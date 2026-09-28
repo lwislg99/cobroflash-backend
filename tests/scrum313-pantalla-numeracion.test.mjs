@@ -143,7 +143,8 @@ test('SCRUM-313 · la microcopy aprobada está literal en la pantalla', () => {
     '¿Ya has facturado en ${ANIO_EN_CURSO}?',
     'No, empiezo ahora',
     '¿Cuál fue el número de tu última factura de ${ANIO_EN_CURSO}?',
-    'Seguimos por ahí para que tu numeración no tenga saltos.',
+    // SCRUM-1216a: «Seguimos por ahí para que tu numeración no tenga saltos.» la RETIRÓ el fundador
+    // (falsa desde el corte de la serie F). Su ausencia la exige scrum1216a-serie-sin-promesa.
     'Tu primera factura con YaQu será:',
     'Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.',
     'Es correcto',

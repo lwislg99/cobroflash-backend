@@ -43,6 +43,12 @@ function anioEnCurso() {
  * ejercitar los dos lados en la suite sin navegador.
  */
 function puertaSerieVisible(veredicto) {
+  // 🔴 SCRUM-1216a · EN `receipt` NUNCA. Con la facturación apagada YaQu no emite nada (regla 24),
+  // y `puertaSerieDisponible` no mira el modo: sin esto, un profesional español con el flag en OFF
+  // veía en Ajustes una pregunta sobre la numeración de sus facturas. Guardar no la cerraría para
+  // siempre: el 1-ene `invoiceSeriesYear` deja de ser el año en curso, y quien no emite nunca no
+  // lo vuelve a escribir. Se mira el modo, como ya hace la vista previa (SCRUM-1029).
+  if (typeof window !== 'undefined' && window.appModoEmision === 'receipt') return false;
   const v = veredicto === undefined ? (typeof window !== 'undefined' ? window.appPuertaSerieDisponible : undefined) : veredicto;
   return v === true;
 }
@@ -74,7 +80,8 @@ function renderPuertaSerie(panel, opciones) {
   caja.className = 'field';
   caja.style.cssText = 'border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px;background:var(--neutral-50)';
 
-  // Microcopy APROBADO del Paso 2 del asistente, literal.
+  // Microcopy APROBADO del Paso 2 del asistente, literal. SCRUM-1216a retiró de las dos pantallas
+  // «Seguimos por ahí para que tu numeración no tenga saltos.»: falsa desde el corte de la serie F.
   caja.innerHTML =
     `<h3 style="margin:0 0 10px;font-size:15px;font-weight:700;color:var(--ink)">¿Ya has facturado en ${anio}?</h3>` +
     '<div id="ps-elec" style="display:flex;gap:10px;margin:4px 0 16px">' +
@@ -93,8 +100,7 @@ function renderPuertaSerie(panel, opciones) {
           '<input id="ps-numero" type="number" min="1" inputmode="numeric" placeholder="41" style="width:100%;min-height:44px;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>' +
         '</div>' +
       '</div>' +
-      '<p style="font-size:12px;color:#6b756f;margin:8px 0 14px">Seguimos por ahí para que tu numeración no tenga saltos.</p>' +
-      '<div id="ps-previa" aria-live="polite" style="background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">' +
+      '<div id="ps-previa" aria-live="polite" style="margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">' +
         '<p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será: ' +
           '<strong id="ps-previa-numero" style="font-size:15px;white-space:nowrap"></strong></p>' +
         '<p style="margin:0;font-size:12px;color:#6b756f">Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>' +
