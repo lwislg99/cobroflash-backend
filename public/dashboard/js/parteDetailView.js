@@ -55,7 +55,8 @@
     notas: 'Notas',
     anadirLinea: 'Añadir línea',
     firmar: 'Firmar aquí mismo',
-    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
+    // SCRUM-1215 (lote 1) · `yaFirmado` RETIRADA: cero consumidores, no se pintaba nunca. Decidido
+    // por el orquestador el 28-sep-2026; motivo en `scripts/_censo-convenio-microcopy-declarados.json`.
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',

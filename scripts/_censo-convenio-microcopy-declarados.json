@@ -296,10 +296,6 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.yaFirmado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/productsView.js · MSG.no_catalog_for_trade": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
@@ -369,5 +365,10 @@
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): su propio comentario lo da por [PENDIENTE microcopy oficial]. Contenido de J3/S4, no de este instrumento."
     }
   },
-  "retiradas": []
+  "retiradas": [
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.yaFirmado",
+      "motivo": "SCRUM-1215 lote 1 (S4, 28-sep-2026, Jira c.17360): la clave no tenía NINGÚN consumidor (ni TEXTOS.yaFirmado ni TEXTOS[...] en public/), así que no se pintaba nunca. Retirada del objeto por decisión del orquestador (cobroflash-backend-57). No se firmó: se borró."
+    }
+  ]
 }
