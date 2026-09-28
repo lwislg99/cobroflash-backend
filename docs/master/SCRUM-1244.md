@@ -104,3 +104,55 @@ lleva al orquestador como hallazgo de SCRUM-1218; aquí no se ha tocado.
 
 El pico se mide con una sonda `--import` que escribe `process.resourceUsage().maxRSS` al salir (sólo entra
 en los hijos de `node --test`).
+
+## ⑤ El reaper de Claude Code: qué mata, qué no, y la receta para correr la tanda aquí
+
+**Medido contra:** `origin/main` = `3928cf10720e700b451e0f3eb893ab0743d764e0` · 2026-09-28T21:34:50Z
+
+Esta sección es del equipo de Javier. La trampa se REPORTA a la S0 para su `trampas-del-entorno.md`,
+que es suyo y que no se toca desde aquí.
+
+### Las seis tandas enteras de esta noche, cada una en su condición real
+
+Todas son la tanda completa (1.070-1.072 ficheros), medidas con `tanda-medida.mjs`: sonda por hijo, muestra
+del sistema cada segundo y un corte propio a 700 MB libres que no saltó en ninguna.
+
+| tanda | cómo se lanzó | sesión | conc. | resultado | mínimo libre |
+| --- | --- | --- | --- | --- | --- |
+| T11 | segundo plano | ACTIVA (trabajando) | 11 | terminó, 4,1 min | 1.487 MB |
+| T11-antes | **primer plano** | activa | 11 | terminó, 4,2 min | **744 MB** |
+| T11-inactiva | segundo plano | **QUIETA** | 11 | terminó, 3,6 min | 1.201 MB |
+| T11-final | segundo plano | **QUIETA** | 11 | terminó, 3,8 min | 1.263 MB |
+| T11-1218 | segundo plano | **QUIETA** | 11 | **MUERTA a los 35 s** (271/1.072), «stopped because the system is running low on memory» | 1.704 MB |
+| T6-1218 | **primer plano** | activa | 6 | terminó, 4,3 min, verde | 1.991 MB |
+
+### Lo que dice la medición, y ni una palabra más
+
+- **Lo que mata el reaper son órdenes en SEGUNDO PLANO con la sesión QUIETA.** Es lo que dice su propio aviso
+  («while the session was idle»), y la única muerte medida es de esa clase. Una tanda en segundo plano con la
+  sesión trabajando (T11) no murió. Con n = 1, eso no demuestra que no pueda morir.
+- **Su umbral NO es la memoria libre que mide `os.freemem()`.** Dentro de la misma condición (segundo plano
+  y sesión quieta), la que murió no bajó de 1.704 MB libres y las dos que sobrevivieron bajaron a 1.201 y
+  1.263. **Cuál es el umbral, no lo sé.** Solo sé que no es el que yo medía.
+- **En primer plano, 2 de 2 terminaron**, una con la concurrencia de `npm test` (11) bajando a 744 MB libres.
+  Con n = 2, más el texto del aviso, que sólo habla de segundo plano. No es una garantía.
+
+### La receta, con su condición
+
+La tanda entera **se puede correr en esta máquina en PRIMER PLANO**, con la herramienta Bash y **sin**
+`run_in_background`, con el comando de `CLAUDE.md` (sección Comandos, patrón entre comillas simples).
+Con concurrencia 6 y con la de por defecto (11) terminaron las dos.
+
+⚠️ **Condición: sólo cuando NO haya otras sesiones trabajando.** DERIVADO del mecanismo, **NO medido**: una
+tanda en primer plano que aprieta la memoria puede hacer que el reaper mate las órdenes en segundo plano de
+OTRA sesión, que no se enteraría más que por el aviso. Con cinco sesiones vivas, una tanda puede tumbar a las
+otras cuatro.
+
+⚠️ **El límite de 10 minutos de la herramienta Bash** (su tope en primer plano): la tanda ha tardado entre 3,6 y
+4,3 min, así que cabe, pero el margen se estrecha con la máquina cargada. Se le pasa el `timeout` máximo
+(600.000 ms). Si lo agota, lo que hay es una tanda sin terminar, no un veredicto: sin la línea `ℹ tests N`
+con su recuento, no hay tanda (A21).
+
+⛔ **Esto NO sustituye al CI**, que sigue siendo el juez obligatorio. **Y no autoriza a tocar**
+`CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`: es configuración de Javier, y desactivar una protección de
+memoria no es arreglar el consumo.
