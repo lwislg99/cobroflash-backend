@@ -22,9 +22,11 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // SCRUM-262 · ningún teléfono de prueba puede ser un móvil de rango real: `telefonoDePrueba(1)`.
 const TELEFONO_DE_PRUEBA = telefonoDePrueba(1);
 
+// Con número por defecto: desde la 2ª vuelta (opción A del orquestador, 28-sep) el botón SOLO
+// existe cuando el cliente tiene teléfono o móvil. El caso sin número tiene su propio test.
 const JOB_BASE = {
   id: 42, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: 'Reparación caldera',
-  customer: { id: 5, name: 'Cliente Uno', phone: null, mobile: null },
+  customer: { id: 5, name: 'Cliente Uno', phone: TELEFONO_DE_PRUEBA, mobile: null },
   asignados: [], operario: null, albaranes: [], gastos: [], notes: '',
   quote: null, direccion: null, totalAceptado: 0, totalCobrado: 0,
 };
@@ -36,6 +38,22 @@ async function pulsar(nodo) {
   await Promise.all(fns.map((fn) => fn.call(nodo, { type: 'click', target: nodo, preventDefault() {}, stopPropagation() {} })));
 }
 
+/**
+ * ¿Sigue el nodo con ese id MONTADO en el documento? No basta `getElementById(id) === null`: el
+ * mini-DOM (`_banco-vistas.mjs`, `removeChild`) desregistra el id del nodo quitado pero NO los de su
+ * subárbol, así que tras `overlay.remove()` el «continuar» de dentro seguía resolviéndose por id —
+ * medido: el test salía ROJO con la hoja ya cerrada. Se sube por `_padre` hasta `body`, que es lo
+ * que en el navegador decide si `getElementById` lo encuentra.
+ */
+function sigueMontado(doc, id) {
+  let n = doc.getElementById(id);
+  while (n) {
+    if (n === doc.body) return true;
+    n = n._padre;
+  }
+  return false;
+}
+
 function botonPorTexto(doc, texto) {
   return [...doc.querySelectorAll('button')].find((b) => String(b.textContent).trim() === texto) || null;
 }
@@ -44,7 +62,15 @@ function botonPorTexto(doc, texto) {
  * Monta la ficha, abre la hoja de alta y rellena una línea. `envio` deja elegir si el paso de
  * WhatsApp sale bien o mal, sin repetir el montaje en cada test.
  */
-async function prepararConHojaAbierta({ job = JOB_BASE, envio = { ok: true, sent: true } } = {}) {
+/** Un error con la forma del de `apiRequest` para un no-2xx (`api.js`: `err.status`, `err.data`). */
+function errorDeApi(status, data) {
+  const e = new Error(data && data.message ? data.message : `API ${status}`);
+  e.status = status;
+  e.data = data;
+  return e;
+}
+
+async function prepararConHojaAbierta({ job = JOB_BASE, envio = { ok: true, sent: true }, emitir = { estado: 'emitido' }, conBoton = true } = {}) {
   const llamadas = [];
   const banco = cargarDashboard(RAIZ);
   banco.ctx.apiRequest = async (u, opts = {}) => {
@@ -60,10 +86,12 @@ async function prepararConHojaAbierta({ job = JOB_BASE, envio = { ok: true, sent
     }
     if (metodo === 'POST' && /\/admin\/albaranes\/501\/emitir$/.test(url)) {
       llamadas.push({ url, metodo });
-      return { estado: 'emitido' };
+      if (emitir instanceof Error) throw emitir;
+      return emitir;
     }
     if (metodo === 'POST' && /\/admin\/albaranes\/501\/enviar-para-firmar$/.test(url)) {
       llamadas.push({ url, metodo });
+      if (envio instanceof Error) throw envio;
       return envio;
     }
     return job;
@@ -78,7 +106,7 @@ async function prepararConHojaAbierta({ job = JOB_BASE, envio = { ok: true, sent
   await pulsar(newAlbBtn);
 
   const entregar = doc.getElementById('alb-entregar-firmar');
-  assert.ok(entregar, '🔴 CIEGO: la hoja de alta no abrió, o no lleva el botón «Entregar y enviar a firmar»');
+  if (conBoton) assert.ok(entregar, '🔴 CIEGO: la hoja de alta no abrió, o no lleva el botón «Entregar y enviar a firmar»');
 
   // Una línea con concepto y cantidad, para que `leerLineasDelFormulario` no la descarte. Los
   // `placeholder` se asignan como PROPIEDAD (`c.placeholder = 'Concepto'`), no con `setAttribute`,
@@ -111,28 +139,80 @@ test('SCRUM-993 · 🔴 EL PRIMER CLIC NO EJECUTA NADA: abre la confirmación, n
   assert.equal(confirmBox.hidden, false, '🔴 la confirmación sigue oculta tras pulsar «Entregar y enviar a firmar»');
 });
 
-test('SCRUM-993 · el texto de la confirmación es el firmado, y nombra el canal solo si hay número', async () => {
-  const { doc: doc1, entregar: e1 } = await prepararConHojaAbierta({
-    job: { ...JOB_BASE, customer: { id: 5, name: 'Cliente Uno', phone: null, mobile: null } },
-  });
-  await pulsar(e1);
+test('SCRUM-993 · con número, el texto de la confirmación es el firmado y nombra el canal', async () => {
+  const { doc, entregar } = await prepararConHojaAbierta();
+  await pulsar(entregar);
   // Solo el <p>, NO `confirmBox` entero: éste también contiene los botones («Entregar y enviar a
   // firmar»/«Cancelar»), que se concatenarían en `textContent` y falsearían la comparación.
   assert.equal(
-    doc1.getElementById('alb-confirmar-entrega').querySelector('p').textContent.trim(),
-    'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar.',
-    '🔴 sin teléfono, el texto no debería nombrar el canal',
-  );
-
-  const { doc: doc2, entregar: e2 } = await prepararConHojaAbierta({
-    job: { ...JOB_BASE, customer: { id: 5, name: 'Cliente Uno', phone: TELEFONO_DE_PRUEBA, mobile: null } },
-  });
-  await pulsar(e2);
-  assert.equal(
-    doc2.getElementById('alb-confirmar-entrega').querySelector('p').textContent.trim(),
+    doc.getElementById('alb-confirmar-entrega').querySelector('p').textContent.trim(),
     'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar por WhatsApp.',
     '🔴 con teléfono, el texto tiene que nombrar el canal (comentario 17263)',
   );
+});
+
+// ═══ 2ª VUELTA (orquestador, 28-sep, opción A) · medido en SCRUM-993 com. 17325 ═══════════════
+
+test('SCRUM-993 · 🔴 SIN NÚMERO NO SE OFRECE: sin teléfono ni móvil la hoja no lleva el botón (y «Crear albarán» sí)', async () => {
+  const { doc } = await prepararConHojaAbierta({
+    job: { ...JOB_BASE, customer: { id: 5, name: 'Cliente Uno', phone: null, mobile: null } },
+    conBoton: false,
+  });
+  assert.ok(doc.getElementById('alb-entregar-firmar') === null,
+    '🔴 sin número el botón sigue ofreciéndose: emitiría (congela al cliente) y el envío fallaría siempre (409 customer_missing_phone)');
+  assert.ok(doc.getElementById('alb-confirmar-entrega') === null, '🔴 sin botón no debe quedar una confirmación montada');
+  assert.ok(botonPorTexto(doc, 'Crear albarán'), '🔴 CONTROL: la hoja de alta tiene que seguir ofreciendo «Crear albarán»');
+});
+
+test('SCRUM-993 · 🔴 un 409 del ENVÍO (lanza en apiRequest) cierra la hoja con el aviso de fallo, sin dejar «continuar» vivo', async () => {
+  const { doc, llamadas, entregar } = await prepararConHojaAbierta({
+    envio: errorDeApi(409, { ok: false, error: 'customer_missing_phone', message: 'Este cliente no tiene WhatsApp guardado.' }),
+  });
+  await pulsar(entregar);
+  assert.ok(sigueMontado(doc, 'alb-confirmar-continuar'), '🔴 CIEGO: «continuar» no consta montado ANTES de pulsarlo');
+  await pulsar(doc.getElementById('alb-confirmar-continuar'));
+
+  assert.equal(llamadas.length, 3, '🔴 se esperaban las tres llamadas (crear/emitir/enviar)');
+  assert.ok(!sigueMontado(doc, 'alb-confirmar-continuar'),
+    '🔴 la hoja sigue abierta con «continuar»: un segundo clic crearía y EMITIRÍA otro albarán');
+  const mensajes = [...(doc.getElementById('yaqu-toasts')?.children || [])].map((t) => t.dataset.msg);
+  assert.ok(mensajes.includes('Albarán emitido — el envío por WhatsApp falló, reenvíalo desde el trabajo.'),
+    `🔴 el 409 del envío no dice que el albarán YA se emitió. Toasts: ${JSON.stringify(mensajes)}`);
+  assert.ok(!mensajes.includes('✓ Albarán entregado y enviado a firmar.'), '🔴 éxito pintado con el envío caído');
+});
+
+test('SCRUM-993 · 🔴 el aviso de ÉXITO solo sale con `sent === true` (condición de su firma)', async () => {
+  const { doc, entregar } = await prepararConHojaAbierta({ envio: { ok: true, sent: true } });
+  await pulsar(entregar);
+  await pulsar(doc.getElementById('alb-confirmar-continuar'));
+  const mensajes = [...(doc.getElementById('yaqu-toasts')?.children || [])].map((t) => t.dataset.msg);
+  assert.ok(mensajes.includes('✓ Albarán entregado y enviado a firmar.'), `🔴 falta el aviso de éxito. Toasts: ${JSON.stringify(mensajes)}`);
+
+  // Una respuesta 2xx que NO dice `sent: true` no es un envío confirmado.
+  const otra = await prepararConHojaAbierta({ envio: { ok: true } });
+  await pulsar(otra.entregar);
+  await pulsar(otra.doc.getElementById('alb-confirmar-continuar'));
+  const m2 = [...(otra.doc.getElementById('yaqu-toasts')?.children || [])].map((t) => t.dataset.msg);
+  assert.ok(!m2.includes('✓ Albarán entregado y enviado a firmar.'), `🔴 éxito pintado sin \`sent: true\`. Toasts: ${JSON.stringify(m2)}`);
+});
+
+test('SCRUM-993 · 🔴 si falla EMITIR tras crear, la hoja se cierra: no se puede volver a crear otro', async () => {
+  const { doc, llamadas, entregar } = await prepararConHojaAbierta({
+    emitir: errorDeApi(409, { error: 'x', message: 'Error del servidor al emitir.' }),
+  });
+  await pulsar(entregar);
+  assert.ok(sigueMontado(doc, 'alb-confirmar-continuar'), '🔴 CIEGO: «continuar» no consta montado ANTES de pulsarlo');
+  await pulsar(doc.getElementById('alb-confirmar-continuar'));
+
+  assert.equal(llamadas.length, 2, '🔴 con emitir caído no debe intentarse el envío');
+  assert.ok(!sigueMontado(doc, 'alb-confirmar-continuar'),
+    '🔴 la hoja sigue abierta con «continuar» tras crear: el siguiente clic crearía un segundo albarán');
+  // Texto firmado en SCRUM-993 comentario 17337: dice que el borrador YA EXISTE. Y nunca el
+  // `message` crudo del servidor (SCRUM-644).
+  const mensajes = [...(doc.getElementById('yaqu-toasts')?.children || [])].map((t) => t.dataset.msg);
+  assert.ok(mensajes.includes('No se pudo completar la entrega. El albarán queda en borrador en este trabajo.'),
+    `🔴 el fallo de emitir no dice que el borrador ya existe. Toasts: ${JSON.stringify(mensajes)}`);
+  assert.ok(!mensajes.includes('Error del servidor al emitir.'), '🔴 se pintó el `message` crudo del servidor');
 });
 
 test('SCRUM-993 · 🔴 «Continuar» encadena las TRES llamadas, EN ORDEN, con un solo alta', async () => {
