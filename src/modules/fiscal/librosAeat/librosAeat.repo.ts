@@ -42,7 +42,8 @@ export async function leerLibroExpedidasDelTrimestre(
 
   // SCRUM-294 (fase C) · el criterio de caja del merchant, igual que en el 303.
   const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
-  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio });
+  // SCRUM-1232: el libro de expedidas son facturas; el justificante sigue en el 303, que NO pide esto.
+  const libro = await leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio, soloFacturas: true });
   // El suelo va ANTES de mirar los asientos: si el libro no se pudo leer, no se resuelve ningún
   // cliente ni se emite nada. Ver `exigirLibroLegible`.
   exigirLibroLegible(libro);
