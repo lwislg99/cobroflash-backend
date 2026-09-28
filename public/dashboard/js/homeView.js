@@ -402,9 +402,17 @@ function renderSetupChecklist(merchant, data) {
     // `!!(merchant.iban || merchant.bizumPhone)` y se dejaba fuera `whatsappPhone`, que SÍ vale
     // como móvil de Bizum. Lo decide `viasDeCobro` en el servidor; aquí solo se pinta. Si el
     // campo no llega, el paso queda PENDIENTE — nunca se rehace el criterio a mano.
-    { label: 'Configura cómo cobras',      done: !!(merchant.viasDeCobro && merchant.viasDeCobro.cobroManual), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
-    { label: 'Conecta tu WhatsApp',        done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Te avisamos cuando acepten o paguen' },
-    { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar' },
+    // SCRUM-1164 · en `receipt` no hay transferencia ni Bizum por YaQu (regla 24): como PASO promete
+    // que YaQu cobrará por él, y se quita (`soloSiCobra`). El campo del IBAN en Ajustes NO se toca:
+    // guardarlo le sigue sirviendo para cobrar por su cuenta (orquestador, 28-sep).
+    { label: 'Configura cómo cobras',      done: !!(merchant.viasDeCobro && merchant.viasDeCobro.cobroManual), action: 'settings', hint: 'IBAN para transferencia o Bizum', soloSiCobra: true },
+    // SCRUM-1164 (#4) · «…o paguen» es falso en `receipt` (nadie paga por YaQu, regla 24): el paso
+    // se queda, su nota se calla (`notaSoloSiCobra`, abajo).
+    { label: 'Conecta tu WhatsApp',        done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Te avisamos cuando acepten o paguen', notaSoloSiCobra: true },
+    // SCRUM-1164 · «tras pagar» no llega nunca en `receipt`, así que la NOTA se calla. El PASO se
+    // queda: el enlace también sale en el perfil público del negocio (`publicProfile.service.ts`),
+    // que no depende del cobro — medido antes de quitar nada.
+    { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar', notaSoloSiCobra: true },
     { label: 'Completa NIF y dirección',   done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'Salen en tus PDF' },
     { label: 'Crea tu primer presupuesto', done: data.recentActivity && data.recentActivity.length > 0, action: 'quotes-new', hint: null },
     // ── SCRUM-315 (D4) · el checklist llega hasta donde llega el dinero ──────────────────────
@@ -422,11 +430,21 @@ function renderSetupChecklist(merchant, data) {
       hint: 'Para que un presupuesto salga en 30 segundos' },
     { label: 'Que tu cliente firme un presupuesto', done: data.onboarding?.firma === true, action: 'quotes-list',
       hint: 'Es tu prueba si luego dice que no lo pidió' },
-    { label: 'Cobra tu primer trabajo', done: data.onboarding?.cobro === true, action: 'invoices',
+    { label: 'Cobra tu primer trabajo', done: data.onboarding?.cobro === true, action: 'invoices', soloSiCobra: true,
       hint: 'Bizum, tarjeta o transferencia, desde el mismo enlace' },
   ];
 
-  const incomplete = steps.filter(s => !s.done);
+  // SCRUM-1164 · en `receipt` no se cobra por YaQu (regla 24). `soloSiCobra` quita EL PASO —su
+  // rótulo es la afirmación, y «Cobra tu primer trabajo» no se podría cumplir nunca: con él
+  // pendiente el checklist no se acababa jamás—; `notaSoloSiCobra` calla sólo la nota (`hint: null`
+  // ya es una forma que este checklist pinta). Va FUERA de `steps`, que SCRUM-315 lee y evalúa tal
+  // cual. Ocultar no es borrar: en cuanto el modo deja de ser `receipt`, vuelven solos.
+  const cobroApagado = window.appModoEmision === 'receipt';
+  const pasos = cobroApagado
+    ? steps.filter((s) => !s.soloSiCobra).map((s) => (s.notaSoloSiCobra ? { ...s, hint: null } : s))
+    : steps;
+
+  const incomplete = pasos.filter(s => !s.done);
   if (incomplete.length === 0) return; // todo completo → no mostrar
 
   const container = document.querySelector('.kpi-grid');
@@ -440,10 +458,10 @@ function renderSetupChecklist(merchant, data) {
         <div style="font-weight:700;font-size:14px;color:#166534">🚀 Completa tu configuración</div>
         <div style="font-size:12px;color:#4d7c0f;margin-top:2px">${incomplete.length} paso${incomplete.length!==1?'s':''} restante${incomplete.length!==1?'s':''}</div>
       </div>
-      <div style="background:#dcfce7;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:#166534">${steps.filter(s=>s.done).length}/${steps.length}</div>
+      <div style="background:#dcfce7;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:#166534">${pasos.filter(s=>s.done).length}/${pasos.length}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      ${steps.map(s => `
+      ${pasos.map(s => `
         <div style="display:flex;align-items:center;gap:10px;font-size:13px;${s.done?'opacity:.5':''}">
           <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${s.done?'#16a34a':'#86efac'};background:${s.done?'#16a34a':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
             ${s.done?'<span style="color:#fff;font-size:10px">✓</span>':''}
@@ -838,6 +856,13 @@ function openQuickQuoteModal(prefill) {
   // Concordancia de género: "Nuevo presupuesto rápido" / "Nueva cotización rápida"
   const qFast = qNew.trim().toLowerCase().startsWith('nuevo') ? 'rápido' : 'rápida';
 
+  // SCRUM-1164 (#3) · en `receipt` no se genera ninguna factura (regla 24): la nota se calla, no se
+  // reescribe. Fuera de la plantilla, como una constante entera, para que el censo de literales
+  // (SCRUM-601) la siga leyendo.
+  const notaCondiciones = window.appModoEmision === 'receipt'
+    ? ''
+    : '<p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">💡 "100% al aceptar" genera la factura cuando el cliente firma.</p>';
+
   const backdrop = document.createElement("div");
   backdrop.className = "modal-overlay";
   backdrop.id = "qq-modal-backdrop";
@@ -936,7 +961,7 @@ function openQuickQuoteModal(prefill) {
               50% · 50%
             </label>
           </div>
-          <p style="font-size:12px;color:var(--neutral-500);margin:6px 0 0">💡 "100% al aceptar" genera la factura cuando el cliente firma.</p>
+          ${notaCondiciones}
         </div>
       </div>
 

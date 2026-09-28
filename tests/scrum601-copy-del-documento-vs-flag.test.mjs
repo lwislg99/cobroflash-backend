@@ -168,7 +168,15 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // anclaje por SU literal, cada una en un fichero distinto (expensesView.js / jobDetailView.js).
 // Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
 // el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 155 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🟢 flag 16 → 17 · 28-sep-2026 (SCRUM-1164, #3) · UN LITERAL QUE EL CENSO NO VEÍA, y ahora lo ve
+// en su categoría correcta. «💡 "100% al aceptar" genera la factura cuando el cliente firma.»
+// (`homeView.js`, hoja de presupuesto rápido) vivía DENTRO de la plantilla grande del modal, y el
+// censo no la lee (en `origin/main` no aparece en `visibles`: medido con `censoCopy` sobre los dos
+// árboles). Ahora es una constante que se calla en `receipt` (`appModoEmision`), así que el censo
+// la encuentra y la clasifica como «flag» — que es lo que ES: el modo de emisión elige si sale.
+// `aPelo` no baja porque nunca la contó. No se toca `PENDIENTES_DE_FIRMA`: no se ha firmado nada.
+const VEREDICTO_AL_MEDIR = { flag: 17, tipo: 7, aPelo: 155 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -284,7 +292,11 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // dos constantes compuestas en la misma plantilla HTML, así que el censo no puede afirmar desde el
 // fuente cuál es el texto final visible (aunque las DOS mitades sean literales firmados sueltos).
 // No se duplica el rótulo en línea para bajar el número: el mismo motivo que 31→32.
-const NO_LEGIBLES_AL_MEDIR = 33;
+// 28-sep-2026 · 33 → 34, MEDIDO (SCRUM-1164, #3). Es el mismo literal que sube `flag` 16 → 17
+// (ver `VEREDICTO_AL_MEDIR`): antes el censo no lo veía; ahora lo ve, y llega al `innerHTML` del
+// modal por `${notaCondiciones}`, así que no puede afirmar el texto final desde el fuente. Es el
+// límite del instrumento con un literal que ANTES ni siquiera contaba, no un literal nuevo.
+const NO_LEGIBLES_AL_MEDIR = 34;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
