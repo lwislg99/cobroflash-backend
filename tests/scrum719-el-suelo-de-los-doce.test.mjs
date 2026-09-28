@@ -86,7 +86,8 @@ test('SCRUM-719 · 🔴 los trece conservan su suelo', () => {
     `🔴 ${sinSuelo.length} de los trece han perdido su suelo:\n    ${sinSuelo.join('\n    ')}\n`
     + '  Sin él vuelven a afirmar una negación sobre un texto que puede estar vacío, y su verde\n'
     + '  deja de significar «no lo encuentro» para significar «no he mirado».\n'
-    + '  Comprobación completa, que no depende de esta lista: `npm run censo:mudez`.');
+    + '  `npm run censo:mudez` hace la comprobación completa, pero es MANUAL y no corre en ningún sitio\n'
+    + '  (SCRUM-1179): la única red que bloquea es ESTA lista.');
 });
 
 // ═══ 🔴 EL ROJO, Y QUE CAE CON EL MECANISMO VIEJO ═════════════════════════════════════════

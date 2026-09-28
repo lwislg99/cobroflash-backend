@@ -15,8 +15,9 @@
 // —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
 // pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
 // más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
-// pie en obra. Las otras quince siguen medidas por el censo (`npm run censo:tactil-panel`) y
-// sin vigilar, a propósito.
+// pie en obra. Las otras quince NO las vigila nada que corra o bloquee: `npm run censo:tactil-panel`
+// es un censo MANUAL que no lanza ningún workflow ni ningún test (medido en SCRUM-1179), así que
+// medirlas depende de que alguien se acuerde. No se cite como red para retirar una pantalla de aquí.
 //
 // 🔴 EL NÚMERO DEL CENSO, RE-FECHADO EL 7-sep-2026 (SCRUM-795): 82 objetivos cortos distintos,
 // 62 de ellos `.btn-sm`. No son 6 nuevos defectos: son los 7 de la ficha 360, que hasta hoy el
