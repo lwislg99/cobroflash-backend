@@ -35,40 +35,67 @@
   var M = '[PENDIENTE microcopy oficial]';
 
   var TEXTOS = {
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
+    // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
+    // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
+    // también la oficina. Editable, se queda `sinLineas`.
+    sinLineasCerrado: 'No se apuntó nada en este apartado.',
+    // APROBADO · SCRUM-1215 comentario 17367
     unds: 'UNDS',
     // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
     // palabra del impreso y no estrena vocabulario. Consta en
     // `docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
     descripcion: 'Descripción',
+    // APROBADO · SCRUM-1215 comentario 17367
     entrada: 'Entrada',
+    // APROBADO · SCRUM-1215 comentario 17367
     salida: 'Salida',
+    // APROBADO · SCRUM-1215 comentario 17367
     desplazamiento: 'Desplazamiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     kilometros: 'Kilómetros',
+    // APROBADO · SCRUM-1215 comentario 17367
     referencia: 'REF',
+    // APROBADO · SCRUM-1215 comentario 17367
     obra: 'Dirección de la obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     tecnicos: 'Técnicos',
+    // APROBADO · SCRUM-1215 comentario 17367
     notas: 'Notas',
+    // APROBADO · SCRUM-1215 comentario 17367
     anadirLinea: 'Añadir línea',
+    // APROBADO · SCRUM-1215 comentario 17367
     firmar: 'Firmar aquí mismo',
-    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
+    // SCRUM-1215 (lote 1) · `yaFirmado` RETIRADA: cero consumidores, no se pintaba nunca. Decidido
+    // por el orquestador el 28-sep-2026; motivo en `scripts/_censo-convenio-microcopy-declarados.json`.
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
+    // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
     // fundador firmó en SCRUM-703 para este mismo vocabulario cerrado en «Trabajo nuevo», así que
     // reutilizarlo no estrena microcopy ni pide firma (regla 30).
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloTipo: 'Tipo de intervención',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoReparacion: 'Reparación / asistencia',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoMantenimiento: 'Mantenimiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoInstalacion: 'Instalación',
+    // APROBADO · SCRUM-1215 comentario 17367
     dictado: 'Dicta lo que has hecho',
+    // APROBADO · SCRUM-1215 comentario 17367
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
+    // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
     confirmarPropuesta: 'Añadir estas líneas',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
@@ -101,7 +128,10 @@
     // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
     parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
     // SCRUM-890 (PR 2) · una firma que se quedó en la cola y el servidor rechazó al vaciarla, con un
-    // código distinto de `parte_vacio`. ⚠️ PROPUESTA, PENDIENTE DE FIRMA (regla 30).
+    // código distinto de `parte_vacio`. APROBADO por el orquestador por delegación del fundador,
+    // SCRUM-890 comentario 15665 (17-sep-2026). Consta en
+    // `docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md`. (Hasta SCRUM-1215 este comentario
+    // decía «PROPUESTA, PENDIENTE DE FIRMA», y el censo 1157 lo contaba como sin firmar.)
     firmaRechazada: 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el parte.',
 
     // ── SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO ────────────────────────────────
@@ -259,7 +289,7 @@
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
       : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
-        esc(TEXTOS.sinLineas) + '</td></tr>';
+        esc(editable ? TEXTOS.sinLineas : TEXTOS.sinLineasCerrado) + '</td></tr>';
 
     return (
       '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '" style="margin-bottom:18px">' +
