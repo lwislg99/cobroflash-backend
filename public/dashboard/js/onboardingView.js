@@ -164,7 +164,13 @@ function showOnboardingWizard(onComplete) {
     // cablear el año haría que el 1 de enero la pantalla preguntara por el año pasado y produjera
     // un arranque que `resolveSeriesSeq` descarta. Al llevar el año dentro, la respuesta ya trae
     // el par completo que necesita el mecanismo.
+    //
+    // SCRUM-1216a · se RETIRÓ «Seguimos por ahí para que tu numeración no tenga saltos.»: desde el
+    // corte de la serie F (SCRUM-780, `ba1cd2d5`, 7-sep-2026) el número declarado no llega a la
+    // factura (medido contra el `allocateInvoiceNumber` real: con «41» y sin nada, `F260001`). Que
+    // llegue es SCRUM-1216b. Y en `receipt` este paso NO EXISTE (ver el filtro de `steps`).
     {
+      pasoDeSerie: true,
       title: `¿Ya has facturado en ${ANIO_EN_CURSO}?`,
       render: () => `
         <div id="ob-serie-elec" style="display:flex;gap:10px;margin:4px 0 16px">
@@ -186,10 +192,8 @@ function showOnboardingWizard(onComplete) {
                 style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
             </div>
           </div>
-          <p style="font-size:12px;color:#6b756f;margin:8px 0 14px">
-            Seguimos por ahí para que tu numeración no tenga saltos.</p>
           <div id="ob-serie-previa" aria-live="polite"
-            style="background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
+            style="margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
             <p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será:
               <strong id="ob-serie-numero-previa" style="font-size:15px;white-space:nowrap"></strong></p>
             <p style="margin:0;font-size:12px;color:#6b756f">
@@ -396,7 +400,10 @@ function showOnboardingWizard(onComplete) {
         footer.querySelector('#ob-explore').addEventListener('click', complete);
       },
     },
-  ];
+  // SCRUM-1216a · en `receipt` (ES real, facturación apagada — regla 24) el paso de la serie NO
+  // existe: YaQu no emite facturas, así que no se le pregunta por su numeración. Se decide al
+  // montar, con el modo que ya trajo `/admin/me` (app.js lo fija antes de abrir el asistente).
+  ].filter((s) => !(s.pasoDeSerie && window.appModoEmision === 'receipt'));
 
   let currentStep = 0;
 
