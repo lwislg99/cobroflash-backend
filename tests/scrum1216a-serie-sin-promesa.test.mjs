@@ -25,6 +25,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
+// SCRUM-694: el filtro de comentarios es ÉSTE, nunca uno a mano.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ANIO = new Date().getFullYear();
@@ -134,8 +136,7 @@ test('SCRUM-1216a · FISCAL · la puerta sale, sin la promesa, y la visibilidad 
 
 test('SCRUM-1216a · la promesa no está en el código de ninguna de las dos pantallas', () => {
   for (const f of ['public/dashboard/js/onboardingView.js', 'public/dashboard/js/puertaSerie.js']) {
-    const codigo = fs.readFileSync(path.join(RAIZ, f), 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const codigo = soloCodigo(fs.readFileSync(path.join(RAIZ, f), 'utf8'), f);
     assert.ok(/onboarding\/serie/.test(codigo), `CIEGO: ${f} no es la pantalla de la serie`);
     assert.ok(!codigo.includes(PROMESA_FALSA), `🔴 ${f} conserva la promesa falsa`);
   }
