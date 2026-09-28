@@ -190,7 +190,11 @@
         // Un periodo vacío se DICE (`X-Yaqu-Filas`, mismo contrato que emitidas). Si el servidor
         // miró gastos y no salió ningún asiento, el descuadre lo pinta ya la tabla recargada.
         const filas = Number(res.headers.get('X-Yaqu-Filas'));
-        showToast(filas === 0 ? COPY.descargaVacia : COPY.descargaLista, filas === 0 ? 'info' : 'ok');
+        // Dos ramas explícitas, no un ternario que caiga en «ok»: si la cabecera falta (NaN), no
+        // es «0 filas» y tampoco es un éxito medido (SCRUM-622: «no lo sé» no se pinta de verde).
+        if (filas === 0) showToast(COPY.descargaVacia, 'info');
+        else if (Number.isFinite(filas)) showToast(COPY.descargaLista, 'ok');
+        else showToast(COPY.descargaLista, 'info');
       } catch (e) {
         if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
         showToast(COPY.descargaFallida, 'error');
