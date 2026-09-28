@@ -1789,9 +1789,24 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       avisoEl.style.display = 'none';
     }
 
+    // SCRUM-1184 · LA VISTA PREVIA DEL NÚMERO. Texto FIRMADO por el orquestador (c.17342): «Siguiente
+    // número: AB260005.», con el número real. Dice «Siguiente» y no «Se creará como» a propósito: si
+    // otro usuario crea un albarán a la vez, el número real puede ser otro. El número lo da el
+    // servidor (`GET /admin/albaranes/serie`, año en la zona del merchant, como al emitir).
+    // FALLA CERRADO: sin `siguiente` string (409 `serie_sin_anio`, error, red) no se pinta nada.
+    const siguienteEl = document.createElement('p');
+    siguienteEl.className = 'alb-siguiente-numero';
+    siguienteEl.hidden = true;
+    apiRequest('/admin/albaranes/serie').then((r) => {
+      const n = r && typeof r.siguiente === 'string' ? r.siguiente.trim() : '';
+      if (!n) return;
+      siguienteEl.textContent = `Siguiente número: ${n}.`;
+      siguienteEl.hidden = false;
+    }).catch(() => {});
+
     const bodyEl = document.createElement('div');
     bodyEl.className = 'modal-body';
-    modal.append(header, errEl, avisoEl, bodyEl);
+    modal.append(header, siguienteEl, errEl, avisoEl, bodyEl);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
