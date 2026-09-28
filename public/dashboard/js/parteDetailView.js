@@ -43,6 +43,10 @@
     // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
+    // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
+    // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
+    // también la oficina. Editable, se queda `sinLineas`.
+    sinLineasCerrado: 'No se apuntó nada en este apartado.',
     // APROBADO · SCRUM-1215 comentario 17367
     unds: 'UNDS',
     // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
@@ -276,7 +280,7 @@
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
       : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
-        esc(TEXTOS.sinLineas) + '</td></tr>';
+        esc(editable ? TEXTOS.sinLineas : TEXTOS.sinLineasCerrado) + '</td></tr>';
 
     return (
       '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '" style="margin-bottom:18px">' +

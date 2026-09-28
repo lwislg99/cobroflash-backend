@@ -57,4 +57,24 @@ solo existe en atributos del código, nunca a la vista, así que «apartado» cu
 - `sinLineas`: medido que **sí se pinta** en un parte firmado (firmar exige una línea en total, no una
   por bloque). Ocultarla deja el bloque con título y cabecera y sin filas: está parado y la decisión es
   del orquestador.
-- `sinBloque` → ticket de S2 (se pierden líneas al confirmar). `pistaFirma` → SCRUM-1229.
+
+## Apéndice (s4-28e) · `sinLineas` PINTADA
+
+Al volver a intentarlo el clasificador ha dejado la edición. Firma: c.17367.
+
+- `TEXTOS.sinLineasCerrado` = «No se apuntó nada en este apartado.», con su `APROBADO` encima. Se pinta
+  **sólo** en un bloque vacío que no es editable; editable, sigue `sinLineas` («Todavía no has apuntado
+  nada.»), como dice la firma.
+- **Lo que afirma, comprobado:** `editable` = `puedeEditarContenido(estado).ok`, y eso sólo es cierto en
+  `borrador` (`parteTrabajo.ts:319`). No depende de quién abra la pantalla: no editable = parte firmado.
+- `tests/scrum1215b-sin-lineas-cerrado.test.mjs` monta la vista en el banco: firmado → el texto nuevo;
+  borrador → el de siempre. **Rojo comprobado:** sin la ternaria cae el caso firmado (1 pass · 1 fail).
+- Censo 1157: trinquete **0 nuevas · 0 que sobran** (la clave nueva nace `APROBADO`; `sinLineas` sigue
+  `SIN_COMENTARIO`, sin tocar el JSON). Tanda de la zona (1215b, 1157, 1175c, 890, 402, 720): **40 · 40
+  pass · 0 fail**.
+
+**«Añadir al parte» (c.17375) NO va en esta rama:** está pintado en local (`scrum-1230b-anadir-al-parte-LOCAL`)
+y **parado**. Mover `confirmarPropuesta` a `retiradas` en el JSON del censo lo **denegó el clasificador**
+([Logging/Audit Tampering]); sin eso, `scrum1157` se pone rojo en el check obligatorio. Avisado al orquestador.
+
+**Medido contra:** `origin/main` = `29eea3f9baba711eb65a3b6119727ef4777f0159` · 2026-09-28T15:39:19Z
