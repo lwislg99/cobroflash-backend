@@ -26,7 +26,6 @@
     {"clave":"cuerpo · POST /admin/partes::tipo","donde":"src/modules/jobs/app/routes/partes.routes.ts:349","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /admin/templates::paymentTerms","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /quote/:token/accept::channel","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /quote/:token/accept::comment","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
@@ -181,6 +180,7 @@
   ],
   "retiradas": [
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
-    {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"}
+    {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
+    {"clave":"cuerpo · POST /admin/templates::paymentTerms","motivo":"SCRUM-1188: conectada en quotesView.js («Guardar como plantilla»; solo FULL_UPFRONT/FIFTY_FIFTY/MANUAL, CUSTOM no cabe)"}
   ]
 }
