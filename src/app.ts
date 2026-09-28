@@ -679,8 +679,12 @@ app.get('/admin/merchant', async (req, res, next) => {
       //
       // Es dato de CALENDARIO, no fiscal ni bancario: no abre la puerta que esta rama protege
       // (NIF, IBAN, CLABE, serie, umbral de aprobación). Decisión del asesor, 4-sep-2026.
-      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone } = merchant;
-      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone });
+      //
+      // SCRUM-1227 · `clausulasPresupuesto` TAMBIÉN (decisión del orquestador, 28-sep): son las
+      // condiciones comerciales del propio negocio, no dato fiscal ni bancario, y el técnico ya las
+      // manda impresas en cada PDF. El editor de presupuestos las necesita si él crea uno (SCRUM-1180).
+      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, clausulasPresupuesto, brandColor, brandAccentColor, timezone } = merchant;
+      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, clausulasPresupuesto, brandColor, brandAccentColor, timezone });
     }
     // A14.1: estado EFECTIVO del flag del perfil público (merchant > env > default)
     // para que Configuración pinte "activa/aún no activa" sin duplicar la lógica.
