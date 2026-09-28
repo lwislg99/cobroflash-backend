@@ -4855,7 +4855,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
           body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
         });
         closeOverlay();
-        setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
+        // SCRUM-1188 · con «CUSTOM» la plantilla sale SIN condición (arriba): se dice, una vez, aquí.
+        // Texto FIRMADO por el orquestador (SCRUM-1188, comentario 17332), letra por letra. SOLO con
+        // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
+        if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
         alertEl.className = 'alert error';
