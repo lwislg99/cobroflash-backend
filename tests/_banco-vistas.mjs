@@ -280,9 +280,15 @@ export function nodo(tag, reg) {
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
     // él. Lo cazó la prueba de rojo de SCRUM-444: la inyección del defecto salía VERDE porque la
     // pila borrada se «encontraba» igual.
+    // 🔴 SCRUM-1221 · y los de TODO SU SUBÁRBOL, como ya hacían `_soltarHijos` (SCRUM-897) y el
+    // montaje de `pintarVista`. Sólo se desregistraba el propio nodo: tras `overlay.remove()`,
+    // `getElementById` seguía encontrando el «continuar» de dentro (medido por S4 en SCRUM-993).
     removeChild(h) {
       n.hijos = n.hijos.filter((x) => x !== h);
-      if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
+      if (h) {
+        h._padre = null;
+        for (const d of todos(h)) if (d && d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
     },
     insertBefore(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.unshift(h); return h; },
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
@@ -592,6 +598,18 @@ export function nodo(tag, reg) {
     },
     get innerHTML() { return n._html; },
   };
+  // 🔴 SCRUM-1221 · UN FALLO DEL TEST TIENE QUE VERSE COMO FALLO, no como «la máquina no da».
+  // `assert` construye su mensaje inspeccionando el valor con `getters: true` y `depth: 1000`. Los
+  // accesores de este nodo (`parentNode`, `children`, `innerHTML`…) devuelven objetos NUEVOS en cada
+  // lectura, que la detección de ciclos no reconoce, y el árbol crece sin fin: medido sobre la lista
+  // de clientes (93 nodos), 273 k caracteres a profundidad 4, 9,7 M a 8, y a 1000
+  // `RangeError: Array buffer allocation failed` a los ~94 s. Un `assert.equal(nodo, null)` rojo
+  // salía como un OOM, y un OOM se archivaba como «cosa de la máquina».
+  // En el navegador esos accesores viven en el prototipo, no son propios ni enumerables; `_padre`
+  // tampoco es del nodo en ningún DOM. Se ocultan a la inspección (sin cambiar lo que devuelven).
+  for (const [k, d] of Object.entries(Object.getOwnPropertyDescriptors(n))) {
+    if (d.get || d.set || k === '_padre') Object.defineProperty(n, k, { ...d, enumerable: false });
+  }
   return n;
 }
 
