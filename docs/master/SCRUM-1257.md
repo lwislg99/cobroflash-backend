@@ -149,6 +149,12 @@ El modo no se recalcula en el navegador: es el que manda el servidor, igual que 
 `settingsView`. Si `appModoEmision` llega `null` (un `/admin/me` que no respondió), el vacío cae al lado
 fiscal/demo (P3/P4), como el resto de la casa, que solo trata `receipt` aparte.
 
+🔴 **Y el reverso, escrito a petición del orquestador:** con el modo desconocido, caer al lado fiscal es
+prometerle «sus facturas aparecerán aquí» a alguien que podría estar en `receipt`, donde no va a salir
+ninguna nunca. Es sobre-prometer, el mismo patrón que se quitó en SCRUM-1220, 1216 y 1247. No se cambia
+ahora, porque si `/admin/me` no responde el panel ya está roto por sitios peores. **Pero si algún día se
+revisa, el lado seguro es el contrario:** con el modo desconocido, no prometer.
+
 ⛔ **No se ha tocado nada de los grupos A y D**, ni `src/`, ni el flag, ni el modo `receipt`.
 
 ## Rojo primero

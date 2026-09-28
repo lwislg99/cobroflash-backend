@@ -547,6 +547,9 @@ async function fetchInvoices(options = {}) {
           // nada (SCRUM-1027). Cambiar la palabra no bastaba: «la factura se genera sola» sería igual de
           // falso y un claim fiscal (regla 7). Textos firmados en SCRUM-1257 comentario 17444 (P1-P4).
           // El modo no se recalcula aquí: es el que mandó el servidor, igual que en homeView y settingsView.
+          // ⚠️ Con el modo desconocido (`null`) cae al lado fiscal, como el resto de la casa, y eso
+          // SOBRE-PROMETE a quien esté en `receipt`. Si se revisa, el lado seguro es el contrario
+          // (SCRUM-1257b, docs/master/SCRUM-1257.md).
           const sinEmision = window.appModoEmision === 'receipt';
           const tituloVacio = sinEmision ? 'Aún no se emiten documentos' : 'Aquí verás tus facturas';
           const cuerpoVacio = sinEmision
