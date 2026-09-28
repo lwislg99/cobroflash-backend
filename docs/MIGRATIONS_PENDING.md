@@ -2921,3 +2921,105 @@ correrla, comprobar con `docs/sql/deriva-prod.sql` que la fila sigue apareciendo
 
 **Este PR ya está mergeado sin las tres casillas marcadas — corregir eso no es reabrir el PR, es
 la aplicación pendiente descrita en SCRUM-1122.**
+
+## LOTE DE 7 del equipo de Luis (529 · 1072 · 1146 · 930 · 914 · 1056 · 359) — 28-sep-2026 · ✅ **SOLO DEV**, verificado por catálogo · staging y producción: las aplica Javier
+
+Registro de **SCRUM-1209**. Aplicado por J6 (jv-j6), por encargo del orquestador del equipo de
+Javier, el **2026-09-28 hacia las 14:15Z**. Los siete ficheros se leyeron de `origin/main` =
+`29b492b0c2f246941e5c514d682887c18fd19494` con `git show`, no de un árbol que pudiera ir atrasado:
+
+```
+docs/sql/scrum-529-to-phone.sql                 docs/sql/scrum-914-equipos-del-cliente.sql
+docs/sql/scrum-1072-activity-kind.sql           docs/sql/scrum-1056-volver-a-llamar.sql
+docs/sql/scrum-1146-retencion-irpf-importe.sql  docs/sql/scrum-359-ventana-de-firma.sql
+docs/sql/scrum-930-descuento-de-plantilla.sql
+```
+
+**Forma:** 22 sentencias, todas aditivas y con `IF NOT EXISTS`, clasificadas con la lista blanca
+**de main** (`_aplicar-sql-dev.mjs`): `ADD COLUMN`, `CREATE INDEX` y un `CREATE TABLE … ( … )`
+(`equipments`, con sus dos claves ajenas en línea). **No se amplió la lista.** Aplicado fichero a
+fichero con `node scripts/aplicar-sql-dev.mjs --file <f> --go`, destino
+`acela.proxy.rlwy.net/yaqu_dev_javier` (DESARROLLO) ✅; los siete salieron con exit 0.
+
+**Verificado leyendo el catálogo, antes y después.** Los objetos esperados se sacan de los propios
+`.sql`: 24 (13 columnas, 1 tabla, 8 índices y 2 claves ajenas, estas con `confdeltype = 'r'` y
+`confupdtype = 'c'`). El verificador tiene tres salidas: está, falta y **no supe mirar**. Se
+calibró en las tres: sale CIEGO ante una sentencia que no sabe leer, ve 3/3 objetos conocidos en un
+fichero de calibración que no se aplicó, y lleva como control positivo que `invoices` existe.
+
+| fichero | ANTES | DESPUÉS |
+|---|---|---|
+| `scrum-529-to-phone` | 0/1 | 1/1 |
+| `scrum-1072-activity-kind` | 0/1 | 1/1 |
+| `scrum-1146-retencion-irpf-importe` | 0/1 | 1/1 |
+| `scrum-930-descuento-de-plantilla` | 0/1 | 1/1 |
+| `scrum-914-equipos-del-cliente` | 0/14 | 14/14 |
+| `scrum-1056-volver-a-llamar` | 0/3 | 3/3 |
+| `scrum-359-ventana-de-firma` | 0/3 | 3/3 |
+| **total** | **0/24** | **24/24** |
+
+⚠️ **Procedencia del verificador:** fue un script de un solo uso, que vivió en la carpeta temporal
+de la sesión y **no está en el repo**. Quien quiera re-medirlo lo reconstruye con las consultas
+de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.tables`,
+`pg_constraint`), o con `docs/sql/deriva-prod.sql` si cubre estas columnas.
+
+### Estado por base — 28-sep-2026
+
+- [x] **desarrollo · yaqu_dev_javier** — ✅ aplicado y verificado por catálogo (0/24 → 24/24).
+- [ ] **staging** — la aplica Javier a mano; no se ha tocado desde esta sesión.
+- [ ] **producción** — la aplica Javier a mano; no se ha tocado desde esta sesión.
+
+### Dos hallazgos de paso
+
+1. **`merchants.domicilio_fiscal_foral` (SCRUM-1102) ESTÁ en dev.** Lo confirmó la calibración del
+   verificador, leyendo el catálogo. Es una de las dos columnas de 1102, que Javier aplicó a mano.
+   ⚠️ **La otra, `lleva_libros_por_sii`, NO se midió en esta pasada.**
+2. **La cabecera de este fichero describe mal el aplicador.** El aviso de SCRUM-758, arriba, dice
+   que `aplicar-sql-dev.mjs` usa `_clasificador-sql.mjs` y admite `ALTER TYPE ADD VALUE` y
+   `COMMENT ON`. Medido en `origin/main` `29b492b0`: el aplicador importa `./_aplicar-sql-dev.mjs`
+   (`scripts/aplicar-sql-dev.mjs:37`), y esa lista es `ADD COLUMN` · `CREATE [UNIQUE] INDEX` ·
+   `CREATE TABLE … ( … )` · `ALTER COLUMN … DROP DEFAULT` · `CREATE TYPE … AS ENUM ( … )`
+   (SCRUM-1197). Sus conclusiones sobre el DML no cambian: el DML sigue sin estar permitido. Aquí
+   se registra, no se corrige.
+
+## SCRUM-1216 · `merchants.invoice_start_seq` + `invoice_start_year` (arranque de serie) — 28-sep-2026 · ✅ **APLICADA EN LAS TRES BASES**
+
+El DDL está en `docs/sql/scrum-1216b-arranque-de-serie.sql`, con el porqué de cada columna. Lo
+escribe J6 (jv-j6), **después** de que se aplicara: hasta ahora sólo existía en una conversación y en
+un fichero del escritorio de Javier. `git grep invoice_start_seq` en `origin/main` a59dc1e6 → 0.
+Es el mismo hueco que SCRUM-1102.
+
+```sql
+ALTER TABLE "merchants"
+  ADD COLUMN IF NOT EXISTS "invoice_start_seq"  INTEGER,
+  ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;
+```
+
+Aditiva, con `IF NOT EXISTS`. 🔴 **Las dos van sin `DEFAULT` y sin `NOT NULL` a propósito:** `NULL`
+es «no declaró nada» (su primera factura, `F260001`) y no puede confundirse con haber declarado «1»
+(regla 29).
+
+### Estado por base — 28-sep-2026
+
+- [x] **producción** — la pegó **Javier** a mano. No se ha verificado desde una sesión.
+- [x] **staging** — la pegó **Javier** a mano. La **verificó el orquestador** leyendo el catálogo
+  con control positivo: 66 columnas en `merchants`, las dos `integer`, `nullable = YES`, sin
+  default, y `next_invoice_number` intacto con su default 1. J6 volvió a leerlo, en solo lectura,
+  para calibrar su verificador, y salió lo mismo.
+- [x] **desarrollo · yaqu_dev_javier** — la aplicó **J6** el 2026-09-28T15:00:43Z con
+  `scripts/aplicar-sql-dev.mjs --go` (destino DESARROLLO ✅, exit 0). La **verificó leyendo el
+  catálogo**, antes y después:
+
+| | ANTES | DESPUÉS |
+|---|---|---|
+| columnas de `merchants` | 64 | 66 |
+| `invoice_start_seq` | no existe | `integer` · nullable · sin default |
+| `invoice_start_year` | no existe | `integer` · nullable · sin default |
+| `next_invoice_number` | `integer` NOT NULL DEFAULT 1 | **igual** |
+| valores de `next_invoice_number` (6 merchants, md5 de `id:valor`) | `8102ae7f0bf8f4d3a8ba7635bbd6a05c` | **idéntica** |
+| merchant 1 | 6 | 6 |
+
+Antes de aplicarlo, el SQL pasó por **dos** sondas independientes: la lista de dev (una sentencia
+`ALTER TABLE … ADD COLUMN`) y el clasificador de producción (`ADD COLUMN ×2`, permitida). Se usaron
+las dos porque la de dev tiene un hueco con los `ALTER` de varias acciones, que J6 encontró ese mismo
+día y que va en su propio ticket.

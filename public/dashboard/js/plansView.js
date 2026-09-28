@@ -115,6 +115,13 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     'Soporte por email',
   ].filter((f) => window.appModoEmision !== 'receipt' || !SOLO_SI_COBRA.has(f));
 
+  // SCRUM-1164 (#7) · la misma regla que las dos filas de arriba, y se quedó fuera: «cobras con
+  // tarjeta · Bizum y transferencia» describe cobros que en `receipt` no ocurren por ninguna vía
+  // (regla 24). Se oculta, no se reescribe.
+  const notaComision = window.appModoEmision === 'receipt'
+    ? ''
+    : '<div style="font-size:12.5px;color:var(--neutral-500);margin-top:8px">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>';
+
   // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL
   const foundingHtml = showFounding ? `
     <div class="customers-card" style="margin-bottom:14px;background:linear-gradient(135deg,var(--brand) 0%,var(--logo-cyan) 100%);border:none;color:var(--brand-ink)">
@@ -156,7 +163,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
           <div style="font-size:40px;font-weight:800;color:var(--neutral-900);letter-spacing:-.5px;line-height:1">
             ${heroAmount}<span style="font-size:16px;font-weight:400;color:var(--neutral-400)">${perLabel}</span>
           </div>
-          <div style="font-size:12.5px;color:var(--neutral-500);margin-top:8px">+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis</div>
+          ${notaComision}
           ${saving}
           <div style="font-size:12px;color:var(--neutral-400);margin-top:8px">Todo incluido · Sin límites</div>
         </div>

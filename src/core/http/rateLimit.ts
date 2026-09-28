@@ -46,7 +46,3 @@ export function rateLimit(opts: { max: number; windowMs: number; scope: string; 
   };
 }
 
-// Solo para tests
-export function __resetRateLimits(): void {
-  buckets.clear();
-}

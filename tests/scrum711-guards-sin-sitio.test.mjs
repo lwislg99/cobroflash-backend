@@ -20,8 +20,9 @@
 //     sin invocar                      →   2   y los dos corren igualmente, por otro camino:
 //        · guard-conformidad-landing.mjs → su comprobación corre en la tanda por su módulo puro:
 //          `scrum400` llama a `comprobarEnDisco(RAIZ)` sobre el árbol real. Sobra el CLI, no el guard.
-//        · guards-entrada.mjs → runner local para empujar una entrada del registro; sus cuatro
-//          comprobaciones son `tests/*.test.mjs`, así que ya corren en la tanda.
+//        · guards-entrada.mjs → runner local para empujar una entrada del registro; TODAS sus
+//          comprobaciones (su lista `GUARDS`) son `tests/*.test.mjs`, así que ya corren en la tanda:
+//          el runner es un atajo, no una red más (SCRUM-1179).
 //     guards que no corren en ningún sitio  →  0
 //
 // 🔴 AÑADIDO EL 23-SEP-2026 (SCRUM-1097), SIN REPETIR LA MEDICIÓN DE ARRIBA — que ya está vieja

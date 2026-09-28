@@ -262,20 +262,10 @@ export function normalizePhone(input?: string | null): string {
   // factura los asigna SIEMPRE modules/invoicing/domain/invoiceNumber.service.ts
   // (serie anual correlativa por merchant: 2026-CF-001).
 
-  // Extrae el id numérico real de un parámetro de ruta, tolerando URLs "sucias".
-  // El botón URL dinámica de WhatsApp puede dejar el placeholder sin sustituir
-  // (p. ej. "{{1}}23" en vez de "23"); aquí quitamos primero cualquier "{{...}}"
-  // (que contiene su propio dígito) y luego nos quedamos solo con los dígitos.
-  // Devuelve NaN si no queda ningún dígito.
-  export function parseNumericId(raw: unknown): number {
-    const digits = String(raw ?? '')
-      .replace(/\{\{.*?\}\}/g, '')  // fuera placeholders tipo {{1}}
-      .replace(/\D/g, '');          // solo dígitos
-    return digits ? Number(digits) : NaN;
-  }
-
-  // SCRUM-95: mismo saneo que parseNumericId, pero para tokens opacos hexadecimales
-  // (crypto.randomBytes(16).toString('hex'), 32 caracteres) en vez de ids numéricos —
+  // SCRUM-95: saneo de tokens opacos hexadecimales (crypto.randomBytes(16).toString('hex'),
+  // 32 caracteres) en parámetros de ruta, tolerando URLs "sucias": el botón URL dinámica de
+  // WhatsApp puede dejar el placeholder sin sustituir (p. ej. "{{1}}abc…"). Sustituyó a
+  // `parseNumericId`, que hacía lo mismo con ids numéricos (retirada en SCRUM-1213) —
   // quita primero cualquier placeholder "{{...}}" sin sustituir y se queda solo con
   // hex. Cadena vacía si no queda nada válido (findUnique con '' nunca matchea).
   export function parseToken(raw: unknown): string {

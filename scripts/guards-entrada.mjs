@@ -15,6 +15,12 @@
 // Todos corren **sin compilar y sin base de datos** —son estructurales, leen ficheros— así que el
 // comando tarda segundos. Ese es el punto: uno que tarde un minuto no se ejecuta.
 //
+// 🔴 SCRUM-1179 · ESTO ES UN ATAJO, NO UNA RED MÁS. Todo lo de `GUARDS` es un `tests/*.test.mjs`, y
+// el check obligatorio (`build + tests`) ya los corre y ya bloquea con ellos (`scrum711` comprueba
+// que cada uno está en la tanda). Correrlo aquí adelanta el rojo, no añade protección: no se cite
+// `guards:entrada` como segunda red de nada, que un guard citado dos veces parece el doble de lo
+// que hay.
+//
 // ── 🔴 EL CRITERIO SE ENSANCHÓ EL 20-SEP-2026, Y ÉSTE ES EL MOTIVO (SCRUM-964) ───────────────
 // Hasta hoy la lista era «los guards de la ENTRADA DE REGISTRO», o sea del fichero de
 // `docs/master/`. Entra un quinto que NO es de la entrada —`public-js-parsea`— y el criterio pasa

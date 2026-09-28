@@ -82,7 +82,13 @@ async function renderReportsView(container) {
       btnVf.disabled = false;
     }
   });
-  exportRow.appendChild(btnVf);
+  // SCRUM-1165 · el botón y su título citan el RD 1007/2023: afirman que YaQu produce el registro
+  // de facturación reglamentario, y eso solo es verdad en modo `fiscal` (reglas 7/17/26; con
+  // `INVOICING_ES_ENABLED` en OFF el servidor da 404). Se OCULTA fuera de `fiscal`: en `receipt`,
+  // en `demo` (cero claims fiscales hasta SIF-1, también en el demo) y con el modo desconocido o
+  // ausente, porque falla cerrado. El texto no se reescribe: ocultar no es copy nuevo. La
+  // condición es el modo, no un borrado: el día que el interruptor se encienda, vuelve solo.
+  if (window.appModoEmision === 'fiscal') exportRow.appendChild(btnVf);
 
   const rightBlock = document.createElement('div');
   rightBlock.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:flex-end';

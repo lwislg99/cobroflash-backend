@@ -28,6 +28,7 @@ Cloudflare que ha vuelto a pisar al origen** — no el código.
 | Páginas de cobro (`/pay/*`, `/recibo/*`) | `no-store, must-revalidate` | sus routers | Importes y estados de pago. Una versión vieja aquí es dinero mal mostrado. |
 | Adjuntos de solicitudes | `private, max-age=86400` | `attachments.routes.ts` | `private` a propósito: son de un merchant, no de una caché compartida. |
 | **JS, CSS e imágenes de `public/`** | **`public, max-age=0`** | `express.static` (su default) | **El punto de este ticket.** Ver abajo. |
+| `/fonts/inter.css` y `/fonts/*.woff2` (SCRUM-1234) | `public, max-age=0` (en el panel, `/fonts/inter.css` va sellada con `?v=` → `immutable`) | `express.static` | La fuente se sirve desde casa para que la IP del visitante no salga a Google. Mismo trato que el resto de estáticos: revalidar es barato y nunca sirve una versión vieja. |
 | `/sw.js` | `public, max-age=0` | `express.static` | Hoy el `register` usa `updateViaCache:'imports'` y salta la caché HTTP para el script raíz, así que no es la causa activa — pero basta un `'all'` para convertirlo en un fallo permanente. Que revalide no depende de esa suerte. |
 
 ---
