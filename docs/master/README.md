@@ -180,8 +180,9 @@ ancla, porque no son mediciones aparte. Si tu apendice de verdad es un trabajo n
 
 ## ANTES DE EMPUJAR: `npm run guards:entrada`
 
-**No es un guard, son CUATRO**, y hasta ahora cada sesion los descubria EN ROJO despues de empujar,
-cuando el PR ya estaba abierto:
+**No es un guard, son VARIOS** —los de la lista `GUARDS` de `scripts/guards-entrada.mjs`; eran
+cuatro al escribir esto y hoy son mas—, y hasta ahora cada sesion los descubria EN ROJO despues de
+empujar, cuando el PR ya estaba abierto. Los cuatro de origen:
 
 | guard | lo que exige |
 |---|---|
@@ -194,12 +195,15 @@ cuando el PR ya estaba abierto:
 npm run guards:entrada
 ```
 
-Tarda segundos: los cuatro son estructurales -no compilan ni tocan la base-. `npm test` tambien los
-corre, pero compila y lanza 2.400 tests, asi que nadie lo usa para revisar un fichero de texto: por
-eso los rojos llegaban por el PR.
+Tarda segundos: son estructurales -no compilan ni tocan la base-. `npm test` tambien los corre,
+pero compila y lanza miles de tests, asi que nadie lo usa para revisar un fichero de texto: por eso
+los rojos llegaban por el PR.
 
-Si el comando corre menos de cuatro, **falla nombrando cual falta**. Un agregador que se queda corto
-da la tranquilidad entera con la cobertura a medias.
+Si el comando corre menos de los de su lista, **falla nombrando cual falta**. Un agregador que se
+queda corto da la tranquilidad entera con la cobertura a medias.
+
+**Es un atajo, no una red mas (SCRUM-1179):** todos son `tests/*.test.mjs` y el check obligatorio ya
+los corre y bloquea con ellos. `guards:entrada` adelanta el rojo; no anade proteccion.
 
 ## El guard
 
