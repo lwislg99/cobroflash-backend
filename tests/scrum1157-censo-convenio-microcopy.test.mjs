@@ -81,7 +81,8 @@ test('SCRUM-1157 ① trinquete: lo acusado == lo declarado, en las dos direccion
   ].join('\n');
   assert.equal(nuevas.length, 0,
     `${msg}\n\nNUEVA = texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39); si YA ` +
-    'está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`. Sólo si queda ' +
+    'está firmado, escribe encima `// APROBADO por <quién> el <fecha> (<referencia>)`, o al final de su ' +
+    'misma línea, detrás de la coma (`k: \'x\', // APROBADO por …`; SCRUM-1157b). Sólo si queda ' +
     `pendiente de verdad, decláralo en «acusadas» de ${DECLARADOS_JSON} con su motivo.`);
   assert.equal(sobran.length, 0,
     `${msg}\n\nSOBRA = ya no sale acusado (se firmó o se borró): muévelo a «retiradas» de ${DECLARADOS_JSON} ` +
@@ -130,6 +131,20 @@ test('SCRUM-1157 ② APROBADO en singular no se hereda; en plural con cuenta, go
   assert.deepEqual(cuenta, { 'T.a': 'APROBADO', 'T.b': 'APROBADO', 'T.c': 'SIN_COMENTARIO' });
   assert.equal(cuantosDice('// los cinco textos de las dos firmas'), 5);
   assert.equal(cuantosDice('// APROBADOS'), Infinity);
+});
+
+// SCRUM-1157b · la regla 1 de la cabecera no funcionaba: con la coma entre el valor y el
+// comentario, TS deja de buscar comentarios «de detrás» en la coma, y los «de delante» no cogen
+// los de la misma línea. S4 marcó 22 hojas así y las 22 salieron SIN_COMENTARIO.
+test('SCRUM-1157b · regla 1: `k: \'x\', // APROBADO` (misma línea, detrás de la coma) firma a esa clave y sólo a ella', () => {
+  const src = 'const T = {\n  // [PENDIENTE microcopy oficial]\n'
+    + '  a: "A", // APROBADO por el fundador (SCRUM-1)\n'
+    + '  b: "B",\n'
+    + '  c: "C" // APROBADO por el fundador (SCRUM-1)\n};\n';
+  assert.deepEqual(clasesDe(src), { 'T.a': 'APROBADO', 'T.b': 'PENDIENTE', 'T.c': 'APROBADO' });
+  // Un objeto cuyo ÚNICO convenio va en esa forma también tiene que ENTRAR en el censo.
+  const solo = 'const U = {\n  a: "A", // APROBADO por el fundador (SCRUM-1)\n  b: "B",\n};\n';
+  assert.deepEqual(clasesDe(solo), { 'U.a': 'APROBADO', 'U.b': 'SIN_COMENTARIO' });
 });
 
 // ── ③ se prueba FALLANDO sobre el árbol real ─────────────────────────────────────────────────────
