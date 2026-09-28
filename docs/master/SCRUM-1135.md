@@ -1,6 +1,6 @@
 # SCRUM-1135 · la selección de la lista de Clientes por fin se puede etiquetar
 
-**Medido contra:** `origin/main` = `d75921536dc3e9a805a521b5fbc0e9aaa630367d` · 2026-09-28T22:41:08Z (J2, equipo de Javier)
+**Medido contra:** `origin/main` = `b7880db80707af65480b90ae00c89a3959cef540` · 2026-09-28T22:51:33Z (J2, equipo de Javier)
 
 ## Qué pasaba
 

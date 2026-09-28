@@ -32,12 +32,12 @@ const CLIENTES = [cliente(11351, 'Ana Etiqueta 1135'), cliente(11352, 'Bea Etiqu
  */
 async function montar({ rol = 'admin', respuesta = { actualizados: 0, resultados: [] } } = {}) {
   const peticiones = [];
-  const datos = (url) => (String(url).includes('/admin/customers') ? CLIENTES : []);
+  const datos = (url) => (/\/admin\/customers/.test(String(url)) ? CLIENTES : []);
   const red = {
     fetch: async (url, opts = {}) => {
       const u = String(url);
       peticiones.push({ url: u, metodo: String(opts.method || 'GET').toUpperCase(), cuerpo: opts.body ? JSON.parse(opts.body) : null });
-      if (u.includes('/admin/customers/bulk-tags')) {
+      if (/\/admin\/customers\/bulk-tags$/.test(u)) {
         if (respuesta === 'sin-red') throw new TypeError('Failed to fetch');
         return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => respuesta, text: async () => '' };
       }
