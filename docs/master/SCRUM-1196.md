@@ -139,3 +139,85 @@ van a rutas propias (`/quote/…/decision`, y `PF_REQUEST_URL` = nuestro `/clien
   y arnés).
 - `evidencias/scrum1196/control-positivo-extractor.txt`.
 - `evidencias/scrum1196/cabeceras-pay-bank-prod.txt`: con el parámetro firmado de NEL omitido.
+
+## Resend: el SIN DETERMINAR, cerrado hasta donde llega el repositorio
+
+**Medido contra:** `origin/main` = `4583f537880241f948a78c9ee274d1b1a59c59a0` · 2026-09-28T15:24:18Z (encargo del orquestador: sin entrar en ningún panel)
+
+### Qué correos van al CLIENTE FINAL
+
+Todo envío pasa por el único POST a Resend (`src/integrations/enviarCorreo.ts`, `enviarPorResend`).
+Destinatarios, llamada por llamada:
+
+| Correo | Disparador | Llamada | Destinatario |
+|---|---|---|---|
+| **Factura con el PDF adjunto** | el profesional pulsa «enviar» | `invoicesAdmin.routes.ts:691` | `invoice.customer.email` · **cliente final** |
+| **Factura con el PDF adjunto** | cobro con tarjeta confirmado (si `AUTO_EMAIL_INVOICE_ON_PAID`) | `psp.routes.ts:78` y `:201` | `customer.email` · **cliente final** |
+| **Factura con el PDF adjunto** | cobro de Mercado Pago confirmado (misma condición) | `mpWebhook.routes.ts:145` | `customer.email` · **cliente final** |
+| **Presupuesto** | el profesional pulsa «enviar» | `quotesAdmin.routes.ts:747` → `email.service.ts` | `quote.customer.email` · **cliente final** |
+| Enlace de acceso, ciclo de vida, resumen semanal, soporte | — | `auth.service`, `lifecycle.service`, `weeklyDigest.service`, `soporteAdmin.routes` | el profesional (`m.email` / `merchant.email`) |
+| Pago recibido, presupuesto aceptado, presupuesto aprobado al técnico | — | `merchantNotifications.ts` | el profesional o su técnico |
+
+Al cliente final le llegan **dos clases de correo: la factura (por cuatro caminos) y el presupuesto**.
+Las plantillas son HTML nuestro, sin imágenes remotas ni URLs externas (medido en el censo de arriba).
+
+### Qué puede fijar nuestra llamada: NADA sobre el seguimiento
+
+Fuente primaria: la documentación de Resend, bajada con `curl` (sufijo `.md`), el 28-sep-2026.
+- **`api-reference/emails/send-email`** (sha256[16] `ff552aa69e2c4151`). Parámetros completos:
+  `from to subject bcc cc scheduled_at reply_to html text react headers topic_id attachments tags
+  template` más la cabecera `Idempotency-Key`. La palabra «track» aparece **0 veces**: **no existe una
+  opción por envío** que encienda o apague el seguimiento.
+- **`dashboard/domains/tracking`** (sha256[16] `7679f37bf8cb6bc4`), literal: «Open and click tracking
+  is disabled by default for all domains.»
+- **`api-reference/domains/update-domain`** (sha256[16] `b34519c1536f862d`): `open_tracking` y
+  `click_tracking` son **propiedades del DOMINIO**, y de cada una dice «This setting is only applied if
+  a `tracking_subdomain` is configured and verified».
+
+Por tanto:
+1. **El seguimiento no se decide en nuestra llamada, sino en el dominio.** «Una opción en nuestra
+   llamada» no existe en la API.
+2. **Lo más cerca de «un hecho del repositorio»** sería un script que haga `PATCH /domains/:id` con
+   `open_tracking: false, click_tracking: false`, o solo `GET /domains/:id` para leer el estado. Los
+   dos piden la `RESEND_API_KEY`, que no está en ningún árbol de trabajo: lo corre quien tenga la
+   clave. Aun así, el estado vive en Resend, no en git.
+3. **Se puede comprobar SIN panel y SIN clave de dos formas:**
+   - que el seguimiento exige un **subdominio de seguimiento verificado**, que es un CNAME en el DNS
+     del dominio remitente;
+   - que cualquiera que haya **recibido** un correo de YaQu puede mirar su código fuente: con el
+     seguimiento de clics los enlaces van reescritos a ese subdominio, y con el de aperturas aparece
+     una imagen de 1×1 servida desde él.
+
+### 🔴 Hallazgo aparte, y no de privacidad: no consta que `yaqu.app` sea dominio remitente de Resend
+
+- **Desde qué dominio enviamos no está en el repositorio.** `from` es `config.EMAIL_FROM`: variable de
+  Railway, y en código el valor por defecto es `YaQu <no-reply@yaqu.local>`. Los documentos lo dan
+  como **intención**: `docs/DEMO_READY_CHECKLIST_FUNDADOR.md:49`, «`YaQu <no-reply@yaqu.app>` …
+  (dominio verificado en Resend primero)».
+- **DNS público** (DNS sobre HTTPS, `cloudflare-dns.com`, 28-sep 15:20Z). La Return-Path de Resend es
+  por defecto un MX en `send.<dominio>` (`add-a-domain`, sha256[16] `95fca8253c336e03`).
+  - **Control positivo:** en `resend.com` salen `send.resend.com MX → feedback-smtp.us-east-1.amazonses.com`
+    y `resend._domainkey.resend.com TXT p=…`.
+  - En **`yaqu.app` (la raíz) y 14 subdominios comunes** (`notifications`, `updates`, `mail`, `email`,
+    `correo`, `facturas`, `no-reply`, `noreply`, `envios`, `notificaciones`, `hola`, `app`, `m`,
+    `info`): **ni `send.` MX ni `resend._domainkey` TXT. NXDOMAIN en todos.**
+  - Los MX y el SPF de `yaqu.app` son de Cloudflare Email Routing (`route*.mx.cloudflare.net`,
+    `include:_spf.mx.cloudflare.net`), sin `include` de Resend.
+- **Suelo:** un subdominio con otro nombre, o una Return-Path personalizada, no se ven con este
+  sondeo. La documentación no da el nombre fijo del registro DKIM. **Esto NO prueba que no se envíe.**
+  Prueba que no consta que `yaqu.app` esté verificado, y que el dominio remitente real es **SIN
+  DETERMINAR** desde fuera. Si `EMAIL_FROM` no está puesta, o apunta a un dominio sin verificar,
+  Resend rechaza el envío, y **la factura no le llega al cliente final**. Es un defecto de producto,
+  no de privacidad. Se reporta, no se mezcla aquí.
+- Tampoco hay ningún CNAME de seguimiento en los 11 nombres típicos de `yaqu.app` (`links`, `track`,
+  `tracking`, `click`, `clicks`, `email`, `mail`, `e`, `r`, `t`, `go`). Con el mismo suelo.
+
+### Qué queda, y quién lo mira (sin panel no se puede cerrar más)
+
+1. **Luis, o quien tenga la cuenta:** en qué dominio envía producción (`EMAIL_FROM` de Railway), si
+   está verificado, y si ese dominio tiene `open_tracking`/`click_tracking` encendidos con un
+   subdominio verificado. Con la clave, basta un `GET /domains`.
+2. **Sin cuenta:** cualquiera que tenga una factura o presupuesto recibidos de YaQu puede abrir el
+   código fuente del correo y mirar los hosts de los enlaces y si hay una imagen de 1×1.
+3. Mientras tanto, lo que dice la documentación es que, **sin subdominio de seguimiento verificado,
+   el seguimiento no se aplica** aunque esté encendido.
