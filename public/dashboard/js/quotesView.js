@@ -1509,6 +1509,70 @@ descWrapper.appendChild(descLabel);
       });
     }
 
+    // SCRUM-1180 · LAS CLÁUSULAS DE CIERRE, PARA ESTE PRESUPUESTO. El servidor guarda
+    // `clausulasExcluidas` y el PDF y el sello la aplican desde SCRUM-656; el editor nunca la
+    // mandaba, así que quitar una cláusula en UN presupuesto no se podía. Una casilla por cada
+    // cláusula del NEGOCIO (`GET /admin/merchant` → `clausulasPresupuesto`, SCRUM-1227), marcada
+    // por defecto: lo de siempre es que las lleve todas. Las desmarcadas viajan por su `id`.
+    // Sin cláusulas en Configuración no se pinta nada: un bloque vacío no decide nada.
+    // Va en «Envío», con `docFields` y los textos: decide cómo SALE el documento.
+    // ⛔ El rótulo del bloque NO está firmado (regla 39): hasta la firma, no se pinta.
+    const TITULO_CLAUSULAS = null;
+    const clausulasWrap = document.createElement("div");
+    clausulasWrap.className = "field quote-clausulas";
+    clausulasWrap.hidden = true;
+    const clausulasChecks = {};
+    // Lo que trae una plantilla o un borrador ANTES de que llegue la lista del negocio.
+    let clausulasExcluidasPendientes = null;
+    if (!esDocumentoSuelto) blockDelivery.appendChild(clausulasWrap);
+    function pintarClausulas(lista) {
+      clausulasWrap.innerHTML = "";
+      Object.keys(clausulasChecks).forEach(function (k) { delete clausulasChecks[k]; });
+      const validas = (Array.isArray(lista) ? lista : []).filter(function (c) {
+        return c && c.id != null && String(c.id) !== "" && typeof c.titulo === "string" && c.titulo.trim() !== "";
+      });
+      clausulasWrap.hidden = validas.length === 0;
+      if (!validas.length) return;
+      if (TITULO_CLAUSULAS) {
+        const titulo = document.createElement("label");
+        titulo.className = "pay-methods-title";
+        titulo.textContent = TITULO_CLAUSULAS;
+        clausulasWrap.appendChild(titulo);
+      }
+      const fila = document.createElement("div");
+      fila.className = "pay-methods-row";
+      validas.forEach(function (c) {
+        const lbl = document.createElement("label");
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.checked = true;
+        chk.value = String(c.id);
+        chk.addEventListener("change", function () { scheduleDraftSave(); });
+        clausulasChecks[String(c.id)] = chk;
+        lbl.appendChild(chk);
+        lbl.appendChild(document.createTextNode(" " + c.titulo.trim()));
+        fila.appendChild(lbl);
+      });
+      clausulasWrap.appendChild(fila);
+      if (clausulasExcluidasPendientes) ponerClausulasExcluidas(clausulasExcluidasPendientes);
+    }
+    // Desmarca las que vienen excluidas (plantilla de «Duplicar» o borrador). Un id que el negocio
+    // ya no tiene se ignora: no hay casilla que desmarcar y el servidor no la imprimiría igual.
+    function ponerClausulasExcluidas(ids) {
+      if (!Array.isArray(ids)) return;
+      clausulasExcluidasPendientes = ids.map(String);
+      clausulasExcluidasPendientes.forEach(function (id) {
+        if (clausulasChecks[id]) clausulasChecks[id].checked = false;
+      });
+    }
+    // `undefined` si no hay casillas (no se sabe qué cláusulas tiene el negocio): la clave no viaja,
+    // en vez de mandar `[]` como si el profesional las hubiera dejado todas.
+    function clausulasExcluidasElegidas() {
+      const ids = Object.keys(clausulasChecks);
+      if (!ids.length) return undefined;
+      return ids.filter(function (id) { return !clausulasChecks[id].checked; });
+    }
+
     // ── SCRUM-915d · EL PIE DEL PASO «CONDICIONES» ──────────────────────────────────────────
     // Va en el ÚLTIMO bloque del paso, que es la fila de Ajustes. Lo único que puede frenarlo es
     // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
@@ -2550,6 +2614,8 @@ descWrapper.appendChild(descLabel);
           : { ok: false };
         return leido.ok ? leido.valores : undefined;
       })(),
+      // SCRUM-1180 · y las cláusulas quitadas en este presupuesto. `undefined` si no hay casillas.
+      clausulasExcluidas: clausulasExcluidasElegidas(),
     };
     // No guardar borradores vacíos
     const hasContent = snapshot.customerId || snapshot.lines.some((l) => l.concept.trim());
@@ -2612,6 +2678,7 @@ descWrapper.appendChild(descLabel);
       }
       // SCRUM-1186 · los dos textos del documento vuelven con el borrador. Uno viejo no los trae.
       ponerTextosDelDocumento(d.textosDelDocumento);
+      ponerClausulasExcluidas(d.clausulasExcluidas); // SCRUM-1180
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -4900,6 +4967,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // SCRUM-1186 · y los dos textos del documento (cabecera y Observaciones), que «Duplicar»
         // copia desde SCRUM-1186. Una plantilla del catálogo no los trae y el campo queda vacío.
         ponerTextosDelDocumento(template);
+        // SCRUM-1180 · y las cláusulas quitadas. Una plantilla del catálogo no las trae.
+        ponerClausulasExcluidas(template.clausulasExcluidas);
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
@@ -4913,6 +4982,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
       currentMerchant = res[0];
       customersList = Array.isArray(res[1]) ? res[1] : [];
+      // SCRUM-1180 · las casillas salen de las cláusulas del NEGOCIO; sin ellas no se pinta nada.
+      pintarClausulas(currentMerchant && currentMerchant.clausulasPresupuesto);
       // SCRUM-633 · ya se sabe en qué calendario vive el negocio: la caducidad se recalcula.
       if (window.__refrescarCaducidadDelPresupuesto) window.__refrescarCaducidadDelPresupuesto();
 
@@ -5611,6 +5682,9 @@ payloadLines.push(lineaParaPayload({
         // dos de arriba: el censo de SCRUM-286 tiene que ver las claves.
         docHeaderText: textoDelDocumento.ok ? textoDelDocumento.valores.docHeaderText : undefined,
         docFooterText: textoDelDocumento.ok ? textoDelDocumento.valores.docFooterText : undefined,
+        // SCRUM-1180 · las cláusulas del negocio que ESTE presupuesto no lleva, por su `id`. A MANO,
+        // por el censo de SCRUM-286. Sin casillas no viaja (no se sabe cuáles tiene el negocio).
+        clausulasExcluidas: clausulasExcluidasElegidas(),
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

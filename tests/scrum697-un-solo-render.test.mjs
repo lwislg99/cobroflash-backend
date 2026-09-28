@@ -378,8 +378,10 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // TODO el delta — el envoltorio y, por cada uno de los dos textos del documento (cabecera y
   // Observaciones), `div.field` + `label` + `textarea[name=docHeaderText|docFooterText]`: 1 + 2×3.
   // 255 − 248 = 7 = el subárbol, así que no esconde una resta compensada en otro sitio.
-  assert.equal(nodos.length, 255,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 255 `
+  // SCRUM-1180 · 28-sep-2026 · 255 → 256, y lo mueve la VISTA: el envoltorio `div.quote-clausulas`
+  // (oculto y vacío: este banco sirve un negocio SIN cláusulas, así que no hay casillas). 1 = el delta.
+  assert.equal(nodos.length, 256,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 256 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
@@ -388,7 +390,7 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
     + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2, − las 2 '
     + 'líneas en blanco y − el bloque `.quote-totals` de SCRUM-915h, − el subtítulo y los dos botones '
     + 'que se van al menú «⋯» + la fila del título y su «⋯» de SCRUM-915i + la lista de clientes por '
-    + 'botones de SCRUM-915j, + los dos textos del documento de SCRUM-1174). Si no '
+    + 'botones de SCRUM-915j, + los dos textos del documento de SCRUM-1174, + el bloque de cláusulas de SCRUM-1180). Si no '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

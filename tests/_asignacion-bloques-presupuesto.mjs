@@ -88,6 +88,9 @@ export const CAMPO_A_BLOQUE = {
   // `ivaModo`: los tres deciden cómo SALE el documento, no qué se cobra ni a quién.
   docHeaderText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
   docFooterText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
+  // SCRUM-1180 · las cláusulas de cierre que ESTE presupuesto no lleva. En «Envío», con los textos
+  // y `docFields`: decide qué SALE impreso.
+  clausulasExcluidas: { control: 'clausulasWrap', bloque: 'blockDelivery' },
 };
 
 /**

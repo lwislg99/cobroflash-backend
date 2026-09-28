@@ -23,3 +23,21 @@ Faltaban tres cosas:
 - La pantalla de S2 encima de esta rama (la sesión S2 de hoy pidió relevo antes de empezarla).
 - Cuando el front mande `clausulasExcluidas`, S1 mueve «cuerpo · POST /quote/create::clausulasExcluidas» a `retiradas` del censo de SCRUM-1185.
 - El texto «Condiciones que lleva este presupuesto» lo firma el orquestador en Jira cuando se vaya a pintar.
+
+## Mitad de pantalla (S2, `s2-28c`) — construida, SIN empujar
+
+**Medido contra:** `origin/main` = `59012d2309adbd8569fc047bcd880f453ade523a` · 2026-09-28T15:44:08Z
+
+- `quotesView.js`: en «Envío», una casilla por cada cláusula del negocio (`clausulasPresupuesto` de
+  `GET /admin/merchant`, SCRUM-1227), marcada por defecto; las desmarcadas viajan como
+  `clausulasExcluidas` (sus `id`). Sin cláusulas, el bloque queda oculto y la clave NO viaja. Se
+  guarda en el borrador y se restaura; la plantilla de «Duplicar» las trae desmarcadas.
+- `quotesDetailView.js` («Duplicar»): copia `clausulasExcluidas` del detalle.
+- **Rótulo del bloque SIN pintar** (`TITULO_CLAUSULAS = null`) hasta la firma de «Condiciones que lleva
+  este presupuesto» (regla 39). Las casillas llevan el título de cada cláusula: dato del profesional.
+- Test del viaje `scrum1180-editor-clausulas-excluidas`: detalle con una quitada → «Duplicar» → la
+  casilla sale desmarcada → se quita otra → «Generar» → el cuerpo REAL del POST lleva las dos → y pasa
+  por el `CreateQuoteSchema` real (dist) conservándolas. Rojo por mutación (sin la clave en el payload,
+  caen 2 de 3). Censos 697/698: 255 → 256 nodos (el envoltorio oculto), declarado con su motivo.
+  `_asignacion-bloques-presupuesto`: `clausulasExcluidas` → `clausulasWrap` en `blockDelivery`.
+- Espera a que #1894 (SCRUM-1227) entre en `main`; se empuja ENCIMA de la rama de S1.
