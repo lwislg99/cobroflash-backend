@@ -66,6 +66,7 @@
 // la deuda ni siquiera hacen falta.
 import { prisma } from '../../../core/db/prisma';
 import { cuboDeCobro, metodoDeUnCobro } from './metodoDeCobro';
+import { CLASES_DE_CORREO } from '../../messaging/domain/registroDeEnvios';
 
 /**
  * La clave derivada, para que las dos poblaciones pasen por el MISMO sitio.
@@ -123,7 +124,54 @@ export type Cobro = {
   tipo: string | null;
   invoiceId: number | null;
   chargeId: number | null;
+  /**
+   * SCRUM-1235 · el correo con el documento de este cobro NO SALIÓ, y nadie más lo va a decir.
+   *
+   * El envío automático tras el cobro se traga el fallo (`psp.routes.ts`, `mpWebhook.routes.ts`) y
+   * el webhook contesta 200 — a propósito: el proveedor pregunta «¿has registrado el cobro?», no
+   * «¿has mandado el correo?» (SCRUM-1235, comentario 17381). Pero `enviarPorResend` SÍ deja la
+   * fila `fallo_envio` en `email_messages`, y hasta aquí no la leía nadie.
+   *
+   * `invoiceId` es a qué documento volver a mandarlo; `clase` es la `kind` de la fila, que separa
+   * la factura del justificante porque el aviso también los separa (reglas 24/26).
+   *
+   * `null` = no consta ningún fallo en el ÚLTIMO intento. No es «salió»: un envío que ni siquiera
+   * llegó a Resend (`invoice_pdf_unavailable`) no deja fila, y esto no lo ve — está declarado en
+   * `docs/master/SCRUM-1235.md`.
+   */
+  correoNoSalio: { invoiceId: number; clase: string } | null;
 };
+
+/** Lo que la fusión necesita de una fila de `email_messages`. */
+export type EnvioDeDocumento = {
+  id: number; relatedId: number | null; kind: string; status: string; createdAt: Date;
+};
+
+/** Las dos clases de correo que llevan el documento de un cobro al cliente. */
+const CLASES_DEL_DOCUMENTO: string[] = [CLASES_DE_CORREO.factura, CLASES_DE_CORREO.justificante];
+
+/**
+ * Por documento, el ÚLTIMO intento de mandarlo — y sólo si ese último falló.
+ *
+ * 🔴 MANDA EL ÚLTIMO, no «alguno falló»: el profesional pulsa «Enviar de nuevo», sale, y el aviso
+ * tiene que apagarse. Un fallo viejo seguido de un envío bueno no es un correo pendiente.
+ *
+ * Sólo `fallo_envio`: es «no salió». `rebotado` (salió y no llegó) pide otra cosa que reenviar a la
+ * misma dirección, y queda fuera de este ticket (`docs/master/SCRUM-1235.md`).
+ */
+function documentosSinSalir(envios: EnvioDeDocumento[]): Map<number, string> {
+  const ultimo = new Map<number, EnvioDeDocumento>();
+  for (const e of envios) {
+    if (e.relatedId == null || !CLASES_DEL_DOCUMENTO.includes(e.kind)) continue;
+    const previo = ultimo.get(e.relatedId);
+    const t = new Date(e.createdAt).getTime();
+    const tp = previo ? new Date(previo.createdAt).getTime() : -Infinity;
+    if (!previo || t > tp || (t === tp && e.id > previo.id)) ultimo.set(e.relatedId, e);
+  }
+  const fallidos = new Map<number, string>();
+  for (const [invoiceId, e] of ultimo) if (e.status === 'fallo_envio') fallidos.set(invoiceId, e.kind);
+  return fallidos;
+}
 
 /** Lo que la fusión necesita de un `Charge`. Los nombres son los del esquema: no se traducen. */
 export type ChargeParaCobro = {
@@ -182,13 +230,31 @@ export async function listarCobros(merchantId: number): Promise<Cobro[]> {
       include: { customer: { select: { name: true } } },
     }),
     // El vínculo REAL cobro → justificante. Multi-tenant por la relación (regla 2).
+    // SCRUM-1235: con `chargeId`, para saber qué documento es el de cada cobro.
     prisma.event.findMany({
       where: { type: 'invoiced', charge: { merchantId } },
-      select: { payload: true },
+      select: { payload: true, chargeId: true },
     }),
   ]);
 
-  return fundirCobros({ charges, candidatas, invoiced });
+  // 🔴 SCRUM-1235 · LOS CORREOS DEL DOCUMENTO QUE NO SALIERON. Los documentos de la lista son los de
+  // los cobros (por el evento `invoiced`) y las facturas sueltas. Multi-tenant por `merchantId`.
+  const documentos = new Set<number>(candidatas.map((i) => i.id));
+  for (const e of invoiced) {
+    const id = (e.payload as { invoice_id?: unknown } | null)?.invoice_id;
+    if (typeof id === 'number') documentos.add(id);
+  }
+  const envios = documentos.size
+    ? await prisma.emailMessage.findMany({
+      where: {
+        merchantId, relatedType: 'invoice',
+        relatedId: { in: [...documentos] }, kind: { in: CLASES_DEL_DOCUMENTO },
+      },
+      select: { id: true, relatedId: true, kind: true, status: true, createdAt: true },
+    })
+    : [];
+
+  return fundirCobros({ charges, candidatas, invoiced, envios });
 }
 
 /**
@@ -202,9 +268,23 @@ export async function listarCobros(merchantId: number): Promise<Cobro[]> {
 export function fundirCobros(entrada: {
   charges: ChargeParaCobro[];
   candidatas: InvoiceParaCobro[];
-  invoiced: Array<{ payload: unknown }>;
+  invoiced: Array<{ payload: unknown; chargeId?: number | null }>;
+  /** SCRUM-1235 · las filas de `email_messages` de esos documentos. Sin ellas no consta ningún fallo. */
+  envios?: EnvioDeDocumento[];
 }): Cobro[] {
   const { charges, candidatas, invoiced } = entrada;
+
+  // SCRUM-1235 · qué documento es el de cada cobro, y cuáles no salieron por correo.
+  const sinSalir = documentosSinSalir(entrada.envios ?? []);
+  const documentoDelCobro = new Map<number, number>();
+  for (const e of invoiced) {
+    const id = (e.payload as { invoice_id?: unknown } | null)?.invoice_id;
+    if (e.chargeId != null && typeof id === 'number') documentoDelCobro.set(e.chargeId, id);
+  }
+  const correoNoSalio = (invoiceId: number | null | undefined) =>
+    invoiceId != null && sinSalir.has(invoiceId)
+      ? { invoiceId, clase: sinSalir.get(invoiceId) as string }
+      : null;
 
   // Las facturas que YA están representadas por su `Charge` en esta misma lista.
   const yaLasTraeSuCharge = new Set(
@@ -242,6 +322,7 @@ export function fundirCobros(entrada: {
     tipo: null,
     invoiceId: null,
     chargeId: ch.id,
+    correoNoSalio: correoNoSalio(documentoDelCobro.get(ch.id)),
   }));
 
   const deInvoice: Cobro[] = sueltas.map((inv) => ({
@@ -281,6 +362,7 @@ export function fundirCobros(entrada: {
     tipo: (inv as { type?: string | null }).type ?? null,
     invoiceId: inv.id,
     chargeId: null,
+    correoNoSalio: correoNoSalio(inv.id),
   }));
 
   return [...deCharge, ...deInvoice]

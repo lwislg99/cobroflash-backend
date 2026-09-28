@@ -71,8 +71,8 @@ function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 
     'customer.findUnique': () => ({ ...cobro.customer }),
     'invoice.findUnique': () => ({ ...factura }),
     'invoice.update': () => ({ ...factura }),
-    // Dos consultas distintas en `listarCobros`: las sueltas (`chargeId: null`) y las vinculadas.
-    'invoice.findMany': (a) => (a?.where?.chargeId === null ? [] : [{ id: factura.id, chargeId }]),
+    // Las facturas SUELTAS (`chargeId: null`): ninguna. La del cobro se liga por el evento `invoiced`.
+    'invoice.findMany': () => [],
     'event.findMany': (a) => filasEvento.filter((f) =>
       (a?.where?.chargeId == null || f.chargeId === a.where.chargeId)
       && (!a?.where?.type || f.type === a.where.type)),
@@ -240,4 +240,73 @@ test('SCRUM-1235 · ✅ manda el ÚLTIMO intento: falló y luego salió → ya n
 
   const sinEnvios = fundirCobros(base);
   assert.equal(sinEnvios[0].correoNoSalio, null, 'sin ninguna fila no consta ningún fallo: se calla');
+});
+
+// ═══ ⑤ LA PANTALLA — el aviso firmado, y el botón que ya existía ════════════════════════════
+//
+// Se pinta la vista REAL con el banco de vistas. La red devuelve la fila tal como la serializa
+// `listarCobros` (con `correoNoSalio`), y el botón llama al endpoint que ya existía.
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { redNormal } from './_banco-red.mjs';
+
+const COBRO_SIN_CORREO = {
+  origen: 'charge', id: 900, fecha: '2026-09-28T10:00:00.000Z', cliente: 'Cliente de laboratorio',
+  concepto: 'Reparación', importe: '121.00', moneda: 'EUR', metodo: 'card', metodoCubo: 'card',
+  estado: 'paid', referencia: null, numero: null, tipo: null, invoiceId: null, chargeId: 900,
+  correoNoSalio: { invoiceId: 7000, clase: 'invoice' },
+};
+
+async function abrirCobros(cobros, alEnviar) {
+  const envios = [];
+  const red = redNormal((url, opts) => {
+    if (url.includes('/send-email')) { envios.push(url); return alEnviar(); }
+    return cobros;
+  });
+  const banco = cargarDashboard(RAIZ, { red });
+  const r = await pintarVista(banco, 'renderCobrosView');
+  assert.equal(r.error, null, `🔴 la pantalla revienta: ${r.error && r.error.message}`);
+  const texto = () => todos(r.contenedor).map((n) => n.textContent).filter(Boolean).join(' | ');
+  const boton = () => todos(r.contenedor).find((n) => n.tagName === 'BUTTON' && n.textContent === 'Enviar de nuevo');
+  return { r, texto, boton, envios };
+}
+const esperar = () => new Promise((ok) => setTimeout(ok, 20));
+
+test('SCRUM-1235 · 🔴 la fila del cobro DICE que la factura no salió, con el texto firmado', async () => {
+  const p = await abrirCobros([COBRO_SIN_CORREO], () => ({ ok: true, sent: true }));
+  assert.match(p.texto(), /Cliente de laboratorio/, '🔴 CIEGO: el cobro ni siquiera se ha pintado');
+  assert.match(p.texto(), /No se pudo enviar la factura al cliente por email\./);
+  assert.ok(p.boton(), '🔴 falta la acción: el aviso sin botón deja al profesional sin salida');
+});
+
+test('SCRUM-1235 · «Enviar de nuevo» llama al endpoint que ya existía y, si sale, lo dice', async () => {
+  const p = await abrirCobros([COBRO_SIN_CORREO], () => ({ ok: true, sent: true }));
+  p.boton().dispararClick();
+  await esperar();
+  assert.deepEqual(p.envios.map((u) => u.replace(/^.*(\/admin\/)/, '$1')), ['/admin/invoices/7000/send-email']);
+  assert.match(p.texto(), /✓ Enviado por email/);
+  assert.doesNotMatch(p.texto(), /No se pudo enviar la factura/, 'si ya salió, el aviso no puede seguir diciendo que no');
+});
+
+test('SCRUM-1235 · 🔴 si el reintento TAMPOCO sale (200 + sent:false), no se dice «enviado»', async () => {
+  const p = await abrirCobros([COBRO_SIN_CORREO],
+    () => ({ ok: true, sent: false, error: 'email_send_failed', message: 'No se pudo enviar el email. Puedes reintentarlo.' }));
+  p.boton().dispararClick();
+  await esperar();
+  assert.doesNotMatch(p.texto(), /Enviado por email/,
+    '🔴 el endpoint contesta 200 cuando el correo falla: leer sólo el código daría «enviado» en falso');
+  assert.match(p.texto(), /No se pudo enviar el email\. Puedes reintentarlo\./, 'se pinta el mensaje del servidor');
+  assert.ok(p.boton() && !p.boton().disabled, 'el botón vuelve a estar a mano');
+});
+
+test('SCRUM-1235 · un justificante se avisa como justificante', async () => {
+  const p = await abrirCobros([{ ...COBRO_SIN_CORREO, correoNoSalio: { invoiceId: 7010, clase: 'justificante' } }], () => ({}));
+  assert.match(p.texto(), /No se pudo enviar el justificante al cliente por email\./);
+  assert.doesNotMatch(p.texto(), /la factura/, '🔴 reglas 24/26: un justificante no se llama factura');
+});
+
+test('SCRUM-1235 · ✅ sin fallo, la fila no dice nada', async () => {
+  const p = await abrirCobros([{ ...COBRO_SIN_CORREO, correoNoSalio: null }], () => ({}));
+  assert.match(p.texto(), /Cliente de laboratorio/, '🔴 CIEGO: el cobro ni siquiera se ha pintado');
+  assert.doesNotMatch(p.texto(), /No se pudo enviar/);
+  assert.equal(p.boton(), undefined);
 });
