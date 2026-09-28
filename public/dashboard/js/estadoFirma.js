@@ -140,18 +140,12 @@ const TEXTO_DESALOJO = Object.freeze({
 });
 
 /**
- * ⚠️ APROBADA Y **SIN CONSUMIDOR**, a propósito y declarado (SCRUM-469).
+ * APROBADA en SCRUM-469. Es el aviso de «no cabe otra firma».
  *
- * Es el aviso de «no cabe otra firma», y NO SE PINTA todavía porque
- * `hayEspacioParaOtraFirma` (SCRUM-360) **no está cableada al encolado**: nadie consulta el tope
- * antes de guardar una firma. Pintar este texto hoy sería anunciar un rechazo que no ocurre; y
- * rechazar la firma sin poder decir por qué sería peor todavía.
- *
- * Vive aquí, en la fuente única, para que el ticket que cablee el tope no tenga que volver a
- * pasar por el asesor. `tests/scrum469-aviso-desalojo.test.mjs` vigila el hueco: exige que el
- * texto siga existiendo Y que siga sin consumidor, de modo que el día que se cablee haya que
- * venir a retirar la aserción — una declaración que nadie tiene que retirar no es un hueco, es
- * una promesa.
+ * SCRUM-1191 · ya se pinta: `firmarConRedDeSeguridad` consulta `hayEspacioParaOtraFirma` antes de
+ * encolar y, si no cabe Y hay firmas pendientes, no encola y devuelve `sinEspacio`. Lo pinta sólo
+ * `mensajeDeFalloAlFirmar` (albaranDetailView.js), y `tests/scrum469-aviso-desalojo.test.mjs`
+ * vigila que siga siendo el único consumidor.
  */
 const TEXTO_SIN_ESPACIO_PARA_FIRMA = 'No cabe otra firma en este móvil. Conéctate para subir las '
   + 'que tienes pendientes.';

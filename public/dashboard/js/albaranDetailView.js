@@ -22,6 +22,11 @@
  * `sinRed` lo marca `api.js` al envolver el `fetch` (SCRUM-404).
  */
 function mensajeDeFalloAlFirmar(e, estado) {
+  // SCRUM-1191 · la firma NO se guardó en el móvil porque la cola llegó al tope (y hay firmas
+  // pendientes: `firmarConRedDeSeguridad` sólo marca `e.sinEspacio` con cola > 0). Texto APROBADO en
+  // SCRUM-469. Si el servidor contestó con un motivo propio, manda ese: no es cosa de espacio.
+  if (e && e.sinEspacio && !(e.data && e.data.message)
+    && typeof TEXTO_SIN_ESPACIO_PARA_FIRMA === 'string') return TEXTO_SIN_ESPACIO_PARA_FIRMA;
   // SCRUM-919 · Aprobado por el orquestador por delegación del fundador (SCRUM-919 comentario 15799).
   // Sin red y con la firma YA guardada en el móvil (estado ①) se dice eso, para que no se vuelva a
   // firmar. Si no se pudo guardar, se queda el texto de antes, que es el que es verdad.
