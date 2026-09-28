@@ -3002,6 +3002,11 @@ es «no declaró nada» (su primera factura, `F260001`) y no puede confundirse c
 ### Estado por base — 28-sep-2026
 
 - [x] **producción** — la pegó **Javier** a mano. No se ha verificado desde una sesión.
+  - *(Añadido por J1 al fusionar main en SCRUM-1216b, 28-sep-2026.)* Verificada después según el
+    **orquestador** (SCRUM-1216, comentario 17369), con la salida que devolvió Javier: las dos
+    `integer`, `is_nullable=YES`, sin default; `next_invoice_number` `NO`, default 1. Distinguida de
+    staging por DATOS (`merchants = 14 · invoices = 2` frente a `8 · 9`), no por columnas: las dos
+    bases dan 66. La medición no es de J1, que no tiene clave de ninguna base.
 - [x] **staging** — la pegó **Javier** a mano. La **verificó el orquestador** leyendo el catálogo
   con control positivo: 66 columnas en `merchants`, las dos `integer`, `nullable = YES`, sin
   default, y `next_invoice_number` intacto con su default 1. J6 volvió a leerlo, en solo lectura,
