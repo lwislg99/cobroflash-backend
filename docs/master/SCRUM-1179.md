@@ -43,3 +43,24 @@ importa algún `tests/*.test.mjs`**, y **7 ya bloquean** lo que vigilan. La preg
 - B, C, D (cabeceras y guard) y E: PR aparte, uno por instrumento.
 
 Tests afectados (42 ficheros): 364 verdes y 4 saltos ajenos (`QA_DB_TEST`, SCRUM-781).
+
+## B · 1 de 4 — `censo:decisiones-encerradas`, con su mitad que cierra
+
+`tests/scrum837-decisiones-encerradas.test.mjs` ya estaba en el check obligatorio, pero solo fijaba
+cuatro nombres (lo ya arreglado no vuelve). Una decisión NUEVA encerrada en una vista pasaba.
+
+- **Mitad que cierra:** el censo del árbol de trabajo se compara con
+  `scripts/_decisiones-encerradas-declaradas.json` en las dos direcciones. NUEVA sin declarar →
+  rojo; declarada que ya no sale → rojo hasta moverla a `retiradas` con motivo. Clave
+  `fichero · función`, nunca la línea. Las 9 de hoy entran declaradas, no aceptadas.
+- **Control positivo real:** el árbol `9cacafad^` (antes de SCRUM-831) acusa
+  `jobDetailView.js · primariaDeAlbaran` como NUEVA.
+- **Control negativo real:** en `9cacafad` (el arreglo) ya no sale, y entre los dos árboles cambia
+  exactamente esa acusación y ninguna otra.
+- **Fail-closed:** censo ciego, población vacía o clave repetida → CIEGO, sin comparar nada.
+- **Probado en rojo:** quitar `jobsView.js · jobRow` del JSON → «NUEVA … jobRow»; añadir una
+  fantasma → «SOBRA … fantasma».
+- **Coste:** va en el mismo fichero para reutilizar los censos que ya pagaba. Cada árbol se censa
+  una vez por proceso: se añade un censo (`9cacafad`) y se ahorran dos repetidos, así que el
+  fichero hace cinco censos en vez de seis. Local, con cuatro sesiones cargando la máquina: 19,1 s antes y 20,5 s después; con esa
+  carga no sirve para comparar (SCRUM-790). El coste real se toma del check del PR.
