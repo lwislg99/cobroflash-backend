@@ -590,6 +590,36 @@
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
+  function avisoFaltaCantidad(texto) {
+    return '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
+      esc(texto) + '</em>';
+  }
+
+  /**
+   * SCRUM-1230 · el aviso «falta la cantidad» sigue a la línea COMO ESTÁ AHORA, no como nació.
+   *
+   * Antes sólo se pintaba si la propuesta llegaba sin cantidad. Si el técnico BORRABA a mano una
+   * cantidad que sí venía, esa línea no entraba al confirmar (`lineasConfirmadas`) y no lo decía en
+   * ningún sitio. Mismo texto del servidor, en la misma línea: se pone al quedarse sin cantidad y se
+   * quita al ponérsela.
+   */
+  function sincronizarAvisosDeCantidad(caja, texto) {
+    if (!caja || !caja.querySelectorAll || !texto) return;
+    var filas = caja.querySelectorAll('[data-propuesta="1"]');
+    Array.prototype.forEach.call(filas, function (fila) {
+      var campo = fila.querySelector('[data-propuesta-unds="1"]');
+      var unds = Number(campo && campo.value);
+      var falta = !isFinite(unds) || unds <= 0;
+      var aviso = fila.querySelector('[data-falta-cantidad]');
+      if (falta && !aviso) {
+        var descripcion = fila.querySelector('span');
+        if (descripcion && descripcion.insertAdjacentHTML) descripcion.insertAdjacentHTML('afterend', avisoFaltaCantidad(texto));
+      } else if (!falta && aviso) {
+        aviso.remove();
+      }
+    });
+  }
+
   function pintarLineaPropuesta(linea, bloque, indice, avisos, inventado) {
     var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
     var conInventado = !!(inventado && inventado[linea.descripcion]);
@@ -603,10 +633,7 @@
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
       // servidor para no reteclearlo aquí.
-      (sinCantidad
-        ? '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
-          esc(avisos.cantidadesRetiradas) + '</em>'
-        : '') +
+      (sinCantidad ? avisoFaltaCantidad(avisos.cantidadesRetiradas) : '') +
       // 🔴 SCRUM-725 · EL DATO QUE EL DICTADO NO DICE, DICHO EN SU LÍNEA.
       //
       // El servidor ya sabe cuál sobra (`datosRetirados`) y hasta hoy la pantalla se lo callaba:
@@ -703,7 +730,10 @@
       : '';
 
     contenedor.innerHTML = bloques + resto +
-      '<button type="button" data-propuesta-confirmar="1" style="width:100%;margin-top:10px">' +
+      // El texto del aviso de cantidad viaja en el botón para que `sincronizarAvisosDeCantidad`
+      // pinte EL DEL SERVIDOR cuando el técnico vacía una cantidad, sin reteclearlo aquí.
+      '<button type="button" data-propuesta-confirmar="1" data-aviso-cantidad="' +
+      esc(avisos.cantidadesRetiradas || '') + '" style="width:100%;margin-top:10px">' +
       esc(TEXTOS.confirmarPropuesta) + '</button>';
     return true;
   }
@@ -1331,11 +1361,23 @@
           });
           // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
           // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
+          // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
+          // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
+          // técnico no sabía si había fallado él, la aplicación o la red. Lo que falta lo dice el
+          // aviso de cada línea, que ahora sigue a la cantidad que hay en pantalla.
           var caja = contenedor.querySelector('[data-dictado-propuesta]');
-          var sincronizar = function () { confirmar.disabled = lineasSinColocar(caja) > 0; };
+          var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
+          var sincronizar = function () {
+            sincronizarAvisosDeCantidad(caja, textoCantidad);
+            confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
+          };
           var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
           Array.prototype.forEach.call(fichas, function (f) {
             if (f.addEventListener) f.addEventListener('change', sincronizar);
+          });
+          var cantidades = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-unds="1"]') : [];
+          Array.prototype.forEach.call(cantidades, function (c) {
+            if (c.addEventListener) c.addEventListener('input', sincronizar);
           });
           sincronizar();
         }

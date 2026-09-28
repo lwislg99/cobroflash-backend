@@ -39,12 +39,12 @@ const PROPUESTA = {
   avisos: { cantidadesRetiradas: 'Falta la cantidad', datosRetirados: 'x', sin_lineas_reconocidas: 'x' },
 };
 
-function montar() {
+function montar(propuesta = PROPUESTA) {
   const patches = [];
   const datos = (url, opts = {}) => {
     const u = String(url);
     const metodo = String(opts.method || 'GET').toUpperCase();
-    if (metodo === 'POST' && /\/admin\/partes\/7\/dictado$/.test(u)) return PROPUESTA;
+    if (metodo === 'POST' && /\/admin\/partes\/7\/dictado$/.test(u)) return propuesta;
     if (metodo === 'PATCH' && /\/admin\/partes\/7$/.test(u)) {
       patches.push(JSON.parse(opts.body || '{}'));
       return PARTE;
@@ -59,7 +59,7 @@ function montar() {
 const esperar = async (n = 20) => { for (let i = 0; i < n; i++) await new Promise((r) => setTimeout(r, 0)); };
 
 /** Pinta, dicta y ordena. Devuelve el contenedor con la propuesta ya pintada. */
-async function hastaLaPropuesta(m) {
+async function hastaLaPropuesta(m, { conSuelta = true } = {}) {
   const contenedor = m.banco.mk('div');
   m.banco.ctx.document.body.appendChild(contenedor);
   assert.equal(await m.banco.ctx.window.renderParteDetailView(contenedor, 7), true,
@@ -72,7 +72,7 @@ async function hastaLaPropuesta(m) {
   await esperar();
   const suelta = todos(contenedor).find((n) => n.getAttribute && n.getAttribute('data-propuesta') === '1'
     && n.getAttribute('data-bloque') === 'sinBloque');
-  assert.ok(suelta, '🔴 CIEGO: la propuesta no pintó la línea «Sin colocar»');
+  if (conSuelta) assert.ok(suelta, '🔴 CIEGO: la propuesta no pintó la línea «Sin colocar»');
   return { contenedor, suelta };
 }
 
@@ -117,4 +117,59 @@ test('SCRUM-1230 · 🔴 CONTROL NEGATIVO: sin elegir, NO se confirma — nada s
   await esperar();
   assert.equal(m.patches.length, 0,
     '🔴 salió un PATCH con una línea «Sin colocar» sin decidir: se ha perdido en silencio');
+});
+
+// ── Los dos flecos de SCRUM-1215 c.17377, dentro de 1230: lo dictado tampoco se pierde en silencio
+// por la CANTIDAD. Sin texto nuevo: el aviso es el del servidor y el botón sólo se apaga.
+
+/** Sin «Sin colocar»: dos líneas de mano de obra, con la cantidad que se diga. */
+const conCantidades = (a, b) => ({
+  ...PROPUESTA,
+  propuesta: {
+    ...PROPUESTA.propuesta,
+    mano_obra: [{ unds: a, descripcion: 'Cambio de presostato' }, { unds: b, descripcion: 'Purga del circuito' }],
+    sinBloque: [],
+  },
+});
+const filaDe = (contenedor, descripcion) => todos(contenedor).find((n) => n.getAttribute
+  && n.getAttribute('data-propuesta') === '1' && todos(n).some((x) => x.tagName === 'SPAN' && x.textContent === descripcion));
+const avisoEn = (fila) => todos(fila).filter((n) => n.getAttribute && n.getAttribute('data-falta-cantidad'));
+const campoDe = (fila) => todos(fila).find((n) => n.getAttribute && n.getAttribute('data-propuesta-unds') === '1');
+
+test('SCRUM-1230 · 🔴 si el técnico BORRA una cantidad que venía, su línea lo dice (y deja de decirlo al ponerla)', async () => {
+  const m = montar(conCantidades(1, 2));
+  const { contenedor } = await hastaLaPropuesta(m, { conSuelta: false });
+  const fila = filaDe(contenedor, 'Purga del circuito');
+  assert.ok(fila, '🔴 CIEGO: no encuentro la línea propuesta');
+  assert.equal(avisoEn(fila).length, 0, '🔴 SUELO: la línea nació con cantidad y ya lleva aviso');
+
+  const campo = campoDe(fila);
+  campo.value = '';
+  campo.disparar('input');
+  const aviso = avisoEn(fila);
+  assert.equal(aviso.length, 1, '🔴 cantidad borrada a mano y la línea no avisa: al confirmar no entraría, en silencio');
+  assert.ok(todos(aviso[0]).some((x) => (x.textContent || '').includes('Falta la cantidad')),
+    '🔴 el aviso no es el texto del servidor');
+
+  campo.value = '4';
+  campo.disparar('input');
+  assert.equal(avisoEn(fila).length, 0, '🔴 con la cantidad puesta sigue avisando de que falta');
+});
+
+test('SCRUM-1230 · 🔴 con NINGUNA línea lista el botón se apaga, en vez de pulsarse sin hacer nada', async () => {
+  const m = montar(conCantidades(null, null));
+  const { contenedor } = await hastaLaPropuesta(m, { conSuelta: false });
+  const boton = confirmar(contenedor);
+  assert.ok(boton, '🔴 CIEGO: no está el botón de confirmar');
+  assert.equal(boton.disabled, true, '🔴 sin ninguna línea con cantidad se puede pulsar, y no pasa nada ni se dice nada');
+
+  // Control positivo: en cuanto una tiene cantidad, se enciende y entra ESA.
+  const campo = campoDe(filaDe(contenedor, 'Cambio de presostato'));
+  campo.value = '1';
+  campo.disparar('input');
+  assert.equal(boton.disabled, false, '🔴 con una línea lista el botón sigue apagado');
+  boton.click();
+  await esperar();
+  assert.equal(m.patches.length, 1, `🔴 no salió el PATCH (${m.patches.length})`);
+  assert.ok((m.patches[0].lineas || []).some((l) => l.descripcion === 'Cambio de presostato' && l.unds === 1));
 });

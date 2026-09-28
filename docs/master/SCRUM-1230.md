@@ -42,3 +42,23 @@ todas**. Con esto entran todas las «Sin colocar», pero **una línea SIN CANTID
 la condición no se cumple entera y el texto sigue sin firmar.
 
 **NO VERIFICABLE en yaqu.app** desde S4 (lectura de producción denegada).
+
+## Apéndice (s4-28e) · los dos flecos de SCRUM-1215 c.17377, dentro de 1230
+
+**Medido contra:** `origin/main` = `59012d2309adbd8569fc047bcd880f453ade523a` · 2026-09-28T15:42:33Z
+
+El orquestador decidió que van aquí: los dos son «lo dictado se pierde en silencio». **Sin texto nuevo.**
+
+1. **El aviso de la cantidad sigue a la línea como está AHORA.** Antes sólo se pintaba si la propuesta
+   llegaba sin cantidad; si el técnico borraba a mano una que venía, la línea no entraba y no lo decía.
+   Alcanzable, medido: es un `<input type="number">` sin nada que impida vaciarlo. `sincronizarAvisosDeCantidad`
+   pone o quita el mismo `<em data-falta-cantidad>` con el texto del SERVIDOR (`avisos.cantidadesRetiradas`,
+   que viaja en `data-aviso-cantidad` del botón), en cada `input` del campo.
+2. **Con ninguna línea lista, el botón se apaga**, igual que cuando falta el bloque. Antes se pulsaba y
+   `confirmarLoDictado:962` no hacía nada ni decía nada.
+
+Tests nuevos en `scrum1230-colocar-lineas-dictadas.test.mjs` (4/4). **Rojo comprobado por mutación**: sin la
+sincronización del aviso cae su test (3 pass · 1 fail); sin el apagado, cae el suyo (3 · 1). Tanda de la zona
+(1230, 683b, 889, 889b, 402, 720, 1157, 725*, 706*): **75 · 75 pass · 0 fail**.
+
+**NO VERIFICABLE en yaqu.app** todavía: no está mergeado.
