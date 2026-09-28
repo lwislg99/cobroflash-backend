@@ -73,3 +73,25 @@ El único error de consola fue un 404 de `/public/founding-status`, que el servi
 El máster A22 describe la demo como «crear→enviar→firmar→factura→pagar» y hay tres pasos. Los dos
 que faltan pondrían una factura y un cobro en la landing pública, contra la regla 24 enmendada
 después de aprobar A22. Es una divergencia máster↔código que decide el fundador; aquí no se toca.
+
+## 6 · La afirmación 19 del censo publicado (añadido el 28-sep-2026, 20:42Z GitHub)
+
+El CI del PR #1923 cayó en `tests/scrum564-afirmaciones-publicadas.test.mjs`: «el censo encuentra 19
+afirmaciones y se midieron 18». La 19 es la píldora nueva, `probar/div#7`, «Firmado · Acepto». Nadie la
+había declarado. Esta sesión solo había corrido su test y 12 guards, no la suite entera, y por eso no
+lo vio antes de entregar.
+
+**Veredicto del orquestador:** se ANCLA, no se descarta. `DESCARTADAS` es para lo que no afirma nada
+del producto (su ejemplo es la barra de direcciones simulada, `probar/div#1`). Esta píldora afirma que
+el presupuesto se firma, y eso es verdad con la emisión apagada. Queda igual que su hermana
+`probar/span#9` («Lo firma desde el móvil»): `anclas: [FIRMA]`.
+
+Qué cambia:
+- `scripts/_afirmaciones-publicadas.mjs`: `ANCLAS_564` gana `'probar/div#7'` con `[FIRMA]`.
+- `tests/scrum564-afirmaciones-publicadas.test.mjs`: el trinquete pasa de 18 a 19 y CON_ANCLA de 13 a
+  14, con el motivo escrito al lado. Las falsas siguen en 2, `ANCLA_A_DECLARAR` en 1 y las descartadas
+  en 2. Además, dos nombres de test decían «18» a mano; ahora lo sacan de la constante.
+
+Control negativo: con el ancla quitada y los contadores nuevos, el guard vuelve a caer en «ninguna se
+queda sin declarar». Con el ancla puesta, 12 de 12. Suite entera sobre esta rama, tras `prisma generate` y `npm run build`: 8866 tests, 8732 pasan, **0 fallan**, 134 saltados (piden base). `public/index.html` no se toca: el texto sigue
+siendo el firmado en 17403.
