@@ -36,15 +36,17 @@ const { entraEnLaCadena, estadoAlNacer, SELLADO_PENDIENTE, SELLADO_NO_APLICA } =
   await import('../dist/modules/invoicing/domain/selladoEstado.js');
 const { formatFechaHoraHuso } =
   await import('../dist/modules/invoicing/domain/verifactu.service.js');
-const { makeReceiptNumber } =
+const { RECEIPT_NUMBER_PREFIX } =
   await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 
 const ES = { country: 'ES', taxId: 'B12345678' };
 const NUM_FACTURA = '2026-CF-001';
-// 🔒 El número de justificante se FABRICA con el constructor del árbol, no se escribe a mano:
-// un `'J-...'` literal seguiría pareciendo un justificante el día que el prefijo cambie, y este
-// test daría verde sobre un documento que ya no es el que dice ser.
-const NUM_JUSTIFICANTE = makeReceiptNumber(new Date('2026-03-15T10:00:00Z'));
+// 🔒 El número de justificante se COMPONE con el prefijo del árbol, no se escribe a mano: un
+// `'J-...'` literal seguiría pareciendo un justificante el día que el prefijo cambie, y este
+// test daría verde sobre un documento que ya no es el que dice ser. (Hasta SCRUM-825 lo fabricaba
+// `makeReceiptNumber`; el generador se retiró con firma, comentario 17446, y los J- ya emitidos
+// siguen en la base: por eso este caso se queda.)
+const NUM_JUSTIFICANTE = `${RECEIPT_NUMBER_PREFIX}20260315-ABCD`;
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // SUELO — «no entra» y «no supe llamarla» tienen que poder distinguirse

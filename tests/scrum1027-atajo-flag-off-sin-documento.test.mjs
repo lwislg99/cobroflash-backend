@@ -182,12 +182,28 @@ test('SCRUM-1027 · NEGATIVO: el tipo JUST y su infraestructura siguen intactos 
     'la que se llegaba a pedir una serie J-.');
 
   const numService = leer('src/modules/invoicing/domain/invoiceNumber.service.ts');
-  assert.match(numService, /function reservarReferenciaJustificante/,
-    '🔴 reservarReferenciaJustificante se ha borrado. SCRUM-1027 solo deja de LLAMARLA desde el ' +
-    'modo receipt; borrarla es trabajo de SCRUM-825, con su propia firma.');
-  assert.match(numService, /isReceiptNumber|makeReceiptNumber/,
-    '🔴 la infraestructura de números de justificante (isReceiptNumber/makeReceiptNumber) ha ' +
-    'desaparecido de invoiceNumber.service.ts — no es SCRUM-1027 quien la retira.');
+  // SCRUM-825 (D1 y D2, FIRMADAS por el fundador: «1-Sí a las 3», SCRUM-825 comentario 17446).
+  // Hasta aquí este suelo EXIGÍA que el generador `J-` siguiera existiendo, porque borrarlo era
+  // de 825 y necesitaba firma. La firma existe, y el suelo se da la vuelta EN EL MISMO PR que
+  // borra el generador (regla 41: el guard cambia con la decisión, no para que pase). No se
+  // relaja nada: sigue mirando lo mismo, y ahora exige lo que la firma dice.
+  for (const retirado of [
+    'makeReceiptNumber', 'reservarReferenciaJustificante',
+    'ReferenciaJustificanteAgotada', 'INTENTOS_REFERENCIA_JUSTIFICANTE',
+  ]) {
+    assert.doesNotMatch(numService, new RegExp(`\\b${retirado}\\b`),
+      `🔴 \`${retirado}\` ha vuelto a invoiceNumber.service.ts. El generador de referencias J- se ` +
+      'retiró con firma del fundador (SCRUM-825, comentario 17446): devolverlo reabre una figura ' +
+      'que el máster ya no tiene, y necesita otra firma (regla 27).');
+  }
+  // Y lo que la firma NO retira: el RECONOCEDOR. Las filas `J-` ya emitidas siguen en la base y
+  // se tienen que poder identificar (regla 29). Sin esto, el bucle de arriba pasaría también si
+  // alguien vaciara el fichero entero.
+  assert.match(numService, /export function isReceiptNumber\b/,
+    '🔴 isReceiptNumber ha desaparecido: los justificantes YA EMITIDOS dejan de reconocerse. ' +
+    'SCRUM-825 retira el GENERADOR, no el reconocedor (regla 29).');
+  assert.match(numService, /export const RECEIPT_NUMBER_PREFIX\b/,
+    '🔴 RECEIPT_NUMBER_PREFIX ha desaparecido: el reconocedor de lo ya emitido se queda sin prefijo.');
 
   // Los cuatro gates YA CERRADOS antes de este ticket (SCRUM-895/A0.4/171a) no se han tocado: la
   // frase que el fundador aprobó explícitamente para no nombrar el justificante retirado sigue.

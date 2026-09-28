@@ -1654,6 +1654,71 @@ nuevas.
 
 ---
 
+# SCRUM-825 · APÉNDICE · 28-sep-2026 · D1 y D2 EJECUTADAS EN EL SERVIDOR: se retira el generador `J-`
+
+**Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:13:34Z
+
+**Puesto:** J1 (`jv-j1`) · **Rama:** `scrum-825-retirar-generador-j` · **Alcance:** servidor y sus
+tests. El panel (`public/`) lo hace J3 en paralelo, por fichero.
+
+**Firma:** SCRUM-825, comentario **17446** —«1-Sí a las 3»— sobre D1, D2 y D4 del apéndice anterior.
+**Permiso:** el clasificador de la sesión denegó tocar `invoiceNumber.service.ts`; se paró sin buscar
+otra vía, y Javier lo autorizó en la propia sesión: «autorizo tocar invoiceNumber.service.ts y sus
+tests para D1/D2».
+
+## Qué se borra
+
+De `src/modules/invoicing/domain/invoiceNumber.service.ts`: `makeReceiptNumber`,
+`reservarReferenciaJustificante`, `ReferenciaJustificanteAgotada` e
+`INTENTOS_REFERENCIA_JUSTIFICANTE`. Antes de borrar se comprobó que el defecto seguía vivo: `git grep`
+sobre `src/` no daba ningún llamador desde SCRUM-1027. También sale el import `ZONA_POR_DEFECTO`, que
+sólo usaban ellos. `allocateInvoiceNumber` no cambia fuera de un comentario. Revisado sobre el diff,
+sin contar comentarios: sólo hay líneas borradas y la del import.
+
+## Qué se queda, a propósito
+
+- **`isReceiptNumber` y `RECEIPT_NUMBER_PREFIX`**: los `J-` ya emitidos siguen en la base (regla 29).
+- **El tipo `'JUST'` como dato**, el filtro de la lista y el PDF de lo emitido.
+- **El modo `receipt`**, que es la puerta de la regla 24.
+- 🔴 **`emitInvoice` sigue con `type: isReceiptNumber(number) ? 'JUST'`.** Es un escritor del tipo
+  que ya no se puede alcanzar. Queda **fuera** de este cambio: es camino de emisión y no estaba en
+  la lista. Va con su propia decisión (anotado por el orquestador).
+
+## D2 · el suelo de `scrum1027` se da la vuelta, y NO se relaja
+
+`tests/scrum1027-atajo-flag-off-sin-documento.test.mjs`: hasta hoy **exigía** que
+`reservarReferenciaJustificante` existiera (*«borrarla es trabajo de SCRUM-825, con su propia
+firma»*). Ahora exige que **no** estén los cuatro símbolos, y que **sí** sigan `isReceiptNumber` y
+`RECEIPT_NUMBER_PREFIX` (sin eso, vaciar el fichero también pasaría). Se escribió **antes** de borrar
+y se vio caer en **ROJO** con el generador todavía dentro (13 pasan, 1 falla). Regla 41: el guard
+cambia con la decisión firmada y en el mismo PR, no para que pase.
+
+## Los tests que usaban el generador
+
+| test | qué se hace |
+|---|---|
+| `emission` | el caso del formato pasa a probar sólo el reconocedor, con un `J-` compuesto con `RECEIPT_NUMBER_PREFIX` |
+| `scrum844d` | el `J-` de la prueba de la cadena se **compone** con el prefijo en vez de fabricarse: el caso se queda, porque los `J-` emitidos siguen existiendo |
+| `scrum643` | salen los dos casos que medían el año del justificante; el huso del sello fiscal sigue medido |
+| `scrum396` | salen el suelo del tope y el de la entropía. **Se quedan** los tres de SCRUM-1027 (el modo `receipt` rechaza siempre) y el de los manejadores |
+| `_huerfanos-declarados.mjs` | fuera la entrada del generador; en la de vocabulario queda `RECEIPT_NUMBER_PREFIX` |
+| `scrum291` | el sello sha256 del fichero pasa a `4ff56cab…` **en este mismo commit**, con su entrada y la firma |
+
+## Medido
+
+- `npm run build`: rc=0.
+- Los 7 tests afectados, más `scrum946` (censo de huérfanos), `scrum237` y `scrum976`: **89/89**.
+- Los 26 tests que además leen `invoiceNumber.service`: **239 pasan, 0 fallan, 5 saltados**. Los
+  cinco piden base (`QA_DB_TEST`, `SERIE_PG_URL`) y **no se han corrido**: aquí no hay base de
+  trabajo, y la de producción no se usa.
+- **El positivo que no puede caer:** los tres tests de SCRUM-1027 en `scrum396` siguen verdes. Un
+  merchant ES sin flag sigue recibiendo `invoicing_es_disabled` sin que se consulte el índice.
+
+## Lo que NO se ha tocado
+
+`public/` (J3) · el modo `receipt` · `emitInvoice` · el sellado, la cadena y la huella ·
+`prisma/schema.prisma` · `docs/YAQU_MASTER.md` (D4 va en otra rama y otro PR) · la skill `verifactu`
+· las dos líneas de Meta (la cuenta es de Luis).
 # SCRUM-825 · APÉNDICE · 28-sep-2026 · D4 EJECUTADA: los registros fechados del máster se ANOTAN, no se corrigen
 
 **Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:15:23Z
