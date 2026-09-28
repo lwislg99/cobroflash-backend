@@ -64,6 +64,10 @@ export const APIS_QUE_ESCRIBEN = new Set([
  * temporal suyo) no se miraba. Seis falsos en la lista, y con forma de hallazgo.
  */
 export const DESTINO_ES_EL_SEGUNDO = new Set(['renameSync', 'rename', 'copyFileSync', 'copyFile', 'cpSync', 'cp']);
+/** De las que escriben, las que pueden DEVOLVER un contenido capturado (borrar no devuelve nada). */
+const DEVUELVEN = new Set([
+  'writeFileSync', 'writeFile', 'copyFileSync', 'copyFile', 'renameSync', 'rename', 'cpSync', 'cp',
+]);
 /** Las APIs que LEEN. Sirven para distinguir el que CAPTURA-Y-DEVUELVE del que sólo genera. */
 const APIS_QUE_LEEN = new Set(['readFileSync', 'readFile', 'createReadStream']);
 
@@ -139,8 +143,12 @@ export function analizar(codigo, nombre) {
   // Ése promete dejarlo como estaba, y es el único al que se le puede quedar a medias. El que
   // sólo genera o borra lo suyo no promete nada.
   const capturaYDevuelve = escrituras.filter((w) => leidos.has(w.arg));
+  // SCRUM-1179-B · EL MISMO PATRÓN SOBRE UNA RUTA QUE NO SÉ RESOLVER: lee un fichero y luego lo
+  // REESCRIBE (no lo borra: borrar lo que leíste es limpiar, no devolver). No sé si esa ruta cae
+  // dentro del árbol, así que no es un veredicto: es la parte ciega que hay que tener a la vista.
+  const capturaOpaca = noConcluyentes.filter((w) => DEVUELVEN.has(w.api) && leidos.has(w.arg));
   const tieneRed = /marcarEnVuelo|restaurarDesdeMarca|instalarRedDeSeguridad/.test(codigo);
-  return { escrituras, capturaYDevuelve, noConcluyentes, tieneFinally, tieneRed, hayRaiz: raices.size > 0 };
+  return { escrituras, capturaYDevuelve, capturaOpaca, noConcluyentes, tieneFinally, tieneRed, hayRaiz: raices.size > 0 };
 }
 
 export function censar({ dirs = DIRS, raiz = RAIZ } = {}) {
@@ -194,6 +202,16 @@ function principal() {
   for (const e of c.opacos) {
     console.log(`   · ${e.rel}`);
     for (const w of e.noConcluyentes.slice(0, 3)) console.log(`        :${w.linea} fs.${w.api}(${w.arg}…)`);
+  }
+
+  // SCRUM-1179-B · la parte ciega que importa: el patrón de riesgo sobre una ruta sin resolver. La
+  // vigila tests/scrum808 contra scripts/_escritores-opacos-declarados.json.
+  const opacosQueDevuelven = [...c.escritores, ...c.opacos].filter((e) => e.tieneFinally && e.capturaOpaca.length);
+  console.log(`\n═══ ⚠️ LEEN Y REESCRIBEN, CON finally, SOBRE UNA RUTA SIN RESOLVER (${opacosQueDevuelven.length}) ═══`);
+  console.log('   Si esa ruta cae en el árbol, es el patrón de riesgo. Se miran a mano y se declaran.');
+  for (const e of opacosQueDevuelven) {
+    console.log(`   · ${e.rel}`);
+    for (const w of e.capturaOpaca.slice(0, 3)) console.log(`        :${w.linea} fs.${w.api}(${w.arg}…)`);
   }
 
   console.log('\n═══ ✅ CONTROL POSITIVO DEL INSTRUMENTO ═══');

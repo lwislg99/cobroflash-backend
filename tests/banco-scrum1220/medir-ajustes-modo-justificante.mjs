@@ -71,6 +71,8 @@ const HALLAR = [
   'IBAN (para pagos por transferencia',
   'Móvil de Bizum (para cobros por Bizum)',
   'Pagar por Bizum',
+  'Aún no se emiten documentos',
+  'Por ahora, YaQu no genera facturas',
 ];
 
 for (const modo of [me.json.modoEmision, 'fiscal']) {
