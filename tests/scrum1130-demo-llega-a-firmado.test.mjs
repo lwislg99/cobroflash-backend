@@ -42,6 +42,7 @@ function montarDemo({ reduce = false } = {}) {
 
   // Temporizadores a mano: el final llega tras el trazo animado, y se quiere ver ANTES y DESPUÉS.
   let reloj = 0;
+  let ultimoId = 0;
   const pendientes = [];
   const ctx = {
     reduce,
@@ -50,8 +51,10 @@ function montarDemo({ reduce = false } = {}) {
       querySelector: (s) => cuerpo.querySelector(s),
       querySelectorAll: (s) => cuerpo.querySelectorAll(s),
     },
-    setTimeout: (fn, ms) => { pendientes.push({ fn, en: reloj + (ms || 0) }); return pendientes.length; },
-    clearTimeout: () => {},
+    // `clearTimeout` CANCELA de verdad: uno de mentira haría fallar al código que sí cancela, y el
+    // rojo se leería como un defecto de la demo que el navegador no tiene.
+    setTimeout: (fn, ms) => { const id = ++ultimoId; pendientes.push({ id, fn, en: reloj + (ms || 0) }); return id; },
+    clearTimeout: (id) => { const k = pendientes.findIndex((p) => p.id === id); if (k >= 0) pendientes.splice(k, 1); },
   };
   ctx.window = ctx;
   vm.createContext(ctx);
@@ -110,6 +113,16 @@ test('SCRUM-1130 · 🔴 tras «Firmar y aceptar», la demo TERMINA: paso 3 hech
   const ok = d.q('#signOk');
   assert.ok(ok, '🔴 no hay estado final de firmado (#signOk) en la pantalla de firma');
   assert.ok(d.clases(ok).includes('on'), '🔴 el estado final existe pero no se enseña tras firmar');
+  // El literal FIRMADO (SCRUM-1130 comentario 17403, opción B). No «Firmado · 961,95 €»: ése es el
+  // fotograma COBRADO de la cabecera (`.paid`), y en España con la emisión apagada no hay cobro.
+  // Del MARCADO de `#signOk` y no de `textContent`: el banco no agrega el texto que va detrás de un
+  // hijo (límite 4 declarado en `_banco-vistas.mjs`), y aquí el literal va detrás del `<svg>`.
+  const marcado = HTML.match(/id="signOk"[^>]*>([\s\S]*?)<\/div>/);
+  assert.ok(marcado, '🔴 no encuentro el marcado de #signOk');
+  const texto = marcado[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  assert.equal(texto, 'Firmado · Acepto', '🔴 el final de la demo no dice el literal firmado');
+  assert.doesNotMatch(texto, /€|cobr|pag|factur/i, '🔴 el final de la firma no puede sugerir cobro ni factura');
+  assert.match('Firmado · 961,95 €', /€|cobr|pag|factur/i); // hermano positivo: la regex casa con la A
   assert.ok(d.clases(d.q('#signBtn')).includes('is-hidden'),
     '🔴 el botón deshabilitado sigue ocupando el sitio del final');
 });
