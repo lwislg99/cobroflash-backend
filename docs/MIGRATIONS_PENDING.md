@@ -2921,3 +2921,63 @@ correrla, comprobar con `docs/sql/deriva-prod.sql` que la fila sigue apareciendo
 
 **Este PR ya está mergeado sin las tres casillas marcadas — corregir eso no es reabrir el PR, es
 la aplicación pendiente descrita en SCRUM-1122.**
+
+## LOTE DE 7 del equipo de Luis (529 · 1072 · 1146 · 930 · 914 · 1056 · 359) — 28-sep-2026 · ✅ **SOLO DEV**, verificado por catálogo · staging y producción: las aplica Javier
+
+Registro de **SCRUM-1209**. Aplicado por J6 (jv-j6), por encargo del orquestador del equipo de
+Javier, el **2026-09-28 hacia las 14:15Z**. Los siete ficheros se leyeron de `origin/main` =
+`29b492b0c2f246941e5c514d682887c18fd19494` con `git show`, no de un árbol que pudiera ir atrasado:
+
+```
+docs/sql/scrum-529-to-phone.sql                 docs/sql/scrum-914-equipos-del-cliente.sql
+docs/sql/scrum-1072-activity-kind.sql           docs/sql/scrum-1056-volver-a-llamar.sql
+docs/sql/scrum-1146-retencion-irpf-importe.sql  docs/sql/scrum-359-ventana-de-firma.sql
+docs/sql/scrum-930-descuento-de-plantilla.sql
+```
+
+**Forma:** 22 sentencias, todas aditivas y con `IF NOT EXISTS`, clasificadas con la lista blanca
+**de main** (`_aplicar-sql-dev.mjs`): `ADD COLUMN`, `CREATE INDEX` y un `CREATE TABLE … ( … )`
+(`equipments`, con sus dos claves ajenas en línea). **No se amplió la lista.** Aplicado fichero a
+fichero con `node scripts/aplicar-sql-dev.mjs --file <f> --go`, destino
+`acela.proxy.rlwy.net/yaqu_dev_javier` (DESARROLLO) ✅; los siete salieron con exit 0.
+
+**Verificado leyendo el catálogo, antes y después.** Los objetos esperados se sacan de los propios
+`.sql`: 24 (13 columnas, 1 tabla, 8 índices y 2 claves ajenas, estas con `confdeltype = 'r'` y
+`confupdtype = 'c'`). El verificador tiene tres salidas: está, falta y **no supe mirar**. Se
+calibró en las tres: sale CIEGO ante una sentencia que no sabe leer, ve 3/3 objetos conocidos en un
+fichero de calibración que no se aplicó, y lleva como control positivo que `invoices` existe.
+
+| fichero | ANTES | DESPUÉS |
+|---|---|---|
+| `scrum-529-to-phone` | 0/1 | 1/1 |
+| `scrum-1072-activity-kind` | 0/1 | 1/1 |
+| `scrum-1146-retencion-irpf-importe` | 0/1 | 1/1 |
+| `scrum-930-descuento-de-plantilla` | 0/1 | 1/1 |
+| `scrum-914-equipos-del-cliente` | 0/14 | 14/14 |
+| `scrum-1056-volver-a-llamar` | 0/3 | 3/3 |
+| `scrum-359-ventana-de-firma` | 0/3 | 3/3 |
+| **total** | **0/24** | **24/24** |
+
+⚠️ **Procedencia del verificador:** fue un script de un solo uso, que vivió en la carpeta temporal
+de la sesión y **no está en el repo**. Quien quiera re-medirlo lo reconstruye con las consultas
+de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.tables`,
+`pg_constraint`), o con `docs/sql/deriva-prod.sql` si cubre estas columnas.
+
+### Estado por base — 28-sep-2026
+
+- [x] **desarrollo · yaqu_dev_javier** — ✅ aplicado y verificado por catálogo (0/24 → 24/24).
+- [ ] **staging** — la aplica Javier a mano; no se ha tocado desde esta sesión.
+- [ ] **producción** — la aplica Javier a mano; no se ha tocado desde esta sesión.
+
+### Dos hallazgos de paso
+
+1. **`merchants.domicilio_fiscal_foral` (SCRUM-1102) ESTÁ en dev.** Lo confirmó la calibración del
+   verificador, leyendo el catálogo. Es una de las dos columnas de 1102, que Javier aplicó a mano.
+   ⚠️ **La otra, `lleva_libros_por_sii`, NO se midió en esta pasada.**
+2. **La cabecera de este fichero describe mal el aplicador.** El aviso de SCRUM-758, arriba, dice
+   que `aplicar-sql-dev.mjs` usa `_clasificador-sql.mjs` y admite `ALTER TYPE ADD VALUE` y
+   `COMMENT ON`. Medido en `origin/main` `29b492b0`: el aplicador importa `./_aplicar-sql-dev.mjs`
+   (`scripts/aplicar-sql-dev.mjs:37`), y esa lista es `ADD COLUMN` · `CREATE [UNIQUE] INDEX` ·
+   `CREATE TABLE … ( … )` · `ALTER COLUMN … DROP DEFAULT` · `CREATE TYPE … AS ENUM ( … )`
+   (SCRUM-1197). Sus conclusiones sobre el DML no cambian: el DML sigue sin estar permitido. Aquí
+   se registra, no se corrige.
