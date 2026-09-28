@@ -67,3 +67,23 @@ el webhook real de `psp.routes`, el `sendInvoiceEmail` real, Resend rechaza (`ax
 - ⚠️ **La tanda completa NO se corrió en local**: el orquestador denegó el turno por memoria de la
   máquina (1,3 GB libres, 28-sep ~16:55Z). La corre el CI del PR.
 - Los cinco literales pasan `constaAprobado()` contra el registro de `docs/microcopy/`.
+
+## 6 · SCRUM-1235b · Los dos rojos del CI del PR #1914 (28-sep-2026)
+
+**Medido contra:** `origin/main` = `0afa87cd95645317226f59bc379edae59a7bea44` · 2026-09-28T18:39:10Z (J2, `jv-j2`)
+
+El CI (run 36454899158) dio rojo en dos checks. Diagnosticados antes de tocar nada:
+
+| Check | Qué dijo | Causa | ¿Mío? |
+|---|---|---|---|
+| `build + tests` · SCRUM-864c ③ | `mkdtempSync` en `tests/scrum1235-…:45` que no se borra nunca | mi test creaba el directorio del PDF y no lo borraba | **sí** → pasa a `temporal()` de `tests/_temporal.mjs` |
+| `build + tests` · SCRUM-128 capa a | «llamada a ruta de envío sin comprobar el resultado · `cobrosView.js` (línea 85)» | la línea 85 era **mi comentario JSDoc**, que citaba la ruta literal; el filtro del guard sólo reconoce `//` como comentario. La llamada real (línea 111) sí mira `waSendFailed` | **sí** → el comentario deja de citar la ruta; el guard no se toca (regla 41) |
+| `guards de navegador` · `lista-trabajos-917` | «no encuentro «💰 Cobrar el resto» en el terminado con saldo» | **ajeno**: falla IGUAL, con las mismas dos comprobaciones, en el CI de `main` @ `0afa87cd` (run 36457602742, job 109049055105). Mi rama no toca la lista de Trabajos | **no** |
+
+Los dos míos se reprodujeron en local ANTES del arreglo (2 fail) y pasan después. **Error propio:** mi tanda
+dirigida de la entrega no incluía `scrum128-*` ni `scrum864*`, y por eso se me escaparon; ahora van dentro:
+57 ficheros · **468 tests · 468 pass · 0 fail · 0 skip**, sobre el árbol fusionado con `0afa87cd`.
+
+Hallazgo sobre el guard, sin tocarlo: SCRUM-128 capa a cuenta como CÓDIGO las líneas ` * …` de un
+comentario de bloque (`ES_COMENTARIO = /^\s*\/\//`). Hoy eso me dio un rojo falso sobre mi propio
+comentario; al revés también podría pasar, porque una mención en un bloque de comentario cuenta como llamada.
