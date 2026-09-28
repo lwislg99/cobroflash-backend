@@ -62,5 +62,55 @@ Control positivo de la búsqueda: la misma expresión SÍ encuentra las dos lín
 
 ## Lo que NO hace
 
-No añade un guard. Que esto vuelva lo cazaría un veredicto nuevo en `scripts/_invocaciones-de-la-tanda.mjs`
+No añade un guard (lo añade SCRUM-1245b, abajo). Que esto vuelva lo cazaría un veredicto nuevo en `scripts/_invocaciones-de-la-tanda.mjs`
 (patrón de la tanda sin comillas en un documento que la prescribe): queda como propuesta al orquestador.
+
+## SCRUM-1245b — el guard que impide que vuelva
+
+**Medido contra:** `origin/main` = `76da0f4916e2c39541c44f01e389cf9fc2d6747f` · 2026-09-28T18:51:05Z (#1917 ya mergeado; rama fusionada con ese main)
+
+Decisión del orquestador (28-sep, ~18:48Z): sí al guard, y del carril J6. Antes se buscó un dueño
+declarado de `scripts/_invocaciones-de-la-tanda.mjs`: no lo tiene, ni en el fichero ni en `docs/equipo/`.
+
+**Lo que añade.** Funciones nuevas en `scripts/_invocaciones-de-la-tanda.mjs`; ninguna existente
+cambia: `lineasLogicas`, `patronesSinComillas`, `documentosQuePrescriben` y
+`patronesDeLaTandaEnDocumentos`. Guard: `tests/scrum1245b-patron-de-la-tanda-entre-comillas.test.mjs`.
+
+**Por qué no bastaba el censo de SCRUM-850.** `deInstrucciones` lee línea a línea. El comando roto
+seguía en la línea de abajo con `\`, y esa línea ya no pone `node --test`: el censo no lo podía ver.
+El guard junta antes las líneas continuadas.
+
+**Población.** `CLAUDE.md`, `docs/**/*.md` sin `docs/master/` (que es registro) y `.claude/**/*.md`:
+294 ficheros · 347 bloques de código · 5 invocaciones de `node --test`. Tiene suelo (250 / 300 / 5).
+Se deja fuera `package.json` a propósito: npm va por cmd, que no expande el patrón, y unas comillas
+simples le llegarían a node como parte del patrón.
+
+**Rojo, verde y controles.**
+
+| comprobación | resultado |
+|---|---|
+| sonda independiente sobre `origin/main` antes del arreglo | 2 hallazgos: `CLAUDE.md:127`, `docs/RUNBOOKS.md:687` |
+| el test del árbol real con los dos documentos de main (`git restore --source=origin/main`, numstat 1/5 y 1/8) | **rojo**, y nombra esas dos líneas |
+| árbol de esta rama | verde, con el control positivo: ve las dos copias entre comillas |
+| mutación ① (`*`/`?` dejan de marcar patrón), numstat 1/1 | cae «el bloque VIEJO de CLAUDE.md sale como hallazgo» (+3 más) |
+| mutación ② (no se juntan las líneas continuadas), numstat 1/1 | cae ese mismo test (+4 más) |
+| positivo con el mismo token | el bloque entre comillas (simples o dobles) se VE y no es hallazgo |
+
+Tras cada mutación se restauró con `git restore --source=HEAD` y el `porcelain` salió vacío.
+
+⚠️ **Un error propio, cazado antes de entregar.** El heredoc con el que añadí las funciones se comió
+una barra, y `lineasLogicas` quedó con `/\\s*$/` en vez de `/\\\s*$/`. Casaba con la `\` final solo
+porque `s*` admite cero, y fallaba con una `\` seguida de espacios. Lo destapó la mutación ②, que no
+casaba con el fuente. Está corregido, y un caso nuevo lo vigila.
+
+⚠️ **Y un rojo que no probaba nada**, también cazado: en la primera versión la aserción del control
+positivo iba antes que la del hallazgo, y con los documentos de main caía el control, no el hallazgo.
+Se invirtió el orden y el rojo nombra ahora las dos líneas.
+
+**Tests corridos.** Este guard, `scrum237`, `scrum976`, `scrum850`, `850b`, `711`, `391`, `708`, `759`
+y `710b`: 70/70. `meta-guard-mutaciones --solo-censo`: exit 0, 97 declarantes, este incluido.
+
+**Hallazgo que NO se arregla aquí.** El mismo punto ciego de `deInstrucciones` vale para lo que vigila
+SCRUM-850: un `| tail` escrito en la línea continuada de un `node --test … \` no lo ve. Hoy no tiene
+víctima, porque las 5 invocaciones de los documentos están sanas. Arreglarlo cambiaría la población de
+un censo que ya tiene sus guards, así que se reporta.
