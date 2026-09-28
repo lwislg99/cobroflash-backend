@@ -109,8 +109,6 @@
     {"clave":"export · src/modules/jobs/domain/ventanaDeFirma.ts::cruzaDias","donde":"src/modules/jobs/domain/ventanaDeFirma.ts:182","carril":"S4","ticket":"SCRUM-1184"},
     {"clave":"export · src/modules/maintenance/domain/maintenance.service.ts::maintenanceEurInMonth","donde":"src/modules/maintenance/domain/maintenance.service.ts:552","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quoteRequests/domain/attachment.service.ts::listQuoteRequestAttachments","donde":"src/modules/quoteRequests/domain/attachment.service.ts:40","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","donde":"src/modules/quotes/domain/billingPlan.ts:99","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","donde":"src/modules/quotes/domain/billingPlan.ts:139","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/presupuestoSello.ts::verificarEvidenciaPresupuesto","donde":"src/modules/quotes/domain/presupuestoSello.ts:261","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/revision.ts::REVISION_LA_PONE_EL_SISTEMA","donde":"src/modules/quotes/domain/revision.ts:278","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/revision.ts::REVISION_NO_HEREDA","donde":"src/modules/quotes/domain/revision.ts:262","carril":"S1","ticket":"SCRUM-1185"},
@@ -176,6 +174,8 @@
   "retiradas": [
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
+    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
+    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","motivo":"SCRUM-1201: BORRADA. Sustituida por distributeStageAmounts sobre resolveBillingPlan (SCRUM-27); el reparto exacto sigue probado en billingPlan.test.mjs"},
     {"clave":"cuerpo · POST /quote/:token/accept::channel","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"cuerpo · POST /quote/:token/accept::comment","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"cuerpo · POST /quote/:token/accept::evidence","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
