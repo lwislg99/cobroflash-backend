@@ -269,7 +269,6 @@ const CONOCIDOS_A = new Map([
   ['scripts/_texto-fuera-del-censo.mjs  scripts/guard-a11y-comparativa.mjs', 1],
   ['tests/_huerfanos-declarados.mjs  public/dashboard/js/cobrosView.js', 1],
   ['tests/_huerfanos-declarados.mjs  public/dashboard/js/jobDetailView.js', 1],
-  ['tests/_huerfanos-declarados.mjs  quoteRequests.routes.ts', 1],
   ['tests/_huerfanos-declarados.mjs  teamOverview.service.ts', 1],
   ['tests/scrum128-send-endpoints-fail-closed.test.mjs  quotes.routes.ts', 1],
   ['tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs  YAQU_MASTER.md', 1],
