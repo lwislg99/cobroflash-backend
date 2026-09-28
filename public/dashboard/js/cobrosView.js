@@ -63,10 +63,11 @@ var COBROS_COPY = {
    */
   diasSinCobrar: function (n) { return 'Sin cobrar desde hace ' + COBROS_COPY.diasEnTabla(n); },
   cabeceras: ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
-  // 🔴 SCRUM-1235 · EL CORREO DEL DOCUMENTO QUE NO SALIÓ. Firmados por delegación del fundador en
-  // SCRUM-1235 comentario 17384 (registro: docs/microcopy/2026-09-28-SCRUM-1235-correo-que-no-salio.md).
-  // Dos avisos y no uno: un justificante no se llama «factura» (reglas 24/26). Van tal cual.
-  // El fallo del reintento NO tiene texto aquí: se pinta el `message` que ya manda el servidor.
+  // 🔴 SCRUM-1235 · EL CORREO DEL DOCUMENTO QUE NO SALIÓ. Los cinco textos que siguen, APROBADOS por
+  // el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1235 comentario 17384;
+  // registro: docs/microcopy/2026-09-28-SCRUM-1235-correo-que-no-salio.md). Van tal cual.
+  // Uno para la factura y otro para el justificante: un justificante no se llama «factura»
+  // (reglas 24/26). El fallo del reintento NO tiene texto aquí: se pinta el `message` del servidor.
   correoFallido: {
     invoice: 'No se pudo enviar la factura al cliente por email.',
     justificante: 'No se pudo enviar el justificante al cliente por email.',

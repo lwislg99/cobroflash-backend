@@ -18,10 +18,14 @@ el webhook real de `psp.routes`, el `sendInvoiceEmail` real, Resend rechaza (`ax
 
 ## 2 · El cambio
 
-- `src/modules/billing/domain/cobros.service.ts`: `listarCobros` lee `email_messages` de los
-  documentos de la lista (los de los cobros, por el evento `invoiced`, y las facturas sueltas), filtra
-  por `merchantId` (regla 2) y por `kind` de factura/justificante. Cada cobro trae `correoNoSalio`:
-  `{ invoiceId, clase }` si el **último** intento de ese documento fue `fallo_envio`, si no `null`.
+- `src/modules/billing/domain/cobros.service.ts`: función nueva `listarCobrosConCorreo`, **encima** de
+  `listarCobros` (su cuerpo, igual que en `main`: SCRUM-445 fija su `return fundirCobros(...)`). Lee
+  `email_messages` de los documentos de la lista (los de los cobros, por el evento `invoiced`, y las
+  facturas sueltas), filtra por `merchantId` (regla 2) y por `kind` de factura/justificante. Cada cobro
+  trae `correoNoSalio`: `{ invoiceId, clase }` si el **último** intento de ese documento fue
+  `fallo_envio`, si no `null`. `GET /admin/cobros` (`cobrosAdmin.routes.ts`) llama a ésta.
+  `listarCobros` pierde el `export`: ya sólo la llama su módulo, y el censo de huérfanos (SCRUM-411)
+  lo cazó.
 - `public/dashboard/js/cobrosView.js`: en la celda «Documento», el aviso firmado (`.alert.warning`)
   con «Enviar de nuevo», que llama al `POST /admin/invoices/:id/send-email` que ya existía. Si el
   reintento vuelve con `sent:false`, pinta el `message` del servidor y deja el botón a mano; si sale,
@@ -49,7 +53,17 @@ el webhook real de `psp.routes`, el `sendInvoiceEmail` real, Resend rechaza (`ax
 
 ## 5 · Verificación
 
-- `tests/scrum1235-el-correo-que-no-salio.test.mjs`: 11 casos, 11 pass tras el cambio.
+- `tests/scrum1235-el-correo-que-no-salio.test.mjs`: 12 casos, 12 pass tras el cambio. El de «manda el
+  último intento» también va por el camino real: falla, se reenvía con el `sendInvoiceEmail` real y sale
+  (se apaga el aviso), y vuelve a fallar (vuelve el aviso).
 - Mutaciones con el código quieto: sin pintar el aviso → caen 4 casos de pantalla; sin el chequeo
-  `sent:false` → cae el caso del reintento fallido. Árbol restaurado y comprobado con `git diff --quiet`.
+  `sent:false` → cae el caso del reintento fallido; sin la capa `listarCobrosConCorreo` → caen los 3 del
+  servidor. Árbol restaurado cada vez y comprobado con `git diff --quiet`.
+- Tanda DIRIGIDA (52 ficheros: cobros, microcopy, correo, huérfanos, 237, 976, 267, 815…): **446 tests ·
+  446 pass · 0 fail · 0 skip**. `guards:entrada`: 12 guards, 112 tests, 0 fail.
+- Dos rojos de la primera dirigida, arreglados en el CÓDIGO: el censo SCRUM-1157 pedía la firma legible
+  encima de los literales, y SCRUM-445 pedía que `listarCobros` siguiera devolviendo
+  `fundirCobros({ charges, candidatas, invoiced })` tal cual — de ahí la capa aparte.
+- ⚠️ **La tanda completa NO se corrió en local**: el orquestador denegó el turno por memoria de la
+  máquina (1,3 GB libres, 28-sep ~16:55Z). La corre el CI del PR.
 - Los cinco literales pasan `constaAprobado()` contra el registro de `docs/microcopy/`.

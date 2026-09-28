@@ -143,7 +143,7 @@ export type Cobro = {
 };
 
 /** Lo que la fusión necesita de una fila de `email_messages`. */
-export type EnvioDeDocumento = {
+type EnvioDeDocumento = {
   id: number; relatedId: number | null; kind: string; status: string; createdAt: Date;
 };
 
@@ -214,7 +214,7 @@ export function diasDeDeuda(cobro: Cobro, ahora = new Date()): number | null {
  *
  * Multi-tenant: las dos consultas filtran por `merchantId` (regla 2).
  */
-export async function listarCobros(merchantId: number): Promise<Cobro[]> {
+async function listarCobros(merchantId: number): Promise<Cobro[]> {
   const [charges, candidatas, invoiced] = await Promise.all([
     prisma.charge.findMany({
       where: { merchantId },
@@ -230,31 +230,13 @@ export async function listarCobros(merchantId: number): Promise<Cobro[]> {
       include: { customer: { select: { name: true } } },
     }),
     // El vínculo REAL cobro → justificante. Multi-tenant por la relación (regla 2).
-    // SCRUM-1235: con `chargeId`, para saber qué documento es el de cada cobro.
     prisma.event.findMany({
       where: { type: 'invoiced', charge: { merchantId } },
-      select: { payload: true, chargeId: true },
+      select: { payload: true },
     }),
   ]);
 
-  // 🔴 SCRUM-1235 · LOS CORREOS DEL DOCUMENTO QUE NO SALIERON. Los documentos de la lista son los de
-  // los cobros (por el evento `invoiced`) y las facturas sueltas. Multi-tenant por `merchantId`.
-  const documentos = new Set<number>(candidatas.map((i) => i.id));
-  for (const e of invoiced) {
-    const id = (e.payload as { invoice_id?: unknown } | null)?.invoice_id;
-    if (typeof id === 'number') documentos.add(id);
-  }
-  const envios = documentos.size
-    ? await prisma.emailMessage.findMany({
-      where: {
-        merchantId, relatedType: 'invoice',
-        relatedId: { in: [...documentos] }, kind: { in: CLASES_DEL_DOCUMENTO },
-      },
-      select: { id: true, relatedId: true, kind: true, status: true, createdAt: true },
-    })
-    : [];
-
-  return fundirCobros({ charges, candidatas, invoiced, envios });
+  return fundirCobros({ charges, candidatas, invoiced });
 }
 
 /**
@@ -268,23 +250,9 @@ export async function listarCobros(merchantId: number): Promise<Cobro[]> {
 export function fundirCobros(entrada: {
   charges: ChargeParaCobro[];
   candidatas: InvoiceParaCobro[];
-  invoiced: Array<{ payload: unknown; chargeId?: number | null }>;
-  /** SCRUM-1235 · las filas de `email_messages` de esos documentos. Sin ellas no consta ningún fallo. */
-  envios?: EnvioDeDocumento[];
+  invoiced: Array<{ payload: unknown }>;
 }): Cobro[] {
   const { charges, candidatas, invoiced } = entrada;
-
-  // SCRUM-1235 · qué documento es el de cada cobro, y cuáles no salieron por correo.
-  const sinSalir = documentosSinSalir(entrada.envios ?? []);
-  const documentoDelCobro = new Map<number, number>();
-  for (const e of invoiced) {
-    const id = (e.payload as { invoice_id?: unknown } | null)?.invoice_id;
-    if (e.chargeId != null && typeof id === 'number') documentoDelCobro.set(e.chargeId, id);
-  }
-  const correoNoSalio = (invoiceId: number | null | undefined) =>
-    invoiceId != null && sinSalir.has(invoiceId)
-      ? { invoiceId, clase: sinSalir.get(invoiceId) as string }
-      : null;
 
   // Las facturas que YA están representadas por su `Charge` en esta misma lista.
   const yaLasTraeSuCharge = new Set(
@@ -322,7 +290,8 @@ export function fundirCobros(entrada: {
     tipo: null,
     invoiceId: null,
     chargeId: ch.id,
-    correoNoSalio: correoNoSalio(documentoDelCobro.get(ch.id)),
+    // SCRUM-1235 · lo rellena `listarCobrosConCorreo`; la fusión no lee correos.
+    correoNoSalio: null,
   }));
 
   const deInvoice: Cobro[] = sueltas.map((inv) => ({
@@ -362,9 +331,56 @@ export function fundirCobros(entrada: {
     tipo: (inv as { type?: string | null }).type ?? null,
     invoiceId: inv.id,
     chargeId: null,
-    correoNoSalio: correoNoSalio(inv.id),
+    correoNoSalio: null,
   }));
 
   return [...deCharge, ...deInvoice]
     .sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0));
+}
+
+/**
+ * SCRUM-1235 · los cobros, y en cada uno si el correo con su documento NO SALIÓ.
+ *
+ * 🔴 VA ENCIMA DE `listarCobros` Y NO DENTRO, a propósito: `listarCobros` es la desduplicación
+ * (SCRUM-445, que fija su `return fundirCobros(...)`), y esto es otra pregunta —¿salió el correo?—
+ * con su propia lectura. La ruta de la pantalla llama a esta.
+ *
+ * Los documentos son los de los cobros (por el evento `invoiced`, el vínculo real) y las facturas
+ * sueltas. Las dos consultas filtran por `merchantId` (regla 2).
+ */
+export async function listarCobrosConCorreo(merchantId: number): Promise<Cobro[]> {
+  const [cobros, vinculos] = await Promise.all([
+    listarCobros(merchantId),
+    prisma.event.findMany({
+      where: { type: 'invoiced', charge: { merchantId } },
+      select: { payload: true, chargeId: true },
+    }),
+  ]);
+
+  const documentoDelCobro = new Map<number, number>();
+  for (const e of vinculos) {
+    const id = (e.payload as { invoice_id?: unknown } | null)?.invoice_id;
+    if (e.chargeId != null && typeof id === 'number') documentoDelCobro.set(e.chargeId, id);
+  }
+  const documentoDe = (c: Cobro): number | null =>
+    c.invoiceId ?? (c.chargeId != null ? documentoDelCobro.get(c.chargeId) ?? null : null);
+
+  const documentos = [...new Set(cobros.map(documentoDe).filter((id): id is number => id != null))];
+  if (!documentos.length) return cobros;
+
+  const envios: EnvioDeDocumento[] = await prisma.emailMessage.findMany({
+    where: {
+      merchantId, relatedType: 'invoice',
+      relatedId: { in: documentos }, kind: { in: CLASES_DEL_DOCUMENTO },
+    },
+    select: { id: true, relatedId: true, kind: true, status: true, createdAt: true },
+  });
+  const sinSalir = documentosSinSalir(envios);
+
+  return cobros.map((c) => {
+    const id = documentoDe(c);
+    return id != null && sinSalir.has(id)
+      ? { ...c, correoNoSalio: { invoiceId: id, clase: sinSalir.get(id) as string } }
+      : c;
+  });
 }

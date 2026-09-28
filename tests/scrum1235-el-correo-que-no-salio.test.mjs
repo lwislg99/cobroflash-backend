@@ -15,7 +15,7 @@
 // Se dobla la BASE (con estado: lo que se escribe en `emailMessage` se lee de vuelta), la
 // EMISIÓN (`dist/lib/invoicing.js`: la factura y su PDF, que aquí no se mide) y la RED
 // (`axios.post`: nada sale de la máquina). **No se dobla**: el webhook, `sendInvoiceEmail`,
-// `enviarPorResend`, `registrarEnvio` ni `listarCobros`. Son el camino real, y es lo que se mide.
+// `enviarPorResend`, `registrarEnvio` ni `listarCobrosConCorreo`. Son el camino real, y es lo que se mide.
 //
 // ⛔ Ni una clave real. Ni un byte de red. Ninguna base: ni producción ni staging.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ fs.writeFileSync(PDF, '%PDF-1.4\n%laboratorio 1235\n');
 
 /**
  * Monta el banco y devuelve: las filas de `email_messages` que escribió el camino real, una
- * función que entrega el webhook y otra que lee la pantalla de cobros por `listarCobros`.
+ * función que entrega el webhook y otra que lee la pantalla de cobros por `listarCobrosConCorreo` (lo que sirve `GET /admin/cobros`).
  *
  * `resend` decide qué contesta el proveedor: `'falla'` o `'acepta'`.
  */
@@ -110,9 +110,10 @@ function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 
     },
   };
 
+  const estado = { resend };
   axios.post = async (url) => {
     if (!String(url).includes('api.resend.com')) throw new Error(`🔴 el banco no esperaba un POST a ${url}`);
-    if (resend === 'falla') {
+    if (estado.resend === 'falla') {
       const e = new Error('Request failed with status code 503'); e.code = 'ERR_BAD_RESPONSE';
       throw e;
     }
@@ -153,12 +154,18 @@ function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 
   };
 
   const pantalla = async () => {
-    const { listarCobros } = requiere(rutaDe('dist/modules/billing/domain/cobros.service.js'));
-    const filas = await listarCobros(MERCHANT);
+    const { listarCobrosConCorreo } = requiere(rutaDe('dist/modules/billing/domain/cobros.service.js'));
+    const filas = await listarCobrosConCorreo(MERCHANT);
     return filas.find((f) => f.chargeId === chargeId);
   };
 
-  return { filasCorreo, entregar, pantalla, cobro };
+  // «Enviar de nuevo» llama a `sendInvoiceEmail` (vía `POST /admin/invoices/:id/send-email`): se
+  // llama al REAL, con la misma base doblada.
+  const reenviar = async () => {
+    const { sendInvoiceEmail } = requiere(rutaDe('dist/lib/email.js'));
+    await sendInvoiceEmail({ invoiceId, toEmail: cobro.customer.email, toName: cobro.customer.name, prisma: doble }).catch(() => {});
+  };
+  return { filasCorreo, entregar, pantalla, reenviar, cobro, estado };
 }
 
 // ═══ ① SUELO — el fallo tiene que haber ocurrido de verdad, o esto no mide nada ═════════════════
@@ -191,7 +198,7 @@ test('SCRUM-1235 · 🔴 el cobro cobrado cuyo correo no salió LO DICE en la pa
   const b = banco();
   await b.entregar();
   const fila = await b.pantalla();
-  assert.ok(fila, '🔴 CIEGO: `listarCobros` no devuelve el cobro del banco');
+  assert.ok(fila, '🔴 CIEGO: `listarCobrosConCorreo` no devuelve el cobro del banco');
   assert.deepEqual(fila.correoNoSalio, { invoiceId: 7000, clase: 'invoice' },
     '🔴 EL CLIENTE HA PAGADO, SU FACTURA NO HA SALIDO Y EL PROFESIONAL NO SE ENTERA.\n'
     + '  La fila `fallo_envio` está en email_messages y la pantalla de cobros no la lee.\n'
@@ -216,36 +223,33 @@ test('SCRUM-1235 · ✅ si el correo SALIÓ, la pantalla no dice nada', async ()
   assert.equal(fila.correoNoSalio, null);
 });
 
-test('SCRUM-1235 · ✅ manda el ÚLTIMO intento: falló y luego salió → ya no se avisa', async () => {
-  const { fundirCobros } = requiere(rutaDe('dist/modules/billing/domain/cobros.service.js'));
-  const charge = {
-    id: 1, createdAt: new Date('2026-09-28T10:00:00Z'), amount: '10', currency: 'EUR',
-    method: 'card', status: 'paid', concept: null, reference: null, customer: { name: 'X' },
-  };
-  const t0 = new Date('2026-09-28T10:00:00Z');
-  const t1 = new Date('2026-09-28T11:00:00Z');
-  const base = { charges: [charge], candidatas: [], invoiced: [{ chargeId: 1, payload: { invoice_id: 5 } }] };
+test('SCRUM-1235 · ✅ manda el ÚLTIMO intento: falló, se reenvió y salió → ya no se avisa', async () => {
+  const b = banco();
+  await b.entregar();                       // el automático falla
+  assert.ok((await b.pantalla()).correoNoSalio, 'precondición: tras el fallo, avisa');
 
-  const falloLuegoSale = fundirCobros({ ...base, envios: [
-    { id: 1, relatedId: 5, kind: 'invoice', status: 'fallo_envio', createdAt: t0 },
-    { id: 2, relatedId: 5, kind: 'invoice', status: 'aceptado_sin_confirmacion', createdAt: t1 },
-  ] });
-  assert.equal(falloLuegoSale[0].correoNoSalio, null, 'el reenvío que salió tiene que apagar el aviso');
+  b.estado.resend = 'acepta';
+  await b.reenviar();                       // el profesional pulsa «Enviar de nuevo» y sale
+  assert.equal(b.filasCorreo.length, 2, '🔴 CIEGO: el reenvío tenía que dejar su propia fila');
+  assert.equal((await b.pantalla()).correoNoSalio, null, 'el reenvío que salió tiene que apagar el aviso');
 
-  const saleLuegoFalla = fundirCobros({ ...base, envios: [
-    { id: 1, relatedId: 5, kind: 'invoice', status: 'aceptado_sin_confirmacion', createdAt: t0 },
-    { id: 2, relatedId: 5, kind: 'invoice', status: 'fallo_envio', createdAt: t1 },
-  ] });
-  assert.deepEqual(saleLuegoFalla[0].correoNoSalio, { invoiceId: 5, clase: 'invoice' });
+  b.estado.resend = 'falla';
+  await b.reenviar();                       // y si el siguiente vuelve a fallar, vuelve a avisar
+  assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7000, clase: 'invoice' });
+});
 
-  const sinEnvios = fundirCobros(base);
-  assert.equal(sinEnvios[0].correoNoSalio, null, 'sin ninguna fila no consta ningún fallo: se calla');
+test('SCRUM-1235 · ✅ sin ninguna fila de correo, no consta ningún fallo: se calla', async () => {
+  const b = banco();
+  const fila = await b.pantalla();          // sin entregar el webhook: no hubo ningún envío
+  assert.ok(fila, '🔴 CIEGO: el cobro no sale en la lista');
+  assert.equal(b.filasCorreo.length, 0);
+  assert.equal(fila.correoNoSalio, null);
 });
 
 // ═══ ⑤ LA PANTALLA — el aviso firmado, y el botón que ya existía ════════════════════════════
 //
 // Se pinta la vista REAL con el banco de vistas. La red devuelve la fila tal como la serializa
-// `listarCobros` (con `correoNoSalio`), y el botón llama al endpoint que ya existía.
+// `listarCobrosConCorreo` (con `correoNoSalio`), y el botón llama al endpoint que ya existía.
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { redNormal } from './_banco-red.mjs';
 
