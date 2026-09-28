@@ -3151,6 +3151,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    Popover anclado en desktop; en ≤640px la lista va DENTRO de .modal (hoja inferior,
    reutilizando el bottom-sheet de F2). Sombra Flotante (DESIGN.md §4), motion con reduce. */
 .overflow-trigger { font-size: 18px; line-height: 1; padding: 4px 10px; }
+/* SCRUM-1193 · el «⋯» mide 44 × 44 EN TODAS LAS PANTALLAS (AB6), no pantalla a pantalla: lo crea
+   `overflowMenu` (api.js) con `overflow-trigger btn-ghost btn-sm`, y `.btn-sm` lo dejaba en 30 px.
+   Las clases exactas del componente pesan (0,3,0): ganan a `.btn-sm` y a `.btn.btn-sm` sin
+   `!important`, como `.accion-irreversible-btn-44` (SCRUM-1167). La forma sola es el respaldo. */
+.overflow-trigger.btn-ghost.btn-sm,
+.overflow-trigger { min-width: 44px; min-height: 44px; }
 .overflow-menu {
   position: fixed;
   background: var(--surface, #fff);
