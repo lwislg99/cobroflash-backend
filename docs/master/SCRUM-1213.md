@@ -19,6 +19,16 @@ Test `tests/scrum1213-quoteadmin-tenencia-fail-closed.test.mjs`: **rojo medido c
 | `esDocumentoAsignable` (asignacionDeDocumento.ts) | Nadie la llamaba. |
 | `listQuoteRequestAttachments` (attachment.service.ts) | La galería la sirve el `findMany` de `quoteRequests.routes.ts`, que filtra por merchant. Sale también de `_huerfanos-declarados.mjs`, y en `scrum710b` baja un anclaje (`quoteRequests.routes.ts`, 1 → 0): es una bajada declarada. |
 
+## 3 · `NOMBRE_CSV`: el orquestador pidió conectarla y NO SE PUEDE sin reescribir un guard
+
+Orden (28-sep): conectarla en `exportData.ts` como no-op demostrado. Medido antes de tocar nada:
+
+- `NOMBRE_CSV` son **nombres de fichero del ZIP**, no cabeceras de columna. Conectarla no puede cambiar ninguna cabecera.
+- `tests/scrum152-guard-paquete-completo.test.mjs:94-97` exige **el literal** `'clientes.csv'` (y los otros cinco) dentro del código de `construirCsvsDelPaquete`. Si se cambia `nombre: 'clientes.csv'` por `nombre: NOMBRE_CSV.clientes`, el literal desaparece y ese guard se pone rojo. Para ponerlo verde habría que cambiar el guard, y la regla 41 lo prohíbe.
+- Además, la divergencia que se quería evitar ya la caza ese guard: ata las cuatro listas (DATASETS, NOMBRE_CSV, el constructor del ZIP y el LEEME), y `NOMBRE_CSV` ES su referencia.
+
+Resultado: **no se conecta**. Se queda declarada en el censo con `motivo` y `ticket: SCRUM-1213`, igual que `isAlbaranNumber`, que el orquestador decidió no tocar.
+
 ## No se tocan (se informa al orquestador)
 
 - `NOMBRE_CSV`: la usa como referencia el guard `scrum152`, mientras `exportData.ts` repite los nombres a mano. Lo correcto es que `exportData.ts` la consuma, pero eso es tocar el export de datos de clientes (STOP de CLAUDE.md).
