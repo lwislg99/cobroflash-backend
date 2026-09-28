@@ -1,8 +1,13 @@
 // public/dashboard/js/facturasRecibidasView.js — SCRUM-1040 (CON-04).
 //
-// LAS FACTURAS QUE EL PROFESIONAL RECIBE DE SUS PROVEEDORES — no las que emite. Hasta hoy el
-// libro de A6/SCRUM-426 solo salía como descarga CSV (`librosAeat.routes.ts:89`); esta pantalla
-// LEE el mismo motor y lo pinta, junto a «Libro de registro» (las emitidas).
+// LAS FACTURAS QUE EL PROFESIONAL RECIBE DE SUS PROVEEDORES — no las que emite. Esta pantalla
+// LEE el motor del libro de A6/SCRUM-426 y lo pinta, junto a «Libro de registro» (las emitidas).
+//
+// ⚠️ CORREGIDO EN SCRUM-1249 (28-sep-2026). Aquí decía que, hasta esta pantalla, el libro «solo
+// salía como descarga CSV». Era FALSO: la ruta `GET /admin/libros/recibidas.csv` existía en el
+// servidor, pero NINGUNA pantalla la pedía (censo AST de SCRUM-1195) — el profesional no tenía
+// ni la tabla ni el fichero. Desde SCRUM-1249 la descarga sale de aquí, con el periodo del
+// selector (ver `#facturas-recibidas-descargar`).
 //
 // SOLO LECTURA y sin sello: no hay aquí ni un `create` ni un `update`, y no se toca el camino de
 // emisión (regla 38 del máster). Con `INVOICING_ES_ENABLED` en OFF esto sigue viéndose: es el
@@ -50,6 +55,13 @@
     etiquetaAnio: 'Año',
     etiquetaTrimestre: 'Trimestre',
     consultar: 'Consultar',
+    // SCRUM-1249 · la descarga del libro (`/admin/libros/recibidas.csv`, SCRUM-426), que el
+    // servidor servía y ninguna pantalla ofrecía. PROPUESTOS al orquestador, SIN FIRMA todavía.
+    descargar: 'Descargar CSV',
+    preparando: 'Preparando la descarga…',
+    descargaVacia: 'No hay facturas recibidas en este periodo.',
+    descargaLista: 'Descarga lista.',
+    descargaFallida: 'No hemos podido preparar la descarga. Inténtalo otra vez.',
   };
 
   function fechaCorta(v) {
@@ -125,6 +137,7 @@
         </select>
       </div>
       <button class="btn-secondary" id="facturas-recibidas-consultar">${COPY.consultar}</button>
+      <button class="btn-secondary" id="facturas-recibidas-descargar">${COPY.descargar}</button>
     `;
     card.appendChild(periodo);
 
@@ -146,6 +159,41 @@
       const anio = Number(inpAnio.value);
       const tri = Number(selTri.value);
       if (Number.isInteger(anio) && tri >= 1 && tri <= 4) cargar(anio, tri);
+    });
+
+    // SCRUM-1249 · LA DESCARGA DEL MISMO LIBRO QUE SE ESTÁ MIRANDO. Ruta y motor son los de
+    // SCRUM-426 y no se tocan: `recibidas.json` (esta tabla) y `recibidas.csv` llaman a
+    // `leerLibroRecibidasDelTrimestre` con el mismo periodo, así que dan las mismas filas.
+    //
+    // Se descarga el periodo del SELECTOR —como la de emitidas en `exportView.js`— y la tabla se
+    // recarga con ese mismo periodo: si el profesional cambió el año sin pulsar «Consultar», el
+    // fichero y la pantalla no pueden quedar enseñando trimestres distintos.
+    const btnDescargar = periodo.querySelector('#facturas-recibidas-descargar');
+    btnDescargar.addEventListener('click', async () => {
+      const anio = Number(inpAnio.value);
+      const tri = Number(selTri.value);
+      if (!(Number.isInteger(anio) && tri >= 1 && tri <= 4)) return;
+      cargar(anio, tri);
+      btnDescargar.disabled = true;
+      btnDescargar.textContent = COPY.preparando;
+      try {
+        const qs = new URLSearchParams({ 'año': String(anio), trimestre: String(tri) });
+        // El nombre lo pone el servidor y lleva el periodo dentro (SCRUM-405).
+        const { res } = await descargarBinario('/admin/libros/recibidas.csv?' + qs, {
+          tipoEsperado: 'csv',
+          nombrePorDefecto: 'facturas-recibidas.csv',
+        });
+        // Un periodo vacío se DICE (`X-Yaqu-Filas`, mismo contrato que emitidas). Si el servidor
+        // miró gastos y no salió ningún asiento, el descuadre lo pinta ya la tabla recargada.
+        const filas = Number(res.headers.get('X-Yaqu-Filas'));
+        showToast(filas === 0 ? COPY.descargaVacia : COPY.descargaLista, filas === 0 ? 'info' : 'ok');
+      } catch (e) {
+        if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
+        showToast(COPY.descargaFallida, 'error');
+      } finally {
+        btnDescargar.textContent = COPY.descargar;
+        btnDescargar.disabled = false;
+      }
     });
 
     async function cargar(anio, tri) {
