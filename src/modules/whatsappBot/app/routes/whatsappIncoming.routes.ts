@@ -9,6 +9,8 @@ import { config } from '../../../../core/config/env';
 import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText, markInboundRead } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-1212: el correo solo dice «Ya puedes emitir la factura» si el modo de emisión lo permite.
+import { modoEmisionVisible } from '../../../invoicing/domain/modoVisible';
 // SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
 import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
@@ -493,7 +495,11 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     // Email al merchant si tiene la notificación activa
     const merchant = await prisma.merchant.findUnique({
       where: { id: quote.merchantId },
-      select: { email: true, name: true, notifyEmailOnQuoteAccepted: true, whatsappPhone: true },
+      // SCRUM-1212: `id`, `country` y `flags` son lo que `getEmissionMode` necesita para el modo.
+      select: {
+        id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true, whatsappPhone: true,
+        country: true, flags: true,
+      },
     });
     const customer = await prisma.customer.findUnique({
       where: { id: quote.customerId },
@@ -511,6 +517,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
         quoteId:       quote.id,
         total:         Number(quote.total).toFixed(2),
         currency:      quote.currency,
+        modoEmision:   modoEmisionVisible(merchant),
       }));
     }
 

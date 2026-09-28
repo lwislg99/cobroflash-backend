@@ -4,6 +4,10 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
+// SCRUM-1188 · las condiciones de cobro que una plantilla puede guardar: las que caben en
+// `quote_templates.payment_terms`. «CUSTOM» no está porque sus tramos no tienen columna ahí.
+const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'];
+
 /**
  * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
  * `sessionStorage['pf_load_template']`, un canal global e implícito).
@@ -4565,6 +4569,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     if (editorEnBlanco()) {
       linesBody.innerHTML = '';
       lines = [];
+      // SCRUM-1188 · empezar CON la plantilla trae también su condición de cobro, como ya hace
+      // el camino de «Usar» desde Plantillas (SCRUM-926, en `loadInitialData`). Añadirla a un
+      // presupuesto empezado solo suma líneas: no cambia las condiciones que ya eligió.
+      // Se pone ANTES de las líneas: `addLine` repinta la vista previa, que ya sale con ella.
+      if (!esDocumentoSuelto && CONDICIONES_QUE_GUARDA_UNA_PLANTILLA.includes(tpl.paymentTerms)) {
+        paymentSelect.value = tpl.paymentTerms;
+      }
     }
     const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
     templateLines.forEach(function (l) {
@@ -4826,11 +4837,22 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       saveBtn.textContent = 'Guardando…';
 
       const currency = currentMerchant?.defaultCurrency || 'EUR';
+      // SCRUM-1188 · la plantilla guarda también la condición de cobro, que al aplicarla ya se
+      // restaura (SCRUM-926, más abajo). Solo las tres que caben en `payment_terms`: «CUSTOM» es
+      // un marcador de front cuyos tramos viajan aparte (`customBillingPlan`) y la plantilla no
+      // tiene dónde guardarlos, así que guardar «CUSTOM» sola dejaría una plantilla que afirma un
+      // plan que no puede reproducir. En ese caso la plantilla sale sin condición.
+      // En el documento suelto el bloque no se pinta y el select se queda en su valor de nacimiento
+      // (`FULL_UPFRONT`), que es también lo que el editor pone cuando la plantilla no trae nada: se
+      // manda igual para que las dos pantallas guarden la MISMA plantilla (lo fija `scrum600g`).
+      const paymentTerms = CONDICIONES_QUE_GUARDA_UNA_PLANTILLA.includes(paymentSelect.value)
+        ? paymentSelect.value
+        : null;
 
       try {
         await apiRequest('/admin/templates', {
           method: 'POST',
-          body: JSON.stringify({ name, currency, lines: templateLines }),
+          body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
         });
         closeOverlay();
         setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
