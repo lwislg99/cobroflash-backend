@@ -1,0 +1,273 @@
+{
+  "ciegos": {
+    "scripts/_banco-lista.mjs · resolverNavegador · nav.ok": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `resolverNavegador`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/_prisma-sync.mjs · spawnSync · r.estado": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/censo-afirmaciones-de-skills.mjs · censar · censo.ciego": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `censar`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/censo-anclas-bloque-f.mjs · censarEnDisco · r.ok": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `censarEnDisco`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/censo-etiquetas-del-documento.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/citar-hueco-condicion.mjs · diez · lista.length": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `diez`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/generar-sql-deriva.mjs · String · t.includes": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no encuentro `String` en la población. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guard-conformidad-landing.mjs · comprobarEnDisco · r.ok": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `comprobarEnDisco`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guards-entrada.mjs · spawnSync · r.error": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guards-entrada.mjs · spawnSync · r.status": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guards-visuales.mjs · fueraDeLaTanda · lista.length": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `fueraDeLaTanda`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guards-visuales.mjs · loQueLaTablaNoSabePintar · ciega.length": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `loQueLaTablaNoSabePintar`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/guards-visuales.mjs · resolverNavegador · nav.ok": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `resolverNavegador`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/preflight-schema-drift.mjs · spawnSync · res.status": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/preview-migracion.mjs · sentenciasDestructivas · malas.length": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `sentenciasDestructivas`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/puerta-cliente-real.mjs · evaluarPuerta · v.abierta": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `evaluarPuerta` se importa de `dist/modules/system/domain/puertaClienteReal.js`, que no está en la población. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/renumerar-documentos.mjs · parseBDSegura · info.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/test-staging-gated.mjs · spawnSync · res.motivo": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/test-staging-gated.mjs · spawnSync · res.ok": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/turno-staging.mjs · spawnSync · r.motivo": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "scripts/turno-staging.mjs · spawnSync · r.ok": {
+      "cuantos": 3,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_censo-eol.mjs · spawnSync · res.error": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_censo-eol.mjs · spawnSync · res.status": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_condiciones-vs-emisor.mjs · alcanzables · enPresupuesto.has": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `alcanzables`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_envio-doblado.mjs · String · nombre.startsWith": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no encuentro `String` en la población. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_sonda-calendarios.mjs · leer · fuenteAtajos.includes": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `leer`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/_xsd-verifactu.mjs · leer · info.includes": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `leer`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1014-sitios-del-cliente.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1014-sitios-del-cliente.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1036-notas-del-cliente.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1036-notas-del-cliente.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1057b-fusion-clientes-postgres.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1057b-fusion-clientes-postgres.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1059b-etiquetado-masivo-postgres.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1059b-etiquetado-masivo-postgres.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1062-historial-whatsapp-cliente.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1062-historial-whatsapp-cliente.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1103-retencion-practicada-en-gastos.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum1103-retencion-practicada-en-gastos.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum13-cobrado.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum13-cobrado.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum297-fuentes-selladas.test.mjs · columnasDelAlbaran · columnas.has": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `columnasDelAlbaran`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum324-cadena-hasta-el-libro.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum324-cadena-hasta-el-libro.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum356-tres-estados.test.mjs · montarAlmacen · b.ctx": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `montarAlmacen`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum52-operario.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum52-operario.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum652d-puerta-al-parte.test.mjs · entradasDeNavConSuelo · nav.length": {
+      "cuantos": 2,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `entradasDeNavConSuelo`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum692-guardado-parcial-en-base.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum692-guardado-parcial-en-base.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum809-paywall-tras-cancelar.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum809-paywall-tras-cancelar.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum844b-que-documento-se-declara.test.mjs · declarabilidadDe · v.declara": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no encuentro `declarabilidadDe` en la población. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum854-todo-merge-deja-entrada.test.mjs · veredictoDe · v.veredicto": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `veredictoDe`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum946-censo-de-huerfanos.test.mjs · spawnSync · r.status": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum966-censo-ve-las-ramas.test.mjs · spawnSync · r.status": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum967b-el-portal-en-el-envio.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum967b-el-portal-en-el-envio.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum973-titulo-del-pr.test.mjs · spawnSync · r.status": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): `spawnSync` viene de `node:child_process`, fuera de la población: no puedo leer qué devuelve. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum974-firmado-sin-facturar-en-el-lunes.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum974-firmado-sin-facturar-en-el-lunes.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum979-ultima-visita.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum979-ultima-visita.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum980-historial-del-cliente.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum980-historial-del-cliente.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum992-partes-recortan-por-rol.test.mjs · parseBDSegura · p.base": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    },
+    "tests/scrum992-partes-recortan-por-rol.test.mjs · parseBDSegura · p.host": {
+      "cuantos": 1,
+      "motivo": "Ya estaba sin leer el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B): no sé leer los `return` de `parseBDSegura`. Declarado, NO aceptado: si el censo aprende a leerlo o el guard se reescribe legible, se retira."
+    }
+  },
+  "retiradas": []
+}

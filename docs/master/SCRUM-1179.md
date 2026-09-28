@@ -64,3 +64,24 @@ cuatro nombres (lo ya arreglado no vuelve). Una decisión NUEVA encerrada en una
   una vez por proceso: se añade un censo (`9cacafad`) y se ahorran dos repetidos, así que el
   fichero hace cinco censos en vez de seis. Local, con cuatro sesiones cargando la máquina: 19,1 s antes y 20,5 s después; con esa
   carga no sirve para comparar (SCRUM-790). El coste real se toma del check del PR.
+
+## B · 2 de 4 — `censo:suelos`, con su mitad que cierra
+
+`tests/scrum775-suelo-que-no-dispara.test.mjs` exigía «conectado» para un solo fichero. Un suelo
+nuevo sin conectar salía en `npm run censo:suelos` con código 1, y ese comando no lo corre nadie.
+Un suelo nuevo que el censo no sabe leer caía en «NO SÉ LEER» (75 hoy) sin que nadie lo mirase.
+
+- **Mitad que cierra:** en el árbol real, NO CONECTADOS tiene que ser cero (hoy lo es), y los NO SÉ
+  LEER se comparan con `scripts/_suelos-sin-leer-declarados.json` en las dos direcciones. Clave
+  `fichero · función productora · variable.propiedad` con su cuenta (8 claves salen dos veces en el
+  mismo fichero), nunca la línea. Entran declarados 75 casos en 67 claves, no aceptados.
+- **Control positivo real:** el árbol real con dos defectos inyectados en memoria: el
+  `censo-tablero-vs-arbol.mjs` roto de SCRUM-775 sale NO CONECTADO, y un guard opaco nuevo sale
+  como NUEVO sin leer.
+- **Control negativo:** el árbol real da cero, que es el propio trinquete en verde.
+- **Fail-closed:** si `motivosParaNoFiarse` dice algo (población vacía incluida), CIEGO y no se compara.
+- **Probado en rojo:** quitar una clave del JSON → «NUEVO … nav.ok (1 vistos, 0 declarados)»;
+  añadir una fantasma → «SOBRA … (0 vistos, 1 declarados)».
+- **Coste:** el árbol real se censa una vez por proceso (lo usan cuatro tests). El control positivo
+  añade un censo (~3,4 s) y el test que lo repetía ahorra otro (~4 s). Local: 29,9 s antes y 29,1 s
+  después, con carga en la máquina. El coste real se toma del check del PR.
