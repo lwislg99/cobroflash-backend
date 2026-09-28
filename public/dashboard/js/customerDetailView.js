@@ -53,12 +53,14 @@ const WHATSAPP_CLIENTE = {
     vacio: 'Sin mensajes de WhatsApp',
     columnas: ['Fecha', 'Documento', 'Estado'],
     verMas: 'Ver más mensajes',
-    baja: 'Se dio de baja de WhatsApp: no se le envían mensajes.',
     factura: 'Factura',
     cobro: 'Cobro',
     sinDocumento: '—',
   },
-  /** «WhatsApp (n)», o «WhatsApp (20+)» cuando el servidor dice que hay más páginas. */
+  /**
+   * «WhatsApp (n)», o «WhatsApp (n+)» cuando el servidor dice que hay más páginas. `n` es lo
+   * cargado: el tamaño de página lo decide el servidor y aquí no se escribe (SCRUM-1133 17448, ①).
+   */
   tituloPestana(n, hayMas) {
     return WHATSAPP_CLIENTE.TEXTOS.pestana + ' (' + (hayMas ? n + '+' : n) + ')';
   },
@@ -526,13 +528,9 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-1133 · la pestaña «WhatsApp»: fecha, documento y el chip de estado de WA-0b.
   function pintarWhatsapp(card, table) {
     const T = WHATSAPP_CLIENTE.TEXTOS;
-    if (whatsapp && whatsapp.waOptOut) {
-      const baja = document.createElement('p');
-      baja.className = 'whatsapp-baja';
-      baja.style.cssText = 'margin:0 0 12px;font-size:13px;color:var(--neutral-600)';
-      baja.textContent = T.baja;
-      card.insertBefore(baja, card.firstChild);
-    }
+    // 🔴 `waOptOut` llega en la respuesta y NO se pinta. La línea firmada («… no se le envían
+    // mensajes») afirma que la baja corta TODOS los envíos, y medido es falso: `isWaOptedOut` sólo
+    // se consulta en 2 de los 8 envíos y falla abierto. Va a SCRUM-1262; no se publica hasta que sea verdad.
     const thead = document.createElement('thead');
     const trh = document.createElement('tr');
     T.columnas.forEach((c) => { const th = document.createElement('th'); th.textContent = c; trh.appendChild(th); });

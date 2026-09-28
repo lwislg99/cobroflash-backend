@@ -103,13 +103,21 @@ test('SCRUM-1133 · sin documento que case con las listas, el tipo sin número (
   assert.equal(W.documento({ relatedType: 'algo-nuevo', relatedId: 1 }, QUOTES, INVOICES, 'Presupuesto'), '—');
 });
 
-test('SCRUM-1133 · vacío: «Sin mensajes de WhatsApp» · y la baja del cliente se dice UNA vez', async () => {
-  const f = await montarFicha({ wa: { waOptOut: true, mensajes: [] } });
+test('SCRUM-1133 · vacío: «Sin mensajes de WhatsApp» · y la baja del cliente NO se afirma (SCRUM-1262)', async () => {
+  // La línea «Se dio de baja de WhatsApp: no se le envían mensajes.» estaba firmada (17448) con una
+  // condición: que fuera VERDAD. Medido, no lo es —la baja no corta todos los envíos—, así que no se
+  // publica y el hallazgo va a SCRUM-1262. Este caso cae si alguien la vuelve a pintar antes.
+  const wa = { waOptOut: true, mensajes: [] };
+  const f = await montarFicha({ wa });
   assert.equal(f.pestanaWa().textContent, 'WhatsApp (0)');
   await f.abrirWa();
   const todo = todos(f.c).map((x) => x._texto || '');
   assert.ok(todo.includes('Sin mensajes de WhatsApp'), '🔴 no sale el vacío');
-  assert.equal(todo.filter((t) => t === 'Se dio de baja de WhatsApp: no se le envían mensajes.').length, 1, '🔴 la baja no se dice (o se dice más de una vez)');
+  // POSITIVO con el mismo token: la respuesta SÍ decía que está de baja; si no, la negación no mide.
+  assert.equal(wa.waOptOut, true);
+  assert.ok(f.peticiones.some((u) => /\/admin\/customers\/11330\/whatsapp$/.test(u)), '🔴 CIEGO: ni se pidió /whatsapp');
+  assert.ok(!todo.some((t) => /de baja de WhatsApp|no se le envían/.test(t)),
+    '🔴 la ficha AFIRMA que no se le envían mensajes, y es falso mientras SCRUM-1262 siga abierto');
 });
 
 test('SCRUM-1133 · con más páginas: «WhatsApp (1+)», y «Ver más mensajes» pide la siguiente con despuesDe', async () => {
@@ -142,9 +150,11 @@ test('SCRUM-1133 · si /whatsapp falla, la ficha sale entera, sin esa pestaña',
 
 test('SCRUM-1133 · cada texto nuevo consta firmado en SCRUM-1133', () => {
   const T = cargarDashboard(RAIZ).ctx.whatsappCliente.TEXTOS;
-  const textos = [T.pestana, T.vacio, ...T.columnas, T.verMas, T.baja, T.factura, T.cobro, T.sinDocumento];
+  const textos = [T.pestana, T.vacio, ...T.columnas, T.verMas, T.factura, T.cobro, T.sinDocumento];
   for (const t of textos) {
     assert.ok(constaAprobado(t).some((f) => f.includes('SCRUM-1133')), `🔴 «${t}» no consta firmado en SCRUM-1133`);
   }
   assert.deepEqual(constaAprobado('Sin mensajes'), [], 'CONTROL NEGATIVO: uno parecido no consta');
+  // La línea de la baja se quedó fuera (SCRUM-1262): ni se pinta ni queda un literal suyo esperando.
+  assert.equal(T.baja, undefined, '🔴 vuelve a haber un texto de baja en TEXTOS, y SCRUM-1262 no se ha cerrado');
 });
