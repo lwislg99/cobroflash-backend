@@ -546,30 +546,9 @@
                   </div>
                 </div>
 
-                <div class="form-grid">
-                  <div class="form-row">
-                    <label for="qq-method">Método preferido</label>
-                    <select id="qq-method">
-                      <option value="bank">Pay-by-bank (SCT Inst / SPEI / Pix)</option>
-                      <option value="card">Tarjeta (Stripe)</option>
-                    </select>
-                  </div>
-                  <div class="form-row">
-                    <label>&nbsp;</label>
-                    <label style="display: flex; gap: 6px; font-size: 12px">
-                      <input
-                        type="checkbox"
-                        id="qq-send"
-                        style="width: 14px; margin-top: 2px"
-                      />
-                      Enviar por WhatsApp automáticamente
-                      <span style="color: var(--muted);">
-                        (usa el teléfono del cliente)
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
+                <!-- SCRUM-1202 · aquí iban «Método preferido» y «Enviar por WhatsApp automáticamente».
+                     Solo alimentaban el cuerpo de POST /quote/:id/accept, que ya los ignoraba y se ha
+                     retirado: eran dos mandos sin efecto. -->
                 <div class="btn-row">
                   <button type="submit" id="qq-btn">
                     Generar presupuesto
@@ -808,13 +787,6 @@
         const concept = document.getElementById('qq-concept').value.trim();
         const amountStr = document.getElementById('qq-amount').value;
         const taxStr = document.getElementById('qq-tax').value;
-        const method = document.getElementById('qq-method').value;
-        const sendNow = document.getElementById('qq-send').checked;
-
-        const selectedCustomer = customersCache.find(
-            (c) => String(c.id) === String(customerId),
-        );
-        const overrideTo = selectedCustomer?.phone || null;
 
 
         if (!customerId) {
@@ -884,49 +856,18 @@
           }
           const created = await createRes.json();
 
-          setStatus(
-            statusEl,
-            '',
-            `Presupuesto #${created.id} creado, aceptando…`,
-          );
-
-          // 2) /quote/:id/accept
-        const acceptRes = await fetch(`/quote/${created.id}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-        method_preference: method,
-        send: !!sendNow,
-        // si tenemos teléfono y el checkbox está marcado, lo mandamos como override
-        to: sendNow && overrideTo ? overrideTo : undefined,
-            }),
-        });
-          if (!acceptRes.ok) {
-            const errBody = await acceptRes.text();
-            throw new Error(
-              'Error en /quote/:id/accept: ' +
-                acceptRes.status +
-                ' ' +
-                errBody,
-            );
-          }
-          const accepted = await acceptRes.json();
-
+          // SCRUM-1202 · aquí había un paso 2 que llamaba a POST /quote/:id/accept con el id
+          // NUMÉRICO. Desde SCRUM-95 esa ruta buscaba por token, así que respondía 404 siempre; y
+          // la ruta se ha retirado (aceptaba sin sello y reescribía el cobro). La aceptación es
+          // del CLIENTE, en la landing (/quote/:token/decision), no de esta consola.
           setStatus(
             statusEl,
             'ok',
-            sendNow
-              ? `Presupuesto #${accepted.quote_id} aceptado y cobro enviado por WhatsApp.`
-              : `Presupuesto #${accepted.quote_id} aceptado. Cobro generado.`,
+            `Presupuesto #${created.id} creado.`,
           );
 
           resultEl.innerHTML = `
-            <div><strong>Presupuesto #${accepted.quote_id}</strong> aceptado para el cliente ID ${customerId}.</div>
-            <div style="margin-top:4px">
-              <span style="color:var(--muted)">Estado:</span> ${
-                accepted.status || 'accepted'
-              }
-            </div>
+            <div><strong>Presupuesto #${created.id}</strong> creado para el cliente ID ${customerId}.</div>
           `;
         } catch (err) {
           console.error(err);

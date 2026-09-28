@@ -344,40 +344,6 @@ export const CreateQuoteSchema = z.object({
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;
 
 
-// imports arriba ya tendrán algo como: import { z } from "zod";
-
-export const AcceptQuoteSchema = z.object({
-  // Desde dónde ha venido la decisión del cliente
-  channel: z.enum(['whatsapp', 'web', 'other']).optional(),
-
-  // Comentario libre del cliente (o que le pasemos desde el flujo)
-  comment: z.string().max(500).optional(),
-
-  // Texto tipo "50% al aceptar, 50% al finalizar"
-  // Guardamos el código interno
-  paymentTerms: z
-    .enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'])
-    .optional()
-    .nullable(),
-
-  // Cualquier extra (ip, userAgent, etc.)
-  evidence: z.any().optional(),
-});
-
-
-export const RejectQuoteSchema = z.object({
-  channel: z.enum(['whatsapp', 'web', 'other']).optional(),
-
-  // Motivo del rechazo (en WhatsApp será lo que nos escriba)
-  reason: z.string().min(1).max(500),
-
-  // Comentario adicional (podemos duplicar reason aquí si queremos)
-  comment: z.string().max(500).optional(),
-
-  evidence: z.any().optional(),
-});
-
-
 // ------- CHARGES -------
 
 export const CreateChargeSchema = z.object({

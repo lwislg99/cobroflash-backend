@@ -78,7 +78,13 @@ const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
  * 🔴 PENDIENTE DEL FUNDADOR: el copy de `job_not_found` en `/quote/create`. En cuanto exista,
  * esto vuelve a 28 -- y esa bajada TAMBIEN la exige el trinquete, asi que no se puede olvidar.
  */
-export const SIN_MESSAGE = 29;
+/**
+ * ✅ BAJA A 21 POR SCRUM-1202 (28-sep-2026): se retiraron POST /quote/:token/accept y /reject,
+ * puerta publica sin autenticar que nadie llamaba desde SCRUM-95. Se van con ellas sus 8
+ * respuestas sin `message`. No se ha arreglado ningun texto: han desaparecido las rutas. El
+ * `job_not_found` de `/quote/create` sigue pendiente del fundador (cuando llegue, 20).
+ */
+export const SIN_MESSAGE = 21;
 
 /** Suelo del escáner: si ve menos respuestas que esto, dejó de mirar y su cuenta no vale. */
 const SUELO_RESPUESTAS = 30;
