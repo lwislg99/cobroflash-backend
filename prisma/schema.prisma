@@ -22,6 +22,11 @@ model Merchant {
   nextInvoiceNumber          Int       @default(1) @map("next_invoice_number")
   invoiceSeriesYear          Int?      @map("invoice_series_year") // año de la serie en curso; al cambiar de año el contador vuelve a 1 (serie anual: 2026-CF-001)
   nextRectInvoiceNumber      Int       @default(1) @map("next_rect_invoice_number") // contador de la serie de rectificativas (2026-CF-R-001), también se resetea por año
+  // SCRUM-1216b · EL ARRANQUE DECLARADO de la serie F: con «mi última fue la 41» se guarda 42 (el
+  // arranque, no lo declarado: nadie suma después). NULL = NO declaró nada, que NO es 1. Sin
+  // default a propósito. Año PROPIO: `invoiceSeriesYear` lo reescribe el emisor en cada factura.
+  invoiceStartSeq            Int?      @map("invoice_start_seq")
+  invoiceStartYear           Int?      @map("invoice_start_year")
   nextQuoteNumber            Int       @default(1) @map("next_quote_number") // A1.2: contador de presupuestos por merchant (sin serie anual: no es doc fiscal)
   // SCRUM-14: serie NO fiscal de albaranes (ALB-YYYY-NNN), independiente de la de
   // facturas; reset anual (mismo patrón que invoiceSeriesYear).

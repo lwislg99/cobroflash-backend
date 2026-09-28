@@ -354,6 +354,43 @@ export function siguienteSeqDeLaSerieF(numeros: readonly string[], year: number)
   return max + 1;
 }
 
+/**
+ * SCRUM-1216b · EL ARRANQUE DECLARADO ENTRA EN LA SERIE F.
+ *
+ * GO del fundador para el camino de emisión: SCRUM-1216, comentario 17347 (28-sep-2026). De las
+ * tres firmas de SCRUM-780 se reabre UNA —«serie nueva que empieza en 0001» pasa a «empieza donde
+ * él diga»—; el formato `F<AA><NNNN>` y la retirada del prefijo siguen intactos.
+ *
+ * Por qué importa: la AEAT acepta el mismo número si cambia la fecha (medido en pruebas, SCRUM-1216),
+ * así que empezar en 0001 a quien ya usó `F26…` en su programa anterior repetiría un número suyo sin
+ * que nadie se enterase nunca.
+ *
+ * La regla es `máx(derivada, arranque)`, sin aritmética:
+ *   · `invoiceStartSeq` guarda YA el arranque (declaró 41 → 42): nadie suma después, y así la vista
+ *     previa y el emisor no pueden discrepar por un `+1`;
+ *   · cuenta SÓLO si `invoiceStartYear` es el año que se numera. Año PROPIO a propósito:
+ *     `invoiceSeriesYear` lo reescribe este mismo emisor en cada factura;
+ *   · `null` = NO declaró nada → manda lo derivado (0001 si no hay nada). `null` NO es 1;
+ *   · el máximo, y no el arranque a secas: con F…0042 y 0043 ya emitidas, la siguiente es la 44.
+ *     Nunca repite.
+ *   · `nextInvoiceNumber` NO entra: es el contador de la serie VIEJA. Con él, el merchant 1 de dev
+ *     (gastó `2026-FG-001..005`, contador en 6) nacería en F260006 sin haber declarado nada, que es
+ *     lo que SCRUM-780 firmó que no pasa.
+ *
+ * Pura, y la usan el emisor y la vista previa: son el mismo número y no pueden decirlo dos veces.
+ */
+export function seqDeLaSerieF(
+  derivada: number,
+  arranque: { invoiceStartSeq?: number | null; invoiceStartYear?: number | null } | null | undefined,
+  year: number,
+): number {
+  const s = arranque?.invoiceStartSeq;
+  const declarado = arranque?.invoiceStartYear === year && typeof s === 'number' && Number.isInteger(s) && s >= 1
+    ? s
+    : null;
+  return declarado === null ? derivada : Math.max(derivada, declarado);
+}
+
 /** Secuencia que toca emitir: si la serie guardada no es la del año en curso, empieza serie nueva en 1. */
 export function resolveSeriesSeq(
   m: { invoiceSeriesYear: number | null; nextInvoiceNumber: number },
@@ -450,6 +487,9 @@ export async function allocateInvoiceNumber(
       nextInvoiceNumber: true,
       nextRectInvoiceNumber: true,
       invoiceSeriesYear: true,
+      // SCRUM-1216b: el arranque declarado de la serie F (ver `seqDeLaSerieF`).
+      invoiceStartSeq: true,
+      invoiceStartYear: true,
     },
   });
   if (!m) throw new Error('merchant_not_found');
@@ -523,7 +563,8 @@ export async function allocateInvoiceNumber(
       where: { merchantId, number: { startsWith: prefijoF } },
       select: { number: true },
     });
-    seq = siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+    // SCRUM-1216b: y si declaró un arranque para ESTE año, no se empieza por debajo de él.
+    seq = seqDeLaSerieF(siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year), m, year);
   } else {
     seq = resolveSeriesSeq(m, year);
   }

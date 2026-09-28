@@ -321,8 +321,19 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 // necesita el `m.timezone` que esa misma consulta ya trae. El `pg_advisory_xact_lock`, el
 // reinicio anual, los dos contadores y el corte a `F<AA><NNNN>` de SCRUM-780 NO SE TOCAN.
 //
-//   nuevo:    ccfaacabe327b7b571d0331f50cdf500837beeb9187d69e4de62b347b09db812   (SCRUM-735)
-const EMISOR_SHA256 = 'ccfaacabe327b7b571d0331f50cdf500837beeb9187d69e4de62b347b09db812';
+//   anterior: ccfaacabe327b7b571d0331f50cdf500837beeb9187d69e4de62b347b09db812   (SCRUM-735)
+//
+// ── SCRUM-1216b · 28-sep-2026 · GO de Javier en Jira, SCRUM-1216 comentario 17347: «Sí» a tocar el
+// sellado para que el número de arranque declarado llegue a la factura. El cambio: una función
+// pura nueva, `seqDeLaSerieF` (máx(derivada, arranque del año)); dos campos más en el `select` de
+// `allocateInvoiceNumber` (`invoiceStartSeq`, `invoiceStartYear`, columnas nuevas y nullables); y
+// UNA línea en la rama F: `seq = seqDeLaSerieF(siguienteSeqDeLaSerieF(…), m, year)`. El
+// `pg_advisory_xact_lock`, el reinicio anual, los dos contadores, las rectificativas, la auditoría y
+// el formato `F<AA><NNNN>` NO SE TOCAN. `nextInvoiceNumber` no entra en la serie F (SCRUM-780 intacto,
+// y lo prueba `scrum1216b-numero-de-arranque`).
+//
+//   nuevo:    74d298cb83beec85cc770521162a36935c65bbc5c2db7e8f940a7717461e0fd5   (SCRUM-1216b)
+const EMISOR_SHA256 = '74d298cb83beec85cc770521162a36935c65bbc5c2db7e8f940a7717461e0fd5';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

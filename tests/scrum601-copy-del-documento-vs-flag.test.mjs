@@ -176,7 +176,23 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // árboles). Ahora es una constante que se calla en `receipt` (`appModoEmision`), así que el censo
 // la encuentra y la clasifica como «flag» — que es lo que ES: el modo de emisión elige si sale.
 // `aPelo` no baja porque nunca la contó. No se toca `PENDIENTES_DE_FIRMA`: no se ha firmado nada.
-const VEREDICTO_AL_MEDIR = { flag: 17, tipo: 7, aPelo: 155 };
+// 155 → 156 · 28-sep-2026 (SCRUM-1216b) · «Facturas recibidas» (`facturasRecibidasView.js:31`,
+// `titulo: rotulo('Facturas recibidas')`, SCRUM-1040). **NO ES COPY NUEVA:** el fichero no cambió
+// (diff vacío entre 1216a y 1216b), y el literal ya era visible (`title.textContent = COPY.titulo`),
+// pero el censo no lo veía. Lo que cambió es la PASADA 0 del censo, que junta los nombres que se
+// LLAMAN dentro de un sumidero: 1216b pinta `${T.titulo(anio)}` en un `innerHTML` (la pregunta de
+// la serie, firmada en SCRUM-1216 comentario 17347), así que `titulo` entró en esa lista y la
+// clave homónima de facturas recibidas se volvió visible al instrumento. Es la misma ceguera por
+// copy centralizada que describió SCRUM-776, curada por accidente. Es un título de pantalla fijo:
+// no depende de flag ni de tipo, así que «a pelo» es su categoría. AISLADO con el propio censo: el
+// diff de `visibles` entre 1216a y 1216b es EXACTAMENTE esa línea, y ninguna de las dos pantallas de
+// la serie añade una. Renombrar `titulo` para que volviera a no verse sería apagar el instrumento.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔀 CONFLICTO DE MERGE (SCRUM-1164 × SCRUM-1216b), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos (`homeView.js` / `facturasRecibidasView.js`).
+// REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main 0afa87cd + la rama):
+// { flag: 17, tipo: 7, aPelo: 156 } — el flag de 1164 y el «a pelo» de 1216b, cada uno por su lado.
+const VEREDICTO_AL_MEDIR = { flag: 17, tipo: 7, aPelo: 156 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
