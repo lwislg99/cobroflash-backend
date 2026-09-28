@@ -823,9 +823,15 @@
       return false;
     }
 
+    // 🔴 SCRUM-1229 · CUANDO FIRMA EL TÉCNICO, EL PAD NO ES EL DEL CLIENTE. Medido ejecutando la
+    // vista: le decía «Pide al cliente que firme…», le ofrecía el «en calidad de qué» (que SCRUM-653
+    // c.14494 le quitó a propósito) y mandaba su nombre en el campo del CLIENTE → 400 siempre.
+    var esTecnico = quien === 'tecnico';
     abrirPad({
-      title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
-      hint: TEXTOS.pistaFirma,
+      title: esTecnico ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
+      // Sin pista para el técnico: la única aprobada habla del cliente, y `null` (no `undefined`)
+      // es lo que le dice al pad que no ponga la suya por defecto, que dice lo mismo.
+      hint: esTecnico ? null : TEXTOS.pistaFirma,
       // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
       ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
@@ -839,9 +845,16 @@
           return { concepto: l && l.descripcion, cantidad: l && l.unds, unidad: ETIQUETA_BLOQUE[l && l.bloque] };
         }),
       },
-      firmante: { sugerencia: parte.clienteNombre || '' },
+      firmante: esTecnico
+        ? { sugerencia: '', sinCalidad: true }
+        : { sugerencia: parte.clienteNombre || '' },
       onConfirm: async function (dataUri, declaracion) {
-        var cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
+        // El pad declara siempre `firmadoPorNombre`; cada ruta lee SU campo (`partes.routes.ts`:
+        // `/firmar` → `firmadoPorNombre`, `/firmar-tecnico` → `firmadoTecnicoNombre`). Se traduce
+        // AQUÍ, en quien llama: el servidor no aprende a aceptar dos nombres para lo mismo.
+        var cuerpo = esTecnico
+          ? { signatureData: dataUri, firmadoTecnicoNombre: (declaracion && declaracion.firmadoPorNombre) || '' }
+          : Object.assign({ signatureData: dataUri }, declaracion || {});
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
         var r;
