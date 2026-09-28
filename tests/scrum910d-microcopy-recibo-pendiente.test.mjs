@@ -68,10 +68,26 @@ async function pedirRecibo(m) {
   app.use('/recibo', require_(R_RECIBO).default);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  const res = await fetch(`http://127.0.0.1:${server.address().port}/recibo/tok910d`, { redirect: 'manual' });
-  const cuerpo = await res.text();
+  // SCRUM-1204 · `node:http` con `agent: false`, NUNCA `fetch`. `fetch` es undici, que interpreta HTTP
+  // con `llhttp` en WebAssembly. Tras unas pocas peticiones V8 lo recompila en segundo plano, y si
+  // `--test-force-exit` cierra el proceso en medio, libuv aborta al salir (`UV_HANDLE_CLOSING`,
+  // `src\win\async.c:94`) con los 5 tests en verde: 20/20 medido. Mismo remedio que SCRUM-100/556
+  // (scrum1107b, scrum1108b, scrum923, scrum924). No sigue redirecciones, como el `redirect: 'manual'`.
+  const { status, cuerpo } = await new Promise((ok, ko) => {
+    const req = http.request(
+      { host: '127.0.0.1', port: server.address().port, path: '/recibo/tok910d', method: 'GET', agent: false },
+      (res) => {
+        let b = '';
+        res.setEncoding('utf8');
+        res.on('data', (c) => { b += c; });
+        res.on('end', () => ok({ status: res.statusCode, cuerpo: b }));
+      },
+    );
+    req.on('error', ko);
+    req.end();
+  });
   await new Promise((r) => server.close(r));
-  return { status: res.status, cuerpo };
+  return { status, cuerpo };
 }
 
 const AMBOS = 'usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba';

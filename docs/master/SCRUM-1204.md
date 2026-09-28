@@ -1,9 +1,10 @@
-# SCRUM-1204 · `scrum910d` aborta al salir: es el tier-up de WebAssembly de V8 (el `llhttp` de `fetch`) terminando mientras el proceso se cierra
+# SCRUM-1204 · `scrum910d` abortaba al salir: el tier-up de WebAssembly de V8 (el `llhttp` de `fetch`) terminaba mientras el proceso se cerraba — ARREGLADO pasándolo a `node:http`
 
 **Medido contra:** `origin/main` = `29b492b0c2f246941e5c514d682887c18fd19494` · 2026-09-28T14:26:43Z
 
-J6 (jv-j6). Windows 11 · Node `v24.18.0`. **Sólo diagnóstico: no se ha tocado ningún test, ni
-el script `test`, ni ninguna bandera.** El arreglo va aparte, con su decisión (§ «Qué hacer»).
+J6 (jv-j6). Windows 11 · Node `v24.18.0`. Primero el diagnóstico y después, por decisión del
+orquestador, el arreglo de 910d (§ «El arreglo»). **No se ha tocado ningún otro test, ni el
+script `test`, ni ninguna bandera.**
 
 ## La firma real (no es un test que falle)
 
@@ -104,21 +105,40 @@ abortos; **los otros 40, 0/3 y limpios.** Con N = 3 eso **no** demuestra que no 
 es una carrera, y terminan más tarde. La lista de 31 de SCRUM-556 ha crecido a 41 (`scrum334` ya
 no tiene el patrón).
 
-## Qué hacer — propuesta, NO aplicada
+## El arreglo — APLICADO (decisión del orquestador, 28-sep-2026)
 
-1. **910d → `node:http` con `agent: false`**, el remedio de la casa (SCRUM-100/556) que ya usan
-   `scrum1107b`, `scrum1108b`, `scrum923` y `scrum924`. Medido en la variante B: **0/20**. Cambia
-   el **transporte** del arnés, no lo que el test afirma.
-2. **Los otros 40:** mismo riesgo latente. Migrarlos es una decisión aparte, no de paso.
-3. **Lo que NO es arreglo**, y por qué:
-   - **quitar `--test-force-exit`**: esconde la carrera en 910d y no la quita (SCRUM-556);
-   - **añadir `--no-wasm-dynamic-tiering` al script `test`**: cambia el runtime de las 1.035
-     pruebas para tapar una; se relaja el instrumento, no se arregla el código (regla 41);
-   - **meterlo en una lista de excepciones o saltos**: prohibido por el propio ticket.
+**910d → `node:http` con `agent: false`**, el remedio de la casa (SCRUM-100/556) que ya usan
+`scrum1107b`, `scrum1108b`, `scrum923` y `scrum924`. Sólo cambia el **transporte** de
+`pedirRecibo`, no lo que el test afirma.
+
+| momento | invocación | resultado |
+|---|---|---|
+| **ROJO**, test sin tocar (sha256 `9bb2d388e7b77d77`) | `node --test --test-force-exit tests/scrum910d-…` ×20 | **20/20 abortos**, firma literal: `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94` |
+| **VERDE**, con el arreglo | la MISMA invocación, **con la bandera puesta**, ×20 | **0/20**, y 5 tests · 5 pass · 0 fail |
+
+El verde se mide **con `--test-force-exit`**, no «5/5 sin bandera». Ése fue el error que tuvo a
+cuatro sesiones (J1, J2, J3 y J6) diciendo «pasa aislado»: respondían a otro comando.
+
+**Las aserciones no se han tocado.** El texto del fichero desde `const AMBOS` hasta el final tiene
+el mismo sha256 antes y después (`07d063189d051b17`). El diff es un solo trozo, dentro de
+`pedirRecibo`. `node:http` no sigue redirecciones, igual que el `redirect: 'manual'` de antes.
+
+**Los otros 40** van a **SCRUM-1218**, que es una declaración y no una migración: la lista, el
+porqué, el remedio y el criterio de disparo (si cae un segundo, se migran todos).
+
+**Lo que NO es arreglo**, con estas palabras:
+- **Quitar `--test-force-exit` no arregla la clase:** SCRUM-556 midió `scrum334` cayendo también
+  sin ella.
+- **Meter `--no-wasm-dynamic-tiering` en `npm test` es relajar el instrumento de 1.035 tests por
+  culpa de uno.**
+- **Meterlo en una lista de excepciones o saltos** está prohibido por el propio ticket y por la
+  regla 41.
 
 ## Lo que NO se ha medido
 
 - **Linux / CI (`ubuntu-latest`).** Todo es Windows; allí un abort de libuv no tendría esta firma.
+  Y esto importa: **si en CI no cae, el verde de CI nunca lo habría cazado**, y eso explicaría
+  por qué llevaba días pasando desapercibido mientras cada sesión lo veía en local.
 - **Desde cuándo cae.** El fichero existe desde `62176956` (23-sep-2026, PR #1694) y no ha
   cambiado. Que cayera desde el primer día queda SIN DETERMINAR: habría que compilar y correr
   aquel commit.
