@@ -139,3 +139,51 @@ for (let i = 0; i <= cola.MAX_INTENTOS; i++) {
 ```
 
 Salida: `exit=0`, `"poblacion": 11`, once filas (las de ②).
+
+## ⑦ El arreglo (SCRUM-1228b) — J1, con el GO del fundador
+
+**Medido contra:** `origin/main` = `0afa87cd95645317226f59bc379edae59a7bea44` · 2026-09-28T18:50:27Z
+
+**GO:** SCRUM-1228, comentario **17407**. Lo registra el orquestador con las palabras literales de Javier:
+«2-Damos el go». Alcance, también de ese comentario: sólo que una respuesta **no SOAP** deje de contarse como
+«la red no contestó». No cubre qué se manda, la cadena, el hash ni el sellado; tampoco `registro.builder.ts`
+ni `claveRegimen`, ni reintentos o plazos para otros casos. Nada de eso se ha tocado. Sin certificado.
+
+**Qué cambia (dos ficheros, 36 líneas):**
+
+- `sif.client.ts`: `HTTP_DE_PERMISOS = [302, 401, 403]`, cerrada. Una respuesta **sin sobre SOAP** (`ilegible`)
+  con uno de esos códigos sale con un quinto resultado, `sin_permiso` (con `etapa: 'interpretar'`, `motivo`
+  `http_<n>:<motivo>` y `httpStatus`), en vez de `sin_respuesta`. El `Fault` se sigue leyendo ANTES que el
+  código HTTP. El XML válido con un código de error sigue en `sin_respuesta` (es SOAP: fuera del GO).
+- `sif.cola.ts`: `sin_permiso` va a `manual_review` **al primer intento**, con `requierePersona: true`,
+  `reintentarEnS: null` y `lastError` `sin_permiso:interpretar:http_302:no_es_xml`.
+  **Decisión de J1, declarada:** `manual_review` y no `rejected`, porque `rejected` quiere decir que el
+  contenido está mal, y eso se subsana con un registro NUEVO. Aquí al registro no le pasa nada: arreglado
+  el certificado, hay que mandar ESTE mismo. Si el orquestador prefiere `rejected`, es una línea.
+- `MAX_INTENTOS`, `backoffS`, `esperaSiguienteEnvio` y las demás ramas de `decidirTrasEnvio`: intactos.
+
+**Rojo primero, con los bytes REALES** (`tests/scrum1228b-permisos-no-reintentan.test.mjs`, commit
+`a82217fb`). El fixture son los 153 bytes de ①, y el propio test comprueba su sha256
+(`eb57d307…`). Con el código de main caen 3 casos (el 302 real sale `sin_respuesta`; la cola lo
+reintenta; lo mismo con 401 y 403) y pasan los 6 controles.
+
+**Verde, con el positivo que pedía el GO:**
+
+| caso | antes | ahora |
+|---|---|---|
+| 302 REAL · 401 · 403 sin SOAP | `pending ×4 → manual_review` | `manual_review` al 1.º |
+| reset (corte de red) | `pending ×4 → manual_review` | **igual** |
+| timeout | `pending ×4 → manual_review` | **igual** |
+| 502 · 503 | `pending ×4 → manual_review` | **igual** |
+| 500 · 200 con HTML (sin determinar) | `pending ×4 → manual_review` | **igual**, a propósito |
+| 403 con SOAP `Fault` | `rejected` | **igual** |
+
+Mutación: quitando SÓLO la rama nueva de la cola (en `dist/`, y restaurado compilando), caen los casos 3
+y 4. El test ve la cola, no sólo el cliente. Suite SIF (1228b + 1127 cliente y cola + 1128 + 1123):
+64/64, 0 saltados.
+
+**Sigue SIN DETERMINAR (④):** qué contesta la AEAT con un certificado PRESENTE pero inválido. Si llega
+como `Fault` (4108/4110/4112), ya sale `rejected`. Si llega como 302/401/403 sin SOAP, desde hoy sale
+`manual_review` al primer intento. Si es un fallo de TLS, sigue `no_enviado`.
+**Texto para el profesional:** ninguno en este cambio. `lastError` es interno. El aviso que vea una persona
+lo firma Javier (regla 39) cuando exista la pantalla.
