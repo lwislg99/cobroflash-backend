@@ -82,7 +82,7 @@ var COBROS_COPY = {
  *
  * `c.correoNoSalio` lo calcula el servidor (`cobros.service.ts`) leyendo `email_messages`: es la
  * fila `fallo_envio` que el envío automático tras el cobro deja y que hasta ahora no leía nadie.
- * El botón llama al MISMO `POST /admin/invoices/:id/send-email` de la ficha de la factura — no se
+ * El botón llama al MISMO endpoint de envío por email que usa la ficha de la factura — no se
  * construye otro camino de envío.
  *
  * Devuelve `null` si no hay nada que avisar, o si la clase no es una de las dos firmadas: un aviso

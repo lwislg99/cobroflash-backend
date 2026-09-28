@@ -22,10 +22,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { temporal } from './_temporal.mjs'; // se borra al salir el proceso, pase lo que pase (SCRUM-864c)
 
 // ANTES de cargar `dist/`: `config` se congela al importarse. Una clave inventada para que el
 // correo vaya por `axios.post`, que es donde se le hace fallar (mismo patrón que scrum1116).
@@ -42,7 +42,7 @@ const MERCHANT = 4242;
 
 // Un PDF de verdad en disco: `sendInvoiceEmail` lo lee para adjuntarlo y, si no está, lanza ANTES
 // de llegar a Resend (`invoice_pdf_unavailable`) — que es otro fallo, sin fila, y no el que se mide.
-const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1235-'));
+const DIR = temporal('yaqu-1235-');
 const PDF = path.join(DIR, 'f.pdf');
 fs.writeFileSync(PDF, '%PDF-1.4\n%laboratorio 1235\n');
 
