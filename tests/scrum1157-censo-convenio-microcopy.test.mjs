@@ -133,9 +133,10 @@ test('SCRUM-1157 ② APROBADO en singular no se hereda; en plural con cuenta, go
   assert.equal(cuantosDice('// APROBADOS'), Infinity);
 });
 
-// SCRUM-1157b · la regla 1 de la cabecera no funcionaba: con la coma entre el valor y el
-// comentario, TS deja de buscar comentarios «de detrás» en la coma, y los «de delante» no cogen
-// los de la misma línea. S4 marcó 22 hojas así y las 22 salieron SIN_COMENTARIO.
+// SCRUM-1157b (documentado en docs/master/SCRUM-1157.md, sección «1157b») · la regla 1 de la
+// cabecera no funcionaba: con la coma entre el valor y el comentario, TS deja de buscar
+// comentarios «de detrás» en la coma, y los «de delante» no cogen los de la misma línea. S4 marcó
+// 22 hojas así y las 22 salieron SIN_COMENTARIO.
 test('SCRUM-1157b · regla 1: `k: \'x\', // APROBADO` (misma línea, detrás de la coma) firma a esa clave y sólo a ella', () => {
   const src = 'const T = {\n  // [PENDIENTE microcopy oficial]\n'
     + '  a: "A", // APROBADO por el fundador (SCRUM-1)\n'
