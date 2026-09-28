@@ -1819,12 +1819,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // en vez de `canalDeWhatsApp` — el detalle del Trabajo no manda `customer.tieneNumeroDeContacto`
     // (eso es del detalle del PRESUPUESTO, SCRUM-1166; medido en `jobs.routes.ts:87`, que solo
     // proyecta `{ id, name, phone, mobile }`). Cuando SCRUM-1171 añada el dato preciso al detalle
-    // del Trabajo, esta línea se cambia por él (orquestador, SCRUM-993 comentario 17263). El
-    // criterio interino solo decide si el TEXTO nombra el canal, no si el envío se intenta.
+    // del Trabajo, esta línea se cambia por él (orquestador, SCRUM-993 comentario 17263).
+    // 2ª vuelta (opción A, SCRUM-993 comentario 17327): SIN número NO SE OFRECE el botón. La única
+    // vía de envío a firmar es WhatsApp, así que sin número su segunda mitad fallaba siempre (409
+    // `customer_missing_phone`) DESPUÉS de emitir — congelando al cliente para nada. Y el texto de
+    // confirmación sin canal («…y lo envía a firmar.») queda RETIRADO: sin botón, no hay dónde decirlo.
     const tieneCanalWhatsAppInterino = !!(job.customer?.phone || job.customer?.mobile);
-    const textoConfirmarEntrega = tieneCanalWhatsAppInterino
-      ? ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP
-      : ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
 
     // SCRUM-303 · EL ÚNICO POST DE CREACIÓN, tanto para «Guardar» como para «Entregar y enviar a
     // firmar» (SCRUM-993): el guard de esta pantalla cuenta los sitios que llaman a este endpoint
@@ -1839,7 +1839,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
-      textoConfirmarEntrega,
+      textoConfirmarEntrega: ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP,
       onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         // SCRUM-607 (ALB-02): la misma trampa que describe `docHeaderText` justo debajo — si no se
@@ -1863,15 +1863,39 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       // el fallo — texto firmado, SCRUM-993 comentario 17263. No hay reintento automático: la
       // escalera y la fila del albarán siguen ofreciendo «Enviar para firmar» sobre el emitido,
       // que es por donde se reenvía a mano (regla 28: nada de envío automático nuevo).
-      onEntregarYFirmar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
+      //
+      // 2ª vuelta (SCRUM-993 comentario 17327) · SOLO LANZA SI FALLA EL ALTA. En cuanto el albarán
+      // existe, un error de aquí en adelante NO puede volver al `catch` de la hoja: ése la deja
+      // abierta y rehabilita «continuar», y el segundo clic crearía —y EMITIRÍA— OTRO albarán.
+      // Medido en el com. 17325: el 409 del envío LANZA en `apiRequest` y no pasa por
+      // `waSendFailed`. Así que, creado el albarán, la hoja se cierra y se refresca pase lo que pase.
+      // Sin número de contacto, `undefined`: `buildAlbEditor` no monta ni el botón ni su confirmación.
+      onEntregarYFirmar: !tieneCanalWhatsAppInterino ? undefined : async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         if (ocultarPreciosEnDocumento !== undefined) cuerpo.ocultarPreciosEnDocumento = ocultarPreciosEnDocumento;
         if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
         const creado = await crearAlbaran(cuerpo);
-        await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
-        const envio = await apiRequest(`/admin/albaranes/${creado.id}/enviar-para-firmar`, { method: 'POST' });
-        if (waSendFailed(envio)) showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO, 'warn');
-        else showToast('✓ Albarán entregado y enviado a firmar.');
+        try {
+          await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
+        } catch (_) {
+          // No emitido: queda el BORRADOR, que la ficha enseña al refrescar con su «Emitir albarán».
+          // Sin texto nuevo: el de fallo que ya pintaba esta hoja. Y sin el `.message` crudo del
+          // servidor, que el trinquete de SCRUM-644 no deja sumar.
+          showToast('No se pudo completar la entrega.', 'warn');
+          return;
+        }
+        let envio = null;
+        try {
+          envio = await apiRequest(`/admin/albaranes/${creado.id}/enviar-para-firmar`, { method: 'POST' });
+        } catch (_) {
+          envio = null;
+        }
+        // Condición de verdad de la firma (17327): el éxito SOLO con `sent === true`, que el servidor
+        // pone únicamente cuando el envío salió (`sendSuccessBody`, `src/lib/sendOutcome.ts`).
+        // Cualquier otra cosa —un 409 que lanza, un `sent:false` con 200, una respuesta sin `sent`—
+        // es «emitido y no enviado», y sale el aviso firmado en el comentario 17263.
+        if (envio && envio.sent === true) showToast('✓ Albarán entregado y enviado a firmar.');
+        else showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO, 'warn');
       },
     }, { cur, refresh, setStatus });
     (bodyEl.querySelector('.input') || closeBtn).focus();
@@ -2441,8 +2465,6 @@ const ALB_ENTREGAR_Y_FIRMAR_LABEL = 'Entregar y enviar a firmar';
 // firma (com. 17262/17263): decirlo cuando no va a pasar sería una promesa falsa.
 const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP =
   'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar por WhatsApp.';
-const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP =
-  'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar.';
 // El envío puede fallar DESPUÉS de un paso irreversible (emitir ya congeló al cliente): el aviso
 // dice primero lo que SÍ pasó, y solo entonces lo que falló — misma forma que el ya firmado de
 // `collect-rest` (SCRUM-126, «Cobro creado — el WhatsApp falló, reenvíalo desde Cobros»). «Desde
@@ -3015,7 +3037,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
     confirmBox.className = 'alert info';
     confirmBox.hidden = true;
     const confirmTexto = document.createElement('p');
-    confirmTexto.textContent = textoConfirmarEntrega || ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
+    confirmTexto.textContent = textoConfirmarEntrega || ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP;
     confirmBox.appendChild(confirmTexto);
     const confirmRow = document.createElement('div');
     confirmRow.className = 'alb-confirmar-fila';
