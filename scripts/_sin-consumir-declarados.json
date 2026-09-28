@@ -143,7 +143,6 @@
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/exports/jobs.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:666","carril":"S2","ticket":"SCRUM-1183"},
-    {"clave":"ruta · GET /admin/libros/recibidas.csv","donde":"src/modules/fiscal/librosAeat/librosAeat.routes.ts:89","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/metrics/operarios","donde":"src/modules/metrics/app/routes/metrics.routes.ts:84","carril":"S2","ticket":"SCRUM-1183"},
     {"clave":"ruta · GET /admin/modelo-303","donde":"src/modules/fiscal/modelo303/modelo303.routes.ts:18","carril":"J1","ticket":"SCRUM-1064"},
     {"clave":"ruta · GET /admin/products/ping","donde":"src/modules/products/app/routes/products.routes.ts:32","carril":"operación","ticket":"SCRUM-1185"},
@@ -165,6 +164,7 @@
     {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"}
   ],
   "retiradas": [
+    {"clave":"ruta · GET /admin/libros/recibidas.csv","motivo":"SCRUM-1249: conectada en facturasRecibidasView.js (botón de descarga con el periodo del selector)"},
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
