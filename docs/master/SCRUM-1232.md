@@ -260,6 +260,8 @@ rojo era el del 303, que es el que NO tiene que cambiar: con la muestra da **bas
 | **303** (`modelo303.repo.ts`) | con justificantes | ⛔ **sin tocar**: no pide el filtro, y el test lo vigila por las dos caras |
 | recuento (`libroRegistroView.js`) | `n + ' facturas'` | `(n) => n === 1 ? '1 factura' : n + ' facturas'`, firmado en 17435 y registrado en `docs/microcopy/2026-09-28-SCRUM-1232-recuento-libro.md` |
 
+> ⚠️ **SUPERADO el 28-sep-2026** por la sección «CAMBIO DE CRITERIO» de abajo: el filtro mira sólo el `type`, y las `F1` con número `J-` se quedan en el libro.
+
 **«Es justificante» = `type === 'JUST'` o número `J-`** (`esJustificante`, con `isReceiptNumber`
 importado de `invoiceNumber.service.ts`, sin copiar el prefijo). Es el mismo `o` de
 `receipt.routes.ts:104` y de `invoiceAdmin.ts:251`. La muestra del test **lleva** una `F1` con número
@@ -318,3 +320,64 @@ expediente igual que un verde sin población.
 Y lo real, que es menor: las dos ediciones de las llamadas las hice con un `node -e` escondido detrás
 de un `python … || node`, que sólo funcionó porque aquí no hay `python`. Salió bien, pero no hay manera
 de revisarlo leyendo el comando. Lo comprobé con `git diff`.
+
+## SCRUM-1232 · CAMBIO DE CRITERIO: el filtro mira SÓLO el `type`, y las `F1` con número `J-` se quedan
+
+**Medido contra:** `origin/main` = `ee0687fd91c09561a46953f309f8c44310340c58` · 2026-09-28T21:20:43Z (hora de GitHub, `gh api -i zen`)
+
+J1 (`jv-j1`), por orden del orquestador de Javier (`cobroflash-backend-3c`), el 28-sep-2026 hacia las
+21:18Z. **La sección de arriba queda SUPERADA en su criterio** (Ⓐ «Es justificante = `type` o número
+`J-`» y la primera fila de mutaciones de Ⓑ). No la borro: explica por qué se hizo así y alguien la
+leerá junto al expediente de J5.
+
+### Qué cambió, y por qué
+
+El orquestador le preguntó al fundador qué eran los cinco documentos `F1` con número `J-` del censo
+del 10-ago. **Su respuesta, tal como la transmitió el orquestador:**
+
+> «1-Todos deberían ser facturas, dijimos de quitar el tema de justificantes»
+
+⚠️ **De dónde sale la cita:** del mensaje del orquestador a esta sesión, no de Jira. A las 21:18Z,
+SCRUM-1252 no tenía ningún comentario y SCRUM-1232 no la recogía. Queda pedido que conste allí.
+
+**Lo que significa:** son **facturas** con el número mal puesto. Sacarlas del libro por el número le
+quitaría cinco facturas a un libro que se entrega al gestor, y **un libro al que le faltan facturas es
+peor que uno que mete justificantes**.
+
+J5 midió bien cómo lo decide hoy el código, por `type` y por número, y avisó de que un filtro sólo por
+`type` las dejaría dentro. Eso es cierto. Lo que faltaba saber es que dejarlas dentro es lo correcto.
+El orquestador dice que esa lectura fue suya.
+
+Qué hacer con esos cinco documentos (renumerarlos no se puede, regla 29) es **SCRUM-1252**, y lo decide
+el fundador.
+
+### Lo que hace ahora el código
+
+- `esJustificante(f)` = **`f.type === 'JUST'`** y nada más. Se retira el `isReceiptNumber`.
+- El filtro sigue en el código, pero **por otro motivo**. El del `NOT LIKE` sobre números nulos ya no
+  aplica, porque `Invoice.type` es `String @default("F1")` y no admite nulos. El que queda: un
+  justificante **ajeno** tiene que llegar al constructor para contarse en `ajenas`.
+- **No cambian:** el 303, que sigue sin tocar; `justificantesFuera`; el recuento firmado (17435); y
+  quién pide el filtro (la pantalla y el libro AEAT).
+
+### Cómo se ha medido
+
+`tests/scrum1232-libro-sin-justificantes.test.mjs`, ahora con **9 casos**. El nuevo comprueba **lo
+contrario** que antes: `J-20260805-AB12` (`type F1`) **se queda** en el libro de la pantalla y en el
+CSV de la AEAT, y si sale, el fallo lo dice.
+
+| mutación sobre `dist/` | resultado |
+|---|---|
+| ninguna (la base) | **9/9 verde** |
+| **filtro también por número** (el criterio retirado) | **caen 5**. El primero: «`J-20260805-AB12` (type F1, número J-) ha salido del libro. Es una FACTURA» |
+| filtro siempre, sin `soloFacturas` (la salida **(a)**) | **caen los 2 del 303** |
+| sin filtro (el defecto original) | **caen 6**, empezando por «el libro de la pantalla NO trae justificantes» |
+
+Con esto el criterio equivocado queda fijado como tal: nadie vuelve a poner el número sin que salte un
+test.
+
+### ⛔ Lo que NO se toca
+
+Retirar el justificante del producto entero, que es lo que el fundador añadió en la misma respuesta.
+Toca el camino de emisión y seguramente el máster, y lo está midiendo J5 contra la fuente legal. El
+alcance de este PR sigue siendo el libro y el libro de la AEAT.

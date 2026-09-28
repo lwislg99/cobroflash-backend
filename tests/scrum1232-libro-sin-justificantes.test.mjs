@@ -14,10 +14,12 @@
 // falso en memoria. Ninguna base. Las dos rutas cogen el cliente del singleton de
 // `core/db/prisma`, que respeta `global.prisma` si ya existe: se le pone el falso ANTES de cargarlas.
 //
-// 🔴 LA TRAMPA QUE DECIDE SI ESTO ESTÁ HECHO: «es justificante» se decide hoy por `type === 'JUST'`
-// **o** por número `J-` (`receipt.routes.ts:104`, `invoiceAdmin.ts:251`). El censo de producción del
-// 10-ago-2026 contó 5 facturas `F1` con número `J-` (`PREGUNTAS_ASESOR.md:640-641`). Por eso la
-// muestra LLEVA una: un filtro sólo por `type` la dejaría dentro, y este test lo cazaría.
+// 🔴 EL CRITERIO ES EL `type`, Y SÓLO EL `type`. El código de hoy decide «es justificante» por `type`
+// **o** por número `J-` (`receipt.routes.ts:104`, `invoiceAdmin.ts:251`), y el censo del 10-ago-2026
+// contó 5 documentos `F1` con número `J-`. La primera versión de este arreglo los sacaba del libro por
+// el número. El fundador dijo qué son (28-sep-2026, transmitido por el orquestador): «Todos deberían ser
+// facturas». Son FACTURAS con el número mal puesto, y se QUEDAN en el libro. La muestra lleva una, y
+// hay un caso que cae si alguien vuelve a filtrar por el número (SCRUM-1252 decide qué hacer con ellas).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -44,13 +46,14 @@ const fila = (id, merchantId, number, type, precio) => ({
 const FILAS = [
   fila(1, MIO, 'F260001', 'F1', 100),           // factura normal: TIENE que seguir (el positivo)
   fila(2, MIO, 'J-2026-0001', 'JUST', 200),     // justificante por `type`
-  fila(3, MIO, 'J-20260805-AB12', 'F1', 50),    // 🔴 la trampa: `F1` con número `J-` (censo 10-ago: 5)
+  fila(3, MIO, 'J-20260805-AB12', 'F1', 50),    // 🔴 `F1` con número `J-`: es FACTURA y se queda (censo 10-ago: 5)
   fila(4, MIO, 'R260001', 'R1', -100),          // rectificativa: es factura, sigue
   fila(5, MIO, null, 'F1', 10),                 // sin número: no es asiento, pero se sigue DECLARANDO
   fila(6, OTRO, 'J-2026-0099', 'JUST', 999),    // otro merchant: la consulta ni lo trae
 ];
-const FACTURAS_QUE_QUEDAN = ['F260001', 'R260001'];
-const JUSTIFICANTES_MIOS = ['J-2026-0001', 'J-20260805-AB12'];
+const F1_CON_NUMERO_J = 'J-20260805-AB12';
+const FACTURAS_QUE_QUEDAN = ['F260001', F1_CON_NUMERO_J, 'R260001'];
+const JUSTIFICANTES_MIOS = ['J-2026-0001'];
 
 /**
  * El cliente falso. Aplica `merchantId` y, si se lo piden, `type: { not }` —como haría Postgres—, para
@@ -107,7 +110,7 @@ async function llamar(router, ruta, query = {}) {
 // EL LIBRO QUE VE EL PROFESIONAL (GET /admin/libro-registro)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1232 · el libro de la pantalla NO trae justificantes — ni por tipo ni por número J-', async () => {
+test('SCRUM-1232 · el libro de la pantalla NO trae justificantes (`type JUST`)', async () => {
   const res = await llamar(rutaLibro, '/');
   assert.equal(res.statusCode, 200, `🔴 la ruta no ha contestado 200: ${JSON.stringify(res.cuerpo)}`);
   const numeros = res.cuerpo.asientos.map((a) => a.numero);
@@ -115,10 +118,21 @@ test('SCRUM-1232 · el libro de la pantalla NO trae justificantes — ni por tip
   for (const j of JUSTIFICANTES_MIOS) {
     assert.ok(!numeros.includes(j),
       `🔴 «${j}» sigue en el «Libro registro de facturas expedidas». Un justificante no es una ` +
-      'factura (RIVA 63: el libro son las facturas expedidas, y nada más).' +
-      (j.startsWith('J-2026080') ? ' Ésta es la TRAMPA: `type F1` con número `J-`. Un filtro sólo ' +
-        'por `type` la deja dentro.' : ''));
+      'factura (RIVA 63: el libro son las facturas expedidas, y nada más).');
   }
+});
+
+test('SCRUM-1232 · una F1 con número J- SE QUEDA en el libro: es una factura con el número mal puesto', async () => {
+  // El fundador, 28-sep-2026: «Todos deberían ser facturas». Filtrar por el número le quitaría
+  // facturas a un libro que se entrega al gestor, y un libro al que le faltan facturas es peor que
+  // uno que mete justificantes. Si esto cae, alguien ha vuelto a poner el criterio del número.
+  const { cuerpo } = await llamar(rutaLibro, '/');
+  assert.ok(cuerpo.asientos.some((a) => a.numero === F1_CON_NUMERO_J),
+    `🔴 «${F1_CON_NUMERO_J}» (type F1, número J-) ha salido del libro. Es una FACTURA: el criterio es el ` +
+    '`type`, no el número (fundador, 28-sep-2026, SCRUM-1232). Filtrar por el número quita facturas.');
+  const csv = String((await llamar(rutaLibrosAeat, '/expedidas.csv', { 'año': '2026', trimestre: '3' })).cuerpo);
+  assert.ok(csv.includes(F1_CON_NUMERO_J),
+    `🔴 «${F1_CON_NUMERO_J}» (type F1, número J-) ha salido del libro de la AEAT. Es una FACTURA.`);
 });
 
 test('SCRUM-1232 · POSITIVO: las facturas de verdad siguen en el libro — un filtro que se lleva de más es peor', async () => {
@@ -128,21 +142,21 @@ test('SCRUM-1232 · POSITIVO: las facturas de verdad siguen en el libro — un f
   // La factura sin número NO es asiento, pero se sigue declarando. Si el filtro fuera un `NOT` en el
   // `where`, Postgres la tiraría en silencio (NOT (NULL LIKE 'J-%') es NULL): este par lo vigila.
   assert.equal(cuerpo.sinNumero, 1, '🔴 la factura sin número ha dejado de declararse.');
-  assert.equal(cuerpo.miradas, 3,
-    '🔴 `miradas` tiene que contar las FACTURAS examinadas (F1, R1 y la sin número). Si contara los ' +
+  assert.equal(cuerpo.miradas, 4,
+    '🔴 `miradas` tiene que contar las FACTURAS examinadas (las dos F1, la R1 y la sin número). Si contara los ' +
     'justificantes, un merchant que sólo tuviera justificantes vería «el libro no cuadra».');
   assert.equal(cuerpo.justificantesFuera, JUSTIFICANTES_MIOS.length,
     '🔴 los justificantes se han quitado sin DECLARARLO. Lo que un libro fiscal descarta se cuenta.');
 });
 
 test('SCRUM-1232 · con SÓLO justificantes el libro dice «no hay», no «no cuadra»', async () => {
-  const solos = { ...clienteFalso(), invoice: { findMany: async () => [FILAS[1], FILAS[2]] } };
+  const solos = { ...clienteFalso(), invoice: { findMany: async () => [FILAS[1]] } };
   const libro = await leerLibroRegistro(solos, { merchantId: MIO, soloFacturas: true });
   assert.equal(libro.asientos.length, 0);
   assert.equal(libro.miradas, 0,
     '🔴 cero asientos con `miradas > 0` pinta el aviso de DESCUADRE («el libro no cuadra»), que ' +
     'sería falso: no había ninguna factura, había justificantes.');
-  assert.equal(libro.justificantesFuera, 2);
+  assert.equal(libro.justificantesFuera, 1);
 });
 
 test('SCRUM-1232 · un justificante AJENO que se cuele no desaparece: sigue contando en `ajenas`', async () => {
@@ -150,7 +164,7 @@ test('SCRUM-1232 · un justificante AJENO que se cuele no desaparece: sigue cont
   // merchant tiene que llegar al constructor, que lo cuenta y la pantalla avisa.
   const libro = await leerLibroRegistro(clienteFalso({ fuga: true }), { merchantId: MIO, soloFacturas: true });
   assert.equal(libro.ajenas, 1, '🔴 el justificante del otro merchant se ha filtrado en silencio en vez de contarse.');
-  assert.equal(libro.justificantesFuera, 2, '🔴 un justificante ajeno se ha contado como mío.');
+  assert.equal(libro.justificantesFuera, 1, '🔴 un justificante ajeno se ha contado como mío.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -167,7 +181,7 @@ test('SCRUM-1232 · el libro de expedidas para la AEAT tampoco lleva justificant
   for (const f of FACTURAS_QUE_QUEDAN) {
     assert.ok(csv.includes(f), `🔴 la factura «${f}» ha desaparecido del libro de la AEAT.`);
   }
-  assert.equal(res.cabeceras['x-yaqu-miradas'], '3');
+  assert.equal(res.cabeceras['x-yaqu-miradas'], '4');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -193,7 +207,7 @@ test('SCRUM-1232 · el 303 pide el libro SIN el filtro de facturas', async () =>
   const x = clienteFalso();
   const conFiltro = await leerLibroRegistro(x, { merchantId: MIO, soloFacturas: true });
   const sinFiltro = await leerLibroRegistro(x, { merchantId: MIO });
-  assert.equal(conFiltro.asientos.length, 2);
+  assert.equal(conFiltro.asientos.length, 3);
   assert.equal(sinFiltro.asientos.length, 4,
     '🔴 `leerLibroRegistro` sin `soloFacturas` ya no trae los justificantes: el 303, las evidencias ' +
     'e Informes han cambiado de población sin GO.');

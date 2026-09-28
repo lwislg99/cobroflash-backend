@@ -37,9 +37,6 @@ import {
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
 import { campoDeDevengo, CAMPO_EMISION } from './devengoPorCaja';
-// SCRUM-1232: el criterio del número `J-` se importa de donde se fija el prefijo, no se copia.
-import { isReceiptNumber } from './invoiceNumber.service';
-
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
  * singleton) para que el test pueda apuntarlo a SU Postgres sin tocar ninguna variable de
@@ -82,19 +79,21 @@ export interface RangoLibro {
 }
 
 /**
- * SCRUM-1232 · ¿Es un justificante de cobro? Por `type` **o** por número `J-`.
+ * SCRUM-1232 · ¿Es un justificante de cobro? Por `type === 'JUST'`, y SÓLO por eso.
  *
- * Los dos criterios, y no uno: es el mismo `o` que ya usan `receipt.routes.ts:104` e
- * `invoiceAdmin.ts:251`, y el censo de producción del 10-ago-2026 contó **5 facturas `F1` con número
- * `J-`** (`PREGUNTAS_ASESOR.md:640-641`). Un filtro sólo por `type` las dejaría en el libro como
- * facturas.
+ * 🔴 EL NÚMERO `J-` NO DECIDE, y es una decisión, no un olvido. `receipt.routes.ts:104` e
+ * `invoiceAdmin.ts:251` miran también el número, y el censo del 10-ago-2026 contó **5 documentos `F1`
+ * con número `J-`** (`PREGUNTAS_ASESOR.md:640-641`). La primera versión de este arreglo los sacaba del
+ * libro por el número. El fundador dijo qué son (28-sep-2026, transmitido por el orquestador):
+ * «Todos deberían ser facturas». Son FACTURAS con el número mal puesto, y sacarlas por el número le
+ * quitaría cinco facturas a un libro que se entrega al gestor. Qué hacer con ellas es SCRUM-1252. Aquí
+ * se quedan dentro, y el test lo vigila con la mutación «filtro también por número».
  *
- * ⚠️ El filtro va en el CÓDIGO y no en el `where`: `NOT (number LIKE 'J-%')` sobre una fila sin número
- * es NULL en Postgres, y la tiraría en silencio. La factura sin número tiene que seguir llegando al
- * constructor, que la cuenta en `sinNumero`.
+ * ⚠️ El filtro va en el CÓDIGO y no en el `where`, para que un justificante AJENO que se colara siga
+ * llegando al constructor y se cuente en `ajenas` (SCRUM-348), en vez de desaparecer en la consulta.
  */
-export function esJustificante(f: { type: string | null; number: string | null }): boolean {
-  return f.type === 'JUST' || isReceiptNumber(f.number);
+export function esJustificante(f: { type: string | null }): boolean {
+  return f.type === 'JUST';
 }
 
 /** Las columnas que el libro necesita. Explícitas: un `select` abierto traería la firma. */
