@@ -90,11 +90,11 @@ const LINEA_BASE = [
   ['ALTER TABLE "invoices" DROP COLUMN "total";', RECHAZADA, 'DROP'],
   ['TRUNCATE "invoices";', RECHAZADA, 'TRUNCATE'],
   ['DELETE FROM "invoices";', RECHAZADA, 'DELETE'],
-  ['UPDATE "invoices" SET "total" = 0;', RECHAZADA, 'DESCONOCIDA'],
+  ['UPDATE "invoices" SET "total" = 0;', RECHAZADA, 'UPDATE'], // SCRUM-1223: etiqueta (era DESCONOCIDA); veredicto igual
   ['ALTER TABLE "invoices" RENAME COLUMN "total" TO "x";', RECHAZADA, 'RENAME'],
   ['ALTER TABLE "invoices" ALTER COLUMN "total" TYPE TEXT;', RECHAZADA, 'ALTER COLUMN TYPE'],
   ['DROP TYPE "VfSubmissionStatus" CASCADE;', RECHAZADA, 'DROP'],
-  ['ALTER TABLE "invoices" ALTER COLUMN "total" DROP NOT NULL;', RECHAZADA, 'DROP'],
+  ['ALTER TABLE "invoices" ALTER COLUMN "total" DROP NOT NULL;', RECHAZADA, 'ALTER COLUMN … DROP NOT NULL'], // SCRUM-1223: etiqueta (era DROP); veredicto igual
   ['ALTER TABLE "invoices" ADD COLUMN "x" TEXT;', PERMITIDA, 'ADD COLUMN ×1'],
   ['ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "x" TEXT;', PERMITIDA, 'ADD COLUMN ×1'],
   ['CREATE INDEX "i" ON "invoices"("x");', PERMITIDA, 'CREATE INDEX'],
@@ -107,7 +107,7 @@ const LINEA_BASE = [
   ['ALTER TABLE "products" ADD COLUMN "a" TEXT, ADD COLUMN "b" TEXT;', PERMITIDA, 'ADD COLUMN ×2'],
   ['CREATE UNIQUE INDEX "u2" ON "invoices"("numero");', PERMITIDA, 'CREATE INDEX'],
   // Las dos diferencias deliberadas del lado de dev siguen RECHAZADAS aquí (no se iguala):
-  ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT;', RECHAZADA, 'DROP'],
+  ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT;', RECHAZADA, 'ALTER COLUMN … DROP DEFAULT'], // SCRUM-1223: etiqueta (era DROP); veredicto igual
   ['ALTER TABLE "invoices" ADD COLUMN "y" INTEGER NOT NULL;', RECHAZADA, 'ADD COLUMN NOT NULL sin DEFAULT'],
 ];
 
