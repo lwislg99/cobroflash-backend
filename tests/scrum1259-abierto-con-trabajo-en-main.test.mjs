@@ -1,10 +1,10 @@
-// tests/scrumNNNN-abierto-con-trabajo-en-main.test.mjs — SCRUM-NNNN (J6)
+// tests/scrum1259-abierto-con-trabajo-en-main.test.mjs — SCRUM-1259 (J6)
 //
 // La red de `scripts/abierto-con-trabajo-en-main.mjs`: las tres trampas del encargo, el «abierto
 // legítimo» que NO se marca, y la foto de Jira que caduca. Todo con casos FABRICADOS: los reales
 // cambian cada vez que alguien cierra un ticket, y el CI no tiene la foto de Jira. Los casos reales
 // del 28-sep-2026 (1194, 1214, 825, 1200 vía SCRUM-1216.md §⑦, 1101 SIN RASTRO) están medidos en
-// `docs/master/SCRUM-NNNN.md`.
+// `docs/master/SCRUM-1259.md`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';

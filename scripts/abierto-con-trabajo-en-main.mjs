@@ -1,4 +1,4 @@
-// scripts/abierto-con-trabajo-en-main.mjs — J6 (encargo del orquestador del equipo de Javier, 28-sep-2026)
+// scripts/abierto-con-trabajo-en-main.mjs — SCRUM-1259 · J6 (encargo del orquestador del equipo de Javier, 28-sep-2026)
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ¿QUÉ TICKETS SIGUEN ABIERTOS EN JIRA CON SU TRABAJO YA EN `main`?
@@ -64,7 +64,7 @@ export function ticketDeRama(nombre) {
   return m ? { num: Number(m[1]), parte: m[2].toLowerCase() } : null;
 }
 
-/** `docs/master/SCRUM-1216b.md` → 1216. */
+/** Un expediente con letra de parte, `SCRUM-<n>b.md`, es del ticket n. */
 export function ticketDeExpediente(fichero) {
   const m = path.basename(String(fichero)).match(/^SCRUM-(\d+)[a-z]?\.md$/i);
   return m ? Number(m[1]) : null;
@@ -214,7 +214,7 @@ function leerRepo(ref) {
     else {
       // Fuera de `ref`: o sin mergear, o un sha que este clon no tiene (hay que hacer fetch).
       let existe = true;
-      try { git('cat-file', '-e', `${sha}^{commit}`); } catch { existe = false; }
+      try { execFileSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: RAIZ, stdio: 'ignore' }); } catch { existe = false; }
       ramas.push({ nombre, estado: existe ? 'SIN_MERGEAR' : 'CIEGA' });
     }
   }
@@ -314,7 +314,7 @@ function principal(argv) {
 
   const por = (v) => res.filter((r) => r.veredicto === v);
   console.log(`\nveredictos sobre ${res.length} abiertos: ${Object.keys(ETIQUETA).map((v) => `${v} ${por(v).length}`).join(' · ')}`);
-  for (const v of ['CANDIDATO', 'CERRADO_EN_OTRO', 'CIEGO', 'ABIERTO_CON_MOTIVO']) {
+  for (const v of ['CANDIDATO', 'CERRADO_EN_OTRO', 'CIEGO', 'ABIERTO_CON_MOTIVO', 'PARCIAL']) {
     if (!por(v).length) continue;
     console.log(`\n═══ ${ETIQUETA[v]} — ${por(v).length} ═══`);
     for (const r of por(v)) pintaUno(r, abiertos.get(r.num));
