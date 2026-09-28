@@ -684,10 +684,17 @@ si saltó, y el reporter por defecto (`spec`) **no imprime el motivo del salto**
 durante meses que 67 tests se apagaban en silencio. Para verlos:
 
 ```bash
+rm -f "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
-     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" 'tests/*.test.mjs'
 grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 ```
+
+> ⚠️ **SCRUM-1245 · el patrón va ENTRE COMILLAS SIMPLES.** Sin ellas lo expande bash, y con ~1.060
+> ficheros la lista desborda la línea de órdenes de Windows (`Argument list too long`): **node no
+> arranca**, y el `grep` lee el TAP de la tanda ANTERIOR y sale `0` aunque haya un test en rojo.
+> Entre comillas lo expande node. El `rm -f` de antes es para que un node que no arrancó no deje a
+> la vista el TAP viejo. El arreglo ya estaba escrito en `docs/equipo/trampas-del-entorno.md` §7.
 
 > ⚠️ **SCRUM-850 · el TAP va a fichero y se lee en un SEGUNDO comando, nunca por tubería.** Aquí
 > ponía `… tests/*.test.mjs | grep "# SKIP"`, y en una tubería el código de salida es el del
