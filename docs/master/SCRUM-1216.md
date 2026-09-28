@@ -184,3 +184,23 @@ dentro: la salida literal, y un discriminador **por datos** que separa producci�
 Producción tiene 2 facturas (SCRUM-1216, comentario 17362: «facturas de prueba», según Javier). El camino de
 emisión YA ha corrido allí, y esas dos no se renumeran nunca (regla 29). Este cambio no las toca: sólo decide
 el número de las que se emitan a partir de ahora.
+
+## ⑨ El rojo del PR #1895, y por qué no entraba (28-sep-2026, ~18:50Z)
+
+**Medido contra:** `origin/main` = `0afa87cd`, run 36442328364, jobs 108995722459 (intento 1) y
+109035653408 (intento 2), los dos sobre la misma cabeza `a00aac73`.
+
+1. **El meta-guard es ajeno a esta rama, y es SCRUM-1100.** Con la MISMA cabeza, el intento 1 salió CIEGO en
+   `scrum757` y el 2 en `scrum859`; en cada intento el otro fichero salió VIVO. Los dos con la firma de 1100:
+   «NO APARECE en la pasada mutada», resumen llegado y recuentos que cuadran (scrum859: 9/7 frente a 20/0 en
+   la limpia, el mismo recuento que 1100 lleva midiendo desde el 23-sep). Ninguno de los dos ficheros está en
+   el diff. Esa misma tarde, el mismo CIEGO salió en `scrum-1179-b2-suelos` (859), `scrum-1179-e-…` (757) y
+   `scrum-1229-firma-tecnico-viaje` (859). La hipótesis heredada («el CIEGO de scrum757») era la mitad: el
+   fichero rota. No se ha relanzado.
+2. **Lo que de verdad lo paraba era un CONFLICTO con main** (`mergeable: CONFLICTING`, 134 commits por
+   detrás): `docs/MIGRATIONS_PENDING.md` (J6 registró el mismo ALTER en main) y el anclaje de
+   `scrum601`. Resuelto con `git merge origin/main` dentro de la rama: en MIGRATIONS se queda la entrada de
+   J6 y se le añade la verificación de producción de 17369; `scrum601` se REGENERÓ con su propio censo sobre
+   el árbol fusionado → `{ flag: 17, tipo: 7, aPelo: 156 }` (el +1 flag de SCRUM-1164 y el +1 «a pelo» de
+   este ticket, por separado). Tras el merge: tests de la rama + scrum237/267/854/976/1168/601 = 113/113 en
+   12 ficheros, 0 saltados; `guards:entrada` 112/112.

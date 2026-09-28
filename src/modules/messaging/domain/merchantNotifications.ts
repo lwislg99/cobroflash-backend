@@ -5,6 +5,8 @@
 import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../integrations/enviarCorreo';
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
+// SCRUM-1212: el modo de emisión se LEE de la fuente única; este módulo no decide nada fiscal.
+import type { ModoVisible } from '../../invoicing/domain/modoVisible';
 
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
 //
@@ -92,8 +94,17 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   quoteId: number;
   total: string;
   currency: string;
+  /**
+   * SCRUM-1212 · OBLIGATORIO, y a propósito sin valor por defecto: quien llame tiene que decir en
+   * qué modo emite este merchant (`modoEmisionVisible`). Con él fuera de `fiscal`/`demo` —ES real
+   * con `INVOICING_ES_ENABLED` en OFF, o modo desconocido— NO se pinta «Ya puedes emitir la
+   * factura.»: no es cierto (regla 24). Mismo criterio y mismo fallo cerrado que
+   * `facturaFiscalDisponible()` en el panel (SCRUM-905/1160). Se OCULTA, no se reescribe.
+   */
+  modoEmision: ModoVisible;
 }): Promise<ResultadoCorreo> {
   const { merchantEmail, merchantName, customerName, quoteId, total, currency } = params;
+  const puedeEmitirFactura = params.modoEmision === 'fiscal' || params.modoEmision === 'demo';
 
   const subject = `✅ Presupuesto #${quoteId} aceptado por ${customerName}`;
   const html = `
@@ -121,7 +132,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0 0 4px">
-      El cliente ha firmado digitalmente el presupuesto. Ya puedes emitir la factura.
+      El cliente ha aceptado el presupuesto.${puedeEmitirFactura ? ' Ya puedes emitir la factura.' : ''}
     </p>
     <p style="color:#94a3b8;font-size:12px;margin:0">
       Para desactivarlo ve a <strong>YaQu → Configuración → Notificaciones</strong>.

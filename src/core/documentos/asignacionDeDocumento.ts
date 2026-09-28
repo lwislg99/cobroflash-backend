@@ -51,10 +51,6 @@ export { normalizarAsignados };
 export const DOCUMENTOS_ASIGNABLES = ['quote', 'invoice'] as const;
 export type DocumentoAsignable = (typeof DOCUMENTOS_ASIGNABLES)[number];
 
-export function esDocumentoAsignable(v: unknown): v is DocumentoAsignable {
-  return typeof v === 'string' && (DOCUMENTOS_ASIGNABLES as readonly string[]).includes(v);
-}
-
 /** Lo mínimo de una tabla puente. Tipar de más ataría esto a Prisma. */
 interface TablaPuente {
   deleteMany: (args: { where: Record<string, number> }) => Promise<unknown>;

@@ -1,0 +1,65 @@
+# SCRUM-1239 · El alta de cliente deja de decir «Revisa los datos» cuando se cae la conexión
+
+**Medido contra:** `origin/main` = `d49787292b06b2bca8dfee765f401ca5cd39b6f7` · 2026-09-28T16:57:04Z (J2, `jv-j2`)
+
+Textos: SCRUM-1239 comentario 17386 (firma delegada), registrados en
+`docs/microcopy/2026-09-28-SCRUM-1239-alta-cliente-sin-conexion.md`. Va encima de SCRUM-1199 (#1865),
+verificado en `main` por efecto antes de empezar: los cuatro literales de 1199 están en `customersView.js`.
+
+## 1 · El defecto, provocado de verdad
+
+`tests/scrum1239-alta-cliente-sin-conexion.test.mjs` monta el modal real con `api.js` real y sólo
+dobla `fetch`. Cada caso se provoca en la red, no se fabrica el error:
+
+| Caso | Cómo se provoca | Qué marca `api.js` | Antes (commit 85e5e7f8) |
+|---|---|---|---|
+| Sin cobertura | `fetch` rechaza con `TypeError('Failed to fetch')` | `err.sinRed` | «Revisa los datos…» |
+| Se cortó a mitad | el POST no vuelve; plazo a 5 ms y `abort` | `err.incierto` | «Revisa los datos…» |
+| El servidor revienta | `500 {error:'internal_error'}` | `err.status = 500` | «Revisa los datos…» |
+
+Rojo: 6 casos, 3 fail, los tres con el genérico de 1199 en pantalla (el mensaje del test lo imprime).
+
+## 2 · El cambio
+
+`public/dashboard/js/customersView.js`, `avisoDeGuardadoFallido`: después del mensaje humano del
+servidor (que sigue ganando) y antes de los avisos por campo, se decide por la MARCA de `api.js`
+—`sinRed`, `incierto`, `status >= 500`—, nunca por el texto del error. No se tocan `api.js` ni
+`schemas.ts`.
+
+## 3 · Un error propio, encontrado al medir
+
+El caso «los literales constan firmados» **pasaba antes de que existiera el registro**. `constaAprobado`
+devuelve un array, y `assert.ok([])` es verde. Censo del patrón en `tests/`: sólo mis dos tests
+(`scrum1199-…` y éste) lo usaban así; los demás ya comparan `.length` o `.includes`. Los dos pasan a
+`.length > 0`, y se comprobó que el de 1239 CAE con el registro fuera y pasa con él.
+
+### 3b · El censo, para poder repetirlo
+
+Una comprobación que no puede fallar no es una comprobación. Si algún día esto se convierte en un guard, ésta es la medición de partida (28-sep-2026, sobre esta rama):
+
+    grep -rnE "assert.ok(constaAprobado([^)]*)s*," tests/*.mjs
+
+| Población | Resultado |
+|---|---|
+| ficheros `tests/*.test.mjs` que llaman a `constaAprobado(` | 22 (21 en `origin/main` + el de 1239) |
+| llamadas a `constaAprobado(` en `tests/*.mjs` | 61 |
+| `assert.ok(constaAprobado(…),` a secas, en esta rama | **0** |
+| **control positivo**: el mismo patrón sobre `origin/main` (`git grep`) | **1**, `scrum1199-avisos-alta-cliente.test.mjs:100`, el que esta rama arregla |
+
+Las demás comparan `.length` (7 ficheros) o `.includes(...)`. El patrón sólo lo escribí yo, en mis dos tests.
+
+## 4 · Verificación
+
+- 1239 + 1199: 10 casos, 10 pass.
+- Mutaciones con el código quieto, una por rama (`sinRed`, `incierto`, `>= 500`): cada una tumba
+  exactamente su caso. Árbol restaurado y comprobado con `git diff --quiet`.
+- Controles: el 400 sin campo sigue en el genérico de 1199, y un `message` humano del servidor sigue
+  ganando también en un 500.
+- Tanda DIRIGIDA sobre el árbol fusionado con `origin/main` 65d080e3150a6d2746f94996f0a41343604ad5b1
+  (52 ficheros: clientes, microcopy, 1157, 1199, 1239, 237, 976, 267, 411, 448, 459, 828, 590 y los
+  que leen los dos censos que main acababa de cambiar): **483 tests · 471 pass · 0 fail · 12 skip**
+  (los 12, gateados por `QA_DB_TEST` / `LIBRO_PG_URL`). `guards:entrada`: 12 guards, 112 tests, 0 fail.
+- ⚠️ **La tanda completa murió por memoria; la corre el CI.** Con turno del orquestador (3.944 MB libres
+  al lanzarla), Claude Code la paró por memoria baja de la máquina y salió sin veredicto. Un intento
+  anterior salió CIEGO sin arrancar: el patrón expandido por la shell eran 1.063 argumentos
+  («Argument list too long»). Ninguno de los dos cuenta como resultado.

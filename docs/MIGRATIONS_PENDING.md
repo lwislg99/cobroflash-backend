@@ -2982,11 +2982,12 @@ de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.table
    (SCRUM-1197). Sus conclusiones sobre el DML no cambian: el DML sigue sin estar permitido. Aquí
    se registra, no se corrige.
 
-## SCRUM-1216b · arranque declarado de la serie F en `merchants` (invoice_start_seq / invoice_start_year) — 28-sep-2026
+## SCRUM-1216 · `merchants.invoice_start_seq` + `invoice_start_year` (arranque de serie) — 28-sep-2026 · ✅ **APLICADA EN LAS TRES BASES**
 
-Decisión y forma: el orquestador de Javier, con el SÍ del fundador (SCRUM-1216, comentarios 17347 y
-siguientes). `invoice_start_seq` guarda EL ARRANQUE (declaró 41 → 42); `invoice_start_year` es año
-PROPIO. **Sin DEFAULT a propósito: NULL = «no declaró», que no es 1.**
+El DDL está en `docs/sql/scrum-1216b-arranque-de-serie.sql`, con el porqué de cada columna. Lo
+escribe J6 (jv-j6), **después** de que se aplicara: hasta ahora sólo existía en una conversación y en
+un fichero del escritorio de Javier. `git grep invoice_start_seq` en `origin/main` a59dc1e6 → 0.
+Es el mismo hueco que SCRUM-1102.
 
 ```sql
 ALTER TABLE "merchants"
@@ -2994,21 +2995,36 @@ ALTER TABLE "merchants"
   ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;
 ```
 
-Aditiva. El diff offline de `preview-migracion.mjs --desde <schema de main>` da exactamente estas
-dos columnas (0 DROP/RENAME/TRUNCATE/DELETE/SET NOT NULL).
+Aditiva, con `IF NOT EXISTS`. 🔴 **Las dos van sin `DEFAULT` y sin `NOT NULL` a propósito:** `NULL`
+es «no declaró nada» (su primera factura, `F260001`) y no puede confundirse con haber declarado «1»
+(regla 29).
 
 ### Estado por base — 28-sep-2026
 
-Fuente de las tres casillas: **SCRUM-1216, comentario 17369**, con la salida literal. La medición NO es de
-J1: J1 no tiene clave de ninguna de las tres bases.
+- [x] **producción** — la pegó **Javier** a mano. No se ha verificado desde una sesión.
+  - *(Añadido por J1 al fusionar main en SCRUM-1216b, 28-sep-2026.)* Verificada después según el
+    **orquestador** (SCRUM-1216, comentario 17369), con la salida que devolvió Javier: las dos
+    `integer`, `is_nullable=YES`, sin default; `next_invoice_number` `NO`, default 1. Distinguida de
+    staging por DATOS (`merchants = 14 · invoices = 2` frente a `8 · 9`), no por columnas: las dos
+    bases dan 66. La medición no es de J1, que no tiene clave de ninguna base.
+- [x] **staging** — la pegó **Javier** a mano. La **verificó el orquestador** leyendo el catálogo
+  con control positivo: 66 columnas en `merchants`, las dos `integer`, `nullable = YES`, sin
+  default, y `next_invoice_number` intacto con su default 1. J6 volvió a leerlo, en solo lectura,
+  para calibrar su verificador, y salió lo mismo.
+- [x] **desarrollo · yaqu_dev_javier** — la aplicó **J6** el 2026-09-28T15:00:43Z con
+  `scripts/aplicar-sql-dev.mjs --go` (destino DESARROLLO ✅, exit 0). La **verificó leyendo el
+  catálogo**, antes y después:
 
-- [x] **producción** — aplicó Javier. Verificada según el **orquestador** (17369), con la salida que
-  devolvió Javier: las dos `integer`, `is_nullable=YES`, sin default; `next_invoice_number` `NO`,
-  default 1. **Distinguida de staging por DATOS, no por columnas**: las dos bases dan 66 columnas en
-  `merchants`, así que contarlas no separaba nada. La consultada tiene `merchants = 14 · invoices = 2`, y
-  staging `8 · 9`. Era la condición para mergear: `schemaDrift.ts` no deja escuchar en
-  `NODE_ENV=production` si el esquema espera columnas que la base no tiene (SCRUM-1122).
-- [x] **staging** — aplicó Javier; lo verificó el orquestador leyendo `information_schema` con
-  `DATABASE_URL_STAGING` (17369).
-- [x] **desarrollo · yaqu_dev_javier** — aplicó y verificó J6 (17369): 64 → 66 columnas, y la huella md5
-  de los valores de `next_invoice_number` es idéntica antes y después.
+| | ANTES | DESPUÉS |
+|---|---|---|
+| columnas de `merchants` | 64 | 66 |
+| `invoice_start_seq` | no existe | `integer` · nullable · sin default |
+| `invoice_start_year` | no existe | `integer` · nullable · sin default |
+| `next_invoice_number` | `integer` NOT NULL DEFAULT 1 | **igual** |
+| valores de `next_invoice_number` (6 merchants, md5 de `id:valor`) | `8102ae7f0bf8f4d3a8ba7635bbd6a05c` | **idéntica** |
+| merchant 1 | 6 | 6 |
+
+Antes de aplicarlo, el SQL pasó por **dos** sondas independientes: la lista de dev (una sentencia
+`ALTER TABLE … ADD COLUMN`) y el clasificador de producción (`ADD COLUMN ×2`, permitida). Se usaron
+las dos porque la de dev tiene un hueco con los `ALTER` de varias acciones, que J6 encontró ese mismo
+día y que va en su propio ticket.

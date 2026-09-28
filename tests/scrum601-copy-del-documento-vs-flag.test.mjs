@@ -169,6 +169,13 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
 // el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
 // ─────────────────────────────────────────────────────────────────────────────────────────
+// 🟢 flag 16 → 17 · 28-sep-2026 (SCRUM-1164, #3) · UN LITERAL QUE EL CENSO NO VEÍA, y ahora lo ve
+// en su categoría correcta. «💡 "100% al aceptar" genera la factura cuando el cliente firma.»
+// (`homeView.js`, hoja de presupuesto rápido) vivía DENTRO de la plantilla grande del modal, y el
+// censo no la lee (en `origin/main` no aparece en `visibles`: medido con `censoCopy` sobre los dos
+// árboles). Ahora es una constante que se calla en `receipt` (`appModoEmision`), así que el censo
+// la encuentra y la clasifica como «flag» — que es lo que ES: el modo de emisión elige si sale.
+// `aPelo` no baja porque nunca la contó. No se toca `PENDIENTES_DE_FIRMA`: no se ha firmado nada.
 // 155 → 156 · 28-sep-2026 (SCRUM-1216b) · «Facturas recibidas» (`facturasRecibidasView.js:31`,
 // `titulo: rotulo('Facturas recibidas')`, SCRUM-1040). **NO ES COPY NUEVA:** el fichero no cambió
 // (diff vacío entre 1216a y 1216b), y el literal ya era visible (`title.textContent = COPY.titulo`),
@@ -180,7 +187,12 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // no depende de flag ni de tipo, así que «a pelo» es su categoría. AISLADO con el propio censo: el
 // diff de `visibles` entre 1216a y 1216b es EXACTAMENTE esa línea, y ninguna de las dos pantallas de
 // la serie añade una. Renombrar `titulo` para que volviera a no verse sería apagar el instrumento.
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 156 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔀 CONFLICTO DE MERGE (SCRUM-1164 × SCRUM-1216b), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos (`homeView.js` / `facturasRecibidasView.js`).
+// REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main 0afa87cd + la rama):
+// { flag: 17, tipo: 7, aPelo: 156 } — el flag de 1164 y el «a pelo» de 1216b, cada uno por su lado.
+const VEREDICTO_AL_MEDIR = { flag: 17, tipo: 7, aPelo: 156 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -296,7 +308,11 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // dos constantes compuestas en la misma plantilla HTML, así que el censo no puede afirmar desde el
 // fuente cuál es el texto final visible (aunque las DOS mitades sean literales firmados sueltos).
 // No se duplica el rótulo en línea para bajar el número: el mismo motivo que 31→32.
-const NO_LEGIBLES_AL_MEDIR = 33;
+// 28-sep-2026 · 33 → 34, MEDIDO (SCRUM-1164, #3). Es el mismo literal que sube `flag` 16 → 17
+// (ver `VEREDICTO_AL_MEDIR`): antes el censo no lo veía; ahora lo ve, y llega al `innerHTML` del
+// modal por `${notaCondiciones}`, así que no puede afirmar el texto final desde el fuente. Es el
+// límite del instrumento con un literal que ANTES ni siquiera contaba, no un literal nuevo.
+const NO_LEGIBLES_AL_MEDIR = 34;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
@@ -360,7 +376,11 @@ const PENDIENTES_DE_FIRMA = [
   // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
   // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
   // rojo decía `quotesView.js:935`), no contada del diff.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-1188 · y de 935 a 939: la constante `CONDICIONES_QUE_GUARDA_UNA_PLANTILLA` (con su comentario
+  // y su línea en blanco) entra en lo alto del fichero. CORREGIR un anclaje no es añadirlo: el texto
+  // es byte a byte el mismo y el motivo sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre
+  // el árbol resultante (28-sep-2026; el rojo decía `quotesView.js:939`), no contada del diff.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 939, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

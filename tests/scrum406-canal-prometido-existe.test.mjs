@@ -40,7 +40,9 @@ const CANALES_QUE_EXISTEN = {
 /** Los `wa.me` del dashboard, declarados con DE QUIÉN es el número. Ninguno es de YaQu. */
 const WA_DECLARADOS = {
   'homeView.js': 'del CLIENTE FINAL: «Responder →» abre WhatsApp con quien escribió al profesional.',
-  'jobRailBlocks.js': 'del CLIENTE FINAL: el teléfono del trabajo, el mismo que se pinta al lado.',
+  // SCRUM-1171 · RETIRADA A PROPÓSITO (el código mejoró): `jobRailBlocks.js` ya no compone su propio
+  // `wa.me`; el enlace del Trabajo sale de `contactoDelCliente` (api.js, declarado abajo) con el número
+  // que resuelve el servidor (`numeroWhatsApp`). Dejarla aquí la convertiría en un fantasma.
   'api.js': 'del CLIENTE FINAL: `contactoDelCliente` (SCRUM-1032) enlaza el móvil, o el teléfono, del cliente que se pinta al lado; es un enlace del navegador, no un envío ni un canal de YaQu.',
 };
 

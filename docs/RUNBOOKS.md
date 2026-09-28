@@ -820,3 +820,8 @@ que cada deploy siguiente muera igual en el arranque, sin llegar a escuchar el p
 **Prevención:** cada PR que declare un cambio de schema no aditivo-ya-aplicado debe dejar su `.sql` en
 `docs/sql/` con entrada en `docs/MIGRATIONS_PENDING.md` (R18) ANTES o en el mismo PR que el código que
 lo asume — nunca "declarado, pendiente de aplicar" como único registro, que es lo que costó las 193h.
+
+## R23 · Entrar al panel de yaqu.app con la cuenta demo, para LEER (SCRUM-1222)
+
+`node scripts/qa/sesion-panel.mjs login [correo]` (demo@yaqu.app por defecto; secreto SOLO en `C:/Users/Admin/.yaqu-qa-secret.txt`, la cookie queda en `C:/Users/Admin/.yaqu-qa-sesion.txt` y no se imprime) y luego `node scripts/qa/sesion-panel.mjs get /admin/…`.
+Sólo GET contra `https://yaqu.app` (rechaza otro método u otro host antes de salir a la red); exit 1 = no pude entrar / no 2xx, 2 = CIEGO (sin secreto o sin sesión), 3 = uso rechazado. Nunca un `fetch` a mano: esta es la única vía, para que la cubra una sola regla de permiso.

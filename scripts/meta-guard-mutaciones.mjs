@@ -14,6 +14,7 @@
 // que a alguien se le ocurra hacerlo. Esto lo mecaniza.
 //
 // ── EN QUÉ SE DIFERENCIA DE SCRUM-719 (`censo:mudez`), que ya existe ─────────────────────────
+// (Existe, pero es MANUAL: no lo lanza ningún workflow ni ningún test — SCRUM-1179. No es una red.)
 // Aquél aplica UNA mutación uniforme —vaciar `soloEjecutable`— a los guards que llaman a ese
 // filtro, y mide ceguera ante un fuente VACÍO. Medido: los guards de SCRUM-740 y SCRUM-741 no
 // llaman al filtro, así que para su censo son «NO APLICA»: invisibles.

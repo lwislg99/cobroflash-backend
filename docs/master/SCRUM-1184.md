@@ -61,3 +61,24 @@ importador muerto como consumidor. Es de J1 (facturas); se reporta, no se toca.
 ## Lo que no se tocó
 
 `prisma/schema.prisma` · los endpoints de firma · `colaDeFirmas.js` · `huecosSerie.ts` · ningún texto.
+
+## Apéndice 28-sep-2026 · trozo 1 construido: `GET /admin/albaranes/serie` (S1, s1-28b)
+
+Medido contra `origin/main` `a59dc1e6` (28-sep-2026 14:57Z). Decisión y firma: comentario 17342 de Jira. Se construye **solo la vista previa**; los huecos no.
+
+- `siguienteNumeroDeAlbaran(db, merchantId, now)` en `albaranSerie.ts`. El año sale de `diaNaturalEn(now, zonaDelMerchant(m))`, las mismas dos funciones que `allocateAlbaranNumber`. Solo lee: no toma el cerrojo ni avanza el contador.
+- Contrato para S2: `200 { siguiente: "AB260005" }` · `409 { error: "serie_sin_anio" }` (`AlbaranSerieSinAnioError`, sin texto) · `404` si el merchant no existe · `500`. Admin y técnico (`TECNICO_ALLOWED`, mismo criterio que el alta).
+- **Un solo PR con la pantalla de S2** (trozo 3): con la ruta sola, el trinquete de SCRUM-1185 cae en `build + tests`.
+- Censos: `vistaPreviaAlbaran` pasa a `retiradas`; `huecosDeAlbaranes` se queda declarada con su motivo y su condición de reapertura (bases renumeradas). SCRUM-411: el tope de módulos inalcanzables baja de 7 a 5, porque `albaranSerie.ts` y `huecosSerie.ts` pasan a estar vivos. Sus exports sin llamador de fuera se declaran, y salen las cuatro declaraciones que ahora sí se consumen (`CORTE_FORMATO_F` y tres de `albaranNumber.service.ts`).
+- Test `tests/scrum1184-serie-siguiente-numero.test.mjs`: incluye el caso de Nochevieja (en Madrid, 23:30Z del 31-dic ya es el año siguiente → `AB270001`), el 409, que la ruta vaya antes de la ficha de un albarán suelto, y que la ruta no escriba nada. 5/5 en rojo contra el `dist` anterior; verde después.
+
+## Apéndice 28-sep-2026 · trozo 3 construido: la vista previa en «Nuevo albarán» (S2, s2-28b)
+
+**Medido contra:** `origin/main` = `00eef8c5e641fb418d8a25e9e172f90b328bd04c` · 2026-09-28T15:06:30Z (sobre la rama de S1, `26ddf3ed`).
+
+- **Un solo sitio**: `openAlbCrearSheet` (`jobDetailView.js`). Todas las altas acaban en esa hoja; el «Nuevo albarán» de la pestaña Albaranes (`albaranDesdePresupuestoModal.js`) solo elige el presupuesto y navega hasta el Trabajo con `altaAlbaran`.
+- Bajo la cabecera, un `<p class="alb-siguiente-numero">` oculto que se rellena con el texto FIRMADO (c.17342), «Siguiente número: AB260005.», con el número de la respuesta. **Falla cerrado**: 409 `serie_sin_anio`, error, red o respuesta sin `siguiente` string → no se pinta nada. La hoja no espera a la petición: el alta funciona igual si la ruta falla.
+- `styles.css`: `.alb-siguiente-numero` con los tokens de las ayudas (`--muted`, 13 px, cifras tabulares). Sin componente ni token nuevo.
+- Test `tests/scrum1184-vista-previa-en-el-alta.test.mjs`, que mide el viaje: el número lo da `siguienteNumeroDeAlbaran` (de `dist`) sobre un contador de prueba → ficha del Trabajo → «+ Nuevo albarán» → la hoja dice exactamente ese número. En rojo: sin pedir la ruta caen 3; pintando sin comprobar la respuesta cae 1.
+- Vecinos (132 ficheros: `jobDetailView`, `styles.css`, la serie, 411 y 1185): 1211 pasan, 0 fallan (3 saltos declarados). El rojo esperado del trinquete 1185 («ruta · GET /admin/albaranes/serie») **desaparece**: la ruta ya tiene consumidor.
+- yaqu.app: NO VERIFICADO (la lectura de producción está bloqueada por un permiso en esta sesión, 28-sep).
