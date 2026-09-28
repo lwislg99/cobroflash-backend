@@ -1651,3 +1651,13 @@ nuevas.
 - Ninguna base: ni dev, ni staging, ni producción. Ningún certificado ni clave.
 - Los apéndices anteriores de este fichero: intactos; éste se anexa al final.
 - **SCRUM-1257:** citado por lo que dice el encargo; no lo he releído en Jira.
+
+---
+
+## Lado panel (J3) — rama `scrum-825-panel-sin-justificante`
+
+Retirada de la rama «justificante» del panel (D1, firmada en el comentario 17446): `app.js`,
+`invoicesView.js`, `quotesView.js` y `rotulosDelDocumento.js`, con los guards y tests re-apuntados al
+lado factura, y la ruta `#invoices-new` cerrada en modo `no`. El registro completo, con lo medido, está
+en `docs/master/SCRUM-1257.md` (sección SCRUM-1257c) y el bug en `docs/BUGS.md` (P1-825). Esta entrada
+es sólo el puntero que exige SCRUM-854: el ticket de la rama es el 825 y su expediente es éste.
