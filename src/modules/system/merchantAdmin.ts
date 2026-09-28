@@ -2,7 +2,7 @@
 import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-314
 // SCRUM-291 (A4) · la decision de si la serie ya empezo es PURA y vive en validacion fiscal,
 // no aqui: aqui solo se lee la base y se lanza el error.
-import { bloqueoCambioDeSerie, numerosDeLaSerie } from '../../core/validation/fiscalInput';
+import { bloqueoCambioDeSerie, numerosDeLaSerie, anioDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
 import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
 
@@ -195,11 +195,13 @@ export async function updateMerchantProfile(
   if (data.invoiceSeriesPrefix !== undefined) {
     const actual = await prisma.merchant.findUnique({
       where: { id: merchantId },
-      select: { invoiceSeriesPrefix: true },
+      select: { invoiceSeriesPrefix: true, timezone: true },
     });
     // Se lee la serie del año EN CURSO, que es la que el cambio partiría. Una serie de un año
     // cerrado ya no admite números nuevos, así que no la afecta.
-    const año = new Date().getFullYear();
+    // SCRUM-1168: «en curso» en la zona del MERCHANT, que es con la que numera
+    // `allocateInvoiceNumber`; con el reloj del proceso, en Nochevieja miraba la serie de otro año.
+    const año = anioDeLaSerie(actual);
     const emitidas = await prisma.invoice.findMany({
       where: { merchantId, number: { startsWith: `${año}-` } },
       select: { number: true },
