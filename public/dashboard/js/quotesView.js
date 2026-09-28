@@ -1592,7 +1592,7 @@ descWrapper.appendChild(descLabel);
   // guarda— pero su tooltip nombra el documento. Se omite SÓLO el tooltip: el rótulo visible
   // («✨ Sugerir con IA») no nombra nada y se explica solo, así que no queda ningún control mudo.
   // Escribir aquí otra frase sería microcopy nueva (regla 30).
-  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y la IA te sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
   const useTemplateBtn = document.createElement("button");

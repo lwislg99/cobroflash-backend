@@ -155,3 +155,62 @@ producto, no legal: aquí solo queda anotado.
   el código servido hoy, no por una captura.
 - El censo es por palabra (`Claude`, `Anthropic`, `Gemini`, `Google`, `IA`). Si alguna pantalla nombra
   al proveedor con otra palabra, no lo ve.
+
+---
+
+# SCRUM-1247b · El texto firmado, aplicado (J3)
+
+**Medido contra:** `origin/main` = `e5acad15ffbe6ce2bfbbb38b40987519b44b43f6` · 2026-09-28T20:20:05Z
+
+**Puesto:** J3 (jv-j3). **Encargo:** del orquestador (`cobroflash-backend-3c`), con el texto firmado en
+**SCRUM-1247 comentario 17425**: opción A. La rama sale del commit de J4 (`3569156e`, el expediente de
+arriba) para anexar esta sección en el mismo fichero y no crear un segundo `SCRUM-1247.md` que
+chocase con el suyo (A8: un fichero por ticket, se anexa).
+
+## Qué cambia
+
+| ranura | fichero | antes | ahora (firmado, 17425) |
+|---|---|---|---|
+| R1 | `public/dashboard/js/aiQuoteAssistant.js`, `openAiSuggestModal` | «…y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.» | «Describe el trabajo con tus propias palabras y la IA te sugerirá las líneas del presupuesto usando tu catálogo. Lo que escribas aquí y tu catálogo se envían a nuestro proveedor de IA (lo tienes en la política de privacidad); no incluyas datos de tu cliente que no hagan falta.» |
+| R2 | `public/dashboard/js/quotesView.js`, `aiBtn.title` | «Describe el trabajo y Claude sugiere las líneas del presupuesto» | «Describe el trabajo y la IA te sugiere las líneas del presupuesto» |
+
+Registro de microcopy: `docs/microcopy/2026-09-28-SCRUM-1247-rotulo-ia.md`, con la línea de firma que cita 17425.
+
+## 🔴 Lo que se ve como un guard tocado y NO es una relajación (regla 41)
+
+`tests/scrum600-un-solo-front-documento.test.mjs` fija R2 con `===` en su lista `RANURAS_A`. Esa
+entrada **cambia de literal en el mismo commit que el código**, al texto firmado en 17425. La ranura
+sigue fijada con `===`, el recuento de ranuras no cambia y el test sigue cayendo si alguien toca el
+rótulo. Se cambia el código y su expectativa a la vez: no se afloja nada.
+
+## Rojo primero
+
+`tests/scrum1247-rotulo-ia-no-nombra-proveedor.test.mjs`, comiteado solo y en rojo (`a923fc66`): **4 de
+4 fallan** contra el código de antes. Los fallos enseñan los textos viejos saliendo: R1 «…y Claude
+sugerirá las líneas…» y R2 «Describe el trabajo y Claude sugiere las líneas del presupuesto». Con el
+cambio: 4 de 4 en verde, y 26 de 26 junto con scrum600 y scrum709.
+
+El test mira R1 **dentro de `openAiSuggestModal`**, cortado donde empieza `openAiMessageModal`. No mira
+el fichero entero, porque en él vive R3 («Claude redactará…»), que no es de este ticket. Lleva un
+control positivo: el patrón de marca (`Claude|Anthropic|Gemini|Google`) sí caza el texto viejo.
+
+**Error propio, corregido antes de empujar:** el commit en rojo buscaba el párrafo con `<p style="…">`, con el `>` pegado a un atributo, y la suite entera lo cazó (`scrum553`, tope 20 y salían 21). Se arregló el test, no el guard: ahora es `<p\b[^>]*>`. Pasada sobre el texto viejo, la regex nueva sigue sacando «…y Claude sugerirá…», así que el rojo sigue siendo válido. El registro también se llevó un byte 0x08 al escribir la regex (cazado por `scrum942`), y se corrigió.
+
+**Suite entera** (`node --test 'tests/*.test.mjs'`, tras `prisma generate` y `npm run build`): 8912 tests, 8778 pasan, **0 fallan**, 134 saltados. Los saltos son los que piden base, que este árbol no tiene.
+
+## ⛔ Lo que no se ha tocado
+
+- R3, `openAiMessageModal` («Claude redactará un mensaje personalizado…»): de SCRUM-1182, sin firmar.
+- `src/modules/ai/`: nada.
+- L1′/L2′ de la política de privacidad: son del fundador.
+- El hallazgo del §5 (`aiQuoteAssistant.js:74` y `:245`, «Añade GEMINI_API_KEY (gratis) en Railway»):
+  sigue igual, porque no hay texto firmado para él.
+
+## Suelo
+
+- Los literales se comprobaron en el `origin/main` del ancla antes de tocarlos: R1 en
+  `aiQuoteAssistant.js:15` y R2 en `quotesView.js:1595`, los dos tal como los citó J4.
+- Mientras tanto `main` no ha tocado ninguno de los tres ficheros de código y test, y la rama mergea
+  limpia sobre el ancla (`git merge-tree`).
+- No se ha visto en un navegador con sesión: el modal pide iniciar sesión, y este árbol no tiene base.
+  Se verifica en yaqu.app cuando entre.
