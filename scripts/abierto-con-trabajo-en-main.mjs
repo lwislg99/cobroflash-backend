@@ -6,42 +6,47 @@
 // El 28-sep-2026 se repartieron SEIS encargos que ya estaban hechos: 1224, 1204 y 1223 (arreglados
 // horas antes), 1200 (hecho bajo el número de OTRO ticket, dentro de `scrum-1216b-*`), 825 (con su
 // ticket desde el 8-sep) y 1101 (hecho bajo SCRUM-1097). Jira mentía porque no se cierra al ritmo al
-// que se entrega. Este instrumento da la lista de CANDIDATOS a mirar antes de repartir. NO cierra
-// nada ni decide nada: cerrar es A13, del orquestador, tras leer el caso.
+// que se entrega. Esto da la lista de CANDIDATOS a LEER antes de repartir o de cerrar. NO cierra
+// nada ni decide nada: cerrar es A13, del orquestador, leyendo el ticket.
 //
-// ── POR QUÉ ES UN FICHERO PROPIO Y NO UN VEREDICTO MÁS EN `enlace-ticket-rama.mjs` ─────────────
-// Se leyó entero antes de escribir esto. Mide otra pregunta (si las cuatro fuentes del ENLACE
-// concuerdan), y además:
-//   · no exporta nada: corre al cargarse y acaba en `process.exit`, así que reusarlo obliga a
-//     modificarlo, y es de la S5 (`scripts/verificacion-s5/`), no de J6;
-//   · empareja ramas por NÚMERO (`numDe`), que es justo la trampa ① de abajo;
-//   · su foto de Jira (`docs/verificacion/asuntos-jira.tsv`) es del 7-sep y no trae los abiertos de hoy.
-// Lo que SÍ se hereda de él son sus dos lecciones de git: la autoridad de «qué rama vive» es
-// `ls-remote`, y una rama mergeada y BORRADA sólo sobrevive en el asunto de su commit de merge.
+// ── 🔴 ESTO ES UNA CAPA, NO UN MOTOR — Y MI PASO 0 SE EQUIVOCÓ ─────────────────────────────────
+// La primera versión de este fichero traía su propio censo de ramas, commits y expedientes. El
+// motor YA EXISTÍA: `censarTicket` (`tests/_censo-tickets.mjs`, SCRUM-388: «¿qué hay en `main` de
+// UN ticket?», con la colisión de número de SCRUM-738) y `rastroDeLosTickets`
+// (`scripts/_rastro-del-ticket.mjs`, SCRUM-804: rama a rama, DENTRO de `main` o VIVA fuera). Lo
+// encontré tarde —por el censo de SCRUM-723, que describía a `censo-tablero-vs-arbol.mjs` con mi
+// misma pregunta—, porque busqué en `scripts/verificacion-s5/` y no por CONCEPTO. Es el mismo
+// tropiezo que confiesa la cabecera de SCRUM-738. Mi motor se retiró: la misma regla dos veces es
+// cómo una de las dos se queda atrás.
+//
+// Lo que SÍ faltaba, y es lo único que este fichero añade:
+//   ① el CRUCE con Jira — `censo-tablero-vs-arbol.mjs` lo dice en su salida: «este censo no lee
+//     Jira. Se cruza a mano». Aquí entra una foto de los ABIERTOS, con fecha y caducidad;
+//   ② la trampa del número AJENO — SCRUM-1200 quedó «cerrado aquí» en `SCRUM-1216.md` §⑦, y el
+//     motor sólo mira la entrada propia. Se busca el número en TODO `docs/master/`, separando la
+//     línea que DICE cierre de la que sólo cita;
+//   ③ el MOTIVO ESCRITO para seguir abierto con trabajo dentro (Jira espera a otro, o el título del
+//     expediente se declara BLOQUEADO/PARADO…), para que el rojo no acuse a todos.
 //
 // ── LAS TRES TRAMPAS DEL ENCARGO ─────────────────────────────────────────────────────────────
-// ① Por SLUG COMPLETO, nunca por número: el 28-sep había dos ramas `scrum-1216b-*`, una en main y
-//   otra no. Cada rama se juzga por su nombre entero, y un ticket con UNA rama sin mergear no es
-//   candidato aunque tenga otras dentro.
-// ② El trabajo puede entrar bajo el número de OTRO ticket: SCRUM-1200 quedó «cerrado aquí» en
-//   `docs/master/SCRUM-1216.md` §⑦. Se busca el número en TODO `docs/master/`, y se separa la
-//   mención que DICE cierre («cerrado aquí», «arreglado en», «ya está») de la que sólo cita.
+// ① Por SLUG COMPLETO, nunca por número: la da el motor de 804, que clasifica CADA rama por su
+//   nombre entero (`en-main` / `viva`). Una sola rama suya viva hace PARCIAL al ticket.
+// ② El número en TODO `docs/master/`: lo añade este fichero (arriba).
 // ③ 🔴 LÍMITE DECLARADO, NO RESUELTO: que el DEFECTO esté arreglado sin rama, commit ni expediente
-//   con ese número. SCRUM-1101 es el caso real (hecho bajo SCRUM-1097 sin nombrar el 1101 en ningún
-//   sitio). Aquí sale «SIN RASTRO», que NO significa «sin hacer»: para eso, el PASO 0 por CONTENIDO
-//   (grep del texto y de la función, no del número).
+//   con ese número. SCRUM-1101 es el caso real. Sale «SIN RASTRO», que NO es «sin hacer»: para eso,
+//   el PASO 0 por CONTENIDO.
 //
 // ── LA FOTO DE JIRA CADUCA ───────────────────────────────────────────────────────────────────
-// El instrumento sólo LEE Jira, y lo hace a través de una foto que le pasa quien lo corre: el JSON
-// que guarda el MCP de Atlassian (`searchJiraIssuesUsingJql`, todas las páginas) o un TSV
-// `clave<TAB>estado<TAB>asunto`. Su fecha es la de modificación del fichero (o `--tomada ISO`), se
-// imprime en la cabecera, y si pasa de `--horas-max` (12 por defecto) el instrumento se declara
-// CIEGO y sale 2: con una foto vieja, «abierto» ya no es una afirmación. Si la última página del
-// JSON dice `hasNextPage: true`, también CIEGO: faltan tickets.
+// Sólo LEE Jira, por una foto que le pasa quien lo corre: el JSON que guarda el MCP de Atlassian
+// (`searchJiraIssuesUsingJql`, `statusCategory != Done`, TODAS las páginas) o un TSV
+// `clave<TAB>estado<TAB>asunto`. Su fecha es la de modificación del fichero (o `--tomada ISO`). Con
+// más de `--horas-max` (12) o sin la última página (`hasNextPage: false`) se declara CIEGO y sale 2
+// SIN tocar git: con una foto vieja, «abierto» ya no es una afirmación.
 //
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
-// Declara su población (tickets abiertos, ramas vivas, ramas en el histórico, expedientes leídos).
-// Cero ramas, cero expedientes o cero tickets → CIEGO (2), nunca «nada que cerrar».
+// El del motor (`comprobarSuelo` y `motivosParaNoFiarse`) más el suyo: cero abiertos o cero
+// expedientes → CIEGO (2), nunca «nada que cerrar». `docs/master/` se lee del árbol donde se corre,
+// igual que hace `censarTicket`: se corre desde un árbol al día con `main`.
 //
 //   node scripts/abierto-con-trabajo-en-main.mjs --jira p1.json p2.json p3.json
 //   node scripts/abierto-con-trabajo-en-main.mjs --jira foto.tsv --tomada 2026-09-28T21:04Z
@@ -49,20 +54,11 @@
 //
 // Salidas: 0 informe hecho (haya o no candidatos) · 2 CIEGO. Nunca falla un check: sólo informa.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-
 // ═══ 1 · LO PURO — sin git ni disco, para poder fabricar casos ══════════════════════════════
-
-/** `scrum-1216b-numero-de-arranque` → { num: 1216, parte: 'b' }. Sin número → null. */
-export function ticketDeRama(nombre) {
-  const m = String(nombre).match(/^scrum-(\d+)([a-z]?)(?:-|$)/i);
-  return m ? { num: Number(m[1]), parte: m[2].toLowerCase() } : null;
-}
 
 /** Un expediente con letra de parte, `SCRUM-<n>b.md`, es del ticket n. */
 export function ticketDeExpediente(fichero) {
@@ -77,19 +73,12 @@ export function reMencion(num) {
 
 /**
  * ¿La línea DICE que el ticket se cerró o se hizo, o sólo lo cita? Lista cerrada, visible, y con
- * su falso positivo sabido: «NO está arreglado» casa igual. Por eso la mención de cierre es un
- * CANDIDATO que alguien lee, nunca un veredicto.
+ * su ruido medido (dos de tres líneas el 28-sep). Es un CANDIDATO para leer, nunca un veredicto.
  */
 // La frontera es de LETRA Unicode y no `\b`: en JS `\b` no trata «ó» como letra, y «sólo cubre»
 // casaba con «lo cubre» (medido en docs/master/SCRUM-1092.md:69).
 export const RE_CIERRE = /(?<![\p{L}\p{N}])(cerrad[oa]s? aqu[ií]|cerrad[oa]s? en|arreglad[oa]s? (aqu[ií]|en)|resuelt[oa]s? (aqu[ií]|en)|hech[oa]s? (aqu[ií]|en|bajo)|ya est[aá] (hech|arreglad|en main)|duplicad[oa] de|lo cubre|queda cubiert)/iu;
 
-/**
- * El veredicto de UN ticket abierto, sobre un estado del repo ya leído.
- *   ramas:       [{ nombre, estado: 'MERGEADA' | 'MERGEADA_BORRADA' | 'SIN_MERGEAR' | 'CIEGA' }]
- *   commits:     [{ sha, asunto }]   — sólo los de `main`
- *   expedientes: Map<fichero, string[]>  — `docs/master/*.md` de `main`, por líneas
- */
 /**
  * 🟡 LOS DOS MOTIVOS ESCRITOS PARA SEGUIR ABIERTO CON TRABAJO DENTRO, que es el «abierto legítimo»
  * que no se marca en rojo. Medidos sobre los 117 tickets que salían sin ellos el 28-sep-2026:
@@ -98,9 +87,8 @@ export const RE_CIERRE = /(?<![\p{L}\p{N}])(cerrad[oa]s? aqu[ií]|cerrad[oa]s? e
  *     «PASO 0», «sin aplicar»…).
  * ⛔ Se probó con el CUERPO del expediente y NO sirve: 95 de 112 tenían «pendiente», «queda»,
  *    «falta»… porque todo expediente habla de lo que queda. Sólo el título es lo que el autor anuncia.
- * No se esconden: salen en su propia sección, porque SCRUM-825 («Acción del fundador» y con el
- * trabajo dentro desde el 8-sep) fue uno de los repartos malos. Para repartir, importa que el trabajo
- * existe; para cerrar, importa por qué sigue abierto.
+ * No se esconden: salen en su propia sección. Para repartir importa que el trabajo existe; para
+ * cerrar, por qué sigue abierto.
  */
 export const RE_ESTADO_ESPERA = /acci[oó]n del fundador|en revisi[oó]n/i;
 export const RE_TITULO_PARADO = /BLOQUEAD[OA]|PARAD[OA]\b|NO se construye|sin aplicar|PASO 0|investigaci[oó]n|SUELO DISPARADO|no he podido/i;
@@ -109,18 +97,27 @@ function tituloDe(lineas) {
   return (lineas.find((l) => /^#\s/.test(l)) || '').replace(/^#\s+/, '');
 }
 
-export function clasificar(num, repo, info = {}) {
-  const suyas = repo.ramas.filter((r) => ticketDeRama(r.nombre)?.num === num);
-  const dentro = suyas.filter((r) => r.estado === 'MERGEADA' || r.estado === 'MERGEADA_BORRADA');
-  const fuera = suyas.filter((r) => r.estado === 'SIN_MERGEAR');
-  const ciegas = suyas.filter((r) => r.estado === 'CIEGA');
+/**
+ * El veredicto de UN ticket abierto, sobre lo que ya dijo el MOTOR:
+ *   censo:       lo que devuelve `censarTicket(n)` (veredicto ENTERO/PARCIAL/NADA/NO_MEDIBLE, fuentes, …)
+ *   rastro:      `rastroDeLosTickets().porTicket.get(n)` → { ramas: [{ nombre, clase: 'en-main' | 'viva' | … }] }
+ *   expedientes: Map<fichero, string[]> de `docs/master/*.md`, por líneas (para ② y para el título)
+ *   info:        { estado, asunto } de la foto de Jira
+ */
+export function clasificar(num, { censo, rastro, expedientes }, info = {}) {
+  const ramas = rastro?.ramas ?? [];
+  const dentro = ramas.filter((r) => r.clase === 'en-main');
+  const fuera = ramas.filter((r) => r.clase === 'viva');
+  const ciegas = ramas.filter((r) => r.clase !== 'en-main' && r.clase !== 'viva');
+  const fuentes = censo?.fuentes ?? [];
+  const trabajoDentro = dentro.length > 0 || fuentes.includes('commits') || fuentes.includes('docs/master');
+
   const re = reMencion(num);
-  const commits = repo.commits.filter((c) => new RegExp(`^SCRUM-${num}(?![0-9])`, 'i').test(c.asunto));
-  const propios = [...repo.expedientes.keys()].filter((f) => ticketDeExpediente(f) === num);
   const cierreAjeno = [];
   let mencionesAjenas = 0;
-  for (const [f, lineas] of repo.expedientes) {
-    if (ticketDeExpediente(f) === num) continue;
+  const propios = [];
+  for (const [f, lineas] of expedientes) {
+    if (ticketDeExpediente(f) === num) { propios.push(f); continue; }
     lineas.forEach((l, i) => {
       if (!re.test(l)) return;
       mencionesAjenas++;
@@ -129,18 +126,20 @@ export function clasificar(num, repo, info = {}) {
   }
 
   let veredicto;
-  if (ciegas.length) veredicto = 'CIEGO';
-  else if (fuera.length && (dentro.length || propios.length || commits.length)) veredicto = 'PARCIAL';
+  let motivo = null;
+  if (censo?.veredicto === 'NO_MEDIBLE') { veredicto = 'NO_MEDIBLE'; motivo = censo.porque; }
+  else if (ciegas.length) veredicto = 'CIEGO';
+  else if (fuera.length && trabajoDentro) veredicto = 'PARCIAL';
   else if (fuera.length) veredicto = 'EN_CURSO';
-  else if (dentro.length || propios.length || commits.length) veredicto = 'CANDIDATO';
+  else if (trabajoDentro) veredicto = 'CANDIDATO';
   else if (cierreAjeno.length) veredicto = 'CERRADO_EN_OTRO';
   else veredicto = 'SIN_RASTRO';
 
   // Trabajo dentro y un motivo ESCRITO para seguir abierto: se aparta del rojo, no se esconde.
-  const titulos = propios.map((f) => tituloDe(repo.expedientes.get(f)));
-  let motivo = null;
   if (veredicto === 'CANDIDATO' || veredicto === 'CERRADO_EN_OTRO') {
-    if (RE_ESTADO_ESPERA.test(info.estado || '')) motivo = `Jira: «${info.estado}»`;
+    const titulos = propios.map((f) => tituloDe(expedientes.get(f)));
+    if (censo?.veredicto === 'PARCIAL') motivo = `el motor lo da PARCIAL (marcas sin conectar: ${(censo.marcas || []).join(', ')})`;
+    else if (RE_ESTADO_ESPERA.test(info.estado || '')) motivo = `Jira: «${info.estado}»`;
     else {
       const t = titulos.find((x) => RE_TITULO_PARADO.test(x));
       if (t) motivo = `su expediente: «${t.slice(0, 90)}»`;
@@ -148,7 +147,7 @@ export function clasificar(num, repo, info = {}) {
     if (motivo) veredicto = 'ABIERTO_CON_MOTIVO';
   }
 
-  return { num, veredicto, motivo, titulos, dentro, fuera, ciegas, commits, propios, cierreAjeno, mencionesAjenas };
+  return { num, veredicto, motivo, dentro, fuera, ciegas, fuentes, commits: censo?.commits ?? [], propios, cierreAjeno, mencionesAjenas };
 }
 
 /**
@@ -191,97 +190,54 @@ export function leerFoto(textos) {
   return { abiertos, problemas };
 }
 
-// ═══ 2 · LO QUE SE LEE DE GIT, siempre de `ref` (no del árbol de trabajo) ═══════════════════
-
-function leerRepo(ref) {
-  const git = (...a) => execFileSync('git', a, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
-  const lineas = (s) => s.split(/\r?\n/).filter(Boolean);
-
-  // Primero lo LOCAL: una ref que no existe falla aquí, antes de salir a la red.
-  const dentroDeRef = new Set(lineas(git('rev-list', ref)));
-
-  // Autoridad de «qué rama vive»: ls-remote. Las refs locales pueden estar desfasadas; sólo se
-  // usan para saber si el sha que vive está dentro de `ref`.
-  const vivas = new Map();
-  for (const l of lineas(git('ls-remote', '--heads', 'origin'))) {
-    const m = l.match(/^([0-9a-f]{40})\s+refs\/heads\/(.+)$/);
-    if (m) vivas.set(m[2], m[1]);
-  }
-  const ramas = [];
-  for (const [nombre, sha] of vivas) {
-    if (!ticketDeRama(nombre)) continue;
-    if (dentroDeRef.has(sha)) ramas.push({ nombre, estado: 'MERGEADA' });
-    else {
-      // Fuera de `ref`: o sin mergear, o un sha que este clon no tiene (hay que hacer fetch).
-      let existe = true;
-      try { execFileSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: RAIZ, stdio: 'ignore' }); } catch { existe = false; }
-      ramas.push({ nombre, estado: existe ? 'SIN_MERGEAR' : 'CIEGA' });
-    }
-  }
-  // Mergeadas y BORRADAS: sólo quedan en el asunto del merge.
-  const historico = new Set();
-  for (const s of lineas(git('log', '--merges', '--format=%s', ref))) {
-    const m = s.match(/^Merge pull request #\d+ from [\w.-]+\/(\S+)/);
-    if (m && ticketDeRama(m[1])) historico.add(m[1]);
-  }
-  for (const nombre of historico) if (!vivas.has(nombre)) ramas.push({ nombre, estado: 'MERGEADA_BORRADA' });
-
-  const commits = [];
-  for (const l of lineas(git('log', '--no-merges', '--format=%h|%s', ref))) {
-    const i = l.indexOf('|');
-    commits.push({ sha: l.slice(0, i), asunto: l.slice(i + 1) });
-  }
-
-  // docs/master de `ref`, entero, en un solo `git grep` que devuelve TODAS las líneas.
-  const expedientes = new Map();
-  const salida = git('grep', '-n', '-I', '-e', '', ref, '--', 'docs/master/*.md');
-  for (const l of salida.split('\n')) {
-    const m = l.match(/^[^:]+:(docs\/master\/[^:]+\.md):(\d+):(.*)$/);
-    if (!m) continue;
-    if (!expedientes.has(m[1])) expedientes.set(m[1], []);
-    expedientes.get(m[1])[Number(m[2]) - 1] = m[3];
-  }
-  for (const [f, ls] of expedientes) expedientes.set(f, Array.from(ls, (x) => x ?? ''));
-  return { ramas, commits, expedientes, poblacion: { vivas: vivas.size, historico: historico.size, commits: commits.length, expedientes: expedientes.size } };
-}
-
-// ═══ 3 · EL INFORME ══════════════════════════════════════════════════════════════════════════
+// ═══ 2 · EL INFORME ══════════════════════════════════════════════════════════════════════════
 
 const ETIQUETA = {
-  CANDIDATO: '🔴 CANDIDATO — todo lo que se ve de él está en main, y no hay rama suya fuera',
-  CERRADO_EN_OTRO: '🟠 CERRADO EN OTRO EXPEDIENTE — sin rama ni expediente propio, pero otro dice que se hizo',
+  CANDIDATO: '🔴 CANDIDATO — todo lo que se ve de él está en main, y no hay rama suya viva fuera',
+  CERRADO_EN_OTRO: '🟠 CERRADO EN OTRO EXPEDIENTE — sin nada propio, pero otro dice que se hizo',
   ABIERTO_CON_MOTIVO: '🟡 TRABAJO EN MAIN Y MOTIVO ESCRITO para seguir abierto — no se marca, pero existe',
-  PARCIAL: '🟡 PARCIAL — parte en main y parte fuera: abierto con motivo, NO se marca',
-  EN_CURSO: '⚪ EN CURSO — sólo ramas sin mergear',
+  PARCIAL: '🟡 PARCIAL — parte en main y una rama suya viva fuera: abierto con motivo, NO se marca',
+  EN_CURSO: '⚪ EN CURSO — sólo ramas vivas sin mergear',
   SIN_RASTRO: '·  SIN RASTRO — nada con su número (≠ «sin hacer»: límite ③)',
-  CIEGO: '🔴 CIEGO — una rama suya vive con un sha que este clon no tiene: git fetch y repetir',
+  NO_MEDIBLE: '🔴 NO MEDIBLE — el motor no puede atribuirle nada (número compartido o fuente ciega)',
+  CIEGO: '🔴 CIEGO — una rama suya no se pudo clasificar (ni en main ni viva)',
 };
 
 function pintaUno(r, info) {
   console.log(`\nSCRUM-${r.num}  [${info.estado}]  ${info.asunto.slice(0, 96)}`);
   console.log(`  ${ETIQUETA[r.veredicto]}`);
   if (r.motivo) console.log(`  motivo  · ${r.motivo}`);
-  for (const b of r.dentro) console.log(`  rama    · ${b.nombre}  ${b.estado === 'MERGEADA' ? 'en main (viva, borrable)' : 'en main (mergeada y borrada)'}`);
-  for (const b of r.fuera) console.log(`  rama    · ${b.nombre}  SIN MERGEAR`);
-  for (const b of r.ciegas) console.log(`  rama    · ${b.nombre}  🔴 sha desconocido en este clon`);
-  if (r.propios.length) console.log(`  expte.  · ${r.propios.join(', ')}`);
-  if (r.commits.length) console.log(`  commits · ${r.commits.length} en main con «SCRUM-${r.num}…» al principio (${r.commits.slice(0, 3).map((c) => c.sha).join(' ')}${r.commits.length > 3 ? ' …' : ''})`);
+  for (const b of r.dentro) console.log(`  rama    · ${b.nombre}  en main`);
+  for (const b of r.fuera) console.log(`  rama    · ${b.nombre}  VIVA, sin mergear`);
+  for (const b of r.ciegas) console.log(`  rama    · ${b.nombre}  🔴 sin clasificar (${b.clase})`);
+  if (r.fuentes.length) console.log(`  motor   · fuentes: ${r.fuentes.join(' · ')}${r.commits.length ? ` (${r.commits.length} commits: ${r.commits.slice(0, 3).map((c) => c.sha).join(' ')}${r.commits.length > 3 ? ' …' : ''})` : ''}`);
   for (const c of r.cierreAjeno.slice(0, 4)) console.log(`  otro    · ${c.fichero}:${c.linea}  «${c.texto}»`);
   if (r.cierreAjeno.length > 4) console.log(`  otro    · … y ${r.cierreAjeno.length - 4} líneas más con palabra de cierre`);
   if (r.mencionesAjenas) console.log(`  citado  · ${r.mencionesAjenas} líneas de otros expedientes lo nombran`);
 }
 
-function principal(argv) {
+function leerExpedientes(raiz) {
+  const dir = path.join(raiz, 'docs', 'master');
+  const out = new Map();
+  if (!fs.existsSync(dir)) return out;
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith('.md')) continue;
+    out.set(`docs/master/${f}`, fs.readFileSync(path.join(dir, f), 'utf8').split(/\r?\n/));
+  }
+  return out;
+}
+
+async function principal(argv) {
   const i = argv.indexOf('--jira');
   const ficheros = [];
   if (i >= 0) for (let k = i + 1; k < argv.length && !argv[k].startsWith('--'); k++) ficheros.push(argv[k]);
   const valor = (n, d) => { const j = argv.indexOf(n); return j >= 0 ? argv[j + 1] : d; };
-  const ref = valor('--ref', 'origin/main');
   const horasMax = Number(valor('--horas-max', '12'));
   const uno = valor('--ticket', null);
+  const raiz = process.cwd();
 
   const ciego = [];
-  if (!ficheros.length) { console.log('uso: abierto-con-trabajo-en-main.mjs --jira <foto.json|tsv …> [--tomada ISO] [--ref origin/main] [--horas-max 12] [--ticket N]'); return 2; }
+  if (!ficheros.length) { console.log('uso: abierto-con-trabajo-en-main.mjs --jira <foto.json|tsv …> [--tomada ISO] [--horas-max 12] [--ticket N]'); return 2; }
   const textos = ficheros.map((f) => ({ nombre: f, texto: fs.readFileSync(f, 'utf8') }));
   const tomadaArg = valor('--tomada', null);
   const tomada = tomadaArg ? new Date(tomadaArg) : new Date(Math.min(...ficheros.map((f) => fs.statSync(f).mtimeMs)));
@@ -297,24 +253,28 @@ function principal(argv) {
     return 2;
   }
 
-  const repo = leerRepo(ref);
-  const sha = execFileSync('git', ['rev-parse', ref], { cwd: RAIZ, encoding: 'utf8' }).trim();
-  if (repo.poblacion.vivas === 0) ciego.push('ls-remote no devolvió ninguna rama');
-  if (repo.poblacion.expedientes === 0) ciego.push(`${ref} no tiene ningún docs/master/*.md legible`);
-  if (repo.poblacion.historico === 0) ciego.push('el histórico de merges no dio ninguna rama: las borradas serían invisibles');
+  // El MOTOR de la casa: se importa aquí para que la parte de la foto no dependa de git.
+  const { censarTicket, comprobarSuelo } = await import('../tests/_censo-tickets.mjs');
+  const { rastroDeLosTickets } = await import('./_rastro-del-ticket.mjs');
+  const suelo = comprobarSuelo({ raiz });
+  const rastro = rastroDeLosTickets({ raiz, traer: true });
+  const expedientes = leerExpedientes(raiz);
+  ciego.push(...suelo, ...rastro.suelo);
+  if (expedientes.size === 0) ciego.push(`${raiz} no tiene ningún docs/master/*.md`);
 
-  console.log(`ref: ${ref} = ${sha}`);
-  console.log(`foto de Jira: ${abiertos.size} tickets ABIERTOS · tomada ${Number.isNaN(tomada.getTime()) ? '?' : tomada.toISOString()} (${Number.isNaN(horas) ? '?' : horas.toFixed(1)} h, tope ${horasMax} h) · ${ficheros.length} fichero(s)`);
-  console.log(`repo: ${repo.poblacion.vivas} ramas vivas · ${repo.poblacion.historico} mergeadas en el histórico · ${repo.poblacion.commits} commits · ${repo.poblacion.expedientes} expedientes de docs/master`);
+  console.log(`main medido por el motor: ${rastro.inst?.sha ?? '?'}  ·  árbol: ${raiz}`);
+  console.log(`foto de Jira: ${abiertos.size} tickets ABIERTOS · tomada ${tomada.toISOString()} (${horas.toFixed(1)} h, tope ${horasMax} h) · ${ficheros.length} fichero(s)`);
+  console.log(`ramas remotas: ${rastro.resumen.total} (${rastro.resumen.enMain} en main, ${rastro.resumen.vivas} vivas, ${rastro.resumen.indeterminadas} sin clasificar) · ${expedientes.size} expedientes de docs/master`);
+  console.log('motor: tests/_censo-tickets.mjs (SCRUM-388) + scripts/_rastro-del-ticket.mjs (SCRUM-804) — esta pieza cruza con Jira');
   if (ciego.length) { console.log('\n🔴 CIEGO — no se puede responder:'); for (const c of ciego) console.log(`   · ${c}`); return 2; }
 
   const nums = uno ? [Number(uno)] : [...abiertos.keys()].sort((a, b) => a - b);
-  const res = nums.map((n) => clasificar(n, repo, abiertos.get(n) ?? {}));
+  const res = nums.map((n) => clasificar(n, { censo: censarTicket(n, { raiz }), rastro: rastro.porTicket.get(n), expedientes }, abiertos.get(n) ?? {}));
   if (uno) { pintaUno(res[0], abiertos.get(res[0].num) ?? { estado: '(no está entre los abiertos de la foto)', asunto: '' }); return 0; }
 
   const por = (v) => res.filter((r) => r.veredicto === v);
   console.log(`\nveredictos sobre ${res.length} abiertos: ${Object.keys(ETIQUETA).map((v) => `${v} ${por(v).length}`).join(' · ')}`);
-  for (const v of ['CANDIDATO', 'CERRADO_EN_OTRO', 'CIEGO', 'ABIERTO_CON_MOTIVO', 'PARCIAL']) {
+  for (const v of ['CANDIDATO', 'CERRADO_EN_OTRO', 'NO_MEDIBLE', 'CIEGO', 'ABIERTO_CON_MOTIVO', 'PARCIAL']) {
     if (!por(v).length) continue;
     console.log(`\n═══ ${ETIQUETA[v]} — ${por(v).length} ═══`);
     for (const r of por(v)) pintaUno(r, abiertos.get(r.num));
@@ -325,5 +285,5 @@ function principal(argv) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.exit(principal(process.argv.slice(2)));
+  principal(process.argv.slice(2)).then((c) => process.exit(c));
 }
