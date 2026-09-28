@@ -91,7 +91,7 @@ Casos conocidos, medidos:
 
 ## Visto en rojo
 
-Con el instrumento commiteado (`120016be`) y restaurado con `git restore --source=HEAD` tras cada mutación,
+Con el instrumento commiteado (`4a503e45`, el mismo que se empuja salvo este registro) y restaurado con `git restore --source=HEAD` tras cada mutación,
 `tests/scrum1259-abierto-con-trabajo-en-main.test.mjs` (10 casos fabricados) cae en las **6**:
 
 | mutación | cae |
