@@ -68,3 +68,22 @@ Un censo que devuelve cero parece limpio y casi siempre es ciego: un árbol viej
 rama sin mergear. Por eso cada vacío va con su control positivo al lado: *«la misma búsqueda SÍ encuentra X,
 así que no está ciega»*. Y un guard que dice «todo bien» sin haber mirado es peor que no tenerlo: ocupa el
 sitio de uno que sí miraría.
+
+## Canon del puesto
+
+### Si el PR añade un test, corre también los guards de SUITE: `scrum237` y `scrum976`
+
+    node --test tests/scrum237-negacion-respaldada.test.mjs tests/scrum976-guards-entrada-con-techo.test.mjs
+
+Además de los tests de lo que tocas. Y toda negación nueva (`assert.doesNotMatch`, `assert.ok(!…)`) lleva al
+lado su positivo con el **mismo** token: sin él, la negación pasaría igual si ese texto no pudiera salir nunca
+(la clase de SCRUM-73).
+
+**La cicatriz (28-sep-2026, SCRUM-1214, PR #1876):** se corrieron los 11 ficheros del clasificador y de quienes
+lo usan (97/97), y el PR salió ROJO en el meta-guard. `scrum237` cazó en el test nuevo un
+`doesNotMatch(…, /solo añade columnas/)` sin hermano, y `scrum976` cayó en cascada. Correr «lo que toco» no
+cubre a los guards que vigilan «lo que añado»: ésos recorren la suite entera y miran cualquier test nuevo.
+
+**Por qué hace falta, y cuándo sobra:** la tanda completa (`npm test`) sí los incluye, pero aquí **no siempre
+se puede correr**: el mismo 28-sep la mató dos veces la falta de memoria de la máquina. **Si algún día la tanda
+completa corre siempre, esta regla sobra.**
