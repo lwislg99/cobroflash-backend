@@ -206,7 +206,10 @@ const RANURAS_A = [
   ["textContent", "Solo presupuesto (facturación manual)"],
   ["textContent", "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\"."],
   ["textContent", "Añade los conceptos que vas a presupuestar."],
-  ["title", "Describe el trabajo y Claude sugiere las líneas del presupuesto"],
+  // SCRUM-1247 · el texto viejo nombraba a Claude y por defecto redacta Gemini. Se cambia el código
+  // y esta expectativa JUNTOS, con el texto firmado en SCRUM-1247 comentario 17425: no se relaja
+  // nada, la ranura sigue fijada con `===` (regla 41).
+  ["title", "Describe el trabajo y la IA te sugiere las líneas del presupuesto"],
   ["textContent", "Generar presupuesto"],
   ["textContent", "Estado del presupuesto"],
   ["innerHTML [const STATUS_EMPTY_HTML]", "<div class=\"quote-status-empty\">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>"],

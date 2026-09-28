@@ -36,9 +36,12 @@ function modalDeLineas() {
   return src.slice(i, f);
 }
 
-/** El párrafo de ayuda del modal, con los espacios de la plantilla colapsados. */
+/**
+ * El párrafo de ayuda del modal (el primer `<p` del cuerpo), con los espacios de la plantilla
+ * colapsados. Sin el `>` pegado a un atributo (SCRUM-553): no se rompe si el `<p` gana una clase.
+ */
 function parrafoR1() {
-  const m = modalDeLineas().match(/<p style="font-size:13px;[^"]*">\s*([\s\S]*?)\s*<\/p>/);
+  const m = modalDeLineas().match(/<p\b[^>]*>\s*([\s\S]*?)\s*<\/p>/);
   assert.ok(m, '🔴 no encuentro el párrafo de ayuda del modal «Sugerir con IA»');
   return m[1].replace(/\s+/g, ' ').trim();
 }
