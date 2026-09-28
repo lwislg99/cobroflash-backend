@@ -288,3 +288,48 @@ STOP).
 - esto mide qué pasa **si** Resend rechaza, no que esté rechazando hoy. Con `presufacil.online`
   verificado, un rechazo por dominio solo llegaría si alguien cambiara `EMAIL_FROM` a un dominio sin
   verificar antes de verificarlo (SCRUM-1115).
+
+## Estado de las cuatro decisiones tras la respuesta de Luis (28-sep)
+
+**Medido contra:** `origin/main` = `44dd30659ce983dd646f35da0ee582860877a9bb` · 2026-09-28T16:08:06Z
+
+| Decisión | Estado | Dónde |
+|---|---|---|
+| Logo por URL | ✅ decidido por Javier: solo a nuestro servidor | SCRUM-1231 (S1) |
+| Google Fonts (los dos hosts) | ✅ **hecho** por el equipo de Luis. No lo he medido yo | SCRUM-1234 · autorización en el comentario 17378 |
+| Cloudflare: proxy | ⏳ **abierto**. Se declara como encargado (texto sin autorizar) | — |
+| Cloudflare: NEL (`Report-To` → `a.nel.cloudflare.com`) | ⏳ **abierto, PENDIENTE DE LUIS**. Nadie ha mirado si se apaga desde su panel | — |
+| Resend: seguimiento de clics **y** de aperturas | ✅ **resuelto con fuente + informe de Luis** (ver abajo) | — |
+
+### Aperturas: la condición de la fuente cubre LAS DOS, leída y no deducida
+
+Relectura literal de la misma descarga del 28-sep (`api-reference/domains/update-domain`, sha256[16]
+`b34519c1536f862d`). La frase aparece **dos veces, una en cada parámetro**, no una sola para los dos:
+
+- `click_tracking`: «Track clicks within the body of each HTML email.» → *Info:* «This setting is only
+  applied if a `tracking_subdomain` is configured and verified.»
+- `open_tracking`: «Track the open rate of each email.» → *Info:* «This setting is only applied if a
+  `tracking_subdomain` is configured and verified.»
+
+Luis informa de que **no existe ningún subdominio de seguimiento**. Con la fuente, eso deja **sin
+aplicar** el seguimiento de clics **y** el de aperturas.
+
+**Suelo:**
+- «no existe subdominio» es el informe de Luis desde el panel, no una medición mía. Lo que medí yo
+  (15 nombres típicos en `presufacil.online`, 11 en `yaqu.app`, todos sin CNAME) es compatible con él,
+  pero no lo prueba;
+- la fuente es la versión de la documentación bajada hoy.
+
+### `yaqu.app` verificado en Resend: confirmado por DNS
+
+Nueva medición, 28-sep 16:08Z:
+- `resend._domainkey.yaqu.app TXT p=…` **existe**. A las 15:20Z era NXDOMAIN, lo que cuadra con el
+  alta de hoy que cuenta Luis.
+- `send.yaqu.app`: MX `feedback.forge.rmta.net`, más un CNAME a `send.forge.rmta.net` y SPF con IPs
+  propias.
+- **Anotado sin interpretarlo:** la Return-Path de `yaqu.app` no apunta a Amazon SES, como la de
+  `presufacil.online` (`feedback-smtp.eu-west-1.amazonses.com`), sino a `forge.rmta.net`. La
+  documentación dice que los registros son los que Resend genera. Lo que significa esa diferencia no
+  está medido.
+- Que el backend ya **envíe** desde `yaqu.app` depende de `EMAIL_FROM` (SCRUM-1115). Esto solo mide
+  que el dominio está verificado.
