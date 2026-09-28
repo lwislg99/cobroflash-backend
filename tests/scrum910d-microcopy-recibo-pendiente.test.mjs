@@ -71,7 +71,7 @@ async function pedirRecibo(m) {
   // SCRUM-1204 · `node:http` con `agent: false`, NUNCA `fetch`. `fetch` es undici, que interpreta HTTP
   // con `llhttp` en WebAssembly. Tras unas pocas peticiones V8 lo recompila en segundo plano, y si
   // `--test-force-exit` cierra el proceso en medio, libuv aborta al salir (`UV_HANDLE_CLOSING`,
-  // `src\win\async.c:94`) con los 5 tests en verde: 20/20 medido. Mismo remedio que SCRUM-100/556
+  // `src\win\async.c:94`) con los 5 tests en verde: 20/20 medido el 28-sep-2026. Mismo remedio que SCRUM-100/556
   // (scrum1107b, scrum1108b, scrum923, scrum924). No sigue redirecciones, como el `redirect: 'manual'`.
   const { status, cuerpo } = await new Promise((ok, ko) => {
     const req = http.request(
