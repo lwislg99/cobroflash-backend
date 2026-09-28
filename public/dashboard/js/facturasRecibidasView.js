@@ -56,7 +56,11 @@
     etiquetaTrimestre: 'Trimestre',
     consultar: 'Consultar',
     // SCRUM-1249 · la descarga del libro (`/admin/libros/recibidas.csv`, SCRUM-426), que el
-    // servidor servía y ninguna pantalla ofrecía. PROPUESTOS al orquestador, SIN FIRMA todavía.
+    // servidor servía y ninguna pantalla ofrecía. Aprobados por el orquestador por delegación del
+    // fundador el 28-sep-2026 — SCRUM-1249 comentario 17432 (registro en `docs/microcopy/`).
+    // ⚠️ `descargaVacia` AFIRMA que el periodo no tiene facturas recibidas: es cierto porque la
+    // descarga recarga la tabla con el mismo periodo y las dos salen del mismo motor. Si se
+    // desacoplan, ese texto miente y vuelve a firma.
     descargar: 'Descargar CSV',
     preparando: 'Preparando la descarga…',
     descargaVacia: 'No hay facturas recibidas en este periodo.',

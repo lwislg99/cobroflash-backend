@@ -78,3 +78,34 @@ test('SCRUM-1249 · 🔴 «Facturas recibidas» ofrece la descarga del libro, co
     assert.equal(qs.get('trimestre'), '2', u);
   }
 });
+
+// 🔴 LA DEPENDENCIA DE `descargaVacia` (firma de SCRUM-1249, comentario 17432). «No hay facturas
+// recibidas en este periodo» se afirma porque el fichero salió vacío, y solo es verdad si la tabla
+// que el profesional tiene delante es del MISMO periodo. Por eso, pulsando SOLO «Descargar CSV»
+// (sin «Consultar»), la tabla tiene que recargarse con ese periodo. Si alguien lo desacopla, esto
+// cae — y el texto vuelve a firma.
+test('SCRUM-1249 · pulsar SOLO la descarga recarga la tabla con el MISMO periodo que el fichero', async () => {
+  const pedidas = [];
+  const banco = cargarDashboard(RAIZ, {
+    datos: (url) => (/\/admin\/libros\/recibidas\.json\?/.test(String(url)) ? RECIBIDAS_VACIO : {}),
+  });
+  const fetchDelBanco = banco.ctx.fetch;
+  banco.ctx.fetch = (url, opts) => { pedidas.push(String(url)); return fetchDelBanco(url, opts); };
+  const r = await pintarVista(banco, 'renderFacturasRecibidasView');
+  assert.equal(r.error, null);
+  banco.ctx.document.getElementById('facturas-recibidas-anio').value = '2024';
+  banco.ctx.document.getElementById('facturas-recibidas-trimestre').value = '4';
+  const antes = pedidas.length;
+  const btn = banco.ctx.document.getElementById('facturas-recibidas-descargar');
+  assert.ok(btn, 'CIEGO: no encuentro el botón de descarga');
+  assert.equal(btn.disparar('click'), 1, 'CIEGO: el botón no tiene oyente');
+  for (let i = 0; i < 10; i++) await new Promise((res) => setImmediate(res));
+  const tras = pedidas.slice(antes).map((u) => {
+    const [ruta, q] = u.split('?'); const qs = new URLSearchParams(q);
+    return `${ruta} ${qs.get('año')}-T${qs.get('trimestre')}`;
+  });
+  assert.deepEqual(tras.sort(), [
+    '/admin/libros/recibidas.csv 2024-T4',
+    '/admin/libros/recibidas.json 2024-T4',
+  ]);
+});
