@@ -38,6 +38,53 @@ const HISTORIAL_CLIENTE = {
 };
 if (typeof window !== 'undefined') window.historialCliente = HISTORIAL_CLIENTE;
 
+/**
+ * SCRUM-1133 · LOS WHATSAPP QUE SE LE HAN ENVIADO AL CLIENTE: las piezas sin DOM de su pestaña.
+ *
+ * `GET /admin/customers/:id/whatsapp` (SCRUM-1062) estaba construido y no lo llamaba nadie. Textos
+ * firmados en SCRUM-1133 (registro en `docs/microcopy/2026-09-28-SCRUM-1133-whatsapp-del-cliente.md`).
+ * El ESTADO de cada mensaje no se escribe aquí: lo pinta `waDeliveryChip` (api.js, WA-0b), el mismo
+ * chip que ya enseñan presupuestos y facturas. Y se callan dos campos a propósito: `error` es el
+ * texto crudo de Meta, en inglés, y `templateName` el nombre interno de la plantilla.
+ */
+const WHATSAPP_CLIENTE = {
+  TEXTOS: {
+    pestana: 'WhatsApp',
+    vacio: 'Sin mensajes de WhatsApp',
+    columnas: ['Fecha', 'Documento', 'Estado'],
+    verMas: 'Ver más mensajes',
+    baja: 'Se dio de baja de WhatsApp: no se le envían mensajes.',
+    factura: 'Factura',
+    cobro: 'Cobro',
+    sinDocumento: '—',
+  },
+  /** «WhatsApp (n)», o «WhatsApp (20+)» cuando el servidor dice que hay más páginas. */
+  tituloPestana(n, hayMas) {
+    return WHATSAPP_CLIENTE.TEXTOS.pestana + ' (' + (hayMas ? n + '+' : n) + ')';
+  },
+  /**
+   * El documento de la fila. El número sale de las listas que la ficha YA tiene, nunca del id
+   * interno (`relatedId`): «#57» por un presupuesto que el profesional conoce como el 12 sería falso.
+   * Si no está en la lista, se nombra el tipo sin número.
+   */
+  documento(m, quotes, invoices, nombrePresupuesto) {
+    const T = WHATSAPP_CLIENTE.TEXTOS;
+    if (!m || !m.relatedType) return T.sinDocumento;
+    if (m.relatedType === 'quote') {
+      const q = (quotes || []).find((x) => x.id === m.relatedId);
+      const numero = q ? (q.quoteNumber ?? q.id) : null;
+      return nombrePresupuesto + (numero != null ? ' #' + numero : '');
+    }
+    if (m.relatedType === 'invoice') {
+      const f = (invoices || []).find((x) => x.id === m.relatedId);
+      return T.factura + (f && f.number ? ' ' + f.number : '');
+    }
+    if (m.relatedType === 'charge') return T.cobro;
+    return T.sinDocumento;
+  },
+};
+if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
+
 async function renderCustomer360View(container, customerId) {
   container.innerHTML = '';
 
@@ -78,10 +125,15 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-980 · el historial de trabajo, EN PARALELO y a parte: si falla, la ficha sale igual que
   // antes —sin pestaña «Trabajos» ni «Próxima visita»— en vez de caerse entera por él.
   let historial = null;
+  // SCRUM-1133 · y los WhatsApp, igual: en paralelo y aparte. La ruta es `requireRole('admin')`,
+  // así que a un técnico ni se le pide (sería un 403) ni se le pinta la pestaña.
+  let whatsapp = null;
+  const pideWhatsapp = window.appUserRole === 'admin';
   try {
-    [data, historial] = await Promise.all([
+    [data, historial, whatsapp] = await Promise.all([
       apiRequest(`/admin/customers/${id}/detail`),
       apiRequest(`/admin/customers/${id}/historial`).catch(() => null),
+      pideWhatsapp ? apiRequest(`/admin/customers/${id}/whatsapp`).catch(() => null) : null,
     ]);
   } catch {
     alertEl.textContent = 'Error al cargar el historial del cliente.';
@@ -363,6 +415,13 @@ async function renderCustomer360View(container, customerId) {
     ? makeTab(HISTORIAL_CLIENTE.tituloPestana(trabajos.length, !!siguiente), 'jobs')
     : null;
   if (tabJobs) tabsWrap.appendChild(tabJobs);
+  // SCRUM-1133 · la cuarta, con el mismo mecanismo. Solo si la respuesta llegó.
+  const mensajesWa = whatsapp && Array.isArray(whatsapp.mensajes) ? whatsapp.mensajes.slice() : null;
+  let siguienteWa = whatsapp ? whatsapp.siguiente ?? null : null;
+  const tabWhatsapp = mensajesWa
+    ? makeTab(WHATSAPP_CLIENTE.tituloPestana(mensajesWa.length, !!siguienteWa), 'whatsapp')
+    : null;
+  if (tabWhatsapp) tabsWrap.appendChild(tabWhatsapp);
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
@@ -409,6 +468,8 @@ async function renderCustomer360View(container, customerId) {
       table.appendChild(tbody);
     } else if (key === 'jobs') {
       pintarTrabajos(card, table);
+    } else if (key === 'whatsapp') {
+      pintarWhatsapp(card, table);
     } else {
       table.innerHTML = `<thead><tr><th>Nº</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
@@ -460,6 +521,72 @@ async function renderCustomer360View(container, customerId) {
     b.textContent = texto;
     b.addEventListener('click', (e) => { e.stopPropagation(); alPulsar(); });
     return b;
+  }
+
+  // SCRUM-1133 · la pestaña «WhatsApp»: fecha, documento y el chip de estado de WA-0b.
+  function pintarWhatsapp(card, table) {
+    const T = WHATSAPP_CLIENTE.TEXTOS;
+    if (whatsapp && whatsapp.waOptOut) {
+      const baja = document.createElement('p');
+      baja.className = 'whatsapp-baja';
+      baja.style.cssText = 'margin:0 0 12px;font-size:13px;color:var(--neutral-600)';
+      baja.textContent = T.baja;
+      card.insertBefore(baja, card.firstChild);
+    }
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    T.columnas.forEach((c) => { const th = document.createElement('th'); th.textContent = c; trh.appendChild(th); });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+
+    if (mensajesWa.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = T.columnas.length;
+      td.className = 'historial-vacio';
+      td.textContent = T.vacio;
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    mensajesWa.forEach((m) => {
+      const tr = document.createElement('tr');
+      tr.dataset.mensaje = String(m.id);
+      const tdFecha = document.createElement('td');
+      tdFecha.className = 'historial-fecha';
+      tdFecha.textContent = m.createdAt ? new Date(m.createdAt).toLocaleDateString('es-ES') : '';
+      tr.appendChild(tdFecha);
+      const tdDoc = document.createElement('td');
+      tdDoc.textContent = WHATSAPP_CLIENTE.documento(m, quotes, invoices, L.quote || 'Presupuesto');
+      tr.appendChild(tdDoc);
+      const tdEstado = document.createElement('td');
+      // El chip ya lleva su fecha en la columna de al lado: `sinFecha`, como en la lista (SCRUM-986).
+      tdEstado.innerHTML = window.waDeliveryChip ? window.waDeliveryChip({ status: m.status, templateName: m.templateName }, { sinFecha: true }) : '';
+      tr.appendChild(tdEstado);
+      tbody.appendChild(tr);
+    });
+
+    if (siguienteWa) {
+      const mas = document.createElement('button');
+      mas.type = 'button';
+      mas.className = 'btn-secondary btn-sm historial-ver-mas';
+      mas.textContent = T.verMas;
+      mas.addEventListener('click', async () => {
+        mas.disabled = true;
+        try {
+          const r = await apiRequest(`/admin/customers/${id}/whatsapp?despuesDe=${encodeURIComponent(siguienteWa)}`);
+          (r.mensajes || []).forEach((x) => mensajesWa.push(x));
+          siguienteWa = r.siguiente ?? null;
+          tabWhatsapp.textContent = WHATSAPP_CLIENTE.tituloPestana(mensajesWa.length, !!siguienteWa);
+          renderTab('whatsapp');
+        } catch {
+          mas.disabled = false; // se puede reintentar: la página que ya estaba sigue en pantalla
+        }
+      });
+      card.appendChild(mas);
+    }
   }
 
   function pintarTrabajos(card, table) {
