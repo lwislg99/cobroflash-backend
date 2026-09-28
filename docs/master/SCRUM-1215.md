@@ -25,6 +25,33 @@ daba como posible dinámico; medido a mano, no se pinta nunca.
 - `scrum1157`, `scrum720`, `scrum1175b`, `scrum652c`, `scrum653`: **47 tests · 47 pass · 0 fail ·
   0 skip**, tras el build.
 
+## Incremento 2 · las firmadas del lote 1, marcadas para que el censo las cuente
+
+Firma: **SCRUM-1215 comentario 17367** (orquestador por delegación del fundador), leída en Jira antes
+de tocar nada. **22 aprobadas**: los 16 rótulos + `firmar`, `anadirLinea`, `dictado`,
+`pistaDictado`, `ordenarDictado`, `noSePudoCargar`. Cada una lleva **encima** su
+`// APROBADO · SCRUM-1215 comentario 17367`. `firmaRechazada` no se volvió a firmar: su comentario
+decía «PENDIENTE DE FIRMA» y ahora cita la firma real (SCRUM-890 c.15665).
+
+**No se marcan, a propósito:** `confirmarPropuesta` (NO aprobada: «añadir estas» es falso mientras
+SCRUM-1230 no haga entrar las «Sin colocar»; se aprueba sola cuando lo haga) · `pistaFirma`
+(SCRUM-1229) · `sinBloque` (SCRUM-1230) · `sinLineas` (ver abajo).
+
+Censo: **APROBADO 173 · PENDIENTE 7 · SIN_COMENTARIO 53**, trinquete **0 nuevas · 0 que sobran**; las
+23 pasan de `acusadas` a `retiradas` con su motivo. Tanda de la zona: **69 · 69 pass · 0 fail · 0 skip**.
+
+⚠️ **Punto ciego del censo, medido**: la regla 1 de `_censo-convenio-microcopy.mjs`
+(`k: 'x', // APROBADO`, en la misma línea) **no funciona con coma**. `getTrailingCommentRanges` se
+llama en el fin de la propiedad, ANTES de la coma, y `getLeadingCommentRanges` no recoge un
+comentario de la misma línea. Las 22 marcas puestas así salieron `SIN_COMENTARIO`; puestas encima
+(regla 2), `APROBADO`. Falla hacia acusar de más (la dirección segura), pero la regla documentada no
+se puede usar. Avisado a S3.
+
+**`sinLineas` NO pintada**: la firma aprueba «No se apuntó nada en este apartado.» para el bloque
+vacío y no editable, pero la edición la **denegó el clasificador de permisos** ([Instruction
+Poisoning]). No se rodea; queda para cuando lo decida el fundador. Vocabulario comprobado: «bloque»
+solo existe en atributos del código, nunca a la vista, así que «apartado» cumple la condición.
+
 ## Lo que NO entra aquí
 
 - `sinLineas`: medido que **sí se pinta** en un parte firmado (firmar exige una línea en total, no una

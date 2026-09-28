@@ -188,75 +188,11 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.anadirLinea": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/parteDetailView.js · TEXTOS.confirmarPropuesta": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.desplazamiento": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.dictado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.entrada": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.firmar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.firmaRechazada": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.kilometros": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.manoObra": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.materiales": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.noSePudoCargar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.notas": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.obra": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.ordenarDictado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.pistaDictado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/parteDetailView.js · TEXTOS.pistaFirma": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.referencia": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.salida": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -265,34 +201,6 @@
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
     "public/dashboard/js/parteDetailView.js · TEXTOS.sinLineas": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tecnicos": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tipoInstalacion": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tipoMantenimiento": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tipoReparacion": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tituloFirma": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.tituloTipo": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.unds": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -369,6 +277,98 @@
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.yaFirmado",
       "motivo": "SCRUM-1215 lote 1 (S4, 28-sep-2026, Jira c.17360): la clave no tenía NINGÚN consumidor (ni TEXTOS.yaFirmado ni TEXTOS[...] en public/), así que no se pintaba nunca. Retirada del objeto por decisión del orquestador (cobroflash-backend-57). No se firmó: se borró."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.manoObra",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.materiales",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.unds",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.entrada",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.salida",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.desplazamiento",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.kilometros",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.referencia",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.obra",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tecnicos",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.notas",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tituloTipo",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tipoReparacion",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tipoMantenimiento",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tipoInstalacion",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.tituloFirma",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.firmar",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.anadirLinea",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.dictado",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.pistaDictado",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.ordenarDictado",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.noSePudoCargar",
+      "motivo": "SCRUM-1215 lote 1: revisada contra el código por S4 (Jira c.17363) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17367. Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.firmaRechazada",
+      "motivo": "SCRUM-1215 lote 1: ya estaba FIRMADA desde SCRUM-890 comentario 15665 (docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md); el comentario del código se había quedado en «PROPUESTA, PENDIENTE DE FIRMA» y ahora cita su firma real. No se volvió a firmar."
     }
   ]
 }
