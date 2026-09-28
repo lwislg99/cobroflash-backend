@@ -29,7 +29,7 @@ enviar; aquí sirve para que tú veas el estado.
 |---|---|---|
 | **SIN RESPUESTA** | Nadie la ha contestado | 14 |
 | **IA · 22-sep** | Respuesta preparada por **una sesión de IA** contra la FAQ de la AEAT y el BOE (`PREGUNTAS_ASESOR.md`, sección «RESPUESTAS · 22-sep», que lo dice en su primera línea). **Ningún asesor humano la ha revisado.** El cotejo del 23-sep (SCRUM-1088) comprobó que las citas existen, no que la aplicación a nuestro caso sea correcta | 11 |
-| **«ASESOR» · 23-sep, AUTORÍA SIN DECLARAR** | Respuestas rotuladas «el asesor fiscal» (SCRUM-1104 y 1106, volcadas en `PREGUNTAS_ASESOR.md:848` y `:978`). **Ningún documento dice si las escribió una persona o una herramienta.** El «asesor» marca él mismo con ⚠ lo que cita «de memoria». | 2 |
+| **«ASESOR» · 23-sep, AUTORÍA SIN DECLARAR** | Respuestas rotuladas «el asesor fiscal» (SCRUM-1104 y 1106, volcadas en `PREGUNTAS_ASESOR.md:847` y `:978` (`RESPONDIDA`)). **Ningún documento dice si las escribió una persona o una herramienta.** El «asesor» marca él mismo con ⚠ lo que cita «de memoria». | 2 |
 | **AEAT** | Respuesta oficial de la Agencia (correo de julio en SCRUM-143) | 1 |
 
 **Por qué importa, con un caso.** El mapa de SCRUM-1023 marca 17 preguntas como «NO necesita
