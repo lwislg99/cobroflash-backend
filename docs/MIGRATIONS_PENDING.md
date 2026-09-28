@@ -2999,10 +2999,16 @@ dos columnas (0 DROP/RENAME/TRUNCATE/DELETE/SET NOT NULL).
 
 ### Estado por base — 28-sep-2026
 
-- [ ] **producción** — la pegó Javier (lo dice el orquestador). **SIN verificar por catálogo**: ninguna
-  sesión tiene la clave. 🔴 Hasta verificarlo, el PR de 1216b NO debe mergearse: `schemaDrift.ts` no
-  deja escuchar en `NODE_ENV=production` si el esquema espera columnas que la base no tiene
-  (SCRUM-1122).
-- [x] **staging** — verificado por el orquestador leyendo `information_schema`: las dos, `integer`,
-  nullable, sin default; `next_invoice_number` intacto.
-- [ ] **desarrollo · yaqu_dev_javier** — pedido a J6 (tiene el aplicador). J1 no lo aplica.
+Fuente de las tres casillas: **SCRUM-1216, comentario 17369**, con la salida literal. La medición NO es de
+J1: J1 no tiene clave de ninguna de las tres bases.
+
+- [x] **producción** — aplicó Javier. Verificada según el **orquestador** (17369), con la salida que
+  devolvió Javier: las dos `integer`, `is_nullable=YES`, sin default; `next_invoice_number` `NO`,
+  default 1. **Distinguida de staging por DATOS, no por columnas**: las dos bases dan 66 columnas en
+  `merchants`, así que contarlas no separaba nada. La consultada tiene `merchants = 14 · invoices = 2`, y
+  staging `8 · 9`. Era la condición para mergear: `schemaDrift.ts` no deja escuchar en
+  `NODE_ENV=production` si el esquema espera columnas que la base no tiene (SCRUM-1122).
+- [x] **staging** — aplicó Javier; lo verificó el orquestador leyendo `information_schema` con
+  `DATABASE_URL_STAGING` (17369).
+- [x] **desarrollo · yaqu_dev_javier** — aplicó y verificó J6 (17369): 64 → 66 columnas, y la huella md5
+  de los valores de `next_invoice_number` es idéntica antes y después.

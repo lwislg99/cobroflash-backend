@@ -172,6 +172,15 @@ con `--test-force-exit`, que pasa 5/5 sin él. El resto de la tanda lo corre el 
 
 ## ⑧ Antes de mergear
 
-🔴 **Producción tiene que tener las dos columnas, VERIFICADAS por catálogo.** `schemaDrift.ts` no deja
-escuchar en `NODE_ENV=production` si el esquema espera columnas que la base no tiene (SCRUM-1122), y el PR
-se mergea solo. Staging está verificado y producción no (ver `docs/MIGRATIONS_PENDING.md`).
+La condición era que **producción tuviera las dos columnas, verificadas por catálogo**: `schemaDrift.ts` no
+deja escuchar en `NODE_ENV=production` si el esquema espera columnas que la base no tiene (SCRUM-1122), y el
+PR se mergea solo. J1 no empujó hasta tenerla.
+
+✅ **Se cumple según SCRUM-1216, comentario 17369.** La medición es del **orquestador**, con la salida que
+devolvió Javier; J1 no tiene clave de producción y no la ha visto de primera mano. La cita por lo que lleva
+dentro: la salida literal, y un discriminador **por datos** que separa producción de staging (14/2 frente a
+8/9), porque contar columnas no las separaba (66 en las dos). Detalle en `docs/MIGRATIONS_PENDING.md`.
+
+Producción tiene 2 facturas (SCRUM-1216, comentario 17362: «facturas de prueba», según Javier). El camino de
+emisión YA ha corrido allí, y esas dos no se renumeran nunca (regla 29). Este cambio no las toca: sólo decide
+el número de las que se emitan a partir de ahora.
