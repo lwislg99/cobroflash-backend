@@ -39,7 +39,7 @@ const FIRMADO_1160 = 'Desde tu cuenta todavía no se pueden generar facturas.';
 
 const TRABAJO = {
   id: 41, title: 'Cambio de calentador', status: 'terminado', scheduledAt: null,
-  customer: { id: 3, name: 'Marta Gil', phone: '+34600111222' },
+  customer: { id: 3, name: 'Marta Gil', phone: '+34000111222' },
   remaining: { amount: 250, currency: 'EUR' }, total: { amount: 500, currency: 'EUR' },
   invoices: [], albaranes: [], tecnicos: [],
 };
