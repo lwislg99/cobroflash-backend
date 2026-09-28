@@ -40,3 +40,11 @@ devuelve un array, y `assert.ok([])` es verde. Censo del patrón en `tests/`: s�
   exactamente su caso. Árbol restaurado y comprobado con `git diff --quiet`.
 - Controles: el 400 sin campo sigue en el genérico de 1199, y un `message` humano del servidor sigue
   ganando también en un 500.
+- Tanda DIRIGIDA sobre el árbol fusionado con `origin/main` 65d080e3150a6d2746f94996f0a41343604ad5b1
+  (52 ficheros: clientes, microcopy, 1157, 1199, 1239, 237, 976, 267, 411, 448, 459, 828, 590 y los
+  que leen los dos censos que main acababa de cambiar): **483 tests · 471 pass · 0 fail · 12 skip**
+  (los 12, gateados por `QA_DB_TEST` / `LIBRO_PG_URL`). `guards:entrada`: 12 guards, 112 tests, 0 fail.
+- ⚠️ **La tanda completa murió por memoria; la corre el CI.** Con turno del orquestador (3.944 MB libres
+  al lanzarla), Claude Code la paró por memoria baja de la máquina y salió sin veredicto. Un intento
+  anterior salió CIEGO sin arrancar: el patrón expandido por la shell eran 1.063 argumentos
+  («Argument list too long»). Ninguno de los dos cuenta como resultado.
