@@ -429,7 +429,12 @@
 
 ---
 
-### [ ] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
+### [x] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
+- **CERRADO (28-sep-2026, SCRUM-1161):** el modal omite `phone` y `email` vacíos (`|| undefined`, la
+  regla de `mobile`). Lo sujeta `tests/scrum1161-alta-sin-correo.test.mjs` (modal real → puerta real,
+  rojo verificado con el modal anterior), y SCRUM-590b ya deja el email vacío. **Queda fuera:** vaciar
+  no borra (la decisión de abajo sigue abierta) y el alta rápida de `homeView.js` manda `phone: null`
+  (carril S2, reportado en el ticket).
 - **Síntoma:** en el modal de Clientes, guardar un cliente dejando el **email** vacío devuelve
   **400 `validation_error`**. Con el **teléfono** vacío, igual. El profesional ve «Error guardando
   cliente: …» y no puede dar de alta a alguien de quien sólo tiene el nombre y un número.

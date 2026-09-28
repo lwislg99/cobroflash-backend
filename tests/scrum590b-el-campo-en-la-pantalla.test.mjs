@@ -90,13 +90,10 @@ async function guardarDesdeLaPantalla({ fijo = '', movil = '' }) {
   };
 
   control('name').value = 'Reformas Ejemplo SL';
-  // ⚠️ EL EMAIL SE RELLENA, y no es adorno: HOY el modal manda `email: ""` cuando está vacío y
-  // `z.string().email()` lo RECHAZA — o sea que un cliente sin email NO se puede guardar desde
-  // esta pantalla. Es un defecto PREEXISTENTE que este test destapó al recorrer el camino real;
-  // está registrado en `docs/BUGS.md` y NO se arregla aquí (regla 37: otro carril, y arreglarlo
-  // «de paso» sin registrarlo es justo lo que la casa prohíbe). Se le da un email para poder
-  // medir LO DE ESTE TICKET, que es el móvil.
-  control('email').value = 'cliente@ejemplo.test';
+  // El email se deja VACÍO a propósito. Aquí se rellenaba para esquivar P1-CONT-19b (el modal
+  // mandaba `email: ""` y la puerta lo rechazaba); desde SCRUM-1161 un cliente sin email se
+  // guarda, y este viaje lo recorre así, que es el caso normal del oficio.
+  control('email').value = '';
   control('phone').value = fijo;
   control('mobile').value = movil;
 
