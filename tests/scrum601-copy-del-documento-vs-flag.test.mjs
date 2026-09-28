@@ -348,7 +348,11 @@ const PENDIENTES_DE_FIRMA = [
   // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
   // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
   // rojo decía `quotesView.js:935`), no contada del diff.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-1188 · y de 935 a 939: la constante `CONDICIONES_QUE_GUARDA_UNA_PLANTILLA` (con su comentario
+  // y su línea en blanco) entra en lo alto del fichero. CORREGIR un anclaje no es añadirlo: el texto
+  // es byte a byte el mismo y el motivo sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre
+  // el árbol resultante (28-sep-2026; el rojo decía `quotesView.js:939`), no contada del diff.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 939, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];
