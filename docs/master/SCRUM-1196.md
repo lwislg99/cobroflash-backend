@@ -238,3 +238,53 @@ marca anterior. SCRUM-1115 (abierto el 25-sep) ya lo decía. Lo de abajo lo **mi
    código fuente del correo y mirar los hosts de los enlaces y si hay una imagen de 1×1.
 3. Mientras tanto, lo que dice la documentación es que, **sin subdominio de seguimiento verificado,
    el seguimiento no se aplica** aunque esté encendido.
+
+### Si Resend RECHAZA, ¿lo ve alguien? (leído sin tocar `src/`)
+
+**Medido contra:** `origin/main` = `eedd7805c45f554bc29ccc3204f6dd09f61862e6` · 2026-09-28T15:32:28Z (pregunta del orquestador; solo lectura, nada construido)
+
+Una aclaración antes: `crearTransportadorResend` **no existe** en `main` (0 apariciones en `src/`).
+El camino real es este:
+
+1. **`enviarPorResend` no lanza.** Si el POST falla, registra el error y escribe una fila de fallo en
+   `emailMessage` (SCRUM-501). Después devuelve `{ enviado: false, motivo: 'fallo_envio' }`
+   (`src/integrations/enviarCorreo.ts`, su `catch`).
+2. **`sendInvoiceEmail` y `sendQuoteEmail` sí lanzan** cuando `!r.enviado`: «no se pudo enviar la
+   factura por email» y lo mismo con el presupuesto (`email.service.ts`, justo tras cada
+   `enviarPorResend`).
+3. Qué hace con esa excepción cada uno de los cinco caminos que llegan al cliente final:
+
+| Camino | Qué hace con la excepción | ¿Lo ve el profesional? |
+|---|---|---|
+| Botón «enviar factura» (`invoicesAdmin.routes.ts:691`) | `catch` → `200` + `sendFailureBody('email_send_failed')` = `{ sent: false, … }` | **SÍ.** `waFallbackBar` (`api.js`) comprueba `waSendFailed(result)` y enseña «Email falló: …» (SCRUM-115/126) |
+| Botón «enviar presupuesto» (`quotesAdmin.routes.ts:747`) | `catch` → `200` + `sent: false` con «No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.» | **SÍ.** `quotesDetailView.js` comprueba `waSendFailed(data)` y pinta el error |
+| Factura automática tras cobro, reintento del proveedor (`psp.routes.ts:78`) | `catch` → `console.error('auto-invoice/error duplicate', …)` | **NO** |
+| Factura automática tras cobro (`psp.routes.ts:201`) | `catch` → `console.error('auto-email error', …)`. El webhook responde igual `200 {status:'paid'}` (`:341`) | **NO** |
+| Factura automática tras cobro de Mercado Pago (`mpWebhook.routes.ts:145`) | `.catch((e) => console.error('[mpWebhook] email error:', e))` | **NO** |
+
+**En los tres caminos automáticos, el rechazo se traga.** Lo único que queda:
+- una línea en los logs de Railway;
+- una fila de fallo en `emailMessage`, que **ninguna pantalla ni ruta lee**. Su único lector en
+  `src/` es `aplicarAvisoDeProveedor` (`registroDeEnvios.ts:310`), que actualiza la fila con el
+  webhook de Resend.
+
+Tampoco hay reintento:
+- `marcarCorreoEnviado` no se escribe si el envío falla. Eso está bien, pero el reintento de
+  `psp.routes.ts:78` solo corre si el proveedor **re-entrega** el evento, y no lo hace, porque el
+  webhook contestó `200`.
+- Ningún cron llama a `sendInvoiceEmail`.
+
+Resultado: el cobro queda `paid`, el cliente final no recibe su factura, y **nadie se entera** salvo
+quien lea los logs.
+
+Es la misma familia de defecto que SCRUM-1161/1162/1200, un fallo que se traga en silencio. **Aquí no
+se construye nada:** tocar esos `catch` es modificar el camino de cobro y de emisión (regla 38/40:
+STOP).
+
+**Suelo:**
+- los caminos automáticos solo corren con `AUTO_EMAIL_INVOICE_ON_PAID` activo y con cobros reales
+  por YaQu. Qué vale la variable en producción no está en el repo, y en España el cobro por YaQu
+  está condicionado a la regla 24;
+- esto mide qué pasa **si** Resend rechaza, no que esté rechazando hoy. Con `presufacil.online`
+  verificado, un rechazo por dominio solo llegaría si alguien cambiara `EMAIL_FROM` a un dominio sin
+  verificar antes de verificarlo (SCRUM-1115).
