@@ -2,6 +2,14 @@
 
 **Fecha:** 28-sep-2026 · **Carril:** J1 (`area-j1`) · **Sesión:** J1, relevo de `jv-j1`
 **Gate:** sin gate, corre en `npm test`
+**Skill UI:** cargada, pero TARDE: después de escribir el botón, cuando la cazó `scrum811c`.
+Revisada contra su checklist AB6:
+- reutiliza `.btn-secondary` dentro de `.data-card-toolbar` (inventario AB3);
+- no añade ningún estilo en línea;
+- tiene estado de carga (texto y `disabled`), y los avisos van por `showToast`;
+- no hay capturas ni matriz de dispositivos: el estado después de pulsar se mide en el banco (A6).
+⚠️ El objetivo táctil es de 36 px (`min-height` del botón compartido), como el de «Consultar» de al
+lado. Subirlo a 44 es un cambio global del componente (SCRUM-724), no de esta pantalla.
 **Medido contra:** `origin/main` = `f20e25d4ae8644a6440e166914355d049bce2017` · 2026-09-28T20:35:00Z
 
 Sale del censo de SCRUM-1195, veredicto (a) DEFECTO.
