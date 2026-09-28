@@ -26,6 +26,7 @@
 // impedir una creación.
 import { huecosDeLaSerie, type HuecosDeSerie } from '../../invoicing/domain/huecosSerie';
 import { formatAlbaranNumber, resolveAlbaranSeq } from './albaranNumber.service';
+import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-1184
 
 /**
  * Compone un número de albarán con la firma que espera `huecosDeLaSerie`.
@@ -70,4 +71,41 @@ export function vistaPreviaAlbaran(
   año: number,
 ): string {
   return formatAlbaranNumber(año, resolveAlbaranSeq(m, año));
+}
+
+/** Lo mínimo de `prisma` que hace falta: tiparlo de más ataría esto a Prisma. */
+export interface LectorDeSerie {
+  merchant: {
+    findUnique: (args: {
+      where: { id: number };
+      select: { nextAlbaranNumber: true; albaranSeriesYear: true; timezone: true };
+    }) => Promise<{ nextAlbaranNumber: number; albaranSeriesYear: number | null; timezone: string | null } | null>;
+  };
+}
+
+/**
+ * SCRUM-1184 · El siguiente número del merchant, para «Siguiente número: AB260005.» en el alta.
+ *
+ * 🔴 EL AÑO SALE DE LA ZONA DEL MERCHANT, con las MISMAS dos funciones que `allocateAlbaranNumber`
+ * (`diaNaturalEn` + `zonaDelMerchant`, SCRUM-1093). Con el reloj del proceso (Railway va en UTC),
+ * en Nochevieja la vista previa enseñaría el número del año que se acaba y el alta emitiría el del
+ * que empieza.
+ *
+ * SOLO LEE: no toma el cerrojo ni avanza el contador. Por eso el texto firmado dice «Siguiente» y
+ * no «Se creará como»: si otro usuario crea un albarán entretanto, el real puede ser otro.
+ *
+ * `null` si el merchant no existe. Propaga `AlbaranSerieSinAnioError` (ver `vistaPreviaAlbaran`).
+ */
+export async function siguienteNumeroDeAlbaran(
+  db: LectorDeSerie,
+  merchantId: number,
+  now = new Date(),
+): Promise<string | null> {
+  const m = await db.merchant.findUnique({
+    where: { id: merchantId },
+    select: { nextAlbaranNumber: true, albaranSeriesYear: true, timezone: true },
+  });
+  if (!m) return null;
+  const año = Number(diaNaturalEn(now, zonaDelMerchant(m)).slice(0, 4));
+  return vistaPreviaAlbaran(m, año);
 }
