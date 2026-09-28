@@ -53,7 +53,7 @@ test('🔴 ① una rama suya VIVA hace PARCIAL al ticket, aunque tenga otra de s
 test('🔴 ② sin nada propio, OTRO expediente que dice «cerrado aquí» lo saca', () => {
   const r = clasificar(9002, caso({ expedientes: { 'docs/master/SCRUM-9003.md': '# SCRUM-9003 · otra cosa\n\n## ⑦ SCRUM-9002, cerrado aquí\n' } }));
   assert.equal(r.veredicto, 'CERRADO_EN_OTRO');
-  assert.deepEqual(r.cierreAjeno.map((c) => `${c.fichero}:${c.linea}`), ['docs/master/SCRUM-9003.md:3']);
+  assert.deepEqual(r.cierreAjeno.map((c) => [c.fichero, c.linea]), [['docs/master/SCRUM-9003.md', 3]]);
 });
 
 test('② una mención que sólo CITA no lo saca, y un número más largo no es el suyo', () => {
