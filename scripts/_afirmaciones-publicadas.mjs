@@ -242,6 +242,10 @@ export const ANCLAS_564 = {
   'precios/li#2': { texto: 'Envío por WhatsApp + firma digital', anclas: [FIRMA, WHATSAPP] },
   'probar/span#9': { texto: 'Lo firma desde el móvil', anclas: [FIRMA] },
   'probar/div#6': { texto: 'Firma para aceptar', anclas: [FIRMA] },
+  // SCRUM-1130 · el final de la demo, firmado en SCRUM-1130 comentario 17403. ANCLADA y no descartada:
+  // afirma que el presupuesto se firma, y la firma existe con la emisión apagada (veredicto del
+  // orquestador, 28-sep-2026). Misma ancla que su hermana `probar/span#9`.
+  'probar/div#7': { texto: 'Firmado · Acepto', anclas: [FIRMA] },
   'probar/p#1': {
     texto: 'Pulsa el botón verde dentro del móvil y avanza — del presupuesto a la firma, como lo viven tú y tu cliente.',
     anclas: [FIRMA],
