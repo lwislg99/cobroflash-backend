@@ -31,6 +31,11 @@ const RESTRICCIONES = [
 ];
 
 test('SCRUM-1214 · ① 🔴 una restricción NUNCA se etiqueta como «añade columnas»', () => {
+  // Hermano del token (SCRUM-237): un ADD COLUMN legítimo SÍ lleva este motivo — así el
+  // `doesNotMatch` de abajo comprueba un texto que el clasificador emite de verdad, no uno
+  // imposible (la clase de bug de scrum73).
+  assert.match(ver('ALTER TABLE "t" ADD COLUMN "c" TEXT;').motivo, /solo añade columnas/,
+    '🔴 el motivo de un ADD COLUMN legítimo dejó de ser «solo añade columnas» — actualiza también el `doesNotMatch` de abajo.');
   for (const [sql, nombre] of RESTRICCIONES) {
     const c = ver(sql);
     assert.doesNotMatch(String(c.forma), /ADD COLUMN/,

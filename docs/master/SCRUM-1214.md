@@ -90,3 +90,18 @@ distingue `AS ENUM ()` de `AS ENUM ('a')`** y el vacío pasa (el guarda de dev l
 
 **Antes del cambio eran cuatro etiquetas falsas sobre sentencias PERMITIDAS, no una:** FK, CHECK,
 UNIQUE y PK.
+
+## 🔴 CI en rojo tras el push: SCRUM-237 sin respaldo (arreglado en la misma rama)
+
+El check obligatorio `build + tests (con banco desechable)` cayó porque `SCRUM-976` ejecuta
+`tests/scrum237-negacion-respaldada.test.mjs` como parte de `guards:entrada`. Ese guard vigila que
+ninguna negación de la suite se quede sin respaldo (nació del bug de scrum73: un `doesNotMatch`
+sobre un token imposible, verde permanente). El `assert.doesNotMatch(String(c.motivo), /solo añade
+columnas/, …)` de `scrum1214-clasificador-apretado.test.mjs:38` usa un texto que el clasificador SÍ
+emite de verdad (`_clasificador-sql.mjs:189`, para un `ADD COLUMN` legítimo) pero, sin ningún
+`assert.match` en el fichero que use el mismo token sobre un caso positivo, el analizador no podía
+distinguirlo de la clase de bug que persigue y lo clasificaba `NINGUNO`.
+
+No es un guard caprichoso (regla 41): se arregló el test, añadiéndole el «hermano del token» — un
+`assert.match` sobre un `ADD COLUMN` legítimo con el mismo patrón `/solo añade columnas/`, antes del
+bucle de restricciones. El guard no se tocó.
