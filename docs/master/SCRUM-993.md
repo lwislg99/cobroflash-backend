@@ -1,6 +1,6 @@
 # SCRUM-993 · Enviar el albarán a firmar en UN toque desde la puerta del cliente
 
-**Medido contra:** `origin/main` = `95cd703f7bd502e62679d0c1a63209ae581ffd57` · 2026-09-27T17:43:36Z
+**Medido contra:** `origin/main` = `29b492b0c2f246941e5c514d682887c18fd19494` · 2026-09-28T14:28:49Z
 
 **Escribe:** Sesión 4 (S4, `s4-27a`) · **Carril:** S4 (producto/microcopy). Cogido el 27-sep-2026
 ~19:00Z, medido antes de construir (comentario 17259) y con las dos decisiones + firma del
@@ -89,3 +89,39 @@ reuso de `.alert.info`) y la declaración correspondiente.
 - El criterio interino de WhatsApp se sustituye cuando SCRUM-1171 exista (referencia dejada en el
   código).
 - No se toca `jobNextAction.js` ni la escalera: si su rediseño hace falta, es SCRUM-917.
+
+## 2ª vuelta · 2026-09-28 · opción A y la hoja que se cierra (S4, relevo de `s4-28b`)
+
+Construye la decisión del orquestador en **SCRUM-993 comentario 17327**, que contesta a la medición
+del comentario 17325. Los tests de esta vuelta los dejó escritos `s4-28b` sin commitear al caer
+(`exit 4`, 14:19:55Z); se leyeron, sirven, y se completaron.
+
+**Qué cambia en `jobDetailView.js`:**
+
+1. **Sin teléfono ni móvil, `onEntregarYFirmar` es `undefined`** y `buildAlbEditor` no monta ni el
+   botón ni la confirmación. «Crear albarán» sigue. El criterio sigue siendo el INTERINO de 17263
+   (SCRUM-1171 lo sustituye).
+2. **RETIRADO** el texto de confirmación sin canal (constante borrada; el registro de microcopy lo
+   tacha, no lo borra).
+3. **Una vez creado el albarán, `onEntregarYFirmar` ya no lanza.** El `catch` de la hoja (que la
+   deja abierta y rehabilita «continuar») solo recibe los fallos del ALTA, que no dejan nada creado.
+   Un fallo de EMITIR deja un borrador visible en la ficha tras el refresco (aviso ya existente «No se
+   pudo completar la entrega.»); un fallo del ENVÍO —incluido el 409 `customer_missing_phone`, que
+   LANZA en `apiRequest`— pinta el aviso firmado en 17263. En los dos casos la hoja se cierra y la
+   ficha se refresca: el segundo clic que creaba y EMITÍA otro albarán ya no existe.
+4. **El éxito solo con `sent === true`.** Distinguible de verdad: el servidor pone `sent: true`
+   únicamente en `sendSuccessBody` (`src/lib/sendOutcome.ts`); el fallo con 200 lleva `sent: false`
+   y el resto son no-2xx. La condición de la firma de 17327 se cumple.
+
+**Verificación en rojo:** `tests/scrum993-boton-un-toque.test.mjs` contra el `jobDetailView.js` de
+`origin/main`: 7 pass / **4 fail** (los cuatro nuevos). Con el cambio: **11/11**. Suite dirigida
+(81 ficheros que citan `jobDetailView`/SCRUM-993): 737 tests, 735 pass, 1 skip, 1 fail → era
+SCRUM-644 (trinquete de `.message` crudos): el primer intento pintaba `e.data.message` del servidor
+en el fallo de emitir. Arreglado el CÓDIGO (texto fijo ya existente), no el trinquete.
+
+**Hallazgo del banco, no arreglado aquí:** en `_banco-vistas.mjs`, `removeChild` desregistra el id
+del nodo quitado pero NO los de su subárbol — tras `overlay.remove()`, `getElementById` seguía
+encontrando el «continuar» de dentro, y el test salía rojo con la hoja ya cerrada. El test mide con
+`sigueMontado` (sube por `_padre` hasta `body`), con control positivo antes de pulsar. Y un
+`assert.equal(nodo, null)` que falla sobre un nodo del mini-DOM **agota la memoria** al
+inspeccionarlo (`RangeError: Array buffer allocation failed`, 100 s): se aserta con `=== null`.
