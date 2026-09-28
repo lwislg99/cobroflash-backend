@@ -68,6 +68,10 @@ libres que no llegó a saltar en ninguna:
 | T11-antes · script de `main`, sesión activa | `main` | 8.924 | 8.789 | 1 | 4,2 | **4.352 MB** | **744 MB** |
 | T11-inactiva · después, en segundo plano con la sesión quieta | este | 8.924 | 8.789 | 1 | 3,6 | 3.488 MB | 1.201 MB |
 
+Y una cuarta, **T11-final**, sobre esta rama ya con este registro (`70f05bda`), en segundo plano con la
+sesión quieta: **8.931 tests · 8.797 pass · 0 fail · 134 saltados** (los gateados por base), 1.072
+ficheros, 3,8 min, pico de la suma 3.460 MB, mínimo libre 1.263 MB, `exit 0`.
+
 Los fallos: `scrum854` en las tres (esta rama aún no traía su registro: es este fichero), y en T11 además
 `scrum1216b` por el abort de libuv (abajo, «De paso»). Ninguna la paró nadie.
 
