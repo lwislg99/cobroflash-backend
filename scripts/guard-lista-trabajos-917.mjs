@@ -63,11 +63,18 @@ const ESPERADO = {
   },
 };
 
+// SCRUM-1205b · CADA RUTA DECLARA EL MODO DE EMISIÓN DE SU MERCHANT. Desde SCRUM-1205 la fila sólo
+// ofrece «💰 Cobrar el resto» si `facturaFiscalDisponible()` —`collect-rest` emite una factura y
+// en modo justificante corta con 409—, y esa función falla cerrado sin `appModoEmision`, que pone
+// `app.js` y aquí no se carga. Sin declararlo, C.1 medía un modo «desconocido» que nadie escribió.
+// Las de siempre son `fiscal`: es el modo en el que se decidió el inventario de SCRUM-917.
+// `/t-justificante` es el caso que SCRUM-1205 introdujo y nadie vigilaba (C.6).
 const RUTAS = [
-  { ruta: '/t', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS) },
-  { ruta: '/t-sin-equipo', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS).replace('D.equipo', '[]') },
-  { ruta: '/t-200', fnVista: 'renderJobsView', datos: reglasDeDatos(DOSCIENTOS) },
-  { ruta: '/t-monedas', fnVista: 'renderJobsView', datos: reglasDeDatos(DOS_MONEDAS) },
+  { ruta: '/t', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS), modoEmision: 'fiscal' },
+  { ruta: '/t-sin-equipo', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS).replace('D.equipo', '[]'), modoEmision: 'fiscal' },
+  { ruta: '/t-200', fnVista: 'renderJobsView', datos: reglasDeDatos(DOSCIENTOS), modoEmision: 'fiscal' },
+  { ruta: '/t-monedas', fnVista: 'renderJobsView', datos: reglasDeDatos(DOS_MONEDAS), modoEmision: 'fiscal' },
+  { ruta: '/t-justificante', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS), modoEmision: 'receipt' },
 ];
 
 const { srv, puerto } = await servirListas(PUBLICO, RUTAS);
@@ -336,7 +343,7 @@ titulo('B · columnas (B.1) · técnico en la línea del cliente (B.2) · sin p�
 }
 
 // ═══ C · LAS ACCIONES, PULSADAS ═════════════════════════════════════════════════════════════
-titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5)');
+titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
 {
   const { page } = await abrirVista(browser, puerto, '/t', 1280);
   const primarias = await page.evaluate((sel) => [...document.querySelectorAll(sel + ' .btn-primary')].map((b) => b.textContent.trim()), SEL_FILA);
@@ -477,6 +484,25 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
   const salvedad = await page.evaluate(() => (document.querySelector('tr.jobs-grupo-salvedad td') || {}).textContent || null);
   if (salvedad !== '1 sin importe de referencia: no se sabe cuánto falta y no entran en el total.') mal(`C.5 la salvedad aprobada cambió o falta: «${salvedad}»`);
   else bien('C.5 salvedad aprobada, palabra por palabra');
+  await page.close();
+}
+{
+  // C.6 · SCRUM-1205b · EN MODO JUSTIFICANTE NO SE OFRECE COBRAR EL RESTO, NI COMO PRIMARIA NI COMO
+  // SIGUIENTE PASO: `collect-rest` emite una factura y ahí corta con 409. Los MISMOS Trabajos que
+  // `/t`, donde C.1 exige el botón: lo único que cambia entre las dos páginas es el modo.
+  const { page, errores } = await abrirVista(browser, puerto, '/t-justificante', 1280);
+  const r = await page.evaluate((sel) => ({
+    filas: document.querySelectorAll(sel).length,
+    cobros: [...document.querySelectorAll(sel + ' button, ' + sel + ' a')].map((b) => b.textContent.trim()).filter((t) => /Cobrar/.test(t)),
+    primarias: [...document.querySelectorAll(sel + ' .btn-primary')].map((b) => b.textContent.trim()),
+    modo: window.appModoEmision,
+  }), SEL_FILA);
+  if (errores.length) nosupe('en modo justificante la vista dejó errores en consola: ' + errores.join(' | '));
+  else if (r.modo !== 'receipt') nosupe(`la página de modo justificante lleva appModoEmision=${JSON.stringify(r.modo)}: no mediría el modo que dice`);
+  // Sin las filas —y sin la del terminado con saldo—, «no hay cobro» sería cierto por vacío.
+  else if (r.filas !== TRABAJOS.length - 1 || !(await filaDe(page, 8))) nosupe(`en modo justificante ${r.filas} filas (esperaba ${TRABAJOS.length - 1}) o falta la de ${POR_ID.get(8).customer.name}`);
+  else if (r.cobros.length) mal(`C.6 en modo justificante la lista ofrece cobrar, y ese cobro acaba en 409: ${JSON.stringify(r.cobros)}`);
+  else bien(`C.6 en modo justificante ningún «Cobrar» en ${r.filas} filas (primarias: ${JSON.stringify(r.primarias)})`);
   await page.close();
 }
 
