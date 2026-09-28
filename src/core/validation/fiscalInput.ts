@@ -13,7 +13,7 @@
 
 // SCRUM-735 (GO comentario 16573): `invalidAnioFiscal` deriva el año MÁXIMO de la zona del
 // merchant, no del reloj del proceso.
-import { diaNaturalEn, ZONA_POR_DEFECTO } from '../zonaDelMerchant';
+import { diaNaturalEn, zonaDelMerchant, ZONA_POR_DEFECTO } from '../zonaDelMerchant';
 
 /**
  * 1152 · El sistema no existe antes del 28-10-2024 (entrada en vigor de la Orden de VERI*FACTU).
@@ -124,6 +124,27 @@ export function invalidPrefijoSerie(valor: unknown): string | null {
 // decide si se admite un CAMBIO DE AJUSTE, no cómo se compone un número. `allocateInvoiceNumber`
 // y su `pg_advisory_xact_lock` quedan intactos — son lo único que hoy impide un hueco real.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * SCRUM-1168 · EL AÑO DE LA SERIE, VISTO DESDE LAS PUERTAS.
+ *
+ * `allocateInvoiceNumber` numera con el año del día natural EN LA ZONA DEL MERCHANT desde
+ * SCRUM-735. Las puertas que deciden SOBRE esa serie —el bloqueo del prefijo, la pregunta de
+ * continuidad del alta y su vista previa— leían `new Date().getFullYear()`: el reloj del PROCESO
+ * (Railway va en UTC). Medido el 28-sep-2026 contra el `allocateInvoiceNumber` real con un `tx`
+ * falso: a las 00:30 del 1-ene en Madrid la puerta razonaba sobre 2026 y el número salía de 2027;
+ * a las 20:00 del 31-dic en Ciudad de México, al revés. Dos mitades del mismo criterio, dos relojes.
+ *
+ * Es la MISMA expresión que usa el emisor, escrita aquí y no importada de él porque tocar el
+ * emisor es regla 40. `tests/scrum1168-anio-serie-zona-merchant.test.mjs` compara las dos sobre
+ * el emisor REAL: si una se mueve sin la otra, cae.
+ */
+export function anioDeLaSerie(
+  merchant: { timezone?: string | null } | null | undefined,
+  ahora: Date = new Date(),
+): number {
+  return Number(diaNaturalEn(ahora, zonaDelMerchant(merchant)).slice(0, 4));
+}
 
 /**
  * De todos los números de factura de un merchant, los que pertenecen a LA SERIE FISCAL del año

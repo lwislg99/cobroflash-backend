@@ -108,7 +108,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 // SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
 // IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
-import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida, anioDeLaSerie } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
 import { leerSeqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
@@ -390,7 +390,7 @@ app.get('/admin/me', async (req, res) => {
     // SCRUM-328: los dos telefonos entran para poder decidir el aviso de Bizum sin telefono
     // con EL MISMO criterio que usa la pagina de pago del cliente (que cae a `whatsappPhone`).
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true,
-      bizumPhone: true, whatsappPhone: true },
+      bizumPhone: true, whatsappPhone: true, timezone: true },
   });
 
   // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
@@ -407,7 +407,9 @@ app.get('/admin/me', async (req, res) => {
   // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
   // viajar YA RESUELTO: si la pantalla reimplementara la regla habria dos criterios sobre cuando
   // se puede tocar la numeracion, y el del navegador seria el facil de equivocar.
-  const anioSerie = new Date().getFullYear();
+  // SCRUM-1168: el año de la serie en la zona del MERCHANT, el mismo con el que numera
+  // `allocateInvoiceNumber`; con el reloj del proceso la puerta miraba otro año en Nochevieja.
+  const anioSerie = anioDeLaSerie(merchantFull);
   const facturasDelAnio = await prisma.invoice.findMany({
     where: { merchantId: session.merchantId, number: { startsWith: `${anioSerie}-` } },
     select: { number: true },
@@ -866,11 +868,12 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { invoiceSeriesPrefix: true },
+      select: { invoiceSeriesPrefix: true, timezone: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
-    const año = new Date().getFullYear();
+    // SCRUM-1168: el año de la serie en la zona del merchant, el de `allocateInvoiceNumber`.
+    const año = anioDeLaSerie(merchant);
     const emitidas = await prisma.invoice.findMany({
       where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
       select: { number: true },
@@ -916,14 +919,16 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { invoiceSeriesPrefix: true },
+      select: { invoiceSeriesPrefix: true, timezone: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
     // El año sale del RELOJ DEL SERVIDOR, nunca del cuerpo: es el mismo año contra el que
     // `resolveSeriesSeq` decidirá al emitir. Aceptarlo del cliente permitiría declarar una
-    // continuidad para un año que no es el que va a salir en la factura.
-    const año = new Date().getFullYear();
+    // continuidad para un año que no es el que va a salir en la factura. SCRUM-1168: y en la zona
+    // del MERCHANT, que es la de `allocateInvoiceNumber` — con la del proceso, en la frontera del
+    // año se declaraba el arranque de una serie y se numeraba en otra.
+    const año = anioDeLaSerie(merchant);
 
     // Lo ya emitido manda. Se lee por el NÚMERO, que es la identidad fiscal del documento.
     const emitidas = await prisma.invoice.findMany({
