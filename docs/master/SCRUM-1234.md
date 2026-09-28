@@ -4,7 +4,9 @@
 
 Sale de **SCRUM-1196 ①** (censo de J4, c.17366). Encargo del orquestador a S2 (28-sep): el trabajo
 **entero**, incluida la parte de `src/` del equipo de Javier, para que no haya dos PR tocando los mismos
-ficheros. **Javier lo ofreció/autorizó** (según el orquestador); J4 lo da por «ya autorizado» en c.17366.
+ficheros. **Javier lo ofreció/autorizó** por mensaje al fundador (no hay comentario suyo en Jira): lo
+deja escrito el orquestador, con sus palabras, en **SCRUM-1196 c.17378**. J4 lo da por «ya autorizado» en
+c.17366.
 
 ## Qué había
 
