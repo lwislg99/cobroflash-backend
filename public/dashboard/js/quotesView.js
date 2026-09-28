@@ -436,9 +436,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // En el documento suelto, la guía que nombra el documento sólo existe firmada para el
   // justificante. En modo factura NO hay texto firmado y se omite (regla 30), igual que SCRUM-600
   // omitió el subtítulo: el paso se entiende por su título, «Cliente».
-  pasoClienteGuia.textContent = esDocumentoSuelto
-    ? (window.rotulosDelDocumento.esJustificante() ? "¿Para quién es el justificante?" : "")
-    : "¿Para quién es el presupuesto?";
+  // SCRUM-825 D1 (comentario 17446) · la guía del justificante se RETIRA con su rama muerta (censo de
+  // SCRUM-1257, grupo A): en el documento suelto queda el lado factura, que ya era no pintar nada.
+  pasoClienteGuia.textContent = esDocumentoSuelto ? "" : "¿Para quién es el presupuesto?";
   if (pasoClienteGuia.textContent) blockClient.appendChild(pasoClienteGuia);
 
   const blockLines = document.createElement("div");

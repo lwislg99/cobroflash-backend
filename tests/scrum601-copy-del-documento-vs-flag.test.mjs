@@ -204,7 +204,29 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //            del banco (`invoiceDetailView.js`) eran «a pelo» y ahora eligen su palabra por el TIPO
 //            del documento (`tipoDeFactura` / `isReceipt`), con su pareja «factura» al lado: +2 y +2.
 // Nada de esto va a `PENDIENTES_DE_FIRMA`: está firmado.
-const VEREDICTO_AL_MEDIR = { flag: 20, tipo: 11, aPelo: 154 };
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴🔴 flag 17 → 4 · aPelo 156 → 162 · 28-sep-2026 (SCRUM-825 D1, firma del fundador en SCRUM-825
+// comentario 17446). OJO, PORQUE ES LO CONTRARIO DE LO QUE PARECE: EL NÚMERO EMPEORA MIENTRAS EL
+// CÓDIGO MEJORA. «a pelo» sube 6 y NO ES DEUDA.
+//
+// Se retiró la rama «justificante» del panel, que desde SCRUM-1027 no veía nadie. Aislado con el
+// propio censo (categorías del árbol de `origin/main` d216084a contra el de la rama):
+//   · flag −7, desaparecen: los seis rótulos «justificante» de `rotulosDelDocumento` y la guía
+//     «¿Para quién es el justificante?» de `quotesView.js`. Es el borrado firmado.
+//   · flag −6 / aPelo +6: los cinco rótulos «factura» de `rotulosDelDocumento` («Facturas»,
+//     «Nº factura», «Nueva factura», «Emitir factura», «Factura emitida») y el «Nueva factura» del
+//     botón de `invoicesView.js` pierden la vía `WINDOW::appDocumentoSuelto`, porque ya no hay ternario.
+//     🔴 PUNTO CIEGO DEL CENSO: EN EJECUCIÓN SIGUEN DETRÁS DE LA PUERTA `appDocumentoSuelto !== 'no'`
+//     (el botón no se pinta en `receipt`), pero el censo solo ve la condición PEGADA al literal. El
+//     censo ha perdido vista; el código no ha perdido calidad.
+//   · Y «+ Nuevo justificante» sale también de los no legibles (ver `NO_LEGIBLES_AL_MEDIR`).
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔀 CONFLICTO DE MERGE (SCRUM-1257 × SCRUM-825 D1), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos. REGENERADO con el propio censo sobre el árbol YA FUSIONADO,
+// no sumado a mano (precedente 1155×1160 y 1164×1216b).
+// { flag: 7, tipo: 11, aPelo: 160 } — medido con `censoCopy` sobre origin/main 6112855b + la rama. Cuadra
+// con la suma de las dos entradas (20−13, 11, 154+6), que se usa como COMPROBACIÓN, no como fuente.
+const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 160 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -253,13 +275,21 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // de comentario+constantes que hay ENCIMA de este botón pierde 3 líneas netas en DOS hunks
   // (un `⚠️`→`✅` de 19→17 líneas y un `window.INV_*` de 12→11). Cifra MEDIDA con el propio censo
   // sobre el árbol resultante (no deducida del diff, que sólo enseña -2 en el primer hunk).
-  const boton = en('public/dashboard/js/invoicesView.js', 220);
-  assert.equal(boton.length, 1, 'no se encuentra el rótulo «+ Nuevo justificante» donde se midió');
-  assert.equal(boton[0].texto, '+ Nuevo justificante');
+  //
+  // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · EL POSITIVO SE RE-ANCLA. Era
+  // «+ Nuevo justificante» (`invoicesView.js:220`), y ese literal se ha BORRADO con su rama muerta:
+  // un control anclado en algo que ya no existe está muerto y da verdes que no ha ganado. Se ancla en
+  // el literal que depende del modo DE VERDAD, de los cuatro que quedan: la nota de condiciones de la
+  // hoja de presupuesto rápido de `homeView.js`, que se calla en `receipt` con
+  // `window.appModoEmision === 'receipt'` (SCRUM-1164). Los otros tres (`jobDetailView.js`) heredan la
+  // dependencia por `jobNextAction` y su condición local no mira el modo: servirían peor de control.
+  const boton = en('public/dashboard/js/homeView.js', 864);
+  assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
+  assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
-    'el censo no ve que «+ Nuevo justificante» lo elige `window.appDocumentoSuelto`. Con el ' +
+    'el censo no ve que la nota de condiciones la calla `window.appModoEmision`. Con el ' +
     'positivo caído, un «ninguno depende» significaría «no supe mirar».');
-  assert.equal(boton[0].via, 'WINDOW::appDocumentoSuelto');
+  assert.equal(boton[0].via, 'WINDOW::appModoEmision');
 
   // NEGATIVO, del árbol real: un rótulo del panel que NO deriva del flag.
   //
@@ -269,7 +299,9 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-918 · 349 → 365: el arranque sin red añade 16 líneas antes en app.js (medido, no deducido).
   // SCRUM-919 · 365 → 366 al fusionar: `app.js` gana además la línea de `appParteAyudas` por encima.
   // SCRUM-1075 · 366 → 367: `app.js` gana `window.appTeamMemberId` por encima (medido, no deducido).
-  const menu = en('public/dashboard/js/app.js', 367);
+  // SCRUM-825 D1 · 367 → 370: la normalización de `appDocumentoSuelto` gana su comentario (y pierde la
+  // lista de dos valores) por encima. Medido con el propio censo sobre el árbol resultante, no contado.
+  const menu = en('public/dashboard/js/app.js', 370);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
@@ -327,7 +359,14 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // 28-sep-2026 · 34 → 37, MEDIDO (SCRUM-1257). Son los tres literales `flag` de arriba: llegan al
 // `innerHTML` del vacío de Facturas por `tituloVacio`/`cuerpoVacio`, así que el censo no puede afirmar
 // el texto final desde el fuente. No se duplican en línea para bajar el número: el motivo de 31→32.
-const NO_LEGIBLES_AL_MEDIR = 37;
+// 28-sep-2026 · 34 → 33, MEDIDO (SCRUM-825 D1, comentario 17446). BAJA, y no por medición sino por
+// borrado: «+ Nuevo justificante» (`invoicesView.js:220`) era una construcción que el censo no sabía
+// leer, y se ha retirado con su rama muerta.
+// 🔀 CONFLICTO DE MERGE (SCRUM-1257 × SCRUM-825 D1), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos. REGENERADO con el propio censo sobre el árbol YA FUSIONADO,
+// no sumado a mano (precedente 1155×1160 y 1164×1216b).
+// 36 — medido sobre el árbol fusionado (37 de SCRUM-1257 − 1 de SCRUM-825 D1, como comprobación).
+const NO_LEGIBLES_AL_MEDIR = 36;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

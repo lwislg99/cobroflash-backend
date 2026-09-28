@@ -52,8 +52,11 @@ async function initApp() {
   window.appModoEmision =
     ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
 
-  window.appDocumentoSuelto =
-    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+  // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · el valor 'justificante' SALE del
+  // contrato. Desde SCRUM-1027 el servidor no lo manda nunca (`modoDocumentoSuelto` solo devuelve
+  // 'factura' o 'no'; ejecutado en los tres modos, docs/master/SCRUM-1257.md §1257c). Si algún día
+  // llegara, cae a 'no' y el botón de crear no se pinta: fallar cerrado, no leerlo como factura.
+  window.appDocumentoSuelto = me.documentoSuelto === 'factura' ? 'factura' : 'no';
 
   // SCRUM-293 (③a) · las opciones de retención, tal y como las manda el CUBO del dominio. El
   // front es vanilla y no puede importar de `src/`: si esta lista no viajara, la única forma de

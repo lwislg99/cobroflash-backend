@@ -407,11 +407,14 @@ test('SCRUM-600b · 🔴 la ruta se monta con UN argumento: el instrumento tiene
     '🔴 la puerta no se publica en `window`: el router no la encontraría');
 
   // ③ Y montada POR LA PUERTA pinta lo mismo que montada a mano. Si no, la puerta miente.
-  const { banco } = bancoConRed('justificante');
+  // SCRUM-825 D1 (comentario 17446) · se RE-ANCLA en el lado factura: la rama «justificante» se
+  // retiró y «Emitir justificante» ya no lo pinta nadie. Lo que se mide no cambia: que la puerta monte
+  // la página del documento suelto y no el presupuesto.
+  const { banco } = bancoConRed('factura');
   const porLaPuerta = await pintarVista(banco, 'renderDocumentoSueltoView');
   assert.equal(porLaPuerta.error, null, `🔴 la puerta no monta: ${porLaPuerta.error && porLaPuerta.error.message}`);
   const textos = ranurasLegibles(porLaPuerta.contenedor).map((x) => x.texto);
-  assert.ok(textos.some((t) => t.includes('Emitir justificante')),
+  assert.ok(textos.some((t) => t.includes('Emitir factura')),
     '🔴 montada por la puerta, la pantalla no es la del documento suelto');
   assert.ok(!textos.some((t) => t.includes('Condiciones')), // SCRUM-915d: era «3. Condiciones»
     '🔴 montada por la puerta, la pantalla trae bloques del presupuesto');
