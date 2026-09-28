@@ -2397,7 +2397,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // NO se sustituye por la del cliente —que además no existe en el modelo—: un enlace a mapa que
   // lleva al sitio equivocado es peor que no tenerlo, porque el que no existe no se sigue.
   const bloquesRail = (typeof construirBloquesRail === 'function'
-    ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName })
+    ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName, contacto: window.contactoDelCliente })
     : []).filter(Boolean);
 
   if (bloquesRail.length) {
