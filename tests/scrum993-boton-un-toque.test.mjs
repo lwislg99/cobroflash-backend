@@ -207,6 +207,12 @@ test('SCRUM-993 · 🔴 si falla EMITIR tras crear, la hoja se cierra: no se pue
   assert.equal(llamadas.length, 2, '🔴 con emitir caído no debe intentarse el envío');
   assert.ok(!sigueMontado(doc, 'alb-confirmar-continuar'),
     '🔴 la hoja sigue abierta con «continuar» tras crear: el siguiente clic crearía un segundo albarán');
+  // Texto firmado en SCRUM-993 comentario 17337: dice que el borrador YA EXISTE. Y nunca el
+  // `message` crudo del servidor (SCRUM-644).
+  const mensajes = [...(doc.getElementById('yaqu-toasts')?.children || [])].map((t) => t.dataset.msg);
+  assert.ok(mensajes.includes('No se pudo completar la entrega. El albarán queda en borrador en este trabajo.'),
+    `🔴 el fallo de emitir no dice que el borrador ya existe. Toasts: ${JSON.stringify(mensajes)}`);
+  assert.ok(!mensajes.includes('Error del servidor al emitir.'), '🔴 se pintó el `message` crudo del servidor');
 });
 
 test('SCRUM-993 · 🔴 «Continuar» encadena las TRES llamadas, EN ORDEN, con un solo alta', async () => {

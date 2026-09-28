@@ -11,6 +11,7 @@
 3. ~~«Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar.»~~ — **RETIRADO** el 2026-09-28 (SCRUM-993 comentario 17327): sin número NO se ofrece el botón (opción A), así que la variante sin canal ya no se pinta en ningún caso. No se sustituye por otro texto.
 4. «Albarán emitido — el envío por WhatsApp falló, reenvíalo desde el trabajo.» — aviso (toast, tono `warn`) cuando la cadena crea y emite bien pero el envío por WhatsApp falla (incluido el 409 que LANZA `apiRequest`).
 5. «✓ Albarán entregado y enviado a firmar.» — aviso de éxito, aprobado el 2026-09-28 en SCRUM-993 comentario 17327, con condición de verdad: SOLO cuando la respuesta del envío trae `sent === true` (`sendSuccessBody`, `src/lib/sendOutcome.ts`, único sitio que lo pone).
+6. «No se pudo completar la entrega. El albarán queda en borrador en este trabajo.» — aviso (toast, `warn`) cuando EMITIR falla después de crear; aprobado el 2026-09-28 en SCRUM-993 comentario 17337. Comprobado antes de pintar: «Borrador» es la palabra con que la ficha del trabajo rotula ese estado (`jobDetAlbEstado`), y la fila aparece en la lista de albaranes de esa ficha al refrescar.
 
 ## Por qué estos textos, y no otros
 

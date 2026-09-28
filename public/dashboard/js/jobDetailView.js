@@ -1879,9 +1879,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
         } catch (_) {
           // No emitido: queda el BORRADOR, que la ficha enseña al refrescar con su «Emitir albarán».
-          // Sin texto nuevo: el de fallo que ya pintaba esta hoja. Y sin el `.message` crudo del
-          // servidor, que el trinquete de SCRUM-644 no deja sumar.
-          showToast('No se pudo completar la entrega.', 'warn');
+          // Texto firmado en SCRUM-993 comentario 17337: dice que el documento YA EXISTE, que es lo
+          // que evita volver a intentarlo desde cero. «Borrador» es la palabra de la ficha
+          // (`jobDetAlbEstado`), no una nueva. Sin el `.message` crudo del servidor (SCRUM-644).
+          showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_EMITIR, 'warn');
           return;
         }
         let envio = null;
@@ -2472,6 +2473,10 @@ const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP =
 // para firmar» sobre un albarán ya emitido, las dos en esta misma pantalla.
 const ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO =
   'Albarán emitido — el envío por WhatsApp falló, reenvíalo desde el trabajo.';
+// Emitir falló DESPUÉS de crear: el albarán existe, en borrador, en la lista de este trabajo.
+// Firmado en SCRUM-993 comentario 17337.
+const ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_EMITIR =
+  'No se pudo completar la entrega. El albarán queda en borrador en este trabajo.';
 
 function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, onEntregarYFirmar, textoConfirmarEntrega } = {}, ctx = {}) {
   // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
