@@ -86,9 +86,16 @@ function tituladosQueDeclaran() {
  * ⬆️ **20** (SCRUM-951d, 18-sep-2026): lo sube `scrum951d-ensayo-instalacion.test.mjs`, que titula
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
+ *
+ * ⬆️ **22** (SCRUM-1179-B, 28-sep-2026): `scrum808-el-arbol-que-queda-mutado.test.mjs` —que ya
+ * declaraba— pasa a titularse GUARD con el test nuevo «control POSITIVO: el meta-guard de antes de
+ * la red sale SIN RED; el de después, no» (cita «meta-guard»). La otra unidad es la deriva normal
+ * del árbol entre medición y medición (~1 guard nuevo al día, según lo anotado arriba). Medido en
+ * el CI de esta rama sobre el commit `5fa7dc2f13ae46aef1d4a48c05b2b5ec0ccbcc8a` (run 36445674666):
+ * 22, dos más que el 20 anclado el 18-sep.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 20;
+export const SUELO_GUARD_QUE_DECLARAN = 22;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -271,8 +278,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 22;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 21;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

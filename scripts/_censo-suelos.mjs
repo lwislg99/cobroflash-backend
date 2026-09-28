@@ -74,20 +74,26 @@ export const DEL_OBJETO = new Set(Object.getOwnPropertyNames(Object.prototype));
 /**
  * SCRUM-1179-B · LO QUE DEVUELVE `spawnSync`, DERIVADO EJECUTÁNDOLO, no escrito a mano.
  *
- * Venía de `node:child_process`, fuera de la población, y 20 de los 75 guards que el censo no
- * sabía leer eran `r.status` / `r.error` sobre un `spawnSync`. Se lanza una vez un proceso que
+ * Venía de `node:child_process`, fuera de la población, y el 28-sep-2026 20 de los 75 guards que
+ * el censo no sabía leer eran `r.status` / `r.error` sobre un `spawnSync`. Se lanza una vez un proceso que
  * funciona y otra uno que no existe (el único caso en que aparece `error`), y la forma es la unión
  * de las dos. Si el lanzamiento no da un objeto, devuelve `null` y el caso sigue saliendo ciego.
  */
 let formaSpawnSync;
 export function formaDeSpawnSync() {
   if (formaSpawnSync !== undefined) return formaSpawnSync;
+  // SCRUM-258 · la ruta del intento fallido va bajo un `mkdtemp` propio, no bajo un nombre fijo
+  // con el PID pegado: un directorio único por llamada es justo lo que ese guard exige, y aquí
+  // no hace falta nada más porque nunca se escribe dentro — solo hace falta que NO EXISTA.
+  let dirUnico;
   try {
+    dirUnico = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1179-spawn-'));
     const bien = spawnSync(process.execPath, ['-e', ''], { stdio: 'ignore' });
-    const mal = spawnSync(path.join(os.tmpdir(), `no-existe-scrum1179-${process.pid}`), [], { stdio: 'ignore' });
+    const mal = spawnSync(path.join(dirUnico, 'no-existe'), [], { stdio: 'ignore' });
     const ok = bien && typeof bien === 'object' && mal && typeof mal === 'object' && 'error' in mal;
     formaSpawnSync = ok ? [...new Set([...Object.keys(bien), ...Object.keys(mal)])] : null;
   } catch { formaSpawnSync = null; }
+  finally { if (dirUnico) fs.rmSync(dirUnico, { recursive: true, force: true }); }
   return formaSpawnSync;
 }
 /** Los productores de FUERA cuya forma se sabe derivar. Clave: `especificador · nombre`. */
@@ -127,8 +133,8 @@ export function propiedadesQueDevuelve(fn, sf) {
   const mirar = (e, saltos = 0) => {
     if (!e || saltos > 4) { opaco = true; return; }
     // SCRUM-1179-B · `return null` / `return undefined` en un camino no fabrica NINGUNA propiedad
-    // y tampoco impide leer las de los otros `return`. Tratarlo como ilegible dejaba en NO SÉ LEER
-    // 34 de los 75 guards del árbol (todos los `if (!ok) return null; return { … }`). Si TODOS los
+    // y tampoco impide leer las de los otros `return`. Tratarlo como ilegible dejaba en NO SÉ LEER,
+    // el 28-sep-2026, 34 de los 75 guards del árbol (todos los `if (!ok) return null; return { … }`). Si TODOS los
     // `return` son así, `leible` sigue en falso y el caso sigue saliendo ciego.
     if (e.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(e) && e.text === 'undefined')) return;
     if (ts.isObjectLiteralExpression(e)) {
