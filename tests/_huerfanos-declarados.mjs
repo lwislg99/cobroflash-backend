@@ -489,6 +489,13 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['FacturaSinLineasError', 'hayLineasFacturables'] },
+  { modulo: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-28',
+    motivo: 'SCRUM-1232: el criterio único de «esto es un justificante» (sólo `type === \'JUST\'`). Lo '
+      + 'ejecuta `leerLibroRegistro` en su propio módulo; se exporta para que su test lo pruebe '
+      + 'suelto y para que SCRUM-1252 (evidencias e Informes) lo reutilice en vez de escribir un '
+      + 'segundo criterio. Esta entrada sale cuando 1252 lo consuma.',
+    exports: ['esJustificante'] },
   { modulo: 'src/modules/invoicing/domain/modoVisible.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
