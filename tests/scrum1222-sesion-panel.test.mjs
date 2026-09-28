@@ -7,10 +7,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { temporal, borrarTemporal } from './_temporal.mjs'; // SCRUM-864 · se borra pase lo que pase
 import {
   ejecutar, peticion, urlDelPanel, cookieDeSesion, Rechazo, RUTA_LOGIN, RUTA_SECRETO, RUTA_SESION,
 } from '../scripts/qa/sesion-panel.mjs';
@@ -26,7 +26,7 @@ function respuesta(status, cuerpo = '', cabeceras = {}) {
 
 /** Un banco con ficheros temporales y un fetch que apunta y responde lo que se le diga. */
 function banco({ secreto = SECRETO, sesion = null, responde }) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1222-'));
+  const dir = temporal('scrum1222-');
   const rutaSecreto = path.join(dir, 'secreto.txt');
   const rutaSesion = path.join(dir, 'sesion.txt');
   if (secreto !== null) fs.writeFileSync(rutaSecreto, secreto);
@@ -37,15 +37,20 @@ function banco({ secreto = SECRETO, sesion = null, responde }) {
   const correr = (argv) => ejecutar(argv, {
     fetchFn, rutaSecreto, rutaSesion, out: (s) => salida.out.push(s), err: (s) => salida.err.push(s),
   });
-  const limpiar = () => fs.rmSync(dir, { recursive: true, force: true });
+  const limpiar = () => borrarTemporal(dir);
   return { correr, llamadas, salida, rutaSesion, limpiar };
 }
 
 const todo = (b) => [...b.salida.out, ...b.salida.err].join('\n');
 
 test('SCRUM-1222 · rutas fijas: el secreto y la sesión viven fuera del repositorio', () => {
+  // Las rutas son de la máquina Windows donde se usa la herramienta. Se juzgan como rutas de
+  // Windows también en el CI (Linux): allí `path.resolve('C:/…')` las pegaba al directorio de
+  // trabajo y las daba por «dentro del repo» (el rojo de la primera pasada de #1881).
+  const raiz = RAIZ.replace(/\\/g, '/').toLowerCase();
   for (const r of [RUTA_SECRETO, RUTA_SESION]) {
-    assert.ok(!path.resolve(r).startsWith(RAIZ), `${r} cae dentro del repo`);
+    assert.ok(path.win32.isAbsolute(r), `${r} no es una ruta absoluta`);
+    assert.ok(!r.replace(/\\/g, '/').toLowerCase().startsWith(raiz), `${r} cae dentro del repo`);
   }
   // El secreto no se lee de una variable de entorno: el script no mira `process.env` en absoluto.
   const fuente = fs.readFileSync(CLI, 'utf8');
