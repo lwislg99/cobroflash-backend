@@ -188,35 +188,52 @@ Por tanto:
      seguimiento de clics los enlaces van reescritos a ese subdominio, y con el de aperturas aparece
      una imagen de 1×1 servida desde él.
 
-### 🔴 Hallazgo aparte, y no de privacidad: no consta que `yaqu.app` sea dominio remitente de Resend
+### El dominio remitente: `presufacil.online` está verificado en Resend, `yaqu.app` no consta (confirma SCRUM-1115)
 
-- **Desde qué dominio enviamos no está en el repositorio.** `from` es `config.EMAIL_FROM`: variable de
-  Railway, y en código el valor por defecto es `YaQu <no-reply@yaqu.local>`. Los documentos lo dan
-  como **intención**: `docs/DEMO_READY_CHECKLIST_FUNDADOR.md:49`, «`YaQu <no-reply@yaqu.app>` …
-  (dominio verificado en Resend primero)».
-- **DNS público** (DNS sobre HTTPS, `cloudflare-dns.com`, 28-sep 15:20Z). La Return-Path de Resend es
-  por defecto un MX en `send.<dominio>` (`add-a-domain`, sha256[16] `95fca8253c336e03`).
-  - **Control positivo:** en `resend.com` salen `send.resend.com MX → feedback-smtp.us-east-1.amazonses.com`
-    y `resend._domainkey.resend.com TXT p=…`.
-  - En **`yaqu.app` (la raíz) y 14 subdominios comunes** (`notifications`, `updates`, `mail`, `email`,
-    `correo`, `facturas`, `no-reply`, `noreply`, `envios`, `notificaciones`, `hola`, `app`, `m`,
-    `info`): **ni `send.` MX ni `resend._domainkey` TXT. NXDOMAIN en todos.**
-  - Los MX y el SPF de `yaqu.app` son de Cloudflare Email Routing (`route*.mx.cloudflare.net`,
-    `include:_spf.mx.cloudflare.net`), sin `include` de Resend.
-- **Suelo:** un subdominio con otro nombre, o una Return-Path personalizada, no se ven con este
-  sondeo. La documentación no da el nombre fijo del registro DKIM. **Esto NO prueba que no se envíe.**
-  Prueba que no consta que `yaqu.app` esté verificado, y que el dominio remitente real es **SIN
-  DETERMINAR** desde fuera. Si `EMAIL_FROM` no está puesta, o apunta a un dominio sin verificar,
-  Resend rechaza el envío, y **la factura no le llega al cliente final**. Es un defecto de producto,
-  no de privacidad. Se reporta, no se mezcla aquí.
-- Tampoco hay ningún CNAME de seguimiento en los 11 nombres típicos de `yaqu.app` (`links`, `track`,
-  `tracking`, `click`, `clicks`, `email`, `mail`, `e`, `r`, `t`, `go`). Con el mismo suelo.
+⚠️ **Corrección del 28-sep, 15:30Z.** La primera versión de este apartado titulaba «no consta que
+`yaqu.app` sea dominio remitente» y sacaba la consecuencia de que «la factura no le llega al cliente
+final». **Esa consecuencia no se sostiene.** YaQu sí tiene un dominio verificado en Resend, el de la
+marca anterior. SCRUM-1115 (abierto el 25-sep) ya lo decía. Lo de abajo lo **mide**.
+
+- **Qué dominio sale del repositorio: ninguno.** `from` es `config.EMAIL_FROM`, variable de Railway.
+  En código, el valor por defecto es `YaQu <no-reply@yaqu.local>`. `presufacil` no aparece en `src/`
+  ni en `public/` (SCRUM-1115).
+- **DNS público**, medido con DNS sobre HTTPS (`cloudflare-dns.com`) el 28-sep entre 15:20 y 15:30Z.
+  Por defecto, la Return-Path de Resend es un MX en `send.<dominio>` (`add-a-domain`, sha256[16]
+  `95fca8253c336e03`).
+
+  | Dominio | `send.` MX | `send.` SPF | `resend._domainkey` TXT |
+  |---|---|---|---|
+  | `resend.com` (**control positivo**) | `feedback-smtp.us-east-1.amazonses.com` | — | `p=…` |
+  | **`presufacil.online`** | **`feedback-smtp.eu-west-1.amazonses.com`** | **`v=spf1 include:amazonses.com ~all`** | **`p=…`** |
+  | `yaqu.app` (raíz) y 14 subdominios comunes¹ | NXDOMAIN | NXDOMAIN | NXDOMAIN |
+
+  ¹ `notifications`, `updates`, `mail`, `email`, `correo`, `facturas`, `no-reply`, `noreply`,
+  `envios`, `notificaciones`, `hola`, `app`, `m`, `info`. Los MX y el SPF de `yaqu.app` son solo de
+  Cloudflare Email Routing (`route*.mx.cloudflare.net`, `include:_spf.mx.cloudflare.net`).
+- **Lo que queda probado:** `presufacil.online` tiene los registros de un dominio verificado en
+  Resend, y `yaqu.app` no los tiene en ningún nombre de los probados. **Suelo:** un subdominio de
+  `yaqu.app` con otro nombre, o una Return-Path personalizada, no se ven con este sondeo. Lo probado
+  es que `yaqu.app` **no consta** verificado, no que sea imposible.
+- **Lo que NO queda probado, y es la pregunta abierta de SCRUM-1115:** qué vale `EMAIL_FROM` en el
+  servicio del **backend**, que es el que escribe al cliente final. El correo de PresuFácil que se
+  observó el 25-sep venía del **servicio cron de acreditación** (así lo dice 1115). Con esta medición:
+  - si el backend usa `presufacil.online` → la factura sale, con la marca vieja (escenario (b) de 1115);
+  - si usa `yaqu.app` → sale desde un dominio que no consta verificado. La documentación de Resend
+    dice, literal, «You must add and verify at least one domain to send emails with Resend»
+    (`dashboard/domains/introduction`, sha256[16] `cf63c0f716a4899f`).
+- **Seguimiento en el dominio que sí envía:** en `presufacil.online` no responde ningún CNAME en 15
+  nombres típicos de subdominio de seguimiento (`links`, `track`, `tracking`, `click`, `clicks`,
+  `email`, `mail`, `e`, `r`, `t`, `go`, `l`, `link`, `lnk`, más la comprobación de `_dmarc`, que
+  tampoco existe). Mismo suelo: un nombre distinto no se ve. Recordatorio de la fuente: sin un
+  subdominio de seguimiento verificado, el seguimiento no se aplica.
 
 ### Qué queda, y quién lo mira (sin panel no se puede cerrar más)
 
-1. **Luis, o quien tenga la cuenta:** en qué dominio envía producción (`EMAIL_FROM` de Railway), si
-   está verificado, y si ese dominio tiene `open_tracking`/`click_tracking` encendidos con un
-   subdominio verificado. Con la clave, basta un `GET /domains`.
+1. **Luis, o quien tenga la cuenta:** qué vale `EMAIL_FROM` en el servicio del **backend** (la pregunta
+   de SCRUM-1115), y si **`presufacil.online`** —el dominio que sí está verificado, no `yaqu.app`—
+   tiene `open_tracking`/`click_tracking` encendidos con un subdominio verificado. Con la clave, basta
+   un `GET /domains`.
 2. **Sin cuenta:** cualquiera que tenga una factura o presupuesto recibidos de YaQu puede abrir el
    código fuente del correo y mirar los hosts de los enlaces y si hay una imagen de 1×1.
 3. Mientras tanto, lo que dice la documentación es que, **sin subdominio de seguimiento verificado,
