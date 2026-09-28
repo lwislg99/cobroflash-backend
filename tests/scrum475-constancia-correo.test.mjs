@@ -65,9 +65,11 @@ test('SCRUM-475 f2 · SUELO: el censo ve el emisor y ve a los llamadores', () =>
     + '2026-08-11 contra `main` = 687d262b). Con menos, el censo de llamadores mira a menos sitios '
     + 'y su silencio no vale nada — que es EXACTAMENTE como se perdieron los cuatro mudos.');
 
+  // ✅ 31 → 30 por SCRUM-1202 (28-sep-2026): se retiró POST /quote/:token/accept y con ella su
+  // llamada a `sendMerchantQuoteAcceptedEmail`. Bajada por código BORRADO, declarada a propósito.
   const llamadores = censarLlamadores(EMISORES);
-  assert.ok(llamadores.length >= 31,
-    `🔴 el censo encuentra ${llamadores.length} llamadas a un emisor: eran TREINTA Y UNA. Con la `
+  assert.ok(llamadores.length >= 30,
+    `🔴 el censo encuentra ${llamadores.length} llamadas a un emisor: eran TREINTA. Con la `
     + 'propagación encerrada en un fichero salían 14 — el mismo árbol, menos de la mitad.');
 });
 
@@ -112,8 +114,9 @@ test('SCRUM-475 f2 · 🔴 REGRESIÓN: ningún envío se traga el fallo sin una 
   // 🔴 SUELO, y hace falta porque el cero de arriba lo cumpliría un censo ciego — que es
   // EXACTAMENTE lo que pasó al traer el emisor único: 4 mudos → 0 sin que nadie arreglara nada.
   const total = censarLlamadores(EMISORES).length;
-  assert.ok(total >= 31,
-    `🔴 el censo solo ve ${total} llamadas a un emisor y eran 31. El cero de arriba no significa `
+  // 31 → 30 por SCRUM-1202 (ver el suelo de arriba).
+  assert.ok(total >= 30,
+    `🔴 el censo solo ve ${total} llamadas a un emisor y eran 30. El cero de arriba no significa `
     + '«ninguno se traga el fallo», significa «no supe mirar».');
 });
 
