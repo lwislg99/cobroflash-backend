@@ -105,16 +105,30 @@ test('SCRUM-1257 · P6 · «Ver factura» solo si el documento es de tipo factur
 
 test('SCRUM-1257 · P7 · el paquete de la reclamación dice «factura», salvo en un J- antiguo', () => {
   const vieja = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
-  assert.equal(eleccion('invoiceDetailView.js', vieja, P7), 'isReceipt');
+  // La condición es `isReceipt`, resuelta a su definición: el MISMO criterio `J-` que ya decide el
+  // título y el chip de la ficha. No hay un segundo criterio.
+  assert.equal(eleccion('invoiceDetailView.js', vieja, P7),
+    "invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-')");
 });
+
+/** Los literales de un fichero (no sus comentarios: el código cita ahí el texto viejo, con su motivo). */
+function literales(fichero) {
+  const sf = arbol(fs.readFileSync(JS(fichero), 'utf8'), fichero);
+  const out = new Set();
+  (function v(n) {
+    if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) out.add(n.text);
+    ts.forEachChild(n, v);
+  })(sf);
+  return out;
+}
 
 test('SCRUM-1257 · los textos que prometían el documento ya no se pintan', () => {
   for (const [f, textos] of Object.entries(VIEJOS)) {
-    const src = fs.readFileSync(JS(f), 'utf8');
-    for (const t of textos) assert.ok(!src.includes(t), `🔴 ${f} sigue pintando «${t}»`);
+    const lits = literales(f);
+    for (const t of textos) assert.ok(!lits.has(t), `🔴 ${f} sigue pintando «${t}»`);
   }
-  // Control positivo: la misma comprobación SÍ encuentra un texto que sigue en el fichero.
-  assert.ok(fs.readFileSync(JS('invoicesView.js'), 'utf8').includes('Nada con estos filtros'));
+  // Control positivo: la misma comprobación SÍ encuentra un literal que sigue en el fichero.
+  assert.ok(literales('invoicesView.js').has('Nada con estos filtros'));
 });
 
 test('SCRUM-1257 · los siete literales constan aprobados en el registro de SCRUM-1257', () => {

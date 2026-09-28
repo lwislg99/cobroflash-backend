@@ -542,11 +542,21 @@ async function fetchInvoices(options = {}) {
           // 🔴 SCRUM-595 · SALE DE LA CABECERA. Aquí había un 6 y este ticket mete una columna:
           // un vacío descuadrado no lo ve ninguna tanda (lección de SCRUM-584).
           td.colSpan = numeroDeColumnas();
+          // 🔴 SCRUM-1257 · EL VACÍO MIRA EL MODO. Antes prometía a todos que «el documento de cobro se
+          // genera solo», y en `receipt` (España, `INVOICING_ES_ENABLED` apagado) al aceptar no se emite
+          // nada (SCRUM-1027). Cambiar la palabra no bastaba: «la factura se genera sola» sería igual de
+          // falso y un claim fiscal (regla 7). Textos firmados en SCRUM-1257 comentario 17444 (P1-P4).
+          // El modo no se recalcula aquí: es el que mandó el servidor, igual que en homeView y settingsView.
+          const sinEmision = window.appModoEmision === 'receipt';
+          const tituloVacio = sinEmision ? 'Aún no se emiten documentos' : 'Aquí verás tus facturas';
+          const cuerpoVacio = sinEmision
+            ? 'Por ahora, YaQu no genera facturas desde tu cuenta.'
+            : 'Cuando un cliente acepte un presupuesto, sus facturas aparecerán aquí.';
           td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
-            + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : 'Aquí verás tus cobros') + '</div>'
+            + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : tituloVacio) + '</div>'
             + '<div class="empty-state-desc">' + (filtering
               ? 'Prueba con otra búsqueda o limpia los filtros.'
-              : 'Cuando un cliente acepte un presupuesto, el documento de cobro se genera solo y aparece aquí.') + '</div>'
+              : cuerpoVacio) + '</div>'
             + (filtering ? '' : '<button id="inv-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">Crear un presupuesto</button>')
             + '</div>';
           tr.appendChild(td);
