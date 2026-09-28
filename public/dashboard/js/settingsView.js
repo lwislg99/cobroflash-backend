@@ -1336,7 +1336,10 @@ async function renderReadinessCard(container, mainFormCard) {
       ok: fiscalReady,
       label: 'Datos fiscales',
       okText: 'Completos — listos para facturar cuando toque',
-      koText: 'Sin ellos, el documento tras el pago es un justificante de cobro',
+      // SCRUM-1257 · antes: «Sin ellos, el documento tras el pago es un justificante de cobro». Falso dos
+      // veces: esta tarjeta no se ve en `receipt` y fuera de él no sale ningún justificante (SCRUM-1027),
+      // y los datos fiscales no deciden el tipo de documento. Firmado en SCRUM-1257 comentario 17444 (P5).
+      koText: 'Complétalos antes de emitir tu primera factura',
       focus: 'taxId',
     },
   ];
