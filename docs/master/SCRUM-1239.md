@@ -33,6 +33,21 @@ devuelve un array, y `assert.ok([])` es verde. Censo del patrón en `tests/`: s�
 (`scrum1199-…` y éste) lo usaban así; los demás ya comparan `.length` o `.includes`. Los dos pasan a
 `.length > 0`, y se comprobó que el de 1239 CAE con el registro fuera y pasa con él.
 
+### 3b · El censo, para poder repetirlo
+
+Una comprobación que no puede fallar no es una comprobación. Si algún día esto se convierte en un guard, ésta es la medición de partida (28-sep-2026, sobre esta rama):
+
+    grep -rnE "assert.ok(constaAprobado([^)]*)s*," tests/*.mjs
+
+| Población | Resultado |
+|---|---|
+| ficheros `tests/*.test.mjs` que llaman a `constaAprobado(` | 22 (21 en `origin/main` + el de 1239) |
+| llamadas a `constaAprobado(` en `tests/*.mjs` | 61 |
+| `assert.ok(constaAprobado(…),` a secas, en esta rama | **0** |
+| **control positivo**: el mismo patrón sobre `origin/main` (`git grep`) | **1**, `scrum1199-avisos-alta-cliente.test.mjs:100`, el que esta rama arregla |
+
+Las demás comparan `.length` (7 ficheros) o `.includes(...)`. El patrón sólo lo escribí yo, en mis dos tests.
+
 ## 4 · Verificación
 
 - 1239 + 1199: 10 casos, 10 pass.
