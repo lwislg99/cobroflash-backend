@@ -1477,6 +1477,34 @@ descWrapper.appendChild(descLabel);
     blockDelivery.appendChild(docFieldsWrapper);
     blockDelivery.appendChild(descWrapper); // SCRUM-915d: detrás de los datos del cliente (v3)
 
+    // SCRUM-1174 · LOS DOS TEXTOS LIBRES DEL DOCUMENTO. El servidor los acepta y el PDF los pinta
+    // desde SCRUM-593, pero el presupuesto no tenía DÓNDE escribirlos: sólo los montaba el albarán.
+    // Es el MISMO componente que el albarán (`textoDelDocumento.js`), con sus rótulos ya firmados:
+    // ni copy nueva ni un segundo formulario. Van en «Envío», junto a qué datos del cliente salen y
+    // cómo se presenta el IVA: los tres deciden cómo sale el documento.
+    // Sólo en el PRESUPUESTO: la factura suelta compone su cuerpo en `cuerpoDelDocumentoSuelto.js`.
+    // La guarda, en la forma simple que lee el censo de SCRUM-600e: una compuesta le es opaca.
+    const textoDocWrap = document.createElement("div");
+    textoDocWrap.className = "quote-texto-documento";
+    if (typeof window.textoDelDocumentoMontar === "function") window.textoDelDocumentoMontar(textoDocWrap, {});
+    if (!esDocumentoSuelto) blockDelivery.appendChild(textoDocWrap);
+    // SCRUM-1186 · el borrador se guarda al teclear en los dos textos, como en el resto del editor.
+    // Sin esto, lo escrito en la cabecera no llegaba al borrador y un F5 lo borraba.
+    // En cada campo y no en el envoltorio: así no depende de que el evento suba.
+    textoDocWrap.querySelectorAll("textarea").forEach(function (area) {
+      area.addEventListener("input", function () { scheduleDraftSave(); });
+    });
+    // SCRUM-1186 · PONE los dos textos en los campos ya montados (plantilla de «Duplicar» y
+    // borrador). Sólo escribe lo que viene: una clave ausente o `null` deja el campo como está,
+    // así que un borrador viejo o una plantilla de catálogo —que no los traen— no inventan nada.
+    function ponerTextosDelDocumento(valores) {
+      if (!valores) return;
+      ["docHeaderText", "docFooterText"].forEach(function (clave) {
+        const nodo = textoDocWrap.querySelector("#campo-" + clave);
+        if (nodo && valores[clave] != null) nodo.value = String(valores[clave]);
+      });
+    }
+
     // ── SCRUM-915d · EL PIE DEL PASO «CONDICIONES» ──────────────────────────────────────────
     // Va en el ÚLTIMO bloque del paso, que es la fila de Ajustes. Lo único que puede frenarlo es
     // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
@@ -2510,6 +2538,14 @@ descWrapper.appendChild(descLabel);
       })),
       // SCRUM-888c: y el descuento global, por lo mismo.
       descuentoGlobal: descuentoGlobalInput.value || "",
+      // SCRUM-1186 · y los dos textos del documento (SCRUM-1174), por lo mismo. Con el lector del
+      // componente: si los campos no están montados, no se guarda nada en vez de guardar vacío.
+      textosDelDocumento: (function () {
+        const leido = typeof window.textoDelDocumentoLeer === "function"
+          ? window.textoDelDocumentoLeer(textoDocWrap)
+          : { ok: false };
+        return leido.ok ? leido.valores : undefined;
+      })(),
     };
     // No guardar borradores vacíos
     const hasContent = snapshot.customerId || snapshot.lines.some((l) => l.concept.trim());
@@ -2570,6 +2606,8 @@ descWrapper.appendChild(descLabel);
         dtoGlobalCampo.hidden = false;
         dtoGlobalBtn.hidden = true;
       }
+      // SCRUM-1186 · los dos textos del documento vuelven con el borrador. Uno viejo no los trae.
+      ponerTextosDelDocumento(d.textosDelDocumento);
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -4837,6 +4875,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
         // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve.
         if (template.paymentTerms) paymentSelect.value = template.paymentTerms;
+        // SCRUM-1186 · y los dos textos del documento (cabecera y Observaciones), que «Duplicar»
+        // copia desde SCRUM-1186. Una plantilla del catálogo no los trae y el campo queda vacío.
+        ponerTextosDelDocumento(template);
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
@@ -5511,6 +5552,12 @@ payloadLines.push(lineaParaPayload({
         fieldDireccionObra.select.value,
         direccionObraInput.value,
       );
+      // SCRUM-1174 · el lector del componente devuelve un VEREDICTO: si los campos no están montados
+      // dice que no los ve, y entonces las claves NO viajan (omitidas), en vez de mandar `null` como
+      // si el profesional los hubiera dejado en blanco.
+      const textoDelDocumento = typeof window.textoDelDocumentoLeer === "function"
+        ? window.textoDelDocumentoLeer(textoDocWrap)
+        : { ok: false };
       const quotePayload = {
         merchant_id: currentMerchant.id,
         customer_id: Number(customerId),
@@ -5538,6 +5585,10 @@ payloadLines.push(lineaParaPayload({
         // «un campo asignado que ya no viaja»; pero un campo nuevo nace SIN registrar.)
         shippingAddressMode: direccionDeLaObra.shippingAddressMode,
         shippingAddress: direccionDeLaObra.shippingAddress,
+        // SCRUM-1174 · los dos textos del documento. A MANO y no con spread, por lo mismo que las
+        // dos de arriba: el censo de SCRUM-286 tiene que ver las claves.
+        docHeaderText: textoDelDocumento.ok ? textoDelDocumento.valores.docHeaderText : undefined,
+        docFooterText: textoDelDocumento.ok ? textoDelDocumento.valores.docFooterText : undefined,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

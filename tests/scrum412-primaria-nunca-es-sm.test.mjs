@@ -77,6 +77,13 @@ const DECLARADAS = {
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '
     + 'Si el fundador decide que un modal así cuenta como primaria, sale de esta lista.',
+  // SCRUM-993 · el paso de confirmación de «Entregar y enviar a firmar», DENTRO de la misma hoja
+  // de alta que ya declara `save` arriba. Confirma un paso que ya se pidió con otro botón (el
+  // secundario `entregar`, `btn-secondary btn-sm`, que esta lista no vigila); la pantalla del
+  // Trabajo tiene sentido completo sin abrir esta hoja.
+  'jobDetailView.js:confirmContinuar':
+    'MODAL (paso de confirmación del sheet de alta de albarán). Igual que `save` de esta misma '
+    + 'hoja: confirma un diálogo, no es la acción por la que existe la pantalla del Trabajo.',
 };
 
 /**
@@ -92,9 +99,13 @@ const DECLARADAS = {
  * aquel motor porque no devuelve el nombre de la variable, y estas declaraciones van por
  * `fichero:variable` a propósito: por línea caducarían al primer commit.
  */
+//
+// 🔴 SCRUM-1172 · Y CON CLASES DETRÁS. El opt-in de 44 px (`btn-primary btn-sm job-toolbar-btn-44`)
+// dejaba al detector CIEGO a esos botones: sus declaraciones salían como fantasmas porque el literal
+// ya no era exacto. Un `btn-primary btn-sm` sigue siéndolo aunque lleve otra clase detrás.
 const FORMAS = [
-  /(\w+)\.className\s*=\s*['"]btn-primary btn-sm['"]/,
-  /(?:const|let|var)\s+(\w+)\s*=\s*createElement\(\s*['"]button['"]\s*,\s*['"]btn-primary btn-sm['"]/,
+  /(\w+)\.className\s*=\s*['"]btn-primary btn-sm(?: [\w-]+)*['"]/,
+  /(?:const|let|var)\s+(\w+)\s*=\s*createElement\(\s*['"]button['"]\s*,\s*['"]btn-primary btn-sm(?: [\w-]+)*['"]/,
 ];
 
 /** Los `btn-primary btn-sm` de UN fuente. Puro, para poder ponerle delante un caso fabricado. */
@@ -131,6 +142,17 @@ test('SCRUM-711 · 🔴 CASO CONOCIDO: el censo VE el botón escrito con el help
   assert.deepEqual(usosEnFuente('customersView.js',
     '  const newBtn = createElement("button", "btn-primary", "Nuevo cliente");'), [],
     '🔴 el censo cuenta como `btn-sm` un botón que no lo lleva: diría «sí» a todo.');
+});
+
+test('SCRUM-1172 · 🔴 CASO CONOCIDO: el censo VE un `btn-primary btn-sm` con una clase añadida', () => {
+  // Fabricado, igual que el de SCRUM-711: sin esto, un detector que volviera al literal exacto
+  // daría el mismo verde con los botones de la ficha del Trabajo fuera de su vista.
+  const conOptIn = usosEnFuente('jobDetailView.js',
+    "  save.className = 'btn-primary btn-sm job-toolbar-btn-44';");
+  assert.deepEqual(conOptIn.map((x) => x.clave), ['jobDetailView.js:save'],
+    '🔴 el censo no ve un `btn-primary btn-sm` que lleva una clase más detrás.');
+  // Y la mitad negativa: una variante que NO es btn-sm no entra por la puerta nueva.
+  assert.deepEqual(usosEnFuente('x.js', "  b.className = 'btn-primary btn-smx';"), []);
 });
 
 test('SCRUM-412 · SUELO: el censo sigue viendo los botones', () => {

@@ -157,8 +157,14 @@ export const SALIDA_APAGADA = 3;
 // zonaDelMerchant(…))` y ya no con `getFullYear()` del proceso, así que su veredicto no depende
 // de la zona de la máquina. Medido en el CI de #1821 (run 36243801473, 26-sep 13:17Z): las dos
 // salieron APAGADAS y la tercera siguió cambiando — el instrumento SÍ midió.
-// Lo que queda de la familia NO está arreglado: `planDeRenumeracion` (abajo) y `allocateAlbaranNumber`
-// (albaranNumber.service.ts, el resto de SCRUM-1093) y `allocateInvoiceNumber` (SCRUM-643 §2·A).
+// Lo que queda de la familia NO está arreglado: `planDeRenumeracion` (abajo, SCRUM-643 §2·A).
+// 27-sep-2026 · SCRUM-1093f: `allocateAlbaranNumber` también deriva ya el año de la zona del merchant,
+// y `allocateInvoiceNumber` lo hacía desde SCRUM-735. Ninguno de los dos tenía prueba CENSADA aquí
+// (sus fixtures no caen en la frontera del año), así que no hay entrada que retirar: la vigila
+// `tests/scrum1093f-albarannumber-zona-merchant.test.mjs`. Medido ese día: `planDeRenumeracion`
+// sigue cambiando (Kiritimati pasa, Midway cae). SCRUM-1093g, mismo día: el número del PARTE
+// (`partes.routes.ts`, `siguienteNumeroParte`) tampoco tenía censada; lo vigila
+// `tests/scrum1093g-parte-numero-zona-merchant.test.mjs`.
 export const CENSADAS = [
   {
     clave: 'tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa',

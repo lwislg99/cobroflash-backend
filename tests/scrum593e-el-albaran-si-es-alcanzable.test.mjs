@@ -13,9 +13,10 @@
 // que sólo sacaba `{ lineas, notas, modoValoracion }`. Ningún test del editor lo habría visto —el
 // editor SÍ lo mandaba—. Por eso aquí se mira el camino ENTERO y no el editor solo.
 //
-// ── QUÉ NO SE VIGILA AQUÍ, y se dice ─────────────────────────────────────────────────────────
-// El PRESUPUESTO. Su formulario vive en `quotesView.js`, que este sprint lo tiene S1 con
-// SCRUM-598. Está cableado de punta a punta pero NO montado, y ése es el hueco abierto del ticket.
+// ── EL PRESUPUESTO, TAMBIÉN (SCRUM-1174) ──────────────────────────────────────────────────────
+// Hasta el 27-sep-2026 esto decía «QUÉ NO SE VIGILA AQUÍ: el PRESUPUESTO», declarado «hasta
+// SCRUM-598». SCRUM-598 cerró sin montarlo y el hueco se quedó sin dueño. SCRUM-1174 lo monta en
+// `quotesView.js`, y los tests del final de este fichero vigilan su camino igual que el del albarán.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -183,8 +184,14 @@ test('SCRUM-593e · 🔴 el PRESUPUESTO sigue SIN montar, y la entrada de máste
   if (montado) {
     // Cuando S1 libere `quotesView.js` y alguien lo monte, este test recuerda actualizar el
     // alcance escrito — un hueco que se cierra y sigue declarado abierto también miente.
-    assert.match(entrada, /PRESUPUESTO.*montad/i,
+    // 🔴 SCRUM-1174 · `/PRESUPUESTO.*montad/` casaba TAMBIÉN con «PRESUPUESTO … NO montado»: con la
+    // entrada sin actualizar, este lado daba verde. Ahora se exige la fila en su estado real.
+    const fila = entrada.split('\n').find((l) => /^\|\s*\*\*PRESUPUESTO\*\*/.test(l));
+    assert.ok(fila, '🔴 CIEGO: no encuentro la fila del PRESUPUESTO en la tabla de alcance.');
+    assert.match(fila, /montado/i,
       '🔴 el presupuesto YA está montado pero la entrada sigue diciendo que no. Actualízala.');
+    assert.doesNotMatch(fila, /NO montado/,
+      '🔴 el presupuesto YA está montado y su fila sigue diciendo «NO montado». Actualízala.');
   } else {
     assert.match(entrada, /PRESUPUESTO.*NO montado/i,
       '🔴 el presupuesto no está montado y la entrada no lo dice. Un ticket que entrega un tercio '
@@ -217,4 +224,44 @@ test('SCRUM-593e · 🔴 el serializador DEVUELVE el campo, o el formulario sale
     '🔴 `serializeAlbaran` no devuelve `docHeaderText`. Es una lista BLANCA: lo que no nombra no '
     + 'llega al navegador, el formulario sale vacío aunque esté guardado, y la siguiente edición '
     + 'lo guarda en blanco. El texto no se pierde al leerlo: se pierde al volver a guardar.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1174 · EL PRESUPUESTO: se pinta, se lee con veredicto y viaja en el POST de crear
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+const QUOTES = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js'), 'utf8');
+
+test('SCRUM-1174 · 🔴 SUELO: el editor del presupuesto se lee de verdad', () => {
+  assert.ok(QUOTES.length > 100_000, `🔴 CIEGO: quotesView.js mide ${QUOTES.length} bytes.`);
+  assert.match(QUOTES, /const blockDelivery = document\.createElement/,
+    '🔴 CIEGO: no encuentro el bloque «Envío» del editor.');
+});
+
+test('SCRUM-1174 · 🔴 el presupuesto MONTA LOS DOS textos, con la pieza y comprobando que está', () => {
+  assert.match(QUOTES,
+    /if \(typeof window\.textoDelDocumentoMontar === "function"\) window\.textoDelDocumentoMontar\(textoDocWrap, \{\}\);/,
+    '🔴 el editor del presupuesto no monta la pieza (o la monta sin comprobar que está cargada).');
+  // Sin tercer argumento = LOS DOS campos. El presupuesto lleva cabecera Y pie (el albarán, sólo cabecera).
+  assert.doesNotMatch(QUOTES, /textoDelDocumentoMontar\(textoDocWrap, \{\}, \[/,
+    '🔴 el presupuesto pide sólo algunos campos: lleva los dos textos, cabecera y pie.');
+  assert.match(QUOTES, /if \(!esDocumentoSuelto\) blockDelivery\.appendChild\(textoDocWrap\);/,
+    '🔴 los textos no se cuelgan del bloque «Envío», o se cuelgan también en la factura suelta.');
+});
+
+test('SCRUM-1174 · 🔴 se lee con VEREDICTO y, si no se ve, las claves NO viajan', () => {
+  assert.match(QUOTES, /window\.textoDelDocumentoLeer\(textoDocWrap\)/,
+    '🔴 el editor no usa el lector con veredicto.');
+  assert.match(QUOTES, /docHeaderText: textoDelDocumento\.ok \? textoDelDocumento\.valores\.docHeaderText : undefined,/,
+    '🔴 la cabecera no viaja en el POST, o viaja aunque no se haya podido leer.');
+  assert.match(QUOTES, /docFooterText: textoDelDocumento\.ok \? textoDelDocumento\.valores\.docFooterText : undefined,/,
+    '🔴 el pie («Observaciones») no viaja en el POST, o viaja aunque no se haya podido leer.');
+});
+
+test('SCRUM-1174 · y el servidor los GUARDA al crear (la otra punta, sólo lectura)', () => {
+  const rutas = fs.readFileSync(path.join(RAIZ, 'src/modules/quotes/app/routes/quotes.routes.ts'), 'utf8');
+  assert.match(rutas, /docHeaderText: body\.docHeaderText \?\? null/,
+    '🔴 la ruta de crear presupuesto ya no guarda la cabecera: el formulario escribiría al vacío.');
+  assert.match(rutas, /docFooterText: body\.docFooterText \?\? null/,
+    '🔴 la ruta de crear presupuesto ya no guarda el pie.');
 });

@@ -382,3 +382,185 @@ exigiendo que lo censado cambie y que nada nuevo cambie; `planDeRenumeracion` si
   retiradas.
 - `tests/scrum813-trinquete-de-zona.test.mjs` (red rápida, canarios incluidos): 28/28.
 - La pasada completa en dos zonas la corre el job del CI de este mismo PR.
+
+---
+
+# APÉNDICE · 27-sep-2026 · SCRUM-1093f (S1) · el resto: `allocateAlbaranNumber`
+
+**Medido contra:** `origin/main` = `37bda5dbc6991cc33a54ee7248020be30d2f977f` · 2026-09-27T15:44:47Z
+
+**Escribe:** Sesión 1 (S1, `s1-27a`), rama `scrum-1093f-albaran-zona`. Encargo del orquestador:
+`albaranNumber.service.ts:115` (`now.getFullYear()` sin zona), el último sitio de la familia en
+`src/modules/jobs`.
+
+## PASO 0 — el defecto, CORRIENDO
+
+Test nuevo `tests/scrum1093f-albarannumber-zona-merchant.test.mjs` (mismo instante frontera que
+`scrum1093-quotenumber…`: 31-dic-2026 23:30Z) corrido sobre el código SIN tocar, en esta máquina
+(reloj del proceso en Europe/Madrid): 1 pass / 2 fail — el merchant SIN zona y el de
+`Atlantic/Canary` salían `AB270001` en vez de `AB260005`. El número lo decidía la zona de la
+MÁQUINA; en el CI (UTC) el que cae es el de Europe/Madrid.
+
+## El cambio
+
+`allocateAlbaranNumber` lee `timezone` en el mismo `findUnique` (ni una consulta de más) y deriva
+el año con `diaNaturalEn(now, zonaDelMerchant(m))`, igual que `allocateQuoteNumber` e
+`allocateInvoiceNumber` (SCRUM-735). Sin zona declarada cae a `'UTC'`: lo mismo que producción
+hacía hasta hoy.
+
+## El trinquete de zona: nada que retirar, y sigue vivo
+
+Ninguna prueba de albaranes estaba CENSADA (sus fixtures son `12:00Z` y `2-ene 09:00Z`, lejos de la
+frontera), así que no baja y no hay entrada que declarar. Se corrige sólo el COMENTARIO de
+`scripts/_trinquete-de-zona.mjs` que afirmaba que `allocateAlbaranNumber` y `allocateInvoiceNumber`
+seguían sin arreglar (lo segundo era falso desde SCRUM-735). Prueba de que no se afloja, corrida
+con `TZ` en el `env`: `scrum1093f` + `albaran` + `scrum306` + `scrum592-doc02` → Kiritimati 46/48
+(2 saltos QA_DB_TEST) · Midway 45/48 con UN rojo, `una mezcla de renumerados…` — la censada que
+queda (`planDeRenumeracion`) SIGUE cambiando · UTC 46/48.
+
+## Controles, corridos
+
+- Relacionados (`scrum1093f`, `albaran`, `scrum306`, `scrum234`, `scrum728`, `scrum1093`): 44 tests,
+  42 pass, 0 fail, 2 skipped (`sin QA_DB_TEST=1`).
+
+---
+
+# APÉNDICE · 27-sep-2026 · SCRUM-1093g (S1) · el número del PARTE, y el censo de la familia en `src/`
+
+**Medido contra:** `origin/main` = `6cbf22ce9c13587d348dffd4ecad8996027257d6` · 2026-09-27T16:07:28Z
+
+**Escribe:** Sesión 1 (S1, `s1-27a`), rama `scrum-1093g-parte-zona`, APILADA sobre
+`scrum-1093f-albaran-zona` (mismo fichero de registro: dos apéndices en paralelo chocarían al final
+del fichero). Encargo del orquestador: arreglar `partes.routes.ts:418`, el tercer sitio de la
+familia, y censarla entera.
+
+## El arreglo
+
+`POST /admin/partes` numeraba con `siguienteNumeroParte(…, fecha.getFullYear())`, con
+`fecha = new Date()`. Ahora lee `timezone` del merchant dentro de la misma transacción y usa
+`Number(diaNaturalEn(fecha, zonaDelMerchant(m)).slice(0, 4))`. Sin zona declarada, `'UTC'`: lo mismo
+que en producción hasta hoy.
+
+La ruta entera necesita Postgres (no hay banco en esta máquina), así que la red es ESTRUCTURAL, por
+AST sobre el fichero real: `tests/scrum1093g-parte-numero-zona-merchant.test.mjs` exige que el año de
+cada `siguienteNumeroParte` salga de `diaNaturalEn` + `zonaDelMerchant`, y que no quede ningún
+`getFullYear()` en el fichero. Tiene SUELO (sin numeración a la vista dice CIEGO) y un CONTROL que caza
+la forma del defecto y absuelve la del arreglo. **Corrido en rojo:** sin el arreglo, 1 pass / 1 fail
+(`una numeración del parte no deriva el año…`); con él, 2/2. El comportamiento de `diaNaturalEn` lo
+prueban sus propios tests.
+
+Controles: los 19 ficheros de test que tocan partes + `scrum745`, `scrum938` y `scrum813`: 230 tests,
+224 pass, 0 fail, 6 skipped.
+
+## El censo de la familia en `src/` — LARGO, y por eso NO se arregla aquí
+
+Censo AST (no `grep`) de las llamadas a métodos de `Date` que leen o escriben componentes LOCALES
+(`getFullYear`, `getMonth`, `getDate`, `getDay`, `getHours`, `set*`, `toLocale*` sin `timeZone`),
+con un control positivo que tiene que ver 2 de 4 formas sintéticas y no ve `getUTCFullYear` ni
+`toLocaleDateString({ timeZone })`. **Población: 304 ficheros `.ts` en `src/`. Resultado: 65 llamadas
+en 23 ficheros** (sobre `37bda5db`; `albaranNumber.service.ts:115` ya curado en 1093f).
+
+| clase | dónde | dueño | estado |
+|---|---|---|---|
+| **NUMERA** un documento | `partes.routes.ts:418` | S1 | **arreglado aquí** |
+| **NUMERA** un documento | `albaranNumber.service.ts:115` | S1 | arreglado en 1093f |
+| 🔴 **Serie de FACTURAS**, año del proceso | `app.ts:410`, `:873`, `:926` · `system/merchantAdmin.ts:202` | J1 (fiscal) | AJENO, reportado. Ojo: `allocateInvoiceNumber` ya usa la zona del merchant (SCRUM-735), así que en la frontera del año estas puertas miran la serie de un año DISTINTO del que va a emitirse |
+| **GUARDA** una fecha | `maintenance/domain/maintenance.service.ts:74` (`setMonth` para `nextDueAt`) | S1 | módulo apagado (`MAINTENANCE_ENABLED`) y NO TOCAR en 1056: reportado |
+| Código de referido | `auth/domain/referral.service.ts:13` (año en el código) | — | bajo impacto, reportado |
+| Se IMPRIME en un documento | `pdf.service.ts:374`, `:1137-1138`, `:1180` · `albaranPdf.service.ts:130`, `:357`, `:417` · `albaranes.routes.ts:1247`, `:1499` · `recapitulativa.service.ts:89` · `receipt.routes.ts:244`, `:286` · `customerPortal.routes.ts:45` · `invoicesAdmin.routes.ts:360` | J1 / S1 / J2 | fecha pintada con la zona del proceso: reportado |
+| Ventanas de AGREGADO (informes, métricas, filtros) | `reports.routes.ts` (8) · `metrics.service.ts` (8) · `exports.routes.ts` (4) · `expenses.service.ts:451-452` · `weeklyDigest.service.ts` (4) · `whatsappLog.service.ts` (3) · `whatsapp.ts:280` · `precarga.service.ts` (5) · `teamOverview.service.ts` (2) · `invoicesAdmin`/`quotesAdmin` `setHours` (2) | varios | no guardan ni numeran: bordes de ventana; reportado |
+
+Cuadre: 6 numeran + 2 guardan + 1 referido + 17 se imprimen + 39 agregan = 65. De las 17 «se
+imprimen», **`albaranPdf.service.ts:133` es un FALSO POSITIVO**: `toLocaleString` sobre un NÚMERO
+(`maximumFractionDigits`), no sobre una fecha. Un censo por nombre de método no distingue el tipo; el
+guard definitivo tendrá que mirar el tipo (el `TypeChecker`), no sólo el nombre.
+
+Con 65 llamadas, lo que procede es convertirlo en un censo con su guard (como SCRUM-1153 con el entorno
+prestado), no en arreglos sueltos. Queda propuesto al orquestador.
+
+---
+
+# APÉNDICE · SCRUM-1093h (S3) · el censo de arriba, convertido en guard que corre solo
+
+**Medido contra:** `origin/main` = `0af96be9c111d37aa9b1c3067fc23befbebe2f8e` · 2026-09-27T16:36:13Z
+(worktree `wt-s3-1093h-censo-fecha-zona`, rama `scrum-1093h-censo-guard-fecha-zona`, apilada sobre
+`scrum-1093g-parte-zona`).
+
+## Qué se construyó
+
+`scripts/_censo-fecha-sin-zona.mjs` — censo AST + **`ts.TypeChecker` real** (un `ts.Program` sobre
+`tsconfig.json`, no un atajo sin tipos) sobre `src/` (304 ficheros `.ts`). Dos capas separadas a
+propósito, porque son dos preguntas distintas:
+
+**① La FAMILIA — por TIPO, no por nombre de método.** `<receptor>.<método>(...)` con `<método>` en
+`getFullYear/getMonth/getDate/getDay/getHours/getMinutes/getSeconds/getMilliseconds` y sus
+hermanas `set*` (siempre dependen del proceso), o en `toLocaleDateString/toLocaleTimeString/
+toLocaleString` **sin** `{ timeZone }` inline en el sitio de la llamada — y el receptor tiene que
+ser de TIPO `Date` según el `checker`, no un nombre de variable ni una lista de opciones. Esto
+resuelve el falso positivo que el propio censo de 1093g encontró a mano: `albaranPdf.service.ts:133`
+(`v.toLocaleString('es-ES', { maximumFractionDigits: 2 })`, `v: number`) **ya no aparece**, porque
+su tipo es `number`, no `Date` — sin lista de excepciones, por construcción.
+
+**② El USO — declarado por IDENTIDAD (fichero + función, SCRUM-710b: nunca la línea), no
+inferido.** Clasificar automáticamente «esto numera un documento» por AST es la lista negra por
+FORMA que `_trinquete-de-zona.mjs` rechaza por escrito (denunciaría los 39 bordes de ventana en
+silencio y el guard se apagaría por ruido). El mapa `USO` recoge la clasificación de la tabla de
+arriba, y `RETIRADAS` las que ya se arreglaron (mismo patrón que `CENSADAS`/`RETIRADAS AL CANON`
+de SCRUM-813). **Cualquier llamada que el censo vea y `USO` no conozca es CIEGA por defecto — no
+limpia**: el guard falla y pide que alguien la clasifique, en vez de dejarla pasar muda.
+
+## Medido de nuevo sobre esta rama: 62, no 65 — y con una corrección propia
+
+S1 midió 65 sobre `37bda5db` (antes de 1093f/g). Sobre esta rama (con `albaranNumber.service.ts` y
+`partes.routes.ts` ya curados) el censo real da **62 llamadas en los mismos ficheros restantes**.
+No investigado más allá de eso (la diferencia exacta 65→62 no es objeto de este ticket).
+
+🔴 **Una entrada de la tabla de arriba estaba mal clasificada, y se corrige aquí, no en silencio:**
+`weeklyDigest.service.ts` línea 208 (dentro de `sendDigestForMerchant`) estaba en el grupo de
+AGREGADO junto a sus otros dos `setHours` del mismo fichero. Leído el código: construye `weekStr`,
+que se IMPRIME literalmente en el asunto del correo (`` `📊 Tu semana en YaQu (${weekStr})` ``) —
+es la misma familia que `receipt.routes.ts` o `albaranPdf.service.ts`, no un borde de ventana.
+Movida a IMPRIME. Los otros dos `setHours` de ese fichero (`sendWeeklyDigests`, `getDigestPreview`)
+sí son ventana y se quedan en AGREGADO. Con esto: **18 IMPRIME, no 17** (recontadas sobre el árbol
+real, no reconstruidas de la tabla).
+
+## Verificación — `tests/scrum1093h-censo-fecha-sin-zona.test.mjs`, 16/16
+
+* **SUELO**: población > 250 ficheros, al menos una acusada y al menos una limpia (AGREGADO).
+* **RATCHET**: ninguna fila del censo real queda sin clasificar en `USO` — verificado a mano que
+  con `USO` vacío las 62 filas caerían como sin clasificar (no es una prueba vacía).
+* **Control positivo REAL** (×3, no fabricado): el código de `quoteNumber.service.ts` (antes de
+  `a0f454f3`), `albaranNumber.service.ts` (antes de `f0ff43df`) y `partes.routes.ts` (antes de
+  `5cb43c1c`), leído de `git show <sha>^`, compilado con tipos reales vía `ts.Program` con overrides
+  — se acusa. **Control negativo DERIVADO**: los mismos tres ficheros en HEAD (con el arreglo
+  `diaNaturalEn(fecha, zonaDelMerchant(m))` aplicado) — limpios.
+* **Falso positivo real**: `albaranPdf.service.ts:133` (`fmtQty`, número) sigue sin acusarse, con
+  control de que el mismo fichero SÍ da señal en `fmtDate`/`generateAlbaranPdf` (el negativo no vale
+  nada si el censo se ha quedado ciego para el fichero entero).
+* **Fabricado + derivado** (×5): `getFullYear` sobre `Date` se acusa; `toLocaleDateString` sin
+  `timeZone` se acusa; el MISMO código con `timeZone` inline no se acusa; `getUTCFullYear` no se
+  acusa; `toLocaleString` sobre `number` no se acusa.
+
+Trampa real encontrada construyendo esto, para quien reconstruya algo parecido:
+`ts.createCompilerHost().getSourceFile` **no llama a `this.readFile`** — tiene su propia lectura de
+disco cerrada al crear el host. Sobreescribir sólo `readFile`/`fileExists` no cambia lo que el
+compilador analiza; hay que sobreescribir `getSourceFile` también. Y **TypeScript normaliza sus
+rutas internas con `/` siempre, también en Windows** — una clave de `overrides` escrita con
+`path.join` (que da `\`) no casa nunca, y el override pasa desapercibido EN SILENCIO (el censo cae
+al fichero real del disco sin decir que el override no se aplicó). Las dos costaron el primer rojo
+de este mismo test; quedan arregladas en `programaDe` y documentadas en su comentario.
+
+## Dónde NO entra: no es de `guards:entrada`
+
+`scripts/guards-entrada.mjs` exige «sin compilar y sin base, segundos» — este censo COMPILA un
+`ts.Program` de 304 ficheros con el `TypeChecker` real (~15-20 s solo). Añadirlo a esa lista
+empujaría el TECHO de 90 s (SCRUM-976) justo con la máquina cargada, que es la causa que este mismo
+equipo midió hoy para los rojos de "pasa sola, falla en tanda". Vive en `tests/` como el resto de
+`npm test`, no en la lista rápida.
+
+## Lo que esto NO hace
+* No arregla nada de lo NUMERA/GUARDA/IMPRIME encontrado — sigue reportado (SCRUM-1168 para J1; el
+  resto ya lo estaba). Este ticket es el INSTRUMENTO, no el arreglo.
+* No decide si `getMonth`/`getDate` sin `Date` explícito en otras 68 proyecciones de Prisma (fuera
+  de alcance, ya separadas en SCRUM-1093/1093g) son de esta familia: sólo mira llamadas de método
+  sobre un valor de tipo `Date`, nunca columnas.

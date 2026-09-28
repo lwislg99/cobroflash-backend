@@ -5,6 +5,7 @@ import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invo
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
 import { getDeliveryStatusMany } from '../messaging/domain/whatsappLog.service'; // SCRUM-986
+import { tieneNumeroDeContacto } from '../../core/contacto/canalDeWhatsApp'; // SCRUM-1166
 import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
@@ -247,6 +248,10 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     // presupuesto sin el global y a más precio (D6 de SCRUM-883), y el detalle no podía cuadrar
     // base e IVA con un `total` que sí lo lleva. Es precio, no margen: lo ve quien ve el total.
     discountGlobalAmount: quote.discountGlobalAmount ?? null,
+    // SCRUM-1187 · la cabecera y el pie del documento (SCRUM-1174). Mismo motivo que el global:
+    // sin ellos «Duplicar» copiaba el presupuesto sin sus textos, en silencio (SCRUM-1186).
+    docHeaderText: quote.docHeaderText ?? null,
+    docFooterText: quote.docFooterText ?? null,
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,
@@ -275,6 +280,11 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
       phone: quote.customer.phone,
       email: quote.customer.email,
       notes: quote.customer.notes,
+      // SCRUM-1166 · ¿hay ALGÚN número al que escribirle (móvil o fijo)? Se manda el BOOLEANO,
+      // calculado con la MISMA función que usa el envío (`sendQuote.service.ts`), y no el móvil:
+      // si la pantalla recibiera los números decidiría por su cuenta y el criterio viviría en dos
+      // sitios. Sin esto la pantalla hacía `!!phone` y un cliente con sólo móvil salía «sin teléfono».
+      tieneNumeroDeContacto: tieneNumeroDeContacto(quote.customer),
     },
 
     charge: quote.charge

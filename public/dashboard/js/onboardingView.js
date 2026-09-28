@@ -447,7 +447,9 @@ function showOnboardingWizard(onComplete) {
   async function onNext() {
     const step = steps[currentStep];
     const nextBtn = document.getElementById('ob-next');
-    if (!step.validate()) {
+    // SCRUM-1162: un paso sin `validate` no tiene nada que validar. El paso 2 (SCRUM-313) nació
+    // sin él, y llamarlo a ciegas dejaba «Siguiente» muerto y mudo en producción siete semanas.
+    if (typeof step.validate === 'function' && !step.validate()) {
       const input = document.querySelector('#ob-steps input, #ob-steps select');
       if (input) { input.style.borderColor = '#dc2626'; input.focus(); }
       return;

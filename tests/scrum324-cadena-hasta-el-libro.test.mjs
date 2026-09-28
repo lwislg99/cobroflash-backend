@@ -109,7 +109,10 @@ test('SCRUM-324 · SUELO: la pantalla PINTA los tres del desglose y los ENVÍA',
 
 test('SCRUM-324 · la microcopy de la foto es la APROBADA, y la fiscal NO está encendida', () => {
   const vista = leer('public/dashboard/js/expensesView.js');
-  assert.ok(vista.includes('Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.'),
+  // 🔄 SCRUM-1155 (920f, 26-sep-2026) · «de arriba» → «de abajo»: en el alta rediseñada la foto
+  // sube al paso 1, así que los campos fiscales que este párrafo describe quedan DEBAJO de él, no
+  // encima. Es el F1 del comentario 15992 aplicándose, no una redacción nueva.
+  assert.ok(vista.includes('Guardamos la foto como tu copia. Los datos fiscales salen de los campos de abajo.'),
     '🔴 falta el texto aprobado bajo «Foto del ticket». Es microcopy oficial (regla 30): no se ' +
     'reescribe ni se parafrasea.');
 

@@ -1632,6 +1632,12 @@ html, body { overflow-x: clip; }
    contenedor a 44px, empezando por los IRREVERSIBLES (Borrar, Emitir) antes que el resto de
    `.btn-sm` (que sigue en 30px sin decidir). Mismo patrón opt-in de SCRUM-962: nunca `.btn-sm`
    global. */
+/* SCRUM-1167 · la regla sola pesaba (0,1,0) y `.btn.btn-sm { min-height: 30px }` pesa (0,2,0):
+   «Borrar» proveedor lleva las dos clases y se quedaba en 30 px en escritorio. El selector
+   compuesto `.btn.btn-sm.accion-irreversible-btn-44` pesa (0,3,0) y gana sin `!important`; la
+   regla sola sigue para los que no llevan `.btn` (plantillas: `btn-danger btn-sm …`, que ya
+   ganaba por orden). Lo mide `guard:objetivo-tactil` en navegador, no la presencia de la clase. */
+.btn.btn-sm.accion-irreversible-btn-44,
 .accion-irreversible-btn-44 { min-height: 44px; }
 
 /* SCRUM-1148 (AB6, grupo B de la misma decisión, opción ③): en el editor de presupuesto, los
@@ -2507,8 +2513,13 @@ html, body { overflow-x: clip; }
 /* SCRUM-918: arrancar sin red. Ámbar de Aviso (DESIGN.md), mismo tinte que .badge-amber. */
 .aviso-sin-cobertura { background: var(--amber-50); border-bottom: 1px solid #fde68a; color: #92400e; padding: 10px 16px; font-size: 13.5px; font-weight: 600; text-align: center; }
 .aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
+/* SCRUM-993: la fila de botones del paso de confirmación de «Entregar y enviar a firmar», dentro
+   del `.alert.info` de la hoja de alta del albarán. */
+.alb-confirmar-fila { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 /* SCRUM-937b: ayuda bajo el NIF del gasto mientras no hay proveedor (mismo tono que .qq-help, AA). */
 .gasto-nif-ayuda { font-size: 12px; color: var(--muted); margin: 2px 0 0; line-height: 1.4; }
+/* SCRUM-1155 (920f): el porqué de un campo descartado por la lectura del ticket, mismo ámbar que .aviso-falta-campo. */
+.gasto-descarte { font-size: 11.5px; color: #b45309; margin: 2px 0 0; }
 
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }
@@ -3562,6 +3573,23 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
+/* SCRUM-1175 (916a, PR-B) · las firmas en su paso, una caja por firma. Contorno y fondo de la
+   tarjeta de contenido de DESIGN.md (plano por defecto: borde de 1 px, sin sombra). */
+.parte-firmas { margin-top: 12px; }
+.parte-firmas-titulo {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.parte-firma-caja {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
 /* Quitar una línea: presente, pero nunca compitiendo con la acción principal.
    ⚠️ AQUÍ ESTÁ TODO LO DE ESTA CLASE, y en un solo sitio a propósito (SCRUM-818). Vivía partida en
    dos reglas —el aspecto aquí y el área táctil 50 líneas más abajo— y no eran duplicadas sino
@@ -3681,6 +3709,62 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   color: var(--ink);
 }
 
+/* ══ SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO, SU PROPIO PASO ═════════════════════════
+   Entrada y salida con selector de hora y «Ahora» al lado; la duración, dicha; y los dos números
+   en campos estrechos en vez de 487 px para dos cifras. Dos columnas también a 390 px: son pares
+   (entrada/salida, desplazamiento/km) y se leen juntos. */
+.parte-horas { margin-bottom: 18px; }
+.parte-horas-titulo {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.parte-horas-guia {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.parte-horas-par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.parte-ahora {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--r-full);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.parte-ahora:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+.parte-duracion {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+.parte-duracion b { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.parte-duracion-rotulo { font-size: 13px; font-weight: 600; }
+.parte-duracion-mal { background: var(--danger-bg); color: var(--danger-ink); }
+.parte-duracion-mal b { font-size: 14px; }
+.parte-campo-con-unidad { display: flex; align-items: center; gap: 8px; }
+.parte-campo-unidad { font-size: 14px; color: var(--muted); }
+
 /* El grupo de los tres tipos ya dice de qué es (rótulo firmado en SCRUM-703). */
 .parte-tipo legend {
   font-size: 12.5px;
@@ -3730,6 +3814,83 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 
 /* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
 .parte-tipo label { min-height: 44px; box-sizing: border-box; }
+
+/* ══ SCRUM-1175 (916a, PR-C) · LOS DATOS DEL PARTE, PLEGADOS AL FINAL ═══════════════════════
+   Obra y REF, tipo, técnicos y notas: una línea por dato con su resumen, que se abre al tocarla.
+   Plegado no es quitado: los campos siguen dentro. La línea entera es el objetivo (≥48 px). */
+.parte-datos-del-parte { margin-top: 18px; }
+.parte-datos-del-parte-titulo {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--neutral-600, var(--muted));
+}
+.parte-plegable { border-top: 1px solid var(--border); }
+.parte-plegable:last-child { border-bottom: 1px solid var(--border); }
+.parte-plegable-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.parte-plegable-cabeza::-webkit-details-marker { display: none; }
+.parte-plegable-cabeza::after {
+  content: "›";
+  flex: none;
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+.parte-plegable[open] > .parte-plegable-cabeza::after { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .parte-plegable-cabeza::after { transition: none; } }
+.parte-plegable-cabeza:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+  border-radius: var(--radius-md, 10px);
+}
+.parte-plegable-titulo { font-size: 14px; font-weight: 600; color: var(--ink); flex: none; }
+.parte-plegable-resumen {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.parte-plegable-cuerpo { padding: 2px 0 14px; }
+.parte-plegable-cuerpo .parte-datos { margin-bottom: 0; }
+/* Dentro de su línea el grupo ya dice de qué es: la leyenda sigue para el lector de pantalla. */
+.parte-plegable .parte-tipo legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.parte-plegable .parte-tipo { margin: 0 !important; }
+/* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
+.parte-tipo .parte-tipo-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 8px 8px 0;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.parte-tipo .parte-tipo-ficha input { margin: 0; }
+.parte-tipo .parte-tipo-ficha:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
 
 /* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
 [data-parte-dictado] textarea { min-height: 88px; }
@@ -4221,3 +4382,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .contacto-link:hover { text-decoration-color: currentColor; }
 .contacto-link--icono { min-width: 36px; justify-content: center; text-decoration: none; }
 @media (max-width: 768px) { .contacto-link { min-height: 44px; } .contacto-link--icono { min-width: 44px; } }
+
+/* SCRUM-1148 (AB6, grupo B, opción ③) · Plantillas: «+ Nuevo presupuesto» de la cabecera medía
+   30,6 px de toque en Chrome real, a 929 y a 390. Regla ACOTADA A SU CONTENEDOR, solo tamaño:
+   `.btn-sm` global no se toca. Los botones de las filas («📋 Usar», «Renombrar», «Borrar») y las
+   pestañas `Historial · Plantillas` ya daban 44 px en el producto: no se tocan. */
+.plantillas-cabecera > .btn-sm { min-height: 44px; }

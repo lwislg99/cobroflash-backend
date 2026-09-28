@@ -146,7 +146,29 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // es un estado vacío fijo, igual en los tres modos —, así que «a pelo» es la categoría correcta.
 // Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 157 };
+// 157 → 158 · 26-sep-2026 (SCRUM-1155, 920f) · «3 · Datos de la factura del proveedor»
+// (`expensesView.js:1036`, la cabecera del paso 3 del alta de gasto rediseñada). Es un rótulo
+// de SECCIÓN fijo, firmado en SCRUM-920 comentario 15992: no depende de ningún flag ni tipo de
+// documento —los gastos no tienen `INVOICING_ES_ENABLED` ni `type`—, así que «a pelo» es la
+// categoría correcta, igual que la de la entrada de arriba (156→157).
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 flag 13 → 16 · aPelo 157 → 154 · 26-sep-2026 (SCRUM-1160) · CUÁLES SE MOVIERON Y POR QUÉ, y
+// **NO ES UN ARREGLO DE COPY que celebrar**: ninguno de los tres cambió de texto ni elige su
+// palabra por el modo de emisión. Son de `jobDetailView.js`:
+//     «El WhatsApp del recordatorio falló — reinténtalo desde la factura»   (CTA, rama `recordar`)
+//     «⚠️ Factura emitida, revisa su registro» · «✓ Factura emitida.»      (hoja de facturar parcial)
+// Pasan a «flag» porque `jobNextAction` ES AHORA portador del flag, y eso sí es verdad: su nivel 1
+// («Cobrar el resto») se salta en modo justificante (`facturaFiscalDisponible`), así que la escalera
+// que decide qué rama del CTA corre depende del modo. El censo hereda esa dependencia a los literales
+// de la función que la llama. AISLADO, no deducido: con `jobNextAction.js` de `origin/main` y el resto
+// de la rama, el diff del censo entre main y la rama sale VACÍO. Por eso NO se tocan
+// `PENDIENTES_DE_FIRMA` (no se ha firmado nada) ni ningún rótulo.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔀 CONFLICTO DE MERGE (SCRUM-1155 × SCRUM-1160), 27-sep-2026: las dos ramas tocan este mismo
+// anclaje por SU literal, cada una en un fichero distinto (expensesView.js / jobDetailView.js).
+// Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
+// el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 155 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -257,7 +279,12 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // vez se queda: el literal firmado del 409 del albarán con descuento global vive en SU ÚNICA
 // constante (`COPY_ALBARAN_CON_DESCUENTO_GLOBAL`) y llega al `json` por referencia. Duplicarlo en
 // línea para bajar este número sería cambiar una fuente por dos: justo lo que la nota avisa.
-const NO_LEGIBLES_AL_MEDIR = 32;
+// 26-sep-2026 · 32 → 33, MEDIDO (SCRUM-1155, 920f). «3 · Datos de la factura del proveedor»
+// (`expensesView.js:1036`) se pinta como `${TEXTO_PASO3_TITULO} <span …>(${TEXTO_OPCIONAL})</span>`:
+// dos constantes compuestas en la misma plantilla HTML, así que el censo no puede afirmar desde el
+// fuente cuál es el texto final visible (aunque las DOS mitades sean literales firmados sueltos).
+// No se duplica el rótulo en línea para bajar el número: el mismo motivo que 31→32.
+const NO_LEGIBLES_AL_MEDIR = 33;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

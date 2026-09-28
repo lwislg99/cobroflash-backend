@@ -17,6 +17,12 @@
 // ⚠️ LO QUE NO RESUELVE: si el orquestador de fondo ya está VIVO y parado, `sesion.mjs` contesta
 // `YA-VIVA` y no se le despierta — reanudar una sesión viva arranca una COPIA (CLI 2.1.263). Para
 // eso está el cron DENTRO de su propia sesión; esta tarea es la que lo resucita si no existe.
+//
+// SCRUM-999 · ANTES de llamar a `sesion.mjs lanzar` se pregunta a `uso.mjs leer` si queda cuota:
+// `decidirLanzar` (sesion.mjs) sólo mira si hay algo VIVO en el repo, nunca la cuota de la cuenta,
+// y una tanda programada disparaba igual con la ventana de 5 h agotada. Fail-closed, como el resto
+// de la puerta: sólo VERDE deja lanzar; AVISO y NO_PUDE_MIRAR paran con veredicto `SIN-CUOTA` y
+// quedan en `arranque.log` para que la tanda siguiente lo intente — esta tarea no reintenta sola.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,6 +33,7 @@ export const PROMPT_INSTALADO = 'prompt-tanda.md';
 export const COMPROBADOS = [
   ['orquestador-arranque.mjs', 'scripts/equipo/orquestador-arranque.mjs'],
   ['sesion.mjs', 'scripts/equipo/sesion.mjs'],
+  ['uso.mjs', 'scripts/equipo/uso.mjs'],
 ];
 
 function gitReal(cwd, args, binario = false) {
@@ -67,6 +74,25 @@ export function puertas({ dir, git = gitReal }) {
   return { ok: true, nombre: `${config.prefijo}${config.orquestador}` };
 }
 
+/**
+ * ¿Queda cuota para lanzar? Se pregunta a la copia de `uso.mjs` que `puertas` ya verificó
+ * byte a byte contra `origin/main`, como proceso aparte — igual que con `sesion.mjs lanzar`:
+ * nunca se importa un fichero cuya integridad decide otro código (ver cabecera). Sólo VERDE deja
+ * lanzar: AVISO y NO_PUDE_MIRAR son fail-closed (SCRUM-999) — un arranque que no puede ni
+ * preguntar la cuota no es un arranque seguro.
+ * @returns {{veredicto:string, motivo?:string, [k:string]:*}}
+ */
+export function veredictoDeUso({ dir, ejecutar = spawnSync }) {
+  const r = ejecutar(process.execPath, [path.join(dir, 'uso.mjs'), 'leer'], { encoding: 'utf8' });
+  const ultima = (r.stdout || '').trim().split('\n').at(-1) || '';
+  let v;
+  try { v = JSON.parse(ultima); } catch { v = null; }
+  if (!v || typeof v.veredicto !== 'string') {
+    return { veredicto: 'NO_PUDE_MIRAR', motivo: 'uso.mjs no devolvió veredicto', salida: ultima.slice(-300) };
+  }
+  return v;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const dir = path.dirname(fileURLToPath(import.meta.url));
   const cuando = new Date().toISOString();
@@ -74,6 +100,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (!p.ok) {
     process.stdout.write(JSON.stringify({ cuando, ...p }) + '\n');
     process.exit(2);
+  }
+  const uso = veredictoDeUso({ dir });
+  if (uso.veredicto !== 'VERDE') {
+    process.stdout.write(JSON.stringify({ cuando, veredicto: 'SIN-CUOTA', motivo: uso.motivo || `uso.mjs dio ${uso.veredicto}`, uso }) + '\n');
+    process.exit(1);
   }
   const r = spawnSync(process.execPath, [path.join(dir, 'sesion.mjs'), 'lanzar', p.nombre, path.join(dir, PROMPT_INSTALADO)], { encoding: 'utf8' });
   const ultima = (r.stdout || '').trim().split('\n').at(-1) || '';

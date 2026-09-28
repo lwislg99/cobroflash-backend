@@ -66,6 +66,38 @@ function facturaFiscalDisponible() {
   return typeof window !== 'undefined' && ['fiscal', 'demo'].includes(window.appModoEmision);
 }
 
+/**
+ * SCRUM-1160 · EL TEXTO para cuando, pese a todo, llega el 409 `facturacion_no_disponible`.
+ *
+ * Con `facturaFiscalDisponible()` los botones que facturan ya no se pintan en modo justificante,
+ * así que este texto no debería verse. Es el cinturón: antes de él, las pantallas pintaban el
+ * `message` del servidor tal cual, y ese mensaje es `[PENDIENTE microcopy oficial]`.
+ *
+ * FIRMADO por el orquestador por delegación del fundador (regla 39), 26-sep-2026. Seco a propósito:
+ * con `INVOICING_ES_ENABLED` en OFF la regla 24 prohíbe también el cobro por YaQu, así que NO se le
+ * añade ninguna alternativa (ni transferencia, ni Bizum). Registro: `docs/master/SCRUM-1160.md`.
+ */
+const COPY_FACTURACION_NO_DISPONIBLE = 'Desde tu cuenta todavía no se pueden generar facturas.';
+
+/**
+ * ¿Este error del servidor es el de «aquí no se factura», o trae un texto sin firmar? Entonces la
+ * pantalla NO pinta el `message`: pinta el texto firmado de arriba. Los demás 409 traen textos
+ * firmados propios (`COPY_ADMIN_SIN_LINEAS`, `motivoSinTramo`…) y siguen saliendo tal cual.
+ */
+function errorDeFacturarSinFirmar(data) {
+  const d = data || {};
+  const msg = typeof d.message === 'string' ? d.message : '';
+  // El marcador se busca con una expresión regular y no con un literal de texto: un literal con él
+  // es lo que `scrum402` cuenta como pintable, y éste sólo sirve para reconocerlo, nunca se pinta.
+  return d.error === 'facturacion_no_disponible' || /\[PENDIENTE/.test(msg) ? COPY_FACTURACION_NO_DISPONIBLE : null;
+}
+
+/** Lo mismo, con el `message` del servidor (firmado) o `porDefecto` para el resto de errores. */
+function textoDeErrorDeFacturar(data, porDefecto) {
+  const msg = data && typeof data.message === 'string' ? data.message : '';
+  return errorDeFacturarSinFirmar(data) || msg || porDefecto;
+}
+
 function ctxAlbaranDeFila(alb) {
   return {
     // SCRUM-905 · «Facturar lo entregado» lleva a la hoja de `facturar-parcial`: 409 en `receipt`.
@@ -102,5 +134,7 @@ function primariaDeAlbaran(alb) {
 if (typeof window !== 'undefined') {
   window.ctxAlbaranDeFila = ctxAlbaranDeFila;
   window.facturaFiscalDisponible = facturaFiscalDisponible;   // SCRUM-905 · consolidar, en la ficha del Trabajo
+  window.textoDeErrorDeFacturar = textoDeErrorDeFacturar;     // SCRUM-1160 · ficha del presupuesto
+  window.errorDeFacturarSinFirmar = errorDeFacturarSinFirmar; // SCRUM-1160 · CTA de la ficha del Trabajo
   window.primariaDeAlbaran = primariaDeAlbaran;
 }

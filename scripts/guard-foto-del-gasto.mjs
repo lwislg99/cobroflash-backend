@@ -241,7 +241,10 @@ const REABRIR_Y_VER = new Function('id', `
     if (fila.tieneFoto !== true) return { error: 'la lista dice tieneFoto=' + JSON.stringify(fila.tieneFoto) + ' de un gasto que SÍ tiene foto' };
     return await new Promise(function (ok) {
       openExpenseModal(fila, { onSaved: async function () {} });
-      var img = document.querySelector('#exp-receipt-section img');
+      // SCRUM-1155 (920f) · el alta rediseñada quitó el id \`exp-receipt-section\` (el \`.field\`
+      // que envolvía el campo de fichero) y puso la foto en \`#exp-foto-elegida\` (con la imagen en
+      // \`#exp-foto-preview\`). Mismo hecho que antes — la foto guardada se ve al reabrir —, otro id.
+      var img = document.querySelector('#exp-foto-elegida img');
       if (!img) return ok({ error: 'al reabrir no hay <img> de la foto' });
       var fin = function () {
         var r = img.getBoundingClientRect();

@@ -298,7 +298,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: pendingInvCta.id });
         });
         actions.appendChild(btnPend);
-      } else {
+      } else if (typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible()) {
+        // SCRUM-1160 · «Cobrar ahora» delega en «Generar factura», y en modo justificante esa
+        // factura no existe: el servidor corta con 409 `facturacion_no_disponible` y la pantalla
+        // acababa enseñando su marcador. Mismo criterio y misma comprobación que los albaranes
+        // (`albaranAccion.js:65`, `jobDetailView.js:1540`): falla cerrado y el botón no se pinta.
         const btnCollect = document.createElement('button');
         btnCollect.className = 'btn-primary';
         // SCRUM-984 · la acción de la pantalla lleva el id de SU fila en `QUOTE_ACTION_REGISTRY`,
@@ -334,7 +338,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         });
         actions.appendChild(btnAlbaran);
       }
-      summarySec.appendChild(actionsSec);
+      // SCRUM-1160 · en modo justificante y sin Trabajo de origen, aquí no queda ninguna acción: un
+      // «Siguiente paso» con nada debajo es un rótulo que promete algo que no está. No se pinta.
+      if (actions.children.length > 0) summarySec.appendChild(actionsSec);
 
       // A15.1 (MANT-1, tras flag): recordatorio de mantenimiento — solo si el
       // server lo ofrece (flag ON + línea mantenible del gremio o plan ya creado).
@@ -349,7 +355,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     btnSend.className = isDraft ? 'btn-primary' : 'btn-secondary btn-sm';
     btnSend.textContent = isDraft ? '📤 Enviar por WhatsApp' : '↻ Reenviar por WhatsApp';
 
-    const hasPhone = !!(quote.customer && quote.customer.phone);
+    // SCRUM-1163 · ¿hay ALGÚN número (móvil o fijo)? Lo dice el servidor (`tieneNumeroDeContacto`,
+    // SCRUM-1166) con la misma función que usa el envío: la pantalla no decide por su cuenta. Si el
+    // dato no llega (un servidor anterior), se queda el criterio de siempre, `phone`.
+    const c = quote.customer || {};
+    const hasPhone = typeof c.tieneNumeroDeContacto === 'boolean' ? c.tieneNumeroDeContacto : !!c.phone;
     if (!hasPhone) {
       btnSend.disabled = true;
       btnSend.title = 'El cliente no tiene teléfono de WhatsApp configurado.';
@@ -646,9 +656,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const invSec = document.createElement('div');
   invSec.className = 'detail-section';
   invSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
-  page.appendChild(invSec);
 
   const invoices = Array.isArray(quote.invoices) ? quote.invoices : [];
+  // SCRUM-1170 · en modo justificante (regla 24) o sin saber el modo, y sin facturas, la sección
+  // sólo diría «No hay facturas generadas.» de un documento que no se puede emitir: no se monta.
+  // Si YA hay facturas, sale con ellas. La condición es el modo: vuelve sola con el interruptor.
+  if ((typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible()) || invoices.length) {
+    page.appendChild(invSec);
+  }
   const invList = document.createElement('div');
   invSec.appendChild(invList);
 
@@ -893,7 +908,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   btnInvoice.id = 'btn-generate-invoice'; // A2.2: el CTA "💰 Cobrar ahora" delega aquí
   btnInvoice.className = 'btn-primary';
   btnInvoice.style.marginTop = '12px';
-  invSec.appendChild(btnInvoice);
+  // SCRUM-1160 · en modo justificante (o sin saber el modo) no se OFRECE facturar: el botón solo
+  // puede acabar en el 409 `facturacion_no_disponible`. No se pinta, igual que en los albaranes.
+  const facturaDisponible = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  if (facturaDisponible) invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
   // SCRUM-178: a qué ruta va el botón. Por defecto la de TRAMOS; la emisión manual (un solo
@@ -946,7 +964,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const notaSinTramos = document.createElement('div');
     notaSinTramos.style.cssText = 'font-size:13px;color:var(--muted);margin-top:6px';
     notaSinTramos.textContent = 'Estas condiciones no generan tramos automáticos';
-    invSec.appendChild(notaSinTramos);
+    if (facturaDisponible) invSec.appendChild(notaSinTramos); // SCRUM-1160: acompaña al botón
   } else {
     btnInvoice.textContent = 'Factura ya generada';
     btnInvoice.disabled = true;
@@ -967,7 +985,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           // SCRUM-151: el mensaje del servidor manda. Antes se pintaba `data.error`, o sea el
           // identificador interno: el usuario leía "Error generando factura:
           // no_more_invoices_for_payment_terms". El código queda para el log, no para la pantalla.
-          setStatus('error', data.message || ('Error generando factura: ' + (data.error || 'desconocido')));
+          //
+          // SCRUM-1160 · …salvo que ese mensaje sea el de «aquí no se factura» o no esté firmado: era
+          // `[PENDIENTE microcopy oficial]`, en rojo y solo. Lo decide `textoDeErrorDeFacturar`
+          // (`albaranAccion.js`); sin él, el texto de siempre, nunca el `message` en crudo.
+          const porDefecto = 'Error generando factura: ' + (data.error || 'desconocido');
+          setStatus('error', typeof window.textoDeErrorDeFacturar === 'function'
+            ? window.textoDeErrorDeFacturar(data, porDefecto) : porDefecto);
           btnInvoice.disabled = false;
           btnInvoice.textContent = original;
           return;
@@ -1277,6 +1301,12 @@ async function duplicateQuote(quoteId) {
     // campo cualquiera: se perdía una rebaja que el cliente ya había aceptado.
     // `?? null` y no `|| null`: un descuento de 0 es una decisión escrita, no «no hay descuento».
     discountGlobalAmount: detail.discountGlobalAmount ?? null,
+    // SCRUM-1186 · LOS DOS TEXTOS DEL DOCUMENTO VIAJAN EN LA COPIA. Desde SCRUM-1174 el editor
+    // tiene dónde escribirlos, y sin estas dos líneas el duplicado salía sin cabecera ni
+    // Observaciones, en silencio. Necesitan que el detalle los mande (SCRUM-1187, servidor):
+    // mientras no llegan, `?? null` deja el campo vacío, que es lo que pasaba hasta ahora.
+    docHeaderText: detail.docHeaderText ?? null,
+    docFooterText: detail.docFooterText ?? null,
   };
   // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino
   // ya tenía el orden correcto y nunca falló, pero compartía el canal global con "Usar plantilla":
@@ -1311,9 +1341,18 @@ function buildStatusTimeline(quote) {
     rejected
       ? { label: 'Rechazada', icon: '✖', state: 'rejected', date: fmtD(d.rejectedAt || quote.rejectedAt) }
       : { label: 'Aceptada', icon: '✍️', state: accepted ? 'done' : (st === 'sent' ? 'current' : 'pending'), date: fmtD(d.acceptedAt || quote.acceptedAt) },
-    { label: 'Facturada', icon: '🧾', state: invoices.length ? 'done' : 'pending', date: invoices.length ? fmtD(invoices[0].createdAt) : '' },
-    { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
   ];
+  // SCRUM-1169 · «Facturada · Cobrada» solo donde pueden ocurrir: en modo justificante (regla 24)
+  // no hay ni documento ni cobro por YaQu, y con el modo desconocido se falla cerrado — la misma
+  // comprobación que el resto de la casa. Si el presupuesto YA tiene facturas, se enseñan: se
+  // oculta lo que no va a ocurrir, no lo que ya ocurrió.
+  const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  if (puedeFacturar || invoices.length) {
+    steps.push(
+      { label: 'Facturada', icon: '🧾', state: invoices.length ? 'done' : 'pending', date: invoices.length ? fmtD(invoices[0].createdAt) : '' },
+      { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
+    );
+  }
 
   const colorFor = (s) => s === 'done' ? 'var(--brand-bright)' : s === 'current' ? 'var(--blue-600)' : s === 'rejected' ? 'var(--red-500)' : 'var(--neutral-200)';
   const textFor = (s) => s === 'pending' ? 'var(--muted)' : 'var(--neutral-700)';

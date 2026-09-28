@@ -58,6 +58,9 @@ const CENSO = censar(RAIZ);
  * que el que añada el número 14 tenga que mirarlo, no para bendecirlos.
  */
 const SIN_PROBAR_CONOCIDOS = [
+  // SCRUM-999: `escribirUso()` recibe `dir` como parámetro (siempre un `temporal()` de quien la
+  // llama, scrum899b y scrum951a) — el análisis estático no atraviesa la llamada para verlo.
+  'tests/_uso-banco.mjs',
   'tests/restauracion-del-arbol-ejecutable.test.mjs',
   // SCRUM-1007/1011/1026: mismo caso que 951d — su `banco()` cuelga de `temporal()`.
   'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',

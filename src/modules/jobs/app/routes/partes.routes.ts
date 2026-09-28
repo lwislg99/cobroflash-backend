@@ -51,6 +51,7 @@ import {
   type TipoParte,
 } from '../../domain/parteTrabajo';
 import { siguienteNumeroParte } from '../../domain/parteNumero';
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { AVISOS_DEL_DICTADO, sanearDictadoDelParte } from '../../domain/parteDictado';
 import { isAiConfigured, suggestLineasDeParte } from '../../../ai/domain/ai.service';
 import { exigirNombreFirmante, resolverCalidadFirmante } from '../../domain/albaranFirmante';
@@ -415,7 +416,12 @@ router.post('/', async (req: any, res) => {
         where: { merchantId: req.merchantId },
         select: { numero: true },
       });
-      const numero = siguienteNumeroParte(yaHay.map((p) => p.numero), fecha.getFullYear());
+      // SCRUM-1093 (mismo GO que SCRUM-735 y que presupuestos y albaranes): el AÑO de la serie sale
+      // de la zona de ESTE merchant, no del reloj del PROCESO (Railway va en UTC). Sin zona declarada
+      // cae a 'UTC': lo mismo que producción hacía hasta hoy.
+      const m = await tx.merchant.findUnique({ where: { id: req.merchantId! }, select: { timezone: true } });
+      const anio = Number(diaNaturalEn(fecha, zonaDelMerchant(m)).slice(0, 4));
+      const numero = siguienteNumeroParte(yaHay.map((p) => p.numero), anio);
       return tx.parteTrabajo.create({
         data: {
           merchantId: req.merchantId,

@@ -1696,7 +1696,10 @@ function renderCustomersView(container) {
     let creado = null;
     const payload = {
       name: fieldName.input.value.trim(),
-      phone: telefonoCompleto(),
+      // 🔴 SCRUM-1161 · el fijo y el email, por la MISMA regla que el móvil de abajo: vacío NO
+      // viaja. Mandaban `""`, y el esquema lo rechaza (el email por formato, el fijo por `min(5)`):
+      // un cliente sin email —el caso normal del oficio— salía con «API 400: validation_error».
+      phone: telefonoCompleto() || undefined,
       // ═══ 🔴 SCRUM-590 (CONT-19) · EL MÓVIL SÓLO VIAJA SI HAY MÓVIL ═══════════════════════
       //
       // MEDIDO ejecutando `customerCreateSchema`, no deducido:
@@ -1711,8 +1714,8 @@ function renderCustomersView(container) {
       //
       // ⚠️ Y la consecuencia, dicha en vez de descubierta: borrar el móvil de un cliente que lo
       // tiene NO lo borra (ausente = «no toques este campo»). Es la misma limitación que ya
-      // tiene `phone` — que además hoy manda `""` y por eso da 400, ver el hallazgo del PR—:
-      // se hereda, no se estrena, y se cierra el día que Zod acepte `null` en los dos a la vez.
+      // tienen `phone` y `email` (que desde SCRUM-1161 también se omiten vacíos): se hereda, no
+      // se estrena, y se cierra el día que Zod acepte `null` en los tres a la vez.
       //
       // 🔴 `|| undefined` Y NO UN SPREAD CONDICIONAL, y lo decidió un guard: `JSON.stringify`
       // BORRA las claves cuyo valor es `undefined`, así que en el cable pasa exactamente lo
@@ -1726,7 +1729,7 @@ function renderCustomersView(container) {
       // control. Su veredicto era «el modal envía campos que NO MUESTRA», que es exactamente la
       // acusación que ese guard existe para hacer, y aquí habría sido falsa.
       mobile: movilCompleto() || undefined,
-      email: fieldEmail.input.value.trim(),
+      email: fieldEmail.input.value.trim() || undefined, // SCRUM-1161, ver `phone`
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,

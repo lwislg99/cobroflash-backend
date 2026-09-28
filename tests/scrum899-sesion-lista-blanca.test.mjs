@@ -203,7 +203,13 @@ function banco({ alterar = false, configEnElRepo = false } = {}) {
 }
 
 function correr(script, ...args) {
-  const r = spawnSync(process.execPath, [script, ...args], { encoding: 'utf8' });
+  // SCRUM-1153 · sin construir el `env` a mano, el hijo hereda `NODE_TEST_CONTEXT` (se niega a
+  // correr) o `FORCE_COLOR` (rompe el `^` de un regex que espere el JSON limpio): se mide la CASA.
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  const r = spawnSync(process.execPath, [script, ...args], { encoding: 'utf8', env: entornoHijo });
   let v = null;
   try { v = JSON.parse((r.stdout || '').trim().split('\n').at(-1)); } catch { /* sin veredicto */ }
   return { status: r.status, v };

@@ -6,6 +6,7 @@ import { prisma } from '../../../../core/db/prisma';
 import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
 import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1171
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
 import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
 import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
@@ -562,6 +563,12 @@ async function serializeJobDetail(job: any) {
     });
     customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null, notes: c?.notes ?? null };
   }
+  // SCRUM-1171 · el número al que el botón «💬 WhatsApp» del bloque Cliente escribe, RESUELTO aquí
+  // con `canalDeWhatsApp` —la misma función que usa el envío—, no los dos números para que la
+  // pantalla elija: el botón tiene que escribir a donde YaQu envía (dos copias del criterio
+  // divergen, SCRUM-1147). `null` = no hay número. Llamar (📞) NO pasa por aquí: el front ya tiene
+  // su implementación (`contactoDelCliente`, SCRUM-1032) y nadie llama desde el servidor.
+  if (customer) customer = { ...customer, numeroWhatsApp: canalDeWhatsApp(customer) || null };
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA, EN PLURAL ────────────────────────────────────────────
   //
   // El parte de papel de Tecnosel escribe «Israel, Miguel y Jesús.L» en el campo «Técnico». La
