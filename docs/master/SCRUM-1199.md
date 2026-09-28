@@ -45,3 +45,30 @@ cambia, el literal vuelve a firma.
 ⚠️ **No se ha censado si hay más pantallas que pintan `validation_error` en crudo.** Se conocen
 dos —el alta de cliente (J2) y el presupuesto rápido (SCRUM-1198, S2)— **porque salieron al
 paso**, no porque nadie las buscara.
+
+## Código (J2, jv-j2): los cuatro literales montados en el modal
+
+**Medido contra:** `origin/main` = `3f4c643e93871234e59e5ca5db145ba5cef8f9ee` · 2026-09-28T14:02:17Z (J2; SCRUM-1161 ya dentro)
+
+Esta sección la añade J2 en su rama de código. La firma de arriba es del orquestador y no se toca.
+Va aquí y no en otro fichero porque `scrum854` exige que una rama que toca código traiga su
+entrada, y `#1861` saldrá del diff en cuanto entre en `main`.
+
+- **Lo que midió el punto 5 de la firma, ejecutando la ruta real:** el 400 salía como
+  `{"error":"validation_error"}` a secas, SIN `details`. La ruta mandaba `details: err.errors`, y
+  con Zod 4 eso es `undefined`, así que `JSON.stringify` borraba la clave. Solo con el front, las
+  cuatro ranuras habrían caído en el genérico.
+- **Servidor** (`customersAdmin.routes.ts`, POST y PUT/PATCH): `details: err.issues`, un cambio
+  aditivo a la respuesta. Medido después: `path` trae `["phone"]`, `["mobile"]` o `["email"]`, y
+  `code` es `too_small` o `invalid_format`.
+- **Pantalla** (`customersView.js`, `avisoDeGuardadoFallido`): decide por campo Y código. Muestra
+  «le faltan cifras» solo con `too_small`, y el email solo con `invalid_format`. El genérico solo
+  sustituye al mensaje compuesto en crudo: un `message` humano del servidor, o un aviso ya resuelto
+  por `apiRequest` (`handled`), se sigue pintando como antes. «El nombre es obligatorio.» no pasa
+  por aquí.
+- **Test** `tests/scrum1199-avisos-alta-cliente.test.mjs`: ruta real → cuerpo real → modal real
+  → aviso pintado. Rojo verificado por mutación y con el árbol devuelto al commit: con el servidor
+  en `err.errors` caen 2 de 4, y con la pantalla en el crudo caen otros 2 de 4.
+- **Fuera de carril, sin tocar:** `details: err.errors` sigue igual de roto en otras 6 rutas
+  (`quotes.routes.ts` ×3, `invoice.routes.ts`, `charges.routes.ts`, `psp.routes.ts`). Sus 400
+  tampoco dicen qué campo falla.
