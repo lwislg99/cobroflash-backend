@@ -1448,14 +1448,6 @@ function createQuote(payload) {
   });
 }
 
-function acceptQuote(id, payload) {
-  // POST /quote/:id/accept
-  return apiRequest(`/quote/${id}/accept`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
 // -------- Admin – Presupuestos (historial + detalle + decisión) --------
 
 // Lista de presupuestos para el BO
