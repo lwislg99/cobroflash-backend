@@ -92,8 +92,7 @@
     {"clave":"export · src/modules/jobs/domain/albaranFirmante.ts::ALBARAN_ROTULOS_APROBADOS","donde":"src/modules/jobs/domain/albaranFirmante.ts:187","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/albaranNumber.service.ts::esAlbaranRenumerado","donde":"src/modules/jobs/domain/albaranNumber.service.ts:35","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/albaranNumber.service.ts::isAlbaranNumber","donde":"src/modules/jobs/domain/albaranNumber.service.ts:27","carril":"S4","ticket":"SCRUM-1213","motivo":"SE QUEDA: la fijan albaran.test y scrum592 como especificacion de las dos formas de la serie; borrarla obligaria a quitar tests. Carril S4"},
-    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::huecosDeAlbaranes","donde":"src/modules/jobs/domain/albaranSerie.ts:53","carril":"S4","ticket":"SCRUM-1184"},
-    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","donde":"src/modules/jobs/domain/albaranSerie.ts:68","carril":"S4","ticket":"SCRUM-1184"},
+    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::huecosDeAlbaranes","donde":"src/modules/jobs/domain/albaranSerie.ts:53","carril":"S4","ticket":"SCRUM-1184","motivo":"SE QUEDA SIN ENCHUFAR a proposito (c.17342): con bases sin renumerar da huecos FALSOS, medido. Se reabre cuando todas las bases esten renumeradas (P-DOC-7, SCRUM-592)"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::censoDeIncoherencias","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:89","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::EJES_DE_VISIBILIDAD","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:141","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::loVe","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:157","carril":"S4","ticket":"SCRUM-1185"},
@@ -181,6 +180,7 @@
     {"clave":"cuerpo · POST /quote/:token/accept::evidence","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"cuerpo · POST /quote/:token/accept::paymentTerms","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"ruta · POST /quote/:token/reject","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
-    {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"}
+    {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","motivo":"SCRUM-1184: conectada. GET /admin/albaranes/serie la usa (via siguienteNumeroDeAlbaran) para la vista previa de Nuevo albaran"}
   ]
 }

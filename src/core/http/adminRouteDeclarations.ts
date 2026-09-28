@@ -189,6 +189,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // por rol es a qué Trabajo puede aterrizar: `seesOnlyOwnJobs` marca como NO elegibles los
   // Trabajos que no son suyos (SCRUM-467), con su motivo y sin darle el `jobId`.
   { method: 'GET',   path: '/admin/albaranes/presupuestos', why: 'SCRUM-606: elegir de qué presupuesto nace el albarán que va a rellenar en la obra; mismo criterio que POST /admin/jobs/:id/albaranes' },
+  { method: 'GET',   path: '/admin/albaranes/serie', why: 'SCRUM-1184: ver el siguiente número de la serie antes de crear el albarán; mismo criterio que POST /admin/jobs/:id/albaranes. Solo lectura, por merchant, no reserva número' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
   // ── Productos ──────────────────────────────────────────────────────────────────────────

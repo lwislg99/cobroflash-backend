@@ -61,3 +61,13 @@ importador muerto como consumidor. Es de J1 (facturas); se reporta, no se toca.
 ## Lo que no se tocó
 
 `prisma/schema.prisma` · los endpoints de firma · `colaDeFirmas.js` · `huecosSerie.ts` · ningún texto.
+
+## Apéndice 28-sep-2026 · trozo 1 construido: `GET /admin/albaranes/serie` (S1, s1-28b)
+
+Medido contra `origin/main` `a59dc1e6` (28-sep-2026 14:57Z). Decisión y firma: comentario 17342 de Jira. Se construye **solo la vista previa**; los huecos no.
+
+- `siguienteNumeroDeAlbaran(db, merchantId, now)` en `albaranSerie.ts`. El año sale de `diaNaturalEn(now, zonaDelMerchant(m))`, las mismas dos funciones que `allocateAlbaranNumber`. Solo lee: no toma el cerrojo ni avanza el contador.
+- Contrato para S2: `200 { siguiente: "AB260005" }` · `409 { error: "serie_sin_anio" }` (`AlbaranSerieSinAnioError`, sin texto) · `404` si el merchant no existe · `500`. Admin y técnico (`TECNICO_ALLOWED`, mismo criterio que el alta).
+- **Un solo PR con la pantalla de S2** (trozo 3): con la ruta sola, el trinquete de SCRUM-1185 cae en `build + tests`.
+- Censos: `vistaPreviaAlbaran` pasa a `retiradas`; `huecosDeAlbaranes` se queda declarada con su motivo y su condición de reapertura (bases renumeradas). SCRUM-411: el tope de módulos inalcanzables baja de 7 a 5, porque `albaranSerie.ts` y `huecosSerie.ts` pasan a estar vivos. Sus exports sin llamador de fuera se declaran, y salen las cuatro declaraciones que ahora sí se consumen (`CORTE_FORMATO_F` y tres de `albaranNumber.service.ts`).
+- Test `tests/scrum1184-serie-siguiente-numero.test.mjs`: incluye el caso de Nochevieja (en Madrid, 23:30Z del 31-dic ya es el año siguiente → `AB270001`), el 409, que la ruta vaya antes de la ficha de un albarán suelto, y que la ruta no escriba nada. 5/5 en rojo contra el `dist` anterior; verde después.
