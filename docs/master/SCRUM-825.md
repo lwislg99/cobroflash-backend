@@ -1651,3 +1651,42 @@ nuevas.
 - Ninguna base: ni dev, ni staging, ni producción. Ningún certificado ni clave.
 - Los apéndices anteriores de este fichero: intactos; éste se anexa al final.
 - **SCRUM-1257:** citado por lo que dice el encargo; no lo he releído en Jira.
+
+---
+
+# SCRUM-825 · APÉNDICE · 28-sep-2026 · D4 EJECUTADA: los registros fechados del máster se ANOTAN, no se corrigen
+
+**Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:15:23Z
+
+**Puesto:** J1 (`jv-j1`) · **Rama:** `scrum-825-d4-notas-master`, **aparte** de la de D1/D2
+(`scrum-825-retirar-generador-j`, PR #1940). `docs/YAQU_MASTER.md` tiene a @lwislg99 en CODEOWNERS:
+este PR espera **su revisión**, no está atascado. Separado para que Luis no tenga que revisar un
+borrado de servidor que no le toca.
+
+**Firma:** SCRUM-825, comentario **17446**, D4: *«se ANOTAN con una nota fechada al lado. NO se
+corrigen. Un registro dice lo que era verdad ese día»*.
+
+## Qué se cambia: tres notas, sin tocar lo que dice cada registro
+
+Localizadas **por texto**, no por número de línea (el máster se movió esta noche con SCRUM-1246), y
+cada ancla aparece **exactamente una vez** (si no, el script paraba). En los tres casos se añade la
+misma nota, justo detrás de donde se nombra el justificante:
+`*(28-sep-2026: desde SCRUM-1027 ya no se emite ningún J-, SCRUM-1253)*`
+
+| registro | dónde va la nota |
+|---|---|
+| ✅ SCRUM-73 (22-jul-2026), gate del export VeriFactu | «los merchants ES reales emiten justificantes (J-)» |
+| V0-1 (U1.1), verificación E2E | «quote→WA→firma→justificante/factura demo» |
+| ✅ SCRUM-149 (27-jul-2026), análisis de riesgo | «o justificantes J-» |
+
+`git diff --word-diff`: tres inserciones, **cero palabras borradas**. Nada de «Antes decía»: eso es
+para una especificación caducada, y éstos son registros que eran ciertos el día en que se escribieron.
+
+## Lo que NO se toca
+
+- **Las dos líneas de plantillas de Meta** (Parte J, la tabla de `payment_confirmation_invoice_es` y la
+  «Decisión fundador 12-jun-26 (tensión con Parte M/justificantes)»). La cuenta de Meta la tiene Luis
+  (fundador, comentario 17446, D3): no las decide ni las toca este equipo.
+- Las demás menciones de «justificante» en el máster: el apéndice de 21-sep ya las clasificó
+  (historia que no se toca, o ya actualizadas por SCRUM-612c).
+- Ningún fichero fuera de `docs/YAQU_MASTER.md` y de este registro.
