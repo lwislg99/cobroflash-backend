@@ -1689,6 +1689,36 @@ function renderCustomersView(container) {
     editingCustomer = null;
   }
 
+  // ═══ 🔴 SCRUM-1199 · QUÉ SE LE DICE CUANDO EL GUARDADO FALLA ═══════════════════════════════
+  //
+  // Textos FIRMADOS (SCRUM-1199, comentario 17321): no se retocan de paso, se vuelven a firmar.
+  // Sustituyen a «Error guardando cliente: API 400: validation_error», un código en crudo.
+  //
+  // · Se decide por CÓDIGO y por CAMPO (`details[].path` + `code`), nunca por el texto.
+  // · «Le faltan cifras» sólo con `too_small`: es verdad porque `phone`/`mobile` son
+  //   `z.string().min(5)` y la longitud es su único modo de fallo. Si el esquema valida otra cosa
+  //   algún día, ese error cae en el genérico y el literal hay que volver a firmarlo.
+  // · El genérico es un SUELO: sólo sustituye al mensaje compuesto en crudo. Si el servidor mandó
+  //   un `message` humano (o `apiRequest` ya lo resolvió, `handled`), ese mensaje GANA y se pinta
+  //   como antes.
+  const AVISO_TELEFONO_CORTO = "Revisa el teléfono: le faltan cifras.";
+  const AVISO_MOVIL_CORTO = "Revisa el móvil: le faltan cifras.";
+  const AVISO_EMAIL_INVALIDO = "Revisa el email: no parece una dirección válida.";
+  const AVISO_ERROR_GENERICO = "No se ha podido guardar el cliente. Revisa los datos e inténtalo de nuevo.";
+
+  function avisoDeGuardadoFallido(err) {
+    const datos = (err && err.data) || null;
+    if (err && (err.handled || (datos && datos.message))) return "Error guardando cliente: " + err.message;
+    if (err && err.code === "validation_error" && datos && Array.isArray(datos.details)) {
+      const primero = datos.details[0] || {};
+      const campo = Array.isArray(primero.path) ? primero.path[0] : null;
+      if (campo === "phone" && primero.code === "too_small") return AVISO_TELEFONO_CORTO;
+      if (campo === "mobile" && primero.code === "too_small") return AVISO_MOVIL_CORTO;
+      if (campo === "email" && primero.code === "invalid_format") return AVISO_EMAIL_INVALIDO;
+    }
+    return AVISO_ERROR_GENERICO;
+  }
+
   async function onModalSubmit(ev) {
     ev.preventDefault();
     avisarDelFormulario(null, "");
@@ -1793,7 +1823,7 @@ function renderCustomersView(container) {
       // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
       if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      avisarDelFormulario("error", "Error guardando cliente: " + err.message);
+      avisarDelFormulario("error", avisoDeGuardadoFallido(err));
     } finally {
       modalSaveBtn.disabled = false;
     }

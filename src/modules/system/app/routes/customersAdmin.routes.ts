@@ -160,7 +160,10 @@ router.post('/', async (req, res) => {
     const customer = await createCustomer(req.merchantId, parsed);
     res.status(201).json(customer);
   } catch (err: any) {
-    if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // 🔴 SCRUM-1199 · `issues`, NO `errors`. Con Zod 4 `err.errors` es `undefined` y
+    // `JSON.stringify` borra la clave: el 400 salía como `{"error":"validation_error"}` a secas
+    // (medido ejecutando esta ruta), y el navegador no podía decir QUÉ campo revisar.
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.issues });
     // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
     // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
     // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
@@ -190,7 +193,7 @@ async function actualizarClienteHandler(req: Request, res: Response) {
     const updated = await getCustomer(req.merchantId, id);
     res.json(updated);
   } catch (err: any) {
-    if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.issues }); // SCRUM-1199, ver el POST
     // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
     // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
     // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
