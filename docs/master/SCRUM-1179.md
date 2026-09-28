@@ -142,3 +142,29 @@ devolverlo en un `finally` SIN la red de SCRUM-808 salía en el censo y nadie lo
   reescribe…»; añadir uno fantasma → «SOBRA … Muévelo a «retiradas»».
 - **Coste:** un censo (~1,9 s en local, con carga), compartido con el test de SCRUM-808 que ya lo
   hacía, así que el neto es ~0. El CLI lista también la parte ciega, que es donde manda el rojo.
+
+## B · 4 de 4 — `censo:guards-navegador --solo-censo`: NO SE CONSTRUYE
+
+Su mitad que cierra ya existía y ya bloqueaba: `tests/scrum548-peaje-package-json.test.mjs:99-243`
+compara los solapes y los «no resueltos» con listas exactas (un guard nuevo sobre una página ya
+medida cambia el recuento → rojo), y `:37` fija los dos suelos del CLI (≥9 guards, ninguno
+declarado sin fichero). Comprobado que no se salta: sale ✔ en el log del CI de #1881. Un PR que no
+cambia nada y cierra un punto de la lista no se abre.
+
+## D — las seis herramientas manuales, marcadas «HERRAMIENTA MANUAL, NO RED»
+
+`censo:vias-de-cobro`, `censo:conflictos-package`, `cr:censo`, `cr:tecnica`, `cr:limpiar` y
+`topologia` (cuatro ficheros: los tres `cr:*` son el mismo). Cada cabecera dice, justo bajo el
+título, que no vigila nada por sí sola y que no se cita como red al retirar un guard (SCRUM-1172).
+Medido antes de escribirlo: ninguna aparece en `test`, `pretest` ni en `.github/workflows/`. Los
+tests que las importan prueban la HERRAMIENTA, no el árbol, y la cabecera lo dice así.
+
+`tests/scrum1179d-herramientas-no-red.test.mjs` mantiene la cabecera cierta en las DOS direcciones:
+cae si la marca desaparece, y cae si alguien empieza a correr una de ellas en `test`/`pretest` o en
+un workflow (entonces sí es red y la marca miente). Probado en rojo las dos: quitando la marca de
+`topologia` y añadiendo `npm run cr:censo` a `pretest`. El detector no confunde un comentario YAML
+ni un nombre parecido (test propio).
+
+No se ha hecho el guard que busque en los comentarios citas de estas herramientas como red: sería
+un guard por TEXTO sobre prosa, que casa con el comentario que lo explica (la trampa de
+`_guard-texto.mjs`). La marca en la cabecera corta el caso en origen.
