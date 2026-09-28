@@ -34,7 +34,9 @@ function clavesQueGuardaLaPantalla() {
 // Lo que el profesional tiene guardado y el formulario le devolvería al servidor.
 const GUARDADO = {
   name: 'Fontanería QA', legalName: 'Fontanería QA SL', taxId: 'B00000000', address: 'C/ Mayor 1',
-  criterioCaja: true, whatsappPhone: '34600000000', defaultCurrency: 'EUR', invoiceSeriesPrefix: 'CF',
+  criterioCaja: true,
+  whatsappPhone: '34000000027', // rango imposible (SCRUM-262)
+  defaultCurrency: 'EUR', invoiceSeriesPrefix: 'CF',
   retencionIrpfDeclarada: true, retencionIrpfTipo: 15, logoUrl: null, googleReviewUrl: null,
   country: 'ES', iban: null, clabe: null, bizumPhone: null,
   notifyEmailOnPaid: true, notifyEmailOnQuoteAccepted: false, notifyEmailWeeklyDigest: true,
