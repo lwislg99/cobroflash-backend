@@ -117,3 +117,28 @@ Un suelo nuevo que el censo no sabe leer caía en «NO SÉ LEER» (75 hoy) sin q
 - **Coste:** el árbol real se censa una vez por proceso (lo usan cuatro tests). El control positivo
   añade un censo (~3,4 s) y el test que lo repetía ahorra otro (~4 s). Local: 29,9 s antes y 29,1 s
   después, con carga en la máquina. El coste real se toma del check del PR.
+
+## B · 3 de 4 — `censo:escritores-arbol`, con su mitad que cierra
+
+`tests/scrum808-el-arbol-que-queda-mutado.test.mjs` sólo exigía que el censo no estuviera ciego y
+que viera al meta-guard. Un script nuevo que capture un fichero del árbol, lo escriba y prometa
+devolverlo en un `finally` SIN la red de SCRUM-808 salía en el censo y nadie lo leía.
+
+- **Mitad que cierra, dos partes:**
+  · todo el que CAPTURA Y DEVUELVE dentro del árbol lleva la red (hoy son 2 y los 2 la llevan:
+    `meta-guard-mutaciones` y `censo-mudez`). Uno nuevo sin red → rojo, sin lista: no se declara.
+  · la parte CIEGA: los que leen un fichero y lo REESCRIBEN, con `finally`, sobre una ruta que el
+    censo no sabe resolver (`capturaOpaca`, nuevo en el instrumento). Hoy son 10, todos tests, y
+    los 10 se miraron A MANO: todos escriben en un temporal propio. Van en
+    `scripts/_escritores-opacos-declarados.json` con adónde apunta cada uno. Clave: el fichero.
+  · Borrar lo que se leyó (`rmSync(outPath)` de los tests de PDF, 11 casos) NO cuenta: es limpiar,
+    no devolver. Contarlo habría llenado la lista de ruido.
+- **Control positivo real:** `meta-guard-mutaciones` tal como estaba antes de la red (`cc0bf7e1^`),
+  metido en el censo de hoy en lugar del actual, sale SIN RED.
+- **Control negativo real:** el de `cc0bf7e1` (con la red) no sale. Y un script que sólo borra lo
+  que leyó no sale como opaco; uno que lo reescribe, sí.
+- **Fail-closed:** censo ciego (población bajo el suelo) o sin su control positivo → CIEGO.
+- **Probado en rojo:** quitar `scrum293` del JSON → «NUEVO fichero que lee un fichero y lo
+  reescribe…»; añadir uno fantasma → «SOBRA … Muévelo a «retiradas»».
+- **Coste:** un censo (~1,9 s en local, con carga), compartido con el test de SCRUM-808 que ya lo
+  hacía, así que el neto es ~0. El CLI lista también la parte ciega, que es donde manda el rojo.

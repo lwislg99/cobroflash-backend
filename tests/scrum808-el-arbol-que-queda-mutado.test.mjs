@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import {
   marcarEnVuelo, borrarMarca, restaurarDesdeMarca, restaurarYVerificar,
   redDeSeguridad, marcasHuerfanas, SALIDA_NO_RESTAURADO,
@@ -239,7 +240,7 @@ test('SCRUM-808 · 🔴 la reparación va ANTES de capturar el original, en las 
 // ═══ ⑦ EL CENSO DE LA OBLIGACIÓN 4 · ¿está el patrón en más sitios? ══════════════════════════
 
 test('SCRUM-808 · el censo de escritores VE al que originó el ticket, y no está ciego', () => {
-  const c = censarEscritores();
+  const c = censoEscritores(); // el mismo censo que usa la mitad que cierra (SCRUM-1179-B), una vez
   assert.equal(c.motivo, null, `🔴 CIEGO: ${c.motivo}.`);
   const yo = c.escritores.find((e) => e.rel === 'scripts/meta-guard-mutaciones.mjs');
   assert.ok(yo, '🔴 el censo NO encuentra al escritor que originó este ticket. Si no ve al que '
@@ -281,6 +282,106 @@ test('SCRUM-808 · leer un fichero del árbol NO es escribirlo', () => {
   assert.equal(captura.capturaYDevuelve.length, 2,
     '🔴 no reconoce el patrón CAPTURA-Y-DEVUELVE, que es el único que puede quedarse a medias.');
   assert.equal(captura.tieneFinally, true);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1179 (parte B, 3 de 4) — LA MITAD QUE CIERRA
+//
+// Lo de arriba sólo exige que el censo no esté ciego y que vea al meta-guard. Un script NUEVO que
+// capture un fichero del árbol, lo escriba y prometa devolverlo en un `finally` SIN la red de
+// SCRUM-808 salía en `npm run censo:escritores-arbol`… que no corre nadie. Aquí, sobre el árbol:
+//   · todo el que CAPTURA Y DEVUELVE dentro del árbol lleva la red → si no, rojo;
+//   · el que hace lo mismo sobre una ruta que el censo NO sabe resolver (la parte ciega) tiene que
+//     estar en scripts/_escritores-opacos-declarados.json, mirado a mano y con su motivo, en las
+//     dos direcciones. La clave es el FICHERO, nunca la línea.
+// Fail-closed: censo ciego o sin su control positivo → CIEGO, no se compara nada.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const OPACOS_JSON = path.join('scripts', '_escritores-opacos-declarados.json');
+let cacheEscritores = null;
+const censoEscritores = () => (cacheEscritores ??= censarEscritores());
+
+function veredictoEscritores(c, declarados) {
+  if (c.motivo) throw new Error(`🔴 CIEGO: ${c.motivo}. No se compara nada.`);
+  if (!c.escritores.some((e) => e.rel === 'scripts/meta-guard-mutaciones.mjs')) {
+    throw new Error('🔴 CIEGO: el censo no ve a meta-guard-mutaciones, su control positivo.');
+  }
+  const sinRed = c.escritores
+    .filter((e) => e.tieneFinally && e.capturaYDevuelve.length && !e.tieneRed).map((e) => e.rel).sort();
+  const opacos = new Set([...c.escritores, ...c.opacos]
+    .filter((e) => e.tieneFinally && e.capturaOpaca.length).map((e) => e.rel));
+  const decl = new Set(Object.keys(declarados.opacos));
+  return {
+    sinRed,
+    nuevas: [...opacos].filter((r) => !decl.has(r)).sort(),
+    sobran: [...decl].filter((r) => !opacos.has(r)).sort(),
+  };
+}
+
+function leerOpacosDeclarados() {
+  const j = JSON.parse(fs.readFileSync(path.join(RAIZ, OPACOS_JSON), 'utf8'));
+  assert.ok(j && typeof j.opacos === 'object' && Array.isArray(j.retiradas),
+    `🔴 ${OPACOS_JSON} no tiene la forma {opacos: {}, retiradas: []}.`);
+  return j;
+}
+
+/** El censo real con UN fichero sustituido por el análisis de otro fuente (en memoria). */
+function conFuente(c, rel, fuente) {
+  const a = { rel, ...analizarEscritor(fuente, rel) };
+  const fuera = (e) => e.rel !== rel;
+  return { ...c, escritores: [...c.escritores.filter(fuera), ...(a.escrituras.length ? [a] : [])],
+    opacos: [...c.opacos.filter(fuera), ...(!a.escrituras.length && a.noConcluyentes.length ? [a] : [])] };
+}
+
+test('SCRUM-1179-B · trinquete: todo el que captura y devuelve lleva red, y los opacos == lo declarado', () => {
+  const { sinRed, nuevas, sobran } = veredictoEscritores(censoEscritores(), leerOpacosDeclarados());
+  assert.deepEqual(sinRed, [],
+    `🔴 CAPTURA un fichero del árbol, lo escribe y promete devolverlo en un finally, SIN la red de\n`
+    + `  SCRUM-808: ${sinRed.join(', ')}. Si lo matan a mitad, el fichero mutado se queda en el árbol.\n`
+    + '  Ponle la red (marcarEnVuelo + restaurarDesdeMarca, como meta-guard-mutaciones y censo-mudez).');
+  assert.deepEqual(nuevas, [],
+    `🔴 NUEVO fichero que lee un fichero y lo reescribe con un finally, sobre una ruta que el censo\n`
+    + `  NO sabe resolver: ${nuevas.join(', ')}. Míralo a mano: si la ruta cae en un temporal propio,\n`
+    + `  decláralo en «opacos» de ${OPACOS_JSON} diciendo adónde apunta; si cae en el árbol, ponle la\n`
+    + '  red de SCRUM-808. Detalle: `npm run censo:escritores-arbol`.');
+  assert.deepEqual(sobran, [],
+    `🔴 SOBRA (declarado y ya no sale): ${sobran.join(', ')}. Muévelo a «retiradas» de ${OPACOS_JSON} con su motivo.`);
+});
+
+test('SCRUM-1179-B · cada opaco declarado y cada retirada lleva motivo', () => {
+  const d = leerOpacosDeclarados();
+  for (const [k, v] of Object.entries(d.opacos)) assert.ok(v && v.motivo, `opaco sin motivo: ${k}`);
+  for (const r of d.retiradas) assert.ok(r && r.id && r.motivo, `retirada sin id o sin motivo: ${JSON.stringify(r)}`);
+});
+
+// El caso REAL que originó SCRUM-808: `meta-guard-mutaciones` justo antes de ponerle la red
+// (cc0bf7e1^) y justo después (cc0bf7e1), metido en el censo de hoy en lugar del actual.
+test('SCRUM-1179-B · control POSITIVO: el meta-guard de antes de la red sale SIN RED; el de después, no', () => {
+  const REL = 'scripts/meta-guard-mutaciones.mjs';
+  const version = (ref) => execFileSync('git', ['show', `${ref}:${REL}`], { cwd: RAIZ, encoding: 'utf8' });
+  const antes = veredictoEscritores(conFuente(censoEscritores(), REL, version('cc0bf7e1^')), leerOpacosDeclarados());
+  assert.deepEqual(antes.sinRed, [REL],
+    `🔴 el trinquete NO acusa el caso real de SCRUM-808 (el meta-guard sin red). Acusó: ${antes.sinRed.join(', ') || '(nada)'}`);
+  const despues = veredictoEscritores(conFuente(censoEscritores(), REL, version('cc0bf7e1')), leerOpacosDeclarados());
+  assert.deepEqual(despues.sinRed, [], '🔴 acusa al meta-guard también después de ponerle la red.');
+});
+
+test('SCRUM-1179-B · control POSITIVO y NEGATIVO de la parte ciega: reescribir lo leído sí; borrarlo, no', () => {
+  const cab = "import fs from 'node:fs';\nimport path from 'node:path';\nimport { fileURLToPath } from 'node:url';\n"
+    + "const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');\n";
+  const devuelve = cab + 'export function f(p) { const o = fs.readFileSync(p); try { fs.writeFileSync(p, "x"); } finally { fs.writeFileSync(p, o); } }\n';
+  const limpia = cab + 'export function f(p) { const o = fs.readFileSync(p); try { return o; } finally { fs.rmSync(p); } }\n';
+  const d = leerOpacosDeclarados();
+  assert.deepEqual(veredictoEscritores(conFuente(censoEscritores(), 'scripts/x1179.mjs', devuelve), d).nuevas, ['scripts/x1179.mjs'],
+    '🔴 un script nuevo que reescribe lo que leyó, sobre una ruta sin resolver, pasa sin que nadie lo mire.');
+  assert.deepEqual(veredictoEscritores(conFuente(censoEscritores(), 'scripts/x1179.mjs', limpia), d).nuevas, [],
+    '🔴 acusa a uno que sólo BORRA lo que leyó: eso es limpiar, no devolver.');
+});
+
+test('SCRUM-1179-B · fail-closed: censo ciego o sin su control positivo → CIEGO, nunca «nada que decir»', () => {
+  const d = leerOpacosDeclarados();
+  assert.throws(() => veredictoEscritores({ motivo: 'población vacía' }, d), /CIEGO/);
+  assert.throws(() => veredictoEscritores({ motivo: null, escritores: [], opacos: [] }, d), /CIEGO.*control positivo/s);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
