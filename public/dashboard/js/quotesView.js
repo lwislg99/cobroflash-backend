@@ -4,9 +4,9 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
-// SCRUM-1188 · las condiciones de cobro que una plantilla puede guardar: las que caben en
-// `quote_templates.payment_terms`. «CUSTOM» no está porque sus tramos no tienen columna ahí.
-const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'];
+// SCRUM-1188/1219 · lo que una plantilla guarda de las condiciones de cobro (cabe en `payment_terms`);
+// `''` es «Sin condiciones específicas» (1219). «CUSTOM» no: sus tramos no tienen columna ahí.
+const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL', ''];
 
 /**
  * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
@@ -4895,8 +4895,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
           dtoGlobalBtn.hidden = true;
         }
         // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
-        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve.
-        if (template.paymentTerms) paymentSelect.value = template.paymentTerms;
+        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve. SCRUM-1219: `''` también.
+        if (template.paymentTerms || (template.paymentTerms === '' && !esDocumentoSuelto)) paymentSelect.value = template.paymentTerms;
         // SCRUM-1186 · y los dos textos del documento (cabecera y Observaciones), que «Duplicar»
         // copia desde SCRUM-1186. Una plantilla del catálogo no los trae y el campo queda vacío.
         ponerTextosDelDocumento(template);
