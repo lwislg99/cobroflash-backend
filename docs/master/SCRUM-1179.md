@@ -181,3 +181,33 @@ Se borran `scripts/censo-escalera-por-estado.mjs` y sus dos líneas de `package.
 `scripts/` ni `tests/` lo nombraba; lo nombran solo registros históricos de `docs/master/`, que no
 se reescriben. Metaguardas que censan `scripts/`, `tests/` y `package.json` (20 ficheros, 202 tests):
 201 verdes y 1 rojo ajeno por falta de `dist` en el árbol local (scrum823 importa de `dist/`; el CI compila).
+
+## CI en rojo tras empujar `ec16ae80` — tres guards viejos, cazando este mismo PR
+
+El check obligatorio cayó en `ec16ae80890b` (run
+https://github.com/lwislg99/cobroflash-backend/actions/runs/36448469767) por CUATRO tests, y las
+cuatro caídas eran EL MISMO PAR de causas — ningún guard nuevo, ningún guard relajado (regla 41):
+
+- **`scrum812` (EL TRINQUETE, `tests/scrum812-…`) y su CIEGO en `meta-guard`:** la mitad B/2 y B/3
+  de este PR añadió, a `scrum775` y `scrum808`, tests nuevos titulados GUARD con su propia
+  declaración de mutación — cobertura auto-declarada real, no fabricada. El trinquete la mide sobre
+  el árbol y su SEGUNDA mitad exige anotar cualquier SUBIDA (no sólo prohibir bajadas): pasó de 20 a
+  22. Se sube `SUELO_GUARD_QUE_DECLARAN` a 22 y se re-ancla, como pide el propio test cuando sube —
+  nunca se «actualiza» cuando lo que sube es el suelo de una bajada, que es el caso contrario y
+  distinto.
+- **`scrum737` (cifras sin ancla):** la cabecera nueva de `formaDeSpawnSync` en
+  `scripts/_censo-suelos.mjs` escribió dos frases con «75 guards» sin fecha ni sha — el defecto
+  exacto que ese guard persigue. Se ancla con `28-sep-2026` en la misma línea del número (no se
+  reformula ni se retira: es una medición real de hoy, citada también en la sección B·2 de más
+  arriba, y vale la pena conservarla con su fecha).
+- **`scrum258` (estado por sesión) y, en cascada, `scrum976` (que corre `guards:entrada`, y
+  `guards:entrada` incluye a `scrum258` desde el propio SCRUM-976):** el `spawnSync` que
+  `formaDeSpawnSync` lanza contra un binario que no existe usaba
+  `path.join(os.tmpdir(), `no-existe-scrum1179-${process.pid}`)` — una ruta fija bajo el temporal de
+  la MÁQUINA, sin `tokenDeSesion()` ni `mkdtemp`. Dos sesiones (o dos worktrees) del mismo equipo
+  podían pisarse esa ruta. Se añade `tokenDeSesion()` a la ruta: no toca ni relaja el guard, cierra
+  la condición real que vigila.
+
+`guards de navegador (fuera de la tanda)` también estaba en rojo en ese run (`guard:lista-trabajos-917`,
+sobre «Cobrar el resto» en la lista de Trabajos) — sin relación con este PR (no toca esa pantalla ni
+esa ruta) y fuera de este carril (regla 9): no se toca aquí.

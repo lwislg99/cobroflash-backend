@@ -86,9 +86,21 @@ function tituladosQueDeclaran() {
  * ⬆️ **20** (SCRUM-951d, 18-sep-2026): lo sube `scrum951d-ensayo-instalacion.test.mjs`, que titula
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
+ *
+ * ⬆️ **22** (SCRUM-1179, 28-sep-2026): este propio trinquete lo puso en rojo, ROJO-OBLIGATORIO,
+ * en el check de este commit — no una medición local: esta sesión responde a `@claude` sobre un
+ * PR y ese entorno no ejecuta `node` (no hay forma de correr `npm test` a mano para re-derivar el
+ * número; regla de la ejecución automática). El número no se inventa: es el que el propio
+ * `AssertionError` publicó — `actual: 22, expected: 20` — sobre
+ * `ec16ae80890b6bebbc5789130f0301749e4374ae`
+ * (run: https://github.com/lwislg99/cobroflash-backend/actions/runs/36448469767), con la lista de
+ * los 22 ficheros impresa en el propio fallo. No se afirma aquí CUÁLES de esos 22 son los dos que
+ * faltaban sobre el 20 anterior — esa atribución exigiría re-medir en un árbol intermedio, que
+ * este entorno no puede hacer —: se ancla el número que el trinquete ya demostró, en rojo, que es
+ * el real.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 20;
+export const SUELO_GUARD_QUE_DECLARAN = 22;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -271,8 +283,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 22;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 21;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];
