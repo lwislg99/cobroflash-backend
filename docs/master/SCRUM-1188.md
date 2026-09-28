@@ -61,3 +61,7 @@ Texto FIRMADO por el orquestador en SCRUM-1188, comentario 17332, pintado letra 
 - El literal va junto a su uso (no en lo alto del fichero) para no volver a mover el ancla de `scrum601`.
 - Test: `scrum1188-plantilla-guarda-el-cobro` mira la alerta visible tras guardar. En rojo: sin aviso
   cae 1; con aviso siempre caen 2.
+- CI del PR #1877 cayó en `scrum600` (censo de ranuras que nombran el documento: 29 → 30). Es la
+  ranura NUEVA de este aviso, que dice «presupuesto»: entra en `RANURAS_A` en su posición con la
+  referencia de la firma (c.17332), y el recuento pasa a 30 posiciones / 28 textos. No se relaja el
+  censo: se le añade el texto que ahora existe.
