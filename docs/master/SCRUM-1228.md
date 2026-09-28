@@ -97,6 +97,26 @@ forma:
 - y qué texto le llega a esa persona. Si lo ve el profesional, es texto de cara al usuario → firma
   (regla 39).
 
+### ⑤bis El criterio, DECIDIDO por el orquestador de Javier (28-sep-2026)
+
+Lo decide el orquestador del equipo de Javier (`jv-orquestador`) y lo transcribe J5. **El texto que
+vea el profesional lo firma Javier** (regla 39): aquí no hay texto de pantalla.
+
+| respuesta | qué significa | qué hace la cola |
+|---|---|---|
+| 302, 401, 403 | **permisos**: el certificado no vale, no está o no es para ese NIF | **no reintenta**: para en el primer intento y avisa a una persona |
+| reset, timeout, 502, 503 | la red o el servidor fallaron | reintenta, como hoy |
+| 500 y 200 con HTML | **SIN DETERMINAR** | por ahora, como hoy, **y declarado** |
+
+**La regla:** *reintentar sólo sirve cuando el que reintenta puede tener suerte.* Con un problema de
+permisos no la hay: reintentar gasta cuota y retrasa el aviso.
+
+El 500 y el 200 con HTML se dejan **sin determinar a propósito**. No se sabe si la AEAT los usa para
+permisos o para averías, y meterlos en «avisa» por simetría sería inventarse su significado.
+
+Sigue **SIN DETERMINAR** qué contesta la AEAT con un certificado presente pero inválido (④). Se medirá
+cuando se haga la prueba con el certificado de Javier; esta sesión no lo toca.
+
 ## ⑥ La sonda, para repetirla
 
 Sobre `dist/` compilado (`npm run build`) de un árbol en `origin/main`. Se lanza con
