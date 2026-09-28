@@ -137,7 +137,6 @@
     {"clave":"front-funcion · public/dashboard/js/jobDocsReparto.js::clavesRepartidas","donde":"public/dashboard/js/jobDocsReparto.js:114","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/patronDetalleAcciones.js::incumplimientosDeLaLey","donde":"public/dashboard/js/patronDetalleAcciones.js:101","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::estadoDePersistencia","donde":"public/dashboard/js/resistenciaAlmacen.js:54","carril":"S4","ticket":"SCRUM-1185"},
-    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","donde":"public/dashboard/js/resistenciaAlmacen.js:182","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/semaforoFiscal.js::avisoPlazoVencido","donde":"public/dashboard/js/semaforoFiscal.js:103","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/semaforoFiscal.js::fetchSemaforo","donde":"public/dashboard/js/semaforoFiscal.js:311","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/semaforoFiscal.js::pintarSemaforo","donde":"public/dashboard/js/semaforoFiscal.js:291","carril":"J1","ticket":"SCRUM-1185"},
@@ -181,6 +180,7 @@
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
-    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","motivo":"SCRUM-1201: BORRADA. Sustituida por distributeStageAmounts sobre resolveBillingPlan (SCRUM-27); el reparto exacto sigue probado en billingPlan.test.mjs"}
+    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","motivo":"SCRUM-1201: BORRADA. Sustituida por distributeStageAmounts sobre resolveBillingPlan (SCRUM-27); el reparto exacto sigue probado en billingPlan.test.mjs"},
+    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"}
   ]
 }
