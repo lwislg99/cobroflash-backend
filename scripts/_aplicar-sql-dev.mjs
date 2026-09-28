@@ -58,6 +58,22 @@ export const PERMITIDAS = Object.freeze([
   // familias deja de ser blanca. El rojo de esa vecindad está probado en
   // `scrum425-aplicador-sql-dev.test.mjs`.
   { nombre: 'ALTER TABLE … ALTER COLUMN … DROP DEFAULT', re: /^ALTER\s+TABLE\s+\S+\s+ALTER\s+COLUMN\s+\S+\s+DROP\s+DEFAULT$/i },
+  // ── LA QUINTA FORMA · SCRUM-1197 (28-sep-2026) ──────────────────────────────────────────
+  //
+  // EL CASO que la trajo: el DDL de la cola de VeriFactu (§④ de `docs/master/SCRUM-1127.md`),
+  // aplicado por el fundador en staging y producción, no entraba en dev por su enum
+  // `VfSubmissionStatus`. (Sus dos `ADD CONSTRAINT … FOREIGN KEY` NO abren forma nueva: se
+  // reescriben dentro del `CREATE TABLE`, que ya estaba permitido.)
+  //
+  // POR QUÉ ES ADMISIBLE: como `CREATE TABLE`, **crea un objeto que antes no estaba y no toca
+  // ninguna fila**. Si el tipo ya existe, la sentencia FALLA, que es el lado seguro.
+  //
+  // ⛔ SE ADMITE LA FORMA, NO LA FAMILIA. `CREATE TYPE` tiene además la forma compuesta
+  // (`AS ( … )`), la de rango (`AS RANGE`), la base (que ejecuta funciones de E/S) y la shell;
+  // y su vecindad (`ALTER TYPE`, `DROP TYPE`) sí cambia o borra. La expresión sólo acepta una
+  // lista NO vacía de literales de cadena entre paréntesis y nada detrás. El rojo de esa
+  // vecindad está probado en `scrum425-aplicador-sql-dev.test.mjs`.
+  { nombre: 'CREATE TYPE … AS ENUM ( … )', re: /^CREATE\s+TYPE\s+"?[\w.]+"?\s+AS\s+ENUM\s*\(\s*'[^']*'(\s*,\s*'[^']*')*\s*\)$/i },
 ]);
 
 /** Quita comentarios CONSERVANDO las líneas, para que el número que se reporte sea el real. */
