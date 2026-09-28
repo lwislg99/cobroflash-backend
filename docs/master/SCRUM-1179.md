@@ -34,6 +34,10 @@ importa algún `tests/*.test.mjs`**, y **7 ya bloquean** lo que vigilan. La preg
 - `docs/master/SCRUM-641.md:216` (`npm run cr:censo --limpiar`: sin `--`, npm se come el flag),
   `SCRUM-791.md:29` y `SCRUM-917.md:874` («medida por `censo:tactil-panel`»): son **registros
   históricos**. Cuentan lo que se hizo, no instruyen, y no se reescriben. Quedan señalados aquí.
+  **Corregido por decisión del orquestador (28-sep):** `SCRUM-641.md:216` no es narración, es un
+  comando que se puede copiar. No se reescribe, pero lleva al lado un apéndice que dice que no
+  limpia nada y cuál sí. Medido: `npm run <script> --limpiar` avisa `Unknown cli config` y el
+  script recibe `argv` vacío. 791 y 917 se quedan como están.
 - Las 3 promesas de la landing congeladas en `SIN_ANCLA_HOY` (`censo:anclas-f`): la landing es STOP
   del fundador; las sube el orquestador.
 - B, C, D (cabeceras y guard) y E: PR aparte, uno por instrumento.
