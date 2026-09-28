@@ -23,3 +23,12 @@ Carril S1 · sesión s1-28b · rama `scrum-1212-sin-emitir-factura-en-recibo`. L
 ## Pruebas
 
 `tests/scrum1212-correo-aceptado-sin-emitir-factura.test.mjs`. El test recorre merchant → `modoEmisionVisible` (real) → correo (real) → HTML, con solo el emisor `enviarCorreo` doblado, sin red. **Rojo medido contra el `dist` anterior:** fallaban 2 de 4 (ES sin flag y modo desconocido), y los dos controles positivos (fiscal y demo) pasaban. Verde después. Tests relacionados: 136 pasan, 2 saltados (staging).
+
+## Apéndice 28-sep-2026 · firma 1 (c.17355): «El cliente ha aceptado el presupuesto.»
+
+Rama `scrum-1212b-correo-ha-aceptado`, medido sobre `origin/main` `a59dc1e6`.
+
+- El correo decía «El cliente ha firmado digitalmente el presupuesto.», y el único camino que lo manda (el bot, que acepta por texto) nunca trae firma. Queda el texto firmado. **Uno solo**: la variante «ha firmado» se descartó porque sería una rama muerta.
+- **El cinturón** (`tests/scrum1212b-correo-aceptado-sin-firma.test.mjs`): por AST sobre `src/`, ningún camino que llame a `sendMerchantQuoteAcceptedEmail` puede conocer `signatureUrl` ni `signatureData`. Tiene un control positivo: el mismo detector ve la firma en el handler de `/decision`. **Mutación comprobada:** al meter una llamada al emisor dentro de `/decision`, el test cae y nombra `quotes.routes.ts:330`. El fichero se restauró después.
+- **La firma 2 (el texto del ajuste en Configuración, `settingsView.js:664`) NO se hace aquí:** es del carril J, decidido por el orquestador sin excepción. Su condición de verdad está medida y se cumple: el correo solo sale por el bot, porque `/accept` se retiró en SCRUM-1202 y era el único otro llamador.
+- Tests relacionados: 107 pasan y 2 saltados (staging).
