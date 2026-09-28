@@ -97,6 +97,12 @@ Un suelo nuevo que el censo no sabe leer caía en «NO SÉ LEER» (75 hoy) sin q
 - **Control positivo real:** el árbol real con dos defectos inyectados en memoria: el
   `censo-tablero-vs-arbol.mjs` roto de SCRUM-775 sale NO CONECTADO, y un guard opaco nuevo sale
   como NUEVO sin leer.
+  Y (a petición del orquestador, porque el censo cambió mucho en una tanda) dos guards de HOY
+  **desconectados a propósito** en ese mismo corpus, uno de cada clase nueva: `p.host` de
+  `censo-etiquetas-del-documento.mjs` (productor con `return null`) y `r.status` de
+  `guards-entrada.mjs` (`spawnSync`). Tienen que salir los tres, y exactamente los tres. Probado
+  quitando la lectura del `return null`: el control cae con «desconecté a propósito … y el censo
+  NO lo acusa».
 - **Control negativo:** el árbol real da cero, que es el propio trinquete en verde.
 - **Fail-closed:** si `motivosParaNoFiarse` dice algo (población vacía incluida), CIEGO y no se compara.
 - **Probado en rojo:** quitar una clave del JSON → «NUEVO … nav.ok (1 vistos, 0 declarados)»;

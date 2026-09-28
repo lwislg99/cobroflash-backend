@@ -367,14 +367,34 @@ test('SCRUM-1179-B · cada declarado lleva cuenta y motivo; cada retirada, id y 
 test('SCRUM-1179-B · control POSITIVO: el roto real de SCRUM-775 y un guard opaco, metidos en el árbol real, salen', () => {
   // El árbol real con dos defectos inyectados EN MEMORIA (nada toca el disco): el fichero de
   // SCRUM-775 tal como estaba roto, y un guard nuevo cuyo productor no se puede leer.
+  // Y dos guards de HOY desconectados a propósito, uno de cada clase que el censo aprendió a leer
+  // en SCRUM-1179-B (sin esto, el «0 no conectados» del árbol real sería un cero sin probar):
+  // un productor con `return null` en un camino, y un `spawnSync`.
+  const DESCONECTA = new Map([
+    ['scripts/censo-etiquetas-del-documento.mjs', ['if (p.host === PROD_HOST)', 'if (p.hostQueNoExiste === PROD_HOST)']],
+    ['scripts/guards-entrada.mjs', ['if (r.status !== 0) {', 'if (r.estadoQueNoExiste !== 0) {']],
+  ]);
   const ficheros = ficherosReales()
     .map((f) => (f.rel === 'scripts/censo-tablero-vs-arbol.mjs' ? { ...f, txt: ROTO_CONGELADO } : f))
+    .map((f) => {
+      const d = DESCONECTA.get(f.rel);
+      if (!d) return f;
+      assert.ok(f.txt.includes(d[0]), `la sonda del control ya no encuentra \`${d[0]}\` en ${f.rel}: actualízala`);
+      return { ...f, txt: f.txt.replace(d[0], d[1]) };
+    })
     .concat([{ rel: 'scripts/y1179.mjs',
       txt: 'export function raro(x) { return x ? algo() : otro(); }\n'
          + 'const r = raro(1);\nif (r.ok === false) { process.exit(2); }\n' }]);
   const { noConectados, nuevas } = compararSuelos(censar(ficheros), leerDeclaradosSuelos());
   assert.ok(noConectados.some((x) => x.startsWith('scripts/censo-tablero-vs-arbol.mjs')),
     `🔴 el trinquete NO acusa el suelo roto real de SCRUM-775. Acusó: ${noConectados.join(', ') || '(nada)'}`);
+  for (const [rel, [, a]] of DESCONECTA) {
+    const prop = /\.(\w+QueNoExiste)/.exec(a)[1];
+    assert.ok(noConectados.some((x) => x.startsWith(rel) && x.endsWith(`.${prop}`)),
+      `🔴 desconecté a propósito un guard de ${rel} (\`.${prop}\`) y el censo NO lo acusa. Acusó: ${noConectados.join(', ') || '(nada)'}`);
+  }
+  assert.equal(noConectados.length, 1 + DESCONECTA.size,
+    `🔴 se inyectaron ${1 + DESCONECTA.size} defectos y acusa ${noConectados.length}: ${noConectados.join(', ')}`);
   assert.ok(nuevas.some((x) => x.startsWith('scripts/y1179.mjs · raro · r.ok')),
     `🔴 un guard nuevo que el censo no sabe leer pasa sin que nadie lo diga. Nuevas: ${nuevas.join(', ') || '(nada)'}`);
 });
