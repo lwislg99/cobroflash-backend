@@ -29,7 +29,7 @@ enviar; aquí sirve para que tú veas el estado.
 |---|---|---|
 | **SIN RESPUESTA** | Nadie la ha contestado | 14 |
 | **IA · 22-sep** | Respuesta preparada por **una sesión de IA** contra la FAQ de la AEAT y el BOE (`PREGUNTAS_ASESOR.md`, sección «RESPUESTAS · 22-sep», que lo dice en su primera línea). **Ningún asesor humano la ha revisado.** El cotejo del 23-sep (SCRUM-1088) comprobó que las citas existen, no que la aplicación a nuestro caso sea correcta | 11 |
-| **«ASESOR» · 23-sep, AUTORÍA SIN DECLARAR** | Respuestas rotuladas «el asesor fiscal» (SCRUM-1104 y 1106, volcadas en `PREGUNTAS_ASESOR.md:847` y `:978` (`RESPONDIDA`)). **Ningún documento dice si las escribió una persona o una herramienta.** El «asesor» marca él mismo con ⚠ lo que cita «de memoria». | 2 |
+| **«ASESOR» · 23-sep, AUTORÍA SIN DECLARAR** | Respuestas rotuladas «el asesor fiscal», de SCRUM-1104 y 1106, volcadas en `docs/legal/PREGUNTAS_ASESOR.md:848` (`Q-C1.`) y `:978` (`Q-C8.`). **Ningún documento dice si las escribió una persona o una herramienta.** El «asesor» marca él mismo con ⚠ lo que cita «de memoria». | 2 |
 | **AEAT** | Respuesta oficial de la Agencia (correo de julio en SCRUM-143) | 1 |
 
 **Por qué importa, con un caso.** El mapa de SCRUM-1023 marca 17 preguntas como «NO necesita
@@ -73,7 +73,7 @@ eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ d
 | A2 | F2 · RESPUESTAS·A · AUDITORIA_CAMINO_EMISION:189 | IA · 22-sep | conectar el envío a la AEAT |
 | A3 | F3 · SCRUM-143 | AEAT (correo de julio) + repetir por decisión tuya | A2 y constituir la SL |
 | A4 | F10 · F17 · P19 · DECLARACION_RESPONSABLE:59 y :72 | IA · 22-sep (B2), parcial | la declaración responsable |
-| B1 | F6 · P11 · D5.1 · D5.5 · 1253 Ⓖ.3 · F9/P16.4 · semaforoFiscal.js:37 | IA · 22-sep (B3) | todo D5; el aviso «cliente sin NIF» |
+| B1 | F6 · P11 · D5.1 · D5.2 y D5.3 (confirmaciones) · D5.5 · 1253 Ⓖ.3 · F9/P16.4 · semaforoFiscal.js:37 | IA · 22-sep (B3) | todo D5; el aviso «cliente sin NIF» |
 | B2 | F9 · P16.2 · P16.3 · anticipos P9 | SIN RESPUESTA | SCRUM-413 |
 | B3 | F4 · QC1 · QC2 · QC9 | IA · 22-sep (tabla F) | SCRUM-212 |
 | B4 | F7 · QC3 | IA · 22-sep (P12) | SCRUM-293 |
@@ -218,6 +218,16 @@ simplificada; **series separadas** si se emiten los dos tipos en el mismo año) 
 FAQ de la AEAT «Procedimientos de facturación».
 **Qué haremos.** Construir el tipo de factura que indique, con su serie y su rectificativa, y el
 aviso que ve el profesional cuando falta el NIF.
+**Dos confirmaciones, de una línea.** No son preguntas abiertas: basta un «correcto» o la corrección.
+Detrás de las dos hay un cambio en nuestra base de datos y en el alta de clientes, y preferimos
+confirmarlo antes de hacerlo.
+- **D5.2 · NIF.** Entendemos que la factura **completa** lleva siempre el NIF del destinatario, porque
+  la operación se realiza en España y el profesional está establecido aquí (ROF 6.1.d), párrafo
+  segundo, 3.º). ¿Correcto?
+- **D5.3 · Domicilio.** Entendemos que la factura completa lleva también el **domicilio** del
+  destinatario (ROF 6.1.e): «Domicilio, tanto del obligado a expedir factura como del destinatario»).
+  ¿Correcto?
+
 **Lo que ya tenemos:** IA · 22-sep. **Ningún asesor la ha revisado, y por eso esperamos la suya.**
 
 ### B2 · ¿Con qué «tipo de factura» se declara cada documento en VeriFactu?
@@ -504,8 +514,6 @@ cliente **el nombre del técnico** que va a su casa.
 
 | Pregunta | Por qué no | Dónde está resuelto |
 |---|---|---|
-| **D5.2** · ¿La factura completa lleva el NIF del destinatario? | **Lo dice la norma, literal.** ROF 6.1.d), párrafo segundo, 3.º: es obligatorio si la operación se realiza en España y el emisor está establecido aquí. Es nuestro caso siempre | Texto consolidado (BOE-A-2012-14696, versión vigente desde 2023-12-07). Si es completa o simplificada, va en **B1** |
-| **D5.3** · ¿Y el domicilio del destinatario? | **Lo dice la norma, literal.** ROF 6.1.e): «Domicilio, tanto del obligado a expedir factura como del destinatario». Lo que falta (columnas nuevas, ALTER) es trabajo nuestro | Ídem |
 | **D5.4** · ¿Dónde se pide el NIF? | **Lo decidiste tú** (17446): en el alta y, si falta, antes de emitir, con aviso y guardándolo en la ficha | SCRUM-825, comentario 17446 |
 | **D5.5** · ¿Se construye la simplificada? | Es una **decisión de producto**, que se toma cuando llegue la respuesta a **B1**. Dato técnico nuestro, no del asesor: según J1 (SCRUM-1258), la huella de una simplificada saldría calculada como si fuera completa si el tipo se decide al exportar en vez de al emitir | SCRUM-825 §2.5; SCRUM-1258 |
 | **F11** · ¿La rectificativa es «por diferencias»? | Lo dice la **AEAT**, literal en su FAQ, y lo confirman sus esquemas y sus validaciones 1118 y 1119 | Skill `verifactu` §4; `PREGUNTAS_ASESOR.md`, RESPUESTAS·B4 |
