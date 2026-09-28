@@ -37,6 +37,8 @@ import {
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
 import { campoDeDevengo, CAMPO_EMISION } from './devengoPorCaja';
+// SCRUM-1232: el criterio del número `J-` se importa de donde se fija el prefijo, no se copia.
+import { isReceiptNumber } from './invoiceNumber.service';
 
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
@@ -64,6 +66,35 @@ export interface RangoLibro {
    * él esconde el fallo para siempre.
    */
   criterioCaja?: unknown;
+  /**
+   * SCRUM-1232 · `true` = el libro de facturas EXPEDIDAS: deja fuera los justificantes.
+   *
+   * 🔴 NO ES EL DEFECTO, Y NO LO PIDE EL 303. La norma separa las dos poblaciones (SCRUM-1232b,
+   * `docs/master/SCRUM-1232.md`): el libro de expedidas son FACTURAS y nada más (RIVA 62.1.a y 63),
+   * y el 303 declara lo DEVENGADO, no lo documentado (LIVA 75/167, RIVA 71). Un justificante documenta
+   * una operación que devengó IVA aunque no se facturara: sacarlo del 303 INFRADECLARARÍA.
+   *
+   * Por eso es opcional y va apagado: lo encienden la pantalla del libro y el libro de la AEAT, y el
+   * 303, las evidencias e Informes siguen leyendo lo de siempre. Encenderlo por defecto cambiaría el
+   * 303 sin que su código moviera una letra.
+   */
+  soloFacturas?: boolean;
+}
+
+/**
+ * SCRUM-1232 · ¿Es un justificante de cobro? Por `type` **o** por número `J-`.
+ *
+ * Los dos criterios, y no uno: es el mismo `o` que ya usan `receipt.routes.ts:104` e
+ * `invoiceAdmin.ts:251`, y el censo de producción del 10-ago-2026 contó **5 facturas `F1` con número
+ * `J-`** (`PREGUNTAS_ASESOR.md:640-641`). Un filtro sólo por `type` las dejaría en el libro como
+ * facturas.
+ *
+ * ⚠️ El filtro va en el CÓDIGO y no en el `where`: `NOT (number LIKE 'J-%')` sobre una fila sin número
+ * es NULL en Postgres, y la tiraría en silencio. La factura sin número tiene que seguir llegando al
+ * constructor, que la cuenta en `sinNumero`.
+ */
+export function esJustificante(f: { type: string | null; number: string | null }): boolean {
+  return f.type === 'JUST' || isReceiptNumber(f.number);
 }
 
 /** Las columnas que el libro necesita. Explícitas: un `select` abierto traería la firma. */
@@ -109,7 +140,7 @@ export async function leerLibroRegistro(
   // fallida LANZA en vez de caer a emisión.
   const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
 
-  const facturas = (await db.invoice.findMany({
+  const leidas = (await db.invoice.findMany({
     where: {
       merchantId: rango.merchantId,
       ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
@@ -119,6 +150,12 @@ export async function leerLibroRegistro(
     // orden en que se emitieron, que es el de la serie.
     orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
   })) as unknown as (FacturaParaLibro & { id: number })[];
+
+  // SCRUM-1232 · fuera los justificantes, pero SÓLO los de este merchant: uno ajeno que se colara
+  // tiene que llegar al constructor para contarse en `ajenas`, no desaparecer aquí (SCRUM-348).
+  const esJustificanteMio = (f: FacturaParaLibro) =>
+    f.merchantId === rango.merchantId && esJustificante(f);
+  const facturas = rango.soloFacturas ? leidas.filter((f) => !esJustificanteMio(f)) : leidas;
 
   const idsFactura = facturas.map((f) => f.id).filter((n) => typeof n === 'number');
   const idsPresupuesto = [
@@ -154,10 +191,13 @@ export async function leerLibroRegistro(
     albaranesVivos.set(a.invoiceId, lista);
   }
 
-  return construirLibroRegistro({
+  const libro = construirLibroRegistro({
     facturas,
     merchantId: rango.merchantId,
     presupuestosFirmados: firmados.map((q) => q.id),
     albaranesVivos,
   });
+  return rango.soloFacturas
+    ? { ...libro, justificantesFuera: leidas.length - facturas.length }
+    : libro;
 }

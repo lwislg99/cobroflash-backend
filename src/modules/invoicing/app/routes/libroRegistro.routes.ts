@@ -33,6 +33,8 @@ router.get('/', async (req, res) => {
       merchantId: req.merchantId,
       desde: fechaDe(req.query.desde),
       hasta: fechaDe(req.query.hasta),
+      // SCRUM-1232: el libro de facturas EXPEDIDAS no lleva justificantes (RIVA 63).
+      soloFacturas: true,
     });
     return res.json(libro);
   } catch (err) {

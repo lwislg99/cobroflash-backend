@@ -230,3 +230,91 @@ Y en el primer borrador escribí que el art. 63 decía «documentos sustitutivos
 deducido de la fecha del ROF, sin mirarlo. Al medirlo versión por versión salió otra cosa: la
 expresión sigue en la versión de 2013-10-27 y desaparece en la de 2017-07-01. Está corregido arriba.
 También había citado `tipoDocumento.ts:17`, y la frase está en la `:18`.
+
+## SCRUM-1232 · el arreglo: el libro de expedidas sin justificantes, y el 303 intacto
+
+**Medido contra:** `origin/main` = `8a27dd4a85b731faea7f4902295cbec1c64ef870` · 2026-09-28T21:05:20Z (hora de GitHub, `gh api -i zen`)
+
+Sesión J1 (`jv-j1`, relevo), 28-sep-2026 por la noche. **GO del fundador en el comentario 17435**
+(«1-Sí»), con la salida **(b)** que eligió la norma en SCRUM-1232b, arriba. Rama
+`scrum-1232-libro-sin-justificantes`.
+
+**Skill UI:** `yaqu-premium-ui` cargada ANTES de tocar `libroRegistroView.js`. El único cambio de
+pantalla es el literal del recuento; no hay cambio visual.
+
+### ⓪ PASO 0 · el defecto seguía vivo, medido EJECUTANDO
+
+`dist/` recompilado desde `8a27dd4a`, y el test nuevo corrido en rojo antes de tocar `src/`:
+**7 de 8 fallaron**. El libro de la pantalla (`GET /admin/libro-registro`) y el CSV de la AEAT
+(`GET /expedidas.csv`) sacaban `J-2026-0001`, y el recuento pintaba «1 facturas». El único verde en
+rojo era el del 303, que es el que NO tiene que cambiar: con la muestra da **base 250 y casilla
+27 = 52,5**, justificantes incluidos, antes y después.
+
+### Ⓐ Lo que se ha hecho
+
+| pieza | antes | después |
+|---|---|---|
+| `leerLibroRegistro` | lee todo lo del merchant | igual, **salvo** que se pida `soloFacturas: true`. Entonces deja fuera los justificantes **de este merchant** y lo declara en `justificantesFuera` |
+| libro de la pantalla (`libroRegistro.routes.ts`) | F1 · JUST · R1 | pide `soloFacturas: true` → F1 · R1 |
+| libro AEAT de expedidas (`librosAeat.repo.ts`) | F1 · JUST · R1 | pide `soloFacturas: true` → F1 · R1 |
+| **303** (`modelo303.repo.ts`) | con justificantes | ⛔ **sin tocar**: no pide el filtro, y el test lo vigila por las dos caras |
+| recuento (`libroRegistroView.js`) | `n + ' facturas'` | `(n) => n === 1 ? '1 factura' : n + ' facturas'`, firmado en 17435 y registrado en `docs/microcopy/2026-09-28-SCRUM-1232-recuento-libro.md` |
+
+**«Es justificante» = `type === 'JUST'` o número `J-`** (`esJustificante`, con `isReceiptNumber`
+importado de `invoiceNumber.service.ts`, sin copiar el prefijo). Es el mismo `o` de
+`receipt.routes.ts:104` y de `invoiceAdmin.ts:251`. La muestra del test **lleva** una `F1` con número
+`J-` (`J-20260805-AB12`), que es la trampa del censo del 10-ago.
+
+**Por qué en el código y no en el `where`.** `NOT (number LIKE 'J-%')` sobre una fila sin número da
+NULL en Postgres, y la fila se perdería sin avisar. La factura sin número tiene que seguir llegando
+al constructor, que la cuenta en `sinNumero`. El test tiene una fila así.
+
+**Por qué `miradas` no cuenta los justificantes.** Si los contara, un merchant con sólo justificantes
+vería «el libro no cuadra» (cero asientos con `miradas > 0`), y eso sería falso. Lo descartado se
+declara aparte, en `justificantesFuera`, como `ajenas` y `sinNumero`. **No hay texto nuevo en
+pantalla para ese número** (regla 39).
+
+**Un justificante AJENO no se filtra: se cuenta en `ajenas`.** Si el `where` de tenencia fallara
+(SCRUM-348), el filtro nuevo no puede tapar la fuga.
+
+### Ⓑ Cómo se ha medido: `tests/scrum1232-libro-sin-justificantes.test.mjs`
+
+Son 8 casos contra **el camino real**: los manejadores de las dos rutas y los lectores de `dist/`,
+con un cliente Prisma falso puesto en `global.prisma` antes de cargarlas. No se usa ninguna base.
+
+| mutación sobre `dist/` | resultado |
+|---|---|
+| ninguna (la base) | **8/8 verde** |
+| filtro sólo por `type` (sin `isReceiptNumber`) | **6 caen**. El primero nombra la trampa: «`J-20260805-AB12` sigue en el libro» |
+| filtro siempre, sin `soloFacturas` (la salida **(a)**) | **caen los 2 del 303**: la base baja y la 27 cambia |
+
+### Ⓒ Quién más lee `leerLibroRegistro`, y qué le pasa
+
+Los 6 llamantes, medidos con `grep` sobre `src/`: la pantalla del libro, el libro AEAT, el 303, el
+paquete de evidencias (`paquete.repo.ts:42`) e Informes (`reports.routes.ts:278` y `:372`).
+**Sólo los dos primeros piden el filtro. Los otros cuatro no cambian de salida**: siguen viendo los
+justificantes, y el caso «el 303 pide el libro SIN el filtro» comprueba que sin `soloFacturas` salen
+los 4 asientos.
+
+⚠️ **Lo que eso deja, y NO lo arreglo porque no tiene GO:**
+
+1. **El paquete de evidencias** lleva su propio libro, leído sin filtro. Si ese libro se entrega como
+   «libro de expedidas», tiene el mismo defecto que este ticket quita de la pantalla. Lo he **leído**,
+   no medido qué pinta. Esto lo decide un jefe.
+2. **Informes** agrega sobre el libro sin filtro, así que cuenta los justificantes en sus cifras.
+   Puede que sea lo correcto: si Informes habla de lo cobrado o de lo devengado, el justificante
+   está bien ahí. **No lo he decidido.**
+3. **La lista de Facturas** (`invoiceAdmin.ts:40`) filtra **sólo por `type`**, así que las `F1` con
+   número `J-` le salen como facturas. Es el mismo agujero en otra pantalla. Hay que abrirle ticket
+   (es de J1, pero queda fuera de este GO).
+
+### Ⓓ Lo que me salió mal
+
+Escribí este mismo apartado con un error que no había cometido: que la primera versión del test
+leía el fuente de la vista. No es verdad, porque la ejecutó en `vm` desde el principio. Lo vi al
+releer antes de anexarlo, y lo he cambiado por esto. Un «lo que me salió mal» de relleno falsea el
+expediente igual que un verde sin población.
+
+Y lo real, que es menor: las dos ediciones de las llamadas las hice con un `node -e` escondido detrás
+de un `python … || node`, que sólo funcionó porque aquí no hay `python`. Salió bien, pero no hay manera
+de revisarlo leyendo el comando. Lo comprobé con `git diff`.
