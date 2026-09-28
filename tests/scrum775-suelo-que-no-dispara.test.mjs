@@ -43,8 +43,9 @@ import { comprobarSuelo } from './_censo-tickets.mjs';
 import { repoFixture } from './_censo-fixture.mjs';
 import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
-  censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY,
+  censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY, formaDeSpawnSync, declaracionVisible,
 } from '../scripts/_censo-suelos.mjs';
+import ts from 'typescript';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'censo-tablero-vs-arbol.mjs');
@@ -376,6 +377,43 @@ test('SCRUM-1179-B · control POSITIVO: el roto real de SCRUM-775 y un guard opa
     `🔴 el trinquete NO acusa el suelo roto real de SCRUM-775. Acusó: ${noConectados.join(', ') || '(nada)'}`);
   assert.ok(nuevas.some((x) => x.startsWith('scripts/y1179.mjs · raro · r.ok')),
     `🔴 un guard nuevo que el censo no sabe leer pasa sin que nadie lo diga. Nuevas: ${nuevas.join(', ') || '(nada)'}`);
+});
+
+// Lo que el censo aprendió a leer en SCRUM-1179-B, porque 57 de los 75 NO SÉ LEER eran corteza
+// del censo y no de los guards. Cada capacidad con lo que TIENE que acusar y lo que NO.
+test('SCRUM-1179-B · `return null` en un camino no ciega: se leen los otros, y el roto se acusa', () => {
+  const prod = 'export function f(x) { if (!x) return null; if (x > 9) return; return { ok: true }; }\n';
+  const sano = censar([{ rel: 'scripts/a.mjs', txt: prod + 'const r = f(1);\nif (!r.ok) { process.exit(2); }\n' }]);
+  assert.equal(sano.conectados.length, 1, `🔴 no ve conectado \`r.ok\`: ${JSON.stringify(sano)}`);
+  const roto = censar([{ rel: 'scripts/a.mjs', txt: prod + 'const r = f(1);\nif (r.fallo) { process.exit(2); }\n' }]);
+  assert.equal(roto.noConectados.length, 1, `🔴 no acusa \`r.fallo\`, que f no fabrica: ${JSON.stringify(roto)}`);
+  const soloNull = censar([{ rel: 'scripts/a.mjs', txt: 'export function f() { return null; }\nconst r = f();\nif (r.ok) { process.exit(2); }\n' }]);
+  assert.equal(soloNull.ciegos.length, 1, '🔴 una función que SÓLO devuelve null no se puede leer: tiene que salir ciega');
+});
+
+test('SCRUM-1179-B · la forma de `spawnSync` se DERIVA ejecutándolo, y un `.ok` sobre ella se acusa', () => {
+  const forma = formaDeSpawnSync();
+  assert.ok(forma && forma.includes('status') && forma.includes('error'),
+    `🔴 la forma derivada de spawnSync no trae status y error: ${JSON.stringify(forma)}`);
+  const cab = "import { spawnSync } from 'node:child_process';\nconst r = spawnSync('x', []);\n";
+  const sano = censar([{ rel: 'scripts/b.mjs', txt: cab + 'if (r.status !== 0) { process.exit(1); }\n' }]);
+  assert.equal(sano.conectados.length, 1, `🔴 \`r.status\` de spawnSync no sale conectado: ${JSON.stringify(sano)}`);
+  const roto = censar([{ rel: 'scripts/b.mjs', txt: cab + 'if (!r.ok) { process.exit(1); }\n' }]);
+  assert.equal(roto.noConectados.length, 1, `🔴 \`r.ok\` sobre spawnSync no se acusa: ${JSON.stringify(roto)}`);
+});
+
+test('SCRUM-1179-B · la variable se resuelve en SU ámbito: dos `r` en dos funciones no se pisan', () => {
+  // El caso real de `turno-staging.mjs`: sin esto, el `r.ok` de la segunda función se atribuía
+  // al spawnSync de la primera y salía un «no conectado» falso.
+  const txt = "import { spawnSync } from 'node:child_process';\n"
+    + "function rama() { const r = spawnSync('git', []); return r.stdout; }\n"
+    + 'async function turno() { const r = await pedir(); if (!r.ok) { process.exit(2); } }\n';
+  const c = censar([{ rel: 'scripts/c.mjs', txt }]);
+  assert.deepEqual(c.noConectados, [], `🔴 el \`r\` de turno() se ha atribuido al spawnSync de rama(): ${JSON.stringify(c.noConectados)}`);
+  const id = ts.forEachChild(ts.createSourceFile('d.mjs', 'const a = f();\nfunction g(a) { return a.x; }\n', ts.ScriptTarget.Latest, true),
+    function busca(n) { return (ts.isPropertyAccessExpression(n) && n.expression) || ts.forEachChild(n, busca); });
+  assert.equal(id && id.text, 'a', 'la sonda del test no encontró `a.x`');
+  assert.equal(declaracionVisible(id), null, '🔴 un parámetro se ha resuelto a la variable de fuera');
 });
 
 test('SCRUM-1179-B · fail-closed: un censo sobre población vacía sale CIEGO, no «cero hallazgos»', () => {
