@@ -55,6 +55,10 @@ const SERIE_TEXTOS = Object.freeze({
   errorNumeroFalta: 'Escribe el número de tu última factura. Por ejemplo: 41.',
   errorNumeroNoValido: 'Tiene que ser un número entero, del 1 en adelante. Por ejemplo: 41.',
   errorNumeroGrande: 'Ese número es demasiado alto. Revisa el número de tu última factura.',
+  // SCRUM-1200 · fallo SIN respuesta (`sinRed` / `incierto` de `api.js`): no sabemos si se guardó,
+  // así que no se afirma nada y se manda a mirar. Repetir es inofensivo: el 409 depende de lo YA
+  // emitido. Aprobado por el orquestador por delegación del fundador, SCRUM-1200 comentario 17418.
+  errorSinRespuesta: 'No hemos podido confirmar si se ha guardado. Comprueba tu conexión y pulsa otra vez: si ya estaba guardado, se queda igual.',
 });
 
 /**
@@ -79,6 +83,8 @@ function errorNumeroArranque(valor, letrasTecleadas) {
  * nunca por el texto. Los dos 400 llegan sin `message`; el 409 trae su texto aprobado (SCRUM-291).
  */
 function textoErrorSerie(e, porDefecto) {
+  // SCRUM-1200: sin respuesta, `e.message` es del navegador («Failed to fetch») o interno de `api.js`.
+  if (e && (e.sinRed || e.incierto)) return SERIE_TEXTOS.errorSinRespuesta;
   const code = e && (e.code || (e.data && e.data.error));
   if (code === 'numero_invalido') return SERIE_TEXTOS.errorNumeroNoValido;
   if (code === 'numero_fuera_de_rango') return SERIE_TEXTOS.errorNumeroGrande;
