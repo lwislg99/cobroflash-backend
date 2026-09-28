@@ -276,7 +276,6 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum298-modo-visible.test.mjs  emission.service.ts', 1],
   ['tests/scrum298-modo-visible.test.mjs  invoiceNumber.service.ts', 1],
   ['tests/scrum298-modo-visible.test.mjs  invoicesAdmin.routes.ts', 1],
-  ['tests/scrum298-modo-visible.test.mjs  verifactu.service.ts', 1],
   ['tests/scrum299-copy-factura-publico.test.mjs  index.html', 1],
   ['tests/scrum302-presupuesto-y-fotos.test.mjs  jobRailBlocks.js', 1],
   ['tests/scrum324-cadena-hasta-el-libro.test.mjs  docs/legal/PREGUNTAS_ASESOR.md', 1],

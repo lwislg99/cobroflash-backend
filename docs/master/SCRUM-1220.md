@@ -109,3 +109,6 @@ antes de aplicarla. Ficha: `docs/microcopy/2026-09-28-SCRUM-1220-modo-justifican
   «Se emiten facturas».
 - Sin cargar `yaqu-premium-ui`: el cambio son dos cadenas de texto en una fila que ya existe; no
   cambia ni un token, ni la maquetación, ni un componente.
+- `tests/scrum710b-anclaje-por-identidad.test.mjs`: al retirar la procedencia antigua desaparece su
+  ancla `verifactu.service.ts:333`, y el trinquete lo cazó («se han ARREGLADO 1 anclaje(s) … declarados
+  1, hay 0»). Se borra esa entrada de `CONOCIDOS_A` en el mismo cambio, como pide el propio guard.
