@@ -1,6 +1,6 @@
 # SCRUM-1180 — Quitar una cláusula de cierre en UN presupuesto
 
-**Medido contra:** `origin/main` = `eedd78055f2a1d2f5bdc3446ebf8edc09e5e13c8` · 2026-09-28T15:40:00Z
+**Medido contra:** `origin/main` = `eedd7805c45f554bc29ccc3204f6dd09f61862e6` · 2026-09-28T15:36:18Z
 
 Carril S1 (servidor) + S2 (pantalla) · rama `scrum-1180-clausulas-por-presupuesto` · medición en el comentario 17358 de Jira.
 
