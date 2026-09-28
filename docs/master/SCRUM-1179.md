@@ -168,3 +168,16 @@ ni un nombre parecido (test propio).
 No se ha hecho el guard que busque en los comentarios citas de estas herramientas como red: sería
 un guard por TEXTO sobre prosa, que casa con el comentario que lo explica (la trampa de
 `_guard-texto.mjs`). La marca en la cabecera corta el caso en origen.
+
+## E — borrado `censo:escalera-por-estado`
+
+Preguntaba si `GET /admin/jobs` trae los albaranes, la dependencia de SCRUM-823 sobre SCRUM-816.
+Comprobado en el código antes de borrar: la lista los trae (`src/modules/jobs/app/routes/jobs.routes.ts`,
+bloque «SCRUM-816 · LO QUE LEE LA ESCALERA, TAMBIÉN EN LA LISTA»), y SCRUM-823 se construyó encima
+(`guard:escalera-por-estado` y `tests/scrum823-…`, que SE QUEDAN: son otra cosa). Era además el más
+peligroso de ejecutar de los 25: tocaba BD, levantaba servidor y escribía una sesión.
+
+Se borran `scripts/censo-escalera-por-estado.mjs` y sus dos líneas de `package.json`. Nada en
+`scripts/` ni `tests/` lo nombraba; lo nombran solo registros históricos de `docs/master/`, que no
+se reescriben. Metaguardas que censan `scripts/`, `tests/` y `package.json` (20 ficheros, 202 tests):
+201 verdes y 1 rojo ajeno por falta de `dist` en el árbol local (scrum823 importa de `dist/`; el CI compila).
