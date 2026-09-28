@@ -204,7 +204,15 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //            del banco (`invoiceDetailView.js`) eran «a pelo» y ahora eligen su palabra por el TIPO
 //            del documento (`tipoDeFactura` / `isReceipt`), con su pareja «factura» al lado: +2 y +2.
 // Nada de esto va a `PENDIENTES_DE_FIRMA`: está firmado.
-const VEREDICTO_AL_MEDIR = { flag: 20, tipo: 11, aPelo: 154 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 155 · 28-sep-2026 (SCRUM-1232) · «1 factura» (`libroRegistroView.js`, `recuento`). ES COPY
+// NUEVA Y FIRMADA: el recuento decía «1 facturas» y pasa a `n === 1 ? '1 factura' : n + ' facturas'`,
+// firmado por el fundador sólo junto al filtro de justificantes del libro (SCRUM-1232, comentario
+// 17435). AISLADO: contra `origin/main` = 6112855b, la única diferencia de `public/` de la rama es
+// esa línea; el literal que ya existía (`' facturas'`) se queda y entra UNO nuevo. Es el recuento
+// fijo de un libro que sólo lista facturas: no depende de flag ni de tipo, así que «a pelo» es su
+// categoría. Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado.
+const VEREDICTO_AL_MEDIR = { flag: 20, tipo: 11, aPelo: 155 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
