@@ -429,6 +429,20 @@
 
 ---
 
+### [ ] P3-CONT-1136b · el importador no reconoce como «exacta» una cabecera con el nombre del campo en camelCase
+- **Síntoma:** `proponerMapeo` normaliza la cabecera a minúsculas (`normalizarCabecera`) y la compara
+  con el nombre del campo TAL CUAL. Para `billingAddress`, `billingCity`, `billingPostalCode`,
+  `billingProvince`, `billingCountry` y `taxId` eso no casa nunca: una columna titulada
+  `billingAddress` sale «sin reconocer». `taxId` se salva porque `taxid` está entre sus sinónimos;
+  los cinco `billing*`, no.
+- **Impacto:** bajo. Un CSV de un profesional trae `DIRECCION`, `CP`, `PAIS`…, y ésas sí se
+  reconocen por sinónimo. Afecta a quien reimporte un fichero con los nombres internos; y aun así
+  la columna no se pierde: sale el aviso «No sabemos qué es esta columna» y se puede elegir a mano.
+- **Encontrado** en SCRUM-1136 (28-sep-2026) al escribir su test. **No arreglado allí**: es del
+  servidor, y el ticket era la pantalla. Arreglo probable: comparar con `normalizarCabecera(campo)`.
+
+---
+
 ### [x] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
 - **CERRADO (28-sep-2026, SCRUM-1161):** el modal omite `phone` y `email` vacíos (`|| undefined`, la
   regla de `mobile`). Lo sujeta `tests/scrum1161-alta-sin-correo.test.mjs` (modal real → puerta real,
