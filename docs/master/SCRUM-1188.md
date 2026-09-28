@@ -35,9 +35,29 @@ mandando cualquier valor cae el de CUSTOM.
 
 ## Lo que NO cierra este ticket
 
-- **El aviso al guardar una plantilla en «Personalizado»**: el texto no está firmado (regla 39). Sin
-  él, ese caso sigue perdiendo el plan sin avisar. Propuesta enviada al orquestador para firma.
+- ~~El aviso al guardar una plantilla en «Personalizado»~~ → hecho en la rama
+  `scrum-1188-aviso-plan-personalizado` (apéndice de abajo).
 - **B (plantilla de 3 opciones) y C (editar una plantilla guardada)**: APARCADAS por diseño
   (c.17282). `POST::tiers` y las cuatro de `PUT` siguen declaradas.
 - **«Sin condiciones específicas»** (valor `""`): no es una de las tres; se guarda `null` y al aplicar
-  el editor se queda en «Pago 100% al aceptar», igual que antes de este cambio. Reportado.
+  el editor se queda en «Pago 100% al aceptar», igual que antes de este cambio. Reportado → SCRUM-1219
+  (decisión del orquestador: se arregla guardando y restaurando `""`, sin aviso).
+- **Ancla de `scrum601`**: la constante nueva baja «Solo presupuesto (facturación manual)» de 935 a
+  939; corregida con la cifra del propio censo (el check obligatorio de #1864 lo cazó).
+
+## Apéndice · el aviso de «Personalizado» (28-sep, s2-28b)
+
+**Medido contra:** `origin/main` = `cd78b8264d042dc01afe1ee714b002278f25e0a1` · 2026-09-28T14:42:22Z
+
+Texto FIRMADO por el orquestador en SCRUM-1188, comentario 17332, pintado letra por letra:
+
+> Plantilla "{nombre}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan
+> en las plantillas: al usarla, elige el cobro en el presupuesto.
+
+- Sustituye al éxito **solo** cuando el cobro es `CUSTOM` (condición de la firma); con las otras tres
+  sale el éxito de siempre. Alerta neutra (ni `success` ni `error`): la plantilla se guardó, el plan no.
+- Comprobado lo que afirma: la plantilla guarda líneas y `paymentTerms: null`; al usarla, el editor
+  sale en «Pago 100% al aceptar».
+- El literal va junto a su uso (no en lo alto del fichero) para no volver a mover el ancla de `scrum601`.
+- Test: `scrum1188-plantilla-guarda-el-cobro` mira la alerta visible tras guardar. En rojo: sin aviso
+  cae 1; con aviso siempre caen 2.
