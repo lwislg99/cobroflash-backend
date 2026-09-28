@@ -93,7 +93,7 @@ async function importarPorLaPantalla(csv) {
 }
 
 const CSV_CARTERA = 'NOMBRE;TELEFONO;NIF;MOVIL;EMAIL\n'
-  + 'Ana Prueba 1136;910000000;12345678Z;600000000;ana1136@example.test\n';
+  + 'Ana Prueba 1136;34000000001;12345678Z;34000000002;ana1136@example.test\n';
 
 test('SCRUM-1136 · 🔴 el NIF y el móvil de un CSV LLEGAN al cliente creado (antes se perdían en silencio)', async () => {
   const { r, creados, mapeo } = await importarPorLaPantalla(CSV_CARTERA);
@@ -120,7 +120,7 @@ test('SCRUM-1136 · los DOCE campos que el servidor acepta llegan, cada uno a su
     billingProvince: 'PROVINCIA', billingCountry: 'PAIS',
   };
   const valores = {
-    name: 'Bea Prueba 1136', phone: '910000001', mobile: '600000001', email: 'bea1136@example.test',
+    name: 'Bea Prueba 1136', phone: '34000000003', mobile: '34000000004', email: 'bea1136@example.test',
     notes: 'nota', taxId: '12345678Z', tags: 'vip', billingAddress: 'Calle Mayor 3',
     billingCity: 'Alcalá', billingPostalCode: '28801', billingProvince: 'Madrid', billingCountry: 'ES',
   };
