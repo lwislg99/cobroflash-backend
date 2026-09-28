@@ -86,9 +86,18 @@ function tituladosQueDeclaran() {
  * ⬆️ **20** (SCRUM-951d, 18-sep-2026): lo sube `scrum951d-ensayo-instalacion.test.mjs`, que titula
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
+ *
+ * ⬆️ **21** (28-sep-2026, SCRUM-1179-B): re-medido sobre esta rama mezclada con `origin/main` =
+ * `09fbc9da3605c07fd71b9e55112fe96b910c9bed`. Este ticket no toca ningún título ni ninguna
+ * `MUTACIONES_QUE_ME_TUMBAN` ajena, así que el 21º no nace de este carril: nace de que la señal es
+ * DÉBIL EN LAS DOS DIRECCIONES por diseño (línea 62 de este mismo bloque) — el propio `seTitulaGuard`
+ * casa la subcadena «guard» dentro de cualquier título, incluida una prosa española como «sello
+ * GUARDado», sin exigir palabra completa. Averiguar A MANO qué commit de qué otra sesión movió
+ * exactamente ese título no es este carril (regla 9): lo que este trinquete exige es que el suelo
+ * no se quede por debajo del árbol real, y eso es lo único que se ancla aquí.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 20;
+export const SUELO_GUARD_QUE_DECLARAN = 21;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -271,8 +280,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 21;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];
