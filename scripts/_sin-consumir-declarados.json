@@ -40,14 +40,11 @@
     {"clave":"cuerpo · PUT /admin/templates/:id::paymentTerms","donde":"src/modules/templates/app/routes/templates.routes.ts:62","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/templates/:id::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:62","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/db/constanciaDelAlter.ts::mensajeDeConstancia","donde":"src/core/db/constanciaDelAlter.ts:136","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/core/documentos/asignacionDeDocumento.ts::esDocumentoAsignable","donde":"src/core/documentos/asignacionDeDocumento.ts:54","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/documentos/direccionObra.ts::SIN_APROBAR_DIRECCION_OBRA","donde":"src/core/documentos/direccionObra.ts:168","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/http/adminMounts.ts::getAdminMounts","donde":"src/core/http/adminMounts.ts:53","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/http/huellaEstaticos.ts::referenciasDe","donde":"src/core/http/huellaEstaticos.ts:216","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/core/http/rateLimit.ts::__resetRateLimits","donde":"src/core/http/rateLimit.ts:50","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/http/roleCapabilities.ts::ADMIN_ONLY_JOB_FIELDS","donde":"src/core/http/roleCapabilities.ts:90","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/utils/utils.ts::formatNumeroEs","donde":"src/core/utils/utils.ts:131","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/core/utils/utils.ts::parseNumericId","donde":"src/core/utils/utils.ts:270","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/validation/causaLineaEmitible.ts::esErrorCausaLineaNoEmitible","donde":"src/core/validation/causaLineaEmitible.ts:56","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/core/validation/tiposIvaEmitibles.ts::esErrorTipoIvaNoEmitible","donde":"src/core/validation/tiposIvaEmitibles.ts:101","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/integrations/stripe.ts::stripeEnabled","donde":"src/integrations/stripe.ts:11","carril":"J2","ticket":"SCRUM-1185"},
@@ -112,7 +109,6 @@
     {"clave":"export · src/modules/jobs/domain/ventanaDeFirma.ts::contrastarReloj","donde":"src/modules/jobs/domain/ventanaDeFirma.ts:135","carril":"S4","ticket":"SCRUM-1184"},
     {"clave":"export · src/modules/jobs/domain/ventanaDeFirma.ts::cruzaDias","donde":"src/modules/jobs/domain/ventanaDeFirma.ts:182","carril":"S4","ticket":"SCRUM-1184"},
     {"clave":"export · src/modules/maintenance/domain/maintenance.service.ts::maintenanceEurInMonth","donde":"src/modules/maintenance/domain/maintenance.service.ts:552","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/quoteRequests/domain/attachment.service.ts::listQuoteRequestAttachments","donde":"src/modules/quoteRequests/domain/attachment.service.ts:40","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/presupuestoSello.ts::verificarEvidenciaPresupuesto","donde":"src/modules/quotes/domain/presupuestoSello.ts:261","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/revision.ts::REVISION_LA_PONE_EL_SISTEMA","donde":"src/modules/quotes/domain/revision.ts:278","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/quotes/domain/revision.ts::REVISION_NO_HEREDA","donde":"src/modules/quotes/domain/revision.ts:262","carril":"S1","ticket":"SCRUM-1185"},
@@ -181,6 +177,10 @@
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
-    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","motivo":"SCRUM-1201: BORRADA. Sustituida por distributeStageAmounts sobre resolveBillingPlan (SCRUM-27); el reparto exacto sigue probado en billingPlan.test.mjs"}
+    {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getStageAmount","motivo":"SCRUM-1201: BORRADA. Sustituida por distributeStageAmounts sobre resolveBillingPlan (SCRUM-27); el reparto exacto sigue probado en billingPlan.test.mjs"},
+    {"clave":"export · src/core/documentos/asignacionDeDocumento.ts::esDocumentoAsignable","motivo":"SCRUM-1213: BORRADA. Sin llamador desde SCRUM-597: las rutas de asignación validan el tipo de documento por su propia ruta"},
+    {"clave":"export · src/core/http/rateLimit.ts::__resetRateLimits","motivo":"SCRUM-1213: BORRADA. Declarada «solo para tests» y ningún test la usaba"},
+    {"clave":"export · src/core/utils/utils.ts::parseNumericId","motivo":"SCRUM-1213: BORRADA. Sustituida por parseToken en SCRUM-95; su test pasa a probar parseToken, que no tenía"},
+    {"clave":"export · src/modules/quoteRequests/domain/attachment.service.ts::listQuoteRequestAttachments","motivo":"SCRUM-1213: BORRADA. La galería la sirve el findMany de quoteRequests.routes.ts (con merchantId); era la copia sin llamador"}
   ]
 }
