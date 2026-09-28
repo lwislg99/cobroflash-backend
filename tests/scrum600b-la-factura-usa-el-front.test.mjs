@@ -262,16 +262,52 @@ test('SCRUM-600b · 🔴 DIVERGENCIA IMPOSIBLE: la pantalla llama a la MISMA pie
 
 const DIANA = /factura/i;
 
-test('SCRUM-600b · 🔴 en modo JUSTIFICANTE la página no dice «factura» EN NINGÚN SITIO', async () => {
-  const r = await pintarPagina('justificante', true);
-  const dicen = ranurasLegibles(r.contenedor).filter((x) => DIANA.test(x.texto));
-  assert.deepEqual(dicen, [],
-    '🔴 LA PANTALLA LE DICE «FACTURA» A QUIEN EMITE JUSTIFICANTES. Con el flag en su valor por\n'
-    + '  defecto eso es afirmarle que ha emitido un documento que NO ha emitido (reglas 7/24).\n'
-    + '  El rótulo sale de `rotulosDelDocumento`, o el bloque no se pinta. NO se reescribe a mano:\n'
-    + '  el microcopy lo firma el fundador (regla 30).\n  '
-    + dicen.map((x) => `${x.via} ${x.tag}: ${JSON.stringify(x.texto.slice(0, 90))}`).join('\n  '));
+// 🔴 SCRUM-825 D1 (28-sep-2026) · RE-APUNTADO, NO RETIRADO. Aquí estaba «en modo JUSTIFICANTE la
+// página no dice «factura» EN NINGÚN SITIO». Ese modo ya no existe (SCRUM-1027: `modoDocumentoSuelto`
+// solo devuelve 'factura' o 'no'), pero el DEFECTO que vigilaba —que la pantalla le prometa una
+// factura a quien no la va a emitir— SEGUÍA VIVO por otra vía, medido ejecutándolo: `invoices-new`
+// está en `HASH_VIEWS` y su `case` no miraba el modo, así que un merchant en `receipt` que abría
+// `#invoices-new` (enlace, recarga) veía «Nueva factura» y «Emitir factura» y se comía un 409 al pulsar.
+// Previo a D1: con los ficheros de `main` salía igual (tests/banco-scrum825/medir-pagina-por-modo.mjs).
+// El caso que se vigila ahora es ése. Se ejecuta el `case` REAL del router, extraído de `app.js`.
+
+/** Ejecuta el `case 'invoices-new'` de `app.js` con un modo dado y devuelve qué pintó. */
+function rutaInvoicesNew(documentoSuelto) {
+  const caso = (leer('public/dashboard/js/app.js').match(/case 'invoices-new':([\s\S]*?)break;/) || [])[1];
+  assert.ok(caso, '🔴 no existe el `case` de `invoices-new` en el router');
+  const pintado = [];
+  const ctx = {
+    window: { appDocumentoSuelto: documentoSuelto, rotulosDelDocumento: { tituloModal: () => 'Nueva factura', tituloListado: () => 'Facturas' } },
+    viewTitle: { textContent: '' },
+    viewContainer: {},
+    renderDocumentoSueltoView: () => pintado.push('documento-suelto'),
+    renderInvoicesView: () => pintado.push('facturas'),
+  };
+  // eslint-disable-next-line no-new-func
+  const vista = new Function(...Object.keys(ctx),
+    `let view = 'invoices-new';\nswitch (view) { case 'invoices-new':${caso}break; }\nreturn view;`)(...Object.values(ctx));
+  return { pintado, vista, titulo: ctx.viewTitle.textContent };
+}
+
+test("SCRUM-600b · 🔴 en modo 'no' (receipt) la ruta de la factura suelta NO pinta la página: lleva a Facturas", () => {
+  const r = rutaInvoicesNew('no');
+  assert.deepEqual(r.pintado, ['facturas'],
+    "🔴 CON EL MODO 'no' LA RUTA PINTA LA PÁGINA DE CREAR FACTURA. Ese merchant no puede emitir nada\n"
+    + '  (regla 24; el servidor contesta 409) y la pantalla le promete «Emitir factura». La ruta tiene\n'
+    + `  que fallar cerrado, como el botón, que ya no se pinta en 'no'.\n  pintó: ${JSON.stringify(r.pintado)}`);
+  assert.equal(r.vista, 'invoices', '🔴 el menú y el título de pestaña seguirían marcando «invoices-new»');
+  assert.doesNotMatch(r.titulo, DIANA_EMITIR, `🔴 el título dice ${JSON.stringify(r.titulo)}`);
 });
+
+test("SCRUM-600b · ✅ CONTROL: con 'factura' la MISMA ruta sí pinta la página del documento suelto", () => {
+  // Sin esto, el de arriba daría verde con una ruta que no pinta NUNCA la página.
+  const r = rutaInvoicesNew('factura');
+  assert.deepEqual(r.pintado, ['documento-suelto']);
+  assert.equal(r.vista, 'invoices-new');
+  assert.equal(r.titulo, 'Nueva factura');
+});
+
+const DIANA_EMITIR = /Nueva factura|Emitir factura/;
 
 test('SCRUM-600b · ✅ CONTROL POSITIVO: en modo FACTURA la MISMA página sí dice «factura»', async () => {
   // Sin esto, el test de arriba daría verde sobre una pantalla en blanco, sobre un banco que no
