@@ -132,7 +132,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0 0 4px">
-      El cliente ha firmado digitalmente el presupuesto.${puedeEmitirFactura ? ' Ya puedes emitir la factura.' : ''}
+      El cliente ha aceptado el presupuesto.${puedeEmitirFactura ? ' Ya puedes emitir la factura.' : ''}
     </p>
     <p style="color:#94a3b8;font-size:12px;margin:0">
       Para desactivarlo ve a <strong>YaQu → Configuración → Notificaciones</strong>.
