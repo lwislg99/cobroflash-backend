@@ -268,12 +268,6 @@ export const AGREGADO = 'AGREGADO';
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
 export const USO = new Map([
-  // ── NUMERA — ajeno, carril J1, SCRUM-1168 (reportado, no tocado) ──────────────────────────────
-  ['src/app.ts::GET /admin/me', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/app.ts::POST /admin/onboarding/serie/previa', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/app.ts::POST /admin/onboarding/serie', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/modules/system/merchantAdmin.ts::updateMerchantProfile', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-
   // ── GUARDA — carril S1, módulo apagado (MAINTENANCE_ENABLED), NO TOCAR (reportado en 1093g) ────
   ['src/modules/maintenance/domain/maintenance.service.ts::addMonths', { uso: GUARDA, motivo: 'setMonth para nextDueAt, módulo apagado — NO TOCAR (SCRUM-1093g)', ref: 'SCRUM-1093' }],
 
@@ -325,11 +319,20 @@ export const USO = new Map([
  *     — SCRUM-1093f, `f0ff43df`. Mismo patrón.
  *   · `src/modules/jobs/app/routes/partes.routes.ts::POST /admin/partes`
  *     — SCRUM-1093g, `5cb43c1c`. Mismo patrón.
+ *   · `src/app.ts::GET /admin/me`, `::POST /admin/onboarding/serie`, `::POST /admin/onboarding/serie/previa`
+ *     y `src/modules/system/merchantAdmin.ts::updateMerchantProfile` — SCRUM-1168. Las puertas de la
+ *     serie de facturas: el año sale de `anioDeLaSerie(merchant)` (`core/validation/fiscalInput.ts`),
+ *     la misma expresión que `allocateInvoiceNumber`, comparada contra el emisor real en
+ *     `tests/scrum1168-anio-serie-zona-merchant.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/quotes/domain/quoteNumber.service.ts::allocateQuoteNumber',
   'src/modules/jobs/domain/albaranNumber.service.ts::allocateAlbaranNumber',
   'src/modules/jobs/app/routes/partes.routes.ts::POST /admin/partes',
+  'src/app.ts::GET /admin/me',
+  'src/app.ts::POST /admin/onboarding/serie/previa',
+  'src/app.ts::POST /admin/onboarding/serie',
+  'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que

@@ -85,31 +85,6 @@ export function getBillingPlan(
 }
 
 /**
- * Devuelve el siguiente tramo de facturación que toca generar
- * en función de:
- *  - paymentTerms
- *  - número de facturas ya existentes ligadas al presupuesto.
- *
- * Si ya no queda nada por facturar, devuelve null.
- *
- * Esto se usa actualmente en:
- *  - POST /admin/quotes/:id/invoice
- *  - POST /quote/:id/decision
- */
-export function getNextBillingStage(
-  paymentTerms: PaymentTermsCode,
-  existingInvoicesCount: number
-): BillingStage | null {
-  const plan = getBillingPlan(paymentTerms);
-
-  if (existingInvoicesCount >= plan.length) {
-    return null;
-  }
-
-  return plan[existingInvoicesCount];
-}
-
-/**
  * SCRUM-32: reparto EXACTO de un total entre los tramos de un plan.
  * Invariante (dinero): se trabaja en CÉNTIMOS ENTEROS; los tramos 0..n-2 se redondean
  * por su %, y el ÚLTIMO tramo absorbe el resto (`totalCents − Σ anteriores`). Así la
@@ -130,19 +105,6 @@ export function distributeStageAmounts(total: number | string | { toString(): st
   }
   cents.push(totalCents - acc); // el último tramo = el resto exacto
   return cents.map((c) => c / 100);
-}
-
-/**
- * SCRUM-32: importe EXACTO del tramo `stageIndex` para unas paymentTerms + total.
- * Construye el plan (mismos % que `getBillingPlan`) y delega en `distributeStageAmounts`.
- */
-export function getStageAmount(
-  total: number | string | { toString(): string }, // acepta Prisma.Decimal (se convierte con Number)
-  paymentTerms: PaymentTermsCode,
-  stageIndex: number
-): number {
-  const amounts = distributeStageAmounts(total, getBillingPlan(paymentTerms));
-  return amounts[stageIndex] ?? 0;
 }
 
 /**
