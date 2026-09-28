@@ -595,7 +595,7 @@
     var conInventado = !!(inventado && inventado[linea.descripcion]);
     return '' +
       '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
-      ' style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
+      ' style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
       '<input type="number" step="any" min="0" data-propuesta-unds="1" ' +
       'value="' + (sinCantidad ? '' : esc(linea.unds)) + '" ' +
       'aria-label="' + esc(TEXTOS.unds) + '" style="width:72px">' +
@@ -618,7 +618,48 @@
       (conInventado
         ? '<em data-dato-inventado="1">' + esc(avisos.datosRetirados) + '</em>'
         : '') +
+      (bloque === 'sinBloque' ? pintarColocar(indice) : '') +
       '</li>';
+  }
+
+  /**
+   * 🔴 SCRUM-1230 · LO QUE LA MÁQUINA NO SUPO COLOCAR, LO COLOCA EL TÉCNICO — AQUÍ, EN SU LÍNEA.
+   *
+   * El grupo se rotula «Sin colocar — elige mano de obra o materiales», y hasta hoy la línea no
+   * tenía con qué elegir: `lineasConfirmadas` la descartaba al confirmar y lo dictado se perdía sin
+   * aviso. Son las mismas fichas del tipo de intervención (`.parte-tipo-ficha`, 48 px, ya con su CSS)
+   * y los mismos dos rótulos de los bloques: ni un texto ni una clase nuevos.
+   */
+  function pintarColocar(indice) {
+    return (
+      '<div class="parte-tipo" role="radiogroup" data-colocar-linea="' + indice + '" style="flex-basis:100%;margin:0">' +
+      BLOQUES.map(function (b) {
+        return (
+          '<label class="parte-tipo-ficha">' +
+          '<input type="radio" name="parte-colocar-' + indice + '" value="' + esc(b) + '" data-colocar="1">' +
+          esc(ETIQUETA_BLOQUE[b]) + '</label>'
+        );
+      }).join('') +
+      '</div>'
+    );
+  }
+
+  /** El bloque que el técnico eligió para una línea «Sin colocar», o null si aún no eligió. */
+  function bloqueElegido(fila) {
+    var opciones = fila.querySelectorAll ? fila.querySelectorAll('[data-colocar]') : [];
+    for (var i = 0; i < opciones.length; i++) {
+      if (opciones[i].checked && BLOQUES.indexOf(opciones[i].value) !== -1) return opciones[i].value;
+    }
+    return null;
+  }
+
+  /** Cuántas líneas «Sin colocar» siguen sin bloque elegido. Con alguna, no se confirma. */
+  function lineasSinColocar(caja) {
+    if (!caja || !caja.querySelectorAll) return 0;
+    var filas = caja.querySelectorAll('[data-propuesta="1"][data-bloque="sinBloque"]');
+    var n = 0;
+    Array.prototype.forEach.call(filas, function (fila) { if (!bloqueElegido(fila)) n += 1; });
+    return n;
   }
 
   /**
@@ -685,8 +726,11 @@
       var descripcion = (fila.querySelector('span') || {}).textContent || '';
       var unds = Number(campoUnds && campoUnds.value);
       var bloque = fila.getAttribute('data-bloque');
+      // SCRUM-1230 · la línea «Sin colocar» entra en el bloque que el técnico eligió en ella.
+      if (bloque === 'sinBloque') bloque = bloqueElegido(fila) || bloque;
       if (!isFinite(unds) || unds <= 0) { sinCantidad += 1; return; }
-      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra.
+      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra. Y no
+      // se llega aquí en silencio: con una sin colocar, confirmar está bloqueado (`lineasSinColocar`).
       if (BLOQUES.indexOf(bloque) === -1) { sinCantidad += 1; return; }
       lineas.push({ bloque: bloque, unds: unds, descripcion: descripcion });
     });
@@ -911,6 +955,9 @@
     if (typeof pedir !== 'function') return false;
 
     var caja = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    // SCRUM-1230 · con una línea «Sin colocar» sin decidir NO se guarda: el `PATCH` la dejaría
+    // fuera y lo dictado se perdería. El botón ya está bloqueado; esto es el respaldo.
+    if (lineasSinColocar(caja) > 0) return false;
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
@@ -1282,6 +1329,15 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
+          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
+          var caja = contenedor.querySelector('[data-dictado-propuesta]');
+          var sincronizar = function () { confirmar.disabled = lineasSinColocar(caja) > 0; };
+          var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
+          Array.prototype.forEach.call(fichas, function (f) {
+            if (f.addEventListener) f.addEventListener('change', sincronizar);
+          });
+          sincronizar();
         }
       });
     }
