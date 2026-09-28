@@ -137,10 +137,31 @@ export function clasificarSentencia(sqlDesnudo) {
 
   // ── Formas destructivas, nombradas una a una ──────────────────────────────
   if (/^DROP\b/.test(t)) return { veredicto: RECHAZADA, forma: 'DROP', motivo: 'DROP: destruye un objeto y sus datos' };
+  // SCRUM-1223 · RECHAZADAS igual, pero con un motivo VERDADERO. `DROP DEFAULT` y `DROP NOT NULL` no
+  // borran datos, y decir «destruye datos» manda a la persona a arreglar lo que no es. Sólo cuando
+  // TODAS las acciones del ALTER son de estas dos formas: si va algo más, manda el motivo de lo otro.
+  if (/^ALTER\s+TABLE\b/.test(t) && PALABRA('DROP').test(t)) {
+    const acciones = partirAcciones(t.replace(/^ALTER\s+TABLE\s+(IF\s+EXISTS\s+)?[A-Z0-9_."]+\s*/, ''));
+    const cual = (a) => (/^ALTER\s+(COLUMN\s+)?["A-Z0-9_]+\s+DROP\s+DEFAULT$/.test(a) ? 'DEFAULT'
+      : /^ALTER\s+(COLUMN\s+)?["A-Z0-9_]+\s+DROP\s+NOT\s+NULL$/.test(a) ? 'NOT NULL' : null);
+    if (acciones.length && acciones.every(cual)) {
+      const tipos = [...new Set(acciones.map(cual))];
+      return {
+        veredicto: RECHAZADA,
+        forma: tipos.map((x) => `ALTER COLUMN … DROP ${x}`).join(' + '),
+        motivo: (tipos.includes('NOT NULL')
+          ? 'quita una restricción NOT NULL: no borra datos, pero deja entrar NULL donde antes no podía'
+          : 'quita el valor por defecto de una columna: no borra datos, cambia qué reciben las filas NUEVAS (SCRUM-797)')
+          + '. Esta lista no la admite; se aplica fuera de ella, con su decisión',
+      };
+    }
+  }
   if (PALABRA('DROP').test(t)) return { veredicto: RECHAZADA, forma: 'DROP', motivo: 'contiene DROP (p. ej. `ALTER TABLE … DROP COLUMN`): destruye datos' };
   if (PALABRA('RENAME').test(t)) return { veredicto: RECHAZADA, forma: 'RENAME', motivo: 'RENAME: el código que use el nombre viejo deja de funcionar' };
   if (/^TRUNCATE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'TRUNCATE', motivo: 'TRUNCATE: vacía la tabla' };
   if (/^DELETE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'DELETE', motivo: 'DELETE: borra filas' };
+  // SCRUM-1223 · antes salía como «DESCONOCIDA», y sabemos perfectamente lo que hace.
+  if (/^UPDATE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'UPDATE', motivo: 'UPDATE: modifica filas que ya existen. Esta lista sólo admite cambios de esquema aditivos' };
   // ALTER COLUMN … TYPE (cambiar el tipo de una columna existente) — distinto de ALTER TYPE de un enum.
   // ⚠️ El identificador puede venir ENTRECOMILLADO: por `clasificarFichero` llega ya desnudo (sin
   // comillas), pero `clasificarSentencia` es pública y se la puede llamar con el SQL crudo. Sin
