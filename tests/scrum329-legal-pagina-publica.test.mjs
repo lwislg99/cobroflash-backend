@@ -466,7 +466,9 @@ const ESTADO_DECLARADO = {
   // Art. 13 RGPD — información en el formulario que recoge datos (registro).
   infoRgpdEnRegistro: false,
   // Terceros que reciben la IP del visitante sin que medie consentimiento.
-  sinTercerosEnLaLanding: false,
+  // SCRUM-1234 (28-sep-2026) · MEJORA: pasa a `true`. La fuente Inter se sirve desde /fonts/ y la
+  // landing ya no pide nada a Google Fonts (el único tercero que esta señal medía).
+  sinTercerosEnLaLanding: true,
 };
 
 function medirObligaciones() {
