@@ -1,6 +1,7 @@
 # SCRUM-1196 · Censo de terceros que reciben datos del CLIENTE FINAL: medido sobre el HTML servido
 
 **Fecha:** 28-sep-2026 · **Carril:** legal / privacidad · **Puesto:** J4 (jv-j4)
+**Skill UI:** no cargada · J4 no toca `public/`: lo mide (HTML servido) y propone texto legal sin firmar; quien lo construya (J3) la carga (campo añadido en SCRUM-1196b, cuando `scrum811c` lo pidió por mencionar `public/`)
 **Medido contra:** `origin/main` = `c57f745d0f9f8424abc90e8a591d10fd81a00cad` · 2026-09-28T15:08:01Z (capturas hechas sobre `a59dc1e6`; entre los dos solo cambian 3 ficheros de `public/dashboard/js/`, que ve el profesional y no el cliente final, y ninguno añade una URL)
 
 ## Encargo
@@ -333,3 +334,123 @@ Nueva medición, 28-sep 16:08Z:
   está medido.
 - Que el backend ya **envíe** desde `yaqu.app` depende de `EMAIL_FROM` (SCRUM-1115). Esto solo mide
   que el dominio está verificado.
+
+## SCRUM-1196b · Propuesta de política de privacidad: todos los terceros en un solo texto
+
+**Medido contra:** `origin/main` = `0afa87cd95645317226f59bc379edae59a7bea44` · 2026-09-28T18:36:58Z (hora de GitHub; la política servida se bajó a las 18:34:38 GMT)
+
+**Carril:** J4 (jv-j4). **Estado del texto: PROPUESTO, SIN FIRMAR.** Regla 39: lo firma el fundador.
+Aquí no se toca `public/` ni `src/`, y nada de esto se publica. Cuando esté firmado, lo construye J3.
+
+**Por qué va en 1196b y no en 1154.** SCRUM-1154 pide solo el §5 de la IA (Google). Lo que queda
+abierto de 1196 es el texto de TODOS los terceros: Cloudflare (proxy, NEL y correo), Google, Anthropic
+y el logo. Son cuatro parches sobre la misma lista del §5, y el encargo pide uno. Esta propuesta
+**incluye** la parte de 1154 (la fila de Google). Si se firma, 1154 queda cubierto por el mismo PR de
+J3 y no hace falta un texto aparte.
+
+### 1. Lo que dice la política publicada HOY, medido en producción
+
+`curl https://yaqu.app/privacidad.html` → `200`, 9.394 B, sha256[16] `36a987715e61f891`.
+`origin/main:public/privacidad.html` → 8.917 B, sha256[16] `1b62f11bb6244042`.
+
+**Difieren, y la diferencia NO es de texto: la pone Cloudflare al servir.**
+- Tres `mailto:hola@yaqu.app` (§1, §7 y §10) salen reescritos a `/cdn-cgi/l/email-protection#…`. En
+  el HTML, la dirección se ve como `[email protected]`.
+- Se inyecta `<script … src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js">`.
+- Aparte de esas 4 líneas, el texto es idéntico (diff de 17 líneas en
+  `evidencias/scrum1196/privacidad-main-vs-servida.diff`). La copia servida está en
+  `evidencias/scrum1196/privacidad-servida-2026-09-28.html`.
+- Dos descargas seguidas dan hashes distintos, porque la ofuscación cambia en cada respuesta. **El
+  hash de la página servida no sirve de ancla.**
+
+🔴 **Hallazgo legal aparte del texto.** La dirección para ejercer los derechos (§7) y la de contacto
+(§1 y §10) **solo se ven si el navegador ejecuta JavaScript**. Sin JS, o en un lector que no lo
+ejecute, se lee `[email protected]`. Esto se arregla en el panel de Cloudflare (la ofuscación de
+correos), **no** en el texto. Es del fundador, igual que el NEL: aquí solo se declara.
+
+**Ya no se carga Google Fonts.** Hoy no hay ningún host de Google en `privacidad.html`, ni en la raíz,
+ni en `/pay/bank/<inventado>`, ni en `/cliente/<inventado>`. Control positivo: el mismo extractor ve
+`https://yaqu.app`, `https://schema.org` y `https://www.aepd.es`. Es SCRUM-1234, mergeado en #1908.
+**Por eso Google Fonts no entra en la propuesta.** Esto lo he medido yo en esas 4 URLs, no en las 16
+superficies.
+
+### 2. Los terceros, uno por fila
+
+Leído en `origin/main` @ `0afa87cd`: `package.json` (SDKs), URLs de `src/` y llamadas a la IA. En
+producción: cabeceras y DNS.
+
+| Tercero | Qué dato del cliente final recibe | Por qué | ¿Nombrado hoy? |
+|---|---|---|---|
+| **Cloudflare, proxy** | Todo el tráfico de yaqu.app: IP, navegador y la URL completa, incluidos los tokens de `/pay/…`, `/cliente/…`, `/recibo/…` y `/albaran/…`. Además reescribe el HTML (§1) | `Server: cloudflare` y `CF-RAY …-MAD` en todas las respuestas | **NO** |
+| **Cloudflare, NEL** | Si una petición a yaqu.app falla, **el propio navegador** manda un informe a `a.nel.cloudflare.com` con la URL (sin el fragmento), el `referrer`, la IP del servidor, el método y el código de estado. Si el fallo es de DNS o de conexión, se quitan la ruta y la query; si es de la aplicación (un 5xx, por ejemplo), **la ruta con el token va dentro**. Dura 7 días | Cabeceras `Nel`/`Report-To` medidas hoy. Norma W3C *Network Error Logging* bajada con curl (sha256[16] `21bb87666c969f00`): «Clear url's fragment. If report body's phase property is dns or connection: Clear url's path and query.» | **NO** |
+| **Cloudflare, correo entrante** | Los correos que escribe cualquiera a `hola@yaqu.app`, **incluidas las solicitudes de derechos del §7** | MX de `yaqu.app` = `route1/2/3.mx.cloudflare.net` (DoH, 28-sep). Es Cloudflare Email Routing | **NO** |
+| **Google (Gemini)** | Al redactar el mensaje del presupuesto: **el nombre del cliente final**, el concepto y el total (`generateQuoteMessage`, `ai.routes.ts:191`). La descripción del trabajo y el dictado del parte (texto libre que puede llevar datos del cliente) | Proveedor por defecto de `aiComplete` (`ai.service.ts:39`); en exclusiva para leer tickets de gasto (`expenses.routes.ts:238`, sin flag) | **NO** (SCRUM-1154) |
+| **Anthropic (Claude)** | Lo mismo que Google, solo si Gemini no está configurado | Respaldo vivo: `anthropic.messages.create` (`ai.service.ts:43`) | Sí, pero **como único proveedor de IA**, y eso ya no es verdad |
+| **Logo por URL** (el host lo elige el profesional) | IP y navegador, en 6 superficies. El token **no** va: `Referrer-Policy: strict-origin-when-cross-origin` | `schemas.ts:438-441`: la rama `z.string().url()` **sigue en main** | **NO**, y no se puede nombrar |
+| Meta (WhatsApp) | Teléfono y contenido del mensaje | `graph.facebook.com` | Sí (§4 y §5) |
+| Stripe · Mercado Pago | Datos de pago (redirección) | SDK `stripe`; `api.mercadopago.com` | Sí |
+| Resend | Correo del cliente final, factura en PDF y presupuesto | `api.resend.com` | Sí |
+| Railway | Todo (alojamiento y base de datos) | `x-railway-edge` | Sí |
+
+**Censo sin aparición:** ninguna analítica ni monitorización externa. Se buscaron `sentry`, `posthog`,
+`mixpanel`, `segment`, `datadog`, `logtail`, `twilio`, `openai`, `cloudinary`, `amazonaws`,
+`plausible`, `hotjar`, `gtag` y `googletagmanager` en `src/` y `public/`: solo salen falsos positivos
+de CSS (`.segmented`). Dependencias de terceros en `package.json`: `@anthropic-ai/sdk`, `stripe` y
+`nodemailer` (solo en desarrollo o con `SMTP_URL`; en producción va Resend).
+
+**Fuera a propósito:** la AEAT. Mencionarla sería un claim fiscal (regla 7), y el envío no está
+activo antes de SIF-1.
+
+### 3. El texto propuesto (literales para firmar)
+
+Todos van en `public/privacidad.html`. **Se localizan por contenido, no por número de línea:** la
+fila de Anthropic era la `:81` en SCRUM-950 y hoy es la `:79`, porque SCRUM-1234 la movió.
+
+| # | Dónde | Acción | Literal propuesto |
+|---|---|---|---|
+| **L1** | §5, `<li>` que empieza por `<strong>Anthropic</strong>` | **sustituye** esa fila por L1 + L2 | `<li><strong>Google (Gemini)</strong> — asistencia de IA para redactar presupuestos, partes de trabajo y el mensaje que acompaña a un presupuesto (puede recibir el nombre de tu cliente y la descripción del trabajo), y para leer el texto de las fotos de tickets de gasto que subes; es el proveedor de IA por defecto (transferencia internacional).</li>` |
+| **L2** | §5, justo después de L1 | nueva | `<li><strong>Anthropic (Claude)</strong> — la misma asistencia de IA para presupuestos, partes y mensajes, solo como proveedor de respaldo si Google no está disponible (transferencia internacional).</li>` |
+| **L3** | §5, después de la fila de Railway | nueva | `<li><strong>Cloudflare</strong> — red de entrega y seguridad por la que pasa todo el tráfico de yaqu.app, incluidas las páginas de presupuesto, firma y pago que abren tus clientes (dirección IP, navegador y dirección de la página); también gestiona el correo que se recibe en las direcciones @yaqu.app (transferencia internacional).</li>` |
+| **L4** | §5, justo después de L3. **Solo si el NEL sigue encendido** | nueva | `<li>Si una página de yaqu.app no carga, tu navegador puede enviar directamente a Cloudflare, durante los 7 días siguientes a tu última visita, un informe técnico del error (la dirección de la página, el tipo de error y la dirección del servidor).</li>` |
+| **L5** | §5, al final de la lista. **Solo si se publica ANTES de que SCRUM-1231 esté en main** | nueva, **provisional** | `<li>Si un profesional configura su logo como un enlace a una imagen alojada fuera de YaQu, al abrir sus presupuestos y páginas de pago tu navegador descarga esa imagen del servidor que él haya elegido, que recibe tu dirección IP y tu navegador.</li>` |
+| **L6** | cabecera, `Última actualización: 23 de julio de 2026` | sustituye la fecha | `Última actualización: <día> de <mes> de 2026` (el día en que J3 lo publique; no se inventa aquí) |
+
+**Diferencias con el literal 16198 de SCRUM-950, y por qué:**
+1. **Google recibe también el nombre del cliente final.** La llamada es `generateQuoteMessage`
+   (`customerName`) y hace falta decirlo. Añado además partes de trabajo, porque `suggestLineasDeParte`
+   y `suggestAlbaranLines` también pasan por `aiComplete`.
+2. **Retiro «sin uso de tus datos para entrenar modelos» de Anthropic.** Estaba en el texto publicado,
+   pero nunca lo he medido contra las condiciones de Anthropic. Una afirmación que no puedo sostener no
+   la propongo. Si el fundador la quiere, se mide antes (ver §4).
+3. **Retiro «desde el 6-jul-2026».** Una fecha interna no le sirve al lector y caduca.
+4. **Para Google no afirmo nada de entrenamiento.** Es lo que avisaba el comentario 17317 de 1154.
+
+**Recomendación:** publicar **después** de SCRUM-1231 y sin L5. Un texto que tiene que decir «un
+servidor que no sabemos cuál es» es justo lo que la decisión del fundador de 1231 quiso quitar.
+
+### 4. SIN DETERMINAR (no lo puedo sostener, y lo digo)
+
+| Qué | Por qué no se sabe desde aquí | Quién lo mira |
+|---|---|---|
+| **¿Se apaga el NEL?** Decide si va L4 | Es un ajuste del panel de Cloudflare, no del código | **Fundador** (panel). No es mío |
+| **¿Se quita la ofuscación de correos?** | Lo mismo: panel de Cloudflare | **Fundador** (panel) |
+| **¿El proyecto de Google de producción tiene facturación activa?** | Las condiciones de Gemini solo permiten servicios de pago con usuarios del EEE (comentario 17317). Si no la tiene, **ningún texto lo arregla**, y L1 describiría un uso que las condiciones no permiten | Quien tenga la consola de Google (SCRUM-1154) |
+| **Seguimiento de clics y aperturas de Resend** | Luis informa de que no hay subdominio de seguimiento, y sin él la fuente dice que no se aplica. Es su informe desde el panel, no una medición mía. Si alguien lo activa, habría que añadirlo | Quien tenga el panel de Resend. No es mío |
+| **¿A qué buzón reenvía Cloudflare `hola@yaqu.app`?** | Email Routing reenvía a un destino que se configura en el panel. Ese destino es **otro encargado** que L3 no puede nombrar | Fundador (panel) |
+| **¿En qué región están Railway y la base de datos?** | `x-railway-edge: bcn1` es el borde, no la región del servicio. De eso depende si la fila de Railway tiene que decir «transferencia internacional», y hoy no lo dice | Quien tenga el panel de Railway |
+| **«Sin uso para entrenar» (Anthropic)** | No medido contra sus condiciones | J4, si el fundador quiere mantener la frase |
+| **Garantía de cada transferencia internacional** (cláusulas tipo, marco UE-EE. UU.) | La política solo la da para Meta; para el resto no la he medido | Asesor (`docs/legal/PREGUNTAS_ASESOR.md`) |
+
+### 5. Hallazgo de otro carril (se reporta, no se arregla)
+
+`public/dashboard/js/aiQuoteAssistant.js:190` le dice al profesional «Claude redactará un mensaje
+personalizado…». Por defecto lo redacta Gemini (`ai.service.ts:39`). Es microcopy de producto (J3,
+con firma), no texto legal: aquí solo queda anotado.
+
+### Suelo
+
+- La tabla sale del código de `main` y de lo que sirve producción. **No se ejecutó ningún navegador.**
+  Lo que un script pida en tiempo de ejecución queda con el mismo suelo que el censo de 1196.
+- Google Fonts: ausencia comprobada en 4 URLs servidas, no en las 16 superficies (eso lo midió 1234).
+- El resto de la política (§1–§4 y §6–§10) no se ha re-auditado, salvo el hallazgo de la ofuscación
+  de correos del §1.

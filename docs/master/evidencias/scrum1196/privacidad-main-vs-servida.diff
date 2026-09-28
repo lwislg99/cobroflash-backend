@@ -1,0 +1,17 @@
+# diff origin/main:public/privacidad.html (0afa87cd) vs https://yaqu.app/privacidad.html (28-sep-2026 18:34:38 GMT)
+48c48
+<     <p><strong>YaQu es responsable del tratamiento</strong> de los datos de las personas profesionales que usan la plataforma (nombre, email, teléfono, NIF y, en su caso, IBAN). Para los datos de los <strong>clientes finales</strong> de cada profesional (las personas a las que él presupuesta y cobra), <strong>YaQu actúa como encargado del tratamiento</strong>: el responsable de esos datos es el propio profesional, que decide para qué los usa. El responsable del tratamiento es el titular de YaQu. Para cualquier consulta sobre privacidad puedes escribirnos a <a href="mailto:hola@yaqu.app">hola@yaqu.app</a>.</p>
+---
+>     <p><strong>YaQu es responsable del tratamiento</strong> de los datos de las personas profesionales que usan la plataforma (nombre, email, teléfono, NIF y, en su caso, IBAN). Para los datos de los <strong>clientes finales</strong> de cada profesional (las personas a las que él presupuesta y cobra), <strong>YaQu actúa como encargado del tratamiento</strong>: el responsable de esos datos es el propio profesional, que decide para qué los usa. El responsable del tratamiento es el titular de YaQu. Para cualquier consulta sobre privacidad puedes escribirnos a <a href="/cdn-cgi/l/email-protection#d4bcbbb8b594adb5a5a1fab5a4a4"><span class="__cf_email__" data-cfemail="731b1c1f12330a1202065d120303">[email&#160;protected]</span></a>.</p>
+87c87
+<     <p>Tienes derecho a acceder, rectificar, eliminar, limitar u oponerte al tratamiento de tus datos, así como a la portabilidad. Para ejercerlos escríbenos a <a href="mailto:hola@yaqu.app">hola@yaqu.app</a>. Si consideras que no hemos atendido tu solicitud correctamente, puedes reclamar ante la <strong>Agencia Española de Protección de Datos (AEPD)</strong>, <a href="https://www.aepd.es">www.aepd.es</a>.</p>
+---
+>     <p>Tienes derecho a acceder, rectificar, eliminar, limitar u oponerte al tratamiento de tus datos, así como a la portabilidad. Para ejercerlos escríbenos a <a href="/cdn-cgi/l/email-protection#d1b9bebdb091a8b0a0a4ffb0a1a1"><span class="__cf_email__" data-cfemail="127a7d7e73526b7363673c736262">[email&#160;protected]</span></a>. Si consideras que no hemos atendido tu solicitud correctamente, puedes reclamar ante la <strong>Agencia Española de Protección de Datos (AEPD)</strong>, <a href="https://www.aepd.es">www.aepd.es</a>.</p>
+97c97
+<     <p>Para cualquier duda sobre privacidad: <a href="mailto:hola@yaqu.app">hola@yaqu.app</a>.</p>
+---
+>     <p>Para cualquier duda sobre privacidad: <a href="/cdn-cgi/l/email-protection#056d6a6964457c6474702b647575"><span class="__cf_email__" data-cfemail="abc3c4c7caebd2cadade85cadbdb">[email&#160;protected]</span></a>.</p>
+102c102
+< </body>
+---
+> <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
