@@ -87,3 +87,25 @@ recorren las tres ramas del modo; se hará en esta misma rama.
 
 La fila del modo vive en «Cumplimiento», que no es formas de cobro ni datos fiscales: la trato como
 «lo general» de `settingsView.js`. Si el orquestador la asigna a J1 (fiscal), se entrega a J1.
+
+## SCRUM-1220b · Opción A aplicada con la firma delegada
+
+**Medido contra:** `origin/main` = `2b4db6a2948ba062909c38f3cac7e495c2b1e8cc` · 2026-09-28T16:45:12Z (reloj de la máquina, UTC; main no toca ninguno de los ficheros de esta rama desde la base)
+
+Firma: **SCRUM-1220 comentario 17385**, del orquestador por delegación del fundador, leída en Jira
+antes de aplicarla. Ficha: `docs/microcopy/2026-09-28-SCRUM-1220-modo-justificante.md`.
+
+- `settingsView.js`: `TITULO_MODO_EMISION.receipt` y `DETALLE_MODO_EMISION.receipt` con los dos
+  literales firmados, más una nota que marca como historia el comentario de la redacción anterior.
+  `fiscal` y `demo` no se tocan.
+- `tests/scrum298-modo-visible.test.mjs`: en `APROBADOS` salen las dos frases retiradas y entran las
+  dos nuevas, cada una con su procedencia (comentario 17385 y el `throw` que la sostiene). Es la vía
+  que el propio guard dicta; no se relaja nada.
+- Primero en rojo: con la vista cambiada y `APROBADOS` sin tocar, el guard cae con
+  «HAY MICROCOPY ESCRITA SIN APROBAR … ["Aún no se emiten documentos","Por ahora, YaQu no genera
+  facturas ni justificantes desde tu cuenta."]» (11 pass, 1 fail). Con `APROBADOS` al día: 12 de 12.
+- El banco, corrido otra vez: en `receipt`, «Cumplimiento» pinta «Aún no se emiten documentos» y
+  «Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.». En `fiscal` sigue saliendo
+  «Se emiten facturas».
+- Sin cargar `yaqu-premium-ui`: el cambio son dos cadenas de texto en una fila que ya existe; no
+  cambia ni un token, ni la maquetación, ni un componente.
