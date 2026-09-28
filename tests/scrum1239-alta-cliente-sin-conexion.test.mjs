@@ -91,7 +91,7 @@ function noVuelve(opts) {
 
 test('SCRUM-1239 · los tres literales constan FIRMADOS en docs/microcopy', () => {
   for (const t of [SIN_CONEXION, SIN_CONFIRMAR, FALLO_SERVIDOR]) {
-    assert.ok(constaAprobado(t), `🔴 «${t}» no consta aprobado: no se pinta un texto sin firma (regla 39)`);
+    assert.ok(constaAprobado(t).length > 0, `🔴 «${t}» no consta aprobado: no se pinta un texto sin firma (regla 39)`);
   }
 });
 
