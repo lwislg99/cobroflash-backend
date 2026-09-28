@@ -8,7 +8,7 @@ import {
 import {
   allocateInvoiceNumber,
   isReceiptNumber,
-  makeReceiptNumber,
+  RECEIPT_NUMBER_PREFIX,
 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 
 // ── V0-0: modo de emisión ────────────────────────────────────────────────────
@@ -43,12 +43,11 @@ test('V0-0: fuera de ES no cambia nada → fiscal (su flujo actual)', () => {
 
 // ── Números de justificante ──────────────────────────────────────────────────
 
-test('makeReceiptNumber: formato J-YYYYMMDD-XXXX, reconocido por isReceiptNumber', () => {
-  // SCRUM-735: `now` se interpreta en la zona EXPLÍCITA (por defecto UTC), ya no en la del
-  // reloj del proceso — así que el instante se construye en UTC para que el test no dependa
-  // de en qué zona corra la máquina que lo ejecuta.
-  const n = makeReceiptNumber(new Date(Date.UTC(2026, 5, 11)));
-  assert.match(n, /^J-20260611-[A-Z0-9]{4}$/);
+test('isReceiptNumber: reconoce los justificantes J- YA EMITIDOS (el generador se retiró, SCRUM-825)', () => {
+  // SCRUM-825 (firma del fundador, comentario 17446): ya no se generan referencias J-, pero las
+  // emitidas siguen en la base y el reconocedor se queda (regla 29). Se compone con el prefijo del
+  // árbol para que el caso siga el día que el prefijo cambie.
+  const n = `${RECEIPT_NUMBER_PREFIX}20260611-AB12`;
   assert.equal(isReceiptNumber(n), true);
   assert.equal(isReceiptNumber('2026-CF-001'), false);
   assert.equal(isReceiptNumber(null), false);

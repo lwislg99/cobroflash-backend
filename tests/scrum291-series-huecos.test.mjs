@@ -332,8 +332,20 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 // el formato `F<AA><NNNN>` NO SE TOCAN. `nextInvoiceNumber` no entra en la serie F (SCRUM-780 intacto,
 // y lo prueba `scrum1216b-numero-de-arranque`).
 //
-//   nuevo:    74d298cb83beec85cc770521162a36935c65bbc5c2db7e8f940a7717461e0fd5   (SCRUM-1216b)
-const EMISOR_SHA256 = '74d298cb83beec85cc770521162a36935c65bbc5c2db7e8f940a7717461e0fd5';
+//   anterior: 74d298cb83beec85cc770521162a36935c65bbc5c2db7e8f940a7717461e0fd5   (SCRUM-1216b)
+//
+// ── SCRUM-825 · 28-sep-2026 · FIRMA del fundador en Jira, SCRUM-825 comentario 17446: «1-Sí a las
+// 3» (D1: se retira el tipo JUST y el generador J- sin llamador; D2: el suelo de scrum1027 se da la
+// vuelta en el mismo PR). Y autorización expresa de Javier en la sesión de J1 para tocar este
+// fichero. El cambio: se BORRAN `makeReceiptNumber`, `reservarReferenciaJustificante`,
+// `ReferenciaJustificanteAgotada` e `INTENTOS_REFERENCIA_JUSTIFICANTE` —sin llamador desde
+// SCRUM-1027— y el import `ZONA_POR_DEFECTO`, que sólo usaban ellos; más tres comentarios. Ni una
+// línea de `allocateInvoiceNumber` cambia fuera de un comentario: el `pg_advisory_xact_lock`, el
+// rechazo del modo `receipt`, los contadores, la serie F y la auditoría NO SE TOCAN. SE QUEDAN
+// `isReceiptNumber` y `RECEIPT_NUMBER_PREFIX`: los J- ya emitidos los necesitan (regla 29).
+//
+//   nuevo:    4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2   (SCRUM-825)
+const EMISOR_SHA256 = '4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

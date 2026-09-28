@@ -192,7 +192,27 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // tocan este anclaje por literales distintos (`homeView.js` / `facturasRecibidasView.js`).
 // REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main 0afa87cd + la rama):
 // { flag: 17, tipo: 7, aPelo: 156 } — el flag de 1164 y el «a pelo» de 1216b, cada uno por su lado.
-const VEREDICTO_AL_MEDIR = { flag: 17, tipo: 7, aPelo: 156 };
+// 🟢 flag 17 → 20 · tipo 7 → 11 · aPelo 156 → 154 · 28-sep-2026 (SCRUM-1257) · UN ARREGLO, y aislado
+// con el propio censo: el diff de `visibles` entre `origin/main` 4fd0b309 y la rama son EXACTAMENTE
+// estas líneas (textos firmados en SCRUM-1257 comentario 17444).
+//   flag +3 · `invoicesView.js`, el vacío de Facturas: «Aquí verás tus facturas», «Cuando un cliente
+//            acepte un presupuesto, sus facturas aparecerán aquí.» y «Por ahora, YaQu no genera
+//            facturas desde tu cuenta.». Los elige `window.appModoEmision === 'receipt'`, que es
+//            justo lo que se arreglaba: antes el vacío prometía el documento a todos. (El texto viejo
+//            no estaba en el censo: no contaba ni en «a pelo».)
+//   tipo +4, aPelo −2 · «🧾 Ver justificante» (`quotesDetailView.js`) y el tooltip de la reclamación
+//            del banco (`invoiceDetailView.js`) eran «a pelo» y ahora eligen su palabra por el TIPO
+//            del documento (`tipoDeFactura` / `isReceipt`), con su pareja «factura» al lado: +2 y +2.
+// Nada de esto va a `PENDIENTES_DE_FIRMA`: está firmado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 155 · 28-sep-2026 (SCRUM-1232) · «1 factura» (`libroRegistroView.js`, `recuento`). ES COPY
+// NUEVA Y FIRMADA: el recuento decía «1 facturas» y pasa a `n === 1 ? '1 factura' : n + ' facturas'`,
+// firmado por el fundador sólo junto al filtro de justificantes del libro (SCRUM-1232, comentario
+// 17435). AISLADO: contra `origin/main` = 6112855b, la única diferencia de `public/` de la rama es
+// esa línea; el literal que ya existía (`' facturas'`) se queda y entra UNO nuevo. Es el recuento
+// fijo de un libro que sólo lista facturas: no depende de flag ni de tipo, así que «a pelo» es su
+// categoría. Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado.
+const VEREDICTO_AL_MEDIR = { flag: 20, tipo: 11, aPelo: 155 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -312,7 +332,10 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // (ver `VEREDICTO_AL_MEDIR`): antes el censo no lo veía; ahora lo ve, y llega al `innerHTML` del
 // modal por `${notaCondiciones}`, así que no puede afirmar el texto final desde el fuente. Es el
 // límite del instrumento con un literal que ANTES ni siquiera contaba, no un literal nuevo.
-const NO_LEGIBLES_AL_MEDIR = 34;
+// 28-sep-2026 · 34 → 37, MEDIDO (SCRUM-1257). Son los tres literales `flag` de arriba: llegan al
+// `innerHTML` del vacío de Facturas por `tituloVacio`/`cuerpoVacio`, así que el censo no puede afirmar
+// el texto final desde el fuente. No se duplican en línea para bajar el número: el motivo de 31→32.
+const NO_LEGIBLES_AL_MEDIR = 37;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
