@@ -97,7 +97,7 @@ async function avisoPintado(respuesta, { email = '', fijo = '', movil = '' } = {
 
 test('SCRUM-1199 · los cuatro literales constan FIRMADOS en docs/microcopy', () => {
   for (const t of [TELEFONO_CORTO, MOVIL_CORTO, EMAIL_INVALIDO, GENERICO]) {
-    assert.ok(constaAprobado(t), `🔴 «${t}» no consta aprobado: no se pinta un texto sin firma (regla 39)`);
+    assert.ok(constaAprobado(t).length > 0, `🔴 «${t}» no consta aprobado: no se pinta un texto sin firma (regla 39)`);
   }
 });
 

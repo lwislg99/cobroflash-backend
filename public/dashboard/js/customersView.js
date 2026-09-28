@@ -1706,9 +1706,24 @@ function renderCustomersView(container) {
   const AVISO_EMAIL_INVALIDO = "Revisa el email: no parece una dirección válida.";
   const AVISO_ERROR_GENERICO = "No se ha podido guardar el cliente. Revisa los datos e inténtalo de nuevo.";
 
+  // 🔴 SCRUM-1239 · CUANDO LO QUE FALLA NO SON LOS DATOS. Los tres textos que siguen, APROBADOS por
+  // el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1239 comentario 17386). Van
+  // tal cual. «Revisa los datos» era falso aquí: los datos estaban bien y lo que se cayó fue la
+  // conexión o el servidor. En ninguno se sabe si el cliente se guardó —`fetch` puede rechazar
+  // después de que llegara el POST—, por eso los tres mandan a mirar la lista antes de repetirlo:
+  // afirmar «no se guardó» fabricaría duplicados (SCRUM-1126, SCRUM-1137).
+  // Dependen de que `api.js` siga separando `sinRed` de `incierto`; si deja de hacerlo, vuelven a firma.
+  const AVISO_SIN_CONEXION = "Sin conexión. Vuelve a intentarlo cuando tengas cobertura, y mira la lista antes de crearlo otra vez.";
+  const AVISO_SIN_CONFIRMAR = "Se cortó la conexión y no sabemos si el cliente se ha guardado. Mira la lista antes de crearlo otra vez.";
+  const AVISO_FALLO_SERVIDOR = "No hemos podido completar el guardado. Inténtalo de nuevo en un rato, y mira la lista antes de crearlo otra vez.";
+
   function avisoDeGuardadoFallido(err) {
     const datos = (err && err.data) || null;
     if (err && (err.handled || (datos && datos.message))) return "Error guardando cliente: " + err.message;
+    // SCRUM-1239 · por la MARCA que pone `api.js`, nunca por el texto del error.
+    if (err && err.sinRed) return AVISO_SIN_CONEXION;
+    if (err && err.incierto) return AVISO_SIN_CONFIRMAR;
+    if (err && Number(err.status) >= 500) return AVISO_FALLO_SERVIDOR;
     if (err && err.code === "validation_error" && datos && Array.isArray(datos.details)) {
       const primero = datos.details[0] || {};
       const campo = Array.isArray(primero.path) ? primero.path[0] : null;
