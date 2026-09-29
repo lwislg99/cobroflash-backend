@@ -1,6 +1,17 @@
 # .github/workflows/vigia-atascados.yml — SCRUM-840
 #
-# QUÉ HACE: cada tres horas mira qué PR llevan atascados y lo DICE. No arregla nada.
+# QUÉ HACE: mira qué PR llevan atascados y lo DICE. No arregla nada.
+#
+# 🔴 CADA CUÁNTO CORRE DE VERDAD, medido el 29-sep-2026 (SCRUM-1270) sobre las 60 pasadas
+# programadas del 17 al 29-sep: el cron pide «cada 3 h» y GitHub lo retrasa o se lo salta. Hueco
+# mediano entre pasadas 4,9 h, máximo 9,8 h, y 43 de 59 huecos de 4 h o más. Así que un atasco
+# se avisa entre su umbral y su umbral + ~10 h: la cadencia de abajo es lo que se PIDE, no lo que
+# pasa.
+#
+# SCRUM-1270 · y el PR MUDO (sin el check obligatorio sobre su cabeza) ≥3 h se avisa DENTRO del
+# PR, diciendo si es conflicto con `main` o que no arrancó nada. Medido del 22 al 29-sep: 8
+# cabezas mudas ≥1 h, 5 ≥3 h, 4 ≥12 h; 6 de las 8 se desatascaron mezclando `main`. El issue de
+# abajo lo contaba, pero nadie lo lee.
 #
 # POR QUÉ EXISTE, medido: el #1214 estuvo horas parado por conflicto y ninguna máquina se
 # enteró — lo vio una persona mirando la lista a mano, que es el trabajo que se venía a
@@ -46,7 +57,8 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  # SCRUM-1270: comentar el aviso de PR mudo dentro del propio PR.
+  pull-requests: write
   issues: write
 
 concurrency:
@@ -228,6 +240,43 @@ jobs:
           else
             echo "- **SIN CAMBIOS A PEOR** — #$NUM reescrito en silencio, sin notificar." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # ── 3b · SCRUM-1270 · EL PR MUDO ≥3 h, AVISADO DENTRO DEL PR ──────────────────────
+      # Una vez por cabeza: si la marca ya está entre los comentarios del PR, no se repite. Si NO
+      # se pueden leer los comentarios, no se publica (repetir cada pasada sería ruido) y se DICE:
+      # no poder mirar no es «ya estaba avisado». Con el `GITHUB_TOKEN`: no despierta a nadie, y el
+      # cuerpo ya viene comprobado contra la mención por la pasada.
+      - name: Avisar DENTRO de los PR mudos (SCRUM-1270)
+        if: always() && steps.pasada.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ ! -f avisos-pr.json ]; then
+            echo "::error::La pasada no dejó avisos-pr.json: no se puede afirmar que no haya PR mudos."
+            echo "- **AVISOS-PR-AUSENTES** — la pasada no dejó la lista de PR mudos." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          TOTAL="$(node -p "String(require('./avisos-pr.json').length)")"
+          FALLOS=0
+          for I in $(seq 0 $((TOTAL - 1))); do
+            N="$(node -p "String(require('./avisos-pr.json')[$I].numero)")"
+            MARCA="$(node -p "String(require('./avisos-pr.json')[$I].marca)")"
+            node -e "require('fs').writeFileSync('aviso-pr.md', require('./avisos-pr.json')[$I].cuerpo)"
+            if ! PREVIOS="$(gh api "repos/$REPO/issues/$N/comments" --paginate -q '.[].body' 2>/dev/null)"; then
+              echo "- **NO-SE-PUDO-MIRAR** #$N — no se leyeron sus comentarios; no se avisa a ciegas." >> "$GITHUB_STEP_SUMMARY"
+              FALLOS=$((FALLOS + 1))
+              continue
+            fi
+            if printf '%s' "$PREVIOS" | grep -qF -- "$MARCA"; then
+              echo "- **YA-AVISADO** #$N — esta cabeza ya tiene su aviso." >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            gh pr comment "$N" --body-file aviso-pr.md > /dev/null
+            echo "- **PR-MUDO-AVISADO** #$N" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo "PR mudos con aviso: $TOTAL · sin poder mirar: $FALLOS"
+          [ "$FALLOS" -eq 0 ]
 
       # ── 4 · EL SUELO DEL VEREDICTO ────────────────────────────────────────────────────
       - name: Veredicto del run
