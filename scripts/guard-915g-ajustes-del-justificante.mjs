@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 /**
- * SCRUM-915g · «AJUSTES DEL DOCUMENTO» DEL JUSTIFICANTE, en «Revisar y emitir» — medido en el árbol
+ * SCRUM-915g · «AJUSTES DEL DOCUMENTO» DE LA FACTURA SUELTA, en «Revisar y emitir» — medido en el árbol
  * RENDERIZADO, después de pulsar.
+ *
+ * 🔁 REAPUNTADO AL MODO `factura` (S3, 29-sep-2026). Nació midiendo el JUSTIFICANTE, y #1943
+ * (SCRUM-825 D1, firma del fundador) retiró esa rama del panel: con `documentoSuelto: 'justificante'`
+ * `app.js` cae a 'no', el editor ya no se pinta y los 6 casos salían «no supe medir». La fila
+ * «Ajustes del documento» es del EDITOR del documento suelto, no del modo: se sigue midiendo, ahora en
+ * el único modo que se emite. El nombre del fichero y del script npm se quedan (los leen los censos
+ * de SCRUM-548 y SCRUM-522); cambia QUÉ modo se sirve, y un CONTROL nuevo lo comprueba en cada caso:
+ * si el panel no está en modo factura, el caso sale CIEGO, nunca verde.
  *
  * Guard de NAVEGADOR. Lo que vigila no se ve en el fuente: qué queda a la vista tras cada clic, y qué
  * mide un botón, sólo existen con el CSS resuelto.
@@ -51,13 +59,14 @@ const TITULO_FILA = 'Ajustes del documento';
 const RESUMEN_CERRADO = 'IVA por defecto 21 %';
 const RESUMEN_TRAS_CAMBIAR = 'IVA por defecto 10 %';
 const ROTULO_DEL_CAMPO = 'IVA por defecto (%)';
-// Lo que es de los ajustes del PRESUPUESTO y no puede colarse en la fila de un justificante.
+// Lo que es de los ajustes del PRESUPUESTO y no puede colarse en la fila de la factura suelta.
 const PROHIBIDO_EN_LA_FILA = ['IVA del presupuesto', 'Dirección de la obra', 'Datos del cliente', 'Incluir descripción', 'presupuesto'];
 
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915g', plan: 'pro', role: 'admin',
   onboardingCompleted: true, subscriptionStatus: 'active', voiceEnabled: false,
-  documentoSuelto: 'justificante',
+  // 🔁 era 'justificante' (retirado en #1943, SCRUM-825 D1): el servidor solo manda 'factura' o 'no'.
+  documentoSuelto: 'factura',
 });
 
 function arrancarServidor() {
@@ -171,6 +180,10 @@ async function llegarAlPaso(pag, etiqueta, paso) {
   await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#invoices-new`, { waitUntil: 'networkidle0' });
   const pintado = await pag.waitForSelector('.quote-line .quote-line__concept input', { timeout: 10000 }).then(() => true, () => false);
   if (!pintado) { ciegos.push(`${etiqueta} -> el editor del documento suelto no se pintó`); return false; }
+  // CONTROL DEL MODO (reapuntado tras #1943): lo que se mide es la FACTURA suelta. Si el panel no la
+  // ha adoptado, ningún caso de abajo sabe de qué habla: ciego, nunca verde.
+  const modo = await pag.evaluate(new Function('return window.appDocumentoSuelto;'));
+  if (modo !== 'factura') { ciegos.push(`${etiqueta} -> el panel no está en modo factura (appDocumentoSuelto=«${modo}»): no mido la factura suelta`); return false; }
   const conClientes = await pag.waitForFunction(
     new Function(`var s = document.querySelector('select[name="customer_id"]'); return !!s && s.querySelector('option[value="${CLIENTE.id}"]');`),
     { timeout: 10000 },
@@ -294,7 +307,7 @@ const CASOS = [
       // CONTROL: lo que se lee ES la fila abierta, con su propio rótulo. Si no lo trae, se está leyendo otra cosa.
       if (!m.textoDeLaFila || !m.textoDeLaFila.includes(ROTULO_DEL_CAMPO)) { ciegos.push(`${etiqueta} -> la fila abierta no trae su rótulo «${ROTULO_DEL_CAMPO}»: no sé qué estoy leyendo («${m.textoDeLaFila}»)`); return; }
       for (const p of PROHIBIDO_EN_LA_FILA) {
-        if (m.textoDeLaFila.toLowerCase().includes(p.toLowerCase())) hallazgos.push(`${etiqueta} -> la fila de un justificante enseña «${p}», que es del presupuesto`);
+        if (m.textoDeLaFila.toLowerCase().includes(p.toLowerCase())) hallazgos.push(`${etiqueta} -> la fila de la factura suelta enseña «${p}», que es del presupuesto`);
       }
     },
   },
@@ -341,7 +354,7 @@ async function main() {
   }
 
   const ancho = '═'.repeat(96);
-  console.log(`\n  SCRUM-915g · «AJUSTES DEL DOCUMENTO» DEL JUSTIFICANTE, EN «REVISAR Y EMITIR»`);
+  console.log(`\n  SCRUM-915g · «AJUSTES DEL DOCUMENTO» DE LA FACTURA SUELTA, EN «REVISAR Y EMITIR» (modo factura)`);
   console.log(`  POBLACIÓN: ${CASOS.length} casos, ${CASOS.length} corridos · ${CASOS.map((c) => c.titulo.split(' · ')[0]).join(' · ')}`);
   informe.forEach((l) => console.log(`   · ${l}`));
   if (hallazgos.length) {
@@ -358,7 +371,7 @@ async function main() {
     console.log(`\n${ancho}`);
     process.exit(SALIDA_HALLAZGO);
   }
-  console.log(`\n  ✔ en los ${CASOS.length} casos: el IVA por defecto del justificante vive en «${TITULO_FILA}», cerrado, dentro de`);
+  console.log(`\n  ✔ en los ${CASOS.length} casos: el IVA por defecto de la factura suelta vive en «${TITULO_FILA}», cerrado, dentro de`);
   console.log(`    «Revisar y emitir»; «Cambiar» lo abre en la página, el valor viaja al resumen y a 390 px se toca.\n`);
 }
 

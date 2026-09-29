@@ -20,7 +20,13 @@
 //          para cerrar la hoja, y «Generar presupuesto» OTRA VEZ sin tocar nada del formulario.
 //          Tiene que haber UN `POST /quote/create`, y el profesional tiene que seguir llegando a su
 //          presupuesto: la hoja vuelve a salir CON EL MISMO NÚMERO.
-//   ✅ B · JUSTIFICANTE (1280 px) — la misma doble pulsación sobre «Emitir justificante».
+//   ✅ B · FACTURA SUELTA (1280 px) — la misma doble pulsación sobre «Emitir factura».
+//          🔁 REAPUNTADO (S3, 29-sep-2026): nació sobre el JUSTIFICANTE y «Emitir justificante»;
+//          #1943 (SCRUM-825 D1, firma del fundador) retiró esa rama del panel y el caso salía «el
+//          editor no se pintó». Se mide ahora en modo 'factura', el único que emite, con el rótulo
+//          que da `rotulosDelDocumento.accionPrimaria()`; un CONTROL comprueba que el panel adoptó
+//          el modo. Lo que sigue sobre el justificante es la historia del caso, y vale igual para
+//          la factura (regla 29).
 //          Tiene que haber UN `POST /admin/invoices`. **Hoy ya sale verde**, y por eso es el control
 //          positivo: el documento suelto navega a su ficha al emitir, así que el botón no se queda
 //          armado. Si este caso saliera rojo, el que está mal es el instrumento — y si saliera
@@ -198,7 +204,7 @@ async function llegarAlUltimoPaso(pag, etiqueta, suelto) {
   await pag.evaluate(new Function('if (document.activeElement && document.activeElement.blur) document.activeElement.blur();'));
   await espera(350);
 
-  // Presupuesto: Conceptos -> Condiciones -> Revisar. Justificante: Conceptos -> Revisar.
+  // Presupuesto: Conceptos -> Condiciones -> Revisar. Documento suelto: Conceptos -> Revisar.
   await pag.evaluate(PULSAR, 'Continuar');
   await espera(300);
   if (!suelto) { await pag.evaluate(PULSAR, 'Continuar'); await espera(300); }
@@ -218,10 +224,16 @@ async function caso(navegador, { suelto, etiqueta, rotulo, cierre, contador, lim
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = suelto ? 'justificante' : 'no';
+    // 🔁 era 'justificante' (retirado en #1943, SCRUM-825 D1): el servidor solo manda 'factura' o 'no'.
+    modoSuelto = suelto ? 'factura' : 'no';
     pedidos = { presupuestos: 0, facturas: 0 };
     await pag.setViewport({ width: 1280, height: 900 });
     if (!await llegarAlUltimoPaso(pag, etiqueta, suelto)) return;
+    if (suelto) {
+      // CONTROL DEL MODO: lo que se cuenta es la FACTURA suelta. Si el panel no la adoptó, ciego.
+      const modo = await pag.evaluate(new Function('return window.appDocumentoSuelto;'));
+      if (modo !== 'factura') { ciegos.push(`${etiqueta} -> el panel no está en modo factura (appDocumentoSuelto=«${modo}»)`); return; }
+    }
 
     // ── Primer clic ──────────────────────────────────────────────────────────────────────────
     const r1 = await pag.evaluate(PULSAR, rotulo);
@@ -295,7 +307,7 @@ const CASOS = [
     cierre: 'Seguir editando', contador: 'presupuestos', limite: 1,
   },
   {
-    suelto: true, etiqueta: 'B · justificante 1280px (control positivo)', rotulo: 'Emitir justificante',
+    suelto: true, etiqueta: 'B · factura suelta 1280px (control positivo)', rotulo: 'Emitir factura',
     cierre: null, contador: 'facturas', limite: 1,
   },
   {

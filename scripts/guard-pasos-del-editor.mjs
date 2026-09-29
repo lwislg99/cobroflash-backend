@@ -41,10 +41,14 @@
 //          «+ Nuevo cliente» abre el alta sin tocar al elegido. El select sigue EN EL DOCUMENTO (el
 //          inventario lo cuenta) porque es el portador del valor.
 //
-// Documento suelto (justificante, 1280 px): TRES pasos —Cliente · Conceptos · Revisar y emitir—,
+// Documento suelto (factura, 1280 px): TRES pasos —Cliente · Conceptos · Revisar y emitir—,
 // sin Condiciones, y el IVA por defecto YA NO está en Conceptos (SCRUM-915g): vive en la fila «Ajustes
 // del documento» del último paso, cerrada por defecto. Lo que esa fila hace al pulsarla lo mide
 // `guard:ajustes-del-justificante`; aquí sólo se juzga el ANDAMIO: Conceptos no lo enseña.
+// 🔁 REAPUNTADO AL MODO `factura` (S3, 29-sep-2026): este caso medía el JUSTIFICANTE, y #1943
+// (SCRUM-825 D1, firma del fundador) retiró esa rama del panel —con 'justificante', `app.js` cae a
+// 'no' y el editor no se pinta—. El andamio de pasos es del documento suelto, no del modo: se mide en
+// el único modo que se emite. Un CONTROL comprueba que el panel adoptó 'factura'; si no, CIEGO.
 //
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 // Si el editor no se pinta o la lista de clientes no llega al selector, sale con 2 (NO SUPE MEDIR),
@@ -491,18 +495,22 @@ async function casoPresupuesto(navegador, ancho) {
 }
 
 async function casoSuelto(navegador, ancho) {
-  const etiqueta = `justificante ${ancho}px`;
+  const etiqueta = `factura suelta ${ancho}px`;
   const contexto = await navegador.createBrowserContext();
   const pag = await contexto.newPage();
   const errores = [];
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = 'justificante';
+    // 🔁 era 'justificante' (retirado en #1943, SCRUM-825 D1): el servidor solo manda 'factura' o 'no'.
+    modoSuelto = 'factura';
     await pag.setViewport({ width: ancho, height: 900 });
     await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#invoices-new`, { waitUntil: 'networkidle0' });
     const pintado = await pag.waitForSelector('.quote-line .quote-line__concept input', { timeout: 10000 }).then(() => true, () => false);
     if (!pintado) { ciegos.push(`${etiqueta} → el editor no se pintó (errores: ${errores.join(' | ') || 'ninguno'})`); return; }
+    // CONTROL DEL MODO: lo que se juzga abajo es la FACTURA suelta. Si el panel no la adoptó, ciego.
+    const modo = await pag.evaluate(new Function('return window.appDocumentoSuelto;'));
+    if (modo !== 'factura') { ciegos.push(`${etiqueta} → el panel no está en modo factura (appDocumentoSuelto=«${modo}»)`); return; }
     await espera(400);
     let m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);
     if (m.error) { ciegos.push(`${etiqueta} → ${m.error}`); return; }
@@ -510,8 +518,8 @@ async function casoSuelto(navegador, ancho) {
     const a = abiertos(m);
     if (a.length !== 1 || !m.visibles.cliente) { mal.push(`A · al entrar se ven ${a.length} pasos a la vez (${a.join(', ')})`); return; }
     const esperados = ['Cliente', 'Conceptos', 'Revisar y emitir'];
-    if (JSON.stringify(m.titulos) !== JSON.stringify(esperados)) mal.push(`los pasos del justificante son ${JSON.stringify(m.titulos)}; se esperaban ${JSON.stringify(esperados)}`);
-    // SCRUM-915j · también en el justificante el cliente se elige pulsando su botón.
+    if (JSON.stringify(m.titulos) !== JSON.stringify(esperados)) mal.push(`los pasos de la factura suelta son ${JSON.stringify(m.titulos)}; se esperaban ${JSON.stringify(esperados)}`);
+    // SCRUM-915j · también en el documento suelto el cliente se elige pulsando su botón.
     if (!await pulsarCliente(pag, CLIENTE.id)) { ciegos.push(`${etiqueta} → no encontré el botón del cliente ${CLIENTE.id}`); return; }
     await espera(200);
     m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);
@@ -519,10 +527,10 @@ async function casoSuelto(navegador, ancho) {
     await pag.evaluate(PULSAR, 'Continuar', null);
     await espera(300);
     m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);
-    if (!m.visibles.concepto) mal.push('el justificante no abre Conceptos con «Continuar»');
+    if (!m.visibles.concepto) mal.push('la factura suelta no abre Conceptos con «Continuar»');
     // SCRUM-915g · invertido: hasta 915g el IVA por defecto tenía que verse aquí; ahora tiene que
     // haberse ido a «Ajustes del documento», en «Revisar y emitir» (medido por su propio guard).
-    if (m.visibles.ivaDefecto) mal.push('en el justificante el IVA por defecto SE VE en Conceptos; desde 915g vive en «Ajustes del documento», en Revisar y emitir');
+    if (m.visibles.ivaDefecto) mal.push('en la factura suelta el IVA por defecto SE VE en Conceptos; desde 915g vive en «Ajustes del documento», en Revisar y emitir');
     if (m.desbordaLado) mal.push('I · hay scroll lateral');
     if (errores.length) mal.push(`errores de página: ${errores.join(' | ')}`);
   } finally {
@@ -545,7 +553,7 @@ try {
 
 console.log('');
 console.log('  SCRUM-915d · LOS PASOS DEL EDITOR (panel real, estado medido después de pulsar)');
-console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, justificante a 1280 px');
+console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, factura suelta a 1280 px');
 for (const l of informe) console.log('   · ' + l);
 
 if (ciegos.length) {

@@ -40,10 +40,16 @@ const TITULO_HOJA = '¿Vaciar este documento?';
 const FRASE_HOJA = 'Se quitan el cliente, las líneas y los cambios de este documento. Tus plantillas y tus opciones de siempre no se tocan.';
 const ITEMS_MENU = ['💾 Guardar como plantilla', 'Limpiar formulario'];
 
+// 🔁 REAPUNTADO (S3, 29-sep-2026). Hasta #1943 la ruta `#invoices-new` pintaba el documento suelto
+// en CUALQUIER modo, y este guard servía 'no' a todos los casos. #1943 (SCRUM-825) hizo que la ruta
+// falle cerrado —con 'no' pinta Facturas—, así que el caso D salía «#invoices-new no se pintó».
+// Ahora D se sirve en modo 'factura', el único que emite, y un CONTROL comprueba que el panel lo
+// adoptó; los casos del presupuesto siguen en 'no'.
+let modoSuelto = 'no';
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915i', plan: 'pro', role: 'admin',
   onboardingCompleted: true, subscriptionStatus: 'active', voiceEnabled: false,
-  documentoSuelto: 'no',
+  documentoSuelto: modoSuelto,
 });
 
 function arrancarServidor() {
@@ -343,9 +349,13 @@ const CASOS = [
   },
   {
     clave: 'suelto',
-    titulo: 'D · el documento suelto: el mismo «⋯» con las dos acciones, y sin aviso de autoguardado',
+    titulo: 'D · la factura suelta: el mismo «⋯» con las dos acciones, y sin aviso de autoguardado',
+    modo: 'factura',
     async correr(pag, etiqueta) {
       if (!await abrirPagina(pag, etiqueta, 'invoices-new', '.quote-line .quote-line__concept input')) return;
+      // CONTROL DEL MODO: lo que se juzga es la FACTURA suelta. Si el panel no la adoptó, ciego.
+      const modo = await pag.evaluate(new Function('return window.appDocumentoSuelto;'));
+      if (modo !== 'factura') { ciegos.push(`${etiqueta} -> el panel no está en modo factura (appDocumentoSuelto=«${modo}»)`); return; }
       const c = await pag.evaluate(CABECERA);
       informe.push(`${etiqueta} · ${JSON.stringify(c)}`);
       if (!c.hayCabecera) { ciegos.push(`${etiqueta} -> no encontré la cabecera del documento suelto`); return; }
@@ -371,6 +381,7 @@ async function main() {
       const errores = [];
       pag.on('pageerror', (e) => errores.push(String(e.message || e)));
       try {
+        modoSuelto = c.modo || 'no';
         await pag.setViewport({ width: 1280, height: 900 });
         await c.correr(pag, c.clave);
         if (errores.length) ciegos.push(`${c.clave} -> la página lanzó ${errores.length} error(es): ${errores[0]}`);
