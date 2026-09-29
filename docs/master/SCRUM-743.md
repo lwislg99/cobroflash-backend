@@ -192,3 +192,28 @@ escrito por qué.
   `2,5` lleva ahí desde que existen los dos.
 - **Tres sitios convierten el punto en coma a mano** (`exports.routes.ts`, `exportData.ts`,
   `fiscal/evidencias/paquete.ts`), del censo de SCRUM-625. Siguen fuera.
+
+---
+
+## Apéndice · 29-sep-2026 · `formatNumeroEs` CONECTADA (S1 s1-29a + S2 s2-29a, una sola ola)
+
+**Medido contra:** `origin/main` = `84925995b8621619f5c27542e90988cdbe4ee1e1` · 2026-09-29T09:51:17Z
+
+Decisión: **SCRUM-743 comentario 17508** (orquestador): se unifica al formato español en los dos
+sitios aunque cambie lo que se VE en albaranes ya firmados, porque el sello no se mueve.
+
+- **S1 (servidor):** `albaranPdf.service.ts` `fmtQty` → `formatNumeroEs`; `albaranPublicVista.ts`
+  `fmtCantidadAlbaran` (vacío → `''`, ilegible → tal cual, número → `formatNumeroEs`).
+- **S2 (presencial):** `signaturePad.js` con la misma semántica (`fmtNumeroEs` de `api.js`), probado
+  número a número contra `fmtCantidadAlbaran` en `scrum743b`.
+- **Guard SCRUM-468 ampliado** a la celda de cantidad (antes no la miraba). Control positivo: sin el
+  cambio de pantalla cae en «LA CANTIDAD DE «Mano de obra» NO COINCIDE CON EL PDF». Su golden del
+  `SIN_VALORAR` cambia UNA celda (`2.5` → `2,5`), citando c.17508.
+- **El sello NO se mueve, medido:** hash v:2 de un albarán con `2.5` y `1500` en `7a94abae` ANTES del
+  cambio = `508319cd…33d4`; el mismo después (`scrum743-cantidad-una-sola-forma`). Los 9 sellos golden
+  de `scrum369` siguen verificando.
+- **Censo 1185:** `formatNumeroEs` → `retiradas`. De paso, con el PASO 0 de las 17 piezas de S1
+  (SCRUM-1185 c.17506): `mensajeDeConstancia` y `NOMBRE_CSV` nombran a su gemela;
+  `puedeMarcarsePagadaEnLote` queda declarada como PREMISA FALSA (no puede ir a `retiradas`: el
+  detector la sigue viendo).
+- **Fuera:** el eje de Informes (`reportsView.js:845`, front) sigue pendiente.

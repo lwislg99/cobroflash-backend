@@ -232,9 +232,13 @@ test('SCRUM-468 · 🔴 EL TEST: para un VALORADO, pantalla y PDF coinciden CAMP
 test('SCRUM-468 · CONTROL POSITIVO: un SIN_VALORAR sale EXACTAMENTE como hoy', () => {
   // Golden tomado de `origin/main` (04dc6359, albaranPublic.routes.ts, antes de este ticket). Son 4
   // albaranes ya firmados en producción: su pantalla no cambia ni un píxel.
+  // ⚠️ SCRUM-743 (29-sep-2026) · UNA celda cambia, a propósito: la cantidad `2.5` → `2,5`, para que
+  // diga lo mismo que el PDF. Decisión escrita en SCRUM-743 comentario 17508; el sello NO se mueve
+  // (lo fija `scrum743-cantidad-una-sola-forma` con el hash medido antes del cambio). Todo lo demás
+  // del marcado sigue byte a byte.
   const esperado =
     '<table class="lines-table"><thead><tr><th>Concepto</th><th>Cant.</th><th>Unidad</th></tr></thead>' +
-    '<tbody><tr><td>Mano de obra</td><td>2.5</td><td>h</td></tr>' +
+    '<tbody><tr><td>Mano de obra</td><td>2,5</td><td>h</td></tr>' +
     '<tr><td>Material &lt;raro&gt; &amp; &quot;caro&quot;</td><td>3</td><td>ud</td></tr>' +
     '<tr><td>Desplazamiento</td><td>1</td><td>ud</td></tr></tbody></table>';
   assert.equal(
