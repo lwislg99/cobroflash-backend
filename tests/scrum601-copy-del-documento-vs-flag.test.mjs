@@ -229,7 +229,20 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // no sumado a mano (precedente 1155×1160 y 1164×1216b).
 // { flag: 7, tipo: 11, aPelo: 160 } — medido con `censoCopy` sobre origin/main 6112855b + la rama. Cuadra
 // con la suma de las dos entradas (20−13, 11, 154+6), que se usa como COMPROBACIÓN, no como fuente.
-const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 160 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 155 · 28-sep-2026 (SCRUM-1232) · «1 factura» (`libroRegistroView.js`, `recuento`). ES COPY
+// NUEVA Y FIRMADA: el recuento decía «1 facturas» y pasa a `n === 1 ? '1 factura' : n + ' facturas'`,
+// firmado por el fundador sólo junto al filtro de justificantes del libro (SCRUM-1232, comentario
+// 17435). AISLADO: contra `origin/main` = 6112855b, la única diferencia de `public/` de la rama es
+// esa línea; el literal que ya existía (`' facturas'`) se queda y entra UNO nuevo. Es el recuento
+// fijo de un libro que sólo lista facturas: no depende de flag ni de tipo, así que «a pelo» es su
+// categoría. Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔀 CONFLICTO DE MERGE (SCRUM-825 D1 × SCRUM-1232), 29-sep-2026: la entrada de SCRUM-1232 (de
+// abajo, 154 → 155) entró en main mientras esta rama llevaba 160. REGENERADO con el propio censo
+// sobre el árbol YA FUSIONADO (origin/main 837a9e53 + la rama), no sumado a mano:
+// { flag: 7, tipo: 11, aPelo: 161 }. Cuadra con la suma (7, 11, 160+1), que se usa como COMPROBACIÓN.
+const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 161 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
