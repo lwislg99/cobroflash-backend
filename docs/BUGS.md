@@ -443,6 +443,30 @@
 
 ---
 
+### [ ] P2-CONT-1126b · fusionar un cliente que tenga direcciones de obra falla con un 500 (razonado desde el esquema, NO ejecutado contra una base)
+- **Síntoma esperado:** `fusionarClientes` (`src/modules/system/domain/fusionClientes.ts`) reasigna
+  nueve tablas del fusionado al principal y al final lo borra con `desvincularYBorrar`. **`customer_sites`
+  (SCRUM-1014, direcciones de obra) no está entre las nueve**: `customerSite` no aparece ni una vez en
+  el fichero. Su relación en `prisma/schema.prisma` es `customer Customer @relation(fields: [customerId],
+  references: [id])` **sin `onDelete`**, que en Prisma es RESTRICT. Un fusionado con al menos una
+  dirección de obra haría fallar el `DELETE` final → la transacción entera vuelve atrás → la ruta
+  responde `500 internal_error`.
+- **Impacto:** no se pierde nada (todo o nada), pero la fusión es IMPOSIBLE para ese cliente y la
+  pantalla de SCRUM-1126 dice el genérico «No se ha podido completar la acción. Vuelve a intentarlo.»:
+  reintentar no sirve nunca, y nada le dice al profesional por qué.
+- **Vivo o latente:** según `docs/MIGRATIONS_PENDING.md` (entrada de SCRUM-1014, fechada el
+  25-sep-2026), `customer_sites` no estaba en ninguna base; si sigue así, es latente hasta que se
+  aplique. **Ese registro no se ha re-medido aquí.**
+- **Cobertura:** `scrum1057b-fusion-clientes-postgres.test.mjs` no crea direcciones de obra, así que no
+  lo puede ver.
+- **Encontrado** en SCRUM-1126 (29-sep-2026) al comprobar qué mueve la fusión para el texto de la
+  previsualización. **No arreglado allí**: es del servidor (carril de S1, equipo de Luis) y el ticket
+  era la pantalla. Decisión pendiente para quien lo arregle: ¿las direcciones pasan al principal (como
+  las otras nueve) o bloquean la fusión con su propio motivo? Si se mueven, la frase firmada `todoPasa`
+  de SCRUM-1126 tendrá que nombrarlas.
+
+---
+
 ### [x] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
 - **CERRADO (28-sep-2026, SCRUM-1161):** el modal omite `phone` y `email` vacíos (`|| undefined`, la
   regla de `mobile`). Lo sujeta `tests/scrum1161-alta-sin-correo.test.mjs` (modal real → puerta real,
