@@ -254,6 +254,25 @@ esa ruta) y fuera de este carril (regla 9): no se toca aquí.
   corriendo: hoy el censo sale con 1 y nombra `Facturas: Uncaught ReferenceError: cb is not defined`.
 - Quedan 5 de C: `accion-del-80`, `mudez`, `lista-fixture`, `gateados` y `alcanzabilidad`.
 
+## C · 3 de 7: `censo:accion-del-80` al job informativo, y tres cegueras menos (S3, 29-sep-2026)
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:43:06Z
+
+- Paso nuevo en el mismo job informativo, con el mismo patrón. Coste medido en local: **~3 s**, un navegador.
+- **Rótulo caducado:** decía «árbol: esta rama (816 + 823 dentro)», escrito a mano el 8-sep y falso desde que esas
+  ramas entraron en main. Ahora LEE el árbol: en CI, `GITHUB_SHA`; en local, SHA + rama + si hay cambios sin
+  commitear; y si no puede leerlo, lo dice.
+- **Ciego 1:** un «⋯» que al pulsarlo no abría menú salía como «dentro del ⋯: 0». Ahora es «NO SUPE ABRIR el ⋯» y
+  cuenta como no medido (salida 2). Comprobado corriendo en Edge, con el selector del menú roto: sale 2 y lo dice.
+- **Ciego 2:** una vista con error al pintarse se inventariaba igual. Ahora se declara «NO SUPE MIRAR».
+- Hoy, con el árbol al día: las cinco se miden, sale 0.
+- Red: `tests/scrum1179c-censo-accion-informativo.test.mjs`, tres mutaciones declaradas (quitar
+  `continue-on-error`; tragarse el «⋯» sin menú; volver al rótulo escrito a mano), y las tres caen.
+- **Lo que quedaba SIN VERIFICAR de la fila A** (`guards:entrada` es redundante: se escribe): **está escrito**, en la
+  cabecera de `scripts/guards-entrada.mjs` («ESTO ES UN ATAJO, NO UNA RED MÁS», commit 429e933d, #1885), y
+  `scrum711` comprueba que cada guard de su lista está en la tanda. Nada que añadir.
+- Quedan 4 de C: `mudez`, `lista-fixture`, `gateados` y `alcanzabilidad`.
+
 ## Nota de la pila B/D/E: dos de los cinco PR se absorbieron (29-sep-2026)
 
 La pila salió en cinco PR apilados que compartían este fichero de registro. **#1897 (B2)** y **#1906 (D)** no

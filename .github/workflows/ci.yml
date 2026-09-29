@@ -566,6 +566,38 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           exit "$CODIGO"
 
+      # ── SCRUM-1179-C (3/7) · ¿QUÉ SE PUEDE PULSAR EN CADA LISTA? INFORMATIVO, NO BLOQUEA ──
+      #
+      # `censo:accion-del-80` hace el inventario de lo pulsable en la primera fila de cada lista (a la
+      # vista, dentro del «⋯» y en la barra). Cuenta, no juzga: sale 0 midiendo; 2 si no supo medir
+      # una lista (vista con error al pintarse, sin fila de datos, o un «⋯» que no abrió menú: antes
+      # eso salía como «dentro del ⋯: 0»). El árbol que mide lo LEE (en CI, `GITHUB_SHA`); el rótulo
+      # «esta rama (816 + 823 dentro)» estaba escrito a mano desde el 8-sep y era falso.
+      # Coste medido en local (29-sep-2026): ~3 s, un navegador.
+      - name: censo:accion-del-80 (informativo — NO bloquea)
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          npm run -s censo:accion-del-80 > "$RUNNER_TEMP/accion.txt" 2>&1
+          CODIGO=$?
+          set -e
+          cat "$RUNNER_TEMP/accion.txt"
+          {
+            echo "### censo:accion-del-80 — informativo, NO bloquea (SCRUM-1179-C)"
+            if [ "$CODIGO" -eq 0 ]; then
+              echo '```'
+              grep -E '^navegador:|^  [A-Z][a-záéíóú]+$|EN LA FILA|→ primarios|DENTRO DEL' "$RUNNER_TEMP/accion.txt" || true
+              echo '```'
+            else
+              echo "🔴 **NO SUPO MEDIR** (salida $CODIGO): este inventario no vale como dato. Ver el log del paso."
+              echo '```'
+              grep -E 'NO SUPE' "$RUNNER_TEMP/accion.txt" || true
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$CODIGO"
+
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
   #
