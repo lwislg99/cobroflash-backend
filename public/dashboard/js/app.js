@@ -52,8 +52,11 @@ async function initApp() {
   window.appModoEmision =
     ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
 
-  window.appDocumentoSuelto =
-    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+  // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · el valor 'justificante' SALE del
+  // contrato. Desde SCRUM-1027 el servidor no lo manda nunca (`modoDocumentoSuelto` solo devuelve
+  // 'factura' o 'no'; ejecutado en los tres modos, docs/master/SCRUM-1257.md §1257c). Si algún día
+  // llegara, cae a 'no' y el botón de crear no se pinta: fallar cerrado, no leerlo como factura.
+  window.appDocumentoSuelto = me.documentoSuelto === 'factura' ? 'factura' : 'no';
 
   // SCRUM-293 (③a) · las opciones de retención, tal y como las manda el CUBO del dominio. El
   // front es vanilla y no puede importar de `src/`: si esta lista no viajara, la única forma de
@@ -381,8 +384,22 @@ async function initApp() {
       // así que con la llamada de tres argumentos montaba esta ruta SIN el tercero — o sea,
       // pintaba el PRESUPUESTO y contaba sus marcadores como si fueran de aquí. Medido.
       case 'invoices-new':
-        viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
-        renderDocumentoSueltoView(viewContainer);
+        // 🔴 SCRUM-825 (28-sep-2026) · LA RUTA FALLA CERRADO, COMO EL BOTÓN. `invoices-new` está en
+        // `HASH_VIEWS`, así que se llega sin pasar por el botón (enlace, recarga), y este `case` no miraba
+        // el modo: un merchant en `receipt` veía «Nueva factura» y «Emitir factura» y el servidor le
+        // contestaba 409. Medido ejecutándolo, y previo a D1. En el modo 'no' se pinta Facturas, igual que
+        // el `default` pinta Inicio. Sin textos nuevos y sin tocar el servidor. ⚠️ Este cambio de
+        // comportamiento NO lo cubre la firma del fundador de D1 (17446): lo autoriza el orquestador como
+        // arreglo de pantalla. Traza en docs/BUGS.md y docs/master/SCRUM-1257.md (SCRUM-1257c).
+        // Una sola salida al final del `case`, a propósito: los guards lo extraen hasta la primera.
+        if (window.appDocumentoSuelto === 'no') {
+          viewTitle.textContent = window.rotulosDelDocumento.tituloListado();
+          renderInvoicesView(viewContainer);
+          view = 'invoices';
+        } else {
+          viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
+          renderDocumentoSueltoView(viewContainer);
+        }
         break;
       // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a

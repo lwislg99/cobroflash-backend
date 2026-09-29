@@ -264,6 +264,14 @@ export function censarFuente(rel, texto, ambiguos = {}) {
     return firmas(bloque(rangos)).some((w) => w.endsWith('S'));
   }
 
+  // SCRUM-1157b · `k: 'x', // APROBADO`: el comentario va DETRÁS de la coma, y
+  // `getTrailingCommentRanges` deja de buscar en cuanto encuentra la coma (y los «de delante» no
+  // cogen los de la misma línea). Sin saltarla, la regla 1 no se cumplía nunca.
+  const trasLaComa = (pos) => {
+    const m = /^[ \t]*,/.exec(texto.slice(pos, pos + 200));
+    return m ? pos + m[0].length : pos;
+  };
+
   const visitados = new Set();
   let objetos = 0;
 
@@ -284,7 +292,7 @@ export function censarFuente(rel, texto, ambiguos = {}) {
       const coma = resto.search(/[^\s]/);
       if (coma >= 0 && resto[coma] === ',') pos = pos + coma + 1;
       const rangos = [
-        ...(i > 0 ? ts.getTrailingCommentRanges(texto, desde) || [] : []),
+        ...(i > 0 ? ts.getTrailingCommentRanges(texto, trasLaComa(desde)) || [] : []),
         ...(ts.getLeadingCommentRanges(texto, pos) || []),
       ];
       const vistos = new Set();
@@ -349,7 +357,7 @@ export function censarFuente(rel, texto, ambiguos = {}) {
       let interno = false;
       for (const p of n.properties) {
         if (claseDeComentario(bloque(ts.getLeadingCommentRanges(texto, p.getFullStart())))) { interno = true; break; }
-        if (claseDeComentario(bloque(ts.getTrailingCommentRanges(texto, p.getEnd())))) { interno = true; break; }
+        if (claseDeComentario(bloque(ts.getTrailingCommentRanges(texto, trasLaComa(p.getEnd()))))) { interno = true; break; }
       }
       const base = cab || interno ? raizDeObjeto(n, sf) : null;
       // La cabecera gobierna al objeto entero, se escriba en singular o en plural. Si se resolvió

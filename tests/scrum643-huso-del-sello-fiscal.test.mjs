@@ -33,7 +33,9 @@ const urlDist = (rel) => pathToFileURL(path.join(RAIZ, 'dist', rel)).href;
 
 const { formatFechaHoraHuso, formatDateES } =
   await import(urlDist('modules/invoicing/domain/verifactu.service.js'));
-const { makeReceiptNumber } = await import(urlDist('modules/invoicing/domain/invoiceNumber.service.js'));
+// SCRUM-825: `makeReceiptNumber` se retiró con firma del fundador (comentario 17446, D1): ya no se
+// generan justificantes, así que sus dos casos de este fichero se fueron con él. El huso del sello
+// fiscal, que es lo que este fichero protege, sigue medido abajo.
 const { invalidAnioFiscal } = await import(urlDist('core/validation/fiscalInput.js'));
 
 const MADRID = 'Europe/Madrid';
@@ -68,12 +70,6 @@ test('SCRUM-735 · el sello fiscal declara el día PENINSULAR aunque el proceso 
   assert.equal(formatDateES(new Date(SALTO_DE_MES), MADRID), '01-04-2026');
 });
 
-test('SCRUM-735 · el justificante nace con el AÑO peninsular en Nochevieja española', () => {
-  const j = makeReceiptNumber(new Date(SALTO_DE_ANIO), MADRID);
-  assert.match(j, /^J-20270101-[0-9A-Z]{4}$/,
-    `🔴 sigue naciendo con el año del proceso (2026), no el de Madrid (2027): "${j}".`);
-});
-
 test('SCRUM-735 · invalidAnioFiscal ya no rechaza el ejercicio en curso en la madrugada española', () => {
   const medianocheEspañola = new Date(SALTO_DE_ANIO); // 1-ene 00:30 en Madrid
   assert.equal(invalidAnioFiscal(2027, medianocheEspañola, MADRID), null,
@@ -84,10 +80,6 @@ test('SCRUM-735 · invalidAnioFiscal ya no rechaza el ejercicio en curso en la m
 // CONTROL NEGATIVO — lo que el arreglo NO puede hacer: fijar `Europe/Madrid`
 // ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-735 · CONTROL NEGATIVO: para un CANARIO el año de Nochevieja sigue siendo el de antes', () => {
-  const j = makeReceiptNumber(new Date(SALTO_DE_ANIO), CANARIAS);
-  assert.match(j, /^J-20261231-[0-9A-Z]{4}$/,
-    '🔴 fijar la península movería el ejercicio de un canario — el mismo defecto con el signo cambiado.');
-
   const husoCanarias = formatFechaHoraHuso(new Date(SALTO_DE_ANIO), CANARIAS);
   const husoMadrid = formatFechaHoraHuso(new Date(SALTO_DE_ANIO), MADRID);
   assert.equal(husoCanarias.slice(0, 10), '2026-12-31');

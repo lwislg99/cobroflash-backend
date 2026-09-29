@@ -108,9 +108,9 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 // SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
 // IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
-import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida, anioDeLaSerie } from './core/validation/fiscalInput';
+import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida, anioDeLaSerie, emitidasDelAnio, prefijosEmitidasDelAnio } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
-import { leerSeqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780
+import { leerSeqDeLaSerieF, seqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780 · SCRUM-1216b
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
@@ -127,7 +127,8 @@ import { prisma } from './core/db/prisma';
 export const app = express();
 
 // SCRUM-105: defensa en profundidad barata — las páginas públicas con token en el path
-// (/recibo, /cliente, /albaran, /p/:slug) cargan Google Fonts como único recurso externo;
+// (/recibo, /cliente, /albaran, /p/:slug) cargaban Google Fonts como único recurso externo
+// (desde SCRUM-1234 la fuente se sirve desde /fonts/ y ya no sale ninguna petición a Google);
 // el default de navegadores modernos ya no debería filtrar el path completo en ese caso,
 // pero la app no lo garantizaba por sí misma. Global, antes de cualquier ruta.
 app.use((_req, res, next) => {
@@ -410,12 +411,18 @@ app.get('/admin/me', async (req, res) => {
   // SCRUM-1168: el año de la serie en la zona del MERCHANT, el mismo con el que numera
   // `allocateInvoiceNumber`; con el reloj del proceso la puerta miraba otro año en Nochevieja.
   const anioSerie = anioDeLaSerie(merchantFull);
+  // SCRUM-1216b: se leen las dos series del año, la vieja y la F.
   const facturasDelAnio = await prisma.invoice.findMany({
-    where: { merchantId: session.merchantId, number: { startsWith: `${anioSerie}-` } },
+    where: {
+      merchantId: session.merchantId,
+      OR: prefijosEmitidasDelAnio(anioSerie).map((p) => ({ number: { startsWith: p } })),
+    },
     select: { number: true },
   });
-  // Una sola vez: la comparten la puerta y el bloqueo del campo (ver abajo).
+  // El bloqueo del PREFIJO mira sólo la serie vieja: tras el corte de SCRUM-780 el prefijo no
+  // entra en la factura ordinaria. La PUERTA pregunta «¿ya emitió este año?», y ahí cuenta la F.
   const deLaSerieDelAnio = numerosDeLaSerie(facturasDelAnio.map((f) => f.number), anioSerie);
+  const emitidasDelAnioParaPuerta = emitidasDelAnio(facturasDelAnio.map((f) => f.number), anioSerie);
 
   const userRole = session.teamMember ? session.teamMember.role : 'admin';
   const userName = session.teamMember ? session.teamMember.name : session.merchant.name;
@@ -538,13 +545,14 @@ app.get('/admin/me', async (req, res) => {
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
     // factura suelta -- veredicto del servidor, no regla en el navegador.
-    // ⚠️ `deLaSerieDelAnio` se calcula UNA vez arriba y lo comparten los dos campos: si cada uno
-    // llamara a `numerosDeLaSerie` por su cuenta, un día divergirían y la puerta y el bloqueo
-    // estarían mirando poblaciones distintas.
+    // ⚠️ SCRUM-1216b: la puerta y el bloqueo miran poblaciones DISTINTAS, y a propósito. La
+    // puerta, todo lo emitido en el año (vieja + F): quien ya emitió en F no puede declarar un
+    // arranque sin dejar huecos en su serie. El bloqueo del prefijo, sólo la vieja. Las dos salen
+    // de la MISMA lectura de arriba.
     puertaSerieDisponible: debeOfrecerArranqueDeSerie({
       invoiceSeriesYear: merchantFull?.invoiceSeriesYear ?? null,
       año: anioSerie,
-      numerosDeLaSerie: deLaSerieDelAnio,
+      numerosDeLaSerie: emitidasDelAnioParaPuerta,
     }),
     // SCRUM-D1: por qué NO se puede tocar la serie, cuando no se puede. `puertaSerieDisponible`
     // es `false` por DOS motivos distintos —ya emitió, o ya contestó este año— y solo el primero
@@ -874,11 +882,12 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
 
     // SCRUM-1168: el año de la serie en la zona del merchant, el de `allocateInvoiceNumber`.
     const año = anioDeLaSerie(merchant);
+    // SCRUM-1216b: el choque del arranque mira lo emitido en el año en las DOS series.
     const emitidas = await prisma.invoice.findMany({
-      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      where: { merchantId: req.merchantId, OR: prefijosEmitidasDelAnio(año).map((p) => ({ number: { startsWith: p } })) },
       select: { number: true },
     });
-    const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+    const deLaSerie = emitidasDelAnio(emitidas.map((f) => f.number), año);
 
     const arranque = arranqueDeSerie({
       vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
@@ -895,9 +904,16 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
       });
     }
 
-    const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
-    const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    // SCRUM-1216b: ninguna pantalla manda ya `serie` (el prefijo no entra en la factura ordinaria
+    // desde el corte de SCRUM-780); la vista previa usa el del merchant, que sólo decide lo anterior
+    // al corte.
+    const prefijo = merchant.invoiceSeriesPrefix;
     // SCRUM-780: la secuencia de la serie F se DERIVA de lo emitido, no del contador viejo.
+    // SCRUM-1216b: y con el arranque que ESTA respuesta guardaría, por la MISMA función que usa el
+    // emisor (`seqDeLaSerieF`). Con «Sí» + 41 el arranque es 42; con «No», ninguno.
+    const arranqueQueGuardaria = req.body?.vieneDeOtroSitio === true
+      ? { invoiceStartSeq: arranque.nextInvoiceNumber, invoiceStartYear: año }
+      : null;
     const ahora = new Date();
     return res.json({
       ok: true,
@@ -907,7 +923,7 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
         año,
         false,
         ahora,
-        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
+        seqDeLaSerieF(await leerSeqDeLaSerieF(prisma, req.merchantId, año), arranqueQueGuardaria, año),
       ),
     });
   } catch (err) {
@@ -931,17 +947,20 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
     const año = anioDeLaSerie(merchant);
 
     // Lo ya emitido manda. Se lee por el NÚMERO, que es la identidad fiscal del documento.
+    // SCRUM-1216b: en las DOS series del año. El choque del arranque cuenta la F; el bloqueo del
+    // prefijo (abajo) sólo la vieja, porque tras el corte el prefijo no entra en la ordinaria.
     const emitidas = await prisma.invoice.findMany({
-      where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+      where: { merchantId: req.merchantId, OR: prefijosEmitidasDelAnio(año).map((p) => ({ number: { startsWith: p } })) },
       select: { number: true },
     });
     const deLaSerie = numerosDeLaSerie(emitidas.map((f) => f.number), año);
+    const emitidasEnElAnio = emitidasDelAnio(emitidas.map((f) => f.number), año);
 
     const arranque = arranqueDeSerie({
       vieneDeOtroSitio: req.body?.vieneDeOtroSitio === true,
       ultimoNumero: req.body?.ultimoNumero,
       año,
-      numerosDeLaSerie: deLaSerie,
+      numerosDeLaSerie: emitidasEnElAnio,
     });
 
     if (!arranque.ok) {
@@ -992,10 +1011,11 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
     const actualizado = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${req.merchantId!}::int)`;
       const dentro = await tx.invoice.findMany({
-        where: { merchantId: req.merchantId, number: { startsWith: `${año}-` } },
+        where: { merchantId: req.merchantId, OR: prefijosEmitidasDelAnio(año).map((p) => ({ number: { startsWith: p } })) },
         select: { number: true },
       });
-      if (numerosDeLaSerie(dentro.map((f) => f.number), año).length > 0) {
+      // SCRUM-1216b: la relectura dentro del cerrojo cuenta las MISMAS que el choque de fuera.
+      if (emitidasDelAnio(dentro.map((f) => f.number), año).length > 0) {
         throw new SerieYaEmpezada();
       }
       return tx.merchant.update({
@@ -1003,9 +1023,16 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
         data: {
           nextInvoiceNumber: arranque.nextInvoiceNumber,
           invoiceSeriesYear: arranque.invoiceSeriesYear,
+          // SCRUM-1216b · el arranque de la serie F: con «Sí» + 41, 42 y este año. Con «No», NULL
+          // EXPLÍCITO en los dos: «no declaró» no deja vivo un arranque anterior. Y NULL no es 1.
+          invoiceStartSeq: req.body?.vieneDeOtroSitio === true ? arranque.nextInvoiceNumber : null,
+          invoiceStartYear: req.body?.vieneDeOtroSitio === true ? año : null,
           ...(prefijoPedido ? { invoiceSeriesPrefix: prefijoPedido } : {}),
         },
-        select: { invoiceSeriesPrefix: true, nextInvoiceNumber: true, invoiceSeriesYear: true },
+        select: {
+          invoiceSeriesPrefix: true, nextInvoiceNumber: true, invoiceSeriesYear: true,
+          invoiceStartSeq: true, invoiceStartYear: true,
+        },
       });
     });
 
@@ -1023,7 +1050,8 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
         año,
         false,
         new Date(),                                        // SCRUM-780: el corte decide por fecha
-        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
+        // SCRUM-1216b: con el arranque recién guardado, por la misma función que el emisor.
+        seqDeLaSerieF(await leerSeqDeLaSerieF(prisma, req.merchantId, año), actualizado, año),
       ),
     });
   } catch (err) {

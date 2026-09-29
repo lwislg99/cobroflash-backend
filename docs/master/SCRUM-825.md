@@ -1420,3 +1420,362 @@ reconciliación entera deja de aplicar y el expediente de 8-sep vuelve a ser el 
   PIONEER por generalización) **queda obsoleto por §0 de este apéndice** — ya no se generaliza
   nada — y se marca así aquí para que nadie lo pegue tal cual.
 - Ninguna base: ni dev, ni staging, ni producción.
+
+---
+
+# SCRUM-825 · APÉNDICE · 28-sep-2026 · FASE 2, TERCERA VUELTA · EL NIF DEL DESTINATARIO, Y LO QUE QUEDA PARA FIRMAR
+
+**Medido contra:** `origin/main` = `4fd0b309c265b10d0f376e2fdea856ed99a7d2ba` · 2026-09-28T21:48:01Z
+
+**Puesto:** J1 · Facturación y VeriFactu (`jv-j1`, equipo de Javier) · **Rama:** `scrum-825-expediente-nif`
+
+**Carril:** fiscal (camino de emisión, contenido del documento) · **Gate:** LECTURA. Cero código,
+cero rótulos, cero `docs/YAQU_MASTER.md`, cero skill. Ninguna base de datos.
+
+> ⛔ **Esto no es un GO para nada.** Javier dijo el 28-sep por la noche «2-Preparalo» y «3-Si mete
+> el NIF si hay que meterlo». Lo segundo es una intención **condicional**: este apéndice establece
+> **si hay que** y **qué cuesta**. Tocar el PDF de la factura es contenido fiscal del documento y
+> camino de emisión (reglas 38 y 40) → STOP hasta firma.
+
+---
+
+## 0 · PASO 0 — este expediente ya existía dos veces, y lo que trae éste es otra cosa
+
+El encargo lo planteaba como «lo siguiente es el expediente para la firma». **Ya está escrito**, en
+este mismo fichero, más arriba:
+
+| apéndice | qué deja | ¿vigente? |
+|---|---|---|
+| 8-sep · FASE 2 | la lista de muerte (§2), las preguntas ⓪-⑥ (§3), el texto del cambio de máster (§4), el orden (§5) | la lista y el orden, **sí**; la pregunta ⓪ y el 4.a, **no** (los retiró el de 21-sep) |
+| 21-sep · FASE 2 reconciliada | la pregunta ⓪ ya contestada por SCRUM-612c + SCRUM-1027; seis decisiones para firmar (su §6) | **sí**, y su condición previa se ha cumplido: **SCRUM-1027 está en `main`** (`tests/scrum1027-atajo-flag-off-sin-documento.test.mjs` vive en `main` y exige el atajo) |
+
+Así que este apéndice **no repite** esas dos listas: las da por vigentes y añade lo que ninguna de
+las dos midió —**el NIF del destinatario**, que el de 21-sep dejaba como bloqueo de la fase 3 sin
+medir—, dos correcciones al propio encargo, y la lista de firma completa en un sitio.
+
+---
+
+## 1 · 🔴 Tres correcciones al encargo, antes de nada
+
+**1.a · «`taxId` no viaja al PDF» ya no es exacto.** Era verdad el 7-sep (`SCRUM-729.md` §2). Desde
+el escritor de SCRUM-729, el NIF **sí viaja** hasta la puerta del generador y **se pierde dentro**
+(recorrido completo en §2.2). La diferencia importa para el coste: no hay que abrir un camino de
+datos, sólo pintar lo que ya llega.
+
+**1.b · La pregunta P11 (¿simplificada F2 o art. 61.d?) tiene una respuesta escrita, y no la ha dado
+un asesor humano.** `docs/legal/PREGUNTAS_ASESOR.md`, apartado «RESPUESTAS · 22-sep-2026», punto
+**B3** y resumen «P11-P13»: particular sin NIF → **F2 simplificada hasta 3.000 €** (art. 4.2.c ROF);
+por encima, o si el cliente es empresario → **F1 con NIF, sin alternativa**; el marcador
+`FacturaSinIdentifDestinatarioArt61d` **no procede** para un emisor establecido. La cabecera de ese
+apartado lo dice sin rodeos: *«Quien preparó estas respuestas: una sesión de IA de este equipo […]
+No las ha revisado un asesor humano»*; cotejadas contra fuente el 23-sep (SCRUM-1088). El código
+**no la ha aplicado**: `MODO_SIN_DESTINATARIO` sigue en `'SIN_DICTAMEN'`
+(`src/modules/fiscal/verifactu/registro.builder.ts:228`).
+
+**1.c · La tabla de renombrado del 8-sep (§3 del primer apartado de este fichero) está caducada.**
+Es anterior a SCRUM-1027 y supone un justificante que todavía se emitía. El censo que describe el
+código de hoy es el de J3 en **SCRUM-1257** (comentario 17444, según el encargo; **no lo he releído**
+y no hay `docs/master/SCRUM-1257.md` en `main`): 24 literales en el panel, **8 muertos** —la rama
+`esJustificante()` siempre es false desde 1027—, 3 vivos y falsos, 3 a los que sólo les sobra la
+palabra, y **5 que NO se renombran** por la regla 29. Siete literales ya firmados en ese comentario.
+**Quien ejecute la fase 3, que trabaje con el censo de 1257, no con la tabla del 8-sep.**
+
+---
+
+## 2 · ⑤ EL NIF DEL DESTINATARIO — medido
+
+### 2.1 · ¿Existe `taxId` en `Customer`? ¿Es obligatorio? ¿Se pide en el alta?
+
+- **Existe:** `Customer.taxId String? @map("tax_id")` (`prisma/schema.prisma:278`). **Opcional.**
+- **Validación:** `customerCreateSchema` (`src/core/validation/schemas.ts:493`) lo declara
+  `z.string().max(20).nullable().optional()` con un `refine` de forma y dígito de control
+  (`:549-550`, SCRUM-575). Su propio comentario: *«VACIO SIGUE SIENDO VALIDO — validar no es obligar»*.
+- **La factura lo congela:** `Invoice.customerTaxId String?` (`schema.prisma:750`), escrito al emitir
+  por `clienteCongelado.ts:133` (`customerTaxId: ficha.taxId ?? null`). Igual en `Albaran` (`:1420`).
+- **Los caminos que dan de alta un cliente** (`git grep` de `customer.create(` en `src/`):
+
+  | camino | fichero | ¿pide NIF? |
+  |---|---|---|
+  | ficha del panel | `customerAdmin.ts:298`, formulario `customersView.js:1237` | **campo opcional**, rotulado «NIF/CIF (opcional)» |
+  | cobro rápido | `charges.routes.ts:24` | **no**: `name`, `phone`, `email` |
+  | bot de WhatsApp | `botFlow.service.ts:264` | **no**: `phone` y `name: 'Cliente nuevo'` |
+
+- **La única puerta que lo pide antes de emitir** es la de SCRUM-292 (`facturaPreEmision.js`), y la
+  única llamada a `revisionPreEmision` en `public/` está en `openFacturarParcialSheet`
+  (`jobDetailView.js:3205`, uso en `:3303`): **1 de los 7 caminos de emisión** que cuenta
+  `SCRUM-729.md` §2. Ahí sí es obligatorio: sin NIF no deja emitir y lo guarda en la ficha por el
+  `PATCH` existente (`:3341-3358`). En los otros seis, nada lo pide.
+
+### 2.2 · ¿Dónde EXACTAMENTE se pierde entre la base y el PDF?
+
+| paso | dónde | ¿lleva el NIF? |
+|---|---|---|
+| ficha | `customers.tax_id` | sí, si se escribió |
+| congelado al emitir | `invoices.customer_tax_id` ← `clienteCongelado.ts:133` | **sí** |
+| lectura para el PDF | `clienteDelDocumento` (`clienteCongelado.ts:215-229`) devuelve `taxId` | **sí** |
+| los tres generadores | `lib/invoicing.ts:122` y `:271`, `invoicesAdmin.routes.ts:1167` pasan `customer: clienteDelDocumento(...)` | **sí, en tiempo de ejecución** |
+| 🔴 **la firma de `generateInvoicePdf`** | `pdf.service.ts:286`: `customer: { name; legalName?; email?; phone? }` | **no está en el tipo** |
+| 🔴 **el pintado del bloque del cliente** | `pdf.service.ts:436-444`: nombre (`:439`), email (`:443`), teléfono (`:444`) | **no se pinta** |
+| registro para la AEAT | `verifactu.service.ts:951-965`: con NIF emite `Destinatarios`; sin él, `resolverSinDestinatario` | sí (lo usa) |
+
+**Se pierde en dos líneas del generador, y en ninguna otra.** El presupuesto, en el mismo fichero,
+**sí** lo pinta (`pdf.service.ts:830`, `NIF: …`, gobernado por `docFields`): la maqueta ya sabe
+hacerlo, la de factura no lo hace.
+
+🔴 **Y hay un segundo hueco del mismo tamaño que nadie había nombrado: el DOMICILIO del
+destinatario.** El art. 6.1 del ROF, releído hoy en el texto consolidado del BOE
+(`BOE-A-2012-14696`, API de legislación consolidada, bloque `a6`), exige en toda factura completa:
+
+> «c) Nombre y apellidos, razón o denominación social completa, tanto del obligado a expedir
+> factura como del destinatario de las operaciones.
+> d) […] Asimismo, será obligatoria la consignación del Número de Identificación Fiscal del
+> destinatario en los siguientes casos: […] 3.º Que se trate de operaciones que se entiendan
+> realizadas en el territorio de aplicación del Impuesto y el empresario o profesional obligado a
+> la expedición de la factura haya de considerarse establecido en dicho territorio.
+> e) Domicilio, tanto del obligado a expedir factura como del destinatario de las operaciones.»
+
+El PDF de factura no pinta domicilio del cliente, **y la factura ni siquiera lo congela**: las cinco
+columnas de SCRUM-729 son nombre, denominación, NIF, email y teléfono. `Customer` sí tiene
+`billingAddress`, `billingCity` y `billingPostalCode` (`schema.prisma:209-211`). «Meter el NIF» para
+que una F1 cumpla el art. 6 es, por tanto, **meter el NIF y el domicilio**, y lo segundo exige
+columnas nuevas en `invoices` (ALTER aditivo, regla 40) y un escritor en el camino de emisión.
+
+### 2.3 · ¿Cuántos clientes lo tienen hoy?
+
+**SIN DETERMINAR.** No tengo claves de trabajo en este árbol y no uso la de producción. La única
+cifra escrita es de desarrollo y de otro campo (`schema.prisma:242`: 14 clientes, 0 con razón social,
+7-sep-2026), y no vale como respuesta.
+
+### 2.4 · 🔴 Si el NIF pasa a ser obligatorio, ¿qué le cambia al profesional?
+
+Depende de **dónde** se haga obligatorio, y son tres productos distintos:
+
+| opción | qué le cambia al fontanero | qué no resuelve |
+|---|---|---|
+| **A · obligatorio en el alta** | Todo cliente nuevo, también el que nunca llegará a factura, exige el NIF. «María, 600…» deja de bastar desde el primer mensaje. Choca con los dos altas que hoy no preguntan nada (cobro rápido y bot) | nada del cobro automático: sigue habiendo clientes antiguos sin NIF |
+| **B · obligatorio al emitir** (extender la puerta de 292 a los 7 caminos) | Sólo se lo pide a quien va a facturar, en el momento de facturar. Hoy ya existe en 1 camino | 🔴 **el cobro que se convierte solo en factura** (`ensureInvoiceForCharge`, `lib/invoicing.ts`): el profesional **no está delante**, así que no hay a quién preguntar. Hay que decidir qué pasa ahí: ¿no se emite y se avisa? ¿no se deja cobrar sin NIF? Esto último es cobro (STOP de `CLAUDE.md`) |
+| **C · F2 simplificada** (abajo) | Para el particular a domicilio y hasta 3.000 €, **no se le pide nada** | por encima de 3.000 €, o cliente empresario, vuelve a A o B |
+
+Y en las tres, si es F1, también el **domicilio** (§2.2): el alta de hoy tampoco lo exige.
+
+### 2.5 · La F2 simplificada — como OPCIÓN, con sus límites y su coste
+
+**Lo que permite** (ROF consolidado, releído hoy, art. 4): factura simplificada hasta **400 €** IVA
+incluido en cualquier caso (4.1.a), y hasta **3.000 €** IVA incluido en *«c) Ventas o servicios a
+domicilio del consumidor»* (4.2.c). El art. 7.1 no pide destinatario.
+
+**Sus límites, leídos en la norma:**
+
+- **«a domicilio del consumidor».** Un trabajo en el taller del profesional, o para una empresa, no
+  entra en el 4.2.c: su techo es 400 €.
+- **Empresario, o particular que lo pida para un derecho tributario** (art. 7.2 y 7.3): la
+  simplificada tiene que llevar **NIF y domicilio** del destinatario. Según B3 (IA, sin asesor
+  humano) se registra entonces como F1.
+- **Series separadas, obligatorias** (art. 7.1, último párrafo, literal): *«Cuando el empresario o
+  profesional expida facturas conforme a este artículo y al artículo 6 […] en un mismo año natural,
+  será obligatoria la expedición mediante series separadas de unas y otras.»* → una **serie de
+  numeración nueva**, es decir, camino de emisión.
+- **La rectificativa de una F2 es R5**, y el producto no la modela (`registro.builder.ts`, comentario
+  de `resolverSinDestinatario`).
+
+**Su coste en el código, medido:**
+
+- 🔴 **La rama `SIMPLIFICADA_F2` que ya existe NO sirve tal cual.** Decide el tipo **al exportar**
+  (`verifactu.service.ts:953-957`), pero la huella se selló **al emitir** con `invoice.type`
+  (`:386-392`, `tipoFactura: exigirTipoDeclarable(invoice.type …)`), y el XML exporta esa misma
+  huella (`:908`). Cambiar la constante a `'SIMPLIFICADA_F2'` produciría registros con
+  `TipoFactura` F2 y una `Huella` calculada sobre F1: el registro no casaría con su propia huella.
+  La F2 tiene que decidirse **al emitir** y quedar en la columna `type`.
+- `TipoDocumento` es `'F1' | 'R1' | 'JUST'` (`tipoDocumento.ts:52`): **F2 es un tipo nuevo**, cambio
+  de máster (regla 27) con su propia firma.
+- El PDF de una F2 no es el de una F1 con menos campos: el art. 7.1 fija su contenido (tipo
+  impositivo, «IVA incluido» opcional, contraprestación total).
+- Y hay que comprobar el techo en el momento de emitir (importe ≤ 3.000 € y operación a domicilio),
+  que es un dato que hoy el producto no pregunta.
+
+---
+
+## 3 · ⑥ LAS DECISIONES QUE NECESITAN TU FIRMA
+
+Sin recomendación mía: cada una con su pregunta y lo que arrastra.
+
+**D1 · ¿Se retira el tipo `JUST` del código?** (regla 27). Las seis sub-preguntas del §6 del apéndice
+de 21-sep siguen abiertas tal cual (reconocedor `isReceiptNumber`, filtro `invoiceAdmin.ts` y su
+guard `scrum442`, `CLASES_DE_CORREO.justificante` y `meta.tipoFactura`, la unión de
+`tipoDocumento.ts`, y los rótulos uno a uno). Su condición previa —1027 en `main`— ya se cumple.
+*Arrastra:* el generador `J-` sin llamador (`makeReceiptNumber`, `reservarReferenciaJustificante`,
+`ReferenciaJustificanteAgotada`, `INTENTOS_REFERENCIA_JUSTIFICANTE`, en `invoiceNumber.service.ts`;
+hoy sólo los usan tests: `emission`, `scrum396`, `scrum643`, `scrum844d` y el huérfano declarado en
+`tests/_huerfanos-declarados.mjs:472`). Es camino de emisión: regla 38 aunque no corra.
+*Y los rótulos:* con el censo de SCRUM-1257, no con la tabla del 8-sep (§1.c).
+
+**D2 · ¿Se retira el suelo de `scrum1027`?** `tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:185-190`
+exige que `reservarReferenciaJustificante` siga existiendo, *«borrarla es trabajo de SCRUM-825, con
+su propia firma»* (y el comentario de `invoiceNumber.service.ts:542`). Si firmas D1, este guard se
+cambia **en el mismo PR que borra el generador y citando tu firma** (regla 41: se cambia con la
+decisión, no para que pase). Si no firmas D1, se queda.
+
+**D3 · Las dos líneas de plantillas de Meta del máster** (`YAQU_MASTER.md:296` y `:300`, Parte J).
+Son lo único vivo del máster que describe un estado que ya no existe («modo justificante»). Tocarlas
+es STOP tuyo (plantillas de Meta). *Opciones:* (a) corregirlas ahora con «Antes decía»; (b) dejarlas
+hasta que se recreen las plantillas; (c) otra que digas tú.
+
+**D4 · Los registros fechados que nombran el justificante** (`YAQU_MASTER.md:721`, `:981`, `:1106`;
+✅ de SCRUM-73, V0-1…). El de 21-sep los dejó intactos por AA1.7 («nunca borrar»). La propuesta es
+**anotarlos** con una nota fechada al lado, **no corregirlos**: un registro dice lo que era verdad
+ese día. *Opciones:* anotar / dejar como están.
+
+**D5 · El NIF (y el domicilio) del destinatario.** Cinco preguntas, y la primera decide las demás:
+
+1. **¿La respuesta P11 (F2 hasta 3.000 € a domicilio; nunca 61.d) se da por buena sin asesor
+   humano, o pasa antes por uno?** Hoy es de una sesión de IA, cotejada contra fuente.
+2. **¿El PDF de la F1 pinta el NIF del destinatario?** (`pdf.service.ts:286` y `:436-444`). Es
+   contenido fiscal del documento → firma tuya, y rótulo nuevo («NIF») → regla 39.
+3. **¿Y el domicilio?** Exige ALTER aditivo en `invoices` (columnas congeladas nuevas), escritor en
+   el camino de emisión y pintarlo. Sin él, la F1 sigue sin cumplir el art. 6.1.e.
+4. **¿Dónde se pide el NIF: en el alta (A), al emitir (B), o ninguno porque se va a F2 (C)?** Y si
+   es B: **¿qué pasa con el cobro que se convierte solo en factura** cuando el cliente no tiene NIF?
+5. **¿Se construye la F2?** Si sí: tipo nuevo (regla 27), serie nueva (art. 7.1 ROF), decisión al
+   emitir y no al exportar (§2.5), techo de 3.000 € y «a domicilio», y R5 sin modelar.
+
+**Lo emitido no se toca** (regla 29) en ninguna de las cinco: lo que se decida vale para facturas
+nuevas.
+
+---
+
+## 4 · Lo que NO se ha tocado
+
+- Ni una línea de `src/`, `public/`, `scripts/`, `tests/`, `prisma/schema.prisma`.
+- `docs/YAQU_MASTER.md` y la skill `verifactu`: sólo leídos.
+- El modo `receipt`, `MODO_SIN_DESTINATARIO`, el PDF: sólo leídos.
+- Ninguna base: ni dev, ni staging, ni producción. Ningún certificado ni clave.
+- Los apéndices anteriores de este fichero: intactos; éste se anexa al final.
+- **SCRUM-1257:** citado por lo que dice el encargo; no lo he releído en Jira.
+
+---
+
+## Lado panel (J3) — rama `scrum-825-panel-sin-justificante`
+
+Retirada de la rama «justificante» del panel (D1, firmada en el comentario 17446): `app.js`,
+`invoicesView.js`, `quotesView.js` y `rotulosDelDocumento.js`, con los guards y tests re-apuntados al
+lado factura, y la ruta `#invoices-new` cerrada en modo `no`. El registro completo, con lo medido, está
+en `docs/master/SCRUM-1257.md` (sección SCRUM-1257c) y el bug en `docs/BUGS.md` (P1-825). Esta entrada
+es sólo el puntero que exige SCRUM-854: el ticket de la rama es el 825 y su expediente es éste.
+# SCRUM-825 · APÉNDICE · 28-sep-2026 · D1 y D2 EJECUTADAS EN EL SERVIDOR: se retira el generador `J-`
+
+**Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:13:34Z
+
+**Puesto:** J1 (`jv-j1`) · **Rama:** `scrum-825-retirar-generador-j` · **Alcance:** servidor y sus
+tests. El panel (`public/`) lo hace J3 en paralelo, por fichero.
+
+**Firma:** SCRUM-825, comentario **17446** —«1-Sí a las 3»— sobre D1, D2 y D4 del apéndice anterior.
+**Permiso:** el clasificador de la sesión denegó tocar `invoiceNumber.service.ts`; se paró sin buscar
+otra vía, y Javier lo autorizó en la propia sesión: «autorizo tocar invoiceNumber.service.ts y sus
+tests para D1/D2».
+
+## Qué se borra
+
+De `src/modules/invoicing/domain/invoiceNumber.service.ts`: `makeReceiptNumber`,
+`reservarReferenciaJustificante`, `ReferenciaJustificanteAgotada` e
+`INTENTOS_REFERENCIA_JUSTIFICANTE`. Antes de borrar se comprobó que el defecto seguía vivo: `git grep`
+sobre `src/` no daba ningún llamador desde SCRUM-1027. También sale el import `ZONA_POR_DEFECTO`, que
+sólo usaban ellos. `allocateInvoiceNumber` no cambia fuera de un comentario. Revisado sobre el diff,
+sin contar comentarios: sólo hay líneas borradas y la del import.
+
+## Qué se queda, a propósito
+
+- **`isReceiptNumber` y `RECEIPT_NUMBER_PREFIX`**: los `J-` ya emitidos siguen en la base (regla 29).
+- **El tipo `'JUST'` como dato**, el filtro de la lista y el PDF de lo emitido.
+- **El modo `receipt`**, que es la puerta de la regla 24.
+- 🔴 **`emitInvoice` sigue con `type: isReceiptNumber(number) ? 'JUST'`.** Es un escritor del tipo
+  que ya no se puede alcanzar. Queda **fuera** de este cambio: es camino de emisión y no estaba en
+  la lista. Va con su propia decisión (anotado por el orquestador).
+
+## D2 · el suelo de `scrum1027` se da la vuelta, y NO se relaja
+
+`tests/scrum1027-atajo-flag-off-sin-documento.test.mjs`: hasta hoy **exigía** que
+`reservarReferenciaJustificante` existiera (*«borrarla es trabajo de SCRUM-825, con su propia
+firma»*). Ahora exige que **no** estén los cuatro símbolos, y que **sí** sigan `isReceiptNumber` y
+`RECEIPT_NUMBER_PREFIX` (sin eso, vaciar el fichero también pasaría). Se escribió **antes** de borrar
+y se vio caer en **ROJO** con el generador todavía dentro (13 pasan, 1 falla). Regla 41: el guard
+cambia con la decisión firmada y en el mismo PR, no para que pase.
+
+## Los tests que usaban el generador
+
+| test | qué se hace |
+|---|---|
+| `emission` | el caso del formato pasa a probar sólo el reconocedor, con un `J-` compuesto con `RECEIPT_NUMBER_PREFIX` |
+| `scrum844d` | el `J-` de la prueba de la cadena se **compone** con el prefijo en vez de fabricarse: el caso se queda, porque los `J-` emitidos siguen existiendo |
+| `scrum643` | salen los dos casos que medían el año del justificante; el huso del sello fiscal sigue medido |
+| `scrum396` | salen el suelo del tope y el de la entropía. **Se quedan** los tres de SCRUM-1027 (el modo `receipt` rechaza siempre) y el de los manejadores |
+| `_huerfanos-declarados.mjs` | fuera la entrada del generador; en la de vocabulario queda `RECEIPT_NUMBER_PREFIX` |
+| `scrum291` | el sello sha256 del fichero pasa a `4ff56cab…` **en este mismo commit**, con su entrada y la firma |
+
+## Medido
+
+- `npm run build`: rc=0.
+- Los 7 tests afectados, más `scrum946` (censo de huérfanos), `scrum237` y `scrum976`: **89/89**.
+- Los 26 tests que además leen `invoiceNumber.service`: **239 pasan, 0 fallan, 5 saltados**. Los
+  cinco piden base (`QA_DB_TEST`, `SERIE_PG_URL`) y **no se han corrido**: aquí no hay base de
+  trabajo, y la de producción no se usa.
+- **El positivo que no puede caer:** los tres tests de SCRUM-1027 en `scrum396` siguen verdes. Un
+  merchant ES sin flag sigue recibiendo `invoicing_es_disabled` sin que se consulte el índice.
+
+## Lo que NO se ha tocado
+
+`public/` (J3) · el modo `receipt` · `emitInvoice` · el sellado, la cadena y la huella ·
+`prisma/schema.prisma` · `docs/YAQU_MASTER.md` (D4 va en otra rama y otro PR) · la skill `verifactu`
+· las dos líneas de Meta (la cuenta es de Luis).
+# SCRUM-825 · APÉNDICE · 28-sep-2026 · D4 EJECUTADA: los registros fechados del máster se ANOTAN, no se corrigen
+
+**Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:15:23Z
+
+**Puesto:** J1 (`jv-j1`) · **Rama:** `scrum-825-d4-notas-master`, **aparte** de la de D1/D2
+(`scrum-825-retirar-generador-j`, PR #1940). `docs/YAQU_MASTER.md` tiene a @lwislg99 en CODEOWNERS:
+este PR espera **su revisión**, no está atascado. Separado para que Luis no tenga que revisar un
+borrado de servidor que no le toca.
+
+**Firma:** SCRUM-825, comentario **17446**, D4: *«se ANOTAN con una nota fechada al lado. NO se
+corrigen. Un registro dice lo que era verdad ese día»*.
+
+## Qué se cambia: tres notas, sin tocar lo que dice cada registro
+
+Localizadas **por texto**, no por número de línea (el máster se movió esta noche con SCRUM-1246), y
+cada ancla aparece **exactamente una vez** (si no, el script paraba). En los tres casos se añade la
+misma nota, justo detrás de donde se nombra el justificante:
+`*(28-sep-2026: desde SCRUM-1027 ya no se emite ningún J-, SCRUM-1253)*`
+
+| registro | dónde va la nota |
+|---|---|
+| ✅ SCRUM-73 (22-jul-2026), gate del export VeriFactu | «los merchants ES reales emiten justificantes (J-)» |
+| V0-1 (U1.1), verificación E2E | «quote→WA→firma→justificante/factura demo» |
+| ✅ SCRUM-149 (27-jul-2026), análisis de riesgo | «o justificantes J-» |
+
+`git diff --word-diff`: tres inserciones, **cero palabras borradas**. Nada de «Antes decía»: eso es
+para una especificación caducada, y éstos son registros que eran ciertos el día en que se escribieron.
+
+## Lo que NO se toca
+
+- **Las dos líneas de plantillas de Meta** (Parte J, la tabla de `payment_confirmation_invoice_es` y la
+  «Decisión fundador 12-jun-26 (tensión con Parte M/justificantes)»). La cuenta de Meta la tiene Luis
+  (fundador, comentario 17446, D3): no las decide ni las toca este equipo.
+- Las demás menciones de «justificante» en el máster: el apéndice de 21-sep ya las clasificó
+  (historia que no se toca, o ya actualizadas por SCRUM-612c).
+- Ningún fichero fuera de `docs/YAQU_MASTER.md` y de este registro.
+
+### Lado panel (J3), 29-sep-2026: revisión de la entrada del robot y merge de main
+
+- **La entrada de arriba no la escribí yo:** la empujó `claude[bot]` (`008fbd51`, 28-sep 22:42Z) a esta
+  rama. **La he medido, no la he dado por buena:** la sección `SCRUM-1257c` existe en
+  `docs/master/SCRUM-1257.md`, el bug `P1-825` existe en `docs/BUGS.md`, el comentario 17446 es la
+  firma que citan los dos, y los cuatro ficheros de `public/` que nombra son los que la rama cambia
+  frente a `main`. Es correcta; se queda como está.
+- **Por qué el PR estaba mudo:** GitHub lo tenía `DIRTY` (conflicto con `main`). Con conflicto no hay
+  commit de merge de prueba, y los flujos `pull_request` no arrancan. El conflicto: el anclaje
+  `VEREDICTO_AL_MEDIR` de `tests/scrum601-copy-del-documento-vs-flag.test.mjs`, que SCRUM-1232 movió en
+  `main` (154 → 155) mientras esta rama llevaba 160.
+- **Resolución:** se regeneró con `censoCopy` sobre el árbol ya fusionado (origin/main `837a9e53` + la
+  rama): `{ flag: 7, tipo: 11, aPelo: 161 }`. Cuadra con la suma (160 + 1), que sirve sólo de
+  comprobación. Se quedan las dos entradas de comentario, más una nota del conflicto.
+- **El test en rojo del título del PR:** el título es el del primer commit (`e945ac55`, el rojo a
+  propósito del TDD). El commit siguiente (`0002f3db`) lo pone verde; el rojo no entra.

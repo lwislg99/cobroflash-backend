@@ -15,7 +15,7 @@
 //     que la AEAT acepte nada: eso solo lo demuestra un CSV devuelto por ella.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────
-// 🔴 CUATRO RESULTADOS, Y NO SE MEZCLAN (SCRUM-1112/1114: un cuelgue mudo de 1 h 46 min)
+// 🔴 CINCO RESULTADOS, Y NO SE MEZCLAN (SCRUM-1112/1114: un cuelgue mudo de 1 h 46 min; el quinto, SCRUM-1228)
 //
 //   no_enviado     · el sobre NO llegó entero a la otra punta: configuración, DNS, conexión,
 //                    TLS o escritura cortada. Sabemos que la AEAT no lo tiene.
@@ -27,6 +27,10 @@
 //                    `Incorrecto`.
 //   respondido     · la AEAT contestó con `Correcto` o `ParcialmenteCorrecto`. Qué registros
 //                    quedaron dentro se lee línea a línea (`lineas`), nunca del estado global.
+//   sin_permiso    · SCRUM-1228: contestó SIN sobre SOAP y con un código de PERMISOS (302, 401,
+//                    403; ver `HTTP_DE_PERMISOS`). El 302 es el que da la AEAT sin certificado,
+//                    medido. Reintentar no puede salir bien: la cola avisa a una persona YA.
+//                    500 y 200 con HTML NO entran: sin determinar, siguen en `sin_respuesta`.
 //
 // Nada devuelve «aceptado» por defecto. Aceptado exige un `EstadoEnvio` reconocido, dicho por
 // la respuesta, y todo lo que no se entiende cae en `sin_respuesta`, que se reintenta.
@@ -118,7 +122,16 @@ export type ResultadoEnvio =
   | { tipo: 'sin_respuesta'; etapa: EtapaEnvio; motivo: string; ms: number; httpStatus: number | null }
   | { tipo: 'rechazado'; porque: 'soap_fault'; faultcode: string | null; faultstring: string | null; httpStatus: number; ms: number }
   | { tipo: 'rechazado'; porque: 'estado_envio_incorrecto'; respuesta: RespuestaAeat; httpStatus: number; ms: number }
-  | { tipo: 'respondido'; respuesta: RespuestaAeat; httpStatus: number; ms: number };
+  | { tipo: 'respondido'; respuesta: RespuestaAeat; httpStatus: number; ms: number }
+  | { tipo: 'sin_permiso'; etapa: 'interpretar'; motivo: string; ms: number; httpStatus: number };
+
+/**
+ * SCRUM-1228 · los códigos HTTP que, llegando SIN sobre SOAP, significan «no tienes permiso»: el
+ * certificado no está, no vale o no es de ese NIF. Criterio decidido en SCRUM-1228 (comentario
+ * 17365; `docs/master/SCRUM-1228.md` §⑤bis). El 302 es el REAL de la AEAT sin certificado; 401 y
+ * 403 van por el mismo motivo. Cerrada a propósito: 500 y 200 con HTML quedan SIN DETERMINAR.
+ */
+export const HTTP_DE_PERMISOS: readonly number[] = [302, 401, 403];
 
 export interface EventoTraza {
   ts: string;
@@ -349,7 +362,7 @@ export async function enviarSobre(p: ParamsEnvio): Promise<ResultadoEnvio> {
   const ms = () => Date.now() - t0;
 
   const fin = (r: ResultadoEnvio): ResultadoEnvio => {
-    const detalle = r.tipo === 'no_enviado' || r.tipo === 'sin_respuesta'
+    const detalle = r.tipo === 'no_enviado' || r.tipo === 'sin_respuesta' || r.tipo === 'sin_permiso'
       ? `${r.etapa}:${r.motivo}`
       : r.tipo === 'rechazado'
         ? (r.porque === 'soap_fault' ? `soap_fault:${r.faultcode ?? '?'}` : `Incorrecto:${r.respuesta.lineas.length}_lineas`)
@@ -483,6 +496,10 @@ export async function enviarSobre(p: ParamsEnvio): Promise<ResultadoEnvio> {
           }
           if (i.tipo === 'ilegible') {
             etapa = 'interpretar';
+            // SCRUM-1228: sin sobre SOAP y con un código de permisos no es «no sabemos qué pasó».
+            if (HTTP_DE_PERMISOS.includes(status)) {
+              return cerrar({ tipo: 'sin_permiso', etapa: 'interpretar', motivo: `http_${status}:${i.motivo}`, ms: ms(), httpStatus: status });
+            }
             return cerrar({ tipo: 'sin_respuesta', etapa: 'interpretar', motivo: `http_${status}:${i.motivo}`, ms: ms(), httpStatus });
           }
           if (status < 200 || status > 299) {

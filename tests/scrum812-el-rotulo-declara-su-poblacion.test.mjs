@@ -87,12 +87,12 @@ function tituladosQueDeclaran() {
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
  *
- * ⬆️ **22** (SCRUM-1179-B, 28-sep-2026): `scrum808-el-arbol-que-queda-mutado.test.mjs` —que ya
- * declaraba— pasa a titularse GUARD con el test nuevo «control POSITIVO: el meta-guard de antes de
- * la red sale SIN RED; el de después, no» (cita «meta-guard»). La otra unidad es la deriva normal
- * del árbol entre medición y medición (~1 guard nuevo al día, según lo anotado arriba). Medido en
- * el CI de esta rama sobre el commit `5fa7dc2f13ae46aef1d4a48c05b2b5ec0ccbcc8a` (run 36445674666):
- * 22, dos más que el 20 anclado el 18-sep.
+ * ⬆️ **22** (SCRUM-1179-B, 28-sep-2026): dos ficheros que YA declaraban ganan un test titulado
+ * GUARD al añadir su control positivo — `scrum775-suelo-que-no-dispara.test.mjs` («…y un guard
+ * opaco, metidos en el árbol real, salen») y `scrum808-el-arbol-que-queda-mutado.test.mjs` («el
+ * meta-guard de antes de la red sale SIN RED; el de después, no»). Los dos ya estaban en el
+ * denominador de declarantes; sólo cambia el subconjunto auto-titulado.
+ * Medido sobre `origin/main` = `2b4db6a2948ba062909c38f3cac7e495c2b1e8cc` mezclado en la rama.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
 export const SUELO_GUARD_QUE_DECLARAN = 22;

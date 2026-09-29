@@ -531,7 +531,11 @@ async function fetchInvoiceDetail(id) {
       const btnDispute = document.createElement('button');
       btnDispute.className = 'btn-secondary btn-sm';
       btnDispute.textContent = 'Ver la reclamación del banco';
-      btnDispute.title = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
+      // SCRUM-1257 · P7, firmado en el comentario 17444. Un `J-` antiguo conserva el texto viejo: el
+      // paquete lleva ESE documento, y no se le llama factura (SCRUM-1252).
+      btnDispute.title = isReceipt
+        ? 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco'
+        : 'Presupuesto firmado + evidencia de aceptación + factura + registro de mensajes, listo para responder al banco';
       btnDispute.addEventListener('click', () => {
         window.open(`/admin/invoices/${invoice.id}/dispute-package`, '_blank');
       });

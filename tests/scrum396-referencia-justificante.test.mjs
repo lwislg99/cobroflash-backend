@@ -23,11 +23,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+// SCRUM-825 (D1, firma del fundador, comentario 17446): el generador `makeReceiptNumber`, la reserva
+// con reintento, su tope y su error propio se RETIRARON. Con ellos se fueron los dos suelos que los
+// mantenían vivos (el tope/error y la entropía). Se quedan los tres de SCRUM-1027 —el modo receipt
+// rechaza siempre, que es la puerta de la regla 24— y el de los manejadores, que vale para cualquier
+// error de la emisión.
 import {
   allocateInvoiceNumber,
-  makeReceiptNumber,
-  INTENTOS_REFERENCIA_JUSTIFICANTE,
-  ReferenciaJustificanteAgotada,
 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,31 +131,6 @@ test('SCRUM-1027 · ni siquiera un fallo simulado del índice cambia el rechazo 
   assert.equal(tx.consultas.length, 0);
 });
 
-test('SCRUM-1027 · SUELO: el tope y el error propio de la colisión SIGUEN definidos (SCRUM-825 los retira, no esto)', () => {
-  // Este ticket no borra infraestructura del justificante (regla 27: eso va firmado). Lo único
-  // que comprueba es que, hoy, nada la alcanza — no que haya dejado de existir.
-  assert.equal(INTENTOS_REFERENCIA_JUSTIFICANTE, 3);
-  assert.ok(ReferenciaJustificanteAgotada, 'la clase del error de agotamiento sigue exportada');
-});
-
-// ── EL GENERADOR SIGUE TENIENDO ENTROPÍA ────────────────────────────────────────────────
-
-test('SCRUM-396 · SUELO DEL GENERADOR: las referencias no salen todas iguales', () => {
-  // Si `makeReceiptNumber` se volviera determinista, el reintento pediría tres veces lo mismo y
-  // este mecanismo sería un bucle caro que no arregla nada. Se comprueba que el generador reparte.
-  const n = 500;
-  const muestras = new Set(Array.from({ length: n }, () => makeReceiptNumber(new Date(2026, 7, 10))));
-  assert.ok(
-    muestras.size >= n - 10,
-    `🔴 de ${n} referencias solo ${muestras.size} son distintas: el generador ha perdido entropía y ` +
-      'el reintento no tendría de dónde sacar una candidata nueva.',
-  );
-  // Y la forma no ha cambiado: `J-YYYYMMDD-XXXX`, sufijo de 4.
-  for (const m of muestras) {
-    assert.match(m, /^J-\d{8}-[0-9A-Z]{4}$/, `🔴 la referencia \`${m}\` no tiene la forma J-YYYYMMDD-XXXX`);
-  }
-});
-
 // ── EL NOMBRE SOBREVIVE AL MANEJADOR DE ARRIBA (condición del GO) ───────────────────────
 
 test('SCRUM-396 · ningún manejador de arriba se traga el nombre del error', () => {
@@ -210,7 +187,7 @@ test('SCRUM-396 · ningún manejador de arriba se traga el nombre del error', ()
     '🔴 HAY MANEJADORES QUE SE TRAGAN EL ERROR SIN DEJAR RASTRO:\n' +
       mudos.map((m) => `   · ${m}`).join('\n') + '\n\n' +
       '  El cuerpo HTTP puede ser un 500 genérico —eso es política de superficie pública— pero el\n' +
-      '  objeto de error tiene que llegar al log. Si no, `ReferenciaJustificanteAgotada` no se\n' +
-      '  distingue de cualquier otro fallo, y su nombre no sirve para nada.',
+      '  objeto de error tiene que llegar al log. Si no, un error con nombre propio\n' +
+      '  (hoy, `invoicing_es_disabled`) no se distingue de cualquier otro fallo.',
   );
 });

@@ -36,15 +36,21 @@ const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
 const TITULO_MODO_EMISION = {
   fiscal: 'Se emiten facturas',
   demo: 'Cuenta de demostración',
-  receipt: 'Se emiten justificantes de cobro',
+  receipt: 'Aún no se emiten documentos', // SCRUM-1220 · firma delegada, comentario 17385
 };
 const DETALLE_MODO_EMISION = {
   fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
   demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
-  receipt: 'Cada cobro genera un justificante para tu cliente, con su propia referencia. No es una factura y no consume tu serie de facturación.',
+  receipt: 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.',
 };
 
 // ── `receipt`: EL QUE SE DEVOLVIÓ, Y POR QUÉ EL DE AHORA SÍ SE SOSTIENE ───────────────────────
+//
+// 🔴 SCRUM-1220 (28-sep-2026) · LO DE ABAJO ES HISTORIA: esa segunda redacción también se retiró.
+// Desde SCRUM-1027, en `receipt` `allocateInvoiceNumber` lanza `invoicing_es_disabled` y no sale
+// NINGÚN documento, así que «Cada cobro genera un justificante» era falso para todo ES real con la
+// emisión apagada. La de ahora (firma delegada, SCRUM-1220 comentario 17385) solo NIEGA: dice que no
+// se genera ni factura ni justificante, sin fecha ni cobro. Medido en `tests/banco-scrum1220/`.
 //
 // La primera redacción decía «con su propia NUMERACIÓN», y el código dice lo contrario en su
 // propio comentario (`invoiceNumber.service.ts:32-35`): los J- **no consumen la serie fiscal**,
@@ -1330,7 +1336,10 @@ async function renderReadinessCard(container, mainFormCard) {
       ok: fiscalReady,
       label: 'Datos fiscales',
       okText: 'Completos — listos para facturar cuando toque',
-      koText: 'Sin ellos, el documento tras el pago es un justificante de cobro',
+      // SCRUM-1257 · antes: «Sin ellos, el documento tras el pago es un justificante de cobro». Falso dos
+      // veces: esta tarjeta no se ve en `receipt` y fuera de él no sale ningún justificante (SCRUM-1027),
+      // y los datos fiscales no deciden el tipo de documento. Firmado en SCRUM-1257 comentario 17444 (P5).
+      koText: 'Complétalos antes de emitir tu primera factura',
       focus: 'taxId',
     },
   ];

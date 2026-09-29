@@ -205,7 +205,14 @@ const R = analizar(RAIZ);
 // en las dos rutas del XML de VeriFactu además del PDF. El módulo ya tiene llamador en `src/`, así
 // que la razón que sostenía el 8 desapareció y el tope baja EN EL MISMO COMMIT que cablea, tal y
 // como pedía el bloque anterior.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ✅ 28-sep-2026 · BAJA A 5 (SCRUM-1184, vista previa del número de albarán).
+//
+// `GET /admin/albaranes/serie` importa `siguienteNumeroDeAlbaran` de `jobs/domain/albaranSerie.ts`,
+// y con él salen DOS de la lista: `albaranSerie.ts` y `invoicing/domain/huecosSerie.ts`, que sólo
+// lo importaba él (hallazgo de SCRUM-1184, c.17277). Es un import, no dos hallazgos. Sus exports
+// sin llamador de fuera pasan a la segunda población, declarados en `_huerfanos-declarados.mjs`.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

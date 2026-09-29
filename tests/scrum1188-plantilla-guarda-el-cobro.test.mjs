@@ -105,6 +105,13 @@ async function guardarComoPlantilla(m, nombre) {
   await pulsar(hoja.querySelector('#save-tpl-btn'));
 }
 
+// El aviso que queda a la vista del editor tras guardar (la caja `.alert` de la vista, visible).
+function alertaVisible(m) {
+  const cajas = todos(m.contenedor).filter((x) => /(^|\s)alert(\s|$)/.test(String(x.className || '')) && x.style && x.style.display === 'block');
+  assert.equal(cajas.length, 1, '🔴 SUELO: tras guardar no queda UNA alerta a la vista');
+  return { texto: texto(cajas[0]).trim(), clase: String(cajas[0].className) };
+}
+
 async function pulsarFicha(m, nombre) {
   const ficha = todos(m.contenedor).find((x) => x.tagName === 'BUTTON'
     && String(x.className || '').includes('quote-plantilla-chip')
@@ -121,6 +128,9 @@ for (const condicion of ['FIFTY_FIFTY', 'MANUAL']) {
     await guardarComoPlantilla(antes, 'Caldera');
     assert.equal(srv.guardadas.length, 1, '🔴 guardar no llegó al servidor');
     assert.equal(srv.guardadas[0].paymentTerms, condicion, '🔴 la plantilla se guarda SIN la condición de cobro elegida');
+    const a = alertaVisible(antes);
+    assert.match(a.texto, /^Plantilla "Caldera" guardada\. /, 'con una condición que SÍ se guarda sale el éxito de siempre');
+    assert.doesNotMatch(a.texto, /sin el plan de cobro/, '🔴 el aviso de «Personalizado» sale donde la condición sí se guardó');
 
     const despues = await montar(srv); // editor nuevo: lo único que sabe es lo que devuelve el servidor
     assert.equal(despues.condiciones.value, 'FULL_UPFRONT', 'SUELO: el editor nace en FULL_UPFRONT');
@@ -146,6 +156,11 @@ test('SCRUM-1188 · 🔴 «Personalizado» NO se guarda como condición: sin sus
   await guardarComoPlantilla(antes, 'Por tramos');
   assert.equal(srv.guardadas.length, 1, '🔴 guardar no llegó al servidor');
   assert.equal(srv.guardadas[0].paymentTerms, null, '🔴 se guardó una condición para un plan por tramos que la plantilla no puede reproducir');
+  // Aviso FIRMADO (SCRUM-1188 c.17332), letra por letra, en lugar del éxito.
+  const a = alertaVisible(antes);
+  assert.equal(a.texto, 'Plantilla "Por tramos" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.',
+    '🔴 la plantilla se guarda sin el plan de cobro y el profesional no se entera');
+  assert.doesNotMatch(a.clase, /success/, 'no es un éxito a secas: algo NO se guardó');
 
   const despues = await montar(srv);
   await pulsarFicha(despues, 'Por tramos');

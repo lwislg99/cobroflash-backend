@@ -119,6 +119,29 @@ async function encolarFirma(documentoId, cuerpo, tipo) {
  * la subida falla, no hay ③, y el trazo sigue en pantalla (SCRUM-404), que es lo que dice el
  * mensaje ya aprobado del camino de firma.
  */
+/**
+ * SCRUM-1191 · ¿Se deja de encolar esta firma por falta de sitio? Sólo `true` con las tres cosas:
+ * la cola se ha podido leer, tiene firmas pendientes y `hayEspacioParaOtraFirma` dice SIN_ESPACIO.
+ *
+ * · Si ESTE documento ya está en la cola, encolar lo sobrescribe (misma clave) y la cola no crece:
+ *   no se le quita la red a un reintento.
+ * · NO_SE_SABE, o no poder leer la cola, NO bloquea: se encola igual (decisión de SCRUM-360).
+ */
+async function noCabeOtraFirma(clave, cuerpo) {
+  if (typeof window.leerFirmasPendientes !== 'function' || typeof window.hayEspacioParaOtraFirma !== 'function') return false;
+  let cola;
+  try { cola = await window.leerFirmasPendientes(); } catch (_e) { return false; }
+  if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) return false;
+  const pendientes = cola.firmas.length;
+  if (pendientes === 0) return false;
+  if (cola.firmas.some((f) => f && f.claveIdempotencia === clave)) return false;
+  let tamano;
+  try { tamano = JSON.stringify(cuerpo || {}).length; } catch (_e) { tamano = undefined; }
+  let espacio;
+  try { espacio = await window.hayEspacioParaOtraFirma(pendientes, tamano); } catch (_e) { return false; }
+  return Boolean(espacio && espacio.estado === window.SIN_ESPACIO);
+}
+
 async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   const clave = claveDeFirma(documentoId, tipo);
   if (!clave) {
@@ -129,8 +152,12 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
     throw e;
   }
 
-  const encolado = await encolarFirma(documentoId, cuerpo, tipo);
-  const encolada = encolado && encolado.estado === window.GUARDADO;
+  // SCRUM-1191 · EL TOPE, ANTES DE ENCOLAR. `sinEspacio` sólo se marca con firmas YA pendientes:
+  // el aviso aprobado dice «Conéctate para subir las que tienes pendientes», y con la cola vacía
+  // (el disco lo llenó otra cosa) sería falso — entonces se encola como siempre.
+  const sinEspacio = await noCabeOtraFirma(clave, cuerpo);
+  const encolado = sinEspacio ? null : await encolarFirma(documentoId, cuerpo, tipo);
+  const encolada = Boolean(encolado && encolado.estado === window.GUARDADO);
 
   let respuesta;
   try {
@@ -143,13 +170,16 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
       return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error, rechazada: true };
     }
     // No se desencola: es justo el caso para el que existe la cola.
-    return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error };
+    // SCRUM-1191 · la marca va EN el error, como `sinRed` (api.js) y `sinClave`: las vistas ya le
+    // pasan el error a `mensajeDeFalloAlFirmar`, que así dice el aviso sin cambiar su llamada.
+    if (sinEspacio && error && typeof error === 'object') error.sinEspacio = true;
+    return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error, sinEspacio };
   }
 
   if (!window.confirmaElServidor(respuesta)) {
     // Respondió algo que no es una confirmación —el HTML de un portal cautivo, por ejemplo—. No
     // subió: se queda en la cola.
-    return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, respuesta };
+    return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, respuesta, sinEspacio };
   }
 
   // Confirmada: fuera de la cola. Si el desencolado fallara, queda un fantasma —y el 409
@@ -396,10 +426,15 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
  * `src/modules/jobs/app/routes/albaranes.routes.ts:639-703`—. `claveIdempotencia`, `albaranId` y
  * `encoladaEn` son NUESTROS: sirven para manejar la cola y no viajan. El endpoint de firmar **no
  * acepta clave de idempotencia** y metérsela sería tocar el sellado.
+ *
+ * 🔴 SCRUM-1229 · `firmadoTecnicoNombre` también viaja: es el nombre que lee
+ * `/admin/partes/:id/firmar-tecnico` (`partes.routes.ts`). Sin él, la firma del técnico encolada
+ * sin cobertura subía sin nombre, el servidor la rechazaba (400) y salía de la cola como rechazada:
+ * se perdía. Las firmas de albarán y de cliente no lo llevan, así que para ellas nada cambia.
  */
 function subirFirmaDeLaCola(firma) {
   const cuerpo = { signatureData: firma.signatureData };
-  for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro']) {
+  for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro', 'firmadoTecnicoNombre']) {
     if (firma[campo] !== undefined) cuerpo[campo] = firma[campo];
   }
   // 🔴 A SU ENDPOINT, y el default importa: una firma encolada por una versión ANTERIOR a

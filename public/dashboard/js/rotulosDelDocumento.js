@@ -45,43 +45,32 @@
 // MICROCOPY FIRMADA POR EL ASESOR el 6-sep-2026 (regla 30). Se firmó DERIVANDO, no inventando:
 // «justificante» ya es el término oficial del máster y ya lo dice el botón desde SCRUM-346. Aquí
 // no entra palabra nueva; entra que seis sitios digan la que ya estaba decidida.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-825 D1 · LA RAMA «JUSTIFICANTE» SE RETIRA (firma del fundador, SCRUM-825 comentario 17446)
+//
+// Todo lo de arriba era verdad cuando se escribió y no se borra. Desde SCRUM-1027 (21-sep-2026)
+// `modoDocumentoSuelto` solo devuelve 'factura' o 'no': el predicado `esJustificante()` era
+// SIEMPRE false y sus seis rótulos no los veía nadie. Medido en el censo de SCRUM-1257 (grupo A) y
+// re-medido ejecutando `modoDocumentoSuelto` en los tres modos (docs/master/SCRUM-1257.md, §1257c).
+// Lo que queda es el lado «factura», que es el que ya se pintaba. No entra ni un texto nuevo.
+//
+// El fichero se queda como FUENTE ÚNICA de estos rótulos: el motivo de SCRUM-776 (que el título, el
+// botón, el aviso y el error no digan cosas distintas en el mismo gesto) sigue en pie sin el modo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
 window.rotulosDelDocumento = (function () {
-  /**
-   * EL ÚNICO PREDICADO. Copiado de ningún sitio: es la lectura directa del veredicto del
-   * servidor, y `invoicesView.js` hace la misma comparación sobre la misma global.
-   */
-  function esJustificante() {
-    return window.appDocumentoSuelto === 'justificante';
-  }
-
-  // ⚠️ CADA RÓTULO ES UN TERNARIO EXPLÍCITO, Y NO UN `segunModo(a, b)` — que es como estaba
-  // escrito primero. El motivo no es de estilo: con el ayudante, los catorce textos pasaban a ser
-  // ARGUMENTOS de una llamada, y el censo de SCRUM-601 —que clasifica un literal por la condición
-  // que lo elige— dejaba de ver que dependían del modo. Medido: los siete salían del censo
-  // entero (162 → 155 literales visibles) en vez de moverse de «a pelo» a «deriva del flag».
-  //
-  // Un rótulo que el censo no ve es un rótulo que el trinquete no protege. Escrito así, la
-  // condición está PEGADA a sus dos ramas, que es exactamente la forma que ya tiene el botón en
-  // `invoicesView.js` y la que el instrumento sabe leer.
   return {
-    esJustificante: esJustificante,
-
     // ── Pantalla de listado ────────────────────────────────────────────────────────────
-    tituloListado: function () { return esJustificante() ? 'Justificantes' : 'Facturas'; },
-    columnaNumero: function () { return esJustificante() ? 'Nº justificante' : 'Nº factura'; },
+    tituloListado: function () { return 'Facturas'; },
+    columnaNumero: function () { return 'Nº factura'; },
 
-    // ── Modal del documento suelto ─────────────────────────────────────────────────────
-    tituloModal: function () { return esJustificante() ? 'Nuevo justificante' : 'Nueva factura'; },
-    accionPrimaria: function () { return esJustificante() ? 'Emitir justificante' : 'Emitir factura'; },
+    // ── Página del documento suelto ────────────────────────────────────────────────────
+    tituloModal: function () { return 'Nueva factura'; },
+    accionPrimaria: function () { return 'Emitir factura'; },
     // SCRUM-875 · aquí estaba `ariaDialogo()`, el `aria-label` del diálogo. Su único consumidor era
     // el modal viejo, retirado en SCRUM-867, y el fundador decidió retirarlo: una página no es un
     // diálogo. Si algún día hay un diálogo, su texto se aprueba entonces (regla 30).
-    avisoEmitido: function () { return esJustificante() ? 'Justificante emitido' : 'Factura emitida'; },
-    errorAlEmitir: function () {
-      return esJustificante()
-        ? 'No hemos podido emitir el justificante. Inténtalo otra vez.'
-        : 'No hemos podido emitir la factura. Inténtalo otra vez.';
-    },
+    avisoEmitido: function () { return 'Factura emitida'; },
+    errorAlEmitir: function () { return 'No hemos podido emitir la factura. Inténtalo otra vez.'; },
 
     // ── Hojas de plantillas del documento suelto (SCRUM-600g) ──────────────────────────
     // ⚠️ AQUÍ NO HAY TERNARIO, y no es saltarse la regla de arriba. Ese ternario existe para que un

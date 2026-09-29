@@ -4,9 +4,9 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
-// SCRUM-1188 · las condiciones de cobro que una plantilla puede guardar: las que caben en
-// `quote_templates.payment_terms`. «CUSTOM» no está porque sus tramos no tienen columna ahí.
-const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'];
+// SCRUM-1188/1219 · lo que una plantilla guarda de las condiciones de cobro (cabe en `payment_terms`);
+// `''` es «Sin condiciones específicas» (1219). «CUSTOM» no: sus tramos no tienen columna ahí.
+const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL', ''];
 
 /**
  * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
@@ -436,9 +436,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // En el documento suelto, la guía que nombra el documento sólo existe firmada para el
   // justificante. En modo factura NO hay texto firmado y se omite (regla 30), igual que SCRUM-600
   // omitió el subtítulo: el paso se entiende por su título, «Cliente».
-  pasoClienteGuia.textContent = esDocumentoSuelto
-    ? (window.rotulosDelDocumento.esJustificante() ? "¿Para quién es el justificante?" : "")
-    : "¿Para quién es el presupuesto?";
+  // SCRUM-825 D1 (comentario 17446) · la guía del justificante se RETIRA con su rama muerta (censo de
+  // SCRUM-1257, grupo A): en el documento suelto queda el lado factura, que ya era no pintar nada.
+  pasoClienteGuia.textContent = esDocumentoSuelto ? "" : "¿Para quién es el presupuesto?";
   if (pasoClienteGuia.textContent) blockClient.appendChild(pasoClienteGuia);
 
   const blockLines = document.createElement("div");
@@ -1592,7 +1592,7 @@ descWrapper.appendChild(descLabel);
   // guarda— pero su tooltip nombra el documento. Se omite SÓLO el tooltip: el rótulo visible
   // («✨ Sugerir con IA») no nombra nada y se explica solo, así que no queda ningún control mudo.
   // Escribir aquí otra frase sería microcopy nueva (regla 30).
-  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y la IA te sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
   const useTemplateBtn = document.createElement("button");
@@ -4855,7 +4855,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
           body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
         });
         closeOverlay();
-        setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
+        // SCRUM-1188 · con «CUSTOM» la plantilla sale SIN condición (arriba): se dice, una vez, aquí.
+        // Texto FIRMADO por el orquestador (SCRUM-1188, comentario 17332), letra por letra. SOLO con
+        // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
+        if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
         alertEl.className = 'alert error';
@@ -4895,8 +4899,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
           dtoGlobalBtn.hidden = true;
         }
         // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
-        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve.
-        if (template.paymentTerms) paymentSelect.value = template.paymentTerms;
+        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve. SCRUM-1219: `''` también.
+        if (template.paymentTerms || (template.paymentTerms === '' && !esDocumentoSuelto)) paymentSelect.value = template.paymentTerms;
         // SCRUM-1186 · y los dos textos del documento (cabecera y Observaciones), que «Duplicar»
         // copia desde SCRUM-1186. Una plantilla del catálogo no los trae y el campo queda vacío.
         ponerTextosDelDocumento(template);

@@ -118,6 +118,14 @@ export interface LibroRegistro {
   sinNumeroImporte: number;
   /** Números de las facturas cuyo importe no se pudo leer. */
   importesIlegibles: string[];
+  /**
+   * SCRUM-1232 · justificantes de ESTE merchant que se dejaron fuera por no ser facturas.
+   *
+   * Sólo viene cuando se pidió el libro de EXPEDIDAS (`soloFacturas`, en el lector). Ausente
+   * significa «no se filtró», no «cero»: el 303 pide el libro sin filtro y no tiene que parecer
+   * que se ha mirado. Lo que un libro fiscal descarta se cuenta, igual que `ajenas` y `sinNumero`.
+   */
+  justificantesFuera?: number;
 }
 
 /** Lee un importe SIN coercionar. Devuelve `null` si no es un número utilizable. */

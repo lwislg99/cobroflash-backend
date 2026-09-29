@@ -29,7 +29,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262: el rango imposible
@@ -153,7 +153,11 @@ function ficherosDeSrc() {
   return salida;
 }
 
-const bloqueCliente = (customer) => BLOQUES.bloqueCliente({ customer });
+// SCRUM-1171 · el bloque recibe `contactoDelCliente` INYECTADO (el de api.js) y el `numeroWhatsApp` que
+// manda el servidor; se le dan los dos como en la ficha real, o los enlaces no saldrían.
+const CONTACTO = cargarDashboard(RAIZ).ctx.contactoDelCliente;
+const { canalDeWhatsApp } = await import(pathToFileURL(path.join(RAIZ, 'dist/core/contacto/canalDeWhatsApp.js')).href);
+const bloqueCliente = (customer) => BLOQUES.bloqueCliente({ customer: { ...customer, numeroWhatsApp: canalDeWhatsApp(customer) || null } }, CONTACTO);
 const lineaDeNota = (b) => (b ? b.lineas.find((l) => l.nota) : undefined);
 
 // ═══ ① EL RÓTULO ═════════════════════════════════════════════════════════════════════════
