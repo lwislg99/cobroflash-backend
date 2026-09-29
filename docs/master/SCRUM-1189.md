@@ -29,3 +29,9 @@ un 400 `tipo_invalido` (la vista repinta y el tipo se pierde otra vez).
 - Medido contra la vista de ANTES del arreglo (0a10475c): 4 ✔ / 3 ✖ (los dos del viaje y el control
   del oyente, que no lo encuentra). Contra la de hoy: 7/7.
 - Sin cambios de código: solo el test. No hay texto nuevo.
+- **Quién arregló qué, para que no se pierda:** el defecto lo arregló #1855 (S2, dentro de SCRUM-1175
+  PR-C, 27-sep). Lo de S4 es la prueba que faltaba: la de 1175c era hueca contra el servidor.
+- 🔴 **El ALTA (`POST /admin/partes`) NO manda `tipo`, A PROPÓSITO.** El alta no tiene selector de tipo
+  y no se inventa uno (decisión de S2 en el ticket, 27-sep): el parte nace sin tipo y se marca en su
+  detalle. No es un hueco que «arreglar». `cuerpo · POST /admin/partes::tipo` sigue declarada en el
+  trinquete de 1185 por eso.
