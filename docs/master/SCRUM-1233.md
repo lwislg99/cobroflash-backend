@@ -57,10 +57,23 @@ Carril S2 (pantallas) · rama `scrum-1233-mensaje-para-persona` · sesión `s2-2
 | `plansView.js` | 2 (:9, :219) | J (pagos), por confirmar |
 | `cobrosView.js` | 1 (:116) | J (pagos), por confirmar |
 | `jobsView.js` | 1 (:398) | S4 |
-| `expensesView.js` | 2 (:295, :1015) | S2 |
-| `productsView.js` | 1 (:891) | S2 |
+| `expensesView.js` | 1 (:295) | S2 · espera firma |
 | `signaturePad.js` | 1 (:413) | S2 |
-| `teamView.js` | 1 (:286) | S2 |
 | `tutorial.js` | 1 (:339) | S2 |
 
 Las de S2 son «el resto» de este ticket, que va después de SCRUM-1267 (orden del orquestador).
+
+## El resto en S2 (rama `scrum-1233b-resto-s2`, apilada sobre la del helper)
+
+- `expensesView.js:1015` (guardar el gasto) y `teamView.js:282` (tope de usuarios) pasan al helper con su
+  mismo texto aprobado. Techo total: 19 → 16.
+- `productsView.js:891` era un FALSO POSITIVO: `codigo` se lee solo en la condición del ternario. El censo
+  ya no cuenta lo que solo DECIDE (la condición de un ternario y los lados de `===`/`!==`). Tiene control
+  negativo, y un control de que la poda no se lleva las RAMAS del ternario.
+- Se quedan declarados, con su motivo:
+  - `signaturePad.js:413` es CONTRATO: `onConfirm` lanza un Error cuyo `message` ya es el texto traducido
+    (`mensajeDeFalloAlFirmar`, `mensajeDelAlbaran`). Pasarlo por el helper lo borraría. Ojo:
+    `parteDetailView.js:993` (S4) mete `r.error.message` crudo en ese contrato.
+  - `tutorial.js:339` pinta `r.message` del CUERPO de un 200, que ya es `data.message`.
+- **Espera firma:** `expensesView.js:295`. Pinta `Error: ${err.message}` en un `innerHTML` al fallar la
+  carga de la lista, y no hay texto aprobado para ese caso. No se pinta nada nuevo hasta la firma.

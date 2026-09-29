@@ -172,6 +172,12 @@ export function crudosOcultosDe(nombre, fuente) {
     const r = { crudo: false, manchado: false };
     const bajar = (n) => {
       if (TRADUCTORES.includes(nombreDeLlamada(n, sf))) return;
+      // Lo que solo DECIDE no se pinta: la condición de un ternario y los dos lados de una
+      // comparación (`codigo === PV_COD_NOMBRE_DUPLICADO ? A : B`, productsView). Leer para decidir
+      // no es enseñar, que es el mismo criterio del control negativo de SCRUM-644.
+      if (ts.isConditionalExpression(n)) { bajar(n.whenTrue); bajar(n.whenFalse); return; }
+      if (ts.isBinaryExpression(n) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken,
+        ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(n.operatorToken.kind)) return;
       if (leeCampoDelServidor(n)) { r.crudo = true; return; }
       if (ts.isIdentifier(n) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)
         && estaManchada(n)) r.manchado = true;
