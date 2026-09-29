@@ -19,31 +19,31 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/intermitente-1281.mjs',
     de: '  if (otros.length) {',
     a: '  if (false) {',
-    cae: 'un rojo con OTRO paso caído sale INTERMITENTE',
+    cae: 'si cae OTRO paso además de la tanda, no es el intermitente',
   },
   {
     fichero: 'scripts/equipo/intermitente-1281.mjs',
     de: '  if (sin.length === 0) {',
     a: '  if (sin.length < detalle.length) {',
-    cae: 'el rojo mixto del 25-sep (775 + 804b) sale INTERMITENTE',
+    cae: 'el rojo MIXTO del 25-sep (775 con firma + 804b real) NO es el intermitente',
   },
   {
     fichero: 'scripts/equipo/intermitente-1281.mjs',
     de: '  return bloque.includes(fichero) ? bloque : \'\';',
     a: '  return bloque;',
-    cae: 'la firma de OTRO fichero se le atribuye al que cayó',
+    cae: 'la firma de OTRO fichero no se le atribuye al que cayó',
   },
   {
     fichero: 'scripts/equipo/intermitente-1281.mjs',
     de: "  if (c.veredicto === 'CIEGO') return res; // sin veredicto no se toca ninguna etiqueta",
     a: '',
-    cae: 'sin poder leer el log se quita la etiqueta',
+    cae: 'sin log legible, o sin PR legible, NO se toca ninguna etiqueta',
   },
   {
     fichero: '.github/workflows/avisador-rojo.yml',
     de: '        name: ¿Es el intermitente de SCRUM-1281?\n        continue-on-error: true\n',
     a: '        name: ¿Es el intermitente de SCRUM-1281?\n',
-    cae: 'el paso nuevo puede tumbar el aviso de la sesión',
+    cae: 'el avisador llama al clasificador ANTES del aviso, sin poder tumbarlo',
   },
 ];
 
