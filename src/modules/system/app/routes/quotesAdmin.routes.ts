@@ -19,6 +19,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
+import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1288
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
@@ -755,7 +756,7 @@ router.post('/:id/send-email', async (req, res) => {
       customerId: quote.customerId,
       type: 'quote_sent',
       title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
-      detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+      detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
     });
 
     return res.json(sendSuccessBody());
