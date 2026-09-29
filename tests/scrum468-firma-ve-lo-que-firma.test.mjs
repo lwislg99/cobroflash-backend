@@ -66,7 +66,7 @@ const FUENTE_PDF = 'src/modules/jobs/infra/albaranPdf.service.ts';
 function pdfValorado() {
   const src = leer(FUENTE_PDF);
   const sf = ts.createSourceFile(FUENTE_PDF, src, ts.ScriptTarget.Latest, true);
-  const out = { rotulos: [], leyenda: null, plantillas: [], fmtMoney: null, importe: null };
+  const out = { rotulos: [], leyenda: null, plantillas: [], fmtMoney: null, fmtQty: null, importe: null };
 
   const dentroDeValorado = (n) => {
     for (let p = n.parent; p; p = p.parent) {
@@ -82,6 +82,12 @@ function pdfValorado() {
       // SCRUM-636 · con los helpers de `utils` en el ámbito: el cuerpo real delega en ellos.
       const f = new Function(...AYUDAS, 'v', cuerpo);
       out.fmtMoney = (v) => f(...AYUDAS.map((n2) => UTILS[n2]), v);
+    }
+    // SCRUM-743 · y el de CANTIDAD, igual: la celda «Cant.» tampoco puede decir otra cosa que el papel.
+    if (ts.isFunctionDeclaration(n) && n.name?.text === 'fmtQty' && n.body) {
+      const cuerpo = n.body.getText(sf).replace(/^\{|\}$/g, '');
+      const f = new Function(...AYUDAS, 'v', cuerpo);
+      out.fmtQty = (v) => f(...AYUDAS.map((n2) => UTILS[n2]), v);
     }
     // `const importe = Number(l.precioUnitario) * Number(l.cantidad)` — la aritmética por línea.
     if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'importe' && n.initializer) {
@@ -142,6 +148,11 @@ test('SCRUM-468 · SUELO: si no se lee el PDF, no se compara nada (y no se pasa 
   );
   assert.ok(pdf.leyenda, '🔴 ESCÁNER CIEGO: no se ha encontrado la leyenda de importes en el PDF.');
   assert.ok(
+    typeof pdf.fmtQty === 'function',
+    '🔴 ESCÁNER CIEGO: no se ha derivado `fmtQty` del PDF (SCRUM-743). Sin él, la celda de cantidad ' +
+      'no tiene contra qué compararse.',
+  );
+  assert.ok(
     pdf.plantillas.length >= 2,
     `🔴 ESCÁNER CIEGO: ${pdf.plantillas.length} plantillas de total leídas del PDF; Base y Total son dos.`,
   );
@@ -169,6 +180,13 @@ test('SCRUM-468 · 🔴 EL TEST: para un VALORADO, pantalla y PDF coinciden CAMP
   LINEAS.forEach((l, i) => {
     const fila = filas[i];
     assert.ok(fila, `🔴 la pantalla no ha pintado la línea ${i + 1} («${l.concepto}»)`);
+    // SCRUM-743 · la CANTIDAD, celda a celda: antes salía en crudo (`2.5`) y el PDF decía `2,5`.
+    assert.equal(
+      fila[1], pdf.fmtQty(l.cantidad),
+      `🔴 LA CANTIDAD DE «${l.concepto}» NO COINCIDE CON EL PDF.\n\n` +
+        `  PDF: «${pdf.fmtQty(l.cantidad)}» · pantalla: «${fila[1] ?? '(no hay celda)'}»\n` +
+        '  Dos formas del mismo número en las dos caras del documento que se firma.',
+    );
     const conPrecio = l.precioUnitario !== null && l.precioUnitario !== undefined;
     const esperadoPrecio = conPrecio ? pdf.fmtMoney(l.precioUnitario) : '';
     const esperadoImporte = conPrecio ? pdf.fmtMoney(pdf.importe(l)) : '';
