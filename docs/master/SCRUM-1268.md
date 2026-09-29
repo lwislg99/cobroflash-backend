@@ -61,3 +61,31 @@ IRPF descartado y el campo borrado, las exclusiones y la falta de sesión. Tiene
 
 Antes hay que hacer `node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com`, que ya está cubierto
 por su regla.
+
+## 1268b · el presupuesto (29-sep-2026, S3, encargo del orquestador)
+
+Sin un presupuesto, S2 no podía verificar 1174 (PDF con cabecera y pie), 1180 («Duplicar» de las cláusulas)
+ni 1205 (botón de cobro de la lista). `sembrar` añade un paso ⑤:
+
+- **Lista blanca:** entra `POST /quote/create` y nada más de presupuestos (enviar, decidir, facturar y el
+  WhatsApp siguen fuera; el test lo fija con 4 rutas nuevas fuera).
+- **Qué crea:** un presupuesto en borrador para el «Cliente de pruebas QA», una línea de 10 € + 21 % IVA,
+  con **cabecera y pie** que empiezan por la marca `[QA-1268]`. Gasta un número de la serie de presupuestos,
+  que no es fiscal. Como owner no avisa a nadie: el WhatsApp solo sale con `needsApproval`, que exige un
+  técnico (`quotes.routes.ts`).
+- 🔴 **Idempotencia propia**, porque el servidor no deduplica: antes de crear, lista los presupuestos del
+  cliente QA y abre el DETALLE de cada uno (la lista no trae cabecera ni pie) buscando la marca en la cabecera
+  **o** en el pie. Dos con la marca → «no elijo» (salida 1). Lista llena (100, `TOPE_LISTADO_QUOTES`) y no
+  está → «no lo sé» (salida 1), no crea.
+- **Se relee:** tras el 201 se abre el detalle y se comprueba que la cabecera y el pie son los enviados. Un
+  201 con un texto perdido sale con 1 y lo dice.
+- ⚠️ Si S2 borra la marca de la cabecera **y** del pie al probar, la siguiente ejecución crea otro. Por eso
+  la marca va en los dos.
+
+**Regla de permiso:** la misma (`sembrar`); no cambia.
+
+**Pruebas:** 2 tests ampliados (sembrado y repetición; la lista blanca pasa a 15 fuera y 7 dentro) y 3 nuevos
+(dos con marca, lista llena con su control a 99, relectura con la cabecera perdida) y **2 mutaciones** más declaradas (no buscar la marca; no releer). Las 5
+del fichero caen, comprobado a mano una a una.
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:29:38Z
