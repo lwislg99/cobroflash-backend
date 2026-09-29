@@ -53,9 +53,12 @@ function limpiarTodo() {
  * Crea un directorio temporal y **se compromete a borrarlo** al terminar el proceso.
  *
  * @param {string} prefijo  el mismo que se le pasaba a `mkdtempSync`, p.ej. `'yaqu-176b-'`.
+ * @param {{ dentroDe?: string }} [opciones]  `dentroDe`: la raíz donde crearlo en vez de
+ *   `os.tmpdir()`. Existe para las fixtures de git de SCRUM-1281, que dejan de compartir sitio con
+ *   el resto de la tanda. Se crea si no existe; al salir se borra SOLO el directorio nuevo.
  * @returns {string} la ruta del directorio, igual que `mkdtempSync`.
  */
-export function temporal(prefijo = 'yaqu-') {
+export function temporal(prefijo = 'yaqu-', { dentroDe } = {}) {
   if (!enganchado) {
     // `exit` corre en la salida normal Y en `process.exit(n)` — que es como sale el runner con
     // `--test-force-exit`. Los otros dos son por si el proceso muere por señal atendible.
@@ -64,7 +67,8 @@ export function temporal(prefijo = 'yaqu-') {
     process.on('SIGTERM', () => { limpiarTodo(); process.exit(143); });
     enganchado = true;
   }
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+  if (dentroDe) fs.mkdirSync(dentroDe, { recursive: true });
+  const dir = fs.mkdtempSync(path.join(dentroDe || os.tmpdir(), prefijo));
   pendientes.add(dir);
   return dir;
 }
