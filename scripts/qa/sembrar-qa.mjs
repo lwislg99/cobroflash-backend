@@ -4,6 +4,7 @@
 // 🔴 LA ÚNICA ESCRITURA EN PRODUCCIÓN PARA QA: ESTRECHA, Y SÓLO EN LA CUENTA QA.
 //
 //   node scripts/qa/sembrar-qa.mjs sembrar            cliente + trabajo + albarán EMITIDO + parte en borrador
+//                                                     + presupuesto en borrador con cabecera y pie
 //   node scripts/qa/sembrar-qa.mjs perfil <f.json>    guarda Configuración y la RELEE, campo a campo
 //
 // Autorizado por el fundador (29-sep-2026) para QA en producción en la cuenta QA, incluida la
@@ -25,6 +26,12 @@
 // está, y el alta lleva una clave de idempotencia fija por trabajo (el servidor devuelve el mismo,
 // 200 `repetida`, sin reservar número). Repetir la orden no crea nada nuevo ni quema números.
 //
+// El PRESUPUESTO (SCRUM-1268b) gasta un número de la serie de presupuestos, que NO es fiscal, y
+// como owner no avisa a nadie (el WhatsApp sólo sale si necesita aprobación, y eso es de un
+// técnico: `quotes.routes.ts`, `needsApproval`). 🔴 `POST /quote/create` NO deduplica: la
+// idempotencia es NUESTRA, por el marcador `MARCA_PRESUPUESTO_QA` en su cabecera o su pie, y se
+// busca en el DETALLE de cada presupuesto del cliente QA (la lista no trae esos textos).
+//
 // SALIDAS: 0 hecho · 1 NO PUDE (respuesta no 2xx, datos ambiguos, lista recortada): se dice, y lo
 //          hecho hasta ahí queda como estaba · 2 CIEGO: sin sesión · 3 rechazado: uso malo,
 //          escritura fuera de la lista, o una sesión que NO es la cuenta QA.
@@ -41,6 +48,10 @@ export const TITULO_TRABAJO_QA = 'Trabajo de pruebas QA';
 export const claveAlbaranQA = (jobId) => `qa-sembrar-albaran-trabajo-${jobId}`;
 export const PERFIL_EXCLUIDOS = ['slug', 'invoiceSeriesPrefix'];
 const LIMITE_LISTA = 200; // las listas del panel cortan en 200: si llega llena, «no está» no se sabe
+export const MARCA_PRESUPUESTO_QA = '[QA-1268]';
+export const CABECERA_QA = `${MARCA_PRESUPUESTO_QA} Cabecera de pruebas QA: este texto va ARRIBA del presupuesto.`;
+export const PIE_QA = `${MARCA_PRESUPUESTO_QA} Pie de pruebas QA: este texto va ABAJO del presupuesto.`;
+const TOPE_LISTA_PRESUPUESTOS = 100; // `TOPE_LISTADO_QUOTES` de quoteAdmin.ts: si llega llena, «no está» no se sabe
 
 export const ESCRITURAS = [
   ['POST', /^\/admin\/customers$/],
@@ -49,6 +60,7 @@ export const ESCRITURAS = [
   ['POST', /^\/admin\/albaranes\/\d+\/emitir$/],
   ['POST', /^\/admin\/partes$/],
   ['PUT', /^\/admin\/merchant$/],
+  ['POST', /^\/quote\/create$/],
 ];
 /** Redundante con la lista blanca a propósito: si alguien la ensancha, esto sigue cerrando. */
 export const PROHIBIDAS = [/enviar/i, /factur/i, /invoice/i, /convertir/i, /cobro/i, /pago/i, /payment/i, /stripe/i, /onboarding/i, /flag/i, /borrar/i];
@@ -167,6 +179,38 @@ export async function sembrar(fetchFn, cookie) {
   if (!parte) parte = await escribir('POST', '/admin/partes', { jobId: trabajo.id });
   if (!Number.isInteger(parte.id) || parte.estado !== 'borrador') throw new NoPude(`el parte no quedó en borrador (id=${parte.id}, estado=${parte.estado}).`);
   lineas.push(`parte     #${parte.id} ${parte.numero ?? ''} · borrador · ${parteNuevo ? 'CREADO' : 'ya estaba'}`);
+
+  // ⑤ presupuesto en borrador con cabecera y pie. El servidor NO deduplica: se busca antes por la
+  // marca, en el DETALLE (la lista no trae los textos), sólo entre los del cliente QA.
+  const delCliente = lista(await leer(`/admin/quotes?search=${encodeURIComponent(NOMBRE_CLIENTE_QA)}`), 'la lista de presupuestos');
+  const candidatos = delCliente.filter((q) => q && q.customerName === NOMBRE_CLIENTE_QA);
+  const conMarca = [];
+  for (const q of candidatos) {
+    const d = await leer(`/admin/quotes/${q.id}`);
+    const textos = `${d.docHeaderText ?? ''}\n${d.docFooterText ?? ''}`;
+    if (d.customer && d.customer.id === cliente.id && textos.includes(MARCA_PRESUPUESTO_QA)) conMarca.push(d);
+  }
+  if (conMarca.length > 1) throw new NoPude(`hay ${conMarca.length} presupuestos con la marca ${MARCA_PRESUPUESTO_QA} (ids ${conMarca.map((q) => q.id).join(', ')}): no elijo uno a ciegas.`);
+  if (!conMarca.length && delCliente.length >= TOPE_LISTA_PRESUPUESTOS) throw new NoPude(`la lista de presupuestos llega llena (${delCliente.length}): no puedo afirmar que el presupuesto no exista.`);
+  let presupuesto = conMarca[0];
+  const presupuestoNuevo = !presupuesto;
+  if (!presupuesto) {
+    const creado = await escribir('POST', '/quote/create', {
+      merchant_id: cuenta.merchantId, customer_id: cliente.id, currency: 'EUR',
+      lines: [{ concept: 'Servicio de pruebas QA', qty: 1, price: 10, tax: 21 }],
+      docHeaderText: CABECERA_QA, docFooterText: PIE_QA,
+    });
+    if (!Number.isInteger(creado.id)) throw new NoPude('el presupuesto no trae id');
+    // Se RELEE: que el alta devuelva 201 no dice que la cabecera y el pie se guardaran.
+    presupuesto = await leer(`/admin/quotes/${creado.id}`);
+    if (presupuesto.docHeaderText !== CABECERA_QA || presupuesto.docFooterText !== PIE_QA) {
+      throw new NoPude(`presupuesto #${creado.id} creado, pero al releerlo la cabecera o el pie NO son los enviados: `
+        + `cabecera=${corto(presupuesto.docHeaderText)} · pie=${corto(presupuesto.docFooterText)}.`);
+    }
+  }
+  if (presupuesto.status !== 'draft') throw new NoPude(`el presupuesto #${presupuesto.id} no está en borrador (status=${presupuesto.status}).`);
+  const conTextos = presupuesto.docHeaderText && presupuesto.docFooterText ? 'con cabecera y pie' : '⚠️ le falta la cabecera o el pie (alguien los editó)';
+  lineas.push(`presupuesto #${presupuesto.id} nº ${presupuesto.number ?? '?'} · borrador · ${conTextos} · ${presupuestoNuevo ? 'CREADO' : 'ya estaba'}`);
   return lineas;
 }
 
