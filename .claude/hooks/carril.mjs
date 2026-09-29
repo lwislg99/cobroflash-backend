@@ -79,7 +79,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   process.stdin.on('data', (c) => { d += c; });
   process.stdin.on('end', () => {
     let s;
-    try { s = JSON.parse(d || '{}'); } catch { bloquear('⛔ Cerradura de carril: stdin no es JSON. NO-PUDE-MIRAR.'); }
+    try { s = JSON.parse(d.replace(/^﻿/, '') || '{}'); } catch { bloquear('⛔ Cerradura de carril: stdin no es JSON. NO-PUDE-MIRAR.'); }
     principal(s, process.argv.includes('--exigir-identidad'));
     process.exit(0);
   });
