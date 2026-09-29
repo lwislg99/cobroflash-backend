@@ -108,6 +108,9 @@ test('SCRUM-1233 · 🔴 CONTROL POSITIVO: el censo acusa los dos sitios rotos d
     ['pintor local'], '🔴 no ve un pintor local');
   assert.equal(crudosOcultosDe('d.js', 'el.innerHTML = `<div>Error: ${err.message}</div>`;').hallazgos.length, 1,
     '🔴 no ve un `.message` dentro de una plantilla de `innerHTML`');
+  // Y la poda de condiciones no ciega la RAMA: una variable manchada en `whenTrue` sí se pinta.
+  assert.equal(crudosOcultosDe('e.js', "const m = e.message; setAlert('error', ok ? m : 'x');").hallazgos.length, 1,
+    '🔴 la poda de condiciones se lleva también las ramas del ternario');
 });
 
 test('SCRUM-1233 · CONTROL NEGATIVO: lo que pasa por el helper, o no se pinta, no se acusa', () => {
@@ -119,6 +122,8 @@ test('SCRUM-1233 · CONTROL NEGATIVO: lo que pasa por el helper, o no se pinta, 
     "detalle.textContent = 'Texto fijo';",
     // Disjunto de SCRUM-644: el `.message` DIRECTO en un pintor lo cuenta aquel, no éste.
     "setAlert('error', e.message);",
+    // Leída solo para DECIDIR (productsView :891): la condición no se pinta.
+    "const codigo = String(e.message).trim(); setAlert('error', codigo === DUP ? A : mensajeDeErrorCatalogo(codigo, 'x'));",
   ];
   for (const c of casos) {
     assert.deepEqual(crudosOcultosDe('n.js', c).hallazgos, [], `🔴 acusa lo que no debe: ${c}`);
@@ -151,19 +156,25 @@ test('SCRUM-1233 · 🔴 SUELO del censo: mira el dashboard entero, sin ciegos, 
 const TECHO = Object.freeze({
   'cobrosView.js': 1,
   'customerDetailView.js': 1,
-  'expensesView.js': 2,
+  // 2 → 1 (SCRUM-1233b): el guardado del gasto pasa por el helper. Queda :295, la carga de la
+  // lista, que no tiene texto aprobado y espera firma.
+  'expensesView.js': 1,
   'facturasRecibidasView.js': 1,
   'invoiceDetailView.js': 3,
   'jobsView.js': 1,
   'libroRegistroView.js': 1,
   'plansView.js': 2,
-  'productsView.js': 1,
   'settingsView.js': 3,
+  // CONTRATO, no defecto: `onConfirm` lanza un Error cuyo `message` YA ES el texto traducido
+  // (`mensajeDeFalloAlFirmar`, `mensajeDelAlbaran`). Pasarlo por el helper lo borraría. Se queda
+  // declarado para que un llamador nuevo que lance crudo lo tenga que mirar aquí.
   'signaturePad.js': 1,
-  'teamView.js': 1,
+  // `r` es el CUERPO de una respuesta 200 con `sent:false`: `r.message` es ya `data.message`.
   'tutorial.js': 1,
 });
-const TOTAL_MEDIDO = 19;
+// 19 → 16 (SCRUM-1233b): teamView y el guardado de expensesView, al helper; productsView :891 era
+// un FALSO POSITIVO (la variable solo se leía en la condición del ternario) y el censo ya no lo cuenta.
+const TOTAL_MEDIDO = 16;
 
 test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocultos que su techo', () => {
   const por = new Map();
@@ -190,7 +201,7 @@ test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocu
 test('SCRUM-1233 · 🔴 la tabla NO CRECE, y lo arreglado se queda en cero', () => {
   const total = Object.values(TECHO).reduce((a, b) => a + b, 0);
   assert.ok(total <= TOTAL_MEDIDO, `🔴 la tabla ha subido a ${total}; solo puede bajar de ${TOTAL_MEDIDO}`);
-  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js']) {
+  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js', 'teamView.js', 'productsView.js']) {
     assert.equal(base in TECHO, false, `🔴 ${base} ha vuelto a la tabla: se arregló en SCRUM-1233 y su techo es CERO`);
   }
 });
