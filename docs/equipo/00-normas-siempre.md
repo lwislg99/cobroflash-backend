@@ -89,3 +89,4 @@ Una captura bonita no prueba que el botón funcione.
 Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
 Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
+La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido. (SCRUM-1295)
