@@ -86,4 +86,24 @@ Los dos últimos son el cabo 2 del orquestador: huecos que cubre la fila general
    **No se arma antes:** hoy ninguna carpeta tiene identidad y pararía a TODAS las sesiones a la vez.
 6. **Límite declarado:** la cerradura ve Edit/Write/NotebookEdit. Una escritura por shell no pasa por ella.
 
-A9: sin fallo que generalice — tanda de medición y construcción; el único tropiezo (tabla con plantillas por rutas) lo cazó la salida 2 del propio generador
+## 🔴 Choque con SCRUM-1298: por qué la cerradura NO se arma antes de migrar
+
+La integración de S5 (`scrum-1298-mesa-por-puesto` @2abf2ec0) traduce el nombre con `config.identidades`.
+En el equipo de Javier las sesiones se llaman `sesion-N` y `sesion-1` → J1. `puestoDeNombre` lee
+`sesion-1` como S1. Armada tal cual, la cerradura habría parado por DISCREPANCIA a **TODAS** las sesiones
+del equipo de Javier, no a un caso raro. Se cazó porque se decidió NO armarla antes de migrar. Ese es el
+argumento para no saltarse ese paso la próxima vez que haya prisa.
+
+Lección: «la discrepancia ES el dato» solo vale si las dos sondas hablan **el mismo idioma**. Con dos
+traducciones distintas, la discrepancia deja de ser señal y se vuelve ruido. Un instrumento que grita
+siempre es tan inútil como uno que calla.
+
+Arreglo pendiente (S0, antes de salir de borrador): carpeta y nombre se traducen con UNA sola tabla.
+- `.yaqu-puesto.json` llevará el nombre de sesión esperado, o el hook leerá la misma `config.identidades`.
+- Un test hará que la cerradura dé DISCREPANCIA para `sesion-1` + carpeta J1 si no se usa la traducción
+  común, y que pase si se usa.
+
+Aviso del orquestador para el interruptor: `sesion.mjs` fuerza `--model sonnet` y el orquestador lanza con
+opus. Pasar por el lanzador cambia el modelo del equipo entero. Es dinero: lo decide el fundador.
+
+A9: aviso → A10 «La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido.» — no se pudo comprobar: el test que lo impide llega con el arreglo, pendiente
