@@ -3819,6 +3819,19 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .parte-linea-unds { width: 100%; text-align: right; }
 .parte-linea-desc { width: 100%; }
+/* SCRUM-1287 · la descripción es un `textarea` de una fila que crece hacia abajo (lo ajusta
+   `crecerDescripcion`). Con una fila mide 44 px como el `input` de antes: 20 px de línea + 11,5 + 9,5 px
+   de relleno + 3 px de borde. El reparto 11,5/9,5 (y no 10,5/10,5) es MEDIDO: es el que deja la fila
+   de una descripción corta idéntica píxel a píxel a la del `input` en Chrome a 390 px. Sin asa ni barra. */
+textarea.parte-linea-desc {
+  display: block;
+  line-height: 20px;
+  padding: 11.5px 10px 9.5px;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
+  overflow-wrap: anywhere;
+}
 .parte-linea-unds:focus,
 .parte-linea-desc:focus {
   outline: none;

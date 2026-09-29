@@ -161,7 +161,7 @@ test('SCRUM-1266b · 🔴 corregir la descripción y DESPUÉS «Es correcto» no
   // Antes, cada guardado se armaba desde las líneas tal y como vinieron al abrir: el segundo mandaba
   // la descripción VIEJA. Medido contra la vista de main: la corrección se perdía en la base.
   const { fila, cont, boton } = await abrir();
-  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
+  const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
   desc.value = 'Cambio de central Honeywell Galaxy Flex';
   desc.disparar('change');
   await vaciar();
@@ -175,7 +175,7 @@ test('SCRUM-1266b · 🔴 corregir la descripción y DESPUÉS «Es correcto» no
 
 test('SCRUM-1266b · 🔴 editar la cantidad DESPUÉS de corregir la descripción no la deshace', async () => {
   const { fila, cont } = await abrir();
-  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '1');
+  const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '1');
   desc.value = 'Detector volumétrico doble';
   desc.disparar('change');
   await vaciar();
@@ -190,7 +190,7 @@ test('SCRUM-1266b · 🔴 editar la cantidad DESPUÉS de corregir la descripció
 
 test('SCRUM-1266b · el blur de la descripción y «Es correcto» a la vez: gana lo último, sin re-marcar', async () => {
   const { fila, cont, boton } = await abrir();
-  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
+  const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
   desc.value = 'Cambio de central Honeywell Galaxy 48';
   desc.disparar('change');       // sin esperar: el clic llega con el guardado anterior en vuelo
   boton(0).dispararClick();
@@ -202,7 +202,7 @@ test('SCRUM-1266b · el blur de la descripción y «Es correcto» a la vez: gana
 
 test('SCRUM-1266b · corregir la descripción ACORTA el aviso, sin releer', async () => {
   const { cont } = await abrir();
-  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
+  const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === '0');
   desc.value = 'Cambio de central Honeywell';
   desc.disparar('change');
   await vaciar();
@@ -277,7 +277,7 @@ test('SCRUM-1266b · una lista LARGA no ensancha la columna: el texto parte por 
 
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const corregirSinEsperar = (cont, i, texto) => {
-  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === String(i));
+  const desc = cont.querySelectorAll('.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === String(i));
   desc.value = texto;
   desc.disparar('change');
 };

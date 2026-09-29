@@ -84,7 +84,9 @@ const botonAnadir = (cont, bloque) => {
   assert.ok(b, `🔴 NO PUDE MIRAR: no hay botón «Añadir línea» en ${bloque}`);
   return b;
 };
-const camposDesc = (cont) => cont.querySelectorAll('input.parte-linea-desc');
+// SCRUM-1287 · sin `input`: el campo es el mismo (clase y atributos), pero ahora es un `textarea` que
+// crece para que la descripción no se corte a 390 px. Mismo significado.
+const camposDesc = (cont) => cont.querySelectorAll('.parte-linea-desc');
 const camposUnds = (cont) => cont.querySelectorAll('input.parte-linea-unds');
 
 /** Pulsa «Añadir línea» y devuelve los dos campos de la fila que ha aparecido. */
