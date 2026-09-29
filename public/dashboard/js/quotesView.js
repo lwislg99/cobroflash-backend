@@ -23,12 +23,17 @@ const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MA
  *
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
-function renderQuotesView(container, template, documentoSuelto, origen) {
+function renderQuotesView(container, template, documentoSuelto) {
   // SCRUM-1274 · EL PRESUPUESTO QUE NACE DESDE UN TRABAJO. «Hacer presupuesto» en la ficha del Trabajo
   // abría esta pantalla sin estado, y al aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para
   // la misma obra. El servidor ya sabe engancharlo (`job_id`, SCRUM-195): aquí solo se le manda.
   // Viene con su cliente, que se deja elegido; si el profesional lo cambia, el `job_id` NO viaja (el
   // servidor comprueba el negocio, no el cliente, y un presupuesto de otro cliente no es de esta obra).
+  // ⚠️ Viaja DENTRO de `template` (`template.deTrabajo`) y no como cuarto argumento: la firma está
+  // fijada por SCRUM-140 y por la garantía de la regla 29 de SCRUM-600b. Sin `lines`, `template` no
+  // carga nada de plantilla (ver «if (template && Array.isArray(template.lines)…»), así que no hay
+  // aviso de «Plantilla cargada» ni líneas fantasma.
+  const origen = template && template.deTrabajo;
   const trabajoDeOrigen = (origen && Number.isInteger(Number(origen.jobId)) && Number(origen.jobId) > 0)
     ? { jobId: Number(origen.jobId), customerId: origen.customerId != null ? String(origen.customerId) : null }
     : null;

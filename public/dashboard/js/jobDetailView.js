@@ -300,8 +300,9 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       // aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para la misma obra (SCRUM-195).
       if (h.accion === 'hacer-presupuesto') {
         if (window.renderAppView) {
+          // Por el argumento que ya existe (`template`, SCRUM-140), sin líneas: no es una plantilla.
           window.renderAppView('quotes-new', {
-            deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null },
+            template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
           });
         }
         return;

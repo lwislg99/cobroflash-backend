@@ -314,9 +314,7 @@ async function initApp() {
         // que causaba la plantilla huérfana (SCRUM-134). Las navegaciones a 'quotes-new' que no
         // pasan `template` (nuevo presupuesto, desde cliente, desde solicitud…) abren en blanco
         // porque no mandan nada — antes podían recoger lo que otra vista hubiera dejado escrito.
-        // SCRUM-1274 · `deTrabajo` ({ jobId, customerId }): el presupuesto nace enganchado a ese
-        // Trabajo. Igual que la plantilla, viaja como argumento y NO se guarda en `state`.
-        renderQuotesView(viewContainer, options.template || null, undefined, options.deTrabajo || null);
+        renderQuotesView(viewContainer, options.template || null);
         break;
       case 'quotes-detail':
         // 🔴 SCRUM-832 · AQUÍ PONÍA `L.quotePlural` — «Presupuestos», en plural, para la ficha de

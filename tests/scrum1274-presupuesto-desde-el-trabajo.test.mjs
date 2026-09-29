@@ -85,7 +85,7 @@ async function generarDesdeElEditor(deTrabajo, { cambiarA = null } = {}) {
   b.ctx.renderAppView = () => {};
   // Las líneas entran como las de una plantilla (mismo recurso que el test de SCRUM-1180): el banco no teclea.
   const LINEAS = { name: 'x', currency: 'EUR', lines: [{ concept: 'Alicatado', qty: 1, price: 100 }] };
-  const r = await pintarVista(b, 'renderQuotesView', LINEAS, undefined, deTrabajo);
+  const r = await pintarVista(b, 'renderQuotesView', deTrabajo ? { ...LINEAS, deTrabajo } : LINEAS);
   assert.equal(r.error, null, `SUELO: el editor no monta: ${r.error && r.error.message}`);
   await respirar();
   const n = todos(r.contenedor);
@@ -124,9 +124,11 @@ async function trabajosCreadosAlAceptar(cuerpo) {
 
 test('SCRUM-1274 · 🔴 EL VIAJE: desde el Trabajo, «Hacer presupuesto» → aceptar → sigue habiendo UN solo Trabajo', async () => {
   const opciones = await pulsarHacerPresupuesto();
-  assert.ok(opciones.deTrabajo, '🔴 «Hacer presupuesto» abre el editor SIN el Trabajo de origen');
-  assert.equal(opciones.deTrabajo.jobId, JOB.id);
-  const { cuerpo, clienteAlAbrir } = await generarDesdeElEditor(opciones.deTrabajo);
+  const deTrabajo = opciones.template && opciones.template.deTrabajo;
+  assert.ok(deTrabajo, '🔴 «Hacer presupuesto» abre el editor SIN el Trabajo de origen');
+  assert.equal(deTrabajo.jobId, JOB.id);
+  assert.equal(opciones.template.lines, undefined, 'el Trabajo de origen no es una plantilla: no lleva líneas');
+  const { cuerpo, clienteAlAbrir } = await generarDesdeElEditor(deTrabajo);
   assert.equal(clienteAlAbrir, String(CLIENTE.id), '🔴 el editor no abre con el cliente del Trabajo');
   assert.equal(cuerpo.job_id, JOB.id, '🔴 el POST no lleva `job_id`: el presupuesto nace suelto');
   const { creados, leido } = await trabajosCreadosAlAceptar(cuerpo);
