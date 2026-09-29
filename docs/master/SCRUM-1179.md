@@ -211,3 +211,28 @@ cuatro caídas eran EL MISMO PAR de causas — ningún guard nuevo, ningún guar
 `guards de navegador (fuera de la tanda)` también estaba en rojo en ese run (`guard:lista-trabajos-917`,
 sobre «Cobrar el resto» en la lista de Trabajos) — sin relación con este PR (no toca esa pantalla ni
 esa ruta) y fuera de este carril (regla 9): no se toca aquí.
+
+## C · 1 de 7: `censo:tactil-panel` al job informativo (S3, 29-sep-2026)
+
+**Medido contra:** `origin/main` = `51dcfe156990dfb36b6dfb225e6d75bda7e5a08e` · 2026-09-29T09:44:01Z
+
+- Paso nuevo en el job `guards de navegador (fuera de la tanda)` de `ci.yml`: corre `censo:tactil-panel` con
+  `if: always()` y `continue-on-error: true`, y deja «EL NÚMERO» en el resumen del job. **No bloquea**: el job
+  no es obligatorio, y el censo sale 0 aunque cuente botones cortos (cuenta, no juzga). Si no supo medir, sale 2
+  y lo dice en el resumen.
+- Coste medido en local: **~29 s**, un navegador. El censo montó 18 de 28 vistas; las 10 que no pudo montar las
+  declara él mismo («NO MEDIDAS»), no las cuenta como cero.
+- Las citas de `scripts/guard-objetivo-tactil.mjs` (cabecera, :395 y mensaje final) decían «no corre en ningún
+  sitio». Desde este cambio eso es falso, y pasan a decir que corre en cada PR **sin bloquear**.
+- Red: `tests/scrum1179c-censo-tactil-informativo.test.mjs` fija las dos mitades del contrato (que corre, y que no
+  bloquea) y que la cita ya no dice «no corre». Tiene una mutación declarada (quitar `continue-on-error`), y cae.
+- Los otros 6 de C siguen sin hacer: `clics-del-80`, `accion-del-80`, `mudez`, `lista-fixture`, `gateados` y
+  `alcanzabilidad`.
+
+## Nota de la pila B/D/E: dos de los cinco PR se absorbieron (29-sep-2026)
+
+La pila salió en cinco PR apilados que compartían este fichero de registro. **#1897 (B2)** y **#1906 (D)** no
+llegaron a mergearse: al mezclar `main`, su diff quedó **vacío**, porque el PR de encima (#1905, B3; y #1909, E)
+ya llevaba su contenido dentro, y se cerraron por absorbidos. Para la próxima pila: apilar cinco niveles sobre
+un registro común hace que los de abajo se absorban al mergear los de arriba. Esto no es un error, pero conviene
+saberlo antes de repartir PR.
