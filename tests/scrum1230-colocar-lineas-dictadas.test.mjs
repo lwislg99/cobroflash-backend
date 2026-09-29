@@ -131,8 +131,11 @@ const conCantidades = (a, b) => ({
     sinBloque: [],
   },
 });
+// SCRUM-1266 · la descripción de la propuesta dejó de ser un <span> de sólo lectura y es un campo
+// (`data-propuesta-desc`): la fila se localiza por el valor de ese campo.
 const filaDe = (contenedor, descripcion) => todos(contenedor).find((n) => n.getAttribute
-  && n.getAttribute('data-propuesta') === '1' && todos(n).some((x) => x.tagName === 'SPAN' && x.textContent === descripcion));
+  && n.getAttribute('data-propuesta') === '1' && todos(n).some((x) => x.getAttribute
+    && x.getAttribute('data-propuesta-desc') === '1' && x.getAttribute('value') === descripcion));
 const avisoEn = (fila) => todos(fila).filter((n) => n.getAttribute && n.getAttribute('data-falta-cantidad'));
 const campoDe = (fila) => todos(fila).find((n) => n.getAttribute && n.getAttribute('data-propuesta-unds') === '1');
 
