@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { casarLineasPorIdentidad, lineasParaElTecnico, computeParteContentHash } =
@@ -179,7 +180,7 @@ test('SCRUM-1266 · la ruta del PATCH deja pasar la marca hasta el casado (sin c
   const i = src.indexOf('function validarLineasDelTecnico(');
   assert.ok(i >= 0, '🔴 CIEGO: no encuentro `validarLineasDelTecnico` en partes.routes.ts');
   const j = src.indexOf('\n}\n', i);
-  const cuerpo = src.slice(i, j).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const cuerpo = soloCodigo(src, 'partes.routes.ts').slice(i, j);
   assert.match(cuerpo, /datosNoRespaldados:\s*l\.datosNoRespaldados/,
     '🔴 la validación del PATCH ya no deja pasar la marca: el panel la manda y el servidor la tira');
 });
