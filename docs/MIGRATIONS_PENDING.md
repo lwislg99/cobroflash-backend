@@ -2610,6 +2610,32 @@ texto que alguien escribió es cómo se pierden datos.
 > **nullable**, que es la mitad de la decisión escrita arriba. Una `NOT NULL` habría fallado en
 > seco sobre una tabla con filas.
 
+> 🔴 **ANOTACIÓN del 29-sep-2026 (J6, jv-j6) · EN STAGING FALTA EL ÍNDICE: la casilla de staging
+> vale para la COLUMNA, no para las dos sentencias.** Lo de arriba se deja tal cual: la
+> verificación del fundador fue sobre `information_schema` (la columna), y la columna sí está. Pero
+> el título dice «aplicada en las tres bases», y la segunda sentencia, en staging, no lo está.
+>
+> - **Base:** staging · `acela…/railway`, con el turno tomado y soltado. Esquema de referencia:
+>   `origin/main` = `fcc2cc01a6ba29ed57bece0844508d513cd86264`.
+> - **Medida 1 · 14:43Z:** `node scripts/preview-migracion.mjs` contra staging (control positivo:
+>   31 tablas). Propone `CREATE INDEX "customers_company_id_idx" ON "customers"("company_id");` y
+>   `DROP INDEX "public"."customers_merchant_id_company_id_idx";`.
+> - **Medida 2 · 14:47Z:** leyendo el catálogo (`pg_indexes` e `information_schema`, solo `SELECT`):
+>   · `customers.company_id` · `integer` · `is_nullable = YES` — **la columna está**, igual que
+>     verificó el fundador;
+>   · el único índice de `customers` que nombra `company_id` es
+>     `customers_merchant_id_company_id_idx ON customers (merchant_id, company_id)`.
+>     **`customers_company_id_idx` NO existe.**
+> - **De dónde sale el otro índice: no se sabe.** `git log --all -S'merchant_id_company_id'` no
+>   devuelve nada: no está en ningún commit ni en ningún `.sql` del repositorio. O alguien lo creó a
+>   mano con otro nombre, o nunca se aplicó el bueno. **No se elige entre las dos:** lo deciden el
+>   fundador y el equipo de Luis.
+> - **Lo que NO se ha medido:** **producción, por nadie** (no hay credencial de producción en un
+>   árbol de trabajo). Que la casilla de producción diga lo mismo que la de staging ya no demuestra
+>   que el índice esté: allí se verificó lo mismo, la columna. **Dev tampoco se ha re-medido** hoy.
+> - La sentencia pendiente es aditiva y re-ejecutable (la de arriba, con `IF NOT EXISTS`). **No se
+>   ha aplicado nada:** esto es solo el registro.
+
 ### 🔴 LA CLAVE AJENA SE RETIRA DEL TICKET — decisión del fundador, 8-sep-2026
 
 **No se aplica en ninguna base y sale del fichero SQL.** El motivo no es la lista blanca: es una
@@ -2968,6 +2994,34 @@ de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.table
 - [x] **desarrollo · yaqu_dev_javier** — ✅ aplicado y verificado por catálogo (0/24 → 24/24).
 - [ ] **staging** — la aplica Javier a mano; no se ha tocado desde esta sesión.
 - [ ] **producción** — la aplica Javier a mano; no se ha tocado desde esta sesión.
+
+> 🔴 **ANOTACIÓN del 29-sep-2026 (J6, jv-j6) · LA CASILLA DE STAGING DE ARRIBA ESTÁ DESFASADA:
+> los siete YA ESTÁN en staging.** Lo de arriba se deja tal cual: era verdad para quien lo escribió
+> («no se ha tocado *desde esta sesión*»), pero se leyó como «a staging le faltan los 7», y con esa
+> lectura se iba a aplicar.
+>
+> - **Base:** staging · `acela…/railway` (host y base comprobados antes de conectar; producción es
+>   `autorack…`), con el turno de staging tomado y soltado. Esquema de referencia: `origin/main` =
+>   `fcc2cc01a6ba29ed57bece0844508d513cd86264`.
+> - **Medida 1 · 14:43Z:** `node scripts/preview-migracion.mjs` contra staging (CLI local, control
+>   positivo 31 tablas). Salió EXIT 2 con **29 sentencias destructivas**: el preview compara el
+>   esquema de `main` con la base, y estos objetos están en la base pero todavía no en
+>   `prisma/schema.prisma` (orden A5: el ALTER va antes que su PR ③). Ahí aparecen, como existentes,
+>   las 13 columnas de los siete, la tabla `equipments`, sus 2 claves ajenas y 5 índices
+>   (los 4 `*_equipment_id_idx` y `customers_merchant_id_callback_on_idx`).
+> - **Medida 2 · 14:47Z:** lectura de `pg_indexes` (solo `SELECT`, control positivo: los índices de
+>   `invoices`). Están los 3 índices propios de `equipments` (`merchant_id`, `customer_id`,
+>   `customer_site_id`), más su `equipments_pkey`.
+> - **Resultado: 24/24** objetos de los siete ficheros, presentes en staging.
+> - **Lo que NO se ha medido:** **producción, por nadie** (desde un árbol de trabajo no hay
+>   credencial de producción, y no se ha usado ninguna). Tampoco **quién** los aplicó en staging ni
+>   cuándo: se sabe que están, no su procedencia. Y los tipos, la nulabilidad y las acciones de las
+>   claves ajenas no se han comparado uno a uno con el `.sql`: solo se ha comprobado que existen.
+> - ⚠️ **No se aplica `db push` con este `main` contra ninguna base:** propondría borrar esos
+>   29 objetos. Lo que se aplica son los `.sql` de `docs/sql/`, que llevan `IF NOT EXISTS`.
+
+- [x] **staging** — ✅ **presente, medido el 29-sep-2026** (anotación de arriba). Procedencia de la
+      aplicación: desconocida.
 
 ### Dos hallazgos de paso
 
