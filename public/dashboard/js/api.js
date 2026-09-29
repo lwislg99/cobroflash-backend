@@ -319,15 +319,39 @@ async function _pedir(url, finalOptions) {
  * escribimos una frase para una persona. Cualquier otra cosa cae en `respaldo`, el texto aprobado
  * de la pantalla que llama. Nunca al revés.
  *
- * @param {any} err el error que lanzó `apiRequest`.
+ * SCRUM-1233d · LA OTRA MITAD: un texto aprobado que lanza NUESTRO código, no el servidor. La
+ * primera versión solo leía `data.message`, así que un `throw new Error(TEXTO_APROBADO)` local caía
+ * siempre al respaldo: en Gastos, una foto que no se abre decía «Error al guardar.» en vez de su
+ * texto firmado. Leer `err.message` a secas NO es el arreglo —ahí vive también el «Failed to fetch»
+ * del navegador—, así que quien lanza el texto lo MARCA con `errorParaPersona(texto)`, y solo lo
+ * marcado se pinta. Un `Error` local sin marca sigue cayendo al respaldo: falla hacia el lado seguro.
+ *
+ * @param {any} err el error que lanzó `apiRequest`, o uno de `errorParaPersona`.
  * @param {string} respaldo el texto aprobado de la pantalla; `''` si la pantalla ya dice lo suyo.
  * @returns {string}
  */
 function mensajeParaPersona(err, respaldo) {
   const texto = err && err.data && err.data.message;
-  return (typeof texto === 'string' && texto.trim()) ? texto : respaldo;
+  if (typeof texto === 'string' && texto.trim()) return texto;
+  const propio = err && err.textoAprobado;
+  return (typeof propio === 'string' && propio.trim()) ? propio : respaldo;
 }
 if (typeof window !== 'undefined') window.mensajeParaPersona = mensajeParaPersona;
+
+/**
+ * SCRUM-1233d · el `Error` que lanza el PANEL cuando lo que tiene que leer la persona es un texto
+ * aprobado. `err.message` sigue siendo ese texto (quien compare con `===` no cambia); la marca
+ * `textoAprobado` es lo que `mensajeParaPersona` lee.
+ *
+ * @param {string} texto un texto YA aprobado; esta función no crea microcopy.
+ * @returns {Error}
+ */
+function errorParaPersona(texto) {
+  const err = new Error(texto);
+  err.textoAprobado = texto;
+  return err;
+}
+if (typeof window !== 'undefined') window.errorParaPersona = errorParaPersona;
 
 // -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
 //

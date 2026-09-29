@@ -1140,9 +1140,9 @@ async function fotoParaGuardar(file) {
   if (original.length <= FOTO_TECHO_DATAURI) return original;
 
   let img;
-  try { img = await abrirFoto(file); } catch { throw new Error(AVISO_FOTO_NO_SE_ABRE); }
+  try { img = await abrirFoto(file); } catch { throw errorParaPersona(AVISO_FOTO_NO_SE_ABRE); }
   const ancho = img.naturalWidth || img.width, alto = img.naturalHeight || img.height;
-  if (!ancho || !alto) throw new Error(AVISO_FOTO_NO_SE_ABRE);
+  if (!ancho || !alto) throw errorParaPersona(AVISO_FOTO_NO_SE_ABRE);
 
   // Primero se baja la calidad (0,8 → 0,6) y, si aún no cabe, el tamaño. Tope de intentos: una
   // foto que no cabe ni así se dice, no se manda para que el servidor la rechace.
@@ -1166,7 +1166,7 @@ async function fotoParaGuardar(file) {
   } finally {
     if (typeof img.close === 'function') img.close();
   }
-  throw new Error(AVISO_FOTO_NO_SE_ABRE);
+  throw errorParaPersona(AVISO_FOTO_NO_SE_ABRE);
 }
 
 // `createImageBitmap` con `imageOrientation: 'from-image'` respeta el giro EXIF de la cámara del
