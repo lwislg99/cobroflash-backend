@@ -205,6 +205,9 @@ const RANURAS_A = [
   ["createFieldSelect()", "IVA del presupuesto"],
   ["textContent", "Solo presupuesto (facturación manual)"],
   ["textContent", "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\"."],
+  // SCRUM-1180 (29-sep-2026) · RANURA NUEVA, FIRMADA en SCRUM-1180 c.17380: el rótulo del bloque de
+  // cláusulas de cierre del presupuesto. «este» es lo que afirma: la casilla solo toca ESTE documento.
+  ["textContent [const TITULO_CLAUSULAS]", "Condiciones que lleva este presupuesto"],
   ["textContent", "Añade los conceptos que vas a presupuestar."],
   ["title", "Describe el trabajo y Claude sugiere las líneas del presupuesto"],
   ["textContent", "Generar presupuesto"],
@@ -256,7 +259,7 @@ test('SCRUM-600 · SUELO: el extractor de ranuras VE la pantalla entera', () => 
   assert.ok(q.length >= 100, `🔴 EXTRACTOR CIEGO sobre el presupuesto: ${q.length} ranuras visibles`);
 });
 
-test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 textos', () => {
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 30 posiciones, 28 textos', () => {
   const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
 
   assert.equal(ranuras.length, RANURAS_A.length,
@@ -286,8 +289,10 @@ test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 t
   // 27 → 28 (SCRUM-915d, 18-sep-2026): entra la guía del paso Cliente, FIRMADA en SCRUM-915
   // comentario 15868 con su variante del justificante. 30 posiciones, 28 textos.
   // 28 → 27 (SCRUM-915i, 21-sep-2026): sale el subtítulo, que la v3 retira. 29 posiciones, 27 textos.
-  assert.equal(distintos.size, 27,
-    `🔴 textos distintos: ${distintos.size}. Son 29 posiciones menos las dos parejas que `
+  // 27 → 28 (SCRUM-1180, 29-sep-2026): entra el rótulo del bloque de cláusulas, FIRMADO en
+  // SCRUM-1180 c.17380. 30 posiciones, 28 textos.
+  assert.equal(distintos.size, 28,
+    `🔴 textos distintos: ${distintos.size}. Son 30 posiciones menos las dos parejas que `
     + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
     + 'estado, que sale dos veces de la MISMA constante).');
 });

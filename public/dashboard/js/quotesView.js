@@ -1516,8 +1516,9 @@ descWrapper.appendChild(descLabel);
     // por defecto: lo de siempre es que las lleve todas. Las desmarcadas viajan por su `id`.
     // Sin cláusulas en Configuración no se pinta nada: un bloque vacío no decide nada.
     // Va en «Envío», con `docFields` y los textos: decide cómo SALE el documento.
-    // ⛔ El rótulo del bloque NO está firmado (regla 39): hasta la firma, no se pinta.
-    const TITULO_CLAUSULAS = null;
+    // FIRMADO: SCRUM-1180 c.17380 (orquestador, por delegación del fundador, 28-sep-2026).
+    // «este» dice dónde acaba lo que hace la casilla: solo este presupuesto, no el negocio.
+    const TITULO_CLAUSULAS = "Condiciones que lleva este presupuesto";
     const clausulasWrap = document.createElement("div");
     clausulasWrap.className = "field quote-clausulas";
     clausulasWrap.hidden = true;

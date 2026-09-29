@@ -89,6 +89,8 @@ test('SCRUM-1180 · 🔴 el viaje: Duplicar → casilla desmarcada → quitar ot
   const casillas = casillasDeClausula(r.contenedor);
   assert.deepEqual(casillas.map((c) => c.value), CLAUSULAS.map((c) => c.id), '🔴 no hay una casilla por cláusula del negocio');
   assert.deepEqual(casillas.map((c) => c.checked), [true, false, true], '🔴 la copia no sale con la cláusula del original quitada');
+  assert.ok(todos(r.contenedor).some((x) => texto(x) === 'Condiciones que lleva este presupuesto'),
+    '🔴 el bloque sale sin el rótulo firmado (SCRUM-1180 c.17380)');
 
   casillas[2].checked = false;
   casillas[2].disparar('change');
@@ -121,6 +123,8 @@ test('SCRUM-1180 · CONTROL: un negocio SIN cláusulas no pinta casillas y la cl
   const bloque = todos(r.contenedor).find((x) => String(x.className || '').includes('quote-clausulas'));
   assert.ok(bloque, 'SUELO: el bloque de cláusulas no está montado');
   assert.equal(bloque.hidden, true, '🔴 un bloque sin cláusulas se pinta vacío');
+  assert.equal(todos(r.contenedor).some((x) => texto(x) === 'Condiciones que lleva este presupuesto'), false,
+    '🔴 sin cláusulas, el rótulo promete una función que el profesional no tiene montada (c.17380, condición 2)');
   await generar(b, r.contenedor);
   assert.equal(posts.length, 1, 'SUELO: no hubo POST');
   assert.equal('clausulasExcluidas' in posts[0], false, '🔴 sin saber qué cláusulas hay, se manda una lista como si las llevara todas');
