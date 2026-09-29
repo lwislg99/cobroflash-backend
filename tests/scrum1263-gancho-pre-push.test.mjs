@@ -139,33 +139,31 @@ const DESDE_MAIN = /git show origin\/main:scripts\/([a-z-]+\.mjs) > "\$RUNNER_TE
 function correrOrigen(m, { autor, cuerpo }, mientras) {
   const guion = pasoOrigen();
   assert.ok(guion, '🔴 no encuentro el paso `origen` en claude.yml');
-  assert.equal((guion.match(DESDE_MAIN) || []).length, 1, 'el paso trae su script de origin/main');
+  assert.equal((guion.match(DESDE_MAIN) || []).length, 1, 'el paso trae su script de la rama principal, no del checkout');
   // Su propio temporal, a la vista del censo de SCRUM-824 (no atraviesa lo que devuelve `montar`).
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1263-runner-'));
   try {
-  fs.mkdirSync(path.join(tmp, 'puerta'), { recursive: true });
-  // Lo que el paso `puerta` ya dejó en el directorio —y de lo que importa el script—, DERIVADO de
-  // ese paso en el YAML: si la puerta deja de traer una dependencia, este laboratorio cae.
-  const dePuerta = [...(pasoOrigen('puerta') || '').matchAll(DESDE_MAIN)].map((x) => x[1]);
-  assert.ok(dePuerta.includes('puerta-avisador-rojo.mjs'), 'no leo qué scripts trae el paso `puerta`');
-  for (const f of dePuerta) fs.copyFileSync(path.join(RAIZ, 'scripts', f), path.join(tmp, 'puerta', f));
-  const salida = path.join(tmp, 'output');
-  const resumen = path.join(tmp, 'summary');
-  fs.writeFileSync(salida, '');
-  fs.writeFileSync(resumen, '');
-  fs.writeFileSync(path.join(tmp, 'paso.sh'),
-    guion.replace(DESDE_MAIN, `cp "${barras(path.join(RAIZ, 'scripts'))}/$1" "$RUNNER_TEMP/puerta/$1"`));
-  const r = spawnSync('bash', ['-e', barras(path.join(tmp, 'paso.sh'))], {
-    cwd: m.clon, encoding: 'utf8', timeout: 60000,
-    env: { ...process.env, ...m.env, RUNNER_TEMP: barras(tmp), GITHUB_OUTPUT: barras(salida), GITHUB_STEP_SUMMARY: barras(resumen), AUTOR: autor, CUERPO_COMENTARIO: cuerpo },
-  });
-  const outputs = {};
-  for (const l of fs.readFileSync(salida, 'utf8').split('\n')) {
-    const k = l.indexOf('=');
-    if (k > 0) outputs[l.slice(0, k)] = l.slice(k + 1);
-  }
-  // Lo que haya que medir con el gancho aún en su sitio (vive en RUNNER_TEMP).
-  return mientras({ r, outputs });
+    fs.mkdirSync(path.join(tmp, 'puerta'), { recursive: true });
+    // Lo que el paso `puerta` ya dejó en el directorio —y de lo que importa el script—, DERIVADO de
+    // ese paso en el YAML: si la puerta deja de traer una dependencia, este laboratorio cae.
+    const dePuerta = [...(pasoOrigen('puerta') || '').matchAll(DESDE_MAIN)].map((x) => x[1]);
+    assert.ok(dePuerta.includes('puerta-avisador-rojo.mjs'), 'no leo qué scripts trae el paso `puerta`');
+    for (const f of dePuerta) fs.copyFileSync(path.join(RAIZ, 'scripts', f), path.join(tmp, 'puerta', f));
+    fs.writeFileSync(path.join(tmp, 'paso.sh'),
+      guion.replace(DESDE_MAIN, `cp "${barras(path.join(RAIZ, 'scripts'))}/$1" "$RUNNER_TEMP/puerta/$1"`));
+    // `GITHUB_OUTPUT` y el resumen los crea el propio paso con `>>`, como en el runner.
+    const salida = path.join(tmp, 'output');
+    const r = spawnSync('bash', ['-e', barras(path.join(tmp, 'paso.sh'))], {
+      cwd: m.clon, encoding: 'utf8', timeout: 60000,
+      env: { ...process.env, ...m.env, RUNNER_TEMP: barras(tmp), GITHUB_OUTPUT: barras(salida), GITHUB_STEP_SUMMARY: barras(path.join(tmp, 'summary')), AUTOR: autor, CUERPO_COMENTARIO: cuerpo },
+    });
+    const outputs = {};
+    for (const l of (fs.existsSync(salida) ? fs.readFileSync(salida, 'utf8') : '').split('\n')) {
+      const k = l.indexOf('=');
+      if (k > 0) outputs[l.slice(0, k)] = l.slice(k + 1);
+    }
+    // Lo que haya que medir con el gancho aún en su sitio (vive en RUNNER_TEMP).
+    return mientras({ r, outputs });
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 }
 
