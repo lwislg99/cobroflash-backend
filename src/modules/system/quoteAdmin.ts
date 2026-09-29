@@ -262,6 +262,10 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     // sin ellos «Duplicar» copiaba el presupuesto sin sus textos, en silencio (SCRUM-1186).
     docHeaderText: quote.docHeaderText ?? null,
     docFooterText: quote.docFooterText ?? null,
+    // SCRUM-1180 · los `id` de las cláusulas del negocio que ESTE presupuesto no lleva. Mismo motivo
+    // otra vez: sin ellos «Duplicar» (`quotesDetailView.js`) copiaba el presupuesto con TODAS las
+    // cláusulas, aunque el original quitara una. `[]` = las lleva todas; nunca `null` ambiguo.
+    clausulasExcluidas: Array.isArray((quote as any).clausulasExcluidas) ? (quote as any).clausulasExcluidas : [],
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,

@@ -27,7 +27,6 @@
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1180"},
     {"clave":"cuerpo · POST /quote/create::job_id","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/invoices/:id/status::paidVia","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:525","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/templates/:id::currency","donde":"src/modules/templates/app/routes/templates.routes.ts:62","carril":"S2","ticket":"SCRUM-1185"},
@@ -165,6 +164,7 @@
   "retiradas": [
     {"clave":"ruta · GET /admin/customers/:id/whatsapp","motivo":"SCRUM-1133: conectada en customerDetailView.js (pestaña «WhatsApp» de la ficha, sólo admin)"},
     {"clave":"ruta · GET /admin/libros/recibidas.csv","motivo":"SCRUM-1249: conectada en facturasRecibidasView.js (botón de descarga con el periodo del selector)"},
+    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","motivo":"SCRUM-1180: conectada en quotesView.js (casillas de cláusulas en el editor; Duplicar las copia desde el detalle)"},
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
