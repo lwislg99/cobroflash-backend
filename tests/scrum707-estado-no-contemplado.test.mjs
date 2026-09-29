@@ -107,7 +107,8 @@ test('SCRUM-707 · ✅ CONTROL POSITIVO: los estados conocidos ofrecen lo mismo 
     'factura|R1': ['btnPdf', 'btnRegen'],
     'albarán|borrador': ['btnEmitir', 'btnPdf', 'btnEditarLineas', 'btnFoto', 'btnVerTrabajo', 'btnDuplicar'],
     'albarán|emitido': ['btnEnviarFirmar', 'btnFirmarAqui', 'btnPdf', 'btnFoto', 'btnVerTrabajo', 'btnDuplicar'],
-    'albarán|firmado': ['btnPdf', 'btnWhatsApp', 'btnFoto', 'btnVerTrabajo', 'btnDuplicar'],
+    // SCRUM-1215 (c.17494): sin `btnFoto`, que en `firmado` el servidor rechaza siempre (409).
+    'albarán|firmado': ['btnPdf', 'btnWhatsApp', 'btnVerTrabajo', 'btnDuplicar'],
   };
   for (const [nombre, registro, estados] of DOCS) {
     for (const e of estados) {
