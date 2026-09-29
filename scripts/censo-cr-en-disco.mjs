@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 // scripts/censo-cr-en-disco.mjs — SCRUM-570
+// 🔴 SCRUM-1179 · HERRAMIENTA MANUAL, NO RED. No vigila nada por sí sola: ningún test ni job la corre
+// sobre el árbol para juzgarlo (los tests que la importan prueban la HERRAMIENTA, no el árbol). No se
+// cite como red al retirar o relajar un guard: citar una red que no corre es lo que dejó los botones
+// de cobro sin vigilar en SCRUM-1172.
 //
 // ¿CUÁNTOS FICHEROS DEL CHECKOUT TIENEN CR EN DISCO Y NO EN EL BLOB?
 //
