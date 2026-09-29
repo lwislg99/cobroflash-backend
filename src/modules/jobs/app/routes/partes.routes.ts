@@ -39,6 +39,7 @@ import {
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
+  estadoTrasFirmar,
   permisoDeCampos,
   puedeFirmarse,
   puedeFirmarCliente,
@@ -672,7 +673,8 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
       data: {
         // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
         // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoTecnicoAt: new Date(),
         firmadoTecnicoNombre: nombre.nombre,
         signatureTecnicoUrl: signatureData,
@@ -751,7 +753,8 @@ router.post('/:id/firmar', async (req: any, res) => {
     const updated = await prisma.parteTrabajo.update({
       where: { id: parte.id },
       data: {
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoAt,
         firmadoPorNombre: nombre.nombre,
         firmadoPorCalidad: calidad.valor,
