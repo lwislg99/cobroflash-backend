@@ -1,6 +1,6 @@
 # SCRUM-1135 · la selección de la lista de Clientes por fin se puede etiquetar
 
-**Medido contra:** `origin/main` = `b7880db80707af65480b90ae00c89a3959cef540` · 2026-09-28T22:51:33Z (J2, equipo de Javier)
+**Medido contra:** `origin/main` = `fcc2cc01a6ba29ed57bece0844508d513cd86264` · 2026-09-29T14:55:25Z (J2, equipo de Javier)
 
 ## Qué pasaba
 
@@ -42,6 +42,29 @@ El caso del 582 se reescribe con esa decisión delante (regla 41): la barra ofre
 Contra el front de `main` caen 5 (el del técnico pasa trivialmente: allí no hay acciones).
 Mutaciones, todas caen: detalle crudo en el error · sin puerta de rol · sin recarga · acciones
 siempre visibles · pinta el motivo del servidor · botones activos con el campo vacío.
+
+## 29-sep-2026 · los dos rojos del PR #1945 (autorizados por el orquestador)
+
+- **Main traído** (la rama iba 99 por detrás y en DIRTY). Dos conflictos, los dos de suma: en
+  `_sin-consumir-declarados.json` conviven la retirada de 1133 y la de 1135; en `scrum698`, Presupuestos
+  en 256 (SCRUM-1180) y Clientes en 82 (esta).
+- **① `SCRUM-713c` (338 > 336).** El techo NO se sube. Los dos `style.cssText` del bloque de etiquetar
+  (`accionesEtiquetado`, `campoEtiqueta`), el `minHeight` de los botones y el `flex-wrap` que se le
+  había añadido a la barra pasan a `styles.css` (mismos valores; nada nuevo de DESIGN.md). La
+  visibilidad pasa de `style.display` a la clase `barra-seleccion-etiquetar--visible`, como la barra
+  de SCRUM-792. El trinquete queda en 336 exacto.
+- **② `guard:lista-trabajos` ⑥.** Se declara SCRUM-1135 como 979 y 1032, citando el comentario 17449:
+  la pieza es el bloque ENTERO con su forma exacta (campo + «Añadir etiqueta» + «Quitar etiqueta»,
+  nada más dentro), una vez. Verde en este árbol. **Mutaciones sobre el producto, con el código ya
+  comiteado (e685a3e5) y el árbol restaurado por sha256 después:**
+  - un `title` en el contador de la barra (cambio NO declarado fuera del bloque) → **cae** («ha
+    cambiado MÁS de lo declarado»);
+  - una tercera acción «Borrar etiqueta» en el bloque → **cae** (bloque 0 de 1);
+  - sin «Quitar etiqueta» → **cae** (bloque 0 de 1).
+- `scrum582` sigue como se escribió: la barra ofrece EXACTAMENTE [«Añadir etiqueta», «Quitar etiqueta»],
+  más apretado que antes (cae con una tercera y cae si falta una).
+- **`guards de navegador (fuera de la tanda)` en rojo NO es de este ticket**: lo rompió #1943 (retirada
+  del justificante; carril de Luis, pendiente de decisión de Javier). No se toca.
 
 ## Lo que queda fuera
 
