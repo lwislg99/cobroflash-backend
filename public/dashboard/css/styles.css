@@ -3087,6 +3087,18 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .barra-seleccion { display: flex; }
 .barra-seleccion.barra-seleccion--vacia { display: none; }
 
+/* SCRUM-1135 · Etiquetar la selección, dentro de la barra. Sólo se ofrece con algo marcado: el JS
+   pone o quita `--visible` y el `display` lo decide esta hoja (SCRUM-713c: nada de `cssText`).
+   `flex-wrap` (en la barra y en el bloque) y el campo encogible, para que quepa a 390 px; los tres
+   controles, a 44 px. */
+.barra-seleccion { flex-wrap: wrap; }
+.barra-seleccion-etiquetar {
+  display: none; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto;
+}
+.barra-seleccion-etiquetar.barra-seleccion-etiquetar--visible { display: flex; }
+.barra-seleccion-etiquetar .input { min-height: 44px; flex: 1 1 140px; min-width: 0; max-width: 220px; }
+.barra-seleccion-etiquetar .btn-secondary { min-height: 44px; }
+
 .casilla-seleccion { position: relative; }
 .casilla-seleccion::before {
   content: "";
