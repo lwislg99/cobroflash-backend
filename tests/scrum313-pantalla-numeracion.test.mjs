@@ -139,10 +139,23 @@ test('SCRUM-313 · la ruta responde el choque con el MISMO texto aprobado del bl
 
 test('SCRUM-313 · la microcopy aprobada está literal en la pantalla', () => {
   const v = leerVista();
+  // SCRUM-1216b · los textos de la pregunta los firmó el fundador de nuevo (SCRUM-1216, comentario
+  // 17347) y viven en UN sitio para las dos pantallas: `SERIE_TEXTOS` de `puertaSerie.js`. Aquí se
+  // exige que estén literales ALLÍ y que el asistente los use con el año de la fecha actual.
+  const textos = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/puertaSerie.js'), 'utf8');
   for (const frase of [
-    '¿Ya has facturado en ${ANIO_EN_CURSO}?',
+    '¿Ya has emitido facturas en ${anio}?',
+    'Si vienes de otro programa, de una plantilla o del papel, cuenta igual.',
+    '¿Cuál fue el número de tu última factura de ${anio}?',
+    'YaQu empezará en el siguiente, para que no repitas un número que ya has usado.',
+  ]) {
+    assert.ok(textos.includes(frase), `🔴 falta la microcopy firmada en SERIE_TEXTOS: «${frase}»`);
+  }
+  for (const uso of ['TS.titulo(ANIO_EN_CURSO)', 'TS.etiquetaCampo(ANIO_EN_CURSO)', 'TS.ayudaTitulo', 'TS.ayudaCampo']) {
+    assert.ok(v.includes(uso), `🔴 el asistente no pinta el texto firmado: falta «${uso}»`);
+  }
+  for (const frase of [
     'No, empiezo ahora',
-    '¿Cuál fue el número de tu última factura de ${ANIO_EN_CURSO}?',
     // SCRUM-1216a: «Seguimos por ahí para que tu numeración no tenga saltos.» la RETIRÓ el fundador
     // (falsa desde el corte de la serie F). Su ausencia la exige scrum1216a-serie-sin-promesa.
     'Tu primera factura con YaQu será:',

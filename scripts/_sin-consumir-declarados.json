@@ -27,7 +27,6 @@
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1180"},
     {"clave":"cuerpo · POST /quote/create::job_id","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/invoices/:id/status::paidVia","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:525","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/templates/:id::currency","donde":"src/modules/templates/app/routes/templates.routes.ts:62","carril":"S2","ticket":"SCRUM-1185"},
@@ -91,8 +90,7 @@
     {"clave":"export · src/modules/jobs/domain/albaranFirmante.ts::ALBARAN_ROTULOS_APROBADOS","donde":"src/modules/jobs/domain/albaranFirmante.ts:187","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/albaranNumber.service.ts::esAlbaranRenumerado","donde":"src/modules/jobs/domain/albaranNumber.service.ts:35","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/albaranNumber.service.ts::isAlbaranNumber","donde":"src/modules/jobs/domain/albaranNumber.service.ts:27","carril":"S4","ticket":"SCRUM-1213","motivo":"SE QUEDA: la fijan albaran.test y scrum592 como especificacion de las dos formas de la serie; borrarla obligaria a quitar tests. Carril S4"},
-    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::huecosDeAlbaranes","donde":"src/modules/jobs/domain/albaranSerie.ts:53","carril":"S4","ticket":"SCRUM-1184"},
-    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","donde":"src/modules/jobs/domain/albaranSerie.ts:68","carril":"S4","ticket":"SCRUM-1184"},
+    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::huecosDeAlbaranes","donde":"src/modules/jobs/domain/albaranSerie.ts:53","carril":"S4","ticket":"SCRUM-1184","motivo":"SE QUEDA SIN ENCHUFAR a proposito (c.17342): con bases sin renumerar da huecos FALSOS, medido. Se reabre cuando todas las bases esten renumeradas (P-DOC-7, SCRUM-592)"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::censoDeIncoherencias","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:89","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::EJES_DE_VISIBILIDAD","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:141","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/jobs/domain/asignacionDeTrabajo.ts::loVe","donde":"src/modules/jobs/domain/asignacionDeTrabajo.ts:157","carril":"S4","ticket":"SCRUM-1185"},
@@ -139,12 +137,10 @@
     {"clave":"ruta · GET /admin/customers/:id/fusion-preview","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:611","carril":"J2","ticket":"SCRUM-1126"},
     {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · GET /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:425","carril":"J2","ticket":"SCRUM-1145"},
-    {"clave":"ruta · GET /admin/customers/:id/whatsapp","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:359","carril":"J2","ticket":"SCRUM-1133"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/exports/jobs.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:666","carril":"S2","ticket":"SCRUM-1183"},
-    {"clave":"ruta · GET /admin/libros/recibidas.csv","donde":"src/modules/fiscal/librosAeat/librosAeat.routes.ts:89","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/metrics/operarios","donde":"src/modules/metrics/app/routes/metrics.routes.ts:84","carril":"S2","ticket":"SCRUM-1183"},
     {"clave":"ruta · GET /admin/modelo-303","donde":"src/modules/fiscal/modelo303/modelo303.routes.ts:18","carril":"J1","ticket":"SCRUM-1064"},
     {"clave":"ruta · GET /admin/products/ping","donde":"src/modules/products/app/routes/products.routes.ts:32","carril":"operación","ticket":"SCRUM-1185"},
@@ -166,6 +162,9 @@
     {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"}
   ],
   "retiradas": [
+    {"clave":"ruta · GET /admin/customers/:id/whatsapp","motivo":"SCRUM-1133: conectada en customerDetailView.js (pestaña «WhatsApp» de la ficha, sólo admin)"},
+    {"clave":"ruta · GET /admin/libros/recibidas.csv","motivo":"SCRUM-1249: conectada en facturasRecibidasView.js (botón de descarga con el periodo del selector)"},
+    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","motivo":"SCRUM-1180: conectada en quotesView.js (casillas de cláusulas en el editor; Duplicar las copia desde el detalle)"},
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
@@ -180,6 +179,7 @@
     {"clave":"cuerpo · POST /quote/:token/accept::paymentTerms","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"ruta · POST /quote/:token/reject","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","motivo":"SCRUM-1184: conectada. GET /admin/albaranes/serie la usa (via siguienteNumeroDeAlbaran) para la vista previa de Nuevo albaran"},
     {"clave":"cuerpo · POST /admin/templates::paymentTerms","motivo":"SCRUM-1188: conectada en quotesView.js («Guardar como plantilla»; solo FULL_UPFRONT/FIFTY_FIFTY/MANUAL, CUSTOM no cabe)"},
     {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"}
   ]

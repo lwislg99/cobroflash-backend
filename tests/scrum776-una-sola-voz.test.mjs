@@ -20,6 +20,14 @@
 //   3. que los consumidores NO reimplementen la decisión;
 //   4. que el merchant DEMO siga leyendo «factura».
 //
+// 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446, 28-sep-2026) · LA RAMA
+// «JUSTIFICANTE» SE RETIRA. Desde SCRUM-1027 `modoDocumentoSuelto` solo devuelve 'factura' o 'no', así
+// que la rama no la veía nadie (grupo A del censo de SCRUM-1257, re-medido ejecutándolo). Lo de arriba
+// era verdad cuando se escribió y no se borra. Lo que este fichero sigue vigilando: (1) UNA sola
+// fuente, (2) que los seis rótulos salgan de ella, (3) que NADIE decida por el modo 'justificante'
+// —el predicado pasa de dos sitios a CERO—, y (4) que el DEMO y cualquier valor lean «factura».
+// Lo que DEJA de vigilar: que un merchant en modo justificante lea «justificante». Ese modo ya no existe.
+//
 // La CAJA la mide `npm run guard:caja-documento-suelto` en navegador, fuera de `npm test`
 // (la suite no arranca navegador). Aquí no se mide un píxel: se mediría un `innerHTML` inventado.
 import test from 'node:test';
@@ -58,12 +66,14 @@ const leer = (rel) => {
  * arregla aquí, y el que más fácil se cuela cuando se corrige «a mano».
  */
 const FIRMADOS = [
-  { fn: 'tituloListado', factura: 'Facturas', justificante: 'Justificantes' },
-  { fn: 'columnaNumero', factura: 'Nº factura', justificante: 'Nº justificante' },
-  { fn: 'tituloModal', factura: 'Nueva factura', justificante: 'Nuevo justificante' },
-  { fn: 'accionPrimaria', factura: 'Emitir factura', justificante: 'Emitir justificante' },
-  { fn: 'avisoEmitido', factura: 'Factura emitida', justificante: 'Justificante emitido' },
-  { fn: 'errorAlEmitir', factura: 'No hemos podido emitir la factura. Inténtalo otra vez.', justificante: 'No hemos podido emitir el justificante. Inténtalo otra vez.' },
+  // SCRUM-825 D1 (comentario 17446): se va la columna `justificante`. Queda el lado factura, que es
+  // el que ya se pintaba y el que está aprobado.
+  { fn: 'tituloListado', factura: 'Facturas' },
+  { fn: 'columnaNumero', factura: 'Nº factura' },
+  { fn: 'tituloModal', factura: 'Nueva factura' },
+  { fn: 'accionPrimaria', factura: 'Emitir factura' },
+  { fn: 'avisoEmitido', factura: 'Factura emitida' },
+  { fn: 'errorAlEmitir', factura: 'No hemos podido emitir la factura. Inténtalo otra vez.' },
 ];
 
 /**
@@ -106,21 +116,19 @@ test('SCRUM-776 · 🔴 los rótulos RETIRADOS no vuelven a la fuente sin firma 
   }
 });
 
-test('SCRUM-776 · los seis rótulos siguen al documento, en los tres modos', () => {
-  // 'justificante' = merchant ES real con el flag en su valor por defecto (el 80 % de la
-  // clientela). 'factura' = merchant DEMO y merchant no-ES. Los dos valores salen de
-  // `modoDocumentoSuelto`, medido en SCRUM-601.
-  const enJust = cargarRotulos('justificante');
-  const enFact = cargarRotulos('factura');
-
-  for (const r of FIRMADOS) {
-    assert.equal(typeof enJust[r.fn], 'function', `🔴 falta el rótulo \`${r.fn}\` en la fuente única`);
-    assert.equal(enJust[r.fn](), r.justificante,
-      `🔴 en modo JUSTIFICANTE, \`${r.fn}()\` no dice lo firmado. Un merchant español real ` +
-      'leería el nombre de un documento que NO está emitiendo.');
-    assert.equal(enFact[r.fn](), r.factura,
-      `🔴 en modo FACTURA, \`${r.fn}()\` ha cambiado. El merchant DEMO y los no-ES emiten factura ` +
-      'de verdad: romperlos por arreglar el otro lado es el defecto simétrico.');
+test('SCRUM-776 · los seis rótulos dicen lo firmado, con cualquier valor del modo', () => {
+  // 🔴 SCRUM-825 D1 (comentario 17446) · ANTES: «siguen al documento, en los tres modos», con una rama
+  // por modo. La rama «justificante» se retiró; ahora el rótulo es UNO y no depende del valor. Se
+  // ejecuta con los valores que el servidor puede mandar hoy ('factura' y el 'no' de app.js) y con el
+  // viejo 'justificante', para que su vuelta se note.
+  for (const modo of ['factura', 'no', 'justificante']) {
+    const r = cargarRotulos(modo);
+    for (const f of FIRMADOS) {
+      assert.equal(typeof r[f.fn], 'function', `🔴 falta el rótulo \`${f.fn}\` en la fuente única`);
+      assert.equal(r[f.fn](), f.factura,
+        `🔴 con ${JSON.stringify(modo)}, \`${f.fn}()\` no dice lo firmado. El merchant DEMO y los no-ES ` +
+        'emiten factura de verdad: romperlos es el defecto simétrico del que SCRUM-776 vino a arreglar.');
+    }
   }
 });
 
@@ -130,40 +138,45 @@ test('SCRUM-776 · ✅ el merchant DEMO y cualquier valor desconocido leen «fac
   // cambiar por este ticket.
   for (const modo of ['factura', 'no', undefined, null, '', 'JUSTIFICANTE', 'otra-cosa']) {
     const r = cargarRotulos(modo);
-    assert.equal(r.esJustificante(), false,
-      `🔴 \`${JSON.stringify(modo)}\` se está tomando por justificante. Sólo el valor exacto ` +
-      "'justificante' lo es: cualquier otra cosa —incluido un `/admin/me` viejo en caché— cae al " +
-      'lado «factura», que es lo que la pantalla decía antes de este ticket.');
     assert.equal(r.tituloListado(), 'Facturas');
     assert.equal(r.avisoEmitido(), 'Factura emitida');
   }
+  // SCRUM-825 D1 · el predicado `esJustificante()` se retiró con su rama. Si vuelve, vuelve la rama.
+  assert.equal(typeof cargarRotulos('justificante').esJustificante, 'undefined',
+    '🔴 `esJustificante()` ha vuelto a `rotulosDelDocumento`: la rama muerta se retiró por firma del ' +
+    'fundador (SCRUM-825 comentario 17446). Si hace falta otra vez, es otra decisión.');
 
-  // CONTROL POSITIVO: el detector de arriba tiene que saber decir que SÍ. Sin esto, una función
-  // que devolviera `false` siempre pasaría los siete casos y no probaría nada.
-  assert.equal(cargarRotulos('justificante').esJustificante(), true,
-    '🔴 el predicado no distingue: dice «no» también al único valor que es «sí».');
+  // CONTROL POSITIVO: el cargador ejecuta de verdad lo que hay en la fuente. Una fuente sintética que
+  // devuelve otra cosa TIENE que verse distinta; si no, los verdes de arriba no significarían nada.
+  const ventana = { appDocumentoSuelto: 'factura' };
+  // eslint-disable-next-line no-new-func
+  new Function('window', "window.rotulosDelDocumento = { tituloListado: function () { return 'X'; } };")(ventana);
+  assert.equal(ventana.rotulosDelDocumento.tituloListado(), 'X', '🔴 el cargador no ejecuta la fuente');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 2 · UNA SOLA FUENTE — que nadie reimplemente la decisión
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-776 · 🔴 la decisión vive en UN sitio: los consumidores no la reimplementan', () => {
-  // El predicado `appDocumentoSuelto === 'justificante'` puede aparecer en DOS sitios y sólo dos:
-  // la fuente única y el rótulo del botón de la vista, que ya existía desde SCRUM-346 y es el que
-  // esta fuente copia A PROPÓSITO para no discrepar con él.
+const PREDICADO = /appDocumentoSuelto\s*===\s*'justificante'/g;
+
+test('SCRUM-776 · 🔴 nadie decide ya el nombre del documento por el modo «justificante»', () => {
+  // ANTES (SCRUM-776): el predicado podía estar en DOS sitios y sólo dos, la fuente única y el botón
+  // de la vista. 🔴 SCRUM-825 D1 (comentario 17446): los dos se retiran con la rama, así que ahora son
+  // CERO. Si vuelve a aparecer en cualquiera de los tres ficheros del flujo, ha vuelto la rama.
   const conPredicado = [];
   for (const rel of [FUENTE, PAGINA, VISTA]) {
-    // 🔴 SÓLO CÓDIGO EJECUTABLE. La primera versión contaba sobre el fuente crudo y salió roja
-    // por el COMENTARIO de la fuente única, que cita el predicado para explicar que es uno solo.
-    // Es el mismo defecto que SCRUM-601 documentó en su cierre —`getText()` incluye comentarios—
-    // y me lo he vuelto a hacer, ahora en un guard de texto. `soloEjecutable` ya existía.
-    const veces = (soloEjecutable(leer(rel)).match(/appDocumentoSuelto\s*===\s*'justificante'/g) || []).length;
+    // 🔴 SÓLO CÓDIGO EJECUTABLE: los comentarios citan el predicado para explicar su retirada.
+    const veces = (soloEjecutable(leer(rel)).match(PREDICADO) || []).length;
     if (veces) conPredicado.push(`${rel} × ${veces}`);
   }
-  assert.deepEqual(conPredicado, [`${FUENTE} × 1`, `${VISTA} × 1`],
-    '🔴 el criterio de «qué documento es» se ha copiado o se ha movido. Dos sitios decidiendo el ' +
-    'nombre del documento es la regla 2 esperando a morder, y aquí morder significa decirle a ' +
-    `alguien que emitió una factura que no emitió.\n  encontrado: ${JSON.stringify(conPredicado)}`);
+  assert.deepEqual(conPredicado, [],
+    '🔴 ha vuelto una rama por modo «justificante», que se retiró por firma del fundador (SCRUM-825 ' +
+    `comentario 17446).\n  encontrado: ${JSON.stringify(conPredicado)}`);
+
+  // CONTROL POSITIVO: el detector SÍ ve el predicado cuando está en código, y NO cuando está en un
+  // comentario. Sin esto, el cero de arriba podría ser un detector ciego.
+  assert.equal((soloEjecutable("const a = window.appDocumentoSuelto === 'justificante';").match(PREDICADO) || []).length, 1);
+  assert.equal((soloEjecutable("// window.appDocumentoSuelto === 'justificante'\nconst a = 1;").match(PREDICADO) || []).length, 0);
 
   // Y la PÁGINA no decide nada por su cuenta: consume la fuente. Hasta SCRUM-867 esto se le exigía
   // al modal, que era quien pintaba el documento suelto.

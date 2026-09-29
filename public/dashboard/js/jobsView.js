@@ -1070,7 +1070,13 @@ function jobRow(j, container, equipo) {
   // `💰 Cobrar el resto (importe)` para un terminado con saldo — la MISMA cadena que el botón de
   // ejecutar de abajo—, así que la fila sacaba el par y no había forma de saber cuál hacía qué.
   // Se queda el que EJECUTA: el detalle está a un clic en la propia fila.
-  const cobraAqui = j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
+  //
+  // SCRUM-1205 · y SOLO si este profesional puede facturar: `collect-rest` emite una factura y en modo
+  // justificante corta con 409 `facturacion_no_disponible`. Mismo criterio que la ficha
+  // (`jobNextAction`, SCRUM-1160), que falla cerrado con el modo desconocido. Sin él, `siguiente` ya
+  // se salta el cobro y la escalera sigue, así que la fila no se queda con un botón muerto.
+  const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  const cobraAqui = puedeFacturar && j.status === 'terminado' && j.remaining && j.remaining.amount > 0;
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
   if (siguiente && !cobraAqui) {
     const bSiguiente = document.createElement('button');
@@ -1126,7 +1132,15 @@ function jobRow(j, container, equipo) {
           : 'Cobro creado — el WhatsApp falló, reenvíalo desde Cobros', waSent ? 'ok' : 'warn');
         refresh();
       } catch (err) {
-        avisoDeFallo('No se pudo generar el cobro', err);
+        // SCRUM-1205 · CINTURÓN: si aun así llega el 409 `facturacion_no_disponible` (o un `message`
+        // con el marcador), sale el texto FIRMADO de SCRUM-1160, nunca el del servidor.
+        // `textoDeErrorDeFacturar` devuelve el `message` tal cual cuando es firmado: si lo cambió, es
+        // que era el de «aquí no se factura».
+        const data = err && err.data;
+        const firmado = data && typeof window.textoDeErrorDeFacturar === 'function'
+          ? window.textoDeErrorDeFacturar(data, null) : null;
+        if (firmado && firmado !== data.message) showToast(firmado, 'error');
+        else avisoDeFallo('No se pudo generar el cobro', err);
         b.disabled = false;
       }
     });

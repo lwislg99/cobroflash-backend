@@ -1689,6 +1689,51 @@ function renderCustomersView(container) {
     editingCustomer = null;
   }
 
+  // ═══ 🔴 SCRUM-1199 · QUÉ SE LE DICE CUANDO EL GUARDADO FALLA ═══════════════════════════════
+  //
+  // Textos FIRMADOS (SCRUM-1199, comentario 17321): no se retocan de paso, se vuelven a firmar.
+  // Sustituyen a «Error guardando cliente: API 400: validation_error», un código en crudo.
+  //
+  // · Se decide por CÓDIGO y por CAMPO (`details[].path` + `code`), nunca por el texto.
+  // · «Le faltan cifras» sólo con `too_small`: es verdad porque `phone`/`mobile` son
+  //   `z.string().min(5)` y la longitud es su único modo de fallo. Si el esquema valida otra cosa
+  //   algún día, ese error cae en el genérico y el literal hay que volver a firmarlo.
+  // · El genérico es un SUELO: sólo sustituye al mensaje compuesto en crudo. Si el servidor mandó
+  //   un `message` humano (o `apiRequest` ya lo resolvió, `handled`), ese mensaje GANA y se pinta
+  //   como antes.
+  const AVISO_TELEFONO_CORTO = "Revisa el teléfono: le faltan cifras.";
+  const AVISO_MOVIL_CORTO = "Revisa el móvil: le faltan cifras.";
+  const AVISO_EMAIL_INVALIDO = "Revisa el email: no parece una dirección válida.";
+  const AVISO_ERROR_GENERICO = "No se ha podido guardar el cliente. Revisa los datos e inténtalo de nuevo.";
+
+  // 🔴 SCRUM-1239 · CUANDO LO QUE FALLA NO SON LOS DATOS. Los tres textos que siguen, APROBADOS por
+  // el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1239 comentario 17386). Van
+  // tal cual. «Revisa los datos» era falso aquí: los datos estaban bien y lo que se cayó fue la
+  // conexión o el servidor. En ninguno se sabe si el cliente se guardó —`fetch` puede rechazar
+  // después de que llegara el POST—, por eso los tres mandan a mirar la lista antes de repetirlo:
+  // afirmar «no se guardó» fabricaría duplicados (SCRUM-1126, SCRUM-1137).
+  // Dependen de que `api.js` siga separando `sinRed` de `incierto`; si deja de hacerlo, vuelven a firma.
+  const AVISO_SIN_CONEXION = "Sin conexión. Vuelve a intentarlo cuando tengas cobertura, y mira la lista antes de crearlo otra vez.";
+  const AVISO_SIN_CONFIRMAR = "Se cortó la conexión y no sabemos si el cliente se ha guardado. Mira la lista antes de crearlo otra vez.";
+  const AVISO_FALLO_SERVIDOR = "No hemos podido completar el guardado. Inténtalo de nuevo en un rato, y mira la lista antes de crearlo otra vez.";
+
+  function avisoDeGuardadoFallido(err) {
+    const datos = (err && err.data) || null;
+    if (err && (err.handled || (datos && datos.message))) return "Error guardando cliente: " + err.message;
+    // SCRUM-1239 · por la MARCA que pone `api.js`, nunca por el texto del error.
+    if (err && err.sinRed) return AVISO_SIN_CONEXION;
+    if (err && err.incierto) return AVISO_SIN_CONFIRMAR;
+    if (err && Number(err.status) >= 500) return AVISO_FALLO_SERVIDOR;
+    if (err && err.code === "validation_error" && datos && Array.isArray(datos.details)) {
+      const primero = datos.details[0] || {};
+      const campo = Array.isArray(primero.path) ? primero.path[0] : null;
+      if (campo === "phone" && primero.code === "too_small") return AVISO_TELEFONO_CORTO;
+      if (campo === "mobile" && primero.code === "too_small") return AVISO_MOVIL_CORTO;
+      if (campo === "email" && primero.code === "invalid_format") return AVISO_EMAIL_INVALIDO;
+    }
+    return AVISO_ERROR_GENERICO;
+  }
+
   async function onModalSubmit(ev) {
     ev.preventDefault();
     avisarDelFormulario(null, "");
@@ -1793,7 +1838,7 @@ function renderCustomersView(container) {
       // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
       if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      avisarDelFormulario("error", "Error guardando cliente: " + err.message);
+      avisarDelFormulario("error", avisoDeGuardadoFallido(err));
     } finally {
       modalSaveBtn.disabled = false;
     }

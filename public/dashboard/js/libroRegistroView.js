@@ -51,7 +51,9 @@
     titulo: 'Libro registro de facturas expedidas',
     menu: 'Libro de registro',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual
-    recuento: (n) => n + ' facturas',
+    // SCRUM-1232 · firmado SÓLO junto al filtro de justificantes (comentario 17435): con él, el
+    // recuento cuenta facturas de verdad y la frase es cierta. Antes decía «1 facturas».
+    recuento: (n) => n === 1 ? '1 factura' : n + ' facturas',
     error: 'No se ha podido cargar el libro. Vuelve a intentarlo.',
     // Los dos vacíos, que existen para NO decir lo mismo:
     vacioDeVerdad: 'Todavía no has emitido ninguna factura.',

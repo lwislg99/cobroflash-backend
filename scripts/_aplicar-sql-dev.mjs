@@ -76,6 +76,47 @@ export const PERMITIDAS = Object.freeze([
   { nombre: 'CREATE TYPE … AS ENUM ( … )', re: /^CREATE\s+TYPE\s+"?[\w.]+"?\s+AS\s+ENUM\s*\(\s*'[^']*'(\s*,\s*'[^']*')*\s*\)$/i },
 ]);
 
+// ── SCRUM-1224 · UN `ALTER TABLE` CON VARIAS ACCIONES SE MIRA ENTERO ───────────────────────────
+//
+// La forma `ALTER TABLE … ADD COLUMN` termina en `[\s\S]+`, así que miraba la PRIMERA acción y lo
+// que fuera detrás de la coma pasaba sin mirar: `ADD COLUMN "x" INT, DROP COLUMN "email"` salía
+// ACEPTADO (medido el 28-sep-2026). Ahora el `ALTER TABLE` se parte en acciones por las comas de
+// PRIMER nivel y cada una tiene que ser, ella sola, una forma de la lista. No se añade ni se quita
+// ninguna forma: es el guarda haciendo lo que dice que hace.
+//
+// El algoritmo es el del clasificador de producción (`partirAcciones` de `_clasificador-sql.mjs`),
+// sobre el texto que devuelve su `desnudar`: conserva las posiciones y convierte los literales en
+// espacios, así que una coma o un paréntesis dentro de `'…'` no parten nada.
+import { desnudar } from './_clasificador-sql.mjs';
+
+const CABEZA_ALTER = /^ALTER\s+TABLE\s+\S+\s+/i;
+
+/** Las acciones de un `ALTER TABLE`, en texto original; `null` si no se pudo leer. */
+export function accionesDeAlterTable(sentencia) {
+  const cabeza = sentencia.match(CABEZA_ALTER);
+  if (!cabeza) return null;
+  const cuerpo = sentencia.slice(cabeza[0].length);
+  const { desnudo, sinCerrar } = desnudar(cuerpo);
+  if (sinCerrar) return null;
+  const acciones = [];
+  let prof = 0, desde = 0;
+  for (let i = 0; i < desnudo.length; i++) {
+    if (desnudo[i] === '(') prof++;
+    else if (desnudo[i] === ')') prof--;
+    else if (desnudo[i] === ',' && prof === 0) { acciones.push(cuerpo.slice(desde, i).trim()); desde = i + 1; }
+  }
+  acciones.push(cuerpo.slice(desde).trim());
+  return { cabeza: cabeza[0], acciones };
+}
+
+/** Si no es un `ALTER TABLE`, no hay nada que partir. Si lo es, CADA acción ha de ser una forma. */
+function todasLasAccionesPermitidas(sentencia) {
+  if (!CABEZA_ALTER.test(sentencia)) return true;
+  const partes = accionesDeAlterTable(sentencia);
+  if (!partes) return false; // no se supo leer: se rechaza, no se permite
+  return partes.acciones.every((a) => a && PERMITIDAS.some((p) => p.re.test(partes.cabeza + a)));
+}
+
 /** Quita comentarios CONSERVANDO las líneas, para que el número que se reporte sea el real. */
 export function sinComentarios(sql) {
   const hueco = (m) => m.replace(/[^\n]/g, ' ');
@@ -101,7 +142,7 @@ export function clasificarSentencias(sql) {
     const desplazamiento = trozo.length - trozo.replace(/^\s+/, '').length;
     const linea = limpio.slice(0, inicio + desplazamiento).split('\n').length;
     const forma = PERMITIDAS.find((p) => p.re.test(sentencia));
-    if (forma) permitidas.push({ linea, sentencia, forma: forma.nombre });
+    if (forma && todasLasAccionesPermitidas(sentencia)) permitidas.push({ linea, sentencia, forma: forma.nombre });
     else rechazadas.push({ linea, sentencia });
   }
   return { permitidas, rechazadas };

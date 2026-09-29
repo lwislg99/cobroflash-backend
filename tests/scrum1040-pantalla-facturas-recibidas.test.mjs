@@ -226,12 +226,30 @@ test('SCRUM-1040 · toda la copy DESCRIPTIVA de esta pantalla va marcada, salvo 
     'cargando', 'menu', 'colFecha', 'colProveedor', 'colNif', 'colBase', 'colIva', 'colTotal',
     'filaTotal', 'etiquetaAnio', 'etiquetaTrimestre', 'consultar',
   ];
+  // 🔴 SCRUM-1249 · LAS APROBADAS VAN APARTE, CADA UNA CON SU FIRMA Y SU LITERAL. Condición de la
+  // propia firma (comentario 17432): en una lista pelada de nombres nadie distingue una ranura
+  // aprobada de una que una sesión se eximió a sí misma. Aquí cada exención lleva quién la firmó y
+  // cuándo, y el TEXTO firmado: si alguien cambia el literal, la exención deja de valer y el guard
+  // vuelve a pedir el marcador (o una firma nueva). Registro: `docs/microcopy/` del mismo ticket.
+  const APROBADAS_CON_FIRMA = [
+    { ranura: 'descargar', texto: 'Descargar CSV', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+    { ranura: 'preparando', texto: 'Preparando la descarga…', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+    { ranura: 'descargaVacia', texto: 'No hay facturas recibidas en este periodo.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+    { ranura: 'descargaLista', texto: 'Descarga lista.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+    { ranura: 'descargaFallida', texto: 'No hemos podido preparar la descarga. Inténtalo otra vez.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+  ];
+  const firmada = (ranura, texto) => APROBADAS_CON_FIRMA.some((a) => a.ranura === ranura && a.texto === texto);
   const sinMarcar = [];
   for (const [ranura, v] of Object.entries(COPY)) {
     if (DECLARADAS_FUERA.includes(ranura) || ranura === 'recuento') continue;
+    if (typeof v === 'string' && firmada(ranura, v)) continue;
     const texto = typeof v === 'function' ? v(1) : v;
     if (!String(texto).startsWith(MARCADOR)) sinMarcar.push(`${ranura}: ${JSON.stringify(texto)}`);
   }
   assert.deepEqual(sinMarcar, [],
     `🔴 estas ranuras llevan texto que nadie ha aprobado y no lo dicen:\n   ${sinMarcar.join('\n   ')}`);
+  // Una firma que ya no ampara nada (ranura quitada o texto cambiado) se retira de la lista: si se
+  // queda, es un permiso esperando a que alguien vuelva a escribir ese literal sin mirar.
+  const huerfanas = APROBADAS_CON_FIRMA.filter((a) => COPY[a.ranura] !== a.texto).map((a) => `${a.ranura} (${a.firma})`);
+  assert.deepEqual(huerfanas, [], '🔴 firmas que ya no amparan el texto de la pantalla: retíralas o pide firma nueva');
 });

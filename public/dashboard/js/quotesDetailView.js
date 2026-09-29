@@ -285,7 +285,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       if (paidInvCta && !pendingInvCta) {
         const btnReceipt = document.createElement('button');
         btnReceipt.className = 'btn-primary';
-        btnReceipt.textContent = '🧾 Ver justificante';
+        // SCRUM-1257 · P6, firmado en el comentario 17444: el documento cobrado es una FACTURA salvo en
+        // un `J-` antiguo, que conserva su rótulo (no se llama factura a lo que no lo es: SCRUM-1252).
+        btnReceipt.textContent = tipoDeFactura(paidInvCta) === 'factura' ? '🧾 Ver factura' : '🧾 Ver justificante';
         btnReceipt.addEventListener('click', () => {
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: paidInvCta.id });
         });

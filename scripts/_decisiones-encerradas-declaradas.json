@@ -1,0 +1,41 @@
+{
+  "acusadas": {
+    "homeView.js · submitQuickQuote": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: presupuesto. Otras vistas que lo pintan y no la llaman: 5. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "jobDetailView.js · destinoEnFila": {
+      "familia": "① resolutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: albarán. Otras vistas que lo pintan y no la llaman: 4. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "jobDetailView.js · buildAlbEditor": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: albarán. Otras vistas que lo pintan y no la llaman: 4. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "jobsView.js · jobRow": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: trabajo. Otras vistas que lo pintan y no la llaman: 3. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "quoteRequestsView.js · loadRequests": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: factura. Otras vistas que lo pintan y no la llaman: 8. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "quotesDetailView.js · renderQuoteDetailView": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: factura + presupuesto. Otras vistas que lo pintan y no la llaman: 11. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "quotesDetailView.js · renderInvoices": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: factura. Otras vistas que lo pintan y no la llaman: 8. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "quotesListView.js · renderRows": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: presupuesto. Otras vistas que lo pintan y no la llaman: 5. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    },
+    "quotesView.js · renderQuotesView": {
+      "familia": "③ ejecutor",
+      "motivo": "Ya estaba encerrada el 28-sep-2026, cuando entró el trinquete (SCRUM-1179-B). Documento: presupuesto. Otras vistas que lo pintan y no la llaman: 5. Declarada, NO aceptada: sacarla a un fichero compartido la retira."
+    }
+  },
+  "retiradas": []
+}
