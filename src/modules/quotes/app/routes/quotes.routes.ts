@@ -5,7 +5,7 @@ import {
   CreateQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
+import { calcTotal, formatMoneyEs, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
@@ -703,7 +703,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     // si está cerrada, fallback a la plantilla merchant_alert_es). Fire-and-forget.
     {
       const customerName = quote.customer?.name || 'El cliente';
-      const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+      // SCRUM-1277 · `updatedQuote`, NO `quote`: si el cliente eligió un tramo, el `update` de
+      // arriba reescribió el total y `quote` es la fila de ANTES (121 donde aceptó 363). Mismo
+      // origen que el Trabajo. Y en es-ES con el formateador de la casa («363,00 €», no «363.00 EUR»).
+      const amount = formatMoneyEs(updatedQuote.total, updatedQuote.currency);
       const qNum = displayQuoteNumber(quote, quote.merchant); // A1.2: número por merchant, no el id global
       const freeText = decision === 'accept'
         ? `✅ ${customerName} aceptó tu presupuesto ${qNum} por ${amount}`
