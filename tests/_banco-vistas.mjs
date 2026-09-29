@@ -448,6 +448,10 @@ export function nodo(tag, reg) {
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
+    // 🔴 SCRUM-1278 · `scrollIntoView`. NO EXISTÍA: S2 lo midió en el barrido de clics de 1275. Una
+    // vista que lo llama al abrir acababa en su catch con un TypeError y el banco medía el cartel.
+    // Sin maquetación no hay nada que desplazar: basta con que exista.
+    scrollIntoView() {},
     // 🔴 SCRUM-591 · `reset()`. NO LO TENÍA, y por eso el formulario de alta de cliente REVENTABA
     // al abrirse desde el banco (`modalForm.reset is not a function`) — en el navegador lo abre
     // un profesional todos los días. Un banco al que le falta un método del navegador no mide de
