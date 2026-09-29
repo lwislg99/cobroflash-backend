@@ -36,7 +36,7 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LO QUE NO SE SELLA, Y NO ES UNA LISTA
 //
-// Las referencias EXTERNAS (Google Fonts) quedan fuera **por ser absolutas**, no por una
+// Las referencias EXTERNAS (entonces, Google Fonts; desde SCRUM-1234 ya no hay) quedan fuera **por ser absolutas**, no por una
 // allowlist de dominios. Es deliberado: una lista de excepciones envejecería igual que la lista
 // de referencias que este ticket viene a eliminar — se añade un dominio y nadie lo mete. La
 // propiedad «apunta fuera de este servidor» la tiene la propia URL y no hay que mantenerla.

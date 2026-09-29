@@ -159,7 +159,18 @@ function openImportCsvModal() {
 
   // ── PASO 2 · Esto es lo que hemos entendido ────────────────────────────────
   function pintarMapeo() {
-    const CAMPOS = [['name', 'Nombre'], ['phone', 'Teléfono'], ['email', 'Email'], ['notes', 'Notas']];
+    // SCRUM-1136 · LOS DOCE CAMPOS QUE EL SERVIDOR ACEPTA, en el orden de `CAMPOS_CLIENTE`
+    // (importarClientes.service.ts). Con sólo los cuatro de antes, una columna que el servidor
+    // RECONOCÍA (NIF, MOVIL…) llegaba propuesta con un campo que aquí no existía: el desplegable
+    // caía en «— dejar fuera —», el aviso de columna desconocida no salía —porque sí se había
+    // reconocido— y el dato se perdía EN SILENCIO. Los ocho rótulos nuevos, firmados en
+    // SCRUM-1136 comentario 17445 (docs/microcopy/2026-09-28-SCRUM-1136-columnas-importar.md).
+    const CAMPOS = [
+      ['name', 'Nombre'], ['phone', 'Teléfono'], ['mobile', 'Móvil (WhatsApp)'], ['email', 'Email'],
+      ['notes', 'Notas'], ['taxId', 'NIF/CIF'], ['tags', 'Etiquetas'], ['billingAddress', 'Dirección'],
+      ['billingCity', 'Población'], ['billingPostalCode', 'Código postal'], ['billingProvince', 'Provincia'],
+      ['billingCountry', 'País (código, ej. ES)'],
+    ];
     const filas = est.columnas.map(function (c) {
       const opciones = ['<option value="">— dejar fuera —</option>'].concat(
         CAMPOS.map(function (f) {

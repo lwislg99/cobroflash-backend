@@ -163,7 +163,7 @@ test('SCRUM-D1 · el microcopy es el APROBADO del asistente, literal', () => {
   // MISMO es parte del punto: quien vuelva a verla tiene que reconocerla.
   const ONB = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/onboardingView.js'), 'utf8');
   for (const frase of [
-    'Seguimos por ahí para que tu numeración no tenga saltos.',
+    // SCRUM-1216a retiró «Seguimos por ahí para que tu numeración no tenga saltos.» de las dos.
     'Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.',
     'No, empiezo ahora',
   ]) {

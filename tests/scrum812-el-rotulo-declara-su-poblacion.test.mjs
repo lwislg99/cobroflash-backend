@@ -87,17 +87,12 @@ function tituladosQueDeclaran() {
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
  *
- * ⬆️ **22** (SCRUM-1179, 28-sep-2026): este propio trinquete lo puso en rojo, ROJO-OBLIGATORIO,
- * en el check de este commit — no una medición local: esta sesión responde a `@claude` sobre un
- * PR y ese entorno no ejecuta `node` (no hay forma de correr `npm test` a mano para re-derivar el
- * número; regla de la ejecución automática). El número no se inventa: es el que el propio
- * `AssertionError` publicó — `actual: 22, expected: 20` — sobre
- * `ec16ae80890b6bebbc5789130f0301749e4374ae`
- * (run: https://github.com/lwislg99/cobroflash-backend/actions/runs/36448469767), con la lista de
- * los 22 ficheros impresa en el propio fallo. No se afirma aquí CUÁLES de esos 22 son los dos que
- * faltaban sobre el 20 anterior — esa atribución exigiría re-medir en un árbol intermedio, que
- * este entorno no puede hacer —: se ancla el número que el trinquete ya demostró, en rojo, que es
- * el real.
+ * ⬆️ **22** (SCRUM-1179-B, 28-sep-2026): dos ficheros que YA declaraban ganan un test titulado
+ * GUARD al añadir su control positivo — `scrum775-suelo-que-no-dispara.test.mjs` («…y un guard
+ * opaco, metidos en el árbol real, salen») y `scrum808-el-arbol-que-queda-mutado.test.mjs` («el
+ * meta-guard de antes de la red sale SIN RED; el de después, no»). Los dos ya estaban en el
+ * denominador de declarantes; sólo cambia el subconjunto auto-titulado.
+ * Medido sobre `origin/main` = `2b4db6a2948ba062909c38f3cac7e495c2b1e8cc` mezclado en la rama.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
 export const SUELO_GUARD_QUE_DECLARAN = 22;

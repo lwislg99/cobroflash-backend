@@ -2981,3 +2981,50 @@ de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.table
    `CREATE TABLE … ( … )` · `ALTER COLUMN … DROP DEFAULT` · `CREATE TYPE … AS ENUM ( … )`
    (SCRUM-1197). Sus conclusiones sobre el DML no cambian: el DML sigue sin estar permitido. Aquí
    se registra, no se corrige.
+
+## SCRUM-1216 · `merchants.invoice_start_seq` + `invoice_start_year` (arranque de serie) — 28-sep-2026 · ✅ **APLICADA EN LAS TRES BASES**
+
+El DDL está en `docs/sql/scrum-1216b-arranque-de-serie.sql`, con el porqué de cada columna. Lo
+escribe J6 (jv-j6), **después** de que se aplicara: hasta ahora sólo existía en una conversación y en
+un fichero del escritorio de Javier. `git grep invoice_start_seq` en `origin/main` a59dc1e6 → 0.
+Es el mismo hueco que SCRUM-1102.
+
+```sql
+ALTER TABLE "merchants"
+  ADD COLUMN IF NOT EXISTS "invoice_start_seq"  INTEGER,
+  ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;
+```
+
+Aditiva, con `IF NOT EXISTS`. 🔴 **Las dos van sin `DEFAULT` y sin `NOT NULL` a propósito:** `NULL`
+es «no declaró nada» (su primera factura, `F260001`) y no puede confundirse con haber declarado «1»
+(regla 29).
+
+### Estado por base — 28-sep-2026
+
+- [x] **producción** — la pegó **Javier** a mano. No se ha verificado desde una sesión.
+  - *(Añadido por J1 al fusionar main en SCRUM-1216b, 28-sep-2026.)* Verificada después según el
+    **orquestador** (SCRUM-1216, comentario 17369), con la salida que devolvió Javier: las dos
+    `integer`, `is_nullable=YES`, sin default; `next_invoice_number` `NO`, default 1. Distinguida de
+    staging por DATOS (`merchants = 14 · invoices = 2` frente a `8 · 9`), no por columnas: las dos
+    bases dan 66. La medición no es de J1, que no tiene clave de ninguna base.
+- [x] **staging** — la pegó **Javier** a mano. La **verificó el orquestador** leyendo el catálogo
+  con control positivo: 66 columnas en `merchants`, las dos `integer`, `nullable = YES`, sin
+  default, y `next_invoice_number` intacto con su default 1. J6 volvió a leerlo, en solo lectura,
+  para calibrar su verificador, y salió lo mismo.
+- [x] **desarrollo · yaqu_dev_javier** — la aplicó **J6** el 2026-09-28T15:00:43Z con
+  `scripts/aplicar-sql-dev.mjs --go` (destino DESARROLLO ✅, exit 0). La **verificó leyendo el
+  catálogo**, antes y después:
+
+| | ANTES | DESPUÉS |
+|---|---|---|
+| columnas de `merchants` | 64 | 66 |
+| `invoice_start_seq` | no existe | `integer` · nullable · sin default |
+| `invoice_start_year` | no existe | `integer` · nullable · sin default |
+| `next_invoice_number` | `integer` NOT NULL DEFAULT 1 | **igual** |
+| valores de `next_invoice_number` (6 merchants, md5 de `id:valor`) | `8102ae7f0bf8f4d3a8ba7635bbd6a05c` | **idéntica** |
+| merchant 1 | 6 | 6 |
+
+Antes de aplicarlo, el SQL pasó por **dos** sondas independientes: la lista de dev (una sentencia
+`ALTER TABLE … ADD COLUMN`) y el clasificador de producción (`ADD COLUMN ×2`, permitida). Se usaron
+las dos porque la de dev tiene un hueco con los `ALTER` de varias acciones, que J6 encontró ese mismo
+día y que va en su propio ticket.
