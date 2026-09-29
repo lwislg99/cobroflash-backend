@@ -15,8 +15,9 @@
 // —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
 // pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
 // más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
-// pie en obra. Las otras quince siguen medidas por el censo (`npm run censo:tactil-panel`) y
-// sin vigilar, a propósito.
+// pie en obra. Las otras quince NO las vigila nada que corra o bloquee: `npm run censo:tactil-panel`
+// es un censo MANUAL que no lanza ningún workflow ni ningún test (medido en SCRUM-1179), así que
+// medirlas depende de que alguien se acuerde. No se cite como red para retirar una pantalla de aquí.
 //
 // 🔴 EL NÚMERO DEL CENSO, RE-FECHADO EL 7-sep-2026 (SCRUM-795): 82 objetivos cortos distintos,
 // 62 de ellos `.btn-sm`. No son 6 nuevos defectos: son los 7 de la ficha 360, que hasta hoy el
@@ -421,13 +422,18 @@ const SUPERFICIES_791 = [
   // Bizum que medir, y medir la pantalla vacía sería medir otra pantalla.
   //
   // Argumentos: `renderJobDetailView(container, jobId)` — SIN `id` no hay fetch y la vista no monta.
+  // 🔴 SCRUM-1193 · 28-sep-2026 · 1 → 0, RETIRADA A PROPÓSITO porque el CÓDIGO MEJORÓ: el único corto
+  // era el «⋯» de `overflowMenu`, que sube a 44 × 44 en el propio componente (styles.css,
+  // `.overflow-trigger.btn-ghost.btn-sm`). Medido con este guard en Edge: la ficha cumple a 929 y a
+  // 390 con la lista de excepciones VACÍA. Lo que impide que un cero sea ceguera no es este número:
+  // son `conocidos` (los botones de cobro, con nombre, tienen que salir) y las sondas del umbral.
   { ruta: '/__job', vista: 'renderJobDetailView', titulo: 'ficha del Trabajo',
-    datos: DATOS_1172, args: [1], distintosEsperados: 1,
+    datos: DATOS_1172, args: [1], distintosEsperados: 0,
     // Los de COBRO primero (aceptación #4): si cualquiera deja de pintarse, CIEGO — no un cero que
     // parezca limpieza. «Marcar como PAGADA» y «📲 Confirmar Bizum recibido» son los dos que la
     // fixture de `DATOS_1172` existe para sacar a pantalla.
     conocidos: ['Marcar como PAGADA', '📲 Confirmar Bizum recibido'],
-    origen: 'SCRUM-1172 (27-sep-2026, medido con la lista de excepciones VACÍA: 1 corto en los dos anchos, el «⋯»)' },
+    origen: 'SCRUM-1193 (28-sep-2026, medido con la lista de excepciones VACÍA: 0 cortos; SCRUM-1172 midió 1, el «⋯», ya arreglado)' },
 ];
 for (const s of SUPERFICIES_791) {
   const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
@@ -794,9 +800,10 @@ const EXCEPCIONES_791 = {
   // ESTA PANTALLA: `overflowMenu` vive en `public/dashboard/js/api.js` y lo comparten otras vistas,
   // así que subirlo aquí no es una decisión de esta sesión ni de este ticket —que es el INSTRUMENTO,
   // no el arreglo—. Se declara, con su cifra, y se reporta aparte (ver docs/master/SCRUM-1172.md).
-  renderJobDetailView: [
-    { sel: 'BUTTON.overflow-trigger.btn-ghost.btn-sm', motivo: 'el «⋯» de acciones secundarias (Recordar pago/Reenviar por WhatsApp), compartido vía `overflowMenu` en `api.js`. 30,7 px a 929, 31,0 px a 390. Hallazgo NUEVO de SCRUM-1172 (27-sep-2026), reportado y sin arreglar: cambiar un componente compartido no es decisión de esta sesión.' },
-  ],
+  // SCRUM-1193 · RETIRADA: el «⋯» sube a 44 × 44 en el propio componente (styles.css,
+  // `.overflow-trigger.btn-ghost.btn-sm`), así que la excepción ya no tiene causa. La ficha queda
+  // vigilada sin excusas.
+  renderJobDetailView: [],
 };
 
 for (const s of SUPERFICIES_791) {

@@ -239,6 +239,15 @@ const APARCADOS = [
       + 'registro —la firma ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-915.md`.',
   },
   {
+    texto: '¿Para quién es el justificante?',
+    motivo: 'RETIRADO CON SU RAMA MUERTA POR FIRMA DEL FUNDADOR (SCRUM-825 D1, comentario 17446, '
+      + '28-sep-2026). Era la guía del paso «Cliente» del documento suelto en modo justificante '
+      + '(`quotesView.js`). Desde SCRUM-1027 `modoDocumentoSuelto` no devuelve nunca «justificante», '
+      + 'así que no la veía nadie (grupo A del censo de SCRUM-1257, re-medido ejecutándolo). NO se '
+      + 'desaprueba en el registro —la firma ocurrió—; ya no tiene dónde pintarse. Registro: '
+      + '`docs/master/SCRUM-1257.md`, sección SCRUM-1257c.',
+  },
+  {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '
       + 'texto que explica qué emite una cuenta toca claims fiscales y se responde sólo con el '

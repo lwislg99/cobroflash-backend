@@ -1,0 +1,14 @@
+┌─────────┬──────────────────────────┬───────────┬───────────────────────────────┬───────────────────────────────────┐
+│ (index) │ nombre                   │ modo      │ desenlace                     │ escrituras                        │
+├─────────┼──────────────────────────┼───────────┼───────────────────────────────┼───────────────────────────────────┤
+│ 0       │ 'ES real, sin override'  │ 'receipt' │ 'LANZA invoicing_es_disabled' │ '—'                               │
+│ 1       │ 'ES real, country vacío' │ 'receipt' │ 'LANZA invoicing_es_disabled' │ '—'                               │
+│ 2       │ 'ES real, country null'  │ 'receipt' │ 'LANZA invoicing_es_disabled' │ '—'                               │
+│ 3       │ 'ES real, override ON'   │ 'fiscal'  │ 'NÚMERO F260001'              │ 'merchant.update,auditLog.create' │
+│ 4       │ 'demo (id=1)'            │ 'demo'    │ 'NÚMERO F260001'              │ 'merchant.update,auditLog.create' │
+│ 5       │ 'PT'                     │ 'fiscal'  │ 'NÚMERO F260001'              │ 'merchant.update,auditLog.create' │
+│ 6       │ 'MX'                     │ 'fiscal'  │ 'NÚMERO F260001'              │ 'merchant.update,auditLog.create' │
+│ 7       │ 'AR'                     │ 'fiscal'  │ 'NÚMERO F260001'              │ 'merchant.update,auditLog.create' │
+└─────────┴──────────────────────────┴───────────┴───────────────────────────────┴───────────────────────────────────┘
+población: 8 merchants · modo receipt: 3 · receipt que lanza invoicing_es_disabled: 3
+control: casos no-receipt que NO lanzan invoicing_es_disabled: 5 de 5

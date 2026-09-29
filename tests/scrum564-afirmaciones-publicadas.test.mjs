@@ -33,8 +33,11 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
 /** Lo medido el 23-sep-2026, tras SCRUM-1086 completo (antes: 28 / 15 CON_ANCLA / 10 FALSA). El trinquete, en las dos direcciones. */
-const AFIRMACIONES = 18;
-const GRUPOS_HOY = { [CON_ANCLA]: 13, [FALSA]: 2, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
+// SCRUM-1130 (28-sep-2026) · 18 → 19 y CON_ANCLA 13 → 14: una afirmación nueva, «Firmado · Acepto»
+// (`probar/div#7`, el final de la demo, texto firmado en SCRUM-1130 comentario 17403), DECLARADA en
+// `ANCLAS_564` con ancla FIRMA. Las falsas no se mueven (2) y ninguna queda sin declarar.
+const AFIRMACIONES = 19;
+const GRUPOS_HOY = { [CON_ANCLA]: 14, [FALSA]: 2, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · contar 28 y medir 12 sería peor que no medir
@@ -49,7 +52,7 @@ test('SUELO · las cinco secciones existen y ninguna sale vacía', () => {
   }
 });
 
-test('SUELO · el censo llega a las 18 afirmaciones, ni menos ni más', () => {
+test(`SUELO · el censo llega a las ${AFIRMACIONES} afirmaciones, ni menos ni más`, () => {
   const c = censar(html);
   assert.equal(c.afirman.length, AFIRMACIONES,
     `🔴 el censo encuentra ${c.afirman.length} afirmaciones y se midieron ${AFIRMACIONES}.\n`
@@ -103,7 +106,7 @@ test('CONTROL POSITIVO · el mecanismo distingue un ancla viva de una inventada'
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LOS TRES GRUPOS · derivados, no declarados
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('cada una de las 18 tiene veredicto, y ninguna se queda sin declarar', () => {
+test(`cada una de las ${AFIRMACIONES} tiene veredicto, y ninguna se queda sin declarar`, () => {
   const r = veredictos(html, RAIZ, censoF);
   assert.equal(r.total, AFIRMACIONES, '🔴 el total de afirmaciones no es el medido');
   const sinDeclarar = r.veredictos.filter((v) => v.grupo === SIN_DECLARAR);

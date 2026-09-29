@@ -92,6 +92,22 @@ function conBarra(p) {
   return String(p).split(path.sep).join('/');
 }
 
+/**
+ * 🔴 SCRUM-1244 · Los `SourceFile` leídos de DISCO se comparten entre programas del mismo proceso.
+ * Cada `ts.createProgram` con un host nuevo vuelve a parsear ~670 ficheros (lib, `@types`, prisma)
+ * aunque el programa sólo tenga UNA raíz: medido en `scrum1093h`, nueve programas seguidos subían el
+ * pico del proceso a 1.190 MB (650 MB el árbol real, ~185 MB cada programa siguiente, sin que V8
+ * recogiera los anteriores antes de crecer). Compartirlos es lo que hace el propio servicio de
+ * lenguaje de TypeScript: un `SourceFile` no cambia si no cambia su texto, y las opciones son
+ * siempre las mismas (`tsconfig.json`). Lo que NO entra nunca aquí es un override: se consulta
+ * antes, así que el código histórico y el fabricado siguen siendo el texto que se analiza.
+ */
+const DE_DISCO = new Map();
+
+function claveDeVersion(opts) {
+  return typeof opts === 'object' && opts !== null ? `${opts.languageVersion}|${opts.impliedNodeFormat}` : String(opts);
+}
+
 export function programaDe(ficheros, overrides = new Map()) {
   const tsconfigPath = path.join(RAIZ, 'tsconfig.json');
   const leido = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
@@ -112,7 +128,11 @@ export function programaDe(ficheros, overrides = new Map()) {
     if (overridesNormalizados.has(clave)) {
       return ts.createSourceFile(fileName, overridesNormalizados.get(clave), opts, true, ts.ScriptKind.TS);
     }
-    return originalGetSourceFile(fileName, opts, onError, shouldCreateNewSourceFile);
+    const enCache = `${clave}|${claveDeVersion(opts)}`;
+    if (!shouldCreateNewSourceFile && DE_DISCO.has(enCache)) return DE_DISCO.get(enCache);
+    const sf = originalGetSourceFile(fileName, opts, onError, shouldCreateNewSourceFile);
+    if (sf) DE_DISCO.set(enCache, sf);
+    return sf;
   };
   const original = host.readFile.bind(host);
   const originalExists = host.fileExists.bind(host);

@@ -467,24 +467,13 @@ export const DECLARADOS = [
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['reconcileToTarget', 'stageLines'] },
   { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
-    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
-    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['ReferenciaJustificanteAgotada', 'makeReceiptNumber'] },
-  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['INTENTOS_REFERENCIA_JUSTIFICANTE', 'RECEIPT_NUMBER_PREFIX'] },
+    exports: ['RECEIPT_NUMBER_PREFIX'] },
   { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'La lista de orígenes de C7. Ni siquiera su propio módulo la usa: su único lector es su test.',
     exports: ['ORIGENES_C7'] },
-  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-07',
-    motivo: 'SCRUM-780 · LA FECHA DE CORTE AL FORMATO F, firmada por el fundador. Se exporta para '
-      + 'que exista UN solo sitio donde vive ese dato y para que su test pueda comprobar que sigue '
-      + 'siendo la firmada: moverla renumeraría facturas ya emitidas, que es la regla 29. Hoy la '
-      + 'leen su propio módulo (por defecto de `usaFormatoF`) y su test.',
-    exports: ['CORTE_FORMATO_F'] },
   { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-07',
     motivo: 'SCRUM-780 · la mitad PURA del contador de la serie F. La consume `leerSeqDeLaSerieF` '
@@ -496,6 +485,13 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['FacturaSinLineasError', 'hayLineasFacturables'] },
+  { modulo: 'src/modules/invoicing/domain/libroRegistro.repo.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-28',
+    motivo: 'SCRUM-1232: el criterio único de «esto es un justificante» (sólo `type === \'JUST\'`). Lo '
+      + 'ejecuta `leerLibroRegistro` en su propio módulo; se exporta para que su test lo pruebe '
+      + 'suelto y para que SCRUM-1252 (evidencias e Informes) lo reutilice en vez de escribir un '
+      + 'segundo criterio. Esta entrada sale cuando 1252 lo consuma.',
+    exports: ['esJustificante'] },
   { modulo: 'src/modules/invoicing/domain/modoVisible.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
@@ -648,10 +644,21 @@ export const DECLARADOS = [
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'El reconocedor de números de albarán; su serie está construida y sin cable (SCRUM-484 lo cuenta entre los 8 por el módulo hermano `albaranSerie.ts`).',
     exports: ['isAlbaranNumber'] },
-  { modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
-    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
-    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['AlbaranSerieSinAnioError', 'formatAlbaranNumber', 'resolveAlbaranSeq'] },
+  // SCRUM-1184 · `albaranSerie.ts` pasa a estar vivo (lo importa `GET /admin/albaranes/serie`), y con
+  // él sus exports sin llamador de fuera aparecen aquí. Los tres de `albaranNumber.service.ts` que
+  // estaban declarados salen: ahora los consume él (y `AlbaranSerieSinAnioError`, la ruta).
+  { modulo: 'src/modules/jobs/domain/albaranSerie.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-28',
+    motivo: 'SCRUM-1184 · las usa `siguienteNumeroDeAlbaran`, dentro del módulo; el `export` lo lee `tests/scrum306-serie-albaranes.test.mjs`, que las prueba sueltas.',
+    exports: ['componerNumeroAlbaran', 'vistaPreviaAlbaran'] },
+  { modulo: 'src/modules/jobs/domain/albaranSerie.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-28',
+    motivo: 'SCRUM-1184 c.17342 · los HUECOS de la serie NO se enchufan a propósito: con bases sin renumerar (ALB- frente a AB) dan huecos FALSOS, medido. Condición de reapertura: todas las bases renumeradas (P-DOC-7, SCRUM-592).',
+    exports: ['huecosDeAlbaranes'] },
+  { modulo: 'src/modules/invoicing/domain/huecosSerie.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-28',
+    motivo: 'SCRUM-1184 · el módulo pasa a estar vivo por el import de `albaranSerie.ts`. El tope lo lee su propio barrido; el `export` lo usa `tests/scrum291-series-huecos.test.mjs`. Es de J1: se declara, no se le quita el `export` desde S1.',
+    exports: ['MAX_SEQ_BARRIDO'] },
   { modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',

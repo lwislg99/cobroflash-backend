@@ -46,6 +46,26 @@ export function scriptsDelIndice(publico) {
 }
 
 /**
+ * SCRUM-1205b · EL MODO DE EMISIÓN DEL MERCHANT DE LA RUTA, SI LA RUTA LO DECLARA.
+ *
+ * `app.js` —que aquí no se carga— es quien pone `window.appModoEmision` con lo que calculó el
+ * servidor, y desde SCRUM-905 `facturaFiscalDisponible()` FALLA CERRADO sin él: todo lo que
+ * factura (en la lista de Trabajos, «💰 Cobrar el resto» desde SCRUM-1205) deja de pintarse. Sin
+ * declararlo, el montaje fija un modo «desconocido» que nadie ha escrito y nada en el guard nombra
+ * — la misma trampa que SCRUM-903d cazó en `guard-marcadores-en-pantalla.mjs`.
+ *
+ * Aditivo: una ruta sin `modoEmision` sale como hasta hoy (el global sin poner), así que los otros
+ * guards de este banco no cambian. Sólo se aceptan los valores del contrato de `app.js`, y `null`.
+ */
+function modoDeclarado(ruta) {
+  if (!Object.prototype.hasOwnProperty.call(ruta, 'modoEmision')) return '';
+  if (![null, 'fiscal', 'demo', 'receipt'].includes(ruta.modoEmision)) {
+    throw new Error(`modoEmision fuera del contrato de app.js en ${ruta.ruta}: ${JSON.stringify(ruta.modoEmision)}`);
+  }
+  return `window.appModoEmision = ${JSON.stringify(ruta.modoEmision)};\n`;
+}
+
+/**
  * El shell REAL del panel, copiado de `public/dashboard/index.html`: `aside.sidebar` +
  * `main.main` + `section#view-container.view-container`.
  *
@@ -53,7 +73,7 @@ export function scriptsDelIndice(publico) {
  * 248 px de la barra lateral; medir dentro de un `<div>` suelto daría 248 px de más y el
  * veredicto sobre el ancho sería el de otra pantalla.
  */
-function documento(publico, fnVista, reglasDatos, args) {
+function documento(publico, fnVista, reglasDatos, args, modo) {
   const scripts = scriptsDelIndice(publico).map((s) => `<script src="${s}"></script>`).join('\n');
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,7 +86,7 @@ ${scripts}
 window.__errores = [];
 window.addEventListener('error', (e) => window.__errores.push(String(e.message)));
 window.appUserRole = 'admin';
-window.__peticiones = [];
+${modo}window.__peticiones = [];
 window.__navegaciones = [];
 window.__avisos = [];
 // Navegar se APUNTA, no se hace: así «no navegó» es una afirmación comprobable y la página no
@@ -148,7 +168,7 @@ export async function servirListas(publico, rutas) {
     const v = rutas.find((x) => x.ruta === p);
     if (v) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end(documento(publico, v.fnVista, v.datos, v.args || '[]'));
+      return res.end(documento(publico, v.fnVista, v.datos, v.args || '[]', modoDeclarado(v)));
     }
     // ═══ 🔴 LAS RUTAS QUE NO PASAN POR `apiRequest` ══════════════════════════════════════════
     //

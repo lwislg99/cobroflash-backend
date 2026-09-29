@@ -124,8 +124,12 @@ npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
 # ⚠️ SCRUM-850: el TAP va a FICHERO y se lee después, en DOS comandos. Con `| grep` el código de
 # salida es el del `grep`, así que una tanda EN ROJO sale 0. Y el fichero va FUERA del árbol:
 # un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
+# ⚠️ SCRUM-1245: el patrón va ENTRE COMILLAS SIMPLES, para que lo expanda node y no bash. Sin
+# ellas, ~1.060 ficheros desbordan la línea de órdenes de Windows: node NO ARRANCA, y el `grep`
+# lee el TAP de la tanda ANTERIOR y sale 0. Por eso también se borra antes.
+rm -f "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
-     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" 'tests/*.test.mjs'
 grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
                              # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en

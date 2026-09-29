@@ -1,0 +1,224 @@
+SCRUM-1232b · extractos literales de la versión VIGENTE (última <version> con fecha_vigencia <= 20260928)
+Generado con extraer-articulo.cjs sobre las respuestas de la API legislacion-consolidada del BOE, 28-sep-2026.
+sha256 BOE-A-1992-28740.xml = 371432fc76f0ae3cb7bac8530cb1e229a8c6c6f2e09ee6fdf3f78fc18a70a202
+sha256 BOE-A-1992-28925.xml = a558146bdd95724641edde646cd638840fedcfd2ffb8fa50ecbe85407f024a23
+sha256 BOE-A-2012-14696.xml = 95d8ff283a96a2a74263fd0bc079cbd00a5c5a418ba66ec046ca2aef4d56f586
+sha256 BOE-A-2008-20953.xml = b9c55b7ff35c95c51ff5e9bb23c76ce455d33ee5beeafbc3664ddfccf0c48e1d
+sha256 aeat303.html = 544f27f23d9b66f7d60ac57f838f1748c48a7f35686815955cbefa016f20ea18  (sede AEAT, instrucciones 303 02-12 y 2T-4T 2026)
+
+════ ROF (BOE-A-2012-14696) ════
+[a1-2] versiones=1 vigente desde 20130101
+Artículo 1. Obligación de expedir, entregar y conservar justificantes de las operaciones.
+          Los empresarios o profesionales están obligados a expedir y entregar, en su caso, factura u otros justificantes por las operaciones que realicen en el desarrollo de su actividad empresarial o profesional, así como a conservar copia o matriz de aquellos. Igualmente, están obligados a conservar las facturas u otros justificantes recibidos de otros empresarios o profesionales por las operaciones de las que sean destinatarios y que se efectúen en desarrollo de la citada actividad.
+          Asimismo, otras personas y entidades que no tengan la condición de empresarios o profesionales están obligadas a expedir y conservar factura u otros justificantes de las operaciones que realicen en los términos establecidos en este Reglamento.
+
+[a2-2] versiones=3 vigente desde 20210701
+Artículo 2. Obligación de expedir factura.
+          1. De acuerdo con el artículo 164.Uno.3.º de la Ley 37/1992, de 28 de diciembre, del Impuesto sobre el Valor Añadido, los empresarios o profesionales están obligados a expedir factura y copia de esta por las entregas de bienes y prestaciones de servicios que realicen en el desarrollo de su actividad, incluidas las no sujetas y las sujetas pero exentas del Impuesto, en los términos establecidos en este Reglamento y sin más excepciones que las previstas en él. Esta obligación incumbe asimismo a los empresarios o profesionales acogidos a los regímenes especiales del Impuesto sobre el Valor Añadido.
+          También deberá expedirse factura y copia de esta por los pagos recibidos con anterioridad a la realización de las entregas de bienes o prestaciones de servicios por las que deba asimismo cumplirse esta obligación conforme al párrafo anterior, a excepción de las entregas de bienes exentas del Impuesto sobre el Valor Añadido por aplicación de lo dispuesto en el artículo 25 de la Ley del Impuesto.
+          2. Deberá expedirse factura y copia de esta en todo caso en las siguientes operaciones:
+          a) Aquellas en las que el destinatario sea un empresario o profesional que actúe como tal, con independencia del régimen de tributación al que se encuentre acogido el empresario o profesional que realice la operación, así como cualesquiera otras en las que el destinatario así lo exija para el ejercicio de cualquier derecho de naturaleza tributaria.
+          b) Las entregas de bienes destinados a otro Estado miembro a que se refiere el artículo 25 de la Ley del Impuesto.
+          c) Las entregas de bienes a que se refiere el artículo 68.Tres.a) y cinco de la Ley del Impuesto cuando, por aplicación de las reglas referidas en dicho precepto, se entiendan realizadas en el territorio de aplicación del Impuesto. No obstante, cuando a estas entregas les resulte aplicable el régimen especial al que se refiere la sección 3.ª del capítulo XI del título IX de la Ley del Impuesto y el Estado miembro de identificación no sea el Reino de España, será el Estado de identificación quien determine si existe obligación de expedir factura.
+          d) Las entregas de bienes expedidos o transportados fuera de la Comunidad Europea a que se refiere el artículo 21.1.º y 2.º de la Ley del Impuesto, excepto las efectuadas en las tiendas libres de impuestos a que se refiere el número 2.º, B, del citado artículo.
+          e) Las entregas de bienes que han de ser objeto de instalación o montaje antes de su puesta a disposición a que se refiere el artículo 68.Dos.2.º de la Ley del Impuesto.
+          f) Aquellas de las que sean destinatarias personas jurídicas que no actúen como empresarios o profesionales, con independencia de que se encuentren establecidas en el territorio de aplicación del Impuesto o no, o las Administraciones Públicas a que se refiere el artículo 2 de la Ley 39/2015, de 1 de octubre, del Procedimiento Administrativo Común de las Administraciones Públicas.
+          3. La obligación de expedir factura a que se refieren los apartados anteriores, se ajustará a las normas establecidas en este Reglamento, en los siguientes supuestos:
+          a) Para las operaciones a las que resulten aplicables los regímenes especiales a que se refiere el capítulo XI del título IX de la Ley del Impuesto, cuando sea el Reino de España el Estado miembro de identificación.
+          b) Para las operaciones distintas de las señaladas en la letra a) anterior cuando:
+          a') La entrega de bienes o la prestación de servicios a que se refiera se entienda realizada en el territorio de aplicación del Impuesto, salvo cuando el proveedor del bien o prestador del servicio no se encuentre establecido en el citado territorio, el sujeto pasivo del Impuesto sea el destinatario para quien se realice la operación sujeta al mismo y la factura no sea expedida por este último con arreglo a lo establecido en el artículo 5 de este Reglamento.
+          b') El proveedor o prestador esté establecido en el territorio de aplicación del Impuesto o tenga en el mismo un establecimiento permanente o, en su defecto, el lugar de su domicilio o residencia habitual, a partir del cual se efectúa la entrega de bienes o prestación de servicios y dicha entrega o prestación, conforme a las reglas de localización aplicables a las mismas, no se entienda realizada en el territorio de aplicación del Impuesto, en los siguientes supuestos:
+          a'') Cuando la operación esté sujeta en otro Estado miembro, el sujeto pasivo del Impuesto sea el destinatario para quien se realice la operación y la factura no sea materialmente expedida por este último en nombre y por cuenta del proveedor del bien o prestador del servicio.
+          b'') Cuando la operación se entienda realizada fuera de la Comunidad.
+          4. Tendrá la consideración de justificante contable a que se refiere el número 4.º del apartado uno del 97 de la Ley del Impuesto, cualquier documento que sirva de soporte a la anotación contable de la operación cuando quien la realice sea un empresario o profesional no establecido en la Comunidad.
+            Se modifican los apartados 2 y 3 por el art. 2.1 del Real Decreto 424/2021, de 15 de junio. Ref. BOE-A-2021-10026#as
+            Se modifica el apartado 3 por el art. 2.1 del Real Decreto 1512/2018, de 28 de diciembre. Ref. BOE-A-2018-17995
+
+[a3-2] versiones=4 vigente desde 20190101
+Artículo 3. Excepciones a la obligación de expedir factura.
+          1. No existirá obligación de expedir factura, salvo en los supuestos contenidos en el apartado 2 del artículo 2 de este Reglamento, por las operaciones siguientes:
+          a) Las operaciones exentas del Impuesto sobre el Valor Añadido, en virtud de lo establecido en el artículo 20 de su ley reguladora, con excepción de las operaciones a que se refiere el apartado 2 siguiente. No obstante, la expedición de factura será obligatoria en las operaciones exentas de este Impuesto de acuerdo con el artículo 20.Uno.2.º, 3.º, 4.º, 5.º, 15.º, 20.º, 22.º, 24.º, 25.º y 28.º de la Ley del Impuesto.
+          b) Las realizadas por empresarios o profesionales en el desarrollo de actividades a las que sea de aplicación el régimen especial del recargo de equivalencia.
+          No obstante, deberá expedirse factura en todo caso por las entregas de inmuebles sujetas y no exentas al Impuesto.
+          c) Las realizadas por empresarios o profesionales en el desarrollo de actividades por las que se encuentren acogidos al régimen simplificado del Impuesto, salvo que la determinación de las cuotas devengadas se efectúe en atención al volumen de ingresos.
+          No obstante, deberá expedirse factura en todo caso por las transmisiones de activos fijos a que se refiere el artículo 123.Uno.B).3.º de la Ley del Impuesto.
+          d) Aquéllas otras en las que así se autorice por el Departamento de Gestión Tributaria de la Agencia Estatal de Administración Tributaria, en relación con sectores empresariales o profesionales o empresas determinadas, con el fin de evitar perturbaciones en el desarrollo de las actividades empresariales o profesionales.
+          2. No existirá obligación de expedir factura cuando se trate de las prestaciones de servicios definidas en el artículo 20.uno.16.º y 18.º, apartados a) a n), de la Ley del Impuesto, salvo que:
+          a) Conforme a las reglas de localización aplicables a las mismas, se entiendan realizadas en el territorio de aplicación del Impuesto o en otro Estado miembro de la Unión Europea y estén sujetas y no exentas al mismo.
+          b) Conforme a las reglas de localización aplicables a las mismas, se entiendan realizadas en el territorio de aplicación del Impuesto, Canarias, Ceuta o Melilla, estén sujetas y exentas al mismo y sean realizadas por empresarios o profesionales, distintos de entidades aseguradoras, sociedades gestoras de instituciones de inversión colectiva, entidades gestoras de fondos de pensiones, fondos de titulización y sus sociedades gestoras, entidades de crédito, a través de la sede de su actividad económica o establecimiento permanente situado en el citado territorio.
+          El Departamento de Gestión Tributaria de la Agencia Estatal de Administración Tributaria podrá eximir a otros empresarios o profesionales de la obligación de expedir factura, previa solicitud de los interesados, cuando quede justificado por las prácticas comerciales o administrativas del sector de actividad de que se trate o por las condiciones técnicas de expedición de estas facturas.
+          3. Tampoco estarán obligados a expedir factura los empresarios o profesionales por las operaciones realizadas en el desarrollo de las actividades que se encuentren acogidas al régimen especial de la agricultura, ganadería y pesca, sin perjuicio de lo dispuesto en el artículo 16.1 de este Reglamento.
+          En todo caso, deberá expedirse factura por las entregas de inmuebles a que se refiere el segundo párrafo del apartado uno del artículo 129 de la Ley del Impuesto.
+            Se modifica la letra a) del apartado 1 y el apartado 2 por el art. 2.2 y 3 del Real Decreto 1512/2018, de 28 de diciembre. Ref. BOE-A-2018-17995
+            Se modifica el apartado 1.b) por el art. 3.1 del Real Decreto 1073/2014, de 19 de diciembre. Ref. BOE-A-2014-13252.
+            Se modifica el apartado 2 por el art. 4.1 del Real Decreto 828/2013, de 25 de octubre. Ref. BOE-A-2013-11216.
+
+[a11] versiones=2 vigente desde 20140101
+Artículo 11. Plazo para la expedición de las facturas.
+          1. Las facturas deberán ser expedidas en el momento de realizarse la operación.
+          No obstante, cuando el destinatario de la operación sea un empresario o profesional que actúe como tal, las facturas deberán expedirse antes del día 16 del mes siguiente a aquél en que se haya producido el devengo del Impuesto correspondiente a la citada operación.
+          2. En las entregas de bienes comprendidas en el artículo 75.Uno.8.º de la Ley del Impuesto, las facturas deberán expedirse antes del día 16 del mes siguiente a aquél en que se inicie la expedición o el transporte de los bienes con destino al adquirente.
+          3. En las operaciones acogidas al régimen especial del criterio de caja regulado en el Capítulo X del Título IX de la Ley del Impuesto, la expedición de la factura deberá realizarse en el momento de la realización de tales operaciones, salvo cuando el destinatario de la operación sea un empresario o profesional que actúe como tal, en cuyo caso deberán expedirse antes del día 16 del mes siguiente a aquel en que se haya realizado la operación.
+            El apartado 3 entra en vigor el 1-1-2014 según establece la disposición final única del Real Decreto 828/2013, de 25 de octubre. Ref. BOE-A-2013-11216.
+            Se añade el apartado 3 por el art. 4.4 del Real Decreto 828/2013, de 25 de octubre. Ref. BOE-A-2013-11216.
+
+════ LIVA (BOE-A-1992-28740) ════
+[a75] versiones=9 vigente desde 20210701
+Artículo 75. Devengo del impuesto.
+          Uno. Se devengará el Impuesto:
+          1.º En las entregas de bienes, cuando tenga lugar su puesta a disposición del adquirente o, en su caso, cuando se efectúen conforme a la legislación que les sea aplicable.
+          No obstante lo dispuesto en el párrafo anterior, en las entregas de bienes efectuadas en virtud de contratos de venta con pacto de reserva de dominio o cualquier otra condición suspensiva, de arrendamiento-venta de bienes o de arrendamiento de bienes con cláusula de transferencia de la propiedad vinculante para ambas partes, se devengará el Impuesto cuando los bienes que constituyan su objeto se pongan en posesión del adquirente.
+          2.º En las prestaciones de servicios, cuando se presten, ejecuten o efectúen las operaciones gravadas.
+          No obstante, en las prestaciones de servicios en las que el destinatario sea el sujeto pasivo del Impuesto conforme a lo previsto en los números 2.º y 3.º del apartado Uno del artículo 84 de esta Ley, que se lleven a cabo de forma continuada durante un plazo superior a un año y que no den lugar a pagos anticipados durante dicho período, el devengo del Impuesto se producirá a 31 de diciembre de cada año por la parte proporcional correspondiente al período transcurrido desde el inicio de la operación o desde el anterior devengo hasta la citada fecha, en tanto no se ponga fin a dichas prestaciones de servicios.
+          Por excepción de lo dispuesto en los párrafos anteriores, cuando se trate de ejecuciones de obra con aportación de materiales, en el momento en que los bienes a que se refieran se pongan a disposición del dueño de la obra.
+          2.º bis. Cuando se trate de ejecuciones de obra, con o sin aportación de materiales, cuyas destinatarias sean las Administraciones públicas, en el momento de su recepción, conforme a lo dispuesto en el artículo 235 del Texto Refundido de la Ley de Contratos del Sector Público, aprobado por el Real Decreto Legislativo 3/2011, de 14 de noviembre.
+          3.º En las transmisiones de bienes entre el comitente y comisionista efectuadas en virtud de contratos de comisión de venta, cuando el último actúe en nombre propio, en el momento en que el comisionista efectúe la entrega de los respectivos bienes.
+          Cuando se trate de entregas de bienes efectuadas en virtud de contratos por los que una de las partes entrega a la otra bienes muebles, cuyo valor se estima en una cantidad cierta, obligándose quien los recibe a procurar su venta dentro de un plazo y a devolver el valor estimado de los bienes vendidos y el resto de los no vendidos, el devengo de las entregas relativas a los bienes vendidos se producirá cuando quien los recibe los ponga a disposición del adquirente.
+          4.º En las transmisiones de bienes entre comisionista y comitente efectuadas en virtud de contratos de comisión de compra, cuando el primero actúe en nombre propio, en el momento en que al comisionista le sean entregados los bienes a que se refieran.
+          5.º En los supuestos de autoconsumo, cuando se efectúen las operaciones gravadas.
+          No obstante, en los casos a que se refiere el artículo 9, número 1.º, letra d), párrafo tercero de esta Ley, el Impuesto se devengará:
+          a) Cuando se produzcan las circunstancias que determinan la limitación o exclusión del derecho a la deducción.
+          b) El último día del año en que los bienes que constituyan su objeto se destinen a operaciones que no originen el derecho a la deducción.
+          c) El último día del año en que sea de aplicación la regla de prorrata general.
+          e) Cuando se produzca el devengo de la entrega exenta.
+          6.º (Suprimido)
+          7.º En los arrendamientos, en los suministros y, en general, en las operaciones de tracto sucesivo o continuado, en el momento en que resulte exigible la parte del precio que comprenda cada percepción.
+          No obstante, cuando no se haya pactado precio o cuando, habiéndose pactado, no se haya determinado el momento de su exigibilidad, o la misma se haya establecido con una periodicidad superior a un año natural, el devengo del Impuesto se producirá a 31 de diciembre de cada año por la parte proporcional correspondiente al periodo transcurrido desde el inicio de la operación, o desde el anterior devengo, hasta la citada fecha.
+          Cuando los referidos suministros constituyan entregas de bienes comprendidas en los apartados Uno y Tres del artículo 25 de esta Ley, y no se haya pactado precio o cuando, habiéndose pactado, no se haya determinado el momento de su exigibilidad, o la misma se haya establecido con una periodicidad superior al mes natural, el devengo del Impuesto se producirá el último día de cada mes por la parte proporcional correspondiente al periodo transcurrido desde el inicio de la operación, o desde el anterior devengo, hasta la citada fecha.
+          Se exceptúan de lo dispuesto en los párrafos anteriores las operaciones a que se refiere el párrafo segundo del número 1.º precedente.
+          8.º En las entregas de bienes comprendidas en el artículo 25 de esta Ley, distintas de las señaladas en el número anterior, el devengo del Impuesto se producirá el día 15 del mes siguiente a aquel:
+          a) En el que se inicie la expedición o el transporte de los bienes con destino al adquirente.
+          b) En el que los bienes se pongan a disposición del adquirente, en las entregas de bienes efectuadas en las condiciones señaladas en el artículo 9 bis, apartado dos, de esta Ley.
+          A efectos de las letras a) y b) anteriores, si con anterioridad a la citada fecha se hubiera expedido factura por dichas operaciones, el devengo del Impuesto tendrá lugar en la fecha de expedición de la misma.
+          c) En el momento en que se produzca el incumplimiento de las condiciones a que se refiere el apartado tres del artículo 9 bis de esta Ley.
+          d) Al día siguiente de la expiración del plazo de 12 meses a que se refiere el apartado cuatro del artículo 9 bis de esta Ley.
+          Dos. No obstante lo dispuesto en el apartado anterior, en las operaciones sujetas a gravamen que originen pagos anticipados anteriores a la realización del hecho imponible el impuesto se devengará en el momento del cobro total o parcial del precio por los importes efectivamente percibidos.
+          Lo dispuesto en el párrafo anterior no será aplicable a las entregas de bienes comprendidas en el artículo 25 de esta Ley.
+          Tres. No obstante lo dispuesto en los apartados anteriores, en las entregas de bienes realizadas en los términos previstos en el artículo 8 bis de esta Ley, el devengo del impuesto de la entrega efectuada a favor del empresario o profesional que facilite la venta o la entrega, así como la efectuada por el mismo, se producirá con la aceptación del pago del cliente.
+            Téngase en cuenta que el apartado tres, añadido por el art. 10.12 del Real Decreto-ley 7/2021, de 27 de abril. Ref. BOE-A-2021-6872#ad, entra en vigor el 1 de julio de 2021, según determina su disposición final octava.
+            Se añade el apartado tres, con efectos de 1 de julio de 2021, por el art. 10.12 del Real Decreto-ley 7/2021, de 27 de abril. Ref. BOE-A-2021-6872#ad
+            Se modifica el apartado 1.8º por el art. 214.7 del Real Decreto-ley 3/2020, de 4 de febrero. Ref. BOE-A-2020-1651#a2-26
+            Esta modificación entra en vigor el 1 de marzo de 2020, según establece la disposición final 16.3 del citado Real Decreto-ley.
+            Se modifica el apartado 1.2º bis por el art. 1.15 de la Ley 28/2014, de 27 de noviembre. Ref. BOE-A-2014-12329.
+            Se suprime el apartado 1.6 por el art. 76 de la Ley 22/2013, de 23 de diciembre. Ref. BOE-A-2013-13616.
+            Se modifica el apartado 1.7º y se añade el 1.8º por el art. 66 de la Ley 17/2012, de 27 de diciembre. Ref. BOE-A-2012-15651.
+            Se modifica el apartado 1.2º por el art. 1.9 de la Ley 2/2010, de 1 de marzo. Ref. BOE-A-2010-3366.
+            Esta modificación surte efectos desde el 1 de enero de 2010, según establece la disposición final 4.
+            Se modifica el apartado 1 por el art. 5.3 de la Ley 24/2001, de 27 de diciembre. Ref. BOE-A-2001-24965.
+            Se añade el segundo párrafo del apartado 2 por el art. 1.3 del Real Decreto-Ley 7/1993, de 21 de mayo. Ref. BOE-A-1993-13663
+
+[a88] versiones=3 vigente desde 20130101
+Artículo 88. Repercusión del impuesto.
+          Uno. Los sujetos pasivos deberán repercutir íntegramente el importe del impuesto sobre aquel para quien se realice la operación gravada, quedando éste obligado a soportarlo siempre que la repercusión se ajuste a lo dispuesto en esta Ley, cualesquiera que fueran las estipulaciones existentes entre ellos.
+          En las entregas de bienes y prestaciones de servicios sujetas y no exentas al impuesto cuyos destinatarios fuesen entes públicos se entenderá siempre que los sujetos pasivos del impuesto, al formular sus propuestas económicas, aunque sean verbales, han incluido dentro de las mismas el Impuesto sobre el Valor Añadido que, no obstante, deberá ser repercutido como partida independiente, cuando así proceda, en los documentos que se presenten para el cobro, sin que el importe global contratado experimente incremento como consecuencia de la consignación del tributo repercutido.
+          Dos. La repercusión del Impuesto deberá efectuarse mediante factura en las condiciones y con los requisitos que se determinen reglamentariamente.
+          A estos efectos, la cuota repercutida se consignará separadamente de la base imponible, incluso en el caso de precios fijados administrativamente, indicando el tipo impositivo aplicado.
+          Se exceptuarán de lo dispuesto en los párrafos anteriores de este apartado las operaciones que se determinen reglamentariamente.
+          Tres. La repercusión del Impuesto deberá efectuarse al tiempo de expedir y entregar la factura correspondiente.
+          Cuatro. Se perderá el derecho a la repercusión cuando haya transcurrido un año desde la fecha del devengo.
+          Cinco. El destinatario de la operación gravada por el Impuesto sobre el Valor Añadido no estará obligado a soportar la repercusión del mismo con anterioridad al momento del devengo de dicho impuesto.
+          Seis. Las controversias que puedan producirse con referencia a la repercusión del impuesto, tanto respecto a la procedencia como a la cuantía de la misma, se considerarán de naturaleza tributaria a efectos de las correspondientes reclamaciones en la vía económico-administrativa.
+            Se modifican los apartados 2 y 3 por el art. 67.1 de la Ley 17/2012, de 27 de diciembre. Ref. BOE-A-2012-15651.
+            Se modifican los apartados 2 y 3 por el art. 4.9 de la Ley 53/2002, de 30 de diciembre. Ref. BOE-A-2002-25412.
+
+[a164] versiones=7 vigente desde 20240101
+Artículo 164. Obligaciones de los sujetos pasivos.
+          Uno. Sin perjuicio de lo establecido en el título anterior, los sujetos pasivos del Impuesto estarán obligados, con los requisitos, límites y condiciones que se determinen reglamentariamente, a:
+          1.º) Presentar declaraciones relativas al comienzo, modificación y cese de las actividades que determinen su sujeción al Impuesto.
+          2.º) Solicitar de la Administración el número de identificación fiscal y comunicarlo y acreditarlo en los supuestos que se establezcan.
+          3.º) Expedir y entregar factura de todas sus operaciones, ajustada a lo que se determine reglamentariamente.
+          4.º) Llevar la contabilidad y los registros que se establezcan en la forma definida reglamentariamente, sin perjuicio de lo dispuesto en el Código de Comercio y demás normas contables.
+          5.º) Presentar periódicamente, o a requerimiento de la Administración, información relativa a sus operaciones económicas con terceras personas y, en particular, una declaración recapitulativa de operaciones intracomunitarias.
+          6.º) Presentar las declaraciones-liquidaciones correspondientes e ingresar el importe del Impuesto resultante.
+          Sin perjuicio de lo previsto en el párrafo anterior, los sujetos pasivos deberán presentar una declaración-resumen anual.
+          En los supuestos del artículo 13, número 2.º, de esta ley deberá acreditarse el pago del Impuesto para efectuar la matriculación definitiva del medio de transporte.
+          7.º) Nombrar un representante a efectos del cumplimiento de las obligaciones impuestas en esta ley cuando se trate de sujetos pasivos no establecidos en la Comunidad, salvo que se encuentren establecidos en Canarias, Ceuta o Melilla, o en un Estado con el que existan instrumentos de asistencia mutua análogos a los instituidos en la Comunidad.
+          Dos. La obligación de expedir y entregar factura por las operaciones efectuadas por los empresarios o profesionales se podrá cumplir, en los términos que reglamentariamente se establezcan, por el cliente de los citados empresarios o profesionales o por un tercero, los cuales actuarán, en todo caso, en nombre y por cuenta del mismo.
+          Cuando la citada obligación se cumpla por un cliente del empresario o profesional, deberá existir un acuerdo previo entre ambas partes. Asimismo, deberá garantizarse la aceptación por dicho empresario o profesional de cada una de las facturas expedidas en su nombre y por su cuenta, por su cliente.
+          La expedición de facturas por el empresario o profesional, por su cliente o por un tercero, en nombre y por cuenta del citado empresario o profesional, podrá realizarse por cualquier medio, en papel o en formato electrónico, siempre que, en este último caso, el destinatario de las facturas haya dado su consentimiento.
+          La factura, en papel o electrónica, deberá garantizar la autenticidad de su origen, la integridad de su contenido y su legibilidad, desde la fecha de expedición y durante todo el periodo de conservación.
+          Reglamentariamente se determinarán los requisitos a los que deba ajustarse la expedición, remisión y conservación de facturas.
+          Tres. Lo previsto en los apartados anteriores será igualmente aplicable a quienes, sin ser sujetos pasivos de este Impuesto, tengan sin embargo la condición de empresarios o profesionales a los efectos del mismo, con los requisitos, límites y condiciones que se determinen reglamentariamente.
+          Cuatro. La Administración tributaria, cuando lo considere necesario a los efectos de cualquier actuación dirigida a la comprobación de la situación tributaria del empresario o profesional o sujeto pasivo, podrá exigir una traducción al castellano, o a cualquier otra lengua oficial, de las facturas correspondientes a entregas de bienes o prestaciones de servicios efectuadas en el territorio de aplicación del Impuesto, así como de las recibidas por los empresarios o profesionales o sujetos pasivos establecidos en dicho territorio.
+            Téngase en cuenta que esta actualización, establecida por el art. 33 de la Ley 11/2023, de 8 de mayo. Ref. BOE-A-2023-11022#a3-5, entra en vigor el 1 de enero de 2024, según determina su disposición final 18.
+
+[a167] versiones=4 vigente desde 20230101
+Artículo 167. Liquidación del impuesto.
+          Uno. Salvo lo dispuesto en el apartado siguiente, los sujetos pasivos deberán determinar e ingresar la deuda tributaria en el lugar, forma, plazos e impresos que establezca el Ministro de Economía y Hacienda.
+          Dos. En las importaciones de bienes el impuesto se liquidará en la forma prevista por la legislación aduanera para los derechos arancelarios o, en su caso, por el artículo 167 bis de esta ley.
+          La recaudación e ingreso de las cuotas del impuesto a la importación se efectuará en la forma que se determine reglamentariamente, donde se podrán establecer los requisitos exigibles a los sujetos pasivos, para que puedan incluir dichas cuotas en la declaración-liquidación correspondiente al período en que reciban el documento en el que conste la liquidación practicada por la Administración.
+          No obstante, cuando la declaración aduanera se presente en otro Estado miembro conforme a lo previsto en el artículo 179 del Reglamento (UE) 952/2013 del Parlamento Europeo y del Consejo, de 9 de octubre de 2013, por el que se establece el código aduanero de la Unión, la Administración liquidará el impuesto con base en la información recibida de la aduana del Estado miembro donde se haya presentado la declaración.
+          Tres. Reglamentariamente se determinarán las garantías que resulten procedentes para asegurar el cumplimiento de las correspondientes obligaciones tributarias.
+            Se modifica el apartado dos por el art. 74.8 de la Ley 31/2022, de 23 de diciembre. Ref. BOE-A-2022-22128#a7-6
+            Se modifica el apartado dos, con efectos de 1 de julio de 2021, por el art. 10.24 del Real Decreto-ley 7/2021, de 27 de abril. Ref. BOE-A-2021-6872#ad
+            Se modifica el apartado 2 por el art. 1.37 de la Ley 28/2014, de 27 de noviembre. Ref. BOE-A-2014-12329.
+
+════ RIVA (BOE-A-1992-28925) ════
+[a62] versiones=7 vigente desde 20210701
+Artículo 62. Libros registros del Impuesto sobre el Valor Añadido.
+          1. Los empresarios o profesionales y otros sujetos pasivos del Impuesto sobre el Valor Añadido deberán llevar, con carácter general y en los términos dispuestos por este reglamento, los siguientes libros registros:
+          a) Libro registro de facturas expedidas.
+          b) Libro registro de facturas recibidas.
+          c) Libro registro de bienes de inversión.
+          d) Libro registro de determinadas operaciones intracomunitarias.
+          2. Lo dispuesto en el apartado anterior no será de aplicación respecto de las actividades acogidas a los regímenes especiales simplificado, de la agricultura, ganadería y pesca y del recargo de equivalencia, con las salvedades establecidas en las normas reguladoras de dichos regímenes especiales, ni respecto de las entregas a título ocasional de medios de transporte nuevos realizadas por las personas a que se refiere la letra e) del apartado uno del artículo 5 de la Ley del Impuesto.
+          3. Los libros o registros, incluidos los de carácter informático que, en cumplimiento de sus obligaciones fiscales o contables, deban llevar los empresarios o profesionales y otros sujetos pasivos del Impuesto sobre el Valor Añadido, podrán ser utilizados a efectos de este impuesto, siempre que se ajusten a los requisitos que se establecen en este reglamento.
+          4. Quienes fuesen titulares de diversos establecimientos situados en el territorio de aplicación del impuesto podrán llevar, en cada uno de ellos, los libros registros establecidos en el apartado 1, en los que anotarán por separado las operaciones efectuadas desde dichos establecimientos, siempre que los asientos resúmenes de éstos se trasladen a los correspondientes libros registros generales que deberán llevarse en el domicilio fiscal.
+          5. . El Departamento de Gestión Tributaria de la Agencia Estatal de Administración Tributaria podrá autorizar, previas las comprobaciones que estime oportunas:
+          a) La sustitución de los Libros Registros mencionados en el apartado 1 de este artículo por sistemas de registro diferentes, así como la modificación de los requisitos exigidos para las anotaciones registrales, siempre que respondan a la organización administrativa y contable de los empresarios o profesionales o sujetos pasivos y, al mismo tiempo, quede garantizada plenamente la comprobación de sus obligaciones tributarias por el Impuesto sobre el Valor Añadido.
+          b) Que en los libros registro de facturas expedidas y recibidas no consten todas las menciones o toda la información referida en el apartado 3 o en el apartado 4, de los artículos 63 y 64 de este Reglamento, respectivamente, así como la realización de asientos resúmenes con condiciones distintas de las señaladas en el apartado 4 o el apartado 5, respectivamente, de los referidos artículos de este Reglamento, cuando aprecie que las prácticas comerciales o administrativas del sector de actividad de que se trate, o bien las condiciones técnicas de expedición de las facturas, justificantes contables y documentos de Aduanas, dificulten la consignación de dichas menciones e información.
+          Dichas autorizaciones serán revocables en cualquier momento.
+          6. No obstante lo dispuesto en los apartados anteriores, los libros registro a que se refiere el apartado 1 de este artículo, deberán llevarse a través de la Sede electrónica de la Agencia Estatal de Administración Tributaria, mediante el suministro electrónico de los registros de facturación, por los empresarios o profesionales y otros sujetos pasivos del Impuesto, que tengan un periodo de liquidación que coincida con el mes natural de acuerdo con lo dispuesto en el artículo 71.3 del presente Reglamento.
+          Además, aquellos empresarios o profesionales y otros sujetos pasivos del Impuesto no mencionados en el párrafo anterior, podrán optar por llevar los libros registro a que se refieren los artículos 40, apartado 1; 47, apartado 2; 61, apartado 2 y el apartado 1 de este artículo, a través de la Sede electrónica de la Agencia Estatal de Administración Tributaria en los términos establecidos en el artículo 68 bis de este Reglamento.
+          A efectos de lo previsto en el apartado 4 anterior, se llevarán unos únicos libros registro en los que se anotarán las operaciones de todos los establecimientos situados en el territorio de aplicación del Impuesto.
+          El suministro electrónico de los registros de facturación se realizará a través de la Sede Electrónica de la Agencia Estatal de Administración Tributaria mediante un servicio web o, en su caso, a través de un formulario electrónico, todo ello conforme con los campos de registro que apruebe por Orden el Ministro de Hacienda y Función Pública.
+            Se modifica el apartado 2 por el art. 1.8 del Real Decreto 424/2021, de 15 de junio. Ref. BOE-A-2021-10026#ap
+            Se modifica el apartado 2 por el art. 1.9 del Real Decreto 1512/2018, de 28 de diciembre. Ref. BOE-A-2018-17995
+            Se modifica el apartado 5 por el art. 1.3 del Real Decreto 1075/2017, de 29 de diciembre. Ref. BOE-A-2017-15843
+            Se añade, con efectos desde el 1 de enero de 2017, el apartado 6, por el art. 1.4 del Real Decreto 596/2016, de 2 de diciembre. Ref. BOE-A-2016-11575.
+            Véase en cuanto a la obligación de remitir los registros de facturación lo establecido en su disposición adicional única.
+            Se modifica por el art. 2.16 del Real Decreto 1496/2003, de 28 de noviembre. Ref. BOE-A-2003-21845
+            Se modifican los apartados 3 y 5 por el art. 1.11 del Real Decreto 1811/1994, de 2 de septiembre. Ref. BOE-A-1994-19989
+            Redactado conforme a la corrección de errores publicada en BOE núm. 33, de 8 de febrero de 1993. Ref. BOE-A-1993-3300
+
+[a63] versiones=10 vigente desde 20230701
+Artículo 63. Libro registro de facturas expedidas.
+          1. Los empresarios o profesionales deberán llevar y conservar un libro registro de las facturas que hayan expedido, en el que se anotarán, con la debida separación, el total de los referidos documentos.
+          La misma obligación incumbirá a quienes, sin tener la condición de empresarios o profesionales a los efectos del Impuesto sobre el Valor Añadido, sean sujetos pasivos de éste, en relación con las facturas que expidan en su condición de tales.
+          2. Será válida, sin embargo, la realización de asientos o anotaciones, por cualquier procedimiento idóneo, sobre hojas separadas, que después habrán de ser numeradas y encuadernadas correlativamente para formar el libro mencionado en el apartado anterior.
+          No obstante, en el caso de las personas y entidades a que se refiere el artículo 62.6 de este Reglamento, la llevanza de este libro registro de facturas expedidas deberá realizarse a través de la Sede electrónica de la Agencia Estatal de Administración Tributaria mediante el suministro electrónico de los registros de facturación.
+          3. En el libro registro de facturas expedidas se inscribirán, una por una, las facturas expedidas y se consignarán el número y, en su caso, serie, la fecha de expedición, la fecha de realización de las operaciones, en caso de que sea distinta de la anterior, el nombre y apellidos, razón social o denominación completa y número de identificación fiscal del destinatario, la base imponible de las operaciones, determinada conforme a los artículos 78 y 79 de la Ley del Impuesto y, en su caso, el tipo impositivo aplicado y, opcionalmente, también la expresión “IVA incluido”, la cuota tributaria y si la operación se ha efectuado conforme al régimen especial del criterio de caja, en cuyo caso se deberán incluir las menciones a que se refiere el apartado 1 del artículo 61 decies de este Reglamento.
+          Cuando no proceda la emisión de factura rectificativa, se anotarán en el libro registro de facturas expedidas las regularizaciones o ajustes de la base imponible y cuota calculadas inicialmente en operaciones acogidas al régimen especial de las agencias de viajes o al régimen especial de los bienes usados, objetos de arte, antigüedades y objetos de colección, consecuencia de descuentos u otras circunstancias posteriores al devengo de la operación.
+          En el caso de las personas y entidades a que se refiere el artículo 62.6 de este Reglamento, se incluirá además la siguiente información:
+          a) Tipo de factura expedida, indicando si se trata de una factura completa o simplificada.
+          Los campos de registro electrónico que se aprueben por Orden de la persona titular del Ministerio de Hacienda y Función Pública podrán exigir que se incluyan otras especificaciones que sirvan para identificar determinadas facturas, como el caso de las facturas expedidas por terceros, así como la identificación de aquellos documentos electrónicos de reembolso, recibos y otros documentos de uso en el ejercicio de la actividad empresarial o profesional a que se refieren el artículo 9.1.2.ºB) de este Reglamento, y el artículo 16.1 y disposición adicional primera del Reglamento por el que se regulan las obligaciones de facturación, aprobado por el Real Decreto 1619/2012, de 30 de noviembre.
+          b) Identificación, en su caso, de si se trata de una rectificación registral a que se refiere el artículo 70 de este Reglamento.
+          c) Descripción de las operaciones.
+          d) En el caso de facturas rectificativas se deberán identificar como tales e incluirán la referencia a la factura rectificada o, en su caso, las especificaciones que se modifican.
+          e) En el caso de facturas que se expidan en sustitución o canje de facturas simplificadas expedidas con anterioridad, se incluirá la referencia de la factura que se sustituye o de la que se canjea o, en su caso, las especificaciones que se sustituyen o canjean.
+          f) Las menciones a que se refieren el artículo 51 quater y el apartado 2 del artículo 61 quinquies de este Reglamento, y las letras j) y l) a p) del apartado 1 del artículo 6 del Reglamento por el que se regulan las obligaciones de facturación, aprobado por el Real Decreto 1619/2012, de 30 de noviembre.
+          g) Periodo de liquidación de las operaciones que se registran a que se refieren las facturas expedidas.
+          h) Indicación de que la operación no se encuentra, en su caso, sujeta al Impuesto sobre el Valor Añadido.
+          i) En el caso de que la factura haya sido expedida en virtud de una autorización en materia de facturación de las previstas en el Real Decreto 1619/2012, de 30 de noviembre, por el que se regulan las obligaciones de facturación, se incluirá la referencia a la autorización concedida.
+          j) En el caso de las operaciones a las que sea de aplicación el Régimen especial de los bienes usados, objetos de arte, antigüedades y objetos de colección, deberá consignar el importe total de la operación.
+          k) En el supuesto de las operaciones a las que sea de aplicación el Régimen especial de las agencias de viajes deberá consignar el importe total de la operación.
+          La persona titular del Ministerio de Hacienda y Función Pública podrá mediante Orden ministerial determinar que, junto a lo anterior, se incluya aquella otra información con transcendencia tributaria a que se refieren los artículos 33 a 36 del Reglamento General de las actuaciones y los procedimientos de gestión e inspección tributaria y de desarrollo de las normas comunes de los procedimientos de aplicación de los tributos, aprobado por el Real Decreto 1065/2007, de 27 de julio.
+            Téngase en cuenta que esta última actualización del apartado 3, por el art, 5.1 del Real Decreto 249/2023, de 4 de abril. Ref. BOE-A-2023-8576#a5, entra en vigor el 1 de julio de 2023, según se establece en su disposición final 3.
+
+[a71] versiones=14 vigente desde 20241222
+Artículo 71. Liquidación del Impuesto. Normas generales.
+          1. Salvo lo establecido en relación con las importaciones, los sujetos pasivos deberán realizar por sí mismos la determinación de la deuda tributaria mediante declaraciones-liquidaciones ajustadas a las normas contenidas en los apartados siguientes.
+          Los empresarios y profesionales deberán presentar las declaraciones-liquidaciones periódicas a que se refieren los apartados 3, 4 y 5 de este artículo, así como la declaración resumen anual prevista en el apartado 7, incluso en los casos en que no existan cuotas devengadas ni se practique deducción de cuotas soportadas o satisfechas.
+
+════ AEAT · instrucciones del 303 (líneas del texto extraído del HTML) ════
+La declaración será "sin actividad" cuando no se hayan devengado ni soportado cuotas durante el período declarado.
+IVA devengado
+IVA Devengado
+01 a 09 y
+150 a 155 y
+165 a 167
+En las casillas 150, 151 y 152 se harán constar las bases imponibles gravadas al tipo del 0% y las cuotas resultantes.
+En las casillas 01, 02 y 03 se harán constar las bases imponibles gravadas al tipo del 4% y las cuotas resultantes.
+En las casillas 04, 05 y 06 se harán constar las bases imponibles gravadas al tipo del 10% y las cuotas resultantes.
+En las casillas 07, 08 y 09 se harán constar las bases imponibles gravadas al tipo del 21% y las cuotas resultantes.
+10 y 11

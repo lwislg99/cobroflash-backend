@@ -137,10 +137,31 @@ export function clasificarSentencia(sqlDesnudo) {
 
   // ── Formas destructivas, nombradas una a una ──────────────────────────────
   if (/^DROP\b/.test(t)) return { veredicto: RECHAZADA, forma: 'DROP', motivo: 'DROP: destruye un objeto y sus datos' };
+  // SCRUM-1223 · RECHAZADAS igual, pero con un motivo VERDADERO. `DROP DEFAULT` y `DROP NOT NULL` no
+  // borran datos, y decir «destruye datos» manda a la persona a arreglar lo que no es. Sólo cuando
+  // TODAS las acciones del ALTER son de estas dos formas: si va algo más, manda el motivo de lo otro.
+  if (/^ALTER\s+TABLE\b/.test(t) && PALABRA('DROP').test(t)) {
+    const acciones = partirAcciones(t.replace(/^ALTER\s+TABLE\s+(IF\s+EXISTS\s+)?[A-Z0-9_."]+\s*/, ''));
+    const cual = (a) => (/^ALTER\s+(COLUMN\s+)?["A-Z0-9_]+\s+DROP\s+DEFAULT$/.test(a) ? 'DEFAULT'
+      : /^ALTER\s+(COLUMN\s+)?["A-Z0-9_]+\s+DROP\s+NOT\s+NULL$/.test(a) ? 'NOT NULL' : null);
+    if (acciones.length && acciones.every(cual)) {
+      const tipos = [...new Set(acciones.map(cual))];
+      return {
+        veredicto: RECHAZADA,
+        forma: tipos.map((x) => `ALTER COLUMN … DROP ${x}`).join(' + '),
+        motivo: (tipos.includes('NOT NULL')
+          ? 'quita una restricción NOT NULL: no borra datos, pero deja entrar NULL donde antes no podía'
+          : 'quita el valor por defecto de una columna: no borra datos, cambia qué reciben las filas NUEVAS (SCRUM-797)')
+          + '. Esta lista no la admite; se aplica fuera de ella, con su decisión',
+      };
+    }
+  }
   if (PALABRA('DROP').test(t)) return { veredicto: RECHAZADA, forma: 'DROP', motivo: 'contiene DROP (p. ej. `ALTER TABLE … DROP COLUMN`): destruye datos' };
   if (PALABRA('RENAME').test(t)) return { veredicto: RECHAZADA, forma: 'RENAME', motivo: 'RENAME: el código que use el nombre viejo deja de funcionar' };
   if (/^TRUNCATE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'TRUNCATE', motivo: 'TRUNCATE: vacía la tabla' };
   if (/^DELETE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'DELETE', motivo: 'DELETE: borra filas' };
+  // SCRUM-1223 · antes salía como «DESCONOCIDA», y sabemos perfectamente lo que hace.
+  if (/^UPDATE\b/.test(t)) return { veredicto: RECHAZADA, forma: 'UPDATE', motivo: 'UPDATE: modifica filas que ya existen. Esta lista sólo admite cambios de esquema aditivos' };
   // ALTER COLUMN … TYPE (cambiar el tipo de una columna existente) — distinto de ALTER TYPE de un enum.
   // ⚠️ El identificador puede venir ENTRECOMILLADO: por `clasificarFichero` llega ya desnudo (sin
   // comillas), pero `clasificarSentencia` es pública y se la puede llamar con el SQL crudo. Sin
@@ -157,6 +178,22 @@ export function clasificarSentencia(sqlDesnudo) {
     const acciones = partirAcciones(cuerpo);
     if (acciones.length === 0) return { veredicto: RECHAZADA, forma: 'ALTER TABLE', motivo: 'no se reconoció ninguna acción dentro del ALTER TABLE' };
     for (const a of acciones) {
+      // SCRUM-1214 · 🔴 una RESTRICCIÓN no es una columna. Antes, cualquier acción que empezara por
+      // `ADD` salía como «ADD COLUMN ×1 — solo añade columnas», así que una clave ajena, un CHECK,
+      // un UNIQUE o una PRIMARY KEY se aconsejaban para producción con un informe FALSO. Se nombran
+      // por lo que son y se rechazan: validan la tabla entera y toman bloqueos, y el guarda de dev
+      // (`_aplicar-sql-dev.mjs`) tampoco las admite. Una clave ajena de una tabla NUEVA va dentro de
+      // su `CREATE TABLE`, que sigue permitido.
+      const restriccion = a.match(/^ADD\s+(?:CONSTRAINT\s+\S+\s+)?(FOREIGN\s+KEY|PRIMARY\s+KEY|UNIQUE|CHECK|EXCLUDE)\b/)
+        || (/^ADD\s+CONSTRAINT\b/.test(a) ? [null, 'CONSTRAINT'] : null);
+      if (restriccion) {
+        const tipo = restriccion[1].replace(/\s+/g, ' ');
+        return {
+          veredicto: RECHAZADA,
+          forma: `ADD CONSTRAINT (${tipo})`,
+          motivo: `añade una restricción ${tipo} a una tabla existente, NO una columna: valida la tabla entera y toma bloqueos`,
+        };
+      }
       if (!/^ADD\s+(COLUMN\s+)?/.test(a)) {
         return { veredicto: RECHAZADA, forma: 'ALTER TABLE', motivo: `acción no reconocida como aditiva: «${a.slice(0, 60)}»` };
       }
@@ -173,8 +210,28 @@ export function clasificarSentencia(sqlDesnudo) {
     return { veredicto: PERMITIDA, forma: `ADD COLUMN ×${acciones.length}`, motivo: 'solo añade columnas (nullable o con DEFAULT)' };
   }
   if (/^CREATE\s+(UNIQUE\s+)?INDEX\b/.test(t)) return { veredicto: PERMITIDA, forma: 'CREATE INDEX', motivo: 'crea un índice: no toca datos' };
-  if (/^CREATE\s+TABLE\b/.test(t)) return { veredicto: PERMITIDA, forma: 'CREATE TABLE', motivo: 'crea una tabla nueva' };
-  if (/^CREATE\s+TYPE\b/.test(t)) return { veredicto: PERMITIDA, forma: 'CREATE TYPE', motivo: 'crea un tipo nuevo' };
+  // SCRUM-1214 · se admite la FORMA, no la familia (el mismo criterio que `_aplicar-sql-dev.mjs`).
+  // Por `clasificarFichero` los identificadores llegan desnudos (`"public"."t"` es `PUBLIC . T`);
+  // llamada a pelo, con comillas. Se admiten las dos, como en el `ALTER COLUMN … TYPE` de arriba.
+  const NOMBRE = '"?[A-Z0-9_]+"?(?:\\s*\\.\\s*"?[A-Z0-9_]+"?)?';
+  if (/^CREATE\s+TABLE\b/.test(t)) {
+    if (new RegExp(`^CREATE\\s+TABLE\\s+(IF\\s+NOT\\s+EXISTS\\s+)?${NOMBRE}\\s*\\(`).test(t)) {
+      return { veredicto: PERMITIDA, forma: 'CREATE TABLE', motivo: 'crea una tabla nueva' };
+    }
+    return { veredicto: RECHAZADA, forma: 'CREATE TABLE … AS', motivo: 'no es `CREATE TABLE … ( columnas )`: `AS SELECT` copia datos de otra tabla y no es aditivo de esquema' };
+  }
+  if (/^CREATE\s+TYPE\b/.test(t)) {
+    // Desnudos, los literales llegan como ESPACIOS; a pelo, como `'…'`. Dentro de `AS ENUM ( … )` sólo
+    // puede haber eso y comas.
+    // ⚠️ LÍMITE declarado: por eso `AS ENUM ()` vacío NO se distingue de `AS ENUM ('a')` y pasa. Es
+    // tolerable porque un enum vacío no toca ningún dato ni ningún objeto existente. Si algún día
+    // deja de serlo, lo retira quien mantenga este clasificador (carril J6), dándole a
+    // `clasificarSentencia` el texto con literales.
+    if (new RegExp(`^CREATE\\s+TYPE\\s+${NOMBRE}\\s+AS\\s+ENUM\\s*\\(\\s*(?:'[^']*')?\\s*(?:,\\s*(?:'[^']*')?\\s*)*\\)$`).test(t)) {
+      return { veredicto: PERMITIDA, forma: 'CREATE TYPE', motivo: 'crea un tipo enum nuevo' };
+    }
+    return { veredicto: RECHAZADA, forma: 'CREATE TYPE (no enum)', motivo: 'sólo se admite `CREATE TYPE … AS ENUM (…)`; compuesto, RANGE, base o shell no están analizados' };
+  }
   if (/^ALTER\s+TYPE\b/.test(t) && /\bADD\s+VALUE\b/.test(t)) return { veredicto: PERMITIDA, forma: 'ALTER TYPE ADD VALUE', motivo: 'añade un valor a un enum: aditivo' };
   if (/^COMMENT\s+ON\b/.test(t)) return { veredicto: PERMITIDA, forma: 'COMMENT ON', motivo: 'solo documenta' };
 

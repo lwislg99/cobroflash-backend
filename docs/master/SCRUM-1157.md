@@ -47,3 +47,22 @@ fuente, no en el valor: en pantalla sale «Formato», «Negro»… y ningún gua
 - Las 77 SIN_COMENTARIO son de **S4**: contrastarlas con `docs/microcopy/` y, o firmarlas, o
   anotar encima la firma que ya tengan. Cada una que se resuelva sale como SOBRA y se mueve a
   `retiradas` con su referencia.
+
+## 1157b (28-sep-2026) — la regla 1 no funcionaba
+
+Lo midió **S4** al usar el censo: marcó 22 hojas con la forma `k: 'x', // APROBADO` y las 22
+salieron SIN_COMENTARIO. Al ponerlas encima (regla 2) salieron APROBADO. El fallo iba en la
+dirección segura (acusaba de más), pero la cabecera prometía una forma que el código no leía.
+
+- **Causa:** `getTrailingCommentRanges` se llamaba en el fin del valor, antes de la coma, y deja de
+  buscar en cuanto la encuentra. `getLeadingCommentRanges` no coge comentarios de la misma línea.
+  Pasaba en los dos sitios: al clasificar la hoja y al decidir si un objeto entra en el censo.
+- **Arreglo:** los dos saltan la coma (`trasLaComa`) antes de buscar. La regla 1 de la cabecera
+  queda como estaba, y ahora es cierta.
+- **Test:** `SCRUM-1157b · regla 1` en `tests/scrum1157-censo-convenio-microcopy.test.mjs`. Sin el
+  arreglo, 10 verdes y 1 rojo (`T.a` salía PENDIENTE). Con él, 11 verdes. Cubre también un objeto
+  cuyo único convenio va en esa forma, que antes ni entraba en el censo.
+- **Mensaje del rojo:** ahora ofrece las dos formas, encima o al final de la misma línea.
+- **Cifra en `main`:** 0. Antes y después, las mismas 234 hojas con la misma clase y 84 acusadas.
+  Un `git grep` independiente da 0 hojas marcadas así en `public/` de `main` y en las 60 ramas más
+  recientes. Las 22 de S4 no están empujadas en ninguna rama; S4 ya las pasó a la regla 2.

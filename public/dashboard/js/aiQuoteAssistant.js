@@ -12,7 +12,7 @@ function openAiSuggestModal(addLinesFn) {
     <div class="modal" style="max-width:500px">
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
-          Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
+          Describe el trabajo con tus propias palabras y la IA te sugerirá las líneas del presupuesto usando tu catálogo. Lo que escribas aquí y tu catálogo se envían a nuestro proveedor de IA (lo tienes en la política de privacidad); no incluyas datos de tu cliente que no hagan falta.
         </p>
         <div class="alert" id="ai-alert" style="display:none"></div>
         <div class="field">

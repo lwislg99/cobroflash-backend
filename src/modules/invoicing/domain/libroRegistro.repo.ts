@@ -37,7 +37,6 @@ import {
 } from './libroRegistro';
 // SCRUM-294 (fase B): qué fecha devenga. Se importa el criterio, no se copia la regla.
 import { campoDeDevengo, CAMPO_EMISION } from './devengoPorCaja';
-
 /**
  * Lo mínimo del cliente Prisma que el lector usa. Se pide por parámetro (no se importa el
  * singleton) para que el test pueda apuntarlo a SU Postgres sin tocar ninguna variable de
@@ -64,6 +63,37 @@ export interface RangoLibro {
    * él esconde el fallo para siempre.
    */
   criterioCaja?: unknown;
+  /**
+   * SCRUM-1232 · `true` = el libro de facturas EXPEDIDAS: deja fuera los justificantes.
+   *
+   * 🔴 NO ES EL DEFECTO, Y NO LO PIDE EL 303. La norma separa las dos poblaciones (SCRUM-1232b,
+   * `docs/master/SCRUM-1232.md`): el libro de expedidas son FACTURAS y nada más (RIVA 62.1.a y 63),
+   * y el 303 declara lo DEVENGADO, no lo documentado (LIVA 75/167, RIVA 71). Un justificante documenta
+   * una operación que devengó IVA aunque no se facturara: sacarlo del 303 INFRADECLARARÍA.
+   *
+   * Por eso es opcional y va apagado: lo encienden la pantalla del libro y el libro de la AEAT, y el
+   * 303, las evidencias e Informes siguen leyendo lo de siempre. Encenderlo por defecto cambiaría el
+   * 303 sin que su código moviera una letra.
+   */
+  soloFacturas?: boolean;
+}
+
+/**
+ * SCRUM-1232 · ¿Es un justificante de cobro? Por `type === 'JUST'`, y SÓLO por eso.
+ *
+ * 🔴 EL NÚMERO `J-` NO DECIDE, y es una decisión, no un olvido. `receipt.routes.ts:104` e
+ * `invoiceAdmin.ts:251` miran también el número, y el censo del 10-ago-2026 contó **5 documentos `F1`
+ * con número `J-`** (`PREGUNTAS_ASESOR.md:640-641`). La primera versión de este arreglo los sacaba del
+ * libro por el número. El fundador dijo qué son (28-sep-2026, transmitido por el orquestador):
+ * «Todos deberían ser facturas». Son FACTURAS con el número mal puesto, y sacarlas por el número le
+ * quitaría cinco facturas a un libro que se entrega al gestor. Qué hacer con ellas es SCRUM-1252. Aquí
+ * se quedan dentro, y el test lo vigila con la mutación «filtro también por número».
+ *
+ * ⚠️ El filtro va en el CÓDIGO y no en el `where`, para que un justificante AJENO que se colara siga
+ * llegando al constructor y se cuente en `ajenas` (SCRUM-348), en vez de desaparecer en la consulta.
+ */
+export function esJustificante(f: { type: string | null }): boolean {
+  return f.type === 'JUST';
 }
 
 /** Las columnas que el libro necesita. Explícitas: un `select` abierto traería la firma. */
@@ -109,7 +139,7 @@ export async function leerLibroRegistro(
   // fallida LANZA en vez de caer a emisión.
   const campo = 'criterioCaja' in rango ? campoDeDevengo(rango.criterioCaja) : CAMPO_EMISION;
 
-  const facturas = (await db.invoice.findMany({
+  const leidas = (await db.invoice.findMany({
     where: {
       merchantId: rango.merchantId,
       ...(Object.keys(fecha).length > 0 ? { [campo]: fecha } : {}),
@@ -119,6 +149,12 @@ export async function leerLibroRegistro(
     // orden en que se emitieron, que es el de la serie.
     orderBy: [{ [campo]: 'asc' }, { number: 'asc' }],
   })) as unknown as (FacturaParaLibro & { id: number })[];
+
+  // SCRUM-1232 · fuera los justificantes, pero SÓLO los de este merchant: uno ajeno que se colara
+  // tiene que llegar al constructor para contarse en `ajenas`, no desaparecer aquí (SCRUM-348).
+  const esJustificanteMio = (f: FacturaParaLibro) =>
+    f.merchantId === rango.merchantId && esJustificante(f);
+  const facturas = rango.soloFacturas ? leidas.filter((f) => !esJustificanteMio(f)) : leidas;
 
   const idsFactura = facturas.map((f) => f.id).filter((n) => typeof n === 'number');
   const idsPresupuesto = [
@@ -154,10 +190,13 @@ export async function leerLibroRegistro(
     albaranesVivos.set(a.invoiceId, lista);
   }
 
-  return construirLibroRegistro({
+  const libro = construirLibroRegistro({
     facturas,
     merchantId: rango.merchantId,
     presupuestosFirmados: firmados.map((q) => q.id),
     albaranesVivos,
   });
+  return rango.soloFacturas
+    ? { ...libro, justificantesFuera: leidas.length - facturas.length }
+    : libro;
 }
