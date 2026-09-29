@@ -11,7 +11,9 @@ import { renderEmailLayout, escEmail } from './emailLayout';
 import { formatMoneyEs } from '../../../core/utils/utils'; // SCRUM-931: el TERCER canal, misma forma
 import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-475: el emisor unico
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
-import { CLASES_DE_CORREO } from './registroDeEnvios';
+import { CLASES_DE_CORREO, registrarEnvio } from './registroDeEnvios';
+// SCRUM-1243: la constancia del fallo previo a Resend, con la misma forma que la de Resend.
+import { constanciaDeFallo } from './constanciaCorreo';
 import { portalUrlDelCliente } from '../../system/customerAdmin'; // SCRUM-967b
 import { getLocale } from '../../../core/i18n/locales';
 
@@ -31,17 +33,59 @@ export async function sendInvoiceEmail(args: {
   const inv = await prisma.invoice.findUnique({ where: { id: invoiceId } });
   if (!inv) throw new Error('invoice_not_found');
 
-  // Asegura el PDF en disco (genera si está PENDING o se perdió) y lo lee.
-  const { diskPath, pdfUrl } = await ensureInvoicePdf(invoiceId, prisma);
-  const pdfBase64 = fs.existsSync(diskPath) ? fs.readFileSync(diskPath).toString('base64') : null;
-  // SCRUM-76: tras SCRUM-72 (D3) se quitó el botón "Ver documento" → el ADJUNTO es la ÚNICA vía de
-  // entrega del documento fiscal al cliente. Si no hay PDF, NO enviamos una factura mutilada en
-  // silencio: fallamos RUIDOSAMENTE para que el caller (webhook/admin) lo registre y se pueda
-  // reenviar tras arreglar la causa. Vale para TODAS las ramas (Resend y fallback SMTP/outbox).
-  if (!pdfBase64) throw new Error('invoice_pdf_unavailable');
-
   // Regla 24/26: J-… = justificante de cobro, el copy jamás dice "factura"
   const isJust = inv.number.startsWith('J-');
+
+  // 🔴 SCRUM-501 · EL CONTEXTO DE LA FILA. Este emisor lo sabe todo —tiene la factura leída— y
+  // es el que responde a la pregunta que motiva la tabla: «¿se le envió la factura F-2026-014 y
+  // cuándo?». `kind` distingue el justificante de la factura porque el copy también lo
+  // distingue (reglas 24/26) y una fila que los mezclara no podría contestarla.
+  //
+  // SCRUM-1243 · UNA sola constante para los DOS sitios que escriben la fila de este correo: el
+  // fallo previo a Resend (abajo) y `enviarPorResend`. Dos literales iguales divergen.
+  const registro = {
+    merchantId: inv.merchantId,
+    kind: isJust ? CLASES_DE_CORREO.justificante : CLASES_DE_CORREO.factura,
+    customerId: inv.customerId ?? null,
+    relatedType: 'invoice',
+    relatedId: inv.id,
+  };
+
+  // Asegura el PDF en disco (genera si está PENDING o se perdió) y lo lee.
+  //
+  // 🔴 SCRUM-1243 · EL FALLO QUE NI SIQUIERA LLEGA A RESEND TAMBIÉN DEJA FILA. Si el PDF no se puede
+  // generar o leer, esto revienta ANTES de `enviarPorResend`, que es quien escribe la fila del
+  // envío. Sin fila, el aviso de Cobros (SCRUM-1235) no sale: el cliente ha pagado, no tiene su
+  // factura y el profesional no se entera. GO del fundador: SCRUM-1243, comentario 17582.
+  //
+  // ⚠️ EL DISCRIMINANTE ES EL SITIO, NO EL MENSAJE. Este `try` envuelve SOLO la preparación del
+  // adjunto: el envío a Resend queda FUERA, así que su fallo no pasa por este `catch` y no se
+  // escribe dos veces (la suya ya la deja `enviarPorResend`). Nada aquí mira el texto del error:
+  // cualquier excepción de esta etapa deja su fila, se llame como se llame.
+  //
+  // ⚠️ Solo con RESEND_API_KEY: es el camino en el que un envío bueno deja fila y apaga el aviso.
+  // En el respaldo SMTP/outbox de dev el éxito no escribe nada, y una fila de fallo sin su «salió»
+  // se quedaría avisando para siempre.
+  //
+  // `registrarEnvio` no lanza ni se cuelga (SCRUM-501): la excepción que sube es la de siempre, y
+  // los llamadores la siguen viendo igual.
+  let pdfBase64: string;
+  try {
+    const { diskPath } = await ensureInvoicePdf(invoiceId, prisma);
+    const leido = fs.existsSync(diskPath) ? fs.readFileSync(diskPath).toString('base64') : null;
+    // SCRUM-76: tras SCRUM-72 (D3) se quitó el botón "Ver documento" → el ADJUNTO es la ÚNICA vía de
+    // entrega del documento fiscal al cliente. Si no hay PDF, NO enviamos una factura mutilada en
+    // silencio: fallamos RUIDOSAMENTE para que el caller (webhook/admin) lo registre y se pueda
+    // reenviar tras arreglar la causa. Vale para TODAS las ramas (Resend y fallback SMTP/outbox).
+    if (!leido) throw new Error('invoice_pdf_unavailable');
+    pdfBase64 = leido;
+  } catch (e) {
+    if (config.RESEND_API_KEY) {
+      await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeFallo(e) });
+    }
+    throw e;
+  }
+
   const docLabel = isJust ? 'justificante de cobro' : 'factura';
   const from = config.EMAIL_FROM;
   const subject = `Tu ${docLabel} ${inv.number}`;
@@ -73,17 +117,9 @@ export async function sendInvoiceEmail(args: {
       from,
       origen: 'factura',
       timeoutMs: 15_000,
-      // 🔴 SCRUM-501 · EL CONTEXTO DE LA FILA. Este emisor lo sabe todo —tiene la factura leída— y
-      // es el que responde a la pregunta que motiva la tabla: «¿se le envió la factura F-2026-014 y
-      // cuándo?». `kind` distingue el justificante de la factura porque el copy también lo
-      // distingue (reglas 24/26) y una fila que los mezclara no podría contestarla.
-      registro: {
-        merchantId: inv.merchantId,
-        kind: isJust ? CLASES_DE_CORREO.justificante : CLASES_DE_CORREO.factura,
-        customerId: inv.customerId ?? null,
-        relatedType: 'invoice',
-        relatedId: inv.id,
-      },
+      // 🔴 SCRUM-501 · el contexto de la fila: la constante de arriba (SCRUM-1243, la misma que usa
+      // el fallo previo a Resend).
+      registro,
       // pdfBase64 garantizado no-null por el guard de arriba → el adjunto SIEMPRE viaja.
       adjuntos: [{ filename: `${inv.number}.pdf`, content: pdfBase64 }],
     });
