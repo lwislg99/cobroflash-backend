@@ -97,6 +97,13 @@
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
     // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
+    // SCRUM-1266 · el dato que la máquina escribió y el dictado no decía, dicho en SU línea de la tabla.
+    // Van seguidos de los datos, separados por coma y espacio. Sólo con el parte editable; nunca en
+    // el sello (la marca no entra en `lineasCanonicasParte`).
+    // APROBADO · SCRUM-1266 comentario 17498
+    noSalioEnLoDictado: 'No salía en lo dictado: ',
+    // APROBADO · SCRUM-1266 comentario 17498. Limpia la marca de esa línea y NO toca la descripción.
+    esCorrecto: 'Es correcto',
     confirmarPropuesta: 'Añadir estas líneas',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
@@ -226,6 +233,54 @@
   }
 
   /**
+   * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
+   *
+   * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
+   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
+   * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
+   */
+  var COLAS_DEL_PARTE = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function enOrdenDelParte(parte, fn) {
+    var previa = (COLAS_DEL_PARTE && parte && COLAS_DEL_PARTE.get(parte)) || Promise.resolve();
+    var turno = previa.then(fn);
+    if (COLAS_DEL_PARTE && parte) COLAS_DEL_PARTE.set(parte, turno.then(null, function () {}));
+    return turno;
+  }
+
+  /** SCRUM-1266 · los datos marcados que siguen en la línea; lo que no sea texto no cuenta. */
+  function marcaDeLinea(linea) {
+    var marca = linea && Array.isArray(linea.datosNoRespaldados) ? linea.datosNoRespaldados : [];
+    return marca.filter(function (t) { return typeof t === 'string' && t !== ''; });
+  }
+
+  /**
+   * 🔴 SCRUM-1266 · EL DATO QUE LA MÁQUINA ESCRIBIÓ Y EL DICTADO NO DECÍA, EN LA TABLA DEL PARTE.
+   *
+   * Hasta hoy la marca llegaba con la línea y no se pintaba: el técnico no sabía qué palabra mirar.
+   * Se pinta sólo desde `filaDeLinea` editable — con el parte firmado no queda nada que corregir y
+   * avisar sería angustiar sin salida (c.17498, condición 1). Nombra los datos, que es lo que lo hace
+   * accionable, y lleva «Es correcto» al lado: sin él, un dato CIERTO sólo se quitaba borrándolo.
+   *
+   * Una lista larga NO deforma la línea: el texto parte por cualquier sitio (`overflow-wrap:anywhere`,
+   * también un token sin espacios) y el botón baja de renglón (`flex-wrap`) en vez de ensanchar la
+   * columna. El servidor corta la marca en 20 datos (`MAX_DATOS_MARCADOS`).
+   */
+  function avisoNoDictado(linea, indice) {
+    var marca = marcaDeLinea(linea);
+    if (!marca.length) return '';
+    return (
+      '<div data-no-dictado="' + indice + '" style="display:flex;flex-wrap:wrap;align-items:center;' +
+      'gap:4px 8px;margin-top:4px;min-width:0;max-width:100%">' +
+      '<span data-no-dictado-texto="1" style="flex:1 1 12em;min-width:0;font-size:12px;' +
+      'color:var(--ink);overflow-wrap:anywhere;word-break:break-word">' +
+      esc(TEXTOS.noSalioEnLoDictado + marca.join(', ')) + '</span>' +
+      '<button type="button" data-es-correcto="' + indice + '">' + esc(TEXTOS.esCorrecto) + '</button>' +
+      '</div>'
+    );
+  }
+
+  /**
    * Una línea del parte.
    *
    * 🔴 SCRUM-818 · DOS CAMPOS CON BORDE, no `2  Tiempo de espera` a pelo. Con las manos sucias y
@@ -251,7 +306,7 @@
       ' data-linea-unds="' + indice + '" value="' + esc(unds) + '"' +
       ' aria-label="' + esc(TEXTOS.unds) + '"></td>' +
       '<td><input class="parte-linea-desc" type="text" data-linea-desc="' + indice + '"' +
-      ' value="' + esc(desc) + '"></td>' +
+      ' value="' + esc(desc) + '">' + avisoNoDictado(linea, indice) + '</td>' +
       '<td class="parte-col-quitar">' +
       '<button type="button" class="parte-quitar-linea" data-indice="' + indice + '" ' +
       'aria-label="Quitar línea">&times;</button></td>' +
@@ -1110,12 +1165,14 @@
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
-    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-
     try {
-      await pedir('/admin/partes/' + parteId, {
-        method: 'PATCH',
-        body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+      // SCRUM-1266 · en su turno: lo que ya había se lee DESPUÉS de que vuelva el guardado anterior.
+      await enOrdenDelParte(parte, function () {
+        var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
+        return pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+        });
       });
     } catch (e) {
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
@@ -1285,6 +1342,55 @@
 
     // Las líneas: cantidad y descripción. El `PATCH` reemplaza la lista ENTERA, así que se manda
     // la lista completa con la línea tocada cambiada — mandar sólo una borraría las demás.
+    //
+    // 🔴 SCRUM-1266 · LA LISTA SALE DE LO QUE HAY EN PANTALLA, y lo guardado se apunta. Antes se
+    // armaba desde `parte.lineas` tal y como vino al abrir, cambiando sólo la casilla tocada: tras
+    // corregir una descripción, el siguiente guardado —otra cantidad, o «Es correcto»— mandaba la
+    // descripción VIEJA y deshacía la corrección sin que la pantalla lo enseñara. Y los guardados van
+    // EN ORDEN: el `blur` de una casilla y el clic de «Es correcto» salen a la vez, y el que llegara
+    // segundo pisaría al primero con su lista.
+    var casillaDeLinea = function (atributo, i) {
+      return contenedor.querySelector ? contenedor.querySelector('[' + atributo + '="' + i + '"]') : null;
+    };
+    var listaDePantalla = function () {
+      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
+        var base = lineaQueSeGuarda(l);
+        var unds = casillaDeLinea('data-linea-unds', i);
+        var desc = casillaDeLinea('data-linea-desc', i);
+        if (unds && typeof unds.value === 'string') base.unds = unds.value === '' ? null : Number(unds.value);
+        if (desc && typeof desc.value === 'string') base.descripcion = desc.value;
+        return base;
+      });
+    };
+    /** Guarda la lista de pantalla (tocada por `ajustar`) y apunta lo guardado. Nunca lanza. */
+    var guardarLineasEnOrden = function (ajustar) {
+      return enOrdenDelParte(parte, async function () {
+        var lista = listaDePantalla();
+        if (ajustar) ajustar(lista);
+        try {
+          var r = await pedir('/admin/partes/' + parteId, {
+            method: 'PATCH',
+            body: JSON.stringify({ lineas: lista }),
+          });
+          parte.lineas = r && Array.isArray(r.lineas) ? r.lineas : lista;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      });
+    };
+
+    /** SCRUM-1266 · el aviso de UNA línea, repintado con la marca que quedó tras guardar. */
+    var repintarAvisoNoDictado = function (indice) {
+      var viejo = casillaDeLinea('data-no-dictado', indice);
+      if (viejo && viejo.remove) viejo.remove();
+      var desc = casillaDeLinea('data-linea-desc', indice);
+      var html = avisoNoDictado((parte.lineas || [])[indice], indice);
+      if (!desc || !html || !desc.insertAdjacentHTML) return;
+      desc.insertAdjacentHTML('afterend', html);
+      conectarEsCorrecto(casillaDeLinea('data-es-correcto', indice));
+    };
+
     var deLinea = contenedor.querySelectorAll
       ? contenedor.querySelectorAll('[data-linea-unds],[data-linea-desc]') : [];
     for (var d = 0; d < deLinea.length; d++) {
@@ -1295,24 +1401,43 @@
           original = casilla.value;
           var esUnds = casilla.hasAttribute('data-linea-unds');
           var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
-          var lista = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
-            var base = lineaQueSeGuarda(l);
-            if (i !== indice) return base;
-            if (esUnds) base.unds = casilla.value === '' ? null : Number(casilla.value);
-            else base.descripcion = casilla.value;
-            return base;
-          });
-          try {
-            await pedir('/admin/partes/' + parteId, {
-              method: 'PATCH',
-              body: JSON.stringify({ lineas: lista }),
-            });
-          } catch (e) {
+          if (!(await guardarLineasEnOrden(null))) {
             await renderParteDetailView(contenedor, parteId, o);
+            return;
           }
+          // La marca se acorta sola al corregir la descripción: el servidor sólo deja lo que sigue escrito.
+          if (!esUnds) repintarAvisoNoDictado(indice);
         });
       }(deLinea[d]));
     }
+
+    // SCRUM-1266 · «Es correcto»: la lista entera, con ESA línea mandando la marca vacía —que el
+    // servidor lee como «ya no hay nada marcado» (`casarLineasPorIdentidad`)— y su descripción tal
+    // cual está. Si falla, el aviso se queda y se dice con el literal ya aprobado `noSeGuardo`.
+    function conectarEsCorrecto(boton) {
+      if (!boton || !boton.addEventListener) return;
+      boton.addEventListener('click', async function () {
+        var indice = Number(boton.getAttribute('data-es-correcto'));
+        if (!(parte.lineas || [])[indice]) return;
+        boton.disabled = true;
+        quitarAvisoNoGuardada();
+        var ok = await guardarLineasEnOrden(function (lista) {
+          if (lista[indice]) lista[indice].datosNoRespaldados = [];
+        });
+        if (ok) {
+          repintarAvisoNoDictado(indice);
+          return;
+        }
+        boton.disabled = false;
+        var filas = contenedor.querySelector('[data-parte-filas="' + parte.lineas[indice].bloque + '"]');
+        if (filas) {
+          filas.insertAdjacentHTML('beforeend',
+            '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
+        }
+      });
+    }
+    var botonesEsCorrecto = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-es-correcto]') : [];
+    for (var ec = 0; ec < botonesEsCorrecto.length; ec++) conectarEsCorrecto(botonesEsCorrecto[ec]);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
@@ -1329,9 +1454,6 @@
     // La «×» de la fila NUEVA sólo la quita de la pantalla, porque nunca llegó al servidor. La de una
     // línea YA GUARDADA va más abajo (segundo PR de SCRUM-889).
     // ═══════════════════════════════════════════════════════════════════════════════════
-    var lineasGuardadas = function () {
-      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-    };
     var laNueva = function () {
       return {
         fila: contenedor.querySelector('[data-parte-linea-nueva]'),
@@ -1361,9 +1483,12 @@
       guardandoLaNueva = true;
       quitarAvisoNoGuardada();
       try {
-        await pedir('/admin/partes/' + parteId, {
-          method: 'PATCH',
-          body: JSON.stringify({ lineas: lineasGuardadas().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+        // SCRUM-1266 · en su turno, con las guardadas tal y como están en pantalla.
+        await enOrdenDelParte(parte, function () {
+          return pedir('/admin/partes/' + parteId, {
+            method: 'PATCH',
+            body: JSON.stringify({ lineas: listaDePantalla().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+          });
         });
       } catch (e) {
         guardandoLaNueva = false;
@@ -1426,11 +1551,14 @@
           quitando = true;
           quitarAvisoNoGuardada();
           try {
-            await pedir('/admin/partes/' + parteId, {
-              method: 'PATCH',
-              body: JSON.stringify({
-                lineas: todas.filter(function (_, i) { return i !== indice; }).map(lineaQueSeGuarda),
-              }),
+            // SCRUM-1266 · en su turno, con las demás tal y como están en pantalla.
+            await enOrdenDelParte(parte, function () {
+              return pedir('/admin/partes/' + parteId, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                  lineas: listaDePantalla().filter(function (_, i) { return i !== indice; }),
+                }),
+              });
             });
           } catch (e) {
             quitando = false;

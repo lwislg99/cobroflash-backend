@@ -667,7 +667,7 @@ function renderSettingsView(container) {
     const tNotifyAccepted = createToggle(
       "notifyEmailOnQuoteAccepted",
       "Recibir email cuando un cliente acepta un presupuesto",
-      "Te notificamos cuando el cliente firma y acepta desde su portal."
+      "Te avisamos por correo cuando un cliente acepte un presupuesto desde WhatsApp."
     );
     const tNotifyWeekly = createToggle(
       "notifyEmailWeeklyDigest",
