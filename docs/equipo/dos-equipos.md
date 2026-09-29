@@ -143,12 +143,12 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 
 | ruta | dueño | nota |
 |---|---|---|
-| `docs/equipo/00-normas-comunes.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
+| `docs/equipo/00-normas-comunes.md`, `00-normas-siempre.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
 | `docs/equipo/afirmaciones-verificadas-javier.md` | **J6** | lo crea J6 en su primera tanda |
 | `docs/equipo/orquestador.md` | **orquestador de Luis** | método común. Mientras no haya otro dueño, cada cambio se avisa al otro equipo con un comentario en Jira |
 | `docs/equipo/traspaso.md` / `traspaso-javier.md` | orquestador de Luis / **orquestador de Javier** | el ESTADO va por equipo; el de Javier lo crea su orquestador |
 | `docs/equipo/limites-del-fundador.md` | **orquestador de Luis** | pasa a «límites de los jefes»: cada decisión lleva quién la tomó y la fecha. El de Javier propone por Jira |
-| `docs/equipo/sesion-N.md` / `puesto-jN.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
+| `docs/equipo/sesion-*.md` / `docs/equipo/puesto-j*.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
 | `docs/equipo/orquestador-javier.md` | **orquestador de Javier** | solo lo que cambia para su equipo: el método es `orquestador.md` |
 | `docs/equipo/prompt-tanda-orquestador.md` | contenido **S0**; el cableado, **S5** | UN solo prompt para los dos equipos |
 | `docs/equipo/orquestador-autonomo.md`, `instalacion-*.md`, `scripts/equipo/**` | **S5** | |
@@ -158,7 +158,9 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `tests/`: guards nuevos de J6 | **J6** | |
 | `tests/`: el test de un ticket | el puesto que trabaja el ticket | |
 | `scripts/` (verificación, censos de consulta) | **S0** | salvo `scripts/equipo/` (S5) y `scripts/_suelo-*` (S3) |
-| `docs/master/SCRUM-N.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
+| `scripts/_suelo-*` | **S3** | |
+| `docs/equipo/cicatrices/*.md` | cada puesto, la suya | A9 (SCRUM-1294): en qué se equivoca ese puesto, con su comprobación al lado |
+| `docs/master/SCRUM-*.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
 | `docs/microcopy/` | **S4** el README; cada registro, el puesto que usa el texto | la firma es de un jefe o de la delegación de SU orquestador |
 | `docs/prototipos/` | S4 / **J5**, por ticket | |
 | `docs/competencia/` | **J5** | la S0 deja ahí el resultado de Holded (§2.1) |
@@ -166,6 +168,18 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `CLAUDE.md`, `.claude/**`, `docs/YAQU_MASTER.md` | **un jefe** | derivados del máster (regla 35); la S0 prepara la propuesta |
 | `DESIGN.md` | **S2** propone | firma un jefe |
 | `package.json` | cada uno SU línea de script | **una dependencia nueva la decide un jefe** |
+
+### 3.4 · Excepciones declaradas — el cruce de carril legítimo, a la vista
+
+Esta tabla y la de §3.1–3.3 se convierten solas en `.claude/carriles.json` y `.claude/rules/carril-*.md`
+(`node scripts/carriles.mjs generar`, SCRUM-1295), y la cerradura `.claude/hooks/carril.mjs` **bloquea**
+editar un fichero de otro puesto. Un cruce legítimo **no se hace con un permiso silencioso: se declara
+aquí**, con quién, por qué y el ticket, y se regenera. Si la tabla y lo generado no coinciden, el check
+obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todos` o una lista de puestos.
+
+| ruta | quién | motivo | ticket |
+|---|---|---|---|
+| `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
