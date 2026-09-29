@@ -26,7 +26,7 @@ function presupuesto(extra = {}) {
     id: 1276, merchantId: MERCHANT, customerId: CLIENTE, status: 'sent', total: '121.00', currency: 'EUR',
     lines: [{ concept: 'Revisión', qty: 1, price: 100, tax: 0.21 }], quoteNumber: 1276, revision: 0,
     decisionToken: TOKEN, validUntil: new Date(Date.now() + 10 * 86400000), paymentTerms: 'FULL_UPFRONT',
-    tiers: null, acceptedAt: null, rejectedAt: null, rejectionReason: null, jobId: null,
+    tiers: null, discountGlobalAmount: null, acceptedAt: null, rejectedAt: null, rejectionReason: null, jobId: null,
     createdAt: new Date(), updatedAt: new Date(),
     // Modo `receipt` (ES sin facturación): el viaje no entra en la emisión, que no es de este ticket.
     merchant: { id: MERCHANT, name: 'Fontanería 1276', legalName: null, taxId: null, country: 'ES',
@@ -165,8 +165,8 @@ test('🔴 SCRUM-1276 · 7 · aceptar y rechazar a la vez: gana uno y el otro NO
 });
 
 // ── La pantalla: el formulario de rechazo ya no se ofrece sobre un presupuesto decidido ───────────
-test('🔴 SCRUM-1276 · GET /pay/quote/:token/reject sobre un ACEPTADO redirige a su estado, no pinta el formulario', async () => {
-  const fila = presupuesto({ status: 'accepted', acceptedAt: new Date('2026-09-20T10:00:00Z'), merchant: { ...presupuesto().merchant, brandColor: null } });
+async function pedirFormularioDeRechazo(extra) {
+  const fila = presupuesto({ ...extra, merchant: { ...presupuesto().merchant, brandColor: null } });
   inyectarBase({ 'quote.findUnique': ({ where }) => (where.decisionToken === TOKEN ? copia(fila) : null),
     'quote.findFirst': ({ where }) => (where.decisionToken === TOKEN ? copia(fila) : null) }, [LANDING]);
   const { quoteDecisionLandingRouter } = moduloDeDist(LANDING);
@@ -175,6 +175,18 @@ test('🔴 SCRUM-1276 · GET /pay/quote/:token/reject sobre un ACEPTADO redirige
   const r = { redirect: null, body: '' };
   const res = { redirect(u) { r.redirect = u; return res; }, status() { return res; }, setHeader() { return res; }, send(b) { r.body = String(b); return res; } };
   await h({ params: { token: TOKEN } }, res);
+  return r;
+}
+
+test('🔴 SCRUM-1276 · GET /pay/quote/:token/reject sobre un ACEPTADO redirige a su estado, no pinta el formulario', async () => {
+  const r = await pedirFormularioDeRechazo({ status: 'accepted', acceptedAt: new Date('2026-09-20T10:00:00Z') });
   assert.equal(r.redirect, `/pay/quote/${TOKEN}`, '🔴 sobre un presupuesto aceptado se sigue ofreciendo «Enviar rechazo»');
   assert.ok(!/Enviar rechazo/.test(r.body));
+});
+
+// Control positivo de la negación de arriba: sobre un `sent` el formulario SÍ se pinta, con su botón.
+test('SCRUM-1276 · control: GET /pay/quote/:token/reject sobre un `sent` pinta el formulario con «Enviar rechazo»', async () => {
+  const r = await pedirFormularioDeRechazo({});
+  assert.equal(r.redirect, null);
+  assert.ok(/Enviar rechazo/.test(r.body), 'el formulario de rechazo no se pinta sobre un presupuesto enviado');
 });
