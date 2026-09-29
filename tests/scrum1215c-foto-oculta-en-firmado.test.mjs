@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require = createRequire(import.meta.url);
@@ -23,9 +24,7 @@ function handlerDeFotos() {
   const i = src.indexOf("router.post('/:id/fotos'");
   assert.ok(i >= 0, '🔴 no encuentro `router.post(\'/:id/fotos\'` en albaranes.routes.ts: no puedo mirar, que no es lo mismo que «no hay nada»');
   const j = src.indexOf('router.', i + 10);
-  return src.slice(i, j < 0 ? undefined : j)
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  return soloCodigo(src.slice(i, j < 0 ? undefined : j), 'albaranes.routes.ts');
 }
 
 test('SCRUM-1215 · el servidor rechaza la foto en un albarán firmado (el motivo de ocultarla)', () => {
