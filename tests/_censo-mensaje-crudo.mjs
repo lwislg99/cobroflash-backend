@@ -39,6 +39,7 @@ export const PINTORES = Object.freeze([
 export const TRADUCTORES = Object.freeze([
   'mensajeDeErrorCatalogo',   // SCRUM-641 · productsView
   'mensajeDeErrorProveedor',  // SCRUM-644 · providersView
+  'mensajeParaPersona',       // SCRUM-1233 · api.js: `data.message` o el texto aprobado, nunca `err.message`
 ]);
 
 /** Las propiedades que traen texto del servidor y no se pueden pintar crudas. */
@@ -107,6 +108,130 @@ export function crudosDe(nombre, fuente) {
   };
   ts.forEachChild(sf, visitar);
   return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1233 · LOS DOS PUNTOS CIEGOS DE `crudosDe`
+//
+// `crudosDe` reconoce UNA forma, `pintor(… .message …)`, y el censo estuvo EN VERDE con dos sitios
+// rotos delante, porque llegaban a la pantalla por otro camino:
+//
+//   ① ASIGNACIÓN   `detalle.textContent = String((err && err.message) || err || '')`  (albaranesView)
+//   ② VARIABLE     `const detalle = … err.message …; showToast(prefijo + detalle)`     (jobsView)
+//
+// y un tercero que no se veía por la lista de pintores: ③ los PINTORES LOCALES, funciones de una
+// pantalla que escriben en ella (`showErr`, `mostrarAviso`…). Van en su propia lista, a mano como
+// las otras (SCRUM-645), y NO en `PINTORES`: meterlos ahí subiría el censo de SCRUM-644, cuyo total
+// solo puede bajar, con sitios que ese censo nunca contó.
+//
+// Las tres formas son DISJUNTAS de `crudosDe`: lo que aquel ya cuenta no se vuelve a contar.
+// Y el censo es FAIL-CLOSED: un fichero que el parser no entiende entero sale CIEGO, no limpio.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Funciones de una pantalla que escriben en ella. A mano. */
+export const PINTORES_LOCALES = Object.freeze([
+  'showErr',       // customerDetailView
+  'showExpError',  // expensesView
+  'mostrarAviso',  // signaturePad
+  'conSalida',     // tutorial
+  'uiErrorState',  // api.js
+]);
+
+/** Las propiedades del DOM que, asignadas, ponen texto en pantalla. */
+export const PROPIEDADES_QUE_PINTAN = Object.freeze(['textContent', 'innerText', 'innerHTML', 'outerHTML']);
+
+const esFuncion = (n) => ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n)
+  || ts.isArrowFunction(n) || ts.isMethodDeclaration(n) || ts.isSourceFile(n);
+
+/**
+ * Los sitios de UN fuente que pintan un `.message` por ①, ② o ③. Puro: recibe el texto.
+ *
+ * @returns {{hallazgos: {linea:number, forma:string, fragmento:string}[], ciego: string|null}}
+ */
+export function crudosOcultosDe(nombre, fuente) {
+  const sf = ts.createSourceFile(nombre, fuente, ts.ScriptTarget.ES2020, true, ts.ScriptKind.JS);
+  const diag = sf.parseDiagnostics || [];
+  if (diag.length) {
+    const d = diag[0];
+    const { line } = sf.getLineAndCharacterOfPosition(d.start || 0);
+    return { hallazgos: [], ciego: `${nombre}:${line + 1} ${ts.flattenDiagnosticMessageText(d.messageText, ' ')}` };
+  }
+
+  // Variables «manchadas»: se inicializan con un `.message` fuera de traductor. Por función.
+  const manchadas = new Map();
+  const funcionDe = (n) => { let p = n.parent; while (p && !esFuncion(p)) p = p.parent; return p || sf; };
+  const estaManchada = (id) => {
+    for (let f = funcionDe(id); f; f = f === sf ? null : funcionDe(f)) {
+      if (manchadas.get(f)?.has(id.text)) return true;
+    }
+    return false;
+  };
+
+  /** ¿Hay aquí un `.message` suelto (`crudo`) o una variable manchada (`manchado`)? */
+  const mirar = (nodo) => {
+    const r = { crudo: false, manchado: false };
+    const bajar = (n) => {
+      if (TRADUCTORES.includes(nombreDeLlamada(n, sf))) return;
+      if (leeCampoDelServidor(n)) { r.crudo = true; return; }
+      if (ts.isIdentifier(n) && !(ts.isPropertyAccessExpression(n.parent) && n.parent.name === n)
+        && estaManchada(n)) r.manchado = true;
+      ts.forEachChild(n, bajar);
+    };
+    bajar(nodo);
+    return r;
+  };
+
+  const hallazgos = [];
+  const anotar = (n, forma) => {
+    const { line } = sf.getLineAndCharacterOfPosition(n.getStart(sf));
+    hallazgos.push({ linea: line + 1, forma, fragmento: n.getText(sf).slice(0, 110).replace(/\s+/g, ' ') });
+  };
+
+  const visitar = (n) => {
+    // Primero se anota la mancha: la declaración va antes que su uso en el recorrido.
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && mirar(n.initializer).crudo) {
+      const f = funcionDe(n);
+      if (!manchadas.has(f)) manchadas.set(f, new Set());
+      manchadas.get(f).add(n.name.text);
+    }
+    // ① asignación a una propiedad que pinta
+    if (ts.isBinaryExpression(n)
+      && (n.operatorToken.kind === ts.SyntaxKind.EqualsToken || n.operatorToken.kind === ts.SyntaxKind.PlusEqualsToken)
+      && ts.isPropertyAccessExpression(n.left) && PROPIEDADES_QUE_PINTAN.includes(n.left.name.text)) {
+      const r = mirar(n.right);
+      if (r.crudo) anotar(n, 'asignación');
+      else if (r.manchado) anotar(n, 'variable');
+    }
+    const llamada = nombreDeLlamada(n, sf);
+    // ② variable manchada que llega a un pintor (el `.message` directo ya lo cuenta `crudosDe`)
+    if (llamada && PINTORES.includes(llamada)) {
+      const args = n.arguments || [];
+      if (!args.some((a) => mirar(a).crudo) && args.some((a) => mirar(a).manchado)) anotar(n, 'variable');
+    }
+    // ③ pintor local
+    if (llamada && PINTORES_LOCALES.includes(llamada)) {
+      const args = (n.arguments || []).map(mirar);
+      if (args.some((a) => a.crudo)) anotar(n, 'pintor local');
+      else if (args.some((a) => a.manchado)) anotar(n, 'variable');
+    }
+    ts.forEachChild(n, visitar);
+  };
+  ts.forEachChild(sf, visitar);
+  return { hallazgos, ciego: null };
+}
+
+/** El censo de las tres formas sobre el dashboard entero. */
+export function censoOculto(raiz) {
+  const dir = path.join(raiz, DIR);
+  const ficheros = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.js')) : [];
+  const hallazgos = [];
+  const ciegos = [];
+  for (const f of ficheros) {
+    const r = crudosOcultosDe(f, fs.readFileSync(path.join(dir, f), 'utf8'));
+    if (r.ciego) ciegos.push(`${DIR}/${r.ciego}`);
+    for (const h of r.hallazgos) hallazgos.push({ fichero: `${DIR}/${f}`, ...h });
+  }
+  return { ficherosMirados: ficheros.length, hallazgos, ciegos };
 }
 
 /** El censo del dashboard entero. `raiz` para poder correrlo sobre otro árbol. */

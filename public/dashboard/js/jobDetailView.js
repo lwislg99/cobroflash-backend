@@ -1143,7 +1143,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       dirInput.value = direccionObra; // se deshace lo tecleado: mentir sería peor
       // El 409 de la firma sellada trae su propio motivo y se enseña TAL CUAL: «no se pudo» sin
       // decir por qué obligaría al profesional a adivinar por qué su trabajo es distinto.
-      setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
+      setStatus('error', mensajeParaPersona(e, 'No se pudo guardar la dirección de la obra.'));
     }
   });
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA ESTE TRABAJO — Y PUEDEN SER TRES ─────────────────────
@@ -1672,7 +1672,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         refresh();
       } catch (e) {
         goM.disabled = false;
-        setStatus('error', e?.data?.message || 'No se pudo consolidar.');
+        setStatus('error', mensajeParaPersona(e, 'No se pudo consolidar.'));
       }
     });
     btnRow.append(cancelM, goM);
@@ -2764,7 +2764,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
           });
           pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
         } catch (e) {
-          err.textContent = e?.message || 'No se pudieron generar las líneas.';
+          err.textContent = mensajeParaPersona(e, 'No se pudieron generar las líneas.');
           err.style.display = 'block';
         } finally {
           btnGen.disabled = false;
@@ -3030,7 +3030,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
       if (onClose) onClose(); // cierra el sheet antes de re-renderizar
       refresh();
     } catch (e) {
-      const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+      const msg = mensajeParaPersona(e, 'No se pudo guardar el albarán.');
       if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
       save.disabled = false;
     }
@@ -3135,7 +3135,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
         if (onClose) onClose();
         refresh();
       } catch (e) {
-        const msg = e?.data?.message || 'No se pudo completar la entrega.';
+        const msg = mensajeParaPersona(e, 'No se pudo completar la entrega.');
         if (onError) onError(msg); else setStatus('error', msg);
         confirmContinuar.disabled = false;
         confirmCancelar.disabled = false;
@@ -3390,7 +3390,7 @@ function openFacturarParcialSheet(alb, ctx) {
       if (d && d.message) setStatus('error', d.message);
       refresh();
     } catch (e) {
-      err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+      err.textContent = mensajeParaPersona(e, 'No se pudo emitir la factura.');
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = orig;
