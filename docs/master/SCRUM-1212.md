@@ -32,3 +32,37 @@ Rama `scrum-1212b-correo-ha-aceptado`, medido sobre `origin/main` `a59dc1e6`.
 - **El cinturón** (`tests/scrum1212b-correo-aceptado-sin-firma.test.mjs`): por AST sobre `src/`, ningún camino que llame a `sendMerchantQuoteAcceptedEmail` puede conocer `signatureUrl` ni `signatureData`. Tiene un control positivo: el mismo detector ve la firma en el handler de `/decision`. **Mutación comprobada:** al meter una llamada al emisor dentro de `/decision`, el test cae y nombra `quotes.routes.ts:330`. El fichero se restauró después.
 - **La firma 2 (el texto del ajuste en Configuración, `settingsView.js:664`) NO se hace aquí:** es del carril J, decidido por el orquestador sin excepción. Su condición de verdad está medida y se cumple: el correo solo sale por el bot, porque `/accept` se retiró en SCRUM-1202 y era el único otro llamador.
 - Tests relacionados: 107 pasan y 2 saltados (staging).
+
+## Apéndice 29-sep-2026 · el correo también por la web (`/decision`): decisiones ② y ③, y lo que falta
+
+Sesión J3 (jv-j3), rama `scrum-1212-correo-aceptado-web`, medido sobre `origin/main` `82cb31c81e3fa7357819af7370a4fcf53bff6682` · 2026-09-29T15:27Z. **Aquí no hay código todavía.** Este apéndice deja escritas las decisiones ya tomadas y el plan, para que no se pierdan salga lo que salga de las dos que siguen abiertas.
+
+**El defecto.** El profesional marca «avísame por correo cuando acepten un presupuesto» (`notifyEmailOnQuoteAccepted`) y el correo sale o no según por dónde acepte su cliente. Por el bot (`whatsappIncoming.routes.ts`) sale; por `POST /quote/:token/decision`, la vía viva de la web, no sale y la ruta ni mira el ajuste. SCRUM-1202 **no lo causa**: `/accept` ya estaba muerta desde SCRUM-95, y 1202 solo lo destapa. Decisión del fundador (29-sep): «Pasa el correo».
+
+### ② El texto: por `/decision` se OCULTA «Ya puedes emitir la factura.» (aprobado por el orquestador, 29-sep)
+
+- **Lo medido.** El correo (`merchantNotifications.ts:135`) dice «El cliente ha aceptado el presupuesto. Ya puedes emitir la factura.»; la segunda frase sale en modo `fiscal` o `demo`.
+    - Por el bot es verdad: aceptar por WhatsApp no emite nada.
+    - Por `/decision` es **falsa**: esa ruta **ya emite y sella** la factura (C1) siempre que quede tramo y el modo no sea `receipt`. Le diríamos «ya puedes emitir» de una factura ya emitida.
+- **Por tanto, el encargo original («el MISMO correo por los dos caminos») era imposible de cumplir sin mentir.**
+- **Decidido:** por `/decision` la frase se oculta cuando la aceptación ha emitido factura, **y también cuando la emisión falla** (`facturaPendiente`): sería media verdad, y en un correo automático se prefiere decir de menos.
+- Patrón de SCRUM-1160: se oculta, no se reescribe. **No hay texto nuevo** → no hace falta firma del fundador. Lo que queda, «El cliente ha aceptado el presupuesto.», es verdad por los dos caminos.
+
+### ③ El cinturón `scrum1212b` evoluciona a allowlist (aprobado por el orquestador, 29-sep, con tres condiciones)
+
+- **Por qué hay que tocarlo.** Enchufar `/decision` lo pone **rojo por construcción**: ese handler conoce la firma de verdad (`signatureData`), y arreglar el código no lo apaga. El propio guard pide lo que se ha hecho: «decide el texto con el orquestador antes de enchufarlo».
+- **Decidido:** «ha aceptado» es válido **también** cuando el cliente firmó. Firmar es aceptar, y en `/decision` la firma es opcional; «ha firmado» sería falso para quien acepta sin firmar.
+- **Condiciones, no negociables:**
+    1. `/decision` va declarado en la allowlist **con su motivo escrito**, citando esta decisión y el ②.
+    2. **Mutación con el código quieto, después de commitear:** una llamada al emisor en un camino que conoce la firma y **no** está declarado tiene que poner el guard rojo y nombrarlo. Si no cae, la allowlist ha apagado el guard y no vale.
+    3. **Lo que protegía sigue protegido:** la llamada al emisor no puede **pasarle** `signatureUrl` ni `signatureData`. Se declara que `/decision` puede llamarlo, no que pueda pasarle la firma.
+- **Plan de la mutación** (se declara cuando el código esté quieto): (i) un camino no declarado que conoce la firma y llama al emisor → rojo, nombrando `fichero:línea`; (ii) en `/decision`, pasar `signatureData` dentro de los argumentos del emisor → rojo por la condición 3. En los dos casos: restaurar y `git status` limpio después.
+
+### Lo que sigue ABIERTO (sube al fundador; no se empieza nada)
+
+- **① Regla 28.** §J6 del máster (`YAQU_MASTER.md:319`) es una sola línea sobre WhatsApp a clientes finales; no nombra correos al profesional. Este registro ya decía que mandarlo desde `/decision` es «un envío nuevo, J6 no lo cubre y lo decide el fundador». Queda por decidir si «Pasa el correo» basta o si hace falta una entrada en §J6, que sería cambio de máster. (Nota: la tabla **no** está en `docs/equipo/puesto-j6.md`: su línea 15 dice que ese «J6» es otra cosa.)
+- **(b) Reglas 38 y 40.** La llamada va **dentro** del handler que sella facturas (C1). No modifica la emisión, pero **añade un efecto en ese handler**, y es STOP hasta que decida el fundador.
+    - Si sale adelante: la llamada va **después del sellado**, sin `await` que bloquee y con su propio `catch`.
+    - Y lleva un test que lo pruebe: el correo revienta y la factura queda sellada igual.
+- **(a) El texto del ajuste en Configuración** (`settingsView.js`, «…cuando el cliente firma y acepta desde su portal»). Hoy ya es falso, porque solo avisa el bot, que no tiene ni portal ni firma. El orquestador lo firmará cuando estén decididos ① y (b), porque el texto correcto depende de ellos.
+- **Pruebas exigidas cuando se construya:** con el ajuste en ON y aceptación por la web, **sale**; con el ajuste en **OFF**, **no sale**; y web y bot mandan el mismo correo en todo salvo la frase del ②.
