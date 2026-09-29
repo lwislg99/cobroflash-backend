@@ -18,6 +18,18 @@ que el guion se estaba probando contra sí mismo. Ahora `POST /quote/create` y `
 pasan por los esquemas de verdad (`CreateQuoteSchema` y `customerCreateSchema`, sacados de `dist/`,
 los mismos que usan las rutas) y devuelven el mismo 400 que el servidor.
 
+### Es la CUARTA vez hoy (29-sep): juntas son un patrón, sueltas parecen mala suerte
+
+| ticket | el test contestaba con… |
+|---|---|
+| SCRUM-1229 | la firma del técnico: el cuerpo construido a mano, ya con el nombre correcto |
+| SCRUM-1189 | el tipo del parte: un servidor falso que aceptaba cualquier `tipo` |
+| SCRUM-1269 | la retención: saltándose el esquema del PUT, que era justo el eslabón roto |
+| **SCRUM-1268c** | `sembrar-qa`: un panel falso que aceptaba cualquier cuerpo, así que el guion se probaba contra sí mismo |
+
+El arreglo que se copia: **el cuerpo pasa por el esquema DE VERDAD (de `dist/`)**. Con eso el doble
+puede decir que no, y el test puede fallar.
+
 ## Medido
 
 | paso | resultado |
