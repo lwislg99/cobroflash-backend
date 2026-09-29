@@ -17,6 +17,7 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1301
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
 import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
@@ -108,7 +109,10 @@ router.post('/', async (req, res) => {
       // camino manual (confirm-bizum), y es donde el Bizum del 31-mar confirmado el 2-abr cruzaba
       // de trimestre. Los cinco reenviadores automáticos mandan el instante de proceso, así que
       // para ellos esto no cambia nada.
-      const resolucion = resolverInstanteDeCobro(body.ts);
+      // SCRUM-1301 · con la zona del merchant DEL COBRO, la misma con la que `confirm-bizum` la acaba
+      // de aceptar. Sin ella, de madrugada en Madrid el «hoy» del profesional era «mañana» aquí.
+      const merchantDelCobro = await prisma.merchant.findUnique({ where: { id: charge.merchantId }, select: { timezone: true } });
+      const resolucion = resolverInstanteDeCobro(body.ts, new Date(), zonaDelMerchant(merchantDelCobro));
       if (!resolucion.ok) {
         // Fail-closed: no se marca nada. El único llamador que trae fecha declarada la valida
         // antes con el mismo criterio, así que esto no debería verse; si se ve, es preferible un
