@@ -2630,6 +2630,37 @@ texto que alguien escribió es cómo se pierden datos.
 >   devuelve nada: no está en ningún commit ni en ningún `.sql` del repositorio. O alguien lo creó a
 >   mano con otro nombre, o nunca se aplicó el bueno. **No se elige entre las dos:** lo deciden el
 >   fundador y el equipo de Luis.
+> 🔴 **SEGUNDA ANOTACIÓN del 29-sep-2026 (orquestador, `cobroflash-backend-47`) · YA ESTÁN MEDIDAS
+> LAS TRES BASES, Y EL CUADRO SE LEE AL REVÉS DE LO QUE PARECÍA.** La anotación de arriba dejaba
+> abierto de dónde salía el otro índice. Con dev y producción medidas, **staging no es la rara**.
+>
+> | Índice | dev | staging | producción |
+> |---|---|---|---|
+> | `customers_company_id_idx` — el del `.sql` de SCRUM-576 | **existe** | NO existe | **NO existe** |
+> | `customers_merchant_id_company_id_idx (merchant_id, company_id)` — el que no está en ningún commit | NO existe | **existe** | **existe** |
+>
+> - **dev**, medido el 29-sep-2026 por el orquestador leyendo `pg_indexes` (solo `SELECT`, con la
+>   puerta de destino por delante: host **y** nombre de base, y control negativo explícito de que no
+>   es producción). Control positivo: 33 tablas en `public`.
+> - **producción**, medido el 29-sep-2026 **por el fundador** en la consola de Railway:
+>   `SELECT indexname, indexdef FROM pg_indexes WHERE schemaname='public' AND tablename='customers'
+>   AND indexdef ILIKE '%company_id%'` → **1 fila**, `customers_merchant_id_company_id_idx`.
+>
+> **Lo que cambia respecto a la lectura anterior:** staging y producción **coinciden entre sí**, y
+> la que se sale es **dev**. Así que «alguien creó el de staging a mano» ya no es la explicación
+> más simple: lo más probable es que el índice compuesto se aplicara a las dos bases de verdad y
+> que el `.sql` de 576 solo llegara a dev. **Sigue sin saberse quién ni cuándo**, y eso no se
+> deduce: se pregunta.
+>
+> **Y el título de esta entrada sigue siendo falso en un sentido que ahora es peor:** dice
+> «APLICADA EN LAS TRES BASES», y el índice que nombra el `.sql` **solo está en una**. Se deja
+> escrito, no se reescribe: el registro fechado se anota.
+>
+> ⚠️ **Antes de "arreglar" nada:** un índice compuesto por `(merchant_id, company_id)` puede ser
+> **mejor** que el simple en una aplicación multi-tenant, donde toda consulta filtra por
+> `merchant_id` (regla 2). Crear el simple «porque lo dice el `.sql`» puede ser añadir un índice que
+> nadie usa. **Es una decisión, no una corrección.**
+
 > - **Lo que NO se ha medido:** **producción, por nadie** (no hay credencial de producción en un
 >   árbol de trabajo). Que la casilla de producción diga lo mismo que la de staging ya no demuestra
 >   que el índice esté: allí se verificó lo mismo, la columna. **Dev tampoco se ha re-medido** hoy.
@@ -3022,6 +3053,29 @@ de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.table
 
 - [x] **staging** — ✅ **presente, medido el 29-sep-2026** (anotación de arriba). Procedencia de la
       aplicación: desconocida.
+> ✅ **ANOTACIÓN del 29-sep-2026 (orquestador del equipo de Javier, `cobroflash-backend-47`) ·
+> PRODUCCIÓN Y STAGING: APLICADOS POR EL FUNDADOR.** Esto cierra el hueco que la anotación de
+> arriba dejaba declarado («lo que NO se ha medido: producción, por nadie»).
+>
+> - **Quién y qué:** Javier aplicó a mano, el 29-sep-2026, los **8** ficheros de `docs/sql/` en un
+>   solo bloque envuelto en `BEGIN`/`COMMIT` — los 7 de este registro más `scrum-1273`. El DDL se
+>   copió **literal** de los ficheros en `origin/main` = `fcc2cc01`; el `BEGIN`/`COMMIT` lo añadió
+>   el orquestador para que entraran todos o ninguno.
+> - **Verificación, por el propio fundador, en las DOS bases:** una consulta de solo lectura sobre
+>   `information_schema.columns`, `pg_indexes` y `to_regclass` que espera **23 objetos** (14
+>   columnas + la tabla `equipments` + 8 índices), ordenada para que lo que falte salga primero.
+>   **Resultado: 23/23 en staging y 23/23 en producción.**
+> - **Por qué lo verificó él y no una sesión:** desde un árbol de trabajo **no hay credencial de
+>   producción, y no se ha usado ninguna**. La de solo lectura que existía en el entorno de Windows
+>   la borró el fundador esa misma mañana. Es deliberado.
+> - **Lo que NO dice esta anotación:** la consulta comprueba que cada objeto **existe**, no su tipo,
+>   su nulabilidad ni las acciones de sus claves ajenas. Y un `IF NOT EXISTS` en `CREATE TABLE` mira
+>   el **nombre**, no la forma: si `equipments` hubiera existido antes con otras columnas, la
+>   comprobación diría «existe» igual.
+
+- [x] **producción** — ✅ **aplicada y verificada 23/23 el 29-sep-2026** por el fundador (anotación
+      de arriba).
+
 
 ### Dos hallazgos de paso
 
@@ -3083,7 +3137,7 @@ Antes de aplicarlo, el SQL pasó por **dos** sondas independientes: la lista de 
 las dos porque la de dev tiene un hueco con los `ALTER` de varias acciones, que J6 encontró ese mismo
 día y que va en su propio ticket.
 
-## SCRUM-1273 · `quotes.archived_at` (archivar presupuestos) — 29-sep-2026 · ESCRITO, SIN APLICAR en ninguna base
+## SCRUM-1273 · `quotes.archived_at` (archivar presupuestos) — 29-sep-2026 · ✅ **APLICADA EN LAS TRES BASES**
 
 Fichero: `docs/sql/scrum-1273-archivar-presupuestos.sql` (S1, `s1-29a`, encargo del orquestador
 `cobroflash-backend-57`). **Una** sentencia, aditiva y re-ejecutable:
@@ -3092,6 +3146,27 @@ ninguna fila cambia. DDL derivado OFFLINE con `previewMigracion` (control positi
 `origin/main` = `223498dc`; `prisma/schema.prisma` NO se ha tocado. El PR ③ (esquema + código) espera
 a que esté en las tres bases (`schemaDrift` es fail-closed, SCRUM-1122).
 
-- [ ] **desarrollo · yaqu_dev_javier** — sin aplicar (carril B; se pide, no se aplica desde S1).
-- [ ] **staging** — sin aplicar.
-- [ ] **producción** — sin aplicar.
+- [x] **desarrollo · yaqu_dev_javier** — ✅ aplicada el **29-sep-2026** por el orquestador del
+      equipo de Javier (`cobroflash-backend-47`). Ver la anotación de abajo.
+- [x] **staging** — ✅ aplicada y verificada el **29-sep-2026** por el fundador.
+- [x] **producción** — ✅ aplicada y verificada el **29-sep-2026** por el fundador.
+
+> ✅ **ANOTACIÓN del 29-sep-2026 (orquestador, `cobroflash-backend-47`).** El título de esta entrada
+> decía, hasta hoy, **«ESCRITO, SIN APLICAR en ninguna base»**, y las tres casillas estaban vacías.
+> Era verdad cuando se escribió, esta misma mañana. Queda dicho aquí para que el cambio tenga fecha
+> y autor, en vez de aparecer ya marcado sin que conste cuándo.
+>
+> - **Staging y producción:** las aplicó **el fundador**, dentro del bloque de los 8 ficheros de
+>   `docs/sql/` envuelto en `BEGIN`/`COMMIT`, y las verificó él con la consulta de 23 objetos:
+>   **23/23 en las dos**. Ninguna sesión tiene credencial de producción, y no se usó ninguna.
+> - **Dev:** la aplicó el **orquestador** el 29-sep-2026, con dos puertas por delante —el guard de
+>   la casa (`_clave-vs-destino.mjs`, que compara host **y** nombre de base) y un control negativo
+>   propio de que la URL no es la de producción— y **post-condición de contenido** después: se
+>   comprobó que `quotes.archived_at` **no existía antes** y **existe después**, leyendo
+>   `information_schema.columns`. Forma resultante: `timestamp without time zone`, `is_nullable =
+>   YES`. No basta con que el `ALTER` no diera error.
+> - **Antes de aplicar en dev, dev estaba en 22 de 23:** los otros 7 ficheros ya estaban, y el único
+>   objeto que faltaba era justo éste — lo que coincide con lo que el equipo de Luis había dicho.
+>
+> ⚠️ **Lo que esto NO habilita:** el PR ③ (esquema + código) sigue siendo un paso aparte.
+> `prisma/schema.prisma` no se ha tocado en ninguna de estas aplicaciones.
