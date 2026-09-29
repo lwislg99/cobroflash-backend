@@ -400,3 +400,47 @@ export function horasDesde(iso, ahora = Date.now()) {
   if (!Number.isFinite(t)) return null;
   return Math.round(((ahora - t) / 3600000) * 10) / 10;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1270 · EL PR MUDO SE AVISA DENTRO DEL PR, Y DICIENDO POR QUÉ
+//
+// Medido del 22 al 29-sep-2026 (328 PR, 587 cabezas empujadas): 8 cabezas estuvieron ≥1 h sin el
+// check obligatorio, 5 ≥3 h y 4 ≥12 h (la peor, #1642, 31,7 h). 6 de las 8 se desatascaron
+// mezclando `main`: el silencio suele ser un CONFLICTO. Este vigía ya lo clasificaba, pero lo
+// contaba en un issue que nadie lee: avisar donde nadie mira es no avisar.
+//
+// 🔴 «MUDO» ES «FALTA EL CHECK OBLIGATORIO», no «cero checks». `SIN-CHECKS` exige cero, y el mudo
+// de #1943 (`008fbd51`) tenía UNO — `abrir-pr-y-armar-automerge`, que corre en todo push — así que
+// con cero no se habría visto. La lista de obligatorios es la de las reglas vivas de `main`.
+//
+// Una vez por cabeza y tipo: la marca lleva el sha, así que un push nuevo que siga mudo vuelve a
+// avisar y la misma cabeza no repite en cada pasada.
+export const UMBRAL_AVISO_EN_PR_HORAS = 3;
+const CAUSAS_CONFLICTO = ['DIRTY', 'CONFLICTO-DISCREPA'];
+
+/**
+ * El aviso que va DENTRO del PR, o `null`. `fila` es la de la pasada (numero, causa, sinPush);
+ * `sha` la cabeza. MUDO = falta algún obligatorio sobre la cabeza. Un conflicto cuyo obligatorio
+ * SÍ corrió no está mudo (es otro problema, el del verde olvidado) y no se avisa aquí. Sin la
+ * lista de obligatorios solo vale `SIN-CHECKS` (cero checks): no se afirma que falte un check
+ * que no se sabe cuál es.
+ */
+export function avisoEnElPR({ fila, sha, checkRuns, obligatorios } = {}) {
+  if (!fila || !(Number(fila.sinPush) >= UMBRAL_AVISO_EN_PR_HORAS) || !sha) return null;
+  const conflicto = CAUSAS_CONFLICTO.includes(fila.causa);
+  const conocidos = Array.isArray(obligatorios) && obligatorios.length > 0 && Array.isArray(checkRuns);
+  const faltan = conocidos ? obligatorios.filter((o) => !checkRuns.some((c) => c && c.name === o)) : [];
+  const mudo = conocidos ? faltan.length > 0 : fila.causa === 'SIN-CHECKS';
+  if (!mudo) return null;
+  const tipo = conflicto ? 'conflicto' : 'sin-checks';
+  const corto = String(sha).slice(0, 12);
+  const que = faltan.length ? `el check obligatorio no ha arrancado sobre \`${corto}\` (${faltan.join(', ')})` : `ningún check ha arrancado sobre \`${corto}\``;
+  const porque = conflicto
+    ? `**Está en CONFLICTO con \`main\`.** Sin fusión de prueba, los flujos \`pull_request\` no arrancan, así que ${que} y el auto-merge no se disparará. Se arregla mezclando \`main\` en la rama (merge, no rebase), resolviendo y empujando. Cerrar y reabrir el PR no sirve.`
+    : `**Sin conflicto a la vista**, y aun así ${que}. Lo más frecuente es que el push no creara ejecuciones: un push nuevo desde el árbol de quien lleva la rama suele relanzarlo.`;
+  return {
+    numero: fila.numero,
+    marca: `<!-- vigia-atascados:pr ${sha}:${tipo} -->`,
+    cuerpo: `🔇 **Este PR lleva ${fila.sinPush} h MUDO** — ni verde ni rojo: el check obligatorio no ha corrido sobre su última cabeza.\n\n${porque}\n\nEl vigía de atascados solo avisa; no toca la rama. Se avisa una vez por cabeza.\n\n<!-- vigia-atascados:pr ${sha}:${tipo} -->\n`,
+  };
+}
