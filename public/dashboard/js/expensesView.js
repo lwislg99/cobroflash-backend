@@ -292,7 +292,15 @@ async function loadExpenses() {
     opcionesDeTrabajo(gastosVista.items);
     pintarGastos();
   } catch (err) {
-    el.innerHTML = `<div class="gastos-error">Error: ${err.message}</div>`;
+    // SCRUM-1233 · aquí se pintaba `Error: ${err.message}` en un innerHTML: «Error: API 500:
+    // internal_error» o el «Failed to fetch» del navegador. Texto APROBADO por el orquestador por
+    // delegación del fundador (SCRUM-1233 comentario 17504). La frase del servidor, si la manda
+    // para una persona, gana. Por `textContent`: lo que venga del servidor no se interpreta como HTML.
+    el.innerHTML = '';
+    const aviso = document.createElement('div');
+    aviso.className = 'gastos-error';
+    aviso.textContent = mensajeParaPersona(err, 'No se han podido cargar los gastos. Vuelve a intentarlo.');
+    el.appendChild(aviso);
   }
 }
 
