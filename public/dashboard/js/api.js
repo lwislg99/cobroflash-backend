@@ -1359,6 +1359,48 @@ function roleLockedNote() {
 window.lockActionForRole = lockActionForRole;
 window.roleLockedNote = roleLockedNote;
 
+/**
+ * 🔴 SCRUM-1285 · UN GUARDADO EN VUELO CONGELA SU FORMULARIO. Es el PATRÓN, no un parche.
+ *
+ * El defecto medido (S4, ejecutando): mientras volvía un PATCH, la persona seguía tecleando; al
+ * llegar la respuesta la pantalla se repintaba con lo del servidor y **lo tecleado desaparecía sin
+ * aviso**. En el plan de cobro era peor: teclear REHABILITABA «Guardar plan», salía un segundo
+ * PATCH, y con la latencia invertida **ganaba el viejo y la base revertía**.
+ *
+ * La causa común es que el formulario seguía vivo mientras su foto ya iba por el cable. La regla:
+ * **mientras hay un guardado en vuelo, NINGÚN control de su zona se puede tocar** — ni los campos
+ * (no hay nada que perder) ni los botones (no hay segundo envío). Al volver, cada control recupera
+ * EXACTAMENTE el `disabled` que tenía: un tramo ya facturado sigue bloqueado, no se desbloquea
+ * por haber pasado por aquí.
+ *
+ * Por qué congelar y no «fusionar lo tecleado con la respuesta»: fusionar exige decidir quién gana
+ * campo a campo, y avisar de un descarte exige un texto nuevo (regla 39). Congelar no pierde nada,
+ * no decide nada y no necesita ninguna frase: el control apagado ya lo dice.
+ *
+ * ⚠️ Esto es la mitad de la PANTALLA. Dos pestañas, o dos personas, siguen pudiendo pisarse: eso
+ * sólo lo para el servidor comprobando contra qué versión escribe (la condición DENTRO del
+ * `update`, como SCRUM-1276).
+ *
+ * @param zona    el nodo que contiene TODOS los controles del formulario (y su botón de guardar).
+ * @param guardar función que lanza el guardado y devuelve su promesa.
+ * @returns la misma promesa: resuelve o rechaza igual, ya con la zona descongelada.
+ */
+function congelarMientrasGuarda(zona, guardar) {
+  const controles = zona ? Array.from(zona.querySelectorAll('input, select, textarea, button')) : [];
+  const antes = controles.map((el) => el.disabled);
+  controles.forEach((el) => { el.disabled = true; });
+  const soltar = () => controles.forEach((el, i) => { el.disabled = antes[i]; });
+  let enVuelo;
+  try {
+    enVuelo = Promise.resolve(guardar());
+  } catch (e) {
+    soltar();
+    return Promise.reject(e);
+  }
+  return enVuelo.then((v) => { soltar(); return v; }, (e) => { soltar(); throw e; });
+}
+window.congelarMientrasGuarda = congelarMientrasGuarda;
+
 // Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular.
 // SCRUM-210: vivía dentro de invoicesView.js; se mudó aquí SIN tocar una letra porque ahora lo
 // comparten dos superficies — la bandeja de pendientes (SCRUM-69) y el aviso ámbar de plazo
