@@ -444,7 +444,7 @@ function renderCustomersView(container) {
   // viviera aquí la barra no podía comportarse distinto en móvil. Lo demás sigue en línea: sólo se
   // muda lo que la media query necesita decidir.
   const barraSeleccion = createElement("div", "barra-seleccion");
-  barraSeleccion.style.cssText = "align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;" // SCRUM-1135: wrap, para las acciones a 390 px
+  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;" // SCRUM-1135: el wrap, en styles.css
     + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
   const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
   const contadorSeleccion = document.createElement("span");
@@ -462,18 +462,17 @@ function renderCustomersView(container) {
   const puedeEtiquetar = window.appUserRole === "admin";
   const accionesEtiquetado = document.createElement("div");
   accionesEtiquetado.className = "barra-seleccion-etiquetar";
-  accionesEtiquetado.style.cssText = "display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto";
+  // Su maquetación (y el `display`, que decide una clase) vive en styles.css, no en `style.cssText`:
+  // el trinquete de SCRUM-713c no se ensancha para que quepa esto.
   const campoEtiqueta = document.createElement("input");
   campoEtiqueta.type = "text";
   campoEtiqueta.className = "input";
   campoEtiqueta.placeholder = FC.TEXTOS_ETIQUETADO.campo;
   campoEtiqueta.setAttribute("aria-label", FC.TEXTOS_ETIQUETADO.campo);
-  campoEtiqueta.style.cssText = "min-height:44px;flex:1 1 140px;min-width:0;max-width:220px";
   const btnAnadirEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.anadir);
   const btnQuitarEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.quitar);
   for (const b of [btnAnadirEtiqueta, btnQuitarEtiqueta]) {
     b.type = "button";
-    b.style.minHeight = "44px";
     accionesEtiquetado.appendChild(b);
   }
   accionesEtiquetado.prepend(campoEtiqueta);
@@ -565,7 +564,7 @@ function renderCustomersView(container) {
     // `display` real lo decide `styles.css`, que es el único sitio que sabe de anchos.
     barraSeleccion.classList.toggle("barra-seleccion--vacia", seleccion.length === 0);
     // SCRUM-1135 · etiquetar sólo tiene sentido con algo marcado.
-    accionesEtiquetado.style.display = seleccion.length > 0 ? "flex" : "none";
+    accionesEtiquetado.classList.toggle("barra-seleccion-etiquetar--visible", seleccion.length > 0);
   }
 
   function alternarTodos() {

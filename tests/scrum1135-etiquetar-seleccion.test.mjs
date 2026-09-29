@@ -53,7 +53,7 @@ async function montar({ rol = 'admin', respuesta = { actualizados: 0, resultados
   const casillas = todos(c).filter((n) => n.tagName === 'INPUT' && n.type === 'checkbox'
     && /Etiqueta 1135/.test(n.getAttribute('aria-label') || ''));
   assert.equal(casillas.length, CLIENTES.length, `🔴 CIEGO: ${casillas.length} casillas de fila y hay ${CLIENTES.length} clientes`);
-  const acciones = todos(c).find((n) => n.className === 'barra-seleccion-etiquetar') || null;
+  const acciones = todos(c).find((n) => String(n.className || '').split(' ')[0] === 'barra-seleccion-etiquetar') || null;
   const boton = (t) => (acciones ? todos(acciones).find((n) => n.tagName === 'BUTTON' && (n.textContent || '').trim() === t) : null);
   const campo = acciones ? todos(acciones).find((n) => n.tagName === 'INPUT') : null;
   const aviso = () => { const a = todos(c).find((n) => n.className && String(n.className).split(' ')[0] === 'alert'); return a ? { texto: a.textContent, clase: a.className } : null; };
@@ -64,9 +64,11 @@ async function montar({ rol = 'admin', respuesta = { actualizados: 0, resultados
 test('SCRUM-1135 · 🔴 marcar dos, escribir, «Añadir etiqueta» → POST bulk-tags con los dos ids, y la lista se recarga', async () => {
   const m = await montar({ respuesta: { actualizados: 1, resultados: [{ id: 11351, actualizado: true }, { id: 11352, actualizado: false, motivo: 'Ya la tenía' }] } });
   assert.ok(m.acciones, '🔴 la barra de selección no tiene acciones de etiquetar: la ruta sigue sin consumidor');
-  assert.equal(m.acciones.style.display, 'none', 'con cero marcados no se ofrece etiquetar');
+  // La visibilidad es una CLASE (el `display` lo decide styles.css, SCRUM-713c), no `style.display`.
+  const visible = () => String(m.acciones.className).split(' ').includes('barra-seleccion-etiquetar--visible');
+  assert.equal(visible(), false, 'con cero marcados no se ofrece etiquetar');
   m.marcar(0); m.marcar(1);
-  assert.equal(m.acciones.style.display, 'flex', 'con dos marcados se ofrece');
+  assert.equal(visible(), true, 'con dos marcados se ofrece');
   const anadir = m.boton('Añadir etiqueta');
   assert.ok(anadir && m.boton('Quitar etiqueta') && m.campo, '🔴 faltan el campo o los dos botones');
   assert.equal(anadir.disabled, true, 'con el campo vacío no se puede añadir');
