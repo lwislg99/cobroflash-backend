@@ -57,5 +57,12 @@ lee este clasificador.
 ## Lo que NO hace
 
 - No relanza nada. Etiqueta y comenta; relanzar sigue siendo una decisión de alguien.
-- No silencia el aviso a la sesión. Si se quiere que un rojo INTERMITENTE no despierte a nadie, es un
-  cambio de comportamiento del avisador y lo decide el orquestador.
+- No silencia el aviso a la sesión. **Decidido por el orquestador (29-sep-2026): el intermitente SIGUE
+  despertando a la sesión.** La sesión se despierta y encuentra el veredicto escrito. Silenciarlo
+  apagaría la atención justo cuando hay que contar si el arreglo de S3 funciona. Y el día que la firma
+  coincida con un fallo real, sería un rojo de verdad que nadie mira.
+  **Solo se revisa cuando se cumplan las dos cosas:**
+  1. que el recuento del marcador `[SCRUM-1281-FIRMA]` confirme que el arreglo de S3 quita el
+     intermitente;
+  2. que el veredicto lleve varias semanas en CI con cero falsos positivos.
+  Antes de eso no se replantea.
