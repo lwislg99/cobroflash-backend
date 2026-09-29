@@ -84,6 +84,21 @@ test('SCRUM-743 · CONTROL: los casos que motivan el ticket salen en español', 
   assert.deepEqual([a, b, c], ['2,5', '12.345', '1.500'], '🔴 el pad sigue escribiendo en crudo');
 });
 
+test('SCRUM-743 · 🔴 las GEMELAS dan la misma cadena: `fmtNumeroEs` (api.js) == `formatNumeroEs` (servidor)', async () => {
+  // Las usan el pad presencial (vía `cantidadDeLinea`) y el eje de Informes (`reportsView.js`,
+  // `fmtNumeroEs(Math.round(maxVal * f))`, ya en main desde 76b4c5eb). Dos funciones que formatean
+  // «casi igual» son la siguiente divergencia: se comparan número a número, miles incluidos.
+  const { formatNumeroEs } = await import(pathToFileURL(path.join(RAIZ, 'dist/core/utils/utils.js')).href);
+  const { ctx } = cargarDashboard(RAIZ);
+  assert.equal(typeof ctx.fmtNumeroEs, 'function', 'SUELO: api.js no expone `fmtNumeroEs`');
+  const NUMEROS = [0, 1, 7, 999, 1000, 1500, 6050, 12345, 99999, 100000, 1234567, 2.5, 0.333, 1500.75, 1234567.891, -1, -1500];
+  const distintos = NUMEROS
+    .map((n) => ({ n, front: ctx.fmtNumeroEs(n), servidor: formatNumeroEs(n) }))
+    .filter((x) => x.front !== x.servidor);
+  assert.deepEqual(distintos, [], '🔴 el front y el servidor formatean distinto el mismo número');
+  assert.equal(ctx.fmtNumeroEs(6050), '6.050', '🔴 el eje: 6050 tiene que ser «6.050», ni «6050» ni «6.050,00»');
+});
+
 test('SCRUM-743 · la unidad sigue detrás de la cantidad formateada', () => {
   const [celda] = celdasDelPad([{ concepto: 'a', cantidad: 2.5, unidad: 'm²' }]);
   assert.equal(celda, '2,5 m²');

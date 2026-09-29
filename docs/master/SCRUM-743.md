@@ -217,3 +217,26 @@ sitios aunque cambie lo que se VE en albaranes ya firmados, porque el sello no s
   `puedeMarcarsePagadaEnLote` queda declarada como PREMISA FALSA (no puede ir a `retiradas`: el
   detector la sigue viendo).
 - **Fuera:** el eje de Informes (`reportsView.js:845`, front) sigue pendiente.
+
+
+## Mitad de pantalla (S2, `s2-29a`) — el canal presencial y el eje de Informes
+
+**Medido contra:** `origin/main` = `84925995b8621619f5c27542e90988cdbe4ee1e1` · 2026-09-29T09:53:32Z
+
+- `signaturePad.js` (antes `:230`, la tabla que el cliente ve en el móvil del profesional antes de firmar)
+  escribía la cantidad en crudo. Ahora pasa por `cantidadDeLinea`, con la MISMA semántica que
+  `fmtCantidadAlbaran` del servidor: vacío → `''`, lo que no es un número → tal cual, y el número por
+  `fmtNumeroEs` (`api.js`).
+- **El eje de Informes NO estaba pendiente:** ya está en `main` desde `76b4c5eb` (un commit anterior de
+  este mismo ticket), en `reportsView.js:1126`, `fmtNumeroEs(Math.round(maxVal * f))`. La línea `:845`
+  del enunciado era de un `main` más viejo. No se toca: `6050` → `6.050`, sin decimales añadidos.
+- `tests/scrum743b-cantidad-presencial-igual-que-remota.test.mjs`: abre el pad DE VERDAD y compara su celda
+  con `fmtCantidadAlbaran` (dist), número a número, sobre 14 valores (enteros, decimales, miles, millones,
+  cadenas, cero, negativo, vacío, basura). Comprueba además que `renderLineasAlbaran` pinta lo mismo que su
+  función, y que las gemelas `fmtNumeroEs` (front) y `formatNumeroEs` (servidor) dan la misma cadena en
+  17 números, miles incluidos. Condición del orquestador (c.17508): cumplida.
+- `tests/scrum466-…`: «4321» → «4.321» en las dos aserciones, citando c.17508. Se sigue exigiendo que la
+  cantidad ESTÉ; lo que cambia es la forma.
+- Local: `scrum1093h` cae en el worktree de S2 también SIN esta ola (en `s2-1180` y `s2-1233`, sobre
+  `main`), y a S1 le pasa (25/25) sobre los mismos commits. Es el `node_modules` compartido del worktree de
+  S2, no el código. Lo juzga el CI.
