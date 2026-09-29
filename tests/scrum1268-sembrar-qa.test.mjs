@@ -142,7 +142,9 @@ test('SCRUM-1268 · 🔴 IDEMPOTENTE: repetir no crea nada ni vuelve a EMITIR (n
 });
 
 test('SCRUM-1268 · 🔴 CERROJO: si el servidor no dice merchant 46 y owner, no sale NINGUNA escritura', async () => {
-  for (const me of [{ merchantId: 1, isOwner: true }, { merchantId: MERCHANT_QA, isOwner: false }, { merchantId: String(MERCHANT_QA), isOwner: true }, {}]) {
+  // El id 1 es el demo: el login por defecto de sesion-panel es demo@yaqu.app, la cuenta equivocada más probable.
+  const DEMO = { merchantId: 1, isOwner: true }; // MERCHANT DEMO A PROPOSITO (SCRUM-409): el cerrojo tiene que rechazar la cuenta demo
+  for (const me of [DEMO, { merchantId: MERCHANT_QA, isOwner: false }, { merchantId: String(MERCHANT_QA), isOwner: true }, {}]) {
     const p = panel({ me });
     const r = await correr(['sembrar'], p);
     assert.equal(r.codigo, 3, `me=${JSON.stringify(me)}: ${r.err}`);
