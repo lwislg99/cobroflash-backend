@@ -132,6 +132,17 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       // A14.3: overrides de flags por merchant (Parte P) — /admin/me y el estado
       // efectivo de publicProfileEnabled los calculan con esto
       flags: true,
+      // 🔴 SCRUM-1227 · LO QUE CONFIGURACIÓN GUARDA TIENE QUE VOLVER AQUÍ. Estos cinco los escribe
+      // el PUT y no salían en el GET, así que la pantalla los recibía vacíos y el siguiente guardado
+      // —de CUALQUIER ajuste— los machacaba: se borraban las cláusulas del PDF, los bloques de la
+      // Home, el criterio de caja y la retención IRPF. `scrum656b` probaba que el PUT los ACEPTA,
+      // no que el GET los DEVUELVA. El test de ida y vuelta (`scrum1227`) compara contra lo que la
+      // pantalla manda al guardar: un campo nuevo en el formulario sin su línea aquí lo pone rojo.
+      clausulasPresupuesto: true,
+      homePrefs: true,
+      criterioCaja: true,
+      retencionIrpfDeclarada: true,
+      retencionIrpfTipo: true,
     },
   });
 
