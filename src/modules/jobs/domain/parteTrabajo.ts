@@ -97,6 +97,40 @@ export interface LineaParte {
   descripcion: string;
   precioUnitario?: number | null;
   tipoIva?: number | null;
+  /**
+   * SCRUM-1266 · LOS DATOS QUE LA MÁQUINA SE INVENTÓ Y SIGUEN EN LA DESCRIPCIÓN.
+   *
+   * Nace en la propuesta del dictado (`datosRetirados`, SCRUM-725) y hasta hoy se perdía al añadir
+   * la línea: el dato inventado entraba en el parte y ya nadie sabía que lo era. Vive dentro del
+   * JSON `ParteTrabajo.lineas` (no es schema) y **NO entra en el sello**: `lineasCanonicasParte`
+   * escribe sus tres campos a mano. Sólo existe si queda alguno (ver `marcaQueSigue`).
+   */
+  datosNoRespaldados?: string[];
+}
+
+/** Tope de tokens por línea: la marca es una lista corta de palabras, no un texto libre. */
+const MAX_DATOS_MARCADOS = 20;
+
+/**
+ * SCRUM-1266 · de los tokens marcados, los que SIGUEN en la descripción.
+ *
+ * Mismo corte que el saneador del dictado (`parteDictado.ts`, `datosNoRespaldados`): palabras
+ * separadas por espacios, sin la puntuación de los extremos. Así, si el profesional corrige la
+ * descripción y quita el dato inventado, la marca se va con él; si lo deja, la marca se queda.
+ * Lo que no sea una lista de textos no marca nada.
+ */
+function marcaQueSigue(descripcion: unknown, tokens: unknown): string[] {
+  if (!Array.isArray(tokens)) return [];
+  const limpiar = (s: string) => s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  const palabras = new Set(String(descripcion ?? '').split(/\s+/).map(limpiar).filter(Boolean));
+  const quedan: string[] = [];
+  for (const t of tokens) {
+    if (typeof t !== 'string') continue;
+    const limpio = limpiar(t.trim());
+    if (limpio && palabras.has(limpio) && !quedan.includes(limpio)) quedan.push(limpio);
+    if (quedan.length >= MAX_DATOS_MARCADOS) break;
+  }
+  return quedan;
 }
 
 /**
@@ -153,6 +187,11 @@ export function casarLineasPorIdentidad(
     const antes = origen[k] === null ? undefined : guardadas[origen[k] as number];
     const id = antes && typeof antes.id === 'string' && antes.id !== '' ? antes.id : nuevoId();
     const linea: LineaParte = { id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    // SCRUM-1266 · la marca del dato inventado SOBREVIVE al guardado: la que traiga la línea o, si
+    // no trae ninguna (una pantalla que no la conoce), la que tenía guardada — y de ella, sólo lo que
+    // siga escrito en la descripción nueva.
+    const marca = marcaQueSigue(l.descripcion, l.datosNoRespaldados ?? antes?.datosNoRespaldados);
+    if (marca.length) linea.datosNoRespaldados = marca;
     return antes && mismaLinea(antes, l)
       ? { ...linea, precioUnitario: antes.precioUnitario ?? null, tipoIva: antes.tipoIva ?? null }
       : linea;
@@ -463,6 +502,28 @@ export function ordenDeFirmaExigido(): null {
   return null;
 }
 
+/**
+ * 🔴 SCRUM-1226 · UNA FIRMA SUBE EL ESTADO, NUNCA LO BAJA.
+ *
+ * Las dos rutas de firma escribían `estado: 'firmado'` a pelo. Como los candados son por RANURA
+ * (arriba), la segunda firma se acepta después de la primera, y sobre un parte en `facturado` con
+ * una ranura libre lo devolvía a `firmado` — que NO cierra los precios (`puedeEditarPrecios`). O
+ * sea: firmar reabría los precios de un parte facturado.
+ *
+ * Firmar solo mueve `borrador` → `firmado`. Cualquier otro estado se queda como está, y la firma
+ * se guarda igual: una segunda firma sobre un parte facturado es un dato válido.
+ *
+ * `puedeEditarPrecios` en este camino: NO se toca. Sigue decidiendo por el estado, y como el
+ * estado ya no baja, un parte facturado sigue con los precios cerrados después de la firma.
+ *
+ * ⚠️ Decide sobre el estado LEÍDO. Quien construya «facturar el parte» y quiera cerrar también la
+ * carrera (facturar entre la lectura y la escritura de una firma) necesita una escritura
+ * condicional o un cerrojo; hoy no hay nada que facture un parte, así que no hay carrera.
+ */
+export function estadoTrasFirmar(actual: EstadoParte): EstadoParte {
+  return actual === 'borrador' ? 'firmado' : actual;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS DOS BLOQUES
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -530,13 +591,19 @@ export function totalesPorBloque(lineas: LineaParte[]): {
  * pantalla que los recibe y decide no enseñarlos está a un `console.log` de enseñarlos.
  */
 export function lineasParaElTecnico(lineas: LineaParte[]): Array<{
-  id: string; bloque: BloqueParte; unds: number; descripcion: string;
+  id: string; bloque: BloqueParte; unds: number; descripcion: string; datosNoRespaldados?: string[];
 }> {
-  return (Array.isArray(lineas) ? lineas : []).map((l, i) => ({
-    // SCRUM-889 · la identidad de la línea, para que al quitarla ningún precio cambie de línea.
-    id: idDeLinea(l, i),
-    bloque: l.bloque,
-    unds: l.unds,
-    descripcion: l.descripcion,
-  }));
+  return (Array.isArray(lineas) ? lineas : []).map((l, i) => {
+    const marca = marcaQueSigue(l.descripcion, l.datosNoRespaldados);
+    return {
+      // SCRUM-889 · la identidad de la línea, para que al quitarla ningún precio cambie de línea.
+      id: idDeLinea(l, i),
+      bloque: l.bloque,
+      unds: l.unds,
+      descripcion: l.descripcion,
+      // SCRUM-1266 · la marca del dato inventado, SÓLO si la hay: no es un importe, y una línea sin
+      // marca sale con sus cuatro campos de siempre.
+      ...(marca.length ? { datosNoRespaldados: marca } : {}),
+    };
+  });
 }

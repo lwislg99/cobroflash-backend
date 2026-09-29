@@ -307,6 +307,28 @@ async function _pedir(url, finalOptions) {
   return res.json();
 }
 
+/**
+ * SCRUM-1233 · QUÉ SE LE ENSEÑA A UNA PERSONA CUANDO UNA PETICIÓN FALLA. Un solo sitio.
+ *
+ * `err.message` NO sirve para pintar: `_pedir` lo rellena con `data.message` si el servidor lo mandó,
+ * pero si no, con `API 500: internal_error`; sin red, con el `Failed to fetch` del navegador. Leído
+ * desde la pantalla, las tres cosas son iguales, y dos de ellas le enseñan la tripa del sistema a
+ * un fontanero.
+ *
+ * La regla: se pinta el mensaje del servidor SOLO cuando viene en `data.message`, que es donde
+ * escribimos una frase para una persona. Cualquier otra cosa cae en `respaldo`, el texto aprobado
+ * de la pantalla que llama. Nunca al revés.
+ *
+ * @param {any} err el error que lanzó `apiRequest`.
+ * @param {string} respaldo el texto aprobado de la pantalla; `''` si la pantalla ya dice lo suyo.
+ * @returns {string}
+ */
+function mensajeParaPersona(err, respaldo) {
+  const texto = err && err.data && err.data.message;
+  return (typeof texto === 'string' && texto.trim()) ? texto : respaldo;
+}
+if (typeof window !== 'undefined') window.mensajeParaPersona = mensajeParaPersona;
+
 // -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
 //
 // EL DEFECTO QUE CIERRA: tres descargas comprobaban `res.ok` y llamaban a `res.blob()` sin mirar

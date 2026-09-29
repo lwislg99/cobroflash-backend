@@ -216,9 +216,10 @@ async function fetchInvoices(options = {}) {
       // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
       // SCRUM-599 · el rótulo de FACTURA sale de la pieza (aprobado); el de JUSTIFICANTE se
       // conserva tal cual estaba —no está en la microcopy de este ticket y la regla 26 lo blinda—.
-      nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
-        ? '+ Nuevo justificante'
-        : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
+      // 🔴 SCRUM-825 D1 (SCRUM-825 comentario 17446) · la rama «+ Nuevo justificante» se RETIRA: desde
+      // SCRUM-1027 `appDocumentoSuelto` no vale nunca 'justificante', así que no la veía nadie (censo
+      // de SCRUM-1257, grupo A). Queda el lado factura, que es el que ya se pintaba.
+      nuevaFacturaBtn.textContent = (window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura';
       // 🔴 SCRUM-600 (DOC-10) · ESTE BOTÓN YA NO ABRE UN MODAL: LLEVA A LA PÁGINA.
       //
       // Es el cambio que hace que haya UN solo front del documento y no dos. Se navega con

@@ -142,3 +142,141 @@ devolverlo en un `finally` SIN la red de SCRUM-808 salía en el censo y nadie lo
   reescribe…»; añadir uno fantasma → «SOBRA … Muévelo a «retiradas»».
 - **Coste:** un censo (~1,9 s en local, con carga), compartido con el test de SCRUM-808 que ya lo
   hacía, así que el neto es ~0. El CLI lista también la parte ciega, que es donde manda el rojo.
+
+## B · 4 de 4 — `censo:guards-navegador --solo-censo`: NO SE CONSTRUYE
+
+Su mitad que cierra ya existía y ya bloqueaba: `tests/scrum548-peaje-package-json.test.mjs:99-243`
+compara los solapes y los «no resueltos» con listas exactas (un guard nuevo sobre una página ya
+medida cambia el recuento → rojo), y `:37` fija los dos suelos del CLI (≥9 guards, ninguno
+declarado sin fichero). Comprobado que no se salta: sale ✔ en el log del CI de #1881. Un PR que no
+cambia nada y cierra un punto de la lista no se abre.
+
+## D — las seis herramientas manuales, marcadas «HERRAMIENTA MANUAL, NO RED»
+
+`censo:vias-de-cobro`, `censo:conflictos-package`, `cr:censo`, `cr:tecnica`, `cr:limpiar` y
+`topologia` (cuatro ficheros: los tres `cr:*` son el mismo). Cada cabecera dice, justo bajo el
+título, que no vigila nada por sí sola y que no se cita como red al retirar un guard (SCRUM-1172).
+Medido antes de escribirlo: ninguna aparece en `test`, `pretest` ni en `.github/workflows/`. Los
+tests que las importan prueban la HERRAMIENTA, no el árbol, y la cabecera lo dice así.
+
+`tests/scrum1179d-herramientas-no-red.test.mjs` mantiene la cabecera cierta en las DOS direcciones:
+cae si la marca desaparece, y cae si alguien empieza a correr una de ellas en `test`/`pretest` o en
+un workflow (entonces sí es red y la marca miente). Probado en rojo las dos: quitando la marca de
+`topologia` y añadiendo `npm run cr:censo` a `pretest`. El detector no confunde un comentario YAML
+ni un nombre parecido (test propio).
+
+No se ha hecho el guard que busque en los comentarios citas de estas herramientas como red: sería
+un guard por TEXTO sobre prosa, que casa con el comentario que lo explica (la trampa de
+`_guard-texto.mjs`). La marca en la cabecera corta el caso en origen.
+
+## E — borrado `censo:escalera-por-estado`
+
+Preguntaba si `GET /admin/jobs` trae los albaranes, la dependencia de SCRUM-823 sobre SCRUM-816.
+Comprobado en el código antes de borrar: la lista los trae (`src/modules/jobs/app/routes/jobs.routes.ts`,
+bloque «SCRUM-816 · LO QUE LEE LA ESCALERA, TAMBIÉN EN LA LISTA»), y SCRUM-823 se construyó encima
+(`guard:escalera-por-estado` y `tests/scrum823-…`, que SE QUEDAN: son otra cosa). Era además el más
+peligroso de ejecutar de los 25: tocaba BD, levantaba servidor y escribía una sesión.
+
+Se borran `scripts/censo-escalera-por-estado.mjs` y sus dos líneas de `package.json`. Nada en
+`scripts/` ni `tests/` lo nombraba; lo nombran solo registros históricos de `docs/master/`, que no
+se reescriben. Metaguardas que censan `scripts/`, `tests/` y `package.json` (20 ficheros, 202 tests):
+201 verdes y 1 rojo ajeno por falta de `dist` en el árbol local (scrum823 importa de `dist/`; el CI compila).
+
+## CI en rojo tras empujar `ec16ae80` — tres guards viejos, cazando este mismo PR
+
+El check obligatorio cayó en `ec16ae80890b` (run
+https://github.com/lwislg99/cobroflash-backend/actions/runs/36448469767) por CUATRO tests, y las
+cuatro caídas eran EL MISMO PAR de causas — ningún guard nuevo, ningún guard relajado (regla 41):
+
+- **`scrum812` (EL TRINQUETE, `tests/scrum812-…`) y su CIEGO en `meta-guard`:** la mitad B/2 y B/3
+  de este PR añadió, a `scrum775` y `scrum808`, tests nuevos titulados GUARD con su propia
+  declaración de mutación — cobertura auto-declarada real, no fabricada. El trinquete la mide sobre
+  el árbol y su SEGUNDA mitad exige anotar cualquier SUBIDA (no sólo prohibir bajadas): pasó de 20 a
+  22. Se sube `SUELO_GUARD_QUE_DECLARAN` a 22 y se re-ancla, como pide el propio test cuando sube —
+  nunca se «actualiza» cuando lo que sube es el suelo de una bajada, que es el caso contrario y
+  distinto.
+- **`scrum737` (cifras sin ancla):** la cabecera nueva de `formaDeSpawnSync` en
+  `scripts/_censo-suelos.mjs` escribió dos frases con «75 guards» sin fecha ni sha — el defecto
+  exacto que ese guard persigue. Se ancla con `28-sep-2026` en la misma línea del número (no se
+  reformula ni se retira: es una medición real de hoy, citada también en la sección B·2 de más
+  arriba, y vale la pena conservarla con su fecha).
+- **`scrum258` (estado por sesión) y, en cascada, `scrum976` (que corre `guards:entrada`, y
+  `guards:entrada` incluye a `scrum258` desde el propio SCRUM-976):** el `spawnSync` que
+  `formaDeSpawnSync` lanza contra un binario que no existe usaba
+  `path.join(os.tmpdir(), `no-existe-scrum1179-${process.pid}`)` — una ruta fija bajo el temporal de
+  la MÁQUINA, sin `tokenDeSesion()` ni `mkdtemp`. Dos sesiones (o dos worktrees) del mismo equipo
+  podían pisarse esa ruta. Se añade `tokenDeSesion()` a la ruta: no toca ni relaja el guard, cierra
+  la condición real que vigila.
+
+`guards de navegador (fuera de la tanda)` también estaba en rojo en ese run (`guard:lista-trabajos-917`,
+sobre «Cobrar el resto» en la lista de Trabajos) — sin relación con este PR (no toca esa pantalla ni
+esa ruta) y fuera de este carril (regla 9): no se toca aquí.
+
+## C · 1 de 7: `censo:tactil-panel` al job informativo (S3, 29-sep-2026)
+
+**Medido contra:** `origin/main` = `51dcfe156990dfb36b6dfb225e6d75bda7e5a08e` · 2026-09-29T09:44:01Z
+
+- Paso nuevo en el job `guards de navegador (fuera de la tanda)` de `ci.yml`: corre `censo:tactil-panel` con
+  `if: always()` y `continue-on-error: true`, y deja «EL NÚMERO» en el resumen del job. **No bloquea**: el job
+  no es obligatorio, y el censo sale 0 aunque cuente botones cortos (cuenta, no juzga). Si no supo medir, sale 2
+  y lo dice en el resumen.
+- Coste medido en local: **~29 s**, un navegador. El censo montó 18 de 28 vistas; las 10 que no pudo montar las
+  declara él mismo («NO MEDIDAS»), no las cuenta como cero.
+- Las citas de `scripts/guard-objetivo-tactil.mjs` (cabecera, :395 y mensaje final) decían «no corre en ningún
+  sitio». Desde este cambio eso es falso, y pasan a decir que corre en cada PR **sin bloquear**.
+- Red: `tests/scrum1179c-censo-tactil-informativo.test.mjs` fija las dos mitades del contrato (que corre, y que no
+  bloquea) y que la cita ya no dice «no corre». Tiene una mutación declarada (quitar `continue-on-error`), y cae.
+- Los otros 6 de C siguen sin hacer: `clics-del-80`, `accion-del-80`, `mudez`, `lista-fixture`, `gateados` y
+  `alcanzabilidad`.
+
+## C · 2 de 7: `censo:clics-del-80` al job informativo — y era CIEGO (S3, 29-sep-2026)
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:34:39Z
+
+- Paso nuevo en el mismo job informativo, con el patrón de C 1/7 (`if: always()`, `continue-on-error: true`,
+  tabla al resumen). Coste medido en local: **~9 s**, un navegador.
+- 🔴 **El censo estaba ciego y escondía un defecto de producción.** Pintaba «Facturas: la fila NO navega» como si
+  fuera diseño. Al sondar a mano: el clic lanza `ReferenceError: cb is not defined` (`invoicesView.js`, desde
+  b7adfd68 / SCRUM-845, 9-sep) y la fila de una factura no abre nada en yaqu.app (comprobado que el JS servido
+  lleva ese código). El censo no leía los errores de la página: «no navega» y «revienta al pulsar» daban el mismo
+  «NO». Registrado en `docs/BUGS.md` como **P1-1179C**; el arreglo es de front y lo reparte el orquestador.
+- Arreglo del instrumento: lee `__errores` antes y después de pulsar; un error nuevo sale como «🔴 ERROR al
+  pulsar» y el censo termina con **1** (medido, defecto del producto), distinto del **2** (no supo medir). Una
+  vista que ya falló al pintarse se declara «NO SUPE MIRAR» en vez de sondearse. El resumen del CI separa los tres.
+- **Control positivo en cada pasada** (encargo del orquestador): antes de medir las listas, el censo pulsa dos filas
+  sintéticas en una página del banco, con la MISMA función que usa para las listas: una quieta (tiene que salir «NO»
+  sin error) y otra que revienta a propósito (tiene que salir con su error). Si falla cualquiera de las dos, no mide
+  y sale con 2. Comprobado corriendo en Edge: con el detector quitado, el censo sale con **2** («NO SUPE MEDIR») en
+  vez de pintar «Facturas: NO» con 0.
+- `docs/CENSO_ACCION_DEL_80.md`: nota de que su «Facturas: la fila abre el documento: sí» (8-sep) está caducada.
+- Red: `tests/scrum1179c-censo-clics-informativo.test.mjs`, tres mutaciones declaradas (quitar
+  `continue-on-error`; volver a no leer los errores; ignorar el control), y las tres caen. Comprobado también
+  corriendo: hoy el censo sale con 1 y nombra `Facturas: Uncaught ReferenceError: cb is not defined`.
+- Quedan 5 de C: `accion-del-80`, `mudez`, `lista-fixture`, `gateados` y `alcanzabilidad`.
+
+## C · 3 de 7: `censo:accion-del-80` al job informativo, y tres cegueras menos (S3, 29-sep-2026)
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:43:06Z
+
+- Paso nuevo en el mismo job informativo, con el mismo patrón. Coste medido en local: **~3 s**, un navegador.
+- **Rótulo caducado:** decía «árbol: esta rama (816 + 823 dentro)», escrito a mano el 8-sep y falso desde que esas
+  ramas entraron en main. Ahora LEE el árbol: en CI, `GITHUB_SHA`; en local, SHA + rama + si hay cambios sin
+  commitear; y si no puede leerlo, lo dice.
+- **Ciego 1:** un «⋯» que al pulsarlo no abría menú salía como «dentro del ⋯: 0». Ahora es «NO SUPE ABRIR el ⋯» y
+  cuenta como no medido (salida 2). Comprobado corriendo en Edge, con el selector del menú roto: sale 2 y lo dice.
+- **Ciego 2:** una vista con error al pintarse se inventariaba igual. Ahora se declara «NO SUPE MIRAR».
+- Hoy, con el árbol al día: las cinco se miden, sale 0.
+- Red: `tests/scrum1179c-censo-accion-informativo.test.mjs`, tres mutaciones declaradas (quitar
+  `continue-on-error`; tragarse el «⋯» sin menú; volver al rótulo escrito a mano), y las tres caen.
+- **Lo que quedaba SIN VERIFICAR de la fila A** (`guards:entrada` es redundante: se escribe): **está escrito**, en la
+  cabecera de `scripts/guards-entrada.mjs` («ESTO ES UN ATAJO, NO UNA RED MÁS», commit 429e933d, #1885), y
+  `scrum711` comprueba que cada guard de su lista está en la tanda. Nada que añadir.
+- Quedan 4 de C: `mudez`, `lista-fixture`, `gateados` y `alcanzabilidad`.
+
+## Nota de la pila B/D/E: dos de los cinco PR se absorbieron (29-sep-2026)
+
+La pila salió en cinco PR apilados que compartían este fichero de registro. **#1897 (B2)** y **#1906 (D)** no
+llegaron a mergearse: al mezclar `main`, su diff quedó **vacío**, porque el PR de encima (#1905, B3; y #1909, E)
+ya llevaba su contenido dentro, y se cerraron por absorbidos. Para la próxima pila: apilar cinco niveles sobre
+un registro común hace que los de abajo se absorban al mergear los de arriba. Esto no es un error, pero conviene
+saberlo antes de repartir PR.

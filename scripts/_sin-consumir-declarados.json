@@ -22,12 +22,10 @@
     {"clave":"cuerpo · POST /admin/ai/quote-message::merchantName","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::quoteId","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:442","carril":"J1","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","donde":"src/modules/jobs/app/routes/jobs.routes.ts:1141","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/partes::tipo","donde":"src/modules/jobs/app/routes/partes.routes.ts:349","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1180"},
     {"clave":"cuerpo · POST /quote/create::job_id","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/invoices/:id/status::paidVia","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:525","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/templates/:id::currency","donde":"src/modules/templates/app/routes/templates.routes.ts:62","carril":"S2","ticket":"SCRUM-1185"},
@@ -138,7 +136,6 @@
     {"clave":"ruta · GET /admin/customers/:id/fusion-preview","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:611","carril":"J2","ticket":"SCRUM-1126"},
     {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · GET /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:425","carril":"J2","ticket":"SCRUM-1145"},
-    {"clave":"ruta · GET /admin/customers/:id/whatsapp","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:359","carril":"J2","ticket":"SCRUM-1133"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
@@ -163,8 +160,10 @@
     {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"}
   ],
   "retiradas": [
+    {"clave":"ruta · GET /admin/customers/:id/whatsapp","motivo":"SCRUM-1133: conectada en customerDetailView.js (pestaña «WhatsApp» de la ficha, sólo admin)"},
     {"clave":"ruta · POST /admin/customers/bulk-tags","motivo":"SCRUM-1135: conectada en customersView.js (Añadir/Quitar etiqueta en la barra de selección, sólo admin)"},
     {"clave":"ruta · GET /admin/libros/recibidas.csv","motivo":"SCRUM-1249: conectada en facturasRecibidasView.js (botón de descarga con el periodo del selector)"},
+    {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","motivo":"SCRUM-1180: conectada en quotesView.js (casillas de cláusulas en el editor; Duplicar las copia desde el detalle)"},
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
     {"clave":"export · src/modules/quotes/domain/billingPlan.ts::getNextBillingStage","motivo":"SCRUM-1201: BORRADA. Sin llamador desde 48570d8e (SCRUM-27, pagos flexibles); el siguiente tramo lo da buildBillingPlanView (nextStage)"},
@@ -181,6 +180,7 @@
     {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","motivo":"SCRUM-1184: conectada. GET /admin/albaranes/serie la usa (via siguienteNumeroDeAlbaran) para la vista previa de Nuevo albaran"},
     {"clave":"cuerpo · POST /admin/templates::paymentTerms","motivo":"SCRUM-1188: conectada en quotesView.js («Guardar como plantilla»; solo FULL_UPFRONT/FIFTY_FIFTY/MANUAL, CUSTOM no cabe)"},
-    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"}
+    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"},
+    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","motivo":"SCRUM-1267: conectada en jobDetailView.js (crearAlbaran; la clave se acuña una vez al abrir la hoja de alta y la reutilizan los reintentos)"}
   ]
 }

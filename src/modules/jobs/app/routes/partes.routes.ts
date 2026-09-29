@@ -39,6 +39,7 @@ import {
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
+  estadoTrasFirmar,
   permisoDeCampos,
   puedeFirmarse,
   puedeFirmarCliente,
@@ -247,7 +248,10 @@ function validarLineasDelTecnico(
     // SCRUM-889 · el `id` sólo sirve para CASAR con una línea guardada; no se guarda el que manda el
     // cliente (`casarLineasPorIdentidad` guarda el de la base o uno nuevo).
     const id = l?.id === undefined || l?.id === null ? undefined : String(l.id);
-    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion });
+    // SCRUM-1266 · la marca del dato inventado viaja con su línea. Sólo si es una lista: qué queda
+    // de ella lo decide `casarLineasPorIdentidad` contra la descripción (`marcaQueSigue`).
+    const marca = Array.isArray(l?.datosNoRespaldados) ? { datosNoRespaldados: l.datosNoRespaldados } : {};
+    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion, ...marca });
   }
   return { ok: true, lineas };
 }
@@ -672,7 +676,8 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
       data: {
         // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
         // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoTecnicoAt: new Date(),
         firmadoTecnicoNombre: nombre.nombre,
         signatureTecnicoUrl: signatureData,
@@ -751,7 +756,8 @@ router.post('/:id/firmar', async (req: any, res) => {
     const updated = await prisma.parteTrabajo.update({
       where: { id: parte.id },
       data: {
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoAt,
         firmadoPorNombre: nombre.nombre,
         firmadoPorCalidad: calidad.valor,

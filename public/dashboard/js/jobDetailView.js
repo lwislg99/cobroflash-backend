@@ -1143,7 +1143,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       dirInput.value = direccionObra; // se deshace lo tecleado: mentir sería peor
       // El 409 de la firma sellada trae su propio motivo y se enseña TAL CUAL: «no se pudo» sin
       // decir por qué obligaría al profesional a adivinar por qué su trabajo es distinto.
-      setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
+      setStatus('error', mensajeParaPersona(e, 'No se pudo guardar la dirección de la obra.'));
     }
   });
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA ESTE TRABAJO — Y PUEDEN SER TRES ─────────────────────
@@ -1672,7 +1672,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         refresh();
       } catch (e) {
         goM.disabled = false;
-        setStatus('error', e?.data?.message || 'No se pudo consolidar.');
+        setStatus('error', mensajeParaPersona(e, 'No se pudo consolidar.'));
       }
     });
     btnRow.append(cancelM, goM);
@@ -1888,8 +1888,22 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // en `jobDetailView.js` y exige que sea UNO — dos altas divergen en cuanto alguien toca una.
     // Toma el CUERPO ya construido: quien lo construye (`onGuardar`, justo abajo, SIN TOCAR — es
     // el receptor que vigila SCRUM-593e/607) sigue siendo el único sitio que decide su forma.
+    //
+    // SCRUM-1267 · EL ALTA VIAJA CON SU `claveIdempotencia` (el servidor la honra desde SCRUM-358).
+    // Si la respuesta se pierde (`incierto`, SCRUM-459, o la red cae a la vuelta) el albarán PUEDE
+    // estar creado, y el profesional reintenta. Sin clave, el servidor no puede saber que es el
+    // mismo y reserva el número siguiente: DOS albaranes. Con ella, devuelve el original.
+    // 🔴 Se acuña UNA vez, al abrir esta hoja, y la reutilizan todos los reintentos y los dos
+    // botones («Crear albarán» y «Entregar y enviar a firmar»). Acuñarla en cada clic no protegería
+    // de nada. Si el reintento cambia el contenido, el servidor lo rechaza nombrando qué cambió.
+    const claveAlta = (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function')
+      ? crypto.randomUUID()
+      : `alb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
     function crearAlbaran(cuerpo) {
-      return apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+      return apiRequest(`/admin/jobs/${job.id}/albaranes`, {
+        method: 'POST',
+        body: JSON.stringify({ ...cuerpo, claveIdempotencia: claveAlta }),
+      });
     }
 
     buildAlbEditor(bodyEl, enBlanco, {
@@ -2764,7 +2778,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
           });
           pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
         } catch (e) {
-          err.textContent = e?.message || 'No se pudieron generar las líneas.';
+          err.textContent = mensajeParaPersona(e, 'No se pudieron generar las líneas.');
           err.style.display = 'block';
         } finally {
           btnGen.disabled = false;
@@ -3030,7 +3044,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
       if (onClose) onClose(); // cierra el sheet antes de re-renderizar
       refresh();
     } catch (e) {
-      const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+      const msg = mensajeParaPersona(e, 'No se pudo guardar el albarán.');
       if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
       save.disabled = false;
     }
@@ -3135,7 +3149,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
         if (onClose) onClose();
         refresh();
       } catch (e) {
-        const msg = e?.data?.message || 'No se pudo completar la entrega.';
+        const msg = mensajeParaPersona(e, 'No se pudo completar la entrega.');
         if (onError) onError(msg); else setStatus('error', msg);
         confirmContinuar.disabled = false;
         confirmCancelar.disabled = false;
@@ -3390,7 +3404,7 @@ function openFacturarParcialSheet(alb, ctx) {
       if (d && d.message) setStatus('error', d.message);
       refresh();
     } catch (e) {
-      err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+      err.textContent = mensajeParaPersona(e, 'No se pudo emitir la factura.');
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = orig;

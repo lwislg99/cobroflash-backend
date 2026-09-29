@@ -185,10 +185,16 @@
       aviso.style.cssText = 'margin:16px';
       aviso.textContent = 'No se han podido cargar los albaranes. Vuelve a intentarlo.';
       body.appendChild(aviso);
-      const detalle = document.createElement('p');
-      detalle.style.cssText = 'margin:0 16px 16px;font-size:12px;color:var(--muted)';
-      detalle.textContent = String((err && err.message) || err || '');
-      body.appendChild(detalle);
+      // SCRUM-1233 · aquí se pintaba `err.message`: «API 500: internal_error» o «Failed to fetch»
+      // debajo del aviso. Solo se añade la frase del servidor si la mandó para una persona; si no,
+      // el aviso de arriba ya lo dice todo.
+      const motivo = mensajeParaPersona(err, '');
+      if (motivo) {
+        const detalle = document.createElement('p');
+        detalle.style.cssText = 'margin:0 16px 16px;font-size:12px;color:var(--muted)';
+        detalle.textContent = motivo;
+        body.appendChild(detalle);
+      }
     }
 
     function pintar(datos) {

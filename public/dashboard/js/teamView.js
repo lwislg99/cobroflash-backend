@@ -279,7 +279,7 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
     } catch (err) {
       // A10.3 (W3): al tope de usuarios, mensaje digno con la oferta Equipo
       const msg = err?.data?.error === 'user_limit'
-        ? (err.data.message || 'Has llegado al límite de usuarios de tu plan.')
+        ? mensajeParaPersona(err, 'Has llegado al límite de usuarios de tu plan.') // SCRUM-1233
         : err?.data?.error === 'email_is_owner'
         ? 'Ese email es el del propietario de la cuenta.'
         : 'Error al enviar la invitación.';

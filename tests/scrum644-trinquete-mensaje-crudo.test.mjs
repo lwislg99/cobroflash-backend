@@ -70,7 +70,9 @@ const CENSO_HEREDADO = Object.freeze({
   'exportView.js': 1,
   'homeView.js': 2,
   'invoiceDetailView.js': 4,
-  'jobDetailView.js': 11,
+  // 11 → 9 (SCRUM-1233, 29-sep-2026): la dirección de la obra y «consolidar» pasan por
+  // `mensajeParaPersona`, que entra en TRADUCTORES.
+  'jobDetailView.js': 9,
   'jobsView.js': 2,
   'plansView.js': 2,
   'quotesDetailView.js': 9,

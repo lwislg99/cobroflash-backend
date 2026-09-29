@@ -1,4 +1,8 @@
 // scripts/topologia-node-modules.mjs — SCRUM-351
+// 🔴 SCRUM-1179 · HERRAMIENTA MANUAL, NO RED. No vigila nada por sí sola: ningún test ni job la corre
+// sobre el árbol para juzgarlo (los tests que la importan prueban la HERRAMIENTA, no el árbol). No se
+// cite como red al retirar o relajar un guard: citar una red que no corre es lo que dejó los botones
+// de cobro sin vigilar en SCRUM-1172.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ¿LOS WORKTREES COMPARTEN `node_modules`, O NO?  — CONTESTADO EN EL MOMENTO, NO CITADO

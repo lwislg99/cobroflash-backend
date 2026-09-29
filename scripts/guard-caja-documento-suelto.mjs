@@ -64,8 +64,16 @@ const ANCHOS = [929, 390];
 const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
 const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
 
-/** Los dos modos que el profesional puede tener HOY. */
-const MODOS = ['justificante', 'factura'];
+/**
+ * Los modos que el profesional puede tener HOY. Eran dos.
+ *
+ * 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · 'justificante' SALE. Desde
+ * SCRUM-1027 `modoDocumentoSuelto` solo devuelve 'factura' o 'no' (re-medido ejecutándolo en los tres
+ * modos, docs/master/SCRUM-1257.md §1257c) y la rama se ha borrado de `rotulosDelDocumento`: medirla
+ * sería medir cajas que no pinta nadie. Con 'no' el botón de crear no se pinta. Lo que deja de
+ * medirse: la caja de los rótulos LARGOS del justificante, que ya no existen.
+ */
+const MODOS = ['factura'];
 
 /** El control negativo del detector de desborde: una caja que NO puede crecer con un texto que no cabe. */
 const CONTROL_NEGATIVO = '<div id="control-desborde" style="width:80px;white-space:nowrap;overflow:hidden">'
@@ -375,5 +383,5 @@ if (hallazgos.length) {
   process.exit(1);
 }
 console.log('   Las CINCO cajas caben: las dos del listado y las tres de la página montada de verdad,');
-console.log('   en los dos modos y en los dos anchos.');
+console.log('   en el modo factura (el único desde SCRUM-825 D1) y en los dos anchos.');
 console.log('   (Envolver en varias líneas NO es un hallazgo; desbordar o salirse del viewport, sí.)');

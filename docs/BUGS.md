@@ -470,6 +470,45 @@
 - **Done cuando:** desde el modal se guarda un cliente con sólo nombre y teléfono, y otro con sólo
   nombre y email, sin error; y el test de SCRUM-590b puede dejar el email vacío.
 
+### [ ] P1-825 · `#invoices-new` abre la página de crear factura a un merchant que no puede emitir (modo `receipt`)
+- **Síntoma:** un merchant español con `INVOICING_ES_ENABLED` apagado (`appDocumentoSuelto = 'no'`)
+  que abre `/dashboard/#invoices-new` (un enlace guardado, o recargando en esa ruta) ve la página
+  del documento suelto con «Nueva factura» y «Emitir factura». Al pulsar, el servidor le contesta
+  409 «En este modo no se emiten facturas.». El botón de la lista sí se escondía; la ruta no.
+- **Medido, no deducido** (28-sep-2026, SCRUM-825 D1): con el banco de vistas la página sale idéntica
+  con `'factura'` y con `'no'`, 121 nodos y los mismos dos rótulos
+  (`tests/banco-scrum825/medir-pagina-por-modo.mjs`). **Previo a D1:** con los ficheros de `main`
+  (d216084a) sale igual. Antes de SCRUM-1027 esa persona leía «justificante» y podía emitir uno.
+  Desde 1027 lee «factura» y no puede emitir nada: 1027 arregló la emisión y dejó la puerta pintada.
+- **Causa raíz:** `'invoices-new'` está en `HASH_VIEWS` (`app.js`) y su `case` del router no miraba
+  el modo. `renderDocumentoSueltoView` tampoco, y no debe: `scrum776` exige que la página no decida
+  por su cuenta.
+- **Arreglo** (rama `scrum-825-rotulos-rama-muerta`): el `case 'invoices-new'` falla cerrado. En
+  `'no'` pinta Facturas y cambia `view`, igual que el `default` pinta Inicio. Sin textos nuevos y sin
+  tocar el servidor, que ya contestaba 409. ⚠️ **NO lo cubre la firma del fundador de D1** (SCRUM-825
+  comentario 17446): lo autoriza el orquestador como arreglo de pantalla del carril de J3.
+- **Guards:** `scrum600b` ejecuta el `case` real con `'no'` (pinta Facturas) y con `'factura'` (pinta
+  la página, como control). `scrum601` exige las dos puertas del flujo: el botón y la ruta.
+- **Done cuando:** en yaqu.app, un merchant en `receipt` que abre `#invoices-new` ve la lista de
+  Facturas y no la página de crear factura.
+
+### [ ] P1-1179C · Pulsar una fila de la lista de Facturas no abre la factura: `cb is not defined`
+- **Síntoma:** en la lista de Facturas la fila se anuncia pulsable (`cursor: pointer`) y al pulsarla
+  no pasa nada. La consola da `Uncaught ReferenceError: cb is not defined`. La fila no tiene otro
+  control que abra la factura, así que desde la lista no se llega al detalle.
+- **Medido, no deducido** (29-sep-2026, SCRUM-1179-C): banco de listas con el DOM real, clic en la
+  celda del número → `__errores = ["Uncaught ReferenceError: cb is not defined"]` y cero navegaciones.
+  El `invoicesView.js` que sirve yaqu.app ese día lleva el mismo código.
+- **Causa raíz:** `invoicesView.js`, el clic de la fila hace `if (e.target === cb) return;`, pero desde
+  b7adfd68 (SCRUM-845, 9-sep) `const cb` se declara DENTRO de `if (window.sePuedeMarcarPagadaEnLote(inv))`.
+  Fuera de ese bloque no existe, y el handler revienta antes de `renderAppView('invoice-detail')`, en
+  TODAS las filas, tengan casilla o no.
+- **Arreglo:** de carril de front (lo reparte el orquestador). No se arregla aquí «de paso».
+- **Instrumento:** `censo:clics-del-80` lo pintaba como «Facturas: NO navega» porque no leía los
+  errores de la página. Desde SCRUM-1179-C los lee y sale con 1 («una fila revienta al pulsarla»).
+- **Done cuando:** en yaqu.app, pulsar una fila de Facturas abre su detalle, y `censo:clics-del-80`
+  sale con 0 y dice «Facturas: sí → invoice-detail».
+
 ---
 ## P2 — Mejoras de producto / UX
 

@@ -401,12 +401,14 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // 🔴 SCRUM-1174 · 27-sep-2026 · `renderQuotesView` 248 → 255, y las otras tres intactas. Por
   // identidad: el subárbol de `div.quote-texto-documento` (el envoltorio + 2 × `div.field` · `label`
   // · `textarea`) = 7, que es todo el delta.
+  // SCRUM-1180 · 28-sep-2026 · `renderQuotesView` 255 → 256: el envoltorio `div.quote-clausulas`,
+  // oculto y vacío porque el negocio del banco no tiene cláusulas. Las otras tres, intactas.
   // 🔴 SCRUM-1135 · 28-sep-2026 · `renderCustomersView` 78 → 82, y las otras tres intactas. Los
   // CUATRO, POR IDENTIDAD sobre el árbol montado: `div.barra-seleccion-etiquetar` (el bloque de
   // etiquetar la selección, dentro de la barra) + `input.input` («Etiqueta») + dos
   // `button.btn-secondary` («Añadir etiqueta», «Quitar etiqueta») = 4, todo el delta. Se montan con
   // el rol admin del banco; para un técnico no se pintan.
-  for (const [vista, nodos] of [['renderQuotesView', 255], ['renderProductsView', 176],
+  for (const [vista, nodos] of [['renderQuotesView', 256], ['renderProductsView', 176],
     ['renderCustomersView', 82], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -474,7 +476,8 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // SCRUM-1174 (27-sep-2026): la DECIMOSÉPTIMA, +7 — los dos textos del documento, identificados por
   // identidad en el bloque de arriba. El componente se monta con valores vacíos y no depende de los
   // datos, así que lo pintan los dos montajes. Los dos dan 255.
-  assert.equal(todos(desnuda.contenedor).length, 255,
+  // SCRUM-1180 (28-sep-2026): +1, el envoltorio de las cláusulas, oculto y vacío en los dos montajes. Los dos dan 256.
+  assert.equal(todos(desnuda.contenedor).length, 256,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

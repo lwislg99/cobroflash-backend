@@ -1,3 +1,30 @@
+# SCRUM-1215 — 77 textos del panel sin revisar (censo 1157), en 5 lotes
+
+## Lote 4 · revisiones del presupuesto (`quoteRevisiones.js`) — S2 (`s2-28c`)
+
+**Medido contra:** `origin/main` = `4583f537880241f948a78c9ee274d1b1a59c59a0` · 2026-09-28T15:28:46Z
+
+Revisión hoja a hoja en Jira, SCRUM-1215 c.17371; GO del orquestador a las dos cosas, en un PR.
+
+- **Las 6 hojas ya estaban firmadas** (4 el 3-sep-2026, addendum «Revisiones del presupuesto» de
+  `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`; `crearRevision` y `errorCrear` el 16-sep-2026 en
+  SCRUM-688). El censo 1157 las daba `SIN_COMENTARIO` porque toma como cuenta de lo aprobado el
+  número más pequeño delante de «textos/rótulos» en la cabecera, y la nota de `ciego` decía
+  «dos textos y no uno» → solo aprobaba `titulo` y `vigente`. Se reescribe la nota sin cifra, **no se
+  refirma**. Medido con `censarFuente`: 2 → 8 `APROBADO`. Las 6 pasan de `acusadas` a `retiradas` en
+  `scripts/_censo-convenio-microcopy-declarados.json`, con su firma citada.
+- **`errorCrear` no se pintaba nunca.** `cablearCrearRevision` solo lo usaba con `e.message` vacío, y
+  `apiRequest` siempre lanza con mensaje: el profesional leía «API 500: internal_error» o «Failed to
+  fetch». Ahora se enseña el mensaje del servidor **solo** si viene en `data.message` (el que escribe
+  `RevisionNoCreable` para una persona); todo lo demás cae en `errorCrear`. Sin texto nuevo.
+- Test del viaje `tests/scrum1215-revisiones-error-crear.test.mjs`: ficha montada en el banco, clic en
+  «Crear revisión», la respuesta pasa por el `apiRequest` REAL (el banco solo pone el `fetch`).
+  **Rojo antes** (medido): 500 → `API 500: internal_error`; sin red → `Failed to fetch`. Verde después;
+  el 409 con `message` sigue enseñando el del servidor.
+- Vecinos en verde: 655c, 688, 988, 1157, 1185 (50/50).
+- **NO VERIFICADO en yaqu.app**: la lectura de producción está denegada para S2.
+- Pendiente de decidir (orquestador): el botón «Crear revisión» sale también en un presupuesto sin
+  `quoteNumber`, que el servidor rechaza con su motivo.
 # SCRUM-1215 · lote 1 (parte) — `yaFirmado` retirada: no la leía nadie
 
 **Medido contra:** `origin/main` = `d2c8903c5e75c9defc732bf8f7a7eebf20e79561` · 2026-09-28T15:10:58Z
@@ -78,3 +105,68 @@ y **parado**. Mover `confirmarPropuesta` a `retiradas` en el JSON del censo lo *
 ([Logging/Audit Tampering]); sin eso, `scrum1157` se pone rojo en el check obligatorio. Avisado al orquestador.
 
 **Medido contra:** `origin/main` = `29eea3f9baba711eb65a3b6119727ef4777f0159` · 2026-09-28T15:39:19Z
+
+## Apéndice (s4-29a) · lote 3 (albarán): «📷 Añadir foto» ya no se ofrece en `firmado`
+
+Revisión: c.17493 (corregida la fila 3 en c.17495). Firma y decisión: c.17494, 6 de 8 aprobados; el 3
+(«Facturar lo entregado») sigue pendiente y el 8 se decide así, sin texto nuevo.
+
+- **Lo que se ha medido:** `POST /admin/albaranes/:id/fotos` responde **siempre** 409 `albaran_locked` en
+  `firmado` («Un albarán firmado está congelado: no admite fotos nuevas.»), y el registro ofrecía
+  `btnFoto` en el «⋮» de ese mismo estado. Era un botón cuya única respuesta posible es un error.
+- **El arreglo, en la tabla** y no en la vista: `albaranActionsRegistry.js`, `btnFoto.firmado` pasa de
+  `overflow` a `oculta`. En borrador y emitido se queda, porque ahí funciona.
+- `tests/scrum707-estado-no-contemplado.test.mjs`: el control positivo enumera lo que se ofrece en cada
+  estado, y de `albarán|firmado` se quita `btnFoto`. Es la consecuencia del cambio, no una relajación.
+- `tests/scrum1215c-foto-oculta-en-firmado.test.mjs` ata las dos mitades: el servidor sigue rechazando en
+  `firmado` (si algún día lo admite, la ocultación pierde su motivo y el test lo dice) y la tabla no la
+  ofrece ahí. **Rojo comprobado:** con `firmado: 'overflow'` → 1 pass · 1 fail.
+- Tanda de todo lo que lee el registro (8 ficheros): **65 · 65 pass · 0 fail**.
+- **No se ha visto en pantalla:** en producción no hay ningún albarán (`GET /admin/albaranes` da total 0
+  en la cuenta QA y en la demo), y crear uno es escribir.
+
+**Medido contra:** `origin/main` = `ba1b096661db77f93aaaf52acdcfd7c9d99db9aa` · 2026-09-29T09:02:53Z
+
+
+## Lote 5 (sueltos) — S2 (`s2-29a`), 29-sep-2026
+
+**Medido contra:** `origin/main` = `51dcfe156990dfb36b6dfb225e6d75bda7e5a08e` · 2026-09-29T09:45:31Z
+
+Revisión hoja a hoja en Jira, SCRUM-1215 c.17505: 13 hojas, 9 pasan (3 con matiz), 2 no pasan y 2 sin
+consumidor. Decisiones del orquestador en el mismo ticket.
+
+- **Firmada y pintada:** `productsView.js · MSG.no_catalog_for_trade`, sin «aún» (c.17507). Pasa a
+  `retiradas` del censo 1157.
+- **Declarada, SE CONSERVA:** `paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual`. Sigue como
+  `SIN_COMENTARIO`, pero con su motivo real en el JSON del censo: traduce un valor de dato antiguo y sin
+  base no se puede saber si alguna fila lo trae. `paidViaEtiquetas.js` es de J y no se toca.
+- **NO se retira:** `quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnBorrar`. No es un rótulo huérfano:
+  es una FILA aprobada de la tabla del patrón (13 filas, fijada por scrum421 y scrum984) que describe una
+  acción que no existe (ni ruta `DELETE` de presupuesto ni botón). Va a **SCRUM-1273**, sin construir
+  hasta decidir el alcance. Queda anotado aquí que **tampoco consta** en `_sin-consumir-declarados.json`
+  (SCRUM-1185): el censo 1185 no la ve, porque mira rutas y exports con productor y esta acción no tiene
+  ninguno.
+- **Carril J, no tocadas:** las tres de `cobrosView.js · COBROS_COPY` (ya firmadas por el asesor,
+  `SCRUM-285.md:249/:271`; el censo las lee mal). El orquestador se las pasa a J.
+- **Los dos que no pasan son de dinero** y van en tickets propios: **SCRUM-1271** («entregados sin
+  facturar» tras una parcial; proyección aditiva de S1) y **SCRUM-1272** («facturados sin cobrar» con
+  anulada o con R1; solo pantalla, S2).
+
+
+## Lote 3 (albarán), marcado de las firmas — S4, 29-sep-2026 (rama `scrum-1215-lote3-albaran-firmados`)
+
+Revisión en Jira c.17493 (corregida en c.17495, fila 3). Firmas del orquestador por delegación del
+fundador: c.17494 (6 de 8) y c.17496 (el 3, «Facturar lo entregado»).
+
+- **Marcadas con su firma, en su misma línea** (regla 1 del censo 1157: el comentario de la línea
+  gobierna sólo a esa clave), y pasadas a `retiradas` del censo: `btnEmitir`, `btnEnviarFirmar`,
+  `btnFirmarAqui`, `btnVerTrabajo`, `btnWhatsApp`, `btnEditarLineas` (c.17494) y `btnFacturar` (c.17496).
+  Ni una letra de texto cambia.
+- **`btnFoto` («📷 Añadir foto») se QUEDA en `acusadas`.** Se oculta en `firmado` (PR #1947, en `main`), pero
+  el texto en borrador y emitido **no tiene firma escrita**: c.17494 dice que ahí «funciona y se queda»,
+  que es una decisión de conducta, no un APROBADO del literal. Pedida la firma aparte.
+- Pendiente de c.17496, sin construir: proponer un título para la hoja «Facturar parte de ‹número›» que
+  no use «parte» en su sentido común.
+- Tanda de los ficheros que tocan la vista del albarán o el censo (26 ficheros): 230 · 230 pass.
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:42:39Z
