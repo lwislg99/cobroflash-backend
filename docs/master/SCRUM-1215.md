@@ -78,3 +78,24 @@ y **parado**. Mover `confirmarPropuesta` a `retiradas` en el JSON del censo lo *
 ([Logging/Audit Tampering]); sin eso, `scrum1157` se pone rojo en el check obligatorio. Avisado al orquestador.
 
 **Medido contra:** `origin/main` = `29eea3f9baba711eb65a3b6119727ef4777f0159` · 2026-09-28T15:39:19Z
+
+## Apéndice (s4-29a) · lote 3 (albarán): «📷 Añadir foto» ya no se ofrece en `firmado`
+
+Revisión: c.17493 (corregida la fila 3 en c.17495). Firma y decisión: c.17494, 6 de 8 aprobados; el 3
+(«Facturar lo entregado») sigue pendiente y el 8 se decide así, sin texto nuevo.
+
+- **Lo que se ha medido:** `POST /admin/albaranes/:id/fotos` responde **siempre** 409 `albaran_locked` en
+  `firmado` («Un albarán firmado está congelado: no admite fotos nuevas.»), y el registro ofrecía
+  `btnFoto` en el «⋮» de ese mismo estado. Era un botón cuya única respuesta posible es un error.
+- **El arreglo, en la tabla** y no en la vista: `albaranActionsRegistry.js`, `btnFoto.firmado` pasa de
+  `overflow` a `oculta`. En borrador y emitido se queda, porque ahí funciona.
+- `tests/scrum707-estado-no-contemplado.test.mjs`: el control positivo enumera lo que se ofrece en cada
+  estado, y de `albarán|firmado` se quita `btnFoto`. Es la consecuencia del cambio, no una relajación.
+- `tests/scrum1215c-foto-oculta-en-firmado.test.mjs` ata las dos mitades: el servidor sigue rechazando en
+  `firmado` (si algún día lo admite, la ocultación pierde su motivo y el test lo dice) y la tabla no la
+  ofrece ahí. **Rojo comprobado:** con `firmado: 'overflow'` → 1 pass · 1 fail.
+- Tanda de todo lo que lee el registro (8 ficheros): **65 · 65 pass · 0 fail**.
+- **No se ha visto en pantalla:** en producción no hay ningún albarán (`GET /admin/albaranes` da total 0
+  en la cuenta QA y en la demo), y crear uno es escribir.
+
+**Medido contra:** `origin/main` = `ba1b096661db77f93aaaf52acdcfd7c9d99db9aa` · 2026-09-29T09:02:53Z
