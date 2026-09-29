@@ -19,6 +19,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
+import { leerVersion, condicionDeVersion, esVersionSuperada, ERROR_VERSION_SUPERADA, ERROR_VERSION_INVALIDA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
@@ -466,6 +467,10 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
+    // SCRUM-1285 · la versión que leyó la pantalla (ver `core/db/escrituraConVersion.ts`).
+    const leida = leerVersion(req.body?.version);
+    if (!leida.ok) return res.status(400).json({ error: ERROR_VERSION_INVALIDA });
+
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
       include: { Invoice: true },
@@ -480,12 +485,15 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
       return res.status(status).json({ error: val.error, message: val.message });
     }
 
+    // 🔴 SCRUM-1285 · la versión va DENTRO del `where`, no en una comprobación previa: aquí
+    // reemplazaba a ciegas, y un PATCH hecho sobre una versión vieja devolvía la base al plan viejo.
     const actualizado = await prisma.quote.update({
-      where: { id: quote.id },
+      where: { id: quote.id, ...condicionDeVersion(leida) },
       data: { customBillingPlan: req.body.customBillingPlan },
     });
-    return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas });
+    return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas, version: actualizado.updatedAt });
   } catch (err: any) {
+    if (esVersionSuperada(err)) return res.status(409).json({ error: ERROR_VERSION_SUPERADA });
     console.error('[PATCH /admin/quotes/:id/billing-plan]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }

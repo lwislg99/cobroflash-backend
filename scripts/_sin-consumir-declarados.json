@@ -19,6 +19,7 @@
     {"clave":"ciega-ruta-generica · POST /admin/albaranes/consolidar","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:421","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PATCH /admin/albaranes/:id::fecha","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:587","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PATCH /admin/jobs/:id::assignedUserId","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S2","ticket":"SCRUM-1185"},
+    {"clave":"cuerpo · PATCH /admin/quotes/:id/billing-plan::version","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:465","carril":"S2","ticket":"SCRUM-1285"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::merchantName","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::quoteId","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:442","carril":"J1","ticket":"SCRUM-1185"},

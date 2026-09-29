@@ -57,3 +57,43 @@ llegando la última).
 - **Aceptación 6 (editor de líneas del albarán 5/5):** no se ha tocado `jobDetailView.js`; el patrón es
   nuevo y hoy solo lo usan estas dos pantallas.
 - El censo de rutas que reemplazan sin versión es de S3.
+
+---
+
+## Mitad de SERVIDOR (S1) · aceptación 4 · rama `scrum-1285b-plan-de-cobro-con-version`
+
+**Medido contra:** `origin/main` = `3700de42ef552b5da5689f375084d8be8ff47157` · 2026-09-29T16:56:08Z
+
+`PATCH /admin/quotes/:id/billing-plan` hacía `update({ where: { id } })`: reemplazaba sin mirar sobre qué
+versión escribía. Ahora:
+
+- La petición puede traer `version` = el `updatedAt` que la pantalla recibió (`quoteAdmin.ts:253` ya lo
+  devuelve en el GET del detalle). La condición va **dentro del `where`** del `update`
+  (`{ id, updatedAt: version }`), mismo patrón que SCRUM-1276: la base decide «¿sigue siendo esa versión?»
+  y «escribe» en la misma sentencia; no cabe otra petición en medio.
+- No casa → P2025 → **409 `version_superada`**, sin escribir. Ilegible → 400 `version_invalida`.
+- La respuesta devuelve `version` (la nueva) para el siguiente guardado.
+
+**Plantilla para el censo de S3:** `src/core/db/escrituraConVersion.ts` (`leerVersion`,
+`condicionDeVersion`, `esVersionSuperada`, los dos códigos). Cuatro líneas por ruta.
+
+⚠️ **Transición declarada:** sin `version` se escribe como hoy, porque la pantalla aún no la manda y
+exigirla rompería el guardado normal al desplegar. **Falta (S2):** que `quotesDetailView.js:807` mande
+`version: quote.updatedAt`, la actualice con la de la respuesta y trate el 409. El 409 va **sin
+`message`**: cualquier texto para la persona pide firma (regla 39). Cuando la pantalla la mande, se exige.
+
+**Patrón nombrado por el orquestador (29-sep), visto en SCRUM-1276:** *un fixture inválido que pasa
+porque el código de producción es demasiado laxo.* Al apretar el código, el fixture cae (`scrum814`
+creaba el presupuesto en `pending`, estado que no existe). La pregunta no es «qué he roto» sino «¿este
+fixture era posible?».
+
+Test `tests/scrum1285b-plan-de-cobro-con-version.test.mjs`, por el manejador real con la base doblada
+(P2025 y `@updatedAt` emulados): control positivo (dos guardados seguidos, cada uno sobre la versión que
+devolvió el anterior), versión superada → 409 sin cambiar la base, **latencia invertida** (el PATCH viejo
+llega el último y no revierte), versión ilegible → 400, y la transición. **Rojo contra `3700de42`: 4/5**
+(la transición pasa en los dos, como debe).
+
+Fuera de alcance: si se emite una factura entre la lectura de `emitidas` y la escritura, eso no cambia el
+`updatedAt` del presupuesto; lo cubre (o no) el censo de S3.
+
+La tanda completa lo marcó (SCRUM-1185): ersion es un campo del cuerpo que ninguna pantalla manda aún. Declarado en scripts/_sin-consumir-declarados.json con carril **S2** y ticket SCRUM-1285; se retira cuando quotesDetailView.js lo mande. Resto de la tanda: solo el 1216b ajeno.
