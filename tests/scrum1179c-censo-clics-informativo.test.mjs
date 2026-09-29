@@ -28,14 +28,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // Vuelve la ceguera: un error al pulsar se leería como «NO navega».
-    fichero: CENSO,
+    fichero: 'scripts/censo-clics-del-80.mjs',
     de: '    if (despues.errores.length > antes.errores) {',
     a: '    if (false) {',
     cae: 'SCRUM-1179-C · clics-del-80 distingue «no navega» de «revienta al pulsar»',
   },
   {
     // El control se mira y se ignora: el censo mediría aunque no supiera ver el error.
-    fichero: CENSO,
+    fichero: 'scripts/censo-clics-del-80.mjs',
     de: '  if (!veQuieta || !veRota) {',
     a: '  if (false) {',
     cae: 'SCRUM-1179-C · clics-del-80 lleva su CONTROL: una fila quieta y una que revienta, antes de medir',
