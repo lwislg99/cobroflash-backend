@@ -25,6 +25,12 @@
 
 Las cinco miden **1402 px de 1700** (ya con el 816 dentro).
 
+> 🔴 **Caducado para Facturas (29-sep-2026, SCRUM-1179-C).** «La fila abre el documento: sí» dejó de
+> ser cierto el 9-sep (b7adfd68, SCRUM-845): la casilla pasó a declararse dentro de un `if` y el clic
+> de la fila, que la nombra, lanza `ReferenceError: cb is not defined` y no abre nada. Hoy la tabla
+> de arriba describe el 8-sep, no producción. El censo lo decía como «NO navega» porque no leía los
+> errores de la página; desde SCRUM-1179-C los lee y lo marca como «🔴 ERROR al pulsar».
+
 ---
 
 ## La acción del 80%, y su coste

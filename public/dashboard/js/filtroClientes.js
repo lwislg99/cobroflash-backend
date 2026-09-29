@@ -541,6 +541,53 @@
     return cuantos === 1 ? TEXTOS_SELECCION.uno : String(cuantos) + ' ' + TEXTOS_SELECCION.varios;
   }
 
+  // ── SCRUM-1135 · ETIQUETAR LA SELECCIÓN ─────────────────────────────────────────────────────
+  //
+  // `POST /admin/customers/bulk-tags` (SCRUM-1059) existía desde el 25-sep sin NINGÚN consumidor:
+  // la selección sólo contaba. Estos textos, firmados en SCRUM-1135 (registro en
+  // docs/microcopy/2026-09-28-SCRUM-1135-etiquetar-seleccion.md). `{n}` y `{m}` son DATO.
+  var TEXTOS_ETIQUETADO = {
+    anadir: 'Añadir etiqueta',
+    quitar: 'Quitar etiqueta',
+    campo: 'Etiqueta',
+    anadidaUno: 'Etiqueta añadida a 1 cliente',
+    anadidaVarios: 'Etiqueta añadida a {n} clientes',
+    quitadaUno: 'Etiqueta quitada de 1 cliente',
+    quitadaVarios: 'Etiqueta quitada de {n} clientes',
+    yaLaTeniaUno: '1 ya la tenía o no caben más etiquetas',
+    yaLaTeniaVarios: '{m} ya la tenían o no caben más etiquetas',
+    noLaTeniaUno: '1 no la tenía',
+    noLaTeniaVarios: '{m} no la tenían',
+    error: 'No se pudieron cambiar las etiquetas',
+  };
+
+  /**
+   * Lo que se le dice al profesional tras etiquetar: SÓLO recuentos. Los motivos por cliente que
+   * devuelve el servidor (`resultados[].motivo`) no se pintan: son textos del servidor sin firmar.
+   *
+   * ⚠️ «Sin cambios» junta todo lo no actualizado. Al añadir, el servidor sólo lo deja así por
+   * «ya la tenía» o por el tope de etiquetas (`MAXIMO_POR_CLIENTE`, que el texto NO repite: SCRUM-1135 comentario 17447) — o por un cliente que ya no existe, que desde esta lista
+   * sólo pasa si otro lo borró entre medias; la recarga de después lo quita de la tabla.
+   *
+   * Puro: `{ texto, tipo }`, con `tipo` 'success' si alguno cambió y null si ninguno.
+   */
+  function resumenDelEtiquetado(accion, respuesta) {
+    var r = respuesta || {};
+    var n = Number(r.actualizados) || 0;
+    var m = (Array.isArray(r.resultados) ? r.resultados : []).filter(function (x) { return x && !x.actualizado; }).length;
+    var T = TEXTOS_ETIQUETADO;
+    var partes = [];
+    if (n > 0) {
+      if (accion === 'remove') partes.push(n === 1 ? T.quitadaUno : T.quitadaVarios.replace('{n}', String(n)));
+      else partes.push(n === 1 ? T.anadidaUno : T.anadidaVarios.replace('{n}', String(n)));
+    }
+    if (m > 0) {
+      if (accion === 'remove') partes.push(m === 1 ? T.noLaTeniaUno : T.noLaTeniaVarios.replace('{m}', String(m)));
+      else partes.push(m === 1 ? T.yaLaTeniaUno : T.yaLaTeniaVarios.replace('{m}', String(m)));
+    }
+    return { texto: partes.join(' · '), tipo: n > 0 ? 'success' : null };
+  }
+
   /** El estado de la casilla de cabecera. Sin filas visibles NO hay «todos»: hay «ninguno». */
   function estadoDeCabecera(seleccion, visibles) {
     var hay = idsDe(visibles);
@@ -575,6 +622,9 @@
     CABECERA_TODOS: CABECERA_TODOS,
     TEXTOS_SELECCION: TEXTOS_SELECCION,
     textoDelContador: textoDelContador,
+    // SCRUM-1135
+    TEXTOS_ETIQUETADO: TEXTOS_ETIQUETADO,
+    resumenDelEtiquetado: resumenDelEtiquetado,
     idsDe: idsDe,
     estaMarcado: estaMarcado,
     alternar: alternar,

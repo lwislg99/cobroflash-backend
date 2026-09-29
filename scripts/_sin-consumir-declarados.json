@@ -150,7 +150,6 @@
     {"clave":"ruta · POST /admin/customers/:id/fusionar","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:631","carril":"J2","ticket":"SCRUM-1126"},
     {"clave":"ruta · POST /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:400","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:439","carril":"J2","ticket":"SCRUM-1145"},
-    {"clave":"ruta · POST /admin/customers/bulk-tags","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:122","carril":"J2","ticket":"SCRUM-1135"},
     {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
@@ -162,6 +161,7 @@
   ],
   "retiradas": [
     {"clave":"ruta · GET /admin/customers/:id/whatsapp","motivo":"SCRUM-1133: conectada en customerDetailView.js (pestaña «WhatsApp» de la ficha, sólo admin)"},
+    {"clave":"ruta · POST /admin/customers/bulk-tags","motivo":"SCRUM-1135: conectada en customersView.js (Añadir/Quitar etiqueta en la barra de selección, sólo admin)"},
     {"clave":"ruta · GET /admin/libros/recibidas.csv","motivo":"SCRUM-1249: conectada en facturasRecibidasView.js (botón de descarga con el periodo del selector)"},
     {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","motivo":"SCRUM-1180: conectada en quotesView.js (casillas de cláusulas en el editor; Duplicar las copia desde el detalle)"},
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},

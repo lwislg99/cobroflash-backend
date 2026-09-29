@@ -151,3 +151,22 @@ consumidor. Decisiones del orquestador en el mismo ticket.
 - **Los dos que no pasan son de dinero** y van en tickets propios: **SCRUM-1271** («entregados sin
   facturar» tras una parcial; proyección aditiva de S1) y **SCRUM-1272** («facturados sin cobrar» con
   anulada o con R1; solo pantalla, S2).
+
+
+## Lote 3 (albarán), marcado de las firmas — S4, 29-sep-2026 (rama `scrum-1215-lote3-albaran-firmados`)
+
+Revisión en Jira c.17493 (corregida en c.17495, fila 3). Firmas del orquestador por delegación del
+fundador: c.17494 (6 de 8) y c.17496 (el 3, «Facturar lo entregado»).
+
+- **Marcadas con su firma, en su misma línea** (regla 1 del censo 1157: el comentario de la línea
+  gobierna sólo a esa clave), y pasadas a `retiradas` del censo: `btnEmitir`, `btnEnviarFirmar`,
+  `btnFirmarAqui`, `btnVerTrabajo`, `btnWhatsApp`, `btnEditarLineas` (c.17494) y `btnFacturar` (c.17496).
+  Ni una letra de texto cambia.
+- **`btnFoto` («📷 Añadir foto») se QUEDA en `acusadas`.** Se oculta en `firmado` (PR #1947, en `main`), pero
+  el texto en borrador y emitido **no tiene firma escrita**: c.17494 dice que ahí «funciona y se queda»,
+  que es una decisión de conducta, no un APROBADO del literal. Pedida la firma aparte.
+- Pendiente de c.17496, sin construir: proponer un título para la hoja «Facturar parte de ‹número›» que
+  no use «parte» en su sentido común.
+- Tanda de los ficheros que tocan la vista del albarán o el censo (26 ficheros): 230 · 230 pass.
+
+**Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:42:39Z
