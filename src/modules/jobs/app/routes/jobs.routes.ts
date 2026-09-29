@@ -44,6 +44,7 @@ import {
 } from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { importePendienteDeFacturar } from '../../domain/importePendienteAlbaran'; // SCRUM-1271
 import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-424
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 // SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
@@ -613,6 +614,7 @@ async function serializeJobDetail(job: any) {
   const albaranes = albaranesRaw.map((a) => {
     const facturado = facturadoPorLinea(libroJob.filter((f) => f.albaranId === a.id));
     const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as any[];
+    const pendientes = pendientePorLinea(lineas, facturado);
     return {
       ...serializeAlbaran(a),
       operario: base.operario,
@@ -624,7 +626,13 @@ async function serializeJobDetail(job: any) {
       // `estadoFacturacion`, siendo la MISMA llamada. Y `estadoCobro` ya nombra otra cosa en este
       // mismo endpoint: el cobro del TRABAJO (`Pagado`/`Parcial`/`Pendiente`, línea 253).
       estadoFacturacion: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
-      pendientes: pendientePorLinea(lineas, facturado),
+      pendientes,
+      // SCRUM-1271 · el IMPORTE que queda por facturar, del mismo libro y con la misma aritmética
+      // que `totales.total`. Tras una parcial, «X entregados sin facturar» contaba el albarán
+      // ENTERO. `null` sin valorar; `0` facturado entero. Lo suma `jobCobroHuecos.js`.
+      importePendienteDeFacturar: importePendienteDeFacturar({
+        lineas, pendientes, modoValoracion: a.modoValoracion, facturadoEntero: a.invoiceId != null,
+      }),
     };
   });
 
