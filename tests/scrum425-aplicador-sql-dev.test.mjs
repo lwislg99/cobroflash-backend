@@ -228,6 +228,57 @@ test('SCRUM-1197 · 🔴 ROJO: se amplió la FORMA `AS ENUM`, no la familia `CRE
   }
 });
 
+// ── SCRUM-1224 (28-sep-2026) · UN ALTER TABLE CON VARIAS ACCIONES SE MIRA ENTERO ────────────
+//
+// La forma `ALTER TABLE … ADD COLUMN` terminaba en `[\s\S]+`: miraba la PRIMERA acción y lo que
+// fuera detrás de la coma pasaba sin mirar. Medido: `ADD COLUMN "x" INTEGER, DROP COLUMN "email"`
+// salía ACEPTADO como «ALTER TABLE … ADD COLUMN». No es una forma nueva ni una excepción: es el
+// guarda haciendo lo que dice que hace. El clasificador de producción ya partía las acciones.
+
+const DESTRUCTIVAS_TRAS_UNA_COMA = [
+  'DROP COLUMN "email"',
+  'ALTER COLUMN "email" TYPE INTEGER',
+  'DROP TABLE "invoices"',
+  'TRUNCATE "invoices"',
+  'DELETE FROM "invoices"',
+  'UPDATE "invoices" SET "total" = 0',
+  'RENAME COLUMN "email" TO "x"',
+  'DROP TYPE "VfSubmissionStatus" CASCADE',
+  'ALTER COLUMN "email" DROP NOT NULL',
+  'DROP CONSTRAINT "merchants_pkey"',
+];
+
+test('SCRUM-1224 · 🔴 una acción destructiva NO pasa por ir detrás de un ADD COLUMN', () => {
+  for (const cola of DESTRUCTIVAS_TRAS_UNA_COMA) {
+    const sql = `ALTER TABLE "merchants" ADD COLUMN "x" INTEGER, ${cola};`;
+    assert.equal(revisar(sql, { ruta: 'x.sql' }).ok, false,
+      `🔴 PASA «${sql}»: la lista miró la primera acción y se creyó el resto.`);
+  }
+  // Control: la misma acción, sola, ya se rechazaba (no es eso lo que se arregla aquí).
+  assert.equal(revisar('ALTER TABLE "merchants" DROP COLUMN "email";', { ruta: 'x.sql' }).ok, false);
+});
+
+test('SCRUM-1224 · 🔴 mira TODAS las acciones: la tercera y la cuarta también', () => {
+  const casos = [
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, DROP COLUMN "c";',
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" INT, DROP COLUMN "d";',
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" INT, ALTER COLUMN "d" TYPE TEXT;',
+  ];
+  for (const sql of casos) assert.equal(revisar(sql, { ruta: 'x.sql' }).ok, false, `🔴 PASA «${sql}»`);
+});
+
+test('SCRUM-1224 · lo aditivo de varias acciones SIGUE pasando (el ALTER real de 1216b, tres columnas, una coma en un literal)', () => {
+  const casos = [
+    `ALTER TABLE "merchants"\n  ADD COLUMN IF NOT EXISTS "invoice_start_seq"  INTEGER,\n  ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;`,
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" NUMERIC(12,2);',
+    `ALTER TABLE "m" ADD COLUMN "nota" TEXT DEFAULT 'a, b', ADD COLUMN "d" INT;`,
+  ];
+  for (const sql of casos) {
+    const r = revisar(sql, { ruta: 'x.sql' });
+    assert.equal(r.ok, true, `🔴 se bloqueó un ALTER aditivo de varias acciones: «${sql}» — ${r.mensaje}`);
+  }
+});
+
 // ── 🔴 ROJO DE DESTINO, y el `--go`──────────────────────────────────────────────────────────
 
 test('SCRUM-425 · 🔴 el CLI está ACOTADO a `yaqu_dev_javier` y lo comprueba por MECANISMO', () => {

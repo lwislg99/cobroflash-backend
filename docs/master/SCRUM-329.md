@@ -51,3 +51,8 @@ Distingue **200-vacío** de 404. Restaurado, verde otra vez.
 Quien llega a `/privacidad` o `/terminos` llega **DESDE FUERA** —un cliente, un asesor, una
 inspección—, porque **desde el dashboard no se enlaza a las legales** (medido en SCRUM-406). Es
 justo el público que no perdona encontrarlas vacías, y hasta hoy **nada comprobaba que respondieran**.
+
+## Mejora anotada · SCRUM-1234 (28-sep-2026)
+
+`sinTercerosEnLaLanding` pasa de `false` a `true` en `ESTADO_DECLARADO`: la fuente Inter se sirve desde
+`/fonts/` y la landing ya no pide nada a Google Fonts. Es una mejora medida, no un guard relajado.

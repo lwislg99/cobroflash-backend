@@ -51,7 +51,8 @@ function montarAsistente() {
 }
 
 const ANIO = new Date().getFullYear();
-const PASO_2 = `¿Ya has facturado en ${ANIO}?`;
+// SCRUM-1216b: título firmado de nuevo por el fundador (SCRUM-1216, comentario 17347).
+const PASO_2 = `¿Ya has emitido facturas en ${ANIO}?`;
 
 test('SCRUM-1162 · «Siguiente» avanza en CADA paso hasta el último (rama «No, empiezo ahora»)', async () => {
   const a = montarAsistente();

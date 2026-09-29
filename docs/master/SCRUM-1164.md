@@ -56,3 +56,39 @@ reestructuró el código, no se tocó el guard):
 
 Suite dirigida (83 ficheros que citan `jobDetailView`/`jobCobroHuecos`/SCRUM-1164): 749 tests,
 748 pass, 1 skip, 0 fail.
+
+## Incremento 2 · Inicio y Planes (`homeView.js`, `plansView.js`)
+
+Mismo criterio (`appModoEmision === 'receipt'`, el que ya usa `plansView.js` para sus dos filas de
+SCRUM-1029). Rama apilada sobre la del incremento 1 para no chocar en este registro.
+
+| # | Qué se calla en `receipt` | Por qué |
+| --- | --- | --- |
+| 3 | nota «💡 "100% al aceptar" genera la factura cuando el cliente firma.» (presupuesto rápido) | no se genera ninguna factura |
+| 4 | PASO «Cobra tu primer trabajo» | no se puede cumplir nunca: con él pendiente el checklist no se acababa jamás |
+| 4 | nota «Te avisamos cuando acepten o paguen» (el paso de WhatsApp se queda) | nadie paga por YaQu |
+| 4+ | PASO «Configura cómo cobras · IBAN para transferencia o Bizum» | regla 24: sin ON no hay transferencia/Bizum por YaQu. **El campo del IBAN en Ajustes no se toca** (orquestador, 28-sep) |
+| 4+ | nota «Se lo pedimos al cliente tras pagar» (el paso de reseñas se QUEDA) | «tras pagar» no llega; pero el enlace también sale en el perfil público (`publicProfile.service.ts:73`), así que el paso sigue sirviendo |
+| 7 | «+ 0,9 % solo cuando cobras con tarjeta · Bizum y transferencia, gratis» | describe cobros que no ocurren |
+
+Las dos filas «4+» no estaban en el censo de S0: salieron al medir el mismo checklist y el
+orquestador las decidió el 28-sep. **Discrepancia declarada:** él pidió quitar también el PASO de
+reseñas; medido que el enlace se usa en el perfil público, se calla sólo la nota. En `receipt` el
+checklist queda con 7 de 9 pasos, no casi vacío.
+
+**Forma, por dos guards:**
+- SCRUM-315 lee `const steps = [ … ];` con una expresión regular y lo EVALÚA sin `window`. Por eso
+  el array se queda literal, marca con `soloSiCobra`/`notaSoloSiCobra`, y el filtro va fuera
+  (`pasos`). El contador «x/y» cuenta `pasos`, así que en `receipt` dice 0/7 y no 0/9.
+- SCRUM-601 (censo de copy vs flag): la nota del #3 vivía dentro de la plantilla grande del modal y
+  el censo NO la veía. Como constante, la ve y la clasifica «flag» (16 → 17) y, al llegar al
+  `innerHTML` por interpolación, «no legible» (33 → 34). Re-anclado con la medición escrita en el
+  propio test (mismo precedente que SCRUM-887/1155); `PENDIENTES_DE_FIRMA` no se toca.
+
+**Test:** `tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs`, en los dos sentidos. **Rojo
+medido:** con `homeView.js`/`plansView.js` de `origin/main`, 7 de 7 fallan; con el cambio, 7/7.
+Suite dirigida (35 ficheros de `homeView`/`plansView`/checklist/601): 324/324. Ratchets de estilo,
+censo y microcopy (51 ficheros): 492 pass, 1 fallo de fichero en `scrum910d` — uno de los tres que
+fallan bajo carga de la máquina, AJENO (no toca estos ficheros).
+
+**En pantalla: NO VERIFICABLE** por el mismo motivo que el incremento 1.

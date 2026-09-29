@@ -35,40 +35,67 @@
   var M = '[PENDIENTE microcopy oficial]';
 
   var TEXTOS = {
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
+    // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
+    // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
+    // también la oficina. Editable, se queda `sinLineas`.
+    sinLineasCerrado: 'No se apuntó nada en este apartado.',
+    // APROBADO · SCRUM-1215 comentario 17367
     unds: 'UNDS',
     // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
     // palabra del impreso y no estrena vocabulario. Consta en
     // `docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
     descripcion: 'Descripción',
+    // APROBADO · SCRUM-1215 comentario 17367
     entrada: 'Entrada',
+    // APROBADO · SCRUM-1215 comentario 17367
     salida: 'Salida',
+    // APROBADO · SCRUM-1215 comentario 17367
     desplazamiento: 'Desplazamiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     kilometros: 'Kilómetros',
+    // APROBADO · SCRUM-1215 comentario 17367
     referencia: 'REF',
+    // APROBADO · SCRUM-1215 comentario 17367
     obra: 'Dirección de la obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     tecnicos: 'Técnicos',
+    // APROBADO · SCRUM-1215 comentario 17367
     notas: 'Notas',
+    // APROBADO · SCRUM-1215 comentario 17367
     anadirLinea: 'Añadir línea',
+    // APROBADO · SCRUM-1215 comentario 17367
     firmar: 'Firmar aquí mismo',
-    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
+    // SCRUM-1215 (lote 1) · `yaFirmado` RETIRADA: cero consumidores, no se pintaba nunca. Decidido
+    // por el orquestador el 28-sep-2026; motivo en `scripts/_censo-convenio-microcopy-declarados.json`.
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
+    // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
     // fundador firmó en SCRUM-703 para este mismo vocabulario cerrado en «Trabajo nuevo», así que
     // reutilizarlo no estrena microcopy ni pide firma (regla 30).
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloTipo: 'Tipo de intervención',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoReparacion: 'Reparación / asistencia',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoMantenimiento: 'Mantenimiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoInstalacion: 'Instalación',
+    // APROBADO · SCRUM-1215 comentario 17367
     dictado: 'Dicta lo que has hecho',
+    // APROBADO · SCRUM-1215 comentario 17367
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
+    // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
     confirmarPropuesta: 'Añadir estas líneas',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
@@ -84,15 +111,27 @@
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
     // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
-    faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
-    faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
+    //
+    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». FIRMADO por delegación del fundador,
+    // SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma, sea cual
+    // sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y `/firmar-tecnico`),
+    // así que con una basta y la segunda ya no cierra nada.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente.',
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.',
+    // Misma firma (c.17354). Solo mientras no ha firmado NADIE: después ya no avisa, es un hecho.
+    // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
+    // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
+    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.',
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
     // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
     parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
     // SCRUM-890 (PR 2) · una firma que se quedó en la cola y el servidor rechazó al vaciarla, con un
-    // código distinto de `parte_vacio`. ⚠️ PROPUESTA, PENDIENTE DE FIRMA (regla 30).
+    // código distinto de `parte_vacio`. APROBADO por el orquestador por delegación del fundador,
+    // SCRUM-890 comentario 15665 (17-sep-2026). Consta en
+    // `docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md`. (Hasta SCRUM-1215 este comentario
+    // decía «PROPUESTA, PENDIENTE DE FIRMA», y el censo 1157 lo contaba como sin firmar.)
     firmaRechazada: 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el parte.',
 
     // ── SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO ────────────────────────────────
@@ -250,7 +289,7 @@
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
       : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
-        esc(TEXTOS.sinLineas) + '</td></tr>';
+        esc(editable ? TEXTOS.sinLineas : TEXTOS.sinLineasCerrado) + '</td></tr>';
 
     return (
       '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '" style="margin-bottom:18px">' +
@@ -590,12 +629,42 @@
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
+  function avisoFaltaCantidad(texto) {
+    return '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
+      esc(texto) + '</em>';
+  }
+
+  /**
+   * SCRUM-1230 · el aviso «falta la cantidad» sigue a la línea COMO ESTÁ AHORA, no como nació.
+   *
+   * Antes sólo se pintaba si la propuesta llegaba sin cantidad. Si el técnico BORRABA a mano una
+   * cantidad que sí venía, esa línea no entraba al confirmar (`lineasConfirmadas`) y no lo decía en
+   * ningún sitio. Mismo texto del servidor, en la misma línea: se pone al quedarse sin cantidad y se
+   * quita al ponérsela.
+   */
+  function sincronizarAvisosDeCantidad(caja, texto) {
+    if (!caja || !caja.querySelectorAll || !texto) return;
+    var filas = caja.querySelectorAll('[data-propuesta="1"]');
+    Array.prototype.forEach.call(filas, function (fila) {
+      var campo = fila.querySelector('[data-propuesta-unds="1"]');
+      var unds = Number(campo && campo.value);
+      var falta = !isFinite(unds) || unds <= 0;
+      var aviso = fila.querySelector('[data-falta-cantidad]');
+      if (falta && !aviso) {
+        var descripcion = fila.querySelector('span');
+        if (descripcion && descripcion.insertAdjacentHTML) descripcion.insertAdjacentHTML('afterend', avisoFaltaCantidad(texto));
+      } else if (!falta && aviso) {
+        aviso.remove();
+      }
+    });
+  }
+
   function pintarLineaPropuesta(linea, bloque, indice, avisos, inventado) {
     var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
     var conInventado = !!(inventado && inventado[linea.descripcion]);
     return '' +
       '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
-      ' style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
+      ' style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
       '<input type="number" step="any" min="0" data-propuesta-unds="1" ' +
       'value="' + (sinCantidad ? '' : esc(linea.unds)) + '" ' +
       'aria-label="' + esc(TEXTOS.unds) + '" style="width:72px">' +
@@ -603,10 +672,7 @@
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
       // servidor para no reteclearlo aquí.
-      (sinCantidad
-        ? '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
-          esc(avisos.cantidadesRetiradas) + '</em>'
-        : '') +
+      (sinCantidad ? avisoFaltaCantidad(avisos.cantidadesRetiradas) : '') +
       // 🔴 SCRUM-725 · EL DATO QUE EL DICTADO NO DICE, DICHO EN SU LÍNEA.
       //
       // El servidor ya sabe cuál sobra (`datosRetirados`) y hasta hoy la pantalla se lo callaba:
@@ -618,7 +684,48 @@
       (conInventado
         ? '<em data-dato-inventado="1">' + esc(avisos.datosRetirados) + '</em>'
         : '') +
+      (bloque === 'sinBloque' ? pintarColocar(indice) : '') +
       '</li>';
+  }
+
+  /**
+   * 🔴 SCRUM-1230 · LO QUE LA MÁQUINA NO SUPO COLOCAR, LO COLOCA EL TÉCNICO — AQUÍ, EN SU LÍNEA.
+   *
+   * El grupo se rotula «Sin colocar — elige mano de obra o materiales», y hasta hoy la línea no
+   * tenía con qué elegir: `lineasConfirmadas` la descartaba al confirmar y lo dictado se perdía sin
+   * aviso. Son las mismas fichas del tipo de intervención (`.parte-tipo-ficha`, 48 px, ya con su CSS)
+   * y los mismos dos rótulos de los bloques: ni un texto ni una clase nuevos.
+   */
+  function pintarColocar(indice) {
+    return (
+      '<div class="parte-tipo" role="radiogroup" data-colocar-linea="' + indice + '" style="flex-basis:100%;margin:0">' +
+      BLOQUES.map(function (b) {
+        return (
+          '<label class="parte-tipo-ficha">' +
+          '<input type="radio" name="parte-colocar-' + indice + '" value="' + esc(b) + '" data-colocar="1">' +
+          esc(ETIQUETA_BLOQUE[b]) + '</label>'
+        );
+      }).join('') +
+      '</div>'
+    );
+  }
+
+  /** El bloque que el técnico eligió para una línea «Sin colocar», o null si aún no eligió. */
+  function bloqueElegido(fila) {
+    var opciones = fila.querySelectorAll ? fila.querySelectorAll('[data-colocar]') : [];
+    for (var i = 0; i < opciones.length; i++) {
+      if (opciones[i].checked && BLOQUES.indexOf(opciones[i].value) !== -1) return opciones[i].value;
+    }
+    return null;
+  }
+
+  /** Cuántas líneas «Sin colocar» siguen sin bloque elegido. Con alguna, no se confirma. */
+  function lineasSinColocar(caja) {
+    if (!caja || !caja.querySelectorAll) return 0;
+    var filas = caja.querySelectorAll('[data-propuesta="1"][data-bloque="sinBloque"]');
+    var n = 0;
+    Array.prototype.forEach.call(filas, function (fila) { if (!bloqueElegido(fila)) n += 1; });
+    return n;
   }
 
   /**
@@ -662,7 +769,10 @@
       : '';
 
     contenedor.innerHTML = bloques + resto +
-      '<button type="button" data-propuesta-confirmar="1" style="width:100%;margin-top:10px">' +
+      // El texto del aviso de cantidad viaja en el botón para que `sincronizarAvisosDeCantidad`
+      // pinte EL DEL SERVIDOR cuando el técnico vacía una cantidad, sin reteclearlo aquí.
+      '<button type="button" data-propuesta-confirmar="1" data-aviso-cantidad="' +
+      esc(avisos.cantidadesRetiradas || '') + '" style="width:100%;margin-top:10px">' +
       esc(TEXTOS.confirmarPropuesta) + '</button>';
     return true;
   }
@@ -685,8 +795,11 @@
       var descripcion = (fila.querySelector('span') || {}).textContent || '';
       var unds = Number(campoUnds && campoUnds.value);
       var bloque = fila.getAttribute('data-bloque');
+      // SCRUM-1230 · la línea «Sin colocar» entra en el bloque que el técnico eligió en ella.
+      if (bloque === 'sinBloque') bloque = bloqueElegido(fila) || bloque;
       if (!isFinite(unds) || unds <= 0) { sinCantidad += 1; return; }
-      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra.
+      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra. Y no
+      // se llega aquí en silencio: con una sin colocar, confirmar está bloqueado (`lineasSinColocar`).
       if (BLOQUES.indexOf(bloque) === -1) { sinCantidad += 1; return; }
       lineas.push({ bloque: bloque, unds: unds, descripcion: descripcion });
     });
@@ -752,6 +865,11 @@
     return (
       '<section data-parte-firmas="1" class="parte-firmas">' +
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
+      // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
+      (!parte.firmoElCliente && !parte.firmoElTecnico
+        ? '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>'
+        : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
@@ -823,9 +941,15 @@
       return false;
     }
 
+    // 🔴 SCRUM-1229 · CUANDO FIRMA EL TÉCNICO, EL PAD NO ES EL DEL CLIENTE. Medido ejecutando la
+    // vista: le decía «Pide al cliente que firme…», le ofrecía el «en calidad de qué» (que SCRUM-653
+    // c.14494 le quitó a propósito) y mandaba su nombre en el campo del CLIENTE → 400 siempre.
+    var esTecnico = quien === 'tecnico';
     abrirPad({
-      title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
-      hint: TEXTOS.pistaFirma,
+      title: esTecnico ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
+      // Sin pista para el técnico: la única aprobada habla del cliente, y `null` (no `undefined`)
+      // es lo que le dice al pad que no ponga la suya por defecto, que dice lo mismo.
+      hint: esTecnico ? null : TEXTOS.pistaFirma,
       // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
       ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
@@ -839,9 +963,16 @@
           return { concepto: l && l.descripcion, cantidad: l && l.unds, unidad: ETIQUETA_BLOQUE[l && l.bloque] };
         }),
       },
-      firmante: { sugerencia: parte.clienteNombre || '' },
+      firmante: esTecnico
+        ? { sugerencia: '', sinCalidad: true }
+        : { sugerencia: parte.clienteNombre || '' },
       onConfirm: async function (dataUri, declaracion) {
-        var cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
+        // El pad declara siempre `firmadoPorNombre`; cada ruta lee SU campo (`partes.routes.ts`:
+        // `/firmar` → `firmadoPorNombre`, `/firmar-tecnico` → `firmadoTecnicoNombre`). Se traduce
+        // AQUÍ, en quien llama: el servidor no aprende a aceptar dos nombres para lo mismo.
+        var cuerpo = esTecnico
+          ? { signatureData: dataUri, firmadoTecnicoNombre: (declaracion && declaracion.firmadoPorNombre) || '' }
+          : Object.assign({ signatureData: dataUri }, declaracion || {});
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
         var r;
@@ -911,6 +1042,9 @@
     if (typeof pedir !== 'function') return false;
 
     var caja = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    // SCRUM-1230 · con una línea «Sin colocar» sin decidir NO se guarda: el `PATCH` la dejaría
+    // fuera y lo dictado se perdería. El botón ya está bloqueado; esto es el respaldo.
+    if (lineasSinColocar(caja) > 0) return false;
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
@@ -1282,6 +1416,27 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
+          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
+          // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
+          // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
+          // técnico no sabía si había fallado él, la aplicación o la red. Lo que falta lo dice el
+          // aviso de cada línea, que ahora sigue a la cantidad que hay en pantalla.
+          var caja = contenedor.querySelector('[data-dictado-propuesta]');
+          var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
+          var sincronizar = function () {
+            sincronizarAvisosDeCantidad(caja, textoCantidad);
+            confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
+          };
+          var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
+          Array.prototype.forEach.call(fichas, function (f) {
+            if (f.addEventListener) f.addEventListener('change', sincronizar);
+          });
+          var cantidades = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-unds="1"]') : [];
+          Array.prototype.forEach.call(cantidades, function (c) {
+            if (c.addEventListener) c.addEventListener('input', sincronizar);
+          });
+          sincronizar();
         }
       });
     }

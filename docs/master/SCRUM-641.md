@@ -217,6 +217,12 @@ desaparece) y que **no** se ha comido el código (las rutas siguen ahí, y queda
   porque el guard de SCRUM-533 mide **el disco** de los ficheros que la rama toca. Al mudarse el
   traductor, el fichero volvió a su contenido exacto: `Buffer.compare(disco, blob) === 0` y
   `git diff` vacío. La «M» que enseña `git status` es la caché de `stat`, no un cambio.
+  > **Apéndice (28-sep-2026, SCRUM-1179): NO copies el comando de la línea 216; no hace lo que dice.**
+  > `npm run cr:censo --limpiar` no le pasa `--limpiar` al script: npm se lo queda como opción suya
+  > (avisa `Unknown cli config "--limpiar"`) y el script arranca sin argumentos, así que solo cuenta
+  > y no limpia nada; además le falta el fichero. El que limpia es
+  > `node scripts/censo-cr-en-disco.mjs --limpiar <fichero>`. El texto de arriba no se reescribe:
+  > cuenta lo que se hizo.
 
 **Lo que NO se ha tocado:** `prisma/schema.prisma` y el `@@unique` (SCRUM-631 espera al fundador),
 `lockActionForRole` y los permisos de SCRUM-614, `_navegador.mjs` y la marca de arranque

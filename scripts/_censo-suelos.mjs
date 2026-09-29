@@ -32,6 +32,8 @@
 //     (paquetes de `node_modules`, indirecciones). Salen en NO SÉ LEER, nunca en «conectado».
 //   · Productores cuyos `return` no son literales legibles (una llamada, un ternario complejo).
 //     También NO SÉ LEER: un veredicto sobre lo que no se ha podido leer sería el defecto mismo.
+//     (Desde SCRUM-1179-B sí lee un `return null`/`undefined` en un camino, y la forma de
+//     `spawnSync`, DERIVADA ejecutándolo: eran 54 de los 75 NO SÉ LEER, corteza del censo.)
 //   · Guards que no se expresan como `if (…) { salida }` — un `assert` suelto, un `??=`, un
 //     early-return sin ruido. Este censo mide UNA forma, la que produjo el defecto, y lo dice.
 //   · Que la propiedad exista NO garantiza que el umbral sea el correcto. «Conectado» significa
@@ -41,8 +43,11 @@
 // árbol— no dice «no hay suelos rotos», dice que no ha medido. Un cero sobre población vacía no
 // es un cero.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
+import { tokenDeSesion } from './_identidad-sesion.mjs';
 
 /** Los directorios que se barren. Declarado, no adivinado. */
 export const POBLACION = ['scripts', 'tests'];
@@ -66,6 +71,31 @@ export const DEL_ARRAY = new Set([
   ...Object.getOwnPropertyNames(Object.prototype),
 ]);
 export const DEL_OBJETO = new Set(Object.getOwnPropertyNames(Object.prototype));
+
+/**
+ * SCRUM-1179-B · LO QUE DEVUELVE `spawnSync`, DERIVADO EJECUTÁNDOLO, no escrito a mano.
+ *
+ * Venía de `node:child_process`, fuera de la población, y 20 de los 75 guards que el censo no sabía leer (medido el 28-sep-2026) eran `r.status` / `r.error` sobre un `spawnSync`. Se lanza
+ * una vez un proceso que funciona y otra uno que no existe (el único caso en que aparece `error`),
+ * y la forma es la unión de las dos. Si el lanzamiento no da un objeto, devuelve `null` y el caso
+ * sigue saliendo ciego.
+ */
+let formaSpawnSync;
+export function formaDeSpawnSync() {
+  if (formaSpawnSync !== undefined) return formaSpawnSync;
+  try {
+    const bien = spawnSync(process.execPath, ['-e', ''], { stdio: 'ignore' });
+    const mal = spawnSync(path.join(os.tmpdir(), `no-existe-scrum1179-${tokenDeSesion()}-${process.pid}`), [], { stdio: 'ignore' });
+    const ok = bien && typeof bien === 'object' && mal && typeof mal === 'object' && 'error' in mal;
+    formaSpawnSync = ok ? [...new Set([...Object.keys(bien), ...Object.keys(mal)])] : null;
+  } catch { formaSpawnSync = null; }
+  return formaSpawnSync;
+}
+/** Los productores de FUERA cuya forma se sabe derivar. Clave: `especificador · nombre`. */
+const FORMAS_DE_FUERA = new Map([
+  ['node:child_process · spawnSync', formaDeSpawnSync],
+  ['child_process · spawnSync', formaDeSpawnSync],
+]);
 
 /** Lo que hace de un `if` un GUARD: su cuerpo corta la ejecución. */
 const CORTA = /process\.exit|assert\.|assert\(|\bfail\(/;
@@ -97,6 +127,11 @@ export function propiedadesQueDevuelve(fn, sf) {
 
   const mirar = (e, saltos = 0) => {
     if (!e || saltos > 4) { opaco = true; return; }
+    // SCRUM-1179-B · `return null` / `return undefined` en un camino no fabrica NINGUNA propiedad
+    // y tampoco impide leer las de los otros `return`. Tratarlo como ilegible dejaba en NO SÉ LEER
+    // 34 de los 75 guards del árbol, medido el 28-sep-2026 (todos los `if (!ok) return null; return { … }`). Si TODOS los
+    // `return` son así, `leible` sigue en falso y el caso sigue saliendo ciego.
+    if (e.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(e) && e.text === 'undefined')) return;
     if (ts.isObjectLiteralExpression(e)) {
       leible = true;
       for (const p of e.properties) {
@@ -115,7 +150,8 @@ export function propiedadesQueDevuelve(fn, sf) {
   const rec = (n) => {
     // No se entra en funciones anidadas: sus `return` son de ellas, no de ésta.
     if (n !== fn && (ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isArrowFunction(n))) return;
-    if (ts.isReturnStatement(n)) mirar(n.expression);
+    // Un `return;` a secas es un `return undefined` (ver arriba), no una expresión ilegible.
+    if (ts.isReturnStatement(n) && n.expression) mirar(n.expression);
     ts.forEachChild(n, rec);
   };
   rec(fn);
@@ -168,6 +204,38 @@ export function importacionesDe(sf, rel) {
   return { deRepo, deFuera };
 }
 
+/**
+ * SCRUM-1179-B · LA DECLARACIÓN QUE VE ESTE IDENTIFICADOR: la del ámbito más cercano que lo
+ * contiene, como la resuelve el lenguaje.
+ *
+ * Antes era un `Map` por FICHERO y el último `const r = …` pisaba a los demás. Lo destapó
+ * derivar la forma de `spawnSync`: en `turno-staging.mjs` el `r.ok` de
+ * `const r = await adquirirLock(…)` se atribuía al `const r = spawnSync(…)` de OTRA función, y
+ * salían 10 «no conectados» falsos. Estaban ahí desde siempre, escondidos en NO SÉ LEER.
+ * Un parámetro o la variable de un `catch` no tienen productor que leer: `null`.
+ */
+export function declaracionVisible(id) {
+  const nombre = id.text;
+  const enLista = (lista) => lista.declarations.find((d) => ts.isIdentifier(d.name) && d.name.text === nombre);
+  for (let n = id.parent; n; n = n.parent) {
+    if (ts.isBlock(n) || ts.isSourceFile(n) || ts.isCaseClause(n) || ts.isDefaultClause(n)) {
+      for (const s of n.statements) {
+        const d = ts.isVariableStatement(s) ? enLista(s.declarationList) : null;
+        if (d) return d;
+      }
+    }
+    if ((ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n))
+        && n.initializer && ts.isVariableDeclarationList(n.initializer)) {
+      const d = enLista(n.initializer);
+      if (d) return d;
+    }
+    if (ts.isFunctionLike(n) && n.parameters?.some((p) => ts.isIdentifier(p.name) && p.name.text === nombre)) return null;
+    if (ts.isCatchClause(n) && n.variableDeclaration && ts.isIdentifier(n.variableDeclaration.name)
+        && n.variableDeclaration.name.text === nombre) return null;
+  }
+  return null;
+}
+
 /** Lee los ficheros de la población. Lanza si un directorio no existe: ciego declarado, no vacío. */
 export function ficherosDe(raiz, dirs = POBLACION) {
   const out = [];
@@ -207,20 +275,11 @@ export function censar(ficheros) {
     const { deRepo, deFuera } = importacionesDe(sf, rel);
     const propias = funcionesDe(sf);
 
-    // variable → nombre de la función que la produjo
-    const origen = new Map();
-    // variable → expresión con la que se inicializó (para seguir un `const X = …; if (X) …`)
-    const inicializador = new Map();
-    const anotar = (n) => {
-      if (ts.isVariableDeclaration(n) && n.name && ts.isIdentifier(n.name) && n.initializer) {
-        inicializador.set(n.name.text, n.initializer);
-        if (ts.isCallExpression(n.initializer) && ts.isIdentifier(n.initializer.expression)) {
-          origen.set(n.name.text, n.initializer.expression.text);
-        }
-      }
-      ts.forEachChild(n, anotar);
+    // variable → nombre de la función que la produjo, resuelta en SU ámbito (ver declaracionVisible)
+    const origenDe = (id) => {
+      const i = declaracionVisible(id)?.initializer;
+      return i && ts.isCallExpression(i) && ts.isIdentifier(i.expression) ? i.expression.text : null;
     };
-    anotar(sf);
 
     const corta = (nodo) => {
       let s = false;
@@ -236,12 +295,12 @@ export function censar(ficheros) {
     const rec = (n) => {
       if (ts.isIfStatement(n) && n.thenStatement && corta(n.thenStatement)) {
         const r = (x) => {
-          if (ts.isPropertyAccessExpression(x) && ts.isIdentifier(x.expression)
-              && origen.has(x.expression.text)) {
+          const fn = ts.isPropertyAccessExpression(x) && ts.isIdentifier(x.expression)
+            ? origenDe(x.expression) : null;
+          if (fn) {
             guards += 1;
             const variable = x.expression.text;
             const prop = x.name.text;
-            const fn = origen.get(variable);
             const linea = sf.getLineAndCharacterOfPosition(x.getStart(sf)).line + 1;
             const donde = `${rel}:${linea}`;
 
@@ -251,8 +310,12 @@ export function censar(ficheros) {
             //    ficheros» y el censo se declaraba ciego en todos ellos.
             let cand = null;
             let porqueCiego = null;
+            let infoDeFuera = null;
             if (deFuera.has(fn)) {
-              porqueCiego = `\`${fn}\` viene de \`${deFuera.get(fn)}\`, fuera de la población: `
+              const derivar = FORMAS_DE_FUERA.get(`${deFuera.get(fn)} · ${fn}`);
+              const forma = derivar ? derivar() : null;
+              if (forma) infoDeFuera = { props: forma, devuelveArray: false };
+              else porqueCiego = `\`${fn}\` viene de \`${deFuera.get(fn)}\`, fuera de la población: `
                 + 'no puedo leer qué devuelve';
             } else if (propias.has(fn)) {
               cand = { nodo: propias.get(fn), sf };
@@ -268,10 +331,10 @@ export function censar(ficheros) {
               else porqueCiego = `\`${fn}\` está declarada en ${cands.length} ficheros y este fuente no la importa: no sé cuál es`;
             }
 
-            if (!cand) {
+            if (!cand && !infoDeFuera) {
               ciegos.push({ donde, variable, prop, fn, porque: porqueCiego });
             } else {
-              const info = propiedadesQueDevuelve(cand.nodo, cand.sf);
+              const info = infoDeFuera || propiedadesQueDevuelve(cand.nodo, cand.sf);
               if (!info) {
                 ciegos.push({ donde, variable, prop, fn, porque: `no sé leer los \`return\` de \`${fn}\`` });
               } else {
@@ -302,7 +365,8 @@ export function censar(ficheros) {
         // resto sale por NO SÉ LEER, que es un resultado honesto.
         const cond = n.expression;
         r(cond);
-        if (ts.isIdentifier(cond) && inicializador.has(cond.text)) r(inicializador.get(cond.text));
+        const salto = ts.isIdentifier(cond) ? declaracionVisible(cond)?.initializer : null;
+        if (salto) r(salto);
       }
       ts.forEachChild(n, rec);
     };

@@ -426,10 +426,15 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
  * `src/modules/jobs/app/routes/albaranes.routes.ts:639-703`—. `claveIdempotencia`, `albaranId` y
  * `encoladaEn` son NUESTROS: sirven para manejar la cola y no viajan. El endpoint de firmar **no
  * acepta clave de idempotencia** y metérsela sería tocar el sellado.
+ *
+ * 🔴 SCRUM-1229 · `firmadoTecnicoNombre` también viaja: es el nombre que lee
+ * `/admin/partes/:id/firmar-tecnico` (`partes.routes.ts`). Sin él, la firma del técnico encolada
+ * sin cobertura subía sin nombre, el servidor la rechazaba (400) y salía de la cola como rechazada:
+ * se perdía. Las firmas de albarán y de cliente no lo llevan, así que para ellas nada cambia.
  */
 function subirFirmaDeLaCola(firma) {
   const cuerpo = { signatureData: firma.signatureData };
-  for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro']) {
+  for (const campo of ['firmadoPorNombre', 'firmadoPorCalidad', 'firmadoPorCalidadOtro', 'firmadoTecnicoNombre']) {
     if (firma[campo] !== undefined) cuerpo[campo] = firma[campo];
   }
   // 🔴 A SU ENDPOINT, y el default importa: una firma encolada por una versión ANTERIOR a
