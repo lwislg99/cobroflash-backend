@@ -22,7 +22,6 @@
     {"clave":"cuerpo · POST /admin/ai/quote-message::merchantName","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::quoteId","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:442","carril":"J1","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","donde":"src/modules/jobs/app/routes/jobs.routes.ts:1141","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/partes::tipo","donde":"src/modules/jobs/app/routes/partes.routes.ts:349","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
@@ -181,6 +180,7 @@
     {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
     {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","motivo":"SCRUM-1184: conectada. GET /admin/albaranes/serie la usa (via siguienteNumeroDeAlbaran) para la vista previa de Nuevo albaran"},
     {"clave":"cuerpo · POST /admin/templates::paymentTerms","motivo":"SCRUM-1188: conectada en quotesView.js («Guardar como plantilla»; solo FULL_UPFRONT/FIFTY_FIFTY/MANUAL, CUSTOM no cabe)"},
-    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"}
+    {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"},
+    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","motivo":"SCRUM-1267: conectada en jobDetailView.js (crearAlbaran; la clave se acuña una vez al abrir la hoja de alta y la reutilizan los reintentos)"}
   ]
 }
