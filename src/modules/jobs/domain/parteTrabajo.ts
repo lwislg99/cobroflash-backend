@@ -463,6 +463,28 @@ export function ordenDeFirmaExigido(): null {
   return null;
 }
 
+/**
+ * 🔴 SCRUM-1226 · UNA FIRMA SUBE EL ESTADO, NUNCA LO BAJA.
+ *
+ * Las dos rutas de firma escribían `estado: 'firmado'` a pelo. Como los candados son por RANURA
+ * (arriba), la segunda firma se acepta después de la primera, y sobre un parte en `facturado` con
+ * una ranura libre lo devolvía a `firmado` — que NO cierra los precios (`puedeEditarPrecios`). O
+ * sea: firmar reabría los precios de un parte facturado.
+ *
+ * Firmar solo mueve `borrador` → `firmado`. Cualquier otro estado se queda como está, y la firma
+ * se guarda igual: una segunda firma sobre un parte facturado es un dato válido.
+ *
+ * `puedeEditarPrecios` en este camino: NO se toca. Sigue decidiendo por el estado, y como el
+ * estado ya no baja, un parte facturado sigue con los precios cerrados después de la firma.
+ *
+ * ⚠️ Decide sobre el estado LEÍDO. Quien construya «facturar el parte» y quiera cerrar también la
+ * carrera (facturar entre la lectura y la escritura de una firma) necesita una escritura
+ * condicional o un cerrojo; hoy no hay nada que facture un parte, así que no hay carrera.
+ */
+export function estadoTrasFirmar(actual: EstadoParte): EstadoParte {
+  return actual === 'borrador' ? 'firmado' : actual;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS DOS BLOQUES
 // ─────────────────────────────────────────────────────────────────────────────────────────
