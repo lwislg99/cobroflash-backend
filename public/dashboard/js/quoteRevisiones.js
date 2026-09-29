@@ -31,9 +31,13 @@
 (function () {
   'use strict';
 
-  // ✅ MICROCOPY APROBADA por el fundador (regla 30). OCHO rótulos, en DOS firmas:
+  // ✅ Los OCHO rótulos están APROBADOS por el fundador (regla 30), en dos actos:
   //    · las SEIS primeras, el 3-sep-2026, SIN UN CAMBIO;
   //    · `crearRevision` y `errorCrear`, el 16-sep-2026 (SCRUM-688).
+  // SCRUM-1215 (lote 4) · el censo de SCRUM-1157 toma como CUENTA de lo aprobado el número más
+  // pequeño que este bloque pone delante de «textos»/«rótulos», y la nota de `ciego` de aquí debajo
+  // lo decía con un dos: daba por firmadas `titulo` y `vigente` y ni una más. No se refirman —ya lo
+  // están—: se reescribe la nota sin esa cifra.
   // Consta en `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`, addendum «Revisiones del presupuesto
   // (3-sep-2026)», con su ancla contra `origin/main` y comparadas byte a byte con estas.
   //
@@ -41,7 +45,7 @@
   // `P2004226.1`— porque son las del papel que le manda al cliente.
   //
   // 🔴 `ciego` NO ES «no tiene revisiones»: es «no se ha podido leer la lista». Son la misma caja
-  // vacía en pantalla y significan lo contrario, y por eso son dos textos y no uno. Es el suelo de
+  // vacía en pantalla y significan lo contrario, y por eso cada caso tiene su texto. Es el suelo de
   // ceguera aplicado a un rótulo: decir mal esa frase manda al cliente una versión creyendo que no
   // hay otra. Va en voz pasiva, como los avisos del dictado y los de las cláusulas.
   // SCRUM-688 (16-sep-2026) · `crearRevision` y `errorCrear` ENTRAN AQUÍ. Nacieron el día antes
@@ -194,7 +198,12 @@
         .catch(function (e) {
           btn.disabled = false;
           // El motivo NO se inventa: si el servidor manda uno, se enseña el suyo.
-          var msg = (e && e.message) ? e.message : TEXTOS.errorCrear;
+          // SCRUM-1215 (lote 4) · «el suyo» es `data.message`, el que el servidor escribe para una
+          // persona (`RevisionNoCreable`). NO `e.message`: `apiRequest` lo compone SIEMPRE
+          // —«API 500: internal_error», o «Failed to fetch» sin red— y así el texto firmado no se
+          // pintaba nunca. Lo que no traiga `data.message` cae en `errorCrear`, nunca al revés.
+          var delServidor = e && e.data && typeof e.data.message === 'string' ? e.data.message.trim() : '';
+          var msg = delServidor || TEXTOS.errorCrear;
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
           // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
