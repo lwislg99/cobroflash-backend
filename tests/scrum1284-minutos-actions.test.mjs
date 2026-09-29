@@ -13,38 +13,38 @@ import path from 'node:path';
 import { minutosDeJob, resumir, veredicto, SALIDA } from '../scripts/equipo/minutos-actions.mjs';
 import { soloDocs, esDocumentacion } from '../scripts/equipo/solo-docs.mjs';
 
-// Las cinco se comprobaron a mano en rojo antes del primer commit (29-sep-2026); el meta-guard las
-// vuelve a aplicar en cada PR.
+// Las cinco se comprobaron en rojo (29-sep-2026): cada una tumba UN test, y su `cae` es el nombre
+// de ese test —medido aplicándola, no elegido—. El meta-guard las vuelve a aplicar en cada PR.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/equipo/minutos-actions.mjs',
     de: "if (!job || job.conclusion === 'skipped' || !job.started_at",
     a: 'if (!job || !job.started_at',
-    cae: 'un job skipped se cobra a 1 min',
+    cae: 'NO se paga, aunque traiga marcas de tiempo',
   },
   {
     fichero: 'scripts/equipo/minutos-actions.mjs',
     de: 'if (leidas < declaradas) motivos.push',
     a: 'if (false) motivos.push',
-    cae: 'una población truncada sale en verde',
+    cae: 'población truncada → NO_PUDE_MIRAR, nunca verde',
   },
   {
     fichero: 'scripts/equipo/solo-docs.mjs',
     de: 'return lista.length > 0 && lista.every(esDocumentacion);',
     a: 'return lista.every(esDocumentacion);',
-    cae: 'un diff vacío se lee como «solo docs» y se saltan los guards',
+    cae: 'sin lista no hay «solo docs» — se corre todo',
   },
   {
     fichero: '.github/workflows/ci.yml',
     de: "      - name: Guards de navegador\n        if: steps.alcance.outputs.solo_docs != 'true'\n",
     a: '      - name: Guards de navegador\n',
-    cae: 'el paso de los guards deja de saltarse',
+    cae: 'el salto vive SOLO en el job de navegador',
   },
   {
     fichero: '.github/workflows/ci.yml',
     de: "    if: github.event_name == 'push'\n\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          # El historial ENTERO: el vigía",
     a: "\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          # El historial ENTERO: el vigía",
-    cae: 'el vigía vuelve a correr en cada PR',
+    cae: 'el vigía del CI corre en push a main (no en cada PR)',
   },
 ];
 
@@ -118,7 +118,7 @@ test('SCRUM-1284 · R1 · el salto vive SOLO en el job de navegador; meta-guard,
   assert.match(nav, /Guards de navegador\n\s+if: steps\.alcance\.outputs\.solo_docs != 'true'/,
     '🔴 el paso de los guards no está condicionado: el salto no ahorraría nada');
   assert.match(nav, /NO se han corrido/, '🔴 un salto que no se dice en el resumen se lee como un verde de los guards');
-  // Medido: el meta-guard muta ficheros de docs/ y la tanda lee docs/ en 193 ficheros.
+  // Medido: el meta-guard muta ficheros de docs/ y la tanda también lee docs/.
   for (const id of ['test', 'meta-mutaciones', 'trinquete-zona']) {
     assert.doesNotMatch(bloqueDelJob(id), /solo_docs|solo-docs/,
       `🔴 el job ${id} se salta en PR solo-docs, y ese job SÍ depende de docs/ (SCRUM-1284)`);
