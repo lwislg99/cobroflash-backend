@@ -34,6 +34,33 @@ const num = (v) => {
 const albaranesDe = (job) => (Array.isArray(job && job.albaranes) ? job.albaranes : []);
 const facturasDe = (job) => (Array.isArray(job && job.invoices) ? job.invoices : []);
 
+/**
+ * SCRUM-1272 · LAS FACTURAS QUE SIGUEN VIVAS: ni anuladas, ni rectificadas.
+ *
+ * «X facturados sin cobrar» contaba como deuda todo lo que no fuera `paid`, y había dos casos en los
+ * que eso le decía al profesional que le deben un dinero que no le deben:
+ *
+ *   · la ANULADA queda `status: 'annulled'` (`invoicesAdmin.routes.ts`, anular) y seguía sumando;
+ *   · la RECTIFICADA con R1 no cambia de estado —la R1 nace `paid` y con el total negado— así que la
+ *     original seguía `pending` y salía entera como deuda.
+ *
+ * Medido (29-sep-2026): una R1 SIEMPRE rectifica la factura ENTERA (`-original.total`, todas sus
+ * líneas negadas) y solo puede haber UNA por original (`already_rectified`). No existe R1 parcial,
+ * así que no se construye un neteo para un caso que no ocurre: una original con R1 no es deuda, y el
+ * par original + R1 no es «facturado». Si algún día hay R1 parcial, esto hay que revisarlo.
+ *
+ * El dato ya viene del servidor en el detalle del Trabajo (`status`, `type`, `rectifiesId`).
+ */
+const facturasVigentes = (job) => {
+  const todas = facturasDe(job).filter(Boolean);
+  const rectificadas = new Set(todas
+    .filter((inv) => String(inv.type).toUpperCase() === 'R1' && inv.rectifiesId != null)
+    .map((inv) => inv.rectifiesId));
+  return todas.filter((inv) => String(inv.status).toLowerCase() !== 'annulled'
+    && String(inv.type).toUpperCase() !== 'R1'
+    && !rectificadas.has(inv.id));
+};
+
 /** Importe de un albarán. `totales` solo tiene contenido en modo VALORADO (serializeAlbaran). */
 const importeAlbaran = (alb) => num(alb && alb.totales && alb.totales.total);
 
@@ -63,7 +90,9 @@ function importesDeCobro(job) {
   }
 
   let facturado = 0;
-  for (const inv of facturasDe(job)) facturado += num(inv && inv.total);
+  // SCRUM-1272: sin anuladas ni pares rectificados (la R1 netea su original a cero, así que el total
+  // es el mismo que sumándolos; lo que cambia es que una ANULADA ya no cuenta como facturada).
+  for (const inv of facturasVigentes(job)) facturado += num(inv && inv.total);
 
   return {
     aceptado,
@@ -146,7 +175,8 @@ function huecosDeCobro(job) {
   // entregado» y luego «853,05 € del trabajo entero»—. Los dos pueden salir a la vez y son dos
   // verdades distintas, que es exactamente lo que esta sección hace: enumerar, no elegir.
   const aceptado = num(job && job.totalAceptado);
-  if (aceptado > 0 && facturasDe(job).length === 0) {
+  // SCRUM-1272: un Trabajo cuya única factura está anulada (o rectificada) no tiene nada facturado.
+  if (aceptado > 0 && facturasVigentes(job).length === 0) {
     huecos.push({ id: 'sin-facturar-nada', importe: aceptado, accion: 'facturar-el-trabajo' });
   }
 
@@ -222,7 +252,8 @@ function huecosDeCobro(job) {
   // 4 · FACTURADO Y SIN COBRAR — por factura, no por resta. Las rectificativas (importe negativo)
   //     no se cuentan como pendiente de cobro: una nota de abono no es dinero que entre.
   let facturadoSinCobrar = 0;
-  for (const inv of facturasDe(job)) {
+  // SCRUM-1272: una anulada o una rectificada no es dinero que el cliente deba.
+  for (const inv of facturasVigentes(job)) {
     if (!inv || String(inv.status).toLowerCase() === 'paid') continue;
     const t = num(inv.total);
     if (t > 0) facturadoSinCobrar += t;
