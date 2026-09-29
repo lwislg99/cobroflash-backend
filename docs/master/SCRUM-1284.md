@@ -68,6 +68,16 @@ La propuesta era sacar los tres informativos pesados de los PR que solo tocan do
 | R6 · «PR automático» solo al crear la rama | sin tocar: un push de bot no dispara `pull_request:synchronize`, y no está medido qué pasa al re-armar tras un conflicto |
 | trinquete solo sobre los tests cambiados · meta-guard solo sobre los ficheros cambiados · quitar los informativos del CI de `main` | quitan vigilancia, y ni así se llega a cero. Si el fundador lo quiere, lo pide él |
 
+Sobre R5, con las palabras con que se decidió: **no cambio seguridad por 12 $/mes.**
+
+## La conclusión que importa
+
+De los ~13.100 min/semana que parecían recortables, solo entran **~1.886** (R4 + R1), un **6 %**.
+Los demás recortes no eran desperdicio: eran **vigilancia que hace falta**. La factura del CI es
+prácticamente irreducible sin quitar cobertura: en privado con ejecutores de GitHub se queda en unos
+**640–680 €/mes**, no en 400. Eso refuerza la decisión de dejar el repositorio público, y deja el
+ejecutor propio como **la única vía gratuita**, no como una de tres.
+
 ## Riesgos que quedan escritos
 
 - **Ejecutor propio.** La tarifa de plataforma de 0,002 $/min para ejecutores propios se anunció para
@@ -86,3 +96,13 @@ La propuesta era sacar los tres informativos pesados de los PR que solo tocan do
 - Los 16 ficheros de test que leen `ci.yml`, más este: 161/161 en verde, con `npm ci` y
   `npm run build` en un worktree fijado a `origin/main`.
 - El guion corrido contra la API real, un día: `855 corridas leídas de 855 declaradas`, salida 0.
+
+## Tropiezo propio (trampa medida de PowerShell)
+
+`git commit -q -F - @'…'@` en PowerShell 5.1 **no** manda el here-string por la entrada estándar:
+lo pasa como un argumento más, y git lo leyó como una ruta (`pathspec '…' did not match`). El commit
+no se hizo y el `git push` de la misma línea empujó una rama VACÍA (`scrum-1284a-vigia-y-zona-roja`,
+en `82cb31c8`). Se borró del remoto al momento; comprobado que no llegó a abrir PR. La forma que
+funciona: escribir el mensaje en un fichero FUERA del árbol y usar `git commit -F <fichero>`, o
+`-m @'…'@` sin el `-F -`. Y no encadenar el push al commit en la misma línea sin comprobar antes que
+el commit existe.
