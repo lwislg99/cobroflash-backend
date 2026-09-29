@@ -126,3 +126,28 @@ Revisión: c.17493 (corregida la fila 3 en c.17495). Firma y decisión: c.17494,
   en la cuenta QA y en la demo), y crear uno es escribir.
 
 **Medido contra:** `origin/main` = `ba1b096661db77f93aaaf52acdcfd7c9d99db9aa` · 2026-09-29T09:02:53Z
+
+
+## Lote 5 (sueltos) — S2 (`s2-29a`), 29-sep-2026
+
+**Medido contra:** `origin/main` = `51dcfe156990dfb36b6dfb225e6d75bda7e5a08e` · 2026-09-29T09:45:31Z
+
+Revisión hoja a hoja en Jira, SCRUM-1215 c.17505: 13 hojas, 9 pasan (3 con matiz), 2 no pasan y 2 sin
+consumidor. Decisiones del orquestador en el mismo ticket.
+
+- **Firmada y pintada:** `productsView.js · MSG.no_catalog_for_trade`, sin «aún» (c.17507). Pasa a
+  `retiradas` del censo 1157.
+- **Declarada, SE CONSERVA:** `paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual`. Sigue como
+  `SIN_COMENTARIO`, pero con su motivo real en el JSON del censo: traduce un valor de dato antiguo y sin
+  base no se puede saber si alguna fila lo trae. `paidViaEtiquetas.js` es de J y no se toca.
+- **NO se retira:** `quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnBorrar`. No es un rótulo huérfano:
+  es una FILA aprobada de la tabla del patrón (13 filas, fijada por scrum421 y scrum984) que describe una
+  acción que no existe (ni ruta `DELETE` de presupuesto ni botón). Va a **SCRUM-1273**, sin construir
+  hasta decidir el alcance. Queda anotado aquí que **tampoco consta** en `_sin-consumir-declarados.json`
+  (SCRUM-1185): el censo 1185 no la ve, porque mira rutas y exports con productor y esta acción no tiene
+  ninguno.
+- **Carril J, no tocadas:** las tres de `cobrosView.js · COBROS_COPY` (ya firmadas por el asesor,
+  `SCRUM-285.md:249/:271`; el censo las lee mal). El orquestador se las pasa a J.
+- **Los dos que no pasan son de dinero** y van en tickets propios: **SCRUM-1271** («entregados sin
+  facturar» tras una parcial; proyección aditiva de S1) y **SCRUM-1272** («facturados sin cobrar» con
+  anulada o con R1; solo pantalla, S2).
