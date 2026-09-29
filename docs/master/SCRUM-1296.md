@@ -1,0 +1,99 @@
+# SCRUM-1296 · SIF-1 fase 2: cablear el envío a la AEAT con la emisión — el GO del fundador
+
+**Medido contra:** `origin/main` = `f662a15e6ecab8d360b7b1acd625bbdb9a70c4ce` · 2026-09-29T17:57:55Z
+(orquestador del equipo de Javier, `cobroflash-backend-47`)
+
+## 0 · Por qué este fichero entra ANTES que el código
+
+Este registro no documenta un cambio de código: **existe para que el permiso del fundador esté en un
+sitio que una sesión de fondo pueda leer.**
+
+Hoy, 29-sep-2026, tres sesiones del equipo (J1, J2 y J5) **no han podido abrir Jira**: el conector de
+Atlassian pide una autenticación interactiva que una sesión en segundo plano no completa. Y cuando le
+pedí a J1 que copiara ella misma el literal del GO a `docs/master/`, **su clasificador de seguridad lo
+bloqueó**, con razón: un permiso que le llega por un mensaje entre sesiones es, para ella, una
+instrucción de fuera que no puede verificar de primera mano.
+
+Las dos cosas son correctas y juntas dejaban el ticket sin camino. La salida es ésta: **lo escribe
+quien puede abrir el comentario** —el orquestador o el fundador— y la sesión lo lee del repositorio,
+versionado y con historial, que es la misma base sobre la que ya se fía de `CLAUDE.md` y del máster.
+
+🔴 **Regla que queda, y que no es de este ticket:** la copia literal de un GO en `docs/master/` **no la
+hace nunca la sesión que lo recibe por mensaje**. La hace el orquestador o el fundador.
+
+## 1 · El GO del fundador, literal
+
+**Se le presentó con la medición delante** (la tabla del §2: todo construido menos el cableado).
+
+> **Pregunta que se le hizo:**
+> «SCRUM-1296 (cablear VeriFactu a la emisión) tiene tu GO y ninguna sesión asignada. ¿Lo arranco?»
+> — y antes, al presentarle el hueco: si daba GO para cablear el envío con la emisión.
+>
+> **Javier, 29-sep-2026, respuesta literal: «GO sí».**
+> Y al preguntarle si lo arrancaba: **«4-Arranca».**
+
+⚠️ **Corrección que va con el GO, para que nadie lo lea mal:** este GO se escribió primero en
+**SCRUM-1127, comentario 17585**, que es **el ticket equivocado** — su título dice literalmente «SIN
+tocar el camino de emisión». El GO es válido; el sitio era éste. Ya está corregido en los dos
+tickets. **Si alguien presenta SCRUM-1127 como autorización para cablear, está mal.**
+
+## 2 · Qué autoriza
+
+✅ **Que emitir una factura ENCOLE un envío a la AEAT.**
+
+El estado medido, que es lo que se le puso delante:
+
+| Pieza | Estado |
+| --- | --- |
+| Construir el registro con formato AEAT (huella + QR) | ✅ |
+| Hablar con la AEAT | ✅ dos sondas aceptadas, CSV `A-SAQQXM7MXBDX3L` (27-sep) y `A-ALQ5VMP5QV7QLQ` (28-sep) |
+| Sobres de alta, anulación y R1 | ✅ SCRUM-1140 |
+| Cliente y cola (`sif.client.ts`, `sif.cola.ts`) | ✅ SCRUM-1127 |
+| El 302 «sin certificado», ejecutado contra la AEAT real | ✅ SCRUM-1228 |
+| 🔴 **Que emitir ENCOLE** | ❌ **nada** |
+
+`git grep` de `sif.client` / `enviarAlaAEAT` sobre `src/modules/invoicing/**` → **cero**. El registro de
+la fase 1 lo dice con sus palabras: «**NO está cableado.** Nada en `src/` llama al cliente».
+
+## 3 · Qué NO cubre este GO
+
+- ⛔ **El SELLADO no se toca.** La huella encadenada y el QR no cambian. Emitir sigue emitiendo lo
+  mismo; lo que se añade es que **además se encole**.
+- ⛔ **Una factura emitida no se edita ni se reintenta a mano** (regla 29). Los reintentos son de la cola.
+- ⛔ **Esto NO enciende la emisión en España.** `INVOICING_ES_ENABLED` sigue en **OFF** y el GO no lo
+  toca (regla 24). Se construye el camino, **no se abre la puerta**.
+- ⛔ **El certificado no entra en ninguna sesión.** Lo que no se pueda probar sin él **se declara como
+  no probado** (SCRUM-1225 midió cómo).
+- ⛔ **Ningún texto de usuario nuevo sin firma** (regla 39).
+- ⛔ **`db push` no**, contra ninguna base. El esquema va por ALTER previo en las tres (orden A5).
+
+## 4 · Las tres condiciones de aceptación
+
+🔴 **① Si el envío falla, la factura queda emitida igual.** El sellado no puede depender de que la
+AEAT responda. **Con un test:** envío que revienta → factura sellada igual.
+
+🔴 **② El aprendizaje de SCRUM-1228 no se pierde al cablear.** Allí se midió que un 302 «sin
+certificado» se trataba como «sin respuesta» y **se reintentaba 4 veces como si fuera la red**. La cola
+no puede reintentar lo que no se debe reintentar.
+
+🔴 **③ El rojo primero.** Que hoy emitir **no** encola nada se prueba **antes** de arreglarlo. Sin eso
+no hay forma de saber que el cambio hizo algo.
+
+## 5 · Estado al escribir este fichero
+
+| Paso | Quién | Estado |
+| --- | --- | --- |
+| ① El rojo visto | J1 | ✅ `tests/scrum1296-emitir-encola.test.mjs` — 4 pass, 1 fail: «0 escrituras en vfSubmission tras sellar». Sin empujar a propósito: el check obligatorio saldría rojo |
+| ② El DDL de la cola | J1 | ✅ sacado **offline**, 0 DROP · 0 RENAME · 0 destructivas. sha256 del SQL `289f2a13c564f09b7e490483179068c7b58b600296990b2c0d0c54a51871242f` |
+| ② El ALTER aplicado en las tres bases | **Javier** | ⏳ pendiente |
+| ③ El cableado | J1 | ⏳ bloqueado por ② y por este fichero |
+
+⚠️ **`vf_timestamp` NO lleva ALTER**: la columna `invoices.vf_timestamp` ya está en el esquema desde
+SCRUM-145. Lo que falta es **escribirla** al cablear, no crearla. (Medido por J1; corrige lo que este
+ticket daba por pendiente.)
+
+## 6 · Lo que no hay que repetir
+
+- **SCRUM-1110 está HECHO** (script `sobre-soap-prueba-aeat.mjs`, y la AEAT respondió «Correcto»),
+  aunque su estado en Jira dijera otra cosa.
+- `docs/SIF_SPEC_NOTES.md` §6 dice hoy «existe, no está cableado». **Al cablear, esa frase cambia.**
