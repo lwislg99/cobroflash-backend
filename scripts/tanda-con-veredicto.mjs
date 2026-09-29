@@ -27,13 +27,16 @@
 //     (`ℹ tests N` del spec o `# tests N` del TAP), sale con 4. Un cero sin recuento no es un
 //     veredicto: es un proceso que se ha ido;
 //   · en cualquier otro caso sale con EL MISMO código que la tanda (un rojo sigue siendo rojo);
-//   · SIGINT/SIGTERM se reenvían al hijo.
+//   · SIGINT/SIGTERM se reenvían al hijo;
+//   · si la orden es `node --test` y `NODE_OPTIONS` trae `--test-reporter*`, los saca de ahí y se
+//     los pasa como ARGUMENTOS, para que ningún `node --test` nieto los herede (SCRUM-1289b).
 //
 // ⚠️ El tope es de SILENCIO, no de duración: una tanda larga que va escribiendo no se toca. 15 min
 // es 4,6× el peor silencio sano medido; bajarlo convierte esto en el rojo intermitente de SCRUM-852.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { spawn, spawnSync } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
+import { reportersComoArgumentos } from './_reporters-de-node-options.mjs';
 
 const [orden, ...args] = process.argv.slice(2);
 if (!orden) {
@@ -59,10 +62,16 @@ const RESUMEN = /(^|\n)\s*(ℹ|#) tests \d+/;
 const CSI = /\u001B\[[0-9;?]*[ -\/]*[@-~]/g;
 const sinColor = (s) => s.replace(CSI, '');
 
+// 🔴 SCRUM-1289b · LOS REPORTERS DE `NODE_OPTIONS` PASAN A SER ARGUMENTOS DE LA TANDA, Y SOLO DE ELLA.
+// En `NODE_OPTIONS` los hereda cualquier `node --test` que lance un test, y ese hijo TRUNCABA el
+// `tanda.tap` del padre: 94 % de NUL en TODAS las tandas del CI, verdes incluidas (SCRUM-1289).
+// Los argumentos no se heredan. Detalle y por qué van detrás de `--test`: `_reporters-de-node-options.mjs`.
+const lanzar = reportersComoArgumentos(orden, args, process.env);
+
 // `node` se resuelve al MISMO binario que corre esto: sin shell no hay PATH de npm que valga.
 const ejecutable = orden === 'node' ? process.execPath : orden;
 const posix = process.platform !== 'win32';
-const hijo = spawn(ejecutable, args, { stdio: ['inherit', 'pipe', 'pipe'], windowsHide: true, detached: posix });
+const hijo = spawn(ejecutable, lanzar.args, { stdio: ['inherit', 'pipe', 'pipe'], windowsHide: true, detached: posix, env: lanzar.env });
 
 let ultimaEscritura = Date.now();
 let cola = '';

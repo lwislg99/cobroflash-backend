@@ -93,8 +93,14 @@ function bancoDeTanda() {
  * Es exactamente la familia de este ticket, una vuelta más adentro: el instrumento contesta algo
  * plausible sin haber medido. Por eso el suelo de aquí abajo exige ver el nombre del test rojo
  * en la salida antes de creerse ni una fila.
+ *
+ * 🔴 SCRUM-1289b · Y `NODE_OPTIONS` TAMBIÉN FUERA. En el CI trae los reporters de la tanda, y el
+ * `node --test` que lanza este banco los heredaba: abría `tanda.tap` TRUNCÁNDOLO y escribía encima
+ * el suyo. Es la avería que dejó el TAP de todas las tandas con un 94 % de NUL (SCRUM-1289). Desde
+ * 1289b el envoltorio ya no los deja en `NODE_OPTIONS`, pero este banco no depende de eso: lo que
+ * lanza no tiene por qué heredar nada del padre.
  */
-const ENTORNO_LIMPIO = (() => { const e = { ...process.env }; delete e.NODE_TEST_CONTEXT; return e; })();
+const ENTORNO_LIMPIO = (() => { const e = { ...process.env }; delete e.NODE_TEST_CONTEXT; delete e.NODE_OPTIONS; return e; })();
 
 const enShell = (cmd) => {
   try {
