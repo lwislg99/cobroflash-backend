@@ -1308,6 +1308,8 @@ async function duplicateQuote(quoteId) {
     // Observaciones, en silencio. Necesitan que el detalle los mande (SCRUM-1187, servidor):
     // mientras no llegan, `?? null` deja el campo vacío, que es lo que pasaba hasta ahora.
     docHeaderText: detail.docHeaderText ?? null,
+    // SCRUM-1180 · las cláusulas quitadas en el original se quitan también en la copia.
+    clausulasExcluidas: Array.isArray(detail.clausulasExcluidas) ? detail.clausulasExcluidas : null,
     docFooterText: detail.docFooterText ?? null,
   };
   // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino
