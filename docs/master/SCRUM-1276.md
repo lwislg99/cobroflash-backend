@@ -63,3 +63,13 @@ No toca la emisión: el candado va antes de ella; numeración, sellado y cerrojo
   Es firma para este camino, no para siempre.
 - **El cambio al censo de SCRUM-421 no relaja el guard**: le quita una ceguera (`where:` no escribe,
   igual que `select`/`include` en SCRUM-688), con control negativo. Aprobado por el orquestador.
+
+## CI del PR #1972 (29-sep tarde): dos rojos, los dos de esta rama
+
+1. `b6e37535` · scrum237 (la negación «Enviar rechazo» sin respaldo) y scrum775/1179-B (el doble de
+   `quote.update` contado como suelo ilegible) eran de MI test: control positivo añadido (sobre `sent` el
+   formulario SÍ se pinta) y el doble declarado en `scripts/_suelos-sin-leer-declarados.json` con motivo.
+2. `3fce3a73` · `scrum814-carrera-de-tramos-postgres` (solo corre con el banco Postgres del CI) creaba el
+   presupuesto en `status: 'pending'`, que no es un estado de Quote (Parte L; ningún código lo escribe).
+   Antes pasaba porque la ruta solo cerraba el mismo sentido; con el candado, 409 como cualquier estado
+   fuera de L. Fixture a `sent`: la carrera medida es la misma y NINGUNA aserción cambia.
