@@ -21,10 +21,14 @@ arregló los dos hijos (scrum976 y scrum928) y dejó cuatro puntos para S3. Los 
 `scrum976:69`\*, `scripts/censo-mudez.mjs:90`, `scripts/guards-entrada.mjs:171`,
 `scripts/verificacion-s5/romper-los-quince.mjs:169`.
 
-\* los arregla #1990 (S5). El resto NO se toca aquí: son de varios dueños. Con el punto 1 dentro,
-ya no rompen el TAP (en `NODE_OPTIONS` no quedan reporters que heredar), pero siguen prestando
-`FORCE_COLOR`/`NODE_TEST_CONTEXT`/`NODE_OPTIONS` a su hijo. El censo es informativo: ningún test
-exige hoy cero acusados. Hay que repartirlos.
+\* los arregla #1990 (S5). El resto NO se toca aquí: son de varios dueños.
+
+🔴 **«YA NO MUERDE» NO ES «ARREGLADO».** Con el punto 1 dentro, **el daño está contenido**: en
+`NODE_OPTIONS` no quedan reporters que heredar, así que estos 13 ya no pueden romper el TAP. Pero
+**la deuda sigue viva**: siguen prestando `FORCE_COLOR`/`NODE_TEST_CONTEXT`/`NODE_OPTIONS` a su hijo,
+y lo próximo que alguien meta en `NODE_OPTIONS` (u otra variable de la familia) volverá a colarse
+por ellos. El censo es informativo —ningún test exige hoy cero acusados—, así que nada los obliga a
+bajar. **Abren la cola del 30-sep**, para repartir por dueño (decisión del orquestador, 29-sep).
 
 ## Lo que se corrió
 
