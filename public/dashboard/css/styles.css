@@ -3558,7 +3558,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar],
 [data-parte-firmar-tecnico],
 [data-dictado-ordenar],
-[data-propuesta-confirmar] {
+[data-propuesta-confirmar],
+[data-es-correcto] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3580,13 +3581,15 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar]:active,
 [data-parte-firmar-tecnico]:active,
 [data-dictado-ordenar]:active,
-[data-propuesta-confirmar]:active { transform: scale(.97); }
+[data-propuesta-confirmar]:active,
+[data-es-correcto]:active { transform: scale(.97); }
 
 .parte-anadir:disabled,
 [data-parte-firmar]:disabled,
 [data-parte-firmar-tecnico]:disabled,
 [data-dictado-ordenar]:disabled,
-[data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+[data-propuesta-confirmar]:disabled,
+[data-es-correcto]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 /* Firmar es la acción principal de esta pantalla: es lo que cierra el parte en la obra. */
 [data-parte-firmar] {
@@ -3679,7 +3682,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar],
 [data-parte-firmar-tecnico],
 [data-dictado-ordenar],
-[data-propuesta-confirmar] { min-height: 44px; }
+[data-propuesta-confirmar],
+[data-es-correcto] { min-height: 44px; }
 
 /* La «×» ya no se estiliza aquí: su regla ENTERA —aspecto y área táctil— vive junto a las demás
    de `.parte-quitar-linea`, más arriba en este mismo fichero (SCRUM-818). */
