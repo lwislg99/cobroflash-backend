@@ -93,9 +93,14 @@ function tituladosQueDeclaran() {
  * meta-guard de antes de la red sale SIN RED; el de después, no»). Los dos ya estaban en el
  * denominador de declarantes; sólo cambia el subconjunto auto-titulado.
  * Medido sobre `origin/main` = `2b4db6a2948ba062909c38f3cac7e495c2b1e8cc` mezclado en la rama.
+ *
+ * ⬆️ **23** (SCRUM-1263, 29-sep-2026): `scrum834-puerta-avisador-rojo.test.mjs` pasa a DECLARAR
+ * sus mutaciones (`MUTACIONES_QUE_ME_TUMBAN`, las dos de SCRUM-1263) y ya tenía tests titulados
+ * GUARD («el guard SALTADO no es un guard verde…»). Entra al denominador y al subconjunto a la vez.
+ * Medido sobre `origin/main` = `bd2964d9a4ebfc48a38f8d34cacc1db250ebd144` mezclado en la rama.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 22;
+export const SUELO_GUARD_QUE_DECLARAN = 23;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -278,8 +283,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 22;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 21;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 23;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 22;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

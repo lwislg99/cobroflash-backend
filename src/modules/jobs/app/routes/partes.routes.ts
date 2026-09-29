@@ -248,7 +248,10 @@ function validarLineasDelTecnico(
     // SCRUM-889 · el `id` sólo sirve para CASAR con una línea guardada; no se guarda el que manda el
     // cliente (`casarLineasPorIdentidad` guarda el de la base o uno nuevo).
     const id = l?.id === undefined || l?.id === null ? undefined : String(l.id);
-    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion });
+    // SCRUM-1266 · la marca del dato inventado viaja con su línea. Sólo si es una lista: qué queda
+    // de ella lo decide `casarLineasPorIdentidad` contra la descripción (`marcaQueSigue`).
+    const marca = Array.isArray(l?.datosNoRespaldados) ? { datosNoRespaldados: l.datosNoRespaldados } : {};
+    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion, ...marca });
   }
   return { ok: true, lineas };
 }
