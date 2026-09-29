@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard, pintarVista, todos, datosDeMuestra } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, todos, datosDeMuestra, nodo } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CARTEL = 'No se han podido cargar los gastos';
@@ -61,4 +61,19 @@ test('SCRUM-1278 ③ el clic sube: target = lo pulsado, currentTarget = quien es
 
   celda.disparar('focus');
   assert.deepEqual(vistos, [['celda', true]], '`focus` no sube en el navegador');
+});
+
+// SCRUM-1285 (para S4) · un `<textarea>` nacido del marcado tenía `.value` VACÍO: toda vista con uno
+// se medía como si la persona no hubiera escrito nada, sin un rojo.
+test('SCRUM-1278 ④ un <textarea> del marcado da su contenido en .value, como el navegador; el vacío da vacío; una entidad desconocida revienta', () => {
+  const c = nodo('div');
+  c.innerHTML = '<textarea name="descripcion">\nCambio de grifo &amp; revisión  </textarea><textarea name="notas"></textarea>';
+  const [lleno, vacio] = todos(c).filter((n) => n.tagName === 'TEXTAREA');
+  assert.equal(lleno.value, 'Cambio de grifo & revisión  ', 'contenido con entidad resuelta, sin recortar y sin el primer salto de línea');
+  assert.equal(vacio.value, '', 'un <textarea> vacío tiene que dar vacío');
+  // Y lo que viene detrás del textarea no se lo come: sigue siendo un hermano.
+  assert.equal(todos(c).filter((n) => n.tagName === 'TEXTAREA').length, 2);
+
+  const d = nodo('div');
+  assert.throws(() => { d.innerHTML = '<textarea>precio &euro;</textarea>'; }, /no sabe resolver/, 'una entidad desconocida no puede pasar como texto literal');
 });

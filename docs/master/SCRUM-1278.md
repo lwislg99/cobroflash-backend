@@ -43,3 +43,16 @@ en la propia fila revienta. La subida es fiel de todos modos, pero no es «lo qu
 
 Ningún censo usa `noMedida` todavía. Conectar `censo:tactil-panel` (y los de clics de 1179-C) es el
 paso siguiente, en su propio ticket.
+
+## Añadido 29-sep-2026 (S3, a petición del orquestador para S4): el `<textarea>` tiene `.value`
+
+`tests/_banco-vistas.mjs`: al parsear un `<textarea>` no se rellenaba `.value` con su contenido. Toda vista con
+un `<textarea>` se medía como si estuviera vacío, sin un solo rojo. Ahora `.value` es lo que da el navegador: el
+contenido con las entidades resueltas, sin recortar y quitando solo el primer salto de línea. Una entidad que el
+banco no sabe resolver **revienta**; no pasa como texto literal.
+
+| Prueba | Resultado |
+|---|---|
+| `scrum1278` ④ con el banco anterior | ✖ «contenido con entidad resuelta, sin recortar…» (`.value` vacío) |
+| `scrum1278` ④ con el arreglo | ✔ (el lleno da su contenido, el vacío da vacío, `&euro;` revienta) |
+| Los 145 tests que importan `_banco-vistas` | 1288/1288 |

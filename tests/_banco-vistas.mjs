@@ -95,6 +95,19 @@ const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))
 const VACIOS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const CRUDOS = new Set(['script', 'style', 'textarea']);
 
+// El contenido de un `<textarea>` es RCDATA: el navegador resuelve sus entidades y quita UN salto de
+// línea inicial. Solo se conocen las que usa el panel; cualquier otra revienta en vez de pasar
+// literal, porque `&foo;` servido tal cual sería un valor que el navegador nunca daría.
+const ENTIDADES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+export function contenidoDeTextarea(crudo) {
+  const sinSalto = String(crudo).replace(/^\r?\n/, '');
+  return sinSalto.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z][a-z0-9]*);/gi, (todo, e) => {
+    if (e[0] === '#') return String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10));
+    if (Object.prototype.hasOwnProperty.call(ENTIDADES, e)) return ENTIDADES[e];
+    throw new Error(`banco-vistas: el <textarea> trae la entidad «${todo}», que el banco no sabe resolver. No se sirve como texto: el navegador daría otro valor.`);
+  });
+}
+
 const REFLEJADOS = new Map([
   ['type', ''], ['name', ''], ['href', ''], ['src', ''],
   ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
@@ -623,6 +636,13 @@ export function nodo(tag, reg) {
           const fin = cierre === -1 ? -1 : marcado.indexOf('>', cierre);
           TOKEN.lastIndex = fin === -1 ? marcado.length : fin + 1;
         }
+        // 🔴 SCRUM-1285 (pedido por el orquestador para S4) · UN `<textarea>` NACIDO DEL MARCADO TIENE
+        // `.value`. En el navegador su valor por defecto es su contenido: entidades resueltas, SIN
+        // recortar, y quitando solo el primer salto de línea tras la apertura. Aquí `.value` salía
+        // vacío, y toda vista con un `<textarea>` se medía como si la persona no hubiera escrito nada,
+        // sin un solo rojo. Una entidad que el banco no sabe resolver NO se deja pasar como texto:
+        // revienta, que un valor falso es peor que un fallo.
+        if (etiqueta === 'textarea' && !autocerrado) h.value = contenidoDeTextarea(texto);
         texto = texto.trim();
         if (texto) h.textContent = texto;
         // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
