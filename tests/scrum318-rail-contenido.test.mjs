@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { soloEjecutable } from './_guard-texto.mjs';
 // SCRUM-262: los teléfonos de los datos de prueba van en el RANGO IMPOSIBLE (`340…`). Un móvil
 // español empieza por 6 o 7, así que `34600000000` —lo primero que escribí— puede ser de alguien
@@ -191,14 +191,21 @@ test('SCRUM-318 · el href del mapa se construye con el MISMO dato que se pinta'
 
 // ── LOS CUATRO QUE SÍ TIENEN DATO ───────────────────────────────────────────────────────
 
-test('SCRUM-318 · CLIENTE: el teléfono es PULSABLE, y `tel:` y WhatsApp salen del mismo número', () => {
-  const b = BLOQUES.bloqueCliente({ customer: { name: 'Francisco Jiménez', phone: TEL_ESPACIADO } });
+test('SCRUM-318 · CLIENTE: el teléfono es PULSABLE, y `tel:` y WhatsApp salen del mismo número', async () => {
+  // SCRUM-1171 · el contrato cambió por decisión del orquestador: los `tel:` los da `contactoDelCliente`
+  // (api.js, el mismo que Clientes), INYECTADO; el WhatsApp va a `customer.numeroWhatsApp`, que el
+  // servidor resuelve con `canalDeWhatsApp`. Con un solo número los dos siguen yendo al mismo. El `tel:`
+  // lleva `+` porque ésa es la normalización compartida (11 dígitos = con prefijo).
+  const { canalDeWhatsApp } = await import(pathToFileURL(path.join(RAIZ, 'dist/core/contacto/canalDeWhatsApp.js')).href);
+  const contacto = cargarDashboard(RAIZ).ctx.contactoDelCliente;
+  const cliente = { name: 'Francisco Jiménez', phone: TEL_ESPACIADO };
+  const b = BLOQUES.bloqueCliente({ customer: { ...cliente, numeroWhatsApp: canalDeWhatsApp(cliente) } }, contacto);
   const tel = b.lineas.find((l) => String(l.href || '').startsWith('tel:'));
   const wa = b.lineas.find((l) => String(l.href || '').includes('wa.me'));
   assert.ok(tel, '🔴 el teléfono no es pulsable. Como texto plano es un número que hay que copiar ' +
     'a mano con las manos sucias; pulsable es una llamada.');
   assert.ok(wa, '🔴 falta el enlace de WhatsApp');
-  assert.equal(tel.href, `tel:${TEL}`, '🔴 el `tel:` no normaliza los espacios');
+  assert.equal(tel.href, `tel:+${TEL}`, '🔴 el `tel:` no normaliza los espacios');
   assert.equal(wa.href, `https://wa.me/${TEL}`, '🔴 WhatsApp usa un número distinto que `tel:`');
   assert.equal(tel.texto, TEL_ESPACIADO, '🔴 se pinta el número normalizado en vez del que guardó el pro');
 });

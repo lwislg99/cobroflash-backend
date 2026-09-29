@@ -151,6 +151,22 @@ export function decidirTrasEnvio(
     };
   }
 
+  if (resultado.tipo === 'sin_permiso') {
+    // SCRUM-1228: un problema de PERMISOS (el certificado no está, no vale o no es de ese NIF).
+    // Reintentar no puede salir bien, así que no se reintenta: a una persona al PRIMER intento.
+    // `manual_review` y no `rejected`: al registro no le pasa nada, y arreglado el certificado es
+    // ESTE mismo el que hay que enviar (un rechazo pediría subsanarlo con un registro nuevo).
+    const error = `${resultado.tipo}:${resultado.etapa}:${resultado.motivo}`;
+    return {
+      registros: enviados.map((e) => ({
+        registro: e.registro, estado: 'manual_review' as const, intentos: e.intentosPrevios + 1,
+        lastError: error, reintentarEnS: null, subsanar: false, requierePersona: true,
+      })),
+      esperaSiguienteEnvioS: esperaSiguienteEnvio(null),
+      lineasHuerfanas: [],
+    };
+  }
+
   if (resultado.tipo === 'rechazado' && resultado.porque === 'soap_fault') {
     // El envío entero no se procesó (estructura, autorización, certificado…). Reenviar lo
     // mismo daría lo mismo: una persona.

@@ -63,7 +63,76 @@ var COBROS_COPY = {
    */
   diasSinCobrar: function (n) { return 'Sin cobrar desde hace ' + COBROS_COPY.diasEnTabla(n); },
   cabeceras: ['Fecha', 'Cliente', 'Importe', 'Método', 'Documento', 'Sin cobrar'],
+  // 🔴 SCRUM-1235 · EL CORREO DEL DOCUMENTO QUE NO SALIÓ. Los cinco textos que siguen, APROBADOS por
+  // el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1235 comentario 17384;
+  // registro: docs/microcopy/2026-09-28-SCRUM-1235-correo-que-no-salio.md). Van tal cual.
+  // Uno para la factura y otro para el justificante: un justificante no se llama «factura»
+  // (reglas 24/26). El fallo del reintento NO tiene texto aquí: se pinta el `message` del servidor.
+  correoFallido: {
+    invoice: 'No se pudo enviar la factura al cliente por email.',
+    justificante: 'No se pudo enviar el justificante al cliente por email.',
+  },
+  reenviar: 'Enviar de nuevo',
+  reenviando: 'Enviando…',
+  reenviado: '✓ Enviado por email',
 };
+
+/**
+ * SCRUM-1235 · el aviso de un documento cuyo último correo NO SALIÓ, con la acción que lo arregla.
+ *
+ * `c.correoNoSalio` lo calcula el servidor (`cobros.service.ts`) leyendo `email_messages`: es la
+ * fila `fallo_envio` que el envío automático tras el cobro deja y que hasta ahora no leía nadie.
+ * El botón llama al MISMO endpoint de envío por email que usa la ficha de la factura — no se
+ * construye otro camino de envío.
+ *
+ * Devuelve `null` si no hay nada que avisar, o si la clase no es una de las dos firmadas: un aviso
+ * sin literal aprobado no se pinta con uno inventado.
+ */
+function avisoCorreoNoSalio(c) {
+  var fallo = c && c.correoNoSalio;
+  if (!fallo) return null;
+  var texto = COBROS_COPY.correoFallido[fallo.clase];
+  if (!texto) return null;
+
+  var caja = document.createElement('div');
+  caja.className = 'alert warning';
+  caja.dataset.correoNoSalio = String(fallo.invoiceId);
+  var p = document.createElement('div');
+  p.textContent = texto;
+  caja.appendChild(p);
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-secondary btn-sm';
+  btn.textContent = COBROS_COPY.reenviar;
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = COBROS_COPY.reenviando;
+    apiRequest('/admin/invoices/' + fallo.invoiceId + '/send-email', { method: 'POST' })
+      .then(function (r) {
+        // El endpoint contesta 200 + `sent:false` cuando el envío falla (SCRUM-126): sin este
+        // chequeo diríamos «enviado» sobre un correo que no salió, que es el defecto entero.
+        if (typeof waSendFailed === 'function' ? waSendFailed(r) : (r && r.sent === false)) {
+          p.textContent = (r && r.message) || texto;
+          btn.disabled = false;
+          btn.textContent = COBROS_COPY.reenviar;
+          return;
+        }
+        caja.className = 'alert success';
+        caja.dataset.correoNoSalio = '';
+        p.textContent = COBROS_COPY.reenviado;
+        btn.remove();
+      })
+      .catch(function () {
+        // Sin respuesta (red, plazo) no sabemos más que antes: el aviso sigue siendo cierto y el
+        // botón vuelve a estar a mano. No se inventa un texto para esto.
+        btn.disabled = false;
+        btn.textContent = COBROS_COPY.reenviar;
+      });
+  });
+  caja.appendChild(btn);
+  return caja;
+}
 
 /**
  * CUATRO cubos, no cinco: `bizum_auto` y `bizum_manual` son una distinción NUESTRA —confirmado
@@ -563,6 +632,9 @@ function renderCobrosView(container) {
       } else {
         tdDoc.textContent = etiquetaDoc;
       }
+      // SCRUM-1235 · si el correo con el documento no salió, se dice AQUÍ, junto al documento.
+      var aviso = avisoCorreoNoSalio(c);
+      if (aviso) tdDoc.appendChild(aviso);
       tr.appendChild(tdDoc);
 
       // SIN COBRAR. Columna propia: es lo que se barre con la vista.
@@ -663,5 +735,5 @@ if (typeof window !== 'undefined') {
   window.diasDeDeudaCobro = diasDeDeudaCobro;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { renderCobrosView, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, COBROS_DESCONOCIDO, esDesconocidoDeclarado, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
+  module.exports = { renderCobrosView, avisoCorreoNoSalio, COBROS_COPY, COBROS_METODOS, COBROS_SIN_METODO, COBROS_DESCONOCIDO, esDesconocidoDeclarado, cuboDeMetodo, metodoSinPasarela, pasarelaDeMetodo, rotuloDeMetodo, COBROS_PASARELAS, COBROS_MATICES, diasDeDeudaCobro };
 }

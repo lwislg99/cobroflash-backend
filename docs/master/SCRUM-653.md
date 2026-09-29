@@ -469,3 +469,53 @@ de los textos cambiaron por eso — «Firmado por el cliente.» y «Firmado por 
 
 **El suelo del instrumento estaba probado de antes**: antes de resolver el conflicto veía 1 marcador
 y 3 marcas de git, así que este cero es un dato y no una ceguera.
+
+---
+
+# SCRUM-653c · «para cerrar el parte» era falso: se quita, y se avisa de que la primera firma congela
+
+**Medido contra:** `origin/main` = `a59dc1e692bae683d2d035fe52534b5589d0c7b3` · 2026-09-28T15:02:16Z
+**Medido en:** sesión `s4` · rama `scrum-653-textos-firma-sin-coletilla`
+
+Firma por delegación del fundador: **SCRUM-653, comentario 17354, opción B**. Tres textos en
+`public/dashboard/js/parteDetailView.js`:
+
+| clave | antes | ahora |
+|---|---|---|
+| `faltaLaFirmaDelCliente` | Falta la firma del cliente para cerrar el parte. | **Falta la firma del cliente.** |
+| `faltaLaFirmaDelTecnico` | Falta la firma del técnico para cerrar el parte. | **Falta la firma del técnico.** |
+| `conLaPrimeraFirmaQuedaFijo` | — | **Con la primera firma, lo apuntado queda fijo.** |
+
+## Lo que cada texto AFIRMA, comprobado en el código antes de pintarlo
+
+- **La coletilla era falsa.** `partes.routes.ts`: `/firmar` y `/firmar-tecnico` escriben
+  `estado: 'firmado'` con la PRIMERA firma, sea de quien sea. El candado de la segunda es por
+  ranura (`puedeFirmarCliente` / `puedeFirmarTecnico`), no por estado: se sigue aceptando, pero ya no
+  cierra nada.
+- **«Lo apuntado queda fijo» es cierto.** `puedeEditarContenido` (`parteTrabajo.ts`) devuelve `ok`
+  solo en `borrador`, y lo aplican las dos rutas que escriben contenido: el `PATCH`
+  (`permisoDeCampos`) y el dictado. No hay otra escritura del parte en `src/` fuera de las firmas
+  (y `fusionClientes`, que solo cambia `customerId`).
+- **Solo mientras no ha firmado nadie**: `!firmoElCliente && !firmoElTecnico`, derivados de
+  `firmadoAt` / `firmadoTecnicoAt` en el serializador.
+- **No habla de precios**: `puedeEditarPrecios` deja abierto `firmado`; esa regla no está medida
+  hasta el final y la firma lo excluye.
+
+## Verificación
+
+- `tests/scrum653c-firmas-sin-coletilla.test.mjs`, sobre lo PINTADO: los dos «falta» en su caja, el
+  aviso de «queda fijo» con nadie firmado, **desaparece con UNA firma de cualquiera de los dos**, la
+  coletilla no se pinta en ningún estado (con respaldo real sacado del registro de microcopy) y el
+  dominio sigue cerrando el contenido fuera de `borrador`.
+- **Rojo primero:** con `parteDetailView.js` de `origin/main`, 3 de 4 caen; con el cambio, 4/4.
+- Tanda de la zona (653b, 653c, 1175b, 720, 652c): **41 tests · 41 pass · 0 fail · 0 skip**, tras
+  `npm ci` + build limpio.
+
+## Hallazgo lateral, NO arreglado aquí
+
+Las dos rutas de firma escriben `estado: 'firmado'` **sin mirar el estado actual**. Si un parte
+llegase a `facturado` con una ranura libre, la segunda firma lo devolvería a `firmado` y **reabriría
+los precios** (`puedeEditarPrecios`). Hoy es latente: ningún camino de `src/` pone un parte en
+`facturado`. Avisado al orquestador para quien construya la facturación del parte (servidor, S1).
+
+Que el parte se cierre con UNA firma no cambia aquí: es **SCRUM-1217**.

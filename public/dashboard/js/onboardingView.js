@@ -66,8 +66,27 @@ function showOnboardingWizard(onComplete) {
     // SCRUM-313 (D2) · la continuidad de numeracion. `vieneDeOtroSitio` arranca en null —ni si ni
     // no— para que la pantalla no de por elegida una respuesta que el profesional no ha dado.
     vieneDeOtroSitio: null,
-    serieNumero: '',
-    seriePrefijo: 'CF',
+  };
+
+  // SCRUM-1216b · textos y validación del número de arranque: los de `puertaSerie.js`, que son los
+  // MISMOS de la puerta de Ajustes. Se leen al abrir el asistente, con toda la página cargada.
+  const TS = window.SERIE_TEXTOS;
+  const serieLetrasTecleadas = () => {
+    const n = document.getElementById('ob-serie-numero');
+    return !!(n && n.validity && n.validity.badInput);
+  };
+  // DESIGN.md §Inputs: «Error: borde Peligro + texto de ayuda en Peligro».
+  const serieAvisar = (texto) => {
+    const e = document.getElementById('ob-serie-error');
+    const n = document.getElementById('ob-serie-numero');
+    if (e) { e.textContent = texto; e.style.display = 'block'; }
+    if (n && state.vieneDeOtroSitio === true) { n.style.borderColor = '#dc2626'; n.setAttribute('aria-invalid', 'true'); }
+  };
+  const serieLimpiar = () => {
+    const e = document.getElementById('ob-serie-error');
+    const n = document.getElementById('ob-serie-numero');
+    if (e) e.style.display = 'none';
+    if (n) { n.style.borderColor = '#cdd2cb'; n.removeAttribute('aria-invalid'); }
   };
 
   const backdrop = document.createElement('div');
@@ -151,47 +170,40 @@ function showOnboardingWizard(onComplete) {
       },
     },
 
-    // ── Paso 2 · SCRUM-313 (D2) · ¿POR QUÉ NÚMERO VAS? ──────────────────────────────────────
+    // ── Paso 2 · SCRUM-313 (D2) → SCRUM-1216b · EL NÚMERO DE ARRANQUE ───────────────────────
     //
     // Un autónomo que ya factura no se cambia de programa porque el nuevo sea más bonito. No se
     // cambia porque romper la serie de numeración le da miedo con Hacienda. Ésta es la pregunta
     // que quita ese miedo, y va AQUÍ y no en Configuración: quien viene de otro programa no entra
-    // en Configuración el primer día — entra, hace un presupuesto, y descubre el problema cuando
-    // ya ha emitido tres facturas mal numeradas. La pregunta se hace cuando la respuesta sirve.
+    // en Configuración el primer día. La pregunta se hace cuando la respuesta sirve.
     //
-    // 🔴 EL AÑO VA DENTRO DE LA PREGUNTA, y sale de la FECHA ACTUAL, nunca cableado. Preguntar
-    // «¿de qué año es esa factura?» sería pedirle al usuario que resuelva un problema nuestro; y
-    // cablear el año haría que el 1 de enero la pantalla preguntara por el año pasado y produjera
-    // un arranque que `resolveSeriesSeq` descarta. Al llevar el año dentro, la respuesta ya trae
-    // el par completo que necesita el mecanismo.
+    // SCRUM-1216b (GO del fundador para el camino de emisión, SCRUM-1216 comentario 17347): si
+    // declara «41», su primera factura con YaQu es la 42. No es cosmético: la AEAT acepta el mismo
+    // número si cambia la fecha (medido en pruebas, SCRUM-1216), así que empezar en 0001 a quien ya
+    // usó `F26…` repetiría un número suyo sin que nadie se enterase.
     //
-    // SCRUM-1216a · se RETIRÓ «Seguimos por ahí para que tu numeración no tenga saltos.»: desde el
-    // corte de la serie F (SCRUM-780, `ba1cd2d5`, 7-sep-2026) el número declarado no llega a la
-    // factura (medido contra el `allocateInvoiceNumber` real: con «41» y sin nada, `F260001`). Que
-    // llegue es SCRUM-1216b. Y en `receipt` este paso NO EXISTE (ver el filtro de `steps`).
+    //   · Textos FIRMADOS, desde `SERIE_TEXTOS` (`puertaSerie.js`): los MISMOS que la puerta de
+    //     Ajustes. El año, por `ANIO_EN_CURSO`: nunca cableado (SCRUM-313).
+    //   · Sin campo «Serie»: tras el corte de SCRUM-780 el prefijo no entra en la factura ordinaria.
+    //   · SCRUM-1200: el número se valida ANTES de avanzar, y un rechazo del servidor se ENSEÑA y
+    //     no avanza. Tragárselo haría creer al profesional que declaró 41 y emitiría la 1.
+    //   · En `receipt` este paso NO EXISTE (SCRUM-1216a, ver el filtro de `steps`).
     {
       pasoDeSerie: true,
-      title: `¿Ya has facturado en ${ANIO_EN_CURSO}?`,
+      title: TS.titulo(ANIO_EN_CURSO),
       render: () => `
+        <p style="font-size:13px;color:#6b756f;margin:-2px 0 12px">${TS.ayudaTitulo}</p>
         <div id="ob-serie-elec" style="display:flex;gap:10px;margin:4px 0 16px">
           <button type="button" id="ob-serie-si" class="btn-secondary" style="flex:1;min-height:44px">Sí</button>
           <button type="button" id="ob-serie-no" class="btn-secondary" style="flex:1;min-height:44px">No, empiezo ahora</button>
         </div>
         <div id="ob-serie-detalle" style="display:none">
-          <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">
-            ¿Cuál fue el número de tu última factura de ${ANIO_EN_CURSO}?</label>
-          <div style="display:flex;gap:10px">
-            <div style="flex:0 0 40%">
-              <label for="ob-serie-prefijo" style="font-size:12px;color:#6b756f;display:block;margin-bottom:4px">Serie</label>
-              <input id="ob-serie-prefijo" type="text" value="${esc(state.seriePrefijo)}" maxlength="10"
-                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-            </div>
-            <div style="flex:1">
-              <label for="ob-serie-numero" style="font-size:12px;color:#6b756f;display:block;margin-bottom:4px">Número</label>
-              <input id="ob-serie-numero" type="number" min="1" inputmode="numeric" placeholder="41"
-                style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
-            </div>
-          </div>
+          <label for="ob-serie-numero" style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">
+            ${TS.etiquetaCampo(ANIO_EN_CURSO)}</label>
+          <input id="ob-serie-numero" type="number" min="1" step="1" inputmode="numeric" placeholder="41"
+            aria-describedby="ob-serie-numero-ayuda"
+            style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px"/>
+          <p id="ob-serie-numero-ayuda" style="font-size:12px;color:#6b756f;margin:6px 0 0">${TS.ayudaCampo}</p>
           <div id="ob-serie-previa" aria-live="polite"
             style="margin-top:14px;background:#f4f7f4;border:1px solid #cdd2cb;border-radius:10px;padding:12px;display:none">
             <p style="margin:0 0 4px;font-size:13px;color:#333c37">Tu primera factura con YaQu será:
@@ -199,15 +211,13 @@ function showOnboardingWizard(onComplete) {
             <p style="margin:0;font-size:12px;color:#6b756f">
               Compruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.</p>
           </div>
-          <p id="ob-serie-error" role="alert" style="display:none;font-size:13px;color:#b91c1c;margin:10px 0 0"></p>
-        </div>`,
+        </div>
+        <p id="ob-serie-error" role="alert" style="display:none;font-size:13px;color:#b91c1c;margin:10px 0 0"></p>`,
       montar: () => {
         const detalle = document.getElementById('ob-serie-detalle');
         const previa  = document.getElementById('ob-serie-previa');
         const salida  = document.getElementById('ob-serie-numero-previa');
         const numero  = document.getElementById('ob-serie-numero');
-        const prefijo = document.getElementById('ob-serie-prefijo');
-        const error   = document.getElementById('ob-serie-error');
         const btnSi   = document.getElementById('ob-serie-si');
         const btnNo   = document.getElementById('ob-serie-no');
 
@@ -216,31 +226,30 @@ function showOnboardingWizard(onComplete) {
           btnSi.className = elegido ? 'btn-primary' : 'btn-secondary';
           btnNo.className = elegido ? 'btn-secondary' : 'btn-primary';
           detalle.style.display = elegido ? 'block' : 'none';
+          serieLimpiar();
           if (elegido) numero.focus();
+          // El texto del botón depende de la elección («Es correcto» / «Siguiente»).
+          const next = document.getElementById('ob-next');
+          if (next) next.textContent = elegido ? 'Es correcto' : 'Siguiente';
         };
 
-        // ── LA VISTA PREVIA EN VIVO — el corazón de la pantalla, no un adorno ───────────────
-        // Es lo único que convierte «41» en «2026-CF-042» delante de sus ojos ANTES de que sea
-        // irreversible. Sin ella, el aviso de «ya no se puede cambiar» no protege nada: el
-        // usuario no sabría qué está confirmando.
-        //
-        // Y NO SE CALCULA AQUÍ. Se la pide al servidor, que la resuelve con `resolveSeriesSeq` y
-        // `formatInvoiceNumber` — quien de verdad decide al emitir. Dos sitios calculando el
-        // mismo número es exactamente cómo la vista previa dice una cosa y la factura otra.
+        // ── LA VISTA PREVIA EN VIVO — se la pide al servidor, que decide al emitir ─────────────
+        // NO SE CALCULA AQUÍ: dos sitios calculando el mismo número es exactamente cómo la vista
+        // previa dice una cosa y la factura otra.
         let pedido = 0;
         const refrescarPrevia = async () => {
-          const n = Number(numero.value);
-          error.style.display = 'none';
+          serieLimpiar();
           // SCRUM-1029 (regla 24): en `receipt` (ES real, facturación apagada) YaQu no emite
-          // ninguna factura — se OCULTA el bloque entero («Tu primera factura con YaQu será…»)
-          // en vez de reescribirlo. El resto del paso (guardar la numeración) sigue igual.
+          // ninguna factura — se OCULTA el bloque entero («Tu primera factura con YaQu será…»).
+          // (Desde SCRUM-1216a el paso entero no existe en `receipt`.)
           if (window.appModoEmision === 'receipt') { previa.style.display = 'none'; return; }
-          if (!Number.isInteger(n) || n < 1) { previa.style.display = 'none'; return; }
+          // Mientras escribe no se le riñe: sin número válido, sólo se esconde la previa.
+          if (window.errorNumeroArranque(numero.value, serieLetrasTecleadas())) { previa.style.display = 'none'; return; }
           const mio = ++pedido;
           try {
             const r = await apiRequest('/admin/onboarding/serie/previa', {
               method: 'POST',
-              body: JSON.stringify({ vieneDeOtroSitio: true, ultimoNumero: n, serie: prefijo.value.trim() }),
+              body: JSON.stringify({ vieneDeOtroSitio: true, ultimoNumero: Number(numero.value) }),
             });
             if (mio !== pedido) return; // llegó tarde: manda la última pulsación
             salida.textContent = r.proximoNumero;
@@ -248,33 +257,41 @@ function showOnboardingWizard(onComplete) {
           } catch (e) {
             if (mio !== pedido) return;
             previa.style.display = 'none';
-            error.textContent = (e && e.data && e.data.titulo)
-              ? `${e.data.titulo}. ${e.message}`
-              : (e && e.message) || 'No se pudo calcular el número.';
-            error.style.display = 'block';
+            serieAvisar(window.textoErrorSerie(e, 'No se pudo calcular el número.'));
           }
         };
 
         btnSi.addEventListener('click', () => { marcar(true); refrescarPrevia(); });
         btnNo.addEventListener('click', () => marcar(false));
         numero.addEventListener('input', refrescarPrevia);
-        prefijo.addEventListener('input', refrescarPrevia);
-        marcar(state.vieneDeOtroSitio === true);
+        if (state.vieneDeOtroSitio !== null) marcar(state.vieneDeOtroSitio === true);
       },
       textoBoton: () => (state.vieneDeOtroSitio ? 'Es correcto' : 'Siguiente'),
+      // SCRUM-1200: con «Sí», un número que no vale NO avanza, y dice por qué.
+      validate: () => {
+        if (state.vieneDeOtroSitio !== true) return true;
+        const numero = document.getElementById('ob-serie-numero');
+        const motivo = window.errorNumeroArranque(numero && numero.value, serieLetrasTecleadas());
+        if (motivo) { serieAvisar(motivo); return false; }
+        return true;
+      },
+      // Devuelve `false` si el servidor lo rechaza: `onNext` se queda en el paso con el aviso
+      // puesto. Tragárselo (el `.catch(() => {})` de antes) era SCRUM-1200.
       save: async () => {
-        state.serieNumero  = document.getElementById('ob-serie-numero')?.value || '';
-        state.seriePrefijo = document.getElementById('ob-serie-prefijo')?.value.trim() || state.seriePrefijo;
-        // Se manda SIEMPRE, también en «No, empiezo ahora»: el servidor escribe el par completo y
-        // así el arranque queda declarado en vez de quedar a merced del valor por defecto.
-        await apiRequest('/admin/onboarding/serie', {
-          method: 'POST',
-          body: JSON.stringify({
-            vieneDeOtroSitio: state.vieneDeOtroSitio === true,
-            ultimoNumero: state.vieneDeOtroSitio === true ? Number(state.serieNumero) : undefined,
-            serie: state.vieneDeOtroSitio === true ? state.seriePrefijo : undefined,
-          }),
-        }).catch(() => {});
+        const si = state.vieneDeOtroSitio === true;
+        const numero = document.getElementById('ob-serie-numero');
+        try {
+          await apiRequest('/admin/onboarding/serie', {
+            method: 'POST',
+            body: JSON.stringify(si
+              ? { vieneDeOtroSitio: true, ultimoNumero: Number(numero && numero.value) }
+              : { vieneDeOtroSitio: false }),
+          });
+          return true;
+        } catch (e) {
+          serieAvisar(window.textoErrorSerie(e, 'No se pudo guardar.'));
+          return false;
+        }
       },
     },
 
@@ -462,7 +479,15 @@ function showOnboardingWizard(onComplete) {
       return;
     }
     if (nextBtn) { nextBtn.disabled = true; nextBtn.textContent = 'Guardando…'; }
-    await step.save();
+    // SCRUM-1216b · un paso cuyo `save` devuelve `false` se QUEDA (con su aviso puesto): el paso
+    // de la serie lo hace cuando el servidor rechaza el número. Los demás no devuelven nada.
+    if ((await step.save()) === false) {
+      if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.textContent = typeof step.textoBoton === 'function' ? step.textoBoton() : 'Siguiente →';
+      }
+      return;
+    }
     currentStep++;
     renderStep();
   }

@@ -43,11 +43,19 @@ import { comprobarSuelo } from './_censo-tickets.mjs';
 import { repoFixture } from './_censo-fixture.mjs';
 import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
-  censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY,
+  censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY, formaDeSpawnSync, declaracionVisible,
 } from '../scripts/_censo-suelos.mjs';
+import ts from 'typescript';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'censo-tablero-vs-arbol.mjs');
+const DECLARADOS_JSON = path.join('scripts', '_suelos-sin-leer-declarados.json');
+
+// El árbol real se lee y se censa UNA vez por proceso: cuesta ~4 s y lo usan cuatro tests. Lo
+// añadió SCRUM-1179-B para que la mitad que cierra no pagase censos repetidos.
+let cacheReal = null;
+const ficherosReales = () => (cacheReal ??= { ficheros: ficherosDe(RAIZ) }).ficheros;
+const censoReal = () => (ficherosReales(), cacheReal.censo ??= censar(cacheReal.ficheros));
 
 /**
  * Un árbol donde el censo ENCOGE: historial sano y `docs/master/` por debajo del mínimo.
@@ -257,7 +265,7 @@ test('SCRUM-775 · SUELO del propio censo: cero sobre población vacía NO es un
     '🔴 no dice que no ha reconocido ni un guard.');
 
   // CONTROL NEGATIVO: sobre el árbol real el suelo NO salta.
-  const real = censar(ficherosDe(RAIZ));
+  const real = censoReal();
   assert.deepEqual(motivosParaNoFiarse(real), [],
     '🔴 el suelo del censo salta sobre el árbol real: no se podría informar de nada.');
   assert.ok(real.guards > 20,
@@ -281,7 +289,7 @@ test('SCRUM-775 · el arreglo está puesto: `censo-tablero-vs-arbol.mjs` ya no p
 
   // Y el censo lo ve CONECTADO — que es lo que cierra el círculo: el instrumento de este ticket
   // reconoce como bueno el arreglo de este ticket.
-  const c = censar(ficherosDe(RAIZ));
+  const c = censoReal();
   assert.deepEqual(
     c.noConectados.filter((x) => x.donde.startsWith('scripts/censo-tablero-vs-arbol.mjs')), [],
     '🔴 el censo sigue viendo un suelo no conectado en el fichero que este ticket arregla.');
@@ -289,6 +297,147 @@ test('SCRUM-775 · el arreglo está puesto: `censo-tablero-vs-arbol.mjs` ya no p
     c.conectados.some((x) => x.donde.startsWith('scripts/censo-tablero-vs-arbol.mjs') && x.fn === 'comprobarSuelo'),
     '🔴 el censo NO ve el suelo arreglado. Si al sacar la condición a una variable el guard se '
     + 'vuelve invisible, este censo se queda ciego justo en el caso que lo motivó.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1179 (parte B, 2 de 4) — LA MITAD QUE CIERRA
+//
+// Lo de arriba solo exige «conectado» para UN fichero. Un suelo NUEVO escrito sin conectar salía
+// en `npm run censo:suelos` con código 1, y nada corría ese comando. Y un suelo nuevo que el censo
+// no sabe leer caía en «NO SÉ LEER» sin que nadie lo mirase: la familia «no pude mirar = no hay
+// nada». Aquí, sobre el árbol real:
+//   · NO CONECTADOS tiene que ser CERO (hoy lo es): cualquiera nuevo → rojo.
+//   · NO SÉ LEER se compara con scripts/_suelos-sin-leer-declarados.json en las dos direcciones.
+//     La clave es FICHERO · FUNCIÓN PRODUCTORA · variable.propiedad, con su cuenta (un fichero
+//     puede leer dos veces lo mismo), nunca la línea.
+// Fail-closed: si el censo no se fía de sí mismo (motivosParaNoFiarse), no se compara nada.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const claveSinLeer = (x) => `${x.donde.replace(/:\d+$/, '')} · ${x.fn} · ${x.variable}.${x.prop}`;
+
+function compararSuelos(c, declarados) {
+  const motivos = motivosParaNoFiarse(c);
+  if (motivos.length) throw new Error(`🔴 CIEGO: el censo de suelos no se fía de sí mismo: ${motivos.join(' · ')}`);
+  const vistos = new Map();
+  for (const x of c.ciegos) vistos.set(claveSinLeer(x), (vistos.get(claveSinLeer(x)) || 0) + 1);
+  const nuevas = [];
+  const sobran = [];
+  for (const [k, n] of vistos) {
+    const d = declarados.ciegos[k]?.cuantos || 0;
+    if (n > d) nuevas.push(`${k} (${n} vistos, ${d} declarados)`);
+  }
+  for (const [k, v] of Object.entries(declarados.ciegos)) {
+    const n = vistos.get(k) || 0;
+    if (n < v.cuantos) sobran.push(`${k} (${n} vistos, ${v.cuantos} declarados)`);
+  }
+  return { noConectados: c.noConectados.map((x) => `${x.donde} · ${x.fn} · ${x.variable}.${x.prop}`), nuevas, sobran };
+}
+
+function leerDeclaradosSuelos() {
+  const j = JSON.parse(fs.readFileSync(path.join(RAIZ, DECLARADOS_JSON), 'utf8'));
+  assert.ok(j && typeof j.ciegos === 'object' && Array.isArray(j.retiradas),
+    `🔴 ${DECLARADOS_JSON} no tiene la forma {ciegos: {}, retiradas: []}.`);
+  return j;
+}
+
+test('SCRUM-1179-B · trinquete: cero NO CONECTADOS y los NO SÉ LEER == lo declarado', () => {
+  const { noConectados, nuevas, sobran } = compararSuelos(censoReal(), leerDeclaradosSuelos());
+  assert.deepEqual(noConectados, [],
+    `🔴 SUELO NO CONECTADO: ${noConectados.join(', ')}.\n`
+    + '  Ese guard lee una propiedad que su productor no fabrica nunca: su condición no puede ser\n'
+    + '  cierta. Se arregla el guard (regla 41). Detalle: `npm run censo:suelos`.');
+  assert.deepEqual(nuevas, [],
+    `🔴 NUEVO suelo que el censo NO SABE LEER: ${nuevas.join(', ')}.\n`
+    + '  Nadie puede decir si ese guard puede saltar. Escríbelo legible (que el productor esté en\n'
+    + '  la población y devuelva algo que se pueda leer) o decláralo en «ciegos» de\n'
+    + `  ${DECLARADOS_JSON} con su motivo. Detalle: \`node scripts/censo-suelos.mjs --ciegos\`.`);
+  assert.deepEqual(sobran, [],
+    `🔴 SOBRA (declarado sin leer y ya no sale así): ${sobran.join(', ')}.\n`
+    + `  Si mejoró, baja su cuenta o muévelo a «retiradas» de ${DECLARADOS_JSON} con su motivo.`);
+});
+
+test('SCRUM-1179-B · cada declarado lleva cuenta y motivo; cada retirada, id y motivo', () => {
+  const d = leerDeclaradosSuelos();
+  for (const [k, v] of Object.entries(d.ciegos)) {
+    assert.ok(v && v.motivo && Number.isInteger(v.cuantos) && v.cuantos > 0, `declarado cojo: ${k}`);
+  }
+  for (const r of d.retiradas) assert.ok(r && r.id && r.motivo, `retirada sin id o sin motivo: ${JSON.stringify(r)}`);
+});
+
+test('SCRUM-1179-B · control POSITIVO: el roto real de SCRUM-775 y un guard opaco, metidos en el árbol real, salen', () => {
+  // El árbol real con dos defectos inyectados EN MEMORIA (nada toca el disco): el fichero de
+  // SCRUM-775 tal como estaba roto, y un guard nuevo cuyo productor no se puede leer.
+  // Y dos guards de HOY desconectados a propósito, uno de cada clase que el censo aprendió a leer
+  // en SCRUM-1179-B (sin esto, el «0 no conectados» del árbol real sería un cero sin probar):
+  // un productor con `return null` en un camino, y un `spawnSync`.
+  const DESCONECTA = new Map([
+    ['scripts/censo-etiquetas-del-documento.mjs', ['if (p.host === PROD_HOST)', 'if (p.hostQueNoExiste === PROD_HOST)']],
+    ['scripts/guards-entrada.mjs', ['if (r.status !== 0) {', 'if (r.estadoQueNoExiste !== 0) {']],
+  ]);
+  const ficheros = ficherosReales()
+    .map((f) => (f.rel === 'scripts/censo-tablero-vs-arbol.mjs' ? { ...f, txt: ROTO_CONGELADO } : f))
+    .map((f) => {
+      const d = DESCONECTA.get(f.rel);
+      if (!d) return f;
+      assert.ok(f.txt.includes(d[0]), `la sonda del control ya no encuentra \`${d[0]}\` en ${f.rel}: actualízala`);
+      return { ...f, txt: f.txt.replace(d[0], d[1]) };
+    })
+    .concat([{ rel: 'scripts/y1179.mjs',
+      txt: 'export function raro(x) { return x ? algo() : otro(); }\n'
+         + 'const r = raro(1);\nif (r.ok === false) { process.exit(2); }\n' }]);
+  const { noConectados, nuevas } = compararSuelos(censar(ficheros), leerDeclaradosSuelos());
+  assert.ok(noConectados.some((x) => x.startsWith('scripts/censo-tablero-vs-arbol.mjs')),
+    `🔴 el trinquete NO acusa el suelo roto real de SCRUM-775. Acusó: ${noConectados.join(', ') || '(nada)'}`);
+  for (const [rel, [, a]] of DESCONECTA) {
+    const prop = /\.(\w+QueNoExiste)/.exec(a)[1];
+    assert.ok(noConectados.some((x) => x.startsWith(rel) && x.endsWith(`.${prop}`)),
+      `🔴 desconecté a propósito un guard de ${rel} (\`.${prop}\`) y el censo NO lo acusa. Acusó: ${noConectados.join(', ') || '(nada)'}`);
+  }
+  assert.equal(noConectados.length, 1 + DESCONECTA.size,
+    `🔴 se inyectaron ${1 + DESCONECTA.size} defectos y acusa ${noConectados.length}: ${noConectados.join(', ')}`);
+  assert.ok(nuevas.some((x) => x.startsWith('scripts/y1179.mjs · raro · r.ok')),
+    `🔴 un guard nuevo que el censo no sabe leer pasa sin que nadie lo diga. Nuevas: ${nuevas.join(', ') || '(nada)'}`);
+});
+
+// Lo que el censo aprendió a leer en SCRUM-1179-B, porque 57 de los 75 NO SÉ LEER eran corteza
+// del censo y no de los guards. Cada capacidad con lo que TIENE que acusar y lo que NO.
+test('SCRUM-1179-B · `return null` en un camino no ciega: se leen los otros, y el roto se acusa', () => {
+  const prod = 'export function f(x) { if (!x) return null; if (x > 9) return; return { ok: true }; }\n';
+  const sano = censar([{ rel: 'scripts/a.mjs', txt: prod + 'const r = f(1);\nif (!r.ok) { process.exit(2); }\n' }]);
+  assert.equal(sano.conectados.length, 1, `🔴 no ve conectado \`r.ok\`: ${JSON.stringify(sano)}`);
+  const roto = censar([{ rel: 'scripts/a.mjs', txt: prod + 'const r = f(1);\nif (r.fallo) { process.exit(2); }\n' }]);
+  assert.equal(roto.noConectados.length, 1, `🔴 no acusa \`r.fallo\`, que f no fabrica: ${JSON.stringify(roto)}`);
+  const soloNull = censar([{ rel: 'scripts/a.mjs', txt: 'export function f() { return null; }\nconst r = f();\nif (r.ok) { process.exit(2); }\n' }]);
+  assert.equal(soloNull.ciegos.length, 1, '🔴 una función que SÓLO devuelve null no se puede leer: tiene que salir ciega');
+});
+
+test('SCRUM-1179-B · la forma de `spawnSync` se DERIVA ejecutándolo, y un `.ok` sobre ella se acusa', () => {
+  const forma = formaDeSpawnSync();
+  assert.ok(forma && forma.includes('status') && forma.includes('error'),
+    `🔴 la forma derivada de spawnSync no trae status y error: ${JSON.stringify(forma)}`);
+  const cab = "import { spawnSync } from 'node:child_process';\nconst r = spawnSync('x', []);\n";
+  const sano = censar([{ rel: 'scripts/b.mjs', txt: cab + 'if (r.status !== 0) { process.exit(1); }\n' }]);
+  assert.equal(sano.conectados.length, 1, `🔴 \`r.status\` de spawnSync no sale conectado: ${JSON.stringify(sano)}`);
+  const roto = censar([{ rel: 'scripts/b.mjs', txt: cab + 'if (!r.ok) { process.exit(1); }\n' }]);
+  assert.equal(roto.noConectados.length, 1, `🔴 \`r.ok\` sobre spawnSync no se acusa: ${JSON.stringify(roto)}`);
+});
+
+test('SCRUM-1179-B · la variable se resuelve en SU ámbito: dos `r` en dos funciones no se pisan', () => {
+  // El caso real de `turno-staging.mjs`: sin esto, el `r.ok` de la segunda función se atribuía
+  // al spawnSync de la primera y salía un «no conectado» falso.
+  const txt = "import { spawnSync } from 'node:child_process';\n"
+    + "function rama() { const r = spawnSync('git', []); return r.stdout; }\n"
+    + 'async function turno() { const r = await pedir(); if (!r.ok) { process.exit(2); } }\n';
+  const c = censar([{ rel: 'scripts/c.mjs', txt }]);
+  assert.deepEqual(c.noConectados, [], `🔴 el \`r\` de turno() se ha atribuido al spawnSync de rama(): ${JSON.stringify(c.noConectados)}`);
+  const id = ts.forEachChild(ts.createSourceFile('d.mjs', 'const a = f();\nfunction g(a) { return a.x; }\n', ts.ScriptTarget.Latest, true),
+    function busca(n) { return (ts.isPropertyAccessExpression(n) && n.expression) || ts.forEachChild(n, busca); });
+  assert.equal(id && id.text, 'a', 'la sonda del test no encontró `a.x`');
+  assert.equal(declaracionVisible(id), null, '🔴 un parámetro se ha resuelto a la variable de fuera');
+});
+
+test('SCRUM-1179-B · fail-closed: un censo sobre población vacía sale CIEGO, no «cero hallazgos»', () => {
+  assert.throws(() => compararSuelos(censar([]), leerDeclaradosSuelos()), /CIEGO/);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

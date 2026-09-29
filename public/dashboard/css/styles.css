@@ -2940,6 +2940,8 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-plega-cuerpo { padding: 2px 0 14px 24px; }
 .detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
 .detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+/* SCRUM-1184 · «Siguiente número: …» bajo la cabecera de «Nuevo albarán». Mismos tokens que las ayudas. */
+.alb-siguiente-numero { margin: 12px 24px 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .job-asignados-alta { min-height: 44px; margin-top: 8px; }
 /* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
 .detail-plega--fija > .detail-plega-cab { cursor: default; }
@@ -3151,6 +3153,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    Popover anclado en desktop; en ≤640px la lista va DENTRO de .modal (hoja inferior,
    reutilizando el bottom-sheet de F2). Sombra Flotante (DESIGN.md §4), motion con reduce. */
 .overflow-trigger { font-size: 18px; line-height: 1; padding: 4px 10px; }
+/* SCRUM-1193 · el «⋯» mide 44 × 44 EN TODAS LAS PANTALLAS (AB6), no pantalla a pantalla: lo crea
+   `overflowMenu` (api.js) con `overflow-trigger btn-ghost btn-sm`, y `.btn-sm` lo dejaba en 30 px.
+   Las clases exactas del componente pesan (0,3,0): ganan a `.btn-sm` y a `.btn.btn-sm` sin
+   `!important`, como `.accion-irreversible-btn-44` (SCRUM-1167). La forma sola es el respaldo. */
+.overflow-trigger.btn-ghost.btn-sm,
+.overflow-trigger { min-width: 44px; min-height: 44px; }
 .overflow-menu {
   position: fixed;
   background: var(--surface, #fff);

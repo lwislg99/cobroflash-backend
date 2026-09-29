@@ -45,3 +45,36 @@ con la base doblada (`_envio-doblado.mjs`).
 - **Regla 2:** pedido desde otro merchant da 404, el móvil no sale en la respuesta y la consulta
   lleva el `merchantId` de quien pregunta.
 - Tests que miran `jobs.routes`, `jobRailBlocks` o `canalDeWhatsApp`: 519 pasan, 0 fallan, 3 saltados (ya existían).
+
+## Apéndice 28-sep-2026 · mitad de FRONT (S2, s2-28b)
+
+**Medido contra:** `origin/main` = `d2c8903c5e75c9defc732bf8f7a7eebf20e79561` · 2026-09-28T15:14:12Z
+
+Criterio del orquestador para esta mitad: reutilizar `contactoDelCliente` (`api.js`, SCRUM-1032) y **no
+escribir un tercer criterio** de a qué número se escribe.
+
+- `jobRailBlocks.js` · `bloqueCliente(job, contacto)`:
+  · **📞** salen de `contactoDelCliente(customer)`, lo mismo que en la lista y la ficha de Clientes: uno al
+    fijo y otro al móvil, y uno solo si son el mismo número. Con fijo, el primer 📞 sigue llamando al fijo
+    (lo de hoy); el caso roto, solo móvil, gana su 📞.
+  · **💬** va a `customer.numeroWhatsApp`, el número que elige el SERVIDOR (`canalDeWhatsApp`). El front
+    no elige número: solo lo normaliza con la misma función de `api.js`.
+  · `contacto` llega **inyectado** por el `ctx` que ya recibía el carril (`fmtMoney`, `fechaCorta`…); el
+    fichero sigue sin tocar `window`. Sin ayudante no se pinta ningún enlace (nunca una normalización
+    hecha aparte).
+- `jobDetailView.js` pasa `contacto: window.contactoDelCliente` en ese `ctx`.
+- Test `tests/scrum1171-whatsapp-y-llamar-en-el-trabajo.test.mjs`: el cliente pasa por `canalDeWhatsApp`
+  REAL (de `dist`) → detalle → ficha montada con el dashboard entero → enlaces. Solo móvil · solo fijo ·
+  ninguno · los dos. **En rojo con el `jobRailBlocks.js` de main fallan 3 de 4** (el caso «sin número» ya
+  funcionaba).
+- Tests anteriores adaptados al contrato nuevo, **sin quitar ninguna aserción**:
+  · `scrum318` y `scrum982` llamaban a `bloqueCliente` sin ayudante. Ahora reciben el `contactoDelCliente`
+    real (del dashboard montado) y el `numeroWhatsApp` de `canalDeWhatsApp`. El `tel:` pasa a llevar `+`
+    (`tel:+34000000001`): es la normalización compartida de Clientes, con 11 dígitos = con prefijo.
+  · `scrum406`: la declaración `WA_DECLARADOS['jobRailBlocks.js']` se **retira a propósito**. El fichero ya
+    no compone su `wa.me`; lo hace `api.js`, que sigue declarado.
+- Vecinos (89 ficheros: `jobDetailView`, `jobRailBlocks`, contacto, `wa.me`, 1185): 783 pasan, 0 fallan
+  (1 salto declarado).
+- ⚠️ Sigue abierto, y es de J2: `contactoDelCliente` lleva su propia copia de `movil || fijo` para el
+  WhatsApp de Clientes. No se toca aquí; está reportado.
+- yaqu.app: NO VERIFICADO (la lectura de producción está bloqueada por permiso en esta sesión).

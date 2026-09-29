@@ -1,0 +1,115 @@
+
+## albaran_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## cliente_zzzzCENSOJ4noexiste0000.html (8582 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : —
+  OTRA: —
+
+## loc_albaran_tok.html (6040 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : —
+  OTRA: —
+
+## loc_cliente_tokcli.html (11370 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : wa.me [<a>]; localhost:3000 [<a>]
+  OTRA: —
+
+## loc_p_ruiz.html (4222 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : wa.me [<a>]; localhost:3000 [<a>]
+  OTRA: —
+
+## loc_pay_bank_tok.html (8001 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : localhost:3000 [<form>]
+  OTRA: —
+
+## loc_pay_bizum_tok.html (5018 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : —
+  OTRA: —
+
+## loc_pay_card_tok.html (77 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## loc_pay_invoice_tok.html (6448 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : —
+  OTRA: —
+
+## loc_pay_mp_tok.html (52 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## loc_pay_mp_tok_result_status_approved.html (2074 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : —
+  OTRA: —
+
+## loc_pay_quote_abcdef0123456789.html (23079 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]; logo-tercero.test [<img>]
+  NAV : wa.me [<a>]
+  OTRA: —
+
+## loc_recibo_tok.html (6264 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : localhost:3000 [<a>|<form>]
+  OTRA: —
+
+## p_zzzzCENSOJ4noexiste0000.html (1492 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## pay_bank_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## pay_bizum_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## pay_invoice_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## pay_mp_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## pay_zzzzCENSOJ4noexiste0000.html (21 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## privacidad.html.html (9486 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : www.aepd.es [<a>]
+  OTRA: —
+
+## quote_prod.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —
+
+## raiz.html (83301 B)
+  AUTO: fonts.googleapis.com [<link rel=preconnect>|<link rel=stylesheet>]; fonts.gstatic.com [<link rel=preconnect>]
+  NAV : —
+  OTRA: schema.org×1
+
+## recibo_zzzzCENSOJ4noexiste0000.html (1053 B)
+  AUTO: —
+  NAV : —
+  OTRA: —

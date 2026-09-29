@@ -44,22 +44,31 @@ const limpio = (v) => (v == null ? '' : String(v).trim());
  * pulsable es una llamada. El teléfono es opcional: sin él se pinta el bloque con el nombre solo,
  * no una línea de teléfono vacía.
  */
-function bloqueCliente(job) {
-  const nombre = limpio(job && job.customer && job.customer.name);
-  const telefono = limpio(job && job.customer && job.customer.phone);
+//
+// SCRUM-1171 · A QUÉ NÚMERO SE LLAMA Y A CUÁL SE ESCRIBE, SIN UN TERCER CRITERIO. Antes todo salía de
+// `phone`, así que un cliente con solo móvil se quedaba sin 📞 y sin 💬.
+//   · 📞 — los `tel:` de `contactoDelCliente` (api.js, SCRUM-1032), el MISMO que usan la lista y la
+//     ficha de Clientes: uno al fijo y otro al móvil (uno solo si son el mismo número).
+//   · 💬 — `customer.numeroWhatsApp`, que el SERVIDOR resuelve con `canalDeWhatsApp` (el mismo criterio
+//     que el envío real). El front no elige número: solo lo pasa por la normalización de `api.js`.
+// `contacto` llega INYECTADO (como `fmtMoney`): este fichero sigue sin tocar `window`. Sin él no se pinta
+// ningún enlace —nunca una normalización hecha aquí aparte—.
+function bloqueCliente(job, contacto) {
+  const cliente = (job && job.customer) || {};
+  const nombre = limpio(cliente.name);
+  const k = typeof contacto === 'function' ? contacto(cliente) : null;
+  const wa = typeof contacto === 'function' && limpio(cliente.numeroWhatsApp)
+    ? contacto({ mobile: cliente.numeroWhatsApp }).whatsapp : null;
+  const telefonos = k ? [k.telefono, k.movil].filter(Boolean) : [];
   // SCRUM-982 · la nota del cliente, tal cual la escribió el profesional: se recortan los extremos
   // y NADA más — los saltos de línea de dentro son suyos y se pintan. Sin nota, sin línea.
-  const nota = limpio(job && job.customer && job.customer.notes);
-  if (!nombre && !telefono && !nota) return null;
+  const nota = limpio(cliente.notes);
+  if (!nombre && !telefonos.length && !wa && !nota) return null;
 
   const lineas = [];
   if (nombre) lineas.push({ texto: nombre, fuerte: true });
-  if (telefono) {
-    // `tel:` y `wa.me` se construyen del MISMO teléfono que se pinta, normalizado igual en los dos.
-    const marcable = telefono.replace(/\s+/g, '');
-    lineas.push({ texto: telefono, icono: '📞', href: `tel:${marcable}` });
-    lineas.push({ texto: 'WhatsApp', icono: '💬', href: `https://wa.me/${marcable}` });
-  }
+  for (const t of telefonos) lineas.push({ texto: t.texto, icono: '📞', href: t.href });
+  if (wa) lineas.push({ texto: 'WhatsApp', icono: '💬', href: wa.href });
   if (nota) lineas.push({ texto: nota, etiqueta: ROTULO_NOTA_DEL_CLIENTE, nota: true });
   return { id: 'cliente', titulo: JOB_RAIL_TITULOS.cliente, lineas };
 }
@@ -186,7 +195,7 @@ function construirBloquesRail(job, ctx) {
   const c = ctx || {};
   const fmt = c.fmtMoney || ((n) => String(n));
   return [
-    bloqueCliente(job),
+    bloqueCliente(job, c.contacto),
     bloqueDonde(job),
     bloqueDinero(job, fmt),
     bloquePresupuesto(job, c.fechaCorta),

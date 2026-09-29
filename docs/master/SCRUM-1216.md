@@ -75,3 +75,132 @@ su AUSENCIA la exige ahora `scrum1216a`. El guard de SCRUM-1029 no se tocó y si
 - **SCRUM-1200 vuelve a importar con 1216b.** En cuanto el número declarado cambie la factura, que el
   alta se trague un 400 con `.catch(() => {})` deja de ser inocuo: el profesional creería haber declarado
   el 41 y emitiría el 1. Va dentro de 1216b.
+
+---
+
+# SCRUM-1216b · El número de arranque declarado llega a la factura
+
+**Medido contra:** `origin/main` = `cd78b8264d042dc01afe1ee714b002278f25e0a1` · 2026-09-28T15:30Z (J1; rama `scrum-1216b-numero-de-arranque`, encima de 1216a)
+
+**GO del fundador para el camino de emisión (regla 40):** SCRUM-1216, comentario **17347**. Textos: los
+cinco de la pregunta en el 17347 (firmados por Javier) y los tres de error en el **17349** (por el
+orquestador, por delegación). Esquema: ALTER aditivo de dos columnas, decidido por el orquestador con el
+SÍ de Javier (entrada en `docs/MIGRATIONS_PENDING.md`).
+
+De las tres firmas de SCRUM-780 se reabre UNA: «serie nueva que empieza en 0001» pasa a «empieza donde él
+diga». El formato `F260001` y la retirada del prefijo siguen intactos.
+
+## ⑤ El rojo, contra el emisor REAL
+
+`tests/scrum1216b-numero-de-arranque.test.mjs` no da por supuesto DÓNDE se guarda el arranque. Declara
+por la ruta real (`POST /admin/onboarding/serie`, app real con Prisma sustituido), aplica al merchant lo
+que la ruta escribe y emite con el `allocateInvoiceNumber` real (tx falso). Commiteado en ROJO
+(`3516cad2`) antes de tocar el emisor:
+
+| caso | antes | después |
+|---|---|---|
+| declara «41» | 🔴 `F260001` | `F260042` |
+| la vista previa promete lo que sale (41) | 🔴 `F260001` / `F260001`: igual, pero MAL | `F260042` / `F260042` |
+| F…0001..0010 emitidas + declara 41 | 🔴 200 (su serie saltaría de la 10 a la 42) | 409 `choca_con_emitidas` |
+| declaró 41 y luego «No» | — | las dos columnas a **NULL explícito** → `F…0001` |
+| CONTROL · «No, empiezo ahora» | `F…0001` | `F…0001` |
+| **CONTROL SCRUM-780** · dev: contador viejo en 6 por `FG-001..005`, sin declarar | `F…0001` | `F…0001` |
+| CONTROL · declarado 41 con F…0042 y 0043 emitidas | `F…0044` | `F…0044` (nunca repite) |
+| CONTROL · declarado este año, factura el 15-ene del siguiente | `F(AA+1)0001` | igual |
+
+## ⑥ Qué se tocó
+
+- **Esquema:** `invoiceStartSeq` e `invoiceStartYear`, `Int?` sin default. `invoice_start_seq` guarda el
+  ARRANQUE (declaró 41 → 42): nadie suma después, así que la vista previa y el emisor no pueden discrepar
+  por un `+1`. Año PROPIO: `invoiceSeriesYear` lo reescribe el emisor en cada factura. **NULL = no
+  declaró, que NO es 1**: si alguien «limpia» poniendo 1, «no contestó» y «declaró empezar en el 1» dejan
+  de distinguirse para siempre.
+- **Emisor (`invoiceNumber.service.ts`), dentro del GO:** dos campos más en el `select` y UNA línea en la
+  rama F: `seq = seqDeLaSerieF(siguienteSeqDeLaSerieF(…), m, year)`. `seqDeLaSerieF` es pura y exportada:
+  `máx(derivada, arranque)` si el arranque es de ese año, y un arranque corrupto (0, negativo, decimal,
+  NaN, texto) cae a lo derivado. **`nextInvoiceNumber` no entra**: es el contador de la serie vieja.
+  Rectificativas, cerrojo, auditoría y formato, intactos.
+- **Rutas (`app.ts`):** `/admin/onboarding/serie` escribe las dos columnas (NULL explícito con «No»), y
+  `/previa` y la respuesta del guardado componen el número con **la misma `seqDeLaSerieF`**. El choque del
+  arranque, la relectura dentro del cerrojo y la puerta de `/admin/me` cuentan también la serie F
+  (`emitidasDelAnio`, con `parseNumeroDocumento`). El bloqueo del prefijo sigue mirando sólo la vieja,
+  porque tras el corte el prefijo no entra en la ordinaria.
+- **Pantallas:** los textos firmados en UN sitio (`SERIE_TEXTOS`, `puertaSerie.js`), usados por el alta y
+  por Ajustes. Se retira el campo «Serie». El año va por `ANIO_EN_CURSO` / `anio` (guard de SCRUM-313).
+
+## ⑦ SCRUM-1200, cerrado aquí
+
+`tests/scrum1216b-pantalla-arranque.test.mjs` (14) monta el dashboard y pulsa en las dos pantallas:
+
+- **«Sí» sin número o con uno que no vale:** no avanza, no manda nada, el campo en Peligro (DESIGN.md
+  §Inputs) y debajo el texto firmado. Vacío → `errorNumeroFalta`. Letras (`value` vacío +
+  `validity.badInput`), 0, negativo, decimal → `errorNumeroNoValido`.
+- **Rechazo del servidor**, decidido por `err.code` y nunca por el texto: `numero_fuera_de_rango` →
+  `errorNumeroGrande`; `choca_con_emitidas` (409) → su texto aprobado. **No avanza**: `onNext` se queda en
+  el paso si `save` devuelve `false`. El tope no se copia en el navegador: lo pone el servidor.
+- **Mutación:** hacer que el `save` devuelva `true` en su `catch` (volver a tragárselo) hace caer
+  exactamente los dos casos 400/409. Y contra las pantallas de 1216a caen los 14; muchos por el título
+  nuevo, por eso vale la mutación y no ese rojo.
+
+### Tests existentes que cambian (regla 41: ninguno se relaja)
+
+- `scrum313-pantalla-numeracion`: la microcopy se exige literal en `SERIE_TEXTOS` y usada por el
+  asistente (`TS.titulo(ANIO_EN_CURSO)`, …). Antes se exigía copiada en el asistente.
+- `scrum1162` y `scrum1216a`: el título del paso es el firmado de nuevo en el 17347.
+- `scrum780` (el caso de dev) sigue verde **sin tocarlo**.
+
+### Guards que se movieron con el cambio, y por qué ninguno se relaja
+
+- `scrum291` fija el sha256 de `invoiceNumber.service.ts`, y dice qué hacer: «si el GO existe, actualiza
+  el hash EN EL MISMO COMMIT». Se actualizó (`ccfaacab…` → `74d298cb…`) citando el comentario 17347 y lo
+  que cambia. Así el permiso queda en el diff.
+- `scrum461`: `docs/sql/deriva-prod.sql` no miraba las dos columnas nuevas (el censo se habría
+  encogido). Se regeneró con `scripts/generar-sql-deriva.mjs`: 487 columnas.
+- `scrum525d`: dos coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` se movieron de línea
+  (`allocateInvoiceNumber` 395 → 432; `vf_hash`/`vf_prev_hash` 903-904 → 908-909). Se llevan donde están
+  hoy; la afirmación no cambia.
+- `scrum601` (`aPelo` 155 → 156): el diff del censo entre 1216a y 1216b es UNA línea, «Facturas
+  recibidas», de un fichero que no cambió. Ya era visible, pero el censo no la veía. Entró porque
+  `T.titulo(…)` puso el nombre `titulo` en su lista de nombres llamados en un sumidero. Explicado en el
+  propio test.
+- `scrum1185`: `/previa` seguía leyendo `req.body.serie`, que ya no manda ninguna pantalla. Arreglado en
+  el CÓDIGO: la vista previa usa el prefijo del merchant.
+
+**Tanda:** `npm test` entero murió por memoria de la máquina a las 7.598 pasadas. Lo que había fallado
+hasta ahí se re-corrió fichero a fichero y está verde, salvo `scrum910d`: el assert de libuv de Windows
+con `--test-force-exit`, que pasa 5/5 sin él. El resto de la tanda lo corre el CI.
+
+## ⑧ Antes de mergear
+
+La condición era que **producción tuviera las dos columnas, verificadas por catálogo**: `schemaDrift.ts` no
+deja escuchar en `NODE_ENV=production` si el esquema espera columnas que la base no tiene (SCRUM-1122), y el
+PR se mergea solo. J1 no empujó hasta tenerla.
+
+✅ **Se cumple según SCRUM-1216, comentario 17369.** La medición es del **orquestador**, con la salida que
+devolvió Javier; J1 no tiene clave de producción y no la ha visto de primera mano. La cita por lo que lleva
+dentro: la salida literal, y un discriminador **por datos** que separa producción de staging (14/2 frente a
+8/9), porque contar columnas no las separaba (66 en las dos). Detalle en `docs/MIGRATIONS_PENDING.md`.
+
+Producción tiene 2 facturas (SCRUM-1216, comentario 17362: «facturas de prueba», según Javier). El camino de
+emisión YA ha corrido allí, y esas dos no se renumeran nunca (regla 29). Este cambio no las toca: sólo decide
+el número de las que se emitan a partir de ahora.
+
+## ⑨ El rojo del PR #1895, y por qué no entraba (28-sep-2026, ~18:50Z)
+
+**Medido contra:** `origin/main` = `0afa87cd`, run 36442328364, jobs 108995722459 (intento 1) y
+109035653408 (intento 2), los dos sobre la misma cabeza `a00aac73`.
+
+1. **El meta-guard es ajeno a esta rama, y es SCRUM-1100.** Con la MISMA cabeza, el intento 1 salió CIEGO en
+   `scrum757` y el 2 en `scrum859`; en cada intento el otro fichero salió VIVO. Los dos con la firma de 1100:
+   «NO APARECE en la pasada mutada», resumen llegado y recuentos que cuadran (scrum859: 9/7 frente a 20/0 en
+   la limpia, el mismo recuento que 1100 lleva midiendo desde el 23-sep). Ninguno de los dos ficheros está en
+   el diff. Esa misma tarde, el mismo CIEGO salió en `scrum-1179-b2-suelos` (859), `scrum-1179-e-…` (757) y
+   `scrum-1229-firma-tecnico-viaje` (859). La hipótesis heredada («el CIEGO de scrum757») era la mitad: el
+   fichero rota. No se ha relanzado.
+2. **Lo que de verdad lo paraba era un CONFLICTO con main** (`mergeable: CONFLICTING`, 134 commits por
+   detrás): `docs/MIGRATIONS_PENDING.md` (J6 registró el mismo ALTER en main) y el anclaje de
+   `scrum601`. Resuelto con `git merge origin/main` dentro de la rama: en MIGRATIONS se queda la entrada de
+   J6 y se le añade la verificación de producción de 17369; `scrum601` se REGENERÓ con su propio censo sobre
+   el árbol fusionado → `{ flag: 17, tipo: 7, aPelo: 156 }` (el +1 flag de SCRUM-1164 y el +1 «a pelo» de
+   este ticket, por separado). Tras el merge: tests de la rama + scrum237/267/854/976/1168/601 = 113/113 en
+   12 ficheros, 0 saltados; `guards:entrada` 112/112.

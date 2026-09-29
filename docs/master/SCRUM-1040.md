@@ -13,6 +13,13 @@ Las facturas que el profesional **RECIBE de sus proveedores** — no las que emi
 `GET /admin/libros/recibidas.csv`, SCRUM-426), pero no había pantalla: el autónomo no podía mirar
 lo que va a entregarle a su gestor sin bajarse el fichero.
 
+> ⚠️ **CORREGIDO EN SCRUM-1249 (28-sep-2026).** El párrafo de arriba es FALSO en su última frase, y
+> se deja escrito para que se vea qué se afirmaba: el autónomo **tampoco podía bajarse el fichero**.
+> La ruta `/recibidas.csv` existía en el servidor, pero **ninguna pantalla la pedía** — ni «Exportar»
+> ni esta. Lo midió el censo AST de SCRUM-1195 (veredicto (a) DEFECTO) y lo re-midió SCRUM-1249
+> pulsando cada control de las dos pantallas. Este ticket acabó con la tabla y **sin** la descarga;
+> la descarga la pone SCRUM-1249 (`docs/master/SCRUM-1249.md`).
+
 **No es el camino de emisión fiscal.** Solo lectura sobre `Expense` (gastos), sin sello, sin
 `INVOICING_ES_ENABLED` de por medio: es el propio profesional mirando sus propios números como
 borrador, aclaración del orquestador en SCRUM-1012 (21-sep-2026).

@@ -16,9 +16,8 @@ import { recordAuditOrThrow, sobreFiscal, type ActorAudit } from '../../system/a
 // SCRUM-780: el formato del número nuevo sale del sitio único, el mismo que compone P y AB.
 import { SERIES, formatoNumeroDocumento, parseNumeroDocumento } from '../../../core/documentos/formatoNumero';
 // SCRUM-735 (GO comentario 16573): el día/año de la serie sale de la zona del MERCHANT, no del
-// reloj del proceso. `zona` es opcional y cae a `ZONA_POR_DEFECTO` ('UTC') — exactamente lo que
-// el proceso hacía hasta hoy — para no romper a los llamadores que todavía no la pasan.
-import { zonaDelMerchant, diaNaturalEn, ZONA_POR_DEFECTO } from '../../../core/zonaDelMerchant';
+// reloj del proceso.
+import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant';
 
 /**
  * SCRUM-207 · los 7 caminos por los que puede nacer una factura (mapa de SCRUM-200 §2.1).
@@ -73,9 +72,10 @@ export const ORIGENES_C7: readonly OrigenC7[] = [
 ] as const;
 
 /**
- * Justificantes de cobro (V0-0): los merchants ES reales con `INVOICING_ES_ENABLED`
- * off NO consumen la serie fiscal — reciben una referencia `J-YYYYMMDD-XXXX` fuera
- * de toda serie de facturación ("sin numeración de factura", Parte M).
+ * Referencias de justificante `J-YYYYMMDD-XXXX` (V0-0). Ya NO se generan: SCRUM-1027 dejó el
+ * generador sin llamador y SCRUM-825 lo retiró con firma del fundador (comentario 17446, D1). Se
+ * queda SÓLO el reconocedor, porque los justificantes ya emitidos siguen en la base y se tienen
+ * que poder identificar (regla 29).
  */
 /**
  * Namespace del advisory lock que serializa la RESERVA de serie (SCRUM-234).
@@ -87,103 +87,6 @@ export const RECEIPT_NUMBER_PREFIX = 'J-';
 
 export function isReceiptNumber(number: string | null | undefined): boolean {
   return typeof number === 'string' && number.startsWith(RECEIPT_NUMBER_PREFIX);
-}
-
-export function makeReceiptNumber(now = new Date(), zona: string = ZONA_POR_DEFECTO): string {
-  const ymd = diaNaturalEn(now, zona).replace(/-/g, '');
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `${RECEIPT_NUMBER_PREFIX}${ymd}-${rand}`;
-}
-
-/**
- * SCRUM-396 · LA REFERENCIA DEL JUSTIFICANTE SE COMPROBABA CONTRA NADA.
- *
- * `makeReceiptNumber` tira 4 caracteres de `[0-9A-Z]` al aire: 36⁴ = 1.679.616 sufijos, y el
- * espacio se reparte POR MERCHANT Y POR DÍA porque la fecha va dentro. A 10 justificantes/día la
- * probabilidad de choque en ese día es 1 entre 37.325; a 200/día baja a **1 entre 85**. Con 200
- * merchants activos son ~1,3 choques al año. No es teórico: es un martes.
- *
- * Y cuando chocaba, ¿qué pasaba? Nada bueno. El número volvía tal cual, el llamador hacía su
- * `invoice.create` y reventaba contra `@@unique([merchantId, number])` — un `500 internal_error`
- * en la cara del profesional, al emitir. La segunda emisión era perfectamente válida.
- *
- * ── POR QUÉ SE COMPRUEBA EL CONSTRAINT Y NO SE CAPTURA EL `P2002` ─────────────────────────
- *
- * Medido, y corrige la forma natural de escribir esto: **el `P2002` no es capturable aquí.**
- *
- *   · `allocateInvoiceNumber` DEVUELVE un string. El `invoice.create` que choca vive en el
- *     llamador —`emitInvoice` y otros 7 sitios—, así que un `try/catch` en este fichero no
- *     envuelve la sentencia que falla;
- *   · y aunque lo envolviera: en PostgreSQL una sentencia fallida **aborta la transacción**. El
- *     segundo intento no daría otro número, daría `25P02 current transaction is aborted`.
- *     Reintentar dentro de la misma `tx` no es reintentar: es insistir sobre una tx muerta.
- *
- * Lo que sí se puede —y es más fuerte— es PREGUNTARLE AL PROPIO CONSTRAINT. Este código corre
- * dentro del `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` que se toma como PRIMERA sentencia
- * de `allocateInvoiceNumber`, y la clave del cerrojo es `merchantId` — **exactamente el alcance del
- * índice `[merchantId, number]`**. Dentro de ese cerrojo, «¿está ocupada esta referencia?» no tiene
- * carrera para el mismo merchant, y entre merchants distintos el choque es imposible por
- * construcción. La consulta usa `merchantId_number`, que es el nombre que Prisma le da a ESE índice:
- * si el constraint cambiara de forma, esto **no compilaría** — que es la diferencia entre comprobar
- * el constraint y reconocer un código de error de memoria.
- *
- * ── POR QUÉ TRES, Y POR QUÉ UN TOPE ──────────────────────────────────────────────────────
- *
- * Al peor volumen medido, agotar tres intentos tiene probabilidad 1,7·10⁻¹². Es decir: **agotar
- * tres ya no significa colisión, significa que pasa otra cosa** —el reloj, el generador, la
- * consulta— y por eso el agotamiento tiene error PROPIO en vez de reintentar en silencio. Un
- * reintento sin tope haría lo contrario: convertiría ese «otra cosa» en un bucle infinito dentro de
- * una transacción con un cerrojo tomado, que es la forma de tumbar la emisión de todo el merchant.
- */
-export const INTENTOS_REFERENCIA_JUSTIFICANTE = 3;
-
-/**
- * Agotar los intentos NO es una colisión: a 1,7·10⁻¹² es otra cosa. Error propio y con nombre para
- * que quien lo lea en el log no lo confunda con el choque que este mecanismo sí resuelve.
- */
-export class ReferenciaJustificanteAgotada extends Error {
-  readonly merchantId: number;
-  readonly intentos: number;
-  readonly candidatas: readonly string[];
-
-  constructor(merchantId: number, candidatas: readonly string[]) {
-    super(
-      `referencia_justificante_agotada: ${candidatas.length} intentos ocupados para el merchant ` +
-      `${merchantId} (${candidatas.join(', ')}). A esta probabilidad esto NO es una colisión: ` +
-      'revisa el generador, el reloj del proceso o la consulta.',
-    );
-    this.name = 'ReferenciaJustificanteAgotada';
-    this.merchantId = merchantId;
-    this.intentos = candidatas.length;
-    this.candidatas = candidatas;
-  }
-}
-
-/**
- * Devuelve una referencia `J-YYYYMMDD-XXXX` LIBRE para este merchant, o lanza.
- *
- * ⚠️ Cada vuelta llama a `makeReceiptNumber` OTRA VEZ. Si reutilizara la candidata, los tres
- * intentos serían uno y el tope sería decorativo.
- */
-async function reservarReferenciaJustificante(
-  tx: Prisma.TransactionClient,
-  merchantId: number,
-  now: Date,
-  zona: string = ZONA_POR_DEFECTO,
-): Promise<string> {
-  const candidatas: string[] = [];
-  for (let intento = 0; intento < INTENTOS_REFERENCIA_JUSTIFICANTE; intento += 1) {
-    const candidata = makeReceiptNumber(now, zona);
-    candidatas.push(candidata);
-    // El índice, por su nombre. Un error de la consulta SUBE: no se reintenta a ciegas, porque
-    // «no pude comprobar si está ocupada» y «está libre» no pueden dar el mismo resultado.
-    const ocupada = await tx.invoice.findUnique({
-      where: { merchantId_number: { merchantId, number: candidata } },
-      select: { id: true },
-    });
-    if (!ocupada) return candidata;
-  }
-  throw new ReferenciaJustificanteAgotada(merchantId, candidatas);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -354,6 +257,43 @@ export function siguienteSeqDeLaSerieF(numeros: readonly string[], year: number)
   return max + 1;
 }
 
+/**
+ * SCRUM-1216b · EL ARRANQUE DECLARADO ENTRA EN LA SERIE F.
+ *
+ * GO del fundador para el camino de emisión: SCRUM-1216, comentario 17347 (28-sep-2026). De las
+ * tres firmas de SCRUM-780 se reabre UNA —«serie nueva que empieza en 0001» pasa a «empieza donde
+ * él diga»—; el formato `F<AA><NNNN>` y la retirada del prefijo siguen intactos.
+ *
+ * Por qué importa: la AEAT acepta el mismo número si cambia la fecha (medido en pruebas, SCRUM-1216),
+ * así que empezar en 0001 a quien ya usó `F26…` en su programa anterior repetiría un número suyo sin
+ * que nadie se enterase nunca.
+ *
+ * La regla es `máx(derivada, arranque)`, sin aritmética:
+ *   · `invoiceStartSeq` guarda YA el arranque (declaró 41 → 42): nadie suma después, y así la vista
+ *     previa y el emisor no pueden discrepar por un `+1`;
+ *   · cuenta SÓLO si `invoiceStartYear` es el año que se numera. Año PROPIO a propósito:
+ *     `invoiceSeriesYear` lo reescribe este mismo emisor en cada factura;
+ *   · `null` = NO declaró nada → manda lo derivado (0001 si no hay nada). `null` NO es 1;
+ *   · el máximo, y no el arranque a secas: con F…0042 y 0043 ya emitidas, la siguiente es la 44.
+ *     Nunca repite.
+ *   · `nextInvoiceNumber` NO entra: es el contador de la serie VIEJA. Con él, el merchant 1 de dev
+ *     (gastó `2026-FG-001..005`, contador en 6) nacería en F260006 sin haber declarado nada, que es
+ *     lo que SCRUM-780 firmó que no pasa.
+ *
+ * Pura, y la usan el emisor y la vista previa: son el mismo número y no pueden decirlo dos veces.
+ */
+export function seqDeLaSerieF(
+  derivada: number,
+  arranque: { invoiceStartSeq?: number | null; invoiceStartYear?: number | null } | null | undefined,
+  year: number,
+): number {
+  const s = arranque?.invoiceStartSeq;
+  const declarado = arranque?.invoiceStartYear === year && typeof s === 'number' && Number.isInteger(s) && s >= 1
+    ? s
+    : null;
+  return declarado === null ? derivada : Math.max(derivada, declarado);
+}
+
 /** Secuencia que toca emitir: si la serie guardada no es la del año en curso, empieza serie nueva en 1. */
 export function resolveSeriesSeq(
   m: { invoiceSeriesYear: number | null; nextInvoiceNumber: number },
@@ -450,6 +390,9 @@ export async function allocateInvoiceNumber(
       nextInvoiceNumber: true,
       nextRectInvoiceNumber: true,
       invoiceSeriesYear: true,
+      // SCRUM-1216b: el arranque declarado de la serie F (ver `seqDeLaSerieF`).
+      invoiceStartSeq: true,
+      invoiceStartYear: true,
     },
   });
   if (!m) throw new Error('merchant_not_found');
@@ -499,9 +442,9 @@ export async function allocateInvoiceNumber(
   // desenlaces para `receipt` y pasa a tener uno solo. No avanza NINGÚN contador de la serie
   // fiscal — ni se llega a intentar.
   //
-  // `reservarReferenciaJustificante` se queda SIN llamador (no se borra: retirar el tipo JUST
-  // es SCRUM-825, que va firmado antes — regla 27. Esto no lo enciende ni lo apaga, solo deja de
-  // usarlo desde aquí).
+  // El generador de referencias `J-` que esta rama llamaba se quedó sin llamador con este cambio,
+  // y SCRUM-825 lo retiró después con firma del fundador (comentario 17446, D1). Esta rama no
+  // cambió con esa retirada: sigue rechazando igual.
   if (getEmissionMode(m) === 'receipt') {
     throw new Error('invoicing_es_disabled');
   }
@@ -523,7 +466,8 @@ export async function allocateInvoiceNumber(
       where: { merchantId, number: { startsWith: prefijoF } },
       select: { number: true },
     });
-    seq = siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year);
+    // SCRUM-1216b: y si declaró un arranque para ESTE año, no se empieza por debajo de él.
+    seq = seqDeLaSerieF(siguienteSeqDeLaSerieF(emitidas.map((f) => f.number), year), m, year);
   } else {
     seq = resolveSeriesSeq(m, year);
   }
