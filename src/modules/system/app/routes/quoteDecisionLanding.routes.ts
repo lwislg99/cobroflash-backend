@@ -6,6 +6,7 @@ import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
+import { ERROR_PRESUPUESTO_YA_DECIDIDO } from '../../../quotes/domain/decisionDelCliente'; // SCRUM-1276
 // SCRUM-806 · la MISMA puerta que usa la ruta de admin para armar el PDF: si el documento del
 // cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
@@ -749,6 +750,10 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +
             '</div>';
+        } else if (res.status === 409 && data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}') {
+          // SCRUM-1276 · ya decidido en otra pestaña: se recarga y la página enseña el estado con
+          // su texto N3 firmado. Ningún texto nuevo aquí.
+          location.reload();
         } else {
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           // SCRUM-264 · el MENSAJE HUMANO gana al código, igual que en api.js:35-37 (SCRUM-151).
@@ -786,6 +791,12 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
       brandColor = quote.merchant?.brandColor ?? null;
       // A16.2: caducado → la landing principal ya cuenta la verdad
       if (isQuoteExpired(quote as any)) {
+        return res.redirect(`/pay/quote/${token}`);
+      }
+      // SCRUM-1276 · ya DECIDIDO: el formulario de rechazo se pintaba con cualquier estado, y un
+      // cliente que ya había aceptado podía rechazar desde aquí. La landing principal ya cuenta la
+      // verdad con su texto N3 firmado («Ya aceptaste…» / «Rechazaste…»): se le manda allí.
+      if (quote.status === 'accepted' || quote.status === 'rejected') {
         return res.redirect(`/pay/quote/${token}`);
       }
       if (quote.status === 'draft' || quote.status === 'sent') {
@@ -863,6 +874,11 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
         body: JSON.stringify({ decision: 'reject', reason: reasonLabel || undefined, comment: commentText || undefined }) }
     );
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
+    // SCRUM-1276 · ya decidido (p. ej. aceptado en otra pestaña): se enseña el estado con su texto
+    // N3 firmado en vez de un código crudo. Sin copy nuevo.
+    if (apiResponse.status === 409 && json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO) {
+      return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
+    }
     if (!apiResponse.ok) {
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
         // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo
