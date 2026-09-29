@@ -85,3 +85,37 @@ Las de S2 son «el resto» de este ticket, que va después de SCRUM-1267 (orden 
 - `expensesView.js` (`loadExpenses`, antes `:295`): pintaba `Error: ${err.message}` en un `innerHTML`. Ahora pinta `mensajeParaPersona(err, 'No se han podido cargar los gastos. Vuelve a intentarlo.')` por `textContent`. Texto firmado en SCRUM-1233 c.17504.
 - Techo del censo: 16 → 15; `expensesView.js` sale de la tabla (techo cero).
 - Viaje (lista de Gastos en el banco con el `apiRequest` real): un 500 y sin red pintan el texto firmado; la frase del servidor sale como TEXTO, no como HTML. Rojo probado: con el fichero de main caen 4.
+
+## 1233d — el helper también entiende el texto aprobado que lanza el PANEL (S2, s2-29c)
+
+**Medido contra:** `origin/main` = `82cb31c81e3fa7357819af7370a4fcf53bff6682` · 2026-09-29T15:58:12Z
+
+**La regresión (la encontró el equipo de Javier):** desde 1233b, en Gastos, una foto que no se puede abrir
+enseñaba «Error al guardar.» en vez del texto firmado de SCRUM-947. `expensesView.js:1023` pasó a
+`mensajeParaPersona(err, 'Error al guardar.')`, y el helper solo leía `err.data.message`;
+`fotoParaGuardar` lanza `AVISO_FOTO_NO_SE_ABRE` como `Error` LOCAL, así que caía al respaldo.
+
+**El arreglo va en el helper, no en el sitio:**
+- `errorParaPersona(texto)` (api.js): el `Error` que lanza el panel cuando lo que tiene que leer la persona es un
+  texto YA aprobado. `err.message` sigue siendo ese texto (el `===` de `expensesView.js:904` no cambia).
+- `mensajeParaPersona` honra esa marca (`textoAprobado`) después de `data.message`. Un `Error` local SIN
+  marca («Failed to fetch», un TypeError) sigue cayendo al respaldo: leer `err.message` a secas NO era el arreglo.
+- `fotoParaGuardar`: sus 3 `throw` pasan a `errorParaPersona(AVISO_FOTO_NO_SE_ABRE)`. Sin texto nuevo.
+
+**Barrido de los llamadores (AST del `try` de cada `catch`, y lo que llama por dentro):**
+
+| Llamador | Carril | ¿Error local con texto aprobado? |
+| --- | --- | --- |
+| `expensesView.js:1023` (guardar) | S2 | **SÍ** (`fotoParaGuardar`): arreglado |
+| `expensesView.js:302` (carga) | S2 | no (solo `apiRequest`) |
+| `albaranesView.js:191` | S2 | no (`pintarError` de la carga) |
+| `jobDetailView.js` 1146 · 1675 · 2781 · 3407 | S2 | no (solo `apiRequest`) |
+| `jobDetailView.js:3047` / `:3152` (`onGuardar` / `onEntregarYFirmar`) | S2 | no: `crearAlbaran` es `apiRequest`, y los fallos de emitir/enviar se tragan con su aviso |
+| `quoteRevisiones.js:206` | S2 | no (solo `api(...)`) |
+| `teamView.js:282` | J3 | no (solo `apiRequest`); no tocado |
+
+**Tests:** `tests/scrum1233d-texto-aprobado-local.test.mjs`. ① helper: la marca se honra; `err.message` sin marca,
+no; `data.message` sigue ganando. ② VIAJE: modal de alta de Gastos en el banco, foto que no abre por ninguna de
+las dos vías de `abrirFoto`, clic en «Añadir gasto», se LEE `#exp-error`, y el gasto no sale hacia el servidor.
+Controles: un 500 sin frase → «Error al guardar.»; una frase del servidor → la suya.
+**Rojo probado:** con `api.js` y `expensesView.js` de main caen 2 de 4; el del viaje pinta exactamente «Error al guardar.».
