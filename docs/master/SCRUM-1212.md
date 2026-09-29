@@ -61,6 +61,14 @@ Sesión J3 (jv-j3), rama `scrum-1212-correo-aceptado-web`, medido sobre `origin/
 ### Lo que sigue ABIERTO (sube al fundador; no se empieza nada)
 
 - **① Regla 28.** §J6 del máster (`YAQU_MASTER.md:319`) es una sola línea sobre WhatsApp a clientes finales; no nombra correos al profesional. Este registro ya decía que mandarlo desde `/decision` es «un envío nuevo, J6 no lo cubre y lo decide el fundador». Queda por decidir si «Pasa el correo» basta o si hace falta una entrada en §J6, que sería cambio de máster. (Nota: la tabla **no** está en `docs/equipo/puesto-j6.md`: su línea 15 dice que ese «J6» es otra cosa.)
+    - 🔴 **EN CONFLICTO (anotado el 29-sep-2026, a partir de ~16:00Z).** Hay dos posturas firmadas y opuestas:
+        - **Javier, 29-sep:** «Sí cubre» (su GO cubre la regla 28), recogido por el orquestador en el comentario 17557.
+        - **Luis, 28-sep (comentario 17355):** «no se conecta ningún correo nuevo; la tabla J6 no cubre "presupuesto aceptado → correo al profesional" y una fila nueva es cambio de máster».
+    - Espera a Javier. **No se construye nada del correo por `/decision` hasta que se resuelva.**
+    - Arrastra al texto de Configuración (a), porque hay dos firmados que codifican las dos salidas:
+        - el de Luis («…cuando un cliente acepte un presupuesto **desde WhatsApp**») vale si el correo sale solo por el bot;
+        - el del orquestador (⑤ de c.17557, «…cuando un cliente acepta un presupuesto») vale si se conecta también la web. **Ese ⑤ está en suspenso.**
+    - ② y ③ no dependen de esto: la falsedad de la frase por `/decision` es un hecho medido, y «ha aceptado» vale también con firma.
 - **(b) Reglas 38 y 40.** La llamada va **dentro** del handler que sella facturas (C1). No modifica la emisión, pero **añade un efecto en ese handler**, y es STOP hasta que decida el fundador.
     - Si sale adelante: la llamada va **después del sellado**, sin `await` que bloquee y con su propio `catch`.
     - Y lleva un test que lo pruebe: el correo revienta y la factura queda sellada igual.
