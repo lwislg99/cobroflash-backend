@@ -38,9 +38,20 @@ en `main`: de los últimos 11 runs de `ci.yml` en `main` que terminaron (29-sep,
 tienen en `failure`. Y como no es obligatorio, un rojo más o menos no cambia nada que alguien mire. Un job
 permanentemente rojo no avisa de nada.
 
-Para que el «no supe medir» de estos guards llegue a alguien, ese job tiene que poder estar en **verde** en `main`.
-Hoy lo impide al menos `guard:foto-del-gasto`, que mide y encuentra un defecto. Queda para el orquestador (reparto:
-el defecto de `foto-del-gasto` es de producto, no de este instrumento).
+**Un job SIEMPRE rojo y no obligatorio no avisa de nada.** Para que un ciego llegue a alguien, ese job tiene que
+poder estar en **VERDE**. Esto vale para todos los informativos, no solo para este.
+
+**Re-medido tras #1979** (el arreglo de la foto del gasto, en `main` desde `e75b94ca`). Esos 11 runs mezclaban el antes
+y el después del arreglo:
+
+| Dónde | `guard:foto-del-gasto` | Veredicto del job |
+|---|---|---|
+| run 36596028069 · `d2451dbe` (antes de #1979) | hallazgo | DEFECTOS (salida 1) + los 4 ciegos |
+| run 36597577377 · `e75b94ca` (con #1979), job 109512062054 | **ya no sale** | «NO MEDIDO (salida 2) · CIEGO en 4 guard(s)»: **solo estos cuatro** |
+| local, `f09dfe44` | ✔ 5/5 (exit 0) | — |
+
+Así que, en `main` de hoy, **lo único que tiene en rojo el job de guards de navegador son los cuatro ciegos de este
+ticket**. Con este PR dentro, ese job debería quedar **verde**. Cuando entre, se comprueba en el primer run de `main`.
 
 ## Qué cambia
 
