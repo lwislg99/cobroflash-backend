@@ -12,6 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
@@ -128,4 +129,19 @@ test('SCRUM-1180 · CONTROL: un negocio SIN cláusulas no pinta casillas y la cl
   await generar(b, r.contenedor);
   assert.equal(posts.length, 1, 'SUELO: no hubo POST');
   assert.equal('clausulasExcluidas' in posts[0], false, '🔴 sin saber qué cláusulas hay, se manda una lista como si las llevara todas');
+});
+
+// La cláusula QUITADA tiene que verse de un vistazo (c.17380, lo que no se firmó y se aprobó aparte):
+// atenuada y tachada. Y SOLO en el bloque de cláusulas: `.pay-methods-row` la comparten los métodos
+// de pago, y un tachado ahí diría «este método no va» en la pantalla de cobro.
+test('SCRUM-1180 · la cláusula quitada se tacha, y la regla no se sale del bloque de cláusulas', () => {
+  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const reglas = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), cuerpo: m[2] }));
+  const tachado = reglas.filter((r) => /line-through/.test(r.cuerpo) && /pay-methods-row/.test(r.sel));
+  assert.equal(tachado.length, 1, `SUELO: se esperaba UNA regla de tachado sobre la fila, hay ${tachado.length}`);
+  const sel = tachado[0].sel;
+  assert.match(sel, /^\.quote-clausulas\s/, `🔴 el tachado no está acotado a las cláusulas: «${sel}»`);
+  assert.match(sel, /:has\(input:not\(:checked\)\)/, `🔴 el tachado no depende de la casilla desmarcada: «${sel}»`);
+  assert.match(tachado[0].cuerpo, /color:\s*var\(--muted\)/, '🔴 la cláusula quitada no se atenúa');
 });
