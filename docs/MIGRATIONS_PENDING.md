@@ -3028,3 +3028,16 @@ Antes de aplicarlo, el SQL pasó por **dos** sondas independientes: la lista de 
 `ALTER TABLE … ADD COLUMN`) y el clasificador de producción (`ADD COLUMN ×2`, permitida). Se usaron
 las dos porque la de dev tiene un hueco con los `ALTER` de varias acciones, que J6 encontró ese mismo
 día y que va en su propio ticket.
+
+## SCRUM-1273 · `quotes.archived_at` (archivar presupuestos) — 29-sep-2026 · ESCRITO, SIN APLICAR en ninguna base
+
+Fichero: `docs/sql/scrum-1273-archivar-presupuestos.sql` (S1, `s1-29a`, encargo del orquestador
+`cobroflash-backend-57`). **Una** sentencia, aditiva y re-ejecutable:
+`ALTER TABLE "quotes" ADD COLUMN IF NOT EXISTS "archived_at" TIMESTAMP(3);` — nullable, sin default:
+ninguna fila cambia. DDL derivado OFFLINE con `previewMigracion` (control positivo: 31 tablas) contra
+`origin/main` = `223498dc`; `prisma/schema.prisma` NO se ha tocado. El PR ③ (esquema + código) espera
+a que esté en las tres bases (`schemaDrift` es fail-closed, SCRUM-1122).
+
+- [ ] **desarrollo · yaqu_dev_javier** — sin aplicar (carril B; se pide, no se aplica desde S1).
+- [ ] **staging** — sin aplicar.
+- [ ] **producción** — sin aplicar.
