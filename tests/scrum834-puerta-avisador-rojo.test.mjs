@@ -453,3 +453,195 @@ test('las rutas se DERIVAN de los módulos fiscales, no se repiten a mano', () =
     assert.ok(RUTAS_FISCALES.includes(`src/modules/${m}/`), `falta la ruta derivada de ${m}`);
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1263 · SI LO DESPERTÓ EL AVISADOR, SOLO SE EMPUJA CON EL GUARD QUE CAYÓ YA EN VERDE
+// ══════════════════════════════════════════════════════════════════════════════════════════
+//
+// El caso, medido (PR #1944, 28-sep-2026): el avisador despertó a Claude por `scrum525d` rojo;
+// Claude empujó `6787a7f0` (`:848 -> :847`, y `:847` es una línea en blanco) y el guard SIGUIÓ
+// ROJO. Lo cazó J5 midiendo en local. Si el arreglo malo hubiera puesto el guard en verde por
+// accidente, `yaqu-bot` lo mergea y nadie lo mira. Decisión del fundador: opción C.
+//
+// 🔴 LOS DATOS NO SON INVENTADOS: el log es el del job rojo de `c80b2f84` (run 36494645539), y
+// los dos TAP salen de correr `scrum525d` sobre el árbol de `6787a7f0` (el del bot) y sobre el de
+// `65996e85` (el arreglo de J5). Un test que se construye él mismo el mensaje solo prueba que la
+// función acepta lo que espera; éste le da lo que produjo el CI de verdad.
+//
+// Import DINÁMICO a propósito: si el módulo falta, caen estos tests y no el fichero entero.
+
+// El rojo de SCRUM-1263, declarado para `npm run meta:mutaciones` (probado a mano el 29-sep-2026).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto del #1944: con el guard aún en rojo, se empuja igual.
+    fichero: 'scripts/puerta-claude-empuje.mjs',
+    de: 'if (rojos.length) {',
+    a: 'if (false) {',
+    cae: 'SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE',
+  },
+  {
+    // Un test SALTADO cuenta como verde.
+    fichero: 'scripts/puerta-claude-empuje.mjs',
+    de: "if (suyas.every((f) => f.ok && !f.directiva)) return { fichero, nombre, estado: 'VERDE' };",
+    a: "if (suyas.every((f) => f.ok)) return { fichero, nombre, estado: 'VERDE' };",
+    cae: 'SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)',
+  },
+];
+
+const FIXT = path.join(REPO, 'tests', 'fixtures', 'scrum1263');
+const leerFixt = (f) => fs.readFileSync(path.join(FIXT, f), 'utf8');
+const empuje = () => import('../scripts/puerta-claude-empuje.mjs');
+const NOMBRE_525D = 'SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo';
+const FICHERO_525D = 'tests/scrum525d-anclas-que-apuntan.test.mjs';
+const DESPERTAR_AVISADOR = { avisador: true, runId: '36494645539', check: 'build + tests (con banco desechable)' };
+
+test('SCRUM-1263 · el log REAL del job rojo nombra el guard que cayó, con su fichero', async () => {
+  const { fallosDelLog } = await empuje();
+  const d = fallosDelLog(leerFixt('log-c80b2f84-build-tests.txt'));
+  assert.equal(d.ciego, false, d.motivo);
+  assert.deepEqual(d.fallos, [{ fichero: FICHERO_525D, nombre: NOMBRE_525D }]);
+});
+
+test('SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE', async () => {
+  const { fallosDelLog, veredictoLocal, decidirEmpuje, cuerpoSinEmpuje } = await empuje();
+  const diagnostico = fallosDelLog(leerFixt('log-c80b2f84-build-tests.txt'));
+  const local = veredictoLocal(diagnostico.fallos, { [FICHERO_525D]: leerFixt('tap-scrum525d-en-6787a7f0.tap') });
+  assert.deepEqual(local.map((l) => l.estado), ['ROJO']);
+  const r = decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 1, diagnostico, local });
+  assert.equal(r.codigo, 'NO-EMPUJA-SIGUE-ROJO');
+  assert.equal(r.empujar, false);
+  const cuerpo = cuerpoSinEmpuje({ numero: 1944, decision: r, local, parche: 'diff --git a/x b/x\n', urlRun: 'https://example.invalid/run' });
+  assert.ok(cuerpo.includes(NOMBRE_525D), 'el comentario nombra el guard que sigue rojo');
+  assert.ok(cuerpo.includes('diff --git'), 'y lleva el parche, para que lo recoja quien tiene la rama');
+  assert.ok(cuerpoNoDebeDespertar(cuerpo), 'y NO despierta a Claude otra vez: sería el bucle');
+});
+
+test('SCRUM-1263 · CONTROL POSITIVO: el arreglo de J5 pone el guard VERDE → SÍ se empuja, como hoy', async () => {
+  const { fallosDelLog, veredictoLocal, decidirEmpuje } = await empuje();
+  const diagnostico = fallosDelLog(leerFixt('log-c80b2f84-build-tests.txt'));
+  const tap = leerFixt('tap-scrum525d-en-65996e85.tap');
+  // Ese TAP trae OTRO `not ok` (un test del mismo fichero que en Windows cae por entorno). No es
+  // el guard que despertó a Claude y no debe frenar el empuje: se mide por NOMBRE, no por fichero.
+  assert.match(tap, /^not ok \d+ - /m, 'el fixture conserva el rojo ajeno; si no, este control no mide nada');
+  const local = veredictoLocal(diagnostico.fallos, { [FICHERO_525D]: tap });
+  assert.deepEqual(local.map((l) => l.estado), ['VERDE']);
+  const r = decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 1, diagnostico, local });
+  assert.equal(r.codigo, 'EMPUJA-GUARD-VERDE');
+  assert.equal(r.empujar, true);
+});
+
+test('SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)', async () => {
+  const { fallosDelLog, veredictoLocal, decidirEmpuje } = await empuje();
+  const diagnostico = fallosDelLog(leerFixt('log-c80b2f84-build-tests.txt'));
+  const saltado = leerFixt('tap-scrum525d-en-65996e85.tap')
+    .replace(`ok 6 - ${NOMBRE_525D}`, `ok 6 - ${NOMBRE_525D} # SKIP sin banco`);
+  const local = veredictoLocal(diagnostico.fallos, { [FICHERO_525D]: saltado });
+  assert.deepEqual(local.map((l) => l.estado), ['SIN-CORRER']);
+  const r = decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 1, diagnostico, local });
+  assert.equal(r.codigo, 'NO-EMPUJA-CIEGO');
+  assert.equal(r.empujar, false);
+});
+
+test('SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde', async () => {
+  const { fallosDelLog, veredictoLocal, decidirEmpuje } = await empuje();
+  const diagnostico = fallosDelLog(leerFixt('log-c80b2f84-build-tests.txt'));
+  for (const taps of [{}, { [FICHERO_525D]: null }, { [FICHERO_525D]: '' }]) {
+    const local = veredictoLocal(diagnostico.fallos, taps);
+    assert.deepEqual(local.map((l) => l.estado), ['SIN-CORRER']);
+    assert.equal(decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 1, diagnostico, local }).empujar, false);
+  }
+});
+
+test('SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)', async () => {
+  const { fallosDelLog, decidirEmpuje } = await empuje();
+  const real = leerFixt('log-c80b2f84-build-tests.txt');
+  const casos = [
+    '',                                                    // sin log
+    'npm ERR! build failed\n',                             // cayó antes de los tests: no hay resumen
+    real.replace('ℹ fail 1', 'ℹ fail 2'),                  // dice 2 y solo se leen 1
+    real.replace(/test at [^\n]+\n/, ''),                  // la lista no trae el fichero
+  ];
+  for (const log of casos) {
+    const d = fallosDelLog(log);
+    assert.equal(d.ciego, true, `debió salir ciego: ${JSON.stringify(log.slice(0, 40))}`);
+    assert.equal(decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 1, diagnostico: d, local: [] }).empujar, false);
+  }
+});
+
+test('SCRUM-1263 · lo que NO cambia: una persona que escribe @claude sigue obteniendo su push', async () => {
+  const { decidirEmpuje } = await empuje();
+  const r = decidirEmpuje({ despertar: { avisador: false }, commitsNuevos: 2, diagnostico: null, local: null });
+  assert.equal(r.codigo, 'SIN-GUARD-QUE-COMPROBAR');
+  assert.equal(r.empujar, true);
+  assert.equal(decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: 0 }).codigo, 'NADA-QUE-EMPUJAR');
+  assert.equal(decidirEmpuje({ despertar: DESPERTAR_AVISADOR, commitsNuevos: null }).empujar, false,
+    'no saber si hay commits no es «no hay»');
+});
+
+test('SCRUM-1263 · el cuerpo que publica el AVISADOR se reconoce (se renderiza desde su propio YAML)', async () => {
+  const { leerDespertar } = await empuje();
+  const yml = fs.readFileSync(WORKFLOW, 'utf8');
+  const m = yml.match(/CUERPO="\$\(printf '([^']+)' "\$MOTIVO" "\$URL_RUN" "\$MARCA"\)"/);
+  assert.ok(m, 'no encuentro la plantilla del aviso en avisador-rojo.yml: este test ya no mide nada');
+  const valores = ['build + tests (con banco desechable)', 'https://github.com/lwislg99/cobroflash-backend/actions/runs/36494645539', 'c80b2f84aaaa:build + tests (con banco desechable)'];
+  let i = 0;
+  const cuerpo = m[1].replace(/%s/g, () => valores[i++]).replace(/\\n/g, '\n');
+  assert.deepEqual(leerDespertar({ autor: BOT, cuerpo }),
+    { avisador: true, runId: '36494645539', check: 'build + tests (con banco desechable)' });
+  assert.equal(leerDespertar({ autor: 'una-persona', cuerpo }).avisador, false,
+    'la marca en boca de otro no es el avisador');
+  assert.equal(leerDespertar({ autor: BOT, cuerpo: '@claude hola' }).avisador, false,
+    'el bot sin la marca (p. ej. la propia respuesta de Claude) tampoco');
+});
+
+// ── 17458 · QUE SU PUSH DISPARE CI, Y SI NO, QUE LO DIGA ─────────────────────────────────────
+// Check-runs REALES de dos pushes del bot: `6787a7f0` (#1944, sin conflicto) y `008fbd51` (#1943,
+// PR en CONFLICTO con main — lo midió J3, com. 17460).
+const OBLIGATORIO = ['build + tests (con banco desechable)'];
+const RUNS_6787 = ['constancia del ALTER (informativo)', 'vigía del despliegue (informativo)',
+  'trinquete · ningún test nuevo mide la zona de la máquina', 'guards de navegador (fuera de la tanda)',
+  'build + tests (con banco desechable)', 'meta-guard · los guards caen cuando deben',
+  '¿este PR toca la zona roja?', 'abrir-pr-y-armar-automerge'].map((name, id) => ({ id, name }));
+const RUNS_008F = [{ id: 1, name: 'abrir-pr-y-armar-automerge' }];
+
+test('SCRUM-1263 · el push del bot a #1944 SÍ disparó el check obligatorio → no se declara nada', async () => {
+  const { decidirDisparo } = await empuje();
+  const r = decidirDisparo({ checkRuns: RUNS_6787, obligatorios: OBLIGATORIO, estadoFusion: 'clean' });
+  assert.equal(r.codigo, 'DISPARO-CI');
+  assert.equal(r.declarar, false);
+});
+
+test('SCRUM-1263 · 🔴 el sha de #1943 sin el check obligatorio → PR MUDO, y dice que está en CONFLICTO', async () => {
+  const { decidirDisparo, cuerpoMudo } = await empuje();
+  const r = decidirDisparo({ checkRuns: RUNS_008F, obligatorios: OBLIGATORIO, estadoFusion: 'dirty' });
+  assert.equal(r.codigo, 'PR-MUDO');
+  assert.equal(r.declarar, true);
+  assert.match(r.motivo, /conflicto/i, 'la causa medida de #1943 fue el conflicto, y se nombra');
+  const cuerpo = cuerpoMudo({ numero: 1943, sha: '008fbd51', decision: r, urlRun: 'https://example.invalid/run' });
+  assert.ok(cuerpoNoDebeDespertar(cuerpo));
+  assert.ok(cuerpo.includes('008fbd51'));
+});
+
+test('SCRUM-1263 · 🔴 no poder leer los check-runs o las reglas NO es «disparó»', async () => {
+  const { decidirDisparo } = await empuje();
+  for (const e of [{ checkRuns: null, obligatorios: OBLIGATORIO }, { checkRuns: RUNS_6787, obligatorios: null }, { checkRuns: RUNS_6787, obligatorios: [] }]) {
+    const r = decidirDisparo(e);
+    assert.equal(r.codigo, 'NO-SE-PUDO-MIRAR');
+    assert.equal(r.declarar, true);
+  }
+});
+
+test('SCRUM-1263 · claude.yml: el gancho va ANTES de la acción, y la verificación y el push DESPUÉS', () => {
+  const codigo = fs.readFileSync(CLAUDE_YML, 'utf8').split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(codigo, /P="\$RUNNER_TEMP\/puerta\/puerta-claude-empuje\.mjs"/, '`$P` es la copia de main del script');
+  const iGancho = codigo.indexOf('node "$P" gancho');
+  const iAccion = codigo.indexOf('anthropics/claude-code-action@v1');
+  const iDecidir = codigo.indexOf('node "$P" decidir');
+  const iDisparo = codigo.indexOf('node "$P" disparo');
+  assert.ok(iGancho > 0 && iGancho < iAccion, 'el gancho pre-push se instala ANTES de que Claude pueda empujar');
+  assert.ok(iDecidir > iAccion, 'la decisión de empujar va DESPUÉS de la acción');
+  assert.ok(iDisparo > iDecidir, 'y la comprobación de que el push disparó CI, después del push');
+  assert.match(codigo, /core\.hooksPath/, 'el gancho se engancha por `core.hooksPath` global');
+  assert.match(codigo, /git show origin\/main:scripts\/puerta-claude-empuje\.mjs/,
+    'el script sale de MAIN, no del checkout del PR');
+});

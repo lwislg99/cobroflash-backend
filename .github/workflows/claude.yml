@@ -236,6 +236,36 @@ jobs:
           fi
           gh pr comment "$NUM" --body-file "$RUNNER_TEMP/respuesta.md"
 
+      # ── SCRUM-1263 · SI LO DESPERTÓ EL AVISADOR, CLAUDE NO EMPUJA: EMPUJA EL WORKFLOW, Y SOLO EN VERDE ──
+      #
+      # MEDIDO (PR #1944, 28-sep-2026): despertado por `scrum525d` en rojo, Claude empujó `6787a7f0`
+      # (`:848 -> :847`, y `:847` es una línea en blanco) y se fue. El guard SIGUIÓ ROJO. No podía
+      # comprobarlo: dentro de la acción solo tiene `git add/commit/rm` y el envoltorio de push, no
+      # `node`. Decisión del fundador (opción C): solo se empuja con el guard que cayó ya en VERDE.
+      #
+      # El envoltorio de push de la acción (`scripts/git-push.sh`) solo acepta `origin <ref>` SIN
+      # flags, así que no hay `--no-verify`: un `pre-push` por `core.hooksPath` GLOBAL —fuera del
+      # árbol que Claude puede editar— lo para, y le dice por qué. Medido con git de verdad en
+      # `tests/scrum1263-gancho-pre-push.test.mjs`. Si lo despierta una PERSONA, nada cambia.
+      - id: origen
+        name: ¿Lo despertó el avisador? Entonces Claude no empuja (SCRUM-1263)
+        if: steps.puerta.outputs.despertar == 'si' && steps.puerta.outputs.es_pr == 'true'
+        env:
+          AUTOR: ${{ github.event.comment.user.login }}
+          CUERPO_COMENTARIO: ${{ github.event.comment.body }}
+        run: |
+          # De MAIN, como los de la puerta: el checkout trae el código del PR. Importa
+          # `./puerta-avisador-rojo.mjs`, que la puerta ya dejó en el mismo directorio.
+          git show origin/main:scripts/puerta-claude-empuje.mjs > "$RUNNER_TEMP/puerta/puerta-claude-empuje.mjs"
+          P="$RUNNER_TEMP/puerta/puerta-claude-empuje.mjs"
+          SALIDA="$(node -e "process.stdout.write(JSON.stringify({autor: process.env.AUTOR, cuerpo: process.env.CUERPO_COMENTARIO}))" | node "$P" despertar)"
+          printf '%s\n' "$SALIDA" >> "$GITHUB_OUTPUT"
+          if printf '%s\n' "$SALIDA" | grep -qx 'avisador=si'; then
+            node "$P" gancho "$RUNNER_TEMP/ganchos-1263"
+            git config --global core.hooksPath "$RUNNER_TEMP/ganchos-1263"
+            echo "- **GANCHO** — lo despertó el avisador: Claude deja su arreglo en local y el workflow lo empuja solo si el guard que cayó sale en VERDE." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: anthropics/claude-code-action@v1
         id: accion
         if: steps.puerta.outputs.despertar == 'si'
@@ -247,6 +277,168 @@ jobs:
           # defecto se mantiene para no dejar el workflow muerto si la App no está: en ese
           # caso vuelve el defecto conocido, y por eso el paso de arriba lo declara.
           github_token: ${{ steps.token.outputs.token || github.token }}
+
+      # ── SCRUM-1263 · LA OTRA MITAD: ¿SALE EN VERDE EL GUARD QUE CAYÓ? SOLO ENTONCES SE EMPUJA ─────
+      #
+      # Qué cayó se LEE del log del job rojo que nombra el aviso (el resumen «failing tests» de
+      # `node --test`), no se supone. Se corre ESE fichero sobre una COPIA del árbol de Claude sin
+      # credenciales (ejecuta código del PR) y se mira ESE test, por NOMBRE: un test saltado (sin
+      # banco, los de BD se saltan aquí) o que no aparece NO es verde, y entonces no se empuja.
+      # Sin log legible, sin commits contables o con la rama movida debajo: tampoco. Si no se
+      # empuja, se dice en el PR con el parche, para que lo recoja quien lleve la rama.
+      - uses: actions/setup-node@v4
+        if: always() && steps.origen.outputs.avisador == 'si'
+        with:
+          node-version: '24'
+
+      - id: empuje
+        name: ¿Se empuja el arreglo? Solo con el guard que cayó en VERDE (SCRUM-1263)
+        if: always() && steps.origen.outputs.avisador == 'si'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOKEN_EMPUJE: ${{ steps.token.outputs.token || github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+          RUN_ROJO: ${{ steps.origen.outputs.run }}
+          URL_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          P="$RUNNER_TEMP/puerta/puerta-claude-empuje.mjs"
+          D="$RUNNER_TEMP/empuje-1263"; mkdir -p "$D"
+
+          # ① ¿Cuántos commits dejó Claude sobre la rama del PR? `null` = no se sabe (y no se empuja).
+          RAMA=""
+          if ! RAMA="$(gh api "repos/$REPO/pulls/$NUM" -q .head.ref 2>/dev/null)"; then RAMA=""; fi
+          COMMITS=null
+          if [ -n "$RAMA" ] && git fetch -q --no-tags origin "+refs/heads/$RAMA:refs/remotes/origin/$RAMA" \
+             && [ "$(git symbolic-ref --short HEAD 2>/dev/null)" = "$RAMA" ] \
+             && git merge-base --is-ancestor "origin/$RAMA" HEAD; then
+            COMMITS="$(git rev-list --count "origin/$RAMA..HEAD")"
+            git format-patch --stdout "origin/$RAMA..HEAD" > "$D/parche.diff" || true
+          fi
+
+          # ② ¿Qué cayó? El log del job rojo del run que nombra el aviso. `curl -f`: un error no deja
+          #    un cuerpo de error haciéndose pasar por log.
+          DIAG=null
+          if [ -n "$RUN_ROJO" ] \
+             && JOB="$(gh api "repos/$REPO/actions/runs/$RUN_ROJO/jobs?per_page=100" -q '[.jobs[] | select(.conclusion == "failure")] | .[0].id' 2>/dev/null)" \
+             && [ -n "$JOB" ] && [ "$JOB" != "null" ] \
+             && curl -sSfL -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$REPO/actions/jobs/$JOB/logs" -o "$D/log.txt"; then
+            DIAG="$(node "$P" fallos < "$D/log.txt")"
+          fi
+
+          # ③ La copia sin credenciales, compilada como en `ci.yml`. Si no compila, los tests no
+          #    corren y salen SIN-CORRER: no se empuja.
+          ARBOL="$RUNNER_TEMP/arbol-1263"
+          if [ "$COMMITS" != null ] && [ "$COMMITS" -gt 0 ] && [ "$DIAG" != null ]; then
+            if git clone -q --no-hardlinks "$GITHUB_WORKSPACE" "$ARBOL"; then
+              git -C "$ARBOL" fetch -q "$GITHUB_WORKSPACE" +refs/remotes/origin/main:refs/remotes/origin/main || true
+              ( cd "$ARBOL" && env -i PATH="$PATH" HOME="$HOME" CI=true npm ci --no-audit --no-fund \
+                  && env -i PATH="$PATH" HOME="$HOME" CI=true npm run build ) || echo "::warning::la copia no compiló: los tests saldrán SIN-CORRER"
+            else
+              echo "::warning::no se pudo copiar el árbol de Claude: los tests saldrán SIN-CORRER"
+            fi
+          fi
+
+          ENTRADA="$(COMMITS="$COMMITS" DIAG="$DIAG" ARBOL="$ARBOL" D="$D" node -e "
+            const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
+            process.stdout.write(JSON.stringify({
+              despertar: { avisador: true, runId: process.env.RUN_ROJO || null },
+              commitsNuevos: json(process.env.COMMITS), diagnostico: json(process.env.DIAG),
+              arbol: process.env.ARBOL, dirTaps: process.env.D + '/taps', numero: Number(process.env.NUM),
+              urlRun: process.env.URL_RUN, ficheroParche: process.env.D + '/parche.diff',
+            }));")"
+          if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$D/cuerpo.md" node "$P" decidir)"; then EMPUJAR=si; else EMPUJAR=no; fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "$CODIGO — $MOTIVO"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$EMPUJAR" = si ]; then
+            # `core.hooksPath=` salta el gancho de arriba: este push es el verificado.
+            git -c core.hooksPath= push "https://x-access-token:${TOKEN_EMPUJE}@github.com/$REPO.git" "HEAD:refs/heads/$RAMA"
+            echo "empujado=si" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -s "$D/cuerpo.md" ]; then
+            set +e
+            CUERPO="$D/cuerpo.md" node --input-type=module -e "
+              import fs from 'node:fs';
+              try {
+                const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+                process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.CUERPO, 'utf8')) ? 0 : 1);
+              } catch (e) { console.error(String(e)); process.exit(2); }"
+            COMPROBACION=$?
+            set -e
+            if [ "$COMPROBACION" -ne 0 ]; then
+              echo "::error::El aviso de «no empujo» NO se publica: la comprobación de la mención dio $COMPROBACION (1 = lleva la mención · 2 = no se pudo comprobar)."
+              exit 1
+            fi
+            # Con el GITHUB_TOKEN, que no crea ejecuciones: el aviso no despierta a nadie.
+            gh pr comment "$NUM" --body-file "$D/cuerpo.md"
+          fi
+
+      - name: Parche que no se empujó (SCRUM-1263)
+        if: always() && steps.origen.outputs.avisador == 'si' && steps.empuje.outputs.empujado != 'si'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parche-claude
+          path: ${{ runner.temp }}/empuje-1263/parche.diff
+          if-no-files-found: ignore
+
+      # ── SCRUM-1263 com. 17458 · ¿EL PUSH DISPARÓ CI? SI NO, SE DICE ────────────────────────────────
+      #
+      # Medido el 29-sep-2026: en los dos runs de la noche (36493867580, 36496035994) el token de la
+      # App SÍ se acuñó, y el push del bot a #1944 (`6787a7f0`, sin conflicto) tuvo sus 8 check-runs.
+      # El PR mudo (#1943, `008fbd51`, 1 check-run) estaba en CONFLICTO con main (com. 17460): sin
+      # fusión de prueba no arranca nada, empuje quien empuje. Aun así se comprueba cada push, porque
+      # un PR mudo no está ni verde ni rojo y el avisador no lo ve.
+      - name: ¿Disparó CI el push? (SCRUM-1263)
+        if: always() && steps.empuje.outputs.empujado == 'si'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+          SHA: ${{ steps.empuje.outputs.sha }}
+          URL_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          P="$RUNNER_TEMP/puerta/puerta-claude-empuje.mjs"
+          if ! REGLAS="$(gh api "repos/$REPO/rules/branches/main" 2>/dev/null)"; then REGLAS=null; fi
+          OBLIGATORIOS="$(REGLAS="$REGLAS" node --input-type=module -e "
+            const { checksObligatoriosDeReglas } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/vigia-atascados.mjs').href);
+            let r = null; try { r = JSON.parse(process.env.REGLAS); } catch {}
+            process.stdout.write(JSON.stringify(checksObligatoriosDeReglas(r)));")"
+          CUERPO="$RUNNER_TEMP/aviso-mudo.md"
+          for INTENTO in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            sleep 20
+            if ! CHECKS="$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" -q '[.check_runs[] | {id, name}]' 2>/dev/null)"; then CHECKS=null; fi
+            if ! FUSION="$(gh api "repos/$REPO/pulls/$NUM" -q .mergeable_state 2>/dev/null)"; then FUSION=""; fi
+            ENTRADA="$(CHECKS="$CHECKS" OBLIGATORIOS="$OBLIGATORIOS" FUSION="$FUSION" node -e "
+              const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
+              process.stdout.write(JSON.stringify({ checkRuns: json(process.env.CHECKS), obligatorios: json(process.env.OBLIGATORIOS),
+                estadoFusion: process.env.FUSION, numero: Number(process.env.NUM), sha: process.env.SHA, urlRun: process.env.URL_RUN }));")"
+            if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$CUERPO" node "$P" disparo)"; then
+              echo "- **$(printf '%s' "$SALIDA" | head -1)** — $(printf '%s' "$SALIDA" | tail -1)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          done
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s "$CUERPO" ]; then
+            set +e
+            CUERPO="$CUERPO" node --input-type=module -e "
+              import fs from 'node:fs';
+              try {
+                const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+                process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.CUERPO, 'utf8')) ? 0 : 1);
+              } catch (e) { console.error(String(e)); process.exit(2); }"
+            COMPROBACION=$?
+            set -e
+            if [ "$COMPROBACION" -eq 0 ]; then gh pr comment "$NUM" --body-file "$CUERPO"; fi
+          fi
+          echo "::error::$CODIGO — $MOTIVO"
+          exit 1
 
       # ── SCRUM-853 · ¿QUEDÓ UNA RAMA MUDA? ────────────────────────────────────────────────────
       #
