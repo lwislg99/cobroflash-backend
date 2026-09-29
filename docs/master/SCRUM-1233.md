@@ -77,3 +77,11 @@ Las de S2 son «el resto» de este ticket, que va después de SCRUM-1267 (orden 
   - `tutorial.js:339` pinta `r.message` del CUERPO de un 200, que ya es `data.message`.
 - **Espera firma:** `expensesView.js:295`. Pinta `Error: ${err.message}` en un `innerHTML` al fallar la
   carga de la lista, y no hay texto aprobado para ese caso. No se pinta nada nuevo hasta la firma.
+
+## 1233c — la carga de la lista de Gastos (S2, s2-29a)
+
+**Medido contra:** `origin/main` = `b1d8845daf38394c33a22814db323394517c091a` · 2026-09-29T09:59:22Z
+
+- `expensesView.js` (`loadExpenses`, antes `:295`): pintaba `Error: ${err.message}` en un `innerHTML`. Ahora pinta `mensajeParaPersona(err, 'No se han podido cargar los gastos. Vuelve a intentarlo.')` por `textContent`. Texto firmado en SCRUM-1233 c.17504.
+- Techo del censo: 16 → 15; `expensesView.js` sale de la tabla (techo cero).
+- Viaje (lista de Gastos en el banco con el `apiRequest` real): un 500 y sin red pintan el texto firmado; la frase del servidor sale como TEXTO, no como HTML. Rojo probado: con el fichero de main caen 4.
