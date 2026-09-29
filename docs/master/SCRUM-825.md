@@ -1654,6 +1654,13 @@ nuevas.
 
 ---
 
+## Lado panel (J3) — rama `scrum-825-panel-sin-justificante`
+
+Retirada de la rama «justificante» del panel (D1, firmada en el comentario 17446): `app.js`,
+`invoicesView.js`, `quotesView.js` y `rotulosDelDocumento.js`, con los guards y tests re-apuntados al
+lado factura, y la ruta `#invoices-new` cerrada en modo `no`. El registro completo, con lo medido, está
+en `docs/master/SCRUM-1257.md` (sección SCRUM-1257c) y el bug en `docs/BUGS.md` (P1-825). Esta entrada
+es sólo el puntero que exige SCRUM-854: el ticket de la rama es el 825 y su expediente es éste.
 # SCRUM-825 · APÉNDICE · 28-sep-2026 · D1 y D2 EJECUTADAS EN EL SERVIDOR: se retira el generador `J-`
 
 **Medido contra:** `origin/main` = `d216084a67b1f42e69b829e5829420562873e528` · 2026-09-28T22:13:34Z
@@ -1755,3 +1762,20 @@ para una especificación caducada, y éstos son registros que eran ciertos el d�
 - Las demás menciones de «justificante» en el máster: el apéndice de 21-sep ya las clasificó
   (historia que no se toca, o ya actualizadas por SCRUM-612c).
 - Ningún fichero fuera de `docs/YAQU_MASTER.md` y de este registro.
+
+### Lado panel (J3), 29-sep-2026: revisión de la entrada del robot y merge de main
+
+- **La entrada de arriba no la escribí yo:** la empujó `claude[bot]` (`008fbd51`, 28-sep 22:42Z) a esta
+  rama. **La he medido, no la he dado por buena:** la sección `SCRUM-1257c` existe en
+  `docs/master/SCRUM-1257.md`, el bug `P1-825` existe en `docs/BUGS.md`, el comentario 17446 es la
+  firma que citan los dos, y los cuatro ficheros de `public/` que nombra son los que la rama cambia
+  frente a `main`. Es correcta; se queda como está.
+- **Por qué el PR estaba mudo:** GitHub lo tenía `DIRTY` (conflicto con `main`). Con conflicto no hay
+  commit de merge de prueba, y los flujos `pull_request` no arrancan. El conflicto: el anclaje
+  `VEREDICTO_AL_MEDIR` de `tests/scrum601-copy-del-documento-vs-flag.test.mjs`, que SCRUM-1232 movió en
+  `main` (154 → 155) mientras esta rama llevaba 160.
+- **Resolución:** se regeneró con `censoCopy` sobre el árbol ya fusionado (origin/main `837a9e53` + la
+  rama): `{ flag: 7, tipo: 11, aPelo: 161 }`. Cuadra con la suma (160 + 1), que sirve sólo de
+  comprobación. Se quedan las dos entradas de comentario, más una nota del conflicto.
+- **El test en rojo del título del PR:** el título es el del primer commit (`e945ac55`, el rojo a
+  propósito del TDD). El commit siguiente (`0002f3db`) lo pone verde; el rojo no entra.

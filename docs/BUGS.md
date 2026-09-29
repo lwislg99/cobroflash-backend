@@ -470,6 +470,28 @@
 - **Done cuando:** desde el modal se guarda un cliente con sólo nombre y teléfono, y otro con sólo
   nombre y email, sin error; y el test de SCRUM-590b puede dejar el email vacío.
 
+### [ ] P1-825 · `#invoices-new` abre la página de crear factura a un merchant que no puede emitir (modo `receipt`)
+- **Síntoma:** un merchant español con `INVOICING_ES_ENABLED` apagado (`appDocumentoSuelto = 'no'`)
+  que abre `/dashboard/#invoices-new` (un enlace guardado, o recargando en esa ruta) ve la página
+  del documento suelto con «Nueva factura» y «Emitir factura». Al pulsar, el servidor le contesta
+  409 «En este modo no se emiten facturas.». El botón de la lista sí se escondía; la ruta no.
+- **Medido, no deducido** (28-sep-2026, SCRUM-825 D1): con el banco de vistas la página sale idéntica
+  con `'factura'` y con `'no'`, 121 nodos y los mismos dos rótulos
+  (`tests/banco-scrum825/medir-pagina-por-modo.mjs`). **Previo a D1:** con los ficheros de `main`
+  (d216084a) sale igual. Antes de SCRUM-1027 esa persona leía «justificante» y podía emitir uno.
+  Desde 1027 lee «factura» y no puede emitir nada: 1027 arregló la emisión y dejó la puerta pintada.
+- **Causa raíz:** `'invoices-new'` está en `HASH_VIEWS` (`app.js`) y su `case` del router no miraba
+  el modo. `renderDocumentoSueltoView` tampoco, y no debe: `scrum776` exige que la página no decida
+  por su cuenta.
+- **Arreglo** (rama `scrum-825-rotulos-rama-muerta`): el `case 'invoices-new'` falla cerrado. En
+  `'no'` pinta Facturas y cambia `view`, igual que el `default` pinta Inicio. Sin textos nuevos y sin
+  tocar el servidor, que ya contestaba 409. ⚠️ **NO lo cubre la firma del fundador de D1** (SCRUM-825
+  comentario 17446): lo autoriza el orquestador como arreglo de pantalla del carril de J3.
+- **Guards:** `scrum600b` ejecuta el `case` real con `'no'` (pinta Facturas) y con `'factura'` (pinta
+  la página, como control). `scrum601` exige las dos puertas del flujo: el botón y la ruta.
+- **Done cuando:** en yaqu.app, un merchant en `receipt` que abre `#invoices-new` ve la lista de
+  Facturas y no la página de crear factura.
+
 ---
 ## P2 — Mejoras de producto / UX
 

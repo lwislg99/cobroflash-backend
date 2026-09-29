@@ -196,3 +196,95 @@ No se duplican en línea para bajar el número (el motivo de 31→32 en el propi
 - No se ha visto en un navegador con sesión: el panel pide sesión y este árbol no tiene base. Se
   verifica en yaqu.app cuando entre.
 - No hay ningún test que fijara los literales viejos (buscado en `tests/`, `scripts/` y `docs/microcopy/`).
+
+---
+
+# SCRUM-1257c · El grupo A se retira (SCRUM-825 D1), y la ruta que seguía abierta
+
+**Medido contra:** `origin/main` = `6112855bd225d5778598f4449ce752972614da32` · 2026-09-28T22:21:27Z
+
+**Firma:** el fundador, **SCRUM-825 comentario 17446** («1-Sí a las 3»). D1: se retira el tipo `JUST`,
+con los rótulos según ESTE censo y no según la tabla del 8-sep. **Rama:** `scrum-825-rotulos-rama-muerta`
+(ticket SCRUM-825, reparto por fichero: `public/` es de J3 y `src/` de J1). Se registra aquí y no en
+`SCRUM-825.md` porque J1 anexa allí su lado servidor en paralelo, y dos ramas añadiendo al final del
+mismo fichero es el conflicto de SCRUM-709. Lo decidió el orquestador.
+
+## 1 · Re-medido antes de borrar, ejecutándolo
+
+Compilado `main` (d216084a), `modoDocumentoSuelto` ejecutado en los tres modos (receipt, fiscal, demo),
+con `INVOICING_ES_ENABLED` apagado y encendido por entorno, y además sin país y con `null`: solo salen
+`'no'` y `'factura'`. La función solo depende de `getEmissionMode` y esos tres valores son todos los
+que devuelve, así que la rama «justificante» está muerta para cualquier merchant. El censo de §0 sobre
+ese `main` dio los mismos 24 literales, con el grupo A donde estaba.
+
+## 2 · Lo que se borra: los ocho del grupo A, sin un texto nuevo
+
+- `rotulosDelDocumento.js`: fuera `esJustificante()` y las seis ramas. Queda el lado factura.
+- `invoicesView.js`: el botón pierde «+ Nuevo justificante».
+- `quotesView.js`: la guía del documento suelto queda vacía, que ya era el lado factura.
+- `app.js`: `window.appDocumentoSuelto = me.documentoSuelto === 'factura' ? 'factura' : 'no'`. No es un
+  rótulo, pero sin esto un `'justificante'` que llegara del servidor pintaría el botón «Nueva
+  factura», porque la puerta es `!== 'no'`. Falla cerrado.
+
+⛔ **No se toca:** el grupo D (documentos `J-` antiguos, SCRUM-1252), P8/C3 (`settingsView.js:44`, sin
+firmar), el modo `receipt`, `src/` ni nada emitido.
+
+## 3 · Los guards que protegían la rama muerta, uno a uno
+
+| guard | qué pasa | por qué no es relajarlo (regla 41) |
+|---|---|---|
+| `scrum776` | pasa al lado factura, y el predicado `=== 'justificante'` queda en CERO sitios, con un control que lo ve en código y no en un comentario | sigue vigilando UNA sola fuente y que el DEMO lea «factura» |
+| `scrum514` | «¿Para quién es el justificante?» se aparca con su motivo, por el mecanismo del propio guard | la firma ocurrió; ya no tiene dónde pintarse |
+| `scrum976` | cae solo en cascada del 514 | — |
+| `guard:caja-documento-suelto` | `MODOS = ['factura']`, con la cita y con lo que deja de medirse. **Ejecutado en Edge real:** exit 0, las cinco cajas caben a 929 y 390 px, y el control negativo respondió | mide todo lo que se pinta |
+| `scrum600b` (la ruta) | re-anclado en «Emitir factura» | mide lo mismo: que la puerta monta el documento suelto |
+| `scrum601` (control positivo) | era «+ Nuevo justificante», que se ha borrado. Pasa a `homeView.js:864` (vía `WINDOW::appModoEmision`, condición `=== 'receipt'`), el único de los cuatro «flag» que quedan que depende del modo DE VERDAD. Los tres de `jobDetailView` heredan por `jobNextAction` y su condición local no mira el modo | un positivo anclado en algo borrado está muerto |
+| `scrum601` (reparto) | flag 17 → 4, aPelo 156 → 162. **EL NÚMERO EMPEORA MIENTRAS EL CÓDIGO MEJORA:** los seis «factura» pierden la vía `WINDOW::appDocumentoSuelto`, pero en ejecución siguen detrás de la puerta `!== 'no'`. Es un punto ciego del censo, escrito encima del número | aislado con el censo, `main` contra la rama |
+| `scrum601` (no legibles) | 34 → 33: «+ Nuevo justificante» era uno | baja |
+
+## 4 · 🔴 Lo que salió al preguntar si se podían retirar dos guards
+
+El orquestador puso una condición antes de retirar el «defecto ATADO» de `scrum601` y el primer test
+de `scrum600b`: **comprobar que el defecto no fuera alcanzable por otra vía.**
+
+- **Fiscal y demo no discrepan:** los dos reciben `'factura'`, la página no tiene ninguna rama por modo y
+  el servidor emite `F1` en los dos.
+- **Pero la RUTA sí:** `'invoices-new'` está en `HASH_VIEWS` y su `case` no miraba el modo. Un merchant
+  en `receipt` que abría `#invoices-new` veía «Nueva factura» y «Emitir factura» y se comía un 409.
+  Está medido montando la página, y es previo a D1: con los ficheros de `main` sale igual.
+  `docs/BUGS.md` P1-825.
+
+Así que **no se retiró nada: se re-apuntó**. Los dos tests se escribieron en rojo contra el código sin
+puerta (`59a723ec`) y se pusieron en verde con el arreglo:
+
+- `scrum600b` ejecuta el `case` REAL de `app.js` con `'no'` (pinta Facturas y `view = 'invoices'`) y con
+  `'factura'` (pinta la página, como control).
+- `scrum601` exige las dos puertas del flujo: el botón `!== 'no'` y la ruta `=== 'no'`. Deja escrito lo
+  que deja de vigilar: los rótulos «a pelo» DENTRO de la página. Con las dos puertas cerradas, esa página
+  solo la ve quien emite factura.
+
+⚠️ **El arreglo de la ruta NO lo cubre la firma 17446.** Es un cambio de comportamiento que el
+orquestador autorizó como arreglo de pantalla del carril de J3: sin textos nuevos, fallando cerrado y
+sin tocar el servidor, que ya contestaba 409. **Que nadie lea este PR creyendo que Javier firmó eso.**
+
+## 5 · El choque con SCRUM-1257b, resuelto regenerando
+
+`#1938` movió los mismos anclajes de `scrum601`. Al rebasar sobre `main` (6112855b) se regeneraron con
+`censoCopy` sobre el árbol fusionado: `{ flag: 7, tipo: 11, aPelo: 160 }` y 36 no legibles. Cuadra con
+la suma de los dos cambios (20−13, 11, 154+6; 37−1), que se usó como comprobación, no como fuente.
+
+## Rojo primero, y pruebas
+
+- `e945ac55`: `tests/scrum825-rama-justificante-retirada.test.mjs`, 4 de 5 en rojo contra `main`. El
+  verde es su control. Después, 5 de 5.
+- `59a723ec`: los dos re-apuntados en rojo, por la ruta. Después, en verde.
+- **Errores propios, cazados antes del verde:**
+  · Mi primer arreglo del router tenía un `break;` dentro del `case`, y los guards lo extraen hasta el
+    primer `break;`. Se reescribió con `if/else` y una sola salida.
+  · Al explicarlo en un comentario escribí la palabra `break;`, y volví a cortar el `case` por ahí. El
+    comentario ya no la cita.
+  · Al rebasar sobre `main` para regenerar `scrum601`, comiteé el conflicto resuelto con los números
+    como marcadores `__REGENERAR__`, que no parsean. Los commits intermedios habrían tenido un «rojo»
+    que era un error de sintaxis. La rama se rehízo, antes de empujarla, en cinco pasos limpios: rojo
+    de D1, borrado + guards, rojo re-apuntado, puerta y registro. Se comprobó que el árbol final es
+    idéntico al de antes de rehacerla.
