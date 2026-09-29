@@ -202,8 +202,8 @@
           // persona (`RevisionNoCreable`). NO `e.message`: `apiRequest` lo compone SIEMPRE
           // —«API 500: internal_error», o «Failed to fetch» sin red— y así el texto firmado no se
           // pintaba nunca. Lo que no traiga `data.message` cae en `errorCrear`, nunca al revés.
-          var delServidor = e && e.data && typeof e.data.message === 'string' ? e.data.message.trim() : '';
-          var msg = delServidor || TEXTOS.errorCrear;
+          // SCRUM-1233 · esa regla vive ya en UN sitio, `mensajeParaPersona` (api.js).
+          var msg = mensajeParaPersona(e, TEXTOS.errorCrear);
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
           // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
