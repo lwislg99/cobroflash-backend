@@ -33,3 +33,6 @@ rama del 22-sep. Ninguna norma ni hook mergeado desde entonces llegaba a nadie.
 2. Añadir `"mesas": "D:/MILLONARIO/cobroFlash"` al `config.json` de la instalación.
 3. Que el orquestador lance SOLO por `sesion.mjs lanzar|relevar sesion-N`: el nombre `-n` tiene que
    decir el puesto (el hook de S0 contrasta carpeta contra nombre). Hoy lanza a pelo con `sN-29x`.
+4. **El modelo (decisión del orquestador, 29-sep):** `sesion.mjs` fuerza `--model sonnet` (SCRUM-990)
+   y hoy se lanza con opus. El lanzador tiene que respetar el modelo pedido (parámetro explícito), no
+   imponer uno; opus frente a sonnet lo decide el fundador. Hasta entonces el interruptor NO se da.
