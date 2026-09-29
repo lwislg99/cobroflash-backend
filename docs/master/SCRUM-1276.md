@@ -53,3 +53,13 @@ controles, como deben). Vecinos (240 ficheros: rutas, landing, censos, microcopy
 0 ✖, 7 saltados por base.
 
 No toca la emisión: el candado va antes de ella; numeración, sellado y cerrojo de serie intactos.
+
+## Juicio del orquestador (29-sep) sobre el `message` y el censo
+
+- **El `message` del 409 es COPIA del texto firmado, no texto nuevo**: mismo literal N3, en un solo
+  sitio (`decisionDelCliente.ts`), y no llega a un contexto nuevo porque la landing lleva en los tres
+  caminos a la misma página N3. ⚠️ **Condición:** el día que ese `message` se pinte en un sitio donde
+  la landing NO llevaría a la página N3, es un contexto nuevo y vuelve a necesitar firma (regla 39).
+  Es firma para este camino, no para siempre.
+- **El cambio al censo de SCRUM-421 no relaja el guard**: le quita una ceguera (`where:` no escribe,
+  igual que `select`/`include` en SCRUM-688), con control negativo. Aprobado por el orquestador.
