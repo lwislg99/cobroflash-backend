@@ -56,3 +56,7 @@ banco no sabe resolver **revienta**; no pasa como texto literal.
 | `scrum1278` ④ con el banco anterior | ✖ «contenido con entidad resuelta, sin recortar…» (`.value` vacío) |
 | `scrum1278` ④ con el arreglo | ✔ (el lleno da su contenido, el vacío da vacío, `&euro;` revienta) |
 | Los 145 tests que importan `_banco-vistas` | 1288/1288 |
+
+Límite declarado: si una vista cambia el 	extContent de un <textarea> DESPUÉS de crearlo, el banco no reajusta
+.value (el navegador sí lo haría mientras nadie haya escrito en él). Ninguna vista del panel lo hace hoy; si una lo
+hace, este caso es donde mirar.
