@@ -1,0 +1,55 @@
+-- docs/sql/scrum-1273-archivar-presupuestos.sql — SCRUM-1273 · paso ② de A5
+--
+-- ARCHIVAR UN PRESUPUESTO: una fecha, no un estado.
+--
+-- ── APROBACIÓN ─────────────────────────────────────────────────────────────────────────────────
+--   · ① Medición de S2 (s2-29a) en SCRUM-1273: archivar necesita columna nueva — en `model Quote`
+--     no hay `archivedAt`, `deletedAt` ni nada parecido.
+--   · Encargado por el ORQUESTADOR (cobroflash-backend-57) el 29-sep-2026: «escríbelo aunque sea el
+--     octavo esperando: está listo el día que se aplique el lote».
+--   · Escrito por la Sesión 1 (S1, `s1-29a`).
+--
+-- ── DÓNDE SE APLICA ────────────────────────────────────────────────────────────────────────────
+--   En las TRES bases (dev, staging y producción), lo aplica el equipo de Javier, y ANTES de que
+--   se mergee el PR ③ que toca `prisma/schema.prisma` (`schemaDrift` es fail-closed — SCRUM-1122).
+--
+-- ── EL DISEÑO: UNA COLUMNA, NO UN ESTADO ───────────────────────────────────────────────────────
+--   · `status: 'archived'` NO: sería un estado nuevo en una lista CERRADA (Parte L del máster, STOP
+--     de cambio de máster), y desarchivar exigiría recordar el estado anterior — otra columna igual.
+--     Archivar no es una etapa del presupuesto: es quitarlo de la vista. El estado sigue diciendo
+--     lo que dice (aceptado, rechazado, caducado…).
+--   · `archived_at TIMESTAMP NULL`: NULL = no archivado. Desarchivar = volver a NULL, sin perder nada.
+--   · SIN `archived_by`: quién archivó va al registro de auditoría que ya existe (`recordAudit`,
+--     `src/modules/system/audit.service.ts`), que ya guarda el autor. Guardarlo también aquí serían
+--     dos fuentes para el mismo hecho, y divergirían.
+--   · SIN índice: las listas ya filtran por `merchant_id` (índices existentes); `archived_at IS NULL`
+--     se compone con ellos sobre las filas de UN negocio. Si algún día hace falta, va en su ALTER.
+--
+-- ── ADITIVO PURO ───────────────────────────────────────────────────────────────────────────────
+--   Una columna NULLABLE sin `DEFAULT`. Ninguna fila cambia: todo presupuesto queda con NULL = «no
+--   archivado», que es la verdad de hoy. RE-EJECUTABLE (`IF NOT EXISTS`).
+--
+-- ── OBLIGACIONES DEL ③ ─────────────────────────────────────────────────────────────────────────
+--   · Toda lectura y escritura filtra por `req.merchantId` (regla 2).
+--   · Archivar y desarchivar dejan su apunte con `recordAudit` (el «quién»).
+--   · Archivar NO toca el estado, el sello ni el documento firmado (regla 29 en espíritu): solo la
+--     visibilidad en las listas.
+--
+-- ── DE DÓNDE SALE ──────────────────────────────────────────────────────────────────────────────
+--   Derivado con `previewMigracion({ schema: <candidato>, desde: prisma/schema.prisma })` de
+--   `scripts/preview-migracion.mjs` (control positivo dentro: ok, 31 tablas), OFFLINE, el
+--   29-sep-2026, contra `prisma/schema.prisma` de origin/main = 223498dc. El candidato vivió en el
+--   scratchpad: `prisma/schema.prisma` del repo NO se ha tocado (regla 40). Nada aplicado a
+--   ninguna base, ni a staging. Salida literal de la herramienta:
+--     ALTER TABLE "quotes" ADD COLUMN     "archived_at" TIMESTAMP(3);
+--
+--   Lo que el ③ escribe en `model Quote`:
+--     archivedAt DateTime? @map("archived_at")
+
+ALTER TABLE "quotes" ADD COLUMN IF NOT EXISTS "archived_at" TIMESTAMP(3);
+
+-- ── VERIFICACIÓN (solo lectura, después de aplicar) ────────────────────────────────────────────
+-- Tiene que devolver 1 fila, `is_nullable = YES`, sin `column_default`.
+-- SELECT column_name, is_nullable, data_type, column_default
+--   FROM information_schema.columns
+--  WHERE table_name = 'quotes' AND column_name = 'archived_at';

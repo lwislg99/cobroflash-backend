@@ -155,10 +155,20 @@ function huecosDeCobro(job) {
   }
 
   // 2 · ENTREGADO Y SIN FACTURAR — por albarán, no por resta.
+  //
+  // 🔴 SCRUM-1271 · LO QUE QUEDA, NO EL ALBARÁN ENTERO. `alb.facturado` es `invoiceId != null`, y la
+  // facturación PARCIAL no pone `invoiceId`: escribe el libro de líneas. Sumar `totales.total` decía
+  // «1.000,00 € entregados sin facturar» con 600 € ya facturados, y seguía diciéndolo con todo
+  // facturado en parciales. El importe pendiente lo deriva el SERVIDOR del mismo libro
+  // (`importePendienteDeFacturar`, detalle del Trabajo): aquí no se recalcula (SCRUM-423, una sola
+  // fuente de verdad). Si el campo no llega (servidor anterior), se cae al comportamiento de antes.
   let entregadoSinFacturar = 0;
   for (const alb of albaranesDe(job)) {
     if (!alb || alb.estado !== 'firmado' || alb.facturado) continue;
-    entregadoSinFacturar += importeAlbaran(alb);
+    if (alb.estadoFacturacion === 'facturado') continue;
+    entregadoSinFacturar += typeof alb.importePendienteDeFacturar === 'number'
+      ? num(alb.importePendienteDeFacturar)
+      : importeAlbaran(alb);
   }
   if (entregadoSinFacturar > 0) {
     huecos.push({ id: 'sin-facturar', importe: entregadoSinFacturar, accion: 'facturar-lo-entregado' });
