@@ -1888,8 +1888,22 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // en `jobDetailView.js` y exige que sea UNO — dos altas divergen en cuanto alguien toca una.
     // Toma el CUERPO ya construido: quien lo construye (`onGuardar`, justo abajo, SIN TOCAR — es
     // el receptor que vigila SCRUM-593e/607) sigue siendo el único sitio que decide su forma.
+    //
+    // SCRUM-1267 · EL ALTA VIAJA CON SU `claveIdempotencia` (el servidor la honra desde SCRUM-358).
+    // Si la respuesta se pierde (`incierto`, SCRUM-459, o la red cae a la vuelta) el albarán PUEDE
+    // estar creado, y el profesional reintenta. Sin clave, el servidor no puede saber que es el
+    // mismo y reserva el número siguiente: DOS albaranes. Con ella, devuelve el original.
+    // 🔴 Se acuña UNA vez, al abrir esta hoja, y la reutilizan todos los reintentos y los dos
+    // botones («Crear albarán» y «Entregar y enviar a firmar»). Acuñarla en cada clic no protegería
+    // de nada. Si el reintento cambia el contenido, el servidor lo rechaza nombrando qué cambió.
+    const claveAlta = (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function')
+      ? crypto.randomUUID()
+      : `alb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
     function crearAlbaran(cuerpo) {
-      return apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+      return apiRequest(`/admin/jobs/${job.id}/albaranes`, {
+        method: 'POST',
+        body: JSON.stringify({ ...cuerpo, claveIdempotencia: claveAlta }),
+      });
     }
 
     buildAlbEditor(bodyEl, enBlanco, {

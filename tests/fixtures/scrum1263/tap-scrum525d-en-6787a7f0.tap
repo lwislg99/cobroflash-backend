@@ -1,0 +1,113 @@
+TAP version 13
+#     · POBLACIÓN: 19 ficheros de docs/legal/ · 199 coordenadas vivas · 14 con testigo
+#     · ✅ firmes 11 · 🔴 desfasadas 0 · ⚠️ sin testigo 81 · ⚠️ sin ruta 104 · 🔴 no resuelven 3 · ~~tachadas~~ exentas 2
+#     · ✅ src/modules/invoicing/domain/selladoEstado.ts:116 (`sellarTrasEmision`) apunta a lo que dice
+#     · 🔴 2 anclas de `exigirDocumentoEmitible` movidas a una línea que no lo dice → 2 desfasadas
+#     · 🔴 src/modules/invoicing/domain/invoiceNumber.service.ts:335 → :336 cae, como debe
+#     · ✅ 0 desfasadas sobre 199 coordenadas vivas · 14 con testigo
+#     · ✅ la cobertura SUBIÓ en 2: añade estas líneas a `scripts/_anclas-sin-testigo.congelado.mjs` en este mismo commit — sólo crece, y así ya no se pueden quitar.
+#         · docs/legal/PREGUNTAS_ASESOR.md \# src/modules/fiscal/verifactu/registro.builder.ts \# nombreRazonProductor
+#         · docs/legal/PREGUNTAS_ASESOR.md \# src/modules/fiscal/verifactu/registro.builder.ts \# xmlSistema
+#     · ✅ los 12 testigos puestos siguen puestos · 🔴 borrar `modoDocumentoSuelto` lo haría caer
+# Subtest: SCRUM-525d · 🔴 SUELO: el censo ve ficheros, coordenadas y testigos
+ok 1 - SCRUM-525d · 🔴 SUELO: el censo ve ficheros, coordenadas y testigos
+  ---
+  duration_ms: 1.1406
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · ✅ CONTROL POSITIVO: un ancla que SÍ apunta sale FIRME
+ok 2 - SCRUM-525d · ✅ CONTROL POSITIVO: un ancla que SÍ apunta sale FIRME
+  ---
+  duration_ms: 0.1803
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · 🔴 CONTROL POSITIVO: el defecto real de la 525b pone el guard en rojo
+ok 3 - SCRUM-525d · 🔴 CONTROL POSITIVO: el defecto real de la 525b pone el guard en rojo
+  ---
+  duration_ms: 35.2688
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · 🔴 EL CONTROL QUE DECIDE: mover un ancla buena una línea la pone en rojo
+ok 4 - SCRUM-525d · 🔴 EL CONTROL QUE DECIDE: mover un ancla buena una línea la pone en rojo
+  ---
+  duration_ms: 34.2437
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice
+ok 5 - SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice
+  ---
+  duration_ms: 0.2292
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo
+not ok 6 - SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo
+  ---
+  duration_ms: 0.9411
+  type: 'test'
+  location: 'RAIZ\\tests\\scrum525d-anclas-que-apuntan.test.mjs:180:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    🔴 1 par(es) documento↔fichero NUEVOS que citan sin testigo en docs/legal/:
+    
+        · docs/legal/ENVIO_ASESOR_2026-09-28.md # PREGUNTAS_ASESOR.md   (docs/legal/ENVIO_ASESOR_2026-09-28.md:32)
+    
+      Una coordenada sin testigo no se puede comprobar: resuelve, y nadie sabe si apunta a
+      lo que dice. Ponle el testigo, que cuesta lo mismo que escribir la coordenada:
+    
+          `ruta/fichero.ts:NN` (`elSímboloQueLaFraseAfirma`)
+    
+      ⛔ Añadir la línea al conjunto congelado NO es la salida: ese conjunto SÓLO ENCOGE.
+         Añadirle una entrada es declarar por escrito que la deuda crece.
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    TestContext.<anonymous> (file:///RAIZ/tests/scrum525d-anclas-que-apuntan.test.mjs:191:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1106:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+    Test.postRun (node:internal/test_runner/test:1235:19)
+    Test.run (node:internal/test_runner/test:1163:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+  ...
+# Subtest: SCRUM-525d · 🔴 TRINQUETE DE COBERTURA: un testigo puesto no se quita
+ok 7 - SCRUM-525d · 🔴 TRINQUETE DE COBERTURA: un testigo puesto no se quita
+  ---
+  duration_ms: 2.4549
+  type: 'test'
+  ...
+# Subtest: SCRUM-525d · 🔴 NINGÚN UMBRAL DE ESTE FICHERO ESTÁ ESCRITO A MANO
+not ok 8 - SCRUM-525d · 🔴 NINGÚN UMBRAL DE ESTE FICHERO ESTÁ ESCRITO A MANO
+  ---
+  duration_ms: 80.4911
+  type: 'test'
+  location: 'RAIZ\\tests\\scrum525d-anclas-que-apuntan.test.mjs:296:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module 'typescript'
+    Require stack:
+    - RAIZ\tests\scrum525d-anclas-que-apuntan.test.mjs
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+    Module._load (node:internal/modules/cjs/loader:1226:37)
+    TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    Module.require (node:internal/modules/cjs/loader:1503:12)
+    require (node:internal/modules/helpers:152:16)
+    TestContext.<anonymous> (file:///RAIZ/tests/scrum525d-anclas-que-apuntan.test.mjs:297:44)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 352.4848

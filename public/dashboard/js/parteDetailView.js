@@ -216,7 +216,13 @@
    * posición, y quitar una línea le movería el precio a la de detrás. Ni un importe: no los hay.
    */
   function lineaQueSeGuarda(l) {
-    return { id: l.id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    var linea = { id: l.id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    // SCRUM-1266 · la marca del dato inventado vuelve con su línea; el servidor deja de ella sólo lo
+    // que siga escrito en la descripción.
+    if (Array.isArray(l.datosNoRespaldados) && l.datosNoRespaldados.length) {
+      linea.datosNoRespaldados = l.datosNoRespaldados;
+    }
+    return linea;
   }
 
   /**
@@ -651,7 +657,7 @@
       var falta = !isFinite(unds) || unds <= 0;
       var aviso = fila.querySelector('[data-falta-cantidad]');
       if (falta && !aviso) {
-        var descripcion = fila.querySelector('span');
+        var descripcion = fila.querySelector('[data-propuesta-desc="1"]');
         if (descripcion && descripcion.insertAdjacentHTML) descripcion.insertAdjacentHTML('afterend', avisoFaltaCantidad(texto));
       } else if (!falta && aviso) {
         aviso.remove();
@@ -661,14 +667,23 @@
 
   function pintarLineaPropuesta(linea, bloque, indice, avisos, inventado) {
     var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
-    var conInventado = !!(inventado && inventado[linea.descripcion]);
+    // El aviso sale si el servidor señaló la línea, traiga o no la lista de tokens (SCRUM-725).
+    var conInventado = !!(inventado && Object.prototype.hasOwnProperty.call(inventado, linea.descripcion));
+    var marca = conInventado ? inventado[linea.descripcion] : [];
     return '' +
       '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
+      // SCRUM-1266 · la marca VIAJA en la fila para que `lineasConfirmadas` la mande con la línea.
+      // Separados por espacios: un token nace de partir la descripción por espacios, así que no lleva.
+      (marca.length ? ' data-datos-no-respaldados="' + esc(marca.join(' ')) + '"' : '') +
       ' style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
       '<input type="number" step="any" min="0" data-propuesta-unds="1" ' +
       'value="' + (sinCantidad ? '' : esc(linea.unds)) + '" ' +
       'aria-label="' + esc(TEXTOS.unds) + '" style="width:72px">' +
-      '<span style="flex:1;font-size:14px">' + esc(linea.descripcion) + '</span>' +
+      // SCRUM-1266 · la descripción se corrige AQUÍ, antes de que entre en el parte: era un texto de
+      // sólo lectura y un dato inventado sólo se podía arreglar ya dentro, a un paso del congelado.
+      // Mismo rótulo accesible que el campo de descripción de la tabla del parte.
+      '<input type="text" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
+      'aria-label="' + esc(TEXTOS.descripcion) + '" style="flex:1;min-width:160px;font-size:14px">' +
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
       // servidor para no reteclearlo aquí.
@@ -744,10 +759,10 @@
       return false;
     }
 
-    // Qué líneas llevan un dato que el dictado no respalda. Se arma UNA vez, no por línea.
+    // Qué líneas llevan un dato que el dictado no respalda, y CUÁLES. Se arma UNA vez, no por línea.
     var inventado = {};
     (p.datosRetirados || []).forEach(function (d) {
-      if (d && d.descripcion) inventado[d.descripcion] = true;
+      if (d && d.descripcion) inventado[d.descripcion] = Array.isArray(d.tokens) ? d.tokens : [];
     });
 
     var bloques = BLOQUES.map(function (b) {
@@ -792,7 +807,10 @@
     var sinCantidad = 0;
     Array.prototype.forEach.call(filas, function (fila) {
       var campoUnds = fila.querySelector('[data-propuesta-unds="1"]');
-      var descripcion = (fila.querySelector('span') || {}).textContent || '';
+      // SCRUM-1266 · la descripción es un CAMPO: se guarda lo que el técnico dejó escrito, no lo
+      // que dijo la máquina. Vacía no se descarta aquí: el servidor la rechaza con su motivo, que es
+      // mejor que perder la línea en silencio.
+      var descripcion = String((fila.querySelector('[data-propuesta-desc="1"]') || {}).value || '').trim();
       var unds = Number(campoUnds && campoUnds.value);
       var bloque = fila.getAttribute('data-bloque');
       // SCRUM-1230 · la línea «Sin colocar» entra en el bloque que el técnico eligió en ella.
@@ -801,9 +819,53 @@
       // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra. Y no
       // se llega aquí en silencio: con una sin colocar, confirmar está bloqueado (`lineasSinColocar`).
       if (BLOQUES.indexOf(bloque) === -1) { sinCantidad += 1; return; }
-      lineas.push({ bloque: bloque, unds: unds, descripcion: descripcion });
+      var linea = { bloque: bloque, unds: unds, descripcion: descripcion };
+      // SCRUM-1266 · la marca del dato inventado ENTRA con la línea, y sólo lo que siga escrito.
+      var marca = marcaQueSigue(descripcion, marcaDeLaFila(fila));
+      if (marca.length) linea.datosNoRespaldados = marca;
+      lineas.push(linea);
     });
     return { lineas: lineas, sinCantidad: sinCantidad };
+  }
+
+  /** Los tokens que el servidor marcó en esta fila de la propuesta (SCRUM-725), o []. */
+  function marcaDeLaFila(fila) {
+    var crudo = fila && fila.getAttribute ? fila.getAttribute('data-datos-no-respaldados') : null;
+    return crudo ? String(crudo).split(/\s+/).filter(Boolean) : [];
+  }
+
+  /**
+   * SCRUM-1266 · de los tokens marcados, los que SIGUEN en la descripción. Mismo corte que el
+   * servidor (`marcaQueSigue` en `parteTrabajo.ts`) y que el saneador del dictado: palabras separadas
+   * por espacios, sin la puntuación de los extremos. Corregir el dato quita la marca; dejarlo, no.
+   */
+  function marcaQueSigue(descripcion, tokens) {
+    if (!Array.isArray(tokens)) return [];
+    var limpiar = function (s) { return String(s).replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''); };
+    var palabras = String(descripcion || '').split(/\s+/).map(limpiar).filter(Boolean);
+    var quedan = [];
+    tokens.forEach(function (t) {
+      if (typeof t !== 'string') return;
+      var limpio = limpiar(t.trim());
+      if (limpio && palabras.indexOf(limpio) !== -1 && quedan.indexOf(limpio) === -1) quedan.push(limpio);
+    });
+    return quedan;
+  }
+
+  /**
+   * SCRUM-1266 · el aviso del dato inventado sigue al estado ACTUAL de la descripción, como el de la
+   * cantidad (SCRUM-1230): si el técnico quita el dato, el aviso se oculta; si lo vuelve a escribir,
+   * vuelve. Es el mismo texto aprobado de SCRUM-725, que ya estaba pintado: ni un texto nuevo.
+   */
+  function sincronizarAvisosDeDatos(caja) {
+    if (!caja || !caja.querySelectorAll) return;
+    var filas = caja.querySelectorAll('[data-propuesta="1"][data-datos-no-respaldados]');
+    Array.prototype.forEach.call(filas, function (fila) {
+      var aviso = fila.querySelector('[data-dato-inventado]');
+      if (!aviso) return;
+      var desc = (fila.querySelector('[data-propuesta-desc="1"]') || {}).value || '';
+      aviso.hidden = marcaQueSigue(desc, marcaDeLaFila(fila)).length === 0;
+    });
   }
 
   /**
@@ -1426,8 +1488,14 @@
           var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
           var sincronizar = function () {
             sincronizarAvisosDeCantidad(caja, textoCantidad);
+            sincronizarAvisosDeDatos(caja);
             confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
           };
+          // SCRUM-1266 · la descripción ahora se corrige aquí: el aviso del dato inventado la sigue.
+          var descripciones = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-desc="1"]') : [];
+          Array.prototype.forEach.call(descripciones, function (d) {
+            if (d.addEventListener) d.addEventListener('input', sincronizar);
+          });
           var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
           Array.prototype.forEach.call(fichas, function (f) {
             if (f.addEventListener) f.addEventListener('change', sincronizar);

@@ -1012,7 +1012,7 @@ function openExpenseModal(expense, opts) {
       if (o.onSaved) await o.onSaved();
       else await Promise.all([loadSummary(), loadExpenses()]);
     } catch (err) {
-      showExpError(err.message || 'Error al guardar.');
+      showExpError(mensajeParaPersona(err, 'Error al guardar.')); // SCRUM-1233: no «API 500: …»
       btn.disabled = false; btn.textContent = isEdit ? 'Guardar cambios' : 'Añadir gasto';
     }
   });

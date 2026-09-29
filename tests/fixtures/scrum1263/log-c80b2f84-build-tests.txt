@@ -1,0 +1,41 @@
+2026-09-28T22:58:02.1757088Z ℹ tests 8965
+2026-09-28T22:58:02.1757297Z ℹ suites 0
+2026-09-28T22:58:02.1757511Z ℹ pass 8866
+2026-09-28T22:58:02.1757708Z ℹ fail 1
+2026-09-28T22:58:02.1757910Z ℹ cancelled 0
+2026-09-28T22:58:02.1758120Z ℹ skipped 98
+2026-09-28T22:58:02.1758319Z ℹ todo 0
+2026-09-28T22:58:02.1758548Z ℹ duration_ms 398139.436118
+2026-09-28T22:58:02.1758703Z 
+2026-09-28T22:58:02.1758830Z ✖ failing tests:
+2026-09-28T22:58:02.1758954Z 
+2026-09-28T22:58:02.1759194Z test at tests/scrum525d-anclas-que-apuntan.test.mjs:180:1
+2026-09-28T22:58:02.1759851Z ✖ SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo (1.386278ms)
+2026-09-28T22:58:02.1760554Z   AssertionError [ERR_ASSERTION]: 
+2026-09-28T22:58:02.1761065Z   🔴 1 par(es) documento↔fichero NUEVOS que citan sin testigo en docs/legal/:
+2026-09-28T22:58:02.1761458Z   
+2026-09-28T22:58:02.1762011Z       · docs/legal/ENVIO_ASESOR_2026-09-28.md # PREGUNTAS_ASESOR.md   (docs/legal/ENVIO_ASESOR_2026-09-28.md:32)
+2026-09-28T22:58:02.1762478Z   
+2026-09-28T22:58:02.1762846Z     Una coordenada sin testigo no se puede comprobar: resuelve, y nadie sabe si apunta a
+2026-09-28T22:58:02.1763425Z     lo que dice. Ponle el testigo, que cuesta lo mismo que escribir la coordenada:
+2026-09-28T22:58:02.1763796Z   
+2026-09-28T22:58:02.1764109Z         `ruta/fichero.ts:NN` (`elSímboloQueLaFraseAfirma`)
+2026-09-28T22:58:02.1764409Z   
+2026-09-28T22:58:02.1764823Z     ⛔ Añadir la línea al conjunto congelado NO es la salida: ese conjunto SÓLO ENCOGE.
+2026-09-28T22:58:02.1765399Z        Añadirle una entrada es declarar por escrito que la deuda crece.
+2026-09-28T22:58:02.1765731Z   
+2026-09-28T22:58:02.1766364Z       at TestContext.<anonymous> (file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/scrum525d-anclas-que-apuntan.test.mjs:191:12)
+2026-09-28T22:58:02.1767256Z       at Test.runInAsyncScope (node:async_hooks:227:14)
+2026-09-28T22:58:02.1767635Z       at Test.run (node:internal/test_runner/test:1402:25)
+2026-09-28T22:58:02.1768209Z       at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+2026-09-28T22:58:02.1768688Z       at Test.postRun (node:internal/test_runner/test:1542:19)
+2026-09-28T22:58:02.1769081Z       at Test.run (node:internal/test_runner/test:1467:12)
+2026-09-28T22:58:02.1769559Z       at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+2026-09-28T22:58:02.1769974Z     generatedMessage: false,
+2026-09-28T22:58:02.1770492Z     code: 'ERR_ASSERTION',
+2026-09-28T22:58:02.1770720Z     actual: undefined,
+2026-09-28T22:58:02.1770943Z     expected: undefined,
+2026-09-28T22:58:02.1771164Z     operator: 'fail',
+2026-09-28T22:58:02.1771377Z     diff: 'simple'
+2026-09-28T22:58:02.1771571Z   }
+2026-09-28T22:58:02.1971836Z ##[error]Process completed with exit code 1.
