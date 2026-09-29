@@ -5,7 +5,7 @@ import {
   CreateQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
+import { calcTotal, formatMoneyEs, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
@@ -72,6 +72,7 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
+import { ESTADOS_DECIDIBLES_POR_EL_CLIENTE, ERROR_PRESUPUESTO_YA_DECIDIDO, mensajeYaDecidido } from '../../domain/decisionDelCliente'; // SCRUM-1276
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -297,6 +298,30 @@ router.post('/create', async (req, res) => {
 // aceptaba sin firmar y cambiaba las condiciones de cobro. La decisión del cliente entra SOLO
 // por /decision, que exige el trazo.
 
+// SCRUM-1276 · Parte L:398 («jamás reabrir»). El porqué, y por qué `draft` sigue decidible, en
+// `decisionDelCliente.ts`.
+const ESTADOS_DECIDIBLES = ESTADOS_DECIDIBLES_POR_EL_CLIENTE;
+
+/**
+ * La carrera perdida (P2025: la fila ya no está en un estado decidible). Se relee y se contesta
+ * como si la petición hubiera llegado después: el mismo sentido es idempotente, el contrario no.
+ */
+async function respuestaTrasDecisionAjena(quote: { id: number; merchant?: any }, decision: string) {
+  const ahora = await prisma.quote.findUnique({ where: { id: quote.id }, select: { status: true } });
+  if (decision === 'accept' && ahora?.status === 'accepted') return { code: 200, body: { ok: true, status: 'already_accepted' } };
+  if (decision === 'reject' && ahora?.status === 'rejected') return { code: 200, body: { ok: true, status: 'already_rejected' } };
+  return { code: 409, body: { error: ERROR_PRESUPUESTO_YA_DECIDIDO, message: mensajeDeYaDecidido(ahora?.status ?? '', quote) } };
+}
+
+/** El texto N3 de ese estado (ver `mensajeYaDecidido`): el mismo que pinta la landing. */
+function mensajeDeYaDecidido(status: string, quote: { merchant?: any }) {
+  return mensajeYaDecidido(status, {
+    quoteVerb: getLocale(quote.merchant?.country).quoteVerb,
+    nombreDelNegocio: quote.merchant?.legalName || quote.merchant?.name || 'el profesional',
+  });
+}
+const esFilaQueNoCasa = (e: any) => e?.code === 'P2025';
+
 /**
  * POST /quote/:token/decision
  * Endpoint pensado para WhatsApp / n8n.
@@ -371,6 +396,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
       return res.status(422).json({ error: ERROR_FIRMA_VACIA, message: COPY_FIRMA_VACIA });
     }
 
+    // SCRUM-1276 · primera barrera: el sentido CONTRARIO sobre un presupuesto ya decidido no pasa.
+    // (El mismo sentido ya ha salido arriba con su 200 idempotente.)
+    if (!ESTADOS_DECIDIBLES.includes(quote.status)) {
+      return res.status(409).json({ error: ERROR_PRESUPUESTO_YA_DECIDIDO, message: mensajeDeYaDecidido(quote.status, quote) });
+    }
+
     let updatedQuote: any = quote;
     let createdInvoice: any = null;
     // SCRUM-234 · si la EMISIÓN falla, la aceptación NO se pierde: ya está commiteada más
@@ -430,8 +461,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         })
         : null;
 
+      // SCRUM-1276 · segunda barrera: la condición de estado VA EN LA ESCRITURA. Si otra petición
+      // decidió entre la lectura y aquí, Prisma no encuentra la fila (P2025) y esta no hace nada más:
+      // ni historial, ni PDF, ni Trabajo, ni aviso al profesional.
+      try {
       updatedQuote = await prisma.quote.update({
-        where: { id: quote.id },
+        where: { id: quote.id, status: { in: ESTADOS_DECIDIBLES } },
         data: {
           status: 'accepted',
           acceptedAt: now,
@@ -446,6 +481,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           ...(selectedLines ? { lines: selectedLines } : {}),
         },
       });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        const r = await respuestaTrasDecisionAjena(quote, decision);
+        return res.status(r.code).json(r.body);
+      }
 
       // ENT-3: historial
       recordCustomerEvent({
@@ -677,8 +717,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
 
     } else {
       // decision === 'reject'
+      // SCRUM-1276 · la misma segunda barrera: nunca se rechaza por detrás de una aceptación.
+      try {
       updatedQuote = await prisma.quote.update({
-        where: { id: quote.id },
+        where: { id: quote.id, status: { in: ESTADOS_DECIDIBLES } },
         data: {
           status: 'rejected',
           rejectedAt: new Date(),
@@ -688,6 +730,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionComment: comment ?? null,
         },
       });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        const r = await respuestaTrasDecisionAjena(quote, decision);
+        return res.status(r.code).json(r.body);
+      }
 
       // ENT-3: historial
       recordCustomerEvent({
@@ -703,7 +750,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     // si está cerrada, fallback a la plantilla merchant_alert_es). Fire-and-forget.
     {
       const customerName = quote.customer?.name || 'El cliente';
-      const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+      // SCRUM-1277 · `updatedQuote`, NO `quote`: si el cliente eligió un tramo, el `update` de
+      // arriba reescribió el total y `quote` es la fila de ANTES (121 donde aceptó 363). Mismo
+      // origen que el Trabajo. Y en es-ES con el formateador de la casa («363,00 €», no «363.00 EUR»).
+      const amount = formatMoneyEs(updatedQuote.total, updatedQuote.currency);
       const qNum = displayQuoteNumber(quote, quote.merchant); // A1.2: número por merchant, no el id global
       const freeText = decision === 'accept'
         ? `✅ ${customerName} aceptó tu presupuesto ${qNum} por ${amount}`

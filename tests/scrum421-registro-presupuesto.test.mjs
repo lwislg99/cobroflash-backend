@@ -95,6 +95,20 @@ test('SCRUM-421 · el `select: { status: true }` no se cuenta como escritura —
   assert.deepEqual(r.escrituras[0].valores, ['draft']);
 });
 
+test('SCRUM-1276 · el `where: { status: … }` de una escritura no se cuenta como escritura — con su negativo', () => {
+  // SCRUM-1276 puso el candado de estado EN la escritura (`where: { id, status: { in: … } }`) para
+  // cerrar la carrera entre leer y escribir. Eso es la CONDICIÓN, no lo que se escribe.
+  const r = censarFuente('condicion.ts', [
+    'async function h(ESTADOS) {',
+    "  return prisma.quote.update({ where: { id: 1, status: { in: ESTADOS } }, data: { status: 'accepted' } });",
+    '}',
+  ].join('\n'));
+  assert.deepEqual(r.sinResolver, [], '🔴 la condición `where` deja el censo ciego');
+  // EL NEGATIVO: lo que va bajo `data:` se sigue contando, con su valor.
+  assert.equal(r.escrituras.length, 1, `🔴 el censo cuenta ${r.escrituras.length} escrituras y hay UNA, la de \`data:\``);
+  assert.deepEqual(r.escrituras[0].valores, ['accepted']);
+});
+
 // ── EL CONTRASTE: la tabla contra el árbol ───────────────────────────────────────────────────
 
 test('SCRUM-421 · 🔴 CONTRASTE: ningún estado escrito se queda fuera de la tabla', () => {

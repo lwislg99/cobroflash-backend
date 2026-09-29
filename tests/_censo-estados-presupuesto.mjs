@@ -133,8 +133,14 @@ function dentroDeEscrituraQuote(nodo) {
     // ⚠️ Esto NO abre un hueco, y esa es la línea que no hay que cruzar: no se ignora ningún
     // `status: true`, se ignora el que cuelga de una proyección. Una escritura de verdad va bajo
     // `data:` y se sigue contando igual — el control negativo de `scrum421` lo fija.
+    //
+    // 🔴 SCRUM-1276 · y `where:` tampoco: es la CONDICIÓN de la escritura, no lo que se escribe.
+    // `update({ where: { id, status: { in: ESTADOS_DECIDIBLES } }, data: { status: 'accepted' } })`
+    // dice «sólo si AHORA está en uno de éstos»; el estado que se escribe sigue bajo `data:` y se
+    // cuenta igual (control negativo en `scrum421`). Sin esto, el candado de estado que cierra la
+    // carrera de 1276 dejaba el fichero CIEGO por una escritura que no existe.
     if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.name)
-      && (p.name.text === 'select' || p.name.text === 'include')) return false;
+      && (p.name.text === 'select' || p.name.text === 'include' || p.name.text === 'where')) return false;
     if (!ts.isCallExpression(p)) continue;
     // ⚠️ `.quote.` y no `prisma.quote.`: dentro de una `$transaction` el cliente se llama `tx`, y
     // la escritura que decide este ticket —`tx.quote.create` con `status: initialStatus`, la ruta

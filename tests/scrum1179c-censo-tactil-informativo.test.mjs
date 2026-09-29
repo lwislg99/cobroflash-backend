@@ -23,8 +23,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El censo pasa a poder tumbar el job sin que nadie lo haya decidido.
     fichero: '.github/workflows/ci.yml',
-    de: "      - name: censo:tactil-panel (informativo — NO bloquea)\n        if: always()\n        continue-on-error: true\n",
-    a: "      - name: censo:tactil-panel (informativo — NO bloquea)\n        if: always()\n",
+    de: "      - name: censo:tactil-panel (informativo — NO bloquea)\n        if: always() && steps.alcance.outputs.solo_docs != 'true'\n        continue-on-error: true\n",
+    a: "      - name: censo:tactil-panel (informativo — NO bloquea)\n        if: always() && steps.alcance.outputs.solo_docs != 'true'\n",
     cae: 'SCRUM-1179-C · el censo de toque corre en el job INFORMATIVO, siempre, y NO bloquea',
   },
 ];
