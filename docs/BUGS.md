@@ -492,6 +492,22 @@
 - **Done cuando:** en yaqu.app, un merchant en `receipt` que abre `#invoices-new` ve la lista de
   Facturas y no la página de crear factura.
 
+### [ ] P1-PARTE-1266 · Corregir la descripción de una línea del parte y luego su cantidad deshace la corrección
+- **Síntoma:** en la tabla de un parte en borrador, el técnico corrige la descripción de una línea (se
+  guarda) y después cambia su cantidad, o la de otra línea: el segundo guardado manda la descripción
+  VIEJA y la base vuelve a ella. La pantalla sigue enseñando la corregida, así que nadie lo ve hasta
+  reabrir el parte, y con la firma queda congelado lo que el técnico ya había corregido.
+- **Causa raíz:** `parteDetailView.js`, escuchador de `[data-linea-unds],[data-linea-desc]`: cada
+  guardado armaba la lista desde `parte.lineas` **tal y como vino al abrir** y sólo cambiaba la
+  casilla tocada; lo guardado no se apuntaba nunca. Medido EJECUTANDO la vista de `main` contra la
+  ruta real (`tests/scrum1266b-…`, «editar la cantidad DESPUÉS…»): la base acaba con
+  `'Detector volumétrico'` en vez de `'Detector volumétrico doble'`.
+- **Arreglo** (rama `scrum-1266b-aviso-y-es-correcto`, junto con «Es correcto», que lo sufría igual
+  y habría deshecho la corrección al limpiar la marca): la lista sale de lo que hay en pantalla, lo
+  guardado se apunta con la respuesta del servidor y los guardados van en orden.
+- **Done cuando:** en yaqu.app, corregir una descripción, cambiar la cantidad y reabrir el parte
+  enseña la descripción corregida.
+
 ---
 ## P2 — Mejoras de producto / UX
 
