@@ -38,6 +38,20 @@ Controles dentro del test: la forma exacta de 1275 (variable leída fuera del `i
 sale con su línea; `root.X`, `window.X`, CommonJS y `typeof` no dan falsos; una excepción que ya no
 ocurre sale como **caducada**.
 
+## Cazó un defecto REAL y lo soltó al arreglarse (s3-29d)
+
+No es solo un mutante sintético: el guard mide el `public/dashboard` de dos commits de `main`,
+tal cual, con `medir({ raiz })`.
+
+| Árbol | Resultado |
+|---|---|
+| `d3b37ac8fc5de19c15c4a39bd9fc2bf5abe8ecfb` (`main` justo ANTES de #1976) | 1 hallazgo · `invoicesView.js:696 · «cb»` (el defecto de SCRUM-1275, que estaba en producción) |
+| `610adb8d9141b9d7e41038acca0fa73b6bba2932` (merge de #1976, el arreglo de J1) | 0 hallazgos |
+| Esta rama con `main` = `e75b94ca` mezclado (`7adc0e3e`) | exit 0 · 1280 + 711 salen 15/15 en local |
+
+**Quien piense en desactivarlo porque estorba:** en `main` hubo un `ReferenceError` que rompía el clic
+de Facturas; este guard lo vio y dejó de verlo cuando se arregló el código, no al tocar el guard.
+
 ## Orden de merge
 
 **Este PR tiene que entrar DESPUÉS de #1976** (J1, arreglo de 1275). Antes, su propio check sale en
