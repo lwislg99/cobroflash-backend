@@ -144,7 +144,10 @@ test('SCRUM-889 · 🔴 con cantidad y descripción, la línea se GUARDA (lista 
   // repintado pero el banco seguía apilando: este assert pasaba mirando lo viejo. La línea que
   // llega del servidor trae `value="…"` en su marcado, y el banco no copia ese atributo a la
   // propiedad al parsear (el navegador sí), así que por `.value` sale vacía.
-  assert.equal(camposDesc(cont).filter((x) => x.getAttribute('value') === 'Cambio de diferencial').length, 1,
+  // SCRUM-1287 · la descripción es ahora un `textarea`: su texto va DENTRO, no en un atributo `value`,
+  // y desde SCRUM-1278 (S3) el banco le da `.value` desde ese contenido, como el navegador. Se lee
+  // `.value`. No puede pasar mirando la fila tecleada: la aserción de abajo exige que ya no exista.
+  assert.equal(camposDesc(cont).filter((x) => x.value === 'Cambio de diferencial').length, 1,
     'la línea guardada vuelve pintada desde el servidor, una sola vez');
   assert.equal(camposDesc(cont).filter((x) => x.hasAttribute('data-nueva-desc')).length, 0,
     '🔴 tras releer del servidor sigue en pantalla la fila tecleada: lo que se ve no es lo que se guardó');
