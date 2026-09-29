@@ -224,30 +224,6 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.ciego": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.crearRevision": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.errorCrear": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.firmado": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.sinOtras": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/quoteRevisiones.js · TEXTOS.verEsta": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/settingsView.js · QR_COPY.color": {
       "clase": "PENDIENTE",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): su propio comentario lo da por [PENDIENTE microcopy oficial]. Contenido de J3/S4, no de este instrumento."
@@ -274,6 +250,30 @@
     }
   },
   "retiradas": [
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.ciego",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 3-sep-2026 (docs/MICROCOPY_APROBADA_SIN_APLICAR.md, addendum «Revisiones del presupuesto»). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.crearRevision",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 16-sep-2026, SCRUM-688 (docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.errorCrear",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 16-sep-2026, SCRUM-688 (docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.firmado",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 3-sep-2026 (docs/MICROCOPY_APROBADA_SIN_APLICAR.md, addendum «Revisiones del presupuesto»). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.sinOtras",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 3-sep-2026 (docs/MICROCOPY_APROBADA_SIN_APLICAR.md, addendum «Revisiones del presupuesto»). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
+    {
+      "id": "public/dashboard/js/quoteRevisiones.js · TEXTOS.verEsta",
+      "motivo": "SCRUM-1215 lote 4 (c.17371, GO del orquestador): YA estaba firmada por el fundador el 3-sep-2026 (docs/MICROCOPY_APROBADA_SIN_APLICAR.md, addendum «Revisiones del presupuesto»). La sonda no lo leía porque la nota de `ciego` en la cabecera de TEXTOS decía «dos textos» y lo tomaba como cuenta de lo aprobado; se reescribió la nota, no se refirmó."
+    },
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.yaFirmado",
       "motivo": "SCRUM-1215 lote 1 (S4, 28-sep-2026, Jira c.17360): la clave no tenía NINGÚN consumidor (ni TEXTOS.yaFirmado ni TEXTOS[...] en public/), así que no se pintaba nunca. Retirada del objeto por decisión del orquestador (cobroflash-backend-57). No se firmó: se borró."
