@@ -15,9 +15,10 @@
 // —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
 // pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
 // más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
-// pie en obra. Las otras quince NO las vigila nada que corra o bloquee: `npm run censo:tactil-panel`
-// es un censo MANUAL que no lanza ningún workflow ni ningún test (medido en SCRUM-1179), así que
-// medirlas depende de que alguien se acuerde. No se cite como red para retirar una pantalla de aquí.
+// pie en obra. Las otras quince NO las vigila nada que BLOQUEE: `npm run censo:tactil-panel` corre
+// en cada PR desde SCRUM-1179-C, pero en el job INFORMATIVO de guards de navegador, sale 0 aunque
+// encuentre botones cortos y deja su número en el resumen del job. Cuenta, no frena ningún PR. No se
+// cite como red para retirar una pantalla de aquí.
 //
 // 🔴 EL NÚMERO DEL CENSO, RE-FECHADO EL 7-sep-2026 (SCRUM-795): 82 objetivos cortos distintos,
 // 62 de ellos `.btn-sm`. No son 6 nuevos defectos: son los 7 de la ficha 360, que hasta hoy el
@@ -392,8 +393,9 @@ const SUPERFICIES_791 = [
   // Las quince superficies restantes del censo de SCRUM-787 (Plantillas y el detalle del Albarán
   // entre ellas) SIGUEN sin vigilarse aquí — eso es cierto y se mantiene así, con `distintosEsperados`
   // ausente a propósito: un número inventado no defendería nada que el «detector de sobrantes» de
-  // abajo no proteja solo. Se miden con `npm run censo:tactil-panel`, que es un CENSO manual —no
-  // corre solo, no bloquea— y así hay que leerlo: sin la promesa de una red que no existe.
+  // abajo no proteja solo. Se miden con `npm run censo:tactil-panel`, que es un CENSO —desde
+  // SCRUM-1179-C corre en cada PR en el job informativo, pero NO bloquea— y así hay que leerlo: sin
+  // la promesa de una red que no existe.
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -986,14 +988,15 @@ if (fallos) {
 // El mensaje final NOMBRA LAS SEIS. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
 //
-// 🔴 SCRUM-1172 · Y DICE LA VERDAD SOBRE LAS QUE FALTAN: `npm run censo:tactil-panel` es un CENSO
-// MANUAL — no corre en ningún workflow, no está en `guards-visuales.mjs` ni en `test`, y el job de
-// guards de navegador TAMPOCO es obligatorio (sólo `build + tests` lo es). Citarlo como si vigilara
-// es EXACTAMENTE el error que SCRUM-1172 vino a cerrar: una red que no corre y no bloquea no es una
-// red, y decir que «se sigue midiendo» sin decir que nadie mira ese número es la misma promesa vacía.
+// 🔴 SCRUM-1172 · Y DICE LA VERDAD SOBRE LAS QUE FALTAN: `npm run censo:tactil-panel` es un CENSO.
+// Hasta SCRUM-1179-C no corría en ningún workflow. Desde entonces corre en cada PR como paso
+// INFORMATIVO del job de guards de navegador, que TAMPOCO es obligatorio (sólo `build + tests` lo
+// es), y sale 0 aunque cuente botones cortos. Citarlo como si vigilara es EXACTAMENTE el error que
+// SCRUM-1172 vino a cerrar: una red que no bloquea no es una red.
 decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo, ver EXCEPCIONES_791) — '
   + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo (con sus botones de COBRO), '
   + 'ficha 360 del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px '
   + 'en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167 + SCRUM-1172. Las demás vistas '
-  + 'del panel NO están vigiladas por ningún guard que corra o bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
-  + 'las CUENTA a mano, sin correr solo y sin frenar ningún PR — no es una red, es un número que hay que ir a leer.');
+  + 'del panel NO están vigiladas por ningún guard que bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
+  + 'las CUENTA en cada PR, en el resumen del job informativo de guards de navegador (SCRUM-1179-C), sin frenar ningún PR '
+  + '— no es una red, es un número que hay que ir a leer.');

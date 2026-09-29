@@ -499,6 +499,38 @@ jobs:
       - name: Guards de navegador
         run: npm run guards:visuales
 
+      # ── SCRUM-1179-C · EL CENSO DE TOQUE DEL PANEL, INFORMATIVO: CORRE, CUENTA Y NO BLOQUEA ──
+      #
+      # `censo:tactil-panel` cuenta los objetivos de toque por debajo de 44 px en las vistas del
+      # panel que `guard:objetivo-tactil` NO vigila (entre ellas botones de COBRO a ~30 px). Hasta
+      # hoy no corría en ningún sitio (SCRUM-1172) y se citaba como red. Aquí corre en cada PR y deja
+      # su número en el resumen del job — y NO BLOQUEA, a propósito y por dos motivos: este job no
+      # es obligatorio, y el censo sale 0 aunque encuentre botones cortos (cuenta, no juzga). Lo
+      # único que lo pone en rojo es no haber sabido medir (sale 2), y eso se dice en el resumen.
+      # Coste medido en local (29-sep-2026): ~29 s, un navegador.
+      # `continue-on-error`: su «no supe medir» no se confunde con el veredicto de los guards.
+      - name: censo:tactil-panel (informativo — NO bloquea)
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          npm run -s censo:tactil-panel > "$RUNNER_TEMP/tactil.txt" 2>&1
+          CODIGO=$?
+          set -e
+          cat "$RUNNER_TEMP/tactil.txt"
+          {
+            echo "### censo:tactil-panel — informativo, NO bloquea (SCRUM-1179-C)"
+            if [ "$CODIGO" -eq 0 ]; then
+              echo '```'
+              sed -n '/═══ EL NÚMERO ═══/,/SIN .btn-sm/p' "$RUNNER_TEMP/tactil.txt"
+              grep -E 'vistas que publica el banco' "$RUNNER_TEMP/tactil.txt" || true
+              echo '```'
+            else
+              echo "🔴 **NO SUPO MEDIR** (salida $CODIGO): este número no vale como cero. Ver el log del paso."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$CODIGO"
+
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
   #
