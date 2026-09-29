@@ -537,7 +537,9 @@ jobs:
       # qué vía, si hay casilla y qué hace el primario. Tres salidas que NO se confunden:
       #   0 medido · 1 medido y una fila REVIENTA al pulsarla (defecto del producto: así se cazó la
       #   fila de Facturas, `cb is not defined`, que este mismo censo pintaba como «NO navega») ·
-      #   2 o más: no supo medir, y su tabla no vale como dato.
+      #   2 o más: no supo medir, y su tabla no vale como dato. Incluye que falle su CONTROL: antes de
+      #   medir pulsa una fila sintética quieta y otra que revienta a propósito, y si no las distingue
+      #   no mide.
       # Coste medido en local (29-sep-2026): ~9 s, un navegador.
       - name: censo:clics-del-80 (informativo — NO bloquea)
         if: always()
