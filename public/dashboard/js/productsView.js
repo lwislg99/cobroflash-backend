@@ -1154,7 +1154,10 @@ async function pedirCatalogo(trade, refresh, btn) {
     // 🔴 MICROCOPY PENDIENTE (regla 30): el texto del caso nuevo está marcado. Lo que tiene que
     // decir, en la entrada `docs/master/SCRUM-313.md`.
     const MSG = {
-      no_catalog_for_trade: 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
+      // Microcopy APROBADA por el orquestador por delegación del fundador (SCRUM-1215 comentario
+      // 17507, 29-sep-2026). Sin «aún»: no hay catálogo encargado para ese gremio. Sólo la ve el
+      // admin (/load-catalog es requireRole('admin')), que tiene «Nuevo producto» e «Importar CSV».
+      no_catalog_for_trade: 'Tu gremio no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
       // Microcopy APROBADA por el fundador (5-ago-2026), literal.
       already_has_products: 'Tu catálogo ya tiene productos, así que no hemos cargado la plantilla. Tus precios siguen como estaban.',
     };
