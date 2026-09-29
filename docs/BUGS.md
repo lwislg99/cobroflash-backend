@@ -492,6 +492,23 @@
 - **Done cuando:** en yaqu.app, un merchant en `receipt` que abre `#invoices-new` ve la lista de
   Facturas y no la página de crear factura.
 
+### [ ] P1-1179C · Pulsar una fila de la lista de Facturas no abre la factura: `cb is not defined`
+- **Síntoma:** en la lista de Facturas la fila se anuncia pulsable (`cursor: pointer`) y al pulsarla
+  no pasa nada. La consola da `Uncaught ReferenceError: cb is not defined`. La fila no tiene otro
+  control que abra la factura, así que desde la lista no se llega al detalle.
+- **Medido, no deducido** (29-sep-2026, SCRUM-1179-C): banco de listas con el DOM real, clic en la
+  celda del número → `__errores = ["Uncaught ReferenceError: cb is not defined"]` y cero navegaciones.
+  El `invoicesView.js` que sirve yaqu.app ese día lleva el mismo código.
+- **Causa raíz:** `invoicesView.js`, el clic de la fila hace `if (e.target === cb) return;`, pero desde
+  b7adfd68 (SCRUM-845, 9-sep) `const cb` se declara DENTRO de `if (window.sePuedeMarcarPagadaEnLote(inv))`.
+  Fuera de ese bloque no existe, y el handler revienta antes de `renderAppView('invoice-detail')`, en
+  TODAS las filas, tengan casilla o no.
+- **Arreglo:** de carril de front (lo reparte el orquestador). No se arregla aquí «de paso».
+- **Instrumento:** `censo:clics-del-80` lo pintaba como «Facturas: NO navega» porque no leía los
+  errores de la página. Desde SCRUM-1179-C los lee y sale con 1 («una fila revienta al pulsarla»).
+- **Done cuando:** en yaqu.app, pulsar una fila de Facturas abre su detalle, y `censo:clics-del-80`
+  sale con 0 y dice «Facturas: sí → invoice-detail».
+
 ---
 ## P2 — Mejoras de producto / UX
 
