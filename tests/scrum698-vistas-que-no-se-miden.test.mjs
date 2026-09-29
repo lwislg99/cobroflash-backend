@@ -403,8 +403,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // · `textarea`) = 7, que es todo el delta.
   // SCRUM-1180 · 28-sep-2026 · `renderQuotesView` 255 → 256: el envoltorio `div.quote-clausulas`,
   // oculto y vacío porque el negocio del banco no tiene cláusulas. Las otras tres, intactas.
+  // 🔴 SCRUM-1135 · 28-sep-2026 · `renderCustomersView` 78 → 82, y las otras tres intactas. Los
+  // CUATRO, POR IDENTIDAD sobre el árbol montado: `div.barra-seleccion-etiquetar` (el bloque de
+  // etiquetar la selección, dentro de la barra) + `input.input` («Etiqueta») + dos
+  // `button.btn-secondary` («Añadir etiqueta», «Quitar etiqueta») = 4, todo el delta. Se montan con
+  // el rol admin del banco; para un técnico no se pintan.
   for (const [vista, nodos] of [['renderQuotesView', 256], ['renderProductsView', 176],
-    ['renderCustomersView', 78], ['renderHomeView', 145]]) {
+    ['renderCustomersView', 82], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
