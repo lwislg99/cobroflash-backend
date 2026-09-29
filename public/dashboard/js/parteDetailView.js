@@ -232,6 +232,22 @@
     return linea;
   }
 
+  /**
+   * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
+   *
+   * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
+   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
+   * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
+   */
+  var COLAS_DEL_PARTE = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function enOrdenDelParte(parte, fn) {
+    var previa = (COLAS_DEL_PARTE && parte && COLAS_DEL_PARTE.get(parte)) || Promise.resolve();
+    var turno = previa.then(fn);
+    if (COLAS_DEL_PARTE && parte) COLAS_DEL_PARTE.set(parte, turno.then(null, function () {}));
+    return turno;
+  }
+
   /** SCRUM-1266 · los datos marcados que siguen en la línea; lo que no sea texto no cuenta. */
   function marcaDeLinea(linea) {
     var marca = linea && Array.isArray(linea.datosNoRespaldados) ? linea.datosNoRespaldados : [];
@@ -1149,12 +1165,14 @@
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
-    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-
     try {
-      await pedir('/admin/partes/' + parteId, {
-        method: 'PATCH',
-        body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+      // SCRUM-1266 · en su turno: lo que ya había se lee DESPUÉS de que vuelva el guardado anterior.
+      await enOrdenDelParte(parte, function () {
+        var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
+        return pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+        });
       });
     } catch (e) {
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
@@ -1344,10 +1362,9 @@
         return base;
       });
     };
-    var colaDeGuardados = Promise.resolve();
     /** Guarda la lista de pantalla (tocada por `ajustar`) y apunta lo guardado. Nunca lanza. */
     var guardarLineasEnOrden = function (ajustar) {
-      var turno = colaDeGuardados.then(async function () {
+      return enOrdenDelParte(parte, async function () {
         var lista = listaDePantalla();
         if (ajustar) ajustar(lista);
         try {
@@ -1361,8 +1378,6 @@
           return false;
         }
       });
-      colaDeGuardados = turno;
-      return turno;
     };
 
     /** SCRUM-1266 · el aviso de UNA línea, repintado con la marca que quedó tras guardar. */
@@ -1439,9 +1454,6 @@
     // La «×» de la fila NUEVA sólo la quita de la pantalla, porque nunca llegó al servidor. La de una
     // línea YA GUARDADA va más abajo (segundo PR de SCRUM-889).
     // ═══════════════════════════════════════════════════════════════════════════════════
-    var lineasGuardadas = function () {
-      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-    };
     var laNueva = function () {
       return {
         fila: contenedor.querySelector('[data-parte-linea-nueva]'),
@@ -1471,9 +1483,12 @@
       guardandoLaNueva = true;
       quitarAvisoNoGuardada();
       try {
-        await pedir('/admin/partes/' + parteId, {
-          method: 'PATCH',
-          body: JSON.stringify({ lineas: lineasGuardadas().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+        // SCRUM-1266 · en su turno, con las guardadas tal y como están en pantalla.
+        await enOrdenDelParte(parte, function () {
+          return pedir('/admin/partes/' + parteId, {
+            method: 'PATCH',
+            body: JSON.stringify({ lineas: listaDePantalla().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+          });
         });
       } catch (e) {
         guardandoLaNueva = false;
@@ -1536,11 +1551,14 @@
           quitando = true;
           quitarAvisoNoGuardada();
           try {
-            await pedir('/admin/partes/' + parteId, {
-              method: 'PATCH',
-              body: JSON.stringify({
-                lineas: todas.filter(function (_, i) { return i !== indice; }).map(lineaQueSeGuarda),
-              }),
+            // SCRUM-1266 · en su turno, con las demás tal y como están en pantalla.
+            await enOrdenDelParte(parte, function () {
+              return pedir('/admin/partes/' + parteId, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                  lineas: listaDePantalla().filter(function (_, i) { return i !== indice; }),
+                }),
+              });
             });
           } catch (e) {
             quitando = false;

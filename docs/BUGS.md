@@ -502,9 +502,16 @@
   casilla tocada; lo guardado no se apuntaba nunca. Medido EJECUTANDO la vista de `main` contra la
   ruta real (`tests/scrum1266b-…`, «editar la cantidad DESPUÉS…»): la base acaba con
   `'Detector volumétrico'` en vez de `'Detector volumétrico doble'`.
+- **Los otros tres guardados de la misma tabla tenían el mismo defecto** (medido igual, con el guardado
+  lento como en un móvil en obra): «×» en otra línea, «Añadir línea» y «Añadir estas líneas» del dictado,
+  justo después de corregir una descripción, la devolvían a la de antes.
 - **Arreglo** (rama `scrum-1266b-aviso-y-es-correcto`, junto con «Es correcto», que lo sufría igual
   y habría deshecho la corrección al limpiar la marca): la lista sale de lo que hay en pantalla, lo
-  guardado se apunta con la respuesta del servidor y los guardados van en orden.
+  guardado se apunta con la respuesta del servidor y los cinco guardados de líneas van en orden
+  (`enOrdenDelParte`).
+- **Otras tablas (leído, no ejecutado):** el editor de líneas del albarán (`jobDetailView.js`), el plan
+  de cobro del presupuesto y los precios de la oficina (`parteOficinaView.js`) leen el DOM al pulsar
+  «Guardar» y releen después: no guardan casilla a casilla desde una copia, que es lo que fallaba aquí.
 - **Done cuando:** en yaqu.app, corregir una descripción, cambiar la cantidad y reabrir el parte
   enseña la descripción corregida.
 

@@ -51,6 +51,13 @@ function filaDelParte({ estado = 'borrador', lineas } = {}) {
   };
 }
 
+const PROPUESTA = {
+  propuesta: {
+    vacia: false, mano_obra: [{ unds: 1, descripcion: 'Purga del circuito' }], materiales: [], sinBloque: [], datosRetirados: [],
+  },
+  avisos: { cantidadesRetiradas: 'Falta la cantidad', datosRetirados: 'AVISO-725', sin_lineas_reconocidas: 'x' },
+};
+
 function manejador(router, metodo, ruta) {
   const capa = router.stack.find((l) => l.route && l.route.path === ruta && l.route.methods[metodo]);
   assert.ok(capa, `🔴 CIEGO: no encuentro ${metodo.toUpperCase()} ${ruta} en el router de partes`);
@@ -59,7 +66,7 @@ function manejador(router, metodo, ruta) {
 }
 
 /** La vista de verdad, cableada a la ruta de verdad. `patchFalla` corta la red en los PATCH. */
-async function abrir({ estado, lineas, patchFalla = false } = {}) {
+async function abrir({ estado, lineas, patchFalla = false, lento = false } = {}) {
   const fila = filaDelParte({ estado, lineas });
   inyectarBase({
     'parteTrabajo.findFirst': ({ where }) =>
@@ -80,6 +87,10 @@ async function abrir({ estado, lineas, patchFalla = false } = {}) {
     const body = o.body ? JSON.parse(o.body) : undefined;
     pedidas.push({ metodo, ruta, body });
     if (metodo !== 'get' && patchFalla) throw new Error('sin red');
+    // El dictado se contesta aquí, sin pasar por la ruta: esa ruta puede llamar a la IA.
+    if (metodo === 'post' && /\/dictado$/.test(ruta)) return copia(PROPUESTA);
+    // Un móvil en obra: el guardado tarda, y el siguiente clic sale antes de que vuelva.
+    if (metodo === 'patch' && lento) await new Promise((r) => setTimeout(r, 15));
     const h = manejador(router, metodo, '/:id');
     const r = { status: 200, data: undefined };
     const res = { status(s) { r.status = s; return res; }, json(j) { r.data = copia(j); return res; } };
@@ -257,4 +268,56 @@ test('SCRUM-1266b · una lista LARGA no ensancha la columna: el texto parte por 
   assert.match(aviso, /flex-wrap:wrap/, '🔴 el botón no puede bajar de renglón');
   assert.match(aviso, /overflow-wrap:anywhere/, '🔴 un dato sin espacios ensancharía la columna');
   assert.match(aviso, /min-width:0/, '🔴 sin min-width:0 el texto no se encoge dentro de la celda');
+});
+
+// ═══ ④ LOS OTROS TRES GUARDADOS DE LA TABLA, CON EL MÓVIL LENTO ═════════════════════════════════
+// El mismo defecto que P1-PARTE-1266 en «×», «Añadir línea» y «Añadir estas líneas»: los tres armaban su
+// lista con las líneas de la última lectura. El `blur` de la descripción sale y, antes de que vuelva,
+// el técnico ya ha tocado el botón.
+
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+const corregirSinEsperar = (cont, i, texto) => {
+  const desc = cont.querySelectorAll('input.parte-linea-desc').find((x) => x.getAttribute('data-linea-desc') === String(i));
+  desc.value = texto;
+  desc.disparar('change');
+};
+const CORREGIDA = 'Cambio de central Honeywell Galaxy Flex';
+
+test('SCRUM-1266b · 🔴 corregir una descripción y quitar OTRA línea con «×»: la corrección se queda', async () => {
+  const { fila, cont } = await abrir({ lento: true });
+  corregirSinEsperar(cont, 0, CORREGIDA);
+  cont.querySelectorAll('.parte-quitar-linea').find((b) => b.getAttribute('data-indice') === '1').dispararClick();
+  await dormir(80);
+  assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA],
+    '🔴 la «×» ha devuelto la descripción de antes de corregirla');
+});
+
+test('SCRUM-1266b · 🔴 corregir una descripción y añadir una línea nueva: la corrección se queda', async () => {
+  const { fila, cont } = await abrir({ lento: true });
+  corregirSinEsperar(cont, 0, CORREGIDA);
+  cont.querySelectorAll('.parte-anadir').find((b) => b.getAttribute('data-bloque') === 'materiales').dispararClick();
+  const unds = cont.querySelector('[data-nueva-unds]');
+  const desc = cont.querySelector('[data-nueva-desc]');
+  assert.ok(unds && desc, '🔴 NO PUDE MIRAR: no aparece la fila nueva');
+  unds.value = '1';
+  desc.value = 'Caja estanca';
+  desc.disparar('change');
+  await dormir(80);
+  assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA, 'Detector volumétrico', 'Caja estanca'],
+    '🔴 añadir una línea ha devuelto la descripción de antes de corregirla');
+});
+
+test('SCRUM-1266b · 🔴 corregir una descripción y «Añadir estas líneas» del dictado: la corrección se queda', async () => {
+  const { fila, cont } = await abrir({ lento: true });
+  const campo = cont.querySelector('[data-dictado-texto]');
+  campo.value = 'He purgado el circuito';
+  cont.querySelector('[data-dictado-ordenar]').dispararClick();
+  await dormir(20);
+  const confirmar = cont.querySelectorAll('[data-propuesta-confirmar]').pop();
+  assert.ok(confirmar && !confirmar.disabled, '🔴 NO PUDE MIRAR: no hay botón para añadir lo dictado');
+  corregirSinEsperar(cont, 0, CORREGIDA);
+  confirmar.dispararClick();
+  await dormir(80);
+  assert.deepEqual(fila.lineas.map((l) => l.descripcion), [CORREGIDA, 'Detector volumétrico', 'Purga del circuito'],
+    '🔴 añadir lo dictado ha devuelto la descripción de antes de corregirla');
 });

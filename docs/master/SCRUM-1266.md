@@ -97,4 +97,16 @@ se apunta con la respuesta y los guardados van en orden (el `blur` y el clic sal
   el de SCRUM-854 por faltar este registro, que es lo que se añade aquí.
 - **No se ha visto en pantalla de producción**: hay 0 partes, y sembrar es escribir (espera la regla del
   fundador para `scripts/qa/sembrar-qa.mjs`).
+
+### Segundo commit: los otros tres guardados de la tabla (pregunta del orquestador, 29-sep)
+
+Medido con el guardado LENTO (como un móvil en obra) y la vista contra la ruta real: «×» en otra línea,
+«Añadir línea» y «Añadir estas líneas» del dictado, justo después de corregir una descripción, **la
+devolvían a la de antes**. Los cinco guardados de líneas pasan por `enOrdenDelParte` y arman su lista en
+su turno. Tests: 15/15; **contra `main` 4 pass · 11 fail; contra el primer commit de esta rama 12 · 3**.
+Tanda de los ficheros que mencionan el parte (507): 4631 · 4567 pass · 64 skip (BD) · 0 fail.
+
+Otras tablas editables (**leído, no ejecutado**): el editor de líneas del albarán, el plan de cobro del
+presupuesto y los precios de la oficina leen el DOM al pulsar «Guardar» y releen después; no guardan
+casilla a casilla desde una copia, que es la forma del defecto.
 **Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:38:21Z
