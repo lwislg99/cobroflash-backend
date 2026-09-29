@@ -3,6 +3,15 @@
 **Rama:** `scrum-1289-tap-del-obligatorio` · **Carril:** S5 · automatización (s5-29d) · **Fecha:** 29-sep-2026
 **Medido contra:** `origin/main` = `c22f7e9ca080ab1a72407a1c60a492589c547854` · 2026-09-29T17:11:49Z
 
+> 🔴 **EL ALCANCE, DE GOLPE: el TAP de la tanda —el fichero principal de diagnóstico del proyecto—
+> salía roto en TODAS las tandas, también en las VERDES.** Lo que lo leyera venía leyendo basura: el
+> «por qué cayó» callaba, y `suelo-de-la-tanda.mjs` acertaba solo porque el número que necesita
+> estaba en la cola del fichero, detrás del tramo de NUL.
+>
+> 🔴 **Y el censo que existe para cazar esta familia (`scrum1153-censo-entorno-prestado`) estaba
+> CIEGO justo a los dos casos que la causaban**, scrum976 y scrum928. Es un instrumento que devuelve
+> silencio cuando no puede mirar.
+
 ## Qué pasaba
 
 El paso «Por qué cayó» del job `build + tests` hacía un `awk '/^not ok /'` sobre `tanda.tap`. Ese TAP
@@ -63,7 +72,9 @@ TAP con su porcentaje y su byte.
 
 ## Pendiente, con dueño
 
-- **S3 (instrumentos) · el arreglo DE RAÍZ.** Mientras un test pueda lanzar `node --test` heredando
+- 🔴 **S3 (instrumentos) · el arreglo DE RAÍZ. Medido: NO se puede hacer desde `ci.yml`** (no lo
+  intentes por ahí): `node --test <ficheros> --test-reporter=…` ignora en silencio los reporters puestos
+  detrás de los ficheros, y la tanda es `npm test`, que los pone al final. Mientras un test pueda lanzar `node --test` heredando
   `NODE_OPTIONS`, el TAP se puede volver a romper. Lo que lo quita para siempre es que el envoltorio
   `scripts/tanda-con-veredicto.mjs` (SCRUM-858b, S3) saque los `--test-reporter*` de `NODE_OPTIONS`
   y se los pase **como argumentos** solo al `node --test` que lanza. Medido: detrás de los ficheros
