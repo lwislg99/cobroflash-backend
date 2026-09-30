@@ -13,7 +13,8 @@ import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-4
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO, registrarEnvio } from './registroDeEnvios';
 // SCRUM-1243: la constancia del fallo previo a Resend, con la misma forma que la de Resend.
-import { constanciaDeFallo } from './constanciaCorreo';
+// SCRUM-1299: y la del respaldo SMTP, con la misma forma que `enviarCorreo` por SMTP.
+import { constanciaDeEnvio, constanciaDeFallo } from './constanciaCorreo';
 import { portalUrlDelCliente } from '../../system/customerAdmin'; // SCRUM-967b
 import { getLocale } from '../../../core/i18n/locales';
 
@@ -63,9 +64,9 @@ export async function sendInvoiceEmail(args: {
   // escribe dos veces (la suya ya la deja `enviarPorResend`). Nada aquí mira el texto del error:
   // cualquier excepción de esta etapa deja su fila, se llame como se llame.
   //
-  // ⚠️ Solo con RESEND_API_KEY: es el camino en el que un envío bueno deja fila y apaga el aviso.
-  // En el respaldo SMTP/outbox de dev el éxito no escribe nada, y una fila de fallo sin su «salió»
-  // se quedaría avisando para siempre.
+  // ⚠️ Solo con un transporte que escriba también el «salió»: Resend y, desde SCRUM-1299, el SMTP.
+  // El outbox `.eml` de dev (ni Resend ni SMTP) sigue sin escribir nada, y una fila de fallo sin su
+  // «salió» se quedaría avisando para siempre.
   //
   // `registrarEnvio` no lanza ni se cuelga (SCRUM-501): la excepción que sube es la de siempre, y
   // los llamadores la siguen viendo igual.
@@ -80,7 +81,7 @@ export async function sendInvoiceEmail(args: {
     if (!leido) throw new Error('invoice_pdf_unavailable');
     pdfBase64 = leido;
   } catch (e) {
-    if (config.RESEND_API_KEY) {
+    if (config.RESEND_API_KEY || config.SMTP_URL) {
       await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeFallo(e) });
     }
     throw e;
@@ -132,14 +133,27 @@ export async function sendInvoiceEmail(args: {
     ? nodemailer.createTransport(config.SMTP_URL)
     : nodemailer.createTransport({ streamTransport: true, newline: 'unix', buffer: true });
 
-  const mail = await transporter.sendMail({
-    from,
-    to: toEmail,
-    subject,
-    // pdfBase64 garantizado no-null → el adjunto SIEMPRE viaja también en el fallback SMTP/outbox.
-    attachments: [{ filename: `${inv.number}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }],
-    html,
-  });
+  // 🔴 SCRUM-1299 · EL SMTP TAMBIÉN DEJA FILA, en sus dos desenlaces y con la forma de `enviarCorreo`
+  // por SMTP: éxito → `aceptado_sin_identificador` (SMTP no da acuse), fallo → `fallo_envio` y la
+  // MISMA excepción sube. Sin esto, el aviso de Cobros (SCRUM-1235) no veía nunca un fallo por aquí.
+  // El outbox `.eml` (sin `SMTP_URL`) queda FUERA a propósito: cambiar lo que devuelve afecta a sus
+  // cuatro llamadores y es otra decisión (docs/master/SCRUM-1299.md).
+  let mail: unknown;
+  try {
+    mail = await transporter.sendMail({
+      from,
+      to: toEmail,
+      subject,
+      // pdfBase64 garantizado no-null → el adjunto SIEMPRE viaja también en el fallback SMTP/outbox.
+      attachments: [{ filename: `${inv.number}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }],
+      html,
+    });
+  } catch (e) {
+    if (config.SMTP_URL) {
+      await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeFallo(e) });
+    }
+    throw e;
+  }
 
   // SCRUM-76: streamTransport + buffer:true devuelve `message` como Buffer → el `createReadStream`
   // de antes NUNCA se ejecutaba (outbox muerto). Se escribe el Buffer directamente al .eml.
@@ -149,6 +163,7 @@ export async function sendInvoiceEmail(args: {
     return { ok: true, eml: `/outbox/invoice-${inv.number}.eml`, smtp: false };
   }
 
+  await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeEnvio(null) });
   return { ok: true, smtp: true };
 }
 
@@ -216,6 +231,16 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
     footnote: 'Podrás revisarlo, firmarlo con el dedo desde el móvil o hacer preguntas.',
   });
 
+  // SCRUM-501 · el presupuesto también deja fila, con su cliente y su documento. SCRUM-1299: UNA
+  // constante para los dos sitios que la escriben (Resend y el respaldo SMTP), como en la factura.
+  const registro = {
+    merchantId: quote.merchantId,
+    kind: CLASES_DE_CORREO.presupuesto,
+    customerId: quote.customerId ?? null,
+    relatedType: 'quote',
+    relatedId: quote.id,
+  };
+
   // SCRUM-475 · emisor único, y el acuse sale hacia el llamador. Mismo motivo que en la factura
   // para usar `enviarPorResend`: debajo vive el respaldo propio del outbox de dev.
   if (config.RESEND_API_KEY) {
@@ -225,14 +250,8 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
       html,
       origen: 'presupuesto',
       timeoutMs: 15_000,
-      // SCRUM-501 · ídem: el presupuesto también deja fila, con su cliente y su documento.
-      registro: {
-        merchantId: quote.merchantId,
-        kind: CLASES_DE_CORREO.presupuesto,
-        customerId: quote.customerId ?? null,
-        relatedType: 'quote',
-        relatedId: quote.id,
-      },
+      // SCRUM-501 · la constante de arriba (SCRUM-1299, la misma que usa el respaldo SMTP).
+      registro,
       // En el presupuesto el adjunto es best-effort: el CTA al enlace /pay/quote es la vía fiable.
       adjuntos: pdfBase64
         ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: pdfBase64 }]
@@ -246,23 +265,34 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   const transporter: nodemailer.Transporter = config.SMTP_URL
     ? nodemailer.createTransport(config.SMTP_URL)
     : nodemailer.createTransport({ streamTransport: true, newline: 'unix', buffer: true });
-  const mail = await transporter.sendMail({
-    from: config.EMAIL_FROM,
-    to: toEmail,
-    subject,
-    html,
-    // SCRUM-76 (defecto 2): el fallback también adjunta el PDF si está en disco — antes salía SIN
-    // adjunto, incoherente con el path Resend. En el presupuesto el adjunto es best-effort: el CTA
-    // al enlace /pay/quote es la vía fiable de entrega, así que aquí NO se falla si el PDF no está.
-    attachments: pdfBase64
-      ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }]
-      : [],
-  });
+  // 🔴 SCRUM-1299 · el SMTP deja fila en sus dos desenlaces, igual que en `sendInvoiceEmail`. El
+  // outbox `.eml` queda fuera, por el mismo motivo.
+  let mail: unknown;
+  try {
+    mail = await transporter.sendMail({
+      from: config.EMAIL_FROM,
+      to: toEmail,
+      subject,
+      html,
+      // SCRUM-76 (defecto 2): el fallback también adjunta el PDF si está en disco — antes salía SIN
+      // adjunto, incoherente con el path Resend. En el presupuesto el adjunto es best-effort: el CTA
+      // al enlace /pay/quote es la vía fiable de entrega, así que aquí NO se falla si el PDF no está.
+      attachments: pdfBase64
+        ? [{ filename: `presupuesto-${(quote as any).quoteNumber ?? quote.id}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }]
+        : [],
+    });
+  } catch (e) {
+    if (config.SMTP_URL) {
+      await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeFallo(e) });
+    }
+    throw e;
+  }
   // SCRUM-76: Buffer directo al .eml (mismo fix que sendInvoiceEmail; el createReadStream estaba muerto).
   if (Buffer.isBuffer((mail as any)?.message)) {
     const file = path.join(outboxDir, `quote-${quote.id}.eml`);
     fs.writeFileSync(file, (mail as any).message);
     return { ok: true, eml: `/outbox/quote-${quote.id}.eml`, smtp: false };
   }
+  await registrarEnvio({ contexto: registro, to: toEmail, constancia: constanciaDeEnvio(null) });
   return { ok: true, smtp: true };
 }
