@@ -1,6 +1,6 @@
 # SCRUM-1291 · Fusionar un cliente con direcciones de obra daba un 500, y el reintento también
 
-**Medido contra:** `origin/main` = `b6243e1c9f22e23b5a48332acc30ef533e55589f` · 2026-09-30T21:54:17+01:00
+**Medido contra:** `origin/main` = `fecff92a31c98db1108b7dc86c00f4246e55b8d3` · 2026-09-30T22:06:46+01:00
 (J2 del equipo de Javier, `cobroflash-jv-j2`)
 
 A9: comprobación → `tests/scrum1291-fusion-mueve-direcciones-de-obra.test.mjs`
@@ -23,7 +23,9 @@ El ticket venía rotulado «razonado desde el esquema, NO ejecutado». Se midió
   con **dos llamadas seguidas** sobre el mismo banco: **500 las dos veces, y la base intacta** — el
   reintento no puede salir bien nunca.
 - **En Postgres real:** el commit `19d041029908344ed653331bb9195770ce721d05` (sólo el test, sin
-  arreglo) se empujó para verlo caer en el banco desechable de CI, donde la FK la pone el motor.
+  arreglo) se empujó para verlo caer en el banco desechable de CI (PR #2008, job 110092907316).
+  Cayó el caso de `1057b` con el error del MOTOR: `update or delete on table "customers" violates
+  foreign key constraint "customer_sites_customer_id_fkey" on table "customer_sites"`.
 
 ## 2 · El arreglo
 
@@ -34,10 +36,17 @@ Una línea dentro de la misma transacción que las otras nueve:
 tienen la misma dirección, el principal se queda con las dos. No se deduplica: eso sería borrar
 datos del cliente (STOP). El caso ③ lo fija y cae si el modelo gana una unicidad.
 
-**Precondición de despliegue:** la tabla tiene que existir en la base. Staging: medida por el
-orquestador con `node scripts/preview-migracion.mjs` (el diff no propone crearla). Producción: la
-confirma Javier; el arreglo no se empuja sin esa confirmación, porque si faltara la tabla TODAS las
-fusiones fallarían (P2021 dentro de la transacción).
+**Precondición de despliegue:** la tabla tiene que existir en la base, o TODAS las fusiones
+fallarían (P2021 dentro de la transacción). El arreglo no se empujó hasta medirlo:
+
+| Base | `customer_sites` | Cómo se midió (30-sep-2026) |
+| --- | --- | --- |
+| staging | existe | orquestador, `node scripts/preview-migracion.mjs`: no propone crearla ni ningún `CREATE TABLE` |
+| producción | existe | el fundador, consulta de sólo lectura, con `customers` como control positivo |
+
+🔴 **`docs/MIGRATIONS_PENDING.md` decía lo contrario** (entrada de SCRUM-1014: «NINGUNA base
+tocada», tres casillas sin marcar) y las dos bases la tienen. No se decide nada mirándolo: es una
+pista, no una medición.
 
 ## 3 · La prueba
 
@@ -75,5 +84,5 @@ direcciones de obra» (la repetida incluida).
   direcciones de obra, que ahora también pasan. Cambiarla es texto (regla 39): propuesta al
   orquestador, no en este PR.
 - El singular de «Contados» (firmado en SCRUM-1126, comentario 17577): otro ticket.
-- `docs/MIGRATIONS_PENDING.md` sigue con la entrada de SCRUM-1014 sin marcar; el documento es una
-  pista, no una medición, y no se toca aquí.
+- `docs/MIGRATIONS_PENDING.md` sigue con la entrada de SCRUM-1014 sin marcar (desactualizada, ver §2);
+  corregirla es de su dueño, no de este PR.
