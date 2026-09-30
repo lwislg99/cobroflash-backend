@@ -35,6 +35,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
@@ -57,9 +58,18 @@ function seccionDeEncargados(html) {
   return html.slice(desde, hasta);
 }
 
+/**
+ * La ficha VIGENTE del texto de Google: por ticket Y ranura (SCRUM-1306). Por ticket a secas, el
+ * `.find` se quedaba con la PRIMERA ficha de SCRUM-1154, que es la más antigua (el barrido va por
+ * nombre y el nombre empieza por la fecha): el día que el texto se vuelva a firmar, habría seguido
+ * comprobando el viejo. Una firma nueva trae ranura nueva, y entonces se cambia ESTA constante.
+ */
+const FICHA_VIGENTE = { ticket: 'SCRUM-1154', ranura: 'encargados-privacidad' };
+
 /** El literal tal como lo FIRMÓ el fundador, leído de su registro de aprobación. */
-function textoFirmadoDeGoogle() {
-  const registro = aprobacionesDeMicrocopy().find((a) => a.ruta.includes('SCRUM-1154'));
+function textoFirmadoDeGoogle(opciones) {
+  const registro = aprobacionesDeMicrocopy(opciones)
+    .find((a) => a.ticket === FICHA_VIGENTE.ticket && a.ranura === FICHA_VIGENTE.ranura);
   assert.ok(registro, '🔴 no existe el registro de aprobación de SCRUM-1154 en `docs/microcopy/`.');
   assert.equal(registro.aprobada, true,
     `🔴 el registro de SCRUM-1154 no cuenta como aprobado (firmante: ${registro.firmante}). `
@@ -123,4 +133,33 @@ test('SCRUM-1154 · Anthropic NO figura en el §5: hoy no recibe nada', () => {
   const conAnthropic = html.replace(TITULO_ENCARGADOS, `${TITULO_ENCARGADOS} — incluido Anthropic`);
   assert.ok(/anthropic/i.test(seccionDeEncargados(conAnthropic)),
     '🔴 el detector no encuentra a Anthropic cuando SÍ está: su «no está» no vale nada.');
+});
+
+test('SCRUM-1306 · 🔴 CONTROL: con una ficha MÁS ANTIGUA del mismo ticket, el guard sigue leyendo la vigente', () => {
+  // Carpeta temporal: escribir una ficha de mentira en docs/microcopy/ la vería cualquier guard que
+  // corra en paralelo. La vigente se copia tal cual; la antigua lleva la misma firma y otro literal.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1306-'));
+  try {
+    const vigente = aprobacionesDeMicrocopy()
+      .find((a) => a.ticket === FICHA_VIGENTE.ticket && a.ranura === FICHA_VIGENTE.ranura);
+    fs.copyFileSync(path.join(RAIZ, 'docs', 'microcopy', vigente.nombre), path.join(dir, vigente.nombre));
+    const ANTIGUA = '2026-09-01-SCRUM-1154-version-anterior.md';
+    const VIEJO = '<li><strong>Google (Gemini)</strong> — texto anterior, ya superado.</li>';
+    fs.writeFileSync(path.join(dir, ANTIGUA), '# Versión anterior (control de SCRUM-1306)\n\n'
+      + '**Aprobado por el fundador** el 1-sep-2026, en **SCRUM-1154**.\n\n'
+      + '| Ranura | Texto aprobado |\n|---|---|\n| `anterior` | `' + VIEJO + '` |\n');
+    const o = { dir };
+    const todas = aprobacionesDeMicrocopy(o);
+    assert.equal(todas.find((a) => a.ruta.includes('SCRUM-1154')).nombre, ANTIGUA,
+      'el caso sí planta el problema: por ticket a secas, la primera ficha es la antigua');
+    const antigua = todas.find((a) => a.nombre === ANTIGUA);
+    assert.ok(antigua.aprobada && antigua.literales.includes(VIEJO),
+      'y la antigua cuenta como firmada, con su literal: si no, el caso no prueba nada');
+    assert.equal(textoFirmadoDeGoogle(o), textoFirmadoDeGoogle(),
+      '🔴 con una ficha más antigua del mismo ticket, el guard ha pasado a leer la ANTIGUA. Tiene que '
+      + 'elegir la ficha vigente por ticket y ranura (SCRUM-1306), no la primera del ticket.');
+    assert.notEqual(textoFirmadoDeGoogle(o), VIEJO, 'y el literal que devuelve no es el superado');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

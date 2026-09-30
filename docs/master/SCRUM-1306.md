@@ -102,3 +102,39 @@ sustitución cruza de ficha.
 - No se ha borrado ningún registro.
 
 A9: aviso → cicatriz J5 «Un guard de texto firmado eligió su ficha por ticket (`.find` sobre `SCRUM-1196`), no por ticket y ranura» — no se pudo comprobar: la comprobación es la decisión de SCRUM-1306 sobre el helper compartido, que no está tomada.
+
+## Vuelta 2 · la decisión: B con trinquete, y 1154 y 1196 a ticket y ranura
+
+**Medido contra:** `origin/main` = `7042852f5f400b6719925c5bdbfbe9a403260aef` · 2026-09-30T22:21:42Z
+
+El orquestador eligió **B con trinquete** (SCRUM-1306, comentario 17656, que corrige la premisa de la
+descripción con el censo de la vuelta 1). Lo decidió el número: **una** sustitución entre fichas en
+98. A queda escrita arriba, con sus cuatro verificaciones, para el día que haya más.
+
+**Lo construido** (el helper compartido NO cambia de comportamiento; sólo su comentario):
+
+1. **1154 y 1196 eligen su ficha por ticket y ranura** (`FICHA_VIGENTE`), no la primera del ticket.
+   Cada uno lleva un control nuevo: en una carpeta temporal, la ficha vigente más una **más antigua
+   del mismo ticket**, firmada y con otro literal. El guard tiene que seguir leyendo la vigente.
+   **Rojo visto en los dos:** devolviendo la selección a `ruta.includes('SCRUM-n')`, el control cae
+   con «ha pasado a leer la ANTIGUA». Restaurados y comprobados por sha256.
+2. **El trinquete:** `tests/scrum1306-consta-en-alguno.test.mjs`, tope **15**. Cuenta los guards de
+   producto con al menos una pregunta débil (laxa, o por ticket sin ranura). Los tests del propio
+   instrumento se reconocen solos: importan del helper algo más que las dos funciones de producto.
+   - Lo que mide coincide fichero a fichero con el censo a mano de la vuelta 1: 15 débiles (los 9
+     laxos y los 6 por ticket), 21 guards de producto y 4 del instrumento.
+   - Primera medida: 16. El que sobraba era `scrum631`, que **cita** `constaAprobado()` dentro de un
+     mensaje. Arreglado en el clasificador, no en el tope: lo de dentro de una cadena no es una
+     llamada, y va en los controles.
+   - **Rojo visto:** deshaciendo el arreglo de 1154, sube a 16 y cae.
+   - **Límite declarado:** mira la sentencia de la llamada. Si el resultado se guarda en una variable
+     y se filtra por ticket en la siguiente (`1247`, `1257`), lo cuenta como laxo. Cuenta igual como
+     débil, así que el tope no cambia; lo que cambia es la etiqueta.
+3. **La regla escrita:** en el JSDoc de `constaAprobado` y en `docs/microcopy/README.md`. Un texto
+   que se puede volver a firmar se comprueba contra **su** ficha, por ticket y ranura. La ficha vieja
+   no se toca, ni se borra ni se marca.
+
+El #2019 (vuelta 1, sólo documentos) se mergeó antes de que llegara la decisión. Por eso esto va en
+un PR aparte y no en el mismo.
+
+A9: comprobación → `tests/scrum1306-consta-en-alguno.test.mjs`
