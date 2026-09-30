@@ -148,8 +148,10 @@ test('SCRUM-1302 F · la factura no se entera: ninguna acción suya lleva `requi
   assert.ok(INVOICE_ACTION_REGISTRY.length > 5 && INVOICE_STATES.length > 2, '🔴 NO PUDE MIRAR: el registro de la factura no se ha cargado');
   assert.deepEqual(INVOICE_ACTION_REGISTRY.filter((a) => 'requiere' in a).map((a) => a.id), [],
     '🔴 una acción de la FACTURA ha empezado a llevar `requiere`: mide lo que oculta antes de seguir');
-  assert.deepEqual(ALBARAN_ACTION_REGISTRY.filter((a) => 'requiere' in a).map((a) => a.id).sort(), ['btnEnviarFirmar', 'btnWhatsApp'],
-    '🔴 las acciones del albarán con `requiere` no son los dos envíos por WhatsApp');
+  // SCRUM-1302 (G) añadió la foto con su propia condición: cada una se fija con la SUYA.
+  assert.deepEqual(Object.fromEntries(ALBARAN_ACTION_REGISTRY.filter((a) => 'requiere' in a).map((a) => [a.id, a.requiere])),
+    { btnEnviarFirmar: 'cliente-con-whatsapp', btnWhatsApp: 'cliente-con-whatsapp', btnFoto: 'caben-fotos' },
+    '🔴 las acciones del albarán con `requiere` no son los dos envíos por WhatsApp (canal) y la foto (plazas)');
   for (const hayCharge of [true, false]) {
     for (const a of INVOICE_ACTION_REGISTRY) {
       for (const s of INVOICE_STATES) {

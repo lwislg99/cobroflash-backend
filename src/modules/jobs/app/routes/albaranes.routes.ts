@@ -875,6 +875,11 @@ router.get('/:id', async (req, res) => {
     });
     const facturado = facturadoPorLinea(libro);
     const estadoFacturacion = estadoCobroAlbaran(lineas, facturado, !!albaran.invoiceId);
+    // SCRUM-1302 (G) · ¿caben más fotos? Contado contra el MISMO tope que da el 409 `max_fotos` al
+    // subir: con las plazas llenas, «Añadir foto» sólo sabe fallar y la pantalla no lo ofrece.
+    const fotos = await prisma.attachment.count({
+      where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
+    });
 
     return res.json({
       ...serializeAlbaran(albaran),
@@ -890,6 +895,7 @@ router.get('/:id', async (req, res) => {
       pendientes: pendientePorLinea(lineas, facturado),
       // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
       enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+      cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/:id]', err?.message || err);
