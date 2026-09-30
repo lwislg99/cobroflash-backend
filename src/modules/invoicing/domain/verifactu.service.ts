@@ -763,15 +763,16 @@ export async function buildVerifactuRegistrosXml(
   const excluidos: Array<{ number: string; motivo: string }> = [];
 
   // SCRUM-1296 · D1 (GO del fundador, SCRUM-1296 comentario 17641): el constructor del registro
-  // vive FUERA de esta función, en `construirRegistroFactura`, para que la cola de remisión encole
-  // EXACTAMENTE el mismo registro que esta exportación declara. Un solo constructor (SCRUM-209/240).
+  // vive FUERA de esta función, en `construirRegistro` (más abajo), para que la cola de remisión
+  // encole EXACTAMENTE el mismo registro que esta exportación declara. Un solo constructor
+  // (SCRUM-209/240), y con el mismo nombre que tenía de closure: el catálogo de la tabla VeriFactu
+  // (SCRUM-524b) ancla sus comprobaciones a ese nombre.
   const contexto: ContextoRegistro = { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts };
-  const construirRegistro = (inv: (typeof invoices)[number]): string => construirRegistroFactura(inv, contexto);
 
   const registros: string[] = [];
   for (const inv of invoices) {
     try {
-      registros.push(construirRegistro(inv));
+      registros.push(construirRegistro(inv, contexto));
     } catch (e) {
       // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
       // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
@@ -857,7 +858,7 @@ ${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}
  * Lanza `RegistroNoEmitibleError` si la factura no se puede declarar (el llamador decide: la
  * exportación la excluye con su motivo; la cola deja constancia y no encola).
  */
-export function construirRegistroFactura(inv: FacturaParaRegistro, contexto: ContextoRegistro): string {
+function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro): string {
   const { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts } = contexto;
     // SCRUM-665 · el emisor de ESTA factura, congelado si lo tiene. `merchant.taxId!` ya exigía
     // NIF antes de llegar aquí (gate de arriba, sobre el merchant EN VIVO); una factura frigida
@@ -1140,7 +1141,7 @@ export interface ContextoRegistro {
  * SCRUM-1296 · el registro de ALTA de una factura recién sellada, para la cola de remisión.
  *
  * Lee la factura DESPUÉS del sellado —huella, sello y eslabón anterior tal como se persistieron— y
- * la pasa por el MISMO constructor que la exportación (`construirRegistroFactura`). Lo que se guarda
+ * la pasa por el MISMO constructor que la exportación (`construirRegistro`). Lo que se guarda
  * en la cola es este texto, y reenviar es reenviar este texto: nunca se regenera (SCRUM-1127 §④).
  *
  * Sólo se lee el eslabón anterior de ESTA factura, no el ejercicio entero: el constructor sólo
@@ -1170,7 +1171,7 @@ export async function registroParaRemision(invoiceId: number, prismaClient = def
       })
     : null;
 
-  return construirRegistroFactura(inv, {
+  return construirRegistro(inv, {
     zona: zonaDelMerchant(merchant),
     // Mismos campos que la exportación: la ficha viva sólo es el respaldo de las facturas
     // anteriores al escritor del emisor (SCRUM-665); una recién emitida lleva el suyo congelado.

@@ -207,7 +207,8 @@ test('SCRUM-1296 · una factura que la exportación EXCLUYE (cliente sin NIF) qu
 test('SCRUM-1296 · el merchant DEMO sella y NO encola, y no es un fallo (sin constancia)', async () => {
   const d = dobleQueApunta();
   const { sellarTrasEmision } = cargar(d);
-  const r = await sellarTrasEmision({ ...FACTURA, merchantId: 1 }, MERCHANT_ES, d.cliente);
+  const { DEMO_MERCHANT_ID } = requiere(rutaDe('dist/modules/invoicing/domain/emission.service.js'));
+  const r = await sellarTrasEmision({ ...FACTURA, merchantId: DEMO_MERCHANT_ID }, MERCHANT_ES, d.cliente);
   await tic();
   assert.equal(r.estado, 'sellado');
   assert.equal(escriturasEnCola(d.llamadas).length, 0, '🔴 el demo ha encolado: sus facturas irían a la AEAT');

@@ -19,7 +19,7 @@ import { RegistroNoEmitibleError } from '../../fiscal/verifactu/registro.builder
 import { isDemoMerchant } from './emission.service';
 import { registroParaRemision } from './verifactu.service';
 
-export const TIPO_OPERACION_ALTA = 'Alta';
+const TIPO_OPERACION_ALTA = 'Alta';
 
 export type ResultadoEncolado =
   | { encolado: true }

@@ -202,3 +202,103 @@ por esta sesión en Jira. Autoriza extraer `construirRegistro` con sha256 antes 
 skipped. Los 2 eran los de `scrum314`, que F1 cierra.
 Tras F1, rebasada sobre `d65cfaa9`: **9.239 tests · 9.105 pass · 0 fail · 134 skipped**.
 Rebasada después sobre el `origin/main` del ancla, que sólo trajo SCRUM-1106 (docs y su test, disjuntos de esta rama): se corrieron ese test, los de esta rama y los guards de registro, no la tanda entera.
+
+## 9 · Tanda 2 — emitir encola (J1, 30-sep-2026)
+
+**Medido contra:** `origin/main` = `8084f273fe0bc30bfe5b7e893605eb34b56d9bae` · 2026-09-30T21:34:53Z
+A9: comprobación → `tests/scrum1296-procesador-cola.test.mjs`
+
+El fallo que esa línea convierte en comprobación es el de SCRUM-1228: un 302 «sin certificado» se
+trataba como «sin respuesta» y se reintentaba como si fuera la red. El test cuenta las llamadas al
+envío a lo largo de seis vueltas y exige UNA; la mutación que reintroduce aquel defecto lo tumba.
+
+### Las firmas que cubren esta tanda, leídas en su origen por esta sesión
+
+- **§1 de este fichero**: el GO de cablear («que emitir ENCOLE»).
+- **SCRUM-1296, comentario 17641** (Javier, 30-sep-2026: «5-Go»): D1, extraer `construirRegistro`
+  con sha256 antes y después sobre los 7 casos de SCRUM-240.
+- **SCRUM-1296, comentario 17642** (Javier, 30-sep-2026: «1-Firmo»): D4, la acción de auditoría
+  `encolado_fallido` con `meta { numero, motivo: 'excluida' | 'error', errorMensaje,
+  tipoOperacion: 'Alta' }`. Levanta la regla 5 para esa acción y ninguna más.
+- **D2 = X**, del orquestador: el procesador recibe el envío inyectado; no se importa `enviarSobre`.
+
+### Qué se construye
+
+| pieza | dónde |
+|---|---|
+| El constructor del registro, fuera del closure (D1) | `construirRegistro` en `verifactu.service.ts`, con el MISMO nombre que tenía de closure |
+| El registro de alta de UNA factura sellada | `registroParaRemision` (mismo fichero) |
+| Encolar tras sellar, sin lanzar nunca | `src/modules/invoicing/domain/encolarRemision.ts` |
+| La llamada, DESPUÉS del `try` del sellado | `sellarTrasEmision` (`selladoEstado.ts`) |
+| El procesador de un obligado | `src/modules/fiscal/verifactu/sif.procesador.ts` |
+| La acción firmada | `encolado_fallido` en `audit.service.ts` |
+
+**D1, medido.** El cuerpo del closure se MOVIÓ: sha256 del texto igual antes y después, con su
+sangría original porque las plantillas la llevan dentro del XML. Salida de
+`buildVerifactuRegistrosXml` sobre los 7 casos (una, dos, anulación, exclusión, todo excluido,
+rectificativa, sin destinatario): **idéntica en los 7**. Control: `TipoHuella` 01→02 en `dist/`
+cambia 5 de 7; los 2 que devuelven `xml: ''` no llegan al registro, igual que en el control de
+SCRUM-240. El arnés no se queda en el repo; lo permanente son los tests del XML, en verde.
+
+**`registroParaRemision` no tiene el tope de 1.000.** Lee sólo el eslabón anterior de ESA factura,
+no el ejercicio: el constructor sólo consulta `porHuella` por `vfPrevHash`, y `registrosOrdenados`
+sólo lo usa la anulación, que al emitir no existe.
+
+**Las tres condiciones de aceptación:**
+- **① El sellado no depende de la cola.** Encolar va fuera del `try` del sellado: la factura ya es
+  `sellado` antes de esa línea. Test: la escritura en la cola revienta → `sellado`, huella escrita,
+  sin `sellado_fallido` y con UNA constancia `encolado_fallido` (motivo `error`). Y en el
+  procesador: un envío que revienta no toca ningún otro modelo; las filas se quedan `sent` y, pasados
+  `SENT_INTERRUMPIDO_TRAS_MS`, `recuperarEnviadoSinCierre` las devuelve a `pending` con el intento
+  contado.
+- **② Una sola política de reintentos.** El procesador llama a `decidirTrasEnvio` tal cual y aplica
+  lo que devuelve. Test: 302 → `manual_review` con UNA llamada en seis vueltas; control: «sin
+  respuesta» se reintenta exactamente `MAX_INTENTOS` veces.
+- **③ El rojo primero**: el commit del rojo va delante del cableado en esta rama; el doble del test
+  pasó a recordar lo que escribe el sellado (la cola lee la factura ya sellada) y sus aserciones
+  no cambiaron.
+
+**El demo no encola, medido.** `scripts/seed-demo.mjs:228-230` da al demo `country: 'ES'` y NIF, así
+que sin la exclusión SÍ entraría en la cadena y encolaría. Se reconoce con `isDemoMerchant` (el
+criterio que ya usan el PDF y `payCard`), por `invoice.merchantId` y el email. No es un fallo: sin
+constancia. **Por eso el `deleteMany` de la cola en `barridoDemo` (§8, F1) no borra nunca nada**:
+es un conjunto vacío siempre. Si algún día cuenta filas, el demo empezó a encolar.
+
+**Una factura EXCLUIDA** (p. ej. cliente sin NIF con `MODO_SIN_DESTINATARIO = SIN_DICTAMEN`): queda
+sellada, sin fila, y con `encolado_fallido` (motivo `excluida`).
+
+**Interrogado.** Seis mutaciones sobre `dist/`, las seis en rojo: no encolar (4 fallos), encolar
+relanza (2), el demo encola (1), el 302 como red (1), ignorar el `TiempoEsperaEnvio` (2), sin pausa
+por `SIF_ENABLED` (1). Los tres `.js` restaurados, comprobado por sha256.
+
+### Lo que NO está probado, y por qué
+
+- **Que la AEAT acepte nada.** Sin certificado no hay envío; los tests usan un envío inyectado. Sólo
+  un CSV devuelto por la AEAT lo demostraría (SCRUM-1225).
+- **El enganche**: nadie llama al procesador ni a `enviarSobre`. Cuando se haga, el guard de
+  afirmaciones fiscales (SCRUM-1128) verá el llamante, que es su trabajo; con `SIF_ENABLED` en OFF
+  seguirá diciendo «no construido».
+- **El alcance en producción hoy**: `INVOICING_ES_ENABLED` está en OFF y, según midió el orquestador,
+  `AUTO_INVOICE_ON_PAID` no existe en Railway, así que el flag vale `false`. El camino que encola
+  existe; en producción hoy no se recorre solo.
+
+### Lo que queda diciendo otra cosa (avisado al orquestador, no se toca aquí)
+
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md` fila 7: «su destino es una DESCARGA». Desde esta tanda, el
+  mismo constructor alimenta también la cola. Fila 8: «NO EXISTE». El texto es del dueño del documento.
+- La skill `yaqu-verifactu-sif` («NO CONSTRUIDO · FSM `VfSubmission`», «`SIF_ENABLED` no pausa
+  ninguna cola»): derivada del máster (reglas 35 y 36).
+
+**Rojos de guard en la primera tanda completa, los seis míos y arreglados en el código:**
+- `scrum524b` (34 casos): su catálogo ancla las comprobaciones a `dentroDe: 'construirRegistro'`, el
+  nombre del closure. Yo lo había sacado como `construirRegistroFactura` dejando un envoltorio
+  `construirRegistro` de una línea, y el guard dejó de ver lo que vigila. Arreglo: la función extraída
+  se llama `construirRegistro` y el envoltorio desaparece. Los 7 sha256 se re-midieron DESPUÉS de
+  ese cambio: idénticos.
+- `scrum860`: cuatro lecturas del procesador sin `select`; ahora nombran sus columnas.
+- `scrum411`: `construirRegistro` y la constante del tipo de operación eran exports sin llamador
+  fuera de su fichero; dejan de exportarse.
+- `scrum1185`: `procesarObligado` se declara SIN CONSUMIR con su motivo (D2 = X), y
+  `decidirTrasEnvio` y `recuperarEnviadoSinCierre` pasan a `retiradas`: ya las consume el procesador.
+- `scrum409`: el caso del demo usaba el id 1 a mano; ahora importa `DEMO_MERCHANT_ID`.
+- Las seis mutaciones se re-pasaron sobre el `dist/` final: las seis siguen en rojo.

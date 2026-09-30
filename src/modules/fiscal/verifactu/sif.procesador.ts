@@ -80,6 +80,7 @@ export async function procesarObligado(
   // ② interrumpidos
   const colgados = await prisma.vfSubmission.findMany({
     where: { obligadoNif, status: 'sent', lastSentAt: { lt: new Date(ahora.getTime() - SENT_INTERRUMPIDO_TRAS_MS) } },
+    select: { id: true, registroXml: true, tipoOperacion: true, attempts: true },
   });
   for (const f of colgados) {
     const id = idDelRegistro(f.registroXml, f.tipoOperacion);
@@ -88,7 +89,7 @@ export async function procesarObligado(
   }
 
   // ③ flujo de control de la AEAT
-  const flujo = await prisma.vfFlujoObligado.findUnique({ where: { obligadoNif } });
+  const flujo = await prisma.vfFlujoObligado.findUnique({ where: { obligadoNif }, select: { siguienteEnvioDesde: true } });
   if (flujo?.siguienteEnvioDesde && flujo.siguienteEnvioDesde > ahora) {
     return { hecho: 'esperando', hasta: flujo.siguienteEnvioDesde };
   }
@@ -98,13 +99,17 @@ export async function procesarObligado(
     where: { obligadoNif, status: 'pending', OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: ahora } }] },
     orderBy: { id: 'asc' },
     take: MAX_REGISTROS_POR_ENVIO,
+    select: { id: true, merchantId: true, registroXml: true, tipoOperacion: true, attempts: true },
   });
   const enviables = filas
     .map((f: any) => ({ f, id: idDelRegistro(f.registroXml, f.tipoOperacion) }))
     .filter((x: any) => x.id);
   if (enviables.length === 0) return { hecho: 'nada_pendiente' };
 
-  const merchant = await prisma.merchant.findUnique({ where: { id: enviables[0].f.merchantId } });
+  const merchant = await prisma.merchant.findUnique({
+    where: { id: enviables[0].f.merchantId },
+    select: { name: true, legalName: true },
+  });
   const envioId = `vf-${obligadoNif}-${ahora.getTime()}`;
   const cuerpoSoap = construirSobreRegFactu({
     // Quien PRESENTA el lote hoy, como en la exportación: el comercio en vivo.
