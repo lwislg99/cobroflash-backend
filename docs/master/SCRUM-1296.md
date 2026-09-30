@@ -120,7 +120,7 @@ poda, se pierde. Quien retome el ticket lo mira **antes** de escribir el test de
 
 ## 8 · Tanda 1 — la cola entra en el esquema (J1, 30-sep-2026)
 
-**Medido contra:** `origin/main` = `b6243e1c9f22e23b5a48332acc30ef533e55589f` · 2026-09-30T20:52:16Z
+**Medido contra:** `origin/main` = `d65cfaa9a09599656a3a97bfbb26f6ce82ad33e5` · 2026-09-30T21:15:37Z
 A9: comprobación → `tests/scrum1296-esquema-cola.test.mjs`
 
 El fallo que esa línea convierte en comprobación: SCRUM-1127b dejó escrito que los cinco estados
@@ -200,3 +200,4 @@ por esta sesión en Jira. Autoriza extraer `construirRegistro` con sha256 antes 
 
 **La tanda completa**, antes de añadir el paso F1: 9.234 tests · 9.098 pass · 2 fail · 134
 skipped. Los 2 eran los de `scrum314`, que F1 cierra.
+Tras F1 y rebasada sobre el `origin/main` del ancla: **9.239 tests · 9.105 pass · 0 fail · 134 skipped**.
