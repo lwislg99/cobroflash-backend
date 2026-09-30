@@ -38,3 +38,31 @@ línea con la norma (ROF 6.1.d) párrafo segundo 3.º y 6.1.e) y la respuesta qu
 la descripción de este ticket. No se abre pregunta nueva, así que el recuento de 28 y las letras que
 citan las partes 1 y 3 no cambian. La fila B1 de «De dónde sale cada pregunta» las nombra. D5.4 sigue
 fuera y SCRUM-1258 sigue en la parte 3 como dato técnico.
+
+## Vuelta 3 · las cuatro decisiones de Javier (30-sep-2026)
+
+**Medido contra:** `origin/main` = `b6243e1c9f22e23b5a48332acc30ef533e55589f` · 2026-09-30T20:49:10Z
+
+Sesión J5 de relevo, por encargo del orquestador. Antes: el commit `65996e85` de la vuelta 2 no estaba
+«sin empujar»: `git merge-base --is-ancestor 65996e85 origin/main` sale 0, entró con el PR #1944
+(merge `837a9e53`) y la rama remota se borró al mergear.
+
+Javier contestó el 30-sep las cuatro decisiones de la parte 1 del bloque, y el bloque las contradecía
+en seis sitios. Corregidos:
+
+1. Parte 1, tabla de marcas: «ASESOR» · 23-sep, AUTORÍA SIN DECLARAR pasa a **IA · 23-sep** (las
+   escribió una herramienta). Debajo, una línea nueva: ninguna de las 28 tiene hoy la revisión de un
+   profesional (13 IA, 14 sin respuesta, la A3 con la de la AEAT).
+2. Parte 1, «Cuatro decisiones tuyas» pasa a «Las cuatro decisiones, tomadas», con cada respuesta.
+3. Parte 1, filas A3, B6 y E4 de «De dónde sale», y el recuento: 14 · 11 · 2 · 1 = 28, contado por
+   script sobre la parte 2 (28 encabezados, 28 marcas).
+4. Parte 2, la leyenda de marcas: la clase «ASESOR» desaparece y se dice que ninguna pregunta tiene
+   hoy respuesta de un profesional.
+5. Parte 2, B6 y E4: marca IA · 23-sep; la E4 deja de ser condicional y se envía entera.
+6. Parte 3, 1232 Ⓗ.1-4: de «condicional» a **fuera definitivamente** (los 44 justificantes del censo
+   del 10-ago eran de prueba).
+
+Sin cambio: A3 sigue dentro (decisión 3) y las 28 siguen en la parte 2 (decisión 2). Los testigos de
+`PREGUNTAS_ASESOR.md` de la fila de marcas no se han movido.
+
+A9: sin fallo que generalice — la vuelta es aplicar cuatro decisiones escritas a un documento; el recuento se hizo por script, no a ojo.
