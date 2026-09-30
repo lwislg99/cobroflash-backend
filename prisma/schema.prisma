@@ -157,6 +157,8 @@ model Merchant {
   QuoteRequest  QuoteRequest[]
   CustomerEvent CustomerEvent[]
   CustomerSite  CustomerSite[]
+  // SCRUM-1296: los registros de este comercio en la cola de remisión a la AEAT.
+  vfSubmissions VfSubmission[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
@@ -941,6 +943,10 @@ model Invoice {
   // SCRUM-597 (DOC-07): los usuarios de la cuenta asignados a ESTA factura. Virtual, sin columna
   // — y por eso asignar no puede tocar el número, el total ni el PDF (regla 29).
   asignados InvoiceAssignee[]
+
+  // SCRUM-1296: los registros de ESTA factura en la cola de remisión a la AEAT (alta, anulación,
+  // subsanación). Virtual, sin columna en `invoices`.
+  vfSubmissions VfSubmission[]
 
   // El número es único POR MERCHANT (antes era único global: dos merchants con el
   // mismo prefijo "CF" colisionaban; la serie es del emisor, no de la plataforma)
@@ -1758,4 +1764,57 @@ model GatewayEvent {
   @@unique([provider, eventId])
   @@index([provider, processedAt])
   @@map("gateway_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1296 · SIF-1 fase 2 · LA COLA DE REMISIÓN A LA AEAT. El modelo es el de SCRUM-1127 §④,
+// con las tres decisiones del fundador (1127b), y el ALTER ya aplicado en staging y producción
+// (orden A5). Los estados son EXACTAMENTE los de `ESTADOS_VF_SUBMISSION` en `sif.cola.ts`.
+// 🔴 `registroXml` es el registro TAL COMO SE SELLÓ: reenviar es reenviar ese, nunca regenerarlo.
+enum VfSubmissionStatus {
+  pending
+  sent
+  accepted
+  rejected
+  manual_review
+}
+
+model VfSubmission {
+  id             Int                @id @default(autoincrement())
+  merchantId     Int                @map("merchant_id")
+  invoiceId      Int                @map("invoice_id")
+  obligadoNif    String             @map("obligado_nif")
+  tipoOperacion  String             @map("tipo_operacion")
+  registroXml    String             @map("registro_xml")
+  status         VfSubmissionStatus @default(pending)
+  attempts       Int                @default(0)
+  lastError      String?            @map("last_error")
+  nextAttemptAt  DateTime?          @map("next_attempt_at")
+  lastSentAt     DateTime?          @map("last_sent_at")
+  lastEnvioId    String?            @map("last_envio_id")
+  csv            String?
+  estadoRegistro String?            @map("estado_registro")
+  subsanar       Boolean            @default(false)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([status, nextAttemptAt])
+  @@index([obligadoNif, status])
+  @@index([merchantId])
+  @@index([invoiceId])
+  @@map("vf_submissions")
+}
+
+// El `TiempoEsperaEnvio` que impone la AEAT, POR OBLIGADO (NIF), no por comercio (1127b, decisión 1).
+model VfFlujoObligado {
+  obligadoNif         String    @id @map("obligado_nif")
+  tiempoEsperaEnvioS  Int?      @map("tiempo_espera_envio_s")
+  siguienteEnvioDesde DateTime? @map("siguiente_envio_desde")
+  ultimoEnvioId       String?   @map("ultimo_envio_id")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("vf_flujo_obligado")
 }
