@@ -135,17 +135,26 @@ merge, y lo hace el orquestador.
 
 # APÉNDICE · 30-sep-2026 · Una afirmación mía que era FALSA
 
-**Medido contra:** `origin/main` = `7042852f5f400b6719925c5bdbfbe9a403260aef` · 2026-09-30T23:29:22+01:00
+**Medido contra:** `origin/main` = `79b8513da48bdc8cb1de0dc209bb6dfae9a89db3` · 2026-09-30T23:37:15+01:00
 (orquestador del equipo de Javier, `cobroflash-backend-47`)
 
 A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: lo que falló es una afirmación en PROSA sobre el estado del código, y el guard que la habría desmentido (`tests/scrum1234-inter-autoalojada.test.mjs`) ya existía y estaba en verde — lo que falló fue no consultarlo. Un guard nuevo sobre esta cadena cazaría el caso y no la clase.
 
-⚠️ **Re-anclado.** Este apéndice se midió primero contra `d65cfaa9` y `main` se movió mientras se
-corregía, así que sus tres afirmaciones se volvieron a medir contra el sha de arriba: `0` aciertos de
+⚠️ **Re-anclado DOS veces, y la segunda por un defecto que merece quedar escrito.** Primero contra
+`d65cfaa9`; luego escribí `7042852f`, que era lo que `git rev-parse origin/main` había dicho **setenta
+minutos antes**; y la base real de la rama era otra. Ancla definitiva, la de arriba.
+
+🔴 **Por qué se movió sin que yo lo tocara: los siete worktrees de esta máquina comparten UN solo
+`.git`.** `refs/remotes/origin/main` es de todos, así que cuando otra sesión hace `fetch`, mi
+`origin/main` avanza **por debajo**, sin que yo ejecute nada. Copiar el sha de `git rev-parse` no
+basta: hay que copiarlo **en el momento de anclar**, y comprobar que coincide con la base de la rama
+(`git rev-parse HEAD~1`, o el merge que la trae). Aquí no coincidía.
+
+Las tres afirmaciones se volvieron a medir contra el sha definitivo: `0` aciertos de
 `fonts.googleapis.com`/`fonts.gstatic.com` en `public/` y en `src/`, con control positivo de que la
-misma maquinaria SÍ encuentra `fonts/inter` donde debe, y el guard de SCRUM-1234 presente en `main`.
-El sha viejo se dice en vez de borrarse: un ancla que cambia sin explicar por qué es una fecha nueva
-sobre una medición vieja.
+misma maquinaria SÍ encuentra `fonts/inter` en 8 ficheros de `public/` —de modo que el cero no es un
+`grep` ciego—, y el guard de SCRUM-1234 presente en `main`. Los shas viejos se dicen en vez de
+borrarse: un ancla que cambia sin explicar por qué es una fecha nueva sobre una medición vieja.
 
 ## Qué dije, y qué es verdad
 
