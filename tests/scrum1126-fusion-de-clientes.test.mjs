@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
-import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { constaAprobado, aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const espera = () => new Promise((r) => setTimeout(r, 30));
@@ -145,8 +145,9 @@ test('SCRUM-1126 · 🔴 elegir pide la previsualización ANTES, y sin «Fusiona
     'Revisa la fusión antes de confirmar',
     'Se queda: Ana Fusión 1126 (sus datos no cambian)',
     'Desaparece: ANA FUSION 1126',
-    'Todo lo de ANA FUSION 1126 pasa a Ana Fusión 1126: presupuestos, solicitudes de presupuesto, trabajos, notas, cobros, partes de trabajo, mensajes de WhatsApp, correos y mantenimientos.',
-    'Contados: 2 presupuestos · 1 trabajos · 3 notas',
+    // 30-sep-2026: firmas 17647 (direcciones de obra) y 17580 (singular: «1 trabajo», no «1 trabajos»).
+    'Todo lo de ANA FUSION 1126 pasa a Ana Fusión 1126: presupuestos, solicitudes de presupuesto, trabajos, direcciones de obra, notas, cobros, partes de trabajo, mensajes de WhatsApp, correos y mantenimientos.',
+    'Contados: 2 presupuestos · 1 trabajo · 3 notas',
     'Las personas de contacto de ANA FUSION 1126 se quedan sin empresa.',
     'Etiquetas tras fusionar: vip, obra',
     'Esta acción no se puede deshacer. ANA FUSION 1126 dejará de existir.',
@@ -296,4 +297,75 @@ test('SCRUM-1126 · textos: cada uno consta firmado en SCRUM-1126, y los reusado
   const tipo = dominio.match(/export type MotivoRechazoFusion = ([^;]+);/);
   assert.ok(tipo, 'CIEGO: no encuentro MotivoRechazoFusion en el dominio');
   assert.deepEqual([...tipo[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort(), Object.keys(T.MOTIVOS).sort());
+});
+
+// ── 30-sep-2026 · los dos textos firmados después de la entrega ──────────────────────────────
+// `todoPasa` nombra las direcciones de obra (firma del FUNDADOR, c.17647: SCRUM-1291 hizo que la
+// fusión las moviera) y el singular de `contados` (c.17580). Los literales se LEEN de su registro
+// de aprobación, no se teclean aquí: si alguien reescribe la pantalla —aunque sea para mejorarla—
+// deja de coincidir y cae (patrón de scrum1154).
+
+/** El registro de aprobación de SCRUM-1126 cuyo nombre lleva `ranura`, y que cuenta como aprobado. */
+function registro1126(ranura) {
+  const r = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1126' && a.ranura === ranura);
+  assert.ok(r, `🔴 no existe el registro docs/microcopy/…-SCRUM-1126-${ranura}.md`);
+  assert.equal(r.aprobada, true, `🔴 el registro de ${ranura} no cuenta como aprobado (firmante: ${r.firmante})`);
+  return r;
+}
+const TODO_PASA_FIRMADO = () => {
+  const r = registro1126('fusion-direcciones-de-obra');
+  assert.equal(r.firmante, 'fundador', '🔴 la firma de 17647 es del fundador');
+  const l = r.literales.filter((x) => x.startsWith('Todo lo de {fusionado} pasa a {principal}:'));
+  assert.equal(l.length, 1, `🔴 el registro de 17647 debe tener UN literal de todoPasa, tiene ${l.length}`);
+  return l[0];
+};
+const rellenar = (t, fusionado, principal) => t.split('{fusionado}').join(fusionado).split('{principal}').join(principal);
+
+test('SCRUM-1126 · 🔴 «Todo lo de… pasa a…» es, carácter a carácter, el firmado el 30-sep (nombra las direcciones de obra)', async () => {
+  const firmado = TODO_PASA_FIRMADO();
+  assert.ok(firmado.includes('direcciones de obra'), 'el literal leído es el de 17647, no el de 17575');
+  const { F: FC } = F();
+  assert.equal(FC.todoPasa('{fusionado}', '{principal}'), firmado, '🔴 FUSION_CLIENTE.todoPasa no es el literal firmado');
+
+  // Y en la pantalla montada, con los nombres de verdad.
+  const f = await montarFicha();
+  await f.abrir();
+  await f.elegir(ANA_DUP.id);
+  const texto = f.visible(f.modal());
+  // CONTROL: el detector ve un texto firmado que SÍ está, para que su «no está» valga algo.
+  assert.ok(texto.includes(FC.seQueda(ANA.name)), 'CIEGO: la previsualización no pinta ni «Se queda»');
+  assert.ok(texto.includes(rellenar(firmado, ANA_DUP.name, ANA.name)), '🔴 la previsualización no pinta el texto firmado de 17647');
+  // Y el de 17575, que sustituye, ya no se pinta.
+  const viejo = registro1126('fusion-de-clientes').literales.find((x) => x.startsWith('Todo lo de {fusionado}'));
+  assert.ok(viejo && !viejo.includes('direcciones de obra'), 'CIEGO: no encuentro el todoPasa de 17575');
+  assert.ok(!texto.includes(rellenar(viejo, ANA_DUP.name, ANA.name)), '🔴 se sigue pintando el todoPasa de 17575, sin direcciones de obra');
+});
+
+test('SCRUM-1126 · 🔴 «Contados» en singular con UNO y en plural con 0 y con 2+, POR ELEMENTO (c.17580)', async () => {
+  const lits = registro1126('fusion-singular-contados').literales;
+  const [p1, t1, n1, pN, tN, nN] = ['1 presupuesto', '1 trabajo', '1 nota', '{n} presupuestos', '{n} trabajos', '{n} notas']
+    .map((x) => { assert.ok(lits.includes(x), `🔴 el registro de 17580 no firma «${x}»`); return x; });
+  // El molde de la línea, del registro de 17575: «Contados: » y « · » no se teclean aquí.
+  const molde = registro1126('fusion-de-clientes').literales.find((x) => x.startsWith('Contados:'));
+  assert.equal(molde, ['Contados: ' + pN, tN, nN].join(' · '), 'CIEGO: el molde de 17575 no es el esperado');
+  const linea = (a, b, c) => 'Contados: ' + [a, b, c].join(' · ');
+  const n = (t, k) => t.replace('{n}', String(k));
+
+  const { F: FC } = F();
+  const casos = [
+    [[1, 1, 1], linea(p1, t1, n1)],                  // singular en los tres
+    [[2, 2, 2], linea(n(pN, 2), n(tN, 2), n(nN, 2))], // plural en los tres: poner SIEMPRE el singular cae aquí
+    [[0, 0, 0], linea(n(pN, 0), n(tN, 0), n(nN, 0))], // con 0, plural
+    [[1, 4, 0], linea(p1, n(tN, 4), n(nN, 0))],       // por elemento, no por la línea
+    [[3, 1, 1], linea(n(pN, 3), t1, n1)],             // y no mirando sólo el primero
+  ];
+  for (const [[a, b, c], esperado] of casos) assert.equal(FC.contados(a, b, c), esperado, `🔴 contados(${a}, ${b}, ${c})`);
+
+  // Y pintado: una previsualización con 1 presupuesto, 4 trabajos y 1 nota.
+  const f = await montarFicha({ previa: () => previaOk(ANA_DUP, { quotesAMover: 1, jobsAMover: 4, notasAMover: 1 }) });
+  await f.abrir();
+  await f.elegir(ANA_DUP.id);
+  const texto = f.visible(f.modal());
+  assert.ok(texto.includes(linea(p1, n(tN, 4), n1)), `🔴 la previsualización no dice «${linea(p1, n(tN, 4), n1)}»`);
+  assert.ok(!texto.includes('1 presupuestos'), '🔴 la pantalla sigue diciendo «1 presupuestos»');
 });
