@@ -169,8 +169,11 @@ router.get('/:token', async (req, res) => {
     !!invoice.pdfUrl &&
     !invoice.pdfUrl.startsWith('PENDING');
 
+  // SCRUM-1312 · el formulario hace POST a `/dev/email-invoice`, que en producción no se monta: el
+  //    CLIENTE FINAL veía un botón que daba 404. Misma condición que `saved` (807) y `sent` (1309);
+  //    el texto no cambia. Decisión del fundador: la (a), no pintarlo (Jira, comentario 17667).
   const emailBlock =
-    hasRealPdf && ch.customer?.email
+    hasRealPdf && ch.customer?.email && config.NODE_ENV !== 'production'
       ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" class="email-form">
            <button class="btn-email">Enviar ${docLabel} por email</button>
          </form>
