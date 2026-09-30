@@ -138,8 +138,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-1057: fusionar dos clientes duplicados. Necesita banco porque vigila las CUATRO tablas
   // con FK real a `customers` (Quote, Charge, QuoteRequest, CustomerEvent) moviéndose antes del
   // `DELETE` —si no, Postgres lo rechazaría—, las cinco sin FK, el rechazo por factura emitida,
-  // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa.
-  'scrum1057b-fusion-clientes-postgres.test.mjs': 4,
+  // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa. SCRUM-1291 sube de
+  // 4 a 5: las direcciones de obra (`customer_sites`, FK RESTRICT) — el defecto era que el MOTOR
+  // rechazaba el `DELETE`, y eso sólo lo prueba un Postgres de verdad.
+  'scrum1057b-fusion-clientes-postgres.test.mjs': 5,
   // SCRUM-1103: la cadena entera de la retención practicada (alta → se lee de vuelta con su
   // precisión Decimal → la LISTA la trae → `updateExpense` corrige sin borrar) y su control
   // negativo. Necesita banco porque lo que prueba es que el ALTER ya aplicado y el dominio

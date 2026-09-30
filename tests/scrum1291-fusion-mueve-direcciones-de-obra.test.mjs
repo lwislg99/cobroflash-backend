@@ -136,11 +136,13 @@ function sembrar(tablasConFila, { facturaDe = null, sitioDelPrincipal = false } 
     { id: 10, merchantId: M, name: 'Ana Principal', taxId: null, tags: [], companyId: null },
     { id: 20, merchantId: M, name: 'Ana Duplicada', taxId: null, tags: [], companyId: null },
     { id: 30, merchantId: OTRO_M, name: 'De otro merchant', taxId: null, tags: [], companyId: null },
+    { id: 40, merchantId: M, name: 'Tercero del mismo merchant', taxId: null, tags: [], companyId: null },
   );
   let id = 1;
   for (const d of tablasConFila) t[d].push({ id: id++, merchantId: M, customerId: 20, name: 'Piso 3ºB', address: 'C/ Mayor 1' });
   if (sitioDelPrincipal) t.customerSite.push({ id: id++, merchantId: M, customerId: 10, name: 'Piso 3ºB', address: 'C/ Mayor 1' });
-  // Una fila de OTRO merchant: la fusión no puede tocarla.
+  // Una fila de un TERCER cliente del mismo merchant y otra de OTRO merchant: la fusión no puede tocarlas.
+  t.customerSite.push({ id: id++, merchantId: M, customerId: 40, name: 'Del tercero', address: null });
   t.customerSite.push({ id: id++, merchantId: OTRO_M, customerId: 30, name: 'Ajena', address: null });
   if (facturaDe) t.invoice.push({ id: id++, merchantId: M, customerId: facturaDe });
   return t;
@@ -177,7 +179,7 @@ test('SCRUM-1291 · ① CONTROL POSITIVO: sin direcciones de obra, la fusión mu
   const t = banco.leer();
   for (const d of SIN_SITIOS) {
     assert.ok(t[d].length >= 1, `🔴 la fila sembrada de ${d} desapareció`);
-    assert.ok(t[d].filter((f) => f.merchantId === M).every((f) => f.customerId === 10), `🔴 ${d} se quedó apuntando al fusionado (borrado)`);
+    assert.ok(t[d].filter((f) => f.merchantId === M && f.customerId !== 40).every((f) => f.customerId === 10), `🔴 ${d} se quedó apuntando al fusionado (borrado)`);
   }
   assert.equal(t.customer.some((c) => c.id === 20), false, '🔴 el fusionado sigue existiendo');
   assert.ok(t.customerEvent.some((e) => e.type === 'fusion' && e.customerId === 10), '🔴 no queda el apunte de la fusión');
@@ -188,7 +190,7 @@ test('SCRUM-1291 · ② 🔴 con UNA dirección de obra, la fusión termina y la
   const r = await fusionarPorLaRuta(banco);
   assert.equal(r.status, 200, `🔴 fusionar un cliente con dirección de obra responde ${r.status} ${JSON.stringify(r.cuerpo)}`);
   const t = banco.leer();
-  assert.deepEqual(t.customerSite.filter((s) => s.merchantId === M).map((s) => s.customerId), [10], '🔴 la dirección de obra no pasó al principal');
+  assert.deepEqual(t.customerSite.filter((s) => s.merchantId === M).map((s) => s.customerId).sort(), [10, 40], '🔴 la dirección de obra no pasó al principal, o se llevó la de un tercero');
   assert.equal(t.customer.some((c) => c.id === 20), false, '🔴 el fusionado sigue existiendo');
   assert.deepEqual(t.customerSite.filter((s) => s.merchantId === OTRO_M).map((s) => s.customerId), [30], '🔴 se tocó la dirección de OTRO merchant');
 });
@@ -201,7 +203,7 @@ test('SCRUM-1291 · ③ la MISMA dirección en los dos clientes: no hay unicidad
   const banco = montarBanco(sembrar(A_MOVER, { sitioDelPrincipal: true }));
   const r = await fusionarPorLaRuta(banco);
   assert.equal(r.status, 200, `🔴 ${r.status} ${JSON.stringify(r.cuerpo)}`);
-  const sitios = banco.leer().customerSite.filter((s) => s.merchantId === M);
+  const sitios = banco.leer().customerSite.filter((s) => s.merchantId === M && s.customerId !== 40);
   assert.equal(sitios.length, 2, '🔴 se perdió una dirección de obra');
   assert.ok(sitios.every((s) => s.customerId === 10));
 });
