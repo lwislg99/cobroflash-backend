@@ -54,7 +54,7 @@ página —aunque sea para mejorarlo— deja de coincidir con lo firmado y el gu
 regla 39 convertida en comprobación, y además hace imposible que el test y la firma se separen sin
 que nadie lo note.
 
-🔴 **Y `fonts.googleapis.com` aparece en 7 de las 9 páginas de `public/` y NO es esto.** Un guard
+🔴 **Y `fonts.googleapis.com` PARECE Google sin serlo.** Un guard
 que buscara «google» daría verde por el motivo equivocado. Hay un caso dedicado que lo demuestra: se
 le da una página **con** las fuentes cargadas y **sin** la fila, y tiene que decir que no está.
 
@@ -121,9 +121,7 @@ puesta en producción: los documentos dicen que sí, **nadie lo ha mirado**.
 
 ## 6 · Dos huecos del §5 que piden ticket propio
 
-- **Google Fonts** se carga en 7 de 9 páginas de `public/` y en 9 superficies servidas desde `src/`,
-  incluidas las que ve el **cliente final**; cada visita manda su IP a Google y el §5 no lo dice.
-  *(`privacidad.html` no carga fuentes de Google: por eso el guard puede probar ese caso a mano.)*
+- ~~**Google Fonts**~~ — **CORREGIDO el 30-sep: no es un hueco.** Ver el apéndice del final.
 - **Cloudflare** ve todo el tráfico de `yaqu.app` y reescribe el HTML servido. No figura en el §5.
 
 Los dos los midió J4 en el comentario 17317. **No se arreglan «de paso»** (A7).
@@ -132,3 +130,54 @@ Los dos los midió J4 en el comentario 17317. **No se arreglan «de paso»** (A7
 
 ① firma ✅ · ② aplicarlo ✅ (este PR) · ③ **verificarlo en lo que sirve `yaqu.app`** ← después del
 merge, y lo hace el orquestador.
+
+---
+
+# APÉNDICE · 30-sep-2026 · Una afirmación mía que era FALSA
+
+**Medido contra:** `origin/main` = `d65cfaa9a09599656a3a97bfbb26f6ce82ad33e5` · 2026-09-30T22:15:42+01:00
+(orquestador del equipo de Javier, `cobroflash-backend-47`)
+
+## Qué dije, y qué es verdad
+
+Escribí en este registro, en el de microcopy y en el comentario de cierre del ticket que **Google
+Fonts era un hueco abierto del §5**: que `fonts.googleapis.com` se cargaba «en 7 de las 9 páginas de
+`public/` y en 9 superficies servidas desde `src/`», y que cada visita mandaba la IP del cliente
+final a Google sin que la política lo dijera.
+
+🔴 **Era falso, y llevaba dos días siéndolo.** Lo midió J5:
+
+- `fonts.googleapis.com` y `fonts.gstatic.com` salen **0 veces** en `public/` y en `src/`.
+- **Inter se sirve del propio dominio**: `public/fonts/` con sus 7 `.woff2` y su `inter.css`.
+- Lo cerró **SCRUM-1234** el 28-sep (PR #1908, merge `a3c0be3e`): «fuera `fonts.googleapis.com` y
+  `fonts.gstatic.com` de las 16 superficies, 9 del cliente final».
+- **Hay un guard que impide que vuelva**: `tests/scrum1234-inter-autoalojada.test.mjs`, que además
+  comprueba que las 16 superficies piden `/fonts/inter.css`.
+- Y verificado en **producción**: `/`, `/login.html`, `/register.html`, `/precios`, `/privacidad`,
+  `/terminos` y `/dashboard/` dan `google = 0` y cargan `/fonts/inter`.
+
+## De dónde venía el dato, y por qué eso no me excusa
+
+De la medición de J4 en el comentario 17317 de este ticket, del **28-sep**. Era cierta **cuando se
+tomó** y dejó de serlo ese mismo día, cuando entró SCRUM-1234.
+
+**Yo la repetí dos días después sin volver a medirla**, en tres sitios, uno de ellos un registro de
+aprobación de texto legal. Es la misma forma que ya tengo apuntada: *una avería declarada como
+corregida se barre en el presente*. La heredé como cierta porque venía escrita.
+
+## Y otra premisa mía, también falsa
+
+Escribí que `privacidad.html` «no carga fuentes de Google, por eso el guard puede probar ese caso a
+mano». **Falso en las dos mitades**: sí las cargaba —está en la lista de las 16 de SCRUM-1234— y hoy
+no las carga porque 1234 se las quitó. Y el control del guard **no depende de eso**: inyecta el texto
+`fonts.googleapis.com` a mano en el §5 para comprobar que no lo cuenta como encargado. El caso sigue
+siendo bueno; mi explicación de por qué era mala.
+
+## Qué queda, de verdad
+
+El **único** hueco abierto del §5 sigue siendo **Cloudflare**, y no es una impresión: su literal
+**L3 está firmado** desde el 29-sep (SCRUM-1196, comentario 17453) y **sin publicar**.
+
+⚠️ Y una pregunta que J5 deja bien planteada y que decide el fundador: **si el §5 debe decir algo
+sobre las fuentes ahora que ya no hay ningún tercero a quien nombrar.** Su lectura, y la comparto:
+no, porque una política lista a quien **recibe** datos y aquí ya no los recibe nadie.

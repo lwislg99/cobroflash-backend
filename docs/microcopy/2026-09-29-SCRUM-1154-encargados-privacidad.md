@@ -73,8 +73,10 @@ Tampoco se ha comprobado si `GEMINI_API_KEY` está puesta en producción: los do
 
 ## Dos huecos que este ticket NO toca, y piden ticket propio
 
-- **Google Fonts.** `fonts.googleapis.com` se carga en 7 de las 9 páginas de `public/` y en 9
-  superficies servidas desde `src/`, incluidas las que ve el **cliente final**. Cada visita manda su
-  IP a Google y el §5 no lo menciona. *(No está en `privacidad.html`, que no carga fuentes de Google.)*
+- ~~**Google Fonts.**~~ **CORREGIDO el 30-sep: este hueco NO existe.** Lo cerró **SCRUM-1234** el
+  28-sep: `fonts.googleapis.com` y `fonts.gstatic.com` salen **0 veces** de `public/` y de `src/`,
+  Inter se sirve del propio dominio (`public/fonts/`) y hay un guard que impide que vuelva
+  (`tests/scrum1234-inter-autoalojada.test.mjs`). Verificado además en `yaqu.app`. Lo midió J5; yo
+  lo había dado por abierto sin comprobarlo.
 - **Cloudflare.** `yaqu.app` va detrás de Cloudflare, que ve todo el tráfico y reescribe el HTML
   servido. No figura en el §5.
