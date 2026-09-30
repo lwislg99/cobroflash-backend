@@ -86,3 +86,70 @@ del resumen de WebFetch (`docs/master/SCRUM-1039.md` §SCRUM-1039c). Con esa evi
 * El resto de Q-C2 (las tres condiciones acumulativas del ISP, las citas ⚠ de los arts.
   20.Uno.22º.B LIVA y 24 *quater* RIVA) sigue exactamente igual: esto solo cierra la leyenda de la
   factura, no el resto de la respuesta.
+
+---
+
+## Apéndice 30-sep-2026 · las respuestas de IA del 23-sep dejan de presentarse como del asesor
+
+**Medido contra:** `origin/main` = `b6243e1c9f22e23b5a48332acc30ef533e55589f` · 2026-09-30T21:03:19Z (J4, equipo de Javier)
+
+A9: comprobación → `tests/scrum1106-respuestas-ia-no-son-del-asesor.test.mjs`
+
+Esta entrada es la que volcó el lote como «respuesta del asesor»; la corrección vive aquí, con ella.
+
+**Encargo:** orquestador del equipo de Javier (`cobroflash-backend-47`), 30-sep-2026, a partir de la
+tanda 2 del censo de J4. **Origen de la decisión:** SCRUM-1261, comentario 17638, decisión ① del
+fundador: «Las escribió una herramienta.»
+
+### Qué pasaba
+
+En el mapa de `docs/legal/ENVIO_ASESOR_2026-09-28.md`, la pregunta **E4** es «Q-C1 a Q-C8» y **B6**
+es QC6. Por eso la decisión ① no afecta a dos respuestas, sino a todo el lote del 23-sep. Pero dos
+documentos de `main` lo seguían presentando como dictamen:
+
+- `docs/legal/PREGUNTAS_ASESOR.md`: Q-C1 y Q-C8 «✅ RESPONDIDA por el asesor fiscal (23-sep-2026)»;
+  Q-C2 a Q-C5 «✅ RESPONDIDA (23-sep-2026)»; Q-C7 «✅ RESUELTA (23-sep-2026)», las tres con «Textual:»
+  de la misma herramienta.
+- `docs/producto/CONTABILIDAD.md`: las notas v0.11 y v0.12 y las filas Q-C1 a Q-C5, Q-C7 y Q-C8 de §4.
+
+Quien leyera §4 para construir 1051, 1052, 1053, 1054 o 1073 lo hacía sobre una respuesta de IA con
+aspecto de dictamen: el alcance de 1051 «se estrechó MUY» por Q-C2, y a 1053 se le formuló una
+pregunta al fundador sobre la premisa de Q-C5 («la retención en factura emitida es CERO»).
+
+El PR #2007 (J5) sólo toca `ENVIO_ASESOR_2026-09-28.md` y `SCRUM-1261.md`: estos dos se quedaban fuera.
+
+### Qué cambia
+
+- Las siete entradas del lote (Q-C1 a Q-C5, Q-C7, Q-C8), en los dos documentos, pierden el tachado y
+  el «RESPONDIDA/RESUELTA» y llevan la marca «RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL
+  (SCRUM-1261, c.17638)». El contenido de cada respuesta NO se toca: se envía al asesor tal cual
+  (decisión ②).
+- Q-C5 dejaba escrito que «sustituye la parcial del 22-sep». La parcial del 22-sep es por cita (RIRPF
+  art. 95, comprobado por script), así que ahora dice que se suma a ella, no que la sustituye.
+- `PREGUNTAS_ASESOR.md` lleva, en la última línea de la cabecera de la sección Q-C, una nota que dice
+  que «el asesor» y «Textual:» de esas entradas son la herramienta.
+- Las notas v0.11 y v0.12 de `CONTABILIDAD.md` llevan una marca en línea: el historial no se reescribe.
+
+**Lo que NO cambia, a propósito:** Q-C9 y la parcial de Q-C5 del 22-sep («RESPONDIDA por cita») y la
+leyenda de Q-C2 comprobada en §3 de `CONTABILIDAD.md` conservan su marca: se apoyan en el BOE cotejado
+por script, no en el lote. Q-C6 no tenía respuesta. Los registros históricos de `docs/master/`
+(SCRUM-1104, 1106, 1039…) no se tocan: cuentan lo que se creyó entonces.
+
+**Número de líneas intacto en los dos ficheros** (1.411 y 226): todo va en el mismo sitio. Las
+coordenadas que otros documentos citan (`PREGUNTAS_ASESOR.md:848` con testigo `Q-C1.`, `:978` con
+`Q-C8.`, los `CONTABILIDAD.md:1xx` del barrido de SCRUM-1259) siguen apuntando a lo mismo.
+
+### La comprobación, en las dos mitades
+
+- **Rojo antes:** con los dos documentos de `origin/main` (`git show`), el test cae en 3 de 6: las
+  siete del lote en cada documento y la atribución al asesor. La autoprueba y los dos controles de
+  Q-C9 siguen en verde.
+- **Verde después:** 6 de 6.
+- **Mutación del control:** si Q-C9 de `CONTABILIDAD.md` se marca también como IA, cae su control
+  («borraría una fuente real»). Restaurado y comprobado por sha256.
+
+### Límite declarado
+
+El test no puede saber quién escribe una respuesta futura. Lo que fija es este lote, y que nadie vuelva
+a atribuir «al asesor» algo fechado el 23-sep-2026 en `docs/legal/` o `docs/producto/`. Cuando conteste
+un profesional de verdad, su respuesta llevará su propia fecha y su nombre.
