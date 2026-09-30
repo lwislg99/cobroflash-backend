@@ -205,7 +205,7 @@ Rebasada después sobre el `origin/main` del ancla, que sólo trajo SCRUM-1106 (
 
 ## 9 · Tanda 2 — emitir encola (J1, 30-sep-2026)
 
-**Medido contra:** `origin/main` = `8084f273fe0bc30bfe5b7e893605eb34b56d9bae` · 2026-09-30T21:34:53Z
+**Medido contra:** `origin/main` = `0e3b2d66d0ba92a3d0af41f01a2180644320077c` · 2026-09-30T21:49:05Z
 A9: comprobación → `tests/scrum1296-procesador-cola.test.mjs`
 
 El fallo que esa línea convierte en comprobación es el de SCRUM-1228: un 302 «sin certificado» se
@@ -302,3 +302,6 @@ por `SIF_ENABLED` (1). Los tres `.js` restaurados, comprobado por sha256.
   `decidirTrasEnvio` y `recuperarEnviadoSinCierre` pasan a `retiradas`: ya las consume el procesador.
 - `scrum409`: el caso del demo usaba el id 1 a mano; ahora importa `DEMO_MERCHANT_ID`.
 - Las seis mutaciones se re-pasaron sobre el `dist/` final: las seis siguen en rojo.
+- ⚠️ **Lo que `scrum524b` mide es el NOMBRE `construirRegistro`, no el comportamiento, y es su diseño.** Aquí sirvió: el rastro del constructor no se perdió. Pero cualquier refactor que lo renombre da decenas de rojos aunque el código haga lo mismo. Si debe medir otra cosa lo decide su dueño (aviso A7 al orquestador); no se toca en este ticket.
+
+**La tanda completa**, sobre el `origin/main` del ancla y con todo lo anterior: **9.281 tests · 9.146 pass · 0 fail · 135 skipped** (ningún salto es de esta rama).
