@@ -206,6 +206,45 @@ export async function borrarMerchant(
   const borradas: Record<string, number> = {};
   const errores: Array<{ modelo: string; error: string }> = [];
 
+  // SCRUM-1307 · PRIMERO SE PREGUNTA, Y CON ENVÍOS A LA AEAT NO SE TOCA NADA.
+  // Firma del fundador (Jira SCRUM-1307, comentario 17664, 1-oct-2026, «2-Firmo»), opción (a).
+  // La decisión 3 de SCRUM-1127b dice que un comercio con envíos no se borra, y el RESTRICT de
+  // `vfSubmission` solo lo cumplía para la fila de `invoice` y la del merchant. Medido en un
+  // Postgres desechable: el bucle seguía tras el fallo de `invoice`, `charge` y `quote` caían, y
+  // como `invoices.charge_id` / `invoices."quoteId"` son SET NULL (también en dev, staging y
+  // producción), la factura PRESENTADA se quedaba sin enlace a su cobro y a su presupuesto
+  // (regla 29), con `auditLog` —el registro fiscal— ya borrado.
+  //
+  // La negativa NO es un estado nuevo: devuelve la misma forma. Se distingue de «no había nada que
+  // borrar» en que `borradas` queda VACÍO (no se recorrió ningún modelo; un recorrido apunta cada
+  // uno, aunque sea con 0) y en que `errores` nombra `vfSubmission`.
+  //
+  // Y si la comprobación no se puede hacer, se niega igual: una pregunta que falla no es un permiso.
+  let envios: number;
+  try {
+    envios = await prisma.vfSubmission.count({ where: { merchantId } });
+  } catch (e: any) {
+    return {
+      ok: false,
+      borradas: {},
+      errores: [{
+        modelo: 'vfSubmission',
+        error: `NO SE HA BORRADO NADA: no se pudo comprobar si hay envíos a la AEAT (${e?.message || String(e)})`,
+      }],
+    };
+  }
+  if (envios > 0) {
+    return {
+      ok: false,
+      borradas: {},
+      errores: [{
+        modelo: 'vfSubmission',
+        error: `NO SE HA BORRADO NADA: el comercio tiene envíos a la AEAT (${envios} en la cola), y un comercio ` +
+          'con envíos no se borra (SCRUM-1127b, decisión 3; SCRUM-1307)',
+      }],
+    };
+  }
+
   const cuenta = async (clave: string, fn: () => Promise<{ count: number }>) => {
     try {
       const r = await fn();
