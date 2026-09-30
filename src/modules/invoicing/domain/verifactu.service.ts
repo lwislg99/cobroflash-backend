@@ -10,6 +10,7 @@
  */
 import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
+import type { Prisma } from '@prisma/client';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { declarabilidadDe } from './tipoDocumento'; // SCRUM-413
@@ -761,7 +762,103 @@ export async function buildVerifactuRegistrosXml(
   // registro fiscal sería peor que el fallo original.
   const excluidos: Array<{ number: string; motivo: string }> = [];
 
-  const construirRegistro = (inv: (typeof invoices)[number]): string => {
+  // SCRUM-1296 · D1 (GO del fundador, SCRUM-1296 comentario 17641): el constructor del registro
+  // vive FUERA de esta función, en `construirRegistroFactura`, para que la cola de remisión encole
+  // EXACTAMENTE el mismo registro que esta exportación declara. Un solo constructor (SCRUM-209/240).
+  const contexto: ContextoRegistro = { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts };
+  const construirRegistro = (inv: (typeof invoices)[number]): string => construirRegistroFactura(inv, contexto);
+
+  const registros: string[] = [];
+  for (const inv of invoices) {
+    try {
+      registros.push(construirRegistro(inv));
+    } catch (e) {
+      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
+      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
+      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
+      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
+      if (e instanceof RegistroNoEmitibleError) {
+        excluidos.push({ number: inv.number, motivo: e.motivo });
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
+  // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
+  // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
+  // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
+  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
+  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
+  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
+  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
+  // enseña en una inspección — que es justo donde tiene que estar.
+  const parteExclusiones = excluidos.length === 0 ? '' : `
+  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
+       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
+       numero y su motivo para que se corrijan y se vuelva a exportar.
+${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
+  -->`;
+
+  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
+  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
+  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
+  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
+  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
+  // particulares, o solo rectificativas, cae aquí entero.
+  //
+  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
+  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
+  // entregarlo; entregarlo en silencio, peor todavía.
+  if (registros.length === 0) {
+    return { xml: '', count: 0, excluidos };
+  }
+
+  // SCRUM-240: el sobre lo arma UN solo sitio del proyecto (`registro.builder.ts`), igual que
+  // el desglose desde SCRUM-209. Aquí estaba escrito a mano un segundo constructor que producía
+  // el MISMO contenido línea a línea que aquél: solo cambiaban la declaración XML, la sangría y
+  // el salto final. Ahora eso es presentación —los tres parámetros de abajo— y el contenido no
+  // se duplica.
+  //
+  // LA SALIDA DE ESTA RUTA NO CAMBIÓ NI UN BYTE, y se comprobó ejecutando: sha256 de la salida
+  // ANTES y DESPUÉS sobre siete casos (una factura, dos, con anulación, con exclusión, todo
+  // excluido, rectificativa, sin destinatario) — idénticos los siete, con el control de que la
+  // comparación SÍ veía un cambio deliberado. Esa comprobación fue del PR, **no** es un test
+  // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
+  // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
+  const xml = construirSobreRegFactu({
+    obligado: { nombreRazon: nombreEmisorDelSobre, nif: merchant.taxId },
+    registrosFacturaXml: registros,
+    comentario: parteExclusiones,
+    declaracionXml: true,
+    saltoFinal: true,
+  });
+
+  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
+  // un pack con exclusiones informaría un número que el fichero no respalda.
+  return { xml, count: registros.length, excluidos };
+}
+
+/**
+ * SCRUM-1296 · D1 — el registro de facturación de UNA factura: su `<sum:RegistroFactura>` de alta y,
+ * si la tiene sellada, el de anulación detrás.
+ *
+ * Es el cuerpo que vivía como closure dentro de `buildVerifactuRegistrosXml`, MOVIDO SIN CAMBIAR
+ * UN BYTE (GO del fundador en SCRUM-1296, comentario 17641, con la condición de que la salida de la
+ * exportación no cambiara: sha256 antes y después sobre los 7 casos de SCRUM-240). Por eso conserva
+ * la sangría de cuando era closure: las plantillas de abajo llevan esa sangría DENTRO del XML, y
+ * reindentarlas cambiaría el documento.
+ *
+ * Lo usan dos llamadores y ningún tercero: la exportación (todas las facturas del ejercicio) y la
+ * cola de remisión (`registroParaRemision`, una factura recién sellada). Mismo registro en los dos:
+ * lo que se declara en una inspección es lo que se remitió.
+ *
+ * Lanza `RegistroNoEmitibleError` si la factura no se puede declarar (el llamador decide: la
+ * exportación la excluye con su motivo; la cola deja constancia y no encola).
+ */
+export function construirRegistroFactura(inv: FacturaParaRegistro, contexto: ContextoRegistro): string {
+  const { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts } = contexto;
     // SCRUM-665 · el emisor de ESTA factura, congelado si lo tiene. `merchant.taxId!` ya exigía
     // NIF antes de llegar aquí (gate de arriba, sobre el merchant EN VIVO); una factura frigida
     // ANTES de tener NIF configurado es el mismo caso límite que ya cubre `excluidos` para el
@@ -1017,76 +1114,24 @@ export async function buildVerifactuRegistrosXml(
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
     </sum1:RegistroAlta>
   </sum:RegistroFactura>${anulacion}`;
+}
+
+/** La factura tal como la lee el constructor del registro (la misma consulta que la exportación). */
+export type FacturaParaRegistro = Prisma.InvoiceGetPayload<{
+  include: {
+    customer: { select: { name: true; taxId: true } };
+    rectifies: { select: { number: true; createdAt: true; lines: true } };
   };
+}>;
 
-  const registros: string[] = [];
-  for (const inv of invoices) {
-    try {
-      registros.push(construirRegistro(inv));
-    } catch (e) {
-      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
-      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
-      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
-      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
-      if (e instanceof RegistroNoEmitibleError) {
-        excluidos.push({ number: inv.number, motivo: e.motivo });
-        continue;
-      }
-      throw e;
-    }
-  }
-
-  // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
-  // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
-  // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
-  // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
-  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
-  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
-  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
-  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
-  // enseña en una inspección — que es justo donde tiene que estar.
-  const parteExclusiones = excluidos.length === 0 ? '' : `
-  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
-       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
-       numero y su motivo para que se corrijan y se vuelva a exportar.
-${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
-  -->`;
-
-  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
-  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
-  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
-  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
-  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
-  // particulares, o solo rectificativas, cae aquí entero.
-  //
-  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
-  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
-  // entregarlo; entregarlo en silencio, peor todavía.
-  if (registros.length === 0) {
-    return { xml: '', count: 0, excluidos };
-  }
-
-  // SCRUM-240: el sobre lo arma UN solo sitio del proyecto (`registro.builder.ts`), igual que
-  // el desglose desde SCRUM-209. Aquí estaba escrito a mano un segundo constructor que producía
-  // el MISMO contenido línea a línea que aquél: solo cambiaban la declaración XML, la sangría y
-  // el salto final. Ahora eso es presentación —los tres parámetros de abajo— y el contenido no
-  // se duplica.
-  //
-  // LA SALIDA DE ESTA RUTA NO CAMBIÓ NI UN BYTE, y se comprobó ejecutando: sha256 de la salida
-  // ANTES y DESPUÉS sobre siete casos (una factura, dos, con anulación, con exclusión, todo
-  // excluido, rectificativa, sin destinatario) — idénticos los siete, con el control de que la
-  // comparación SÍ veía un cambio deliberado. Esa comprobación fue del PR, **no** es un test
-  // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
-  // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
-  const xml = construirSobreRegFactu({
-    obligado: { nombreRazon: nombreEmisorDelSobre, nif: merchant.taxId },
-    registrosFacturaXml: registros,
-    comentario: parteExclusiones,
-    declaracionXml: true,
-    saltoFinal: true,
-  });
-
-  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
-  // un pack con exclusiones informaría un número que el fichero no respalda.
-  return { xml, count: registros.length, excluidos };
+/** Lo que el constructor necesita además de la factura. Lo arma cada llamador. */
+export interface ContextoRegistro {
+  zona: string;
+  emisorFichaViva: FichaDeEmisor;
+  productor: { nombre: string; nif: string; idSistema: string; version: string; numInstalacion: string };
+  /** Facturas con huella del emisor, por su `vfHash`: de aquí sale el `RegistroAnterior` del alta. */
+  porHuella: ReadonlyMap<string, { number: string; createdAt: Date }>;
+  /** La cadena entera ordenada por sello: sólo la usa el registro de ANULACIÓN. */
+  registrosOrdenados: { huella: string; numero: string; fecha: Date }[];
+  opts: { modoSinDestinatario?: ModoSinDestinatario; modoTipoRectificativa?: ModoTipoRectificativa };
 }
