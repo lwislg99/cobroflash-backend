@@ -96,7 +96,7 @@ test('SCRUM-182 · el cliente de Prisma se RESUELVE, no se adivina', () => {
 // ── Ratchet: el runner tiene que seguir llamando al guard ─────────────────────────────────
 
 test('SCRUM-182 · el runner gateado comprueba el árbol antes de dar por buenos sus números', () => {
-  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'), 'utf8');
+  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'staging-gated.mjs'), 'utf8');
   assert.ok(runner.includes('_artefactos-guard.mjs'), '🔴 el runner ya no importa el guard');
   assert.ok(runner.includes('huellaArtefactos'), '🔴 el runner ya no toma la huella');
 

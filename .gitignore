@@ -150,7 +150,7 @@ vite.config.ts.timestamp-*
 
 # SCRUM-161: recibo de la tanda gateada. LOCAL Y NUNCA COMMITEADO, igual que el sentinel de
 # arriba y por el mismo motivo: si viajara con la rama seria un artefacto que se COPIA entre
-# ramas, y una prueba que se copia deja de probar nada. Lo escribe scripts/test-staging-gated.mjs.
+# ramas, y una prueba que se copia deja de probar nada. Lo escribe scripts/staging-gated.mjs.
 .claude/evidencia-tanda.json
 
 # muestras generadas para validacion XSD (S1-C)
