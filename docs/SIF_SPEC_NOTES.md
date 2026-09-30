@@ -6,7 +6,8 @@
 >
 > **Hoy no existe el envío a la AEAT.** No está apagado ni pendiente de activar: no está
 > escrito (auditoría `docs/legal/AUDITORIA_CAMINO_EMISION.md`, SCRUM-525, eslabones 8 y 9).
-> Tampoco existe la cola `VfSubmission` — no está en `prisma/schema.prisma`, medido.
+> La cola `VfSubmission` **existe como TABLA** desde SCRUM-1296 (`prisma/schema.prisma`), y una
+> tabla no es un envío: ver §6.
 >
 > **Por qué esta cabecera (SCRUM-566):** el inventario de SCRUM-538 midió que este documento no
 > decía en ninguna parte que el envío no estuviera construido. Ninguna frase era falsa; lo que
@@ -119,8 +120,9 @@ ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
 >
 > Lo que sigue es el texto anterior a esa fecha y sigue siendo cierto para lo que no se ha
 > construido. `sif.client.ts` NO EXISTÍA: esta sección era la decisión de cómo se construiría,
-> no una descripción de lo que había. `fast-xml-parser` tampoco está instalado, y la cola
-> `VfSubmission` del último punto no está en el esquema.
+> no una descripción de lo que había. `fast-xml-parser` tampoco está instalado. La cola
+> `VfSubmission` del último punto **está en el esquema desde SCRUM-1296** (el modelo de
+> SCRUM-1127 §④, con `VfFlujoObligado` para el `TiempoEsperaEnvio` por obligado).
 
 - **HTTP:** `https` nativo de Node con agente mTLS (cert del merchant/colaborador en env
   o storage cifrado **[decisión de custodia con el asesor]**).
