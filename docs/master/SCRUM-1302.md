@@ -97,3 +97,8 @@ Sin el dato no se esconde nada. Sin texto nuevo.
 9 y sin el dato; la ruta filtra por merchant y albarán y compara con el tope del 409. Dos mutaciones
 cazadas (quitar el `requiere` de la foto; `<=` en vez de `<` en la ruta), restauradas con sha256.
 El test de §F pasa a fijar cada acción con SU condición (los dos envíos → canal; la foto → plazas).
+
+**Fixture ajeno completado (aprobado por el orquestador, opción a).** `tests/scrum302-presupuesto-y-fotos.test.mjs`
+monta a mano un doble de la base sin el modelo `attachment`: con la cuenta de fotos, el GET respondía 500
+y sus dos casos del presupuesto no llegaban a ejecutarse. Se le añade UNA línea
+(`attachment.count → 0`) con su porqué y el aviso de que el 0 es fijo. Ninguna aserción se toca.
