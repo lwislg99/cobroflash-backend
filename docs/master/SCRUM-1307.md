@@ -97,3 +97,13 @@ SET NULL de `charge` y `quote`.
   PR.
 - **La tanda completa** no se ha corrido en local (memoria justa, seis sesiones vivas); la corre el
   CI.
+
+## El primer CI salió rojo, y era mío
+
+- **Qué cayó:** `scrum377` («el «(s)» de programador no sube»). Mi mensaje de negativa decía
+  «envío(s)», y fue el único fallo de 9.317 tests.
+- **Corrección:** ahora dice «tiene envíos a la AEAT (N en la cola)». La tanda de la zona, con
+  `scrum377` dentro, sale 60 de 60.
+- **Por qué no lo vi en local:** mi muestra de guards no incluía `scrum377`, que mira el texto de
+  todo `src/`. La lección ya está escrita (cambio con texto: tanda completa o sus guards de texto), y
+  la comprobación ya existe: es el propio `scrum377`, que lo cazó.

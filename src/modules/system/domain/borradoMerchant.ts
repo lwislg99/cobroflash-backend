@@ -239,7 +239,7 @@ export async function borrarMerchant(
       borradas: {},
       errores: [{
         modelo: 'vfSubmission',
-        error: `NO SE HA BORRADO NADA: el comercio tiene ${envios} envío(s) a la AEAT, y un comercio ` +
+        error: `NO SE HA BORRADO NADA: el comercio tiene envíos a la AEAT (${envios} en la cola), y un comercio ` +
           'con envíos no se borra (SCRUM-1127b, decisión 3; SCRUM-1307)',
       }],
     };
