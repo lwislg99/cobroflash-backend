@@ -150,8 +150,12 @@ router.get('/:token', async (req, res) => {
   //    que sigue haciendo lo suyo (escapar el HTML) sobre el resultado ya validado.
   // ③ `rel="noopener"`: era el único `target="_blank"` del fichero sin él. Las otras tres anclas
   //    ya lo llevaban.
+  // SCRUM-1309 · el ① de arriba, terminado: `sent` tiene el MISMO único productor
+  //    (`dev.routes.ts`, el redirect de `/dev/email-invoice`) y se pintaba sin gate. En producción,
+  //    añadir `?mail=sent` a mano hacía que la página le dijera al CLIENTE FINAL que se le mandó un
+  //    correo que nadie mandó. Misma condición que `saved`; el texto no cambia.
   const mailBanner =
-    mailParam === 'sent'
+    mailParam === 'sent' && config.NODE_ENV !== 'production'
       ? `<div class="note note-ok">📧 Email enviado correctamente.</div>`
       : mailParam === 'saved' && config.NODE_ENV !== 'production'
       ? `<div class="note note-info">📧 Email generado en <a href="${esc(
