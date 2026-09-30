@@ -319,6 +319,28 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
+- **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
+  escribe `vfAnulHash`/`vfAnulPrevHash`/`vfAnulTimestamp` y extiende la cadena) ANTES de escribir el
+  estado, en su propia transacción. Si un cobro entra mientras se sella, desde SCRUM-1303 la escritura
+  del estado ya no pisa la factura (`pending` va en el `where`) y la ruta contesta el 409
+  `invoice_not_pending` de siempre. Pero el eslabón de anulación **ya está sellado**: la factura queda
+  `paid` **y** con `vfAnulHash`.
+- **No lo introdujo SCRUM-1303:** antes de él, la misma carrera dejaba el mismo eslabón y además
+  escribía `annulled` sobre la factura cobrada. El arreglo deja el estado verdadero; el eslabón,
+  igual que estaba.
+- **Lo que el profesional no sabe:** el 409 reusado («Solo se anula una factura pendiente. Si ya se
+  cobró, hay que rectificarla (R1), no anularla.») es cierto pero calla que se selló una anulación. Si
+  emite la R1, la cadena lleva las dos.
+- **Sin constancia:** no se escribe `factura_anulada` (no se anuló) ni ningún evento nuevo (la unión
+  es cerrada, regla 5). Sólo queda un `console.error` con el número, y **un `console.error` NO es
+  constancia**.
+- **Por qué no se arregló allí:** cerrarlo exige tocar el sellado (reordenarlo o un estado intermedio
+  que la Parte L no declara): STOP, reglas 5 y 40. Decide el fundador. Tampoco se repara nada ya
+  escrito: primero hay que medir si alguna factura quedó así.
+- **Fijado por un test:** `tests/scrum1303-estado-dentro-del-where.test.mjs`, caso «RESIDUAL
+  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí.
+
 ### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
 - **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
   clave, ni un byte de red). `getWhatsAppMetrics`, ventana de 7 días:
