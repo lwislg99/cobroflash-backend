@@ -443,7 +443,8 @@
 
 ---
 
-### [ ] P2-CONT-1126b · fusionar un cliente que tenga direcciones de obra falla con un 500 (razonado desde el esquema, NO ejecutado contra una base)
+### [x] P2-CONT-1126b · fusionar un cliente que tenga direcciones de obra falla con un 500 (razonado desde el esquema, NO ejecutado contra una base)
+- **Resuelto en SCRUM-1291 (30-sep-2026):** reproducido (500, y 500 también al reintentar) y arreglado: la fusión mueve `customer_sites` en la misma transacción. Sin índice único: una dirección repetida no choca. Registro: `docs/master/SCRUM-1291.md`.
 - **Síntoma esperado:** `fusionarClientes` (`src/modules/system/domain/fusionClientes.ts`) reasigna
   nueve tablas del fusionado al principal y al final lo borra con `desvincularYBorrar`. **`customer_sites`
   (SCRUM-1014, direcciones de obra) no está entre las nueve**: `customerSite` no aparece ni una vez en

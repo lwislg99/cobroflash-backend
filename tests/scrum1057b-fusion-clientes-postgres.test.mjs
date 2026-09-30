@@ -111,6 +111,35 @@ test('SCRUM-1057 · fusión limpia: las nueve tablas se mueven, se fusionan etiq
   }
 });
 
+// SCRUM-1291 · `customer_sites` tiene FK RESTRICT a `customers` y la fusión no la movía: con una
+// dirección de obra el `DELETE` final lo rechazaba el MOTOR. Aquí la FK la pone Postgres, no un
+// doble (la mitad sin base está en `scrum1291-fusion-mueve-direcciones-de-obra.test.mjs`).
+test('SCRUM-1291 · fusión con direcciones de obra: se mueven al principal (también la repetida) y la fusión termina', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { fusionarClientes } = await import('../dist/modules/system/domain/fusionClientes.js');
+  const stamp = Date.now();
+  try {
+    await withMerchant(prisma, { name: 'QA 1291', email: `qa-1291-${stamp}@test.local` }, async (a) => {
+      const principal = await prisma.customer.create({ data: { merchantId: a.id, name: 'Obra Principal' } });
+      const fusionado = await prisma.customer.create({ data: { merchantId: a.id, name: 'Obra Duplicada' } });
+      // La MISMA dirección en los dos: `customer_sites` no tiene índice único, así que no choca.
+      const delPrincipal = await prisma.customerSite.create({ data: { merchantId: a.id, customerId: principal.id, name: 'Piso 3ºB', address: 'C/ Mayor 1' } });
+      const delFusionado = await prisma.customerSite.create({ data: { merchantId: a.id, customerId: fusionado.id, name: 'Piso 3ºB', address: 'C/ Mayor 1' } });
+      const job = await prisma.job.create({ data: { merchantId: a.id, customerId: fusionado.id } });
+
+      await fusionarClientes(a.id, principal.id, fusionado.id);
+
+      const sitios = await prisma.customerSite.findMany({ where: { id: { in: [delPrincipal.id, delFusionado.id] } } });
+      assert.equal(sitios.length, 2, '🔴 se perdió una dirección de obra en la fusión');
+      assert.ok(sitios.every((s) => s.customerId === principal.id), '🔴 una dirección de obra se quedó en el fusionado');
+      assert.equal((await prisma.job.findUnique({ where: { id: job.id } })).customerId, principal.id, '🔴 el job dejó de moverse');
+      assert.equal(await prisma.customer.findUnique({ where: { id: fusionado.id } }), null, '🔴 el fusionado sigue existiendo');
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 test('SCRUM-1057 · 🔴 CUALQUIERA de los dos con una factura EMITIDA rechaza la fusión, y no toca nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { fusionarClientes } = await import('../dist/modules/system/domain/fusionClientes.js');
