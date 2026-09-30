@@ -641,4 +641,7 @@ script cargó `DATABASE_URL_TESTS` del `.env` del checkout compartido, que apunt
 Después: `npm run turno:estado` dice «Turno LIBRE», no hay nota de turno de esta sesión en `tmp` y
 no hay recibo de evidencia de la tanda (el que escribe el runner al acabar), así que no llegó a terminar ningún hijo. **Si hizo el
 preflight contra esa base no se puede saber sin volver a ejecutarlo, y no se ha vuelto a ejecutar.**
-Queda en la cicatriz de J2, sin comprobación, con el motivo.
+Por qué esos dos y no otros (medido): el descubridor de `node --test` elige por NOMBRE, y de los 263
+ficheros de `scripts/` solo esos dos casan con sus patrones; además los cuenta como tests en verde
+si salen 0. Queda en la cicatriz de J2, sin comprobación: cerrarlo exige renombrarlos, y
+`test-staging-gated` está citado en el máster.
