@@ -101,3 +101,52 @@ test('SCRUM-1296 · con la tabla dentro, el guard sigue diciendo «envío NO con
   assert.equal(h.construido, false,
     '🔴 STOP regla 26: la tabla sola desbloquearía afirmaciones fiscales en la landing');
 });
+
+// ═══ «Eliminar datos de ejemplo» con la cola dentro (D3b del orquestador = F1) ═══════════════════
+//
+// `vfSubmission` está FUERA del barrido genérico (RESTRICT: un comercio con envíos no se borra),
+// pero `barridoDemo` no consulta esa lista, así que el botón del demo la barre con un paso propio,
+// acotado al demo. El guard de SCRUM-314 comprueba la FORMA del `where` sobre un espía que no
+// filtra; aquí se comprueba el EFECTO, sobre una cola con filas de DOS comercios.
+const { barridoDemo } = requiere(path.join(RAIZ, 'dist/modules/system/domain/barridoDemo.js'));
+const DEMO = 1;
+const OTRO = 77;
+
+/** Una cola en memoria cuyo `deleteMany` APLICA el `where` de verdad (sólo `merchantId`). */
+function colaConFilas() {
+  let filas = [
+    { id: 1, merchantId: DEMO }, { id: 2, merchantId: DEMO },
+    { id: 3, merchantId: OTRO }, { id: 4, merchantId: OTRO },
+  ];
+  const vacio = { deleteMany: async () => ({ count: 0 }) };
+  const p = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? vacio : undefined) });
+  const vfSubmission = {
+    deleteMany: async ({ where } = {}) => {
+      const antes = filas.length;
+      filas = filas.filter((f) => !(where?.merchantId === undefined || f.merchantId === where.merchantId));
+      return { count: antes - filas.length };
+    },
+  };
+  return { prisma: new Proxy(p, { get: (t, k) => (k === 'vfSubmission' ? vfSubmission : t[k]) }), filas: () => filas };
+}
+
+test('SCRUM-1296 · el botón del demo borra la cola DEL DEMO, antes que sus facturas', async () => {
+  const c = colaConFilas();
+  const { modelos, porModelo } = await barridoDemo(c.prisma, DEMO);
+  assert.ok(modelos.includes('vfSubmission'), '🔴 el barrido del demo no recorre la cola');
+  assert.ok(modelos.indexOf('vfSubmission') < modelos.indexOf('invoice'),
+    '🔴 la cola va DESPUÉS que las facturas: con RESTRICT, el borrado de `invoice` revienta');
+  assert.equal(porModelo.vfSubmission, 2);
+  assert.deepEqual(c.filas().filter((f) => f.merchantId === DEMO), []);
+});
+
+test('SCRUM-1296 · 🔴 CONTROL NEGATIVO: la cola de OTRO comercio NO se toca', async () => {
+  const c = colaConFilas();
+  await barridoDemo(c.prisma, DEMO);
+  assert.deepEqual(c.filas().filter((f) => f.merchantId === OTRO).map((f) => f.id), [3, 4],
+    '🔴 el botón del demo se ha llevado registros de la cola de otro comercio: son registros presentados ante la AEAT');
+  // Control del propio doble: un `deleteMany` sin `where` SÍ se lo llevaría todo.
+  const d = colaConFilas();
+  await d.prisma.vfSubmission.deleteMany({});
+  assert.equal(d.filas().length, 0, 'CIEGO: el doble no borraría nada ni sin filtro');
+});

@@ -173,3 +173,30 @@ decide su dueño; se entregan como aviso al orquestador.
 - **Una factura que la exportación EXCLUYE** (p. ej. cliente sin NIF, con
   `MODO_SIN_DESTINATARIO = SIN_DICTAMEN`) no tiene registro que encolar: queda sellada igual y
   deja constancia en la auditoría.
+
+**Borrar un comercio y «Eliminar datos de ejemplo» con la cola dentro (D3 y D3b del orquestador).**
+`vfSubmission` tiene `merchantId`, así que los guards de cobertura (SCRUM-172/192/314) exigen
+decidir qué hace con ella el borrado. Lo decidió el orquestador, porque cumple la decisión 3 de
+1127b en vez de tomar una nueva:
+- **D3 = F.** `vfSubmission` va en `FUERA_DEL_BARRIDO_GENERICO` (`borradoMerchant.ts`), con el
+  motivo dentro de la lista: RESTRICT, registros presentados ante la AEAT, un comercio con envíos
+  no se borra y el borrado falla ruidoso en `invoice`.
+- **D3b = F1.** `barridoDemo` NO consulta `FUERA_DEL_BARRIDO_GENERICO`: recorre
+  `COLGADOS_DE_CHARGE`, `ORDEN_BORRADO_MERCHANT` y `botSession`. Esa asimetría entre las dos
+  listas es la que obligó a un paso propio, acotado al demo (`where: { merchantId: demoId }`),
+  antes de las facturas. Quien añada otro modelo «fuera» tropezará con lo mismo; va como aviso
+  al orquestador, no se arregla en este ticket.
+- ⚠️ **Consecuencia declarada:** ese paso **hoy no borra nada** (la tabla está vacía en todas
+  partes) y, si la tanda 2 cierra que el demo no encola, no borrará nunca: sólo protege el
+  botón. Si algún día cuenta filas, es que el demo empezó a encolar.
+- **Efecto, no forma.** El control de `scrum314` mira la FORMA del `where` sobre un espía que no
+  filtra. El test nuevo mira el EFECTO sobre una cola con filas de dos comercios: las del demo
+  caen, las del otro no. Mutación del `where` a `{}` en `dist/`: caen los dos casos nuevos y el
+  control de `scrum314`; restaurado por sha256.
+
+**GO de D1 leído en origen:** SCRUM-1296, comentario 17641 (Javier, 30-sep-2026: «5-Go»), abierto
+por esta sesión en Jira. Autoriza extraer `construirRegistro` con sha256 antes y después sobre los
+7 casos de SCRUM-240; si uno difiere, se para. Es para la tanda 2.
+
+**La tanda completa**, antes de añadir el paso F1: 9.234 tests · 9.098 pass · 2 fail · 134
+skipped. Los 2 eran los de `scrum314`, que F1 cierra.
