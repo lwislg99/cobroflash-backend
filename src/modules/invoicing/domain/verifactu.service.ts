@@ -1135,3 +1135,63 @@ export interface ContextoRegistro {
   registrosOrdenados: { huella: string; numero: string; fecha: Date }[];
   opts: { modoSinDestinatario?: ModoSinDestinatario; modoTipoRectificativa?: ModoTipoRectificativa };
 }
+
+/**
+ * SCRUM-1296 · el registro de ALTA de una factura recién sellada, para la cola de remisión.
+ *
+ * Lee la factura DESPUÉS del sellado —huella, sello y eslabón anterior tal como se persistieron— y
+ * la pasa por el MISMO constructor que la exportación (`construirRegistroFactura`). Lo que se guarda
+ * en la cola es este texto, y reenviar es reenviar este texto: nunca se regenera (SCRUM-1127 §④).
+ *
+ * Sólo se lee el eslabón anterior de ESTA factura, no el ejercicio entero: el constructor sólo
+ * consulta `porHuella` por `vfPrevHash`, y `registrosOrdenados` sólo lo usa la anulación, que al
+ * emitir no existe. Así no hay tope de 1.000 facturas por ejercicio en este camino.
+ *
+ * Lanza lo mismo que el constructor (`RegistroNoEmitibleError` si la factura no se puede declarar,
+ * `verifactu_cadena_rota` si su eslabón anterior no aparece): quien encola decide.
+ */
+export async function registroParaRemision(invoiceId: number, prismaClient = defaultPrisma): Promise<string> {
+  const inv = await prismaClient.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      customer: { select: { name: true, taxId: true } },
+      rectifies: { select: { number: true, createdAt: true, lines: true } },
+    },
+  });
+  if (!inv) throw new Error('invoice_not_found');
+  if (!inv.vfHash) throw new Error('verifactu_sin_sellar');
+  const merchant = await prismaClient.merchant.findUnique({ where: { id: inv.merchantId } });
+  if (!merchant || merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
+
+  const anterior = inv.vfPrevHash && inv.vfPrevHash !== '0'
+    ? await prismaClient.invoice.findFirst({
+        where: { merchantId: inv.merchantId, vfHash: inv.vfPrevHash },
+        select: { number: true, createdAt: true },
+      })
+    : null;
+
+  return construirRegistroFactura(inv, {
+    zona: zonaDelMerchant(merchant),
+    // Mismos campos que la exportación: la ficha viva sólo es el respaldo de las facturas
+    // anteriores al escritor del emisor (SCRUM-665); una recién emitida lleva el suyo congelado.
+    emisorFichaViva: {
+      name: merchant.name,
+      legalName: merchant.legalName,
+      taxId: merchant.taxId,
+      address: merchant.address,
+      logoUrl: merchant.logoUrl,
+      phone: merchant.whatsappPhone,
+      email: merchant.email,
+    },
+    productor: {
+      nombre: VERIFACTU_PRODUCTOR_NOMBRE,
+      nif: VERIFACTU_PRODUCTOR_NIF,
+      idSistema: VERIFACTU_ID_SISTEMA,
+      version: VERIFACTU_VERSION,
+      numInstalacion: VERIFACTU_NUM_INSTALACION,
+    },
+    porHuella: new Map(anterior ? [[inv.vfPrevHash as string, anterior]] : []),
+    registrosOrdenados: [],
+    opts: {},
+  });
+}
