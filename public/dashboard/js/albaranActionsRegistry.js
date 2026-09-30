@@ -41,7 +41,10 @@ const ALBARAN_ACTION_REGISTRY = [
   // sentido si el albarán lleva precios y queda algo por facturar — y esa condición la responde
   // el derivado de tres valores, no un booleano.
   { id: 'btnEmitir',        destinos: { borrador: 'primaria',   emitido: 'oculta',     firmado: 'oculta' } },
-  { id: 'btnEnviarFirmar',  destinos: { borrador: 'oculta',     emitido: 'primaria',   firmado: 'oculta' } },
+  // SCRUM-1302 (F) · los dos ENVÍOS van por WhatsApp: sin canal su único desenlace es 409
+  // `customer_missing_phone`, así que `requiere` los oculta (el patrón de SCRUM-993 en el Trabajo).
+  { id: 'btnEnviarFirmar',  destinos: { borrador: 'oculta',     emitido: 'primaria',   firmado: 'oculta' },
+    requiere: 'cliente-con-whatsapp' },
   { id: 'btnFacturar',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'primaria' },
     cuando: 'valorado-con-pendiente' },
   // SCRUM-290 (A0.4) · LA OTRA MITAD DE LA PRIMARIA DE `firmado`, y son EXCLUYENTES por
@@ -58,7 +61,8 @@ const ALBARAN_ACTION_REGISTRY = [
   // Secundarias: como mucho dos por estado (regla 2).
   { id: 'btnFirmarAqui',    destinos: { borrador: 'oculta',     emitido: 'secundaria', firmado: 'oculta' } },
   { id: 'btnPdf',           destinos: { borrador: 'secundaria', emitido: 'secundaria', firmado: 'secundaria' } },
-  { id: 'btnWhatsApp',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'secundaria' } },
+  { id: 'btnWhatsApp',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'secundaria' },
+    requiere: 'cliente-con-whatsapp' },
   { id: 'btnEditarLineas',  destinos: { borrador: 'secundaria', emitido: 'oculta',     firmado: 'oculta' } },
 
   // El resto, al «⋮» (regla 3).
