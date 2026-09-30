@@ -71,11 +71,23 @@ test('SCRUM-314 · el barrido cubre TODOS los modelos con merchantId, derivados 
   const { modelos } = await barridoDemo(p, DEMO_ID);
   const olvidados = derivados.filter((m) => !modelos.includes(m));
 
+  // SCRUM-1305 · SÓLO EL MENSAJE: la condición de abajo es la de siempre. Lo que cambia es que el
+  // rojo dice QUÉ HACER cuando el olvidado está declarado fuera del barrido genérico, en vez de
+  // dejar que quien lo recibe reconstruya la asimetría (a SCRUM-1296 le costó una hora).
+  const { FUERA_DEL_BARRIDO_GENERICO } = await import('../dist/modules/system/domain/borradoMerchant.js');
+  const declaradosFuera = olvidados.filter((m) => Object.hasOwn(FUERA_DEL_BARRIDO_GENERICO, m));
+  const queHacer = declaradosFuera.length
+    ? `\n\n  ⚠️ ${declaradosFuera.join(', ')} está(n) en FUERA_DEL_BARRIDO_GENERICO, y \`barridoDemo\` NO\n` +
+      '  recorre esa lista: sólo la leen los guards de borrarMerchant. Decide qué hace el DEMO con\n' +
+      '  sus filas y escríbele su paso propio en `barridoDemo`, acotado al demo, como `vfSubmission`\n' +
+      '  (1bis) o `botSession` (3). No se deriva a propósito: ver el comentario de la lista (SCRUM-1305).'
+    : '\n\n  Añádelo(s) a ORDEN_BORRADO_MERCHANT (hijos antes que padres): barridoDemo lo recorre.';
+
   assert.deepEqual(
     olvidados, [],
     `🔴 ${olvidados.length} MODELO(S) DEL DEMO SIN BARRER: ${olvidados.join(', ')}.\n\n` +
       '  Con el botón «Eliminar datos de ejemplo» encima, eso es decirle al usuario que su cuenta\n' +
-      '  quedó limpia mientras siguen ahí sus trabajos, albaranes, equipo y auditoría.',
+      '  quedó limpia mientras siguen ahí sus trabajos, albaranes, equipo y auditoría.' + queHacer,
   );
 });
 
