@@ -74,6 +74,19 @@ import { aprobacionesDeMicrocopy, constaAprobado } from './_microcopy-aprobada.m
 Está en `tests/_microcopy-aprobada.mjs` y **falla declarándose ciega** si no encuentra ninguna: un
 barrido vacío es «no supe mirar», nunca «no hay aprobaciones».
 
+🔴 **«¿Consta en alguna ficha?» no dice que la firma siga vigente** (SCRUM-1306). Este directorio no
+se borra, así que cuando un texto se vuelve a firmar en una ficha nueva, el literal viejo **sigue
+constando** en la suya. Para un texto que se pueda volver a firmar, el guard lo comprueba contra
+**su** ficha, por ticket **y** ranura, o por su ruta exacta:
+
+```js
+const r = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-n' && a.ranura === 'mi-ranura');
+```
+
+Y cuando se vuelva a firmar, la ficha nueva trae ranura nueva y el guard cambia a ella. La ficha
+vieja **no se toca**: ni se borra ni se marca. Los guards que preguntan de la forma débil no pueden
+aumentar: lo vigila `tests/scrum1306-consta-en-alguno.test.mjs`.
+
 ## El registro anterior
 
 `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` queda **congelado**, entero y sin tocar. Era cierto cuando

@@ -13,6 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
@@ -33,10 +34,17 @@ function seccionDeEncargados(html) {
   return html.slice(desde, hasta);
 }
 
+/**
+ * La ficha VIGENTE del texto de Cloudflare: por ticket Y ranura (SCRUM-1306). La primera versión la
+ * elegía por ticket, y el `.find` se quedaba con la ficha MÁS ANTIGUA de SCRUM-1196 (el barrido va
+ * por nombre y el nombre empieza por la fecha). Una firma nueva trae ranura nueva: se cambia AQUÍ.
+ */
+const FICHA_VIGENTE = { ticket: 'SCRUM-1196', ranura: 'encargado-cloudflare' };
+
 /** El literal tal como lo FIRMÓ el fundador, leído de su registro de aprobación. */
-function textoFirmadoDeCloudflare() {
-  const registro = aprobacionesDeMicrocopy()
-    .find((a) => a.ruta.includes('SCRUM-1196') && a.literales.some((l) => l.includes('Cloudflare')));
+function textoFirmadoDeCloudflare(opciones) {
+  const registro = aprobacionesDeMicrocopy(opciones)
+    .find((a) => a.ticket === FICHA_VIGENTE.ticket && a.ranura === FICHA_VIGENTE.ranura);
   assert.ok(registro, '🔴 no existe en `docs/microcopy/` un registro de SCRUM-1196 con la fila de Cloudflare.');
   assert.equal(registro.aprobada, true,
     `🔴 el registro de Cloudflare no cuenta como aprobado (firmante: ${registro.firmante}). `
@@ -89,4 +97,33 @@ test('SCRUM-1196 · 🔴 CONTROLES: sin la fila, o con una coma cambiada, el gua
   const movida = sinFila.replace('</ul>', `  ${firmado}\n    </ul>`);
   assert.ok(movida.includes(firmado), 'control: la fila movida al final sí está');
   assert.notEqual(filaTrasRailway(movida), firmado, 'control: pero no está tras Railway, y el guard lo distingue');
+});
+
+test('SCRUM-1306 · 🔴 CONTROL: con una ficha MÁS ANTIGUA del mismo ticket, el guard sigue leyendo la vigente', () => {
+  // Carpeta temporal: escribir una ficha de mentira en docs/microcopy/ la vería cualquier guard que
+  // corra en paralelo. La vigente se copia tal cual; la antigua lleva la misma firma y otro literal.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1306-'));
+  try {
+    const vigente = aprobacionesDeMicrocopy()
+      .find((a) => a.ticket === FICHA_VIGENTE.ticket && a.ranura === FICHA_VIGENTE.ranura);
+    fs.copyFileSync(path.join(RAIZ, 'docs', 'microcopy', vigente.nombre), path.join(dir, vigente.nombre));
+    const ANTIGUA = '2026-09-01-SCRUM-1196-version-anterior.md';
+    const VIEJO = '<li><strong>Cloudflare</strong> — texto anterior, ya superado.</li>';
+    fs.writeFileSync(path.join(dir, ANTIGUA), '# Versión anterior (control de SCRUM-1306)\n\n'
+      + '**Aprobado por el fundador** el 1-sep-2026, en **SCRUM-1196**.\n\n'
+      + '| Ranura | Texto aprobado |\n|---|---|\n| `anterior` | `' + VIEJO + '` |\n');
+    const o = { dir };
+    const todas = aprobacionesDeMicrocopy(o);
+    assert.equal(todas.find((a) => a.ruta.includes('SCRUM-1196')).nombre, ANTIGUA,
+      'el caso sí planta el problema: por ticket a secas, la primera ficha es la antigua');
+    const antigua = todas.find((a) => a.nombre === ANTIGUA);
+    assert.ok(antigua.aprobada && antigua.literales.includes(VIEJO),
+      'y la antigua cuenta como firmada, con su literal: si no, el caso no prueba nada');
+    assert.equal(textoFirmadoDeCloudflare(o), textoFirmadoDeCloudflare(),
+      '🔴 con una ficha más antigua del mismo ticket, el guard ha pasado a leer la ANTIGUA. Tiene que '
+      + 'elegir la ficha vigente por ticket y ranura (SCRUM-1306), no la primera del ticket.');
+    assert.notEqual(textoFirmadoDeCloudflare(o), VIEJO, 'y el literal que devuelve no es el superado');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
