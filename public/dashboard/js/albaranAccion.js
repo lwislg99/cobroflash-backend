@@ -115,6 +115,8 @@ function ctxAlbaranDeFila(alb) {
     // el dato queda `undefined` y `requiere` no oculta nada: no saber no es saber que falta.
     'cliente-con-whatsapp': alb.customer && typeof alb.customer.puedeRecibirWhatsApp === 'boolean'
       ? alb.customer.puedeRecibirWhatsApp : undefined,
+    // SCRUM-1302 (G) · idem: lo cuenta el servidor contra el tope del 409 `max_fotos`.
+    'caben-fotos': typeof alb.cabenMasFotos === 'boolean' ? alb.cabenMasFotos : undefined,
   };
 }
 

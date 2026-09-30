@@ -70,7 +70,9 @@ const ALBARAN_ACTION_REGISTRY = [
   // SCRUM-1215 (lote 3, c.17494) · la foto NO se ofrece en `firmado`: el servidor la rechaza SIEMPRE
   // en ese estado (`POST /admin/albaranes/:id/fotos` → 409 `albaran_locked`, «Un albarán firmado
   // está congelado»). Un botón cuya única respuesta posible es un error no se pinta.
-  { id: 'btnFoto',          destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'oculta' } },
+  // SCRUM-1302 (G) · y tampoco con las diez plazas llenas: su único desenlace es 409 `max_fotos`.
+  { id: 'btnFoto',          destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'oculta' },
+    requiere: 'caben-fotos' },
   { id: 'btnVerTrabajo',    destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'overflow' } },
   // SCRUM-302 · DUPLICAR. En una reforma de tres semanas cada dia es un parte: duplicar el de
   // ayer y ajustar cantidades ahorra casi todo el trabajo. Va al «⋮» en los TRES estados —

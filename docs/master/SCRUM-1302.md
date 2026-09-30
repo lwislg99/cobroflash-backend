@@ -78,3 +78,22 @@ la condición del albarán en el contexto). Tres mutaciones cazadas (quitar `req
 la falta de dato como `false`, servidor diciendo siempre `true`), restauradas con sha256.
 Guards de navegador de las pantallas afectadas: `guard:albaranes-con-acciones`,
 `guard:detalle-trabajo-917` y `guard:descuentos-en-el-detalle`, los tres en 0.
+
+## G · Con las diez fotos puestas, «Añadir foto» no se ofrece
+
+**Medido contra:** `origin/main` = `a91203a9a78d86eb9505ef170673761d0a6de984` · 2026-09-30T22:36:40+01:00
+
+A9: comprobación → `tests/scrum1302g-foto-con-diez.test.mjs`
+
+**Causa.** Con 10 fotos en el albarán, «📷 Añadir foto» seguía en el «⋯» y su único desenlace era
+`409 max_fotos` (tope `FOTOS_MAX_POR_ALBARAN` en `POST /admin/albaranes/:id/fotos`). El detalle no
+decía si caben más.
+
+**Arreglo.** `GET /admin/albaranes/:id` cuenta las fotos de ese albarán y ese merchant contra el MISMO
+tope y manda `cabenMasFotos`; el registro pone `requiere: 'caben-fotos'` en `btnFoto` (la ley de §F).
+Sin el dato no se esconde nada. Sin texto nuevo.
+
+**Prueba.** Pantalla real contra la ruta real con N fotos en la base: rojo visto con 10; positivo con
+9 y sin el dato; la ruta filtra por merchant y albarán y compara con el tope del 409. Dos mutaciones
+cazadas (quitar el `requiere` de la foto; `<=` en vez de `<` en la ruta), restauradas con sha256.
+El test de §F pasa a fijar cada acción con SU condición (los dos envíos → canal; la foto → plazas).
