@@ -74,3 +74,12 @@ ninguna es una instrucción viva).
 **Rojo visto:** con un fichero vacío con cada nombre viejo puesto en `scripts/` (vacío: no se ejecutó
 nada real), el guard cae y lo nombra; borrado, vuelve a verde. Los dos scripts NO se ejecutaron en
 ningún momento de este trabajo.
+
+**Rojo del CI en la primera vuelta (#2026, mío).** En local el contraste pasaba; en CI salió CIEGO («no
+ejecutó los juguetes», status 1). Causa medida: el CI pone en `NODE_OPTIONS` los reporters con destino
+al TAP de la tanda, y el `node --test` hijo los heredaba: salía 1 sin ejecutar nada y, además, habría
+escrito encima de ese TAP. Arreglo con el patrón de la casa (SCRUM-813/938/1153): el entorno del hijo
+se construye a mano sin `NODE_TEST_CONTEXT`, `NODE_OPTIONS` ni `FORCE_COLOR`. Reproducido en local
+con el mismo `NODE_OPTIONS` del CI: la versión empujada cae igual que en CI; la arreglada pasa y el TAP
+de fuera sólo contiene los tres tests del runner de fuera. Salió CIEGO y no verde: el suelo del caso
+hizo su trabajo.

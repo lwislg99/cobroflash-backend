@@ -74,9 +74,13 @@ test('SCRUM-1308 · el comparador es el de node --test: lo que ejecuta de verdad
       const cuerpo = `require('node:fs').appendFileSync(${JSON.stringify(marca)}, ${JSON.stringify(j + '\n')});\n`;
       fs.writeFileSync(f, j.endsWith('.mjs') ? `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);\n${cuerpo}` : cuerpo);
     }
-    // Sin NODE_TEST_CONTEXT: heredado del runner que corre ESTE test, el hijo se portaría como subproceso de test.
+    // El entorno del hijo, a mano (patrón de SCRUM-813/938/1153): con NODE_TEST_CONTEXT heredado del runner
+    // que corre ESTE test no ejecuta nada (medido en local), y con el NODE_OPTIONS del CI —reporters con
+    // destino al TAP de la tanda— sale 1 sin ejecutar nada Y escribiría encima de ese TAP (medido en #2026).
     const env = { ...process.env };
     delete env.NODE_TEST_CONTEXT;
+    delete env.NODE_OPTIONS;
+    delete env.FORCE_COLOR;
     const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap'], { cwd: dir, encoding: 'utf8', env });
     const ejecutados = fs.existsSync(marca) ? fs.readFileSync(marca, 'utf8').split('\n').filter(Boolean).sort() : [];
     const segunElComparador = juguetes.filter(casa).sort();
