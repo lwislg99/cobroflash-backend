@@ -29,7 +29,9 @@
 //    Se acota por los TÍTULOS visibles de las secciones, que son texto del documento y no marcado.
 //
 // 🔴 Y la trampa que todo esto esquiva: buscar «google» a secas da verde por el motivo equivocado,
-// porque `fonts.googleapis.com` aparece en 7 de las 9 páginas de `public/` y NO es esto. Hay un
+// porque `fonts.googleapis.com` PARECE Google sin serlo. (Hoy no se carga en ninguna página: lo
+// retiró SCRUM-1234 el 28-sep, e Inter se sirve del propio dominio. Aun así el caso se queda: lo que
+// sujeta no es el recuento, es que el detector mida el ENCARGADO y no la palabra.) Hay un
 // caso dedicado que lo demuestra. (Google Fonts y Cloudflare SÍ son huecos reales del §5 —medidos
 // en el comentario 17317— pero piden ticket propio y no son éste.)
 import { test } from 'node:test';
