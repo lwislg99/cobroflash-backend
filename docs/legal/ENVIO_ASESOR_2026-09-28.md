@@ -52,7 +52,7 @@ en el expediente de esta entrega. **No las he vuelto a comprobar hoy**, y se cit
 en nuestros expedientes: RD 1007/2023, Orden HAC/1177/2024, RD-ley 15/2025, RGPD, LOPDGDD, Reglamento
 eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ de la AEAT.
 
-## Las cuatro decisiones, tomadas (Javier, 30-sep-2026)
+## Las cuatro decisiones, tomadas (Javier, 30-sep-2026; literales en SCRUM-1261, comentario 17638)
 
 1. **Las respuestas del 23-sep (Q-C1 a Q-C8, modelos y contabilidad) las escribió una herramienta**,
    no una persona. Su marca pasa a **IA · 23-sep** (B6 y E4), y la **E4** deja de ser condicional: se

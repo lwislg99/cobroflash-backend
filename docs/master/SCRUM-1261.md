@@ -47,8 +47,15 @@ Sesión J5 de relevo, por encargo del orquestador. Antes: el commit `65996e85` d
 «sin empujar»: `git merge-base --is-ancestor 65996e85 origin/main` sale 0, entró con el PR #1944
 (merge `837a9e53`) y la rama remota se borró al mergear.
 
+**La lección, para quien herede un árbol con un commit «suelto».** Que la rama no aparezca en
+`git ls-remote --heads` no dice que el commit se haya perdido: la rama se borra al mergear. Lo que dice
+si un commit está a salvo es `git merge-base --is-ancestor <sha> origin/main` (o `git branch -r
+--contains <sha>`). Medir la presencia de la rama y concluir sobre la del commit fue lo que hizo el
+encargo de esta vuelta decir «lleva un día en tu disco y en ningún sitio más», que era falso
+(reconocido por el orquestador en su respuesta a esta entrega).
+
 Javier contestó el 30-sep las cuatro decisiones de la parte 1 del bloque, y el bloque las contradecía
-en seis sitios. Corregidos:
+en seis sitios. **Las respuestas literales están en SCRUM-1261, comentario 17638.** Corregidos:
 
 1. Parte 1, tabla de marcas: «ASESOR» · 23-sep, AUTORÍA SIN DECLARAR pasa a **IA · 23-sep** (las
    escribió una herramienta). Debajo, una línea nueva: ninguna de las 28 tiene hoy la revisión de un
