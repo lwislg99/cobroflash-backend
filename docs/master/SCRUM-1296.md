@@ -117,3 +117,88 @@ entre en el árbol**, en el PR del cableado, y no antes.
 
 ⚠️ **Y un riesgo que queda dicho:** ese commit vive sólo en un árbol de trabajo local. Si el árbol se
 poda, se pierde. Quien retome el ticket lo mira **antes** de escribir el test de cero.
+
+## 8 · Tanda 1 — la cola entra en el esquema (J1, 30-sep-2026)
+
+**Medido contra:** `origin/main` = `21c7163d04c8a117df995f3f945cf6f04c53bc99` · 2026-09-30T21:22:00Z
+A9: comprobación → `tests/scrum1296-esquema-cola.test.mjs`
+
+El fallo que esa línea convierte en comprobación: SCRUM-1127b dejó escrito que los cinco estados
+del enum eran «los mismos, y en el mismo orden, que `ESTADOS_VF_SUBMISSION`, y hay un test que los
+fija». El test fijaba sólo la mitad TS; el enum no estaba en el esquema y nadie lo comparaba. Ahora
+se comparan, y también los nombres de tabla y columna y el `onDelete: Restrict`.
+
+**Qué entra.** `enum VfSubmissionStatus`, `model VfSubmission` y `model VfFlujoObligado` en
+`prisma/schema.prisma`, más los dos campos de vuelta (`vfSubmissions`) en `Invoice` y `Merchant`,
+que no producen DDL. Es el modelo de SCRUM-1127 §④ sin cambiar nada.
+
+**El DDL, medido.** `node scripts/preview-migracion.mjs --desde <esquema de origin/main>`: control
+positivo `ok` (33 tablas), **aditiva**, y el SQL es **idéntico línea a línea** al de SCRUM-1127 §④
+(diff vacío salvo líneas en blanco). El ALTER ya estaba aplicado en staging y producción: lo midió
+el fundador con una consulta de solo lectura en las dos (17 + 5 columnas, el enum con sus 5
+etiquetas en orden, 2 claves ajenas, 5 + 1 índices, huellas iguales entre las dos bases), y el
+orquestador con un preview de solo lectura contra staging que proponía `DROP` de esos objetos con
+el esquema de `main`: un `DROP` sólo se propone de lo que existe. Esta sesión **no** corrió el
+preview contra staging: su árbol no tiene la clave, y no se buscó en otro. **Dev no está medido**;
+no bloquea, porque el CI monta su banco desde el esquema.
+
+⚠️ **Lo que no está verificado:** el TIPO de cada columna una a una en las bases. Las huellas prueban
+que staging y producción coinciden entre sí y los recuentos cuadran con el DDL.
+
+**La landing no se desbloquea (regla 26), medido.** `envioConstruido()` sobre este árbol con el
+modelo dentro: `construido: false`, `señales: [cola]` (ve la tabla), `llamantes: []`,
+`SIF_ENABLED` leído y en OFF. El criterio de SCRUM-1128 exige llamante del envío **y** el flag en
+ON. `scrum537` y `scrum1128` en verde. El último caso del test nuevo lo deja fijado.
+
+**El test, interrogado.** Base: 5 de 5 en verde. Tres mutaciones del esquema, las tres en rojo:
+orden del enum cambiado, `onDelete: Cascade` en una relación y un `@map` de columna mal escrito.
+Restauración comprobada por sha256 del esquema, no por un `finally`.
+
+**Texto que cambia porque dejó de ser cierto:** la cabecera de `sif.cola.ts` («NO HAY TABLA») y dos
+frases de `docs/SIF_SPEC_NOTES.md` («no está en el esquema»). Lo que queda en §6 («existe, no está
+cableado») sigue siendo cierto hasta la tanda 2 y se cambia allí.
+
+⚠️ **Quedan diciendo «no está en el esquema», y no se tocan aquí:** la skill `yaqu-verifactu-sif`
+(derivada del máster, regla 35) y `docs/legal/AUDITORIA_CAMINO_EMISION.md` (eslabón 8). Los dos los
+decide su dueño; se entregan como aviso al orquestador.
+
+**Decisiones del orquestador para la tanda 2, que constan aquí para no parecer un olvido:**
+- **D2 = X.** El procesador de la cola recibe el envío INYECTADO: no importa `enviarSobre` ni se
+  engancha a un cron, y aplica `decidirTrasEnvio` tal cual, sin segunda política de reintentos.
+  El guard de SCRUM-1128 queda intacto, y el día que se enganche de verdad lo verá.
+- **D1 al fundador.** El único constructor del `RegistroAlta` es un closure dentro de
+  `buildVerifactuRegistrosXml`: sacarlo para reutilizarlo es modificar el camino de emisión
+  (regla 38), y eso no lo cubre el GO de §1. La recomendación es extraerlo sin cambiar ni un
+  byte de la exportación (sha256 antes y después sobre los 7 casos de SCRUM-240).
+- **Una factura que la exportación EXCLUYE** (p. ej. cliente sin NIF, con
+  `MODO_SIN_DESTINATARIO = SIN_DICTAMEN`) no tiene registro que encolar: queda sellada igual y
+  deja constancia en la auditoría.
+
+**Borrar un comercio y «Eliminar datos de ejemplo» con la cola dentro (D3 y D3b del orquestador).**
+`vfSubmission` tiene `merchantId`, así que los guards de cobertura (SCRUM-172/192/314) exigen
+decidir qué hace con ella el borrado. Lo decidió el orquestador, porque cumple la decisión 3 de
+1127b en vez de tomar una nueva:
+- **D3 = F.** `vfSubmission` va en `FUERA_DEL_BARRIDO_GENERICO` (`borradoMerchant.ts`), con el
+  motivo dentro de la lista: RESTRICT, registros presentados ante la AEAT, un comercio con envíos
+  no se borra y el borrado falla ruidoso en `invoice`.
+- **D3b = F1.** `barridoDemo` NO consulta `FUERA_DEL_BARRIDO_GENERICO`: recorre
+  `COLGADOS_DE_CHARGE`, `ORDEN_BORRADO_MERCHANT` y `botSession`. Esa asimetría entre las dos
+  listas es la que obligó a un paso propio, acotado al demo (`where: { merchantId: demoId }`),
+  antes de las facturas. Quien añada otro modelo «fuera» tropezará con lo mismo; va como aviso
+  al orquestador, no se arregla en este ticket.
+- ⚠️ **Consecuencia declarada:** ese paso **hoy no borra nada** (la tabla está vacía en todas
+  partes) y, si la tanda 2 cierra que el demo no encola, no borrará nunca: sólo protege el
+  botón. Si algún día cuenta filas, es que el demo empezó a encolar.
+- **Efecto, no forma.** El control de `scrum314` mira la FORMA del `where` sobre un espía que no
+  filtra. El test nuevo mira el EFECTO sobre una cola con filas de dos comercios: las del demo
+  caen, las del otro no. Mutación del `where` a `{}` en `dist/`: caen los dos casos nuevos y el
+  control de `scrum314`; restaurado por sha256.
+
+**GO de D1 leído en origen:** SCRUM-1296, comentario 17641 (Javier, 30-sep-2026: «5-Go»), abierto
+por esta sesión en Jira. Autoriza extraer `construirRegistro` con sha256 antes y después sobre los
+7 casos de SCRUM-240; si uno difiere, se para. Es para la tanda 2.
+
+**La tanda completa**, antes de añadir el paso F1: 9.234 tests · 9.098 pass · 2 fail · 134
+skipped. Los 2 eran los de `scrum314`, que F1 cierra.
+Tras F1, rebasada sobre `d65cfaa9`: **9.239 tests · 9.105 pass · 0 fail · 134 skipped**.
+Rebasada después sobre el `origin/main` del ancla, que sólo trajo SCRUM-1106 (docs y su test, disjuntos de esta rama): se corrieron ese test, los de esta rama y los guards de registro, no la tanda entera.

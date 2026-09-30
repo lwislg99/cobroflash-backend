@@ -132,6 +132,12 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // que su padre. La diferencia se decidió en el ALTER (`docs/sql/scrum-597-…`), no aquí.
   quoteAssignee: 'cascada por sus dos padres (SCRUM-597): Quote y TeamMember declaran onDelete Cascade',
   invoiceAssignee: 'cascada por sus dos padres (SCRUM-597): Invoice y TeamMember declaran onDelete Cascade',
+  // SCRUM-1296: la cola de remisión a la AEAT. NO se barre, y es la decisión del fundador, no un
+  // hueco: sus dos `@relation` son `onDelete: Restrict` (SCRUM-1127b, decisión 3). Con filas
+  // dentro, el `deleteMany` de `invoice` revienta RUIDOSO — que es exactamente lo que se quiere.
+  vfSubmission:
+    'RESTRICT decidido en SCRUM-1127b (decisión 3): registros presentados ante la AEAT. ' +
+    'Un comercio con envíos no se borra — el borrado falla ruidoso en invoice.',
 };
 
 /**
