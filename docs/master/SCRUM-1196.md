@@ -513,3 +513,39 @@ bueno del error, pero que no lo descubra nadie creyendo que es un fallo.
   sigue con Cloudflare = 0. Es de J3 y sigue pendiente.
 - **L1/L2**: superados por el texto de SCRUM-1154, ya publicado.
 - **L4 (NEL)**: espera al panel del fundador. **L5**: no se publica.
+
+## Apéndice · L3 (Cloudflare) aplicado · J5, 30-sep-2026
+
+**Medido contra:** `origin/main` = `d65cfaa9a09599656a3a97bfbb26f6ce82ad33e5` · 2026-09-30T21:14:01Z
+
+Sesión J5, por encargo del orquestador del equipo de Javier, después del #2009 (L6), que era el
+mismo fichero.
+
+**Qué se aplica.** Solo **L3**, firmado por el fundador en el comentario 17453 («¿Firmas L1, L3 y
+L6?» → «Sí firmo todas»). Va en `public/privacidad.html`, §5, **justo después de la fila de Railway**.
+El texto es el de la tabla L1–L6 de este mismo expediente: comparado por programa, la página lo
+contiene **una vez, carácter a carácter**.
+
+**Registro de aprobación:** `docs/microcopy/2026-09-29-SCRUM-1196-encargado-cloudflare.md` (firma en
+persona, no por delegación: texto legal, regla 39). Es de donde lo lee el guard: no hay una copia del
+literal dentro del test.
+
+**Guard:** `tests/scrum1196-cloudflare-encargado.test.mjs`. SUELO (el §5 se acota y tiene la fila de
+Railway), EL QUE DECIDE (el literal firmado está en el §5 y es la fila que sigue a Railway) y los
+CONTROLES dentro del propio test: sin la fila, con una coma cambiada y con la fila movida al final,
+el guard lo distingue. **Interrogado sobre el fichero real:** borrando la fila cae; con el punto final
+cambiado cae; restaurado y comprobado por sha256.
+
+**La fecha (L6).** El #2009 dejó la cabecera en «30 de septiembre de 2026», y este cambio es del
+mismo día: `scrum1196-fecha-de-la-politica` sigue verde sin moverla. Si se mergea después de las
+00:00 de Madrid, la publicación real sería del 1-oct y la cabecera tendría que decirlo.
+
+**Lo que NO entra:** L4 (NEL), que espera al panel del fundador; L5, que no se firmó; L1/L2,
+superados por SCRUM-1154. Tampoco la reescritura del HTML que hace Cloudflare (ofusca los
+`mailto:`): no está en el literal firmado. Sigue sin determinar a qué buzón reenvía Cloudflare
+`hola@yaqu.app`, que es otro encargado que L3 no nombra.
+
+**Guards de la zona, en verde:** 1154 (fila de Google, sin Anthropic), 1234, 525d, 514, 709, 715, 726,
+329, y los de suite 237, 976, 391 y 267: 88 de 88.
+
+A9: comprobación → `tests/scrum1196-cloudflare-encargado.test.mjs`
