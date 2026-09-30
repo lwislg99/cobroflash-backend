@@ -49,9 +49,9 @@ function filaTrasRailway(seccion) {
   const i = seccion.indexOf(FILA_RAILWAY);
   if (i === -1) return null;
   const finRailway = seccion.indexOf('</li>', i);
-  const siguiente = seccion.indexOf('<li>', finRailway);
-  if (siguiente === -1) return null;
-  return seccion.slice(siguiente, seccion.indexOf('</li>', siguiente) + '</li>'.length);
+  // La siguiente `<li …>`, con hueco para atributos (SCRUM-553: nada de `>` pegado a la etiqueta).
+  const m = /<li(?:\s[^>]*)?>[\s\S]*?<\/li>/.exec(seccion.slice(finRailway));
+  return m ? m[0] : null;
 }
 
 const html = fs.readFileSync(PAGINA, 'utf8');

@@ -548,4 +548,6 @@ superados por SCRUM-1154. Tampoco la reescritura del HTML que hace Cloudflare (o
 **Guards de la zona, en verde:** 1154 (fila de Google, sin Anthropic), 1234, 525d, 514, 709, 715, 726,
 329, y los de suite 237, 976, 391 y 267: 88 de 88.
 
+**Rojo de CI en la primera versión, mío:** `scrum553-etiquetas-pegadas` cayó porque el guard buscaba la siguiente fila con `'<li>'`, con el `>` pegado (un `<li class=…>` no lo habría visto). Arreglado el código, no el guard: la fila se busca con hueco para atributos. En local había corrido una muestra de guards y no la tanda entera, que es donde estaba 553.
+
 A9: comprobación → `tests/scrum1196-cloudflare-encargado.test.mjs`
