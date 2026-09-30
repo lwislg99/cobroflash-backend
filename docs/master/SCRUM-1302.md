@@ -81,7 +81,7 @@ Guards de navegador de las pantallas afectadas: `guard:albaranes-con-acciones`,
 
 ## G · Con las diez fotos puestas, «Añadir foto» no se ofrece
 
-**Medido contra:** `origin/main` = `a91203a9a78d86eb9505ef170673761d0a6de984` · 2026-09-30T22:36:40+01:00
+**Medido contra:** `origin/main` = `0e3b2d66d0ba92a3d0af41f01a2180644320077c` · 2026-09-30T22:45:20+01:00
 
 A9: comprobación → `tests/scrum1302g-foto-con-diez.test.mjs`
 
