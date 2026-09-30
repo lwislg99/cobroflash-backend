@@ -19,7 +19,7 @@ import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; //
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1301
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
-import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
+import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
 import { yaSeEnvioElCorreo, marcarCorreoEnviado } from '../../domain/correoDeFacturaEnviado';
 // SCRUM-1292: un cobro PAGADO no retrocede a fallido ni a caducado.
@@ -183,11 +183,21 @@ router.post('/', async (req, res) => {
           //
           // La guarda va sobre la ESCRITURA y no sobre el `where`: asi lo demas —el numero para la
           // confirmacion al cliente— se comporta exactamente igual que hoy.
+          //
+          // 🔴 SCRUM-1303 · Y LA MISMA GUARDA VA DENTRO DEL `where`. La de arriba mira el estado leído
+          // en el `findFirst`; si el profesional anula mientras llega este pago, la fila ya está
+          // anulada al escribir. Entonces Prisma no la encuentra (P2025) y no se escribe nada. Al
+          // proveedor se le contesta lo mismo que antes: esto sólo decide si se escribe.
           if (puedeCobrarPorPasarela(linkedInvoice)) {
+          try {
           await prisma.invoice.update({
-            where: { id: linkedInvoice.id },
+            where: { id: linkedInvoice.id, status: { not: ESTADO_ANULADA } },
             data: { status: 'paid', paidAt: new Date() },
           });
+          } catch (e) {
+            if (!esFilaQueNoCasa(e)) throw e;
+            console.error(`[psp] SCRUM-1303 ${linkedInvoice.number} se anuló entre la lectura y el cobro: no se marca pagada`);
+          }
           }
         }
       } catch (e) {
