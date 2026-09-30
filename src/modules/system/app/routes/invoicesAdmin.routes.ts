@@ -48,6 +48,7 @@ import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailu
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
@@ -447,7 +448,12 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
 
     // Sin fecha en el cuerpo -> hoy. Eso NO es el defecto: es el valor por defecto que la pantalla
     // propone y la persona puede cambiar. El defecto era que no se podia cambiar.
-    const fecha = resolverFechaDeCobro(req.body?.paidAt);
+    // SCRUM-1093 · el «hoy» que decide si la fecha es futura es el del MERCHANT, como en
+    // chargesAdmin (confirm-bizum) y en el webhook (SCRUM-1301). Sin zona, entre las 00:00 y las
+    // 02:00 de Madrid la fecha de hoy salía «futura». El lote sólo toca facturas de
+    // `req.merchantId` (el `where` de abajo), así que la zona es la del merchant de la sesión.
+    const m = await prisma.merchant.findUnique({ where: { id: req.merchantId }, select: { timezone: true } });
+    const fecha = resolverFechaDeCobro(req.body?.paidAt, new Date(), zonaDelMerchant(m));
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
     const result = await prisma.invoice.updateMany({
