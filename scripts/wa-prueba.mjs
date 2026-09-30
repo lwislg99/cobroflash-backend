@@ -10,7 +10,7 @@
  *   WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_ACCESS_TOKEN
  *
  * Uso:
- *   node scripts/wa-test.mjs <plantilla> <telefono> [opciones]
+ *   node scripts/wa-prueba.mjs <plantilla> <telefono> [opciones]
  *
  *   plantilla:  quote_decision | payment_request | payment_confirmation
  *   telefono:   E.164 sin '+', p.ej. 34600111222
@@ -25,10 +25,10 @@
  *   --dry                          imprime el payload SIN enviar
  *
  * Ejemplos:
- *   node scripts/wa-test.mjs quote_decision 34600111222
+ *   node scripts/wa-prueba.mjs quote_decision 34600111222
  *   WHATSAPP_ACCESS_TOKEN=xxx WHATSAPP_PHONE_NUMBER_ID=yyy \
- *     node scripts/wa-test.mjs payment_request 34600111222 --num=F-2025-014 --id=42
- *   node scripts/wa-test.mjs payment_confirmation 34600111222 --dry
+ *     node scripts/wa-prueba.mjs payment_request 34600111222 --num=F-2025-014 --id=42
+ *   node scripts/wa-prueba.mjs payment_confirmation 34600111222 --dry
  */
 import dotenv from 'dotenv';
 dotenv.config(); // .env (no carga .env.local, que deja las credenciales WA en blanco)
@@ -56,7 +56,7 @@ const TEMPLATES = {
 
 function fail(msg) {
   console.error('\n❌ ' + msg + '\n');
-  console.error('Uso: node scripts/wa-test.mjs <quote_decision|payment_request|payment_confirmation|payment_confirmation_invoice|merchant_alert> <telefono> [--name= --biz= --num= --amount= --id= --action= --detail= --lang=es --dry]');
+  console.error('Uso: node scripts/wa-prueba.mjs <quote_decision|payment_request|payment_confirmation|payment_confirmation_invoice|merchant_alert> <telefono> [--name= --biz= --num= --amount= --id= --action= --detail= --lang=es --dry]');
   process.exit(1);
 }
 
