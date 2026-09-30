@@ -83,7 +83,7 @@ no hay forma de saber que el cambio hizo algo.
 
 | Paso | Quién | Estado |
 | --- | --- | --- |
-| ① El rojo visto | J1 | ✅ `tests/scrum1296-emitir-encola.test.mjs` — 4 pass, 1 fail: «0 escrituras en vfSubmission tras sellar». Sin empujar a propósito: el check obligatorio saldría rojo |
+| ① El rojo visto | J1 | ✅ pero **NO en el árbol**: 4 pass y 1 fail («0 escrituras en `vfSubmission` tras sellar»), en un commit que vive sólo en el árbol de trabajo de J1. Sin empujar a propósito, porque el check obligatorio saldría rojo. **Su ruta no se escribe aquí** — ver §7 |
 | ② El DDL de la cola | J1 | ✅ sacado **offline**, 0 DROP · 0 RENAME · 0 destructivas. sha256 del SQL `289f2a13c564f09b7e490483179068c7b58b600296990b2c0d0c54a51871242f` |
 | ② El ALTER aplicado en las tres bases | **Javier** | ⏳ pendiente |
 | ③ El cableado | J1 | ⏳ bloqueado por ② y por este fichero |
@@ -97,3 +97,23 @@ ticket daba por pendiente.)
 - **SCRUM-1110 está HECHO** (script `sobre-soap-prueba-aeat.mjs`, y la AEAT respondió «Correcto»),
   aunque su estado en Jira dijera otra cosa.
 - `docs/SIF_SPEC_NOTES.md` §6 dice hoy «existe, no está cableado». **Al cablear, esa frase cambia.**
+
+## 7 · Por qué no se escribe la ruta del test del rojo
+
+El guard `scrum391` tumbó la primera versión de este fichero, y con razón: declaraba la ruta de
+un test que **no está en el árbol**. Su mensaje es la regla:
+
+> «UNA CONSTANCIA NO ESCRIBE LA RUTA DE UN FICHERO QUE NO EXISTE, ni siquiera para explicar por qué
+> no existe. El motivo se escribe NOMBRANDO LO QUE SÍ EXISTE —el test que hoy cubre aquello—, no la
+> ruta del que se fue.»
+
+Y el motivo que da es el bueno: **la ausencia de un guard y su verde son indistinguibles desde
+fuera**, y encima retiran la desconfianza que los habría sustituido. Un fichero que declara una ruta
+que no existe hace creer vigilado algo que nadie vigila.
+
+🔴 **Aquí no hay nada que nombre en su lugar: hoy NADIE comprueba que emitir encole.** Ése es el
+hueco entero de este ticket. La comprobación se declarará en este mismo fichero **cuando el test
+entre en el árbol**, en el PR del cableado, y no antes.
+
+⚠️ **Y un riesgo que queda dicho:** ese commit vive sólo en un árbol de trabajo local. Si el árbol se
+poda, se pierde. Quien retome el ticket lo mira **antes** de escribir el test de cero.
