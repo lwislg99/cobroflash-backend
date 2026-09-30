@@ -22,6 +22,8 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-130
 import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
 import { yaSeEnvioElCorreo, marcarCorreoEnviado } from '../../domain/correoDeFacturaEnviado';
+// SCRUM-1292: un cobro PAGADO no retrocede a fallido ni a caducado.
+import { ESTADOS_QUE_UN_FALLO_PUEDE_PISAR, elFalloPuedePisar, esFilaQueNoCasa } from '../../domain/estadoDelCobro';
 
 
 const router = Router();
@@ -99,6 +101,16 @@ router.post('/', async (req, res) => {
     if (
       (charge.status === 'failed' && body.event === 'payment.failed') ||
       (charge.status === 'expired' && body.event === 'payment.expired')
+    ) {
+      return res.json({ ok: true, status: `already_${charge.status}` });
+    }
+
+    // SCRUM-1292 · PRIMERA BARRERA: un cobro PAGADO no retrocede. Esta guarda es la que da la
+    // respuesta buena y ahorra la escritura; la que de verdad sujeta es la condición dentro del
+    // `update` de abajo, porque entre este `if` y aquella escritura cabe otra petición.
+    if (
+      !elFalloPuedePisar(charge.status) &&
+      (body.event === 'payment.failed' || body.event === 'payment.expired')
     ) {
       return res.json({ ok: true, status: `already_${charge.status}` });
     }
@@ -346,26 +358,28 @@ router.post('/', async (req, res) => {
     }
 
 
-    if (body.event === 'payment.failed') {
-      await prisma.charge.update({
-        where: { id: chargeId },
-        data: {
-          status: 'failed',
-          events: { create: { type: 'failed', payload: body as any } },
-        },
-      });
-      return res.json({ ok: true, status: 'failed' });
-    }
-
-    if (body.event === 'payment.expired') {
-      await prisma.charge.update({
-        where: { id: chargeId },
-        data: {
-          status: 'expired',
-          events: { create: { type: 'expired', payload: body as any } },
-        },
-      });
-      return res.json({ ok: true, status: 'expired' });
+    // SCRUM-1292 · SEGUNDA BARRERA: la condición de estado VA EN LA ESCRITURA. Un cobro `paid` no
+    // retrocede a fallido ni a caducado por un aviso posterior —el caso normal es un Bizum ya
+    // cobrado cuya sesión de Stripe caduca después—, y si alguien paga entre la lectura de arriba y
+    // esta escritura, Prisma no encuentra la fila (P2025) y aquí no se escribe nada. El porqué de la
+    // lista, en `domain/estadoDelCobro.ts`.
+    if (body.event === 'payment.failed' || body.event === 'payment.expired') {
+      const nuevo = body.event === 'payment.failed' ? 'failed' : 'expired';
+      try {
+        await prisma.charge.update({
+          where: { id: chargeId, status: { in: ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } },
+          data: {
+            status: nuevo,
+            events: { create: { type: nuevo, payload: body as any } },
+          },
+        });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        // Pagaron entre la lectura y la escritura. No se escribe nada, y se contesta lo mismo que si
+        // se hubiera visto arriba. Para Stripe sigue siendo un 200, que es lo que evita el reintento.
+        return res.json({ ok: true, status: 'already_paid' });
+      }
+      return res.json({ ok: true, status: nuevo });
     }
 
     return res.status(400).json({ error: 'unhandled_event' });
