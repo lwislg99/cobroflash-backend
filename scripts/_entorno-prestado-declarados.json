@@ -1,12 +1,6 @@
 {
   "leeme": "SCRUM-1349 · Los ficheros que HOY lanzan un `node` hijo prestándole FORCE_COLOR / NODE_OPTIONS / NODE_TEST_CONTEXT, declarados UNO A UNO con su dueño y su motivo. Los mide scripts/_censo-entorno-prestado.mjs y los vigila tests/scrum1349-entorno-prestado-solo-baja.test.mjs. ESTA LISTA SOLO PUEDE BAJAR: un fichero nuevo aquí es un rojo, no una línea más. Quien arregla el suyo BORRA su entrada en el mismo commit (no se pone a 0). `llamadas` es cuántas llamadas acusadas tiene el fichero (por fichero y no por línea: las líneas se mueven). `confirmado: false` quiere decir que el dueño se dedujo y nadie lo ha confirmado. Daño CONTENIDO desde #2000 (los reporters ya no viajan en NODE_OPTIONS), deuda VIVA: lo próximo que alguien meta en esas variables volverá a colarse por aquí.",
   "ficheros": {
-    "tests/scrum1123-vigia-despliegue-aviso.test.mjs": { "llamadas": 2, "dueno": "S5", "confirmado": true, "motivo": "sin limpiar ninguna de las tres; Carril S5 en docs/master/SCRUM-1123.md" },
-    "tests/scrum932-el-turno-tiene-mecanismo.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
-    "tests/scrum946-censo-de-huerfanos.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
-    "tests/scrum966-censo-ve-las-ramas.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
-    "tests/scrum928-guards-entrada-recuento-con-color.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; lo arregla el PR #1990, que al entrar tiene que borrar esta entrada" },
-    "tests/scrum976-guards-entrada-con-techo.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; lo arregla el PR #1990, que al entrar tiene que borrar esta entrada" },
     "tests/scrum899d-aviso-de-uso.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin docs/master propio, atribuido por el ticket 899 que trabajó S5" },
     "tests/node-p-capturado-sin-color.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin número de ticket, nació en el commit «vigia y conflicto-de-registro» del 18-sep-2026" },
     "tests/scrum815-idempotencia-del-webhook.test.mjs": { "llamadas": 1, "dueno": "S1", "confirmado": true, "motivo": "no pasa `env`: hereda entero; Carril dinero en su registro" },
