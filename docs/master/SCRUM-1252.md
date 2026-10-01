@@ -2,7 +2,14 @@
 
 **Medido contra:** `origin/main` = `f5d99bd7bac005f7cb8053447dc416ba6334f06e` · 2026-10-01T03:05:22Z (hora de GitHub, `gh api -i zen`)
 
-A9: sin fallo que generalice — dos tropiezos cazados antes de salir: leí la ficha del puesto después de crear la rama (lo paró la tabla de carriles de `dos-equipos.md`, antes de tocar `src/`), y cité de memoria el ticket de un comentario (442, no 460; lo cazó releer la fuente antes de comitear); y un `\u` del test propuesto aterrizó como BOM literal, que es la A22 ya escrita y lo cazó su recuento.
+A9: comprobación → `tests/scrum391-guards-declarados-presentes.test.mjs`
+
+Lo que cazó ese guard: la primera versión de este registro nombraba, en su receta, la ruta de un test
+que todavía no existe en el árbol, y la entrada salió roja antes de empujar. Otros tres tropiezos que
+no llegaron a salir: leí la ficha del puesto después de crear la rama (lo paró la tabla de carriles de
+`dos-equipos.md`, antes de tocar `src/`); cité de memoria el ticket de un comentario (442, no 460; lo
+cazó releer la fuente antes de comitear); y un escape de carácter del test propuesto aterrizó como BOM
+literal, que es la A22 ya escrita y lo cazó su recuento.
 
 Sesión J6d (`jv-j6d`), 1-oct-2026, por encargo del orquestador de Javier (`cobroflash-backend-5b`).
 **Aquí sólo se mide y se propone.** No se toca `src/` (J6 no construye producto y `src/modules/fiscal/**`
