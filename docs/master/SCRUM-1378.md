@@ -1,7 +1,7 @@
 # SCRUM-1378 · En el latido, un PR es de quien lo EMPUJÓ, no de quien lo cita
 
 **Rama:** `scrum-1378-latido-pr-de-quien-empujo` · **Carril:** S5 (s5-1octd) · **Fecha:** 1-oct-2026
-**Medido contra:** `origin/main` = `31688d6b550ea0bbc1b99b381fdf857b821bdec9` · 2026-10-01T13:45:00Z
+**Medido contra:** `origin/main` = `31688d6b550ea0bbc1b99b381fdf857b821bdec9` · 2026-10-01T13:36:00Z
 
 A9: comprobación → `tests/scrum1350-latido.test.mjs`
 
@@ -35,7 +35,7 @@ leer entero, y con él se pierden los buenos.
 
 ## Medido contra las sesiones reales (1-oct-2026)
 
-| Qué | Antes (`origin/main`, 13:33Z) | Con el cambio (13:44Z) |
+| Qué | Antes (`origin/main`, ~13:28Z) | Con el cambio (~13:36Z) |
 |---|---|---|
 | Sesiones leídas | 27 de 24 h, por `children` | 28 de 24 h: 26 por su transcript, 2 sin turno (`s3-1octb`, `s1-1octb`) |
 | Avisos de «nadie vuelve» | 4 | 4, cada uno con la rama que esa sesión empujó |
