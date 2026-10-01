@@ -127,6 +127,13 @@ está leído, **no medido**.
   Ya no lleva ninguna hora escrita a mano; las buenas son las de Jira. Apuntado en las cicatrices
   del puesto, sin comprobación: un comentario de Jira no pasa por ningún guard.
 - La mutación M5 salió muda y la había declarado antes de mirar si el comportamiento cambiaba.
-- Un doc de auditoría cita  por línea ():
-  el  nuevo movió dos coordenadas y lo cazó , no yo. Coordenadas llevadas a
+- Un doc de auditoría cita `src/lib/invoicing.ts` por línea (`docs/legal/AUDITORIA_CAMINO_EMISION.md`):
+  el `import` nuevo movió dos coordenadas y lo cazó `tests/scrum525d`, no yo. Coordenadas llevadas a
   su sitio en el mismo cambio.
+- Este mismo párrafo entró primero con huecos (commit `a2c2123d`): lo escribí pasándole el texto a
+  `node -e "…"` desde bash, y bash EJECUTÓ lo que iba entre acentos graves — intentó correr
+  `src/lib/invoicing.ts` y el doc de auditoría como guiones de shell. No ejecutó nada con efecto
+  (falló en la primera línea de cada uno; `git status` limpio y el commit lleva sólo sus tres
+  ficheros), pero pudo. Es una trampa ya apuntada en la memoria del puesto, y la pisé igual.
+  Apuntado en las cicatrices, sin comprobación: lo que lo impediría es un hook sobre la orden, y
+  los hooks no son de este puesto.
