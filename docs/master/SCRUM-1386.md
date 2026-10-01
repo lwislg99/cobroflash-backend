@@ -134,6 +134,25 @@ subía de 27 a 28; SCRUM-1343 entró en `main` antes subiéndolo también a 28, 
 `origin/main` = `cae4c5cc6fb65aea21f7267525930ee44d8d4631` chocaron. La cifra no se eligió ni se sumó: se
 conservaron las dos explicaciones, se corrió el test sobre el árbol fusionado y dijo **29**.
 
+## Medido antes de empujar
+
+Sobre la rama con `origin/main` = `cae4c5cc6fb65aea21f7267525930ee44d8d4631` mezclado, en un árbol de
+trabajo anidado: `dist/` emitido con `tsc --noCheck` y `node_modules` heredados del árbol de arriba.
+
+- **`guards:entrada`**: 12 guards, 132 tests, verde.
+- **El test**: 11 casos, 11 pasan. **Sin la protección** (`terminado = !agotado`, puesta a mano y con
+  el `git diff --numstat` al lado: 1 línea) caen el ⑦ —«estado 1: sin resumen se dio por terminado»— y
+  el ⑨. Es lo que respalda retirar el aserto del caso ⑤.
+- **Mutaciones**: 6 de 6 caen, árbol restaurado, repetidas después del merge.
+- **Tanda DIRIGIDA, con turno** (`npm run tanda:dirigida`): 220 ficheros de 1.191 (13 nombran lo
+  tocado, 93 recorren su directorio, 114 «no sé qué leen»), 4 a la vez: **2.142 tests · 2.136 pasan ·
+  1 cae**; de los otros 5 el comando no dice nada. El que cae es
+  `tests/scrum476-reconciliar-censos.test.mjs`, «el censo de directorios `node_modules` no puede dar
+  cero»: este árbol anidado no tiene esa carpeta (la hereda). Corrido a solas dice lo mismo. No lo he
+  visto en verde en este árbol: lo dirá el CI.
+- **NO corrido**: los otros 971 ficheros de la suite, `guards:visuales` y el meta-guard entero (sólo
+  mis 6 declaraciones). Eso lo corre CI sobre el merge.
+
 ## Lo que NO cubre, y lo que NO sé
 
 - **Si el arnés mata el árbol ENTERO, puerta incluida, no habla nadie.** No hay arreglo posible dentro

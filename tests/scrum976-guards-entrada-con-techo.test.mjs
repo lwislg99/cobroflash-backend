@@ -343,8 +343,14 @@ test('SCRUM-1345 ⑤ un test que YA había caído sigue siendo ROJO aunque se ag
   const vRojo = veredictoDe(cuentasDeLaPasada({ agotado: false, status: cae.status, salida: cae.entera }));
   assert.equal(vRojo.codigo, SALIDA_HALLAZGO, '🔴 una pasada que terminó con un test caído debe salir 1');
   assert.equal(vRojo.hallazgos, 1, 'el rojo no cuenta los caídos que dice el resumen del runner');
-  // SCRUM-1386 · aquí se exigía que un estado ≠ 0 SIN resumen fuera rojo. Es justo lo que ese ticket
-  // cambia: sin resumen el runner no terminó, y eso es un ciego (lo prueba ⑦, con salida real).
+  // ── UN ASERTO RETIRADO AQUÍ, Y POR QUÉ (SCRUM-1386, 1-oct-2026) ──
+  // Hasta ese ticket, en este punto se exigía que un runner con estado ≠ 0 y SIN resumen (estado 7,
+  // salida vacía) fuera ROJO: «terminó con estado distinto de 0». Era el comportamiento que SCRUM-1386
+  // decide cambiar —un runner sin resumen NO terminó: lo mataron o ni arrancó—, así que mantenerlo
+  // sería exigir que el arreglo no funcione. No se relaja: se sustituye por lo contrario, en el caso ⑦,
+  // que exige CIEGO (2) para esa misma forma con cuatro estados (1, 4294967295, null y 0).
+  // Que ⑦ lo cubre está VISTO EN ROJO y no supuesto: sin la protección (`terminado = !agotado`) el ⑦
+  // cae con «estado 1: sin resumen se dio por terminado». Es la primera mutación declarada arriba.
   assert.equal(veredictoDe(cuentasDeLaPasada({ agotado: false, status: pasa.status, salida: pasa.entera })).codigo, SALIDA_VERDE,
     '🔴 una pasada limpia dentro de plazo debe seguir saliendo 0');
 });
