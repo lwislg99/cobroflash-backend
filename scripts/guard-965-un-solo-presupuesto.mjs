@@ -45,6 +45,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -345,8 +346,6 @@ if (corridos !== CASOS.length) ciegos.push(`sólo llegué a correr ${corridos} d
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «no duplica»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  console.log('\nEXIT=' + SALIDA_NO_SUPE_MEDIR);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 EN ${hallazgos.length} DE ${CASOS.length} CASOS EL NÚMERO DE DOCUMENTOS NO ES EL QUE TIENE QUE SER:\n`);
@@ -354,8 +353,14 @@ if (hallazgos.length) {
     console.error(`     [${h.etiqueta}]`);
     for (const x of h.mal) console.error('       · ' + x);
   }
-  console.log('\nEXIT=' + SALIDA_HALLAZGO);
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  console.log('\nEXIT=' + veredictoFinal.codigo);
+  process.exit(veredictoFinal.codigo);
 }
 console.log(`\n  ✔ en los ${CASOS.length} casos: se crea EXACTAMENTE el documento que toca —uno si no ha cambiado nada, otro si ha cambiado— y el profesional sigue llegando al suyo.\n`);
 console.log('EXIT=0');
