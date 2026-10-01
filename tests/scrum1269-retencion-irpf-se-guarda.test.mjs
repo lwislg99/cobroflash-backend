@@ -36,6 +36,7 @@ function clavesQueGuardaLaPantalla() {
 const GUARDADO = {
   name: 'Fontanería QA', legalName: 'Fontanería QA SL', taxId: 'B00000000', address: 'C/ Mayor 1',
   criterioCaja: true,
+  llevaLibrosPorSii: true, domicilioFiscalForal: false, // SCRUM-1102f
   whatsappPhone: '34000000027', // rango imposible (SCRUM-262)
   defaultCurrency: 'EUR', invoiceSeriesPrefix: 'CF',
   retencionIrpfDeclarada: true, retencionIrpfTipo: 15, logoUrl: null, googleReviewUrl: null,
