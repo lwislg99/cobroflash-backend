@@ -1,0 +1,44 @@
+// SCRUM-1337 · inserta el bloque firmado en la Parte S1 del máster, EN SITIO.
+// Garantías que comprueba antes y después (y aborta si alguna falla):
+//   · las dos líneas ancla casan UNA vez cada una y son CONSECUTIVAS;
+//   · el fichero no lleva BOM y usa un solo fin de línea (se conserva el que tenga);
+//   · después: todas las líneas originales siguen, en su orden y byte a byte; sólo hay altas.
+// Uso: node insertar-s1.mjs <ruta ABSOLUTA del máster> <ruta ABSOLUTA del bloque> [--aplicar]
+import fs from 'node:fs';
+
+const [, , rutaMaster, rutaBloque, modo] = process.argv;
+const bytes = fs.readFileSync(rutaMaster);
+if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) throw new Error('el máster lleva BOM');
+const texto = bytes.toString('utf8');
+const crlf = (texto.match(/\r\n/g) || []).length;
+const lf = (texto.match(/\n/g) || []).length;
+if (crlf !== 0 && crlf !== lf) throw new Error(`fines de línea mezclados: ${crlf} CRLF de ${lf} LF`);
+const FIN = crlf ? '\r\n' : '\n';
+const lineas = texto.split(FIN);
+
+const ANTES = 'Ruta nueva = declara rol mínimo; default Admin-only.';
+const DESPUES = '> **✅ SCRUM-147 (27-jul-2026)';
+const iAntes = lineas.flatMap((l, i) => (l.startsWith(ANTES) ? [i] : []));
+const iDespues = lineas.flatMap((l, i) => (l.startsWith(DESPUES) ? [i] : []));
+if (iAntes.length !== 1 || iDespues.length !== 1) throw new Error(`anclas: ${iAntes.length} y ${iDespues.length} (se exige 1 y 1)`);
+if (iDespues[0] !== iAntes[0] + 1) throw new Error(`las anclas no son consecutivas: ${iAntes[0] + 1} y ${iDespues[0] + 1}`);
+
+const bloque = fs.readFileSync(rutaBloque, 'utf8').replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
+if (bloque.some((l) => /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(l))) throw new Error('el bloque lleva bytes de control');
+
+const nuevas = [...lineas.slice(0, iDespues[0]), ...bloque, ...lineas.slice(iDespues[0])];
+
+// Post-condición: quitando el tramo insertado, queda EXACTAMENTE el original.
+const sinBloque = [...nuevas.slice(0, iDespues[0]), ...nuevas.slice(iDespues[0] + bloque.length)];
+if (sinBloque.join(FIN) !== texto) throw new Error('la inserción altera líneas que ya estaban');
+
+console.log(`POBLACION: ${lineas.length} líneas, fin de línea ${crlf ? 'CRLF' : 'LF'}, sin BOM, ${bytes.length} bytes`);
+console.log(`ancla de arriba: línea ${iAntes[0] + 1} · ancla de abajo: línea ${iDespues[0] + 1}`);
+console.log(`bloque: ${bloque.length} líneas, que ocuparán de la ${iDespues[0] + 1} a la ${iDespues[0] + bloque.length}`);
+if (modo === '--aplicar') {
+  fs.writeFileSync(rutaMaster, nuevas.join(FIN));
+  console.log(`APLICADO: ${nuevas.length} líneas, ${fs.statSync(rutaMaster).size} bytes`);
+} else {
+  console.log('EN SECO (sin --aplicar): no se ha escrito nada');
+}
+console.log('EXIT=0');
