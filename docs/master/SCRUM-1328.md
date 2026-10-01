@@ -3,7 +3,7 @@
 **Medido contra:** `origin/main` = `8f5906bc51c1c17dfd4fd3d44c1bd028324b8f48` · 2026-10-01T07:50:46Z
 (J3f del equipo de Javier, relevo de J3e, por encargo del orquestador `cobroflash-backend-5b`)
 
-A9: aviso → cicatriz J3 «Un canario con un solo fichero no ve a quien pisa el TAP: el padre lleva 15 bytes escritos y tapa al hijo. Se mide en mini-tanda, con relleno delante. (SCRUM-1328)» — no se pudo comprobar: es cómo se monta una medición puntual fuera del árbol, no algo del repositorio que un test pueda mirar
+A9: aviso → cicatriz J3 «Un canario con un solo fichero no ve a quien pisa el TAP: el padre lleva 15 bytes escritos y tapa al hijo. Se mide en mini-tanda, con relleno delante.» — no se pudo comprobar: es cómo se monta una medición puntual fuera del árbol, no algo del repositorio que un test pueda mirar
 
 ## 0 · En una frase
 
@@ -122,7 +122,7 @@ ficheros limpios de control (`salida-mini-tanda-6-argumentos.txt`, frente a
 Para repetirlo: `bash docs/master/evidencias/scrum1328/montar.sh <carpeta fuera del árbol, sin
 espacios>` y las órdenes que lleva en su cabecera.
 
-## 7 · Cuatro errores míos
+## 7 · Cinco errores míos
 
 1. **Mi primer instrumento dio `scrum850b` y `scrum928` por limpios.** Miraba los bytes de un canario
    corriendo UN fichero: ahí el padre lleva 15 bytes escritos cuando el hijo trunca, y lo que escribe
@@ -137,3 +137,9 @@ espacios>` y las órdenes que lleva en su cabecera.
    escrito en la memoria del puesto y lo repetí.
 4. **Mi control del sufijo usó como positivo una rama que ya no existía** (la de SCRUM-1339, ya
    mergeada y borrada): salió vacío y no valía. Repetido con la de SCRUM-1289.
+5. **El primer commit de este registro tenía el guard de la A9 en rojo**: cité la cicatriz con su
+   «(SCRUM-1328)» dentro de las comillas, y el guard compara la frase sin ese origen. Lo cazó
+   `tests/scrum1294-a9-leccion-en-a10.test.mjs` en local, antes de empujar; corregida la cita, no
+   el guard. Lo que corrí antes de empujar fueron 185 ficheros de guards elegidos por `grep` (los
+   que nombran `docs/master`, evidencias, cicatrices o el árbol): 1.839 casos, ese único rojo.
+   **No es la tanda: el CI es la primera pasada entera de este PR.**
