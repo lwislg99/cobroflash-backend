@@ -92,11 +92,11 @@ function clienteFalso({ marca, ahoraMs = T0, db = 'railway', comentarioSchema = 
 // ── 1 · LA PROPIEDAD QUE IMPIDE EL LOCK ETERNO ───────────────────────────────────────────
 
 test('SCRUM-249 · NADA refresca el turno por temporizador — la señal es de PROGRESO', () => {
-  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'), 'utf8');
+  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'staging-gated.mjs'), 'utf8');
   const lock = fs.readFileSync(path.join(RAIZ, 'scripts', '_staging-lock.mjs'), 'utf8');
   const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  for (const [nombre, fuente] of [['test-staging-gated.mjs', runner], ['_staging-lock.mjs', lock]]) {
+  for (const [nombre, fuente] of [['staging-gated.mjs', runner], ['_staging-lock.mjs', lock]]) {
     assert.doesNotMatch(sinComentarios(fuente), /setInterval|setTimeout\s*\(/,
       `🔴 HAY UN TEMPORIZADOR EN ${nombre}.\n\n` +
       '  Un latido por temporizador es EXACTAMENTE lo que convierte un lock huérfano en uno\n' +
@@ -222,10 +222,10 @@ test('SCRUM-249 · refrescar SIN compromiso no borra el que había (no se degrad
 // ── 5 · LA NOTA LOCAL, la otra mitad del ticket ──────────────────────────────────────────
 
 test('SCRUM-249 · el runner y el CLI comparten la MISMA nota local', () => {
-  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'), 'utf8');
+  const runner = fs.readFileSync(path.join(RAIZ, 'scripts', 'staging-gated.mjs'), 'utf8');
   const cli = fs.readFileSync(path.join(RAIZ, 'scripts', 'turno-staging.mjs'), 'utf8');
 
-  for (const [nombre, fuente] of [['test-staging-gated.mjs', runner], ['turno-staging.mjs', cli]]) {
+  for (const [nombre, fuente] of [['staging-gated.mjs', runner], ['turno-staging.mjs', cli]]) {
     assert.match(fuente, /from '\.\/_turno-nota\.mjs'/,
       `🔴 ${nombre} no usa el módulo compartido de la nota. Si cada uno escribe la suya, ` +
       '`turno:soltar` no podrá liberar la tanda del otro — que es exactamente el bloqueo de 30 ' +
@@ -236,7 +236,7 @@ test('SCRUM-249 · el runner y el CLI comparten la MISMA nota local', () => {
     'volvería a quedar irrecuperable sin leer el marcador de la BD a mano');
 
   // Y que nadie vuelva a inventarse la ruta por su cuenta.
-  for (const [nombre, fuente] of [['test-staging-gated.mjs', runner], ['turno-staging.mjs', cli]]) {
+  for (const [nombre, fuente] of [['staging-gated.mjs', runner], ['turno-staging.mjs', cli]]) {
     assert.doesNotMatch(fuente, /yaqu-turno-staging\.json/,
       `🔴 ${nombre} vuelve a escribir la ruta de la nota a mano: dos rutas que deben coincidir y ` +
       'nada que las ate es como nació este defecto');

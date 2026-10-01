@@ -179,13 +179,13 @@ ejecuta, no la intención de acordarse de dos variables sueltas.
 npm run test:staging:gated > /tmp/gated.log 2>&1; echo "exit=$?"   # ✅ los 51, exit real
 ```
 
-Lo lanza `scripts/test-staging-gated.mjs`, que corre **tres procesos** y agrega sus cuatro
+Lo lanza `scripts/staging-gated.mjs`, que corre **tres procesos** y agrega sus cuatro
 números (total·pass·fail·skip): el bloque `QA_DB_TEST` (los 49, menos los dos aislados para
 no contarlos dos veces) y `a55`/`bot-suite` **cada uno aislado** con sus envs — porque mutan
 el merchant demo id=1, son lentos y la config de `dist` se congela al primer import (mezclar
 sus envs en un mismo `node --test` las cruzaría). El runner devuelve ≠0 si cualquier hijo
 falla y **nombra cuál**; lee `res.status` directo, sin tubería (la trampa 5, dentro del
-mecanismo). Contraprueba de esa propagación: `node scripts/test-staging-gated.mjs <fichero>`
+mecanismo). Contraprueba de esa propagación: `node scripts/staging-gated.mjs <fichero>`
 apunta los tres hijos a un fichero trivial y debe dar exit 0.
 
 ⚠️ **Hoy la tanda sale ROJA en 2** (`a55` y `bot-suite`): bitrot del seed demo, «cliente seed

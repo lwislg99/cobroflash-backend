@@ -102,3 +102,52 @@ rutas salen como «conectadas sin retirar») y pasa con el nuevo.
 - El singular de «Contados» no está firmado: con uno, dice «1 presupuestos».
 - **Visual sin comprobar en navegador** (pide sesión de admin): la pantalla se ha medido en el banco
   de vistas, no pintada a 390 px.
+
+---
+
+# Tramo 30-sep-2026 · los dos textos firmados después de la entrega
+
+**Medido contra:** `origin/main` = `8084f273fe0bc30bfe5b7e893605eb34b56d9bae` · 2026-09-30T22:35:01+01:00 (J2, equipo de Javier)
+
+A9: comprobación → `tests/scrum1126-fusion-de-clientes.test.mjs`
+
+**Rama:** `scrum-1126-textos-fusion`. Sólo front y textos; ni el servidor ni ninguna otra ranura.
+J2 leyó los dos comentarios en Jira con sus ojos (esta vez el conector sí abría).
+
+## Qué se aplica
+
+| Ranura | Firma | Antes | Ahora |
+| --- | --- | --- | --- |
+| `todoPasa` | **fundador**, c.17647 («1-Sí lo firmo») | la lista sin direcciones de obra | añade «direcciones de obra» después de «trabajos» |
+| `contados` | orquestador por delegación, c.17580 | «1 presupuestos» | singular **por elemento** con `{n}` = 1; plural con 0 y con 2+ |
+
+Por qué hacía falta `todoPasa`: SCRUM-1291 (PR #2008, merge `8084f273`) hizo que la fusión moviera
+también `customer_sites`, y la frase firmada quedó incompleta. **Posición elegida por el
+orquestador**, no por el fundador (declarado en el 17647 y en el registro de aprobación).
+
+Registros de aprobación, fechados el día de la firma: `docs/microcopy/2026-09-30-SCRUM-1126-fusion-direcciones-de-obra.md`
+y `docs/microcopy/2026-09-29-SCRUM-1126-fusion-singular-contados.md`. El del 29-sep NO se toca: un
+registro que nombrara a otros sería un índice a mano (`scrum709` lo cazó en la primera tanda).
+
+## La prueba
+
+Dos casos nuevos en `tests/scrum1126-fusion-de-clientes.test.mjs`, que **leen los literales del
+registro de aprobación** en lugar de llevarlos tecleados:
+
+- `todoPasa` es carácter a carácter el literal de 17647, en la función y en la previsualización
+  montada. CONTROL: el detector ve «Se queda», que sí está. Y el literal de 17575 ya no se pinta.
+- `contados`: (1,1,1) singular · (2,2,2) plural · (0,0,0) plural · (1,4,0) y (3,1,1) por elemento, y
+  pintado con 1 presupuesto, 4 trabajos y 1 nota. El molde «Contados: … · …» sale del registro de 17575.
+
+El caso antiguo «elegir pide la previsualización» tenía los dos textos viejos tecleados, «1 trabajos»
+incluido. Se actualizan esas dos líneas a lo firmado: es la consecuencia directa de la firma nueva,
+no un guard que se relaja.
+
+**Mutaciones** sobre `customerDetailView.js`, restauradas con sha256. Caen las siete: siempre
+singular · siempre plural (lo de antes) · singular decidido por el primer elemento · sin
+«direcciones de obra» · «direcciones de obra» al final · una coma de más · 0 en singular.
+
+⚠️ **Hallazgo del instrumento:** con la mutación «sin direcciones de obra», el caso antiguo de
+textos NO cae, porque el registro del 29-sep sigue contando el `todoPasa` viejo como aprobado
+(`constaAprobado` no sabe que una firma posterior lo sustituye). Esa mutación solo la caza el caso
+nuevo, que lee el literal del registro concreto. No se ha cambiado el lector compartido: queda dicho.

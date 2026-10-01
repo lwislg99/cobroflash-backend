@@ -319,6 +319,46 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [x] P1-1317 · la pantalla de Productos del OPERARIO sale con la lista vacía: `renderProductsView` lanza al cablear el margen (1-oct-2026, hallazgo de SCRUM-1317; arreglado en la misma rama)
+- **Qué pasa:** con sesión de operario, abrir Productos lanza `TypeError: Cannot read properties of
+  null (reading 'addEventListener')` en `cablearMargen` (`productsView.js:604`, llamado desde
+  `:643`). El formulario se pinta, pero `refresh()` no llega a correr y la tabla se queda sin filas.
+- **Medido, no supuesto:** en Edge, con el panel de `origin/main` `bee39d3b51e300ff4efdda3befcb1eff4626f988`
+  y `/admin` simulado: operario → 0 filas con 1 producto en el servidor, y el error de arriba; admin →
+  1 fila y ningún error. Y en el banco de vistas, montando la vista con `rol: 'tecnico'`.
+- **Causa raíz:** SCRUM-597 le retira al operario los campos «Coste» y «Margen %» del alta
+  (`retirarEconomiaSiNoLaVe`), y unas líneas después se cablean los tres campos sin mirar si siguen
+  ahí. El modal de edición sí se protegía (`:349`); el alta, no.
+- **Qué se cambió:** `if (costI && margenI) cablearMargen(…)`. Para el admin los dos campos existen,
+  así que su pantalla no cambia (lo fija `tests/scrum1317-productos-del-operario.test.mjs`, que
+  además teclea un coste y comprueba que el margen se sigue calculando).
+- **Por qué no lo cazó nadie:** ningún test monta Productos con rol de operario. El banco de vistas
+  usa `admin` por defecto, así que toda pantalla que se bifurca por rol sólo se mide por una rama.
+- **Queda abierto, sin tocar:** el botón «Crear» del alta no se le veta al operario, aunque
+  `POST /admin/products` exige admin desde SCRUM-614. Si lo pulsa, falla.
+
+### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
+- **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
+  escribe `vfAnulHash`/`vfAnulPrevHash`/`vfAnulTimestamp` y extiende la cadena) ANTES de escribir el
+  estado, en su propia transacción. Si un cobro entra mientras se sella, desde SCRUM-1303 la escritura
+  del estado ya no pisa la factura (`pending` va en el `where`) y la ruta contesta el 409
+  `invoice_not_pending` de siempre. Pero el eslabón de anulación **ya está sellado**: la factura queda
+  `paid` **y** con `vfAnulHash`.
+- **No lo introdujo SCRUM-1303:** antes de él, la misma carrera dejaba el mismo eslabón y además
+  escribía `annulled` sobre la factura cobrada. El arreglo deja el estado verdadero; el eslabón,
+  igual que estaba.
+- **Lo que el profesional no sabe:** el 409 reusado («Solo se anula una factura pendiente. Si ya se
+  cobró, hay que rectificarla (R1), no anularla.») es cierto pero calla que se selló una anulación. Si
+  emite la R1, la cadena lleva las dos.
+- **Sin constancia:** no se escribe `factura_anulada` (no se anuló) ni ningún evento nuevo (la unión
+  es cerrada, regla 5). Sólo queda un `console.error` con el número, y **un `console.error` NO es
+  constancia**.
+- **Por qué no se arregló allí:** cerrarlo exige tocar el sellado (reordenarlo o un estado intermedio
+  que la Parte L no declara): STOP, reglas 5 y 40. Decide el fundador. Tampoco se repara nada ya
+  escrito: primero hay que medir si alguna factura quedó así.
+- **Fijado por un test:** `tests/scrum1303-estado-dentro-del-where.test.mjs`, caso «RESIDUAL
+  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí.
+
 ### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
 - **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
   clave, ni un byte de red). `getWhatsAppMetrics`, ventana de 7 días:
@@ -443,7 +483,8 @@
 
 ---
 
-### [ ] P2-CONT-1126b · fusionar un cliente que tenga direcciones de obra falla con un 500 (razonado desde el esquema, NO ejecutado contra una base)
+### [x] P2-CONT-1126b · fusionar un cliente que tenga direcciones de obra falla con un 500 (razonado desde el esquema, NO ejecutado contra una base)
+- **Resuelto en SCRUM-1291 (30-sep-2026):** reproducido (500, y 500 también al reintentar) y arreglado: la fusión mueve `customer_sites` en la misma transacción. Sin índice único: una dirección repetida no choca. Registro: `docs/master/SCRUM-1291.md`.
 - **Síntoma esperado:** `fusionarClientes` (`src/modules/system/domain/fusionClientes.ts`) reasigna
   nueve tablas del fusionado al principal y al final lo borra con `desvincularYBorrar`. **`customer_sites`
   (SCRUM-1014, direcciones de obra) no está entre las nueve**: `customerSite` no aparece ni una vez en

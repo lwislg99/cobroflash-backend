@@ -1,0 +1,31 @@
+EL ANTES, EN PRODUCCION. https://yaqu.app con sesion REAL de operario. Solo lectura (GET).
+J4d · 2026-10-01T07:11:56Z (hora de GitHub) · antes de empujar la rama de SCRUM-1317.
+Produccion servia: /health -> version 761db44f2f18bc69e55047ebc2e26e55d6d1c89d (= origin/main, SIN este ticket).
+La sesion la abrio el fundador con enlace magico en el navegador que conduce J4d. /admin/me -> 200, userRole "tecnico", isOwner false.
+Se anota el codigo y la FORMA de la respuesta (nombres de campo), no los valores.
+
+POBLACION=9 peticiones (6 de las doce rutas, las GET, + 3 controles)
+
+GET /admin/metrics/home            -> 200 · objeto{onboarding,weekly,sparkline,avgResponseHours,pendingAmount,pendingCount,quotesAwaiting,awaitingAmount,collectedThisMonth,recentActivity,expensesThisMonth,expensesCount,profitThisMonth,pendingRequests,topCustomers,topServices}
+GET /admin/metrics/funnel          -> 200 · objeto{current,previous,rejectionReasons,acceptanceRate}
+GET /admin/metrics/services        -> 200 · objeto{services}
+GET /admin/metrics/whatsapp        -> 200 · objeto{month,byTemplate,alert,channel}
+GET /admin/providers               -> 200 · objeto{ok,items}
+GET /admin/metrics/platform-funnel -> 403 · objeto{error}            (ya negaba: el merchant no es el dueno de la plataforma)
+control: GET /admin/metrics/inicio -> 404 · objeto{error}            (la ruta nueva aun no existe: el despliegue no lleva el ticket)
+control: GET /admin/templates      -> 200 · lista[3]                 (se queda abierta al operario, c.17782)
+control: GET /admin/metrics/team   -> 403 · objeto{error,required_role}  (ya exigia admin: el instrumento SI ve un 403)
+
+Resultado: 5 de las 6 GET DEJAN PASAR al operario en produccion, con los campos de dinero del negocio en /home.
+
+EL PANEL, medido en el DOM de esa misma sesion (ventana de 929 px):
+rol en el panel: tecnico · vista: home · titulo: Inicio
+numero heroe: se pinta · Resumen (kpi-grid): se pinta · semana: esta · tops: estan · cartel de error: no
+actividad: 3 filas · globos visibles: Presupuestos "2" (los otros dos, sin globo)
+menu visible (14): home, quote-requests, jobs, quotes-list, albaranes, partes-oficina, invoices, cobros, customers, products, providers, reports, libro-registro, facturas-recibidas
+  -> Proveedores e Informes ESTAN en la barra del operario.
+desborde horizontal: no (documento 914 <= ventana 929)
+
+NO medido aqui: los seis verbos de escritura (POST/PUT/DELETE de providers y de templates). No se mandan
+antes del despliegue: hoy escribirian de verdad.
+EXIT=0

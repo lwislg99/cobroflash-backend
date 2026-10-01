@@ -1,0 +1,116 @@
+POBLACION · origin/main e9e71cab67574538943cd94392bdecf5f3dcbfa2 · guard sha256 241c2f8f9572b67a · 8 escenarios
+
+[H] HOY: origin/main sin tocar (cola en el esquema, sin llamante, flag OFF)
+   poblacion: 310 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [] · flag: leido=true on=false
+   importan sif.client (expresion de scrum1127): ["src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=0 · tests 11 · pass 11 · fail 0 · skipped 0
+
+[H0] contrafactual: hoy SIN la fila VfSubmission
+   poblacion: 310 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: [] · llamantes: [] · flag: leido=true on=false
+   importan sif.client (expresion de scrum1127): ["src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=false · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=0 · tests 11 · pass 11 · fail 0 · skipped 0
+
+[P] POSITIVO: llamante simulado en src/core/cron + SIF_ENABLED ON por defecto
+   poblacion: 311 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [{"donde":"src/core/cron/remisionSif.ts","llamadas":1}] · flag: leido=true on=true
+   importan sif.client (expresion de scrum1127): ["src/core/cron/remisionSif.ts","src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=true · VIEJO=true · con SIF_ENABLED=true en el entorno=true
+   frases (nuevo): pasa[-] pasa[-] pasa[-] pasa[-] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: SI (familia B deja de bloquear)»
+   scrum537: exit=1 · tests 18 · pass 17 · fail 1 · skipped 0
+      caen: SCRUM-537 · el hecho se DERIVA del codigo, y hoy el envio NO existe
+   scrum1128: exit=1 · tests 11 · pass 10 · fail 1 · skipped 0
+      caen: SCRUM-1128 · el árbol real: se lee (no está ciego), el flag está en OFF y no hay llamante
+
+[P1] sólo el llamante (flag OFF)
+   poblacion: 311 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [{"donde":"src/core/cron/remisionSif.ts","llamadas":1}] · flag: leido=true on=false
+   importan sif.client (expresion de scrum1127): ["src/core/cron/remisionSif.ts","src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=1 · tests 11 · pass 10 · fail 1 · skipped 0
+      caen: SCRUM-1128 · el árbol real: se lee (no está ciego), el flag está en OFF y no hay llamante
+
+[P2] sólo el flag ON (sin llamante)
+   poblacion: 310 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [] · flag: leido=true on=true
+   importan sif.client (expresion de scrum1127): ["src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=1 · tests 11 · pass 10 · fail 1 · skipped 0
+      caen: SCRUM-1128 · el árbol real: se lee (no está ciego), el flag está en OFF y no hay llamante
+
+[X1] AVISO: el mismo llamante pero en verifactu/sif.cron.ts + flag ON
+   poblacion: 311 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [] · flag: leido=true on=true
+   importan sif.client (expresion de scrum1127): ["src/modules/fiscal/verifactu/sif.cola.ts","src/modules/fiscal/verifactu/sif.cron.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=1 · tests 11 · pass 10 · fail 1 · skipped 0
+      caen: SCRUM-1128 · el árbol real: se lee (no está ciego), el flag está en OFF y no hay llamante
+
+[X2] AVISO: enviarSobre pasado POR REFERENCIA (sin llamarlo) + flag ON
+   poblacion: 311 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [] · flag: leido=true on=true
+   importan sif.client (expresion de scrum1127): ["src/core/cron/remisionSif.ts","src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=0 · tests 18 · pass 18 · fail 0 · skipped 0
+   scrum1128: exit=1 · tests 11 · pass 10 · fail 1 · skipped 0
+      caen: SCRUM-1128 · el árbol real: se lee (no está ciego), el flag está en OFF y no hay llamante
+
+[M] MUTACIÓN: hoy, con el guard VIEJO puesto en su sitio (¿lo caza scrum537?)
+   poblacion: 310 .ts · 5 menciones AEAT · esquema leido · 4 paginas (17942 car.)
+   piezas: ["cola@prisma/schema.prisma"] · llamantes: [] · flag: leido=true on=false
+   importan sif.client (expresion de scrum1127): ["src/modules/fiscal/verifactu/sif.cola.ts"]
+   construido · NUEVO=false · VIEJO=true · con SIF_ENABLED=true en el entorno=false
+   frases (nuevo): BLOQUEA[B] BLOQUEA[C] BLOQUEA[C] BLOQUEA[C] · familia A: BLOQUEA
+   frases (viejo): pasa[-] pasa[-] pasa[-] pasa[-]
+   landing real: ok=true · «envio a la AEAT en el codigo: NO»
+   scrum537: exit=1 · tests 18 · pass 17 · fail 1 · skipped 0
+      caen: SCRUM-537 · el hecho se DERIVA del codigo, y hoy el envio NO existe
+   scrum1128: exit=1 · tests 1 · pass 0 · fail 1 · skipped 0
+      caen: tests\\scrum1128-envio-construido.test.mjs
+
+COMPROBACIONES
+   SI  1_hoy_la_cola_se_VE
+   SI  1_hoy_sin_llamante_y_flag_leido_OFF
+   SI  1_hoy_SIGUE_bloqueando_las_4_frases
+   SI  1_el_criterio_VIEJO_hoy_las_dejaria_pasar
+   SI  1_sin_la_fila_el_viejo_bloqueaba (la fila es lo que abria)
+   SI  2_positivo_DEJA_de_bloquear_las_4
+   SI  2_positivo_la_familia_A_sigue_bloqueando
+   SI  2_una_sola_condicion_no_basta
+   SI  3_scrum537_VERDE_hoy
+   SI  3_scrum537_CAE_en_el_positivo
+   SI  3_scrum537_no_cae_con_una_sola_condicion
+   SI  M_volver_al_criterio_viejo_HOY_tumba_scrum537_sobre_el_arbol_real
+   SI  X_hoy_scrum1127_ve_exactamente_la_cola_como_importador
+   SI  X_los_dos_enganches_que_el_guard_NO_cuenta_los_delata_scrum1127
+
+ciegos=0 · no-esperados=0
+EXIT=0

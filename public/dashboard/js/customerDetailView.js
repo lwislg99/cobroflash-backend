@@ -130,13 +130,18 @@ const FUSION_CLIENTE = {
    */
   todoPasa(fusionado, principal) {
     return 'Todo lo de ' + fusionado + ' pasa a ' + principal
-      + ': presupuestos, solicitudes de presupuesto, trabajos, notas, cobros, partes de trabajo, mensajes de WhatsApp, correos y mantenimientos.';
+      + ': presupuestos, solicitudes de presupuesto, trabajos, direcciones de obra, notas, cobros, partes de trabajo, mensajes de WhatsApp, correos y mantenimientos.';
   },
   /** `desvincularYBorrar` deja sin empresa a quien la tenía en el fusionado: NO se re-enlazan. */
   sinEmpresa(fusionado) { return 'Las personas de contacto de ' + fusionado + ' se quedan sin empresa.'; },
-  /** Lo que SÍ cuenta el servidor, rotulado «Contados» para que no se lea como la lista entera. */
+  /**
+   * Lo que SÍ cuenta el servidor, rotulado «Contados» para que no se lea como la lista entera.
+   * Singular POR ELEMENTO (SCRUM-1126 c.17580): puede haber 1 presupuesto y 4 trabajos. Con 0, plural.
+   */
   contados(presupuestos, trabajos, notas) {
-    return 'Contados: ' + presupuestos + ' presupuestos · ' + trabajos + ' trabajos · ' + notas + ' notas';
+    const uno = (n, singular, plural) => (Number(n) === 1 ? '1 ' + singular : n + ' ' + plural);
+    return 'Contados: ' + uno(presupuestos, 'presupuesto', 'presupuestos') + ' · ' + uno(trabajos, 'trabajo', 'trabajos')
+      + ' · ' + uno(notas, 'nota', 'notas');
   },
   etiquetas(lista) {
     return Array.isArray(lista) && lista.length ? 'Etiquetas tras fusionar: ' + lista.join(', ') : FUSION_CLIENTE.TEXTOS.sinEtiquetas;

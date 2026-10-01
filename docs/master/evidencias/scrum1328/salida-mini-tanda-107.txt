@@ -1,0 +1,216 @@
+POBLACION ficheros=107 via=opciones node=v24.18.0
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78570 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/node-p-capturado-sin-color.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80365 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/pr-automatico-el-mensaje-del-automerge.test.mjs
+ENTERO  salida=0 consola: tests=342 fail=0 · TAP: bytes=78466 NUL=0 recuentos=[342] casos_legibles=342 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/public-js-parsea.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80585 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=80104 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1091-guard-cwd-posix.test.mjs
+ENTERO  salida=0 consola: tests=356 fail=0 · TAP: bytes=82235 NUL=0 recuentos=[356] casos_legibles=356 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1093h-censo-fecha-sin-zona.test.mjs
+ENTERO  salida=0 consola: tests=352 fail=0 · TAP: bytes=81388 NUL=0 recuentos=[352] casos_legibles=352 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1117-anclas-por-bloque.test.mjs
+ENTERO  salida=0 consola: tests=354 fail=0 · TAP: bytes=81485 NUL=0 recuentos=[354] casos_legibles=354 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1123-vigia-despliegue-aviso.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=80153 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1153-censo-entorno-prestado.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80450 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1157-censo-convenio-microcopy.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78604 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1196-fecha-de-la-politica.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78704 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1221-banco-fallo-visible.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=80105 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1222-sesion-panel.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79048 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80374 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1259-abierto-con-trabajo-en-main.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=79023 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1263-gancho-pre-push.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79745 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1270-pr-mudo-avisado-en-el-pr.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78703 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1308-scripts-sin-nombre-de-test.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79263 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1321-el-resumen-no-prueba-el-final.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79478 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1331-sin-red-se-dice.test.mjs
+ENTERO  salida=0 consola: tests=342 fail=0 · TAP: bytes=78431 NUL=0 recuentos=[342] casos_legibles=342 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79915 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum145-verifactu-xsd.test.mjs
+ENTERO  salida=0 consola: tests=366 fail=0 · TAP: bytes=83530 NUL=0 recuentos=[366] casos_legibles=366 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum176-guard-mensaje.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79807 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum180-fixtures-nunca-a-meta.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=79842 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum195-url-bd-sin-fuga.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79873 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum226-url-credencial-en-argv.test.mjs
+ENTERO  salida=0 consola: tests=361 fail=0 · TAP: bytes=82432 NUL=0 recuentos=[361] casos_legibles=361 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum235-cliente-por-columnas.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=81834 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum239-huella-de-codigo.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78670 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum245-tipo-obliga-declarar.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79823 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum249-latido-turno.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=79845 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum265-margen-en-recibo.test.mjs
+ENTERO  salida=0 consola: tests=354 fail=0 · TAP: bytes=81119 NUL=0 recuentos=[354] casos_legibles=354 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum267-ancla-de-medicion.test.mjs
+ENTERO  salida=0 consola: tests=353 fail=0 · TAP: bytes=80644 NUL=0 recuentos=[353] casos_legibles=353 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum268-espera-automatica.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79205 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum272-criterio-referencial.test.mjs
+ENTERO  salida=0 consola: tests=355 fail=0 · TAP: bytes=81091 NUL=0 recuentos=[355] casos_legibles=355 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum351-topologia-node-modules.test.mjs
+ENTERO  salida=0 consola: tests=355 fail=0 · TAP: bytes=81279 NUL=0 recuentos=[355] casos_legibles=355 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum387-censo-reparto.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79033 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum414-url-a-mano.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=82247 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum425-aplicador-sql-dev.test.mjs
+ENTERO  salida=0 consola: tests=381 fail=0 · TAP: bytes=86939 NUL=0 recuentos=[381] casos_legibles=381 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum454-destructivo-sin-comprobacion.test.mjs
+ENTERO  salida=0 consola: tests=366 fail=0 · TAP: bytes=83373 NUL=0 recuentos=[366] casos_legibles=366 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum522-guards-fuera-de-la-tanda.test.mjs
+ENTERO  salida=0 consola: tests=381 fail=0 · TAP: bytes=89199 NUL=0 recuentos=[381] casos_legibles=381 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum524b-trinquete-de-la-tabla.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79314 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum534d-extractores-a-mano.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79419 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum554-el-censo-no-confunde-el-numero.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78732 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum620-servidor-que-no-arranca.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=81848 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum637-la-rama-que-nadie-mira.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=79911 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum642-tramos-del-arranque.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80351 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum645-la-puerta-no-tira-los-tramos.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=82027 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum649-el-ancla-que-no-apunta.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=80780 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum709-microcopy-por-fichero.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=80264 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum716c-la-memoria-del-vigia.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79845 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum723-guard-contra-su-base.test.mjs
+ENTERO  salida=0 consola: tests=349 fail=0 · TAP: bytes=80053 NUL=0 recuentos=[349] casos_legibles=349 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum727-constancia-del-vigia.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79512 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum744-el-guard-mira-la-accion.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80435 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum745-comparar-por-identidad.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79819 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum750-los-dos-calendarios.test.mjs
+ENTERO  salida=0 consola: tests=359 fail=0 · TAP: bytes=82386 NUL=0 recuentos=[359] casos_legibles=359 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum753-censo-de-alcanzabilidad.test.mjs
+ENTERO  salida=0 consola: tests=362 fail=0 · TAP: bytes=83204 NUL=0 recuentos=[362] casos_legibles=362 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum754-el-juez-que-oscila.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79497 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum765-la-puerta-y-el-suelo.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80641 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum766-el-grep-que-cuenta-lineas.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80929 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum774-arbol-de-otra-sesion.test.mjs
+ENTERO  salida=0 consola: tests=356 fail=0 · TAP: bytes=81882 NUL=0 recuentos=[356] casos_legibles=356 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum775-suelo-que-no-dispara.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80577 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum804-la-rama-viva.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=80096 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum804b-el-barrido-de-la-42.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78951 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum804f-la-rama-sin-slug.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78919 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum804h-la-fase-con-corte.test.mjs
+ENTERO  salida=0 consola: tests=355 fail=0 · TAP: bytes=81890 NUL=0 recuentos=[355] casos_legibles=355 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum808-el-arbol-que-queda-mutado.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79080 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum810-el-suelo-a-la-primera.test.mjs
+ENTERO  salida=0 consola: tests=368 fail=0 · TAP: bytes=84726 NUL=0 recuentos=[368] casos_legibles=368 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum813-trinquete-de-zona.test.mjs
+ENTERO  salida=0 consola: tests=341 fail=0 · TAP: bytes=78134 NUL=0 recuentos=[341] casos_legibles=341 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum814-carrera-de-tramos-postgres.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78778 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum814-carrera-del-tramo.gated.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79248 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum815-idempotencia-del-webhook.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80481 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum815c-el-escritor-de-los-cinco.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78668 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78647 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum829b-la-ref-rancia-se-poda.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79118 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum835-credenciales-en-el-historial.test.mjs
+ENTERO  salida=0 consola: tests=348 fail=0 · TAP: bytes=79812 NUL=0 recuentos=[348] casos_legibles=348 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum837-decisiones-encerradas.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80105 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum839c-la-pasada-se-ejecuta.test.mjs
+ENTERO  salida=0 consola: tests=355 fail=0 · TAP: bytes=81099 NUL=0 recuentos=[355] casos_legibles=355 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum839d-union-solo-en-el-registro.test.mjs
+ENTERO  salida=0 consola: tests=353 fail=0 · TAP: bytes=81137 NUL=0 recuentos=[353] casos_legibles=353 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum839e-solo-pr-armados.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79378 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum850-la-poblacion-del-instrumento.test.mjs
+PISADO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79213 NUL=76811 (992..77803) recuentos=[2,346] casos_legibles=8 relleno_A_legible=0/300
+          cabeza: «ESTE TEST FALLA A PROPOSITO»  tests/scrum850b-las-formas-que-mienten.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80705 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum853-lecturas-que-fallan-cerrado.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80362 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs
+ENTERO  salida=0 consola: tests=356 fail=0 · TAP: bytes=81379 NUL=0 recuentos=[356] casos_legibles=356 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum853d-cortacircuitos.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79551 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum857-union-de-vias.test.mjs
+ENTERO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79407 NUL=0 recuentos=[346] casos_legibles=346 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum858b-la-tanda-sin-veredicto.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79477 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum864-el-temporal-que-se-borra.test.mjs
+ENTERO  salida=0 consola: tests=352 fail=0 · TAP: bytes=80592 NUL=0 recuentos=[352] casos_legibles=352 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum899-sesion-lista-blanca.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80458 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum899b-arranque-de-la-tanda.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=80997 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum899d-aviso-de-uso.test.mjs
+ENTERO  salida=0 consola: tests=343 fail=0 · TAP: bytes=78680 NUL=0 recuentos=[343] casos_legibles=343 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum900-push-de-claude-con-la-app.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=80768 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum908c-la-cola-que-se-pierde.test.mjs
+ENTERO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78996 NUL=0 recuentos=[344] casos_legibles=344 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum927-el-censo-de-los-censos.test.mjs
+PISADO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78672 NUL=77549 (258..77807) recuentos=[2,344] casos_legibles=6 relleno_A_legible=0/300
+          cabeza: «a»  tests/scrum928-guards-entrada-recuento-con-color.test.mjs
+ENTERO  salida=0 consola: tests=345 fail=0 · TAP: bytes=79303 NUL=0 recuentos=[345] casos_legibles=345 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum928b-el-veredicto-que-el-color-tapa.test.mjs
+ENTERO  salida=0 consola: tests=352 fail=0 · TAP: bytes=80666 NUL=0 recuentos=[352] casos_legibles=352 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum932-el-turno-tiene-mecanismo.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80867 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum938-la-lista-como-fixture.test.mjs
+ENTERO  salida=0 consola: tests=352 fail=0 · TAP: bytes=81376 NUL=0 recuentos=[352] casos_legibles=352 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80251 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum946-censo-de-huerfanos.test.mjs
+ENTERO  salida=0 consola: tests=350 fail=0 · TAP: bytes=80006 NUL=0 recuentos=[350] casos_legibles=350 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum949-el-suelo-como-cociente.test.mjs
+ENTERO  salida=0 consola: tests=358 fail=0 · TAP: bytes=82363 NUL=0 recuentos=[358] casos_legibles=358 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum951a-equipo-configurable.test.mjs
+ENTERO  salida=0 consola: tests=352 fail=0 · TAP: bytes=80614 NUL=0 recuentos=[352] casos_legibles=352 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum954-vivo-no-es-listado.test.mjs
+ENTERO  salida=0 consola: tests=351 fail=0 · TAP: bytes=80604 NUL=0 recuentos=[351] casos_legibles=351 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79618 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum966-censo-ve-las-ramas.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79516 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum973-titulo-del-pr.test.mjs
+PISADO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78876 NUL=21726 (56073..77799) recuentos=[122,344] casos_legibles=126 relleno_A_legible=0/300
+          cabeza: «public/ · SUELO: el guard encuentra los ficheros que dice comprobar»  tests/scrum976-guards-entrada-con-techo.test.mjs
+ENTERO  salida=0 consola: tests=362 fail=0 · TAP: bytes=83730 NUL=0 recuentos=[362] casos_legibles=362 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum996-suelo-de-arranque.test.mjs
+EXIT=0

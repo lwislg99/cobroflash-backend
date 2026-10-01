@@ -30,6 +30,7 @@
 // Por eso el doble es ÚNICO y se REPROGRAMA: `programar()` cambia lo que devuelve cada tabla y
 // `reiniciar()` vacía el registro de escrituras entre casos.
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -140,20 +141,46 @@ export async function montarAppReal() {
     base,
     doble,
     cerrar: () => new Promise((r) => server.close(r)),
-    /** Una petición como la haría el navegador del profesional. */
-    async pedir(ruta, { token, metodo = 'GET', cuerpo } = {}) {
-      const res = await fetch(`${base}${ruta}`, {
-        method: metodo,
-        headers: {
-          ...(token ? { cookie: `pf_session=${token}` } : {}),
-          ...(cuerpo ? { 'content-type': 'application/json' } : {}),
-        },
-        ...(cuerpo ? { body: JSON.stringify(cuerpo) } : {}),
+    /**
+     * Una petición como la haría el navegador del profesional.
+     *
+     * 🔴 SCRUM-1332 · CON `node:http`, NO CON `fetch`, y no es una preferencia. Medido el
+     * 1-oct-2026 (Windows 11, node v24.18.0): un fichero que usa el `fetch` global y sale justo
+     * después con `--test-force-exit` —que es como corre `npm test`— muere AL SALIR con
+     * `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c` y sus casos
+     * en verde. Con la máquina cargada: 33 de 40 con un servidor http pelado y `fetch`, sin una
+     * línea de YaQu; **0 de 40 con la misma petición por `http.request`**. `scrum1216b` moría
+     * así 7 de 40. Las cifras y las variantes, en `docs/master/SCRUM-1332.md`.
+     *
+     * `agent: false`: una conexión por petición, que se cierra al terminar. No queda ningún
+     * socket de cliente abierto cuando el fichero acaba.
+     *
+     * ⚠️ Lo que cambia respecto a `fetch`: NO sigue redirecciones (devuelve el 3xx tal cual).
+     */
+    pedir(ruta, { token, metodo = 'GET', cuerpo } = {}) {
+      const carga = cuerpo ? JSON.stringify(cuerpo) : null;
+      return new Promise((resolver, rechazar) => {
+        const peticion = http.request(`${base}${ruta}`, {
+          method: metodo,
+          agent: false,
+          headers: {
+            ...(token ? { cookie: `pf_session=${token}` } : {}),
+            ...(carga ? { 'content-type': 'application/json', 'content-length': Buffer.byteLength(carga) } : {}),
+          },
+        }, (res) => {
+          const trozos = [];
+          res.on('data', (t) => trozos.push(t));
+          res.on('error', rechazar);
+          res.on('end', () => {
+            const texto = Buffer.concat(trozos).toString('utf8');
+            let json = null;
+            try { json = JSON.parse(texto); } catch { /* no era JSON: se devuelve el texto */ }
+            resolver({ status: res.statusCode, json, texto });
+          });
+        });
+        peticion.on('error', rechazar);
+        peticion.end(carga ?? undefined);
       });
-      const texto = await res.text();
-      let json = null;
-      try { json = JSON.parse(texto); } catch { /* no era JSON: se devuelve el texto */ }
-      return { status: res.status, json, texto };
     },
   };
   return montada;

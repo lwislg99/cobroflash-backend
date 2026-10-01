@@ -105,7 +105,11 @@ test('SCRUM-145: están TODOS los elementos obligatorios que declara el XSD (le�
   assert.deepEqual(faltan, [], `faltan elementos OBLIGATORIOS del XSD en el XML: ${faltan.join(', ')}`);
 
   // De cada `choice` (p. ej. NIF | IDOtro del productor) tiene que salir EXACTAMENTE una rama.
-  for (const alternativas of [...alta.choices, ...sistema.choices]) {
+  // SCRUM-1311 · suelo de población: las alternativas salen de leer el XSD, y con cero no se mira nada.
+  const alternativasDelXsd = [...alta.choices, ...sistema.choices];
+  assert.ok(alternativasDelXsd.length > 0,
+    '🔴 CIEGO: el extractor no ha visto NINGUNA alternativa (choice) en el XSD — ¿se rompió? Sin ellas, lo de abajo no comprueba nada.');
+  for (const alternativas of alternativasDelXsd) {
     const presentes = alternativas.filter((n) => xml.includes(`<sum1:${n}>`));
     assert.equal(
       presentes.length, 1,

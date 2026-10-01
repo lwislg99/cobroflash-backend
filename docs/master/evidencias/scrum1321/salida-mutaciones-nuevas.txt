@@ -1,0 +1,14 @@
+POBLACION · scrum836-ancla-de-mutacion-viva.test.mjs · 1 mutación(es)
+LIMPIA · 17 pasados · 0 caídos · 0 saltados · movidos 0
+
+[1] VIVA · scripts/meta-guard-mutaciones.mjs · cae: SCRUM-1321 · 🔴 EL CASO REAL: un ancla que casa ANTES en otra línea se denuncia
+    colaterales 4 · pasada mutada: 12 pasados · 5 caídos
+
+EXIT=0
+POBLACION · scrum1321-el-resumen-no-prueba-el-final.test.mjs · 1 mutación(es)
+LIMPIA · 5 pasados · 0 caídos · 0 saltados · movidos 0
+
+[1] VIVA · scripts/meta-guard-mutaciones.mjs · cae: SCRUM-1321 · 🔴 EL CASO MEDIDO: 20 en la limpia y 16 en la mutada
+    colaterales 0 · pasada mutada: 4 pasados · 1 caídos
+
+EXIT=0

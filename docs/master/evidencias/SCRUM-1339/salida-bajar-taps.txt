@@ -1,0 +1,3 @@
+POBLACION: GitHub dice 627 artefactos tanda-tap · listados 627 · caducados 0
+BAJADOS 627 · ya estaban 0 · fallidos 0 · sin caducar 627
+EXIT=0

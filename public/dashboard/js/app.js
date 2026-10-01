@@ -154,6 +154,14 @@ async function initApp() {
     // alta rápida, que no se construye hasta que exista Expense.teamMemberId.
     const expensesNav = document.querySelector('.nav-item[data-view="expenses"]');
     if (expensesNav) expensesNav.style.display = 'none';
+    // SCRUM-1317: Proveedores e Informes salen de la barra del operario ANTES de cerrarle sus
+    // rutas (`/admin/providers`, `/admin/metrics/funnel|services|whatsapp`). Informes ya le
+    // fallaba desde SCRUM-55 (`/admin/reports` exige admin en el montaje) con la entrada a la
+    // vista: una entrada de menú que lleva a un 403 es peor que no tenerla (SCRUM-1312).
+    ['providers', 'reports'].forEach((vista) => {
+      const el = document.querySelector(`.nav-item[data-view="${vista}"]`);
+      if (el) el.style.display = 'none';
+    });
   }
 
   // Badge de solicitudes pendientes
@@ -331,9 +339,17 @@ async function initApp() {
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
+      // SCRUM-1317: guard como en 'settings' — todo lo que pinta Informes es admin en el servidor
+      // (/admin/reports desde SCRUM-55, /admin/metrics/funnel|services|whatsapp desde este ticket).
       case 'reports':
-        viewTitle.textContent = 'Informes';
-        if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Informes';
+          if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
+        }
         break;
       case 'templates':
         viewTitle.textContent = 'Plantillas';
@@ -449,7 +465,13 @@ async function initApp() {
         viewTitle.textContent = 'Productos';
         (window.renderProductsView || renderProductsView)(viewContainer);
         break;
+      // SCRUM-1317: mismo guard que 'settings'/'team'/'export' — un operario no entra ni
+      // tecleando la vista (el hash `#providers` existe). La seguridad real la da el
+      // requireRole('admin') de /admin/providers.
+      // Se REDIRIGE, como 'operarios', en vez de pintar Inicio aquí dentro: este `case` es el
+      // control positivo del censo de SCRUM-801, que exige que pinte UNA vista, la suya.
       case 'providers':
+        if (window.appUserRole !== 'admin') return renderView('home', options);
         viewTitle.textContent = 'Proveedores';
         (window.renderProvidersView || renderProvidersView)(viewContainer);
         break;

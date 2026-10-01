@@ -107,6 +107,8 @@ test('SCRUM-192 · botSession NO está en el barrido genérico', () => {
 function prismaFalso() {
   const llamadas = [];
   const modelo = (nombre) => ({
+    // SCRUM-1307: borrarMerchant pregunta antes por la cola de la AEAT; el cliente real SIEMPRE tiene count (0 = sin envíos).
+    count: async () => 0,
     deleteMany: async (args) => { llamadas.push({ modelo: nombre, where: args?.where }); return { count: 1 }; },
   });
   const p = new Proxy({ llamadas }, {
@@ -152,6 +154,8 @@ test('SCRUM-192 · un modelo que falla NO cancela los siguientes', async () => {
   const llamadas = [];
   const p = new Proxy({}, {
     get: (_t, k) => ({
+      // SCRUM-1307: borrarMerchant pregunta antes por la cola de la AEAT; el cliente real SIEMPRE tiene count (0 = sin envíos).
+      count: async () => 0,
       deleteMany: async () => {
         const nombre = String(k);
         llamadas.push(nombre);

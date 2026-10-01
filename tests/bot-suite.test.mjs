@@ -6,7 +6,7 @@
 //
 // ── CÓMO SE EJECUTA (SCRUM-157 / 159 / 166) ──────────────────────────────────
 // Esta suite corre por `npm run test:staging:gated` — el runner
-// `scripts/test-staging-gated.mjs` (SCRUM-157) setea BOT_SUITE_TEST=1 en su hijo
+// `scripts/staging-gated.mjs` (SCRUM-157) setea BOT_SUITE_TEST=1 en su hijo
 // aislado (líneas 63-65 de ese fichero). NO corre por `npm run test:staging`
 // (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166) ni por el
 // CI (`npm test`, ungated). En `npm test` normal aparece como SKIP y no toca nada.

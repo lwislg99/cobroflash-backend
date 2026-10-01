@@ -325,7 +325,7 @@ test('SCRUM-268 · ceder NUNCA degrada a soltar: no escribe el marcador libre', 
 test('SCRUM-268 · el runner consulta si debe soltar, en vez de soltar siempre', () => {
   // Sin esto, el arreglo de la asimetría se deshace con una línea y nadie se entera: la función
   // pura seguiría verde en sus tests y el runner soltaría igual.
-  const sf = ast('scripts/test-staging-gated.mjs');
+  const sf = ast('scripts/staging-gated.mjs');
   let consulta = false;
   recorrer(sf, (n) => {
     if (ts.isCallExpression(n) && nombreLlamado(n.expression) === 'debeSoltarAlTerminar') consulta = true;

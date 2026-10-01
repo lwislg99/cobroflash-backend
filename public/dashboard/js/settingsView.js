@@ -41,7 +41,7 @@ const TITULO_MODO_EMISION = {
 const DETALLE_MODO_EMISION = {
   fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
   demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
-  receipt: 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.',
+  receipt: 'Por ahora, YaQu no genera facturas desde tu cuenta.', // SCRUM-1257 · firma delegada, comentario 17676
 };
 
 // ── `receipt`: EL QUE SE DEVOLVIÓ, Y POR QUÉ EL DE AHORA SÍ SE SOSTIENE ───────────────────────
@@ -49,8 +49,8 @@ const DETALLE_MODO_EMISION = {
 // 🔴 SCRUM-1220 (28-sep-2026) · LO DE ABAJO ES HISTORIA: esa segunda redacción también se retiró.
 // Desde SCRUM-1027, en `receipt` `allocateInvoiceNumber` lanza `invoicing_es_disabled` y no sale
 // NINGÚN documento, así que «Cada cobro genera un justificante» era falso para todo ES real con la
-// emisión apagada. La de ahora (firma delegada, SCRUM-1220 comentario 17385) solo NIEGA: dice que no
-// se genera ni factura ni justificante, sin fecha ni cobro. Medido en `tests/banco-scrum1220/`.
+// emisión apagada. La tercera (SCRUM-1220 comentario 17385) solo NEGABA, y nombraba el justificante.
+// La de ahora (SCRUM-1257 comentario 17676) niega igual y ya no lo nombra: no afirma nada nuevo.
 //
 // La primera redacción decía «con su propia NUMERACIÓN», y el código dice lo contrario en su
 // propio comentario (`invoiceNumber.service.ts:32-35`): los J- **no consumen la serie fiscal**,
@@ -307,6 +307,43 @@ function renderSettingsView(container) {
       '<option value="no">No estoy acogido</option>';
     criterioWrapper.appendChild(criterioLabel);
     criterioWrapper.appendChild(fCriterioCaja);
+
+    // SCRUM-1102 · EL SII Y EL DOMICILIO FORAL. Mismo mecanismo que el criterio de caja: un <select>
+    // de TRES opciones sobre una columna `Boolean?` (NULL / false / true), porque «no consta» no es
+    // «dijo que no». Se pregunta el HECHO que el profesional conoce y no se le explica qué régimen
+    // le corresponde ni qué consecuencia tiene (regla 7). Aquí solo se pregunta y se guarda.
+    //
+    // MICROCOPY (regla 39): los dos enunciados, aprobados por el fundador el 1-oct-2026 en
+    // SCRUM-1102 (comentario 17709). Ficha: docs/microcopy/2026-10-01-SCRUM-1102-sii-y-domicilio-foral.md.
+    // El `.name` va LITERAL en cada uno: es lo que lee el censo de Configuración (SCRUM-284).
+    const OPCIONES_HECHO_FISCAL =
+      '<option value="">No consta</option>' +
+      '<option value="si">Sí</option>' +
+      '<option value="no">No</option>';
+    const siiWrapper = document.createElement("div");
+    siiWrapper.className = "field";
+    const siiLabel = document.createElement("label");
+    siiLabel.textContent = "¿Llevas los libros de IVA por el SII?";
+    siiLabel.htmlFor = "merchant-lleva-libros-por-sii";
+    const fLlevaLibrosPorSii = document.createElement("select");
+    fLlevaLibrosPorSii.id = "merchant-lleva-libros-por-sii";
+    fLlevaLibrosPorSii.name = "llevaLibrosPorSii";
+    fLlevaLibrosPorSii.className = "input";
+    fLlevaLibrosPorSii.innerHTML = OPCIONES_HECHO_FISCAL;
+    siiWrapper.appendChild(siiLabel);
+    siiWrapper.appendChild(fLlevaLibrosPorSii);
+    const foralWrapper = document.createElement("div");
+    foralWrapper.className = "field";
+    const foralLabel = document.createElement("label");
+    foralLabel.textContent = "¿Tienes el domicilio fiscal en el País Vasco o en Navarra?";
+    foralLabel.htmlFor = "merchant-domicilio-fiscal-foral";
+    const fDomicilioFiscalForal = document.createElement("select");
+    fDomicilioFiscalForal.id = "merchant-domicilio-fiscal-foral";
+    fDomicilioFiscalForal.name = "domicilioFiscalForal";
+    fDomicilioFiscalForal.className = "input";
+    fDomicilioFiscalForal.innerHTML = OPCIONES_HECHO_FISCAL;
+    foralWrapper.appendChild(foralLabel);
+    foralWrapper.appendChild(fDomicilioFiscalForal);
     const fWhatsappPhone = createField(
       "Teléfono WhatsApp (E.164 sin +)",
       "whatsappPhone",
@@ -361,6 +398,8 @@ function renderSettingsView(container) {
     colocar("taxId", fTaxId.wrapper);
     colocar("address", fAddress.wrapper);
     colocar("criterioCaja", criterioWrapper);
+    colocar("llevaLibrosPorSii", siiWrapper);
+    colocar("domicilioFiscalForal", foralWrapper);
     colocar("whatsappPhone", fWhatsappPhone.wrapper);
     colocar("country", fCountryWrapper);
     colocar("defaultCurrency", fDefaultCurrency.wrapper);
@@ -871,6 +910,10 @@ function renderSettingsView(container) {
         // —`null` o el campo ausente— es «no consta», que es la opcion vacia.
         fCriterioCaja.value = merchant.criterioCaja === true ? "si"
           : merchant.criterioCaja === false ? "no" : "";
+        fLlevaLibrosPorSii.value = merchant.llevaLibrosPorSii === true ? "si"
+          : merchant.llevaLibrosPorSii === false ? "no" : "";
+        fDomicilioFiscalForal.value = merchant.domicilioFiscalForal === true ? "si"
+          : merchant.domicilioFiscalForal === false ? "no" : "";
         fWhatsappPhone.input.value = merchant.whatsappPhone || "";
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
@@ -1070,6 +1113,8 @@ function renderSettingsView(container) {
         // «no consta» viaja como NULL, no como `false` ni como cadena vacia: es un valor que el
         // negocio elige, y la base lo guarda distinto de «declara que no».
         criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
+        llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
+        domicilioFiscalForal: fDomicilioFiscalForal.value === "si" ? true : fDomicilioFiscalForal.value === "no" ? false : null,
         whatsappPhone: fWhatsappPhone.input.value.trim(),
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),

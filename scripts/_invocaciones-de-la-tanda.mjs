@@ -211,7 +211,7 @@ export function deUnFicheroJs(codigo, nombre) {
     }
     // 🔴 EL PUNTO CIEGO QUE CASI DEJA EL CENSO EN «scripts: 0», y lo destapó DECLARAR LA POBLACIÓN.
     // La casa no lanza la tanda por cadena de shell: la lanza por ARGUMENTOS —
-    // `spawnSync(process.execPath, ['--test', …])`, y `test-staging-gated.mjs` con un `args: [...]`
+    // `spawnSync(process.execPath, ['--test', …])`, y `staging-gated.mjs` con un `args: [...]`
     // en una tabla. Sin shell no puede haber tubería, así que son SANAS por construcción; pero
     // dejarlas fuera hacía que el censo dijera CERO sobre una superficie que tiene dos.
     if (ts.isArrayLiteralExpression(n)) {

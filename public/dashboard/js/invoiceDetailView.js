@@ -668,6 +668,9 @@ async function fetchInvoiceDetail(id) {
         }
       });
       ubicarAccion(btnRectify, 'btnRectify');
+      // SCRUM-1142 · 44 px de área de toque (AB6, patrón opt-in de SCRUM-786). DESPUÉS de
+      // `ubicarAccion`, que reescribe el className; `overflowMenu` quita sólo las clases de botón.
+      btnRectify.classList.add('accion-irreversible-btn-44');
     }
 
     // ── SCRUM-153 (c) · ANULAR — EN BLOQUE APARTE, NO JUNTO A RECTIFICAR ──────────────
@@ -705,7 +708,8 @@ async function fetchInvoiceDetail(id) {
         + 'Rectificar en vez de anular.';
 
       const btnAnular = document.createElement('button');
-      btnAnular.className = 'btn-secondary btn-sm';
+      // SCRUM-1142 · 44 px de área de toque (AB6, patrón opt-in de SCRUM-786); `.btn-sm` no se toca.
+      btnAnular.className = 'btn-secondary btn-sm accion-irreversible-btn-44';
       btnAnular.textContent = 'Anular factura…';
       btnAnular.title = 'Deja la factura sin efecto. No la borra.';
 
@@ -831,7 +835,7 @@ async function fetchInvoiceDetail(id) {
 
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
             <button class="btn-ghost btn-sm" id="anul-no">Cancelar</button>
-            <button class="btn-danger btn-sm" id="anul-si" disabled>Anular factura</button>
+            <button class="btn-danger btn-sm accion-irreversible-btn-44" id="anul-si" disabled>Anular factura</button>
           </div>
         </div>
       </div>

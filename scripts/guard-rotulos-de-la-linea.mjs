@@ -60,6 +60,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { abrirConceptos, CLIENTE_DE_PASO } from './_abrir-conceptos.mjs';
@@ -253,7 +254,6 @@ console.log('  ' + '─'.repeat(108));
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «los rótulos están bien»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 EN ${hallazgos.length} DE ${ANCHOS.length} ANCHURAS EL CONCEPTO NO CABE EN SU SITIO:\n`);
@@ -263,6 +263,12 @@ if (hallazgos.length) {
   }
   console.error('\n  El profesional escribe QUÉ HA HECHO en ese campo. Si desaparece, la pantalla le está');
   console.error('  pidiendo el dato más importante del presupuesto por una rendija.\n');
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
 }
 console.log(`\n  ✔ en las ${ANCHOS.length} anchuras: cada rótulo cabe, el concepto es el campo más ancho y no hay scroll lateral.\n`);

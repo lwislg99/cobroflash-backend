@@ -843,9 +843,9 @@ la factura, o cuando pida su borrado?
 > código y dedujo qué hace falta, y cada regla fiscal que usa lleva su cita oficial comprobada por
 > script (`docs/verificacion/comprobar-citas-contabilidad.mjs`, 26/26 citas literales, control
 > negativo OK). **Q-C5 y Q-C9 se responden abajo con esa cita** — se dejan aquí para que las
-> confirmes o las corrijas, no porque falte la fuente. El resto sigue abierto.
+> confirmes o las corrijas, no porque falte la fuente. El resto sigue abierto. **⚠️ 30-sep-2026 · SCRUM-1261, comentario 17638 (decisión ① del fundador): las respuestas del 23-sep rotuladas «el asesor fiscal» —Q-C1 a Q-C5, Q-C7 y Q-C8— las escribió una HERRAMIENTA, no un asesor. Donde abajo dice «el asesor» o «Textual:», léase «la herramienta». Ninguna tiene revisión profesional, y todas se envían al asesor (decisión ②). Lo que se apoya en una cita comprobada por script —Q-C5 y Q-C9 del 22-sep, la leyenda de Q-C2 (§3 de `CONTABILIDAD.md`)— conserva su marca.**
 
-**Q-C1.** ~~Reforma de vivienda al 10 %~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026) →
+**Q-C1.** Reforma de vivienda al 10 % · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638) →
 afecta a SCRUM-1052.** El 40 % de materiales se mide sobre **la operación entera** (todo el
 presupuesto/obra), **nunca partida a partida** — cita AEAT verificada hoy, con enlace (no ⚠):
 _«la ejecución de obra […] tributará, toda ella, al tipo general del 21 %»_ y _«no cabría facturar
@@ -867,7 +867,7 @@ Comunidad de propietarios: incluida expresamente (no es empresario → ni ISP ni
 AEAT, con enlace) · rehabilitación integral va por otro número (art. 91.Uno.3.1º LIVA, **NO
 VERIFICADO** ⚠).
 
-**Q-C2.** ~~Inversión del sujeto pasivo~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1051, y le
+**Q-C2.** Inversión del sujeto pasivo · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638) → afecta a SCRUM-1051, y le
 estrecha mucho el alcance.** La leyenda exacta, **RESPONDIDA por cita comprobada (§3 de
 `CONTABILIDAD.md`, SCRUM-1039c, 23-sep-2026)** — art. 6.1.m RFACT/ROF (RD 1619/2012): *«En el caso
 de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la operación, la
@@ -902,7 +902,7 @@ En el 303: emisor → casilla informativa 61 (**NO VERIFICADO** ⚠) sin cuota; 
 (casillas 12-13, **NO VERIFICADO** ⚠) y deduce. VeriFactu: `CalificacionOperacion = S2` — esto sí
 verificado, en código, contra el XSD (SCRUM-1088), no es cita legal.
 
-**Q-C3.** ~~Suplidos~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.** Tres condiciones
+**Q-C3.** Suplidos · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638) → afecta a SCRUM-1054.** Tres condiciones
 ACUMULATIVAS, cada una con su prueba:
 1. 🔴 **la factura del tercero va A NOMBRE DEL CLIENTE**, no del profesional — textual: _«un
    material comprado por el fontanero a su nombre nunca es suplido: es coste suyo, va en la base y
@@ -917,7 +917,7 @@ Factura y registro: importe separado, fuera de base y cuota; en VeriFactu fuera 
 no sujeto/tipo 0 — de la FAQ de registros de facturación de la AEAT (con enlace, no ⚠). No entra en
 el libro de gastos (su IVA no se deduce).
 
-**Q-C4.** ~~Recargo de equivalencia~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.**
+**Q-C4.** Recargo de equivalencia · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638) → afecta a SCRUM-1054.**
 Corresponde al comerciante minorista persona física que vende sin transformar y ≥80 % a
 consumidores finales (arts. 148-149 LIVA, **NO VERIFICADO** ⚠). Tipos: 5,2/1,4/0,5 % (art. 161
 LIVA, **NO VERIFICADO** ⚠ en esta pasada — el valor ya estaba en el código, el artículo no se ha
@@ -933,8 +933,8 @@ minorista para su tienda. Un oficio presta SERVICIOS (ejecución de obra); sólo
 material suelto a una ferretería o similar para reventa. Es tan raro que basta con tener el campo,
 no un flujo.»_
 
-**Q-C5.** ~~Retenciones 2 y 1 %~~ ✅ **RESPONDIDA por completo (23-sep-2026) → afecta a SCRUM-1053 y
-SCRUM-1073, y necesita DECISIÓN DEL FUNDADOR (abajo).** Sustituye la respuesta parcial del 22-sep.
+**Q-C5.** Retenciones 2 y 1 % · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638) → afecta a SCRUM-1053 y
+SCRUM-1073, y necesita DECISIÓN DEL FUNDADOR (abajo).** Se suma a la parcial del 22-sep, que es por cita y conserva su marca; no la sustituye.
 
 Los cuatro tipos, situados: **15 %** profesionales (art. 95.1 RIRPF, ya comprobado en
 `CONTABILIDAD.md` §3) — la que un oficio **sufre** al recibir la factura de su gestor, no la que
@@ -968,14 +968,14 @@ fecha real en que entró el dinero (detalle y advertencia ya en el código,
 fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica y avisa; no liquida
 ningún 303 (sin llamadores).
 
-**Q-C7.** ~~Los tipos de IVA 2, 5 y 7,5 %~~ ✅ **RESUELTA (23-sep-2026).** Son los tipos
+**Q-C7.** Los tipos de IVA 2, 5 y 7,5 % · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638).** Son los tipos
 **temporales de alimentos** del RDL 4/2024 (1-oct a 31-dic-2024: el 0 % básico subió al 2 %, y el
 5 % de aceite y pasta al 7,5 %; desde 1-ene-2025 volvieron al 4 % y 10 % — fechas **NO VERIFICADO**
 ⚠). Recargos de equivalencia asociados: 0,26 % y 1 %. Siguen en el anexo de la Orden VeriFactu
 porque hay facturas históricas que los usan. Textual: _«a un oficio no le aplican nunca; en el
 código pueden quedar como valores admitidos pero NO OFRECIDOS»_.
 
-**Q-C8.** ~~Plazos trimestrales~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026), pendiente de tu
+**Q-C8.** Plazos trimestrales · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638), pendiente de tu
 confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
 clientes particulares y empresas. **El asesor marcó él mismo con ⚠ lo que citó de memoria** — por la
 regla de oro de `docs/producto/CONTABILIDAD.md` §0, ninguna cita ⚠ entra aquí como cita comprobada:

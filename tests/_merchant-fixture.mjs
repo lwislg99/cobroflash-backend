@@ -109,6 +109,8 @@ const MODELOS_POR_MERCHANT = [
   // SCRUM-1014 · `customerSite` (la agenda de sitios) es del grupo FK-RESTRICT: sin barrerla
   // antes de `customer`, `merchant.delete` fallaría RUIDOSO si el test dejó algún sitio vivo.
   'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'customerSite', 'attachment',
+  // SCRUM-1296 · `vfSubmission` es FK-RESTRICT hacia `invoice` y `merchant`: va antes de los dos.
+  'vfSubmission',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
   'teamMember', 'customer',

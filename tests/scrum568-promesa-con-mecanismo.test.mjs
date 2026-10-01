@@ -181,6 +181,8 @@ test('CONTROL POSITIVO · lo que NO está condicionado no se mueve al encender l
   const antes = veredictos(html, RAIZ, censoF).veredictos.filter((v) => v.grupo === CON_ANCLA).map((v) => v.id);
   const despues = veredictos(html, RAIZ, censoF, conLosFlagsEncendidos()).veredictos
     .filter((v) => v.grupo === CON_ANCLA).map((v) => v.id);
+  // SCRUM-1311 · suelo de población: sin ninguna promesa con ancla ANTES, «no se mueve» no compara nada.
+  assert.ok(antes.length > 0, '🔴 CIEGO: con los flags apagados no hay NINGUNA promesa con ancla viva: este control no compara nada.');
   for (const id of antes) {
     assert.ok(despues.includes(id),
       `🔴 «${id}» tenía ancla viva y deja de tenerla al encender un flag que no le afecta`);
