@@ -94,3 +94,4 @@ Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
 Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy. (SCRUM-1154)
 Empujar no es entregar: antes de cerrar, mira el check obligatorio de tu último push, o di que no lo miraste. (SCRUM-1298)
+Que un commit no esté en main no dice que su contenido no esté: el trabajo entra por otra rama o bajo otro número. Se compara contenido, no ancestría ni número. (SCRUM-1348)
