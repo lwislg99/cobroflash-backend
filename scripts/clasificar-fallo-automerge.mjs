@@ -41,6 +41,8 @@ import { pathToFileURL } from 'node:url';
 const BENIGNOS = {
   CONFLICTING: 'el PR tiene CONFLICTOS con la base — GitHub no permite armar auto-merge ahí',
   CLEAN: 'el PR ya está limpio y no queda ningún check obligatorio por esperar — no hay nada que armar',
+  DRAFT: 'el PR está en BORRADOR — GitHub no arma el auto-merge de un borrador, y es lo correcto. ' +
+         'Se armará solo en el primer empujón después de marcarlo como listo; no hay nada que revisar en la configuración',
 };
 
 /** `mergeable` llega como enum de GraphQL, o como booleano si viene de REST. */
@@ -76,8 +78,8 @@ const MARCAS_DE_PERMISOS = [
 ];
 
 /**
- * @param {{mergeable?: unknown, mergeStateStatus?: unknown, error?: unknown}} vista  lo que
- *        devuelve `gh pr view --json mergeable,mergeStateStatus` (ya parseado), más
+ * @param {{mergeable?: unknown, mergeStateStatus?: unknown, isDraft?: unknown, error?: unknown}} vista  lo que
+ *        devuelve `gh pr view --json mergeable,mergeStateStatus,isDraft` (ya parseado), más
  *        opcionalmente `error`: la salida de texto que dio `gh pr merge` al fallar.
  * @returns {{benigno: boolean, motivo: string, mergeable: string, estado: string}}
  */
@@ -94,6 +96,17 @@ export function clasificar(vista = {}) {
               'armar el auto-merge. Mirar `permissions:` del job y si hay token de App',
       mergeable, estado,
     };
+  }
+
+  // SCRUM-1382 · BORRADOR. GitHub no deja armar el auto-merge en un borrador, y hace bien: un
+  // borrador es alguien diciendo «todavía no». Medido el 1-oct-2026 en el PR #2001 (borrador a
+  // propósito): cuatro empujones seguidos en rojo con «FALLO REAL», mandando a mirar la
+  // configuración del repo. Un check que grita en cada empujón se aprende a ignorar.
+  // Se decide por el ESTADO (`isDraft` es un booleano, `DRAFT` un valor del enum), no por el
+  // «is a draft» del mensaje. Y va ANTES que el conflicto y que UNKNOWN: en #2001 GitHub
+  // devolvía mergeable=UNKNOWN y mergeStateStatus=UNKNOWN con isDraft=true.
+  if (vista.isDraft === true || estado === 'DRAFT') {
+    return { benigno: true, motivo: BENIGNOS.DRAFT, mergeable, estado };
   }
 
   // Conflicto: lo dicen dos campos distintos, y basta con que lo diga uno.

@@ -380,8 +380,10 @@ jobs:
           # UNKNOWN y el clasificador —que falla cerrado— lo pintaría rojo por no saber.
           VISTA='{}'
           for intento in 1 2 3 4 5; do
-            VISTA="$(gh pr view "$NUM" --json mergeable,mergeStateStatus 2>/dev/null || echo '{}')"
+            VISTA="$(gh pr view "$NUM" --json mergeable,mergeStateStatus,isDraft 2>/dev/null || echo '{}')"
             case "$VISTA" in
+              # SCRUM-1382: de un borrador ya se sabe lo que hace falta, aunque lo demás siga UNKNOWN.
+              *'"isDraft":true'*) break ;;
               *'"UNKNOWN"'*|'{}') sleep 5 ;;
               *) break ;;
             esac
@@ -406,7 +408,7 @@ jobs:
             echo "No se armó el auto-merge del PR #$NUM, y es lo esperable. El PR queda ABIERTO"
             echo "para que lo mire una persona. Esto NO es un fallo del workflow."
             echo "NO-ARMADO-LEGITIMO" >> "$RUNNER_TEMP/veredicto.txt"
-            echo "- **NO-ARMADO (motivo legítimo)** — el PR #$NUM no se pudo armar (conflicto, o nada que esperar). Queda abierto para una persona." >> "$GITHUB_STEP_SUMMARY"
+            echo "- **NO-ARMADO (motivo legítimo)** — el PR #$NUM no se pudo armar (borrador, conflicto, o nada que esperar). Queda abierto para una persona." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
