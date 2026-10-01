@@ -1,0 +1,5 @@
+// hijo/suelto.mjs - un script que usa node:test SIN `--test` (como scripts/guards-entrada.mjs).
+import test from 'node:test';
+import fs from 'node:fs';
+if (process.env.TESTIGO) fs.appendFileSync(process.env.TESTIGO, `hijo pid=${process.pid} ctx=${process.env.NODE_TEST_CONTEXT || '-'} opts=${process.env.NODE_OPTIONS ? 'SI' : 'NO'}\n`);
+for (let i = 1; i <= 5; i++) test(`HIJO caso ${i}`, () => {});
