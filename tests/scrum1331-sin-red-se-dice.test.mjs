@@ -305,3 +305,13 @@ test('SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida
   assert.notEqual(informe.ficherosMuertos[0].clase, NATIVA);
   assert.equal(redactar({ ...informe, ficherosMuertos: [] }, 1), '', 'sin nada que decir, no dice nada');
 });
+
+test('SCRUM-1331 · clasificarVentana, con entradas fabricadas: red, nativa y nada', () => {
+  const red = clasificarVentana(['✔ uno (1ms)', 'fatal: Could not resolve host: github.com']);
+  assert.equal(red.clase, RED);
+  assert.match(red.huella, /Could not resolve host/);
+  assert.equal(clasificarVentana(['----- Native stack trace -----']).clase, NATIVA);
+  assert.deepEqual(clasificarVentana(['Error: boom', "  'test failed'"]), { clase: SIN_HUELLA, huella: '' });
+  assert.equal(clasificarVentana(['Segmentation fault', 'fatal: Could not resolve host: x']).clase, RED,
+    'la red se mira ANTES que lo nativo');
+});
