@@ -13,6 +13,7 @@ import path from 'node:path';
 import {
   seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, seccionDespliegue,
   seccionCementerio, actualizarLibro, leerTrabajos, leerLibro,
+  seccionContexto, contextoDeRuta,
   fallosDelLog, salidaDe, informe, puestoDe,
   SALIDA_OK, SALIDA_AVISO, SALIDA_CIEGO, HORAS_DE_ROJO, MINUTOS_DE_DESPLIEGUE,
 } from '../scripts/equipo/latido.mjs';
@@ -284,4 +285,64 @@ test('SCRUM-1357 · NEGATIVO del libro: la que SIGUIÓ trabajando sale sola; la 
   assert.equal(c2.alertas.length, 1, '🔴 una respuesta no contesta a la pregunta siguiente');
   // Y si el libro no se pudo guardar, se dice.
   assert.match(seccionCementerio({ sesiones: bloqueada, libro, libroGuardado: false, ahora: AHORA }).poblacion, /NO pude guardar el libro/);
+});
+
+// ───────────────────────────── SCRUM-1282 · la ocupación, leída desde un árbol ─────────────────────────────
+//
+// Medido el 1-oct-2026: `sesion.mjs contexto` (la copia INSTALADA) respondió ALTERADO a todo el equipo
+// al entrar #2002, porque su puerta compara con origin/main. La cifra del relevo desapareció para
+// todos a la vez. El latido la da leyendo el jsonl de cada sesión, sin pasar por esa puerta.
+
+const ctx = (tokens, minutos = 5) => ({ tokens, cuando: new Date(AHORA - minutos * 60000).toISOString() });
+
+test('SCRUM-1282 · 🔴 CONTEXTO: cada sesión viva sale con su ocupación, y la que pasa del umbral se avisa', () => {
+  const por = { 's3-1oct': ctx(409_000, 11), 's4-1oct': ctx(121_000) };
+  const s = seccionContexto({
+    sesiones: [sesion('s3-1oct', 'working'), sesion('s4-1oct', 'blocked'), sesion('s1-1oct', 'done'), sesion('s2-30sep', 'working', { actualizado: AHORA - 30 * H })],
+    contextoDe: (x) => por[x.nombre], sueltas: [{ nombre: '(sin trabajo de fondo: ed676fd1)', ctx: ctx(421_000, 0) }], ahora: AHORA,
+  });
+  assert.equal(s.pudo, true, `🔴 la terminada y la de ayer no se miran: no pueden dejarla ciega (${s.motivo})`);
+  assert.deepEqual(s.alertas.map((a) => a.sesion), ['(sin trabajo de fondo: ed676fd1)', 's3-1oct (s3-1oct)'], '🔴 las dos por encima de 200k, la mayor primero; la de 121k no');
+  assert.match(s.alertas[1].linea, /s3-1oct \(s3-1oct\) · 409k de ventana, por encima de 200k \(A19\): se releva AL TERMINAR su entrega · último turno hace 11 min/);
+  assert.match(s.poblacion, /^2 sesiones vivas en 24 h \+ 1 transcript\(s\).* 3 leídas: .*s3-1oct 409k · s4-1oct 121k/);
+  assert.equal(salidaDe([s]), SALIDA_AVISO);
+});
+
+test('SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y dice cuánto llevan', () => {
+  const s = seccionContexto({ sesiones: [sesion('s4-1oct', 'working')], contextoDe: () => ctx(121_000), ahora: AHORA });
+  assert.deepEqual(s.alertas, []);
+  assert.match(s.poblacion, /1 leídas: s4-1oct 121k/);
+  assert.equal(salidaDe([s]), SALIDA_OK);
+  // El umbral es el de la A19, no uno propio: con otro umbral, la misma sesión sí sale.
+  assert.equal(seccionContexto({ sesiones: [sesion('s4-1oct', 'working')], contextoDe: () => ctx(121_000), ahora: AHORA, umbral: 100_000 }).alertas.length, 1);
+});
+
+test('SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó', () => {
+  const s = seccionContexto({
+    sesiones: [sesion('s3-1oct', 'working'), sesion('s5-1oct', 'working'), sesion('s0-1oct', 'working')],
+    contextoDe: (x) => (x.nombre === 's5-1oct' ? undefined : x.nombre === 's0-1oct' ? null : ctx(409_000)), ahora: AHORA,
+  });
+  assert.equal(s.pudo, false);
+  assert.equal(salidaDe([s]), SALIDA_CIEGO);
+  const txt = informe([s], { ahora: AHORA });
+  assert.match(txt, /CONTEXTO · NO PUDE MIRAR: no encontré o no pude leer el jsonl de 1 sesión\(es\) viva\(s\): s5-1oct \(s5-1oct\)/);
+  assert.match(txt, /· s3-1oct \(s3-1oct\) · 409k de ventana/, '🔴 estar ciego de UNA no tapa a la que sí se leyó');
+  // Recién lanzada, sin ningún turno todavía: se NOMBRA, pero no es ceguera (el jsonl se leyó).
+  assert.match(txt, /1 sin ningún turno con uso todavía \(s0-1oct \(s0-1oct\)\)/);
+  assert.equal(seccionContexto({ sesiones: [sesion('s0-1oct', 'working')], contextoDe: () => null, ahora: AHORA }).pudo, true);
+  assert.equal(seccionContexto({ sesiones: undefined, contextoDe: () => null, ahora: AHORA }).pudo, false);
+});
+
+test('SCRUM-1282 · contra disco: el ÚLTIMO turno con uso (baja al compactar), y sin fichero es «no pude», no cero', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-latido-ctx-'));
+  try {
+    const turno = (n, t) => JSON.stringify({ type: 'assistant', timestamp: t, message: { usage: { input_tokens: 10, cache_read_input_tokens: n, cache_creation_input_tokens: 0, output_tokens: 99_999 } } });
+    const f = path.join(dir, 'a.jsonl');
+    fs.writeFileSync(f, [turno(965_000, '2026-10-01T10:00:00Z'), turno(75_000, '2026-10-01T11:00:00Z'), '{"type":"assistant","mess'].join('\n'));
+    assert.deepEqual(contextoDeRuta(f), { tokens: 75_010, turnos: 2, cuando: '2026-10-01T11:00:00Z' }, '🔴 tras compactar manda el último turno, no el máximo; la salida no cuenta; la línea a medias no rompe');
+    fs.writeFileSync(path.join(dir, 'vacio.jsonl'), '{"type":"user"}\n');
+    assert.equal(contextoDeRuta(path.join(dir, 'vacio.jsonl')), null);
+    assert.equal(contextoDeRuta(path.join(dir, 'no-existe.jsonl')), undefined);
+    assert.equal(contextoDeRuta(undefined), undefined);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
