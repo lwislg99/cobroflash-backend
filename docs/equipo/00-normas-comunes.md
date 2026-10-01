@@ -261,6 +261,15 @@ línea de su aceptación:
 parte** (A18). ✗ Falla: medido el 1-oct sobre los 47 cierres de tres días, cinco estaban «Finalizada»
 diciendo en su propio comentario que no se había visto en yaqu.app.
 
+**El obligatorio de lo que empujas te lo pone delante un hook, no tu memoria** (SCRUM-1356). Al ir a
+parar, `.claude/hooks/latido-cierre.mjs` mira cada rama que TU sesión ha empujado (las saca de los
+`git push` de tu transcript) y, si alguna no está en verde, te lo dice UNA vez por estado y te deja
+seguir: lo dices en tu mensaje —verde, rojo o todavía no— o lo arreglas. Empuja con el nombre escrito
+(`git push origin HEAD:<rama>`): un `git push` a secas, o con la rama en una variable, no deja rastro y
+el hook no lo ve. Y quien reparte recibe el latido al arrancar (`latido-arranque.mjs`) sin pedirlo.
+✗ Falla: los dos hooks solo corren en sesiones lanzadas desde una carpeta que los TENGA. Si corrieron
+de verdad se mide, no se supone: `node .claude/hooks/latido-arranque.mjs corrio`.
+
 ## A9 · Cuando algo te sale mal, lo cuentas tú
 
 **El texto canónico vive en `docs/equipo/00-normas-siempre.md`**, y lo
