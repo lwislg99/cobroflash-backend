@@ -212,6 +212,6 @@ los que toca este PR; la población del censo sigue siendo 40.
 - Después del último cambio: los tests de CR, los dos del ticket y los guards de suite — ver el
   comentario de entrega en Jira, que lleva las cifras de la última pasada.
 
-Y un quinto error mío, que va con los de Ⓗ: **empujé evidencias a `docs/` sin contar sus CR contra la
+Y un quinto error mío, que va con los de Ⓗ: **comiteé evidencias en `docs/` sin contrastar sus CR contra la
 regla del repo.** Los conté (la tabla de bytes los enseñaba: «CR 4») y no hice nada con el número. Lo
 cazó la suite completa, no yo.
