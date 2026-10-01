@@ -1,0 +1,21 @@
+# a11y-comparativa-hallazgo · guard-a11y-comparativa.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · una celda llega sin su etiqueta de columna, y ningún ciego
+# EXIT=1 · 1.8 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+── 1280px · 6 filas · grid: 323.25px 269.375px 269.375px
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 11/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+── 360px · 6 filas · grid: no hay (apilado)
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 11/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✖ fila "firma" · columna «Con YaQu» → llega SIN su etiqueta de columna. Se oiría: «Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.»
+   ✖ fila "firma" · columna «Con YaQu» → llega SIN su etiqueta de columna. Se oiría: «Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.»
+
+🔴 2 problema(s). En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.

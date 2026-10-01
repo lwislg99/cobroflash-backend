@@ -1,0 +1,4 @@
+# marcadores-en-pantalla-ciego-banco · guard-marcadores-en-pantalla.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · index.html del panel sin scripts: «el banco no es el panel», antes de medir nada
+# EXIT=1 · 0.2 s
+
+🔴 CIEGO: sólo 0 scripts derivados de index.html. El banco no es el panel.

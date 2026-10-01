@@ -291,25 +291,20 @@ export function censoDeSalidas(poblacion, declarados) {
  * dos mitades: ni entra una salida sin declarar, ni se queda una entrada (o un número) de más.
  *
  *   salidas ...................... cuántas encuentra `comoSale`. Si arreglas una, baja el número aquí.
- *   pintaElCiegoDeHallazgo ....... LEÍDO en el fuente (1-oct-2026), NO ejercitado en ciego: un «no supe
- *                                  mirar» acaba en el mismo 1 que el defecto. Es la cola de SCRUM-1336,
- *                                  que consiste en vaciar estas entradas.
+ *   pintaElCiegoDeHallazgo ....... un «no supe mirar» acaba en el mismo 1 que el defecto. HOY NO LA LLEVA
+ *                                  NINGUNA ENTRADA: las seis que la llevaban las vació SCRUM-1336, que
+ *                                  además las EJERCITÓ en ciego (hasta entonces estaban leídas, no
+ *                                  corridas) y retiró `guard-rastro-del-menu.mjs`, un séptimo que
+ *                                  estaba en la lista SIN la marca: su suelo era un `throw` sin
+ *                                  capturar. Antes y después, con navegador, en
+ *                                  `docs/master/evidencias/scrum1336/`. La marca se queda descrita por
+ *                                  si otro guard vuelve a hacerlo: se declara con ella, no sin ella.
  *   eligeEntreCiegoYHallazgo ..... tiene una salida de ciego Y otra de hallazgo escritas por él. Es lo
  *                                  que censa `tests/scrum1320-…`, que DERIVA su lista de aquí.
  *
  * Uno por entrada. Un guard nuevo no entra aquí: sale por `veredictoDe`.
  */
 export const SALEN_A_MANO = new Map([
-  ['guard-a11y-comparativa.mjs', {
-    salidas: 1,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): cada «NO SUPE MIRAR» hace `fallos++` y sale con el mismo 1 que una celda sin su columna.',
-  }],
-  ['guard-a11y-landing.mjs', {
-    salidas: 1,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): cada «NO SUPE MIRAR» hace `fallos++` y sale con el mismo 1 que un defecto de accesibilidad.',
-  }],
   ['guard-acreditacion-invoicing-es.mjs', {
     salidas: 1,
     motivo: 'Sale con lo que devuelve `principal()` (0, 1 o 2, y el 2 es su ciego): el número viaja en una variable y este lector no sabe cuál es. No es de navegador ni tiene clave en package.json. Lo retira quien lo pase a `veredictoDe`.',
@@ -331,28 +326,13 @@ export const SALEN_A_MANO = new Map([
     salidas: 2,
     motivo: 'No es de navegador y no tiene ciego: la lógica es pura (`_guard-conformidad-landing.mjs`). Un 1 es «la web afirma una conformidad sin documento» y el otro «se ejecutó y no se reconoció como CLI» (SCRUM-235).',
   }],
-  ['guard-contraste.mjs', {
-    salidas: 3,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): «no se pudo medir» una página sale con 1 DENTRO del bucle (corta las demás), y el suelo de nodos («no supe mirar») también con 1. La tercera es el hallazgo.',
-  }],
   ['guard-detalle-trabajo-917.mjs', {
     salidas: 1,
     motivo: 'Usa `veredictoDe`; lo declarado es el `process.exit(3)` de «no arrancó el navegador», ANTES de medir nada.',
   }],
-  ['guard-duplicar-926.mjs', {
-    salidas: 1,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): un caso ciego deja sus casillas en falso y el guard sale con el mismo 1 que «duplicar no conserva».',
-  }],
   ['guard-lista-gastos.mjs', {
     salidas: 2,
     motivo: 'Usa `veredictoDe`; lo declarado es el vigía de 4 minutos (`process.exit(2)` si se cuelga: tira lo acumulado hasta ahí) y el `process.exit(0)` final, que cierra el servidor del banco tras el veredicto verde.',
-  }],
-  ['guard-marcadores-en-pantalla.mjs', {
-    salidas: 3,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): dos «CIEGO» previos (el banco no es el panel) salen con 1, y la lista `ciegos` pasa por `mal()` y acaba en el mismo 1 que un marcador nuevo.',
   }],
   ['guard-nif-del-gasto.mjs', {
     salidas: 1,
@@ -363,17 +343,8 @@ export const SALEN_A_MANO = new Map([
     eligeEntreCiegoYHallazgo: true,
     motivo: 'NO ES EL DEFECTO: su salida de ciego es `noMedido` del instrumento ENTERO, antes de juzgar nada; no hay hallazgos que tapar. No es de navegador.',
   }],
-  ['guard-objetivo-tactil.mjs', {
-    salidas: 1,
-    pintaElCiegoDeHallazgo: true,
-    motivo: 'SIN ARREGLAR (SCRUM-1336): `mal()` cuenta «NO SUPE MIRAR» y «CIEGO» como un problema más y sale con el mismo 1 que un táctil corto.',
-  }],
   ['guard-primera-pantalla.mjs', {
     salidas: 1,
     motivo: 'Sólo cuenta `fallos` y sale con `fallos === 0 ? 0 : 1`. No se le ha encontrado palabra para el ciego (buscado por texto, no ejercitado). Lo retira quien lo pase a `veredictoDe`.',
-  }],
-  ['guard-rastro-del-menu.mjs', {
-    salidas: 1,
-    motivo: 'Una salida, con 1, por hallazgo. Su suelo («menos de 17 destinos: está ciego») es un `throw`, que sale también con 1 y que este lector NO ve (límite declarado): candidato a SCRUM-1336, leído y no ejercitado.',
   }],
 ]);
