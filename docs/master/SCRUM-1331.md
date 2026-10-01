@@ -114,6 +114,14 @@ tocar ningún guard: el comentario ya no dice número, el dato fabricado se comp
 caso ⑤ llama al clasificador con entradas en la mano en los dos sentidos (que es mejor test del
 que había). Con los tres dentro: 10 ficheros · **72 tests · 71 pass · 0 fail · 1 skip**.
 
+⚠️ **A la vez que yo, lo arregló una ejecución de `claude[bot]`** sobre esta misma rama (commit
+`3efc4f65`, 06:30:52Z, lanzada por el flujo del repositorio ante el CI rojo; yo no la pedí). Sus
+tres arreglos son equivalentes a los míos. No se forzó nada: su commit está mezclado con los míos
+(`c88f1c6d`), el comentario de 804b queda con su redacción y su caso añadido
+(`clasificarVentana, con entradas fabricadas`) se conserva junto al mío. Tras la mezcla: 12
+ficheros · **91 tests · 90 pass · 0 fail · 1 skip**, `guards:entrada` 12 guards en verde y las
+mutaciones 3 vivas de 3.
+
 ## 5 · La población (de J3d, subida aquí porque vivía en un scratchpad)
 
 Medida por EJECUCIÓN, no por grep: un `--import` que anota cada proceso hijo, `fetch`, socket no
