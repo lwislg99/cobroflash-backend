@@ -1,0 +1,41 @@
+SONDA forma · win32 · node v24.18.0
+
+① EL RUNNER MATADO DESDE FUERA · población 5 formas de matar
+   taskkill /F                            → status=1 signal=null · resumen=no · bytes de salida=0 · TESTIGO runner_vivo_antes=true nieto_arrancó=sí
+   taskkill /F /T                         → status=1 signal=null · resumen=no · bytes de salida=0 · TESTIGO runner_vivo_antes=true nieto_arrancó=sí
+   Stop-Process -Force                    → status=4294967295 signal=null · resumen=no · bytes de salida=0 · TESTIGO runner_vivo_antes=true nieto_arrancó=sí
+   process.kill(pid) de node              → status=1 signal=null · resumen=no · bytes de salida=0 · TESTIGO runner_vivo_antes=true nieto_arrancó=sí
+   process.kill(pid, 'SIGKILL') de node   → status=1 signal=null · resumen=no · bytes de salida=0 · TESTIGO runner_vivo_antes=true nieto_arrancó=sí
+
+② CÓMO PINTA EL RUNNER UN FICHERO QUE MUERE · población 4 formas
+
+   ▓ MATADO desde fuera (taskkill /F al proceso del fichero) · TESTIGO vivo_antes=true vivo_después=false
+     status del runner=1 · tests=2 · fail=1 · ¿deja su traza en el stdout del runner?=no
+     │ ✖ failing tests:
+     │ test at cuelga.test.mjs:1:1
+     │ ✖ <tmp>\cuelga.test.mjs (457.7444ms)
+     │   'test failed'
+
+   ▓ REVIENTA en su primera línea (throw al cargar)
+     status del runner=1 · tests=2 · fail=1 · ¿deja su traza en el stdout del runner?=SÍ
+     │ ✖ failing tests:
+     │ test at revienta.test.mjs:1:1
+     │ ✖ <tmp>\revienta.test.mjs (63.1415ms)
+     │   'test failed'
+
+   ▓ CALLADO: process.exit(1) sin una letra
+     status del runner=1 · tests=2 · fail=1 · ¿deja su traza en el stdout del runner?=no
+     │ ✖ failing tests:
+     │ test at callado.test.mjs:1:1
+     │ ✖ <tmp>\callado.test.mjs (40.7466ms)
+     │   'test failed'
+
+   ▓ ROJO DE VERDAD: un assert que cae
+     status del runner=1 · tests=2 · fail=1 · ¿deja su traza en el stdout del runner?=no
+     │ ✖ failing tests:
+     │ test at rojo.test.mjs:3:1
+     │ ✖ caso que cae de verdad (1.0548ms)
+     │   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+     │   1 !== 2
+
+SONDA=0

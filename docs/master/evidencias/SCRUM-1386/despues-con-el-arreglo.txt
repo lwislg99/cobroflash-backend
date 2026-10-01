@@ -1,0 +1,142 @@
+BANCO SCRUM-1386 (runner matado) · plataforma win32 · node v24.18.0 · árbol medido: scrum-1386-runner-matado-es-ciego
+POBLACIÓN: 9 caso(s) — K0-control, KA-arbol-pronto, KA-arbol-mitad, KA-arbol-tarde, KA-solo-mitad, KA-stop-mitad, KB-nieto, R0-rojo-control, KR-rojo-y-matado
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO K0-control · CONTROL · nadie mata a nadie
+████████████████████████████████████████████████████████████████████████████████████████████████████
+(sin matador)
+VALE=sí
+EXIT de la puerta=0 · 10.1 s
+lo que el runner dejó escrito: ✔=132 · ✖=0 · resumen «tests N»=132 · «fail N»=0
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   [stdout, última] 12 guards · 10.0 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KA-arbol-pronto · runner y sus hijos matados nada más aparecer (taskkill /F /T)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=2984 visto_a=333ms espera=0ms nietos_vivos_al_matar=9 objetivo=2984 como=[taskkill /F /T] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 1.3 s
+lo que el runner dejó escrito: ✔=0 · ✖=0 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ CIEGO — no terminé; no sé nada de tus guards. El runner acabó sin escribir su resumen (estado 1).
+     Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+     dicho que esté bien. Había escrito 0 resultado(s) en verde y ninguno caído.
+     Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que
+     cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 1.0 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KA-arbol-mitad · runner y sus hijos matados a los 4 s (taskkill /F /T)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=2040 visto_a=343ms espera=4000ms nietos_vivos_al_matar=5 objetivo=2040 como=[taskkill /F /T] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 5.2 s
+lo que el runner dejó escrito: ✔=0 · ✖=0 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ CIEGO — no terminé; no sé nada de tus guards. El runner acabó sin escribir su resumen (estado 1).
+     Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+     dicho que esté bien. Había escrito 0 resultado(s) en verde y ninguno caído.
+     Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que
+     cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 4.9 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KA-arbol-tarde · runner y sus hijos matados a los 7 s (taskkill /F /T), con resultados ya escritos
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=32736 visto_a=336ms espera=7000ms nietos_vivos_al_matar=2 objetivo=32736 como=[taskkill /F /T] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 8.2 s
+lo que el runner dejó escrito: ✔=97 · ✖=0 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ CIEGO — no terminé; no sé nada de tus guards. El runner acabó sin escribir su resumen (estado 1).
+     Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+     dicho que esté bien. Había escrito 97 resultado(s) en verde y ninguno caído.
+     Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que
+     cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 7.9 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KA-solo-mitad · SÓLO el runner matado a los 4 s (taskkill /F); sus hijos quedan huérfanos
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=26148 visto_a=322ms espera=4000ms nietos_vivos_al_matar=5 objetivo=26148 como=[taskkill /F] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 5.2 s
+lo que el runner dejó escrito: ✔=0 · ✖=0 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ CIEGO — no terminé; no sé nada de tus guards. El runner acabó sin escribir su resumen (estado 1).
+     Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+     dicho que esté bien. Había escrito 0 resultado(s) en verde y ninguno caído.
+     Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que
+     cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 4.9 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KA-stop-mitad · runner matado a los 4 s con Stop-Process -Force (otro código de salida)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=16440 visto_a=338ms espera=4000ms nietos_vivos_al_matar=5 objetivo=16440 como=[Stop-Process -Force] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 5.1 s
+lo que el runner dejó escrito: ✔=0 · ✖=0 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ CIEGO — no terminé; no sé nada de tus guards. El runner acabó sin escribir su resumen (estado 4294967295).
+     Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+     dicho que esté bien. Había escrito 0 resultado(s) en verde y ninguno caído.
+     Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que
+     cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 4.8 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KB-nieto · UN proceso por fichero (scrum237) matado a los 1,5 s; el runner sigue vivo
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=19280 visto_a=351ms espera=1500ms nietos_vivos_al_matar=6 objetivo=21384 como=[taskkill /F al nieto scrum237] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+VALE=sí
+EXIT de la puerta=2 · 9.9 s
+lo que el runner dejó escrito: ✔=124 · ✖=1 · resumen «tests N»=125 · «fail N»=1
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   ⬜ 1 guard(s) NO ACABARON DE MEDIR: su proceso murió sin dejar una letra de por qué.
+      · tests/scrum237-negacion-respaldada.test.mjs
+     Ningún test suyo ha caído: el que cae es el fichero entero, y callado. Es lo que deja un
+     proceso al que matan desde fuera (SCRUM-1386). No es un rojo ni un verde. Relánzalo.
+     ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
+   [stdout, última] 12 guards · 9.8 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO R0-rojo-control · POSITIVO · un rojo de verdad (un registro sin ancla) y nadie mata a nadie
+████████████████████████████████████████████████████████████████████████████████████████████████████
+(sin matador)
+cebo retirado del árbol: sí
+VALE=sí
+EXIT de la puerta=1 · 9.9 s
+lo que el runner dejó escrito: ✔=126 · ✖=6 · resumen «tests N»=132 · «fail N»=6
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,
+     el PR sale rojo y cuesta una vuelta entera.
+     ⟦veredicto⟧ 6 hallazgos · 0 ciegos → salida 1 (hallazgo)
+   [stdout, última] 12 guards · 9.8 s · plazo 90 s
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO KR-rojo-y-matado · un rojo de verdad, y el runner matado a los 7 s, DESPUÉS de escribir sus ✖
+████████████████████████████████████████████████████████████████████████████████████████████████████
+TESTIGO runner=12864 visto_a=330ms espera=7000ms nietos_vivos_al_matar=2 objetivo=12864 como=[taskkill /F /T] objetivo_vivo_antes=1 objetivo_sigue_vivo=0
+cebo retirado del árbol: sí
+VALE=sí
+EXIT de la puerta=1 · 8.1 s
+lo que el runner dejó escrito: ✔=94 · ✖=3 · resumen «tests N»=NO HAY · «fail N»=NO HAY
+── lo que la puerta dice (su stderr, sin lo que reenvía del runner) ──
+   🔴 HALLAZGO, y además no terminé. Antes del corte (el runner acabó sin dejar su resumen) ya habían caído 3:
+      ✖ SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo (743.183ms)
+      ✖ SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer (539.0644ms)
+      ✖ SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total (507.8471ms)
+     Ésos son reales: arréglalos ANTES de empujar. Y la lista NO es completa: de los guards
+     que no llegaron a acabar no sé nada.
+     ⟦veredicto⟧ 3 hallazgos · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos
+   [stdout, última] 12 guards · 7.8 s · plazo 90 s
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+CASOS CORRIDOS=9 · VÁLIDOS=9 · BANCO=0
