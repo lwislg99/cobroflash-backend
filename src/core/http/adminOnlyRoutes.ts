@@ -68,6 +68,20 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.
   { method: 'GET', path: '/admin/metrics/team' },
+  // SCRUM-1317: las once que salen de PENDIENTE_CLASIFICAR con requireRole. Los KPIs de
+  // ingresos, el embudo, los servicios y el coste de WhatsApp son economía del negocio;
+  // proveedores, y escribir plantillas de presupuesto, son gestión.
+  { method: 'GET',    path: '/admin/metrics/home' },
+  { method: 'GET',    path: '/admin/metrics/funnel' },
+  { method: 'GET',    path: '/admin/metrics/services' },
+  { method: 'GET',    path: '/admin/metrics/whatsapp' },
+  { method: 'GET',    path: '/admin/providers' },
+  { method: 'POST',   path: '/admin/providers', body: { name: 'x' } },
+  { method: 'PUT',    path: '/admin/providers/999999', body: { name: 'x' } },
+  { method: 'DELETE', path: '/admin/providers/999999' },
+  { method: 'POST',   path: '/admin/templates', body: { name: 'x', lines: [{ concept: 'x', qty: 1, price: 1 }] } },
+  { method: 'PUT',    path: '/admin/templates/999999', body: { name: 'x' } },
+  { method: 'DELETE', path: '/admin/templates/999999' },
   // SCRUM-107: las 5 de /admin/expenses que NO son campo. POST y /categories quedan
   // abiertos a propósito (crear el gasto desde la furgoneta) y por eso no están aquí.
   { method: 'GET',    path: '/admin/expenses' },

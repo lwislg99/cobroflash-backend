@@ -7,7 +7,7 @@ import { isVerifiedPlatformOwner } from '../../../../core/config/env';
 
 const router = Router();
 
-router.get('/home', async (req, res) => {
+router.get('/home', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getHomeMetrics(req.merchantId);
     return res.json(metrics);
@@ -29,7 +29,7 @@ router.get('/inicio', async (req, res) => {
   }
 });
 
-router.get('/funnel', async (req, res) => {
+router.get('/funnel', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getFunnelMetrics(req.merchantId);
     return res.json(metrics);
@@ -39,7 +39,7 @@ router.get('/funnel', async (req, res) => {
   }
 });
 
-router.get('/services', async (req, res) => {
+router.get('/services', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getServiceMetrics(req.merchantId);
     return res.json(metrics);
@@ -67,7 +67,7 @@ router.get('/platform-funnel', async (req, res) => {
 });
 
 // J8: métricas de coste y entrega de WhatsApp del merchant (mes en curso)
-router.get('/whatsapp', async (req, res) => {
+router.get('/whatsapp', requireRole('admin'), async (req, res) => {
   try {
     return res.json(await getWhatsAppMetrics(req.merchantId));
   } catch (err) {
