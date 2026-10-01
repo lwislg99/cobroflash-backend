@@ -34,7 +34,7 @@ import {
   resolverTipoRectificativa,
   type ModoSinDestinatario,
   RegistroNoEmitibleError,
-  resolverSinDestinatario,
+  resolverSinDestinatario, TipoDistintoDelSelladoError, // SCRUM-1258 (misma línea: no mueve las de abajo)
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
@@ -1053,6 +1053,21 @@ function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro)
       : null;
 
     const tipoFactura = sinDestinatario ? sinDestinatario.tipoFactura : tipoBase;
+
+    // ── 🔴 SCRUM-1258 · EL TIPO QUE SE DECLARA ES EL QUE ENTRÓ EN LA HUELLA ────────────────────
+    //
+    // `tipoBase` sale de la misma columna y por la misma función (`declarabilidadDe`) que usó el
+    // sellado: es el tipo que está DENTRO de `inv.vfHash`. Si lo que se va a declarar es otro, el
+    // registro no se emite. Se mira sólo en facturas selladas: sin huella no hay nada que
+    // contradecir, y el motivo firmado habla de una factura que «se selló».
+    //
+    // Aquí NO se escribe nada ni se recalcula ninguna huella: se deja de emitir un registro.
+    if (inv.vfHash && tipoFactura !== tipoBase) {
+      if (tipoBase === 'F1' && tipoFactura === 'F2') throw new TipoDistintoDelSelladoError(inv.number);
+      // Cualquier otra pareja no existe hoy y no tiene texto firmado: tumba el paquete entero,
+      // como una cadena rota, en vez de salir con un motivo que nadie ha aprobado.
+      throw new Error(`verifactu_tipo_distinto_del_sellado:${inv.number}:${tipoBase}:${tipoFactura}`);
+    }
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 

@@ -31,8 +31,28 @@ import ts from 'typescript';
 import {
   applyVeriFactu, buildVerifactuRegistrosXml, computeVeriFactuHash, exigirTipoDeclarable,
 } from '../dist/modules/invoicing/domain/verifactu.service.js';
-import { MODO_SIN_DESTINATARIO } from '../dist/modules/fiscal/verifactu/registro.builder.js';
+import {
+  MODO_SIN_DESTINATARIO, MOTIVO_SELLADA_F1_DECLARADA_F2,
+} from '../dist/modules/fiscal/verifactu/registro.builder.js';
 import { validarRegistrosXml } from './_xsd-verifactu.mjs';
+import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
+
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Quitar la comprobación: la factura sellada como F1 volvería a salir declarada como F2.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '    if (inv.vfHash && tipoFactura !== tipoBase) {',
+    a: '    if (false) {',
+    cae: 'SCRUM-1258 · 🔴 EL QUE DECIDE: en NINGÚN modo sale un registro cuyo tipo no sea el de su huella',
+  },
+  {
+    // Sellar con un tipo que no es el de la columna: es justo lo que este ticket no puede tocar.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '      tipoFactura: exigirTipoDeclarable(invoice.type ?? null, invoice.number),',
+    a: "      tipoFactura: 'F2',",
+    cae: 'SCRUM-1258 · 🔒 el sellado sigue calculando la huella sobre el tipo de la COLUMNA',
+  },
+];
 
 const FUENTE_BUILDER = 'src/modules/fiscal/verifactu/registro.builder.ts';
 const NIF = 'B12345678';
@@ -271,6 +291,34 @@ test('SCRUM-1258 · una factura sellada cuyo tipo cambiaría al exportar queda F
       assert.ok(String(parte.motivo || '').trim().length > 20, `🔴 [${modo}] ${fila.number} se excluye sin motivo legible.`);
     }
   }
+});
+
+test('SCRUM-1258 · la que se excluye por el tipo lo dice con el texto FIRMADO, y sólo ella', async () => {
+  // Se busca por lo que el resolvedor devuelve, no por el nombre de un modo: todo modo que a una F1
+  // sin NIF le cambie el tipo tiene que acabar en esta exclusión, con este motivo.
+  const { resolverSinDestinatario } = await import('../dist/modules/fiscal/verifactu/registro.builder.js');
+  const modosQueCambianElTipo = modosDeclarados().filter((modo) => {
+    try { return resolverSinDestinatario('F1', 'x', modo).tipoFactura !== 'F1'; } catch { return false; }
+  });
+  assert.ok(modosQueCambianElTipo.length >= 1,
+    '🔴 ningún modo cambia ya el tipo de una F1 sin NIF: este caso se ha quedado sin población. '
+    + 'Si la rama se ha retirado, este test se retira con ella, diciéndolo.');
+
+  for (const modo of modosQueCambianElTipo) {
+    const b = await ejercicioSellado();
+    const { xml, excluidos } = await exportar(b, modo);
+    const conEseMotivo = excluidos.filter((x) => x.motivo === MOTIVO_SELLADA_F1_DECLARADA_F2).map((x) => x.number);
+    assert.deepEqual(conEseMotivo, ['2026-CF-002'],
+      `🔴 [${modo}] con el motivo firmado sólo debe quedar fuera la F1 sellada sin NIF.`);
+    assert.ok(xml.includes(MOTIVO_SELLADA_F1_DECLARADA_F2.slice(0, 40)),
+      `🔴 [${modo}] la exclusión no viaja dentro del propio documento.`);
+  }
+
+  const ficha = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1258' && a.ranura === 'tipo-distinto-del-sellado');
+  assert.ok(ficha, '🔴 no encuentro la ficha de la firma de este texto en docs/microcopy/.');
+  assert.equal(ficha.aprobada, true, '🔴 la ficha existe pero su firma no cuenta como aprobación.');
+  assert.ok(ficha.literales.includes(MOTIVO_SELLADA_F1_DECLARADA_F2),
+    '🔴 el motivo que emite el código no es, letra a letra, el que consta firmado en su ficha.');
 });
 
 // ── 2 · EL CONTROL POSITIVO ───────────────────────────────────────────────────────────────
