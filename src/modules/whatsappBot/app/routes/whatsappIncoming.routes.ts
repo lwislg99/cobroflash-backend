@@ -17,6 +17,7 @@ import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messagin
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, handleUnsupportedMedia, handleIncomingPhoto, isMidIntake, type BotInput } from '../../domain/botFlow.service';
+import { parseDecision } from '../../domain/decisionPorTexto';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
@@ -349,15 +350,7 @@ async function tryLegacyDecision(phone: string, from: string, text: string): Pro
 }
 
 // ── Lógica de decisión ────────────────────────────────────────────────────
-type Decision = 'accept' | 'reject' | 'unknown';
-
-function parseDecision(text: string): Decision {
-  const t = text.toLowerCase().trim();
-  // Rechazo primero (tiene prioridad ante "no gracias", "no me interesa")
-  if (/\b(no|rechaz|cancel|paso|mejor no|no gracias|negativo|nel)\b/i.test(t)) return 'reject';
-  if (/\b(acept|s[ií]|ok|okay|okey|dale|vale|confirm|adelante|de acuerdo|perfecto|me interesa|quiero|listo|va|sale|claro)\b/i.test(t)) return 'accept';
-  return 'unknown';
-}
+// SCRUM-1322: qué cuenta como decisión vive en `decisionPorTexto.ts` (puro, con su test).
 
 async function handleIncomingText(from: string, text: string): Promise<void> {
   const phone = normalizePhone(from);
