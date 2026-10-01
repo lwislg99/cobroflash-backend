@@ -85,10 +85,19 @@ const FORMAS_C5 = new RegExp('(?<![\\p{L}\\p{N}_])('
   + '|no (?:se )?verific(?:ó|ado|ada|able)'
   + '|no visto|no lo he (?:visto|verificado|mirado)'
   + ')(?![\\p{L}\\p{N}_])', 'iu');
-/** @returns {string|null} la forma que casó, para que el informe la cite. */
+// Un «no se vio» que dice POR QUÉ no es lo mismo que uno que no lo dice. El 1-oct cuatro verificaciones
+// se quedaron a medias por el mismo hueco del entorno de pruebas (SCRUM-1367) y lo declararon bien: eso
+// es un cierre honesto con un límite dicho, y una criba que lo acuse igual que al que calla castiga a
+// quien hizo lo correcto. Se mira la frase y lo que la sigue.
+const MOTIVO_C5 = /porque|ya que|fixture|cuenta (?:de )?QA|no existe ning|no (?:hay|tiene) (?:ning|un|una)\b|modo recibo|sin (?:sesi[oó]n|credenciales)|SCRUM-\d+/i;
+const VENTANA_DEL_MOTIVO = 220;
+
+/** @returns {{forma:string, conMotivo:boolean}|null} la forma que casó (para citarla) y si la acompaña un motivo. */
 export function senalC5(texto) {
-  const m = FORMAS_C5.exec(String(texto || ''));
-  return m ? m[1].toLowerCase() : null;
+  const t = String(texto || '');
+  const m = FORMAS_C5.exec(t);
+  if (!m) return null;
+  return { forma: m[1].toLowerCase(), conMotivo: MOTIVO_C5.test(t.slice(m.index, m.index + m[0].length + VENTANA_DEL_MOTIVO)) };
 }
 
 /** Los ficheros de test que cita un texto, entre comillas invertidas o sueltos. */
@@ -149,8 +158,11 @@ export function cribarUno(c, repo) {
   const rotas = repo.registros(n).flatMap(citasDeTest).filter((t) => !repo.existe(t));
   if (rotas.length) { senales.push('C4'); notas.push(`cita ${[...new Set(rotas)].join(', ')}, que no existe en main`); }
 
-  const forma = senalC5(c.ultimoComentario);
-  if (forma) { senales.push('C5'); notas.push(`su último comentario dice «${forma}»`); }
+  const c5 = senalC5(c.ultimoComentario);
+  if (c5) {
+    senales.push('C5');
+    notas.push(`su último comentario dice «${c5.forma}»${c5.conMotivo ? ' y da el motivo: límite DECLARADO, no un cierre malo' : ', sin decir por qué'}`);
+  }
 
   if (c.aceptacion.length === 0) senales.push('C6');
 
@@ -171,7 +183,7 @@ export function cribarUno(c, repo) {
 
   return {
     clave: c.clave, cribado: true, puesto: puestoDe(c.etiquetas), senales: [...new Set(senales)], notas,
-    conAceptacion: c.aceptacion.length > 0, commits,
+    conAceptacion: c.aceptacion.length > 0, commits, c5ConMotivo: c5 ? c5.conMotivo : null,
   };
 }
 
@@ -216,7 +228,8 @@ export function elegirMuestra(cribados, { fecha }) {
   const orden = [...cribados].sort((a, b) => a.clave.localeCompare(b.clave, 'en', { numeric: true }));
   const es = (c, s) => c.senales.includes(s);
   const seguros = orden.filter((c) => es(c, 'C1') || es(c, 'C2'));
-  const deC5 = orden.filter((c) => es(c, 'C5') && !seguros.includes(c));
+  // Primero los que no dicen por qué: son los que nadie ha explicado. Los de límite declarado, después.
+  const deC5 = orden.filter((c) => es(c, 'C5') && !seguros.includes(c)).sort((a, b) => Number(a.c5ConMotivo) - Number(b.c5ConMotivo));
   const c5 = deC5.slice(0, TOPE - RESERVA_AZAR);
   // «No marcados» = sin señal que acuse. C6 no acusa, pero sin aceptación no hay contra qué leer.
   const limpios = orden.filter((c) => c.conAceptacion && c.senales.length === 0);
@@ -253,7 +266,7 @@ export function pasada({ datos, repo, desde, fecha, ahora = Date.now(), conCanar
   out.push(
     '',
     `cierres en la ventana: ${datos.cierres.length} · cribados: ${cribados.length} · merges en main en la ventana: ${repo.mergesEnVentana ?? 'NO MEDIDO'}`,
-    `marcados: ${marcados.length} (C1 ${cuenta('C1')} · C2 ${cuenta('C2')} · C4 ${cuenta('C4')} · C5 ${cuenta('C5')} · A8 ${cuenta('A8')}) · sin aceptación (C6): ${cuenta('C6')} · C3 (despliegue): NO CONSTRUIDA, no se mira`,
+    `marcados: ${marcados.length} (C1 ${cuenta('C1')} · C2 ${cuenta('C2')} · C4 ${cuenta('C4')} · C5 ${cuenta('C5')}, de ellos ${cribados.filter((c) => c.c5ConMotivo === true).length} con el motivo dicho · A8 ${cuenta('A8')}) · sin aceptación (C6): ${cuenta('C6')} · C3 (despliegue): NO CONSTRUIDA, no se mira`,
     `canario: saltó con ${ESPERADO_DEL_CANARIO.join(', ')}`,
   );
   if (ciegos.length) {

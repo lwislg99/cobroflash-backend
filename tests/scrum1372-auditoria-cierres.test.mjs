@@ -88,6 +88,27 @@ test('SCRUM-1372 · 🔴 C5 ni grita ni calla: las formas REALES de «no lo vi»
   assert.deepEqual(senales(cierre(104, { ultimoComentario: 'Mergeado. No se ha visto en producción.' })), ['C5']);
 });
 
+test('SCRUM-1372 · 🔴 C5 distingue el «no se vio» que da su MOTIVO del que calla: un límite declarado no es un cierre malo', () => {
+  // Las frases del 1-oct, cuando cuatro verificaciones se quedaron a medias por el mismo hueco de fixture (SCRUM-1367).
+  for (const t of [
+    'no se verificó en producción: no existe ningún Trabajo con presupuesto aceptado',
+    'No se ha visto en producción porque el fixture no las tiene',
+    '🟡 NO visto**: la cuenta QA no tiene un cliente sin número',
+    'No se ha podido ver. No es falta de sesión: la cuenta QA (merchant 46) está en modo recibo',
+    'Sin verificar en yaqu.app; lo sigue SCRUM-1367.',
+  ]) assert.equal(senalC5(t).conMotivo, true, t);
+  for (const t of ['Mergeado. No se ha visto en producción.', 'Hecho, 15/15. Queda pendiente verificar en yaqu.app.']) assert.equal(senalC5(t).conMotivo, false, t);
+  // El motivo tiene que estar JUNTO a la frase: uno que aparece tres párrafos antes no la explica.
+  assert.equal(senalC5(`El fixture de la cuenta QA se rehízo ayer. ${'x'.repeat(400)} Queda sin verificar.`).conMotivo, false);
+  const con = cribarUno(cierre(109, { ultimoComentario: 'No se ha visto en producción porque el fixture no las tiene.' }), repoDe());
+  const sin = cribarUno(cierre(110, { ultimoComentario: 'Mergeado. No se ha visto en producción.' }), repoDe());
+  assert.match(con.notas.join(' '), /límite DECLARADO, no un cierre malo/);
+  assert.match(sin.notas.join(' '), /sin decir por qué/);
+  // Y en la muestra va antes el que calla: es el que nadie ha explicado.
+  const m = elegirMuestra([con, sin], { fecha: '2026-10-01' });
+  assert.deepEqual(m.c5.map((c) => c.clave), ['SCRUM-110', 'SCRUM-109']);
+});
+
 test('SCRUM-1372 · C6: sin aceptación no se acusa, se cuenta aparte — y no entra en el azar', () => {
   const r = cribarUno(cierre(105, { aceptacion: [] }), repoDe());
   assert.deepEqual(r.senales, ['C6']);
@@ -201,7 +222,7 @@ test('SCRUM-1372 · la pasada declara su POBLACIÓN antes de cualquier veredicto
   const t = r.lineas.join('\n');
   assert.equal(r.codigo, 1);
   assert.match(t, /cierres en la ventana: 10 · cribados: 10 · merges en main en la ventana: 40/);
-  assert.match(t, /marcados: 2 \(C1 1 · C2 0 · C4 0 · C5 1 · A8 0\) · sin aceptación \(C6\): 1/);
+  assert.match(t, /marcados: 2 \(C1 1 · C2 0 · C4 0 · C5 1, de ellos 0 con el motivo dicho · A8 0\) · sin aceptación \(C6\): 1/);
   assert.match(t, /C3 \(despliegue\): NO CONSTRUIDA/, 'lo que no se mira se dice en cada pasada');
   assert.match(t, /sin aceptación escrita \(1\): .* NO están aprobados → 20/);
   assert.match(t, /Marcado no es culpable/);

@@ -74,8 +74,8 @@ ser un cierre real y es de la mitad 2.
 | | |
 |---|---|
 | cribados | 61 de 61, en 3 s |
-| marcados | 9: C1 2 · C2 1 · C4 0 · C5 6 · A8 2 |
-| sin aceptación | 31 de 61 (el piloto del 1-oct por la mañana: 23 de 47) |
+| marcados | 9: C1 2 · C2 1 · C4 0 · C5 6 (5 de ellos con el motivo dicho) · A8 2 |
+| sin aceptación | 31 de 61. Por fecha de apertura: **0 después de la norma**, 11 el 1-oct antes de ella, 9 el 29-sep, 8 el 28-sep, 3 anteriores. Es línea base. No comparable con el «23 de 47» del piloto: otra población y otro lector |
 | las tres marcas «seguras» (C1, C2) | las tres tienen explicación ya conocida: un duplicado (1131), un descarte (1361) y una rama zombi de tres líneas (1196) |
 | bajar los 61 de Jira | un agente, 2 min, ~100.000 tokens. Es lo caro de la criba |
 
@@ -91,6 +91,11 @@ qué son.
    «no se ha podido ver». La primera versión gritaba (28 de 41); la segunda callaba. La tercera es una
    negación pegada a ver/verificar, y marca 6 de 61. Una pasada con C5 a cero lo DICE: cero puede ser «lo
    dijeron de otra forma».
+1bis. **Un «no se vio» con su motivo no es lo mismo que uno que calla.** Cinco de los seis lo dicen junto a
+   la frase, y casi siempre es el hueco del entorno de pruebas (SCRUM-1367). La criba mira si en los 220
+   caracteres que siguen hay un motivo (un «porque», el fixture, la cuenta QA, un ticket) y lo dice en la
+   fila: «límite DECLARADO, no un cierre malo». En la muestra va primero el que no da motivo. Es otra
+   búsqueda por palabras: separa, no absuelve.
 2. **«Uno por puesto» y «tope 6» no caben juntos.** Con nueve puestos cerrando, el azar llega a tres. El
    script reserva la mitad del tope al azar y dice qué puestos se quedan sin lectura.
 3. **C1 no distingue un cierre vacío de uno por duplicado o por descarte.** Dos de dos C1 de hoy son eso.
