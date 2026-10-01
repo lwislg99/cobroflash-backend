@@ -259,7 +259,19 @@ for (const grupo of [SEIS, SEPTIMO]) {
 
 const st = git(['status', '--porcelain'], { encoding: 'utf8' });
 console.log(`\nporcelain del árbol de TRABAJO tras el banco: ${String(st.stdout || '').trim() ? '\n' + st.stdout : '(vacío)'}`);
-if (!FILTRO) fs.writeFileSync(path.join(SALIDA, `${ETIQUETA}-resumen.json`), JSON.stringify({ sha, filas }, null, 2) + '\n');
+// El resumen ACUMULA entre invocaciones del MISMO SHA: el banco se lanza por trozos (un guard cada
+// vez, para que ninguno pase de diez minutos) y una pasada repetida sustituye a la suya. Con otro
+// SHA no se mezcla: se empieza de cero.
+const ficheroResumen = path.join(SALIDA, `${ETIQUETA}-resumen.json`);
+let previas = [];
+if (fs.existsSync(ficheroResumen)) {
+  const anterior = JSON.parse(fs.readFileSync(ficheroResumen, 'utf8'));
+  if (anterior.sha === sha && Array.isArray(anterior.filas)) previas = anterior.filas;
+}
+const porId = new Map([...previas, ...filas].map((f) => [f.id, f]));
+const acumuladas = PASADAS.map((p) => porId.get(p.id)).filter(Boolean);
+fs.writeFileSync(ficheroResumen, JSON.stringify({ sha, pasadas: acumuladas.length, de: PASADAS.length, filas: acumuladas }, null, 2) + '\n');
+console.log(`resumen: ${acumuladas.length} de ${PASADAS.length} pasadas acumuladas para ${sha}`);
 // Este banco no juzga: apunta. Sale 2 sólo si alguna pasada no se pudo contar.
 const sinContar = filas.filter((f) => clasificarPasada(f) === 'sin contar' && !f.valida).length;
 console.log(`EXIT=${sinContar ? 2 : 0}`);
