@@ -130,9 +130,11 @@ test('SCRUM-446 · el `aria-labelledby` de los tres modales sigue apuntando a al
   // 🔴 LA REGRESIÓN QUE ESTA MIGRACIÓN LLEGÓ A INTRODUCIR, y que cazó medir: tres modales llevan
   // `aria-labelledby` al id del título. Al pasar por el constructor, dos perdieron ese id y la
   // referencia quedó apuntando a nada — el modal se queda SIN NOMBRE ACCESIBLE, en silencio.
+  let referencias = 0;
   for (const f of fs.readdirSync(DIR).filter((x) => x.endsWith('.js'))) {
     const codigo = soloEjecutable(fs.readFileSync(path.join(DIR, f), 'utf8'));
     for (const m of codigo.matchAll(/aria-labelledby="([^"]+)"/g)) {
+      referencias++;
       const id = m[1];
       const declarado = new RegExp(`idTitulo:\\s*['"]${id}['"]|id="${id}"`).test(codigo);
       assert.ok(declarado,
@@ -141,6 +143,10 @@ test('SCRUM-446 · el `aria-labelledby` de los tres modales sigue apuntando a al
         + `  Si la cabecera pasa por el constructor, pásale \`idTitulo: '${id}'\`.`);
     }
   }
+  // SCRUM-1311 · suelo de población: con cero referencias, el bucle de arriba no ha mirado ningún modal.
+  assert.ok(referencias > 0,
+    '🔴 CIEGO: no se ha encontrado NINGÚN `aria-labelledby` en las vistas. O ha cambiado cómo se escribe, o '
+    + 'los modales han dejado de llevarlo: en los dos casos este test ya no comprueba nada.');
 });
 
 test('SCRUM-446 · los TRES overlays propios se declaran, no se unifican', () => {

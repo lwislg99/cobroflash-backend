@@ -218,7 +218,10 @@ async function caso(navegador, { suelto, etiqueta, rotulo, cierre, contador, lim
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = suelto ? 'justificante' : 'no';
+    // SCRUM-1313 · era 'justificante', que desde SCRUM-825 (PR #1943) el panel lee como 'no': la
+    // ruta pintaba el listado y el caso B —el del documento que NO se puede borrar— estuvo CIEGO
+    // desde el 29-sep-2026. El documento suelto sólo existe en modo 'factura'.
+    modoSuelto = suelto ? 'factura' : 'no';
     pedidos = { presupuestos: 0, facturas: 0 };
     await pag.setViewport({ width: 1280, height: 900 });
     if (!await llegarAlUltimoPaso(pag, etiqueta, suelto)) return;
@@ -295,7 +298,9 @@ const CASOS = [
     cierre: 'Seguir editando', contador: 'presupuestos', limite: 1,
   },
   {
-    suelto: true, etiqueta: 'B · justificante 1280px (control positivo)', rotulo: 'Emitir justificante',
+    // SCRUM-1313 · el rótulo es el que el panel pinta HOY («Emitir justificante» se retiró con firma
+    // en SCRUM-825 D1). Con el viejo, aunque la pantalla se pintara, el primer clic no encontraba botón.
+    suelto: true, etiqueta: 'B · documento suelto 1280px (control positivo)', rotulo: 'Emitir factura',
     cierre: null, contador: 'facturas', limite: 1,
   },
   {

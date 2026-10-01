@@ -232,6 +232,9 @@ test('SCRUM-652 · 🔴 CONTROL NEGATIVO: al técnico NO le llega ni un importe,
   // enseñarlos.
   for (const estado of ESTADOS_PARTE) {
     const paraElTecnico = lineasParaElTecnico(parte().lineas);
+    // SCRUM-1311 · suelo de población: un control NEGATIVO sobre una lista vacía pasa siempre.
+    assert.ok(paraElTecnico.length > 0,
+      '🔴 CIEGO: al técnico no le llega NINGUNA línea, así que «no le llega ni un importe» no se ha comprobado sobre nada.');
     for (const l of paraElTecnico) {
       // SCRUM-889 · `id` es la identidad de la línea (casa los precios de la oficina con SU línea al
       // quitar una). No es dinero, y la lista sigue CERRADA: cualquier otra clave cae.
