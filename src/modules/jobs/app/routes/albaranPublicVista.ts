@@ -30,7 +30,7 @@
 // mirando el fuente, que es exactamente como se coló el defecto original.
 import { esc } from '../../../../core/utils/utils';
 import { calcAlbaranTotales, AlbaranLinea } from '../../domain/albaran.service';
-import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { formatImporteEs, formatNumeroEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { documentoEnsenaPrecios } from '../../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 
 /**
@@ -50,6 +50,22 @@ export function fmtMoneyAlbaran(v: number): string {
   // `style:'currency'` de `formatMoneyEs` mete un espacio DURO (U+00A0), asi que usarlo aqui
   // cambiaria los bytes de una pagina que YA se sirve. La variante sin simbolo + ' €' no.
   return formatImporteEs(v) + ' €';
+}
+
+/**
+ * SCRUM-743 · LA CANTIDAD, CON LA MISMA FORMA QUE EL PDF (`fmtQty` → `formatNumeroEs`).
+ *
+ * Se escribía EN CRUDO: el cliente firmaba «2.5» en esta pantalla y el papel decía «2,5»; «12345»
+ * aquí y «12.345» allí. Dos formas del mismo número en las dos caras del mismo documento.
+ *
+ * Cambia lo que se VE en albaranes ya firmados, no lo que se SELLÓ: el `contentHash` es del
+ * contenido canónico (la cantidad como número), no del pintado. Lo fija `scrum743-…` con un hash
+ * medido antes del cambio. Vacío o ilegible se deja como venía: no se inventa un número.
+ */
+export function fmtCantidadAlbaran(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '';
+  const n = Number(v);
+  return Number.isFinite(n) ? formatNumeroEs(n) : String(v);
 }
 
 /** Leyenda de los importes. LITERAL del PDF (regla 30: no se escribe copy aquí). */
@@ -81,7 +97,7 @@ export function renderLineasAlbaran(
     : '<tr><th>Concepto</th><th>Cant.</th><th>Unidad</th></tr>';
 
   const fila = (l: any) => {
-    const base = `<tr><td>${esc(l?.concepto ?? '')}</td><td>${esc(l?.cantidad ?? '')}</td><td>${esc(l?.unidad ?? '')}</td>`;
+    const base = `<tr><td>${esc(l?.concepto ?? '')}</td><td>${esc(fmtCantidadAlbaran(l?.cantidad))}</td><td>${esc(l?.unidad ?? '')}</td>`;
     if (!valorado) return `${base}</tr>`;
     // Igual que el PDF: una línea VALORADA sin precio deja las dos celdas VACÍAS. Pintar «0,00 €»
     // sería afirmar que esa línea no cuesta nada — y el PDF no lo afirma.
