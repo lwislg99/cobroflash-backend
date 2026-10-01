@@ -154,15 +154,22 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // del censo (el fundador firmó el texto, SCRUM-1124). El meta-guard la declaró CIEGA: «la
     // declaración caducó». Se realoja en `'jobAsignados.js': 1,`, que el propio SCRUM-1124 dejó
     // A CONCIENCIA (huérfana pero exigida por SCRUM-720, ver el censo) — no es una entrada de paso.
-    fichero: 'tests/scrum402-marcador-no-se-pinta.test.mjs',
-    de: "  'jobAsignados.js': 1,",
-    a: "  'jobAsignados.js': 1,\n  'jobAsignados.js': 1,",
+    //
+    // 🔴 SCRUM-1293 (1-oct-2026) · SEGUNDO REALOJO, y esta vez se va del 402: su `CENSO` dejó de ser
+    // un objeto literal (la lista vive en `scripts/_marcadores-pendientes-declarados.json`), así que
+    // allí ya no hay clave que duplicar y `meta:mutaciones` declaraba las dos CIEGAS. Se realojan
+    // en `CENSO_HEREDADO` de SCRUM-644, que es la MISMA forma del incidente: un censo por fichero,
+    // un número por clave, escrito a mano dentro de un test. Las claves repetidas del JSON del 402
+    // las caza su cargador, y esa mutación la declara `tests/scrum1293-cargador-de-marcadores`.
+    fichero: 'tests/scrum644-trinquete-mensaje-crudo.test.mjs',
+    de: "  'api.js': 1,",
+    a: "  'api.js': 1,\n  'api.js': 1,",
     cae: 'NINGÚN objeto literal del árbol repite una clave',
   },
   {
-    fichero: 'tests/scrum402-marcador-no-se-pinta.test.mjs',
-    de: "  'settingsView.js': 1,",
-    a: "  'settingsView.js': 1,\n  'settingsView.js': 9,",
+    fichero: 'tests/scrum644-trinquete-mensaje-crudo.test.mjs',
+    de: "  'app.js': 1,",
+    a: "  'app.js': 1,\n  'app.js': 9,",
     cae: 'NINGÚN objeto literal del árbol repite una clave',
   },
 ];

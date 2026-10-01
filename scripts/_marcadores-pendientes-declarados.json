@@ -1,0 +1,38 @@
+{
+  "leeme": "SCRUM-1293 · LAS LISTAS de los censos de marcadores `[PENDIENTE` que llegan a pantalla o a papel. Antes vivían DENTRO de tres tests (scrum402, scrum667, scrum650d), y retirar un marcador firmado obligaba a editar el test: el cambio se parecía a borrar una prueba. Las ASERCIONES siguen en los tests, intactas; aquí sólo están los DATOS, como en `_sin-consumir-declarados.json` o `_suelos-sin-leer-declarados.json`. Reglas que no cambian: por fichero, nunca un total; una entrada que llega a 0 se BORRA, no se pone a 0 (SCRUM-424/405); subir un número se hace A CONCIENCIA y se dice por qué en el commit. La historia de cada entrada (quién entró, quién salió y con qué firma) sigue escrita en los comentarios del test que la vigila. El cargador (`tests/_marcadores-declarados.mjs`) sale en ROJO si este fichero no se puede leer, si una sección viene vacía o si una clave está REPETIDA (en JSON, como en un literal de JavaScript, la última gana en silencio).",
+  "panel": {
+    "_que_es": "Censo de SCRUM-402: marcadores en LITERALES (por AST) de `public/dashboard/js/*.js`. Lo vigilan tests/scrum402-marcador-no-se-pinta.test.mjs (R4) y, para `jobAsignados.js`, tests/scrum650d-pantalla-asignar.test.mjs.",
+    "ficheros": {
+      "jobAsignados.js": 1,
+      "productsView.js": 1,
+      "providersView.js": 1,
+      "libroRegistroView.js": 1,
+      "semaforoFiscal.js": 1,
+      "tipoDestinatarioPendiente.js": 1,
+      "parteDetailView.js": 1,
+      "settingsSubmenus.js": 1,
+      "settingsView.js": 1,
+      "facturasRecibidasView.js": 1
+    }
+  },
+  "servidor": {
+    "_que_es": "Censo de SCRUM-667: marcadores en `src/` (scripts/censo-marcadores.mjs, ámbito `servidor`). Lo vigila tests/scrum667-marcador-visible.test.mjs.",
+    "ficheros": {
+      "src/modules/invoicing/infra/pdf/pdf.service.ts": 1,
+      "src/modules/invoicing/domain/criterioCaja.ts": 1,
+      "src/modules/fiscal/modelo303/modelo303.ts": 1,
+      "src/modules/fiscal/librosAeat/librosAeat.ts": 1,
+      "src/modules/jobs/app/routes/albaranes.routes.ts": 1,
+      "src/modules/system/app/routes/invoicesAdmin.routes.ts": 1,
+      "src/modules/jobs/app/routes/jobs.routes.ts": 1,
+      "src/modules/system/app/routes/quotesAdmin.routes.ts": 1,
+      "src/modules/jobs/domain/albaranFirmante.ts": 1
+    }
+  },
+  "papel": {
+    "_que_es": "SCRUM-667 ②: los marcadores que se IMPRIMEN en el papel del cliente, con su condición. Lo vigila tests/scrum667-marcador-visible.test.mjs (el papel trae exactamente tantos como aquí se declaran).",
+    "constantes": {
+      "MARCADOR_MICROCOPY_DESGLOSE": "factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases"
+    }
+  }
+}

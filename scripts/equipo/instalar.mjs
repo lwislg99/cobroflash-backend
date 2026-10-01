@@ -3,6 +3,7 @@
 //   node scripts/equipo/instalar.mjs --destino <carpeta> --repo <checkout> --claude <ruta de claude.exe>
 //        (--prefijo <p> | --sin-prefijo) --puestos <a,b,…> --orquestador <puesto>
 //        --tandas <HH:MM,…> --prompt <ruta del prompt en el repo> [--traspasos <carpeta>]
+//        [--mesas <carpeta ABSOLUTA, HERMANA del repo>]   ← SCRUM-1298: el interruptor de las mesas
 //
 // Hace CUATRO cosas y ninguna más:
 //   1 · crea <destino> con `config.json`: el repositorio, el binario de Claude y el EQUIPO (prefijo,
@@ -130,7 +131,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     contenidos.push([instalado, r.stdout]);
   }
 
-  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos };
+  // SCRUM-1298 · Sin --mesas, las sesiones heredan el cwd de quien las lanza (y `sesion.mjs` lo dice).
+  const mesas = argumento('--mesas');
+  if (mesas && !path.isAbsolute(mesas)) fallar('--mesas tiene que ser una ruta ABSOLUTA');
+  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos, ...(mesas ? { mesas } : {}) };
   fs.mkdirSync(destino, { recursive: true });
   for (const [instalado, contenido] of contenidos) fs.writeFileSync(path.join(destino, instalado), contenido);
   fs.writeFileSync(path.join(destino, 'arranque.cmd'), arranqueCmd({ destino, repo, prompt }));
