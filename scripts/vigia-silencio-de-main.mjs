@@ -57,9 +57,11 @@
 // SALIDAS: 0 = leído, nada que avisar · 1 = leído, HAY aviso · 2 = no supe medir (CIEGO).
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RUTAS_GH } from './equipo/ancla.mjs';
+import { checksObligatoriosDeReglas } from './vigia-atascados.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -380,22 +382,29 @@ export function informe(v, { ahora, origen, poblacion }) {
 }
 
 // ── LA LECTURA DE GITHUB (sólo aquí hay red) ─────────────────────────────────────────────────
-const GH_FUERA_DEL_PATH = 'C:/Program Files/GitHub CLI/gh.exe';
+// Qué `gh` se usa NO se decide mirando en qué máquina corre: se prueban en orden los de `RUTAS_GH`
+// (los mismos del ancla, SCRUM-360), aquí y en CI. Uno que no existe (ENOENT) deja paso al
+// siguiente; uno que existe y falla NO: eso ya es un fallo de verdad y no se tapa reintentando.
+let ghQueResponde = null;
 const gh = (ruta) => new Promise((ok, ko) => {
-  const binario = process.env.GH_BIN || (process.platform === 'win32' && existsSync(GH_FUERA_DEL_PATH) ? GH_FUERA_DEL_PATH : 'gh');
-  execFile(binario, ['api', ruta], { maxBuffer: 64 * 1024 * 1024 }, (e, salida) => {
-    if (e) return ko(new Error(`gh api ${ruta}: ${String(e.message).split('\n')[0].slice(0, 160)}`));
-    try { ok(JSON.parse(salida)); } catch { ko(new Error(`gh api ${ruta}: respuesta que no es JSON`)); }
-  });
+  const probar = (binarios) => {
+    const [binario, ...resto] = binarios;
+    execFile(binario, ['api', ruta], { maxBuffer: 64 * 1024 * 1024 }, (e, salida) => {
+      if (e && e.code === 'ENOENT' && resto.length) return probar(resto);
+      if (e) return ko(new Error(`gh api ${ruta}: ${String(e.message).split('\n')[0].slice(0, 160)}`));
+      ghQueResponde = binario;
+      try { ok(JSON.parse(salida)); } catch { ko(new Error(`gh api ${ruta}: respuesta que no es JSON`)); }
+    });
+  };
+  probar(ghQueResponde ? [ghQueResponde] : [...(process.env.GH_BIN ? [process.env.GH_BIN] : []), ...RUTAS_GH]);
 });
 
 const ESTADO_DE = { success: 'success', failure: 'failure', cancelled: 'cancelled', skipped: 'skipped' };
 
 async function leerDeGitHub(jobs) {
-  const reglas = await gh(`repos/${REPO}/rules/branches/main`);
-  const obligatorios = reglas
-    .filter((r) => r.type === 'required_status_checks')
-    .flatMap((r) => r.parameters.required_status_checks.map((c) => c.context));
+  // La lista de obligatorios la lee el ÚNICO lector de la casa (el del vigía de atascados, que
+  // `scrum853` protege): devuelve `null` si no pudo leerla, y con `null` `veredicto` sale CIEGO.
+  const obligatorios = checksObligatoriosDeReglas(await gh(`repos/${REPO}/rules/branches/main`));
   const commits = (await gh(`repos/${REPO}/commits?sha=main&per_page=100`)).map((c) => c.sha.slice(0, 8));
   const lista = (await gh(`repos/${REPO}/actions/workflows?per_page=100`)).workflows;
   const runs = [];
@@ -458,7 +467,7 @@ async function principal() {
     }
     ahora = new Date().toISOString();
     v = veredicto({ runs: leido.runs, ahora, obligatorios: leido.obligatorios, commitsDeMain: leido.commits });
-    origen = `GitHub ${REPO} · obligatorios: ${leido.obligatorios.join(', ') || '(ninguno)'} · main en ${leido.commits[0]}`;
+    origen = `GitHub ${REPO} · obligatorios: ${leido.obligatorios ? leido.obligatorios.join(', ') : '(no leídos)'} · main en ${leido.commits[0]}`;
     poblacion = `runs=${leido.runs.length} · jobs sin leer=${leido.sinLeer.length}`;
     for (const s of leido.sinLeer) console.log(`  sin leer: ${s}`);
   }
