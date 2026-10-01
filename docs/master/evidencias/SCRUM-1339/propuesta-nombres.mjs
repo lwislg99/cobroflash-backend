@@ -117,14 +117,11 @@ for (const j of pushes) {
   pushConFalta++; if (j.fail === '0' && j.cancelled === '0') pushVerdeConFalta++; tam.push(faltan.length);
   const fs3 = new Map(); for (const n of faltan) for (const f of d.mapa.get(n)) fs3.set(f, (fs3.get(f) || 0) + 1);
   for (const f of fs3.keys()) porFichero.set(f, (porFichero.get(f) || 0) + 1);
-  filas.push([j.job, j.run, j.probado, j.empezo, j.conclusion, j.tests, d.total, faltan.length, [...fs3.entries()].map(([f, c]) => f + '×' + c).join(' ')].join('	'));
+  filas.push([j.job, j.run, j.probado, j.empezo, j.conclusion, j.tests, d.total, faltan.length, [...fs3.entries()].map(([f, c]) => f + '×' + c).join(' ')].join('\t'));
 }
-fs.writeFileSync(path.join(carpeta, 'declarados-que-faltan-en-main.tsv'), ['job	run	commit	empezo	conclusion	tests	llamadas_declaradas	literales_que_faltan	ficheros', ...filas].join('
-') + '
-');
+fs.writeFileSync(path.join(carpeta, 'declarados-que-faltan-en-main.tsv'), ['job\trun\tcommit\tempezo\tconclusion\ttests\tllamadas_declaradas\tliterales_que_faltan\tficheros', ...filas].join('\n') + '\n');
 tam.sort((a, b) => a - b);
-console.log(`
-③ TODA LA LÍNEA DE MAIN — jobs de push con resumen y commit en local: ${pushes.length}`);
+console.log(`\n③ TODA LA LÍNEA DE MAIN — jobs de push con resumen y commit en local: ${pushes.length}`);
 console.log(`   con algún nombre declarado que NO aparece en su registro: ${pushConFalta} de ${pushes.length} (${(100 * pushConFalta / pushes.length).toFixed(0)} %) · de ellos verdes: ${pushVerdeConFalta}`);
 if (tam.length) console.log(`   nombres que faltan por job: mín ${tam[0]} · mediana ${tam[tam.length >> 1]} · máx ${tam.at(-1)}`);
 for (const [f, c] of [...porFichero.entries()].sort((a, b) => b[1] - a[1])) console.log(`     ${String(c).padStart(3)}  ${f}`);
