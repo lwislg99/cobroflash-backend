@@ -54,6 +54,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -209,10 +210,34 @@ function servidor(modoActual, scripts) {
   return { s, servidos, altas };
 }
 
-function noSupeMirar(porque) {
-  console.error('\n🔴 NO SUPE MIRAR — no se da ningún número.');
-  console.error('   ' + porque);
-  process.exit(2);
+// ── 🔴 SCRUM-1327 · ESTE GUARD YA NO DECIDE CON QUÉ SALE, NI CUÁNDO DEJA DE MIRAR ─────────
+// `noSupeMirar()` hacía `process.exit(2)` en la primera pantalla ciega, DENTRO del bucle: las de
+// después no se medían y los rótulos que ya se había visto desbordar se tiraban. Visto ocurrir en
+// navegador: listado ciego a 929 px y, detrás, un título que no cabe a 390 px → salida 2 y ni una
+// palabra del título. Ahora una pantalla ciega se APUNTA y se sigue (`recorrerCasos`), y el código
+// lo da `veredictoDe` con las dos cuentas.
+const hallazgos = [];
+const ciegos = [];
+
+/** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
+function cerrar() {
+  if (ciegos.length) {
+    console.error(`\n🔴 NO SUPE MIRAR — de esto no se da ningún número (${ciegos.length}):`);
+    for (const c of ciegos) console.error('   ' + c);
+  }
+  if (hallazgos.length) {
+    console.error(`\n🔴 ${hallazgos.length} rótulo(s) NO CABEN en su caja:`);
+    for (const h of hallazgos) console.error('   ' + h);
+    console.error('\n   El texto está FIRMADO: la caja se adapta al texto, nunca al revés. PARA y dilo.');
+  }
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+  if (veredictoFinal.codigo !== 0) {
+    console.error('\n' + veredictoFinal.linea);
+    process.exit(veredictoFinal.codigo);
+  }
+  // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+  // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+  console.log(veredictoFinal.linea);
 }
 
 /** Mide una caja en el navegador. Se inyecta en cada `evaluate` como texto. */
@@ -233,47 +258,64 @@ const CAJA = `(nodo, etiqueta) => {
 }`;
 
 const scripts = scriptsDelIndice();
-if (scripts.length < 40) noSupeMirar(`sólo ${scripts.length} scripts derivados de index.html: eso no es el panel.`);
+// Sin el panel no hay página que montar: se cierra ANTES de medir, y por la misma puerta.
+if (scripts.length < 40) {
+  ciegos.push(`sólo ${scripts.length} scripts derivados de index.html: eso no es el panel.`);
+  cerrar();
+}
 
 const modoActual = { valor: MODOS[0] };
 const { s, servidos, altas } = servidor(modoActual, scripts);
 const puerto = await levantarServidor(s, 0, '127.0.0.1');
 const base = `http://127.0.0.1:${puerto}`;
 const navegador = await lanzarNavegador(puppeteer, {});
-const hallazgos = [];
 let fuenteUnica = null;
 
+/** Las cuentas de una pantalla que no se pudo medir: un ciego suyo, y nada más. */
+const soloCiego = (porque) => ({ hallazgos: [], ciegos: [porque] });
+
+/**
+ * Juzga UNA pantalla ya medida y devuelve sus dos cuentas. Ni sale ni corta: lo que invalida la
+ * pantalla entera (el CSS, el control negativo) la deja ciega; una caja que no se puede medir deja
+ * ciega ESA caja, y las demás se juzgan.
+ */
 function informar(modo, ancho, pantalla, m) {
-  if (parseFloat(m.anchoSidebar) <= 0) noSupeMirar(`${pantalla}: el sidebar computa 0 px, el CSS no se aplicó como en el producto.`);
+  const donde = `${pantalla} (${modo} @${ancho}px)`;
+  if (parseFloat(m.anchoSidebar) <= 0) return soloCiego(`${donde}: el sidebar computa 0 px, el CSS no se aplicó como en el producto.`);
   // 🔴 EL DETECTOR TIENE QUE SABER DECIR QUE NO, en CADA pantalla: una caja de 80 px con una frase
   // de 59 caracteres. Si no sale desbordada, «todo cabe» sería el verde de un detector apagado.
   if (!m.controlDesborde || !m.controlDesborde.desborda) {
-    noSupeMirar(`${pantalla}: el CONTROL NEGATIVO no salió desbordado, así que «todos caben» significaría «no supe mirar».`);
+    return soloCiego(`${donde}: el CONTROL NEGATIVO no salió desbordado, así que «todos caben» significaría «no supe mirar».`);
   }
+  const suyas = { hallazgos: [], ciegos: [] };
   console.log(`\n── ${pantalla.toUpperCase()} · MODO ${modo.toUpperCase()} · VIEWPORT ${ancho} px ──`);
   for (const c of m.cajas) {
-    if (c.ausente) noSupeMirar(`${pantalla}: no se encontró el nodo de «${c.etiqueta}».`);
+    if (c.ausente) { suyas.ciegos.push(`${donde}: no se encontró el nodo de «${c.etiqueta}».`); continue; }
     if (c.width <= 0 || c.height <= 0) {
-      noSupeMirar(`${pantalla}: la caja de «${c.etiqueta}» mide 0. Se está midiendo vacía, y ese cero se `
+      suyas.ciegos.push(`${donde}: la caja de «${c.etiqueta}» mide 0. Se está midiendo vacía, y ese cero se `
         + 'leería como «no cabe» cuando lo que pasa es que no hay texto.');
+      continue;
     }
     const mal = c.desborda || c.fueraDelViewport;
     console.log(`   ${mal ? '🔴' : '  '} ${c.etiqueta.padEnd(20)} ${JSON.stringify(c.texto).padEnd(60)} `
       + `${String(c.chars).padStart(3)} car · ${c.width.toFixed(1)}×${c.height.toFixed(1)} px · ${c.lineas} línea(s)`
       + `${c.desborda ? ` · DESBORDA (scroll ${c.scrollWidth} > client ${c.clientWidth})` : ''}`
       + `${c.fueraDelViewport ? ' · SE SALE DEL VIEWPORT' : ''}`);
-    if (mal) hallazgos.push(`${modo} @${ancho}px · ${c.etiqueta}: ${JSON.stringify(c.texto)}`);
+    if (mal) suyas.hallazgos.push(`${modo} @${ancho}px · ${c.etiqueta}: ${JSON.stringify(c.texto)}`);
   }
+  return suyas;
 }
+
+// Cada (modo, ancho) son DOS pantallas, y cada pantalla es un caso: que el listado se quede ciego
+// no impide medir la página, ni al revés.
+const CASOS = [];
+for (const modo of MODOS) for (const ancho of ANCHOS) for (const pantalla of ['listado', 'página']) CASOS.push({ modo, ancho, pantalla });
 
 try {
   const page = await navegador.newPage();
-  for (const modo of MODOS) {
-    modoActual.valor = modo;
-    for (const ancho of ANCHOS) {
-      await page.setViewport({ width: ancho, height: 900 });
-
-      // ── ① EL LISTADO ───────────────────────────────────────────────────────────────────
+  const MEDIR = {
+    // ── ① EL LISTADO ─────────────────────────────────────────────────────────────────────
+    listado: async (modo, ancho) => {
       await page.goto(`${base}/__caja-${modo}.html`, { waitUntil: 'networkidle0' });
       const lista = await page.evaluate((cajaSrc) => {
         const caja = eval(cajaSrc); // eslint-disable-line no-eval
@@ -287,11 +329,13 @@ try {
           ],
         };
       }, CAJA);
-      if (!servidos.has('/dashboard/css/styles.css')) noSupeMirar('el CSS del dashboard no llegó a servirse.');
+      if (!servidos.has('/dashboard/css/styles.css')) return soloCiego(`listado (${modo} @${ancho}px): el CSS del dashboard no llegó a servirse.`);
       fuenteUnica = lista.hayFuenteUnica;
-      informar(modo, ancho, 'listado', lista);
+      return informar(modo, ancho, 'listado', lista);
+    },
 
-      // ── ② LA PÁGINA DEL DOCUMENTO SUELTO, MONTADA DE VERDAD ────────────────────────────
+    // ── ② LA PÁGINA DEL DOCUMENTO SUELTO, MONTADA DE VERDAD ──────────────────────────────
+    página: async (modo, ancho) => {
       const altasAntes = altas.length;
       await page.goto(`${base}/__pagina-${modo}.html`, { waitUntil: 'networkidle0' });
       const doc = await page.evaluate(async (cajaSrc) => {
@@ -349,24 +393,31 @@ try {
         };
       }, CAJA);
 
-      if (doc.ciego) noSupeMirar(`página (${modo} @${ancho}px): ${doc.ciego}`);
+      if (doc.ciego) return soloCiego(`página (${modo} @${ancho}px): ${doc.ciego}`);
       // 🔴 EL ALTA TIENE QUE HABER LLEGADO A LA RED. Si no, el aviso que se mide no es el de «no se
       // pudo emitir», sino el de otra cosa (una validación del formulario, por ejemplo).
       if (altas.length !== altasAntes + 1) {
-        noSupeMirar(`página (${modo} @${ancho}px): «Emitir» no llegó a \`POST /admin/invoices\` `
+        return soloCiego(`página (${modo} @${ancho}px): «Emitir» no llegó a \`POST /admin/invoices\` `
           + `(${altas.length - altasAntes} altas). El error medido no sería el de emitir.`);
       }
       // 🔴 CADA TEXTO ES EXACTAMENTE EL RÓTULO DE LA FUENTE: si no, se estaría midiendo otra caja.
       const [cTitulo, cBoton, cError] = doc.cajas;
       for (const [c, esperado] of [[cTitulo, doc.esperado.titulo], [cBoton, doc.esperado.boton], [cError, doc.esperado.error]]) {
         if (!c.ausente && c.texto !== esperado) {
-          noSupeMirar(`página (${modo} @${ancho}px): «${c.etiqueta}» dice ${JSON.stringify(c.texto)} y la `
+          return soloCiego(`página (${modo} @${ancho}px): «${c.etiqueta}» dice ${JSON.stringify(c.texto)} y la `
             + `fuente dice ${JSON.stringify(esperado)}. No es la caja que digo medir.`);
         }
       }
-      informar(modo, ancho, 'página del documento suelto', doc);
-    }
-  }
+      return informar(modo, ancho, 'página del documento suelto', doc);
+    },
+  };
+  const cuentas = await recorrerCasos(CASOS, async ({ modo, ancho, pantalla }) => {
+    modoActual.valor = modo;
+    await page.setViewport({ width: ancho, height: 900 });
+    return MEDIR[pantalla](modo, ancho);
+  }, (caso) => `${caso.pantalla} (${caso.modo} @${caso.ancho}px)`);
+  hallazgos.push(...cuentas.hallazgos);
+  ciegos.push(...cuentas.ciegos);
 } finally {
   await navegador.close();
   s.close();
@@ -376,12 +427,7 @@ console.log('\n════ VEREDICTO ════');
 if (fuenteUnica === false) {
   console.log('   ⚠️  `rotulosDelDocumento` NO existe todavía: los rótulos medidos son los de hoy.');
 }
-if (hallazgos.length) {
-  console.error(`\n🔴 ${hallazgos.length} rótulo(s) NO CABEN en su caja:`);
-  for (const h of hallazgos) console.error('   ' + h);
-  console.error('\n   El texto está FIRMADO: la caja se adapta al texto, nunca al revés. PARA y dilo.');
-  process.exit(1);
-}
+cerrar();
 console.log('   Las CINCO cajas caben: las dos del listado y las tres de la página montada de verdad,');
 console.log('   en el modo factura (el único desde SCRUM-825 D1) y en los dos anchos.');
 console.log('   (Envolver en varias líneas NO es un hallazgo; desbordar o salirse del viewport, sí.)');

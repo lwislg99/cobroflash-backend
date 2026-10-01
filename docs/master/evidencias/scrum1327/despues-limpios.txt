@@ -1,0 +1,6 @@
+LIMPIO caja-datos-del-cliente EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+LIMPIO caja-documento-suelto EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+LIMPIO portal-en-la-ficha EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+LIMPIO aviso-bizum EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+LIMPIO vias-de-cobro EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+LIMPIO firma-con-tramos EXIT=0 · ⟦veredicto⟧ 0 hallazgos · 0 ciegos

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "g1-caja-datos-del-cliente",
+    "exit": 2,
+    "veredicto": ""
+  },
+  {
+    "id": "g1-caja-documento-suelto",
+    "exit": 2,
+    "veredicto": ""
+  },
+  {
+    "id": "g1-portal-en-la-ficha",
+    "exit": 2,
+    "veredicto": ""
+  },
+  {
+    "id": "g2-aviso-bizum",
+    "exit": 1,
+    "veredicto": ""
+  },
+  {
+    "id": "g2-vias-de-cobro",
+    "exit": 1,
+    "veredicto": ""
+  },
+  {
+    "id": "g2-firma-con-tramos",
+    "exit": 1,
+    "veredicto": ""
+  },
+  {
+    "id": "positivo-caja-datos-del-cliente",
+    "exit": 1,
+    "veredicto": ""
+  },
+  {
+    "id": "positivo-portal-en-la-ficha",
+    "exit": 1,
+    "veredicto": ""
+  }
+]

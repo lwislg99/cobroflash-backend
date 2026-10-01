@@ -86,3 +86,54 @@ export function leerVeredicto(salida) {
   const m = lineas[lineas.length - 1].match(/(\d+) hallazgos? · (\d+) ciegos?/);
   return m ? { hallazgos: Number(m[1]), ciegos: Number(m[2]) } : null;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1327 · EL RECORRIDO: UN CASO CIEGO NO CORTA LOS DEMÁS.
+//
+// `veredictoDe` decide bien con las dos cuentas… si le llegan enteras. Tres guards no se las daban:
+// al primer caso que no sabían medir SALÍAN (`noSupeMirar()` → `process.exit(2)`, o un `break`), y
+// los casos de después no se medían. No era un hallazgo mal rotulado: era un hallazgo que no llegaba
+// a existir. Visto ocurrir, con el navegador de verdad (docs/master/SCRUM-1327.md): un caso ciego a
+// 929 px y, detrás, un rótulo que no cabe a 390 px → salida 2 y ni una palabra del que no cabe.
+//
+// Por eso el bucle vive AQUÍ y no en cada guard: quien lo escribe a mano elige cuándo dejar de mirar.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+function listaDe(valor, nombre, caso) {
+  if (!Array.isArray(valor)) {
+    // Un caso que no dice sus cuentas no es un caso limpio (misma regla que `cuenta`, arriba).
+    throw new TypeError(`recorrerCasos: el caso «${caso}» no devolvió la lista «${nombre}» (${String(valor)}). Un caso sin cuentas no es un verde.`);
+  }
+  return valor;
+}
+
+/**
+ * Recorre TODOS los casos y junta sus dos cuentas. `juzgarCaso(caso)` devuelve `{ hallazgos, ciegos }`
+ * (dos listas) de ESE caso; puede ser asíncrona.
+ *
+ *   · un caso ciego NO corta el recorrido: los de después se miden igual;
+ *   · un caso que LANZA es un caso que no se pudo medir: se apunta como ciego, con su motivo, y se sigue;
+ *   · cero casos es un ciego, no un verde: «0 hallazgos» sobre nada no es una medición.
+ *
+ * Lo que devuelve se le pasa tal cual a `veredictoDe`.
+ */
+export async function recorrerCasos(casos, juzgarCaso, nombrar = (caso) => String(caso)) {
+  const hallazgos = [];
+  const ciegos = [];
+  let recorridos = 0;
+  for (const caso of casos) {
+    recorridos += 1;
+    const nombre = nombrar(caso);
+    let suyo;
+    try {
+      suyo = await juzgarCaso(caso);
+    } catch (e) {
+      ciegos.push(nombre + ': no se pudo medir — ' + String((e && e.message) || e));
+      continue;
+    }
+    hallazgos.push(...listaDe(suyo && suyo.hallazgos, 'hallazgos', nombre));
+    ciegos.push(...listaDe(suyo && suyo.ciegos, 'ciegos', nombre));
+  }
+  if (recorridos === 0) ciegos.push('no se recorrió ni un solo caso: «0 hallazgos» sobre nada no es una medición');
+  return { hallazgos, ciegos, recorridos };
+}

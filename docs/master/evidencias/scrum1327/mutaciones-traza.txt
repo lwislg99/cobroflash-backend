@@ -1,0 +1,28 @@
+BASE sin mutar: 22 tests · 0 caídos
+CAZADA  R1  el recorrido corta al primer ciego (el defecto del grupo 1)  [2 de 22 caen]
+CAZADA  R2  un caso que lanza corta el recorrido  [1 de 22 caen]
+CAZADA  R3  cero casos da verde  [1 de 22 caen]
+CAZADA  R4  un caso que no devuelve una LISTA pasa (una frase se esparce letra a letra)  [1 de 22 caen]
+CAZADA  S4  un guard deja de decir sus dos cuentas en verde  [1 de 22 caen]
+CAZADA  S1  un guard del grupo 2 vuelve a salir con 1 a mano  [3 de 22 caen]
+CAZADA  S2  un guard del grupo 1 vuelve a cerrar DENTRO del recorrido (con veredictoDe puesto)  [2 de 22 caen]
+CAZADA  S3  un guard del grupo 1 deja de recorrer con recorrerCasos  [1 de 22 caen]
+CAZADA  C1  entra un guard NUEVO que decide solo (el séptimo)  [1 de 22 caen]
+CAZADA  C2  entra un guard NUEVO del que no se sabe cómo decide (sin ninguna salida)  [1 de 22 caen]
+CAZADA  C3  una salida a mano NUEVA en un guard ya declarado  [3 de 22 caen]
+CAZADA  C4  un número de la lista por encima de la realidad (holgura)  [1 de 22 caen]
+CAZADA  C5  una entrada caduca: un guard ya arreglado sigue en la lista  [2 de 22 caen]
+CAZADA  L1  cualquier `.codigo` vale como veredicto  [1 de 22 caen]
+CAZADA  L2  el lector deja de ver las salidas dentro del recorrido  [1 de 22 caen]
+CAZADA  L3  el lector deja de ver `process.exitCode`  [1 de 22 caen]
+CAZADA  L4  el lector deja de ver la cuenta escrita a mano  [1 de 22 caen]
+CAZADA  L5  un guard sin ninguna salida deja de ser «no lo sé»  [2 de 22 caen]
+CAZADA  F1  el censo calla los «no lo sé»  [1 de 22 caen]
+CAZADA  F2  el censo sólo ve los números que SUBEN  [1 de 22 caen]
+CAZADA  F3  el censo pierde la mitad de las entradas caducas  [1 de 22 caen]
+CAZADA  F4  el censo calla a los que salen a mano sin declarar  [1 de 22 caen]
+CAZADA  U1  una marca de la lista miente (la que deriva el censo de SCRUM-1320)  [2 de 22 caen]
+POBLACIÓN=23 mutaciones · CAZADA=23 · MUDA=0 · OTRA=0 · CIEGA=0
+BASE tras deshacer: 22 tests · 0 caídos
+porcelain tras deshacer: (vacío)
+EXIT=0
