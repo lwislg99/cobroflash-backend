@@ -1,0 +1,43 @@
+job	run	commit	empezo	conclusion	tests	perdidos	ficheros
+108075640675	36136471571	b2fd65171c57d4951195bdf43146a871cde079e1	2026-09-25T12:42:25Z	success	8269	8	SIN-LOCALIZAR×5 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108160429152	36160900019	cab692d54fd183fb737d00365ee5dcdd3d6ea257	2026-09-25T16:37:45Z	success	8318	9	scrum312-importador-clientes.test.mjs×8 scrum834-puerta-avisador-rojo.test.mjs×1
+108165310934	36163313417	88236ae828b24fcd59c5795f09442ba1e17b987e	2026-09-25T16:51:35Z	success	8304	23	vigia-atascados.test.mjs×23
+108178634601	36167452844	9f6887236257bd7a3ce382bd6223a7edb8eed2c7	2026-09-25T17:29:49Z	success	8317	27	vigia-atascados.test.mjs×27
+108193544610	36172001450	8fe2de5af2530ad29a6ea1ca80391e68957d372d	2026-09-25T18:15:27Z	success	8328	25	vigia-atascados.test.mjs×25
+108201932295	36174303940	ad6e1a5f98fba838b970f084e0a85ba5ae65ea37	2026-09-25T18:37:13Z	success	8305	48	scrum853-avisador-solo-obligatorio.test.mjs×14 vigia-atascados.test.mjs×34
+108206534639	36175869339	e528628e30fc65357153e9159a43f1fdf2eafea0	2026-09-25T18:56:29Z	success	8355	2	scrum834-puerta-avisador-rojo.test.mjs×2
+108214343730	36177663108	cbd6a2b43039b506953be1ca19fafcef05d3d20d	2026-09-25T19:13:25Z	success	8413	6	SIN-LOCALIZAR×3 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108219038530	36178960449	18738bc0b44b0a7554bf82e2abbcba8608c9c8cf	2026-09-25T19:27:25Z	success	8416	3	scrum454-destructivo-sin-comprobacion.test.mjs×3
+108229441094	36182940382	bd3d26e74b25e0537e18524617366123b4593eda	2026-09-25T19:58:50Z	success	8419	8	SIN-LOCALIZAR×5 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108233702796	36183751800	032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d	2026-09-25T20:11:30Z	success	8417	10	SIN-LOCALIZAR×7 scrum888g-senal-en-la-firma.test.mjs×3
+108354450702	36223925739	5b79374ef1d4ea9a3a30f5262f2f02a992d698ce	2026-09-26T06:31:35Z	success	8407	23	vigia-atascados.test.mjs×23
+108365443916	36227934467	942e90d1f84dd6d7fcf5fa92aad48f36758c2d87	2026-09-26T07:49:11Z	success	8445	6	SIN-LOCALIZAR×3 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108653668529	36331314638	a399c71be2709abafaed10ee7a2af18b6e486a31	2026-09-27T15:55:22Z	success	8484	65	SIN-LOCALIZAR×21 scrum524b-trinquete-de-la-tabla.test.mjs×3 vigia-atascados.test.mjs×41
+108656174461	36332085204	e264c23476ec7f69a96365f57f3e19dfd4a752c8	2026-09-27T16:09:50Z	success	8542	14	scrum853-avisador-solo-obligatorio.test.mjs×14
+108658673196	36332901463	f9d6379b91584da925445df4af60f3bdda44a224	2026-09-27T16:23:59Z	success	8553	16	scrum595-etiquetas-del-documento.test.mjs×4 scrum834-puerta-avisador-rojo.test.mjs×12
+108661170008	36333766133	0af96be9c111d37aa9b1c3067fc23befbebe2f8e	2026-09-27T16:38:23Z	success	8586	1	scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs×1
+108665830619	36335229839	f888a039731b376fae68cda1c065699d6565725a	2026-09-27T17:05:34Z	success	8588	14	SIN-LOCALIZAR×11 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108673143125	36337996102	95cd703f7bd502e62679d0c1a63209ae581ffd57	2026-09-27T17:47:36Z	failure	8646	5	scrum237-negacion-respaldada.test.mjs×5
+108678266884	36340047517	7ba1ad5f2a87e7752894f790a5256b20a65f9ed5	2026-09-27T18:16:57Z	success	8668	6	SIN-LOCALIZAR×3 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108972862378	36433962378	29b492b0c2f246941e5c514d682887c18fd19494	2026-09-28T14:29:37Z	success	8691	7	SIN-LOCALIZAR×4 scrum524b-trinquete-de-la-tabla.test.mjs×3
+108980512626	36437379781	cd78b8264d042dc01afe1ee714b002278f25e0a1	2026-09-28T14:45:29Z	success	8713	4	scrum161-evidencia-tanda.test.mjs×2 scrum524b-trinquete-de-la-tabla.test.mjs×2
+108989921436	36439416778	a59dc1e692bae683d2d035fe52534b5589d0c7b3	2026-09-28T15:14:44Z	success	8707	29	scrum411-exports-inalcanzables.test.mjs×5 scrum834-puerta-avisador-rojo.test.mjs×24
+109001664921	36443970065	3d57a7c0eca6dd630bca7391157ca41bd465e642	2026-09-28T15:43:28Z	success	8738	29	vigia-atascados.test.mjs×29
+109022842621	36449882131	0fa2140a431df06e942cc58ae6ef920c44a5417c	2026-09-28T16:28:51Z	success	8788	30	scrum522-guards-fuera-de-la-tanda.test.mjs×6 scrum524b-trinquete-de-la-tabla.test.mjs×1 vigia-atascados.test.mjs×23
+109049054916	36457602742	0afa87cd95645317226f59bc379edae59a7bea44	2026-09-28T17:25:11Z	success	8825	42	SIN-LOCALIZAR×22 scrum524b-trinquete-de-la-tabla.test.mjs×3 vigia-atascados.test.mjs×17
+109082989527	36468048224	87c87bd4a7876455061aa497bc5fda86311c4d56	2026-09-28T18:50:42Z	success	8849	18	vigia-atascados.test.mjs×18
+109140330288	36485004021	ee0687fd91c09561a46953f309f8c44310340c58	2026-09-28T21:18:28Z	success	8933	3	scrum524b-trinquete-de-la-tabla.test.mjs×3
+109170911615	36494542868	b7880db80707af65480b90ae00c89a3959cef540	2026-09-28T22:48:37Z	success	8960	5	scrum286-bloques-orden.test.mjs×5
+109175672580	36496019643	a4e664cd5d130d330a0b391f0f34d0787020179c	2026-09-28T23:04:35Z	success	8940	33	vigia-atascados.test.mjs×33
+109346975896	36550364413	7a94abae5260c5953b4171860e9779dd428f6527	2026-09-29T09:39:18Z	success	9000	10	SIN-LOCALIZAR×1 scrum524b-trinquete-de-la-tabla.test.mjs×3 scrum931-un-solo-importe-de-plantilla.test.mjs×6
+109374096698	36558271547	fcc2cc01a6ba29ed57bece0844508d513cd86264	2026-09-29T10:57:05Z	failure	9064	25	scrum388-censo-mecanismo.test.mjs×13 scrum411-exports-inalcanzables.test.mjs×3 scrum834-puerta-avisador-rojo.test.mjs×9
+109468470597	36586596848	00c07bef9cc794b46155fa0d4289849477fb5b18	2026-09-29T14:58:24Z	success	9064	24	scrum454-destructivo-sin-comprobacion.test.mjs×7 SIN-LOCALIZAR×17
+109475165878	36587969972	00d98f6bae81edddfd783e7aa7ac86244b3bf07f	2026-09-29T15:13:18Z	success	9068	26	scrum834-puerta-avisador-rojo.test.mjs×26
+109481810520	36588888348	82cb31c81e3fa7357819af7370a4fcf53bff6682	2026-09-29T15:28:21Z	success	9070	25	scrum237-negacion-respaldada.test.mjs×8 scrum813-trinquete-de-zona.test.mjs×2 scrum834-puerta-avisador-rojo.test.mjs×15
+109505872541	36596028069	d2451dbe39f38afc2116e11ce87f5d57c7f1458d	2026-09-29T16:25:54Z	success	9100	22	scrum834-puerta-avisador-rojo.test.mjs×22
+109551579943	36609065230	c8d9d6b4b784866ada0224752fb4a28bac0727f4	2026-09-29T18:16:14Z	success	9211	4	scrum286-bloques-orden.test.mjs×4
+110109317348	36780440737	d568599635ab018262aae596843eeb6206925ce5	2026-09-30T21:36:34Z	success	9214	47	scrum286-bloques-orden.test.mjs×3 vigia-atascados.test.mjs×44
+110146731237	36791371620	1dbc9c24c89a4baa9af903fe036489282fac134b	2026-09-30T23:36:47Z	success	9325	6	scrum931-un-solo-importe-de-plantilla.test.mjs×6
+110158880298	36792374547	e9e71cab67574538943cd94392bdecf5f3dcbfa2	2026-10-01T00:22:06Z	failure	9336	7	scrum834-puerta-avisador-rojo.test.mjs×7
+110188662066	36805414513	ce567ed45a800d7b67032480e31131954ec11741	2026-10-01T02:43:37Z	success	9347	35	scrum834-puerta-avisador-rojo.test.mjs×22 vigia-atascados.test.mjs×13
+110213649853	36812672630	258fc29bff83966eece68ec0d6625b2cf9d13570	2026-10-01T04:06:27Z	success	9483	23	vigia-atascados.test.mjs×23

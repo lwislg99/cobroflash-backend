@@ -1,0 +1,54 @@
+POBLACIÓN: 70 árboles probados más de una vez · con un commit legible en local: 61 · sin él: 9
+  último árbol leído: 1153 ficheros de tests/ · 9154 llamadas test()/it() · 9048 nombres literales distintos
+
+① FALSOS POSITIVOS — jobs a los que NO les falta nada respecto a su hermano: 85
+   nombres declarados que no aparecen en su registro: mín 0 · mediana 0 · máx 18
+   jobs «completos» a los que aun así les falta algún declarado: 3 de 85
+   nombres distintos que faltan en algún job completo: 21
+       2×  SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+       1×  SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+       1×  SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+       1×  🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+       1×  un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+       1×  🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+       1×  🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+       1×  y una cuenta que solo se le parece NO
+       1×  🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY
+       1×  la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+       1×  el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+       1×  🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa
+       1×  un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco
+       1×  y el que espera y entró en silencio avisa al cruzar las 24 h
+       1×  🔴 una causa que NO se arregla esperando avisa al entrar, sin esperar a la edad
+       1×  pasar A una causa que espera no es empeorar (un push arregló el rojo y CI corre)
+       1×  🔴 pasar DE una causa que espera a una que no, sí: el #1205 de ESPERANDO a ROJO-OBLIGATORIO
+       1×  🔴 CEBO REAL #1190 · del bot, sin auto-merge y todo en verde → SIN-AUTO-MERGE, no ESPERANDO
+       1×  sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+       1×  el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+       1×  la pasada le da al clasificador el dato del auto-merge
+
+② PODER — jobs que perdieron casos respecto a su hermano: 38
+   habría saltado en 37 de 38 · casos perdidos 638 · de ellos nombrados por la señal 475
+   NO habría saltado en: 107672560751 (le faltan 9)
+
+③ TODA LA LÍNEA DE MAIN — jobs de push con resumen y commit en local: 123
+   con algún nombre declarado que NO aparece en su registro: 45 de 123 (37 %) · de ellos verdes: 42
+   nombres que faltan por job: mín 1 · mediana 14 · máx 48
+      16  vigia-atascados.test.mjs
+      14  scrum524b-trinquete-de-la-tabla.test.mjs
+      10  scrum834-puerta-avisador-rojo.test.mjs
+       3  scrum286-bloques-orden.test.mjs
+       2  scrum853-avisador-solo-obligatorio.test.mjs
+       2  scrum454-destructivo-sin-comprobacion.test.mjs
+       2  scrum237-negacion-respaldada.test.mjs
+       2  scrum411-exports-inalcanzables.test.mjs
+       2  scrum931-un-solo-importe-de-plantilla.test.mjs
+       1  scrum312-importador-clientes.test.mjs
+       1  scrum888g-senal-en-la-firma.test.mjs
+       1  scrum595-etiquetas-del-documento.test.mjs
+       1  scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs
+       1  scrum161-evidencia-tanda.test.mjs
+       1  scrum522-guards-fuera-de-la-tanda.test.mjs
+       1  scrum388-censo-mecanismo.test.mjs
+       1  scrum813-trinquete-de-zona.test.mjs
+EXIT=0
