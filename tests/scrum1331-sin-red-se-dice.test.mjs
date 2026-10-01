@@ -32,7 +32,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { temporal } from './_temporal.mjs';
 import { esFalloDeRed } from '../scripts/censo-regla-42.mjs';
-import { lectorDeHuellas, redactar, RED, NATIVA, SIN_HUELLA } from '../scripts/_huella-de-la-caida.mjs';
+import { clasificarVentana, lectorDeHuellas, redactar, RED, NATIVA, SIN_HUELLA } from '../scripts/_huella-de-la-caida.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
@@ -274,7 +274,7 @@ test('SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida
     '',
     '✖ failing tests:',
     '',
-    'test at tests\\x.test.mjs:1:1',
+    'test at tests\\' + ['x.test.mjs', 1, 1].join(':'),
     '✖ tests\\x.test.mjs (5ms)',
     "  'test failed'",
     '',
@@ -289,4 +289,14 @@ test('SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida
   assert.notEqual(informe.ficherosMuertos[0].clase, RED);
   assert.notEqual(informe.ficherosMuertos[0].clase, NATIVA);
   assert.equal(redactar({ ...informe, ficherosMuertos: [] }, 1), '', 'sin nada que decir, no dice nada');
+});
+
+test('SCRUM-1331 · clasificarVentana, con entradas fabricadas: red, nativa y nada', () => {
+  const red = clasificarVentana(['✔ uno (1ms)', 'fatal: Could not resolve host: github.com']);
+  assert.equal(red.clase, RED);
+  assert.match(red.huella, /Could not resolve host/);
+  assert.equal(clasificarVentana(['----- Native stack trace -----']).clase, NATIVA);
+  assert.deepEqual(clasificarVentana(['Error: boom', "  'test failed'"]), { clase: SIN_HUELLA, huella: '' });
+  assert.equal(clasificarVentana(['Segmentation fault', 'fatal: Could not resolve host: x']).clase, RED,
+    'la red se mira ANTES que lo nativo');
 });

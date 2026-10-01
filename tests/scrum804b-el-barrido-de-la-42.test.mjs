@@ -73,7 +73,7 @@ function git(args) {
 // puros —identidad y artefactos— corren haya red o no.
 //
 // ⚠️ La red se llama en DOS sitios y los dos están cubiertos: aquí (`negativoVivo`) y dentro de
-// `censarConMotivo` (`scripts/censo-regla-42.mjs`). Sacar sólo éste dejaba 3 de 5 casos cayendo
+// `censarConMotivo` (`scripts/censo-regla-42.mjs`). Sacar sólo éste dejaba los casos de red cayendo
 // con un «CIEGO» que no decía de qué.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
