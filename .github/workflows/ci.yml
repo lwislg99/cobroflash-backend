@@ -368,24 +368,6 @@ jobs:
         continue-on-error: true
         run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"
 
-      # ⛔ TEMPORAL · SCRUM-1339d · EL CONTROL ④ DE c.17954: el paso ROTO A PROPÓSITO, tres veces.
-      # Tiene que verse en un run de verdad que el job sigue como estaba y que cada uno DICE que
-      # no pudo medir. Estos tres pasos se QUITAN en el commit siguiente: no entran en `main`.
-      - name: (TEMPORAL · control ④) el guion NO EXISTE
-        if: always()
-        continue-on-error: true
-        run: node scripts/senal-de-nombres-NO-EXISTE.mjs "${{ runner.temp }}/tanda.tap"
-      - name: (TEMPORAL · control ④) el TAP NO EXISTE
-        if: always()
-        continue-on-error: true
-        run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/no-existe.tap"
-      - name: (TEMPORAL · control ④) el TAP es BASURA
-        if: always()
-        continue-on-error: true
-        run: |
-          printf 'esto no es un TAP {' > "$RUNNER_TEMP/basura.tap"
-          node scripts/senal-de-nombres.mjs "$RUNNER_TEMP/basura.tap"
-
       # ── 🔴 SCRUM-972 · EL AVISO DE LA PUERTA ──────────────────────────────────────────────
       #
       # Mismo mecanismo que el de `meta-guard` (SCRUM-935) y por el mismo motivo medido: el riesgo
