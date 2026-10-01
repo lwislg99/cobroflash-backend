@@ -98,6 +98,41 @@ En `tests/scrum976-guards-entrada-con-techo.test.mjs`:
   hasta el final, y su salida recortada antes del resumen. Sin reloj, así que sin sorteo.
 - ⑥ la línea.
 
+### Los casos nuevos, vistos caer
+
+`evidencias/SCRUM-1345/mutar.mjs` (salida en `salida-mutar.txt`). Base sin mutar primero: 8 tests, 8
+pasan. Cada mutación se aplica sobre el árbol commiteado (`61a71096`), enseña su `git diff --numstat`,
+se restaura con `git restore --source=HEAD` y se comprueba que el árbol queda limpio.
+
+| mutación | fichero | cae |
+|---|---|---|
+| M1 · el plazo agotado olvida los caídos ya vistos | el comando | ⑤ |
+| M2 · el plazo agotado deja de contar como ciego (saldría 0) | el comando | ③ y ⑤ |
+| M3 · la señal `CI` se lee por verdad y no por presencia | el test | ④bis |
+| M4 · en CI el plazo agotado deja de ser rojo | el test | ④ter |
+| M5 · un rojo dentro de plazo sale 0 | el comando | ⑤ |
+| M6 · la línea de la pasada deja de salir en verde | el comando | ④ |
+
+6 de 6 vivas. ⚠️ M3 y M4 mutan funciones que viven en el propio test (`seJuzgaElPresupuesto` y
+`sentenciaDelPositivo`): prueban que los casos ④bis y ④ter miran esas funciones, no que CI las ejercite.
+Lo más cerca que se puede estar de CI desde aquí: el fichero entero con `CI=true` puesto a mano → 8 de 8,
+y su línea dice «presupuesto de 90 s juzgado: SÍ (CI) · tardó 14.5 s»; sin la variable dice «NO (local:
+el tiempo lo decide la máquina) · tardó 9.6 s».
+
+### Lo que se corrió alrededor
+
+Con turno del orquestador, concurrencia 3 y el TAP fuera del árbol, sobre el árbol final (`61a71096`, 0
+ficheros sucios): **100 ficheros distintos · 1.018 tests · 1.016 pasan · 0 caen · 2 saltos · 0 cancelados
+· 93 s**. Los dos saltos son los GATEADOS por `QA_DB_TEST`. La lista, en
+`evidencias/SCRUM-1345/ficheros-de-la-pasada-final.txt`: los 91 de `tests/` que barren el árbol y nombran
+`scripts/`, más los que nombran lo tocado y los doce de `guards:entrada`. ⚠️ Al runner le llegaron 110
+argumentos y no 100: el `sort -u` que quitaba los repetidos murió por falta de memoria de la máquina
+(`fork: Resource temporarily unavailable`) y diez ficheros iban dos veces. No sé si node los corrió una
+vez o dos; el veredicto no cambia, el recuento de tests puede.
+
+La primera pasada de esos 91, antes de los arreglos, dio 2 caídos, y los dos eran míos: están en «Mis
+errores».
+
 ## ④ El trinquete que saltó, y la decisión
 
 `tests/scrum702-suelo-misma-poblacion.test.mjs` cuenta los ficheros que leen una señal del entorno. Tope
@@ -165,6 +200,8 @@ tardan segundos. Que tengan la forma no dice que hoy muerdan.
   del caso ⑤ colgaba de un parámetro y el censo no podía probar de dónde) y `scrum702` (la señal del
   entorno). El primero se arregló en mi código; el segundo era una decisión y subió. Los encontró la
   pasada de 91 ficheros, no yo.
+- Al pasar el caso ④ a una función pura quité el único `assert.match` que respaldaba la negación del
+  caso ③, y `scrum237` cayó. Lo cazó correr la BASE antes de mutar; el aserto ha vuelto.
 - La primera versión del caso ④ leía dos señales y por verdad a secas. Con `CI=""` habría dejado de
   juzgar sin decirlo. Lo vio el orquestador.
 
