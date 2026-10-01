@@ -407,6 +407,60 @@ export function ocurrenciasDelAncla(fuente, ancla) {
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1321 · EL ANCLA QUE DEJA DE SER ÚNICA — el límite que SCRUM-812c dejó escrito, cobrado.
+ *
+ * `aplicarUna` hace `texto.replace(de, a)`, que muta la PRIMERA ocurrencia. Mientras el ancla
+ * aparece una vez, da igual. El día que alguien escribe MÁS ARRIBA una línea que la contiene, la
+ * mutación pasa a caer en otro sitio, el test declarado no se entera, y el veredicto sale **MUDO
+ * acusando a un guard sano**. Nadie ha tocado ni el guard ni su declaración.
+ *
+ * Medido: `dc8ea603` (SCRUM-1263, PR #1951, mergeado el 29-sep-2026 a las 09:44Z) añadió a
+ * `.github/workflows/claude.yml` dos pasos nuevos. Uno lleva un `if:` que EMPIEZA igual que el de
+ * la acción y va antes; el otro repite la línea `CUERPO="$CUERPO" node …` del paso de después.
+ * Dos anclas de `scrum853` pasaron de 1 ocurrencia a 2, las dos mutaciones se fueron al paso
+ * nuevo, y el meta-guard dictó `scrum853 · MUDO` dos veces en cada PR desde entonces. Reancladas
+ * al paso que querían, las dos caen (registro: `docs/master/SCRUM-1321.md`).
+ *
+ * Devuelve `null` si el ancla es inequívoca, o `{ veces, lineas }` si no se puede saber cuál de
+ * las ocurrencias quería la declaración.
+ *
+ * ── LA ÚNICA REPETICIÓN QUE SE ADMITE, y se DERIVA, no se lista ─────────────────────────────
+ * El guard que se muta a sí mismo CITA su ancla dentro de su propia declaración (el caso de
+ * SCRUM-812c, arriba): dos ocurrencias, y sólo una es código. Se admite si y sólo si
+ * `seCitaASiMismo` y hay exactamente DOS, exactamente UNA empieza línea, y ésa es la PRIMERA —
+ * que es la que `replace` va a tocar. Con el array movido arriba la primera es la cita, y sale
+ * ambigua: es justo el caso que aquel bloque describe.
+ *
+ * ⚠️ LO QUE NO MIRA: que la ocurrencia única sea la que el test ejercita. Eso sólo lo dice
+ * aplicar la mutación (SCRUM-839e). Esto es la criba de «¿sé siquiera a cuál me refiero?».
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function ambiguedadDelAncla(fuente, ancla, { seCitaASiMismo = false } = {}) {
+  const posiciones = [];
+  for (let i = fuente.indexOf(ancla); i !== -1; i = fuente.indexOf(ancla, i + ancla.length)) {
+    posiciones.push(i);
+  }
+  if (posiciones.length <= 1) return null;
+  const empiezanLinea = posiciones.filter((i) => i === 0 || fuente[i - 1] === '\n');
+  if (seCitaASiMismo && posiciones.length === 2 && empiezanLinea.length === 1
+      && empiezanLinea[0] === posiciones[0]) return null;
+  return {
+    veces: posiciones.length,
+    lineas: posiciones.map((i) => fuente.slice(0, i).split('\n').length),
+  };
+}
+
+/** El motivo, ya escrito, de un ancla ambigua. Lo dicen igual el meta-guard y la criba de `npm test`. */
+export function motivoDeAnclaAmbigua(fichero, { veces, lineas }) {
+  return `el ancla \`de\` aparece ${veces} veces en \`${fichero}\` (líneas ${lineas.join(', ')}) y `
+    + `\`replace\` mutaría la primera, la de la línea ${lineas[0]}, sin saber si es la que la `
+    + 'declaración quería. Alárgala con el contexto que la hace única (la línea de antes o la de '
+    + 'después, dentro del mismo literal con `\\n`): anclar a media línea es anclar a que nadie '
+    + 'escriba otra que empiece igual';
+}
+
+/**
  * SUELO ⓿ (SCRUM-812) · ¿he mirado algún fichero? Devuelve el motivo, o `null` si aguanta.
  *
  * Vive FUERA del bloque principal por lo mismo que `sueloDelCenso`: un suelo que sólo existe
