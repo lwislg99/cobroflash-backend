@@ -516,3 +516,4 @@ test('SCRUM-1304 · 🔴 `ensureInvoiceForCharge` a secas, dos llamadas a la vez
   assert.equal(fs.length, 1, `🔴 DOS LLAMADAS, ${fs.length} FACTURAS: ${numeros(fs)}. No es cosa de la ruta: es la función.`);
   assert.deepEqual(resultado.map((f) => f.id), [fs[0].id, fs[0].id], 'y las dos llamadas devuelven LA MISMA factura');
 });
+
