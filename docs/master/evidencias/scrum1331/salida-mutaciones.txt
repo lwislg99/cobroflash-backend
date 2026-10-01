@@ -6,8 +6,9 @@ BASE sin mutar: exit=0 · tests=5 · caidos=0
 #1 VIVA · scripts/tanda-con-veredicto.mjs · numstat «1	1	scripts/tanda-con-veredicto.mjs» · exit=1 · caidos=2/5 · restaurado=true
      cae: SCRUM-1331 · 🔴 el envoltorio dice al final qué rojos NO son un caso que falle, y no cambia el código de salid
      cae: SCRUM-1331 · ✅ una tanda sana no dice nada, y una que no se puede leer LO DICE
-#2 VIVA · scripts/_huella-de-la-caida.mjs · numstat «1	1	scripts/_huella-de-la-caida.mjs» · exit=1 · caidos=1/5 · restaurado=true
+#2 VIVA · scripts/_huella-de-la-caida.mjs · numstat «1	1	scripts/_huella-de-la-caida.mjs» · exit=1 · caidos=2/5 · restaurado=true
      cae: SCRUM-1331 · 🔴 el envoltorio dice al final qué rojos NO son un caso que falle, y no cambia el código de salid
+     cae: SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida del fichero que cae
 RESULTADO: 3 vivas de 3
 git status: «»
 EXIT=0
