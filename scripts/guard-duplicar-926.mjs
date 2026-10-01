@@ -217,8 +217,11 @@ leidoP = suelo(PAGO !== NACIMIENTO, 'CONTROL DEL CASO P · FIFTY_FIFTY no es el 
 producto(leidoP, P.pago === PAGO, `P · duplicar CONSERVA las condiciones de pago (${PAGO})`);
 
 // Un error de página es algo que SE HA VISTO, haya ciego o no: se cuenta siempre.
+// Que NO haya ninguno es un juicio por AUSENCIA: sólo vale si los dos casos se leyeron. Con uno sin
+// leer la lista sale vacía igual, y la casilla queda SIN JUZGAR en vez de verde (c.17970; lo cazó
+// el censo de `tests/scrum622`, que no deja que un «no lo sé» acabe en 'ok').
 const errores = [...(G.errores || []).map((e) => 'G: ' + e), ...(P.errores || []).map((e) => 'P: ' + e)];
-apuntar(errores.length ? 'hallazgo' : 'ok', 'sin errores de pagina en ninguno de los dos casos' + (errores.length ? ' — ' + errores.join(' · ') : ''));
+apuntar(errores.length ? 'hallazgo' : (leidoG && leidoP ? 'ok' : 'sin juzgar'), 'sin errores de pagina en ninguno de los dos casos' + (errores.length ? ' — ' + errores.join(' · ') : ''));
 
 const MARCAS = { ok: '✔ ', hallazgo: '🔴 ', ciego: '⬜ NO SUPE MIRAR · ', 'sin juzgar': '·  SIN JUZGAR (su caso no se pudo leer) · ' };
 console.log(JSON.stringify(informe, null, 2));

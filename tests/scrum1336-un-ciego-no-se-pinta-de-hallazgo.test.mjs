@@ -411,7 +411,7 @@ test('SCRUM-1336 · la evidencia con navegador dice lo que el registro afirma: e
   assert.match(antes.sha, /^[0-9a-f]{40}$/);
   assert.match(despues.sha, /^[0-9a-f]{40}$/);
   assert.notEqual(antes.sha, despues.sha, 'el «antes» y el «después» se midieron sobre el MISMO commit: no comparan nada');
-  assert.deepEqual([pasadas(antes).length, antes.de, pasadas(despues).length, despues.de], [33, 33, 33, 33]);
+  assert.deepEqual([pasadas(antes).length, antes.de, pasadas(despues).length, despues.de], [35, 35, 35, 35]);
   assert.deepEqual([...pasadas(antes), ...pasadas(despues)].filter((f) => !f.valida).map((f) => f.id), [], 'hay pasadas que no cuentan');
 
   for (const f of [...SEIS, SEPTIMO]) {
@@ -434,6 +434,19 @@ test('SCRUM-1336 · la evidencia con navegador dice lo que el registro afirma: e
   for (const id of ['contraste-ciego-suelo', 'marcadores-en-pantalla-ciego-banco', 'contraste-ciego-ausencia', 'marcadores-en-pantalla-ciego-ausencia', 'objetivo-tactil-ciego-ausencia']) {
     assert.deepEqual([salida(antes, id), salida(despues, id)], [1, 2], id);
   }
+  // c.17970 · EL CUARTO juicio por ausencia: «sin errores de página» en `duplicar-926`.
+  // El positivo primero: un error de página VISTO sigue saliendo 1, solo y con un caso sin leer.
+  for (const id of ['duplicar-926-error-de-pagina', 'duplicar-926-error-y-ciego']) {
+    assert.deepEqual([salida(antes, id), salida(despues, id)], [1, 1], id + ' · un error de página visto tiene que seguir saliendo 1');
+  }
+  const errorYCiego = leerVeredicto(pasadas(despues).find((x) => x.id === 'duplicar-926-error-y-ciego').veredicto);
+  assert.ok(errorYCiego && errorYCiego.hallazgos >= 1 && errorYCiego.ciegos >= 1, 'duplicar-926-error-y-ciego tiene que decir las DOS cuentas');
+  // Y la fila: con los dos casos sin leer queda SIN JUZGAR; con los dos leídos sigue en verde.
+  const filaDeErrores = (escenario) => fs.readFileSync(path.join(EVIDENCIAS, 'despues-duplicar-926-' + escenario + '.txt'), 'utf8')
+    .split('\n').filter((l) => l.includes('sin errores de pagina en ninguno de los dos casos'));
+  assert.deepEqual(filaDeErrores('ciego').map((l) => l.startsWith('·  SIN JUZGAR')), [true], 'con los dos casos sin leer, «sin errores de página» no se puede pintar de verde');
+  assert.deepEqual(filaDeErrores('limpio').map((l) => l.startsWith('✔ ')), [true], 'con los dos casos leídos y sin errores, la casilla sigue en verde');
+  assert.deepEqual(filaDeErrores('error-y-ciego').map((l) => l.startsWith('🔴 ')), [true], 'un error visto es un hallazgo aunque un caso no se leyera');
   // Antes ninguno decía sus cuentas; después las dicen los siete en TODAS sus pasadas (E1, visto correr).
   assert.deepEqual(pasadas(antes).filter((f) => f.veredicto).map((f) => f.id), []);
   assert.deepEqual(pasadas(despues).filter((f) => !leerVeredicto(f.veredicto)).map((f) => f.id), []);
@@ -452,7 +465,7 @@ test('SCRUM-1336 · las mutaciones con navegador están VISTAS, cada una contra 
   const mutaciones = despues.filas.filter((f) => f.esMutacion);
   console.log('  [SCRUM-1336] mutaciones con navegador: ' + mutaciones.length + ' de ' + despues.deMutaciones
     + ' · vistas ' + mutaciones.filter((f) => f.valida && f.mutacion && f.mutacion.vista).length);
-  assert.deepEqual([mutaciones.length, despues.deMutaciones], [17, 17]);
+  assert.deepEqual([mutaciones.length, despues.deMutaciones], [18, 18]);
   assert.deepEqual(mutaciones.filter((f) => !f.valida || !f.mutacion || !f.mutacion.vista).map((f) => f.id), [], 'mutaciones MUDAS o sin contar');
   for (const f of [...SEIS, SEPTIMO]) {
     const g = GUARD_DE(f);
@@ -463,4 +476,7 @@ test('SCRUM-1336 · las mutaciones con navegador están VISTAS, cada una contra 
     const alReves = mutaciones.find((m) => m.id === g + '-mut-hallazgo-a-ciego');
     assert.deepEqual([alReves.mutacion.sinMutar, alReves.exit], [1, 2], g + ' · hallazgo-a-ciego');
   }
+  // c.17970 · la suspensión puesta DELANTE del error visto: un error de página deja de contar.
+  const calla = mutaciones.find((m) => m.id === 'duplicar-926-mut-error-visto-sin-juzgar');
+  assert.deepEqual([calla.mutacion.sinMutar, calla.exit], [1, 2], 'duplicar-926 · error-visto-sin-juzgar');
 });

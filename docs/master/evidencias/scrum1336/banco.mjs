@@ -60,6 +60,11 @@ const SOLO_UNA_PAGINA_CASI_VACIA = { dejarSoloEsteHtml: 'public/solo-1336.html',
 const DUPLICAR_SIN_BOTON = { f: DETALLE, de: "'⎘ Duplicar'", a: "'⎘ Clonar'", veces: 1 };
 const DUPLICAR_PIERDE_EL_DESCUENTO = { f: EDITOR, de: "if (template.discountGlobalAmount != null && String(template.discountGlobalAmount).trim() !== '') {", a: 'if (false) {', veces: 1 };
 const EDITOR_SIN_OPCION_5050 = { f: EDITOR, de: 'opt5050.value = "FIFTY_FIFTY";', a: 'opt5050.value = "FIFTY_FIFTY_ROTA";', veces: 1 };
+// Un error de página DE VERDAD (una excepción sin capturar en un temporizador del editor), solo y
+// junto a un caso que no se puede leer. Es el positivo de c.17970: un error VISTO cuenta siempre.
+const ERROR_DE_PAGINA = ' setTimeout(function () { throw new Error("error de pagina puesto por el banco de SCRUM-1336"); }, 0);';
+const EDITOR_CON_ERROR_DE_PAGINA = { f: EDITOR, de: 'opt5050.value = "FIFTY_FIFTY";', a: 'opt5050.value = "FIFTY_FIFTY";' + ERROR_DE_PAGINA, veces: 1 };
+const EDITOR_SIN_OPCION_5050_Y_CON_ERROR = { f: EDITOR, de: 'opt5050.value = "FIFTY_FIFTY";', a: 'opt5050.value = "FIFTY_FIFTY_ROTA";' + ERROR_DE_PAGINA, veces: 1 };
 
 const INFORMES_REVIENTA = { f: INFORMES, de: "async function renderReportsView(container) {\n  container.innerHTML = '';", a: "async function renderReportsView(container) {\n  container.innerHTML = '';\n  throw new Error('rota a proposito por el banco de SCRUM-1336');", veces: 1 };
 const INFORMES_PINTA_MARCADOR = { f: INFORMES, de: "  container.appendChild(wrap);", a: "  container.appendChild(wrap);\n  container.appendChild(document.createTextNode('" + MARCADOR + " puesto por el banco de SCRUM-1336'));", veces: 1 };
@@ -126,6 +131,9 @@ const PASADAS = [
   { guard: 'contraste', grupo: SEIS, escenario: 'ciego-ausencia', que: 'admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales', cambios: [ADMIN_NO_SE_DEJA_MEDIR] },
   { guard: 'marcadores-en-pantalla', grupo: SEIS, escenario: 'ciego-ausencia', que: 'revienta «facturas-recibidas», la única vista con techo en el CENSO: 0 hallazgos reales', cambios: [RECIBIDAS_REVIENTA] },
   { guard: 'objetivo-tactil', grupo: SEIS, escenario: 'ciego-ausencia', que: 'la lista de Clientes no monta, y sus excepciones dejan de verse: 0 hallazgos reales', cambios: [CLIENTES_REVIENTA] },
+  // ── UN ERROR DE PÁGINA VISTO cuenta siempre, también con un caso sin leer (c.17970) ──
+  { guard: 'duplicar-926', grupo: SEIS, escenario: 'error-de-pagina', que: 'el editor lanza un error de página en los dos casos, y ningún ciego', cambios: [EDITOR_CON_ERROR_DE_PAGINA] },
+  { guard: 'duplicar-926', grupo: SEIS, escenario: 'error-y-ciego', que: 'el editor lanza un error de página Y el desplegable de cobro no se puede leer (P): el error visto cuenta igual', cambios: [EDITOR_SIN_OPCION_5050_Y_CON_ERROR] },
 ].map((p) => ({ ...p, id: p.guard + '-' + p.escenario }));
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -138,6 +146,9 @@ const PASADAS = [
 //                         escenario «hallazgo» tiene que dejar de salir 1.
 //   juzga-por-ausencia .. se quita la suspensión de los juicios por ausencia. El escenario
 //                         «ciego-ausencia» tiene que dejar de salir 2.
+//   error-visto-sin-juzgar  (sólo duplicar-926) la suspensión se pone DELANTE del error visto: un
+//                         error de página deja de contar si un caso no se leyó. El escenario
+//                         «error-y-ciego» tiene que dejar de salir 1.
 //
 // Sólo corren con el filtro «mutaciones» (o por su id): no son parte de la pasada normal.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -154,6 +165,7 @@ const MUTACIONES = [
   { guard: 'contraste', grupo: SEIS, nombre: 'juzga-por-ausencia', base: 'ciego-ausencia', m: { f: g('contraste'), de: 'if (desaparecidos.length && !medidoEntero) {', a: 'if (false) {', veces: 1 } },
   { guard: 'duplicar-926', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('duplicar-926'), de: "  if (estado === 'ciego') ciegos.push(texto);", a: "  if (estado === 'ciego') hallazgos.push(texto);", veces: 1 } },
   { guard: 'duplicar-926', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('duplicar-926'), de: "  if (estado === 'hallazgo') hallazgos.push(texto);", a: "  if (estado === 'hallazgo') ciegos.push(texto);", veces: 1 } },
+  { guard: 'duplicar-926', grupo: SEIS, nombre: 'error-visto-sin-juzgar', base: 'error-y-ciego', m: { f: g('duplicar-926'), de: "apuntar(errores.length ? 'hallazgo' : (leidoG && leidoP ? 'ok' : 'sin juzgar'),", a: "apuntar(!(leidoG && leidoP) ? 'sin juzgar' : (errores.length ? 'hallazgo' : 'ok'),", veces: 1 } },
   { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('marcadores-en-pantalla'), de: '  ciegos.push(...recorrido.ciegos);', a: '  hallazgos.push(...recorrido.ciegos);', veces: 1 } },
   { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('marcadores-en-pantalla'), de: 'const hallazgo = (m) => { console.error(m); hallazgos.push(m); };', a: 'const hallazgo = (m) => { console.error(m); ciegos.push(m); };', veces: 1 } },
   { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'juzga-por-ausencia', base: 'ciego-ausencia', m: { f: g('marcadores-en-pantalla'), de: 'const seVioEntera = (vista) => detectorVe && !vistasConCiego.has(vista);', a: 'const seVioEntera = (vista) => true;', veces: 1 } },
