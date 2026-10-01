@@ -47,6 +47,10 @@
 // como colateral a todos los demás guards que vigilan ese fichero. Una mutación con más radio que
 // el defecto que imita no prueba nada — es la lección escrita en la mutación ① de `scrum716`. En
 // su lugar, el ① de aquí abajo provoca el caso sobre un banco sintético, con el radio exacto.
+//
+// (SCRUM-1321: eso vale para las dos cribas de arriba, que viven en este fichero. La tercera
+// usa un criterio que vive en el meta-guard —`ambiguedadDelAncla`—, y apagar ESE criterio no
+// rompe ningún ancla real: sólo deja pasar el banco del ④. Ésa sí se declara.)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -60,6 +64,16 @@ import {
 } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // SCRUM-1321 · el criterio deja de ver repeticiones: todo ancla presente vuelve a valer.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (posiciones.length <= 1) return null;',
+    a: '  if (posiciones.length <= 99) return null; // SCRUM-1321: nada es ambiguo, a proposito',
+    cae: 'SCRUM-1321 · 🔴 EL CASO REAL: un ancla que casa ANTES en otra línea se denuncia',
+  },
+];
 
 /** Cabecera mínima de un guard de mentira: dos tests, que es lo que el lector espera encontrar. */
 const CABECERA = "import test from 'node:test';\ntest('uno', () => {});\ntest('dos', () => {});\n\n";
