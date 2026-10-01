@@ -146,6 +146,19 @@ test(`SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de ${MINUTOS_DE_DESPLIEGUE
   assert.equal(seccionDespliegue({ despliegues: [d(30, undefined)], ahora: AHORA }).pudo, false);
 });
 
+test('SCRUM-1368 · 🔴 DESPLIEGUE: el ÚLTIMO en failure se AVISA (salía en verde con «→ failure» dentro); uno viejo ya superado, no', () => {
+  // El caso real del 1-oct: 36071b72 → [failure, in_progress, in_progress] a los 28 s; prod siguió en el anterior.
+  const d = (sha, estados) => ({ sha: sha.padEnd(40, '0'), creado: new Date(AHORA - 5 * 60000).toISOString(), estados });
+  const roto = seccionDespliegue({ despliegues: [d('36071b72', ['failure', 'in_progress', 'in_progress']), d('425065aa', ['success', 'in_progress'])], ahora: AHORA });
+  assert.equal(roto.alertas.length, 1);
+  assert.match(roto.alertas[0].linea, /el ÚLTIMO despliegue \(36071b72\) terminó en failure: main NO está desplegado/);
+  assert.equal(salidaDe([roto]), SALIDA_AVISO);
+  assert.equal(seccionDespliegue({ despliegues: [d('aaaaaaaa', ['error'])], ahora: AHORA }).alertas.length, 1);
+  // NEGATIVO: el fallo es del anterior y el más nuevo salió bien — o todavía está en marcha.
+  assert.deepEqual(seccionDespliegue({ despliegues: [d('bbbbbbbb', ['success', 'in_progress']), d('36071b72', ['failure', 'in_progress'])], ahora: AHORA }).alertas, []);
+  assert.deepEqual(seccionDespliegue({ despliegues: [d('cccccccc', ['in_progress']), d('36071b72', ['failure'])], ahora: AHORA }).alertas, []);
+});
+
 test('SCRUM-1350 · lo que cayó: los nombres del resumen `spec`; sin resumen es «no supe», NO «cero fallos»', () => {
   const log = [
     '2026-10-01T10:00:00.0000000Z ✔ uno que pasa (1.2ms)',

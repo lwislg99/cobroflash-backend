@@ -353,6 +353,11 @@ export function seccionDespliegue({ despliegues, ahora }) {
     }
   }
   const u = despliegues[0];
+  // SCRUM-1368 · sólo el MÁS NUEVO: un fallo viejo con un despliegue bueno detrás ya está superado.
+  // Medido el 1-oct: 36071b72 falló a los 28 s y esta sección salió en verde con «→ failure» dentro.
+  if (/^(failure|error)$/.test(u.estados[0] || '')) {
+    alertas.unshift({ linea: `el ÚLTIMO despliegue (${u.sha.slice(0, 8)}) terminó en ${u.estados[0]}: main NO está desplegado, producción sigue sirviendo lo anterior (míralo en yaqu.app/version)` });
+  }
   return {
     nombre: 'DESPLIEGUE', pudo: true, alertas,
     poblacion: `${despliegues.length} despliegues mirados · el último: ${u.sha.slice(0, 8)} → ${u.estados[0] || 'sin estado'} (lo que Railway le dice a GitHub, NO lo que sirve yaqu.app)`,

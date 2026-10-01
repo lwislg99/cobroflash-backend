@@ -47,7 +47,15 @@
 //   · `reanudar` NO lleva `--model`: con flags `--resume` arranca una COPIA (SCRUM-899), y la sesión
 //     reanudada conserva las opciones con las que se lanzó. Ninguna acción de la CLI reanuda ya.
 //
-// ── LO QUE NO HACE, Y ES LA MITAD DEL DISEÑO ──────────────────────────────────────────────────
+// ── LO QUE CAMBIA EN SCRUM-1364 (1-oct-2026) ───────────────────────────────────────────────────
+//   · Decisión del fundador (1-oct-2026, «caro con 6 si»): el equipo va con OPUS y seis puestos.
+//     Revierte la de SCRUM-990. Con `sonnet` fijo, lanzar por esta puerta bajaba de modelo a los seis
+//     sin decirlo, y por eso se lanzaba a mano.
+//   · El modelo sale de `config.json` (`modelo`); sin la clave, opus. Declarado e ilegible → PARA
+//     (`modeloDe`). Lo medido en SCRUM-990 sobre el flag y su orden sigue valiendo.
+//   · `lanzar` y `relevar` DICEN el modelo en su veredicto: uno declarado a propósito tampoco es mudo.
+//
+// ── LO QUE NO HACE, Y ES LA MITAD DEL DISEÑO──────────────────────────────────────────────────
 //   · No acepta nombres fuera de la lista blanca: ni `control-*`, ni una sesión del fundador.
 //   · No construye NUNCA un modo que se salte permisos, ni recibe flags desde fuera.
 //   · No corre desde un árbol de trabajo, ni si su contenido difiere del de `origin/main`.
@@ -80,8 +88,13 @@ export const RUTA_EN_EL_REPO = 'scripts/equipo/sesion.mjs';
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /** Más de esto parada → sesión nueva en vez de reanudar: la caché ya está fría. */
 export const UNA_HORA_MS = 60 * 60 * 1000;
-/** SCRUM-990 · el modelo de TODA sesión de fondo del equipo (fundador, 21-sep-2026). Sin excepción. */
-export const MODELO_DEL_EQUIPO = 'sonnet';
+/**
+ * SCRUM-1364 · el modelo con el que se lanza cuando `config.json` no declara `modelo`. Decisión del
+ * fundador del 1-oct-2026 («caro con 6 si»: opus, seis puestos), que revierte la de SCRUM-990.
+ */
+export const MODELO_POR_DEFECTO = 'opus';
+/** Un alias o un id de modelo. Nunca empieza por guion: viaja como argumento y no puede leerse como flag. */
+const MODELO = /^[a-z0-9][a-z0-9.-]{0,63}$/;
 /** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
 export const UMBRAL_CONTEXTO = 200_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
@@ -150,13 +163,36 @@ export function validarNombreDeLectura(nombre) {
 }
 
 /**
+ * SCRUM-1364 · con qué modelo lanza esta instalación. Falla HACIA ARRIBA, y son dos casos distintos:
+ *   · `modelo` NO está en el config → `MODELO_POR_DEFECTO`. Ausente no es ilegible: es «no declarado».
+ *   · `modelo` ESTÁ y no se deja leer (no es texto, vacío, con forma de flag) → NO-PUDE-MIRAR, y no se
+ *     lanza. Sustituirlo por otro —por cualquiera— sería decidir el modelo del equipo en silencio.
+ *
+ * @returns {{ok:true, modelo:string, declarado:boolean} | {ok:false, veredicto:'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function modeloDe(config) {
+  if (!config || typeof config !== 'object') return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'config.json: no es un objeto' };
+  if (!Object.hasOwn(config, 'modelo')) return { ok: true, modelo: MODELO_POR_DEFECTO, declarado: false };
+  const m = config.modelo;
+  if (typeof m !== 'string' || !MODELO.test(m)) {
+    return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: `config.json: \`modelo\` está declarado y no se deja leer (${JSON.stringify(m) ?? typeof m}). No lanzo con otro: corrígelo, o quita la clave para ir con ${MODELO_POR_DEFECTO}` };
+  }
+  return { ok: true, modelo: m, declarado: true };
+}
+
+function modeloValido(modelo) {
+  if (typeof modelo !== 'string' || !MODELO.test(modelo)) throw new Error('modelo ilegible: no se lanza con otro');
+  return modelo;
+}
+
+/**
  * Los argumentos de `claude` para lanzar. Nunca recibe flags de fuera: solo el nombre (validado),
  * el sessionId (validado) y el texto del prompt, que va como UN argumento y no se interpreta.
  */
-export function argsLanzar({ modo, nombre, sessionId, prompt, equipo }) {
+export function argsLanzar({ modo, nombre, sessionId, prompt, equipo, modelo = MODELO_POR_DEFECTO }) {
   if (validarNombre(nombre, equipo)) throw new Error('nombre fuera de la lista blanca');
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt vacío');
-  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];
+  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', modeloValido(modelo), prompt];
   if (modo === 'reanudar') {
     // SIN flags: con flags, `--resume` arranca una copia (medido en SCRUM-899, control 3b).
     if (!SESSION_ID.test(sessionId || '')) throw new Error('reanudar exige el sessionId COMPLETO');
@@ -804,7 +840,10 @@ export function puertaDeIntegridad({ rutaPropia, rutaEnElRepo = RUTA_EN_EL_REPO,
   if (!Buffer.from(main.stdoutBuffer).equals(propio)) {
     return { ok: false, veredicto: 'ALTERADO', motivo: `esta copia no es idéntica a origin/main:${rutaEnElRepo}` };
   }
-  return { ok: true, config, equipo: e.equipo };
+  // SCRUM-1364: un `modelo` declarado y que no se deja leer PARA aquí; no se lanza con otro.
+  const mo = modeloDe(config);
+  if (!mo.ok) return { ok: false, veredicto: mo.veredicto, motivo: mo.motivo };
+  return { ok: true, config, equipo: e.equipo, modelo: mo.modelo };
 }
 
 function gitReal(cwd, args, { binario = false } = {}) {
@@ -951,7 +990,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const rutaPropia = fileURLToPath(import.meta.url);
   const puerta = puertaDeIntegridad({ rutaPropia });
   if (!puerta.ok) salir(2, puerta);
-  const { config, equipo } = puerta;
+  const { config, equipo, modelo } = puerta;
   const dir = path.dirname(rutaPropia);
   const [accion, nombre, ficheroPrompt] = process.argv.slice(2);
 
@@ -1029,7 +1068,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 
     // 🔴 SIEMPRE 'nueva', NUNCA 'reanudar': ese es el punto entero de la A19. Reanudar arrastraría
     // la caché que el relevo viene a soltar.
-    const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo });
+    const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400), mesa: ml.mesa });
@@ -1048,7 +1087,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const registro = leerRegistro(dir) || {};
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify({ ...registro, [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } }, null, 2));
-    salir(0, { veredicto: d.veredicto === 'RELEVAR' ? 'RELEVADA' : 'LANZADA', nombre, anterior: d.id ?? null, id: m[1], sessionId: nueva.sessionId, comprobado: d.comprobado ?? null, mesa: ml.mesa });
+    salir(0, { veredicto: d.veredicto === 'RELEVAR' ? 'RELEVADA' : 'LANZADA', nombre, anterior: d.id ?? null, id: m[1], sessionId: nueva.sessionId, comprobado: d.comprobado ?? null, mesa: ml.mesa, modelo });
   }
 
   if (accion === 'parar') {
@@ -1079,7 +1118,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // SCRUM-1298: la sesión arranca en su mesa, al día con origin/main; si la mesa no se puede preparar, no se lanza.
     const ml = mesaDelLanzamiento({ config, nombre, equipo });
     if (!ml.ok) salir(2, { ...ml, nombre });
-    const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo });
+    const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
@@ -1099,7 +1138,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const siguiente = { ...(registro || {}), [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } };
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify(siguiente, null, 2));
-    salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, mesa: ml.mesa, ...(d.restos ? { restos: d.restos } : {}) });
+    salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, mesa: ml.mesa, modelo, ...(d.restos ? { restos: d.restos } : {}) });
   }
 
   salir(1, {
