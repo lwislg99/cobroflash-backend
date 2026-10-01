@@ -1,0 +1,17 @@
+ℹ fail 7
+ℹ pass 6
+ℹ tests 13
+✔ SCRUM-1304 · SUELO: el banco tiene estado, evalúa el `where` entero y su cerrojo EXCLUYE (44.097ms)
+✔ SCRUM-1304 · ⚠️ y un cobro normal NO dice nada: el aviso no es ruido (31.3383ms)
+✔ SCRUM-1304 · ✅ C · una sola entrega → UNA factura, con su número, su PDF y su evento (46.2674ms)
+✔ SCRUM-1304 · ✅ dos cobros DISTINTOS del mismo merchant → dos facturas, una por cobro, correlativas (30.8855ms)
+✔ SCRUM-1304 · ✅ ④a · dos entregas SEGUIDAS → una factura (la segunda la encuentra por su evento) (31.322ms)
+✔ SCRUM-1304 · ✅ ④d · el presupuesto del cobro YA tiene factura → no se emite otra (30.4877ms)
+✖ SCRUM-1304 · ⚠️ la entrega que NO emite lo DICE: nombra el cobro y la factura que ya había (30.7028ms)
+✖ SCRUM-1304 · 🔴 `ensureInvoiceForCharge` a secas, dos llamadas a la vez sobre un cobro pagado → UNA factura (1.0147ms)
+✖ SCRUM-1304 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura (31.8047ms)
+✖ SCRUM-1304 · 🔴 ④b′ · la segunda entrega entra EN EL HUECO (la primera ya buscó y espera el cerrojo) → UNA factura (47.258ms)
+✖ SCRUM-1304 · 🔴 ④c · dos entregas a la vez, con presupuesto aún SIN factura → UNA factura (30.8811ms)
+✖ SCRUM-1304 · 🔴 ④e · SIN CARRERA: el PDF cae una vez → la entrega siguiente NO crea otra, y TERMINA la que hay (31.8949ms)
+✖ SCRUM-1304 · 🔴 ④f · SIN CARRERA NI FALLO: un cobro creado para COBRAR una factura que ya existe → no se emite una segunda (31.0939ms)
+✖ failing tests:
