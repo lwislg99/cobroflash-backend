@@ -43,6 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // NUNCA `new URL().pathname`: no decodifica (SCRUM-730)
 
 import { ranurasDelPanel, ranurasDe, contadoresDe, MARCA } from './_ranuras-con-marcador.mjs';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(RAIZ, 'public/dashboard/js');
@@ -311,10 +312,10 @@ test('SCRUM-755 · los que pintan y no cuentan: cada uno con su MOTIVO escrito',
 test('SCRUM-755 · ninguno de ellos está DESNUDO: los cubre el censo de SCRUM-402', () => {
   // No se copia aquí el censo de SCRUM-402: se LEEN sus claves. Copiarlo sería crear la segunda
   // lista a mano que este ticket entero viene a evitar.
-  const fuente402 = fs.readFileSync(path.join(RAIZ, 'tests/scrum402-marcador-no-se-pinta.test.mjs'), 'utf8');
-  const ini = fuente402.indexOf('const CENSO = Object.freeze({');
-  const bloque = fuente402.slice(ini, fuente402.indexOf('});', ini));
-  const censo402 = new Set([...bloque.matchAll(/^\s*'([^']+\.js)':\s*\d+/gm)].map((m) => m[1]));
+  // SCRUM-1293 (1-oct-2026) · esas claves ya no están escritas dentro del test de SCRUM-402: viven
+  // en `scripts/_marcadores-pendientes-declarados.json` (sección `panel`) y se leen con el MISMO
+  // cargador que usa él. Sigue sin haber segunda lista. El suelo de abajo no cambia.
+  const censo402 = new Set(Object.keys(marcadoresDeclarados().panel));
 
   // SUELO: si el lector no encuentra el censo ajeno, el «todos cubiertos» de abajo sería el
   // verde de no haber mirado.

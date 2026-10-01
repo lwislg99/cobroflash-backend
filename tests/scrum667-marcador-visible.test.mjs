@@ -38,6 +38,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { censar, MARCA } from '../scripts/censo-marcadores.mjs';
 import { lineasDePdf, extraerTextoPdf, vecesEnPdf } from './_texto-del-pdf.mjs';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,7 +49,13 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Medido el 2-sep-2026 sobre `main`. **Sólo puede BAJAR**, y cuando baje hay que actualizarlo aquí
 // — un trinquete que no se aprieta al arreglarlo deja de apretar.
 // ═════════════════════════════════════════════════════════════════════════════════════════
-const CENSO_SERVIDOR = Object.freeze({
+const CENSO_SERVIDOR = marcadoresDeclarados().servidor;
+// 🔴 SCRUM-1293 (1-oct-2026) · LA LISTA YA NO VIVE AQUÍ: está en
+// `scripts/_marcadores-pendientes-declarados.json` (sección `servidor`), y la carga
+// `tests/_marcadores-declarados.mjs`, que sale en ROJO si no puede leerla, si viene vacía, si un
+// número es 0 o si una clave está repetida. Las ASERCIONES no han cambiado. Lo que sigue es la
+// HISTORIA de cada entrada; donde había una entrada viva queda un «↳ ENTRADA».
+{
   // Sprint Tecnosel · `tipoIntervencion.ts` ESTUVO aquí con 1 y SALIÓ el 3-sep-2026: el fundador
   // firmó «Tipo de intervención» y los tres valores del papel («Reparación / Asistencia técnica»,
   // «Mantenimiento», «Instalación»). Los tres salían de una sola constante, así que se apagaron de
@@ -56,11 +63,11 @@ const CENSO_SERVIDOR = Object.freeze({
   // censo sólo lista ficheros CON marcador. El trinquete APRIETA (SCRUM-703).
   // El rótulo de la columna de bases del desglose. 🔴 ES EL ÚNICO QUE SE IMPRIME EN EL PDF, y el
   // PDF de la factura lo ve el CLIENTE del profesional. Medido leyendo el papel, no la plantilla.
-  'src/modules/invoicing/infra/pdf/pdf.service.ts': 1,
+  // ↳ ENTRADA `src/modules/invoicing/infra/pdf/pdf.service.ts` (su número, en el JSON)
   // Aviso del criterio de caja y resumen del modelo 303: los ve el profesional en su pantalla.
-  'src/modules/invoicing/domain/criterioCaja.ts': 1,
-  'src/modules/fiscal/modelo303/modelo303.ts': 1,
-  'src/modules/fiscal/librosAeat/librosAeat.ts': 1,
+  // ↳ ENTRADA `src/modules/invoicing/domain/criterioCaja.ts` (su número, en el JSON)
+  // ↳ ENTRADA `src/modules/fiscal/modelo303/modelo303.ts` (su número, en el JSON)
+  // ↳ ENTRADA `src/modules/fiscal/librosAeat/librosAeat.ts` (su número, en el JSON)
   // ── SCRUM-684 · 4-sep-2026 · ENTRÓ CON 1 Y SALIÓ EL MISMO DÍA ──────────────────────────
   //
   // El rechazo de una línea que dice venir de un presupuesto inexistente entró con marcador
@@ -91,8 +98,8 @@ const CENSO_SERVIDOR = Object.freeze({
   // `docs/microcopy/2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md`. Entrada BORRADA,
   // no puesta a 0.
   // Mensajes de error de API (409): los lee el profesional en un aviso del panel.
-  'src/modules/jobs/app/routes/albaranes.routes.ts': 1,
-  'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
+  // ↳ ENTRADA `src/modules/jobs/app/routes/albaranes.routes.ts` (su número, en el JSON)
+  // ↳ ENTRADA `src/modules/system/app/routes/invoicesAdmin.routes.ts` (su número, en el JSON)
   // ── SCRUM-1027 · 21-sep-2026 · ENTRAN A CONCIENCIA CON 1 CADA UNO ──────────────────────
   //
   // Regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, ya no se emite
@@ -101,14 +108,14 @@ const CENSO_SERVIDOR = Object.freeze({
   // ya llevan `albaranes.routes.ts` e `invoicesAdmin.routes.ts` arriba, MISMO MOTIVO: no hay
   // texto firmado todavía para «este merchant ya no emite nada» (regla 39). Mensajes de error
   // de API (409): los lee el profesional en un aviso del panel, nunca en un PDF.
-  'src/modules/jobs/app/routes/jobs.routes.ts': 1,
-  'src/modules/system/app/routes/quotesAdmin.routes.ts': 1,
+  // ↳ ENTRADA `src/modules/jobs/app/routes/jobs.routes.ts` (su número, en el JSON)
+  // ↳ ENTRADA `src/modules/system/app/routes/quotesAdmin.routes.ts` (su número, en el JSON)
   // Etiqueta de la calidad del firmante.
-  'src/modules/jobs/domain/albaranFirmante.ts': 1,
+  // ↳ ENTRADA `src/modules/jobs/domain/albaranFirmante.ts` (su número, en el JSON)
   // 🔴 SCRUM-1124 (25-sep-2026) · `jobDireccion.ts` SALE DEL CENSO: `MSG_DIRECCION_SELLADA`
   // quedó firmado por el orquestador por delegación del fundador (comentario 17002). Consta en
   // `docs/microcopy/2026-09-25-SCRUM-1124-direccion-albaran-firmado.md`. Entrada BORRADA.
-});
+}
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // ② LOS QUE LLEGAN AL PAPEL DEL CLIENTE — la lista más cara del repo
@@ -116,12 +123,13 @@ const CENSO_SERVIDOR = Object.freeze({
 // Se declara ENTERA y con su condición: un marcador nuevo en un PDF no puede entrar en silencio.
 // `MARCADOR_MICROCOPY_CABECERA_DOC` era otro y se resolvió; éste es el que queda.
 // ═════════════════════════════════════════════════════════════════════════════════════════
-const EN_EL_PAPEL = Object.freeze({
-  'MARCADOR_MICROCOPY_DESGLOSE': 'factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases',
-  // SCRUM-607 (ALB-02) · `ROTULO_PRESUPUESTO_ORIGEN` SALIÓ el 25-sep-2026 (SCRUM-1124): el pie
-  // del albarán con el presupuesto de origen imprime ya «Presupuesto nº», firmado por delegación
-  // del fundador (comentario 17002). Ya no lleva marcador.
-});
+const EN_EL_PAPEL = marcadoresDeclarados().papel;
+// SCRUM-1293 (1-oct-2026) · la lista vive en la sección `papel` del mismo JSON, cada constante
+// con la condición en que se imprime.
+// ↳ ENTRADA `MARCADOR_MICROCOPY_DESGLOSE` (su condición, en el JSON)
+// SCRUM-607 (ALB-02) · `ROTULO_PRESUPUESTO_ORIGEN` SALIÓ el 25-sep-2026 (SCRUM-1124): el pie
+// del albarán con el presupuesto de origen imprime ya «Presupuesto nº», firmado por delegación
+// del fundador (comentario 17002). Ya no lleva marcador.
 
 /** Una factura de prueba. Los campos son `qty`/`price`/`tax` (fracción), que es lo que lee el generador. */
 async function pdfDeFactura(sufijo, lines) {
