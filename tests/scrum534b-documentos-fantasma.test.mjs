@@ -186,6 +186,10 @@ test('SCRUM-534e · 🔴 GENERADOS se deriva de quién ESCRIBE, no de la prosa q
   const porProsa = c.fantasmas.filter((f) => f.citadores.every((x) => /(genera|escribe|produce|salida|crea)/i.test(x.contexto)));
   assert.ok(c.fantasmas.length > 0,
     '🔴 cero fantasmas: el censo ha dejado de ver, o se han arreglado todos y hay que rehacer esto.');
+  // SCRUM-1311 · suelo de población del SUBCONJUNTO: el de arriba sólo cubre al padre.
+  assert.ok(porProsa.length > 0,
+    '🔴 CIEGO: ningún fantasma tiene todas sus citas rodeadas de verbos de escritura, así que «la prosa no '
+    + 'exime» no se ha comprobado sobre nada. O el filtro ha dejado de casar, o se arreglaron y hay que rehacer esto.');
   for (const f of porProsa) {
     assert.equal(c.generados.some((g) => g.ruta === f.ruta), false,
       `🔴 \`${f.ruta}\` está en los dos cubos: el reparto no es excluyente.`);
