@@ -1,0 +1,49 @@
+CENSO de `timeout:` en C:\Users\Javier Pereira\.claude\jobs\3c3d202d\tmp\a-8f59\tests
+POBLACION: 1294 ficheros .mjs · 1161 son .test.mjs · ilegibles 0
+apariciones de `timeout:` en un objeto literal: 39 en 24 ficheros
+  ① PLAZO DE TEST (el objeto es argumento de test/it/describe/hook): 4 plazos en 3 ficheros
+     scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs:221 · test · 20_000
+     scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs:239 · test · 20_000
+     scrum358-drenado.test.mjs:244 · test · 8000
+     scrum976-guards-entrada-con-techo.test.mjs:108 · test · 120000
+  ② OTROS (el objeto va a otra llamada): 35 en 21 ficheros
+     spawnSync · 27 en 15 ficheros
+        scrum1221-banco-fallo-visible.test.mjs:41 · 60_000
+        scrum1222-sesion-panel.test.mjs:172 · 20_000
+        scrum1263-gancho-pre-push.test.mjs:157 · 60000
+        scrum1331-sin-red-se-dice.test.mjs:96 · 120_000
+        scrum1331-sin-red-se-dice.test.mjs:134 · 60_000
+        scrum1331-sin-red-se-dice.test.mjs:193 · 120_000
+        scrum1331-sin-red-se-dice.test.mjs:195 · 120_000
+        scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs:84 · 120_000
+        scrum265-margen-en-recibo.test.mjs:70 · LIMITE_MS
+        scrum265-margen-en-recibo.test.mjs:84 · 30_000
+        scrum554-el-censo-no-confunde-el-numero.test.mjs:122 · 700
+        scrum620-servidor-que-no-arranca.test.mjs:62 · 60000
+        scrum620-servidor-que-no-arranca.test.mjs:88 · 60000
+        scrum775-suelo-que-no-dispara.test.mjs:84 · 600000
+        scrum853-lecturas-que-fallan-cerrado.test.mjs:177 · 60000
+        scrum853-lecturas-que-fallan-cerrado.test.mjs:193 · 30000
+        scrum853c-el-vigia-no-se-cree-un-error.test.mjs:195 · 120000
+        scrum853c-el-vigia-no-se-cree-un-error.test.mjs:221 · 30000
+        scrum853c-el-vigia-no-se-cree-un-error.test.mjs:252 · 30000
+        scrum853d-cortacircuitos.test.mjs:245 · 120000
+        scrum858b-la-tanda-sin-veredicto.test.mjs:79 · 120_000
+        scrum858b-la-tanda-sin-veredicto.test.mjs:121 · 120_000
+        scrum858b-la-tanda-sin-veredicto.test.mjs:135 · 60_000
+        scrum928b-el-veredicto-que-el-color-tapa.test.mjs:85 · 60_000
+        scrum928b-el-veredicto-que-el-color-tapa.test.mjs:93 · 120_000
+        scrum928b-el-veredicto-que-el-color-tapa.test.mjs:107 · 30_000
+        scrum949-el-suelo-como-cociente.test.mjs:136 · 60_000
+     prisma.$transaction · 5 en 4 ficheros
+        scrum1333-carrera-del-encolado-postgres.test.mjs:139 · 30_000
+        scrum234-carrera-serie.gated.test.mjs:96 · 30_000
+        scrum234-carrera-serie.gated.test.mjs:119 · 30_000
+        scrum592-concurrencia-serie.test.mjs:97 · 30_000
+        scrum728-serie-ocupada-postgres.test.mjs:122 · ms + 15_000
+     execFileSync · 2 en 1 ficheros
+        scrum765-la-puerta-y-el-suelo.test.mjs:45 · 120000
+        scrum765-la-puerta-y-el-suelo.test.mjs:248 · 120000
+     execFile · 1 en 1 ficheros
+        scrum900-push-de-claude-con-la-app.test.mjs:113 · 20000
+CONTROL POSITIVO · scrum976 (se que lleva un plazo de test): VISTO en la linea 108 (120000)

@@ -1,0 +1,15 @@
+POBLACION: 119 candidatos de 1192 .test.mjs · pasada LIMPIA · plazo 180000 ms · FORCE_COLOR en el hijo: false · C:\Users\Javier Pereira\.claude\jobs\3c3d202d\tmp\copia-entera
+CORRIDOS: 119 de 119 en 107 s
+  status 0: 114 · status 1: 5 · status null (cortados por el plazo o matados): 0 · sin resumen de tests: 0
+  los 8 más lentos:
+     21.9 s (12.2 % del plazo) · scrum775-suelo-que-no-dispara.test.mjs · status 1 · tests 16
+     12.9 s (7.2 % del plazo) · scrum753-censo-de-alcanzabilidad.test.mjs · status 1 · tests 19
+     10.3 s (5.7 % del plazo) · scrum448-cobros-estado-de-carga.test.mjs · status 0 · tests 9
+     4.5 s (2.5 % del plazo) · scrum600g-plantillas-en-el-documento-suelto.test.mjs · status 0 · tests 9
+     4.2 s (2.3 % del plazo) · scrum745-comparar-por-identidad.test.mjs · status 0 · tests 11
+     4.1 s (2.3 % del plazo) · scrum451-plazo-de-red.test.mjs · status 0 · tests 12
+     3.1 s (1.7 % del plazo) · scrum601-copy-del-documento-vs-flag.test.mjs · status 0 · tests 5
+     3.0 s (1.7 % del plazo) · scrum586-forma-de-pago-por-cliente.test.mjs · status 1 · tests 22
+  mediana 0.2 s · más del 10 % del plazo: 1 · más del 50 %: 0
+EL MÁS LENTO: 21.9 s = 12.2 % de 180 s · margen ×8.2
+EXIT=0

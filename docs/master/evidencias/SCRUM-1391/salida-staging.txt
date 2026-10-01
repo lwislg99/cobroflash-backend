@@ -1,0 +1,9 @@
++0.1s BANCO SCRUM-1391 · puerta «staging-gated» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.1s POBLACION: 3 hijos reales (plazo vencido · rojo que termina · verde) · claves de hijo del recibo: a55, bot, scrum180, qa
++1.2s ① plazo vencido → status=null signal=SIGTERM error.code=ETIMEDOUT durMs=1011 · esAbortadoPorTiempo=true
++1.2s ① rojo que termina → status=1 signal=null error.code=undefined durMs=39 · esAbortadoPorTiempo=false
++1.2s ① verde → status=0 signal=null error.code=undefined durMs=40 · esAbortadoPorTiempo=false
++1.2s ② recibo de «plazo vencido en el último hijo» → claves [hijo] · remedio: TANDA NO VÁLIDA, vuelve a lanzarla
++1.2s ② recibo de «rojo real en el último hijo» → claves [rojo] · remedio: ROJA: ticket y cuarentena
+VEREDICTO-PUERTA {"puerta":"staging-gated","ejercitada":false,"forma":null,"frase":"no se puede lanzar sin base (toma el turno de staging antes del primer hijo); ejecutadas sus dos mitades puras: el plazo se reconoce (true) y el recibo lo separa del rojo ([hijo] frente a [rojo]); que los dos acaben en `fallaron` y salida 1 queda LEÍDO"}
+EXIT=0

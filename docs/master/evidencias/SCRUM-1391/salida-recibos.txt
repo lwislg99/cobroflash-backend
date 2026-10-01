@@ -1,0 +1,6 @@
+POBLACION: 55 árboles cobroflash* · 4 con recibo
+2026-07-30T21:15Z · cobroflash-b1 · autotest false · total 895 · fail 3 · qa sin margen escrito · bot sin margen escrito · a55 sin margen escrito · hijos que no terminaron: ninguno
+2026-08-02T13:05Z · cobroflash-b2 · autotest false · total 945 · fail 4 · qa sin margen escrito · bot sin margen escrito · a55 sin margen escrito · hijos que no terminaron: ninguno
+2026-09-02T14:54Z · cobroflash-b3 · autotest false · total 4461 · fail 5 · qa 72 % de 45 min · bot 23 % de 5 min · a55 10 % de 5 min · hijos que no terminaron: ninguno
+2026-09-04T22:46Z · cobroflash-backend · autotest false · total 9 · fail 0 · qa 100 % de 45 min · bot 31 % de 5 min · a55 14 % de 5 min · hijos que no terminaron: qa
+EXIT=0
