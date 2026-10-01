@@ -1,0 +1,14 @@
+BASE · estado 0 · tests 8 · pass 8 · fail 0
+VIVA · M1 · el plazo agotado olvida los caídos ya vistos
+   diff: 1	1	scripts/guards-entrada.mjs · tests 8 · fail 1 · esperaba caer «SCRUM-1345 ⑤» · cayeron: SCRUM-1345 ⑤ un test que YA había caído  · árbol restaurado: true
+VIVA · M2 · el plazo agotado deja de contar como ciego (saldría 0)
+   diff: 1	1	scripts/guards-entrada.mjs · tests 8 · fail 2 · esperaba caer «SCRUM-976 ③» · cayeron: SCRUM-976 ③ mitad NEGATIVA: con un plazo | SCRUM-1345 ⑤ un test que YA había caído  · árbol restaurado: true
+VIVA · M3 · la señal CI se lee por verdad y no por presencia
+   diff: 1	1	tests/scrum976-guards-entrada-con-techo.test.mjs · tests 8 · fail 1 · esperaba caer «SCRUM-1345 ④bis» · cayeron: SCRUM-1345 ④bis la señal `CI` se lee por · árbol restaurado: true
+VIVA · M4 · en CI el plazo agotado deja de ser rojo
+   diff: 1	1	tests/scrum976-guards-entrada-con-techo.test.mjs · tests 8 · fail 1 · esperaba caer «SCRUM-1345 ④ter» · cayeron: SCRUM-1345 ④ter en CI el caso ④ es tan e · árbol restaurado: true
+VIVA · M5 · un rojo dentro de plazo sale 0
+   diff: 1	1	scripts/guards-entrada.mjs · tests 8 · fail 1 · esperaba caer «SCRUM-1345 ⑤» · cayeron: SCRUM-1345 ⑤ un test que YA había caído  · árbol restaurado: true
+VIVA · M6 · la línea de la pasada deja de salir en verde
+   diff: 0	1	scripts/guards-entrada.mjs · tests 8 · fail 1 · esperaba caer «SCRUM-976 ④» · cayeron: SCRUM-976 ④ mitad POSITIVA: el comando d · árbol restaurado: true
+FIN · 6 mutaciones · 6 vivas · 0 no vivas · EXIT=0

@@ -142,6 +142,24 @@ async function noCabeOtraFirma(clave, cuerpo) {
   return Boolean(espacio && espacio.estado === window.SIN_ESPACIO);
 }
 
+/**
+ * SCRUM-1302 · La marca `yaqu_hubo_cola` se pone al ENCOLAR, antes de subir, y sólo la retiraba el
+ * drenado. Una firma que sube a la primera sale de la cola pero dejaba la marca, y el arranque
+ * siguiente leía «hubo cola y el almacén está vacío»: avisaba de una pérdida que no hubo (medido
+ * en Chromium contra yaqu.app, 10 de 10 arranques).
+ *
+ * Mismo criterio que el drenado: se retira SÓLO si la cola se ha podido leer y está vacía. Si
+ * queda otra firma, o no se puede leer, la marca se queda — sigue habiendo algo que perder.
+ */
+async function retirarLaMarcaSiNoQuedaNada() {
+  if (typeof window.olvidarQueHuboCola !== 'function' || typeof window.leerFirmasPendientes !== 'function') return;
+  let cola;
+  try { cola = await window.leerFirmasPendientes(); } catch (_e) { return; }
+  if (cola && cola.estado === window.GUARDADO && Array.isArray(cola.firmas) && cola.firmas.length === 0) {
+    window.olvidarQueHuboCola();
+  }
+}
+
 async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   const clave = claveDeFirma(documentoId, tipo);
   if (!clave) {
@@ -163,6 +181,20 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   try {
     respuesta = await subir();
   } catch (error) {
+    // 🔴 SCRUM-1302 · EL 409 `albaran_locked` / `parte_locked` TAMBIÉN AQUÍ ES «YA LA TIENE». El
+    // drenado lo sabía (`elServidorYaLaTiene`) y la firma directa no: con el detalle abierto y viejo
+    // —la cola subió la firma al volver la red y esa pantalla no se enteró—, firmar o «Reintentar»
+    // devolvía ②, la vista decía que no se había podido registrar una firma que SÍ estaba
+    // registrada, y la firma volvía a la cola con el servidor ya en firmado. Es la MISMA función
+    // que usa el drenado, no una segunda regla. Se desencola aunque este intento no la encolara:
+    // puede venir de uno anterior, con la misma clave. Sin `respuesta`: las vistas repintan
+    // pidiendo el documento al servidor, que es quien sabe con qué firma se quedó.
+    if (elServidorYaLaTiene(error)) {
+      await window.quitarFirmaPendiente(clave);
+      await olvidarElRechazo(clave);
+      await retirarLaMarcaSiNoQuedaNada();
+      return { estado: window.FIRMA_A_SALVO, encolada, yaLaTenia: true };
+    }
     // SCRUM-890 · el servidor ha LEÍDO la firma y la rechaza por el documento: reintentarla da el
     // mismo no. Sale de la cola; el trazo sigue en pantalla porque la vista relanza el error.
     if (elServidorLaRechaza(error)) {
@@ -187,6 +219,7 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   // ya ha declarado: la firma ESTÁ a salvo, y eso no depende de que el móvil sepa olvidarla.
   if (encolada) await window.quitarFirmaPendiente(clave);
   await olvidarElRechazo(clave);
+  await retirarLaMarcaSiNoQuedaNada();
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
@@ -414,7 +447,13 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
   // Si la cola quedó vacía DE VERDAD —leída y sin nada—, ya no hay nada que perder: se retira la
   // marca. Dejarla puesta haría que el siguiente arranque avisara de una pérdida que no hubo.
-  if (quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
+  //
+  // 🔴 SCRUM-1354 · PERO SÓLO SI ESTE DRENADO LA VACIÓ. Si la encontró ya vacía no ha drenado nada
+  // y no sabe POR QUÉ está vacía: puede ser que el navegador se la llevara. Antes la borraba igual,
+  // y si llegaba al arranque antes que `detectarDesalojo` una pérdida real salía «sin pérdida». La
+  // marca de una cola vacía es del detector, que es quien la consume al avisar.
+  const teniaAlgo = cola.firmas.length > 0;
+  if (teniaAlgo && quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
   return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
@@ -474,7 +513,28 @@ function subirFirmaDeLaCola(firma) {
  * al terminar, porque el contador es el ÚNICO sitio donde el profesional ve que el drenado
  * funcionó: si sube una firma y el número no se mueve, para él no ha pasado nada.
  */
-async function drenarAlAbrir() {
+const drenadosEnVuelo = new Set();
+/**
+ * SCRUM-1354 · Resuelve cuando no queda ningún drenado a medias. No lanza nunca.
+ *
+ * Lo usa el detector de desalojo del arranque: entre que el drenado saca la última firma y retira
+ * la marca hay una lectura de la cola, y un detector que mirase justo ahí vería «hubo cola y está
+ * vacía» de una cola que se acaba de subir entera. El drenado tiene plazo (el de `api.js`), así
+ * que esto no espera para siempre.
+ */
+function esperarDrenadosEnVuelo() {
+  return Promise.allSettled([...drenadosEnVuelo]).then(() => undefined);
+}
+
+function drenarAlAbrir() {
+  const p = drenarAlAbrirDeVerdad();
+  drenadosEnVuelo.add(p);
+  const soltar = () => { drenadosEnVuelo.delete(p); };
+  p.then(soltar, soltar);
+  return p;
+}
+
+async function drenarAlAbrirDeVerdad() {
   if (typeof window.leerFirmasPendientes !== 'function') return null;
   let r = null;
   try {
@@ -525,6 +585,7 @@ function activarDrenadoAlVolver(win, doc) {
 
 window.subirFirmaDeLaCola = subirFirmaDeLaCola;
 window.drenarAlAbrir = drenarAlAbrir;
+window.esperarDrenadosEnVuelo = esperarDrenadosEnVuelo;   // SCRUM-1354
 window.drenarSiNoSeEstaDrenando = drenarSiNoSeEstaDrenando;   // SCRUM-919
 window.activarDrenadoAlVolver = activarDrenadoAlVolver;
 window.claveDeFirma = claveDeFirma;

@@ -26,6 +26,18 @@
   const esc = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+  // SCRUM-743 · LA CANTIDAD, CON LA FORMA DEL PDF Y DE LA PANTALLA REMOTA. Aquí se escribía en crudo
+  // («2.5», «12345») mientras el papel y el canal remoto dicen «2,5» y «12.345». Misma semántica que
+  // `fmtCantidadAlbaran` del servidor (`albaranPublicVista.ts`): vacío se queda vacío, lo que no es
+  // un número se deja como venía, y un número va por `fmtNumeroEs` (api.js), gemela de
+  // `formatNumeroEs`. No toca lo que se sella: la huella es de la cantidad como número.
+  const cantidadDeLinea = (v) => {
+    if (v === null || v === undefined || v === '') return '';
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return typeof window.fmtNumeroEs === 'function' ? window.fmtNumeroEs(n) : String(v);
+  };
+
   const rotulos = () => (window.appAlbaranRotulos || {});
   const ayudas = () => (window.appAlbaranAyudas || {});
   const calidades = () => (Array.isArray(window.appAlbaranFirmanteOpciones) ? window.appAlbaranFirmanteOpciones : []);
@@ -227,7 +239,7 @@
         ? filas.map((l) =>
             `<tr><td style="padding:5px 0;border-bottom:1px solid var(--border)">${esc(l && l.concepto)}</td>` +
             `<td style="padding:5px 0;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">` +
-            `${esc(l && l.cantidad)}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
+            `${esc(cantidadDeLinea(l && l.cantidad))}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
         : '<tr><td style="padding:5px 0;color:var(--muted)">Sin líneas.</td></tr>';
       resumen.appendChild(tabla);
       card.appendChild(resumen);

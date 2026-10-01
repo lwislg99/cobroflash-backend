@@ -131,6 +131,9 @@ function correrSuelo(dir, envExtra = {}) {
   // tercer `--test-reporter` al explícito de abajo sin destino a juego y Node lo rechaza
   // (ERR_INVALID_ARG_VALUE) antes de correr nada. La copia pone los suyos, no los de la tanda.
   delete env.NODE_OPTIONS;
+  // SCRUM-1349 · y `FORCE_COLOR`: con color, el `spec` del hijo trae secuencias ANSI y la regex
+  // `LINEA` de arriba deja de casar según quién lance la tanda.
+  delete env.FORCE_COLOR;
   const r = spawnSync(process.execPath,
     ['--test', '--test-reporter=spec', '--test-name-pattern=SUELO', path.join(dir, INSTRUMENTO)],
     { cwd: dir, env, encoding: 'utf8', timeout: 60_000 });
