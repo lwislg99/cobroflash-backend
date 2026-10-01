@@ -45,6 +45,7 @@ import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { recordAudit } from '../../system/audit.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { applyVeriFactu, applyVeriFactuAnulacion } from './verifactu.service';
+import { encolarAltaTrasSellado } from './encolarRemision';
 
 export const SELLADO_PENDIENTE = 'pendiente_de_sellado';
 export const SELLADO_HECHO = 'sellado';
@@ -58,6 +59,8 @@ export type EstadoSellado =
 export interface MerchantFiscal {
   country?: string | null;
   taxId?: string | null;
+  /** Sólo para reconocer al merchant demo, que no encola (SCRUM-1296). */
+  email?: string | null;
 }
 
 /**
@@ -141,7 +144,6 @@ export async function sellarTrasEmision(
       where: { id: invoice.id },
       data: { vfEstado: SELLADO_HECHO },
     });
-    return { estado: SELLADO_HECHO };
   } catch (e: any) {
     const mensaje = String(e?.message ?? e).slice(0, 300);
     // La factura se queda pendiente. Queda constancia consultable — no una línea de log en un
@@ -162,6 +164,14 @@ export async function sellarTrasEmision(
     });
     return { estado: SELLADO_PENDIENTE, error: mensaje };
   }
+
+  // SCRUM-1296 · SELLADA → además se ENCOLA para la AEAT. Va FUERA del `try` del sellado, y es
+  // lo que hace que el sellado no dependa de la cola: la factura ya está `sellado` antes de esta
+  // línea, `encolarAltaTrasSellado` no lanza, y si no pudo encolar deja `encolado_fallido`. Dentro
+  // del `try`, un fallo de la cola se leería como fallo de SELLADO (`sellado_fallido`) y dejaría
+  // la factura pendiente con la huella ya escrita.
+  await encolarAltaTrasSellado(invoice, merchant, prismaClient);
+  return { estado: SELLADO_HECHO };
 }
 
 /**

@@ -33,6 +33,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -57,7 +58,11 @@ const PROHIBIDO_EN_LA_FILA = ['IVA del presupuesto', 'Dirección de la obra', 'D
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915g', plan: 'pro', role: 'admin',
   onboardingCompleted: true, subscriptionStatus: 'active', voiceEnabled: false,
-  documentoSuelto: 'justificante',
+  // SCRUM-1313 · era 'justificante'. Desde SCRUM-825 (PR #1943, 29-sep-2026) el panel lee ese valor
+  // como 'no' y la ruta pinta el listado: los SEIS casos de este guard estuvieron CIEGOS dos días.
+  // El documento suelto sólo existe en modo 'factura', y su fila «Ajustes del documento» es la misma.
+  // El nombre del guard conserva «justificante» porque los catálogos lo anclan por nombre.
+  documentoSuelto: 'factura',
 });
 
 function arrancarServidor() {
@@ -351,15 +356,25 @@ async function main() {
   if (ciegos.length) {
     console.log(`\n  ⬜ NO SUPE MEDIR ${ciegos.length}:`);
     ciegos.forEach((l) => console.log(`   ⬜ ${l}`));
-    console.log(`\n  Un ciego no es un verde: de esos casos no se ha juzgado nada.\n${ancho}`);
-    process.exit(SALIDA_NO_SUPE_MEDIR);
+    console.log(`\n  Un ciego no es un verde: de esos casos no se ha juzgado nada.`);
   }
-  if (hallazgos.length) {
-    console.log(`\n${ancho}`);
-    process.exit(SALIDA_HALLAZGO);
+  // SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+  // código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+  if (veredictoFinal.codigo !== 0) {
+    console.log(`\n  ${veredictoFinal.linea}\n${ancho}`);
+    process.exit(veredictoFinal.codigo);
   }
   console.log(`\n  ✔ en los ${CASOS.length} casos: el IVA por defecto del justificante vive en «${TITULO_FILA}», cerrado, dentro de`);
   console.log(`    «Revisar y emitir»; «Cambiar» lo abre en la página, el valor viaja al resumen y a 390 px se toca.\n`);
 }
 
-main().catch((e) => { console.error('⬜ el guard no llegó a medir:', e); process.exit(SALIDA_NO_SUPE_MEDIR); });
+// SCRUM-1320 · si el guard revienta a medias, lo que ya había encontrado NO se tira: se imprime, y
+// el reventón cuenta como un ciego más. Antes salía por «no supe medir» callándose los hallazgos.
+main().catch((e) => {
+  console.error('⬜ el guard no llegó a medir:', e);
+  hallazgos.forEach((l) => console.log(`   🔴 ${l}`));
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos: ciegos.length + 1 });
+  console.log(`\n  ${veredictoFinal.linea}`);
+  process.exit(veredictoFinal.codigo);
+});

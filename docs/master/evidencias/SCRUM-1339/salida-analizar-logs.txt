@@ -1,0 +1,6 @@
+POBLACION: 630 jobs en jobs.tsv · sin log: 0 · leídos: 630
+  con resumen «ℹ tests»: 594 · sin resumen (tanda cortada o cancelada): 36
+  CONTROL DEL INSTRUMENTO: líneas de resultado leídas == «ℹ tests» en 594 de 594
+  commit probado leído: 630 · con árbol: 630
+  «total actual» del suelo == «ℹ tests»: 594 de 594
+EXIT=0

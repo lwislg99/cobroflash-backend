@@ -1,7 +1,7 @@
 // scripts/_timeouts-tanda.mjs — SCRUM-265 · los límites de tiempo por hijo de la tanda gateada,
 // y la lectura del override, en piezas PURAS que un test puede importar.
 //
-// Viven fuera de `test-staging-gated.mjs` por la misma razón que las de SCRUM-265 punto 3
+// Viven fuera de `staging-gated.mjs` por la misma razón que las de SCRUM-265 punto 3
 // (`_margen-tanda.mjs`): ese fichero es un SCRIPT, e importarlo desde un test lanzaría una
 // tanda entera contra staging. Sin poder importarlo no hay red posible, y un número que
 // gobierna cuándo se mata a un hijo no puede estar sin red.

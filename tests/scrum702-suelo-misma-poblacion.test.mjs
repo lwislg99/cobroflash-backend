@@ -258,7 +258,16 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // tiene runner Windows en CI (`ci.yml` es `ubuntu-latest`). Fuera de win32 esos 4 casos se saltan
 // CON motivo declarado (no en silencio); los otros 4, deterministas con `path.win32` explícito,
 // corren en cualquier host y no leen esta señal.
-const TOPE_LEEN_EL_ENTORNO = 19;
+// SCRUM-1345 (1-oct-2026) · 19 → 20, decidido por el orquestador del equipo de Javier con el
+// trinquete saltado delante: `tests/scrum976-guards-entrada-con-techo.test.mjs` lee `process.env.CI`
+// y ÉSTA SÍ condiciona un aserto, como `scrum480`. Su caso ④ lanza `guards:entrada` de verdad, y el
+// presupuesto de tiempo de ese comando sólo se juzga donde la carga es constante: en CI (15,4 s de
+// máximo en 597 pasadas) el caso es tan estricto como antes; en local (el mismo árbol, de 10 s a más
+// de 90 según los núcleos libres) un plazo agotado se DICE con `diagnostic` y no tumba la tanda. Lo
+// que no cambia con el entorno: un guard en rojo cae en los dos sitios. La señal se lee por
+// PRESENCIA (existe la variable, valga lo que valga), y el caso imprime SIEMPRE «presupuesto juzgado:
+// SÍ / NO», también cuando juzga, para que el modo de cada pasada conste.
+const TOPE_LEEN_EL_ENTORNO = 20;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

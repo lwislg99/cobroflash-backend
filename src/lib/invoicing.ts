@@ -25,6 +25,7 @@ import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
+import { tomarCerrojoDeSerie } from '../modules/jobs/domain/albaranIdempotencia'; // SCRUM-1304
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -225,14 +226,27 @@ export async function ensureInvoiceForCharge(
     // fiscal. Ahora, si el sellado falla, la factura se queda `pendiente_de_sellado` —donde
     // nació— y en ese estado `ensureInvoicePdf` se niega a generar nada. El fallo deja de ser
     // «sigue adelante con un log» y pasa a ser «no hay documento hasta que se selle».
-    const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
-    if (resultadoSellado.estado === SELLADO_HECHO) {
-      const releida = await prisma.invoice.findUnique({
-        where: { id: inv.id },
-        select: { vfHash: true, qrData: true },
-      });
-      vfHash = releida?.vfHash ?? vfHash;
-      if (releida?.qrData && !String(releida.qrData).startsWith('PENDING')) qrData = releida.qrData;
+    //
+    // ── SCRUM-1330 · PERO SÓLO SI NO ESTÁ YA SELLADA ─────────────────────────────────────────
+    //
+    // Por aquí pasa también la factura que YA existía: la segunda entrega del mismo cobro, o el
+    // cobro que es el enlace de pago de una factura emitida hace un mes. Esa ya tuvo su momento
+    // de emisión. Volver a meterla en `sellarTrasEmision` le reescribía el estado y volvía a
+    // encolar su alta para la AEAT (y, antes de la guarda de `applyVeriFactu`, le pisaba la huella).
+    //
+    // Esta guarda mira la fila QUE TIENE EN LA MANO, que puede ser vieja: la entrega que leyó la
+    // fila antes de que la otra la sellara entra igual. A ésa la para la guarda de dentro del
+    // cerrojo, en `applyVeriFactu`. Hacen falta las dos.
+    if (inv.vfEstado !== SELLADO_HECHO) {
+      const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
+      if (resultadoSellado.estado === SELLADO_HECHO) {
+        const releida = await prisma.invoice.findUnique({
+          where: { id: inv.id },
+          select: { vfHash: true, qrData: true },
+        });
+        vfHash = releida?.vfHash ?? vfHash;
+        if (releida?.qrData && !String(releida.qrData).startsWith('PENDING')) qrData = releida.qrData;
+      }
     }
 
     const needsPdf =
@@ -367,7 +381,30 @@ export async function ensureInvoiceForCharge(
     email: ch.merchant.email,
   });
 
-  const inv = await prisma.$transaction(async (tx) => {
+  const emision = await prisma.$transaction(async (tx) => {
+    // ── SCRUM-1304 · UN COBRO, UNA FACTURA: EL CERROJO PRIMERO Y LA PREGUNTA DENTRO ──────────
+    //
+    // Las dos búsquedas de arriba no bastan. El evento `invoiced` se escribe AL FINAL, después del
+    // sello y del PDF, así que si el PDF cae no se escribe; y por `Invoice.chargeId` no buscaba
+    // nadie. Con eso un cobro emitía DOS facturas de tres maneras: dos entregas a la vez (el
+    // retorno de `/recibo` y el aviso de la pasarela coinciden por diseño), una entrega repetida
+    // tras un PDF caído, y el cobro que es el enlace de pago de una factura ya emitida
+    // (`invoiceWhatsApp.service` escribe su `chargeId`).
+    //
+    // Va DENTRO de la transacción y detrás del cerrojo, no junto a las otras dos: fuera, dos
+    // entregas preguntan a la vez, las dos oyen «no hay» y las dos crean. Mismo cerrojo y misma
+    // forma que el recuento de tramos (SCRUM-814): `tomarCerrojoDeSerie` es el de la reserva de
+    // número, re-entrante, que `allocateInvoiceNumber` vuelve a tomar más abajo.
+    //
+    // Y ANTES de pedir número: la entrega que encuentra la factura sale sin haber reservado nada,
+    // así que no deja hueco en la serie.
+    await tomarCerrojoDeSerie(tx, ch.merchantId);
+    const yaEmitida = await tx.invoice.findFirst({
+      where: { chargeId: ch.id, merchantId: ch.merchantId }, // regla 2: scoped
+      orderBy: { id: 'asc' }, // si ya hubiera duplicadas de antes, siempre la misma: la primera
+    });
+    if (yaEmitida) return { factura: yaEmitida, nueva: false };
+
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {
       camino: 'C6',
       // C6 tiene CUATRO bocas (2 webhooks de PSP + 2 API internas, SCRUM-200 §2.2) y
@@ -375,7 +412,7 @@ export async function ensureInvoiceForCharge(
       // actor desde los 4 llamadores. Se registra lo que se sabe y NO se inventa el resto.
       actor: actorC6 ?? { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
     });
-    return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
+    const factura = await crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
       // SCRUM-445 · EL VINCULO, ESCRITO. `Invoice.chargeId` existia y no lo escribia nadie, asi
       // que la pantalla de Cobros no tenia con que saber que este Charge y esta Invoice son EL
       // MISMO dinero: los pintaba dos veces. Toda la desduplicacion colgaba de que existiera un
@@ -401,7 +438,15 @@ export async function ensureInvoiceForCharge(
       pdfUrl: 'PENDING_PDF',
       qrData: `INV:${number}|AMOUNT:${ch.amount.toString()}|CUR:${ch.currency}|REF:${ch.reference ?? ''}`,
     });
+    return { factura, nueva: true };
   });
 
-  return ensurePdfAndEvent(inv, ch);
+  // SCRUM-1304 · la entrega que NO emite lo DICE. Devuelve la factura que ya había y sigue como las
+  // otras dos búsquedas, así que desde fuera no se distingue de una emisión: sin esta línea el
+  // duplicado evitado no lo vería nadie. Es un aviso de consola, no un registro consultable.
+  if (!emision.nueva) {
+    console.error(`[invoicing] SCRUM-1304 el cobro ${ch.id} ya tenía la factura ${emision.factura.number}: no se emite otra`);
+  }
+
+  return ensurePdfAndEvent(emision.factura, ch);
 }

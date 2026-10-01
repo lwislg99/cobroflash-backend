@@ -159,9 +159,20 @@ test('SCRUM-397 · el camino manual manda la fecha, y el webhook la lee', () => 
     '🔴 el camino manual ha vuelto a mandar la hora de proceso en vez de la fecha declarada.');
 
   const psp = fs.readFileSync(path.join(RAIZ, 'src/modules/billing/app/routes/psp.routes.ts'), 'utf8');
-  assert.match(psp, /resolverInstanteDeCobro\(body\.ts\)/,
-    '🔴 el webhook ha vuelto a ignorar `body.ts`. Ese campo lleva en el esquema desde siempre; el '
-    + 'defecto era que nadie lo leía.');
+  // SCRUM-1301 · EL PATRÓN CAMBIÓ Y NO SE AFLOJÓ. Era `/resolverInstanteDeCobro\(body\.ts\)/`: el `\)`
+  // exigía EXACTAMENTE UN argumento, y eso nunca fue lo que este guard vino a proteger (su intención,
+  // escrita abajo, es que el webhook lea `body.ts`). SCRUM-1301 le pasa además la zona del merchant
+  // del cobro, sin la cual el webhook tiraba de madrugada la fecha que `confirm-bizum` acababa de
+  // aceptar. Ahora se exigen LAS DOS cosas: `body.ts` como primer argumento Y `zonaDelMerchant(`
+  // dentro de la misma llamada. Más estricto que antes, no menos.
+  const llamada = psp.match(/resolverInstanteDeCobro\(([^;]*)\);/);
+  assert.ok(llamada, '🔴 el webhook ya no llama a `resolverInstanteDeCobro`: nadie resuelve la fecha del cobro.');
+  assert.match(llamada[1], /^\s*body\.ts\s*(,|$)/,
+    '🔴 el webhook ha vuelto a ignorar `body.ts` como fecha del cobro (primer argumento). Ese campo '
+    + 'lleva en el esquema desde siempre; el defecto de SCRUM-397 era que nadie lo leía.');
+  assert.match(llamada[1], /zonaDelMerchant\(/,
+    '🔴 el webhook resuelve la fecha SIN la zona del merchant (SCRUM-1301): de madrugada en Madrid '
+    + 'rechaza con `fecha_futura` la fecha de «hoy» que `confirm-bizum` acaba de aceptar con ella.');
 });
 
 // ── 5 · REGLA 38 · esto marca un cobro, NO emite ──────────────────────────────────────────

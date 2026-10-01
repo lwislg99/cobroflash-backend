@@ -1,0 +1,7 @@
+POBLACION: 1 mutaciones declaradas en tests/scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs
+BASE sin mutar: exit=0 · tests=2 · caidos=0
+#0 VIVA · tests/_banco-camino-real.mjs · numstat «1	1	tests/_banco-camino-real.mjs» · exit=1 · caidos=1/2 · restaurado=true
+     cae: SCRUM-1332 · 🔴 el banco de la app real pide con node:http, no con el fetch global
+RESULTADO: 1 vivas de 1
+git status: «»
+EXIT=0

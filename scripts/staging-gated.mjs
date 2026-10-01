@@ -1,4 +1,4 @@
-// scripts/test-staging-gated.mjs — SCRUM-157
+// scripts/staging-gated.mjs — SCRUM-157
 //
 // EL COMANDO QUE LA GENTE EJECUTA para la tanda gateada COMPLETA. Antes, la tanda de
 // rutina era `QA_DB_TEST=1 npm run test:staging`, tecleada a mano: exportaba SOLO
@@ -134,7 +134,7 @@ const hijos = HIJOS_SPEC.map((s) => ({
 // HIJOS_SPEC (la fuente única, SCRUM-199), no contra `hijos`, para no crear una CUARTA lista.
 if (!pesadoEsElUltimo()) {
   console.error(
-    '\n❌ test-staging-gated: el hijo PESADO no es el último de HIJOS_SPEC (_evidencia-tanda.mjs).\n' +
+    '\n❌ staging-gated: el hijo PESADO no es el último de HIJOS_SPEC (_evidencia-tanda.mjs).\n' +
     '   Debe ir SIEMPRE al final: en Windows deja el DLL de Prisma bloqueado y el hijo\n' +
     '   siguiente crashea con exit=3221225794 (0xC0000142). Reordena HIJOS_SPEC y vuelve.\n',
   );
@@ -567,7 +567,7 @@ async function tanda() {
     const sumaHijo = c.pass + c.fail + c.cancelled + c.skipped + c.todo;
     if (sumaHijo !== c.tests) {
       console.error(
-        `\n❌ test-staging-gated: los números del hijo «${h.nombre}» no cuadran ` +
+        `\n❌ staging-gated: los números del hijo «${h.nombre}» no cuadran ` +
         `(tests=${c.tests}, pass+fail+cancelled+skip+todo=${sumaHijo}). No me fío — abortado.\n`,
       );
       salir(3);
@@ -635,7 +635,7 @@ async function tanda() {
       // y qué se rompe al fusionarlos está donde se declara `margenes`, arriba.
       margenes,
       autotest: Boolean(override),
-      runner: 'scripts/test-staging-gated.mjs',
+      runner: 'scripts/staging-gated.mjs',
     };
     mkdirSync(path.dirname(RUTA_RECIBO), { recursive: true });
     writeFileSync(RUTA_RECIBO, JSON.stringify(recibo, null, 2) + '\n');
