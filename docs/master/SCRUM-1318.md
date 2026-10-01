@@ -85,3 +85,45 @@ Tanda dirigida, 33 ficheros (los que leen los ficheros tocados, más `scrum237`,
 **1 fail** · 2 skip. El fallo es «SCRUM-55: la lista de pendientes mengua», el otro plazo vencido,
 que este ticket no cubre. Los 2 saltos son los gateados por `QA_DB_TEST`. La tanda completa la
 corre CI.
+
+## SCRUM-1318b · La segunda mitad: el plazo de `scrum55` pasa al 1-nov-2026, por decisión del fundador
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:57:14Z
+
+A9: comprobación → `tests/scrum55-admin-fail-closed.test.mjs`
+
+Esto **sustituye** al primer punto de «Lo que NO arregla», más arriba: el otro plazo vencido ya no
+espera al fundador.
+
+**Qué cambia.** `src/core/http/adminRouteDeclarations.ts`: `REVISAR_ANTES_DE` pasa de `'2026-09-30'`
+a `'2026-11-01'`, con el motivo escrito encima de la constante. Nada más.
+
+**Quién lo autoriza, y por dónde me llega.** El fichero dice de sí mismo que «mover esta fecha
+requiere OK del fundador y queda en el diff». La decisión es del fundador, del 1-oct-2026, y consta
+en **SCRUM-1317, comentario 17689**. Su frase literal: «1-Sí mueve la fecha al 1 de noviembre».
+**Yo no se la oí:** la transcribe el orquestador del equipo de Javier, que le hizo la pregunta, y así
+lo dice el propio comentario. El encargo me llegó primero pegado en el chat, sin que la decisión
+constara en ningún sitio que yo pudiera leer (SCRUM-1317 tenía 0 comentarios). Paré, pedí que se
+escribiera, y solo entonces hice el cambio.
+
+**Qué NO cambia** (lo que el comentario 17689 no autoriza):
+- `PENDIENTE_CLASIFICAR` sigue con sus 13 entradas, y `PENDIENTE_MAX` sigue en 13. Esto aplaza, no
+  ensancha.
+- `tests/scrum55-admin-fail-closed.test.mjs` no se toca: la fecha vive en el fichero de
+  declaraciones y el test la lee.
+- No se clasifica ninguna de las 13 rutas «de paso». Eso es SCRUM-1317.
+
+**El 1-nov es plazo, no estimación.** Si llega sin que SCRUM-1317 esté hecho, el test vuelve a caer
+y vuelve a bloquear la cola. Es lo que se quiere.
+
+**Medido.**
+- Antes del cambio: `scrum55`, 5 tests · 4 pass · **1 fail** («la lista de pendientes mengua
+  (ratchet + caducidad)»).
+- Después, con `npm run build` (exit 0) y `dist/` con la fecha nueva: `scrum55`, 5 tests · 5 pass ·
+  0 fail.
+- `npm run guards:entrada`: 112 tests · 112 pass · 0 fail · 0 skipped.
+- Las citas por línea de este fichero que hay en `tests/`, `docs/` y `src/` (líneas 84 a 271) caen
+  todas ANTES de la constante (línea 355 en adelante): el comentario añadido no mueve ninguna.
+
+**Suelo.** La tanda completa no se ha corrido en local (una sesión no la lanza). Que queden 0 fallos
+lo dirá el CI de #2039.
