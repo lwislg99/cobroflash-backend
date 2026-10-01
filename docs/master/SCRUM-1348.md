@@ -194,4 +194,7 @@ C2 compara CONTENIDO: si fusionar la rama sobre `main` no cambia nada (o casi), 
 cierre con trabajo fuera. Con esto, las dos marcas «seguras» del piloto (1131 y 1196) eran falsas las dos.
 La criba sola no acusa a nadie: todo lo que marca pasa por lectura.
 
+El principio, que vale para más que esta auditoría, queda en A10: que un commit no esté en `main` no dice que su
+contenido no esté. El 1-oct pasó tres veces que un trabajo había entrado bajo otro número.
+
 A9: aviso → cicatriz S0 «Diseñé una señal por palabras sin medirla: marcaba 28 de 41 cierres. Una señal que salta en dos de cada tres casos no es una señal.» — no se pudo comprobar: el instrumento aún no existe; su test llevará el techo de marcados
