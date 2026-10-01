@@ -1,0 +1,21 @@
+POBLACION mutaciones=15 · sujeto sha256 23cba1d3fe8c0c12
+BASE sin mutar: exit 0 · pasan 8 · caen 0
+MUERTA M01 umbral de rojos 5 → 4 · exit 1 · pasan 5 · caen 3: ② ③ ④
+MUERTA M02 umbral de rojos 5 → 6 · exit 1 · pasan 6 · caen 2: ② ③
+MUERTA M03 umbral de runs sin ejecutar 22 → 23 · exit 1 · pasan 7 · caen 1: ②
+MUERTA M04 umbral de horas de cron 10 → 11 · exit 1 · pasan 7 · caen 1: ②
+MUERTA M05 el rojo del obligatorio también avisa · exit 1 · pasan 7 · caen 1: ⑦
+MUERTA M06 el silencio deja de avisar · exit 1 · pasan 7 · caen 1: ⑤
+MUERTA M07 un job ausente del run no cuenta como hueco · exit 1 · pasan 5 · caen 3: ② ⑤ ⑦
+MUERTA M08 un solo rojo de cron ya avisa · exit 1 · pasan 6 · caen 2: ④ ⑥
+MUERTA M09 los commits de main sin run no cuentan · exit 1 · pasan 7 · caen 1: ⑤
+MUERTA M10 sin lista de obligatorios sigue adelante · exit 1 · pasan 6 · caen 2: ⑦ ⑧
+MUERTA M11 un run sin ejecutar rompe la racha roja · exit 1 · pasan 5 · caen 3: ③ ④ ⑧
+MUERTA M12 el veredicto mira también el futuro · exit 1 · pasan 3 · caen 5: ③ ④ ⑥ ⑦ ⑧
+MUERTA M13 nunca hay nada sin declarar · exit 1 · pasan 7 · caen 1: ⑦
+MUERTA M14 el cron que no llega no es silencio · exit 1 · pasan 6 · caen 2: ⑥ ⑦
+MUERTA M15 la tasa de fallo se mide con las rachas largas dentro · exit 1 · pasan 7 · caen 1: ②
+sujeto restaurado: IDÉNTICO (sha256 23cba1d3fe8c0c12)
+BASE después: exit 0 · pasan 8 · caen 0
+mutaciones muertas 15 de 15 · vivas 0
+EXIT=0
