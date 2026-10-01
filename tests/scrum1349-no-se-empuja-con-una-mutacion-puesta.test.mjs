@@ -41,7 +41,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/guards-entrada.mjs',
     de: 'if (puestas.length) {',
     a: 'if (puestas.length < 0) {',
-    porque: 'sin la puerta, el comando corre los guards y sale 0 con una mutación puesta en el árbol',
+    // Sin la puerta, el comando corre los guards y sale 0 con una mutación puesta en el árbol.
+    cae: 'con una mutación puesta, `guards:entrada` sale',
   },
 ];
 
