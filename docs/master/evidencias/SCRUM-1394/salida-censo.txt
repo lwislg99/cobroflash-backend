@@ -1,8 +1,8 @@
-CENSO mutaciones-fuera-del-catálogo · raíz C:\Users\Javier Pereira\cobroflash-jv6 @ b3b40554ed5441c285c780590a98d1665636e778
-CATÁLOGO: 121 guards · 413 declaraciones · nació el 2026-09-04T22:52:36+01:00
-POBLACIÓN: 953 registros · 304 AFIRMAN mutaciones (línea con «mutar» + cuenta o resultado) · tests seguidos 1193
+CENSO mutaciones-fuera-del-catálogo · raíz C:\Users\Javier Pereira\cobroflash-jv6 @ d0169aa0cfc18d34470943739928a9097c66896c
+CATÁLOGO: 122 guards · 418 declaraciones · nació el 2026-09-04T22:52:36+01:00
+POBLACIÓN: 954 registros · 306 AFIRMAN mutaciones (línea con «mutar» + cuenta o resultado) · tests seguidos 1194
 
-A · test propio EN el catálogo: 82  (registro nacido DESPUÉS del catálogo: 78)
+A · test propio EN el catálogo: 83  (registro nacido DESPUÉS del catálogo: 79)
 
 B · tiene test propio y NINGUNO está en el catálogo: 186  (registro nacido DESPUÉS del catálogo: 121)
    SCRUM-285 · 2026-08-05 · propios=[scrum285-bloque-cobro.test.mjs, scrum285-censo-cobro-factura.test.mjs, scrum285-cobro-a-factura.test.mjs, scrum285-pantalla-cobros.test.mjs]
@@ -397,8 +397,8 @@ C1 · sin test propio; nombra alguno que SÍ está: 13  (registro nacido DESPUÉ
       «**Control positivo: tres mutaciones, las tres caen** (el test entero, sin tocarlo):»  (+1 líneas)
    SCRUM-1337 · 2026-10-01 · propios=[] · nombrados=1
       «| meta-guard | **salió con 2 (ciego), y no es de este cambio**: 365 mediciones, 364 mutaciones vivas, 0 mudas, 0 ciegas y **un fichero muerto**, `scrum834-puerta-avisador-rojo.test.mjs`: al mutar, el fichero no reportó ni un nombr»
-   SCRUM-1345 · 2026-10-01 · propios=[] · nombrados=3
-      «| mutación | fichero | cae |»  (+1 líneas)
+   SCRUM-1345 · 2026-10-01 · propios=[] · nombrados=11
+      «| mutación | fichero | cae |»  (+4 líneas)
    SCRUM-1359 · 2026-10-01 · propios=[] · nombrados=6
       «| `tests/scrum836-ancla-de-mutacion-viva.test.mjs` | — | 17 tests, 16 pasan. El que cae nombra solo 3 anclas de `scrum608` a ficheros de `dist/`, y este árbol no tiene `dist`: no es de este cambio |»
    SCRUM-1364 · 2026-10-01 · propios=[] · nombrados=1
@@ -406,7 +406,7 @@ C1 · sin test propio; nombra alguno que SÍ está: 13  (registro nacido DESPUÉ
    SCRUM-1386 · 2026-10-01 · propios=[] · nombrados=6
       «**Mutaciones: 6 declaradas en el test (`MUTACIONES_QUE_ME_TUMBAN`), 6 de 6 caen**»  (+3 líneas)
 
-C2 · sin test propio; nombra tests y NINGUNO está: 16  (registro nacido DESPUÉS del catálogo: 13)
+C2 · sin test propio; nombra tests y NINGUNO está: 17  (registro nacido DESPUÉS del catálogo: 14)
    SCRUM-307 · 2026-08-10 · propios=[] · nombrados=1
       «- **Puppeteer `setOfflineMode(true)` como único corte:** ni siquiera la petición directa falla. Es el ROJO de `control-red.mjs`: con esa mutación sale `✗ NO SUPE MIRAR` y exit 2. Con el proxy sale exit 0.»
    SCRUM-456 · 2026-08-10 · propios=[] · nombrados=1
@@ -439,6 +439,8 @@ C2 · sin test propio; nombra tests y NINGUNO está: 16  (registro nacido DESPU�
       «| Mutación: quitar la comprobación | cae el test nuevo |»
    SCRUM-1377 · 2026-10-01 · propios=[] · nombrados=3
       «| Mutante | Qué deshace | Caen |»
+   SCRUM-1394 · 2026-10-01 · propios=[] · nombrados=1
+      «# SCRUM-1394 · El censo de bancos de mutación fuera del catálogo, subido y re-anclado: hoy son 18 de 31, y «fuera» dice menos de lo que parece»  (+3 líneas)
 
 C3 · sin test propio y sin nombrar ninguno: 7  (registro nacido DESPUÉS del catálogo: 5)
    SCRUM-516 · 2026-08-19 · propios=[] · nombrados=0

@@ -1,4 +1,4 @@
-BANCOS de mutación en git · 29 carpetas · catálogo 121 guards
+BANCOS de mutación en git · 31 carpetas · catálogo 122 guards
 
 docs/evidencias/scrum1317
    LISTA PROPIA, fuera del catálogo · entradas propias≈13
@@ -16,6 +16,10 @@ docs/master/evidencias/SCRUM-1324
    LISTA PROPIA, fuera del catálogo · entradas propias≈0
    tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
 
+docs/master/evidencias/SCRUM-1339
+   TOMA LAS DEL TEST (catálogo) · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
 docs/master/evidencias/SCRUM-1345
    LISTA PROPIA, fuera del catálogo · entradas propias≈6
    tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 1)
@@ -23,6 +27,10 @@ docs/master/evidencias/SCRUM-1345
 docs/master/evidencias/SCRUM-1386
    TOMA LAS DEL TEST (catálogo) · entradas propias≈0
    tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 1)
+
+docs/master/evidencias/SCRUM-1391
+   SÓLO SALIDAS (sin guion en git) · entradas propias≈0
+   tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 0 (en el catálogo: 0)
 
 docs/master/evidencias/SCRUM-912
    LISTA PROPIA, fuera del catálogo · entradas propias≈0
@@ -116,7 +124,7 @@ docs/master/evidencias/scrum982
    LISTA PROPIA, fuera del catálogo · entradas propias≈13
    tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
 
-RECUENTO sobre 29 carpetas: lista propia fuera del catálogo 18 · toma las del test 7 · mixto 0 · sólo salidas 4
+RECUENTO sobre 31 carpetas: lista propia fuera del catálogo 18 · toma las del test 8 · mixto 0 · sólo salidas 5
 
 FUERA DEL CATÁLOGO, por nombre:
    docs/evidencias/scrum1317
@@ -141,4 +149,4 @@ FUERA DEL CATÁLOGO, por nombre:
 CONTROL POSITIVO · docs/master/evidencias/scrum1326 (su guion trae 20 mutaciones escritas dentro y su test no declara ninguna): sale FUERA
 CONTROL NEGATIVO · docs/master/evidencias/scrum1331 (su guion toma las mutaciones del test, que las declara): no sale fuera
 
-29 bancos mirados · 18 fuera del catálogo   (población: 91 ficheros de evidencias con «mut» en el nombre, en 29 carpetas · catálogo: 121 guards, 413 declaraciones · de los 18: 7 con lista reconocida y ningún test suyo en el catálogo, 9 sin entradas reconocidas, 5 con algún test suyo en el catálogo)
+31 bancos mirados · 18 fuera del catálogo   (población: 95 ficheros de evidencias con «mut» en el nombre, en 31 carpetas · catálogo: 122 guards, 418 declaraciones · de los 18: 7 con lista reconocida y ningún test suyo en el catálogo, 9 sin entradas reconocidas, 5 con algún test suyo en el catálogo)
