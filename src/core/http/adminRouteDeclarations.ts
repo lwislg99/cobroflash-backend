@@ -66,6 +66,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // propia (`getInicioOperario`), no un recorte de aquélla: tres recuentos de listas que ya
   // puede abrir y los últimos presupuestos, que ya ve en Presupuestos. Ni un importe agregado.
   { method: 'GET', path: '/admin/metrics/inicio', why: 'SCRUM-1317: su portada — los tres recuentos de los globos del menú y los últimos presupuestos, que ya ve en Presupuestos; sin ningún importe agregado del negocio' },
+  // SCRUM-1341 · DECISIÓN DE PERMISOS, no un trámite, y es del fundador («1-B», 1-oct-2026): el
+  // Técnico ve la actividad de sus compañeros SIN importes. `/admin/metrics/team` reparte lo
+  // COBRADO del mes por persona y se queda en admin, con su 403 exigido. Ésta es una función
+  // propia (`getActividadEquipo`), no un recorte de aquélla: no consulta facturas, y no devuelve
+  // el `id` de nadie, ni la estrella de «Mejor del mes», ni nada de «Sin asignar» (c.17825).
+  { method: 'GET', path: '/admin/metrics/actividad-equipo', why: 'SCRUM-1341: la actividad de sus compañeros este mes — presupuestos enviados y aceptados por persona; sin ningún importe, sin el id de nadie y sin consultar facturas' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
   { method: 'GET',  path: '/admin/customers', why: 'Ver la cartera de clientes es trabajo de campo' },
