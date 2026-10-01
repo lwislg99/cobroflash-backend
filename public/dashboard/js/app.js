@@ -137,32 +137,29 @@ async function initApp() {
   };
 
   // Ocultar elementos de navegación para técnicos
-  if (window.appUserRole !== 'admin') {
-    // SCRUM-24/136: la gestión y supervisión del equipo es solo del admin (S1). Ocultar el
-    // nav es UX; la seguridad real la da el requireRole('admin') de /admin/team (backend, S3).
-    ['nav-plans', 'nav-team', 'nav-export'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    // A1.3: Configuración es solo del admin (datos fiscales, IBAN, umbrales)
-    const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
-    if (settingsNav) settingsNav.style.display = 'none';
-    // SCRUM-107: Gastos se oculta porque la PANTALLA no es para el técnico — lista
-    // completa, totales del mes y margen son economía del negocio, y sus 403 dejarían
-    // la vista medio rota (loadSummary traga el error en un catch vacío). Crear un gasto
-    // SÍ es suyo: POST /admin/expenses sigue abierto y el endpoint queda listo para el
-    // alta rápida, que no se construye hasta que exista Expense.teamMemberId.
-    const expensesNav = document.querySelector('.nav-item[data-view="expenses"]');
-    if (expensesNav) expensesNav.style.display = 'none';
-    // SCRUM-1317: Proveedores e Informes salen de la barra del operario ANTES de cerrarle sus
-    // rutas (`/admin/providers`, `/admin/metrics/funnel|services|whatsapp`). Informes ya le
-    // fallaba desde SCRUM-55 (`/admin/reports` exige admin en el montaje) con la entrada a la
-    // vista: una entrada de menú que lleva a un 403 es peor que no tenerla (SCRUM-1312).
-    ['providers', 'reports'].forEach((vista) => {
-      const el = document.querySelector(`.nav-item[data-view="${vista}"]`);
-      if (el) el.style.display = 'none';
-    });
-  }
+  //
+  // 🔴 SCRUM-1338 · AQUÍ HABÍA UNA LISTA DE NOMBRES, Y SE RETIRA. Eran siete, puestos a mano
+  // (`nav-plans`, `nav-team`, `nav-export` —que ya no existía—, Configuración, Gastos, Proveedores
+  // e Informes), cada uno por el ticket que se dio cuenta, y nadie comprobaba que estuvieran
+  // todos: Partes por valorar, Cobros, Libro de registro y Facturas recibidas seguían a la vista
+  // del operario, y las cuatro abren pidiendo una ruta que el servidor le niega.
+  //
+  // Ahora QUIÉN ve una entrada lo dice la propia entrada, en `index.html`: `data-rol="admin"`.
+  // Y que esa declaración sea verdad no se le confía a quien la escribe: la comprueba
+  // `tests/scrum1338-la-barra-del-operario-contra-los-gates.test.mjs`, montando cada vista con
+  // rol de operario contra los gates REALES del servidor. Una entrada sin declarar que pida una
+  // ruta de admin sale en rojo; y una declarada que no pida ninguna, también (sería quitarle algo suyo).
+  //
+  // Los motivos de cada una, que no se pierden con la lista:
+  //   · Equipo y Planes (SCRUM-24/136) y Configuración (A1.3): gestión de la cuenta, sólo admin.
+  //   · Gastos (SCRUM-107): la PANTALLA no es del técnico —totales del mes y margen—, aunque
+  //     crear un gasto sí lo es (`POST /admin/expenses` sigue abierto para el alta rápida).
+  //   · Proveedores e Informes (SCRUM-1317): sus rutas se le cerraron, y una entrada de menú que
+  //     lleva a un 403 es peor que no tenerla (SCRUM-1312).
+  //
+  // Ocultar el nav es UX; la seguridad real la da el `requireRole('admin')` del servidor.
+  // La función vive al final del fichero, a nivel superior, para que el banco de vistas la EJECUTE.
+  aplicarRolALaBarra(document, window.appUserRole);
 
   // Badge de solicitudes pendientes
   function updateRequestsBadge() {
@@ -280,6 +277,9 @@ async function initApp() {
 
   // 7. Render view
   function renderView(view, options = {}) {
+    // SCRUM-1338 · la vista tecleada (`#cobros`) o abierta desde otra pantalla pasa por la MISMA
+    // declaración que la barra: si su entrada es sólo del admin, quien no lo es cae en Inicio.
+    if (vistaVedadaPorRol(document, window.appUserRole, view)) return renderView('home', options);
     const state = window.appState;
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
@@ -1031,3 +1031,39 @@ document.addEventListener('visibilitychange', () => {
 document.addEventListener('DOMContentLoaded', () => {
   initApp(); startVersionWatch(); precargarSiTocaAhora();
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1338 · LA BARRA SEGÚN EL ROL. Dos funciones a nivel superior y sin estado: reciben el
+// documento y el rol, para que el banco de vistas las ejecute sobre el `index.html` de verdad.
+//
+// La declaración es UNA y vive en la entrada: `data-rol="admin"` en su `<button class="nav-item">`.
+// Aquí no hay ningún nombre de vista. Quien no es admin —el técnico, o un rol que aún no existe—
+// cae del lado restringido (misma dirección que `seesAllJobs` en `roleCapabilities.ts`).
+// ════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Quita de la barra lo que no es de este rol, y con ello el rótulo de la sección que se quede
+ * sin ninguna entrada debajo: un «CUENTA» encima de nada es un título de una lista vacía.
+ */
+function aplicarRolALaBarra(documento, rol) {
+  if (rol === 'admin') return;
+  const nav = documento.querySelector('.sidebar-nav');
+  if (!nav) return;
+  let rotulo = null;
+  let visibles = 0;
+  const cerrarSeccion = () => { if (rotulo && visibles === 0) rotulo.style.display = 'none'; };
+  Array.from(nav.children).forEach((el) => {
+    if (el.classList.contains('nav-section-label')) { cerrarSeccion(); rotulo = el; visibles = 0; return; }
+    if (!el.classList.contains('nav-item')) return;
+    if (el.dataset.rol === 'admin') el.style.display = 'none';
+    else visibles += 1;
+  });
+  cerrarSeccion();
+}
+
+/** ¿Esta vista tiene entrada en la barra y esa entrada es sólo del admin? Sin entrada, no veta. */
+function vistaVedadaPorRol(documento, rol, view) {
+  if (rol === 'admin') return false;
+  const entrada = documento.querySelector('.nav-item[data-view="' + view + '"]');
+  return !!entrada && entrada.dataset.rol === 'admin';
+}

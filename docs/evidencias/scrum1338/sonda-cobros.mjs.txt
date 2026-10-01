@@ -1,0 +1,49 @@
+// Sonda J4f · ¿pinta Cobros su aviso cuando GET /admin/cobros contesta 403?
+// Mismo banco que censo-barra (tests/_banco-vistas.mjs). Se busca el TEXTO, no la clase.
+//   node sonda-cobros.mjs <raiz del repo>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const imp = (rel) => import(pathToFileURL(path.join(RAIZ, rel)).href);
+const { cargarDashboard, pintarVista, todos, datosDeMuestra } = await imp('tests/_banco-vistas.mjs');
+
+async function montar(rol, niegaCobros) {
+  const peticiones = [];
+  const fetch = async (url, opts) => {
+    const method = (opts && opts.method) || 'GET';
+    const u = String(url).replace(/^https?:\/\/[^/]+/, '').replace(/\?.*$/, '');
+    const niega = niegaCobros && u === '/admin/cobros';
+    peticiones.push(`${niega ? 403 : 200} ${method} ${u}`);
+    if (niega) {
+      return { ok: false, status: 403, headers: { get: () => 'application/json' }, json: async () => ({ error: 'forbidden', required_role: 'admin' }), text: async () => '{"error":"forbidden","required_role":"admin"}', blob: async () => ({}) };
+    }
+    return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => datosDeMuestra(String(url)), text: async () => '', blob: async () => ({}) };
+  };
+  const b = cargarDashboard(RAIZ, { rol, red: { navigator: { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } }, fetch } });
+  b.ctx.appMerchantId = 1;
+  b.ctx.renderAppView = () => {};
+  const v = await pintarVista(b, 'renderCobrosView');
+  for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r));
+  const copy = b.ctx.COBROS_COPY || {};
+  const ns = v.contenedor ? todos(v.contenedor) : [];
+  const hojas = ns.filter((n) => !(n.children && n.children.length));
+  const conAviso = hojas.filter((n) => String(n.textContent || '').includes(copy.errorCarga));
+  const conVacio = hojas.filter((n) => String(n.textContent || '').includes(copy.vacioSinCobros));
+  return {
+    rol, niegaCobros, peticiones, error: v.error ? String(v.error.message) : null,
+    nodos: ns.length,
+    literalBuscado: copy.errorCarga,
+    avisoPintado: conAviso.map((n) => `${n.tagName}[class="${String(n.className || '')}"]: ${String(n.textContent).trim()}`),
+    vacioPintado: conVacio.map((n) => `${n.tagName}[class="${String(n.className || '')}"]: ${String(n.textContent).trim()}`),
+  };
+}
+
+const casos = [
+  await montar('tecnico', true),   // el caso del ticket
+  await montar('admin', false),    // control: sin fallo NO hay aviso
+  await montar('admin', true),     // el admin con un fallo
+];
+console.log(`POBLACION=${casos.length} montajes de renderCobrosView`);
+for (const c of casos) console.log(JSON.stringify(c, null, 1));
+console.log('EXIT=0');
