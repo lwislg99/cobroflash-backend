@@ -472,8 +472,10 @@ test('SCRUM-1386 ⑧ un fichero MUERTO sin una letra es un ciego; con su traza, 
   });
 });
 
+// Sin `{ timeout }` propio, a propósito: un plazo de `node:test` que vence sale ROJO, que es la forma
+// que este ticket viene a quitar. El comando ya se corta solo a los 90 s, y entonces sale ciego.
 test('SCRUM-1386 ⑨ el comando de verdad: si su runner no arranca, o se muere a mitad, sale CIEGO (2) y lo dice',
-  { timeout: 120000 }, () => {
+  () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1386-'));
     try {
       // (a) El runner NO ARRANCA: la puerta lanza un binario que no existe (`spawn` ENOENT).
