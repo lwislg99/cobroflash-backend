@@ -167,8 +167,8 @@ quedó rechazado: perdona sin nombrar.
    el corte y no tiene techo.** Más un repositorio temporal para la prueba de punta a punta (~2,8 s).
 2. **En un clon somero no puede medir, y CAE diciendo CIEGO.** El job obligatorio («build + tests») trae
    `fetch-depth: 0` y la referencia de main (`ci.yml` 147 y 158), igual que navegador, meta-guard y vigía.
-   El «trinquete de zona» (`ci.yml` 870) clona desnudo: ahí este guard caerá, en las dos zonas por igual,
-   como ya cae `scrum723`. **Es un rojo que existirá en un job que nadie lee.** No toco el workflow.
+   El «trinquete de zona» (`ci.yml` 870) clona desnudo: ahí este guard cae diciendo CIEGO. **Es un rojo que
+   existe en un job que nadie lee**, y ni siquiera se ve en su log. Qué está medido y qué no, en Ⓝ. No toco el workflow.
 3. **PR en vuelo al entrar esto.** Un PR de interfaz sin declarar cuyo CI corrió antes de que este guard
    esté en `main`, y que mergee después, dejará `main` en rojo nombrando ese merge. No puede entrar en la
    lista. Se arregla declarando en su registro.
@@ -312,3 +312,31 @@ log del obligatorio los 27 casos de este fichero por nombre.
 **El GO para entrar.** El orquestador me transmite la decisión del fundador, presentada con los dos PR
 delante: «1-Entra!», con el aviso al equipo de Luis saliendo a la vez. Yo no se lo oí a Javier: me llega
 por el orquestador (`cobroflash-backend-5b`), y así queda dicho.
+
+## Ⓝ El clon somero: lo que predije, lo que se puede ver y lo que medí
+
+Predije, antes de leer el job, que en el «trinquete de zona» este guard caería diciendo CIEGO en las dos
+zonas sin cambiar de veredicto. **Tal como la formulé, esa predicción no se puede comprobar en ese job**: su
+log sólo nombra los tests que CAMBIAN de veredicto entre zonas, no los que caen igual en las dos. Un guard
+que cae en las dos y uno que pasa en las dos dejan el mismo log. Lo que hay, por partes:
+
+- **Que el job clona con profundidad 1: MEDIDO**, en el log de este mismo PR (run 36830461527, job
+  110265644001): `fetch-depth: 1` y `git … fetch … --depth=1 origin +1d1e3f5a…:refs/remotes/pull/2067/merge`.
+- **Que en un clon así el guard cae diciendo CIEGO: MEDIDO**, pero aquí y no en el runner: `git clone --depth 1`
+  de esta rama en `8eec5e96…` (`is-shallow-repository` = true, 1 commit), y el fichero del guard corrido
+  dentro: 27 tests, 23 pasan, 4 caen. Dos son míos —el SUELO y el que decide— con «CIEGO: no puedo medir qué
+  PR tocaron la interfaz — clon somero…». Los otros dos son de `scrum649`, que ya decía «CIEGO: el clon es
+  SUPERFICIAL». La prueba de punta a punta, que fabrica su propio clon somero, sí pasó en el runner.
+- **Que cae «en las dos zonas por igual»: NO OBSERVADO.** Es lo que se deduce de las dos líneas de arriba y de
+  que el job no lo denuncia; el job salió en verde y en su log mi fichero aparece 0 veces.
+- **«Como ya cae `scrum723`»: lo escribí sin medirlo, y lo retiro.** Leí su aserto, no lo vi caer. Al intentarlo
+  en el clon somero no arrancó (le falta `typescript`, que el clon no trae): eso es un instrumento que no
+  corrió, no un resultado. El precedente MEDIDO es `scrum649`.
+- **Y en el clon somero la línea de la cuenta NO sale**: el guard cae antes de imprimirla. «Sale siempre»
+  vale cuando puede medir; cuando no puede, lo que sale es el CIEGO.
+
+Visto de paso en ese log y no es de este PR: las dos zonas corrieron 9.529 y 9.527 pruebas —no el mismo
+número— y `scrum286-bloques-orden` fue a repesca y «confirma 0 de 2». Reportado al orquestador, sin tocar.
+
+Séptimo error mío: **di por medida una frase que sólo había leído** («como ya cae `scrum723`») y formulé una
+predicción sin mirar antes si el instrumento donde iba a comprobarla podía enseñármela.
