@@ -64,6 +64,7 @@ function correrCli(argumentos, clavesExtra = {}) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum932-'));
   const env = { ...process.env, ...clavesExtra };
   delete env.FORCE_COLOR;
+  delete env.NODE_OPTIONS;
   delete env.NODE_TEST_CONTEXT;
   // Las de base, solo las que pida el caso.
   for (const clave of ['DATABASE_URL_TESTS', 'DATABASE_URL_STAGING', 'DATABASE_URL', 'YAQU_ENV_FILE']) {
