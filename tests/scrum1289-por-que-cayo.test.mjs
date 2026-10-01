@@ -39,14 +39,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'tests/scrum976-guards-entrada-con-techo.test.mjs',
-    de: '  delete env.NODE_OPTIONS;\n',
-    a: '\n',
+    // El ancla lleva la línea siguiente: `delete env.NODE_OPTIONS;` a secas casa también con el
+    // segundo hijo del fichero, y un ancla que casa dos veces no dice cuál muta (SCRUM-1321).
+    de: '  delete env.NODE_OPTIONS;\n  const t0 = Date.now();',
+    a: '  const t0 = Date.now();',
     cae: 'el hijo de scrum976 no hereda los reporters',
   },
   {
     fichero: '.github/workflows/ci.yml',
-    de: '          set -o pipefail\n          npm test 2>&1 | tee',
-    a: '          npm test 2>&1 | tee',
+    de: 'run: npm test > >(tee "$RUNNER_TEMP/tanda-spec.log") 2>&1',
+    a: 'run: npm test 2>&1 | tee "$RUNNER_TEMP/tanda-spec.log"',
     cae: 'el paso de la tanda deja el log spec en fichero SIN perder su código de salida',
   },
   {
