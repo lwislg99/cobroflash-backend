@@ -199,6 +199,11 @@ escrito por qué.
 
 **Medido contra:** `origin/main` = `84925995b8621619f5c27542e90988cdbe4ee1e1` · 2026-09-29T09:51:17Z
 
+**Skill UI:** no cargada · el único fichero de interfaz es `public/dashboard/js/signaturePad.js` y el
+cambio es el FORMATO de un número en una celda que ya existía (`cantidadDeLinea` → `fmtNumeroEs`): ni
+componente, ni token, ni texto nuevo. Declarado el 1-oct-2026 por S1 al aterrizar el PR (SCRUM-1340); S1 no
+puede dar fe de que S2 la abriera el 29-sep, así que no se escribe «cargada».
+
 Decisión: **SCRUM-743 comentario 17508** (orquestador): se unifica al formato español en los dos
 sitios aunque cambie lo que se VE en albaranes ya firmados, porque el sello no se mueve.
 
@@ -222,6 +227,11 @@ sitios aunque cambie lo que se VE en albaranes ya firmados, porque el sello no s
 ## Mitad de pantalla (S2, `s2-29a`) — el canal presencial y el eje de Informes
 
 **Medido contra:** `origin/main` = `84925995b8621619f5c27542e90988cdbe4ee1e1` · 2026-09-29T09:53:32Z
+
+**Skill UI:** no cargada · el único fichero de interfaz es `public/dashboard/js/signaturePad.js` y el
+cambio es el FORMATO de un número en una celda que ya existía (`cantidadDeLinea` → `fmtNumeroEs`): ni
+componente, ni token, ni texto nuevo. Declarado el 1-oct-2026 por S1 al aterrizar el PR (SCRUM-1340); S1 no
+puede dar fe de que S2 la abriera el 29-sep, así que no se escribe «cargada».
 
 - `signaturePad.js` (antes `:230`, la tabla que el cliente ve en el móvil del profesional antes de firmar)
   escribía la cantidad en crudo. Ahora pasa por `cantidadDeLinea`, con la MISMA semántica que

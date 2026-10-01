@@ -47,15 +47,15 @@ function celdasDelPad(lineas) {
   recorrer(banco.ctx.document.body);
   assert.equal(tablas.length, 1, `SUELO: el pad no pintó la tabla de líneas (${tablas.length})`);
   const html = String(tablas[0].innerHTML);
-  const filas = [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]));
+  const filas = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m) => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1]));
   return filas.map((celdas) => celdas[1]);
 }
 
 /** Lo mismo desde el servidor: la segunda celda de cada fila de `renderLineasAlbaran`. */
 function celdasDelServidor(lineas) {
   const html = String(renderLineasAlbaran(lineas, 'SIN_VALORAR'));
-  const filas = [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].slice(1); // la primera es la cabecera
-  return filas.map((m) => [...m[1].matchAll(/<td>([\s\S]*?)<\/td>/g)].map((c) => c[1])[1]);
+  const filas = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].slice(1); // la primera es la cabecera
+  return filas.map((m) => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1])[1]);
 }
 
 test('SCRUM-743 · 🔴 el pad presencial escribe la cantidad EXACTAMENTE como el servidor, número a número', () => {

@@ -36,7 +36,7 @@ test('🔴 SCRUM-743 · el SELLO no se mueve: cambiar cómo se pinta la cantidad
 });
 
 test('🔴 SCRUM-743 · la pantalla de firma escribe la cantidad en español, agrupada', () => {
-  const celdasCantidad = [...renderLineasAlbaran(ALBARAN.lineas, 'SIN_VALORAR').matchAll(/<tr><td>[^<]*<\/td><td>([^<]*)<\/td>/g)]
+  const celdasCantidad = [...renderLineasAlbaran(ALBARAN.lineas, 'SIN_VALORAR').matchAll(/<tr[^>]*><td[^>]*>[^<]*<\/td><td[^>]*>([^<]*)<\/td>/g)]
     .map((m) => m[1]);
   assert.deepEqual(celdasCantidad, ['2,5', '1.500'], '🔴 la pantalla de firma no escribe la cantidad como el PDF');
 });
