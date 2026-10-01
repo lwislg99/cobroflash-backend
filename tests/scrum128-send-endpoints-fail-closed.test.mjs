@@ -137,10 +137,13 @@ test('SCRUM-128: los 9 endpoints con contrato de sendOutcome.ts están TODOS dec
   // se borra la ruta) lo note por otra vía. Mismo espíritu que RUTAS_MIN de scrum55,
   // aplicado a una lista mucho más pequeña y por eso exacto en vez de suelo con margen.
   assert.equal(
-    SEND_ENDPOINTS_DECLARED.length, 9,
-    `\n\n🔴 SEND_ENDPOINTS_DECLARED tiene ${SEND_ENDPOINTS_DECLARED.length} entradas, se esperaban 9 ` +
-      `(los 9 endpoints con contrato de cuerpo de SCRUM-126 — el 9º, el fire-and-forget de ` +
-      `quotes.routes.ts:568, no tiene contrato que declarar). Si añadiste un endpoint de envío ` +
+    // 9 → 10 (SCRUM-1318): entra `POST /admin/team/:id/resend`, que sale de la lista de aparcadas
+    // con el contrato que le dio SCRUM-131. Mismo commit que la mueve.
+    SEND_ENDPOINTS_DECLARED.length, 10,
+    `\n\n🔴 SEND_ENDPOINTS_DECLARED tiene ${SEND_ENDPOINTS_DECLARED.length} entradas, se esperaban 10 ` +
+      `(8 de los 9 endpoints con contrato de cuerpo de SCRUM-126 — el 9º, el fire-and-forget de ` +
+      `quotes.routes.ts:568, no tiene contrato que declarar —, más /admin/soporte de SCRUM-406 y ` +
+      `/admin/team/:id/resend de SCRUM-1318). Si añadiste un endpoint de envío ` +
       `NUEVO, este número sube a propósito: actualízalo aquí mismo, en el mismo commit.\n`,
   );
 });
