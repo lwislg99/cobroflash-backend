@@ -24,6 +24,19 @@ const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MA
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
 function renderQuotesView(container, template, documentoSuelto) {
+  // SCRUM-1274 · EL PRESUPUESTO QUE NACE DESDE UN TRABAJO. «Hacer presupuesto» en la ficha del Trabajo
+  // abría esta pantalla sin estado, y al aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para
+  // la misma obra. El servidor ya sabe engancharlo (`job_id`, SCRUM-195): aquí solo se le manda.
+  // Viene con su cliente, que se deja elegido; si el profesional lo cambia, el `job_id` NO viaja (el
+  // servidor comprueba el negocio, no el cliente, y un presupuesto de otro cliente no es de esta obra).
+  // ⚠️ Viaja DENTRO de `template` (`template.deTrabajo`) y no como cuarto argumento: la firma está
+  // fijada por SCRUM-140 y por la garantía de la regla 29 de SCRUM-600b. Sin `lines`, `template` no
+  // carga nada de plantilla (ver «if (template && Array.isArray(template.lines)…»), así que no hay
+  // aviso de «Plantilla cargada» ni líneas fantasma.
+  const origen = template && template.deTrabajo;
+  const trabajoDeOrigen = (origen && Number.isInteger(Number(origen.jobId)) && Number(origen.jobId) > 0)
+    ? { jobId: Number(origen.jobId), customerId: origen.customerId != null ? String(origen.customerId) : null }
+    : null;
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
 
@@ -5043,7 +5056,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
       // Restaurar borrador autoguardado (si no venimos de una plantilla)
       let draftRestored = false;
-      if (!templatePending) {
+      // SCRUM-1274 · desde un Trabajo NO se restaura el borrador guardado: traería otro cliente y
+      // otras líneas a un presupuesto que es de ESTA obra.
+      if (!templatePending && !trabajoDeOrigen) {
         const restored = loadDraft();
         if (restored) {
           draftRestored = true;
@@ -5056,6 +5071,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         }
       }
       if (!draftRestored) setAlert(null, "");
+      // SCRUM-1274 · el cliente del Trabajo, elegido como si se hubiera pulsado su botón.
+      if (trabajoDeOrigen && trabajoDeOrigen.customerId
+        && customersList.some(function (c) { return String(c.id) === trabajoDeOrigen.customerId; })) {
+        elegirCliente(trabajoDeOrigen.customerId);
+      }
       // SCRUM-586 (CONT-13): la lista de clientes acaba de llegar y el borrador ya ha puesto su
       // cliente, así que ÉSTE es el primer momento en que se puede saber si hay algo pactado. Sin
       // esta llamada, un borrador restaurado no propondría NADA hasta que el profesional volviera
@@ -5698,6 +5718,9 @@ payloadLines.push(lineaParaPayload({
         // SCRUM-1180 · las cláusulas del negocio que ESTE presupuesto no lleva, por su `id`. A MANO,
         // por el censo de SCRUM-286. Sin casillas no viaja (no se sabe cuáles tiene el negocio).
         clausulasExcluidas: clausulasExcluidasElegidas(),
+        // SCRUM-1274 · el Trabajo de origen, A MANO (censo de SCRUM-286). Solo si el cliente elegido
+        // sigue siendo el del Trabajo: con otro cliente, el presupuesto no es de esta obra.
+        job_id: trabajoDeOrigen && String(customerId) === trabajoDeOrigen.customerId ? trabajoDeOrigen.jobId : undefined,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,
