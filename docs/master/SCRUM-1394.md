@@ -1,6 +1,6 @@
-# SCRUM-1394 · El censo de bancos de mutación fuera del catálogo, subido y re-anclado: hoy son 18 de 29, y «fuera» dice menos de lo que parece
+# SCRUM-1394 · El censo de bancos de mutación fuera del catálogo, subido y re-anclado: hoy son 18 de 31, y «fuera» dice menos de lo que parece
 
-**Medido contra:** `origin/main` = `b3b40554ed5441c285c780590a98d1665636e778` · 2026-10-01T18:30:20Z
+**Medido contra:** `origin/main` = `7c85e366f6c7b298f166f0b2fa0d24f132924825` · 2026-10-01T18:46:27Z
 (J6 del equipo de Javier, sesión `jv-j6k`, relevo de J6j; encargo del orquestador `cobroflash-backend-5b`. El censo
 lo construyó J6i y lo inventarió J6j; aquí se sube, se le cambian los controles y se vuelve a correr.)
 
@@ -15,19 +15,21 @@ catálogo debe ser el destino obligatorio de las mutaciones (SCRUM-1387 ②): le
 `mut` en el nombre», y está «fuera» si su guion no nombra el catálogo. Puede perder bancos que se llamen de otra
 forma y contar carpetas que no lo son. Ningún número de aquí se lee sin esa frase al lado.
 
-| | J6i (catálogo de 118 guards · 385 declaraciones) | hoy, sobre `b3b40554` (121 · 413) |
+| | J6i (catálogo de 118 guards · 385 declaraciones) | hoy, sobre `7c85e366` (122 · 418) |
 |---|---|---|
-| carpetas con banco de mutación | 24 | **29** |
+| carpetas con banco de mutación | 24 | **31** |
 | lista propia, fuera del catálogo | 17 | **18** |
-| toman las del test (catálogo) | 4 | 7 |
-| sólo salidas, sin guion en git | 3 | 4 |
+| toman las del test (catálogo) | 4 | 8 |
+| sólo salidas, sin guion en git | 3 | 5 |
 
 La línea que sale siempre, también con cero (`salida-bancos.txt`):
 
-    29 bancos mirados · 18 fuera del catálogo   (población: 91 ficheros de evidencias con «mut» en el nombre, en 29 carpetas · catálogo: 121 guards, 413 declaraciones · de los 18: 7 con lista reconocida y ningún test suyo en el catálogo, 9 sin entradas reconocidas, 5 con algún test suyo en el catálogo)
+    31 bancos mirados · 18 fuera del catálogo   (población: 95 ficheros de evidencias con «mut» en el nombre, en 31 carpetas · catálogo: 122 guards, 418 declaraciones · de los 18: 7 con lista reconocida y ningún test suyo en el catálogo, 9 sin entradas reconocidas, 5 con algún test suyo en el catálogo)
 
-Las cinco carpetas nuevas desde la medición de J6i: `scrum1338` (fuera), `scrum1341` (sólo salidas), y `SCRUM-1386`,
-`scrum1336` y `scrum1343`, que toman las del test. De las 24 de entonces, ninguna cambió de clase.
+Las siete carpetas nuevas desde la medición de J6i: `scrum1338` (fuera); `scrum1341` y `SCRUM-1391` (sólo salidas); y
+`SCRUM-1339`, `SCRUM-1386`, `scrum1336` y `scrum1343`, que toman las del test. De las 24 de entonces, ninguna cambió
+de clase. La primera pasada de esta sesión, sobre `b3b40554`, dio 29 carpetas con los mismos 18 fuera: en un cuarto
+de hora entraron dos carpetas más.
 
 ## ① Los dos controles de `censo.mjs` no valían, y sólo se sabía de uno
 
@@ -52,8 +54,10 @@ Ahora los dos se juzgan, y si uno no da lo que se sabe de él el censo sale 2 co
 Vistos fallar: en una copia con la clase esperada del positivo cambiada, `censo.mjs` sale 2; en una copia de
 `bancos.mjs` que espera fuera al banco de dentro, sale 2. Sin cambiar, los dos salen 0.
 
-Con el censo re-anclado, sobre 953 registros de los que 304 AFIRMAN mutaciones (una línea que habla de mutar y trae
-una cuenta o un resultado): A 82 · B 186 · C1 13 · C2 16 · C3 7. La lista entera está en `salida-censo.txt`.
+Con el censo re-anclado, sobre 954 registros de los que 306 AFIRMAN mutaciones (una línea que habla de mutar y trae
+una cuenta o un resultado): A 83 · B 186 · C1 13 · C2 17 · C3 7. La lista entera está en `salida-censo.txt`.
+Uno de los 17 de C2 es este mismo registro, que habla de mutaciones con cifras y no tiene test: el censo se cuenta a
+sí mismo, y no se le ha hecho una excepción.
 
 ## ② Qué dice «fuera» y qué no
 
@@ -75,7 +79,7 @@ Así que la frase del ticket, «17 bancos cuyas mutaciones el CI no vigila», ho
 los otros 11 dice «su guion no nombra el catálogo».
 
 Los controles de `bancos.mjs`, también juzgados: `scrum1326` (20 mutaciones escritas en su guion, su test no
-declara) tiene que salir fuera, y `scrum1331` (toma las del test) no puede salir. Si el censo nombrara a los 29
+declara) tiene que salir fuera, y `scrum1331` (toma las del test) no puede salir. Si el censo nombrara a los 31
 no estaría midiendo; nombra 18.
 
 ## Lo que se subió
@@ -94,13 +98,13 @@ no estaría midiendo; nombra 18.
 
 - **Todo es texto.** Vale lo dicho arriba, y además: un banco cuyos ficheros no lleven `mut` en el nombre no existe
   para este censo. Cuántos hay así no está medido.
-- **Lo contrario también pasa.** La carpeta `SCRUM-1391` (PR #2117, sin mergear a esta hora) trae
-  `salida-mudez-mutada-copia.txt`: cuando entre, contará como un banco «sólo salidas» sin serlo. Leído del patrón,
-  no ejecutado.
+- **Lo contrario también pasa, y ya ha pasado.** La carpeta `SCRUM-1391` (PR #2117, que entró en `main` mientras se
+  escribía esto) trae `salida-mudez-mutada-copia.txt` y cuenta como un banco «sólo salidas» sin serlo: no muta nada,
+  mide plazos. Es una de las 31. Antes de que entrara estaba leído del patrón; ahora está en `salida-bancos.txt`.
 - **Los números caducan con cada merge.** En cuarenta minutos del 1-oct el catálogo pasó de 118 a 120 guards, y
-  ahora tiene 121. Quien cite una cifra de aquí la vuelve a correr.
+  ahora tiene 122. Quien cite una cifra de aquí la vuelve a correr.
 - **Si una mutación de un banco de fuera sigue cayendo hoy**, no se sabe: aquí no se ha ejecutado ningún banco.
-- De los 123 tests que contienen el texto `MUTACIONES_QUE_ME_TUMBAN`, 121 están en el catálogo. Los otros dos
+- De los 124 tests que contienen el texto `MUTACIONES_QUE_ME_TUMBAN`, 122 están en el catálogo. Los otros dos
   (`scrum606-albaran-desde-presupuesto`, `scrum708-el-fichero-que-no-corre`) sólo lo mencionan, no lo exportan.
 
 ## Mis errores
