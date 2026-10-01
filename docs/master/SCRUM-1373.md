@@ -1,7 +1,9 @@
 # SCRUM-1373 · El drenado de la cola dice qué firmas ha confirmado el servidor (mitad S2 del «detalle abierto que no se entera»)
 
-**Medido contra:** `origin/main` = `31688d6b` (punta al crear la rama) · 2026-10-01T13:26:21Z
-A9: sin fallo que generalice — el encargo llegó con dos premisas que no se sostenían («no lo bloquea el permiso», «cabe en un carril») y las dos se midieron antes de construir; no hubo tropiezo propio en esta tanda.
+**Medido contra:** `origin/main` = `31688d6b550ea0bbc1b99b381fdf857b821bdec9` · 2026-10-01T13:26:21Z
+A9: comprobación → `tests/scrum267-ancla-de-medicion.test.mjs`
+
+(La A9: escribí el ancla de arriba con el SHA corto y mi tanda dirigida, elegida por nombre de fichero, no llevaba el guard que lo mira. Lo cazó porque esta vez lo arrastró el patrón por casualidad. Desde ahora mi tanda dirigida lleva `scrum267` junto a la skill de UI y la A9.)
 
 Carril S2 (`public/dashboard/js/colaDeFirmas.js`) · rama `scrum-1373-drenado-avisa-firmas-confirmadas` · sesión `s2-1octb`.
 
