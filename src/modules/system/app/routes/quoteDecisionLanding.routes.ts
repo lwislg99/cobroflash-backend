@@ -6,12 +6,16 @@ import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
+import { ERROR_PRESUPUESTO_YA_DECIDIDO } from '../../../quotes/domain/decisionDelCliente'; // SCRUM-1276
 // SCRUM-806 · la MISMA puerta que usa la ruta de admin para armar el PDF: si el documento del
 // cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1001
 import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-888 punto 1
+// SCRUM-1279 · las cláusulas y los textos del documento, con el MISMO filtro y el MISMO rótulo que el PDF.
+import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
+import { TITULO_OBSERVACIONES } from '../../../invoicing/infra/pdf/pdf.service';
 // SCRUM-888g · los tramos que ve el cliente al firmar salen de la MISMA vista que usan el panel y
 // la emisión (`stageAmountsFromLines`): la página no calcula un solo importe por su cuenta.
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
@@ -105,6 +109,17 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
     /* V8/N1: política de señal junto a las condiciones (solo cuando hay señal 50/50) */
     .senal-policy { text-align: center; font-size: 12px; color: #6b756f; margin: 0 0 12px; }
     .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
+    /* SCRUM-1279: los textos del documento, antes de la firma. El texto es del profesional: se
+       respetan sus saltos de línea y una palabra larga no desborda en 360 px. Las cláusulas van en
+       una caja con tope de alto: abiertas y legibles, pero sin alejar la firma una pantalla entera. */
+    .doc-texto { font-size: 13px; color: #3f4a45; white-space: pre-line; overflow-wrap: anywhere; margin: 0 0 12px; }
+    .doc-bloque { margin: 12px 0; }
+    .doc-titulo { font-size: 12px; font-weight: 700; color: #0f1c17; text-transform: uppercase;
+      letter-spacing: .04em; margin-bottom: 4px; overflow-wrap: anywhere; }
+    .doc-clausulas { max-height: 45vh; overflow-y: auto; margin: 12px 0 16px; padding: 12px;
+      border: 1px solid #e7e9e5; border-radius: 12px; background: #f6f7f5; }
+    .doc-clausula + .doc-clausula { margin-top: 10px; }
+    .doc-clausulas .doc-texto { margin: 0; font-size: 12px; }
     /* Firma */
     .sig-label { font-size: 13px; font-weight: 600; color: #333c37; margin-bottom: 6px; display: block; }
     .sig-sub { font-size: 12px; color: #6b756f; margin-bottom: 8px; }
@@ -238,7 +253,9 @@ async function loadQuote(token: string) {
       // veces, y sin este campo las dos saldrían en la zona del contenedor. Mismo `select`
       // explícito, mismo riesgo: lo que no esté aquí no sale.
       // SCRUM-1001 · `id`, `email` y `flags`: `getEmissionMode` reconoce al demo y el interruptor por negocio con ellos.
-      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true } },
+      // SCRUM-1279 · `clausulasPresupuesto`: las cláusulas de cierre que el PDF imprime; sin ella la
+      // página no puede enseñar lo que el cliente firma.
+      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true, clausulasPresupuesto: true } },
       customer: { select: { name: true } },
     },
   });
@@ -432,6 +449,29 @@ function renderQuoteDetail(
   });
   const validityHtml = textoValidez ? `<div class="validity-badge">⏳ ${textoValidez}</div>` : '';
 
+  // ── SCRUM-1279 · LA FIRMA VE LO QUE FIRMA (misma familia que SCRUM-468) ──────────────────────
+  // El PDF archivado lleva el texto de cabecera, las «Observaciones» y las cláusulas de cierre, y
+  // esta página no pintaba ninguno: el papel afirmaba que el cliente aceptó lo que nunca vio. Los
+  // tres salen del MISMO constructor que alimenta al PDF (`paramsDePresupuestoParaPdf`) y las
+  // cláusulas del MISMO filtro (`clausulasParaDocumento`, que quita las excluidas y las que no
+  // tienen título y texto), así que la página y el papel no pueden decir cosas distintas.
+  // Rótulos: ninguno nuevo. La cabecera va SIN rótulo y el pie con «Observaciones», como en el PDF
+  // (decisión del fundador, 2-sep-2026); cada cláusula lleva el título que escribió el profesional.
+  const delDocumento = paramsDePresupuestoParaPdf({ quote, merchant: quote.merchant, customer: quote.customer ?? {} });
+  const conTexto = (t: unknown) => (t != null && String(t).trim() !== '' ? String(t) : null);
+  const cabecera = conTexto(delDocumento.docHeaderText);
+  const observaciones = conTexto(delDocumento.docFooterText);
+  const clausulas = clausulasParaDocumento(delDocumento.clausulas, delDocumento.clausulasExcluidas);
+  const cabeceraHtml = cabecera ? `<div class="doc-texto" data-doc="cabecera">${esc(cabecera)}</div>` : '';
+  const observacionesHtml = observaciones
+    ? `<div class="doc-bloque" data-doc="observaciones"><div class="doc-titulo">${esc(TITULO_OBSERVACIONES)}</div><div class="doc-texto">${esc(observaciones)}</div></div>`
+    : '';
+  const clausulasHtml = clausulas.length > 0
+    ? `<div class="doc-clausulas" data-doc="clausulas">${clausulas.map((c) => `
+        <div class="doc-clausula" data-clausula="${esc(c.id)}"><div class="doc-titulo">${esc(c.titulo)}</div><div class="doc-texto">${esc(c.texto)}</div></div>`).join('')}
+      </div>`
+    : '';
+
   return `
     <div class="merchant-hero">
       ${hero}
@@ -440,14 +480,14 @@ function renderQuoteDetail(
     </div>
     <h1>Hola, ${customerName} 👋</h1>
     <div class="quote-meta">Presupuesto #${esc(String(quote.quoteNumber ?? quote.id))}</div>
-    ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}
+    ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}${cabeceraHtml /* SCRUM-1279: pegado, para que sin texto la página sea byte a byte la de antes (888d) */}
     ${linesHtml}
     ${vatHtml}
     <div class="amount-hero">
       <div class="amount-hero-label">${tiersInfo ? 'Elige tu opción abajo 👇' : (hasVat ? 'Total · IVA incluido' : 'Total del presupuesto')}</div>
       <div class="amount-hero-value">${tiersInfo ? `Desde ${money(tiersInfo.min)}` : money(Number(quote.total))}</div>
     </div>
-    ${condiciones ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(condiciones)}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}
+    ${condiciones ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(condiciones)}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}${observacionesHtml}${clausulasHtml}
   `;
 }
 
@@ -749,6 +789,10 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +
             '</div>';
+        } else if (res.status === 409 && data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}') {
+          // SCRUM-1276 · ya decidido en otra pestaña: se recarga y la página enseña el estado con
+          // su texto N3 firmado. Ningún texto nuevo aquí.
+          location.reload();
         } else {
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           // SCRUM-264 · el MENSAJE HUMANO gana al código, igual que en api.js:35-37 (SCRUM-151).
@@ -786,6 +830,12 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
       brandColor = quote.merchant?.brandColor ?? null;
       // A16.2: caducado → la landing principal ya cuenta la verdad
       if (isQuoteExpired(quote as any)) {
+        return res.redirect(`/pay/quote/${token}`);
+      }
+      // SCRUM-1276 · ya DECIDIDO: el formulario de rechazo se pintaba con cualquier estado, y un
+      // cliente que ya había aceptado podía rechazar desde aquí. La landing principal ya cuenta la
+      // verdad con su texto N3 firmado («Ya aceptaste…» / «Rechazaste…»): se le manda allí.
+      if (quote.status === 'accepted' || quote.status === 'rejected') {
         return res.redirect(`/pay/quote/${token}`);
       }
       if (quote.status === 'draft' || quote.status === 'sent') {
@@ -863,6 +913,11 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
         body: JSON.stringify({ decision: 'reject', reason: reasonLabel || undefined, comment: commentText || undefined }) }
     );
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
+    // SCRUM-1276 · ya decidido (p. ej. aceptado en otra pestaña): se enseña el estado con su texto
+    // N3 firmado en vez de un código crudo. Sin copy nuevo.
+    if (apiResponse.status === 409 && json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO) {
+      return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
+    }
     if (!apiResponse.ok) {
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
         // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo

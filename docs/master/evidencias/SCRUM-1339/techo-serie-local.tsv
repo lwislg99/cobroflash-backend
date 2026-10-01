@@ -1,0 +1,13 @@
+serie	hora_utc	mascara	nucleos	carga_cpu_antes_pct	procesos_node_antes	resultado
+0	sin anotar	(ninguna)	12	sin medir	21	(122 tests, 10.0 s de 90)
+1	sin anotar	800	1	sin medir	35 al acabar	(122 tests, 77.0 s de 90)
+1	sin anotar	C00	2	sin medir	38 al acabar	se pasaron del TECHO: más de 90000 ms
+1	sin anotar	F00	4	sin medir	42 al acabar	(122 tests, 33.0 s de 90)
+2	07:03:29	FFF	12	59	11	(122 tests, 11.4 s de 90)
+2	07:03:45	F00	4	21	11	(122 tests, 14.9 s de 90)
+2	07:04:31	C00	2	28	11	(122 tests, 44.2 s de 90)
+2	07:05:49	800	1	100	35	(122 tests, 61.9 s de 90)
+2	07:06:15	FFF	12	22	10	(122 tests, 23.9 s de 90)
+2	07:06:41	F00	4	43	14	(122 tests, 24.6 s de 90)
+2	07:08:26	C00	2	100	24	se pasaron del TECHO: más de 90000 ms
+2	07:10:19	800	1	100	46	se pasaron del TECHO: más de 90000 ms

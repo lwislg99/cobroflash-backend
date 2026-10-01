@@ -612,8 +612,12 @@ async function fetchInvoices(options = {}) {
           const tdCheck = document.createElement('td');
           tdCheck.className = 'col-hide-mobile'; // bulk = flujo de escritorio
           tdCheck.style.cssText = 'width:36px;padding:12px 8px';
+          // 🔴 SCRUM-1275 · `cb` se declara FUERA del `if`: el clic de la fila (abajo) lo compara.
+          // Con `const` dentro del bloque, ese manejador lanzaba `ReferenceError` y NINGUNA fila
+          // abría su factura (9-sep → 29-sep-2026). Sin casilla se queda en `null`.
+          let cb = null;
           if (window.sePuedeMarcarPagadaEnLote(inv)) {
-            const cb = document.createElement('input');
+            cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'inv-row-check';
             cb.dataset.id = inv.id;

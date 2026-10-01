@@ -1,0 +1,53 @@
+// Sonda de SCRUM-1337b (para SCRUM-1341): ¿qué devuelve el panel «Rendimiento del equipo» y
+// dónde hay dinero? Ejecuta la función PURA real `ensamblarMetricasEquipo` con datos fabricados.
+// Sólo lee; no toca ninguna base. Uso: node sonda-ensamblado.mjs <raiz del arbol, con dist/>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.argv[2];
+const { ensamblarMetricasEquipo } = await import(pathToFileURL(path.join(raiz, 'dist/modules/metrics/domain/metricasEquipo.js')).href);
+
+const ahora = new Date();
+const base = {
+  members: [
+    { id: 11, name: 'Ana', role: 'tecnico', status: 'active' },
+    { id: 12, name: 'Blas', role: 'tecnico', status: 'active' },
+  ],
+  // Ana manda MÁS presupuestos y le aceptan MÁS; Blas cobra MÁS. Así se ve por qué campo va la estrella.
+  monthQuotes: [
+    { teamMemberId: 11, status: 'accepted', createdAt: ahora },
+    { teamMemberId: 11, status: 'accepted', createdAt: ahora },
+    { teamMemberId: 11, status: 'sent', createdAt: ahora },
+    { teamMemberId: 12, status: 'sent', createdAt: ahora },
+  ],
+  nombrePropietario: 'Dueña',
+  weekAgo: new Date(ahora.getTime() - 7 * 86_400_000),
+};
+const correr = (cobraAna, cobraBlas) => ensamblarMetricasEquipo({
+  ...base,
+  paidInvoices: [
+    { total: cobraAna, quoteId: 1, quote: { teamMemberId: 11 } },
+    { total: cobraBlas, quoteId: 2, quote: { teamMemberId: 12 } },
+    { total: 50, quoteId: null, quote: null },
+  ],
+});
+
+const a = correr(100, 900);
+console.log('CLAVES de la respuesta: ' + Object.keys(a).join(', '));
+console.log('CLAVES de cada fila:    ' + Object.keys(a.members[0]).join(', '));
+const fila = (r, n) => r.members.find((m) => m.name === n);
+const pinta = (r) => r.members.map((m) => m.name + ' sent=' + m.sent + ' accepted=' + m.accepted + ' collected=' + m.collected + ' isBest=' + m.isBest).join(' | ');
+console.log('Ana cobra 100, Blas 900 → ' + pinta(a));
+console.log('  orden de las filas: ' + a.members.map((m) => m.name).join(', ') + ' · sinAsignar=' + JSON.stringify(a.sinAsignar) + ' · totalCollected=' + a.totalCollected);
+const b = correr(900, 100);
+console.log('Ana cobra 900, Blas 100 → ' + pinta(b));
+console.log('  orden de las filas: ' + b.members.map((m) => m.name).join(', '));
+
+// Lo que se afirma, comprobado:
+const dineroEnFila = fila(a, 'Blas').collected === 900;
+const estrellaSigueAlDinero = fila(a, 'Blas').isBest && !fila(a, 'Ana').isBest && fila(b, 'Ana').isBest && !fila(b, 'Blas').isBest;
+const ordenCambiaConElDinero = a.members.map((m) => m.name).join() !== b.members.map((m) => m.name).join();
+console.log('¿hay importe por compañero (`collected`)?                 ' + dineroEnFila);
+console.log('¿`isBest` cambia de persona SOLO con cambiar lo cobrado?  ' + estrellaSigueAlDinero);
+console.log('¿el ORDEN de las filas cambia con lo cobrado?             ' + ordenCambiaConElDinero);
+console.log('EXIT=0');

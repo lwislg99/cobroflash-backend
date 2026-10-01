@@ -1,0 +1,3 @@
+POBLACION: 622 runs distintos con artefacto tanda-tap
+JOBS «build + tests»: 630 · runs sin ese job: 0 · fallidos: 0
+EXIT=0

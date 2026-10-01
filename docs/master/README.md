@@ -104,8 +104,8 @@ Si estas escribiendo una entrada NUEVA, nada de esto te afecta: pon el ancla.
 
 ## El campo `Skill UI` (SCRUM-811)
 
-Si tu entrada nombra una ruta `public/*.{js,css,html}` **y la fechas después del 22-sep-2026**,
-lleva además:
+Si tu PR **cambia** algún `public/**.{js,css,html}` —lo mide el guard sobre el cambio, no sobre lo
+que escribas ni sobre cómo lo fechas (SCRUM-1340)—, la entrada que escribes lleva además:
 
 ```markdown
 **Skill UI:** cargada
@@ -122,8 +122,8 @@ Lo exige `tests/scrum811c-skill-ui-declarada.test.mjs`. `yaqu-premium-ui` se dec
 sola la cumplía en 2 de 222 registros que tocaban `public/` (0,9 %) — contra el 99,7 % de la
 ancla `**Medido contra:**`, que SÍ tiene guard. El campo no puede comprobar que abriste la skill
 de verdad (eso no toca el árbol): mide la declaración, igual que la ancla mide que escribiste un
-sha, no que lo copiaste bien. **Entradas fechadas el 22-sep-2026 o antes quedan exentas** — el
-campo no existía cuando se escribieron.
+sha, no que lo copiaste bien. **Lo mergeado el 22-sep-2026 o antes queda exento** — el campo no
+existía. Nombrar la ruta en prosa con fecha posterior al corte también obliga, como hasta ahora.
 
 ### 🔴 UN TICKET REPARTIDO ENTRE CARRILES COMPARTE UN SOLO FICHERO (SCRUM-1093)
 

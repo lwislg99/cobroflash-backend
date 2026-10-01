@@ -5,6 +5,8 @@
 Carril S2 (pantalla) · rama `scrum-1274-adicional-con-trabajo` · sesión `s2-29a`. Sale del barrido de
 las piezas de S2 del censo SCRUM-1185.
 
+**Skill UI:** cargada (`yaqu-premium-ui`, 1-oct-2026, sesión `s2-01a`, al repasar el diff de `public/`: es solo lógica — qué estado lleva la navegación y qué campo viaja en el POST —, sin marcado, sin estilos, sin tokens y sin texto nuevo que vea el usuario).
+
 ## El defecto
 
 «Hacer presupuesto», el hueco de un Trabajo sin presupuesto aceptado (`jobDetailView.js`), abría
@@ -57,3 +59,5 @@ presupuesto» → el editor REAL → «Generar» → el POST real → `CreateQuo
   son de staging (`QA_DB_TEST`, `LIBRO_PG_URL`, `A55`, `BOT_SUITE`).
 
 **NO VERIFICADO en yaqu.app:** la cuenta QA no tiene trabajos.
+
+**1-oct-2026 (`s2-01a`), sin cambio de conducta:** fusionado `origin/main` = `fe5b3c18` (conflicto en `scripts/_sin-consumir-declarados.json`: se conservan las dos retiradas de SCRUM-1296 y la de `job_id`); el fixture del test usaba `merchantId: 1` (el merchant de la demo, lo caza `scrum409`) y pasa a `4242`; y se declara la skill de UI (SCRUM-1340).

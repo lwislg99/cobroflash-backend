@@ -13,7 +13,7 @@ import path from 'node:path';
 import { temporal, borrarTemporal } from './_temporal.mjs'; // SCRUM-864 · se borra pase lo que pase
 import {
   ejecutar, escrituraPermitida, escritura, comprobarCuentaQA, MERCHANT_QA, NOMBRE_CLIENTE_QA,
-  TITULO_TRABAJO_QA, MOVIL_CLIENTE_QA,
+  TITULO_TRABAJO_QA, MOVIL_CLIENTE_QA, MARCA_PRESUPUESTO_QA, CABECERA_QA, PIE_QA,
 } from '../scripts/qa/sembrar-qa.mjs';
 import { Rechazo } from '../scripts/qa/sesion-panel.mjs';
 
@@ -40,6 +40,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "  if (true) {\n    albaran = await escribir(",
     cae: 'SCRUM-1268 · 🔴 IDEMPOTENTE: repetir no crea nada ni vuelve a EMITIR (no quema números ALB)',
   },
+  {
+    // Sin buscar la marca: cada ejecución dejaría un presupuesto más (el servidor no deduplica).
+    fichero: 'scripts/qa/sembrar-qa.mjs',
+    de: '    if (d.customer && d.customer.id === cliente.id && textos.includes(MARCA_PRESUPUESTO_QA)) conMarca.push(d);',
+    a: '    if (false) conMarca.push(d);',
+    cae: 'SCRUM-1268 · 🔴 IDEMPOTENTE: repetir no crea nada ni vuelve a EMITIR (no quema números ALB)',
+  },
+  {
+    // Sin la relectura: un 201 con la cabecera perdida saldría como «hecho».
+    fichero: 'scripts/qa/sembrar-qa.mjs',
+    de: '    if (presupuesto.docHeaderText !== CABECERA_QA || presupuesto.docFooterText !== PIE_QA) {',
+    a: '    if (false) {',
+    cae: 'SCRUM-1268b · 🔴 presupuesto: se RELEE; si el servidor se comió la cabecera, lo dice y sale 1',
+  },
 ];
 
 const COOKIE = 'pf_session=tok1268abcdef';
@@ -49,12 +63,13 @@ function resp(status, cuerpo) {
 }
 
 /** Un panel falso, con estado. `falla` permite forzar una respuesta por «MÉTODO ruta». */
-function panel({ me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA' }, falla = {}, trabajosDeRelleno = 0, clientesExtra = [], idempotencia = null } = {}) {
+function panel({ me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA' }, falla = {}, trabajosDeRelleno = 0, clientesExtra = [], idempotencia = null, presupuestosDeRelleno = 0, pierdeCabecera = false } = {}) {
   const s = {
-    clientes: [...clientesExtra], trabajos: [], albaranes: [], partes: [], emisiones: 0,
+    clientes: [...clientesExtra], trabajos: [], albaranes: [], partes: [], emisiones: 0, presupuestos: [], presupuestosRelleno: [],
     merchant: { name: 'PruebaQA', legalName: 'Pruebas QA SL', taxId: 'B00000000', address: 'Calle Prueba 1', retencionIrpfDeclarada: false, retencionIrpfTipo: null },
   };
   for (let i = 0; i < trabajosDeRelleno; i++) s.trabajos.push({ id: 9000 + i, tituloPropio: 'otro', customer: { id: 1 } });
+  for (let i = 0; i < presupuestosDeRelleno; i++) s.presupuestosRelleno.push({ id: 7000 + i, number: i, status: 'draft', customerId: -1, relleno: true, docHeaderText: null, docFooterText: null });
   let id = 100;
   const llamadas = [];
   const fetchFn = async (url, init = {}) => {
@@ -81,6 +96,25 @@ function panel({ me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'P
     if (r && m === 'POST') { const a = s.albaranes.find((x) => x.id === Number(r[1])); s.emisiones++; a.estado = 'emitido'; return resp(200, a); }
     if (clave === 'GET /admin/partes') return resp(200, { partes: s.partes });
     if (clave === 'POST /admin/partes') { const p = { id: ++id, numero: `PT-${id}`, jobId: cuerpo.jobId, estado: 'borrador' }; s.partes.push(p); return resp(201, p); }
+    // Presupuestos (SCRUM-1268b): la lista NO trae cabecera ni pie, como la de verdad; el detalle sí.
+    if (clave === 'GET /admin/quotes') {
+      const q = u.searchParams.get('search') || '';
+      const cli = (id) => s.clientes.find((c) => c.id === id) || { name: '—' };
+      return resp(200, [...s.presupuestos, ...s.presupuestosRelleno].filter((p) => cli(p.customerId).name.includes(q) || p.relleno)
+        .map((p) => ({ id: p.id, number: p.number, customerName: p.relleno ? NOMBRE_CLIENTE_QA : cli(p.customerId).name, status: p.status })));
+    }
+    r = u.pathname.match(/^\/admin\/quotes\/(\d+)$/);
+    if (r && m === 'GET') {
+      const p = [...s.presupuestos, ...s.presupuestosRelleno].find((x) => x.id === Number(r[1]));
+      if (!p) return resp(404, { error: 'not_found' });
+      return resp(200, { id: p.id, number: p.number, status: p.status, docHeaderText: p.docHeaderText, docFooterText: p.docFooterText, customer: { id: p.customerId } });
+    }
+    if (clave === 'POST /quote/create') {
+      const p = { id: ++id, number: 260000 + id, status: 'draft', customerId: cuerpo.customer_id, docHeaderText: cuerpo.docHeaderText ?? null, docFooterText: cuerpo.docFooterText ?? null, cuerpo };
+      if (pierdeCabecera) p.docHeaderText = null; // un eslabón que se come el campo: el 201 sale igual
+      s.presupuestos.push(p);
+      return resp(201, { id: p.id, number: p.number, status: p.status, total: '12.10', currency: 'EUR' });
+    }
     if (clave === 'GET /admin/merchant') return resp(200, { ...s.merchant });
     if (clave === 'PUT /admin/merchant') {
       // Como el servidor de verdad: el esquema DESCARTA en silencio lo que no conoce (el defecto del
@@ -122,7 +156,12 @@ test('SCRUM-1268 · sembrar desde cero: cliente, trabajo, albarán EMITIDO y par
   assert.equal(p.s.albaranes[0].estado, 'emitido');
   assert.equal(p.s.partes[0].estado, 'borrador');
   assert.equal(p.s.emisiones, 1);
-  for (const x of ['cliente', 'trabajo', 'albarán', 'parte']) assert.match(r.out, new RegExp(`${x}\\s+#\\d+`), `el informe da el id de ${x}`);
+  assert.equal(p.s.presupuestos.length, 1);
+  assert.equal(p.s.presupuestos[0].docHeaderText, CABECERA_QA);
+  assert.equal(p.s.presupuestos[0].docFooterText, PIE_QA);
+  assert.equal(p.s.presupuestos[0].cuerpo.merchant_id, MERCHANT_QA, 'el merchant del cuerpo es el que dijo el servidor');
+  assert.equal(p.s.presupuestos[0].customerId, p.s.clientes[0].id, 'y es del cliente QA');
+  for (const x of ['cliente', 'trabajo', 'albarán', 'parte', 'presupuesto']) assert.match(r.out, new RegExp(`${x}\\s+#\\d+`), `el informe da el id de ${x}`);
   assert.match(r.out, /EMITIDO ahora/);
   assert.ok(escrituras(p).every((l) => l.cookie === COOKIE), 'cada escritura lleva la sesión');
 });
@@ -136,8 +175,9 @@ test('SCRUM-1268 · 🔴 IDEMPOTENTE: repetir no crea nada ni vuelve a EMITIR (n
   assert.equal(p.s.trabajos.length, 1);
   assert.equal(p.s.albaranes.length, 1);
   assert.equal(p.s.partes.length, 1);
+  assert.equal(p.s.presupuestos.length, 1, 'el servidor NO deduplica presupuestos: lo hace la marca');
   assert.equal(p.s.emisiones, 1, 'un albarán ya emitido NO se vuelve a emitir');
-  for (const x of ['cliente', 'trabajo', 'parte']) assert.match(r.out, new RegExp(`${x}\\s+#\\d+.*ya estaba`), `${x}: ya estaba`);
+  for (const x of ['cliente', 'trabajo', 'parte', 'presupuesto']) assert.match(r.out, new RegExp(`${x}\\s+#\\d+.*ya estaba`), `${x}: ya estaba`);
   assert.match(r.out, /albarán\s+#\d+.*· ya estaba · ya estaba emitido \(no se repite\)/);
 });
 
@@ -166,9 +206,10 @@ test('SCRUM-1268 · 🔴 LISTA BLANCA: lo que no está, se rechaza ANTES de la r
     ['POST', '/admin/albaranes/1/enviar-para-firmar'], ['POST', '/admin/albaranes/1/convertir-en-factura'],
     ['POST', '/admin/invoices'], ['POST', '/admin/onboarding/complete'], ['PUT', '/admin/merchant?x=1'],
     ['POST', '//evil.example/admin/customers'], ['GET', '/admin/customers'],
+    ['POST', '/quote/abc/decision'], ['POST', '/admin/quotes/7/send-whatsapp'], ['POST', '/admin/quotes/7/invoice'], ['POST', '/quote/create?x=1'],
   ];
   for (const [m, r] of fuera) assert.throws(() => escrituraPermitida(m, r), Rechazo, `${m} ${r} tenía que rechazarse`);
-  const dentro = [['POST', '/admin/customers'], ['POST', '/admin/jobs'], ['POST', '/admin/jobs/7/albaranes'], ['POST', '/admin/albaranes/7/emitir'], ['POST', '/admin/partes'], ['PUT', '/admin/merchant']];
+  const dentro = [['POST', '/admin/customers'], ['POST', '/admin/jobs'], ['POST', '/admin/jobs/7/albaranes'], ['POST', '/admin/albaranes/7/emitir'], ['POST', '/admin/partes'], ['PUT', '/admin/merchant'], ['POST', '/quote/create']];
   for (const [m, r] of dentro) assert.doesNotThrow(() => escrituraPermitida(m, r), `${m} ${r} está en la lista`);
   // Y con una cuenta de verdad comprobada, la ruta de fuera tampoco toca la red.
   const p = panel();
@@ -215,6 +256,36 @@ test('SCRUM-1268 · fail-closed: si el servidor no aplica la clave de idempotenc
   const r = await correr(['sembrar'], p);
   assert.equal(r.codigo, 1);
   assert.equal(p.s.emisiones, 0);
+});
+
+test('SCRUM-1268b · presupuesto: dos con la marca → no elige, no crea otro', async () => {
+  const p = panel();
+  assert.equal((await correr(['sembrar'], p)).codigo, 0);
+  const primero = p.s.presupuestos[0];
+  p.s.presupuestos.push({ ...primero, id: primero.id + 1000 });
+  const r = await correr(['sembrar'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, new RegExp(`2 presupuestos con la marca ${MARCA_PRESUPUESTO_QA.replace(/[[\]]/g, '\\$&')}`));
+  assert.equal(p.s.presupuestos.length, 2, 'no se crea un tercero');
+});
+
+test('SCRUM-1268b · presupuesto: la lista llega llena y el nuestro no está → «no lo sé», no crea', async () => {
+  const p = panel({ presupuestosDeRelleno: 100 });
+  const r = await correr(['sembrar'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /lista de presupuestos llega llena \(100\)/);
+  assert.ok(!escrituras(p).some((l) => l.ruta === '/quote/create'), 'no se crea un presupuesto a ciegas');
+  // Control: con 99 la lista NO está llena, y sí se crea.
+  const q = panel({ presupuestosDeRelleno: 99 });
+  assert.equal((await correr(['sembrar'], q)).codigo, 0);
+  assert.equal(q.s.presupuestos.length, 1);
+});
+
+test('SCRUM-1268b · 🔴 presupuesto: se RELEE; si el servidor se comió la cabecera, lo dice y sale 1', async () => {
+  const p = panel({ pierdeCabecera: true });
+  const r = await correr(['sembrar'], p);
+  assert.equal(r.codigo, 1, 'un 201 con la cabecera perdida no es «hecho»');
+  assert.match(r.err, /al releerlo la cabecera o el pie NO son los enviados/);
 });
 
 test('SCRUM-1268 · perfil: imprime la RELECTURA campo a campo, caza lo descartado y lo borrado sin enviar, y no la respuesta cruda', async () => {

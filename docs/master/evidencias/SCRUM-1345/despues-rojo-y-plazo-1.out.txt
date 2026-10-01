@@ -1,0 +1,283 @@
+Guards de entrada del registro (12):
+  · scrum273-registro-por-fichero.test.mjs — el fichero se llama SCRUM-<n>.md y el trabajo no se escribe en YAQU_MASTER.md
+  · scrum267-ancla-de-medicion.test.mjs — la entrada declara contra qué `origin/main` se midió, con sha de 40 y hora con huso
+  · scrum391-guards-declarados-presentes.test.mjs — todo test que la entrada DECLARA existe en el árbol
+  · scrum242-scripts-no-prometen-documentos.test.mjs — no se nombra un documento que no existe (la promesa que se lee y no se busca)
+  · public-js-parsea.test.mjs — todo .js que se sirve al navegador PARSEA (un backtick suelto borra una pantalla entera)
+  · scrum237-negacion-respaldada.test.mjs — ninguna negación de la suite se queda sin respaldo (el rojo del #1541: cayó en CI y aquí salía verde)
+  · scrum258-nota-por-sesion.test.mjs — la nota del turno es de la SESIÓN: una no puede soltar el turno vivo de otra
+  · scrum514-aprobado-y-aplicado.test.mjs — todo texto APROBADO está aplicado en la pantalla (la mitad de la regla 30 que faltaba)
+  · scrum522-guards-fuera-de-la-tanda.test.mjs — la puerta de los guards de navegador sigue existiendo, el workflow la invoca y su lista sale derivada
+  · scrum548-peaje-package-json.test.mjs — el censo de guards cuenta todos los declarados y el detector de solape sigue discriminando
+  · scrum723-guard-contra-su-base.test.mjs — un guard compara contra el punto de partida de la rama, no contra la punta móvil de main
+  · scrum811c-skill-ui-declarada.test.mjs — toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no
+
+✔ public/ · SUELO: el guard encuentra los ficheros que dice comprobar (65.067ms)
+ℹ suelo por cociente · «los .js de public/» · población 98 (recorrido 98 · censo 98) · de acuerdo 98 · cociente 1.0000 · mínimo 1 → umbral 98
+✔ public/ · 🔴 todo .js que se sirve al navegador PARSEA (3827.739ms)
+
+[SCRUM-237] 971 negaciones · FUERTE 255 · MEDIO 433 · ESTRUCTURAL 120 · DÉBIL 163 · NINGUNO 0
+  (ESTRUCTURAL = respaldo por mutation-test, NO verificada por este guard — declarada, no fingida)
+  ⚠️ LÍMITE: las DÉBIL se ACEPTAN y NO tienen techo. Si esta lista crece mucho, DÉBIL se vuelve el
+     vertedero de lo que no encaja y el guard vale MENOS de lo que parece. No hay ratchet a mano
+     (los sabemos acabar mal); pero míralas de vez en cuando — un DÉBIL que sube sin parar es una señal.
+  DÉBIL (aceptadas y declaradas — mirar si alguna debería reforzarse):
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:86  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:129  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:153  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1038-leer-el-ticket-gasto.test.mjs:392  «lecturas_agotadas|429|error t[eé]cnico» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum106-trabajos-fecha.test.mjs:85  «ejecutadoEnJulio.titulo» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum106-trabajos-fecha.test.mjs:93  «sinAgendar.titulo» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1105-semilla-destino-por-bandera.test.mjs:58  «u:p» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1105-semilla-destino-por-bandera.test.mjs:100  «u:p» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1106-respuestas-ia-no-son-del-asesor.test.mjs:49  «RE_ATRIBUCION» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum111-canario-zip.test.mjs:70  «CANARIO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1127-sif-client.test.mjs:401  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1127-sif-client.test.mjs:402  «CLAVE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1135-etiquetar-seleccion.test.mjs:90  «Ya la tenía» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1135-etiquetar-seleccion.test.mjs:142  «\b20\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1142-irreversibles-factura-44.test.mjs:95  «new RegExp(CLASE)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1142-irreversibles-factura-44.test.mjs:103  «CLASE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1147-resumen-del-servidor.test.mjs:77  «prohibida» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-ficha-trabajo.test.mjs:89  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:52  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:77  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:97  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1175c-datos-del-parte-plegados.test.mjs:103  «falso» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1179c-censo-accion-informativo.test.mjs:70  «name: build \+ tests» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1179c-censo-clics-informativo.test.mjs:68  «name: build \+ tests» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1188-plantilla-guarda-el-cobro.test.mjs:163  «success» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1214-clasificador-apretado.test.mjs:41  «ADD COLUMN» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1215b-sin-lineas-cerrado.test.mjs:49  «Todavía» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1216a-serie-sin-promesa.test.mjs:119  «PASO_SERIE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1232-libro-sin-justificantes.test.mjs:119  «j» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1257-vacio-facturas-segun-modo.test.mjs:86  «RECEIPT» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1278-banco-dice-no-medida.test.mjs:40  «CARTEL» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1286-intermitente-1281.test.mjs:160  «@claude» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1288-dinero-es-en-avisos-s1.test.mjs:61  «\bEUR\b|\d\.\d{2}\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1309-banner-mail-sent-gateado.test.mjs:106  «GENERADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1312-boton-email-recibo-gateado.test.mjs:114  «ENVIADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1312-boton-email-recibo-gateado.test.mjs:118  «GENERADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:301  «INSTRUCCION» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum188-turno-staging.test.mjs:331  «['@ ]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum192-borrado-merchant.test.mjs:96  «botSession» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:50  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:72  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:76  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:89  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:129  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:130  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:143  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum206-sin-huella-no-salen-bytes.test.mjs:247  «prohibida.toLowerCase()» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum221-export-fiscal-cero-bytes.test.mjs:117  «attachment» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum232-turno-contexto.test.mjs:216  «['\\$]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum236-equipo-sin-asignar.test.mjs:137  «ETIQUETA_SIN_ASIGNAR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum246-sin-lineas-no-se-emite.test.mjs:270  «vuelve a intentarlo|inténtalo» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum249-latido-turno.test.mjs:140  «\+\d{4}-\d{2}-\d{2}T» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum253-adopcion.test.mjs:194  «new RegExp(`\\.${process.pid}$`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum253-adopcion.test.mjs:229  «new RegExp(`p${process.pid}`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum258-nota-por-sesion.test.mjs:78  «new RegExp(`p${process.pid}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum260-rastro-limpieza.test.mjs:63  «E1» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum283-tabla-patron-factura.test.mjs:202  «p» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum285-pantalla-cobros.test.mjs:199  «\bOtro\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum289b-factura-suelta.test.mjs:189  «^(update|updateMany|delete|deleteMany|upsert)$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum294-recargo-caja.test.mjs:219  «p» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum295-modelo-303-postgres.test.mjs:36  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum296-lector-tenencia.test.mjs:127  «signatureUrl» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum296-libro-postgres.test.mjs:60  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum297-evidencias-postgres.test.mjs:29  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum298-modo-visible.test.mjs:95  «r» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum300-firmante-ids-y-microcopy.test.mjs:261  «PENDIENTE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum300-firmante-ids-y-microcopy.test.mjs:287  «PENDIENTE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum302-patron-albaran.test.mjs:114  «facturado» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum303-albaran-una-pantalla.test.mjs:226  «[PENDIENTE microcopy oficial]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum303-albaran-una-pantalla.test.mjs:242  «(s)» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum304-albaranes-tabla.test.mjs:432  «[PENDIENTE microcopy oficial]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum317-trabajo-por-su-nombre.test.mjs:121  «^·|·$|· *·» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum318-rail-contenido.test.mjs:161  «donde» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum319-documentos-por-tipo.test.mjs:223  «id» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum331-heroe.test.mjs:140  «PENDIENTE» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum331-heroe.test.mjs:208  «s» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum344-cierre-con-saldo.test.mjs:156  «PALABRAS» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum347-origen-de-la-factura.test.mjs:245  «C7» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum351-topologia-node-modules.test.mjs:91  «wtC» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum356-tres-estados.test.mjs:134  «[.,]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum356-tres-estados.test.mjs:349  «^[✓✔√●•]+$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum359-tres-relojes.test.mjs:151  «fecha_entrega|albaran_fecha$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum361-version-al-firmar.test.mjs:114  «PENDIENTE|TODO|\[.*microcopy» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum372-un-dato-un-nombre.test.mjs:195  «new RegExp(`\\b(alb|albaran)\\.${RETIRADO}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum389-un-solo-iva.test.mjs:36  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum404-trazo-no-se-pierde.test.mjs:128  «promesa» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum405-microcopy-descarga.test.mjs:142  «CULPA_A_LA_RED» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum405-microcopy-descarga.test.mjs:163  «CULPA_AL_USUARIO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:210  «PROHIBIDO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:405  «MOTOR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:410  «ENCHUFE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum424-donde-tiene-dato.test.mjs:103  «[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum427-composicion-detalle.test.mjs:230  «[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum438-atestiguar.test.mjs:237  «[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum447-byte-invisible-en-patrones.test.mjs:79  «BACKSPACE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum451-plazo-de-red.test.mjs:109  «numeroAMano» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum452-pdf-lo-que-se-sello.test.mjs:258  «RAYA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum452-pdf-lo-que-se-sello.test.mjs:316  «new RegExp(`\\b${mala}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum457-logout-purga-claves.test.mjs:62  «Comunidad Los Olivos|Sustituir bajante|1450\.00» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum457-logout-purga-claves.test.mjs:64  «Codo 90 PVC|4\.20» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum462-firmado-sin-sobre.test.mjs:133  «estado:\s*'firmado'» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum466-el-firmante-ve-el-albaran.test.mjs:211  «HABLA_DE_DINERO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum466-el-firmante-ve-el-albaran.test.mjs:213  «SIN_APROBAR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum475-receptor-webhook.test.mjs:226  «ana@obra\.example» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum476-reconciliar-censos.test.mjs:469  «new RegExp(`\\b${n}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum481-metodo-en-castellano.test.mjs:306  «·\s*$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum481-metodo-en-castellano.test.mjs:309  «:» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum481-metodo-en-castellano.test.mjs:311  «function|\[native code\]|\[object» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum497-dato-personal-no-sobrevive.test.mjs:266  «@» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum500-suplidos.test.mjs:446  «\bPOR CUENTA\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum505-dato-personal-en-contenido.test.mjs:187  «CORREO_FABRICADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum505-dato-personal-en-contenido.test.mjs:190  «FORMA_DE_MOVIL» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum514-leeme-multilinea.test.mjs:68  «duplicado» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum521-resolvedor-de-importadores.test.mjs:123  «ajeno» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum549-nada-publicable-sin-marcar.test.mjs:90  «e» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum55-admin-fail-closed.test.mjs:379  «CITA_S1_COMO_DECIDIDO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum55-admin-fail-closed.test.mjs:390  «CONFIRMADA_ABIERTA_EN_PROD» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum553-etiquetas-pegadas.test.mjs:167  «PILOTO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum587-descuento-por-defecto.test.mjs:332  «\[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:211  «presupuest» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:222  «presupuest» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum652c-parte-en-el-movil.test.mjs:464  «precioUnitario|tipoIva|"38"|:38|\u20ac» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:65  «FIJO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:69  «FIJO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:84  «COLETILLA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:94  «precio|importe» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum656-iva-y-clausulas.test.mjs:168  «marca» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum662-lista-de-scripts.test.mjs:106  «INTRUSO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum665e-el-escritor-del-emisor.test.mjs:126  «FICHA_DE_HOY.taxId» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum665e-el-escritor-del-emisor.test.mjs:131  «FICHA_DE_HOY.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum676-hojas-del-indice.test.mjs:67  «^https?:|^\/\/» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum701-sellado-ve-las-dos-comillas.test.mjs:84  «new RegExp(`[?&]${PARAM_HUELLA}=`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum703-rotulos-del-tipo.test.mjs:77  «MARCADOR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:258  «__» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:261  «\bundefined\b|\bnull\b|\bNaN\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum728-serie-ocupada-postgres.test.mjs:61  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum728-serie-ocupada-postgres.test.mjs:200  «JERGA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum728d-ms-en-loopback.test.mjs:57  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum729-el-escritor-del-cliente.test.mjs:146  «FICHA_DE_HOY.taxId» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum73-verifactu-gate.test.mjs:75  «new RegExp(invoice.number)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:74  «A.customer.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:75  «A.customer.email» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:89  «A.invoice.number» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum742-internos-de-prisma.test.mjs:71  «SE_EXCLUYE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum746b-guarda-en-la-conexion.test.mjs:71  «:\/\/|u:p@» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum746b-guarda-en-la-conexion.test.mjs:87  «PROD_HOST» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum806-el-pdf-del-portal.test.mjs:109  «pdfUrl» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum806-el-pdf-del-portal.test.mjs:120  «\$\{q\.id\}|\/pay\/quote\/\$\{q\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum814-carrera-de-tramos-postgres.test.mjs:81  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs:190  «conHuso» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum844c-el-xml-que-se-remite.test.mjs:99  «`>${MERCHANT.name}<`» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum85-pay-routes-token.test.mjs:60  «A.merchant.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum90-pay-bank-mp-token.test.mjs:66  «A.merchant.iban» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum912-leer-ticket-gasto.test.mjs:476  «NIF_MALO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum917g-el-trabajo-plegable.test.mjs:145  «€|EUR|\d[.,]\d» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs:265  «NO\s+est[aá]\s+firmad» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs:172  «€» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum932-el-turno-tiene-mecanismo.test.mjs:261  «new RegExp(VALOR)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum967b-el-portal-en-el-envio.test.mjs:150  «tokParte» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum979-ultima-visita.test.mjs:49  «5» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum986-chip-whatsapp-en-la-lista.test.mjs:198  «\b(null|undefined)\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/tenancy-permisos.test.mjs:160  «CANARIO_A» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/tenancy-permisos.test.mjs:185  «:» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+✔ SCRUM-237 · autoprueba: HERMANO DEL TOKEN → FUERTE (1.0265ms)
+✔ SCRUM-237 · autoprueba: SUJETO VERIFICADO por contenido → MEDIO (0.1607ms)
+✔ SCRUM-237 · autoprueba: sujeto = FUENTE leída → ESTRUCTURAL (mutation-test declarada) (0.2098ms)
+✔ SCRUM-237 · autoprueba: token DINÁMICO sin sujeto verificado → DÉBIL (aceptado, no marcado) (0.1239ms)
+✔ SCRUM-237 · autoprueba: char-class prohibida sin respaldo → DÉBIL (guard de patrón, no scrum73) (0.1352ms)
+✔ SCRUM-237 · autoprueba: EL BUG DE SCRUM73 (token concreto imposible, sin respaldo) → NINGUNO (0.157ms)
+✔ SCRUM-237 · suelo: el analizador NO está ciego (parse, presencia, canario) (0.8588ms)
+✔ SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO = 0) (23.5011ms)
+✔ SCRUM-242 · SUELO: el detector ve scripts y ve referencias a documento (134.196ms)
+✔ SCRUM-242 · la salida que un script GENERA no cuenta como promesa (120.8099ms)
+✔ SCRUM-242 · ningún script nombra un documento que no existe (122.0492ms)
+✔ SCRUM-258 · la ruta de la nota es distinta por árbol y la MISMA entre procesos (5.5969ms)
+✔ SCRUM-258 · la ruta NO depende de nada que el humano exporte (0.852ms)
+✔ SCRUM-258 · la nota se describe a sí misma: una marca ajena no se devuelve (6.219ms)
+✔ SCRUM-258 · EL CASO GRAVE — con la marca correcta pero AJENA, no se suelta (1.2065ms)
+✔ SCRUM-258 · el turno PROPIO se sigue soltando igual (0.7786ms)
+✔ SCRUM-258 · sin dueño se conserva el comportamiento anterior (0.2359ms)
+✔ SCRUM-258 · los llamadores de casa SÍ pasan el dueño (713.8673ms)
+✔ SCRUM-258 · ningún script guarda estado en una ruta fija compartida por la máquina (95.163ms)
+✔ SCRUM-258 · SUELO: el analizador recorre los scripts de verdad (1.8901ms)
+✔ SCRUM-258 · ningún script usa un nombre que no existe (3084.2982ms)
+✔ SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala (1.2036ms)
+✔ SCRUM-267 · ② el barrido encuentra entradas de verdad (369.7936ms)
+✖ SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo (453.8912ms)
+✔ SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien (0.1899ms)
+✔ SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados (1326.6568ms)
+✖ SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer (384.0728ms)
+✖ SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total (353.1537ms)
+✔ SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo (359.5461ms)
+✔ SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE (2.9054ms)
+✔ SCRUM-267 · el formato declarado en el README incluye el ancla (0.8107ms)
+✔ SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada (87.7651ms)
+✔ SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE (508.5617ms)
+✔ SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una (0.1205ms)
+✔ SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver (437.828ms)
+✔ SCRUM-273 · SUELO: el extractor encuentra las entradas que ya existen (3.7585ms)
+✔ SCRUM-273 · ninguna entrada de trabajo NUEVA se escribe en YAQU_MASTER.md (2.3933ms)
+✔ SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket (0.9111ms)
+✔ SCRUM-273 · 🔴 el mensaje del guard ENUNCIA LA ALTERNATIVA, no solo la prohibición (0.2521ms)
+✔ SCRUM-273 · el mensaje bueno es el que se USA de verdad (0.8721ms)
+✔ SCRUM-273 · el máster dice dónde vive el registro ahora (1.6529ms)
+✔ SCRUM-391 · SUELO: el detector encuentra entradas y declaraciones de verdad (435.9836ms)
+✔ SCRUM-391 · CONTROL NEGATIVO: una declaración que SÍ existe no salta (439.563ms)
+✔ SCRUM-391 · todo test DECLARADO en una entrada EXISTE en el árbol (407.0365ms)
+✔ SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra (198.6451ms)
+✔ SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO (144.232ms)
+✔ SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo) (320.4989ms)
+✔ SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo (227.4657ms)
+✔ SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en el código (43.3685ms)
+✔ SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro (188.4081ms)
+✔ SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa (2.8415ms)
+✔ SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta (2.3752ms)
+✔ SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código (2.7564ms)
+✔ SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta (2.5348ms)
+✔ SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE (2.0327ms)
+✔ SCRUM-1329 · CONTROL: el comentario nombrado en OTRA línea no respalda a la firma (1.8887ms)
+✔ SCRUM-1329 · la firma DELEGADA, con su comentario, vale igual que la del fundador (2.1854ms)
+✔ SCRUM-1329 · CONTROL: una celda larga del registro CONGELADO no tiene firma que mirar — NO SÉ (2.0819ms)
+✔ SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada (1.9979ms)
+✔ SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae (6.0779ms)
+✔ SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes (49.6337ms)
+✔ SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vacía (2.6379ms)
+✔ SCRUM-522 · la lista sale DERIVADA de package.json, no escrita aquí (0.1413ms)
+✔ SCRUM-522 · el resolutor encuentra el navegador donde lo haya (0.1755ms)
+✔ SCRUM-522 · 🔴 SUELO: sin navegador NO devuelve una ruta plausible (0.268ms)
+✔ SCRUM-522 · 🔴 EDGE_PATH puesta y rota NO cae hacia atrás a otro navegador (0.2768ms)
+✔ SCRUM-522 · guard-contraste no lleva una ruta de Windows escrita a mano (0.9249ms)
+✔ SCRUM-522 · guard-caja-avisos no lleva una ruta de Windows escrita a mano (0.638ms)
+✔ SCRUM-522 · guard-caja-semaforo no lleva una ruta de Windows escrita a mano (0.5648ms)
+✔ SCRUM-522 · guard-cls-barra-anuncio no lleva una ruta de Windows escrita a mano (1.1879ms)
+✔ SCRUM-522 · guard-primera-pantalla no lleva una ruta de Windows escrita a mano (0.876ms)
+✔ SCRUM-522 · guard-vias-de-cobro no lleva una ruta de Windows escrita a mano (0.6073ms)
+✔ SCRUM-522 · guard-aviso-bizum no lleva una ruta de Windows escrita a mano (0.4556ms)
+✔ SCRUM-522 · guard-a11y-comparativa no lleva una ruta de Windows escrita a mano (0.5776ms)
+✔ SCRUM-522 · guard-a11y-landing no lleva una ruta de Windows escrita a mano (0.5021ms)
+✔ SCRUM-522 · guard-objetivo-tactil no lleva una ruta de Windows escrita a mano (0.8963ms)
+✔ SCRUM-522 · 🔴 IMPORTAR la puerta NO la ejecuta (50.4812ms)
+✔ SCRUM-522 · ✅ POSITIVO: lanzada COMO SCRIPT la puerta sí actúa (49.0692ms)
+✔ SCRUM-522 · 🔴 «no lo encuentro» y «no arranca» son DOS códigos, no uno (0.2336ms)
+✔ SCRUM-617 · 🔴 el tope de arranque POR DEFECTO no se toca (0.8244ms)
+✔ SCRUM-617 · 🔴 el workflow NO lleva el tope de medición puesto (0.3223ms)
+✔ SCRUM-617 · el ARRANQUE se mide aparte del total, y la puerta lo lee (0.3076ms)
+✔ SCRUM-522 · 🔴 el aislamiento del navegador se relaja SÓLO en CI (0.1512ms)
+✔ SCRUM-522 · 🔴 y ese suelo común PARA de verdad, no devuelve una ruta (104.4196ms)
+✔ SCRUM-522 · la puerta está declarada con su //comentario (0.1913ms)
+✔ SCRUM-522 · 🔴 el workflow de CI invoca la puerta (0.1641ms)
+✔ SCRUM-522 · la puerta JUZGA, no sólo mide (0.3104ms)
+✔ SCRUM-548 · 🔴 el censo de guards sigue viendo TODOS los declarados (21.9392ms)
+✔ SCRUM-548 · el detector de solape entiende las DOS formas de escribir el destino (4.7044ms)
+✔ SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se declara (16.3535ms)
+✔ SCRUM-548 · el clasificador separa el peaje del conflicto de verdad (0.1529ms)
+✔ SCRUM-548 · sabe decir DÓNDE cae el conflicto (0.4055ms)
+✔ SCRUM-548 · ningún //comentario cita un número de guards ni un total en segundos (1.3227ms)
+✔ SCRUM-548 · ✅ CONTROL: el detector de cifras caducadas sabe encontrarlas (0.1724ms)
+✔ SCRUM-548 · la convención está escrita en package.json y dice las cinco cosas (0.2983ms)
+12 guards · 25.0 s · plazo 25 s

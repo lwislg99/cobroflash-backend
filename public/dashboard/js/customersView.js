@@ -444,13 +444,80 @@ function renderCustomersView(container) {
   // viviera aquí la barra no podía comportarse distinto en móvil. Lo demás sigue en línea: sólo se
   // muda lo que la media query necesita decidir.
   const barraSeleccion = createElement("div", "barra-seleccion");
-  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;"
+  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;" // SCRUM-1135: el wrap, en styles.css
     + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
   const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
   const contadorSeleccion = document.createElement("span");
   contadorSeleccion.style.cssText = "font-size:13.5px;font-weight:600;color:var(--ink)";
   barraSeleccion.appendChild(casillaTodosBarra);
   barraSeleccion.appendChild(contadorSeleccion);
+
+  // ── SCRUM-1135 · ETIQUETAR LA SELECCIÓN, en la barra que ya existe.
+  //
+  // `POST /admin/customers/bulk-tags` (SCRUM-1059) estaba construido y nadie lo llamaba: con 50
+  // clientes marcados, el profesional tenía que abrirlos de uno en uno. Sólo se ve con algo marcado
+  // (`refrescarSeleccion`). La ruta es `requireRole('admin')`, así que sólo se PINTA para el rol que
+  // la ruta deja pasar —la misma condición que Exportar, arriba—: a un técnico no se le ofrece un
+  // botón que acaba en 403 (diseño aprobado en SCRUM-1135 comentario 17447).
+  const puedeEtiquetar = window.appUserRole === "admin";
+  const accionesEtiquetado = document.createElement("div");
+  accionesEtiquetado.className = "barra-seleccion-etiquetar";
+  // Su maquetación (y el `display`, que decide una clase) vive en styles.css, no en `style.cssText`:
+  // el trinquete de SCRUM-713c no se ensancha para que quepa esto.
+  const campoEtiqueta = document.createElement("input");
+  campoEtiqueta.type = "text";
+  campoEtiqueta.className = "input";
+  campoEtiqueta.placeholder = FC.TEXTOS_ETIQUETADO.campo;
+  campoEtiqueta.setAttribute("aria-label", FC.TEXTOS_ETIQUETADO.campo);
+  const btnAnadirEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.anadir);
+  const btnQuitarEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.quitar);
+  for (const b of [btnAnadirEtiqueta, btnQuitarEtiqueta]) {
+    b.type = "button";
+    accionesEtiquetado.appendChild(b);
+  }
+  accionesEtiquetado.prepend(campoEtiqueta);
+  if (puedeEtiquetar) barraSeleccion.appendChild(accionesEtiquetado);
+
+  let etiquetando = false;
+  /** Con el campo vacío no hay nada que mandar: los botones no se ofrecen (y no hace falta aviso). */
+  function refrescarBotonesEtiqueta() {
+    const vacio = campoEtiqueta.value.trim() === "";
+    btnAnadirEtiqueta.disabled = vacio || etiquetando;
+    btnQuitarEtiqueta.disabled = vacio || etiquetando;
+  }
+  campoEtiqueta.addEventListener("input", refrescarBotonesEtiqueta);
+
+  async function etiquetarSeleccion(accion) {
+    const etiqueta = campoEtiqueta.value.trim();
+    if (!etiqueta || seleccion.length === 0 || etiquetando) return;
+    etiquetando = true;
+    refrescarBotonesEtiqueta();
+    try {
+      const r = await apiRequest("/admin/customers/bulk-tags", {
+        method: "POST",
+        body: JSON.stringify({ ids: seleccion.map(Number), accion, etiqueta }),
+      });
+      const resumen = FC.resumenDelEtiquetado(accion, r);
+      // La recarga va ANTES del aviso: `loadCustomers` limpia la caja de avisos al empezar.
+      await loadCustomers(ultimaBusqueda);
+      setAlert(resumen.tipo, resumen.texto);
+    } catch (err) {
+      // 🔴 SIN el detalle del error, a propósito. Medido en `api.js`: sin red, `err.message` es el
+      // «Failed to fetch» del navegador, en inglés; un 500 sin `message` da «API 500:
+      // internal_error». Es el defecto de SCRUM-1200. Los `message` de esta ruta (acción inválida,
+      // etiqueta vacía) no son alcanzables desde aquí. Y se recarga igual: si la respuesta se
+      // perdió pero el cambio entró, la tabla enseña lo que de verdad quedó, y repetir es inocuo
+      // (añadir otra vez sale «ya la tenía»).
+      try { await loadCustomers(ultimaBusqueda); } catch { /* su propio aviso ya lo dice */ }
+      setAlert("error", FC.TEXTOS_ETIQUETADO.error);
+    } finally {
+      etiquetando = false;
+      refrescarBotonesEtiqueta();
+    }
+  }
+  btnAnadirEtiqueta.addEventListener("click", () => etiquetarSeleccion("add"));
+  btnQuitarEtiqueta.addEventListener("click", () => etiquetarSeleccion("remove"));
+  refrescarBotonesEtiqueta();
 
   // 🔴 SCRUM-699 · AQUÍ HABÍA UN `outerCard.appendChild(table)`, Y SACABA LA TABLA DE SU CARRIL.
   //
@@ -496,6 +563,8 @@ function renderCustomersView(container) {
     // su REFLEJO, se reescribe en cada refresco y NO SE LEE NUNCA (hay un test que lo exige). El
     // `display` real lo decide `styles.css`, que es el único sitio que sabe de anchos.
     barraSeleccion.classList.toggle("barra-seleccion--vacia", seleccion.length === 0);
+    // SCRUM-1135 · etiquetar sólo tiene sentido con algo marcado.
+    accionesEtiquetado.classList.toggle("barra-seleccion-etiquetar--visible", seleccion.length > 0);
   }
 
   function alternarTodos() {

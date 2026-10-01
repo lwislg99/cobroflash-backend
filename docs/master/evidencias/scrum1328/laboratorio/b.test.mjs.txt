@@ -1,0 +1,27 @@
+// b.test.mjs - el que lanza un `node` HIJO que usa node:test. MODO decide que entorno le deja.
+//   hereda   : borra NODE_TEST_CONTEXT (lo que hace tests/scrum976 en main) y DEJA NODE_OPTIONS
+//   limpio   : borra NODE_TEST_CONTEXT y NODE_OPTIONS
+//   contexto : no borra nada (el hijo se cree hijo de la tanda)
+//   sin-hijo : no lanza nada (linea base)
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const MODO = process.env.MODO || 'hereda';
+const HIJO = process.env.HIJO || 'suelto.mjs';
+
+test('PADRE-B antes de lanzar', () => {});
+test('PADRE-B lanza al hijo', () => {
+  if (MODO === 'sin-hijo') return;
+  const env = { ...process.env };
+  if (MODO !== 'contexto') delete env.NODE_TEST_CONTEXT;
+  if (MODO === 'limpio') delete env.NODE_OPTIONS;
+  const args = HIJO === 'suelto.mjs' ? [path.join(AQUI, 'hijo', HIJO)] : ['--test', path.join(AQUI, 'hijo', HIJO)];
+  const r = spawnSync(process.execPath, args, { encoding: 'utf8', env });
+  // testigo de ejecucion del hijo (A21): si no corrio, esto cae y la pasada no vale
+  assert.equal(r.status, 0, `el hijo salio ${r.status}: ${(r.stderr || '').slice(-300)}`);
+});
+test('PADRE-B despues de lanzar', () => {});

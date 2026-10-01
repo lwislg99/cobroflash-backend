@@ -36,6 +36,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -308,16 +309,19 @@ for (const m of medidas) {
   }
 }
 
+// Un ancho que no dejó medida y tampoco dijo por qué es un ciego más, no una tercera salida.
+if (!ciego.length && medidas.length !== ANCHOS.length) ciego.push(`se midieron ${medidas.length} de ${ANCHOS.length} anchos.`);
 if (ciego.length) {
   console.error('\n🔴 NO SUPE MIRAR — y eso no es un verde:\n' + ciego.map((c) => '  · ' + c).join('\n'));
-  process.exit(2);
-}
-if (medidas.length !== ANCHOS.length) {
-  console.error(`\n🔴 se midieron ${medidas.length} de ${ANCHOS.length} anchos.`);
-  process.exit(2);
 }
 if (fallos.length) {
   console.error('\n🔴 LA CAJA NO AGUANTA EL AVISO:\n' + fallos.map((f) => '  · ' + f).join('\n'));
-  process.exit(1);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n' + veredictoFinal.linea);
+  process.exit(veredictoFinal.codigo);
 }
 console.log('\n✅ el aviso cabe y es alcanzable en los dos anchos.');

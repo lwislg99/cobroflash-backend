@@ -1,0 +1,96 @@
+POBLACION ficheros=76 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-23804.tap
+PISA    x6  proc=  7 bytes=ENTERO     907 ms salida=0 tests=10 fail=0  tests/pr-automatico-el-mensaje-del-automerge.test.mjs
+            intruso: [otro node --test] hijo: 
+            intruso: [otro node --test] hijo: C:\Users\Javier Pereira\cobroflash-jv3\scripts\clasificar-fallo-automerge.mjs
+limpio  x0  proc= 99 bytes=ENTERO    4334 ms salida=0 tests=2 fail=0  tests/public-js-parsea.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     306 ms salida=0 tests=8 fail=0  tests/scrum1091-guard-cwd-posix.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    5554 ms salida=0 tests=16 fail=0  tests/scrum1093h-censo-fecha-sin-zona.test.mjs
+limpio  x0  proc= 24 bytes=ENTERO    1384 ms salida=0 tests=12 fail=0  tests/scrum1117-anclas-por-bloque.test.mjs
+limpio  x0  proc=  5 bytes=ENTERO     302 ms salida=0 tests=14 fail=0  tests/scrum1123-vigia-despliegue-aviso.test.mjs
+limpio  x0  proc=  4 bytes=ENTERO    1746 ms salida=0 tests=11 fail=0  tests/scrum1157-censo-convenio-microcopy.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     149 ms salida=0 tests=3 fail=0  tests/scrum1196-fecha-de-la-politica.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO     741 ms salida=0 tests=3 fail=0  tests/scrum1221-banco-fallo-visible.test.mjs
+limpio  x0  proc=  4 bytes=ENTERO     339 ms salida=0 tests=9 fail=0  tests/scrum1222-sesion-panel.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     339 ms salida=0 tests=10 fail=0  tests/scrum1259-abierto-con-trabajo-en-main.test.mjs
+PISA    x5  proc=  6 bytes=ENTERO    3288 ms salida=0 tests=4 fail=0  tests/scrum1263-gancho-pre-push.test.mjs
+            intruso: [otro node --test] hijo: 
+            intruso: [otro node --test] hijo: \Users\JAVIER~1\AppData\Local\Temp\scrum1263-runner-3x0TW6\puerta\puerta-claude-empuje.mjs despertar
+            intruso: [otro node --test] hijo: \Users\JAVIER~1\AppData\Local\Temp\scrum1263-runner-3x0TW6\puerta\puerta-claude-empuje.mjs gancho C:/Users/JAVIER~1/AppData/Local/Temp/scrum1263-runner-3x0TW6/ganchos-1263
+            intruso: [otro node --test] hijo: \Users\JAVIER~1\AppData\Local\Temp\scrum1263-runner-FJPfXx\puerta\puerta-claude-empuje.mjs despertar
+limpio  x0  proc=  2 bytes=ENTERO     213 ms salida=0 tests=7 fail=0  tests/scrum1270-pr-mudo-avisado-en-el-pr.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     305 ms salida=0 tests=8 fail=0  tests/scrum145-verifactu-xsd.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     240 ms salida=0 tests=26 fail=0  tests/scrum176-guard-mensaje.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     763 ms salida=0 tests=9 fail=0  tests/scrum195-url-bd-sin-fuga.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    2878 ms salida=0 tests=8 fail=0  tests/scrum226-url-credencial-en-argv.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     303 ms salida=0 tests=21 fail=0  tests/scrum235-cliente-por-columnas.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     747 ms salida=0 tests=18 fail=0  tests/scrum239-huella-de-codigo.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO    5141 ms salida=0 tests=4 fail=0  tests/scrum245-tipo-obliga-declarar.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     160 ms salida=0 tests=8 fail=0  tests/scrum249-latido-turno.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     340 ms salida=0 tests=9 fail=0  tests/scrum265-margen-en-recibo.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    3972 ms salida=0 tests=14 fail=0  tests/scrum267-ancla-de-medicion.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    2601 ms salida=0 tests=13 fail=0  tests/scrum268-espera-automatica.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     118 ms salida=0 tests=6 fail=0  tests/scrum272-criterio-referencial.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     768 ms salida=0 tests=15 fail=0  tests/scrum351-topologia-node-modules.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     306 ms salida=0 tests=15 fail=0  tests/scrum387-censo-reparto.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1409 ms salida=0 tests=5 fail=0  tests/scrum414-url-a-mano.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     153 ms salida=0 tests=18 fail=0  tests/scrum425-aplicador-sql-dev.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     913 ms salida=0 tests=41 fail=0  tests/scrum454-destructivo-sin-comprobacion.test.mjs
+limpio  x0  proc=  5 bytes=ENTERO     315 ms salida=0 tests=26 fail=0  tests/scrum522-guards-fuera-de-la-tanda.test.mjs
+limpio  x0  proc=  5 bytes=ENTERO    6720 ms salida=0 tests=41 fail=0  tests/scrum524b-trinquete-de-la-tabla.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     797 ms salida=0 tests=5 fail=0  tests/scrum534d-extractores-a-mano.test.mjs
+limpio  x0  proc=  8 bytes=ENTERO    1218 ms salida=0 tests=7 fail=0  tests/scrum554-el-censo-no-confunde-el-numero.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     356 ms salida=0 tests=4 fail=0  tests/scrum620-servidor-que-no-arranca.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     908 ms salida=0 tests=18 fail=0  tests/scrum637-la-rama-que-nadie-mira.test.mjs
+limpio  x0  proc= 12 bytes=ENTERO     634 ms salida=0 tests=9 fail=0  tests/scrum642-tramos-del-arranque.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO     212 ms salida=0 tests=11 fail=0  tests/scrum645-la-puerta-no-tira-los-tramos.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1792 ms salida=0 tests=8 fail=0  tests/scrum709-microcopy-por-fichero.test.mjs
+limpio  x0  proc=  8 bytes=ENTERO    2698 ms salida=0 tests=9 fail=0  tests/scrum716c-la-memoria-del-vigia.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    6123 ms salida=0 tests=8 fail=0  tests/scrum723-guard-contra-su-base.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO     449 ms salida=0 tests=9 fail=0  tests/scrum727-constancia-del-vigia.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     129 ms salida=0 tests=7 fail=0  tests/scrum744-el-guard-mira-la-accion.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    3184 ms salida=0 tests=11 fail=0  tests/scrum745-comparar-por-identidad.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO   12947 ms salida=0 tests=19 fail=0  tests/scrum753-censo-de-alcanzabilidad.test.mjs
+limpio  x0  proc=  7 bytes=ENTERO    6831 ms salida=0 tests=7 fail=0  tests/scrum765-la-puerta-y-el-suelo.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    3881 ms salida=0 tests=10 fail=0  tests/scrum766-el-grep-que-cuenta-lineas.test.mjs
+limpio  x0  proc=  4 bytes=ENTERO    2397 ms salida=0 tests=11 fail=0  tests/scrum774-arbol-de-otra-sesion.test.mjs
+limpio  x0  proc=  6 bytes=ENTERO   21955 ms salida=0 tests=16 fail=0  tests/scrum775-suelo-que-no-dispara.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    6000 ms salida=0 tests=11 fail=0  tests/scrum804-la-rama-viva.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    7684 ms salida=0 tests=5 fail=0  tests/scrum804b-el-barrido-de-la-42.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     471 ms salida=0 tests=4 fail=0  tests/scrum804f-la-rama-sin-slug.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     396 ms salida=0 tests=4 fail=0  tests/scrum804h-la-fase-con-corte.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    2274 ms salida=0 tests=15 fail=0  tests/scrum808-el-arbol-que-queda-mutado.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    5182 ms salida=0 tests=6 fail=0  tests/scrum810-el-suelo-a-la-primera.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     142 ms salida=0 tests=1 fail=0  tests/scrum814-carrera-de-tramos-postgres.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     173 ms salida=0 tests=3 fail=0  tests/scrum814-carrera-del-tramo.gated.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO    3015 ms salida=0 tests=6 fail=0  tests/scrum815-idempotencia-del-webhook.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO    1132 ms salida=0 tests=11 fail=0  tests/scrum815c-el-escritor-de-los-cinco.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     930 ms salida=0 tests=3 fail=0  tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1652 ms salida=0 tests=3 fail=0  tests/scrum829b-la-ref-rancia-se-poda.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    5213 ms salida=0 tests=5 fail=0  tests/scrum835-credenciales-en-el-historial.test.mjs
+limpio  x0  proc=  6 bytes=ENTERO   14082 ms salida=0 tests=8 fail=0  tests/scrum837-decisiones-encerradas.test.mjs
+limpio  x0  proc= 13 bytes=ENTERO     889 ms salida=0 tests=10 fail=0  tests/scrum839c-la-pasada-se-ejecuta.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    6104 ms salida=0 tests=15 fail=0  tests/scrum839d-union-solo-en-el-registro.test.mjs
+PISA    x20 proc= 26 bytes=ENTERO    9080 ms salida=0 tests=13 fail=0  tests/scrum839e-solo-pr-armados.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\scrum839e-paso-KXGoc7\bin\gh.mjs api C:/Program Files/Git/users/yaqu-bot%5Bbot%5D -q .id
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\scrum839e-paso-KXGoc7\bin\gh.mjs pr list --state open
+            intruso: [otro node --test] hijo: 
+            intruso: [otro node --test] hijo: rs\JAVIER~1\AppData\Local\Temp\scrum839e-job-8q5aM5\clon\scripts\conflicto-de-registro.mjs 880 f8e6d67d05fa1e08d296199b157d1f3d69ccc5ed origin/main prs.json
+PISA    x10 proc= 11 bytes=ENTERO    1920 ms salida=0 tests=6 fail=0  tests/scrum850-la-poblacion-del-instrumento.test.mjs
+            intruso: [otro node --test] hijo: 
+PISA    x15 proc= 17 bytes=ENTERO    7356 ms salida=0 tests=11 fail=0  tests/scrum853-lecturas-que-fallan-cerrado.test.mjs
+            intruso: [otro node --test] hijo: 
+            intruso: [otro node --test] hijo: C:\Users\Javier Pereira\cobroflash-jv3\scripts\puerta-avisador-rojo.mjs
+PISA    x4  proc=  5 bytes=ENTERO    1962 ms salida=0 tests=16 fail=0  tests/scrum853d-cortacircuitos.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-853d-26564-wZwuYM\puerta\puerta-claude.mjs antes
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-853d-26564-ebwSse\puerta\puerta-claude.mjs antes
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-853d-26564-N7Hkro\puerta\puerta-claude.mjs antes
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-853d-26564-pTBo3f\puerta\puerta-claude.mjs antes
+limpio  x0  proc=  1 bytes=ENTERO    1403 ms salida=0 tests=7 fail=0  tests/scrum857-union-de-vias.test.mjs
+limpio  x0  proc=  3 bytes=ENTERO     404 ms salida=0 tests=7 fail=0  tests/scrum864-el-temporal-que-se-borra.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     723 ms salida=0 tests=3 fail=0  tests/scrum900-push-de-claude-con-la-app.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     346 ms salida=0 tests=4 fail=0  tests/scrum927-el-censo-de-los-censos.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    2954 ms salida=0 tests=12 fail=0  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1165 ms salida=0 tests=7 fail=0  tests/scrum973-titulo-del-pr.test.mjs
+limpio  x0  proc= 43 bytes=ENTERO    2585 ms salida=0 tests=22 fail=0  tests/scrum996-suelo-de-arranque.test.mjs
+RESUMEN (sonda/bytes) {"PISA/ENTERO":6,"limpio/ENTERO":70} sobre 76
+EXIT=0

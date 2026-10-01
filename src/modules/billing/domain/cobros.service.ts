@@ -135,9 +135,10 @@ export type Cobro = {
    * `invoiceId` es a qué documento volver a mandarlo; `clase` es la `kind` de la fila, que separa
    * la factura del justificante porque el aviso también los separa (reglas 24/26).
    *
-   * `null` = no consta ningún fallo en el ÚLTIMO intento. No es «salió»: un envío que ni siquiera
-   * llegó a Resend (`invoice_pdf_unavailable`) no deja fila, y esto no lo ve — está declarado en
-   * `docs/master/SCRUM-1235.md`.
+   * `null` = no consta ningún fallo en el ÚLTIMO intento. No es «salió». Desde SCRUM-1243 el envío
+   * que ni siquiera llega a Resend (`invoice_pdf_unavailable`, o `ensureInvoicePdf` que lanza)
+   * también deja su fila y esto lo ve; `invoice_not_found` sigue sin dejarla, porque sin factura
+   * no hay merchant al que atribuirla (`docs/master/SCRUM-1243.md`).
    */
   correoNoSalio: { invoiceId: number; clase: string } | null;
 };

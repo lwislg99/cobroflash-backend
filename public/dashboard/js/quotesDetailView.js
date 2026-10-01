@@ -798,14 +798,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     }
 
     btnGuardar.addEventListener('click', async () => {
-      btnGuardar.disabled = true;
       const antes = btnGuardar.textContent;
       btnGuardar.textContent = 'Guardando…';
       try {
-        await apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
+        // 🔴 SCRUM-1285 · la sección ENTERA congelada mientras vuelve el PATCH. Sin esto, teclear un
+        // tramo llamaba a `recalcular()`, que REHABILITABA este botón: segundo PATCH en vuelo y, si
+        // el primero llegaba después, la base se quedaba con el plan VIEJO.
+        await congelarMientrasGuarda(planSec, () => apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
           method: 'PATCH',
           body: JSON.stringify({ customBillingPlan: leerTramos() }),
-        });
+        }));
         showToast('✓ Plan de cobro actualizado');
         // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
         // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en

@@ -87,7 +87,7 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 // deriva del AST los botones que la vista CREA y exige que todos tengan rótulo aquí.
 const ROTULOS_ALBARAN = {
   // Aprobados para ESTE ticket (nuevos en el árbol)
-  btnFacturar: 'Facturar lo entregado',
+  btnFacturar: 'Facturar lo entregado', // APROBADO · SCRUM-1215 comentario 17496 (lote 3)
   // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699), por delegación de la
   // elección entre tres alternativas. Va pegado a `btnFacturar` porque es de él de quien hay que
   // distinguirlo: son las DOS mitades excluyentes de la primaria de `firmado` —aquélla para el
@@ -102,20 +102,20 @@ const ROTULOS_ALBARAN = {
   // Hasta hoy esta clave NO EXISTÍA, y `mk()` caía al respaldo `ROTULOS_ALBARAN[id] || MARCADOR`:
   // el botón principal de un albarán firmado decía literalmente `[PENDIENTE microcopy oficial]`.
   btnConvertirFactura: 'Facturar con el presupuesto',
-  btnFirmarAqui: 'Firmar aquí mismo',
-  btnVerTrabajo: 'Ver trabajo',
+  btnFirmarAqui: 'Firmar aquí mismo', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
+  btnVerTrabajo: 'Ver trabajo', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
   // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa
   // todo el mundo en un menu de desbordamiento. Describe lo que hace sin adornarlo.
   btnDuplicar: 'Duplicar',
   // Reutilizados letra por letra de la fila del Trabajo (jobDetailView.js), de donde se mudan
-  btnEmitir: 'Emitir',
-  btnEnviarFirmar: 'Enviar para firmar',
+  btnEmitir: 'Emitir', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
+  btnEnviarFirmar: 'Enviar para firmar', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
   // SCRUM-302 · APROBADO por el fundador el 6-ago-2026: VERBO, como sus dos vecinos de la barra.
   // «PDF» a secas venía de una fila estrecha y aquí parecía una etiqueta de formato perdida entre
   // dos acciones.
   btnPdf: 'Descargar PDF',
-  btnWhatsApp: 'Enviar por WhatsApp',
-  btnEditarLineas: 'Editar líneas',
+  btnWhatsApp: 'Enviar por WhatsApp', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
+  btnEditarLineas: 'Editar líneas', // APROBADO · SCRUM-1215 comentario 17494 (lote 3): lleva al Trabajo, donde se editan
   btnFoto: '📷 Añadir foto',
 };
 

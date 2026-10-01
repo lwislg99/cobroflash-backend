@@ -108,7 +108,7 @@ async function generarDesdeElEditor(deTrabajo, { cambiarA = null } = {}) {
 async function trabajosCreadosAlAceptar(cuerpo) {
   const leido = CreateQuoteSchema.parse(cuerpo);
   const quoteGuardado = {
-    id: 99, merchantId: 1, customerId: leido.customer_id, status: 'accepted', total: '100.00',
+    id: 99, merchantId: 4242, customerId: leido.customer_id, status: 'accepted', total: '100.00',
     quoteNumber: 3, teamMemberId: null, jobId: leido.job_id ?? null, // quotes.routes.ts: `jobId: jobIdDelAdicional`
     customer: { name: CLIENTE.name },
   };

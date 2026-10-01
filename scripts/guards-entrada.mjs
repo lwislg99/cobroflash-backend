@@ -51,11 +51,26 @@
 // lanza este comando de verdad, lo cronometra y cae si se pasa. Para añadir el siguiente hay que
 // dejarle sitio a alguno o subir el techo A PROPÓSITO, en un PR que lo diga.
 //
+// ── 🔴 EL 1-OCT-2026 EL TECHO SE PARTIÓ EN DOS (SCRUM-1345): PLAZO NO ES PRESUPUESTO ──────────────
+// Un solo número hacía dos trabajos: cortar a un runner que no acaba (PLAZO) y vigilar que la lista
+// siga tardando segundos (PRESUPUESTO). Pasarse salía 1, el mismo código que «un guard encontró algo».
+// Y cuánto tarda no lo decide este comando sino la máquina, medido sobre el mismo árbol y los mismos
+// 122 tests: 13 s de mediana y 15,4 s de máximo en 597 pasadas de CI; aquí, de 10 s a más de 90
+// según los núcleos libres, con 3 de 12 pasadas por encima sin que nadie tocara un guard.
+//
+//   · PLAZO: pasarse sale CIEGO —código 2, «no terminé; no sé nada de tus guards»—, salvo que antes
+//     de cortar YA hubiera caído algún test: ése es un hallazgo real y manda (código 1).
+//   · PRESUPUESTO: lo juzga `tests/scrum976-guards-entrada-con-techo` EN CI, donde la carga es constante.
+//
+// El número NO sube: siguen siendo 90 s. Las mediciones y los controles, en `docs/master/SCRUM-1345.md`.
+//
 // ⚠️ Esto NO sustituye a `npm test`. Comprueba lo barato de comprobar, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -103,6 +118,11 @@ export const GUARDS = [
 // por sorteo enseña a desconfiar de los rojos. Son 90 s (orquestador, 21-sep-2026).
 export const TECHO_MS = 90000;
 
+// SCRUM-1345 · El PRESUPUESTO es el mismo número, y no se elige: se deriva. Lo que cambia es DÓNDE se
+// juzga —en CI, por `tests/scrum976-guards-entrada-con-techo`— y qué significa pasarse aquí (ciego, no
+// rojo). Bajarlo es una decisión aparte, con su PR: en CI el máximo medido son 15,4 s.
+export const PRESUPUESTO_MS = TECHO_MS;
+
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
@@ -144,7 +164,56 @@ export function techoEfectivo(pedido) {
   return Number.isFinite(n) && n > 0 ? Math.min(n, TECHO_MS) : TECHO_MS;
 }
 
+/**
+ * Los tests que la salida del runner da por CAÍDOS, uno por línea, en lo que llegó a escribir. Vale
+ * para una salida CORTADA, que no trae resumen: lee las líneas de resultado (`✖` del reporter `spec`,
+ * `not ok` del `tap`), no el recuento del final.
+ *
+ * Sólo cuenta lo que el runner escribió ESTANDO VIVO: al runner se le corta con SIGKILL, así que
+ * después del corte no escribe nada. Lo que sale de un proceso matado no se cuenta.
+ *
+ * ⚠️ Límite: es texto. Un guard que imprimiera por su cuenta una línea que empiece por `✖` contaría
+ * como caído; por eso quien llama ENSEÑA las líneas que contó. Medido el 1-oct-2026 sobre cinco
+ * salidas reales en verde (una entera y cuatro cortadas): 0 líneas así.
+ */
+export function fallosVistos(salida) {
+  return (salida || '').replace(ANSI, '').split(/\r?\n/)
+    .filter((l) => /^\s*(?:✖|not ok\b)/.test(l))
+    .filter((l) => !/^\s*✖ failing tests:\s*$/.test(l) && !/#\s*(?:SKIP|TODO)\b/i.test(l))
+    .map((l) => l.trim());
+}
+
+/** El `fail N` del resumen del runner; 0 si la salida no trae resumen. Mismo lector que el de arriba. */
+function fallosDelResumen(salida) {
+  const m = /^[^\n]*\bfail\s+(\d+)\s*$/m.exec((salida || '').replace(ANSI, ''));
+  return m ? Number(m[1]) : 0;
+}
+
+/**
+ * Las DOS cuentas de una pasada, para dárselas a `veredictoDe` (SCRUM-1320). Aquí no se decide ningún
+ * código de salida: sólo se cuenta.
+ *
+ *   · `agotado` (se cortó por el plazo): un ciego SIEMPRE —de lo que no acabó no se sabe nada—, y de
+ *     hallazgos, los tests que ya habían caído antes del corte. Ésos son reales y no se pierden.
+ *   · terminó con estado ≠ 0: hallazgos, los que dice su resumen (y al menos uno: salió distinto de 0).
+ *   · terminó con 0: ni una cosa ni otra.
+ */
+export function cuentasDeLaPasada({ agotado, status, salida }) {
+  if (agotado) {
+    const vistos = fallosVistos(salida);
+    return { hallazgos: vistos.length, ciegos: 1, vistos };
+  }
+  if (status !== 0) return { hallazgos: Math.max(1, fallosDelResumen(salida)), ciegos: 0, vistos: [] };
+  return { hallazgos: 0, ciegos: 0, vistos: [] };
+}
+
+/** La línea que sale SIEMPRE, también en verde y también si no se lanzó nada: población, tiempo y plazo. */
+export function lineaDeLaPasada({ guards, ms, plazoMs }) {
+  return `${guards} guards · ${(ms / 1000).toFixed(1)} s · plazo ${plazoMs / 1000} s`;
+}
+
 function main() {
+const techo = techoEfectivo(process.env.GUARDS_ENTRADA_TECHO_MS);
 const faltan = GUARDS.filter((g) => !fs.existsSync(path.join(RAIZ, g.fichero)));
 if (faltan.length) {
   console.error('🔴 FALTAN GUARDS DE ENTRADA — no se ejecuta nada:\n');
@@ -152,10 +221,12 @@ if (faltan.length) {
   console.error('\n  O el fichero se ha renombrado y hay que actualizar esta lista, o el guard ha');
   console.error('  desaparecido y hay que decidirlo a propósito. Correr los que quedan y decir');
   console.error('  «verde» sería exactamente el fallo que este comando viene a evitar.');
+  console.log(lineaDeLaPasada({ guards: 0, ms: 0, plazoMs: techo }));
   process.exit(1);
 }
 if (GUARDS.length < MINIMO) {
   console.error(`🔴 la lista tiene ${GUARDS.length} guards y el mínimo son ${MINIMO}. No se ejecuta nada.`);
+  console.log(lineaDeLaPasada({ guards: 0, ms: 0, plazoMs: techo }));
   process.exit(1);
 }
 
@@ -163,23 +234,43 @@ console.log(`Guards de entrada del registro (${GUARDS.length}):`);
 for (const g of GUARDS) console.log(`  · ${path.basename(g.fichero)} — ${g.porque}`);
 console.log();
 
-// El techo es del comando ENTERO y lo hace cumplir `spawnSync`: pasado el plazo mata al runner y
-// `r.error` trae ETIMEDOUT. Se puede BAJAR con `GUARDS_ENTRADA_TECHO_MS` (así lo prueba el test, sin
-// esperar un minuto), nunca subir: un plazo que cualquiera alarga desde el entorno es una sugerencia.
-const techo = techoEfectivo(process.env.GUARDS_ENTRADA_TECHO_MS);
+// El plazo es del comando ENTERO y lo hace cumplir `spawnSync`: pasado, mata al runner y `r.error`
+// trae ETIMEDOUT. Se puede BAJAR con `GUARDS_ENTRADA_TECHO_MS` (así lo prueba el test, sin esperar un
+// minuto), nunca subir: un plazo que cualquiera alarga desde el entorno es una sugerencia.
+// SCRUM-1345 · se le corta con SIGKILL para que NO escriba nada después del corte: lo que hay en
+// `r.stdout` es lo que dijo estando vivo, y sólo eso se cuenta.
 const t0 = Date.now();
 const r = spawnSync(process.execPath, ['--test', ...GUARDS.map((g) => g.fichero)], {
-  cwd: RAIZ, encoding: 'utf8', timeout: techo,
+  cwd: RAIZ, encoding: 'utf8', timeout: techo, killSignal: 'SIGKILL',
 });
 const ms = Date.now() - t0;
 process.stdout.write(r.stdout || '');
 process.stderr.write(r.stderr || '');
 
-if (r.error && r.error.code === 'ETIMEDOUT') {
-  console.error(`\n🔴 los guards de entrada se pasaron del TECHO: más de ${techo} ms (el techo es ${TECHO_MS} ms).`);
-  console.error('  Un comando que tarda un minuto no se ejecuta, y entonces no vigila nada. Deja sitio a');
-  console.error('  alguno de la lista o sube el techo A PROPÓSITO, en un PR que lo diga (SCRUM-976).');
-  process.exit(1);
+// SCRUM-1345 · las dos cuentas de la pasada y, de ellas, el veredicto: lo decide `veredictoDe`
+// (SCRUM-1320), igual que en los guards de navegador. Aquí no se elige ningún código a mano.
+const agotado = Boolean(r.error && r.error.code === 'ETIMEDOUT');
+const cuentas = cuentasDeLaPasada({ agotado, status: r.status, salida: r.stdout || '' });
+const veredicto = veredictoDe(cuentas);
+const linea = lineaDeLaPasada({ guards: GUARDS.length, ms, plazoMs: techo });
+
+if (agotado) {
+  const vistos = cuentas.vistos;
+  if (vistos.length > 0) {
+    console.error(`\n🔴 HALLAZGO, y además no terminé. Antes del corte (plazo de ${techo / 1000} s) ya habían caído ${vistos.length}:`);
+    for (const l of vistos) console.error(`   ${l}`);
+    console.error('  Ésos son reales: arréglalos ANTES de empujar. Y la lista NO es completa: de los guards');
+    console.error('  que no llegaron a acabar no sé nada.');
+  } else {
+    console.error(`\n⬜ CIEGO — no terminé; no sé nada de tus guards. Corté al runner al pasar el plazo de ${techo / 1000} s.`);
+    console.error('  Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha');
+    console.error('  dicho que esté bien. Cuánto tarda este comando lo decide la carga de la máquina, no la lista');
+    console.error('  (mismo árbol: de 10 s a más de 90 según los núcleos libres, SCRUM-1345). Relánzalo cuando la');
+    console.error('  máquina afloje. El presupuesto de tiempo de la lista se juzga en CI, no aquí.');
+  }
+  console.error(`  ${veredicto.linea}`);
+  console.log(linea);
+  process.exit(veredicto.codigo);
 }
 
 // SUELO Nº2: que además de correr, HAYAN CORRIDO. Un fichero que existe pero se quedó sin tests
@@ -189,15 +280,19 @@ const ejecutados = recuentoDeTests(r.stdout || '');
 if (ejecutados < MINIMO) {
   console.error(`\n🔴 solo se ejecutaron ${ejecutados} tests entre ${GUARDS.length} ficheros.`);
   console.error('  Los ficheros están, pero no han corrido: «0 tests, 0 fallos» también sale verde.');
+  console.log(linea);
   process.exit(1);
 }
 
 if (r.status !== 0) {
   console.error('\n🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,');
   console.error('  el PR sale rojo y cuesta una vuelta entera.');
-  process.exit(r.status ?? 1);
+  console.error(`  ${veredicto.linea}`);
+  console.log(linea);
+  process.exit(veredicto.codigo);
 }
 console.log(`\n✓ ${GUARDS.length} guards de entrada en verde (${ejecutados} tests, ${(ms / 1000).toFixed(1)} s de ${TECHO_MS / 1000}). La entrada puede empujarse.`);
+console.log(linea);
 }
 
 // Solo corre cuando se le llama como comando. Importarlo —para probar el lector de arriba— no

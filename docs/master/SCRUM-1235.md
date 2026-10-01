@@ -46,6 +46,7 @@ el webhook real de `psp.routes`, el `sendInvoiceEmail` real, Resend rechaza (`ax
 1. **`invoice_pdf_unavailable`** (`email.service.ts`) se lanza ANTES de llamar a Resend: ese fallo **no
    deja fila**, y este mecanismo no lo ve. Taparlo exige escribir la fila fuera de `enviarPorResend`:
    ticket aparte.
+   → *29-sep-2026:* tapado por **SCRUM-1243** (salvo `invoice_not_found`); ver `docs/master/SCRUM-1243.md`.
 2. **`rebotado`**: el correo salió y rebotó. «Enviar de nuevo» a la misma dirección no lo arregla;
    fuera de este ticket.
 3. **Un reintento sin respuesta** (red caída, plazo vencido) no pinta texto nuevo: el aviso sigue
