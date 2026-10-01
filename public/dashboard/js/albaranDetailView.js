@@ -469,7 +469,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
         aviso.setAttribute('role', 'alert');
         aviso.dataset.firmaRechazada = '1';
         aviso.textContent = rechazada;
-        page.appendChild(aviso);
+        // SCRUM-1376 · dentro del MISMO envoltorio que la caja de arriba: suelto en la página, su
+        // borde tocaba la barra de acciones. Sin estilo nuevo: la separación es la que ya había.
+        cajaDeFirma('').appendChild(aviso);
       }
     }
   }
