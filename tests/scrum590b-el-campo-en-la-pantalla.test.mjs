@@ -241,7 +241,12 @@ test('SCRUM-590b · el campo se ve en los DOS lados (Empresa y Persona) — medi
 
   // Y el modal NO se lo pasa a `aplicarLado`, que es lo que de verdad decide en pantalla.
   const modal = fs.readFileSync(MODAL, 'utf8');
-  for (const bloque of modal.split('aplicarLado(').slice(1)) {
+  // SCRUM-1311 · suelo de población: el nombre va escrito como cadena, y si la función se renombra
+  // el `split` no parte nada y el bucle no mira ninguna llamada.
+  const llamadasAlConmutador = modal.split('aplicarLado(').slice(1);
+  assert.ok(llamadasAlConmutador.length > 0,
+    '🔴 CIEGO: el modal ya no llama a `aplicarLado(` — ¿se ha renombrado? Sin ninguna llamada que mirar, «el móvil no se pasa al conmutador» no se ha comprobado.');
+  for (const bloque of llamadasAlConmutador) {
     const mapa = bloque.slice(0, bloque.indexOf('}'));
     assert.equal(/\bmobile\b/.test(mapa), false,
       '🔴 el campo del móvil se está pasando al conmutador de lado: dejaría de verse en Persona.');
