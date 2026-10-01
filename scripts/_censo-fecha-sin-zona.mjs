@@ -51,7 +51,39 @@ import { createRequire } from 'node:module';
 const require_ = createRequire(import.meta.url);
 const ts = require_('typescript');
 
-const RAIZ = path.resolve(path.dirname(require_.resolve('typescript/package.json')), '..', '..');
+/**
+ * 🔴 SCRUM-1377 · LA RAÍZ ES LA DEL ÁRBOL QUE SE MIDE, no la de la casa de `typescript`.
+ *
+ * Hasta el 1-oct-2026 esto era `require.resolve('typescript/package.json')` subiendo dos carpetas.
+ * En un worktree cuyo `node_modules` es una junction al de otro, node resuelve la junction a su
+ * destino y esa «raíz» es EL OTRO ÁRBOL: medido, 312 ficheros censados, 0 filas y salida 0 — un
+ * «árbol limpio» que no había mirado nada. Este fichero vive en `scripts/` del árbol que mide: su
+ * propia ruta es la única referencia que no depende de dónde esté instalada una dependencia.
+ */
+const RAIZ = path.resolve(import.meta.dirname, '..');
+
+/**
+ * La raíz, comprobada: tiene que ser un árbol que este censo SABE medir (su `tsconfig.json` y al
+ * menos una de las `CARPETAS`). Si no, LANZA — «no pude determinar la raíz» nunca sale como 0 filas.
+ */
+export function raizMedible(raiz = RAIZ) {
+  const abs = path.resolve(raiz);
+  const faltan = [];
+  if (!fs.existsSync(path.join(abs, 'tsconfig.json'))) faltan.push('tsconfig.json');
+  if (!CARPETAS.some((c) => fs.existsSync(path.join(abs, c)))) faltan.push(`ninguna de [${CARPETAS.join(', ')}]`);
+  if (faltan.length) {
+    throw new Error(`🔴 CIEGO · censo de fecha sin zona: «${abs}» no es un árbol medible (falta ${faltan.join(' y ')}). `
+      + 'No se devuelve un censo vacío: cero filas aquí sería «no he mirado», no «está limpio» (SCRUM-1377).');
+  }
+  return abs;
+}
+
+/** ¿`fichero` cuelga de `raiz`? Por ruta relativa, que en Windows ya compara sin distinguir la caja. */
+function relativaDentro(raiz, fichero) {
+  const rel = path.relative(raiz, fichero);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return null;
+  return rel.split(path.sep).join('/');
+}
 
 const GET_SET = new Set([
   'getFullYear', 'getMonth', 'getDate', 'getDay', 'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds',
@@ -108,10 +140,19 @@ function claveDeVersion(opts) {
   return typeof opts === 'object' && opts !== null ? `${opts.languageVersion}|${opts.impliedNodeFormat}` : String(opts);
 }
 
-export function programaDe(ficheros, overrides = new Map()) {
-  const tsconfigPath = path.join(RAIZ, 'tsconfig.json');
-  const leido = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
-  const parseado = ts.parseJsonConfigFileContent(leido.config, ts.sys, RAIZ);
+export function programaDe(ficheros, overrides = new Map(), raiz = RAIZ) {
+  const abs = raizMedible(raiz);
+  const tsconfigPath = path.join(abs, 'tsconfig.json');
+  // Con `/`: al adjuntar un error de sintaxis, TypeScript compara esta ruta con su forma normalizada
+  // y con `\` revienta en un «Debug Failure» que tapa el motivo real.
+  const leido = ts.readConfigFile(conBarra(tsconfigPath), ts.sys.readFile);
+  // Un `tsconfig.json` ilegible deja `leido.config` en `undefined`, y `parseJsonConfigFileContent`
+  // lo acepta con las opciones POR DEFECTO sin decir nada: otro compilador, mismos «resultados».
+  if (leido.error || !leido.config) {
+    throw new Error(`🔴 CIEGO · censo de fecha sin zona: no pude leer ${tsconfigPath}: `
+      + `${ts.flattenDiagnosticMessageText(leido.error?.messageText ?? 'sin contenido', ' ')} (SCRUM-1377).`);
+  }
+  const parseado = ts.parseJsonConfigFileContent(leido.config, ts.sys, abs);
   const opciones = { ...parseado.options, noEmit: true };
 
   const overridesNormalizados = new Map([...overrides].map(([k, v]) => [conBarra(k), v]));
@@ -212,12 +253,23 @@ function identidadDe(nodo, sf) {
  * Censa un `ts.Program` ya construido. Devuelve una fila por llamada de la familia, con su
  * identidad, línea (informativa, no la clave) y si tiene zona explícita.
  */
-export function censarPrograma(program, soloEstosFicheros = null) {
+export function censarPrograma(program, soloEstosFicheros = null, raiz = RAIZ) {
+  const abs = path.resolve(raiz);
+  // 🔴 SCRUM-1377 · Los ficheros que se PIDIÓ censar tienen que colgar de la raíz contra la que se
+  // van a nombrar. Si no, ninguno empieza por `src/`, el filtro de abajo los descarta todos y el
+  // censo devuelve 0 filas: el defecto medido. Raíz y programa que no casan es CIEGO, no vacío.
+  const fuera = program.getRootFileNames().filter((f) => relativaDentro(abs, f) === null);
+  if (fuera.length) {
+    throw new Error(`🔴 CIEGO · censo de fecha sin zona: ${fuera.length} de ${program.getRootFileNames().length} `
+      + `ficheros pedidos caen FUERA de la raíz «${abs}» (el primero: ${fuera[0]}). La raíz no es la del `
+      + 'árbol que se mide; no se devuelve un censo vacío (SCRUM-1377).');
+  }
   const checker = program.getTypeChecker();
   const filas = [];
   for (const sf of program.getSourceFiles()) {
     if (sf.isDeclarationFile) continue;
-    const rel = path.relative(RAIZ, sf.fileName).split(path.sep).join('/');
+    const rel = relativaDentro(abs, sf.fileName);
+    if (rel === null) continue;
     if (soloEstosFicheros && !soloEstosFicheros.includes(rel)) continue;
     if (!rel.startsWith('src/') && soloEstosFicheros === null) continue;
 
@@ -250,11 +302,15 @@ export function censarPrograma(program, soloEstosFicheros = null) {
 
 /** Censa el árbol real de `src/`. Declara su POBLACIÓN (SCRUM-850): nunca sólo el resultado. */
 export function censar(raiz = RAIZ) {
-  const abs = path.resolve(raiz);
+  const abs = raizMedible(raiz);
   const todos = CARPETAS.flatMap((c) => ficherosDe(path.join(abs, c)));
-  const program = programaDe(todos);
-  const filas = censarPrograma(program);
-  return { ficheros: todos.length, filas };
+  if (todos.length === 0) {
+    throw new Error(`🔴 CIEGO · censo de fecha sin zona: «${abs}» no tiene ni un fichero ${[...EXT].join('/')} `
+      + `en [${CARPETAS.join(', ')}]. Sin población no hay censo (SCRUM-1377).`);
+  }
+  const program = programaDe(todos, new Map(), abs);
+  const filas = censarPrograma(program, null, abs);
+  return { raiz: abs, ficheros: todos.length, filas };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
