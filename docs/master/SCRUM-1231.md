@@ -67,6 +67,16 @@ El primer M1 lo escribí mal y **rompía la sintaxis** de `schemas.js`: salió `
 fichero, 0 casos corridos. Leído deprisa es «el mutante muere». No medía nada: lo delató que `ok=0`.
 Rehecho con el `union` de verdad. De ahí la cicatriz.
 
+## De paso, en este PR (no es de este ticket)
+
+- La lección y las cicatrices de SCRUM-1355 que quedaron fuera del repo: apéndice `SCRUM-1355b` y
+  `docs/equipo/cicatrices/S1.md`.
+- Una frase en A10, a petición del orquestador (medida por S2 en yaqu.app, presupuesto #203): «El
+  `updatedAt` de una fila no es la versión de un trozo de esa fila». Las notas de un presupuesto se
+  autoguardan y mueven el `updatedAt` de la fila, así que «Guardar plan» devolvía un 409 «versión
+  superada» por la nota de la propia persona. Aviso de diseño para las 21 escrituras sin versión del
+  censo de SCRUM-1285c; aquí no se cambia código por ello.
+
 ## Suelos
 
 - ⚠️ **La ruta no se ejecuta en el test**: `app.ts` arranca el servidor entero. Se prueban sus dos
