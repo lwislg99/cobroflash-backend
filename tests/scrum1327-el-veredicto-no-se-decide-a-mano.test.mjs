@@ -120,7 +120,9 @@ test('SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin c
   assert.equal(vacio.ciegos.length, 1);
   assert.equal(veredictoDe(vacio).codigo, SALIDA_NO_SUPE_MEDIR);
   // Un juez que no devuelve sus dos listas no ha juzgado: no es un caso limpio.
-  for (const malo of [undefined, null, {}, { hallazgos: [] }, { ciegos: [] }, { hallazgos: 0, ciegos: 0 }]) {
+  // El último es el que muerde: una FRASE en vez de una lista se esparciría letra a letra, y «no cabe»
+  // contaría como siete hallazgos sin que nada lanzase.
+  for (const malo of [undefined, null, {}, { hallazgos: [] }, { ciegos: [] }, { hallazgos: 0, ciegos: 0 }, { hallazgos: 'no cabe', ciegos: [] }]) {
     await assert.rejects(() => recorrerCasos([{ nombre: 'a' }], async () => malo, nombrar), TypeError, 'devolvió ' + JSON.stringify(malo));
   }
   // El control de que `rejects` no pasa por cualquier cosa: la forma buena no lanza.
@@ -129,17 +131,21 @@ test('SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin c
 
 // ── ② LOS SEIS ─────────────────────────────────────────────────────────────────────────────────
 
-/** ¿El fuente llama a esa función? Por AST: los comentarios de estos guards la nombran al explicarse. */
-function llamaA(fuente, nombre) {
+/** Las llamadas del fuente que cumplen `es`. Por AST: los comentarios de estos guards nombran lo mismo al explicarse. */
+function llamadas(fuente, es) {
   const sf = ts.createSourceFile('guard.mjs', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   let n = 0;
   const ver = (nodo) => {
-    if (ts.isCallExpression(nodo) && ts.isIdentifier(nodo.expression) && nodo.expression.text === nombre) n += 1;
+    if (ts.isCallExpression(nodo) && es(nodo, sf)) n += 1;
     ts.forEachChild(nodo, ver);
   };
   ver(sf);
   return n;
 }
+const llamaA = (fuente, nombre) => llamadas(fuente, (n) => ts.isIdentifier(n.expression) && n.expression.text === nombre);
+/** `console.log(… veredictoFinal.linea …)`: la línea de las dos cuentas, dicha por el camino VERDE. */
+const diceSusCuentasEnVerde = (fuente) => llamadas(fuente, (n, sf) => n.expression.getText(sf) === 'console.log'
+  && n.arguments.some((a) => /\bveredictoFinal\.linea\b/.test(a.getText(sf))));
 
 test('SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`', () => {
   for (const f of [...GRUPO_1, ...GRUPO_2]) {
@@ -149,13 +155,18 @@ test('SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo
     assert.ok(r.porVeredicto.length >= 1, f + ' no sale con el `.codigo` de su veredicto');
     assert.deepEqual(r.aMano.map((s) => f + ':' + s.linea + ' ' + s.porque), [], f + ' vuelve a decidir por su cuenta');
     assert.equal(SALEN_A_MANO.has(f), false, f + ' está arreglado: no puede seguir en la lista de los que salen a mano');
+    // La línea de las cuentas sale SIEMPRE, también en verde. Si sólo saliera con algo que contar, que
+    // no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+    assert.equal(diceSusCuentasEnVerde(leerGuard(f)), 1, f + ' ya no dice sus dos cuentas cuando sale en verde');
   }
   for (const f of GRUPO_1) {
     assert.equal(llamaA(leerGuard(f), 'recorrerCasos'), 1, f + ' tiene que recorrer sus casos con `recorrerCasos`: escrito a mano, el bucle vuelve a elegir cuándo deja de mirar');
   }
-  // El control de `llamaA`: no cuenta la palabra en un comentario, sólo la llamada.
+  // El control de los dos lectores: no cuentan la palabra en un comentario, sólo la llamada.
   assert.equal(llamaA('// recorrerCasos(a, b)\nconst x = 1;', 'recorrerCasos'), 0);
   assert.equal(llamaA('await recorrerCasos(a, b);', 'recorrerCasos'), 1);
+  assert.equal(diceSusCuentasEnVerde("// console.log(veredictoFinal.linea)\nconsole.error(veredictoFinal.linea);"), 0, 'por `console.error` es el camino rojo, no el verde');
+  assert.equal(diceSusCuentasEnVerde("console.log('  ' + veredictoFinal.linea);"), 1);
 });
 
 // ── ③ EL LECTOR ────────────────────────────────────────────────────────────────────────────────

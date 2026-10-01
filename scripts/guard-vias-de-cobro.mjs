@@ -341,7 +341,7 @@ if (veredictoFinal.codigo !== 0) {
 }
 // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
 // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
-console.log(veredictoFinal.linea);
+console.log('  ' + veredictoFinal.linea);
 
 console.log(`\n  ✔ los ${CASOS.length} casos: la tarjeta y el aviso dicen LO MISMO sobre si puede cobrar por Bizum.`);
 console.log('    Medido en el DOM vivo al final del render, con el detector calibrado en cada caso.\n');

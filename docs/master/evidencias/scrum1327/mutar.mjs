@@ -38,7 +38,13 @@ const MUTACIONES = [
   { id: 'R3', que: 'cero casos da verde', f: RECORRIDO,
     de: 'if (recorridos === 0) ciegos.push(', a: 'if (recorridos < 0) ciegos.push(',
     cae: 'SUELO del recorrido' },
+  { id: 'R4', que: 'un caso que no devuelve una LISTA pasa (una frase se esparce letra a letra)', f: RECORRIDO,
+    de: 'if (!Array.isArray(valor)) {', a: 'if (valor === undefined) {',
+    cae: 'SUELO del recorrido' },
   // ── los seis ──
+  { id: 'S4', que: 'un guard deja de decir sus dos cuentas en verde', f: 'scripts/guard-vias-de-cobro.mjs',
+    de: "console.log('  ' + veredictoFinal.linea);", a: "console.log('  sin las cuentas');",
+    cae: 'los seis salen SÓLO por `veredictoDe`' },
   { id: 'S1', que: 'un guard del grupo 2 vuelve a salir con 1 a mano', f: 'scripts/guard-aviso-bizum.mjs',
     de: '  process.exit(veredictoFinal.codigo);', a: '  process.exit(1);',
     cae: 'los seis salen SÓLO por `veredictoDe`' },
