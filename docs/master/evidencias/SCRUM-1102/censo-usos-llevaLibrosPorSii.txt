@@ -1,0 +1,74 @@
+
+CENSO DE USOS DE `llevaLibrosPorSii` (AST · grafías normalizadas)
+
+GRAFÍAS ENCONTRADAS: fLlevaLibrosPorSii · llevaLibrosPorSii · lleva_libros_por_sii
+
+── LECTURA (18) ──
+   src/modules/system/merchantAdmin.ts:148  [prisma: select]
+      llevaLibrosPorSii: true,
+   public/dashboard/js/settingsView.js:329
+      fLlevaLibrosPorSii.id = "merchant-lleva-libros-por-sii";
+   public/dashboard/js/settingsView.js:330
+      fLlevaLibrosPorSii.name = "llevaLibrosPorSii";
+   public/dashboard/js/settingsView.js:331
+      fLlevaLibrosPorSii.className = "input";
+   public/dashboard/js/settingsView.js:332
+      fLlevaLibrosPorSii.innerHTML = OPCIONES_HECHO_FISCAL;
+   public/dashboard/js/settingsView.js:334
+      siiWrapper.appendChild(fLlevaLibrosPorSii);
+   public/dashboard/js/settingsView.js:913
+      fLlevaLibrosPorSii.value = merchant.llevaLibrosPorSii === true ? "si"
+   public/dashboard/js/settingsView.js:913
+      fLlevaLibrosPorSii.value = merchant.llevaLibrosPorSii === true ? "si"
+   public/dashboard/js/settingsView.js:914
+      : merchant.llevaLibrosPorSii === false ? "no" : "";
+   public/dashboard/js/settingsView.js:1116
+      llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
+   public/dashboard/js/settingsView.js:1116
+      llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
+   tests/banco-scrum1102f/navegador.mjs:26
+      criterioCaja: null, llevaLibrosPorSii: true, domicilioFiscalForal: false,
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:116
+      const fila = baseQueRecuerda({ llevaLibrosPorSii: true, domicilioFiscalForal: false });
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:118
+      assert.deepEqual([fila.llevaLibrosPorSii, fila.domicilioFiscalForal], [true, false], '🔴 un guardado ajeno las ha tocado
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:120
+      assert.deepEqual([fila.llevaLibrosPorSii, fila.domicilioFiscalForal], [true, null], '🔴 guardar una ha movido la otra');
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:201
+      assert.deepEqual([enviado.llevaLibrosPorSii, enviado.domicilioFiscalForal], [true, false]);
+   tests/scrum1227-perfil-ida-y-vuelta.test.mjs:38
+      llevaLibrosPorSii: true, domicilioFiscalForal: false, // SCRUM-1102f
+   tests/scrum1269-retencion-irpf-se-guarda.test.mjs:39
+      llevaLibrosPorSii: true, domicilioFiscalForal: false, // SCRUM-1102f
+
+── ESCRITURA (3) ──
+   public/dashboard/js/settingsSubmenus.js:126
+      llevaLibrosPorSii: 'empresa',
+   public/dashboard/js/settingsView.js:1116
+      llevaLibrosPorSii: fLlevaLibrosPorSii.value === "si" ? true : fLlevaLibrosPorSii.value === "no" ? false : null,
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:197
+      const p = await montarConfiguracion({ llevaLibrosPorSii: null, domicilioFiscalForal: null });
+
+── DECLARACION (3) ──
+   src/core/validation/schemas.ts:421
+      llevaLibrosPorSii: z.boolean().nullable().optional(),
+   public/dashboard/js/settingsView.js:328
+      const fLlevaLibrosPorSii = document.createElement("select");
+   prisma/schema.prisma:60  [por línea, sin AST]
+      llevaLibrosPorSii          Boolean?  @map("lleva_libros_por_sii")
+
+── NO_CLASIFICADO (6) ──
+   public/dashboard/js/settingsView.js:330
+      fLlevaLibrosPorSii.name = "llevaLibrosPorSii";
+   public/dashboard/js/settingsView.js:401
+      colocar("llevaLibrosPorSii", siiWrapper);
+   tests/banco-scrum1102f/navegador.mjs:29
+      { clave: 'llevaLibrosPorSii', pregunta: '¿Llevas los libros de IVA por el SII?', alCargar: 'si', elegir: '', seManda: nu
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:33
+      clave: 'llevaLibrosPorSii',
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:34
+      columna: 'lleva_libros_por_sii',
+   tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs:198
+      p.selector('llevaLibrosPorSii').value = 'si';
+
+TOTAL: 30 usos · 9 ficheros
