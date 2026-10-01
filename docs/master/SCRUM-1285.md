@@ -201,3 +201,49 @@ tiene la doble transición a `paid` de `psp:119`), y la carrera de sellado de `e
 
 Nada de `src/`, `public/` ni del esquema. Carriles de lo encontrado: dinero y cobros → S1/J (según `dos-equipos.md`);
 lo fiscal (`invoiceAdmin.ts`, `invoice.routes.ts`, `invoicing.ts`) → J1, **solo se ha leído**.
+
+# APÉNDICE · La pantalla manda la versión y el aviso del 409 sólo sale cuando el plan ha cambiado (S2)
+
+**Medido contra:** `origin/main` = `64dc3211d039cedece0cccf9fa3fcaf7d491319d` · 2026-10-01T13:03:46Z
+A9: comprobación → `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`
+
+Carril S2 (`public/dashboard/js/quotesDetailView.js`) · rama `scrum-1285-plan-de-cobro-version-pantalla` · sesión `s2-1octb`. Entrada propia (encabezado de primer nivel) para que su declaración de skill no se atribuya a los PR de arriba.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Un párrafo nuevo en la sección «Plan de cobro», con una clase que ya existía (`cobro-aviso`): sin estilos nuevos ni en línea, sin componente nuevo. Texto: el aprobado, registrado en `docs/microcopy/2026-10-01-SCRUM-1285-plan-de-cobro-cambiado.md`.
+
+(La A9: iba a pintar el texto a cada 409, que es lo que decía el encargo — «son ~3 líneas». Antes de pintarlo comprobé lo que afirma, y no se sostenía. La comprobación es el test de la nota, abajo.)
+
+## Lo que se encargó y lo que se midió
+
+El encargo: mandar `version: quote.updatedAt`, y ante el 409 `version_superada` recargar y pintar «Este plan de cobro ha cambiado desde que lo abriste…».
+
+La versión que compara el servidor es el `updatedAt` **del presupuesto entero**. En esta misma ficha, las notas internas se guardan solas al teclear y no repintan la ficha; las etiquetas, igual.
+
+Medido en yaqu.app, cuenta de pruebas, presupuesto #203: `updatedAt` antes `2026-10-01T11:00:24.453Z` → guardar la nota interna, 200 → después `2026-10-01T12:54:38.985Z`. La nota se restauró.
+
+Es decir: apuntar una nota y después guardar el plan da 409, y el texto diría que el plan ha cambiado cuando lo único que cambió fue la nota. Y se descartaría el cambio de la persona.
+
+## Lo construido
+
+1. «Guardar plan» manda la versión que leyó la ficha.
+2. Ante 409 `version_superada` se relee el presupuesto y se compara lo que la persona ve del plan (tramos, reparto y cuántos tramos están facturados) con lo vigente:
+   - **es otro** → no se reenvía nada, se repinta la ficha con el plan vigente y sale el aviso aprobado, una vez, dentro de la sección;
+   - **es el mismo** → se reenvía su cambio con la versión nueva, sin decir nada. Si entre la relectura y el reenvío alguien cambia el plan, el servidor vuelve a rechazarlo: la protección no baja.
+3. Si el reenvío también choca, sale el respaldo que la pantalla ya tenía («No se pudo guardar el plan») y no el identificador interno.
+4. Todo ocurre con la sección congelada (`congelarMientrasGuarda`): sigue habiendo un solo guardado en vuelo.
+
+Retirada `billing-plan::version` de las declaradas de `scripts/_sin-consumir-declarados.json` (pasa a `retiradas`).
+
+## Verificado, ejecutando
+
+`tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`, vista real en el banco y red retenida:
+
+- **Con la vista de `main`:** 1 de 7 (pasa sólo el control del 409 que no es de versión).
+- **Con el cambio:** 7 de 7.
+
+## Lo que NO está medido o queda abierto
+
+- **En pantalla contra yaqu.app:** la cuenta de pruebas no tiene ningún presupuesto con plan de cobro propio (#203 es un borrador sin plan). Es el mismo hueco de datos de prueba que SCRUM-1367 (no hay Trabajo con presupuesto aceptado): dos verificaciones distintas paradas por lo mismo.
+- **La tanda completa en esta máquina no terminó:** el sistema la paró por falta de memoria. Corrida una tanda dirigida de 22 ficheros (plan de cobro, trinquetes 1185 y 713, censos de copy, skill UI, A9): 195 de 195.
+- **Un tramo facturado de más cuenta como «el plan ha cambiado».** Los tramos son los mismos, pero uno ha pasado a fijo. El criterio: lo que la persona está a punto de guardar ya no es válido — su pantalla describe un estado que ya se superó, y guardarlo sería escribir sobre una factura emitida. Y entre molestarla con el aviso y dejarle pisar un plan con un tramo ya facturado, lo segundo es el daño.
+- **El mismo defecto de fondo sigue en el servidor:** cualquier escritura del presupuesto mueve la versión del plan. Aquí se absorbe en la pantalla; una versión propia del plan sería cambio de esquema (S1, con su ALTER).

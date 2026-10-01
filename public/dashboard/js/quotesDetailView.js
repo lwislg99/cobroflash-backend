@@ -41,6 +41,24 @@ function addDefRow(dl, term, value) {
   dl.appendChild(dd);
 }
 
+// SCRUM-1285 · el aviso del 409 `version_superada` del plan de cobro. Texto aprobado
+// (docs/microcopy/2026-10-01-SCRUM-1285-plan-de-cobro-cambiado.md); sólo se pinta cuando el plan
+// HA cambiado de verdad, que es lo que afirma.
+const TEXTO_PLAN_DE_COBRO_CAMBIADO =
+  'Este plan de cobro ha cambiado desde que lo abriste. Te mostramos cómo está ahora: revísalo y vuelve a hacer tu cambio.';
+// El presupuesto cuyo plan hay que anunciar como cambiado en el PRÓXIMO pintado de su ficha. Lo
+// pone el guardado rechazado y lo consume el repintado: el aviso sale una vez, junto al plan vigente.
+let planDeCobroCambiadoEn = null;
+
+/** Lo que la persona VE del plan: tramos, reparto y cuántos están ya facturados. */
+function huellaDelPlanDeCobro(q) {
+  const tramos = Array.isArray(q && q.billingPlan) ? q.billingPlan : [];
+  return JSON.stringify([
+    tramos.map((s) => [String(s.label || ''), Number(s.percent || 0)]),
+    Array.isArray(q && q.invoices) ? q.invoices.length : 0,
+  ]);
+}
+
 async function renderQuoteDetailView(container, forcedQuoteId) {
   const rawId =
     typeof forcedQuoteId !== 'undefined'
@@ -693,6 +711,15 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     planSec.innerHTML = '<h3 class="detail-section-title">Plan de cobro</h3>';
     page.appendChild(planSec);
 
+    if (planDeCobroCambiadoEn === quote.id) {
+      planDeCobroCambiadoEn = null;
+      const aviso = document.createElement('p');
+      aviso.className = 'cobro-aviso';
+      aviso.setAttribute('role', 'status');
+      aviso.textContent = TEXTO_PLAN_DE_COBRO_CAMBIADO;
+      planSec.appendChild(aviso);
+    }
+
     const emitidos = invoices.length;
     const ayuda = document.createElement('p');
     ayuda.style.cssText = 'font-size:13px;color:var(--muted);margin:0 0 10px';
@@ -804,10 +831,34 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         // 🔴 SCRUM-1285 · la sección ENTERA congelada mientras vuelve el PATCH. Sin esto, teclear un
         // tramo llamaba a `recalcular()`, que REHABILITABA este botón: segundo PATCH en vuelo y, si
         // el primero llegaba después, la base se quedaba con el plan VIEJO.
-        await congelarMientrasGuarda(planSec, () => apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
-          method: 'PATCH',
-          body: JSON.stringify({ customBillingPlan: leerTramos() }),
-        }));
+        const cambiado = await congelarMientrasGuarda(planSec, async () => {
+          // SCRUM-1285 · se manda la versión que LEYÓ esta pantalla: el servidor rechaza (409
+          // `version_superada`) un guardado hecho sobre una lectura vieja en vez de pisar a ciegas.
+          const enviar = (version) => apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
+            method: 'PATCH',
+            body: JSON.stringify({ customBillingPlan: leerTramos(), version }),
+          });
+          try {
+            await enviar(quote.updatedAt);
+            return false;
+          } catch (e) {
+            if (!e || e.code !== 'version_superada') throw e;
+          }
+          // 🔴 La versión es la del PRESUPUESTO ENTERO, no la del plan: guardar una nota interna o
+          // una etiqueta en esta misma ficha también la mueve (medido en yaqu.app). Así que un 409
+          // no dice todavía que el plan haya cambiado — se mira. Si el plan vigente es el que la
+          // persona tiene delante, su cambio se guarda sobre la versión nueva y no se le dice nada,
+          // porque no ha pasado nada que contarle. Si es otro, se descarta y se le dice.
+          const vigente = await apiRequest('/admin/quotes/' + quote.id);
+          if (huellaDelPlanDeCobro(vigente) !== huellaDelPlanDeCobro(quote)) return true;
+          await enviar(vigente.updatedAt);
+          return false;
+        });
+        if (cambiado) {
+          planDeCobroCambiadoEn = quote.id;
+          if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: quote.id });
+          return;
+        }
         showToast('✓ Plan de cobro actualizado');
         // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
         // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en
@@ -816,7 +867,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         // el guard nace en rojo; es de otro carril y queda declarado en el informe.
         if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: quote.id });
       } catch (e) {
-        showToast(e && e.message ? e.message : 'No se pudo guardar el plan', 'error');
+        // Un segundo `version_superada` (la ficha se sigue moviendo) no trae `message`: sin esto se
+        // pintaría el identificador interno.
+        const sinTexto = !e || !e.message || e.code === 'version_superada';
+        showToast(sinTexto ? 'No se pudo guardar el plan' : e.message, 'error');
         btnGuardar.textContent = antes;
         recalcular();
       }
