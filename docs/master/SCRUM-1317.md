@@ -272,3 +272,54 @@ lista. No ve los arneses que montan `dist/app.js` entero. Sólo se arregla el de
   control de admin del mismo test, que usa el mismo localizador y exige encontrar los tres.
 - En dos mensajes al orquestador puse la hora **estimada** en vez de leerla de GitHub (A14). Iba
   casi una hora adelantada.
+
+# SCRUM-1317b · El DESPUÉS de producción entra en el repo, copiado de Jira y sin volver a medir
+
+**Medido contra:** `origin/main` = `8f5906bc51c1c17dfd4fd3d44c1bd028324b8f48` · 2026-10-01T07:38:18Z
+
+1-oct-2026 · **J4e** (equipo de Javier, relevo de J4d), por encargo del orquestador
+(`cobroflash-backend-5b`). [Escrito por J4e. Sólo docs. **J4e no midió nada de esto**: el ancla de
+arriba es la del `main` sobre el que se escribe el anexo; la medición es de J4d y lleva su hora.]
+
+A9: sin fallo que generalice — sólo docs: una copia cotejada fila por fila contra el ANTES del banco, sin instrumento propio que pudiera fallar
+
+**Fecha:** 1-oct-2026
+
+**El DESPUÉS, medido por J4d en yaqu.app con la misma sesión real de operario** (1-oct-2026
+07:31:49Z; producción servía `8f5906bc`, que contiene el merge `d67713ce` del PR #2065): **12 de 12
+niegan, y las doce por la puerta de rol** —`403` con `{"error":"forbidden","required_role":"admin"}`,
+no un 400 ni un 404 de validación—. Son 6 GET, de los que **5 cambiaron** de «pasa» a «niega»
+(`platform-funnel` ya negaba, y ahora lo niega la puerta nueva), y 6 de escritura sin «antes» en
+producción a propósito. Controles: `metrics/inicio` **200** con cuatro campos (antes 404),
+`templates` 200 (3 plantillas antes de los seis verbos y 3 después), `metrics/team` 403 antes y
+después. En el panel, a 1280 y a 390 px: sin número héroe, Resumen, semana ni tops; actividad 3
+filas; 0 esqueletos; sin desborde; peticiones a `/admin` negadas, 0 de 20 y 0 de 8. Menú: de 14
+entradas a **12**; se fueron Proveedores e Informes y sólo ésas. Literal, con las doce filas, en
+`docs/evidencias/scrum1317/yaqu-app-DESPUES-operario-8f5906bc.txt`, al lado del ANTES.
+
+De dónde sale, y es lo único de donde sale: **SCRUM-1317, comentario 17817** (la entrega de J4d, con
+la tabla) y **comentario 17818** (el cierre del orquestador, que la recoge). Los seis verbos de
+escritura contra producción los autorizó el fundador en el comentario 17815.
+
+Con esto queda cerrada la frase de más arriba «El DESPUÉS no está medido aquí»: era verdad cuando
+se escribió (antes del despliegue) y se deja como estaba.
+
+## Lo que se cotejó al copiar, y lo que no cuadra del todo
+
+Cotejado contra `yaqu-app-ANTES-operario-761db44f.txt`, sin tocar producción: la columna «Antes» de
+las seis GET de c.17817 coincide con el fichero (cinco `200` y un `403` sin `required_role`); la
+ventana de 929 px, las 3 filas de actividad, el globo «2» y las 14 entradas, también. Leído de
+GitHub: el PR #2065 está `MERGED` a las 07:23:13Z con merge `d67713ce2692099f04615c98706dfb9502ba850a`,
+y ese commit es ancestro de `8f5906bc`.
+
+Dos cosas que la copia **no** puede sostener, dichas para que nadie las lea de más:
+
+- **El menú de DESPUÉS es un número y dos nombres, no una lista.** c.17817 dice «12» y «se fueron
+  Proveedores e Informes»; no enumera los doce ids. Restarlos de los 14 del ANTES es una cuenta, no
+  una medición, y no se ha escrito como lista medida.
+- **La «tanda completa final» de c.17817 (1.160 ficheros · 9.581 tests · 9.443 pasan · 138 saltan)
+  no está en el banco.** `tanda-completa-j4d.txt` guarda las dos anteriores; la última es de 1.159
+  ficheros · 9.575 tests · 9.437 pasan, y es la que cita la sección de J4d de este registro. No es
+  una contradicción que yo pueda afirmar —c.17817 la llama «final», así que se lee como una tercera
+  pasada; por qué difiere no lo he medido— pero la cifra final vive sólo en Jira y no la respalda
+  ningún fichero. No se copia aquí como medida.
