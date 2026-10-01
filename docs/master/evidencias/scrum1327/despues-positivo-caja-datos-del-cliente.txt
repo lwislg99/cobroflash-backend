@@ -1,0 +1,38 @@
+# positivo-caja-datos-del-cliente · guard-caja-datos-del-cliente.mjs · hallazgo a 390 px y ningun ciego
+# EXIT=1
+
+textos DERIVADOS de quotesView.js:
+   casillas : ["Nombre","Teléfono","NIF","Email"]
+   elección : ["Razón social","Nombre comercial"]
+   nota     : 104 caracteres
+
+── CON-NOMBRE · 929 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · activos
+   → cabe ✅
+
+── CON-NOMBRE · 390 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · activos
+   → 🔴 no cabe
+
+── SIN-NOMBRE · 929 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · deshabilitados
+   → cabe ✅
+
+── SIN-NOMBRE · 390 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · deshabilitados
+   → 🔴 no cabe
+
+════ VEREDICTO ════
+⟦arranque⟧ 2.8 s COMPLETA · proceso+ws 2.8 s · primera-página 0.0 s
+
+🔴 2 hallazgo(s):
+   con-nombre @390px: algo desborda o se sale del viewport
+   sin-nombre @390px: algo desborda o se sale del viewport
+
+   El texto está FIRMADO: la caja se adapta al texto, nunca al revés.
+
+⟦veredicto⟧ 2 hallazgos · 0 ciegos → salida 1 (hallazgo)
