@@ -42,13 +42,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 import os from 'node:os';
 
 import {
   GUARDS, MINIMO, TECHO_MS, PRESUPUESTO_MS, techoEfectivo, cuentasDeLaPasada, lineaDeLaPasada,
+  traeResumen, ficherosMuertos, verdesVistos,
 } from '../scripts/guards-entrada.mjs';
 import { veredictoDe, SALIDA_VERDE, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR } from '../scripts/_hallazgos-y-ciegos.mjs';
 
@@ -76,7 +77,7 @@ const LOS_ONCE = [
  * hijo a uno serializado que no escribe nada por stdout (medido en SCRUM-928): sin quitarlo, este
  * test leería una salida VACÍA. Y `FORCE_COLOR` fuera, que no es lo que se mide aquí.
  */
-function lanzar(extraEnv = {}) {
+function lanzar(extraEnv = {}, { antes = [], opcionesDeNode = null } = {}) {
   const env = { ...process.env, ...extraEnv };
   delete env.NODE_TEST_CONTEXT;
   delete env.FORCE_COLOR;
@@ -84,8 +85,11 @@ function lanzar(extraEnv = {}) {
   // hijo se llevaba los reporters del CI: TRUNCABA el `tanda.tap` del padre y escribía el suyo
   // encima. Medido el 29-sep-2026: el TAP de cada tanda, verde o roja, salía casi todo NUL.
   delete env.NODE_OPTIONS;
+  // SCRUM-1386 · lo heredado se quita SIEMPRE; lo que un caso pone a propósito (el preload que
+  // mata al runner) entra después, y es lo único que lleva.
+  if (opcionesDeNode) env.NODE_OPTIONS = opcionesDeNode;
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, [SCRIPT], { cwd: RAIZ, encoding: 'utf8', env });
+  const r = spawnSync(process.execPath, [...antes, SCRIPT], { cwd: RAIZ, encoding: 'utf8', env });
   return { r, ms: Date.now() - t0 };
 }
 
@@ -157,8 +161,9 @@ const RE_NO_TERMINO = /no terminé; no sé nada de tus guards/;
 function sentenciaDelPositivo({ status, stdout, stderr, ms, enCI }) {
   const avisos = [];
   if (status === SALIDA_NO_SUPE_MEDIR && RE_NO_TERMINO.test(stderr)) {
-    const informe = `\`guards:entrada\` no terminó en su plazo (${TECHO_MS / 1000} s) sobre este árbol: CIEGO, no rojo.`;
-    if (enCI) return { rojo: `PRESUPUESTO: ${informe} En CI esto SÍ es un rojo: la lista ya no cabe. Hay que dejar sitio o subirlo A PROPÓSITO.`, aviso: null };
+    // SCRUM-1386 · «no terminó» ya no es sólo el plazo: también un runner al que cortan desde fuera.
+    const informe = `\`guards:entrada\` no terminó sobre este árbol (plazo de ${TECHO_MS / 1000} s agotado, o runner cortado desde fuera): CIEGO, no rojo.`;
+    if (enCI) return { rojo: `PRESUPUESTO: ${informe} En CI esto SÍ es un rojo: o la lista ya no cabe —hay que dejar sitio o subirlo A PROPÓSITO— o al runner lo mataron; su salida dice cuál.`, aviso: null };
     return { rojo: null, aviso: `⬜ ${informe} No se ha juzgado nada de la lista; relánzalo con la máquina tranquila.` };
   }
   if (status !== 0) return { rojo: `\`guards:entrada\` salió ${status} sobre este árbol.`, aviso: null };
@@ -299,8 +304,8 @@ test('SCRUM-1345 ⑤ un test que YA había caído sigue siendo ROJO aunque se ag
   const vRojo = veredictoDe(cuentasDeLaPasada({ agotado: false, status: cae.status, salida: cae.entera }));
   assert.equal(vRojo.codigo, SALIDA_HALLAZGO, '🔴 una pasada que terminó con un test caído debe salir 1');
   assert.equal(vRojo.hallazgos, 1, 'el rojo no cuenta los caídos que dice el resumen del runner');
-  assert.equal(veredictoDe(cuentasDeLaPasada({ agotado: false, status: 7, salida: '' })).codigo, SALIDA_HALLAZGO,
-    '🔴 un runner que terminó con estado distinto de 0 es rojo aunque no deje resumen');
+  // SCRUM-1386 · aquí se exigía que un estado ≠ 0 SIN resumen fuera rojo. Es justo lo que ese ticket
+  // cambia: sin resumen el runner no terminó, y eso es un ciego (lo prueba ⑦, con salida real).
   assert.equal(veredictoDe(cuentasDeLaPasada({ agotado: false, status: pasa.status, salida: pasa.entera })).codigo, SALIDA_VERDE,
     '🔴 una pasada limpia dentro de plazo debe seguir saliendo 0');
 });
@@ -311,3 +316,157 @@ test('SCRUM-1345 ⑥ la línea de la pasada dice población, tiempo y plazo, tam
   assert.match(lineaDeLaPasada({ guards: 12, ms: 1, plazoMs: 1 }), RE_LINEA, 'la línea y su lector se han separado');
   assert.equal(PRESUPUESTO_MS, TECHO_MS, '🔴 el presupuesto dejó de derivarse del techo: si es a propósito, que lo diga el PR.');
 });
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1386 (1-oct-2026) · UN RUNNER AL QUE MATAN NO HA ENCONTRADO NADA
+//
+// Medido matando al runner de verdad (`docs/master/SCRUM-1386.md`): salía 1 con «solo se ejecutaron
+// 0 tests», también con 97 tests en ✔ en su propio stdout. Y con UN proceso por fichero matado,
+// «1 hallazgo». El código de salida no lo distingue; el RESUMEN sí: un `node --test` que termina lo
+// escribe siempre, y uno al que cortan, nunca.
+//   ⑦ runner sin resumen → ciego (2); con un caído ya escrito → rojo (1), nombrado. Salida REAL.
+//   ⑧ fichero muerto: callado → ciego; con traza → hallazgo; y un caído de verdad manda. Salida REAL.
+//   ⑨ el comando de verdad: su runner no arranca (ENOENT) y su runner se mata a mitad → 2 las dos veces.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Varios cebos fuera del árbol, corridos de verdad por `node --test`. Le pasa a `usar` la salida y dónde corrió. */
+function runnerRealSobre(cebos, usar) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1386-'));
+  try {
+    for (const [nombre, cuerpo] of Object.entries(cebos)) fs.writeFileSync(path.join(dir, nombre), cuerpo);
+    const env = { ...process.env };
+    delete env.NODE_TEST_CONTEXT;
+    delete env.NODE_OPTIONS;
+    delete env.FORCE_COLOR;
+    const ficheros = Object.keys(cebos);
+    const r = spawnSync(process.execPath, ['--test', ...ficheros], { cwd: dir, encoding: 'utf8', env });
+    return usar({ status: r.status, salida: r.stdout || '', opciones: { raiz: dir, ficheros } });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const CEBO_LIMPIO = "import test from 'node:test';\ntest('cebo 1386 limpio', () => {});\n";
+const CEBO_CAE = "import test from 'node:test';\ntest('cebo 1386 que CAE', () => { throw new Error('caída de cebo'); });\n";
+// Sale con 1 sin escribir una letra: lo mismo que deja, visto desde el runner, un proceso matado.
+const CEBO_CALLADO = 'process.exit(1);\n';
+// Arranca y revienta en su primera línea: node deja la traza.
+const CEBO_REVIENTA = "import test from 'node:test';\nthrow new Error('reviento de cebo al cargar');\n";
+
+test('SCRUM-1386 ⑦ un runner que acaba SIN su resumen no terminó: ciego (2); y lo que ya había caído sigue siendo rojo', () => {
+  const cae = salidaRealDelRunner('cae.test.mjs', CEBO_LIMPIO + "test('cebo 1386 que CAE', () => { throw new Error('caída de cebo'); });\n");
+  const pasa = salidaRealDelRunner('pasa.test.mjs', CEBO_LIMPIO);
+
+  // El lector del resumen distingue las tres cosas (si no, todo lo de abajo se cumpliría por otra causa).
+  assert.equal(traeResumen(pasa.entera), true, 'una salida entera del runner trae su resumen');
+  assert.equal(traeResumen(pasa.cortada), false, '🔴 una salida cortada antes del resumen «trae resumen»');
+  assert.equal(traeResumen(''), false, '🔴 una salida vacía «trae resumen»');
+  assert.equal(verdesVistos(pasa.cortada), 1, 'no cuenta el resultado en verde que el runner llegó a escribir');
+
+  // 🔴 EL QUE DECIDE: nadie agotó el plazo, el runner acabó y no dejó resumen → CIEGO, no rojo.
+  // El estado da igual, que es lo medido: 1 (taskkill, el kill de node), 4294967295 (Stop-Process),
+  // null (una señal en Linux, o un `spawn` que ni arrancó).
+  for (const status of [1, 4294967295, null, 0]) {
+    for (const salida of ['', pasa.cortada]) {
+      const c = cuentasDeLaPasada({ agotado: false, status, salida });
+      assert.equal(c.terminado, false, `estado ${status}: sin resumen se dio por terminado`);
+      assert.equal(veredictoDe(c).codigo, SALIDA_NO_SUPE_MEDIR,
+        `🔴 un runner que acabó con estado ${status} SIN resumen debe salir ciego (2): no terminó, y nadie encontró nada (SCRUM-1386).`);
+    }
+  }
+
+  // 🔴 LO QUE PROTEGE LO GANADO: si antes de que lo cortaran ya había escrito un caído, es ROJO y lo nombra.
+  const mixto = cuentasDeLaPasada({ agotado: false, status: 1, salida: cae.cortada });
+  assert.equal(mixto.vistos.length, 1, `debía ver 1 caído en la salida cortada y ve ${mixto.vistos.length}`);
+  assert.match(mixto.vistos[0], /cebo 1386 que CAE/, 'el caído que ve no es el del cebo');
+  assert.equal(veredictoDe(mixto).codigo, SALIDA_HALLAZGO,
+    '🔴 un guard que encontró algo sale CIEGO porque después mataron al runner: el arreglo se ha comido un hallazgo real.');
+  assert.equal(veredictoDe(mixto).estado, 'HALLAZGO Y CIEGO');
+
+  // Y el runner que TERMINA con un caído escribe su resumen y sigue saliendo 1, sin ciegos.
+  const rojo = cuentasDeLaPasada({ agotado: false, status: cae.status, salida: cae.entera });
+  assert.equal(rojo.terminado, true, 'una pasada con resumen no se dio por terminada');
+  assert.deepEqual([veredictoDe(rojo).codigo, rojo.hallazgos, rojo.ciegos], [SALIDA_HALLAZGO, 1, 0],
+    '🔴 un rojo de verdad, con el runner terminado, ya no es «1 hallazgo · 0 ciegos»');
+});
+
+test('SCRUM-1386 ⑧ un fichero MUERTO sin una letra es un ciego; con su traza, un hallazgo; y un test caído manda', () => {
+  // Callado: el caído es la RUTA del fichero y no dejó nada escrito → ciego.
+  runnerRealSobre({ 'a-limpio.test.mjs': CEBO_LIMPIO, 'b-callado.test.mjs': CEBO_CALLADO }, ({ status, salida, opciones }) => {
+    assert.equal(status, 1, 'el cebo callado no hizo salir al runner con 1');
+    assert.equal(traeResumen(salida), true, 'CIEGO: el runner no dejó resumen sobre los cebos\n' + salida);
+    assert.deepEqual(ficherosMuertos(salida, opciones), [{ fichero: 'b-callado.test.mjs', callado: true }],
+      '🔴 no reconoce al fichero que murió sin decir nada\n' + salida);
+    const c = cuentasDeLaPasada({ agotado: false, status, salida }, opciones);
+    assert.deepEqual([c.hallazgos, c.ciegos, c.callados], [0, 1, ['b-callado.test.mjs']]);
+    assert.equal(veredictoDe(c).codigo, SALIDA_NO_SUPE_MEDIR,
+      '🔴 un fichero cuyo proceso murió callado cuenta como «1 hallazgo»: nadie ha encontrado nada (SCRUM-1386).');
+    // El mismo texto contra una lista que NO lo lleva: un caído que no es un fichero de la lista es un hallazgo.
+    const sinEl = { raiz: opciones.raiz, ficheros: ['a-limpio.test.mjs'] };
+    assert.deepEqual(ficherosMuertos(salida, sinEl), [], '🔴 da por «fichero muerto» un caído cuya ruta no está en la lista');
+    assert.equal(veredictoDe(cuentasDeLaPasada({ agotado: false, status, salida }, sinEl)).codigo, SALIDA_HALLAZGO);
+  });
+
+  // 🔴 EL POSITIVO: arrancó y reventó al cargar → deja su traza → es SUYO: hallazgo, no ciego.
+  runnerRealSobre({ 'a-limpio.test.mjs': CEBO_LIMPIO, 'b-revienta.test.mjs': CEBO_REVIENTA }, ({ status, salida, opciones }) => {
+    assert.match(salida, /reviento de cebo al cargar/, 'CIEGO: la traza del cebo no llegó a la salida del runner\n' + salida);
+    assert.deepEqual(ficherosMuertos(salida, opciones), [{ fichero: 'b-revienta.test.mjs', callado: false }],
+      '🔴 un fichero que revienta con su traza se lee como «callado»\n' + salida);
+    const c = cuentasDeLaPasada({ agotado: false, status, salida }, opciones);
+    assert.deepEqual([veredictoDe(c).codigo, c.hallazgos, c.ciegos], [SALIDA_HALLAZGO, 1, 0],
+      '🔴 un guard que REVIENTA al cargar sale ciego: quien rompa lo que el guard importa leería «relánzalo».');
+  });
+
+  // Un muerto callado JUNTO a un test que cae de verdad: manda el hallazgo, y se dice que falta uno.
+  runnerRealSobre({ 'a-limpio.test.mjs': CEBO_LIMPIO, 'b-callado.test.mjs': CEBO_CALLADO, 'c-cae.test.mjs': CEBO_CAE }, ({ status, salida, opciones }) => {
+    const c = cuentasDeLaPasada({ agotado: false, status, salida }, opciones);
+    assert.deepEqual([c.hallazgos, c.ciegos], [1, 1], 'no separa el test caído del fichero muerto\n' + salida);
+    assert.equal(veredictoDe(c).codigo, SALIDA_HALLAZGO, '🔴 un test caído de verdad sale ciego porque además murió otro fichero');
+    assert.equal(veredictoDe(c).estado, 'HALLAZGO Y CIEGO');
+  });
+
+  // Y sin muertos no cambia nada: un test que cae es 1 hallazgo, 0 ciegos.
+  runnerRealSobre({ 'a-limpio.test.mjs': CEBO_LIMPIO, 'c-cae.test.mjs': CEBO_CAE }, ({ status, salida, opciones }) => {
+    assert.deepEqual(ficherosMuertos(salida, opciones), [], 'da por muerto un fichero cuyo test cayó');
+    const c = cuentasDeLaPasada({ agotado: false, status, salida }, opciones);
+    assert.deepEqual([veredictoDe(c).codigo, c.hallazgos, c.ciegos], [SALIDA_HALLAZGO, 1, 0]);
+  });
+});
+
+test('SCRUM-1386 ⑨ el comando de verdad: si su runner no arranca, o se muere a mitad, sale CIEGO (2) y lo dice',
+  { timeout: 120000 }, () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1386-'));
+    try {
+      // (a) El runner NO ARRANCA: la puerta lanza un binario que no existe (`spawn` ENOENT).
+      const sinBinario = path.join(dir, 'sin-binario.mjs');
+      fs.writeFileSync(sinBinario, `process.execPath = ${JSON.stringify(path.join(dir, 'este-node-no-existe'))};\n`);
+      const a = lanzar({}, { antes: ['--import', pathToFileURL(sinBinario).href] }).r;
+      assert.equal(a.status, SALIDA_NO_SUPE_MEDIR,
+        `🔴 con un runner que no arranca el comando debe salir ${SALIDA_NO_SUPE_MEDIR} (salió ${a.status}): no se ha medido nada.\n${a.stderr}`);
+      assert.match(a.stderr || '', /no llegó a arrancar \(ENOENT\)/, '🔴 salió 2 y no dice que el runner no arrancó');
+      assert.match(a.stderr || '', /0 hallazgos · 1 ciego/, '🔴 el veredicto no dice sus dos cuentas');
+      assert.match(a.stdout || '', RE_LINEA, '🔴 sin runner no sale la línea «N guards · T s · plazo P s»');
+
+      // (b) El runner SE MUERE A MITAD. Un preload que sólo actúa en el proceso que reparte (`--test`
+      // y no un proceso por fichero): deja su testigo y se mata a los 1,5 s, con los guards corriendo.
+      const testigo = path.join(dir, 'testigo.txt');
+      const mata = path.join(dir, 'mata-al-runner.cjs');
+      fs.writeFileSync(mata, [
+        "const esElRunner = process.execArgv.includes('--test') && !process.execArgv.some((a) => a.startsWith('--test-isolation'));",
+        'if (esElRunner) {',
+        "  setTimeout(() => { require('node:fs').writeFileSync(process.env.SCRUM1386_TESTIGO, 'me mato'); process.kill(process.pid, 'SIGKILL'); }, 1500);",
+        '}',
+        '',
+      ].join('\n'));
+      const b = lanzar({ SCRUM1386_TESTIGO: testigo }, { opcionesDeNode: '--require ' + JSON.stringify(mata.split(path.sep).join('/')) }).r;
+      assert.ok(fs.existsSync(testigo),
+        `🔴 CIEGO: el runner no llegó a matarse (sin testigo): este caso no ha probado nada. Salida ${b.status}.\n${(b.stdout || '').slice(-600)}\n${b.stderr}`);
+      assert.equal(b.status, SALIDA_NO_SUPE_MEDIR,
+        `🔴 con el runner matado a mitad el comando debe salir ${SALIDA_NO_SUPE_MEDIR} (salió ${b.status}): un 1 es lo que dice un guard que encontró algo.\n${b.stderr}`);
+      assert.match(b.stderr || '', /acabó sin escribir su resumen/, '🔴 salió 2 y no dice que el runner no dejó resumen');
+      assert.match(b.stderr || '', /0 hallazgos · 1 ciego/, '🔴 el veredicto no dice sus dos cuentas');
+      assert.match(b.stdout || '', RE_LINEA, '🔴 con el runner muerto no sale la línea «N guards · T s · plazo P s»');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
