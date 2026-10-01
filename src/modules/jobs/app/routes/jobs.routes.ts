@@ -16,7 +16,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 // SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente } from '../../domain/presupuestosDelTrabajo';
-import { dineroDelTrabajo } from '../../domain/dineroDelTrabajo'; // SCRUM-1355
+import { dineroDelTrabajo, presupuestoAceptado } from '../../domain/dineroDelTrabajo'; // SCRUM-1355, SCRUM-1365
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
@@ -1432,10 +1432,18 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
 
     // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
     // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.
-    const conPendiente = primeroConTramoPendiente(quotesConPlan, job.quoteId, resolveBillingPlan);
+    //
+    // SCRUM-1365 · SÓLO LOS ACEPTADOS. `quotesConPlan` trae los presupuestos del Trabajo del estado
+    // que sean, y sin este filtro un BORRADOR con tramo pendiente salía elegido: se emitía la
+    // factura de algo que el cliente no ha aceptado. El criterio es EL de `dineroDelTrabajo.ts`
+    // (SCRUM-1355, las cinco lecturas), no una copia. Un Trabajo que sólo tiene presupuestos sin
+    // aceptar responde lo mismo que uno sin presupuesto: para cobrar, no tiene ninguno.
+    const quotesAceptados = quotesConPlan.filter(presupuestoAceptado);
+    if (quotesAceptados.length === 0) return res.status(409).json({ error: 'job_without_quote' });
+    const conPendiente = primeroConTramoPendiente(quotesAceptados, job.quoteId, resolveBillingPlan);
     const ordenados = [
-      ...quotesConPlan.filter((q) => q.id === job.quoteId),
-      ...quotesConPlan.filter((q) => q.id !== job.quoteId).sort((a, b) => a.id - b.id),
+      ...quotesAceptados.filter((q) => q.id === job.quoteId),
+      ...quotesAceptados.filter((q) => q.id !== job.quoteId).sort((a, b) => a.id - b.id),
     ];
 
     // Sin ninguno pendiente, el motivo se explica con el plan del ORIGINAL, que es el que el
