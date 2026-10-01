@@ -56,6 +56,43 @@ import { veredictoDe, SALIDA_VERDE, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR } from
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = path.join(RAIZ, 'scripts', 'guards-entrada.mjs');
 
+// SCRUM-1386 · Las mutaciones van AQUÍ, en el catálogo que el meta-guard corre en CI, y no sólo en
+// un banco de evidencias: una mutación que se comprobó una vez y no está declarada no la vuelve a
+// correr nadie. Tres devuelven el defecto (un runner o un fichero matado vuelve a ser «hallazgo») y
+// tres son el defecto CONTRARIO, que es peor: un hallazgo de verdad que pasa a ciego.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  // El defecto vuelve: sin resumen ya no es «no terminó», y un runner matado sale 1.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'const terminado = !agotado && traeResumen(salida);',
+    a: 'const terminado = !agotado;',
+    cae: 'SCRUM-1386 ⑦ un runner que acaba SIN su resumen' },
+  // El defecto vuelve en el comando: la rama del «no terminó» sólo se abre con el plazo.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'if (!cuentas.terminado) {',
+    a: 'if (agotado) {',
+    cae: 'SCRUM-1386 ⑨ el comando de verdad' },
+  // El defecto vuelve: un fichero muerto sin una letra cuenta otra vez como hallazgo.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'ficherosMuertos(salida, opciones).filter((f) => f.callado)',
+    a: 'ficherosMuertos(salida, opciones).filter(() => false)',
+    cae: 'SCRUM-1386 ⑧ un fichero MUERTO' },
+  // 🔴 El contrario: todo fichero muerto es ciego, también el que reventó con su traza.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'ficherosMuertos(salida, opciones).filter((f) => f.callado)',
+    a: 'ficherosMuertos(salida, opciones).filter(() => true)',
+    cae: 'SCRUM-1386 ⑧ un fichero MUERTO' },
+  // 🔴 El contrario: cualquier test caído se toma por «fichero muerto» y pasa a ciego.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'const fichero = m && rutas.get(path.resolve(raiz, m[1]));',
+    a: 'const fichero = m && m[1];',
+    cae: 'SCRUM-1386 ⑧ un fichero MUERTO' },
+  // 🔴 El contrario: lo que ya había caído cuando cortaron al runner se pierde.
+  { fichero: 'scripts/guards-entrada.mjs',
+    de: 'return { hallazgos: vistos.length, ciegos: 1, vistos, terminado, callados: [] };',
+    a: 'return { hallazgos: 0, ciegos: 1, vistos, terminado, callados: [] };',
+    cae: 'SCRUM-1386 ⑦ un runner que acaba SIN su resumen' },
+];
+
 // Los cinco de antes y los seis de SCRUM-976. Es la lista por la que se decidió, escrita a
 // propósito: añadir un duodécimo NO toca esto; quitar uno sí.
 const LOS_ONCE = [
