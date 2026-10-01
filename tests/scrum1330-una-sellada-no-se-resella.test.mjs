@@ -375,6 +375,8 @@ test('SCRUM-1330 · 🔴 ④f · ESPAÑA: cobrar el enlace de una factura sellad
   assert.equal(vieja.pdfUrl, `/admin/invoices/${vieja.id}/pdf`, 'SUELO: y pasó por `ensurePdfAndEvent` (tiene su PDF)');
   exigirCadenaIntacta(antes, 'al cobrar el enlace de una factura ya sellada');
   assert.equal(sellados(), 0, '🔴 se ha ESCRITO una huella en una cadena que no tenía nada que sellar');
+  assert.deepEqual({ pasos: pasosPorSellarTrasEmision(), cola: intentosDeEncolar() }, { pasos: 0, cola: 0 },
+    '🔴 la factura de hace un mes ha vuelto a entrar en `sellarTrasEmision`: estado reescrito o alta encolada otra vez');
   assert.equal(banco.tablas.invoice.some((f) => f.vfHash === posterior.vfPrevHash), true,
     'la posterior sigue apuntando a una huella que EXISTE: la cadena no está rota');
 });
