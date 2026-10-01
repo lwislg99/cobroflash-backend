@@ -106,9 +106,13 @@ function tituladosQueDeclaran() {
  * ⬆️ **25** (SCRUM-1284, 29-sep-2026): entra `scrum1284-minutos-actions.test.mjs`, que declara
  * sus mutaciones y tiene un test que nombra el meta-guard en su título. Medido sobre `origin/main`
  * = `9977c40f2d36df05579f810866348d17719dd302` mezclado en la rama.
+ *
+ * ⬆️ **26** (SCRUM-1321, 1-oct-2026): `scrum836-ancla-de-mutacion-viva.test.mjs` pasa a DECLARAR
+ * (la mutacion que apaga `ambiguedadDelAncla`) y ya tenia un test titulado GUARD («…se DENUNCIA,
+ * con guard y fichero»). Medido sobre `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2`.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 25;
+export const SUELO_GUARD_QUE_DECLARAN = 26;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -291,8 +295,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 25;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 24;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 26;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 25;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

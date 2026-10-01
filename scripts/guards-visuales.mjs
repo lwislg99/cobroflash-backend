@@ -45,6 +45,7 @@ import { esDeNavegador, ficheroDe } from './_solape-de-guards.mjs';
 // levantar su servidor se pintaba `rojo(4)` — con la palabra «rojo» delante, que es
 // justamente la que significa «he encontrado defectos».
 import { SALIDA_SIN_SERVIDOR } from './_servidor.mjs';
+import { leerVeredicto } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOPE_MS = Number(process.env.GUARDS_VISUALES_TOPE_MS || 240000);
@@ -180,16 +181,19 @@ export function veredicto(filas) {
  * «CIEGOS» junta todo lo que no midió —CIEGO, NO ARRANCA, SIN SERVIDOR, TOPE—; si no son todos
  * del mismo tipo, el desglose va entre paréntesis.
  *
- * ⚠️ LO QUE ESTE RECUENTO NO SABE, DECLARADO: un guard que juzga VARIOS casos y se queda ciego
- * en UNO sale por la puerta del ciego aunque en los demás haya encontrado defectos (los guards
- * del editor comprueban `ciegos` antes que `hallazgos`). Aquí cuenta como CIEGO; sus hallazgos
- * están en su salida, que la puerta reproduce entera más abajo.
+ * 🔴 SCRUM-1320 · LO QUE ESTE RECUENTO NO SABÍA, y estaba declarado aquí mismo: un guard que juzga
+ * VARIOS casos y se queda ciego en UNO salía por la puerta del ciego aunque en los demás hubiera
+ * encontrado defectos, porque su cola miraba `ciegos` antes que `hallazgos`. Contaba como CIEGO
+ * con cinco defectos dentro. Ahora ese guard sale con el código del hallazgo y DICE sus dos
+ * cuentas (`_hallazgos-y-ciegos.mjs`); aquí cuenta como rojo, y si además dejó casos sin medir el
+ * recuento lo pone al lado, para que «1 rojo» no se lea como la lista completa de sus defectos.
  */
 export function recuento(filas) {
   const noVerdes = filas.filter((f) => f.estado !== 'verde');
   const rojos = noVerdes.filter((f) => llegoAMedir(f.codigo));
   const ciegos = noVerdes.filter((f) => !llegoAMedir(f.codigo));
   const verdes = filas.length - noVerdes.length;
+  const rojosConCiegos = rojos.filter((f) => f.cuentas && f.cuentas.ciegos > 0);
 
   const porTipo = new Map();
   for (const f of ciegos) porTipo.set(f.estado, (porTipo.get(f.estado) || 0) + 1);
@@ -198,11 +202,22 @@ export function recuento(filas) {
     : '';
 
   return {
-    total: filas.length, verdes, ciegos: ciegos.length, rojos: rojos.length,
+    total: filas.length, verdes, ciegos: ciegos.length, rojos: rojos.length, rojosConCiegos: rojosConCiegos.length,
     linea: verdes + (verdes === 1 ? ' verde' : ' verdes')
       + ' · ' + ciegos.length + (ciegos.length === 1 ? ' CIEGO' : ' CIEGOS') + desglose
-      + ' · ' + rojos.length + (rojos.length === 1 ? ' rojo' : ' rojos'),
+      + ' · ' + rojos.length + (rojos.length === 1 ? ' rojo' : ' rojos')
+      + (rojosConCiegos.length ? ' (' + rojosConCiegos.length + ' con casos sin medir)' : ''),
   };
+}
+
+/**
+ * Lo que la tabla pinta detrás del estado de un guard no verde: sus dos cuentas, si las dijo.
+ * Vacío para los verdes y para el guard que no emite la marca — eso no es tirar nada: no la había.
+ */
+export function cuentasDeLaFila(estado, cuentas) {
+  if (estado === 'verde' || !cuentas) return '';
+  return ' · ' + cuentas.hallazgos + (cuentas.hallazgos === 1 ? ' hallazgo' : ' hallazgos')
+    + ' · ' + cuentas.ciegos + (cuentas.ciegos === 1 ? ' ciego' : ' ciegos');
 }
 
 /**
@@ -475,11 +490,14 @@ for (const g of lista) {
   // y se tiraba para todo el que salía verde.
   const marca = leerArranque(salida);
   const arranque = marca && marca.total !== null ? marca.total : null;
-  filas.push({ g, ms, estado, codigo, arranque, marca, salida });
+  // SCRUM-1320 · las dos cuentas del guard («N hallazgos · M ciegos»), si las dijo. El código sólo
+  // lleva una de las dos cosas; la otra viaja en esta línea, y la tabla la enseña sin abrir nada.
+  const cuentas = leerVeredicto(salida);
+  filas.push({ g, ms, estado, codigo, arranque, marca, salida, cuentas });
   console.log('   ' + (estado === 'verde' ? '✔' : '✖') + ' ' + g.padEnd(26)
     + String((ms / 1000).toFixed(1)).padStart(6) + ' s'
     + (arranque === null ? '   (arranque: ?)' : '   arranque ' + arranque.toFixed(1).padStart(5) + ' s')
-    + '   ' + estado);
+    + '   ' + estado + cuentasDeLaFila(estado, cuentas));
   // La segunda línea es el ticket: los tramos se enseñan TAMBIÉN cuando el guard pasa. Antes
   // sólo se veían si moría, y con el tope subido morir es justo lo que deja de pasar.
   const desglose = lineaDeTramos(marca);
