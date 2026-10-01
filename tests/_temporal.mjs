@@ -52,9 +52,13 @@ function limpiarTodo() {
 /** El repositorio: este fichero vive en su `tests/`. */
 const RAIZ_DEL_ARBOL = path.resolve(import.meta.dirname, '..');
 
-/** ¿Esta ruta es el repositorio o cuelga de él? En Windows, sin distinguir mayúsculas. */
+/**
+ * ¿Esta ruta es el repositorio o cuelga de él? SIEMPRE sin distinguir mayúsculas, en cualquier
+ * sistema: preguntar por la plataforma haría que esto se comprobara distinto en CI que en local
+ * (SCRUM-702), y en la duda —dos rutas que sólo difieren en la caja— se contesta que sí y se niega.
+ */
 export function caeEnElArbol(dir, raiz = RAIZ_DEL_ARBOL) {
-  const norma = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
+  const norma = (p) => path.resolve(p).toLowerCase();
   const rel = path.relative(norma(raiz), norma(dir));
   return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
 }
