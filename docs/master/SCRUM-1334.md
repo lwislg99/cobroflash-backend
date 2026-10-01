@@ -133,6 +133,17 @@ El arreglo es quitarles el `>`, en sitio y sin mover líneas.
 
 No se declaran en el guard: lo pondría verde dejando a las notas contando como aprobadas.
 
+**Por eso este PR se empuja en ROJO, a propósito** (decisión del orquestador, 1-oct-2026): `scrum514`
+cae en 2 de sus 28 casos, y los dos por esas 22 líneas. Es el estado real del árbol. Entra cuando
+su dueño les quite el `>`, o cuando diga que lo haga este puesto.
+
+## `guards:entrada` y su techo
+
+`guards:entrada` se pasó del techo de 90 s con 42 procesos node en la máquina, y `scrum514` tarda lo
+mismo que en `main` (9,1 s). Medido el 1-oct-2026 corriendo el fichero de esta rama y el de
+`origin/main` uno detrás de otro, en la misma máquina y con la misma carga. El techo lo decidió la
+carga, no el instrumento.
+
 ## Lo que queda fuera
 
 - El hallazgo de `constaAprobado` es de la otra mitad de la regla 30 y tiene ticket aparte, que
