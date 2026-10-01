@@ -132,7 +132,13 @@ local y `dns.lookup` de cada fichero, en una pasada de sólo carga (`evidencias/
   salida del fichero, así que una muerte nativa que no escriba nada sale «sin huella reconocida»;
   y la cola de salida de error del fichero anterior puede entrar en la ventana del que cae.
 
-## 7 · Dos errores míos
+## 7 · Tres errores míos
+
+**El tercero, en mi propia evidencia.** La primera `salida-804b-antes-y-despues.txt` decía
+«sin DNS · exit=0» con 3 casos caídos al lado: había leído el `$?` de un `echo` intermedio, no el
+de node. Es la trampa de A3 («el código de salida es del último tramo») cometida al escribir la
+prueba de un ticket que va de leer bien un rojo. Lo vi al releer el fichero antes de empujar; el
+que hay ahora guarda el código en una variable justo detrás de node (0 con red, 1 sin DNS).
 
 **El segundo lo cazó un guard, no yo.** Al mover el mensaje de CIEGO de 804b a una plantilla y
 escribir `origin/main` en el detalle de `SIN_ARBOL`, cambié sin saberlo QUIÉN nombra una
