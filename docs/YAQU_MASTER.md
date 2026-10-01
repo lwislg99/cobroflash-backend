@@ -666,6 +666,20 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
 Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test, no la disciplina** (SCRUM-55).
+
+**Qué VE el Técnico en Inicio** _(decidido por el fundador el 1-oct-2026; la tabla de arriba dice qué puede HACER, no qué puede VER — SCRUM-55 c.10699, regla 27)_
+
+| En la pantalla de Inicio | Admin | Técnico |
+| --- | --- | --- |
+| Saludo · avisos de riesgo · acciones rápidas · «Te esperan en WhatsApp» · globos del menú | ✅ | ✅ |
+| Actividad reciente del negocio (últimos presupuestos, con importe) | ✅ | ✅ |
+| Lo que le deben (número héroe) · cobrado / gastos / **beneficio neto** · resumen de la semana · top clientes · top servicios · **«Cotizaciones sin respuesta»** | ✅ | ❌ |
+| Herramientas de administración de la cuenta: «⚙ Personalizar», la lista de puesta en marcha, el aviso de informe trimestral | ✅ | ❌ |
+
+La actividad reciente **la ve**: esos mismos presupuestos ya los tiene en la pantalla de Presupuestos, así que quitarlos de Inicio los esconde, no los cierra.
+
+_(La fila de las herramientas de administración: decidido por el orquestador, no por el fundador: no es información del negocio, son mandos de administración, y ya eran sólo-admin antes de SCRUM-1317.)_
+
 > **✅ SCRUM-147 (27-jul-2026) — el rol se pregunta por CAPACIDAD, y lo desconocido cae al lado seguro:** nace del recon de SCRUM-137 (rol "comercial"). SCRUM-55 convirtió una denylist de rol en allowlist y dejó la lección escrita en `jobs.routes.ts:470`… **tres líneas más abajo de otras DOS que se quedaron sin convertir**: el filtro row-level de SCRUM-23 (`if (req.userRole === 'tecnico') where.operarioId = …`, lista y detalle de Trabajos). Al ser denylist, **cualquier rol que no fuera exactamente `'tecnico'` se saltaba el filtro** y vería TODOS los Trabajos del merchant — el rol pensado para tener los MISMOS permisos que el operario habría tenido MÁS. No mordía porque solo hay dos roles; habría explotado con el primero que se añadiera, que es justo el que lo destapó. **Fix:** `src/core/http/roleCapabilities.ts` — `seesAllJobs` es **allowlist de `'admin'`**, así que un rol desconocido (o ausente) queda RESTRINGIDO. **Con una asimetría deliberada y documentada:** en las MÉTRICAS (`isFieldMember`) el conjunto cerrado es el EXCLUIDO (admin/propietario), de modo que un rol nuevo **aparece** en el equipo de campo en vez de desaparecer — blindarlo en la misma dirección que el gate habría creado la otra mitad del problema. **Además:** `team.routes.ts` **valida** el rol (400 `invalid_role`) en vez de **coaccionarlo en silencio** — antes cualquier valor ≠ `'admin'` se reescribía a `'tecnico'`, así que pedir `role:'comercial'` creaba un técnico sin avisar (y hacía imposible crear el rol por API). **Tests:** 6 puros sin gate, con un guard ESTRUCTURAL que falla si vuelve a aparecer `req.userRole === 'tecnico'` en el fuente — el arreglo es una CLASE, no dos líneas. Probado en rojo por partida doble: reintroduciendo la denylist (el guard la nombra con fichero y línea) e invirtiendo `seesAllJobs` a denylist (cae el test del rol desconocido). **Desbloquea SCRUM-137**, que queda pendiente de decidir rol-vs-puesto.
 > **✅ SCRUM-55 (22-jul-2026, absorbe SCRUM-54):** hasta hoy esta regla no la hacía cumplir NADA — 124 rutas
 > bajo `/admin`, 79 llegaban a un Operario sin declaración de rol, y la 125 iba a nacer abierta igual. Ahora

@@ -1,0 +1,11 @@
+# g1-caja-datos-del-cliente · guard-caja-datos-del-cliente.mjs · ciego a 929 px y, despues, hallazgo a 390 px
+# EXIT=2
+
+textos DERIVADOS de quotesView.js:
+   casillas : ["Nombre","Teléfono","NIF","Email"]
+   elección : ["Razón social","Nombre comercial"]
+   nota     : 104 caracteres
+⟦arranque⟧ 0.8 s COMPLETA · proceso+ws 0.8 s · primera-página 0.0 s
+
+🔴 NO SUPE MIRAR — no se da ningún número.
+   el sidebar computa 0 px: el CSS no se aplicó como en el producto.

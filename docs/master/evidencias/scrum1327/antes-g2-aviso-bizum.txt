@@ -1,0 +1,18 @@
+# g2-aviso-bizum · guard-aviso-bizum.mjs · la ranura del aviso no existe en ningun caso: 0 hallazgos, todo ciego
+# EXIT=1
+
+
+  SCRUM-515 · EL AVISO DE BIZUM, MEDIDO EN EL DOM RENDERIZADO
+  ────────────────────────────────────────────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────────────────────────────────────────────
+⟦arranque⟧ 0.8 s COMPLETA · proceso+ws 0.8 s · primera-página 0.0 s
+
+  🔴 EL ESCÁNER NO SUPO MIRAR — y esto NO es «ningún merchant desprotegido»:
+
+   · sin bizumPhone · sin whatsappPhone: no existe input[name=bizumPhone] en el DOM renderizado
+   · sin bizumPhone · con whatsappPhone: no existe input[name=bizumPhone] en el DOM renderizado
+   · con bizumPhone · sin whatsappPhone: no existe input[name=bizumPhone] en el DOM renderizado
+   · con bizumPhone · con whatsappPhone: no existe input[name=bizumPhone] en el DOM renderizado
+
+  Un cero aquí se leería como que no hay nadie en riesgo. Son siete.
+
