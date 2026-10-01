@@ -186,6 +186,10 @@ test('SCRUM-976 ④ mitad POSITIVA: el comando de verdad sale 0 y ejecutó los g
     const s = sentenciaDelPositivo({ status: r.status, stdout: r.stdout || '', stderr: r.stderr || '', ms, enCI });
     if (s.aviso) t.diagnostic(s.aviso);
     assert.equal(s.rojo, null, `🔴 ${s.rojo}\n${(r.stdout || '').slice(-1500)}\n${(r.stderr || '').slice(-1500)}`);
+    // El positivo que respalda la negación de ③ (allí NO puede decir «verde»): cuando sale 0, lo dice.
+    if (r.status === 0) {
+      assert.match(r.stdout || '', /guards de entrada en verde/, '🔴 salió 0 y no dice «verde»');
+    }
   });
 
 test('SCRUM-1345 ④bis la señal `CI` se lee por PRESENCIA: sólo su ausencia es «local»', () => {
