@@ -131,6 +131,10 @@ código (3: U1.1, U1.2, U1.3; CONNECT-1 y las demás no llevan el código en su 
 Extender el guard a U1.1 no es ampliar una constante: pide decidir cómo se lee una viñeta con
 varios símbolos. No entra en este ticket.
 
+**Decisión del orquestador (1-oct), añadida por J5c:** no se abre ticket —no tiene víctima y sería
+cola que nadie trabaja—, pero extender el comparador a U1.1, con el `V0-5 ⏳` del resumen contra el
+🟡 de su viñeta dentro, queda como **candidato a ticket el día que alguien toque U1.1**.
+
 ## Ⓗ Lo que me salió mal
 
 1. **Una de mis mutaciones del guard era equivalente y la había dado por buena al escribirla.**
@@ -155,3 +159,105 @@ varios símbolos. No entra en este ticket.
   del PR.
 - La tanda entera no la lanza una sesión: va en CI. Allí saldrán además `scrum55` y `scrum128`, que
   son plazos vencidos de `main` (SCRUM-1318) y no de este PR.
+
+---
+
+# Segunda vuelta (J5c) · El guard dice en su salida lo que NO comprueba
+
+**Medido contra:** `origin/main` = `eabcb2d51ae7c71bb4b9177236ae9da6ec803a6d` · 2026-10-01T02:12:02Z
+
+A9: comprobación → `tests/scrum1323-resumen-vs-detalle-sif1.test.mjs`
+
+Sesión J5c (relevo de J5b), por encargo del orquestador (`cobroflash-backend-5b`). Son las condiciones
+con las que aceptó los límites 1 y 2 de Ⓓ, más la frase añadida a Ⓖ. Cambia el test y este registro.
+**No se ha tocado `docs/YAQU_MASTER.md`**, ni `src/`, ni el extracto histórico, ni
+`compararResumenYDetalle`: la regla es la misma; lo nuevo es lo que el guard dice de ella.
+
+## Ⓙ El defecto, que era del propio guard
+
+Cuatro de los diez hitos (S1-0, S1-D, S1-F, S1-G) no se comparan contra nada: su viñeta no lleva
+símbolo y ahí la regla solo prohíbe el ✅. Estaba escrito en un comentario del test y en Ⓓ de este
+registro, y en ningún sitio que se lea al ver el verde. Un «25/25» se entendía como «los diez hitos
+están vigilados»: un resumen que dice más de lo que su detalle sostiene, que es lo que este guard
+vino a impedir.
+
+## Ⓚ Lo que cambia
+
+El cuerpo del test ① pasa a ser una función con nombre, `veLosDosSitios(texto)`, y ① la llama con el
+máster. Imprime, en cada pasada:
+
+```
+[SCRUM-1323] población: 10 hitos de U1.3 · S1-0 🟡/— · S1-0b ✅/✅ · … · S1-H 🟡/🟡
+[SCRUM-1323] ⚠️ SIN COMPROBAR contra su viñeta: 4 de 10 hitos (S1-0, S1-D, S1-F, S1-G) — su viñeta no lleva símbolo de estado; ahí solo se prohíbe ✅
+```
+
+La segunda línea es nueva y sale **siempre**, también con cero («0 de 10 hitos (ninguno)»): si solo
+saliera cuando hay alguno, su ausencia se leería como «todos vigilados» y también como «alguien la
+quitó». La tercera, «comparados solo por pertenencia (viñeta con varios símbolos): …», ya existía y
+sigue saliendo solo cuando hay alguna (hoy 0 de 10).
+
+Tres tests nuevos (28 en total) corren esa misma función con `console.log` sustituido mientras dura,
+y fijan lo que dice:
+
+| test | qué fija |
+|---|---|
+| ⑫ | sobre el extracto histórico, la línea nombra exactamente S1-0, S1-D, S1-F, S1-G y dice «4 de 10 hitos»; si S1-F gana un símbolo en su viñeta, deja de salir y la cuenta baja a 3; sobre el máster del árbol, los nombres son los que da el comparador |
+| ⑫ (cero) | con las cuatro viñetas mudas ya con símbolo, la línea sigue saliendo y dice «0 de 10 hitos (ninguno)» |
+| ⑬ | el caso que señaló el orquestador: la viñeta de S1-E con «🟡 BORRADOR … ✅ DONE» sin tachar → S1-E **no cae** (es el límite 2, dicho con un test) y el aviso de pertenencia sale nombrando S1-E y solo S1-E. Control: la misma edición tachando el 🟡 sí cae, y entonces el aviso no sale; sin tocar nada, tampoco |
+
+## Ⓛ Mutación, repetida entera
+
+Sobre el máster de `50ff50e4` puesto en el árbol mientras dura (`git diff --numstat` =
+`1 1 docs/YAQU_MASTER.md`; base 28/28) y con el árbol comprobado por sha256 al terminar. Una línea
+cada vez; las cinco primeras son las de Ⓔ, repetidas con los tests nuevos dentro.
+
+| mutación | tests que caen |
+|---|---|
+| regla ② apagada | ③ ⑥ ⑨ ⑬ |
+| regla ① apagada | ③ ⑨ ⑬ |
+| lo tachado sí se lee | ① ③ ⑦ ⑫ ⑬ |
+| el símbolo ya no tiene que ir pegado al identificador | los dos ⑩ de «sin símbolo» |
+| símbolo desconocido aceptado | el ⑩ de «símbolo desconocido» |
+| la línea «SIN COMPROBAR» no se imprime | los dos ⑫ y ⑬ |
+| la línea «SIN COMPROBAR» sale sin nombres | los dos ⑫ |
+| «SIN COMPROBAR» solo sale si hay alguno | ⑫ (cero) |
+| «SIN COMPROBAR» nombra a los comprobados en vez de a los mudos | los dos ⑫ |
+| el aviso de pertenencia no se imprime | ⑬ |
+| el aviso de pertenencia sale sin nombres | ⑬ |
+| el aviso de pertenencia sale siempre | ⑬ |
+| «varios símbolos» pide tres y no dos | ⑬ |
+
+13 de 13 cazadas; ninguna retirada.
+
+## Ⓜ El límite de lo nuevo
+
+⑫ y ⑬ fijan lo que **dice la función**, no que ① la siga llamando: quien borre el cuerpo de ① se
+lleva también la línea de población y las tres aserciones de lectura, y eso no lo caza ningún test
+de este fichero. No lo he cerrado con un proceso hijo que corra el fichero y lea su salida: un hijo
+de `node --test` hereda el contexto del padre y en CI pisa el TAP de la tanda (SCRUM-1308), y el
+riesgo que cubre es una llamada de una línea a la vista.
+
+## Ⓝ Lo que me salió mal
+
+1. Dejé en el test un comentario a medio pensar (una frase que se corregía a sí misma dentro del
+   comentario). Lo reescribí antes de correr nada; no llegó a ningún commit.
+2. **No desarmé el auto-merge de #2044 al arrancar, y lo acabó desarmando el orquestador.** Fue una
+   apuesta medida, no una garantía: #2040 tenía el check obligatorio en rojo y la tanda de #2044
+   era anterior al merge de #2039, así que #2044 no podía entrar sin una tanda nueva. Si alguien la
+   hubiera relanzado sobre el head viejo con #2040 ya dentro, habría entrado incompleto. Desarmar
+   costaba una orden y lo re-arma el orquestador: era la opción barata y no la cogí.
+3. Empecé a escribir antes de leer `00-normas-comunes.md` desde `origin/main`; la leí con el código
+   ya escrito y antes de empujar.
+4. **La primera pasada de mutación la corrí con el árbol sin comitear** (A23 nº 9), y `arbol:mio`
+   después de la primera escritura y no antes (A2). El script restaura por contenido y lo comprueba
+   por sha256, y salió bien, pero si el proceso hubiera muerto a mitad el test mutado se habría
+   quedado en el árbol sin un commit al que volver. La tabla de Ⓛ es la de la segunda pasada, ya
+   con todo comiteado y `origin/main` mergeado.
+
+## Ⓞ Verificación
+
+- El test solo, en esta rama con `origin/main` (`eabcb2d5`) mergeado: 28 tests, 27 en verde y ② en
+  rojo (el de Ⓑ: `main` todavía no lleva #2040). Con el máster de `50ff50e4`: 28/28.
+- `npm run guards:entrada`, `scrum237`, `scrum976`, `scrum1294`, `scrum525d` y los que leen el máster:
+  resultado en el cuerpo del PR y en el comentario de entrega del ticket.
+- La tanda entera va en CI.

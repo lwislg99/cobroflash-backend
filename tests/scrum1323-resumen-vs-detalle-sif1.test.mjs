@@ -26,9 +26,12 @@
 //
 // ── LOS LÍMITES, DECLARADOS ───────────────────────────────────────────────────────────────
 //   a) Una viñeta sin símbolo solo prohíbe el ✅. `S1-0 🟡` y `S1-F ⏳` contra una viñeta muda
-//      pasan: no hay dos sitios que comparar, hay uno.
+//      pasan: no hay dos sitios que comparar, hay uno. Medido al escribirlo: 4 viñetas así de 10.
+//      🔴 Esos hitos NO SE COMPRUEBAN, y el test ① lo imprime en cada pasada, con sus nombres
+//      («SIN COMPROBAR contra su viñeta: 4 de 10 hitos (…)»). Esa salida la fija ⑫.
 //   b) Una viñeta con DOS símbolos distintos se compara por pertenencia: no sabe cuál es el
-//      vigente. Medido al escribirlo: 0 viñetas así de 10. El test ① las imprime si aparecen.
+//      vigente. Medido al escribirlo: 0 viñetas así de 10. El test ① las imprime si aparecen, y
+//      esa salida la fija ⑬.
 //   c) No sabe si el estado es VERDAD (si de verdad hay 10 registros aceptados): solo que los dos
 //      sitios dicen lo mismo.
 //
@@ -240,10 +243,21 @@ const real = () => fs.readFileSync(MASTER, 'utf8');
 // EL ÁRBOL DE VERDAD
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1323 ① · el instrumento VE los dos sitios del máster: población declarada y ningún hito sin leer', () => {
-  const r = compararResumenYDetalle(real());
+/**
+ * Lo que el test ① hace y DICE en cada pasada. Es una función con nombre para que su salida se
+ * pueda fijar (⑫ y ⑬): una salida que nadie fija desaparece en la siguiente edición sin que nadie
+ * se entere, y aquí la salida es el único sitio donde el guard confiesa lo que NO comprueba.
+ */
+function veLosDosSitios(texto) {
+  const r = compararResumenYDetalle(texto);
   console.log(`  [SCRUM-1323] población: ${r.hitos.length} hitos de ${SECCION} · `
     + r.hitos.map((h) => `${h.id} ${h.resumen}/${h.detalle.join('') || '—'}`).join(' · '));
+  // Límite a): una viñeta sin símbolo solo prohíbe el ✅. Esos hitos NO se comparan contra nada, y
+  // un «25/25 verde» sin esta línea se lee como «los diez están vigilados». Sale SIEMPRE, también
+  // con cero: que no salga no puede significar «ninguno».
+  const mudas = r.hitos.filter((h) => h.detalle.length === 0).map((h) => h.id);
+  console.log(`  [SCRUM-1323] ⚠️ SIN COMPROBAR contra su viñeta: ${mudas.length} de ${r.hitos.length} hitos`
+    + ` (${mudas.join(', ') || 'ninguno'}) — su viñeta no lleva símbolo de estado; ahí solo se prohíbe ${HECHO}`);
   const varios = r.hitos.filter((h) => h.detalle.length > 1).map((h) => h.id);
   if (varios.length) console.log(`  [SCRUM-1323] ⚠️ comparados solo por pertenencia (viñeta con varios símbolos): ${varios.join(', ')}`);
 
@@ -254,6 +268,11 @@ test('SCRUM-1323 ① · el instrumento VE los dos sitios del máster: población
   assert.ok(r.hitos.length > 0, 'población vacía: no hay nada comparado');
   assert.equal(r.hitos.filter((h) => h.resumen !== null).length, r.hitos.length,
     'hay hitos sin estado leído en el resumen');
+  return r;
+}
+
+test('SCRUM-1323 ① · el instrumento VE los dos sitios del máster: población declarada y ningún hito sin leer', () => {
+  veLosDosSitios(real());
 });
 
 test('SCRUM-1323 ② · el resumen de SIF-1 y la viñeta de cada hito dicen el MISMO estado', () => {
@@ -395,5 +414,88 @@ test('SCRUM-1323 ⑪ · un texto que no es el máster no da verde: da problemas 
   for (const t of ['', '# otro documento\n\n- **S1-A** ✅\n']) {
     const r = compararResumenYDetalle(t);
     assert.deepEqual([motivos(r), r.hitos.length, r.contradicciones.length], [['SIN_RESUMEN', 'SIN_SECCION'], 0, 0]);
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LO QUE EL GUARD DICE DE SÍ MISMO: la salida de ①, fijada
+//
+// ① imprime qué hitos NO compara (viñeta sin símbolo) y cuáles compara solo por pertenencia (viñeta
+// con varios). Esas dos líneas son el límite del guard dicho donde se lee el verde. Aquí se corre
+// LA MISMA función que corre ①, con `console.log` cambiado por un cuaderno mientras dura: quitar
+// cualquiera de las dos líneas, o vaciarlas de nombres, hace caer esto.
+//
+// Límite: fija lo que la función dice, no que ① la siga llamando. Esa llamada es una línea, y está
+// a la vista justo debajo de la función.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Lo que `fn` manda a `console.log` mientras corre. El original vuelve aunque `fn` lance. */
+function loQueDice(fn) {
+  const dicho = [];
+  const original = console.log;
+  console.log = (...a) => { dicho.push(a.join(' ')); };
+  try { fn(); } finally { console.log = original; }
+  return dicho;
+}
+/** La ÚNICA línea de la salida que lleva esa marca; si hay otra cuenta, cae diciendo cuántas. */
+function laLinea(dicho, marca) {
+  const con = dicho.filter((l) => l.includes(marca));
+  assert.equal(con.length, 1, `esperaba UNA línea con «${marca}» en la salida de ① y hay ${con.length}:\n    ${dicho.join('\n    ')}`);
+  return con[0];
+}
+/** Los identificadores de hito que nombra una línea, en el orden en que salen. */
+const nombrados = (linea) => linea.match(/(?<![\w-])S1-[0-9A-Za-z]+(?![\w-])/g) || [];
+
+const SIN_COMPROBAR = 'SIN COMPROBAR contra su viñeta';
+const POR_PERTENENCIA = 'comparados solo por pertenencia';
+// El extracto histórico vale tal cual aunque lleve el rojo de S1-D: ① no juzga contradicciones
+// (eso es ②), solo exige que no haya PROBLEMAS de lectura, y el extracto no los tiene (⑥).
+
+test('SCRUM-1323 ⑫ · ① DICE, con sus nombres, los hitos que NO comprueba: 4 de 10 en el extracto, y los del máster de hoy', () => {
+  // ── el extracto histórico: bytes congelados, así que los nombres van literales ──
+  const linea = laLinea(loQueDice(() => veLosDosSitios(historico())), SIN_COMPROBAR);
+  assert.deepEqual(nombrados(linea), ['S1-0', 'S1-D', 'S1-F', 'S1-G']);
+  assert.ok(linea.includes('4 de 10 hitos'), `la línea no da la cuenta sobre la población: «${linea}»`);
+
+  // ── la línea se mueve con el dato: S1-F gana un símbolo en su viñeta y deja de salir ──
+  const conF = cambiar(historico(), 'Entregable: conformidad archivada.', 'Entregable: conformidad archivada. ⏳');
+  const lineaF = laLinea(loQueDice(() => veLosDosSitios(conF)), SIN_COMPROBAR);
+  assert.deepEqual(nombrados(lineaF), ['S1-0', 'S1-D', 'S1-G']);
+  assert.ok(lineaF.includes('3 de 10 hitos'), `«${lineaF}»`);
+
+  // ── el máster de hoy: los nombres salen del comparador, no de una lista escrita aquí ──
+  let r;
+  const hoy = laLinea(loQueDice(() => { r = veLosDosSitios(real()); }), SIN_COMPROBAR);
+  const mudas = r.hitos.filter((h) => h.detalle.length === 0).map((h) => h.id);
+  assert.deepEqual(nombrados(hoy), mudas);
+  assert.ok(hoy.includes(`${mudas.length} de ${r.hitos.length} hitos`), `«${hoy}»`);
+});
+
+test('SCRUM-1323 ⑫ · con CERO hitos sin comprobar la línea sale igual y dice «ninguno»: su ausencia no puede leerse como «todos vigilados»', () => {
+  // cada viñeta muda recibe el símbolo que ya lleva su hito en el resumen (S1-D, el ✅ histórico)
+  const base = compararResumenYDetalle(historico());
+  const mudas = base.hitos.filter((h) => h.detalle.length === 0);
+  assert.equal(mudas.length, 4, 'el extracto tiene 4 viñetas sin símbolo');
+  const todas = mudas.reduce((t, h) => conDetalle(t, h, h.resumen), historico());
+  const linea = laLinea(loQueDice(() => veLosDosSitios(todas)), SIN_COMPROBAR);
+  assert.deepEqual(nombrados(linea), []);
+  assert.ok(linea.includes('0 de 10 hitos (ninguno)'), `«${linea}»`);
+});
+
+test('SCRUM-1323 ⑬ · una viñeta con DOS símbolos sin tachar pasa por pertenencia, y ① lo DICE con el nombre del hito', () => {
+  // El caso probable: S1-E y S1-H llevan «🟡 BORRADOR». Alguien añade «✅ DONE» y no tacha el 🟡.
+  const dos = cambiar(historico(), '**🟡 BORRADOR 13-jun-26:** plantilla', '**🟡 BORRADOR 13-jun-26 · ✅ DONE 15-oct-26:** plantilla');
+  const r = compararResumenYDetalle(dos);
+  assert.deepEqual(r.hitos.find((h) => h.id === 'S1-E').detalle, ['🟡', '✅']);
+  assert.deepEqual(ids(r), ['S1-D'], 'el límite b): el resumen sigue en 🟡 y S1-E NO cae (S1-D es el rojo del extracto)');
+  assert.deepEqual(nombrados(laLinea(loQueDice(() => veLosDosSitios(dos)), POR_PERTENENCIA)), ['S1-E']);
+
+  // ── el control: la misma edición TACHANDO el 🟡 ya no es de pertenencia — cae, y el aviso no sale ──
+  const tachado = cambiar(historico(), '**🟡 BORRADOR 13-jun-26:** plantilla', '**~~🟡 BORRADOR 13-jun-26~~ · ✅ DONE 15-oct-26:** plantilla');
+  assert.deepEqual(ids(compararResumenYDetalle(tachado)), ['S1-D', 'S1-E']);
+  for (const [caso, texto] of [['tachando el 🟡', tachado], ['sin tocar nada', historico()]]) {
+    const dicho = loQueDice(() => veLosDosSitios(texto));
+    assert.equal(dicho.filter((l) => l.includes(POR_PERTENENCIA)).length, 0, `${caso}: el aviso de pertenencia sale sin viñeta con dos símbolos`);
+    laLinea(dicho, SIN_COMPROBAR); // y la salida no está vacía: la otra línea sí está
   }
 });
