@@ -419,3 +419,15 @@ Es una muestra, no la tanda: hay 93 ficheros de `tests/` que nombran Ajustes o e
   no arrancaba. El primer «rojo» de `scrum298` fue ése, un instrumento que no llegó a arrancar, y no
   se contó como la caída.
 - No se ha visto en un navegador con sesión: se verifica en yaqu.app cuando entre.
+
+## 6 · Pregunta abierta (del orquestador; no se resuelve aquí)
+
+La ficha de SCRUM-1220 sigue firmada y uno de sus dos textos ya no se pinta. Aparcarlo en `scrum514`
+vale hoy, pero si ese texto no puede volver, una excepción permanente no es su sitio: lo sería marcar
+la ficha como superada. **Hoy ese mecanismo no existe del lado de la ficha.** `docs/microcopy/README.md`
+dice que la ficha vieja «no se toca: ni se borra ni se marca», y lo que SCRUM-1306 construyó
+(`FICHA_VIGENTE`) vive en el test que pregunta —dice cuál es SU ficha—, no en la ficha superada. Así
+que `scrum514`, que lee todas las fichas, no tiene de dónde saber que una firma quedó atrás salvo por
+su lista. Si hay más fichas firmadas-pero-no-pintadas, es un patrón y pide ticket: en esa lista he
+leído tres entradas cuyo motivo acaba en «la firma ocurrió; ya no tiene dónde pintarse» («2. Líneas»,
+la de la sección SCRUM-1257c y ésta). El resto de la lista no lo he clasificado.
