@@ -255,3 +255,25 @@ Ninguno cambió una cifra entregada, salvo la hora del punto 1, corregida en el 
 - La forma de `scrum1294`: sin víctima hoy.
 
 ## Ⓛ Verificación
+
+Sobre `origin/main` = `0aab84f2356f6ce4cf6c629926a9e8cb4744ab14`, mezclado en la rama (dos merges de `main`
+durante el trabajo: `761db44f…` y éste; ninguno trajo un PR de interfaz ni tocó los ficheros de este PR).
+Hora de GitHub leída después del último: 2026-10-01T07:22:05Z.
+
+- **El fichero del guard, solo:** 27 tests, 27 pasan. Diez son de este ticket, tres de SCRUM-811 (intactos)
+  y catorce los arrastra el `import` de `scrum267` y `scrum649`.
+- **Mutación, repetida con el código final:** 18 de 18 cazadas; base 27/27 antes y después.
+- **`npm run guards:entrada`:** 12 guards, 132 tests, verde, 7,6 s de un techo de 90. Antes de este PR eran
+  122 tests.
+- **Guards de suite, en dos lotes** (26 ficheros: `scrum267`, `273`, `237`, `391`, `480`, `859`, `1294`,
+  `976`, `525d`, `694`, `694b`, `694c`, `737`, `824`, `850`, `850b`, `1308`, `1245b`, `242-scripts`, `258`,
+  `723`, `419`, `548`, `522`, `1106`, `514`): 78 + 156 tests. **El segundo lote salió con 2 rojos, los dos
+  míos y el mismo** (abajo); arreglado y vueltos a correr `811c`, `723`, `976` y `237`: 47 de 47.
+- **La tanda completa NO la he corrido en esta máquina.** El turno lo tenía otra sesión y la máquina iba
+  justa de memoria. Tampoco he recompilado `dist/`. Lo que pase en CI se anota en Jira.
+
+Y un sexto error mío, que va con los de Ⓙ: **mis dos ficheros nombraban la rama principal fuera de los
+argumentos de git** —tres mensajes de error y un `update-ref` del repositorio de prueba— y el censo de
+`scrum723` los acusó (y con él `scrum976` ④, que lanza `guards:entrada` de verdad). No lo cacé yo: lo cazó
+el lote. Arreglado en MI código —los mensajes dicen «la rama principal» y el repositorio de prueba ya no
+crea esa referencia—, no en la lista del guard. Preguntado después al propio censo: 0 menciones mías.
