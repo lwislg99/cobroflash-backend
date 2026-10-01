@@ -205,7 +205,7 @@ test('SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombr
     assert.equal(r.ok, false);
     assert.equal(r.mudo, undefined,
       '🔴 sale MUDO: acusa al guard de no vigilar cuando la declaración no dice qué quiere mutar. '
-      + 'Es el veredicto falso que `scrum853` llevó dos días.');
+      + 'Es el veredicto falso que `scrum853` llevó más de 40 horas.');
     assert.match(String(r.ciego), /aparece 2 veces/);
     assert.match(String(r.ciego), /líneas 1, 3/, '🔴 no dice dónde están las dos ocurrencias.');
     assert.equal(fs.readFileSync(vigilado, 'utf8'), ORIGINAL, '🔴 la puerta dice que no muta, y ha mutado.');

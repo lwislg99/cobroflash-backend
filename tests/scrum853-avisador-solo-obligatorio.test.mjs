@@ -72,7 +72,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // 🔴 SCRUM-1321 · EL ANCLA LLEVA LA LÍNEA DE ANTES, Y NO ES ADORNO. Hasta el 29-sep-2026 era
     // sólo el `if:`, que casaba una vez. `dc8ea603` (SCRUM-1263) añadió ANTES el paso `origen`,
     // cuyo `if:` empieza igual; la mutación se fue a ése, la acción siguió preguntando a la
-    // puerta, y esto salió MUDO en el meta-guard durante dos días. Anclada al `id: accion` va al
+    // puerta, y esto salió MUDO en el meta-guard más de 40 horas. Anclada al `id: accion` va al
     // paso por su IDENTIDAD, no por ser el primero que casa.
     fichero: '.github/workflows/claude.yml',
     de: "        id: accion\n        if: steps.puerta.outputs.despertar == 'si'",
