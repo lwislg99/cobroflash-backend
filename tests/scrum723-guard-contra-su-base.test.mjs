@@ -557,6 +557,14 @@ const INDIRECTAS_DECLARADAS = [
   // contando el estado de ayer. Herramienta de mano del orquestador; no corre en CI.
   // Lo retira quien retire el latido.
   'scripts/equipo/latido.mjs',
+  // SCRUM-1372 · la criba de cierres. Aquí la punta es el SUJETO, igual que en SCRUM-753 y SCRUM-637:
+  // «¿el trabajo de este cierre está DENTRO de `main` hoy?» no se puede contestar contra la base de una
+  // rama. NO le pasa la referencia móvil a git: usa `instantanea()` de SCRUM-753, que la resuelve UNA
+  // vez, y todo (árbol, historial, `merge-tree`) va contra ese sha congelado, que imprime en su segunda
+  // línea. Fuera de los argumentos nombra `main` en los textos del informe («commit en main que lo
+  // nombre», «no existe en main»). Herramienta de mano de la S0; no corre en CI.
+  // Lo retira quien retire la criba.
+  'scripts/auditoria-cierres.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
