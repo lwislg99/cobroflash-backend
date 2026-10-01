@@ -144,9 +144,14 @@ Tampoco se tocan los dos eventos `invoiced` de la misma factura en ④b (dichos 
 ## Lo que se corrió, y lo que no
 
 - Los dos ficheros del ticket: 16 + 18 casos, verdes.
-- Barrido dirigido sobre el árbol con `main` `1460262b` dentro: **243 ficheros, 2.031 tests, 1.982
-  pasan, 0 fallan, 49 saltan**. Los 49 son todos gateados por una base real (`QA_DB_TEST`,
-  `LIBRO_PG_URL`, `SERIE_PG_URL`, `TRAMOS_PG_URL`).
+- Barrido dirigido sobre el árbol con `main` `c1fe641c` dentro, en dos mitades: **587 ficheros de
+  1.153, 5.087 tests, 5.031 pasan, 1 falla, 55 saltan**. Entran los que tocan el sellado o lo
+  modelan con un doble y los que barren el árbol o `docs/master`. Los saltos son de tests gateados
+  por una base real (`QA_DB_TEST`, `LIBRO_PG_URL`, `SERIE_PG_URL`, `TRAMOS_PG_URL`).
+- El que falla es `tests/scrum754-el-juez-que-oscila.test.mjs` (vigila ficheros que nacen y mueren
+  en `tests/`), un caso de 22. **Suelto, dos veces: 22 de 22.** No toca nada de este cambio; la
+  causa no está demostrada (hipótesis: otros tests escribiendo en `tests/` a la vez).
+- `npm run guards:entrada`: 12 guards, 112 tests, verde.
 - **La tanda completa no se ha corrido.** Orden del orquestador al cerrar la tanda: la cubre el CI.
 - No medido: la carrera contra un Postgres real, y `tests/scrum173` real.
 
