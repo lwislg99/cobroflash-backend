@@ -122,7 +122,7 @@ Por equipo: 30 de Javier, 12 de Luis, 5 sin etiqueta de área (un ticket lleva d
 |---|---|---|---|
 | sin registro en `docs/master/` | 2 (1131, 1203) | 47 | 1203 tiene commit en `main`; solo le falta el registro |
 | sin registro NI commit (C1) | 1 (1131) | 47 | su comentario dice que ya estaba hecho bajo otro commit: cierre por duplicado, no trabajo perdido |
-| rama fuera de `main` (C2) | 1 (1196) | 47 | **real**: `origin/scrum-1196-fecha-de-la-politica` lleva `0ae2be8c` sin entrar; su PR #2013 se cerró sin mergear |
+| rama fuera de `main` (C2) | 1 (1196) | 47 | **falsa**, medido después (abajo): el contenido entró por otra rama (#2023); queda una rama zombi |
 | lenguaje de a medias (C5) | 28 | 41 con comentarios | **ruido**: leídas las citas, unos 6 son de verdad (1135, 1142, 1196, 1216, 1235, 1275) |
 | sin aceptación escrita (C6) | 23 | 47 | la mitad de los cierres no tiene contra qué auditarse |
 
@@ -146,10 +146,52 @@ C3 (despliegue) y C4 (cita rota) no entraron en el piloto.
    git. Lo caro sigue siendo leer.
 
 **Para repartir hoy, sin esperar al instrumento** (no los decido yo):
-- SCRUM-1196: «Finalizada» con un commit fuera de `main` (regla 42).
+- ~~SCRUM-1196: «Finalizada» con un commit fuera de `main`~~ — medido después: no hay trabajo fuera (abajo).
 - SCRUM-1135, 1142, 1216, 1235, 1275: «Finalizada» diciendo que no se verificó en yaqu.app.
 
 **Límites del piloto:** tres días, una pasada. No se leyó ninguna aceptación contra el producto: la mitad 2 no
 está probada. La cifra «unos 6» sale de 1–2 citas por ticket: es un mínimo leído.
+
+## Decisiones del orquestador (1-oct) y lo que cambian
+
+El dato de 23 de 47 reordena el plan: **el instrumento no es lo primero.** Medir contra una aceptación que
+en la mitad de los casos no existe sería construir un medidor para una magnitud que no está.
+
+1. **Un ticket sin aceptación escrita no se reparte.** Escrito en `00-normas-comunes.md` A13.1, en este PR.
+2. **La tabla «aceptación → dónde se ve» en la entrega.** Escrita en A8, en este PR. Rige para los seis
+   puestos de Luis. Al equipo de Javier se le PROPONE (abajo): no se le impone.
+3. **El instrumento se construye después**, en otro ticket, con este diseño. Tres piezas no se tocan: el lector
+   NO recibe el comentario de entrega; la cifra que vale es la del AZAR; y el canario.
+
+### Propuesta para el orquestador del equipo de Javier
+
+De los 47 cierres medidos, 30 son de vuestro equipo. No sé cuántos de los 23 sin aceptación son vuestros: el
+piloto no cruzó las dos cosas, y no lo supongo. Lo que proponemos es lo que ya nos hemos puesto nosotros:
+
+- que el ticket nazca con su aceptación (qué hay que ver, y dónde se ve);
+- que el comentario de entrega lleve una fila por línea de aceptación, con dónde se ve.
+
+Con eso, comprobar un cierre pasa de leer dos textos en prosa a mirar si cada fila tiene un sitio que existe.
+Si decís que no, lo aplicamos a los nuestros y os contamos qué midió.
+
+## SCRUM-1196, medido: no hay trabajo perdido — y la criba se equivocó
+
+El piloto marcó 1196 por rama fuera de `main`. Medido después contra el árbol:
+
+- El commit `0ae2be8c` existe. Es de documentación: corrige en `docs/master/SCRUM-1154.md`, en el registro de
+  microcopy y en la cabecera de `tests/scrum1154-google-encargado.test.mjs` una afirmación falsa sobre Google
+  Fonts. No lleva código de producto.
+- Su PR #2013 se cerró **a favor de #2023** (rama `scrum-1154-apendice-google-fonts`), mergeado el 30-sep a las
+  22:49Z (`46195e86`). El motivo, en el propio #2013: la rama se llamaba 1196 y llevaba trabajo de 1154.
+- El contenido **está en `main`**: el apéndice del 30-sep, las dos correcciones y la cabecera del test salen en
+  `origin/main`. Fusionar hoy `0ae2be8c` añadiría 3 líneas a un fichero.
+- `fonts.googleapis.com` sale 0 veces en `public/` y `src/` de `origin/main`.
+
+Lo que queda es una **rama zombi** (`origin/scrum-1196-fecha-de-la-politica`), no un cierre malo.
+
+**Lo que cambia del diseño:** C2 medía ANCESTRÍA, y el trabajo puede entrar por otra rama. Antes de acusar,
+C2 compara CONTENIDO: si fusionar la rama sobre `main` no cambia nada (o casi), es una rama por borrar, no un
+cierre con trabajo fuera. Con esto, las dos marcas «seguras» del piloto (1131 y 1196) eran falsas las dos.
+La criba sola no acusa a nadie: todo lo que marca pasa por lectura.
 
 A9: aviso → cicatriz S0 «Diseñé una señal por palabras sin medirla: marcaba 28 de 41 cierres. Una señal que salta en dos de cada tres casos no es una señal.» — no se pudo comprobar: el instrumento aún no existe; su test llevará el techo de marcados
