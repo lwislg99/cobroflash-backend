@@ -121,7 +121,7 @@ export function leerUnidades(raiz, corteInstante) {
   }
   const base = baseDeLaRama(raiz);
   if (!base) {
-    return { ...vacio, ciego: 'no se pudo resolver la base de la rama (falta la referencia remota de main)' };
+    return { ...vacio, ciego: 'no se pudo resolver la base de la rama (falta la referencia remota de la rama principal)' };
   }
 
   // `--since-as-filter` y no `--since`: el segundo DEJA DE ANDAR al ver commits viejos, y una

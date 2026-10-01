@@ -373,7 +373,7 @@ test('SCRUM-1340 · SUELO: la cadena de primer padre se pudo leer, y trae PR de 
   assert.equal(m.ciego, null,
     `🔴 CIEGO: no puedo medir qué PR tocaron la interfaz — ${m.ciego}. `
     + 'Esto NO es «nadie debe nada»: es «no he podido mirar». En CI el checkout necesita '
-    + '`fetch-depth: 0` y la referencia remota de main (el job de la tanda los trae).');
+    + '`fetch-depth: 0` y la referencia remota de la rama principal (el job de la tanda los trae).');
   assert.ok(/^[0-9a-f]{40}$/.test(m.base.sha), '🔴 CIEGO: la base de la rama no es un sha');
 
   const deInterfaz = m.historia.filter((u) => u.ui.length);
@@ -649,7 +649,7 @@ test('SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, l
     const calla = r.pr('pr-interfaz-sin-declarar', [['public/css/b.css', 'a{}\n'], ['docs/master/SCRUM-2.md', r.registro(2)]]);
     const dice = r.pr('pr-interfaz-declara', [['public/c.html', '<p>\n'], ['docs/master/SCRUM-3.md', r.registro(3, '\n**Skill UI:** cargada\n')]]);
     const ajeno = r.pr('pr-sin-interfaz', [['src/x.ts', 'export {};\n'], ['docs/master/SCRUM-4.md', r.registro(4)]]);
-    r.g(['update-ref', 'refs/remotes/origin/main', r.g(['rev-parse', 'HEAD']).trim()]);
+    // Sin referencia remota a propósito: `baseDeLaRama` cae a la rama local, que aquí es la misma.
 
     // ① EN MAIN, árbol limpio: tres unidades tras el corte, en orden, y nada pendiente.
     const enMain = leerUnidades(r.raiz, CORTE_INSTANTE);
@@ -680,7 +680,7 @@ test('SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, l
     r.escribir('docs/master/SCRUM-5.md', r.registro(5, '\n**Skill UI:** no cargada · es un fichero de prueba\n'));
     const conCampo = leerUnidades(r.raiz, CORTE_INSTANTE);
     assert.equal(veredictoDeUnidad(conCampo.pendiente, entradasDe(r.raiz), declaraSkillUi).veredicto, 'DECLARA');
-    assert.equal(conCampo.historia.length, 3, '🔴 lo de la rama se ha colado en la historia de main');
+    assert.equal(conCampo.historia.length, 3, '🔴 lo de la rama se ha colado en la historia de la rama principal');
 
     // ④ CLON SOMERO: no hay cadena que leer, y lo dice en vez de devolver cero unidades.
     const somero = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1340-somero-'));
