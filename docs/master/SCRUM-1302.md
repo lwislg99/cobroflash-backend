@@ -102,3 +102,31 @@ El test de §F pasa a fijar cada acción con SU condición (los dos envíos → 
 monta a mano un doble de la base sin el modelo `attachment`: con la cuenta de fotos, el GET respondía 500
 y sus dos casos del presupuesto no llegaban a ejecutarse. Se le añade UNA línea
 (`attachment.count → 0`) con su porqué y el aviso de que el 0 es fijo. Ninguna aserción se toca.
+
+## H1 · La firma directa lee «ya está firmado» como lo lee el drenado
+
+**Medido contra:** `origin/main` = `48babd04d40667a9ec8fbeb6e02b9e44dbf0585b` · 2026-10-01T11:09:06Z
+
+Carril S2 (`colaDeFirmas.js`; §11bis: «el resto es de la S2») · rama `scrum-1302-firma-directa-ya-registrada` · sesión `s2-01a`. Hallazgo 1 del recorrido de S4 de la cola de firmas sin red del albarán (Jira SCRUM-1302, c.17880). Los otros cinco de ese recorrido NO van aquí.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). El cambio es de lógica en `public/dashboard/js/colaDeFirmas.js`: sin marcado, sin estilos y **sin texto nuevo**.
+
+### El defecto
+
+La cola sube la firma al volver la red y el detalle abierto se queda viejo. Firmar o «Reintentar» desde ahí recibe 409 `albaran_locked` («Este albarán ya está firmado.»). `firmarConRedDeSeguridad` lo trataba como un fallo cualquiera: devolvía ②, la vista pintaba «No hemos podido registrar la firma (…)» de una firma que SÍ estaba registrada, y la firma volvía a la cola, donde el aviso dice «si lo pierdes, se pierde» de algo que el servidor ya guarda. El drenado, en el mismo fichero, ya lo leía bien (`elServidorYaLaTiene`).
+
+### El arreglo
+
+En el `catch` de la subida, antes del rechazo definitivo: si `elServidorYaLaTiene(error)` —la MISMA función del drenado, no una segunda regla— la firma sale de la cola, se olvida su rechazo y se devuelve ③ (`FIRMA_A_SALVO`) con `yaLaTenia: true` y sin `respuesta`. Las dos vistas que llaman (`albaranDetailView.js` y `parteDetailView.js`, de S4, no tocadas) ante ③ repintan pidiendo el documento al servidor y no leen `respuesta`: leído en su fuente, no ejecutado aquí.
+
+Vale también para `parte_locked`: en las rutas de firmar del parte ese código sólo sale de `puedeFirmarCliente`/`puedeFirmarTecnico` («ya ha firmado»).
+
+### Verificado, ejecutando
+
+`tests/scrum1302h-firma-directa-ya-registrada.test.mjs`: `firmarConRedDeSeguridad` real con el `apiRequest` real y una red que responde el 409 (el `code` lo pone `api.js`, no el test).
+
+- **Rojo antes del arreglo:** caen justo los tres del defecto (`albaran_locked`, con firma previa en la cola, y `parte_locked`); el suelo y los tres controles pasan.
+- **Verde después:** 7/7. Controles: un 409 `invalid_transition` y un 500 siguen en ② **y en la cola**; con red normal sigue ③ con la respuesta del servidor.
+- Vecinos (los 15 ficheros de test que nombran la cola o el drenado): 171/171.
+
+**NO medido:** la vista del albarán montada (el recorrido con pantalla es la sonda de S4), ni yaqu.app: reproducirlo en producción exige firmar un albarán, y el fixture sólo tiene uno emitido.
