@@ -1,0 +1,25 @@
+POBLACION: jobs de zona no cancelados 116 · con las dos pasadas medidas 114 · sin medir (log vacio u otra averia) 2
+con algun fichero no censado en repesca: 53 (46 %) · rojos entre ellos: 8 · rojos en total: 9
+   2026-09-22 jobs 18 con perdida 9 rojos 1 node 24.20.0,24.21.0
+   2026-09-28 jobs 16 con perdida 4 rojos 0 node 24.21.0
+   2026-09-29 jobs 11 con perdida 5 rojos 0 node 24.21.0
+   2026-09-30 jobs 11 con perdida 5 rojos 0 node 24.21.0
+   2026-10-01 jobs 58 con perdida 30 rojos 7 node 24.21.0
+FICHEROS (jobs en que salio · de ellos, cambio tambien A SOLAS):
+    21   4  casos~ 64 vigia-atascados
+    13   2  casos~ 53 scrum834-puerta-avisador-rojo
+    13   1  casos~ 12 scrum524b-trinquete-de-la-tabla
+     6   0  casos~  8 scrum237-negacion-respaldada
+     4   0  casos~ 34 scrum853-avisador-solo-obligatorio
+     4   0  casos~ 13 scrum931-un-solo-importe-de-plantilla
+     4   0  casos~  4 scrum649-el-ancla-que-no-apunta
+     4   0  casos~ 14 scrum454-destructivo-sin-comprobacion
+     3   0  casos~ 27 scrum312-importador-clientes
+     2   1  casos~ 10 scrum1262-la-baja-corta-todas-las-vias
+     2   0  casos~ 17 scrum522-guards-fuera-de-la-tanda
+     2   0  casos~ 10 scrum888g-senal-en-la-firma
+     2   1  casos~  1 scrum980-historial-del-cliente
+     1   0  casos~ 11 scrum176-guard-mensaje
+     1   0  casos~ 22 scrum996-suelo-de-arranque
+     1   0  casos~ 23 scrum580-tags-por-contacto
+     1   0  casos~ 24 scrum286-bloques-orden
