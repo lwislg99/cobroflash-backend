@@ -1,0 +1,6 @@
++0.1s BANCO SCRUM-1391 · puerta «tests con plazo propio» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.1s POBLACION: 2 ficheros de mentira · 4 tests · plazos de 500 ms
++5.4s ① un plazo propio que vence → salida 1 · ok 1 - rapido · not ok 2 - con plazo propio que vence · failureType: 'testTimeoutFailure' · # tests 2 · # pass 1 · # fail 0 · # cancelled 1
++9.5s ② el orden de los argumentos → salida 1 · ok 1 - opciones DESPUES de la funcion · not ok 2 - opciones ANTES de la funcion · failureType: 'testTimeoutFailure' · # tests 2 · # pass 1 · # fail 0 · # cancelled 1
+VEREDICTO-PUERTA {"puerta":"tests con plazo propio","ejercitada":true,"forma":"si","frase":"el plazo vencido sale `not ok`, salida 1, contado como `cancelled` y no como `fail`; unas opciones escritas DESPUÉS de la función se IGNORAN (el test de 2 s pasa con plazo de 500 ms)"}
+EXIT=0

@@ -1,0 +1,9 @@
+POBLACIÓN: 3 versiones del registro × 2 (limpia, mutada) × 10 pasadas = 60 pasadas
+  registro «antes-de-2114» (18734 bytes, 1 secciones) · limpia · 10 de 10 pasadas: tests 20 pass 20 fail 0 · los cuatro: 4/4 · «insertar…» no cae · salida 0
+  registro «antes-de-2114» (18734 bytes, 1 secciones) · MUTADA · 10 de 10 pasadas: tests 20 pass 12 fail 8 · los cuatro: 4/4 · «insertar…» CAE · salida 1
+  registro «main-con-1339b-y-c» (29896 bytes, 3 secciones) · limpia · 10 de 10 pasadas: tests 20 pass 20 fail 0 · los cuatro: 4/4 · «insertar…» no cae · salida 0
+  registro «main-con-1339b-y-c» (29896 bytes, 3 secciones) · MUTADA · 10 de 10 pasadas: tests 20 pass 12 fail 8 · los cuatro: 4/4 · «insertar…» CAE · salida 1
+  registro «mi-rama-con-1339d» (42159 bytes, 4 secciones) · limpia · 10 de 10 pasadas: tests 20 pass 20 fail 0 · los cuatro: 4/4 · «insertar…» no cae · salida 0
+  registro «mi-rama-con-1339d» (42159 bytes, 4 secciones) · MUTADA · 10 de 10 pasadas: tests 20 pass 12 fail 8 · los cuatro: 4/4 · «insertar…» CAE · salida 1
+restaurados los dos ficheros, byte a byte: sí
+EXIT=0
