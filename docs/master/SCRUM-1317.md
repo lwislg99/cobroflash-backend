@@ -235,6 +235,17 @@ encontraron algo» sobre siete procesos que **no llegaron a arrancar** (0,0 s, s
 `0xC0000142`). Un hijo que no se inició se contó como hallazgo. La salida literal está en
 `guards-visuales-cortado-por-memoria.txt`. Entregado al orquestador.
 
+**El ANTES, medido en yaqu.app con sesión real de operario** (1-oct-2026 07:11:56Z; producción servía
+`761db44f`, sin este ticket; la sesión la abrió el fundador con enlace mágico y `/admin/me` decía
+`tecnico`). Sólo lectura, 9 peticiones: `home`, `funnel`, `services`, `whatsapp` y `providers`
+contestaron **200** al operario —`home` con sus campos de dinero—; `platform-funnel`, 403 (ya negaba:
+ese merchant no es el dueño de la plataforma). Controles: `metrics/team` 403 (el instrumento ve un
+403), `templates` 200, `metrics/inicio` 404 (la ruta nueva aún no estaba). En el panel: número héroe,
+Resumen, semana y tops pintados, y Proveedores e Informes en la barra. Es la mitad «antes dejaba
+pasar» de la aceptación 1, que hasta hoy sólo constaba en un test. Literal en
+`docs/evidencias/scrum1317/yaqu-app-ANTES-operario-761db44f.txt`. **El DESPUÉS no está medido aquí:**
+va tras el despliegue, y los seis verbos de escritura sólo si los GET ya niegan.
+
 Y sobre `scrum601`: un control anclado por posición no sólo se rompe: **se rompe en cascada y de una
 en una**. Su segundo ancla estaba escondido detrás del primer aserto caído.
 
