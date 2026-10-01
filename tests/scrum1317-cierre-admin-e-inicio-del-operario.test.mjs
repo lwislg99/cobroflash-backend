@@ -39,10 +39,15 @@ const modelo = (nombre) => new Proxy({}, {
         ? [{ id: 9, quoteNumber: 4, status: 'sent', customer: { name: 'Marta' }, total: 120, currency: 'EUR', updatedAt: new Date(0), lines: [] }]
         : [];
     }
+    if (nombre === 'merchant' && metodo === 'findUnique') return merchantDeLaSesion;
     if (metodo === 'findUnique' || metodo === 'findFirst') return { id: 7, merchantId: 42 };
     return { id: 7, ...(args && args.data) };
   },
 });
+/** El merchant que la base devuelve a `platform-funnel`. Por defecto, uno cualquiera. */
+const UN_MERCHANT = { email: 'taller@example.com', isPlatformOwner: false };
+const EL_DUENO = { email: 'duena-de-la-plataforma@example.com', isPlatformOwner: true };
+let merchantDeLaSesion = UN_MERCHANT;
 const prisma = new Proxy({}, { get: (_t, nombre) => modelo(String(nombre)) });
 require_.cache[R_PRISMA] = { id: R_PRISMA, filename: R_PRISMA, loaded: true, exports: { prisma } };
 
@@ -168,6 +173,28 @@ test('SCRUM-1317 · la portada del operario no lleva NI UN importe agregado del 
   for (const dinero of ['pendingAmount', 'awaitingAmount', 'collectedThisMonth', 'expensesThisMonth', 'profitThisMonth', 'topCustomers']) {
     assert.ok(dinero in home.cuerpo, `🔴 CIEGO: /home ya no devuelve ${dinero}`);
     assert.ok(!(dinero in inicio.cuerpo), `🔴 la portada del operario devuelve ${dinero}`);
+  }
+});
+
+test('SCRUM-1317 · el embudo de PLATAFORMA exige las dos cosas: ser admin Y ser el merchant dueño', async () => {
+  // La puerta de SCRUM-102 mira el MERCHANT (correo en OWNER_EMAILS + marca en la base), no quién
+  // llama: un operario dado de alta en la cuenta dueña de la plataforma veía el embudo de TODOS
+  // los merchants. `requireRole('admin')` va delante; la de dueño se queda intacta detrás.
+  const { config } = require_('./dist/core/config/env.js');
+  const antes = config.OWNER_EMAILS;
+  config.OWNER_EMAILS = [EL_DUENO.email];
+  const pedirComo = async (rol, merchant) => {
+    merchantDeLaSesion = merchant;
+    try { return (await pedir(rol, 'GET', '/admin/metrics/platform-funnel')).status; } finally { merchantDeLaSesion = UN_MERCHANT; }
+  };
+  try {
+    assert.equal(await pedirComo('tecnico', UN_MERCHANT), 403, '🔴 un operario cualquiera llega al embudo de plataforma');
+    assert.equal(await pedirComo('admin', UN_MERCHANT), 403, '🔴 un admin que no es el dueño llega al embudo de plataforma');
+    assert.equal(await pedirComo('tecnico', EL_DUENO), 403, '🔴 un operario del merchant dueño ve el embudo de todos los merchants');
+    // Control: el admin del merchant dueño SÍ pasa. Sin él, los tres 403 de arriba no dirían nada.
+    assert.notEqual(await pedirComo('admin', EL_DUENO), 403, '🔴 CIEGO: el admin dueño tampoco pasa; el arnés no distingue');
+  } finally {
+    config.OWNER_EMAILS = antes;
   }
 });
 

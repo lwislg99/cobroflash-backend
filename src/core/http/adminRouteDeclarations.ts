@@ -311,10 +311,11 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   // las cuatro con `requireRole('admin')`. `/home` era el Inicio del operario: antes de cerrarla
   // se le dio su propia ruta (`/admin/metrics/inicio`, arriba en TECNICO_ALLOWED), sin importes.
   //
-  // Queda UNA, y su duda de antes decía algo falso: que su puerta era «más estricta que admin».
-  // No lo es; es OTRA pregunta. `isVerifiedPlatformOwner` mira el MERCHANT (correo + marca en
-  // la base), no quién llama, así que un operario del merchant dueño de la plataforma pasa.
-  { method: 'GET', path: '/admin/metrics/platform-funnel', tanda: 2, duda: 'Su puerta inline (isVerifiedPlatformOwner, SCRUM-102) mira el merchant y no el rol de quien llama: ponerle requireRole delante cambia quién llega, y esa decisión está pedida al fundador en SCRUM-1317' },
+  // Y SALE `/admin/metrics/platform-funnel`, también con `requireRole('admin')`. Su duda decía
+  // que su puerta inline era «más estricta que admin», y no lo era: era OTRA pregunta.
+  // `isVerifiedPlatformOwner` mira el MERCHANT (correo + marca en la base), no quién llama, así
+  // que un operario del merchant dueño de la plataforma pasaba. La de rol va delante y la de
+  // dueño se queda intacta detrás: ahora hacen falta las dos.
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
@@ -364,9 +365,12 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
 //
 // 13 → 1 (SCRUM-1317, 1-oct-2026): salen doce. Once se cierran con requireRole('admin')
 // —metrics/home, funnel, services y whatsapp; las cuatro de providers; POST, PUT y DELETE de
-// templates— y GET /admin/templates pasa a TECNICO_ALLOWED. Queda /admin/metrics/platform-funnel,
-// que espera una decisión del fundador (ver su duda).
-export const PENDIENTE_MAX = 1;
+// templates— y GET /admin/templates pasa a TECNICO_ALLOWED.
+//
+// 1 → 0 (SCRUM-1317): sale /admin/metrics/platform-funnel, con requireRole('admin') delante de
+// su puerta de dueño de plataforma. LA LISTA QUEDA VACÍA, y el tope en cero es lo que hace que
+// siga mordiendo: una ruta nueva sin declarar ya no tiene dónde aparcarse.
+export const PENDIENTE_MAX = 0;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.

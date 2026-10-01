@@ -75,6 +75,7 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET',    path: '/admin/metrics/funnel' },
   { method: 'GET',    path: '/admin/metrics/services' },
   { method: 'GET',    path: '/admin/metrics/whatsapp' },
+  { method: 'GET',    path: '/admin/metrics/platform-funnel' },
   { method: 'GET',    path: '/admin/providers' },
   { method: 'POST',   path: '/admin/providers', body: { name: 'x' } },
   { method: 'PUT',    path: '/admin/providers/999999', body: { name: 'x' } },

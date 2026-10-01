@@ -51,7 +51,11 @@ router.get('/services', requireRole('admin'), async (req, res) => {
 
 // V0-3: funnel de plataforma — SOLO cuentas owner; el resto recibe 403.
 // SCRUM-102: dos factores (email en OWNER_EMAILS + Merchant.isPlatformOwner en BD).
-router.get('/platform-funnel', async (req, res) => {
+// SCRUM-1317: `requireRole('admin')` DELANTE, y la puerta de dueño intacta detrás. La de dueño
+// mira el MERCHANT, no quién llama: sin la de rol, un operario dado de alta en la cuenta dueña
+// de la plataforma veía el embudo de todos los merchants. Y un gate inline no lo ve la red de
+// SCRUM-55; con `requireRole` la ruta queda declarada. Autorizado en SCRUM-1317, comentario 17780.
+router.get('/platform-funnel', requireRole('admin'), async (req, res) => {
   try {
     const m = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
