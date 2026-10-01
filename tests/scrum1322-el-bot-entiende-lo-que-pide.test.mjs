@@ -95,17 +95,17 @@ const ACEPTAN = [
   'Acepto', 'acepto', 'ACEPTO', 'Acepto.', '*Acepto*',
   'sí', 'Sí', 'SÍ', 'sí.', 'si', 'Si', 'si!',
   // lo que ya se entendía suelto antes de este ticket, y tiene que seguir:
-  'acept', 'okay', 'okey', 'dale', 'confirm', 'adelante', 'de acuerdo', 'me interesa',
-  'quiero', 'va', 'sale',
+  'acept', 'dale', 'confirm', 'adelante', 'de acuerdo', 'me interesa',
+  'quiero', 'sale',
   // las conjugaciones que la raíz dejaba fuera:
   'aceptar', 'aceptado', 'aceptamos', 'lo acepto', 'acepto el presupuesto', 'confirmo', 'confirmar', 'confirmado',
   // varias a la vez y con cortesía:
   'sí, acepto', 'si acepto', 'hola, acepto', 'sí, por favor', 'claro que sí',
   'sí, gracias', 'acepto, muchas gracias',
 ];
-// SCRUM-1326 (firmado por el fundador, comentario 17692): estas cinco, sueltas, YA NO aceptan: el
+// SCRUM-1326 (firmado por el fundador, comentarios 17692 y 17802): estas ocho, sueltas, YA NO aceptan: el
 // bot pregunta. Hasta ese ticket estaban arriba, en ACEPTAN. Su test es `tests/scrum1326-…`.
-const PREGUNTAN = ['ok', 'vale', 'perfecto', 'listo', 'claro', 'vale, gracias', 'ok perfecto', 'vale, muchas gracias'];
+const PREGUNTAN = ['ok', 'okay', 'okey', 'vale', 'va', 'perfecto', 'listo', 'claro', 'vale, gracias', 'ok perfecto', 'vale, muchas gracias'];
 const RECHAZAN = [
   'no', 'No', 'NO', 'No.', '*No*',
   'rechazo', 'cancelar',
@@ -117,7 +117,7 @@ const RECHAZAN = [
 test('SCRUM-1322 · control positivo: lo que es una decisión se entiende', () => {
   cadaUna(ACEPTAN, 'accept', 'una aceptación deja de entenderse');
   cadaUna(RECHAZAN, 'reject', 'un rechazo deja de entenderse');
-  cadaUna(PREGUNTAN, 'ask', 'una de las cinco de SCRUM-1326 deja de preguntar');
+  cadaUna(PREGUNTAN, 'ask', 'una de las ocho de SCRUM-1326 deja de preguntar');
 });
 
 test('SCRUM-1322 · «sí» con tilde, en las dos formas en que puede llegar el carácter', () => {
@@ -189,9 +189,9 @@ test('SCRUM-1322 · el vocabulario que decide es éste, entero', () => {
   assert.deepEqual([...ACEPTA].sort(), [
     'acept', 'aceptado', 'aceptamos', 'aceptar', 'acepto', 'acepto el presupuesto', 'adelante',
     'claro que si', 'confirm', 'confirmado', 'confirmamos', 'confirmar', 'confirmo', 'dale', 'de acuerdo',
-    'lo acepto', 'lo confirmo', 'lo quiero', 'me interesa', 'okay', 'okey',
-    'quiero', 'sale', 'si', 'va',
-  ]); // sin `claro`, `listo`, `ok`, `perfecto`, `vale`: desde SCRUM-1326 están en `PREGUNTA`
+    'lo acepto', 'lo confirmo', 'lo quiero', 'me interesa',
+    'quiero', 'sale', 'si',
+  ]); // sin `claro`, `listo`, `ok`, `okay`, `okey`, `perfecto`, `va`, `vale`: desde SCRUM-1326 están en `PREGUNTA`
   assert.deepEqual([...RECHAZA].sort(), [
     'cancel', 'cancelado', 'cancelamos', 'cancelar', 'cancelo', 'claro que no', 'lo rechazo', 'mejor no',
     'negativo', 'nel', 'no', 'no acepto', 'no lo acepto', 'no lo quiero', 'no me interesa', 'no quiero',

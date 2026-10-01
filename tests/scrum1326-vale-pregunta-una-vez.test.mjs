@@ -3,8 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // Un cliente que contesta «vale» a un presupuesto lo ACEPTABA: estado `accepted`, se creaba el
 // Trabajo y al profesional se le decía que su cliente había aceptado. Y «vale» puede ser sólo
-// «recibido». El fundador firmó (SCRUM-1326, comentario 17692) que cinco palabras —`vale`, `ok`,
-// `perfecto`, `listo`, `claro`—, sueltas, dejan de aceptar: el bot PREGUNTA, con un texto firmado.
+// «recibido». El fundador firmó (SCRUM-1326, comentarios 17692 y 17802) que ocho palabras —`vale`,
+// `ok`, `okay`, `okey`, `perfecto`, `listo`, `claro`, `va`—, sueltas, dejan de aceptar: el bot
+// PREGUNTA, con un texto firmado. Son acuses de recibo. Las que autorizan o desean siguen aceptando.
 //
 // Lo que se sostiene aquí, por EFECTO en el webhook real (dobles en `require.cache`, el mismo
 // harness que `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs`):
@@ -33,11 +34,14 @@ const RUTA_SRC = path.join(RAIZ, 'src/modules/whatsappBot/app/routes/whatsappInc
 const MODULO_SRC = path.join(RAIZ, 'src/modules/whatsappBot/domain/decisionPorTexto.ts');
 const { parseDecision } = require_('./dist/modules/whatsappBot/domain/decisionPorTexto.js');
 
-// Las DOS listas de la decisión firmada en SCRUM-1326 (comentario 17692;
+// Las DOS listas del reparto firmado en SCRUM-1326 (comentario 17802, que amplía el 17692;
 // `docs/microcopy/2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md`), no las del módulo: si el módulo
-// cambia de opinión sobre una de estas nueve, este fichero cae.
-const PREGUNTAN = ['vale', 'ok', 'perfecto', 'listo', 'claro'];
-const ACEPTAN_SIN_PREGUNTA = ['Acepto', 'sí', 'confirmo', 'aceptar'];
+// cambia de opinión sobre una de estas dieciocho, este fichero cae.
+const PREGUNTAN = ['vale', 'ok', 'okay', 'okey', 'perfecto', 'listo', 'claro', 'va'];
+const ACEPTAN_SIN_PREGUNTA = ['Acepto', 'aceptar', 'sí', 'confirmo', 'dale', 'adelante', 'de acuerdo', 'me interesa', 'quiero', 'sale'];
+// Las que el reparto NO nombra: flexiones de las que aceptan. Siguen aceptando (SCRUM-1326, comentario 17801).
+const FLEXIONES_QUE_ACEPTAN = ['aceptado', 'aceptamos', 'lo acepto', 'acepto el presupuesto', 'confirmar', 'confirmado',
+  'confirmamos', 'lo confirmo', 'lo quiero', 'claro que sí', 'acept', 'confirm'];
 
 /** Cada entrada, una por una y con su nombre: un fallo dice QUÉ frase. */
 function cadaUna(entradas, esperado, porQue) {
@@ -214,7 +218,7 @@ test('🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea 
 });
 
 test('SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando', async () => {
-  for (const frase of ['Vale', 'VALE', 'vale.', 'Ok!', '*vale*', 'vale, gracias', 'ok, muchas gracias', 'hola, vale',
+  for (const frase of ['Vale', 'VALE', 'vale.', 'Ok!', 'Okay', 'okey, gracias', 'Va', 'va.', '*vale*', 'vale, gracias', 'ok, muchas gracias', 'hola, vale',
     'ok perfecto', 'vale vale', 'claro, perfecto', 'v\xe1le', 'Perfecto 👍']) {
     const r = await escribe(frase);
     assert.equal(r.estado, 'sent', `🔴 «${frase}» ha movido el presupuesto a «${r.estado}»`);
@@ -225,7 +229,7 @@ test('SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con do
 
 // ── 2 · El positivo: lo que protege lo ganado ──────────────────────────────────────────────────
 
-test('🔴 SCRUM-1326 · por efecto: «Acepto», «sí», «confirmo» y «aceptar» aceptan SIN pregunta intermedia', async () => {
+test('🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia', async () => {
   for (const palabra of ACEPTAN_SIN_PREGUNTA) {
     const r = await escribe(palabra);
     assert.equal(r.estado, 'accepted', `🔴 «${palabra}» ya no acepta el presupuesto a la primera`);
@@ -390,28 +394,62 @@ function listaDelModulo(nombre) {
   assert.fail(`🔴 CIEGO: no encuentro la lista ${nombre} en el módulo`);
 }
 
-test('🔴 SCRUM-1326 · las que preguntan son CINCO, las firmadas, y ninguna más', () => {
+const sinTildes = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+test('🔴 SCRUM-1326 · las que preguntan son OCHO, las firmadas, y ninguna más', () => {
+  assert.equal(PREGUNTAN.length, 8);
   assert.deepEqual([...listaDelModulo('PREGUNTA')].sort(), [...PREGUNTAN].sort(),
-    '🔴 la lista de las que preguntan no es la que firmó el fundador (SCRUM-1326, comentario 17692)');
-  // Ninguna de las cinco sigue, además, entre las que aceptan: el orden de búsqueda decidiría.
+    '🔴 la lista de las que preguntan no es la que firmó el fundador (SCRUM-1326, comentario 17802)');
+  // Ninguna de las ocho sigue, además, entre las que aceptan: el orden de búsqueda decidiría.
   const acepta = listaDelModulo('ACEPTA');
   assert.deepEqual(PREGUNTAN.filter((p) => acepta.includes(p)), [], '🔴 una palabra está en las dos listas');
-  // Las cuatro que el fundador nombró como claras siguen en la de aceptar.
-  assert.deepEqual(['acepto', 'si', 'confirmo', 'aceptar'].filter((p) => !acepta.includes(p)), []);
+  // Y la de aceptar es EXACTAMENTE las firmadas más sus flexiones declaradas: ni falta ni sobra una.
+  assert.deepEqual([...acepta].sort(), [...ACEPTAN_SIN_PREGUNTA, ...FLEXIONES_QUE_ACEPTAN].map(sinTildes).sort(),
+    '🔴 la lista de aceptar no es «las firmadas + sus flexiones declaradas»');
+  assert.equal(PREGUNTAN.length + acepta.length, 30, 'las 30 entradas que aceptaban antes de este ticket siguen estando, repartidas');
+});
+
+test('🔴 SCRUM-1326 · `va` pregunta y `sale` acepta: estaban juntas y van a grupos distintos', async () => {
+  // `sale` la decidió el fundador (SCRUM-1326, comentario 17802). Un caso por cada una, por efecto.
+  const va = await escribe('va');
+  assert.equal(va.estado, 'sent', '🔴 «va» ha movido el presupuesto');
+  assert.deepEqual(va.trabajos, [], '🔴 «va» ha creado el Trabajo');
+  assert.deepEqual(va.alPro, []);
+  assert.deepEqual(va.alCliente, [laPregunta('P-0011')], '«va» recibe la pregunta firmada');
+
+  const sale = await escribe('sale');
+  assert.equal(sale.estado, 'accepted', '🔴 «sale» ya no acepta a la primera');
+  assert.deepEqual(sale.trabajos, [11], '🔴 «sale» no crea el Trabajo');
+  assert.equal(sale.alPro.length, 1);
+  assert.notEqual(sale.alCliente[0], laPregunta('P-0011'), '🔴 a «sale» se le ha metido la pregunta por medio');
+
+  // Juntas: hay una aceptación clara al lado, así que acepta.
+  assert.equal(parseDecision('va, sale'), 'accept');
+  // Con tilde del corrector, cada una sigue en su grupo.
+  assert.equal(parseDecision('v\xe1'), 'ask');
+  assert.equal(parseDecision('s\xe1le'), 'accept');
+});
+
+test('SCRUM-1326 · las doce flexiones que el reparto no nombra siguen aceptando a la primera', () => {
+  assert.equal(FLEXIONES_QUE_ACEPTAN.length, 12);
+  cadaUna(FLEXIONES_QUE_ACEPTAN, 'accept', 'una flexión de una palabra que acepta ha dejado de aceptar');
+  // «claro» a secas pregunta; «claro que sí» es una afirmación entera.
+  assert.equal(parseDecision('claro'), 'ask');
+  assert.equal(parseDecision('claro que s\xed'), 'accept');
 });
 
 test('SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada', () => {
-  cadaUna(PREGUNTAN, 'ask', 'una de las cinco, suelta, no pregunta');
-  cadaUna(ACEPTAN_SIN_PREGUNTA, 'accept', 'una de las cuatro claras ya no acepta a la primera');
+  cadaUna(PREGUNTAN, 'ask', 'una de las ocho, suelta, no pregunta');
+  cadaUna(ACEPTAN_SIN_PREGUNTA, 'accept', 'una de las que el reparto firmado deja aceptando ya no acepta a la primera');
   cadaUna(['vale, gracias', 'hola, ok', 'ok perfecto', 'listo listo', 'claro, por favor', '*vale*', ' VALE ', 'ok.', 'listo!'],
-    'ask', 'una de las cinco, con cortesía o con otra de las cinco, no pregunta');
+    'ask', 'una de las ocho, con cortesía o con otra de las ocho, no pregunta');
   cadaUna(['sí, vale', 'vale, acepto', 'ok confirmo', 'claro que sí', 'perfecto, aceptar'], 'accept',
-    'una aceptación clara, acompañada de una de las cinco, no acepta');
-  cadaUna(['vale no', 'no, vale', 'ok, no gracias'], 'unknown', 'una de las cinco con un rechazo decide algo');
+    'una aceptación clara, acompañada de una de las ocho, no acepta');
+  cadaUna(['vale no', 'no, vale', 'ok, no gracias'], 'unknown', 'una de las ocho con un rechazo decide algo');
   assert.equal(parseDecision('claro que no'), 'reject', '«claro que no» es un rechazo entero');
   cadaUna(['vale?', '¿ok?', 'listo?'], 'unknown', 'una PREGUNTA del cliente provoca la pregunta del bot');
-  cadaUna(['vales', 'oka', 'listos', 'clarooo', 'perfectos', 'vale cuanto', 'ok pero me lo tengo que pensar'], 'unknown',
-    'algo que sólo EMPIEZA como una de las cinco, o que trae más cosas, pregunta');
+  cadaUna(['vales', 'oka', 'okeys', 'vas', 'listos', 'clarooo', 'perfectos', 'vale cuanto', 'ok pero me lo tengo que pensar'], 'unknown',
+    'algo que sólo EMPIEZA como una de las ocho, o que trae más cosas, pregunta');
 });
 
 test('SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)', () => {
@@ -424,5 +462,5 @@ test('SCRUM-1326 · con tildes, en las dos formas en que puede llegar el caráct
   // Y las claras, con su tilde y sin ella, siguen siendo claras.
   cadaUna(['s\xed', 's\xed'.normalize('NFD'), 'S\xcd', 'si', 'ac\xe9pto', 'conf\xedrmo'], 'accept', 'una clara con tilde deja de aceptar');
   // Detrás de una vocal con tilde no hay «frontera de palabra» sin modo unicode: que no se pegue.
-  cadaUna(['s\xed vale', 'vale s\xed', 's\xed, ok'], 'accept', '«sí» pegada a una de las cinco no se separa');
+  cadaUna(['s\xed vale', 'vale s\xed', 's\xed, ok'], 'accept', '«sí» pegada a una de las ocho no se separa');
 });

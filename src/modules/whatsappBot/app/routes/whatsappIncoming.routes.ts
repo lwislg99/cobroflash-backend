@@ -464,7 +464,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     return;
   }
 
-  // SCRUM-1326: «vale», «ok», «perfecto», «listo» o «claro», sueltas, pueden ser sólo «recibido».
+  // SCRUM-1326: «vale», «ok», «va», «perfecto»… (la lista `PREGUNTA`), sueltas, pueden ser sólo «recibido».
   // No aceptan: se pregunta, y el presupuesto NO se toca ni se apunta en ningún sitio que se
   // preguntó. Si el cliente no contesta, sigue en `sent`. Texto firmado (comentario 17692,
   // `docs/microcopy/2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md`): ni una palabra distinta.

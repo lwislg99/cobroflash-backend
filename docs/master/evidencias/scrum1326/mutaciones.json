@@ -1,0 +1,199 @@
+{
+  "poblacion": "17 mutaciones corridas de 17",
+  "base": {
+    "ok": 14,
+    "caen": 0
+  },
+  "filas": [
+    {
+      "id": "M1 «vale» vuelve a aceptar (el defecto del ticket)",
+      "veredicto": "CAE",
+      "ok": 3,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA",
+        "SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot",
+        "🔴 SCRUM-1326 · las que preguntan son CINCO, las firmadas, y ninguna más",
+        "SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada",
+        "SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)"
+      ]
+    },
+    {
+      "id": "M2 todo pregunta: «Acepto» tambien pasa por la pregunta",
+      "veredicto": "CAE",
+      "ok": 7,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «Acepto», «sí», «confirmo» y «aceptar» aceptan SIN pregunta intermedia",
+        "🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA",
+        "SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar",
+        "🔴 SCRUM-1326 · las dos palabras que la pregunta pide escribir DECIDEN, sin otra pregunta",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot",
+        "SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada",
+        "SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)"
+      ]
+    },
+    {
+      "id": "M3 una de las cinco al lado de una clara mete la pregunta («si, vale»)",
+      "veredicto": "CAE",
+      "ok": 11,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «Acepto», «sí», «confirmo» y «aceptar» aceptan SIN pregunta intermedia",
+        "SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada",
+        "SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)"
+      ]
+    },
+    {
+      "id": "M4 una de las cinco con un rechazo: gana el rechazo",
+      "veredicto": "CAE",
+      "ok": 12,
+      "caen": [
+        "SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre",
+        "SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada"
+      ]
+    },
+    {
+      "id": "M5 la ruta trata la pregunta como aceptacion",
+      "veredicto": "CAE",
+      "ok": 6,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA",
+        "SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M6 la pregunta deja una marca en el presupuesto (un estado intermedio)",
+      "veredicto": "CAE",
+      "ok": 11,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar"
+      ]
+    },
+    {
+      "id": "M7 la pregunta apunta que pregunto en OTRA tabla",
+      "veredicto": "CAE",
+      "ok": 11,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar"
+      ]
+    },
+    {
+      "id": "M8 una palabra distinta en el texto firmado",
+      "veredicto": "CAE",
+      "ok": 9,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M9 sin el arranque «Entendido»",
+      "veredicto": "CAE",
+      "ok": 9,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M10 las negritas de WhatsApp se pierden",
+      "veredicto": "CAE",
+      "ok": 9,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M11 otro numero: el id aunque haya quoteNumber",
+      "veredicto": "CAE",
+      "ok": 9,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar",
+        "🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»",
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M12 la pregunta avisa TAMBIEN al profesional",
+      "veredicto": "CAE",
+      "ok": 12,
+      "caen": [
+        "🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional",
+        "SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta"
+      ]
+    },
+    {
+      "id": "M13 la pregunta deja de declararse respuesta a un entrante",
+      "veredicto": "CAE",
+      "ok": 13,
+      "caen": [
+        "SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta"
+      ]
+    },
+    {
+      "id": "M14 con el bot encendido, la pregunta se la queda el menu del bot",
+      "veredicto": "CAE",
+      "ok": 13,
+      "caen": [
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M15 a mitad de captacion, «vale» decide sobre el presupuesto viejo",
+      "veredicto": "CAE",
+      "ok": 13,
+      "caen": [
+        "SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot"
+      ]
+    },
+    {
+      "id": "M16 una sexta palabra que pregunta («va»)",
+      "veredicto": "CAE",
+      "ok": 13,
+      "caen": [
+        "🔴 SCRUM-1326 · las que preguntan son CINCO, las firmadas, y ninguna más"
+      ]
+    },
+    {
+      "id": "M17 sin quitar las tildes",
+      "veredicto": "CAE",
+      "ok": 12,
+      "caen": [
+        "SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando",
+        "SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)"
+      ]
+    }
+  ],
+  "final": {
+    "build": 0,
+    "ok": 14,
+    "caen": 0,
+    "srcSucio": ""
+  }
+}

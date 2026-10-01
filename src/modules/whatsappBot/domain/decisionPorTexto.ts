@@ -20,7 +20,7 @@
 // enumera enteras (las lee de este fuente, no se exportan): añadir una entrada es cambiar el test
 // a propósito. Van ya normalizadas (minúsculas, sin tildes), que es como se compara.
 //
-// SCRUM-1326: hay una cuarta respuesta, `ask`. Cinco palabras que aceptaban —las de `PREGUNTA`—
+// SCRUM-1326: hay una cuarta respuesta, `ask`. Ocho palabras que aceptaban —las de `PREGUNTA`—
 // pueden ser sólo «recibido», y aceptar crea el Trabajo y avisa al profesional. Sueltas ya no
 // aceptan: quien llama pregunta al cliente, y el presupuesto no se mueve.
 
@@ -33,17 +33,19 @@ const ACEPTA: readonly string[] = [
   'si', 'claro que si',
   'confirmo', 'confirmar', 'confirmado', 'confirmamos', 'lo confirmo',
   // lo que ya se entendía suelto antes de SCRUM-1322 (las raíces, tal cual, incluidas)
-  'acept', 'confirm', 'okay', 'okey', 'dale', 'adelante', 'de acuerdo',
-  'me interesa', 'quiero', 'lo quiero', 'va', 'sale',
+  'acept', 'confirm', 'dale', 'adelante', 'de acuerdo',
+  'me interesa', 'quiero', 'lo quiero', 'sale',
 ];
 
 /**
- * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las cinco que firmó el fundador
- * (comentario 17692), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las enumera.
+ * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador
+ * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las
+ * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.
+ * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.
  * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el
  * mensaje no decide nada, igual que antes.
  */
-const PREGUNTA: readonly string[] = ['vale', 'ok', 'perfecto', 'listo', 'claro'];
+const PREGUNTA: readonly string[] = ['vale', 'ok', 'okay', 'okey', 'perfecto', 'listo', 'claro', 'va'];
 
 /** Lo que rechaza. Las que niegan una palabra de aceptar («no acepto») van aquí ENTERAS. */
 const RECHAZA: readonly string[] = [
