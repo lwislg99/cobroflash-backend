@@ -300,28 +300,28 @@ test('SCRUM-1304 · ⛔ regla 2: una factura de OTRO merchant con ese `chargeId`
   assert.notEqual(resultado.number, 'F269999');
 });
 
-// ── ⚠️ ESPAÑA · LO QUE ESTE ARREGLO NO CIERRA, FIJADO COMO ESTÁ (SCRUM-1330) ─────────────────
+// ── ESPAÑA · DEDUPLICAR POR COBRO NO VUELVE A SELLAR LA FACTURA QUE YA EXISTÍA (SCRUM-1330) ──
 //
-// 🔴 NADA DE LO QUE SIGUE ES EL COMPORTAMIENTO DESEADO. Es el que hay, medido, y está aquí para que
-// no se pueda cambiar sin enterarse. `ensurePdfAndEvent` llama a `sellarTrasEmision` SIEMPRE, y el
-// sellado no comprueba si la factura ya está sellada: recalcula y pisa `vfHash`, `vfPrevHash` y
-// `vfTimestamp`. Deduplicar por cobro mete a la factura que ya existía por ese mismo embudo.
+// Deduplicar por cobro mete a la factura que ya existía por `ensurePdfAndEvent`, que sellaba
+// SIEMPRE; y el sellado no miraba si la factura ya tenía huella: la recalculaba y la pisaba. Este
+// arreglo, solo, habría sido peor que el defecto en ④f. Entró junto con las dos guardas de
+// SCRUM-1330 (GO en su comentario 17724), y estos tres casos —que antes fijaban el re-sellado como
+// RESIDUAL CONOCIDO, contando dos sellados— dicen ahora lo contrario: UNA huella escrita, y no se
+// toca. El detalle del sellado (cadena byte a byte, las dos guardas por separado) vive en
+// `tests/scrum1330-una-sellada-no-se-resella.test.mjs`.
 //
-// Cerrarlo es tocar el sellado, y el GO de SCRUM-1304 (c.17704) lo excluye expresamente: decide el
-// fundador en SCRUM-1330. Cuando se arregle, estos tres casos CAEN: se reescriben con lo contrario
-// —la huella no cambia, se sella una vez— en el mismo cambio.
-//
-// Se cuentan SELLADOS (la línea `[verifactu]` que deja cada uno) y no sólo la huella: dos sellados
-// en el mismo segundo dan la misma huella, y un «huella igual» escondería el segundo.
+// Se cuentan ESCRITURAS de `vfHash` en la fila y no sólo la huella: dos sellados en el mismo
+// segundo dan la misma huella, y un «huella igual» escondería el segundo.
 
-/** Corre `fn` con el flag encendido y devuelve cuántas veces se selló. */
-async function contandoSellados(fn) {
-  const original = console.log;
-  const sellados = [];
-  console.log = (...a) => { const l = a.map(String).join(' '); if (l.startsWith('[verifactu]')) sellados.push(l); };
-  try { await conFlag(fn); } finally { console.log = original; }
+/** Cuántas veces se ha escrito una huella en una fila: los sellados, por efecto. */
+const sellados = () => banco.escriturasFactura.filter((e) => e.campos.includes('vfHash')).length;
+
+/** Corre `fn` con el flag encendido y sin que el sellado hable por la consola. */
+async function enEspana(fn) {
+  const voces = { log: console.log, warn: console.warn };
+  console.log = console.warn = () => {};
+  try { await conFlag(fn); } finally { Object.assign(console, voces); }
   await asentar();
-  return sellados;
 }
 
 const selladaDeAntes = (extra) => ({
@@ -333,59 +333,59 @@ const selladaDeAntes = (extra) => ({
 test('SCRUM-1304 · ✅ ESPAÑA · C: una sola entrega → una factura, SELLADA UNA VEZ', async () => {
   reiniciar();
   const cobro = nuevoCobro({ merchantId: M_ES });
-  const sellados = await contandoSellados(() => entrega(cobro));
+  await enEspana(() => entrega(cobro));
   const fs = facturasDe(cobro);
   assert.equal(fs.length, 1);
   assert.equal(fs[0].vfEstado, 'sellado', 'SUELO: el merchant de España entra en la cadena (si no, lo de abajo no mide nada)');
   assert.match(fs[0].vfHash ?? '', /^[0-9A-F]{64}$/, 'con su huella');
-  assert.equal(sellados.length, 1, 'y se selló exactamente una vez');
+  assert.equal(sellados(), 1, 'SUELO: y el contador de sellados VE ese sellado');
 });
 
-test('SCRUM-1304 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1330) · ESPAÑA ④a: una entrega REPETIDA vuelve a sellar la misma factura — ya pasaba antes de este arreglo', async () => {
+test('SCRUM-1304 · 🔴 ESPAÑA ④a: una entrega REPETIDA no vuelve a sellar la factura (SCRUM-1330)', async () => {
   reiniciar();
   const cobro = nuevoCobro({ merchantId: M_ES });
-  let selloPrimero = null;
-  const sellados = await contandoSellados(async () => {
+  let primero = null;
+  await enEspana(async () => {
     await entrega(cobro);
-    selloPrimero = facturasDe(cobro)[0].vfTimestamp;
+    const f = facturasDe(cobro)[0];
+    primero = { huella: f.vfHash, anterior: f.vfPrevHash, sello: f.vfTimestamp.toISOString() };
+    await new Promise((r) => setTimeout(r, 1100)); // otro segundo: un re-sellado CAMBIARÍA la huella
     await entrega(cobro);
   });
   const fs = facturasDe(cobro);
   assert.equal(fs.length, 1, 'una sola factura');
-  assert.equal(sellados.length, 2,
-    '⚠️ la entrega repetida YA NO vuelve a sellar. Si es a propósito (SCRUM-1330), reescribe este caso con lo '
-    + 'contrario —se sella UNA vez y la huella no cambia— en el mismo cambio.');
-  assert.notEqual(fs[0].vfTimestamp, selloPrimero, 'y el sello de la fila se ha reescrito: una factura sellada, editada');
+  assert.equal(sellados(), 1, `🔴 LA ENTREGA REPETIDA HA VUELTO A SELLAR la factura (${sellados()} escrituras de huella)`);
+  assert.deepEqual({ huella: fs[0].vfHash, anterior: fs[0].vfPrevHash, sello: fs[0].vfTimestamp.toISOString() }, primero,
+    '🔴 una factura sellada, editada: su huella, su anterior o su sello han cambiado');
 });
 
-test('SCRUM-1304 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1330) · ESPAÑA ④b: dos entregas a la vez → UNA factura, pero sellada DOS veces', async () => {
+test('SCRUM-1304 · 🔴 ESPAÑA ④b: dos entregas a la vez → UNA factura, sellada UNA vez (SCRUM-1330)', async () => {
   reiniciar();
   const cobro = nuevoCobro({ merchantId: M_ES });
-  const sellados = await contandoSellados(() => Promise.all([entrega(cobro), entrega(cobro)]));
+  await enEspana(() => Promise.all([entrega(cobro), entrega(cobro)]));
   assert.equal(facturasDe(cobro).length, 1, '🔴 el arreglo de SCRUM-1304 ha dejado de valer en España: dos facturas del mismo cobro');
-  assert.equal(sellados.length, 2,
-    '⚠️ la entrega que no emite YA NO vuelve a sellar la factura que encontró. Si es a propósito (SCRUM-1330), '
-    + 'reescribe este caso con lo contrario en el mismo cambio.');
+  assert.equal(sellados(), 1, `🔴 la entrega que no emite HA VUELTO A SELLAR la factura que encontró (${sellados()} escrituras de huella)`);
 });
 
-test('SCRUM-1304 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1330) · ESPAÑA ④f: cobrar el enlace de una factura sellada hace tiempo la RE-SELLA y rompe la cadena', async () => {
-  // 🔴 ÉSTE ES EL MOTIVO POR EL QUE EL ARREGLO NO PUEDE ENTRAR SOLO. Sin él, main emite una factura
-  // duplicada y deja la cadena intacta. Con él no se duplica, pero la que había se vuelve a sellar.
+test('SCRUM-1304 · 🔴 ESPAÑA ④f: cobrar el enlace de una factura sellada hace tiempo NO la re-sella, y la cadena sigue entera (SCRUM-1330)', async () => {
+  // 🔴 ÉSTE ERA EL MOTIVO POR EL QUE EL ARREGLO NO PODÍA ENTRAR SOLO. Sin él, main emite una factura
+  // duplicada y deja la cadena intacta. Con él y sin las guardas, no se duplicaba pero la que había
+  // se volvía a sellar, encadenada a la posterior, y la posterior apuntaba a una huella inexistente.
   reiniciar();
   const H1 = 'A'.repeat(64);
   const H2 = 'B'.repeat(64);
   const cobro = nuevoCobro({ merchantId: M_ES });
-  const vieja = selladaDeAntes({ number: 'F260001', chargeId: cobro, vfHash: H1, vfPrevHash: '', vfTimestamp: new Date('2026-09-01T10:00:00Z'), createdAt: new Date('2026-09-01T10:00:00Z') });
+  const selloViejo = new Date('2026-09-01T10:00:00Z');
+  const vieja = selladaDeAntes({ number: 'F260001', chargeId: cobro, vfHash: H1, vfPrevHash: '', vfTimestamp: selloViejo, createdAt: new Date('2026-09-01T10:00:00Z') });
   const posterior = selladaDeAntes({ number: 'F260002', vfHash: H2, vfPrevHash: H1, vfTimestamp: new Date('2026-09-02T10:00:00Z'), createdAt: new Date('2026-09-02T10:00:00Z') });
   banco.tablas.invoice.push(vieja, posterior);
-  const sellados = await contandoSellados(() => entrega(cobro));
+  await enEspana(() => entrega(cobro));
   assert.equal(banco.tablas.invoice.length, 2, '🔴 se ha emitido otra factura por el mismo dinero (las dos de partida y ninguna más)');
-  assert.equal(posterior.vfPrevHash, H1, 'la posterior no se toca: sigue apuntando a la huella con la que se selló');
-  assert.equal(sellados.length, 1,
-    '⚠️ cobrar el enlace de una factura ya sellada YA NO la vuelve a sellar. Si es a propósito (SCRUM-1330), '
-    + 'reescribe este caso con lo contrario —huella, anterior y sello idénticos byte a byte— en el mismo cambio.');
-  assert.notEqual(vieja.vfHash, H1, 'la huella de la factura sellada hace un mes HA CAMBIADO');
-  assert.equal(vieja.vfPrevHash, H2, 'y ahora se encadena a la que se selló DESPUÉS de ella');
-  assert.equal(banco.tablas.invoice.some((f) => f.vfHash === posterior.vfPrevHash), false,
-    'así que la posterior apunta a una huella que ya no tiene ninguna factura: la cadena está rota');
+  assert.equal(vieja.status, 'paid', 'SUELO: la entrega llegó a la factura del cobro (queda cobrada)');
+  assert.equal(sellados(), 0, `🔴 COBRAR EL ENLACE DE UNA FACTURA YA SELLADA LA HA VUELTO A SELLAR (${sellados()} escrituras de huella)`);
+  assert.deepEqual({ huella: vieja.vfHash, anterior: vieja.vfPrevHash, sello: vieja.vfTimestamp.toISOString() },
+    { huella: H1, anterior: '', sello: selloViejo.toISOString() }, '🔴 la huella, el anterior o el sello de la factura sellada hace un mes HAN CAMBIADO');
+  assert.equal(posterior.vfPrevHash, H1, 'la posterior no se toca');
+  assert.equal(banco.tablas.invoice.some((f) => f.vfHash === posterior.vfPrevHash), true,
+    '🔴 la posterior apunta a una huella que ya no tiene ninguna factura: la cadena está rota');
 });

@@ -226,14 +226,27 @@ export async function ensureInvoiceForCharge(
     // fiscal. Ahora, si el sellado falla, la factura se queda `pendiente_de_sellado` —donde
     // nació— y en ese estado `ensureInvoicePdf` se niega a generar nada. El fallo deja de ser
     // «sigue adelante con un log» y pasa a ser «no hay documento hasta que se selle».
-    const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
-    if (resultadoSellado.estado === SELLADO_HECHO) {
-      const releida = await prisma.invoice.findUnique({
-        where: { id: inv.id },
-        select: { vfHash: true, qrData: true },
-      });
-      vfHash = releida?.vfHash ?? vfHash;
-      if (releida?.qrData && !String(releida.qrData).startsWith('PENDING')) qrData = releida.qrData;
+    //
+    // ── SCRUM-1330 · PERO SÓLO SI NO ESTÁ YA SELLADA ─────────────────────────────────────────
+    //
+    // Por aquí pasa también la factura que YA existía: la segunda entrega del mismo cobro, o el
+    // cobro que es el enlace de pago de una factura emitida hace un mes. Esa ya tuvo su momento
+    // de emisión. Volver a meterla en `sellarTrasEmision` le reescribía el estado y volvía a
+    // encolar su alta para la AEAT (y, antes de la guarda de `applyVeriFactu`, le pisaba la huella).
+    //
+    // Esta guarda mira la fila QUE TIENE EN LA MANO, que puede ser vieja: la entrega que leyó la
+    // fila antes de que la otra la sellara entra igual. A ésa la para la guarda de dentro del
+    // cerrojo, en `applyVeriFactu`. Hacen falta las dos.
+    if (inv.vfEstado !== SELLADO_HECHO) {
+      const resultadoSellado = await sellarTrasEmision(inv, merchant ?? {}, prisma);
+      if (resultadoSellado.estado === SELLADO_HECHO) {
+        const releida = await prisma.invoice.findUnique({
+          where: { id: inv.id },
+          select: { vfHash: true, qrData: true },
+        });
+        vfHash = releida?.vfHash ?? vfHash;
+        if (releida?.qrData && !String(releida.qrData).startsWith('PENDING')) qrData = releida.qrData;
+      }
     }
 
     const needsPdf =

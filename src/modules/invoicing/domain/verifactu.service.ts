@@ -349,6 +349,26 @@ export async function applyVeriFactu(
     // otro advisory lock de la aplicación.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
+    // ── SCRUM-1330 · LO YA SELLADO NO SE VUELVE A SELLAR ───────────────────────────────────
+    //
+    // Esta función no miraba si la factura ya tenía huella: recalculaba y PISABA `vfHash`,
+    // `vfPrevHash` y `vfTimestamp`. Bastaba una segunda entrega del mismo cobro para dejar una
+    // factura emitida con otra huella —y, si ya tenía otra encadenada detrás, a ésa apuntando a
+    // una huella que ya no existía—. Una factura emitida no se edita (regla 29 del máster).
+    //
+    // La pregunta va DENTRO del cerrojo y no antes: dos sellados de la misma factura a la vez
+    // leerían los dos «sin huella» fuera de él. Aquí el segundo espera, y al entrar la ve.
+    //
+    // Devuelve el sello PERSISTIDO, no lanza: quien llama (`sellarTrasEmision`) tiene que poder
+    // terminar una factura que se quedó con la huella escrita y el estado sin marcar.
+    const yaSellada = await tx.invoice.findUnique({
+      where: { id: invoice.id },
+      select: { vfHash: true, vfPrevHash: true, qrData: true },
+    });
+    if (yaSellada?.vfHash) {
+      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };
+    }
+
     // ── SCRUM-177 · UNA SOLA CADENA: el alta también encadena a las anulaciones ────────────
     //
     // Antes esta consulta miraba SOLO altas (`vfHash not null`), mientras que la anulación
@@ -412,11 +432,16 @@ export async function applyVeriFactu(
       data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
     });
 
-    return { vfHash, prevHash, qrUrl };
+    return { vfHash, prevHash, qrUrl, conservada: false };
   });
 
   const { vfHash, prevHash, qrUrl } = sellado;
-  console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  if (sellado.conservada) {
+    // SCRUM-1330: que no recalcular no sea mudo. No es un sellado, y no se anuncia como uno.
+    console.warn(`[verifactu] invoice=${invoice.number} ya estaba sellada: se conserva su huella ${vfHash.slice(0, 16)}… y no se vuelve a sellar`);
+  } else {
+    console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  }
   return { vfHash, vfPrevHash: prevHash, qrUrl };
 }
 
