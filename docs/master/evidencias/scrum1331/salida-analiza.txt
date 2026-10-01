@@ -1,0 +1,32 @@
+POBLACION observada (líneas de arranque, ficheros distintos): 1146
+ficheros que lanzan ALGÚN proceso/fetch/socket: 17 · eventos: 534
+por fase: {"carga":482,"test":52}
+--- qué se lanza (todas las fases):
+  114 git add
+  114 git commit
+  110 git merge-base
+   93 git rev-list
+   13 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum973-rgsB3l\repo
+   12 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum946-bEroNp\princip
+   11 git config
+   10 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum966-uBHOq5\con-arb
+    9 git init
+    9 node.exe
+    8 git for-each-ref
+    7 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum966-uBHOq5\princip
+    5 git update-ref
+    3 git rev-parse
+    3 bash
+    3 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum946-bEroNp\empujad
+    2 git archive
+    2 tar
+    2 git cat-file
+    2 git C:\Users\JAVIER~1\AppData\Local\Temp\scrum946-bEroNp\sinEmpu
+    1 git remote
+    1 git ls-remote
+--- 🔴 RED:
+scrum804b-el-barrido-de-la-42.test.mjs | carga | git ls-remote | ls-remote --heads origin
+scrum946-censo-de-huerfanos.test.mjs | test | git push | -C C:\Users\JAVIER~1\AppData\Local\Temp\scrum946-bEroNp\princip push -q -u
+scrum946-censo-de-huerfanos.test.mjs | test | git push | -C C:\Users\JAVIER~1\AppData\Local\Temp\scrum946-bEroNp\empujad push -q origin
+scrum966-censo-ve-las-ramas.test.mjs | test | git push | -C C:\Users\JAVIER~1\AppData\Local\Temp\scrum966-uBHOq5\princip push -q -u
+scrum966-censo-ve-las-ramas.test.mjs | test | git push | -C C:\Users\JAVIER~1\AppData\Local\Temp\scrum966-uBHOq5\con-arb push -q origin
