@@ -247,10 +247,15 @@ router.post('/', async (req, res) => {
 
         // 👇 NUEVO: si hemos conseguido una factura, la marcamos como PAGADA
         // 🔴 SCRUM-502 · misma guarda que arriba: una anulada no se marca cobrada.
+        //
+        // 🔴 SCRUM-1315 · Y VA TAMBIÉN DENTRO DEL `where`, como la de arriba desde SCRUM-1303. La guarda
+        // mira el estado que devolvió `ensureInvoiceForCharge`; si el profesional anula después, la
+        // fila ya está anulada al escribir. Entonces Prisma no la encuentra (P2025), no se escribe
+        // nada y se dice. Lo demás —la respuesta al proveedor, los avisos— sigue igual.
         if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
           try {
             await prisma.invoice.update({
-              where: { id: invoiceId },
+              where: { id: invoiceId, status: { not: ESTADO_ANULADA } },
               data: {
                 status: 'paid',
                 // solo ponemos paidAt si no lo tenía aún, para que sea idempotente
@@ -258,7 +263,11 @@ router.post('/', async (req, res) => {
               },
             });
           } catch (e) {
-            console.error('auto-mark invoice paid error', (e as any)?.message || 'error desconocido'); // SCRUM-105
+            if (esFilaQueNoCasa(e)) {
+              console.error(`[psp] SCRUM-1315 la factura ${invoiceId} se anuló entre la lectura y el cobro: no se marca pagada`);
+            } else {
+              console.error('auto-mark invoice paid error', (e as any)?.message || 'error desconocido'); // SCRUM-105
+            }
           }
         }
   
