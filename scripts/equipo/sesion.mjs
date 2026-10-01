@@ -736,7 +736,9 @@ export function prepararMesa({ config, nombre, equipo, git = gitReal, existe = f
   if (!existe(path.join(mesa, GENERADOR_DE_IDENTIDAD))) {
     return no('SIN-IDENTIDAD', `${GENERADOR_DE_IDENTIDAD} no está en origin/main (${sha.slice(0, 8)}): sin identidad no se lanza (SCRUM-1295)`);
   }
-  const gen = node(mesa, [GENERADOR_DE_IDENTIDAD, 'mesa', puesto, mesa]);
+  // `--nombre` SIEMPRE: en un equipo con prefijo el nombre no se deduce del puesto («sesion-1» es J1
+  // allí y S1 aquí), y el generador se niega a escribir la mesa de un J sin él (SCRUM-1295).
+  const gen = node(mesa, [GENERADOR_DE_IDENTIDAD, 'mesa', puesto, mesa, '--nombre', nombre]);
   if (gen.status !== 0) {
     return no('SIN-IDENTIDAD', `el generador de identidad salió ${gen.status}: ${(gen.stdout || '').trim().slice(-300)}`);
   }

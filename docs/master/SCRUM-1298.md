@@ -36,3 +36,26 @@ rama del 22-sep. Ninguna norma ni hook mergeado desde entonces llegaba a nadie.
 4. **El modelo (decisión del orquestador, 29-sep):** `sesion.mjs` fuerza `--model sonnet` (SCRUM-990)
    y hoy se lanza con opus. El lanzador tiene que respetar el modelo pedido (parámetro explícito), no
    imponer uno; opus frente a sonnet lo decide el fundador. Hasta entonces el interruptor NO se da.
+
+## 1-oct-2026 · por qué este PR estuvo dos días en rojo, y lo que cambió
+
+**Medido contra:** `origin/main` = `fe5b3c18f038eb5c1200b8c067ed69d0bfda0898` · 2026-10-01T10:37:17Z
+
+El PR (#2002) **nació rojo** el 29-sep: la sesión cerró sin mirar su check. No fue podredumbre — la
+primera corrida, minutos después de abrirse, ya traía los cinco fallos propios. Lo que caía y lo hecho:
+
+| Guard | Qué decía | Arreglo |
+|---|---|---|
+| `scrum836` (anclas) | las mutaciones de `scrum951a` apuntaban a dos líneas que este PR cambió | re-ancladas en `scrum951a` (lo que quitan sigue siendo lo mismo) |
+| `scrum836d` (`cae`) | los dos `cae` de este test no eran títulos de test | ahora nombran el título |
+| `scrum723` | `sesion.mjs` y este test nombran `origin/main` fuera de los argumentos de git | declarados con su motivo |
+| `scrum824` | este test crea temporales que el censo no puede probar | declarado (cuelga de `temporal()`, como 951d) |
+| `scrum812` | la cobertura subió | suelo 26 → 27 |
+
+Y un cambio de conducta, pedido por S0: `prepararMesa` pasa **siempre** `--nombre <sesión>` al
+generador de identidad. Sin él, el equipo con prefijo (sus `sesion-N` son `JN`) saldría 2 al lanzar.
+Aserción en «una mesa que no existe nace en origin/main…».
+
+Tanda completa en local (Windows): 9.623 tests, 9.481 pasan, 138 saltan, 4 caen — los cuatro se
+declaran CIEGOS por la máquina (`scrum1093h` ×3 y `scrum1321`: el temporal está en otra unidad),
+no por este cambio. El veredicto que vale es el del CI.

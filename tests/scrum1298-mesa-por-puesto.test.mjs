@@ -32,13 +32,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     de: "    if (sucio.length) return no('MESA-SUCIA',",
     a: "    if (false) return no('MESA-SUCIA',",
-    cae: '🔴 una mesa con trabajo sin guardar NO se actualiza',
+    cae: 'una mesa con trabajo sin guardar NO se actualiza',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
     de: '  if (m === r || m.startsWith(r + \'/\') || r.startsWith(m + \'/\')) {',
     a: '  if (false) {',
-    cae: '🔴 una mesa DENTRO del repo se rechaza',
+    cae: 'siempre HERMANA del repo',
   },
 ];
 
@@ -50,7 +50,8 @@ const GENERADOR = [
   'const [, , accion, puesto, mesa] = process.argv;',
   "if (accion !== 'mesa' || !/^(S[0-5]|ORQ)$/.test(puesto)) { console.log('NO-PUDE-MIRAR: puesto ' + puesto); process.exit(2); }",
   "fs.writeFileSync(path.join(mesa, 'CLAUDE.local.md'), 'Eres ' + puesto + '\\n');",
-  "fs.writeFileSync(path.join(mesa, '.yaqu-puesto.json'), JSON.stringify({ puesto }));",
+  "const iN = process.argv.indexOf('--nombre');",
+  "fs.writeFileSync(path.join(mesa, '.yaqu-puesto.json'), JSON.stringify({ puesto, nombre: iN >= 0 ? process.argv[iN + 1] : null }));",
 ].join('\n');
 
 /** origin desnudo + repo clonado + carpeta de mesas hermana. `conGenerador:false` = main sin identidad. */
@@ -115,6 +116,9 @@ test('una mesa que no existe nace en origin/main, con su identidad escrita', () 
   assert.equal(p.mesa, path.join(b.mesas, 'mesa-s2'));
   assert.equal(git(p.mesa, 'rev-parse', 'HEAD'), git(b.repo, 'rev-parse', 'origin/main'));
   assert.equal(fs.readFileSync(path.join(p.mesa, 'CLAUDE.local.md'), 'utf8'), 'Eres S2\n');
+  // El generador de S0 se niega a escribir la mesa de un puesto J sin `--nombre`: se le pasa SIEMPRE.
+  assert.equal(JSON.parse(fs.readFileSync(path.join(p.mesa, '.yaqu-puesto.json'), 'utf8')).nombre, 'sesion-2',
+    '🔴 el nombre de la sesión llega al generador de identidad');
 });
 
 test('antes de cada lanzamiento la mesa se pone al día con lo que se mergeó mientras (el defecto entero)', () => {
