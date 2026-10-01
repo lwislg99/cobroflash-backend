@@ -164,7 +164,9 @@ campos salen.
 **Decidido por el fundador el mismo 1-oct-2026, SCRUM-1390 c.17962 (leído en Jira), después de mandarle
 lo de abajo:** la asignación al documento cuenta para ver («1-Sí»); el rótulo del Técnico es «Tus
 presupuestos recientes» («2-Ok firmo»); el admin conserva «Actividad reciente» («3-El admin conserva
-sí»). El máster lo recoge en la misma nota. **Sigue sin firma** el texto del bloque cuando está vacío. Y
+sí»). El máster lo recoge en la misma nota. El texto del bloque vacío lo firmó después (c.17963, «1-Firmo la
+1»): «Todavía no tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.» para el Técnico;
+el admin conserva «Sin actividad reciente». Nadie ha medido qué enseña el bloque si la carga falla. Y
 el comentario «ASIGNAR NO ES UN PERMISO» de `prisma/schema.prisma` queda falso: no se toca aquí.
 
 Un aviso para quien construya: «los tres ejes» son dos listas distintas. Los de la decisión son autor del
