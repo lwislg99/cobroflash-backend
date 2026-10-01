@@ -17,7 +17,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, titulosDePuestos, fichaDe, globARegex, censoDeHuecos, puestoDeNombre } from './_carriles.mjs';
+import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, titulosDePuestos, fichaDe, globARegex, censoDeHuecos, nombresQueContradicen, puestoDeNombre } from './_carriles.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAPA = '.claude/carriles.json';
@@ -171,7 +171,11 @@ function principal(argv) {
     if (!c.producto || !c.reglasGenerales || !c.especificos || !c.generales) { console.log('NO-PUDE-MIRAR: población vacía en alguna columna; un censo así no ve huecos, no es que no los haya'); return 2; }
     for (const f of c.sinFila) console.log(`SIN-FILA  ${f} → ninguna fila de §3 lo reclama`);
     for (const h of c.parientes) console.log(`PARIENTE  ${h.fichero} → ${h.puesto} solo por la fila general (${FUENTE}:${h.linea}); por el nombre se parece a ${h.pistas.map((p) => `${p.puesto} («${p.palabra}»: ${p.ejemplos.map((e) => e.slice(e.lastIndexOf('/') + 1)).join(', ')}${p.n > 2 ? `, +${p.n - 2}` : ''})`).join(' · ')}`);
-    const n = c.sinFila.length + c.parientes.length;
+    const nc = nombresQueContradicen(mapa, ficheros);
+    console.log(`nombres · ${nc.conPuestoEnElNombre} rutas del repo llevan un puesto en el nombre · ${nc.casos.length} tramos contradicen a la tabla`);
+    if (!nc.conPuestoEnElNombre) { console.log('NO-PUDE-MIRAR: ninguna ruta lleva un puesto en el nombre; existen (docs/equipo/sesion-N.md), así que el lector no ve'); return 2; }
+    for (const k of nc.casos) console.log(`NOMBRE    ${k.tramo} → el nombre dice ${k.dice}, la tabla dice ${k.puesto} (${FUENTE}:${k.linea}); ${k.n} fichero${k.n === 1 ? '' : 's'}`);
+    const n = c.sinFila.length + c.parientes.length + nc.casos.length;
     console.log(`→ ${n} casos. No es un veredicto: es la pregunta para los jefes (¿hueco de la tabla, o de ese puesto a propósito?). Cada uno se cierra con una fila en §3.`);
     return n ? 1 : 0;
   }

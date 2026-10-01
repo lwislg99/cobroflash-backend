@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { construirMapa, censoDeHuecos, puestoDeNombre, palabrasDe, reglaDe } from '../scripts/_carriles.mjs';
+import { construirMapa, censoDeHuecos, nombresQueContradicen, puestoDeNombre, palabrasDe, reglaDe } from '../scripts/_carriles.mjs';
 import { generar, ficherosDelRepo, MAPA } from '../scripts/carriles.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -181,6 +181,12 @@ test('SCRUM-1295 · huecos: ve un pariente, no cruza servidor con pantalla, y si
   // Sin fila general, un fichero de producto no es de nadie: SIN-FILA, no «0 huecos».
   const sinGeneral = construirMapa(tabla.replace('| todo lo demás de `public/` | **S2** | |', ''), ficheros);
   assert.deepEqual(censoDeHuecos(sinGeneral, ficheros).sinFila, ['public/js/parteOficinaView.js', 'public/js/homeView.js']);
+
+  // El nombre que contradice a la tabla: la carpeta dice S5 y la fila dice S0. Donde coinciden, calla.
+  const tablaN = ['### 3.3 · Repo', '| ruta | dueño | nota |', '|---|---|---|', '| `scripts/` | **S0** | |', '| `scripts/equipo/**` | **S5** | |'].join('\n');
+  const fn = ['scripts/verificacion-s5/a.mjs', 'scripts/verificacion-s5/b.mjs', 'scripts/equipo/turno-s5.mjs', 'scripts/censo.mjs'];
+  const nc = nombresQueContradicen(construirMapa(tablaN, fn), fn);
+  assert.deepEqual(nc, { conPuestoEnElNombre: 3, casos: [{ tramo: 'scripts/verificacion-s5/', dice: 'S5', puesto: 'S0', linea: 4, n: 2 }] });
 
   // El censo de verdad: mide (0 = sin huecos, 1 = hay lista), nunca 2, y con población.
   const r = spawnSync(process.execPath, [CLI, 'huecos'], { cwd: RAIZ, encoding: 'utf8' });

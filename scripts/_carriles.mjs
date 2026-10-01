@@ -228,6 +228,31 @@ export function censoDeHuecos(mapa, ficheros) {
   return { producto: producto.length, especificos, generales, reglasGenerales: mapa.reglas.filter((r) => r.general).length, sinFila, parientes };
 }
 
+/**
+ * EL NOMBRE CONTRADICE A LA TABLA (aportado por S3, 1-oct): una carpeta o un fichero cuyo nombre lleva un
+ * puesto (`verificacion-s5/`, `…-j2.mjs`) y cuya fila de §3 se lo da a OTRO. No es un fichero sin fila
+ * —manda la tabla—, pero quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas y los
+ * dos creen tener razón. Se mira TODO el repo, y se agrupa por el tramo de ruta que lleva el nombre.
+ */
+export function nombresQueContradicen(mapa, ficheros) {
+  const grupos = new Map();
+  let conPuestoEnElNombre = 0;
+  for (const f of ficheros) {
+    const m = /(?:^|[-_./])(s[0-5]|j[1-6])(?=$|[-_./])/i.exec(f);
+    if (!m) continue;
+    conPuestoEnElNombre++;
+    const r = reglaDe(f, mapa);
+    const dice = m[1].toUpperCase();
+    if (!r || !r.puesto || r.puesto === dice) continue;
+    const fin = f.indexOf('/', m.index + 1);
+    const tramo = fin < 0 ? f : f.slice(0, fin + 1);
+    const k = `${tramo}|${dice}|${r.puesto}`;
+    if (!grupos.has(k)) grupos.set(k, { tramo, dice, puesto: r.puesto, linea: r.linea, n: 0 });
+    grupos.get(k).n++;
+  }
+  return { conPuestoEnElNombre, casos: [...grupos.values()] };
+}
+
 /** El último nombre que el transcript registra para la sesión (`/rename` incluido). */
 export function nombreDelTranscript(texto) {
   let nombre = null;

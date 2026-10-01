@@ -256,6 +256,10 @@ efecto y se le cuenta al jefe en plano.
      `parteOficinaView.js` (costó un viaje el 29-sep), `albaranAccion.js`, `albaranActionsRegistry.js` y
      `albaranDesdePresupuestoModal.js`.
    - El resto de la lista (20 ficheros sueltos) la da el censo; ninguno ha costado un viaje todavía.
+   - **Y un tipo distinto: el nombre contradice a la tabla** (lo encontró S3 el 1-oct). `scripts/verificacion-s5/`
+     (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
+     quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
+     rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el
