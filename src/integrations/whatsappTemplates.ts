@@ -2,7 +2,7 @@
 // Constructores PUROS de los payloads de plantilla de WhatsApp (Meta Cloud API).
 // Fuente de verdad de la estructura: docs/WHATSAPP_TEMPLATES.md.
 //
-// Centralizar aquí evita que cada call-site (y scripts/wa-test.mjs) construya los
+// Centralizar aquí evita que cada call-site (y scripts/wa-prueba.mjs) construya los
 // componentes por su cuenta y se desincronicen → un desajuste de nº de variables
 // o de botones hace que Meta rechace el envío (#132000 / #132001).
 // tests/whatsappTemplates.test.mjs blinda esta estructura.

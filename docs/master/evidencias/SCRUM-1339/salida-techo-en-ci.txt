@@ -1,0 +1,8 @@
+POBLACIÓN: 630 logs de «build + tests» · con la línea del caso ④ de scrum976: 597 · sin ella (tanda cortada antes): 33
+  el caso ④ CAYÓ en 41 de 597
+  duración (s): mín 6.7 · p25 10.5 · mediana 13.1 · p75 13.8 · p95 14.4 · p99 14.8 · máx 15.4
+  por encima de 45 s: 0
+  por encima de 60 s: 0
+  por encima de 75 s: 0
+  por encima de 90 s: 0
+EXIT=0

@@ -36,6 +36,7 @@ import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1302 (F)
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
 // SCRUM-606 (ALB-01): el buscador de «Nuevo albarán». La búsqueda se REUTILIZA (no se reescribe)
 // y la regla de qué presupuesto puede ser origen vive en su módulo puro, con su porqué medido.
@@ -835,11 +836,18 @@ router.get('/:id', async (req, res) => {
           || (job.assignees ?? []).some((a) => a.teamMemberId === req.teamMemberId));
       if (!suyo) return res.status(404).json({ error: 'not_found' });
     }
-    const customer = job?.customerId
+    const cliente = job?.customerId
       ? await prisma.customer.findFirst({
           where: { id: job.customerId, merchantId: req.merchantId },
-          select: { id: true, name: true },
+          // SCRUM-1302 (F) · los números se leen para decidir el canal y NO salen de aquí.
+          select: { id: true, name: true, phone: true, mobile: true },
         })
+      : null;
+    // SCRUM-1302 (F) · ¿hay a quién mandarle el WhatsApp? Con la MISMA función que da el 409
+    // `customer_missing_phone` en los dos envíos (`albaranWhatsApp.service.ts`): sin canal, esos
+    // botones sólo saben fallar y la pantalla no los ofrece. Viaja resuelto, sin el número.
+    const customer = cliente
+      ? { id: cliente.id, name: cliente.name, puedeRecibirWhatsApp: !!canalDeWhatsApp(cliente) }
       : null;
 
     // SCRUM-302 · EL PRESUPUESTO DE ORIGEN, Y ES DEL DOCUMENTO — NO DE LAS LÍNEAS.
@@ -867,6 +875,11 @@ router.get('/:id', async (req, res) => {
     });
     const facturado = facturadoPorLinea(libro);
     const estadoFacturacion = estadoCobroAlbaran(lineas, facturado, !!albaran.invoiceId);
+    // SCRUM-1302 (G) · ¿caben más fotos? Contado contra el MISMO tope que da el 409 `max_fotos` al
+    // subir: con las plazas llenas, «Añadir foto» sólo sabe fallar y la pantalla no lo ofrece.
+    const fotos = await prisma.attachment.count({
+      where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
+    });
 
     return res.json({
       ...serializeAlbaran(albaran),
@@ -882,6 +895,7 @@ router.get('/:id', async (req, res) => {
       pendientes: pendientePorLinea(lineas, facturado),
       // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
       enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+      cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/:id]', err?.message || err);

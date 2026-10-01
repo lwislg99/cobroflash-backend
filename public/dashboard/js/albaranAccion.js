@@ -111,6 +111,12 @@ function ctxAlbaranDeFila(alb) {
     // justificante falla SIEMPRE. Misma razón, segunda causa.
     'sin-valorar-convertible': alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado'
       && facturaFiscalDisponible(),
+    // SCRUM-1302 (F) · lo dice el servidor (`GET /admin/albaranes/:id`, con `canalDeWhatsApp`). Sin
+    // el dato queda `undefined` y `requiere` no oculta nada: no saber no es saber que falta.
+    'cliente-con-whatsapp': alb.customer && typeof alb.customer.puedeRecibirWhatsApp === 'boolean'
+      ? alb.customer.puedeRecibirWhatsApp : undefined,
+    // SCRUM-1302 (G) · idem: lo cuenta el servidor contra el tope del 409 `max_fotos`.
+    'caben-fotos': typeof alb.cabenMasFotos === 'boolean' ? alb.cabenMasFotos : undefined,
   };
 }
 

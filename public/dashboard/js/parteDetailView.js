@@ -305,8 +305,11 @@
       '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any"' +
       ' data-linea-unds="' + indice + '" value="' + esc(unds) + '"' +
       ' aria-label="' + esc(TEXTOS.unds) + '"></td>' +
-      '<td><input class="parte-linea-desc" type="text" data-linea-desc="' + indice + '"' +
-      ' value="' + esc(desc) + '">' + avisoNoDictado(linea, indice) + '</td>' +
+      // SCRUM-1287 · `textarea` de UNA fila que crece hacia abajo (`crecerDescripcion`): en un móvil de
+      // 390 px el `input` medía 182 px y cortaba el 77 % de las descripciones del catálogo de gremios,
+      // así que las palabras que nombra el aviso del dato inventado no se podían leer en su sitio.
+      '<td><textarea class="parte-linea-desc" rows="1" data-linea-desc="' + indice + '">' +
+      esc(desc) + '</textarea>' + avisoNoDictado(linea, indice) + '</td>' +
       '<td class="parte-col-quitar">' +
       '<button type="button" class="parte-quitar-linea" data-indice="' + indice + '" ' +
       'aria-label="Quitar línea">&times;</button></td>' +
@@ -327,13 +330,41 @@
       '<td class="parte-col-unds">' +
       '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any" min="0"' +
       ' data-nueva-unds="1" value="" aria-label="' + esc(TEXTOS.unds) + '"></td>' +
-      '<td><input class="parte-linea-desc" type="text" data-nueva-desc="1" value=""' +
-      ' aria-label="' + esc(TEXTOS.descripcion) + '"></td>' +
+      '<td><textarea class="parte-linea-desc" rows="1" data-nueva-desc="1"' +
+      ' aria-label="' + esc(TEXTOS.descripcion) + '"></textarea></td>' +
       '<td class="parte-col-quitar">' +
       '<button type="button" class="parte-quitar-linea" data-quitar-nueva="1" ' +
       'aria-label="Quitar línea">&times;</button></td>' +
       '</tr>'
     );
+  }
+
+  /**
+   * SCRUM-1287 · La descripción crece hacia abajo en vez de cortarse, y sigue siendo UNA línea de texto.
+   *
+   * · El alto sale de su contenido: `auto` y después su `scrollHeight`. Con una sola fila mide lo mismo
+   *   que el `input` de antes (44 px, ver `.parte-linea-desc` en styles.css), así que una descripción
+   *   corta se ve igual que hoy.
+   * · Intro NO mete un salto: con el `input` no lo metía, y una descripción es una línea del papel.
+   *   Un salto pegado se cambia por un espacio por el mismo motivo.
+   */
+  function crecerDescripcion(casilla) {
+    if (!casilla || !casilla.style || typeof casilla.scrollHeight !== 'number') return;
+    casilla.style.height = 'auto';
+    casilla.style.height = casilla.scrollHeight + (casilla.offsetHeight - casilla.clientHeight) + 'px';
+  }
+  function conectarDescripcion(casilla) {
+    if (!casilla || !casilla.addEventListener) return;
+    casilla.addEventListener('keydown', function (e) {
+      if (e && e.key === 'Enter') e.preventDefault();
+    });
+    casilla.addEventListener('input', function () {
+      if (typeof casilla.value === 'string' && /[\r\n]/.test(casilla.value)) {
+        casilla.value = casilla.value.replace(/[\r\n]+/g, ' ');
+      }
+      crecerDescripcion(casilla);
+    });
+    crecerDescripcion(casilla);
   }
 
   /**
@@ -1395,6 +1426,7 @@
       ? contenedor.querySelectorAll('[data-linea-unds],[data-linea-desc]') : [];
     for (var d = 0; d < deLinea.length; d++) {
       (function (casilla) {
+        if (casilla.hasAttribute('data-linea-desc')) conectarDescripcion(casilla);
         var original = casilla.value;
         casilla.addEventListener('change', async function () {
           if (casilla.value === original) return;
@@ -1523,7 +1555,10 @@
       filas.insertAdjacentHTML('beforeend', filaNueva(bloque));
       var nueva = laNueva();
       if (nueva.unds) nueva.unds.addEventListener('change', guardarLaNueva);
-      if (nueva.desc) nueva.desc.addEventListener('change', guardarLaNueva);
+      if (nueva.desc) {
+        conectarDescripcion(nueva.desc);
+        nueva.desc.addEventListener('change', guardarLaNueva);
+      }
       var equis = contenedor.querySelector('[data-quitar-nueva]');
       if (equis) equis.addEventListener('click', quitarLaNueva);
       // Al campo de la cantidad: es la primera columna del papel y abre el teclado numérico.

@@ -1,0 +1,395 @@
+TAP version 13
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: 🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional
+not ok 1 - 🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional
+  ---
+  duration_ms: 2543.6529
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:203:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «vale» ha movido el presupuesto a «accepted»
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:206:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Vale"
+# [WA in] from=34••••••333 text="Vale"
+# Subtest: SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando
+not ok 2 - SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando
+  ---
+  duration_ms: 77.8299
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:215:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «Vale» ha movido el presupuesto a «accepted»
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:219:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="sí"
+# [WA in] from=34••••••333 text="sí"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="confirmo"
+# [WA in] from=34••••••333 text="confirmo"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="aceptar"
+# [WA in] from=34••••••333 text="aceptar"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="sí, vale"
+# [WA in] from=34••••••333 text="sí, vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale, acepto"
+# [WA in] from=34••••••333 text="vale, acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="ok, confirmo"
+# [WA in] from=34••••••333 text="ok, confirmo"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="claro que sí"
+# [WA in] from=34••••••333 text="claro que sí"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="perfecto, lo acepto"
+# [WA in] from=34••••••333 text="perfecto, lo acepto"
+# Subtest: 🔴 SCRUM-1326 · por efecto: «Acepto», «sí», «confirmo» y «aceptar» aceptan SIN pregunta intermedia
+ok 3 - 🔴 SCRUM-1326 · por efecto: «Acepto», «sí», «confirmo» y «aceptar» aceptan SIN pregunta intermedia
+  ---
+  duration_ms: 706.7584
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="No"
+# [WA in] from=34••••••333 text="No"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale no"
+# [WA in] from=34••••••333 text="vale no"
+# Subtest: SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre
+ok 4 - SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre
+  ---
+  duration_ms: 341.4077
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: 🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA
+not ok 5 - 🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA
+  ---
+  duration_ms: 64.8124
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:262:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la pregunta ha tocado la fila del presupuesto
+    + actual - expected
+    
+    + '{"id":11,"merchantId":42,"customerId":3,"status":"accepted","quoteNumber":"P-0011","total":250,"currency":"EUR","acceptedAt":"2026-10-01T06:37:33.834Z","rejectedAt":null,"decisionChannel":"whatsapp_text"}'
+    - '{"id":11,"merchantId":42,"customerId":3,"status":"sent","quoteNumber":"P-0011","total":250,"currency":"EUR"}'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '{"id":11,"merchantId":42,"customerId":3,"status":"sent","quoteNumber":"P-0011","total":250,"currency":"EUR"}'
+  actual: '{"id":11,"merchantId":42,"customerId":3,"status":"accepted","quoteNumber":"P-0011","total":250,"currency":"EUR","acceptedAt":"2026-10-01T06:37:33.834Z","rejectedAt":null,"decisionChannel":"whatsapp_text"}'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:268:12)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# Subtest: SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar
+not ok 6 - SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar
+  ---
+  duration_ms: 136.4679
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:278:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   11
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 11
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:284:12)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar
+not ok 7 - SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar
+  ---
+  duration_ms: 144.8085
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 el segundo «vale» acepta
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:305:12)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: 🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»
+not ok 8 - 🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»
+  ---
+  duration_ms: 118.0951
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:314:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    con quoteNumber=P-0011
+    + actual - expected
+    
+      [
+    +   '✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Te avisaremos con los siguientes pasos.'
+    -   'Entendido 🙌 Para que no haya dudas sobre el presupuesto #P-0011: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'Entendido 🙌 Para que no haya dudas sobre el presupuesto #P-0011: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.'
+  actual:
+    0: '✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Te avisaremos con los siguientes pasos.'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:319:14)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta
+not ok 9 - SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta
+  ---
+  duration_ms: 70.3369
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:337:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «vale» provoca más de un envío
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:339:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: 🔴 SCRUM-1326 · las dos palabras que la pregunta pide escribir DECIDEN, sin otra pregunta
+ok 10 - 🔴 SCRUM-1326 · las dos palabras que la pregunta pide escribir DECIDEN, sin otra pregunta
+  ---
+  duration_ms: 70.4435
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot
+not ok 11 - SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot
+  ---
+  duration_ms: 70.4643
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:359:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 con el bot encendido, «vale» acepta
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:361:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: 🔴 SCRUM-1326 · las que preguntan son CINCO, las firmadas, y ninguna más
+not ok 12 - 🔴 SCRUM-1326 · las que preguntan son CINCO, las firmadas, y ninguna más
+  ---
+  duration_ms: 48.4868
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:392:1'
+  failureType: 'testCodeFailure'
+  error: '🔴 CIEGO: no encuentro la lista PREGUNTA en el módulo'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    listaDelModulo (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:389:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:393:24)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada
+not ok 13 - SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada
+  ---
+  duration_ms: 0.8497
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:402:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 una de las cinco, suelta, no pregunta (esperado «ask», población 5)
+    + actual - expected
+    
+    + [
+    +   '"vale" → accept',
+    +   '"ok" → accept',
+    +   '"perfecto" → accept',
+    +   '"listo" → accept',
+    +   '"claro" → accept'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '"vale" → accept'
+    1: '"ok" → accept'
+    2: '"perfecto" → accept'
+    3: '"listo" → accept'
+    4: '"claro" → accept'
+  operator: 'deepStrictEqual'
+  stack: |-
+    cadaUna (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:45:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:403:3)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)
+not ok 14 - SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)
+  ---
+  duration_ms: 0.5231
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:416:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 una tilde (carácter compuesto) cambia lo que el bot entiende (esperado «ask», población 7)
+    + actual - expected
+    
+    + [
+    +   '"vále" → accept',
+    +   '"valé" → accept',
+    +   '"ók" → accept',
+    +   '"perfécto" → accept',
+    +   '"lísto" → accept',
+    +   '"cláro" → accept',
+    +   '"VÁLE" → accept'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '"vále" → accept'
+    1: '"valé" → accept'
+    2: '"ók" → accept'
+    3: '"perfécto" → accept'
+    4: '"lísto" → accept'
+    5: '"cláro" → accept'
+    6: '"VÁLE" → accept'
+  operator: 'deepStrictEqual'
+  stack: |-
+    cadaUna (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:45:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:421:3)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 3
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5022.9694

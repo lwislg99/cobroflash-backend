@@ -125,6 +125,10 @@ const TABLES = [
   // memoria de lo procesado, y el siguiente reintento de Stripe —que los hay— se atendería como
   // si fuera nuevo. Es la tabla que existe para que un cobro no se cuente dos veces.
   'gateway_events',
+  // SCRUM-1296: la cola de remisión a la AEAT. `vf_submissions` guarda cada registro TAL COMO SE
+  // SELLÓ y lo que contestó la AEAT (CSV, estado): no se puede regenerar, y restaurar sin ella
+  // dejaría sin saber qué se presentó. `vf_flujo_obligado`, la espera que impone la AEAT a cada NIF.
+  'vf_submissions', 'vf_flujo_obligado',
 ];
 
 async function logicalDump(prisma) {

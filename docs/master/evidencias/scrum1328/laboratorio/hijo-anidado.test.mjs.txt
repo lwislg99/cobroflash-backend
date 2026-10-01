@@ -1,0 +1,6 @@
+// hijo/anidado.test.mjs - lo corre OTRO `node --test` lanzado desde b.test.mjs (HIJO=anidado.test.mjs).
+import test from 'node:test';
+import fs from 'node:fs';
+if (process.env.TESTIGO) fs.appendFileSync(process.env.TESTIGO, `anidado pid=${process.pid} ctx=${process.env.NODE_TEST_CONTEXT || '-'} opts=${process.env.NODE_OPTIONS ? 'SI' : 'NO'}\n`);
+test('ANIDADO caso 1', () => {});
+test('ANIDADO caso 2', () => {});

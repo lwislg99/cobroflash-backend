@@ -1,0 +1,106 @@
+{
+  "medidoSobre": "rama local scrum-1304-un-cobro-una-factura, bf1ef5db (M1-M5, 13 casos) y d09c969c (M5 repetida, 18 casos); main dentro: bb7c4c5f",
+  "fecha": "2026-10-01",
+  "nota": "M5 salió MUDA en la primera pasada: el cobro es de un solo merchant, así que acotar por merchant no cambia nada con datos sanos. Se añadió el caso de la regla 2 y se repitió: cae.",
+  "pasadas": [
+    {
+      "id": "BASE sin mutar",
+      "build": 0,
+      "exit": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "caidos": []
+    },
+    {
+      "id": "M1 sin cerrojo (la pregunta, fuera de la exclusion)",
+      "numstat": "0\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 1,
+      "tests": 13,
+      "pass": 8,
+      "fail": 5,
+      "caidos": [
+        "🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura",
+        "🔴 ④b′ · la segunda entrega entra EN EL HUECO (la primera ya buscó y e",
+        "🔴 ④c · dos entregas a la vez, con presupuesto aún SIN factura → UNA f",
+        "⚠️ la entrega que NO emite lo DICE: nombra el cobro y la factura que y",
+        "🔴 `ensureInvoiceForCharge` a secas, dos llamadas a la vez sobre un co"
+      ]
+    },
+    {
+      "id": "M2 la pregunta no decide",
+      "numstat": "1\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 1,
+      "tests": 13,
+      "pass": 6,
+      "fail": 7,
+      "caidos": [
+        "🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura",
+        "🔴 ④b′ · la segunda entrega entra EN EL HUECO (la primera ya buscó y e",
+        "🔴 ④c · dos entregas a la vez, con presupuesto aún SIN factura → UNA f",
+        "🔴 ④e · SIN CARRERA: el PDF cae una vez → la entrega siguiente NO crea",
+        "🔴 ④f · SIN CARRERA NI FALLO: un cobro creado para COBRAR una factura ",
+        "⚠️ la entrega que NO emite lo DICE: nombra el cobro y la factura que y",
+        "🔴 `ensureInvoiceForCharge` a secas, dos llamadas a la vez sobre un co"
+      ]
+    },
+    {
+      "id": "M3 la pregunta ignora el cobro",
+      "numstat": "1\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 1,
+      "tests": 13,
+      "pass": 12,
+      "fail": 1,
+      "caidos": [
+        "✅ dos cobros DISTINTOS del mismo merchant → dos facturas, una por cobr"
+      ]
+    },
+    {
+      "id": "M4 la entrega que no emite se calla",
+      "numstat": "1\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 1,
+      "tests": 13,
+      "pass": 12,
+      "fail": 1,
+      "caidos": [
+        "⚠️ la entrega que NO emite lo DICE: nombra el cobro y la factura que y"
+      ]
+    },
+    {
+      "id": "M5 la pregunta ignora el merchant (regla 2)",
+      "numstat": "1\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "caidos": []
+    },
+    {
+      "id": "M5 la pregunta ignora el merchant (regla 2) — REPETIDA tras añadir el caso de la regla 2",
+      "numstat": "1\t1\tsrc/lib/invoicing.ts",
+      "build": 0,
+      "exit": 1,
+      "tests": 18,
+      "pass": 17,
+      "fail": 1,
+      "caidos": [
+        "⛔ regla 2: una factura de OTRO merchant con ese `chargeId` no es «la del cobro»"
+      ]
+    },
+    {
+      "id": "RESTAURADO",
+      "build": 0,
+      "porcelain": "",
+      "exit": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "caidos": []
+    }
+  ]
+}

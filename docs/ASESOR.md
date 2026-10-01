@@ -56,7 +56,7 @@ Ficheros donde un cambio no revisado rompe a otro carril o destruye datos. Es **
 
 - `/prisma/schema.prisma` · `/prisma/migrations/` (hoy INEXISTENTE: el proyecto va por `db push`; el patrón vigila el PR que cree la primera migración)
 - `/src/app.ts` (montajes + gates admin)
-- `/tests/` · `/scripts/seed-staging.mjs` · `/scripts/clean-staging-tests.mjs` · `/scripts/test-staging-gated.mjs`
+- `/tests/` · `/scripts/seed-staging.mjs` · `/scripts/clean-staging-tests.mjs` · `/scripts/staging-gated.mjs`
 - `/docs/QA/SUITE_REGRESION.md`
 - `/.github/workflows/` · `/.github/CODEOWNERS`
 - `/package.json` · `/package-lock.json`

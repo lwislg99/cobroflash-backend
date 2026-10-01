@@ -1,0 +1,360 @@
+TAP version 13
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="ok"
+# [WA in] from=34••••••333 text="ok"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="okay"
+# [WA in] from=34••••••333 text="okay"
+# Subtest: 🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional
+not ok 1 - 🔴 SCRUM-1326 · por efecto: «vale» NO acepta el presupuesto, NO crea el Trabajo y NO avisa al profesional
+  ---
+  duration_ms: 482.1188
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:208:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «okay» ha movido el presupuesto a «accepted»
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:211:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Vale"
+# [WA in] from=34••••••333 text="Vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="VALE"
+# [WA in] from=34••••••333 text="VALE"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale."
+# [WA in] from=34••••••333 text="vale."
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Ok!"
+# [WA in] from=34••••••333 text="Ok!"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Okay"
+# [WA in] from=34••••••333 text="Okay"
+# Subtest: SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando
+not ok 2 - SCRUM-1326 · por efecto: como lo teclea un móvil, con cortesía o con dos a la vez, sigue preguntando
+  ---
+  duration_ms: 344.8057
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:220:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «Okay» ha movido el presupuesto a «accepted»
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:224:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="aceptar"
+# [WA in] from=34••••••333 text="aceptar"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="sí"
+# [WA in] from=34••••••333 text="sí"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="confirmo"
+# [WA in] from=34••••••333 text="confirmo"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="dale"
+# [WA in] from=34••••••333 text="dale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="adelante"
+# [WA in] from=34••••••333 text="adelante"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="de acuerdo"
+# [WA in] from=34••••••333 text="de acuerdo"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="me interesa"
+# [WA in] from=34••••••333 text="me interesa"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="quiero"
+# [WA in] from=34••••••333 text="quiero"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="sale"
+# [WA in] from=34••••••333 text="sale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="sí, vale"
+# [WA in] from=34••••••333 text="sí, vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale, acepto"
+# [WA in] from=34••••••333 text="vale, acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="ok, confirmo"
+# [WA in] from=34••••••333 text="ok, confirmo"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="claro que sí"
+# [WA in] from=34••••••333 text="claro que sí"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="perfecto, lo acepto"
+# [WA in] from=34••••••333 text="perfecto, lo acepto"
+# Subtest: 🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia
+ok 3 - 🔴 SCRUM-1326 · por efecto: las nueve que aceptan («Acepto», «sí», «dale», «sale»…) aceptan SIN pregunta intermedia
+  ---
+  duration_ms: 948.0135
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="No"
+# [WA in] from=34••••••333 text="No"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale no"
+# [WA in] from=34••••••333 text="vale no"
+# Subtest: SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre
+ok 4 - SCRUM-1326 · control: «No» sigue rechazando, y lo que no es una decisión sigue recibiendo la instrucción de siempre
+  ---
+  duration_ms: 197.5529
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# Subtest: 🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA
+ok 5 - 🔴 SCRUM-1326 · si el cliente NO contesta a la pregunta, el presupuesto está en `sent` y no se ha escrito NADA
+  ---
+  duration_ms: 100.3487
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="ok"
+# [WA in] from=34••••••333 text="ok"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="No"
+# [WA in] from=34••••••333 text="No"
+# Subtest: SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar
+ok 6 - SCRUM-1326 · después de la pregunta, «Acepto» acepta y «No» rechaza: la pregunta se puede contestar
+  ---
+  duration_ms: 203.1291
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar
+ok 7 - SCRUM-1326 · un segundo «vale» tampoco acepta: el bot no guarda que preguntó, así que vuelve a preguntar
+  ---
+  duration_ms: 121.7296
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="va con IVA?"
+# [WA in] from=34••••••333 text="va con IVA?"
+# Subtest: 🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»
+ok 8 - 🔴 SCRUM-1326 · lo que sale es el texto de la ficha firmada, letra a letra, con el mismo número que el «no te entiendo»
+  ---
+  duration_ms: 231.3653
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta
+ok 9 - SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, al cliente, declarado como respuesta
+  ---
+  duration_ms: 50.0628
+  type: 'test'
+  ...
+# Subtest: 🔴 SCRUM-1326 · las dos palabras que la pregunta pide escribir DECIDEN, sin otra pregunta
+ok 10 - 🔴 SCRUM-1326 · las dos palabras que la pregunta pide escribir DECIDEN, sin otra pregunta
+  ---
+  duration_ms: 13.2046
+  type: 'test'
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# [WA in] from=34••••••333 text="vale"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="Acepto"
+# [WA in] from=34••••••333 text="Acepto"
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="vale"
+# Subtest: SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot
+ok 11 - SCRUM-1326 · con el bot encendido: «vale» sobre UN presupuesto enviado pregunta; a mitad de captación es del bot
+  ---
+  duration_ms: 159.6629
+  type: 'test'
+  ...
+# Subtest: 🔴 SCRUM-1326 · las que preguntan son OCHO, las firmadas, y ninguna más
+not ok 12 - 🔴 SCRUM-1326 · las que preguntan son OCHO, las firmadas, y ninguna más
+  ---
+  duration_ms: 14.5191
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:399:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la lista de las que preguntan no es la que firmó el fundador (SCRUM-1326, comentario 17802)
+    + actual - expected
+    
+      [
+        'claro',
+        'listo',
+        'ok',
+    -   'okay',
+    -   'okey',
+        'perfecto',
+    -   'va',
+        'vale'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'claro'
+    1: 'listo'
+    2: 'ok'
+    3: 'okay'
+    4: 'okey'
+    5: 'perfecto'
+    6: 'va'
+    7: 'vale'
+  actual:
+    0: 'claro'
+    1: 'listo'
+    2: 'ok'
+    3: 'perfecto'
+    4: 'vale'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:401:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# [WA webhook] POST recibido (fields: messages)
+# [WA in] from=34••••••333 text="va"
+# [WA in] from=34••••••333 text="va"
+# Subtest: 🔴 SCRUM-1326 · `va` pregunta y `sale` acepta: estaban juntas y van a grupos distintos
+not ok 13 - 🔴 SCRUM-1326 · `va` pregunta y `sale` acepta: estaban juntas y van a grupos distintos
+  ---
+  duration_ms: 48.0594
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:412:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 «va» ha movido el presupuesto
+    
+    'accepted' !== 'sent'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'sent'
+  actual: 'accepted'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:415:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1326 · las doce flexiones que el reparto no nombra siguen aceptando a la primera
+ok 14 - SCRUM-1326 · las doce flexiones que el reparto no nombra siguen aceptando a la primera
+  ---
+  duration_ms: 0.4072
+  type: 'test'
+  ...
+# Subtest: SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada
+not ok 15 - SCRUM-1326 · la función: sueltas preguntan; con una aceptación clara, aceptan; con un rechazo o una pregunta, nada
+  ---
+  duration_ms: 0.3665
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1326-vale-pregunta-una-vez.test.mjs:441:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 una de las ocho, suelta, no pregunta (esperado «ask», población 8)
+    + actual - expected
+    
+    + [
+    +   '"okay" → accept',
+    +   '"okey" → accept',
+    +   '"va" → accept'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '"okay" → accept'
+    1: '"okey" → accept'
+    2: '"va" → accept'
+  operator: 'deepStrictEqual'
+  stack: |-
+    cadaUna (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:50:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1326-vale-pregunta-una-vez.test.mjs:442:3)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)
+ok 16 - SCRUM-1326 · con tildes, en las dos formas en que puede llegar el carácter (SCRUM-1325)
+  ---
+  duration_ms: 0.2062
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 11
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3432.2525

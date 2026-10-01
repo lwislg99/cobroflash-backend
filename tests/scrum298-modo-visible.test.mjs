@@ -253,9 +253,11 @@ const APROBADOS = {
   'Aún no se emiten documentos':
     'orquestador por delegación del fundador 28-sep-2026 · SCRUM-1220 comentario 17385 · '
     + '`allocateInvoiceNumber` lanza `invoicing_es_disabled` en `receipt` (`invoiceNumber.service.ts:505`)',
-  'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.':
-    'orquestador por delegación del fundador 28-sep-2026 · SCRUM-1220 comentario 17385 · '
-    + 'ni factura ni justificante: el mismo `throw`, ejecutado en scrum1027 y scrum396',
+  // El detalle es de la CUARTA (SCRUM-1257, P8): la tercera decía «…facturas ni justificantes…». La
+  // entrada vieja se BORRA y entra ésta con su firma: es la caducidad de abajo haciendo su trabajo.
+  'Por ahora, YaQu no genera facturas desde tu cuenta.':
+    'orquestador por delegación del fundador 1-oct-2026 · SCRUM-1257 comentario 17676 · '
+    + 'el mismo `throw` de `allocateInvoiceNumber` en `receipt`; ya no nombra el justificante y no afirma nada sobre él',
 };
 
 test('SCRUM-298 · MICROCOPY: sin aprobar va el marcador; aprobado va con su procedencia (reglas 30 y 26)', () => {

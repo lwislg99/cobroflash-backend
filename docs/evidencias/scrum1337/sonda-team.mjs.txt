@@ -1,0 +1,33 @@
+// Sonda de SCRUM-1337b: ¿qué le contesta HOY `GET /admin/metrics/team` a un Técnico?
+// Sólo lee: carga el router REAL de `dist/` y le pasa una petición fabricada a la puerta de la ruta.
+// No abre servidor ni toca ninguna base (no llega al handler que consulta).
+// Uso: node sonda-team.mjs <raiz del arbol, con dist/ emitido>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.argv[2];
+const mod = await import(pathToFileURL(path.join(raiz, 'dist/modules/metrics/app/routes/metrics.routes.js')).href);
+const router = mod.default && mod.default.stack ? mod.default : mod.default.default;
+const rutas = router.stack.filter((l) => l.route);
+console.log('POBLACION: ' + rutas.length + ' rutas en el router de metricas: ' + rutas.map((l) => l.route.path).join(' '));
+
+const capa = rutas.find((l) => l.route.path === '/team' && l.route.methods.get);
+if (!capa) { console.log('CIEGO: no encuentro GET /team en el router'); console.log('EXIT=2'); process.exit(2); }
+const manos = capa.route.stack.map((s) => s.handle);
+console.log('GET /team: ' + manos.length + ' manos · rol declarado en la primera: ' + (manos[0].__requiredRole || 'NINGUNO'));
+
+function pasar(rol) {
+  let estado = null, cuerpo = null, siguio = false;
+  const res = { status(n) { estado = n; return this; }, json(o) { cuerpo = o; return this; } };
+  manos[0]({ userRole: rol, merchantId: 1 }, res, () => { siguio = true; });
+  return { rol, estado, cuerpo: JSON.stringify(cuerpo), siguio };
+}
+const tecnico = pasar('tecnico');
+const admin = pasar('admin');           // control positivo: la puerta NO corta al admin
+const raro = pasar('comercial');        // un rol desconocido cae al lado cerrado
+for (const r of [tecnico, admin, raro]) console.log('  rol ' + r.rol + ' → estado ' + r.estado + ' · cuerpo ' + r.cuerpo + ' · pasa a la siguiente mano: ' + r.siguio);
+
+const bien = tecnico.estado === 403 && !tecnico.siguio && admin.siguio && admin.estado === null && raro.estado === 403;
+console.log(bien ? 'VEREDICTO: hoy es solo-admin (Tecnico 403, admin pasa)' : 'VEREDICTO: NO es lo que la nota dice');
+console.log('EXIT=' + (bien ? 0 : 1));
+process.exit(bien ? 0 : 1);

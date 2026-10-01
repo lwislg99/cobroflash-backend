@@ -1,0 +1,67 @@
+// Inicio del operario a 390 px (y a 1280 como control): desborde horizontal y captura.
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+const RAIZ = process.argv[2];
+const SALIDA = process.argv[3];
+const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+const { lanzarNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+const json = (res, o, s = 200) => { res.writeHead(s, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+const ACT = [1, 2, 3, 4, 5].map((i) => ({ type: 'quote', id: i, quoteNumber: i, status: i % 2 ? 'sent' : 'accepted', customer: i === 3 ? 'Comunidad de Propietarios Avenida de la Constitucion 124' : 'Marta Ruiz', total: i === 2 ? 9999.99 : 120, currency: 'EUR', updatedAt: '2026-09-30T10:00:00Z' }));
+function servidor(rol) {
+  return http.createServer((req, res) => {
+    const u = req.url.split('?')[0];
+    if (u.startsWith('/admin/')) {
+      if (rol !== 'admin' && /^\/admin\/(metrics\/(home|funnel|services|whatsapp)|providers|reports\/)/.test(u)) return json(res, { error: 'forbidden' }, 403);
+      if (u === '/admin/me') return json(res, { id: 1, merchantId: 1, name: 'Pepe Lopez', merchantName: 'Epipe', plan: 'pro', userRole: rol, isOwner: rol === 'admin', onboardingCompleted: true, subscriptionStatus: 'active' });
+      if (u === '/admin/merchant') return json(res, { id: 1, name: 'Epipe', defaultCurrency: 'EUR', country: 'ES' });
+      if (u === '/admin/metrics/inicio') return json(res, { pendingCount: 3, quotesAwaiting: 5, pendingRequests: 1, recentActivity: ACT });
+      if (u === '/admin/bot/handoffs') return json(res, [{ name: 'Lucia', phone: '34600000000', since: new Date(Date.now() - 600000).toISOString(), context: 'quotes' }]);
+      if (/^\/admin\/(quote-requests|customers|quotes|invoices|jobs)$/.test(u)) return json(res, []);
+      return json(res, { items: [], rows: [], data: [] });
+    }
+    const rel = u === '/' || u === '/dashboard/' ? 'dashboard/index.html' : u.replace(/^\//, '');
+    const f = path.join(RAIZ, 'public', rel);
+    if (fs.existsSync(f) && fs.statSync(f).isFile()) {
+      const ext = path.extname(f);
+      res.writeHead(200, { 'content-type': `${ext === '.css' ? 'text/css' : ext === '.js' ? 'application/javascript' : ext === '.html' ? 'text/html' : 'application/octet-stream'}; charset=utf-8` });
+      return res.end(fs.readFileSync(f));
+    }
+    res.writeHead(404); res.end('no');
+  });
+}
+console.log('POBLACION=2 anchos (390, 1280), rol operario');
+for (const ancho of [390, 1280]) {
+  const srv = servidor('tecnico');
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  const nav = await lanzarNavegador(puppeteer, { headless: 'new' });
+  try {
+    const pag = await nav.newPage();
+    const errores = [];
+    pag.on('pageerror', (e) => errores.push(String(e.message).slice(0, 120)));
+    await pag.setViewport({ width: ancho, height: 844, isMobile: ancho < 600, hasTouch: ancho < 600 });
+    await pag.goto(`http://127.0.0.1:${srv.address().port}/dashboard/index.html`, { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, 900));
+    const m = await pag.evaluate(() => {
+      const c = document.getElementById('view-container');
+      const hijos = [...c.querySelectorAll('*')].filter((e) => e.offsetParent !== null);
+      const fuera = hijos.filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1).map((e) => (e.id || e.className || e.tagName).toString().slice(0, 40));
+      const acciones = [...document.querySelectorAll('.home-action')].map((b) => Math.round(b.getBoundingClientRect().height));
+      return {
+        rol: window.appUserRole, anchoVentana: window.innerWidth, anchoDocumento: document.documentElement.scrollWidth,
+        seSalenPorLaDerecha: [...new Set(fuera)].slice(0, 6), filasDeActividad: document.querySelectorAll('.activity-item[data-quote-id]').length,
+        altoDeLasAcciones: acciones, whatsapp: !!document.getElementById('bot-handoffs-card'),
+        bloquesDelNegocio: ['kpi-grid', 'week-summary', 'top-customers'].filter((id) => document.getElementById(id)),
+        heroeAlto: document.getElementById('home-hero').getBoundingClientRect().height,
+        textoError: /No pudimos cargar/.test(c.textContent),
+      };
+    });
+    m.erroresDePagina = errores;
+    console.log(JSON.stringify(m));
+    await pag.screenshot({ path: path.join(SALIDA, `inicio-operario-${ancho}.png`), fullPage: true });
+  } finally { await nav.close(); srv.close(); }
+}
+console.log('EXIT=0');
+process.exit(0);

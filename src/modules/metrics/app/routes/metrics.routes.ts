@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
+import { getHomeMetrics, getInicioOperario, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
@@ -7,7 +7,7 @@ import { isVerifiedPlatformOwner } from '../../../../core/config/env';
 
 const router = Router();
 
-router.get('/home', async (req, res) => {
+router.get('/home', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getHomeMetrics(req.merchantId);
     return res.json(metrics);
@@ -17,7 +17,19 @@ router.get('/home', async (req, res) => {
   }
 });
 
-router.get('/funnel', async (req, res) => {
+// SCRUM-1317: la portada del OPERARIO. Ruta propia y no un recorte por rol de `/home`: así
+// `/home` se puede cerrar de verdad y esta no devuelve ni un importe agregado del negocio.
+// Declarada en TECNICO_ALLOWED con su motivo.
+router.get('/inicio', async (req, res) => {
+  try {
+    return res.json(await getInicioOperario(req.merchantId));
+  } catch (err) {
+    console.error('[GET /admin/metrics/inicio]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.get('/funnel', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getFunnelMetrics(req.merchantId);
     return res.json(metrics);
@@ -27,7 +39,7 @@ router.get('/funnel', async (req, res) => {
   }
 });
 
-router.get('/services', async (req, res) => {
+router.get('/services', requireRole('admin'), async (req, res) => {
   try {
     const metrics = await getServiceMetrics(req.merchantId);
     return res.json(metrics);
@@ -39,7 +51,11 @@ router.get('/services', async (req, res) => {
 
 // V0-3: funnel de plataforma — SOLO cuentas owner; el resto recibe 403.
 // SCRUM-102: dos factores (email en OWNER_EMAILS + Merchant.isPlatformOwner en BD).
-router.get('/platform-funnel', async (req, res) => {
+// SCRUM-1317: `requireRole('admin')` DELANTE, y la puerta de dueño intacta detrás. La de dueño
+// mira el MERCHANT, no quién llama: sin la de rol, un operario dado de alta en la cuenta dueña
+// de la plataforma veía el embudo de todos los merchants. Y un gate inline no lo ve la red de
+// SCRUM-55; con `requireRole` la ruta queda declarada. Autorizado en SCRUM-1317, comentario 17780.
+router.get('/platform-funnel', requireRole('admin'), async (req, res) => {
   try {
     const m = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
@@ -55,7 +71,7 @@ router.get('/platform-funnel', async (req, res) => {
 });
 
 // J8: métricas de coste y entrega de WhatsApp del merchant (mes en curso)
-router.get('/whatsapp', async (req, res) => {
+router.get('/whatsapp', requireRole('admin'), async (req, res) => {
   try {
     return res.json(await getWhatsAppMetrics(req.merchantId));
   } catch (err) {

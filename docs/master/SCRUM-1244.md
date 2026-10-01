@@ -156,3 +156,163 @@ con su recuento, no hay tanda (A21).
 ⛔ **Esto NO sustituye al CI**, que sigue siendo el juez obligatorio. **Y no autoriza a tocar**
 `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`: es configuración de Javier, y desactivar una protección de
 memoria no es arreglar el consumo.
+
+## ⑥ 1-oct: la premisa del ticket, vuelta a comprobar — «ya no se puede correr» no se sostiene, y el número de HOY sigue sin medir
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T00:38:53Z
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: el coste de la tanda lo di primero por la caída de la memoria libre, que también se mueve por lo que hacen las otras sesiones (hoy osciló 3 GB en diez minutos sin tanda ninguna); lo corrigió cruzarlo con un segundo instrumento, y no hay test que pueda exigir «dos instrumentos» a una cifra escrita en prosa.
+
+J6 (jv-j6), encargo del orquestador de Javier. Windows 11 · Node `v24.18.0` · 12 núcleos · 16.299 MB.
+**Cada número lleva la fecha en que se midió**: los de las secciones ①-⑤ son del 28-sep; los nuevos, del 1-oct.
+
+### La premisa
+
+El título dice que `npm test` entero «ya no se puede correr» y habla de «3 muertes por memoria». Las dos
+cosas estaban contestadas en este mismo registro desde el 28-sep, con el ticket todavía en «Por hacer»:
+
+| lo que pide el ticket | dónde está | fecha |
+| --- | --- | --- |
+| medir dónde muere | §①-④: un fichero de 1.190 MB, bajado a 690; y §⑤: quien mata es el reaper de Claude Code, no Windows | 28-sep |
+| una forma que quepa | §⑤: en primer plano terminaron 2 de 2; en total, 5 de 6 tandas enteras | 28-sep |
+| distinguir «verde» de «no terminé» | `scripts/tanda-con-veredicto.mjs` (SCRUM-858b): sin línea de recuento sale con 4 | 17-sep |
+| que «Argument list too long» no salga 0 | SCRUM-1245 y `tests/scrum1245b-patron-de-la-tanda-entre-comillas.test.mjs` | 28-sep |
+
+Y un dato nuevo que cierra la pregunta de quién mata (1-oct 01:29+01, con las sesiones vivas):
+
+| | MB |
+| --- | --- |
+| memoria física libre | 3.289 de 16.299 |
+| archivo de paginación: reservado / en uso / pico histórico | 26.624 / 86 / 3.285 |
+| compromiso libre / total | 24.132 / 42.923 |
+
+⇒ **Windows no ha matado ninguna tanda ni está cerca de hacerlo**: tiene 24 GB de compromiso sin usar. Si la
+memoria física se acaba, pagina; va más lento, no muere. Las «muertes por memoria» son todas del reaper de
+Claude Code (§⑤), que mata órdenes en segundo plano de una sesión quieta con un umbral que no es la memoria
+libre.
+
+### Cuánto cuesta la tanda — dato del 28-sep, con dos instrumentos
+
+Releídas las muestras de las seis tandas del 28-sep (1.070-1.072 ficheros, concurrencia 11 salvo la última):
+
+| tanda (28-sep) | `node.exe` ajeno al empezar | pico de la suma | **coste propio** (pico − ajeno) | caída de la libre |
+| --- | --- | --- | --- | --- |
+| T11 | 1.906 | 3.650 | **1.744** | 1.806 |
+| T11-antes (censo viejo) | 2.473 | 4.352 | **1.879** | 1.548 |
+| T11-inactiva | 1.758 | 3.488 | **1.730** | 1.587 |
+| T11-final | 1.740 | 3.460 | **1.720** | 1.797 |
+| T6-1218 (concurrencia 6, censo viejo) | 1.489 | 3.713 | **2.224** | 1.961 |
+
+⇒ **La tanda entera cuesta entre 1,7 y 2,2 GB de pico** (28-sep). Por hijo: máximo 781 MB, p99 371, p90 162,
+mediana 99; 12 ficheros pasan de 350 MB y 518 de 100.
+
+**Límite del instrumento:** la suma de `node.exe` no cuenta los nietos que no son node (`git`), y la caída de la
+libre cuenta también lo que hagan las demás sesiones. Por eso van las dos columnas: coinciden en el orden
+(1,5-2,2 GB), no en la cifra.
+
+### ¿Cabe hoy? — proyectado; medirlo me lo denegaron
+
+Hoy la tanda tiene **1.139 ficheros** (+67 desde el 28-sep). El orquestador dio turno para una tanda entera
+medida, en primer plano y con corte propio a 800 MB libres; **el clasificador de permisos de la sesión denegó
+lanzarla** («Interfere With Workloads»). No se reintentó por ningún otro camino. **El pico de hoy no está
+medido.** Lo desbloquea Javier: o la corre él, o la autoriza en la sesión.
+
+Lo que sí se midió hoy, sin tanda (entre la 01:29 y la 01:38+01, un fichero cada vez, en primer plano):
+
+- **Los 12 ficheros más pesados del 28-sep no han engordado**: 12 de 12 verdes; suma de sus picos **5.557 MB**
+  (28-sep, dentro de la tanda: 5.504). El mayor, `scrum1093h`, 700 MB; `scrum775`, 538.
+- **La memoria libre, sin tanda ninguna, osciló entre 1.636 y 4.626 MB** en esos diez minutos (38 lecturas).
+  O sea: el margen depende más de lo que hagan las otras sesiones que de lo que cueste la tanda.
+- No se sabe si alguno de los 67 ficheros nuevos pesa. Con la concurrencia topada en 11, ficheros normales
+  (~100 MB) alargan la tanda sin subir el pico — **derivado, no medido**.
+
+**Veredicto:** con el coste del 28-sep (1,7-2,2 GB) y 3,3 GB libres, quedarían **1,1-1,6 GB**; en el peor
+momento medido hoy (1,6 GB libres) no quedaría margen físico y Windows paginaría. **Cabe** en el único sentido
+que importa —termina y da veredicto—, y **no está demostrado hoy**. Lo que el ticket afirma («no se puede
+correr») queda tumbado por 5 tandas enteras; lo que nadie puede prometer es que el reaper no corte una orden
+en segundo plano de OTRA sesión mientras corre (§⑤: derivado, nunca medido).
+
+### Lo que se puede hacer sin pedirle nada a Javier — cada opción con su coste
+
+| opción | qué se midió | coste | ¿sirve? |
+| --- | --- | --- | --- |
+| **bajar la concurrencia** | 28-sep, mismo censo viejo: con 6, coste propio 2.224 MB; con 11, 1.879. Tiempo 4,3 contra 4,2 min. n = 1 cada una | ninguno en tiempo; cambiar `package.json` afecta a los dos equipos | **no es la palanca**: el pico lo ponen unos pocos ficheros pesados que coinciden, no el número de trabajadores |
+| **`--max-old-space-size=512`** | 1-oct, los 12 pesados uno a uno: 12 de 12 verdes; suma de picos 5.257 MB contra 5.557 sin tope (**−5 %**). Un fichero SUBIÓ 103 MB: el ahorro está dentro del ruido | tendría que ir en `NODE_OPTIONS` del script o del CI | **no**: donde no rompe, no ahorra. Lo que pesa son datos vivos (programas de TypeScript), no basura |
+| **`--max-old-space-size=256`** | 1-oct, los mismos 12: **5 mueren** con «heap out of memory» y la tanda los cuenta como «1 test, 1 fail» | fabrica cinco rojos que no son defectos del producto | **no, y hace daño**: un rojo así se lee como un guard que ha saltado |
+| **trocear la tanda** | no medido hoy. Los 12 pesados en serie tardan 125 s (1-oct) | exige un agregador que dé UN veredicto y declare CIEGO el trozo sin recuento (requisito 3 del ticket), y tocar `package.json` | **no hace falta para caber**: la tanda entera ya cabe. Solo tendría sentido aislar los 12 pesados, +2 min |
+| **adelgazar los pesados, uno a uno** | 28-sep: `scrum1093h` 1.190 → 690 MB con salida idéntica byte a byte | un cambio de código por censo, con su prueba de salida idéntica y sus mutaciones | **es lo único que ha bajado el pico de verdad** (−700 MB en la suma). Siguientes: `scrum534b` 592, `scrum846c` 543, `scrum775` 538. No hace falta para caber |
+| **correrla en primer plano** (§⑤) | 28-sep: 2 de 2 terminaron | pedir turno: ninguna otra sesión con órdenes en segundo plano | **es la receta vigente** |
+
+### Lo que es de Javier, por separado
+
+1. **Cerrar Discord, Spotify e iTero no es lo que hace caber la tanda.** El orquestador midió 2,22 GB entre
+   los tres con cero sesiones; a la 01:29 yo vi Discord 847 MB e iTero 619, y **a la 01:38 ya no estaban**
+   (libre: 4.626 MB). Son más memoria que la que consume la tanda entera, y ayudan a todo lo demás; pero la
+   restricción no era la memoria libre.
+2. **La tanda de hoy**: correrla él (`npm test` en una consola) o autorizarla en la sesión.
+3. **El reaper** (`CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`) sigue siendo suyo y sigue sin tocarse (§⑤).
+
+### Lo que NO se ha tocado
+
+Ni `package.json`, ni el CI, ni ningún test, ni ningún proceso ajeno, ni ninguna base. Este tramo es solo
+registro. Instrumentos fuera del árbol y de un solo uso: la sonda de pico por hijo del 28-sep (con el tope de
+heap efectivo añadido, para comprobar que la bandera LLEGA al hijo: 704 MB con 512, 448 con 256) y un
+lanzador que corre un fichero cada vez.
+
+### Mis errores en esta entrega
+
+- Di el coste de la tanda al orquestador como «1,5-2,0 GB» leyendo solo la caída de la memoria libre. Cruzado
+  con la suma de `node.exe`, es **1,7-2,2 GB**. La corrección está arriba.
+- Le escribí una hora «a ojo» en el aviso de la denegación en vez de leerla del reloj.
+
+## ⑦ 1-oct: la tanda de HOY terminó — y dos condiciones del entorno que fabrican rojos con cara de defecto
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:01:05Z
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: lo que falta es que la receta de la tanda diga en qué shell se corre, y ese texto vive en `CLAUDE.md`, derivado del máster; lo decide el fundador y aquí sólo se deja medido.
+
+### El número de hoy
+
+| quién, dónde | tests | pass | fail | saltados | duración |
+| --- | --- | --- | --- | --- | --- |
+| el fundador, `npm test` en `cmd.exe`, esta máquina, 1-oct | 9.338 | 9.156 | 44 | 138 | 5 min 17 s |
+| CI del PR #2033 (Linux), 1-oct 00:49Z | 9.343 | 9.243 | 2 | 98 | — |
+
+⇒ **La tanda entera TERMINÓ hoy en la máquina del equipo, con su línea de recuento.** La afirmación del
+título queda tumbada también con el número de hoy, no sólo con las cinco tandas del 28-sep.
+
+**De segunda mano, y dicho:** la fila local me la ha pasado el orquestador a partir de lo que pegó el
+fundador; no he visto la salida. La fila del CI la he leído yo del log del job.
+
+**Sin pico de memoria.** Se corrió `npm test` a secas, sin el muestreador: no hay ni pico ni caída de la
+memoria libre de hoy. **El coste sigue siendo el del 28-sep (1,7-2,2 GB)**; el de hoy queda sin medir.
+
+### Los 44 rojos locales: 2 son de `main`, 42 son de la shell
+
+- **2 son los trinquetes de fecha** (`scrum128` y `scrum55`, «la lista mengua (ratchet + caducidad)»).
+  Son los mismos 2 del CI: `main` los lleva desde medianoche y los trae cualquier PR de hoy.
+- **42 son por correrla desde `cmd.exe`, donde no hay `bash` en el PATH**: `spawnSync bash ENOENT`,
+  «🔴 CIEGO: no hay `bash` en esta máquina» y, en cascada, `null !== 0`. Reparto 2 + 42 según la lectura
+  del orquestador sobre el pegado; **no los he contado yo uno a uno**. Lo que sí he medido, leyendo el
+  árbol: **9 ficheros de test nombran `bash` literalmente** para lanzarlo.
+
+### 🔴 Dos condiciones del entorno que fabrican rojos con cara de defecto
+
+| condición | lo que fabrica | cómo se lee en el resumen |
+| --- | --- | --- |
+| **`--max-old-space-size=256`** (§⑥) | 5 de los 12 ficheros pesados mueren con «heap out of memory» | «1 test, 1 fail» por fichero: parece un guard que ha saltado |
+| **correr `npm test` desde `cmd.exe` o PowerShell** | 42 tests sin intérprete | «fail 44»: varios se declaran CIEGOS, que es lo correcto, pero el total no lo distingue |
+
+Las dos son la misma forma: el test no llegó a medir y el resumen lo cuenta como un fallo del producto.
+Quien persiga esos rojos persigue un defecto que no existe.
+
+**La receta de la casa no dice en qué shell se corre la tanda.** El bloque de comandos de `CLAUDE.md` es
+de bash, pero en ningún sitio dice que la tanda NECESITA `bash` en el PATH. **Propuesta, no aplicada**
+(es texto derivado del máster): una línea en ese bloque — «la tanda se corre desde Git Bash: desde `cmd`
+o PowerShell, los tests que lanzan `bash` salen en rojo sin serlo».
+
+### El CI de este PR
+
+`build + tests` salió rojo en #2033 **sólo por los dos trinquetes de fecha** (9.343 tests, 2 fail): no es
+de este cambio, que es sólo registro. El meta-guard también salió rojo, por dos mudos de `scrum853` y un
+ciego de `scrum859`, ninguno tocado aquí.

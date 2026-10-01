@@ -1,0 +1,8 @@
+
+══ LO QUE ESTA TANDA DICE DE SUS ROJOS (SCRUM-1331 / SCRUM-1332) · no cambia el código de salida ══
+   población: 4 caído(s) en «failing tests» · 2 fichero(s) caído(s) SIN caso caído · 1 caso(s) caído(s) por CIEGO · 1 saltado(s) por CIEGO · 1 rojo(s) de caso
+   🔴 MURIÓ EL PROCESO, NO FALLÓ UN TEST · b-muere-al-salir.test.mjs — 0 casos caídos dentro; huella nativa: «----- Native stack trace -----». Relanza UNA vez: si el mismo fichero vuelve a morir, entonces sí es de lo que se prueba.
+   🔴 NO HABÍA RED · c-no-carga.test.mjs — 0 casos caídos dentro; el fichero no llegó al remoto: «fatal: unable to access 'https://sin-dns.invalid/x.git/': Could not resolve host: sin-dns.invalid». No es un caso que falle ni es el cambio que se prueba: RELANZA.
+   ⚠️ CIEGO · SIN RED · «caso ciego que cae» (d-ciego-falla.test.mjs) cayó porque NO PUDO MIRAR, no porque viera un fallo: AssertionError [ERR_ASSERTION]: 🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. no llegó al remoto («Could not resolve host: x»). RELANZA.
+   ⚠️ ESTA TANDA NO COMPROBÓ «caso ciego que se salta»: CIEGO · SIN RED: no se comprobó el barrido
+   Y ADEMÁS hay 1 rojo(s) de caso que NO son nada de lo de arriba: ésos sí se miran en el cambio.

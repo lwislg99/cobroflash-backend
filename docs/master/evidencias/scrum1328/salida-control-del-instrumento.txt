@@ -1,0 +1,52 @@
+# control del instrumento censo-quien-pisa.mjs sobre el laboratorio (verdad conocida)
+## HIJO=suelto.mjs MODO=hereda
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-7340.tap
+PISA    x1  proc=  2 bytes=PISADO     199 ms salida=0 tests=3 fail=0  b.test.mjs
+            intruso: [script con node:test] C:\Users\Javier Pereira\AppData\Local\Temp\yaqu-1328-lab\repro\hijo\suelto.mjs
+            bytes: quedo «PADRE-B antes de lanzar» · 2 recuentos «# tests» [3,5] (se espera uno)
+limpio  x0  proc=  1 bytes=ENTERO     241 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"PISA/PISADO":1,"limpio/ENTERO":1} sobre 2
+EXIT=0
+## HIJO=suelto.mjs MODO=limpio
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-6228.tap
+limpio  x0  proc=  1 bytes=ENTERO     205 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     215 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0
+## HIJO=suelto.mjs MODO=contexto
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-25872.tap
+limpio  x0  proc=  2 bytes=ENTERO     205 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     263 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0
+## HIJO=suelto.mjs MODO=sin-hijo
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-25876.tap
+limpio  x0  proc=  1 bytes=ENTERO     187 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     275 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0
+## HIJO=anidado.test.mjs MODO=hereda
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-16512.tap
+PISA    x1  proc=  2 bytes=ENTERO     339 ms salida=0 tests=3 fail=0  b.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\Javier Pereira\AppData\Local\Temp\yaqu-1328-lab\repro\hijo\anidado.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     252 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"PISA/ENTERO":1,"limpio/ENTERO":1} sobre 2
+EXIT=0
+## HIJO=anidado.test.mjs MODO=limpio
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-6488.tap
+limpio  x0  proc=  1 bytes=ENTERO     320 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     226 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0
+## HIJO=anidado.test.mjs MODO=contexto
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-13584.tap
+limpio  x0  proc=  1 bytes=ENTERO     209 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     197 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0
+## HIJO=anidado.test.mjs MODO=sin-hijo
+POBLACION ficheros=2 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-27720.tap
+limpio  x0  proc=  1 bytes=ENTERO     137 ms salida=0 tests=3 fail=0  b.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     214 ms salida=0 tests=300 fail=0  a.test.mjs
+RESUMEN (sonda/bytes) {"limpio/ENTERO":2} sobre 2
+EXIT=0

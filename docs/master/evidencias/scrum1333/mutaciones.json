@@ -1,0 +1,150 @@
+[
+  {
+    "id": "BASE sin mutar",
+    "build": 0,
+    "exit": 0,
+    "tests": 50,
+    "pass": 50,
+    "fail": 0,
+    "caidos": []
+  },
+  {
+    "id": "M1 la pregunta no decide (el defecto entero)",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 46,
+    "fail": 4,
+    "caidos": [
+      "SCRUM-1330 · ④b tras SCRUM-1333: la entrega que pierde la carrera YA NO vuelve a encolar el alta — una factura",
+      "SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola",
+      "SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su",
+      "SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo"
+    ]
+  },
+  {
+    "id": "M2 la pregunta va SIN cerrojo",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 49,
+    "fail": 1,
+    "caidos": [
+      "SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo"
+    ]
+  },
+  {
+    "id": "M3 la pregunta ignora la FACTURA",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 49,
+    "fail": 1,
+    "caidos": [
+      "SCRUM-1333 · ✅ dos facturas DISTINTAS dejan cada una SU fila: no encolar dos veces no es no encolar la segunda"
+    ]
+  },
+  {
+    "id": "M4 la pregunta ignora el COMERCIO (regla 2)",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 49,
+    "fail": 1,
+    "caidos": [
+      "SCRUM-1333 · ✅ regla 2: una fila de OTRO comercio no cuenta como «ya encolada»"
+    ]
+  },
+  {
+    "id": "M5 la pregunta ignora el TIPO de operación",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 49,
+    "fail": 1,
+    "caidos": [
+      "SCRUM-1333 · ✅ una fila de OTRA operación de la misma factura no cuenta como su alta"
+    ]
+  },
+  {
+    "id": "M6 no encolar se calla",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 49,
+    "fail": 1,
+    "caidos": [
+      "SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su"
+    ]
+  },
+  {
+    "id": "M7 no encolar se registra como un FALLO",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 46,
+    "fail": 4,
+    "caidos": [
+      "SCRUM-1330 · ④b tras SCRUM-1333: la entrega que pierde la carrera YA NO vuelve a encolar el alta — una factura",
+      "SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola",
+      "SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su",
+      "SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo"
+    ]
+  },
+  {
+    "id": "M8 no encola NUNCA",
+    "numstat": [
+      "1\t1\tsrc/modules/invoicing/domain/encolarRemision.ts"
+    ],
+    "build": 0,
+    "exit": 1,
+    "tests": 50,
+    "pass": 38,
+    "fail": 12,
+    "caidos": [
+      "SCRUM-1296 · 🔴 sellar una factura DEJA su registro de alta en la cola de remisión",
+      "SCRUM-1296 · ① si ESCRIBIR en la cola revienta, la factura queda SELLADA igual y queda constancia",
+      "SCRUM-1296 · el merchant DEMO sella y NO encola, y no es un fallo (sin constancia)",
+      "SCRUM-1330 · ④b tras SCRUM-1333: la entrega que pierde la carrera YA NO vuelve a encolar el alta — una factura",
+      "SCRUM-1333 · SUELO Y ✅ POSITIVO: una factura sellada UNA vez deja UNA fila en la cola, con su registro tal com",
+      "SCRUM-1333 · ✅ dos facturas DISTINTAS dejan cada una SU fila: no encolar dos veces no es no encolar la segunda",
+      "SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola",
+      "SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su",
+      "SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo",
+      "SCRUM-1333 · ✅ si el PRIMER intento no llegó a la cola, la segunda pasada SÍ encola: manda la cola, no «quién ",
+      "SCRUM-1333 · ✅ regla 2: una fila de OTRO comercio no cuenta como «ya encolada»",
+      "SCRUM-1333 · ✅ una fila de OTRA operación de la misma factura no cuenta como su alta"
+    ]
+  },
+  {
+    "id": "RESTAURADO",
+    "build": 0,
+    "porcelainDeSrc": "",
+    "exit": 0,
+    "tests": 50,
+    "pass": 50,
+    "fail": 0,
+    "caidos": []
+  }
+]

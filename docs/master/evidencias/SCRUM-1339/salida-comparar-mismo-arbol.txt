@@ -1,0 +1,398 @@
+POBLACION: 630 jobs · con resumen 594 · árboles distintos 523
+  árboles probados MÁS DE UNA VEZ: 70 (suman 141 jobs)
+
+── árbol e86e99644726 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 107669564689 · run 36010475841#1 · pr · success · 2026-09-24T14:07:22Z · tests 8236 pass 8143 fail 0 skip 93 · le FALTAN 0 de 8236
+   job 107672560751 · run 36011346585#1 · push · success · 2026-09-24T14:14:33Z · tests 8227 pass 8134 fail 0 skip 93 · le FALTAN 9 de 8236
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · entra un tipo de IVA que no existe (15 %) → cae 1124
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tipos · el paquete anual deja de filtrar por tipo → cae tipos-declarables
+        − SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119
+        … y 3 nombres más
+── árbol 74b517d8d798 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108072781974 · run 36135520794#1 · pr · success · 2026-09-25T12:33:23Z · tests 8277 pass 8184 fail 0 skip 93 · le FALTAN 0 de 8277
+   job 108075640675 · run 36136471571#1 · push · success · 2026-09-25T12:42:25Z · tests 8269 pass 8176 fail 0 skip 93 · le FALTAN 8 de 8277
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        … y 2 nombres más
+── árbol 85559c245ed2 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108086565610 · run 36139805618#1 · pr · success · 2026-09-25T13:15:26Z · tests 8291 pass 8198 fail 0 skip 93 · le FALTAN 3 de 8294
+        − SCRUM-161 · el recibo lo escribe el runner, con los exit REALES de sus hijos
+        − SCRUM-161 · el recibo se escribe DESPUÉS de los guards de «no pude comprobar»
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+   job 108089564314 · run 36140708389#1 · push · success · 2026-09-25T13:24:07Z · tests 8294 pass 8201 fail 0 skip 93 · le FALTAN 0 de 8294
+── árbol 0f2eec79abca · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108118429514 · run 36149361977#1 · pr · success · 2026-09-25T14:43:15Z · tests 8309 pass 8216 fail 0 skip 93 · le FALTAN 9 de 8318
+        − SCRUM-286 · ROJO: si el censo del envío se queda ciego, falla el SUELO
+        − SCRUM-286 · NEGATIVO: un cambio inocuo NO pone el guard en rojo
+        − SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdido
+        − SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-271
+        − SCRUM-286 · el orden de pintado, impreso, con su POBLACIÓN declarada
+        − 🔴 un módulo NUEVO sin clasificar se trata como fiscal, no como inocuo
+        … y 3 nombres más
+   job 108122866675 · run 36150352928#1 · push · failure · 2026-09-25T14:55:04Z · tests 8318 pass 8224 fail 1 skip 93 · le FALTAN 0 de 8318
+── árbol 77445a60e988 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108127424850 · run 36152039414#1 · pr · failure · 2026-09-25T15:07:19Z · tests 8297 pass 8203 fail 1 skip 93 · le FALTAN 21 de 8318
+        − 🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+        − 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+        − 🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+        − 🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+        − un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+        − 🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+        … y 15 nombres más
+   job 108133645166 · run 36152039414#2 · pr · failure · 2026-09-25T15:24:04Z · tests 8318 pass 8224 fail 1 skip 93 · le FALTAN 0 de 8318
+── árbol 9d7df0b51e99 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108127884890 · run 36152176419#1 · pr · failure · 2026-09-25T15:08:34Z · tests 8322 pass 8228 fail 1 skip 93 · le FALTAN 4 de 8326
+        − 🔴 un módulo NUEVO sin clasificar se trata como fiscal, no como inocuo
+        − el censo detecta lo que le falta, no solo lo que tiene
+        − y un módulo declarado NO fiscal sigue sin escalar
+        − las rutas se DERIVAN de los módulos fiscales, no se repiten a mano
+   job 108141523315 · run 36152176419#2 · pr · failure · 2026-09-25T15:45:16Z · tests 8314 pass 8220 fail 1 skip 93 · le FALTAN 12 de 8326
+        − la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+        − el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+        − 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa
+        − un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco
+        − y el que espera y entró en silencio avisa al cruzar las 24 h
+        − 🔴 una causa que NO se arregla esperando avisa al entrar, sin esperar a la edad
+        … y 6 nombres más
+── árbol 30616acd4609 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108175986269 · run 36166668161#1 · pr · success · 2026-09-25T17:22:05Z · tests 8344 pass 8251 fail 0 skip 93 · le FALTAN 0 de 8344
+   job 108178634601 · run 36167452844#1 · push · success · 2026-09-25T17:29:49Z · tests 8317 pass 8224 fail 0 skip 93 · le FALTAN 27 de 8344
+        − un obligatorio TODAVÍA CORRIENDO es ESPERANDO de verdad
+        − 🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que aparezca
+        − 🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO
+        − sin datos de checks el clasificador se comporta como antes (no inventa rojo)
+        − el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+        − los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+        … y 21 nombres más
+── árbol b481e8d653f5 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108190243971 · run 36171008437#1 · pr · success · 2026-09-25T18:03:49Z · tests 8346 pass 8253 fail 0 skip 93 · le FALTAN 7 de 8353
+        − SCRUM-176 · descontarTexto quita el mensaje pero deja la invocacion
+        − SCRUM-931 · 🔴 LA PUERTA: ninguna plantilla acepta el importe YA formateado
+        − SCRUM-931 · 🔴 LA PUERTA: el importe entra como NÚMERO en los cuatro builders
+        − SCRUM-931 · 🔴 SUELO: el lector encuentra la llamada de plantilla en los siete productores
+        − SCRUM-931 · 🔴 TRINQUETE: ningún productor formatea el importe por su cuenta
+        − SCRUM-931 · 🔴 SUELO: el correo se está leyendo de verdad
+        … y 1 nombres más
+   job 108193544610 · run 36172001450#1 · push · success · 2026-09-25T18:15:27Z · tests 8328 pass 8235 fail 0 skip 93 · le FALTAN 25 de 8353
+        − 🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO
+        − sin datos de checks el clasificador se comporta como antes (no inventa rojo)
+        − el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+        − los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+        − 🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+        − 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+        … y 19 nombres más
+── árbol be282d177998 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108203616319 · run 36175082418#1 · pr · success · 2026-09-25T18:42:17Z · tests 8357 pass 8264 fail 0 skip 93 · le FALTAN 0 de 8357
+   job 108206534639 · run 36175869339#1 · push · success · 2026-09-25T18:56:29Z · tests 8355 pass 8262 fail 0 skip 93 · le FALTAN 2 de 8357
+        − y un módulo declarado NO fiscal sigue sin escalar
+        − las rutas se DERIVAN de los módulos fiscales, no se repiten a mano
+── árbol 57fed2ef2244 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108226531075 · run 36182054495#1 · pr · success · 2026-09-25T19:49:56Z · tests 8427 pass 8334 fail 0 skip 93 · le FALTAN 0 de 8427
+   job 108229441094 · run 36182940382#1 · push · success · 2026-09-25T19:58:50Z · tests 8419 pass 8326 fail 0 skip 93 · le FALTAN 8 de 8427
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        … y 2 nombres más
+── árbol 8e0189ec661f · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108358124911 · run 36225327292#1 · pr · success · 2026-09-26T06:58:00Z · tests 8436 pass 8343 fail 0 skip 93 · le FALTAN 15 de 8451
+        − el fork manda sobre lo fiscal: contenido de un desconocido es la razón más fuerte
+        − el workflow le pasa a la puerta los ficheros del PR
+        − 🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope
+        − 🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar
+        − la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)
+        − el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha
+        … y 9 nombres más
+   job 108360887065 · run 36225767284#1 · push · success · 2026-09-26T07:16:54Z · tests 8451 pass 8358 fail 0 skip 93 · le FALTAN 0 de 8451
+── árbol ceaeac0301ca · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108364548275 · run 36227613007#1 · pr · success · 2026-09-26T07:42:49Z · tests 8450 pass 8357 fail 0 skip 93 · le FALTAN 0 de 8450
+   job 108365443916 · run 36227934467#1 · push · success · 2026-09-26T07:49:11Z · tests 8445 pass 8352 fail 0 skip 93 · le FALTAN 5 de 8450
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        − SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+── árbol 6b74c10b16bc · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108400245733 · run 36240603489#1 · pr · success · 2026-09-26T12:01:07Z · tests 8429 pass 8336 fail 0 skip 93 · le FALTAN 23 de 8452
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero NUEVO
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: git checkout -- con el árbol LIMPIO en esa ruta
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero que git IGNORA
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: añadir (>>) a un fichero existente
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección a /dev/null
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: git restore --staged, que no toca el árbol
+        … y 17 nombres más
+   job 108401563926 · run 36241076579#1 · push · success · 2026-09-26T12:10:28Z · tests 8452 pass 8359 fail 0 skip 93 · le FALTAN 0 de 8452
+── árbol d3096c0a5f2a · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108652197209 · run 36330795320#1 · pr · success · 2026-09-27T15:46:40Z · tests 8549 pass 8451 fail 0 skip 98 · le FALTAN 0 de 8549
+   job 108653668529 · run 36331314638#1 · push · success · 2026-09-27T15:55:22Z · tests 8484 pass 8386 fail 0 skip 98 · le FALTAN 65 de 8549
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1115 · una no rectificativa también resuelve `TipoRectificativa` → cae 1115
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1117 · `FacturasRectificadas` se escribe siempre → cae 1117
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1195 · `CalificacionOperacion` pasa a ser opcional → cae 1195
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · aparece una calificación que no es S1 → cae 1207
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica) → cae 1207
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el arranque deja de comprobar el id del sistema → cae 1177
+        … y 59 nombres más
+── árbol df28ee22de0e · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108667910627 · run 36336384330#1 · pr · success · 2026-09-27T17:17:32Z · tests 8618 pass 8520 fail 0 skip 98 · le FALTAN 16 de 8634
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        − SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+        − SCRUM-996 · gasto · funciones puras: dedupe por message.id, U sin output, borde del tope, < 8 turnos no tiene U8
+        … y 10 nombres más
+   job 108670679753 · run 36336787101#1 · push · success · 2026-09-27T17:33:17Z · tests 8634 pass 8536 fail 0 skip 98 · le FALTAN 0 de 8634
+── árbol 97b79b9a431d · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108673604350 · run 36338413437#1 · pr · success · 2026-09-27T17:50:25Z · tests 8632 pass 8534 fail 0 skip 98 · le FALTAN 28 de 8660
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        − SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+        − el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+        … y 22 nombres más
+   job 108675678571 · run 36338872828#1 · push · success · 2026-09-27T18:02:23Z · tests 8660 pass 8562 fail 0 skip 98 · le FALTAN 0 de 8660
+── árbol 9f583c82bc25 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 108956394707 · run 36430869593#1 · pr · success · 2026-09-28T13:45:22Z · tests 8670 pass 8572 fail 0 skip 98 · le FALTAN 4 de 8674
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+        − sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+        − el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+        − la pasada le da al clasificador el dato del auto-merge
+   job 108960496521 · run 36432073469#1 · push · success · 2026-09-28T13:55:26Z · tests 8674 pass 8576 fail 0 skip 98 · le FALTAN 0 de 8674
+── árbol 05a1b777cd82 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109079283183 · run 36466942745#1 · pr · success · 2026-09-28T18:41:17Z · tests 8843 pass 8745 fail 0 skip 98 · le FALTAN 6 de 8849
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+        − el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+        − los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+        − 🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+        − 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+        − 🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+   job 109082989527 · run 36468048224#1 · push · success · 2026-09-28T18:50:42Z · tests 8849 pass 8751 fail 0 skip 98 · le FALTAN 0 de 8849
+── árbol 643b75367394 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109124928758 · run 36480581856#1 · pr · success · 2026-09-28T20:38:04Z · tests 8922 pass 8824 fail 0 skip 98 · le FALTAN 7 de 8929
+        − SCRUM-454 · BLOQUEA (hay algo que perder): y el caso exacto del 11-ago: > sobre un .md que ya existe
+        − SCRUM-454 · el junction se comprueba ANTES de seguirlo (SCRUM-429)
+        − SCRUM-454 · el sentinel autoriza UNA vez y se consume
+        − SCRUM-454 · el permiso NO se quema si otra regla bloquea antes
+        − SCRUM-454 · 🔴 crear el permiso EN EL MISMO comando no vale
+        − SCRUM-454 · el guard mira el árbol donde se va a ejecutar, no donde corre él
+        … y 1 nombres más
+   job 109129066356 · run 36481753567#1 · push · success · 2026-09-28T20:48:49Z · tests 8929 pass 8831 fail 0 skip 98 · le FALTAN 0 de 8929
+── árbol 704b0f7af29b · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109129803193 · run 36482046788#1 · pr · success · 2026-09-28T20:50:45Z · tests 8932 pass 8834 fail 0 skip 98 · le FALTAN 1 de 8933
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+   job 109134684774 · run 36483004720#1 · push · success · 2026-09-28T21:03:34Z · tests 8933 pass 8835 fail 0 skip 98 · le FALTAN 0 de 8933
+── árbol b0514ca41392 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109136276862 · run 36483993420#1 · pr · success · 2026-09-28T21:07:46Z · tests 8910 pass 8812 fail 0 skip 98 · le FALTAN 24 de 8934
+        − SCRUM-454 · el tokenizador no confunde el descriptor con una palabra
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero NUEVO
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: git checkout -- con el árbol LIMPIO en esa ruta
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero que git IGNORA
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: añadir (>>) a un fichero existente
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección a /dev/null
+        … y 18 nombres más
+   job 109140330288 · run 36485004021#1 · push · success · 2026-09-28T21:18:28Z · tests 8933 pass 8835 fail 0 skip 98 · le FALTAN 1 de 8934
+        − SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+── árbol 2355425b933f · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109141033683 · run 36485418647#1 · pr · success · 2026-09-28T21:20:22Z · tests 8907 pass 8809 fail 0 skip 98 · le FALTAN 29 de 8936
+        − SCRUM-813b · la marca REAL trae el detalle, y cuadra con lo que dice git
+        − SCRUM-813c · ✅ POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto
+        − SCRUM-813c · 🔴 EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO
+        − SCRUM-813c · 🔴 la excepción es CERRADA: lo que NO está declarado ciega, aunque se le parezca
+        − SCRUM-813c · 🔴 con la lista VACÍA nada se ampara: cualquier ruta sigue cegando
+        − SCRUM-813c · la lista declarada es EXACTAMENTE ésta, y cada entrada dice quién y por qué
+        … y 23 nombres más
+   job 109145603934 · run 36486227919#1 · push · success · 2026-09-28T21:32:52Z · tests 8936 pass 8838 fail 0 skip 98 · le FALTAN 0 de 8936
+── árbol 58840cdf4f6c · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109168504773 · run 36493799050#1 · pr · success · 2026-09-28T22:40:42Z · tests 8965 pass 8867 fail 0 skip 98 · le FALTAN 0 de 8965
+   job 109170911615 · run 36494542868#1 · push · success · 2026-09-28T22:48:37Z · tests 8960 pass 8862 fail 0 skip 98 · le FALTAN 5 de 8965
+        − SCRUM-286 · ROJO: si el censo del envío se queda ciego, falla el SUELO
+        − SCRUM-286 · NEGATIVO: un cambio inocuo NO pone el guard en rojo
+        − SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdido
+        − SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-271
+        − SCRUM-286 · el orden de pintado, impreso, con su POBLACIÓN declarada
+── árbol 47974c42dec4 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109172780547 · run 36495119523#1 · pr · success · 2026-09-28T22:54:52Z · tests 8973 pass 8875 fail 0 skip 98 · le FALTAN 0 de 8973
+   job 109175672580 · run 36496019643#1 · push · success · 2026-09-28T23:04:35Z · tests 8940 pass 8842 fail 0 skip 98 · le FALTAN 33 de 8973
+        − 🔴 RECIEN-EMPUJADO se DESCARTA de la lista, no se cuenta como atasco
+        − el workflow valida la sonda ANTES de usarla, y degrada si no pasa
+        − la lista de obligatorios se DERIVA de las reglas vivas de main, no se escribe a mano
+        − 🔴 SUELO de la lista: vacía, ilegible o sin regla NO es «nada es obligatorio»
+        − 🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO
+        − CEBO REAL #1248 · rojo SOLO en checks NO obligatorios → no es atasco rojo (y de hecho entró)
+        … y 27 nombres más
+── árbol a06ff10d85f1 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109178721790 · run 36496904219#1 · pr · success · 2026-09-28T23:15:05Z · tests 8953 pass 8855 fail 0 skip 98 · le FALTAN 20 de 8973
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tipos · el paquete anual deja de filtrar por tipo → cae tipos-declarables
+        − SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        … y 14 nombres más
+   job 109181067748 · run 36497716616#1 · push · success · 2026-09-28T23:23:13Z · tests 8973 pass 8875 fail 0 skip 98 · le FALTAN 0 de 8973
+── árbol fee13198bff4 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109332109897 · run 36545908571#1 · pr · success · 2026-09-29T08:56:28Z · tests 8960 pass 8862 fail 0 skip 98 · le FALTAN 22 de 8982
+        − los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+        − 🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+        − 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+        − 🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+        − 🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+        − un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+        … y 16 nombres más
+   job 109335763397 · run 36547024875#1 · push · success · 2026-09-29T09:06:44Z · tests 8982 pass 8884 fail 0 skip 98 · le FALTAN 0 de 8982
+── árbol 5bf200edf8cc · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109365294001 · run 36556036696#1 · pr · success · 2026-09-29T10:30:55Z · tests 9079 pass 8981 fail 0 skip 98 · le FALTAN 3 de 9082
+        − SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdido
+        − SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-271
+        − SCRUM-286 · el orden de pintado, impreso, con su POBLACIÓN declarada
+   job 109369007049 · run 36557170591#1 · push · success · 2026-09-29T10:42:04Z · tests 9082 pass 8984 fail 0 skip 98 · le FALTAN 0 de 9082
+── árbol 84780fe2499f · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109464369378 · run 36585440098#1 · pr · success · 2026-09-29T14:48:35Z · tests 9087 pass 8989 fail 0 skip 98 · le FALTAN 1 de 9088
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+   job 109468470597 · run 36586596848#1 · push · success · 2026-09-29T14:58:24Z · tests 9064 pass 8966 fail 0 skip 98 · le FALTAN 24 de 9088
+        − SCRUM-454 · el tokenizador no confunde el descriptor con una palabra
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero NUEVO
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: git checkout -- con el árbol LIMPIO en esa ruta
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero que git IGNORA
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: añadir (>>) a un fichero existente
+        − SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección a /dev/null
+        … y 18 nombres más
+── árbol edf6d4ddb05c · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109469205939 · run 36586806494#1 · pr · success · 2026-09-29T15:00:02Z · tests 9070 pass 8972 fail 0 skip 98 · le FALTAN 24 de 9094
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · entra un tipo de IVA que no existe (15 %) → cae 1124
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tipos · el paquete anual deja de filtrar por tipo → cae tipos-declarables
+        − SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119
+        … y 18 nombres más
+   job 109475165878 · run 36587969972#1 · push · success · 2026-09-29T15:13:18Z · tests 9068 pass 8970 fail 0 skip 98 · le FALTAN 26 de 9094
+        − el workflow le pasa a la puerta los ficheros del PR
+        − 🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope
+        − 🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar
+        − la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)
+        − el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha
+        − 🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run
+        … y 20 nombres más
+── árbol e45b0a8a1234 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109489236819 · run 36592594884#1 · pr · success · 2026-09-29T15:45:17Z · tests 9055 pass 8957 fail 0 skip 98 · le FALTAN 41 de 9096
+        − SCRUM-286 · el orden de pintado, impreso, con su POBLACIÓN declarada
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1212 · UNA de las dos apariciones deja de ser fija → cae 1212
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1213 · ídem → cae 1213
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · ídem → cae 1226
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124
+        … y 35 nombres más
+   job 109492978977 · run 36593678878#1 · push · success · 2026-09-29T15:53:56Z · tests 9096 pass 8998 fail 0 skip 98 · le FALTAN 0 de 9096
+── árbol aa862f81924f · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109502823386 · run 36596548810#1 · pr · success · 2026-09-29T16:16:53Z · tests 9117 pass 9019 fail 0 skip 98 · le FALTAN 9 de 9126
+        − SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)
+        − SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde
+        − SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)
+        − SCRUM-1263 · lo que NO cambia: una persona que escribe @claude sigue obteniendo su push
+        − SCRUM-1263 · el cuerpo que publica el AVISADOR se reconoce (se renderiza desde su propio YAML)
+        − SCRUM-1263 · el push del bot a #1944 SÍ disparó el check obligatorio → no se declara nada
+        … y 3 nombres más
+   job 109512061713 · run 36597577377#1 · push · success · 2026-09-29T16:41:13Z · tests 9126 pass 9028 fail 0 skip 98 · le FALTAN 0 de 9126
+── árbol 83ad4be47ffe · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109533255908 · run 36605475029#1 · pr · success · 2026-09-29T17:30:57Z · tests 9191 pass 9093 fail 0 skip 98 · le FALTAN 4 de 9195
+        − SCRUM-522 · 🔴 y ese suelo común PARA de verdad, no devuelve una ruta
+        − SCRUM-522 · la puerta está declarada con su //comentario
+        − SCRUM-522 · 🔴 el workflow de CI invoca la puerta
+        − SCRUM-522 · la puerta JUZGA, no sólo mide
+   job 109537154046 · run 36606499941#1 · push · success · 2026-09-29T17:45:36Z · tests 9195 pass 9097 fail 0 skip 98 · le FALTAN 0 de 9195
+── árbol 12da08d2fd40 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 109551284909 · run 36610767076#1 · pr · success · 2026-09-29T18:15:32Z · tests 9194 pass 9096 fail 0 skip 98 · le FALTAN 28 de 9222
+        − CONTROL POSITIVO de la puerta fiscal: un PR inocuo SÍ sigue despertando
+        − el fork manda sobre lo fiscal: contenido de un desconocido es la razón más fuerte
+        − el workflow le pasa a la puerta los ficheros del PR
+        − 🔴 EL CONTROL DEL BUCLE · diez ciclos rojos seguidos y el avisador se PARA en el tope
+        − 🔴 y la DEDUPE no salva de nada aquí: nunca llega a saltar
+        − la dedupe SÍ actúa cuando el sha NO cambia (rearranque del mismo CI)
+        … y 22 nombres más
+   job 109557694532 · run 36611573227#1 · push · success · 2026-09-29T18:31:27Z · tests 9222 pass 9124 fail 0 skip 98 · le FALTAN 0 de 9222
+── árbol 3426950c0e9a · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110065234503 · run 36767496636#1 · pr · success · 2026-09-30T19:42:12Z · tests 9199 pass 9101 fail 0 skip 98 · le FALTAN 23 de 9222
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1117 · `FacturasRectificadas` se escribe siempre → cae 1117
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1195 · `CalificacionOperacion` pasa a ser opcional → cae 1195
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · aparece una calificación que no es S1 → cae 1207
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica) → cae 1207
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el arranque deja de comprobar el id del sistema → cae 1177
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el validador deja de exigir 2 posiciones → cae 1177
+        … y 17 nombres más
+   job 110069062176 · run 36768635837#1 · push · success · 2026-09-30T19:52:06Z · tests 9222 pass 9124 fail 0 skip 98 · le FALTAN 0 de 9222
+── árbol 71ca7ee373b9 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110165573865 · run 36797941392#1 · pr · failure · 2026-10-01T00:47:45Z · tests 9343 pass 9243 fail 2 skip 98 · le FALTAN 0 de 9343
+   job 110185726613 · run 36797941392#2 · pr · failure · 2026-10-01T02:09:32Z · tests 9342 pass 9242 fail 2 skip 98 · le FALTAN 1 de 9343
+        − SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+── árbol 7cf5340efdb3 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110165842739 · run 36797938424#1 · pr · failure · 2026-10-01T00:48:45Z · tests 9338 pass 9238 fail 2 skip 98 · le FALTAN 7 de 9345
+        − tests/scrum237-negacion-respaldada.test.mjs
+        − SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01
+        − SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+        − SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        … y 1 nombres más
+   job 110185717988 · run 36797938424#2 · pr · failure · 2026-10-01T02:09:30Z · tests 9327 pass 9227 fail 2 skip 98 · le FALTAN 18 de 9345
+        − SCRUM-237 · autoprueba: HERMANO DEL TOKEN → FUERTE
+        − SCRUM-237 · autoprueba: SUJETO VERIFICADO por contenido → MEDIO
+        − SCRUM-237 · autoprueba: sujeto = FUENTE leída → ESTRUCTURAL (mutation-test declarada)
+        − SCRUM-237 · autoprueba: token DINÁMICO sin sujeto verificado → DÉBIL (aceptado, no marcado)
+        − SCRUM-237 · autoprueba: char-class prohibida sin respaldo → DÉBIL (guard de patrón, no scrum73)
+        − SCRUM-237 · autoprueba: EL BUG DE SCRUM73 (token concreto imposible, sin respaldo) → NINGUNO
+        … y 12 nombres más
+── árbol 173547551cd8 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110174857527 · run 36800930882#1 · pr · failure · 2026-10-01T01:24:22Z · tests 9338 pass 9238 fail 2 skip 98 · le FALTAN 5 de 9343
+        − SCRUM-286 · ROJO: si el censo del envío se queda ciego, falla el SUELO
+        − SCRUM-286 · NEGATIVO: un cambio inocuo NO pone el guard en rojo
+        − SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdido
+        − SCRUM-286 · el reordenado NO reintroduce la cantidad inventada de SCRUM-271
+        − SCRUM-286 · el orden de pintado, impreso, con su POBLACIÓN declarada
+   job 110186213916 · run 36804658406#1 · pr · failure · 2026-10-01T02:28:37Z · tests 9343 pass 9243 fail 2 skip 98 · le FALTAN 0 de 9343
+── árbol 3ab4c962fa61 · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110181935419 · run 36803221288#1 · pr · failure · 2026-10-01T01:53:20Z · tests 9354 pass 9254 fail 2 skip 98 · le FALTAN 1 de 9355
+        − tests/scrum237-negacion-respaldada.test.mjs
+   job 110186236587 · run 36804665953#1 · pr · failure · 2026-10-01T02:25:43Z · tests 9347 pass 9247 fail 2 skip 98 · le FALTAN 8 de 9355
+        − SCRUM-237 · autoprueba: HERMANO DEL TOKEN → FUERTE
+        − SCRUM-237 · autoprueba: SUJETO VERIFICADO por contenido → MEDIO
+        − SCRUM-237 · autoprueba: sujeto = FUENTE leída → ESTRUCTURAL (mutation-test declarada)
+        − SCRUM-237 · autoprueba: token DINÁMICO sin sujeto verificado → DÉBIL (aceptado, no marcado)
+        − SCRUM-237 · autoprueba: char-class prohibida sin respaldo → DÉBIL (guard de patrón, no scrum73)
+        − SCRUM-237 · autoprueba: EL BUG DE SCRUM73 (token concreto imposible, sin respaldo) → NINGUNO
+        … y 2 nombres más
+── árbol 133edef4101f · 2 jobs 🔴 NO DAN LOS MISMOS CASOS
+   job 110186209126 · run 36804656838#1 · pr · success · 2026-10-01T02:13:32Z · tests 9338 pass 9240 fail 0 skip 98 · le FALTAN 31 de 9369
+        − SCRUM-1262 ✅ sendWhatsAppButtons: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+        − SCRUM-1262 ✅ sendWhatsAppList: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+        − SCRUM-1262 ✅ sendWhatsAppCtaUrl: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+        − SCRUM-1262 ✅ sendWhatsAppLocationRequest: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+        − SCRUM-1262 🔴 la exención NO se hereda del freno del demo: `exentoDelDemo` no levanta la baja
+        − SCRUM-1262 🔴 las vías que inicia el negocio NO pueden declararse respuesta
+        … y 25 nombres más
+   job 110188662066 · run 36805414513#1 · push · success · 2026-10-01T02:43:37Z · tests 9347 pass 9249 fail 0 skip 98 · le FALTAN 22 de 9369
+        − el tope cuenta AVISOS PUBLICADOS, no coincidencias: por eso sobrevive al cambio de sha
+        − 🔴 el veredicto del tope se LEE sin abrir logs: sale al resumen del run
+        − 🔴 claude.yml empuja con la llave de la App, no con el token por defecto
+        − 🔴 EL HUECO QUE DEJA ABIERTO EL CAMBIO DE TOKEN, escrito para que no se olvide
+        − 🔴 los 20 ficheros de src/modules/fiscal/ escalan, uno por uno
+        − 🔴 EL SUELO DEL CENSO: ningún módulo del árbol se queda sin clasificar
+        … y 16 nombres más
+
+RESUMEN
+  árboles probados más de una vez: 70
+  · en los que algún job NO trae todos los casos que trae otro del mismo árbol: 39
+  · de ésos, con la pérdida en un job VERDE (fail 0): 33
+  · grupos con todos sus jobs verdes: 61
+  jobs con casos perdidos respecto a su grupo: 47 · de ellos verdes: 38
+EXIT=0

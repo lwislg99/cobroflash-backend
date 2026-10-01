@@ -45,6 +45,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -218,7 +219,10 @@ async function caso(navegador, { suelto, etiqueta, rotulo, cierre, contador, lim
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = suelto ? 'justificante' : 'no';
+    // SCRUM-1313 · era 'justificante', que desde SCRUM-825 (PR #1943) el panel lee como 'no': la
+    // ruta pintaba el listado y el caso B —el del documento que NO se puede borrar— estuvo CIEGO
+    // desde el 29-sep-2026. El documento suelto sólo existe en modo 'factura'.
+    modoSuelto = suelto ? 'factura' : 'no';
     pedidos = { presupuestos: 0, facturas: 0 };
     await pag.setViewport({ width: 1280, height: 900 });
     if (!await llegarAlUltimoPaso(pag, etiqueta, suelto)) return;
@@ -295,7 +299,9 @@ const CASOS = [
     cierre: 'Seguir editando', contador: 'presupuestos', limite: 1,
   },
   {
-    suelto: true, etiqueta: 'B · justificante 1280px (control positivo)', rotulo: 'Emitir justificante',
+    // SCRUM-1313 · el rótulo es el que el panel pinta HOY («Emitir justificante» se retiró con firma
+    // en SCRUM-825 D1). Con el viejo, aunque la pantalla se pintara, el primer clic no encontraba botón.
+    suelto: true, etiqueta: 'B · documento suelto 1280px (control positivo)', rotulo: 'Emitir factura',
     cierre: null, contador: 'facturas', limite: 1,
   },
   {
@@ -340,8 +346,6 @@ if (corridos !== CASOS.length) ciegos.push(`sólo llegué a correr ${corridos} d
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «no duplica»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  console.log('\nEXIT=' + SALIDA_NO_SUPE_MEDIR);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 EN ${hallazgos.length} DE ${CASOS.length} CASOS EL NÚMERO DE DOCUMENTOS NO ES EL QUE TIENE QUE SER:\n`);
@@ -349,8 +353,14 @@ if (hallazgos.length) {
     console.error(`     [${h.etiqueta}]`);
     for (const x of h.mal) console.error('       · ' + x);
   }
-  console.log('\nEXIT=' + SALIDA_HALLAZGO);
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  console.log('\nEXIT=' + veredictoFinal.codigo);
+  process.exit(veredictoFinal.codigo);
 }
 console.log(`\n  ✔ en los ${CASOS.length} casos: se crea EXACTAMENTE el documento que toca —uno si no ha cambiado nada, otro si ha cambiado— y el profesional sigue llegando al suyo.\n`);
 console.log('EXIT=0');

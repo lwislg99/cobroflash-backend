@@ -1,0 +1,4 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+const { seqDeLaSerieF } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+test('trivial con emisor importado', () => { assert.equal(typeof seqDeLaSerieF, 'function'); });
