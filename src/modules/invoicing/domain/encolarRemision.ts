@@ -24,7 +24,7 @@ const TIPO_OPERACION_ALTA = 'Alta';
 // SCRUM-1333 · Primera clave del cerrojo consultivo del encolado; la segunda es el id de la
 // FACTURA. Es por factura y no por comercio a propósito: sólo tienen que esperarse dos encolados
 // de la misma, y así no se pone a la cola de la reserva de número (1749) ni del sellado (1748).
-export const ENCOLADO_LOCK_NS = 1750;
+const ENCOLADO_LOCK_NS = 1750;
 
 export type ResultadoEncolado =
   | { encolado: true }

@@ -156,3 +156,10 @@ escrito, no una medición. Lo que diga CI va en el comentario de entrega de Jira
   llega al log; y CI no se traga los avisos: el literal de un `console.warn` de `src/`
   («Credenciales no configuradas, mensaje omitido») sale 2 veces en ese mismo log.
 - El test de Postgres entra sin haberlo visto correr ni caer (arriba).
+- Exporté `ENCOLADO_LOCK_NS` sólo para que lo importara el test de Postgres. Lo cazó
+  `tests/scrum411-exports-inalcanzables` en el barrido dirigido (2 rojos: el export huérfano y la
+  suma del censo, 236 contra 237). Se le quitó el `export` y el test lleva la clave escrita, como
+  el banco lleva la de la serie. El primer barrido, entero: 360 ficheros, 3.235 tests, 3 rojos — esos
+  dos y `tests/scrum1266b-aviso-no-salia-en-lo-dictado` (un caso de 15), que suelto pasa 15 de 15
+  dos veces y no toca nada de este cambio; duerme 15 ms a propósito, así que la hipótesis es la
+  carga de la máquina, sin demostrar.

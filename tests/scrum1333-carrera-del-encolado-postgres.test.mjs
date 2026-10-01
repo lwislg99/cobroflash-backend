@@ -30,15 +30,18 @@ if (URL_BANCO) {
 const ENABLED = URL_BANCO !== '';
 
 const NIF = 'B12345678';
+// La primera clave del cerrojo del encolado, la de `src/modules/invoicing/domain/encolarRemision.ts`.
+// Va escrita aquí y no importada: allí no se exporta (nadie de `src/` la usa fuera de su fichero). Si
+// allí cambia, el tercer caso cae diciendo que el encolado no espera a ESTE cerrojo.
+const ENCOLADO_LOCK_NS = 1750;
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function cargar() {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
   const { sellarTrasEmision } = await import('../dist/modules/invoicing/domain/selladoEstado.js');
-  const { encolarAltaTrasSellado, ENCOLADO_LOCK_NS } = await import('../dist/modules/invoicing/domain/encolarRemision.js');
-  assert.equal(typeof ENCOLADO_LOCK_NS, 'number', '🔴 CIEGO: no encuentro la clave del cerrojo del encolado');
-  return { prisma, applyVeriFactu, sellarTrasEmision, encolarAltaTrasSellado, ENCOLADO_LOCK_NS };
+  const { encolarAltaTrasSellado } = await import('../dist/modules/invoicing/domain/encolarRemision.js');
+  return { prisma, applyVeriFactu, sellarTrasEmision, encolarAltaTrasSellado };
 }
 
 /** Una factura DECLARABLE (cliente con NIF, línea al 21 %), sin sellar. */
@@ -120,7 +123,7 @@ test('SCRUM-1333 · POSTGRES · 🔴 el encolado ESPERA al cerrojo de su factura
     // Sin carrera y sin ventanas: otro tiene el cerrojo de la factura, y se mira en `pg_locks` que
     // el encolado está ESPERÁNDOLO. Mientras espera no ha escrito nada. Entonces el titular deja
     // su fila y suelta; el encolado entra, cuenta, la ve, y no escribe otra.
-    const { prisma, applyVeriFactu, encolarAltaTrasSellado, ENCOLADO_LOCK_NS } = await cargar();
+    const { prisma, applyVeriFactu, encolarAltaTrasSellado } = await cargar();
     await withMerchant(prisma, { name: 'QA 1333 c', taxId: NIF, email: `qa-1333-c-${Date.now()}@test.local` }, async (merchant) => {
       const inv = await facturaSelladaSinEncolar(prisma, applyVeriFactu, merchant, 'C');
 
