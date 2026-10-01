@@ -107,7 +107,23 @@ que lo fija por su nombre.
 
 ## Medido
 
-MEDIDO_PENDIENTE
+Sobre la rama con `main` `eb3d3b367e62e95ca86c217a0a39a32764200075` mezclado dentro (sin
+conflictos), con `prisma generate` y build en 0:
+
+- `tests/scrum1326-…`: 16 de 16. `tests/scrum1322-…`: 11 de 11.
+- Tanda dirigida: 213 ficheros de 1.159 (los que nombran el webhook, el módulo, la microcopy, los
+  envíos de WhatsApp y `docs/master`, más los guards de suite), 1.960 tests, 1.945 pasan, 15
+  saltados, 0 caen. Antes de terminar habían caído dos, los dos míos: `scrum854` (faltaba este
+  registro) y `scrum921c` (ver «Errores míos»).
+- `guards:entrada`: 12 guards, 122 tests, verde.
+- Mutaciones (`docs/master/evidencias/scrum1326/mutar.mjs`, resultado en `mutaciones.json`): base
+  16 de 16 antes y después; 20 corridas de 20, **las 20 caen**, y `src/` queda limpio al terminar.
+  Entre ellas: «vale» vuelve a aceptar; `va` vuelve a aceptar; `okay` acepta mientras `ok`
+  pregunta; `sale` pasa a preguntar; una flexión deja de aceptar; todo pregunta, también «Acepto»;
+  la pregunta deja una marca en el presupuesto; la pregunta apunta que preguntó en otra tabla; una
+  palabra distinta en el texto; sin «Entendido»; sin negritas; avisa también al profesional; sin
+  quitar las tildes. Corrieron antes de mezclar `main`.
+- La tanda completa y lo que diga CI van en el comentario de entrega del ticket, no aquí.
 
 **Sin medir, dicho:** el texto en un WhatsApp de verdad (aquí sale por un doble: los asteriscos y
 el emoji se comprueban como caracteres, no como se pintan en el teléfono); y si
