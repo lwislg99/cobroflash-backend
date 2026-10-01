@@ -191,8 +191,52 @@ operario Inicio, Productos, Plantillas y el editor.
 - En Plantillas, el texto de la lista vacía le dice al operario que pulse «Guardar como plantilla»,
   que ya no tiene. Cambiarlo es texto nuevo (regla 39).
 
+## Lo que cazó la tanda completa (J4d, relevo de J4c)
+
+**Medido contra:** `origin/main` = `07571bceaf41dd21b9563601d39922238873b183` · 2026-10-01T06:45:28Z
+
+1-oct-2026 · **J4d**. [Escrito por J4d. J4c entregó la rama construida y sin la tanda completa; el
+turno de la suite no era suyo todavía.]
+
+A9: comprobación → `tests/scrum960-nif-del-proveedor.test.mjs`
+
+La primera tanda completa sobre la rama (1.157 ficheros · 9.560 tests) salió con **9 rojos en 3
+ficheros**, los tres consecuencia de este cambio y ninguno visible en los tests del ticket:
+
+| Fichero | Casos | Por qué caía | Qué se hizo |
+|---|---|---|---|
+| `tests/scrum960-nif-del-proveedor.test.mjs` | 7 | Su arnés llama al router real de proveedores con un `req` **sin rol**; desde el cierre, `403`. | El arnés lleva `userRole: 'admin'`, con el motivo escrito dentro. **Ninguna aserción cambia.** |
+| `tests/scrum801-el-respaldo-de-la-n.test.mjs` | 1 | `case 'providers'` de `app.js` pintaba Inicio **dentro** del `case` para el operario; el censo veía dos vistas donde exige una. El censo no mentía. | **Se arregló el código, no el guard:** el `case` redirige con `return renderView('home', options)`, la forma que ya usa `case 'operarios'`. |
+| `tests/scrum601-copy-del-documento-vs-flag.test.mjs` | 1 | Sus dos controles están anclados **por número de línea**, y este ticket mete líneas por encima de los dos. | Se re-miden: `homeView.js` 864 → 885, `app.js` 370 → 386, cada uno con la orden que lo vuelve a medir. |
+
+Tocar los dos tests ajenos lo autorizó el orquestador (`cobroflash-backend-5b`) por el canal, con la
+condición de dejar el motivo dentro de cada fichero. El segundo número de `scrum601` (370 → 386) no
+estaba en la pregunta que se le hizo: el primer aserto caído lo tapaba. Es el mismo re-anclaje, en el
+mismo control, y se dice aquí.
+
+**El cambio de `app.js` tiene un efecto, y es éste:** para el operario que teclea `#providers`,
+`appState.view` queda en `home` (antes se quedaba en `providers` con Inicio pintado). Re-medido en
+Edge con la sonda del banco: operario → vista `home`, título «Inicio»; admin → vista `providers`,
+título «Proveedores», igual que en `main`. `case 'reports'` se queda como estaba.
+
+🔴 **Lo que NO se arregla aquí y queda dicho:** el control positivo de `scrum601` está anclado por
+**posición**. Es su tercer re-anclaje en `homeView.js`/`invoicesView.js` y el quinto en `app.js`: se
+rompe cada vez que alguien edita por encima, y quien lo rompe no ha tocado nada de lo que mide.
+Debería anclarse por **contenido**. Es un guard de otro ticket; lo recoge el orquestador.
+
+**Cuántos arneses más llaman a un router de sesión sin rol** (censo por texto sobre `origin/main`
+`5de9464f6064d9caaa6408cfb88615f7ce461c3b`, no por AST): 69 ficheros de `tests/` importan un router
+de `dist/modules`; 27 nombran `userRole`; de los 42 que no, 32 lo ejecutan y 22 de ésos le pasan
+`merchantId` — arneses con forma de sesión y sin rol. Dos de los 22 son de rutas públicas (leído por
+el nombre del módulo), así que quedan **20, contando `scrum960`**. Control: `scrum960` sale en la
+lista. No ve los arneses que montan `dist/app.js` entero. Sólo se arregla el de este ticket.
+
 ## Mis errores
 
+- **(J4d)** En un mensaje al orquestador conté «7 rutas de escritura y 5 GET»: son 6 y 6. Lo
+  corregí por el canal antes de que nadie midiera con ello.
+- **(J4d)** Puse la hora **estimada** en tres mensajes al orquestador en vez de leerla de GitHub
+  (A14), el mismo error que J4c confiesa abajo y que yo había leído en su traspaso.
 - La primera versión del test de Productos buscaba los campos con un localizador que **no encontraba
   ninguno**: «al operario no se le pinta Coste» habría salido verde con el campo delante. Lo cazó el
   control de admin del mismo test, que usa el mismo localizador y exige encontrar los tres.
