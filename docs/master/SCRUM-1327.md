@@ -194,7 +194,7 @@ Lo primero y lo segundo los cazó un instrumento que dice su población, no una 
 
 ## Ⓘ Verificación
 
-Sobre `origin/main` = `08f37ae000397facc48c286fa354ffa7ce202039`, mergeado en la rama (1-oct-2026 ~06:40Z).
+Sobre `origin/main` = `08f37ae000397facc48c286fa354ffa7ce202039`, mergeado en la rama el 1-oct-2026 entre las 06:16Z y las 06:32Z (hora de GitHub de antes y de después; la del merge no la medí, y en la primera versión de este registro puse «~06:40Z» a ojo: era una hora que aún no había llegado).
 Entre el punto de rama y ese merge, `main` no cambió ningún `scripts/guard-*.mjs` ni ningún fichero de
 los que toca este PR; la población del censo sigue siendo 40.
 
