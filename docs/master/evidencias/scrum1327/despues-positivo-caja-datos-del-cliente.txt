@@ -27,7 +27,7 @@ textos DERIVADOS de quotesView.js:
    → 🔴 no cabe
 
 ════ VEREDICTO ════
-⟦arranque⟧ 2.8 s COMPLETA · proceso+ws 2.8 s · primera-página 0.0 s
+⟦arranque⟧ 0.9 s COMPLETA · proceso+ws 0.9 s · primera-página 0.0 s
 
 🔴 2 hallazgo(s):
    con-nombre @390px: algo desborda o se sale del viewport

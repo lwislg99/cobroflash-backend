@@ -12,7 +12,7 @@
       error al emitir      "No hemos podido emitir la factura. Inténtalo otra vez."      54 car · 324.0×62.5 px · 3 línea(s)
 
 ════ VEREDICTO ════
-⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
 
 🔴 NO SUPE MIRAR — de esto no se da ningún número (2):
    listado (factura @929px): el sidebar computa 0 px, el CSS no se aplicó como en el producto.

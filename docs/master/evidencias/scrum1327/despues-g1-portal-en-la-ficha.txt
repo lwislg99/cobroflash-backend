@@ -10,7 +10,7 @@ EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado
 
   peticiones al abrir (las dos vistas):
     CON token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
-⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
 
 🔴 NO SUPE MEDIR — de esto no se da ningún veredicto:
    · SIN token: la FICHA 360 no ha pintado (sin `#btn-edit-360`). Sin ancla, «no hay botón» no dice nada.

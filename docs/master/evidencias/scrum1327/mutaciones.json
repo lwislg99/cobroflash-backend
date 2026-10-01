@@ -3,7 +3,7 @@
     "total": 22,
     "caen": []
   },
-  "resumen": "POBLACIÓN=21 mutaciones · CAZADA=21 · MUDA=0 · OTRA=0 · CIEGA=0",
+  "resumen": "POBLACIÓN=23 mutaciones · CAZADA=23 · MUDA=0 · OTRA=0 · CIEGA=0",
   "filas": [
     {
       "id": "R1",
@@ -36,6 +36,28 @@
       "veredicto": "CAZADA",
       "caidos": [
         "SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin cuentas lanza"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "R4",
+      "que": "un caso que no devuelve una LISTA pasa (una frase se esparce letra a letra)",
+      "fichero": "scripts/_hallazgos-y-ciegos.mjs",
+      "cae": "SUELO del recorrido",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin cuentas lanza"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "S4",
+      "que": "un guard deja de decir sus dos cuentas en verde",
+      "fichero": "scripts/guard-vias-de-cobro.mjs",
+      "cae": "los seis salen SÓLO por `veredictoDe`",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`"
       ],
       "motivo": null
     },

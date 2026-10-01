@@ -9,7 +9,7 @@
   🔴 tramos · densidad 1 · lienzo interno 304×150 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
   🔴 tramos · densidad 3 · lienzo interno 912×450 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
   ────────────────────────────────────────────────────────────────────────────────────────────────────
-⟦arranque⟧ 1.8 s COMPLETA · proceso+ws 1.8 s · primera-página 0.0 s
+⟦arranque⟧ 1.2 s COMPLETA · proceso+ws 1.2 s · primera-página 0.0 s
 
   🔴 NO SUPE MIRAR — esto NO es «la firma de 3 opciones funciona»:
 

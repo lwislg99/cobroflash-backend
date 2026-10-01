@@ -17,7 +17,7 @@ textos DERIVADOS de quotesView.js:
    → 🔴 no cabe
 
 ════ VEREDICTO ════
-⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
 
 🔴 NO SUPE MIRAR — de esto no se da ningún número (2):
    con-nombre @929px: el sidebar computa 0 px: el CSS no se aplicó como en el producto.

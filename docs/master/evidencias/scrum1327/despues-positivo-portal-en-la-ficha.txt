@@ -12,7 +12,7 @@ EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado
   peticiones al abrir (las dos vistas):
     SIN token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
     CON token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
-⟦arranque⟧ 1.9 s COMPLETA · proceso+ws 1.9 s · primera-página 0.0 s
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
 
 🔴 HALLAZGOS:
   · con token alguna de las dos ha dejado de pintarlo
