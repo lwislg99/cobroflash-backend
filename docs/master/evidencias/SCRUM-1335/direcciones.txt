@@ -1,0 +1,8 @@
+DIRECCION DEL «ausente» en los 7 jobs rojos del 1-oct (leido del log de cada job; 592 es la censada pass/fail)
+110185005492:      22 Pacific/Kiritimati → pass · Pacific/Midway → ausente;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110186137556:       6 Pacific/Kiritimati → ausente · Pacific/Midway → pass;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110186236745:       9 Pacific/Kiritimati → pass · Pacific/Midway → ausente;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110195238163:      10 Pacific/Kiritimati → pass · Pacific/Midway → ausente;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110195873440:       1 Pacific/Kiritimati → ausente · Pacific/Midway → pass;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110196119194:      19 Pacific/Kiritimati → pass · Pacific/Midway → ausente;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;
+110213649929:      11 Pacific/Kiritimati → ausente · Pacific/Midway → pass;      1 Pacific/Kiritimati → pass · Pacific/Midway → fail;

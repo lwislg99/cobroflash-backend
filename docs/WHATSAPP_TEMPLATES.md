@@ -330,24 +330,24 @@ Enlace «para firmar» a distancia: el cliente firma el albarán desde su móvil
 
 ## Cómo probar (cuando Meta las apruebe)
 
-Script de prueba manual: `scripts/wa-test.mjs`. Envía UNA plantilla a UN número de
+Script de prueba manual: `scripts/wa-prueba.mjs`. Envía UNA plantilla a UN número de
 test con la misma estructura que la app. No toca la base de datos.
 
 ```bash
 # Ver el payload sin enviar:
-node scripts/wa-test.mjs quote_decision 34600111222 --dry
+node scripts/wa-prueba.mjs quote_decision 34600111222 --dry
 
 # Enviar de verdad (necesita credenciales WA en .env o inline):
 WHATSAPP_PHONE_NUMBER_ID=yyy WHATSAPP_ACCESS_TOKEN=xxx \
-  node scripts/wa-test.mjs quote_decision 34600111222
-node scripts/wa-test.mjs payment_request 34600111222 --num=F-2025-014 --id=42
-node scripts/wa-test.mjs payment_confirmation 34600111222
+  node scripts/wa-prueba.mjs quote_decision 34600111222
+node scripts/wa-prueba.mjs payment_request 34600111222 --num=F-2025-014 --id=42
+node scripts/wa-prueba.mjs payment_confirmation 34600111222
 ```
 
 ```bash
 # Las nuevas (pendientes de alta en Meta):
-node scripts/wa-test.mjs payment_confirmation_invoice 34600111222 --num=2026-CF-001 --id=42 --dry
-node scripts/wa-test.mjs merchant_alert 34600111222 --name="María García" --action="te ha pagado" --detail="450,00 € · Factura F-2026-014" --dry
+node scripts/wa-prueba.mjs payment_confirmation_invoice 34600111222 --num=2026-CF-001 --id=42 --dry
+node scripts/wa-prueba.mjs merchant_alert 34600111222 --name="María García" --action="te ha pagado" --detail="450,00 € · Factura F-2026-014" --dry
 ```
 
 Plantillas válidas: `quote_decision`, `payment_request`, `payment_confirmation`,

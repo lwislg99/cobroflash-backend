@@ -65,7 +65,7 @@ function reciboBueno(extra = {}) {
     ficheros: 337,
     hijos: todosVerdes(),
     autotest: false,
-    runner: 'scripts/test-staging-gated.mjs',
+    runner: 'scripts/staging-gated.mjs',
     ...extra,
   };
 }
@@ -370,7 +370,7 @@ test('SCRUM-161 · el recibo NO se commitea', () => {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-161 · el recibo lo escribe el runner, con los exit REALES de sus hijos', () => {
-  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
+  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'staging-gated.mjs'));
   assert.match(fuente, /writeFileSync\(RUTA_RECIBO/, 'el runner tiene que escribirlo');
   assert.match(fuente, /hijos: desgloseHijos/, 'y con el desglose real por hijo (SCRUM-197), no con ceros optimistas');
   // SCRUM-199: las claves ya NO son literales en el runner — se DERIVAN de HIJOS_SPEC. Se comprueba
@@ -385,7 +385,7 @@ test('SCRUM-161 · el recibo se escribe DESPUÉS de los guards de «no pude comp
   // Turno ajeno (5), preflight sin veredicto (2), números que no cuadran (3) y árbol movido (4)
   // son todos casos en los que los números NO son evidencia de nada. Un recibo escrito antes de
   // esas puertas diría más de lo que se sabe — y encima con pinta de bueno.
-  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
+  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'staging-gated.mjs'));
   const iArbol = fuente.indexOf('CODIGO_SALIDA_ARBOL_MOVIDO)');
   const iRecibo = fuente.indexOf('writeFileSync(RUTA_RECIBO');
   assert.ok(iArbol > 0 && iRecibo > 0);

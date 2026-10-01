@@ -1,0 +1,4 @@
+
+🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,
+  el PR sale rojo y cuesta una vuelta entera.
+  ⟦veredicto⟧ 6 hallazgos · 0 ciegos → salida 1 (hallazgo)

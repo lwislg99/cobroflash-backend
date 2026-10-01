@@ -454,3 +454,100 @@ con firma), no texto legal: aquí solo queda anotado.
 - Google Fonts: ausencia comprobada en 4 URLs servidas, no en las 16 superficies (eso lo midió 1234).
 - El resto de la política (§1–§4 y §6–§10) no se ha re-auditado, salvo el hallazgo de la ofuscación
   de correos del §1.
+
+---
+
+# APÉNDICE · 30-sep-2026 · L6 aplicado: la fecha de la política
+
+**Medido contra:** `origin/main` = `b6243e1c9f22e23b5a48332acc30ef533e55589f` · 2026-09-30T21:56:55+01:00
+(orquestador del equipo de Javier, `cobroflash-backend-47`)
+
+A9: comprobación → `tests/scrum1196-fecha-de-la-politica.test.mjs`
+
+## Qué se aplica, y por qué lo aplico yo
+
+**L6, firmado el 29-sep** (SCRUM-1196, comentario 17453): la cabecera pasa de «Última actualización:
+23 de julio de 2026» a **«30 de septiembre de 2026»**, el día en que se publicó el cambio.
+
+El literal firmado dice `Última actualización: <día> de <mes> de 2026` y añade, con estas palabras:
+«el día en que J3 lo publique; **no se inventa aquí**». Así que la forma está firmada y el día lo
+pone quien publica. No hay texto nuevo.
+
+🔴 **Esto es un defecto MÍO, y lo arreglo por eso.** El 30-sep publiqué SCRUM-1154 —la política pasó a
+nombrar a Google y dejó de nombrar a Anthropic— **y dejé la cabecera con la fecha de julio**. No es
+cosmético: el **§9 de la propia página** promete, literalmente, «Publicaremos cualquier cambio en
+esta misma página, **indicando la fecha de la última actualización**».
+
+Durante un día, un documento legal publicado ha estado incumpliendo una promesa suya.
+
+**Lo cazó J4 censando**, no yo revisando lo que acababa de publicar. Y el literal llevaba firmado
+desde el día anterior: no faltaba una decisión, faltaba aplicarla.
+
+## El guard, y por qué no lleva la fecha escrita dentro
+
+Un guard que dijera «la fecha es el 30 de septiembre» **caducaría en cuanto alguien vuelva a tocar la
+página**: pasaría a exigir una fecha vieja, y para arreglarlo habría que editar el guard. Eso lo
+convierte en una nota.
+
+El invariante de verdad es otro: **la fecha que la página DICE no puede ser anterior al último cambio
+que la página TUVO**. Eso se le pregunta a `git`, que es quien lo sabe. Así el guard **no caduca**, y
+el día que alguien cambie el §5 sin tocar la cabecera, cae solo.
+
+| Caso | Qué sujeta |
+|---|---|
+| **SUELO** | la página dice su fecha en la forma firmada, y el §9 sigue prometiendo indicarla |
+| **EL QUE DECIDE** | la fecha dicha ≥ el último cambio según `git`. Y si `git` no puede contestar, **se declara CIEGO**: no es un aprobado |
+| **CONTROL** | el lector de fechas lee dos fechas distintas de verdad, y devuelve `null` con un mes que no existe y con un texto sin fecha |
+
+**Interrogado, y las dos mutaciones caen donde deben:** con la fecha de julio cae «EL QUE DECIDE»;
+con un mes inventado caen el SUELO y el que decide. Post-condición de contenido: la página quedó con
+el mismo sha256.
+
+⚠️ **Lo que este guard NO distingue, dicho a propósito:** un cambio de contenido de uno de formato. Si
+alguien reindenta el fichero, exigirá mover la fecha igual. Para una página legal me parece el lado
+bueno del error, pero que no lo descubra nadie creyendo que es un fallo.
+
+## Lo que este apéndice NO aplica de SCRUM-1196
+
+- **L3 (Cloudflare)**, firmado en el mismo comentario 17453 y **sin publicar**: `privacidad.html`
+  sigue con Cloudflare = 0. Es de J3 y sigue pendiente.
+- **L1/L2**: superados por el texto de SCRUM-1154, ya publicado.
+- **L4 (NEL)**: espera al panel del fundador. **L5**: no se publica.
+
+## Apéndice · L3 (Cloudflare) aplicado · J5, 30-sep-2026
+
+**Medido contra:** `origin/main` = `d65cfaa9a09599656a3a97bfbb26f6ce82ad33e5` · 2026-09-30T21:14:01Z
+
+Sesión J5, por encargo del orquestador del equipo de Javier, después del #2009 (L6), que era el
+mismo fichero.
+
+**Qué se aplica.** Solo **L3**, firmado por el fundador en el comentario 17453 («¿Firmas L1, L3 y
+L6?» → «Sí firmo todas»). Va en `public/privacidad.html`, §5, **justo después de la fila de Railway**.
+El texto es el de la tabla L1–L6 de este mismo expediente: comparado por programa, la página lo
+contiene **una vez, carácter a carácter**.
+
+**Registro de aprobación:** `docs/microcopy/2026-09-29-SCRUM-1196-encargado-cloudflare.md` (firma en
+persona, no por delegación: texto legal, regla 39). Es de donde lo lee el guard: no hay una copia del
+literal dentro del test.
+
+**Guard:** `tests/scrum1196-cloudflare-encargado.test.mjs`. SUELO (el §5 se acota y tiene la fila de
+Railway), EL QUE DECIDE (el literal firmado está en el §5 y es la fila que sigue a Railway) y los
+CONTROLES dentro del propio test: sin la fila, con una coma cambiada y con la fila movida al final,
+el guard lo distingue. **Interrogado sobre el fichero real:** borrando la fila cae; con el punto final
+cambiado cae; restaurado y comprobado por sha256.
+
+**La fecha (L6).** El #2009 dejó la cabecera en «30 de septiembre de 2026», y este cambio es del
+mismo día: `scrum1196-fecha-de-la-politica` sigue verde sin moverla. Si se mergea después de las
+00:00 de Madrid, la publicación real sería del 1-oct y la cabecera tendría que decirlo.
+
+**Lo que NO entra:** L4 (NEL), que espera al panel del fundador; L5, que no se firmó; L1/L2,
+superados por SCRUM-1154. Tampoco la reescritura del HTML que hace Cloudflare (ofusca los
+`mailto:`): no está en el literal firmado. Sigue sin determinar a qué buzón reenvía Cloudflare
+`hola@yaqu.app`, que es otro encargado que L3 no nombra.
+
+**Guards de la zona, en verde:** 1154 (fila de Google, sin Anthropic), 1234, 525d, 514, 709, 715, 726,
+329, y los de suite 237, 976, 391 y 267: 88 de 88.
+
+**Rojo de CI en la primera versión, mío:** `scrum553-etiquetas-pegadas` cayó porque el guard buscaba la siguiente fila con `'<li>'`, con el `>` pegado (un `<li class=…>` no lo habría visto). Arreglado el código, no el guard: la fila se busca con hueco para atributos. En local había corrido una muestra de guards y no la tanda entera, que es donde estaba 553.
+
+A9: comprobación → `tests/scrum1196-cloudflare-encargado.test.mjs`

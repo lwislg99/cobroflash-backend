@@ -245,7 +245,7 @@ router.post('/create', async (req, res) => {
         sendWhatsAppText({
           to: adminPhone,
           merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote, merchant)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
+          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote, merchant)} por ${formatMoneyEs(totalNum, quote.currency) /* SCRUM-1288: «1.234,50 €», no «1234.50 EUR» */} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }
     }

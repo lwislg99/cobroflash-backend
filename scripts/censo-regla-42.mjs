@@ -34,16 +34,60 @@ export const DENTRO = 'DENTRO';
 export const FUERA = 'FUERA';
 export const NO_DECIDIBLE = 'NO_DECIDIBLE';
 
-/** Ramas remotas vivas: nombre → sha. Una sola lectura, no una por ticket (SCRUM-753). */
-export function ramasRemotas() {
-  const salida = git(['ls-remote', '--heads', 'origin']);
-  if (salida === null) return null;
+// ── 🔴 SCRUM-1331 · «NO HAY RED» NO ES «NO PUDE LEER EL ÁRBOL» ────────────────────────────────
+//
+// `ls-remote` es la ÚNICA orden de este censo que sale de la máquina. Hasta SCRUM-1331 su fallo
+// se tragaba la salida de error y devolvía el mismo `null` que un árbol ilegible, así que quien
+// leía «CIEGO» no podía saber si el defecto era del repositorio o del runner. Medido el 1-oct-2026
+// en el CI del PR #2046: `Could not resolve host: github.com`, y fue el único rojo de 9.404 tests.
+//
+// Las tres cegueras se accionan distinto, y por eso llevan nombre:
+//   · SIN_RED   → el runner no llegó al remoto. No es del cambio que se prueba: se relanza.
+//   · SIN_REFS  → `ls-remote` falló por otra cosa (no hay remoto, no es un repositorio…).
+//   · SIN_ARBOL → no se pudo leer `origin/main` en local.
+export const SIN_RED = 'SIN_RED';
+export const SIN_REFS = 'SIN_REFS';
+export const SIN_ARBOL = 'SIN_ARBOL';
+
+/**
+ * Lo que git escribe cuando NO LLEGA al remoto. Es una lista de frases de git/curl, no una
+ * adivinanza: lo que no case aquí sale `SIN_REFS` con su texto, nunca `SIN_RED`.
+ *
+ * ⚠️ `unable to access` NO está, a propósito: git lo antepone a CUALQUIER fallo de https, también
+ * a un 403 (`The requested URL returned error: 403`), que es de permisos y no de red. Lo que
+ * decide es el motivo que va detrás.
+ */
+const HUELLA_DE_RED = /Could not resolve host|Failed to connect to|Connection timed out|Connection refused|Network is unreachable|Temporary failure in name resolution/i;
+
+/** ¿Este texto de error de git es de RED? Exportado para que el test lo ejercite sin red. */
+export function esFalloDeRed(texto) {
+  return HUELLA_DE_RED.test(String(texto ?? ''));
+}
+
+/**
+ * Las ramas remotas CON el motivo si no se pudieron leer:
+ * `{ ramas: Map, ciego: null }` o `{ ramas: null, ciego: { que: SIN_RED | SIN_REFS, detalle } }`.
+ */
+export function ramasRemotasConMotivo() {
+  let salida;
+  try {
+    salida = execFileSync('git', ['ls-remote', '--heads', 'origin'],
+      { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    const detalle = String(e?.stderr || e?.message || '').trim().split('\n').filter(Boolean).pop() ?? '';
+    return { ramas: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : SIN_REFS, detalle: detalle.slice(0, 300) } };
+  }
   const m = new Map();
   for (const l of salida.split('\n')) {
     const [sha, ref] = l.split('\t');
     if (ref?.startsWith('refs/heads/')) m.set(ref.slice('refs/heads/'.length), sha);
   }
-  return m;
+  return { ramas: m, ciego: null };
+}
+
+/** Ramas remotas vivas: nombre → sha. Una sola lectura, no una por ticket (SCRUM-753). */
+export function ramasRemotas() {
+  return ramasRemotasConMotivo().ramas;
 }
 
 /** Todos los ficheros de `origin/main`, una sola vez. */
@@ -126,11 +170,29 @@ export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrad
   return { ...base, motivo: 'sin rama, sin entrada, sin ficheros propios y sin commits que lo nombren: el censo no ve NADA, que no es lo mismo que no haber nada' };
 }
 
-/** El censo entero. `tickets` son números; devuelve población, filas y reparto. */
+/**
+ * El censo entero, o `null` si no se pudo medir. Para saber POR QUÉ no se pudo, `censarConMotivo`.
+ */
 export function censar(tickets) {
-  const ramas = ramasRemotas();
+  return censarConMotivo(tickets).censo;
+}
+
+/**
+ * SCRUM-1331 · el censo y, si salió ciego, el motivo: `{ censo, ciego }`, y siempre uno de los dos
+ * es `null`. `ciego.que` es `SIN_RED`, `SIN_REFS` o `SIN_ARBOL`; `ciego.detalle`, lo que dijo git.
+ */
+export function censarConMotivo(tickets) {
+  const { ramas, ciego } = ramasRemotasConMotivo();
+  if (!ramas) return { censo: null, ciego };       // 🔴 CIEGO: sin refs no se mide
   const ficheros = arbolDeMain();
-  if (!ramas || !ficheros) return null;            // 🔴 CIEGO: sin refs o sin árbol no se mide
+  if (!ficheros) {                                 // 🔴 CIEGO: sin árbol tampoco
+    return { censo: null, ciego: { que: SIN_ARBOL, detalle: 'el `ls-tree` de la punta remota no ha contestado' } };
+  }
+  return { censo: censoSobre(tickets, ramas, ficheros), ciego: null };
+}
+
+/** El censo, ya con las refs y el árbol leídos. `tickets` son números. */
+function censoSobre(tickets, ramas, ficheros) {
 
   // 🔴 LA CONVENCIÓN SE DERIVA DEL ÁRBOL, no se escribe a mano. «La primera densa» = el número más
   // bajo a partir del cual hay al menos tres entradas seguidas dentro de un margen de 100: así una

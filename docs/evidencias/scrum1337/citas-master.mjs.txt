@@ -1,0 +1,38 @@
+// Censo: quién cita docs/YAQU_MASTER.md por número de línea, y cuántas citas caen DESPUÉS de la
+// línea de inserción (668). Sólo lee. Uso: node citas-master.mjs <raiz> <lineaDeCorte>
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+
+const raiz = process.argv[2];
+const corte = Number(process.argv[3]);
+const ficheros = execFileSync('git', ['-C', raiz, 'ls-files'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  .split('\n').filter(Boolean);
+const RE = /YAQU_MASTER\.md:(\d+)(?:-(\d+))?/g;
+let leidos = 0, ilegibles = 0;
+const porZona = new Map();
+const despues = [];
+let total = 0;
+for (const f of ficheros) {
+  if (!/\.(md|mjs|js|ts|json|yml|txt)$/.test(f)) continue;
+  let t;
+  try { t = fs.readFileSync(path.join(raiz, f), 'utf8'); leidos++; } catch { ilegibles++; continue; }
+  const lineas = t.split(/\r?\n/);
+  lineas.forEach((l, i) => {
+    for (const m of l.matchAll(RE)) {
+      total++;
+      const n = Number(m[1]);
+      const zona = f.split('/').slice(0, 2).join('/');
+      if (n > corte) {
+        despues.push(`${f}:${i + 1} -> :${m[1]}${m[2] ? '-' + m[2] : ''}`);
+        porZona.set(zona, (porZona.get(zona) || 0) + 1);
+      }
+    }
+  });
+}
+console.log(`POBLACION: ${ficheros.length} ficheros seguidos, ${leidos} leidos, ${ilegibles} ilegibles`);
+console.log(`citas por linea al master: ${total} · con linea > ${corte}: ${despues.length}`);
+for (const [z, n] of [...porZona].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(3)}  ${z}`);
+console.log('--- fuera de docs/ (codigo, tests, scripts):');
+for (const d of despues.filter((x) => !x.startsWith('docs/'))) console.log('  ' + d);
+console.log('EXIT=0');

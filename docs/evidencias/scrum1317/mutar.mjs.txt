@@ -1,0 +1,62 @@
+// Mutaciones de FRONT para tests/scrum1317 (no hace falta build: el banco lee public/).
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const RAIZ = process.argv[2];
+const TEST = 'tests/scrum1317-cierre-admin-e-inicio-del-operario.test.mjs';
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR']) delete entorno[k];
+const git = (...a) => spawnSync('git', ['-C', RAIZ, ...a], { encoding: 'utf8' }).stdout.trim();
+
+function correr() {
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', TEST], { cwd: RAIZ, env: entorno, encoding: 'utf8' });
+  const sal = r.stdout || '';
+  const caidos = [...sal.matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1].slice(0, 70));
+  const pasan = (sal.match(/^ok \d+ - /gm) || []).length;
+  return { exit: r.status, pasan, caidos };
+}
+
+const MUTACIONES = [
+  { id: 'M1 el Inicio del operario vuelve a pedir /home', f: 'public/dashboard/js/homeView.js',
+    de: 'apiRequest(veNegocio ? "/admin/metrics/home" : "/admin/metrics/inicio")', a: 'apiRequest("/admin/metrics/home")' },
+  { id: 'M2 no se le quitan los bloques del negocio', f: 'public/dashboard/js/homeView.js',
+    de: '.forEach((bloque) => bloque.remove());', a: '.forEach((bloque) => bloque);' },
+  { id: 'M3 los globos del arranque vuelven a /home', f: 'public/dashboard/js/homeView.js',
+    de: "apiRequest(window.appUserRole === 'admin' ? '/admin/metrics/home' : '/admin/metrics/inicio')", a: "apiRequest('/admin/metrics/home')" },
+  { id: 'M4 el aviso del trimestre vuelve a preguntar a /admin/reports', f: 'public/dashboard/js/homeView.js',
+    de: "  if (window.appUserRole !== 'admin') return;\n\n  const { anio, trimestre }", a: "\n  const { anio, trimestre }" },
+  { id: 'M5 Productos vuelve a pedir proveedores', f: 'public/dashboard/js/productsView.js',
+    de: "window.appUserRole === 'admin' ? listProviders(merchantId) : [],", a: 'listProviders(merchantId),' },
+  { id: 'M6 Productos vuelve a cablear el margen sin mirar', f: 'public/dashboard/js/productsView.js',
+    de: 'if (costI && margenI) cablearMargen(costI, priceI, margenI);', a: 'cablearMargen(costI, priceI, margenI);' },
+  { id: 'M7 Plantillas vuelve a pintar Renombrar y Borrar', f: 'public/dashboard/js/templatesView.js',
+    de: "if (window.appUserRole !== 'admin') {\n        actionsCell.appendChild(actDiv);", a: "if (false) {\n        actionsCell.appendChild(actDiv);" },
+  { id: 'M8 el editor vuelve a pintar Guardar como plantilla', f: 'public/dashboard/js/quotesView.js',
+    de: 'const puedeGuardarPlantilla = window.appUserRole === "admin";', a: 'const puedeGuardarPlantilla = true;' },
+];
+
+console.log(`POBLACION=${MUTACIONES.length} mutaciones · HEAD=${git('rev-parse', 'HEAD')} · arbol limpio=${git('status', '--porcelain') === ''}`);
+const base = correr();
+console.log(`BASE sin mutar: exit=${base.exit} pasan=${base.pasan} caen=${base.caidos.length}`);
+if (base.exit !== 0 || base.pasan === 0) { console.log('CIEGO: la base no esta verde'); process.exit(1); }
+
+let mudas = 0;
+for (const m of MUTACIONES) {
+  const f = path.join(RAIZ, m.f);
+  const antes = fs.readFileSync(f, 'utf8');
+  const n = antes.split(m.de).length - 1;
+  if (n !== 1) { console.log(`${m.id}: CIEGO, el ancla aparece ${n} veces`); mudas++; continue; }
+  fs.writeFileSync(f, antes.replace(m.de, m.a));
+  const numstat = git('diff', '--numstat');
+  const r = correr();
+  git('restore', '--source=HEAD', '--', m.f);
+  const limpio = git('status', '--porcelain') === '';
+  const veredicto = r.caidos.length > 0 ? 'CAE' : 'MUDA';
+  if (veredicto === 'MUDA') mudas++;
+  console.log(`${m.id}\n   aplicada: ${numstat.replace(/\s+/g, ' ')} · ${veredicto} · pasan=${r.pasan} caen=${r.caidos.length} · restaurado=${limpio}\n   ${r.caidos.join('\n   ')}`);
+}
+const fin = correr();
+console.log(`BASE al final: exit=${fin.exit} pasan=${fin.pasan} · mudas=${mudas}`);
+console.log(`EXIT=${mudas === 0 && fin.exit === 0 ? 0 : 1}`);
+process.exit(mudas === 0 && fin.exit === 0 ? 0 : 1);

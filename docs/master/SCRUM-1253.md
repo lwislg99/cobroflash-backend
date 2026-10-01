@@ -274,3 +274,114 @@ añadido allí:** ese fichero lo decide su dueño.
 2. **La primera pasada de la sonda murió.** Le pasé un `URL` al `require` de `createRequire`, que sólo
    acepta cadenas. Salió con código 1 **sin producir la tabla**, así que era un instrumento **CIEGO**,
    no un resultado. Lo arreglé con `fileURLToPath`, la volví a correr y salió con código 0 y la tabla.
+
+---
+
+## Apéndice · re-medición del 1-oct-2026: la LIVA ha cambiado y el veredicto se sostiene
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T00:37:11Z
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: que la fuente siga igual sólo se sabe volviendo a bajarla del BOE, y la tanda de CI no sale a la red; un guard que comparase el sha256 guardado con el guardado no mediría nada.
+
+Sesión J5, con GO del orquestador de Javier (`cobroflash-backend-5b`). **Sólo se añade este apéndice.**
+No se toca nada de lo de arriba, ni `src/`, ni el máster, ni ningún texto de pantalla. No es una
+afirmación fiscal de producto (regla 7).
+
+**Por qué existe.** El 1-oct este ticket se volvió a repartir porque en Jira seguía «por hacer». Estaba
+hecho, en `main` y decidido por el fundador desde el 28-sep (comentario 17441). En vez de rehacerlo,
+repetí el control de las fuentes. **Una de las siete había cambiado dos días después de medirla**, y el
+expediente no tenía forma de decirlo: un veredicto legal con su sha256 se queda viejo en silencio.
+
+### Ⓘ Las siete fuentes, bajadas otra vez
+
+Misma API (`legislacion-consolidada/id/<ID>/texto`), `curl`, 2026-10-01 a las 00:30Z. Las siete
+respondieron 200.
+
+| # | norma | sha256 el 1-oct-2026 | ¿igual que en §Ⓑ? |
+|---|---|---|---|
+| C2 | LIVA | `e2386e75b39d9843e15786f72ec32c94cc781b25b4b7c1aa6623392aa7cb26b7` | 🔴 **NO** (era `371432fc…`) |
+| C3 | RIVA | `a558146bdd95724641edde646cd638840fedcfd2ffb8fa50ecbe85407f024a23` | sí |
+| C4 | ROF | `95d8ff283a96a2a74263fd0bc079cbd00a5c5a418ba66ec046ca2aef4d56f586` | sí |
+| C11 | LGT | `abc3a2730bef3ee18569dacd58c71bf4e51424b2058087c032d805061c72f4c9` | sí |
+| C12 | TRLGDCU | `d87125d5d52fe84c71af7b32496296b3dedf20d8e002cca84294d09a17230265` | sí |
+| C13 | Código Civil | `11bfe708d8cc5839d4c5bce97092c386a9ced055ea839463f754131ffc787750` | sí |
+| C14 | Código de Comercio | `465ece190e3a3c9c9976627de85487c2b4a7681bb6d5ea6f7045aa736ea08c7e` | sí |
+
+Población: 7 fuentes. Iguales **6**, distinta **1**.
+
+### Ⓙ Qué movió la LIVA
+
+El **Real Decreto-ley 26/2026, de 29 de septiembre** (`BOE-A-2026-20266`), publicado el 30-sep-2026 y
+con efectos el **1 de diciembre de 2026**. En el XML de hoy aparecen **2** bloques con una `<version>`
+de esa norma, y son:
+
+- **art. 20**, apartado Uno.23.º, letra e') (arrendamientos de viviendas amuebladas);
+- **art. 91**, apartados Uno.2.2.º, Uno.2.10.º y Dos.1.6.º (tipos reducidos).
+
+La nota al pie del propio BOE lo dice así: «Se modifican, con efectos de 1 de diciembre de 2026, los
+apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por el art. 7.2 a 4 del Real Decreto-ley 26/2026».
+
+### Ⓚ Por qué el veredicto no cambia
+
+Este expediente cita cuatro artículos de la LIVA: **75, 88, 97 y 164**. Ninguno es el 20 ni el 91.
+
+1. **Por la lista de versiones.** La última `<version>` de cada uno sigue siendo la que se citó: art. 75
+   vigente desde 2021-07-01, art. 88 desde 2013-01-01, art. 97 desde 2011-01-01 y art. 164 desde
+   2024-01-01. Ninguno tiene versión de 2026.
+2. **Por el texto.** Volví a sacar de los XML de hoy, con el mismo extractor de SCRUM-1232b, los **17**
+   bloques que guarda `evidencias/SCRUM-1253/extractos.txt` (9 del ROF, 4 de la LIVA, 2 de la LGT, 1 del
+   TRLGDCU y 1 del Código Civil) y los comparé con `diff` contra lo guardado: **0 líneas distintas**.
+   **Control positivo:** con una sola línea quitada de la extracción de hoy, el mismo `diff` sale con
+   código 1. El instrumento ve una diferencia cuando la hay.
+
+**Las citas literales de este expediente siguen siendo texto vigente a 1-oct-2026**, y el veredicto,
+«se puede quitar, con condiciones», se sostiene.
+
+**Y de paso queda mejor probado que la API da el consolidado:** devuelve una modificación publicada el
+día anterior. El control del 28-sep (art. 7.5 del ROF, de 2023) era bueno; éste es más reciente.
+
+### Ⓛ Los límites de esta re-medición, tal cual
+
+1. **«Sólo cambiaron esos dos bloques» lo digo por la lista de versiones, no por un diff byte a byte.**
+   No conservé el XML de la LIVA del 28-sep, sólo su sha256. Lo que sí está comparado byte a byte son
+   los 17 bloques citados, contra los extractos guardados.
+2. **El extractor del repo corta por vigencia en una fecha fija** (el 28-sep-2026). Para esta comparación
+   es justo lo que hace falta, porque la versión nueva del art. 91 no rige hasta diciembre. Quien lo
+   reuse después del 1-dic-2026 tiene que mover esa fecha, o seguirá leyendo la redacción anterior.
+3. **Los XML de hoy no están en el repo.** Pesan 14 MB. Están en la máquina de Javier, en la carpeta
+   `yaqu-censos`, subcarpeta `scrum1253`, con sus sha256 al lado. Otro equipo no los ve: para
+   comprobarlo, se vuelven a bajar y se compara el sha256 de la tabla.
+4. **Todo lo que no es cita literal en este expediente es una inferencia de una IA** (la sesión J5), y
+   ningún asesor ha contestado todavía. Las tres que más pesan, para que nadie las tome por frase de la
+   norma: (a) «quitar el justificante no abre ningún hueco» se deduce de ROF 2.1 y LIVA 88.Dos, no lo
+   dice un artículo; (b) «para un consumidor, el momento es el cobro» es una lectura, ya marcada
+   → ASESOR en §Ⓓ; (c) «no hay deber civil general de dar recibo» es que **no lo encontré en el
+   texto**, no que no exista en la jurisprudencia, ya marcado → ASESOR en §Ⓒ.4.
+
+### Ⓜ Lo que salió de aquí y NO es de este ticket
+
+El cambio del **art. 91.Uno.2.10.º LIVA** (el 10 % de las obras de renovación y reparación en
+viviendas) no toca al justificante, pero sí al producto, y por eso se entregó aparte al orquestador el
+mismo 1-oct. El texto que regirá desde el 1-dic-2026 añade, literal:
+
+> «La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las
+> ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia
+> bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos
+> pasivos que las realicen.»
+
+y extiende el tipo a las obras en «viviendas destinadas a su arrendamiento como vivienda habitual,
+cualquiera que sea la condición del arrendador».
+
+**Lo que no sé y no afirmo:** si el Real Decreto-ley se convalida (puede decaer); qué más trae, porque
+no lo he leído entero, sólo lo que la LIVA consolidada refleja de su art. 7; si un pago por Bizum
+cuenta como «transferencia bancaria», que el texto no lo dice (→ ASESOR); y si `src/` aplica hoy el
+10 % en algún sitio. Aquí sólo queda constancia de dónde salió. El trabajo va en su propio ticket, que
+abre el orquestador.
+
+### Ⓝ Lo que me salió mal en esta vuelta
+
+**Mi primer extractor de bloques salió ciego.** Era un script de usar y tirar, y su expresión regular
+esperaba `fecha_publicacion` justo detrás de `id_norma`. Las versiones nuevas traen un atributo
+`fpub=""` en medio, así que devolvió **0 bloques modificados**. No lo di por bueno porque otro
+recuento, por norma, decía **2**. Lo releí por número de línea. El extractor del repo no tiene ese
+defecto: busca `fecha_vigencia` en cualquier posición.

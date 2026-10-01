@@ -45,7 +45,7 @@ function reciboBueno({ huella = 'a'.repeat(40), commit = 'c'.repeat(40) } = {}) 
     total: SUELO_TOTAL, pass: SUELO_TOTAL, fail: 0, skip: 0,
     ficheros: 400,
     hijos: Object.fromEntries(CLAVES_HIJOS.map((k) => [k, { exit: 0, tests: 1, pass: 1, fail: 0 }])),
-    runner: 'scripts/test-staging-gated.mjs',
+    runner: 'scripts/staging-gated.mjs',
   });
 }
 
@@ -244,7 +244,7 @@ test('SCRUM-239 · contra este repo: la huella se calcula y supera el suelo', ()
 test('SCRUM-239 · runner y verificador IMPORTAN el mismo cálculo, no lo reimplementan', () => {
   // La lección de SCRUM-199: dos copias del mismo dato divergen, y aquí divergir significa que
   // el recibo nunca vuelve a validar (o peor, que valida siempre).
-  for (const f of ['test-staging-gated.mjs', 'verificar-evidencia-tanda.mjs']) {
+  for (const f of ['staging-gated.mjs', 'verificar-evidencia-tanda.mjs']) {
     const src = fs.readFileSync(path.join(RAIZ, 'scripts', f), 'utf8');
     assert.match(src, /huellaDeCodigo/, `🔴 ${f} no usa huellaDeCodigo`);
     assert.match(src, /from '\.\/_evidencia-tanda\.mjs'/, `🔴 ${f} no lo importa de la fuente única`);
@@ -254,7 +254,7 @@ test('SCRUM-239 · runner y verificador IMPORTAN el mismo cálculo, no lo reimpl
 });
 
 test('SCRUM-239 · el runner guarda la huella Y el commit (criterio + contexto)', () => {
-  const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'), 'utf8');
+  const src = fs.readFileSync(path.join(RAIZ, 'scripts', 'staging-gated.mjs'), 'utf8');
   assert.match(src, /huella: huella\?\.huella/, '🔴 el recibo no lleva la huella: no habría criterio');
   assert.match(src, /^\s*commit,$/m,
     '🔴 el recibo ya no lleva el commit: es el CONTEXTO que hace reconciliable la medición ' +

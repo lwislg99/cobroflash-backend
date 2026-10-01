@@ -119,7 +119,7 @@ export async function sendQuoteWhatsAppToCustomer(
     customerId: quote.customerId,
     type: 'quote_sent',
     title: `Presupuesto #${displayNum} enviado por WhatsApp`,
-    detail: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+    detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
   });
 
   return { ok: true, sent: true, to, quoteId: quote.id };

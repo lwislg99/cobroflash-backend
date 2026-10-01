@@ -42,7 +42,7 @@ import {
 import { ttlParaTanda, TTL_POR_DEFECTO_MS } from '../scripts/_staging-lock.mjs';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
-const RUNNER = 'scripts/test-staging-gated.mjs';
+const RUNNER = 'scripts/staging-gated.mjs';
 
 // Datos MEDIDOS, no supuestos. Los tres primeros salen del recibo `.claude/evidencia-tanda.json`
 // de una tanda real; la serie de duraciones del bloque QA la midió el fundador el 2-ago-2026.

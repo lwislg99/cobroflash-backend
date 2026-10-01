@@ -1,0 +1,72 @@
+EL DESPUÉS, EN PRODUCCIÓN. https://yaqu.app con sesión REAL de operario.
+TRANSCRIPCIÓN, no salida de instrumento. Lo midió J4d el 2026-10-01 a las 07:31:49Z (hora de GitHub) y lo entregó en
+Jira, SCRUM-1317, comentario 17817. El cierre del orquestador que lo recoge es el comentario 17818.
+Lo copia J4e (SCRUM-1317b) el 2026-10-01T07:38:18Z SIN VOLVER A MEDIR: la sesión de operario ya no existe (c.17818).
+Por eso este fichero NO lleva EXIT=: aquí no corrió nada. Las cifras son las del comentario, una por una.
+Producción servía: /health -> 8f5906bc51c1c17dfd4fd3d44c1bd028324b8f48, que contiene el merge del PR #2065
+(d67713ce2692099f04615c98706dfb9502ba850a, MERGED 2026-10-01T07:23:13Z). app.js y homeView.js servidos por yaqu.app,
+mismo sha256 que los de origin/main.
+La sesión la abrió el fundador con enlace mágico en el navegador que conduce J4d (decisión «2-Conduce ella»).
+/admin/me -> 200, userRole "tecnico", isOwner false.
+Los seis verbos de escritura, autorizados en el comentario 17815 («3-Si autorizo»): sólo después de que los GET
+negaran, cuerpo vacío, id 0.
+
+POBLACIÓN=12 rutas (6 GET + 6 de escritura) + 3 controles, según las filas de c.17817
+
+ #  Ruta                                          Antes (07:11Z)              Después
+ 1  GET /admin/metrics/home                    -> 200                      -> 403
+ 2  GET /admin/metrics/funnel                  -> 200                      -> 403
+ 3  GET /admin/metrics/services                -> 200                      -> 403
+ 4  GET /admin/metrics/whatsapp                -> 200                      -> 403
+ 5  GET /admin/providers                       -> 200                      -> 403
+ 6  GET /admin/metrics/platform-funnel         -> 403 (sin required_role)  -> 403
+ 7  POST /admin/providers (cuerpo vacío)       -> no medido en producción  -> 403
+ 8  PUT /admin/providers/0 (cuerpo vacío)      -> no medido en producción  -> 403
+ 9  DELETE /admin/providers/0                  -> no medido en producción  -> 403
+10  POST /admin/templates (cuerpo vacío)       -> no medido en producción  -> 403
+11  PUT /admin/templates/0 (cuerpo vacío)      -> no medido en producción  -> 403
+12  DELETE /admin/templates/0                  -> no medido en producción  -> 403
+
+Cuerpo de la respuesta, en las doce: {"error":"forbidden","required_role":"admin"}   (la puerta de rol; no un 400 ni
+un 404 de validación)
+
+control: GET /admin/metrics/inicio -> 200 · pendingCount, quotesAwaiting, pendingRequests, recentActivity   (antes: 404)
+control: GET /admin/templates      -> 200                                                                  (se queda con el operario, c.17782)
+control: GET /admin/metrics/team   -> 403 antes y después                                                  (control del instrumento)
+
+Resultado, literal de c.17817: «12 de 12 niegan, y las doce por la puerta de rol». «Son 6 GET, de los que 5 CAMBIARON
+de "pasa" a "niega"; platform-funnel ya negaba a un operario corriente, y ahora lo niega la puerta nueva, delante de la
+del dueño.» De las 6 de escritura no hay «antes» en producción a propósito (habrían escrito de verdad): su antes es el
+del test con routers reales, donde pasaban y llegaban a la base.
+
+Control de que nada se escribió: GET /admin/templates daba 3 plantillas antes de los seis verbos y 3 después.
+Los proveedores no se pueden contar con esta sesión: su GET ya niega.
+
+EL PANEL, medido en el DOM de yaqu.app con esa sesión (no en una captura):
+                                          Antes (929 px)   Después, 1280 px              Después, 390 px
+Número héroe · Resumen · semana · tops    se pintan        no están                      no están
+Actividad reciente                        3 filas          3 filas                       3 filas
+Acciones rápidas                          sí               sí                            sí
+Cartel de error · esqueletos              no · —           no · 0                        no · 0
+Globo de Presupuestos                     2                2                             no medido (barra plegada)
+Desborde horizontal                       no               no (1280 = 1280)              no (390 = 390, 0 elementos fuera)
+Peticiones a /admin negadas               —                0 de 20                       0 de 8
+
+Menú: 14 entradas antes, 12 después; se fueron Proveedores e Informes y sólo ésas.
+#providers tecleado -> vista home, «Inicio». #reports tecleado -> «Inicio».
+Productos: 2 filas, sin error. Plantillas: sólo «Usar». Editor, menú «⋯»: sólo «Limpiar formulario».
+Ninguna petición a /admin/metrics/home; /admin/metrics/inicio contestó 200 las cinco veces que se pidió.
+Consola: 0 errores al cargar.
+
+NO medido (literal de c.17817 y c.17818):
+- «Admin sigue viendo todo», en yaqu.app: no había sesión de admin en ese navegador y no se pidió. Lo cubren el test y
+  rastro-del-menu.
+- El globo de Presupuestos a 390 px (la barra va plegada). iPhone y tablet reales.
+- A12.4 (tenancy-permisos, gateado por QA_DB_TEST) no se corrió.
+
+LO QUE ESTA COPIA NO PUEDE DECIR (J4e):
+- c.17817 da el menú de DESPUÉS como un número (12) y dos nombres que se fueron; NO lista los doce ids. La lista de 14
+  del ANTES está en yaqu-app-ANTES-operario-761db44f.txt; restarle providers y reports da doce ids, pero eso es una
+  resta mía, no una medición de J4d, y por eso no se escribe aquí como lista medida.
+- Las formas de respuesta (objeto{...}) que el ANTES sí anota, el DESPUÉS sólo las da como el cuerpo literal de arriba
+  y los cuatro campos de /inicio.
