@@ -16,12 +16,12 @@
 // 2 no supe medir (el análisis no es fiable, no hay base, `dist/` no corresponde al fuente, o una
 // tanda no ejecutó ni un test).
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 import { baseDeLaRama } from '../tests/_base-de-la-rama.mjs';
+import { temporal } from '../tests/_temporal.mjs';
 import {
   analizarArbol, seleccionar, motivosParaNoFiarse, NOMBRA, RECORRE, NO_SE,
 } from './_tests-que-cubren.mjs';
@@ -97,15 +97,21 @@ function lanzar(elegidos, concurrencia) {
   for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete entorno[k];
   const total = { tests: 0, pass: 0, fail: 0, caidos: [], ciegos: [] };
   const taps = [];
+  // FUERA del árbol, y en un directorio ÚNICO por llamada: una ruta fija del temporal la comparten
+  // todas las sesiones de la máquina y dos dirigidas a la vez se pisarían el TAP (SCRUM-258).
+  // Se borra al salir (SCRUM-864): quien quiera conservar el TAP lo pide con `--tap=<fichero>`.
+  const dirTap = temporal('yaqu-dirigida-');
   for (let i = 0; i < elegidos.length; i += LOTE) {
     const lote = elegidos.slice(i, i + LOTE);
-    const tap = path.join(os.tmpdir(), `yaqu-dirigida-${process.pid}-${i / LOTE}.tap`);
+    const tap = path.join(dirTap, `lote-${i / LOTE + 1}.tap`);
     taps.push(tap);
     const r = spawnSync(process.execPath, [
       '--test', '--test-force-exit', `--test-concurrency=${concurrencia}`,
       '--test-reporter=tap', `--test-reporter-destination=${tap}`, ...lote,
     ], { cwd: RAIZ, encoding: 'utf8', env: entorno, stdio: ['ignore', 'inherit', 'inherit'] });
-    const c = cuentasDelTap(fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '');
+    const textoTap = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
+    taps[taps.length - 1] = textoTap;
+    const c = cuentasDelTap(textoTap);
     // Una tanda que no ejecutó ni un test no es un verde: es un instrumento que no arrancó.
     if (!c.tests) { total.ciegos.push(`lote ${i / LOTE + 1} (${lote.length} ficheros): sin recuento, salida ${r.status}`); continue; }
     total.tests += c.tests; total.pass += c.pass || 0; total.fail += c.fail || 0; total.caidos.push(...c.caidos);
@@ -176,7 +182,13 @@ function main() {
   console.log(`\nLanzo ${elegidos.length} ficheros de test, ${concurrencia} a la vez, en lotes de ${LOTE}…\n`);
   const r = lanzar(elegidos, concurrencia);
   console.log(`\nDIRIGIDA: ${elegidos.length} ficheros · ${r.tests} tests · ${r.pass} pass · ${r.fail} fail`);
-  console.log(`  TAP: ${r.taps.join(' · ')}`);
+  const destinoTap = args.find((a) => a.startsWith('--tap='))?.slice('--tap='.length);
+  if (destinoTap) {
+    fs.writeFileSync(path.resolve(destinoTap), r.taps.join('\n'));
+    console.log(`  TAP: ${path.resolve(destinoTap)}`);
+  } else {
+    console.log('  TAP no conservado. Para leerlo después: --tap=<fichero FUERA del árbol>.');
+  }
   for (const c of r.caidos) console.log(`  not ok · ${c}`);
   for (const c of r.ciegos) console.error(`  🔴 CIEGO · ${c}`);
   const salida = r.ciegos.length && !r.fail ? SALIDA_CIEGO : r.fail || r.ciegos.length ? SALIDA_ROJO : 0;
