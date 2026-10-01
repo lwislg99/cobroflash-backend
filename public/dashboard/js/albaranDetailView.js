@@ -427,6 +427,15 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // La cola se CONSULTA, no se produce: encolar y drenar son de H3 (SCRUM-358). Y sólo puede
   // DEGRADAR a ①, nunca ascender — entre «el servidor lo tiene» y «este móvil cree que aún debe
   // subirlo», gana la lectura que no promete nada.
+  // SCRUM-1353 · UNA caja para los dos casos que la pintan (firmado, y firma guardada en el móvil):
+  // la segunda no trae un segundo estilo en línea — el trinquete de SCRUM-713c lo cazó en el CI.
+  const cajaDeFirma = (html) => {
+    const cajaFirma = document.createElement('div');
+    cajaFirma.style.cssText = 'margin:0 0 16px';
+    cajaFirma.innerHTML = html;
+    page.appendChild(cajaFirma);
+    return cajaFirma;
+  };
   if (alb.estado === 'firmado') {
     let enCola = [];
     try {
@@ -435,12 +444,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     } catch (_e) {
       // Sin almacén no hay cola que degrade nada: el estado lo declara el servidor, que ya habló.
     }
-    const cajaFirma = document.createElement('div');
-    cajaFirma.style.cssText = 'margin:0 0 16px';
-    cajaFirma.innerHTML = window.pintarEstadoDeFirma(
+    cajaDeFirma(window.pintarEstadoDeFirma(
       window.estadoDeLaFirmaDelAlbaran(alb.id, true, enCola),
-    );
-    page.appendChild(cajaFirma);
+    ));
   }
 
   // ── SCRUM-1353 · SIN FIRMAR PARA EL SERVIDOR, PERO ESTE MÓVIL SABE ALGO MÁS ──────────────
@@ -454,11 +460,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   if (alb.estado !== 'firmado') {
     firmaGuardadaAqui = (await firmaDeEsteAlbaranEnCola(alb.id)) === true;
     if (firmaGuardadaAqui) {
-      const cajaFirma = document.createElement('div');
-      cajaFirma.style.cssText = 'margin:0 0 16px';
-      cajaFirma.dataset.firmaGuardadaAqui = '1';
-      cajaFirma.innerHTML = window.pintarEstadoDeFirma(window.FIRMA_SOLO_EN_ESTE_MOVIL);
-      page.appendChild(cajaFirma);
+      cajaDeFirma(window.pintarEstadoDeFirma(window.FIRMA_SOLO_EN_ESTE_MOVIL)).dataset.firmaGuardadaAqui = '1';
     } else {
       const rechazada = await avisoDeFirmaRechazada(alb.id);
       if (rechazada) {
