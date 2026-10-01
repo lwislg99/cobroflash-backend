@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import {
   clasificaFuente, censar, motivosParaNoFiarse, contraDeclarados, comoLinea, NO_RESPONDE_DE,
 } from '../scripts/_censo-entorno-prestado.mjs';
@@ -129,7 +130,113 @@ test('SCRUM-1349 · 🔴 los que prestan el entorno son EXACTAMENTE los declarad
     + `  Población: ${c.ficheros} ficheros · ${c.nuestras.length} llamadas · ${c.limpios.length} limpias · ${c.acusados.length} acusadas.`);
   assert.deepEqual(sobran, [],
     `🔴 EL TRINQUETE PUEDE APRETAR Y NO SE HA APRETADO: ${sobran.join(' · ')}\n`
-    + '  Ya no se acusan. BORRA su entrada de scripts/_entorno-prestado-declarados.json (o baja `llamadas`) en este commit.');
+    + '  Ya no se acusan. BORRA su entrada de scripts/_entorno-prestado-declarados.json (o baja `llamadas`) en este commit.\n'
+    + cruceDe(sobran));
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ②bis QUIÉN DECLARÓ Y QUIÉN ARREGLÓ
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// El 1-oct-2026 este trinquete dejó la rama principal en rojo sin que nadie hubiera hecho nada
+// mal: #2077 DECLARÓ `scrum928` y `scrum976`, #1990 los ARREGLÓ, cada uno pasó su CI por
+// separado y entraron con 34 segundos de diferencia. Juntos, la lista declaraba dos ficheros que
+// ya no se acusaban. El cruce estaba AVISADO —pero en el encargo de una sesión, y el PR era de
+// otra—: una dependencia entre dos PR escrita en el prompt de uno no existe para el otro.
+//
+// Lo que este rojo no decía es lo único que hacía falta para arreglarlo en un minuto: QUÉ commit
+// metió la entrada y QUÉ commit dejó limpio el fichero. Ahora lo dice el propio mensaje, leyendo
+// la historia. No evita el cruce —dos PR verdes por separado se siguen pudiendo cruzar, y eso
+// sólo lo quita probar cada PR contra la punta en el momento de entrar—; evita que el rojo haya
+// que investigarlo.
+
+const git = (...args) => {
+  try {
+    return execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch { return null; }
+};
+
+/**
+ * El PR que trajo un commit: el merge de PR más ANTIGUO que desciende de él. Sin `--first-parent`
+ * a propósito: el commit sólo se alcanza por el SEGUNDO padre de su merge, y con esa opción el
+ * merge que lo trajo no sale (medido: daba `null` para un commit que entró por el #2077).
+ */
+function prDe(sha) {
+  const merges = git('log', '--merges', '--ancestry-path', '--reverse', '--format=%s', `${sha}..HEAD`) || '';
+  for (const asunto of merges.split('\n')) {
+    const m = /^Merge pull request #(\d+)/.exec(asunto);
+    if (m) return `#${m[1]}`;
+  }
+  return null;
+}
+
+/**
+ * Para un fichero de la lista: el commit que metió su entrada y el último que tocó el fichero.
+ * Cada mitad viene con su sha y su asunto, o en `null` si la historia no alcanza para saberlo —
+ * que se DICE, no se calla: «no lo sé» no es «nadie».
+ */
+export function procedenciaDe(fichero) {
+  const uno = (salida) => {
+    const [sha, ...resto] = (salida || '').split('\n')[0].split(' ');
+    return /^[0-9a-f]{7,40}$/.test(sha || '') ? { sha, asunto: resto.join(' '), pr: prDe(sha) } : null;
+  };
+  return {
+    // `-S` da los commits que cambian CUÁNTAS veces aparece la cadena: mientras la entrada siga
+    // en la lista, el más reciente es el que la metió.
+    declaro: uno(git('log', '-1', '--format=%h %s', `-S"${fichero}"`, '--', 'scripts/_entorno-prestado-declarados.json')),
+    arreglo: uno(git('log', '-1', '--no-merges', '--format=%h %s', '--', fichero)),
+  };
+}
+
+const comoProcedencia = (p) => (p ? `${p.sha}${p.pr ? ` (${p.pr})` : ''} · ${p.asunto}` : 'NO LO SÉ: la historia de este clon no alcanza');
+
+/** El párrafo que acompaña al rojo de «puede apretar»: por cada entrada, quién y quién. */
+function cruceDe(sobran) {
+  const lineas = ['  Quién declaró cada una y quién dejó limpio su fichero (leído de la historia):'];
+  for (const s of sobran) {
+    const fichero = s.replace(/ \(.*$/, '');
+    const p = procedenciaDe(fichero);
+    lineas.push(`    ${fichero}`);
+    lineas.push(`      la declaró:        ${comoProcedencia(p.declaro)}`);
+    lineas.push(`      la dejó limpia:    ${comoProcedencia(p.arreglo)}`);
+  }
+  lineas.push('  Si son dos PR distintos, se han cruzado: borra la entrada el que entró SEGUNDO, o quien lo vea primero.');
+  return lineas.join('\n');
+}
+
+test('SCRUM-1349 · el rojo de «puede apretar» sabe decir quién declaró la entrada y quién tocó el fichero', () => {
+  const lista = Object.keys(declarados());
+  // Sin entradas no hay con qué probarlo, y se DICE: el día que la lista llegue a cero este caso
+  // se retira junto con ella.
+  assert.ok(lista.length > 0, '🔴 NO MEDIDO: la lista de declarados está vacía. Retira este caso con ella.');
+  assert.equal(git('rev-parse', '--is-shallow-repository'), 'false',
+    '🔴 NO MEDIDO: el clon es superficial y la historia no se puede leer (el checkout de CI lleva `fetch-depth: 0`, SCRUM-388)');
+
+  for (const fichero of lista) {
+    const p = procedenciaDe(fichero);
+    assert.ok(p.declaro && p.declaro.asunto.length > 0,
+      `🔴 no sé decir qué commit declaró «${fichero}»: el rojo del trinquete volvería a salir sin nombre`);
+    assert.ok(p.arreglo && p.arreglo.asunto.length > 0, `🔴 no sé decir qué commit tocó «${fichero}» por última vez`);
+    // El commit que se nombra como declarante tiene que haber tocado la LISTA: si no, el `-S` ha
+    // casado otra cosa y el mensaje señalaría a quien no fue.
+    const tocados = git('show', '--name-only', '--format=', p.declaro.sha) || '';
+    assert.ok(tocados.split('\n').includes('scripts/_entorno-prestado-declarados.json'),
+      `🔴 el commit que nombro como declarante de «${fichero}» (${p.declaro.sha}) no tocó la lista`);
+  }
+
+  // LA MITAD QUE DICE «NO LO SÉ»: un fichero que nunca estuvo en la lista no tiene declarante, y
+  // eso sale como tal en vez de inventarse uno.
+  assert.equal(procedenciaDe('tests/nunca-estuvo-en-la-lista-1349.test.mjs').declaro, null,
+    '🔴 le atribuye un declarante a un fichero que nunca se declaró');
+  assert.match(cruceDe(['tests/nunca-estuvo-en-la-lista-1349.test.mjs (-1)']), /NO LO SÉ/,
+    '🔴 cuando no sabe quién declaró, el mensaje no lo dice');
+  // El PR: la lista nació en el #2077, y sus entradas de entonces tienen que decirlo. (Las que
+  // entren después dirán el suyo; sólo se exige a las que declaró aquel commit.)
+  const delNacimiento = lista.map((f) => procedenciaDe(f).declaro).filter((d) => d.asunto.includes('la lista solo baja'));
+  assert.ok(delNacimiento.length > 0, '🔴 NO MEDIDO: no queda ninguna entrada del commit que creó la lista; busca otro testigo del PR');
+  for (const d of delNacimiento) assert.equal(d.pr, '#2077', `🔴 no sé decir por qué PR entró ${d.sha}: saldría un commit sin su PR`);
+  // Y el mensaje entero nombra un commit de verdad para una entrada de verdad.
+  assert.match(cruceDe([`${lista[0]} (-1)`]), /la declaró: +[0-9a-f]{7,}/, '🔴 el mensaje del cruce no nombra el commit que declaró');
 });
 
 test('SCRUM-1349 · 🔴 CONTROL POSITIVO DEL TRINQUETE: un acusado de mentira SALTA, y uno arreglado también', () => {

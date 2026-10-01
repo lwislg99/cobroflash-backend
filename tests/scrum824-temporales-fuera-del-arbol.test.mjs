@@ -58,6 +58,12 @@ const CENSO = censar(RAIZ);
  * que el que añada el número 14 tenga que mirarlo, no para bendecirlos.
  */
 const SIN_PROBAR_CONOCIDOS = [
+  // SCRUM-1281: el propio ayudante. Desde que admite `{ dentroDe }` crea en una raíz que le llega
+  // por PARÁMETRO, y de un parámetro no se puede probar nada leyendo el fuente. No se declara para
+  // bendecirlo: lo que el censo no puede ver lo impide el ayudante, que LANZA si `dentroDe` cae en
+  // el repositorio, y eso lo prueba por efecto `scrum1281-fixture-git-raiz-propia` (caso ④).
+  // Lo retira: quien le quite `dentroDe`, o quien enseñe al censo a seguir un parámetro.
+  'tests/_temporal.mjs',
   // SCRUM-999: `escribirUso()` recibe `dir` como parámetro (siempre un `temporal()` de quien la
   // llama, scrum899b y scrum951a) — el análisis estático no atraviesa la llamada para verlo.
   'tests/_uso-banco.mjs',

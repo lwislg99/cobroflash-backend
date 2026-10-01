@@ -71,6 +71,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
+import { marcasHuerfanas } from './_marca-de-arbol.mjs'; // SCRUM-1349
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -212,8 +213,50 @@ export function lineaDeLaPasada({ guards, ms, plazoMs }) {
   return `${guards} guards · ${(ms / 1000).toFixed(1)} s · plazo ${plazoMs / 1000} s`;
 }
 
+/**
+ * 🔴 SCRUM-1349 · ¿HAY UNA MUTACIÓN PUESTA EN ESTE ÁRBOL? Entonces no se empuja.
+ *
+ * Los instrumentos que mutan el árbol (`meta:mutaciones`, `censo:mudez`) dejan una MARCA antes de
+ * escribir y la borran al restaurar (SCRUM-808). Si los matan a mitad, la marca sobrevive y la
+ * reparan ellos mismos LA PRÓXIMA VEZ QUE SE LANCEN. Hasta entonces el fichero mutado está en el
+ * árbol con pinta de cambio propio, y lo único que lo delataba era un test de la tanda completa
+ * —`scrum808`, «no hay una marca huérfana»— que en CI no puede caer nunca: la marca vive en
+ * `.cache/`, que no viaja. Medido el 1-oct-2026 matando la pasada de verdad: árbol mutado, ese
+ * test en rojo en local… y un `git add -A && git push` habría salido verde en CI con la mutación
+ * dentro. Pasó ese mismo día con una línea de `homeView.js`, y la paró un `git status` mirado a ojo.
+ *
+ * Por eso va AQUÍ, en lo que se corre antes de empujar: es el único sitio donde la marca y el
+ * árbol que se va a empujar están en la misma máquina.
+ *
+ * `extra` es una carpeta MÁS que mirar (así lo prueba su test, con una marca fabricada en el
+ * temporal). Sólo AÑADE: la del árbol se mira siempre, y no hay forma de apartarla desde el entorno.
+ */
+export function mutacionesPuestas(extra = process.env.GUARDS_ENTRADA_CACHE_EXTRA) {
+  return [...marcasHuerfanas(), ...(extra ? marcasHuerfanas(extra) : [])];
+}
+
+/** Lo que se le dice a quien iba a empujar. Una línea por marca, con el fichero y el remedio. */
+export function avisoDeMutacionPuesta(marcas) {
+  const lineas = ['🔴 HAY UNA MUTACIÓN PUESTA EN ESTE ÁRBOL — no se empuja nada:\n'];
+  for (const m of marcas) {
+    lineas.push(m.ilegible
+      ? `   · \`${m.herramienta}\` dejó una marca que no se puede leer: no sé qué quedó puesto.`
+      : `   · \`${m.herramienta}\` murió (pid ${m.pid}, ${m.cuando}) y dejó mutado: ${m.sucias.join(', ')}`);
+  }
+  lineas.push('\n  Lo devuelve a sus bytes ESA herramienta la próxima vez que arranca. Para');
+  lineas.push('  `meta-guard-mutaciones` basta `node scripts/meta-guard-mutaciones.mjs --solo-censo`');
+  lineas.push('  (segundos). Después, `git status`: no tiene que quedar nada que no sea tuyo.');
+  return lineas.join('\n');
+}
+
 function main() {
 const techo = techoEfectivo(process.env.GUARDS_ENTRADA_TECHO_MS);
+const puestas = mutacionesPuestas();
+if (puestas.length) {
+  console.error(avisoDeMutacionPuesta(puestas));
+  console.log(lineaDeLaPasada({ guards: 0, ms: 0, plazoMs: techo }));
+  process.exit(1);
+}
 const faltan = GUARDS.filter((g) => !fs.existsSync(path.join(RAIZ, g.fichero)));
 if (faltan.length) {
   console.error('🔴 FALTAN GUARDS DE ENTRADA — no se ejecuta nada:\n');
