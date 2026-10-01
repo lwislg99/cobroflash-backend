@@ -41,6 +41,8 @@ rama del 22-sep. Ninguna norma ni hook mergeado desde entonces llegaba a nadie.
 
 **Medido contra:** `origin/main` = `fe5b3c18f038eb5c1200b8c067ed69d0bfda0898` · 2026-10-01T10:37:17Z
 
+A9: aviso → A10 «Empujar no es entregar: antes de cerrar, mira el check obligatorio de tu último push, o di que no lo miraste.» — no se pudo comprobar: la comprobación (que ninguna sesión cierre con su último push en rojo sin decirlo) es SCRUM-1350 y todavía no existe; hasta que entre, esto es lo único que llega a todas las sesiones.
+
 El PR (#2002) **nació rojo** el 29-sep: la sesión cerró sin mirar su check. No fue podredumbre — la
 primera corrida, minutos después de abrirse, ya traía los cinco fallos propios. Lo que caía y lo hecho:
 
