@@ -258,11 +258,10 @@ jobs:
             --test-reporter=spec --test-reporter-destination=stdout
             --test-reporter=tap --test-reporter-destination=${{ runner.temp }}/tanda.tap
         # SCRUM-1289 · el log `spec` se guarda TAMBIÉN en un fichero: es la segunda fuente del «por
-        # qué cayó» cuando el TAP no se puede leer. `pipefail` NO es adorno: sin él, el código de
-        # salida del paso sería el de `tee` y una tanda en ROJO saldría VERDE (SCRUM-850).
-        run: |
-          set -o pipefail
-          npm test 2>&1 | tee "$RUNNER_TEMP/tanda-spec.log"
+        # qué cayó» cuando el TAP no se puede leer. SIN TUBERÍA a propósito: con la tanda entubada a `tee` el
+        # código de salida del paso depende de que alguien se acuerde del `pipefail`, y SCRUM-850 lo
+        # denuncia con razón. Con la sustitución de proceso, el código que sale es el de `npm test`.
+        run: npm test > >(tee "$RUNNER_TEMP/tanda-spec.log") 2>&1
 
       # SCRUM-871 · `scrum814` VA SOLO, Y NO ES PRUDENCIA: ESTÁ MEDIDO.
       #

@@ -153,8 +153,10 @@ function paso(nombre) {
 
 test('SCRUM-1289 · 🔴 el paso de la tanda deja el log spec en fichero SIN perder su código de salida', () => {
   const p = paso('Tests (incluidos los de banco desechable)');
-  assert.match(p, /set -o pipefail\n\s+npm test 2>&1 \| tee "\$RUNNER_TEMP\/tanda-spec\.log"/,
-    '🔴 sin `pipefail`, el código de salida es el de `tee` y una tanda roja sale VERDE (SCRUM-850)');
+  assert.match(p, /run: npm test > >\(tee "\$RUNNER_TEMP\/tanda-spec\.log"\) 2>&1\n/,
+    '🔴 el log spec va a fichero por sustitución de proceso: el código de salida es el de `npm test`');
+  assert.doesNotMatch(p, /npm test[^\n]*\| *tee/,
+    '🔴 con `npm test | tee` el código de salida es el de `tee` y una tanda roja sale VERDE (SCRUM-850)');
   assert.match(p, /--test-reporter=tap --test-reporter-destination=\$\{\{ runner\.temp \}\}\/tanda\.tap/);
 });
 
