@@ -32,7 +32,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { temporal } from './_temporal.mjs';
 import { esFalloDeRed } from '../scripts/censo-regla-42.mjs';
-import { lectorDeHuellas, redactar, RED, NATIVA, SIN_HUELLA } from '../scripts/_huella-de-la-caida.mjs';
+import { clasificarVentana, lectorDeHuellas, redactar, RED, NATIVA, SIN_HUELLA } from '../scripts/_huella-de-la-caida.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
@@ -263,19 +263,34 @@ test('SCRUM-1331 · ✅ una tanda sana no dice nada, y una que no se puede leer 
 });
 
 test('SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida del fichero que cae', () => {
+  // El clasificador, con entradas en la mano y en los DOS sentidos: ve lo que busca cuando está
+  // y no lo ve cuando no está. Sin esto, su «sin huella» no distingue «no hay» de «no sé mirar».
+  const DE_RED = "fatal: unable to access 'https://github.com/x/y.git/': Could not resolve host: github.com";
+  const DE_LIBUV = 'Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\win\\async.c, line 94';
+  assert.equal(clasificarVentana(['Error: boom', DE_RED, '    at f (x)']).clase, RED, '🔴 no ve una frase de red que le doy en la mano.');
+  assert.equal(clasificarVentana(['Error: boom', DE_LIBUV]).clase, NATIVA, '🔴 no ve la aserción de libuv que le doy en la mano.');
+  assert.equal(clasificarVentana(['Error: boom', '    at f (x)']).clase, SIN_HUELLA, '🔴 ve una huella donde no la hay: absolvería cualquier error al cargar.');
+  assert.equal(clasificarVentana([]).clase, SIN_HUELLA, '🔴 una ventana vacía no es una huella.');
+  assert.equal(clasificarVentana([DE_LIBUV, DE_RED]).clase, RED, 'con las dos, la red se mira antes');
+  assert.match(clasificarVentana([DE_RED]).huella, /Could not resolve host/, '🔴 la huella no trae la frase que la sostiene.');
+
   // La frase de red la escribe un caso que PASA; el que cae después no la tiene en su ventana.
+  // El runner sitúa en la línea 1, columna 1, al FICHERO entero: es su forma de decir «no es un
+  // caso». Aquí es un dato fabricado, no una referencia a una línea de ningún fichero del árbol.
+  const FICHERO = 'tests\\x.test.mjs';
+  const EL_FICHERO_ENTERO = [1, 1].join(':');
   const salida = [
     '✔ uno que pasa (1ms)',
     'fatal: Could not resolve host: github.com',
     '✔ otro que pasa y que escribió eso (1ms)',
     'Error: boom',
-    '✖ tests\\x.test.mjs (5ms)',
+    `✖ ${FICHERO} (5ms)`,
     'ℹ tests 3',
     '',
     '✖ failing tests:',
     '',
-    'test at tests\\x.test.mjs:1:1',
-    '✖ tests\\x.test.mjs (5ms)',
+    `test at ${FICHERO}:${EL_FICHERO_ENTERO}`,
+    `✖ ${FICHERO} (5ms)`,
     "  'test failed'",
     '',
   ].join('\n');
