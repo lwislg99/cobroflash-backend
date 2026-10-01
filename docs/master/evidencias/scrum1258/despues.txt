@@ -1,0 +1,6 @@
+POBLACION: 4 casos (sin modo + SIN_DICTAMEN, ART_61D, SIMPLIFICADA_F2) · 5 facturas selladas por caso
+modo=(sin pasar: el de la constante) | declarados=3 | tipos=F1,R1,F1 | excluidos=2026-CF-002,2026-CF-R-002 | sha256(xml)=f71abb84aa5a25754d744db85428c30d3aa652d4395877e5b75c551257cc4f4d | sha256(cadena persistida)=2d070c12f928659ce4287d0a017f96f41bc40d7e5a61a29c157e5f50cf55bce8 | cadena intacta tras exportar=true
+modo=SIN_DICTAMEN | declarados=3 | tipos=F1,R1,F1 | excluidos=2026-CF-002,2026-CF-R-002 | sha256(xml)=f71abb84aa5a25754d744db85428c30d3aa652d4395877e5b75c551257cc4f4d | sha256(cadena persistida)=2d070c12f928659ce4287d0a017f96f41bc40d7e5a61a29c157e5f50cf55bce8 | cadena intacta tras exportar=true
+modo=ART_61D | declarados=5 | tipos=F1,F1,R1,R1,F1 | excluidos=- | sha256(xml)=fd217f8ab8639ffd6c0621ee2f19c189291f21ac1366e31e59a1bf28ce39361c | sha256(cadena persistida)=2d070c12f928659ce4287d0a017f96f41bc40d7e5a61a29c157e5f50cf55bce8 | cadena intacta tras exportar=true
+modo=SIMPLIFICADA_F2 | declarados=3 | tipos=F1,R1,F1 | excluidos=2026-CF-002,2026-CF-R-002 | sha256(xml)=c8b97b8c87e36a7605306f7e7fd60056a39d720293e7bb6981ceb74d4add0140 | sha256(cadena persistida)=2d070c12f928659ce4287d0a017f96f41bc40d7e5a61a29c157e5f50cf55bce8 | cadena intacta tras exportar=true
+EXIT=0

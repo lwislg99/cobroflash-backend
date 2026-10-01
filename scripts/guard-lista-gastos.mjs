@@ -42,6 +42,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { servirListas, abrirNavegador, abrirVista } from './_banco-lista.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -822,8 +823,12 @@ J390: {
 
 await browser.close();
 di('');
-if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitios: esto NO es «de acuerdo».`); process.exit(2); }
-if (fallos) { console.error(`🔴 ${fallos} hallazgos.`); process.exit(1); }
+if (ciego) console.error(`🔴 NO SUPE MIRAR en ${ciego} sitios: esto NO es «de acuerdo».`);
+if (fallos) console.error(`🔴 ${fallos} hallazgos.`);
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) { console.error(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
 di('✅ De acuerdo: la lista de Gastos no se recorre de lado, cada opción del «⋯» cambia el estado, el KPI no enseña claves internas, la foto se ve en cada fila sin pedirla, los filtros y los chips cuentan lo que filtran y «Nuevo gasto» va fijo abajo en el móvil.');
 // Salida EXPLÍCITA: el servidor del banco sigue abierto y, sin esto, el proceso no termina nunca en el
 // camino verde (medido: una mutación equivalente dejó al guard colgado hasta que lo mató el reloj).

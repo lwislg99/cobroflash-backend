@@ -96,4 +96,4 @@ llega el último y no revierte), versión ilegible → 400, y la transición. **
 Fuera de alcance: si se emite una factura entre la lectura de `emitidas` y la escritura, eso no cambia el
 `updatedAt` del presupuesto; lo cubre (o no) el censo de S3.
 
-La tanda completa lo marcó (SCRUM-1185): ersion es un campo del cuerpo que ninguna pantalla manda aún. Declarado en scripts/_sin-consumir-declarados.json con carril **S2** y ticket SCRUM-1285; se retira cuando quotesDetailView.js lo mande. Resto de la tanda: solo el 1216b ajeno.
+La tanda completa lo marcó (SCRUM-1185): `version` es un campo del cuerpo que ninguna pantalla manda aún. Declarado en scripts/_sin-consumir-declarados.json con carril **S2** y ticket SCRUM-1285; se retira cuando quotesDetailView.js lo mande. Resto de la tanda: solo el 1216b ajeno.

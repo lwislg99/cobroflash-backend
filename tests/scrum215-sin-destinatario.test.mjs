@@ -113,18 +113,89 @@ test('SCRUM-215 · salida A — art. 61.d: F1 marcada, sin Destinatarios, y VALI
   assert.equal(valido, true, `🔴 la salida A no valida:\n${errores.join('\n')}`);
 });
 
-test('SCRUM-215 · salida B — simplificada: F2 marcada, sin Destinatarios, y VALIDA', async () => {
-  const { xml, count, excluidos } = await build([mkInvoice()], { modoSinDestinatario: 'SIMPLIFICADA_F2' });
+// ── SCRUM-1258 · LA SALIDA B YA NO SE PRUEBA POR EL CONSTRUCTOR REAL, Y SE DICE AQUÍ ───────
+//
+// Hasta SCRUM-1258 este caso exportaba una factura SELLADA con tipo F1 bajo `SIMPLIFICADA_F2` y
+// exigía que saliera declarada como F2. Eso era el defecto: `TipoFactura` es uno de los campos de
+// la huella, así que el registro declaraba F2 llevando firmada la huella de una F1. El test daba
+// por bueno un registro que nadie podía recalcular.
+//
+// Ahora son DOS casos, y entre los dos hay algo que se ha dejado de probar:
+//
+//   ① por el constructor REAL: una F1 sellada, bajo ese modo, queda FUERA del registro.
+//   ② que el XSD acepta una F2 con su marcador y sin `Destinatarios`: el registro lo COMPONE
+//      ESTE TEST —`buildRegistroAlta` con una huella calculada SOBRE F2, más el marcador que
+//      devuelve el `resolverSinDestinatario` real, insertado detrás de `DescripcionOperacion`.
+//
+// ⚠️ LO QUE YA NO PRUEBA NADIE: que el constructor real (`construirRegistro`) coloque ese marcador
+// en su sitio para una F2. No puede probarse, porque con el arreglo el constructor real no llega a
+// emitir una F2 para ninguna factura sellada, y sin sellar no hay huella que validar. La rama F2
+// de `construirRegistro` es hoy INALCANZABLE; quitarla sería elegir política y no se ha hecho. El
+// día que el dictamen elija la simplificada habrá que sellar como F2, y entonces este caso tiene
+// que volver a pasar por el constructor real. Un verde aquí NO vigila ese constructor.
+test('SCRUM-215 · salida B — una F1 ya SELLADA no sale como simplificada: queda fuera (SCRUM-1258)', async () => {
+  const { count, excluidos, xml } = await build([mkInvoice()], { modoSinDestinatario: 'SIMPLIFICADA_F2' });
 
-  assert.equal(count, 1);
-  assert.deepEqual(excluidos, []);
-  assert.match(xml, /<sum1:TipoFactura>F2<\/sum1:TipoFactura>/, 'el TIPO cambia: es otro documento');
+  assert.equal(count, 0, '🔴 se ha declarado una F2 con la huella de una F1');
+  assert.equal(xml, '', 'sin registros que declarar no se entrega un sobre vacío');
+  assert.equal(excluidos.length, 1);
+  assert.equal(excluidos[0].number, '2026-CF-001');
+  assert.match(excluidos[0].motivo, /se selló como factura completa \(F1\)/);
+});
+
+test('SCRUM-215 · salida B — el XSD acepta F2 + marcador sin Destinatarios (COMPUESTO POR EL TEST)', async () => {
+  const builder = await import('../dist/modules/fiscal/verifactu/registro.builder.js');
+  const { computeVeriFactuHash } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
+
+  // El tipo y el marcador salen del resolvedor REAL: lo que se valida es su texto, no una copia.
+  const { tipoFactura, marcadorXml } = builder.resolverSinDestinatario('F1', '2026-CF-001', 'SIMPLIFICADA_F2');
+  assert.equal(tipoFactura, 'F2', 'el TIPO cambia: es otro documento');
+  assert.match(marcadorXml, /<sum1:FacturaSimplificadaArt7273>S<\/sum1:FacturaSimplificadaArt7273>/);
+
+  const campos = {
+    idEmisorFactura: merchant.taxId, numSerieFactura: '2026-CF-001', fechaExpedicion: '15-03-2026',
+    cuotaTotal: '21.00', importeTotal: '121.00', fechaHoraHusoGenRegistro: '2026-03-15T11:00:05+01:00',
+  };
+  // La huella se calcula SOBRE F2: un registro que declara F2 con la huella de una F2.
+  const huella = computeVeriFactuHash({
+    nif: campos.idEmisorFactura, serie: campos.numSerieFactura, fecha: campos.fechaExpedicion, tipoFactura,
+    cuotaTotal: campos.cuotaTotal, importeTotal: campos.importeTotal, prevHash: '', timestamp: campos.fechaHoraHusoGenRegistro,
+  });
+  const sinMarcador = builder.buildRegistroAlta({
+    ...campos, tipoFactura, huella, nombreRazonEmisor: merchant.legalName, descripcionOperacion: 'Reparación de fuga',
+    desglose: [{ claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21', baseImponible: '100.00', cuotaRepercutida: '21.00' }],
+    encadenamiento: { primerRegistro: true },
+    sistema: {
+      nombreRazonProductor: 'PRODUCTOR QA SL', nifProductor: 'B12345678', nombreSistema: 'YaQu', idSistema: '01',
+      version: '1.0.0', numeroInstalacion: '1', soloVerifactu: 'S', multiOT: 'S', indicadorMultiplesOT: 'S',
+    },
+  });
+
+  // 🔴 AQUÍ COLOCA EL TEST, no el producto: el marcador va detrás de `DescripcionOperacion`.
+  const CIERRE = '</sum1:DescripcionOperacion>';
+  assert.equal(sinMarcador.split(CIERRE).length, 2, '🔴 no encuentro UN sitio donde insertar el marcador');
+  const registro = sinMarcador.replace(CIERRE, CIERRE + marcadorXml);
+  assert.notEqual(registro, sinMarcador, '🔴 el marcador no entró: se validaría un registro sin él');
+
+  const xml = builder.construirCuerpoSoapRegFactu({
+    obligado: { nombreRazon: merchant.legalName, nif: merchant.taxId }, registrosXml: [registro],
+  });
+  assert.match(xml, /<sum1:TipoFactura>F2<\/sum1:TipoFactura>/);
   assert.match(xml, /<sum1:FacturaSimplificadaArt7273>S<\/sum1:FacturaSimplificadaArt7273>/);
   assert.doesNotMatch(xml, /<sum1:Destinatarios>/, 'una F2 con Destinatarios sería el error 1190');
   assert.doesNotMatch(xml, /FacturaSinIdentifDestinatarioArt61d/);
 
   const { valido, errores } = await validarRegistrosXml(xml, 'simplificada.xml');
   assert.equal(valido, true, `🔴 la salida B no valida:\n${errores.join('\n')}`);
+
+  // Control: el validador VE la colocación. El mismo marcador detrás de `Desglose` no valida.
+  const malColocado = builder.construirCuerpoSoapRegFactu({
+    obligado: { nombreRazon: merchant.legalName, nif: merchant.taxId },
+    registrosXml: [sinMarcador.replace('</sum1:Desglose>', '</sum1:Desglose>' + marcadorXml)],
+  });
+  assert.match(malColocado, /FacturaSimplificadaArt7273/, '🔴 el veneno del control no entró');
+  const control = await validarRegistrosXml(malColocado, 'simplificada-mal-colocada.xml');
+  assert.equal(control.valido, false, '🔴 el XSD acepta el marcador en cualquier sitio: este caso no prueba el orden');
 });
 
 test('SCRUM-215 · el ORDEN del XSD: el marcador va antes de Destinatarios', async () => {

@@ -59,6 +59,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -491,14 +492,18 @@ async function casoPresupuesto(navegador, ancho) {
 }
 
 async function casoSuelto(navegador, ancho) {
-  const etiqueta = `justificante ${ancho}px`;
+  // SCRUM-1313 · la etiqueta dice lo que se mide. Decía «justificante», y desde SCRUM-825 (PR #1943)
+  // ese modo no existe en el panel: 'justificante' cae a 'no' y la ruta pinta el listado, así que
+  // este caso estuvo CIEGO desde el 29-sep-2026. El documento suelto se abre en modo 'factura', que
+  // es el único en que la pantalla existe; lo que se le EXIGE no cambia ni una línea.
+  const etiqueta = `documento suelto ${ancho}px`;
   const contexto = await navegador.createBrowserContext();
   const pag = await contexto.newPage();
   const errores = [];
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = 'justificante';
+    modoSuelto = 'factura';
     await pag.setViewport({ width: ancho, height: 900 });
     await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#invoices-new`, { waitUntil: 'networkidle0' });
     const pintado = await pag.waitForSelector('.quote-line .quote-line__concept input', { timeout: 10000 }).then(() => true, () => false);
@@ -545,13 +550,12 @@ try {
 
 console.log('');
 console.log('  SCRUM-915d · LOS PASOS DEL EDITOR (panel real, estado medido después de pulsar)');
-console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, justificante a 1280 px');
+console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, documento suelto a 1280 px');
 for (const l of informe) console.log('   · ' + l);
 
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «los pasos están bien»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 EN ${hallazgos.length} DE 3 CASOS EL EDITOR NO SE RECORRE POR PASOS:\n`);
@@ -559,6 +563,12 @@ if (hallazgos.length) {
     console.error(`     [${h.etiqueta}]`);
     for (const x of h.mal) console.error('       · ' + x);
   }
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
 }
 console.log('\n  ✔ en los 3 casos: un paso abierto, «Continuar» sólo cuando se puede, resúmenes, «Cambiar» e inventario completo.\n');

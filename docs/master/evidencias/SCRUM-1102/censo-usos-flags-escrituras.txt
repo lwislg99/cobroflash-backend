@@ -1,0 +1,18 @@
+node scripts/censo-usos-de-campo.mjs flags  →  TOTAL: 301 usos · 116 ficheros
+ESCRITURAS en src/, scripts/ y prisma/ (de 116; el resto son tests y public/). «[prisma: data]» = va a la base:
+   src/app.ts:405
+   src/app.ts:703
+   src/modules/exports/app/routes/exports.routes.ts:309
+   src/modules/exports/app/routes/exports.routes.ts:606
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:967
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1123
+   src/modules/system/app/routes/publicProfile.routes.ts:34
+   src/modules/system/audit.service.ts:233
+   src/modules/system/domain/flagFiscal.service.ts:110
+   src/modules/system/domain/flagFiscal.service.ts:117  [prisma: data]
+   src/modules/system/domain/flagFiscal.service.ts:132
+   src/modules/system/domain/flagFiscal.service.ts:133
+   src/modules/system/domain/flagFiscal.service.ts:134
+   src/modules/whatsappBot/domain/botFlow.service.ts:255
+   scripts/medir-concurrencia-emision.mjs:90  [prisma: data]
+   scripts/seed-video.mjs:396  [prisma: data]

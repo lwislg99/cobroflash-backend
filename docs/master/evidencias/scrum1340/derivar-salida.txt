@@ -1,0 +1,97 @@
+DERIVAR base=eb3d3b367e62e95ca86c217a0a39a32764200075 (origin/main) · ms=575
+DERIVAR unidades tras el corte=361 · {"NO_ES_INTERFAZ":260,"SIN_DECLARAR":74,"DECLARA":27}
+DERIVAR atribucion de las de interfaz: {"nacidas":74,"tocadas":27}
+DERIVAR pendiente={"ui":[],"registros":[]}
+LISTA   '936743224df712808258053f64391a25e0e3791c', // 2026-09-23 · SCRUM-910.md
+LISTA   'b77a3cb3cbd4583302edecaddc17c255fe02e74e', // 2026-09-24 · SCRUM-1042.md
+LISTA   '09f8ba9974964b9205936b9c3eb0ec70a8f0acb5', // 2026-09-24 · SCRUM-1008.md
+LISTA   'f6814d23d2467de7f790e9bebb6e059a083f890c', // 2026-09-25 · SCRUM-1108.md (sólo tocadas)
+LISTA   'e528628e30fc65357153e9159a43f1fdf2eafea0', // 2026-09-25 · SCRUM-1049.md
+LISTA   'cbd6a2b43039b506953be1ca19fafcef05d3d20d', // 2026-09-25 · SCRUM-1022.md (sólo tocadas)
+LISTA   '7eaf74892d9a4f2e3ef47d6f6ec4362bfa9efa03', // 2026-09-26 · SCRUM-1134.md
+LISTA   '942e90d1f84dd6d7fcf5fa92aad48f36758c2d87', // 2026-09-26 · SCRUM-1124.md
+LISTA   '494c0a7165d4b3e39e9b4b39d50616e32616a710', // 2026-09-27 · SCRUM-1186.md
+LISTA   '8c77d6db85534f7dc5c9bda2585624eb42fd8da7', // 2026-09-27 · SCRUM-1175.md, SCRUM-1189.md
+LISTA   '7ba1ad5f2a87e7752894f790a5256b20a65f9ed5', // 2026-09-27 · SCRUM-993.md
+LISTA   '2bb2857144d7c80ee80bc780390d31f9ac8cfc7c', // 2026-09-28 · SCRUM-1162.md
+LISTA   '3f4c643e93871234e59e5ca5db145ba5cef8f9ee', // 2026-09-28 · SCRUM-1161.md
+LISTA   'a1f4d9ddae5e6f47e56ea0f4a39c58c4527afc40', // 2026-09-28 · SCRUM-1165.md
+LISTA   'f9dc44a3f9267cd5624a4902ba3fc1fd93b108d9', // 2026-09-28 · SCRUM-1202.md
+LISTA   '90b82de5844e9e6c664b66707cf0aaf3a67a21f9', // 2026-09-28 · SCRUM-993.md (sólo tocadas)
+LISTA   '92161e9387119b6fdd39507bc0561b7af252b6ec', // 2026-09-28 · SCRUM-1188.md
+LISTA   '00eef8c5e641fb418d8a25e9e172f90b328bd04c', // 2026-09-28 · SCRUM-1216.md
+LISTA   'c57f745d0f9f8424abc90e8a591d10fd81a00cad', // 2026-09-28 · SCRUM-1164.md
+LISTA   '6184ea45acbf37a645a7402e55f5e1abf85ab8f8', // 2026-09-28 · SCRUM-1191.md
+LISTA   '3d57a7c0eca6dd630bca7391157ca41bd465e642', // 2026-09-28 · SCRUM-1219.md
+LISTA   'dcbfe76d9427d689a9961ab695ef56ee006b05b5', // 2026-09-28 · SCRUM-1193.md
+LISTA   '8b607386fc6f43b022e44bd56b8671784046f1cd', // 2026-09-28 · SCRUM-653.md
+LISTA   '59012d2309adbd8569fc047bcd880f453ade523a', // 2026-09-28 · SCRUM-1164.md (sólo tocadas)
+LISTA   'c6337738d88b64068a53e3f54983a3f8abee5476', // 2026-09-28 · SCRUM-1205.md
+LISTA   'beca1de8870d43381668da32b51c8729ef6e5e21', // 2026-09-28 · SCRUM-1171.md (sólo tocadas)
+LISTA   '44dd30659ce983dd646f35da0ee582860877a9bb', // 2026-09-28 · SCRUM-1215.md
+LISTA   '0fa2140a431df06e942cc58ae6ef920c44a5417c', // 2026-09-28 · SCRUM-1188.md (sólo tocadas)
+LISTA   '666f0a078e466800bbdf7c5e7bd49c2b427b89f0', // 2026-09-28 · SCRUM-1230.md
+LISTA   '0c381c940db43ad4699537e29262791df7fcee95', // 2026-09-28 · SCRUM-1184.md (sólo tocadas)
+LISTA   'c504b033de5e11ecfd7e7d46d0bc8b8d6fa546d8', // 2026-09-28 · SCRUM-1229.md
+LISTA   'a3c0be3e3659152fc1662a3434b0b14e80044b21', // 2026-09-28 · SCRUM-1234.md
+LISTA   'd49787292b06b2bca8dfee765f401ca5cd39b6f7', // 2026-09-28 · SCRUM-1199.md (sólo tocadas)
+LISTA   '44f8dd38259d67e219830b0a7322589fd8f287f5', // 2026-09-28 · SCRUM-1220.md (sólo tocadas)
+LISTA   '0afa87cd95645317226f59bc379edae59a7bea44', // 2026-09-28 · SCRUM-1239.md
+LISTA   '76da0f4916e2c39541c44f01e389cf9fc2d6747f', // 2026-09-28 · SCRUM-1216.md
+LISTA   '7ddab7d83ed9cc6c7c4b18e9d780f641c56fe1a6', // 2026-09-28 · SCRUM-1200.md
+LISTA   'fdc01e4fc4a33e53f91affe4b5780a95ec013ce6', // 2026-09-28 · SCRUM-1235.md
+LISTA   '8a27dd4a85b731faea7f4902295cbec1c64ef870', // 2026-09-28 · SCRUM-1247.md
+LISTA   '244b30787df5d4b3c54d6592cd0a6b90c6631123', // 2026-09-28 · SCRUM-1130.md
+LISTA   '0a0f6b79dea0f7f1f07fd69f57d317dffe79b999', // 2026-09-28 · SCRUM-1257.md
+LISTA   '6112855bd225d5778598f4449ce752972614da32', // 2026-09-28 · SCRUM-1136.md
+LISTA   'bb542f6d590658a6baf01218fcac5d9d3c641075', // 2026-09-28 · SCRUM-1232.md (sólo tocadas)
+LISTA   'a4e664cd5d130d330a0b391f0f34d0787020179c', // 2026-09-28 · SCRUM-1133.md
+LISTA   'ba1b096661db77f93aaaf52acdcfd7c9d99db9aa', // 2026-09-29 · SCRUM-1257.md
+LISTA   '510ba6d9f408490c6dcbf2bed0806fd298044627', // 2026-09-29 · SCRUM-1215.md
+LISTA   'bd2964d9a4ebfc48a38f8d34cacc1db250ebd144', // 2026-09-29 · SCRUM-1180.md
+LISTA   'ae49a457a20950256b4cc80b69aa7aedf40f72be', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
+LISTA   '7a94abae5260c5953b4171860e9779dd428f6527', // 2026-09-29 · SCRUM-1233.md
+LISTA   '51dcfe156990dfb36b6dfb225e6d75bda7e5a08e', // 2026-09-29 · SCRUM-1267.md
+LISTA   '2d1f9244cd0991cf6804e3965ebe1119fe0fdbe7', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+LISTA   '84925995b8621619f5c27542e90988cdbe4ee1e1', // 2026-09-29 · SCRUM-1266.md
+LISTA   'b1d8845daf38394c33a22814db323394517c091a', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
+LISTA   'fcc889928bd077ecd81776fded32ca83658e7cbb', // 2026-09-29 · SCRUM-1272.md
+LISTA   '89fb1ec45d06b8c8d8368bc68a1c2492f5e748ab', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+LISTA   '57d3b900b26c0ac5725010a0220d1b112471f935', // 2026-09-29 · SCRUM-1271.md
+LISTA   '59453d6a6fdf45b9c59c36bab08c04d3db134f0f', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
+LISTA   '00d98f6bae81edddfd783e7aa7ac86244b3bf07f', // 2026-09-29 · SCRUM-1135.md
+LISTA   'd3b37ac8fc5de19c15c4a39bd9fc2bf5abe8ecfb', // 2026-09-29 · SCRUM-1212.md (sólo tocadas)
+LISTA   '610adb8d9141b9d7e41038acca0fa73b6bba2932', // 2026-09-29 · SCRUM-1275.md
+LISTA   'f61f2d2efa89bc35a6208d64ae072f650f4fecf6', // 2026-09-29 · SCRUM-1266.md (sólo tocadas)
+LISTA   'e75b94ca8755bd5d27981940c5ff4c01b2df8695', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+LISTA   '3700de42ef552b5da5689f375084d8be8ff47157', // 2026-09-29 · SCRUM-1285.md
+LISTA   '51d81311b01e19d592ad99a1f1f0817e4121cb55', // 2026-09-29 · SCRUM-1126.md
+LISTA   '1183c79946d9da54f471aa3502070e6c43842105', // 2026-09-29 · SCRUM-1287.md
+LISTA   '483010e03a3836c702932420c239344ee2838d9e', // 2026-09-30 · SCRUM-1154.md
+LISTA   'd65cfaa9a09599656a3a97bfbb26f6ce82ad33e5', // 2026-09-30 · SCRUM-1196.md
+LISTA   'a91203a9a78d86eb9505ef170673761d0a6de984', // 2026-09-30 · SCRUM-1302.md (sólo tocadas)
+LISTA   '0e3b2d66d0ba92a3d0af41f01a2180644320077c', // 2026-09-30 · SCRUM-1196.md (sólo tocadas)
+LISTA   '71a4cd0552af761519536c3dcc7b44045c6c5f7b', // 2026-09-30 · SCRUM-1302.md (sólo tocadas)
+LISTA   '264096a822b0d225a17b673d15ae4c617d6b868d', // 2026-09-30 · SCRUM-1126.md
+LISTA   'f98f3ee1f8dc968b8158e769b98e83dbfa09c8ab', // 2026-09-30 · SCRUM-1142.md
+LISTA   'ba712b6d2d1938d2eb5bb4d27a970468a3041377', // 2026-10-01 · SCRUM-1257.md
+LISTA   'a5b62893c7616ddd19626afe5921eec67c691e9e', // 2026-10-01 · SCRUM-1102.md
+DERIVAR entradas nacidas tras el corte=278 · nombran ruta public/=56 · de ellas fuera de la via del efecto=21 · y de esas sin declarar=16 · con Fecha>corte (las que 811 ya exige)=4
+TEXTO   SCRUM-1023.md#APÉNDICE · 23-sep-2026 · SCRUM-1023 (parte 2) · El mapa: qué bloquea cada una, por gravedad, y cuáles no n
+TEXTO   SCRUM-1059.md#SCRUM-1059 · Acciones sobre varios clientes a la vez: etiquetar (servidor)
+TEXTO   SCRUM-1086.md#SCRUM-1086 · Lote único de literales de la web que prometen cobro
+TEXTO   SCRUM-1098.md#SCRUM-1098 · `seed-video.mjs` reventaba desde SCRUM-1027 (flag sin override) y su comentario ya mentía
+TEXTO   SCRUM-1102.md#SCRUM-1102e · La segunda sonda: las mismas citas, por la API de legislación consolidada
+TEXTO   SCRUM-1128.md#SCRUM-1128b · Las tres comprobaciones, medidas por efecto con la fila YA en el esquema
+TEXTO   SCRUM-1129.md#SCRUM-1129b · ¿De dónde sale el régimen de cada merchant?
+TEXTO   SCRUM-1195.md#SCRUM-1195 · Cinco rutas del carril J1 sin consumidor: censo con veredicto (no se retira nada)
+TEXTO   SCRUM-1240.md#SCRUM-1240 · Criterio de caja: qué dice la norma sobre `ClaveRegimen`
+TEXTO   SCRUM-1247.md#SCRUM-1247 · El asistente de IA dice que escribe Claude, y por defecto escribe Gemini
+TEXTO   SCRUM-1259.md#APÉNDICE · 29-sep-2026 · El BARRIDO por contenido: los 99 abiertos, uno a uno
+TEXTO   SCRUM-1280.md#SCRUM-1280 · Un nombre no declarado en el panel pone el check obligatorio en rojo
+TEXTO   SCRUM-1318.md#SCRUM-1318 · La entrada aparcada de los endpoints de envío describía un defecto ya arreglado
+TEXTO   SCRUM-1320.md#SCRUM-1320 · Un guard que encuentra defectos y además se queda ciego salía rotulado «no medido»
+TEXTO   SCRUM-1329.md#SCRUM-1329 · una cita firmada puede ser larga; la prosa, no
+TEXTO   SCRUM-1337.md#SCRUM-1337 · La Parte S1 del máster dice qué VE el Técnico en Inicio
+CRUCE primer instrumento=74 · motor=74 · solo en el primero=[] · solo en el motor=[]
+DERIVAR EXIT=0

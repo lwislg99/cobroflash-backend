@@ -239,7 +239,7 @@ export const SUELO_TOTAL = 646;
  * Antes, «qué ficheros/hijos son especiales» vivía en TRES copias a mano (AISLADOS del runner,
  * AISLADOS del verificador, CLAVES_HIJOS) y los tres modos de fallo NO eran equivalentes — el
  * peor, SILENCIOSO: un hijo que sale rojo y el guard no lo mira. Ahora TODO se deriva de aquí:
- * añadir un hijo es UNA entrada. El runner (test-staging-gated.mjs) construye su array de
+ * añadir un hijo es UNA entrada. El runner (staging-gated.mjs) construye su array de
  * ejecución ITERANDO este spec (no re-lista nada); el verificador usa `AISLADOS`; el validador de
  * abajo usa `CLAVES_HIJOS`. Un guard de texto (scrum199-fuente-unica-hijos.test.mjs) impide que
  * cualquiera de esas listas reaparezca a mano en el runner o el verificador.

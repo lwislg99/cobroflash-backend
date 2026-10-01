@@ -564,3 +564,84 @@ equipo midió hoy para los rojos de "pasa sola, falla en tanda". Vive en `tests/
 * No decide si `getMonth`/`getDate` sin `Date` explícito en otras 68 proyecciones de Prisma (fuera
   de alcance, ya separadas en SCRUM-1093/1093g) son de esta familia: sólo mira llamadas de método
   sobre un valor de tipo `Date`, nunca columnas.
+
+---
+
+# APÉNDICE · 30-sep-2026 · J2 · `POST /admin/invoices/bulk-paid` (la fila `fechaDeCobro`, tercer sitio)
+
+**Medido contra:** `origin/main` = `0e86f5def492e4a7dea3cffaca6704de513db149` · 2026-09-30T23:12:18+01:00 (J2, equipo de Javier)
+
+A9: comprobación → `tests/scrum1093-bulk-paid-hoy-de-madrugada.test.mjs`
+
+**Rama:** `scrum-1093-bulk-paid-zona`. **GO del fundador nombrando la ruta:** SCRUM-1093, comentario
+17654 («1-Autorizo»), leído por J2 en Jira. El GO recogido en SCRUM-1301 NO lo cubría: su «Qué
+autoriza» nombraba el webhook o confirm-bizum, y «⛔ nada más del camino de cobro». Se preguntó otra
+vez en lugar de estirarlo. Un permiso acotado no se ensancha interpretándolo.
+
+⛔ **Esto NO cierra SCRUM-1093.** `albaranNumber` y `quoteNumber` son de los carriles S y S1 (equipo de Luis).
+
+## El defecto
+
+`invoicesAdmin.routes.ts` (`/bulk-paid`) llamaba a `resolverFechaDeCobro(req.body?.paidAt)` **sin
+la zona del merchant**. Los otros dos llamadores ya la pasaban: `chargesAdmin` (confirm-bizum) y
+`instanteDeCobro` (el webhook, desde SCRUM-1301). Entre las 00:00 y las 02:00 de Madrid (00:00–01:00
+en invierno) no se podían marcar facturas en lote con la fecha de hoy.
+
+⚠️ **Aquí es peor de leer que en el webhook.** Allí salía un 500 genérico. Aquí sale un **400 con
+el texto firmado** «Esa fecha no puede ser posterior a hoy.». Es un mensaje seguro de sí mismo que
+contradice el calendario del profesional. Un error genérico invita a reintentar; uno que afirma
+algo falso sobre su fecha, no.
+
+**¿De quién es la zona si hay varios merchants?** No hay nada que decidir: el `updateMany` filtra
+`merchantId: req.merchantId`, así que un lote sólo toca facturas del merchant de la sesión.
+
+## El arreglo
+
+Dos líneas, las mismas que en `chargesAdmin`: `prisma.merchant.findUnique({ where: { id:
+req.merchantId }, select: { timezone: true } })` y `resolverFechaDeCobro(req.body?.paidAt, new
+Date(), zonaDelMerchant(m))`. No se fija `Europe/Madrid`. No hay texto nuevo, no cambia la respuesta
+y no se toca el camino de emisión (lo sigue comprobando `scrum397`, «REGLA 38»).
+
+## La prueba — rojo visto antes de arreglar
+
+Sobre el handler REAL compilado, con el reloj simulado (`mock.timers`). La base doblada solo
+devuelve el merchant de la sesión y el lote solo marca facturas de ese merchant.
+
+| # | Caso | Antes | Después |
+| --- | --- | --- | --- |
+| ① | Madrid, 31-mar 23:30Z, `paidAt` 1-abr | 🔴 400 `fecha_futura` | 200, marca las 3 |
+| ② | Madrid, `paidAt` 31-mar | 200 | 200 |
+| ③ | merchant SIN zona, `paidAt` 1-abr | 400 | 400 (para él aún es 31) |
+| ④ | Canarias en INVIERNO, 31-ene 23:30Z, `paidAt` 1-feb | 400 | 400 |
+| ④b | Madrid en el mismo instante | 🔴 400 | 200 (allí ya es 1-feb) |
+| ⑤ | POSITIVO: sin fecha, ids de dos merchants | 200, marca 3 | 200, marca 3, ninguna ajena |
+| ⑥ | Madrid, `paidAt` 2-abr | 400 | 400 (no acepta cualquier fecha) |
+
+⚠️ **El control de Canarias va el 31 de enero, no el 31 de marzo.** Desde el 29 de marzo Canarias
+está en UTC+1, así que el 31-mar 23:30Z allí ya es día 1 y el arreglo lo aceptaría: ese control no
+probaría nada.
+
+**Mutaciones** sobre `dist/`, restauradas con sha256. Caen las cinco:
+
+| Mutación | Qué cae |
+| --- | --- |
+| sin zona (lo de antes) | ① ④ |
+| `Europe/Madrid` fija | ③ ④ |
+| zona de otro merchant | ① ④ |
+| aceptar cualquier fecha | ③ ④ ⑥ |
+| lote sin filtro de `merchantId` | ① ② ⑤ |
+
+## Un error propio en esta rama, y lo que hizo
+
+Al repetir los rojos de la tanda (que resultaron ser el cliente de Prisma sin regenerar tras el
+avance de `main`), construí la lista de ficheros con un `sed` que falló. `node --test` con la lista
+**vacía** descubrió ficheros por su cuenta y ejecutó, entre otros, `scripts/wa-test.mjs` (sale con
+`exit 1` por falta de plantilla antes de enviar nada) y **`scripts/test-staging-gated.mjs`**. Ese
+script cargó `DATABASE_URL_TESTS` del `.env` del checkout compartido, que apunta a `yaqu_dev_javier`.
+Después: `npm run turno:estado` dice «Turno LIBRE», no hay nota de turno de esta sesión en `tmp` y
+no hay recibo de evidencia de la tanda (el que escribe el runner al acabar), así que no llegó a terminar ningún hijo. **Si hizo el
+preflight contra esa base no se puede saber sin volver a ejecutarlo, y no se ha vuelto a ejecutar.**
+Por qué esos dos y no otros (medido): el descubridor de `node --test` elige por NOMBRE, y de los 263
+ficheros de `scripts/` solo esos dos casan con sus patrones; además los cuenta como tests en verde
+si salen 0. Queda en la cicatriz de J2, sin comprobación: cerrarlo exige renombrarlos, y
+`test-staging-gated` está citado en el máster.

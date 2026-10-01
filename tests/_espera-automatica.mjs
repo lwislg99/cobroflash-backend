@@ -19,7 +19,7 @@
 //
 // Por eso `refrescarLock` NO cuenta como adquisición: el runner refresca DENTRO de su bucle de
 // hijos y eso es correcto — ya tiene el turno, no compite por él. Medido en `main`:
-// `adquirirLock` está en la línea 272 de `test-staging-gated.mjs`, FUERA de todo bucle, y lo
+// `adquirirLock` está en la línea 272 de `staging-gated.mjs`, FUERA de todo bucle, y lo
 // que hay dentro del bucle es `refrescarLock`. Confundirlos volvería rojo el runner legítimo.
 //
 // ── POR QUÉ AST Y NO TEXTO ────────────────────────────────────────────────────
@@ -59,7 +59,9 @@ function spawnAdquiere(nodo) {
   nodo.arguments.forEach(recoger);
   const todo = textos.join(' ');
   const tomaElTurno = /turno-staging/.test(todo) && /\btomar\b/.test(todo);
-  const lanzaLaTanda = /test-staging-gated|test:staging/.test(todo);
+  // SCRUM-1308 · el runner se llama `staging-gated.mjs` (antes con `test-` delante, que `node --test`
+  // descubría y ejecutaba). `staging-gated` casa con los dos nombres: no se estrecha lo que se detecta.
+  const lanzaLaTanda = /staging-gated|test:staging/.test(todo);
   return tomaElTurno || lanzaLaTanda;
 }
 

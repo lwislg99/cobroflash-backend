@@ -106,10 +106,30 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
 ];
 
 /**
- * Modelos con `merchantId` que quedan FUERA del barrido genérico, con su motivo.
+ * Modelos que quedan FUERA del barrido genérico, con su motivo.
  *
  * Se declaran en vez de omitirse en silencio: una ausencia sin explicación es indistinguible
  * de un olvido, y el guard obliga a que cada modelo derivado esté o en el orden o aquí.
+ *
+ * 🔑 SCRUM-1305 · QUÉ ES «GENÉRICO» Y QUÉ ES «FUERA», porque el nombre no lo dice solo.
+ *
+ * «Barrido genérico» es un paso concreto: el `deleteMany({ where: { merchantId } })` que recorre
+ * `ORDEN_BORRADO_MERCHANT`. Estar aquí significa **no pasar por ESE paso**, y nada más. NO dice
+ * si el modelo se borra o no, y las entradas de hoy tienen tres destinos distintos:
+ *   · se borra POR OTRA VÍA — `botSession`, por teléfono;
+ *   · cae EN CASCADA con su padre — los `*Assignee`, que además no tienen `merchantId`;
+ *   · NO se borra — `vfSubmission`, por política (SCRUM-1127b, decisión 3).
+ *
+ * ⚠️ ESTA LISTA NO LA LEE NADIE AL EJECUTARSE. Ni `borrarMerchant` ni `barridoDemo` la
+ * recorren: la leen los guards (`scrum192`, `scrum244`), que la aceptan como COBERTURA
+ * DECLARADA. El de `barridoDemo` (`scrum314`) no: exige que el demo BORRE de verdad todo modelo
+ * con `merchantId`. Así que **toda entrada nueva con `merchantId` necesita decidir qué hace el
+ * demo con ella y escribirle su paso en `barridoDemo`**, como `botSession` y `vfSubmission`.
+ *
+ * Y ese rojo es a propósito, no un rodeo: con una exclusión por política («esto no se borra de
+ * un comercio real»), qué hacer en el demo es una pregunta que hay que hacerse cada vez — para la
+ * cola de la AEAT, la respuesta buena puede ser que el demo no encole nunca. Derivarla de esta
+ * lista la contestaría sola, una vez y para todos. Se decidió no hacerlo (SCRUM-1305, opción C).
  */
 export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // SCRUM-174: `BotSession.merchantId` es NULLABLE a propósito — la sesión de primer contacto
@@ -132,6 +152,12 @@ export const FUERA_DEL_BARRIDO_GENERICO: Readonly<Record<string, string>> = {
   // que su padre. La diferencia se decidió en el ALTER (`docs/sql/scrum-597-…`), no aquí.
   quoteAssignee: 'cascada por sus dos padres (SCRUM-597): Quote y TeamMember declaran onDelete Cascade',
   invoiceAssignee: 'cascada por sus dos padres (SCRUM-597): Invoice y TeamMember declaran onDelete Cascade',
+  // SCRUM-1296: la cola de remisión a la AEAT. NO se barre, y es la decisión del fundador, no un
+  // hueco: sus dos `@relation` son `onDelete: Restrict` (SCRUM-1127b, decisión 3). Con filas
+  // dentro, el `deleteMany` de `invoice` revienta RUIDOSO — que es exactamente lo que se quiere.
+  vfSubmission:
+    'RESTRICT decidido en SCRUM-1127b (decisión 3): registros presentados ante la AEAT. ' +
+    'Un comercio con envíos no se borra — el borrado falla ruidoso en invoice.',
 };
 
 /**
@@ -179,6 +205,45 @@ export async function borrarMerchant(
 ): Promise<ResultadoBorrado> {
   const borradas: Record<string, number> = {};
   const errores: Array<{ modelo: string; error: string }> = [];
+
+  // SCRUM-1307 · PRIMERO SE PREGUNTA, Y CON ENVÍOS A LA AEAT NO SE TOCA NADA.
+  // Firma del fundador (Jira SCRUM-1307, comentario 17664, 1-oct-2026, «2-Firmo»), opción (a).
+  // La decisión 3 de SCRUM-1127b dice que un comercio con envíos no se borra, y el RESTRICT de
+  // `vfSubmission` solo lo cumplía para la fila de `invoice` y la del merchant. Medido en un
+  // Postgres desechable: el bucle seguía tras el fallo de `invoice`, `charge` y `quote` caían, y
+  // como `invoices.charge_id` / `invoices."quoteId"` son SET NULL (también en dev, staging y
+  // producción), la factura PRESENTADA se quedaba sin enlace a su cobro y a su presupuesto
+  // (regla 29), con `auditLog` —el registro fiscal— ya borrado.
+  //
+  // La negativa NO es un estado nuevo: devuelve la misma forma. Se distingue de «no había nada que
+  // borrar» en que `borradas` queda VACÍO (no se recorrió ningún modelo; un recorrido apunta cada
+  // uno, aunque sea con 0) y en que `errores` nombra `vfSubmission`.
+  //
+  // Y si la comprobación no se puede hacer, se niega igual: una pregunta que falla no es un permiso.
+  let envios: number;
+  try {
+    envios = await prisma.vfSubmission.count({ where: { merchantId } });
+  } catch (e: any) {
+    return {
+      ok: false,
+      borradas: {},
+      errores: [{
+        modelo: 'vfSubmission',
+        error: `NO SE HA BORRADO NADA: no se pudo comprobar si hay envíos a la AEAT (${e?.message || String(e)})`,
+      }],
+    };
+  }
+  if (envios > 0) {
+    return {
+      ok: false,
+      borradas: {},
+      errores: [{
+        modelo: 'vfSubmission',
+        error: `NO SE HA BORRADO NADA: el comercio tiene envíos a la AEAT (${envios} en la cola), y un comercio ` +
+          'con envíos no se borra (SCRUM-1127b, decisión 3; SCRUM-1307)',
+      }],
+    };
+  }
 
   const cuenta = async (clave: string, fn: () => Promise<{ count: number }>) => {
     try {

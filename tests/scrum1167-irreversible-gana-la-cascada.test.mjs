@@ -79,6 +79,11 @@ const IRREVERSIBLES = [
   { nombre: '«Borrar» proveedor', clases: ['btn', 'btn-danger', 'btn-sm', 'accion-irreversible-btn-44'] },
   { nombre: '«Borrar» plantilla', clases: ['btn-danger', 'btn-sm', 'accion-irreversible-btn-44'] },
   { nombre: '«Emitir» albarán (primaria)', clases: ['btn-primary', 'btn-sm', 'accion-irreversible-btn-44'] },
+  // SCRUM-1142 · ficha de factura (invoiceDetailView.js). Las clases las fija por el producto
+  // `tests/scrum1142-irreversibles-factura-44.test.mjs`. La rectificativa es un ítem del «⋯».
+  { nombre: '«Anular factura…»', clases: ['btn-secondary', 'btn-sm', 'accion-irreversible-btn-44'] },
+  { nombre: '«Anular factura» (modal)', clases: ['btn-danger', 'btn-sm', 'accion-irreversible-btn-44'] },
+  { nombre: '«Emitir factura rectificativa» (⋯)', clases: ['overflow-item', 'accion-irreversible-btn-44'] },
 ];
 
 test('SCRUM-1167 · SUELO: el lector de la hoja ve reglas y ve la de `.btn.btn-sm` a 30 px', () => {

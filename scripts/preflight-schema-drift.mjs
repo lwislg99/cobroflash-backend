@@ -63,7 +63,7 @@ dotenv.config({ path: path.join(PROJECT_ROOT, '.env'), quiet: true }); // .env d
 
 // La URL con credencial entra SOLO por el ENTORNO, nunca por argv. Aceptarla como argv[2] la metía
 // en la línea de ESTE proceso (visible en `ps`) e invitaba a que el llamador la tecleara —
-// exponiéndola antes de entrar aquí. El único llamador (scripts/test-staging-gated.mjs) ya la pasa
+// exponiéndola antes de entrar aquí. El único llamador (scripts/staging-gated.mjs) ya la pasa
 // por DATABASE_URL_TESTS, no por argumento. SCRUM-226.
 const url = process.env.DATABASE_URL_TESTS;
 // Datamodel a comparar: por defecto el REAL. `PREFLIGHT_DATAMODEL` lo sobrescribe SOLO para
