@@ -1,0 +1,19 @@
+CEBO REAL #1248 · rojo SOLO en checks NO obligatorios → no es atasco rojo (y de hecho entró)
+el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+sin datos de checks el clasificador se comporta como antes (no inventa rojo)
+un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+un obligatorio TODAVÍA CORRIENDO es ESPERANDO de verdad
+y una cuenta que solo se le parece NO
+🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO
+🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY
+🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que aparezca
+🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO
+🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar

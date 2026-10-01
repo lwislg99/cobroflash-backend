@@ -32,35 +32,7 @@
     }
   },
   "acusadas": {
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEditarLineas": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEmitir": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEnviarFirmar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFacturar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFirmarAqui": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFoto": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnVerTrabajo": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnWhatsApp": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -186,7 +158,7 @@
     },
     "public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual": {
       "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
+      "motivo": "SCRUM-1215 lote 5 (S2, c.17505; decisión del orquestador, 29-sep-2026): SE CONSERVA, declarada. Sin productor vivo desde SCRUM-491 (nadie en src/ escribe 'manual'), pero traduce un VALOR DE DATO que una fila antigua puede traer escrito; sin ella se vería el valor crudo. No se puede consultar la base para saberlo, así que el lado seguro es conservarla. El motivo ya consta en su código (paidViaEtiquetas.js:53-58, fichero de J, no tocado). Cuando es cierto: «Marcado a mano» es lo que significa ese valor."
     },
     "public/dashboard/js/parteDetailView.js · TEXTOS.confirmarPropuesta": {
       "clase": "SIN_COMENTARIO",
@@ -201,10 +173,6 @@
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
     "public/dashboard/js/parteDetailView.js · TEXTOS.sinLineas": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/productsView.js · MSG.no_catalog_for_trade": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
@@ -369,6 +337,38 @@
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.firmaRechazada",
       "motivo": "SCRUM-1215 lote 1: ya estaba FIRMADA desde SCRUM-890 comentario 15665 (docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md); el comentario del código se había quedado en «PROPUESTA, PENDIENTE DE FIRMA» y ahora cita su firma real. No se volvió a firmar."
+    },
+    {
+      "id": "public/dashboard/js/productsView.js · MSG.no_catalog_for_trade",
+      "motivo": "SCRUM-1215 lote 5 (S2, c.17505): revisada contra el código y FIRMADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17507, sin «aún» (no hay catálogo encargado para ese gremio). Lleva su comentario de firma encima."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEmitir",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEnviarFirmar",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFirmarAqui",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnVerTrabajo",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnWhatsApp",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnEditarLineas",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17494. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFacturar",
+      "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17496. Lleva su comentario de firma en su misma línea."
     }
   ]
 }

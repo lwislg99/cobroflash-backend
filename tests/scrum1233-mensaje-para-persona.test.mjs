@@ -86,6 +86,35 @@ test('SCRUM-1233 · CONTROL: una frase del servidor para una persona SÍ se ense
   assert.ok(t.includes('Tu cuenta está en pausa.'), `🔴 el helper se traga la frase del servidor: ${t}`);
 });
 
+// El mismo viaje en GASTOS (SCRUM-1233c): la lista no carga y el texto firmado (c.17504) ocupa su sitio.
+const AVISO_GASTOS = 'No se han podido cargar los gastos. Vuelve a intentarlo.';
+async function gastosTrasFallo(alPedir) {
+  const banco = cargarDashboard(RAIZ, {
+    red: {
+      fetch: async (url) => (/\/admin\/expenses\?/.test(String(url)) ? alPedir() : respuesta(200, {})),
+    },
+  });
+  const r = await pintarVista(banco, 'renderExpensesView');
+  assert.equal(r.error, null, `SUELO: Gastos revienta: ${r.error && r.error.message}`);
+  await respirar(40);
+  const nodos = todos(r.contenedor).filter((n) => String(n.className || '') === 'gastos-error');
+  assert.equal(nodos.length, 1, `CIEGO: no se pintó el aviso de fallo de la lista (${nodos.length})`);
+  return String(nodos[0].textContent || '');
+}
+
+test('SCRUM-1233c · 🔴 Gastos: un 500 sin mensaje pinta el texto firmado, no «Error: API 500»', async () => {
+  assert.equal(await gastosTrasFallo(() => respuesta(500, { error: 'internal_error' })), AVISO_GASTOS);
+});
+
+test('SCRUM-1233c · 🔴 Gastos: sin red pinta el texto firmado, no «Failed to fetch»', async () => {
+  assert.equal(await gastosTrasFallo(() => { throw new TypeError('Failed to fetch'); }), AVISO_GASTOS);
+});
+
+test('SCRUM-1233c · CONTROL: Gastos enseña la frase del servidor cuando la manda, como TEXTO', async () => {
+  const t = await gastosTrasFallo(() => respuesta(403, { error: 'x', message: 'Tu plan no incluye <b>gastos</b>.' }));
+  assert.equal(t, 'Tu plan no incluye <b>gastos</b>.', '🔴 la frase del servidor no llega, o se interpreta como HTML');
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // ③ EL CENSO VE LO QUE NO VEÍA — control positivo, negativo y ciego
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -156,9 +185,8 @@ test('SCRUM-1233 · 🔴 SUELO del censo: mira el dashboard entero, sin ciegos, 
 const TECHO = Object.freeze({
   'cobrosView.js': 1,
   'customerDetailView.js': 1,
-  // 2 → 1 (SCRUM-1233b): el guardado del gasto pasa por el helper. Queda :295, la carga de la
-  // lista, que no tiene texto aprobado y espera firma.
-  'expensesView.js': 1,
+  // expensesView.js: 2 → 1 (SCRUM-1233b, el guardado) → 0 (SCRUM-1233c, la carga de la lista con su
+  // texto firmado en SCRUM-1233 c.17504). Sale de la tabla: su techo es CERO.
   'facturasRecibidasView.js': 1,
   'invoiceDetailView.js': 3,
   'jobsView.js': 1,
@@ -174,7 +202,8 @@ const TECHO = Object.freeze({
 });
 // 19 → 16 (SCRUM-1233b): teamView y el guardado de expensesView, al helper; productsView :891 era
 // un FALSO POSITIVO (la variable solo se leía en la condición del ternario) y el censo ya no lo cuenta.
-const TOTAL_MEDIDO = 16;
+// 16 → 15 (SCRUM-1233c): la carga de la lista de Gastos, al helper con su texto firmado (c.17504).
+const TOTAL_MEDIDO = 15;
 
 test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocultos que su techo', () => {
   const por = new Map();
@@ -201,7 +230,7 @@ test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocu
 test('SCRUM-1233 · 🔴 la tabla NO CRECE, y lo arreglado se queda en cero', () => {
   const total = Object.values(TECHO).reduce((a, b) => a + b, 0);
   assert.ok(total <= TOTAL_MEDIDO, `🔴 la tabla ha subido a ${total}; solo puede bajar de ${TOTAL_MEDIDO}`);
-  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js', 'teamView.js', 'productsView.js']) {
+  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js', 'teamView.js', 'productsView.js', 'expensesView.js']) {
     assert.equal(base in TECHO, false, `🔴 ${base} ha vuelto a la tabla: se arregló en SCRUM-1233 y su techo es CERO`);
   }
 });

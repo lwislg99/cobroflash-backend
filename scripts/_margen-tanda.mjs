@@ -16,7 +16,7 @@
 // que nadie mira, que es justo el defecto que este ticket viene a cerrar.
 //
 // ── POR QUÉ ESTE MÓDULO EXISTE (y no vive dentro del runner) ─────────────────
-// `test-staging-gated.mjs` se ejecuta ENTERO al importarlo: es un script, no una librería. Un
+// `staging-gated.mjs` se ejecuta ENTERO al importarlo: es un script, no una librería. Un
 // test que lo importara lanzaría una tanda. Sacando aquí las piezas puras se pueden ejercitar en
 // `npm test` sin BD, sin turno y sin lanzar nada — que es la única forma de que este código
 // tenga red (SCRUM-161: un artefacto que no corre en `npm test` no existe).

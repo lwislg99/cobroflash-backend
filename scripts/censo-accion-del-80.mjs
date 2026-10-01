@@ -17,6 +17,7 @@
 //   · 2 clics → está dentro del «⋯»: abrir el menú + pulsar.
 //   · 3 clics → está dentro del «⋯» y además abre un modal que hay que confirmar.
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { servirListas, abrirNavegador, abrirVista } from './_banco-lista.mjs';
@@ -110,15 +111,35 @@ const ABRIR_OVERFLOW = `(() => {
   if (!t) return { hay: false, dentro: [] };
   t.click();
   const menu = document.querySelector('.overflow-menu, .overflow-sheet');
+  // 🔴 SCRUM-1179-C · «el menú tiene 0 cosas» y «no encontré el menú» NO son lo mismo: antes los dos
+  // salían como «dentro del ⋯: 0». Se devuelve si el menú se VIO.
   return {
     hay: true,
+    menuVisto: !!menu,
     dentro: menu ? [...menu.querySelectorAll('button, a[href]')].map((b) => (b.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 42)) : [],
   };
 })()`;
 
+/**
+ * El árbol que se mide, LEÍDO y no escrito a mano. El rótulo decía «esta rama (816 + 823 dentro)»
+ * desde el 8-sep: cierto el día que se escribió y falso desde que esas ramas se mergearon. En CI
+ * se toma `GITHUB_SHA`; si no se puede leer, se dice.
+ */
+function arbolMedido() {
+  if (process.env.GITHUB_SHA) return `${process.env.GITHUB_SHA.slice(0, 8)} (CI)`;
+  try {
+    const sha = execFileSync('git', ['rev-parse', '--short=8', 'HEAD'], { cwd: RAIZ, encoding: 'utf8' }).trim();
+    const rama = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: RAIZ, encoding: 'utf8' }).trim();
+    const sucio = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: RAIZ, encoding: 'utf8' }).trim();
+    return `${sha} (${rama})${sucio ? ' + cambios SIN commitear' : ''}`;
+  } catch {
+    return '⚠️ NO SUPE LEERLO (sin git): esta medida no dice de qué código es';
+  }
+}
+
 const { srv, puerto } = await servirListas(path.join(RAIZ, 'public'), LISTAS);
 const { browser, quien } = await abrirNavegador(puppeteer);
-console.log(`navegador: ${quien}  ·  viewport: ${ANCHO} px  ·  árbol: esta rama (816 + 823 dentro)\n`);
+console.log(`navegador: ${quien}  ·  viewport: ${ANCHO} px  ·  árbol: ${arbolMedido()}\n`);
 
 let ciego = 0;
 for (const l of LISTAS) {
@@ -127,6 +148,14 @@ for (const l of LISTAS) {
   console.log('═'.repeat(88));
   console.log(`  ${l.rotulo}`);
   console.log('═'.repeat(88));
+  // Una vista que dio error al PINTARSE puede haberse quedado a medias: su inventario no describe la
+  // pantalla que ve el profesional. Se declara, no se cuenta.
+  if (errores.length) {
+    console.log(`  ⚠️ NO SUPE MIRAR: la vista dio error al pintarse: ${errores.join(' | ')}`);
+    ciego += 1;
+    await page.close();
+    continue;
+  }
   if (r.error || !r.hayTabla || !r.hayFila) {
     console.log(`  ⚠️ NO SUPE MIRAR: ${r.error || (r.hayTabla ? 'la tabla no tiene ninguna fila de DATOS (solo cabeceras de grupo)' : 'no hay tabla')} · ${r.nodos} nodos`);
     if (errores.length) console.log(`     errores: ${errores.join(' | ')}`);
@@ -146,7 +175,10 @@ for (const l of LISTAS) {
   console.log(`     → primarios: ${primarios.length}`);
 
   const ov = await page.evaluate(ABRIR_OVERFLOW);
-  if (ov.hay) {
+  if (ov.error || (ov.hay && !ov.menuVisto)) {
+    console.log(`\n  ⚠️ NO SUPE ABRIR el «⋯»: ${ov.error || 'la fila tiene «⋯» pero al pulsarlo no apareció ningún menú'} — su contenido NO es 0, es desconocido`);
+    ciego += 1;
+  } else if (ov.hay) {
     console.log(`\n  DENTRO DEL «⋯» (un clic sólo para verlo): ${ov.dentro.length}`);
     for (const t of ov.dentro) console.log(`        «${t}»`);
   } else {

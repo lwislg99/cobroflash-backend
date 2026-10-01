@@ -1,0 +1,56 @@
+BASE · salida 0 · pasan 27 · caen 0
+M1 · CAZADA · pasan 25 · caen 2 · restaurado si · un .html deja de contar como interfaz
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M2 · CAZADA · pasan 22 · caen 5 · restaurado si · tocar la interfaz ya no obliga a nada (el defecto del ticket, entero)
+      cae: SCRUM-1340 · 🔴 EL CASO QUE SE VIO: el registro de 1317 sin fecha y sin prefijo ya no sale exento
+      cae: SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada
+      cae: SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M3 · CAZADA · pasan 26 · caen 1 · restaurado si · un clon somero se mide como si trajera la cadena
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+M4 · CAZADA · pasan 25 · caen 2 · restaurado si · la declaracion de una entrada ajena que el PR solo rozo lo salva
+      cae: SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada
+      cae: SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta
+M5 · CAZADA · pasan 25 · caen 2 · restaurado si · una linea en blanco basta para atribuir una entrada
+      cae: SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M6 · CAZADA · pasan 25 · caen 2 · restaurado si · el corte deja de aplicarse: entra toda la historia
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M7 · CAZADA · pasan 26 · caen 1 · restaurado si · lo que aun no esta rastreado no cuenta como cambio de la rama
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+M8 · CAZADA · pasan 24 · caen 3 · restaurado si · el lector de parches no sale nunca de la cabecera: no lee ninguna linea
+      cae: SCRUM-1340 · AUTOPRUEBA: los lectores de `git log` separan unidades, ficheros y líneas añadidas
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M9 · CAZADA · pasan 25 · caen 2 · restaurado si · tienen que declarar TODAS las entradas del PR, no una
+      cae: SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+M10 · CAZADA · pasan 24 · caen 3 · restaurado si · sin base resuelta se sigue adelante (y con base, se declara ciego)
+      cae: SCRUM-1340 · SUELO: la cadena de primer padre se pudo leer, y trae PR de interfaz de verdad
+      cae: SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+J1 · CAZADA · pasan 26 · caen 1 · restaurado si · la lista admite altas posteriores al techo (la escapatoria)
+      cae: SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio
+J2 · CAZADA · pasan 26 · caen 1 · restaurado si · la lista puede pasar de su tope
+      cae: SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio
+J3 · CAZADA · pasan 26 · caen 1 · restaurado si · una heredada que ya declara se queda en la lista sin que nadie lo diga
+      cae: SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio
+J4 · CAZADA · pasan 24 · caen 3 · restaurado si · lo que no declara y esta fuera de la lista deja de acusarse
+      cae: SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio
+      cae: SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+J5 · CAZADA · pasan 24 · caen 3 · restaurado si · lo que cambia la rama deja de juzgarse
+      cae: SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada
+      cae: SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio
+      cae: SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M
+J6 · CAZADA · pasan 26 · caen 1 · restaurado si · la linea de la cuenta cambia N por M
+      cae: SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M
+A1 · CAZADA · pasan 26 · caen 1 · restaurado si · un PR real de interfaz que no declara, FUERA de la lista (la violacion de verdad)
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+A2 · CAZADA · pasan 26 · caen 1 · restaurado si · un registro real de la lista pasa a declarar: la lista tiene que encoger diciendolo
+      cae: SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada
+BASE DESPUES · salida 0 · pasan 27 · caen 0
+TOTAL · 18 de 18 mutaciones corridas · {"CAZADA":18}

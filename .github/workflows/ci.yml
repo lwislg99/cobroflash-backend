@@ -453,11 +453,42 @@ jobs:
         with:
           node-version: '24'
 
+      # ── SCRUM-1284 (R1) · UN PR QUE SOLO TRAE PROSA NO ARRANCA UN NAVEGADOR ──────────────────
+      # En los 493 PR del 22–28 sep, 156 corridas (32%) solo tocaban `docs/`/`.md`, y este job les
+      # cobraba ~9 min a cada una por medir unas pantallas que ese PR no puede cambiar: los 38
+      # guards de navegador no leen `docs/` (medido; el porqué y los números, en
+      # `scripts/equipo/solo-docs.mjs`). Los pasos de abajo se saltan y el resumen lo DICE.
+      # SOLO en este job: el meta-guard y el trinquete SÍ dependen de `docs/` y corren siempre, y
+      # `build + tests` no se toca. En push a `main` este paso no corre y todo lo de abajo sí.
+      # Fail-closed: si el diff no se puede calcular, `solo_docs=false` y se corre todo.
+      - name: ¿Este PR toca solo documentación? (SCRUM-1284 · R1)
+        id: alcance
+        if: github.event_name == 'pull_request'
+        run: |
+          set +e
+          SALIDA="solo_docs=false"
+          if git diff --name-only "origin/main...HEAD" > "$RUNNER_TEMP/cambiados.txt"; then
+            SALIDA="$(node scripts/equipo/solo-docs.mjs "$RUNNER_TEMP/cambiados.txt" || echo solo_docs=false)"
+          else
+            echo "no pude calcular el diff contra origin/main: se corre todo"
+          fi
+          echo "$SALIDA" >> "$GITHUB_OUTPUT"
+          if [ "$SALIDA" = "solo_docs=true" ]; then
+            {
+              echo "### guards de navegador — NO se han corrido (SCRUM-1284 · R1)"
+              echo "Este PR solo toca documentación y ninguno de estos guards la lee. **No es un verde de los guards: es que no aplican.**"
+              echo '```'; cat "$RUNNER_TEMP/cambiados.txt"; echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
+
       - run: npm ci
+        if: steps.alcance.outputs.solo_docs != 'true'
 
       # Dos de los nueve —`vias-de-cobro` y `aviso-bizum`— importan de `dist/`, así que sin
       # compilar se caerían por falta de módulo y el rojo diría lo que no es.
       - name: Compilar (tsc)
+        if: steps.alcance.outputs.solo_docs != 'true'
         run: npm run build
 
       # 🔴 QUE HAYA NAVEGADOR SE COMPRUEBA ANTES, Y EN VOZ ALTA.
@@ -473,6 +504,7 @@ jobs:
       #    espacio dentro del mensaje, y en un escalar plano YAML eso se lee como un mapa. El
       #    fichero se rompería, y un workflow que no parsea no falla: NO CORRE.
       - name: Qué navegador hay
+        if: steps.alcance.outputs.solo_docs != 'true'
         run: |
           node -e "import('./scripts/_navegador.mjs').then(m => { const r = m.resolverNavegador(); if (!r.ok) { console.error('NO SUPE MIRAR'); console.error(r.motivo); process.exit(2); } console.log(r.quien + ' -> ' + r.ruta); })"
 
@@ -497,7 +529,107 @@ jobs:
       # CI **QUEDA ABIERTO** — hipótesis A (arranque en frío del runner) en pie y SIN CONFIRMAR.
       # Ver `docs/master/SCRUM-617.md`.
       - name: Guards de navegador
+        if: steps.alcance.outputs.solo_docs != 'true'
         run: npm run guards:visuales
+
+      # ── SCRUM-1179-C · EL CENSO DE TOQUE DEL PANEL, INFORMATIVO: CORRE, CUENTA Y NO BLOQUEA ──
+      #
+      # `censo:tactil-panel` cuenta los objetivos de toque por debajo de 44 px en las vistas del
+      # panel que `guard:objetivo-tactil` NO vigila (entre ellas botones de COBRO a ~30 px). Hasta
+      # hoy no corría en ningún sitio (SCRUM-1172) y se citaba como red. Aquí corre en cada PR y deja
+      # su número en el resumen del job — y NO BLOQUEA, a propósito y por dos motivos: este job no
+      # es obligatorio, y el censo sale 0 aunque encuentre botones cortos (cuenta, no juzga). Lo
+      # único que lo pone en rojo es no haber sabido medir (sale 2), y eso se dice en el resumen.
+      # Coste medido en local (29-sep-2026): ~29 s, un navegador.
+      # `continue-on-error`: su «no supe medir» no se confunde con el veredicto de los guards.
+      - name: censo:tactil-panel (informativo — NO bloquea)
+        if: always() && steps.alcance.outputs.solo_docs != 'true'
+        continue-on-error: true
+        run: |
+          set +e
+          npm run -s censo:tactil-panel > "$RUNNER_TEMP/tactil.txt" 2>&1
+          CODIGO=$?
+          set -e
+          cat "$RUNNER_TEMP/tactil.txt"
+          {
+            echo "### censo:tactil-panel — informativo, NO bloquea (SCRUM-1179-C)"
+            if [ "$CODIGO" -eq 0 ]; then
+              echo '```'
+              sed -n '/═══ EL NÚMERO ═══/,/SIN .btn-sm/p' "$RUNNER_TEMP/tactil.txt"
+              grep -E 'vistas que publica el banco' "$RUNNER_TEMP/tactil.txt" || true
+              echo '```'
+            else
+              echo "🔴 **NO SUPO MEDIR** (salida $CODIGO): este número no vale como cero. Ver el log del paso."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$CODIGO"
+
+      # ── SCRUM-1179-C (2/7) · ¿A CUÁNTOS CLICS? PULSA LAS CINCO LISTAS, INFORMATIVO, NO BLOQUEA ──
+      #
+      # `censo:clics-del-80` pulsa de verdad la fila de cada lista y dice si abre el documento, por
+      # qué vía, si hay casilla y qué hace el primario. Tres salidas que NO se confunden:
+      #   0 medido · 1 medido y una fila REVIENTA al pulsarla (defecto del producto: así se cazó la
+      #   fila de Facturas, `cb is not defined`, que este mismo censo pintaba como «NO navega») ·
+      #   2 o más: no supo medir, y su tabla no vale como dato. Incluye que falle su CONTROL: antes de
+      #   medir pulsa una fila sintética quieta y otra que revienta a propósito, y si no las distingue
+      #   no mide.
+      # Coste medido en local (29-sep-2026): ~9 s, un navegador.
+      - name: censo:clics-del-80 (informativo — NO bloquea)
+        if: always() && steps.alcance.outputs.solo_docs != 'true'
+        continue-on-error: true
+        run: |
+          set +e
+          npm run -s censo:clics-del-80 > "$RUNNER_TEMP/clics.txt" 2>&1
+          CODIGO=$?
+          set -e
+          cat "$RUNNER_TEMP/clics.txt"
+          {
+            echo "### censo:clics-del-80 — informativo, NO bloquea (SCRUM-1179-C)"
+            if [ "$CODIGO" -eq 0 ] || [ "$CODIGO" -eq 1 ]; then
+              if [ "$CODIGO" -eq 1 ]; then
+                echo "🔴 **UNA FILA REVIENTA AL PULSARLA** (defecto del producto, no del censo):"
+              fi
+              echo '```'
+              sed -n '/^lista /,/^─── detalle/p' "$RUNNER_TEMP/clics.txt" | sed '$d'
+              sed -n '/AL PULSAR LA FILA/,$p' "$RUNNER_TEMP/clics.txt"
+              echo '```'
+            else
+              echo "🔴 **NO SUPO MEDIR** (salida $CODIGO): esta tabla no vale como dato. Ver el log del paso."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$CODIGO"
+
+      # ── SCRUM-1179-C (3/7) · ¿QUÉ SE PUEDE PULSAR EN CADA LISTA? INFORMATIVO, NO BLOQUEA ──
+      #
+      # `censo:accion-del-80` hace el inventario de lo pulsable en la primera fila de cada lista (a la
+      # vista, dentro del «⋯» y en la barra). Cuenta, no juzga: sale 0 midiendo; 2 si no supo medir
+      # una lista (vista con error al pintarse, sin fila de datos, o un «⋯» que no abrió menú: antes
+      # eso salía como «dentro del ⋯: 0»). El árbol que mide lo LEE (en CI, `GITHUB_SHA`); el rótulo
+      # «esta rama (816 + 823 dentro)» estaba escrito a mano desde el 8-sep y era falso.
+      # Coste medido en local (29-sep-2026): ~3 s, un navegador.
+      - name: censo:accion-del-80 (informativo — NO bloquea)
+        if: always() && steps.alcance.outputs.solo_docs != 'true'
+        continue-on-error: true
+        run: |
+          set +e
+          npm run -s censo:accion-del-80 > "$RUNNER_TEMP/accion.txt" 2>&1
+          CODIGO=$?
+          set -e
+          cat "$RUNNER_TEMP/accion.txt"
+          {
+            echo "### censo:accion-del-80 — informativo, NO bloquea (SCRUM-1179-C)"
+            if [ "$CODIGO" -eq 0 ]; then
+              echo '```'
+              grep -E '^navegador:|^  [A-Z][a-záéíóú]+$|EN LA FILA|→ primarios|DENTRO DEL' "$RUNNER_TEMP/accion.txt" || true
+              echo '```'
+            else
+              echo "🔴 **NO SUPO MEDIR** (salida $CODIGO): este inventario no vale como dato. Ver el log del paso."
+              echo '```'
+              grep -E 'NO SUPE' "$RUNNER_TEMP/accion.txt" || true
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$CODIGO"
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-745 · EL META-GUARD, EN CI · un aviso que nadie está obligado a mirar no es un guard
@@ -792,6 +924,11 @@ jobs:
     timeout-minutes: 5
     # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
     continue-on-error: true
+    # SCRUM-1284 (R4) · SOLO EN PUSH A `main`. Lo que mide —producción contra `main`— no depende
+    # del PR: en los 493 PR del 22–28 sep dio el MISMO veredicto en todos a la vez, y costaba
+    # ~576 min facturables por semana. La vigilancia no se pierde: sigue aquí en cada merge a
+    # `main` y en `vigia-despliegue.yml` cada 2 h, que es el que abre el aviso (SCRUM-1123).
+    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4

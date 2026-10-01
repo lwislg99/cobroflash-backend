@@ -182,6 +182,11 @@ function serializeParteParaElTecnico(parte: any) {
  */
 function serializeParteParaLaOficina(parte: any) {
   const lineas: LineaParte[] = Array.isArray(parte.lineas) ? parte.lineas : [];
+  // SCRUM-1302 (A) · la marca del dato inventado (SCRUM-1266) viaja TAMBIÉN aquí. El `PATCH` con rol
+  // admin responde esta vista, y la ficha del parte repinta su aviso con lo que vuelve: sin la marca,
+  // el dueño que editaba la descripción veía irse el aviso aunque la base la conservaba. Se toma de
+  // `lineasParaElTecnico`, la MISMA función que la sirve al técnico: una sola regla de qué queda escrito.
+  const marcas = lineasParaElTecnico(lineas);
   const conImporte = lineas.map((l: any, i: number) => {
     const precio = l.precioUnitario === null || l.precioUnitario === undefined ? null : Number(l.precioUnitario);
     const unds = l.unds === null || l.unds === undefined ? null : Number(l.unds);
@@ -199,6 +204,7 @@ function serializeParteParaLaOficina(parte: any) {
       precioUnitario: precio,
       tipoIva: l.tipoIva === null || l.tipoIva === undefined ? null : Number(l.tipoIva),
       importe,
+      ...(marcas[i]?.datosNoRespaldados ? { datosNoRespaldados: marcas[i].datosNoRespaldados } : {}),
     };
   });
   // 🔴 «SIN VALORAR» ES POR LÍNEA, NO POR PARTE: un parte con tres líneas y dos precios está sin

@@ -1,0 +1,7 @@
+
+⬜ CIEGO — no terminé; no sé nada de tus guards. Corté al runner al pasar el plazo de 0.001 s.
+  Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha
+  dicho que esté bien. Cuánto tarda este comando lo decide la carga de la máquina, no la lista
+  (mismo árbol: de 10 s a más de 90 según los núcleos libres, SCRUM-1345). Relánzalo cuando la
+  máquina afloje. El presupuesto de tiempo de la lista se juzga en CI, no aquí.
+  ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde

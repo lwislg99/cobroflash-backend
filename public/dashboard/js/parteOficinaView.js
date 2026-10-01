@@ -199,22 +199,23 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
   card.appendChild(guardar);
 
   guardar.onclick = function () {
-    guardar.disabled = true;
     const precios = entradas.map(function (e) {
       // SCRUM-889 · con el id: si el técnico quitó esa línea mientras, el precio no cae en la de detrás.
       return { indice: e.indice, id: e.id, precioUnitario: e.input.value === '' ? null : Number(e.input.value) };
     });
-    apiRequest('/admin/partes/' + parte.id, {
-      method: 'PATCH',
-      body: JSON.stringify({ precios: precios }),
+    // 🔴 SCRUM-1285 · la tarjeta ENTERA queda congelada mientras vuelve el PATCH: el repintado de
+    // abajo pinta lo del servidor, y lo que se tecleara entretanto desaparecería sin aviso.
+    congelarMientrasGuarda(card, function () {
+      return apiRequest('/admin/partes/' + parte.id, {
+        method: 'PATCH',
+        body: JSON.stringify({ precios: precios }),
+      });
     }).then(function (actualizado) {
       // 🔴 SE REPINTA CON LO QUE DEVUELVE EL SERVIDOR, no con lo que había en la pantalla: es la
       // única forma de que el jefe vea LO QUE SE GUARDÓ y no lo que él tecleó. Si el servidor
       // hubiera redondeado o rechazado algo, aquí se ve.
-      guardar.disabled = false;
       pintarParte(actualizado.id, detalle, container, opts, actualizado);
     }).catch(function () {
-      guardar.disabled = false;
       uiErrorState(detalle, 'No se han podido guardar los precios',
         function () { pintarParte(parte.id, detalle, container, opts); });
     });

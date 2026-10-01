@@ -288,6 +288,13 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false, dir = null, con
  * mirando QUIÉN firma, y lo que añade la delegación es un segundo nombre con respaldo escrito.
  *
  * Un `[]` aquí SÍ es un veredicto: el barrido ya se declaró no-ciego al construir la lista.
+ *
+ * 🔴 SCRUM-1306 · UNA RUTA DEVUELTA NO DICE QUE LA FIRMA SIGA VIGENTE. El historial no se borra: si
+ * un texto se vuelve a firmar en otra ficha, el literal VIEJO sigue constando aquí para siempre.
+ * Así que «¿consta en alguna ficha?» (`.length > 0`), y también «¿en alguna de SCRUM-n?», NO valen
+ * para un texto que se pueda volver a firmar: compruébalo contra SU ficha, por ticket Y ranura
+ * (`aprobacionesDeMicrocopy().find((a) => a.ticket === T && a.ranura === R)`) o por su ruta exacta.
+ * Lo sujeta el trinquete `tests/scrum1306-consta-en-alguno.test.mjs`: las formas débiles no suben.
  */
 export function constaAprobado(texto, opciones) {
   const aguja = desnudar(texto);

@@ -18,7 +18,7 @@ import { HIJOS_SPEC, AISLADOS, CLAVES_HIJOS, pesadoEsElUltimo } from '../scripts
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Los dos ficheros que ANTES tenían una copia a mano de la lista de aislados/claves.
-const CONSUMIDORES = ['scripts/test-staging-gated.mjs', 'scripts/verificar-evidencia-tanda.mjs'];
+const CONSUMIDORES = ['scripts/staging-gated.mjs', 'scripts/verificar-evidencia-tanda.mjs'];
 
 test('SCRUM-199 · AISLADOS, CLAVES_HIJOS y el orden se DERIVAN del spec (no se repiten)', () => {
   assert.deepEqual(AISLADOS, HIJOS_SPEC.filter((h) => h.aislado).map((h) => h.fichero),

@@ -29,12 +29,16 @@ enviar; aquí sirve para que tú veas el estado.
 |---|---|---|
 | **SIN RESPUESTA** | Nadie la ha contestado | 14 |
 | **IA · 22-sep** | Respuesta preparada por **una sesión de IA** contra la FAQ de la AEAT y el BOE (`PREGUNTAS_ASESOR.md`, sección «RESPUESTAS · 22-sep», que lo dice en su primera línea). **Ningún asesor humano la ha revisado.** El cotejo del 23-sep (SCRUM-1088) comprobó que las citas existen, no que la aplicación a nuestro caso sea correcta | 11 |
-| **«ASESOR» · 23-sep, AUTORÍA SIN DECLARAR** | Respuestas rotuladas «el asesor fiscal», de SCRUM-1104 y 1106, volcadas en `docs/legal/PREGUNTAS_ASESOR.md:848` (`Q-C1.`) y `:978` (`Q-C8.`). **Ningún documento dice si las escribió una persona o una herramienta.** El «asesor» marca él mismo con ⚠ lo que cita «de memoria». | 2 |
+| **IA · 23-sep** | Respuestas rotuladas «el asesor fiscal», de SCRUM-1104 y 1106, volcadas en `docs/legal/PREGUNTAS_ASESOR.md:848` (`Q-C1.`) y `:978` (`Q-C8.`). **Las escribió una herramienta, no una persona** (decisión 1, 30-sep). **Ningún profesional las ha revisado.** La propia respuesta marca con ⚠ lo que cita «de memoria». | 2 |
 | **AEAT** | Respuesta oficial de la Agencia (correo de julio en SCRUM-143) | 1 |
+
+**Ninguna de las 28 tiene hoy la revisión de un profesional.** 13 tienen respuesta de IA (11 del
+22-sep y 2 del 23-sep), 14 no tienen ninguna, y la A3 tiene la de la AEAT, que es la Agencia y no un
+asesor nuestro.
 
 **Por qué importa, con un caso.** El mapa de SCRUM-1023 marca 17 preguntas como «NO necesita
 asesor», y **la mayoría se apoya en respuestas de la clase IA · 22-sep** (el resto, en la FAQ de la AEAT o en
-respuestas del 23-sep). La P11 (factura a un
+las respuestas del 23-sep, que también son de IA). La P11 (factura a un
 particular sin NIF) es el ejemplo. Está «respondida» en la sección B3 por una sesión de IA, el código
 la sigue marcando `SIN_DICTAMEN`, y ahora mismo **nada de D5 se construye hasta que conteste un
 asesor** (17446). Una respuesta de IA con cita tiene aspecto de fuente, y no lo es.
@@ -48,22 +52,18 @@ en el expediente de esta entrega. **No las he vuelto a comprobar hoy**, y se cit
 en nuestros expedientes: RD 1007/2023, Orden HAC/1177/2024, RD-ley 15/2025, RGPD, LOPDGDD, Reglamento
 eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ de la AEAT.
 
-## Cuatro decisiones tuyas, antes de enviar
+## Las cuatro decisiones, tomadas (Javier, 30-sep-2026; literales en SCRUM-1261, comentario 17638)
 
-1. **¿Quién escribió las respuestas del 23-sep (Q-C1 a Q-C8, modelos y contabilidad)?** Si fue una
-   persona, lo pone y cambia la marca. Si fue una herramienta, la pregunta **E4** de abajo deja de ser
-   condicional y hay que mandarla entera.
-2. **¿Se mandan también las que tienen respuesta de IA, o sólo las que no tienen ninguna?** Las
-   he incluido todas y marcadas. Mandar sólo las SIN RESPUESTA deja 14 preguntas, pero entonces las
-   respuestas de IA quedan sin la firma de un profesional.
-3. **A3 (Convenio 017).** La AEAT ya lo contestó por correo en julio. El 22-sep dijiste «lo vuelvo a
-   preguntar», y por eso está dentro. Si ya no hace falta, sale.
-4. **Las cuatro de SCRUM-1232 §Ⓗ (justificantes antiguos en el libro y el 303) están FUERA**, y se
-   mandan sólo si algún profesional **real** llegó a recibir un justificante. Dijiste el 28-sep que no
-   hay ningún profesional real, y otra sesión leyó ese día en el catálogo de producción 2 facturas,
-   las dos de prueba. **Pero el censo de producción del 10-ago contó 44 justificantes.** Las dos
-   mediciones chocan y yo no mido producción. Si alguno de esos 44 es de un cliente de verdad, esas
-   cuatro vuelven a la lista.
+1. **Las respuestas del 23-sep (Q-C1 a Q-C8, modelos y contabilidad) las escribió una herramienta**,
+   no una persona. Su marca pasa a **IA · 23-sep** (B6 y E4), y la **E4** deja de ser condicional: se
+   envía entera.
+2. **Se envían las 28**, también las que tienen respuesta de IA. Las revisarás a mano y las llevarás
+   a un profesional real.
+3. **A3 (Convenio 017) se queda dentro.** La AEAT ya lo contestó por correo en julio, y hay
+   conversaciones abiertas con ella.
+4. **Las cuatro de SCRUM-1232 §Ⓗ (justificantes antiguos en el libro y el 303) quedan fuera
+   definitivamente.** Los 44 justificantes del censo de producción del 10-ago eran todos de prueba,
+   de ningún profesional real.
 
 ## De dónde sale cada pregunta
 
@@ -71,14 +71,14 @@ eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ d
 |---|---|---|---|
 | A1 | F1 · P14 | IA · 22-sep | el riesgo del productor (art. 201 bis LGT) |
 | A2 | F2 · RESPUESTAS·A · AUDITORIA_CAMINO_EMISION:189 | IA · 22-sep | conectar el envío a la AEAT |
-| A3 | F3 · SCRUM-143 | AEAT (correo de julio) + repetir por decisión tuya | A2 y constituir la SL |
+| A3 | F3 · SCRUM-143 | AEAT (correo de julio) + se repite (decisión 3) | A2 y constituir la SL |
 | A4 | F10 · F17 · P19 · DECLARACION_RESPONSABLE:59 y :72 | IA · 22-sep (B2), parcial | la declaración responsable |
 | B1 | F6 · P11 · D5.1 · D5.2 y D5.3 (confirmaciones) · D5.5 · 1253 Ⓖ.3 · F9/P16.4 · semaforoFiscal.js:37 | IA · 22-sep (B3) | todo D5; el aviso «cliente sin NIF» |
 | B2 | F9 · P16.2 · P16.3 · anticipos P9 | SIN RESPUESTA | SCRUM-413 |
 | B3 | F4 · QC1 · QC2 · QC9 | IA · 22-sep (tabla F) | SCRUM-212 |
 | B4 | F7 · QC3 | IA · 22-sep (P12) | SCRUM-293 |
 | B5 | F5 · QC4 · SCRUM-1129 (:99, :268, :351) | IA · 22-sep (P13), parcial | SCRUM-294 |
-| B6 | F5.4 · QC6 · SCRUM-1055 · SCRUM-1240 (:212, :238) | «ASESOR» · 23-sep, autoría sin declarar (SCRUM-1104 §6); SCRUM-1055 dice que sigue sin respuesta | el criterio de caja |
+| B6 | F5.4 · QC6 · SCRUM-1055 · SCRUM-1240 (:212, :238) | IA · 23-sep (SCRUM-1104 §6); SCRUM-1055 dice que sigue sin respuesta | el criterio de caja |
 | C1 | 1253 Ⓖ.1 · anticipos P1 y P6 | SIN RESPUESTA | cobrar la señal con la factura encendida |
 | C2 | EXPEDIENTE_FISCAL_ANTICIPOS_RECAPITULATIVA P2-P8 y P10 | SIN RESPUESTA (P10: DECIDIDO POR TI el 27-jul) | la facturación de anticipos y la recapitulativa |
 | D1 | F18 · P20 · SCRUM-665 (:161, :364) | SIN RESPUESTA | el diseño de SCRUM-665 |
@@ -87,7 +87,7 @@ eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ d
 | E1 | F8 · P15.2 · P15.3 | SIN RESPUESTA (P15.1: IA · 22-sep) | SCRUM-325/426 |
 | E2 | F14 · bloque 21 | SIN RESPUESTA | 5 avisos del libro |
 | E3 | F13 · SCRUM-324 | SIN RESPUESTA | el aviso del ticket no deducible |
-| E4 | Q-C1 a Q-C8 | «ASESOR» · 23-sep, autoría sin declarar | CONTABILIDAD §4; **condicional** (decisión 1) |
+| E4 | Q-C1 a Q-C8 | IA · 23-sep | CONTABILIDAD §4; **se envía entera** (decisión 1) |
 | E5 | QC7 | SIN RESPUESTA | los tipos del selector |
 | F1 | M1 · C6 · DECLARACION_RESPONSABLE:72 | IA · 22-sep (C6) | los Términos |
 | F2 | M2 · C7 | SIN RESPUESTA | los Términos |
@@ -98,7 +98,7 @@ eIDAS, los decretos de la Comunidad de Madrid, la Orden HAC/773/2019 y las FAQ d
 | G2 | P2 · P17 | IA · 22-sep | la supresión del cliente final |
 | G3 | P3 · RGPD_TRATAMIENTO_DATOS:306-328 · SCRUM-1196:442 · SCRUM-1018:107 | SIN RESPUESTA | validar la privacidad publicada |
 
-Recuento, contado por script sobre la parte 2: 14 SIN RESPUESTA · 11 IA · 22-sep · 2 «ASESOR» 23-sep · 1 AEAT = **28**. La C2 cuenta como SIN RESPUESTA aunque su punto (7) lo hayas decidido tú (27-jul). La B6 cuenta como «ASESOR» 23-sep, aunque dos documentos discrepan sobre si la contestó.
+Recuento, contado por script sobre la parte 2: 14 SIN RESPUESTA · 11 IA · 22-sep · 2 IA · 23-sep · 1 AEAT = **28**. La C2 cuenta como SIN RESPUESTA aunque su punto (7) lo hayas decidido tú (27-jul). La B6 cuenta como IA · 23-sep, aunque dos documentos discrepan sobre si la contestó.
 
 ---
 
@@ -128,10 +128,11 @@ conclusión es lo que le preguntamos.
 
 La última línea de cada pregunta dice **qué respuesta tenemos ya**, sin dar su contenido:
 **SIN RESPUESTA**; **IA · 22-sep**, que es una respuesta preparada con una herramienta de
-inteligencia artificial y que **no ha revisado ningún profesional**; **«ASESOR» · 23-sep**, unas
-respuestas recibidas ese día de las que no consta quién es el autor; o **AEAT**, cuando contestó la
-propia Agencia. Lo que tenga respuesta de IA le pedimos que lo conteste igual, como si no la
-hubiera.
+inteligencia artificial y que **no ha revisado ningún profesional**; **IA · 23-sep**, otras
+respuestas preparadas también con una herramienta de inteligencia artificial, que tampoco ha revisado
+ningún profesional; o **AEAT**, cuando contestó la propia Agencia. **Ninguna de estas preguntas tiene
+hoy la respuesta de un profesional.** Lo que tenga respuesta de IA le pedimos que lo conteste igual,
+como si no la hubiera.
 
 ---
 
@@ -295,7 +296,7 @@ AEAT cruza la autoliquidación del IVA con los registros remitidos?
 **Normas que ya hemos localizado.** LIVA, arts. 163 decies a 163 terdecies; ROF, art. 6.1.p) (la mención «régimen
 especial del criterio de caja»); RIVA, art. 61 decies.
 **Qué haremos.** Guardar la fecha que indique y declarar la clave del régimen como indique.
-**Lo que ya tenemos:** «ASESOR» · 23-sep, autoría sin declarar, y sólo sobre (1). Nuestros propios
+**Lo que ya tenemos:** IA · 23-sep, sólo sobre (1). Nuestros propios
 documentos no coinciden en si esa respuesta la contesta.
 
 ---
@@ -405,16 +406,15 @@ la cuota desglosada? (2) Sabiendo que un ticket puede ser gasto en el IRPF aunqu
 **Qué haremos.** Mostrar el aviso sólo cuando sepamos qué no dice nada falso.
 **Lo que ya tenemos:** SIN RESPUESTA.
 
-### E4 · (Condicional) Confirmar el mapa de modelos de un autónomo de oficio
+### E4 · Confirmar el mapa de modelos de un autónomo de oficio
 
 **La pregunta.** Para un autónomo de oficio en estimación directa y régimen general de IVA, con
 clientes particulares y empresas: ¿qué **modelos** presenta (303, 390, 130, 111/190, 115/180, 347, 100,
 349), cuáles **siempre** y cuáles **según el caso**, y qué cambia si opta al **criterio de caja**?
-**Por qué.** Ya tenemos un mapa de modelos rotulado «asesor fiscal», pero no consta quién lo
-escribió.
+**Por qué.** Ya tenemos un mapa de modelos, pero lo preparó una herramienta de inteligencia
+artificial y ningún profesional lo ha revisado.
 **Qué haremos.** Construir la parte de contabilidad sobre ese mapa.
-**Lo que ya tenemos:** «ASESOR» · 23-sep, autoría sin declarar. **Sólo se envía si la decisión 1 de
-Javier dice que no la escribió una persona.**
+**Lo que ya tenemos:** IA · 23-sep.
 
 ### E5 · Tipos de IVA poco comunes
 
@@ -519,7 +519,7 @@ cliente **el nombre del técnico** que va a su casa.
 | **F11** · ¿La rectificativa es «por diferencias»? | Lo dice la **AEAT**, literal en su FAQ, y lo confirman sus esquemas y sus validaciones 1118 y 1119 | Skill `verifactu` §4; `PREGUNTAS_ASESOR.md`, RESPUESTAS·B4 |
 | **F12** · ¿La señal obliga a factura? | **Lo dice la norma:** ROF 2.1, párrafo segundo, y LIVA 75.Dos. Lo que queda abierto va en **C1 y C2** | SCRUM-1253 §Ⓒ |
 | **1253 Ⓖ.3 · ¿Hay otra figura en vez del justificante?** | **Lo dice la norma:** la única figura es la factura (sea completa o simplificada) | SCRUM-1253 §Ⓔ |
-| **1232 Ⓗ.1-4** · Justificantes antiguos en el libro y en el 303 | **Condicional:** sólo si un profesional real recibió alguno. Ver la decisión 4 de la parte 1 | SCRUM-1232 §Ⓗ |
+| **1232 Ⓗ.1-4** · Justificantes antiguos en el libro y en el 303 | **Fuera definitivamente** (decisión 4 de la parte 1): los 44 justificantes del censo del 10-ago eran todos de prueba, de ningún profesional real | SCRUM-1232 §Ⓗ |
 | **F9/P16.1** · ¿El justificante va en el registro? | El justificante **se retira** (lo firmaste, D1 de 17446) y nunca se selló | SCRUM-825, 17446 |
 | **F15** · Coste y plazo de la revisión | Es **logística**: se pregunta al pedir la cita | — |
 | **D12** · ¿Hay que darse de alta para el entorno de pruebas? | Lo dice la **AEAT** en su Portal de Pruebas Externas: acceso libre con certificado | `PREGUNTAS_ASESOR.md`, ADDENDA·D12 |

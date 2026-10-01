@@ -1,0 +1,10 @@
+# g1-caja-documento-suelto · guard-caja-documento-suelto.mjs · ciego a 929 px y, despues, hallazgo a 390 px
+# EXIT=2
+
+⟦arranque⟧ 0.8 s COMPLETA · proceso+ws 0.8 s · primera-página 0.0 s
+
+🔴 NO SUPE MIRAR — no se da ningún número.
+   listado: el sidebar computa 0 px, el CSS no se aplicó como en el producto.
+ERROR: el proceso con PID 12420 (proceso secundario de PID 11260)
+no se pudo terminar.
+Motivo: La operaci�n que se ha intentado no est� permitida.

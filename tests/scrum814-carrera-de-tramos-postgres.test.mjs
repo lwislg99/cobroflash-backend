@@ -165,8 +165,13 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
           // `parseToken` se queda SÓLO con hex, así que un `tok-1-…` se convierte en otra cosa y la
           // ruta contesta 404 sin emitir nada. Me pasó, y el suelo lo cazó: 0 facturas donde tenía
           // que haber 1.
+          // SCRUM-1276 · `sent`, el estado REAL de un presupuesto que el cliente tiene delante (Parte
+          // L: draft → sent → accepted | rejected). Aquí ponía `pending`, que ningún código escribe
+          // en un Quote: la ruta lo aceptaba porque solo miraba «¿es el mismo sentido?», y desde que
+          // la decisión solo se toma sobre draft/sent lo rechaza con 409, como a cualquier estado
+          // que no está en L. La carrera que se mide es la misma.
           const q = await nuevoPresupuesto(merchant.id, cliente.id, {
-            status: 'pending', decisionToken: randomBytes(16).toString('hex'),
+            status: 'sent', decisionToken: randomBytes(16).toString('hex'),
           });
           const [a, b] = await correrCarrera(CAMINO_CLIENTE, {
             params: { token: q.decisionToken }, body: { decision: 'accept' },
@@ -285,7 +290,8 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
         // número que reservar. Lo que hay que garantizar es que la aceptación sigue funcionando
         // y que NINGÚN proceso de la pareja cuela un documento.
         const q = await nuevoPresupuesto(merchant.id, cliente.id, {
-          status: 'pending', decisionToken: randomBytes(16).toString('hex'),
+          status: 'sent', decisionToken: randomBytes(16).toString('hex'), // SCRUM-1276: ver arriba
+
         });
         const [a1, b1] = await correrCarrera(CAMINO_CLIENTE, {
           params: { token: q.decisionToken }, body: { decision: 'accept' },

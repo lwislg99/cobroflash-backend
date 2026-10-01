@@ -150,3 +150,57 @@ export function emisoresSinFila(llamadas = censarLlamadas()) {
   const conFila = new Set(emisoresConFila(llamadas));
   return [...new Set(llamadas.filter((l) => !l.conRegistro && !conFila.has(l.fichero)).map((l) => l.fichero))].sort();
 }
+
+/**
+ * CENSO C · SCRUM-1299 · los `sendMail` DIRECTOS, y si su envío deja fila en los DOS desenlaces.
+ *
+ * El censo A mira las llamadas a `enviarCorreo`/`enviarPorResend`. Los respaldos SMTP de
+ * `email.service` mandan con `transporter.sendMail` a pelo y le eran INVISIBLES: el guard de 508
+ * estuvo verde con el hueco dentro, porque no los contaba ni a favor ni en contra.
+ *
+ * Por cada `<algo>.sendMail(...)` se mira, en la función que lo contiene:
+ *   · `fallo`: está dentro de un `try` cuyo `catch` llama a `registrarEnvio`;
+ *   · `exito`: hay una llamada a `registrarEnvio` DESPUÉS del `sendMail` y fuera de todo `catch`.
+ * ⚠️ LÍMITE declarado: no sigue ramas. Un `return` entre el `sendMail` y el `registrarEnvio` (el
+ * outbox `.eml`, fuera de alcance en 1299) no lo ve: mide que el camino del éxito ESCRIBE, no que
+ * TODAS sus ramas lo hagan. Eso lo mide el comportamiento, en `scrum1299-respaldo-smtp-deja-fila`.
+ */
+export function censarSendMailDeTexto(texto, nombreFichero = 'sintetico.ts') {
+  const sf = ts.createSourceFile(path.basename(nombreFichero), texto, ts.ScriptTarget.Latest, true);
+  const esFuncion = (n) => ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n)
+    || ts.isArrowFunction(n) || ts.isMethodDeclaration(n);
+  const esRegistro = (n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'registrarEnvio';
+  const dentroDeCatch = (n, tope) => { for (let p = n.parent; p && p !== tope; p = p.parent) if (ts.isCatchClause(p)) return true; return false; };
+  const salida = [];
+  (function walk(n) {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'sendMail') {
+      let fn = n.parent;
+      while (fn && !esFuncion(fn)) fn = fn.parent;
+      const registros = [];
+      if (fn) (function r(m) { if (esRegistro(m)) registros.push(m); ts.forEachChild(m, r); })(fn);
+      let fallo = false;
+      for (let p = n.parent; p && p !== fn; p = p.parent) {
+        if (ts.isTryStatement(p) && p.catchClause && n.pos >= p.tryBlock.pos && n.end <= p.tryBlock.end) {
+          if (registros.some((x) => x.pos >= p.catchClause.pos && x.end <= p.catchClause.end)) fallo = true;
+        }
+      }
+      const exito = registros.some((x) => x.pos >= n.end && !dentroDeCatch(x, fn));
+      salida.push({
+        fichero: nombreFichero,
+        linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+        fallo, exito,
+      });
+    }
+    ts.forEachChild(n, walk);
+  })(sf);
+  return salida;
+}
+
+/** CENSO C sobre `src/`: TODOS los `sendMail`, también el del propio emisor único. */
+export function censarSendMailDirectos() {
+  const salida = [];
+  for (const fichero of ficherosTs(path.join(RAIZ, 'src'))) {
+    salida.push(...censarSendMailDeTexto(fs.readFileSync(fichero, 'utf8'), rel(fichero)));
+  }
+  return salida;
+}

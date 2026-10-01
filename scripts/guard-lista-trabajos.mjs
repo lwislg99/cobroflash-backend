@@ -33,6 +33,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { servirListas, abrirNavegador, abrirVista, arbolDePartida } from './_banco-lista.mjs';
 import { trabajosDeMuestra, reglasDeDatos, EQUIPO } from './_trabajos-de-muestra.mjs';
 
@@ -505,7 +506,22 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         filasDeDatos,
         (todo, enlace, texto) => (sinHuecos(enlace) ? texto : todo)],
     ];
-    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032];
+    // ── SCRUM-1135 · Clientes: la barra de selección trae el bloque de ETIQUETAR la selección ──────
+    // Declaración autorizada por el orquestador (29-sep-2026) sobre la decisión del fundador en el
+    // comentario 17449 de SCRUM-1135 («1-Ok, sí»): dos acciones en bloque, y SÓLO dos, «Añadir
+    // etiqueta» y «Quitar etiqueta». Por eso la pieza es el bloque ENTERO con su forma exacta —el
+    // campo y esos dos botones, en ese orden, y nada más dentro—, UNA vez: un tercer botón, un botón
+    // de menos o un atributo de más dejan la pieza sin casar y el guard cae. Con cero marcados (que es
+    // como la pinta este banco) el bloque va sin `--visible` y los dos botones, deshabilitados.
+    // El `flex-wrap` que 1135 le dio a la barra vive en styles.css, así que el `style` de la barra
+    // sale IDÉNTICO a la base y no hace falta declararlo.
+    const PIEZAS_1135 = [
+      ['el bloque de etiquetar la selección (campo + «Añadir etiqueta» + «Quitar etiqueta»)',
+        /<div class="barra-seleccion-etiquetar"([^>]*)><input type="text" class="input" placeholder="Etiqueta" aria-label="Etiqueta"([^>]*)><button class="btn-secondary" type="button" disabled=""([^>]*)>Añadir etiqueta<\/button><button class="btn-secondary" type="button" disabled=""([^>]*)>Quitar etiqueta<\/button><\/div>/g,
+        1,
+        (todo, caja, campo, anadir, quitar) => (sinHuecos(caja, campo, anadir, quitar) ? '' : todo)],
+    ];
+    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032, ...PIEZAS_1135];
     const cuentas = PIEZAS_DECLARADAS.map(([nombre, re, esperadas]) => [nombre, (cB._html.match(re) || []).length, esperadas]);
     // 🔴 SE DESHACEN LAS MISMAS PIEZAS EN LOS DOS LADOS. Antes sólo se quitaban de HOY y se comparaba con
     // la base «tal cual», y eso valía mientras la base NO trajera lo declarado. Desde que SCRUM-979 está
@@ -521,15 +537,15 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     if (filasCli < 2 || filasDeDatos < 1) {
       nosupe(`   🔴 NO SUPE MIRAR · Clientes: la base pintó ${filasCli} <tr> y hoy ${filasDeDatos} filas de cliente.`);
     } else if (cuentas.some(([, n, esperadas]) => n !== esperadas)) {
-      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979 y SCRUM-1032 · '
+      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · '
         + cuentas.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
     } else if (cA.sha === cB.sha) {
       // La base ya trae 979 y 1032: entonces lo que se exige es lo de siempre, que no haya cambiado nada.
-      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979 y SCRUM-1032)`);
+      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979, SCRUM-1032 y SCRUM-1135)`);
     } else if (shaSin !== shaBaseSin) {
-      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979 y SCRUM-1032 · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
+      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
     } else {
-      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979 y SCRUM-1032) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
+      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032 y SCRUM-1135) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
     }
     srvMain.close();
   }
@@ -540,6 +556,10 @@ await browser.close();
 srv.close();
 
 di('');
-if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`); process.exit(2); }
-if (fallos) { console.error(`🔴 ${fallos} defecto(s).`); process.exit(1); }
+if (ciego) console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`);
+if (fallos) console.error(`🔴 ${fallos} defecto(s).`);
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) { console.error(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
 di('✅ el candado aguanta en las dos direcciones, el fallo revierte, no hay scroll horizontal, y las hermanas están donde deben.');

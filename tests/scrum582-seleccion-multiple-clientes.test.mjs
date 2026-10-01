@@ -183,10 +183,16 @@ test('SCRUM-582 · 🔴 la casilla de cabecera EXISTE, y también en la barra (e
     `🔴 las dos casillas no están donde deben (vi: ${padres.join(', ')}).`);
 });
 
-test('SCRUM-582 · ⛔ NO HAY NI UNA ACCIÓN EN BLOQUE, y esto es el ticket', async () => {
-  // La forma barata de «rematar» esto era un menú de acciones. El ticket lo prohíbe con esas
+test('SCRUM-582 · ⛔ en bloque SÓLO lo que decidió el fundador: «Añadir etiqueta» y «Quitar etiqueta»', async () => {
+  // La forma barata de «rematar» esto era un menú de acciones. El ticket lo prohibía con esas
   // palabras: qué se ofrece en bloque lo decide el fundador. Este test cae el día que alguien
   // añada un botón a la barra «para probar».
+  //
+  // 🔴 SCRUM-1135 · EL FUNDADOR DECIDIÓ DOS, y sólo dos: «1-Ok, sí» (SCRUM-1135 comentario 17449,
+  // 29-sep-2026) a «Añadir etiqueta» y «Quitar etiqueta». No es una lista que se amplíe: exportar,
+  // borrar, enviar o cualquier otra acción masiva vuelve a necesitar su sí, una por una, y si manda
+  // mensajes pasa antes por la tabla de la regla 28. El caso NO se relaja: sigue cayendo con una
+  // tercera acción, y ahora cae también si se pierde una de las dos.
   const { r } = await listaMontada();
   const barras = todos(r.contenedor).filter((n) => n.tagName === 'DIV'
     && todos(n).some((h) => h.tagName === 'INPUT'
@@ -194,10 +200,11 @@ test('SCRUM-582 · ⛔ NO HAY NI UNA ACCIÓN EN BLOQUE, y esto es el ticket', as
   assert.ok(barras.length >= 1, '🔴 SUELO: no encuentro la barra de selección.');
   const barra = barras[barras.length - 1];
   const botones = todos(barra).filter((n) => n.tagName === 'BUTTON' || n.tagName === 'A');
-  assert.deepEqual(botones.map((b) => b.textContent), [],
-    '🔴 HA APARECIDO UNA ACCIÓN EN BLOQUE en la barra de selección. Qué se ofrece en bloque lo '
-    + 'decide el FUNDADOR: este ticket entrega el mecanismo de selección y NADA más. Y si la '
-    + 'acción envía mensajes, antes pasa por la tabla anti-spam de la regla 28.');
+  assert.deepEqual(botones.map((b) => b.textContent), ['Añadir etiqueta', 'Quitar etiqueta'],
+    '🔴 LA BARRA DE SELECCIÓN NO OFRECE EXACTAMENTE LO DECIDIDO. Qué se ofrece en bloque lo decide '
+    + 'el FUNDADOR, y decidió estas dos y nada más (SCRUM-1135 comentario 17449). Una acción nueva '
+    + 'necesita su sí antes de entrar aquí; y si envía mensajes, antes pasa por la tabla anti-spam '
+    + 'de la regla 28.');
 });
 
 // ═══ ④ MICROCOPY ═════════════════════════════════════════════════════════════════════════

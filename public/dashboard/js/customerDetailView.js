@@ -87,6 +87,94 @@ const WHATSAPP_CLIENTE = {
 };
 if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
 
+/**
+ * SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha.
+ *
+ * `GET /admin/customers/:id/fusion-preview` y `POST /admin/customers/:id/fusionar` (SCRUM-1057)
+ * estaban construidos y no los llamaba nadie. `:id` es el cliente de ESTA ficha, el que se queda;
+ * `con` es el elegido, el que desaparece. Operación destructiva: GO del fundador para la UI en
+ * SCRUM-1126, comentario 17572 (registro en `docs/master/SCRUM-1126.md`).
+ *
+ * ✅ TEXTOS FIRMADOS por el orquestador por delegación del fundador (29-sep-2026, SCRUM-1126
+ * comentarios 17574 y 17575, que corrige al anterior; registro en `docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md`).
+ * Tres se REUSAN byte a byte de donde ya estaban firmados, y un test los ancla contra su origen:
+ * `generico` (`patronDetalleAcciones.js`, SCRUM-1124), `sinResultados` (`buscadorDeClientes.js`)
+ * y `cancelar`.
+ *
+ * ⛔ El `error` que devuelve el servidor en el 409 NO se pinta: se traduce por `motivo()`, y un
+ * código que no esté en la tabla cae en el genérico (regla 39, el aviso de SCRUM-1135).
+ */
+const FUSION_CLIENTE = {
+  TEXTOS: {
+    boton: 'Fusionar con otro cliente',
+    selector: '¿Con qué cliente lo fusionas?',
+    placeholder: 'Busca por nombre o NIF',
+    tituloPrevia: 'Revisa la fusión antes de confirmar',
+    sinEtiquetas: 'Sin etiquetas',
+    confirmar: 'Fusionar',
+    cancelar: 'Cancelar',
+    exito: 'Clientes fusionados',
+    sinResultados: 'Sin resultados para tu búsqueda',
+    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.',
+    MOTIVOS: {
+      factura_emitida: 'No se puede fusionar: uno de los dos tiene una factura emitida, y una factura emitida no se modifica.',
+      mismo_cliente: 'Elige un cliente distinto.',
+      cliente_no_encontrado: 'Uno de los clientes ya no existe. Recarga la lista.',
+    },
+  },
+  seQueda(principal) { return 'Se queda: ' + principal + ' (sus datos no cambian)'; },
+  desaparece(fusionado) { return 'Desaparece: ' + fusionado; },
+  /**
+   * 🔴 Lo que se MUEVE va entero y sin número: la fusión reasigna más tablas de las que el servidor
+   * cuenta, y una lista de tres en una acción irreversible se leería como «eso es todo».
+   */
+  todoPasa(fusionado, principal) {
+    return 'Todo lo de ' + fusionado + ' pasa a ' + principal
+      + ': presupuestos, solicitudes de presupuesto, trabajos, direcciones de obra, notas, cobros, partes de trabajo, mensajes de WhatsApp, correos y mantenimientos.';
+  },
+  /** `desvincularYBorrar` deja sin empresa a quien la tenía en el fusionado: NO se re-enlazan. */
+  sinEmpresa(fusionado) { return 'Las personas de contacto de ' + fusionado + ' se quedan sin empresa.'; },
+  /**
+   * Lo que SÍ cuenta el servidor, rotulado «Contados» para que no se lea como la lista entera.
+   * Singular POR ELEMENTO (SCRUM-1126 c.17580): puede haber 1 presupuesto y 4 trabajos. Con 0, plural.
+   */
+  contados(presupuestos, trabajos, notas) {
+    const uno = (n, singular, plural) => (Number(n) === 1 ? '1 ' + singular : n + ' ' + plural);
+    return 'Contados: ' + uno(presupuestos, 'presupuesto', 'presupuestos') + ' · ' + uno(trabajos, 'trabajo', 'trabajos')
+      + ' · ' + uno(notas, 'nota', 'notas');
+  },
+  etiquetas(lista) {
+    return Array.isArray(lista) && lista.length ? 'Etiquetas tras fusionar: ' + lista.join(', ') : FUSION_CLIENTE.TEXTOS.sinEtiquetas;
+  },
+  avisoNif(nifPrincipal, nifFusionado) {
+    return 'Ojo: los NIF no coinciden (' + nifPrincipal + ' / ' + nifFusionado + '). Comprueba que es el mismo cliente.';
+  },
+  confirmacion(fusionado) { return 'Esta acción no se puede deshacer. ' + fusionado + ' dejará de existir.'; },
+  /** El texto firmado de un motivo de rechazo; `null` si el código no es uno de los tres. */
+  motivo(codigo) {
+    return Object.prototype.hasOwnProperty.call(FUSION_CLIENTE.TEXTOS.MOTIVOS, codigo) ? FUSION_CLIENTE.TEXTOS.MOTIVOS[codigo] : null;
+  },
+  /** Lo que se le enseña a la persona cuando `/fusionar` falla: el motivo firmado o el genérico. */
+  textoDelError(err) {
+    const propio = err && err.status === 409 ? FUSION_CLIENTE.motivo(err.code) : null;
+    return propio || window.mensajeParaPersona(err, FUSION_CLIENTE.TEXTOS.generico);
+  },
+  /**
+   * Los clientes que se ofrecen: todos menos el de la ficha, filtrados por nombre o NIF (lo que
+   * promete el placeholder, y nada más) con la comparación de `buscadorDeClientes.js`, y recortados
+   * a sus `MAX_COINCIDENCIAS`.
+   */
+  candidatos(clientes, idActual, consulta) {
+    const B = window.buscadorDeClientes;
+    const q = B.normalizar(consulta);
+    return (Array.isArray(clientes) ? clientes : [])
+      .filter((c) => c && Number(c.id) !== Number(idActual))
+      .filter((c) => q === '' || B.normalizar(c.name).indexOf(q) >= 0 || B.normalizar(c.taxId).indexOf(q) >= 0)
+      .slice(0, B.MAX_COINCIDENCIAS);
+  },
+};
+if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
+
 async function renderCustomer360View(container, customerId) {
   container.innerHTML = '';
 
@@ -189,6 +277,7 @@ async function renderCustomer360View(container, customerId) {
       </button>
       <!-- ✅ SCRUM-1003, texto firmado por el orquestador por delegación del fundador (22-sep-2026) -->
       <button class="btn-secondary btn-sm" id="btn-vcard-360" title="Descargar la ficha del cliente como contacto">📇 Guardar en mis contactos</button>
+      ${window.appUserRole === 'admin' ? `<button class="btn-secondary btn-sm" id="btn-fusionar-360">${escC(FUSION_CLIENTE.TEXTOS.boton)}</button>` : ''}
       <button class="btn-primary btn-sm" id="btn-new-quote-360">+ ${L.quoteNew || 'Nuevo presupuesto'}</button>
     </div>
   `;
@@ -206,6 +295,10 @@ async function renderCustomer360View(container, customerId) {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
   };
+
+  // SCRUM-1126 · las dos rutas son `requireRole('admin')`: a quien no lo es ni se le pinta el botón.
+  const btnFusionar = header.querySelector('#btn-fusionar-360');
+  if (btnFusionar) btnFusionar.addEventListener('click', () => abrirFusionDeClientes(customer, id, container));
 
   // ── SCRUM-1033 · chips de la cabecera: NIF/CIF, dirección y referencia interna ──────────────
   // Sólo lo que tenga valor: un cliente sin ninguno de los tres no pinta el bloque.
@@ -761,6 +854,155 @@ function nombreDeFicheroVCard(customer) {
 if (typeof window !== 'undefined') {
   window.construirVCard = construirVCard;
   window.nombreDeFicheroVCard = nombreDeFicheroVCard;
+}
+
+// ── SCRUM-1126 · Fusionar con otro cliente ──────────────────────────────────
+// Elegir → previsualización (GET, no escribe nada) → «Fusionar» → POST. El POST sólo sale de ese
+// botón, y el botón sólo existe con una previsualización NO bloqueada en pantalla. Si la
+// previsualización ya trae `bloqueada` (el mismo motivo que daría el 409), se avisa ANTES y no se
+// ofrece el botón; el 409 del POST se maneja igual, porque entre mirar y pulsar alguien puede
+// haber emitido una factura.
+function abrirFusionDeClientes(customer, customerId, container) {
+  const T = FUSION_CLIENTE.TEXTOS;
+  const el = (tag, clase, texto) => {
+    const n = document.createElement(tag);
+    if (clase) n.className = clase;
+    if (texto !== undefined) n.textContent = texto;
+    return n;
+  };
+
+  const overlay = el('div', 'modal-overlay');
+  const modal = el('div', 'modal');
+  const cerrar = () => overlay.remove();
+  modal.appendChild(cabeceraModal({ titulo: T.boton, sinCierre: true }));
+
+  const cuerpo = el('div', 'modal-body');
+  const campo = el('div', 'field');
+  const etiqueta = el('label', '', T.selector);
+  etiqueta.setAttribute('for', 'fusion-buscar');
+  const buscar = el('input', 'input');
+  buscar.type = 'search';
+  buscar.id = 'fusion-buscar';
+  buscar.placeholder = T.placeholder;
+  buscar.autocomplete = 'off';
+  campo.appendChild(etiqueta);
+  campo.appendChild(buscar);
+  const lista = el('div', 'fusion-candidatos');
+  const previa = el('div', 'fusion-previa');
+  const aviso = el('div', 'alert error');
+  aviso.id = 'fusion-alert';
+  cuerpo.appendChild(campo);
+  cuerpo.appendChild(lista);
+  cuerpo.appendChild(previa);
+  cuerpo.appendChild(aviso);
+  modal.appendChild(cuerpo);
+
+  const pie = el('div', 'modal-footer');
+  const cancelar = el('button', 'btn btn-secondary', T.cancelar);
+  cancelar.type = 'button';
+  cancelar.id = 'fusion-cancelar';
+  const confirmar = el('button', 'btn btn-danger fusion-confirmar', T.confirmar);
+  confirmar.type = 'button';
+  confirmar.id = 'fusion-confirmar';
+  confirmar.disabled = true;
+  pie.appendChild(cancelar);
+  pie.appendChild(confirmar);
+  modal.appendChild(pie);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+  cancelar.addEventListener('click', cerrar);
+
+  const mostrarError = (texto) => { aviso.textContent = texto || ''; };
+
+  // El elegido cuya previsualización está en pantalla y se puede confirmar. `null` = no hay nada
+  // que confirmar, y entonces el botón está desactivado Y el clic no llama (dos cierres, no uno).
+  let elegido = null;
+  // Una previsualización que llega tarde (se eligió otro mientras tanto) no pisa a la buena.
+  let turno = 0;
+  let clientes = [];
+
+  const pintarLista = () => {
+    lista.innerHTML = '';
+    const encontrados = FUSION_CLIENTE.candidatos(clientes, customerId, buscar.value);
+    if (!encontrados.length) {
+      lista.appendChild(el('p', 'fusion-vacio', T.sinResultados));
+      return;
+    }
+    encontrados.forEach((c) => {
+      const b = el('button', 'fusion-candidato');
+      b.type = 'button';
+      b.dataset.id = String(c.id);
+      b.appendChild(el('span', 'fusion-candidato-nombre', c.name || ''));
+      if (c.taxId) b.appendChild(el('span', 'fusion-candidato-nif', c.taxId));
+      b.addEventListener('click', () => previsualizar(c.id));
+      lista.appendChild(b);
+    });
+  };
+
+  async function previsualizar(conId) {
+    const miTurno = ++turno;
+    elegido = null;
+    confirmar.disabled = true;
+    previa.innerHTML = '';
+    mostrarError('');
+    let p;
+    try {
+      p = await apiRequest(`/admin/customers/${customerId}/fusion-preview?con=${encodeURIComponent(conId)}`);
+    } catch (err) {
+      if (miTurno === turno) mostrarError(window.mensajeParaPersona(err, T.generico));
+      return;
+    }
+    if (miTurno !== turno) return;
+    if (p.bloqueada) {
+      mostrarError(FUSION_CLIENTE.motivo(p.bloqueada) || T.generico);
+      return;
+    }
+    if (!p.principal || !p.fusionado) { mostrarError(T.generico); return; }
+
+    previa.appendChild(el('h4', 'fusion-previa-titulo', T.tituloPrevia));
+    previa.appendChild(el('p', 'fusion-linea', FUSION_CLIENTE.seQueda(p.principal.name)));
+    previa.appendChild(el('p', 'fusion-linea', FUSION_CLIENTE.desaparece(p.fusionado.name)));
+    previa.appendChild(el('p', 'fusion-linea', FUSION_CLIENTE.todoPasa(p.fusionado.name, p.principal.name)));
+    previa.appendChild(el('p', 'fusion-linea fusion-contados', FUSION_CLIENTE.contados(p.quotesAMover, p.jobsAMover, p.notasAMover)));
+    previa.appendChild(el('p', 'fusion-linea', FUSION_CLIENTE.sinEmpresa(p.fusionado.name)));
+    previa.appendChild(el('p', 'fusion-linea', FUSION_CLIENTE.etiquetas(p.etiquetasResultantes)));
+    if (p.nifDistintos) {
+      previa.appendChild(el('div', 'alert warning fusion-nif', FUSION_CLIENTE.avisoNif(p.principal.taxId, p.fusionado.taxId)));
+    }
+    previa.appendChild(el('p', 'fusion-irreversible', FUSION_CLIENTE.confirmacion(p.fusionado.name)));
+    elegido = p.fusionado.id;
+    confirmar.disabled = false;
+  }
+
+  confirmar.addEventListener('click', async () => {
+    if (elegido == null) return;
+    const con = elegido;
+    confirmar.disabled = true;
+    cancelar.disabled = true;
+    mostrarError('');
+    try {
+      await apiRequest(`/admin/customers/${customerId}/fusionar`, { method: 'POST', body: JSON.stringify({ con }) });
+    } catch (err) {
+      cancelar.disabled = false;
+      mostrarError(FUSION_CLIENTE.textoDelError(err));
+      // Rechazado por un motivo que no cambia reintentando: no se vuelve a ofrecer.
+      if (err && err.status === 409) elegido = null;
+      else confirmar.disabled = false;
+      return;
+    }
+    cerrar();
+    if (typeof window.showToast === 'function') window.showToast(T.exito);
+    // La ficha que se queda, recargada: ya trae lo movido y las etiquetas unidas.
+    renderCustomer360View(container, customerId);
+  });
+
+  buscar.addEventListener('input', pintarLista);
+  apiRequest('/admin/customers')
+    .then((r) => { clientes = Array.isArray(r) ? r : []; pintarLista(); })
+    .catch((err) => mostrarError(window.mensajeParaPersona(err, T.generico)));
+  if (typeof buscar.focus === 'function') buscar.focus();
 }
 
 // ── Modal de edición desde la ficha 360 ─────────────────────────────────────
