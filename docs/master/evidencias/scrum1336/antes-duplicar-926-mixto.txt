@@ -1,0 +1,57 @@
+# duplicar-926-mixto · guard-duplicar-926.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · duplicar pierde el descuento (G) y el desplegable de cobro no se puede leer (P)
+# EXIT=1 · 4.8 s
+
+{
+  "casos": {
+    "G": {
+      "editorConLineas": true,
+      "lineasCargadas": 2,
+      "hayCampoGlobal": true,
+      "global": "",
+      "campoGlobalAbierto": false,
+      "botonAnadirVisible": true,
+      "hayDesplegableDePago": false,
+      "pago": null,
+      "errores": []
+    },
+    "P": {
+      "editorConLineas": true,
+      "lineasCargadas": 2,
+      "hayCampoGlobal": true,
+      "global": "",
+      "campoGlobalAbierto": false,
+      "botonAnadirVisible": true,
+      "hayDesplegableDePago": false,
+      "pago": null,
+      "errores": []
+    }
+  },
+  "controles": {
+    "G": {
+      "leido": "25",
+      "abierto": true
+    },
+    "P": {
+      "leido": null,
+      "nota": "no hay desplegable de cobro"
+    }
+  }
+}
+
+── SCRUM-926 · duplicar conserva lo que cobra ──
+✔ SUELO · el editor abre con las 2 lineas del presupuesto duplicado (G)
+✔ SUELO · y tambien en el caso de cobro (P)
+✔ CONTROL POSITIVO G · este guard SABE leer el campo del descuento global
+🔴 CONTROL POSITIVO P · este guard SABE leer el desplegable de cobro
+✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
+🔴 G · duplicar CONSERVA el descuento global de 25 €
+🔴 G · y deja su campo ABIERTO, no un importe detras de un boton
+🔴 P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
+✔ sin errores de pagina en ninguno de los dos casos
+
+NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
+                                        `currency` (el editor no tiene selector: usa la del merchant)
+
+POBLACION casillas=9 verdes=5 fallos=4
+EXIT=1
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
