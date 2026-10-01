@@ -1,0 +1,19 @@
++0.1s BANCO SCRUM-1391 · puerta «sonda» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.1s POBLACION: 4 ficheros de mentira · plazo de run() 4000 ms · cada espera 12000 ms
++4.2s p1-async · duró 4.1 s
+      test:pass «rapido»
+      test:fail «colgado-async» failureType=testTimeoutFailure
+      test:pass «despues»
+      resumen {"tests":3,"passed":2,"failed":0,"cancelled":1,"skipped":0} success=false
++16.3s p2-sync · duró 12.1 s
+      test:pass «rapido»
+      test:pass «bloqueado-sync»
+      test:pass «despues»
+      resumen {"tests":3,"passed":3,"failed":0,"cancelled":0,"skipped":0} success=true
++20.4s p5-gateado-con-before · duró 4.1 s
+      test:fail «gateado-1» skip failureType=hookFailed
+      test:fail «gateado-2» skip failureType=hookFailed
+      resumen {"tests":2,"passed":0,"failed":0,"cancelled":0,"skipped":2} success=true
++20.4s p6-gateado-que-muere · duró 0.1 s
+      test:fail «RUTA DEL FICHERO» failureType=testCodeFailure
+EXIT=0
