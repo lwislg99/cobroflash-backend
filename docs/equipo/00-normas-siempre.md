@@ -95,3 +95,7 @@ El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cu
 Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy. (SCRUM-1154)
 Empujar no es entregar: antes de cerrar, mira el check obligatorio de tu último push, o di que no lo miraste. (SCRUM-1298)
 Que un commit no esté en main no dice que su contenido no esté: el trabajo entra por otra rama o bajo otro número. Se compara contenido, no ancestría ni número. (SCRUM-1348)
+Un lanzamiento que no cuaja dice lo mismo que uno que sí: «backgrounded» y un id. (SCRUM-1357)
+El panel vacío no es «no existe»: cuando el panel y el registro de trabajos discrepan, manda el registro. (SCRUM-1357)
+Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests; sólo el recuento lo distingue. (SCRUM-1366)
+Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
