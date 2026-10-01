@@ -137,3 +137,28 @@ está leído, **no medido**.
   ficheros), pero pudo. Es una trampa ya apuntada en la memoria del puesto, y la pisé igual.
   Apuntado en las cicatrices, sin comprobación: lo que lo impediría es un hook sobre la orden, y
   los hooks no son de este puesto.
+
+## SCRUM-1304 · segunda vuelta: entra con las dos guardas de SCRUM-1330, y los tres residuales dicen lo contrario
+
+**Medido contra:** `origin/main` = `c1fe641c929b2dfbc3d55db60cced6c4640974bc` · 2026-10-01T03:52:35Z
+A9: comprobación → `tests/scrum1304-un-cobro-una-factura.test.mjs`
+
+1-oct-2026 · **J1e**, relevo de J1d. Lo de arriba lo escribió J1d con el arreglo parado. Lo que
+cambia desde entonces:
+
+- **Ya no espera.** El fundador dio GO a las dos guardas en SCRUM-1330 (comentario 17724; me llegó
+  por el orquestador). Están construidas y este arreglo entra con ellas en el mismo PR, en la rama
+  `scrum-1330-una-sellada-no-se-resella`. El detalle, en `docs/master/SCRUM-1330.md`.
+- **Los tres casos «RESIDUAL CONOCIDO» de España se han reescrito con lo contrario**, en el mismo
+  cambio que las guardas: ④a, ④b y ④f exigen ahora UNA escritura de huella (o ninguna, en ④f) y
+  que huella, anterior y sello de la fila no cambien. Los sellados se cuentan por escrituras de
+  `vfHash`, ya no por la línea de log.
+- **El banco salió del test** a `tests/_banco-emision-con-estado.mjs`, sin cambiar su código, porque
+  lo usa también el test de SCRUM-1330. `auditLog` pasa a tener estado y se apuntan las escrituras
+  sobre `invoice`.
+- El fichero sigue en 18 casos, 18 verdes. Las mutaciones M1–M5 de arriba no se han repetido sobre
+  el fichero reescrito: los casos que las cazan no son los tres que cambiaron.
+
+De lo que arriba quedó «sin medir»: **el doble encolado a la AEAT está medido** y tiene ticket,
+SCRUM-1333 (2 filas en `vfSubmission` para una factura en ④b, sólo si la factura es declarable). Los
+dos eventos `invoiced` siguen sin tocar. La carrera contra un Postgres real sigue sin medir.
