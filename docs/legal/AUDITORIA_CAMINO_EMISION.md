@@ -36,7 +36,7 @@ y el envío— no se han construido nunca.**
 | 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:917-918` (`vf_hash`, `vf_prev_hash`) — SCRUM-1107 (25-sep-2026) movió la línea: la retención de garantía de obra añadió campos por encima en el mismo modelo; SCRUM-1216b (28-sep-2026), dos columnas del arranque en `merchants`; SCRUM-1296 (30-sep-2026), la relación con la cola de remisión en `merchants`; SCRUM-1102f (1-oct-2026), las dos columnas del SII y del domicilio foral en `merchants`. La afirmación NO cambia: la huella y el encadenado siguen exactamente donde estaban |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:119` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` — SCRUM-1296 (30-sep-2026) movió la línea: una importación y el `email` del merchant, para reconocer al demo |
 | 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:185` (`buildVeriFactuQrUrl`) — SCRUM-735 movió la línea; SCRUM-1296, una importación de tipos |
-| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:634` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos |
+| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:659` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos; SCRUM-1330, la guarda de «ya sellada» |
 | 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE** | ningún modelo del esquema; ver medición abajo |
 | 9 | Envío telemático a la AEAT | **NO EXISTE** | ninguna llamada de red; ver medición abajo |
 
@@ -145,7 +145,7 @@ existe, porque no hay envío.**
 | Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
 | Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
 | Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
-| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:103` y `:247` (`exigirDocumentoEmitible`) — SCRUM-1051 movió la línea |
+| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:104` y `:261` (`exigirDocumentoEmitible`) — SCRUM-1304 y SCRUM-1330 movieron la línea |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
 | Cola `VfSubmission` | **INEXISTENTE** | el esquema tiene **25 modelos** (`prisma/schema.prisma`) y **ninguno** se llama `Vf*`, `*Submission` ni `*Verifactu`. Ningún fichero de `src/` menciona `vfSubmission` |
 | Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |
