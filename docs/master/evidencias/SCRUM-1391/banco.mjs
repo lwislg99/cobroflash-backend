@@ -19,6 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const YO = fileURLToPath(import.meta.url);
 const RAIZ = process.cwd();
@@ -58,9 +59,20 @@ function cabecera(puerta) {
   }
 }
 
+/** Quita el enlace, y SÓLO el enlace. Dice si la copia ya se puede borrar sin tocar lo enlazado. */
+function soltarEnlace(dir) {
+  const enlace = path.join(dir, 'node_modules');
+  try { fs.rmdirSync(enlace); } catch { try { fs.unlinkSync(enlace); } catch { /* se comprueba abajo */ } }
+  return { quitado: !fs.existsSync(enlace), intacto: fs.existsSync(path.join(NODE_MODULES, 'typescript', 'package.json')) };
+}
+
 /** La copia fuera del árbol. Devuelve su carpeta. */
 function montar(etiqueta) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1391-' + etiqueta + '-'));
+  // Si algo revienta antes de `desmontar(dir)`, la copia se borra igual al salir el proceso, y por el
+  // MISMO camino: primero el enlace. Por eso aquí NO va `temporal()`: su borrado no sabe que dentro
+  // cuelga el `node_modules` de verdad, y si el enlace no se deja quitar la copia se QUEDA.
+  process.on('exit', () => { const e = soltarEnlace(dir); if (e.quitado && e.intacto) fs.rmSync(dir, { recursive: true, force: true }); });
   fs.cpSync(path.join(RAIZ, 'scripts'), path.join(dir, 'scripts'), { recursive: true });
   for (const f of ['tsconfig.json', 'package.json']) fs.copyFileSync(path.join(RAIZ, f), path.join(dir, f));
   fs.mkdirSync(path.join(dir, 'tests'));
@@ -71,10 +83,7 @@ function montar(etiqueta) {
 
 /** Quita PRIMERO el enlace (sólo el enlace) y sólo después borra la copia. */
 function desmontar(dir) {
-  const enlace = path.join(dir, 'node_modules');
-  try { fs.rmdirSync(enlace); } catch { try { fs.unlinkSync(enlace); } catch { /* se comprueba abajo */ } }
-  const quitado = !fs.existsSync(enlace);
-  const intacto = fs.existsSync(path.join(NODE_MODULES, 'typescript', 'package.json'));
+  const { quitado, intacto } = soltarEnlace(dir);
   if (quitado && intacto) fs.rmSync(dir, { recursive: true, force: true });
   log('copia desmontada: enlace quitado=' + quitado + ' · node_modules de verdad intacto=' + intacto + ' · carpeta borrada=' + !fs.existsSync(dir));
 }
@@ -97,7 +106,7 @@ const ESPERA_SYNC = 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0
 async function sonda() {
   cabecera('sonda');
   const { run } = await import('node:test');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1391-sonda-'));
+  const dir = temporal('scrum1391-sonda-');
   const casos = [
     ['p1-async', ["import { test } from 'node:test';", "test('rapido', () => {});", "test('colgado-async', async () => { " + ESPERA_ASYNC + ' });', "test('despues', () => {});"]],
     ['p2-sync', ["import { test } from 'node:test';", "test('rapido', () => {});", "test('bloqueado-sync', () => { " + ESPERA_SYNC + ' });', "test('despues', () => {});"]],
@@ -130,7 +139,7 @@ async function sonda() {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 function plazoTest() {
   cabecera('tests con plazo propio');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1391-plazo-'));
+  const dir = temporal('scrum1391-plazo-');
   escribir(dir, 'con-plazo.test.mjs', ["import { test } from 'node:test';", "test('rapido', () => {});",
     "test('con plazo propio que vence', { timeout: 500 }, async () => { await new Promise((s) => setTimeout(s, 5000)); });"]);
   escribir(dir, 'orden.test.mjs', ["import { test } from 'node:test';",
@@ -203,7 +212,7 @@ async function staging() {
 async function empuje() {
   cabecera('puerta-claude-empuje');
   const m = await import(pathToFileURL(path.join(RAIZ, 'scripts', 'puerta-claude-empuje.mjs')).href);
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1391-empuje-'));
+  const dir = temporal('scrum1391-empuje-');
   const T = "import { test } from 'node:test';";
   escribir(dir, 'tests/verde.test.mjs', [T, "test('el que cayo en CI', () => {});"]);
   escribir(dir, 'tests/rojo.test.mjs', [T, "import assert from 'node:assert/strict';", "test('el que cayo en CI', () => { assert.equal(1, 2); });"]);
