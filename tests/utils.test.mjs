@@ -44,17 +44,17 @@ test('makeReference: formato CF-YYYYMMDD-XXXX y único', () => {
   assert.notEqual(r1, r2); // parte aleatoria distinta
 });
 
-test('parseNumericId: tolera URLs sucias del botón de WhatsApp', () => {
-  assert.equal(U.parseNumericId('23'), 23);             // limpio
-  assert.equal(U.parseNumericId('{{1}}23'), 23);        // placeholder sin sustituir (¡no 123!)
-  assert.equal(U.parseNumericId('{{2}}107'), 107);      // otro índice de placeholder
-  assert.equal(U.parseNumericId('/pay/quote/{{1}}23'.split('/').pop()), 23);
-  assert.equal(U.parseNumericId(' 23 '), 23);           // espacios
-  assert.equal(U.parseNumericId(23), 23);               // ya numérico
-  assert.ok(Number.isNaN(U.parseNumericId('{{1}}')), 'solo placeholder → NaN');
-  assert.ok(Number.isNaN(U.parseNumericId('abc')), 'sin dígitos → NaN');
-  assert.ok(Number.isNaN(U.parseNumericId('')), 'vacío → NaN');
-  assert.ok(Number.isNaN(U.parseNumericId(null)), 'null → NaN');
+// SCRUM-1213: aquí se probaba `parseNumericId`, retirada (sin llamador desde SCRUM-95). La que
+// SÍ sirve cada enlace del cliente es `parseToken`, que no tenía test: se prueba la misma regla.
+test('parseToken: tolera URLs sucias del botón de WhatsApp', () => {
+  const t = 'ab12'.repeat(8);                              // 32 hex, como randomBytes(16)
+  assert.equal(U.parseToken(t), t);                        // limpio
+  assert.equal(U.parseToken('{{1}}' + t), t);              // placeholder sin sustituir (¡sin su 1!)
+  assert.equal(U.parseToken(('/pay/quote/{{1}}' + t).split('/').pop()), t);
+  assert.equal(U.parseToken(' ' + t.toUpperCase() + ' '), t); // espacios y mayúsculas
+  assert.equal(U.parseToken('{{1}}'), '', 'solo placeholder → vacío');
+  assert.equal(U.parseToken('zzz'), '', 'sin hex → vacío');
+  assert.equal(U.parseToken(null), '', 'null → vacío');
 });
 
 test('esc: escapa HTML peligroso y tolera null/number', () => {

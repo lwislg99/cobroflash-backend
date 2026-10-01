@@ -15,8 +15,10 @@
 // —76 objetivos cortos distintos, de los que 57 son `.btn-sm`— y dejó escrito que MEDIR es barato
 // pero VIGILAR se paga en cada PR. Estas dos entran por su motivo: el editor es la pantalla que
 // más se usa, y la ficha de Trabajo tiene los dos peores del árbol (14,0 y 19,6 px) y se usa de
-// pie en obra. Las otras quince siguen medidas por el censo (`npm run censo:tactil-panel`) y
-// sin vigilar, a propósito.
+// pie en obra. Las otras quince NO las vigila nada que BLOQUEE: `npm run censo:tactil-panel` corre
+// en cada PR desde SCRUM-1179-C, pero en el job INFORMATIVO de guards de navegador, sale 0 aunque
+// encuentre botones cortos y deja su número en el resumen del job. Cuenta, no frena ningún PR. No se
+// cite como red para retirar una pantalla de aquí.
 //
 // 🔴 EL NÚMERO DEL CENSO, RE-FECHADO EL 7-sep-2026 (SCRUM-795): 82 objetivos cortos distintos,
 // 62 de ellos `.btn-sm`. No son 6 nuevos defectos: son los 7 de la ficha 360, que hasta hoy el
@@ -391,8 +393,9 @@ const SUPERFICIES_791 = [
   // Las quince superficies restantes del censo de SCRUM-787 (Plantillas y el detalle del Albarán
   // entre ellas) SIGUEN sin vigilarse aquí — eso es cierto y se mantiene así, con `distintosEsperados`
   // ausente a propósito: un número inventado no defendería nada que el «detector de sobrantes» de
-  // abajo no proteja solo. Se miden con `npm run censo:tactil-panel`, que es un CENSO manual —no
-  // corre solo, no bloquea— y así hay que leerlo: sin la promesa de una red que no existe.
+  // abajo no proteja solo. Se miden con `npm run censo:tactil-panel`, que es un CENSO —desde
+  // SCRUM-1179-C corre en cada PR en el job informativo, pero NO bloquea— y así hay que leerlo: sin
+  // la promesa de una red que no existe.
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -421,13 +424,18 @@ const SUPERFICIES_791 = [
   // Bizum que medir, y medir la pantalla vacía sería medir otra pantalla.
   //
   // Argumentos: `renderJobDetailView(container, jobId)` — SIN `id` no hay fetch y la vista no monta.
+  // 🔴 SCRUM-1193 · 28-sep-2026 · 1 → 0, RETIRADA A PROPÓSITO porque el CÓDIGO MEJORÓ: el único corto
+  // era el «⋯» de `overflowMenu`, que sube a 44 × 44 en el propio componente (styles.css,
+  // `.overflow-trigger.btn-ghost.btn-sm`). Medido con este guard en Edge: la ficha cumple a 929 y a
+  // 390 con la lista de excepciones VACÍA. Lo que impide que un cero sea ceguera no es este número:
+  // son `conocidos` (los botones de cobro, con nombre, tienen que salir) y las sondas del umbral.
   { ruta: '/__job', vista: 'renderJobDetailView', titulo: 'ficha del Trabajo',
-    datos: DATOS_1172, args: [1], distintosEsperados: 1,
+    datos: DATOS_1172, args: [1], distintosEsperados: 0,
     // Los de COBRO primero (aceptación #4): si cualquiera deja de pintarse, CIEGO — no un cero que
     // parezca limpieza. «Marcar como PAGADA» y «📲 Confirmar Bizum recibido» son los dos que la
     // fixture de `DATOS_1172` existe para sacar a pantalla.
     conocidos: ['Marcar como PAGADA', '📲 Confirmar Bizum recibido'],
-    origen: 'SCRUM-1172 (27-sep-2026, medido con la lista de excepciones VACÍA: 1 corto en los dos anchos, el «⋯»)' },
+    origen: 'SCRUM-1193 (28-sep-2026, medido con la lista de excepciones VACÍA: 0 cortos; SCRUM-1172 midió 1, el «⋯», ya arreglado)' },
 ];
 for (const s of SUPERFICIES_791) {
   const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
@@ -794,9 +802,10 @@ const EXCEPCIONES_791 = {
   // ESTA PANTALLA: `overflowMenu` vive en `public/dashboard/js/api.js` y lo comparten otras vistas,
   // así que subirlo aquí no es una decisión de esta sesión ni de este ticket —que es el INSTRUMENTO,
   // no el arreglo—. Se declara, con su cifra, y se reporta aparte (ver docs/master/SCRUM-1172.md).
-  renderJobDetailView: [
-    { sel: 'BUTTON.overflow-trigger.btn-ghost.btn-sm', motivo: 'el «⋯» de acciones secundarias (Recordar pago/Reenviar por WhatsApp), compartido vía `overflowMenu` en `api.js`. 30,7 px a 929, 31,0 px a 390. Hallazgo NUEVO de SCRUM-1172 (27-sep-2026), reportado y sin arreglar: cambiar un componente compartido no es decisión de esta sesión.' },
-  ],
+  // SCRUM-1193 · RETIRADA: el «⋯» sube a 44 × 44 en el propio componente (styles.css,
+  // `.overflow-trigger.btn-ghost.btn-sm`), así que la excepción ya no tiene causa. La ficha queda
+  // vigilada sin excusas.
+  renderJobDetailView: [],
 };
 
 for (const s of SUPERFICIES_791) {
@@ -979,14 +988,15 @@ if (fallos) {
 // El mensaje final NOMBRA LAS SEIS. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
 //
-// 🔴 SCRUM-1172 · Y DICE LA VERDAD SOBRE LAS QUE FALTAN: `npm run censo:tactil-panel` es un CENSO
-// MANUAL — no corre en ningún workflow, no está en `guards-visuales.mjs` ni en `test`, y el job de
-// guards de navegador TAMPOCO es obligatorio (sólo `build + tests` lo es). Citarlo como si vigilara
-// es EXACTAMENTE el error que SCRUM-1172 vino a cerrar: una red que no corre y no bloquea no es una
-// red, y decir que «se sigue midiendo» sin decir que nadie mira ese número es la misma promesa vacía.
+// 🔴 SCRUM-1172 · Y DICE LA VERDAD SOBRE LAS QUE FALTAN: `npm run censo:tactil-panel` es un CENSO.
+// Hasta SCRUM-1179-C no corría en ningún workflow. Desde entonces corre en cada PR como paso
+// INFORMATIVO del job de guards de navegador, que TAMPOCO es obligatorio (sólo `build + tests` lo
+// es), y sale 0 aunque cuente botones cortos. Citarlo como si vigilara es EXACTAMENTE el error que
+// SCRUM-1172 vino a cerrar: una red que no bloquea no es una red.
 decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo, ver EXCEPCIONES_791) — '
   + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo (con sus botones de COBRO), '
   + 'ficha 360 del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px '
   + 'en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167 + SCRUM-1172. Las demás vistas '
-  + 'del panel NO están vigiladas por ningún guard que corra o bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
-  + 'las CUENTA a mano, sin correr solo y sin frenar ningún PR — no es una red, es un número que hay que ir a leer.');
+  + 'del panel NO están vigiladas por ningún guard que bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
+  + 'las CUENTA en cada PR, en el resumen del job informativo de guards de navegador (SCRUM-1179-C), sin frenar ningún PR '
+  + '— no es una red, es un número que hay que ir a leer.');

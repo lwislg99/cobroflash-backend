@@ -1,0 +1,6 @@
+POBLACION=2 anchos (390, 1280), rol operario
+⟦arranque⟧ 1.0 s COMPLETA · proceso+ws 1.0 s · primera-página 0.0 s
+{"rol":"tecnico","anchoVentana":390,"anchoDocumento":390,"seSalenPorLaDerecha":[],"filasDeActividad":5,"altoDeLasAcciones":[66,66,66],"whatsapp":true,"bloquesDelNegocio":[],"heroeAlto":0,"textoError":false,"erroresDePagina":[]}
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+{"rol":"tecnico","anchoVentana":1280,"anchoDocumento":1280,"seSalenPorLaDerecha":[],"filasDeActividad":5,"altoDeLasAcciones":[66,86,86],"whatsapp":true,"bloquesDelNegocio":[],"heroeAlto":0,"textoError":false,"erroresDePagina":[]}
+EXIT=0

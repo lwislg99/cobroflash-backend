@@ -216,9 +216,10 @@ async function fetchInvoices(options = {}) {
       // con el guion H2, y un texto que explica mal una obligación fiscal no es feo, es peligroso.
       // SCRUM-599 · el rótulo de FACTURA sale de la pieza (aprobado); el de JUSTIFICANTE se
       // conserva tal cual estaba —no está en la microcopy de este ticket y la regla 26 lo blinda—.
-      nuevaFacturaBtn.textContent = window.appDocumentoSuelto === 'justificante'
-        ? '+ Nuevo justificante'
-        : ((window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura');
+      // 🔴 SCRUM-825 D1 (SCRUM-825 comentario 17446) · la rama «+ Nuevo justificante» se RETIRA: desde
+      // SCRUM-1027 `appDocumentoSuelto` no vale nunca 'justificante', así que no la veía nadie (censo
+      // de SCRUM-1257, grupo A). Queda el lado factura, que es el que ya se pintaba.
+      nuevaFacturaBtn.textContent = (window.atajoNuevo && window.atajoNuevo.textoDe('invoices')) || 'Nueva factura';
       // 🔴 SCRUM-600 (DOC-10) · ESTE BOTÓN YA NO ABRE UN MODAL: LLEVA A LA PÁGINA.
       //
       // Es el cambio que hace que haya UN solo front del documento y no dos. Se navega con
@@ -542,11 +543,24 @@ async function fetchInvoices(options = {}) {
           // 🔴 SCRUM-595 · SALE DE LA CABECERA. Aquí había un 6 y este ticket mete una columna:
           // un vacío descuadrado no lo ve ninguna tanda (lección de SCRUM-584).
           td.colSpan = numeroDeColumnas();
+          // 🔴 SCRUM-1257 · EL VACÍO MIRA EL MODO. Antes prometía a todos que «el documento de cobro se
+          // genera solo», y en `receipt` (España, `INVOICING_ES_ENABLED` apagado) al aceptar no se emite
+          // nada (SCRUM-1027). Cambiar la palabra no bastaba: «la factura se genera sola» sería igual de
+          // falso y un claim fiscal (regla 7). Textos firmados en SCRUM-1257 comentario 17444 (P1-P4).
+          // El modo no se recalcula aquí: es el que mandó el servidor, igual que en homeView y settingsView.
+          // ⚠️ Con el modo desconocido (`null`) cae al lado fiscal, como el resto de la casa, y eso
+          // SOBRE-PROMETE a quien esté en `receipt`. Si se revisa, el lado seguro es el contrario
+          // (SCRUM-1257b, docs/master/SCRUM-1257.md).
+          const sinEmision = window.appModoEmision === 'receipt';
+          const tituloVacio = sinEmision ? 'Aún no se emiten documentos' : 'Aquí verás tus facturas';
+          const cuerpoVacio = sinEmision
+            ? 'Por ahora, YaQu no genera facturas desde tu cuenta.'
+            : 'Cuando un cliente acepte un presupuesto, sus facturas aparecerán aquí.';
           td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
-            + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : 'Aquí verás tus cobros') + '</div>'
+            + '<div class="empty-state-title">' + (filtering ? 'Nada con estos filtros' : tituloVacio) + '</div>'
             + '<div class="empty-state-desc">' + (filtering
               ? 'Prueba con otra búsqueda o limpia los filtros.'
-              : 'Cuando un cliente acepte un presupuesto, el documento de cobro se genera solo y aparece aquí.') + '</div>'
+              : cuerpoVacio) + '</div>'
             + (filtering ? '' : '<button id="inv-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">Crear un presupuesto</button>')
             + '</div>';
           tr.appendChild(td);
@@ -598,8 +612,12 @@ async function fetchInvoices(options = {}) {
           const tdCheck = document.createElement('td');
           tdCheck.className = 'col-hide-mobile'; // bulk = flujo de escritorio
           tdCheck.style.cssText = 'width:36px;padding:12px 8px';
+          // 🔴 SCRUM-1275 · `cb` se declara FUERA del `if`: el clic de la fila (abajo) lo compara.
+          // Con `const` dentro del bloque, ese manejador lanzaba `ReferenceError` y NINGUNA fila
+          // abría su factura (9-sep → 29-sep-2026). Sin casilla se queda en `null`.
+          let cb = null;
           if (window.sePuedeMarcarPagadaEnLote(inv)) {
-            const cb = document.createElement('input');
+            cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'inv-row-check';
             cb.dataset.id = inv.id;

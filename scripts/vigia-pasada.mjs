@@ -19,12 +19,13 @@
 //   · cuerpo.md       el cuerpo del issue, ya comprobado contra la mención
 //   · aviso.md        SOLO si la lista empeora: el comentario, también comprobado
 //   · veredicto.json  { empeora, nuevos, cambiados, envejecidos, atascados }
+//   · avisos-pr.json  SCRUM-1270: [{ numero, marca, cuerpo }] de los PR mudos ≥3 h, comprobados
 //   · exit 0 normal · exit 1 si el suelo no reconoce su cebo o si un texto a publicar
 //     despertaría a alguien. Las dos son «esta pasada no vale», no «no hay atascados».
 import fs from 'node:fs';
 import {
   esAsuntoDelVigia, causaDelAtasco, haEmpeorado, sueloDeLaPasada, horasDesde,
-  checksObligatoriosDeReglas, umbralDeEdad, UMBRALES_HORAS,
+  checksObligatoriosDeReglas, umbralDeEdad, UMBRALES_HORAS, avisoEnElPR, UMBRAL_AVISO_EN_PR_HORAS,
 } from './vigia-atascados.mjs';
 import { cuerpoNoDebeDespertar } from './puerta-avisador-rojo.mjs';
 
@@ -177,6 +178,24 @@ if (r.empeora) {
   }
   fs.writeFileSync('aviso.md', a);
 }
+
+// ── SCRUM-1270 · EL PR MUDO ≥3 h, AVISADO DENTRO DEL PR ────────────────────────────────────
+// Lo publica el workflow, una vez por cabeza (la marca). Aquí se compone y se comprueba.
+const avisosPR = [];
+for (const f of filas) {
+  const p = prs.find((x) => x.number === f.numero);
+  const payload = leerJson(`checks/${f.numero}.json`);
+  const checkRuns = payload && Array.isArray(payload.check_runs) ? payload.check_runs : undefined;
+  const a = avisoEnElPR({ fila: f, sha: p && p.headRefOid, checkRuns, obligatorios });
+  if (!a) continue;
+  if (!cuerpoNoDebeDespertar(a.cuerpo)) {
+    console.log(`::error::El aviso de PR mudo de #${a.numero} contiene la mención que despierta a Claude. No se publica.`);
+    process.exit(1);
+  }
+  avisosPR.push(a);
+}
+fs.writeFileSync('avisos-pr.json', JSON.stringify(avisosPR));
+console.log(`PR mudos ≥${UMBRAL_AVISO_EN_PR_HORAS} h con aviso en el PR: ${avisosPR.map((a) => '#' + a.numero).join(', ') || 'ninguno'}`);
 
 fs.writeFileSync('veredicto.json', JSON.stringify({ ...r, atascados: filas.length }));
 console.log(`atascados ${filas.length} · descartados ${descartados.length} · empeora ${r.empeora}`

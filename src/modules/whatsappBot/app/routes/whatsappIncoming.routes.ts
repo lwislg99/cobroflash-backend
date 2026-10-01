@@ -9,12 +9,15 @@ import { config } from '../../../../core/config/env';
 import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText, markInboundRead } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-1212: el correo solo dice «Ya puedes emitir la factura» si el modo de emisión lo permite.
+import { modoEmisionVisible } from '../../../invoicing/domain/modoVisible';
 // SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
 import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, handleUnsupportedMedia, handleIncomingPhoto, isMidIntake, type BotInput } from '../../domain/botFlow.service';
+import { parseDecision } from '../../domain/decisionPorTexto';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
@@ -321,7 +324,7 @@ async function handleTemplateButtonReply(from: string, btnText: string): Promise
     await sendWhatsAppText({
       merchantId: unicoMerchant,
       sinMerchant: unicoMerchant ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.',
     });
@@ -347,15 +350,7 @@ async function tryLegacyDecision(phone: string, from: string, text: string): Pro
 }
 
 // ── Lógica de decisión ────────────────────────────────────────────────────
-type Decision = 'accept' | 'reject' | 'unknown';
-
-function parseDecision(text: string): Decision {
-  const t = text.toLowerCase().trim();
-  // Rechazo primero (tiene prioridad ante "no gracias", "no me interesa")
-  if (/\b(no|rechaz|cancel|paso|mejor no|no gracias|negativo|nel)\b/i.test(t)) return 'reject';
-  if (/\b(acept|s[ií]|ok|okay|okey|dale|vale|confirm|adelante|de acuerdo|perfecto|me interesa|quiero|listo|va|sale|claro)\b/i.test(t)) return 'accept';
-  return 'unknown';
-}
+// SCRUM-1322: qué cuenta como decisión vive en `decisionPorTexto.ts` (puro, con su test).
 
 async function handleIncomingText(from: string, text: string): Promise<void> {
   const phone = normalizePhone(from);
@@ -421,7 +416,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       }).catch(() => {});
       await sendWhatsAppText({
         to: from,
-        merchantId: albaranMsg.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        merchantId: albaranMsg.merchantId, exentoDeLaBaja: 'respuesta-a-entrante', // V0-2: demo solo a DEMO_SAFE_NUMBERS · SCRUM-1262: es un acuse a quien escribió
         text: 'Gracias por tu mensaje 🙌 Se lo hemos pasado a tu profesional, que te responderá en breve.',
       });
       return;
@@ -434,7 +429,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: 'Hola 👋 No tienes presupuestos pendientes en este momento.',
     });
@@ -449,7 +444,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: 'Tienes varios presupuestos pendientes. Para responder, por favor abre el enlace que te enviamos en cada uno.',
     });
@@ -462,9 +457,23 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   if (decision === 'unknown') {
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
+    });
+    return;
+  }
+
+  // SCRUM-1326: «vale», «ok», «va», «perfecto»… (la lista `PREGUNTA`), sueltas, pueden ser sólo «recibido».
+  // No aceptan: se pregunta, y el presupuesto NO se toca ni se apunta en ningún sitio que se
+  // preguntó. Si el cliente no contesta, sigue en `sent`. Texto firmado (comentario 17692,
+  // `docs/microcopy/2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md`): ni una palabra distinta.
+  if (decision === 'ask') {
+    await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // responde a quien acaba de escribir
+      to: from,
+      text: `Entendido 🙌 Para que no haya dudas sobre el presupuesto #${(quote as any).quoteNumber ?? quote.id}: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.`,
     });
     return;
   }
@@ -485,7 +494,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
     });
@@ -493,7 +502,11 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     // Email al merchant si tiene la notificación activa
     const merchant = await prisma.merchant.findUnique({
       where: { id: quote.merchantId },
-      select: { email: true, name: true, notifyEmailOnQuoteAccepted: true, whatsappPhone: true },
+      // SCRUM-1212: `id`, `country` y `flags` son lo que `getEmissionMode` necesita para el modo.
+      select: {
+        id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true, whatsappPhone: true,
+        country: true, flags: true,
+      },
     });
     const customer = await prisma.customer.findUnique({
       where: { id: quote.customerId },
@@ -511,6 +524,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
         quoteId:       quote.id,
         total:         Number(quote.total).toFixed(2),
         currency:      quote.currency,
+        modoEmision:   modoEmisionVisible(merchant),
       }));
     }
 
@@ -545,7 +559,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Hemos registrado tu rechazo del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Gracias por avisar.`,
     });

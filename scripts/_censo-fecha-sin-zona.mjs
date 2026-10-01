@@ -92,6 +92,22 @@ function conBarra(p) {
   return String(p).split(path.sep).join('/');
 }
 
+/**
+ * 🔴 SCRUM-1244 · Los `SourceFile` leídos de DISCO se comparten entre programas del mismo proceso.
+ * Cada `ts.createProgram` con un host nuevo vuelve a parsear ~670 ficheros (lib, `@types`, prisma)
+ * aunque el programa sólo tenga UNA raíz: medido en `scrum1093h`, nueve programas seguidos subían el
+ * pico del proceso a 1.190 MB (650 MB el árbol real, ~185 MB cada programa siguiente, sin que V8
+ * recogiera los anteriores antes de crecer). Compartirlos es lo que hace el propio servicio de
+ * lenguaje de TypeScript: un `SourceFile` no cambia si no cambia su texto, y las opciones son
+ * siempre las mismas (`tsconfig.json`). Lo que NO entra nunca aquí es un override: se consulta
+ * antes, así que el código histórico y el fabricado siguen siendo el texto que se analiza.
+ */
+const DE_DISCO = new Map();
+
+function claveDeVersion(opts) {
+  return typeof opts === 'object' && opts !== null ? `${opts.languageVersion}|${opts.impliedNodeFormat}` : String(opts);
+}
+
 export function programaDe(ficheros, overrides = new Map()) {
   const tsconfigPath = path.join(RAIZ, 'tsconfig.json');
   const leido = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
@@ -112,7 +128,11 @@ export function programaDe(ficheros, overrides = new Map()) {
     if (overridesNormalizados.has(clave)) {
       return ts.createSourceFile(fileName, overridesNormalizados.get(clave), opts, true, ts.ScriptKind.TS);
     }
-    return originalGetSourceFile(fileName, opts, onError, shouldCreateNewSourceFile);
+    const enCache = `${clave}|${claveDeVersion(opts)}`;
+    if (!shouldCreateNewSourceFile && DE_DISCO.has(enCache)) return DE_DISCO.get(enCache);
+    const sf = originalGetSourceFile(fileName, opts, onError, shouldCreateNewSourceFile);
+    if (sf) DE_DISCO.set(enCache, sf);
+    return sf;
   };
   const original = host.readFile.bind(host);
   const originalExists = host.fileExists.bind(host);
@@ -268,12 +288,6 @@ export const AGREGADO = 'AGREGADO';
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
 export const USO = new Map([
-  // ── NUMERA — ajeno, carril J1, SCRUM-1168 (reportado, no tocado) ──────────────────────────────
-  ['src/app.ts::GET /admin/me', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/app.ts::POST /admin/onboarding/serie/previa', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/app.ts::POST /admin/onboarding/serie', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-  ['src/modules/system/merchantAdmin.ts::updateMerchantProfile', { uso: NUMERA, motivo: 'serie de facturas del año — SCRUM-1168', ref: 'SCRUM-1168' }],
-
   // ── GUARDA — carril S1, módulo apagado (MAINTENANCE_ENABLED), NO TOCAR (reportado en 1093g) ────
   ['src/modules/maintenance/domain/maintenance.service.ts::addMonths', { uso: GUARDA, motivo: 'setMonth para nextDueAt, módulo apagado — NO TOCAR (SCRUM-1093g)', ref: 'SCRUM-1093' }],
 
@@ -325,11 +339,20 @@ export const USO = new Map([
  *     — SCRUM-1093f, `f0ff43df`. Mismo patrón.
  *   · `src/modules/jobs/app/routes/partes.routes.ts::POST /admin/partes`
  *     — SCRUM-1093g, `5cb43c1c`. Mismo patrón.
+ *   · `src/app.ts::GET /admin/me`, `::POST /admin/onboarding/serie`, `::POST /admin/onboarding/serie/previa`
+ *     y `src/modules/system/merchantAdmin.ts::updateMerchantProfile` — SCRUM-1168. Las puertas de la
+ *     serie de facturas: el año sale de `anioDeLaSerie(merchant)` (`core/validation/fiscalInput.ts`),
+ *     la misma expresión que `allocateInvoiceNumber`, comparada contra el emisor real en
+ *     `tests/scrum1168-anio-serie-zona-merchant.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/quotes/domain/quoteNumber.service.ts::allocateQuoteNumber',
   'src/modules/jobs/domain/albaranNumber.service.ts::allocateAlbaranNumber',
   'src/modules/jobs/app/routes/partes.routes.ts::POST /admin/partes',
+  'src/app.ts::GET /admin/me',
+  'src/app.ts::POST /admin/onboarding/serie/previa',
+  'src/app.ts::POST /admin/onboarding/serie',
+  'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que

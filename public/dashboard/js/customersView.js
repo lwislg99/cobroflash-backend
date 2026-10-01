@@ -444,13 +444,80 @@ function renderCustomersView(container) {
   // viviera aquí la barra no podía comportarse distinto en móvil. Lo demás sigue en línea: sólo se
   // muda lo que la media query necesita decidir.
   const barraSeleccion = createElement("div", "barra-seleccion");
-  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;"
+  barraSeleccion.style.cssText = "align-items:center;gap:10px;padding:10px 14px;" // SCRUM-1135: el wrap, en styles.css
     + "border-top:1px solid var(--border);background:var(--neutral-50,#f8faf9)";
   const casillaTodosBarra = casillaConNombre(FC.TEXTOS_SELECCION.todos);
   const contadorSeleccion = document.createElement("span");
   contadorSeleccion.style.cssText = "font-size:13.5px;font-weight:600;color:var(--ink)";
   barraSeleccion.appendChild(casillaTodosBarra);
   barraSeleccion.appendChild(contadorSeleccion);
+
+  // ── SCRUM-1135 · ETIQUETAR LA SELECCIÓN, en la barra que ya existe.
+  //
+  // `POST /admin/customers/bulk-tags` (SCRUM-1059) estaba construido y nadie lo llamaba: con 50
+  // clientes marcados, el profesional tenía que abrirlos de uno en uno. Sólo se ve con algo marcado
+  // (`refrescarSeleccion`). La ruta es `requireRole('admin')`, así que sólo se PINTA para el rol que
+  // la ruta deja pasar —la misma condición que Exportar, arriba—: a un técnico no se le ofrece un
+  // botón que acaba en 403 (diseño aprobado en SCRUM-1135 comentario 17447).
+  const puedeEtiquetar = window.appUserRole === "admin";
+  const accionesEtiquetado = document.createElement("div");
+  accionesEtiquetado.className = "barra-seleccion-etiquetar";
+  // Su maquetación (y el `display`, que decide una clase) vive en styles.css, no en `style.cssText`:
+  // el trinquete de SCRUM-713c no se ensancha para que quepa esto.
+  const campoEtiqueta = document.createElement("input");
+  campoEtiqueta.type = "text";
+  campoEtiqueta.className = "input";
+  campoEtiqueta.placeholder = FC.TEXTOS_ETIQUETADO.campo;
+  campoEtiqueta.setAttribute("aria-label", FC.TEXTOS_ETIQUETADO.campo);
+  const btnAnadirEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.anadir);
+  const btnQuitarEtiqueta = createElement("button", "btn-secondary", FC.TEXTOS_ETIQUETADO.quitar);
+  for (const b of [btnAnadirEtiqueta, btnQuitarEtiqueta]) {
+    b.type = "button";
+    accionesEtiquetado.appendChild(b);
+  }
+  accionesEtiquetado.prepend(campoEtiqueta);
+  if (puedeEtiquetar) barraSeleccion.appendChild(accionesEtiquetado);
+
+  let etiquetando = false;
+  /** Con el campo vacío no hay nada que mandar: los botones no se ofrecen (y no hace falta aviso). */
+  function refrescarBotonesEtiqueta() {
+    const vacio = campoEtiqueta.value.trim() === "";
+    btnAnadirEtiqueta.disabled = vacio || etiquetando;
+    btnQuitarEtiqueta.disabled = vacio || etiquetando;
+  }
+  campoEtiqueta.addEventListener("input", refrescarBotonesEtiqueta);
+
+  async function etiquetarSeleccion(accion) {
+    const etiqueta = campoEtiqueta.value.trim();
+    if (!etiqueta || seleccion.length === 0 || etiquetando) return;
+    etiquetando = true;
+    refrescarBotonesEtiqueta();
+    try {
+      const r = await apiRequest("/admin/customers/bulk-tags", {
+        method: "POST",
+        body: JSON.stringify({ ids: seleccion.map(Number), accion, etiqueta }),
+      });
+      const resumen = FC.resumenDelEtiquetado(accion, r);
+      // La recarga va ANTES del aviso: `loadCustomers` limpia la caja de avisos al empezar.
+      await loadCustomers(ultimaBusqueda);
+      setAlert(resumen.tipo, resumen.texto);
+    } catch (err) {
+      // 🔴 SIN el detalle del error, a propósito. Medido en `api.js`: sin red, `err.message` es el
+      // «Failed to fetch» del navegador, en inglés; un 500 sin `message` da «API 500:
+      // internal_error». Es el defecto de SCRUM-1200. Los `message` de esta ruta (acción inválida,
+      // etiqueta vacía) no son alcanzables desde aquí. Y se recarga igual: si la respuesta se
+      // perdió pero el cambio entró, la tabla enseña lo que de verdad quedó, y repetir es inocuo
+      // (añadir otra vez sale «ya la tenía»).
+      try { await loadCustomers(ultimaBusqueda); } catch { /* su propio aviso ya lo dice */ }
+      setAlert("error", FC.TEXTOS_ETIQUETADO.error);
+    } finally {
+      etiquetando = false;
+      refrescarBotonesEtiqueta();
+    }
+  }
+  btnAnadirEtiqueta.addEventListener("click", () => etiquetarSeleccion("add"));
+  btnQuitarEtiqueta.addEventListener("click", () => etiquetarSeleccion("remove"));
+  refrescarBotonesEtiqueta();
 
   // 🔴 SCRUM-699 · AQUÍ HABÍA UN `outerCard.appendChild(table)`, Y SACABA LA TABLA DE SU CARRIL.
   //
@@ -496,6 +563,8 @@ function renderCustomersView(container) {
     // su REFLEJO, se reescribe en cada refresco y NO SE LEE NUNCA (hay un test que lo exige). El
     // `display` real lo decide `styles.css`, que es el único sitio que sabe de anchos.
     barraSeleccion.classList.toggle("barra-seleccion--vacia", seleccion.length === 0);
+    // SCRUM-1135 · etiquetar sólo tiene sentido con algo marcado.
+    accionesEtiquetado.classList.toggle("barra-seleccion-etiquetar--visible", seleccion.length > 0);
   }
 
   function alternarTodos() {
@@ -1689,6 +1758,51 @@ function renderCustomersView(container) {
     editingCustomer = null;
   }
 
+  // ═══ 🔴 SCRUM-1199 · QUÉ SE LE DICE CUANDO EL GUARDADO FALLA ═══════════════════════════════
+  //
+  // Textos FIRMADOS (SCRUM-1199, comentario 17321): no se retocan de paso, se vuelven a firmar.
+  // Sustituyen a «Error guardando cliente: API 400: validation_error», un código en crudo.
+  //
+  // · Se decide por CÓDIGO y por CAMPO (`details[].path` + `code`), nunca por el texto.
+  // · «Le faltan cifras» sólo con `too_small`: es verdad porque `phone`/`mobile` son
+  //   `z.string().min(5)` y la longitud es su único modo de fallo. Si el esquema valida otra cosa
+  //   algún día, ese error cae en el genérico y el literal hay que volver a firmarlo.
+  // · El genérico es un SUELO: sólo sustituye al mensaje compuesto en crudo. Si el servidor mandó
+  //   un `message` humano (o `apiRequest` ya lo resolvió, `handled`), ese mensaje GANA y se pinta
+  //   como antes.
+  const AVISO_TELEFONO_CORTO = "Revisa el teléfono: le faltan cifras.";
+  const AVISO_MOVIL_CORTO = "Revisa el móvil: le faltan cifras.";
+  const AVISO_EMAIL_INVALIDO = "Revisa el email: no parece una dirección válida.";
+  const AVISO_ERROR_GENERICO = "No se ha podido guardar el cliente. Revisa los datos e inténtalo de nuevo.";
+
+  // 🔴 SCRUM-1239 · CUANDO LO QUE FALLA NO SON LOS DATOS. Los tres textos que siguen, APROBADOS por
+  // el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1239 comentario 17386). Van
+  // tal cual. «Revisa los datos» era falso aquí: los datos estaban bien y lo que se cayó fue la
+  // conexión o el servidor. En ninguno se sabe si el cliente se guardó —`fetch` puede rechazar
+  // después de que llegara el POST—, por eso los tres mandan a mirar la lista antes de repetirlo:
+  // afirmar «no se guardó» fabricaría duplicados (SCRUM-1126, SCRUM-1137).
+  // Dependen de que `api.js` siga separando `sinRed` de `incierto`; si deja de hacerlo, vuelven a firma.
+  const AVISO_SIN_CONEXION = "Sin conexión. Vuelve a intentarlo cuando tengas cobertura, y mira la lista antes de crearlo otra vez.";
+  const AVISO_SIN_CONFIRMAR = "Se cortó la conexión y no sabemos si el cliente se ha guardado. Mira la lista antes de crearlo otra vez.";
+  const AVISO_FALLO_SERVIDOR = "No hemos podido completar el guardado. Inténtalo de nuevo en un rato, y mira la lista antes de crearlo otra vez.";
+
+  function avisoDeGuardadoFallido(err) {
+    const datos = (err && err.data) || null;
+    if (err && (err.handled || (datos && datos.message))) return "Error guardando cliente: " + err.message;
+    // SCRUM-1239 · por la MARCA que pone `api.js`, nunca por el texto del error.
+    if (err && err.sinRed) return AVISO_SIN_CONEXION;
+    if (err && err.incierto) return AVISO_SIN_CONFIRMAR;
+    if (err && Number(err.status) >= 500) return AVISO_FALLO_SERVIDOR;
+    if (err && err.code === "validation_error" && datos && Array.isArray(datos.details)) {
+      const primero = datos.details[0] || {};
+      const campo = Array.isArray(primero.path) ? primero.path[0] : null;
+      if (campo === "phone" && primero.code === "too_small") return AVISO_TELEFONO_CORTO;
+      if (campo === "mobile" && primero.code === "too_small") return AVISO_MOVIL_CORTO;
+      if (campo === "email" && primero.code === "invalid_format") return AVISO_EMAIL_INVALIDO;
+    }
+    return AVISO_ERROR_GENERICO;
+  }
+
   async function onModalSubmit(ev) {
     ev.preventDefault();
     avisarDelFormulario(null, "");
@@ -1696,7 +1810,10 @@ function renderCustomersView(container) {
     let creado = null;
     const payload = {
       name: fieldName.input.value.trim(),
-      phone: telefonoCompleto(),
+      // 🔴 SCRUM-1161 · el fijo y el email, por la MISMA regla que el móvil de abajo: vacío NO
+      // viaja. Mandaban `""`, y el esquema lo rechaza (el email por formato, el fijo por `min(5)`):
+      // un cliente sin email —el caso normal del oficio— salía con «API 400: validation_error».
+      phone: telefonoCompleto() || undefined,
       // ═══ 🔴 SCRUM-590 (CONT-19) · EL MÓVIL SÓLO VIAJA SI HAY MÓVIL ═══════════════════════
       //
       // MEDIDO ejecutando `customerCreateSchema`, no deducido:
@@ -1711,8 +1828,8 @@ function renderCustomersView(container) {
       //
       // ⚠️ Y la consecuencia, dicha en vez de descubierta: borrar el móvil de un cliente que lo
       // tiene NO lo borra (ausente = «no toques este campo»). Es la misma limitación que ya
-      // tiene `phone` — que además hoy manda `""` y por eso da 400, ver el hallazgo del PR—:
-      // se hereda, no se estrena, y se cierra el día que Zod acepte `null` en los dos a la vez.
+      // tienen `phone` y `email` (que desde SCRUM-1161 también se omiten vacíos): se hereda, no
+      // se estrena, y se cierra el día que Zod acepte `null` en los tres a la vez.
       //
       // 🔴 `|| undefined` Y NO UN SPREAD CONDICIONAL, y lo decidió un guard: `JSON.stringify`
       // BORRA las claves cuyo valor es `undefined`, así que en el cable pasa exactamente lo
@@ -1726,7 +1843,7 @@ function renderCustomersView(container) {
       // control. Su veredicto era «el modal envía campos que NO MUESTRA», que es exactamente la
       // acusación que ese guard existe para hacer, y aquí habría sido falsa.
       mobile: movilCompleto() || undefined,
-      email: fieldEmail.input.value.trim(),
+      email: fieldEmail.input.value.trim() || undefined, // SCRUM-1161, ver `phone`
       notes: fieldNotes.input.value.trim(),
       legalName: fieldLegalName.input.value.trim() || null, // A20.4
       taxId: fieldTaxId.input.value.trim() || null,
@@ -1790,7 +1907,7 @@ function renderCustomersView(container) {
       // SOLO USO: se limpia, para que el siguiente alta normal no dispare al anterior.
       if (creado && alGuardarUnaVez) { const cb = alGuardarUnaVez; alGuardarUnaVez = null; cb(creado); }
     } catch (err) {
-      avisarDelFormulario("error", "Error guardando cliente: " + err.message);
+      avisarDelFormulario("error", avisoDeGuardadoFallido(err));
     } finally {
       modalSaveBtn.disabled = false;
     }

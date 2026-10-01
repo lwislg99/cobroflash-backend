@@ -211,7 +211,7 @@ export function deUnFicheroJs(codigo, nombre) {
     }
     // 🔴 EL PUNTO CIEGO QUE CASI DEJA EL CENSO EN «scripts: 0», y lo destapó DECLARAR LA POBLACIÓN.
     // La casa no lanza la tanda por cadena de shell: la lanza por ARGUMENTOS —
-    // `spawnSync(process.execPath, ['--test', …])`, y `test-staging-gated.mjs` con un `args: [...]`
+    // `spawnSync(process.execPath, ['--test', …])`, y `staging-gated.mjs` con un `args: [...]`
     // en una tabla. Sin shell no puede haber tubería, así que son SANAS por construcción; pero
     // dejarlas fuera hacía que el censo dijera CERO sobre una superficie que tiene dos.
     if (ts.isArrayLiteralExpression(n)) {
@@ -300,5 +300,93 @@ export function censar(raiz) {
     poblacion: todas.length,
     invocaciones: todas,
     comeElCodigo: todas.filter((h) => h.veredicto !== VEREDICTOS.SANO),
+  };
+}
+
+// ── SCRUM-1245b · EL PATRÓN DE LA TANDA, ENTRE COMILLAS, EN LO QUE SE PEGA ─────────────────────
+//
+// `CLAUDE.md` y `docs/RUNBOOKS.md` enseñaron durante semanas `node --test … tests/*.test.mjs` sin
+// comillas, con el arreglo ya escrito en `trampas-del-entorno.md` §7. En bash el patrón lo expande
+// el shell: 1.063 ficheros son 47.393 caracteres, más que la línea de órdenes de Windows, y node NO
+// ARRANCA. Medido el 28-sep-2026 con un test en rojo dentro: con el TAP de una tanda anterior en
+// `$TMPDIR`, el bloque salía 0.
+//
+// `deInstrucciones` no lo podía ver: lee línea a línea, y ese comando sigue en la línea de abajo con
+// `\`, donde ya no pone `node --test`. Aquí se juntan antes las líneas continuadas.
+//
+// ⚠️ SOLO DOCUMENTOS, no `package.json`: npm corre por cmd en Windows, cmd no expande el patrón, y
+// unas comillas simples le llegarían a node como parte del patrón.
+
+/** Junta las líneas terminadas en `\` con la siguiente. Devuelve `{ linea, texto }` (1-based). */
+export function lineasLogicas(lineas) {
+  const out = [];
+  for (let i = 0; i < lineas.length; i++) {
+    const desde = i;
+    let texto = lineas[i];
+    while (/\\\s*$/.test(texto) && i + 1 < lineas.length) texto = texto.replace(/\\\s*$/, ' ') + lineas[++i];
+    out.push({ linea: desde + 1, texto });
+  }
+  return out;
+}
+
+/** Las palabras de un comando con un `*` o un `?` FUERA de comillas: las que expande el shell. */
+export function patronesSinComillas(comando) {
+  const out = [];
+  let palabra = '', comilla = null, esPatron = false;
+  for (const c of `${comando} `) {
+    if (comilla) { palabra += c; if (c === comilla) comilla = null; continue; }
+    if (c === "'" || c === '"') { comilla = c; palabra += c; continue; }
+    if (/\s/.test(c)) { if (palabra && esPatron) out.push(palabra); palabra = ''; esPatron = false; continue; }
+    if (c === '*' || c === '?') esPatron = true;
+    palabra += c;
+  }
+  return out;
+}
+
+/** Los `.md` que PRESCRIBEN: `CLAUDE.md`, `docs/` sin `docs/master/` (registro), y `.claude/`. */
+export function documentosQuePrescriben(raiz) {
+  const out = [];
+  const anda = (rel) => {
+    for (const e of fs.readdirSync(path.join(raiz, rel), { withFileTypes: true })) {
+      const r = path.posix.join(rel, e.name);
+      if (e.isDirectory()) { if (r !== 'docs/master' && e.name !== 'node_modules') anda(r); }
+      else if (e.name.endsWith('.md')) out.push(r);
+    }
+  };
+  if (fs.existsSync(path.join(raiz, 'CLAUDE.md'))) out.push('CLAUDE.md');
+  for (const d of ['docs', '.claude']) if (fs.existsSync(path.join(raiz, d))) anda(d);
+  return out;
+}
+
+/**
+ * Las invocaciones de `node --test` de los bloques de código, con sus patrones sin comillas.
+ * Declara su población: ficheros, bloques e invocaciones mirados.
+ */
+export function patronesDeLaTandaEnDocumentos(raiz, ficheros = documentosQuePrescriben(raiz)) {
+  let bloques = 0;
+  const invocaciones = [];
+  for (const rel of ficheros) {
+    const lineas = fs.readFileSync(path.join(raiz, rel), 'utf8').split(/\r?\n/);
+    let dentro = false;
+    const delBloque = [];
+    for (let i = 0; i < lineas.length; i++) {
+      if (/^\s*```/.test(lineas[i])) {
+        if (!dentro) { bloques++; delBloque.length = 0; }
+        else for (const l of lineasLogicas(delBloque.map((d) => d.texto))) {
+          for (const h of veredictoDeLinea(l.texto)) {
+            if (!/\bnode\b/.test(h.comando)) continue;
+            invocaciones.push({ fichero: rel, linea: delBloque[l.linea - 1].linea, comando: h.comando, sinComillas: patronesSinComillas(h.comando) });
+          }
+        }
+        dentro = !dentro;
+        continue;
+      }
+      if (dentro) delBloque.push({ linea: i + 1, texto: sinComentario(lineas[i]) });
+    }
+  }
+  return {
+    poblacion: { ficheros: ficheros.length, bloques, invocaciones: invocaciones.length },
+    invocaciones,
+    hallazgos: invocaciones.filter((v) => v.sinComillas.length),
   };
 }

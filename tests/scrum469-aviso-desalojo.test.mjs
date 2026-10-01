@@ -263,17 +263,15 @@ test('SCRUM-469 · 🔴 la HOME pinta el aviso, y no sólo sabe pintarlo', () =>
 
 // ── LA APROBADA QUE **NO** SE PINTA, Y SU TRINQUETE ───────────────────────────────────────
 
-test('SCRUM-469 · ⚠️ el aviso de «no cabe otra firma» está APROBADO y SIGUE SIN CONSUMIDOR', () => {
+test('SCRUM-469 · el aviso de «no cabe otra firma» está APROBADO y su ÚNICO consumidor es el mensaje de fallo al firmar', () => {
   const b = montar();
   assert.equal(typeof b.ctx.TEXTO_SIN_ESPACIO_PARA_FIRMA, 'string',
-    '🔴 el texto aprobado ha desaparecido de la fuente única. Si se ha cableado el tope, este test '
-    + 'se cambia; si se ha borrado, hay que volver a pasar por el asesor.');
+    '🔴 el texto aprobado ha desaparecido de la fuente única: hay que volver a pasar por el asesor.');
 
-  // 🔴 POR QUÉ SE VIGILA QUE **NO** SE USE. `hayEspacioParaOtraFirma` (SCRUM-360) no está cableada
-  // al encolado: nadie consulta el tope antes de guardar una firma. Pintar hoy este texto sería
-  // anunciar un rechazo que no ocurre. Y una declaración que nadie tiene que venir a retirar no es
-  // un hueco declarado: es una promesa. El día que se cablee el tope, ESTA ASERCIÓN CAE y hay que
-  // quitarla — que es exactamente el aviso que queremos que reciba esa sesión.
+  // SCRUM-1191 · RETIRADA A PROPÓSITO de la aserción «sigue sin consumidor»: el tope YA está
+  // cableado (`firmarConRedDeSeguridad` consulta `hayEspacioParaOtraFirma` antes de encolar), y la
+  // aserción estaba hecha para caer ese día. Lo que se vigila ahora es que lo pinte UN solo sitio,
+  // `mensajeDeFalloAlFirmar`, que sólo lo devuelve con `sinEspacio` (cola > 0, sin encolar).
   const consumidores = [];
   for (const rel of fs.readdirSync(DIR_JS).filter((f) => f.endsWith('.js'))) {
     const sf = arbol(rel);
@@ -288,8 +286,7 @@ test('SCRUM-469 · ⚠️ el aviso de «no cabe otra firma» está APROBADO y SI
       consumidores.push(`${rel}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`);
     });
   }
-  assert.deepEqual(consumidores, [],
-    `⚠️ ALGUIEN YA PINTA «no cabe otra firma» (${consumidores.join(', ')}) — y si el tope sigue sin `
-    + 'estar cableado a `guardarFirmaPendiente`, se está anunciando un rechazo que no ocurre. Si '
-    + 'SÍ se ha cableado: enhorabuena, borra este test y déjalo dicho en `docs/master/`.');
+  assert.ok(consumidores.length >= 1 && consumidores.every((c) => c.startsWith('albaranDetailView.js:')),
+    `🔴 «no cabe otra firma» se pinta fuera de \`mensajeDeFalloAlFirmar\` (${consumidores.join(', ') || 'en ningún sitio'}): `
+    + 'sólo es cierto cuando la firma NO se encoló por el tope y hay pendientes (SCRUM-1191).');
 });

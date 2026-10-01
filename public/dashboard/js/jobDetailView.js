@@ -125,6 +125,35 @@ function pintarBloqueRail(bloque) {
 }
 
 /**
+ * SCRUM-1164 · ¿ESTE NEGOCIO ESTÁ EN MODO JUSTIFICANTE? Con `INVOICING_ES_ENABLED` en OFF (todo
+ * merchant ES real hoy) el servidor manda `receipt`, y entonces YaQu ni factura ni cobra (regla 24).
+ * Los textos que afirman lo contrario se OCULTAN, no se reescriben: ocultar no es inventar copy
+ * (decisión del orquestador en SCRUM-1164). Mismo criterio y misma fuente que ya ocultan en
+ * `receipt` Planes, el tutorial, Ajustes y el onboarding: `window.appModoEmision`, tal cual lo
+ * calculó el servidor (`app.js`, SCRUM-298) — el navegador no recalcula el modo.
+ *
+ * ⚠️ Compara con `=== 'receipt'` y NO con `facturaFiscalDisponible()`, a propósito: aquello decide si
+ * se OFRECE una acción fiscal y falla cerrado (SCRUM-905); esto decide si se CALLA un texto que es
+ * verdad en los otros dos modos. Y ocultar no es borrar: el día que el cobro se encienda, el modo
+ * cambia y los textos vuelven solos.
+ */
+function enModoJustificante() {
+  return typeof window !== 'undefined' && window.appModoEmision === 'receipt';
+}
+
+// SCRUM-1164 (fila A del com. 17240) · los huecos que invitan a FACTURAR o a COBRAR por YaQu. En
+// `receipt` no hay factura posible, así que «X entregados sin facturar» + «Facturar lo entregado»
+// empujan a una acción que no existe. `sin-cobrar` («X facturados sin cobrar») no puede darse sin
+// facturas, pero se nombra igual: es la misma afirmación. Precedente en el servidor:
+// `weeklyDigest.service.ts` ya calla el «sin facturar» en este modo.
+const HUECOS_SOLO_SI_FACTURA = new Set(['sin-facturar', 'sin-facturar-nada', 'sin-cobrar']);
+
+function huecosVisibles(job) {
+  const huecos = huecosDeCobro(job);
+  return enModoJustificante() ? huecos.filter((h) => !HUECOS_SOLO_SI_FACTURA.has(h.id)) : huecos;
+}
+
+/**
  * SCRUM-320 (G5) · pinta «QUÉ FALTA PARA COBRAR».
  *
  * Aquí no se decide nada: los importes y los huecos salen de `jobCobroHuecos.js`, que es puro y por
@@ -233,7 +262,7 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
 
   const lista = document.createElement('div');
   lista.className = 'cobro-huecos';
-  for (const h of huecosDeCobro(job)) {
+  for (const h of huecosVisibles(job)) {
     const f = document.createElement('div');
     f.className = 'cobro-hueco';
     f.dataset.hueco = h.id;
@@ -267,8 +296,15 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       // hacerlo: lo que falta no está en ninguna sección de este Trabajo, es que no existe el
       // documento. Se navega por el mismo camino que ya usan el detalle de cliente y la lista de
       // facturas —`renderAppView('quotes-new')`, sin estado—, no por uno nuevo.
+      // SCRUM-1274 · …pero CON el Trabajo y su cliente. Sin ellos, el presupuesto nacía suelto y al
+      // aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para la misma obra (SCRUM-195).
       if (h.accion === 'hacer-presupuesto') {
-        if (window.renderAppView) window.renderAppView('quotes-new');
+        if (window.renderAppView) {
+          // Por el argumento que ya existe (`template`, SCRUM-140), sin líneas: no es una plantilla.
+          window.renderAppView('quotes-new', {
+            template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+          });
+        }
         return;
       }
       // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando
@@ -722,10 +758,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // Si no hay ningún hueco, la sección NO SE PINTA: no falta nada, y preguntar qué falta cuando no
   // falta nada es ruido (misma regla del hueco que G3 y G4).
   if (typeof seccionCobroVisible === 'function' && seccionCobroVisible(job)) {
-    const cobroSec = document.createElement('div');
-    cobroSec.className = 'detail-section';
-    body.appendChild(cobroSec);
-    pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+    // SCRUM-1164 · y en `receipt` cuenta con los huecos que QUEDAN tras ocultar los de facturar: si
+    // sólo había ésos, la sección sería un título «Lo que falta» sobre una lista vacía. Va DENTRO de
+    // su condición, no sumada a ella: la sección se sigue montando bajo su propio `if` (SCRUM-320).
+    if (huecosVisibles(job).length > 0 || importesDeCobro(job).cobradoDeMas > 0) {
+      const cobroSec = document.createElement('div');
+      cobroSec.className = 'detail-section';
+      body.appendChild(cobroSec);
+      pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+    }
   }
 
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
@@ -750,7 +791,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // gris: un Trabajo sin importe de referencia no admite ninguna afirmación sobre su dinero, y
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
-    (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
+    // SCRUM-1164 (fila F) · y en `receipt` tampoco: sin cobro por YaQu el cobrado no se mueve nunca
+    // de 0, así que el chip diría «Pendiente» para siempre, cobre el profesional o no. El modo va
+    // FUERA de la condición de SCRUM-363, que se queda tal cual: son dos razones distintas para callar.
+    (enModoJustificante() ? '' : (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : ''));
   // 🔴 SCRUM-917e (D) · EL DINERO SE DICE UNA VEZ. Aquí había un titular «Total aceptado» a 2,2 rem
   // y, debajo, una barra que repetía «Cobrado X de Y». Entre eso, las cuatro filas de importes de
   // «Qué falta para cobrar» y el bloque DINERO del rail, **«590,00 €» se leía SIETE veces en la
@@ -794,7 +838,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     franja.className = 'detail-dinero';
 
     const foco = document.createElement('div');
-    if (hayEje) {
+    // SCRUM-1164 (fila F) · en `receipt` se calla el FOCO («Te falta por cobrar X €» / «Cobrado del
+    // todo»): es un DERIVADO del cobrado, y el cobrado por YaQu es 0 para siempre en este modo. Los
+    // lados (Aceptado, Cobrado) son datos medidos y se siguen diciendo — mismo reparto que ya hace
+    // el caso sin eje de justo arriba: se calla lo derivado, no el dato.
+    if (hayEje && !enModoJustificante()) {
       const rot = document.createElement('span');
       rot.className = 'detail-dinero__rotulo';
       // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
@@ -1102,7 +1150,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       dirInput.value = direccionObra; // se deshace lo tecleado: mentir sería peor
       // El 409 de la firma sellada trae su propio motivo y se enseña TAL CUAL: «no se pudo» sin
       // decir por qué obligaría al profesional a adivinar por qué su trabajo es distinto.
-      setStatus('error', (e && e.data && e.data.message) || 'No se pudo guardar la dirección de la obra.');
+      setStatus('error', mensajeParaPersona(e, 'No se pudo guardar la dirección de la obra.'));
     }
   });
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA ESTE TRABAJO — Y PUEDEN SER TRES ─────────────────────
@@ -1270,7 +1318,8 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const tipoHint = document.createElement('p');
   tipoHint.style.cssText = 'margin:8px 0 0;color:var(--muted);font-size:12px';
   tipoHint.textContent = 'Nos ayuda a preparar tus facturas correctamente. Si tienes dudas, confírmalo con tu asesor.';
-  tipoExpanded.appendChild(tipoHint);
+  // SCRUM-1164 (fila C) · en `receipt` YaQu no prepara facturas: la nota se calla, el selector no.
+  if (!enModoJustificante()) tipoExpanded.appendChild(tipoHint);
   if (!isTecnico) tipoSec.appendChild(tipoExpanded);
 
   syncTipoCollapsed();
@@ -1630,7 +1679,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         refresh();
       } catch (e) {
         goM.disabled = false;
-        setStatus('error', e?.data?.message || 'No se pudo consolidar.');
+        setStatus('error', mensajeParaPersona(e, 'No se pudo consolidar.'));
       }
     });
     btnRow.append(cancelM, goM);
@@ -1789,9 +1838,24 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       avisoEl.style.display = 'none';
     }
 
+    // SCRUM-1184 · LA VISTA PREVIA DEL NÚMERO. Texto FIRMADO por el orquestador (c.17342): «Siguiente
+    // número: AB260005.», con el número real. Dice «Siguiente» y no «Se creará como» a propósito: si
+    // otro usuario crea un albarán a la vez, el número real puede ser otro. El número lo da el
+    // servidor (`GET /admin/albaranes/serie`, año en la zona del merchant, como al emitir).
+    // FALLA CERRADO: sin `siguiente` string (409 `serie_sin_anio`, error, red) no se pinta nada.
+    const siguienteEl = document.createElement('p');
+    siguienteEl.className = 'alb-siguiente-numero';
+    siguienteEl.hidden = true;
+    apiRequest('/admin/albaranes/serie').then((r) => {
+      const n = r && typeof r.siguiente === 'string' ? r.siguiente.trim() : '';
+      if (!n) return;
+      siguienteEl.textContent = `Siguiente número: ${n}.`;
+      siguienteEl.hidden = false;
+    }).catch(() => {});
+
     const bodyEl = document.createElement('div');
     bodyEl.className = 'modal-body';
-    modal.append(header, errEl, avisoEl, bodyEl);
+    modal.append(header, siguienteEl, errEl, avisoEl, bodyEl);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
@@ -1819,27 +1883,41 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // en vez de `canalDeWhatsApp` — el detalle del Trabajo no manda `customer.tieneNumeroDeContacto`
     // (eso es del detalle del PRESUPUESTO, SCRUM-1166; medido en `jobs.routes.ts:87`, que solo
     // proyecta `{ id, name, phone, mobile }`). Cuando SCRUM-1171 añada el dato preciso al detalle
-    // del Trabajo, esta línea se cambia por él (orquestador, SCRUM-993 comentario 17263). El
-    // criterio interino solo decide si el TEXTO nombra el canal, no si el envío se intenta.
+    // del Trabajo, esta línea se cambia por él (orquestador, SCRUM-993 comentario 17263).
+    // 2ª vuelta (opción A, SCRUM-993 comentario 17327): SIN número NO SE OFRECE el botón. La única
+    // vía de envío a firmar es WhatsApp, así que sin número su segunda mitad fallaba siempre (409
+    // `customer_missing_phone`) DESPUÉS de emitir — congelando al cliente para nada. Y el texto de
+    // confirmación sin canal («…y lo envía a firmar.») queda RETIRADO: sin botón, no hay dónde decirlo.
     const tieneCanalWhatsAppInterino = !!(job.customer?.phone || job.customer?.mobile);
-    const textoConfirmarEntrega = tieneCanalWhatsAppInterino
-      ? ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP
-      : ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
 
     // SCRUM-303 · EL ÚNICO POST DE CREACIÓN, tanto para «Guardar» como para «Entregar y enviar a
     // firmar» (SCRUM-993): el guard de esta pantalla cuenta los sitios que llaman a este endpoint
     // en `jobDetailView.js` y exige que sea UNO — dos altas divergen en cuanto alguien toca una.
     // Toma el CUERPO ya construido: quien lo construye (`onGuardar`, justo abajo, SIN TOCAR — es
     // el receptor que vigila SCRUM-593e/607) sigue siendo el único sitio que decide su forma.
+    //
+    // SCRUM-1267 · EL ALTA VIAJA CON SU `claveIdempotencia` (el servidor la honra desde SCRUM-358).
+    // Si la respuesta se pierde (`incierto`, SCRUM-459, o la red cae a la vuelta) el albarán PUEDE
+    // estar creado, y el profesional reintenta. Sin clave, el servidor no puede saber que es el
+    // mismo y reserva el número siguiente: DOS albaranes. Con ella, devuelve el original.
+    // 🔴 Se acuña UNA vez, al abrir esta hoja, y la reutilizan todos los reintentos y los dos
+    // botones («Crear albarán» y «Entregar y enviar a firmar»). Acuñarla en cada clic no protegería
+    // de nada. Si el reintento cambia el contenido, el servidor lo rechaza nombrando qué cambió.
+    const claveAlta = (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function')
+      ? crypto.randomUUID()
+      : `alb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
     function crearAlbaran(cuerpo) {
-      return apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+      return apiRequest(`/admin/jobs/${job.id}/albaranes`, {
+        method: 'POST',
+        body: JSON.stringify({ ...cuerpo, claveIdempotencia: claveAlta }),
+      });
     }
 
     buildAlbEditor(bodyEl, enBlanco, {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
-      textoConfirmarEntrega,
+      textoConfirmarEntrega: ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP,
       onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         // SCRUM-607 (ALB-02): la misma trampa que describe `docHeaderText` justo debajo — si no se
@@ -1863,15 +1941,40 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       // el fallo — texto firmado, SCRUM-993 comentario 17263. No hay reintento automático: la
       // escalera y la fila del albarán siguen ofreciendo «Enviar para firmar» sobre el emitido,
       // que es por donde se reenvía a mano (regla 28: nada de envío automático nuevo).
-      onEntregarYFirmar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
+      //
+      // 2ª vuelta (SCRUM-993 comentario 17327) · SOLO LANZA SI FALLA EL ALTA. En cuanto el albarán
+      // existe, un error de aquí en adelante NO puede volver al `catch` de la hoja: ése la deja
+      // abierta y rehabilita «continuar», y el segundo clic crearía —y EMITIRÍA— OTRO albarán.
+      // Medido en el com. 17325: el 409 del envío LANZA en `apiRequest` y no pasa por
+      // `waSendFailed`. Así que, creado el albarán, la hoja se cierra y se refresca pase lo que pase.
+      // Sin número de contacto, `undefined`: `buildAlbEditor` no monta ni el botón ni su confirmación.
+      onEntregarYFirmar: !tieneCanalWhatsAppInterino ? undefined : async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         if (ocultarPreciosEnDocumento !== undefined) cuerpo.ocultarPreciosEnDocumento = ocultarPreciosEnDocumento;
         if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
         const creado = await crearAlbaran(cuerpo);
-        await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
-        const envio = await apiRequest(`/admin/albaranes/${creado.id}/enviar-para-firmar`, { method: 'POST' });
-        if (waSendFailed(envio)) showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO, 'warn');
-        else showToast('✓ Albarán entregado y enviado a firmar.');
+        try {
+          await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
+        } catch (_) {
+          // No emitido: queda el BORRADOR, que la ficha enseña al refrescar con su «Emitir albarán».
+          // Texto firmado en SCRUM-993 comentario 17337: dice que el documento YA EXISTE, que es lo
+          // que evita volver a intentarlo desde cero. «Borrador» es la palabra de la ficha
+          // (`jobDetAlbEstado`), no una nueva. Sin el `.message` crudo del servidor (SCRUM-644).
+          showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_EMITIR, 'warn');
+          return;
+        }
+        let envio = null;
+        try {
+          envio = await apiRequest(`/admin/albaranes/${creado.id}/enviar-para-firmar`, { method: 'POST' });
+        } catch (_) {
+          envio = null;
+        }
+        // Condición de verdad de la firma (17327): el éxito SOLO con `sent === true`, que el servidor
+        // pone únicamente cuando el envío salió (`sendSuccessBody`, `src/lib/sendOutcome.ts`).
+        // Cualquier otra cosa —un 409 que lanza, un `sent:false` con 200, una respuesta sin `sent`—
+        // es «emitido y no enviado», y sale el aviso firmado en el comentario 17263.
+        if (envio && envio.sent === true) showToast('✓ Albarán entregado y enviado a firmar.');
+        else showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO, 'warn');
       },
     }, { cur, refresh, setStatus });
     (bodyEl.querySelector('.input') || closeBtn).focus();
@@ -2330,7 +2433,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // NO se sustituye por la del cliente —que además no existe en el modelo—: un enlace a mapa que
   // lleva al sitio equivocado es peor que no tenerlo, porque el que no existe no se sigue.
   const bloquesRail = (typeof construirBloquesRail === 'function'
-    ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName })
+    ? construirBloquesRail(job, { fmtMoney: fmtMoneyEs, fechaCorta, responsableName, contacto: window.contactoDelCliente })
     : []).filter(Boolean);
 
   if (bloquesRail.length) {
@@ -2441,8 +2544,6 @@ const ALB_ENTREGAR_Y_FIRMAR_LABEL = 'Entregar y enviar a firmar';
 // firma (com. 17262/17263): decirlo cuando no va a pasar sería una promesa falsa.
 const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP =
   'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar por WhatsApp.';
-const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP =
-  'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar.';
 // El envío puede fallar DESPUÉS de un paso irreversible (emitir ya congeló al cliente): el aviso
 // dice primero lo que SÍ pasó, y solo entonces lo que falló — misma forma que el ya firmado de
 // `collect-rest` (SCRUM-126, «Cobro creado — el WhatsApp falló, reenvíalo desde Cobros»). «Desde
@@ -2450,6 +2551,10 @@ const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP =
 // para firmar» sobre un albarán ya emitido, las dos en esta misma pantalla.
 const ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO =
   'Albarán emitido — el envío por WhatsApp falló, reenvíalo desde el trabajo.';
+// Emitir falló DESPUÉS de crear: el albarán existe, en borrador, en la lista de este trabajo.
+// Firmado en SCRUM-993 comentario 17337.
+const ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_EMITIR =
+  'No se pudo completar la entrega. El albarán queda en borrador en este trabajo.';
 
 function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, onEntregarYFirmar, textoConfirmarEntrega } = {}, ctx = {}) {
   // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
@@ -2521,7 +2626,9 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
   const ocultarHint = document.createElement('p');
   ocultarHint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
   ocultarHint.textContent = ALB_OCULTAR_PRECIOS_NOTA;
-  ocultarRow.appendChild(ocultarHint);
+  // SCRUM-1164 (fila B) · «…y puedes facturarlo» es falso en `receipt`: la nota se calla, la casilla
+  // (que sí hace lo que dice) se queda.
+  if (!enModoJustificante()) ocultarRow.appendChild(ocultarHint);
   // Se muestra u oculta con el modo, sin re-pintar nada: el pro marca «con precios» y aparece.
   function syncOcultarRow() { ocultarRow.style.display = modo === 'VALORADO' ? '' : 'none'; }
   syncOcultarRow();
@@ -2678,7 +2785,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
           });
           pintarPropuesta(Array.isArray(d.lines) ? d.lines : []);
         } catch (e) {
-          err.textContent = e?.message || 'No se pudieron generar las líneas.';
+          err.textContent = mensajeParaPersona(e, 'No se pudieron generar las líneas.');
           err.style.display = 'block';
         } finally {
           btnGen.disabled = false;
@@ -2944,7 +3051,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
       if (onClose) onClose(); // cierra el sheet antes de re-renderizar
       refresh();
     } catch (e) {
-      const msg = e?.data?.message || 'No se pudo guardar el albarán.';
+      const msg = mensajeParaPersona(e, 'No se pudo guardar el albarán.');
       if (onError) onError(msg); else setStatus('error', msg); // el error se ve DENTRO del sheet
       save.disabled = false;
     }
@@ -3015,7 +3122,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
     confirmBox.className = 'alert info';
     confirmBox.hidden = true;
     const confirmTexto = document.createElement('p');
-    confirmTexto.textContent = textoConfirmarEntrega || ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
+    confirmTexto.textContent = textoConfirmarEntrega || ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP;
     confirmBox.appendChild(confirmTexto);
     const confirmRow = document.createElement('div');
     confirmRow.className = 'alb-confirmar-fila';
@@ -3049,7 +3156,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
         if (onClose) onClose();
         refresh();
       } catch (e) {
-        const msg = e?.data?.message || 'No se pudo completar la entrega.';
+        const msg = mensajeParaPersona(e, 'No se pudo completar la entrega.');
         if (onError) onError(msg); else setStatus('error', msg);
         confirmContinuar.disabled = false;
         confirmCancelar.disabled = false;
@@ -3304,7 +3411,7 @@ function openFacturarParcialSheet(alb, ctx) {
       if (d && d.message) setStatus('error', d.message);
       refresh();
     } catch (e) {
-      err.textContent = e?.data?.message || 'No se pudo emitir la factura.';
+      err.textContent = mensajeParaPersona(e, 'No se pudo emitir la factura.');
       err.style.display = 'block';
       emitir.disabled = false;
       emitir.textContent = orig;

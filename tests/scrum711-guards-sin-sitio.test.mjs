@@ -20,8 +20,9 @@
 //     sin invocar                      →   2   y los dos corren igualmente, por otro camino:
 //        · guard-conformidad-landing.mjs → su comprobación corre en la tanda por su módulo puro:
 //          `scrum400` llama a `comprobarEnDisco(RAIZ)` sobre el árbol real. Sobra el CLI, no el guard.
-//        · guards-entrada.mjs → runner local para empujar una entrada del registro; sus cuatro
-//          comprobaciones son `tests/*.test.mjs`, así que ya corren en la tanda.
+//        · guards-entrada.mjs → runner local para empujar una entrada del registro; TODAS sus
+//          comprobaciones (su lista `GUARDS`) son `tests/*.test.mjs`, así que ya corren en la tanda:
+//          el runner es un atajo, no una red más (SCRUM-1179).
 //     guards que no corren en ningún sitio  →  0
 //
 // 🔴 AÑADIDO EL 23-SEP-2026 (SCRUM-1097), SIN REPETIR LA MEDICIÓN DE ARRIBA — que ya está vieja
@@ -181,6 +182,11 @@ export const DECLARADOS = {
       testEnvoltorio: 'tests/scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs',
       llamadaTestEnvoltorio: 'ejecutarPasada',
     },
+  },
+  'scripts/guard-nombres-no-declarados.mjs': {
+    porque: 'SCRUM-1280: tiene que BLOQUEAR, así que corre dentro de `npm test` (el check obligatorio) '
+      + 'a través de su módulo puro: scrum1280 ejecuta `medir()` sobre el panel real y exige cero hallazgos.',
+    prueba: { fichero: 'tests/scrum1280-nombres-no-declarados.test.mjs', llamada: 'medir({ piezasExtra: PIEZAS' },
   },
 };
 
@@ -364,6 +370,14 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
   assert.ok(patrones.some((p) => p.test(pa.fichero)),
     `🔴 \`${pa.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`), así que su `
     + 'declaración no vale aunque llame a lo que dice.');
+
+  const pn = DECLARADOS['scripts/guard-nombres-no-declarados.mjs'].prueba;
+  const codigoN = soloCodigo(fs.readFileSync(path.join(RAIZ, pn.fichero), 'utf8'));
+  assert.ok(codigoN.includes(pn.llamada),
+    `🔴 \`${pn.fichero}\` ya no ejecuta \`${pn.llamada}\` (fuera de comentarios). Sin esa llamada, `
+    + '`guard-nombres-no-declarados` deja de correr en el check obligatorio y su declaración lo estaría tapando.');
+  assert.ok(patrones.some((p) => p.test(pn.fichero)),
+    `🔴 \`${pn.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`).`);
 });
 
 test('SCRUM-1109 · el envoltorio programado también ejercita de verdad al guard importado', () => {

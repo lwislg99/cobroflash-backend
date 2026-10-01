@@ -52,9 +52,12 @@ async function capturandoLog(fn) {
 
 test('SCRUM-477 · 🔴 SUELO: el censo VE los cuatro avisos, o no puede afirmar nada de ellos', () => {
   const deAviso = LLAMADORES.filter((l) => EMISORES_DE_AVISO.includes(l.emisor));
-  assert.equal(deAviso.length, 4,
+  // ✅ BAJA DE 4 A 3 POR SCRUM-1202 (28-sep-2026), retirada a propósito: el aviso de `quotes` vivía
+  // en POST /quote/:token/accept, ruta pública sin llamador desde SCRUM-95 que se ha RETIRADO. No se
+  // ha arreglado ni perdido ningún aviso vivo: la vía viva (/decision) nunca llamó a este emisor.
+  assert.equal(deAviso.length, 3,
     `🔴 EL CENSO ESTÁ CIEGO: encuentra ${deAviso.length} llamadas a los avisos del profesional y `
-    + 'son CUATRO (psp, quotes, quotesAdmin, whatsappIncoming).\n\n'
+    + 'son TRES (psp, quotesAdmin, whatsappIncoming).\n\n'
     + '  Con menos, «ninguno se traga el fallo» significa «no supe mirar», que es el mismo verde\n'
     + '  con el significado contrario. Ya pasó una vez: al unificar el emisor, este censo pasó de\n'
     + '  4 mudos a 0 sin que nadie arreglara nada.');

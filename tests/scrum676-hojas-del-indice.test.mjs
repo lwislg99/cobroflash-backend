@@ -40,37 +40,44 @@ const HOJA = '  <link rel="stylesheet" href="/tokens.css"/>\n';
 
 // ── EL ÍNDICE REAL ──────────────────────────────────────────────────────────────────────
 
-test('SCRUM-676 · el índice declara DOS hojas locales, y son las dos que se esperan', () => {
+// SCRUM-1234 (28-sep-2026) · A PROPÓSITO: la hoja de fuentes pasa de REMOTA (Google) a LOCAL
+// (`/fonts/inter.css`), para que la IP del visitante no salga a Google. Son TRES locales y cero remotas.
+test('SCRUM-676 · el índice declara TRES hojas locales, y son las tres que se esperan', () => {
   const r = hojasDeLaPagina(HTML);
-  assert.deepEqual(r.locales, ['/tokens.css', './css/styles.css'],
+  assert.deepEqual(r.locales, ['/fonts/inter.css', '/tokens.css', './css/styles.css'],
     '🔴 las hojas locales del índice han cambiado. Si es a propósito, actualiza esta lista; si no,\n' +
     '   el marcado cambió de forma y hay que mirarlo.');
   assert.equal(r.ilegibles.length, 0,
     '🔴 hay `<link>` en el índice que el extractor no sabe leer:\n    ' + r.ilegibles.join('\n    '));
 });
 
-test('SCRUM-676 · 🔴 la hoja REMOTA de fuentes se ve, y NO se mete con las locales', () => {
-  // El agravante propio del CSS (SCRUM-666): el índice carga dos hojas locales más UNA remota.
-  // Un extractor que no las separe mete la de Google en una población donde no pinta nada — y
-  // `_banco-vistas` NI SIQUIERA LA VEÍA, porque esa etiqueta lleva `href` antes de `rel`.
+test('SCRUM-676 · 🔴 el índice NO carga hojas REMOTAS, y una remota no se mete con las locales', () => {
+  // El agravante propio del CSS (SCRUM-666): el índice cargaba dos hojas locales más UNA remota, la
+  // de Google Fonts, con `href` antes de `rel` (`_banco-vistas` NI SIQUIERA LA VEÍA).
+  // SCRUM-1234 · esa remota ya no existe: la fuente se sirve desde `/fonts/`. Que VUELVA una remota
+  // es que vuelve a salir la IP del visitante a un tercero, y se caza aquí. La separación
+  // remota/local sigue probada en corpus, con la misma etiqueta de entonces:
   const r = hojasDeLaPagina(HTML);
-  assert.equal(r.remotas.length, 1, `🔴 esperaba UNA hoja remota y veo ${r.remotas.length}.`);
-  assert.match(r.remotas[0], /^https:\/\/fonts\.googleapis\.com\//,
-    '🔴 la hoja remota del índice ya no es la de fuentes de Google.');
+  assert.deepEqual(r.remotas, [], `🔴 el índice vuelve a cargar hojas remotas: ${r.remotas.join(', ')}`);
+  const corpus = hojasDeLaPagina(pagina(HOJA,
+    '  <link href="https://ejemplo.test/css2?family=Inter&display=swap" rel="stylesheet"/>\n'));
+  assert.equal(corpus.remotas.length, 1, `🔴 en corpus esperaba UNA hoja remota y veo ${corpus.remotas.length}.`);
+  assert.deepEqual(corpus.locales, ['/tokens.css'], '🔴 la remota del corpus se ha colado en las locales.');
   for (const l of r.locales) {
     assert.doesNotMatch(l, /^https?:|^\/\//, `🔴 «${l}» es remota y está en las LOCALES.`);
   }
 });
 
 test('SCRUM-676 · el índice tiene `<link>` que NO son hojas, y se clasifican aparte', () => {
-  // `icon`, `manifest`, `preconnect`, `apple-touch-icon`. Contarlas como hojas sería exigir CSS
-  // donde hay un PNG.
+  // `icon`, `manifest`, `apple-touch-icon`. Contarlas como hojas sería exigir CSS donde hay un PNG.
+  // SCRUM-1234 · el suelo baja de cuatro a TRES porque salen los dos `preconnect` a Google Fonts,
+  // no porque el extractor vea menos: las tres que quedan se nombran una a una justo debajo.
   const r = hojasDeLaPagina(HTML);
-  assert.ok(r.otras.length >= 4,
-    `🔴 SUELO: veo ${r.otras.length} <link> que no son hojas y en el índice hay al menos cuatro. ` +
+  assert.ok(r.otras.length >= 3,
+    `🔴 SUELO: veo ${r.otras.length} <link> que no son hojas y en el índice hay al menos tres. ` +
     'Si salen cero, el extractor no está viendo las etiquetas, no es que no existan.');
   const rels = r.otras.map((o) => String(o.rel || '').toLowerCase());
-  for (const esperado of ['icon', 'manifest']) {
+  for (const esperado of ['icon', 'manifest', 'apple-touch-icon']) {
     assert.ok(rels.some((x) => x.split(/\s+/).includes(esperado)),
       `🔴 no veo ningún <link rel="${esperado}"> entre las «otras», y el índice lo tiene.`);
   }

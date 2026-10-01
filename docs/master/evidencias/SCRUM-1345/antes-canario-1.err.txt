@@ -1,0 +1,4 @@
+
+🔴 los guards de entrada se pasaron del TECHO: más de 1 ms (el techo es 90000 ms).
+  Un comando que tarda un minuto no se ejecuta, y entonces no vigila nada. Deja sitio a
+  alguno de la lista o sube el techo A PROPÓSITO, en un PR que lo diga (SCRUM-976).

@@ -95,6 +95,19 @@ const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))
 const VACIOS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const CRUDOS = new Set(['script', 'style', 'textarea']);
 
+// El contenido de un `<textarea>` es RCDATA: el navegador resuelve sus entidades y quita UN salto de
+// línea inicial. Solo se conocen las que usa el panel; cualquier otra revienta en vez de pasar
+// literal, porque `&foo;` servido tal cual sería un valor que el navegador nunca daría.
+const ENTIDADES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+export function contenidoDeTextarea(crudo) {
+  const sinSalto = String(crudo).replace(/^\r?\n/, '');
+  return sinSalto.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z][a-z0-9]*);/gi, (todo, e) => {
+    if (e[0] === '#') return String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10));
+    if (Object.prototype.hasOwnProperty.call(ENTIDADES, e)) return ENTIDADES[e];
+    throw new Error(`banco-vistas: el <textarea> trae la entidad «${todo}», que el banco no sabe resolver. No se sirve como texto: el navegador daría otro valor.`);
+  });
+}
+
 const REFLEJADOS = new Map([
   ['type', ''], ['name', ''], ['href', ''], ['src', ''],
   ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
@@ -258,6 +271,9 @@ function comoNodo(x, reg) {
   return t;
 }
 
+/** SCRUM-1278 · los eventos que en el navegador SUBEN por el árbol (`bubbles: true`). */
+const TIPOS_QUE_SUBEN = new Set(['click', 'dblclick', 'input', 'change', 'submit', 'keydown', 'keyup', 'keypress', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'contextmenu']);
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
@@ -280,9 +296,15 @@ export function nodo(tag, reg) {
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
     // él. Lo cazó la prueba de rojo de SCRUM-444: la inyección del defecto salía VERDE porque la
     // pila borrada se «encontraba» igual.
+    // 🔴 SCRUM-1221 · y los de TODO SU SUBÁRBOL, como ya hacían `_soltarHijos` (SCRUM-897) y el
+    // montaje de `pintarVista`. Sólo se desregistraba el propio nodo: tras `overlay.remove()`,
+    // `getElementById` seguía encontrando el «continuar» de dentro (medido por S4 en SCRUM-993).
     removeChild(h) {
       n.hijos = n.hijos.filter((x) => x !== h);
-      if (h) { h._padre = null; if (h._id && reg.porId.get(h._id) === h) reg.porId.delete(h._id); }
+      if (h) {
+        h._padre = null;
+        for (const d of todos(h)) if (d && d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
     },
     insertBefore(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.unshift(h); return h; },
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
@@ -381,6 +403,13 @@ export function nodo(tag, reg) {
     get firstElementChild() { return n.hijos[0] || null; },
     get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
     remove() { if (n._padre) n._padre.removeChild(n); },
+    // 🔴 SCRUM-1278 · `replaceChildren`. NO EXISTÍA, y `expensesView.js` lo usa para rellenar el filtro
+    // por trabajo: el `TypeError` se lo tragaba el `try` de la carga y Gastos salía con su cartel de
+    // error. Quita como `removeChild` (desregistrando ids) y pone como `append` (cadenas = texto).
+    replaceChildren(...bruto) {
+      for (const h of n.hijos.slice()) n.removeChild(h);
+      n.append(...bruto);
+    },
     // ⚠️ SCRUM-444 · UN `id` ASIGNADO A MANO TAMBIÉN SE ENCUENTRA.
     //
     // `reg.porId` sólo se rellenaba desde `innerHTML`, así que
@@ -399,15 +428,43 @@ export function nodo(tag, reg) {
     removeEventListener(tipo, fn) {
       n._oyentes[tipo] = (n._oyentes[tipo] || []).filter((f) => f !== fn);
     },
-    /** Dispara los oyentes de un tipo. Devuelve cuántos corrieron: 0 se lee igual que «no pasó nada». */
+    /**
+     * Dispara los oyentes de un tipo. Devuelve cuántos corrieron: 0 se lee igual que «no pasó nada».
+     *
+     * 🔴 SCRUM-1278 · Y SUBE, COMO EN EL NAVEGADOR. Antes sólo corrían los oyentes del propio nodo, con
+     * `target` = ese nodo. Un clic de verdad nace en el hijo más profundo y SUBE por sus antepasados
+     * con `target` = el hijo: así, pulsar la celda de una fila llega al oyente de la fila con
+     * `e.target` = la celda. Sin eso, el defecto de SCRUM-1275 (el oyente de la fila de Facturas lee
+     * una `cb` que no existe) no se reproducía nunca en el banco: el clic sintético no llegaba a la
+     * fila desde dentro. `stopPropagation` corta la subida; los tipos que en el navegador no suben
+     * (`focus`, `blur`…) siguen sin subir.
+     *
+     * ⚠️ Lo que DEVUELVE sigue siendo lo de siempre: cuántos oyentes tiene EL PROPIO nodo. Hay tests
+     * que lo usan para afirmar «este botón tiene su oyente» (`scrum660`, `scrum915d`); contar también
+     * los de los antepasados les haría decir que sí a un botón sin oyente dentro de una fila con uno.
+     */
     disparar(tipo) {
-      const fns = n._oyentes[tipo] || [];
-      for (const f of fns) f.call(n, { type: tipo, target: n, preventDefault() {}, stopPropagation() {} });
-      return fns.length;
+      const sube = TIPOS_QUE_SUBEN.has(tipo);
+      let parado = false;
+      const propios = ((n._oyentes && n._oyentes[tipo]) || []).length;
+      const ev = {
+        type: tipo, target: n, currentTarget: n, bubbles: sube, defaultPrevented: false,
+        preventDefault() { ev.defaultPrevented = true; }, stopPropagation() { parado = true; },
+      };
+      for (let x = n; x && !parado; x = sube ? x._padre : null) {
+        ev.currentTarget = x;
+        const fns = (x._oyentes && x._oyentes[tipo]) || [];
+        for (const f of fns.slice()) f.call(x, ev);
+      }
+      return propios;
     },
     dispararClick() { return n.disparar('click'); },
     click() { return n.disparar('click'); },
     focus() {}, blur() {},
+    // 🔴 SCRUM-1278 · `scrollIntoView`. NO EXISTÍA: S2 lo midió en el barrido de clics de 1275. Una
+    // vista que lo llama al abrir acababa en su catch con un TypeError y el banco medía el cartel.
+    // Sin maquetación no hay nada que desplazar: basta con que exista.
+    scrollIntoView() {},
     // 🔴 SCRUM-591 · `reset()`. NO LO TENÍA, y por eso el formulario de alta de cliente REVENTABA
     // al abrirse desde el banco (`modalForm.reset is not a function`) — en el navegador lo abre
     // un profesional todos los días. Un banco al que le falta un método del navegador no mide de
@@ -579,6 +636,13 @@ export function nodo(tag, reg) {
           const fin = cierre === -1 ? -1 : marcado.indexOf('>', cierre);
           TOKEN.lastIndex = fin === -1 ? marcado.length : fin + 1;
         }
+        // 🔴 SCRUM-1285 (pedido por el orquestador para S4) · UN `<textarea>` NACIDO DEL MARCADO TIENE
+        // `.value`. En el navegador su valor por defecto es su contenido: entidades resueltas, SIN
+        // recortar, y quitando solo el primer salto de línea tras la apertura. Aquí `.value` salía
+        // vacío, y toda vista con un `<textarea>` se medía como si la persona no hubiera escrito nada,
+        // sin un solo rojo. Una entidad que el banco no sabe resolver NO se deja pasar como texto:
+        // revienta, que un valor falso es peor que un fallo.
+        if (etiqueta === 'textarea' && !autocerrado) h.value = contenidoDeTextarea(texto);
         texto = texto.trim();
         if (texto) h.textContent = texto;
         // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
@@ -592,6 +656,18 @@ export function nodo(tag, reg) {
     },
     get innerHTML() { return n._html; },
   };
+  // 🔴 SCRUM-1221 · UN FALLO DEL TEST TIENE QUE VERSE COMO FALLO, no como «la máquina no da».
+  // `assert` construye su mensaje inspeccionando el valor con `getters: true` y `depth: 1000`. Los
+  // accesores de este nodo (`parentNode`, `children`, `innerHTML`…) devuelven objetos NUEVOS en cada
+  // lectura, que la detección de ciclos no reconoce, y el árbol crece sin fin: medido sobre la lista
+  // de clientes (93 nodos), 273 k caracteres a profundidad 4, 9,7 M a 8, y a 1000
+  // `RangeError: Array buffer allocation failed` a los ~94 s. Un `assert.equal(nodo, null)` rojo
+  // salía como un OOM, y un OOM se archivaba como «cosa de la máquina».
+  // En el navegador esos accesores viven en el prototipo, no son propios ni enumerables; `_padre`
+  // tampoco es del nodo en ningún DOM. Se ocultan a la inspección (sin cambiar lo que devuelven).
+  for (const [k, d] of Object.entries(Object.getOwnPropertyDescriptors(n))) {
+    if (d.get || d.set || k === '_padre') Object.defineProperty(n, k, { ...d, enumerable: false });
+  }
   return n;
 }
 
@@ -1221,10 +1297,42 @@ function cubosDelArranque() {
   return _cubosDelArranque;
 }
 
+/**
+ * 🔴 SCRUM-1278 · LO QUE LAS VISTAS SE TRAGAN EN UN `catch`, APUNTADO.
+ *
+ * `loadExpenses` envuelve la carga en un `try` y, si algo lanza, pinta «No se han podido cargar los
+ * gastos» SIN `console.error`. Al banco le faltaba `new Option` y la vista acababa ahí: `pintarVista`
+ * devolvía `error: null`, la consola vacía y un contenedor con el cartel de error, y cualquier test o
+ * censo contaba controles DE UN CARTEL DE FALLO sin sospechar nada (S2, 29-sep-2026).
+ *
+ * Arreglar `Option` cura Gastos hoy; mañana faltará otra cosa. Lo estructural es que el banco VEA lo
+ * que se traga una vista: al cargar cada script, cada `catch (x) {` y cada `.catch((x) => {` /
+ * `.catch(function (x) {` recibe al principio de su bloque una llamada a `__bancoAtrapado(x, i)`.
+ *
+ * Por qué es inocuo: es una sentencia de expresión que no lanza (se protege dentro) y no devuelve
+ * nada que se use; va en la MISMA línea, así que las trazas siguen apuntando a su sitio; y no lleva
+ * comillas, así que si el patrón casara dentro de una cadena o un comentario no rompe su sintaxis.
+ * Lo que NO ve: `catch {` sin variable y `.catch(fn)` con una función ya definida. Se dice aquí.
+ */
+export function instrumentarCatch(fuente, rel, sitios) {
+  const inicios = [0];
+  for (let i = 0; i < fuente.length; i++) if (fuente[i] === '\n') inicios.push(i + 1);
+  const linea = (pos) => { let lo = 0, hi = inicios.length - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (inicios[m] <= pos) lo = m; else hi = m - 1; } return lo + 1; };
+  const patron = /(\bcatch\s*\(\s*([A-Za-z_$][\w$]*)\s*\)\s*\{)|(\.catch\(\s*(?:function\s*)?\(?\s*([A-Za-z_$][\w$]*)\s*\)?\s*(?:=>)?\s*\{)/g;
+  return fuente.replace(patron, (todo, _a, varA, _b, varB, pos) => {
+    const i = sitios.length;
+    sitios.push(`${rel}:${linea(pos)}`);
+    return `${todo} __bancoAtrapado(${varA || varB}, ${i});`;
+  });
+}
+
+/** Los nombres de error que dicen «el PROGRAMA falló» (hueco del banco o defecto), no «la red falló». */
+export const ERRORES_DE_PROGRAMA = Object.freeze(['TypeError', 'ReferenceError', 'SyntaxError', 'RangeError']);
+
 export function cargarDashboard(raiz, opciones = {}) {
   // `selectoresNoSoportados`: SCRUM-451 · lo que el mini-DOM NO sabe resolver. Un banco que no sabe
   // algo se declara ciego; devolver `null` y callarse es lo que dejó dos vistas sin medir.
-  const reg = { porId: new Map(), errores: [], idsNoResueltos: [], selectoresNoSoportados: [] };
+  const reg = { porId: new Map(), errores: [], idsNoResueltos: [], selectoresNoSoportados: [], atrapados: [], sitiosDeCatch: [] };
   const mk = (t) => nodo(t, reg);
 
   const doc = {
@@ -1308,6 +1416,23 @@ export function cargarDashboard(raiz, opciones = {}) {
     requestAnimationFrame: (f) => setTimeout(f, 0),
     Intl, Date, Array, Number, String, Boolean, Object, JSON, isNaN, parseInt, parseFloat,
     Math, Promise, Error, TypeError, RegExp, Map, Set, Symbol, encodeURIComponent, decodeURIComponent,
+    // 🔴 SCRUM-1278 · `new Option(texto, valor)`. NO EXISTÍA, y `expensesView.js` (`opcionesDeTrabajo`)
+    // lo usa para el filtro por trabajo: el `ReferenceError` caía DENTRO del `try` de `loadExpenses` y
+    // la lista de Gastos salía con su cartel de error, «medida» y sin que nadie lo supiera (S2, 29-sep).
+    Option: function Option(texto = '', valor, porDefecto = false, elegido = false) {
+      const o = nodo('option', reg);
+      o.textContent = String(texto);
+      o.value = valor === undefined ? String(texto) : String(valor);
+      o.selected = !!elegido;
+      o.defaultSelected = !!porDefecto;
+      return o;
+    },
+    // Lo que cae en un `catch` de las vistas mientras se montan (ver `instrumentarCatch`).
+    __bancoAtrapado(e, i) {
+      try {
+        reg.atrapados.push({ sitio: reg.sitiosDeCatch[i] || '?', nombre: (e && e.name) || typeof e, mensaje: String((e && e.message) || e).slice(0, 200) });
+      } catch { /* el banco no puede cambiar lo que hace la vista */ }
+    },
     URL: globalThis.URL, URLSearchParams: globalThis.URLSearchParams,
     Blob: class {}, FormData: class {}, FileReader: class {}, AbortController,
     TextEncoder, TextDecoder, btoa: globalThis.btoa, atob: globalThis.atob,
@@ -1349,7 +1474,7 @@ export function cargarDashboard(raiz, opciones = {}) {
     const f = path.join(raiz, 'public/dashboard', rel);
     if (!fs.existsSync(f)) { fallos.push({ fichero: rel, error: 'declarado en index.html y NO EXISTE en el árbol' }); continue; }
     try {
-      vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: rel });
+      vm.runInContext(instrumentarCatch(fs.readFileSync(f, 'utf8'), rel, reg.sitiosDeCatch), ctx, { filename: rel });
     } catch (e) {
       // El navegador descarta el fichero ENTERO ante un error de carga; se anota con su sitio.
       const linea = (e.stack || '').split('\n').find((l) => l.includes(rel)) || '';
@@ -1422,6 +1547,8 @@ export async function pintarVista(banco, nombreFn, ...argumentos) {
   cuerpo.appendChild(contenedor);
   banco.montada = contenedor;
   const idsAntes = banco.reg.idsNoResueltos.length;
+  const atrapadosAntes = banco.reg.atrapados.length;
+  const consolaAntes = banco.reg.errores.length;
 
   // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.
   //
@@ -1466,11 +1593,21 @@ export async function pintarVista(banco, nombreFn, ...argumentos) {
     return { error: e, contenedor, rechazos };
   }
   devolverOyentes();
+  // 🔴 SCRUM-1278 · lo que la vista se tragó MIENTRAS se montaba. Un error de PROGRAMA tragado quiere
+  // decir que lo pintado es el camino de error, no la pantalla: la vista NO se ha medido. Se devuelve
+  // aparte (`noMedida`) con su sitio, para que quien mide lo diga en vez de contar un cartel.
+  const atrapados = banco.reg.atrapados.slice(atrapadosAntes);
+  const deProgramaTragados = atrapados.filter((a) => ERRORES_DE_PROGRAMA.includes(a.nombre));
   return {
     error: null,
     contenedor,
     nodos: todos(contenedor).length,
     idsNoResueltos: banco.reg.idsNoResueltos.slice(idsAntes),
+    atrapados,
+    noMedida: deProgramaTragados.length
+      ? `${nombreFn} acabó en su camino de error: ${deProgramaTragados.map((a) => `${a.nombre}: ${a.mensaje} (${a.sitio})`).join(' · ')}`
+      : null,
+    erroresDeEstaVista: banco.reg.errores.slice(consolaAntes),
     erroresDeConsola: banco.reg.errores.slice(),
     // Vacío casi siempre. Cuando no lo esté, dice QUÉ vista dejó la promesa suelta y con qué
     // error — que es justo lo que el proceso muriéndose no decía.

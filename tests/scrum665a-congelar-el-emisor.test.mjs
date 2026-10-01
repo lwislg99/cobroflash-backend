@@ -299,7 +299,12 @@ test('SCRUM-665A · 🔴 si el modulo YA tiene llamador en src/, el tope de SCRU
     return;
   }
 
-  assert.equal(tope, 7,
+  // ⚠️ SCRUM-1184 (28-sep-2026) · RETIRADA DECLARADA de la igualdad exacta, no relajación. Esto
+  // exigía `tope === 7` porque su fin es que el 8 NO SE QUEDE ALTO tras cablear `emisorCongelado`.
+  // Con SCRUM-1184 el tope BAJÓ a 5 (se cablearon `albaranSerie.ts` y `huecosSerie.ts`): la
+  // igualdad castigaba una MEJORA. La exactitud tope↔realidad la sigue exigiendo scrum411 (su
+  // «el tope ya no coincide con la realidad»); aquí basta con que no haya vuelto por encima de 7.
+  assert.ok(tope <= 7,
     `🔴 \`emisorCongelado\` YA tiene llamador en src/ (${conImport.length}: `
     + `${conImport.map((p) => pathMod.default.relative(RZ, p)).join(', ')}) y el tope sigue en ${tope}.\n\n`
     + '  El 8 se concedio por UNA razon: que este modulo no podia cablearse sin las siete columnas.\n'

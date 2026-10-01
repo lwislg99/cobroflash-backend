@@ -205,7 +205,14 @@ const R = analizar(RAIZ);
 // en las dos rutas del XML de VeriFactu además del PDF. El módulo ya tiene llamador en `src/`, así
 // que la razón que sostenía el 8 desapareció y el tope baja EN EL MISMO COMMIT que cablea, tal y
 // como pedía el bloque anterior.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ✅ 28-sep-2026 · BAJA A 5 (SCRUM-1184, vista previa del número de albarán).
+//
+// `GET /admin/albaranes/serie` importa `siguienteNumeroDeAlbaran` de `jobs/domain/albaranSerie.ts`,
+// y con él salen DOS de la lista: `albaranSerie.ts` y `invoicing/domain/huecosSerie.ts`, que sólo
+// lo importaba él (hallazgo de SCRUM-1184, c.17277). Es un import, no dos hallazgos. Sus exports
+// sin llamador de fuera pasan a la segunda población, declarados en `_huerfanos-declarados.mjs`.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
@@ -622,11 +629,14 @@ test('SCRUM-411 · 🔴 lo que un test CORRE no es código muerto, y se cuenta p
   // una llamada de verdad. Aquí se cuentan CallExpression.
   const usos = llamadasEnTests(RAIZ, 'borrarMerchant');
   const total = usos.reduce((a, u) => a + u.llamadas, 0);
-  assert.equal(total, 7,
-    '🔴 `borrarMerchant` ya no se ejerce 7 veces desde los tests.\n' +
+  // SCRUM-1307: de 7 a 13 porque entra un guard nuevo que lo CORRE (la negativa con envíos a la
+  // AEAT, 6 llamadas). Sube, no baja: es especificación ejecutable añadida, no retirada.
+  assert.equal(total, 13,
+    '🔴 `borrarMerchant` ya no se ejerce 13 veces desde los tests.\n' +
     `   medido ahora: ${usos.map((u) => `${u.fichero}=${u.llamadas}`).join(' · ') || '(ninguna)'}\n` +
     '   Si BAJA, alguien está retirando la especificación ejecutable del orden de borrado seguro.');
   assert.deepEqual(usos.map((u) => u.fichero), [
+    'tests/scrum1307-negarse-con-envios.test.mjs',
     'tests/scrum192-borrado-merchant.test.mjs',
     'tests/scrum244-colgados-de-otro-modelo.test.mjs',
   ], '🔴 han cambiado los guards que lo CORREN. Son ellos los que hacen que no se pueda borrar.');

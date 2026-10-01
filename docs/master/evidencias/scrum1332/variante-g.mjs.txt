@@ -1,0 +1,18 @@
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+const server = http.createServer((req, res) => { req.resume(); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end('{"ok":true}'); }); });
+server.listen(0);
+await new Promise((r) => server.once('listening', r));
+const puerto = server.address().port;
+after(() => new Promise((r) => server.close(r)));
+const pedir = () => new Promise((ok, mal) => {
+  const q = http.request({ host: '127.0.0.1', port: puerto, path: '/x', method: 'POST', headers: { 'content-type': 'application/json' } }, (res) => {
+    let t = ''; res.on('data', (d) => { t += d; }); res.on('end', () => ok({ status: res.statusCode, t }));
+  });
+  q.on('error', mal); q.end('{"a":1}');
+});
+for (let i = 0; i < 6; i++) test('http.request ' + i + ' al mismo servidor pelado', async () => {
+  const r = await pedir();
+  assert.equal(r.status, 200);
+});

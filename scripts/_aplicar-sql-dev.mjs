@@ -58,7 +58,64 @@ export const PERMITIDAS = Object.freeze([
   // familias deja de ser blanca. El rojo de esa vecindad está probado en
   // `scrum425-aplicador-sql-dev.test.mjs`.
   { nombre: 'ALTER TABLE … ALTER COLUMN … DROP DEFAULT', re: /^ALTER\s+TABLE\s+\S+\s+ALTER\s+COLUMN\s+\S+\s+DROP\s+DEFAULT$/i },
+  // ── LA QUINTA FORMA · SCRUM-1197 (28-sep-2026) ──────────────────────────────────────────
+  //
+  // EL CASO que la trajo: el DDL de la cola de VeriFactu (§④ de `docs/master/SCRUM-1127.md`),
+  // aplicado por el fundador en staging y producción, no entraba en dev por su enum
+  // `VfSubmissionStatus`. (Sus dos `ADD CONSTRAINT … FOREIGN KEY` NO abren forma nueva: se
+  // reescriben dentro del `CREATE TABLE`, que ya estaba permitido.)
+  //
+  // POR QUÉ ES ADMISIBLE: como `CREATE TABLE`, **crea un objeto que antes no estaba y no toca
+  // ninguna fila**. Si el tipo ya existe, la sentencia FALLA, que es el lado seguro.
+  //
+  // ⛔ SE ADMITE LA FORMA, NO LA FAMILIA. `CREATE TYPE` tiene además la forma compuesta
+  // (`AS ( … )`), la de rango (`AS RANGE`), la base (que ejecuta funciones de E/S) y la shell;
+  // y su vecindad (`ALTER TYPE`, `DROP TYPE`) sí cambia o borra. La expresión sólo acepta una
+  // lista NO vacía de literales de cadena entre paréntesis y nada detrás. El rojo de esa
+  // vecindad está probado en `scrum425-aplicador-sql-dev.test.mjs`.
+  { nombre: 'CREATE TYPE … AS ENUM ( … )', re: /^CREATE\s+TYPE\s+"?[\w.]+"?\s+AS\s+ENUM\s*\(\s*'[^']*'(\s*,\s*'[^']*')*\s*\)$/i },
 ]);
+
+// ── SCRUM-1224 · UN `ALTER TABLE` CON VARIAS ACCIONES SE MIRA ENTERO ───────────────────────────
+//
+// La forma `ALTER TABLE … ADD COLUMN` termina en `[\s\S]+`, así que miraba la PRIMERA acción y lo
+// que fuera detrás de la coma pasaba sin mirar: `ADD COLUMN "x" INT, DROP COLUMN "email"` salía
+// ACEPTADO (medido el 28-sep-2026). Ahora el `ALTER TABLE` se parte en acciones por las comas de
+// PRIMER nivel y cada una tiene que ser, ella sola, una forma de la lista. No se añade ni se quita
+// ninguna forma: es el guarda haciendo lo que dice que hace.
+//
+// El algoritmo es el del clasificador de producción (`partirAcciones` de `_clasificador-sql.mjs`),
+// sobre el texto que devuelve su `desnudar`: conserva las posiciones y convierte los literales en
+// espacios, así que una coma o un paréntesis dentro de `'…'` no parten nada.
+import { desnudar } from './_clasificador-sql.mjs';
+
+const CABEZA_ALTER = /^ALTER\s+TABLE\s+\S+\s+/i;
+
+/** Las acciones de un `ALTER TABLE`, en texto original; `null` si no se pudo leer. */
+export function accionesDeAlterTable(sentencia) {
+  const cabeza = sentencia.match(CABEZA_ALTER);
+  if (!cabeza) return null;
+  const cuerpo = sentencia.slice(cabeza[0].length);
+  const { desnudo, sinCerrar } = desnudar(cuerpo);
+  if (sinCerrar) return null;
+  const acciones = [];
+  let prof = 0, desde = 0;
+  for (let i = 0; i < desnudo.length; i++) {
+    if (desnudo[i] === '(') prof++;
+    else if (desnudo[i] === ')') prof--;
+    else if (desnudo[i] === ',' && prof === 0) { acciones.push(cuerpo.slice(desde, i).trim()); desde = i + 1; }
+  }
+  acciones.push(cuerpo.slice(desde).trim());
+  return { cabeza: cabeza[0], acciones };
+}
+
+/** Si no es un `ALTER TABLE`, no hay nada que partir. Si lo es, CADA acción ha de ser una forma. */
+function todasLasAccionesPermitidas(sentencia) {
+  if (!CABEZA_ALTER.test(sentencia)) return true;
+  const partes = accionesDeAlterTable(sentencia);
+  if (!partes) return false; // no se supo leer: se rechaza, no se permite
+  return partes.acciones.every((a) => a && PERMITIDAS.some((p) => p.re.test(partes.cabeza + a)));
+}
 
 /** Quita comentarios CONSERVANDO las líneas, para que el número que se reporte sea el real. */
 export function sinComentarios(sql) {
@@ -85,7 +142,7 @@ export function clasificarSentencias(sql) {
     const desplazamiento = trozo.length - trozo.replace(/^\s+/, '').length;
     const linea = limpio.slice(0, inicio + desplazamiento).split('\n').length;
     const forma = PERMITIDAS.find((p) => p.re.test(sentencia));
-    if (forma) permitidas.push({ linea, sentencia, forma: forma.nombre });
+    if (forma && todasLasAccionesPermitidas(sentencia)) permitidas.push({ linea, sentencia, forma: forma.nombre });
     else rechazadas.push({ linea, sentencia });
   }
   return { permitidas, rechazadas };

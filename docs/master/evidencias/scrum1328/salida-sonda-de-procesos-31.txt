@@ -1,0 +1,41 @@
+POBLACION ficheros=31 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-21772.tap
+limpio  x0  proc=  5 bytes=ENTERO     286 ms salida=0 tests=3 fail=0  tests/node-p-capturado-sin-color.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO   10898 ms salida=0 tests=10 fail=0  tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1167 ms salida=0 tests=9 fail=0  tests/scrum1153-censo-entorno-prestado.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     992 ms salida=0 tests=5 fail=0  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO    1091 ms salida=0 tests=3 fail=0  tests/scrum1308-scripts-sin-nombre-de-test.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     534 ms salida=0 tests=5 fail=0  tests/scrum1321-el-resumen-no-prueba-el-final.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1523 ms salida=0 tests=6 fail=0  tests/scrum1331-sin-red-se-dice.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     589 ms salida=0 tests=2 fail=0  tests/scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     204 ms salida=0 tests=7 fail=0  tests/scrum180-fixtures-nunca-a-meta.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    5209 ms salida=0 tests=18 fail=0  tests/scrum649-el-ancla-que-no-apunta.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    5910 ms salida=0 tests=8 fail=0  tests/scrum750-los-dos-calendarios.test.mjs
+PISA    x2  proc=  5 bytes=ENTERO    2585 ms salida=0 tests=22 fail=0  tests/scrum754-el-juez-que-oscila.test.mjs
+            intruso: [script con node:test] C:\Users\Javier Pereira\cobroflash-jv3\tests\_sonda-saltados.mjs C:\Users\JAVIER~1\AppData\Local\Temp\scrum754c-tSCZiN\fixture.test.mjs
+            intruso: [script con node:test] C:\Users\Javier Pereira\cobroflash-jv3\tests\_sonda-saltados.mjs C:\Users\JAVIER~1\AppData\Local\Temp\scrum754c-UYQdNo\fixture.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     920 ms salida=0 tests=28 fail=0  tests/scrum813-trinquete-de-zona.test.mjs
+PISA    x13 proc= 27 bytes=ENTERO    3642 ms salida=0 tests=6 fail=0  tests/scrum850b-las-formas-que-mienten.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\tanda850b-uV7gt4\rojo.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\tanda850b-iR7caW\rojo.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO   15338 ms salida=0 tests=10 fail=0  tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    8045 ms salida=0 tests=6 fail=0  tests/scrum858b-la-tanda-sin-veredicto.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1295 ms salida=0 tests=12 fail=0  tests/scrum899-sesion-lista-blanca.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    4599 ms salida=0 tests=11 fail=0  tests/scrum899b-arranque-de-la-tanda.test.mjs
+limpio  x0  proc=  8 bytes=ENTERO     437 ms salida=0 tests=18 fail=0  tests/scrum899d-aviso-de-uso.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    6330 ms salida=0 tests=5 fail=0  tests/scrum908c-la-cola-que-se-pierde.test.mjs
+PISA    x1  proc=  2 bytes=ENTERO     224 ms salida=0 tests=4 fail=0  tests/scrum928-guards-entrada-recuento-con-color.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\scrum928-color-TNhsFE\sonda.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     948 ms salida=0 tests=5 fail=0  tests/scrum928b-el-veredicto-que-el-color-tapa.test.mjs
+limpio  x0  proc=  7 bytes=ENTERO     760 ms salida=0 tests=12 fail=0  tests/scrum932-el-turno-tiene-mecanismo.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO     905 ms salida=0 tests=11 fail=0  tests/scrum938-la-lista-como-fixture.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO    6299 ms salida=0 tests=10 fail=0  tests/scrum946-censo-de-huerfanos.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    3543 ms salida=0 tests=10 fail=0  tests/scrum949-el-suelo-como-cociente.test.mjs
+limpio  x0  proc= 10 bytes=ENTERO    7404 ms salida=0 tests=18 fail=0  tests/scrum951a-equipo-configurable.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    1585 ms salida=0 tests=12 fail=0  tests/scrum954-vivo-no-es-listado.test.mjs
+limpio  x0  proc=  1 bytes=ENTERO    9598 ms salida=0 tests=11 fail=0  tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs
+limpio  x0  proc=  2 bytes=ENTERO    2861 ms salida=0 tests=7 fail=0  tests/scrum966-censo-ve-las-ramas.test.mjs
+PISA    x1  proc=115 bytes=PISADO   13571 ms salida=0 tests=4 fail=0  tests/scrum976-guards-entrada-con-techo.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\Javier Pereira\cobroflash-jv3\tests\public-js-parsea.test.mjs
+            bytes: quedo «SCRUM-976 ① están los once, por nombre, y el suelo no baja de ellos» · 2 recuentos «# tests» [4,122] (se espera uno) · los casos de nivel superior no van 1..N seguidos (primero 1, ultimo 122, hay 124)
+RESUMEN (sonda/bytes) {"limpio/ENTERO":27,"PISA/ENTERO":3,"PISA/PISADO":1} sobre 31
+EXIT=0

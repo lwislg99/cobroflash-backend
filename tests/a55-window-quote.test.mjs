@@ -3,7 +3,7 @@
 // TEXTO de sesión (type:'service', 0 €) y NO como plantilla quote_decision_es.
 //
 // ── CÓMO SE EJECUTA (SCRUM-157 / 159 / 166) ──────────────────────────────────
-// Corre por `npm run test:staging:gated` — el runner `scripts/test-staging-gated.mjs`
+// Corre por `npm run test:staging:gated` — el runner `scripts/staging-gated.mjs`
 // (SCRUM-157) setea A55_DB_TEST=1 + WHATSAPP_DRY_RUN=1 en su hijo aislado. NO corre por
 // `npm run test:staging` (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166)
 // ni por el CI (`npm test`, ungated). En `npm test` normal aparece como SKIP y no toca nada.

@@ -1,0 +1,9 @@
+{
+  "leeme": "SCRUM-1362 · LOS DEFECTOS que hoy tiene el viaje de la firma sin red en la pantalla del albarán, medidos por tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs. Aquí sólo están los DATOS; las aserciones siguen en el test, intactas. Reglas: quien ARREGLA un defecto BORRA su entrada en el mismo commit (el test cae si se queda); NO se puede borrar una entrada cuyo defecto sigue ahí (el test cae por «no estaba declarado»); la clave es el identificador que usa el detector, no se renombra aquí. Si un día no queda ninguno, `defectos` se deja en {} y se añade `vacio_a_proposito` con el motivo: una sección vacía sin motivo es «no supe leer» y sale en ROJO. El cargador (tests/_defectos-viaje-firma.mjs) también sale en rojo si el fichero no se puede leer, si falta la sección, si una clave está repetida o si un valor viene vacío.",
+  "defectos": {
+    "firmar-lo-ya-subido-dice-que-no-se-registro-y-reencola": "colaDeFirmas.js: la firma directa no trata `albaran_locked` como «ya la tiene» · S2",
+    "el-detalle-abierto-no-se-entera-de-que-la-cola-subio": "colaDeFirmas.js: `drenarAlAbrir` sólo repinta la home · S2",
+    "cerrar-sesion-borra-la-cola-sin-avisar": "app.js: el logout vacía la cola sin preguntar · S2 (texto firmado en SCRUM-1302 c.17889)",
+    "firmar-con-red-deja-la-marca-de-que-hubo-cola": "colaDeFirmas.js: la marca se pone al encolar y la firma confirmada no la quita · S2"
+  }
+}

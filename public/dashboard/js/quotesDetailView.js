@@ -285,7 +285,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       if (paidInvCta && !pendingInvCta) {
         const btnReceipt = document.createElement('button');
         btnReceipt.className = 'btn-primary';
-        btnReceipt.textContent = '🧾 Ver justificante';
+        // SCRUM-1257 · P6, firmado en el comentario 17444: el documento cobrado es una FACTURA salvo en
+        // un `J-` antiguo, que conserva su rótulo (no se llama factura a lo que no lo es: SCRUM-1252).
+        btnReceipt.textContent = tipoDeFactura(paidInvCta) === 'factura' ? '🧾 Ver factura' : '🧾 Ver justificante';
         btnReceipt.addEventListener('click', () => {
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: paidInvCta.id });
         });
@@ -796,14 +798,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     }
 
     btnGuardar.addEventListener('click', async () => {
-      btnGuardar.disabled = true;
       const antes = btnGuardar.textContent;
       btnGuardar.textContent = 'Guardando…';
       try {
-        await apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
+        // 🔴 SCRUM-1285 · la sección ENTERA congelada mientras vuelve el PATCH. Sin esto, teclear un
+        // tramo llamaba a `recalcular()`, que REHABILITABA este botón: segundo PATCH en vuelo y, si
+        // el primero llegaba después, la base se quedaba con el plan VIEJO.
+        await congelarMientrasGuarda(planSec, () => apiRequest(`/admin/quotes/${quote.id}/billing-plan`, {
           method: 'PATCH',
           body: JSON.stringify({ customBillingPlan: leerTramos() }),
-        });
+        }));
         showToast('✓ Plan de cobro actualizado');
         // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
         // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en
@@ -1306,6 +1310,8 @@ async function duplicateQuote(quoteId) {
     // Observaciones, en silencio. Necesitan que el detalle los mande (SCRUM-1187, servidor):
     // mientras no llegan, `?? null` deja el campo vacío, que es lo que pasaba hasta ahora.
     docHeaderText: detail.docHeaderText ?? null,
+    // SCRUM-1180 · las cláusulas quitadas en el original se quitan también en la copia.
+    clausulasExcluidas: Array.isArray(detail.clausulasExcluidas) ? detail.clausulasExcluidas : null,
     docFooterText: detail.docFooterText ?? null,
   };
   // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino

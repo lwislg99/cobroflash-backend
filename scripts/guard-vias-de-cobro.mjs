@@ -43,6 +43,7 @@ const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -308,7 +309,6 @@ if (ciegos.length) {
   console.error('\n  🔴 EL ESCÁNER NO SUPO MIRAR — esto NO es «las pantallas son coherentes»:\n');
   for (const c of ciegos) console.error('     · ' + c);
   console.error('\n  Sin haber encontrado las dos pantallas no se puede afirmar que digan lo mismo.');
-  process.exit(1);
 }
 
 if (fallos.length) {
@@ -328,8 +328,20 @@ if (fallos.length) {
   console.error('  sirve `GET /admin/merchant`: si estas dos discrepan, o una pantalla ha dejado de');
   console.error('  consumir ese veredicto y ha vuelto a calcularlo, o el dominio y el aviso ya no');
   console.error('  usan el mismo criterio de teléfono.');
-  process.exit(1);
 }
+
+// SCRUM-1327 · el código sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`). Antes un ciego puro
+// salía con 1 —el mismo número que «las pantallas se contradicen»— y, si además había
+// contradicciones, el ciego iba delante y NO SE IMPRIMÍAN. Visto en navegador: sin la ranura del
+// aviso en ningún caso, salida 1.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
+}
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log('  ' + veredictoFinal.linea);
 
 console.log(`\n  ✔ los ${CASOS.length} casos: la tarjeta y el aviso dicen LO MISMO sobre si puede cobrar por Bizum.`);
 console.log('    Medido en el DOM vivo al final del render, con el detector calibrado en cada caso.\n');

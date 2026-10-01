@@ -2,12 +2,11 @@
 //
 // LAS DECISIONES DE LA COLA DE REMISIÓN, COMO FUNCIONES PURAS.
 //
-// 🔴 NO HAY TABLA. `VfSubmission` no está en `prisma/schema.prisma`, y NO entra hasta que el
-// fundador decida qué significa «envío construido» para `scripts/_guard-afirmacion-fiscal.mjs`
-// (una fila `model VfSubmission` basta para que ese guard deje de bloquear afirmaciones
-// fiscales en la landing: ver `docs/master/SCRUM-1127.md`). Aquí vive lo que la cola DECIDE,
-// sin base y sin red: qué pasa con cada registro después de un envío, cuánto se espera y
-// cómo se trocea. El DDL propuesto está en el expediente.
+// La TABLA existe desde SCRUM-1296 (`VfSubmission` y `VfFlujoObligado` en `prisma/schema.prisma`,
+// el DDL de `docs/master/SCRUM-1127.md` §④). Que exista no desbloquea ninguna afirmación fiscal:
+// desde SCRUM-1128 el guard exige un llamante del envío Y `SIF_ENABLED` en ON. Aquí vive lo que
+// la cola DECIDE, sin base y sin red: qué pasa con cada registro después de un envío, cuánto se
+// espera y cómo se trocea.
 //
 // Estados: los de la FSM de `docs/SIF_SPEC_NOTES.md` §6 — `pending → sent → accepted`,
 // `sent → rejected`, `sent → pending` (reintento) y `manual_review` al 5º intento. No se
@@ -146,6 +145,22 @@ export function decidirTrasEnvio(
     const error = `${resultado.tipo}:${resultado.etapa}:${resultado.motivo}`;
     return {
       registros: enviados.map((e) => reintento(e.registro, e.intentosPrevios, error)),
+      esperaSiguienteEnvioS: esperaSiguienteEnvio(null),
+      lineasHuerfanas: [],
+    };
+  }
+
+  if (resultado.tipo === 'sin_permiso') {
+    // SCRUM-1228: un problema de PERMISOS (el certificado no está, no vale o no es de ese NIF).
+    // Reintentar no puede salir bien, así que no se reintenta: a una persona al PRIMER intento.
+    // `manual_review` y no `rejected`: al registro no le pasa nada, y arreglado el certificado es
+    // ESTE mismo el que hay que enviar (un rechazo pediría subsanarlo con un registro nuevo).
+    const error = `${resultado.tipo}:${resultado.etapa}:${resultado.motivo}`;
+    return {
+      registros: enviados.map((e) => ({
+        registro: e.registro, estado: 'manual_review' as const, intentos: e.intentosPrevios + 1,
+        lastError: error, reintentarEnS: null, subsanar: false, requierePersona: true,
+      })),
       esperaSiguienteEnvioS: esperaSiguienteEnvio(null),
       lineasHuerfanas: [],
     };

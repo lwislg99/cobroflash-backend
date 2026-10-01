@@ -2046,6 +2046,10 @@ html, body { overflow-x: clip; }
 .pay-methods-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--body); font-size: 13px; }
 .pay-methods-note { font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
 .pay-methods-title { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; }
+/* SCRUM-1180 · una cláusula QUITADA de este presupuesto se ve de un vistazo: atenuada y tachada
+   («esto no va»). Acotado a `.quote-clausulas`: la fila `.pay-methods-row` la comparten los
+   métodos de pago y ahí no cambia nada. */
+.quote-clausulas .pay-methods-row label:has(input:not(:checked)) { color: var(--muted); text-decoration: line-through; }
 .inline-options { display: flex; gap: 8px; flex-wrap: wrap; }
 .radio-label { display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; }
 
@@ -2406,6 +2410,26 @@ html, body { overflow-x: clip; }
 
 /* SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo, en el historial de la ficha 360. */
 .historial-fotos-mini { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+/* SCRUM-1126 · fusionar con otro cliente (modal de la ficha 360). Regla 4: nada de esto va como
+   `style.cssText` desde JS. El foco lo da `:focus-visible` global (anillo `--ring`). */
+.fusion-candidatos { display: flex; flex-direction: column; gap: 6px; }
+.fusion-candidato {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  min-height: 44px; padding: 8px 12px; text-align: left; cursor: pointer;
+  background: #fff; border: 1px solid var(--neutral-200); border-radius: var(--radius);
+  font: inherit; color: var(--neutral-900);
+}
+.fusion-candidato:hover { border-color: var(--neutral-400); }
+.fusion-candidato-nombre { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.fusion-candidato-nif { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.fusion-vacio { margin: 0; font-size: 13px; color: var(--muted); }
+.fusion-previa { display: flex; flex-direction: column; gap: 6px; }
+.fusion-previa:empty { display: none; }
+.fusion-previa-titulo { margin: 4px 0 2px; font-size: 14px; font-weight: 700; color: var(--neutral-900); }
+.fusion-linea { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--neutral-700); overflow-wrap: anywhere; }
+.fusion-contados { color: var(--muted); }
+.fusion-irreversible { margin: 4px 0 0; font-size: 13.5px; font-weight: 700; color: var(--red-600); overflow-wrap: anywhere; }
 .historial-foto-mini {
   display: inline-flex; width: 44px; height: 44px; border-radius: 8px; overflow: hidden;
   border: 1px solid var(--border);
@@ -2940,6 +2964,8 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-plega-cuerpo { padding: 2px 0 14px 24px; }
 .detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
 .detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+/* SCRUM-1184 · «Siguiente número: …» bajo la cabecera de «Nuevo albarán». Mismos tokens que las ayudas. */
+.alb-siguiente-numero { margin: 12px 24px 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .job-asignados-alta { min-height: 44px; margin-top: 8px; }
 /* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
 .detail-plega--fija > .detail-plega-cab { cursor: default; }
@@ -3081,6 +3107,18 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .barra-seleccion { display: flex; }
 .barra-seleccion.barra-seleccion--vacia { display: none; }
 
+/* SCRUM-1135 · Etiquetar la selección, dentro de la barra. Sólo se ofrece con algo marcado: el JS
+   pone o quita `--visible` y el `display` lo decide esta hoja (SCRUM-713c: nada de `cssText`).
+   `flex-wrap` (en la barra y en el bloque) y el campo encogible, para que quepa a 390 px; los tres
+   controles, a 44 px. */
+.barra-seleccion { flex-wrap: wrap; }
+.barra-seleccion-etiquetar {
+  display: none; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto;
+}
+.barra-seleccion-etiquetar.barra-seleccion-etiquetar--visible { display: flex; }
+.barra-seleccion-etiquetar .input { min-height: 44px; flex: 1 1 140px; min-width: 0; max-width: 220px; }
+.barra-seleccion-etiquetar .btn-secondary { min-height: 44px; }
+
 .casilla-seleccion { position: relative; }
 .casilla-seleccion::before {
   content: "";
@@ -3151,6 +3189,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    Popover anclado en desktop; en ≤640px la lista va DENTRO de .modal (hoja inferior,
    reutilizando el bottom-sheet de F2). Sombra Flotante (DESIGN.md §4), motion con reduce. */
 .overflow-trigger { font-size: 18px; line-height: 1; padding: 4px 10px; }
+/* SCRUM-1193 · el «⋯» mide 44 × 44 EN TODAS LAS PANTALLAS (AB6), no pantalla a pantalla: lo crea
+   `overflowMenu` (api.js) con `overflow-trigger btn-ghost btn-sm`, y `.btn-sm` lo dejaba en 30 px.
+   Las clases exactas del componente pesan (0,3,0): ganan a `.btn-sm` y a `.btn.btn-sm` sin
+   `!important`, como `.accion-irreversible-btn-44` (SCRUM-1167). La forma sola es el respaldo. */
+.overflow-trigger.btn-ghost.btn-sm,
+.overflow-trigger { min-width: 44px; min-height: 44px; }
 .overflow-menu {
   position: fixed;
   background: var(--surface, #fff);
@@ -3534,7 +3578,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar],
 [data-parte-firmar-tecnico],
 [data-dictado-ordenar],
-[data-propuesta-confirmar] {
+[data-propuesta-confirmar],
+[data-es-correcto] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3556,13 +3601,15 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar]:active,
 [data-parte-firmar-tecnico]:active,
 [data-dictado-ordenar]:active,
-[data-propuesta-confirmar]:active { transform: scale(.97); }
+[data-propuesta-confirmar]:active,
+[data-es-correcto]:active { transform: scale(.97); }
 
 .parte-anadir:disabled,
 [data-parte-firmar]:disabled,
 [data-parte-firmar-tecnico]:disabled,
 [data-dictado-ordenar]:disabled,
-[data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+[data-propuesta-confirmar]:disabled,
+[data-es-correcto]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 /* Firmar es la acción principal de esta pantalla: es lo que cierra el parte en la obra. */
 [data-parte-firmar] {
@@ -3655,7 +3702,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 [data-parte-firmar],
 [data-parte-firmar-tecnico],
 [data-dictado-ordenar],
-[data-propuesta-confirmar] { min-height: 44px; }
+[data-propuesta-confirmar],
+[data-es-correcto] { min-height: 44px; }
 
 /* La «×» ya no se estiliza aquí: su regla ENTERA —aspecto y área táctil— vive junto a las demás
    de `.parte-quitar-linea`, más arriba en este mismo fichero (SCRUM-818). */
@@ -3791,6 +3839,19 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .parte-linea-unds { width: 100%; text-align: right; }
 .parte-linea-desc { width: 100%; }
+/* SCRUM-1287 · la descripción es un `textarea` de una fila que crece hacia abajo (lo ajusta
+   `crecerDescripcion`). Con una fila mide 44 px como el `input` de antes: 20 px de línea + 11,5 + 9,5 px
+   de relleno + 3 px de borde. El reparto 11,5/9,5 (y no 10,5/10,5) es MEDIDO: es el que deja la fila
+   de una descripción corta idéntica píxel a píxel a la del `input` en Chrome a 390 px. Sin asa ni barra. */
+textarea.parte-linea-desc {
+  display: block;
+  line-height: 20px;
+  padding: 11.5px 10px 9.5px;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
+  overflow-wrap: anywhere;
+}
 .parte-linea-unds:focus,
 .parte-linea-desc:focus {
   outline: none;

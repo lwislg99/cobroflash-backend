@@ -4,6 +4,10 @@
 // el create lleva created_via='voice' (telemetría V0-3). Se resetea por render.
 let quoteFormCreatedVia = 'text';
 
+// SCRUM-1188/1219 · lo que una plantilla guarda de las condiciones de cobro (cabe en `payment_terms`);
+// `''` es «Sin condiciones específicas» (1219). «CUSTOM» no: sus tramos no tienen columna ahí.
+const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL', ''];
+
 /**
  * SCRUM-140: `template` llega como ARGUMENTO EXPLÍCITO (antes por
  * `sessionStorage['pf_load_template']`, un canal global e implícito).
@@ -20,6 +24,19 @@ let quoteFormCreatedVia = 'text';
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
 function renderQuotesView(container, template, documentoSuelto) {
+  // SCRUM-1274 · EL PRESUPUESTO QUE NACE DESDE UN TRABAJO. «Hacer presupuesto» en la ficha del Trabajo
+  // abría esta pantalla sin estado, y al aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para
+  // la misma obra. El servidor ya sabe engancharlo (`job_id`, SCRUM-195): aquí solo se le manda.
+  // Viene con su cliente, que se deja elegido; si el profesional lo cambia, el `job_id` NO viaja (el
+  // servidor comprueba el negocio, no el cliente, y un presupuesto de otro cliente no es de esta obra).
+  // ⚠️ Viaja DENTRO de `template` (`template.deTrabajo`) y no como cuarto argumento: la firma está
+  // fijada por SCRUM-140 y por la garantía de la regla 29 de SCRUM-600b. Sin `lines`, `template` no
+  // carga nada de plantilla (ver «if (template && Array.isArray(template.lines)…»), así que no hay
+  // aviso de «Plantilla cargada» ni líneas fantasma.
+  const origen = template && template.deTrabajo;
+  const trabajoDeOrigen = (origen && Number.isInteger(Number(origen.jobId)) && Number(origen.jobId) > 0)
+    ? { jobId: Number(origen.jobId), customerId: origen.customerId != null ? String(origen.customerId) : null }
+    : null;
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
 
@@ -432,9 +449,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // En el documento suelto, la guía que nombra el documento sólo existe firmada para el
   // justificante. En modo factura NO hay texto firmado y se omite (regla 30), igual que SCRUM-600
   // omitió el subtítulo: el paso se entiende por su título, «Cliente».
-  pasoClienteGuia.textContent = esDocumentoSuelto
-    ? (window.rotulosDelDocumento.esJustificante() ? "¿Para quién es el justificante?" : "")
-    : "¿Para quién es el presupuesto?";
+  // SCRUM-825 D1 (comentario 17446) · la guía del justificante se RETIRA con su rama muerta (censo de
+  // SCRUM-1257, grupo A): en el documento suelto queda el lado factura, que ya era no pintar nada.
+  pasoClienteGuia.textContent = esDocumentoSuelto ? "" : "¿Para quién es el presupuesto?";
   if (pasoClienteGuia.textContent) blockClient.appendChild(pasoClienteGuia);
 
   const blockLines = document.createElement("div");
@@ -1505,6 +1522,71 @@ descWrapper.appendChild(descLabel);
       });
     }
 
+    // SCRUM-1180 · LAS CLÁUSULAS DE CIERRE, PARA ESTE PRESUPUESTO. El servidor guarda
+    // `clausulasExcluidas` y el PDF y el sello la aplican desde SCRUM-656; el editor nunca la
+    // mandaba, así que quitar una cláusula en UN presupuesto no se podía. Una casilla por cada
+    // cláusula del NEGOCIO (`GET /admin/merchant` → `clausulasPresupuesto`, SCRUM-1227), marcada
+    // por defecto: lo de siempre es que las lleve todas. Las desmarcadas viajan por su `id`.
+    // Sin cláusulas en Configuración no se pinta nada: un bloque vacío no decide nada.
+    // Va en «Envío», con `docFields` y los textos: decide cómo SALE el documento.
+    // FIRMADO: SCRUM-1180 c.17380 (orquestador, por delegación del fundador, 28-sep-2026).
+    // «este» dice dónde acaba lo que hace la casilla: solo este presupuesto, no el negocio.
+    const TITULO_CLAUSULAS = "Condiciones que lleva este presupuesto";
+    const clausulasWrap = document.createElement("div");
+    clausulasWrap.className = "field quote-clausulas";
+    clausulasWrap.hidden = true;
+    const clausulasChecks = {};
+    // Lo que trae una plantilla o un borrador ANTES de que llegue la lista del negocio.
+    let clausulasExcluidasPendientes = null;
+    if (!esDocumentoSuelto) blockDelivery.appendChild(clausulasWrap);
+    function pintarClausulas(lista) {
+      clausulasWrap.innerHTML = "";
+      Object.keys(clausulasChecks).forEach(function (k) { delete clausulasChecks[k]; });
+      const validas = (Array.isArray(lista) ? lista : []).filter(function (c) {
+        return c && c.id != null && String(c.id) !== "" && typeof c.titulo === "string" && c.titulo.trim() !== "";
+      });
+      clausulasWrap.hidden = validas.length === 0;
+      if (!validas.length) return;
+      if (TITULO_CLAUSULAS) {
+        const titulo = document.createElement("label");
+        titulo.className = "pay-methods-title";
+        titulo.textContent = TITULO_CLAUSULAS;
+        clausulasWrap.appendChild(titulo);
+      }
+      const fila = document.createElement("div");
+      fila.className = "pay-methods-row";
+      validas.forEach(function (c) {
+        const lbl = document.createElement("label");
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.checked = true;
+        chk.value = String(c.id);
+        chk.addEventListener("change", function () { scheduleDraftSave(); });
+        clausulasChecks[String(c.id)] = chk;
+        lbl.appendChild(chk);
+        lbl.appendChild(document.createTextNode(" " + c.titulo.trim()));
+        fila.appendChild(lbl);
+      });
+      clausulasWrap.appendChild(fila);
+      if (clausulasExcluidasPendientes) ponerClausulasExcluidas(clausulasExcluidasPendientes);
+    }
+    // Desmarca las que vienen excluidas (plantilla de «Duplicar» o borrador). Un id que el negocio
+    // ya no tiene se ignora: no hay casilla que desmarcar y el servidor no la imprimiría igual.
+    function ponerClausulasExcluidas(ids) {
+      if (!Array.isArray(ids)) return;
+      clausulasExcluidasPendientes = ids.map(String);
+      clausulasExcluidasPendientes.forEach(function (id) {
+        if (clausulasChecks[id]) clausulasChecks[id].checked = false;
+      });
+    }
+    // `undefined` si no hay casillas (no se sabe qué cláusulas tiene el negocio): la clave no viaja,
+    // en vez de mandar `[]` como si el profesional las hubiera dejado todas.
+    function clausulasExcluidasElegidas() {
+      const ids = Object.keys(clausulasChecks);
+      if (!ids.length) return undefined;
+      return ids.filter(function (id) { return !clausulasChecks[id].checked; });
+    }
+
     // ── SCRUM-915d · EL PIE DEL PASO «CONDICIONES» ──────────────────────────────────────────
     // Va en el ÚLTIMO bloque del paso, que es la fila de Ajustes. Lo único que puede frenarlo es
     // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
@@ -1588,7 +1670,7 @@ descWrapper.appendChild(descLabel);
   // guarda— pero su tooltip nombra el documento. Se omite SÓLO el tooltip: el rótulo visible
   // («✨ Sugerir con IA») no nombra nada y se explica solo, así que no queda ningún control mudo.
   // Escribir aquí otra frase sería microcopy nueva (regla 30).
-  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y Claude sugiere las líneas del presupuesto";
+  if (!esDocumentoSuelto) aiBtn.title = "Describe el trabajo y la IA te sugiere las líneas del presupuesto";
   linesHeader.appendChild(aiBtn);
 
   const useTemplateBtn = document.createElement("button");
@@ -2012,10 +2094,15 @@ descWrapper.appendChild(descLabel);
   // El menú es el helper compartido de AB3, con su rótulo por defecto, «Más acciones» (firmado en
   // el comentario 15868). Si no estuviera cargado, los dos botones se quedan en la fila del título:
   // perder el menú no puede costar la posibilidad de vaciar el documento.
+  // SCRUM-1317 · guardar una plantilla es admin en el servidor (`POST /admin/templates`). Al
+  // operario el botón no se le pinta: USAR una plantilla sigue siendo suyo, crearla no, y un
+  // botón que acaba en 403 es peor que no tenerlo (SCRUM-1312).
+  const puedeGuardarPlantilla = window.appUserRole === "admin";
   const masAccionesBtn =
-    typeof overflowMenu === "function"
-      ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
-      : null;
+    typeof overflowMenu !== "function" ? null
+      : puedeGuardarPlantilla
+        ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
+        : overflowMenu([resetBtn], { label: "Más acciones" });
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
@@ -2033,7 +2120,10 @@ descWrapper.appendChild(descLabel);
   // SCRUM-915i · en la fila del título, delante del «⋯».
   if (!esDocumentoSuelto) headingRow.appendChild(draftIndicator);
   if (masAccionesBtn) headingRow.appendChild(masAccionesBtn);
-  else { headingRow.appendChild(saveTemplateBtn); headingRow.appendChild(resetBtn); }
+  else {
+    if (puedeGuardarPlantilla) headingRow.appendChild(saveTemplateBtn);
+    headingRow.appendChild(resetBtn);
+  }
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»
@@ -2546,6 +2636,8 @@ descWrapper.appendChild(descLabel);
           : { ok: false };
         return leido.ok ? leido.valores : undefined;
       })(),
+      // SCRUM-1180 · y las cláusulas quitadas en este presupuesto. `undefined` si no hay casillas.
+      clausulasExcluidas: clausulasExcluidasElegidas(),
     };
     // No guardar borradores vacíos
     const hasContent = snapshot.customerId || snapshot.lines.some((l) => l.concept.trim());
@@ -2608,6 +2700,7 @@ descWrapper.appendChild(descLabel);
       }
       // SCRUM-1186 · los dos textos del documento vuelven con el borrador. Uno viejo no los trae.
       ponerTextosDelDocumento(d.textosDelDocumento);
+      ponerClausulasExcluidas(d.clausulasExcluidas); // SCRUM-1180
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -4565,6 +4658,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     if (editorEnBlanco()) {
       linesBody.innerHTML = '';
       lines = [];
+      // SCRUM-1188 · empezar CON la plantilla trae también su condición de cobro, como ya hace
+      // el camino de «Usar» desde Plantillas (SCRUM-926, en `loadInitialData`). Añadirla a un
+      // presupuesto empezado solo suma líneas: no cambia las condiciones que ya eligió.
+      // Se pone ANTES de las líneas: `addLine` repinta la vista previa, que ya sale con ella.
+      if (!esDocumentoSuelto && CONDICIONES_QUE_GUARDA_UNA_PLANTILLA.includes(tpl.paymentTerms)) {
+        paymentSelect.value = tpl.paymentTerms;
+      }
     }
     const templateLines = Array.isArray(tpl.lines) ? tpl.lines : [];
     templateLines.forEach(function (l) {
@@ -4826,14 +4926,29 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       saveBtn.textContent = 'Guardando…';
 
       const currency = currentMerchant?.defaultCurrency || 'EUR';
+      // SCRUM-1188 · la plantilla guarda también la condición de cobro, que al aplicarla ya se
+      // restaura (SCRUM-926, más abajo). Solo las tres que caben en `payment_terms`: «CUSTOM» es
+      // un marcador de front cuyos tramos viajan aparte (`customBillingPlan`) y la plantilla no
+      // tiene dónde guardarlos, así que guardar «CUSTOM» sola dejaría una plantilla que afirma un
+      // plan que no puede reproducir. En ese caso la plantilla sale sin condición.
+      // En el documento suelto el bloque no se pinta y el select se queda en su valor de nacimiento
+      // (`FULL_UPFRONT`), que es también lo que el editor pone cuando la plantilla no trae nada: se
+      // manda igual para que las dos pantallas guarden la MISMA plantilla (lo fija `scrum600g`).
+      const paymentTerms = CONDICIONES_QUE_GUARDA_UNA_PLANTILLA.includes(paymentSelect.value)
+        ? paymentSelect.value
+        : null;
 
       try {
         await apiRequest('/admin/templates', {
           method: 'POST',
-          body: JSON.stringify({ name, currency, lines: templateLines }),
+          body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
         });
         closeOverlay();
-        setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
+        // SCRUM-1188 · con «CUSTOM» la plantilla sale SIN condición (arriba): se dice, una vez, aquí.
+        // Texto FIRMADO por el orquestador (SCRUM-1188, comentario 17332), letra por letra. SOLO con
+        // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
+        if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
         alertEl.className = 'alert error';
@@ -4873,11 +4988,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
           dtoGlobalBtn.hidden = true;
         }
         // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
-        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve.
-        if (template.paymentTerms) paymentSelect.value = template.paymentTerms;
+        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve. SCRUM-1219: `''` también.
+        if (template.paymentTerms || (template.paymentTerms === '' && !esDocumentoSuelto)) paymentSelect.value = template.paymentTerms;
         // SCRUM-1186 · y los dos textos del documento (cabecera y Observaciones), que «Duplicar»
         // copia desde SCRUM-1186. Una plantilla del catálogo no los trae y el campo queda vacío.
         ponerTextosDelDocumento(template);
+        // SCRUM-1180 · y las cláusulas quitadas. Una plantilla del catálogo no las trae.
+        ponerClausulasExcluidas(template.clausulasExcluidas);
         // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
         // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
         // moneda (usa la del merchant). No se inventa un campo para meterlos.
@@ -4891,6 +5008,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
       currentMerchant = res[0];
       customersList = Array.isArray(res[1]) ? res[1] : [];
+      // SCRUM-1180 · las casillas salen de las cláusulas del NEGOCIO; sin ellas no se pinta nada.
+      pintarClausulas(currentMerchant && currentMerchant.clausulasPresupuesto);
       // SCRUM-633 · ya se sabe en qué calendario vive el negocio: la caducidad se recalcula.
       if (window.__refrescarCaducidadDelPresupuesto) window.__refrescarCaducidadDelPresupuesto();
 
@@ -4937,7 +5056,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
       // Restaurar borrador autoguardado (si no venimos de una plantilla)
       let draftRestored = false;
-      if (!templatePending) {
+      // SCRUM-1274 · desde un Trabajo NO se restaura el borrador guardado: traería otro cliente y
+      // otras líneas a un presupuesto que es de ESTA obra.
+      if (!templatePending && !trabajoDeOrigen) {
         const restored = loadDraft();
         if (restored) {
           draftRestored = true;
@@ -4950,6 +5071,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         }
       }
       if (!draftRestored) setAlert(null, "");
+      // SCRUM-1274 · el cliente del Trabajo, elegido como si se hubiera pulsado su botón.
+      if (trabajoDeOrigen && trabajoDeOrigen.customerId
+        && customersList.some(function (c) { return String(c.id) === trabajoDeOrigen.customerId; })) {
+        elegirCliente(trabajoDeOrigen.customerId);
+      }
       // SCRUM-586 (CONT-13): la lista de clientes acaba de llegar y el borrador ya ha puesto su
       // cliente, así que ÉSTE es el primer momento en que se puede saber si hay algo pactado. Sin
       // esta llamada, un borrador restaurado no propondría NADA hasta que el profesional volviera
@@ -5589,6 +5715,12 @@ payloadLines.push(lineaParaPayload({
         // dos de arriba: el censo de SCRUM-286 tiene que ver las claves.
         docHeaderText: textoDelDocumento.ok ? textoDelDocumento.valores.docHeaderText : undefined,
         docFooterText: textoDelDocumento.ok ? textoDelDocumento.valores.docFooterText : undefined,
+        // SCRUM-1180 · las cláusulas del negocio que ESTE presupuesto no lleva, por su `id`. A MANO,
+        // por el censo de SCRUM-286. Sin casillas no viaja (no se sabe cuáles tiene el negocio).
+        clausulasExcluidas: clausulasExcluidasElegidas(),
+        // SCRUM-1274 · el Trabajo de origen, A MANO (censo de SCRUM-286). Solo si el cliente elegido
+        // sigue siendo el del Trabajo: con otro cliente, el presupuesto no es de esta obra.
+        job_id: trabajoDeOrigen && String(customerId) === trabajoDeOrigen.customerId ? trabajoDeOrigen.jobId : undefined,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

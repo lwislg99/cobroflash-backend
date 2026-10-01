@@ -24,7 +24,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { distributeStageAmounts, getStageAmount, getBillingPlan } = await import('../dist/modules/quotes/domain/billingPlan.js');
+const mod = await import('../dist/modules/quotes/domain/billingPlan.js');
+const { distributeStageAmounts, getBillingPlan } = mod;
 
 const toCents = (a) => a.map((x) => Math.round(x * 100));
 const sumCents = (a) => toCents(a).reduce((s, x) => s + x, 0);
@@ -56,11 +57,17 @@ test('SCRUM-32: MANUAL/[] → sin tramos', () => {
   assert.deepEqual(distributeStageAmounts('100.01', getBillingPlan('SIN_CONDICIONES')), []);
 });
 
-test('SCRUM-32: getStageAmount indexa el reparto — el 2º tramo es el RESTO', () => {
-  assert.equal(getStageAmount('151.25', 'FIFTY_FIFTY', 0), 75.63);
-  assert.equal(getStageAmount('151.25', 'FIFTY_FIFTY', 1), 75.62); // el resto, no 75,63
-  assert.equal(getStageAmount('100.01', 'FIFTY_FIFTY', 0), 50.01);
-  assert.equal(getStageAmount('100.01', 'FIFTY_FIFTY', 1), 50.00);
+// SCRUM-1201: `getStageAmount` se borró (sin llamador desde SCRUM-27); lo que probaba —el 2º tramo
+// es el RESTO— se prueba ahora sobre `distributeStageAmounts`, que es lo que emite.
+test('SCRUM-32: el reparto indexa bien — el 2º tramo es el RESTO', () => {
+  assert.deepEqual(distributeStageAmounts('151.25', getBillingPlan('FIFTY_FIFTY')), [75.63, 75.62]); // el resto, no 75,63
+  assert.deepEqual(distributeStageAmounts('100.01', getBillingPlan('FIFTY_FIFTY')), [50.01, 50.00]);
+});
+
+test('SCRUM-1201: getNextBillingStage y getStageAmount ya no existen (retiradas, sin llamador)', () => {
+  assert.equal(typeof distributeStageAmounts, 'function', 'control positivo: el módulo se cargó');
+  assert.equal(mod.getNextBillingStage, undefined);
+  assert.equal(mod.getStageAmount, undefined);
 });
 
 test('SCRUM-32: invariante general — suma == total en muchos impares', () => {

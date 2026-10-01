@@ -358,6 +358,17 @@ const HALLAZGOS_DECLARADOS = [
   // `sesion.mjs` acepte la instalación del banco y se pueda medir POR EFECTO `lanzar`/`relevar`/
   // `estado` (confirmarArranque, sesionesBloqueadas). Lo retira quien borre `sesion.mjs`.
   'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs [show]',
+  // SCRUM-804b · el censo de la regla 42. Su pregunta es sobre la PUNTA, igual que la de
+  // `censo-reparto.mjs`: «¿qué tickets abiertos ya están DENTRO de `main`?». Lee el árbol de la
+  // punta, la entrada de registro de cada ticket en ella y el histórico que la nombra. Contra la
+  // base de una rama contestaría sobre un pasado que no le sirve a nadie. No corre en CI salvo a
+  // través de `tests/scrum804b-…`, que lleva su motivo en la lista de abajo.
+  // 🔴 NO ES NUEVO: ESTABA AHÍ Y ESTE CENSO NO LO VEÍA (SCRUM-1281, 1-oct-2026). Llama a git con
+  // `git([...])` —los argumentos en UN array— y el censo leía el array entero como subcomando.
+  // Las tres salieron el día que aprendió a abrirlo. Lo retira: quien retire el censo de la 42.
+  'scripts/censo-regla-42.mjs [log]',
+  'scripts/censo-regla-42.mjs [ls-tree]',
+  'scripts/censo-regla-42.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -530,6 +541,22 @@ const INDIRECTAS_DECLARADAS = [
   // formato del ancla en sí (mismo caso que scrum267/scrum649 de arriba), no un descuido.
   // Lo retira quien borre la plantilla del ancla.
   'scripts/equipo/ancla.mjs',
+  // SCRUM-1298 · `prepararMesa` SÍ pregunta por la punta de verdad (`rev-parse origin/main`, en los
+  // argumentos de git), y es lo que tiene que preguntar: la mesa de un puesto arranca en la oficial
+  // de AHORA, no en una base fijada. Fuera de los argumentos la nombra en los MOTIVOS que devuelve
+  // («la mesa quedó en X y origin/main es Y», «no se pudo leer origin/main») y en su cabecera.
+  // Lo retira quien retire las mesas.
+  'scripts/equipo/sesion.mjs',
+  // SCRUM-1298 · su banco: mismo caso que 899b, 951a y 973 — un repositorio SINTÉTICO en el temporal
+  // cuyo `origin/main` no es el de nadie, para comprobar que la mesa nace y se pone al día ahí.
+  // Lo retira quien borre el banco.
+  'tests/scrum1298-mesa-por-puesto.test.mjs',
+  // SCRUM-1350 · el latido pregunta «¿cómo está la punta AHORA?», que es la única pregunta que tiene:
+  // el último commit de `main` con el obligatorio en verde, las reglas vivas de la rama y si lo
+  // empujado es lo que hay en local. No censa nada contra una base, y fijarle una lo dejaría
+  // contando el estado de ayer. Herramienta de mano del orquestador; no corre en CI.
+  // Lo retira quien retire el latido.
+  'scripts/equipo/latido.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
@@ -578,6 +605,47 @@ test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a 
   const noEsGit = 'const f = (...a) => console.log(a);\nf("show", "origin/main:x");';
   assert.equal(analizarFuente(noEsGit).length, 0,
     '🔴 el censo trata como git a una función que no lo es: contaría hallazgos inventados');
+  // 🔴 SCRUM-1281 · LOS PASAMANOS. Formas que el censo absolvía, y la última cruza de fichero.
+  // ① los argumentos en UN array: se leía el array entero como si fuera el subcomando.
+  const enArray = 'const git = (args) => execFileSync("git", args);\n'
+    + 'const x = git(["show", "origin/main:" + rel]);';
+  assert.equal(analizarFuente(enArray).filter((l) => l.esHallazgo).length, 1,
+    '🔴 el censo NO ve un git cuyos argumentos van en un array (`git([...])`). Así llama '
+    + '`scripts/censo-regla-42.mjs`, y sus tres lecturas de la punta no salían.');
+  // ② los argumentos DETRÁS de otro parámetro: se leía el directorio como subcomando.
+  const trasElCwd = 'const git = (raiz, ...args) => execFileSync("git", args, { cwd: raiz });\n'
+    + 'const x = git(dir, "show", "origin/main:" + rel);';
+  assert.equal(analizarFuente(trasElCwd).filter((l) => l.esHallazgo).length, 1,
+    '🔴 el censo NO ve un git cuyos argumentos van detrás del directorio (`git(raiz, …)`).');
+  // ③ dos pisos: un pasamanos que se apoya en otro.
+  const dosPisos = 'function gitDe(args, o = {}) { return execFileSync("git", args, o); }\n'
+    + 'const g = (...args) => gitDe(args, { cwd: r });\n'
+    + 'const x = g("show", "origin/main:" + rel);';
+  assert.equal(analizarFuente(dosPisos).filter((l) => l.esHallazgo).length, 1,
+    '🔴 el censo NO ve un git que pasa por DOS envoltorios. Es como escribe git la familia de '
+    + 'fixtures desde SCRUM-1281: sus ficheros dejaban de contar como «llaman a git».');
+  // ④ y el que viene IMPORTADO, que es por donde `_fixture-alcanzabilidad.mjs` se cayó de la lista.
+  const importado = 'import { gitDe } from "./otro.mjs";\nconst x = gitDe(["show", "origin/main:" + rel]);';
+  assert.equal(analizarFuente(importado).length, 0,
+    '🔴 sin saber qué es `gitDe` en su origen, el censo no puede darlo por git: se inventaría llamadas');
+  assert.equal(analizarFuente(importado, 'x.mjs', new Map([['gitDe', { indice: 0, resto: false }]]))
+    .filter((l) => l.esHallazgo).length, 1,
+    '🔴 el censo NO ve un git que llega por un pasamanos IMPORTADO, ni diciéndole que lo es');
+  // 🔴 LA MITAD QUE ABSUELVE. Pasarle un parámetro propio a un pasamanos en el sitio del DIRECTORIO
+  // no convierte en pasamanos a quien lo hace: si lo hiciera, `numero("main")` contaría como
+  // argumento de git y esa cadena saldría de la lista de indirectas — el censo se taparía los ojos
+  // con su propio arreglo. (Pasó al escribirlo: `tests/scrum854-…` entró en la lista por esto.)
+  const noPasa = 'const git = (raiz, ...args) => execFileSync("git", args, { cwd: raiz });\n'
+    + 'function numero(raiz) { return git(raiz, "rev-parse", "HEAD"); }\n'
+    + 'const n = numero("main");';
+  // Dos: el `execFileSync` de dentro del pasamanos y el `git(raiz, …)` de `numero`. Una tercera
+  // sería `numero("main")` leído como git.
+  assert.equal(analizarFuente(noPasa).length, 2,
+    '🔴 el censo trata como git a `numero(…)`, que sólo le pasa el DIRECTORIO a un pasamanos. '
+    + 'Leería sus argumentos como si fueran de git y taparía las cadenas que lleva dentro.');
+  assert.ok(c.porImportado >= 1,
+    '🔴 CIEGO: ningún fichero del árbol llama a git por un pasamanos importado. La familia de '
+    + 'fixtures lo hace (`gitDeFixture`): si sale 0, el censo ha dejado de seguir los imports.');
   // Y no cuenta lo que sólo se NOMBRA: si contara el texto, se cazaría en este comentario que
   // dice `git show origin/main:` tres veces, que es la trampa de SCRUM-203.
   const soloTexto = '// git show origin/main:x\nconst s = "origin/main";';

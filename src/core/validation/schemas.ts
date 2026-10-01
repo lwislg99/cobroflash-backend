@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { validarNifEspanol } from './nifEspanol'; // SCRUM-575 (CONT-02)
 import { invalidTipoIva, invalidPrefijoSerie } from './fiscalInput'; // SCRUM-217
+import { esTipoRetencionValido } from '../../modules/invoicing/domain/retencionIrpf'; // SCRUM-1269
 // SCRUM-602 (DOC-12) · los tres modos, DERIVADOS del dominio: una segunda lista aquí envejecería sola.
 import { MODOS_DIRECCION_OBRA } from '../documentos/direccionObra';
 
@@ -344,40 +345,6 @@ export const CreateQuoteSchema = z.object({
 export type QuoteTier = z.infer<typeof QuoteTierSchema>;
 
 
-// imports arriba ya tendrán algo como: import { z } from "zod";
-
-export const AcceptQuoteSchema = z.object({
-  // Desde dónde ha venido la decisión del cliente
-  channel: z.enum(['whatsapp', 'web', 'other']).optional(),
-
-  // Comentario libre del cliente (o que le pasemos desde el flujo)
-  comment: z.string().max(500).optional(),
-
-  // Texto tipo "50% al aceptar, 50% al finalizar"
-  // Guardamos el código interno
-  paymentTerms: z
-    .enum(['FULL_UPFRONT', 'FIFTY_FIFTY', 'MANUAL'])
-    .optional()
-    .nullable(),
-
-  // Cualquier extra (ip, userAgent, etc.)
-  evidence: z.any().optional(),
-});
-
-
-export const RejectQuoteSchema = z.object({
-  channel: z.enum(['whatsapp', 'web', 'other']).optional(),
-
-  // Motivo del rechazo (en WhatsApp será lo que nos escriba)
-  reason: z.string().min(1).max(500),
-
-  // Comentario adicional (podemos duplicar reason aquí si queremos)
-  comment: z.string().max(500).optional(),
-
-  evidence: z.any().optional(),
-});
-
-
 // ------- CHARGES -------
 
 export const CreateChargeSchema = z.object({
@@ -447,6 +414,24 @@ export const merchantProfileUpdateSchema = z.object({
   // que es un valor guardable y distinto de `false`. Un `z.boolean()` a secas colapsaria los tres
   // estados en dos y «no se pregunto» se guardaria como «declara que no».
   criterioCaja: z.boolean().nullable().optional(),
+  // SCRUM-1102 · ¿lleva los libros de IVA por el SII? ¿tiene el domicilio fiscal en territorio
+  // foral? Mismo contrato de TRES estados que `criterioCaja`, y por el mismo motivo: AUSENTE = no
+  // se toca; `null` = «no consta», que se guarda distinto de `false`. Sin estas dos líneas
+  // `z.object` las descartaría en silencio y la pantalla diría «guardado» (el fallo de SCRUM-1269).
+  llevaLibrosPorSii: z.boolean().nullable().optional(),
+  domicilioFiscalForal: z.boolean().nullable().optional(),
+  // SCRUM-1269 · LA RETENCIÓN DE IRPF (SCRUM-293). La pantalla los mandaba desde siempre y aquí no
+  // estaban: `z.object` los DESCARTABA en silencio, `updateMerchantProfile` escribe lo que sobrevive
+  // y ninguna otra vía los escribe — el profesional elegía «15 %», veía «guardado» y al recargar
+  // volvía «No consta». Tres estados, como `criterioCaja`, pero en DOS columnas:
+  //   · `declarada: false` (+ tipo `null`) = no consta · `declarada: true` + `null` = no retiene
+  //   · `declarada: true` + tipo = retiene ese tipo, y el tipo lo valida EL CUBO del dominio.
+  // Un tipo sin `declarada: true` se rechaza abajo en vez de guardarse: la lectura
+  // (`settingsView.js`) mira `declarada` primero y lo mostraría como «No consta» con un 15 dentro.
+  retencionIrpfDeclarada: z.boolean().optional(),
+  retencionIrpfTipo: z.number().int()
+    .refine(esTipoRetencionValido, { message: 'Tipo de retención de IRPF no admitido' })
+    .nullable().optional(),
   trade: z
     .enum([
       'electricista', 'fontanero', 'reformista', 'pintor',
@@ -503,6 +488,16 @@ export const merchantProfileUpdateSchema = z.object({
   ),
   profileZones: z.array(z.string().trim().min(1).max(40)).max(12).nullable().optional(),
   profileYears: z.number().int().min(0).max(80).nullable().optional(),
+}).superRefine((v, ctx) => {
+  // SCRUM-1269 · un tipo de retención solo tiene sentido DECLARADO. Si llegan los dos y no casan, se
+  // rechaza: guardar `declarada: false` con un 15 dejaría la fila diciendo dos cosas a la vez.
+  if (v.retencionIrpfTipo != null && v.retencionIrpfDeclarada !== true) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['retencionIrpfTipo'],
+      message: 'Un tipo de retención exige retencionIrpfDeclarada: true',
+    });
+  }
 });
 
 export type MerchantProfileUpdateInput = z.infer<

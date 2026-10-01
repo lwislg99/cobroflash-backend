@@ -109,7 +109,7 @@ test('SCRUM-425 · la lista es BLANCA: solo las formas declaradas, y el rojo las
   assert.deepEqual(
     PERMITIDAS.map((p) => p.nombre),
     ['ALTER TABLE … ADD COLUMN', 'CREATE [UNIQUE] INDEX', 'CREATE TABLE … ( … )',
-      'ALTER TABLE … ALTER COLUMN … DROP DEFAULT'],
+      'ALTER TABLE … ALTER COLUMN … DROP DEFAULT', 'CREATE TYPE … AS ENUM ( … )'],
     '🔴 la lista de formas permitidas ha cambiado. Ampliarla es una decisión a conciencia: si de ' +
     'verdad hace falta otra forma, actualiza este test CON su caso — no al revés.',
   );
@@ -184,7 +184,102 @@ test('SCRUM-797 · 🔴 ROJO: se amplió la FORMA, no la familia `ALTER COLUMN`'
   }
 });
 
-// ── 🔴 ROJO DE DESTINO, y el `--go` ──────────────────────────────────────────────────────────
+// ── LA QUINTA FORMA · SCRUM-1197 (28-sep-2026) ──────────────────────────────────────────────
+//
+// EL CASO que la trajo: el DDL de la cola de VeriFactu (§④ de `docs/master/SCRUM-1127.md`), ya
+// aplicado por el fundador en staging y producción, no se podía aplicar a dev: su enum
+// `VfSubmissionStatus` no tenía forma en la lista. (Sus dos `ADD CONSTRAINT … FOREIGN KEY` NO
+// traen forma nueva: se reescriben dentro del `CREATE TABLE`, que ya estaba permitido.)
+
+const ENUM_1127 = `CREATE TYPE "VfSubmissionStatus" AS ENUM ('pending', 'sent', 'accepted', 'rejected', 'manual_review');`;
+
+test('SCRUM-1197 · CREATE TYPE … AS ENUM se ACEPTA, con su nombre de forma — el caso real de 1127', () => {
+  const r = revisar(ENUM_1127, { ruta: 'x.sql' });
+  assert.equal(r.ok, true, `🔴 la forma que trajo esta ampliación no pasa: ${r.mensaje}`);
+  assert.equal(r.permitidas[0].forma, 'CREATE TYPE … AS ENUM ( … )');
+  // Y partida en líneas, como la escribe una persona.
+  assert.equal(revisar(`CREATE TYPE "x" AS ENUM (\n  'a',\n  'b'\n);`, { ruta: 'x.sql' }).ok, true);
+});
+
+test('SCRUM-1197 · 🔴 ROJO: se amplió la FORMA `AS ENUM`, no la familia `CREATE TYPE`', () => {
+  // `CREATE TYPE` tiene cuatro formas más (compuesto, rango, base, shell) y su familia vecina
+  // (`ALTER TYPE`, `DROP TYPE`) sí cambia o borra. La expresión sólo admite una lista de literales
+  // de cadena: si al ensanchar pasara cualquiera de éstas, la lista habría dejado de ser blanca.
+  const casos = [
+    ['DROP TABLE "vf_submissions";', 'DROP TABLE, que el encargo exige ver rechazado'],
+    ['ALTER TABLE "vf_submissions" DROP COLUMN "status";', 'DROP COLUMN, que el encargo exige ver rechazado'],
+    ['DROP TYPE "VfSubmissionStatus";', 'DROP TYPE: el mismo nombre, la operación contraria'],
+    ['DROP TYPE "VfSubmissionStatus" CASCADE;', 'DROP TYPE … CASCADE se lleva las columnas que lo usan'],
+    [`ALTER TYPE "VfSubmissionStatus" ADD VALUE 'x';`, 'ALTER TYPE: cambia un tipo que ya existe'],
+    [`ALTER TYPE "VfSubmissionStatus" RENAME VALUE 'sent' TO 'x';`, 'RENAME VALUE cambia lo que ya leen las filas'],
+    ['CREATE TYPE "x" AS ("a" INT, "b" TEXT);', 'tipo compuesto: otra forma de CREATE TYPE'],
+    ['CREATE TYPE "x" AS RANGE (SUBTYPE = int4);', 'tipo rango: otra forma de CREATE TYPE'],
+    ['CREATE TYPE "x" (INPUT = f, OUTPUT = g);', 'tipo base: ejecuta funciones de E/S'],
+    ['CREATE TYPE "x";', 'tipo shell'],
+    ['CREATE TYPE "x" AS ENUM ();', 'enum vacío: no es la forma que genera prisma, no se necesita'],
+    ['CREATE TYPE "x" AS ENUM (lower(\'a\'));', 'algo que no es un literal dentro de la lista'],
+    [`CREATE TYPE "x" AS ENUM ('a'); DROP TABLE "invoices";`, 'un DROP escondido tras la forma válida'],
+    [`CREATETYPE "x" AS ENUM ('a');`, 'una palabra clave pegada que no es la sentencia'],
+  ];
+  for (const [sentencia, porque] of casos) {
+    assert.equal(revisar(sentencia, { ruta: 'x.sql' }).ok, false,
+      `🔴 PASA algo que no debería (${porque}): «${sentencia}». La ampliación de SCRUM-1197 se ` +
+      'acotó a `CREATE TYPE … AS ENUM ( \'…\', … )` justamente para que esto siguiera cayendo.');
+  }
+});
+
+// ── SCRUM-1224 (28-sep-2026) · UN ALTER TABLE CON VARIAS ACCIONES SE MIRA ENTERO ────────────
+//
+// La forma `ALTER TABLE … ADD COLUMN` terminaba en `[\s\S]+`: miraba la PRIMERA acción y lo que
+// fuera detrás de la coma pasaba sin mirar. Medido: `ADD COLUMN "x" INTEGER, DROP COLUMN "email"`
+// salía ACEPTADO como «ALTER TABLE … ADD COLUMN». No es una forma nueva ni una excepción: es el
+// guarda haciendo lo que dice que hace. El clasificador de producción ya partía las acciones.
+
+const DESTRUCTIVAS_TRAS_UNA_COMA = [
+  'DROP COLUMN "email"',
+  'ALTER COLUMN "email" TYPE INTEGER',
+  'DROP TABLE "invoices"',
+  'TRUNCATE "invoices"',
+  'DELETE FROM "invoices"',
+  'UPDATE "invoices" SET "total" = 0',
+  'RENAME COLUMN "email" TO "x"',
+  'DROP TYPE "VfSubmissionStatus" CASCADE',
+  'ALTER COLUMN "email" DROP NOT NULL',
+  'DROP CONSTRAINT "merchants_pkey"',
+];
+
+test('SCRUM-1224 · 🔴 una acción destructiva NO pasa por ir detrás de un ADD COLUMN', () => {
+  for (const cola of DESTRUCTIVAS_TRAS_UNA_COMA) {
+    const sql = `ALTER TABLE "merchants" ADD COLUMN "x" INTEGER, ${cola};`;
+    assert.equal(revisar(sql, { ruta: 'x.sql' }).ok, false,
+      `🔴 PASA «${sql}»: la lista miró la primera acción y se creyó el resto.`);
+  }
+  // Control: la misma acción, sola, ya se rechazaba (no es eso lo que se arregla aquí).
+  assert.equal(revisar('ALTER TABLE "merchants" DROP COLUMN "email";', { ruta: 'x.sql' }).ok, false);
+});
+
+test('SCRUM-1224 · 🔴 mira TODAS las acciones: la tercera y la cuarta también', () => {
+  const casos = [
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, DROP COLUMN "c";',
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" INT, DROP COLUMN "d";',
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" INT, ALTER COLUMN "d" TYPE TEXT;',
+  ];
+  for (const sql of casos) assert.equal(revisar(sql, { ruta: 'x.sql' }).ok, false, `🔴 PASA «${sql}»`);
+});
+
+test('SCRUM-1224 · lo aditivo de varias acciones SIGUE pasando (el ALTER real de 1216b, tres columnas, una coma en un literal)', () => {
+  const casos = [
+    `ALTER TABLE "merchants"\n  ADD COLUMN IF NOT EXISTS "invoice_start_seq"  INTEGER,\n  ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;`,
+    'ALTER TABLE "m" ADD COLUMN "a" INT, ADD COLUMN "b" INT, ADD COLUMN "c" NUMERIC(12,2);',
+    `ALTER TABLE "m" ADD COLUMN "nota" TEXT DEFAULT 'a, b', ADD COLUMN "d" INT;`,
+  ];
+  for (const sql of casos) {
+    const r = revisar(sql, { ruta: 'x.sql' });
+    assert.equal(r.ok, true, `🔴 se bloqueó un ALTER aditivo de varias acciones: «${sql}» — ${r.mensaje}`);
+  }
+});
+
+// ── 🔴 ROJO DE DESTINO, y el `--go`──────────────────────────────────────────────────────────
 
 test('SCRUM-425 · 🔴 el CLI está ACOTADO a `yaqu_dev_javier` y lo comprueba por MECANISMO', () => {
   // Se lee el CLI por texto: ejecutarlo exigiría credenciales y una base, y este fichero no toca

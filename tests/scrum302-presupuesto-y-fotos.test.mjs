@@ -440,6 +440,10 @@ async function invocarDetalle({ job, quote }) {
   moduloPrisma.prisma.job = { findFirst: async () => job };
   moduloPrisma.prisma.customer = { findFirst: async () => ({ id: 5, name: 'Comunidad Los Olivos' }) };
   moduloPrisma.prisma.albaranLineaFacturada = { findMany: async () => [] };
+  // SCRUM-1302 (G): el GET cuenta fotos (`cabenMasFotos`); este doble se monta a mano y necesita el
+  // modelo. Devuelve 0 porque estos casos miden el presupuesto, no las fotos. ⚠️ El 0 es FIJO: un
+  // caso de este fichero que necesite fotos en la base tiene que darle las suyas, o este 0 le mentirá.
+  moduloPrisma.prisma.attachment = { count: async () => 0 };
   moduloPrisma.prisma.quote = {
     findFirst: async (args) => { wheres.push(args?.where ?? null); return quote; },
   };

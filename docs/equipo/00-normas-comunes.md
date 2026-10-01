@@ -247,55 +247,32 @@ instrumentos se comitean ANTES de tocarlos.
 Registro de máster: un fichero por número de ticket. Si ya existe,
 ANEXAS una sección (SCRUM-Nb, Nc…) y no escribes encima.
 
+**La entrega lleva la tabla «aceptación → dónde se ve»** (SCRUM-1348; equipo de Luis desde el 1-oct-2026,
+propuesta al de Javier por su orquestador). En el comentario de entrega del ticket, una fila por CADA
+línea de su aceptación:
+
+    | aceptación (literal) | dónde se ve |
+    |---|---|
+    | <la línea, copiada> | `tests/…test.mjs` · o la URL de yaqu.app y qué se ve en ella |
+    | <la línea, copiada> | NO HECHO → <a quién se le pasa, y su ticket> |
+
+«Dónde se ve» es algo que otro puede abrir: una ruta que existe en `main` o una pantalla de `yaqu.app`.
+«Lo comprobé» no es un sitio. Una fila `NO HECHO` no impide entregar, pero **ese ticket no se cierra: se
+parte** (A18). ✗ Falla: medido el 1-oct sobre los 47 cierres de tres días, cinco estaban «Finalizada»
+diciendo en su propio comentario que no se había visto en yaqu.app.
+
 ## A9 · Cuando algo te sale mal, lo cuentas tú
 
-Las mejores entregas de este equipo llevan dentro un error propio
-confesado sin que nadie preguntara.
-
-  Un informe sin errores propios es un informe que no ha mirado.
+**El texto canónico vive en `docs/equipo/00-normas-siempre.md`**, y lo
+tienes cargado: `CLAUDE.md` lo importa con `@` (SCRUM-1294). En corto: lo
+confiesas, y la lección va a A10 en tu mismo PR, con la línea `A9:` en tu
+registro. Lo exige un guard del check obligatorio.
 
 ## A10 · Frases de la casa
 
-Un instrumento declara su población, no sólo su resultado.
-«0 fail» sin «sobre cuántos» no es un verde: es una frase.
-El código de salida es el del último tramo de la tubería.
-Un prefijo no es un nombre, y una subcadena tampoco.
-Cero no es «está limpio»: es «no he mirado».
-CI prueba el MERGE, no la rama.
-Una ventana fija es una tolerancia disfrazada.
-Un build roto no es un rojo: es un verde que no vale.
-Referenciar por posición caduca. Referenciar por identidad no.
-Una prohibición sin mecanismo es una frase.
-Un número derivado no se elige: se recalcula.
-«Exactamente una vez» no es alcanzable cruzando un límite de proceso.
-Si parece un campo y no se puede escribir, la pantalla ha mentido.
-Si la acción no cambia con el estado de la fila, no es la acción de
-la fila.
-Una pantalla se ordena por lo que se hace en ella, no por cómo están
-guardados los campos.
-La lista que decide qué se mira es la única que nadie mira.
-Contar no es avisar.
-Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el
-trabajo: estabas midiendo el envase.
-Dos anclas para la misma comprobación no son redundancia: son la próxima
-contradicción esperando fecha.
-Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
-del tuyo.
-Un instrumento que solo sabe callar no es un instrumento.
-Si desactivas una comprobación de permisos para que tu robot pase, el
-permiso tiene que volver a preguntarse en la puerta siguiente.
-Un control que no se puede usar y no puede explicar por qué, no se
-deshabilita: se quita.
-Un acto irreversible no es nunca la acción principal.
-Si tu medición tumba una decisión firmada, gana tu medición.
-El coste no es lo que entra en el chat: es lo que el chat arrastra.
-Un carácter que no se ve no lo caza una revisión: lo caza un recuento.
-Una operación que no se ejecutó se lee exactamente igual que un éxito.
-Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
-Una captura bonita no prueba que el botón funcione.
-«No está en el PATH» no es «no está».
-Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
-Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
+**Viven en `docs/equipo/00-normas-siempre.md`** (SCRUM-1294), junto a la
+A9, para que lleguen solas a toda sesión de los dos equipos. Cualquier
+puesto añade su línea allí, en su PR.
 
 ## A11 · Cómo se actualiza esto
 
@@ -330,6 +307,12 @@ papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar
    con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
    mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
    etiqueta VIEJA de agosto con otro significado (10 tickets la llevan) y no se reutiliza.
+   **Y nace con su ACEPTACIÓN escrita** (SCRUM-1348): una lista bajo la palabra «Aceptación», y cada línea
+   dice **qué hay que ver para decir que está hecho, y dónde se ve**. Un ticket sin aceptación **no se
+   reparte**: quien lo va a mandar la escribe antes, o no lo manda; y la sesión que recibe uno sin ella
+   lo dice y no empieza (como en A20). ✗ Falla: medido el 1-oct, **23 de los 47 cierres** de tres días no
+   tenían aceptación escrita: la mitad de lo cerrado no se puede comprobar contra nada, ni a mano ni con
+   un instrumento.
 2. **COGER.** Antes de la primera línea, **se mira el ticket**. Si está En curso y es de otro puesto u
    otro equipo, **no se toca** y se avisa al orquestador. Si está libre: **En curso + asignado al JEFE
    del equipo que lo trabaja** (Luis o Javier: las sesiones no tienen cuenta de Jira) + un comentario

@@ -35,41 +35,75 @@
   var M = '[PENDIENTE microcopy oficial]';
 
   var TEXTOS = {
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
     sinLineas: 'Todavía no has apuntado nada.',
+    // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
+    // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
+    // también la oficina. Editable, se queda `sinLineas`.
+    sinLineasCerrado: 'No se apuntó nada en este apartado.',
+    // APROBADO · SCRUM-1215 comentario 17367
     unds: 'UNDS',
     // La segunda cabecera de las líneas. FIRMADA por el fundador el 7-sep-2026 (SCRUM-818): es la
     // palabra del impreso y no estrena vocabulario. Consta en
     // `docs/microcopy/2026-09-07-SCRUM-818-cabecera-de-la-descripcion.md`.
     descripcion: 'Descripción',
+    // APROBADO · SCRUM-1215 comentario 17367
     entrada: 'Entrada',
+    // APROBADO · SCRUM-1215 comentario 17367
     salida: 'Salida',
+    // APROBADO · SCRUM-1215 comentario 17367
     desplazamiento: 'Desplazamiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     kilometros: 'Kilómetros',
+    // APROBADO · SCRUM-1215 comentario 17367
     referencia: 'REF',
+    // APROBADO · SCRUM-1215 comentario 17367
     obra: 'Dirección de la obra',
+    // APROBADO · SCRUM-1215 comentario 17367
     tecnicos: 'Técnicos',
+    // APROBADO · SCRUM-1215 comentario 17367
     notas: 'Notas',
+    // APROBADO · SCRUM-1215 comentario 17367
     anadirLinea: 'Añadir línea',
+    // APROBADO · SCRUM-1215 comentario 17367
     firmar: 'Firmar aquí mismo',
-    yaFirmado: 'Firmado. El contenido ya no se puede cambiar.',
+    // SCRUM-1215 (lote 1) · `yaFirmado` RETIRADA: cero consumidores, no se pintaba nunca. Decidido
+    // por el orquestador el 28-sep-2026; motivo en `scripts/_censo-convenio-microcopy-declarados.json`.
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
+    // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
     // fundador firmó en SCRUM-703 para este mismo vocabulario cerrado en «Trabajo nuevo», así que
     // reutilizarlo no estrena microcopy ni pide firma (regla 30).
+    // APROBADO · SCRUM-1215 comentario 17367
     tituloTipo: 'Tipo de intervención',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoReparacion: 'Reparación / asistencia',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoMantenimiento: 'Mantenimiento',
+    // APROBADO · SCRUM-1215 comentario 17367
     tipoInstalacion: 'Instalación',
+    // APROBADO · SCRUM-1215 comentario 17367
     dictado: 'Dicta lo que has hecho',
+    // APROBADO · SCRUM-1215 comentario 17367
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
+    // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
+    // SCRUM-1266 · el dato que la máquina escribió y el dictado no decía, dicho en SU línea de la tabla.
+    // Van seguidos de los datos, separados por coma y espacio. Sólo con el parte editable; nunca en
+    // el sello (la marca no entra en `lineasCanonicasParte`).
+    // APROBADO · SCRUM-1266 comentario 17498
+    noSalioEnLoDictado: 'No salía en lo dictado: ',
+    // APROBADO · SCRUM-1266 comentario 17498. Limpia la marca de esa línea y NO toca la descripción.
+    esCorrecto: 'Es correcto',
     confirmarPropuesta: 'Añadir estas líneas',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
@@ -84,15 +118,27 @@
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
     // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
-    faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
-    faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
+    //
+    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». FIRMADO por delegación del fundador,
+    // SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma, sea cual
+    // sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y `/firmar-tecnico`),
+    // así que con una basta y la segunda ya no cierra nada.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente.',
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.',
+    // Misma firma (c.17354). Solo mientras no ha firmado NADIE: después ya no avisa, es un hecho.
+    // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
+    // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
+    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.',
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
     // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
     parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
     // SCRUM-890 (PR 2) · una firma que se quedó en la cola y el servidor rechazó al vaciarla, con un
-    // código distinto de `parte_vacio`. ⚠️ PROPUESTA, PENDIENTE DE FIRMA (regla 30).
+    // código distinto de `parte_vacio`. APROBADO por el orquestador por delegación del fundador,
+    // SCRUM-890 comentario 15665 (17-sep-2026). Consta en
+    // `docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md`. (Hasta SCRUM-1215 este comentario
+    // decía «PROPUESTA, PENDIENTE DE FIRMA», y el censo 1157 lo contaba como sin firmar.)
     firmaRechazada: 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el parte.',
 
     // ── SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO ────────────────────────────────
@@ -177,7 +223,61 @@
    * posición, y quitar una línea le movería el precio a la de detrás. Ni un importe: no los hay.
    */
   function lineaQueSeGuarda(l) {
-    return { id: l.id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    var linea = { id: l.id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    // SCRUM-1266 · la marca del dato inventado vuelve con su línea; el servidor deja de ella sólo lo
+    // que siga escrito en la descripción.
+    if (Array.isArray(l.datosNoRespaldados) && l.datosNoRespaldados.length) {
+      linea.datosNoRespaldados = l.datosNoRespaldados;
+    }
+    return linea;
+  }
+
+  /**
+   * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
+   *
+   * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
+   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
+   * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
+   */
+  var COLAS_DEL_PARTE = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function enOrdenDelParte(parte, fn) {
+    var previa = (COLAS_DEL_PARTE && parte && COLAS_DEL_PARTE.get(parte)) || Promise.resolve();
+    var turno = previa.then(fn);
+    if (COLAS_DEL_PARTE && parte) COLAS_DEL_PARTE.set(parte, turno.then(null, function () {}));
+    return turno;
+  }
+
+  /** SCRUM-1266 · los datos marcados que siguen en la línea; lo que no sea texto no cuenta. */
+  function marcaDeLinea(linea) {
+    var marca = linea && Array.isArray(linea.datosNoRespaldados) ? linea.datosNoRespaldados : [];
+    return marca.filter(function (t) { return typeof t === 'string' && t !== ''; });
+  }
+
+  /**
+   * 🔴 SCRUM-1266 · EL DATO QUE LA MÁQUINA ESCRIBIÓ Y EL DICTADO NO DECÍA, EN LA TABLA DEL PARTE.
+   *
+   * Hasta hoy la marca llegaba con la línea y no se pintaba: el técnico no sabía qué palabra mirar.
+   * Se pinta sólo desde `filaDeLinea` editable — con el parte firmado no queda nada que corregir y
+   * avisar sería angustiar sin salida (c.17498, condición 1). Nombra los datos, que es lo que lo hace
+   * accionable, y lleva «Es correcto» al lado: sin él, un dato CIERTO sólo se quitaba borrándolo.
+   *
+   * Una lista larga NO deforma la línea: el texto parte por cualquier sitio (`overflow-wrap:anywhere`,
+   * también un token sin espacios) y el botón baja de renglón (`flex-wrap`) en vez de ensanchar la
+   * columna. El servidor corta la marca en 20 datos (`MAX_DATOS_MARCADOS`).
+   */
+  function avisoNoDictado(linea, indice) {
+    var marca = marcaDeLinea(linea);
+    if (!marca.length) return '';
+    return (
+      '<div data-no-dictado="' + indice + '" style="display:flex;flex-wrap:wrap;align-items:center;' +
+      'gap:4px 8px;margin-top:4px;min-width:0;max-width:100%">' +
+      '<span data-no-dictado-texto="1" style="flex:1 1 12em;min-width:0;font-size:12px;' +
+      'color:var(--ink);overflow-wrap:anywhere;word-break:break-word">' +
+      esc(TEXTOS.noSalioEnLoDictado + marca.join(', ')) + '</span>' +
+      '<button type="button" data-es-correcto="' + indice + '">' + esc(TEXTOS.esCorrecto) + '</button>' +
+      '</div>'
+    );
   }
 
   /**
@@ -205,8 +305,11 @@
       '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any"' +
       ' data-linea-unds="' + indice + '" value="' + esc(unds) + '"' +
       ' aria-label="' + esc(TEXTOS.unds) + '"></td>' +
-      '<td><input class="parte-linea-desc" type="text" data-linea-desc="' + indice + '"' +
-      ' value="' + esc(desc) + '"></td>' +
+      // SCRUM-1287 · `textarea` de UNA fila que crece hacia abajo (`crecerDescripcion`): en un móvil de
+      // 390 px el `input` medía 182 px y cortaba el 77 % de las descripciones del catálogo de gremios,
+      // así que las palabras que nombra el aviso del dato inventado no se podían leer en su sitio.
+      '<td><textarea class="parte-linea-desc" rows="1" data-linea-desc="' + indice + '">' +
+      esc(desc) + '</textarea>' + avisoNoDictado(linea, indice) + '</td>' +
       '<td class="parte-col-quitar">' +
       '<button type="button" class="parte-quitar-linea" data-indice="' + indice + '" ' +
       'aria-label="Quitar línea">&times;</button></td>' +
@@ -227,13 +330,41 @@
       '<td class="parte-col-unds">' +
       '<input class="parte-linea-unds" type="number" inputmode="decimal" step="any" min="0"' +
       ' data-nueva-unds="1" value="" aria-label="' + esc(TEXTOS.unds) + '"></td>' +
-      '<td><input class="parte-linea-desc" type="text" data-nueva-desc="1" value=""' +
-      ' aria-label="' + esc(TEXTOS.descripcion) + '"></td>' +
+      '<td><textarea class="parte-linea-desc" rows="1" data-nueva-desc="1"' +
+      ' aria-label="' + esc(TEXTOS.descripcion) + '"></textarea></td>' +
       '<td class="parte-col-quitar">' +
       '<button type="button" class="parte-quitar-linea" data-quitar-nueva="1" ' +
       'aria-label="Quitar línea">&times;</button></td>' +
       '</tr>'
     );
+  }
+
+  /**
+   * SCRUM-1287 · La descripción crece hacia abajo en vez de cortarse, y sigue siendo UNA línea de texto.
+   *
+   * · El alto sale de su contenido: `auto` y después su `scrollHeight`. Con una sola fila mide lo mismo
+   *   que el `input` de antes (44 px, ver `.parte-linea-desc` en styles.css), así que una descripción
+   *   corta se ve igual que hoy.
+   * · Intro NO mete un salto: con el `input` no lo metía, y una descripción es una línea del papel.
+   *   Un salto pegado se cambia por un espacio por el mismo motivo.
+   */
+  function crecerDescripcion(casilla) {
+    if (!casilla || !casilla.style || typeof casilla.scrollHeight !== 'number') return;
+    casilla.style.height = 'auto';
+    casilla.style.height = casilla.scrollHeight + (casilla.offsetHeight - casilla.clientHeight) + 'px';
+  }
+  function conectarDescripcion(casilla) {
+    if (!casilla || !casilla.addEventListener) return;
+    casilla.addEventListener('keydown', function (e) {
+      if (e && e.key === 'Enter') e.preventDefault();
+    });
+    casilla.addEventListener('input', function () {
+      if (typeof casilla.value === 'string' && /[\r\n]/.test(casilla.value)) {
+        casilla.value = casilla.value.replace(/[\r\n]+/g, ' ');
+      }
+      crecerDescripcion(casilla);
+    });
+    crecerDescripcion(casilla);
   }
 
   /**
@@ -250,7 +381,7 @@
     var filas = suyas.length
       ? suyas.map(function (x) { return filaDeLinea(x.linea, x.indice, editable); }).join('')
       : '<tr data-parte-sin-lineas="' + esc(bloque) + '"><td colspan="' + (editable ? 3 : 2) + '" style="padding:6px 0;color:var(--muted)">' +
-        esc(TEXTOS.sinLineas) + '</td></tr>';
+        esc(editable ? TEXTOS.sinLineas : TEXTOS.sinLineasCerrado) + '</td></tr>';
 
     return (
       '<section class="parte-bloque" data-parte-bloque="' + esc(bloque) + '" style="margin-bottom:18px">' +
@@ -590,23 +721,59 @@
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
+  function avisoFaltaCantidad(texto) {
+    return '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
+      esc(texto) + '</em>';
+  }
+
+  /**
+   * SCRUM-1230 · el aviso «falta la cantidad» sigue a la línea COMO ESTÁ AHORA, no como nació.
+   *
+   * Antes sólo se pintaba si la propuesta llegaba sin cantidad. Si el técnico BORRABA a mano una
+   * cantidad que sí venía, esa línea no entraba al confirmar (`lineasConfirmadas`) y no lo decía en
+   * ningún sitio. Mismo texto del servidor, en la misma línea: se pone al quedarse sin cantidad y se
+   * quita al ponérsela.
+   */
+  function sincronizarAvisosDeCantidad(caja, texto) {
+    if (!caja || !caja.querySelectorAll || !texto) return;
+    var filas = caja.querySelectorAll('[data-propuesta="1"]');
+    Array.prototype.forEach.call(filas, function (fila) {
+      var campo = fila.querySelector('[data-propuesta-unds="1"]');
+      var unds = Number(campo && campo.value);
+      var falta = !isFinite(unds) || unds <= 0;
+      var aviso = fila.querySelector('[data-falta-cantidad]');
+      if (falta && !aviso) {
+        var descripcion = fila.querySelector('[data-propuesta-desc="1"]');
+        if (descripcion && descripcion.insertAdjacentHTML) descripcion.insertAdjacentHTML('afterend', avisoFaltaCantidad(texto));
+      } else if (!falta && aviso) {
+        aviso.remove();
+      }
+    });
+  }
+
   function pintarLineaPropuesta(linea, bloque, indice, avisos, inventado) {
     var sinCantidad = !(typeof linea.unds === 'number' && linea.unds > 0);
-    var conInventado = !!(inventado && inventado[linea.descripcion]);
+    // El aviso sale si el servidor señaló la línea, traiga o no la lista de tokens (SCRUM-725).
+    var conInventado = !!(inventado && Object.prototype.hasOwnProperty.call(inventado, linea.descripcion));
+    var marca = conInventado ? inventado[linea.descripcion] : [];
     return '' +
       '<li data-propuesta="1" data-bloque="' + esc(bloque) + '" data-indice="' + indice + '"' +
-      ' style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
+      // SCRUM-1266 · la marca VIAJA en la fila para que `lineasConfirmadas` la mande con la línea.
+      // Separados por espacios: un token nace de partir la descripción por espacios, así que no lleva.
+      (marca.length ? ' data-datos-no-respaldados="' + esc(marca.join(' ')) + '"' : '') +
+      ' style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' +
       '<input type="number" step="any" min="0" data-propuesta-unds="1" ' +
       'value="' + (sinCantidad ? '' : esc(linea.unds)) + '" ' +
       'aria-label="' + esc(TEXTOS.unds) + '" style="width:72px">' +
-      '<span style="flex:1;font-size:14px">' + esc(linea.descripcion) + '</span>' +
+      // SCRUM-1266 · la descripción se corrige AQUÍ, antes de que entre en el parte: era un texto de
+      // sólo lectura y un dato inventado sólo se podía arreglar ya dentro, a un paso del congelado.
+      // Mismo rótulo accesible que el campo de descripción de la tabla del parte.
+      '<input type="text" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
+      'aria-label="' + esc(TEXTOS.descripcion) + '" style="flex:1;min-width:160px;font-size:14px">' +
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
       // servidor para no reteclearlo aquí.
-      (sinCantidad
-        ? '<em data-falta-cantidad="1" style="font-size:12px;color:var(--muted);font-style:normal">' +
-          esc(avisos.cantidadesRetiradas) + '</em>'
-        : '') +
+      (sinCantidad ? avisoFaltaCantidad(avisos.cantidadesRetiradas) : '') +
       // 🔴 SCRUM-725 · EL DATO QUE EL DICTADO NO DICE, DICHO EN SU LÍNEA.
       //
       // El servidor ya sabe cuál sobra (`datosRetirados`) y hasta hoy la pantalla se lo callaba:
@@ -618,7 +785,48 @@
       (conInventado
         ? '<em data-dato-inventado="1">' + esc(avisos.datosRetirados) + '</em>'
         : '') +
+      (bloque === 'sinBloque' ? pintarColocar(indice) : '') +
       '</li>';
+  }
+
+  /**
+   * 🔴 SCRUM-1230 · LO QUE LA MÁQUINA NO SUPO COLOCAR, LO COLOCA EL TÉCNICO — AQUÍ, EN SU LÍNEA.
+   *
+   * El grupo se rotula «Sin colocar — elige mano de obra o materiales», y hasta hoy la línea no
+   * tenía con qué elegir: `lineasConfirmadas` la descartaba al confirmar y lo dictado se perdía sin
+   * aviso. Son las mismas fichas del tipo de intervención (`.parte-tipo-ficha`, 48 px, ya con su CSS)
+   * y los mismos dos rótulos de los bloques: ni un texto ni una clase nuevos.
+   */
+  function pintarColocar(indice) {
+    return (
+      '<div class="parte-tipo" role="radiogroup" data-colocar-linea="' + indice + '" style="flex-basis:100%;margin:0">' +
+      BLOQUES.map(function (b) {
+        return (
+          '<label class="parte-tipo-ficha">' +
+          '<input type="radio" name="parte-colocar-' + indice + '" value="' + esc(b) + '" data-colocar="1">' +
+          esc(ETIQUETA_BLOQUE[b]) + '</label>'
+        );
+      }).join('') +
+      '</div>'
+    );
+  }
+
+  /** El bloque que el técnico eligió para una línea «Sin colocar», o null si aún no eligió. */
+  function bloqueElegido(fila) {
+    var opciones = fila.querySelectorAll ? fila.querySelectorAll('[data-colocar]') : [];
+    for (var i = 0; i < opciones.length; i++) {
+      if (opciones[i].checked && BLOQUES.indexOf(opciones[i].value) !== -1) return opciones[i].value;
+    }
+    return null;
+  }
+
+  /** Cuántas líneas «Sin colocar» siguen sin bloque elegido. Con alguna, no se confirma. */
+  function lineasSinColocar(caja) {
+    if (!caja || !caja.querySelectorAll) return 0;
+    var filas = caja.querySelectorAll('[data-propuesta="1"][data-bloque="sinBloque"]');
+    var n = 0;
+    Array.prototype.forEach.call(filas, function (fila) { if (!bloqueElegido(fila)) n += 1; });
+    return n;
   }
 
   /**
@@ -637,10 +845,10 @@
       return false;
     }
 
-    // Qué líneas llevan un dato que el dictado no respalda. Se arma UNA vez, no por línea.
+    // Qué líneas llevan un dato que el dictado no respalda, y CUÁLES. Se arma UNA vez, no por línea.
     var inventado = {};
     (p.datosRetirados || []).forEach(function (d) {
-      if (d && d.descripcion) inventado[d.descripcion] = true;
+      if (d && d.descripcion) inventado[d.descripcion] = Array.isArray(d.tokens) ? d.tokens : [];
     });
 
     var bloques = BLOQUES.map(function (b) {
@@ -662,7 +870,10 @@
       : '';
 
     contenedor.innerHTML = bloques + resto +
-      '<button type="button" data-propuesta-confirmar="1" style="width:100%;margin-top:10px">' +
+      // El texto del aviso de cantidad viaja en el botón para que `sincronizarAvisosDeCantidad`
+      // pinte EL DEL SERVIDOR cuando el técnico vacía una cantidad, sin reteclearlo aquí.
+      '<button type="button" data-propuesta-confirmar="1" data-aviso-cantidad="' +
+      esc(avisos.cantidadesRetiradas || '') + '" style="width:100%;margin-top:10px">' +
       esc(TEXTOS.confirmarPropuesta) + '</button>';
     return true;
   }
@@ -682,15 +893,65 @@
     var sinCantidad = 0;
     Array.prototype.forEach.call(filas, function (fila) {
       var campoUnds = fila.querySelector('[data-propuesta-unds="1"]');
-      var descripcion = (fila.querySelector('span') || {}).textContent || '';
+      // SCRUM-1266 · la descripción es un CAMPO: se guarda lo que el técnico dejó escrito, no lo
+      // que dijo la máquina. Vacía no se descarta aquí: el servidor la rechaza con su motivo, que es
+      // mejor que perder la línea en silencio.
+      var descripcion = String((fila.querySelector('[data-propuesta-desc="1"]') || {}).value || '').trim();
       var unds = Number(campoUnds && campoUnds.value);
       var bloque = fila.getAttribute('data-bloque');
+      // SCRUM-1230 · la línea «Sin colocar» entra en el bloque que el técnico eligió en ella.
+      if (bloque === 'sinBloque') bloque = bloqueElegido(fila) || bloque;
       if (!isFinite(unds) || unds <= 0) { sinCantidad += 1; return; }
-      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra.
+      // `sinBloque` no es un bloque del dominio: sin decidirlo el técnico, esa línea no entra. Y no
+      // se llega aquí en silencio: con una sin colocar, confirmar está bloqueado (`lineasSinColocar`).
       if (BLOQUES.indexOf(bloque) === -1) { sinCantidad += 1; return; }
-      lineas.push({ bloque: bloque, unds: unds, descripcion: descripcion });
+      var linea = { bloque: bloque, unds: unds, descripcion: descripcion };
+      // SCRUM-1266 · la marca del dato inventado ENTRA con la línea, y sólo lo que siga escrito.
+      var marca = marcaQueSigue(descripcion, marcaDeLaFila(fila));
+      if (marca.length) linea.datosNoRespaldados = marca;
+      lineas.push(linea);
     });
     return { lineas: lineas, sinCantidad: sinCantidad };
+  }
+
+  /** Los tokens que el servidor marcó en esta fila de la propuesta (SCRUM-725), o []. */
+  function marcaDeLaFila(fila) {
+    var crudo = fila && fila.getAttribute ? fila.getAttribute('data-datos-no-respaldados') : null;
+    return crudo ? String(crudo).split(/\s+/).filter(Boolean) : [];
+  }
+
+  /**
+   * SCRUM-1266 · de los tokens marcados, los que SIGUEN en la descripción. Mismo corte que el
+   * servidor (`marcaQueSigue` en `parteTrabajo.ts`) y que el saneador del dictado: palabras separadas
+   * por espacios, sin la puntuación de los extremos. Corregir el dato quita la marca; dejarlo, no.
+   */
+  function marcaQueSigue(descripcion, tokens) {
+    if (!Array.isArray(tokens)) return [];
+    var limpiar = function (s) { return String(s).replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''); };
+    var palabras = String(descripcion || '').split(/\s+/).map(limpiar).filter(Boolean);
+    var quedan = [];
+    tokens.forEach(function (t) {
+      if (typeof t !== 'string') return;
+      var limpio = limpiar(t.trim());
+      if (limpio && palabras.indexOf(limpio) !== -1 && quedan.indexOf(limpio) === -1) quedan.push(limpio);
+    });
+    return quedan;
+  }
+
+  /**
+   * SCRUM-1266 · el aviso del dato inventado sigue al estado ACTUAL de la descripción, como el de la
+   * cantidad (SCRUM-1230): si el técnico quita el dato, el aviso se oculta; si lo vuelve a escribir,
+   * vuelve. Es el mismo texto aprobado de SCRUM-725, que ya estaba pintado: ni un texto nuevo.
+   */
+  function sincronizarAvisosDeDatos(caja) {
+    if (!caja || !caja.querySelectorAll) return;
+    var filas = caja.querySelectorAll('[data-propuesta="1"][data-datos-no-respaldados]');
+    Array.prototype.forEach.call(filas, function (fila) {
+      var aviso = fila.querySelector('[data-dato-inventado]');
+      if (!aviso) return;
+      var desc = (fila.querySelector('[data-propuesta-desc="1"]') || {}).value || '';
+      aviso.hidden = marcaQueSigue(desc, marcaDeLaFila(fila)).length === 0;
+    });
   }
 
   /**
@@ -752,6 +1013,11 @@
     return (
       '<section data-parte-firmas="1" class="parte-firmas">' +
       '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
+      // SCRUM-653 c.17354 · el paso irreversible se enseña ANTES de darlo, y solo entonces.
+      (!parte.firmoElCliente && !parte.firmoElTecnico
+        ? '<p data-parte-primera-firma-fija="1" style="margin:0 0 8px;font-size:13px;color:var(--muted)">' +
+          esc(TEXTOS.conLaPrimeraFirmaQuedaFijo) + '</p>'
+        : '') +
       '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
@@ -823,9 +1089,15 @@
       return false;
     }
 
+    // 🔴 SCRUM-1229 · CUANDO FIRMA EL TÉCNICO, EL PAD NO ES EL DEL CLIENTE. Medido ejecutando la
+    // vista: le decía «Pide al cliente que firme…», le ofrecía el «en calidad de qué» (que SCRUM-653
+    // c.14494 le quitó a propósito) y mandaba su nombre en el campo del CLIENTE → 400 siempre.
+    var esTecnico = quien === 'tecnico';
     abrirPad({
-      title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
-      hint: TEXTOS.pistaFirma,
+      title: esTecnico ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
+      // Sin pista para el técnico: la única aprobada habla del cliente, y `null` (no `undefined`)
+      // es lo que le dice al pad que no ponga la suya por defecto, que dice lo mismo.
+      hint: esTecnico ? null : TEXTOS.pistaFirma,
       // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
       ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
@@ -839,9 +1111,16 @@
           return { concepto: l && l.descripcion, cantidad: l && l.unds, unidad: ETIQUETA_BLOQUE[l && l.bloque] };
         }),
       },
-      firmante: { sugerencia: parte.clienteNombre || '' },
+      firmante: esTecnico
+        ? { sugerencia: '', sinCalidad: true }
+        : { sugerencia: parte.clienteNombre || '' },
       onConfirm: async function (dataUri, declaracion) {
-        var cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
+        // El pad declara siempre `firmadoPorNombre`; cada ruta lee SU campo (`partes.routes.ts`:
+        // `/firmar` → `firmadoPorNombre`, `/firmar-tecnico` → `firmadoTecnicoNombre`). Se traduce
+        // AQUÍ, en quien llama: el servidor no aprende a aceptar dos nombres para lo mismo.
+        var cuerpo = esTecnico
+          ? { signatureData: dataUri, firmadoTecnicoNombre: (declaracion && declaracion.firmadoPorNombre) || '' }
+          : Object.assign({ signatureData: dataUri }, declaracion || {});
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
         var r;
@@ -911,15 +1190,20 @@
     if (typeof pedir !== 'function') return false;
 
     var caja = contenedor.querySelector && contenedor.querySelector('[data-dictado-propuesta]');
+    // SCRUM-1230 · con una línea «Sin colocar» sin decidir NO se guarda: el `PATCH` la dejaría
+    // fuera y lo dictado se perdería. El botón ya está bloqueado; esto es el respaldo.
+    if (lineasSinColocar(caja) > 0) return false;
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
-    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-
     try {
-      await pedir('/admin/partes/' + parteId, {
-        method: 'PATCH',
-        body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+      // SCRUM-1266 · en su turno: lo que ya había se lee DESPUÉS de que vuelva el guardado anterior.
+      await enOrdenDelParte(parte, function () {
+        var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
+        return pedir('/admin/partes/' + parteId, {
+          method: 'PATCH',
+          body: JSON.stringify({ lineas: yaHabia.concat(confirmadas.lineas) }),
+        });
       });
     } catch (e) {
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
@@ -1089,34 +1373,103 @@
 
     // Las líneas: cantidad y descripción. El `PATCH` reemplaza la lista ENTERA, así que se manda
     // la lista completa con la línea tocada cambiada — mandar sólo una borraría las demás.
+    //
+    // 🔴 SCRUM-1266 · LA LISTA SALE DE LO QUE HAY EN PANTALLA, y lo guardado se apunta. Antes se
+    // armaba desde `parte.lineas` tal y como vino al abrir, cambiando sólo la casilla tocada: tras
+    // corregir una descripción, el siguiente guardado —otra cantidad, o «Es correcto»— mandaba la
+    // descripción VIEJA y deshacía la corrección sin que la pantalla lo enseñara. Y los guardados van
+    // EN ORDEN: el `blur` de una casilla y el clic de «Es correcto» salen a la vez, y el que llegara
+    // segundo pisaría al primero con su lista.
+    var casillaDeLinea = function (atributo, i) {
+      return contenedor.querySelector ? contenedor.querySelector('[' + atributo + '="' + i + '"]') : null;
+    };
+    var listaDePantalla = function () {
+      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
+        var base = lineaQueSeGuarda(l);
+        var unds = casillaDeLinea('data-linea-unds', i);
+        var desc = casillaDeLinea('data-linea-desc', i);
+        if (unds && typeof unds.value === 'string') base.unds = unds.value === '' ? null : Number(unds.value);
+        if (desc && typeof desc.value === 'string') base.descripcion = desc.value;
+        return base;
+      });
+    };
+    /** Guarda la lista de pantalla (tocada por `ajustar`) y apunta lo guardado. Nunca lanza. */
+    var guardarLineasEnOrden = function (ajustar) {
+      return enOrdenDelParte(parte, async function () {
+        var lista = listaDePantalla();
+        if (ajustar) ajustar(lista);
+        try {
+          var r = await pedir('/admin/partes/' + parteId, {
+            method: 'PATCH',
+            body: JSON.stringify({ lineas: lista }),
+          });
+          parte.lineas = r && Array.isArray(r.lineas) ? r.lineas : lista;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      });
+    };
+
+    /** SCRUM-1266 · el aviso de UNA línea, repintado con la marca que quedó tras guardar. */
+    var repintarAvisoNoDictado = function (indice) {
+      var viejo = casillaDeLinea('data-no-dictado', indice);
+      if (viejo && viejo.remove) viejo.remove();
+      var desc = casillaDeLinea('data-linea-desc', indice);
+      var html = avisoNoDictado((parte.lineas || [])[indice], indice);
+      if (!desc || !html || !desc.insertAdjacentHTML) return;
+      desc.insertAdjacentHTML('afterend', html);
+      conectarEsCorrecto(casillaDeLinea('data-es-correcto', indice));
+    };
+
     var deLinea = contenedor.querySelectorAll
       ? contenedor.querySelectorAll('[data-linea-unds],[data-linea-desc]') : [];
     for (var d = 0; d < deLinea.length; d++) {
       (function (casilla) {
+        if (casilla.hasAttribute('data-linea-desc')) conectarDescripcion(casilla);
         var original = casilla.value;
         casilla.addEventListener('change', async function () {
           if (casilla.value === original) return;
           original = casilla.value;
           var esUnds = casilla.hasAttribute('data-linea-unds');
           var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
-          var lista = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
-            var base = lineaQueSeGuarda(l);
-            if (i !== indice) return base;
-            if (esUnds) base.unds = casilla.value === '' ? null : Number(casilla.value);
-            else base.descripcion = casilla.value;
-            return base;
-          });
-          try {
-            await pedir('/admin/partes/' + parteId, {
-              method: 'PATCH',
-              body: JSON.stringify({ lineas: lista }),
-            });
-          } catch (e) {
+          if (!(await guardarLineasEnOrden(null))) {
             await renderParteDetailView(contenedor, parteId, o);
+            return;
           }
+          // La marca se acorta sola al corregir la descripción: el servidor sólo deja lo que sigue escrito.
+          if (!esUnds) repintarAvisoNoDictado(indice);
         });
       }(deLinea[d]));
     }
+
+    // SCRUM-1266 · «Es correcto»: la lista entera, con ESA línea mandando la marca vacía —que el
+    // servidor lee como «ya no hay nada marcado» (`casarLineasPorIdentidad`)— y su descripción tal
+    // cual está. Si falla, el aviso se queda y se dice con el literal ya aprobado `noSeGuardo`.
+    function conectarEsCorrecto(boton) {
+      if (!boton || !boton.addEventListener) return;
+      boton.addEventListener('click', async function () {
+        var indice = Number(boton.getAttribute('data-es-correcto'));
+        if (!(parte.lineas || [])[indice]) return;
+        boton.disabled = true;
+        quitarAvisoNoGuardada();
+        var ok = await guardarLineasEnOrden(function (lista) {
+          if (lista[indice]) lista[indice].datosNoRespaldados = [];
+        });
+        if (ok) {
+          repintarAvisoNoDictado(indice);
+          return;
+        }
+        boton.disabled = false;
+        var filas = contenedor.querySelector('[data-parte-filas="' + parte.lineas[indice].bloque + '"]');
+        if (filas) {
+          filas.insertAdjacentHTML('beforeend',
+            '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
+        }
+      });
+    }
+    var botonesEsCorrecto = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-es-correcto]') : [];
+    for (var ec = 0; ec < botonesEsCorrecto.length; ec++) conectarEsCorrecto(botonesEsCorrecto[ec]);
 
     // ═══════════════════════════════════════════════════════════════════════════════════
     // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
@@ -1133,9 +1486,6 @@
     // La «×» de la fila NUEVA sólo la quita de la pantalla, porque nunca llegó al servidor. La de una
     // línea YA GUARDADA va más abajo (segundo PR de SCRUM-889).
     // ═══════════════════════════════════════════════════════════════════════════════════
-    var lineasGuardadas = function () {
-      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
-    };
     var laNueva = function () {
       return {
         fila: contenedor.querySelector('[data-parte-linea-nueva]'),
@@ -1165,9 +1515,12 @@
       guardandoLaNueva = true;
       quitarAvisoNoGuardada();
       try {
-        await pedir('/admin/partes/' + parteId, {
-          method: 'PATCH',
-          body: JSON.stringify({ lineas: lineasGuardadas().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+        // SCRUM-1266 · en su turno, con las guardadas tal y como están en pantalla.
+        await enOrdenDelParte(parte, function () {
+          return pedir('/admin/partes/' + parteId, {
+            method: 'PATCH',
+            body: JSON.stringify({ lineas: listaDePantalla().concat([{ bloque: bloque, unds: unds, descripcion: descripcion }]) }),
+          });
         });
       } catch (e) {
         guardandoLaNueva = false;
@@ -1202,7 +1555,10 @@
       filas.insertAdjacentHTML('beforeend', filaNueva(bloque));
       var nueva = laNueva();
       if (nueva.unds) nueva.unds.addEventListener('change', guardarLaNueva);
-      if (nueva.desc) nueva.desc.addEventListener('change', guardarLaNueva);
+      if (nueva.desc) {
+        conectarDescripcion(nueva.desc);
+        nueva.desc.addEventListener('change', guardarLaNueva);
+      }
       var equis = contenedor.querySelector('[data-quitar-nueva]');
       if (equis) equis.addEventListener('click', quitarLaNueva);
       // Al campo de la cantidad: es la primera columna del papel y abre el teclado numérico.
@@ -1230,11 +1586,14 @@
           quitando = true;
           quitarAvisoNoGuardada();
           try {
-            await pedir('/admin/partes/' + parteId, {
-              method: 'PATCH',
-              body: JSON.stringify({
-                lineas: todas.filter(function (_, i) { return i !== indice; }).map(lineaQueSeGuarda),
-              }),
+            // SCRUM-1266 · en su turno, con las demás tal y como están en pantalla.
+            await enOrdenDelParte(parte, function () {
+              return pedir('/admin/partes/' + parteId, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                  lineas: listaDePantalla().filter(function (_, i) { return i !== indice; }),
+                }),
+              });
             });
           } catch (e) {
             quitando = false;
@@ -1282,6 +1641,33 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
+          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
+          // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
+          // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
+          // técnico no sabía si había fallado él, la aplicación o la red. Lo que falta lo dice el
+          // aviso de cada línea, que ahora sigue a la cantidad que hay en pantalla.
+          var caja = contenedor.querySelector('[data-dictado-propuesta]');
+          var textoCantidad = confirmar.getAttribute ? confirmar.getAttribute('data-aviso-cantidad') : '';
+          var sincronizar = function () {
+            sincronizarAvisosDeCantidad(caja, textoCantidad);
+            sincronizarAvisosDeDatos(caja);
+            confirmar.disabled = lineasSinColocar(caja) > 0 || lineasConfirmadas(caja).lineas.length === 0;
+          };
+          // SCRUM-1266 · la descripción ahora se corrige aquí: el aviso del dato inventado la sigue.
+          var descripciones = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-desc="1"]') : [];
+          Array.prototype.forEach.call(descripciones, function (d) {
+            if (d.addEventListener) d.addEventListener('input', sincronizar);
+          });
+          var fichas = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-colocar]') : [];
+          Array.prototype.forEach.call(fichas, function (f) {
+            if (f.addEventListener) f.addEventListener('change', sincronizar);
+          });
+          var cantidades = caja && caja.querySelectorAll ? caja.querySelectorAll('[data-propuesta-unds="1"]') : [];
+          Array.prototype.forEach.call(cantidades, function (c) {
+            if (c.addEventListener) c.addEventListener('input', sincronizar);
+          });
+          sincronizar();
         }
       });
     }

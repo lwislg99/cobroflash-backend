@@ -1,0 +1,23 @@
+# g1-portal-en-la-ficha · guard-portal-en-la-ficha.mjs · ciego en «SIN token» y, despues, hallazgo en «CON token»
+# EXIT=1
+
+
+════════════════════════════════════════════════════════════════════════════════════
+EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado
+════════════════════════════════════════════════════════════════════════════════════
+  caso        LISTA    FICHA 360
+  CON token   botón    NO EXISTE
+
+  peticiones al abrir (las dos vistas):
+    CON token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+
+🔴 NO SUPE MEDIR — de esto no se da ningún veredicto:
+   · SIN token: la FICHA 360 no ha pintado (sin `#btn-edit-360`). Sin ancla, «no hay botón» no dice nada.
+
+
+🔴 HALLAZGOS:
+  · con token alguna de las dos ha dejado de pintarlo
+
+⟦veredicto⟧ 1 hallazgo · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos
+

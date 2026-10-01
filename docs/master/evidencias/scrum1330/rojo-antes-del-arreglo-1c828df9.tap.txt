@@ -1,0 +1,259 @@
+TAP version 13
+# Subtest: SCRUM-1330 · SUELO Y ✅ POSITIVO: el primer sellado escribe la huella UNA vez, encadenada y reproducible
+ok 1 - SCRUM-1330 · SUELO Y ✅ POSITIVO: el primer sellado escribe la huella UNA vez, encadenada y reproducible
+  ---
+  duration_ms: 49.3844
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173 ①: sellar DENTRO de una transacción sigue prohibido
+ok 2 - SCRUM-1330 · transcripción de scrum173 ①: sellar DENTRO de una transacción sigue prohibido
+  ---
+  duration_ms: 30.0199
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista
+ok 3 - SCRUM-1330 · transcripción de scrum173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista
+  ---
+  duration_ms: 62.6348
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173 ③: dos sellados CONCURRENTES de facturas distintas se serializan
+ok 4 - SCRUM-1330 · transcripción de scrum173 ③: dos sellados CONCURRENTES de facturas distintas se serializan
+  ---
+  duration_ms: 30.9275
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173b: la ANULACIÓN encadena al alta, y dentro de una transacción se rechaza
+ok 5 - SCRUM-1330 · transcripción de scrum173b: la ANULACIÓN encadena al alta, y dentro de una transacción se rechaza
+  ---
+  duration_ms: 93.8448
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173 (SCRUM-177): el alta siguiente a una ANULACIÓN encadena a ELLA
+ok 6 - SCRUM-1330 · transcripción de scrum173 (SCRUM-177): el alta siguiente a una ANULACIÓN encadena a ELLA
+  ---
+  duration_ms: 91.2043
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma
+ok 7 - SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma
+  ---
+  duration_ms: 60.7327
+  type: 'test'
+  ...
+# Subtest: SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena queda BYTE A BYTE
+not ok 8 - SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena queda BYTE A BYTE
+  ---
+  duration_ms: 1177.4957
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:263:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 LA CADENA PERSISTIDA HA CAMBIADO al volver a pasar por el sellado una factura que ya tenía huella. Una factura sellada no se edita (regla 29 del máster).
+    + actual - expected
+    
+      [
+    +   'factura=F260001 · estado=pendiente_de_sellado · huella=4FF50EAD4A2F5EA24B9048F53AF167462989DE1BD8C2733C0E10AE04812721A9 · anterior="302139EC22957488F3CEC1201703CE3EA3FBB569836087F6E70D09333329A71C" · sello=2026-10-01T03:34:24.412Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null',
+    -   'factura=F260001 · estado=pendiente_de_sellado · huella=7DF88459AF63C6E4575FF0E43066AD3C6FA843D7DE1F664D785E7DD0AAA295E1 · anterior="" · sello=2026-10-01T03:34:23.267Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null',
+        'factura=F260002 · estado=pendiente_de_sellado · huella=302139EC22957488F3CEC1201703CE3EA3FBB569836087F6E70D09333329A71C · anterior="7DF88459AF63C6E4575FF0E43066AD3C6FA843D7DE1F664D785E7DD0AAA295E1" · sello=2026-10-01T03:34:23.268Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260002&fecha=01-10-2026&importe=121.00 · anulacion=null'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'factura=F260001 · estado=pendiente_de_sellado · huella=7DF88459AF63C6E4575FF0E43066AD3C6FA843D7DE1F664D785E7DD0AAA295E1 · anterior="" · sello=2026-10-01T03:34:23.267Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+    1: 'factura=F260002 · estado=pendiente_de_sellado · huella=302139EC22957488F3CEC1201703CE3EA3FBB569836087F6E70D09333329A71C · anterior="7DF88459AF63C6E4575FF0E43066AD3C6FA843D7DE1F664D785E7DD0AAA295E1" · sello=2026-10-01T03:34:23.268Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260002&fecha=01-10-2026&importe=121.00 · anulacion=null'
+  actual:
+    0: 'factura=F260001 · estado=pendiente_de_sellado · huella=4FF50EAD4A2F5EA24B9048F53AF167462989DE1BD8C2733C0E10AE04812721A9 · anterior="302139EC22957488F3CEC1201703CE3EA3FBB569836087F6E70D09333329A71C" · sello=2026-10-01T03:34:24.412Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+    1: 'factura=F260002 · estado=pendiente_de_sellado · huella=302139EC22957488F3CEC1201703CE3EA3FBB569836087F6E70D09333329A71C · anterior="7DF88459AF63C6E4575FF0E43066AD3C6FA843D7DE1F664D785E7DD0AAA295E1" · sello=2026-10-01T03:34:23.268Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260002&fecha=01-10-2026&importe=121.00 · anulacion=null'
+  operator: 'deepStrictEqual'
+  stack: |-
+    exigirCadenaIntacta (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:133:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:274:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la misma
+not ok 9 - SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la misma
+  ---
+  duration_ms: 29.8309
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:281:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 UNA FACTURA SELLADA 2 VECES: la que esperaba el cerrojo no miró si la otra ya la había sellado
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:285:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella
+not ok 10 - SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella
+  ---
+  duration_ms: 1174.385
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:290:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 terminar una factura sellada a medias le ha cambiado la huella
+    + actual - expected
+    
+      {
+    +   h: 'EDBA1BEF26C1A445D352E3D68FB1569815DAFB7B990D8F0F2B9A5A68E776B2A4',
+    -   h: 'C8AB08483CFA06D00CE2594659BDF3C0A8BC3CA1BEAD9A60CB1F8E47C279EFA4',
+        p: '',
+        q: 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00',
+    +   t: '2026-10-01T03:34:25.618Z'
+    -   t: '2026-10-01T03:34:24.475Z'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    h: 'C8AB08483CFA06D00CE2594659BDF3C0A8BC3CA1BEAD9A60CB1F8E47C279EFA4'
+    p: ''
+    t: '2026-10-01T03:34:24.475Z'
+    q: 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00'
+  actual:
+    h: 'EDBA1BEF26C1A445D352E3D68FB1569815DAFB7B990D8F0F2B9A5A68E776B2A4'
+    p: ''
+    t: '2026-10-01T03:34:25.618Z'
+    q: 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:302:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · 🔴 ④a · ESPAÑA: una entrega REPETIDA del mismo cobro no toca la factura ya sellada
+not ok 11 - SCRUM-1330 · 🔴 ④a · ESPAÑA: una entrega REPETIDA del mismo cobro no toca la factura ya sellada
+  ---
+  duration_ms: 1173.3706
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:308:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 LA CADENA PERSISTIDA HA CAMBIADO con la segunda entrega del mismo cobro. Una factura sellada no se edita (regla 29 del máster).
+    + actual - expected
+    
+      [
+    +   'factura=F260001 · estado=sellado · huella=17566FE5479AC349C94781D3550087F1A453E7120B74C1DFD64DD52B8D1BB355 · anterior="" · sello=2026-10-01T03:34:26.792Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+    -   'factura=F260001 · estado=sellado · huella=3EBC999CA07B61B45F5AC6BC13AB46621A9B377F18B8B490A83D7F2B0E439697 · anterior="" · sello=2026-10-01T03:34:25.655Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'factura=F260001 · estado=sellado · huella=3EBC999CA07B61B45F5AC6BC13AB46621A9B377F18B8B490A83D7F2B0E439697 · anterior="" · sello=2026-10-01T03:34:25.655Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+  actual:
+    0: 'factura=F260001 · estado=sellado · huella=17566FE5479AC349C94781D3550087F1A453E7120B74C1DFD64DD52B8D1BB355 · anterior="" · sello=2026-10-01T03:34:26.792Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-10-2026&importe=121.00 · anulacion=null'
+  operator: 'deepStrictEqual'
+  stack: |-
+    exigirCadenaIntacta (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:133:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:323:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez
+not ok 12 - SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez
+  ---
+  duration_ms: 30.7267
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:327:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 UNA FACTURA, 2 SELLADOS. La entrega que no emitió leyó la fila ANTES de que la otra la sellara, así que la guarda del punto de llamada no la para: la tiene que parar la de DENTRO del cerrojo.
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:335:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · 🔴 ④f · ESPAÑA: cobrar el enlace de una factura sellada hace un mes NO la re-sella — cadena BYTE A BYTE
+not ok 13 - SCRUM-1330 · 🔴 ④f · ESPAÑA: cobrar el enlace de una factura sellada hace un mes NO la re-sella — cadena BYTE A BYTE
+  ---
+  duration_ms: 31.6466
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:341:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 LA CADENA PERSISTIDA HA CAMBIADO al cobrar el enlace de una factura ya sellada. Una factura sellada no se edita (regla 29 del máster).
+    + actual - expected
+    
+      [
+    +   'factura=F260001 · estado=sellado · huella=EA2B1A69854ADB373387DAACFB0D7E63B067BFDA7D6F07DC9D780A37C09E9DF7 · anterior="BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" · sello=2026-10-01T03:34:26.854Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-09-2026&importe=121.00 · anulacion=null',
+    -   'factura=F260001 · estado=sellado · huella=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA · anterior="" · sello=2026-09-01T10:00:00.123Z · qr=https://ejemplo.invalid/qr · anulacion=null',
+        'factura=F260002 · estado=sellado · huella=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB · anterior="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" · sello=2026-09-02T10:00:00.456Z · qr=https://ejemplo.invalid/qr · anulacion=null'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'factura=F260001 · estado=sellado · huella=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA · anterior="" · sello=2026-09-01T10:00:00.123Z · qr=https://ejemplo.invalid/qr · anulacion=null'
+    1: 'factura=F260002 · estado=sellado · huella=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB · anterior="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" · sello=2026-09-02T10:00:00.456Z · qr=https://ejemplo.invalid/qr · anulacion=null'
+  actual:
+    0: 'factura=F260001 · estado=sellado · huella=EA2B1A69854ADB373387DAACFB0D7E63B067BFDA7D6F07DC9D780A37C09E9DF7 · anterior="BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" · sello=2026-10-01T03:34:26.854Z · qr=https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B27000001&numserie=F260001&fecha=01-09-2026&importe=121.00 · anulacion=null'
+    1: 'factura=F260002 · estado=sellado · huella=BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB · anterior="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" · sello=2026-09-02T10:00:00.456Z · qr=https://ejemplo.invalid/qr · anulacion=null'
+  operator: 'deepStrictEqual'
+  stack: |-
+    exigirCadenaIntacta (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:133:10)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:358:3)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado ni cola
+not ok 14 - SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado ni cola
+  ---
+  duration_ms: 62.4292
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1330-una-sellada-no-se-resella.test.mjs:366:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 UNA FACTURA YA SELLADA HA VUELTO A ENTRAR EN `sellarTrasEmision`: se le ha reescrito el estado o se ha vuelto a encolar su alta para la AEAT.
+    + actual - expected
+    
+      {
+    +   cola: 2,
+    +   pasos: 2
+    -   cola: 1,
+    -   pasos: 1
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    pasos: 1
+    cola: 1
+  actual:
+    pasos: 2
+    cola: 2
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1330-una-sellada-no-se-resella.test.mjs:377:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 7
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4396.4202

@@ -120,6 +120,20 @@ export const SEND_ENDPOINTS_DECLARED: ReadonlyArray<SendEndpointDeclaration> = [
       'Aquí `sent` no es formato: si el correo no sale, el profesional TIENE que enterarse, porque ' +
       'el canal que esto sustituye (un mailto:) al menos le dejaba el texto delante.',
   },
+  {
+    // SCRUM-1318 · VIENE DE `SEND_ENDPOINTS_PENDING`. Estuvo aparcada desde SCRUM-128 porque
+    // respondía `{ok:true}` fijo; SCRUM-131 le dio contrato y la ficha se quedó puesta hasta que
+    // el plazo venció. No se movió por leer el código: `tests/scrum1318-resend-dice-si-salio.test.mjs`
+    // ejecuta la ruta con el proveedor de correo fallando y ve el `sent: false` en la respuesta.
+    method: 'POST',
+    path: '/admin/team/:id/resend',
+    shape: { kind: 'top-level' },
+    channel: 'email',
+    reason:
+      'sendSuccessBody/sendFailureBody directo (team.routes.ts, SCRUM-131). 200 siempre: la ' +
+      'invitación se regenera aunque el correo no salga; `sent` dice si se entregó, con ' +
+      '`email_send_failed` o `not_configured` como motivo.',
+  },
 ];
 
 export interface SendEndpointPending {
@@ -138,21 +152,24 @@ export interface SendEndpointPending {
  * se arreglen — mismo mecanismo que PUBLIC_ACCESS_PENDING (Guard A, SCRUM-98).
  */
 export const SEND_ENDPOINTS_PENDING: ReadonlyArray<SendEndpointPending> = [
-  {
-    method: 'POST',
-    path: '/admin/team/:id/resend',
-    duda:
-      'Reenvía invitación de equipo por email. inviteTeamMember() (auth.service.ts) traga el ' +
-      'error de sendEmail en un catch que solo hace console.error — nunca lo relanza. La ruta ' +
-      'responde {ok:true} SIEMPRE, sin campo `sent`. Misma clase de bug que el cluster ' +
-      '114-127, en invitaciones en vez de documentos a cliente. No es uno de los 9 de ' +
-      'SCRUM-126 (no toca sendOutcome.ts) — encontrado en el recon de este guard.',
-    ticket: 'SCRUM-131',
-  },
+  // ✅ VACÍA desde SCRUM-1318 (1-oct-2026). La única entrada que tuvo, `POST /admin/team/:id/resend`
+  // (ticket SCRUM-131), decía: «inviteTeamMember() traga el error de sendEmail en un catch que solo
+  // hace console.error. La ruta responde {ok:true} SIEMPRE, sin campo `sent`». SCRUM-131 arregló
+  // las dos cosas y NO sacó la entrada de aquí, así que la ficha siguió describiendo un defecto que
+  // ya no existía hasta que su plazo venció y tumbó la tanda. Ahora está en SEND_ENDPOINTS_DECLARED.
+  //
+  // ⚠️ Lo que eso enseña de esta lista: nada comprueba que la `duda` de una entrada siga siendo
+  // CIERTA. Quien cierre el ticket de una aparcada tiene que sacarla en ese mismo cambio.
 ];
 
-/** Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al cerrar cada ticket. */
-export const SEND_ENDPOINTS_PENDING_MAX = 1;
+/**
+ * Tope del ratchet: la lista puede menguar, JAMÁS crecer. Bajarlo al cerrar cada ticket.
+ *
+ * 1 → 0 (SCRUM-1318): sale `POST /admin/team/:id/resend`, ya con contrato. En el mismo commit que
+ * la saca, porque el ratchet exige igualdad exacta: con 0 entradas y el tope en 1 quedaría un
+ * hueco libre para aparcar una ruta nueva sin que el número subiera.
+ */
+export const SEND_ENDPOINTS_PENDING_MAX = 0;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden aparcadas. Mover esta

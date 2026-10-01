@@ -24,6 +24,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
@@ -31,35 +32,17 @@ const VISTA_CLIENTES = path.join(DIR_JS, 'customersView.js');
 const VISTA_DOC = path.join(DIR_JS, 'quotesView.js');
 
 /**
- * Cuántos marcadores declara el censo de SCRUM-402 para un fichero. **Por AST**: se lee el objeto
- * `CENSO` de su test, no se busca la cadena — una mención en un comentario (y ese fichero está
- * lleno de comentarios que nombran ficheros) daría un número inventado.
+ * Cuántos marcadores declara el censo de SCRUM-402 para un fichero.
  *
- * Se lee el FUENTE en vez de importarlo porque importar un `.test.mjs` CORRERÍA sus pruebas.
+ * 🔴 SCRUM-1293 (1-oct-2026) · la lista del censo ya no es un objeto escrito dentro del test de
+ * SCRUM-402: vive en `scripts/_marcadores-pendientes-declarados.json` (sección `panel`). Antes
+ * esto la leía por AST del FUENTE de aquel test; ahora la lee del MISMO cargador que usa él, así
+ * que sigue siendo UN solo número en UN solo sitio. El cargador no devuelve nunca una lista
+ * vacía: si no puede leer, lanza, y este guard cae en rojo en vez de comparar contra cero —
+ * lo mismo que hacía el «GUARD CIEGO» que vivía aquí.
  */
 function declaradosEn402(fichero) {
-  const ruta = path.join(RAIZ, 'tests/scrum402-marcador-no-se-pinta.test.mjs');
-  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
-  let censo = null;
-  const v = (n) => {
-    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'CENSO') {
-      let e = n.initializer;
-      // `Object.freeze({...})`: el objeto va dentro de la llamada.
-      if (e && ts.isCallExpression(e) && e.arguments.length) e = e.arguments[0];
-      if (e && ts.isObjectLiteralExpression(e)) censo = e;
-    }
-    ts.forEachChild(n, v);
-  };
-  v(sf);
-  assert.ok(censo,
-    '🔴 GUARD CIEGO: no encuentro el objeto `CENSO` en el test de SCRUM-402. Si se ha renombrado, '
-    + 'esta comprobación dejó de mirar nada y cualquier número le parecería bien.');
-  for (const p of censo.properties) {
-    if (!ts.isPropertyAssignment(p)) continue;
-    const clave = ts.isStringLiteral(p.name) || ts.isIdentifier(p.name) ? p.name.text : null;
-    if (clave === fichero) return Number(p.initializer.getText());
-  }
-  return 0; // no está en el censo = no debe pintar ninguno
+  return marcadoresDeclarados().panel[fichero] ?? 0; // no está en el censo = no debe pintar ninguno
 }
 
 const leer = (p) => fs.readFileSync(p, 'utf8');

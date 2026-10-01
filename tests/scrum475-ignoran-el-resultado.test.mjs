@@ -132,8 +132,10 @@ test('SCRUM-475 · 🔴 SUELO: el censo VE las ocho llamadas, o su número no si
     `🔴 la lista DERIVADA de emisores trae ${EMISORES.length} nombres y eran DIECISIETE. Con menos, `
     + 'el censo mira a menos sitios y su silencio no vale nada — que es EXACTAMENTE cómo se '
     + 'perdieron los cuatro mudos al unificar el emisor (SCRUM-475 fase 2).');
-  assert.ok(LLAMADORES.length >= 31,
-    `🔴 el censo encuentra ${LLAMADORES.length} llamadas a un emisor y eran TREINTA Y UNA. Con la `
+  // ✅ 31 → 30 por SCRUM-1202 (28-sep-2026): se retiró POST /quote/:token/accept y su llamada a
+  // `sendMerchantQuoteAcceptedEmail`. Bajada por código BORRADO, declarada a propósito.
+  assert.ok(LLAMADORES.length >= 30,
+    `🔴 el censo encuentra ${LLAMADORES.length} llamadas a un emisor y eran TREINTA. Con la `
     + 'propagación encerrada en un fichero salían 14 — el mismo árbol, menos de la mitad.');
 
   // 🔴 Y LAS OCHO, UNA A UNA. Esto es lo que impide que la bajada de 8 a 1 sea un censo ciego: si

@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 485. Tablas: 31.
+-- Columnas esperadas: 511. Tablas: 33.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -323,6 +323,7 @@ WITH esperado (tabla, columna) AS (
     ('merchants','created_at'),
     ('merchants','criterio_caja'),
     ('merchants','default_currency'),
+    ('merchants','domicilio_fiscal_foral'),
     ('merchants','email'),
     ('merchants','flags'),
     ('merchants','free_months_earned'),
@@ -332,9 +333,12 @@ WITH esperado (tabla, columna) AS (
     ('merchants','id'),
     ('merchants','invoice_series_prefix'),
     ('merchants','invoice_series_year'),
+    ('merchants','invoice_start_seq'),
+    ('merchants','invoice_start_year'),
     ('merchants','is_platform_owner'),
     ('merchants','legal_name'),
     ('merchants','lifecycle_emails_sent'),
+    ('merchants','lleva_libros_por_sii'),
     ('merchants','logo_url'),
     ('merchants','name'),
     ('merchants','next_albaran_number'),
@@ -500,6 +504,28 @@ WITH esperado (tabla, columna) AS (
     ('team_members','role'),
     ('team_members','status'),
     ('team_members','updated_at'),
+    ('vf_flujo_obligado','obligado_nif'),
+    ('vf_flujo_obligado','siguiente_envio_desde'),
+    ('vf_flujo_obligado','tiempo_espera_envio_s'),
+    ('vf_flujo_obligado','ultimo_envio_id'),
+    ('vf_flujo_obligado','updated_at'),
+    ('vf_submissions','attempts'),
+    ('vf_submissions','created_at'),
+    ('vf_submissions','csv'),
+    ('vf_submissions','estado_registro'),
+    ('vf_submissions','id'),
+    ('vf_submissions','invoice_id'),
+    ('vf_submissions','last_envio_id'),
+    ('vf_submissions','last_error'),
+    ('vf_submissions','last_sent_at'),
+    ('vf_submissions','merchant_id'),
+    ('vf_submissions','next_attempt_at'),
+    ('vf_submissions','obligado_nif'),
+    ('vf_submissions','registro_xml'),
+    ('vf_submissions','status'),
+    ('vf_submissions','subsanar'),
+    ('vf_submissions','tipo_operacion'),
+    ('vf_submissions','updated_at'),
     ('whatsapp_messages','cost_estimate'),
     ('whatsapp_messages','created_at'),
     ('whatsapp_messages','customer_id'),

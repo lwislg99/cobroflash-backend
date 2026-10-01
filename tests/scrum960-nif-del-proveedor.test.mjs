@@ -82,7 +82,10 @@ const NIF_MALO = 'A58818502';
 function pedir(metodo, ruta, cuerpo) {
   escrituras.length = 0;
   return new Promise((resolve, reject) => {
-    const req = { method: metodo, url: ruta, body: cuerpo === undefined ? {} : cuerpo, merchantId: MERCHANT_ID, headers: {} };
+    // SCRUM-1317: `userRole: 'admin'`. Este arnés describía a un llamante SIN rol, y desde que las
+    // rutas de `/admin/providers` exigen admin ese llamante ya no existe (daba 403 en los 7 casos).
+    // Es el fixture el que cambia; ninguna aserción de este fichero se ha tocado.
+    const req = { method: metodo, url: ruta, body: cuerpo === undefined ? {} : cuerpo, merchantId: MERCHANT_ID, userRole: 'admin', headers: {} };
     const res = {
       statusCode: 200,
       status(c) { this.statusCode = c; return this; },

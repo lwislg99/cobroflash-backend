@@ -32,11 +32,14 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { portadoresDelFlag, censoCopy, NOMBRE_FLAG, SEMILLA_FLAG, SEMILLA_TIPO } from './_censo-copy-vs-flag.mjs';
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 
 // Se calcula UNA vez: cada cierre recorre 355 ficheros y no cambia entre aserciones.
 const cierre = portadoresDelFlag(RAIZ, SEMILLA_FLAG);
@@ -168,7 +171,78 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // anclaje por SU literal, cada una en un fichero distinto (expensesView.js / jobDetailView.js).
 // Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
 // el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 155 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🟢 flag 16 → 17 · 28-sep-2026 (SCRUM-1164, #3) · UN LITERAL QUE EL CENSO NO VEÍA, y ahora lo ve
+// en su categoría correcta. «💡 "100% al aceptar" genera la factura cuando el cliente firma.»
+// (`homeView.js`, hoja de presupuesto rápido) vivía DENTRO de la plantilla grande del modal, y el
+// censo no la lee (en `origin/main` no aparece en `visibles`: medido con `censoCopy` sobre los dos
+// árboles). Ahora es una constante que se calla en `receipt` (`appModoEmision`), así que el censo
+// la encuentra y la clasifica como «flag» — que es lo que ES: el modo de emisión elige si sale.
+// `aPelo` no baja porque nunca la contó. No se toca `PENDIENTES_DE_FIRMA`: no se ha firmado nada.
+// 155 → 156 · 28-sep-2026 (SCRUM-1216b) · «Facturas recibidas» (`facturasRecibidasView.js:31`,
+// `titulo: rotulo('Facturas recibidas')`, SCRUM-1040). **NO ES COPY NUEVA:** el fichero no cambió
+// (diff vacío entre 1216a y 1216b), y el literal ya era visible (`title.textContent = COPY.titulo`),
+// pero el censo no lo veía. Lo que cambió es la PASADA 0 del censo, que junta los nombres que se
+// LLAMAN dentro de un sumidero: 1216b pinta `${T.titulo(anio)}` en un `innerHTML` (la pregunta de
+// la serie, firmada en SCRUM-1216 comentario 17347), así que `titulo` entró en esa lista y la
+// clave homónima de facturas recibidas se volvió visible al instrumento. Es la misma ceguera por
+// copy centralizada que describió SCRUM-776, curada por accidente. Es un título de pantalla fijo:
+// no depende de flag ni de tipo, así que «a pelo» es su categoría. AISLADO con el propio censo: el
+// diff de `visibles` entre 1216a y 1216b es EXACTAMENTE esa línea, y ninguna de las dos pantallas de
+// la serie añade una. Renombrar `titulo` para que volviera a no verse sería apagar el instrumento.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔀 CONFLICTO DE MERGE (SCRUM-1164 × SCRUM-1216b), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos (`homeView.js` / `facturasRecibidasView.js`).
+// REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main 0afa87cd + la rama):
+// { flag: 17, tipo: 7, aPelo: 156 } — el flag de 1164 y el «a pelo» de 1216b, cada uno por su lado.
+// 🟢 flag 17 → 20 · tipo 7 → 11 · aPelo 156 → 154 · 28-sep-2026 (SCRUM-1257) · UN ARREGLO, y aislado
+// con el propio censo: el diff de `visibles` entre `origin/main` 4fd0b309 y la rama son EXACTAMENTE
+// estas líneas (textos firmados en SCRUM-1257 comentario 17444).
+//   flag +3 · `invoicesView.js`, el vacío de Facturas: «Aquí verás tus facturas», «Cuando un cliente
+//            acepte un presupuesto, sus facturas aparecerán aquí.» y «Por ahora, YaQu no genera
+//            facturas desde tu cuenta.». Los elige `window.appModoEmision === 'receipt'`, que es
+//            justo lo que se arreglaba: antes el vacío prometía el documento a todos. (El texto viejo
+//            no estaba en el censo: no contaba ni en «a pelo».)
+//   tipo +4, aPelo −2 · «🧾 Ver justificante» (`quotesDetailView.js`) y el tooltip de la reclamación
+//            del banco (`invoiceDetailView.js`) eran «a pelo» y ahora eligen su palabra por el TIPO
+//            del documento (`tipoDeFactura` / `isReceipt`), con su pareja «factura» al lado: +2 y +2.
+// Nada de esto va a `PENDIENTES_DE_FIRMA`: está firmado.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴🔴 flag 17 → 4 · aPelo 156 → 162 · 28-sep-2026 (SCRUM-825 D1, firma del fundador en SCRUM-825
+// comentario 17446). OJO, PORQUE ES LO CONTRARIO DE LO QUE PARECE: EL NÚMERO EMPEORA MIENTRAS EL
+// CÓDIGO MEJORA. «a pelo» sube 6 y NO ES DEUDA.
+//
+// Se retiró la rama «justificante» del panel, que desde SCRUM-1027 no veía nadie. Aislado con el
+// propio censo (categorías del árbol de `origin/main` d216084a contra el de la rama):
+//   · flag −7, desaparecen: los seis rótulos «justificante» de `rotulosDelDocumento` y la guía
+//     «¿Para quién es el justificante?» de `quotesView.js`. Es el borrado firmado.
+//   · flag −6 / aPelo +6: los cinco rótulos «factura» de `rotulosDelDocumento` («Facturas»,
+//     «Nº factura», «Nueva factura», «Emitir factura», «Factura emitida») y el «Nueva factura» del
+//     botón de `invoicesView.js` pierden la vía `WINDOW::appDocumentoSuelto`, porque ya no hay ternario.
+//     🔴 PUNTO CIEGO DEL CENSO: EN EJECUCIÓN SIGUEN DETRÁS DE LA PUERTA `appDocumentoSuelto !== 'no'`
+//     (el botón no se pinta en `receipt`), pero el censo solo ve la condición PEGADA al literal. El
+//     censo ha perdido vista; el código no ha perdido calidad.
+//   · Y «+ Nuevo justificante» sale también de los no legibles (ver `NO_LEGIBLES_AL_MEDIR`).
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔀 CONFLICTO DE MERGE (SCRUM-1257 × SCRUM-825 D1), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos. REGENERADO con el propio censo sobre el árbol YA FUSIONADO,
+// no sumado a mano (precedente 1155×1160 y 1164×1216b).
+// { flag: 7, tipo: 11, aPelo: 160 } — medido con `censoCopy` sobre origin/main 6112855b + la rama. Cuadra
+// con la suma de las dos entradas (20−13, 11, 154+6), que se usa como COMPROBACIÓN, no como fuente.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 155 · 28-sep-2026 (SCRUM-1232) · «1 factura» (`libroRegistroView.js`, `recuento`). ES COPY
+// NUEVA Y FIRMADA: el recuento decía «1 facturas» y pasa a `n === 1 ? '1 factura' : n + ' facturas'`,
+// firmado por el fundador sólo junto al filtro de justificantes del libro (SCRUM-1232, comentario
+// 17435). AISLADO: contra `origin/main` = 6112855b, la única diferencia de `public/` de la rama es
+// esa línea; el literal que ya existía (`' facturas'`) se queda y entra UNO nuevo. Es el recuento
+// fijo de un libro que sólo lista facturas: no depende de flag ni de tipo, así que «a pelo» es su
+// categoría. Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔀 CONFLICTO DE MERGE (SCRUM-825 D1 × SCRUM-1232), 29-sep-2026: la entrada de SCRUM-1232 (de
+// abajo, 154 → 155) entró en main mientras esta rama llevaba 160. REGENERADO con el propio censo
+// sobre el árbol YA FUSIONADO (origin/main 837a9e53 + la rama), no sumado a mano:
+// { flag: 7, tipo: 11, aPelo: 161 }. Cuadra con la suma (7, 11, 160+1), que se usa como COMPROBACIÓN.
+const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 161 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -217,13 +291,26 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // de comentario+constantes que hay ENCIMA de este botón pierde 3 líneas netas en DOS hunks
   // (un `⚠️`→`✅` de 19→17 líneas y un `window.INV_*` de 12→11). Cifra MEDIDA con el propio censo
   // sobre el árbol resultante (no deducida del diff, que sólo enseña -2 en el primer hunk).
-  const boton = en('public/dashboard/js/invoicesView.js', 220);
-  assert.equal(boton.length, 1, 'no se encuentra el rótulo «+ Nuevo justificante» donde se midió');
-  assert.equal(boton[0].texto, '+ Nuevo justificante');
+  //
+  // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · EL POSITIVO SE RE-ANCLA. Era
+  // «+ Nuevo justificante» (`invoicesView.js:220`), y ese literal se ha BORRADO con su rama muerta:
+  // un control anclado en algo que ya no existe está muerto y da verdes que no ha ganado. Se ancla en
+  // el literal que depende del modo DE VERDAD, de los cuatro que quedan: la nota de condiciones de la
+  // hoja de presupuesto rápido de `homeView.js`, que se calla en `receipt` con
+  // `window.appModoEmision === 'receipt'` (SCRUM-1164). Los otros tres (`jobDetailView.js`) heredan la
+  // dependencia por `jobNextAction` y su condición local no mira el modo: servirían peor de control.
+  //
+  // SCRUM-1317 (1-oct-2026) · 864 → 885: el Inicio del operario mete 31 líneas y quita 10 POR ENCIMA
+  // de la nota (`git diff --numstat` de `homeView.js`: 31 10). Cifra MEDIDA, no deducida, y se vuelve
+  // a medir igual: `grep -n '"100% al aceptar" genera' public/dashboard/js/homeView.js` da una sola
+  // línea, y es ésta. Segundo re-anclaje por posición de este control (el primero, SCRUM-1124).
+  const boton = en('public/dashboard/js/homeView.js', 885);
+  assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
+  assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
-    'el censo no ve que «+ Nuevo justificante» lo elige `window.appDocumentoSuelto`. Con el ' +
+    'el censo no ve que la nota de condiciones la calla `window.appModoEmision`. Con el ' +
     'positivo caído, un «ninguno depende» significaría «no supe mirar».');
-  assert.equal(boton[0].via, 'WINDOW::appDocumentoSuelto');
+  assert.equal(boton[0].via, 'WINDOW::appModoEmision');
 
   // NEGATIVO, del árbol real: un rótulo del panel que NO deriva del flag.
   //
@@ -233,7 +320,12 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-918 · 349 → 365: el arranque sin red añade 16 líneas antes en app.js (medido, no deducido).
   // SCRUM-919 · 365 → 366 al fusionar: `app.js` gana además la línea de `appParteAyudas` por encima.
   // SCRUM-1075 · 366 → 367: `app.js` gana `window.appTeamMemberId` por encima (medido, no deducido).
-  const menu = en('public/dashboard/js/app.js', 367);
+  // SCRUM-825 D1 · 367 → 370: la normalización de `appDocumentoSuelto` gana su comentario (y pierde la
+  // lista de dos valores) por encima. Medido con el propio censo sobre el árbol resultante, no contado.
+  // SCRUM-1317 · 370 → 386: `app.js` gana por encima las 8 líneas que le quitan Proveedores e Informes
+  // de la barra al operario y las 8 netas del guard de rol de `case 'reports'`. Medido, no deducido:
+  // `grep -n "textContent = 'Facturas'" public/dashboard/js/app.js` da una sola línea, y es ésta.
+  const menu = en('public/dashboard/js/app.js', 386);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
@@ -284,7 +376,21 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // dos constantes compuestas en la misma plantilla HTML, así que el censo no puede afirmar desde el
 // fuente cuál es el texto final visible (aunque las DOS mitades sean literales firmados sueltos).
 // No se duplica el rótulo en línea para bajar el número: el mismo motivo que 31→32.
-const NO_LEGIBLES_AL_MEDIR = 33;
+// 28-sep-2026 · 33 → 34, MEDIDO (SCRUM-1164, #3). Es el mismo literal que sube `flag` 16 → 17
+// (ver `VEREDICTO_AL_MEDIR`): antes el censo no lo veía; ahora lo ve, y llega al `innerHTML` del
+// modal por `${notaCondiciones}`, así que no puede afirmar el texto final desde el fuente. Es el
+// límite del instrumento con un literal que ANTES ni siquiera contaba, no un literal nuevo.
+// 28-sep-2026 · 34 → 37, MEDIDO (SCRUM-1257). Son los tres literales `flag` de arriba: llegan al
+// `innerHTML` del vacío de Facturas por `tituloVacio`/`cuerpoVacio`, así que el censo no puede afirmar
+// el texto final desde el fuente. No se duplican en línea para bajar el número: el motivo de 31→32.
+// 28-sep-2026 · 34 → 33, MEDIDO (SCRUM-825 D1, comentario 17446). BAJA, y no por medición sino por
+// borrado: «+ Nuevo justificante» (`invoicesView.js:220`) era una construcción que el censo no sabía
+// leer, y se ha retirado con su rama muerta.
+// 🔀 CONFLICTO DE MERGE (SCRUM-1257 × SCRUM-825 D1), 28-sep-2026: las dos entradas de arriba
+// tocan este anclaje por literales distintos. REGENERADO con el propio censo sobre el árbol YA FUSIONADO,
+// no sumado a mano (precedente 1155×1160 y 1164×1216b).
+// 36 — medido sobre el árbol fusionado (37 de SCRUM-1257 − 1 de SCRUM-825 D1, como comprobación).
+const NO_LEGIBLES_AL_MEDIR = 36;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
@@ -302,91 +408,43 @@ test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece so
 // 3 · 🔴 EL ROJO QUE DECIDE — la contradicción DENTRO DE UN MISMO GESTO
 // ─────────────────────────────────────────────────────────────────────────────────────────
 /**
- * EL FLUJO DE LA FACTURA SUELTA: el botón de la pantalla de Facturas y el modal que abre.
- * Un solo gesto del profesional, dos ficheros.
+ * 🔴 SCRUM-825 D1 (28-sep-2026) · RE-APUNTADO, NO RETIRADO.
  *
- * 🔴 LOS TRES RÓTULOS INCUMPLIDORES, DECLARADOS UNO A UNO — no un número. Están escritos a pelo
- * y con el flag OFF le dicen «factura» a quien emite justificantes. NO SE ARREGLAN AQUÍ: el
- * microcopy lo firma el asesor (regla 30) y este ticket MIDE. Se atan para que no crezcan.
+ * ANTES: el flujo del documento suelto (botón de Facturas + página) «no hablaba con una sola voz»
+ * porque en modo JUSTIFICANTE el botón decía «justificante» y la página tenía rótulos a pelo que
+ * decían «factura». Se ataban uno a uno en `PENDIENTES_DE_FIRMA` para que no crecieran.
  *
- * El día que uno de ellos pase a derivar del flag, este test cae pidiendo que se borre de la
- * lista — así el arreglo no puede entrar sin dejar constancia. Y si aparece un CUARTO rótulo a
- * pelo en el flujo, también cae.
+ * El modo justificante ya no existe (SCRUM-1027; su rama se retiró por firma del fundador, SCRUM-825
+ * comentario 17446). Pero el DEFECTO —que el flujo le hable de «factura» a quien no la va a emitir—
+ * seguía VIVO por otra vía, medido ejecutándolo: la RUTA `#invoices-new` no miraba el modo, y un
+ * merchant en `receipt` veía la página entera. Así que el test no se retira: se apunta a lo que ahora
+ * garantiza la sola voz, que el flujo SOLO SE ABRE para quien emite factura. Tiene dos puertas y las
+ * dos tienen que cerrarse en el modo 'no':
+ *   · el BOTÓN de la lista (`invoicesView.js`): se pinta solo si `appDocumentoSuelto !== 'no'`;
+ *   · la RUTA (`app.js`, `case 'invoices-new'`): con `appDocumentoSuelto === 'no'` pinta Facturas.
+ *   (La RUTA se ejecuta de verdad en `scrum600b`; aquí se exige que las dos puertas existan.)
+ *
+ * 🔴 LO QUE DEJA DE ESTAR VIGILADO, dicho para quien lo tenga que recuperar: los rótulos escritos
+ * «a pelo» DENTRO de la página del documento suelto (`quotesView.js`) ya no se atan uno a uno. Con
+ * las dos puertas cerradas, esa página solo la ve quien emite factura, así que un «factura» a pelo
+ * es cierto allí. Si algún día vuelve un segundo documento suelto que no sea factura, la lista vuelve
+ * con él: estaba en `PENDIENTES_DE_FIRMA` de este fichero, en `origin/main` d216084a.
  */
-const PENDIENTES_DE_FIRMA = [
-  // SCRUM-776 · SE VACIÓ DE SEIS A UNO. Los cinco que faltan ya derivan de
-  // `rotulosDelDocumento`, y se han borrado de aquí EN EL MISMO COMMIT que los arregla — que es
-  // lo que este trinquete exige y por lo que sirve de algo.
-  //
-  // 🔴 SCRUM-867 · Y DE UNO A NINGUNO, PERO NO POR FIRMA. El que quedaba —el `aria-label` «Cliente
-  // al que facturas», que el asesor no firmó porque «cliente al que justificas» no existe en
-  // castellano— vivía en `nuevaFacturaModal.js`, y ese modal se retiró por muerto. La deuda se
-  // cierra por DESAPARICIÓN de la pantalla, no porque nadie la firmara: si el texto vuelve al
-  // panel, `scrum776` lo caza.
-  //
-  // 🔴 LO QUE QUEDA DECLARADO es de otra clase, y por eso lleva su motivo: el censo lo ve «a pelo»
-  // porque contiene la diana, pero NO nombra el documento que se emite.
-  // SCRUM-915d · la línea pasa de 672 a 885 porque el esqueleto de los pasos se escribe encima;
-  // el texto y el motivo no cambian. Cifra MEDIDA sobre el árbol resultante, no deducida.
-  // SCRUM-915e2 · y de 885 a 889 por lo mismo: el «Ver documento» del pie de los pasos se escribe
-  // 150 líneas más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`), y la cifra
-  // sale del propio censo sobre el árbol resultante —dice 889— no de contar el diff. El texto es
-  // byte a byte el mismo y el motivo sigue siendo el suyo.
-  // SCRUM-915i · y de 889 a 890: la cabecera pierde el subtítulo y gana la fila del título. Medido
-  // con el propio censo sobre el árbol resultante (el rojo decía `quotesView.js:890`), no contado.
-  // SCRUM-915g · y de 890 a 911: la fila «Ajustes del documento» del justificante se escribe 21 líneas
-  // más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`): el texto es byte a byte el
-  // mismo y el motivo sigue siendo el suyo. Cifra medida con el propio censo sobre el árbol resultante
-  // (21-sep-2026; el rojo decía `quotesView.js:911`), no contada del diff. Y el censo NO marca como
-  // «a pelo» ninguno de los rótulos que entran con 915g («Ajustes del documento», «IVA por defecto»):
-  // ninguno nombra el documento que se emite.
-  // SCRUM-915k · y de 911 a 909: se retira la constante `MARCA_DESC_LINEA` (y su línea en blanco) de
-  // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
-  // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
-  // contada ni deducida: al fusionar, el generador la regeneró.
-  // SCRUM-915j · y de 909 a 935: la lista de clientes por botones y sus funciones se escriben ANTES de
-  // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
-  // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
-  // rojo decía `quotesView.js:935`), no contada del diff.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
-    motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
-      + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
-];
+test('SCRUM-601 · 🔴 el flujo del documento suelto solo se abre para quien emite factura: sus DOS puertas se cierran en «no»', () => {
+  const vista = soloEjecutable(leer('public/dashboard/js/invoicesView.js'));
+  assert.match(vista, /if\s*\(\s*window\.appDocumentoSuelto\s*!==\s*'no'\s*\)/,
+    '🔴 el BOTÓN de crear factura suelta ya no se esconde en el modo \'no\'.');
 
-test('SCRUM-601 · 🔴 el flujo del documento suelto NO habla con una sola voz (defecto ATADO)', () => {
-  // 🔴 SCRUM-867 · EL FLUJO SE MUDÓ, Y EL TRINQUETE CON ÉL. Hasta ahora el flujo eran el botón de
-  // Facturas y el MODAL que abría. Retirado el modal, el gesto termina en la PÁGINA del documento
-  // suelto: es ahí donde un rótulo nuevo escrito a pelo le diría «factura» a quien emite
-  // justificantes. Vigilar el fichero retirado sería vigilar un sitio donde ya no puede pasar nada.
-  const FLUJO = 'public/dashboard/js/quotesView.js';
+  const app = soloEjecutable(leer('public/dashboard/js/app.js'));
+  const caso = (app.match(/case 'invoices-new':([\s\S]*?)break;/) || [])[1] || '';
+  assert.ok(caso, '🔴 no existe el `case` de `invoices-new` en el router');
+  assert.match(caso, /window\.appDocumentoSuelto\s*===\s*'no'/,
+    '🔴 la RUTA `#invoices-new` no mira el modo: un merchant en `receipt` que abre el enlace ve la '
+    + 'página de crear factura y se come un 409 al pulsar (SCRUM-825, medido).');
 
-  // Premisa: el botón que ABRE este modal sí deriva del flag. Si dejara de hacerlo, la
-  // contradicción desaparecería por el lado malo y este test tiene que enterarse.
-  //
-  // SCRUM-1124 (26-sep-2026) · 223 → 220: mismo desplazamiento y mismo motivo que el anclaje de
-  // arriba en este fichero (línea ~193): 3 líneas netas menos en el bloque de comentario+
-  // constantes que precede al botón. Medido con el propio censo, no deducido.
-  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 220);
-  assert.ok(boton && boton.dependeDelFlag,
-    'el rótulo del botón ha dejado de derivar del flag: ya no hay «uno sí y otro no», hay «ninguno».');
-
-  const aPelo = censo.visibles
-    .filter((v) => v.fichero === FLUJO && !v.dependeDelFlag)
-    .map((v) => ({ fichero: v.fichero, linea: v.linea, texto: v.texto }));
-
-  const clave = (x) => `${x.fichero}:${x.linea}:${x.texto}`;
-  const declarados = new Set(PENDIENTES_DE_FIRMA.map(clave));
-  const nuevos = aPelo.filter((x) => !declarados.has(clave(x)));
-  const arreglados = PENDIENTES_DE_FIRMA.filter((x) => !aPelo.some((y) => clave(y) === clave(x)));
-
-  assert.deepEqual(nuevos, [],
-    '🔴 RÓTULO NUEVO ESCRITO A PELO en el flujo de la factura suelta. Con `INVOICING_ES_ENABLED` ' +
-    'en su valor por defecto, un merchant ES real emite JUSTIFICANTES y este texto le dirá ' +
-    '«factura». No lo arregles por tu cuenta: el microcopy lo firma el asesor (regla 30).\n  ' +
-    nuevos.map(clave).join('\n  '));
-
-  assert.deepEqual(arreglados, [],
-    '🟢 Uno de los rótulos declarados YA DERIVA DEL FLAG. Bórralo de `PENDIENTES_DE_FIRMA` en el ' +
-    'mismo commit que lo arregla, para que la lista siga diciendo la verdad:\n  ' +
-    arreglados.map(clave).join('\n  '));
+  // CONTROL: el mismo detector NO encuentra la puerta en un `case` que no la tiene.
+  const sinPuerta = "case 'invoices-new':\n  viewTitle.textContent = 'x';\n  renderDocumentoSueltoView(viewContainer);\n  break;";
+  const casoSin = (sinPuerta.match(/case 'invoices-new':([\s\S]*?)break;/) || [])[1];
+  assert.doesNotMatch(casoSin, /window\.appDocumentoSuelto\s*===\s*'no'/);
 });
+

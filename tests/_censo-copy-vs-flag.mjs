@@ -317,6 +317,9 @@ function sumideroDe(nodo, sf) {
     if (ts.isCallExpression(p) && p.arguments.includes(n)) {
       const e = p.expression;
       const nom = ts.isPropertyAccessExpression(e) ? e.name.text : e.getText(sf);
+      // SCRUM-1233 · el RESPALDO de `mensajeParaPersona(err, RESPALDO)` es el valor que se pinta,
+      // igual que el lado derecho de un `||` (ver `hojasDe`): se sigue subiendo.
+      if (nom === 'mensajeParaPersona' && p.arguments[1] === n) { hijo = n; n = p; continue; }
       return LLAMADAS.has(nom) ? { clase: 'LLAMADA', detalle: nom, nodoValor: n } : null;
     }
     if (!sigueSiendoValor) return null;
@@ -419,6 +422,14 @@ function hojasDe(nodo, sf) {
     if (ts.isConditionalExpression(n)) { visitar(n.whenTrue); visitar(n.whenFalse); return; }
     if (ts.isBinaryExpression(n) && [ts.SyntaxKind.PlusToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(n.operatorToken.kind)) {
       visitar(n.left); visitar(n.right); return;
+    }
+    // SCRUM-1233 · `mensajeParaPersona(err, RESPALDO)` (api.js) ES `err.data.message || RESPALDO`:
+    // se lee igual que el `||` de arriba. Sin esto, pasar un aviso por el helper sacaba su texto
+    // aprobado del censo (161 → 160 «a pelo») sin que la pantalla dejara de pintarlo.
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'mensajeParaPersona'
+      && n.arguments.length === 2) {
+      dinamicas.push(n.arguments[0].getText(sf).replace(/\s+/g, ' ').slice(0, 80));
+      visitar(n.arguments[1]); return;
     }
     dinamicas.push(n.getText(sf).replace(/\s+/g, ' ').slice(0, 80));
   };

@@ -52,8 +52,11 @@ async function initApp() {
   window.appModoEmision =
     ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
 
-  window.appDocumentoSuelto =
-    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+  // 🔴 SCRUM-825 D1 (firma del fundador, SCRUM-825 comentario 17446) · el valor 'justificante' SALE del
+  // contrato. Desde SCRUM-1027 el servidor no lo manda nunca (`modoDocumentoSuelto` solo devuelve
+  // 'factura' o 'no'; ejecutado en los tres modos, docs/master/SCRUM-1257.md §1257c). Si algún día
+  // llegara, cae a 'no' y el botón de crear no se pinta: fallar cerrado, no leerlo como factura.
+  window.appDocumentoSuelto = me.documentoSuelto === 'factura' ? 'factura' : 'no';
 
   // SCRUM-293 (③a) · las opciones de retención, tal y como las manda el CUBO del dominio. El
   // front es vanilla y no puede importar de `src/`: si esta lista no viajara, la única forma de
@@ -151,6 +154,14 @@ async function initApp() {
     // alta rápida, que no se construye hasta que exista Expense.teamMemberId.
     const expensesNav = document.querySelector('.nav-item[data-view="expenses"]');
     if (expensesNav) expensesNav.style.display = 'none';
+    // SCRUM-1317: Proveedores e Informes salen de la barra del operario ANTES de cerrarle sus
+    // rutas (`/admin/providers`, `/admin/metrics/funnel|services|whatsapp`). Informes ya le
+    // fallaba desde SCRUM-55 (`/admin/reports` exige admin en el montaje) con la entrada a la
+    // vista: una entrada de menú que lleva a un 403 es peor que no tenerla (SCRUM-1312).
+    ['providers', 'reports'].forEach((vista) => {
+      const el = document.querySelector(`.nav-item[data-view="${vista}"]`);
+      if (el) el.style.display = 'none';
+    });
   }
 
   // Badge de solicitudes pendientes
@@ -328,9 +339,17 @@ async function initApp() {
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
+      // SCRUM-1317: guard como en 'settings' — todo lo que pinta Informes es admin en el servidor
+      // (/admin/reports desde SCRUM-55, /admin/metrics/funnel|services|whatsapp desde este ticket).
       case 'reports':
-        viewTitle.textContent = 'Informes';
-        if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
+        if (window.appUserRole !== 'admin') {
+          viewTitle.textContent = 'Inicio';
+          renderHomeView(viewContainer);
+          view = 'home';
+        } else {
+          viewTitle.textContent = 'Informes';
+          if (typeof renderReportsView === 'function') renderReportsView(viewContainer);
+        }
         break;
       case 'templates':
         viewTitle.textContent = 'Plantillas';
@@ -381,8 +400,22 @@ async function initApp() {
       // así que con la llamada de tres argumentos montaba esta ruta SIN el tercero — o sea,
       // pintaba el PRESUPUESTO y contaba sus marcadores como si fueran de aquí. Medido.
       case 'invoices-new':
-        viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
-        renderDocumentoSueltoView(viewContainer);
+        // 🔴 SCRUM-825 (28-sep-2026) · LA RUTA FALLA CERRADO, COMO EL BOTÓN. `invoices-new` está en
+        // `HASH_VIEWS`, así que se llega sin pasar por el botón (enlace, recarga), y este `case` no miraba
+        // el modo: un merchant en `receipt` veía «Nueva factura» y «Emitir factura» y el servidor le
+        // contestaba 409. Medido ejecutándolo, y previo a D1. En el modo 'no' se pinta Facturas, igual que
+        // el `default` pinta Inicio. Sin textos nuevos y sin tocar el servidor. ⚠️ Este cambio de
+        // comportamiento NO lo cubre la firma del fundador de D1 (17446): lo autoriza el orquestador como
+        // arreglo de pantalla. Traza en docs/BUGS.md y docs/master/SCRUM-1257.md (SCRUM-1257c).
+        // Una sola salida al final del `case`, a propósito: los guards lo extraen hasta la primera.
+        if (window.appDocumentoSuelto === 'no') {
+          viewTitle.textContent = window.rotulosDelDocumento.tituloListado();
+          renderInvoicesView(viewContainer);
+          view = 'invoices';
+        } else {
+          viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
+          renderDocumentoSueltoView(viewContainer);
+        }
         break;
       // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
       // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
@@ -432,7 +465,13 @@ async function initApp() {
         viewTitle.textContent = 'Productos';
         (window.renderProductsView || renderProductsView)(viewContainer);
         break;
+      // SCRUM-1317: mismo guard que 'settings'/'team'/'export' — un operario no entra ni
+      // tecleando la vista (el hash `#providers` existe). La seguridad real la da el
+      // requireRole('admin') de /admin/providers.
+      // Se REDIRIGE, como 'operarios', en vez de pintar Inicio aquí dentro: este `case` es el
+      // control positivo del censo de SCRUM-801, que exige que pinte UNA vista, la suya.
       case 'providers':
+        if (window.appUserRole !== 'admin') return renderView('home', options);
         viewTitle.textContent = 'Proveedores';
         (window.renderProvidersView || renderProvidersView)(viewContainer);
         break;

@@ -39,6 +39,7 @@ import {
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
+  estadoTrasFirmar,
   permisoDeCampos,
   puedeFirmarse,
   puedeFirmarCliente,
@@ -181,6 +182,11 @@ function serializeParteParaElTecnico(parte: any) {
  */
 function serializeParteParaLaOficina(parte: any) {
   const lineas: LineaParte[] = Array.isArray(parte.lineas) ? parte.lineas : [];
+  // SCRUM-1302 (A) · la marca del dato inventado (SCRUM-1266) viaja TAMBIÉN aquí. El `PATCH` con rol
+  // admin responde esta vista, y la ficha del parte repinta su aviso con lo que vuelve: sin la marca,
+  // el dueño que editaba la descripción veía irse el aviso aunque la base la conservaba. Se toma de
+  // `lineasParaElTecnico`, la MISMA función que la sirve al técnico: una sola regla de qué queda escrito.
+  const marcas = lineasParaElTecnico(lineas);
   const conImporte = lineas.map((l: any, i: number) => {
     const precio = l.precioUnitario === null || l.precioUnitario === undefined ? null : Number(l.precioUnitario);
     const unds = l.unds === null || l.unds === undefined ? null : Number(l.unds);
@@ -198,6 +204,7 @@ function serializeParteParaLaOficina(parte: any) {
       precioUnitario: precio,
       tipoIva: l.tipoIva === null || l.tipoIva === undefined ? null : Number(l.tipoIva),
       importe,
+      ...(marcas[i]?.datosNoRespaldados ? { datosNoRespaldados: marcas[i].datosNoRespaldados } : {}),
     };
   });
   // 🔴 «SIN VALORAR» ES POR LÍNEA, NO POR PARTE: un parte con tres líneas y dos precios está sin
@@ -247,7 +254,10 @@ function validarLineasDelTecnico(
     // SCRUM-889 · el `id` sólo sirve para CASAR con una línea guardada; no se guarda el que manda el
     // cliente (`casarLineasPorIdentidad` guarda el de la base o uno nuevo).
     const id = l?.id === undefined || l?.id === null ? undefined : String(l.id);
-    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion });
+    // SCRUM-1266 · la marca del dato inventado viaja con su línea. Sólo si es una lista: qué queda
+    // de ella lo decide `casarLineasPorIdentidad` contra la descripción (`marcaQueSigue`).
+    const marca = Array.isArray(l?.datosNoRespaldados) ? { datosNoRespaldados: l.datosNoRespaldados } : {};
+    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion, ...marca });
   }
   return { ok: true, lineas };
 }
@@ -672,7 +682,8 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
       data: {
         // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
         // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoTecnicoAt: new Date(),
         firmadoTecnicoNombre: nombre.nombre,
         signatureTecnicoUrl: signatureData,
@@ -751,7 +762,8 @@ router.post('/:id/firmar', async (req: any, res) => {
     const updated = await prisma.parteTrabajo.update({
       where: { id: parte.id },
       data: {
-        estado: 'firmado',
+        // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
+        estado: estadoTrasFirmar(parte.estado as EstadoParte),
         firmadoAt,
         firmadoPorNombre: nombre.nombre,
         firmadoPorCalidad: calidad.valor,

@@ -1,4 +1,8 @@
 // scripts/censo-vias-de-cobro.mjs — SCRUM-519 · A CUÁNTOS TOCA LA DISCREPANCIA, CONTADO.
+// 🔴 SCRUM-1179 · HERRAMIENTA MANUAL, NO RED. No vigila nada por sí sola: ningún test ni job la corre
+// sobre el árbol para juzgarlo (los tests que la importan prueban la HERRAMIENTA, no el árbol). No se
+// cite como red al retirar o relajar un guard: citar una red que no corre es lo que dejó los botones
+// de cobro sin vigilar en SCRUM-1172.
 //
 // Uso:  npm run censo:vias-de-cobro
 //

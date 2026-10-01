@@ -640,7 +640,11 @@ function renderProductsView(container) {
     const skuI = form.querySelector('input[name="sku"]');
     const supplierRefI = form.querySelector('input[name="supplierRef"]');
     const unitI = form.querySelector('input[name="unit"]');
-    cablearMargen(costI, priceI, margenI);
+    // SCRUM-1317 · sólo si los tres campos siguen ahí. A quien no ve economía se le han retirado
+    // «Coste» y «Margen %» veinte líneas más arriba (SCRUM-597), y cablearlos lanzaba un
+    // TypeError que dejaba al operario con la lista de productos VACÍA: `refresh()` no llegaba a
+    // correr. Medido en Edge sobre main el 1-oct-2026. El modal de edición ya se protegía igual.
+    if (costI && margenI) cablearMargen(costI, priceI, margenI);
     // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
     // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
@@ -909,9 +913,13 @@ function renderProductsView(container) {
       uiSkeletonRows(tbody, 8, 6);
       const merchantId = _merchantId || (_merchantId = await getMerchantId());
 
+      // SCRUM-1317 · sólo el admin pide los proveedores. `GET /admin/providers` pasa a admin, y
+      // con las dos peticiones en el mismo `Promise.all` su 403 se llevaba por delante la lista
+      // de productos del operario, que sí es suya (S1). Los proveedores sólo alimentan el
+      // desplegable del alta y de la edición, que él no puede usar desde SCRUM-614.
       const [items, providers] = await Promise.all([
         listProducts(merchantId),
-        listProviders(merchantId),
+        window.appUserRole === 'admin' ? listProviders(merchantId) : [],
       ]);
 
       _providers = Array.isArray(providers) ? providers : [];
@@ -1154,7 +1162,10 @@ async function pedirCatalogo(trade, refresh, btn) {
     // 🔴 MICROCOPY PENDIENTE (regla 30): el texto del caso nuevo está marcado. Lo que tiene que
     // decir, en la entrada `docs/master/SCRUM-313.md`.
     const MSG = {
-      no_catalog_for_trade: 'Tu gremio aún no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
+      // Microcopy APROBADA por el orquestador por delegación del fundador (SCRUM-1215 comentario
+      // 17507, 29-sep-2026). Sin «aún»: no hay catálogo encargado para ese gremio. Sólo la ve el
+      // admin (/load-catalog es requireRole('admin')), que tiene «Nuevo producto» e «Importar CSV».
+      no_catalog_for_trade: 'Tu gremio no tiene catálogo predefinido — añade servicios a mano o importa un CSV.',
       // Microcopy APROBADA por el fundador (5-ago-2026), literal.
       already_has_products: 'Tu catálogo ya tiene productos, así que no hemos cargado la plantilla. Tus precios siguen como estaban.',
     };

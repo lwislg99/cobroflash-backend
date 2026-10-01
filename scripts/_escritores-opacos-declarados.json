@@ -1,0 +1,17 @@
+{
+  "_que_es": "SCRUM-1179-B (3/4). Ficheros que LEEN un fichero y lo REESCRIBEN, con un finally, sobre una ruta que censo-escritores-del-arbol NO sabe resolver. No es un veredicto: es la parte ciega del censo. Cada uno se miró A MANO el 28-sep-2026 y su motivo dice adónde apunta de verdad. Uno nuevo pone rojo tests/scrum808: se mira igual y se declara aquí, o se reescribe para que la ruta se resuelva.",
+  "opacos": {
+    "tests/scrum1321-el-resumen-no-prueba-el-final.test.mjs": { "motivo": "`vigilado` = path.join(dir, 'vigilado.yml') con dir = fs.mkdtempSync(os.tmpdir()) (mirado a mano el 1-oct-2026): banco propio, fuera del árbol. Se escribe y se RELEE para comprobar que la puerta de `aplicarUna` no lo mutó." },
+    "tests/scrum245-llamador-declara-merchant.test.mjs": { "motivo": "`fich` = path.join(dir, 'envios.ts') con dir = fs.mkdtempSync(os.tmpdir()): un banco propio, fuera del árbol." },
+    "tests/scrum258-nota-por-sesion.test.mjs": { "motivo": "`ruta` = ficheroNota() de scripts/_turno-nota.mjs = os.tmpdir()/yaqu-turno-staging-<sesión>.json: fuera del árbol." },
+    "tests/scrum293-cero-literales-retencion.test.mjs": { "motivo": "`victima` = path.join(dir, 'settingsView.js') con dir = fs.mkdtempSync(os.tmpdir()): una COPIA en un temporal, no el fichero del panel." },
+    "tests/scrum325-libros-por-periodo.test.mjs": { "motivo": "`destino` = os.tmpdir()/yaqu-scrum325-<pid>.csv: fuera del árbol." },
+    "tests/scrum570-cr-en-disco.test.mjs": { "motivo": "`abs` = path.join(dir, rel) con dir = fs.mkdtempSync(os.tmpdir()): banco propio." },
+    "tests/scrum716c-la-memoria-del-vigia.test.mjs": { "motivo": "`estado` = path.join(dir, '.vigia', 'constancias.log') con dir de repoDePrueba(), un repo de prueba en fs.mkdtempSync(os.tmpdir())." },
+    "tests/scrum754-el-juez-que-oscila.test.mjs": { "motivo": "`pieza`, `abs`, `man` y `leido` cuelgan de dir = fs.mkdtempSync(os.tmpdir()) (bancoConMarca y el fixture): banco propio." },
+    "tests/scrum766-el-grep-que-cuenta-lineas.test.mjs": { "motivo": "`f` = path.join(dir, 'control-*.txt') con dir = tempPropio(): banco propio." },
+    "tests/scrum808-el-arbol-que-queda-mutado.test.mjs": { "motivo": "`b.abs` sale de banco(), que monta una víctima en un temporal: es el propio test de la red de SCRUM-808." },
+    "tests/scrum839e-solo-pr-armados.test.mjs": { "motivo": "path.join(banco, f) con banco = fs.mkdtempSync(os.tmpdir()): banco propio." }
+  },
+  "retiradas": []
+}

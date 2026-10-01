@@ -20,6 +20,13 @@ las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aqu�
 esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
 `docs/equipo/sesion-N.md`, y tu carril en la tabla §11bis de `docs/equipo/orquestador.md`.
 
+🔴 **Un fallo no se convierte en una nota. Se convierte en una COMPROBACIÓN.** Si no se puede convertir,
+se dice que no se puede y se queda como aviso — pero sin fingir que apuntarlo lo arregla. Cómo se cumple
+(la línea `A9:` de tu registro, A10 y las cicatrices de tu puesto) está en la A9, importada aquí debajo
+junto a la A10 (SCRUM-1294). Lo exige un guard.
+
+@docs/equipo/00-normas-siempre.md
+
 ⚠️ **Lee estos ficheros desde `origin/main` (`git show origin/main:<ruta>`) o abre el chat en un worktree
 al día:** el checkout compartido `cobroflash-backend` va miles de commits por detrás, y lo que se carga
 desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-sep-2026, auditoría de la S0.)*
@@ -124,8 +131,12 @@ npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
 # ⚠️ SCRUM-850: el TAP va a FICHERO y se lee después, en DOS comandos. Con `| grep` el código de
 # salida es el del `grep`, así que una tanda EN ROJO sale 0. Y el fichero va FUERA del árbol:
 # un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
+# ⚠️ SCRUM-1245: el patrón va ENTRE COMILLAS SIMPLES, para que lo expanda node y no bash. Sin
+# ellas, ~1.060 ficheros desbordan la línea de órdenes de Windows: node NO ARRANCA, y el `grep`
+# lee el TAP de la tanda ANTERIOR y sale 0. Por eso también se borra antes.
+rm -f "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
-     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" 'tests/*.test.mjs'
 grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
                              # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en

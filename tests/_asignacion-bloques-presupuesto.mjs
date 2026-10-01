@@ -88,6 +88,9 @@ export const CAMPO_A_BLOQUE = {
   // `ivaModo`: los tres deciden cómo SALE el documento, no qué se cobra ni a quién.
   docHeaderText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
   docFooterText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
+  // SCRUM-1180 · las cláusulas de cierre que ESTE presupuesto no lleva. En «Envío», con los textos
+  // y `docFields`: decide qué SALE impreso.
+  clausulasExcluidas: { control: 'clausulasWrap', bloque: 'blockDelivery' },
 };
 
 /**
@@ -97,7 +100,14 @@ export const CAMPO_A_BLOQUE = {
  * el pro no controla ni debe controlar. Constan aquí para que nadie los busque en la pantalla, y
  * para que el guard no los cuente como «campos sin sitio».
  */
-export const VIAJAN_SIN_PINTARSE = ['merchant_id', 'currency', 'created_via'];
+export const VIAJAN_SIN_PINTARSE = [
+  'merchant_id',
+  'currency',
+  'created_via',
+  // SCRUM-1274 · el Trabajo del que nace el presupuesto («Hacer presupuesto» en su ficha). Es de
+  // dónde viene el documento, no algo que el profesional ajuste: no tiene control en pantalla.
+  'job_id',
+];
 
 /** Campos por línea. Viven todos dentro del bloque de Líneas, en las filas que crea `addLine`. */
 export const CAMPOS_DE_LINEA = ['concept', 'qty', 'price', 'tax'];

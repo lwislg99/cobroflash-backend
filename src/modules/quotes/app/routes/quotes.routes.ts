@@ -3,11 +3,9 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import {
   CreateQuoteSchema,
-  AcceptQuoteSchema,
-  RejectQuoteSchema,
   type QuoteTier,
 } from '../../../../core/validation/schemas';
-import { calcTotal, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
+import { calcTotal, formatMoneyEs, normalizePhone, parseToken, type QuoteLine } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { rateLimit } from '../../../../core/http/rateLimit';
 
@@ -28,9 +26,6 @@ import { notifyMerchantAlert } from '../../../../integrations/whatsappNotificati
 import { resolveBillingPlan, distributeStageAmounts, validateCustomBillingPlan } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
 import { isQuoteExpired } from '../../domain/expire.service';
-import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
-// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
-import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { getSession } from '../../../auth/domain/auth.service';
 
 // Lee el teamMemberId de la sesión (si hay cookie válida) para atribuir el creador.
@@ -77,6 +72,7 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
+import { ESTADOS_DECIDIBLES_POR_EL_CLIENTE, ERROR_PRESUPUESTO_YA_DECIDIDO, mensajeYaDecidido } from '../../domain/decisionDelCliente'; // SCRUM-1276
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -87,8 +83,7 @@ const router = Router();
 // SCRUM-95: rate limit por IP como defensa EN PROFUNDIDAD además del token opaco
 // (Quote.decisionToken) — el token ya cierra el IDOR; esto acota además la velocidad
 // de fuerza bruta/abuso masivo. P1-SEC-6 lo introdujo cuando accept/reject aún
-// resolvían por id crudo; ahora las tres rutas de decisión (accept/reject/decision)
-// lo comparten.
+// resolvían por id crudo. Desde SCRUM-1202 la única ruta de decisión es /decision.
 const decisionLimiter = rateLimit({ scope: 'quote_decision', max: 20, windowMs: 60_000 });
 
 /**
@@ -250,7 +245,7 @@ router.post('/create', async (req, res) => {
         sendWhatsAppText({
           to: adminPhone,
           merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote, merchant)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
+          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote, merchant)} por ${formatMoneyEs(totalNum, quote.currency) /* SCRUM-1288: «1.234,50 €», no «1234.50 EUR» */} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }
     }
@@ -297,173 +292,35 @@ router.post('/create', async (req, res) => {
 });
 
 
-/**
- * POST /quote/:id/accept
- * Decisión del CLIENTE: acepta el presupuesto.
- * No crea cobros ni facturas, solo marca la decisión.
- */
-router.post('/:token/accept', decisionLimiter, async (req, res) => {
-  try {
-    // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id autoincremental —
-    // era la sexta puerta de la misma fuga (SCRUM-72/74/85/87/90). Token
-    // ausente/malformado y token válido pero inexistente responden IGUAL (404
-    // quote_not_found) para no distinguir "formato malo" de "no existe".
-    const token = parseToken(req.params.token);
+// SCRUM-1202 · Aquí vivían POST /quote/:token/accept y /reject. Se RETIRARON: nadie las llamaba
+// desde SCRUM-95, y /accept marcaba el presupuesto `accepted` SIN firma ni sello y reescribía
+// `paymentTerms` y `evidence` con lo que trajera el cuerpo — cualquiera con el enlace del cliente
+// aceptaba sin firmar y cambiaba las condiciones de cobro. La decisión del cliente entra SOLO
+// por /decision, que exige el trazo.
 
-    const body = AcceptQuoteSchema.parse(req.body);
-
-    const quote = token ? await prisma.quote.findUnique({
-      where: { decisionToken: token },
-      include: {
-        // SCRUM-1093: `timezone` para que `displayQuoteNumber` lea el año en la zona del merchant.
-        merchant: {
-          select: {
-            id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true, timezone: true,
-          },
-        },
-        customer: { select: { name: true } },
-      },
-    }) : null;
-
-    if (!quote) {
-      return res.status(404).json({ error: 'quote_not_found' });
-    }
-
-    // Idempotencia: si ya está aceptado devolvemos ok
-    if (quote.status === 'accepted') {
-      return res.json({
-        ok: true,
-        status: 'already_accepted',
-        quote_id: quote.id,
-      });
-    }
-
-    // Si ya estaba rechazado, no dejamos aceptarlo por esta vía
-    if (quote.status === 'rejected') {
-      return res.status(409).json({
-        ok: false,
-        error: 'already_rejected',
-      });
-    }
-
-    const now = new Date();
-
-    const updated = await prisma.quote.update({
-      where: { id: quote.id },
-      data: {
-        status: 'accepted',
-        acceptedAt: now,
-        rejectedAt: null,
-        decisionChannel: body.channel ?? 'whatsapp',
-        decisionComment: body.comment ?? null,
-        paymentTerms: body.paymentTerms ?? quote.paymentTerms,
-        evidence: body.evidence ?? quote.evidence ?? {},
-      },
-    });
-
-    // Email al merchant si tiene notificaciones de aceptación activadas
-    if (quote.merchant?.notifyEmailOnQuoteAccepted && quote.merchant?.email) {
-      // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya está aceptado y un aviso que no sale
-      // NO puede tumbar la aceptación. Lo que cambia es que ahora el fallo deja constancia.
-      conConstancia('presupuesto_aceptado', quote.merchant.email, sendMerchantQuoteAcceptedEmail({
-        merchantId: quote.merchantId, // SCRUM-508: para que el aviso deje fila
-        merchantEmail: quote.merchant.email,
-        merchantName:  quote.merchant.name || 'Tu negocio',
-        customerName:  quote.customer?.name || 'Cliente',
-        quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
-        total: Number(quote.total).toFixed(2),
-        currency: quote.currency,
-      }));
-    }
-
-    return res.json({
-      ok: true,
-      status: 'accepted',
-      quote_id: updated.id,
-      accepted_at: updated.acceptedAt,
-    });
-  } catch (err: any) {
-    if (err?.name === 'ZodError') {
-      return res.status(400).json({
-        error: 'validation_error',
-        details: err.errors,
-      });
-    }
-    console.error('POST /quote/:id/accept error', err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
-});
+// SCRUM-1276 · Parte L:398 («jamás reabrir»). El porqué, y por qué `draft` sigue decidible, en
+// `decisionDelCliente.ts`.
+const ESTADOS_DECIDIBLES = ESTADOS_DECIDIBLES_POR_EL_CLIENTE;
 
 /**
- * POST /quote/:token/reject
- * Decisión del CLIENTE: rechaza el presupuesto.
+ * La carrera perdida (P2025: la fila ya no está en un estado decidible). Se relee y se contesta
+ * como si la petición hubiera llegado después: el mismo sentido es idempotente, el contrario no.
  */
-router.post('/:token/reject', decisionLimiter, async (req, res) => {
-  try {
-    // SCRUM-95: token opaco — ver nota en /:token/accept.
-    const token = parseToken(req.params.token);
+async function respuestaTrasDecisionAjena(quote: { id: number; merchant?: any }, decision: string) {
+  const ahora = await prisma.quote.findUnique({ where: { id: quote.id }, select: { status: true } });
+  if (decision === 'accept' && ahora?.status === 'accepted') return { code: 200, body: { ok: true, status: 'already_accepted' } };
+  if (decision === 'reject' && ahora?.status === 'rejected') return { code: 200, body: { ok: true, status: 'already_rejected' } };
+  return { code: 409, body: { error: ERROR_PRESUPUESTO_YA_DECIDIDO, message: mensajeDeYaDecidido(ahora?.status ?? '', quote) } };
+}
 
-    const body = RejectQuoteSchema.parse(req.body);
-
-    const quote = token ? await prisma.quote.findUnique({
-      where: { decisionToken: token },
-    }) : null;
-
-    if (!quote) {
-      return res.status(404).json({ error: 'quote_not_found' });
-    }
-
-    // Si ya estaba rechazado → idempotente
-    if (quote.status === 'rejected') {
-      return res.json({
-        ok: true,
-        status: 'already_rejected',
-        quote_id: quote.id,
-      });
-    }
-
-    // Si ya estaba aceptado → conflicto
-    if (quote.status === 'accepted') {
-      return res.status(409).json({
-        ok: false,
-        error: 'already_accepted',
-      });
-    }
-
-    const now = new Date();
-
-    const updated = await prisma.quote.update({
-      where: { id: quote.id },
-      data: {
-        status: 'rejected',
-        rejectedAt: now,
-        acceptedAt: null,
-        decisionChannel: body.channel ?? 'whatsapp',
-        rejectionReason: body.reason ?? null,
-        decisionComment: body.comment ?? null,
-        evidence: body.evidence ?? quote.evidence ?? {},
-      },
-    });
-
-    return res.json({
-      ok: true,
-      status: 'rejected',
-      quote_id: updated.id,
-      rejected_at: updated.rejectedAt,
-    });
-  } catch (err: any) {
-    if (err?.name === 'ZodError') {
-      return res.status(400).json({
-        error: 'validation_error',
-        details: err.errors,
-      });
-    }
-    console.error('POST /quote/:token/reject error', err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-
+/** El texto N3 de ese estado (ver `mensajeYaDecidido`): el mismo que pinta la landing. */
+function mensajeDeYaDecidido(status: string, quote: { merchant?: any }) {
+  return mensajeYaDecidido(status, {
+    quoteVerb: getLocale(quote.merchant?.country).quoteVerb,
+    nombreDelNegocio: quote.merchant?.legalName || quote.merchant?.name || 'el profesional',
+  });
+}
+const esFilaQueNoCasa = (e: any) => e?.code === 'P2025';
 
 /**
  * POST /quote/:token/decision
@@ -484,12 +341,12 @@ router.post('/:token/reject', decisionLimiter, async (req, res) => {
  * SCRUM-95 (🔴 la sexta puerta, la peor): esta ruta era pública, SIN auth y SIN
  * rate-limit, resolvía por Quote.id autoincremental (enumerable) y MUTABA estado
  * (aceptar/rechazar presupuestos ajenos) además de devolver NIF/dirección/teléfono
- * del profesional en el JSON. Ahora: token opaco (decisionLimiter compartido con
- * accept/reject) igual que las otras dos rutas de decisión.
+ * del profesional en el JSON. Ahora: token opaco y decisionLimiter.
  */
 router.post('/:token/decision', decisionLimiter, async (req, res) => {
   try {
-    // SCRUM-95: token opaco — ver nota en /:token/accept.
+    // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id autoincremental. Token ausente/
+    // malformado y token válido pero inexistente responden IGUAL (404 quote_not_found).
     const token = parseToken(req.params.token);
 
     const decision = String(req.body?.decision || '').toLowerCase();
@@ -537,6 +394,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     // es opcional —«Acepto sin firmar» manda `null` y sigue valiendo—; mandarla vacía, no.
     if (decision === 'accept' && req.body?.signatureData != null && !firmaTieneTrazo(req.body.signatureData)) {
       return res.status(422).json({ error: ERROR_FIRMA_VACIA, message: COPY_FIRMA_VACIA });
+    }
+
+    // SCRUM-1276 · primera barrera: el sentido CONTRARIO sobre un presupuesto ya decidido no pasa.
+    // (El mismo sentido ya ha salido arriba con su 200 idempotente.)
+    if (!ESTADOS_DECIDIBLES.includes(quote.status)) {
+      return res.status(409).json({ error: ERROR_PRESUPUESTO_YA_DECIDIDO, message: mensajeDeYaDecidido(quote.status, quote) });
     }
 
     let updatedQuote: any = quote;
@@ -598,8 +461,12 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         })
         : null;
 
+      // SCRUM-1276 · segunda barrera: la condición de estado VA EN LA ESCRITURA. Si otra petición
+      // decidió entre la lectura y aquí, Prisma no encuentra la fila (P2025) y esta no hace nada más:
+      // ni historial, ni PDF, ni Trabajo, ni aviso al profesional.
+      try {
       updatedQuote = await prisma.quote.update({
-        where: { id: quote.id },
+        where: { id: quote.id, status: { in: ESTADOS_DECIDIBLES } },
         data: {
           status: 'accepted',
           acceptedAt: now,
@@ -614,6 +481,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           ...(selectedLines ? { lines: selectedLines } : {}),
         },
       });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        const r = await respuestaTrasDecisionAjena(quote, decision);
+        return res.status(r.code).json(r.body);
+      }
 
       // ENT-3: historial
       recordCustomerEvent({
@@ -845,8 +717,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
 
     } else {
       // decision === 'reject'
+      // SCRUM-1276 · la misma segunda barrera: nunca se rechaza por detrás de una aceptación.
+      try {
       updatedQuote = await prisma.quote.update({
-        where: { id: quote.id },
+        where: { id: quote.id, status: { in: ESTADOS_DECIDIBLES } },
         data: {
           status: 'rejected',
           rejectedAt: new Date(),
@@ -856,6 +730,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionComment: comment ?? null,
         },
       });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        const r = await respuestaTrasDecisionAjena(quote, decision);
+        return res.status(r.code).json(r.body);
+      }
 
       // ENT-3: historial
       recordCustomerEvent({
@@ -871,7 +750,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     // si está cerrada, fallback a la plantilla merchant_alert_es). Fire-and-forget.
     {
       const customerName = quote.customer?.name || 'El cliente';
-      const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+      // SCRUM-1277 · `updatedQuote`, NO `quote`: si el cliente eligió un tramo, el `update` de
+      // arriba reescribió el total y `quote` es la fila de ANTES (121 donde aceptó 363). Mismo
+      // origen que el Trabajo. Y en es-ES con el formateador de la casa («363,00 €», no «363.00 EUR»).
+      const amount = formatMoneyEs(updatedQuote.total, updatedQuote.currency);
       const qNum = displayQuoteNumber(quote, quote.merchant); // A1.2: número por merchant, no el id global
       const freeText = decision === 'accept'
         ? `✅ ${customerName} aceptó tu presupuesto ${qNum} por ${amount}`

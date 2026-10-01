@@ -13,7 +13,9 @@
 
 // SCRUM-735 (GO comentario 16573): `invalidAnioFiscal` deriva el año MÁXIMO de la zona del
 // merchant, no del reloj del proceso.
-import { diaNaturalEn, ZONA_POR_DEFECTO } from '../zonaDelMerchant';
+import { diaNaturalEn, zonaDelMerchant, ZONA_POR_DEFECTO } from '../zonaDelMerchant';
+// SCRUM-1216b: la serie F se reconoce con el MISMO parser que la compone, no con un patrón aparte.
+import { SERIES, parseNumeroDocumento } from '../documentos/formatoNumero';
 
 /**
  * 1152 · El sistema no existe antes del 28-10-2024 (entrada en vigor de la Orden de VERI*FACTU).
@@ -126,6 +128,27 @@ export function invalidPrefijoSerie(valor: unknown): string | null {
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
+ * SCRUM-1168 · EL AÑO DE LA SERIE, VISTO DESDE LAS PUERTAS.
+ *
+ * `allocateInvoiceNumber` numera con el año del día natural EN LA ZONA DEL MERCHANT desde
+ * SCRUM-735. Las puertas que deciden SOBRE esa serie —el bloqueo del prefijo, la pregunta de
+ * continuidad del alta y su vista previa— leían `new Date().getFullYear()`: el reloj del PROCESO
+ * (Railway va en UTC). Medido el 28-sep-2026 contra el `allocateInvoiceNumber` real con un `tx`
+ * falso: a las 00:30 del 1-ene en Madrid la puerta razonaba sobre 2026 y el número salía de 2027;
+ * a las 20:00 del 31-dic en Ciudad de México, al revés. Dos mitades del mismo criterio, dos relojes.
+ *
+ * Es la MISMA expresión que usa el emisor, escrita aquí y no importada de él porque tocar el
+ * emisor es regla 40. `tests/scrum1168-anio-serie-zona-merchant.test.mjs` compara las dos sobre
+ * el emisor REAL: si una se mueve sin la otra, cae.
+ */
+export function anioDeLaSerie(
+  merchant: { timezone?: string | null } | null | undefined,
+  ahora: Date = new Date(),
+): number {
+  return Number(diaNaturalEn(ahora, zonaDelMerchant(merchant)).slice(0, 4));
+}
+
+/**
  * De todos los números de factura de un merchant, los que pertenecen a LA SERIE FISCAL del año
  * dado. Puro: recibe los números ya leídos, no toca la base.
  *
@@ -141,6 +164,35 @@ export function numerosDeLaSerie(numeros: readonly (string | null | undefined)[]
     .filter((n): n is string => typeof n === 'string' && n.length > 0)
     .filter((n) => !n.startsWith('J-'))
     .filter((n) => n.startsWith(marca));
+}
+
+/**
+ * SCRUM-1216b · LO YA EMITIDO EN EL AÑO, EN LAS DOS SERIES: la vieja (`AAAA-PREF-NNN`) y la F
+ * (`F<AA><NNNN>`, desde el corte de SCRUM-780).
+ *
+ * `numerosDeLaSerie` sólo ve la vieja, y para el cambio de PREFIJO es lo correcto: tras el corte
+ * el prefijo no entra en la factura ordinaria. Pero el CHOQUE del arranque y la PUERTA preguntan
+ * otra cosa —«¿ya emitió este año?»—, y ahí no ver la F dejaba que quien lleva `F260001..010`
+ * declarara 41 y su serie saltara de la 10 a la 42: no duplica (el emisor toma el máximo), pero
+ * deja 31 huecos en su propia serie que nadie puede cerrar (regla 29). Medido: SCRUM-1203 (a).
+ *
+ * La F se reconoce con `parseNumeroDocumento`, el mismo que la compone; el año, por el parser, no
+ * por el prefijo, para que un número parecido no cuele.
+ */
+export function emitidasDelAnio(numeros: readonly (string | null | undefined)[], año: number): string[] {
+  const deLaF = numeros.filter((n): n is string => {
+    const p = parseNumeroDocumento(n);
+    return p !== null && p.serie === SERIES.factura && p.year === año;
+  });
+  return [...numerosDeLaSerie(numeros, año), ...deLaF];
+}
+
+/**
+ * Los prefijos por los que se LEEN de la base las emitidas del año: `AAAA-` (serie vieja) y
+ * `F<AA>` (serie F). Es el acotado de la consulta; el veredicto lo da `emitidasDelAnio`.
+ */
+export function prefijosEmitidasDelAnio(año: number): string[] {
+  return [`${año}-`, `${SERIES.factura}${String(año % 100).padStart(2, '0')}`];
 }
 
 /**

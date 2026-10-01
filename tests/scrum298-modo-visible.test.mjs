@@ -247,15 +247,17 @@ const APROBADOS = {
     'fundador 7-ago-2026 · solo el merchant demo (`isDemoMerchant`)',
   'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.':
     'fundador 7-ago-2026 · `DEMO_WATERMARK = "DEMO — no válida fiscalmente"` (`emission.service.ts:12`), aplicada en `lib/invoicing.ts:122` y `:257`',
-  // Los dos de `receipt` son de la SEGUNDA redacción: la primera decía «numeración» y se devolvió
-  // por afirmar una correlatividad que no existe. La condición del fundador —verificar contra el
-  // mecanismo antes de escribir— sirvió exactamente para esto.
-  'Se emiten justificantes de cobro':
-    'fundador 7-ago-2026 (2.ª redacción) · `getEmissionMode` → `receipt` para ES real con el flag off',
-  'Cada cobro genera un justificante para tu cliente, con su propia referencia. No es una factura y no consume tu serie de facturación.':
-    'fundador 7-ago-2026 (2.ª redacción) · «referencia» distinta por `@@unique([merchantId, number])` — sin afirmar orden; '
-    + '«no es una factura» por `type: JUST` y fuera de la cadena (`verifactu.service.ts:333`); '
-    + '«no consume tu serie» por `invoiceNumber.service.ts:214-219`, que hace `return` ANTES del update de `nextInvoiceNumber`',
+  // Los dos de `receipt` son de la TERCERA redacción (SCRUM-1220). La segunda —«Se emiten
+  // justificantes de cobro» / «Cada cobro genera un justificante…»— se retiró: desde SCRUM-1027, en
+  // `receipt` no sale NINGÚN documento, y se pintaba a un ES real con la emisión apagada.
+  'Aún no se emiten documentos':
+    'orquestador por delegación del fundador 28-sep-2026 · SCRUM-1220 comentario 17385 · '
+    + '`allocateInvoiceNumber` lanza `invoicing_es_disabled` en `receipt` (`invoiceNumber.service.ts:505`)',
+  // El detalle es de la CUARTA (SCRUM-1257, P8): la tercera decía «…facturas ni justificantes…». La
+  // entrada vieja se BORRA y entra ésta con su firma: es la caducidad de abajo haciendo su trabajo.
+  'Por ahora, YaQu no genera facturas desde tu cuenta.':
+    'orquestador por delegación del fundador 1-oct-2026 · SCRUM-1257 comentario 17676 · '
+    + 'el mismo `throw` de `allocateInvoiceNumber` en `receipt`; ya no nombra el justificante y no afirma nada sobre él',
 };
 
 test('SCRUM-298 · MICROCOPY: sin aprobar va el marcador; aprobado va con su procedencia (reglas 30 y 26)', () => {

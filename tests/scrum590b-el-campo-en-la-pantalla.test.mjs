@@ -90,13 +90,10 @@ async function guardarDesdeLaPantalla({ fijo = '', movil = '' }) {
   };
 
   control('name').value = 'Reformas Ejemplo SL';
-  // ⚠️ EL EMAIL SE RELLENA, y no es adorno: HOY el modal manda `email: ""` cuando está vacío y
-  // `z.string().email()` lo RECHAZA — o sea que un cliente sin email NO se puede guardar desde
-  // esta pantalla. Es un defecto PREEXISTENTE que este test destapó al recorrer el camino real;
-  // está registrado en `docs/BUGS.md` y NO se arregla aquí (regla 37: otro carril, y arreglarlo
-  // «de paso» sin registrarlo es justo lo que la casa prohíbe). Se le da un email para poder
-  // medir LO DE ESTE TICKET, que es el móvil.
-  control('email').value = 'cliente@ejemplo.test';
+  // El email se deja VACÍO a propósito. Aquí se rellenaba para esquivar P1-CONT-19b (el modal
+  // mandaba `email: ""` y la puerta lo rechazaba); desde SCRUM-1161 un cliente sin email se
+  // guarda, y este viaje lo recorre así, que es el caso normal del oficio.
+  control('email').value = '';
   control('phone').value = fijo;
   control('mobile').value = movil;
 
@@ -244,7 +241,12 @@ test('SCRUM-590b · el campo se ve en los DOS lados (Empresa y Persona) — medi
 
   // Y el modal NO se lo pasa a `aplicarLado`, que es lo que de verdad decide en pantalla.
   const modal = fs.readFileSync(MODAL, 'utf8');
-  for (const bloque of modal.split('aplicarLado(').slice(1)) {
+  // SCRUM-1311 · suelo de población: el nombre va escrito como cadena, y si la función se renombra
+  // el `split` no parte nada y el bucle no mira ninguna llamada.
+  const llamadasAlConmutador = modal.split('aplicarLado(').slice(1);
+  assert.ok(llamadasAlConmutador.length > 0,
+    '🔴 CIEGO: el modal ya no llama a `aplicarLado(` — ¿se ha renombrado? Sin ninguna llamada que mirar, «el móvil no se pasa al conmutador» no se ha comprobado.');
+  for (const bloque of llamadasAlConmutador) {
     const mapa = bloque.slice(0, bloque.indexOf('}'));
     assert.equal(/\bmobile\b/.test(mapa), false,
       '🔴 el campo del móvil se está pasando al conmutador de lado: dejaría de verse en Persona.');

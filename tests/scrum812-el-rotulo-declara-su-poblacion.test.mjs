@@ -86,9 +86,37 @@ function tituladosQueDeclaran() {
  * ⬆️ **20** (SCRUM-951d, 18-sep-2026): lo sube `scrum951d-ensayo-instalacion.test.mjs`, que titula
  * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
  * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
+ *
+ * ⬆️ **22** (SCRUM-1179-B, 28-sep-2026): dos ficheros que YA declaraban ganan un test titulado
+ * GUARD al añadir su control positivo — `scrum775-suelo-que-no-dispara.test.mjs` («…y un guard
+ * opaco, metidos en el árbol real, salen») y `scrum808-el-arbol-que-queda-mutado.test.mjs` («el
+ * meta-guard de antes de la red sale SIN RED; el de después, no»). Los dos ya estaban en el
+ * denominador de declarantes; sólo cambia el subconjunto auto-titulado.
+ * Medido sobre `origin/main` = `2b4db6a2948ba062909c38f3cac7e495c2b1e8cc` mezclado en la rama.
+ *
+ * ⬆️ **23** (SCRUM-1263, 29-sep-2026): `scrum834-puerta-avisador-rojo.test.mjs` pasa a DECLARAR
+ * sus mutaciones (`MUTACIONES_QUE_ME_TUMBAN`, las dos de SCRUM-1263) y ya tenía tests titulados
+ * GUARD («el guard SALTADO no es un guard verde…»). Entra al denominador y al subconjunto a la vez.
+ * Medido sobre `origin/main` = `bd2964d9a4ebfc48a38f8d34cacc1db250ebd144` mezclado en la rama.
+ *
+ * ⬆️ **24** (SCRUM-1179-C, 29-sep-2026): entra `scrum1179c-censo-tactil-informativo.test.mjs`,
+ * que declara su mutación y tiene un test titulado GUARD («las citas del guard ya no dicen…»).
+ * Regenerado al mezclar la subida a 23 de SCRUM-1263 — no se eligió lado: se volvió a medir.
+ *
+ * ⬆️ **25** (SCRUM-1284, 29-sep-2026): entra `scrum1284-minutos-actions.test.mjs`, que declara
+ * sus mutaciones y tiene un test que nombra el meta-guard en su título. Medido sobre `origin/main`
+ * = `9977c40f2d36df05579f810866348d17719dd302` mezclado en la rama.
+ *
+ * ⬆️ **26** (SCRUM-1321, 1-oct-2026): `scrum836-ancla-de-mutacion-viva.test.mjs` pasa a DECLARAR
+ * (la mutacion que apaga `ambiguedadDelAncla`) y ya tenia un test titulado GUARD («…se DENUNCIA,
+ * con guard y fichero»). Medido sobre `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2`.
+ *
+ * ⬆️ **27** (SCRUM-1298, 1-oct-2026): entra `scrum1298-mesa-por-puesto.test.mjs`, que declara sus
+ * mutaciones y nombra el guard en un título («el guard del segundo orquestador ve al equipo…»).
+ * Medido sobre `origin/main` = `36f1eee3` mezclado en la rama.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 20;
+export const SUELO_GUARD_QUE_DECLARAN = 27;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -271,8 +299,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 27;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 26;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

@@ -269,7 +269,6 @@ const CONOCIDOS_A = new Map([
   ['scripts/_texto-fuera-del-censo.mjs  scripts/guard-a11y-comparativa.mjs', 1],
   ['tests/_huerfanos-declarados.mjs  public/dashboard/js/cobrosView.js', 1],
   ['tests/_huerfanos-declarados.mjs  public/dashboard/js/jobDetailView.js', 1],
-  ['tests/_huerfanos-declarados.mjs  quoteRequests.routes.ts', 1],
   ['tests/_huerfanos-declarados.mjs  teamOverview.service.ts', 1],
   ['tests/scrum128-send-endpoints-fail-closed.test.mjs  quotes.routes.ts', 1],
   ['tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs  YAQU_MASTER.md', 1],
@@ -277,7 +276,6 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum298-modo-visible.test.mjs  emission.service.ts', 1],
   ['tests/scrum298-modo-visible.test.mjs  invoiceNumber.service.ts', 1],
   ['tests/scrum298-modo-visible.test.mjs  invoicesAdmin.routes.ts', 1],
-  ['tests/scrum298-modo-visible.test.mjs  verifactu.service.ts', 1],
   ['tests/scrum299-copy-factura-publico.test.mjs  index.html', 1],
   ['tests/scrum302-presupuesto-y-fotos.test.mjs  jobRailBlocks.js', 1],
   ['tests/scrum324-cadena-hasta-el-libro.test.mjs  docs/legal/PREGUNTAS_ASESOR.md', 1],
@@ -296,6 +294,17 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum642-tramos-del-arranque.test.mjs  BrowserLauncher.ts', 1],
   ['tests/scrum656b-clausulas-configuracion.test.mjs  quotes.routes.ts', 2],
   ['tests/scrum656b-clausulas-configuracion.test.mjs  quotesView.js', 1],
+  // SCRUM-1286 · NO son anclajes: son líneas de LOG de CI copiadas tal cual como banco del
+  // clasificador del intermitente (`test at <fichero>:L:C`, pilas `file:///…:L:C`). Nadie las
+  // recalcula ni se rompen si el fichero citado cambia; el clasificador lee esa forma porque es
+  // la que escribe `node --test`. Mismo caso que los que aguantan (arriba): posición CITADA, no medida.
+  ['tests/scrum1286-intermitente-1281.test.mjs  ///home/runner/work/x/x/tests/_censo-fixture.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  ///home/runner/work/x/x/tests/scrum388-censo-mecanismo.test.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum388-censo-mecanismo.test.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum388-x.test.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum500-cae-por-otra-cosa.test.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum775-suelo-que-no-dispara.test.mjs', 1],
+  ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum804b-el-barrido-de-la-42.test.mjs', 1],
 ]);
 
 // (b) TRES arrays de pares `[texto, número]` con dos o más pares en la misma línea física.

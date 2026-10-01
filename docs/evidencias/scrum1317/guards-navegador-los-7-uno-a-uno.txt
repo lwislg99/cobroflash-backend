@@ -1,0 +1,312 @@
+Los 7 guards de navegador que no arrancaron, corridos UNO A UNO en primer plano sobre el mismo arbol (app.js y public/ sin cambios desde ed0e9a7a) · J4d · 1-oct-2026
+memoria libre medida antes de cada uno; salida completa de cada guard debajo de su linea
+
+===== guard:rastro-del-menu · 20 lineas =====
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+destinos del menú: 18
+
+════════ POR EL MENÚ (lo que hace el profesional) ════════
+  hash coherente con el destino: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL POSITIVO · por `renderAppView` ════════
+  hash coherente: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL NEGATIVO · hash inventado ════════
+  vista: settings · nodos pintados: 186
+
+════════ «ATRÁS», PULSADO DE VERDAD ════════
+  clientes → productos → informes  (estoy en: reports)
+  atrás → vista products · hash products
+  atrás → vista customers · hash customers
+
+✓ los 17 destinos dejan rastro, «atrás» vuelve, y un hash inventado no rompe nada.
+
+===== guard:escalera-por-estado · 35 lineas =====
+navegador: Edge (Windows)
+
+══════════════════════════════════════════════════════════════════════════════════════
+① LA LISTA Y EL DETALLE DICEN LO MISMO, ESTADO POR ESTADO
+══════════════════════════════════════════════════════════════════════════════════════
+estado              LISTA                   DETALLE
+──────────────────────────────────────────────────────────────────────────────────────
+pendiente_agendar   «Agendar»               «Agendar»
+agendado            «▶ Empezar»             «▶ Empezar»
+en_curso            «+ Nuevo albarán»       «+ Nuevo albarán»
+terminado           «+ Nuevo albarán»       «+ Nuevo albarán»
+cerrado             (ninguna)               (ninguna)
+
+   ✅ SUELO · los cinco estados dan 4 rótulos distintos: hay algo que comparar
+
+══════════════════════════════════════════════════════════════════════════════════════
+② «Agendar» SE PUEDE EJECUTAR EN LAS DOS — y no navega, y no deja el botón colgado
+══════════════════════════════════════════════════════════════════════════════════════
+   LISTA: modal ✅ · campo de fecha ✅ · navegó no ✅ · botón «Agendar» ✅ · escrituras 0
+   DETALLE: modal ✅ · campo de fecha ✅ · navegó no ✅ · botón «Agendar» ✅ · escrituras 0
+
+══════════════════════════════════════════════════════════════════════════════════════
+②-bis «▶ Empezar» ESCRIBE en las dos — y escribe la transición que la FSM admite
+══════════════════════════════════════════════════════════════════════════════════════
+   LISTA: PATCH /admin/jobs/1 {"status":"en_curso"} · navegó no ✅
+   DETALLE: PATCH /admin/jobs/1 {"status":"en_curso"} · navegó no ✅
+
+══════════════════════════════════════════════════════════════════════════════════════
+③ UN TRABAJO CERRADO NO PROPONE NADA — en ninguna de las dos
+══════════════════════════════════════════════════════════════════════════════════════
+   ✅ LISTA: sin acción principal (70 nodos pintados, o sea la pantalla está ahí)
+   ✅ DETALLE: sin acción principal (130 nodos pintados, o sea la pantalla está ahí)
+   ✅ la barra de «+ Nuevo albarán»: se ve en EN CURSO y no en CERRADO (control positivo incluido)
+
+✅ las dos pantallas dicen y hacen lo mismo en los cinco estados.
+
+===== guard:albaranes-con-acciones · 43 lineas =====
+navegador: Edge (Windows)
+
+══════════════════════════════════════════════════════════════════════════════════════
+① CADA ESTADO OFRECE SU SIGUIENTE PASO
+══════════════════════════════════════════════════════════════════════════════════════
+   tabla: table table--cards-mobile table--albaranes
+   columnas: Nº | Emisión | Entrega | Cliente | Trabajo | Estado | Acciones
+
+   nº             estado      acción en la fila
+   ──────────────────────────────────────────────────────────────────────────────
+   A-2026-0021    borrador    «Emitir»
+   A-2026-0022    emitido     «Enviar para firmar»
+   A-2026-0023    firmado     (ninguna)
+   A-2026-0024    firmado     (ninguna)
+   A-2026-0025    firmado     (ninguna)
+
+   ✅ SUELO · 5 casos dan 3 respuestas distintas: hay algo que comparar
+   ✅ ningún rótulo es un identificador ni un marcador
+   ⏳ HUECO DECLARADO · `btnConvertirFactura` sigue SIN RÓTULO FIRMADO, así que ese caso no
+      pinta acción. Es lo correcto (regla 30), no una omisión. Texto propuesto en
+      docs/master/SCRUM-831.md — el día que se firme, son dos líneas.
+   ✅ firmado y ya facturado: ninguna acción, que es la respuesta correcta
+
+══════════════════════════════════════════════════════════════════════════════════════
+② LA RANURA DE ACCIONES CONTIENE ACCIONES, Y EL TRABAJO TIENE LA SUYA
+══════════════════════════════════════════════════════════════════════════════════════
+   ✅ `.cell-actions` no contiene ningún enlace de navegación
+   ✅ el Trabajo sigue en la fila, en su propia celda · «Trabajo 1»
+   ✅ la cabecera declara «Acciones» (el mismo rótulo que Trabajos y Presupuestos)
+
+══════════════════════════════════════════════════════════════════════════════════════
+③ LA PRIMARIA NAVEGA, NO EJECUTA — emitir no tiene vuelta atrás
+══════════════════════════════════════════════════════════════════════════════════════
+   pulsado «Emitir» · navegó a: albaran-detail · escrituras: 0
+   ✅ dice qué toca y lleva hasta donde se hace; no escribe nada
+
+══════════════════════════════════════════════════════════════════════════════════════
+④ LA FILA NO SE ANUNCIA PULSABLE — y es una decisión, no un olvido
+══════════════════════════════════════════════════════════════════════════════════════
+   cursor de la fila: auto
+   ✅ no se anuncia pulsable: el número abre el detalle y ése sí se anuncia
+
+✅ cada estado ofrece su siguiente paso, la ranura de acciones es de las acciones, y la primaria lleva sin escribir.
+
+===== guard:nif-del-gasto · 11 lineas =====
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+
+  SCRUM-937b · EL NIF DEL GASTO EN EL MODAL (modal real, veredicto real de queFueDelNif)
+  POBLACIÓN: 4 casos a 390 px
+   ✔ A · el campo NIF según el proveedor elegido
+   ✔ B · alta: NIF tecleado y proveedor quitado → aviso tras guardar
+   ✔ B · edición: lo mismo por PUT
+   ✔ POSITIVO · proveedor sin NIF + NIF tecleado → a la ficha, sin aviso
+
+  ✔ los 4 casos: el NIF sólo se escribe con proveedor, y si se pierde se dice.
+
+
+===== guard:lista-gastos · 125 lineas =====
+navegador: Edge (Windows) · 8 gastos de muestra
+
+══════════════════════════════════════════════════════════════════════════════
+⓪ SUELO · ¿hay pantalla, con sus filas y sus tres KPI?
+══════════════════════════════════════════════════════════════════════════════
+   filas pintadas: 8 de 8
+   ✅ los tres KPI, con los rótulos de siempre
+
+══════════════════════════════════════════════════════════════════════════════
+A · sin tabla y sin scroll lateral, a 390 y a 1280
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 390px · lista de 366px, 8 filas, 0 cajas que desbordan (incluida la de 130 caracteres sin espacios)
+   ✅ 1280px · lista de 984px, 8 filas, 0 cajas que desbordan (incluida la de 130 caracteres sin espacios)
+
+══════════════════════════════════════════════════════════════════════════════
+B · objetivo al pulgar (AB6): ningún control por debajo de 44 px
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 390px · 20 controles, todos a 44 px o más
+   ✅ 1280px · 20 controles, todos a 44 px o más
+
+══════════════════════════════════════════════════════════════════════════════
+C · «Mayor categoría» con una categoría que la pantalla no conoce
+══════════════════════════════════════════════════════════════════════════════
+   ✅ el KPI dice «Otros», no la clave
+   ✅ POSITIVO · con una categoría conocida, el KPI dice su nombre («Subcontrata»)
+
+══════════════════════════════════════════════════════════════════════════════
+D · el «⋯» de la fila, pulsado con el ratón: qué opciones ofrece y qué queda tras pulsar cada una
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 1280px · el «⋯» con Trabajo ofrece Editar · Ver trabajo · 🗑 Eliminar
+   ✅ 1280px · el «⋯» sin Trabajo ofrece sólo Editar · 🗑 Eliminar
+   ✅ 1280px · «Editar» abre el modal con «Taladro percutor»
+   ✅ 1280px · «Ver trabajo» navega al trabajo 501 y no abre el modal
+   ✅ 1280px · «Eliminar» pregunta, borra el gasto 5 y la lista pasa de 8 a 7 filas
+   ✅ 1280px · NEGATIVO · rechazar «¿Eliminar este gasto?» no borra nada
+   ✅ 390px · el «⋯» con Trabajo ofrece Editar · Ver trabajo · 🗑 Eliminar
+   ✅ 390px · el «⋯» sin Trabajo ofrece sólo Editar · 🗑 Eliminar
+   ✅ 390px · «Editar» abre el modal con «Taladro percutor»
+   ✅ 390px · «Ver trabajo» navega al trabajo 501 y no abre el modal
+   ✅ 390px · «Eliminar» pregunta, borra el gasto 5 y la lista pasa de 8 a 7 filas
+   ✅ 390px · NEGATIVO · rechazar «¿Eliminar este gasto?» no borra nada
+
+══════════════════════════════════════════════════════════════════════════════
+E · tocar la fila abre el gasto · el enlace del trabajo y el «⋯» NO
+══════════════════════════════════════════════════════════════════════════════
+   ✅ tocar la fila abre el gasto en el modal de edición
+   ✅ el enlace del trabajo navega al trabajo 500 y no abre el modal
+   ✅ el «⋯» abre su menú y no el modal
+
+══════════════════════════════════════════════════════════════════════════════
+F · «Sin trabajo» · «Presupuesto sin trabajo» · el nombre del trabajo y el proveedor
+══════════════════════════════════════════════════════════════════════════════
+   ✅ «Gasolina» · «Sin trabajo» (sin enlace)
+   ✅ «Tubo de cobre 22 mm» · «Presupuesto #5 · María López Saltoki» (enlace)
+   ✅ «Cinta aislante» · «Presupuesto sin trabajo» (enlace)
+   ✅ «Fontanero autónomo» · «Cocina Ruiz Instalaciones Pérez» (enlace)
+
+══════════════════════════════════════════════════════════════════════════════
+G · el estado vacío, el filtro, el CSV y «Nuevo gasto»
+══════════════════════════════════════════════════════════════════════════════
+   ✅ el estado vacío, palabra por palabra
+   ✅ «+ Añadir mi primer gasto» abre el alta
+   ✅ el filtro de categoría pide category=materiales
+   ✅ el CSV lleva el mes y la categoría
+   ✅ «Nuevo gasto» abre el alta vacía
+
+══════════════════════════════════════════════════════════════════════════════
+H · sin estilos en línea (A7) · las cinco píldoras pasan AA
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 0 elementos con style= en línea en la pantalla
+   ✅ píldoras {"materiales":5.49,"desplazamiento":6.37,"herramientas":5.98,"subcontrata":5.3,"otros":6.89,"gasto-foto--si":5.21,"gasto-foto--no":4.73}: todas ≥ 4,5:1
+
+══════════════════════════════════════════════════════════════════════════════
+I · la foto en la fila · el filtro por trabajo · los chips · la cabecera del mes · el vacío de los filtros
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 1280px · cada fila dice «Foto guardada» (3) o «Sin foto» (5) según su gasto
+   ✅ 1280px · la lista no pide ninguna foto (0 <img>, 0 descargas de /foto)
+   ✅ 1280px · el filtro por trabajo ofrece «Todos los trabajos», «Sin trabajo» y los 3 trabajos de la lista, una vez cada uno
+   ✅ 1280px · chips «Todos · 8» (pulsado) y «Sin foto · 5»
+   ✅ 1280px · cabecera «Octubre de 2026 · 8 gastos», sin suma (el total del mes sale sólo en el KPI)
+   ✅ 1280px · «Sin foto» deja las 5 filas sin foto (y sólo ésas)
+   ✅ 1280px · aria-pressed pasa de «Todos» a «Sin foto»
+   ✅ 1280px · el chip filtra sin pedir nada al servidor (1 petición de lista en total)
+   ✅ 1280px · con filtro, la cabecera dice la suma de lo que se ve (10.087,49 €) y que no es la del mes
+   ✅ 1280px · NEGATIVO · «Todos» devuelve las 8 filas y quita la suma
+   ✅ 1280px · «Presupuesto #5 · María López» deja 2 filas · Todos · 2 · Sin foto · 0 · · 2 gastos · 45,00 €
+   ✅ 1280px · «Sin trabajo» deja 4 filas · Todos · 4 · Sin foto · 4 · · 4 gastos · 87,50 €
+   ✅ 1280px · «Reforma baño» deja 1 fila · Todos · 1 · Sin foto · 0 · · 1 gasto · 129,90 €
+   ✅ 1280px · cambiar de trabajo no pide nada al servidor
+   ✅ 1280px · trabajo + «Sin foto» sin resultados → «Ningún gasto con esos filtros», su ayuda y «Quitar los filtros» (Todos · 1 · Sin foto · 0)
+   ✅ 1280px · «Quitar los filtros» devuelve las 8 filas, «Todos los trabajos» y el chip «Todos»
+   ✅ 390px · cada fila dice «Foto guardada» (3) o «Sin foto» (5) según su gasto
+   ✅ 390px · la lista no pide ninguna foto (0 <img>, 0 descargas de /foto)
+   ✅ 390px · el filtro por trabajo ofrece «Todos los trabajos», «Sin trabajo» y los 3 trabajos de la lista, una vez cada uno
+   ✅ 390px · chips «Todos · 8» (pulsado) y «Sin foto · 5»
+   ✅ 390px · cabecera «Octubre de 2026 · 8 gastos», sin suma (el total del mes sale sólo en el KPI)
+   ✅ 390px · «Sin foto» deja las 5 filas sin foto (y sólo ésas)
+   ✅ 390px · aria-pressed pasa de «Todos» a «Sin foto»
+   ✅ 390px · el chip filtra sin pedir nada al servidor (1 petición de lista en total)
+   ✅ 390px · con filtro, la cabecera dice la suma de lo que se ve (10.087,49 €) y que no es la del mes
+   ✅ 390px · NEGATIVO · «Todos» devuelve las 8 filas y quita la suma
+   ✅ 390px · «Presupuesto #5 · María López» deja 2 filas · Todos · 2 · Sin foto · 0 · · 2 gastos · 45,00 €
+   ✅ 390px · «Sin trabajo» deja 4 filas · Todos · 4 · Sin foto · 4 · · 4 gastos · 87,50 €
+   ✅ 390px · «Reforma baño» deja 1 fila · Todos · 1 · Sin foto · 0 · · 1 gasto · 129,90 €
+   ✅ 390px · cambiar de trabajo no pide nada al servidor
+   ✅ 390px · trabajo + «Sin foto» sin resultados → «Ningún gasto con esos filtros», su ayuda y «Quitar los filtros» (Todos · 1 · Sin foto · 0)
+   ✅ 390px · «Quitar los filtros» devuelve las 8 filas, «Todos los trabajos» y el chip «Todos»
+   ✅ categoría sin gastos → «Ningún gasto con esos filtros», no «Sin gastos este mes»
+   ✅ «Quitar los filtros» suelta la categoría y vuelve a pedir el mes entero (sin category=)
+   ✅ mes vacío → chips «Todos · 0» y «Sin foto · 0», sin cabecera del mes
+
+══════════════════════════════════════════════════════════════════════════════
+J · «Nuevo gasto» abajo, fijo, en el móvil · arriba en el escritorio · la primera fila entra en la primera pantalla
+══════════════════════════════════════════════════════════════════════════════
+   ✅ 390px · «Nuevo gasto» va fijo abajo, a 296 px de 390, pegado al borde (bottom 834 de 844) y nada lo tapa
+   ✅ 390px · «⬇ CSV» se queda arriba (top 16), fuera de la barra
+   ✅ 390px · el «?» de ayuda no toca «Nuevo gasto»: 0 de 27 puntos tapados, 0 px² de solape (el botón acaba en x=312, el «?» empieza en x=322)
+   ✅ 390px · recorrida 1194 px de lista, «Nuevo gasto» sigue en su sitio (top 790)
+   ✅ 390px · al final de la lista, la última fila acaba en 755 y la barra empieza en 779: no la tapa
+   ✅ 390×844 · la primera fila entera entra en la primera pantalla (acaba en 654; la barra empieza en 779)
+   ✅ 390px · «Nuevo gasto» (el de la barra) abre el alta, y el modal queda por encima de la barra
+   ✅ 1280px · «Nuevo gasto» está arriba, junto a «⬇ CSV» (top 24 y 24), no en una barra fija
+   ✅ 1280px · el atajo «N» sigue siendo de este botón (rótulo «Nuevo gasto» + <kbd>N</kbd>) y su destino abre el alta (la tecla la escucha app.js: fuera del banco)
+
+✅ De acuerdo: la lista de Gastos no se recorre de lado, cada opción del «⋯» cambia el estado, el KPI no enseña claves internas, la foto se ve en cada fila sin pedirla, los filtros y los chips cuentan lo que filtran y «Nuevo gasto» va fijo abajo en el móvil.
+
+===== guard:duplicar-conserva · 53 lineas =====
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+{
+  "casos": {
+    "G": {
+      "editorConLineas": true,
+      "lineasCargadas": 2,
+      "hayCampoGlobal": true,
+      "global": "25",
+      "campoGlobalAbierto": true,
+      "botonAnadirVisible": false,
+      "hayDesplegableDePago": true,
+      "pago": "FULL_UPFRONT",
+      "errores": []
+    },
+    "P": {
+      "editorConLineas": true,
+      "lineasCargadas": 2,
+      "hayCampoGlobal": true,
+      "global": "",
+      "campoGlobalAbierto": false,
+      "botonAnadirVisible": true,
+      "hayDesplegableDePago": true,
+      "pago": "FIFTY_FIFTY",
+      "errores": []
+    }
+  },
+  "controles": {
+    "G": {
+      "leido": "25",
+      "abierto": true
+    },
+    "P": {
+      "leido": "FIFTY_FIFTY"
+    }
+  }
+}
+
+── SCRUM-926 · duplicar conserva lo que cobra ──
+✔ SUELO · el editor abre con las 2 lineas del presupuesto duplicado (G)
+✔ SUELO · y tambien en el caso de cobro (P)
+✔ CONTROL POSITIVO G · este guard SABE leer el campo del descuento global
+✔ CONTROL POSITIVO P · este guard SABE leer el desplegable de cobro
+✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
+✔ G · duplicar CONSERVA el descuento global de 25 €
+✔ G · y deja su campo ABIERTO, no un importe detras de un boton
+✔ P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
+✔ sin errores de pagina en ninguno de los dos casos
+
+NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
+                                        `currency` (el editor no tiene selector: usa la del merchant)
+
+POBLACION casillas=9 verdes=9 fallos=0
+EXIT=0
+
+===== guard:marcadores-en-pantalla · 9 lineas =====
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+
+────────────────────────────────────────────────────────────────────────────
+✅ ningún marcador NUEVO llega al DOM renderizado. Vigiladas las 28 vistas del router en sus tres estados (con datos, sin datos y error), con el control negativo corrido en esta misma ejecución. Los que quedan están en el CENSO, reportados al fundador y pendientes de firma.

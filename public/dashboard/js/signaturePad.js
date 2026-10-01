@@ -26,6 +26,18 @@
   const esc = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+  // SCRUM-743 · LA CANTIDAD, CON LA FORMA DEL PDF Y DE LA PANTALLA REMOTA. Aquí se escribía en crudo
+  // («2.5», «12345») mientras el papel y el canal remoto dicen «2,5» y «12.345». Misma semántica que
+  // `fmtCantidadAlbaran` del servidor (`albaranPublicVista.ts`): vacío se queda vacío, lo que no es
+  // un número se deja como venía, y un número va por `fmtNumeroEs` (api.js), gemela de
+  // `formatNumeroEs`. No toca lo que se sella: la huella es de la cantidad como número.
+  const cantidadDeLinea = (v) => {
+    if (v === null || v === undefined || v === '') return '';
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return typeof window.fmtNumeroEs === 'function' ? window.fmtNumeroEs(n) : String(v);
+  };
+
   const rotulos = () => (window.appAlbaranRotulos || {});
   const ayudas = () => (window.appAlbaranAyudas || {});
   const calidades = () => (Array.isArray(window.appAlbaranFirmanteOpciones) ? window.appAlbaranFirmanteOpciones : []);
@@ -33,7 +45,11 @@
   function openSignaturePad(opts) {
     const onConfirm = (opts && opts.onConfirm) || function () {};
     const title = (opts && opts.title) || 'Firma del cliente';
-    const hint = (opts && opts.hint) || 'Pide al cliente que firme con el dedo dentro del recuadro.';
+    // SCRUM-1229 · `hint: null` = SIN pista. Hace falta distinguirlo de «no la pasé»: la pista por
+    // defecto habla del CLIENTE, y el parte también abre este pad para que firme el TÉCNICO.
+    const hint = opts && opts.hint === null
+      ? null
+      : ((opts && opts.hint) || 'Pide al cliente que firme con el dedo dentro del recuadro.');
     const firmante = (opts && opts.firmante) || null;
 
     const overlay = document.createElement('div');
@@ -58,7 +74,7 @@
 
     card.innerHTML =
       `<h3 style="margin:0 0 4px;font-size:1.05rem;font-weight:700;color:var(--ink)">${title}</h3>` +
-      `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${hint}</p>`;
+      (hint === null ? '' : `<p style="margin:0 0 12px;font-size:13px;color:var(--muted)">${hint}</p>`);
 
     // ── SCRUM-300: quién firma, ANTES del recuadro ───────────────────────────
     // ⚠️ EN OBRA EL CAMPO VA VACÍO, con la sugerencia como un CHIP DE UN TOQUE. Prerrellenarlo
@@ -112,64 +128,70 @@
         wrap.appendChild(chip);
       }
 
-      // En calidad de qué: SIN opción marcada por defecto, por la misma razón que el nombre, y
-      // porque el comentario de `firmadoPorCalidad` en `prisma/schema.prisma` lo dice.
-      const idLibre = (CALS.find((c) => c.libre) || {}).id;
-      const lista = document.createElement('div');
-      lista.setAttribute('role', 'radiogroup');
-      if (ROT.firmadoPorCalidad) lista.setAttribute('aria-label', ROT.firmadoPorCalidad);
-      lista.style.cssText = 'display:flex;flex-direction:column;gap:2px;margin-top:10px';
-      CALS.forEach((c) => {
-        const fila = document.createElement('label');
-        fila.style.cssText = 'display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;color:var(--ink);cursor:pointer';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'sp-calidad';
-        radio.value = c.id;
-        radio.style.cssText = 'width:20px;height:20px;accent-color:var(--brand,#16a34a);flex:none';
-        const txt = document.createElement('span');
-        txt.textContent = c.etiqueta;
-        fila.appendChild(radio);
-        fila.appendChild(txt);
-        lista.appendChild(fila);
-        if (c.libre) {
-          otraEl = document.createElement('input');
-          otraEl.type = 'text';
-          otraEl.maxLength = 120;
-          otraEl.hidden = true;
-          otraEl.setAttribute('aria-label', c.etiqueta);
-          otraEl.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink);background:var(--surface,#fff);border:1.5px solid var(--border);border-radius:10px;margin:4px 0 4px 30px';
-          // «Otro» EXIGE su texto: la ranura sola no dice nada, así que el botón sigue bloqueado
-          // hasta que se escriba. Mismo criterio que el backend (`resolverCalidadFirmante`).
-          otraEl.addEventListener('input', () => syncOk());
-          lista.appendChild(otraEl);
-        }
-      });
-      lista.addEventListener('change', () => {
-        const sel = lista.querySelector('input[name="sp-calidad"]:checked');
-        if (otraEl) {
-          otraEl.hidden = !sel || sel.value !== idLibre;
-          if (!otraEl.hidden) otraEl.focus();
-        }
-        // 🔴 SCRUM-300: el nombre PRECARGADO se borra al cambiar de opción.
-        //
-        // Si el pro declara que firmó alguien que no es el cliente, dejar ahí el nombre del
-        // cliente que pusimos nosotros sellaría una declaración falsa —y encima con nuestra
-        // sugerencia como culpable—. Solo se borra si sigue siendo NUESTRA sugerencia intacta:
-        // lo que haya tecleado él no se toca nunca.
-        if (nombreEl && nombreEl.dataset.deSugerencia === '1' && sel && sel.value !== 'el_propio_cliente') {
-          nombreEl.value = '';
-          delete nombreEl.dataset.deSugerencia;
-          nombreEl.focus();
-        }
-        syncOk();
-      });
       // Teclear a mano deja de ser «sugerencia nuestra»: pasa a ser lo que él ha dicho.
       nombreEl.addEventListener('input', () => {
         delete nombreEl.dataset.deSugerencia;
         syncOk();
       });
-      card.appendChild(lista);
+
+      // SCRUM-1229 · `firmante.sinCalidad`: el TÉCNICO del parte no declara «en calidad de qué».
+      // Es un empleado identificado, y darle esa ranura sería dejarle decir que firma en nombre
+      // del cliente (SCRUM-653 c.14494; `partes.routes.ts`, ruta `/firmar-tecnico`).
+      if (!firmante.sinCalidad) {
+        // En calidad de qué: SIN opción marcada por defecto, por la misma razón que el nombre, y
+        // porque el comentario de `firmadoPorCalidad` en `prisma/schema.prisma` lo dice.
+        const idLibre = (CALS.find((c) => c.libre) || {}).id;
+        const lista = document.createElement('div');
+        lista.setAttribute('role', 'radiogroup');
+        if (ROT.firmadoPorCalidad) lista.setAttribute('aria-label', ROT.firmadoPorCalidad);
+        lista.style.cssText = 'display:flex;flex-direction:column;gap:2px;margin-top:10px';
+        CALS.forEach((c) => {
+          const fila = document.createElement('label');
+          fila.style.cssText = 'display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;color:var(--ink);cursor:pointer';
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'sp-calidad';
+          radio.value = c.id;
+          radio.style.cssText = 'width:20px;height:20px;accent-color:var(--brand,#16a34a);flex:none';
+          const txt = document.createElement('span');
+          txt.textContent = c.etiqueta;
+          fila.appendChild(radio);
+          fila.appendChild(txt);
+          lista.appendChild(fila);
+          if (c.libre) {
+            otraEl = document.createElement('input');
+            otraEl.type = 'text';
+            otraEl.maxLength = 120;
+            otraEl.hidden = true;
+            otraEl.setAttribute('aria-label', c.etiqueta);
+            otraEl.style.cssText = 'width:100%;min-height:44px;padding:10px 12px;font-size:16px;font-family:inherit;color:var(--ink);background:var(--surface,#fff);border:1.5px solid var(--border);border-radius:10px;margin:4px 0 4px 30px';
+            // «Otro» EXIGE su texto: la ranura sola no dice nada, así que el botón sigue bloqueado
+            // hasta que se escriba. Mismo criterio que el backend (`resolverCalidadFirmante`).
+            otraEl.addEventListener('input', () => syncOk());
+            lista.appendChild(otraEl);
+          }
+        });
+        lista.addEventListener('change', () => {
+          const sel = lista.querySelector('input[name="sp-calidad"]:checked');
+          if (otraEl) {
+            otraEl.hidden = !sel || sel.value !== idLibre;
+            if (!otraEl.hidden) otraEl.focus();
+          }
+          // 🔴 SCRUM-300: el nombre PRECARGADO se borra al cambiar de opción.
+          //
+          // Si el pro declara que firmó alguien que no es el cliente, dejar ahí el nombre del
+          // cliente que pusimos nosotros sellaría una declaración falsa —y encima con nuestra
+          // sugerencia como culpable—. Solo se borra si sigue siendo NUESTRA sugerencia intacta:
+          // lo que haya tecleado él no se toca nunca.
+          if (nombreEl && nombreEl.dataset.deSugerencia === '1' && sel && sel.value !== 'el_propio_cliente') {
+            nombreEl.value = '';
+            delete nombreEl.dataset.deSugerencia;
+            nombreEl.focus();
+          }
+          syncOk();
+        });
+        card.appendChild(lista);
+      }
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -217,7 +239,7 @@
         ? filas.map((l) =>
             `<tr><td style="padding:5px 0;border-bottom:1px solid var(--border)">${esc(l && l.concepto)}</td>` +
             `<td style="padding:5px 0;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap">` +
-            `${esc(l && l.cantidad)}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
+            `${esc(cantidadDeLinea(l && l.cantidad))}${l && l.unidad ? ' ' + esc(l.unidad) : ''}</td></tr>`).join('')
         : '<tr><td style="padding:5px 0;color:var(--muted)">Sin líneas.</td></tr>';
       resumen.appendChild(tabla);
       card.appendChild(resumen);

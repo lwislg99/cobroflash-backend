@@ -2,7 +2,7 @@
 import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-314
 // SCRUM-291 (A4) · la decision de si la serie ya empezo es PURA y vive en validacion fiscal,
 // no aqui: aqui solo se lee la base y se lanza el error.
-import { bloqueoCambioDeSerie, numerosDeLaSerie } from '../../core/validation/fiscalInput';
+import { bloqueoCambioDeSerie, numerosDeLaSerie, anioDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
 import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
 
@@ -132,6 +132,21 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       // A14.3: overrides de flags por merchant (Parte P) — /admin/me y el estado
       // efectivo de publicProfileEnabled los calculan con esto
       flags: true,
+      // 🔴 SCRUM-1227 · LO QUE CONFIGURACIÓN GUARDA TIENE QUE VOLVER AQUÍ. Estos cinco los escribe
+      // el PUT y no salían en el GET, así que la pantalla los recibía vacíos y el siguiente guardado
+      // —de CUALQUIER ajuste— los machacaba: se borraban las cláusulas del PDF, los bloques de la
+      // Home, el criterio de caja y la retención IRPF. `scrum656b` probaba que el PUT los ACEPTA,
+      // no que el GET los DEVUELVA. El test de ida y vuelta (`scrum1227`) compara contra lo que la
+      // pantalla manda al guardar: un campo nuevo en el formulario sin su línea aquí lo pone rojo.
+      clausulasPresupuesto: true,
+      homePrefs: true,
+      criterioCaja: true,
+      retencionIrpfDeclarada: true,
+      retencionIrpfTipo: true,
+      // SCRUM-1102 · las dos respuestas de Configuración (SII y domicilio foral). Mismo aviso que
+      // arriba: sin su línea aquí, el siguiente guardado de cualquier ajuste las devolvería a NULL.
+      llevaLibrosPorSii: true,
+      domicilioFiscalForal: true,
     },
   });
 
@@ -195,11 +210,13 @@ export async function updateMerchantProfile(
   if (data.invoiceSeriesPrefix !== undefined) {
     const actual = await prisma.merchant.findUnique({
       where: { id: merchantId },
-      select: { invoiceSeriesPrefix: true },
+      select: { invoiceSeriesPrefix: true, timezone: true },
     });
     // Se lee la serie del año EN CURSO, que es la que el cambio partiría. Una serie de un año
     // cerrado ya no admite números nuevos, así que no la afecta.
-    const año = new Date().getFullYear();
+    // SCRUM-1168: «en curso» en la zona del MERCHANT, que es con la que numera
+    // `allocateInvoiceNumber`; con el reloj del proceso, en Nochevieja miraba la serie de otro año.
+    const año = anioDeLaSerie(actual);
     const emitidas = await prisma.invoice.findMany({
       where: { merchantId, number: { startsWith: `${año}-` } },
       select: { number: true },

@@ -67,6 +67,21 @@ export async function barridoDemo(
     porModelo[modelo] = await contar(prisma, modelo, { charge: { merchantId: demoId } });
   }
 
+  // 1bis) SCRUM-1296 · la cola de remisión a la AEAT DEL DEMO, antes que sus facturas.
+  //
+  // `vfSubmission` está en `FUERA_DEL_BARRIDO_GENERICO`, no en `ORDEN_BORRADO_MERCHANT`: sus FK
+  // son RESTRICT (SCRUM-1127b, decisión 3) y un comercio real con envíos NO se borra. Pero este
+  // barrido no consulta esa lista —recorre `COLGADOS_DE_CHARGE`, el orden y `botSession`—, así
+  // que lo que está fuera del genérico necesita aquí su paso propio o el demo no se limpia.
+  // Esa asimetría entre las dos listas es la que obligó a este paso: quien añada otro modelo
+  // «fuera» tropezará con lo mismo.
+  //
+  // ⚠️ Hoy no borra nada: la tabla está vacía en todas partes, y la tanda 2 de SCRUM-1296
+  // propone que el demo no encole nunca. Con eso, el paso sólo protege el botón; si algún día
+  // cuenta filas, es que el demo empezó a encolar.
+  modelos.push('vfSubmission');
+  porModelo.vfSubmission = await contar(prisma, 'vfSubmission', { merchantId: demoId });
+
   // 2) Los que llevan `merchantId`, en el orden declarado (hijos antes que padres).
   for (const modelo of ORDEN_BORRADO_MERCHANT) {
     modelos.push(modelo);

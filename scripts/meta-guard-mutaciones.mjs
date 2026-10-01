@@ -14,6 +14,7 @@
 // que a alguien se le ocurra hacerlo. Esto lo mecaniza.
 //
 // ── EN QUÉ SE DIFERENCIA DE SCRUM-719 (`censo:mudez`), que ya existe ─────────────────────────
+// (Existe, pero es MANUAL: no lo lanza ningún workflow ni ningún test — SCRUM-1179. No es una red.)
 // Aquél aplica UNA mutación uniforme —vaciar `soloEjecutable`— a los guards que llaman a ese
 // filtro, y mide ceguera ante un fuente VACÍO. Medido: los guards de SCRUM-740 y SCRUM-741 no
 // llaman al filtro, así que para su censo son «NO APLICA»: invisibles.
@@ -406,6 +407,60 @@ export function ocurrenciasDelAncla(fuente, ancla) {
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1321 · EL ANCLA QUE DEJA DE SER ÚNICA — el límite que SCRUM-812c dejó escrito, cobrado.
+ *
+ * `aplicarUna` hace `texto.replace(de, a)`, que muta la PRIMERA ocurrencia. Mientras el ancla
+ * aparece una vez, da igual. El día que alguien escribe MÁS ARRIBA una línea que la contiene, la
+ * mutación pasa a caer en otro sitio, el test declarado no se entera, y el veredicto sale **MUDO
+ * acusando a un guard sano**. Nadie ha tocado ni el guard ni su declaración.
+ *
+ * Medido: `dc8ea603` (SCRUM-1263, PR #1951, mergeado el 29-sep-2026 a las 09:44Z) añadió a
+ * `.github/workflows/claude.yml` dos pasos nuevos. Uno lleva un `if:` que EMPIEZA igual que el de
+ * la acción y va antes; el otro repite la línea `CUERPO="$CUERPO" node …` del paso de después.
+ * Dos anclas de `scrum853` pasaron de 1 ocurrencia a 2, las dos mutaciones se fueron al paso
+ * nuevo, y el meta-guard dictó `scrum853 · MUDO` dos veces en cada PR desde entonces. Reancladas
+ * al paso que querían, las dos caen (registro: `docs/master/SCRUM-1321.md`).
+ *
+ * Devuelve `null` si el ancla es inequívoca, o `{ veces, lineas }` si no se puede saber cuál de
+ * las ocurrencias quería la declaración.
+ *
+ * ── LA ÚNICA REPETICIÓN QUE SE ADMITE, y se DERIVA, no se lista ─────────────────────────────
+ * El guard que se muta a sí mismo CITA su ancla dentro de su propia declaración (el caso de
+ * SCRUM-812c, arriba): dos ocurrencias, y sólo una es código. Se admite si y sólo si
+ * `seCitaASiMismo` y hay exactamente DOS, exactamente UNA empieza línea, y ésa es la PRIMERA —
+ * que es la que `replace` va a tocar. Con el array movido arriba la primera es la cita, y sale
+ * ambigua: es justo el caso que aquel bloque describe.
+ *
+ * ⚠️ LO QUE NO MIRA: que la ocurrencia única sea la que el test ejercita. Eso sólo lo dice
+ * aplicar la mutación (SCRUM-839e). Esto es la criba de «¿sé siquiera a cuál me refiero?».
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function ambiguedadDelAncla(fuente, ancla, { seCitaASiMismo = false } = {}) {
+  const posiciones = [];
+  for (let i = fuente.indexOf(ancla); i !== -1; i = fuente.indexOf(ancla, i + ancla.length)) {
+    posiciones.push(i);
+  }
+  if (posiciones.length <= 1) return null;
+  const empiezanLinea = posiciones.filter((i) => i === 0 || fuente[i - 1] === '\n');
+  if (seCitaASiMismo && posiciones.length === 2 && empiezanLinea.length === 1
+      && empiezanLinea[0] === posiciones[0]) return null;
+  return {
+    veces: posiciones.length,
+    lineas: posiciones.map((i) => fuente.slice(0, i).split('\n').length),
+  };
+}
+
+/** El motivo, ya escrito, de un ancla ambigua. Lo dicen igual el meta-guard y la criba de `npm test`. */
+export function motivoDeAnclaAmbigua(fichero, { veces, lineas }) {
+  return `el ancla \`de\` aparece ${veces} veces en \`${fichero}\` (líneas ${lineas.join(', ')}) y `
+    + `\`replace\` mutaría la primera, la de la línea ${lineas[0]}, sin saber si es la que la `
+    + 'declaración quería. Alárgala con el contexto que la hace única (la línea de antes o la de '
+    + 'después, dentro del mismo literal con `\\n`): anclar a media línea es anclar a que nadie '
+    + 'escriba otra que empiece igual';
+}
+
+/**
  * SUELO ⓿ (SCRUM-812) · ¿he mirado algún fichero? Devuelve el motivo, o `null` si aguanta.
  *
  * Vive FUERA del bloque principal por lo mismo que `sueloDelCenso`: un suelo que sólo existe
@@ -570,8 +625,43 @@ export function esCegueraNoMudez(donde) {
  * FAIL-CLOSED, a propósito: si `tras` no trae lo que esta función necesita (una sesión vieja que
  * llamó a `correr()` antes de SCRUM-1100, o un `tras` fabricado a mano en un test), lo DICE en vez
  * de inventar un veredicto — el mismo principio que el resto de esta casa (A3).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1321 · LA TERCERA RAMA DE ARRIBA ERA FALSA, Y MANDÓ A DOS SESIONES A BUSCAR UN RENOMBRADO.
+ *
+ * «CON resumen Y cuadra → el fichero terminó con normalidad; … ¿cambió el título?» parte de que
+ * `test:summary` lo emite el HIJO y viaja por su tubería. No es así, y está medido (Node 24, el
+ * del CI; la sonda y su salida, en `docs/master/SCRUM-1321.md`): una cobaya con CINCO tests que
+ * muere en el tercero —el testigo dice 3 ejecutados— entrega al padre un resumen con
+ * `tests: 1`, y este script había acumulado 1. **Cuadra.** El resumen lo escribe el proceso
+ * PADRE contando lo que LE LLEGÓ: llega siempre y cuadra siempre, también cuando se ha perdido
+ * la mitad del fichero. Como prueba de «terminó con normalidad» no vale nada.
+ *
+ * Y el coste, medido el 1-oct-2026: el meta-guard dijo de `scrum859` «CUADRAN … el título
+ * cambió» en los PR #2037 y #2034, y con eso se abrió SCRUM-1321 pidiendo arreglar un renombrado.
+ * Nadie había renombrado nada: el título lleva sin tocarse desde `b676ec8d` (15-sep). La pasada
+ * limpia traía 20 tests y la mutada 16 — faltaban cuatro, y el mensaje no los contaba.
+ *
+ * LO QUE SÍ SE SABE, y es lo que ahora dice: cuando llega aquí, PUERTA 1 ya ha visto ese test EN
+ * VERDE Y CON ESE NOMBRE en la pasada limpia, sobre el mismo fichero y un momento antes. Así que
+ * lo que distingue «se cortó» de cualquier otra cosa es la DIFERENCIA con la limpia: qué tests
+ * que entonces aparecieron ya no aparecen. Por eso recibe `limpia`.
+ *
+ * ⚠️ ESTO NO ARREGLA LA PÉRDIDA (sigue siendo la de SCRUM-908): sólo deja de atribuirla a quien
+ * no la causó, y nombra lo que falta para que la próxima vez haya con qué acotarla.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
-export function diagnosticoDeCorte(tras) {
+const NOMBRES_DE = (r) => [
+  ...(r?.pasados || []), ...(r?.caidos || []), ...(r?.saltados || []).map((x) => String(x?.nombre || '')),
+];
+
+/** Los tests que aparecieron en la pasada limpia y NO aparecen en la mutada, por nombre exacto. */
+export function ausentesRespectoALaLimpia(tras, limpia) {
+  const vistos = new Set(NOMBRES_DE(tras));
+  return NOMBRES_DE(limpia).filter((n) => !vistos.has(n));
+}
+
+export function diagnosticoDeCorte(tras, limpia = null) {
   if (!tras || typeof tras !== 'object' || (tras.resumen === undefined && tras.duracionMs === undefined)) {
     return 'NO EVALUABLE: este `tras` no trae `resumen`/`duracionMs` (¿corrió con una versión de '
       + '`correr()` anterior a SCRUM-1100?). No se afirma nada sobre si la salida se cortó.';
@@ -587,11 +677,28 @@ export function diagnosticoDeCorte(tras) {
   const c = tras.resumen.counts || {};
   const contadosAqui = (tras.pasados?.length || 0) + (tras.caidos?.length || 0) + (tras.saltados?.length || 0);
   const cuadra = Number.isFinite(c.tests) && c.tests === contadosAqui;
-  return `resumen SÍ llegó en ${duracion}: node:test contó ${c.tests ?? '?'} tests (${c.passed ?? '?'} pasados, `
+  const delResumen = `resumen SÍ llegó en ${duracion}: node:test contó ${c.tests ?? '?'} tests (${c.passed ?? '?'} pasados, `
     + `${c.skipped ?? '?'} saltados) frente a los ${contadosAqui} que este script acumuló. `
     + (cuadra
-      ? 'CUADRAN: el fichero terminó con normalidad — si el test buscado no aparece, el título cambió.'
+      // SCRUM-1321: que cuadre NO dice que el fichero terminara. El resumen lo escribe el padre.
+      ? 'Cuadran, y eso NO prueba que el fichero terminara: el resumen lo emite el proceso padre con lo que le llegó.'
       : '🔴 NO CUADRAN: se perdió algo ANTES del resumen, no al final — mismo mecanismo de pérdida, otro punto de corte.');
+  if (!limpia) {
+    return `${delResumen} Sin la pasada limpia delante no se puede decir qué falta: no se afirma `
+      + 'ni que la salida se cortara ni que el título cambiara.';
+  }
+  const ausentes = ausentesRespectoALaLimpia(tras, limpia);
+  const enLimpia = NOMBRES_DE(limpia).length;
+  if (!ausentes.length) {
+    return `${delResumen} Y no falta NINGUNO de los ${enLimpia} tests de la pasada limpia: el test `
+      + 'buscado no estaba tampoco allí con ese nombre. Mira la declaración, no la tubería.';
+  }
+  return `🔴 FALTAN ${ausentes.length} de los ${enLimpia} tests que SÍ aparecieron en la pasada limpia `
+    + `(la mutada trae ${contadosAqui}): ${ausentes.slice(0, 8).map((n) => `«${n}»`).join(', ')}`
+    + `${ausentes.length > 8 ? `, y ${ausentes.length - 8} más` : ''}. `
+    + 'La salida de la pasada mutada se CORTÓ, o el fichero murió a medias. NO es un título '
+    + 'renombrado: esos tests corrieron con ese nombre un momento antes y sobre el mismo fichero, '
+    + `así que sólo la propia mutación podría haberlos renombrado. ${delResumen}`;
 }
 
 /**
@@ -1011,6 +1118,28 @@ export async function aplicarUna(mut, guard, limpia) {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PUERTA 1b (SCRUM-1321) · ¿SÉ A CUÁL DE LAS OCURRENCIAS ME REFIERO?
+  //
+  // El `replace` de abajo muta la PRIMERA. Si el ancla casa dos veces y la primera no es la que
+  // el test ejercita, el test pasa y esto dictaba MUDO —«pasa en verde sobre el defecto que dice
+  // vigilar»— sobre un guard que cae en cuanto se muta el sitio correcto. Medido con `scrum853`
+  // y `claude.yml`: MUDO ×2 sobre `main`, VIVO ×2 con la misma mutación en el paso que quería.
+  //
+  // No se muta y se dice: no saber a cuál me refiero es CEGUERA, no mudez. La criba barata vive
+  // en `npm test` (`scrum836`, con el MISMO `ambiguedadDelAncla`) y debería pararlo antes; ésta
+  // es la segunda línea, para el día que aquélla no esté o no llegue.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  const absGuard = path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard);
+  const ambigua = ambiguedadDelAncla(texto, mut.de, { seCitaASiMismo: path.resolve(abs) === path.resolve(absGuard) });
+  if (ambigua) {
+    return {
+      ok: false,
+      ciego: `${motivoDeAnclaAmbigua(mut.fichero, ambigua)}. NO se ha mutado nada. NO es que el `
+        + 'guard esté mudo: es que la declaración no dice qué quiere mutar.',
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
   // 🔴 PUERTA 2 (SCRUM-763) · ¿HAY UN ÁRBOL EJECUTABLE DETRÁS DE ESTE FUENTE?
   //
   // Si el fichero se compila, el código que corren los tests NO es éste: es su `.js` de `dist/`.
@@ -1135,7 +1264,8 @@ export async function aplicarUna(mut, guard, limpia) {
       // SCRUM-1100 · sólo para «NO APARECE»: es la única de las tres causas donde `test:summary`
       // puede dar evidencia directa de corte. SALTADO ya tiene su causa conocida (QA_DB_TEST) y
       // añadir esto ahí sería ruido, no diagnóstico.
-      const corte = donde.startsWith('NO APARECE') ? `\n    → ${diagnosticoDeCorte(tras)}` : '';
+      // SCRUM-1321 · con la LIMPIA delante: lo que distingue un corte es qué falta respecto a ella.
+      const corte = donde.startsWith('NO APARECE') ? `\n    → ${diagnosticoDeCorte(tras, limpia)}` : '';
       const recuento = `\n    → en la pasada MUTADA ese test: ${donde}.`
         + ` Recuento: ${(tras?.pasados || []).length} pasados · ${(tras?.caidos || []).length} caídos`
         + ` · ${(tras?.saltados || []).length} saltados.`

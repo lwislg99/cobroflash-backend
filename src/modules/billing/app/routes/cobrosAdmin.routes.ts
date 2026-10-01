@@ -7,7 +7,7 @@
 // Se monta con `mountAdmin`, así que hereda `requireAuth` y `req.merchantId` (regla 2).
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
-import { listarCobros } from '../../domain/cobros.service';
+import { listarCobrosConCorreo } from '../../domain/cobros.service';
 
 const router = Router();
 
@@ -24,7 +24,8 @@ const router = Router();
  */
 router.get('/', requireRole('admin'), async (req, res) => {
   try {
-    const cobros = await listarCobros((req as { merchantId: number }).merchantId);
+    // SCRUM-1235 · con el aviso del correo del documento que no salió.
+    const cobros = await listarCobrosConCorreo((req as { merchantId: number }).merchantId);
     // 🔴 SCRUM-474 fase 2 · LOS CUBOS NO VIAJAN AQUÍ, y esto es la corrección de un error de
     // diseño: metí un dato CONSTANTE dentro del sobre de un dato VARIABLE. El conjunto cerrado de
     // métodos no cambia entre peticiones —es configuración del producto, no parte de una lista— y

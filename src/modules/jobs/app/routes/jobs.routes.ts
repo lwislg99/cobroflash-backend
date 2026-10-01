@@ -15,7 +15,8 @@ import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../.
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
 // SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
 // módulo para que el test use el MISMO y no una copia.
-import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
+import { primeroConTramoPendiente } from '../../domain/presupuestosDelTrabajo';
+import { dineroDelTrabajo } from '../../domain/dineroDelTrabajo'; // SCRUM-1355
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
@@ -44,6 +45,7 @@ import {
 } from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { importePendienteDeFacturar } from '../../domain/importePendienteAlbaran'; // SCRUM-1271
 import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-424
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 // SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
@@ -93,6 +95,9 @@ const jobInclude = {
 // versión por lote y la de una sola fila no puedan divergir (mismos campos, misma forma).
 const QUOTE_SELECT = {
   id: true, quoteNumber: true, total: true, currency: true,
+  // SCRUM-1355 · sin el estado, el serializador no distingue un BORRADOR de un aceptado, y el
+  // total de un presupuesto que nadie ha aceptado salía como dinero que le deben al Trabajo.
+  status: true,
   paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
   lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
   discountGlobalAmount: true, // SCRUM-887: `lineasParaFacturar` lo exige para decidir si aplica el dto
@@ -438,7 +443,26 @@ async function serializeJob(job: Job, refs?: JobRefs) {
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
   let planView: ReturnType<typeof buildBillingPlanView> | null = null; // SCRUM-34
-  if (quote) {
+  // ── SCRUM-1355 · SÓLO ES DINERO LO QUE EL CLIENTE HA ACEPTADO ────────────────────────────
+  //
+  // `todosLosQuotes` trae los presupuestos del Trabajo del estado que sean: también un BORRADOR
+  // colgado con `job_id` (SCRUM-1274). Hasta hoy su total salía como importe aceptado, como chip,
+  // como importe de referencia, como pendiente y como siguiente tramo — medido en producción: un
+  // Trabajo sin aceptar nada decía que le debían 121 €.
+  //
+  // 🔴 Las cinco salidas leen de `dinero`, y NINGUNA de `quote.total`: el criterio vive en un
+  // solo sitio (`dineroDelTrabajo`) porque arreglarlas una a una deja las demás mintiendo. Lo
+  // vigila `tests/scrum1355-borrador-no-es-deuda`.
+  //
+  // `quote` (el primero) sigue titulando el Trabajo y viajando en `quote:` — eso es el DOCUMENTO,
+  // no una afirmación sobre lo que se debe. Y lo FACTURADO sigue saliendo de todos: una factura
+  // emitida es un hecho, esté como esté su presupuesto (SCRUM-363).
+  const dinero = dineroDelTrabajo({
+    totalAceptadoGuardado: job.totalAceptado,
+    quotes: todosLosQuotes,
+    resolverPlan: resolveBillingPlan,
+  });
+  if (dinero.aceptados.length > 0) {
     // SCRUM-195 (rebanada 2) · `remaining` SUMA TODOS los presupuestos del Trabajo.
     //
     // EL FALLO QUE CIERRA: antes salía solo del original, así que un adicional aceptado y no
@@ -447,15 +471,17 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     //
     // Cada presupuesto tiene su PROPIO plan (decisión 5 del ticket: el plan del extra es
     // independiente), así que lo correcto es sumar los restos, no recalcular un plan conjunto.
-    const pendiente = restanteDelTrabajo(todosLosQuotes, resolveBillingPlan);
+    const pendiente = dinero.restante;
     if (pendiente > 0) {
-      remaining = { amount: Math.round(pendiente * 100) / 100, currency: quote.currency };
+      remaining = { amount: Math.round(pendiente * 100) / 100, currency: dinero.aceptados[0].currency };
     }
+  }
+  if (dinero.quoteDelPlan) {
     // SCRUM-34: siguiente tramo + pendientes por el MISMO conteo que collect-rest (plan[emitted]).
     // ⚠️ `planView` sigue siendo el del ORIGINAL a propósito: es la vista del plan BASE, y
     // enseñar los planes de los adicionales es timeline multi-documento — rebanada 3, con su
     // microcopy. Lo que NO puede seguir mintiendo hoy es el importe pendiente, y ése ya suma.
-    planView = buildBillingPlanView(quote, (quote.Invoice || []).length);
+    planView = buildBillingPlanView(dinero.quoteDelPlan, (dinero.quoteDelPlan.Invoice || []).length);
   }
 
   return {
@@ -475,7 +501,7 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // lista ya pinta el cliente aparte y con `titulo` a secas lo repetía.
     tituloPropio: tituloPropioDeTrabajo(job),
     direccion: job.direccion ?? null,
-    totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
+    totalAceptado: dinero.totalAceptado, // SCRUM-1355: null si nadie ha aceptado nada
     totalCobrado: Number(job.totalCobrado ?? 0),
     // SCRUM-13: semáforo de cobro derivado (SCRUM-11 lo pinta; aquí NO se hace UI).
     // totalCobrado lo materializa recalcJobCobradoForCharge en los webhooks de pago.
@@ -484,7 +510,7 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // de los presupuestos del Trabajo, que ya están resueltas aquí — sin consulta nueva.
     estadoCobro: estadoCobroFor(
       Number(job.totalCobrado ?? 0),
-      job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      dinero.totalAceptado ?? 0,
       totalFacturadoDe(todosLosQuotes),
     ),
     // SCRUM-363 · el EJE, explícito. Viaja para que la interfaz no vuelva a derivarlo por su
@@ -492,7 +518,7 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // criterio — y en cuanto el eje puede venir de lo facturado, los dos dejan de coincidir y el
     // mismo Trabajo sale «Pagado» en el detalle y sin chip en la lista. `null` = sin eje.
     importeReferencia: importeDeReferencia(
-      job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      dinero.totalAceptado ?? 0,
       totalFacturadoDe(todosLosQuotes),
     ),
     customer,
@@ -613,6 +639,7 @@ async function serializeJobDetail(job: any) {
   const albaranes = albaranesRaw.map((a) => {
     const facturado = facturadoPorLinea(libroJob.filter((f) => f.albaranId === a.id));
     const lineas = (Array.isArray(a.lineas) ? a.lineas : []) as any[];
+    const pendientes = pendientePorLinea(lineas, facturado);
     return {
       ...serializeAlbaran(a),
       operario: base.operario,
@@ -624,7 +651,13 @@ async function serializeJobDetail(job: any) {
       // `estadoFacturacion`, siendo la MISMA llamada. Y `estadoCobro` ya nombra otra cosa en este
       // mismo endpoint: el cobro del TRABAJO (`Pagado`/`Parcial`/`Pendiente`, línea 253).
       estadoFacturacion: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
-      pendientes: pendientePorLinea(lineas, facturado),
+      pendientes,
+      // SCRUM-1271 · el IMPORTE que queda por facturar, del mismo libro y con la misma aritmética
+      // que `totales.total`. Tras una parcial, «X entregados sin facturar» contaba el albarán
+      // ENTERO. `null` sin valorar; `0` facturado entero. Lo suma `jobCobroHuecos.js`.
+      importePendienteDeFacturar: importePendienteDeFacturar({
+        lineas, pendientes, modoValoracion: a.modoValoracion, facturadoEntero: a.invoiceId != null,
+      }),
     };
   });
 
