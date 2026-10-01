@@ -1,0 +1,20 @@
+POBLACION ficheros=10 node=v24.18.0 canario=C:\Users\JAVIER~1\AppData\Local\Temp\yaqu-1328-canario-31328.tap
+limpio  x0  proc=  7 bytes=ENTERO     999 ms salida=0 tests=10 fail=0  tests/pr-automatico-el-mensaje-del-automerge.test.mjs
+limpio  x0  proc=  6 bytes=ENTERO    3462 ms salida=0 tests=4 fail=0  tests/scrum1263-gancho-pre-push.test.mjs
+limpio  x0  proc= 26 bytes=ENTERO    7648 ms salida=0 tests=13 fail=0  tests/scrum839e-solo-pr-armados.test.mjs
+limpio  x0  proc= 11 bytes=ENTERO    1483 ms salida=0 tests=6 fail=0  tests/scrum850-la-poblacion-del-instrumento.test.mjs
+limpio  x0  proc= 17 bytes=ENTERO    6336 ms salida=0 tests=11 fail=0  tests/scrum853-lecturas-que-fallan-cerrado.test.mjs
+limpio  x0  proc=  5 bytes=ENTERO    1975 ms salida=0 tests=16 fail=0  tests/scrum853d-cortacircuitos.test.mjs
+PISA    x13 proc= 27 bytes=ENTERO    4094 ms salida=0 tests=6 fail=0  tests/scrum850b-las-formas-que-mienten.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\tanda850b-Pzh8d7\rojo.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\tanda850b-PGDKRW\rojo.test.mjs
+PISA    x1  proc=  2 bytes=ENTERO     254 ms salida=0 tests=4 fail=0  tests/scrum928-guards-entrada-recuento-con-color.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\JAVIER~1\AppData\Local\Temp\scrum928-color-2ItjQw\sonda.test.mjs
+PISA    x2  proc=  5 bytes=ENTERO    2662 ms salida=0 tests=22 fail=0  tests/scrum754-el-juez-que-oscila.test.mjs
+            intruso: [script con node:test] C:\Users\Javier Pereira\cobroflash-jv3\tests\_sonda-saltados.mjs C:\Users\JAVIER~1\AppData\Local\Temp\scrum754c-Hksqpv\fixture.test.mjs
+            intruso: [script con node:test] C:\Users\Javier Pereira\cobroflash-jv3\tests\_sonda-saltados.mjs C:\Users\JAVIER~1\AppData\Local\Temp\scrum754c-UpiOU8\fixture.test.mjs
+PISA    x1  proc=116 bytes=PISADO    9565 ms salida=0 tests=4 fail=0  tests/scrum976-guards-entrada-con-techo.test.mjs
+            intruso: [otro node --test] hijo: C:\Users\Javier Pereira\cobroflash-jv3\tests\public-js-parsea.test.mjs
+            bytes: quedo «SCRUM-976 ① están los once, por nombre, y el suelo no baja de ellos» · 2 recuentos «# tests» [4,122] (se espera uno) · los casos de nivel superior no van 1..N seguidos (primero 1, ultimo 122, hay 124)
+RESUMEN (sonda/bytes) {"limpio/ENTERO":6,"PISA/ENTERO":3,"PISA/PISADO":1} sobre 10
+EXIT=0
