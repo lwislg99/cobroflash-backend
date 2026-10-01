@@ -387,7 +387,10 @@ test('SCRUM-1343 · la línea de arranque se imprime SIN condición: cuelga del 
   while (sentencia && !ts.isExpressionStatement(sentencia)) sentencia = sentencia.parent;
   assert.ok(sentencia, 'el uso es una sentencia');
   assert.match(sentencia.getText(sf), /^console\.log\(/);
-  assert.equal(sentencia.parent, puerta.body, 'si colgara de un `if` o de un bucle, dejaría de salir con ceros');
+  // `ok` y no `equal`: al fallar, `equal` intenta pintar los dos nodos del AST enteros y el
+  // fichero muere en vez de dar su rojo (visto al mutar: «FICHERO MUERTO»).
+  assert.ok(sentencia.parent === puerta.body,
+    'cuelga de un «' + ts.SyntaxKind[sentencia.parent.kind] + '»: si colgara de un `if` o de un bucle, dejaría de salir con ceros');
 });
 
 test('SCRUM-1343 · el veredicto de la tanda pasa por `veredictoDe`: no hay una tercera forma de decidir', () => {
