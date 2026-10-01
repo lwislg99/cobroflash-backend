@@ -67,8 +67,14 @@ de otro carril: el corte vive en el sender.
 
 - **Fail-closed:** del orquestador, por el mismo principio de SCRUM-1307 (una comprobación que
   falla no es un permiso). El ticket lo marcaba como decisión y no como arreglo.
-- **La exención de la respuesta:** el criterio es del propio ticket. El orquestador la aprueba y
-  la sube a Javier ANTES de empujar, porque define a quién sí se le escribe tras una baja.
+- **La exención de la respuesta:** el criterio es del propio ticket, y el sí es de Javier
+  (1-oct-2026), ANTES de empujar, porque define a quién sí se le escribe tras una baja. Consta en
+  SCRUM-1262, comentario 17677. La pregunta, con la alternativa delante: «Un cliente que se dio de
+  baja de WhatsApp escribe al bot. ¿Le contesta? Sí = se corta todo lo que nace de nosotros, pero
+  si él escribe, el bot responde. No = silencio total, y además parcial, porque el corte no es
+  uniforme.» La respuesta, literal: **«3-Dale, sí»**.
+  ⚠️ **Es una transcripción del orquestador; yo no se lo he leído a Javier.** El comentario 17677
+  lo escribí yo y lo dice así. Al escribirlo, el ticket no tenía ningún otro comentario.
 
 ## Un test de OTRO carril, tocado — y sólo su montaje
 
