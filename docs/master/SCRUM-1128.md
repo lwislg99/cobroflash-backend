@@ -138,3 +138,119 @@ rojo por un motivo que no es el suyo. La aserción que importa (`construido === 
 - ⛔ **No toca el camino de emisión** (regla 40).
 - **Desbloquea el PR ③ de SCRUM-1127** (el esquema de `VfSubmission`), que además necesita que
   Javier aplique antes el ALTER en las tres bases (A5). Las dos cosas, no una.
+
+---
+
+# SCRUM-1128b · Las tres comprobaciones, medidas por efecto con la fila YA en el esquema
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:55:21Z
+
+A9: sin fallo que generalice — la medición confirma lo construido; los dos enganches que el guard no cuenta (§⑤) ya los pone en rojo `tests/scrum1127-sif-client.test.mjs`, medido en X1 y X2.
+
+Sesión J6b (`jv-j6b`), 1-oct-2026, por encargo del orquestador de Javier. Rama
+`scrum-1128b-las-tres-por-efecto`. **Sólo registro y banco: ni `src/`, ni `scripts/`, ni `tests/`,
+ni flags, ni landing.**
+
+## ① Por qué se vuelve a medir
+
+Las tres verificaciones del enunciado se corrieron el 25 y el 26-sep (§④ de arriba; comentario
+17153 de Jira, S0, sobre `942e90d1`), **cuando `model VfSubmission` todavía no existía en el
+esquema**: el caso que importa sólo se había visto sobre una raíz fabricada. La fila entró en `main`
+el **30-sep a las 21:35:42Z** (PR #2014, merge `d568599635ab018262aae596843eeb6206925ce5`,
+SCRUM-1296). Desde ese momento el caso ① dejó de ser una fixture y pasó a ser el estado de `main`.
+
+Lo que ya estaba medido sin que nadie lo dijera: `scrum537` corre sobre el árbol real en el check
+obligatorio, así que **cada merge desde #2014 ha comprobado `construido === false` con la fila
+dentro**. Lo que no estaba medido en ningún sitio: qué habría pasado con el criterio viejo, y el
+control positivo y la caída de `scrum537` sobre el `src/` de verdad en vez de sobre una raíz de
+cuatro ficheros.
+
+## ② El banco
+
+`docs/master/evidencias/SCRUM-1128/medir.mjs`. Saca una copia de `origin/main` **fuera del árbol**
+y hace de ella ocho escenarios; cada uno es la copia con una modificación declarada. El llamante y
+el flag en ON existen **sólo en la copia**: en el repositorio no se ha encendido nada ni se ha
+cableado nada. Sobre cada escenario corre el guard de hoy, el guard de antes de SCRUM-1128
+(`32da2be5^`) y los dos tests enteros **dentro de la copia**, con el entorno construido a mano y el
+TAP leído de fichero.
+
+Población de cada escenario (la declara el banco, y sale CIEGO si no llega a sus suelos): **310 ficheros `.ts`
+de `src/`** (311 con el llamante), **5 menciones de hosts de la AEAT**, esquema leído, flag leído,
+**4 páginas públicas, 17.942 caracteres visibles**. Las frases son las cuatro del enunciado: «ya está
+construida» (familia B), «ya cumple», «conforme a la AEAT» y «validada por la AEAT» (familia C).
+
+## ③ Lo medido
+
+| | escenario | piezas | llamantes | flag | criterio de hoy | criterio viejo | las 4 frases (hoy) | `scrum537` |
+|---|---|---|---|---|---|---|---|---|
+| **H** | **`main` tal cual** | cola | 0 | OFF | **no construido** | construido | **BLOQUEA las 4** | 18/18 verde |
+| H0 | hoy sin la fila | — | 0 | OFF | no construido | no construido | bloquea las 4 | 18/18 verde |
+| **P** | **llamante en `src/core/cron/` + flag ON** | cola | 1 | ON | **construido** | construido | **pasan las 4** | **17/18 · cae 1** |
+| P1 | sólo el llamante | cola | 1 | OFF | no construido | construido | bloquea las 4 | 18/18 verde |
+| P2 | sólo el flag ON | cola | 0 | ON | no construido | construido | bloquea las 4 | 18/18 verde |
+| X1 | llamante en `verifactu/sif.cron.ts` + flag ON | cola | 0 | ON | no construido | construido | bloquea las 4 | 18/18 verde |
+| X2 | `enviarSobre` pasado por referencia + flag ON | cola | 0 | ON | no construido | construido | bloquea las 4 | 18/18 verde |
+| M | hoy, con el guard viejo puesto en su sitio | cola | — | — | — | construido | — | **17/18 · cae 1** |
+
+**① El caso que importa — SIGUE BLOQUEANDO (fila H).** Con la fila en el esquema, sin llamante y con
+el flag en OFF, las cuatro frases caen. No es un verde por ceguera: la pieza `cola` se VE, el flag se
+LEE, y un `SIF_ENABLED=true` puesto en el entorno del proceso no cambia nada.
+
+Y la puerta estuvo abierta de verdad: **el criterio viejo, sobre el `main` de hoy, da «construido» y
+deja pasar las cuatro frases.** Que es la fila lo que la abría lo dice H0: quitándola, el viejo vuelve
+a bloquear. Y que hay algo permanente sujetándola lo dice M: con el guard viejo puesto en la copia de
+hoy, `scrum537` cae en «el hecho se DERIVA del codigo, y hoy el envio NO existe».
+
+Lo que **no** había hoy era nadie cruzándola: las cuatro páginas públicas llevan **0 afirmaciones**
+de ninguna familia, con cualquiera de los dos criterios.
+
+**② El control positivo — DEJA DE BLOQUEAR (fila P).** Con un llamante fuera del cliente y el flag en
+ON por defecto, `construido: true`, la salida dice «SI (familia B deja de bloquear)» y las cuatro
+frases pasan. No se ha apagado el guard: en ese mismo escenario la familia A («en certificación»)
+**sigue bloqueando**, y con una sola de las dos condiciones (P1, P2) siguen cayendo las cuatro.
+
+**③ `scrum537` — verde hoy, y cae cuando funcione.** Verde en H (18 tests, 18 pass, 0 fail, 0
+saltados). En P cae **exactamente uno**, «el hecho se DERIVA del codigo, y hoy el envio NO existe»,
+y no cae con una sola condición (P1, P2: 0 fallos).
+
+## ④ Lo que el banco NO mide
+
+- El llamante de P es **simulado**: un fichero de siete líneas que envuelve `enviarSobre` en el
+  `enviar` que pide `procesarObligado`. No compila contra nada ni se ejecuta. Lo que prueba es qué
+  **ve el guard**, no que el envío funcione — que es justo lo que el guard tampoco puede saber.
+- `scrum1128` en la fila M sale «1 test, 1 fallo»: es el fichero que **no carga** (el guard viejo no
+  exporta lo que importa), no un hallazgo. Un rojo sin población no cuenta, y no se cuenta.
+- La columna «importan `sif.client`» del banco replica la expresión de
+  `tests/scrum1127-sif-client.test.mjs` en vez de correr ese fichero, que exige `dist/`.
+
+## ⑤ Dos enganches que el guard NO cuenta — y por qué hoy no son un hueco
+
+Los dos van hacia el lado seguro (bloquea de más, nunca de menos), y se dejan escritos porque el día
+que ocurran la landing seguirá bloqueada con el envío funcionando, y `scrum537` **no** caerá para
+avisarlo:
+
+- **X1 · el enganche se llama `sif.<algo>.ts` y vive en `verifactu/`.** El guard excluye
+  `sif.[a-z]+.ts` entero («el cliente y su cola no son llamantes de sí mismos»), así que un
+  `sif.cron.ts` que llame a `enviarSobre` no cuenta.
+- **X2 · `enviarSobre` se pasa por referencia** (`procesarObligado(nif, enviarSobre)`): no hay
+  llamada en el AST.
+
+Ninguno pasa en silencio: en los dos, el fichero nuevo importa `sif.client`, y
+`tests/scrum1127-sif-client.test.mjs` exige que el único importador sea `sif.cola.ts`. Ese rojo es
+el que obliga a decidir. **No se ha tocado el guard**: la exclusión es del criterio aprobado y
+cambiarla es otro ticket, de su dueño.
+
+## Reproducir
+
+Desde la raíz del repo, con `B` apuntando a un directorio vacío **fuera del árbol**:
+
+    git rev-parse origin/main > "$B/sha-main.txt"
+    mkdir -p "$B/hoy" "$B/node_modules"
+    git archive origin/main src prisma/schema.prisma public/index.html public/precios.html public/terminos.html public/privacidad.html scripts/_guard-afirmacion-fiscal.mjs tests/scrum537-afirmacion-falsa.test.mjs tests/scrum400-conformidad-landing.test.mjs tests/scrum1128-envio-construido.test.mjs | tar -x -C "$B/hoy"
+    cp -r node_modules/typescript "$B/node_modules/typescript"
+    git show 32da2be5^:scripts/_guard-afirmacion-fiscal.mjs > "$B/guard-viejo.mjs"
+    node docs/master/evidencias/SCRUM-1128/medir.mjs "$B"
+
+Sale 0 si las catorce comprobaciones dan lo esperado, 1 si alguna no, 2 si el instrumento está ciego.
+La salida de esta pasada, entera: `docs/master/evidencias/SCRUM-1128/medicion.txt` (14 de 14,
+`ciegos=0`, `EXIT=0`).
