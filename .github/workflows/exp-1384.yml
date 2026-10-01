@@ -1,0 +1,89 @@
+# EXPERIMENTO DESECHABLE · SCRUM-1384 · NO se mergea, NO abre PR (la rama no empieza por `scrum-`).
+#
+# Pregunta: ¿la pérdida de la cola del informe de un fichero (13 de 38 tandas verdes del 1-oct) tiene
+# que ver con `--test-force-exit`? Doce tandas del MISMO árbol: seis con el flag (control: mide la
+# frecuencia base en estas condiciones) y seis sin él. No toca `ci.yml` ni el check obligatorio.
+#
+# Si una tanda sin el flag se cuelga, muere en el techo del job y ESO es el resultado: no se repite.
+name: exp-1384 · informe truncado
+
+on:
+  push:
+    branches: [exp-1384-informe-truncado]
+
+jobs:
+  tanda:
+    name: ${{ matrix.brazo }} force-exit · tirada ${{ matrix.tirada }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        brazo: [con, sin]
+        tirada: [1, 2, 3, 4, 5, 6]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Traer `main`
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+      - name: Compilar (tsc)
+        run: npm run build
+      - name: Banco desechable
+        env:
+          PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          test -n "$PGPORT_HOST" || { echo "no se pudo leer el puerto del servicio"; exit 1; }
+          npx prisma migrate diff --from-empty \
+            --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
+          test -s "$RUNNER_TEMP/esquema.sql" || { echo "el esquema salió VACÍO"; exit 1; }
+          for BASE in yaqu_libro_test yaqu_serie_test yaqu_tramos_test; do
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c "CREATE DATABASE $BASE"
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -q -f "$RUNNER_TEMP/esquema.sql"
+          done
+      # El MISMO comando que `npm test` (sin repetir el build), con o sin el flag según el brazo.
+      - name: La tanda
+        continue-on-error: true
+        env:
+          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+          SERIE_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_serie_test
+          NODE_OPTIONS: >-
+            --test-reporter=spec --test-reporter-destination=stdout
+            --test-reporter=tap --test-reporter-destination=${{ runner.temp }}/tanda.tap
+          FLAG: ${{ matrix.brazo == 'con' && '--test-force-exit' || '' }}
+        run: |
+          echo "brazo=${{ matrix.brazo }} flag='$FLAG'"
+          node scripts/tanda-con-veredicto.mjs node --test $FLAG tests/*.test.mjs > "$RUNNER_TEMP/tanda-spec.log" 2>&1 \
+            && echo "la tanda salió 0" || echo "la tanda salió con $?"
+      - name: Resumen del TAP
+        if: always()
+        run: |
+          grep -E '^# (tests|pass|fail|skipped|duration_ms) ' "$RUNNER_TEMP/tanda.tap" || echo "el TAP no llegó a su resumen"
+          tail -n 5 "$RUNNER_TEMP/tanda-spec.log" || true
+      - name: Guardar el TAP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp-tap-${{ matrix.brazo }}-${{ matrix.tirada }}
+          path: ${{ runner.temp }}/tanda.tap
+          retention-days: 3
+          if-no-files-found: warn
