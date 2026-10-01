@@ -1,7 +1,7 @@
 # SCRUM-1380 · El suelo de la tanda distingue «corrió y no reportó» de «no tiene tests»
 
 **Rama:** `scrum-1380-suelo-corrio-y-no-reporto` · **Carril:** S5 (s5-1octd) · **Fecha:** 1-oct-2026
-**Medido contra:** `origin/main` = `6ce9bf9a` (merge de #2098) · 2026-10-01T13:55:00Z
+**Medido contra:** `origin/main` = `6ce9bf9a0f583063072d05dcac22f26cd6b419cc` · 2026-10-01T13:40:00Z
 
 A9: comprobación → `tests/scrum1380-suelo-corrio-y-no-reporto.test.mjs`
 
@@ -73,7 +73,10 @@ el TAP plano no dice de qué fichero es cada test.
 
 ## Mis errores
 
-1. El primer TAP que bajé con `gh run download` era el del intento 2 (el bueno) y busqué en él una
+1. La hora de «Medido contra» del primer commit de este registro (13:55Z) la puse a ojo desde el reloj
+   local, que va adelantado; la real era ~13:40Z (cabecera `Date:` de GitHub). Corregida en el
+   segundo commit. Estaba avisado en el traspaso.
+2. El primer TAP que bajé con `gh run download` era el del intento 2 (el bueno) y busqué en él una
    firma que no podía estar. `gh run download` da el artefacto del ÚLTIMO intento; el del primero se
    baja por su id (`actions/runs/<id>/artifacts` → `actions/artifacts/<id>/zip`). De ese tropiezo salió
    la comparación de arriba.
