@@ -5,8 +5,6 @@
     "tests/scrum932-el-turno-tiene-mecanismo.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
     "tests/scrum946-censo-de-huerfanos.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
     "tests/scrum966-censo-ve-las-ramas.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; Carril S5 en su registro" },
-    "tests/scrum928-guards-entrada-recuento-con-color.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; lo arregla el PR #1990, que al entrar tiene que borrar esta entrada" },
-    "tests/scrum976-guards-entrada-con-techo.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": true, "motivo": "le falta NODE_OPTIONS; lo arregla el PR #1990, que al entrar tiene que borrar esta entrada" },
     "tests/scrum899d-aviso-de-uso.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin docs/master propio, atribuido por el ticket 899 que trabajó S5" },
     "tests/node-p-capturado-sin-color.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin número de ticket, nació en el commit «vigia y conflicto-de-registro» del 18-sep-2026" },
     "tests/scrum815-idempotencia-del-webhook.test.mjs": { "llamadas": 1, "dueno": "S1", "confirmado": true, "motivo": "no pasa `env`: hereda entero; Carril dinero en su registro" },
