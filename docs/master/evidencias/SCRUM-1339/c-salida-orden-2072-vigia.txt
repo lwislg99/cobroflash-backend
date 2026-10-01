@@ -1,0 +1,75 @@
+POBLACIÓN · tests/vigia-atascados.test.mjs: 64 casos con nombre literal · 0 con nombre construido · anidados: 0
+LOG · vigia-atascados.test.mjs                       confirma 22 de 31
+LOG · confirmadas a solas: 22 · no confirmadas: 9 · sentido impreso (pasada entera): Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+
+pos  línea  estado            nombre
+  1     54  presente          auto-merge armado → lo vigila (la máquina prometió mergearlo)
+  2     60  presente          lo abrió el bot y no llegó a armar → lo vigila (es el caso del #1190)
+  3     64  presente          🔴 PR de una persona SIN auto-merge → NO lo vigila, y dice por qué
+  4     72  presente          draft → no lo vigila
+  5     76  presente          la ETIQUETA gana al título: `no-mergear` lo saca del censo
+  6     83  presente          la etiqueta se compara sin importar mayúsculas
+  7     89  presente          🔴 SIN-CHECKS es una causa PROPIA, no «esperando»
+  8     97  presente          sin checks manda sobre el estado del merge
+  9    102  presente          las otras dos causas, separadas
+ 10    107  presente          🔴 `unknown` NO es limpio: es SIN-ESTADO
+ 11    115  presente          un estado sano con checks corriendo es ESPERANDO, no un atasco nuevo
+ 12    121  presente          un PR nuevo en la lista EMPEORA
+ 13    130  presente          cambiar de causa EMPEORA (behind → dirty no es lo mismo)
+ 14    136  presente          🔴 la MISMA lista NO empeora: se reescribe el cuerpo y no se comenta
+ 15    142  presente          que un PR se DESATASQUE no es empeorar
+ 16    148  presente          🔴 el suelo de la pasada reconoce su cebo
+ 17    154  presente          🔴 y el suelo sabe DECIR que está roto, no solo que está bien
+ 18    164  presente          horasDesde mide, y dice NO SÉ en vez de inventar un cero
+ 19    181  presente          el workflow llama a la pasada, y la pasada usa el suelo y el espejo
+ 20    189  presente          🔴 el vigía NO usa la llave de la App: su token no debe crear ejecuciones
+ 21    196  presente          comenta solo al empeorar: el camino de «sin cambios» existe y no comenta
+ 22    207  presente          🔴 la GRACIA: cero checks recién empujado NO es un atasco
+ 23    214  presente          pasada la gracia, cero checks SÍ es SIN-CHECKS
+ 24    219  presente          sin dato de minutos NO se regala la gracia
+ 25    224  presente          las dos sondas de acuerdo → DIRTY, y lo dice
+ 26    230  presente          🔴 la sonda ve conflicto y el campo no → DISCREPA, no se elige en silencio
+ 27    237  presente          🔴 el campo dice DIRTY y la sonda dice limpio → también DISCREPA
+ 28    242  presente          sin segunda sonda, el campo sigue mandando y se dice que faltaba
+ 29    250  presente          🔴 validarSonda acepta una sonda que compara algo consigo mismo y da 0
+ 30    254  presente          🔴 y RECHAZA una sonda que dice conflicto siempre
+ 31    262  presente          🔴 y RECHAZA una sonda que no se puede ejecutar
+ 32    266  presente          🔴 RECIEN-EMPUJADO se DESCARTA de la lista, no se cuenta como atasco
+ 33    275  presente          el workflow valida la sonda ANTES de usarla, y degrada si no pasa
+ 34    444  AUSENTE·no-conf.  la lista de obligatorios se DERIVA de las reglas vivas de main, no se escribe a mano
+ 35    449  AUSENTE·no-conf.  🔴 SUELO de la lista: vacía, ilegible o sin regla NO es «nada es obligatorio»
+ 36    457  AUSENTE·no-conf.  🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO
+ 37    463  AUSENTE·no-conf.  CEBO REAL #1248 · rojo SOLO en checks NO obligatorios → no es atasco rojo (y de hecho entró)
+ 38    469  AUSENTE·no-conf.  un obligatorio TODAVÍA CORRIENDO es ESPERANDO de verdad
+ 39    474  AUSENTE·no-conf.  🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que aparezca
+ 40    488  AUSENTE·no-conf.  🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO
+ 41    493  AUSENTE·no-conf.  sin datos de checks el clasificador se comporta como antes (no inventa rojo)
+ 42    497  AUSENTE·no-conf.  el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+ 43    504  AUSENTE·confirma  los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+ 44    510  AUSENTE·confirma  🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+ 45    515  AUSENTE·confirma  🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+ 46    530  AUSENTE·confirma  🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+ 47    536  AUSENTE·confirma  🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+ 48    542  AUSENTE·confirma  un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+ 49    546  AUSENTE·confirma  🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+ 50    554  AUSENTE·confirma  🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+ 51    560  AUSENTE·confirma  y una cuenta que solo se le parece NO
+ 52    566  AUSENTE·confirma  🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY
+ 53    573  AUSENTE·confirma  la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+ 54    582  AUSENTE·confirma  el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+ 55    620  AUSENTE·confirma  🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa
+ 56    630  AUSENTE·confirma  un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco
+ 57    636  AUSENTE·confirma  y el que espera y entró en silencio avisa al cruzar las 24 h
+ 58    642  AUSENTE·confirma  🔴 una causa que NO se arregla esperando avisa al entrar, sin esperar a la edad
+ 59    648  AUSENTE·confirma  pasar A una causa que espera no es empeorar (un push arregló el rojo y CI corre)
+ 60    652  AUSENTE·confirma  🔴 pasar DE una causa que espera a una que no, sí: el #1205 de ESPERANDO a ROJO-OBLIGATORIO
+ 61    658  AUSENTE·confirma  🔴 CEBO REAL #1190 · del bot, sin auto-merge y todo en verde → SIN-AUTO-MERGE, no ESPERANDO
+ 62    666  AUSENTE·confirma  sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+ 63    670  AUSENTE·confirma  el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+ 64    675  AUSENTE·confirma  la pasada le da al clasificador el dato del auto-merge
+
+PASADA ENTERA   · cambiaron 31 de 64 · posiciones 34-64 → CONTIGUOS, y hasta el FINAL (cola)
+ENTERA Y A SOLAS · 22 · posiciones 43-64 → CONTIGUOS, y hasta el FINAL (cola)
+SÓLO EN LA ENTERA · 9 · posiciones 34-42 → CONTIGUOS, pero NO llegan al final (bloque en medio)
+A SOLAS         · cambiaron 22, y son exactamente las 22 de arriba
+EXIT=0

@@ -1,0 +1,9 @@
+POBLACIÓN · tests/scrum524b-trinquete-de-la-tabla.test.mjs: 11 casos con nombre literal · 1 con nombre construido · anidados: 0
+LOG · scrum524b-trinquete-de-la-tabla.test.mjs       confirma 2 de 8
+LOG · confirmadas a solas: 2 · no confirmadas: 6 · sentido impreso (pasada entera): Pacific/Kiritimati → ausente   ·   Pacific/Midway → pass
+🔴 CIEGO · nombres repetidos en el fichero: 0 · nombres del log sin posición: 5 · declarados: 11 · leídos del log: 8
+     sin posición: SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+     sin posición: SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+     sin posición: SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+     sin posición: SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+     sin posición: SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
