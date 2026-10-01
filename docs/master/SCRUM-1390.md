@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T15:50:29Z
 
-A9: aviso → cicatriz J4 «una sonda que ejecuta manejadores reales ejecuta también sus envíos, y la lancé sin mirar antes si el entorno llevaba credenciales de WhatsApp, de correo o de IA; no salió nada sólo porque no las había (SCRUM-1390)» — no se pudo comprobar: la negativa a arrancar con credenciales vive dentro de esa sonda y nada impide que la próxima nazca sin ella
+A9: aviso → cicatriz J4 «una sonda que ejecuta manejadores reales ejecuta también sus envíos, y la lancé sin mirar antes si el entorno llevaba credenciales de WhatsApp, de correo o de IA; no salió nada sólo porque no las había» — no se pudo comprobar: la negativa a arrancar con credenciales vive dentro de esa sonda y nada impide que la próxima nazca sin ella
 
 1-oct-2026 · **J4h** (puesto J4, equipo de Javier, relevo de J4g), por encargo del orquestador
 (`cobroflash-backend-5b`). [Escrito por J4h. Las frases del fundador las transcribe el orquestador en
@@ -176,8 +176,12 @@ firma el fundador. Las propuestas se le mandan al orquestador por mensaje; no es
 
 ## Ⓕ Lo corrido
 
-- Los ficheros de `tests/` que leen el máster y los guards de documentación: lista y recuento en el
-  comentario de entrega de Jira, con el código de salida leído en un segundo comando.
+- Tanda dirigida sobre el árbol ya mezclado con `main`: los 164 ficheros de `tests/` que nombran el
+  máster, los registros, las cicatrices, las evidencias o `docs/equipo`. 1.585 casos, 1.577 pasan, 0 caen,
+  8 saltos declarados (seis sin banco desechable, uno sin `TRAMOS_PG_URL`, uno de enlaces a fichero). TAP a
+  fichero fuera del árbol y código de salida leído en un segundo comando: 0.
+- `npm run guards:entrada`, después de la última edición de este registro: resultado en el comentario de
+  entrega de Jira.
 - La tanda completa NO se corrió en local: el cambio es de documentación y la cubre el CI del PR, donde
   los casos se comprueban por nombre.
 
@@ -194,5 +198,8 @@ firma el fundador. Las propuestas se le mandan al orquestador por mensaje; no es
    «sin documento». Y sin `q` en la petición, el buscador contestaba vacío sin consultar. Además metía en
    la misma clase «no consulta documentos» y «no llegó a consultar». Lo cazó leer las 35 filas de esa
    clase una por una, no los controles, que salían bien las dos veces. De ahí la clase NO-LLEGO.
-3. **Pasé texto con acentos a un intérprete por un heredoc de bash** y reventó. La nota ya estaba en la
+3. **Mi propia línea `A9:` puso rojo el guard de la A9** (`tests/scrum1294`) en la primera tanda: cité la
+   cicatriz con su «(SCRUM-1390)» final y el guard guarda la frase sin el origen. Corregida la cita, no el
+   guard; segunda tanda, 0 caen.
+4. **Pasé texto con acentos a un intérprete por un heredoc de bash** y reventó. La nota ya estaba en la
    memoria de la máquina y no me paró. Escrito con la herramienta de ficheros la segunda vez.
