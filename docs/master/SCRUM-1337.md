@@ -19,11 +19,12 @@ ticket, escrita por el orquestador, y Jira publica todo bajo la cuenta de Javier
 | La firma del cambio de máster, del fundador | «1-Firmo» | descripción de SCRUM-1337 |
 | El hueco, dicho por el fundador el 22-jul-2026 | «la tabla S1 cubre qué puede hacer, no qué puede ver» | SCRUM-55 comentario 10699, citado en la descripción |
 | «Cotizaciones sin respuesta» entra en la fila de abajo | decisión del **orquestador** | SCRUM-1337 comentario 17781 |
-| La cuarta fila, «Herramientas de administración de la cuenta» | decisión del **orquestador**, no del fundador | mensaje del orquestador a esta sesión, 1-oct-2026; **sin comentario numerado en Jira al escribir esto** (se lo he pedido) |
+| La cuarta fila, «Herramientas de administración de la cuenta» | decisión del **orquestador**, no del fundador | SCRUM-1337 comentario 17788 (me llegó antes por mensaje; pedí el número y lo leí en Jira) |
 
 La cuarta fila no la firmó el fundador y **el máster lo dice en la misma inserción**, con las
 palabras del orquestador. Lo único mío en esa línea es el arranque «La fila de las herramientas de
-administración:», para que se sepa a cuál se refiere.
+administración:», para que se sepa a cuál se refiere; el orquestador lo aprueba en ese mismo
+comentario 17788.
 
 ## Ⓑ Qué se ha cambiado
 
@@ -79,9 +80,17 @@ nombra en ningún sentido**.
 
 Por qué pesa: la frase firmada es «Sí el operario ve la actividad de sus compañeros», la tabla la
 aterriza en los últimos presupuestos, y el bloque que más literalmente es actividad de compañeros
-sigue cerrado al Técnico sin que el máster lo diga. El orquestador se lo ha preguntado al fundador;
-al escribir esto no hay respuesta que se pueda escribir. **No lo he metido en la tabla ni como ✅ ni
-como ❌.** Entrará con su número cuando conste.
+sigue cerrado al Técnico sin que el máster lo diga.
+
+Y el dato que hace que no sea mecánico, que midió el orquestador y he leído yo en el fuente:
+`getTeamMetrics` (`src/modules/metrics/domain/metrics.service.ts`) consulta las facturas **pagadas**
+del mes con su `total` y las reparte por compañero. Es **dinero cobrado por persona**, y la tercera
+fila de la tabla firmada pone lo cobrado en ❌ para el Técnico. Abrir ese bloque tal cual chocaría
+con esa fila. (Leído, no ejecutado.)
+
+El orquestador se lo ha llevado al fundador con esa medición delante; al escribir esto no hay
+respuesta que se pueda escribir. **No lo he metido en la tabla ni como ✅ ni como ❌.** Entrará con
+su número cuando conste.
 
 🔴 **SCRUM-1337 no se cierra con este PR**: le falta esa línea (orden del orquestador).
 
