@@ -168,6 +168,11 @@ el PR: se miden después de escribir este fichero.
 2. **Un `git checkout --` para deshacer una edición.** Lo paró `guard-dangerous`. Mi ficha de
    encargo lo avisaba para `git restore`; no lo apliqué al comando hermano. Deshecho con la edición
    inversa.
+4. **Partí el texto firmado con `+` en el código y lo puse en una sola cita de 196 caracteres.**
+   `guards:entrada` salió rojo por `tests/scrum514-aprobado-y-aplicado.test.mjs`, dos veces: el texto
+   no estaba letra a letra en el código, y ese guard trata como prosa toda cita de más de 160
+   caracteres. No se tocó el guard: la constante lleva cada frase entera en su línea y la ficha, una
+   frase por cita. El texto que se pinta es el mismo, y el test de este ticket lo compara con la ficha.
 3. **La primera colocación del arreglo movía líneas.** Puse la constante y la clase en mitad de
    `registro.builder.ts`, que varios catálogos citan por línea. Lo corregí antes de compilar: van al
    final del fichero.

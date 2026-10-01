@@ -641,10 +641,12 @@ export function construirCuerpoSoapRegFactu(params: {
  *
  * Va al final del fichero a propósito: varios documentos y catálogos citan este módulo por línea.
  */
-export const MOTIVO_SELLADA_F1_DECLARADA_F2 =
-  'Esta factura se selló como factura completa (F1) y el registro la declararía como simplificada ' +
-  '(F2). El tipo forma parte de la huella y no puede cambiar después de sellar, así que queda ' +
-  'fuera del registro.';
+// Cada frase va ENTERA en su línea: `tests/scrum514-aprobado-y-aplicado.test.mjs` busca el texto
+// firmado letra a letra en el código, y una frase partida con `+` no la encuentra.
+export const MOTIVO_SELLADA_F1_DECLARADA_F2 = [
+  'Esta factura se selló como factura completa (F1) y el registro la declararía como simplificada (F2).',
+  'El tipo forma parte de la huella y no puede cambiar después de sellar, así que queda fuera del registro.',
+].join(' ');
 
 export class TipoDistintoDelSelladoError extends RegistroNoEmitibleError {
   constructor(ref?: string) {

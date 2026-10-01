@@ -317,7 +317,9 @@ test('SCRUM-1258 · la que se excluye por el tipo lo dice con el texto FIRMADO, 
   const ficha = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1258' && a.ranura === 'tipo-distinto-del-sellado');
   assert.ok(ficha, '🔴 no encuentro la ficha de la firma de este texto en docs/microcopy/.');
   assert.equal(ficha.aprobada, true, '🔴 la ficha existe pero su firma no cuenta como aprobación.');
-  assert.ok(ficha.literales.includes(MOTIVO_SELLADA_F1_DECLARADA_F2),
+  // La ficha lleva el texto en dos líneas, una por frase; se pinta seguido, con un espacio.
+  assert.equal(ficha.literales.length, 2, '🔴 la ficha ya no lleva las dos frases del texto, una por línea.');
+  assert.equal(MOTIVO_SELLADA_F1_DECLARADA_F2, ficha.literales.join(' '),
     '🔴 el motivo que emite el código no es, letra a letra, el que consta firmado en su ficha.');
 });
 

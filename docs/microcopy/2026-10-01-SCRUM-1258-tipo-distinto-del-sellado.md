@@ -8,7 +8,11 @@ no del mensaje.
 
 ## Texto aprobado, literal
 
-> Esta factura se selló como factura completa (F1) y el registro la declararía como simplificada (F2). El tipo forma parte de la huella y no puede cambiar después de sellar, así que queda fuera del registro.
+Es UN texto de dos frases, que se pinta seguido y separado por un espacio. Va una frase por línea
+porque así lo leen los guards que cruzan lo firmado con el código, y cada frase está entera.
+
+> Esta factura se selló como factura completa (F1) y el registro la declararía como simplificada (F2).
+> El tipo forma parte de la huella y no puede cambiar después de sellar, así que queda fuera del registro.
 
 ## Dónde se pinta
 
