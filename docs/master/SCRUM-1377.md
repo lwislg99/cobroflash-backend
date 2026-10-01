@@ -63,3 +63,9 @@ La primera versión llamaba a `ts.readConfigFile` con la ruta en `\`. Con un `ts
 TypeScript revienta en un «Debug Failure» al adjuntar el error, y ese mensaje tapaba el motivo real.
 Lo cazó el caso del `tsconfig.json` roto del test 20, que esperaba «no pude leer». Corregido pasando
 la ruta con `/`; el caso se queda en el test.
+
+Y un segundo: los tests nuevos creaban y retocaban el árbol fabricado desde cada test, con la ruta
+del temporal ya devuelta por una función. `tests/scrum824-temporales-fuera-del-arbol.test.mjs` cayó
+(«el conjunto de ficheros SIN PROBAR no crece»): su censo no podía demostrar de dónde colgaba cada
+escritura. No se declaró el fichero en la lista: se reescribió `arbolFabricado` para que todo se cree
+dentro de ella, colgando a la vista del `temporal()`. Los dos mutantes se repitieron después.
