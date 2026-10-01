@@ -57,7 +57,20 @@ tienen hoy población **1**.
 - El de `scrum145` es estable: es el `choice` NIF | IDOtro del esquema de la AEAT.
 - El de `scrum534b` **no**: el día que alguien arregle ese documento, el suelo saltará. No será un fallo
   del producto: será el aviso de que ese control se ha quedado sin caso y hay que rehacerlo con uno
-  fabricado. El mensaje lo dice. Queda avisado aquí para que quien lo vea saltar no lo ensanche.
+  fabricado. El mensaje dice las dos salidas —si el filtro dejó de casar, se arregla el test; si se
+  arregló el documento, se le fabrica un caso— para que quien lo vea saltar no crea que ha roto algo ni
+  lo ensanche. Decidido con el orquestador: no se fabrica el caso ahora, porque el día que salte saltará
+  con razón.
+
+## Tests que parecen de otro carril — declarado, no medido
+
+Varios de los diez no son del puesto J6, y alguno puede ser del equipo de Luis: por el tema,
+`scrum568-promesa-con-mecanismo`, `scrum727-constancia-del-vigia` y `scrum861-firma-por-delegacion`, y
+quizá `scrum534b-documentos-fantasma`. **No está medido de quién es cada uno**: el historial de git sólo
+da la cuenta de Javier para todos los commits, de los dos equipos. Se han tocado igual por decisión del
+orquestador de Javier (1-oct): a cada uno se le AÑADE una aserción y no se le cambia ninguna de las que
+tenía, y esperar siete u ocho horas a su dueño por una línea cuesta más que avisarle después. El aviso a
+Luis lo traslada Javier.
 
 ## Lo que NO se ha hecho
 

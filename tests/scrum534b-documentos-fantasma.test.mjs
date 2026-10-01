@@ -189,7 +189,10 @@ test('SCRUM-534e · 🔴 GENERADOS se deriva de quién ESCRIBE, no de la prosa q
   // SCRUM-1311 · suelo de población del SUBCONJUNTO: el de arriba sólo cubre al padre.
   assert.ok(porProsa.length > 0,
     '🔴 CIEGO: ningún fantasma tiene todas sus citas rodeadas de verbos de escritura, así que «la prosa no '
-    + 'exime» no se ha comprobado sobre nada. O el filtro ha dejado de casar, o se arreglaron y hay que rehacer esto.');
+    + 'exime» no se ha comprobado sobre nada.\n'
+    + '      → Si el filtro ha dejado de casar, es un fallo de este test: arréglalo.\n'
+    + '      → Si alguien ARREGLÓ el documento que servía de caso (hoy hay UNO solo), no has roto nada: este '
+    + 'control se ha quedado sin caso real. Fabrícale uno en un árbol sintético, como el test de abajo.');
   for (const f of porProsa) {
     assert.equal(c.generados.some((g) => g.ruta === f.ruta), false,
       `🔴 \`${f.ruta}\` está en los dos cubos: el reparto no es excluyente.`);
