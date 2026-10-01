@@ -99,3 +99,4 @@ Un lanzamiento que no cuaja dice lo mismo que uno que sí: «backgrounded» y un
 El panel vacío no es «no existe»: cuando el panel y el registro de trabajos discrepan, manda el registro. (SCRUM-1357)
 Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests; sólo el recuento lo distingue. (SCRUM-1366)
 Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
+Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)
