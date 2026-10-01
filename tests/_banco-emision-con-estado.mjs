@@ -44,6 +44,7 @@ export const banco = {
   alPedirCerrojoDeSerie: null,
   pdf: { fallos: 0, generados: 0 },
   ajenas: [],          // llamadas a modelos que el banco no gobierna
+  escriturasFactura: [], // cada `invoice.update`, en orden: { id, campos } — para contar por EFECTO qué se escribió
 };
 
 // `auditLog` tiene estado desde SCRUM-1330: un encolado que no llega a la cola deja ahí su
@@ -58,6 +59,7 @@ export function reiniciar() {
   banco.alPedirCerrojoDeSerie = null;
   banco.pdf = { fallos: 0, generados: 0 };
   banco.ajenas = [];
+  banco.escriturasFactura = [];
   banco.tablas.merchant.push(
     {
       id: M_PT, name: 'Canalizações do Porto', legalName: null, taxId: 'PT509999990', country: 'PT',
@@ -139,6 +141,7 @@ function modeloConEstado(tabla) {
     update: async (a) => {
       const f = filas().find((x) => casaBanco(x, a?.where));
       if (!f) throw filaNoEncontrada();
+      if (tabla === 'invoice') banco.escriturasFactura.push({ id: f.id, campos: Object.keys(a.data ?? {}) });
       for (const [k, v] of Object.entries(a.data ?? {})) {
         // Escrituras anidadas: sólo las que la ruta usa de verdad sobre el cobro.
         if (v && typeof v === 'object' && !(v instanceof Date) && 'create' in v) {
