@@ -640,7 +640,11 @@ function renderProductsView(container) {
     const skuI = form.querySelector('input[name="sku"]');
     const supplierRefI = form.querySelector('input[name="supplierRef"]');
     const unitI = form.querySelector('input[name="unit"]');
-    cablearMargen(costI, priceI, margenI);
+    // SCRUM-1317 · sólo si los tres campos siguen ahí. A quien no ve economía se le han retirado
+    // «Coste» y «Margen %» veinte líneas más arriba (SCRUM-597), y cablearlos lanzaba un
+    // TypeError que dejaba al operario con la lista de productos VACÍA: `refresh()` no llegaba a
+    // correr. Medido en Edge sobre main el 1-oct-2026. El modal de edición ya se protegía igual.
+    if (costI && margenI) cablearMargen(costI, priceI, margenI);
     // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
     // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
