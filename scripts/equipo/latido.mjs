@@ -75,6 +75,7 @@ export const HORAS_DE_SESION = 24;
 
 const REPO = 'lwislg99/cobroflash-backend';
 const OBLIGATORIO_POR_DEFECTO = 'build + tests';
+const URL_DE_VERSION = 'https://yaqu.app/version';
 
 // ───────────────────────────── 1 · PR ─────────────────────────────
 
@@ -341,8 +342,26 @@ export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO }) 
 
 // ───────────────────────────── 5 · DESPLIEGUE ─────────────────────────────
 
-/** @param {{despliegues:{sha:string, creado:string, estados:string[]|undefined}[], ahora:number}} e — `estados` del más NUEVO al más viejo. */
-export function seccionDespliegue({ despliegues, ahora }) {
+/** `{"version":"<sha de 40>"}` de yaqu.app/version → el sha; cualquier otra cosa → undefined (no se adivina). */
+export function shaDeVersion(texto) {
+  const v = intentar(() => JSON.parse(String(texto || '')).version);
+  return typeof v === 'string' && /^[0-9a-f]{40}$/.test(v) ? v : undefined;
+}
+
+/** Lo que SIRVE producción contra la punta de main, dicho de forma que «no lo sé» no se lea como «al día». */
+function distanciaDeProd(servido) {
+  if (!servido || !servido.sha) return 'NO PUDE LEER qué sirve producción (yaqu.app/version): NO SÉ cuántos commits va por detrás de main';
+  const s = servido.sha.slice(0, 8);
+  if (!Number.isFinite(servido.detras)) return `producción sirve ${s} y NO SUPE contar cuántos commits va por detrás de main`;
+  return servido.detras === 0 ? `producción sirve ${s}, que ES la punta de main (0 commits por detrás)` : `producción sirve ${s}: ${servido.detras} commit(s) POR DETRÁS de main`;
+}
+
+/**
+ * @param {{despliegues:{sha:string, creado:string, estados:string[]|undefined}[], servido?:{sha:string, detras?:number}, ahora:number}} e
+ * `estados` del más NUEVO al más viejo. `servido`: el sha de yaqu.app/version y cuántos commits tiene main por delante de él;
+ * `undefined` = no se pudo leer · `detras` sin número = se leyó el sha y no se pudo comparar con main.
+ */
+export function seccionDespliegue({ despliegues, servido, ahora }) {
   if (!Array.isArray(despliegues) || despliegues.length === 0) return ciega('DESPLIEGUE', 'la API no devolvió despliegues');
   const alertas = [];
   for (const d of despliegues) {
@@ -356,11 +375,11 @@ export function seccionDespliegue({ despliegues, ahora }) {
   // SCRUM-1368 · sólo el MÁS NUEVO: un fallo viejo con un despliegue bueno detrás ya está superado.
   // Medido el 1-oct: 36071b72 falló a los 28 s y esta sección salió en verde con «→ failure» dentro.
   if (/^(failure|error)$/.test(u.estados[0] || '')) {
-    alertas.unshift({ linea: `el ÚLTIMO despliegue (${u.sha.slice(0, 8)}) terminó en ${u.estados[0]}: main NO está desplegado, producción sigue sirviendo lo anterior (míralo en yaqu.app/version)` });
+    alertas.unshift({ linea: `el ÚLTIMO despliegue (${u.sha.slice(0, 8)}) terminó en ${u.estados[0]}: main NO está desplegado · ${distanciaDeProd(servido)}` });
   }
   return {
     nombre: 'DESPLIEGUE', pudo: true, alertas,
-    poblacion: `${despliegues.length} despliegues mirados · el último: ${u.sha.slice(0, 8)} → ${u.estados[0] || 'sin estado'} (lo que Railway le dice a GitHub, NO lo que sirve yaqu.app)`,
+    poblacion: `${despliegues.length} despliegues mirados · el último: ${u.sha.slice(0, 8)} → ${u.estados[0] || 'sin estado'} (lo que Railway le dice a GitHub) · ${distanciaDeProd(servido)} (leído de yaqu.app/version)`,
   };
 }
 
@@ -393,11 +412,20 @@ export function informe(secciones, { ahora, fallosDe = () => undefined }) {
 
 // ───────────────────────────── recogida (lo único que toca el mundo) ─────────────────────────────
 
+/** @param {{nombre:string, ms:number, gh:number}[]} tramos */
+export function tiempos(tramos) {
+  const total = tramos.reduce((a, x) => a + x.ms, 0);
+  const s = (ms) => `${(ms / 1000).toFixed(1)} s`;
+  return `tardó ${s(total)} · ${tramos.map((x) => `${x.nombre} ${s(x.ms)}${x.gh ? ` (${x.gh} llamadas a gh)` : ''}`).join(' · ')}`;
+}
+
 function ghDe() {
   const cand = process.platform === 'win32' ? ['C:\\Program Files\\GitHub CLI\\gh.exe', 'gh'] : ['gh'];
   return cand.find((c) => c === 'gh' || fs.existsSync(c));
 }
+let llamadasGh = 0;
 function gh(args) {
+  llamadasGh++;
   const txt = execFileSync(ghDe(), args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
   return txt.replace(/^\uFEFF/, '');
 }
@@ -576,8 +604,11 @@ function cierre() {
   return SALIDA_AVISO;
 }
 
-function todo() {
+async function todo() {
   const ahora = Date.now();
+  // Cuánto tarda cada tramo y cuántas veces llamó a `gh`: un comando de cada turno que a veces tarda 4 min no se corre.
+  const tramos = []; let t0 = Date.now(); let g0 = llamadasGh;
+  const tramo = (nombre) => { tramos.push({ nombre, ms: Date.now() - t0, gh: llamadasGh - g0 }); t0 = Date.now(); g0 = llamadasGh; };
   // 1 · PR
   const prs = intentar(() => ghJson(['pr', 'list', '--state', 'open', '--limit', '100', '--json',
     'number,title,author,isDraft,labels,autoMergeRequest,createdAt,headRefOid,headRefName,mergeStateStatus,mergeable']));
@@ -590,6 +621,7 @@ function todo() {
     minutos.set(p.number, Number.isFinite(t) ? (ahora - t) / 60000 : undefined);
   }
   const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n) });
+  tramo('PR');
   // 2 y 3 · sesiones y traspasos
   const trabajos = leerTrabajos();
   const sesiones = trabajos && trabajos.sesiones;
@@ -597,6 +629,7 @@ function todo() {
   const dT = dirDeTraspasos();
   const sTra = dT === undefined ? ciega('TRASPASO', 'no encuentro la carpeta de traspasos en la instalación del equipo')
     : seccionTraspasos({ sesiones, ahora, mtimeDelTraspaso: (n) => { const r = path.join(dT, `project_s${n}_traspaso.md`); return fs.existsSync(r) ? fs.statSync(r).mtimeMs : null; } });
+  tramo('sesiones');
   // 4 · main
   const shas = intentar(() => ghJson(['api', `repos/${REPO}/commits?sha=main&per_page=${COMMITS_DE_MAIN}`]).map((c) => c.sha));
   const commits = [];
@@ -606,10 +639,15 @@ function todo() {
     if (Array.isArray(checkRuns) && checkRuns.some((r) => String(r.name).startsWith(OBLIGATORIO_POR_DEFECTO) && r.status === 'completed' && /^(success|failure)$/.test(r.conclusion))) break;
   }
   const sMain = seccionMain({ commits });
+  tramo('main');
   // 5 · despliegue
   const ds = intentar(() => ghJson(['api', `repos/${REPO}/deployments?per_page=5`]));
   const despliegues = (ds || []).map((d) => ({ sha: d.sha, creado: d.created_at, estados: intentar(() => ghJson(['api', `repos/${REPO}/deployments/${d.id}/statuses?per_page=30`]).map((s) => s.state)) }));
-  const sDep = seccionDespliegue({ despliegues, ahora });
+  // Lo que SIRVE producción no lo sabe GitHub: se le pregunta a yaqu.app. Sin respuesta, la sección lo DICE.
+  const sha = shaDeVersion(await fetch(URL_DE_VERSION, { headers: { 'cache-control': 'no-cache' }, signal: AbortSignal.timeout(15000) }).then((r) => r.text()).catch(() => undefined));
+  const servido = sha && { sha, detras: intentar(() => Number(ghJson(['api', `repos/${REPO}/compare/${sha}...main`]).ahead_by)) };
+  const sDep = seccionDespliegue({ despliegues, servido, ahora });
+  tramo('despliegue');
 
   // Lo que cayó, solo de los PR en rojo (un log pesa ~1,5 MB: no se baja el de los verdes).
   const fallos = new Map();
@@ -620,6 +658,7 @@ function todo() {
     const log = id ? intentar(() => gh(['api', '--allow-escape-sequences', `repos/${REPO}/actions/jobs/${id}/logs`])) : undefined;
     if (log !== undefined) fallos.set(a.numero, fallosDelLog(log));
   }
+  tramo('logs de los rojos');
   // 6 · cementerio. El libro se actualiza ANTES de informar: lo que se ve hoy tiene que sobrevivir a que la paren mañana.
   let libro = leerLibro();
   let libroGuardado = true;
@@ -628,12 +667,14 @@ function todo() {
   // 7 · contexto. Se lee el jsonl de cada una; nada de `claude agents` ni de la copia instalada.
   const sCtx = seccionContexto({ sesiones, contextoDe: (s) => contextoDeRuta(jsonlDe(s)), sueltas: sesiones ? transcriptsSueltos(sesiones, ahora) : [], ahora });
   const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx];
+  tramo('cementerio y contexto');
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
+  console.log(tiempos(tramos));
   return salidaDe(secciones);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const orden = process.argv[2];
   process.exitCode = orden === 'repartos' ? await repartos() : orden === 'cierre' ? cierre()
-    : orden === 'contestada' ? contestada(process.argv[3], process.argv.slice(4).join(' ')) : todo();
+    : orden === 'contestada' ? contestada(process.argv[3], process.argv.slice(4).join(' ')) : await todo();
 }

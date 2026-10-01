@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, seccionDespliegue,
+  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, seccionDespliegue, shaDeVersion,
   seccionCementerio, actualizarLibro, leerTrabajos, leerLibro,
   seccionContexto, contextoDeRuta,
   fallosDelLog, salidaDe, informe, puestoDe,
@@ -157,6 +157,31 @@ test('SCRUM-1368 · 🔴 DESPLIEGUE: el ÚLTIMO en failure se AVISA (salía en v
   // NEGATIVO: el fallo es del anterior y el más nuevo salió bien — o todavía está en marcha.
   assert.deepEqual(seccionDespliegue({ despliegues: [d('bbbbbbbb', ['success', 'in_progress']), d('36071b72', ['failure', 'in_progress'])], ahora: AHORA }).alertas, []);
   assert.deepEqual(seccionDespliegue({ despliegues: [d('cccccccc', ['in_progress']), d('36071b72', ['failure'])], ahora: AHORA }).alertas, []);
+});
+
+test('SCRUM-1368 · DESPLIEGUE: el aviso dice CUÁNTOS commits va producción por detrás de main; si no lo sabe, lo DICE', () => {
+  const d = (sha, estados) => ({ sha: sha.padEnd(40, '0'), creado: new Date(AHORA - 5 * 60000).toISOString(), estados });
+  const roto = [d('36071b72', ['failure', 'in_progress']), d('425065aa', ['success', 'in_progress'])];
+  const sha = '425065aa'.padEnd(40, '0');
+  // El caso del 1-oct por la tarde: último despliegue en failure y producción cuatro commits detrás.
+  const s = seccionDespliegue({ despliegues: roto, servido: { sha, detras: 4 }, ahora: AHORA });
+  assert.match(s.alertas[0].linea, /producción sirve 425065aa: 4 commit\(s\) POR DETRÁS de main/);
+  assert.match(s.poblacion, /4 commit\(s\) POR DETRÁS de main/);
+  // Falló el despliegue pero lo servido YA es la punta (un redespliegue): se dice, y no se confunde con «detrás».
+  assert.match(seccionDespliegue({ despliegues: roto, servido: { sha, detras: 0 }, ahora: AHORA }).alertas[0].linea, /ES la punta de main \(0 commits por detrás\)/);
+  // NEGATIVO de la cifra: «no pude leer» y «leí y no supe contar» NO son «0 por detrás».
+  for (const servido of [undefined, { sha }, { sha, detras: NaN }]) {
+    const c = seccionDespliegue({ despliegues: roto, servido, ahora: AHORA });
+    assert.match(c.alertas[0].linea, servido ? /NO SUPE contar/ : /NO PUDE LEER qué sirve producción/);
+    assert.doesNotMatch(`${c.alertas[0].linea} ${c.poblacion}`, /\d+ commit/);
+  }
+  // Sin fallo no hay aviso, pero la cifra va SIEMPRE en la población: es la que dice si un rojo importa.
+  const bien = seccionDespliegue({ despliegues: [d('bbbbbbbb', ['success'])], servido: { sha, detras: 2 }, ahora: AHORA });
+  assert.deepEqual(bien.alertas, []);
+  assert.match(bien.poblacion, /2 commit\(s\) POR DETRÁS/);
+  // El sha sale de `{"version":"…"}`; una página de error o un sha corto no son un sha.
+  assert.equal(shaDeVersion(JSON.stringify({ version: sha })), sha);
+  for (const malo of ['', '<html>502</html>', '{"version":"425065aa"}', '{}', undefined]) assert.equal(shaDeVersion(malo), undefined);
 });
 
 test('SCRUM-1350 · lo que cayó: los nombres del resumen `spec`; sin resumen es «no supe», NO «cero fallos»', () => {
