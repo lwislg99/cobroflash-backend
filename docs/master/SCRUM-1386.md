@@ -129,7 +129,10 @@ banco **a propósito**: las seis de SCRUM-1345 se comprobaron en su banco y el m
 ninguna (medido: 0 líneas de `scrum976` en su log de 365 mutaciones).
 
 Eso hace saltar el trinquete de `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` (guards que
-declaran: 27 → 28). Su mensaje pide anotarlo y está anotado allí, con su mutación propia re-anclada.
+declaran). Su mensaje pide anotarlo y está anotado allí, con su mutación propia re-anclada. En esta rama
+subía de 27 a 28; SCRUM-1343 entró en `main` antes subiéndolo también a 28, y al mezclar
+`origin/main` = `cae4c5cc6fb65aea21f7267525930ee44d8d4631` chocaron. La cifra no se eligió ni se sumó: se
+conservaron las dos explicaciones, se corrió el test sobre el árbol fusionado y dijo **29**.
 
 ## Lo que NO cubre, y lo que NO sé
 

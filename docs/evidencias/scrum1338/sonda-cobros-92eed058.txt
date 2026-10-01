@@ -1,0 +1,45 @@
+J4f · sonda-cobros.mjs sobre 92eed0586594e185fe59a4f1eeeb3d29621c9677 (la rama con origin/main 762f4fbba51ea214fd6c2473baa577d69c088791 dentro) · entre las lecturas de GitHub 2026-10-01T14:45:16Z y 14:47:19Z · salida entera
+POBLACION=3 montajes de renderCobrosView
+{
+ "rol": "tecnico",
+ "niegaCobros": true,
+ "peticiones": [
+  "403 GET /admin/cobros"
+ ],
+ "error": null,
+ "nodos": 24,
+ "literalBuscado": "No hemos podido cargar los cobros. Vuelve a intentarlo.",
+ "avisoPintado": [
+  "TD[class=\"\"]: No hemos podido cargar los cobros. Vuelve a intentarlo."
+ ],
+ "vacioPintado": []
+}
+{
+ "rol": "admin",
+ "niegaCobros": false,
+ "peticiones": [
+  "200 GET /admin/cobros"
+ ],
+ "error": null,
+ "nodos": 27,
+ "literalBuscado": "No hemos podido cargar los cobros. Vuelve a intentarlo.",
+ "avisoPintado": [],
+ "vacioPintado": [
+  "DIV[class=\"empty-state-title\"]: Todavía no hay cobros registrados."
+ ]
+}
+{
+ "rol": "admin",
+ "niegaCobros": true,
+ "peticiones": [
+  "403 GET /admin/cobros"
+ ],
+ "error": null,
+ "nodos": 24,
+ "literalBuscado": "No hemos podido cargar los cobros. Vuelve a intentarlo.",
+ "avisoPintado": [
+  "TD[class=\"\"]: No hemos podido cargar los cobros. Vuelve a intentarlo."
+ ],
+ "vacioPintado": []
+}
+EXIT=0

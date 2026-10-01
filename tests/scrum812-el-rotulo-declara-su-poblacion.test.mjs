@@ -115,12 +115,19 @@ function tituladosQueDeclaran() {
  * mutaciones y nombra el guard en un título («el guard del segundo orquestador ve al equipo…»).
  * Medido sobre `origin/main` = `36f1eee3` mezclado en la rama.
  *
- * ⬆️ **28** (SCRUM-1386, 1-oct-2026): `scrum976-guards-entrada-con-techo.test.mjs` pasa a DECLARAR
- * (seis mutaciones sobre `scripts/guards-entrada.mjs`) y ya nombraba los guards en un título.
- * Medido sobre `origin/main` = `5fb7630ad564740f0fe4ba115e7dc141d18da775`.
+ * ⬆️ **28** (SCRUM-1343, 1-oct-2026): entra `scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs`,
+ * que declara sus 14 mutaciones y tiene tests titulados GUARD («…lo que un guard SÍ dijo sigue
+ * siendo rojo…»). Las dos ramas decían 27 y chocaron al mezclar: la cifra NO se eligió ni se sumó,
+ * la dio este mismo test sobre el árbol fusionado con `origin/main` =
+ * `762f4fbba51ea214fd6c2473baa577d69c088791`.
+ *
+ * ⬆️ **29** (SCRUM-1386, 1-oct-2026): `scrum976-guards-entrada-con-techo.test.mjs` pasa a DECLARAR
+ * (seis mutaciones sobre `scripts/guards-entrada.mjs`) y ya nombraba los guards en un título. En su
+ * rama decía 28, lo mismo que SCRUM-1343 en la suya; al mezclar, la cifra la dio este test sobre el
+ * árbol fusionado con `origin/main` = `cae4c5cc6fb65aea21f7267525930ee44d8d4631`.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 28;
+export const SUELO_GUARD_QUE_DECLARAN = 29;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -303,8 +310,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 28;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 27;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 29;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 28;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

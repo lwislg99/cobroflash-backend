@@ -1,0 +1,18 @@
+POBLACIÓN: 14 mutaciones declaradas en tests/scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs
+BASE: 14 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (7 caen) · el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos
+  ✔ VIVA           (6 caen) · un binario que NO EXISTE
+  ✔ VIVA           (2 caen) · el sistema lo cortó A MEDIAS
+  ✔ VIVA           (3 caen) · se dice también con ceros, y suma el total
+  ✔ VIVA           (1 caen) · la línea de arranque se imprime SIN condición
+  ✔ VIVA           (1 caen) · el borde sale de la constante
+  ✔ VIVA           (2 caen) · el tope sigue siendo el tope
+  ✔ VIVA           (1 caen) · el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos
+  ✔ VIVA           (1 caen) · la puerta clasifica a sus hijos con
+  ✔ VIVA           (1 caen) · no hay una tercera forma de decidir
+  ✔ VIVA           (1 caen) · se dice también con ceros, y suma el total
+  ✔ VIVA           (2 caen) · POSITIVO: lo que un guard SÍ dijo sigue siendo rojo, y uno limpio sigue saliendo 0
+  ✔ VIVA           (1 caen) · si lo mató el sistema DESPUÉS de decir sus hallazgos, es rojo
+  ✔ VIVA           (4 caen) · con un hijo de verdad: reventar en la primera línea es rojo
+
+RESULTADO: 14 de 14 caen · sin restaurar: 0
