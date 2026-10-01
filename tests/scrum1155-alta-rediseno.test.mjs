@@ -78,6 +78,9 @@ test('SCRUM-1155 · el mapa de campo→input de los descartes solo nombra campos
   const m = VISTA.match(/const CAMPO_DESCARTE_A_INPUT = \{([\s\S]*?)\};/);
   assert.ok(m, '🔴 CAMPO_DESCARTE_A_INPUT ha desaparecido: los 9 porqués dejarían de saber dónde pintarse');
   const ids = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  // SCRUM-1311 · suelo de población: si el mapa cambia de comillas o de forma, aquí no sale ningún id.
+  assert.ok(ids.length > 0,
+    '🔴 CIEGO: no se ha leído NINGÚN id de CAMPO_DESCARTE_A_INPUT — ¿ha cambiado cómo se escribe el mapa? Sin ids, lo de abajo no comprueba nada.');
   for (const id of ids) {
     assert.ok(VISTA.includes(`id="${id}"`), `🔴 el mapa apunta a «${id}», que no existe en el formulario`);
   }
