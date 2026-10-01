@@ -27,7 +27,7 @@
 //
 // USO:  node docs/master/evidencias/scrum1343/banco.mjs [escenario …]     (sin argumentos: todos)
 import fs from 'node:fs';
-import os from 'node:os';
+import { temporal } from '../../../../tests/_temporal.mjs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -63,7 +63,7 @@ const ESCENARIOS = {
 };
 
 function montar(escenario) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1343-' + escenario + '-'));
+  const dir = temporal('scrum1343-' + escenario + '-');
   fs.cpSync(path.join(RAIZ, 'scripts'), path.join(dir, 'scripts'), { recursive: true });
   const scripts = { test: 'echo la tanda del banco no corre ningun guard' };
   for (const g of ESCENARIOS[escenario]) {

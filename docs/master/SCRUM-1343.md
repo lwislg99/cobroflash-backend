@@ -23,9 +23,15 @@ mentira**, en un temporal y sin navegador (`docs/master/evidencias/scrum1343/ban
 | un hijo sale con 3221225794 sin una letra | `rojo(3221225794)` · «1 verde · 0 CIEGOS · 2 rojos» · «2 guard(s) midieron y encontraron algo» | 1 |
 | el binario no existe (`spawn` ENOENT) | `rojo(null)` · «1 verde · 2 CIEGOS (2 rojo(null)) · 0 rojos» · «NO MEDIDO» | 2 |
 
-**La premisa del encargo no se cumplía entera, y se dice:** con un binario inexistente la puerta
-**ya** salía por el ciego; lo que hacía mal era pintarlo «rojo(null)». El «midieron y encontraron
-algo» sale sólo con el código nativo, que es lo que pasó el 1-oct.
+**Son dos defectos, no uno**, y se arreglan en la misma línea y con el mismo criterio:
+
+1. **El del ticket** — con el código nativo, la puerta afirma un hallazgo que no existe.
+2. **Otro, que no estaba en el ticket** — con un binario inexistente la puerta **ya** salía por el
+   ciego, pero lo pintaba «rojo(null)»: la palabra «rojo» sobre algo que no corrió. Ahora dice
+   `PROCESO NO ARRANCÓ (spawn ENOENT)`.
+
+La premisa del encargo («binario inexistente → hoy sale "midieron y encontraron algo"») no se
+cumplía: esa frase sale sólo con el código nativo. Avisado al orquestador, que lo corrige en el ticket.
 
 ⚠️ El caso del código nativo es una **imitación**: el hijo arranca y sale con ese número. Es lo que
 la puerta ve; un `0xC0000142` de verdad pide dejar la máquina sin memoria. El de ENOENT no imita
@@ -59,7 +65,7 @@ No se toca ningún workflow: `ci.yml` sólo lee que la salida no sea 0.
 
 ## El positivo (④), que es el que podía tumbar el arreglo
 
-Con la puerta de verdad, antes y después (`despues-sobre-la-rama.txt`), los cuatro siguen **rojos**
+Con la puerta de verdad, antes y después (`despues-con-el-arreglo.txt`), los cuatro siguen **rojos**
 y la tanda sale **1** con «4 guard(s) midieron y encontraron algo»:
 
 - un guard con su hallazgo y su marca (`rojo(1) · 1 hallazgo · 0 ciegos`);
@@ -98,7 +104,9 @@ Las tres puertas corren tal cual están en el árbol; se fabrica el hijo que no 
 | meta-guard (`correr`) | — | bien: el único caído es el propio fichero → FICHERO MUERTO → cuenta como CIEGA |
 
 **Recuento: 2 de 3 tienen la misma forma**, y las dos por el mismo sitio: es `node --test` quien
-cuenta como `fail` un fichero cuyo proceso no llegó a existir. En el caso fabricado sobre
+cuenta como `fail` un fichero cuyo proceso no llegó a existir. **El modelo bueno ya está en la
+casa**: el meta-guard separa «el único caído es el propio fichero» de «cayó un test». No hay que
+inventar nada; hay que hacer en las otras dos lo que ya hace una de las tres. No se arreglan aquí. En el caso fabricado sobre
 `guards-entrada`, seis ficheros no arrancaron (ENOENT) y un séptimo cayó porque sus propios hijos
 tampoco pudieron arrancar.
 
@@ -123,7 +131,20 @@ de SCRUM-554 y no bloquea).
 
 ## Medido
 
-RESULTADOS_PENDIENTES
+Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm run build` (salida 0):
+
+- **El test**: 14 casos, 14 pasan.
+- **Mutaciones**: 14 de 14 caen; árbol restaurado (sha256 por fichero y `git status` vacío).
+- **`guards:entrada`**: 12 guards, 122 tests, verde.
+- **Tanda DIRIGIDA, con turno**: 449 ficheros de 1.163 (los que leen `scripts/`, `docs/master`, las
+  cicatrices o el meta-guard), en cuatro trozos, concurrencia 3, TAP a fichero fuera del árbol:
+  4.100 tests · 4.026 pasan · 71 saltan · **3 caen, los tres míos**, arreglados en el código y
+  repetidos en verde:
+  - `scrum533`: dos evidencias con CR en disco;
+  - `scrum812`: el trinquete de guards que declaran sube a 27 (entra este test) — anotado allí;
+  - `scrum864c`: los dos bancos creaban su temporal sin garantizar el borrado; ahora usan `temporal()`.
+- **NO corrido**: los otros 714 ficheros de la suite, `guards:visuales`, y el meta-guard entero
+  (sólo mis 14 declaraciones). Eso lo corre CI sobre el merge.
 
 ## Errores míos
 
@@ -134,6 +155,8 @@ RESULTADOS_PENDIENTES
    imprime su testigo («binario renombrado = sí»).
 2. **Escribí «no verdes» en una frase de la puerta** y `tests/scrum1313` la tumbó: es la palabra
    que ese ticket retiró. Cambié la frase.
+4. **Tres rojos míos en la tanda dirigida** (CR en disco, el trinquete de SCRUM-812 y un temporal
+   sin borrado garantizado): los cazaron los guards de la casa antes de empujar.
 3. **Un aserto mío mataba el fichero en vez de dar su rojo**: `assert.equal` sobre dos nodos del
    AST intenta pintarlos enteros al fallar. Lo cazó la mutación («FICHERO MUERTO»); ahora es
    `assert.ok` con el tipo del nodo en el mensaje.

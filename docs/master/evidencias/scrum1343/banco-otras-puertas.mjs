@@ -16,13 +16,13 @@
 //
 // USO:  node docs/master/evidencias/scrum1343/banco-otras-puertas.mjs
 import fs from 'node:fs';
-import os from 'node:os';
+import { temporal } from '../../../../tests/_temporal.mjs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1343-otras-'));
+const TMP = temporal('scrum1343-otras-');
 const INEXISTENTE = path.join(TMP, 'este-node-no-existe.exe');
 
 // El entorno de los sujetos, a mano (A21).
