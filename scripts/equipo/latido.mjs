@@ -59,6 +59,9 @@ import {
 // estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
 // instalada esté desfasada (SCRUM-1282).
 import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } from './sesion.mjs';
+// Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
+// distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
+import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -157,12 +160,13 @@ export function preguntaDe(s) {
 }
 
 /**
- * @param {{sesiones:{id:string,nombre:string,estado:string,tempo?:string,detalle?:string,needs?:any,actualizado:number,creado?:number,prs:number[]}[], filasPR:object[]|null, ilegibles?:object[], ahora:number}} e
+ * @param {{sesiones:{id:string,nombre:string,estado:string,tempo?:string,detalle?:string,needs?:any,actualizado:number,creado?:number}[], filasPR:{numero:number,rama:string,causa:string}[]|null, ramasDe?:(s:object)=>string[]|undefined, ilegibles?:object[], ahora:number}} e
+ * `ramasDe`: las ramas que esa sesión ha empujado · `undefined` = no se pudo leer su transcript (y es lo que
+ * responde si nadie la pasa: sin saber qué empujó cada una, esta sección no atribuye nada).
  */
-export function seccionSesiones({ sesiones, filasPR, ilegibles = [], ahora }) {
+export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, ilegibles = [], ahora }) {
   if (!Array.isArray(sesiones)) return ciega('SESIONES', 'no se pudo leer la carpeta de trabajos');
   const hoy = sesiones.filter((s) => (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
-  const porNumero = new Map((filasPR || []).map((f) => [f.numero, f]));
   const alertas = [];
   for (const s of hoy) {
     const min = Math.round((ahora - s.actualizado) / 60000);
@@ -171,26 +175,46 @@ export function seccionSesiones({ sesiones, filasPR, ilegibles = [], ahora }) {
       const disfraz = s.estado === 'blocked' ? '' : ` · ⚠️ su state dice «${s.estado}»: el bloqueo está en ${s.tempo === 'blocked' ? 'tempo' : 'needs'}`;
       alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) BLOQUEADA hace ${min} min · espera: ${String(s.needs || s.detalle || 'no lo dice').slice(0, 200)}${disfraz}` });
     }
-    if (s.estado !== 'working') {
-      for (const n of s.prs) {
-        const f = porNumero.get(n);
-        // Un PR que ya no está abierto no aparece en `filasPR`: mergeado o cerrado, no es asunto de nadie.
-        if (!f) continue;
-        if (/^ROJO|SIN-CHECKS|CONFLICTO|DIRTY/.test(f.causa)) {
-          alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) ya NO trabaja (${s.estado}) y su PR #${n} sigue ${f.causa}: nadie vuelve` });
-        } else {
-          // Abierto y sin rojo: todavía no hay veredicto. Cerrar así no es entregar (A10), y si luego sale rojo nadie lo verá.
-          alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) ya NO trabaja (${s.estado}) y su PR #${n} sigue ABIERTO sin veredicto (${f.causa}): si sale rojo, nadie vuelve` });
-        }
-      }
-    }
+  }
+  // DE QUIÉN ES UN PR. De quien EMPUJÓ su rama, leído de los `git push` de su transcript: la misma
+  // regla del hook de cierre (SCRUM-1356), no una segunda. Lo que NO vale es `children` del state.json:
+  // son los PR que la sesión CITA (medido el 1-oct: el #1681 sale en cuatro sesiones que no lo abrieron),
+  // y con eso esta sección acusaba a quien sólo lo había mencionado.
+  const empujo = new Map(); const sinLeer = []; const sinTurno = [];
+  for (const s of hoy) {
+    const ramas = ramasDe(s);
+    // `null`: su registro no apunta a ningún transcript y no hay ninguno con su id. Es el lanzamiento que no
+    // cuajó (medido el 1-oct: s3-1octb y s1-1octb, paradas pidiendo un permiso): sin un turno no hay `git push`.
+    if (ramas === null) { sinTurno.push(s); continue; }
+    if (!Array.isArray(ramas)) { sinLeer.push(s); continue; }
+    for (const r of ramas) empujo.set(r, [...(empujo.get(r) || []), s]);
+  }
+  const sinDuena = [];
+  for (const f of filasPR || []) {
+    const malo = /^ROJO|SIN-CHECKS|CONFLICTO|DIRTY/.test(f.causa);
+    const duenas = empujo.get(f.rama) || [];
+    // Sin nadie que la empujara no se acusa a nadie: se dice que no se supo.
+    if (duenas.length === 0) { if (malo) sinDuena.push(`#${f.numero}`); continue; }
+    // Si una de las que la empujó sigue trabajando, alguien vuelve: el relevo no hereda la culpa de su antecesora.
+    if (duenas.some((s) => s.estado === 'working')) continue;
+    const quien = duenas.map((s) => `${s.nombre} (${s.id}, ${s.estado})`).join(' y ');
+    const sigue = malo ? `sigue ${f.causa}: nadie vuelve`
+      // Abierto y sin rojo: todavía no hay veredicto. Cerrar así no es entregar (A10), y si luego sale rojo nadie lo verá.
+      : `sigue ABIERTO sin veredicto (${f.causa}): si sale rojo, nadie vuelve`;
+    alertas.push({ sesion: duenas[0].nombre, linea: `${quien} ya NO trabaja y el PR #${f.numero}, cuya rama ${f.rama} EMPUJÓ, ${sigue}` });
   }
   const cuenta = {};
   for (const s of hoy) cuenta[s.estado] = (cuenta[s.estado] || 0) + 1;
-  return {
-    nombre: 'SESIONES', pudo: true, alertas,
-    poblacion: `${sesiones.length} trabajos con state.json · ${hoy.length} con actividad en ${HORAS_DE_SESION} h (${Object.entries(cuenta).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguno'}) · leído del REGISTRO, no del panel${filasPR ? '' : ' · ⚠️ sin la sección PR no se pudo cruzar con sus PR'}${ilegibles.length ? ` · ⚠️ ${ilegibles.length} state.json ILEGIBLES, que pueden ser de hoy (ver CEMENTERIO)` : ''}`,
-  };
+  const leidas = hoy.length - sinLeer.length - sinTurno.length;
+  const poblacion = `${sesiones.length} trabajos con state.json · ${hoy.length} con actividad en ${HORAS_DE_SESION} h (${Object.entries(cuenta).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguno'}) · leído del REGISTRO, no del panel`
+    + (filasPR ? ` · un PR es de quien EMPUJÓ su rama (\`git push\` en el transcript de ${leidas} sesión(es)), no de quien lo cita${sinTurno.length ? ` · ${sinTurno.length} sin transcript porque no llegaron a escribir un turno (${sinTurno.map((s) => s.nombre).join(', ')})` : ''}${sinDuena.length ? ` · ${sinDuena.length} PR con problema y NO SUPE DE QUIÉN SON (${sinDuena.join(', ')}): ninguna sesión leída de ${HORAS_DE_SESION} h empujó su rama, o lo hizo sin nombrarla — no acuso a nadie` : ''}` : ' · ⚠️ sin la sección PR no se pudo cruzar con sus PR')
+    + (ilegibles.length ? ` · ⚠️ ${ilegibles.length} state.json ILEGIBLES, que pueden ser de hoy (ver CEMENTERIO)` : '');
+  // Una sesión cuyo transcript no se deja leer NO es una sesión que no empujó nada.
+  // (Sin ningún PR abierto que cruzar no hay nada que atribuir, y no leerlo no esconde nada.)
+  if (filasPR && filasPR.length && sinLeer.length) {
+    return { nombre: 'SESIONES', pudo: false, alertas, poblacion: null, motivo: `no encontré o no pude leer el transcript de ${sinLeer.length} sesión(es) (${sinLeer.slice(0, 8).map((s) => `${s.nombre} (${s.id})`).join(', ')}): NO SÉ qué ramas empujaron, así que puede haber un PR suyo sin nadie detrás. Debajo va SOLO lo que sí pude leer: ${poblacion}` };
+  }
+  return { nombre: 'SESIONES', pudo: true, alertas, poblacion };
 }
 
 // ───────────────────────────── 6 · CEMENTERIO ─────────────────────────────
@@ -454,7 +478,7 @@ export function leerTrabajos(dir = dirDeTrabajos()) {
     out.push({
       id, nombre: s.name || (i >= 0 ? flags[i + 1] : id), estado: String(s.state || 'desconocido'), tempo: s.tempo, detalle: s.detail, needs: s.needs,
       actualizado: Date.parse(s.updatedAt) || fs.statSync(ruta).mtimeMs, creado: Date.parse(s.createdAt) || undefined,
-      prs: (s.children || []).filter((c) => c && c.kind === 'pr').map((c) => Number(c.id)).filter(Number.isFinite),
+      // `children` NO se lee: son los PR que la sesión cita, no los suyos. Los suyos salen de su transcript.
       transcript: s.linkScanPath, sessionId: s.sessionId,
     });
   }
@@ -625,7 +649,15 @@ async function todo() {
   // 2 y 3 · sesiones y traspasos
   const trabajos = leerTrabajos();
   const sesiones = trabajos && trabajos.sesiones;
-  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ilegibles: trabajos ? trabajos.ilegibles : [], ahora });
+  const ramasDe = (s) => {
+    const r = jsonlDe(s);
+    // Sin ruta en su registro y sin jsonl con su id en ninguna carpeta: nunca escribió un turno (`null`).
+    // Con ruta declarada y sin fichero, o con fichero que no se deja leer: no se sabe (`undefined`).
+    if (!r) return s.transcript || !s.sessionId ? undefined : null;
+    const t = intentar(() => fs.readFileSync(r, 'utf8'));
+    return typeof t === 'string' ? ramasEmpujadas(t) : undefined;
+  };
+  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ramasDe, ilegibles: trabajos ? trabajos.ilegibles : [], ahora });
   const dT = dirDeTraspasos();
   const sTra = dT === undefined ? ciega('TRASPASO', 'no encuentro la carpeta de traspasos en la instalación del equipo')
     : seccionTraspasos({ sesiones, ahora, mtimeDelTraspaso: (n) => { const r = path.join(dT, `project_s${n}_traspaso.md`); return fs.existsSync(r) ? fs.statSync(r).mtimeMs : null; } });
