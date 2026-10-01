@@ -491,14 +491,18 @@ async function casoPresupuesto(navegador, ancho) {
 }
 
 async function casoSuelto(navegador, ancho) {
-  const etiqueta = `justificante ${ancho}px`;
+  // SCRUM-1313 · la etiqueta dice lo que se mide. Decía «justificante», y desde SCRUM-825 (PR #1943)
+  // ese modo no existe en el panel: 'justificante' cae a 'no' y la ruta pinta el listado, así que
+  // este caso estuvo CIEGO desde el 29-sep-2026. El documento suelto se abre en modo 'factura', que
+  // es el único en que la pantalla existe; lo que se le EXIGE no cambia ni una línea.
+  const etiqueta = `documento suelto ${ancho}px`;
   const contexto = await navegador.createBrowserContext();
   const pag = await contexto.newPage();
   const errores = [];
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   const mal = [];
   try {
-    modoSuelto = 'justificante';
+    modoSuelto = 'factura';
     await pag.setViewport({ width: ancho, height: 900 });
     await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#invoices-new`, { waitUntil: 'networkidle0' });
     const pintado = await pag.waitForSelector('.quote-line .quote-line__concept input', { timeout: 10000 }).then(() => true, () => false);
@@ -545,7 +549,7 @@ try {
 
 console.log('');
 console.log('  SCRUM-915d · LOS PASOS DEL EDITOR (panel real, estado medido después de pulsar)');
-console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, justificante a 1280 px');
+console.log('  POBLACIÓN: 3 casos — presupuesto a 390 y 1280 px, documento suelto a 1280 px');
 for (const l of informe) console.log('   · ' + l);
 
 if (ciegos.length) {
