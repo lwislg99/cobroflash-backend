@@ -197,7 +197,8 @@ export async function sembrar(fetchFn, cookie) {
   if (!presupuesto) {
     const creado = await escribir('POST', '/quote/create', {
       merchant_id: cuenta.merchantId, customer_id: cliente.id, currency: 'EUR',
-      lines: [{ concept: 'Servicio de pruebas QA', qty: 1, price: 10, tax: 21 }],
+      // El IVA va en FRACCIÓN (0.21), no en porcentaje: lo exige el esquema desde SCRUM-217 (SCRUM-1268c).
+      lines: [{ concept: 'Servicio de pruebas QA', qty: 1, price: 10, tax: 0.21 }],
       docHeaderText: CABECERA_QA, docFooterText: PIE_QA,
     });
     if (!Number.isInteger(creado.id)) throw new NoPude('el presupuesto no trae id');
