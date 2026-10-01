@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, seccionDespliegue, shaDeVersion,
+  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, commitsDeCorridas, seccionDespliegue, shaDeVersion,
   seccionCementerio, actualizarLibro, leerTrabajos, leerLibro,
   seccionContexto, contextoDeRuta,
   fallosDelLog, salidaDe, informe, puestoDe,
@@ -194,6 +194,51 @@ test('SCRUM-1350 · 🔴 MAIN en rojo se avisa; sin NINGÚN veredicto también; 
   assert.match(seccionMain({ commits: [commit('aaaa', undefined), commit('bbbb', null, 'in_progress')] }).alertas[0].linea, /ninguno de los últimos 2 commits/);
   assert.equal(seccionMain({ commits: [{ sha: 'a'.repeat(40), checkRuns: undefined }] }).pudo, false);
   assert.equal(seccionMain({ commits: [] }).pudo, false);
+});
+
+// SCRUM-1385 · una corrida de la API, con lo que `commitsDeCorridas` mira de ella.
+const corrida = (sha, extra = {}) => ({ id: sha, head_sha: sha.padEnd(40, '0'), event: 'push', head_branch: 'main', status: 'completed', conclusion: 'success', ...extra });
+
+test('SCRUM-1385 · 🔴 el verde de la RAMA de un PR no es un verde de main: sólo cuentan las corridas de main por push', () => {
+  // El caso del 1-oct: 4048a415 era la punta de la rama de #2093, verde en SU PR, y la sección lo dio
+  // por «último verde de main». Aquí su corrida viene con la rama y el evento de un PR.
+  const jobs = { ramaa: [check('success')], maina: [check('success')] };
+  const corridas = [
+    corrida('ramaa', { event: 'pull_request', head_branch: 'scrum-1368-latido-despliegue-fallido' }),
+    corrida('ramab', { event: 'push', head_branch: 'scrum-otra' }),
+    corrida('ramac', { event: 'pull_request', head_branch: 'main' }),
+    corrida('maina'),
+  ];
+  const commits = commitsDeCorridas(corridas, (c) => jobs[c.id]);
+  assert.deepEqual(commits.map((c) => c.sha.slice(0, 5)), ['maina'], '🔴 se ha colado una corrida que no es de main por push');
+  assert.match(seccionMain({ commits }).poblacion, /último con el obligatorio VERDE: maina000/);
+  // CONTROL: si lo ÚNICO verde es de la rama, main NO tiene verde, y se avisa.
+  const sinMain = commitsDeCorridas(corridas.slice(0, 3), (c) => jobs[c.id]);
+  assert.deepEqual(sinMain, []);
+  assert.equal(seccionMain({ commits: sinMain }).pudo, false, '🔴 sin corridas de main la sección tiene que decir «no pude mirar», no ✅');
+});
+
+test('SCRUM-1385 · las CANCELADAS se cuentan y se dicen, sin abrirlas; y se para en el primer veredicto', () => {
+  const pedidos = [];
+  const jobsDe = (c) => { pedidos.push(c.id); return c.id === 'd' ? [check('success')] : c.id === 'a' ? [check(null, { status: 'in_progress' })] : undefined; };
+  const cancelada = { conclusion: 'cancelled' };
+  const commits = commitsDeCorridas([corrida('a', { status: 'in_progress', conclusion: null }), corrida('b', cancelada), corrida('c', cancelada), corrida('d'), corrida('e')], jobsDe);
+  assert.deepEqual(pedidos, ['a', 'd'], '🔴 una cancelada no se abre (no tiene veredicto), y después del primer veredicto no se sigue');
+  assert.deepEqual(commits.map((c) => c.cancelada), [false, true, true, false]);
+  const s = seccionMain({ commits });
+  assert.deepEqual(s.alertas, []);
+  assert.match(s.poblacion, /último con el obligatorio VERDE: d0{7} · 3 commit\(s\) más nuevos sin veredicto \(2 con su corrida CANCELADA/);
+  // En rojo, lo mismo dentro del aviso.
+  const rojo = seccionMain({ commits: commitsDeCorridas([corrida('b', cancelada), corrida('f')], () => [check('failure')]) });
+  assert.match(rojo.alertas[0].linea, /main f0{7} tiene el obligatorio en ROJO \(1 commit\(s\) más nuevos sin veredicto \(1 con su corrida CANCELADA/);
+  // Y si TODAS están canceladas, no hay verde que dar: se avisa.
+  assert.match(seccionMain({ commits: commitsDeCorridas([corrida('b', cancelada), corrida('c', cancelada)], jobsDe) }).alertas[0].linea, /ninguno de los últimos 2 commits de main tiene veredicto del obligatorio \(2 con su corrida CANCELADA\)/);
+});
+
+test('SCRUM-1385 · 🔴 CIEGO: sin la lista de corridas, o sin poder leer los jobs de una que sí corrió, MAIN no sale verde', () => {
+  assert.equal(commitsDeCorridas(undefined, () => []), undefined);
+  assert.equal(seccionMain({ commits: commitsDeCorridas(undefined, () => []) }).pudo, false);
+  assert.equal(seccionMain({ commits: commitsDeCorridas([corrida('a')], () => undefined) }).pudo, false);
 });
 
 test(`SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de ${MINUTOS_DE_DESPLIEGUE} min es ATASCADO; uno recién lanzado no`, () => {
