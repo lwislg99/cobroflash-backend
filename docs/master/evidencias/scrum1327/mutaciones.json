@@ -1,0 +1,275 @@
+{
+  "base": {
+    "total": 22,
+    "caen": []
+  },
+  "resumen": "POBLACIÓN=23 mutaciones · CAZADA=23 · MUDA=0 · OTRA=0 · CIEGA=0",
+  "filas": [
+    {
+      "id": "R1",
+      "que": "el recorrido corta al primer ciego (el defecto del grupo 1)",
+      "fichero": "scripts/_hallazgos-y-ciegos.mjs",
+      "cae": "un ciego DELANTE no impide medir el hallazgo",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · GRUPO ① · el caso que se vio: un ciego DELANTE no impide medir el hallazgo de detrás",
+        "SCRUM-1327 · GRUPO ② · sólo ciegos sale por CIEGO (2), no por hallazgo (1)"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "R2",
+      "que": "un caso que lanza corta el recorrido",
+      "fichero": "scripts/_hallazgos-y-ciegos.mjs",
+      "cae": "un caso que LANZA es un ciego de ese caso",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · GRUPO ① · un caso que LANZA es un ciego de ese caso, y los de después se miden"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "R3",
+      "que": "cero casos da verde",
+      "fichero": "scripts/_hallazgos-y-ciegos.mjs",
+      "cae": "SUELO del recorrido",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin cuentas lanza"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "R4",
+      "que": "un caso que no devuelve una LISTA pasa (una frase se esparce letra a letra)",
+      "fichero": "scripts/_hallazgos-y-ciegos.mjs",
+      "cae": "SUELO del recorrido",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · SUELO del recorrido: cero casos es un ciego, y un caso sin cuentas lanza"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "S4",
+      "que": "un guard deja de decir sus dos cuentas en verde",
+      "fichero": "scripts/guard-vias-de-cobro.mjs",
+      "cae": "los seis salen SÓLO por `veredictoDe`",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "S1",
+      "que": "un guard del grupo 2 vuelve a salir con 1 a mano",
+      "fichero": "scripts/guard-aviso-bizum.mjs",
+      "cae": "los seis salen SÓLO por `veredictoDe`",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1320 · censo: ningún guard decide a mano entre ciego y hallazgo fuera de los declarados",
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`",
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "S2",
+      "que": "un guard del grupo 1 vuelve a cerrar DENTRO del recorrido (con veredictoDe puesto)",
+      "fichero": "scripts/guard-caja-datos-del-cliente.mjs",
+      "cae": "los seis salen SÓLO por `veredictoDe`",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`",
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "S3",
+      "que": "un guard del grupo 1 deja de recorrer con recorrerCasos",
+      "fichero": "scripts/guard-portal-en-la-ficha.mjs",
+      "cae": "los seis salen SÓLO por `veredictoDe`",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "C1",
+      "que": "entra un guard NUEVO que decide solo (el séptimo)",
+      "fichero": "scripts/guard-septimo-de-prueba.mjs",
+      "cae": "censo: ningún `scripts/guard-*.mjs` sale a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "C2",
+      "que": "entra un guard NUEVO del que no se sabe cómo decide (sin ninguna salida)",
+      "fichero": "scripts/guard-mudo-de-prueba.mjs",
+      "cae": "censo: ningún `scripts/guard-*.mjs` sale a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "C3",
+      "que": "una salida a mano NUEVA en un guard ya declarado",
+      "fichero": "scripts/guard-rastro-del-menu.mjs",
+      "cae": "censo: ningún `scripts/guard-*.mjs` sale a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1320 · censo: ningún guard decide a mano entre ciego y hallazgo fuera de los declarados",
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide",
+        "SCRUM-1327 · la lista dice por qué, una a una, y sus marcas no mienten"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "C4",
+      "que": "un número de la lista por encima de la realidad (holgura)",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "censo: ningún `scripts/guard-*.mjs` sale a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "C5",
+      "que": "una entrada caduca: un guard ya arreglado sigue en la lista",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "censo: ningún `scripts/guard-*.mjs` sale a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · los seis salen SÓLO por `veredictoDe`, y los tres del grupo ① recorren con `recorrerCasos`",
+        "SCRUM-1327 · censo: ningún `scripts/guard-*.mjs` sale a mano fuera de los declarados, y de ninguno se ignora cómo decide"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "L1",
+      "que": "cualquier `.codigo` vale como veredicto",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "las otras formas de decidir a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el lector ve las otras formas de decidir a mano: la cuenta escrita, `exitCode`, una variable, el `.codigo` de otro"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "L2",
+      "que": "el lector deja de ver las salidas dentro del recorrido",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "la forma del grupo ①",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el lector ve la forma del grupo ①: una salida a la que se llega desde DENTRO del recorrido"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "L3",
+      "que": "el lector deja de ver `process.exitCode`",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "las otras formas de decidir a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el lector ve las otras formas de decidir a mano: la cuenta escrita, `exitCode`, una variable, el `.codigo` de otro"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "L4",
+      "que": "el lector deja de ver la cuenta escrita a mano",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "las otras formas de decidir a mano",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el lector ve las otras formas de decidir a mano: la cuenta escrita, `exitCode`, una variable, el `.codigo` de otro"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "L5",
+      "que": "un guard sin ninguna salida deja de ser «no lo sé»",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "cuando no sabe, dice que no sabe",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · CONTROL del lector: de la cola buena no se queja, y cuando no sabe, dice que no sabe",
+        "SCRUM-1327 · el censo SABE FALLAR: uno nuevo sin declarar, un número que no cuadra, una entrada caduca y un «no lo sé»"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "F1",
+      "que": "el censo calla los «no lo sé»",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "el censo SABE FALLAR",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el censo SABE FALLAR: uno nuevo sin declarar, un número que no cuadra, una entrada caduca y un «no lo sé»"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "F2",
+      "que": "el censo sólo ve los números que SUBEN",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "el censo SABE FALLAR",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el censo SABE FALLAR: uno nuevo sin declarar, un número que no cuadra, una entrada caduca y un «no lo sé»"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "F3",
+      "que": "el censo pierde la mitad de las entradas caducas",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "el censo SABE FALLAR",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el censo SABE FALLAR: uno nuevo sin declarar, un número que no cuadra, una entrada caduca y un «no lo sé»"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "F4",
+      "que": "el censo calla a los que salen a mano sin declarar",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "el censo SABE FALLAR",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1327 · el censo SABE FALLAR: uno nuevo sin declarar, un número que no cuadra, una entrada caduca y un «no lo sé»"
+      ],
+      "motivo": null
+    },
+    {
+      "id": "U1",
+      "que": "una marca de la lista miente (la que deriva el censo de SCRUM-1320)",
+      "fichero": "tests/_salidas-de-guard.mjs",
+      "cae": "sus marcas no mienten",
+      "veredicto": "CAZADA",
+      "caidos": [
+        "SCRUM-1320 · censo: ningún guard decide a mano entre ciego y hallazgo fuera de los declarados",
+        "SCRUM-1327 · la lista dice por qué, una a una, y sus marcas no mienten"
+      ],
+      "motivo": null
+    }
+  ],
+  "baseTrasDeshacer": {
+    "total": 22,
+    "caen": []
+  }
+}

@@ -29,7 +29,7 @@ import {
   veredictoDe, leerVeredicto, MARCA_VEREDICTO, SALIDA_VERDE, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR,
 } from '../scripts/_hallazgos-y-ciegos.mjs';
 import { recuento, veredicto, cuentasDeLaFila, llegoAMedir } from '../scripts/guards-visuales.mjs';
-import { defectosDe } from './_salidas-de-guard.mjs';
+import { defectosDe, SALEN_A_MANO } from './_salidas-de-guard.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_SCRIPTS = path.join(RAIZ, 'scripts');
@@ -174,18 +174,12 @@ test('SCRUM-1320 · el detector distingue las colas: caza la de antes, la invert
  * Los guards que siguen eligiendo a mano entre «ciego» y «hallazgo», con su motivo y quién lo retira.
  * Uno por línea. No es una lista de permisos: es deuda con nombre, y el test de abajo la mantiene exacta.
  */
-const DECIDEN_A_MANO = new Map([
-  ['guard-completar-lleva-al-campo.mjs',
-    'ORDEN BUENO, escrito a mano desde SCRUM-904 (hallazgo primero, y el ciego se imprime siempre); lo ancla `tests/scrum904`. Lo retira quien lo pase a `veredictoDe`.'],
-  ['guard-caja-datos-del-cliente.mjs',
-    'OTRA FORMA del mismo defecto, sin arreglar: `noSupeMirar()` ABORTA en el primer ciego y tira los hallazgos acumulados. Pide rehacer el bucle; reportado al orquestador en la entrega de SCRUM-1320 (1-oct-2026).'],
-  ['guard-caja-documento-suelto.mjs',
-    'OTRA FORMA del mismo defecto, sin arreglar: `noSupeMirar()` ABORTA en el primer ciego y tira los hallazgos acumulados. Reportado con el anterior.'],
-  ['guard-portal-en-la-ficha.mjs',
-    'OTRA FORMA del mismo defecto, sin arreglar: el primer caso ciego corta el bucle y los hallazgos se calculan después, así que un caso ya medido no se juzga. Reportado con los anteriores.'],
-  ['guard-nombres-no-declarados.mjs',
-    'NO ES EL DEFECTO: su salida de ciego es `noMedido` del instrumento ENTERO, antes de juzgar nada; no hay hallazgos que tapar. No es de navegador.'],
-]);
+//
+// SCRUM-1327 · LA LISTA YA NO SE ESCRIBE AQUÍ: se DERIVA de `SALEN_A_MANO` (`_salidas-de-guard.mjs`),
+// que declara TODA salida a mano de un guard y no sólo ésta forma. Dos listas para la misma deuda
+// son la próxima contradicción esperando fecha. De aquí salieron al arreglarse `caja-datos-del-cliente`,
+// `caja-documento-suelto` y `portal-en-la-ficha`; quedan los que llevan la marca.
+const DECIDEN_A_MANO = new Map([...SALEN_A_MANO].filter(([, d]) => d.eligeEntreCiegoYHallazgo).map(([f, d]) => [f, d.motivo]));
 
 test('SCRUM-1320 · censo: ningún guard decide a mano entre ciego y hallazgo fuera de los declarados', () => {
   const poblacion = fs.readdirSync(DIR_SCRIPTS).filter((f) => /^guard-.*\.mjs$/.test(f)).sort();
