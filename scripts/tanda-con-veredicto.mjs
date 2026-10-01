@@ -37,6 +37,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
 import { reportersComoArgumentos } from './_reporters-de-node-options.mjs';
+import { lectorDeHuellas, redactar } from './_huella-de-la-caida.mjs';
 
 const [orden, ...args] = process.argv.slice(2);
 if (!orden) {
@@ -78,11 +79,20 @@ let cola = '';
 let conResumen = false;
 const decodificador = new StringDecoder('utf8');
 
+// 🔴 SCRUM-1331 / SCRUM-1332: además de pasar la salida, se LEE, para poder decir al final qué
+// rojos NO son un caso que falle (un fichero que murió al salir, uno que no tenía red, un caso
+// CIEGO). Es sólo lectura: nada de lo que el lector concluya toca el código de salida, y si el
+// lector fallara se calla él, no la tanda. Qué lee y sus límites: `_huella-de-la-caida.mjs`.
+const huellas = lectorDeHuellas();
+let lectorRoto = null;
+
 hijo.stdout.on('data', (trozo) => {
   ultimaEscritura = Date.now();
   process.stdout.write(trozo);
-  cola = (cola + decodificador.write(trozo)).slice(-4000);
+  const texto = decodificador.write(trozo);
+  cola = (cola + texto).slice(-4000);
   if (!conResumen && RESUMEN.test(sinColor(cola))) conResumen = true;
+  if (!lectorRoto) { try { huellas.texto(texto); } catch (e) { lectorRoto = e; } }
 });
 hijo.stderr.on('data', (trozo) => {
   ultimaEscritura = Date.now();
@@ -118,6 +128,7 @@ hijo.on('error', (e) => {
 hijo.on('close', (codigo, senal) => {
   clearInterval(vigia);
   if (parado) return;
+  decirLasHuellas(codigo);
   if (codigo === 0 && !conResumen) {
     process.stderr.write(
       '\n🔴 TANDA SIN RESUMEN (SCRUM-858): la tanda ha salido con 0, pero por la salida estándar no ha '
@@ -131,6 +142,21 @@ hijo.on('close', (codigo, senal) => {
   process.exitCode = codigo ?? 1;
   if (codigo === null) process.stderr.write(`\n🔴 la tanda terminó por la señal ${senal}.\n`);
 });
+
+/**
+ * SCRUM-1331 / SCRUM-1332 · el aviso final: qué rojos de esta tanda NO son un caso que falle.
+ * Va a la salida de error, DESPUÉS de todo lo de la tanda, y no devuelve nada a propósito: el
+ * código de salida se decide en `close`, sin mirar esto.
+ */
+function decirLasHuellas(codigo) {
+  try {
+    if (lectorRoto) throw lectorRoto;
+    const aviso = redactar(huellas.fin(), codigo);
+    if (aviso) process.stderr.write(aviso);
+  } catch (e) {
+    process.stderr.write(`\nℹ️ el lector de huellas de la tanda (SCRUM-1331) ha fallado y NO ha dicho nada: ${e?.message}\n`);
+  }
+}
 
 /** Para SOLO el árbol del hijo. Nunca `node` a secas: hay otras sesiones en la máquina. */
 function pararArbol() {

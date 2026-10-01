@@ -1,0 +1,41 @@
+# Barrido de logs del job obligatorio en CI (Linux): ficheros caidos SIN caso caido.
+# INCOMPLETO: el sistema paro las dos pasadas por falta de memoria. No se relanzaron.
+
+## Ventana A: runs con conclusion=failure entre los ultimos 150 de ci.yml (29-sep 18:15Z a 1-oct 06:18Z): 94. Procesados 24, logs leidos 6:
+36810188746 2026-10-01T03:22:12Z scrum-1325-una-tilde-no-rompe-lo-que-entiende · bytes=2160282 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+36809487211 2026-10-01T03:13:08Z scrum-1252-evidencias-libro-solo-facturas · bytes=2156354 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+36807859456 2026-10-01T02:52:17Z scrum-1324-nadie-vigila-el-silencio · bytes=2515459 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+36804929200 2026-10-01T02:15:00Z scrum-1298-mesa-por-puesto · bytes=2183059 · lineas ✖=17 · red=0 · ficheros caidos sin caso: ninguno
+36804918944 2026-10-01T02:14:52Z scrum-1289b-reporters-como-argumentos · bytes=2168402 · lineas ✖=11 · red=0 · ficheros caidos sin caso: ninguno
+36804909056 2026-10-01T02:14:44Z scrum-1268c-sembrar-qa-iva-en-fraccion · bytes=2152861 · lineas ✖=11 · red=0 · ficheros caidos sin caso: ninguno
+36804896125 2026-10-01T02:14:35Z scrum-1285c-censo-escrituras-sin-version · bytes=2153799 · lineas ✖=11 · red=0 · ficheros caidos sin caso: ninguno
+36804888127 2026-10-01T02:14:28Z scrum-1289-tap-del-obligatorio · bytes=2141532 · lineas ✖=13 · red=0 · ficheros caidos sin caso: ninguno
+36804875074 2026-10-01T02:14:18Z scrum-825-guards-ciegos-a-factura · bytes=2126616 · lineas ✖=7 · red=0 · ficheros caidos sin caso: ninguno
+36804868311 2026-10-01T02:14:13Z scrum-1281-fixture-git-raiz-propia · bytes=2193737 · lineas ✖=15 · red=0 · ficheros caidos sin caso: ninguno
+36804665953 2026-10-01T02:11:40Z scrum-1322-el-bot-entiende-lo-que-pide · bytes=2514679 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+36803845315 2026-10-01T02:01:14Z scrum-1321-ancla-de-mutacion-ambigua · bytes=2516599 · lineas ✖=7 · red=0 · ficheros caidos sin caso: ninguno
+36803674320 2026-10-01T01:59:07Z scrum-1128b-las-tres-por-efecto · bytes=2144183 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+36803221288 2026-10-01T01:53:17Z scrum-1322-el-bot-entiende-lo-que-pide · bytes=2150025 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+(los otros 18 procesados: su job obligatorio salio success; el rojo era de otro job)
+
+## Ventana B: lo que devolvio gh run list --status failure --limit 40 (runs del 17 y 18-sep, NO los ultimos). Procesados 34, logs leidos 8:
+35365054060 2026-09-18T15:52:24Z scrum-908c-la-cola-que-se-pierde · bytes=1848717 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+35351918095 2026-09-18T13:43:43Z scrum-951d-ensayo-instalacion · bytes=1847371 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35328803518 2026-09-18T09:18:00Z scrum-949-el-suelo-como-cociente · bytes=1886455 · lineas ✖=15 · red=0 · ficheros caidos sin caso: ninguno
+35277159315 2026-09-17T21:31:33Z scrum-921c-el-guard-ampliado · bytes=1807219 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35274641738 2026-09-17T21:05:02Z scrum-921c-el-guard-ampliado · bytes=1806134 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35270060017 2026-09-17T20:18:58Z scrum-909-rotulos-que-se-pisan · bytes=1804861 · lineas ✖=7 · red=0 · ficheros caidos sin caso: ninguno
+35237029037 2026-09-17T14:57:22Z scrum-858b-la-tanda-sin-resumen-falla · bytes=1779088 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35229394828 2026-09-17T13:48:09Z scrum-804b-el-barrido-de-la-42 · bytes=1762834 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35228414645 2026-09-17T13:39:06Z scrum-899-orquestador-autonomo · bytes=1760808 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35228220325 2026-09-17T13:37:18Z scrum-904 · bytes=1758906 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35226645854 2026-09-17T13:22:19Z scrum-895-literales-firmados · bytes=1763983 · lineas ✖=5 · red=0 · ficheros caidos sin caso: ninguno
+35226595804 2026-09-17T13:21:51Z scrum-904 · bytes=1760650 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35226536503 2026-09-17T13:21:15Z main · bytes=1758109 · lineas ✖=3 · red=0 · ficheros caidos sin caso: ninguno
+35208941163 2026-09-17T10:08:52Z scrum-899-orquestador-autonomo · bytes=1759130 · lineas ✖=7 · red=0 · ficheros caidos sin caso: ninguno
+
+## CONTROL POSITIVO: run 36806690822 (PR #2046), job 110192494963. El run consta como «cancelled», no «failure»: quedaba FUERA de la ventana A.
+bytes=2148147 · ficheros caidos sin caso: tests/scrum804b-el-barrido-de-la-42.test.mjs · lineas con «Could not resolve host»: 4
+
+RESULTADO: 14 logs leidos (6 + 8) · 0 con fichero caido sin caso caido · 0 con huella de red. Mas el control: 1 de 1.
+NO medido: 70 runs fallidos de la ventana A sin procesar, y los 46 runs «cancelled» de esos 150.

@@ -1,0 +1,11 @@
+POBLACION negativos=4 · guards=2 · sujeto sha256 1448b9f9017b7469
+BASE sin tocar: exit 0 · pasan 44 · caen 0
+CAE    N1 el vigía vuelve a copiar la lectura de las reglas · exit 1 · pasan 43 de 44 · caen 1: 🔴 CENSO · en scripts/ y en los workflows, UN solo sitio lee la lista de obligatorios
+CAE    N2 el vigía vuelve a elegir `gh` según la plataforma · exit 1 · pasan 43 de 44 · caen 1: SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nueva sin declararla
+CAE    N3 OTRO script nuevo copia la lectura de las reglas · exit 1 · pasan 43 de 44 · caen 1: 🔴 CENSO · en scripts/ y en los workflows, UN solo sitio lee la lista de obligatorios
+CAE    N4 OTRO script nuevo mira en qué máquina corre · exit 1 · pasan 43 de 44 · caen 1: SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nueva sin declararla
+sujeto restaurado: IDÉNTICO (sha256 1448b9f9017b7469)
+git status de scripts/ y tests/: limpio
+BASE después: exit 0 · pasan 44 · caen 0
+negativos cazados por el guard esperado 4 de 4 · mudos 0
+EXIT=0

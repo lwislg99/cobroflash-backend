@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -42,10 +43,33 @@ const ANCHOS = [929, 390];
 const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
 const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html' };
 
-function noSupeMirar(porque) {
-  console.error('\n🔴 NO SUPE MIRAR — no se da ningún número.');
-  console.error('   ' + porque);
-  process.exit(2);
+// ── 🔴 SCRUM-1327 · ESTE GUARD YA NO DECIDE CON QUÉ SALE, NI CUÁNDO DEJA DE MIRAR ─────────
+// `noSupeMirar()` hacía `process.exit(2)` en el primer caso ciego, DENTRO del bucle: los casos de
+// después no se medían y los hallazgos ya apuntados se tiraban. Visto ocurrir en navegador: ciego
+// a 929 px y, detrás, una nota que no cabe a 390 px → salida 2 y ni una palabra de la nota.
+// Ahora un caso ciego se APUNTA y se sigue (`recorrerCasos`), y el código lo da `veredictoDe`.
+const hallazgos = [];
+const ciegos = [];
+
+/** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
+function cerrar() {
+  if (ciegos.length) {
+    console.error(`\n🔴 NO SUPE MIRAR — de esto no se da ningún número (${ciegos.length}):`);
+    for (const c of ciegos) console.error('   ' + c);
+  }
+  if (hallazgos.length) {
+    console.error(`\n🔴 ${hallazgos.length} hallazgo(s):`);
+    for (const h of hallazgos) console.error('   ' + h);
+    console.error('\n   El texto está FIRMADO: la caja se adapta al texto, nunca al revés.');
+  }
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+  if (veredictoFinal.codigo !== 0) {
+    console.error('\n' + veredictoFinal.linea);
+    process.exit(veredictoFinal.codigo);
+  }
+  // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+  // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+  console.log(veredictoFinal.linea);
 }
 
 // ── LOS TEXTOS, EXTRAÍDOS DEL FICHERO REAL ───────────────────────────────────────────────
@@ -54,13 +78,15 @@ const casillas = [...fuente.matchAll(/\{\s*key:\s*"(\w+)",\s*label:\s*"([^"]+)"\
 const radios = [...fuente.matchAll(/\{\s*valor:\s*"(\w+)",\s*label:\s*"([^"]+)"\s*\}/g)].map((m) => m[2]);
 const nota = (fuente.match(/dfNote\.textContent\s*=\s*"([^"]+)"/) || [])[1];
 
-if (casillas.length < 4) noSupeMirar(`sólo encuentro ${casillas.length} rótulos de casilla en quotesView.js (esperaba al menos los 4 de docFields).`);
-if (radios.length !== 2) noSupeMirar(`encuentro ${radios.length} rótulos de radio y el control de SCRUM-589 tiene DOS. Si el control ha cambiado de forma, este guard no sabe medirlo.`);
-if (!nota) noSupeMirar('no encuentro el texto de la nota (`dfNote.textContent`).');
+if (casillas.length < 4) ciegos.push(`sólo encuentro ${casillas.length} rótulos de casilla en quotesView.js (esperaba al menos los 4 de docFields).`);
+if (radios.length !== 2) ciegos.push(`encuentro ${radios.length} rótulos de radio y el control de SCRUM-589 tiene DOS. Si el control ha cambiado de forma, este guard no sabe medirlo.`);
+if (!nota) ciegos.push('no encuentro el texto de la nota (`dfNote.textContent`).');
 // Las 4 de docFields son las últimas del fichero que casan con la forma {key,label}; las de
 // pay-methods usan la misma forma, así que se filtran por nombre conocido del bloque.
 const DOC = ['Nombre', 'Teléfono', 'NIF', 'Email'].filter((t) => casillas.includes(t));
-if (DOC.length !== 4) noSupeMirar(`de las cuatro casillas de «Datos del cliente» sólo veo ${DOC.length}: ${JSON.stringify(DOC)}.`);
+if (DOC.length !== 4) ciegos.push(`de las cuatro casillas de «Datos del cliente» sólo veo ${DOC.length}: ${JSON.stringify(DOC)}.`);
+// Sin los textos no hay página que montar: se cierra ANTES de medir, y por la misma puerta.
+if (ciegos.length) cerrar();
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -111,7 +137,8 @@ const srv = http.createServer((req, res) => {
 const puerto = await levantarServidor(srv, 0, '127.0.0.1');
 const base = `http://127.0.0.1:${puerto}`;
 const nav = await lanzarNavegador(puppeteer, {});
-const hallazgos = [];
+const CASOS = [];
+for (const estado of ['con-nombre', 'sin-nombre']) for (const ancho of ANCHOS) CASOS.push({ estado, ancho });
 
 console.log('textos DERIVADOS de quotesView.js:');
 console.log(`   casillas : ${JSON.stringify(DOC)}`);
@@ -120,8 +147,10 @@ console.log(`   nota     : ${nota.length} caracteres`);
 
 try {
   const page = await nav.newPage();
-  for (const estado of ['con-nombre', 'sin-nombre']) {
-    for (const ancho of ANCHOS) {
+  const cuentas = await recorrerCasos(CASOS, async ({ estado, ancho }) => {
+      // Lo que no deja medir ESTE caso lo deja ciego a él, y sólo a él: el siguiente se mide igual.
+      const soloCiego = (porque) => ({ hallazgos: [], ciegos: [`${estado} @${ancho}px: ${porque}`] });
+      const suyos = [];
       await page.setViewport({ width: ancho, height: 1000 });
       await page.goto(`${base}/__datos-${estado}.html`, { waitUntil: 'networkidle0' });
       const m = await page.evaluate(() => {
@@ -153,38 +182,35 @@ try {
         };
       });
 
-      if (!servidos.has('/dashboard/css/styles.css')) noSupeMirar('el CSS del dashboard no se sirvió.');
-      if (m.anchoSidebar <= 0) noSupeMirar('el sidebar computa 0 px: el CSS no se aplicó como en el producto.');
-      if (m.paddingCard !== 20) noSupeMirar(`la card computa ${m.paddingCard}px de padding y el CSS pide 20: no es la caja del producto.`);
-      if (!m.control || !m.control.desborda) noSupeMirar('el CONTROL NEGATIVO no salió desbordado: el detector de desborde no distingue, así que «todo cabe» significaría «no supe mirar».');
+      if (!servidos.has('/dashboard/css/styles.css')) return soloCiego('el CSS del dashboard no se sirvió.');
+      if (m.anchoSidebar <= 0) return soloCiego('el sidebar computa 0 px: el CSS no se aplicó como en el producto.');
+      if (m.paddingCard !== 20) return soloCiego(`la card computa ${m.paddingCard}px de padding y el CSS pide 20: no es la caja del producto.`);
+      if (!m.control || !m.control.desborda) return soloCiego('el CONTROL NEGATIVO no salió desbordado: el detector de desborde no distingue, así que «todo cabe» significaría «no supe mirar».');
       for (const [q, c] of [['bloque', m.bloque], ['fila', m.fila], ['elección', m.eleccion], ['nota', m.nota]]) {
-        if (!c) noSupeMirar(`no encuentro el nodo de «${q}».`);
-        if (c.alto <= 0) noSupeMirar(`la caja de «${q}» mide 0: se está midiendo vacía.`);
+        if (!c) return soloCiego(`no encuentro el nodo de «${q}».`);
+        if (c.alto <= 0) return soloCiego(`la caja de «${q}» mide 0: se está midiendo vacía.`);
       }
 
       // 🔴 CON ☐Nombre LOS RADIOS SE DESHABILITAN, NO SE ESCONDEN. Si desaparecieran, la fila
       // entera saltaría al marcar una casilla y el profesional no sabría que la opción existe.
-      if (!m.radiosVisibles) noSupeMirar('la elección de nombre ha desaparecido del layout: tiene que deshabilitarse, no esconderse.');
+      if (!m.radiosVisibles) return soloCiego('la elección de nombre ha desaparecido del layout: tiene que deshabilitarse, no esconderse.');
       if (estado === 'sin-nombre' && !m.radiosDeshabilitados) {
-        hallazgos.push('con ☐Nombre los radios siguen ACTIVOS (deberían estar deshabilitados)');
+        suyos.push('con ☐Nombre los radios siguen ACTIVOS (deberían estar deshabilitados)');
       }
 
       console.log(`\n── ${estado.toUpperCase()} · ${ancho} px ──`);
       console.log(`   bloque   ${m.bloque.alto.toFixed(1)} px · fila ${m.fila.alto.toFixed(1)} px (${m.filasVisuales} línea/s) · elección ${m.eleccion.alto.toFixed(1)} px · nota ${m.nota.alto.toFixed(1)} px (${m.nota.lineas} línea/s)`);
       console.log(`   radios: ${m.radiosVisibles ? 'en el layout' : 'AUSENTES'} · ${m.radiosDeshabilitados ? 'deshabilitados' : 'activos'}`);
       const mal = [m.bloque, m.fila, m.eleccion, m.nota].some((c) => c.desborda || c.fuera);
-      if (mal) hallazgos.push(`${estado} @${ancho}px: algo desborda o se sale del viewport`);
+      if (mal) suyos.push(`${estado} @${ancho}px: algo desborda o se sale del viewport`);
       console.log(`   → ${mal ? '🔴 no cabe' : 'cabe ✅'}`);
-    }
-  }
+      return { hallazgos: suyos, ciegos: [] };
+  }, (caso) => `${caso.estado} @${caso.ancho}px`);
+  hallazgos.push(...cuentas.hallazgos);
+  ciegos.push(...cuentas.ciegos);
 } finally { await nav.close(); srv.close(); }
 
 console.log('\n════ VEREDICTO ════');
-if (hallazgos.length) {
-  console.error(`🔴 ${hallazgos.length} hallazgo(s):`);
-  for (const h of hallazgos) console.error('   ' + h);
-  console.error('\n   El texto está FIRMADO: la caja se adapta al texto, nunca al revés.');
-  process.exit(1);
-}
+cerrar();
 console.log('   El bloque cabe en los dos estados y en los dos anchos, y la elección nunca');
 console.log('   desaparece del layout. (Envolver no es hallazgo; desbordar o salirse, sí.)');

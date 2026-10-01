@@ -1,0 +1,36 @@
+POBLACION · src/*.ts 311 · scripts/+prisma/ 266
+
+A1 · isFlagEnabled('INVOICING_ES_ENABLED', …) DIRECTAS: 6  (control: 39 llamadas a isFlagEnabled en src/)
+   src/modules/exports/app/routes/exports.routes.ts:145 · en (nivel de modulo o callback de ruta) · ctx={ merchant }
+   src/modules/exports/app/routes/exports.routes.ts:544 · en (nivel de modulo o callback de ruta) · ctx={ merchant }
+   src/modules/invoicing/domain/emission.service.ts:40 · en getEmissionMode · ctx={ merchant: m }
+   src/modules/invoicing/domain/invoiceNumber.service.ts:409 · en allocateInvoiceNumber · ctx={ merchant: m }
+   src/modules/system/audit.service.ts:259 · en flagsFiscalesDe · ctx={ merchant }
+   src/modules/system/domain/flagFiscal.service.ts:133 · en cambiarFlagFiscal · ctx={ merchant: { ...merchant, flags: flagsNuevos } }
+
+A2 · isFlagEnabled(<no literal>, …) — pueden recibir el flag: 2
+   src/modules/system/domain/flagFiscal.service.ts:106 · en cambiarFlagFiscal · flag=params.flag as FlagName
+   src/modules/system/domain/flagFiscal.service.ts:110 · en cambiarFlagFiscal · flag=params.flag as FlagName
+
+A3 · llamadas a getEmissionMode(): 16 en 10 ficheros
+     3  src/modules/jobs/app/routes/albaranes.routes.ts
+     3  src/modules/messaging/domain/lifecycle.service.ts
+     2  src/modules/jobs/app/routes/jobs.routes.ts
+     2  src/modules/system/app/routes/quotesAdmin.routes.ts
+     1  src/modules/invoicing/domain/facturaSuelta.ts
+     1  src/modules/invoicing/domain/invoiceNumber.service.ts
+     1  src/modules/invoicing/domain/modoVisible.ts
+     1  src/modules/messaging/domain/weeklyDigest.service.ts
+     1  src/modules/quotes/app/routes/quotes.routes.ts
+     1  src/modules/system/app/routes/quoteDecisionLanding.routes.ts
+
+C · escrituras de <x>.merchant.{update,updateMany,create,createMany,upsert}: src/ 23 · scripts/+prisma/ 11
+   por clase: literal sin flags=28 · OPACO (…)=2 · OPACO (spread ...(rect
+        ? { nextRectInvo)=1 · ESCRIBE flags=3
+   src/app.ts:1025 · update · OPACO (spread ...(prefijoPedido ? { invoiceSeri) · en (nivel de modulo o callback de ruta)
+   src/modules/invoicing/domain/invoiceNumber.service.ts:475 · update · OPACO (spread ...(rect
+        ? { nextRectInvo) · en allocateInvoiceNumber
+   src/modules/system/domain/flagFiscal.service.ts:117 · update · ESCRIBE flags · en cambiarFlagFiscal
+   src/modules/system/merchantAdmin.ts:251 · update · OPACO (spread ...rest,...(profileZones !== undefined ? ) · en updateMerchantProfile
+   scripts/medir-concurrencia-emision.mjs:85 · create · ESCRIBE flags · en conMerchant
+   scripts/seed-video.mjs:376 · create · ESCRIBE flags · en seed

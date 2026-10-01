@@ -81,6 +81,12 @@ export type AuditAction =
   // A6 · el sellado falló y el documento siguió su curso. Antes de esto solo quedaba un
   // `console.error` (lib/invoicing.ts:58 y :152): el fallo mudo del contrato §2.2.
   | 'sellado_fallido'
+  // SCRUM-1296 · una factura SELLADA que no quedó en la cola de remisión a la AEAT: o la
+  // exportación la excluye (no hay registro que encolar) o falló la escritura. La factura queda
+  // sellada igual. FIRMA del fundador (SCRUM-1296, comentario 17642: «1-Firmo»), que levanta la
+  // regla 5 para ESTA acción y ninguna más. `meta: { numero, motivo: 'excluida' | 'error',
+  // errorMensaje, tipoOperacion: 'Alta' }`. No reusa `sellado_fallido`: mentiría (sí está sellada).
+  | 'encolado_fallido'
   // A7/A8 · las dos mitades de `anular_factura` (D-3).
   | 'factura_anulada'
   | 'factura_rectificada'

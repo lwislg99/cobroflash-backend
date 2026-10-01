@@ -35,6 +35,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -262,7 +263,6 @@ console.log('  ' + '─'.repeat(100));
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «arranca sin red»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 ${hallazgos.length} HALLAZGO(S):\n`);
@@ -271,6 +271,12 @@ if (hallazgos.length) {
     for (const m of h.mal) console.error('       · ' + m);
   }
   console.error('\n  Si el móvil recarga en un sótano, el técnico no puede abrir ni el albarán que ya tenía descargado.');
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
 }
 console.log('\n  ✔ sin red la app arranca y avisa, no enseña nada como si estuviera al día, y un 401 sigue yendo al login.\n');

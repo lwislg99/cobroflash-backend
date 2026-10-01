@@ -29,6 +29,8 @@
 //   · el `de`  — el texto anclado existe HOY, byte a byte, en el fichero que dice mutar.
 //   · el `cae` — el nombre del test que debe caer existe HOY en el guard que lo declara.
 //                (SCRUM-836d; el detalle y sus límites, justo encima de `caesHuerfanos`.)
+//   · y desde SCRUM-1321, que el `de` sea INEQUÍVOCO: si aparece dos veces, la mutación cae en
+//     la primera y nadie sabe si era ésa. (El detalle, justo encima de `anclasAmbiguas`.)
 //
 //   · NO muta · NO corre tests · NO dice si un guard está mudo. Eso es trabajo de
 //     `meta:mutaciones` y aquí no se duplica: leer ficheros y hacer `includes` cuesta
@@ -45,6 +47,10 @@
 // como colateral a todos los demás guards que vigilan ese fichero. Una mutación con más radio que
 // el defecto que imita no prueba nada — es la lección escrita en la mutación ① de `scrum716`. En
 // su lugar, el ① de aquí abajo provoca el caso sobre un banco sintético, con el radio exacto.
+//
+// (SCRUM-1321: eso vale para las dos cribas de arriba, que viven en este fichero. La tercera
+// usa un criterio que vive en el meta-guard —`ambiguedadDelAncla`—, y apagar ESE criterio no
+// rompe ningún ancla real: sólo deja pasar el banco del ④. Ésa sí se declara.)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -53,9 +59,21 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { censoDeDeclaraciones } from '../scripts/meta-guard-mutaciones.mjs';
+import {
+  censoDeDeclaraciones, ambiguedadDelAncla, motivoDeAnclaAmbigua,
+} from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // SCRUM-1321 · el criterio deja de ver repeticiones: todo ancla presente vuelve a valer.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (posiciones.length <= 1) return null;',
+    a: '  if (posiciones.length <= 99) return null; // SCRUM-1321: nada es ambiguo, a proposito',
+    cae: 'SCRUM-1321 · 🔴 EL CASO REAL: un ancla que casa ANTES en otra línea se denuncia',
+  },
+];
 
 /** Cabecera mínima de un guard de mentira: dos tests, que es lo que el lector espera encontrar. */
 const CABECERA = "import test from 'node:test';\ntest('uno', () => {});\ntest('dos', () => {});\n\n";
@@ -91,6 +109,45 @@ export function anclasCaducadas(raiz = RAIZ, censo = null) {
     }
   }
   return fuera;
+}
+
+// ── SCRUM-1321 · EL ANCLA QUE SIGUE AHÍ, PERO YA NO ES LA ÚNICA ──────────────────────────────
+//
+// `anclasCaducadas` pregunta si el `de` ESTÁ. No pregunta si está UNA vez, y el corredor muta la
+// primera ocurrencia (`texto.replace(de, a)`). Así que una declaración puede romperse sin que
+// nadie la toque ni toque su guard: basta con que alguien escriba, más arriba en el fichero
+// vigilado, una línea que contenga el ancla.
+//
+// 🔴 MEDIDO EL 1-oct-2026: `dc8ea603` (SCRUM-1263, PR #1951, mergeado el 29-sep a las 09:44Z)
+// añadió dos pasos a `claude.yml`, y dos anclas de `scrum853` pasaron de 1 ocurrencia a 2. Las dos
+// mutaciones se fueron al paso nuevo, el test declarado ni se enteró, y `meta:mutaciones` dictó
+// «scrum853 · MUDO» dos veces en cada PR desde entonces — en el job que no bloquea. El PR que lo
+// causó era correcto y su tanda obligatoria estaba verde: no había nada en ella que mirase esto.
+//
+//   >>> Un ancla que casa dos veces no dice qué quiere mutar: dice lo que haya primero. <<<
+//
+// El criterio NO vive aquí: es `ambiguedadDelAncla`, del módulo dueño del contrato, y es el mismo
+// que `aplicarUna` usa para negarse a mutar. Dos criterios serían dos cosas que se quedan atrás.
+// La única repetición admitida —el guard que se muta a sí mismo y cita su ancla en su propia
+// declaración (SCRUM-812c)— se DERIVA allí; aquí no hay lista de excepciones.
+
+/** Las mutaciones cuyo `de` aparece más de una vez en su fichero sin que se sepa cuál se quería. */
+export function anclasAmbiguas(raiz = RAIZ, censo = null, dirGuards = path.join(raiz, 'tests')) {
+  const ambiguas = [];
+  for (const { guard, mutaciones } of (censo || censoDeDeclaraciones())) {
+    for (const mut of mutaciones) {
+      const abs = path.join(raiz, mut.fichero);
+      if (!fs.existsSync(abs)) continue; // eso ya lo denuncia `anclasCaducadas`, con su motivo
+      const seCitaASiMismo = path.resolve(abs) === path.resolve(dirGuards, guard);
+      const a = ambiguedadDelAncla(fs.readFileSync(abs, 'utf8'), mut.de, { seCitaASiMismo });
+      if (a) {
+        ambiguas.push({
+          guard, fichero: mut.fichero, cae: mut.cae, ...a, motivo: motivoDeAnclaAmbigua(mut.fichero, a),
+        });
+      }
+    }
+  }
+  return ambiguas;
 }
 
 // ── SCRUM-836d · LA OTRA MITAD: el `cae`, que nombra el test que la mutación debe tumbar ─────
@@ -375,4 +432,151 @@ test('SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada', ()
     + '  la línea. Anclar a una línea es anclar a cómo está escrita hoy, y eso caduca.\n\n'
     + '  Pasó el 8-sep-2026 con `scrum716`: un `||` se partió en dos `if` con todo el motivo, y\n'
     + '  la mutación se quedó ciega SIETE DÍAS mientras entraban 54 PRs.');
+});
+
+// ═══ ④ SCRUM-1321 · EL ANCLA AMBIGUA ═════════════════════════════════════════════════════════
+
+/** El fichero vigilado del caso REAL, reducido a su forma: el paso nuevo va ANTES y empieza igual. */
+const DOS_PASOS = [
+  '      - id: origen',
+  "        if: steps.puerta.outputs.despertar == 'si' && steps.puerta.outputs.es_pr == 'true'",
+  '      - uses: la/accion@v1',
+  '        id: accion',
+  "        if: steps.puerta.outputs.despertar == 'si'",
+  '',
+].join('\n');
+
+test('SCRUM-1321 · 🔴 EL CASO REAL: un ancla que casa ANTES en otra línea se denuncia, con sus líneas', () => {
+  const b = banco('scrum1321-', DOS_PASOS,
+    '  { fichero: \'vigilado.mjs\', de: "        if: steps.puerta.outputs.despertar == \'si\'", a: \'        if: always()\', cae: \'uno\' },\n');
+  try {
+    const censo = censoDeDeclaraciones(b.dir);
+    assert.equal(censo.reduce((n, c) => n + c.mutaciones.length, 0), 1,
+      '🔴 el banco no lee su declaración: lo que mida este test no significaría nada.');
+    // El defecto exacto: el ancla ESTÁ, así que la criba de SCRUM-836 no tiene nada que decir.
+    assert.deepEqual(anclasCaducadas(b.dir, censo), [],
+      '🔴 el banco no reproduce el caso: el ancla tiene que estar PRESENTE y aun así ser ambigua.');
+
+    const ambiguas = anclasAmbiguas(b.dir, censo, b.dir);
+    assert.equal(ambiguas.length, 1, `🔴 se esperaba UNA ambigua y salen ${ambiguas.length}.`);
+    assert.deepEqual(ambiguas[0].lineas, [2, 5],
+      '🔴 no dice DÓNDE están las dos ocurrencias. Sin las líneas, quien lo lea tiene que '
+      + 'reconstruir a mano qué se coló delante.');
+    assert.match(ambiguas[0].motivo, /mutaría la primera, la de la línea 2/,
+      '🔴 el motivo no dice cuál de las dos se mutaría, que es la mitad del diagnóstico.');
+  } finally {
+    b.limpia();
+  }
+});
+
+test('SCRUM-1321 · ✅ POSITIVO: la misma mutación, anclada con su contexto, NO se denuncia', () => {
+  // Sin esto, «detecta ambiguas» y «acusa a todo lo que se repite por dentro» dan el mismo rojo.
+  // Es además la forma del arreglo: la línea de antes dentro del mismo literal.
+  const b = banco('scrum1321-ok-', DOS_PASOS,
+    '  { fichero: \'vigilado.mjs\', de: "        id: accion\\n        if: steps.puerta.outputs.despertar == \'si\'", a: \'        id: accion\\n        if: always()\', cae: \'uno\' },\n');
+  try {
+    const censo = censoDeDeclaraciones(b.dir);
+    assert.equal(censo[0].mutaciones[0].de.split('\n').length, 2,
+      '🔴 el banco no ha escrito un ancla de dos líneas: el control no probaría lo que dice.');
+    assert.deepEqual(anclasCaducadas(b.dir, censo), [], '🔴 el ancla larga no está en el fichero.');
+    assert.deepEqual(anclasAmbiguas(b.dir, censo, b.dir), [],
+      '🔴 acusa a un ancla que casa UNA vez. Un guard que grita sin motivo se acaba puenteando.');
+  } finally {
+    b.limpia();
+  }
+});
+
+/** Un guard que se muta a SÍ MISMO: la constante y la declaración que la cita, en el orden pedido. */
+function bancoQueSeCita(prefijo, { arrayArriba = false, constantes = 1 } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+  const constante = 'export const TOPE = 5;\n'.repeat(constantes);
+  const array = 'export const MUTACIONES_QUE_ME_TUMBAN = [\n'
+    + "  { fichero: 'guardx.test.mjs', de: 'export const TOPE = 5;', a: 'export const TOPE = 99;', cae: 'uno' },\n"
+    + '];\n';
+  fs.writeFileSync(path.join(dir, 'guardx.test.mjs'),
+    CABECERA + (arrayArriba ? array + constante : constante + array));
+  return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+}
+
+test('SCRUM-1321 · ✅ el guard que se muta a sí mismo y CITA su ancla no es ambiguo: se deriva, no se lista', () => {
+  // Es el caso de SCRUM-812c y en el árbol real hay tres. Si esto los denunciara, el guard nacería
+  // rojo contra declaraciones sanas, y la salida fácil sería una lista de excepciones a mano.
+  const b = bancoQueSeCita('scrum1321-cita-');
+  try {
+    const censo = censoDeDeclaraciones(b.dir);
+    assert.equal(censo.reduce((n, c) => n + c.mutaciones.length, 0), 1, '🔴 el banco no lee su declaración.');
+    const fuente = fs.readFileSync(path.join(b.dir, 'guardx.test.mjs'), 'utf8');
+    assert.equal(fuente.split('export const TOPE = 5;').length - 1, 2,
+      '🔴 el banco no tiene las DOS ocurrencias (constante y cita): no ejercita la excepción.');
+    assert.deepEqual(anclasAmbiguas(b.dir, censo, b.dir), []);
+    // Y la excepción es SÓLO para quien se cita a sí mismo: el mismo texto, visto como fichero
+    // ajeno, sí es ambiguo. Si esto no cayera, la excepción sería «dos ocurrencias valen siempre».
+    assert.ok(ambiguedadDelAncla(fuente, 'export const TOPE = 5;', { seCitaASiMismo: false }),
+      '🔴 dos ocurrencias en un fichero AJENO se dan por buenas: la excepción se ha comido la regla.');
+  } finally {
+    b.limpia();
+  }
+});
+
+test('SCRUM-1321 · 🔴 con el array movido ARRIBA la primera ocurrencia es la CITA, y se denuncia', () => {
+  // El caso que SCRUM-812c dejó descrito: `replace` reescribe el texto de la declaración, la
+  // constante se queda como estaba y el veredicto sale MUDO acusando a un guard sano.
+  const b = bancoQueSeCita('scrum1321-arriba-', { arrayArriba: true });
+  try {
+    const ambiguas = anclasAmbiguas(b.dir, censoDeDeclaraciones(b.dir), b.dir);
+    assert.equal(ambiguas.length, 1,
+      '🔴 con la cita por delante de la constante, la mutación tocaría la cita y nadie lo dice.');
+  } finally {
+    b.limpia();
+  }
+});
+
+test('SCRUM-1321 · 🔴 citarse a sí mismo no absuelve una SEGUNDA ocurrencia de código', () => {
+  const b = bancoQueSeCita('scrum1321-tres-', { constantes: 2 });
+  try {
+    const ambiguas = anclasAmbiguas(b.dir, censoDeDeclaraciones(b.dir), b.dir);
+    assert.equal(ambiguas.length, 1, '🔴 dos líneas de código iguales más la cita se dan por inequívocas.');
+    assert.equal(ambiguas[0].veces, 3);
+  } finally {
+    b.limpia();
+  }
+});
+
+test('SCRUM-1321 · 🔴 NINGUNA mutación declarada tiene el ancla ambigua', () => {
+  const censo = censoDeDeclaraciones();
+  const total = censo.reduce((n, c) => n + c.mutaciones.length, 0);
+  assert.ok(total >= 54,
+    `🔴 el censo trae ${total} declaraciones y el suelo del meta-guard son 54. Un verde aquí no `
+    + 'diría «ninguna ambigua», diría «no se supo mirar».');
+
+  // SUELO de la excepción: las que se repiten y se ADMITEN tienen que existir y ser todas de un
+  // guard que se muta a sí mismo. Si salieran cero, la rama que absuelve no se habría ejercitado
+  // sobre el árbol real, y si saliera una ajena, la excepción se habría ensanchado sola.
+  const repetidas = [];
+  for (const { guard, mutaciones } of censo) {
+    for (const mut of mutaciones) {
+      const abs = path.join(RAIZ, mut.fichero);
+      if (fs.existsSync(abs) && fs.readFileSync(abs, 'utf8').split(mut.de).length - 1 > 1) {
+        repetidas.push({ guard, fichero: mut.fichero });
+      }
+    }
+  }
+  const ambiguas = anclasAmbiguas();
+  const admitidas = repetidas.filter((r) => !ambiguas.some((a) => a.guard === r.guard && a.fichero === r.fichero));
+  assert.ok(admitidas.length >= 1,
+    `🔴 de ${total} declaraciones ninguna repite su ancla y se admite: la excepción del guard que `
+    + 'se cita a sí mismo no se ha ejercitado sobre el árbol real.');
+  assert.deepEqual(admitidas.filter((r) => r.fichero !== `tests/${r.guard}`), [],
+    '🔴 se admite un ancla repetida en un fichero que NO es el propio guard.');
+
+  assert.deepEqual(ambiguas.map((a) => `${a.guard} → ${a.fichero} (${a.cae})`), [],
+    `🔴 HAY MUTACIONES CUYO ANCLA CASA MÁS DE UNA VEZ (${ambiguas.length} de ${total}):\n    `
+    + ambiguas.map((a) => `${a.guard}\n        cae: ${JSON.stringify(a.cae)}\n        ${a.motivo}`).join('\n    ')
+    + '\n\n  `meta:mutaciones` muta la PRIMERA ocurrencia. Si no es la que el test ejercita, el\n'
+    + '  veredicto sale MUDO acusando a un guard sano, y lo hace en el job que no bloquea.\n\n'
+    + '  🔴 Casi nunca lo ha roto quien toca la declaración: lo rompe quien escribe, MÁS ARRIBA en\n'
+    + '  el fichero vigilado, una línea que contiene el ancla. Si es tu caso, tu cambio está bien;\n'
+    + '  lo que hay que hacer es alargar el ancla de ESA declaración hasta que vuelva a ser única,\n'
+    + '  y comprobar aplicándola que sigue cayendo el test que nombra.\n\n'
+    + '  ⛔ NO se arregla quitando la declaración ni cambiando tu línea para que no case.');
 });

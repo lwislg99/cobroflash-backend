@@ -12,6 +12,7 @@ import {
 import { recordAudit, requestIp, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../audit.service'; // A11.1 (S2) · SCRUM-207
 import { requireRole } from '../../../../core/http/authMiddleware'; // A21.3 (S1)
 import { UnpayNotAllowedError } from '../../invoiceAdmin';
+import { esFilaQueNoCasa } from '../../../billing/domain/estadoDelCobro'; // SCRUM-1303
 import {
   listInvoicesAdmin,
   getInvoiceDetailAdmin,
@@ -48,6 +49,7 @@ import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailu
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
@@ -447,7 +449,12 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
 
     // Sin fecha en el cuerpo -> hoy. Eso NO es el defecto: es el valor por defecto que la pantalla
     // propone y la persona puede cambiar. El defecto era que no se podia cambiar.
-    const fecha = resolverFechaDeCobro(req.body?.paidAt);
+    // SCRUM-1093 · el «hoy» que decide si la fecha es futura es el del MERCHANT, como en
+    // chargesAdmin (confirm-bizum) y en el webhook (SCRUM-1301). Sin zona, entre las 00:00 y las
+    // 02:00 de Madrid la fecha de hoy salía «futura». El lote sólo toca facturas de
+    // `req.merchantId` (el `where` de abajo), así que la zona es la del merchant de la sesión.
+    const m = await prisma.merchant.findUnique({ where: { id: req.merchantId }, select: { timezone: true } });
+    const fecha = resolverFechaDeCobro(req.body?.paidAt, new Date(), zonaDelMerchant(m));
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
     const result = await prisma.invoice.updateMany({
@@ -814,6 +821,16 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
 const MOTIVOS_ANULACION = ['duplicada', 'error_sin_operacion', 'datos_cliente', 'prueba'] as const;
 
 /**
+ * El 409 de «no está pendiente», en UN sitio porque lo dan DOS puntos de `/:id/annul`: la guarda de
+ * entrada y la escritura que pierde la carrera (SCRUM-1303). Es el mismo hecho y el mismo texto ya
+ * firmado; no es texto nuevo.
+ */
+const NO_SE_ANULA_SI_NO_ESTA_PENDIENTE = {
+  error: 'invoice_not_pending',
+  message: 'Solo se anula una factura pendiente. Si ya se cobró, hay que rectificarla (R1), no anularla.',
+};
+
+/**
  * POST /admin/invoices/:id/annul — SCRUM-153 · ANULAR una factura emitida.
  *
  * La maquinaria fiscal existía desde SCRUM-145 (`applyVeriFactuAnulacion`, huella encadenada,
@@ -866,10 +883,7 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
     // Una factura COBRADA no se anula: el dinero entró, la operación existió. Eso es devolución
     // + R1 (y ninguno de los motivos de arriba podría ser cierto).
     if (invoice.status !== 'pending') {
-      return res.status(409).json({
-        error: 'invoice_not_pending',
-        message: 'Solo se anula una factura pendiente. Si ya se cobró, hay que rectificarla (R1), no anularla.',
-      });
+      return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
     }
     // V0-0: un justificante J- no está en la cadena fiscal; no hay anulación que registrar.
     if (isReceiptNumber(invoice.number)) {
@@ -903,8 +917,22 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
     }
 
     // ── 2) ESTADO + LIBERACIÓN, en UNA transacción ──────────────────────────────────────────
-    const liberados = await prisma.$transaction(async (tx) => {
-      await tx.invoice.update({ where: { id: invoice.id }, data: { status: 'annulled' } });
+    //
+    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado ANTES del
+    // sellado, y el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al
+    // escribir. Antes se escribía `annulled` encima de una factura cobrada. Ahora Prisma no
+    // encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
+    // toca el libro— y se contesta el mismo 409 de la guarda de entrada.
+    //
+    // ⚠️ LO QUE ESTO NO ARREGLA, declarado en `docs/BUGS.md` (P1-1303): el eslabón de anulación ya
+    // quedó sellado en el paso 1, así que la factura queda `paid` CON `vfAnulHash`. Ese eslabón ya
+    // existía antes de este arreglo cada vez que saltaba la carrera; lo que cambia es que el estado
+    // deja de taparlo. Qué hacer con él es del fundador (tocar el sellado es STOP, regla 40). Y no
+    // queda constancia en la auditoría: el `console.error` de abajo NO lo es.
+    let liberados;
+    try {
+    liberados = await prisma.$transaction(async (tx) => {
+      await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
       // P10 (criterio nuevo): los albaranes que consolidó vuelven a estar pendientes.
       const albs = await tx.albaran.updateMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
@@ -917,6 +945,14 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       });
       return { albaranes: albs.count, lineasLibro: libro.count };
     });
+    } catch (e) {
+      if (!esFilaQueNoCasa(e)) throw e;
+      console.error(
+        `[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula` +
+          (sellada ? ' (el eslabón de anulación YA quedó sellado: P1-1303)' : ''),
+      );
+      return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+    }
 
     // SCRUM-207 (D-3): antes esto y la rectificativa R1 compartían `anular_factura`, así que
     // por el campo `action` NO se distinguían dos hechos fiscales que no son el mismo (R10,

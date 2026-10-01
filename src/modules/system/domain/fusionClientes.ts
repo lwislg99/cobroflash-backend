@@ -23,10 +23,13 @@
 //
 //   CON FK REAL (Postgres rechazaría el `DELETE` si no se mueven primero):
 //     Quote · Charge · QuoteRequest · CustomerEvent (las notas)
+//     CustomerSite (direcciones de obra, SCRUM-1014) — se añadió en SCRUM-1291: faltaba, y con
+//     su FK RESTRICT la fusión daba 500 en cada reintento
 //   SIN FK (Postgres NO protestaría — el defecto sería silencioso):
 //     Job · ParteTrabajo · WhatsAppMessage · EmailMessage · MaintenancePlan
 //
-// Las nueve se reasignan. La décima, `Customer.companyId` de OTROS clientes que apuntaran al
+// Las diez se reasignan (`Invoice` es la única con `customerId` que no: con ella se rechaza).
+// Aparte, `Customer.companyId` de OTROS clientes que apuntaran al
 // fusionado como su empresa, se desvincula con `desvincularYBorrar` — la MISMA función que ya usa
 // `deleteCustomer`, no una segunda copia de esa decisión.
 //
@@ -182,6 +185,10 @@ export async function fusionarClientes(
     // puede escribir esa tabla (scrum508-los-cinco-dejan-fila.test.mjs).
     await reasignarClienteEnFusion(tx as any, merchantId, fusionadoId, principalId);
     await tx.maintenancePlan.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
+    // SCRUM-1291 · las direcciones de obra (SCRUM-1014). FK RESTRICT: sin moverlas, el `DELETE`
+    // final falla y la fusión da 500 en cada reintento. Sin índice único: una dirección repetida
+    // en los dos clientes no choca, el principal se queda con las dos (deduplicar sería borrar).
+    await tx.customerSite.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
 
     await tx.customer.updateMany({ where: { id: principalId, merchantId }, data: { tags: tagsUnidas } });
 

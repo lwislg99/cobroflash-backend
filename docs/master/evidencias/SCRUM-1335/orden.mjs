@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const [,, fichero, lista] = process.argv;
+const src = fs.readFileSync(fichero, 'utf8').split(/\r?\n/);
+const aus = fs.readFileSync(lista, 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+const casos = [];
+src.forEach((l, i) => { const m = /^(?:test|it)\((['"`])(.*)\1\s*,/.exec(l); if (m) casos.push({ linea: i + 1, nombre: m[2] }); });
+console.log('casos por regex:', casos.length, '· ausentes:', aus.length);
+let casados = 0;
+const marca = casos.map((c) => { const a = aus.includes(c.nombre); if (a) casados++; return a ? 'A' : '.'; });
+console.log('ausentes casados con un caso:', casados);
+console.log(marca.join(''));
+casos.forEach((c, i) => { if (marca[i] === 'A') console.log(String(i + 1).padStart(3), 'L' + c.linea, c.nombre.slice(0, 90)); });
+const nombres = casos.map((c) => c.nombre); const dup = nombres.filter((n, i) => nombres.indexOf(n) !== i);
+console.log('nombres repetidos:', dup.length, dup);

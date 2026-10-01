@@ -625,3 +625,31 @@ export function construirCuerpoSoapRegFactu(params: {
     ),
   });
 }
+
+/**
+ * SCRUM-1258 · Una factura SELLADA no puede declararse con un `TipoFactura` distinto del que entró
+ * en su huella. `TipoFactura` es uno de los ocho campos de `computeVeriFactuHash`, y al sellar sale
+ * de la columna `invoice.type`; si al exportar se resolviera otro, el registro llevaría firmada la
+ * huella de un tipo y declararía el otro, y quien la recalculara desde el propio XML no la
+ * obtendría.
+ *
+ * Se EXCLUYE con motivo, como todo lo que no se puede declarar con certeza: no se resella (regla 29
+ * de `docs/YAQU_MASTER.md`: la huella no se toca) ni se elige aquí qué facturas son simplificadas.
+ *
+ * El texto es el firmado por el fundador en SCRUM-1258, comentario 17713
+ * (`docs/microcopy/2026-10-01-SCRUM-1258-tipo-distinto-del-sellado.md`). No se retoca sin firma.
+ *
+ * Va al final del fichero a propósito: varios documentos y catálogos citan este módulo por línea.
+ */
+// Cada frase va ENTERA en su línea: `tests/scrum514-aprobado-y-aplicado.test.mjs` busca el texto
+// firmado letra a letra en el código, y una frase partida con `+` no la encuentra.
+export const MOTIVO_SELLADA_F1_DECLARADA_F2 = [
+  'Esta factura se selló como factura completa (F1) y el registro la declararía como simplificada (F2).',
+  'El tipo forma parte de la huella y no puede cambiar después de sellar, así que queda fuera del registro.',
+].join(' ');
+
+export class TipoDistintoDelSelladoError extends RegistroNoEmitibleError {
+  constructor(ref?: string) {
+    super(MOTIVO_SELLADA_F1_DECLARADA_F2, ref, 'verifactu_tipo_distinto_del_sellado');
+  }
+}

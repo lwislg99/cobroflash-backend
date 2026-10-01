@@ -1,0 +1,143 @@
+# laboratorio de SCRUM-1328 · node v24.18.0 · MINGW64_NT-10.0-26200
+## hijo = script suelto que usa node:test (como scripts/guards-entrada.mjs)
+modo=sin-hijo via=opciones EXIT=0 testigo=
+modo=hereda via=opciones EXIT=0 testigo=hijo pid=22240 ctx=- opts=SI;
+modo=limpio via=opciones EXIT=0 testigo=hijo pid=19044 ctx=- opts=NO;
+modo=contexto via=opciones EXIT=0 testigo=hijo pid=23156 ctx=child-v8 opts=SI;
+modo=hereda via=argumentos EXIT=0 testigo=hijo pid=10040 ctx=- opts=NO;
+
+=== base.tap
+POBLACION bytes=78274
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78274 largo=78274
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78167
+         recuentos: tests=343@78174 pass=343@78197 fail=0@78208 cancelled=0@78217 skipped=0@78231
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+=== hereda.tap
+POBLACION bytes=78270
+NUL total=70402 (89.9 %) en 1 tramo(s); tramos de texto=2
+  [TEXT] 0..571 largo=571
+         cabeceras TAP en: 0
+         casos nivel superior: ok=5 not_ok=0 skip=0 primero=1 ultimo=5
+         planes: 1..5@470
+         recuentos: tests=5@475 pass=5@496 fail=0@505 cancelled=0@514 skipped=0@528
+         primeros: ["ok 1 - HIJO caso 1","ok 2 - HIJO caso 2"]
+         ultimo:   ["ok 5 - HIJO caso 5"]
+         empieza con: "TAP version 13\n# Subtest: HIJO caso 1\nok 1 - HIJO caso 1\n  ---\n  duration_ms: 0.6125\n  typ"
+  [NUL ] 571..70973 largo=70402
+  [TEXT] 70973..78270 largo=7297
+         cabeceras TAP en: (ninguna)
+         casos nivel superior: ok=43 not_ok=0 skip=0 primero=301 ultimo=343
+         planes: 1..343@78162
+         recuentos: tests=343@78169 pass=343@78192 fail=0@78203 cancelled=0@78212 skipped=0@78226
+         primeros: ["ok 301 - PADRE-B antes de lanzar","ok 302 - PADRE-B lanza al hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "# Subtest: PADRE-B antes de lanzar\nok 301 - PADRE-B antes de lanzar\n  ---\n  duration_ms: 0"
+
+=== limpio.tap
+POBLACION bytes=78273
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78273 largo=78273
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78167
+         recuentos: tests=343@78174 pass=343@78197 fail=0@78208 cancelled=0@78217 skipped=0@78231
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+=== contexto.tap
+POBLACION bytes=78274
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78274 largo=78274
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78166
+         recuentos: tests=343@78173 pass=343@78196 fail=0@78207 cancelled=0@78216 skipped=0@78230
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+=== args.tap
+POBLACION bytes=78270
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78270 largo=78270
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78162
+         recuentos: tests=343@78169 pass=343@78192 fail=0@78203 cancelled=0@78212 skipped=0@78226
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+## hijo = OTRO node --test (como tests/scrum850b y tests/scrum928)
+modo=hereda via=opciones EXIT=0 testigo=anidado pid=5716 ctx=child-v8 opts=SI;
+modo=limpio via=opciones EXIT=0 testigo=anidado pid=17264 ctx=child-v8 opts=NO;
+modo=contexto via=opciones EXIT=0 testigo=
+modo=hereda via=argumentos EXIT=0 testigo=anidado pid=7528 ctx=child-v8 opts=NO;
+
+=== anid-hereda.tap
+POBLACION bytes=78268
+NUL total=70662 (90.3 %) en 1 tramo(s); tramos de texto=2
+  [TEXT] 0..310 largo=310
+         cabeceras TAP en: 0
+         casos nivel superior: ok=2 not_ok=0 skip=0 primero=1 ultimo=2
+         planes: 1..2@209
+         recuentos: tests=2@214 pass=2@235 fail=0@244 cancelled=0@253 skipped=0@267
+         primeros: ["ok 1 - ANIDADO caso 1","ok 2 - ANIDADO caso 2"]
+         ultimo:   ["ok 2 - ANIDADO caso 2"]
+         empieza con: "TAP version 13\n# Subtest: ANIDADO caso 1\nok 1 - ANIDADO caso 1\n  ---\n  duration_ms: 0.7414"
+  [NUL ] 310..70972 largo=70662
+  [TEXT] 70972..78268 largo=7296
+         cabeceras TAP en: (ninguna)
+         casos nivel superior: ok=43 not_ok=0 skip=0 primero=301 ultimo=343
+         planes: 1..343@78160
+         recuentos: tests=343@78167 pass=343@78190 fail=0@78201 cancelled=0@78210 skipped=0@78224
+         primeros: ["ok 301 - PADRE-B antes de lanzar","ok 302 - PADRE-B lanza al hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "# Subtest: PADRE-B antes de lanzar\nok 301 - PADRE-B antes de lanzar\n  ---\n  duration_ms: 0"
+
+=== anid-limpio.tap
+POBLACION bytes=78252
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78252 largo=78252
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78144
+         recuentos: tests=343@78151 pass=343@78174 fail=0@78185 cancelled=0@78194 skipped=0@78208
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+=== anid-contexto.tap
+POBLACION bytes=78275
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78275 largo=78275
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78167
+         recuentos: tests=343@78174 pass=343@78197 fail=0@78208 cancelled=0@78217 skipped=0@78231
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+=== anid-args.tap
+POBLACION bytes=78270
+NUL total=0 (0.0 %) en 0 tramo(s); tramos de texto=1
+  [TEXT] 0..78270 largo=78270
+         cabeceras TAP en: 0
+         casos nivel superior: ok=343 not_ok=0 skip=0 primero=1 ultimo=343
+         planes: 1..343@78163
+         recuentos: tests=343@78170 pass=343@78193 fail=0@78204 cancelled=0@78213 skipped=0@78227
+         primeros: ["ok 1 - PADRE-A caso 001 - relleno para que el padre lleve escrito bastante mas que el hijo","ok 2 - PADRE-A caso 002 - relleno para que el padre lleve escrito bastante mas que el hijo"]
+         ultimo:   ["ok 343 - PADRE-C caso 040 - lo que el padre escribe despues"]
+         empieza con: "TAP version 13\n# Subtest: PADRE-A caso 001 - relleno para que el padre lleve escrito basta"
+
+## repeticion del rojo: 20 pasadas de «hereda opciones»
+pisadas con NUL: 20 de 20
+EXIT=0

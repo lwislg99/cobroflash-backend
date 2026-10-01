@@ -128,15 +128,75 @@ export type DestinoDeEnvio =
  * los dos lados antes de comparar, igual que antes.)
  */
 async function isWaOptedOut(merchantId: number, to: string): Promise<boolean> {
+  // SCRUM-1262: aquí NO se captura el error. Antes devolvía `false` si la consulta fallaba
+  // («ante la duda no bloquear»), y eso convertía «no lo sé» en «no se dio de baja». Qué hacer
+  // cuando no se puede saber lo decide `corteDeLaBaja`, que es su único llamador.
+  const optedOut = await prisma.customer.findMany({
+    where: { merchantId, waOptOut: true, OR: [{ phone: { not: null } }, { mobile: { not: null } }] },
+    select: { phone: true, mobile: true },
+  });
+  return optedOut.some((c) => numerosDelContacto(c).includes(to));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1262 · EL CORTE DE LA BAJA — uno, para las ocho vías, y que falla CERRADO
+//
+// Hasta aquí la baja (J3) sólo se miraba en 2 de los 8 senders (`Template` y `WindowFirst`), y
+// en esos dos dejaba pasar si la consulta reventaba. Son dos defectos distintos:
+//
+//   ① COBERTURA: por texto, botones, lista, botón-enlace, documento y ubicación, un número dado
+//     de baja recibía. Medido: 4 llamadas escribían así a un CLIENTE por iniciativa nuestra
+//     (el recordatorio manual y el del cron en su rama de texto, y la petición de reseña de los
+//     dos webhooks de pago).
+//   ② FAIL-OPEN: una comprobación que no puede responder no es un permiso. Si no se sabe si
+//     alguien pidió que no se le escriba, no se le escribe.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * El único motivo por el que la baja NO corta: contestar a quien ACABA DE ESCRIBIR. La baja
+ * corta lo que nace de nosotros; una respuesta la ha pedido el destinatario al escribir. Sin
+ * esto, un cliente de baja que escribe «hola» recibiría silencio.
+ *
+ * 🔴 Tipo propio: NO se hereda de `MotivoExencionDemo` aunque hoy se escriban igual. Una protege
+ * una cuenta pública y la otra un consentimiento; quien declare una no declara la otra sin
+ * escribirlo. Sólo la declara quien PROCESA el entrante, y hacia quien escribió
+ * (`tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs`, por AST).
+ */
+export type MotivoExencionBaja = 'respuesta-a-entrante';
+
+/**
+ * Motivo de un envío que no salió porque NO SE PUDO COMPROBAR la baja. No es `wa_opt_out` a
+ * propósito: ese motivo le dice al profesional que su cliente se dio de baja, y aquí no se sabe.
+ * No está en `SEND_FAILURE_MESSAGES`, así que los llamadores lo llevan al genérico de «no se
+ * pudo enviar por WhatsApp» — sin texto nuevo.
+ */
+export const MOTIVO_BAJA_NO_COMPROBABLE = 'baja_no_comprobable';
+
+/**
+ * ¿Hay que cortar este envío por la baja del canal? Devuelve el motivo, o `null` si puede salir.
+ *
+ * Sin `merchantId` no corta, y no es un descuido: la baja se guarda POR merchant, así que sin él
+ * no hay contra qué preguntarla. Es el caso de la confirmación de la propia baja («Hecho ✅…»),
+ * que sale con `sinMerchant: 'multi-merchant'` justo después de marcarla.
+ */
+async function corteDeLaBaja(p: {
+  via: string;
+  to: string;
+  merchantId?: number;
+  exentoDeLaBaja?: MotivoExencionBaja;
+}): Promise<'wa_opt_out' | typeof MOTIVO_BAJA_NO_COMPROBABLE | null> {
+  if (p.exentoDeLaBaja || !p.merchantId) return null;
   try {
-    const optedOut = await prisma.customer.findMany({
-      where: { merchantId, waOptOut: true, OR: [{ phone: { not: null } }, { mobile: { not: null } }] },
-      select: { phone: true, mobile: true },
-    });
-    return optedOut.some((c) => numerosDelContacto(c).includes(to));
+    if (!(await isWaOptedOut(p.merchantId, p.to))) return null;
+    console.warn(`[WhatsApp] ${maskPhone(p.to)} dado de baja (waOptOut) para merchant ${p.merchantId}; ${p.via} bloqueado`);
+    return 'wa_opt_out';
   } catch (err: any) {
-    console.error('[WhatsApp] Error comprobando waOptOut:', err?.message || err);
-    return false; // ante la duda no bloquear: el guard es best-effort, el dato manda en BD
+    console.error(
+      `[WhatsApp] NO se pudo comprobar la baja de ${maskPhone(p.to)} para merchant ${p.merchantId}; ` +
+        `${p.via} bloqueado (fail-closed, SCRUM-1262):`,
+      err?.message || err,
+    );
+    return MOTIVO_BAJA_NO_COMPROBABLE;
   }
 }
 
@@ -266,10 +326,10 @@ export async function sendWhatsAppTemplate(params: {
   }
 
   // J3: baja del canal — bloqueo de plantillas a ese número para ese merchant
-  if (params.merchantId && (await isWaOptedOut(params.merchantId, params.to))) {
-    console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; envío bloqueado`);
-    logFailure('wa_opt_out');
-    return { ok: false, reason: 'wa_opt_out' };
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppTemplate', to: params.to, merchantId: params.merchantId });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
 
   // A3.2 (PV-WA-CAPS): topes anti-abuso del número compartido, contados sobre
@@ -410,8 +470,8 @@ export async function sendWhatsAppWindowFirst(params: {
   const customerId = params.customerId ?? params.log?.customerId ?? null;
 
   // J3: la baja del canal manda también sobre los textos de ventana
-  if (await isWaOptedOut(params.merchantId, params.to)) {
-    console.warn(`[WhatsApp] ${maskPhone(params.to)} dado de baja (waOptOut) para merchant ${params.merchantId}; ventana-first bloqueado`);
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppWindowFirst', to: params.to, merchantId: params.merchantId });
+  if (corte) {
     // SCRUM-126: este early-return no registraba nada en WA-0b (a diferencia del fallback
     // a sendWhatsAppTemplate, que sí lo hace desde SCRUM-115). El único llamador fire-and-
     // forget de esta función (el auto-envío tras decisión de presupuesto, quotes.routes.ts)
@@ -422,11 +482,11 @@ export async function sendWhatsAppWindowFirst(params: {
       type: 'service',
       templateName: params.template.templateName,
       status: 'failed',
-      error: 'wa_opt_out',
+      error: corte,
       relatedType: params.log?.relatedType ?? null,
       relatedId: params.log?.relatedId ?? null,
     }).catch(() => {});
-    return { ok: false, via: 'none', reason: 'wa_opt_out' };
+    return { ok: false, via: 'none', reason: corte };
   }
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
@@ -513,6 +573,12 @@ export async function sendWhatsAppText(params: {
    * cuenta pública y sus clientes sembrados llevan teléfonos del rango de móvil español real.
    */
   exentoDelDemo?: MotivoExencionDemo;
+  /**
+   * SCRUM-1262: la baja (J3) no corta una RESPUESTA a quien acaba de escribir. Se declara
+   * APARTE de `exentoDelDemo` aunque el motivo se escriba igual: son dos políticas, y quien
+   * exime del freno del demo no está eximiendo de un consentimiento sin escribirlo.
+   */
+  exentoDeLaBaja?: MotivoExencionBaja;
   // WA-0b: metadata opcional para el registro de un FALLO (SCRUM-115). No se usa en éxito:
   // sendWhatsAppWindowFirst ya registra el éxito de su propio texto de ventana — duplicaría
   // la fila si esta función también lo hiciera aquí.
@@ -551,6 +617,12 @@ export async function sendWhatsAppText(params: {
     console.warn(`[WhatsApp] V0-2: texto desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppText', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca (quien registre el log usa este wamid)
@@ -595,6 +667,8 @@ export async function sendWhatsAppButtons(params: {
   bodyText: string;
   buttons: Array<{ id: string; title: string }>; // title máx 20 chars (Meta)
   log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
+  /** SCRUM-1262: la baja (J3) no corta una RESPUESTA a quien acaba de escribir. Ver `MotivoExencionBaja`. */
+  exentoDeLaBaja?: MotivoExencionBaja;
 } & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -638,6 +712,12 @@ export async function sendWhatsAppButtons(params: {
     console.warn(`[WhatsApp] V0-2: botones desde el merchant demo a ${maskPhone(params.to)} BLOQUEADOS`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppButtons', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
@@ -691,6 +771,8 @@ export async function sendWhatsAppList(params: {
   buttonText: string; // texto del botón que despliega la lista (máx 20 chars)
   rows: Array<{ id: string; title: string; description?: string }>;
   log?: WaLogMeta;     // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
+  /** SCRUM-1262: la baja (J3) no corta una RESPUESTA a quien acaba de escribir. Ver `MotivoExencionBaja`. */
+  exentoDeLaBaja?: MotivoExencionBaja;
 } & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -733,6 +815,12 @@ export async function sendWhatsAppList(params: {
     console.warn(`[WhatsApp] V0-2: lista desde el merchant demo a ${maskPhone(params.to)} BLOQUEADA`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppList', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
 
   // A5.5/A8.4: dry-run — Meta no se toca
@@ -794,6 +882,8 @@ export async function sendWhatsAppCtaUrl(params: {
   header?: string;      // texto de cabecera (máx 60)
   footer?: string;      // texto de pie (máx 60)
   log?: WaLogMeta;      // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
+  /** SCRUM-1262: la baja (J3) no corta una RESPUESTA a quien acaba de escribir. Ver `MotivoExencionBaja`. */
+  exentoDeLaBaja?: MotivoExencionBaja;
 } & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -837,6 +927,12 @@ export async function sendWhatsAppCtaUrl(params: {
     console.warn(`[WhatsApp] V0-2: cta_url desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppCtaUrl', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
   if (isDryRun()) {
     const data = dryRunData();
@@ -922,6 +1018,12 @@ export async function sendWhatsAppDocument(params: {
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
   }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppDocument', to: params.to, merchantId: params.merchantId });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
+  }
   if (isDryRun()) {
     const data = dryRunData();
     dryRunRecord({ kind: 'document', to: params.to, link: params.link, filename: params.filename });
@@ -954,6 +1056,8 @@ export async function sendWhatsAppLocationRequest(params: {
   to: string;
   bodyText: string;
   log?: WaLogMeta; // WA-0b (SCRUM-227): rastro del envío (éxito y fallo)
+  /** SCRUM-1262: la baja (J3) no corta una RESPUESTA a quien acaba de escribir. Ver `MotivoExencionBaja`. */
+  exentoDeLaBaja?: MotivoExencionBaja;
 } & DestinoDeEnvio) { // SCRUM-245: merchantId o sinMerchant. Omitir los dos no compila.
   const phoneNumberId = config.WHATSAPP_PHONE_NUMBER_ID;
   const token = config.WHATSAPP_ACCESS_TOKEN;
@@ -996,6 +1100,12 @@ export async function sendWhatsAppLocationRequest(params: {
     console.warn(`[WhatsApp] V0-2: location_request desde el merchant demo a ${maskPhone(params.to)} BLOQUEADO`);
     logFailure('demo_safe_numbers');
     return { ok: false, reason: 'demo_safe_numbers' };
+  }
+  // SCRUM-1262 (J3): la baja del canal corta TAMBIÉN esta vía, y falla cerrado.
+  const corte = await corteDeLaBaja({ via: 'sendWhatsAppLocationRequest', to: params.to, merchantId: params.merchantId, exentoDeLaBaja: params.exentoDeLaBaja });
+  if (corte) {
+    logFailure(corte);
+    return { ok: false, reason: corte };
   }
   if (isDryRun()) {
     const data = dryRunData();

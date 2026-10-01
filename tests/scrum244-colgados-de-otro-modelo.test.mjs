@@ -120,6 +120,8 @@ test('SCRUM-244 · cada colgado trae su motivo por escrito, como las exclusiones
 function prismaFalso() {
   const llamadas = [];
   const modelo = (nombre) => ({
+    // SCRUM-1307: borrarMerchant pregunta antes por la cola de la AEAT; el cliente real SIEMPRE tiene count (0 = sin envíos).
+    count: async () => 0,
     deleteMany: async (args) => {
       llamadas.push({ modelo: nombre, where: args?.where });
       return { count: 0 };
@@ -169,6 +171,12 @@ test('SCRUM-244 · un charge de OTRO merchant no se lleva por delante su concili
   const p = prismaFalso();
   await borrarMerchant(p, 7, { telefonosBot: ['34000000001'] });
 
+  // SCRUM-1311 · suelo de población PROPIO. Sin él este caso pasaba EN VACÍO si `borrarMerchant` se
+  // negaba antes de borrar nada, y sólo lo cazaba un hermano de este fichero por usar el mismo doble.
+  // «Mayor que cero» y no un número exacto: el recorrido crece con cada modelo que entra en el orden.
+  assert.ok(p.llamadas.length > 0,
+    '🔴 CIEGO: `borrarMerchant` no ha hecho NI UNA llamada de borrado, así que este caso no ha recorrido ' +
+      'nada y su «ningún borrado sin filtro» no dice nada. ¿Le falta al doble algo que el servicio pide?');
   for (const l of p.llamadas) {
     assert.notDeepEqual(l.where, {}, `🔴 «${l.modelo}» se borra SIN filtro: eso vacía la tabla entera`);
     assert.notDeepEqual(l.where, undefined, `🔴 «${l.modelo}» se borra sin \`where\``);

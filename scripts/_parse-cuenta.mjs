@@ -2,7 +2,7 @@
 //
 // `parseCuenta` es la ÚNICA función que sostiene la distinción CRASH-vs-ROJO del recibo (SCRUM-197):
 // de sus contadores por hijo sale el `fail` PROPIO que separa un crash (fail=0) de un rojo (fail>0).
-// Vivía dentro de test-staging-gated.mjs, que no se puede importar sin EJECUTAR la tanda entera, así
+// Vivía dentro de staging-gated.mjs, que no se puede importar sin EJECUTAR la tanda entera, así
 // que ningún test la ejercitaba — un dato del que depende una decisión, sin registrar (el defecto que
 // SCRUM-197 cierra, un escalón más abajo). Aquí, pura y aislada, su comportamiento queda fijado en
 // tests/scrum197-parse-cuenta.test.mjs, sobre todo con salida TRUNCADA, que es donde tiene menos que leer.

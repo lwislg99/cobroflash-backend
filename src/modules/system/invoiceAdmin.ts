@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { recalcJobCobradoForInvoice } from '../jobs/domain/job.service'; // SCRUM-28
 // SCRUM-441: el conjunto cerrado de métodos se CONSUME desde su dueño. Aquí no se copia ni un valor.
 import { campoPaidViaAlMarcar } from '../billing/domain/metodoDeCobro';
+import { esFilaQueNoCasa } from '../billing/domain/estadoDelCobro'; // SCRUM-1303
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 
 // Listado para el BO (con filtros)
@@ -216,6 +217,8 @@ export async function updateInvoiceStatusAdmin(
    * copia de `Charge.method`, y las filas históricas no se tocan.
    */
   paidVia?: unknown,
+  /** SCRUM-1303 · INTERNO: `true` en la única relectura tras perder la carrera. No lo pases. */
+  yaSeReleyo = false,
 ) {
   const existing = await prisma.invoice.findFirst({
     where: { id, ...(merchantId != null ? { merchantId } : {}) },
@@ -282,14 +285,26 @@ export async function updateInvoiceStatusAdmin(
   // datos. Un objeto VACÍO significa «no toques la columna», que es el caso de siempre.
   const campoMetodo = campoPaidViaAlMarcar(status, paidVia);
 
-  const updated = await prisma.invoice.update({
-    where: { id },
-    data: {
-      status,
-      paidAt,
-      ...campoMetodo,
-    },
-  });
+  // 🔴 SCRUM-1303 · EL ESTADO LEÍDO VA DENTRO DEL `where`. Las guardas de arriba miran `existing`,
+  // leída al entrar, y entre esa lectura y esta escritura cabe otra petición: una anulación que
+  // entra en medio dejaba la factura `paid` encima de su registro de anulación. Si la fila ya no
+  // está en el estado que se leyó, Prisma no la encuentra (P2025) y aquí no se escribe nada: se
+  // vuelve a leer UNA vez y las MISMAS guardas deciden con la fila fresca —así, «anulada en medio»
+  // contesta el texto que ya tiene SCRUM-153—. Un segundo cambio en medio sale como error.
+  let updated;
+  try {
+    updated = await prisma.invoice.update({
+      where: { id, status: existing.status },
+      data: {
+        status,
+        paidAt,
+        ...campoMetodo,
+      },
+    });
+  } catch (e) {
+    if (!esFilaQueNoCasa(e) || yaSeReleyo) throw e;
+    return updateInvoiceStatusAdmin(id, status, merchantId, paidVia, true);
+  }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).
   // Fire-and-forget: un fallo aquí JAMÁS rompe el marcar-pagado (marca paid, permisos y

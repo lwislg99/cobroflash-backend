@@ -1,0 +1,26 @@
+# g1-caja-documento-suelto · guard-caja-documento-suelto.mjs · ciego a 929 px y, despues, hallazgo a 390 px
+# EXIT=1
+
+
+── LISTADO · MODO FACTURA · VIEWPORT 390 px ──
+   🔴 título de listado    "Facturas"                                                     8 car · 40.0×46.5 px · 1 línea(s) · DESBORDA (scroll 114 > client 40)
+      columna Nº           "Nº factura"                                                  10 car · 50.0×46.5 px · 2 línea(s)
+
+── PÁGINA DEL DOCUMENTO SUELTO · MODO FACTURA · VIEWPORT 390 px ──
+      título de la página  "Nueva factura"                                               13 car · 272.0×26.3 px · 1 línea(s)
+      botón primario       "Emitir factura"                                              14 car · 151.6×44.0 px · 2 línea(s)
+      error al emitir      "No hemos podido emitir la factura. Inténtalo otra vez."      54 car · 324.0×62.5 px · 3 línea(s)
+
+════ VEREDICTO ════
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
+
+🔴 NO SUPE MIRAR — de esto no se da ningún número (2):
+   listado (factura @929px): el sidebar computa 0 px, el CSS no se aplicó como en el producto.
+   página del documento suelto (factura @929px): el sidebar computa 0 px, el CSS no se aplicó como en el producto.
+
+🔴 1 rótulo(s) NO CABEN en su caja:
+   factura @390px · título de listado: "Facturas"
+
+   El texto está FIRMADO: la caja se adapta al texto, nunca al revés. PARA y dilo.
+
+⟦veredicto⟧ 1 hallazgo · 2 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

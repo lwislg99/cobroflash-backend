@@ -249,53 +249,16 @@ ANEXAS una sección (SCRUM-Nb, Nc…) y no escribes encima.
 
 ## A9 · Cuando algo te sale mal, lo cuentas tú
 
-Las mejores entregas de este equipo llevan dentro un error propio
-confesado sin que nadie preguntara.
-
-  Un informe sin errores propios es un informe que no ha mirado.
+**El texto canónico vive en `docs/equipo/00-normas-siempre.md`**, y lo
+tienes cargado: `CLAUDE.md` lo importa con `@` (SCRUM-1294). En corto: lo
+confiesas, y la lección va a A10 en tu mismo PR, con la línea `A9:` en tu
+registro. Lo exige un guard del check obligatorio.
 
 ## A10 · Frases de la casa
 
-Un instrumento declara su población, no sólo su resultado.
-«0 fail» sin «sobre cuántos» no es un verde: es una frase.
-El código de salida es el del último tramo de la tubería.
-Un prefijo no es un nombre, y una subcadena tampoco.
-Cero no es «está limpio»: es «no he mirado».
-CI prueba el MERGE, no la rama.
-Una ventana fija es una tolerancia disfrazada.
-Un build roto no es un rojo: es un verde que no vale.
-Referenciar por posición caduca. Referenciar por identidad no.
-Una prohibición sin mecanismo es una frase.
-Un número derivado no se elige: se recalcula.
-«Exactamente una vez» no es alcanzable cruzando un límite de proceso.
-Si parece un campo y no se puede escribir, la pantalla ha mentido.
-Si la acción no cambia con el estado de la fila, no es la acción de
-la fila.
-Una pantalla se ordena por lo que se hace en ella, no por cómo están
-guardados los campos.
-La lista que decide qué se mira es la única que nadie mira.
-Contar no es avisar.
-Si el borrado de una rama puede cambiar tu medición, no estabas midiendo el
-trabajo: estabas midiendo el envase.
-Dos anclas para la misma comprobación no son redundancia: son la próxima
-contradicción esperando fecha.
-Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
-del tuyo.
-Un instrumento que solo sabe callar no es un instrumento.
-Si desactivas una comprobación de permisos para que tu robot pase, el
-permiso tiene que volver a preguntarse en la puerta siguiente.
-Un control que no se puede usar y no puede explicar por qué, no se
-deshabilita: se quita.
-Un acto irreversible no es nunca la acción principal.
-Si tu medición tumba una decisión firmada, gana tu medición.
-El coste no es lo que entra en el chat: es lo que el chat arrastra.
-Un carácter que no se ve no lo caza una revisión: lo caza un recuento.
-Una operación que no se ejecutó se lee exactamente igual que un éxito.
-Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
-Una captura bonita no prueba que el botón funcione.
-«No está en el PATH» no es «no está».
-Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
-Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
+**Viven en `docs/equipo/00-normas-siempre.md`** (SCRUM-1294), junto a la
+A9, para que lleguen solas a toda sesión de los dos equipos. Cualquier
+puesto añade su línea allí, en su PR.
 
 ## A11 · Cómo se actualiza esto
 
