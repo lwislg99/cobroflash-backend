@@ -24,6 +24,29 @@ estuvieron once minutos bloqueadas con «Login expired» y quien reparte no lo s
 registro a mano; y la primera vez que corrió el latido, traía un despliegue fallido bajo una etiqueta
 verde y lo leyó por encima (eso lo arregla S5 en #2093: son las dos mitades, que corra y que grite).
 
+Y uno pequeño, de este mismo encargo: el prompt con el que arranqué decía que el latido de `main` «ya
+trae la sección CEMENTERIO». Mi sesión arrancó a las 12:57:30Z y #2084 se mergeó a las 13:02:20Z. El
+prompt fue falso cinco minutos. Escrito ≠ entregado, medido con dos horas de reloj.
+
+## 🔴 La frase que nadie puede saltarse al tocar estos hooks
+
+> **NINGUNO de los dos hooks puede bloquear ni parar a nadie, y un «no pude mirar» también deja pasar.**
+
+En concreto, y para que quien los endurezca tenga que pasar por encima de esto:
+
+- El de **arranque** no puede impedir que una sesión arranque: `SessionStart` no bloquea y el fichero
+  sale 0 siempre. Lo más que hace es retrasar la primera respuesta lo que dure su plazo (90 s).
+- El de **cierre** no puede impedir que una sesión pare. La retiene **un turno, una vez por estado**,
+  diciéndole por qué y diciéndole que es una sola vez. Si la sesión vuelve a parar sin que nada cambie,
+  pasa. Con `stop_hook_active`, pasa siempre.
+- **«No pude mirar»** (sin transcript, sin `gh`, sin red, sin tiempo) se dice una vez y pasa. No es un
+  verde y no es un cerrojo.
+- **Si el hook falla él mismo**, sale 0 y lo dice. Un hook que para a una sesión sin explicar por qué es
+  peor que no tenerlo.
+
+Lo ata el test: «NUNCA dos veces por lo mismo», «no pude mirar se dice UNA vez y deja pasar» y el de
+proceso, que exige salida 0 en todos los casos.
+
 ## Lo que entra
 
 | Fichero | Evento | Qué hace |
@@ -32,6 +55,8 @@ verde y lo leyó por encima (eso lo arregla S5 en #2093: son las dos mitades, qu
 | `.claude/hooks/latido-cierre.mjs` | `Stop` | a toda sesión, el obligatorio de cada rama que ELLA ha empujado |
 | `.claude/settings.json` | — | registra los dos, con `timeout` 120 y 60 s |
 | `docs/equipo/00-normas-comunes.md` A8 | — | la norma, en un párrafo |
+| `docs/equipo/orquestador.md` §0 | — | paso 0 de cada turno: el latido. Antes `docs/equipo/` no lo nombraba en ningún fichero |
+| `docs/equipo/afirmaciones-verificadas.md` | — | una fila: por qué cae `abrir-pr-y-armar-automerge` en #2001 |
 | `docs/equipo/00-normas-siempre.md` A10 | — | la frase |
 
 ### Arranque
@@ -63,7 +88,7 @@ verde y lo leyó por encima (eso lo arregla S5 en #2093: son las dos mitades, qu
 
 | Qué | Resultado |
 |---|---|
-| Cuánto tarda una pasada del latido | **245 s, 62 s y 30 s** (13:07Z, 13:13Z y 13:22Z, con 11, 9 y 12 PR abiertos). El ticket decía «decenas de segundos». Una llamada suelta a `gh` tarda 0,6-1,1 s: el resto no lo he localizado |
+| Cuánto tarda una pasada del latido | **245 s, 62 s y 30 s** (13:07Z, 13:13Z y 13:22Z, con 11, 9 y 12 PR abiertos), y al orquestador **más de 120 s** la suya. El ticket decía «decenas de segundos». Una llamada suelta a `gh` tarda 0,6-1,1 s. **La causa de las pasadas largas NO está localizada.** Importa: un comando de cada turno que a veces tarda cuatro minutos no se corre, y eso lo mata más que un fallo. Es de S5 |
 | Leer el registro de trabajos (247) | 0,35 s |
 | El hook de cierre contra un transcript real de 3 MB (`s4-1octb`) | 1,4 s · 3 ramas halladas · 2 FUERA · 1 `in_progress` → avisó; segunda vez, calló |
 | El hook de cierre contra `s0-1oct` | 3 ramas, las tres en verde o fuera → calló |

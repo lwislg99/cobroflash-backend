@@ -79,6 +79,15 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 
 **CADA TURNO, en este orden (lo pidió así el fundador, 17-sep-2026):**
 
+0. 🔴 **EL LATIDO, antes de nada** (SCRUM-1350 · 1356): `node scripts/equipo/latido.mjs`, desde un árbol
+   al día. PR en rojo o sin veredicto, sesiones bloqueadas leídas del REGISTRO (no del panel), traspasos,
+   `main`, despliegue, cementerio de preguntas y ocupación. Sale 0 = nada · 1 = hay algo · 2 = no pudo
+   mirar (y un 2 NO es un 0). Al ARRANCAR lo trae solo el hook `.claude/hooks/latido-arranque.mjs` si tu
+   carpeta lo tiene: **compruébalo, no lo supongas** → `node .claude/hooks/latido-arranque.mjs corrio`.
+   Entre turnos no lo trae nadie: se corre a mano. ⚠️ Tarda de 30 s a 4 min (cuatro medidas del 1-oct,
+   causa de las largas sin localizar).
+
+       🔒 Escrito no es corriendo. Un vigía que escribiste y no armaste vigila lo mismo que ninguno.
 1. **El cuadro del bucle** (§10.1): qué entró solo · qué se atascó y por qué · qué necesita de él.
 2. **Explicarle en plano** lo que ha traído cada sesión (§10.9, §10ter): qué hizo, qué significa,
    qué se decide.
