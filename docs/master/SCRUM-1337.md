@@ -282,3 +282,56 @@ sesión y el cambio es de documentación); la cubre el CI del PR.
 - El control que pedía el ticket contra el Inicio de SCRUM-1317 lo hizo J2g sobre un commit local de
   J4c. SCRUM-1317 sigue sin estar en `main` al escribir esto; no lo he repetido.
 - La pantalla (`renderTeamPerformance`) la he leído, no la he abierto en un navegador.
+
+# SCRUM-1337c · El literal de la nota SÍ tenía aprobación numerada: comentario 17800
+
+**Medido contra:** `origin/main` = `761db44f2f18bc69e55047ebc2e26e55d6d1c89d` · 2026-10-01T07:07:00Z
+
+A9: aviso → cicatriz J2 «afirmé que el orquestador no había contestado sin releer los comentarios del ticket, y su respuesta llevaba más de diez minutos escrita en Jira» — no se pudo comprobar: la respuesta puede llegar por mensaje o por comentario, y no hay instrumento que obligue a mirar los dos antes de afirmar un silencio
+
+Sesión J2h. Sólo este registro y la cicatriz del puesto; el máster no se toca.
+
+## ① Qué corrige
+
+La sección «SCRUM-1337b», §②, dice que propuse el literal al orquestador por mensaje y deja entender
+que entró sin aprobación numerada. En Jira (comentario 17806) lo dije del todo: «al empujar no tenía
+respuesta numerada». **La respuesta existía.**
+
+| Qué | Cuándo (hora de Jira, pasada a Z) |
+|---|---|
+| Mi mensaje al orquestador con el literal | 06:39Z |
+| Comentario 17800 de SCRUM-1337: aprueba ese literal y resuelve «nota sola, sin fila» | 06:41:29Z |
+| Mi push de la rama de SCRUM-1337b | entre las 06:51Z y las 06:54Z (no apunté la hora exacta) |
+| Mi comentario 17806, que dice que no la tenía | 06:54:33Z |
+
+No releí los comentarios del ticket antes de empujar ni antes de escribir el 17806: esperaba la
+respuesta por mensaje, y llegó por comentario. Me lo dijo el orquestador al darme el número.
+
+## ② Lo que consta ahora
+
+- **El literal de la nota de «Rendimiento del equipo» está aprobado por el orquestador en el
+  comentario 17800 de SCRUM-1337** («Entra tal cual»). No es texto de usuario; las palabras del
+  fundador que lleva dentro («1-B») están citadas.
+- **La forma, nota sola con el ❌ dentro, la resuelve ese mismo comentario**, que además corrige en
+  ese punto la descripción de SCRUM-1341.
+- He cotejado el literal del comentario con la línea del máster **a ojo, palabra por palabra**: son
+  iguales. No lo he comparado con una herramienta: el texto del comentario sólo lo tengo en la
+  respuesta de Jira, y copiarlo yo a un fichero para compararlo sería comparar mi copia con mi copia.
+- El título del comentario 17800 dice «con una palabra cambiada». La palabra es de los textos del
+  orquestador («facturado», que pasa a «cobrado»: su §③), no del literal de la nota.
+
+## ③ El CI de #2062, leído
+
+Run 36827275817; probó el merge de `2b760d7c` sobre `eb3d3b36`. Entró en `main` a las 07:04:02Z,
+commit de merge `761db44f2f18bc69e55047ebc2e26e55d6d1c89d`.
+
+| Job | Resultado |
+|---|---|
+| build + tests (el obligatorio) | verde: 9.568 casos, 9.470 pasan, 0 caen, 98 saltos |
+| navegador · zona roja · constancia del ALTER | verdes |
+| trinquete de zona | verde esta vez (en #2060 salió rojo por casos ausentes de `scrum524b`) |
+| meta-guard | **salió con 2 (ciego), y no es de este cambio**: 365 mediciones, 364 mutaciones vivas, 0 mudas, 0 ciegas y **un fichero muerto**, `scrum834-puerta-avisador-rojo.test.mjs`: al mutar, el fichero no reportó ni un nombre de test. En #2060, con el mismo guard y sin tocar ese fichero, la misma mutación había salido viva. No es un caso que pasa en un sitio y cae en otro; es un fichero que no llega a contar. `scrum834` está en la lista de ficheros que pierden casos de SCRUM-1339 (13 jobs). No bloquea el merge. |
+
+El obligatorio de #2060 había contado 9.551 casos sobre el `main` anterior; éste, 9.568, con dos PR
+más dentro (SCRUM-1327 y SCRUM-1331, que añaden tests). No he comprobado que la diferencia, 17, sea
+exactamente la de esos tests.
