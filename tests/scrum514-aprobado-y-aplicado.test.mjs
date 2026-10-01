@@ -248,6 +248,14 @@ const APARCADOS = [
       + '`docs/master/SCRUM-1257.md`, sección SCRUM-1257c.',
   },
   {
+    texto: 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.',
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-1257 comentario 17676, 1-oct-2026). Era el '
+      + 'detalle del modo `receipt` en Ajustes (`settingsView.js`, `DETALLE_MODO_EMISION.receipt`), '
+      + 'firmado en SCRUM-1220 comentario 17385. La firma nueva pinta en esa MISMA ranura el mismo '
+      + 'texto sin «ni justificantes». NO se desaprueba en el registro —la firma ocurrió—; ya no '
+      + 'tiene dónde pintarse. Registro: `docs/master/SCRUM-1257.md`, sección SCRUM-1257d.',
+  },
+  {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '
       + 'texto que explica qué emite una cuenta toca claims fiscales y se responde sólo con el '

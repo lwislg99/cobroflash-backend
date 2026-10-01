@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
-import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { aprobacionesDeMicrocopy, constaAprobado } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const JS = (f) => path.join(RAIZ, 'public/dashboard/js', f);
@@ -26,7 +26,7 @@ const CENSO = path.join(RAIZ, 'tests/banco-scrum1257/censo-vocabulario-justifica
 
 const P8 = 'Por ahora, YaQu no genera facturas desde tu cuenta.';
 const VIEJO = 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.';
-const REGISTRO_P8 = '2026-10-01-SCRUM-1257-detalle-modo-receipt.md';
+const RANURA_P8 = 'detalle-modo-receipt';
 
 function arbol(fuente, nombre = 'x.js') {
   return ts.createSourceFile(nombre, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
@@ -142,8 +142,12 @@ test('SCRUM-1257 P8 · el censo baja a 10, Ajustes sale de él y los cinco de la
   assert.equal(total, 10);
 });
 
-test('SCRUM-1257 P8 · la firma de ESTA ranura consta en su propio registro', () => {
-  const donde = constaAprobado(P8);
-  assert.equal(donde.some((r) => r.endsWith(REGISTRO_P8)), true,
-    `🔴 «${P8}» no consta firmado para Ajustes en ${REGISTRO_P8} (consta en: ${donde.join(', ') || 'ninguno'})`);
+test('SCRUM-1257 P8 · la firma de ESTA ranura consta en su propia ficha', () => {
+  // Por ticket Y ranura (SCRUM-1306): el mismo literal ya consta firmado para OTRA ranura —el vacío de
+  // Facturas, comentario 17444—, y esa firma decía expresamente que ésta no se firmaba todavía.
+  const ficha = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1257' && a.ranura === RANURA_P8);
+  assert.ok(ficha, `🔴 no existe la ficha de la ranura «${RANURA_P8}» de SCRUM-1257 en docs/microcopy/`);
+  assert.equal(ficha.aprobada, true, `🔴 la firma de ${ficha.ruta} no cuenta (firmante: ${ficha.firmante})`);
+  assert.equal(constaAprobado(P8).includes(ficha.ruta), true,
+    `🔴 «${P8}» no es un literal aprobado de ${ficha.ruta}`);
 });

@@ -288,3 +288,134 @@ la suma de los dos cambios (20−13, 11, 154+6; 37−1), que se usó como compro
     que era un error de sintaxis. La rama se rehízo, antes de empujarla, en cinco pasos limpios: rojo
     de D1, borrado + guards, rojo re-apuntado, puerta y registro. Se comprobó que el árbol final es
     idéntico al de antes de rehacerla.
+
+---
+
+# SCRUM-1257d · P8: Ajustes deja de nombrar el justificante, y el censo baja de 11 a 10
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:38:47+01:00 (J3)
+
+A9: aviso → cicatriz J3 «Conté tres caminos sobre un listado cortado con head: una salida recortada no es la población.» — no se pudo comprobar: es cómo leo la salida de una orden, no algo del árbol que un test pueda mirar
+
+**Firma:** el orquestador, por delegación del fundador, en **SCRUM-1257 comentario 17676** (leído en
+Jira antes de copiarlo aquí). Ficha: `docs/microcopy/2026-10-01-SCRUM-1257-detalle-modo-receipt.md`.
+
+## 0 · La premisa del encargo no se sostenía, y eso fue la primera entrega
+
+El encargo llegó con el título de Jira: «24 literales, 8 muertos, 3 vivos y falsos, 5 de la regla 29».
+Repetido el censo de §0 sobre un `git archive` de este `main`: **11 literales, no 24.**
+
+| clase del enunciado | en este `main` | cómo entró |
+|---|---|---|
+| 8 muertos (grupo A) | 0 de 8 como literal en `public/` y `src/`; quedan citados en 3 comentarios | #1943, sección SCRUM-1257c |
+| 3 vivos y falsos (grupo B) | 0 de 3; sustituidos por P1-P5 | #1938, sección SCRUM-1257b |
+| 5 de la regla 29 (grupo D) | 5 de 5, intactos | no se tocan (SCRUM-1252) |
+
+Los otros 6: las ramas `J-` de P6 y P7, tres valores de código que comparan la palabra, y C3
+(`settingsView.js`, `DETALLE_MODO_EMISION.receipt`), lo único que quedaba abierto. No se borró nada.
+
+## 1 · Lo medido antes de pedir la firma: ¿puede hoy una petición escribir `type: 'JUST'`?
+
+No. Y no es «no encontré cómo llegar»: es una cadena de cuatro eslabones, cada uno con su población.
+
+1. **Un solo sitio crea filas de `Invoice`**: `src/modules/invoicing/domain/crearFacturaEmitida.ts`.
+   `invoice.(create|createMany|upsert)` en `src/`: 1. Creates anidados: 0. SQL crudo sobre la tabla: 0.
+   De los 20 `update`/`updateMany` censados, ninguno pone `type` en su `data`.
+2. **Tiene 8 llamantes.** Seis escriben `isReceiptNumber(n) ? 'JUST' : 'F1'`: `src/lib/invoicing.ts`,
+   `src/modules/jobs/app/routes/jobs.routes.ts`, `src/modules/quotes/app/routes/quotes.routes.ts`,
+   `src/modules/system/app/routes/quotesAdmin.routes.ts` (dos) y `emitInvoice`
+   (`src/modules/invoicing/domain/invoicing.service.ts`), cuyos 4 llamantes pasan `'F1'` literal. El
+   octavo es la rectificativa, que escribe `'R1'` fijo.
+3. **En los 8 el número sale de `allocateInvoiceNumber`** y de ningún otro sitio: 7 llamadas, `const`
+   en la línea de la llamada, sin reasignar.
+4. **Y `allocateInvoiceNumber` no puede devolver un `J-`**
+   (`src/modules/invoicing/domain/invoiceNumber.service.ts`). En `receipt` lanza
+   `invoicing_es_disabled` antes de reservar nada. Su única salida es `formatInvoiceNumber`, con dos
+   formas: `F` + año + secuencia, o año + prefijo del merchant. El generador de `J-` se retiró en #1940.
+
+El eslabón 4 se **ejecutó**, no se razonó: `formatInvoiceNumber` compilado, con 11 prefijos hostiles
+(«J-», con espacio delante, con salto de línea delante…) × 5 fechas × 3 años × rectificativa sí/no =
+**330 combinaciones. 0 reconocidas como `J-`**, 22 lanzan (año no numérico en el formato F). Control
+positivo: `isReceiptNumber` sí devuelve `true` para una referencia `J-` de verdad.
+
+**No lo apaga un flag.** Con `INVOICING_ES_ENABLED` en OFF lanza y en ON sale `F`. Un bloqueo por flag
+se enciende; éste no.
+
+**Error propio, dicho antes de la firma:** al orquestador le dije «tres caminos» y eran seis. Mi lista
+venía de un `grep` cortado con `head -12`. Va a las cicatrices del puesto (línea `A9:` de arriba).
+
+**De paso, para SCRUM-1260 (carril de J1, no se toca aquí):** la condición inalcanzable no es solo la de
+`emitInvoice`: es la misma en los seis sitios y en tres semillas de `scripts/`. El parámetro
+`esJustificante` de `auditar` solo se llama con `false`. Y `scripts/e2e-critico.mjs` todavía espera
+`'JUST'`: no se ha corrido, pero leído así fallaría hoy.
+
+## 2 · 🔴 Sobre qué descansa la firma, y sobre qué NO
+
+- **Descansa en el código de este `main`, no en un guard.** Hay 13 ficheros de `tests/` que nombran el
+  reconocedor de `J-`, y **no se han interrogado**: no se sabe si alguno caería si alguien devolviera
+  un generador de `J-`.
+- **No se ha medido ninguna base.** «No se pueden crear nuevos» no dice cuántos `J-` antiguos existen.
+- El texto firmado **no afirma nada sobre justificantes: solo deja de mencionarlos.** Sería verdad
+  aunque existieran `J-` antiguos en la cuenta, y por eso la firma es delegable. Una frase que dijera
+  que YaQu ya no genera justificantes sería un hecho sobre el producto, y del fundador (regla 39).
+
+## 3 · Qué cambia
+
+| fichero | cambio |
+|---|---|
+| `public/dashboard/js/settingsView.js` | `DETALLE_MODO_EMISION.receipt`: «Por ahora, YaQu no genera facturas desde tu cuenta.» Es, carácter a carácter, el P2 del vacío de Facturas. El comentario de historia se actualiza en sitio, sin mover líneas |
+| `tests/scrum298-modo-visible.test.mjs` | en `APROBADOS`, la entrada del texto viejo **se borra** y entra la nueva con su procedencia (comentario 17676) |
+| `tests/scrum514-aprobado-y-aplicado.test.mjs` | el texto viejo se aparca como «sustituido por una firma posterior», con su motivo |
+| `docs/microcopy/` | ficha nueva, ranura `detalle-modo-receipt`. La de SCRUM-1220 no se toca (SCRUM-1306) |
+| `docs/equipo/cicatrices/J3.md` | la primera cicatriz del puesto |
+
+**Lo de `scrum298` no es relajar el guard (regla 41), y se comprobó antes de tocarlo:** con el literal
+nuevo y la lista vieja cae, 11 de 12, nombrando exactamente el texto nuevo como «microcopy escrita sin
+aprobar». Su propio mensaje dice qué hacer: el aprobado entra con su procedencia, y el que ya no se
+pinta sale (la caducidad). Relajarlo sería ensanchar la lista o quitarle la caducidad; aquí la lista
+sigue teniendo seis entradas.
+
+**`scrum514` no lo había previsto, y salió rojo en mi primera pasada** (y `scrum976 ④` en cascada: es
+uno de los guards de entrada). La ficha de SCRUM-1220 sigue firmada y su texto ya no se pinta: «hay
+texto aprobado que no llega a la pantalla». El propio guard da las dos salidas —aplicarlo o aparcarlo
+con su motivo— y el caso tiene precedente escrito en su lista: «sustituido por una firma posterior»
+(SCRUM-915d) y el de la sección SCRUM-1257c. Se aparca igual. Su segundo test sigue vigilando la
+excepción: si el texto volviera a pintarse, la entrada sobra y cae. **El orquestador aprobó de antemano
+lo de `scrum298`, no esto: se hace por ser consecuencia mecánica de la firma, y se dice.**
+
+⛔ **No se toca:** el grupo D, las ramas `J-` de P6 y P7, `src/`, el flag ni el modo `receipt`.
+
+## 4 · Rojo primero, y el control de no haberse llevado de más
+
+`tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs`, comiteado solo (`33b50d46`): **4 de 5 en
+rojo** contra este `main`; el verde es el control de los detectores. Con el cambio, **5 de 5**.
+
+- El literal se lee con el AST, como valor de `DETALLE_MODO_EMISION.receipt`, y el viejo se busca
+  **entre los literales**: el comentario del código lo sigue citando, con su motivo.
+- **El censo de §0 se ejecuta desde el test** sobre el árbol: **10 literales** (antes 11), Ajustes ya no
+  sale, y **los cinco de la regla 29 tienen que seguir saliendo**, uno a uno, por fichero y texto y no
+  por línea. Sin ese positivo, «ya no sale la palabra» sería cierto también por haber borrado de más.
+- El conjunto de los 10 se compara entero. Si cambia no es un fallo del test: es que alguien añadió o
+  quitó un texto con la palabra, y eso se decide (reglas 29 y 39).
+- La firma se comprueba contra **su** ficha, por ticket y ranura: el mismo literal ya constaba firmado
+  para otra ranura (17444), y esa firma decía expresamente que ésta no se firmaba todavía. Este caso
+  se reescribió después del commit en rojo: allí miraba el nombre del fichero, que es la forma débil.
+- El hijo que lanza el censo lleva el entorno construido a mano (SCRUM-1308).
+
+**Hueco declarado:** la caída por «falta uno de los cinco» no se ha visto: no se mutó el árbol para
+provocarla. El rojo que sí se vio en ese caso fue el de «Ajustes sigue en el censo».
+
+## 5 · Qué se corrió, y qué no
+
+En local, **30 ficheros elegidos a mano, 245 tests, 245 pasan, 0 saltados**: el nuevo, `scrum298`,
+`scrum514`, los dos de 1257/825, `scrum601` (sus anclajes **no se movieron**), `scrum237`, `scrum976`,
+`scrum377`, `scrum267`, `scrum273`, `scrum391`, `scrum1294`, `scrum1306` y los del registro de
+microcopy. La pasada anterior, sobre los mismos 30, dio 243 de 245: los dos rojos de `scrum514`.
+Es una muestra, no la tanda: hay 93 ficheros de `tests/` que nombran Ajustes o el registro.
+
+- **La tanda completa NO se corrió en local**: se deja al CI, por decisión del orquestador (memoria de
+  la máquina).
+- `dist/` se generó en este worktree con `tsc --noCheck` (solo emisión): no había, y sin él `scrum298`
+  no arrancaba. El primer «rojo» de `scrum298` fue ése, un instrumento que no llegó a arrancar, y no
+  se contó como la caída.
+- No se ha visto en un navegador con sesión: se verifica en yaqu.app cuando entre.
