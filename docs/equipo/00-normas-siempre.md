@@ -102,4 +102,3 @@ Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde q
 Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
 El `updatedAt` de una fila no es la versión de un trozo de esa fila. (SCRUM-1285)
 Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)
-E
