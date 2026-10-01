@@ -1,0 +1,37 @@
+// Lanzador de la tanda dirigida de SCRUM-1337b. Uso: node lanzar.mjs <raiz> <etiqueta>
+// Corre los tests que LEEN docs/YAQU_MASTER.md más los guards de registro, con el entorno limpio,
+// el TAP fuera del árbol, y dice POBLACIÓN y EXIT.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const raiz = process.argv[2];
+const etiqueta = process.argv[3] || 'tanda';
+const dirTests = path.join(raiz, 'tests');
+const todos = fs.readdirSync(dirTests).filter((f) => f.endsWith('.test.mjs'));
+const leenElMaster = todos.filter((f) => fs.readFileSync(path.join(dirTests, f), 'utf8').includes('YAQU_MASTER'));
+// scrum55 es el que exige el 403 de `/admin/metrics/team` al Técnico: lo que la nota afirma de HOY.
+const DE_REGISTRO = ['scrum267-', 'scrum273-', 'scrum649-', 'scrum854-', 'scrum1294-', 'scrum976-', 'scrum55-'];
+const deRegistro = todos.filter((f) => DE_REGISTRO.some((p) => f.startsWith(p)));
+const lista = [...new Set([...leenElMaster, ...deRegistro])].sort();
+if (lista.length === 0) { console.log('POBLACION=0 · CIEGO: no hay ficheros que correr'); process.exit(2); }
+
+const tap = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), etiqueta + '.tap');
+fs.rmSync(tap, { force: true });
+const env = { ...process.env };
+for (const k of ['FORCE_COLOR', 'NODE_TEST_CONTEXT', 'NODE_OPTIONS']) delete env[k];
+const r = spawnSync(process.execPath, [
+  '--test', '--test-force-exit',
+  '--test-reporter=tap', '--test-reporter-destination=' + decodeURIComponent(tap),
+  ...lista.map((f) => path.join('tests', f)),
+], { cwd: raiz, env, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+
+const t = fs.existsSync(decodeURIComponent(tap)) ? fs.readFileSync(decodeURIComponent(tap), 'utf8') : '';
+const cifra = (k) => { const m = t.match(new RegExp('^# ' + k + ' (\\d+)', 'm')); return m ? m[1] : 'AUSENTE'; };
+console.log('POBLACION: ' + lista.length + ' ficheros (' + leenElMaster.length + ' leen el master, ' + deRegistro.length + ' de registro y scrum55; alguno esta en las dos listas)');
+for (const f of lista) console.log('  ' + f);
+console.log('tests ' + cifra('tests') + ' · pass ' + cifra('pass') + ' · fail ' + cifra('fail') + ' · skipped ' + cifra('skipped') + ' · cancelled ' + cifra('cancelled'));
+const caidos = t.split(/\r?\n/).filter((l) => /^\s*not ok /.test(l));
+for (const c of caidos) console.log('  CAIDO: ' + c.trim());
+if (r.stderr && r.stderr.trim()) console.log('STDERR (cola): ' + r.stderr.trim().split(/\r?\n/).slice(-5).join(' | '));
+console.log('EXIT=' + r.status);
