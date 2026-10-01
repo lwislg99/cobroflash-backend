@@ -365,6 +365,11 @@ jobs:
       #     falta algo, su silencio no distinguiría «no faltó» de «alguien quitó la cuenta».
       - name: ¿Faltan casos declarados en el TAP? (señal de nombres · avisa, no bloquea)
         if: always()
+        # 🔴 ESTA LÍNEA ES LA SEGUNDA RED, Y ES LA QUE CALLA. La primera es el guion, que sale 0
+        # DICIENDO «NO PUDE MEDIR». Ésta sólo actúa cuando el guion no llega a hablar —no está,
+        # se renombró, node no arranca—: entonces el paso sale con una ✗ roja dentro de un job
+        # verde y SIN esa frase. Un paso con ✗ y sin «NO PUDE MEDIR» significa «el guion no
+        # está», no «no faltó nada». Medido en el run 36901626137 (SCRUM-1339d, control ④).
         continue-on-error: true
         run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"
 

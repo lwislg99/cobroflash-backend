@@ -657,3 +657,37 @@ Sí están las listas para volver a bajarlos (`b-arts-hoy.tsv`, `d-arts-banco2.t
     node $E/d-scrum859-local.mjs . 10 antes=8c0bf72850988e5f06266f330ab4c6c869f42a36 main=cadf00bcee699dc200ff142050986a62b692b3c4 rama=ARBOL
     node $E/d-meta-scrum859.mjs <fuera del árbol>/meta 150
     node scripts/senal-de-nombres.mjs <un tanda.tap>                             # sobre el árbol del disco
+
+## ⑦ El control ④ sobre el PASO, en un run de verdad (J3j, relevo de J3i)
+
+Run `36901626137` (`pull_request`, head `601185c091d49391e4d78a4124c9c32a0e0c87f7`, creado
+2026-10-01T17:44:37Z), con tres pasos temporales rotos a propósito detrás del bueno. El job «build
++ tests (con banco desechable)» salió `success`. Leído del log del job (2.700.194 bytes):
+
+| paso | salida | qué dejó |
+|---|---|---|
+| el bueno | 0 | `::notice` «FALTAN al menos 5 en 2 fichero(s)» y 2 `::warning` con fichero y líneas |
+| el TAP no existe | 0 | «NO PUDE MEDIR: no pude leer el TAP…» y su `::warning` |
+| el TAP es basura | 0 | «NO PUDE MEDIR: el TAP no tiene resumen», `::notice` con `medible=no` y su `::warning` |
+| el guion no existe | **1** | **nada propio**: node dice «Cannot find module» y GitHub deja una anotación `failure` |
+
+- **Lo dicen dos, no tres.** «Incapaz de tumbar el job» descansa en dos construcciones: el guion,
+  que sale 0 hablando, y `continue-on-error`, que calla. Si el guion desaparece, el paso sale con
+  una ✗ roja en un job verde y sin la frase. Queda escrito en `ci.yml`, junto a esa línea.
+- **Las anotaciones no cuelgan de ningún fichero del repositorio:** `path` = `.github` y la línea
+  es la del log del paso (API de anotaciones del check-run `110501932336`). Era lo no medido de
+  c.17961.
+- **La señal cazó en su primer run:** ese obligatorio salió verde con 5 casos perdidos —
+  `scrum286-bloques-orden` (4 de 24, la cola) y `scrum524b-trinquete-de-la-tabla` (1 de 12, el
+  último). Comprobado aparte, buscando en el log los nombres declarados: los cuatro de `scrum286`
+  no aparecen; el de `scrum524b` aparece empezado (`▶`) y sin resultado. No se tocó ninguno.
+- Los 17 casos de `tests/scrum1339d-…`, 17 de 17 por nombre en ese log. Control del buscador:
+  «SCRUM-267» 50 líneas, «scrum267» 0.
+- Los tres pasos temporales se quitaron con un revert (`83a6af55`): el `ci.yml` volvió al blob del
+  commit bueno (`34e473b9`). Después se añadió la frase de la segunda red y se mezcló `main`
+  (`b3b40554`); `scrum812` chocó otra vez y su test dio 31 sobre el árbol fusionado.
+
+**Mi error (J3j):** un recuento de «restos de los temporales» dio 0 porque la orden no llegó a
+correr (Git Bash convirtió `origin/rama:ruta` en una ruta de Windows y git salió con `fatal`).
+Lo delató el error impreso al lado del cero. Repetido por sha y con control positivo (9 sobre
+`601185c0`), el número es 1, y es una línea de SCRUM-617 que ya estaba en `main`.

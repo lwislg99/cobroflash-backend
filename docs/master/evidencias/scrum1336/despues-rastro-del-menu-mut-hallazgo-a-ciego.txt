@@ -1,0 +1,45 @@
+# rastro-del-menu-mut-hallazgo-a-ciego · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const veredictoFinal = veredictoDe({ hallazgos: fallos, cieg
+# EXIT=2 · 8.5 s
+
+destinos del menú: 18
+
+════════ POR EL MENÚ (lo que hace el profesional) ════════
+  hash coherente con el destino: 0/18
+  entradas de historial creadas: 0
+    🔴 pulsé «home» y el hash dice «(vacío)» (vista: home)
+    🔴 pulsé «quote-requests» y el hash dice «(vacío)» (vista: quote-requests)
+    🔴 pulsé «jobs» y el hash dice «(vacío)» (vista: jobs)
+    🔴 pulsé «quotes-list» y el hash dice «(vacío)» (vista: quotes-list)
+    🔴 pulsé «albaranes» y el hash dice «(vacío)» (vista: albaranes)
+    🔴 pulsé «partes-oficina» y el hash dice «(vacío)» (vista: partes-oficina)
+    🔴 pulsé «invoices» y el hash dice «(vacío)» (vista: invoices)
+    🔴 pulsé «cobros» y el hash dice «(vacío)» (vista: cobros)
+    🔴 pulsé «customers» y el hash dice «(vacío)» (vista: customers)
+    🔴 pulsé «products» y el hash dice «(vacío)» (vista: products)
+    🔴 pulsé «providers» y el hash dice «(vacío)» (vista: providers)
+    🔴 pulsé «expenses» y el hash dice «(vacío)» (vista: expenses)
+    🔴 pulsé «reports» y el hash dice «(vacío)» (vista: reports)
+    🔴 pulsé «libro-registro» y el hash dice «(vacío)» (vista: libro-registro)
+    🔴 pulsé «facturas-recibidas» y el hash dice «(vacío)» (vista: facturas-recibidas)
+    🔴 pulsé «team» y el hash dice «(vacío)» (vista: team)
+    🔴 pulsé «plans» y el hash dice «(vacío)» (vista: plans)
+    🔴 pulsé «settings» y el hash dice «(vacío)» (vista: settings)
+
+════════ CONTROL POSITIVO · por `renderAppView` ════════
+  hash coherente: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL NEGATIVO · hash inventado ════════
+  vista: settings · nodos pintados: 186
+
+════════ «ATRÁS», PULSADO DE VERDAD ════════
+  clientes → productos → informes  (estoy en: reports)
+  atrás → vista reports · hash no-existe-esta-vista-819
+  atrás → vista settings · hash settings
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+
+🔴 RASTRO DE NAVEGACIÓN ROTO:
+   · el menú deja la URL incoherente en 18 de 18 destinos: F5 lleva a otra pantalla y un enlace guardado abre la vista anterior. Navega por `window.renderAppView`, no por `renderView` crudo.
+   · 18 clics del menú dejan 0 entradas de historial. Con `replaceState` no se crea ninguna y «atrás» saca de la aplicación.
+   · «atrás» no vuelve: desde informes debería dar productos y luego clientes, y da reports y settings.
+⟦veredicto⟧ 0 hallazgos · 3 ciegos → salida 2 (no supe medir) · un ciego no es un verde
