@@ -1,6 +1,6 @@
 # SCRUM-1331 · Sin red, `scrum804b` declara sus tests y el rojo dice que no es tu cambio
 
-**Medido contra:** `origin/main` = `bee39d3b51e300ff4efdda3befcb1eff4626f988` · 2026-10-01T06:09:40Z
+**Medido contra:** `origin/main` = `01d99084936c73ce975d708c31397281ebc1538f` · 2026-10-01T06:32:31Z
 (J3e del equipo de Javier, relevo de J3d, por encargo del orquestador `cobroflash-backend-5b`)
 
 A9: comprobación → `tests/scrum1331-sin-red-se-dice.test.mjs`
@@ -105,6 +105,15 @@ de señales POSIX de 858b, que en Windows no aplica y lo mide el CI). Y `npm run
 **12 guards, 122 tests, 0 fail**, después del último cambio de código.
 La tanda completa NO se ha corrido en local: no había turno.
 
+**Y la tanda completa del CI cazó lo que esa muestra no.** Primer run del PR #2058
+(`36823752294`, `Merge 884a40a5… into bee39d3b…`), job obligatorio: **3 caídos**, los tres míos y
+los tres trinquetes de la casa que yo no había corrido — `scrum710b` (una cadena con forma de
+`fichero:línea` en mi test), `scrum737` (una cifra sin fecha en un comentario de 804b) y
+`scrum846c` (`clasificarVentana` sin un caso fabricado que la llame). Arreglados en el código, sin
+tocar ningún guard: el comentario ya no dice número, el dato fabricado se compone y lo dice, y el
+caso ⑤ llama al clasificador con entradas en la mano en los dos sentidos (que es mejor test del
+que había). Con los tres dentro: 10 ficheros · **72 tests · 71 pass · 0 fail · 1 skip**.
+
 ## 5 · La población (de J3d, subida aquí porque vivía en un scratchpad)
 
 Medida por EJECUCIÓN, no por grep: un `--import` que anota cada proceso hijo, `fetch`, socket no
@@ -127,12 +136,21 @@ local y `dns.lookup` de cada fichero, en una pasada de sólo carga (`evidencias/
   cuánto dura un fallo de DNS del runner, y un reintento con espera fija sin esa medida es una
   tolerancia a ojo.
 - **El aviso del envoltorio no se ha visto en un run real de CI**: sólo en local, con tandas
-  fabricadas. Es la condición que el orquestador puso para la B.
+  fabricadas. Es la condición que el orquestador puso para la B. Lo más cerca: el lector,
+  alimentado fuera de línea con las 13.029 líneas del log del job de #2046 (run `36806690822`,
+  Linux), dice `NO HABÍA RED · tests/scrum804b-…` y que no hay ningún otro rojo de caso. La salida
+  está con las evidencias de SCRUM-1332 (`salida-lector-sobre-el-log-de-2046.txt`).
 - **Límites del lector**, declarados en su cabecera: sólo lee `spec`; `spec` no trae el código de
   salida del fichero, así que una muerte nativa que no escriba nada sale «sin huella reconocida»;
   y la cola de salida de error del fichero anterior puede entrar en la ventana del que cae.
 
-## 7 · Tres errores míos
+## 7 · Cuatro errores míos
+
+**El cuarto es el segundo repetido, y lo cazó el CI.** Después de que `scrum723` me enseñara que
+una muestra de guards elegida a ojo no es la población, empujé igual con otra muestra elegida a
+ojo —más `guards:entrada`— y el check obligatorio cayó por tres trinquetes que no estaban en
+ella (§4). No tenía turno para la tanda completa y no lo pedí: lo que tocaba era pedirlo, o decir
+en la entrega «empujo sin tanda completa: el CI es mi primera pasada entera», que es lo que era.
 
 **El tercero, en mi propia evidencia.** La primera `salida-804b-antes-y-despues.txt` decía
 «sin DNS · exit=0» con 3 casos caídos al lado: había leído el `$?` de un `echo` intermedio, no el
