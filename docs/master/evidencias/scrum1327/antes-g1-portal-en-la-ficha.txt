@@ -1,0 +1,12 @@
+# g1-portal-en-la-ficha · guard-portal-en-la-ficha.mjs · ciego en «SIN token» y, despues, hallazgo en «CON token»
+# EXIT=2
+
+
+════════════════════════════════════════════════════════════════════════════════════
+EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado
+════════════════════════════════════════════════════════════════════════════════════
+⟦arranque⟧ 1.0 s COMPLETA · proceso+ws 1.0 s · primera-página 0.0 s
+
+🔴 NO SUPE MEDIR — no se da ningún veredicto:
+   · SIN token: la FICHA 360 no ha pintado (sin `#btn-edit-360`). Sin ancla, «no hay botón» no dice nada.
+

@@ -319,15 +319,39 @@ async function _pedir(url, finalOptions) {
  * escribimos una frase para una persona. Cualquier otra cosa cae en `respaldo`, el texto aprobado
  * de la pantalla que llama. Nunca al revés.
  *
- * @param {any} err el error que lanzó `apiRequest`.
+ * SCRUM-1233d · LA OTRA MITAD: un texto aprobado que lanza NUESTRO código, no el servidor. La
+ * primera versión solo leía `data.message`, así que un `throw new Error(TEXTO_APROBADO)` local caía
+ * siempre al respaldo: en Gastos, una foto que no se abre decía «Error al guardar.» en vez de su
+ * texto firmado. Leer `err.message` a secas NO es el arreglo —ahí vive también el «Failed to fetch»
+ * del navegador—, así que quien lanza el texto lo MARCA con `errorParaPersona(texto)`, y solo lo
+ * marcado se pinta. Un `Error` local sin marca sigue cayendo al respaldo: falla hacia el lado seguro.
+ *
+ * @param {any} err el error que lanzó `apiRequest`, o uno de `errorParaPersona`.
  * @param {string} respaldo el texto aprobado de la pantalla; `''` si la pantalla ya dice lo suyo.
  * @returns {string}
  */
 function mensajeParaPersona(err, respaldo) {
   const texto = err && err.data && err.data.message;
-  return (typeof texto === 'string' && texto.trim()) ? texto : respaldo;
+  if (typeof texto === 'string' && texto.trim()) return texto;
+  const propio = err && err.textoAprobado;
+  return (typeof propio === 'string' && propio.trim()) ? propio : respaldo;
 }
 if (typeof window !== 'undefined') window.mensajeParaPersona = mensajeParaPersona;
+
+/**
+ * SCRUM-1233d · el `Error` que lanza el PANEL cuando lo que tiene que leer la persona es un texto
+ * aprobado. `err.message` sigue siendo ese texto (quien compare con `===` no cambia); la marca
+ * `textoAprobado` es lo que `mensajeParaPersona` lee.
+ *
+ * @param {string} texto un texto YA aprobado; esta función no crea microcopy.
+ * @returns {Error}
+ */
+function errorParaPersona(texto) {
+  const err = new Error(texto);
+  err.textoAprobado = texto;
+  return err;
+}
+if (typeof window !== 'undefined') window.errorParaPersona = errorParaPersona;
 
 // -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
 //
@@ -1334,6 +1358,48 @@ function roleLockedNote() {
 }
 window.lockActionForRole = lockActionForRole;
 window.roleLockedNote = roleLockedNote;
+
+/**
+ * 🔴 SCRUM-1285 · UN GUARDADO EN VUELO CONGELA SU FORMULARIO. Es el PATRÓN, no un parche.
+ *
+ * El defecto medido (S4, ejecutando): mientras volvía un PATCH, la persona seguía tecleando; al
+ * llegar la respuesta la pantalla se repintaba con lo del servidor y **lo tecleado desaparecía sin
+ * aviso**. En el plan de cobro era peor: teclear REHABILITABA «Guardar plan», salía un segundo
+ * PATCH, y con la latencia invertida **ganaba el viejo y la base revertía**.
+ *
+ * La causa común es que el formulario seguía vivo mientras su foto ya iba por el cable. La regla:
+ * **mientras hay un guardado en vuelo, NINGÚN control de su zona se puede tocar** — ni los campos
+ * (no hay nada que perder) ni los botones (no hay segundo envío). Al volver, cada control recupera
+ * EXACTAMENTE el `disabled` que tenía: un tramo ya facturado sigue bloqueado, no se desbloquea
+ * por haber pasado por aquí.
+ *
+ * Por qué congelar y no «fusionar lo tecleado con la respuesta»: fusionar exige decidir quién gana
+ * campo a campo, y avisar de un descarte exige un texto nuevo (regla 39). Congelar no pierde nada,
+ * no decide nada y no necesita ninguna frase: el control apagado ya lo dice.
+ *
+ * ⚠️ Esto es la mitad de la PANTALLA. Dos pestañas, o dos personas, siguen pudiendo pisarse: eso
+ * sólo lo para el servidor comprobando contra qué versión escribe (la condición DENTRO del
+ * `update`, como SCRUM-1276).
+ *
+ * @param zona    el nodo que contiene TODOS los controles del formulario (y su botón de guardar).
+ * @param guardar función que lanza el guardado y devuelve su promesa.
+ * @returns la misma promesa: resuelve o rechaza igual, ya con la zona descongelada.
+ */
+function congelarMientrasGuarda(zona, guardar) {
+  const controles = zona ? Array.from(zona.querySelectorAll('input, select, textarea, button')) : [];
+  const antes = controles.map((el) => el.disabled);
+  controles.forEach((el) => { el.disabled = true; });
+  const soltar = () => controles.forEach((el, i) => { el.disabled = antes[i]; });
+  let enVuelo;
+  try {
+    enVuelo = Promise.resolve(guardar());
+  } catch (e) {
+    soltar();
+    return Promise.reject(e);
+  }
+  return enVuelo.then((v) => { soltar(); return v; }, (e) => { soltar(); throw e; });
+}
+window.congelarMientrasGuarda = congelarMientrasGuarda;
 
 // Copy aprobado por el fundador (23-jul, docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md) — NO reformular.
 // SCRUM-210: vivía dentro de invoicesView.js; se mudó aquí SIN tocar una letra porque ahora lo

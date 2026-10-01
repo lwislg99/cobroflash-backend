@@ -27,7 +27,7 @@ const THIS_FILE = fileURLToPath(import.meta.url);
 const repoRoot = path.join(path.dirname(THIS_FILE), '..');
 
 // SCRUM-124: hallazgo del propio barrido, no una concesión silenciosa — ver el ticket para
-// el razonamiento completo. scripts/wa-test.mjs es una herramienta MANUAL (un humano la
+// el razonamiento completo. scripts/wa-prueba.mjs es una herramienta MANUAL (un humano la
 // invoca a mano, con sus propias credenciales, para probar una plantilla antes de que Meta
 // la apruebe); no la importa nunca src/, no es un camino alcanzable por la app en marcha.
 // Sigue siendo una vía real de saltarse los topes si alguien la scriptase en bucle — por
@@ -35,7 +35,7 @@ const repoRoot = path.join(path.dirname(THIS_FILE), '..');
 // fundador: aceptarla así, endurecerla con su propio límite, o retirarla.
 const ALLOWED = new Set([
   path.join(repoRoot, 'src', 'integrations', 'whatsapp.ts'),
-  path.join(repoRoot, 'scripts', 'wa-test.mjs'),
+  path.join(repoRoot, 'scripts', 'wa-prueba.mjs'),
 ]);
 
 // Directorios que nunca hace falta recorrer: dependencias, build, control de versiones,

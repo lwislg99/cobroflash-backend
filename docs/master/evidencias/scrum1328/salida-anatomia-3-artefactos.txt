@@ -1,0 +1,63 @@
+
+=== 36828206142/tanda.tap
+POBLACION bytes=2399429
+NUL total=2259036 (94.1 %) en 1 tramo(s); tramos de texto=2
+  [TEXT] 0..56307 largo=56307
+         cabeceras TAP en: 0
+         casos nivel superior: ok=122 not_ok=0 skip=0 primero=1 ultimo=122
+         planes: 1..122@56195
+         recuentos: tests=122@56202 pass=122@56225 fail=0@56236 cancelled=0@56245 skipped=0@56259
+         primeros: ["ok 1 - public/ · SUELO: el guard encuentra los ficheros que dice comprobar","ok 2 - public/ · 🔴 todo .js que se sirve al navegador PARSEA"]
+         ultimo:   ["ok 122 - SCRUM-811 · toda entrada NUEVA que toca public/ declara si cargó la skill, o por qué no"]
+         empieza con: "TAP version 13\n# Subtest: public/ · SUELO: el guard encuentra los ficheros que dice compro"
+  [NUL ] 56307..2315343 largo=2259036
+  [TEXT] 2315343..2399429 largo=84086
+         cabeceras TAP en: (ninguna)
+         casos nivel superior: ok=353 not_ok=0 skip=3 primero=9215 ultimo=9567
+         planes: 1..9567@2399312
+         recuentos: tests=9572@2399320 pass=9474@2399344 fail=0@2399356 cancelled=0@2399365 skipped=98@2399379
+         primeros: ["ok 9215 - la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de abajo no miden nada)","ok 9216 - 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres, `lanzar orquestador` dice YA-VIVA"]
+         ultimo:   ["ok 9567 - specs J7: albaran_para_firmar_es registrada (3 vars + botón URL, sin header)"]
+         empieza con: "# Subtest: la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de a"
+
+=== 36825577571/tanda.tap
+POBLACION bytes=2394903
+NUL total=2254523 (94.1 %) en 1 tramo(s); tramos de texto=2
+  [TEXT] 0..56302 largo=56302
+         cabeceras TAP en: 0
+         casos nivel superior: ok=122 not_ok=0 skip=0 primero=1 ultimo=122
+         planes: 1..122@56190
+         recuentos: tests=122@56197 pass=122@56220 fail=0@56231 cancelled=0@56240 skipped=0@56254
+         primeros: ["ok 1 - public/ · SUELO: el guard encuentra los ficheros que dice comprobar","ok 2 - public/ · 🔴 todo .js que se sirve al navegador PARSEA"]
+         ultimo:   ["ok 122 - SCRUM-811 · toda entrada NUEVA que toca public/ declara si cargó la skill, o por qué no"]
+         empieza con: "TAP version 13\n# Subtest: public/ · SUELO: el guard encuentra los ficheros que dice compro"
+  [NUL ] 56302..2310825 largo=2254523
+  [TEXT] 2310825..2394903 largo=84078
+         cabeceras TAP en: (ninguna)
+         casos nivel superior: ok=353 not_ok=0 skip=3 primero=9200 ultimo=9552
+         planes: 1..9552@2394786
+         recuentos: tests=9557@2394794 pass=9459@2394818 fail=0@2394830 cancelled=0@2394839 skipped=98@2394853
+         primeros: ["ok 9200 - la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de abajo no miden nada)","ok 9201 - 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres, `lanzar orquestador` dice YA-VIVA"]
+         ultimo:   ["ok 9552 - specs J7: albaran_para_firmar_es registrada (3 vars + botón URL, sin header)"]
+         empieza con: "# Subtest: la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de a"
+
+=== 36826604612/tanda.tap
+POBLACION bytes=2398805
+NUL total=2258422 (94.1 %) en 1 tramo(s); tramos de texto=2
+  [TEXT] 0..56303 largo=56303
+         cabeceras TAP en: 0
+         casos nivel superior: ok=122 not_ok=0 skip=0 primero=1 ultimo=122
+         planes: 1..122@56191
+         recuentos: tests=122@56198 pass=122@56221 fail=0@56232 cancelled=0@56241 skipped=0@56255
+         primeros: ["ok 1 - public/ · SUELO: el guard encuentra los ficheros que dice comprobar","ok 2 - public/ · 🔴 todo .js que se sirve al navegador PARSEA"]
+         ultimo:   ["ok 122 - SCRUM-811 · toda entrada NUEVA que toca public/ declara si cargó la skill, o por qué no"]
+         empieza con: "TAP version 13\n# Subtest: public/ · SUELO: el guard encuentra los ficheros que dice compro"
+  [NUL ] 56303..2314725 largo=2258422
+  [TEXT] 2314725..2398805 largo=84080
+         cabeceras TAP en: (ninguna)
+         casos nivel superior: ok=353 not_ok=0 skip=3 primero=9212 ultimo=9564
+         planes: 1..9564@2398688
+         recuentos: tests=9569@2398696 pass=9471@2398720 fail=0@2398732 cancelled=0@2398741 skipped=98@2398755
+         primeros: ["ok 9212 - la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de abajo no miden nada)","ok 9213 - 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres, `lanzar orquestador` dice YA-VIVA"]
+         ultimo:   ["ok 9564 - specs J7: albaran_para_firmar_es registrada (3 vars + botón URL, sin header)"]
+         empieza con: "# Subtest: la captura trae lo que este fichero dice que trae (SUELO: si no, los casos de a"

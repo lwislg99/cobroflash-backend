@@ -24,6 +24,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module'; // SCRUM-1262: para el doble de la consulta de la baja (②)
 
 import { SEND_FAILURE_MESSAGES } from '../dist/lib/sendOutcome.js';
 
@@ -51,6 +52,21 @@ test('① NO se reutiliza el copy de «falló el envío»: aquí no ha fallado n
 // ═════════════════════════════════════════════════════════════════════════════
 // ② `sinPlantilla` — no mandar es mejor que mandar lo que parece lo de antes
 // ═════════════════════════════════════════════════════════════════════════════
+
+// ── SCRUM-1262 · LA PREMISA QUE ESTE BLOQUE TENÍA SIN ESCRIBIR ───────────────────────────────
+// Estos tres casos llaman al sender SIN base. Hasta SCRUM-1262 pasaban porque la consulta de la
+// baja de WhatsApp reventaba y el sender leía ese error como «no se dio de baja»: su premisa —
+// «el destinatario no está de baja»— la ponía un defecto, no el test. Ahora el corte falla
+// CERRADO, así que la premisa se ESCRIBE: la consulta de la baja contesta «nadie». Es lo único
+// que se dobla (la técnica de `scrum590-el-movil-es-el-canal`); todo lo demás sigue yendo al
+// cliente real, sin base, exactamente como antes. Ninguna aserción de abajo cambia.
+const base = createRequire(import.meta.url)('../dist/core/db/prisma.js');
+const clienteReal = base.prisma;
+base.prisma = new Proxy(clienteReal, {
+  get: (cliente, modelo) => (modelo !== 'customer' ? cliente[modelo] : new Proxy(cliente.customer, {
+    get: (clientes, metodo) => (metodo === 'findMany' ? async () => [] : clientes[metodo]),
+  })),
+});
 
 const { sendWhatsAppWindowFirst } = await import('../dist/integrations/whatsapp.js');
 

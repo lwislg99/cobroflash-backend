@@ -183,6 +183,11 @@ export const DECLARADOS = {
       llamadaTestEnvoltorio: 'ejecutarPasada',
     },
   },
+  'scripts/guard-nombres-no-declarados.mjs': {
+    porque: 'SCRUM-1280: tiene que BLOQUEAR, así que corre dentro de `npm test` (el check obligatorio) '
+      + 'a través de su módulo puro: scrum1280 ejecuta `medir()` sobre el panel real y exige cero hallazgos.',
+    prueba: { fichero: 'tests/scrum1280-nombres-no-declarados.test.mjs', llamada: 'medir({ piezasExtra: PIEZAS' },
+  },
 };
 
 // ── EL ÁRBOL REAL ────────────────────────────────────────────────────────────────────────────
@@ -365,6 +370,14 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
   assert.ok(patrones.some((p) => p.test(pa.fichero)),
     `🔴 \`${pa.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`), así que su `
     + 'declaración no vale aunque llame a lo que dice.');
+
+  const pn = DECLARADOS['scripts/guard-nombres-no-declarados.mjs'].prueba;
+  const codigoN = soloCodigo(fs.readFileSync(path.join(RAIZ, pn.fichero), 'utf8'));
+  assert.ok(codigoN.includes(pn.llamada),
+    `🔴 \`${pn.fichero}\` ya no ejecuta \`${pn.llamada}\` (fuera de comentarios). Sin esa llamada, `
+    + '`guard-nombres-no-declarados` deja de correr en el check obligatorio y su declaración lo estaría tapando.');
+  assert.ok(patrones.some((p) => p.test(pn.fichero)),
+    `🔴 \`${pn.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`).`);
 });
 
 test('SCRUM-1109 · el envoltorio programado también ejercita de verdad al guard importado', () => {

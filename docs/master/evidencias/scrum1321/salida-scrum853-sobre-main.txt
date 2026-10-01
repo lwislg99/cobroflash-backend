@@ -1,0 +1,33 @@
+POBLACION · scrum853-avisador-solo-obligatorio.test.mjs · 9 mutación(es)
+LIMPIA · 34 pasados · 0 caídos · 0 saltados · movidos 0
+
+[1] VIVA · scripts/puerta-avisador-rojo.mjs · cae: CEBO REAL #1255 · rojo SOLO en checks NO obligatorios → NO despierta
+    colaterales 0 · pasada mutada: 33 pasados · 1 caídos
+
+[2] VIVA · scripts/puerta-avisador-rojo.mjs · cae: sin lista de obligatorios NO despierta, y lo DICE con su código
+    colaterales 0 · pasada mutada: 33 pasados · 1 caídos
+
+[3] VIVA · scripts/puerta-avisador-rojo.mjs · cae: CEBO REAL #1255 · el aviso salió 18 s DESPUÉS del merge
+    colaterales 2 · pasada mutada: 31 pasados · 3 caídos
+
+[4] VIVA · scripts/puerta-claude.mjs · cae: CEBO REAL #1255 · claude.yml NO arranca sobre un PR ya mergeado
+    colaterales 1 · pasada mutada: 32 pasados · 2 caídos
+
+[5] VIVA · scripts/puerta-claude.mjs · cae: CEBO REAL #1255 · PR mergeado cuando Claude termina y rama claude/pr-* nueva → RAMA-MUDA
+    colaterales 0 · pasada mutada: 33 pasados · 1 caídos
+
+[6] MUDA · .github/workflows/claude.yml · cae: claude.yml pregunta a la puerta ANTES de la acción
+    el guard NO cayó. Test que debía ponerse rojo: «claude.yml pregunta a la puerta ANTES de la acción»
+    → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 34 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 34 pasados · 0 caídos.
+
+[7] MUDA · .github/workflows/claude.yml · cae: el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar
+    el guard NO cayó. Test que debía ponerse rojo: «el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar»
+    → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 34 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 34 pasados · 0 caídos.
+
+[8] VIVA · scripts/puerta-claude.mjs · cae: un 404 que llega como CUERPO DEL ERROR no es una cabeza remota
+    colaterales 1 · pasada mutada: 32 pasados · 2 caídos
+
+[9] VIVA · .github/workflows/avisador-rojo.yml · cae: lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO
+    colaterales 0 · pasada mutada: 33 pasados · 1 caídos
+
+EXIT=0

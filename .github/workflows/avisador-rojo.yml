@@ -63,9 +63,12 @@ concurrency:
   cancel-in-progress: false
 
 # Mínimos: leer el repo y escribir un comentario. NO se toca `contents`.
+# `actions: read` (SCRUM-1286): leer el job y el log de la corrida que ha caído, para decir si es el
+# intermitente de SCRUM-1281. Solo lectura.
 permissions:
   contents: read
   pull-requests: write
+  actions: read
 
 jobs:
   avisar:
@@ -80,6 +83,27 @@ jobs:
       # `origin/main`, hará falta `fetch-depth: 0` MÁS el fetch explícito de `main` — la
       # tabla de `ci.yml` (SCRUM-765) explica por qué uno solo no basta.
       - uses: actions/checkout@v4
+
+      # ── 1bis · SCRUM-1286 · ¿ES EL INTERMITENTE DE SCRUM-1281? ─────────────────────────────
+      # El check obligatorio cae a veces porque git pierde un fichero bajo `.git/objects` en la
+      # fixture de censos, no por el código del PR. Un relanzamiento exige leer el log antes: esto
+      # lo lee y deja el veredicto escrito. INTERMITENTE solo si el único paso caído es la tanda y
+      # TODOS sus fallos traen la firma; un rojo mixto NO lo es. En los PR abiertos pone o quita la
+      # etiqueta `intermitente-1281` y comenta una vez por commit, SIN `@claude`: informa, no
+      # despierta. Va con `github.token`, cuyos comentarios no disparan workflows. Nunca tumba el
+      # job, y va ANTES del aviso para que la sesión que despierte lo encuentre ya escrito.
+      # Medido: los 123 rojos de `build + tests` del 22–29 sep → 2 INTERMITENTE, 0 falsos.
+      - id: intermitente
+        name: ¿Es el intermitente de SCRUM-1281?
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          INTENTO: ${{ github.event.workflow_run.run_attempt }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          URL_RUN: ${{ github.event.workflow_run.html_url }}
+        run: node scripts/equipo/intermitente-1281.mjs ci
 
       # ── 2 · ¿HAY LLAVE DE LA APP? ──────────────────────────────────────────────────────
       # Sin ella el aviso no despertaría a nadie, así que no se publica. No es un fallo: es

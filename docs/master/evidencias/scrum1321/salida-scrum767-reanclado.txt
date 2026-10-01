@@ -1,0 +1,13 @@
+POBLACION · scrum767-portal-token.test.mjs · 3 mutación(es)
+LIMPIA · 5 pasados · 0 caídos · 0 saltados · movidos 0
+
+[1] VIVA · scripts/seed-demo.mjs · cae: SCRUM-767 · el SEMBRADOR da de alta por el camino real, no con un `create` a pelo
+    colaterales 1 · pasada mutada: 3 pasados · 2 caídos
+
+[2] VIVA · src/modules/system/customerAdmin.ts · cae: SCRUM-767 · el alta REAL pone token, y las que no lo ponen están DECLARADAS
+    colaterales 1 · pasada mutada: 3 pasados · 2 caídos
+
+[3] VIVA · src/modules/system/app/routes/customerPortal.routes.ts · cae: SCRUM-767 · 🔴 EL CENSO QUE DECIDE: qué lee el token SIN pasar por la cura
+    colaterales 1 · pasada mutada: 3 pasados · 2 caídos
+
+EXIT=0

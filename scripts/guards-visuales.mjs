@@ -45,6 +45,7 @@ import { esDeNavegador, ficheroDe } from './_solape-de-guards.mjs';
 // levantar su servidor se pintaba `rojo(4)` — con la palabra «rojo» delante, que es
 // justamente la que significa «he encontrado defectos».
 import { SALIDA_SIN_SERVIDOR } from './_servidor.mjs';
+import { leerVeredicto } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOPE_MS = Number(process.env.GUARDS_VISUALES_TOPE_MS || 240000);
@@ -154,6 +155,83 @@ export function veredicto(filas) {
   };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1313 · EL RECUENTO DECÍA DOS COSAS Y PASABAN TRES.
+//
+// LO QUE PASABA, literal de la puerta, en local y en CI, desde el 29-sep-2026:
+//
+//     37 guards · 612.7 s en serie   ·   verdes: 33 · no verdes: 4
+//
+// Esos 4 no habían encontrado nada: no habían podido MIRAR (el editor del documento suelto no se
+// pintaba en su arnés). Ese «no verdes» se leyó de las dos maneras equivocadas —«cuatro fallan» y
+// «33 de 37, casi todo bien»— y el job de CI estuvo dos días en rojo tratado como «un rojo que ya
+// se conoce». El vocabulario para distinguirlo vivía aquí desde SCRUM-639 (`llegoAMedir`) y la
+// línea del total no lo usaba: es la TERCERA vez que esta puerta sabe algo y no lo dice.
+//
+// Son tres cosas y se cuentan las tres, SIEMPRE, también cuando alguna es cero: un «0 rojos»
+// escrito es una medición; un rojo que no se nombra es un hueco.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Cuántos guards están verdes, cuántos NO LLEGARON A MEDIR y cuántos midieron y encontraron algo.
+ *
+ * PURA, como `veredicto`, y con la MISMA regla (`llegoAMedir`): si la línea del total y el código
+ * de salida clasificaran cada uno por su cuenta, acabarían discrepando.
+ *
+ * «CIEGOS» junta todo lo que no midió —CIEGO, NO ARRANCA, SIN SERVIDOR, TOPE—; si no son todos
+ * del mismo tipo, el desglose va entre paréntesis.
+ *
+ * 🔴 SCRUM-1320 · LO QUE ESTE RECUENTO NO SABÍA, y estaba declarado aquí mismo: un guard que juzga
+ * VARIOS casos y se queda ciego en UNO salía por la puerta del ciego aunque en los demás hubiera
+ * encontrado defectos, porque su cola miraba `ciegos` antes que `hallazgos`. Contaba como CIEGO
+ * con cinco defectos dentro. Ahora ese guard sale con el código del hallazgo y DICE sus dos
+ * cuentas (`_hallazgos-y-ciegos.mjs`); aquí cuenta como rojo, y si además dejó casos sin medir el
+ * recuento lo pone al lado, para que «1 rojo» no se lea como la lista completa de sus defectos.
+ */
+export function recuento(filas) {
+  const noVerdes = filas.filter((f) => f.estado !== 'verde');
+  const rojos = noVerdes.filter((f) => llegoAMedir(f.codigo));
+  const ciegos = noVerdes.filter((f) => !llegoAMedir(f.codigo));
+  const verdes = filas.length - noVerdes.length;
+  const rojosConCiegos = rojos.filter((f) => f.cuentas && f.cuentas.ciegos > 0);
+
+  const porTipo = new Map();
+  for (const f of ciegos) porTipo.set(f.estado, (porTipo.get(f.estado) || 0) + 1);
+  const desglose = porTipo.size > 1 || (porTipo.size === 1 && !porTipo.has('CIEGO'))
+    ? ' (' + [...porTipo].map(([tipo, n]) => n + ' ' + tipo).join(' · ') + ')'
+    : '';
+
+  return {
+    total: filas.length, verdes, ciegos: ciegos.length, rojos: rojos.length, rojosConCiegos: rojosConCiegos.length,
+    linea: verdes + (verdes === 1 ? ' verde' : ' verdes')
+      + ' · ' + ciegos.length + (ciegos.length === 1 ? ' CIEGO' : ' CIEGOS') + desglose
+      + ' · ' + rojos.length + (rojos.length === 1 ? ' rojo' : ' rojos')
+      + (rojosConCiegos.length ? ' (' + rojosConCiegos.length + ' con casos sin medir)' : ''),
+  };
+}
+
+/**
+ * Lo que la tabla pinta detrás del estado de un guard no verde: sus dos cuentas, si las dijo.
+ * Vacío para los verdes y para el guard que no emite la marca — eso no es tirar nada: no la había.
+ */
+export function cuentasDeLaFila(estado, cuentas) {
+  if (estado === 'verde' || !cuentas) return '';
+  return ' · ' + cuentas.hallazgos + (cuentas.hallazgos === 1 ? ' hallazgo' : ' hallazgos')
+    + ' · ' + cuentas.ciegos + (cuentas.ciegos === 1 ? ' ciego' : ' ciegos');
+}
+
+/**
+ * La fila de un guard DECLARADO cuyo fichero no está en el disco (SCRUM-1313).
+ *
+ * Antes ese caso sumaba un fallo y NO dejaba fila: el recuento se calculaba sobre una población
+ * más corta que la lista, y `veredicto` —que sólo ve filas— podía contestar «VERDE» con un guard
+ * sin correr. Es un ciego como cualquier otro: no supo mirar.
+ */
+export function filaDeFicheroAusente(g) {
+  return { g, ms: 0, estado: 'CIEGO', codigo: SALIDA_NO_ENCONTRADO, arranque: null, marca: null,
+    salida: '   🔴 CIEGO · ' + g + ': está declarado y su fichero no está en el disco.' };
+}
+
 /**
  * Que la distinción se vea SIN abrir el log.
  *
@@ -166,10 +244,13 @@ export function veredicto(filas) {
  * salida y no sabe distinguir los desenlaces; este fichero sí. Y en local no se emite nada,
  * para no ensuciar una salida que alguien pueda estar leyendo.
  */
-export function anuncio(v) {
-  const cuerpo = String(v.detalle).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+export function anuncio(v, cuenta = null) {
+  // SCRUM-1313 · el recuento va DELANTE del detalle, en la anotación y en el resumen: es lo que se
+  // lee desde la pestaña de checks, que es donde «un rojo que ya se conoce» se dio por sabido.
+  const detalle = (cuenta ? cuenta.linea + '. ' : '') + String(v.detalle);
+  const cuerpo = detalle.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
   return { anotacion: '::error title=' + v.titulo + '::' + cuerpo,
-    resumen: '### 🔴 guards de navegador — ' + v.titulo + '\n\n' + v.detalle + '\n' };
+    resumen: '### 🔴 guards de navegador — ' + v.titulo + '\n\n' + detalle + '\n' };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -379,7 +460,9 @@ for (const g of lista) {
   const f = ficheroDe(scripts, g);
   const abs = f && path.join(RAIZ, f);
   if (!f || !fs.existsSync(abs)) {
-    console.error('   🔴 CIEGO · ' + g + ': está declarado y su fichero no está en el disco.');
+    const ausente = filaDeFicheroAusente(g);
+    console.error(ausente.salida);
+    filas.push(ausente);
     fallos += 1; continue;
   }
   const t0 = Date.now();
@@ -407,11 +490,14 @@ for (const g of lista) {
   // y se tiraba para todo el que salía verde.
   const marca = leerArranque(salida);
   const arranque = marca && marca.total !== null ? marca.total : null;
-  filas.push({ g, ms, estado, codigo, arranque, marca, salida });
+  // SCRUM-1320 · las dos cuentas del guard («N hallazgos · M ciegos»), si las dijo. El código sólo
+  // lleva una de las dos cosas; la otra viaja en esta línea, y la tabla la enseña sin abrir nada.
+  const cuentas = leerVeredicto(salida);
+  filas.push({ g, ms, estado, codigo, arranque, marca, salida, cuentas });
   console.log('   ' + (estado === 'verde' ? '✔' : '✖') + ' ' + g.padEnd(26)
     + String((ms / 1000).toFixed(1)).padStart(6) + ' s'
     + (arranque === null ? '   (arranque: ?)' : '   arranque ' + arranque.toFixed(1).padStart(5) + ' s')
-    + '   ' + estado);
+    + '   ' + estado + cuentasDeLaFila(estado, cuentas));
   // La segunda línea es el ticket: los tramos se enseñan TAMBIÉN cuando el guard pasa. Antes
   // sólo se veían si moría, y con el tope subido morir es justo lo que deja de pasar.
   const desglose = lineaDeTramos(marca);
@@ -422,9 +508,13 @@ for (const g of lista) {
 }
 
 console.log('\n── TOTAL ' + '─'.repeat(48));
+// SCRUM-1313 · tres cuentas, no dos: «no verdes: 4» no decía si eran defectos o cegueras.
+const cuenta = recuento(filas);
 console.log('   ' + lista.length + ' guards · ' + (total / 1000).toFixed(1) + ' s en serie'
-  + '   ·   verdes: ' + (filas.length - filas.filter((f) => f.estado !== 'verde').length)
-  + ' · no verdes: ' + filas.filter((f) => f.estado !== 'verde').length);
+  + '   ·   ' + cuenta.linea);
+// La población del recuento ES la lista: cada vuelta del bucle deja exactamente una fila, también
+// la del guard sin fichero (`filaDeFicheroAusente`). No lleva un suelo propio aquí porque no podría
+// saltar nunca, y un suelo que no dispara es justo lo que `tests/scrum775` no deja entrar.
 
 // ── 🔴 EL TRINQUETE (SCRUM-645) ─────────────────────────────────────────────────────────────
 // Va ANTES del volcado de los no verdes a propósito: si la puerta no entiende lo que lee, lo que
@@ -448,7 +538,7 @@ if (ciega.length) {
 
 if (fallos) {
   console.error('\n' + '═'.repeat(72));
-  console.error('🔴 ' + fallos + ' guard(s) de navegador no están verdes. Lo que dijeron:');
+  console.error('🔴 ' + fallos + ' guard(s) de navegador no están verdes (' + cuenta.linea + '). Lo que dijeron:');
   console.error('═'.repeat(72));
   for (const f of filas.filter((x) => x.estado !== 'verde')) {
     console.error('\n── ' + f.g + '  [' + f.estado + '] ' + '─'.repeat(Math.max(0, 50 - f.g.length)));
@@ -464,7 +554,7 @@ if (fallos) {
   console.error(v.detalle);
   // Y que se vea sin abrir el log.
   if (process.env.GITHUB_ACTIONS) {
-    const a = anuncio(v);
+    const a = anuncio(v, cuenta);
     console.log(a.anotacion);
     if (process.env.GITHUB_STEP_SUMMARY) {
       try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, a.resumen); } catch { /* el resumen es un extra: si no se puede escribir, el código de salida sigue siendo el bueno */ }
@@ -472,5 +562,5 @@ if (fallos) {
   }
   process.exit(v.codigo);
 }
-console.log('\n✅ los ' + lista.length + ' guards de navegador están verdes.');
+console.log('\n✅ los ' + lista.length + ' guards de navegador están verdes (' + cuenta.linea + ').');
 }

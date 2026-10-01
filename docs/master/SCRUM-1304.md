@@ -1,0 +1,164 @@
+# SCRUM-1304 · Un cobro, una factura — la pregunta por `chargeId`, dentro del cerrojo de serie
+
+**Medido contra:** `origin/main` = `84e1fd80882d1231d0c4fa6f72d8aa08b0fad51f` · 2026-10-01T03:18:28Z
+
+1-oct-2026 · **J1d** (equipo de Javier). Medición de partida de J6 (30-sep). GO del fundador en
+SCRUM-1304, comentario 17704 («1-Ok, Go»): **me llegó por el orquestador** (`cobroflash-backend-5b`),
+que se lo oyó al fundador; yo no. Autoriza construir el arreglo y excluye tocar el sellado, cambiar
+el esquema y editar o borrar duplicadas que ya existan.
+
+🔴 **ESTE ARREGLO NO PUEDE ENTRAR SOLO.** En España desemboca en un re-sellado que ya existe en
+`main` (§ «Por qué se paró»). Está construido y medido; lo que falta lo decide el fundador en
+**SCRUM-1330**.
+
+A9: comprobación → `tests/scrum1304-un-cobro-una-factura.test.mjs`
+
+## PASO 0 — la premisa, re-medida
+
+El ticket se midió contra `b6243e1c`. Sobre `f5d99bd7` el defecto sigue: el rojo se vio corriendo
+antes de tocar nada (`docs/master/evidencias/scrum1304/rojo-sobre-main-f5d99bd7.txt`: 13 casos,
+7 rojos, 6 controles verdes). Sin rama remota ni PR del ticket, y nada hecho con otra redacción.
+
+Una precisión al enunciado: dice que por `Invoice.chargeId` «no busca», y es cierto, pero el dato
+**ya está escrito** desde SCRUM-445. Por eso el arreglo no necesita ni columna ni índice.
+
+## Qué cambia
+
+`ensureInvoiceForCharge` (`src/lib/invoicing.ts`), dentro de la transacción que emite:
+
+1. `tomarCerrojoDeSerie(tx, merchantId)` — el de la reserva de número, re-entrante; el mismo y con
+   la misma forma que el recuento de tramos de SCRUM-814.
+2. `findFirst` por `chargeId` + `merchantId`. Si hay factura, se devuelve **sin pedir número**: la
+   entrega que no emite no deja hueco en la serie.
+3. La entrega que no emite lo dice por `console.error`, con el cobro y el número de la factura.
+
+Las dos búsquedas de antes (evento `invoiced`, factura del presupuesto) no se tocan. La respuesta al
+proveedor de pagos no cambia.
+
+## Los casos, por efecto
+
+Corre el código compilado: `/webhooks/psp`, `ensureInvoiceForCharge`, `allocateInvoiceNumber`,
+`crearFacturaEmitida`, `sellarTrasEmision`. Se doblan la base, el PDF y el correo, y nada más.
+
+| Caso | `main` | Con el arreglo |
+| --- | --- | --- |
+| C · una entrega | 1 factura | 1 |
+| ④a · dos seguidas | 1 | 1 |
+| ④d · el presupuesto ya tiene factura | 1 | 1 |
+| dos cobros distintos, a la vez | una por cobro | una por cobro |
+| ④b · dos entregas a la vez | 🔴 2 | 1 |
+| ④b′ · la segunda entra mientras la primera espera el cerrojo | 🔴 2 | 1 |
+| ④c · dos a la vez, presupuesto sin factura | 🔴 2 | 1 |
+| ④e · el PDF cae una vez, sin carrera | 🔴 2 | 1, y la segunda entrega la termina |
+| ④f · el cobro es el enlace de pago de una factura ya emitida | 🔴 2 | 1 |
+| la función suelta, dos llamadas a la vez | 🔴 2 | 1 |
+
+**④f es nuevo y no necesita ni carrera ni fallo.** `invoiceWhatsApp.service` crea un cobro para
+cobrar una factura que ya existe y le escribe su `chargeId`. Al pagarse con el flag encendido no hay
+evento `invoiced` ni presupuesto que la encuentren, y se emitía otra por el mismo dinero.
+
+④b′ es el que separa el arreglo entero del arreglo a medias: cuando la primera entrega pide el
+cerrojo, se ejecuta entera la ruta real de la segunda. Una pregunta hecha fuera del cerrojo ya ha
+contestado «no hay» cuando la otra escribe.
+
+## Mutaciones
+
+`docs/master/evidencias/scrum1304/mutar.mjs` y su salida, `mutaciones.json`. Base sin mutar primero.
+
+| Mutación | Resultado |
+| --- | --- |
+| M1 · sin el cerrojo | cae: ④b, ④b′, ④c, el aviso y la función suelta |
+| M2 · la pregunta no decide | caen los 7 |
+| M3 · la pregunta ignora el cobro | cae «dos cobros distintos» |
+| M4 · la entrega que no emite se calla | cae el aviso |
+| M5 · la pregunta ignora el merchant | **MUDA** en la primera pasada; cae tras añadir el caso de la regla 2 |
+
+M5 era muda porque un cobro es de un solo merchant: con datos sanos, acotar no cambia nada. Se
+añadió el caso que lo sujeta (una factura de otro merchant con ese `chargeId` no se devuelve).
+
+## Por qué se paró — medido por ejecución (SCRUM-1330)
+
+`ensurePdfAndEvent` llama a `sellarTrasEmision` siempre, y `applyVeriFactu` no comprueba si la
+factura ya está sellada: recalcula y pisa `vfHash`, `vfPrevHash` y `vfTimestamp`. Con un merchant
+de España con el flag por merchant:
+
+- **Ya pasa en `main`, sin este cambio (④a):** una segunda entrega 1,2 s después deja la misma
+  F260001 con la huella cambiada, `9E45613C…` → `B6ABC7EB…`. Una factura sellada, editada.
+- **Con este arreglo, ④f es peor que el defecto.** F260001 sellada un mes antes, con F260002
+  encadenada detrás. Al pagarse su enlace no se emite otra, pero F260001 se re-sella: huella nueva,
+  encadenada a la posterior, y F260002 queda apuntando a una huella que ya no tiene ninguna
+  factura. `main`, en ese caso, emite una duplicada y deja la cadena intacta.
+- **④b con el arreglo:** una factura, sellada dos veces.
+
+Los tres quedan fijados en el test como RESIDUAL CONOCIDO, contando sellados y no sólo la huella
+(dos sellados en el mismo segundo dan la misma). Cuando SCRUM-1330 lo arregle, caen y se reescriben
+con lo contrario en el mismo cambio.
+
+Fuera de España el arreglo es completo: no hay cadena.
+
+**Una guarda en el punto de llamada** («si la fila ya está `sellado`, no se llama a
+`sellarTrasEmision`») se midió como experimento local y se deshizo, con `porcelain` vacío: ④f queda
+intacta byte a byte y 0 sellados, y arregla también el ④a de `main`. No cierra ④b: la entrega que
+pierde lee la fila aún `pendiente_de_sellado` y sella también. Cerrarlo del todo pide la guarda
+dentro del cerrojo del sellado, que choca con el caso «resellar un alta» de `tests/scrum173`; eso
+está leído, **no medido**.
+
+## Lo que NO se midió
+
+- **La carrera contra un Postgres real.** En la máquina no hay ninguno y dárselo en CI es tocar un
+  workflow. El banco modela el cerrojo consultivo como una exclusión por clave que se suelta al
+  terminar la transacción, re-entrante dentro de ella, y su suelo comprueba que excluye. No deshace
+  una transacción que lanza y no aísla lecturas.
+- **Si el re-sellado encola dos veces el alta a la AEAT** (`vfSubmission`): en el banco el registro
+  XML no llega a montarse.
+- **Facturas duplicadas que ya existan.** Este árbol no tiene acceso a ninguna base y producción no
+  se toca. No se han contado. `AUTO_INVOICE_ON_PAID` no existe en Railway (c.17639), así que por
+  `/webhooks/psp` y `/webhooks/mp` no se ha podido producir ninguna allí.
+- **Dos eventos `invoiced`** con la misma factura cuando dos entregas coinciden: se ve en el banco,
+  no rompe ninguna búsqueda (las dos apuntan a la misma), y no se ha tocado.
+
+## Lo que salió mal
+
+- El caso ④c dio rojo por otro motivo la primera vez: el presupuesto de prueba llevaba `tax: 21`
+  y el IVA va en fracción, así que ninguna entrega emitía y el recuento era 0, no 2. Lo delató el
+  mensaje. Ahora el caso exige primero que ninguna entrega falle al emitir.
+- En el comentario 17725 de Jira puse la hora del estado a ojo (diez minutos de más), y al
+  corregirlo puse a ojo la hora de la corrección. Dos veces el mismo error en el mismo comentario.
+  Ya no lleva ninguna hora escrita a mano; las buenas son las de Jira. Apuntado en las cicatrices
+  del puesto, sin comprobación: un comentario de Jira no pasa por ningún guard.
+- La mutación M5 salió muda y la había declarado antes de mirar si el comportamiento cambiaba.
+- Un doc de auditoría cita `src/lib/invoicing.ts` por línea (`docs/legal/AUDITORIA_CAMINO_EMISION.md`):
+  el `import` nuevo movió dos coordenadas y lo cazó `tests/scrum525d`, no yo. Coordenadas llevadas a
+  su sitio en el mismo cambio.
+- Este mismo párrafo entró primero con huecos (commit `a2c2123d`): lo escribí pasándole el texto a
+  `node -e "…"` desde bash, y bash EJECUTÓ lo que iba entre acentos graves — intentó correr
+  `src/lib/invoicing.ts` y el doc de auditoría como guiones de shell. No ejecutó nada con efecto
+  (falló en la primera línea de cada uno; `git status` limpio y el commit lleva sólo sus tres
+  ficheros), pero pudo. Es una trampa ya apuntada en la memoria del puesto, y la pisé igual.
+  Apuntado en las cicatrices, sin comprobación: lo que lo impediría es un hook sobre la orden, y
+  los hooks no son de este puesto.
+
+## SCRUM-1304 · segunda vuelta: entra con las dos guardas de SCRUM-1330, y los tres residuales dicen lo contrario
+
+**Medido contra:** `origin/main` = `c1fe641c929b2dfbc3d55db60cced6c4640974bc` · 2026-10-01T03:52:35Z
+A9: comprobación → `tests/scrum1304-un-cobro-una-factura.test.mjs`
+
+1-oct-2026 · **J1e**, relevo de J1d. Lo de arriba lo escribió J1d con el arreglo parado. Lo que
+cambia desde entonces:
+
+- **Ya no espera.** El fundador dio GO a las dos guardas en SCRUM-1330 (comentario 17724; me llegó
+  por el orquestador). Están construidas y este arreglo entra con ellas en el mismo PR, en la rama
+  `scrum-1330-una-sellada-no-se-resella`. El detalle, en `docs/master/SCRUM-1330.md`.
+- **Los tres casos «RESIDUAL CONOCIDO» de España se han reescrito con lo contrario**, en el mismo
+  cambio que las guardas: ④a, ④b y ④f exigen ahora UNA escritura de huella (o ninguna, en ④f) y
+  que huella, anterior y sello de la fila no cambien. Los sellados se cuentan por escrituras de
+  `vfHash`, ya no por la línea de log.
+- **El banco salió del test** a `tests/_banco-emision-con-estado.mjs`, sin cambiar su código, porque
+  lo usa también el test de SCRUM-1330. `auditLog` pasa a tener estado y se apuntan las escrituras
+  sobre `invoice`.
+- El fichero sigue en 18 casos, 18 verdes. Las mutaciones M1–M5 de arriba no se han repetido sobre
+  el fichero reescrito: los casos que las cazan no son los tres que cambiaron.
+
+De lo que arriba quedó «sin medir»: **el doble encolado a la AEAT está medido** y tiene ticket,
+SCRUM-1333 (2 filas en `vfSubmission` para una factura en ④b, sólo si la factura es declarable). Los
+dos eventos `invoiced` siguen sin tocar. La carrera contra un Postgres real sigue sin medir.

@@ -20,7 +20,7 @@ import {
 } from '../scripts/_margen-tanda.mjs';
 import { leerFuente } from './_guard-texto.mjs';
 
-const RUNNER = 'scripts/test-staging-gated.mjs';
+const RUNNER = 'scripts/staging-gated.mjs';
 
 // ── EL DATO CRUDO ────────────────────────────────────────────────────────────
 test('SCRUM-265 · el recibo guarda CRUDO (durMs y limiteMs), no el porcentaje', () => {
