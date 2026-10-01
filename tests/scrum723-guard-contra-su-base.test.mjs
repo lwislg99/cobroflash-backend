@@ -530,6 +530,22 @@ const INDIRECTAS_DECLARADAS = [
   // formato del ancla en sí (mismo caso que scrum267/scrum649 de arriba), no un descuido.
   // Lo retira quien borre la plantilla del ancla.
   'scripts/equipo/ancla.mjs',
+  // SCRUM-1298 · `prepararMesa` SÍ pregunta por la punta de verdad (`rev-parse origin/main`, en los
+  // argumentos de git), y es lo que tiene que preguntar: la mesa de un puesto arranca en la oficial
+  // de AHORA, no en una base fijada. Fuera de los argumentos la nombra en los MOTIVOS que devuelve
+  // («la mesa quedó en X y origin/main es Y», «no se pudo leer origin/main») y en su cabecera.
+  // Lo retira quien retire las mesas.
+  'scripts/equipo/sesion.mjs',
+  // SCRUM-1298 · su banco: mismo caso que 899b, 951a y 973 — un repositorio SINTÉTICO en el temporal
+  // cuyo `origin/main` no es el de nadie, para comprobar que la mesa nace y se pone al día ahí.
+  // Lo retira quien borre el banco.
+  'tests/scrum1298-mesa-por-puesto.test.mjs',
+  // SCRUM-1350 · el latido pregunta «¿cómo está la punta AHORA?», que es la única pregunta que tiene:
+  // el último commit de `main` con el obligatorio en verde, las reglas vivas de la rama y si lo
+  // empujado es lo que hay en local. No censa nada contra una base, y fijarle una lo dejaría
+  // contando el estado de ayer. Herramienta de mano del orquestador; no corre en CI.
+  // Lo retira quien retire el latido.
+  'scripts/equipo/latido.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MARCADOR = '[PENDIENTE microcopy oficial]';
@@ -229,8 +230,10 @@ test('SCRUM-903 · ⛔ TODO generador de PDF filtra sus marcadores', () => {
 
   // Y el registro de SCRUM-667 sigue siendo quien decide lo que SÍ puede llegar al papel: si
   // alguien lo vacía o lo amplía, que sea mirándolo, no por efecto colateral de otro ticket.
-  const guard667 = fs.readFileSync(path.join(RAIZ, 'tests/scrum667-marcador-visible.test.mjs'), 'utf8');
-  assert.ok(/MARCADOR_MICROCOPY_DESGLOSE/.test(guard667),
+  // 🔴 SCRUM-1293 (1-oct-2026) · antes se buscaba el nombre en el TEXTO del test de SCRUM-667. Desde
+  // que `EN_EL_PAPEL` sale del JSON declarado, ese texto solo lo nombra en un comentario de historia:
+  // la búsqueda seguía verde aunque la entrada se quitara de la lista. Ahora se mira la LISTA.
+  assert.ok(Object.hasOwn(marcadoresDeclarados().papel, 'MARCADOR_MICROCOPY_DESGLOSE'),
     '🔴 el marcador de la factura ha dejado de estar DECLARADO en `EN_EL_PAPEL`. Si se ha escrito '
     + 'su texto, perfecto — retíralo de allí en ese commit. Si no, nadie lo vigila ya.');
 });

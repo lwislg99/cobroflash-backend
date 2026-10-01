@@ -105,6 +105,9 @@ test('② el runner de node de HOY, con el color forzado, se lee bien', () => {
     // resultado. Por eso está: un test que no puede distinguir las dos versiones no es un test.
     const env = { ...process.env, FORCE_COLOR: '3' };
     delete env.NODE_TEST_CONTEXT;
+    // SCRUM-1289 · y `NODE_OPTIONS` tampoco: en el CI trae los reporters de la tanda, y este hijo
+    // TRUNCABA el `tanda.tap` del padre para escribir encima el suyo (el de `a` y `b`).
+    delete env.NODE_OPTIONS;
 
     const r = spawnSync(process.execPath, ['--test', sonda], {
       cwd: banco,
