@@ -686,6 +686,10 @@ Run `36901626137` (`pull_request`, head `601185c091d49391e4d78a4124c9c32a0e0c87f
 - Los tres pasos temporales se quitaron con un revert (`83a6af55`): el `ci.yml` volvió al blob del
   commit bueno (`34e473b9`). Después se añadió la frase de la segunda red y se mezcló `main`
   (`b3b40554`); `scrum812` chocó otra vez y su test dio 31 sobre el árbol fusionado.
+- **El trinquete de `scrum812` exige que el ancla de su mutación ④ se mueva con la constante, y
+  lo comprueba él mismo.** Subí sólo la constante (30 → 31) y cayó «mi ancla ④ muta la
+  CONSTANTE»: la mutación declarada seguía diciendo «de 30 a 29» y habría salido ciega. Van
+  juntas: la constante y las líneas `de:`/`a:` de su mutación.
 
 **Mi error (J3j):** un recuento de «restos de los temporales» dio 0 porque la orden no llegó a
 correr (Git Bash convirtió `origin/rama:ruta` en una ruta de Windows y git salió con `fatal`).
