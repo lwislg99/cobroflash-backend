@@ -17,7 +17,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
-  DENTRO, FUERA, NO_DECIDIBLE, censar, linea, ramasDelTicket, artefactosQueNombra,
+  DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, esFalloDeRed, linea, ramasDelTicket,
+  artefactosQueNombra,
 } from '../scripts/censo-regla-42.mjs';
 
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
@@ -55,20 +56,69 @@ const POSITIVOS = [866, 881];
 // garantizar y lo que un fixture sacado del propio censo no garantizaría.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-/** Cero red, cero escritura: sólo pregunta. */
+/** Cero escritura: sólo pregunta. La salida de error se RECOGE, para poder decir por qué falló. */
 function git(args) {
-  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1331 · LA RED NO SE LLAMA AL CARGAR EL MÓDULO, Y SU FALTA SE DICE CON SU NOMBRE.
+//
+// Hasta el 1-oct-2026 aquí ponía `const NEGATIVO = negativoVivo()` en el nivel superior. Con el
+// runner sin DNS, `ls-remote` lanzaba AL CARGAR y el fichero no llegaba a declarar NI UN test:
+// el check obligatorio caía con «1 fail» sin nombre de caso, y quien lo miraba buscaba la causa
+// en su propio diff (PR #2046: el único rojo de 9.404 tests).
+//
+// Ahora el negativo se deriva DENTRO del caso que lo usa (una vez por proceso), y los dos casos
+// puros —identidad y artefactos— corren haya red o no.
+//
+// ⚠️ La red se llama en DOS sitios y los dos están cubiertos: aquí (`negativoVivo`) y dentro de
+// `censarConMotivo` (`scripts/censo-regla-42.mjs`). Sacar sólo éste dejaba 3 de 5 casos cayendo
+// con un «CIEGO» que no decía de qué.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * El veredicto de un caso que NO HA PODIDO MIRAR. No devuelve: lanza.
+ *
+ * 🔴 UN CIEGO NO ES UN VERDE, Y AQUÍ TAMPOCO SE SALTA: el caso CAE, igual que caía antes de
+ * SCRUM-1331. Lo que cambia es lo que DICE: si la causa es la red, que no es el cambio que se
+ * está probando. Que un ciego por red deje pasar el check obligatorio (saltándose con su motivo)
+ * es una DECISIÓN que este fichero no toma: está formulada en SCRUM-1331 y, mientras no se firme,
+ * se conserva lo que había — sin red, rojo.
+ */
+function ciego(c) {
+  if (c.que === SIN_RED) {
+    assert.fail('🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al '
+      + `remoto («${c.detalle}»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es `
+      + 'un rojo del código ni un verde, es que no se pudo mirar. RELANZA la tanda; si con red sigue '
+      + 'cayendo, entonces sí es un fallo de verdad.');
+  }
+  assert.fail(`🔴 CIEGO (${c.que}): no se han podido leer las refs remotas o el árbol de \`main\` `
+    + `(«${c.detalle}»). Sin eso no se mide, y «no he podido» no es «no hay».`);
 }
 
 /**
- * Un ticket con rama viva SIN mergear hoy, o `null` si no hay ninguno.
+ * Un ticket con rama viva SIN mergear hoy: `{ n, ciego }`. `n` es `null` si no hay ninguno, y
+ * `ciego` trae el motivo si no se pudo ni preguntar.
  *
- * `null` NO es «todo bien»: es que este control no se puede ejercitar, y entonces el caso se
+ * `n === null` NO es «todo bien»: es que este control no se puede ejercitar, y entonces el caso se
  * SALTA declarando el motivo. Un negativo que no se puede montar y pasa en silencio cuenta como
  * verde sin haberse ganado nada.
  */
+let negativoYaDerivado = null;
 function negativoVivo() {
-  const heads = git(['ls-remote', '--heads', 'origin']).split('\n').filter(Boolean);
+  negativoYaDerivado ??= derivarNegativo();
+  return negativoYaDerivado;
+}
+
+function derivarNegativo() {
+  let heads;
+  try {
+    heads = git(['ls-remote', '--heads', 'origin']).split('\n').filter(Boolean);
+  } catch (e) {
+    const detalle = String(e?.stderr || e?.message || '').trim().split('\n').filter(Boolean).pop() ?? '';
+    return { n: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : 'SIN_REFS', detalle: detalle.slice(0, 300) } };
+  }
   const candidatos = [];
   for (const fila of heads) {
     const [sha, ref] = fila.split(/\s+/);
@@ -83,10 +133,8 @@ function negativoVivo() {
   }
   // El más alto: el más reciente, y por tanto el que menos probable es que esté a punto de
   // mergearse mientras corre esta misma tanda.
-  return candidatos.length ? Math.max(...candidatos) : null;
+  return { n: candidatos.length ? Math.max(...candidatos) : null, ciego: null };
 }
-
-const NEGATIVO = negativoVivo();
 
 // ═══ 🔴 POR IDENTIDAD: el número no casa dentro de otro ═════════════════════════════════════
 
@@ -119,10 +167,11 @@ test('SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del núm
 // ═══ 🔴 EL SUELO Y LOS DOS CONTROLES, sobre el árbol de verdad ══════════════════════════════
 
 test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO', (t) => {
-  const c = censar([...POSITIVOS, NEGATIVO]);
-  assert.ok(c !== null,
-    '🔴 CIEGO: no se han podido leer las refs remotas o el árbol de `main`. Sin eso no se mide, y '
-    + '«no he podido» no es «no hay».');
+  const negativo = negativoVivo();
+  if (negativo.ciego) ciego(negativo.ciego);
+  const NEGATIVO = negativo.n;
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, NEGATIVO]);
+  if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
 
   // 🔴 SUELO: cero DENTRO es ceguera, no un tablero limpio.
@@ -162,8 +211,8 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
 test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo', () => {
   // Un número que con toda seguridad no tiene rama, ni entrada, ni ficheros, ni commits.
   const inventado = 999999;
-  const c = censar([inventado]);
-  assert.ok(c !== null, '🔴 CIEGO: no se pudo medir.');
+  const { censo: c, ciego: censoCiego } = censarConMotivo([inventado]);
+  if (censoCiego) ciego(censoCiego);
   const f = c.filas.find((x) => x.n === inventado);
 
   assert.equal(f.cubo, NO_DECIDIBLE,
@@ -178,8 +227,10 @@ test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, 
 // ═══ EL REPARTO, que es el entregable ═══════════════════════════════════════════════════════
 
 test('SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN', (t) => {
-  const c = censar([...POSITIVOS, NEGATIVO, 41, 534, 691]);
-  assert.ok(c !== null, '🔴 CIEGO: no se pudo medir.');
+  const negativo = negativoVivo();
+  if (negativo.ciego) ciego(negativo.ciego);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, negativo.n, 41, 534, 691]);
+  if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
   for (const f of c.filas) t.diagnostic(`  SCRUM-${String(f.n).padEnd(6)} ${f.cubo.padEnd(13)} ${f.motivo.slice(0, 95)}`);
 
