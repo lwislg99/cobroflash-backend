@@ -102,14 +102,21 @@ const SOLO = (process.argv[2] || '').split(',').filter(Boolean);
 const ELEGIDAS = MUTACIONES.filter((x) => !SOLO.length || SOLO.some((p) => x.id.startsWith(p + ' ')));
 const filas = [];
 let mudas = 0;
+// Una mutacion de `src/` deja su build en `dist/` aunque el fuente se restaure. La siguiente de
+// `src/` lo pisa con el suyo, pero una del MOTOR no compila: correria el test de efecto contra el
+// `dist/` de la mutacion anterior y lo veria caer sin tener nada que ver.
+let distMutado = false;
 for (const m of ELEGIDAS) {
   const original = fs.readFileSync(m.f, 'utf8');
   const veces = original.split(m.de).length - 1;
   if (veces !== 1) { filas.push(`${m.id}: CIEGO — el ancla aparece ${veces} veces, no se aplico`); mudas++; continue; }
   try {
     fs.writeFileSync(m.f, original.replace(m.de, () => m.a));
-    if (m.f !== MOTOR) {
+    if (m.f !== MOTOR || distMutado) {
+      if (m.f === MOTOR) fs.writeFileSync(m.f, original);
       b = build();
+      distMutado = m.f !== MOTOR;
+      if (m.f === MOTOR) fs.writeFileSync(m.f, original.replace(m.de, () => m.a));
       if (b.status !== 0) { filas.push(`${m.id}: NO COMPILA (${(b.stdout || '').split('\n')[0]})`); mudas++; continue; }
     }
     const r = losDos();
