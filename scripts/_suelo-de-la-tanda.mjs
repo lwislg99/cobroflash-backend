@@ -215,7 +215,7 @@ export function ficherosMudosDelTap(texto) {
  * 🔴 SCRUM-1380 · UN FICHERO QUE CORRIÓ Y PERDIÓ SU INFORME deja la MISMA entrada que uno sin tests.
  *
  * Medido el 1-oct-2026 (SCRUM-1366): `tests/scrum237-negacion-respaldada.test.mjs` corre entero en el
- * CI, imprime su censo y el runner no registra ninguno de sus 8 tests. En el TAP queda
+ * CI, imprime su censo y el runner no registra ninguno de sus tests. En el TAP queda
  * `ok 352 - tests/scrum237-….test.mjs`, idéntica a la de un fichero vacío, y el mensaje mandaba a
  * buscar un `import` roto en una rama que no tenía nada. Lo único que separa los dos casos es el
  * `duration_ms` de esa entrada:
