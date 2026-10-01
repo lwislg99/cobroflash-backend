@@ -329,7 +329,8 @@ commit de merge `761db44f2f18bc69e55047ebc2e26e55d6d1c89d`.
 |---|---|
 | build + tests (el obligatorio) | verde: 9.568 casos, 9.470 pasan, 0 caen, 98 saltos |
 | navegador · zona roja · constancia del ALTER | verdes |
-| meta-guard y trinquete de zona | sin terminar al escribir esto; no bloquean el merge |
+| trinquete de zona | verde esta vez (en #2060 salió rojo por casos ausentes de `scrum524b`) |
+| meta-guard | **salió con 2 (ciego), y no es de este cambio**: 365 mediciones, 364 mutaciones vivas, 0 mudas, 0 ciegas y **un fichero muerto**, `scrum834-puerta-avisador-rojo.test.mjs`: al mutar, el fichero no reportó ni un nombre de test. En #2060, con el mismo guard y sin tocar ese fichero, la misma mutación había salido viva. No es un caso que pasa en un sitio y cae en otro; es un fichero que no llega a contar. `scrum834` está en la lista de ficheros que pierden casos de SCRUM-1339 (13 jobs). No bloquea el merge. |
 
 El obligatorio de #2060 había contado 9.551 casos sobre el `main` anterior; éste, 9.568, con dos PR
 más dentro (SCRUM-1327 y SCRUM-1331, que añaden tests). No he comprobado que la diferencia, 17, sea
