@@ -66,6 +66,8 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',
   // SCRUM-1089b: `copiarSkillsA()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
   'tests/scrum1089b-espejo-skills-agentes.test.mjs',
+  // SCRUM-1298: su `banco()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
+  'tests/scrum1298-mesa-por-puesto.test.mjs',
   'tests/scrum253-adopcion.test.mjs',
   'tests/scrum258-nota-por-sesion.test.mjs',
   'tests/scrum351-diagnostico-dependencias.test.mjs',
