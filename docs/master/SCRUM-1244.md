@@ -264,3 +264,55 @@ lanzador que corre un fichero cada vez.
 - Di el coste de la tanda al orquestador como «1,5-2,0 GB» leyendo solo la caída de la memoria libre. Cruzado
   con la suma de `node.exe`, es **1,7-2,2 GB**. La corrección está arriba.
 - Le escribí una hora «a ojo» en el aviso de la denegación en vez de leerla del reloj.
+
+## ⑦ 1-oct: la tanda de HOY terminó — y dos condiciones del entorno que fabrican rojos con cara de defecto
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:01:05Z
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: lo que falta es que la receta de la tanda diga en qué shell se corre, y ese texto vive en `CLAUDE.md`, derivado del máster; lo decide el fundador y aquí sólo se deja medido.
+
+### El número de hoy
+
+| quién, dónde | tests | pass | fail | saltados | duración |
+| --- | --- | --- | --- | --- | --- |
+| el fundador, `npm test` en `cmd.exe`, esta máquina, 1-oct | 9.338 | 9.156 | 44 | 138 | 5 min 17 s |
+| CI del PR #2033 (Linux), 1-oct 00:49Z | 9.343 | 9.243 | 2 | 98 | — |
+
+⇒ **La tanda entera TERMINÓ hoy en la máquina del equipo, con su línea de recuento.** La afirmación del
+título queda tumbada también con el número de hoy, no sólo con las cinco tandas del 28-sep.
+
+**De segunda mano, y dicho:** la fila local me la ha pasado el orquestador a partir de lo que pegó el
+fundador; no he visto la salida. La fila del CI la he leído yo del log del job.
+
+**Sin pico de memoria.** Se corrió `npm test` a secas, sin el muestreador: no hay ni pico ni caída de la
+memoria libre de hoy. **El coste sigue siendo el del 28-sep (1,7-2,2 GB)**; el de hoy queda sin medir.
+
+### Los 44 rojos locales: 2 son de `main`, 42 son de la shell
+
+- **2 son los trinquetes de fecha** (`scrum128` y `scrum55`, «la lista mengua (ratchet + caducidad)»).
+  Son los mismos 2 del CI: `main` los lleva desde medianoche y los trae cualquier PR de hoy.
+- **42 son por correrla desde `cmd.exe`, donde no hay `bash` en el PATH**: `spawnSync bash ENOENT`,
+  «🔴 CIEGO: no hay `bash` en esta máquina» y, en cascada, `null !== 0`. Reparto 2 + 42 según la lectura
+  del orquestador sobre el pegado; **no los he contado yo uno a uno**. Lo que sí he medido, leyendo el
+  árbol: **9 ficheros de test nombran `bash` literalmente** para lanzarlo.
+
+### 🔴 Dos condiciones del entorno que fabrican rojos con cara de defecto
+
+| condición | lo que fabrica | cómo se lee en el resumen |
+| --- | --- | --- |
+| **`--max-old-space-size=256`** (§⑥) | 5 de los 12 ficheros pesados mueren con «heap out of memory» | «1 test, 1 fail» por fichero: parece un guard que ha saltado |
+| **correr `npm test` desde `cmd.exe` o PowerShell** | 42 tests sin intérprete | «fail 44»: varios se declaran CIEGOS, que es lo correcto, pero el total no lo distingue |
+
+Las dos son la misma forma: el test no llegó a medir y el resumen lo cuenta como un fallo del producto.
+Quien persiga esos rojos persigue un defecto que no existe.
+
+**La receta de la casa no dice en qué shell se corre la tanda.** El bloque de comandos de `CLAUDE.md` es
+de bash, pero en ningún sitio dice que la tanda NECESITA `bash` en el PATH. **Propuesta, no aplicada**
+(es texto derivado del máster): una línea en ese bloque — «la tanda se corre desde Git Bash: desde `cmd`
+o PowerShell, los tests que lanzan `bash` salen en rojo sin serlo».
+
+### El CI de este PR
+
+`build + tests` salió rojo en #2033 **sólo por los dos trinquetes de fecha** (9.343 tests, 2 fail): no es
+de este cambio, que es sólo registro. El meta-guard también salió rojo, por dos mudos de `scrum853` y un
+ciego de `scrum859`, ninguno tocado aquí.
