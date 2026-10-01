@@ -470,3 +470,53 @@ Desde la raíz del árbol, con todo commiteado:
 
 `banco.mjs todas` tarda unos seis minutos: casi todo es esperar a que venzan los plazos de verdad. Los modos
 `mutada` y `censo` de `distancia-mudez.mjs` se niegan a correr sobre una carpeta que cuelgue de un repositorio.
+
+## Después de empujar: el banco no borraba sus temporales si reventaba
+
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+
+(Sesión `jv-j6k`, relevo de J6j. Lo de este apartado está medido sobre la rama con `origin/main` =
+`b3b40554ed5441c285c780590a98d1665636e778` mezclado.)
+
+El obligatorio del PR #2117 cayó sobre `e08d41e9` por un caso, «SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin
+borrarse», que señalaba las cuatro llamadas a `mkdtempSync` de `banco.mjs` (líneas 63, 100, 133 y 206 de aquel
+commit): se borraban, pero fuera de un `finally`, así que un fallo a mitad dejaba la carpeta. El guard tenía razón
+y no se ha tocado. Visto en rojo antes de arreglar (4 casos: 3 pasan y cae el ③ con esas cuatro líneas) y en verde
+después (4 de 4).
+
+Y medido por efecto, no sólo por forma. Reventando a propósito cada sitio justo después de crear su carpeta, con
+un `node_modules` de mentira:
+
+| versión de `banco.mjs` | sitios que dejan su carpeta en el temporal del sistema |
+|---|---|
+| la de `e08d41e9` | 4 de 4 |
+| la arreglada | 0 de 4 |
+
+Tres sitios (`sonda`, `plazo-test`, `empuje`) usan ahora `temporal()` de `tests/_temporal.mjs`. **El cuarto,
+`montar()`, no, y a propósito:** dentro de esa carpeta cuelga el enlace al `node_modules` de verdad, y `temporal()`
+la borraría al salir sin quitar antes el enlace, que es la cicatriz de este mismo ticket. `montar()` registra su
+propio `process.on('exit')`, que hace lo mismo que `desmontar()`: quita el enlace, comprueba que lo enlazado sigue
+entero, y sólo entonces borra. Si el enlace no se deja quitar, la copia se queda.
+
+Medido aparte, con un destino de mentira: en node 24.18.0 sobre Windows, `fs.rmSync` recursivo NO atraviesa un
+enlace de directorio (borra la copia y deja el destino). Es una muestra en una versión; no dice nada de lo que
+borra la carpeta de un trabajo cuando el trabajo se elimina, que es de lo que habla la cicatriz.
+
+**Las salidas de esta carpeta (`salida-*.txt`) son de `banco.mjs` tal como estaba en `e08d41e9`.** Con el
+arreglado se volvieron a correr cuatro de los nueve modos: `plazo-test`, `empuje` y `gateados` dan la misma línea
+de veredicto, byte a byte, y `sonda` (que no da veredicto) las mismas 19 líneas salvo tiempos, ruta y commit.
+`staging` no usa carpeta temporal. **`meta-async`, `meta-sync`, `mudez` y `mudez-con-color` NO se volvieron a
+correr:** pasan por el mismo `montar()` y `desmontar()` que `gateados`, y eso está leído, no ejecutado.
+
+Lo que salió de paso y no es de este ticket: el censo de `scripts/_censo-mkdtemp.mjs` empareja la creación con su
+borrado por el NOMBRE de la variable en todo el fichero, sin mirar la función. Preguntado a `clasificaFuente` con
+fuentes fabricadas: una función que no borra su `dir` sale SIN_LIMPIEZA sola, y GARANTIZADA si otra función del
+mismo fichero borra en un `finally` un `dir` suyo (control: con otro nombre sigue SIN_LIMPIEZA). En este banco
+las cuatro carpetas se llamaban `dir`: arreglar sólo una habría puesto el guard en verde con tres fugas dentro.
+No se toca aquí; va al orquestador.
+
+La ruta del `import` desde esta carpeta son cuatro `../`, no los tres del ejemplo de la orden, que ya avisaba de
+comprobarla: se comprobó corriéndolo.
+
+Mi error: medí los retornos de carro de este registro con `grep` sobre la salida de `od` y me dio 12 en 200
+bytes; contados por bytes son 0. La trampa estaba escrita en la memoria del puesto.
