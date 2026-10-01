@@ -142,6 +142,24 @@ async function noCabeOtraFirma(clave, cuerpo) {
   return Boolean(espacio && espacio.estado === window.SIN_ESPACIO);
 }
 
+/**
+ * SCRUM-1302 · La marca `yaqu_hubo_cola` se pone al ENCOLAR, antes de subir, y sólo la retiraba el
+ * drenado. Una firma que sube a la primera sale de la cola pero dejaba la marca, y el arranque
+ * siguiente leía «hubo cola y el almacén está vacío»: avisaba de una pérdida que no hubo (medido
+ * en Chromium contra yaqu.app, 10 de 10 arranques).
+ *
+ * Mismo criterio que el drenado: se retira SÓLO si la cola se ha podido leer y está vacía. Si
+ * queda otra firma, o no se puede leer, la marca se queda — sigue habiendo algo que perder.
+ */
+async function retirarLaMarcaSiNoQuedaNada() {
+  if (typeof window.olvidarQueHuboCola !== 'function' || typeof window.leerFirmasPendientes !== 'function') return;
+  let cola;
+  try { cola = await window.leerFirmasPendientes(); } catch (_e) { return; }
+  if (cola && cola.estado === window.GUARDADO && Array.isArray(cola.firmas) && cola.firmas.length === 0) {
+    window.olvidarQueHuboCola();
+  }
+}
+
 async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   const clave = claveDeFirma(documentoId, tipo);
   if (!clave) {
@@ -163,6 +181,20 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   try {
     respuesta = await subir();
   } catch (error) {
+    // 🔴 SCRUM-1302 · EL 409 `albaran_locked` / `parte_locked` TAMBIÉN AQUÍ ES «YA LA TIENE». El
+    // drenado lo sabía (`elServidorYaLaTiene`) y la firma directa no: con el detalle abierto y viejo
+    // —la cola subió la firma al volver la red y esa pantalla no se enteró—, firmar o «Reintentar»
+    // devolvía ②, la vista decía que no se había podido registrar una firma que SÍ estaba
+    // registrada, y la firma volvía a la cola con el servidor ya en firmado. Es la MISMA función
+    // que usa el drenado, no una segunda regla. Se desencola aunque este intento no la encolara:
+    // puede venir de uno anterior, con la misma clave. Sin `respuesta`: las vistas repintan
+    // pidiendo el documento al servidor, que es quien sabe con qué firma se quedó.
+    if (elServidorYaLaTiene(error)) {
+      await window.quitarFirmaPendiente(clave);
+      await olvidarElRechazo(clave);
+      await retirarLaMarcaSiNoQuedaNada();
+      return { estado: window.FIRMA_A_SALVO, encolada, yaLaTenia: true };
+    }
     // SCRUM-890 · el servidor ha LEÍDO la firma y la rechaza por el documento: reintentarla da el
     // mismo no. Sale de la cola; el trazo sigue en pantalla porque la vista relanza el error.
     if (elServidorLaRechaza(error)) {
@@ -187,6 +219,7 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   // ya ha declarado: la firma ESTÁ a salvo, y eso no depende de que el móvil sepa olvidarla.
   if (encolada) await window.quitarFirmaPendiente(clave);
   await olvidarElRechazo(clave);
+  await retirarLaMarcaSiNoQuedaNada();
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
