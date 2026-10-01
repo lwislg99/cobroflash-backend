@@ -136,14 +136,14 @@ Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm 
 - **El test**: 14 casos, 14 pasan.
 - **Mutaciones**: 14 de 14 caen; árbol restaurado (sha256 por fichero y `git status` vacío).
 - **`guards:entrada`**: 12 guards, 122 tests, verde.
-- **Tanda DIRIGIDA, con turno**: 449 ficheros de 1.163 (los que leen `scripts/`, `docs/master`, las
+- **Tanda DIRIGIDA, con turno**: 449 ficheros de 1.162 (los que leen `scripts/`, `docs/master`, las
   cicatrices o el meta-guard), en cuatro trozos, concurrencia 3, TAP a fichero fuera del árbol:
   4.100 tests · 4.026 pasan · 71 saltan · **3 caen, los tres míos**, arreglados en el código y
   repetidos en verde:
   - `scrum533`: dos evidencias con CR en disco;
   - `scrum812`: el trinquete de guards que declaran sube a 27 (entra este test) — anotado allí;
   - `scrum864c`: los dos bancos creaban su temporal sin garantizar el borrado; ahora usan `temporal()`.
-- **NO corrido**: los otros 714 ficheros de la suite, `guards:visuales`, y el meta-guard entero
+- **NO corrido**: los otros 713 ficheros de la suite, `guards:visuales`, y el meta-guard entero
   (sólo mis 14 declaraciones). Eso lo corre CI sobre el merge.
 
 ## Errores míos
@@ -155,8 +155,8 @@ Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm 
    imprime su testigo («binario renombrado = sí»).
 2. **Escribí «no verdes» en una frase de la puerta** y `tests/scrum1313` la tumbó: es la palabra
    que ese ticket retiró. Cambié la frase.
-4. **Tres rojos míos en la tanda dirigida** (CR en disco, el trinquete de SCRUM-812 y un temporal
-   sin borrado garantizado): los cazaron los guards de la casa antes de empujar.
 3. **Un aserto mío mataba el fichero en vez de dar su rojo**: `assert.equal` sobre dos nodos del
    AST intenta pintarlos enteros al fallar. Lo cazó la mutación («FICHERO MUERTO»); ahora es
    `assert.ok` con el tipo del nodo en el mensaje.
+4. **Tres rojos míos en la tanda dirigida** (CR en disco, el trinquete de SCRUM-812 y un temporal
+   sin borrado garantizado): los cazaron los guards de la casa antes de empujar.
