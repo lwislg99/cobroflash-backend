@@ -1,0 +1,32 @@
+# ANTES (origin/main 258fc29b, fichero sin tocar) · sin DNS
+not ok 1 - tests\\scrum804b-el-barrido-de-la-42.test.mjs
+  exitCode: 1
+# tests 1
+# pass 0
+# fail 1
+# skipped 0
+
+# DESPUES · con red
+ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+# tests 5
+# pass 5
+# fail 0
+# skipped 0
+
+# DESPUES · sin DNS
+ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+not ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+  error: "🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al remoto («fatal: unable to access 'https://sin-dns.invalid/lwislg99/cobroflash-backend.git/': Could not resolve host: sin-dns.invalid»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es un rojo del código ni un verde, es que no se pudo mirar. RELANZA la tanda; si con red sigue cayendo, entonce
+not ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+  error: "🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al remoto («fatal: unable to access 'https://sin-dns.invalid/lwislg99/cobroflash-backend.git/': Could not resolve host: sin-dns.invalid»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es un rojo del código ni un verde, es que no se pudo mirar. RELANZA la tanda; si con red sigue cayendo, entonce
+not ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+  error: "🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al remoto («fatal: unable to access 'https://sin-dns.invalid/lwislg99/cobroflash-backend.git/': Could not resolve host: sin-dns.invalid»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es un rojo del código ni un verde, es que no se pudo mirar. RELANZA la tanda; si con red sigue cayendo, entonce
+# tests 5
+# pass 2
+# fail 3
+# skipped 0
