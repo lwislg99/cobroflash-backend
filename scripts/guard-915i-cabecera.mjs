@@ -40,10 +40,11 @@ const TITULO_HOJA = '¿Vaciar este documento?';
 const FRASE_HOJA = 'Se quitan el cliente, las líneas y los cambios de este documento. Tus plantillas y tus opciones de siempre no se tocan.';
 const ITEMS_MENU = ['💾 Guardar como plantilla', 'Limpiar formulario'];
 
+let modoSuelto = 'no';
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915i', plan: 'pro', role: 'admin',
   onboardingCompleted: true, subscriptionStatus: 'active', voiceEnabled: false,
-  documentoSuelto: 'no',
+  documentoSuelto: modoSuelto,
 });
 
 function arrancarServidor() {
@@ -195,6 +196,11 @@ async function teclear(pag, selector, texto) {
 }
 
 async function abrirPagina(pag, etiqueta, hash, selectorListo) {
+  // SCRUM-1313 · el modo lo pone LA PÁGINA que se abre. Este arnés servía 'no' para todo, y desde
+  // SCRUM-825 (PR #1943, 29-sep-2026) la ruta `#invoices-new` falla cerrado en ese modo: pinta el
+  // listado, no el editor, y el caso D se quedó CIEGO dos días. El editor del documento suelto sólo
+  // existe en modo 'factura'; los casos del presupuesto siguen midiéndose en 'no', como antes.
+  modoSuelto = hash === 'invoices-new' ? 'factura' : 'no';
   await pag.goto('about:blank');
   // La URL va LITERAL por página (no `#${hash}`): el censo de SCRUM-548 lee qué página mide cada guard
   // por sus `goto`, y una plantilla se la escondería.
