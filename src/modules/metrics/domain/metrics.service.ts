@@ -190,6 +190,52 @@ function monthRange(offset = 0) {
  * `client` es inyectable SOLO para poder probar la relación entre etapas sin BD. Producción
  * nunca lo pasa: usa el `prisma` global. (Mismo patrón que `buildVerifactuRegistrosXml`.)
  */
+/**
+ * SCRUM-1317 · EL INICIO DEL OPERARIO — lo que pinta su portada, y nada más.
+ *
+ * `getHomeMetrics` devuelve 16 campos y 9 son dinero del negocio (lo que se debe, lo cobrado,
+ * los gastos, el beneficio, la facturación por cliente). Su ruta pasa a admin; ésta es la que
+ * se queda el operario, y por eso NO es un recorte de aquélla: es una función propia, que no
+ * consulta ni un importe agregado. Si mañana se añade un KPI a la portada del admin, aquí no
+ * aparece solo.
+ *
+ *   · los tres RECUENTOS de los globos del menú (solicitudes, presupuestos esperando, facturas
+ *     pendientes): son recuentos de listas que el operario ya puede abrir (S1: «ver sí»);
+ *   · la actividad reciente: los últimos presupuestos, que ya ve en Presupuestos. Se mantiene
+ *     porque ocultarla aquí no cambiaría lo que puede ver (orquestador, SCRUM-1317). Si un
+ *     operario debe ver la actividad de sus compañeros es una decisión más grande que esta
+ *     pantalla, y sigue pendiente desde SCRUM-55.
+ */
+export async function getInicioOperario(merchantId: number) {
+  const [pendingCount, quotesAwaiting, pendingRequests, recentQuotes] = await Promise.all([
+    prisma.invoice.count({ where: { merchantId, status: 'pending' } }),
+    prisma.quote.count({ where: { merchantId, status: 'sent' } }),
+    prisma.quoteRequest.count({ where: { merchantId, status: 'pending' } }),
+    prisma.quote.findMany({
+      where: { merchantId },
+      include: { customer: { select: { name: true } } },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+    }),
+  ]);
+
+  return {
+    pendingCount,
+    quotesAwaiting,
+    pendingRequests,
+    recentActivity: recentQuotes.map((q) => ({
+      type: 'quote' as const,
+      id: q.id,
+      quoteNumber: q.quoteNumber,
+      status: q.status,
+      customer: q.customer?.name ?? '—',
+      total: Number(q.total),
+      currency: q.currency,
+      updatedAt: q.updatedAt,
+    })),
+  };
+}
+
 export async function funnelForPeriod(
   merchantId: number,
   start: Date,

@@ -60,6 +60,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // justo al operario que esta en la obra, que es quien mas lo necesita. Mismo criterio que /admin/entorno.
   { method: 'POST', path: '/admin/soporte', why: 'Escribirnos desde dentro del producto; el operario en obra es quien mas lo necesita y no es capacidad de admin' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
+  // SCRUM-1317 · DECISIÓN DE PERMISOS, no un trámite: es la portada del operario, y nace para
+  // poder CERRAR `/admin/metrics/home`, que era su Inicio y devuelve el dinero del negocio (lo
+  // que se debe, lo cobrado, gastos, beneficio, facturación por cliente). Ésta es una función
+  // propia (`getInicioOperario`), no un recorte de aquélla: tres recuentos de listas que ya
+  // puede abrir y los últimos presupuestos, que ya ve en Presupuestos. Ni un importe agregado.
+  { method: 'GET', path: '/admin/metrics/inicio', why: 'SCRUM-1317: su portada — los tres recuentos de los globos del menú y los últimos presupuestos, que ya ve en Presupuestos; sin ningún importe agregado del negocio' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
   { method: 'GET',  path: '/admin/customers', why: 'Ver la cartera de clientes es trabajo de campo' },

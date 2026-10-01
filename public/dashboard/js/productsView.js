@@ -913,9 +913,13 @@ function renderProductsView(container) {
       uiSkeletonRows(tbody, 8, 6);
       const merchantId = _merchantId || (_merchantId = await getMerchantId());
 
+      // SCRUM-1317 · sólo el admin pide los proveedores. `GET /admin/providers` pasa a admin, y
+      // con las dos peticiones en el mismo `Promise.all` su 403 se llevaba por delante la lista
+      // de productos del operario, que sí es suya (S1). Los proveedores sólo alimentan el
+      // desplegable del alta y de la edición, que él no puede usar desde SCRUM-614.
       const [items, providers] = await Promise.all([
         listProducts(merchantId),
-        listProviders(merchantId),
+        window.appUserRole === 'admin' ? listProviders(merchantId) : [],
       ]);
 
       _providers = Array.isArray(providers) ? providers : [];

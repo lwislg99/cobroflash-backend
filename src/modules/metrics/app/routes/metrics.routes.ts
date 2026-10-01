@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getHomeMetrics, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
+import { getHomeMetrics, getInicioOperario, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
@@ -13,6 +13,18 @@ router.get('/home', async (req, res) => {
     return res.json(metrics);
   } catch (err) {
     console.error('[GET /admin/metrics/home]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// SCRUM-1317: la portada del OPERARIO. Ruta propia y no un recorte por rol de `/home`: así
+// `/home` se puede cerrar de verdad y esta no devuelve ni un importe agregado del negocio.
+// Declarada en TECNICO_ALLOWED con su motivo.
+router.get('/inicio', async (req, res) => {
+  try {
+    return res.json(await getInicioOperario(req.merchantId));
+  } catch (err) {
+    console.error('[GET /admin/metrics/inicio]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
