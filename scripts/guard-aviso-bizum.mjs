@@ -57,6 +57,7 @@ const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -364,11 +365,20 @@ if (ciegos.length) {
   console.error('\n  🔴 EL ESCÁNER NO SUPO MIRAR — y esto NO es «ningún merchant desprotegido»:\n');
   for (const c of ciegos) console.error('   · ' + c);
   console.error('\n  Un cero aquí se leería como que no hay nadie en riesgo. Son siete.\n');
-  process.exit(1);
 }
 if (fallos.length) {
   console.error('\n  🔴 ' + fallos.length + ' FALLO(S):\n');
   for (const f of fallos) console.error('   ' + f + '\n');
-  process.exit(1);
 }
+// SCRUM-1327 · el código sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`). Antes un ciego puro
+// salía con 1 —el mismo número que «he medido y está mal»— y, si además había fallos, el ciego iba
+// delante y los fallos NO SE IMPRIMÍAN. Visto en navegador: sin la ranura del aviso, salida 1.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
+}
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log('  ' + veredictoFinal.linea);
 console.log('\n  ✔ los cuatro casos se comportan como dicta el servidor, medido en el DOM vivo.\n');
