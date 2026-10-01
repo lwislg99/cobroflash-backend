@@ -157,3 +157,11 @@ En Chromium gana siempre el detector: el aviso falso sale el 100 % de las veces,
 **Verificado.** Mismo fichero de test, 12/12. Rojo antes: caen los dos del defecto (confirmada y «ya la tenía»). Controles: el detector SÍ caza marca + cola vacía; si la firma no sube, la marca se queda; si sube ésta y queda otra en la cola, la marca se queda. Vecinos (17 ficheros que nombran cola, drenado, marca o detector): 197/197.
 
 **Queda abierto, dicho y no arreglado:** con marca y cola vacía DE VERDAD (un desalojo real), el aviso depende de la misma carrera — `drenarAlAbrir` también borra la marca cuando encuentra la cola ya vacía (`quedan === 0`). En Chromium gana el detector y el aviso sale; en el banco de S4 con `persist` ≥5 ms gana el drenado y **una pérdida real se callaría**. Cambiarlo es rediseñar quién es dueño de la marca; no se toca aquí sin medir Safari.
+
+### Retirada de las dos entradas declaradas (sesión `s2-1octc`, 1-oct-2026)
+
+Al mezclar `main` (que ya trae SCRUM-1351 y SCRUM-1362), `tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs` cae en «los defectos del viaje son EXACTAMENTE los declarados»: H1 y H6 ya no se observan y sus entradas seguían en `scripts/_defectos-viaje-firma-declarados.json`. Se borran `firmar-lo-ya-subido-dice-que-no-se-registro-y-reencola` y `firmar-con-red-deja-la-marca-de-que-hubo-cola`; quedan dos (`el-detalle-abierto-no-se-entera-de-que-la-cola-subio`, `cerrar-sesion-borra-la-cola-sin-avisar`), cuyos defectos siguen vivos. Ninguna aserción se toca.
+
+**Autorización:** retirada autorizada por el fundador el 1-oct-2026 («1 autorizo lo que dices»), regla en `settings.local.json:70`. La sesión anterior (`s2-1octb`) no la hizo porque tenía una denegación propia sobre ese resultado; ésta arranca sin ella.
+
+**Medido:** ese fichero de test, rojo 12/13 antes de borrar (el que cae nombra justo esas dos claves) y verde 13/13 después.
