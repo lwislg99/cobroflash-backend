@@ -1,0 +1,3 @@
+2438:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-29T15:30:18.9345157Z [SCRUM-237] 914 negaciones · FUERTE 240 · MEDIO 403 · ESTRUCTURAL 118 · DÉBIL 153 · NINGUNO 0
+2597:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-29T15:30:18.9767311Z ✔ tests/scrum237-negacion-respaldada.test.mjs (2151.297956ms)
+12490:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-29T15:35:30.1518824Z [suelo de la tanda] ✅ suelo 8502 · total actual 9070 · margen 568 · derivado

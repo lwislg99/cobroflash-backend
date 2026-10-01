@@ -1,0 +1,54 @@
+artefacto	run	intento	conclusion	fichero	faltan	llamadas	literales	primer_ausente	forma	entrada
+11155370047	36849042279	1	failure	vigia-atascados.test.mjs	42	64	64	23	cola	sin entrada
+11156229790	36851820389	1	failure	scrum161-evidencia-tanda.test.mjs	2	22	22	21	cola	sin entrada
+11156229790	36851820389	1	failure	scrum522-guards-fuera-de-la-tanda.test.mjs	7	17	16	11	cola	sin entrada
+11156229790	36851820389	1	failure	vigia-atascados.test.mjs	31	64	64	34	cola	sin entrada
+11156727644	36852825128	1	success	scrum813-trinquete-de-zona.test.mjs	10	28	28	19	cola	sin entrada
+11156727644	36852825128	1	success	vigia-atascados.test.mjs	24	64	64	41	cola	sin entrada
+11158721194	36853168880	1	failure	scrum237-negacion-respaldada.test.mjs	8	8	8	1	entero	con entrada de fichero
+11158721194	36853168880	1	failure	scrum834-puerta-avisador-rojo.test.mjs	3	53	53	51	cola	sin entrada
+11157833830	36855923508	1	success	scrum176-guard-mensaje.test.mjs	7	11	9	5	cola	sin entrada
+11157833830	36855923508	1	success	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11158944035	36856531526	1	failure	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11160490269	36856729105	1	failure	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11161251226	36859091123	1	failure	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11161251226	36859091123	1	failure	scrum834-puerta-avisador-rojo.test.mjs	9	53	53	45	cola	sin entrada
+11161251226	36859091123	1	failure	vigia-atascados.test.mjs	18	64	64	47	cola	sin entrada
+11161812993	36860067926	1	success	scrum286-bloques-orden.test.mjs	5	24	24	20	cola	sin entrada
+11161313790	36860261197	1	success	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11161828771	36860171227	1	failure	scrum237-negacion-respaldada.test.mjs	8	8	8	1	entero	con entrada de fichero
+11161319227	36860610412	1	failure	scrum524b-trinquete-de-la-tabla.test.mjs	1	12	11	12	cola	sin entrada
+11161319227	36860610412	1	failure	scrum888g-senal-en-la-firma.test.mjs	3	10	5	8	cola	sin entrada
+11162145171	36860717695	1	success	scrum1262-la-baja-corta-todas-las-vias.test.mjs	1	10	6	10	cola	sin entrada
+11162145171	36860717695	1	success	scrum312-importador-clientes.test.mjs	5	27	27	23	cola	sin entrada
+11162485750	36861121169	1	success	scrum524b-trinquete-de-la-tabla.test.mjs	1	12	11	12	cola	sin entrada
+11163236187	36861263916	1	success	vigia-atascados.test.mjs	23	64	64	42	cola	sin entrada
+11162202016	36862095124	1	success	scrum1262-la-baja-corta-todas-las-vias.test.mjs	5	10	6	6	cola	sin entrada
+11163032993	36860171227	2	success	scrum1323-resumen-vs-detalle-sif1.test.mjs	1	14	13	14	cola	sin entrada
+11162069344	36862419563	1	success	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11162069344	36862419563	1	success	scrum834-puerta-avisador-rojo.test.mjs	14	53	53	40	cola	sin entrada
+11162069344	36862419563	1	success	scrum931-un-solo-importe-de-plantilla.test.mjs	6	13	9	8	cola	sin entrada
+11161994827	36863578275	1	failure	scrum237-negacion-respaldada.test.mjs	8	8	8	1	entero	con entrada de fichero
+11164124022	36863578275	2	success	scrum1323-resumen-vs-detalle-sif1.test.mjs	4	14	13	11	cola	sin entrada
+11164124022	36863578275	2	success	scrum312-importador-clientes.test.mjs	5	27	27	23	cola	sin entrada
+11164124022	36863578275	2	success	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11165470653	36866436425	1	success	scrum834-puerta-avisador-rojo.test.mjs	9	53	53	45	cola	sin entrada
+11164922920	36867966094	1	cancelled	scrum454-destructivo-sin-comprobacion.test.mjs	6	14	10	9	cola	sin entrada
+11164922920	36867966094	1	cancelled	vigia-atascados.test.mjs	4	64	64	61	cola	sin entrada
+11164958708	36868204270	1	success	scrum834-puerta-avisador-rojo.test.mjs	35	53	53	19	cola	sin entrada
+11166322806	36868764493	1	success	scrum996-suelo-de-arranque.test.mjs	2	22	22	21	cola	sin entrada
+11166563147	36869452118	1	success	scrum522-guards-fuera-de-la-tanda.test.mjs	3	17	16	15	cola	sin entrada
+11165494538	36869390442	1	success	scrum834-puerta-avisador-rojo.test.mjs	32	53	53	22	cola	sin entrada
+11167975771	36871008807	1	failure	scrum1262-la-baja-corta-todas-las-vias.test.mjs	5	10	6	6	cola	sin entrada
+11168271951	36871031378	1	failure	scrum834-puerta-avisador-rojo.test.mjs	25	53	53	29	cola	sin entrada
+11168560474	36871803226	1	success	scrum1323-resumen-vs-detalle-sif1.test.mjs	4	14	13	11	cola	sin entrada
+11167468696	36872039381	1	success	scrum524b-trinquete-de-la-tabla.test.mjs	3	12	11	10	cola	sin entrada
+11167474519	36872559721	1	success	scrum996-suelo-de-arranque.test.mjs	2	22	22	21	cola	sin entrada
+11167739879	36872847972	1	failure	scrum1262-la-baja-corta-todas-las-vias.test.mjs	5	10	6	6	cola	sin entrada
+11167739879	36872847972	1	failure	scrum237-negacion-respaldada.test.mjs	8	8	8	1	entero	con entrada de fichero
+11168955893	36873341958	1	success	scrum834-puerta-avisador-rojo.test.mjs	22	53	53	32	cola	sin entrada
+11169631306	36873132718	1	success	vigia-atascados.test.mjs	31	64	64	34	cola	sin entrada
+11170030913	36873487461	1	success	scrum1350-latido.test.mjs	8	32	30	25	cola	sin entrada
+11169263288	36872965725	1	success	scrum1262-la-baja-corta-todas-las-vias.test.mjs	5	10	6	6	cola	sin entrada
+11169263288	36872965725	1	success	scrum834-puerta-avisador-rojo.test.mjs	2	53	53	52	cola	sin entrada
+11169263288	36872965725	1	success	vigia-atascados.test.mjs	10	64	64	55	cola	sin entrada
