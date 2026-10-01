@@ -81,7 +81,8 @@ test('SCRUM-1281 ③ la familia vive en su raíz propia; en CI, fuera de la /tmp
 
   const raiz = raizDeFixturesGit();
   assert.ok(repoFixture().startsWith(raiz + path.sep), `repoFixture() está fuera de ${raiz}`);
-  if (process.env.RUNNER_TEMP && !process.env.YAQU_RAIZ_FIXTURES_GIT) {
-    assert.ok(!repoFixture().startsWith(os.tmpdir() + path.sep), 'en CI la fixture sigue en la /tmp compartida');
-  }
+  // Aquí vivía un `if (process.env.RUNNER_TEMP …)` que solo aseveraba en CI: una comprobación que
+  // solo asevera en un entorno no se comprueba en el otro (SCRUM-702 lo cazó). No hace falta: que
+  // con `RUNNER_TEMP` la raíz cuelga de él lo prueba la primera línea, con el entorno INYECTADO, y
+  // que `repoFixture()` vive en esa raíz lo prueba la de arriba, en cualquier máquina.
 });

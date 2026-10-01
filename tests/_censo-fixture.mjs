@@ -30,7 +30,7 @@ import { temporal } from './_temporal.mjs';
 // 4 rojos de `build + tests` desde el 24-sep con la misma firma: git se queda sin un fichero bajo
 // `.git/objects` A MITAD de una operación, siempre en esta familia (`repoFixture`, el clon de
 // `scrum775` y el de `_fixture-alcanzabilidad`). Aislada no cae nunca (J6: 0 de 600, dos brazos);
-// dentro de la tanda (~1.060 ficheros en paralelo) cae ~0,3 % de los montajes. Causa sin nombrar.
+// dentro de la tanda (todos los ficheros de test en paralelo) cae ~0,3 % de los montajes. Causa sin nombrar.
 //
 // Dos pasos baratos, antes que un vigía con inotify (decisión del orquestador):
 //  (b) La familia deja de compartir sitio: en CI vive bajo `$RUNNER_TEMP`, no en `/tmp` con todo lo
@@ -43,7 +43,7 @@ import { temporal } from './_temporal.mjs';
 /** Marcador fijo, una línea, para que el CI lo busque tal cual. No cambiarlo sin avisar a S5. */
 export const FIRMA_1281 = '[SCRUM-1281-FIRMA]';
 
-/** Los textos con que git ha caído en los 4 casos medidos (y el del control, que es el mismo). */
+/** Los textos con que git ha caído en los casos medidos (y el del control, que es el mismo). */
 const FIRMA_GIT = /(failed to copy file to .*[\\/]\.git[\\/]objects[\\/].*No such file or directory|unable to create temporary file: No such file or directory|failed to write commit object)/;
 
 /** ¿Este error de git es el del intermitente? */
