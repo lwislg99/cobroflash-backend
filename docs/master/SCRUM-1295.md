@@ -149,6 +149,12 @@ específica, 241 solo por la fila general, 0 sin fila. **32 con pariente en otro
 - Los dos casos del 29-sep salen: `fusionClientes.ts` (S1 ~ J2) y `parteOficinaView.js` (S2 ~ S4). La pregunta
   queda en `dos-equipos.md` §7.4, para los dos jefes. No la decido.
 
+🔴 **Construido y MUDO.** Las piezas 1+2 (SCRUM-1294, PR #1999) están en `main` desde el 30-sep: la A9, el
+import en `CLAUDE.md`, las cicatrices. **No le llegan a nadie todavía.** Las sesiones arrancan en el checkout
+compartido, que va muy por detrás, y el `CLAUDE.md` que cargan no es el de `main`. La norma existe y no se lee.
+Lo mismo valdrá para estos hooks el día que entren. Lo que lo enciende es la pieza 0, las mesas (SCRUM-1298).
+Hasta entonces, nadie debe darlo por funcionando.
+
 **No corrido aquí:** la tanda entera. Este worktree no tiene `node_modules` (`scrum804-la-rama-viva` cae por
 `typescript` ausente, no por el código). La tanda la da el CI.
 

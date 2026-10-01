@@ -243,10 +243,19 @@ efecto y se le cuenta al jefe en plano.
    1-oct-2026 sobre `36f1eee3`: 432 ficheros de producto, 241 solo por la fila general, **32 con pariente
    en otro puesto**. El censo no decide. Para cada uno, la pregunta es de los dos jefes: **¿es un hueco de
    la tabla, o es de ese puesto a propósito?** Se cierra escribiendo su fila en §3 (aunque sea para
-   confirmar al dueño actual: con fila propia deja de salir). Los dos que ya costaron un viaje el 29-sep:
-   - `src/modules/system/domain/fusionClientes.ts` → **S1** por la fila general; por el nombre, de J2
-     (clientes). Con él salen otros seis `…DelCliente.ts` / `…Cliente….ts` de `system/domain/`.
-   - `public/dashboard/js/parteOficinaView.js` → **S2** por la fila general; por el nombre, de S4 (partes).
+   confirmar al dueño actual: con fila propia deja de salir). Las preguntas se hacen por FAMILIA, no por
+   fichero: una pregunta sobre un grupo se contesta una vez; siete sobre ficheros se quedan sin contestar.
+   - **¿De quién es la familia «cliente» del servidor?** Hoy **S1**, solo por la fila general; por el
+     nombre, de J2 (que tiene `customerAdmin.ts`, `tagsDelCliente.ts`, `importarClientes.service.ts`). Son
+     ocho ficheros: seis en `src/modules/system/domain/` (`fusionClientes.ts`, que costó un viaje el
+     29-sep, `historialDelCliente.ts`, `historialWhatsAppDelCliente.ts`, `notasDelCliente.ts`,
+     `sitiosDelCliente.ts`, `puertaClienteReal.ts`), más `jobs/domain/consolidacionCliente.service.ts` y
+     `quotes/domain/decisionDelCliente.ts`.
+   - **¿De quién son las pantallas de parte y albarán que no son la ficha?** Hoy **S2**, solo por la fila
+     general; por el nombre, de S4 (que tiene `parteDetailView.js` y `albaranDetailView.js`). Son cuatro:
+     `parteOficinaView.js` (costó un viaje el 29-sep), `albaranAccion.js`, `albaranActionsRegistry.js` y
+     `albaranDesdePresupuestoModal.js`.
+   - El resto de la lista (20 ficheros sueltos) la da el censo; ninguno ha costado un viaje todavía.
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el
