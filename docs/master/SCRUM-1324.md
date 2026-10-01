@@ -184,3 +184,81 @@ mecanismo. Actions no cuesta dinero mientras el repositorio sea público.
    lo que el ticket prohíbe. El barrido por instantes de run no lo veía; lo destapó añadir la rejilla
    de 30 minutos. Lo fijan los casos ④ y ⑥, con el caso real del 30-sep.
 3. Un comentario del script decía «10 jobs» y son 9; corregido antes del primer commit.
+
+## SCRUM-1324b · El PR del vigía cayó por dos guards del CI: el vigía duplicaba lo que ya existía
+
+**Medido contra:** `origin/main` = `a5b62893c7616ddd19626afe5921eec67c691e9e` · 2026-10-01T03:36:57Z
+(J6 del equipo de Javier, sesión `jv-j6e`, relevo de J6c; encargo del orquestador `cobroflash-backend-5b`)
+
+A9: comprobación → `tests/scrum853-avisador-solo-obligatorio.test.mjs`
+
+### Qué cayó, leído del log y no de los títulos
+
+PR #2047, run `36807859456`, job «build + tests» (`110196119184`): 2 casos en rojo, los dos por lo
+que la rama AÑADÍA. Reproducidos en local sobre la rama con `main` mergeado, antes de tocar nada:
+52 casos, 50 pasan, caen esos mismos 2.
+
+| guard | qué dijo | qué había en `scripts/vigia-silencio-de-main.mjs` |
+| --- | --- | --- |
+| `tests/scrum853-avisador-solo-obligatorio.test.mjs` · «CENSO · … UN solo sitio lee la lista de obligatorios» | «hay copias del lector: `scripts/vigia-atascados.mjs`, `scripts/vigia-silencio-de-main.mjs`» | una segunda lectura de las reglas de `main`, escrita a mano |
+| `tests/scrum702-suelo-misma-poblacion.test.mjs` · «no entra NINGUNA dependencia del entorno nueva sin declararla» | «hay 20 ficheros leyendo una señal del entorno y el tope es 19» | elegía el binario de `gh` mirando la plataforma |
+
+El encargo traía la segunda como «usa una variable de entorno sin declararla». Medido, no es una
+variable: es la lectura de la plataforma. La diferencia decide el arreglo, porque la única forma de
+«declararla» es subir el tope dentro del propio guard, y eso no se hizo.
+
+### El arreglo: cambia el vigía, no los guards
+
+- **Los obligatorios** los lee `checksObligatoriosDeReglas`, importada de `scripts/vigia-atascados.mjs`,
+  que es el lector que `scrum853` protege. Y es mejor que la copia: devuelve `null` si no pudo leer la
+  lista, y con `null` el vigía sale CIEGO. La copia devolvía una lista vacía, que se lee como «nada es
+  obligatorio» y habría avisado también del rojo de «build + tests».
+- **El `gh`** ya no se elige según la máquina: se prueban en orden los de `RUTAS_GH`
+  (`scripts/equipo/ancla.mjs`, SCRUM-360), igual aquí que en CI. El que no existe deja paso al
+  siguiente; el que existe y falla, no.
+- **No se tocó** ningún guard, ningún tope ni ningún workflow. El tope de `scrum702` sigue en 19.
+  El workflow nuevo con `schedule` (opción (b), decidida por el fundador en el comentario 17719 de
+  Jira) NO entra en este PR.
+
+### El negativo: los guards siguen cayendo
+
+`docs/master/evidencias/SCRUM-1324/negativos.mjs`, salida en `negativos.txt`. Base verde antes y
+después (44 casos de los dos guards). **4 de 4 cazados, cada uno por el guard esperado y sólo por él:**
+
+| negativo | cae |
+| --- | --- |
+| N1 · el vigía vuelve a copiar la lectura de las reglas | el CENSO de `scrum853` |
+| N2 · el vigía vuelve a elegir `gh` según la plataforma | el tope de `scrum702` |
+| N3 · OTRO script nuevo copia la lectura | el CENSO de `scrum853` |
+| N4 · OTRO script nuevo mira en qué máquina corre | el tope de `scrum702` |
+
+El sujeto queda idéntico por sha256 y `git status` limpio.
+
+### Lo demás que se comprobó
+
+- Los dos guards, el test del vigía y `tests/vigia-atascados.test.mjs`: 116 casos, 116 pasan.
+- Las 15 mutaciones de §⑤, repetidas sobre el script arreglado: 15 de 15 muertas, y las 15 líneas
+  idénticas a las de `mutaciones.txt` (cambia sólo el sha256 del sujeto, que es otro fichero).
+- En vivo, dos veces (03:34Z, 260 runs, 0 sin leer): lee «build + tests (con banco desechable)» como
+  único obligatorio y avisa del meta-guard. La segunda, con `gh` fuera del PATH y un `GH_BIN` que no
+  existe, para ejercer el paso al siguiente binario: mismo resultado.
+- La tanda completa no se corrió en local; la cubre el CI del PR.
+
+### Lo que NO es de este arreglo, medido y sin tocar
+
+El mismo run tenía otros dos jobs en rojo, ninguno obligatorio:
+
+- **«meta-guard»**: `scrum853` MUDO, dos veces. Es el rojo que este ticket censa; en `main` sigue igual
+  (run `36808750944`).
+- **«trinquete · ningún test nuevo mide la zona»** (job `110196119194`): 19 casos de
+  `tests/vigia-atascados.test.mjs` salen «ausente» en `Pacific/Midway` (9.321 pruebas contra 9.302).
+  **No reproducido:** en local, 64 de 64 en las dos zonas; el fichero no lee reloj, entorno ni disco; y
+  el recuento no es estable (19 en la tanda, 30 a solas). En `main` ese job pasó (`36808750944`), y de
+  7 PR hermanos de la misma media hora pasó en 5 y cayó en 2, con otros ficheros. La causa no está
+  demostrada. El run nuevo del PR dirá si se repite.
+
+### Errores propios
+
+Ninguno que cambiara el resultado. El que generaliza es el de la entrega de J6c, y lo impide un guard
+que ya existía: su muestra de «guards de suite» (17 ficheros) no llevaba los dos censos que cuentan
+ficheros de `scripts/`, así que un script nuevo salió sin pasar por ellos y lo cazó el CI.
