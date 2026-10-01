@@ -57,7 +57,11 @@ const PROHIBIDO_EN_LA_FILA = ['IVA del presupuesto', 'Dirección de la obra', 'D
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915g', plan: 'pro', role: 'admin',
   onboardingCompleted: true, subscriptionStatus: 'active', voiceEnabled: false,
-  documentoSuelto: 'justificante',
+  // SCRUM-1313 · era 'justificante'. Desde SCRUM-825 (PR #1943, 29-sep-2026) el panel lee ese valor
+  // como 'no' y la ruta pinta el listado: los SEIS casos de este guard estuvieron CIEGOS dos días.
+  // El documento suelto sólo existe en modo 'factura', y su fila «Ajustes del documento» es la misma.
+  // El nombre del guard conserva «justificante» porque los catálogos lo anclan por nombre.
+  documentoSuelto: 'factura',
 });
 
 function arrancarServidor() {

@@ -143,7 +143,10 @@ test('SCRUM-727 · 🔴 un cero MEDIDO y un «no se sabe» se escriben distinto'
     + `al día— y se pierde si se escribe «${SIN_MEDIR}».\n     ` + sinHueco.renglon);
 
   // ── el lado que NO mide: nunca un cero donde no se supo.
-  for (const f of c.filter((x) => !Number.isFinite(x.v.horas))) {
+  // SCRUM-1311 · suelo de población: el lado que NO mide tiene que tener al menos un caso.
+  const sinMedir = c.filter((x) => !Number.isFinite(x.v.horas));
+  assert.ok(sinMedir.length > 0, '🔴 CIEGO: el censo no trae NINGUNA ejecución sin horas medidas: el lado «no se sabe» no se ha comprobado sobre nada.');
+  for (const f of sinMedir) {
     assert.ok(f.renglon.includes('hueco=' + SIN_MEDIR),
       `🔴 «${f.que}» no escribe «${SIN_MEDIR}» en el hueco que no pudo medir:\n     ${f.renglon}`);
     assert.equal(/· hueco=0(\.0)?h/.test(f.renglon), false,
