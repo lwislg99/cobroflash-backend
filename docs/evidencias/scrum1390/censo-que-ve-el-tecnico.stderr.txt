@@ -1,0 +1,20 @@
+[GET /admin/quotes/:id] Error: quote_not_found
+[GET /admin/quotes/:id] Error: quote_not_found
+[GET /admin/quotes/:id] Error: lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado
+[GET /admin/quotes/:id] Error: lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado
+[POST /admin/quotes/:id/accept] Error: quote_not_found
+[POST /admin/quotes/:id/accept] Error: quote_not_found
+[POST /admin/quotes/:id/reject] Error: quote_not_found
+[POST /admin/quotes/:id/reject] Error: quote_not_found
+[POST /admin/quotes/:id/reject] Error: quote_already_accepted
+[POST /admin/quotes/:id/reject] Error: quote_already_accepted
+[WhatsApp] Credenciales no configuradas, cta_url omitido
+[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla
+[WhatsApp] Credenciales no configuradas, mensaje omitido
+[sendQuote] Error de Meta API: undefined
+[WhatsApp] Credenciales no configuradas, cta_url omitido
+[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla
+[WhatsApp] Credenciales no configuradas, mensaje omitido
+[sendQuote] Error de Meta API: undefined
+[GET /admin/jobs/:id] lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado
+[PATCH /admin/jobs/:id] lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado
