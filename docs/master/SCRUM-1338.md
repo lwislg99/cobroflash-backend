@@ -207,3 +207,70 @@ fuera, con el acuerdo del orquestador: son pantallas de documento, no caben en u
   propio fichero del triaje al escribirlo.
 - En dos cabeceras del banco puse una hora «aprox.»; la cambié por las dos lecturas de GitHub que la
   acotan.
+
+---
+
+# SCRUM-1338b · Cobros SÍ pinta su aviso tras el 403: lo que no lo veía era el instrumento
+
+**Medido contra:** `origin/main` = `762f4fbba51ea214fd6c2473baa577d69c088791` · 2026-10-01T14:49:03Z
+
+1-oct-2026 · **J4f** (equipo de Javier, relevo de J4e), por encargo del orquestador (`cobroflash-backend-5b`).
+[Escrito por J4f. Anexo de sólo docs y banco: no toca `src/`, `public/` ni `tests/`. Medido sobre la
+rama con ese `origin/main` ya mergeado dentro (`92eed0586594e185fe59a4f1eeeb3d29621c9677`).]
+
+A9: aviso → A10 «Un instrumento que solo sabe callar no es un instrumento.» — no se pudo comprobar: `censo-barra` es una sonda del banco de evidencias y no un guard de la tanda, así que no hay dónde colgarle un control; lo que queda escrito es su límite, aquí y en la propuesta de tickets
+
+**Fecha:** 1-oct-2026
+
+## Qué corrige
+
+La tabla «Qué pintaba cada una tras el 403» de arriba dice de Cobros «ningún cartel: los filtros
+pintados y la lista vacía, como si no hubiera cobros». **No es así.** Cobros pinta su aviso
+aprobado —«No hemos podido cargar los cobros. Vuelve a intentarlo.» (`COBROS_COPY.errorCarga`, de
+SCRUM-285)— dentro de la tabla, en una celda **sin clase** (`cobrosView.js`, `pintarAviso`).
+
+`censo-barra` buscaba los carteles por el NOMBRE DE CLASE del nodo (`error`, `empty-state`, `alert`)
+y no por su texto: una celda sin clase le es invisible, y su `carteles=[]` se leyó como «no pinta
+nada». La fila de J4e se deja como está y se corrige aquí.
+
+## Cómo se midió
+
+`docs/evidencias/scrum1338/sonda-cobros.mjs.txt`, con el mismo banco de vistas, busca el literal
+de `COBROS_COPY.errorCarga` en el texto de las hojas del contenedor. Salida entera en
+`sonda-cobros-92eed058.txt`:
+
+| Montaje | `GET /admin/cobros` | Aviso de fallo | Vacío «no hay cobros» |
+|---|---|---|---|
+| operario | negada | **pintado** (una celda, sin clase) | no |
+| admin, control | concedida | no | pintado |
+| admin con el mismo fallo | negada | **pintado** | no |
+
+El control es la segunda fila: sin fallo no hay aviso, así que la sonda distingue.
+
+## Lo que cambia en la propuesta de tickets
+
+- **«Cobros no pinta ningún cartel» se retira**: no tiene víctima. Lo que sí es cierto es menor y
+  distinto: el aviso va en una celda sin clase, no en el cartel de error que usan las otras pantallas.
+- **Facturas recibidas se mantiene, partido en dos cosas distintas.** El marcador
+  «[PENDIENTE microcopy oficial]» no es un descuido del cartel: todas las ranuras de esa pantalla
+  que aún no tienen firma lo llevan a propósito (`facturasRecibidasView.js`, `rotulo(…)`), y se
+  quita con una firma, no con código. El detalle crudo de la API debajo del cartel
+  («API 403: forbidden») sí es código.
+- **Los gates de las llamadas citadas en la propuesta siguen siendo de admin**, consultados uno a
+  uno contra `dist/` (`sonda-gates-92eed058.txt`, con sus dos controles: una ruta sin rol y una que
+  no existe). Las líneas citadas en `triaje-leido.txt` son de `8f5906bc`; `quotesDetailView.js`,
+  `albaranDetailView.js` y `quotesView.js` se movieron en `main` desde entonces, y la sonda lleva
+  las de hoy.
+
+## Lo que NO está medido
+
+- Sigue siendo el banco de vistas, no un navegador: que la celda se vea bien en pantalla no consta.
+- Los controles de las fichas de factura, presupuesto, albarán y Trabajos siguen LEÍDOS, no pulsados.
+  La sonda de gates dice qué exige el servidor, no qué botón ve el operario.
+
+## Lo que entró en esta rama sin ser de J4e ni mío
+
+El commit `f54e1440042fa73280c08dab8043cec58a2d3b17` lo hizo el flujo `@claude` del repositorio,
+llamado por el avisador de rojos: el primer CI de la rama cayó en `scrum553` y `scrum737` por el
+test nuevo. Cambia tres líneas de ese test (dos expresiones dejan hueco a los atributos; un
+comentario escribe dos recuentos en letra) y ningún guard. Leído entero antes de seguir.
