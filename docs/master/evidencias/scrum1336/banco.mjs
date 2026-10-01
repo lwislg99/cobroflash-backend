@@ -70,7 +70,10 @@ const TACTIL_SIN_ANUNCIO = { f: INDICE, de: 'id="announce"', a: 'id="announce-ro
 const TACTIL_BOTON_CORTO = { f: INDICE, de: '.cmp-lbl{display:block;', a: '.try-reset{min-height:0!important;height:20px!important;padding:0!important;line-height:1!important}\n  .cmp-lbl{display:block;', veces: 1 };
 
 const MENU_CON_UN_DESTINO_MENOS = { f: PANEL, de: '<button class="nav-item" data-view="home">', a: '<button class="nav-item" data-vista="home">', veces: 1 };
-const MENU_POR_RENDER_CRUDO = { f: APP, de: "btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));", a: "btn.addEventListener('click', () => renderView(btn.dataset.view));", veces: 1 };
+// Un destino MÁS (19): un segundo botón hacia una vista que ya existe, para que lo único que cambie
+// sea cuántos hay. Lo pidió el orquestador (c.17957): «verde con 19» estaba leído, no corrido.
+const MENU_CON_UN_DESTINO_MAS = { f: PANEL, de: '<button class="nav-item" data-view="home">', a: '<button class="nav-item" data-view="settings">uno mas</button>\n        <button class="nav-item" data-view="home">', veces: 1 };
+const MENU_POR_RENDER_CRUDO ={ f: APP, de: "btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));", a: "btn.addEventListener('click', () => renderView(btn.dataset.view));", veces: 1 };
 
 const SEIS = 'seis';
 const SEPTIMO = 'septimo';
@@ -111,6 +114,7 @@ const PASADAS = [
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'limpio', que: 'sin romper nada', cambios: [] },
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'ciego', que: 'el menú pierde un destino: por debajo de su suelo', cambios: [MENU_CON_UN_DESTINO_MENOS] },
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'hallazgo', que: 'el menú navega por `renderView` crudo: no deja rastro, y ningún ciego', cambios: [MENU_POR_RENDER_CRUDO] },
+  { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'gana-uno', que: 'el menú GANA un destino (19): qué dice el guard, él solo', cambios: [MENU_CON_UN_DESTINO_MAS] },
 ].map((p) => ({ ...p, id: p.guard + '-' + p.escenario }));
 
 const elegidas = FILTRO

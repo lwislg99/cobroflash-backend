@@ -32,6 +32,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GLOBAL = 25;
@@ -149,57 +150,90 @@ const abrirEditorDuplicando = async (nav, c) => {
 
 const informe = { casos: {}, controles: {} };
 const nav = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--disable-dev-shm-usage'] });
+/** Lo que devuelve cada caso a `recorrerCasos`: aquí se LEE; se juzga después, con el informe entero. */
+const SOLO_LEIDO = Object.freeze({ hallazgos: Object.freeze([]), ciegos: Object.freeze([]) });
+const CASOS = [
+  // G · el descuento global. CONTROL POSITIVO, en la MISMA pantalla: se abre el campo a mano y se teclea.
+  { clave: 'G', plantilla: { global: GLOBAL, pago: null }, control: (pag) => pag.evaluate(ABRIR_Y_ESCRIBIR_GLOBAL, GLOBAL) },
+  // P · las condiciones de pago. CONTROL POSITIVO: se pone a mano el valor y se vuelve a leer con el MISMO lector.
+  { clave: 'P', plantilla: { global: null, pago: PAGO }, control: (pag) => pag.evaluate(PONER_COBRO_A_MANO, PAGO) },
+];
+let recorrido;
 try {
-  // ── G · el descuento global ───────────────────────────────────────────────────────────────
-  {
-    const { pag, listo, errores, ciego } = await abrirEditorDuplicando(nav, { global: GLOBAL, pago: null });
-    if (ciego) informe.casos.G = { ciego, errores };
-    else {
-      informe.casos.G = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
-      // CONTROL POSITIVO G, en la MISMA pantalla: se abre el campo a mano y se teclea.
-      informe.controles.G = await pag.evaluate(ABRIR_Y_ESCRIBIR_GLOBAL, GLOBAL);
-      await pag.close();
-    }
-  }
-  // ── P · las condiciones de pago ───────────────────────────────────────────────────────────
-  {
-    const { pag, listo, errores, ciego } = await abrirEditorDuplicando(nav, { global: null, pago: PAGO });
-    if (ciego) informe.casos.P = { ciego, errores };
-    else {
-      informe.casos.P = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
-      // CONTROL POSITIVO P: se pone a mano el valor y se vuelve a leer con el MISMO lector.
-      informe.controles.P = await pag.evaluate(PONER_COBRO_A_MANO, PAGO);
-      await pag.close();
-    }
-  }
+  // `recorrerCasos`: un caso que LANZA (el navegador se cae, la página se destruye) es un ciego de
+  // ESE caso y el otro se lee igual. Antes subía sin capturar y el proceso salía con 1.
+  recorrido = await recorrerCasos(CASOS, async (c) => {
+    const { pag, listo, errores, ciego } = await abrirEditorDuplicando(nav, c.plantilla);
+    if (ciego) { informe.casos[c.clave] = { ciego, errores }; return SOLO_LEIDO; }
+    informe.casos[c.clave] = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
+    informe.controles[c.clave] = await c.control(pag);
+    await pag.close();
+    return SOLO_LEIDO;
+  }, (c) => 'caso ' + c.clave);
 } finally {
   await nav.close();
   srv.close();
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1336 · UNA CASILLA EN ROJO NO DICE POR QUÉ ESTÁ EN ROJO, Y HAY DOS PORQUÉS.
+//
+// Aquí había nueve casillas y una sola cuenta: «verdes de total». Las de SUELO y de CONTROL dicen
+// si el guard SUPO MIRAR; las de G y P dicen si duplicar CONSERVA. Con el botón «Duplicar» fuera de
+// la pantalla salían siete en rojo y el proceso con 1 —«duplicar no conserva»—, cuando no se había
+// duplicado nada (visto correr: docs/master/evidencias/scrum1336/).
+//
+// Ahora cada caso se pregunta primero si se pudo LEER. Si no, es un ciego y sus casillas de producto
+// quedan SIN JUZGAR: ni verdes ni rojas. El código lo da `veredictoDe` con las dos cuentas.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const hallazgos = [];
+const ciegos = [];
+const filas = [];
+const apuntar = (estado, texto) => {
+  filas.push({ estado, texto });
+  if (estado === 'hallazgo') hallazgos.push(texto);
+  if (estado === 'ciego') ciegos.push(texto);
+};
+const suelo = (ok, texto) => { apuntar(ok ? 'ok' : 'ciego', texto); return ok; };
+const producto = (leido, ok, texto) => apuntar(!leido ? 'sin juzgar' : (ok ? 'ok' : 'hallazgo'), texto);
+
+for (const c of recorrido.ciegos) apuntar('ciego', c);
 const G = informe.casos.G || {};
 const P = informe.casos.P || {};
-const casillas = {
-  'SUELO · el editor abre con las 2 lineas del presupuesto duplicado (G)': G.lineasCargadas === 2,
-  'SUELO · y tambien en el caso de cobro (P)': P.lineasCargadas === 2,
-  'CONTROL POSITIVO G · este guard SABE leer el campo del descuento global':
-    informe.controles.G?.leido === String(GLOBAL) && informe.controles.G?.abierto === true,
-  'CONTROL POSITIVO P · este guard SABE leer el desplegable de cobro':
-    informe.controles.P?.leido === PAGO,
-  'CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor': PAGO !== NACIMIENTO,
-  [`G · duplicar CONSERVA el descuento global de ${GLOBAL} €`]: G.global === String(GLOBAL),
-  'G · y deja su campo ABIERTO, no un importe detras de un boton': G.campoGlobalAbierto === true && G.botonAnadirVisible === false,
-  [`P · duplicar CONSERVA las condiciones de pago (${PAGO})`]: P.pago === PAGO,
-  'sin errores de pagina en ninguno de los dos casos': (G.errores || []).length === 0 && (P.errores || []).length === 0,
-};
 
+// ── G ──
+let leidoG = suelo(!G.ciego && !!informe.casos.G, 'SUELO · el caso G se pudo abrir' + (G.ciego ? ' — ' + G.ciego : ''));
+leidoG = leidoG && suelo(G.lineasCargadas === 2, 'SUELO · el editor abre con las 2 lineas del presupuesto duplicado (G)');
+leidoG = leidoG && suelo(informe.controles.G?.leido === String(GLOBAL) && informe.controles.G?.abierto === true,
+  'CONTROL POSITIVO G · este guard SABE leer el campo del descuento global');
+producto(leidoG, G.global === String(GLOBAL), `G · duplicar CONSERVA el descuento global de ${GLOBAL} €`);
+producto(leidoG, G.campoGlobalAbierto === true && G.botonAnadirVisible === false, 'G · y deja su campo ABIERTO, no un importe detras de un boton');
+
+// ── P ──
+let leidoP = suelo(!P.ciego && !!informe.casos.P, 'SUELO · el caso P se pudo abrir' + (P.ciego ? ' — ' + P.ciego : ''));
+leidoP = leidoP && suelo(P.lineasCargadas === 2, 'SUELO · y tambien en el caso de cobro (P)');
+leidoP = leidoP && suelo(informe.controles.P?.leido === PAGO, 'CONTROL POSITIVO P · este guard SABE leer el desplegable de cobro');
+leidoP = suelo(PAGO !== NACIMIENTO, 'CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor') && leidoP;
+producto(leidoP, P.pago === PAGO, `P · duplicar CONSERVA las condiciones de pago (${PAGO})`);
+
+// Un error de página es algo que SE HA VISTO, haya ciego o no: se cuenta siempre.
+const errores = [...(G.errores || []).map((e) => 'G: ' + e), ...(P.errores || []).map((e) => 'P: ' + e)];
+apuntar(errores.length ? 'hallazgo' : 'ok', 'sin errores de pagina en ninguno de los dos casos' + (errores.length ? ' — ' + errores.join(' · ') : ''));
+
+const MARCAS = { ok: '✔ ', hallazgo: '🔴 ', ciego: '⬜ NO SUPE MIRAR · ', 'sin juzgar': '·  SIN JUZGAR (su caso no se pudo leer) · ' };
 console.log(JSON.stringify(informe, null, 2));
 console.log('\n── SCRUM-926 · duplicar conserva lo que cobra ──');
-for (const [k, v] of Object.entries(casillas)) console.log((v ? '✔ ' : '🔴 ') + k);
+for (const f of filas) console.log(MARCAS[f.estado] + f.texto);
 console.log('\nNO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)');
 console.log('                                        `currency` (el editor no tiene selector: usa la del merchant)');
-const verdes = Object.values(casillas).filter(Boolean).length;
-const total = Object.keys(casillas).length;
-console.log(`\nPOBLACION casillas=${total} verdes=${verdes} fallos=${total - verdes}`);
-console.log('EXIT=' + (verdes === total ? 0 : 1));
-process.exit(verdes === total ? 0 : 1);
+const cuantas = (estado) => filas.filter((f) => f.estado === estado).length;
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+console.log(`\nPOBLACION casillas=${filas.length} verdes=${cuantas('ok')} hallazgos=${cuantas('hallazgo')} ciegos=${cuantas('ciego')} sin-juzgar=${cuantas('sin juzgar')}`);
+console.log('EXIT=' + veredictoFinal.codigo);
+if (veredictoFinal.codigo !== 0) console.error(veredictoFinal.linea);
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+else console.log(veredictoFinal.linea);
+// Se sale SIEMPRE con el código del veredicto, también el 0: el servidor del banco puede dejar el
+// proceso abierto, y un `process.exit(0)` escrito a mano sería otra forma de decidir al lado.
+process.exit(veredictoFinal.codigo);
