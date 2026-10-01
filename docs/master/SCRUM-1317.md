@@ -10,6 +10,23 @@
 
 A9: comprobación → `tests/scrum1317-productos-del-operario.test.mjs`
 
+**Fecha:** 1-oct-2026
+**Skill UI:** cargada (`yaqu-premium-ui`). Checklist AB6 de este cambio: no entra ningún componente,
+token, color ni texto nuevo — sólo se quitan, por rol, bloques y botones que ya existían. El Inicio
+del operario, medido en Edge a 390 y a 1280 px con un nombre de cliente largo y un importe de
+9.999,99 €: sin desborde horizontal (documento = ventana en los dos anchos), 5 filas de actividad,
+ningún bloque del negocio, héroe a 0 px. Capturas en `docs/evidencias/scrum1317/`. De la matriz AB6
+**no** se midió: iPhone ni tablet reales, ni el estado de carga.
+
+## Ficheros
+
+`public/dashboard/js/homeView.js` · `public/dashboard/js/app.js` ·
+`public/dashboard/js/productsView.js` · `public/dashboard/js/quotesView.js` ·
+`public/dashboard/js/templatesView.js` · `src/modules/metrics/` (ruta y servicio) ·
+`src/modules/providers/app/routes/providers.routes.ts` ·
+`src/modules/templates/app/routes/templates.routes.ts` · `src/core/http/adminRouteDeclarations.ts` ·
+`src/core/http/adminOnlyRoutes.ts`
+
 ## Qué había
 
 SCRUM-55 dejó 13 rutas en `PENDIENTE_CLASIFICAR` (`src/core/http/adminRouteDeclarations.ts`): sin

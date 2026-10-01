@@ -201,10 +201,10 @@ function monthRange(offset = 0) {
  *
  *   · los tres RECUENTOS de los globos del menú (solicitudes, presupuestos esperando, facturas
  *     pendientes): son recuentos de listas que el operario ya puede abrir (S1: «ver sí»);
- *   · la actividad reciente: los últimos presupuestos, que ya ve en Presupuestos. Se mantiene
- *     porque ocultarla aquí no cambiaría lo que puede ver (orquestador, SCRUM-1317). Si un
- *     operario debe ver la actividad de sus compañeros es una decisión más grande que esta
- *     pantalla, y sigue pendiente desde SCRUM-55.
+ *   · la actividad reciente: los últimos presupuestos del negocio, con importe. El Técnico SÍ ve
+ *     la actividad de sus compañeros: lo decidió el fundador el 1-oct-2026 y está en la tabla
+ *     «Qué VE el Técnico en Inicio» de la Parte S1 del máster (SCRUM-1337). Son los mismos
+ *     presupuestos que ya tiene en la pantalla de Presupuestos.
  */
 export async function getInicioOperario(merchantId: number) {
   const [pendingCount, quotesAwaiting, pendingRequests, recentQuotes] = await Promise.all([
