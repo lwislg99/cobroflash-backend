@@ -243,6 +243,7 @@ Retirada `billing-plan::version` de las declaradas de `scripts/_sin-consumir-dec
 
 ## Lo que NO está medido o queda abierto
 
-- **En pantalla contra yaqu.app:** la cuenta de pruebas no tiene ningún presupuesto con plan de cobro propio (#203 es un borrador sin plan).
-- **Un tramo facturado de más cuenta como «el plan ha cambiado».** Los tramos son los mismos, pero uno ha pasado a fijo; se eligió decirlo antes que reenviar. Si esa lectura del texto no convence, es decisión del fundador.
+- **En pantalla contra yaqu.app:** la cuenta de pruebas no tiene ningún presupuesto con plan de cobro propio (#203 es un borrador sin plan). Es el mismo hueco de datos de prueba que SCRUM-1367 (no hay Trabajo con presupuesto aceptado): dos verificaciones distintas paradas por lo mismo.
+- **La tanda completa en esta máquina no terminó:** el sistema la paró por falta de memoria. Corrida una tanda dirigida de 22 ficheros (plan de cobro, trinquetes 1185 y 713, censos de copy, skill UI, A9): 195 de 195.
+- **Un tramo facturado de más cuenta como «el plan ha cambiado».** Los tramos son los mismos, pero uno ha pasado a fijo. El criterio: lo que la persona está a punto de guardar ya no es válido — su pantalla describe un estado que ya se superó, y guardarlo sería escribir sobre una factura emitida. Y entre molestarla con el aviso y dejarle pisar un plan con un tramo ya facturado, lo segundo es el daño.
 - **El mismo defecto de fondo sigue en el servidor:** cualquier escritura del presupuesto mueve la versión del plan. Aquí se absorbe en la pantalla; una versión propia del plan sería cambio de esquema (S1, con su ALTER).
