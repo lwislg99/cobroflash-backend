@@ -124,7 +124,9 @@ La consulta que haría falta, por base (sólo lectura): cuántas filas de `invoi
 
     ./node_modules/.bin/prisma generate
     npm run build
-    cp docs/master/evidencias/SCRUM-1252/propuesto-scrum1252-evidencias-libro-solo-facturas.mjs tests/scrum1252-evidencias-libro-solo-facturas.test.mjs
-    node --test tests/scrum1252-evidencias-libro-solo-facturas.test.mjs
 
-Sale 2 de 4 en rojo hasta que se aplique `diff-propuesto.diff` y se recompile.
+Después se copia `docs/master/evidencias/SCRUM-1252/propuesto-scrum1252-evidencias-libro-solo-facturas.mjs`
+a la carpeta de tests, con el nombre que dice su primera línea, y se corre con `node --test`. Sale 2 de 4
+en rojo hasta que se aplique `diff-propuesto.diff` y se recompile. La ruta de destino no se escribe aquí
+a propósito: el guard de SCRUM-391 exige que todo test que un registro declara exista en el árbol, y
+éste todavía no existe.
