@@ -287,6 +287,24 @@ test('SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se e
   assert.equal(fila(a.id).vfHash, s1.vfHash);
 });
 
+test('SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado', async () => {
+  // La línea `[verifactu] invoice=… hash=…` es la que deja cada sellado. Si lo conservado la emitiera,
+  // quien cuente sellados en el log del servidor contaría uno que no ocurrió.
+  reiniciar();
+  const a = await crearFactura('F260001');
+  await enSilencio(() => applyVeriFactu(a, NIF, prisma));
+  const dicho = { log: [], warn: [] };
+  const voces = { log: console.log, warn: console.warn };
+  console.log = (...x) => dicho.log.push(x.map(String).join(' '));
+  console.warn = (...x) => dicho.warn.push(x.map(String).join(' '));
+  try { await applyVeriFactu(a, NIF, prisma); } finally { Object.assign(console, voces); }
+  assert.deepEqual(dicho.log.filter((l) => l.startsWith('[verifactu]')), [],
+    '🔴 una factura que NO se ha sellado se ha anunciado con la línea de un sellado');
+  assert.equal(dicho.warn.length, 1, `🔴 conservar la huella no ha dejado ni una línea (lo dicho: ${JSON.stringify(dicho)})`);
+  assert.ok(dicho.warn[0].includes('F260001') && dicho.warn[0].includes(fila(a.id).vfHash.slice(0, 16)),
+    `el aviso nombra la factura y la huella que conserva: «${dicho.warn[0]}»`);
+});
+
 test('SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella', async () => {
   // El proceso murió entre escribir la huella y marcar el estado. El reintento tiene que dejarla
   // `sellado` — con B no es un no-op entero: es «conserva la huella y termina lo demás».
