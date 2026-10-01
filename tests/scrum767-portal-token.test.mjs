@@ -329,9 +329,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ③ Nace una lectura directa NUEVA, en un fichero que no está declarado. Es exactamente la
     // forma en que el defecto se extendería sin que nadie se entere.
+    //
+    // SCRUM-1321 · el `where:` a secas está DOS veces en ese fichero (la ruta `/:token` y la de
+    // la petición). La mutación caía en la primera por orden, no por contrato. Con las dos líneas
+    // de después sigue siendo la MISMA —la de `/:token`— y ya no depende de quién vaya antes.
     fichero: 'src/modules/system/app/routes/customerPortal.routes.ts',
-    de: '    where: { portalToken: token },',
-    a: '    select: { portalToken: true },',
+    de: '    where: { portalToken: token },\n    include: {\n      merchant: {',
+    a: '    select: { portalToken: true },\n    include: {\n      merchant: {',
     cae: 'SCRUM-767 · 🔴 EL CENSO QUE DECIDE: qué lee el token SIN pasar por la cura',
   },
 ];
