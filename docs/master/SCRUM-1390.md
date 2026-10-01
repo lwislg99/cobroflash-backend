@@ -44,6 +44,10 @@ orquestador si aprueba el literal.
 | `:675` | `Actividad reciente del negocio (últimos presupuestos, con importe) … ✅ ✅` | la celda del Técnico dice las dos cosas: ✅ HOY los del negocio, y lo decidido por la tarde, sin construir |
 | `:681` | la frase firmada por la mañana («…quitarlos de Inicio los esconde, no los cierra») | **se queda entera**; a continuación, en la MISMA línea, la nota «Autor o asignado» |
 
+**La última frase de la nota (`:681`, «⛔ Y no se puede construir sobre el eje del Trabajo…») es del
+orquestador**, que la pidió al aprobar el literal: yo había escrito la pregunta de Ⓔ como algo «sin
+decidir», y medida es un muro para quien construya. Entra con sus palabras.
+
 **Nada se ha borrado.** La frase de la mañana se conserva palabra por palabra y lleva al lado quién la
 firmó y cuándo. La nota dice que la decisión de la tarde es posterior, que la sustituye en cuanto se
 construya, y que hoy no está construida.
@@ -144,7 +148,9 @@ campos salen.
 - **Las 15 NO-LLEGO.** La petición fabricada no pasó la validación. Leídas a mano, tres tocan documentos:
   `GET /admin/attachments/:id` (busca por `id` y negocio; sirve las fotos del albarán y las de las
   solicitudes), `GET /admin/customers/:id/portal-url` (da el enlace del portal de cualquier cliente del
-  negocio; qué enseña ese portal no lo he mirado) y `POST /admin/ai/suggest-albaran-lines`. Las otras doce
+  negocio; LEÍDO después, no ejecutado: la página `GET /cliente/:token` de
+  `src/modules/system/app/routes/customerPortal.routes.ts` consulta los presupuestos y las facturas de
+  ese cliente, así que es una undécima puerta de lectura, por un enlace público) y `POST /admin/ai/suggest-albaran-lines`. Las otras doce
   son altas, soporte, entorno, sitios de cliente, gastos e IA de presupuesto.
 - **Las pantallas.** Se han contado rutas, no vistas de `public/dashboard/`. Una ruta puede pintarse en
   varias pantallas y al revés.
