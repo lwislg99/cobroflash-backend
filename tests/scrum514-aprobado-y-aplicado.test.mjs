@@ -157,7 +157,6 @@ function citasDeFicha(md) {
   for (const linea of md.split('\n')) {
     const h = /^#{1,6}\s+(.*)$/.exec(linea.trimEnd());
     if (h) { seccion = h[1].trim(); continue; }
-    if (!/texto\s+aprobado/i.test(seccion)) continue; // CRITERIO VIEJO, sólo para ver el rojo
     const m = /^>\s?(.+)$/.exec(linea.trim());
     if (!m || m[1].trim() === '') continue;
     const texto = m[1].trim();
