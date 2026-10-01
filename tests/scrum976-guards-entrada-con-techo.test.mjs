@@ -122,11 +122,13 @@ function lanzar(extraEnv = {}, { antes = [], opcionesDeNode = null } = {}) {
   // hijo se llevaba los reporters del CI: TRUNCABA el `tanda.tap` del padre y escribía el suyo
   // encima. Medido el 29-sep-2026: el TAP de cada tanda, verde o roja, salía casi todo NUL.
   delete env.NODE_OPTIONS;
-  // SCRUM-1386 · lo heredado se quita SIEMPRE; lo que un caso pone a propósito (el preload que
-  // mata al runner) entra después, y es lo único que lleva.
-  if (opcionesDeNode) env.NODE_OPTIONS = opcionesDeNode;
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, [...antes, SCRIPT], { cwd: RAIZ, encoding: 'utf8', env });
+  // SCRUM-1386 · lo heredado se ha quitado SIEMPRE, arriba (SCRUM-1289 ancla ahí su mutación). Lo que
+  // un caso pone a propósito —el `--require` del preload que mata al runner, sin ningún reporter— entra
+  // aquí, en una copia, y es lo único que lleva.
+  const r = spawnSync(process.execPath, [...antes, SCRIPT], {
+    cwd: RAIZ, encoding: 'utf8', env: opcionesDeNode ? { ...env, NODE_OPTIONS: opcionesDeNode } : env,
+  });
   return { r, ms: Date.now() - t0 };
 }
 
