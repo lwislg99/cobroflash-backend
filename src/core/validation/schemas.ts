@@ -414,6 +414,12 @@ export const merchantProfileUpdateSchema = z.object({
   // que es un valor guardable y distinto de `false`. Un `z.boolean()` a secas colapsaria los tres
   // estados en dos y «no se pregunto» se guardaria como «declara que no».
   criterioCaja: z.boolean().nullable().optional(),
+  // SCRUM-1102 · ¿lleva los libros de IVA por el SII? ¿tiene el domicilio fiscal en territorio
+  // foral? Mismo contrato de TRES estados que `criterioCaja`, y por el mismo motivo: AUSENTE = no
+  // se toca; `null` = «no consta», que se guarda distinto de `false`. Sin estas dos líneas
+  // `z.object` las descartaría en silencio y la pantalla diría «guardado» (el fallo de SCRUM-1269).
+  llevaLibrosPorSii: z.boolean().nullable().optional(),
+  domicilioFiscalForal: z.boolean().nullable().optional(),
   // SCRUM-1269 · LA RETENCIÓN DE IRPF (SCRUM-293). La pantalla los mandaba desde siempre y aquí no
   // estaban: `z.object` los DESCARTABA en silencio, `updateMerchantProfile` escribe lo que sobrevive
   // y ninguna otra vía los escribe — el profesional elegía «15 %», veía «guardado» y al recargar

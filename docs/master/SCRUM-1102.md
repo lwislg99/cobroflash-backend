@@ -326,3 +326,113 @@ for (const id of ids) {
 Bloques leídos: en el RIVA, `a30`, `a62`, `a68bis`, `a71`; en el RRSIF, `a1`, `a3` y `a1-2`.
 ⚠️ **El identificador de bloque no es el número del artículo:** en el RRSIF el art. 10 es `a1-2` y
 el 11 es `a1-3`. Se busca por el atributo `titulo`, no se deduce.
+
+---
+
+# SCRUM-1102f · Configuración pregunta por el SII y el domicilio foral, y lo guarda
+
+**Medido contra:** `origin/main` = `ba712b6d2d1938d2eb5bb4d27a970468a3041377` · 2026-10-01T03:10:58Z
+
+A9: comprobación → `tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs`
+
+Sesión J2d (`jv-j2`), 1-oct-2026. Es el paso ③ de A5: esquema + código + tests en un PR.
+
+**Cruce de carril, autorizado por el orquestador del equipo de Javier (`cobroflash-backend-5b`) el
+1-oct-2026, por mensaje:** el ticket es `area-j1` y toca `settingsView.js` (pestaña fiscal, J1) y
+`merchantAdmin.ts` (J3). Se asigna a J2 porque J1 y J4 pidieron relevo con el ticket a medias y
+éste era el árbol libre cuando el fundador desbloqueó el esquema y firmó los textos. No hay
+criterio de especialidad detrás, y lo dijo así.
+
+## ⓪ De dónde sale cada permiso
+
+Ninguno se lo oí yo al fundador: los tres están en Jira, transcritos por el orquestador, y ahí los
+leí antes de escribir.
+
+| qué | comentario de SCRUM-1102 | literal del fundador |
+|---|---|---|
+| las dos líneas en `prisma/schema.prisma`, sin ALTER | 17709 | «1-Ok go, y dev lo revisas tú» |
+| los dos enunciados | 17709 | «2-Sí firmo» |
+| las opciones «No consta / Sí / No» | 17721 | «1-Ok las firmo» |
+| que las columnas existen en producción, anulables y sin valor por defecto | 17714 | medición suya, no firma |
+
+## ① Qué entra
+
+- `prisma/schema.prisma`: `llevaLibrosPorSii` y `domicilioFiscalForal`, `Boolean?`, sin `@default`,
+  sobre las columnas que creó `docs/sql/scrum-1102-sii-y-domicilio-foral.sql`. **Ningún ALTER y
+  ningún `db push`:** el fichero se pone al día con un DDL ya aplicado.
+- `src/core/validation/schemas.ts`: las dos claves en el esquema del PUT, `boolean` anulable y
+  opcional. Sin ellas `z.object` las descarta en silencio (el fallo de SCRUM-1269).
+- `src/modules/system/merchantAdmin.ts`: las dos en el `select` del GET. Sin ellas el siguiente
+  guardado de cualquier ajuste las devolvería a NULL (el fallo de SCRUM-1227).
+- `public/dashboard/js/settingsView.js` y `settingsSubmenus.js`: dos selectores de tres estados en
+  la pestaña Empresa, debajo de «Criterio de caja», con el mismo mecanismo que ya existía.
+- `docs/microcopy/`: una ficha para los dos enunciados y otra para las opciones.
+- `docs/sql/deriva-prod.sql`: regenerado con su script (509 → 511 columnas).
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md:36`: el ancla de `vf_hash` pasa de `910-911` a `917-918`.
+  Las siete líneas nuevas del modelo `Merchant` la movieron; la afirmación no cambia.
+
+## ② Qué NO entra
+
+- **Ninguna puerta lee estas columnas.** Encender `INVOICING_ES_ENABLED` no las mira. Eso es
+  camino de emisión: ticket aparte y STOP aparte (comentario 17709, §③). Hoy la respuesta se
+  guarda y nadie actúa sobre ella.
+- **El alta no las pregunta.** Van sólo en Configuración.
+- **Ningún texto de ayuda.** La caja de cada selector es la pregunta y sus opciones (regla 7).
+
+## ③ Dos cosas que el encargo daba por hechas y no lo estaban
+
+**Los rótulos de las opciones no estaban firmados.** El comentario 17709 decía «la terna que ya
+existe: No consta / Sí / No». La terna que existe en `settingsView.js` es «No consta / Sí, estoy
+acogido / No estoy acogido», y la del recargo, «Sí, está en recargo / No está en recargo». «Sí» y
+«No» a secas no constaban como literal aprobado en `docs/microcopy/` ni en el registro congelado.
+Se avisó antes de escribir código; lo corrige el comentario 17717 y lo firma el 17721.
+
+**La ficha de encargo no declaraba el cruce de carril.** Se preguntó antes de empezar (A20) y el
+orquestador lo confirmó con su motivo, que es el párrafo de arriba.
+
+## ④ Cómo se midió
+
+**Rojo primero.** Con el `dist/` de `f5d99bd7` y el test ya escrito, los tres casos del viaje por
+el servidor caen: «mando null y en la base queda true», «guardar una ha movido la otra» y «acepta
+"si"». Las dos claves no sobrevivían al esquema del PUT.
+
+**El test del ticket**, `tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs`: 9
+casos. Esquema contra el DDL; los tres estados de cada columna por el PUT y de vuelta por el GET;
+la pantalla montada en el banco de vistas (pinta lo guardado, y al guardar lo devuelve igual); los
+enunciados y las opciones contra su ficha, por ticket y ranura.
+
+**Mutaciones**, `tests/banco-scrum1102f/mutar.mjs`: 14 de 14 caen, cada una en el caso que se
+esperaba. Base verde antes de mutar, build entre mutaciones de `src/`, árbol limpio al acabar.
+
+**Navegador**, `tests/banco-scrum1102f/navegador.mjs`, a 390 y a 1280 px: los dos selectores se
+ven en la pestaña Empresa al abrir, miden 44,5 px, la pregunta cabe y la página no desborda. Con
+«Sí» y «No» guardados se pintan «Sí» y «No»; tras elegir «No consta» y «Sí» y pulsar «Guardar
+cambios» se manda `null` y `true`, y el criterio de caja no se mueve. Control positivo: el selector
+del criterio de caja, que ya existía, se ve con el mismo instrumento. Este instrumento se lanza a
+mano; no está en `guards:visuales`.
+
+**Guards que saltaron al cambiar el esquema, y eran el aviso:** `scrum222` y `scrum461` (el censo
+de deriva no conocía las dos columnas) y `scrum525d` (el ancla de arriba). `scrum1227` y
+`scrum1269` piden que su fixture cubra todo lo que la pantalla guarda: se añadieron las dos claves
+a `GUARDADO`, sin tocar ninguna aserción.
+
+## ⑤ Mis errores
+
+1. **Di por guardado algo que no se había mandado.** Al montar la pantalla por primera vez, mi
+   perfil de prueba no llevaba teléfono; el formulario avisó y no guardó, y mi sonda dijo
+   «0 guardados» sin error. Es la A10 «una operación que no se ejecutó se lee exactamente igual
+   que un éxito». **La comprobación:** en el test, `guardar()` exige exactamente un PUT y si no se
+   declara ciego. Es la línea `A9:` de arriba.
+2. **Añadí una regla de 44 px sin medir si hacía falta.** La base de `.field select` ya da 44,5.
+   Lo medí después, en navegador, y quité la regla y su clase. No llegó a empujarse.
+3. **Compilé sin regenerar el cliente de Prisma** tras tocar el esquema: build roto, un minuto.
+   Es A1, y estaba escrita.
+
+## ⑥ Lo que queda sin medir
+
+- **Dev.** `MIGRATIONS_PENDING.md` confirma la columna foral y dice que la del SII no se midió.
+  Este árbol no la ha medido tampoco. Quien arranque en local contra dev puede encontrarse
+  «columna que no existe» en cualquier lectura de `Merchant`. El comentario 17709 deja esa
+  medición a cargo del orquestador.
+- **Staging**: que el ALTER está aplicado lo dice la cabecera del SQL; aquí no se ha medido.
+- **La pantalla en yaqu.app**: se mide después del despliegue.
