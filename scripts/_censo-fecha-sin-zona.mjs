@@ -56,8 +56,9 @@ const ts = require_('typescript');
  *
  * Hasta el 1-oct-2026 esto era `require.resolve('typescript/package.json')` subiendo dos carpetas.
  * En un worktree cuyo `node_modules` es una junction al de otro, node resuelve la junction a su
- * destino y esa «raíz» es EL OTRO ÁRBOL: medido, 312 ficheros censados, 0 filas y salida 0 — un
- * «árbol limpio» que no había mirado nada. Este fichero vive en `scripts/` del árbol que mide: su
+ * destino y esa «raíz» es EL OTRO ÁRBOL: el censo leía los ficheros del vecino, no casaba ninguno
+ * con las rutas del propio y salía limpio — un «árbol limpio» que no había mirado nada (las cifras
+ * de aquella medición, con su fecha, en `docs/master/SCRUM-1377.md`). Este fichero vive en `scripts/` del árbol que mide: su
  * propia ruta es la única referencia que no depende de dónde esté instalada una dependencia.
  */
 const RAIZ = path.resolve(import.meta.dirname, '..');

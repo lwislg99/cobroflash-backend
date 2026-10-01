@@ -69,3 +69,11 @@ del temporal ya devuelta por una función. `tests/scrum824-temporales-fuera-del-
 («el conjunto de ficheros SIN PROBAR no crece»): su censo no podía demostrar de dónde colgaba cada
 escritura. No se declaró el fichero en la lista: se reescribió `arbolFabricado` para que todo se cree
 dentro de ella, colgando a la vista del `temporal()`. Los dos mutantes se repitieron después.
+
+Y un tercero, que cazó el CI y no yo (run 36871008807, head `82c233d2`, 1-oct-2026): la cabecera
+nueva de `scripts/_censo-fecha-sin-zona.mjs` escribía la cifra de ficheros de aquella medición sin
+fecha, y `tests/scrum737-cifra-con-arbol-y-hora.test.mjs` cayó: el censo de cifras sin ancla pasó
+de 81 a 82. Único fallo de la tanda (9.833 tests, 1 fail, 98 saltados). No se subió el censo
+congelado: se reformuló la frase para que no diga número y remita a este registro, donde la cifra
+sí lleva su fecha. Tras el cambio, en el worktree: `scrum737` + `scrum1093h` + `scrum758`, 34 tests,
+34 pasan. No era que el censo de fechas «viera más»: es otro censo, y la fila nueva era mía.
