@@ -41,7 +41,7 @@ const TITULO_MODO_EMISION = {
 const DETALLE_MODO_EMISION = {
   fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
   demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
-  receipt: 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.',
+  receipt: 'Por ahora, YaQu no genera facturas desde tu cuenta.', // SCRUM-1257 · firma delegada, comentario 17676
 };
 
 // ── `receipt`: EL QUE SE DEVOLVIÓ, Y POR QUÉ EL DE AHORA SÍ SE SOSTIENE ───────────────────────
@@ -49,8 +49,8 @@ const DETALLE_MODO_EMISION = {
 // 🔴 SCRUM-1220 (28-sep-2026) · LO DE ABAJO ES HISTORIA: esa segunda redacción también se retiró.
 // Desde SCRUM-1027, en `receipt` `allocateInvoiceNumber` lanza `invoicing_es_disabled` y no sale
 // NINGÚN documento, así que «Cada cobro genera un justificante» era falso para todo ES real con la
-// emisión apagada. La de ahora (firma delegada, SCRUM-1220 comentario 17385) solo NIEGA: dice que no
-// se genera ni factura ni justificante, sin fecha ni cobro. Medido en `tests/banco-scrum1220/`.
+// emisión apagada. La tercera (SCRUM-1220 comentario 17385) solo NEGABA, y nombraba el justificante.
+// La de ahora (SCRUM-1257 comentario 17676) niega igual y ya no lo nombra: no afirma nada nuevo.
 //
 // La primera redacción decía «con su propia NUMERACIÓN», y el código dice lo contrario en su
 // propio comentario (`invoiceNumber.service.ts:32-35`): los J- **no consumen la serie fiscal**,
