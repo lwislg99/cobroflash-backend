@@ -1,0 +1,73 @@
+POBLACION: 6 escenarios · 57 rutas distintas en la respuesta
+CLAVES de la respuesta: hasTeam, members, inactive, sinAsignar, totalCollected
+
+── RUTAS QUE CAMBIAN SÓLO CON EL DINERO: 12
+  members[Ana].collected            100 | 900 | 100 | 0 | 0 | 0
+  members[Ana].isBest               false | true | false | false | false | false
+  members[Blas].collected           900 | 100 | 900 | 0 | 0 | 0
+  members[Blas].isBest              true | false | true | false | false | false
+  members[Caro].collected           0 | 0 | 0 | 0 | 0 | 5000
+  members[Caro].isBest              false | false | false | false | false | true
+  members[Dueña].collected          0 | 0 | 0 | 0 | 300 | 0
+  members[Dueña].isBest             false | false | false | false | true | false
+  sinAsignar                        (no existe) | (no existe) | null | null | null | null
+  sinAsignar.collected              50 | 50 | (no existe) | (no existe) | (no existe) | (no existe)
+  sinAsignar.label                  Sin asignar | Sin asignar | (no existe) | (no existe) | (no existe) | (no existe)
+  totalCollected                    1050 | 1050 | 1000 | 0 | 300 | 5000
+
+── CAMINOS DISTINTOS POR LOS QUE SALE EL DINERO: 6 → members[].collected · members[].isBest · sinAsignar · sinAsignar.collected · sinAsignar.label · totalCollected
+
+── RUTAS QUE NO SE MUEVEN (lo que queda): 45
+  hasTeam                           true
+  inactive[0]                       Caro
+  members.ORDEN                     Dueña > Ana > Blas > Caro > Dani
+  members[Ana].acceptanceRate       67
+  members[Ana].accepted             2
+  members[Ana].id                   11
+  members[Ana].name                 Ana
+  members[Ana].role                 tecnico
+  members[Ana].sent                 3
+  members[Ana].status               active
+  members[Ana].thisWeek             3
+  members[Blas].acceptanceRate      0
+  members[Blas].accepted            0
+  members[Blas].id                  12
+  members[Blas].name                Blas
+  members[Blas].role                tecnico
+  members[Blas].sent                1
+  members[Blas].status              active
+  members[Blas].thisWeek            1
+  members[Caro].acceptanceRate      0
+  members[Caro].accepted            0
+  members[Caro].id                  13
+  members[Caro].name                Caro
+  members[Caro].role                tecnico
+  members[Caro].sent                1
+  members[Caro].status              active
+  members[Caro].thisWeek            0
+  members[Dani].acceptanceRate      0
+  members[Dani].accepted            0
+  members[Dani].collected           0
+  members[Dani].id                  14
+  members[Dani].isBest              false
+  members[Dani].name                Dani
+  members[Dani].role                admin
+  members[Dani].sent                0
+  members[Dani].status              active
+  members[Dani].thisWeek            0
+  members[Dueña].acceptanceRate     100
+  members[Dueña].accepted           1
+  members[Dueña].id                 null
+  members[Dueña].name               Dueña
+  members[Dueña].role               owner
+  members[Dueña].sent               1
+  members[Dueña].status             active
+  members[Dueña].thisWeek           1
+
+── CAMPOS QUE QUEDAN: 11 → hasTeam · inactive[] · members.ORDEN · members[].acceptanceRate · members[].accepted · members[].id · members[].name · members[].role · members[].sent · members[].status · members[].thisWeek
+
+¿el instrumento ve el dinero donde se sabe que está?        true
+¿la estrella cambia de persona SÓLO con lo cobrado?         true
+¿el ORDEN de las filas se mueve con lo cobrado?             false
+¿que «sinAsignar» EXISTA o sea null delata un cobro suelto? true
+EXIT=0

@@ -1,0 +1,10 @@
+REFERENCIA: origin/main = 762f4fbba51ea214fd6c2473baa577d69c088791
+homeView.js: 75345 caracteres en la referencia · 78652 en este arbol · distintos
+POBLACION: 3 respuestas del equipo × 2 roles × 2 versiones de homeView.js
+ADMIN · con dinero, estrella, «Sin asignar» y aviso: IDENTICO · 205 nodos antes, 205 ahora · bloque del equipo 3776 y 3776 caracteres · sha256 0a49452a1336fb6c / 0a49452a1336fb6c
+ADMIN · sin cobros sueltos ni inactivos: IDENTICO · 178 nodos antes, 178 ahora · bloque del equipo 2006 y 2006 caracteres · sha256 f6f69c810dff3ce0 / f6f69c810dff3ce0
+ADMIN · sin equipo de campo: IDENTICO · 145 nodos antes, 145 ahora · bloque del equipo 0 y 0 caracteres · sha256 0cab3fa39a9b224e / 0cab3fa39a9b224e
+CONTROL · TECNICO: DISTINTO, como tiene que ser · bloque 0 caracteres antes, 1730 ahora
+   antes pedia: GET /admin/metrics/inicio
+   ahora pide:  GET /admin/metrics/inicio · GET /admin/metrics/actividad-equipo
+EXIT=0
