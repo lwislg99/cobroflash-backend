@@ -16,9 +16,10 @@
 // «sin poder medirse» el 29-sep. Estaba al lado.
 //
 // ── LOS DEFECTOS, DECLARADOS (trinquete de dos mitades) ──────────────────────────────────────
-// Los seis de `DEFECTOS_DECLARADOS` existen HOY y este fichero no los arregla: `colaDeFirmas.js`,
-// `almacenLocal.js` y `app.js` son de otro carril, y tres piden un texto que nadie ha firmado
-// (regla 39). El test los MIDE y exige que lo medido sea exactamente lo declarado:
+// Los de `scripts/_defectos-viaje-firma-declarados.json` existen HOY y este fichero no los
+// arregla: `colaDeFirmas.js`, `almacenLocal.js` y `app.js` son de otro carril. Nacieron seis;
+// SCRUM-1353 arregló los dos de `albaranDetailView.js` y borró sus líneas. El test los MIDE y
+// exige que lo medido sea exactamente lo declarado:
 //   · arreglas uno → cae, y te pide retirar su entrada (se BORRA, no se comenta);
 //   · aparece uno nuevo → cae también.
 // Así ninguno se arregla ni se rompe sin que este fichero se entere.
@@ -33,13 +34,20 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { montarAlmacen, porQueEstariaCiego, indexedDBQueAbortaTrasEscribir } from './_banco-almacen-local.mjs';
 import { pintarVista, todos } from './_banco-vistas.mjs';
+import { defectosDeclarados } from './_defectos-viaje-firma.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const dom = require('../dist/modules/jobs/domain/albaranFirmante.js');
 
-/** Los defectos que el viaje tiene HOY. Uno por línea; el que se arregla se BORRA. */
-const DEFECTOS_DECLARADOS = [
+/**
+ * Los defectos que el viaje tiene HOY. Viven en `scripts/_defectos-viaje-firma-declarados.json`
+ * (SCRUM-1362): quien arregla uno BORRA su entrada ALLÍ, sin tocar este fichero. Si el JSON no se
+ * puede leer, el cargador lanza y el test sale en rojo diciéndolo: nunca una lista vacía.
+ */
+const DEFECTOS_DECLARADOS = defectosDeclarados();
+/** Todo lo que `defectosObservados()` sabe detectar. Una clave del JSON que no esté aquí es una errata. */
+const DEFECTOS_QUE_SE_SABEN_MEDIR = [
   'firmar-lo-ya-subido-dice-que-no-se-registro-y-reencola',
   'reabrir-sin-red-calla-la-firma-guardada-y-refirmar-la-sobrescribe',
   'el-detalle-abierto-no-se-entera-de-que-la-cola-subio',
@@ -85,6 +93,7 @@ function nuevaRed() {
     if (/\/firmar$/.test(u)) {
       if (e.servidorFirmado) return responder(409, { error: 'albaran_locked', message: 'Este albarán ya está firmado.' });
       if (e.modoPost === 'firma_invalida') return responder(400, { error: 'firma_invalida', message: 'La firma debe ser una imagen PNG o JPEG (data-URI base64).' });
+      if (e.modoPost === 'invalid_id') return responder(400, { error: 'invalid_id', message: 'Identificador no válido.' });
       e.servidorFirmado = true;
       return responder(200, { id: ID, estado: 'firmado' });
     }
@@ -97,8 +106,9 @@ function nuevaRed() {
 function montar(opciones = {}) {
   const red = nuevaRed();
   const b = montarAlmacen(RAIZ, { ...opciones, dashboard: { red } });
-  const avisos = { confirm: 0, alert: 0 };
-  b.ctx.confirm = () => { avisos.confirm += 1; return true; };
+  // `acepta` decide qué contesta el profesional al `confirm`; `preguntas` guarda lo que se le dijo.
+  const avisos = { confirm: 0, alert: 0, acepta: true, preguntas: [] };
+  b.ctx.confirm = (texto) => { avisos.confirm += 1; avisos.preguntas.push(String(texto)); return avisos.acepta; };
   b.ctx.alert = () => { avisos.alert += 1; };
   b.ctx.appAlbaranRotulos = dom.ALBARAN_ROTULOS;
   b.ctx.appAlbaranAyudas = dom.ALBARAN_AYUDAS;
@@ -161,12 +171,23 @@ async function confirmarPad(b, pad) {
 }
 
 /** Pulsa «Firmar aquí mismo» en la vista real, traza en el pad real, pone el nombre y confirma. */
-async function firmarEnPantalla(b, cont, nombre = 'Ana Ruiz') {
+const padsAbiertos = (b) => todos(b.ctx.document.body)
+  .filter((n) => n && n.hasAttribute && n.hasAttribute('data-sp-aviso') && enDocumento(b, n));
+
+/** Pulsa «Firmar aquí mismo» y devuelve el aviso del pad que se ha abierto, o `null` si no se abrió. */
+async function pulsarFirmar(b, cont) {
   const btn = todos(cont).find((n) => n && n.dataset && n.dataset.accion === 'btnFirmarAqui');
   assert.ok(btn, 'la pantalla tiene que ofrecer «Firmar aquí mismo»: sin botón no hay viaje que medir');
+  const antes = padsAbiertos(b).length;
   btn.click();
+  await esperar(40); // el clic consulta la cola antes de abrir el pad (SCRUM-1353)
+  const ahora = padsAbiertos(b);
+  return ahora.length > antes ? ahora.pop() : null;
+}
+
+async function firmarEnPantalla(b, cont, nombre = 'Ana Ruiz') {
   const cuerpo = b.ctx.document.body;
-  const aviso = todos(cuerpo).filter((n) => n && n.hasAttribute && n.hasAttribute('data-sp-aviso')).pop();
+  const aviso = await pulsarFirmar(b, cont);
   assert.ok(aviso, 'el pad de firma tiene que abrirse');
   let overlay = aviso;
   while (overlay._padre && overlay._padre !== cuerpo) overlay = overlay._padre;
@@ -304,6 +325,127 @@ test('SCRUM-1351 · el drenado con «ya firmado» (409 albaran_locked) saca la f
   assert.equal(red.posts.length, 1, 'un solo intento');
 });
 
+// ═══ SCRUM-1353 · LO QUE EL MÓVIL SABE Y EL SERVIDOR NO, DICHO EN EL DETALLE ═══════════════════
+//
+// Dos de los seis defectos de arriba se arreglaron aquí (por eso ya no están en la lista). Estos
+// tests fijan la conducta nueva caso a caso; el de los defectos sólo dice «ya no se observa».
+
+const cajaDeFirmaGuardada = (cont) => todos(cont).find((n) => n && n.dataset && n.dataset.firmaGuardadaAqui === '1');
+const avisoDeRechazo = (cont) => todos(cont).find((n) => n && n.dataset && n.dataset.firmaRechazada === '1');
+const acciones = (cont) => todos(cont).filter((n) => n && n.dataset && n.dataset.accion).map((n) => n.dataset.accion);
+
+test('SCRUM-1353 · control: un albarán sin firmar y SIN nada en el móvil se pinta como siempre', async () => {
+  const { b } = montar();
+  const v = await abrirDetalle(b);
+  assert.equal(cajaDeFirmaGuardada(v.contenedor), undefined, 'sin firma en la cola no hay caja: si saliera, saldría en todos');
+  assert.equal(avisoDeRechazo(v.contenedor), undefined);
+  assert.ok(acciones(v.contenedor).includes('btnEnviarFirmar'), '«Enviar para firmar» se ofrece');
+  assert.ok(acciones(v.contenedor).includes('btnFirmarAqui'));
+});
+
+test('SCRUM-1353 · reabrir con una firma de ESTE albarán en la cola: lo dice, deja firmar y no ofrece mandarlo a firmar', async () => {
+  const { b, red } = await conUnaFirmaEnCola();
+  for (const conRed of [false, true]) {
+    red.conRed = conRed;
+    const v = await abrirDetalle(b, { sinRed: !conRed });
+    const caja = cajaDeFirmaGuardada(v.contenedor);
+    assert.ok(caja, `${conRed ? 'con' : 'sin'} red: la caja de «solo en este móvil» tiene que estar`);
+    const t = textoDe(v.contenedor);
+    assert.ok(t.includes(b.ctx.TEXTO_FIRMA[b.ctx.FIRMA_SOLO_EN_ESTE_MOVIL].etiqueta), 'con la etiqueta YA aprobada del estado ①');
+    assert.ok(t.includes(b.ctx.TEXTO_FIRMA[b.ctx.FIRMA_SOLO_EN_ESTE_MOVIL].detalle), 'y su detalle, letra por letra');
+    assert.ok(acciones(v.contenedor).includes('btnFirmarAqui'), '«Firmar aquí mismo» se queda');
+    assert.equal(acciones(v.contenedor).includes('btnEnviarFirmar'), false, '«Enviar para firmar» no: serían dos firmas en dos dispositivos');
+  }
+  // la firma de OTRO albarán no pinta nada en éste
+  const otro = montar();
+  await otro.b.ctx.encolarFirma(ID + 1, { signatureData: 'data:image/png;base64,AAAA', firmadoPorNombre: 'X' }, 'albaran');
+  assert.equal(cajaDeFirmaGuardada((await abrirDetalle(otro.b)).contenedor), undefined, 'la cola de otro albarán no es la de éste');
+});
+
+test('SCRUM-1353 · firmar encima de una firma guardada AVISA antes de abrir el pad; si dice que no, no se toca nada', async () => {
+  const { b, avisos } = await conUnaFirmaEnCola();
+  const v = await abrirDetalle(b, { sinRed: true });
+  assert.equal(avisos.confirm, 0, 'suelo: la primera firma, con la cola vacía, no preguntó nada');
+
+  avisos.acepta = false;
+  assert.equal(await pulsarFirmar(b, v.contenedor), null, 'si no acepta, el pad NO se abre');
+  assert.deepEqual(avisos.preguntas, [b.ctx.TEXTO_YA_HAY_FIRMA_GUARDADA], 'y se le preguntó con el literal firmado');
+  assert.deepEqual((await cola(b)).nombres, ['Ana Ruiz'], 'la firma guardada sigue siendo la misma');
+
+  avisos.acepta = true;
+  const r = await firmarEnPantalla(b, v.contenedor, 'OTRO FIRMANTE');
+  cerrarPad(r.pad);
+  assert.equal(avisos.confirm, 2, 'aceptando también se pregunta antes');
+  assert.deepEqual((await cola(b)).nombres, ['OTRO FIRMANTE'], 'y entonces sí: la nueva sustituye a la anterior, como dice el texto');
+});
+
+test('SCRUM-1353 · en la MISMA pantalla, sin reabrir: firmar sin red, cancelar y volver a pulsar también avisa', async () => {
+  const { b, red, avisos } = montar();
+  await b.ctx.guardarAlbaranPrecargado(PRECARGADO);
+  red.conRed = false;
+  const v = await abrirDetalle(b, { sinRed: true });
+  const r = await firmarEnPantalla(b, v.contenedor);
+  cerrarPad(r.pad);
+  assert.equal(avisos.confirm, 0);
+  avisos.acepta = false;
+  assert.equal(await pulsarFirmar(b, v.contenedor), null, 'la pantalla se pintó sin cola, pero el clic la consulta');
+  assert.equal(avisos.confirm, 1);
+});
+
+test('SCRUM-1353 · el rechazo definitivo del servidor se dice en el albarán — salvo donde el texto sería falso', async () => {
+  async function trasElRechazo(codigo) {
+    const m = await conUnaFirmaEnCola();
+    m.red.conRed = true;
+    m.red.modoPost = codigo;
+    const d = await m.b.ctx.drenarAlAbrir();
+    assert.deepEqual(Array.from(d.rechazadas, (x) => x.codigo), [codigo], `suelo: el drenado rechaza con ${codigo}`);
+    assert.equal((await m.b.ctx.leerRechazosDeFirma()).rechazos.length, 1, 'suelo: la constancia existe');
+    return m;
+  }
+
+  {
+    const { b } = await trasElRechazo('firma_invalida');
+    const aviso = avisoDeRechazo((await abrirDetalle(b)).contenedor);
+    assert.ok(aviso, 'con un rechazo que se arregla firmando otra vez, se avisa');
+    assert.equal(aviso._texto, b.ctx.TEXTO_FIRMA_RECHAZADA_ALBARAN);
+    assert.match(aviso.className, /alert/);
+  }
+  {
+    // 🔴 `invalid_id`: repetir la firma da el mismo no. «Vuelve a firmar» sería falso → no se pinta.
+    const { b } = await trasElRechazo('invalid_id');
+    assert.equal(avisoDeRechazo((await abrirDetalle(b)).contenedor), undefined);
+  }
+  {
+    // ya volvió a firmar (hay una nueva en la cola): el rechazo es viejo; manda la caja.
+    const { b, red } = await trasElRechazo('firma_invalida');
+    red.conRed = false;
+    const v = await abrirDetalle(b, { sinRed: true });
+    const r = await firmarEnPantalla(b, v.contenedor);
+    cerrarPad(r.pad);
+    const v2 = await abrirDetalle(b, { sinRed: true });
+    assert.ok(cajaDeFirmaGuardada(v2.contenedor));
+    assert.equal(avisoDeRechazo(v2.contenedor), undefined, 'no se le pide volver a firmar a quien ya lo ha hecho');
+  }
+  {
+    // el servidor ya lo da por firmado: el rechazo no pide nada.
+    const { b, red } = await trasElRechazo('firma_invalida');
+    red.servidorFirmado = true;
+    const v = await abrirDetalle(b);
+    assert.match(textoDe(v.contenedor), /firmado/);
+    assert.equal(avisoDeRechazo(v.contenedor), undefined);
+  }
+});
+
+test('SCRUM-1353 · sin almacén que leer no se afirma nada: ni caja, ni aviso, ni pregunta', async () => {
+  const { b, avisos } = montar({ sinIndexedDB: true });
+  const v = await abrirDetalle(b);
+  assert.equal(cajaDeFirmaGuardada(v.contenedor), undefined);
+  assert.ok(acciones(v.contenedor).includes('btnEnviarFirmar'));
+  const aviso = await pulsarFirmar(b, v.contenedor);
+  assert.ok(aviso, 'el pad se abre igual');
+  assert.equal(avisos.confirm, 0);
+});
+
 // ═══ LOS DEFECTOS: se MIDEN, y lo medido tiene que ser lo declarado ═════════════════════════════
 
 /**
@@ -354,16 +496,18 @@ async function defectosObservados() {
     limpio.red.conRed = false;
     const sinCola = textoDe((await abrirDetalle(limpio.b, { sinRed: true })).contenedor);
 
-    const { b } = await conUnaFirmaEnCola();
+    const { b, avisos } = await conUnaFirmaEnCola();
     const v = await abrirDetalle(b, { sinRed: true });
     const calla = textoDe(v.contenedor) === sinCola;
-    let sobrescribe = false;
+    // Reemplazar se puede; lo que no se puede es reemplazar SIN HABERLO DICHO antes.
+    let sobrescribeSinAvisar = false;
     if (ofreceFirmar(v.contenedor)) {
+      const preguntasAntes = avisos.confirm;
       const r = await firmarEnPantalla(b, v.contenedor, 'OTRO FIRMANTE');
       cerrarPad(r.pad);
-      sobrescribe = (await cola(b)).nombres.join() === 'OTRO FIRMANTE';
+      sobrescribeSinAvisar = (await cola(b)).nombres.join() === 'OTRO FIRMANTE' && avisos.confirm === preguntasAntes;
     }
-    if (calla || sobrescribe) vistos.push('reabrir-sin-red-calla-la-firma-guardada-y-refirmar-la-sobrescribe');
+    if (calla || sobrescribeSinAvisar) vistos.push('reabrir-sin-red-calla-la-firma-guardada-y-refirmar-la-sobrescribe');
   }
 
   // ④ · el servidor rechaza la firma para siempre al drenar: sale de la cola, queda constancia…
@@ -399,11 +543,15 @@ async function defectosObservados() {
 
 test('SCRUM-1351 · los defectos del viaje son EXACTAMENTE los declarados (ni uno arreglado sin retirar, ni uno nuevo)', async () => {
   assert.equal(new Set(DEFECTOS_DECLARADOS).size, DEFECTOS_DECLARADOS.length, 'una entrada repetida esconde otra');
+  // Una clave mal escrita en el JSON nunca coincidiría con nada: se leería como «arreglado» y,
+  // a la vez, el defecto de verdad como «nuevo». Mejor decir que es una errata.
+  assert.deepEqual(DEFECTOS_DECLARADOS.filter((d) => !DEFECTOS_QUE_SE_SABEN_MEDIR.includes(d)), [],
+    '🔴 el JSON declara un defecto que este test no sabe medir: ¿errata en la clave?');
   const vistos = await defectosObservados();
   const arreglados = DEFECTOS_DECLARADOS.filter((d) => !vistos.includes(d));
   const nuevos = vistos.filter((d) => !DEFECTOS_DECLARADOS.includes(d));
   assert.deepEqual(arreglados, [],
-    '✅ este defecto ya NO se observa: BORRA su línea de DEFECTOS_DECLARADOS en el mismo commit que lo arregla.');
+    '✅ este defecto ya NO se observa: BORRA su entrada de scripts/_defectos-viaje-firma-declarados.json en el mismo commit que lo arregla.');
   assert.deepEqual(nuevos, [],
     '🔴 el viaje de la firma sin red del albarán tiene un defecto que no estaba declarado.');
 });

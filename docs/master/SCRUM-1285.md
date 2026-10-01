@@ -60,6 +60,44 @@ llegando la última).
 
 ---
 
+## Mitad de SERVIDOR (S1) · aceptación 4 · rama `scrum-1285b-plan-de-cobro-con-version`
+
+**Medido contra:** `origin/main` = `3700de42ef552b5da5689f375084d8be8ff47157` · 2026-09-29T16:56:08Z
+
+`PATCH /admin/quotes/:id/billing-plan` hacía `update({ where: { id } })`: reemplazaba sin mirar sobre qué
+versión escribía. Ahora:
+
+- La petición puede traer `version` = el `updatedAt` que la pantalla recibió (`quoteAdmin.ts:253` ya lo
+  devuelve en el GET del detalle). La condición va **dentro del `where`** del `update`
+  (`{ id, updatedAt: version }`), mismo patrón que SCRUM-1276: la base decide «¿sigue siendo esa versión?»
+  y «escribe» en la misma sentencia; no cabe otra petición en medio.
+- No casa → P2025 → **409 `version_superada`**, sin escribir. Ilegible → 400 `version_invalida`.
+- La respuesta devuelve `version` (la nueva) para el siguiente guardado.
+
+**Plantilla para el censo de S3:** `src/core/db/escrituraConVersion.ts` (`leerVersion`,
+`esVersionSuperada`, los dos códigos). Cuatro líneas por ruta. El `where` lleva `updatedAt` como LITERAL
+(no un spread): un spread lo vuelve OPACO para el censo 1285c, que lo midió así en CI.
+
+⚠️ **Transición declarada:** sin `version` se escribe como hoy, porque la pantalla aún no la manda y
+exigirla rompería el guardado normal al desplegar. **Falta (S2):** que `quotesDetailView.js:807` mande
+`version: quote.updatedAt`, la actualice con la de la respuesta y trate el 409. El 409 va **sin
+`message`**: cualquier texto para la persona pide firma (regla 39). Cuando la pantalla la mande, se exige.
+
+**Patrón nombrado por el orquestador (29-sep), visto en SCRUM-1276:** *un fixture inválido que pasa
+porque el código de producción es demasiado laxo.* Al apretar el código, el fixture cae (`scrum814`
+creaba el presupuesto en `pending`, estado que no existe). La pregunta no es «qué he roto» sino «¿este
+fixture era posible?».
+
+Test `tests/scrum1285b-plan-de-cobro-con-version.test.mjs`, por el manejador real con la base doblada
+(P2025 y `@updatedAt` emulados): control positivo (dos guardados seguidos, cada uno sobre la versión que
+devolvió el anterior), versión superada → 409 sin cambiar la base, **latencia invertida** (el PATCH viejo
+llega el último y no revierte), versión ilegible → 400, y la transición. **Rojo contra `3700de42`: 4/5**
+(la transición pasa en los dos, como debe).
+
+Fuera de alcance: si se emite una factura entre la lectura de `emitidas` y la escritura, eso no cambia el
+`updatedAt` del presupuesto; lo cubre (o no) el censo de S3.
+
+La tanda completa lo marcó (SCRUM-1185): `version` es un campo del cuerpo que ninguna pantalla manda aún. Declarado en scripts/_sin-consumir-declarados.json con carril **S2** y ticket SCRUM-1285; se retira cuando quotesDetailView.js lo mande. Resto de la tanda: solo el 1216b ajeno.
 # Apéndice · SCRUM-1285c · Censo: escrituras que reemplazan un registro sin comprobar contra qué versión escriben
 
 **Medido contra:** `origin/main` = `51d81311b01e19d592ad99a1f1f0817e4121cb55` · 2026-09-29T17:14:58Z
@@ -163,3 +201,49 @@ tiene la doble transición a `paid` de `psp:119`), y la carrera de sellado de `e
 
 Nada de `src/`, `public/` ni del esquema. Carriles de lo encontrado: dinero y cobros → S1/J (según `dos-equipos.md`);
 lo fiscal (`invoiceAdmin.ts`, `invoice.routes.ts`, `invoicing.ts`) → J1, **solo se ha leído**.
+
+# APÉNDICE · La pantalla manda la versión y el aviso del 409 sólo sale cuando el plan ha cambiado (S2)
+
+**Medido contra:** `origin/main` = `64dc3211d039cedece0cccf9fa3fcaf7d491319d` · 2026-10-01T13:03:46Z
+A9: comprobación → `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`
+
+Carril S2 (`public/dashboard/js/quotesDetailView.js`) · rama `scrum-1285-plan-de-cobro-version-pantalla` · sesión `s2-1octb`. Entrada propia (encabezado de primer nivel) para que su declaración de skill no se atribuya a los PR de arriba.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Un párrafo nuevo en la sección «Plan de cobro», con una clase que ya existía (`cobro-aviso`): sin estilos nuevos ni en línea, sin componente nuevo. Texto: el aprobado, registrado en `docs/microcopy/2026-10-01-SCRUM-1285-plan-de-cobro-cambiado.md`.
+
+(La A9: iba a pintar el texto a cada 409, que es lo que decía el encargo — «son ~3 líneas». Antes de pintarlo comprobé lo que afirma, y no se sostenía. La comprobación es el test de la nota, abajo.)
+
+## Lo que se encargó y lo que se midió
+
+El encargo: mandar `version: quote.updatedAt`, y ante el 409 `version_superada` recargar y pintar «Este plan de cobro ha cambiado desde que lo abriste…».
+
+La versión que compara el servidor es el `updatedAt` **del presupuesto entero**. En esta misma ficha, las notas internas se guardan solas al teclear y no repintan la ficha; las etiquetas, igual.
+
+Medido en yaqu.app, cuenta de pruebas, presupuesto #203: `updatedAt` antes `2026-10-01T11:00:24.453Z` → guardar la nota interna, 200 → después `2026-10-01T12:54:38.985Z`. La nota se restauró.
+
+Es decir: apuntar una nota y después guardar el plan da 409, y el texto diría que el plan ha cambiado cuando lo único que cambió fue la nota. Y se descartaría el cambio de la persona.
+
+## Lo construido
+
+1. «Guardar plan» manda la versión que leyó la ficha.
+2. Ante 409 `version_superada` se relee el presupuesto y se compara lo que la persona ve del plan (tramos, reparto y cuántos tramos están facturados) con lo vigente:
+   - **es otro** → no se reenvía nada, se repinta la ficha con el plan vigente y sale el aviso aprobado, una vez, dentro de la sección;
+   - **es el mismo** → se reenvía su cambio con la versión nueva, sin decir nada. Si entre la relectura y el reenvío alguien cambia el plan, el servidor vuelve a rechazarlo: la protección no baja.
+3. Si el reenvío también choca, sale el respaldo que la pantalla ya tenía («No se pudo guardar el plan») y no el identificador interno.
+4. Todo ocurre con la sección congelada (`congelarMientrasGuarda`): sigue habiendo un solo guardado en vuelo.
+
+Retirada `billing-plan::version` de las declaradas de `scripts/_sin-consumir-declarados.json` (pasa a `retiradas`).
+
+## Verificado, ejecutando
+
+`tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`, vista real en el banco y red retenida:
+
+- **Con la vista de `main`:** 1 de 7 (pasa sólo el control del 409 que no es de versión).
+- **Con el cambio:** 7 de 7.
+
+## Lo que NO está medido o queda abierto
+
+- **En pantalla contra yaqu.app:** la cuenta de pruebas no tiene ningún presupuesto con plan de cobro propio (#203 es un borrador sin plan). Es el mismo hueco de datos de prueba que SCRUM-1367 (no hay Trabajo con presupuesto aceptado): dos verificaciones distintas paradas por lo mismo.
+- **La tanda completa en esta máquina no terminó:** el sistema la paró por falta de memoria. Corrida una tanda dirigida de 22 ficheros (plan de cobro, trinquetes 1185 y 713, censos de copy, skill UI, A9): 195 de 195.
+- **Un tramo facturado de más cuenta como «el plan ha cambiado».** Los tramos son los mismos, pero uno ha pasado a fijo. El criterio: lo que la persona está a punto de guardar ya no es válido — su pantalla describe un estado que ya se superó, y guardarlo sería escribir sobre una factura emitida. Y entre molestarla con el aviso y dejarle pisar un plan con un tramo ya facturado, lo segundo es el daño.
+- **El mismo defecto de fondo sigue en el servidor:** cualquier escritura del presupuesto mueve la versión del plan. Aquí se absorbe en la pantalla; una versión propia del plan sería cambio de esquema (S1, con su ALTER).

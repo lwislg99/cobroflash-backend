@@ -298,10 +298,16 @@ async function pendientesDeSubir(leerCola) {
  *
  * PURA sobre sus argumentos: hoy la cola siempre está vacía —no tiene productor— y una lista vacía
  * hace verdad cualquier «no hay ninguna», así que el control positivo se ejercita con corpus.
+ *
+ * 🔴 SCRUM-1360 · EL ID NO BASTA: TAMBIÉN EL TIPO. Desde SCRUM-652 la cola guarda firmas de parte,
+ * y el id del parte va en ESTE MISMO campo (`colaDeFirmas.js`, `encolarFirma`). Sin mirar `tipo`, la
+ * firma pendiente del parte 7 degradaba la caja del albarán 7 ya firmado. Una entrada sin `tipo`
+ * es de albarán — el mismo default con el que se sube, para que las colas viejas sigan contando.
  */
 function hayFirmaEnColaDe(albaranId, firmas) {
   if (!Array.isArray(firmas)) return false;
-  return firmas.some((f) => f && String(f.albaranId) === String(albaranId));
+  return firmas.some((f) => f && (f.tipo || 'albaran') === 'albaran'
+    && String(f.albaranId) === String(albaranId));
 }
 
 /**

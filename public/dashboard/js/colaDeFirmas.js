@@ -447,7 +447,13 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
   // Si la cola quedó vacía DE VERDAD —leída y sin nada—, ya no hay nada que perder: se retira la
   // marca. Dejarla puesta haría que el siguiente arranque avisara de una pérdida que no hubo.
-  if (quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
+  //
+  // 🔴 SCRUM-1354 · PERO SÓLO SI ESTE DRENADO LA VACIÓ. Si la encontró ya vacía no ha drenado nada
+  // y no sabe POR QUÉ está vacía: puede ser que el navegador se la llevara. Antes la borraba igual,
+  // y si llegaba al arranque antes que `detectarDesalojo` una pérdida real salía «sin pérdida». La
+  // marca de una cola vacía es del detector, que es quien la consume al avisar.
+  const teniaAlgo = cola.firmas.length > 0;
+  if (teniaAlgo && quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
   return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
@@ -507,7 +513,28 @@ function subirFirmaDeLaCola(firma) {
  * al terminar, porque el contador es el ÚNICO sitio donde el profesional ve que el drenado
  * funcionó: si sube una firma y el número no se mueve, para él no ha pasado nada.
  */
-async function drenarAlAbrir() {
+const drenadosEnVuelo = new Set();
+/**
+ * SCRUM-1354 · Resuelve cuando no queda ningún drenado a medias. No lanza nunca.
+ *
+ * Lo usa el detector de desalojo del arranque: entre que el drenado saca la última firma y retira
+ * la marca hay una lectura de la cola, y un detector que mirase justo ahí vería «hubo cola y está
+ * vacía» de una cola que se acaba de subir entera. El drenado tiene plazo (el de `api.js`), así
+ * que esto no espera para siempre.
+ */
+function esperarDrenadosEnVuelo() {
+  return Promise.allSettled([...drenadosEnVuelo]).then(() => undefined);
+}
+
+function drenarAlAbrir() {
+  const p = drenarAlAbrirDeVerdad();
+  drenadosEnVuelo.add(p);
+  const soltar = () => { drenadosEnVuelo.delete(p); };
+  p.then(soltar, soltar);
+  return p;
+}
+
+async function drenarAlAbrirDeVerdad() {
   if (typeof window.leerFirmasPendientes !== 'function') return null;
   let r = null;
   try {
@@ -558,6 +585,7 @@ function activarDrenadoAlVolver(win, doc) {
 
 window.subirFirmaDeLaCola = subirFirmaDeLaCola;
 window.drenarAlAbrir = drenarAlAbrir;
+window.esperarDrenadosEnVuelo = esperarDrenadosEnVuelo;   // SCRUM-1354
 window.drenarSiNoSeEstaDrenando = drenarSiNoSeEstaDrenando;   // SCRUM-919
 window.activarDrenadoAlVolver = activarDrenadoAlVolver;
 window.claveDeFirma = claveDeFirma;
