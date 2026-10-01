@@ -16,10 +16,10 @@
 // «sin poder medirse» el 29-sep. Estaba al lado.
 //
 // ── LOS DEFECTOS, DECLARADOS (trinquete de dos mitades) ──────────────────────────────────────
-// Los de `DEFECTOS_DECLARADOS` existen HOY y este fichero no los arregla: `colaDeFirmas.js`,
-// `almacenLocal.js` y `app.js` son de otro carril. Nacieron seis; SCRUM-1353 arregló los dos de
-// `albaranDetailView.js` y borró sus líneas. El test los MIDE y exige que lo medido sea
-// exactamente lo declarado:
+// Los de `scripts/_defectos-viaje-firma-declarados.json` existen HOY y este fichero no los
+// arregla: `colaDeFirmas.js`, `almacenLocal.js` y `app.js` son de otro carril. Nacieron seis;
+// SCRUM-1353 arregló los dos de `albaranDetailView.js` y borró sus líneas. El test los MIDE y
+// exige que lo medido sea exactamente lo declarado:
 //   · arreglas uno → cae, y te pide retirar su entrada (se BORRA, no se comenta);
 //   · aparece uno nuevo → cae también.
 // Así ninguno se arregla ni se rompe sin que este fichero se entere.
@@ -34,15 +34,24 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { montarAlmacen, porQueEstariaCiego, indexedDBQueAbortaTrasEscribir } from './_banco-almacen-local.mjs';
 import { pintarVista, todos } from './_banco-vistas.mjs';
+import { defectosDeclarados } from './_defectos-viaje-firma.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const dom = require('../dist/modules/jobs/domain/albaranFirmante.js');
 
-/** Los defectos que el viaje tiene HOY. Uno por línea; el que se arregla se BORRA. */
-const DEFECTOS_DECLARADOS = [
+/**
+ * Los defectos que el viaje tiene HOY. Viven en `scripts/_defectos-viaje-firma-declarados.json`
+ * (SCRUM-1362): quien arregla uno BORRA su entrada ALLÍ, sin tocar este fichero. Si el JSON no se
+ * puede leer, el cargador lanza y el test sale en rojo diciéndolo: nunca una lista vacía.
+ */
+const DEFECTOS_DECLARADOS = defectosDeclarados();
+/** Todo lo que `defectosObservados()` sabe detectar. Una clave del JSON que no esté aquí es una errata. */
+const DEFECTOS_QUE_SE_SABEN_MEDIR = [
   'firmar-lo-ya-subido-dice-que-no-se-registro-y-reencola',
+  'reabrir-sin-red-calla-la-firma-guardada-y-refirmar-la-sobrescribe',
   'el-detalle-abierto-no-se-entera-de-que-la-cola-subio',
+  'rechazo-definitivo-del-drenado-no-se-ve-en-el-albaran',
   'cerrar-sesion-borra-la-cola-sin-avisar',
   'firmar-con-red-deja-la-marca-de-que-hubo-cola',
 ];
@@ -534,11 +543,15 @@ async function defectosObservados() {
 
 test('SCRUM-1351 · los defectos del viaje son EXACTAMENTE los declarados (ni uno arreglado sin retirar, ni uno nuevo)', async () => {
   assert.equal(new Set(DEFECTOS_DECLARADOS).size, DEFECTOS_DECLARADOS.length, 'una entrada repetida esconde otra');
+  // Una clave mal escrita en el JSON nunca coincidiría con nada: se leería como «arreglado» y,
+  // a la vez, el defecto de verdad como «nuevo». Mejor decir que es una errata.
+  assert.deepEqual(DEFECTOS_DECLARADOS.filter((d) => !DEFECTOS_QUE_SE_SABEN_MEDIR.includes(d)), [],
+    '🔴 el JSON declara un defecto que este test no sabe medir: ¿errata en la clave?');
   const vistos = await defectosObservados();
   const arreglados = DEFECTOS_DECLARADOS.filter((d) => !vistos.includes(d));
   const nuevos = vistos.filter((d) => !DEFECTOS_DECLARADOS.includes(d));
   assert.deepEqual(arreglados, [],
-    '✅ este defecto ya NO se observa: BORRA su línea de DEFECTOS_DECLARADOS en el mismo commit que lo arregla.');
+    '✅ este defecto ya NO se observa: BORRA su entrada de scripts/_defectos-viaje-firma-declarados.json en el mismo commit que lo arregla.');
   assert.deepEqual(nuevos, [],
     '🔴 el viaje de la firma sin red del albarán tiene un defecto que no estaba declarado.');
 });
