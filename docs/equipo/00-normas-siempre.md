@@ -61,6 +61,7 @@ El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
+Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada. (SCRUM-1358)
 Una ventana fija es una tolerancia disfrazada.
 Un build roto no es un rojo: es un verde que no vale.
 Referenciar por posición caduca. Referenciar por identidad no.
