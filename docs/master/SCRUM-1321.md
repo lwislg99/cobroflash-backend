@@ -145,3 +145,19 @@ el padre mide. La vi en rojo a mano (`if (false && ambigua)` → el test cae; re
    fichero nuevo. Las dos trampas están escritas en la cabecera de `historia-del-meta-guard.sh`.
 3. Corrí la suite entera sólo en CI (decisión del orquestador: sin turno). En local, los ficheros
    que toco, los guards del instrumento y `guards:entrada`.
+4. **Subí a evidencias una cobaya que registra tests fuera de `tests/`** (`cobaya-de-cinco.mjs`), y
+   `tests/scrum708-el-fichero-que-no-corre.test.mjs` la denunció en el CI del PR #2043: el tercer
+   rojo de esa tanda, el único mío. Mi muestra local de 51 guards no llevaba ese. Ahora la sonda
+   escribe la cobaya en un temporal y el fichero ya no existe.
+
+## 8 · Lo que dijo el CI (run 36803845315, cabeza `cd7afa56`)
+
+- **meta-guard: `vivas 359 · mudas 0 · ciegas 0 · ficheros muertos 0`**, en verde. Las nueve de
+  `scrum853` VIVAS, también en Linux. `scrum859` no perdió eventos en este run: el mensaje nuevo
+  de los tests que faltan sigue SIN verse en un caso real.
+- tanda obligatoria: 9.346 tests, 9.245 pasan, 98 saltados, **3 caen**: `scrum55` y `scrum128`
+  (plazos vencidos en `main`, ajenos) y `scrum708` (el mío de arriba, arreglado en el commit
+  siguiente). Los 11 tests de SCRUM-1321 pasan en Linux, la sonda incluida.
+- Sin seguir: el artefacto `tanda-tap` de ese run trae 2.197.164 bytes NUL de 2.334.814; el del
+  run 36800533840 (otro PR), 2.194.946 de 2.332.593. Algo sigue pisando el TAP de la tanda en CI
+  después de SCRUM-1308. No es de este cambio; queda dicho.
