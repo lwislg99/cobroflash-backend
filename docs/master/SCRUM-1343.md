@@ -1,6 +1,6 @@
 # SCRUM-1343 · Un hijo que no arranca es un CIEGO, no un hallazgo
 
-**Medido contra:** `origin/main` = `f2336d78a28db890ce813d9f7954c99cd5e0ff63` · 2026-10-01T07:53:57Z
+**Medido contra:** `origin/main` = `f19ac2f0081a613d44079df86f4cecf2d6f9ace7` · 2026-10-01T08:07:39Z
 
 1-oct-2026 · **J1h** (equipo de Javier), relevo de J1g. Encargo del orquestador `cobroflash-backend-5b`.
 
@@ -131,7 +131,7 @@ de SCRUM-554 y no bloquea).
 
 ## Medido
 
-Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm run build` (salida 0):
+Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm run build` (salida 0). Después `main` se movió a `f19ac2f0` (sólo SCRUM-1340: su guard de la skill y docs; nada donde toco): mezclado, y repetidos `guards:entrada` (12 guards, 132 tests, verde) y los seis ficheros de los rojos y del registro (33 tests, 0 caen). La tanda dirigida NO se repitió sobre `f19ac2f0`:
 
 - **El test**: 14 casos, 14 pasan.
 - **Mutaciones**: 14 de 14 caen; árbol restaurado (sha256 por fichero y `git status` vacío).
