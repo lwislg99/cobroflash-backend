@@ -159,7 +159,19 @@ campos salen.
 - **Qué campos salen** en cada una: se ha medido si la consulta distingue el rol, no si recorta campos.
 - **Por efecto en yaqu.app** sólo están las tres de J4g. La sesión de operario está cerrada y no se pide.
 
-## Ⓔ Lo que queda sin decidir, y es del fundador
+## Ⓔ Lo que quedaba sin decidir
+
+**Decidido por el fundador el mismo 1-oct-2026, SCRUM-1390 c.17962 (leído en Jira), después de mandarle
+lo de abajo:** la asignación al documento cuenta para ver («1-Sí»); el rótulo del Técnico es «Tus
+presupuestos recientes» («2-Ok firmo»); el admin conserva «Actividad reciente» («3-El admin conserva
+sí»). El máster lo recoge en la misma nota. **Sigue sin firma** el texto del bloque cuando está vacío. Y
+el comentario «ASIGNAR NO ES UN PERMISO» de `prisma/schema.prisma` queda falso: no se toca aquí.
+
+Un aviso para quien construya: «los tres ejes» son dos listas distintas. Los de la decisión son autor del
+documento, Trabajo asignado y asignado al documento. Los de `esSuyoElTrabajo` son los tres del TRABAJO
+(`operarioId`, `assignedUserId`, la tabla de asignados): cubren sólo el segundo de la decisión.
+
+Lo que sigue es lo que se le mandó, tal como se escribió antes de la decisión:
 
 **Qué cuenta como «asignado» en un presupuesto que todavía no tiene Trabajo.** El literal es «lo que se
 le ha asignado como trabajo» (c.17932). El Trabajo nace cuando el presupuesto se acepta. Antes de eso, un
