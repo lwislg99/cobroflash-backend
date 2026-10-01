@@ -65,7 +65,7 @@ const medidos = new Map(leeTsv('medidos.tsv').map((j) => [j.job, j]));
 const grupos = new Map();
 for (const f of leeTsv('mismo-arbol.tsv')) { if (!grupos.has(f.arbol)) grupos.set(f.arbol, []); grupos.get(f.arbol).push(f); }
 const nombresDe = (job) => { const s = new Map(); for (const l of fs.readFileSync(path.join(carpeta, 'casos', `${job}.txt`), 'utf8').split('\n')) { if (!l) continue; const n = l.split('\t').slice(2).join('\t'); s.set(n, (s.get(n) || 0) + 1); } return s; };
-const existe = (c) => { try { git(['cat-file', '-e', `${c}^{commit}`]); return true; } catch { return false; } };
+const existe = (c) => { try { execFileSync('git', ['cat-file', '-e', `${c}^{commit}`], { cwd: raiz, stdio: 'ignore' }); return true; } catch { return false; } };
 
 let arbolesMedidos = 0; let sinCommitLocal = 0;
 const fp = []; // por job completo: cuántos declarados no aparecen
@@ -101,9 +101,31 @@ console.log(`POBLACIÓN: ${grupos.size} árboles probados más de una vez · con
 console.log(`  último árbol leído: ${ficherosUltimo} ficheros de tests/ · ${totalUltimo} llamadas test()/it() · ${literalesUltimo} nombres literales distintos`);
 console.log(`\n① FALSOS POSITIVOS — jobs a los que NO les falta nada respecto a su hermano: ${jobsCompletos}`);
 console.log(`   nombres declarados que no aparecen en su registro: mín ${fp[0]} · mediana ${fp[fp.length >> 1]} · máx ${fp.at(-1)}`);
+console.log(`   jobs «completos» a los que aun así les falta algún declarado: ${fp.filter((x) => x > 0).length} de ${jobsCompletos}`);
 console.log(`   nombres distintos que faltan en algún job completo: ${noAparecen.size}`);
 for (const [n, c] of [...noAparecen.entries()].sort((a, b) => b[1] - a[1]).slice(0, 40)) console.log(`     ${String(c).padStart(3)}×  ${n.slice(0, 140)}`);
 console.log(`\n② PODER — jobs que perdieron casos respecto a su hermano: ${jobsConPerdida}`);
 console.log(`   habría saltado en ${cazados} de ${jobsConPerdida} · casos perdidos ${casosPerdidos} · de ellos nombrados por la señal ${casosNombrados}`);
 if (noCazados.length) console.log(`   NO habría saltado en: ${noCazados.join(' · ')}`);
+// ── ③ TODA LA LÍNEA DE MAIN, sin hermano: cada job de push contra lo que declara SU commit ──
+const pushes = [...medidos.values()].filter((j) => j.evento === 'push' && j.tests !== '' && existe(j.probado));
+let pushConFalta = 0; let pushVerdeConFalta = 0; const porFichero = new Map(); const filas = []; const tam = [];
+for (const j of pushes) {
+  const d = declaradosDelCommit(j.probado); const s = nombresDe(j.job);
+  const faltan = [...d.mapa.keys()].filter((n) => !s.has(n));
+  if (!faltan.length) continue;
+  pushConFalta++; if (j.fail === '0' && j.cancelled === '0') pushVerdeConFalta++; tam.push(faltan.length);
+  const fs3 = new Map(); for (const n of faltan) for (const f of d.mapa.get(n)) fs3.set(f, (fs3.get(f) || 0) + 1);
+  for (const f of fs3.keys()) porFichero.set(f, (porFichero.get(f) || 0) + 1);
+  filas.push([j.job, j.run, j.probado, j.empezo, j.conclusion, j.tests, d.total, faltan.length, [...fs3.entries()].map(([f, c]) => f + '×' + c).join(' ')].join('	'));
+}
+fs.writeFileSync(path.join(carpeta, 'declarados-que-faltan-en-main.tsv'), ['job	run	commit	empezo	conclusion	tests	llamadas_declaradas	literales_que_faltan	ficheros', ...filas].join('
+') + '
+');
+tam.sort((a, b) => a - b);
+console.log(`
+③ TODA LA LÍNEA DE MAIN — jobs de push con resumen y commit en local: ${pushes.length}`);
+console.log(`   con algún nombre declarado que NO aparece en su registro: ${pushConFalta} de ${pushes.length} (${(100 * pushConFalta / pushes.length).toFixed(0)} %) · de ellos verdes: ${pushVerdeConFalta}`);
+if (tam.length) console.log(`   nombres que faltan por job: mín ${tam[0]} · mediana ${tam[tam.length >> 1]} · máx ${tam.at(-1)}`);
+for (const [f, c] of [...porFichero.entries()].sort((a, b) => b[1] - a[1])) console.log(`     ${String(c).padStart(3)}  ${f}`);
 console.log('EXIT=0');
