@@ -127,3 +127,23 @@ pasaría a ser un texto «firmado por el fundador», que es exactamente lo que l
 
 **Y si tu lector no encuentra nada, que lo diga.** `aprobacionesDeMicrocopy()` **lanza** cuando el
 barrido vuelve vacío: cero es «no supe mirar», nunca «no hay aprobaciones».
+
+## Un texto firmado largo (SCRUM-1329)
+
+`tests/scrum514-aprobado-y-aplicado.test.mjs` trata como **nota** —prosa que nadie pinta— toda cita
+de más de 160 caracteres. Un texto firmado puede pasar de ahí, y entonces la ficha lo dice de forma
+que el guard lo pueda comprobar leyendo. Las tres cosas a la vez:
+
+1. El texto va **entero en UNA línea de cita**, bajo el encabezado «Texto aprobado».
+2. La **línea de la firma nombra el comentario de Jira** donde se firmó, en esa misma línea:
+   `**Aprobado por el fundador** el <fecha>, en **SCRUM-<n>** (comentario <id>).` La firma delegada
+   ya lo lleva.
+3. El código lo **pinta tal cual**, en un solo literal.
+
+Si falta alguna, el guard cae diciendo cuál: no sabe si es una cita firmada o una nota, y no lo
+deja pasar. ⛔ **Un texto firmado no se parte ni se reescribe para que quepa** (regla 39): el texto
+manda sobre el instrumento. Una frase por línea sigue valiendo cuando el texto son varias frases y
+el código las pinta por separado.
+
+Lo que el guard **no** comprueba: que ese comentario contenga ese texto. Un test no lee Jira; la
+referencia es para que una persona pueda ir a mirarlo.
