@@ -50,6 +50,8 @@ test('SCRUM-1185 · SUELO: el censo del árbol real ve población (si no, CIEGO,
   if (p.consumidores < 500) ciegos.push(`${p.consumidores} llamadas a rutas`);
   if (p.vistas < 20) ciegos.push(`${p.vistas} vistas del router`);
   if (p.exportaciones < 900) ciegos.push(`${p.exportaciones} exportaciones`);
+  // SCRUM-1192 · sin la raíz, el cierre transitivo no mide y todo import vuelve a contar como vivo.
+  if (!(p.alcanzables >= 250)) ciegos.push(`${p.alcanzables} ficheros alcanzables desde src/index.ts`);
   assert.deepEqual(ciegos, [], `🔴 CIEGO: población sospechosamente pequeña (${ciegos.join(' · ')}). `
     + 'Una sonda que no ve el árbol diría «nada nuevo sin consumir» y sería mentira.');
 });
@@ -163,6 +165,27 @@ test('SCRUM-1185 · CONTROL NEGATIVO DERIVADO: el mismo árbol, con el consumido
   assert.ok(!conectado.has('ruta · POST /admin/x/consolidar'), '🔴 una llamada real a `/admin/x/consolidar` no cuenta');
   assert.ok(base.has('front-funcion · public/dashboard/js/a.js::pintarNada'), '🔴 el negativo no parte del mismo positivo');
   assert.ok(!conectado.has('front-funcion · public/dashboard/js/a.js::pintarNada'), '🔴 una llamada real a `window.pintarNada()` no cuenta');
+});
+
+// SCRUM-1192 · un import desde un módulo MUERTO no es consumo. `h.ts::ayuda` sólo la importa
+// `muerto.ts`, y a `muerto.ts` no lo carga nadie desde la raíz: se acusa. El negativo es el mismo
+// árbol con la raíz cargando `muerto.ts`.
+function arbolConRaiz({ raizCargaMuerto = false } = {}) {
+  const files = new Map();
+  files.set('src/index.ts', raizCargaMuerto ? "import { usar } from './muerto';\nusar();" : "console.log('arranque');");
+  files.set('src/muerto.ts', "import { ayuda } from './h';\nexport function usar() { return ayuda(); }");
+  files.set('src/h.ts', 'export function ayuda() { return 1; }');
+  return { files, testsText: '' };
+}
+
+test('SCRUM-1192 · CONTROL FABRICADO: lo que sólo usa un módulo muerto se acusa; con la raíz cargándolo, no', () => {
+  const base = censar(arbolConRaiz());
+  assert.equal(base.poblacion.alcanzables, 1, '🔴 el alcance desde src/index.ts no se está midiendo');
+  assert.ok(claves(base).has('export · src/h.ts::ayuda'),
+    '🔴 `ayuda` sale viva: se está contando el import de un módulo que no carga nadie');
+  const conectado = censar(arbolConRaiz({ raizCargaMuerto: true }));
+  assert.ok(!claves(conectado).has('export · src/h.ts::ayuda'), '🔴 con la raíz cargando `muerto.ts`, `ayuda` sí tiene consumidor vivo');
+  assert.ok(!claves(conectado).has('export · src/muerto.ts::usar'), '🔴 `usar` la llama la raíz');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

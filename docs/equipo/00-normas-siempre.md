@@ -99,5 +99,6 @@ Que un commit no esté en main no dice que su contenido no esté: el trabajo ent
 Un lanzamiento que no cuaja dice lo mismo que uno que sí: «backgrounded» y un id. (SCRUM-1357)
 El panel vacío no es «no existe»: cuando el panel y el registro de trabajos discrepan, manda el registro. (SCRUM-1357)
 Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests; sólo el recuento lo distingue. (SCRUM-1366)
+Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido. (SCRUM-1356)
 Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
 Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)

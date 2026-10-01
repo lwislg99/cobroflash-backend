@@ -42,7 +42,8 @@ Con una firma guardada ya no se ofrece «Enviar para firmar»: serían dos firma
 
 - **Con el código `invalid_id` el aviso de rechazo NO se pinta.** «Vuelve a firmar» promete que
   repetir sirve, y con ese código repetir da el mismo no. No hay texto firmado para ese caso, así
-  que no se dice nada. El texto del parte tiene hoy ese mismo agujero: SCRUM-1352.
+  que no se dice nada. El texto del parte no calla con ese código: SCRUM-1352 midió que desde el
+  pad del parte no se alcanza.
 - Si hay un rechazo y además una firma nueva en la cola, manda la caja: ya volvió a firmar.
 - Si el servidor ya da el albarán por firmado, el rechazo es viejo y no se pinta.
 - Si el almacén del móvil no se puede leer, no se pinta nada ni se pregunta nada.
