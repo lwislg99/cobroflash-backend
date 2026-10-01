@@ -1,0 +1,89 @@
+POBLACION · ficheros 409 · definiciones 34251 · vueltas 6 · cables back→front ["WIRE::voiceEnabled","WIRE::voiceAlbaranEnabled","WIRE::bizumManualEnabled","WI
+PORTADORES: 1788
+   EXPORT (36): FLAG_DEFAULTS, isFlagEnabled, cardChargeMode, procesarObligado, getEmissionMode, modoDocumentoSuelto, allocateInvoiceNumber, emitInvoice, modoEmisionVisible, emitirRecapitulativas, runMaintenanceProposals, handleMaintenanceButton, sendWelcomeEmail, sendFirstPaymentEmail, runLifecycleEmails, sobreFis
+   WINDOW (43): appVoiceEnabled, appVoiceAlbaranEnabled, appBizumManualEnabled, appBizumSinTelefono, appModoEmision, appDocumentoSuelto, renderAppView, renderCobrosView, pintarResumenTrimestreEnHome, ctxAccionesFactura, destinoDeAccionFactura, renderInvoiceDetailView, renderInvoicesView, renderJobDetailView, render
+   WIRE (7): voiceEnabled, voiceAlbaranEnabled, bizumManualEnabled, bizumSinTelefono, documentoSuelto, modoEmision, viasDeCobro
+   public/dashboard/js/aiQuoteAssistant.js (2): openAiSuggestModal, openAiMessageModal
+   public/dashboard/js/albaranAccion.js (6): facturaFiscalDisponible, ctxAlbaranDeFila, valorado-con-pendiente, sin-valorar-convertible, primariaDeAlbaran, ctx
+   public/dashboard/js/albaranDesdePresupuestoModal.js (1): abrirModalAlbaranDesdePresupuesto
+   public/dashboard/js/albaranDetailView.js (30): renderAlbaranDetailView, recargar, refrescar, post, botones, btnEmitir, btnEnviarFirmar, btnFacturar, btnConvertirFactura, btnFirmarAqui, onConfirm, btnWhatsApp, btnEditarLineas, btnFoto, onload, btnDuplicar, btnVerTrabajo, ctx, destino, crear, b, className, ROTULOS_ALBARAN, PUENTES_A_LA_FILA, setSt
+   public/dashboard/js/albaranesView.js (11): renderAlbaranesView, pintar, fila, primaria, rotulo, textContent, cargar, pintarError, botones, activar, pintarFilas
+   public/dashboard/js/app.js (14): initApp, appVoiceEnabled, appVoiceAlbaranEnabled, appBizumManualEnabled, appBizumSinTelefono, appModoEmision, appDocumentoSuelto, renderView, renderAppView, _origRender, pintarInicio, abrirFichaDesdeHash, anotarPrecarga, precargarSiTocaAhora
+   public/dashboard/js/cobrosView.js (4): renderCobrosView, pintarFilas, exports, pintarFiltros
+   public/dashboard/js/colaDeFirmas.js (3): drenarAlAbrir, drenarSiNoSeEstaDrenando, activarDrenadoAlVolver
+   public/dashboard/js/csvImport.js (1): openImportCsvModal
+   public/dashboard/js/customerDetailView.js (17): renderCustomer360View, onclick, renderTab, abrir, pintarWhatsapp, pintarTrabajos, bTitulo, b, abrirFusionDeClientes, pintarLista, openEdit360Modal, makeTab, tabQuotes, tabInvoices, tabJobs, tabWhatsapp, enlace
+   public/dashboard/js/customersView.js (16): renderCustomersView, openCustomer360, pintar, botonesPestana, alternarTodos, loadCustomers, etiquetarSeleccion, trasGuardar, onModalSubmit, altaClienteModal, configurar, openModal, buildModal, header, abrir, abrirNuevo
+   public/dashboard/js/expensesView.js (8): celdaTrabajo, filaDeGasto, pintarGastos, quitarFiltrosDeGastos, renderExpensesView, loadExpenses, deleteExpenseItem, openExpenseModal
+   public/dashboard/js/globalSearch.js (2): navigate, renderDropdown
+   public/dashboard/js/homeView.js (29): renderHomeView, pintarResumenTrimestreEnHome, renderSetupChecklist, steps, done, cobroApagado, pasos, incomplete, innerHTML, renderHero, renderKpis, renderWeekSummary, renderActivity, go, renderTopCustomers, renderTopServices, renderTeamPerformance, openQuickQuoteModal, notaCondiciones, renderQqLine
+   public/dashboard/js/invoiceAccion.js (6): ctxAccionesFactura, bizumDisponible, bizum-disponible, bizum-no-disponible, destinoDeAccionFactura, exports
+   public/dashboard/js/invoiceDetailView.js (9): renderInvoiceDetailView, ubicarAccion, destino, className, abrirModalAnular, setStatus, avisar, avisoEstadoNoReconocido, avisoF
+   public/dashboard/js/invoicesView.js (12): renderInvoicesView, reload, sinEmision, tituloVacio, cuerpoVacio, innerHTML, renderGrupoCard, reloadPendientes, activateTab, repoblarEtiquetas, bloqueTipo, alElegir
+   public/dashboard/js/jobDetailView.js (61): pintarBloqueRail, enModoJustificante, huecosVisibles, pintarQueFaltaParaCobrar, renderJobDetailView, refresh, innerHTML, openAlbCrearSheet, editBtn, bt, marcarBtn, recordarBtn, wa, orig, textContent, qBtn, buildAlbEditor, mkRow, vozDisponible, abrirHojaDictado, pintarPropuesta, updateTotales, campoA
+   public/dashboard/js/jobNextAction.js (2): jobNextAction, puedeFacturar
+   public/dashboard/js/jobNuevoModal.js (2): abrirModalTrabajoNuevo, exports
+   public/dashboard/js/jobsView.js (23): renderJobsView, jobRow, refresh, patch, tecnicos, paint, pintarOpciones, renderJobRows, jobCierreSection, puedeFacturar, cobraAqui, siguiente, textContent, opcion, cifraDeLaLista, pintarCifrasDeLaLista, celdaTecnicos, celdaTecnicosConDesplegable, pintarResumen, abrirAsignar, celdaImporte, linea, imp
+   public/dashboard/js/modalHeader.js (2): cabeceraModal, exports
+   public/dashboard/js/onboardingView.js (15): showOnboardingWizard, steps, montar, refrescarPrevia, renderStep, step, innerHTML, renderFooter, renderDots, onNext, textContent, serieAvisar, marcar, validate, save
+   public/dashboard/js/plansView.js (9): buildPlansHtml, features, notaComision, renderPlansView, render, innerHTML, openAlcanceModal, selectPlan, accepted
+   public/dashboard/js/productsView.js (10): renderProductsView, buildEditModal, openEditModal, renderRows, refresh, onchange, cargarCatalogoDeGremio, pedirCatalogo, pedirOficio, cargado
+   public/dashboard/js/providersView.js (5): renderProvidersView, buildProviderEditModal, openProviderEditModal, renderRows, refresh
+   public/dashboard/js/puertaSerie.js (4): puertaSerieVisible, renderPuertaSerie, refrescarPrevia, exports
+   public/dashboard/js/quoteRequestsView.js (3): renderQuoteRequestsView, loadRequests, onclick
+   public/dashboard/js/quotesDetailView.js (11): renderQuoteDetailView, renderInvoices, buildDecisionPanel, submitDecision, duplicateQuote, buildMaintenanceBlock, mantBlock, facturaDisponible, openForm, buildStatusTimeline, puedeFacturar
+   public/dashboard/js/quotesListView.js (5): renderQuotesListView, renderRows, openDetail, pintar, loadQuotes
+   public/dashboard/js/quotesTabs.js (4): PESTANAS_PRESUPUESTOS, abrir, renderPestanasPresupuestos, exports
+   public/dashboard/js/quotesView.js (304): renderQuotesView, esDocumentoSuelto, textContent, setAlert, openQuoteModal, markDone, createField, createFieldSelect, fieldCustomer, fieldDireccionObra, refrescarDireccionObra, modo, esPersonalizada, hidden, cliente, placeholder, fieldVatDefault, input, fieldIvaModo, fieldPaymentTerms, paymentSelect
+   public/dashboard/js/reportsView.js (1): renderReportsView
+   public/dashboard/js/settingsSubmenus.js (6): ASIGNACION_SUPERFICIE, submenuDeSuperficie, destino, revisarAsignacion, exports, submenuDeCampo
+   public/dashboard/js/settingsView.js (127): renderSettingsView, panelDeSuperficie, modo, textContent, setAlert, createField, fName, fLegalName, fTaxId, fAddress, fWhatsappPhone, fDefaultCurrency, fInvoiceSeriesPrefix, fLogoUrl, fGoogleReviewUrl, fIban, fClabe, refreshLogoUI, v, src, onload, onerror, fBizumPhone, estadoBizum, original, innerHT
+   public/dashboard/js/teamView.js (6): renderTeamMemberDetail, renderTeamView, loadMembers, onclick, showInviteModal, showEditModal
+   public/dashboard/js/templatesView.js (4): renderTemplatesView, loadTemplates, onclick, showRenameModal
+   public/dashboard/js/tutorial.js (7): openHelpGuide, innerHTML, montarEscribenos, conSalida, showTutorialTooltip, ensureHelpButton, maybeShowSectionTip
+   public/dashboard/js/voiceInput.js (2): voiceSupportProbe, attachVoiceInput
+   src/app.ts (10): voiceEnabled, voiceAlbaranEnabled, bizumManualEnabled, bizumSinTelefono, flagBizum, documentoSuelto, modoEmision, publicProfileEnabled, vias, viasDeCobro
+   src/core/cron/cron.ts (4): startCronJobs, r, parte, resumen
+   src/core/flags.ts (3): FLAG_DEFAULTS, ES_ONLY_FLAGS, isFlagEnabled
+   src/index.ts (2): arrancar, parte
+   src/lib/invoicing.ts (67): ensureInvoiceForCharge, emision, number, factura, type, qrData, ensureInvoicePdf, inv, include, rectifies, select, fileName, diskPath, publicUrlPath, needs, vfHash, lines, emisor, name, legalName, taxId, address, logoUrl, phone, email, invoiceId, merchantId, merchant, customer, currency, total, crea
+   src/modules/auth/domain/auth.service.ts (1): registerMerchant
+   src/modules/billing/app/routes/charges.routes.ts (4): payToken, paybank_url, paycard_url, paymp_url
+   src/modules/billing/app/routes/mpWebhook.routes.ts (44): inv, invoiceId, where, id, invConf, documentNumber, receiptToken, chargeId, detail, log, customerId, relatedId, mpPaymentId, authResult, dataId, charge, updated, data, mp_payment_id, reference, reconciliations, create, bankRef, toEmail, toName, merchant, amt, cur, toPhone, customerName, merchantId, 
+   src/modules/billing/app/routes/payCard.routes.ts (8): useConnect, mode, sessionParams, session, data, payload, session_id, connect
+   src/modules/billing/app/routes/payInvoice.routes.ts (7): hasBizum, bizumAuto, flagOn, conBizumAuto, ordered, methodsHtml, hasCard
+   src/modules/billing/app/routes/psp.routes.ts (49): inv, hasRealPdf, invoiceId, where, id, merchant, invConf, documentNumber, receiptToken, businessName, chargeId, detail, merchantName, bodyText, url, log, customerId, relatedId, merchantPhone, merchantEmail, invoiceNumber, charge, data, cust, toEmail, toName, status, merchantDelCobro, resolucion, err
+   src/modules/billing/app/routes/receipt.routes.ts (12): retrieveOpts, s, bank_ref, amount, currency, puedeTarjeta, payBtns, pendingMessage, statusMessage, methodLabel, paidMeta, statusHero
+   src/modules/billing/domain/cardCharge.ts (3): cardChargeMode, useConnect, cardChargeDecision
+   src/modules/billing/domain/invoiceReminder.service.ts (9): sendReminderWA, payToken, result, windowText, windowCta, url, template, urlToken, sendInvoicePaymentReminders
+   src/modules/billing/domain/invoiceWhatsApp.service.ts (8): sendInvoicePaymentRequest, payToken, result, windowText, windowCta, url, template, urlToken
+   src/modules/billing/domain/viasDeCobro.ts (1): viasDeCobro
+   src/modules/exports/app/routes/exports.routes.ts (50): xmlPermitido, seleccion, invoices, facturas, message, resueltos, listos, fallidos, pdfsOk, conXml, anios, entrega, total, completo, pdfs_incluidos, pdfs_fallidos, meta, payload, fichero, pdfsTotal, cabecera, datasets, viaConnect, name, auditExport, excede, flagsFiscales, nombre, charges, include, me
+   src/modules/fiscal/verifactu/sif.procesador.ts (2): procesarObligado, encendido
+   src/modules/invoicing/app/routes/invoice.routes.ts (29): inv, id, number, pdf_url, currency, total, quote_id, created_at, invoiceId, invoice, where, status, paidAt, updated, data, quote, merchant, customer, createdAt, paymentTerms, name, legalName, taxId, address, whatsappPhone, defaultCurrency, phone, email, include
+   src/modules/invoicing/domain/emission.service.ts (1): getEmissionMode
+   src/modules/invoicing/domain/facturaSuelta.ts (1): modoDocumentoSuelto
+   src/modules/invoicing/domain/invoiceNumber.service.ts (6): allocateInvoiceNumber, flagsFiscales, INVOICING_ES_ENABLED, SIF_ENABLED, auditar, meta
+   src/modules/invoicing/domain/invoicing.service.ts (3): emitInvoice, number, type
+   src/modules/invoicing/domain/modoVisible.ts (2): modoEmisionVisible, modo
+   src/modules/jobs/app/routes/albaranes.routes.ts (118): invoice, inv, data, invoiceId, sellada, libroTras, select, facturadoTras, factura, id, number, total, currency, estadoFacturacion, pendientes, veriFactu, job, where, merchant, quote, albaranesDelJob, jobId, libro, albaranId, in, casacion, motivos, paraAdicional, facturables, invoiceLines, concept, b
+   src/modules/jobs/app/routes/jobs.routes.ts (169): invoice, emitidasAhora, tramo, invoiceNumber, number, type, total, stageLabel, lines, sent, waReason, invoiceId, amount, currency, whatsapp, error, message, consolidables, val, status, grupos, QUOTE_SELECT, Invoice, select, loadJobRefs, teamMember, quien, id, name, cual, porId, original, quotes, cus
+   src/modules/jobs/domain/recapitulativa.service.ts (15): emitirRecapitulativas, facturas, invoice, upd, data, invoiceId, id, number, inv, where, r, albaranRefs, albaranId, groupIds, in
+   src/modules/maintenance/app/routes/maintenance.routes.ts (1): maintenanceEnabled
+   src/modules/maintenance/domain/maintenance.service.ts (2): runMaintenanceProposals, handleMaintenanceButton
+   src/modules/messaging/domain/email.service.ts (1): sendInvoiceEmail
+   src/modules/messaging/domain/lifecycle.service.ts (12): sendWelcomeEmail, puedeCobrar, html, r, sendFirstPaymentEmail, facturaAlCobrar, runLifecycleEmails, sendEmail, wrap, tagline, anotarEnvio, registro
+   src/modules/messaging/domain/merchantNotifications.ts (7): sendMerchantQuoteAcceptedEmail, puedeEmitirFactura, html, sendTechQuoteApprovedEmail, sendEmail, r, sendMerchantPaymentEmail
+   src/modules/messaging/domain/weeklyDigest.service.ts (9): bloqueFirmadoSinFacturar, sendDigestForMerchant, firmadoSinFacturar, html, r, sendEmail, sendWeeklyDigests, garantiaPorDia, garantia
+   src/modules/payments/connect/connect.routes.ts (2): enabled, bizumEnabled
+   src/modules/quotes/app/routes/quotes.routes.ts (5): invoiceNumber, number, type, invoice, emitidasAhora
+   src/modules/system/app/routes/customerPortal.routes.ts (6): puedeTarjeta, invoicesHtml, btnPay, hasActions, html, quotesHtml
+   src/modules/system/app/routes/dev.routes.ts (8): inv, result, invoiceId, data, payload, invoice_id, qs, receiptToken
+   src/modules/system/app/routes/invoicesAdmin.routes.ts (121): modoSuelto, invoice, sellada, factura, id, number, total, currency, veriFactu, waDelivery, payToken, asignados, envioDocumento, cuerpo, demo, envioDelDocumentoDeLaFactura, cobro, where, filasWhatsapp, clienteEmail, select, diff, kind, detail, customerId, title, message, include, merchant, customer, 
+   src/modules/system/app/routes/publicProfile.routes.ts (1): visible
+   src/modules/system/app/routes/quoteDecisionLanding.routes.ts (2): sinBotonDePago, html
+   src/modules/system/app/routes/quotesAdmin.routes.ts (76): emision, invoiceNumber, creada, number, type, invoice, stage, resultadoSellado, vfApplied, id, total, currency, createdAt, percentage, veriFactu, quote, where, emitidas, val, status, error, message, actualizado, customBillingPlan, quoteId, plan, existingInvoices, quoteLines, planManual, scaledLines,
+   src/modules/system/audit.service.ts (4): sobreFiscal, flagsFiscalesDe, INVOICING_ES_ENABLED, SIF_ENABLED
+   src/modules/system/domain/flagFiscal.service.ts (21): FLAGS_FISCALES, esFlagFiscal, cambiarFlagFiscal, anterior, nuevo, meta, flagsFiscales, INVOICING_ES_ENABLED, SIF_ENABLED, payload, valorAnterior, valorNuevo, overrideNuevo, flagsNuevos, [params.flag], merchant, flags, data, select, esperado, overrideAnterior
+   src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts (6): routeIncoming, handled, handleIncomingText, modoEmision, done, tryLegacyDecision
+   src/modules/whatsappBot/domain/botFlow.service.ts (6): handleQrEntry, handleBotMessage, handled, payToken, url, cta

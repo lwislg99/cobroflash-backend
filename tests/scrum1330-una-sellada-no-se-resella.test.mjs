@@ -399,23 +399,22 @@ test('SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO e
     + 'vuelto a encolar su alta para la AEAT.');
 });
 
-// ── ⚠️ LO QUE ESTAS DOS GUARDAS NO CIERRAN, FIJADO COMO ESTÁ (SCRUM-1333) ──────────────────────
+// ── LO QUE ESTAS DOS GUARDAS NO CERRABAN, Y CERRÓ SCRUM-1333 ───────────────────────────────────
 //
-// 🔴 ESTO NO ES EL COMPORTAMIENTO DESEADO. Es el que hay, medido, y está aquí para que no se pueda
-// cambiar sin enterarse. `sellarTrasEmision` encola el alta para la AEAT después de cada sellado, y
-// `VfSubmission` no tiene único por factura. En ④b la entrega que pierde leyó la fila todavía
-// `pendiente_de_sellado`: la guarda de fuera no la para, la de dentro le conserva la huella, y
-// `sellarTrasEmision` sigue y ENCOLA OTRA VEZ. La huella no se toca; la cola, sí.
+// `sellarTrasEmision` encola el alta para la AEAT después de cada sellado, y `VfSubmission` no tiene
+// único por factura. En ④b la entrega que pierde leyó la fila todavía `pendiente_de_sellado`: la
+// guarda de fuera no la para, la de dentro le conserva la huella, y `sellarTrasEmision` sigue y
+// llega al encolado. Hasta SCRUM-1333 este caso fijaba DOS filas en la cola, como residual conocido.
 //
-// Cerrarlo es tocar `sellarTrasEmision` o la cola, y el GO de SCRUM-1330 (c.17724) nombra sólo las
-// dos guardas: decide el fundador en SCRUM-1333. Cuando se arregle, este caso CAE: se reescribe con
-// lo contrario —una fila en la cola— en el mismo cambio.
+// SCRUM-1333 (GO del fundador, c.17733) lo cerró en el encolado: `encolarAltaTrasSellado` pregunta
+// a la cola, dentro de un cerrojo por factura, si esa factura ya tiene su alta. Este caso dice ahora
+// lo contrario de lo que decía. Sus casos propios, en `tests/scrum1333-…`.
 //
-// Su límite, dicho: el 2 sale sólo si la factura es DECLARABLE (cliente con NIF, líneas con un tipo
-// de IVA clasificable). Con el cobro pelado del banco los dos intentos acaban en `encolado_fallido`
-// y la cola se queda en 0 filas.
+// Su límite, dicho: la fila sólo llega a la cola si la factura es DECLARABLE (cliente con NIF,
+// líneas con un tipo de IVA clasificable). Con el cobro pelado del banco los dos intentos acaban en
+// `encolado_fallido` y la cola se queda en 0 filas.
 
-test('SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta — una factura, una huella, DOS filas en la cola', async () => {
+test('SCRUM-1330 · ④b tras SCRUM-1333: la entrega que pierde la carrera YA NO vuelve a encolar el alta — una factura, una huella, UNA fila en la cola', async () => {
   reiniciar();
   const cobro = nuevoCobro();
   Object.assign(banco.tablas.customer[0], { taxId: '12345678Z', legalName: 'Clienta de prueba SL', address: 'Calle 1, Lugo' });
@@ -426,8 +425,6 @@ test('SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega qu
   assert.deepEqual(banco.tablas.auditLog.filter((a) => a.action === 'encolado_fallido').map((a) => a.meta?.errorMensaje), [],
     'precondición: el registro se pudo montar (si no, los intentos no llegan a la cola y este caso no mide nada)');
   const cola = banco.tablas.vfSubmission.filter((s) => s.invoiceId === facturasDe(cobro)[0].id);
-  assert.equal(cola.length, 2,
-    `⚠️ la entrega que pierde la carrera YA NO vuelve a encolar (hay ${cola.length} filas). Si es a propósito `
-    + '(SCRUM-1333), reescribe este caso con lo contrario —UNA fila en la cola— en el mismo cambio.');
-  assert.equal(cola[0].registroXml, cola[1].registroXml, 'y las dos filas llevan el MISMO registro: es la misma alta, dos veces');
+  assert.equal(cola.length, 1,
+    `🔴 LA MISMA FACTURA ESTÁ ${cola.length} VECES EN LA COLA DE LA AEAT: la entrega que pierde la carrera ha vuelto a encolar su alta (SCRUM-1333).`);
 });
