@@ -334,8 +334,8 @@
   además teclea un coste y comprueba que el margen se sigue calculando).
 - **Por qué no lo cazó nadie:** ningún test monta Productos con rol de operario. El banco de vistas
   usa `admin` por defecto, así que toda pantalla que se bifurca por rol sólo se mide por una rama.
-- **Queda abierto, sin tocar:** el botón «Crear» del alta no se le veta al operario, aunque
-  `POST /admin/products` exige admin desde SCRUM-614. Si lo pulsa, falla.
+- **Quedaba abierto, y lo cierra SCRUM-1338 (1-oct-2026):** el botón «Crear producto» del alta no se le vetaba al operario, aunque
+  `POST /admin/products` exige admin desde SCRUM-614. Ahora va deshabilitado y con su nota (`docs/master/SCRUM-1338.md`).
 
 ### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
 - **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
