@@ -850,7 +850,54 @@ function vigilarVueltaDeLaRed() {
   });
 }
 
+// ── SCRUM-1302 · CERRAR SESIÓN CON FIRMAS SIN SUBIR ────────────────────────────────────────────
+// El purgado de abajo vacía la cola de firmas A PROPÓSITO (SCRUM-455, art. 32 RGPD). Lo que faltaba
+// era decirlo antes: una firma hecha en un sótano y aún sin subir se iba con el logout y nadie
+// avisaba. Textos firmados en SCRUM-1302, comentario 17889. Las tres mitades van juntas o el texto
+// miente: se CUENTA antes de purgar, se INTENTA subir antes de preguntar, y «Cancelar» no cierra
+// sesión ni borra nada.
+function textoFirmasSinSubirAlCerrar(n) {
+  return n === 1
+    ? 'Te queda 1 firma por subir. Si cierras sesión ahora, se borra de este móvil y habrá que volver a firmar. ¿Cerrar sesión?'
+    : `Te quedan ${n} firmas por subir. Si cierras sesión ahora, se borran de este móvil y habrá que volver a firmarlas. ¿Cerrar sesión?`;
+}
+
+/** Cuántas firmas hay en la cola, o `null` si no se ha podido LEER: «no supe mirar» no es un cero. */
+async function firmasSinSubirAlCerrar() {
+  if (typeof window.leerFirmasPendientes !== 'function') return null;
+  try {
+    const cola = await window.leerFirmasPendientes();
+    if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) return null;
+    return cola.firmas.length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * ¿Se sigue adelante con el cierre de sesión? `false` sólo si la persona dice que no.
+ *
+ * Sin cifra cierta NO se pregunta —ni con la cola ilegible ni sin `confirm`—: cerrar sesión tiene
+ * que funcionar siempre (SCRUM-455), y un aviso con un número inventado sería otra mentira.
+ */
+async function confirmarCierreConFirmasSinSubir() {
+  let n = await firmasSinSubirAlCerrar();
+  if (!n) return true;
+  // Con red, primero se intenta subirlas: preguntar por algo que se arregla solo es ruido. El
+  // drenado tiene plazo (el de `api.js`), así que un sótano no deja el botón colgado para siempre.
+  if (navigator.onLine !== false && typeof window.drenarSiNoSeEstaDrenando === 'function') {
+    try { await window.drenarSiNoSeEstaDrenando(); } catch (_e) { /* best-effort: se vuelve a contar */ }
+    n = await firmasSinSubirAlCerrar();
+    if (!n) return true;
+  }
+  if (typeof window.confirm !== 'function') return true;
+  return !!window.confirm(textoFirmasSinSubirAlCerrar(n));
+}
+
 async function logout() {
+  // SCRUM-1302 · ANTES de purgar: después ya no habría cola que contar ni firma que salvar.
+  if (!(await confirmarCierreConFirmasSinSubir())) return;
+
   // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
   //
   // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la
