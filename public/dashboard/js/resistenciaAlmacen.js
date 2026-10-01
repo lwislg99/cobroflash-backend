@@ -229,7 +229,17 @@ async function hayEspacioParaOtraFirma(firmasEnCola, tamanoAproximado) {
  */
 async function resistenciaAlArrancar(opciones) {
   const persistencia = await pedirPersistencia();
+  // SCRUM-1354 · se mira DESPUÉS de los drenados que haya a medias. `app.js` lanza el drenado y
+  // esto sin `await`, y un drenado que acaba de subir la última firma deja un instante la cola
+  // vacía con la marca aún puesta: mirar ahí sería avisar de una pérdida que no hubo.
+  if (typeof window.esperarDrenadosEnVuelo === 'function') {
+    try { await window.esperarDrenadosEnVuelo(); } catch (_e) { /* no lanza; y si lanzara, se mira igual */ }
+  }
   const desalojo = await detectarDesalojo(opciones && opciones.leerCola);
+  // 🔴 SCRUM-1354 · LA MARCA DE UNA COLA VACÍA ES DE QUIEN AVISA. El drenado ya no la toca cuando
+  // encuentra la cola vacía, así que se consume aquí, al devolver el aviso: sale una vez, no en
+  // cada arranque. `detectarDesalojo` a solas sigue siendo una pregunta y no consume nada.
+  if (desalojo && desalojo.estado === POSIBLE_PERDIDA) olvidarQueHuboCola();
   return { persistencia, desalojo };
 }
 

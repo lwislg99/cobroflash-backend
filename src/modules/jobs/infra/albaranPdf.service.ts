@@ -14,7 +14,7 @@ import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
 // SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
-import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { formatImporteEs, formatNumeroEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
 import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
 import { documentoEnsenaPrecios } from '../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
@@ -129,8 +129,12 @@ export async function generateAlbaranPdf(params: {
   function fmtDate(d: Date | null | undefined) {
     return d ? new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
   }
+  // SCRUM-743: DELEGA en el sitio unico, como `fmtMoney`. `toLocaleString('es-ES')` a pelo no
+  // agrupa los enteros de cuatro cifras (CLDR): escribia `1500` donde el producto escribe `1.500`.
+  // La pantalla publica de firma usa la MISMA funcion (`fmtCantidadAlbaran`), y el guard de
+  // SCRUM-468 compara la celda de cantidad de las dos.
   function fmtQty(v: number) {
-    return v.toLocaleString('es-ES', { maximumFractionDigits: 2 });
+    return formatNumeroEs(v);
   }
   // SCRUM-636: DELEGA en el sitio unico. Era la SEXTA copia del formato, y su falta de agrupado
   // es lo que hacia que el PDF del albaran escribiera `1234,50 €` mientras su propia vista
