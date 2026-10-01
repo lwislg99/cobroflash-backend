@@ -4,6 +4,8 @@
 //   node scripts/equipo/latido.mjs            → todas las secciones
 //   node scripts/equipo/latido.mjs repartos   → el libro de repartos (quién mandó qué a quién)
 //   node scripts/equipo/latido.mjs cierre     → el obligatorio del último push de ESTA rama
+//   node scripts/equipo/latido.mjs contestada <id> <dónde>   → apunta en el libro que esa pregunta ya
+//                                               tiene respuesta (SCRUM-1357), y DÓNDE está escrita
 //
 // POR QUÉ EXISTE. El 29-sep-2026 se abrieron diez PR que NACIERON rojos y estuvieron dos días así
 // con el auto-merge armado. Medido el 1-oct: los detectores EXISTÍAN y los vieron —`vigia-atascados`
@@ -27,6 +29,16 @@
 //                  veces que termina por los informativos, y 34 de 60 no ejecutan ningún job.
 //   5 · DESPLIEGUE → `in_progress` más de 10 min. Medido sobre 100 despliegues: mediana 1,6 min;
 //                  lo que tarda diez es un despliegue ATASCADO, no uno en cola.
+//   6 · CEMENTERIO → (SCRUM-1357) la pregunta de TODA sesión bloqueada de más de 24 h, viva o muerta,
+//                  con su edad. Medido el 1-oct: ocho, del 27 al 29-sep, ninguna contestada, y la
+//                  sección 2 no las veía porque solo mira las de hoy. Una pregunta no caduca porque
+//                  muera quien la hizo. Y un state.json que no se deja leer se DICE: antes se saltaba.
+//
+// DE DÓNDE SALEN LAS SESIONES: del REGISTRO de trabajos (`~/.claude/jobs/*/state.json`), nunca del
+// panel. Medido el 1-oct: dos sesiones lanzadas desde una carpeta nueva quedaron pidiendo un permiso,
+// el lanzador dijo «backgrounded» con su id, `ListAgents` no las listaba y se las dio por trabajando
+// una hora. El panel vacío se leyó como «no existe». Y el bloqueo no siempre está en `state`: una
+// sesión con `state=working` puede llevar `tempo=blocked` y la pregunta en `needs`.
 //
 // SALIDA: 0 = nada que atender · 1 = hay algo · 2 = alguna sección NO PUDO MIRAR (y gana al 1:
 // un «no sé» no se tapa con un «hay tres cosas»).
@@ -124,18 +136,31 @@ export function puestoDe(nombre) {
   return m ? Number(m[1]) : null;
 }
 
+/** El bloqueo vive en TRES campos y basta uno: `state`, `tempo` o una pregunta en `needs`. */
+export function espera(s) {
+  return s.estado === 'blocked' || s.tempo === 'blocked' || !!s.needs;
+}
+
+/** La pregunta, tal cual está en el registro. Si no hay, se dice: no se rellena con el `detail`. */
+export function preguntaDe(s) {
+  const n = s.needs;
+  return n ? (typeof n === 'string' ? n : JSON.stringify(n)).replace(/\s+/g, ' ').trim() : '';
+}
+
 /**
- * @param {{sesiones:{id:string,nombre:string,estado:string,detalle?:string,needs?:any,actualizado:number,creado?:number,prs:number[]}[], filasPR:object[]|null, ahora:number}} e
+ * @param {{sesiones:{id:string,nombre:string,estado:string,tempo?:string,detalle?:string,needs?:any,actualizado:number,creado?:number,prs:number[]}[], filasPR:object[]|null, ilegibles?:object[], ahora:number}} e
  */
-export function seccionSesiones({ sesiones, filasPR, ahora }) {
+export function seccionSesiones({ sesiones, filasPR, ilegibles = [], ahora }) {
   if (!Array.isArray(sesiones)) return ciega('SESIONES', 'no se pudo leer la carpeta de trabajos');
   const hoy = sesiones.filter((s) => (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
   const porNumero = new Map((filasPR || []).map((f) => [f.numero, f]));
   const alertas = [];
   for (const s of hoy) {
     const min = Math.round((ahora - s.actualizado) / 60000);
-    if (s.estado === 'blocked' || s.needs) {
-      alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) BLOQUEADA hace ${min} min · espera: ${String(s.needs || s.detalle || 'no lo dice').slice(0, 200)}` });
+    if (espera(s)) {
+      // Quien lee «working» en el panel no mira más: si el bloqueo no está en `state`, se dice dónde está.
+      const disfraz = s.estado === 'blocked' ? '' : ` · ⚠️ su state dice «${s.estado}»: el bloqueo está en ${s.tempo === 'blocked' ? 'tempo' : 'needs'}`;
+      alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) BLOQUEADA hace ${min} min · espera: ${String(s.needs || s.detalle || 'no lo dice').slice(0, 200)}${disfraz}` });
     }
     if (s.estado !== 'working') {
       for (const n of s.prs) {
@@ -155,8 +180,70 @@ export function seccionSesiones({ sesiones, filasPR, ahora }) {
   for (const s of hoy) cuenta[s.estado] = (cuenta[s.estado] || 0) + 1;
   return {
     nombre: 'SESIONES', pudo: true, alertas,
-    poblacion: `${sesiones.length} trabajos con state.json · ${hoy.length} con actividad en ${HORAS_DE_SESION} h (${Object.entries(cuenta).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguno'})${filasPR ? '' : ' · ⚠️ sin la sección PR no se pudo cruzar con sus PR'}`,
+    poblacion: `${sesiones.length} trabajos con state.json · ${hoy.length} con actividad en ${HORAS_DE_SESION} h (${Object.entries(cuenta).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguno'}) · leído del REGISTRO, no del panel${filasPR ? '' : ' · ⚠️ sin la sección PR no se pudo cruzar con sus PR'}${ilegibles.length ? ` · ⚠️ ${ilegibles.length} state.json ILEGIBLES, que pueden ser de hoy (ver CEMENTERIO)` : ''}`,
   };
+}
+
+// ───────────────────────────── 6 · CEMENTERIO ─────────────────────────────
+
+const edadDe = (ms) => (ms < 48 * 36e5 ? `${Math.round(ms / 36e5)} h` : `${(ms / (24 * 36e5)).toFixed(1)} días`);
+
+/** Estados en los que una sesión ya no va a contestarse sola. `working`/`done` = siguió: alguien le contestó. */
+const MUERTA = /^(stopped|failed)$/;
+
+/**
+ * EL LIBRO. El registro pierde la pregunta cuando alguien PARA la sesión (medido el 1-oct: 0 de 227
+ * trabajos en done/failed/stopped conservan `needs`). Así que cada pasada copia aquí las preguntas que ve, y
+ * una pregunta apuntada solo sale del libro si la sesión SIGUIÓ trabajando (se le contestó) o si
+ * alguien la marca con `contestada`. Que la maten no la saca.
+ * @param {Record<string,{nombre:string,needs:string,desde:number,contestada?:{cuando:number,donde:string}}>} libro
+ */
+export function actualizarLibro(libro, sesiones) {
+  const nuevo = { ...libro };
+  for (const s of sesiones) {
+    const q = preguntaDe(s);
+    if (espera(s) && q) {
+      // Otra pregunta de la misma sesión es otra pregunta: la respuesta apuntada era de la anterior.
+      if (!nuevo[s.id] || nuevo[s.id].needs !== q) nuevo[s.id] = { nombre: s.nombre, needs: q, desde: s.actualizado };
+    } else if (nuevo[s.id] && !espera(s) && !MUERTA.test(s.estado)) {
+      delete nuevo[s.id];
+    }
+  }
+  return nuevo;
+}
+
+/**
+ * @param {{sesiones:object[], ilegibles?:{id:string,motivo:string}[], sinEstado?:string[], libro:object|null|undefined, libroGuardado?:boolean, ahora:number}} e
+ * `libro`: `undefined` si existe y no se pudo leer · `null` si todavía no existe (no es un fallo).
+ */
+export function seccionCementerio({ sesiones, ilegibles = [], sinEstado = [], libro, libroGuardado = true, ahora }) {
+  if (!Array.isArray(sesiones)) return ciega('CEMENTERIO', 'no se pudo leer la carpeta de trabajos');
+  const apuntado = libro || {};
+  const alertas = [];
+  let contestadas = 0; let deHoy = 0;
+  const enRegistro = new Map(sesiones.map((s) => [s.id, s]));
+  for (const s of sesiones) {
+    if (!espera(s)) continue;
+    if ((ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION) { deHoy++; continue; }
+    const q = preguntaDe(s);
+    const a = apuntado[s.id];
+    if (a && a.contestada && a.needs === q) { contestadas++; continue; }
+    alertas.push({ sesion: s.nombre, desde: s.actualizado, linea: `${s.nombre} (${s.id}) · hace ${edadDe(ahora - s.actualizado)} · espera: ${q || 'NO LO DICE (bloqueada sin `needs`)'}` });
+  }
+  // Lo que el registro ya no enseña y el libro sí: la sesión fue parada (o borrada) con la pregunta dentro.
+  for (const [id, a] of Object.entries(apuntado)) {
+    const s = enRegistro.get(id);
+    if (s && espera(s)) continue;
+    if (a.contestada) { contestadas++; continue; }
+    alertas.push({ sesion: a.nombre, desde: a.desde, linea: `${a.nombre} (${id}) · hace ${edadDe(ahora - a.desde)} · espera: ${a.needs} · ⚠️ ${s ? `el registro ya la da por «${s.estado}» y ha BORRADO la pregunta` : 'su carpeta ya no existe'}: sale del libro` });
+  }
+  alertas.sort((x, y) => x.desde - y.desde);
+  const poblacion = `${sesiones.length} trabajos leídos · ${alertas.length} pregunta(s) sin contestar (de más de ${HORAS_DE_SESION} h, o de una sesión ya parada) · ${deHoy} de hoy (están en SESIONES) · ${contestadas} marcada(s) como contestadas${sinEstado.length ? ` · ${sinEstado.length} carpeta(s) de trabajo SIN state.json (${sinEstado.slice(0, 5).join(', ')}): lanzadas y sin registro` : ''}${libroGuardado ? '' : ' · ⚠️ NO pude guardar el libro: si paran una sesión bloqueada, su pregunta se pierde'}`;
+  const ciegos = [];
+  if (ilegibles.length) ciegos.push(`${ilegibles.length} state.json que NO se dejan leer (${ilegibles.slice(0, 5).map((i) => `${i.id}: ${i.motivo}`).join(' · ')})`);
+  if (libro === undefined) ciegos.push('el libro de preguntas existe y no se deja leer (las contestadas y las de sesiones ya paradas NO están contadas)');
+  if (ciegos.length) return { nombre: 'CEMENTERIO', pudo: false, motivo: `${ciegos.join(' · ')}. Debajo va SOLO lo que sí pude leer: ${poblacion}`, alertas, poblacion: null };
+  return { nombre: 'CEMENTERIO', pudo: true, alertas, poblacion };
 }
 
 /**
@@ -246,7 +333,7 @@ export function salidaDe(secciones) {
 export function informe(secciones, { ahora, fallosDe = () => undefined }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
-    if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); continue; }
+    if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); for (const a of s.alertas) out.push(`   · ${a.linea}`); continue; }
     out.push('', `${s.alertas.length ? '🔴' : '✅'} ${s.nombre} · ${s.poblacion}`);
     for (const a of s.alertas) {
       out.push(`   · ${a.linea}`);
@@ -275,23 +362,64 @@ const intentar = (f) => { try { return f(); } catch { return undefined; } };
 
 function dirDeTrabajos() { return path.join(os.homedir(), '.claude', 'jobs'); }
 
-export function leerSesiones(dir = dirDeTrabajos()) {
+/**
+ * El registro entero, y lo que NO se pudo leer de él aparte: un state.json ilegible no es una sesión
+ * que no existe (SCRUM-1357; antes se saltaba con un `continue` y nadie lo sabía).
+ * @returns {{sesiones:object[], ilegibles:{id:string,motivo:string}[], sinEstado:string[]}|undefined}
+ */
+export function leerTrabajos(dir = dirDeTrabajos()) {
   if (!fs.existsSync(dir)) return undefined;
-  const out = [];
-  for (const id of fs.readdirSync(dir)) {
+  const out = []; const ilegibles = []; const sinEstado = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const id = e.name;
     const ruta = path.join(dir, id, 'state.json');
-    if (!fs.existsSync(ruta)) continue;
-    let s; try { s = JSON.parse(fs.readFileSync(ruta, 'utf8')); } catch { continue; }
+    if (!fs.existsSync(ruta)) { sinEstado.push(id); continue; }
+    let s; try { s = JSON.parse(fs.readFileSync(ruta, 'utf8').replace(/^﻿/, '')); } catch (err) { ilegibles.push({ id, motivo: String(err.code || err.name || 'error') }); continue; }
+    if (!s || typeof s !== 'object') { ilegibles.push({ id, motivo: 'no es un objeto' }); continue; }
     const flags = s.respawnFlags || [];
     const i = flags.indexOf('-n');
     out.push({
-      id, nombre: s.name || (i >= 0 ? flags[i + 1] : id), estado: String(s.state || 'desconocido'), detalle: s.detail, needs: s.needs,
+      id, nombre: s.name || (i >= 0 ? flags[i + 1] : id), estado: String(s.state || 'desconocido'), tempo: s.tempo, detalle: s.detail, needs: s.needs,
       actualizado: Date.parse(s.updatedAt) || fs.statSync(ruta).mtimeMs, creado: Date.parse(s.createdAt) || undefined,
       prs: (s.children || []).filter((c) => c && c.kind === 'pr').map((c) => Number(c.id)).filter(Number.isFinite),
       transcript: s.linkScanPath,
     });
   }
-  return out;
+  return { sesiones: out, ilegibles, sinEstado };
+}
+
+export function leerSesiones(dir = dirDeTrabajos()) {
+  const t = leerTrabajos(dir);
+  return t && t.sesiones;
+}
+
+function rutaDelLibro() {
+  const base = process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'yaqu-equipo') : path.join(os.homedir(), '.yaqu-equipo');
+  return path.join(base, 'cementerio.json');
+}
+/** `null` = todavía no existe · `undefined` = existe y no se deja leer. */
+export function leerLibro(ruta = rutaDelLibro()) {
+  if (!fs.existsSync(ruta)) return null;
+  const l = intentar(() => JSON.parse(fs.readFileSync(ruta, 'utf8')));
+  return l && typeof l === 'object' && !Array.isArray(l) ? l : undefined;
+}
+function guardarLibro(libro, ruta = rutaDelLibro()) {
+  return intentar(() => { fs.mkdirSync(path.dirname(ruta), { recursive: true }); fs.writeFileSync(ruta, `${JSON.stringify(libro, null, 1)}\n`); return true; }) === true;
+}
+
+function contestada(id, donde) {
+  if (!id || !donde) { console.log('uso: latido.mjs contestada <id del trabajo> <dónde está la respuesta: ticket, comentario, mensaje>'); return SALIDA_CIEGO; }
+  const t = leerTrabajos();
+  const libro = leerLibro();
+  if (!t || libro === undefined) { console.log('🔴 NO PUDE MIRAR: el registro de trabajos o el libro no se dejan leer. No apunto nada.'); return SALIDA_CIEGO; }
+  const nuevo = actualizarLibro(libro || {}, t.sesiones);
+  const hallados = Object.keys(nuevo).filter((k) => k === id || nuevo[k].nombre === id);
+  if (hallados.length !== 1) { console.log(`🔴 «${id}» casa con ${hallados.length} preguntas del libro: no apunto nada. Usa el id del trabajo (el de entre paréntesis).`); return SALIDA_AVISO; }
+  nuevo[hallados[0]].contestada = { cuando: Date.now(), donde: String(donde) };
+  if (!guardarLibro(nuevo)) { console.log('🔴 NO pude guardar el libro: la pregunta sigue contando como sin contestar.'); return SALIDA_CIEGO; }
+  console.log(`✅ ${nuevo[hallados[0]].nombre} (${hallados[0]}): «${nuevo[hallados[0]].needs.slice(0, 120)}» → contestada en ${donde}`);
+  return SALIDA_OK;
 }
 
 function dirDeTraspasos() {
@@ -380,8 +508,9 @@ function todo() {
   }
   const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n) });
   // 2 y 3 · sesiones y traspasos
-  const sesiones = leerSesiones();
-  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ahora });
+  const trabajos = leerTrabajos();
+  const sesiones = trabajos && trabajos.sesiones;
+  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ilegibles: trabajos ? trabajos.ilegibles : [], ahora });
   const dT = dirDeTraspasos();
   const sTra = dT === undefined ? ciega('TRASPASO', 'no encuentro la carpeta de traspasos en la instalación del equipo')
     : seccionTraspasos({ sesiones, ahora, mtimeDelTraspaso: (n) => { const r = path.join(dT, `project_s${n}_traspaso.md`); return fs.existsSync(r) ? fs.statSync(r).mtimeMs : null; } });
@@ -408,12 +537,18 @@ function todo() {
     const log = id ? intentar(() => gh(['api', '--allow-escape-sequences', `repos/${REPO}/actions/jobs/${id}/logs`])) : undefined;
     if (log !== undefined) fallos.set(a.numero, fallosDelLog(log));
   }
-  const secciones = [sPR, sSes, sTra, sMain, sDep];
+  // 6 · cementerio. El libro se actualiza ANTES de informar: lo que se ve hoy tiene que sobrevivir a que la paren mañana.
+  let libro = leerLibro();
+  let libroGuardado = true;
+  if (sesiones && libro !== undefined) { libro = actualizarLibro(libro || {}, sesiones); libroGuardado = guardarLibro(libro); }
+  const sCem = seccionCementerio({ sesiones, ilegibles: trabajos ? trabajos.ilegibles : [], sinEstado: trabajos ? trabajos.sinEstado : [], libro, libroGuardado, ahora });
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
   return salidaDe(secciones);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const orden = process.argv[2];
-  process.exitCode = orden === 'repartos' ? await repartos() : orden === 'cierre' ? cierre() : todo();
+  process.exitCode = orden === 'repartos' ? await repartos() : orden === 'cierre' ? cierre()
+    : orden === 'contestada' ? contestada(process.argv[3], process.argv.slice(4).join(' ')) : todo();
 }
