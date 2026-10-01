@@ -1,6 +1,6 @@
 # SCRUM-1336 · Un «no supe mirar» no sale con el mismo 1 que «he mirado y está mal»
 
-**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:18:07Z
+**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:32:11Z
 
 1-oct-2026 · **J1j** (equipo de Javier), relevo de J1i. Encargo del orquestador `cobroflash-backend-5b`.
 
@@ -176,4 +176,19 @@ Rama con `origin/main` @ `cadf00bcee699dc200ff142050986a62b692b3c4` mezclado. En
 `cadf00bc`, `main` no tocó ninguno de los siete guards, ni `public/`, ni `src/`: lo medido con
 navegador sobre `d174fa4c` vale para el árbol mezclado (`git diff` vacío en esos ficheros).
 
-RESULTADOS_PENDIENTES
+`prisma generate` y `npm run build` (salida 0) antes de medir. `main` seguía en `cadf00bc` al
+empujar (leído a las 16:32:11Z).
+
+- **El test**: 12 casos, 12 pasan.
+- **Mutaciones del test**: 8 de 8 caen; árbol restaurado (sha256 por fichero y `git status` vacío).
+- **Con navegador**: 33 + 33 pasadas válidas y 17 mutaciones vistas, con turno, guards sueltos de uno
+  en uno. `git status` del árbol de trabajo vacío tras cada trozo. Ninguna pasada matada.
+- **`guards:entrada`**: 12 guards, 132 tests, verde.
+- **Tanda DIRIGIDA, con turno**: los 278 ficheros de 1.193 que da `npm run tests:que-cubren` sobre la
+  rama (103 nombran lo tocado, 77 recorren un directorio que lo contiene, 98 de «no sé qué leen»),
+  en cuatro trozos, concurrencia 3, TAP a fichero fuera del árbol: **2.643 tests, 2.637 pasan, 0
+  caen, 6 saltan** (4 de `QA_DB_TEST`, 1 de señales POSIX y 1 de enlaces a fichero, los dos últimos
+  por ser Windows). Mis 12 casos, por nombre, en `ok`. La primera pasada dio **un rojo mío**:
+  `scrum864c` no daba por borrado el temporal de mi banco, porque el borrado estaba en una función
+  aparte del manejador de salida; arreglado y repetidos los cuatro trozos.
+- **NO corrido**: la suite completa local; `guards:visuales` entero. El juez es el CI.
