@@ -3,6 +3,8 @@
 **Rama:** `scrum-1349-entorno-prestado-trinquete` · **Carril:** S3 · instrumentos (s3-1oct)
 **Medido contra:** `origin/main` = `bdebd30ee4c39ce79a565fca2f314f33fe799430` · 2026-10-01T10:55:37Z
 
+A9: comprobación → `tests/scrum1349-entorno-prestado-solo-baja.test.mjs`
+
 ## Qué es
 
 Un test o script que lanza un `node` hijo sin limpiar `FORCE_COLOR` / `NODE_OPTIONS` /
