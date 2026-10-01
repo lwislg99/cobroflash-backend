@@ -130,3 +130,25 @@ Vale también para `parte_locked`: en las rutas de firmar del parte ese código 
 - Vecinos (los 15 ficheros de test que nombran la cola o el drenado): 171/171.
 
 **NO medido:** la vista del albarán montada (el recorrido con pantalla es la sonda de S4), ni yaqu.app: reproducirlo en producción exige firmar un albarán, y el fixture sólo tiene uno emitido.
+
+### H6, en la misma rama · firmar CON red ya no deja la marca de «hubo cola»
+
+Va en la misma rama y el mismo fichero porque toca la misma función y las mismas líneas que H1. **Skill UI:** la de arriba; tampoco hay marcado, estilos ni texto nuevo.
+
+**El defecto.** `yaqu_hubo_cola` se pone al encolar (antes de subir) y sólo la retiraba el drenado. Una firma que sube a la primera sale de la cola y dejaba la marca. En el arranque siguiente `detectarDesalojo` lee «hubo cola y el almacén está vacío» y la home pinta «El móvil ha borrado firmas sin subir» de una firma que está en el servidor.
+
+**Quién gana la carrera, medido en navegador real** (S4 no pudo: su banco daba 10/10 sin `persist` y 0/10 con ≥5 ms). Chromium headless contra yaqu.app (build `48babd04`), cuenta QA, sólo lectura, partiendo del estado que deja «firmar con red» (marca puesta, cola vacía), 10 arranques por tanda:
+
+| Estado de partida | Resultado del detector | Aviso pintado | Marca tras arrancar |
+| --- | --- | --- | --- |
+| sin marca (control) | 10/10 `SIN_PERDIDA` | 0/10 | no |
+| marca + cola vacía, service worker activo | 10/10 `POSIBLE_PERDIDA` | **10/10** | no (la borra el drenado, después) |
+| marca + cola vacía, service worker bloqueado | 10/10 `POSIBLE_PERDIDA` | **10/10** | no |
+
+En Chromium gana siempre el detector: el aviso falso sale el 100 % de las veces, una vez. **No medido:** Safari ni un iPhone.
+
+**El arreglo no depende de quién gane:** se quita la causa. `retirarLaMarcaSiNoQuedaNada()` en `colaDeFirmas.js`, con el criterio que ya usa el drenado (cola leída y vacía), llamada cuando la firma directa confirma (③) y cuando el servidor contesta que ya la tenía. Si queda otra firma en la cola o no se puede leer, la marca se queda.
+
+**Verificado.** Mismo fichero de test, 12/12. Rojo antes: caen los dos del defecto (confirmada y «ya la tenía»). Controles: el detector SÍ caza marca + cola vacía; si la firma no sube, la marca se queda; si sube ésta y queda otra en la cola, la marca se queda. Vecinos (17 ficheros que nombran cola, drenado, marca o detector): 197/197.
+
+**Queda abierto, dicho y no arreglado:** con marca y cola vacía DE VERDAD (un desalojo real), el aviso depende de la misma carrera — `drenarAlAbrir` también borra la marca cuando encuentra la cola ya vacía (`quedan === 0`). En Chromium gana el detector y el aviso sale; en el banco de S4 con `persist` ≥5 ms gana el drenado y **una pérdida real se callaría**. Cambiarlo es rediseñar quién es dueño de la marca; no se toca aquí sin medir Safari.

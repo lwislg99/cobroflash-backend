@@ -112,3 +112,59 @@ test('SCRUM-1302h · ✅ CONTROL POSITIVO: con red normal sigue siendo ③ con l
   assert.ok(r.respuesta, '🔴 el camino normal ha dejado de devolver la respuesta del servidor.');
   assert.deepEqual(await enLaCola(b), []);
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// HALLAZGO 6 (c.17880) · FIRMAR CON RED DEJABA LA MARCA `yaqu_hubo_cola`, Y EL ARRANQUE SIGUIENTE
+// AVISABA DE UNA PÉRDIDA QUE NO HUBO
+//
+// La marca se pone al encolar (antes de subir) y sólo la retiraba el drenado. Una firma que sube
+// a la primera sale de la cola, pero la marca se quedaba: «hubo cola y el almacén está vacío» =
+// POSIBLE_PERDIDA. Medido en Chromium real contra yaqu.app (1-oct-2026, 10 arranques con ese
+// estado): 10/10 pintan «El móvil ha borrado firmas sin subir»; control sin marca, 0/10.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1302h · 🔴 SUELO (marca): el banco tiene la marca y el detector, y el detector CAZA', async () => {
+  const b = conRed(redNormal({ id: ALBARAN_ID, estado: 'firmado' }));
+  for (const n of ['marcarQueHuboCola', 'huboColaAlgunaVez', 'resistenciaAlArrancar']) {
+    assert.equal(typeof b.ctx[n], 'function', `🔴 CIEGO: no está \`${n}\` en el banco.`);
+  }
+  // Control positivo del detector: marca puesta y cola vacía TIENE que dar POSIBLE_PERDIDA. Si no,
+  // los «no avisa» de abajo no probarían nada.
+  b.ctx.marcarQueHuboCola();
+  const r = await b.ctx.resistenciaAlArrancar();
+  assert.equal(r.desalojo.estado, b.ctx.POSIBLE_PERDIDA, '🔴 CIEGO: el detector no ve una marca con la cola vacía.');
+});
+
+test('SCRUM-1302h · 🔴 firmar CON red no deja la marca: el arranque siguiente no avisa de una pérdida', async () => {
+  const b = conRed(redNormal({ id: ALBARAN_ID, estado: 'firmado' }));
+  const r = await b.ctx.firmarConRedDeSeguridad(ALBARAN_ID, CUERPO, subirAlbaran(b));
+  assert.equal(r.estado, b.ctx.FIRMA_A_SALVO);
+  assert.equal(b.ctx.huboColaAlgunaVez(), false,
+    '🔴 la firma subió, la cola está vacía y la marca `yaqu_hubo_cola` sigue puesta: el siguiente ' +
+    'arranque dirá «El móvil ha borrado firmas sin subir» de una firma que está en el servidor.');
+  const arranque = await b.ctx.resistenciaAlArrancar();
+  assert.equal(arranque.desalojo.estado, b.ctx.SIN_PERDIDA);
+});
+
+test('SCRUM-1302h · 🔴 lo mismo cuando el servidor contesta que ya la tenía (409 `albaran_locked`)', async () => {
+  const b = conRed(falloDelServidor(409, { error: 'albaran_locked', message: 'Este albarán ya está firmado.' }));
+  await b.ctx.firmarConRedDeSeguridad(ALBARAN_ID, CUERPO, subirAlbaran(b));
+  assert.equal(b.ctx.huboColaAlgunaVez(), false, '🔴 «ya la tiene» saca la firma de la cola y deja la marca.');
+});
+
+test('SCRUM-1302h · ✅ CONTROL NEGATIVO: si la firma NO sube, la marca SE QUEDA (hay algo que perder)', async () => {
+  const b = conRed(falloDelServidor(500, { error: 'internal_error' }));
+  await b.ctx.firmarConRedDeSeguridad(ALBARAN_ID, CUERPO, subirAlbaran(b));
+  assert.equal((await enLaCola(b)).length, 1);
+  assert.equal(b.ctx.huboColaAlgunaVez(), true,
+    '🔴 se retira la marca con una firma en la cola: si el móvil la desaloja, nadie lo sabrá.');
+});
+
+test('SCRUM-1302h · ✅ CONTROL NEGATIVO: sube ésta pero queda OTRA en la cola → la marca se queda', async () => {
+  const b = conRed(redNormal({ id: ALBARAN_ID, estado: 'firmado' }));
+  await b.ctx.encolarFirma(43, CUERPO);   // otra, de antes, sin subir
+  await b.ctx.firmarConRedDeSeguridad(ALBARAN_ID, CUERPO, subirAlbaran(b));
+  assert.equal((await enLaCola(b)).length, 1, '🔴 CIEGO: la otra firma no está en la cola; el caso no se montó.');
+  assert.equal(b.ctx.huboColaAlgunaVez(), true,
+    '🔴 confirmar UNA firma retira la marca con OTRA todavía en la cola.');
+});
