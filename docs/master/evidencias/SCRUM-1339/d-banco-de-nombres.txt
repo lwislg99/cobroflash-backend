@@ -1,0 +1,27 @@
+// Banco: ¿cómo escribe el reporter TAP de node los nombres difíciles? Se FABRICA, no se razona.
+import { test, describe, it } from 'node:test';
+
+test('simple', () => {});
+test('con # almohadilla y \\ barra', () => {});
+test('con  dos  espacios   y tab\taqui', () => {});
+test(`plantilla sin sustitucion`, () => {});
+test(`plantilla
+en dos lineas`, () => {});
+test('acentos: «señal» ñ — ✅ 🔴', () => {});
+test('saltado por opcion', { skip: 'motivo # con almohadilla' }, () => {});
+test('saltado sin motivo', { skip: true }, () => {});
+test('pendiente', { todo: true }, () => {});
+test('  con espacios al borde  ', () => {});
+test('repetido', () => {});
+test('repetido', () => {});
+describe('grupo', () => {
+  it('dentro del grupo', () => {});
+  it('repetido', () => {});
+});
+for (const x of ['a', 'b']) test(`en bucle ${x}`, () => {});
+for (const x of [1, 2]) test('literal en bucle', () => {});
+test('padre', async (t) => { await t.test('hijo por t.test', () => {}); });
+test('termina en # SKIP falso', () => {});
+test('', () => {});
+test(() => {});
+test(function conNombreDeFuncion() {});

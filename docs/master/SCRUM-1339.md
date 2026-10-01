@@ -460,3 +460,200 @@ cambió a solas. Lo que se pierde sólo a solas no sale en ningún sitio: en #20
 
 Las posiciones valen mientras el blob del fichero siga siendo `741e399b`. Los logs de los jobs no
 están en git (2,6 MB cada uno); los recortes del job de zona, sí (`c-zona-2072.txt`, `c-zona-2071.txt`).
+
+# SCRUM-1339d · La señal por nombres, construida: avisa con fichero y líneas, y cuenta lo que no ve
+
+**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:51:01Z
+
+A9: comprobación → `tests/scrum1339d-senal-de-nombres.test.mjs`
+
+**El encargo** (orquestador del equipo de Javier; decisión en c.17935, autorizaciones del fundador
+en c.17951 y c.17954, enmienda en c.17961, cruce de carril y contradicción resuelta en c.17966):
+construir la cuenta de la señal como módulo puro + guion + test, y un paso NUEVO en `ci.yml` que
+sólo anota su propio run. **Cruces declarados:** el ticket es `area-j6` y lo trabaja J3 por decisión
+del orquestador; `ci.yml` es de S5 y corre en los PR de los dos equipos (autorización: c.17954).
+
+## En corto
+
+- **Construido:** `scripts/_senal-de-nombres.mjs` (puro), `scripts/senal-de-nombres.mjs` (guion,
+  sale 0 siempre) y `tests/scrum1339d-senal-de-nombres.test.mjs` (17 casos, 5 mutaciones vistas caer).
+- **Un paso nuevo en `ci.yml`**, tras «Guardar el TAP completo»: `if: always()`,
+  `continue-on-error: true`, sin `env`, sin token. No es requerido y no puede bloquear.
+- **Medido sobre 114 artefactos `tanda-tap` del 1-oct** (10:27Z a 16:12Z), cada uno contra el árbol
+  que probó su job: 91 medibles, **41 con casos ausentes (28 en `success`)** y 50 limpios.
+- **El punto ciego es mayor de lo que el diseño suponía, y va dicho en cada aviso:** lo que la
+  señal nombra es un SUELO. En un job a `scrum524b` le faltaban 26 casos y nombró 3.
+- **La punta de `main` (`cadf00bc`) perdió 6 casos de `scrum411` en su obligatorio y salió verde.**
+- **`scrum859` (lo que J3h dejó sin medir):** el contenido del registro NO hace desaparecer sus
+  cuatro casos. Salía CIEGO en el 22 % de los runs ANTES de que existiera #2114.
+
+## ⓪ Antes de construir: el paso que «ya existe»
+
+c.17935 decía «el paso ya existe y corre con `if: always()`» y c.17954 autorizaba uno nuevo. Las
+dos frases no podían sostener la misma conclusión. Medido en `ci.yml` (job `test`, líneas de
+`origin/main` en `cadf00bc`, antes de mi paso): hay cuatro pasos con `if: always()` y ninguno se
+puede usar sin editar un guion ajeno.
+
+| línea | paso | por qué no sirve |
+|---|---|---|
+| 301 | «¿Se puede leer el TAP de la tanda?» | corre `scripts/equipo/por-que-cayo.mjs` (S5) |
+| 324 | «¿Ha perdido tests la tanda?» | corre `scripts/suelo-de-la-tanda.mjs`, con PR ajenos abiertos (#1990, #2000), y **no lleva `continue-on-error`**: un fallo mío ahí pondría rojo el obligatorio |
+| 342 | «Guardar el TAP completo» | es un `uses:`, no ejecuta guion |
+| 365 | «¿Cuánto ha tardado la puerta?» | shell dentro del propio `ci.yml` |
+
+El paso nuevo es el cambio más pequeño y el único autorizado.
+
+## ① Qué compara, y con qué criterio
+
+«Todo test que el árbol declara con nombre LITERAL aparece en el TAP, tantas veces como se
+declara.» Quién declara tests lo decide el censo de SCRUM-708 (`tests/_poblacion-de-tests.mjs`),
+que se IMPORTA: da cuántas llamadas hay y no cómo se llaman, así que el módulo saca los nombres
+con su propio recorrido y **ata su recuento al del censo** — fichero a fichero con
+`testsDeclarados`, y el árbol entero con `testsDeclaradosEn(raiz)`. Si discrepan, no mide y lo dice.
+
+Tres cosas medidas antes de escribirlo (banco `d-banco-de-nombres.txt`, node 24.18):
+
+- **El escape no es invertible.** El reporter cambia primero los caracteres de control y después
+  dobla la barra: un tabulador real sale como barra-barra-t, igual que una barra seguida de «t».
+  Por eso se escapa lo DECLARADO y no se des-escapa lo registrado.
+- **El TAP dice si una línea es suite o test** (`type:` en su bloque). Sin eso, un `describe('x')`
+  taparía la pérdida de un `test('x')`.
+- **El TAP no dice de qué fichero viene cada línea.** De ahí los «dudosos» de abajo.
+
+**Multiplicidad** (la mejora de J3h): un nombre declarado dos veces tiene que llegar dos. Si no
+llega ninguna, faltan las dos y cada fichero lleva la suya. Si llega una, falta una y no se sabe
+cuál: sale como DUDOSO, contado aparte, y no se le cuelga a ningún fichero. En el árbol de hoy
+hay 1 nombre repetido entre dos ficheros, y 0 dudosos en los 91 jobs.
+
+## ② Lo medido sobre los TAP de verdad
+
+Dos bancos: los 99 artefactos que bajó J3h (10:27Z–14:41Z) y 15 posteriores (14:52Z–16:12Z).
+Instrumento: `d-contra-los-tap.mjs`. Salidas: `d-salida-contra-los-tap-*.txt`.
+
+| | banco de J3h | los 15 nuevos | suma |
+|---|---|---|---|
+| artefactos con TAP | 99 | 15 | 114 |
+| TAP no entero (NUL, o sin resumen) | 18 | 3 | 21 |
+| sin árbol probado (falta el log) | 1 | 1 | 2 |
+| **medibles** | 80 | 11 | **91** |
+| con casos ausentes | 36 | 5 | **41** |
+| … de ellos `success` | 23 | 5 | **28** |
+| limpios (0 ausentes, 0 dudosos) | 44 | 6 | **50** |
+
+- **Cruce con la sonda de J3h** (`b-analisis.tsv`, otro instrumento, mismas entradas): 79
+  comparables de 80, **mismo veredicto en 79 y misma cifra en 79**. El que falta es un push que
+  su sonda no resolvió por no tener log y la mía resuelve por el sha.
+- **El guion sobre el disco y el módulo sobre objetos de git coinciden**: el TAP del obligatorio
+  de `cadf00bc`, por los dos caminos, da 6 ausentes en `scrum411` (`d-salida-cli-arbol-real.txt`;
+  los otros 17 de esa salida son los de mi propio test, que ese TAP no podía traer).
+- **Coste:** 4,2 s sobre el árbol entero (1.193 ficheros, 9.547 llamadas), en esta máquina.
+
+## ③ 🔴 El control positivo, con una segunda sonda que no mira ningún fuente
+
+«Un run completo no anota nada» no se puede comprobar con la propia señal: si dice 0, dice 0.
+`d-hermanos.mjs` compara los TAP de dos jobs que probaron el MISMO árbol, línea a línea, sin
+leer un solo fuente. Lo que un hermano trae y el otro no es lo que se perdió de verdad.
+
+| | jobs |
+|---|---|
+| árboles con más de un job | 7 |
+| jobs en esos árboles | 14 |
+| la señal nombra exactamente lo perdido (incluidos 7 limpios con 0 y 0) | 12 |
+| la señal nombra MENOS de lo perdido | 2 (12 de 15, y 8 de 32) |
+| **la señal nombra MÁS de lo perdido (falso positivo)** | **0** |
+| hay pérdida y la señal calla | 0 |
+
+**Lo que este control NO alcanza, dicho:** el encargo pedía cero falsos positivos «sobre los 85
+jobs limpios medidos». Esos 85 son de la medición de J3g, hecha sobre nombres sacados de los LOGS
+porque entonces el TAP llegaba roto; no existen como TAP y no se pueden pasar por un lector de
+TAP. Lo que hay es: 50 jobs que la señal da por limpios, de los cuales **7 tienen un hermano que
+lo confirma** y 43 no tienen con quién compararse. Cero falsos positivos está medido sobre 14
+jobs, no sobre 85.
+
+## ④ 🔴 El punto ciego, medido: lo que se nombra es un suelo
+
+En el árbol de hoy **115 llamadas de 9.547 (1,2 %) llevan el nombre construido**, en 64
+ficheros. Parecía poco. No lo es, porque UNA llamada dentro de un bucle registra muchos casos:
+
+- job `11174308618` (push a `main`, `204d117b`, verde): le faltan **32** casos frente a su
+  hermano. La señal nombró **8**. Los otros 24 son de `scrum524b` (23, de una sola llamada en un
+  bucle) y de `scrum1262` (1).
+- job `11164124022`: faltan 15, nombró 12.
+
+La señal SÍ saltó en los dos (el fichero sale nombrado), pero la cifra se queda corta. Por eso:
+
+- el aviso dice **«faltan AL MENOS N»** cuando en el mismo hueco hay llamadas de nombre
+  construido, y dice cuántas;
+- la línea de registro de cada run lleva `no_comparables=`;
+- y queda un caso que esta señal NO ve y que el test deja escrito como tal: si se pierden SÓLO
+  casos de un bucle, da 0. No se ha visto en los 14 jobs con hermano. No está descartado.
+
+## ⑤ Los controles del encargo
+
+| control | dónde se ve |
+|---|---|
+| ① el rojo: un run con ausentes sale anotado con fichero y rango | test «① EL ROJO…»; sobre TAP reales, las 41 filas de `d-salida-contra-los-tap-*.txt` |
+| ② el positivo: un run completo no anota nada | test «② 🔴 EL POSITIVO…»; sobre TAP reales, la sección ③ de arriba |
+| ③ la línea sale siempre, con su población | test «③ la línea de registro…» y «LA TASA…» (también con 0 y con 0 medidos) |
+| ④ el guion roto sale 0 y lo dice | test «④ 🔴 EL GUION ROTO A PROPÓSITO…»: 9 roturas, entre ellas el guion sin su módulo |
+| el punto ciego, contado e impreso | test «EL PUNTO CIEGO…»; línea `PUNTO CIEGO:` de cada salida |
+| «declarados N» atado al censo | test ««declarados N» está ATADO…» |
+
+Las cinco mutaciones declaradas, vistas caer una a una (`d-salida-mutaciones.txt`): 5 vivas, 0
+mudas, 0 ciegas, sobre una base de 17 en verde.
+
+**El control ④ sobre el PASO (no sobre el guion) sólo se puede enseñar en un run de verdad:** va
+en el comentario de entrega del ticket, con el número del run.
+
+## ⑥ `scrum859`, lo que J3h declaró sin medir
+
+Su PR añadió dos secciones a este registro y el meta-guard salió rojo por `scrum859` CIEGO
+(faltan 4 de 20 en la pasada mutada). Ese test trocea `docs/master`. ¿Contribuye el contenido?
+
+- **La parte determinista, NO** (`d-salida-scrum859-local.txt`): 60 pasadas en esta máquina, con
+  el registro de antes de #2114, con el de `main` y con el de esta rama (que añade esta sección),
+  limpias y con la mutación que el propio `scrum859` declara. Las 60: 20 tests, los cuatro
+  presentes. Mutada: 12 pasan y 8 caen, y el que tiene que caer, cae. En CI la mutada dio 9 y 7:
+  son exactamente los cuatro últimos que faltan.
+- **Ya pasaba antes** (`d-salida-meta-scrum859.txt`, 150 runs del CI de hoy, 83 juzgables):
+  CIEGO en **18 de 81 runs (22 %) creados antes de que #2114 entrara en `main`**, el primero a
+  las 10:32Z. Siempre «faltan 4 de 20», siempre los mismos cuatro, que son la COLA del fichero.
+- **Después de #2114: 1 de 2.** Con dos runs no se puede decir si la frecuencia cambió.
+
+Es la forma de SCRUM-1339 (cola contigua, un solo fichero, sin carga) dentro del meta-guard. **Y
+es un candidato a reproductor que ya existe**: un fichero, una mutación, y pierde su cola una de
+cada cinco veces en Linux. No lo he construido ni tocado: es del workflow de c.17951.
+
+## Lo que NO sé
+
+- Si el contenido de `docs/master` cambia la PROBABILIDAD de esa pérdida. Lo medido descarta que
+  la cause; no que la empuje.
+- Si `file=`/`line=` cuelga la anotación del fichero. No lo uso (c.17961) y no lo he medido.
+- Cuántos casos faltan de verdad en los 34 jobs con ausentes que no tienen hermano.
+- La causa. No demostrada.
+
+## Mis errores
+
+- Di «ausentes» como si fuera la cuenta de lo perdido. Lo desmintió la segunda sonda: 8 nombrados
+  de 32. Ahora el aviso dice «al menos» y un test lo sujeta (es la línea A9 de arriba).
+- Mi primer cruce buscaba el log por artefacto y no por run: dejó dos jobs «sin árbol» que J3h sí
+  había resuelto. Lo delató que mi población medible (78) no casaba con la suya (79).
+- Mi primera comparación de hermanos tomaba el máximo de `# tests` como «el completo» y contaba
+  la línea de fichero entero como un caso: marcó «no cuadra» en cuatro jobs que cuadraban.
+- Comprobé `ci.yml` con una librería que no está instalada, pasando el código a node por la
+  línea de órdenes. No comprobó nada, y lo dijo con un error en vez de con un cero.
+
+## Lo que no está en git, y reproducir
+
+Los TAP no están en git (114, de 0,16 a 2,4 MB): son artefactos del CI y caducan a los 7 días.
+Sí están las listas para volver a bajarlos (`b-arts-hoy.tsv`, `d-arts-banco2.tsv`) y lo que salió.
+
+    E=docs/master/evidencias/SCRUM-1339
+    node --test tests/scrum1339d-senal-de-nombres.test.mjs
+    node $E/d-mutaciones.mjs . tests/scrum1339d-senal-de-nombres.test.mjs      # con el árbol commiteado
+    node $E/b-bajar.mjs <fuera del árbol>/banco                                  # pide arts-hoy.tsv dentro
+    node $E/d-contra-los-tap.mjs <fuera del árbol>/banco .
+    node $E/d-hermanos.mjs <fuera del árbol>/banco/d-contra-los-tap.tsv <fuera del árbol>/banco/taps .
+    node $E/d-scrum859-local.mjs . 10 antes=8c0bf72850988e5f06266f330ab4c6c869f42a36 main=cadf00bcee699dc200ff142050986a62b692b3c4 rama=ARBOL
+    node $E/d-meta-scrum859.mjs <fuera del árbol>/meta 150
+    node scripts/senal-de-nombres.mjs <un tanda.tap>                             # sobre el árbol del disco

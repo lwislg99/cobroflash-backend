@@ -348,6 +348,26 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      # ── SCRUM-1339d · ¿FALTAN CASOS DECLARADOS EN EL TAP? AVISA, NO BLOQUEA ────────────────
+      #
+      # La tanda pierde casos y sale verde (SCRUM-1339: 41 de 91 jobs medidos el 1-oct, 28 de
+      # ellos en `success`). El suelo de arriba no puede verlo: compara un NÚMERO con holgura.
+      # Esto compara NOMBRES —los que el árbol declara contra los que hay en el TAP— y anota en
+      # el run qué falta, con su fichero y su rango de líneas dentro del texto del aviso.
+      #
+      #   · NO BLOQUEA, y no por intención: `continue-on-error` aquí, y el guion sale 0 hasta
+      #     cuando revienta, DICIENDO que no pudo medir (lo vigila `tests/scrum1339d-…`).
+      #     Decisión del fundador: SCRUM-1339 c.17935 y c.17954. Hacerlo requerido es OTRA.
+      #   · `if: always()`: el defecto que persigue sale VERDE; y en rojo también interesa.
+      #   · Sin `env`, sin token y sin `permissions`: sólo lee el TAP y `tests/*.test.mjs`. La
+      #     tasa sobre los últimos runs se calcula FUERA, con `gh`.
+      #   · Deja SIEMPRE una `::notice` con su población, también con 0: si sólo hablara cuando
+      #     falta algo, su silencio no distinguiría «no faltó» de «alguien quitó la cuenta».
+      - name: ¿Faltan casos declarados en el TAP? (señal de nombres · avisa, no bloquea)
+        if: always()
+        continue-on-error: true
+        run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"
+
       # ── 🔴 SCRUM-972 · EL AVISO DE LA PUERTA ──────────────────────────────────────────────
       #
       # Mismo mecanismo que el de `meta-guard` (SCRUM-935) y por el mismo motivo medido: el riesgo
