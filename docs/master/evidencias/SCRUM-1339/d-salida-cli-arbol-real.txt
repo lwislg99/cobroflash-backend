@@ -1,0 +1,13 @@
+
+[señal de nombres v1] medible=si ausentes=23 ficheros_con_ausentes=2 dudosos=0 declarados=9547 literales=9432 no_comparables=115 ficheros=1193 tap_tests=9941 tap_fail=0
+  POBLACIÓN: 1193 ficheros de tests/ · 9547 llamadas test()/it() (censo de SCRUM-708: 9547, coincide) · 9432 con nombre literal (9431 distintos)
+  PUNTO CIEGO: 115 llamadas NO se comparan (115 con el nombre construido, 0 sin nombre) en 64 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 1 nombres declarados más de una vez (1 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2444373 caracteres · 9941 líneas de test · 0 de suite · resumen: tests 9941 · fail 0 · entero
+  🔴 FALTAN AL MENOS 23 casos declarados, en 2 fichero(s). La tanda no informó de ellos:
+     tests/scrum1339d-senal-de-nombres.test.mjs · faltan 17 de 17 (entero) · posiciones 1–17 · líneas 122–620
+     tests/scrum411-exports-inalcanzables.test.mjs · faltan 6 de 25 (cola) · posiciones 20–25 · líneas 545–643
+
+::notice title=señal de nombres · FALTAN al menos 23 en 2 fichero(s)::[señal de nombres v1] medible=si ausentes=23 ficheros_con_ausentes=2 dudosos=0 declarados=9547 literales=9432 no_comparables=115 ficheros=1193 tap_tests=9941 tap_fail=0
+::warning title=señal de nombres · faltan casos::tests/scrum1339d-senal-de-nombres.test.mjs · faltan 17 de 17 (entero) · posiciones 1–17 · líneas 122–620. La tanda no informó de ellos y salió igual.
+::warning title=señal de nombres · faltan casos::tests/scrum411-exports-inalcanzables.test.mjs · faltan 6 de 25 (cola) · posiciones 20–25 · líneas 545–643. La tanda no informó de ellos y salió igual.

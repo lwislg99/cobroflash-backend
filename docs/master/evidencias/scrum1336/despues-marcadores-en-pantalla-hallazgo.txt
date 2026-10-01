@@ -1,0 +1,16 @@
+# marcadores-en-pantalla-hallazgo · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · Informes pinta un marcador nuevo, y ningún ciego
+# EXIT=1 · 30.5 s
+
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+  🔴 VISTA NUEVA CON MARCADOR: `reports` pinta 3 y no estaba en el censo.
+     «[PENDIENTE microcopy oficial] puesto por el banco de SCRUM-1»
+     O se firma el texto y desaparece, o entra AQUÍ con su motivo y quién lo retira.
+
+────────────────────────────────────────────────────────────────────────────
+🔴 SCRUM-722 · 1 problema(s) con los marcadores en pantalla.
+⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)

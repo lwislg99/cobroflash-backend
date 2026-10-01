@@ -43,6 +43,7 @@ import puppeteer from 'puppeteer-core';
 
 import { rutaDelNavegador, argsDeAislamiento } from './_navegador.mjs';
 import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PANEL = path.join(RAIZ, 'public', 'dashboard');
@@ -81,9 +82,42 @@ const CENSO = Object.freeze({
 
 const ESTADOS = ['con-datos', 'sin-datos', 'error'];
 
-let fallos = 0;
-const mal = (m) => { fallos++; console.error(m); };
 const decir = (m) => console.log(m);
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1336 · «NO HE PODIDO MIRAR» NO ES «HAY UN MARCADOR NUEVO».
+//
+// Aquí había UNA cuenta (`fallos`) y un solo `mal()` para las dos cosas, y las dos salían con 1.
+// Visto correr (docs/master/evidencias/scrum1336/): con una vista que revienta en sus tres estados
+// y ningún marcador nuevo, salía 1 y decía «1 problema(s) con los marcadores en pantalla»; y con el
+// `index.html` del panel sin scripts —«el banco no es el panel»— también 1, antes de medir nada.
+//
+// Ahora son dos listas y el código lo da `veredictoDe`: 1 si hay hallazgos, 2 si sólo hay ciegos.
+//
+// 🔴 Y HAY DOS JUICIOS QUE UN CIEGO VUELVE FALSOS, y por eso se suspenden cuando lo hay: «BAJA» y
+// «ENTRADA CADUCA» se deducen de NO haber visto algo. Si la vista no se pudo pintar, no haberlo
+// visto no dice nada: contarlo como hallazgo sería pintar el mismo ciego de 1 por otra puerta. Se
+// dice que quedan SIN JUZGAR. «SUBE» y «VISTA NUEVA» se deducen de algo que SÍ se vio: valen siempre.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const hallazgos = [];
+const ciegos = [];
+const hallazgo = (m) => { console.error(m); hallazgos.push(m); };
+const noSupeMirar = (m) => { console.error(m); ciegos.push(m); };
+
+/** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
+function cerrar() {
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+  if (veredictoFinal.codigo !== 0) {
+    console.error('\n' + '─'.repeat(76));
+    if (hallazgos.length) console.error(`🔴 SCRUM-722 · ${hallazgos.length} problema(s) con los marcadores en pantalla.`);
+    if (ciegos.length) console.error(`🔴 SCRUM-722 · NO SUPE MIRAR ${ciegos.length} cosa(s): de eso no se da veredicto, ni bueno ni malo.`);
+    console.error(veredictoFinal.linea);
+    process.exit(veredictoFinal.codigo);
+  }
+  // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+  // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+  console.log(veredictoFinal.linea);
+}
 
 // ── El banco: el índice REAL del panel, con sus scripts, servido desde un fichero temporal ──
 //
@@ -97,8 +131,8 @@ function construirBanco() {
     // taparía las vistas que se miden. Se excluye DECLARADO, no en silencio.
     .filter((f) => f !== 'onboardingView.js');
   if (scripts.length < 40) {
-    mal(`🔴 CIEGO: sólo ${scripts.length} scripts derivados de index.html. El banco no es el panel.`);
-    process.exit(1);
+    noSupeMirar(`🔴 CIEGO: sólo ${scripts.length} scripts derivados de index.html. El banco no es el panel.`);
+    cerrar();
   }
   const url = (p) => pathToFileURL(path.join(PANEL, p)).href;
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
@@ -143,8 +177,8 @@ function vistasDelRouter() {
 const { fichero, scripts } = construirBanco();
 const VISTAS = vistasDelRouter();
 if (VISTAS.length < 15) {
-  mal(`🔴 CIEGO: sólo ${VISTAS.length} vistas derivadas del router. No estoy mirando el panel.`);
-  process.exit(1);
+  noSupeMirar(`🔴 CIEGO: sólo ${VISTAS.length} vistas derivadas del router. No estoy mirando el panel.`);
+  cerrar();
 }
 decir(`SCRUM-722 · marcadores en el DOM renderizado — ${VISTAS.length} vistas × ${ESTADOS.length} estados · ${scripts} scripts\n`);
 
@@ -260,13 +294,17 @@ async function medir(vista, fn, arg, estado, inyectar, estadoAlbaran = 'borrador
 
 // ── ② CONTROL NEGATIVO, ANTES DE NADA: el detector tiene que saber ver uno ──────────────────
 const prueba = await medir('customers', 'renderCustomersView', null, 'con-datos', true);
+// SCRUM-1336 · si el detector no ve el marcador que se le pone delante, NADA de lo que cuente
+// después vale: es un ciego del guard entero, y los juicios por ausencia se suspenden.
+let detectorVe = false;
 if (prueba.ciego) {
-  mal(`🔴 CIEGO en el control negativo: ${prueba.ciego}`);
+  noSupeMirar(`🔴 CIEGO en el control negativo: ${prueba.ciego}`);
 } else if (!prueba.apariciones) {
-  mal('🔴 EL CONTROL NEGATIVO NO CAE: se ha metido un marcador en el DOM y el detector no lo ve.\n'
+  noSupeMirar('🔴 EL CONTROL NEGATIVO NO CAE: se ha metido un marcador en el DOM y el detector no lo ve.\n'
     + '   Entonces el cero de todas las vistas es «no he mirado», no «está limpio». Este guard\n'
     + '   no vale hasta que esto se ponga rojo.');
 } else {
+  detectorVe = true;
   decir(`  ✅ control negativo: el marcador inyectado se detecta (${prueba.apariciones})`);
 }
 
@@ -276,38 +314,59 @@ if (prueba.ciego) {
 // decidir las acciones. Escribirlos aquí a mano sería una SEGUNDA copia del dominio, y el día que
 // el albarán gane un estado este banco dejaría de servirlo en silencio — el mismo modo de fallo
 // que este arreglo viene a cerrar, una capa más abajo.
-const ESTADOS_ALBARAN = await page.evaluate(() => window.ALBARAN_STATES || null);
-if (!Array.isArray(ESTADOS_ALBARAN) || ESTADOS_ALBARAN.length < 2) {
-  mal('🔴 CIEGO: no se ha podido leer `window.ALBARAN_STATES` del panel. Sin la tabla de estados\n'
+const estadosLeidos = await page.evaluate(() => window.ALBARAN_STATES || null);
+const tablaDeEstadosLeida = Array.isArray(estadosLeidos) && estadosLeidos.length >= 2;
+// Sin la tabla NO se sirve ningún estado del albarán: servir uno solo sería volver al defecto.
+// (Aquí se hacía `ESTADOS_ALBARAN.length = 0` sobre lo leído, que con un `null` lanzaba sin capturar.)
+const ESTADOS_ALBARAN = tablaDeEstadosLeida ? estadosLeidos : [];
+if (!tablaDeEstadosLeida) {
+  noSupeMirar('🔴 CIEGO: no se ha podido leer `window.ALBARAN_STATES` del panel. Sin la tabla de estados\n'
     + '   este banco volvería a servir uno solo, que es el defecto de SCRUM-903d.');
-  ESTADOS_ALBARAN.length = 0;
 }
-decir(`  · estados de albarán servidos: ${ESTADOS_ALBARAN.join(', ')}`);
+decir(`  · estados de albarán servidos: ${ESTADOS_ALBARAN.join(', ') || '(ninguno)'}`);
 
 // ── ① EL CENSO ──────────────────────────────────────────────────────────────────────────────
 const porVista = {};
-const ciegos = [];
+/** Las vistas con algún par (vista,estado) que no se pudo pintar: su recuento es un mínimo, no un total. */
+const vistasConCiego = new Set();
+if (!tablaDeEstadosLeida) vistasConCiego.add('albaran-detail');
+const paresPintados = new Map();
+const PARES = [];
 for (const [vista, fn, arg] of VISTAS) {
   // El albarán se sirve en TODOS sus estados; el resto de vistas no tiene ese eje.
   const estadosAlb = vista === 'albaran-detail' ? ESTADOS_ALBARAN : ['borrador'];
   for (const estado of ESTADOS) {
     for (const estadoAlb of estadosAlb) {
-      const r = await medir(vista, fn, arg, estado, false, estadoAlb);
-      const etiqueta = vista === 'albaran-detail' ? `${vista}(${estadoAlb})` : vista;
-      if (r.ciego) { ciegos.push(`${etiqueta} · ${estado} → ${r.ciego}`); continue; }
-      if (!r.apariciones) continue;
-      porVista[vista] = (porVista[vista] || 0) + r.apariciones;
-      (porVista['__muestras_' + vista] ||= []).push(...r.muestras);
+      PARES.push({ vista, fn, arg, estado, estadoAlb, etiqueta: vista === 'albaran-detail' ? `${vista}(${estadoAlb})` : vista });
     }
   }
 }
+// `recorrerCasos` y no tres `for`: un par que LANZA es un ciego de ESE par, y los demás se miden.
+const recorrido = await recorrerCasos(PARES, async (p) => {
+  vistasConCiego.add(p.vista);                  // hasta que se demuestre que se pudo pintar
+  const r = await medir(p.vista, p.fn, p.arg, p.estado, false, p.estadoAlb);
+  if (r.ciego) return { hallazgos: [], ciegos: [`${p.etiqueta} · ${p.estado} → ${r.ciego}`] };
+  paresPintados.set(p.vista, (paresPintados.get(p.vista) || 0) + 1);
+  if (r.apariciones) {
+    porVista[p.vista] = (porVista[p.vista] || 0) + r.apariciones;
+    (porVista['__muestras_' + p.vista] ||= []).push(...r.muestras);
+  }
+  return { hallazgos: [], ciegos: [] };
+}, (p) => `${p.etiqueta} · ${p.estado}`);
 await navegador.close();
 fs.rmSync(path.dirname(fichero), { recursive: true, force: true });
 
-if (ciegos.length) {
-  mal(`\n🔴 ${ciegos.length} par(es) (vista,estado) CIEGOS. No es «limpio»: es que no he podido mirar,\n`
-    + '   y un guard que no puede mirar no puede aprobar:\n     ' + ciegos.join('\n     '));
+// Una vista está entera sólo si se pintaron TODOS sus pares.
+for (const vista of new Set(PARES.map((p) => p.vista))) {
+  if (paresPintados.get(vista) === PARES.filter((p) => p.vista === vista).length) vistasConCiego.delete(vista);
 }
+if (recorrido.ciegos.length) {
+  console.error(`\n🔴 ${recorrido.ciegos.length} par(es) (vista,estado) CIEGOS. No es «limpio»: es que no he podido mirar,\n`
+    + '   y un guard que no puede mirar no puede aprobar:\n     ' + recorrido.ciegos.join('\n     '));
+  ciegos.push(...recorrido.ciegos);
+}
+/** ¿Se puede deducir algo de NO haber visto un marcador en esta vista? */
+const seVioEntera = (vista) => detectorVe && !vistasConCiego.has(vista);
 
 decir('');
 const vistas = Object.keys(porVista).filter((k) => !k.startsWith('__'));
@@ -316,13 +375,16 @@ for (const v of vistas) {
   const n = porVista[v];
   const muestra = (porVista['__muestras_' + v] || [])[0] || '';
   if (techo === undefined) {
-    mal(`  🔴 VISTA NUEVA CON MARCADOR: \`${v}\` pinta ${n} y no estaba en el censo.\n`
+    hallazgo(`  🔴 VISTA NUEVA CON MARCADOR: \`${v}\` pinta ${n} y no estaba en el censo.\n`
       + `     «${muestra}»\n`
       + '     O se firma el texto y desaparece, o entra AQUÍ con su motivo y quién lo retira.');
   } else if (n > techo) {
-    mal(`  🔴 SUBE: \`${v}\` pinta ${n} y su techo es ${techo}. El trinquete sólo baja.\n     «${muestra}»`);
+    hallazgo(`  🔴 SUBE: \`${v}\` pinta ${n} y su techo es ${techo}. El trinquete sólo baja.\n     «${muestra}»`);
+  } else if (n < techo && !seVioEntera(v)) {
+    // Menos marcadores que el techo en una vista que NO se pudo pintar entera: no es una bajada.
+    decir(`  · ${v}: ${n} de ${techo} — SIN JUZGAR si ha bajado: esa vista no se pudo mirar entera (va arriba, entre los ciegos).`);
   } else if (n < techo) {
-    mal(`  🔴 BAJA Y NO SE HA APRETADO: \`${v}\` pinta ${n} y el censo dice ${techo}.\n`
+    hallazgo(`  🔴 BAJA Y NO SE HA APRETADO: \`${v}\` pinta ${n} y el censo dice ${techo}.\n`
       + '     Baja el número aquí (o borra la entrada si es 0): un techo por encima de la realidad\n'
       + '     es holgura para que vuelva a subir sin que nadie lo note.');
   } else {
@@ -330,17 +392,17 @@ for (const v of vistas) {
   }
 }
 for (const v of Object.keys(CENSO)) {
-  if (!vistas.includes(v)) {
-    mal(`  🔴 ENTRADA CADUCA: \`${v}\` ya no pinta ningún marcador. BÓRRALA del censo — no la pongas\n`
-      + '     a 0: mientras esté, esa vista puede volver a subir hasta su techo sin caer.');
+  if (vistas.includes(v)) continue;
+  if (!seVioEntera(v)) {
+    decir(`  · ${v}: 0 de ${CENSO[v]} — SIN JUZGAR si la entrada ha caducado: esa vista no se pudo mirar entera (va arriba, entre los ciegos).`);
+    continue;
   }
+  hallazgo(`  🔴 ENTRADA CADUCA: \`${v}\` ya no pinta ningún marcador. BÓRRALA del censo — no la pongas\n`
+    + '     a 0: mientras esté, esa vista puede volver a subir hasta su techo sin caer.');
 }
 
+cerrar();
 decir('\n' + '─'.repeat(76));
-if (fallos) {
-  console.error(`🔴 SCRUM-722 · ${fallos} problema(s) con los marcadores en pantalla.`);
-  process.exit(1);
-}
 decir('✅ ningún marcador NUEVO llega al DOM renderizado. Vigiladas las '
   + `${VISTAS.length} vistas del router en sus tres estados (con datos, sin datos y error), con el `
   + 'control negativo corrido en esta misma ejecución. Los que quedan están en el CENSO, '
