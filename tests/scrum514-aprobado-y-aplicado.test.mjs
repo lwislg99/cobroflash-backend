@@ -44,9 +44,9 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
  *
  * De cada sitio se saca lo que ese sitio usa para el texto aprobado:
  *   · el registro → la ÚLTIMA columna de sus tablas;
- *   · un fichero de aprobación → las CITAS bajo el encabezado «Texto aprobado».
- * Las citas se limitan a esa sección a propósito: el registro está lleno de notas en `>` que no
- * son copy, y meterlas convertiría el guard en ruido.
+ *   · un fichero de aprobación → TODAS sus líneas de cita (SCRUM-1334; ver `poblacion`).
+ * Hasta el 1-oct-2026 sólo se leían las citas bajo un encabezado «Texto aprobado», y eso dejaba
+ * fuera, sin decirlo, 138 de 248: bastaba titular el apartado con otras palabras.
  *
  * Se descarta lo que no es copy —rutas, identificadores en mayúsculas, fragmentos cortos—. El
  * filtro es por FORMA, nunca por contenido: excluir un texto por lo que dice sería decidir por el
@@ -80,17 +80,51 @@ function textosAprobados(opciones) {
  * (SCRUM-726, SCRUM-861). Y el comentario sólo se busca en una FICHA: en el registro congelado el
  * fichero entero es la firma, y una línea suya no dice a cuál de sus textos respalda.
  */
-function citasAprobadas(opciones) {
+function citasAprobadas(opciones, declaradas) {
+  return poblacion(opciones, declaradas).filter((c) => c.caja === 'cruce');
+}
+
+/**
+ * 🔴 SCRUM-1334 · LA POBLACIÓN ENTERA, Y CADA TEXTO EN SU CAJA.
+ *
+ * Hasta aquí, de una ficha sólo se leían las citas bajo un encabezado que dijera «Texto aprobado».
+ * Medido el 1-oct-2026: eso cruzaba 110 de 248 citas. Las otras 138 quedaban fuera EN SILENCIO, y
+ * 106 iban bajo nueve títulos que cualquiera leería como de textos aprobados («Textos aprobados,
+ * literales», «Los literales, tal cual se pintan»…). Entre ellas, una cita de 276 caracteres que
+ * nadie miraba porque su encabezado estaba en plural.
+ *
+ * Añadir los nueve títulos a una lista habría sido un catálogo por nombre, que se rompe con el
+ * décimo. Así que AQUÍ NINGÚN ENCABEZADO DECIDE NADA. En una ficha, TODA línea de cita es un texto
+ * aprobado: es la convención que ya usa el lector (`constaAprobado` cuenta toda cita de
+ * `docs/microcopy/` como literal firmado) y la que escribe su README. La sección se guarda para
+ * DECIRLA en el rojo, no para decidir.
+ *
+ * Cada unidad cae en UNA caja, y de todas se da cuenta en el recuento:
+ *   · `cruce`     — se busca tal cual en el código. Es lo que el guard vigila.
+ *   · `plantilla` — lleva huecos `{…}`: el código la COMPONE y nunca aparece literal.
+ *   · `corta`     — menos de 4 caracteres: por subcadena, «Sí» está en cualquier fichero.
+ *   · `declarada` — está en `NO_SE_CRUZAN`, por ficha y texto, con su motivo y su prueba.
+ *   · `forma`     — sólo en el registro congelado: una ruta o una constante, no copy.
+ *
+ * Lo desconocido va a `cruce`. Una cita que el código no pinta y que nadie ha declarado no pasa
+ * callada: sale en rojo, y el rojo dice que el guard NO SABE qué es.
+ */
+const CAJAS = ['cruce', 'plantilla', 'corta', 'declarada', 'forma'];
+
+function poblacion(opciones, declaradas = NO_SE_CRUZAN) {
   const out = [];
   for (const ap of aprobacionesDeMicrocopy(opciones)) {
     const deFicha = ap.origen === 'fichero';
     const procedencia = {
       ruta: ap.ruta,
+      deFicha,
       firmaQueCuenta: ap.aprobada === true,
       comentario: deFicha ? comentarioDeLaFirma(ap.texto) : null,
     };
-    for (const texto of (deFicha ? citasDeTextoAprobado(ap.texto) : celdasDeTabla(ap.texto))) {
-      out.push({ texto, ...procedencia });
+    for (const u of (deFicha ? citasDeFicha(ap.texto) : celdasDelCongelado(ap.texto))) {
+      const caja = u.caja
+        || (declaradas.some((d) => d.ficha === ap.nombre && d.texto === u.texto) ? 'declarada' : 'cruce');
+      out.push({ ...u, caja, ...procedencia });
     }
   }
   return out;
@@ -113,15 +147,21 @@ function comentarioDeLaFirma(md) {
   return null;
 }
 
-/** Las citas `> …` que van bajo un encabezado «Texto aprobado». */
-function citasDeTextoAprobado(md) {
+/**
+ * TODAS las líneas de cita `> …` de una ficha, cada una con su sección y, si se sabe leyendo sólo
+ * el texto, con su caja. La línea en blanco de un bloque de cita (`>` a secas) no es una cita.
+ */
+function citasDeFicha(md) {
   const out = [];
-  let dentro = false;
+  let seccion = '(antes del primer encabezado)';
   for (const linea of md.split('\n')) {
-    if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
-    if (!dentro) continue;
+    const h = /^#{1,6}\s+(.*)$/.exec(linea.trimEnd());
+    if (h) { seccion = h[1].trim(); continue; }
+    if (!/texto\s+aprobado/i.test(seccion)) continue; // CRITERIO VIEJO, sólo para ver el rojo
     const m = /^>\s?(.+)$/.exec(linea.trim());
-    if (!m || m[1].trim().length < 4) continue;
+    if (!m || m[1].trim() === '') continue;
+    const texto = m[1].trim();
+    if (texto.length < 4) { out.push({ texto, seccion, caja: 'corta' }); continue; }
     // 🔴 SCRUM-915e1 · LA MISMA REGLA DE PLANTILLA QUE YA APLICA `celdasDeTabla`, que aquí
     // faltaba. No es una excepción nueva ni una rebaja: es la de 20 líneas más abajo, escrita
     // para el registro congelado y nunca traída a las fichas. Un texto aprobado con un hueco
@@ -134,15 +174,16 @@ function citasDeTextoAprobado(md) {
     //
     // La exención es ESTRECHA a propósito: sólo salta con llaves. Un texto sin ellas se sigue
     // cruzando byte a byte, y eso lo vigila el suelo de este mismo fichero.
-    if (/{[^}]+}/.test(m[1])) continue;
-    out.push(m[1].trim());
+    if (/{[^}]+}/.test(texto)) { out.push({ texto, seccion, caja: 'plantilla' }); continue; }
+    out.push({ texto, seccion });
   }
   return out;
 }
 
-/** La última columna de las tablas del registro congelado. */
-function celdasDeTabla(md) {
-  const out = new Set();
+/** La última columna de las tablas del registro congelado, cada texto una vez y con su caja. */
+function celdasDelCongelado(md) {
+  const out = new Map();
+  const poner = (texto, caja) => { if (!out.has(texto)) out.set(texto, { texto, seccion: null, caja }); };
   for (const linea of md.split('\n')) {
     const t0 = linea.trim();
     if (!t0.startsWith('|') || /^\|\s*-+/.test(t0)) continue;
@@ -150,24 +191,26 @@ function celdasDeTabla(md) {
     const ultima = celdas[celdas.length - 1] || '';
     for (const m of ultima.matchAll(/`([^`]+)`/g)) {
       const t = m[1].trim();
-      if (t.length < 4) continue;
-      if (/^[\w.\-/]+\.(js|ts|md)/.test(t)) continue;      // rutas de fichero
-      if (/^[A-Z_]{4,}$/.test(t)) continue;                 // constantes
-      if (!/[ áéíóúñÁÉÍÓÚÑ]/.test(t) && t.length < 8) continue;
+      if (t.length < 4) { poner(t, 'corta'); continue; }
+      if (/^[\w.\-/]+\.(js|ts|md)/.test(t)) { poner(t, 'forma'); continue; }      // rutas de fichero
+      if (/^[A-Z_]{4,}$/.test(t)) { poner(t, 'forma'); continue; }                 // constantes
+      if (!/[ áéíóúñÁÉÍÓÚÑ]/.test(t) && t.length < 8) { poner(t, 'forma'); continue; }
       // 🔴 Las PLANTILLAS se quedan fuera del cruce, y no es una excepción de conveniencia: un
       // texto como `{N} facturas` NUNCA aparece literal en el código porque el código lo
       // COMPONE (`n + ' facturas'`). Buscarlo tal cual daría un rojo permanente por algo que sí
       // está aplicado — medido: `libroRegistroView.js:49`. Lo que el guard puede afirmar de una
       // plantilla es que su parte fija esté, y eso ya lo cubre el resto de la fila.
-      if (/{[^}]+}/.test(t)) continue;
-      out.add(t);
+      if (/{[^}]+}/.test(t)) { poner(t, 'plantilla'); continue; }
+      poner(t, 'cruce');
     }
   }
-  return [...out];
+  return [...out.values()];
 }
 
-/** Todo el código donde puede vivir un texto de pantalla. */
+/** Todo el código donde puede vivir un texto de pantalla. Se lee UNA vez por pasada. */
+let corpusLeido = null;
 function corpus() {
+  if (corpusLeido) return corpusLeido;
   const ficheros = [];
   const walk = (d, ext) => {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
@@ -179,7 +222,8 @@ function corpus() {
   };
   walk(path.join(RAIZ, 'public'), /\.(js|ts|html)$/);
   walk(path.join(RAIZ, 'src'), /\.ts$/);
-  return { texto: ficheros.map((f) => fs.readFileSync(f, 'utf8')).join('\n'), cuantos: ficheros.length };
+  corpusLeido = { texto: ficheros.map((f) => fs.readFileSync(f, 'utf8')).join('\n'), cuantos: ficheros.length };
+  return corpusLeido;
 }
 
 /** A partir de aquí, una cita se trata como prosa. No se sube ni se baja para que pase un caso. */
@@ -356,6 +400,140 @@ const APARCADOS = [
   },
 ];
 
+/**
+ * 🔴 SCRUM-1334 · LAS CITAS QUE EL CÓDIGO PINTA SIN QUE APAREZCAN TAL CUAL, CON SU PRUEBA.
+ *
+ * Una cita de una ficha que el cruce literal no puede encontrar porque el código la COMPONE (un
+ * plural, un número, dos constantes) o la tiene PARTIDA en dos literales. No es una lista de
+ * perdón, y por eso cada entrada lleva lo que la hace comprobable:
+ *   · `ficha`   — de qué ficha es. La declaración vale para ESA cita de ESA ficha y ninguna más.
+ *   · `fichero` — dónde se compone.
+ *   · `partes`  — la cita, troceada: las cadenas son las partes FIJAS, que tienen que seguir
+ *                 escritas en ese fichero; `dato(…)` es lo que el código pone (un número, una fecha).
+ *                 El texto de la cita es la suma de las partes: no se escribe dos veces.
+ *   · `motivo`  — por qué no aparece tal cual, y qué la sacaría de aquí.
+ *
+ * ⛔ AQUÍ NO VA UNA NOTA. Una nota o un «qué había antes» escritos como cita no se declaran: se les
+ * quita el `>` en su ficha. En `docs/microcopy/` toda cita es un texto firmado —también para
+ * `constaAprobado`—, así que declararla aquí pondría este guard en verde dejando a la nota
+ * contando como aprobada en el otro.
+ */
+const dato = (valor) => ({ dato: valor });
+const textoDe = (partes) => partes.map((p) => (typeof p === 'string' ? p : p.dato)).join('');
+
+const REMEDIO_DE_887 = 'este presupuesto tiene un descuento global y varios tipos de IVA. Duplícalo, '
+  + 'pon el descuento en cada línea y envíaselo al cliente para que lo firme.';
+const MOTIVO_DE_887 = 'FRASE COMPLETA QUE EL CÓDIGO COMPONE (SCRUM-887 comentario 15698): un prefijo más '
+  + 'la constante `REMEDIO_DESCUENTO_GLOBAL_VARIOS_IVA`, que comparten las dos frases. Ejecutado el '
+  + '1-oct-2026 contra `dist/`: la constante compuesta es idéntica a la cita. Sale de aquí si algún '
+  + 'día el código la escribe entera en un solo literal.';
+const MOTIVO_DE_915 = 'FORMATO DEL RESUMEN DE UN PASO CERRADO (SCRUM-915 comentario 15868): `N`, el '
+  + 'total, la condición de pago y la fecha son datos, y la ficha lo dice debajo de la cita. Leído '
+  + 'en `quotesView.js` (los `texto` de los pasos), no ejecutado: vive dentro del editor.';
+const MOTIVO_DE_917 = 'SINGULAR QUE EL CÓDIGO ELIGE CON N = 1 (SCRUM-917 comentario 15938): '
+  + '`pintarCifrasDeLaLista` compone el pie de «Por cobrar» con el número y la palabra en singular o '
+  + 'plural. Leído en `jobsView.js`, no ejecutado: necesita el DOM de la lista.';
+const MOTIVO_DE_974 = 'EJEMPLO DEL DETALLE CON SUS PLURALES (SCRUM-974 comentario 16056): '
+  + '`bloqueFirmadoSinFacturar` compone «{partes} parte(s) firmado(s) de {clientes} cliente(s)» con '
+  + 'plurales de verdad; la ficha cita tres casos. Leído en el servicio, no ejecutado: consulta la base.';
+
+const NO_SE_CRUZAN = [
+  { ficha: '2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md', clase: 'compuesta',
+    fichero: 'src/modules/quotes/domain/descuentoGlobalConVariosIva.ts',
+    partes: ['No se puede facturar: ', REMEDIO_DE_887], motivo: MOTIVO_DE_887 },
+  { ficha: '2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md', clase: 'compuesta',
+    fichero: 'src/modules/quotes/domain/descuentoGlobalConVariosIva.ts',
+    partes: ['No se puede crear una revisión: ', REMEDIO_DE_887], motivo: MOTIVO_DE_887 },
+  { ficha: '2026-09-18-SCRUM-915-pasos-del-editor.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/quotesView.js',
+    partes: [dato('N'), ' ', 'conceptos', ' · ', dato('total')], motivo: MOTIVO_DE_915 },
+  { ficha: '2026-09-18-SCRUM-915-pasos-del-editor.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/quotesView.js',
+    partes: [dato('…'), ' · válido hasta ', dato('dd/mm/aaaa')], motivo: MOTIVO_DE_915 },
+  { ficha: '2026-09-18-SCRUM-917-lista-singulares.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobsView.js',
+    partes: ['en ', dato('1'), ' ', 'trabajo', ' sin cerrar'], motivo: MOTIVO_DE_917 },
+  { ficha: '2026-09-18-SCRUM-917-lista-singulares.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobsView.js',
+    partes: [dato('1'), ' sin importe de referencia, ', 'no entra'], motivo: MOTIVO_DE_917 },
+  { ficha: '2026-09-21-SCRUM-974-firmado-sin-facturar.md', clase: 'compuesta',
+    fichero: 'src/modules/messaging/domain/weeklyDigest.service.ts',
+    partes: [dato('1'), ' ', 'parte firmado', ' de ', dato('1'), ' ', 'cliente'], motivo: MOTIVO_DE_974 },
+  { ficha: '2026-09-21-SCRUM-974-firmado-sin-facturar.md', clase: 'compuesta',
+    fichero: 'src/modules/messaging/domain/weeklyDigest.service.ts',
+    partes: [dato('3'), ' ', 'partes firmados', ' de ', dato('1'), ' ', 'cliente'], motivo: MOTIVO_DE_974 },
+  { ficha: '2026-09-21-SCRUM-974-firmado-sin-facturar.md', clase: 'compuesta',
+    fichero: 'src/modules/messaging/domain/weeklyDigest.service.ts',
+    partes: [dato('3'), ' ', 'partes firmados', ' de ', dato('2'), ' ', 'clientes'], motivo: MOTIVO_DE_974 },
+  { ficha: '2026-09-21-SCRUM-980-historial-del-cliente.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/customerDetailView.js',
+    partes: [dato('3'), ' fotos'],
+    motivo: 'PLURAL QUE EL CÓDIGO COMPONE (SCRUM-980): el nombre accesible de las fotos sale de '
+      + '`ariaFotos(n)`, que devuelve «1 foto» o el número seguido de « fotos». El singular sí está '
+      + 'tal cual y se cruza. Leído en `customerDetailView.js`, no ejecutado.' },
+  { ficha: '2026-09-25-SCRUM-1124-direccion-albaran-firmado.md', clase: 'partida',
+    fichero: 'src/modules/jobs/domain/jobDireccion.ts',
+    partes: [
+      'No se puede añadir la dirección a este trabajo: tiene un albarán ya firmado que la lleva ',
+      'dentro de su firma. Cambiarla dejaría esa firma sin poder verificarse.',
+    ],
+    motivo: 'UN SOLO TEXTO, PARTIDO EN DOS LITERALES CON `+` (`MSG_DIRECCION_SELLADA`). Ejecutado el '
+      + '1-oct-2026 contra `dist/`: la constante es idéntica a la cita. No se junta aquí a propósito '
+      + '(orquestador, 1-oct-2026): ese fichero es del sellado del albarán (regla 29) y tocarlo para '
+      + 'que un guard pueda leerlo sería mover lo serio por lo cómodo. Sale de aquí el día que quien '
+      + 'lleve ese carril lo escriba en una línea.' },
+].map((d) => ({ ...d, texto: textoDe(d.partes) }));
+
+/** A partir de aquí un «dato» deja de ser un número, una fecha o un hueco, y es una frase. */
+const LARGO_DE_UN_DATO = 12;
+
+/**
+ * Lo que le falta a UNA declaración para valer. `[]` es que vale.
+ *
+ * `leer(ruta)` devuelve el texto de un fichero del repo, o `null` si no existe. Va por parámetro
+ * para poder probar esto con una declaración fabricada, sin tocar ni el código ni las fichas.
+ */
+function fallosDeDeclaracion(d, { leer, textoDelCorpus }) {
+  const fallos = [];
+  if (!['compuesta', 'partida'].includes(d.clase)) fallos.push(`clase desconocida: «${d.clase}»`);
+  if (!d.motivo || d.motivo.length <= 60) fallos.push('no lleva motivo, o es demasiado corto para revisarlo');
+  const ficha = leer('docs/microcopy/' + d.ficha);
+  if (ficha === null) fallos.push(`su ficha no existe: ${d.ficha}`);
+  else if (!citasDeFicha(ficha).some((c) => c.texto === d.texto)) fallos.push('su ficha ya no tiene esa cita: la declaración sobra');
+  if (textoDelCorpus.includes(d.texto)) fallos.push('el código YA la pinta tal cual: la declaración sobra');
+  const fijas = d.partes.filter((p) => typeof p === 'string');
+  const datos = d.partes.filter((p) => typeof p !== 'string').map((p) => p.dato);
+  if (!fijas.some((p) => p.trim().length >= 4)) fallos.push('ninguna parte fija tiene 4 caracteres: no prueba nada');
+  for (const v of datos) {
+    if (v.length > LARGO_DE_UN_DATO) fallos.push(`«${v}» no es un dato (pasa de ${LARGO_DE_UN_DATO} caracteres): es texto, y el texto va como parte fija`);
+  }
+  if (d.clase === 'partida' && (datos.length > 0 || fijas.length < 2)) fallos.push('una cita partida son dos o más partes fijas y ningún dato');
+  const codigo = leer(d.fichero);
+  if (codigo === null) fallos.push(`el fichero donde se compone no existe: ${d.fichero}`);
+  else for (const p of fijas) if (!codigo.includes(p)) fallos.push(`la parte fija ${JSON.stringify(p)} ya no está en ${d.fichero}`);
+  return fallos;
+}
+
+const leerDelRepo = (ruta) => {
+  const p = path.join(RAIZ, ruta);
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+};
+
+/**
+ * Lo que está en el cruce y el código NO pinta, quitando lo aparcado. Cada texto, con las fichas y
+ * secciones donde aparece: para que el rojo diga dónde mirar.
+ */
+function sinAplicar(citas, textoDelCorpus, aparcados = APARCADOS) {
+  const fuera = new Set(aparcados.map((a) => a.texto));
+  const out = new Map();
+  for (const c of citas) {
+    if (c.caja !== 'cruce' || fuera.has(c.texto) || textoDelCorpus.includes(c.texto)) continue;
+    if (!out.has(c.texto)) out.set(c.texto, { texto: c.texto, donde: [] });
+    out.get(c.texto).donde.push(c.seccion ? `${c.ruta} · sección «${c.seccion}»` : c.ruta);
+  }
+  return [...out.values()];
+}
+
 // ═══ ① SUELO ═════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra', () => {
@@ -382,19 +560,75 @@ test('SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO', () => {
 // ═══ ② LO QUE VIGILA ═════════════════════════════════════════════════════════════════════
 
 test('SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo)', () => {
+  const faltan = sinAplicar(poblacion(), corpus().texto);
+
+  assert.deepEqual(faltan.map((f) => f.texto), [],
+    '🔴 HAY TEXTO APROBADO QUE EL CÓDIGO NO PINTA TAL CUAL, Y NO SÉ POR QUÉ:\n    '
+    + faltan.map((f) => `${JSON.stringify(f.texto)}\n        ${f.donde.join('\n        ')}`).join('\n    ')
+    + '\n\n  En una ficha de `docs/microcopy/` toda línea de cita es un texto firmado, vaya bajo el '
+    + 'encabezado que vaya (SCRUM-1334). De cada una de arriba no sé cuál de estas tres cosas es, y '
+    + 'no la dejo pasar sin saberlo:\n'
+    + '   · Un texto firmado que NO se ha aplicado: un profesional no lo está viendo. Se aplica '
+    + '—copiándolo LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca en `APARCADOS` '
+    + 'con su motivo y quién lo desbloquea.\n'
+    + '   · Un texto que el código COMPONE (un plural, un número) o tiene partido en dos literales: '
+    + 'se declara en `NO_SE_CRUZAN` con el fichero y sus partes fijas.\n'
+    + '   · Una NOTA, o un «qué había antes», escritos como cita: se les quita el `>` en la ficha. '
+    + 'No se declaran aquí: con el `>` puesto, `constaAprobado` las sigue dando por firmadas.\n'
+    + '  ⛔ No se cambia un texto firmado para que cruce (regla 39), ni se afloja esto (regla 41).');
+});
+
+test('SCRUM-1334 · 🔴 RECUENTO: el guard DICE lo que cruza y lo que no — «crucé N de M»', (t) => {
+  const p = poblacion();
+  const fichas = p.filter((c) => c.deFicha);
+  const congelado = p.filter((c) => !c.deFicha);
+  const de = (lista, caja) => lista.filter((c) => c.caja === caja).length;
+
+  // Cada unidad está en UNA caja de las que el recuento nombra: nada se queda sin contar.
+  const sinCaja = p.filter((c) => !CAJAS.includes(c.caja));
+  assert.deepEqual(sinCaja.map((c) => c.texto), [], '🔴 hay unidades en una caja que el recuento no nombra.');
+
+  // SEGUNDA SONDA, independiente del extractor: las líneas de cita, contadas a pelo sobre el
+  // directorio. Si el extractor se dejara alguna fuera, su M sería menor y nadie lo vería.
+  const dir = path.join(RAIZ, 'docs', 'microcopy');
+  const nombres = fs.readdirSync(dir).filter((n) => n.endsWith('.md') && n !== 'README.md');
+  const aPelo = nombres
+    .flatMap((n) => fs.readFileSync(path.join(dir, n), 'utf8').split(/\r?\n/))
+    .filter((l) => /^\s*>\s*\S/.test(l)).length;
+  assert.equal(fichas.length, aPelo,
+    `🔴 el extractor ve ${fichas.length} citas en las fichas y a pelo hay ${aPelo}: se está dejando `
+    + 'citas fuera sin meterlas en ninguna caja, que es justo lo que SCRUM-1334 vino a cerrar.');
+
   const { texto } = corpus();
   const aparcados = new Set(APARCADOS.map((a) => a.texto));
-  const sinAplicar = textosAprobados()
-    .filter((t) => !texto.includes(t))
-    .filter((t) => !aparcados.has(t));
+  const enCruce = fichas.filter((c) => c.caja === 'cruce');
+  const pintadas = enCruce.filter((c) => texto.includes(c.texto)).length;
+  const aparcadas = enCruce.filter((c) => !texto.includes(c.texto) && aparcados.has(c.texto)).length;
+  t.diagnostic(`SCRUM-514 · fichas: crucé ${enCruce.length} de ${fichas.length} citas de ${nombres.length} fichas `
+    + `(${pintadas} pintadas tal cual, ${aparcadas} aparcadas con motivo, ${enCruce.length - pintadas - aparcadas} SIN SABER). `
+    + `No cruzo: ${de(fichas, 'plantilla')} plantillas con huecos, ${de(fichas, 'declarada')} declaradas `
+    + `(compuestas o partidas, con su prueba), ${de(fichas, 'corta')} de menos de 4 caracteres.`);
+  t.diagnostic(`SCRUM-514 · registro congelado: crucé ${de(congelado, 'cruce')} de ${congelado.length} textos. `
+    + `No cruzo: ${de(congelado, 'plantilla')} plantillas, ${de(congelado, 'forma')} rutas o constantes, `
+    + `${de(congelado, 'corta')} de menos de 4 caracteres.`);
 
-  assert.deepEqual(sinAplicar, [],
-    '🔴 HAY TEXTO APROBADO QUE NO LLEGA A LA PANTALLA:\n    '
-    + sinAplicar.map((t) => JSON.stringify(t)).join('\n    ')
-    + `\n\n  El fundador lo firmó y un profesional no lo está viendo. O se aplica —copiándolo de `
-    + 'la aprobación LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca AQUÍ con su '
-    + 'motivo y quién lo desbloquea. Lo que no vale es dejarlo sin decidir: eso es lo que estuvo '
-    + 'tres semanas pasando.');
+  assert.ok(nombres.length >= 100 && fichas.length >= 200,
+    `🔴 CIEGO: ${fichas.length} citas en ${nombres.length} fichas, y el 1-oct-2026 eran 248 en 101. `
+    + 'Las fichas no se borran: un recuento que baja tanto es que no las estoy leyendo.');
+});
+
+test('SCRUM-1334 · 🔴 cada DECLARADA sigue en su ficha, sigue sin pintarse tal cual y sus partes fijas siguen en su fichero', () => {
+  const { texto } = corpus();
+  for (const d of NO_SE_CRUZAN) {
+    assert.deepEqual(fallosDeDeclaracion(d, { leer: leerDelRepo, textoDelCorpus: texto }), [],
+      `🔴 la declaración de «${d.texto.slice(0, 70)}» (${d.ficha}) ya no se sostiene. Una declaración `
+      + 'que sobrevive a su prueba parece una decisión y no protege nada: o se corrige, o se borra.');
+  }
+  const claves = NO_SE_CRUZAN.map((d) => d.ficha + '\n' + d.texto);
+  assert.equal(new Set(claves).size, claves.length, '🔴 hay una cita declarada dos veces.');
+  assert.ok(NO_SE_CRUZAN.length > 0,
+    '🔴 la lista de declaradas está vacía. Si de verdad no queda ninguna, este test se retira A MANO '
+    + 'diciéndolo; no se deja una lista vacía por simetría.');
 });
 
 test('SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo', () => {
@@ -435,7 +669,7 @@ test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
     '🔴 ha entrado PROSA en el cruce:\n    '
     + prosa.map((p) => `${JSON.stringify(p.texto.slice(0, 50))} — ${p.porque}`).join('\n    ')
     + '\n\n  Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que '
-    + 'nadie pinta. Si es una nota, sácala de la sección «Texto aprobado» de su ficha. Si es un '
+    + 'nadie pinta. Si es una nota, quítale el `>` en su ficha: una nota no va en cita. Si es un '
     + 'texto FIRMADO y largo (SCRUM-1329): va entero en UNA línea de cita, la línea de la firma '
     + 'nombra su comentario de Jira («… en SCRUM-n (comentario NNNNN)») y el código lo pinta tal '
     + 'cual. ⛔ No lo partas ni lo reescribas para que quepa: el texto manda sobre el instrumento.');
@@ -461,10 +695,17 @@ const fichaFabricada = (firma, citas) => [
 
 /** Las citas que el extractor saca de UNA ficha fabricada, sin registro congelado. */
 function citasDeUnaFichaFabricada(md) {
+  return poblacionDeUnaFichaFabricada(md).filter((c) => c.caja === 'cruce');
+}
+
+const FICHA_FABRICADA = '2026-10-01-SCRUM-1329-caso-fabricado.md';
+
+/** TODO lo que el extractor saca de UNA ficha fabricada, cada unidad con su caja (SCRUM-1334). */
+function poblacionDeUnaFichaFabricada(md, declaradas = []) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum514-'));
   try {
-    fs.writeFileSync(path.join(dir, '2026-10-01-SCRUM-1329-caso-fabricado.md'), md);
-    return citasAprobadas({ dir, congelado: path.join(dir, 'no-existe.md') });
+    fs.writeFileSync(path.join(dir, FICHA_FABRICADA), md);
+    return poblacion({ dir, congelado: path.join(dir, 'no-existe.md') }, declaradas);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -562,6 +803,182 @@ test('SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_P
   const justo = 'a'.repeat(LARGO_DE_PROSA);
   assert.deepEqual(veredictoFabricado({ firma: 'Pendiente de firma.', cita: justo, pintada: false }), []);
   assert.equal(veredictoFabricado({ firma: 'Pendiente de firma.', cita: justo + 'a', pintada: false }).length, 1);
+});
+
+// ═══ ⑤ SCRUM-1334 · NINGÚN ENCABEZADO DECIDE QUÉ SE CRUZA ═══════════════════════════════════
+//
+// Hasta el 1-oct-2026 sólo se cruzaban las citas bajo un encabezado «Texto aprobado»: 110 de 248.
+// Las demás no se miraban, y no lo decía nadie. Aquí se prueba lo contrario con fichas fabricadas
+// —toda cita entra, lo que no se pinta sale en rojo diciendo dónde— y con el caso real que lo
+// destapó: la cita de 276 caracteres de SCRUM-1247, bajo «Textos aprobados, literales».
+
+const fichaConTitulo = (titulo, lineas) => [
+  '# Ficha fabricada por el test', '', FIRMA_CON_COMENTARIO, '',
+  ...(titulo === null ? [] : ['## ' + titulo, '']),
+  ...lineas.flatMap((l) => [l, '']),
+].join('\n');
+
+const TITULOS_QUE_NO_DECIDEN = [
+  'Texto aprobado, literal',
+  'Textos aprobados, literales',
+  'Los literales, tal cual se pintan',
+  'Formato aprobado, literal',
+  'Dónde se pinta',
+  'Un título que nadie ha previsto',
+  null, // la cita va antes de cualquier encabezado
+];
+
+test('SCRUM-1334 · 🔴 una cita entra en el cruce vaya bajo el encabezado que vaya, o bajo ninguno', () => {
+  for (const titulo of TITULOS_QUE_NO_DECIDEN) {
+    const p = poblacionDeUnaFichaFabricada(fichaConTitulo(titulo, ['> Guardar los cambios del taller']));
+    assert.deepEqual(p.map((c) => [c.texto, c.caja]), [['Guardar los cambios del taller', 'cruce']],
+      `🔴 bajo ${titulo === null ? 'ningún encabezado' : `«${titulo}»`} la cita no entra en el cruce: el `
+      + 'título del apartado vuelve a decidir qué se mira, y un texto firmado puede quedarse sin '
+      + 'comprobar sólo por cómo tituló su ficha quien la escribió.');
+  }
+});
+
+test('SCRUM-1334 · 🔴 TESTIGO REAL: la cita de 276 caracteres de SCRUM-1247 («Textos aprobados», en plural) se cruza', () => {
+  const suyas = poblacion().filter((c) => c.ruta === 'docs/microcopy/2026-09-28-SCRUM-1247-rotulo-ia.md');
+  const larga = suyas.filter((c) => c.texto.length > LARGO_DE_PROSA);
+  assert.deepEqual(larga.map((c) => [c.texto.length, c.seccion, c.caja]), [[276, 'Textos aprobados, literales', 'cruce']],
+    '🔴 la cita larga de SCRUM-1247 no está en el cruce. Es el caso que destapó el defecto: pasaba '
+    + 'sin que nadie la mirase porque su encabezado dice «Textos aprobados», en plural.');
+  const { texto } = corpus();
+  assert.deepEqual(prosaEnElCruce(larga, texto), [],
+    '🔴 la cita larga de SCRUM-1247 está firmada, nombra su comentario y está pintada: no es prosa.');
+  // Y el cruce la mira DE VERDAD: sin el código delante, cae por no estar pintada.
+  const sinCodigo = prosaEnElCruce(larga, 'const OTRA = 1;');
+  assert.equal(sinCodigo.length, 1, '🔴 la cita larga pasa aunque el código no la pinte: nadie la está cruzando.');
+  assert.match(sinCodigo[0].porque, /no está pintado/);
+});
+
+test('SCRUM-1334 · 🔴 una cita que el código NO pinta, bajo un título cualquiera, sale en rojo y dice dónde', () => {
+  const p = poblacionDeUnaFichaFabricada(fichaConTitulo('Un título que nadie ha previsto', ['> Guardar los cambios del taller']));
+  const faltan = sinAplicar(p, 'const OTRA = 1;', []);
+  assert.deepEqual(faltan.map((f) => f.texto), ['Guardar los cambios del taller'],
+    '🔴 una cita de una ficha firmada que el código no pinta ha pasado en silencio.');
+  assert.match(faltan[0].donde[0], /caso-fabricado\.md · sección «Un título que nadie ha previsto»/);
+  // CONTROL: la misma cita, pintada, no sale.
+  assert.deepEqual(sinAplicar(p, "boton.textContent = 'Guardar los cambios del taller';", []), []);
+  // CONTROL: y aparcada con su motivo, tampoco.
+  assert.deepEqual(sinAplicar(p, 'const OTRA = 1;', [{ texto: 'Guardar los cambios del taller' }]), []);
+});
+
+test('SCRUM-1334 · CONTROL: la prosa de una ficha que NO va en cita sigue sin pasar por texto aprobado', () => {
+  const p = poblacionDeUnaFichaFabricada(fichaConTitulo('Textos aprobados, literales', [
+    'Este párrafo explica por qué se eligió la redacción y no es un texto de pantalla.',
+    '- Una viñeta con «Texto entre comillas» tampoco es una cita.',
+    '| ranura | texto aprobado |', '|---|---|', '| R1 | `Texto de una tabla de la ficha` |',
+    '`Texto en comillas de código`',
+    '> Guardar los cambios del taller',
+  ]));
+  assert.deepEqual(p.map((c) => c.texto), ['Guardar los cambios del taller'],
+    '🔴 ha entrado en la población algo que no es una línea de cita. Abrir el cruce a todas las '
+    + 'secciones no es abrirlo a toda la ficha: sólo la cita `>` es un texto aprobado.');
+});
+
+test('SCRUM-1334 · CONTROL: lo que ya se cruzaba por su título se sigue cruzando, entero', () => {
+  // El criterio de ANTES, escrito aparte y a propósito con otro código: las citas de 4 caracteres o
+  // más, sin huecos, bajo un encabezado que diga «Texto aprobado».
+  const antes = new Set();
+  for (const ap of aprobacionesDeMicrocopy()) {
+    if (ap.origen !== 'fichero') continue;
+    let dentro = false;
+    for (const linea of ap.texto.split(/\r?\n/)) {
+      if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
+      const m = /^>\s?(.+)$/.exec(linea.trim());
+      if (dentro && m && m[1].trim().length >= 4 && !/{[^}]+}/.test(m[1])) antes.add(m[1].trim());
+    }
+  }
+  assert.ok(antes.size >= 90,
+    `🔴 CIEGO: el criterio de antes sólo encuentra ${antes.size} textos, y el 1-oct-2026 eran más de cien.`);
+  const ahora = new Set(textosAprobados());
+  const perdidos = [...antes].filter((t) => !ahora.has(t));
+  assert.deepEqual(perdidos, [],
+    '🔴 hay textos que se cruzaban por ir bajo «Texto aprobado» y ya no se cruzan. Ensanchar la '
+    + 'población no puede sacar a ninguno.');
+  assert.ok(ahora.size > antes.size,
+    `🔴 el cruce no ha crecido (${antes.size} antes, ${ahora.size} ahora): se sigue mirando sólo lo de antes.`);
+});
+
+test('SCRUM-1334 · una plantilla y una cita corta siguen fuera del cruce, y ahora constan en su caja', () => {
+  const p = poblacionDeUnaFichaFabricada(fichaConTitulo('Los literales, tal cual se pintan', [
+    '> Hola {nombre}, gracias por tu visita', '> Sí', '>', '> Guardar los cambios del taller',
+  ]));
+  assert.deepEqual(p.map((c) => [c.texto, c.caja]), [
+    ['Hola {nombre}, gracias por tu visita', 'plantilla'],
+    ['Sí', 'corta'],
+    ['Guardar los cambios del taller', 'cruce'],
+  ]);
+});
+
+// ── Las declaradas: una declaración sin prueba no saca nada del cruce ───────────────────────────
+
+const CITA_COMPUESTA = '3 partes firmados de 2 clientes';
+const DECLARACION_FABRICADA = {
+  ficha: FICHA_FABRICADA, clase: 'compuesta', fichero: 'src/fabricado.ts',
+  partes: [dato('3'), ' ', 'partes firmados', ' de ', dato('2'), ' ', 'clientes'],
+  texto: CITA_COMPUESTA,
+  motivo: 'Declaración fabricada por el test: el código compone el detalle con sus plurales y dos números.',
+};
+const REPO_FABRICADO = {
+  ['docs/microcopy/' + FICHA_FABRICADA]: fichaConTitulo('Los literales, tal cual se pintan', ['> ' + CITA_COMPUESTA]),
+  'src/fabricado.ts': "const d = `${n} ${n === 1 ? 'parte firmado' : 'partes firmados'} de ${c} ${c === 1 ? 'cliente' : 'clientes'}`;",
+};
+const fallosFabricados = (cambios = {}, repo = REPO_FABRICADO) => fallosDeDeclaracion(
+  { ...DECLARACION_FABRICADA, ...cambios },
+  { leer: (ruta) => (ruta in repo ? repo[ruta] : null), textoDelCorpus: repo['src/fabricado.ts'] || '' },
+);
+
+test('SCRUM-1334 · una cita declarada sale del cruce SÓLO en su ficha: la declaración no es del texto', () => {
+  const md = REPO_FABRICADO['docs/microcopy/' + FICHA_FABRICADA];
+  assert.deepEqual(poblacionDeUnaFichaFabricada(md, [DECLARACION_FABRICADA]).map((c) => c.caja), ['declarada']);
+  assert.deepEqual(
+    poblacionDeUnaFichaFabricada(md, [{ ...DECLARACION_FABRICADA, ficha: '2026-01-01-SCRUM-000-otra-ficha.md' }]).map((c) => c.caja),
+    ['cruce'],
+    '🔴 una declaración hecha para otra ficha ha sacado del cruce a esta cita: se declara por ficha Y '
+    + 'texto, o el mismo texto firmado en otro sitio dejaría de mirarse.');
+  assert.deepEqual(poblacionDeUnaFichaFabricada(md, []).map((c) => c.caja), ['cruce']);
+});
+
+test('SCRUM-1334 · una declaración con su prueba vale; sin ella, dice qué le falta', () => {
+  assert.deepEqual(fallosFabricados(), [], '🔴 la declaración fabricada completa no vale: el caso no prueba nada.');
+
+  const caso = (cambios, repo, patron) => {
+    const f = fallosFabricados(cambios, repo);
+    assert.ok(f.some((x) => patron.test(x)), `🔴 esperaba un fallo ${patron} y hay: ${JSON.stringify(f)}`);
+  };
+  // La parte fija ya no está en el fichero: el código cambió y la declaración se quedó.
+  caso({}, { ...REPO_FABRICADO, 'src/fabricado.ts': 'const d = `${n} albaranes de ${c} clientes`;' }, /"partes firmados" ya no está en/);
+  // El fichero donde se compone ya no existe.
+  caso({ fichero: 'src/retirado.ts' }, REPO_FABRICADO, /no existe: src\/retirado\.ts/);
+  // La ficha ya no tiene esa cita.
+  caso({}, { ...REPO_FABRICADO, ['docs/microcopy/' + FICHA_FABRICADA]: fichaConTitulo('X', ['> Otra cosa distinta']) }, /ya no tiene esa cita/);
+  // El código ya la pinta tal cual: la declaración sobra.
+  caso({}, { ...REPO_FABRICADO, 'src/fabricado.ts': REPO_FABRICADO['src/fabricado.ts'] + ` const e = '${CITA_COMPUESTA}';` }, /YA la pinta tal cual/);
+  // Sin motivo que se pueda revisar.
+  caso({ motivo: 'Porque sí.' }, REPO_FABRICADO, /no lleva motivo/);
+  // Una clase inventada.
+  caso({ clase: 'nota' }, REPO_FABRICADO, /clase desconocida/);
+  // «Partida» con un dato dentro no es una cita partida: es una compuesta mal declarada.
+  caso({ clase: 'partida' }, REPO_FABRICADO, /cita partida son dos o más partes fijas/);
+});
+
+test('SCRUM-1334 · CONTROL: una NOTA no cuela como «compuesta» metiéndola entera en un dato', () => {
+  const nota = 'Esta nota explica por qué la cifra sale así de la bandeja';
+  const f = fallosDeDeclaracion(
+    { ficha: FICHA_FABRICADA, clase: 'compuesta', fichero: 'src/fabricado.ts', partes: [dato(nota), ' de ', 'clientes'],
+      texto: nota + ' de clientes', motivo: DECLARACION_FABRICADA.motivo },
+    { leer: (ruta) => (ruta === 'src/fabricado.ts' ? REPO_FABRICADO[ruta] : fichaConTitulo('X', ['> ' + nota + ' de clientes'])),
+      textoDelCorpus: REPO_FABRICADO['src/fabricado.ts'] },
+  );
+  assert.ok(f.some((x) => /no es un dato/.test(x)),
+    `🔴 una frase entera ha pasado por «dato»: así cualquier nota se declara compuesta. Fallos: ${JSON.stringify(f)}`);
+  // Y sin ninguna parte fija de verdad, tampoco.
+  const g = fallosFabricados({ partes: [dato('3'), ' ', dato('2')], texto: '3 2' },
+    { ...REPO_FABRICADO, ['docs/microcopy/' + FICHA_FABRICADA]: fichaConTitulo('X', ['> 3 2']) });
+  assert.ok(g.some((x) => /ninguna parte fija/.test(x)), `🔴 una declaración sin partes fijas ha valido: ${JSON.stringify(g)}`);
 });
 
 test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes', () => {
