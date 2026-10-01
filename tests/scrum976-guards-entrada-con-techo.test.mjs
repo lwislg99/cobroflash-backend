@@ -80,6 +80,10 @@ function lanzar(extraEnv = {}) {
   const env = { ...process.env, ...extraEnv };
   delete env.NODE_TEST_CONTEXT;
   delete env.FORCE_COLOR;
+  // SCRUM-1289 · `guards-entrada.mjs` lanza un `node --test`, y con `NODE_OPTIONS` heredado ese
+  // hijo se llevaba los reporters del CI: TRUNCABA el `tanda.tap` del padre y escribía el suyo
+  // encima. Medido el 29-sep-2026: el TAP de cada tanda, verde o roja, salía casi todo NUL.
+  delete env.NODE_OPTIONS;
   const t0 = Date.now();
   const r = spawnSync(process.execPath, [SCRIPT], { cwd: RAIZ, encoding: 'utf8', env });
   return { r, ms: Date.now() - t0 };
