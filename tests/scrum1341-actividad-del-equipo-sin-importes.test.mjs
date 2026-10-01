@@ -21,6 +21,7 @@
 //   ④ LA PANTALLA: el Técnico ve el título firmado y tres columnas; el admin, lo de siempre.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -434,6 +435,49 @@ test('SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta,
   assert.ok(m.marcadoDelEquipo.includes('>Rendimiento del equipo · este mes<'), '🔴 al admin le ha cambiado el título');
   assert.ok(m.marcadoDelEquipo.includes('Ver equipo →'), '🔴 el admin pierde el botón al hub del equipo');
   assert.equal(m.marcadoDelEquipo.includes(TITULO_FIRMADO), false, '🔴 al admin se le pinta el título del Técnico');
+});
+
+// ── EL CONTRASTE, MEDIDO ─────────────────────────────────────────────────────────────────────
+// Nace de un fallo propio: la primera versión del bloque copió el gris del panel del admin para
+// el título y el rótulo de rol, y sólo se midió el verde. Medido después, ese gris da 4,44:1
+// sobre el lienzo. Los colores se leen de las hojas; no se copian aquí.
+
+const HOJAS = ['public/tokens.css', 'public/dashboard/css/styles.css'].map((f) => fs.readFileSync(path.join(RAIZ, f), 'utf8')).join('\n');
+function colorDelToken(nombre, saltos = 0) {
+  const m = new RegExp(`${nombre}\\s*:\\s*([^;]+);`).exec(HOJAS);
+  if (!m || saltos > 4) return null;
+  const alias = /^var\((--[a-z0-9-]+)\)/.exec(m[1].trim());
+  if (alias) return colorDelToken(alias[1], saltos + 1);
+  const hex = /^#[0-9a-fA-F]{6}\b/.exec(m[1].trim());
+  return hex ? hex[0] : null;
+}
+const canal = (c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+const luminancia = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.2126 * canal(n >> 16) + 0.7152 * canal((n >> 8) & 255) + 0.0722 * canal(n & 255); };
+const contraste = (a, b) => { const [x, y] = [luminancia(a), luminancia(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+test('SCRUM-1341 · todo color de texto del bloque llega a AA (4,5:1) sobre el fondo en el que cae', () => {
+  // Las reglas del bloque que ponen color, con su token: `.…equipo-actividad-… { … color: var(--x) … }`.
+  const reglas = [...HOJAS.matchAll(/^([^{}\n]*equipo-actividad[^{}\n]*)\{([^}]*)\}/gm)]
+    .map((m) => ({ selector: m[1].trim(), token: (/(?:^|[;\s])color:\s*var\((--[a-z0-9-]+)\)/.exec(m[2]) || [])[1] }))
+    .filter((r) => r.token);
+  assert.equal(reglas.length, 5, `🔴 CIEGO: se esperaban cinco reglas del bloque con color y hay ${reglas.length}: ${reglas.map((r) => r.selector).join(' | ')}`);
+
+  // El título va sobre el lienzo; lo demás, dentro de la tarjeta: blanco, o la fila en hover.
+  const fondosDe = (selector) => (/titulo/.test(selector) ? ['--bg'] : ['--surface', '--neutral-50']);
+  const cortos = [];
+  for (const r of reglas) {
+    for (const fondo of fondosDe(r.selector)) {
+      const [texto, detras] = [colorDelToken(r.token), colorDelToken(fondo)];
+      assert.ok(texto && detras, `🔴 CIEGO: no leo de las hojas ${r.token} o ${fondo}`);
+      const c = contraste(texto, detras);
+      if (c < 4.5) cortos.push(`${r.selector} · ${r.token} sobre ${fondo}: ${c.toFixed(2)}:1`);
+    }
+  }
+  assert.deepEqual(cortos, [], `\n🔴 TEXTO DEL BLOQUE QUE NO LLEGA A AA:\n   · ${cortos.join('\n   · ')}\n`);
+
+  // Control: el instrumento ve un contraste corto donde se sabe que lo hay (el verde de marca sobre blanco).
+  const verdeDeMarca = contraste(colorDelToken('--green-600'), colorDelToken('--surface'));
+  assert.ok(verdeDeMarca > 3 && verdeDeMarca < 4.5, `🔴 CIEGO: el verde de marca sobre blanco da ${verdeDeMarca.toFixed(2)}:1; el cálculo no mide`);
 });
 
 test('SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto', async () => {

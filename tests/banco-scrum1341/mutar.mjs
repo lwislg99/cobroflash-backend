@@ -21,6 +21,7 @@ const SERVICIO = en('src/modules/metrics/domain/metrics.service.ts');
 const RUTAS = en('src/modules/metrics/app/routes/metrics.routes.ts');
 const DECLARADAS = en('src/core/http/adminRouteDeclarations.ts');
 const VISTA = en('public/dashboard/js/homeView.js');
+const HOJA = en('public/dashboard/css/styles.css');
 const TEST = 'tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs';
 
 const CONSULTAS = "      orderBy: { id: 'asc' },\n    }),\n    prisma.quote.findMany({\n      where: { merchantId, status: { not: 'draft' }, createdAt: { gte: monthStart } },\n      select: { teamMemberId: true, status: true, createdAt: true },\n    }),\n";
@@ -81,6 +82,10 @@ const MUTACIONES = [
     de: "  if (!data || !data.hasTeam || !Array.isArray(data.members)) return;\n\n  const section = document.createElement('div');\n  section.className", a: "  if (!data || !Array.isArray(data.members)) return;\n\n  const section = document.createElement('div');\n  section.className" },
   { id: 'M26 el titulo lleva un estilo en linea', f: VISTA, cae: 'título firmado',
     de: '<div class="equipo-actividad-titulo">Actividad', a: '<div class="equipo-actividad-titulo" style="color:red">Actividad' },
+  { id: 'M27 el rotulo de rol vuelve al gris del panel del admin', f: HOJA, cae: 'llega a AA',
+    de: '.equipo-actividad-rol { font-size: 11px; font-weight: 400; color: var(--neutral-600); }', a: '.equipo-actividad-rol { font-size: 11px; font-weight: 400; color: var(--neutral-500); }' },
+  { id: 'M28 el % alto vuelve al verde de marca', f: HOJA, cae: 'llega a AA',
+    de: '.table td.equipo-actividad-tasa-alta { color: var(--green-700);', a: '.table td.equipo-actividad-tasa-alta { color: var(--green-600);' },
 ];
 
 const entorno = { ...process.env };
