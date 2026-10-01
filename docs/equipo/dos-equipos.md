@@ -237,6 +237,16 @@ efecto y se le cuenta al jefe en plano.
 1. Merchant QA propio para el equipo de Javier (§5.1).
 2. Si un jefe puede cambiar una decisión escrita por el otro (§1).
 3. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
+4. **Los huecos de carril** (`node scripts/carriles.mjs huecos`, SCRUM-1295). Un fichero que solo cubre la
+   fila general («todo lo demás de `src/`» o «de `public/`») y cuyo nombre se parece a los de OTRO puesto
+   es un viaje esperando: alguien deducirá el dueño por el dominio y la tabla dirá otra cosa. Medido el
+   1-oct-2026 sobre `36f1eee3`: 432 ficheros de producto, 241 solo por la fila general, **32 con pariente
+   en otro puesto**. El censo no decide. Para cada uno, la pregunta es de los dos jefes: **¿es un hueco de
+   la tabla, o es de ese puesto a propósito?** Se cierra escribiendo su fila en §3 (aunque sea para
+   confirmar al dueño actual: con fila propia deja de salir). Los dos que ya costaron un viaje el 29-sep:
+   - `src/modules/system/domain/fusionClientes.ts` → **S1** por la fila general; por el nombre, de J2
+     (clientes). Con él salen otros seis `…DelCliente.ts` / `…Cliente….ts` de `system/domain/`.
+   - `public/dashboard/js/parteOficinaView.js` → **S2** por la fila general; por el nombre, de S4 (partes).
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el

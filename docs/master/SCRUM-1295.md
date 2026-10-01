@@ -107,3 +107,49 @@ Aviso del orquestador para el interruptor: `sesion.mjs` fuerza `--model sonnet` 
 opus. Pasar por el lanzador cambia el modelo del equipo entero. Es dinero: lo decide el fundador.
 
 A9: aviso → A10 «La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido.» — no se pudo comprobar: el test que lo impide llega con el arreglo, pendiente
+
+## 1-oct · s0-1oct · el choque arreglado, el guard, el registro de los hooks y el censo de huecos
+
+**Medido contra:** `origin/main` = `36f1eee354cae549ec30dee009666757345a703b` · 2026-10-01T10:23:39Z
+
+Sigue en **BORRADOR**. La rama lleva `main` fusionado (313 commits; un conflicto, en A10, las dos líneas se quedan).
+
+**El choque (pendiente 7 del traspaso), arreglado.** Había dos traducciones del nombre: la de quien lanza
+(`config.identidades` de sesion.mjs: `sesion-1` → J1) y la mía (`puestoDeNombre`: `sesion-1` → S1). Ahora hay una:
+- `node scripts/carriles.mjs mesa <PUESTO> <dir> --nombre <nombre de sesión>` escribe el nombre en
+  `.yaqu-puesto.json`. Quien lanza traduce UNA vez y deja en la mesa el puesto y el nombre.
+- `puestoDeNombre(nombre, mesa)`: si la sesión se llama como dice la mesa, el puesto es el de la mesa. Un nombre
+  que NO es el de la mesa se sigue leyendo por su forma, y ahí la discrepancia sí es señal.
+- `identidad.mjs` ya no traduce: se lo pide a `carril.mjs`. Había una segunda copia de la sonda ahí.
+- La mesa de un puesto **J sin `--nombre` no se escribe** (salida 2): el fallo se dice al LANZAR, a una sesión,
+  y no después parando a un equipo.
+
+⚠️ **Para S5 (SCRUM-1298, PR #2002):** `prepararMesa` llama a `mesa <PUESTO> <mesa>` sin `--nombre`. Para el equipo
+de Luis sigue valiendo. Para el de Javier dará salida 2 y no lanzará hasta que pase `--nombre <nombre>`. Es su
+fichero (`scripts/equipo/**`): no lo toco.
+
+**El guard `tests/scrum1295-carriles.test.mjs` (8 tests, verde aquí):** lo generado = la tabla, con control
+positivo mutando una fila; la cerradura por proceso (fuera del carril, dentro, leer, discrepancia, sin identidad
+con y sin `--exigir-identidad`, mesa rota de tres formas, mapa ausente y mapa roto con su control); el choque
+(sin la traducción común da DISCREPANCIA; con ella pasa; otra sesión en esa mesa sigue parando); la mesa J sin
+nombre; el censo; el registro de los hooks.
+
+**Registrado en `.claude/settings.json`:** SessionStart → `identidad.mjs`; PreToolUse
+`Edit|Write|NotebookEdit|MultiEdit` → `carril.mjs`, **sin** `--exigir-identidad`. `.gitignore`: `CLAUDE.local.md`
+y `.yaqu-puesto.json`. `.claude/**` es de un jefe (§3.3): esto es la propuesta, y por eso también es borrador.
+
+**Censo de huecos (`node scripts/carriles.mjs huecos`).** Población: 432 ficheros de producto, 191 con fila
+específica, 241 solo por la fila general, 0 sin fila. **32 con pariente en otro puesto.** Salidas: 0 sin casos,
+1 con lista, 2 no pudo mirar (población vacía en alguna columna). No está en el check obligatorio: es una lista.
+- Primera versión: 91 casos, casi todos «el servidor de X es de S1 y su pantalla de S4». El parentesco se mira
+  ahora dentro de la misma subsección (servidor con servidor, pantalla con pantalla): 43. Quitando siete
+  palabras de forma (`action`, `schema`, `switch`…): 32.
+- Límite: el parentesco es por PALABRA del nombre. No ve un fichero cuyo nombre no dice su dominio, y da por
+  pariente a `enviarCorreo.ts` de `correoDeFacturaEnviado.ts`. Es una lista para preguntar, no un veredicto.
+- Los dos casos del 29-sep salen: `fusionClientes.ts` (S1 ~ J2) y `parteOficinaView.js` (S2 ~ S4). La pregunta
+  queda en `dos-equipos.md` §7.4, para los dos jefes. No la decido.
+
+**No corrido aquí:** la tanda entera. Este worktree no tiene `node_modules` (`scrum804-la-rama-viva` cae por
+`typescript` ausente, no por el código). La tanda la da el CI.
+
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`

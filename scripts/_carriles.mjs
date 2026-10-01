@@ -115,7 +115,8 @@ export function construirMapa(texto, ficheros) {
       const r = resolver(ruta, RAICES[f.sub], ficheros);
       if (r.error) { errores.push(`${FUENTE}:${f.linea} · \`${ruta}\` → ${r.error}`); continue; }
       if (r.noExiste) noExisten.push(`${FUENTE}:${f.linea} · ${r.patrones[0]}`);
-      for (const p of r.patrones) reglas.push({ patron: p, puesto: d.puesto, tipo: d.tipo, linea: f.linea, dueno: f.dueno });
+      // «todo lo demás de …» es la fila GENERAL: da dueño sin que nadie haya mirado el fichero (huecos).
+      for (const p of r.patrones) reglas.push({ patron: p, puesto: d.puesto, tipo: d.tipo, linea: f.linea, dueno: f.dueno, ...(/todo lo demás/.test(f.ruta) ? { general: true } : {}) });
     }
   }
   // Dos filas que dan la MISMA ruta a dueños distintos: la tabla se contradice.
@@ -150,16 +151,81 @@ export function excepcionPara(rel, puesto, mapa) {
  * El puesto que declara un nombre de sesión. Formatos medidos el 29-sep: `sesion-N` (sesion.mjs),
  * `sN-<fecha><letra>` (lanzados a mano), `orquestador`. Para el equipo de Javier se aceptan
  * `jN-…` y `puesto-jN`. Cualquier otro nombre (`cobroflash-backend-57`, vacío) → null.
+ *
+ * UNA SOLA TRADUCCIÓN (choque con SCRUM-1298, medido el 29-sep): `sesion-N` NO es un nombre unívoco.
+ * En el equipo de Luis es SN; en el de Javier, `sesion-1` es J1 (`config.identidades` de sesion.mjs).
+ * Quien lanza traduce UNA vez y escribe el resultado en la mesa: el puesto Y el nombre con el que lanza
+ * (`mesa <PUESTO> <dir> --nombre <nombre>`). Si la mesa declara ese nombre y la sesión se llama así,
+ * el puesto es el de la mesa — la misma traducción, no una segunda hecha aquí con otra tabla. Con dos
+ * traducciones la discrepancia deja de ser el dato y pasa a ser ruido: la cerradura habría parado al
+ * equipo de Javier ENTERO, y un instrumento que grita siempre es tan inútil como uno que calla.
+ * Un nombre que NO es el de la mesa se sigue leyendo por su forma: ahí la discrepancia sí es señal.
+ *
+ * @param {string|null} nombre
+ * @param {{puesto:string, nombre?:string|null}|null} [mesa] lo que dice `.yaqu-puesto.json`
  */
-export function puestoDeNombre(nombre) {
+export function puestoDeNombre(nombre, mesa = null) {
   if (typeof nombre !== 'string') return null;
   const n = nombre.trim().toLowerCase();
+  if (mesa && typeof mesa.nombre === 'string' && mesa.nombre.trim() && mesa.nombre.trim().toLowerCase() === n) return mesa.puesto;
   let m = /^(?:sesion-([0-5])|s([0-5])-[a-z0-9-]+)$/.exec(n);
   if (m) return `S${m[1] ?? m[2]}`;
   m = /^(?:puesto-j([1-6])|j([1-6])-[a-z0-9-]+)$/.exec(n);
   if (m) return `J${m[1] ?? m[2]}`;
   if (/^orquestador(?:-[a-z0-9-]+)?$/.test(n)) return 'ORQ';
   return null;
+}
+
+/** Palabras de un nombre de fichero (`parteOficinaView.js` → parte, oficina), sin las de relleno. */
+const RELLENO = new Set(['view', 'detail', 'service', 'routes', 'route', 'admin', 'domain', 'index', 'registry', 'del', 'por', 'los', 'las', 'the',
+  // palabras de FORMA, no de dominio (medido el 1-oct: daban parentescos como schemaDrift.ts ~ un .xsd)
+  'action', 'accion', 'schema', 'switch', 'defecto', 'vista', 'number']);
+export function palabrasDe(rel) {
+  const base = rel.slice(rel.lastIndexOf('/') + 1).replace(/\.[a-z0-9.]+$/i, '');
+  return [...new Set(base.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).map((p) => p.toLowerCase().replace(/(?<=.{4})s$/, '')).filter((p) => p.length >= 5 && !RELLENO.has(p)))];
+}
+
+/**
+ * CENSO DE HUECOS de carril (SCRUM-1295, cabo 2). Un hueco es un fichero de PRODUCTO (`src/`, `public/`)
+ * cuyo dueño nadie ha decidido mirándolo:
+ *   · SIN-FILA   → ninguna fila de §3 lo reclama;
+ *   · PARIENTE   → solo lo cubre la fila general («todo lo demás de …») y comparte una palabra de su
+ *                  nombre con ficheros que una fila ESPECÍFICA da a OTRO puesto. No dice que la tabla
+ *                  esté mal: dice que alguien va a deducir otro dueño por el nombre, y eso es un viaje.
+ * No decide nada: da la lista y la evidencia. La pregunta (¿hueco o a propósito?) es de los jefes.
+ * Los que solo cubre la fila general y no tienen pariente se CUENTAN (población), no se listan.
+ */
+const raizDe = (f) => f.slice(0, f.indexOf('/') + 1);
+export function censoDeHuecos(mapa, ficheros) {
+  const producto = ficheros.filter((f) => /^(src|public)\//.test(f) && !/\.(png|jpe?g|svg|ico|webp|gif|woff2?|ttf|mp4|pdf)$/i.test(f));
+  const deQuien = new Map(producto.map((f) => [f, reglaDe(f, mapa)]));
+  const porPalabra = new Map(); // palabra → Map(puesto → [ficheros]) de filas ESPECÍFICAS con dueño
+  let especificos = 0;
+  for (const [f, r] of deQuien) {
+    if (!r || r.general || !r.puesto) continue;
+    especificos++;
+    for (const p of palabrasDe(f)) {
+      // El parentesco se mira DENTRO de la misma subsección de la tabla (servidor con servidor, pantalla
+      // con pantalla): §3 reparte `src/` y `public/` por separado, y cruzarlas daba 91 casos, casi todos
+      // «el servidor de X es de S1 y su pantalla de S4», que es la tabla funcionando, no un hueco.
+      const k = `${raizDe(f)}${p}`;
+      if (!porPalabra.has(k)) porPalabra.set(k, new Map());
+      const m = porPalabra.get(k);
+      m.set(r.puesto, [...(m.get(r.puesto) ?? []), f]);
+    }
+  }
+  const sinFila = [];
+  const parientes = [];
+  let generales = 0;
+  for (const [f, r] of deQuien) {
+    if (!r) { sinFila.push(f); continue; }
+    if (!r.general) continue;
+    generales++;
+    const pistas = [];
+    for (const p of palabrasDe(f)) for (const [puesto, fs_] of porPalabra.get(`${raizDe(f)}${p}`) ?? []) if (puesto !== r.puesto) pistas.push({ palabra: p, puesto, ejemplos: fs_.slice(0, 2), n: fs_.length });
+    if (pistas.length) parientes.push({ fichero: f, puesto: r.puesto, linea: r.linea, pistas });
+  }
+  return { producto: producto.length, especificos, generales, reglasGenerales: mapa.reglas.filter((r) => r.general).length, sinFila, parientes };
 }
 
 /** El último nombre que el transcript registra para la sesión (`/rename` incluido). */

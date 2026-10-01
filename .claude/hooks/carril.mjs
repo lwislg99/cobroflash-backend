@@ -24,19 +24,25 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const EDICION = new Set(['Edit', 'Write', 'NotebookEdit', 'MultiEdit']);
 const bloquear = (msg) => { process.stderr.write(msg + '\n'); process.exit(2); };
 
-export function identidad({ proyecto, transcript }) {
+// `nombre` lo pasa quien YA lo tiene (SessionStart recibe `session_title`); si no, sale del transcript.
+// Las dos sondas se leen AQUÍ y solo aquí: una segunda copia de «qué puesto dice este nombre» es una
+// segunda traducción, y con dos traducciones la discrepancia es ruido (choque con SCRUM-1298).
+export function identidad({ proyecto, transcript, nombre = null }) {
   let carpeta = null;
   let carpetaRota = null;
+  let esperado = null; // el nombre con el que quien lanza dijo que lanzaría (mesa --nombre)
   const f = proyecto ? path.join(proyecto, '.yaqu-puesto.json') : null;
   if (f && fs.existsSync(f)) {
     try {
-      const p = JSON.parse(fs.readFileSync(f, 'utf8')).puesto;
-      if (/^(S[0-5]|J[1-6]|ORQ)$/.test(p)) carpeta = p; else carpetaRota = `puesto «${p}» no válido`;
+      const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+      const p = j.puesto;
+      if (!/^(S[0-5]|J[1-6]|ORQ)$/.test(p)) carpetaRota = `puesto «${p}» no válido`;
+      else if (j.nombre !== undefined && (typeof j.nombre !== 'string' || !j.nombre.trim())) carpetaRota = 'campo «nombre» vacío o que no es texto';
+      else { carpeta = p; esperado = j.nombre ?? null; }
     } catch (e) { carpetaRota = e.message; }
   }
-  let nombre = null;
-  try { if (transcript) nombre = nombreDelTranscript(fs.readFileSync(transcript, 'utf8')); } catch { /* sin transcript aún */ }
-  const porNombre = puestoDeNombre(nombre);
+  try { if (!nombre && transcript) nombre = nombreDelTranscript(fs.readFileSync(transcript, 'utf8')); } catch { /* sin transcript aún */ }
+  const porNombre = puestoDeNombre(nombre, carpeta ? { puesto: carpeta, nombre: esperado } : null);
   return { carpeta, carpetaRota, nombre, porNombre, puesto: carpeta ?? porNombre, discrepa: Boolean(carpeta && porNombre && carpeta !== porNombre) };
 }
 

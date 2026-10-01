@@ -9,15 +9,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { puestoDeNombre, fichaDe } from '../../scripts/_carriles.mjs';
+import { fichaDe } from '../../scripts/_carriles.mjs';
 import { identidad } from './carril.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export function contexto(s) {
-  const id = identidad({ proyecto: process.env.CLAUDE_PROJECT_DIR || s.cwd, transcript: null });
   const nombre = typeof s.session_title === 'string' && s.session_title.trim() ? s.session_title.trim() : null;
-  const porNombre = puestoDeNombre(nombre);
+  const id = identidad({ proyecto: process.env.CLAUDE_PROJECT_DIR || s.cwd, transcript: null, nombre });
+  const { porNombre } = id; // traducido por carril.mjs con lo que dice la mesa: UNA traducción
   const puesto = id.carpeta ?? porNombre;
   const cab = 'IDENTIDAD (hook de inicio, SCRUM-1295):';
   if (id.carpeta && porNombre && id.carpeta !== porNombre) {

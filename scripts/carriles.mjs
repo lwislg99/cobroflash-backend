@@ -17,7 +17,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, fichaDe, globARegex } from './_carriles.mjs';
+import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, fichaDe, globARegex, censoDeHuecos, puestoDeNombre } from './_carriles.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAPA = '.claude/carriles.json';
@@ -37,7 +37,7 @@ export function generar(textoTabla, ficheros) {
     fuente: FUENTE,
     sha,
     areas,
-    reglas: mapa.reglas.map(({ patron, puesto, tipo, linea, dueno }) => ({ patron, puesto, tipo, linea, dueno })),
+    reglas: mapa.reglas.map(({ patron, puesto, tipo, linea, dueno, general }) => ({ patron, puesto, tipo, linea, dueno, ...(general ? { general } : {}) })),
     excepciones: mapa.excepciones,
   };
   const salida = { [MAPA]: JSON.stringify(json, null, 2) + '\n' };
@@ -65,9 +65,18 @@ export function generar(textoTabla, ficheros) {
 }
 
 /** El texto de la mesa de un puesto: CLAUDE.local.md y .yaqu-puesto.json. */
-export function textoMesa(puesto, textoTabla, ficheros, leerCicatrices = () => null) {
+export function textoMesa(puesto, textoTabla, ficheros, leerCicatrices = () => null, nombre = null) {
   const areas = areasDePuestos(textoTabla);
   if (puesto !== 'ORQ' && !areas[puesto]) return { error: `puesto «${puesto}» desconocido: no está en las tablas de §2 de ${FUENTE}` };
+  // El NOMBRE con el que se lanza va en la mesa: es la traducción de quien lanza, y la sonda del nombre
+  // la lee de ahí en vez de traducir por su cuenta (puestoDeNombre). Un puesto J no tiene un nombre que
+  // se deduzca de su forma («sesion-1» es J1 allí y S1 aquí): sin --nombre no hay mesa, y se dice AQUÍ,
+  // al lanzar, no parando después a todo su equipo por una discrepancia que no es señal.
+  if (/^J/.test(puesto) && !nombre) return { error: `la mesa de ${puesto} necesita --nombre <nombre de sesión>: en el equipo de Javier el nombre no se deduce del puesto, y sin él la cerradura leería «sesion-N» como SN y pararía por DISCREPANCIA` };
+  if (nombre && !/^sesion-\d$/i.test(nombre.trim())) {
+    const porForma = puestoDeNombre(nombre);
+    if (porForma && porForma !== puesto) return { error: `el nombre «${nombre}» dice ${porForma} por su forma y la mesa es de ${puesto}: eso no es una traducción, es una discrepancia` };
+  }
   const { mapa, sha } = generar(textoTabla, ficheros);
   const ficha = fichaDe(puesto);
   const propias = mapa.reglas.filter((r) => r.puesto === puesto).map((r) => `\`${r.patron}\``);
@@ -88,7 +97,7 @@ export function textoMesa(puesto, textoTabla, ficheros, leerCicatrices = () => n
     ...(cicatrices ? ['', '## Tus cicatrices (en qué se equivoca este puesto)', '', cicatrices.trim()] : []),
     '',
   ].join('\n');
-  const json = JSON.stringify({ puesto, generadoDe: `${FUENTE}@${sha}`, generadoEn: new Date().toISOString() }, null, 2) + '\n';
+  const json = JSON.stringify({ puesto, ...(nombre ? { nombre: nombre.trim() } : {}), generadoDe: `${FUENTE}@${sha}`, generadoEn: new Date().toISOString() }, null, 2) + '\n';
   return { md, json };
 }
 
@@ -139,17 +148,32 @@ function principal(argv) {
     return 0;
   }
   if (orden === 'mesa') {
-    const [puesto, dir] = resto;
+    const iN = resto.indexOf('--nombre');
+    const nombre = iN >= 0 ? resto[iN + 1] : null;
+    if (iN >= 0 && (!nombre || nombre.startsWith('--'))) { console.log('NO-PUDE-MIRAR: --nombre sin valor'); return 2; }
+    const [puesto, dir] = resto.filter((_, i) => iN < 0 || (i !== iN && i !== iN + 1));
     if (!puesto || !dir || !path.isAbsolute(dir) || !fs.existsSync(dir)) { console.log('NO-PUDE-MIRAR: uso: mesa <PUESTO> <ruta ABSOLUTA de la mesa, que exista>'); return 2; }
     const leer = (p) => { const f = path.join(RAIZ, 'docs/equipo/cicatrices', `${p}.md`); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n').filter((l) => l.startsWith('- ')).join('\n') || null : null; };
-    const r = textoMesa(puesto.toUpperCase(), tabla, ficheros, leer);
+    const r = textoMesa(puesto.toUpperCase(), tabla, ficheros, leer, nombre);
     if (r.error) { console.log(`NO-PUDE-MIRAR: ${r.error}`); return 2; }
     fs.writeFileSync(path.join(dir, 'CLAUDE.local.md'), r.md);
     fs.writeFileSync(path.join(dir, '.yaqu-puesto.json'), r.json);
-    console.log(`mesa ${puesto.toUpperCase()} → ${dir}: CLAUDE.local.md (${Buffer.byteLength(r.md)} B) + .yaqu-puesto.json`);
+    console.log(`mesa ${puesto.toUpperCase()} → ${dir}: CLAUDE.local.md (${Buffer.byteLength(r.md)} B) + .yaqu-puesto.json${nombre ? ` (nombre «${nombre.trim()}»)` : ''}`);
     return 0;
   }
-  console.log('uso: node scripts/carriles.mjs generar | comprobar | de <ruta> | mesa <PUESTO> <dir>');
+  if (orden === 'huecos') {
+    const c = censoDeHuecos(mapa, ficheros);
+    console.log(`huecos · ${c.producto} ficheros de producto (src/, public/) · ${c.especificos} con fila específica · ${c.generales} solo por la fila general (${c.reglasGenerales} filas generales) · ${c.sinFila.length} sin fila`);
+    // CONTROL POSITIVO: sin producto, sin filas generales o sin ficheros con dueño específico, el censo
+    // no tiene con qué comparar, y su «0 huecos» no sabría nada.
+    if (!c.producto || !c.reglasGenerales || !c.especificos || !c.generales) { console.log('NO-PUDE-MIRAR: población vacía en alguna columna; un censo así no ve huecos, no es que no los haya'); return 2; }
+    for (const f of c.sinFila) console.log(`SIN-FILA  ${f} → ninguna fila de §3 lo reclama`);
+    for (const h of c.parientes) console.log(`PARIENTE  ${h.fichero} → ${h.puesto} solo por la fila general (${FUENTE}:${h.linea}); por el nombre se parece a ${h.pistas.map((p) => `${p.puesto} («${p.palabra}»: ${p.ejemplos.map((e) => e.slice(e.lastIndexOf('/') + 1)).join(', ')}${p.n > 2 ? `, +${p.n - 2}` : ''})`).join(' · ')}`);
+    const n = c.sinFila.length + c.parientes.length;
+    console.log(`→ ${n} casos. No es un veredicto: es la pregunta para los jefes (¿hueco de la tabla, o de ese puesto a propósito?). Cada uno se cierra con una fila en §3.`);
+    return n ? 1 : 0;
+  }
+  console.log('uso: node scripts/carriles.mjs generar | comprobar | de <ruta> | huecos | mesa <PUESTO> <dir> [--nombre <nombre de sesión>]');
   return 2;
 }
 
