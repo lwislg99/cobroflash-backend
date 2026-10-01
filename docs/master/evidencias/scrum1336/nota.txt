@@ -1,0 +1,39 @@
+SCRUM-1336 · CÓMO LEER ESTA CARPETA
+
+QUÉ VALE
+  antes-resumen.json / antes-<guard>-<escenario>.txt ...... los guards de origin/main 8c0bf72850988e5f06266f330ab4c6c869f42a36
+  despues-resumen.json / despues-<guard>-<escenario>.txt .. los guards de d174fa4cf903f899d87e982eec3e5a1b4d77dfed (el arreglo)
+  despues-<guard>-mut-<mutación>.txt ...................... el arreglo con UNA línea rota, contra su pasada sin mutar
+  antes-traza.txt ......................................... lo que imprimió el banco en la tanda entera del «antes» (29 pasadas)
+  mutaciones.json / mutaciones-traza.txt .................. las 8 mutaciones del test, con el motor de la casa (sin navegador)
+  lista-antes-despues.mjs ................................. SALEN_A_MANO, contada en los dos SHA
+  limite-de-recorrer-casos.mjs / .txt ..................... un límite de la pieza común, medido y NO arreglado
+
+  Las 33 pasadas de cada resumen son 30 + las 3 «ciego-ausencia», que se añadieron después de las
+  primeras 30 y se corrieron en los DOS SHA. «rastro-del-menu-gana-uno» también corrió en los dos.
+
+POR QUÉ EL «ANTES» SE CORRIÓ DOS VECES, Y CUÁL VALE
+  La primera tanda del «antes» NO VALE y no está aquí: se sobrescribió con la segunda.
+  En la primera, `guard-objetivo-tactil` salió 1 en 0,4 s en sus cuatro pasadas y el banco lo contó
+  como «midió». No medía: reventaba al importar, porque el árbol desechable no tenía `dist/` y
+  `tests/_banco-vistas.mjs` lo necesita. Un proceso que no llegó a medir, contado como una medición:
+  el defecto de este ticket, cometido por el instrumento que lo mide.
+  Lo cazó la pasada «limpio» de ese guard, que tenía que salir 0 y salía 1.
+  Desde entonces (commit c1ac3857 del banco):
+    · el árbol desechable toma `dist/` prestado del de trabajo, y se niega a correr si `src/` o
+      `prisma/` no son los del SHA medido;
+    · la pasada de un guard cuyo control «limpio» no sale 0 en esa invocación NO SE CUENTA;
+    · una excepción sin capturar se marca en la traza.
+  Las 29 pasadas se repitieron enteras con ese banco. Ésas son las de `antes-resumen.json`.
+
+LO QUE EL BANCO NO HACE
+  · No toca el árbol de trabajo: saca el SHA con `git archive` a un temporal fuera del repo, rompe
+    allí y lo borra. `node_modules` y `dist/` van por enlace de directorio.
+  · No corre en `npm test`: pide navegador y turno. Lo que corre siempre es
+    `tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`, que LEE estos resúmenes.
+  · Las mutaciones con navegador sólo existen para el SHA del arreglo: en el de antes no hay línea
+    que romper.
+
+CÓMO SE REPITE (con turno de navegador, un guard cada vez)
+  node docs/master/evidencias/scrum1336/banco.mjs "<raíz ABSOLUTA del repo>" <sha> <antes|despues> "<esta carpeta>" <guard>
+  node docs/master/evidencias/scrum1336/banco.mjs "<raíz ABSOLUTA del repo>" <sha> despues "<esta carpeta>" mutaciones
