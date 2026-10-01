@@ -348,8 +348,15 @@ test('SCRUM-1338 · Productos: «Crear producto» va DESHABILITADO y con su nota
   assert.equal(gateDe('POST', '/admin/products')?.rol, 'admin', 'SUELO: si el servidor abre el alta al operario, este veto sobra');
   assert.equal(bo.disabled, true, '🔴 el operario puede pulsar «Crear producto», y el servidor le contestará 403');
   assert.ok(String(bo.className).split(/\s+/).includes('role-locked'), 'el botón no lleva la clase del veto por rol');
-  const cerca = notas(operario).filter((n) => rotulo(n) === 'Esta acción es solo para administradores. Pídeselo a quien gestiona la cuenta.');
-  assert.ok(cerca.length >= 1, '🔴 el botón está deshabilitado y no dice por qué (un control que no explica por qué no se usa, no se deshabilita)');
+  // La nota es la de ESTE botón: lo que va justo detrás de su fila. Buscar «alguna nota en la
+  // pantalla» salía verde sin ella —la mutación M9 era MUDA—, porque con el catálogo vacío
+  // «Cargar el catálogo de mi gremio» ya pinta la suya unas líneas más abajo.
+  const fila = bo._padre;
+  const hermanos = fila._padre.hijos;
+  const detras = hermanos[hermanos.indexOf(fila) + 1];
+  assert.ok(detras && String(detras.className).split(/\s+/).includes('role-locked-note'),
+    '🔴 el botón está deshabilitado y no dice por qué (un control que no explica por qué no se usa, no se deshabilita)');
+  assert.equal(rotulo(detras), 'Esta acción es solo para administradores. Pídeselo a quien gestiona la cuenta.');
 
   const admin = await abrir('admin', 'products');
   const ba = boton(admin);
