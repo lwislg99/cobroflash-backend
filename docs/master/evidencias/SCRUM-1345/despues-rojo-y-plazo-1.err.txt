@@ -1,0 +1,8 @@
+
+🔴 HALLAZGO, y además no terminé. Antes del corte (plazo de 25 s) ya habían caído 3:
+   ✖ SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo (453.8912ms)
+   ✖ SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer (384.0728ms)
+   ✖ SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total (353.1537ms)
+  Ésos son reales: arréglalos ANTES de empujar. Y la lista NO es completa: de los guards
+  que no llegaron a acabar no sé nada.
+  ⟦veredicto⟧ 3 hallazgos · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos
