@@ -45,6 +45,11 @@ function paginaHtml(rol) {
     + '<script>\n'
     + '  window.appUserRole = ' + JSON.stringify(rol) + ';\n'
     + '  window.__pedidas = [];\n'
+    // El panel del ADMIN (el control) pinta sus importes con `fmtMoneyEs`, que vive en `api.js` y
+    // esta página no carga. Sin este doble el control lanzaba y la medición entera salía CIEGA
+    // (así la encontró J2k: «fmtMoneyEs is not defined»). Es un doble, no el formateador real:
+    // sólo sirve para que el control tenga un «€» que enseñar. El bloque del Técnico no lo llama.
+    + '  window.fmtMoneyEs = (n, moneda) => new Intl.NumberFormat("es-ES", { style: "currency", currency: moneda || "EUR" }).format(Number(n) || 0);\n'
     + '  window.apiRequest = async (ruta) => { window.__pedidas.push(ruta); return ' + JSON.stringify(EQUIPO) + '; };\n'
     + '<\/script>\n'
     + '<script src="/dashboard/js/homeView.js"><\/script>\n'
