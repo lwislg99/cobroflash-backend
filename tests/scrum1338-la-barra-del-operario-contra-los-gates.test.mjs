@@ -6,7 +6,7 @@
 // `scrum55` audita el servidor: toda ruta /admin declara rol. Y lo hace bien. Lo que no existía
 // era nada que comparase eso con la barra del panel: `app.js` ocultaba entradas al operario con una
 // lista de nombres escrita a mano, y nadie comprobaba que estuviera completa. Medido el 1-oct-2026
-// sobre `8f5906bc`: de las 12 entradas que el operario veía, 4 —Partes por valorar, Cobros, Libro
+// sobre `8f5906bc`: de las doce entradas que el operario veía, cuatro —Partes por valorar, Cobros, Libro
 // de registro y Facturas recibidas— abrían pidiendo una ruta que el servidor le niega. SCRUM-1165
 // había ocultado una, SCRUM-1317 otras dos, y éstas seguían ahí: la lista sólo crecía cuando
 // alguien tropezaba.
@@ -92,7 +92,7 @@ function gateDe(metodo, url) {
 const HTML = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
 
 function navDe(html) {
-  const m = /<nav class="sidebar-nav">([^]*?)<\/nav>/.exec(html);
+  const m = /<nav class="sidebar-nav"[^>]*>([^]*?)<\/nav>/.exec(html);
   assert.ok(m, '🔴 CIEGO: no encuentro <nav class="sidebar-nav"> en index.html');
   return m[1].replace(/<!--[^]*?-->/g, '');
 }
@@ -228,7 +228,7 @@ test('SCRUM-1338 · SUELO: los gates salen del servidor real, y el instrumento d
 
 test('SCRUM-1338 · SUELO: el banco ve TODAS las entradas de la barra, y cada una tiene su pantalla', () => {
   const enElHtml = [...NAV.matchAll(/<button[^>]*class="nav-item"[^>]*data-view="([^"]+)"/g)].map((m) => m[1]);
-  const rotulosEnElHtml = [...NAV.matchAll(/<div class="nav-section-label">([^<]*)<\/div>/g)].map((m) => m[1].trim());
+  const rotulosEnElHtml = [...NAV.matchAll(/<div class="nav-section-label"[^>]*>([^<]*)<\/div>/g)].map((m) => m[1].trim());
   console.log(`scrum1338 · barra: ${enElHtml.length} entradas · ${rotulosEnElHtml.length} secciones con rótulo`);
   assert.ok(enElHtml.length >= 10, `🔴 CIEGO: sólo ${enElHtml.length} entradas en la barra`);
   assert.deepEqual(BARRA_OPERARIO.entradas.map((e) => e.vista), enElHtml,
