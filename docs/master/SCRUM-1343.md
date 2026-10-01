@@ -1,6 +1,6 @@
 # SCRUM-1343 · Un hijo que no arranca es un CIEGO, no un hallazgo
 
-**Medido contra:** `origin/main` = `f19ac2f0081a613d44079df86f4cecf2d6f9ace7` · 2026-10-01T08:07:39Z
+**Medido contra:** `origin/main` = `762f4fbba51ea214fd6c2473baa577d69c088791` · 2026-10-01T14:35:51Z
 
 1-oct-2026 · **J1h** (equipo de Javier), relevo de J1g. Encargo del orquestador `cobroflash-backend-5b`.
 
@@ -160,3 +160,21 @@ Sobre la rama con `origin/main` @ `f2336d78` mezclado, `prisma generate` y `npm 
    `assert.ok` con el tipo del nodo en el mensaje.
 4. **Tres rojos míos en la tanda dirigida** (CR en disco, el trinquete de SCRUM-812 y un temporal
    sin borrado garantizado): los cazaron los guards de la casa antes de empujar.
+
+## Segunda mezcla con `main` (J1i, tarde del 1-oct)
+
+El PR #2072 se quedó en conflicto: `main` avanzó 215 commits desde `f19ac2f0`. De los 13 ficheros
+de esta rama, `main` sólo tocó uno, `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`: las
+dos ramas habían subido `SUELO_GUARD_QUE_DECLARAN` a 27 (SCRUM-1298 allí, SCRUM-1343 aquí). Se
+conservan las dos explicaciones y la cifra la dio el propio test sobre el árbol fusionado: **28**.
+El verde que el CI había dado a las 08:15Z era sobre `f19ac2f0` y ya no cuenta.
+
+Repetido sobre `762f4fbb` mezclado, tras `prisma generate` y `npm run build` (salida 0):
+
+- `scrum812` + este test: 19 casos, 19 pasan (los 14 de SCRUM-1343 por nombre).
+- Dirigida de **56 ficheros** de 1.190: los 23 que nombran `guards-visuales`, los 28 que
+  `npm run tests:que-cubren` selecciona para esta rama Y que `main` cambió desde `f19ac2f0`, y
+  los guards del registro. 563 tests, 563 pasan, 0 saltan; salida 0; árbol limpio después.
+- **NO corrido**: los otros 176 de los 232 que selecciona `tests:que-cubren` (ya corrieron en
+  la dirigida de la mañana y `main` no los cambió), las mutaciones, `guards:visuales` y la suite
+  completa. De los módulos que importa la puerta, `main` no cambió ninguno.
