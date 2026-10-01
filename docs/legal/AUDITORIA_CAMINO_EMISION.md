@@ -145,7 +145,7 @@ existe, porque no hay envío.**
 | Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
 | Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
 | Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
-| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:103` y `:247` (`exigirDocumentoEmitible`) — SCRUM-1051 movió la línea |
+| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:104` y `:248` (`exigirDocumentoEmitible`) — SCRUM-1304 movió la línea |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
 | Cola `VfSubmission` | **INEXISTENTE** | el esquema tiene **25 modelos** (`prisma/schema.prisma`) y **ninguno** se llama `Vf*`, `*Submission` ni `*Verifactu`. Ningún fichero de `src/` menciona `vfSubmission` |
 | Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |
