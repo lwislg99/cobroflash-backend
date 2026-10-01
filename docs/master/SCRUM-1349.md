@@ -95,3 +95,77 @@ completo es el del CI. Ni `meta:mutaciones` entero.
 
 El diario de `meta:mutaciones`: parar ese instrumento a medias deja el árbol mutado (medido el
 1-oct, por accidente propio). Va aparte porque toca otro instrumento.
+
+# SCRUM-1349c · El diario ya existía: lo que faltaba es dónde se mira, y que el rojo del cruce diga quién
+
+**Medido contra:** `origin/main` = `e4ebbfc8e6c63554206be600006c3bad21c50166` · 2026-10-01T12:26:55Z
+
+A9: comprobación → `tests/scrum1349-entorno-prestado-solo-baja.test.mjs`
+
+Carril S3. Sesión s3-1oct-b. Dos piezas del mismo ticket: la que quedó anunciada arriba («el diario
+de `meta:mutaciones`») y la comprobación que faltó en el cruce de #1990 y #2077.
+
+## 1 · El diario: PASO 0, y no hay que construirlo
+
+El encargo traía el diseño: antes de mutar, ruta y bytes originales en disco; al arrancar, si hay
+diario, restaurar y decirlo; y un test que caiga si el diario existe. **Las tres cosas están en
+`main` desde SCRUM-808** (`scripts/_marca-de-arbol.mjs`, 6-sep-2026): la marca en `.cache/<herramienta>/`,
+`restaurarDesdeMarca()` al arrancar, y `scrum808` «no hay una marca huérfana en este árbol».
+
+Se comprobó matando la pasada DE VERDAD (`Stop-Process -Force`, que en Windows no entrega señal y
+no deja correr ningún `finally`), no simulado:
+
+| Paso | Resultado |
+|---|---|
+| `meta:mutaciones` lanzado; a los 7 s hay marca y árbol mutado | pid 33352, pieza `scripts/meta-guard-mutaciones.mjs` |
+| Kill forzado del proceso y sus hijos | ` M scripts/meta-guard-mutaciones.mjs` (`numstat` 1 1); la marca sigue en disco |
+| `scrum808` con la marca huérfana | **1 fail de 15**: «NO hay una marca HUÉRFANA en este árbol ahora mismo» |
+| `meta-guard-mutaciones.mjs --solo-censo` | «UNA PASADA ANTERIOR MURIÓ CON LA MUTACIÓN PUESTA… Devuelto a sus bytes», sale 0 |
+| `git status` y la marca | árbol limpio, marca borrada |
+| `scrum808` otra vez | 15 de 15 |
+
+## 2 · El hueco que sí quedaba: ese test no puede caer donde se decide
+
+`scrum808` sólo corre en la tanda completa, y **en CI no puede caer nunca**: la marca vive en
+`.cache/`, que git ignora y el clon de CI no recibe. Entre matar la pasada y volver a lanzarla, un
+`git add -A` y un push se llevan la mutación con un obligatorio verde. Es lo que estuvo a punto de
+pasar el 1-oct con una línea de `homeView.js`.
+
+`guards:entrada` es lo que se corre antes de empujar y el único sitio donde la marca y el árbol que
+se empuja están en la misma máquina. Ahora mira las marcas huérfanas ANTES de lanzar nada: si hay
+una, sale 1 nombrando la herramienta y el fichero mutado, y no corre ningún guard.
+
+- La carpeta de más (`GUARDS_ENTRADA_CACHE_EXTRA`) sólo AÑADE: la del árbol se mira siempre.
+- `tests/scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs`: ① el comando de verdad, con una
+  marca fabricada en el temporal, sale 1, nombra el fichero y no lanza los guards · ② no grita por
+  una marca ya cuadrada ni por la de un proceso vivo · ③ la carpeta de más sólo añade.
+
+**Lo que NO cubre, dicho:** quien empuje sin correr `guards:entrada` no pasa por la puerta. Cerrar
+eso es un gancho de git (`pre-push`) en la máquina, que es configuración y no es de este carril.
+
+## 3 · El trinquete dice quién declaró y quién arregló
+
+El 1-oct #2077 declaró `scrum928` y `scrum976`, #1990 los arregló, cada uno pasó su CI y entraron con
+34 segundos de diferencia: `main` en rojo sin que nadie hiciera nada mal. El cruce estaba avisado en
+el encargo de una sesión y el PR era de otra. El rojo de «puede apretar» ahora trae, por cada
+entrada que sobra, el commit que la declaró y el último que tocó el fichero, cada uno con su PR
+(`procedenciaDe()`, leído de la historia). Si no lo puede saber, dice «NO LO SÉ», no lo calla.
+
+**No evita el cruce**: dos PR verdes por separado se siguen pudiendo cruzar. Evita que el rojo haya
+que investigarlo.
+
+**Error propio.** La primera versión buscaba el PR con `--first-parent` y daba `null` para un commit
+que entró por el #2077: el commit sólo se alcanza por el segundo padre de su merge. El test pasaba
+igual, porque no afirmaba nada del PR; lo vi al imprimir la salida real. Ahora lo afirma (la
+comprobación de arriba).
+
+## Probado en ROJO
+
+| Mutación (`git diff --numstat` 1 1) | Cae |
+|---|---|
+| `guards-entrada.mjs`: `if (puestas.length)` → `if (puestas.length < 0)` | caso ① del test de la puerta (1 fail de 3) |
+
+## Lo que se corrió
+
+Los dos ficheros de `scrum1349` (12 tests), `scrum808`, `scrum976`, `scrum723`, `scrum824`,
+`scrum702`, los de registro y `guards:entrada`. La tanda completa, la del CI.

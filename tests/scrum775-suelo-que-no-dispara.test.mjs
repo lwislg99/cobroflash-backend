@@ -40,8 +40,7 @@ import { fileURLToPath } from 'node:url';   // SCRUM-730
 import { execFileSync, spawnSync } from 'node:child_process';
 import { ejecutableDe } from './_guard-texto.mjs';
 import { comprobarSuelo } from './_censo-tickets.mjs';
-import { repoFixture } from './_censo-fixture.mjs';
-import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { repoFixture, temporalDeFixtureGit, gitDeFixture } from './_censo-fixture.mjs';
 import {
   censar, ficherosDe, motivosParaNoFiarse, DEL_ARRAY, formaDeSpawnSync, declaracionVisible,
 } from '../scripts/_censo-suelos.mjs';
@@ -68,9 +67,10 @@ let cacheEncogido = null;
 function arbolEncogido() {
   if (cacheEncogido && fs.existsSync(cacheEncogido)) return cacheEncogido;
   const base = repoFixture();
-  const raiz = temporal('suelo-');
+  // SCRUM-1281: en la raíz propia de la familia y con el git que marca la firma del intermitente.
+  const raiz = temporalDeFixtureGit('suelo-');
   fs.rmSync(raiz, { recursive: true, force: true });
-  execFileSync('git', ['clone', '--quiet', base, raiz], { stdio: ['ignore', 'pipe', 'pipe'] });
+  gitDeFixture(['clone', '--quiet', base, raiz]);
   execFileSync('git', ['config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*'],
     { cwd: raiz, stdio: 'ignore' });
   const dir = path.join(raiz, 'docs', 'master');
