@@ -1,0 +1,13 @@
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+const server = http.createServer((req, res) => { req.resume(); req.on('end', () => { res.setHeader('content-type', 'application/json'); res.end('{"ok":true}'); }); });
+server.listen(0);
+await new Promise((r) => server.once('listening', r));
+const base = 'http://127.0.0.1:' + server.address().port;
+after(async () => { await new Promise((r) => setTimeout(r, 1500)); await new Promise((r) => server.close(r)); });
+for (let i = 0; i < 6; i++) test('fetch ' + i + ' a un servidor http pelado, sin YaQu', async () => {
+  const r = await fetch(base + '/x', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"a":1}' });
+  assert.equal(r.status, 200);
+  await r.text();
+});
