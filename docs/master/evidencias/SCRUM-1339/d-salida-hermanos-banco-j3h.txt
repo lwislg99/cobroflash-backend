@@ -1,0 +1,29 @@
+POBLACIÓN: 80 jobs medibles · 75 árboles · con más de un job: 5
+  6268b4db7f35 11161396399 [1/1] pull_request success · tests 9711 · unión de hermanos 9711 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  6268b4db7f35 11161812993 [1/1] push success · tests 9706 · unión de hermanos 9711 · perdidos frente a la unión 5 · señal 5 · CUADRA
+  9acf52ec0ad6 11161437282 [1/1] pull_request success · tests 9711 · unión de hermanos 9711 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  9acf52ec0ad6 11162634523 [1/1] push success · tests 9711 · unión de hermanos 9711 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  76d567c2ead3 11161828771 [1/2] pull_request failure · tests 9711 · unión de hermanos 9718 · perdidos frente a la unión 8 · señal 8 · CUADRA
+  76d567c2ead3 11163032993 [2/2] pull_request success · tests 9717 · unión de hermanos 9718 · perdidos frente a la unión 1 · señal 1 · CUADRA
+  0517f7d4eeac 11161994827 [1/2] pull_request failure · tests 9763 · unión de hermanos 9770 · perdidos frente a la unión 8 · señal 8 · CUADRA
+  0517f7d4eeac 11164124022 [2/2] pull_request success · tests 9755 · unión de hermanos 9770 · perdidos frente a la unión 15 · señal 12 · CIEGO: la señal nombra 12 de 15
+        1× SCRUM-1323 ⑪ · un texto que no es el máster no da verde: da problemas y población cero
+        1× SCRUM-1323 ⑫ · ① DICE, con sus nombres, los hitos que NO comprueba: 4 de 10 en el extracto, y los del máster de hoy
+        1× SCRUM-1323 ⑫ · con CERO hitos sin comprobar la línea sale igual y dice «ninguno»: su ausencia no puede leerse como «todos vigilados»
+        1× SCRUM-1323 ⑬ · una viñeta con DOS símbolos sin tachar pasa por pertenencia, y ① lo DICE con el nombre del hito
+        1× ④ las etiquetas respetan el límite de 20 por cliente (`tagsDelCliente.ts`)
+        1× ④ un NIF repetido DENTRO del mismo archivo se omite, no se duplica en silencio
+        1× ④ un NIF que YA EXISTE en la base con otra CAPITALIZACIÓN se omite
+        1× ④ un móvil que ya existe como móvil de otro cliente se omite (dedup propio, no comparte con teléfono)
+        1× TENENCIA · todo cliente se crea con el merchantId que se pasa, y el dedup va acotado
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        1× SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+        1× SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+  73e66aaa7943 11164191448 [1/1] pull_request success · tests 9779 · unión de hermanos 9779 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  73e66aaa7943 11165470653 [1/1] push success · tests 9770 · unión de hermanos 9779 · perdidos frente a la unión 9 · señal 9 · CUADRA
+RESUMEN: 5 árboles con hermanos · 10 jobs · cuadran 9 · con pérdidas que la señal no nombra enteras 1 · con pérdida y señal MUDA (0 nombrados) 0
+         casos perdidos frente a la unión 46 · nombrados por la señal 43
+EXIT=0
