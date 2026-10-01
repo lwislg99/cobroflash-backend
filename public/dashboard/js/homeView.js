@@ -722,78 +722,8 @@ function renderTopServices(items) {
     </div>`).join('');
 }
 
-// SCRUM-1341 · «ACTIVIDAD DEL EQUIPO»: lo que el Técnico ve de sus compañeros, SIN IMPORTES.
-//
-// El fundador firmó que el operario ve la actividad de sus compañeros (SCRUM-1337) y que no ve lo
-// cobrado (tabla S1). «Rendimiento del equipo», aquí debajo, reparte lo cobrado del mes por
-// persona, así que al Técnico no se le da ese panel recortado: se le da ÉSTE, que pide SU ruta
-// (`/admin/metrics/actividad-equipo`, que no consulta facturas) y pinta la misma tabla con tres
-// de sus cuatro columnas.
-//
-// Pinta por LISTA CERRADA: nombre, rol, enviados y % de aceptación. No recorre `data` ni las
-// claves de cada fila, así que un campo que llegara de más no acaba en pantalla.
-//
-// Lo que NO lleva, y está decidido (SCRUM-1341, comentarios 17825 y 17827):
-//   · la columna «Cobrado», el pie «Sin asignar» y el «Total cobrado»: son el dinero;
-//   · la estrella «Mejor del mes»: se calcula por lo cobrado;
-//   · el aviso «Sin actividad esta semana»: es herramienta de gestión, le dice a un jefe a quién
-//     perseguir;
-//   · el botón «Ver equipo →»: lleva a una pantalla sólo-admin.
-//
-// El título es texto FIRMADO por el fundador el 1-oct-2026 (c.17827) y no es el del admin a
-// propósito: sin la columna de importes esto ya no es rendimiento, es actividad. Las tres
-// cabeceras son las del panel del admin, reusadas tal cual (c.17825 ④).
-const TONO_DE_ACEPTACION = {
-  alta: 'equipo-actividad-num equipo-actividad-tasa-alta',
-  media: 'equipo-actividad-num equipo-actividad-tasa-media',
-  baja: 'equipo-actividad-num equipo-actividad-tasa-baja',
-};
-
-async function renderTeamActivity(container) {
-  let data;
-  try {
-    data = await apiRequest('/admin/metrics/actividad-equipo');
-  } catch { return; }
-  if (!data || !data.hasTeam || !Array.isArray(data.members)) return;
-
-  const section = document.createElement('div');
-  section.className = 'equipo-actividad';
-
-  const rows = data.members.map((m) => {
-    const tasa = Number(m.acceptanceRate) || 0;
-    // Mismos cortes que el panel del admin: 50 y 25.
-    const tono = tasa >= 50 ? TONO_DE_ACEPTACION.alta : tasa >= 25 ? TONO_DE_ACEPTACION.media : TONO_DE_ACEPTACION.baja;
-    // SCRUM-136 (A20.3): las mismas dos palabras que el panel del admin para los mismos roles.
-    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Operario' : m.role;
-    return `
-      <tr>
-        <td class="equipo-actividad-miembro">${esc(m.name)}<div class="equipo-actividad-rol">${esc(roleLabel)}</div></td>
-        <td class="equipo-actividad-num">${Number(m.sent) || 0}</td>
-        <td class="${tono}">${tasa}%</td>
-      </tr>`;
-  }).join('');
-
-  section.innerHTML = `
-    <div class="equipo-actividad-titulo">Actividad del equipo · este mes</div>
-    <div class="data-card">
-      <div class="table-scroll">
-        <table class="table equipo-actividad-tabla">
-          <thead><tr>
-            <th>Miembro</th>
-            <th class="equipo-actividad-num">Cotizaciones</th>
-            <th class="equipo-actividad-num">Aceptación</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-  container.appendChild(section);
-}
-
 async function renderTeamPerformance(container) {
-  // «Rendimiento del equipo» es del propietario/admin. El Técnico tiene su propio bloque, sin
-  // importes y con su propia ruta (SCRUM-1341).
+  // Sólo para el propietario/admin. El Técnico tiene SU bloque, sin importes y con su ruta (SCRUM-1341, al final).
   if (window.appUserRole && window.appUserRole !== 'admin') return renderTeamActivity(container);
 
   let data;
@@ -1599,4 +1529,78 @@ function openHomePrefsPanel() {
       showToast('No se pudo guardar: ' + (err && err.message ? err.message : 'inténtalo de nuevo'), 'error');
     }
   });
+}
+
+// SCRUM-1341 · «ACTIVIDAD DEL EQUIPO»: lo que el Técnico ve de sus compañeros, SIN IMPORTES.
+//
+// El fundador firmó que el operario ve la actividad de sus compañeros (SCRUM-1337) y que no ve lo
+// cobrado (tabla S1). «Rendimiento del equipo» (`renderTeamPerformance`, más arriba) reparte lo
+// cobrado del mes por persona, así que al Técnico no se le da ese panel recortado: se le da ÉSTE,
+// que pide SU ruta (`/admin/metrics/actividad-equipo`, que no consulta facturas) y pinta la misma
+// tabla con tres de sus cuatro columnas.
+//
+// Va al FINAL del fichero a propósito, y no al lado de `renderTeamPerformance`: este fichero tiene
+// un control anclado por NÚMERO DE LÍNEA (`tests/scrum601-copy-del-documento-vs-flag.test.mjs`, la
+// nota de condiciones del presupuesto rápido) y 68 líneas metidas por encima lo dejaban sin su
+// positivo. Aquí abajo no desplaza a nadie.
+//
+// Pinta por LISTA CERRADA: nombre, rol, enviados y % de aceptación. No recorre `data` ni las
+// claves de cada fila, así que un campo que llegara de más no acaba en pantalla.
+//
+// Lo que NO lleva, y está decidido (SCRUM-1341, comentarios 17825 y 17827):
+//   · la columna «Cobrado», el pie «Sin asignar» y el «Total cobrado»: son el dinero;
+//   · la estrella «Mejor del mes»: se calcula por lo cobrado;
+//   · el aviso «Sin actividad esta semana»: es herramienta de gestión, le dice a un jefe a quién
+//     perseguir;
+//   · el botón «Ver equipo →»: lleva a una pantalla sólo-admin.
+//
+// El título es texto FIRMADO por el fundador el 1-oct-2026 (c.17827) y no es el del admin a
+// propósito: sin la columna de importes esto ya no es rendimiento, es actividad. Las tres
+// cabeceras son las del panel del admin, reusadas tal cual (c.17825 ④).
+const TONO_DE_ACEPTACION = {
+  alta: 'equipo-actividad-num equipo-actividad-tasa-alta',
+  media: 'equipo-actividad-num equipo-actividad-tasa-media',
+  baja: 'equipo-actividad-num equipo-actividad-tasa-baja',
+};
+
+async function renderTeamActivity(container) {
+  let data;
+  try {
+    data = await apiRequest('/admin/metrics/actividad-equipo');
+  } catch { return; }
+  if (!data || !data.hasTeam || !Array.isArray(data.members)) return;
+
+  const section = document.createElement('div');
+  section.className = 'equipo-actividad';
+
+  const rows = data.members.map((m) => {
+    const tasa = Number(m.acceptanceRate) || 0;
+    // Mismos cortes que el panel del admin: 50 y 25.
+    const tono = tasa >= 50 ? TONO_DE_ACEPTACION.alta : tasa >= 25 ? TONO_DE_ACEPTACION.media : TONO_DE_ACEPTACION.baja;
+    // SCRUM-136 (A20.3): las mismas dos palabras que el panel del admin para los mismos roles.
+    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Operario' : m.role;
+    return `
+      <tr>
+        <td class="equipo-actividad-miembro">${esc(m.name)}<div class="equipo-actividad-rol">${esc(roleLabel)}</div></td>
+        <td class="equipo-actividad-num">${Number(m.sent) || 0}</td>
+        <td class="${tono}">${tasa}%</td>
+      </tr>`;
+  }).join('');
+
+  section.innerHTML = `
+    <div class="equipo-actividad-titulo">Actividad del equipo · este mes</div>
+    <div class="data-card">
+      <div class="table-scroll">
+        <table class="table equipo-actividad-tabla">
+          <thead><tr>
+            <th>Miembro</th>
+            <th class="equipo-actividad-num">Cotizaciones</th>
+            <th class="equipo-actividad-num">Aceptación</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  container.appendChild(section);
 }

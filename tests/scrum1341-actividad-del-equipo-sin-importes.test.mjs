@@ -401,7 +401,7 @@ test('SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» co
   assert.ok(marcado.includes(`>${TITULO_FIRMADO}<`), '🔴 el título no es, letra a letra, el que firmó el fundador');
   const cabeceras = [...marcado.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((x) => x[1]);
   assert.deepEqual(cabeceras, ['Miembro', 'Cotizaciones', 'Aceptación'], '🔴 las cabeceras no son las tres reusadas, en su orden');
-  const filas = [...marcado.matchAll(/<tr>\s*<td[^>]*>([^<]*)<div[^>]*>([^<]*)<\/div><\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<\/tr>/g)].map((x) => x.slice(1, 5));
+  const filas = [...marcado.matchAll(/<tr[^>]*>\s*<td[^>]*>([^<]*)<div[^>]*>([^<]*)<\/div><\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<td[^>]*>([^<]*)<\/td>\s*<\/tr>/g)].map((x) => x.slice(1, 5));
   assert.deepEqual(filas, [
     ['Dueña SL', 'Propietario', '1', '100%'],
     ['Ana', 'Operario', '3', '67%'],

@@ -1,7 +1,7 @@
 // SCRUM-1341 · ¿el Inicio del ADMIN se pinta EXACTAMENTE igual que antes de este cambio?
 //
 // Monta el Inicio dos veces en el banco de vistas, con la misma red: una con el `homeView.js` de
-// la referencia (por defecto `origin/main`, leido con `git show`) y otra con el de este arbol. De
+// la referencia que se le pasa (leido con `git show`) y otra con el de este arbol. De
 // cada montaje saca TODOS los nodos (etiqueta, clase, id, estilo, texto) y el marcado del bloque
 // del equipo, y compara los dos por sha256.
 //
@@ -9,7 +9,9 @@
 // la referencia no). Si salen iguales, el instrumento no ve una diferencia que sabemos que esta.
 //
 // Solo lee el arbol. Escribe una copia de `public/` en el directorio temporal del sistema y la borra.
-//   node tests/banco-scrum1341/admin-identico.mjs [referencia]
+// La referencia es OBLIGATORIA y no tiene valor por defecto: contra qué se compara lo dice quien lo
+// lanza, y sale escrito con su sha en la primera línea de la salida.
+//   node tests/banco-scrum1341/admin-identico.mjs <referencia de git>
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,7 +20,8 @@ import { spawnSync } from 'node:child_process';
 import { cargarDashboard, pintarVista, todos } from '../_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '../..');
-const REF = process.argv[2] || 'origin/main';
+const REF = process.argv[2];
+if (!REF) { console.log('CIEGO: falta la referencia contra la que comparar (primer argumento)'); console.log('EXIT=2'); process.exit(2); }
 const VISTA = 'public/dashboard/js/homeView.js';
 
 const sha = spawnSync('git', ['rev-parse', REF], { cwd: RAIZ, encoding: 'utf8' }).stdout.trim();
