@@ -1,0 +1,268 @@
+{
+ "base": {
+  "salida": 0,
+  "pasan": 27,
+  "caidos": []
+ },
+ "despues": {
+  "salida": 0,
+  "pasan": 27,
+  "caidos": []
+ },
+ "cuenta": {
+  "CAZADA": 18
+ },
+ "filas": [
+  {
+   "id": "M1",
+   "que": "un .html deja de contar como interfaz",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "DE PUNTA A PUNTA",
+   "pasan": 25,
+   "caidos": [
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M2",
+   "que": "tocar la interfaz ya no obliga a nada (el defecto del ticket, entero)",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "EL CASO QUE SE VIO",
+   "pasan": 22,
+   "caidos": [
+    "SCRUM-1340 · 🔴 EL CASO QUE SE VIO: el registro de 1317 sin fecha y sin prefijo ya no sale exento",
+    "SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada",
+    "SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta",
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M3",
+   "que": "un clon somero se mide como si trajera la cadena",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "DE PUNTA A PUNTA",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M4",
+   "que": "la declaracion de una entrada ajena que el PR solo rozo lo salva",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "a un PR lo salvan SUS entradas",
+   "pasan": 25,
+   "caidos": [
+    "SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada",
+    "SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M5",
+   "que": "una linea en blanco basta para atribuir una entrada",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "lo que no sé clasificar CAE",
+   "pasan": 25,
+   "caidos": [
+    "SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M6",
+   "que": "el corte deja de aplicarse: entra toda la historia",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "DE PUNTA A PUNTA",
+   "pasan": 25,
+   "caidos": [
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M7",
+   "que": "lo que aun no esta rastreado no cuenta como cambio de la rama",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "DE PUNTA A PUNTA",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M8",
+   "que": "el lector de parches no sale nunca de la cabecera: no lee ninguna linea",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "AUTOPRUEBA: los lectores",
+   "pasan": 24,
+   "caidos": [
+    "SCRUM-1340 · AUTOPRUEBA: los lectores de `git log` separan unidades, ficheros y líneas añadidas",
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M9",
+   "que": "tienen que declarar TODAS las entradas del PR, no una",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "a un PR lo salvan SUS entradas",
+   "pasan": 25,
+   "caidos": [
+    "SCRUM-1340 · 🔴 a un PR lo salvan SUS entradas: la declaración de una vieja que sólo rozó no cuenta",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "M10",
+   "que": "sin base resuelta se sigue adelante (y con base, se declara ciego)",
+   "f": "tests/_skill-ui-por-efecto.mjs",
+   "veredicto": "CAZADA",
+   "cae": "SUELO: la cadena de primer padre",
+   "pasan": 24,
+   "caidos": [
+    "SCRUM-1340 · SUELO: la cadena de primer padre se pudo leer, y trae PR de interfaz de verdad",
+    "SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en un clon somero",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J1",
+   "que": "la lista admite altas posteriores al techo (la escapatoria)",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la lista de heredadas no admite altas",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J2",
+   "que": "la lista puede pasar de su tope",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la lista de heredadas no admite altas",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J3",
+   "que": "una heredada que ya declara se queda en la lista sin que nadie lo diga",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la lista de heredadas no admite altas",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J4",
+   "que": "lo que no declara y esta fuera de la lista deja de acusarse",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la lista de heredadas no admite altas",
+   "pasan": 24,
+   "caidos": [
+    "SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio",
+    "SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M",
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J5",
+   "que": "lo que cambia la rama deja de juzgarse",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la lista de heredadas no admite altas",
+   "pasan": 24,
+   "caidos": [
+    "SCRUM-1340 · 🔴 lo que no sé clasificar CAE diciéndolo: interfaz sin registro, y registro sin entrada",
+    "SCRUM-1340 · 🔴 la lista de heredadas no admite altas, no pasa de su tope y no encoge en silencio",
+    "SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "J6",
+   "que": "la linea de la cuenta cambia N por M",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "la línea de la cuenta sale SIEMPRE",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y dice N de M"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "A1",
+   "que": "un PR real de interfaz que no declara, FUERA de la lista (la violacion de verdad)",
+   "f": "tests/scrum811c-skill-ui-declarada.test.mjs",
+   "veredicto": "CAZADA",
+   "cae": "todo PR que cambia public/ declara la skill",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  },
+  {
+   "id": "A2",
+   "que": "un registro real de la lista pasa a declarar: la lista tiene que encoger diciendolo",
+   "f": "docs/master/SCRUM-910.md",
+   "veredicto": "CAZADA",
+   "cae": "todo PR que cambia public/ declara la skill",
+   "pasan": 26,
+   "caidos": [
+    "SCRUM-1340 · 🔴 todo PR que cambia public/ declara la skill en su registro, o está en la lista cerrada"
+   ],
+   "cambio": true,
+   "vuelto": true
+  }
+ ]
+}
