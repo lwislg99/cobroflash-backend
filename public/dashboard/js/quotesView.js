@@ -2081,10 +2081,15 @@ descWrapper.appendChild(descLabel);
   // El menú es el helper compartido de AB3, con su rótulo por defecto, «Más acciones» (firmado en
   // el comentario 15868). Si no estuviera cargado, los dos botones se quedan en la fila del título:
   // perder el menú no puede costar la posibilidad de vaciar el documento.
+  // SCRUM-1317 · guardar una plantilla es admin en el servidor (`POST /admin/templates`). Al
+  // operario el botón no se le pinta: USAR una plantilla sigue siendo suyo, crearla no, y un
+  // botón que acaba en 403 es peor que no tenerlo (SCRUM-1312).
+  const puedeGuardarPlantilla = window.appUserRole === "admin";
   const masAccionesBtn =
-    typeof overflowMenu === "function"
-      ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
-      : null;
+    typeof overflowMenu !== "function" ? null
+      : puedeGuardarPlantilla
+        ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
+        : overflowMenu([resetBtn], { label: "Más acciones" });
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
@@ -2102,7 +2107,10 @@ descWrapper.appendChild(descLabel);
   // SCRUM-915i · en la fila del título, delante del «⋯».
   if (!esDocumentoSuelto) headingRow.appendChild(draftIndicator);
   if (masAccionesBtn) headingRow.appendChild(masAccionesBtn);
-  else { headingRow.appendChild(saveTemplateBtn); headingRow.appendChild(resetBtn); }
+  else {
+    if (puedeGuardarPlantilla) headingRow.appendChild(saveTemplateBtn);
+    headingRow.appendChild(resetBtn);
+  }
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»

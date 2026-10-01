@@ -319,6 +319,24 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [x] P1-1317 · la pantalla de Productos del OPERARIO sale con la lista vacía: `renderProductsView` lanza al cablear el margen (1-oct-2026, hallazgo de SCRUM-1317; arreglado en la misma rama)
+- **Qué pasa:** con sesión de operario, abrir Productos lanza `TypeError: Cannot read properties of
+  null (reading 'addEventListener')` en `cablearMargen` (`productsView.js:604`, llamado desde
+  `:643`). El formulario se pinta, pero `refresh()` no llega a correr y la tabla se queda sin filas.
+- **Medido, no supuesto:** en Edge, con el panel de `origin/main` `bee39d3b51e300ff4efdda3befcb1eff4626f988`
+  y `/admin` simulado: operario → 0 filas con 1 producto en el servidor, y el error de arriba; admin →
+  1 fila y ningún error. Y en el banco de vistas, montando la vista con `rol: 'tecnico'`.
+- **Causa raíz:** SCRUM-597 le retira al operario los campos «Coste» y «Margen %» del alta
+  (`retirarEconomiaSiNoLaVe`), y unas líneas después se cablean los tres campos sin mirar si siguen
+  ahí. El modal de edición sí se protegía (`:349`); el alta, no.
+- **Qué se cambió:** `if (costI && margenI) cablearMargen(…)`. Para el admin los dos campos existen,
+  así que su pantalla no cambia (lo fija `tests/scrum1317-productos-del-operario.test.mjs`, que
+  además teclea un coste y comprueba que el margen se sigue calculando).
+- **Por qué no lo cazó nadie:** ningún test monta Productos con rol de operario. El banco de vistas
+  usa `admin` por defecto, así que toda pantalla que se bifurca por rol sólo se mide por una rama.
+- **Queda abierto, sin tocar:** el botón «Crear» del alta no se le veta al operario, aunque
+  `POST /admin/products` exige admin desde SCRUM-614. Si lo pulsa, falla.
+
 ### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
 - **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
   escribe `vfAnulHash`/`vfAnulPrevHash`/`vfAnulTimestamp` y extiende la cadena) ANTES de escribir el

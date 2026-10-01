@@ -116,20 +116,36 @@ async function renderHomeView(container) {
   document.getElementById("btn-view-pending").addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
   document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);
 
+  // SCRUM-1317 · EL INICIO DEL OPERARIO. Las cifras del negocio (lo que se debe, lo cobrado,
+  // gastos, beneficio, la semana, los tops) son del admin: su ruta `/admin/metrics/home` exige
+  // admin, y al operario esos bloques se le QUITAN del DOM — no se le dejan cargando ni vacíos.
+  // Se queda con lo que es de su trabajo: el saludo, los tres avisos de riesgo, las acciones
+  // rápidas, «Te esperan en WhatsApp» y la actividad reciente, que pide a SU ruta.
+  // `#home-hero` no se quita: vacío no ocupa nada y es el ancla de la tarjeta de WhatsApp.
+  const veNegocio = window.appUserRole === 'admin';
+  if (!veNegocio) {
+    container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
+      .forEach((bloque) => bloque.remove());
+  }
+
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
   if (window.appHomePrefs) applyHomePrefs(window.appHomePrefs);
 
   try {
     const [data, merchant] = await Promise.all([
-      apiRequest("/admin/metrics/home"),
+      apiRequest(veNegocio ? "/admin/metrics/home" : "/admin/metrics/inicio"),
       apiRequest("/admin/merchant").catch(() => null),
     ]);
-    renderHero(data);
-    renderKpis(data);
-    renderWeekSummary(data);
+    if (veNegocio) {
+      renderHero(data);
+      renderKpis(data);
+      renderWeekSummary(data);
+    }
     renderActivity(data.recentActivity || []);
-    renderTopCustomers(data.topCustomers || []);
-    renderTopServices(data.topServices || []);
+    if (veNegocio) {
+      renderTopCustomers(data.topCustomers || []);
+      renderTopServices(data.topServices || []);
+    }
 
     // Setup checklist para usuarios nuevos
     if (merchant) renderSetupChecklist(merchant, data);
@@ -153,13 +169,15 @@ async function renderHomeView(container) {
     // Rendimiento del equipo (ANA-3) — solo admin con técnicos
     renderTeamPerformance(container);
   } catch (err) {
+    // SCRUM-1317: el operario no tiene `kpi-grid`; su error va donde iba a ir su contenido.
+    const af = document.getElementById("activity-feed");
+    const kpis = document.getElementById("kpi-grid");
+    if (kpis && af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
     uiErrorState(
-      document.getElementById("kpi-grid"),
+      kpis || af,
       "No pudimos cargar tus métricas. Revisa tu conexión.",
       () => renderHomeView(container)
     );
-    const af = document.getElementById("activity-feed");
-    if (af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
   }
 
   // SCRUM-356 (H2) · FUERA del try/catch a propósito: si las métricas fallan —que es justo cuando
@@ -262,7 +280,8 @@ window.updateSidebarBadges = updateSidebarBadges;
 // Refresca los badges del sidebar sin renderizar el Home (para usar al iniciar la app).
 async function refreshSidebarBadges() {
   try {
-    const data = await apiRequest('/admin/metrics/home');
+    // SCRUM-1317: los globos del operario salen de SU ruta; `/admin/metrics/home` exige admin.
+    const data = await apiRequest(window.appUserRole === 'admin' ? '/admin/metrics/home' : '/admin/metrics/inicio');
     updateSidebarBadges(data);
   } catch { /* silencioso */ }
 }
@@ -343,6 +362,8 @@ async function pintarResumenTrimestreEnHome() {
   const caja = document.getElementById('home-resumen-trimestre');
   if (!caja) return;
   caja.innerHTML = '';
+  // SCRUM-1317: `/admin/reports/*` exige admin desde SCRUM-55; el operario no lo pregunta.
+  if (window.appUserRole !== 'admin') return;
 
   const { anio, trimestre } = trimestreAnteriorMadrid();
   const clave = claveDescarteResumenTrimestre(anio, trimestre);

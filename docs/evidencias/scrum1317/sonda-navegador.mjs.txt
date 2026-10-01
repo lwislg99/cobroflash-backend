@@ -1,0 +1,146 @@
+// Sonda de navegador SCRUM-1317. Panel REAL en Edge, /admin simulado.
+//   node sonda-navegador.mjs <raiz> <arbol|main>
+// `main`: sirve public/ desde origin/main y el servidor contesta 200 a todo (el estado de hoy).
+// `arbol`: sirve public/ del arbol y el servidor NIEGA al operario las rutas que se cierran.
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = process.argv[2];
+const MODO = process.argv[3];
+const puppeteer = (await import('node:module')).createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+const { lanzarNavegador } = await import(pathToFileURL(path.join(RAIZ, 'scripts/_navegador.mjs')).href);
+
+const CERRADAS = [
+  /^GET \/admin\/metrics\/(home|funnel|services|whatsapp)$/,
+  /^(GET|POST) \/admin\/providers$/, /^(PUT|DELETE) \/admin\/providers\/\d+$/,
+  /^POST \/admin\/templates$/, /^(PUT|DELETE) \/admin\/templates\/\d+$/,
+  /^GET \/admin\/reports\//, // admin desde SCRUM-55, en los dos modos
+];
+// argv[4]: carpeta `public` a servir (en modo main, la extraida de origin/main con git archive).
+const PUBLICO = process.argv[4] || path.join(RAIZ, 'public');
+function fichero(rel) {
+  const f = path.join(PUBLICO, rel);
+  return fs.existsSync(f) && fs.statSync(f).isFile() ? fs.readFileSync(f) : null;
+}
+const json = (res, o, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+const HOME = { pendingCount: 3, quotesAwaiting: 5, pendingRequests: 1, pendingAmount: 900, awaitingAmount: 400, collectedThisMonth: 1200,
+  expensesThisMonth: 300, expensesCount: 2, profitThisMonth: 900, weekly: { quotesThisWeek: 2, quotesLastWeek: 1, collectedThisWeek: 500, collectedLastWeek: 100 },
+  sparkline: [0, 1, 0, 2, 0, 0, 1], avgResponseHours: 5, onboarding: { precios: true, firma: true, cobro: true },
+  topCustomers: [{ customerId: 1, name: 'Marta Ruiz', invoices: 2, total: 800 }], topServices: [{ name: 'Revision', count: 3, revenue: 270 }],
+  recentActivity: [{ type: 'quote', id: 9, quoteNumber: 4, status: 'sent', customer: 'Marta Ruiz', total: 120, currency: 'EUR', updatedAt: '2026-09-30T10:00:00Z' }] };
+
+function servidor(rol, peticiones) {
+  return http.createServer((req, res) => {
+    const u = req.url.split('?')[0];
+    if (u.startsWith('/admin/')) {
+      const clave = `${req.method} ${u}`;
+      const niega = rol !== 'admin' && CERRADAS.some((r) => r.test(clave)) && (MODO === 'arbol' || /\/admin\/reports\//.test(u));
+      peticiones.push({ clave, status: niega ? 403 : 200 });
+      if (niega) return json(res, { error: 'forbidden', required_role: 'admin' }, 403);
+      if (u === '/admin/me') return json(res, { id: 1, merchantId: 1, email: 'demo@yaqu.app', name: 'Pepe Lopez', merchantName: 'Epipe', plan: 'pro', userRole: rol, isOwner: rol === 'admin', onboardingCompleted: true, subscriptionStatus: 'active' });
+      if (u === '/admin/merchant') return json(res, { id: 1, name: 'Epipe', defaultCurrency: 'EUR', country: 'ES' });
+      if (u === '/admin/metrics/home') return json(res, HOME);
+      if (u === '/admin/metrics/inicio') return json(res, { pendingCount: 3, quotesAwaiting: 5, pendingRequests: 1, recentActivity: HOME.recentActivity });
+      if (u === '/admin/products') return json(res, { ok: true, items: [{ id: 1, name: 'Grifo monomando', price: 40, isActive: true }] });
+      if (u === '/admin/providers') return json(res, { ok: true, items: [{ id: 1, name: 'Saltoki' }] });
+      if (u === '/admin/templates') return json(res, [{ id: 1, name: 'Revision anual', currency: 'EUR', lines: [{ concept: 'Revision', qty: 1, price: 90 }], updatedAt: '2026-09-30T10:00:00Z' }]);
+      if (/^\/admin\/(quote-requests|bot\/handoffs|customers|quotes|invoices|jobs)$/.test(u)) return json(res, []);
+      return json(res, { items: [], rows: [], data: [], partes: [], gastos: [] });
+    }
+    const rel = u === '/' || u === '/dashboard/' ? 'dashboard/index.html' : u.replace(/^\//, '');
+    const b = fichero(rel);
+    if (b) {
+      const ext = path.extname(rel);
+      res.writeHead(200, { 'content-type': `${ext === '.css' ? 'text/css' : ext === '.js' ? 'application/javascript' : ext === '.html' ? 'text/html' : 'application/octet-stream'}; charset=utf-8` });
+      return res.end(b);
+    }
+    res.writeHead(404); res.end('no');
+  });
+}
+
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+async function medir(rol) {
+  const peticiones = [];
+  const srv = servidor(rol, peticiones);
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  const BASE = `http://127.0.0.1:${srv.address().port}/dashboard/index.html`;
+  const nav = await lanzarNavegador(puppeteer, { headless: 'new' });
+  const errores = [];
+  try {
+    const pag = await nav.newPage();
+    pag.on('pageerror', (e) => errores.push(String(e.message).slice(0, 160)));
+    await pag.setViewport({ width: 1280, height: 900 });
+    await pag.goto(BASE, { waitUntil: 'networkidle0' });
+    await espera(800);
+    const arrancado = await pag.evaluate(() => typeof window.renderAppView === 'function');
+    if (!arrancado) {
+      console.log(JSON.stringify({ rol, CIEGO: 'el panel no arranco', errores, url: pag.url(), peticiones: peticiones.slice(0, 12) }));
+      return { rol, CIEGO: true };
+    }
+    const ir = async (vista) => {
+      const fallo = await pag.evaluate((v) => { try { window.renderAppView(v); return null; } catch (e) { return String((e && e.stack) || e).slice(0, 300); } }, vista);
+      if (fallo) errores.push(`renderAppView('${vista}') LANZA: ${fallo}`);
+      await espera(700);
+    };
+    const visibles = (sel) => pag.evaluate((s) => [...document.querySelectorAll(s)].filter((e) => e.offsetParent !== null).map((e) => (e.dataset.view || e.id || e.textContent.trim().slice(0, 40))), sel);
+
+    const r = { rol, modo: MODO };
+    r.rolEnPanel = await pag.evaluate(() => window.appUserRole);
+    r.menu = await visibles('.nav-item[data-view]');
+    r.inicio = await pag.evaluate(() => {
+      const c = document.getElementById('view-container');
+      const visto = (id) => { const e = document.getElementById(id); return !!e && e.offsetParent !== null && e.textContent.trim().length > 0; };
+      const hero = document.getElementById('home-hero');
+      return {
+        heroe: visto('home-hero'), heroeAlto: hero ? hero.getBoundingClientRect().height : null,
+        resumen: visto('kpi-grid'), semana: visto('week-summary'), tops: visto('top-customers'),
+        actividad: /Marta Ruiz/.test((document.getElementById('activity-feed') || {}).textContent || ''),
+        acciones: !!document.getElementById('btn-quick-quote'),
+        cartelDeError: /No pudimos cargar/.test(c.textContent),
+        esqueletos: c.querySelectorAll('.skeleton').length,
+        globos: ['req-badge', 'nav-quotes-badge', 'nav-invoices-badge'].map((id) => { const e = document.getElementById(id); return e && e.offsetParent !== null ? e.textContent : null; }),
+      };
+    });
+    const antesProductos = errores.length;
+    await ir('products');
+    r.productos = await pag.evaluate(() => ({
+      filas: document.querySelectorAll('#view-container tbody tr').length,
+      grifo: /Grifo monomando/.test(document.getElementById('view-container').textContent),
+    }));
+    r.productos.erroresDePagina = errores.slice(antesProductos);
+    for (const vista of ['providers', 'reports']) {
+      await pag.evaluate((v) => { location.hash = '#' + v; }, vista);
+      await espera(700);
+      r[`hash_${vista}`] = await pag.evaluate(() => ({ vista: window.appState.view, titulo: (document.querySelector('#view-title') || {}).textContent || null }));
+    }
+    await ir('templates');
+    r.plantillas = await visibles('#view-container tbody button');
+    await ir('quotes-new');
+    r.editor = await pag.evaluate(async () => {
+      const mas = [...document.querySelectorAll('#view-container button')].find((b) => b.getAttribute('aria-label') === 'Más acciones');
+      if (!mas) return { menu: null };
+      mas.click();
+      await new Promise((res) => setTimeout(res, 200));
+      const menu = document.querySelector('[role="menu"]');
+      return {
+        menu: menu ? [...menu.querySelectorAll('button')].map((b) => b.textContent.trim()) : null,
+        usarPlantilla: [...document.querySelectorAll('#view-container button')].filter((b) => /plantilla|Ver las/i.test(b.textContent) && b.offsetParent !== null).map((b) => b.textContent.trim()),
+      };
+    });
+    r.negadas = peticiones.filter((p) => p.status === 403).map((p) => p.clave);
+    r.peticiones = peticiones.length;
+    r.erroresDePagina = errores;
+    return r;
+  } finally {
+    await nav.close();
+    srv.close();
+  }
+}
+
+console.log(`POBLACION=2 roles, modo ${MODO}`);
+for (const rol of ['tecnico', 'admin']) console.log(JSON.stringify(await medir(rol), null, 1));
+console.log('EXIT=0');
+process.exit(0);

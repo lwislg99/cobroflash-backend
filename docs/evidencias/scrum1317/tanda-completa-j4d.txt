@@ -1,0 +1,20 @@
+TANDA COMPLETA 1 (antes de los arreglos), J4d, 1-oct-2026
+HEAD=5c471d4e63d9b1ef28cd46a42191ce4822472918 FICHEROS=1157 INICIO=06:36:11Z EXIT=1 FIN=06:40:38Z
+tests 9560 · pass 9413 · fail 9 · skipped 138
+caidos:
+  SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario cualquiera
+  SCRUM-801 · lee (window.renderX || renderX)(...), que es como se pintan dos vistas
+  SCRUM-960 · 7 casos (alta, edicion, NIF invalido x2, null y vacio, alta sin NIF, mismo validador): 403 en vez de 201/200
+
+TANDA COMPLETA 2 (despues de los arreglos y de mergear origin/main 07571bceaf41dd21b9563601d39922238873b183)
+FORCE_COLOR_fuera=True HEAD=1cddd6158dd8188b049bc8b34c0416b4df788cc1 FICHEROS=1159 INICIO=06:46:19Z
+EXIT=0 FIN=06:51:04Z
+# tests 9575
+# pass 9437
+# fail 0
+# cancelled 0
+# skipped 138
+# duration_ms 285781.9852
+caidos: ninguno (grep '^ *not ok' sobre el TAP: 0 lineas; control: el mismo grep sobre el TAP de la tanda 1 daba 9)
+
+Orden: node --test --test-force-exit --test-reporter=spec ... --test-reporter=tap --test-reporter-destination=<fuera del arbol> 'tests/*.test.mjs', FORCE_COLOR fuera, memoria libre al lanzar 3.088 MB, 0 suites en marcha.

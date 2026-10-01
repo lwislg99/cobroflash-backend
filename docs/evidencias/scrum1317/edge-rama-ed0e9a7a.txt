@@ -1,0 +1,138 @@
+SONDA: docs/evidencias/scrum1317/sonda-navegador.mjs.txt, modo arbol, sobre ed0e9a7a (app.js con la redireccion de case 'providers'). J4d, 1-oct-2026.
+POBLACION=2 roles, modo arbol
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+{
+ "rol": "tecnico",
+ "modo": "arbol",
+ "rolEnPanel": "tecnico",
+ "menu": [
+  "home",
+  "quote-requests",
+  "jobs",
+  "quotes-list",
+  "albaranes",
+  "partes-oficina",
+  "invoices",
+  "cobros",
+  "customers",
+  "products",
+  "libro-registro",
+  "facturas-recibidas"
+ ],
+ "inicio": {
+  "heroe": false,
+  "heroeAlto": 0,
+  "resumen": false,
+  "semana": false,
+  "tops": false,
+  "actividad": true,
+  "acciones": true,
+  "cartelDeError": false,
+  "esqueletos": 0,
+  "globos": [
+   "1",
+   "5",
+   "3"
+  ]
+ },
+ "productos": {
+  "filas": 1,
+  "grifo": true,
+  "erroresDePagina": []
+ },
+ "hash_providers": {
+  "vista": "home",
+  "titulo": "Inicio"
+ },
+ "hash_reports": {
+  "vista": "reports",
+  "titulo": "Inicio"
+ },
+ "plantillas": [
+  "📋 Usar"
+ ],
+ "editor": {
+  "menu": [
+   "Limpiar formulario"
+  ],
+  "usarPlantilla": []
+ },
+ "negadas": [],
+ "peticiones": 21,
+ "erroresDePagina": []
+}
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+{
+ "rol": "admin",
+ "modo": "arbol",
+ "rolEnPanel": "admin",
+ "menu": [
+  "home",
+  "quote-requests",
+  "jobs",
+  "quotes-list",
+  "albaranes",
+  "partes-oficina",
+  "invoices",
+  "cobros",
+  "customers",
+  "products",
+  "providers",
+  "expenses",
+  "reports",
+  "libro-registro",
+  "facturas-recibidas",
+  "team",
+  "plans",
+  "settings"
+ ],
+ "inicio": {
+  "heroe": true,
+  "heroeAlto": 137.546875,
+  "resumen": true,
+  "semana": true,
+  "tops": true,
+  "actividad": true,
+  "acciones": true,
+  "cartelDeError": false,
+  "esqueletos": 0,
+  "globos": [
+   "1",
+   "5",
+   "3"
+  ]
+ },
+ "productos": {
+  "filas": 1,
+  "grifo": true,
+  "erroresDePagina": []
+ },
+ "hash_providers": {
+  "vista": "providers",
+  "titulo": "Proveedores"
+ },
+ "hash_reports": {
+  "vista": "reports",
+  "titulo": "Informes"
+ },
+ "plantillas": [
+  "📋 Usar",
+  "Renombrar",
+  "Borrar"
+ ],
+ "editor": {
+  "menu": [
+   "💾 Guardar como plantilla",
+   "Limpiar formulario"
+  ],
+  "usarPlantilla": []
+ },
+ "negadas": [],
+ "peticiones": 31,
+ "erroresDePagina": [
+  "Cannot read properties of undefined (reading 'length')",
+  "Cannot read properties of undefined (reading 'revenueBase')",
+  "Cannot read properties of undefined (reading 'totalCuota')"
+ ]
+}
+EXIT=0
