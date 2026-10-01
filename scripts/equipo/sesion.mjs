@@ -252,13 +252,16 @@ function rutaComparable(r) {
  * declara y no se inventa un umbral. Y el orquestador y los puestos no se distinguen por nombre
  * a propósito: mañana serán otros.
  */
-export function equipoVivo({ agentes, repo, job }) {
+export function equipoVivo({ agentes, repo, job, mesas }) {
   const raiz = rutaComparable(repo);
+  // SCRUM-1298: con mesas, las sesiones del equipo arrancan FUERA del repo (`<mesas>/mesa-*`, hermanas).
+  // Sin esto, el guard del segundo orquestador dejaría de ver a todo el equipo el día del interruptor.
+  const mesa = typeof mesas === 'string' && mesas ? rutaComparable(mesas) + '/mesa-' : null;
   const vivos = [];
   for (const a of agentes) {
     if (!a || typeof a !== 'object' || typeof a.cwd !== 'string') continue;
     const cwd = rutaComparable(a.cwd);
-    if (cwd !== raiz && !cwd.startsWith(raiz + '/')) continue;
+    if (cwd !== raiz && !cwd.startsWith(raiz + '/') && !(mesa && cwd.startsWith(mesa))) continue;
     const c = clasificarAgente(a, typeof job === 'function' ? job(a.id) : null);
     if (c.estado === 'MUERTA') continue;
     if (a.kind === 'interactive' && a.status !== 'busy' && a.state !== 'working') continue;
@@ -292,7 +295,7 @@ function motivoDeBloqueo(v) {
  * reanudar dentro de la hora arrastra la conversación entera, que es lo contrario de lo que pide la
  * A19. `relevar` ya lanzaba siempre nueva; ahora `lanzar` también.
  */
-export function decidirLanzar({ nombre, agentes, registro, ahora, equipo, job, repo }) {
+export function decidirLanzar({ nombre, agentes, registro, ahora, equipo, job, repo, mesas }) {
   const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
@@ -319,7 +322,7 @@ export function decidirLanzar({ nombre, agentes, registro, ahora, equipo, job, r
     if (typeof repo !== 'string' || !repo) {
       return { veredicto: 'NO-PUDE-MIRAR', motivo: 'sin la ruta del repo no se sabe si ya hay un equipo vivo: no se lanza otro orquestador a ciegas' };
     }
-    const vivos = equipoVivo({ agentes, repo, job });
+    const vivos = equipoVivo({ agentes, repo, job, mesas });
     if (vivos.length) {
       return {
         veredicto: 'YA-VIVA',
@@ -588,6 +591,180 @@ export function sesionesBloqueadas({ agentes, sinActividadMs }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1298 · La MESA de cada puesto: el directorio desde el que arranca su sesión
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+//
+// 🔴 EL DEFECTO (medido por S0 el 29-sep-2026): `CLAUDE.md`, `.claude/settings.json` (los hooks) y
+// `.claude/rules` se cargan del directorio de ARRANQUE de la sesión. `claude --bg` toma como tal el
+// `cwd` del proceso que lo lanza (medido por S5 el mismo día: control `983223e8`, lanzado desde
+// `D:\MILLONARIO\cobroFlash\mesa-control-s5`, sale en `agents --json` con ese `cwd`). Todas las
+// sesiones heredaban así el checkout compartido, 1.026 commits por detrás de `main`: su guard era
+// caduco y ninguna norma nueva llegaba a nadie.
+//
+// Por eso cada puesto arranca en SU mesa, un worktree `--detach` en `origin/main` recién traído:
+//   · HERMANA del repo (`<config.mesas>/mesa-sN`), nunca bajo él: el fichero de identidad de un
+//     worktree hijo se carga en cuanto OTRA sesión lee un fichero de ahí (medido por S0).
+//   · Se actualiza ANTES DE CADA lanzamiento, así que las normas de hoy son las que se cargan hoy.
+//   · 🔴 Una carpeta fuera de una ruta de confianza hace que `claude --bg` se NIEGUE («Workspace not
+//     trusted», medido). `D:/MILLONARIO/cobroFlash` lo es y sus hijas lo heredan (medido): por eso
+//     las mesas van ahí. Si alguien las mueve, el lanzamiento falla con esa frase y NO se rodea
+//     escribiendo la confianza a mano: la acepta el fundador.
+//
+// Sin `config.mesas` todo sigue como antes (hereda el `cwd`), pero el veredicto lo DICE: el interruptor
+// es añadir `mesas` a la instalación, y se da con el equipo parado.
+
+/**
+ * Los dos ficheros que el generador de identidad de S0 (SCRUM-1295) escribe en la raíz de la mesa, sin
+ * rastrear. Son lo ÚNICO que una mesa limpia puede tener de más: su `.gitignore` llega con ese PR, y
+ * hasta entonces se excluyen aquí por nombre DECLARADO — nunca con `.git/info/exclude`, que es del
+ * directorio común y cambiaría lo que ven todos los worktrees.
+ */
+export const FICHEROS_DE_IDENTIDAD = Object.freeze(['CLAUDE.local.md', '.yaqu-puesto.json']);
+/** El generador de identidad, tal y como vive en `origin/main` (lo corre la mesa ya actualizada). */
+export const GENERADOR_DE_IDENTIDAD = 'scripts/carriles.mjs';
+
+/**
+ * El puesto tal y como lo entiende el generador de identidad: `sesion-N` → `SN`, `orquestador` → `ORQ`.
+ * Otro equipo declara el suyo en `config.identidades` (`{ "<puesto>": "J1", … }`). Sin traducción no
+ * hay identidad, y sin identidad NO se lanza: devuelve `null` y quien llama lo convierte en un rechazo.
+ */
+export function puestoDeIdentidad(nombre, equipo = EQUIPO_DE_LUIS, identidades = null) {
+  if (validarNombre(nombre, equipo)) return null;
+  const puesto = nombre.slice(equipo.prefijo.length);
+  if (identidades && typeof identidades === 'object') {
+    const v = identidades[puesto];
+    return typeof v === 'string' && /^[A-Z][A-Z0-9]{0,7}$/.test(v) ? v : null;
+  }
+  if (equipo.prefijo !== '') return null;
+  const n = /^sesion-(\d)$/.exec(puesto);
+  if (n) return `S${n[1]}`;
+  return puesto === equipo.orquestador ? 'ORQ' : null;
+}
+
+/**
+ * La ruta de la mesa de `nombre`, o el motivo por el que no se puede usar. Pura.
+ *
+ *   `sesion-N` → `<mesas>/mesa-<prefijo>sN` · cualquier otro puesto → `<mesas>/mesa-<prefijo><puesto>`
+ *
+ * Falla CERRADO si la carpeta de las mesas es relativa, o si la mesa cae DENTRO del repo (en
+ * `.claude/worktrees/` o en cualquier otro sitio): es el caso medido por S0 que reparte identidades.
+ *
+ * @returns {{ok:true, mesa:string} | {ok:false, veredicto:string, motivo:string}}
+ */
+export function rutaDeMesa({ mesas, repo, nombre, equipo = EQUIPO_DE_LUIS }) {
+  const malo = validarNombre(nombre, equipo);
+  if (malo) return { ok: false, ...malo };
+  if (typeof mesas !== 'string' || !path.isAbsolute(mesas)) {
+    return { ok: false, veredicto: 'MESA-NO-VALIDA', motivo: `config.mesas tiene que ser una ruta ABSOLUTA (es «${mesas}»)` };
+  }
+  if (typeof repo !== 'string' || !path.isAbsolute(repo)) {
+    return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'sin la ruta absoluta del repo no se puede comprobar que la mesa quede FUERA de él' };
+  }
+  const puesto = nombre.slice(equipo.prefijo.length);
+  const n = /^sesion-(\d+)$/.exec(puesto);
+  const mesa = path.join(mesas, `mesa-${equipo.prefijo}${n ? `s${n[1]}` : puesto}`);
+  const r = rutaComparable(repo);
+  const m = rutaComparable(mesa);
+  if (m === r || m.startsWith(r + '/') || r.startsWith(m + '/')) {
+    return { ok: false, veredicto: 'MESA-DENTRO-DEL-REPO', motivo: `${mesa} no es HERMANA de ${repo}: una mesa hija reparte su identidad a quien lea sus ficheros (medido por S0)` };
+  }
+  return { ok: true, mesa };
+}
+
+/**
+ * Las líneas de `git status --porcelain` que NO son de la identidad. Una mesa con cualquiera de ellas
+ * está SUCIA: alguien trabajó en ella, y actualizarla le pisaría el trabajo. Pura.
+ */
+export function suciedadDeMesa(porcelana) {
+  return String(porcelana || '').split(/\r?\n/).filter((l) => l.trim() !== '')
+    .filter((l) => !FICHEROS_DE_IDENTIDAD.includes(l.slice(3).trim().replace(/^"|"$/g, '')));
+}
+
+/**
+ * Deja la mesa de `nombre` en `origin/main` recién traído, con su identidad escrita, y devuelve su
+ * ruta. Cada paso que no se puede comprobar es un rechazo: el que llama NO lanza.
+ *
+ *   1 · `git fetch origin main` en el repo      → sin eso, «actualizada» no significa nada
+ *   2 · si no existe: `worktree add --detach`   → nace en origin/main
+ *       si existe: tiene que ser un worktree de ESTE repo (mismo `--git-common-dir`) y estar LIMPIA,
+ *       y entonces `checkout --detach origin/main`
+ *   3 · CONTROL: `HEAD` de la mesa == `origin/main` del repo. No se da por buena por haber corrido
+ *       los comandos, sino por leer dónde quedó.
+ *   4 · el generador de identidad de ESA versión (`node scripts/carriles.mjs mesa <PUESTO> <mesa>`).
+ *       Si no está en main, o sale ≠ 0, no hay identidad y no se lanza.
+ *
+ * @param {{config:object, nombre:string, equipo:object, git?:Function, existe?:Function, node?:Function}} e
+ * @returns {{ok:true, mesa:string, head:string, identidad:string} | {ok:false, veredicto:string, motivo:string, mesa?:string}}
+ */
+export function prepararMesa({ config, nombre, equipo, git = gitReal, existe = fs.existsSync, node = nodeReal }) {
+  const r = rutaDeMesa({ mesas: config.mesas, repo: config.repo, nombre, equipo });
+  if (!r.ok) return r;
+  const { mesa } = r;
+  const puesto = puestoDeIdentidad(nombre, equipo, config.identidades);
+  if (!puesto) return { ok: false, veredicto: 'SIN-IDENTIDAD', motivo: `no sé qué puesto es «${nombre}» para el generador de identidad (declara config.identidades)`, mesa };
+  const no = (veredicto, motivo) => ({ ok: false, veredicto, motivo, mesa });
+
+  const f = git(config.repo, ['fetch', 'origin', 'main']);
+  if (f.status !== 0) return no('NO-PUDE-MIRAR', '`git fetch origin main` falló: la mesa no se puede poner al día');
+  const main = git(config.repo, ['rev-parse', 'origin/main']);
+  if (main.status !== 0 || !/^[0-9a-f]{40}$/.test(main.stdout.trim())) return no('NO-PUDE-MIRAR', 'no se pudo leer origin/main');
+  const sha = main.stdout.trim();
+
+  if (!existe(mesa)) {
+    const add = git(config.repo, ['worktree', 'add', '--detach', mesa, sha]);
+    if (add.status !== 0) return no('NO-PUDE-MIRAR', `\`git worktree add\` falló para ${mesa}`);
+  } else {
+    const suya = git(mesa, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+    const nuestra = git(config.repo, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
+    if (suya.status !== 0 || nuestra.status !== 0) return no('NO-PUDE-MIRAR', `no se pudo leer de qué repositorio es ${mesa}`);
+    if (rutaComparable(suya.stdout.trim()) !== rutaComparable(nuestra.stdout.trim())) {
+      return no('MESA-AJENA', `${mesa} existe y no es un worktree de ${config.repo}: no se toca`);
+    }
+    const st = git(mesa, ['status', '--porcelain', '--untracked-files=all']);
+    if (st.status !== 0) return no('NO-PUDE-MIRAR', `no se pudo leer el estado de ${mesa}`);
+    const sucio = suciedadDeMesa(st.stdout);
+    if (sucio.length) return no('MESA-SUCIA', `${mesa} tiene ${sucio.length} cambio(s) sin guardar (${sucio.slice(0, 3).join(' | ')}): alguien trabajó en la mesa, y actualizarla se lo pisaría`);
+    const co = git(mesa, ['checkout', '--detach', sha]);
+    if (co.status !== 0) return no('NO-PUDE-MIRAR', `\`git checkout --detach\` falló en ${mesa}`);
+  }
+
+  const head = git(mesa, ['rev-parse', 'HEAD']);
+  if (head.status !== 0 || head.stdout.trim() !== sha) {
+    return no('MESA-NO-AL-DIA', `la mesa quedó en ${head.stdout.trim() || '?'} y origin/main es ${sha}`);
+  }
+
+  if (!existe(path.join(mesa, GENERADOR_DE_IDENTIDAD))) {
+    return no('SIN-IDENTIDAD', `${GENERADOR_DE_IDENTIDAD} no está en origin/main (${sha.slice(0, 8)}): sin identidad no se lanza (SCRUM-1295)`);
+  }
+  // `--nombre` SIEMPRE: en un equipo con prefijo el nombre no se deduce del puesto («sesion-1» es J1
+  // allí y S1 aquí), y el generador se niega a escribir la mesa de un J sin él (SCRUM-1295).
+  const gen = node(mesa, [GENERADOR_DE_IDENTIDAD, 'mesa', puesto, mesa, '--nombre', nombre]);
+  if (gen.status !== 0) {
+    return no('SIN-IDENTIDAD', `el generador de identidad salió ${gen.status}: ${(gen.stdout || '').trim().slice(-300)}`);
+  }
+  return { ok: true, mesa, head: sha, identidad: puesto };
+}
+
+function nodeReal(cwd, args) {
+  const r = spawnSync(process.execPath, args, { cwd, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+  if (r.error) return { status: null, stdout: '' };
+  return { status: r.status, stdout: r.stdout || '' };
+}
+
+/**
+ * Qué mesa usa un lanzamiento. Sin `config.mesas`, ninguna, y se DICE (el interruptor no se ha dado).
+ * @returns {{ok:true, cwd:string|undefined, mesa:object} | {ok:false, veredicto:string, motivo:string}}
+ */
+export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
+  if (config.mesas === undefined) {
+    return { ok: true, cwd: undefined, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión hereda el cwd de quien la lanza (SCRUM-1298)' } };
+  }
+  const p = prepararMesa({ config, nombre, equipo, ...io });
+  if (!p.ok) return p;
+  return { ok: true, cwd: p.mesa, mesa: { veredicto: 'MESA', ruta: p.mesa, head: p.head, identidad: p.identidad } };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
 // La puerta: ¿esta copia puede actuar?
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -643,9 +820,9 @@ function gitReal(cwd, args, { binario = false } = {}) {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 /** `config.claude`: la ruta del binario, o `[orden, ...argumentos previos]` (así lo dobla el test). */
-function claude(config, args) {
+function claude(config, args, { cwd } = {}) {
   const [orden, ...previos] = Array.isArray(config.claude) ? config.claude : [config.claude || 'claude'];
-  return spawnSync(orden, [...previos, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+  return spawnSync(orden, [...previos, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...(cwd ? { cwd } : {}) });
 }
 
 function leerAgentes(config) {
@@ -840,6 +1017,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const d = decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora: Date.now(), equipo, job: (id) => estadoDeJob(config, id) });
     if (d.veredicto !== 'RELEVAR' && d.veredicto !== 'LANZAR') salir(1, d);
 
+    // SCRUM-1298: la mesa se prepara ANTES de parar a la anterior. Si no se puede, el puesto sigue
+    // como estaba en vez de quedarse vacío.
+    const ml = mesaDelLanzamiento({ config, nombre, equipo });
+    if (!ml.ok) salir(2, { ...ml, nombre, anterior: d.id ?? null });
+
     if (d.veredicto === 'RELEVAR') {
       const stop = claude(config, ['stop', d.id]);
       if (stop.status !== 0) salir(2, { veredicto: 'NO-PUDE-PARAR', nombre, id: d.id, stop: stop.status, comprobado: d.comprobado });
@@ -848,9 +1030,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // 🔴 SIEMPRE 'nueva', NUNCA 'reanudar': ese es el punto entero de la A19. Reanudar arrastraría
     // la caché que el relevo viene a soltar.
     const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo });
-    const r = claude(config, args);
+    const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400), mesa: ml.mesa });
     // SCRUM-1011: el mismo defecto que `lanzar` — «backgrounded» solo dice que `claude` aceptó el
     // encargo, no que el proceso exista. Se sondea el `pid` antes de dar RELEVADA/LANZADA por buena.
     const confirmacion = confirmarArranque(config, m[1]);
@@ -866,7 +1048,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const registro = leerRegistro(dir) || {};
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify({ ...registro, [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } }, null, 2));
-    salir(0, { veredicto: d.veredicto === 'RELEVAR' ? 'RELEVADA' : 'LANZADA', nombre, anterior: d.id ?? null, id: m[1], sessionId: nueva.sessionId, comprobado: d.comprobado ?? null });
+    salir(0, { veredicto: d.veredicto === 'RELEVAR' ? 'RELEVADA' : 'LANZADA', nombre, anterior: d.id ?? null, id: m[1], sessionId: nueva.sessionId, comprobado: d.comprobado ?? null, mesa: ml.mesa });
   }
 
   if (accion === 'parar') {
@@ -892,10 +1074,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     let prompt;
     try { prompt = fs.readFileSync(ficheroPrompt, 'utf8'); } catch { salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el fichero del prompt' }); }
     const registro = leerRegistro(dir);
-    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, job: (id) => estadoDeJob(config, id) });
+    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, mesas: config.mesas, job: (id) => estadoDeJob(config, id) });
     if (d.veredicto !== 'NUEVA') salir(d.veredicto === 'YA-VIVA' ? 0 : 1, d);
+    // SCRUM-1298: la sesión arranca en su mesa, al día con origin/main; si la mesa no se puede preparar, no se lanza.
+    const ml = mesaDelLanzamiento({ config, nombre, equipo });
+    if (!ml.ok) salir(2, { ...ml, nombre });
     const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo });
-    const r = claude(config, args);
+    const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
     // 🔴 SCRUM-1011 · medido 4 de 4: «backgrounded» solo dice que `claude` aceptó el encargo, no
@@ -914,7 +1099,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const siguiente = { ...(registro || {}), [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } };
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify(siguiente, null, 2));
-    salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, ...(d.restos ? { restos: d.restos } : {}) });
+    salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, mesa: ml.mesa, ...(d.restos ? { restos: d.restos } : {}) });
   }
 
   salir(1, {
