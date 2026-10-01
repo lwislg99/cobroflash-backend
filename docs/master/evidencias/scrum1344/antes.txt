@@ -1,0 +1,81 @@
+SCRUM-1344 · sonda de ejecución · etiqueta «antes»
+SCRUM-1344 · 36 arneses montan rutas con rol · 14 sin declararlo · y 27 montan rutas sin gate hoy · 9 sin declararlo · población: 1330 ficheros de tests/ leídos, 0 sin parsear; 63 arman un req de sesión contra un router de /admin (0 con reqDeSesion, 40 a mano, 23 sin rol) · SIN JUZGAR: 7 · aparte: 2 cargan un router de /admin sin armarle un req de sesión, 31 solo routers públicos, 49 montan dist/app.js entero
+
+POBLACION corrida: 152 ficheros · sin testigo: 0 · base≠sonda: 0 · base en rojo: 0
+
+CRUCE (filas = lo que LEE el AST · columnas = lo que VE la sonda)
+                        sin-rol-CON-GATE  sin-rol-sin-gate           con-rol        sin-sesion      no-observado       SIN-TESTIGO
+sin-rol                               13                 8                 0                 0                 2                 0
+arnes-unico                            0                 0                 0                 0                 0                 0
+a-mano                                 0                 0                40                 0                 0                 0
+sin-forma-de-sesion                    0                 0                 0                 1                 1                 0
+solo-publicos                          0                 0                 0                24                 7                 0
+monta-la-app                           0                 0                 0                 2                47                 0
+sin-juzgar                             0                 0                 0                 0                 7                 0
+
+CONTRADICCIONES entre las dos sondas: 0
+
+UN REQ SIN ROL LLEGA A UNA RUTA QUE HOY EXIGE ROL, Y EL TEST SALE VERDE: 13 ficheros
+  scrum1040-facturas-recibidas-servidor.test.mjs · 5/5 en verde, caen 0, saltan 0 · 9 llamadas sin rol
+        9 × GET /admin/libros/recibidas.json · handler sacado de route.stack · GATE admin en montaje
+  scrum1151-conteo-no-deducible.test.mjs · 3/3 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        3 × GET /admin/reports/resumen-trimestre · handler sacado de route.stack · GATE admin en montaje
+  scrum1232-libro-sin-justificantes.test.mjs · 9/9 en verde, caen 0, saltan 0 · 5 llamadas sin rol
+        3 × GET /admin/libro-registro · handler sacado de route.stack · GATE admin en montaje
+        2 × GET /admin/libros/expedidas.csv · handler sacado de route.stack · GATE admin en montaje
+  scrum1285b-plan-de-cobro-con-version.test.mjs · 5/5 en verde, caen 0, saltan 0 · 10 llamadas sin rol
+       10 × PATCH /admin/quotes/:id/billing-plan · handler sacado de route.stack · GATE admin en ruta
+  scrum244-supresion-y-anonimizado.test.mjs · 9/10 en verde, caen 0, saltan 1 · 6 llamadas sin rol
+        6 × POST /admin/supresion/:merchantId · handler sacado de route.stack · GATE admin en montaje
+  scrum263-sin-lineas-409.test.mjs · 6/6 en verde, caen 0, saltan 0 · 5 llamadas sin rol
+        2 × POST /admin/quotes/:id/invoice · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/quotes/:id/invoice-manual · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/jobs/:id/collect-rest · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/invoices/:id/rectify · handler sacado de route.stack · GATE admin en ruta
+  scrum308-caracterizacion-rectify.test.mjs · 7/7 en verde, caen 0, saltan 0 · 8 llamadas sin rol
+        8 × POST /admin/invoices/:id/rectify · handler sacado de route.stack · GATE admin en ruta
+  scrum342-dispute-package-quote-nulo.test.mjs · 2/2 en verde, caen 0, saltan 0 · 2 llamadas sin rol
+        2 × GET /admin/invoices/:id/dispute-package · handler sacado de route.stack · GATE admin en ruta
+  scrum343-cabecera-gastos-unica.test.mjs · 2/2 en verde, caen 0, saltan 0 · 2 llamadas sin rol
+        2 × GET /admin/exports/expenses.csv · handler sacado de route.stack · GATE admin en montaje
+  scrum440-tenencia-supresion.test.mjs · 7/7 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        3 × POST /admin/supresion/:merchantId · handler sacado de route.stack · GATE admin en montaje
+  scrum771-el-emisor-no-valida-el-tipo.test.mjs · 11/11 en verde, caen 0, saltan 0 · 8 llamadas sin rol
+        8 × POST /admin/invoices · handler sacado de route.stack · GATE admin en ruta
+  scrum885-documento-sin-enviar.test.mjs · 14/14 en verde, caen 0, saltan 0 · 12 llamadas sin rol (y 29 con rol)
+       12 × POST /admin/charges/:id/confirm-bizum · handler sacado de route.stack · GATE admin en montaje
+  scrum887c-caso-c-bloqueado.test.mjs · 9/9 en verde, caen 0, saltan 0 · 4 llamadas sin rol
+        1 × POST /admin/quotes/:id/revisiones · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/quotes/:id/invoice · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/quotes/:id/invoice-manual · handler sacado de route.stack · GATE admin en ruta
+        1 × POST /admin/jobs/:id/collect-rest · handler sacado de route.stack · GATE admin en ruta
+
+UN REQ SIN ROL LLEGA A UNA RUTA QUE HOY NO EXIGE ROL: 8 ficheros
+  scrum1057-duplicados-antes-de-id.test.mjs · 2/2 en verde, caen 0, saltan 0 · 2 llamadas sin rol
+        1 × GET /admin/customers/duplicados · por el router · sin gate hoy
+        1 × GET /admin/customers/:id · por el router · sin gate hoy
+  scrum1138-patch-customers.test.mjs · 3/3 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        2 × PATCH /admin/customers/:id · por el router · sin gate hoy
+        1 × PUT /admin/customers/:id · por el router · sin gate hoy
+  scrum1184-serie-siguiente-numero.test.mjs · 5/5 en verde, caen 0, saltan 0 · 2 llamadas sin rol
+        2 × GET /admin/albaranes/serie · handler sacado de route.stack · sin gate hoy
+  scrum1288-dinero-es-en-avisos-s1.test.mjs · 4/4 en verde, caen 0, saltan 0 · 1 llamadas sin rol
+        1 × POST /admin/quotes/:id/send-email · handler sacado de route.stack · sin gate hoy
+  scrum257-albaran-desde-presupuesto.test.mjs · 8/8 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        3 × POST /admin/jobs/:id/albaranes · handler sacado de route.stack · sin gate hoy
+  scrum302-presupuesto-y-fotos.test.mjs · 13/13 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        3 × GET /admin/albaranes/:id · handler sacado de route.stack · sin gate hoy
+  scrum303-albaran-una-pantalla.test.mjs · 15/15 en verde, caen 0, saltan 0 · 3 llamadas sin rol
+        3 × POST /admin/jobs/:id/albaranes · handler sacado de route.stack · sin gate hoy
+  scrum912-leer-ticket-gasto.test.mjs · 21/21 en verde, caen 0, saltan 0 · 19 llamadas sin rol
+       19 × POST /admin/expenses/leer-ticket · por el router · sin gate hoy
+
+NO OBSERVADOS (la sonda no vio ninguna llamada: NO se juzgan por ejecución): 64
+  de ellos con todos sus tests saltados: 31 · con alguno saltado: 10 · sin ninguno saltado (no llaman a ninguna ruta): 19 · sin recuento (ayudantes, no son tests): 4
+  sin-rol: scrum389-un-solo-iva.test.mjs scrum728-serie-ocupada-postgres.test.mjs
+  sin-forma-de-sesion: scrum1008-ficha-articulo.test.mjs
+  solo-publicos: scrum212-copy-sin-claim-fiscal.test.mjs scrum815-idempotencia-del-webhook.test.mjs scrum815c-el-escritor-de-los-cinco.test.mjs scrum888d-firma-con-descuentos.test.mjs scrum888g-senal-en-la-firma.test.mjs scrum987-valido-hasta-en-el-pdf.test.mjs webhooks-idempotencia.test.mjs
+  monta-la-app: _banco-camino-real.mjs _censo-arneses-de-router.mjs albaran.test.mjs bot-suite.test.mjs pdfs.test.mjs scrum120-patch-job-roles.test.mjs scrum124-r29-no-borrado-facturas.test.mjs scrum127-paywall-bloquea.test.mjs scrum128-send-endpoints-fail-closed.test.mjs scrum131-resend-honesto.test.mjs scrum1338-la-barra-del-operario-contra-los-gates.test.mjs scrum136-hub-equipo.test.mjs scrum148-filtro-por-miembro.test.mjs scrum17-recapitulativa.test.mjs scrum170-facturacion-parcial.test.mjs scrum171a-consolidar-cliente.test.mjs scrum178-emision-manual.test.mjs scrum22-operario-readpath.test.mjs scrum221-export-fiscal-cero-bytes.test.mjs scrum24-operarios-metrics.test.mjs scrum25-export-zip.test.mjs scrum25-exports.test.mjs scrum47-enviar-albaran-wa.test.mjs scrum49-firma-remota.test.mjs scrum50-bot-albaranes.test.mjs scrum51-job-sin-quote.test.mjs scrum55-admin-fail-closed.test.mjs scrum57-operario-propagacion.test.mjs scrum58-jobs-n1.test.mjs scrum66-tipo-operacion.test.mjs scrum68-evidencias-firma.test.mjs scrum688-crear-revision.test.mjs scrum72-pdfs-privados.test.mjs scrum73-verifactu-gate.test.mjs scrum74-recibo-token.test.mjs scrum809-paywall-tras-cancelar.test.mjs scrum814-carrera-del-tramo.gated.test.mjs scrum82-zip-verifactu.test.mjs scrum85-pay-routes-token.test.mjs scrum886-exportar-clientes-desde-clientes.test.mjs scrum90-pay-bank-mp-token.test.mjs scrum92-login-operario.test.mjs scrum94-register-teammember.test.mjs scrum967b-el-portal-en-el-envio.test.mjs scrum98-public-access-fail-closed.test.mjs scrum992-partes-recortan-por-rol.test.mjs tenancy-permisos.test.mjs
+  sin-juzgar: _banco-emision-con-estado.mjs _envio-doblado.mjs scrum1212-correo-aceptado-sin-emitir-factura.test.mjs scrum1296-emitir-encola.test.mjs scrum1299-respaldo-smtp-deja-fila.test.mjs scrum590-el-movil-es-el-canal.test.mjs scrum761-sembrador-columnas-derivadas.test.mjs
+
+EXIT=0

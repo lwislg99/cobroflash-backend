@@ -75,7 +75,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
-import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs'; // SCRUM-262
 
 const DIST = pathToFileURL(
   path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')).href + '/';
@@ -168,7 +168,7 @@ function exigir409ConCopy(resp, copyEsperado, quien) {
 test('SCRUM-263 · POST /admin/quotes/:id/invoice — 409 con el copy del PROFESIONAL', async () => {
   sustituirPrisma(quoteBase([LINEA_SIN_IMPORTE]));
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice',
-    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }));
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'quotesAdmin /:id/invoice');
 });
 
@@ -177,7 +177,7 @@ test('SCRUM-263 · POST /admin/quotes/:id/invoice-manual — 409 con el copy del
   // tramos, y con un plan responde `has_billing_plan` antes de llegar al porton. Medido.
   sustituirPrisma({ ...quoteBase([LINEA_SIN_IMPORTE]), paymentTerms: 'MANUAL' });
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice-manual',
-    { params: { id: '7' }, body: { amount: '0.00' }, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '7' }, body: { amount: '0.00' }, merchantId: 7, query: {}, headers: {} }));
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'quotesAdmin /:id/invoice-manual');
 });
 
@@ -190,7 +190,7 @@ test('SCRUM-263 · POST /admin/jobs/:id/collect-rest — 409 con el copy del PRO
     },
   });
   const resp = await invocar('modules/jobs/app/routes/jobs.routes.js', 'post', '/:id/collect-rest',
-    { params: { id: '3' }, body: {}, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '3' }, body: {}, merchantId: 7, query: {}, headers: {} }));
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'jobs /:id/collect-rest');
 });
 
@@ -234,7 +234,7 @@ test('SCRUM-264 · POST /admin/invoices/:id/rectify — 409 con el copy del PROF
   };
 
   const resp = await invocar('modules/system/app/routes/invoicesAdmin.routes.js', 'post', '/:id/rectify',
-    { params: { id: '11' }, body: {}, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '11' }, body: {}, merchantId: 7, query: {}, headers: {} }));
   exigir409ConCopy(resp, COPY_ADMIN_SIN_LINEAS, 'invoicesAdmin /:id/rectify');
 });
 
@@ -245,7 +245,7 @@ test('SCRUM-263 · SUELO: con una línea CON importe, NO sale el rechazo por fal
   // cualquier otro motivo. El control demuestra que el 409 lo produce el portón y no el decorado.
   sustituirPrisma(quoteBase([LINEA_CON_IMPORTE]));
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/invoice',
-    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }));
 
   assert.ok(resp, '🔴 el handler no respondió nada con líneas válidas');
   assert.notEqual(resp.body?.error, ERROR_SIN_LINEAS,

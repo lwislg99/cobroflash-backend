@@ -9,7 +9,7 @@
 //   · con el contador movido sin año, 409 `serie_sin_anio` y NINGÚN número (falla cerrado);
 //   · la ruta real responde exactamente `{ siguiente }`, y NO escribe (no reserva número).
 import test from 'node:test';
-import assert from 'node:assert/strict';
+import assert from 'node:assert/strict'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const { siguienteNumeroDeAlbaran } = await import('../dist/modules/jobs/domain/albaranSerie.js');
 const { AlbaranSerieSinAnioError } = await import('../dist/modules/jobs/domain/albaranNumber.service.js');
@@ -58,7 +58,7 @@ async function llamarRuta(merchant) {
       json(b) { salida = { code: this._c ?? 200, body: b }; return this; },
     };
     const h = capa.route.stack;
-    await h[h.length - 1].handle({ merchantId: 7, query: {}, params: {} }, res, () => {});
+    await h[h.length - 1].handle(reqDeSesion({ rol: 'admin', merchantId: 7, query: {}, params: {} }), res, () => {});
     return { salida, escrituras };
   } finally {
     moduloPrisma.prisma.merchant = original;
