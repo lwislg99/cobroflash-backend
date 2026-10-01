@@ -15,6 +15,7 @@ import { sendQuoteWhatsAppToCustomer } from '../../quotes/domain/sendQuote.servi
 import { recordCustomerEvent, existeEventoDePlan } from '../../system/customerEvents.service';
 import { normalizePhone, formatMoneyEs, maskPhone, calcTotal } from '../../../core/utils/utils';
 import { allocateQuoteNumber } from '../../quotes/domain/quoteNumber.service';
+import { sinTildes } from '../../../core/texto/sinTildes';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PROPOSAL_COOLDOWN_DAYS = 90; // 1 propuesta/cliente/90d (spec literal)
@@ -44,6 +45,8 @@ const DETALLE_SIN_CANAL =
   + 'proponérselo, tendrás que llegar a él por otra vía.';
 
 // Semillas del master (Parte R, MANT-1) — el PRO siempre puede editar intervalo.
+// SCRUM-1325: `match` se aplica a `sinTildes(concepto)`, así que va en ASCII. La eñe llega como
+// «n»: por eso «bano» va ANCLADO (`\bbano`), o casaría dentro de «urbano».
 type MaintSeed = { match: RegExp; title: string; intervalMonths: number };
 export const MAINTAINABLE_SEEDS: Record<string, MaintSeed[]> = {
   climatizacion: [
@@ -59,13 +62,13 @@ export const MAINTAINABLE_SEEDS: Record<string, MaintSeed[]> = {
     { match: /cuadro/i, title: 'Revisión del cuadro eléctrico', intervalMonths: 24 },
   ],
   cerrajero: [
-    { match: /cerradura|bomb[ií]n|puerta/i, title: 'Engrase y ajuste de cerradura', intervalMonths: 24 },
+    { match: /cerradura|bombin|puerta/i, title: 'Engrase y ajuste de cerradura', intervalMonths: 24 },
   ],
   pintor: [
     { match: /pintura|pintar/i, title: 'Repaso de pintura', intervalMonths: 36 },
   ],
   reformista: [
-    { match: /reforma|obra|baño|cocina/i, title: 'Visita post-obra (garantía)', intervalMonths: 12 },
+    { match: /reforma|obra|\bbano|cocina/i, title: 'Visita post-obra (garantía)', intervalMonths: 12 },
   ],
 };
 
@@ -88,7 +91,7 @@ export function suggestMaintenance(
     const concept = String(raw?.concept ?? '').trim();
     if (!concept) continue;
     for (const seed of seeds) {
-      if (seed.match.test(concept)) {
+      if (seed.match.test(sinTildes(concept))) {
         return { title: seed.title, intervalMonths: seed.intervalMonths, matchedConcept: concept, line: raw };
       }
     }
