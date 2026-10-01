@@ -186,7 +186,7 @@ export function censarConMotivo(tickets) {
   if (!ramas) return { censo: null, ciego };       // 🔴 CIEGO: sin refs no se mide
   const ficheros = arbolDeMain();
   if (!ficheros) {                                 // 🔴 CIEGO: sin árbol tampoco
-    return { censo: null, ciego: { que: SIN_ARBOL, detalle: '`git ls-tree -r origin/main` no ha contestado' } };
+    return { censo: null, ciego: { que: SIN_ARBOL, detalle: 'el `ls-tree` de la punta remota no ha contestado' } };
   }
   return { censo: censoSobre(tickets, ramas, ficheros), ciego: null };
 }

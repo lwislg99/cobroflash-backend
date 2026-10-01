@@ -99,8 +99,10 @@ Mutaciones declaradas, aplicadas a mano una a una (`evidencias/scrum1331/mutar.m
 
 Guards de suite corridos con el cambio (un solo comando, TAP a fichero fuera del árbol):
 `scrum1331`, `scrum804b`, `scrum858b`, `scrum928`, `scrum928b`, `scrum836`, `scrum237`, `scrum708`,
-`scrum711`, `scrum850`, `scrum702`, `scrum812`, `scrum808`, `scrum745` → **113 tests · 112 pass ·
-0 fail · 1 skip** (el de señales POSIX de 858b, que en Windows no aplica y lo mide el CI).
+`scrum711`, `scrum850`, `scrum702`, `scrum812`, `scrum808`, `scrum745`, `scrum723`, `scrum267`,
+`scrum273`, `scrum1294`, `scrum976`, `scrum570` → **157 tests · 156 pass · 0 fail · 1 skip** (el
+de señales POSIX de 858b, que en Windows no aplica y lo mide el CI). Y `npm run guards:entrada`:
+**12 guards, 122 tests, 0 fail**, después del último cambio de código.
 La tanda completa NO se ha corrido en local: no había turno.
 
 ## 5 · La población (de J3d, subida aquí porque vivía en un scratchpad)
@@ -130,7 +132,18 @@ local y `dns.lookup` de cada fichero, en una pasada de sólo carga (`evidencias/
   salida del fichero, así que una muerte nativa que no escriba nada sale «sin huella reconocida»;
   y la cola de salida de error del fichero anterior puede entrar en la ventana del que cae.
 
-## 7 · Un error mío, corregido antes de correr nada
+## 7 · Dos errores míos
+
+**El segundo lo cazó un guard, no yo.** Al mover el mensaje de CIEGO de 804b a una plantilla y
+escribir `origin/main` en el detalle de `SIN_ARBOL`, cambié sin saberlo QUIÉN nombra una
+referencia móvil fuera de los argumentos de git: `tests/scrum723-guard-contra-su-base.test.mjs`
+(guard de entrada) salió rojo — 804b había salido de su lista y el censo había entrado. No toqué
+el guard (regla 41): el mensaje de 804b vuelve a ser una cadena literal, como era, y el detalle
+del censo ya no nombra la referencia. La lista declarada de scrum723 queda idéntica. Lo que
+corrí antes de eso —mis tests y catorce guards elegidos a ojo— estaba verde: la muestra no era
+la población, y lo que lo dijo fue `npm run guards:entrada`.
+
+**El primero, corregido antes de correr nada:**
 
 La primera lista de frases de red llevaba `unable to access`. Git antepone esa frase a CUALQUIER
 fallo de https — también a un `The requested URL returned error: 403`, que es de permisos. Habría

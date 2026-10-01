@@ -93,8 +93,8 @@ function ciego(c) {
       + 'un rojo del código ni un verde, es que no se pudo mirar. RELANZA la tanda; si con red sigue '
       + 'cayendo, entonces sí es un fallo de verdad.');
   }
-  assert.fail(`🔴 CIEGO (${c.que}): no se han podido leer las refs remotas o el árbol de \`main\` `
-    + `(«${c.detalle}»). Sin eso no se mide, y «no he podido» no es «no hay».`);
+  assert.fail('🔴 CIEGO: no se han podido leer las refs remotas o el árbol de `main`. Sin eso no se mide, y '
+    + `«no he podido» no es «no hay». Motivo: ${c.que} («${c.detalle}»).`);
 }
 
 /**
