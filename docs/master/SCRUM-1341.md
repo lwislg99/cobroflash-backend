@@ -176,3 +176,124 @@ literal del código es el firmado.
   común. Los dos, pasados al orquestador.
 - SCRUM-1346 (las dos rutas por las que el Técnico reconstruye lo cobrado): del fundador.
 - Verificación en `yaqu.app` tras el despliegue: pide sesión de Técnico.
+
+# SCRUM-1341 · APENDICE · 1-oct-2026 · Lo que midió el relevo después de mezclar `main`, y tres rojos propios que el 13 de 13 no veía
+
+**Medido contra:** `origin/main` = `7580bcc876d6d86f35e3578d4f1cf06c807f44a6` · 2026-10-01T15:04:44Z
+
+A9: aviso → cicatriz J2 «el registro de SCRUM-1341 prometía en un anexo la salida de un instrumento de navegador que, tal como estaba comiteado, salía CIEGO: ni el anexo ni la salida existían» — no se pudo comprobar: nada exige que un instrumento que el registro nombra tenga su salida en el repo; lo destapó correrlo
+
+Sesión **J2k** (puesto J2, relevo de J2j), por encargo del orquestador (`cobroflash-backend-5b`): no
+reconstruir, mezclar `main`, volver a medir y empujar. Lo de arriba es de J2j y no lo he reescrito; donde
+este apéndice lo contradice, manda el apéndice, y lo dice.
+
+**El «anexo Ⓙ» que Ⓕ y Ⓗ prometen no existía.** No he reconstruido lo que J2j habría puesto en él: lo
+que sigue es medición nueva, mía, sobre el árbol mezclado.
+
+## ① Dónde estaba el trabajo, y qué se mezcló
+
+El encargo nombraba la rama local `scrum-1341-actividad-del-equipo-sin-importes`; esa rama seguía en
+`44e249f7` (las dos sondas de J2i). El trabajo de J2j estaba en `worktree-scrum-1341-j2j`, punta
+`d259a5ee5f00275c2a0946d594ebf704b02a044a`, y su traspaso no estaba escrito. Monté un árbol propio sobre esa
+punta. En remoto no había rama ni PR de 1341 (control positivo: la rama de SCRUM-1334 sí sale).
+
+Dos mezclas de `main`, las dos sin conflictos:
+
+| mezcla | `origin/main` | commits de `main` dentro | ficheros que movió `main` | de ellos, tocados también aquí |
+|---|---|---|---|---|
+| primera (`d2ac84ed`) | `762f4fbb` | 215 | 206 | **1**: `public/dashboard/js/homeView.js` |
+| segunda | `7580bcc8` | — | 14 | 0 |
+
+En `homeView.js`, `main` tocó `submitQuickQuote` (SCRUM-1371): otra zona del fichero. Un merge sin
+conflictos no es un merge correcto, así que se volvió a medir todo lo de abajo.
+
+## ② Los dos controles que deciden, repetidos sobre el árbol mezclado
+
+- **Ni un euro.** El test del ticket: 13 casos, 13 pasan, 0 saltos. El caso «NI UN EURO: seis escenarios
+  que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta» pasa, con su control delante (el
+  admin se mueve por los seis caminos).
+- **El admin, idéntico.** `tests/banco-scrum1341/admin-identico.mjs` contra `origin/main` `7580bcc8`, con
+  el código final (`docs/evidencias/scrum1341/admin-identico.codigo-final.salida.txt`): tres respuestas,
+  mismos sha256 — 205 / 205, 178 / 178 y 145 / 145 nodos; bloque del equipo de 3.776, 2.006 y 0
+  caracteres en los dos lados. Control: con rol Técnico sale DISTINTO (0 caracteres antes, 1.730 ahora).
+- **Mutaciones.** `tests/banco-scrum1341/mutar.mjs`, dos pasadas (tras la primera mezcla, y otra vez con el
+  código final de ④): base 13 de 13; **28 mutaciones, 28 caen en el caso que tenían que tumbar, 0 mudas,
+  0 ciegas**; build final 0, 13 de 13, árbol limpio. Incluye M27 y M28, las del contraste, que arriba
+  quedaron sin salida. Las dos pasadas dan la misma salida, byte a byte:
+  `docs/evidencias/scrum1341/mutar.tras-mezclar-main.salida.txt`.
+
+## ③ El instrumento de navegador no había medido nunca
+
+`tests/banco-scrum1341/navegador.mjs`, tal como estaba comiteado, salía con 2 (CIEGO) en los dos anchos:
+«renderTeamPerformance lanzó: fmtMoneyEs is not defined». Su página carga `homeView.js` y no `api.js`,
+donde vive ese formateador, y el panel del admin —el control— lo llama. El bloque del Técnico no. Así que
+lo que Ⓗ dice de «textos largos, y 390 / 1280 px» **no estaba medido** cuando se escribió.
+
+Arreglado en el instrumento, no en el código: la página lleva un doble de `fmtMoneyEs` (sólo le da al
+control un «€» que enseñar). Salida en `docs/evidencias/scrum1341/navegador.salida.txt`, EXIT 0:
+
+| | 390 px | 1280 px |
+|---|---|---|
+| control: panel del admin | 4 cabeceras, 1 botón, con «€», pide `/admin/metrics/team` | igual |
+| título del Técnico | «Actividad del equipo · este mes», 13 px, `rgb(75, 85, 79)` | igual |
+| cabeceras | Miembro · Cotizaciones · Aceptación | igual |
+| tabla / caja | 364 / 364 px, sin barra horizontal, la página no desborda | 1.230 / 1.230 px, igual |
+| nombre de 66 caracteres | cabe | cabe |
+| % alto · medio · bajo | `rgb(21, 128, 61)` · `rgb(75, 85, 79)` · `rgb(220, 38, 38)` | igual |
+| botones · nodos con estilo en línea | 0 · 0 | 0 · 0 |
+| pide | sólo `/admin/metrics/actividad-equipo` | igual |
+
+Es Chromium sin interfaz sobre una página montada para la medición, con la respuesta fabricada: no es
+`yaqu.app` ni una sesión real de Técnico.
+
+## ④ Tres rojos NUESTROS que el 13 de 13 no veía
+
+La tanda dirigida (`scripts/tests-que-cubren.mjs --lanzar`, la herramienta de SCRUM-1363 que llegó con
+la mezcla) eligió 548 ficheros de 1.190 y dio 4.922 casos, 4.910 pasan, **7 caen**. Leído el motivo de
+cada uno antes de clasificar:
+
+| caso | motivo, leído en el TAP | de quién |
+|---|---|---|
+| `scrum553` · el número de etiquetas con el `>` pegado no sube | 21 sobre un tope de 20; la nueva: `tests/scrum1341-…test.mjs:404  <tr>` | **nuestro** |
+| `scrum601` · el censo distingue depender del flag | ancla por número de línea `homeView.js:885`; el bloque nuevo, metido por encima, la llevaba a la 955 | **nuestro** |
+| `scrum723` · quién nombra una referencia móvil | `tests/banco-scrum1341/admin-identico.mjs` la nombraba fuera de los argumentos de git | **nuestro** |
+| `scrum976` ④ · `guards:entrada` sale 0 | cascada del anterior: lo corre de verdad | cascada |
+| `scrum1199` × 2 | `Cannot find module '…\scrum-1341-j2k\node_modules\express'` | del árbol: no tiene `node_modules` |
+| `scrum476` · suelo del censo de `node_modules` | «CERO directorios `node_modules` en el árbol» | del árbol, lo mismo |
+
+Los tres nuestros habrían salido rojos en CI. Arreglados **en el código, ninguno en el guard**:
+
+1. **`scrum553`:** el extractor del test deja hueco a los atributos (`<tr[^>]*>`).
+2. **`scrum601`:** el bloque del Técnico (`TONO_DE_ACEPTACION` y `renderTeamActivity`; el código, sin
+   cambiar una línea) baja al **final** de `homeView.js`, y el cambio en `renderTeamPerformance` pasa a ser de
+   dos líneas por dos. La nota de condiciones vuelve a estar en la 885, que es donde el control la busca.
+   El comentario del bloque dice por qué está ahí abajo. Es la tercera vez que ese control se cruza con
+   un cambio de `homeView.js` (SCRUM-1124 y SCRUM-1317 lo re-anclaron); aquí no se ha tocado.
+3. **`scrum723`:** al banco se le PASA la referencia; sin ella sale CIEGO con 2. Ya no la nombra.
+
+Repetida la dirigida sobre el código final (commit `7aac7cff`, con la segunda mezcla dentro): 548 ficheros
+de 1.191, 4.922 casos, 4.914 pasan, 5 saltos, **3 caen: los tres del árbol sin `node_modules`**, ninguno
+nuestro. Después de mover el bloque se repitieron también el admin idéntico, el navegador (misma salida
+que la tabla de ③) y las 28 mutaciones.
+
+## ⑤ Lo que NO está hecho, y por qué
+
+- **La tanda completa local NO se ha corrido.** Tenía el turno. Este árbol hereda `node_modules` del
+  checkout compartido, y su cliente de Prisma es del 25-sep y no coincide con el esquema de hoy (medido:
+  los dos `schema.prisma` difieren; `tsc` sin `--noCheck` da 6 errores, los 6 de `invoiceStartSeq`, 0 en
+  los ficheros de este ticket). Una tanda completa aquí mediría ese desfase, no el cambio. La dirigida
+  de ④ es lo que hay; el juez es el CI, y los 13 casos se leen allí por nombre.
+- **Tipos:** por lo mismo, el `dist/` de todas estas mediciones se emitió con `--noCheck`. Los cuatro
+  ficheros de `src/` de este ticket no dan ningún error de tipos; el build con tipos lo hace el CI.
+- `guards:visuales` no se ha lanzado; lo de navegador es el instrumento de ③.
+- Verlo en `yaqu.app` sigue pidiendo una sesión de Técnico.
+
+## ⑥ Lo que me salió mal
+
+1. **Lancé la tanda dirigida antes de escribir este apéndice** y tuve que repetir los guards de registro
+   después de escribirlo. El orden bueno estaba en A6.
+2. **Quise sobrescribir las salidas de J2j** en `docs/evidencias/scrum1341/` con las mías. Lo paró el hook;
+   van en ficheros nuevos y las suyas se quedan como estaban.
+3. **Mi primer informe al orquestador decía «13 de 13» y «admin idéntico» con tres rojos nuestros dentro.**
+   Los dos datos eran ciertos, y ninguno miraba fuera del test del ticket. Lo destapó la tanda dirigida,
+   que corrí después de informar y no antes.
