@@ -50,7 +50,16 @@ async function unRun(run) {
     } catch (e) { fila.log_bytes = 'ERROR'; fallidos.push(`job ${j.id}: ${String(e.message).split('\n')[0].slice(0, 100)}`); }
   }
 }
+// 🔴 EL CANARIO: UNO antes que todos. Si el primer run no deja un log en disco, no se lanzan los
+// demás. Nace de mi propio fallo en este ticket: 622 bajadas lanzadas sin probar una.
 let i = 0;
+await unRun(runs[i++]);
+if (!jobs.length || jobs.some((j) => j.log_bytes === 'ERROR' || j.log_bytes === '')) {
+  console.log(`CANARIO: el primer run (${runs[0]}) no dejó su log. No lanzo los otros ${runs.length - 1}.`);
+  for (const f of fallidos) console.log('  ✗ ' + f);
+  console.log('EXIT=3');
+  process.exit(3);
+}
 await Promise.all(Array.from({ length: 6 }, async () => { while (i < runs.length) await unRun(runs[i++]); }));
 
 jobs.sort((a, b) => String(a.empezo).localeCompare(String(b.empezo)));

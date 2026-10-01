@@ -91,7 +91,14 @@ for (const e of eventos) {
       const antes = r[0] > 0 ? ficheroDe(e.R[r[0] - 1].nombre) : 'INICIO';
       const despues = r.at(-1) + 1 < e.R.length ? ficheroDe(e.R[r.at(-1) + 1].nombre) : 'FIN';
       const mismoAntes = antes === f[0]; const mismoDespues = despues === f[0];
-      pos = mismoAntes && !mismoDespues ? 'cola' : !mismoAntes && mismoDespues ? 'cabeza' : mismoAntes && mismoDespues ? 'medio' : 'fichero entero';
+      // Un vecino que no se localiza en el fuente (nombre generado en un bucle) NO es «otro
+      // fichero»: es un borde que no sé situar. La primera versión lo contaba como «fichero
+      // entero» y eran colas de scrum524b, cuyos casos salen casi todos de un bucle.
+      const ciego = (x) => x === 'SIN-LOCALIZAR' || x === 'AMBIGUO';
+      pos = mismoAntes && !mismoDespues && !ciego(despues) ? 'cola'
+        : mismoAntes && mismoDespues ? 'medio'
+          : !mismoAntes && mismoDespues && !ciego(antes) ? 'cabeza'
+            : ciego(antes) || ciego(despues) ? 'borde sin situar' : 'fichero entero';
     }
     if (pos === 'cola') colas++; else if (pos === 'cabeza') cabezas++; else if (pos === 'medio') medios++; else if (pos === 'fichero entero') enteros++; else sinSituar++;
     filas.push([e.j.job, e.j.run, e.j.intento, e.j.evento, e.j.conclusion, e.j.empezo, e.j.tests, e.ref.job, e.ref.tests, r.length, nombreF, pos, e.porOrden ? 'orden' : 'multiplicidad'].join('\t'));
