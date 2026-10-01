@@ -122,6 +122,9 @@ var ASIGNACION_SUBMENU = {
   address: 'empresa',
   // SCRUM-294 (fase C): el criterio de caja es un dato del NEGOCIO, como el NIF y la direccion.
   criterioCaja: 'empresa',
+  // SCRUM-1102: el SII y el domicilio foral son hechos del NEGOCIO, como el criterio de caja.
+  llevaLibrosPorSii: 'empresa',
+  domicilioFiscalForal: 'empresa',
   whatsappPhone: 'empresa',
   defaultCurrency: 'empresa',
   country: 'empresa',

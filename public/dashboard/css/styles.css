@@ -646,6 +646,10 @@ html, body { overflow-x: clip; }
 .field textarea::placeholder { color: var(--muted); }
 .field textarea { resize: vertical; }
 .field select { appearance: none; cursor: pointer; }
+/* SCRUM-1102 · AB6, objetivo al pulgar en los dos selectores de Configuración (SII y domicilio
+   foral). Su hermano, el del criterio de caja, lo lleva puesto en línea desde JS; aquí va en la
+   hoja, que es donde la regla 4 lo quiere. */
+.campo-hecho-fiscal select { min-height: 44px; }
 
 /* Checkbox / radio dentro de .field: tamaño nativo, pegados a su etiqueta.
    (Antes heredaban el estilo de campo de texto —padding, borde, radio— y se
