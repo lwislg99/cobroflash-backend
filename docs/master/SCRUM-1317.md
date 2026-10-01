@@ -219,6 +219,25 @@ mismo control, y se dice aquí.
 Edge con la sonda del banco: operario → vista `home`, título «Inicio»; admin → vista `providers`,
 título «Proveedores», igual que en `main`. `case 'reports'` se queda como estaba.
 
+**Después de los arreglos:** tanda completa, 1.159 ficheros · 9.575 tests · 9.437 pasan · 0 caen ·
+138 saltan, salida 0; `guards:entrada`, 12 guards y 122 tests, salida 0. Las dos tandas y la salida
+de la sonda están en `docs/evidencias/scrum1317/` (`tanda-completa-j4d.txt`, `edge-rama-ed0e9a7a.txt`).
+
+**Guards de navegador: 37 de 37 en verde, pero no de una vez.** `guards:visuales` iba por el 30 de
+37 cuando el sistema mató el proceso por falta de memoria. Los 30 que midieron, verdes. Los 7 que
+faltaban —entre ellos `guard:rastro-del-menu`, el que recorre el menú y `app.js`— se corrieron
+después **uno a uno**, midiendo la memoria antes de cada uno: los 7 con salida 0 y con su salida
+(`guards-navegador-los-7-uno-a-uno.txt`). `rastro-del-menu`: 18 destinos, 18 de 18 con el hash
+coherente.
+
+🔴 **Hallazgo de otro carril, sólo reportado:** al morir, la puerta cerró con «7 guard(s) midieron y
+encontraron algo» sobre siete procesos que **no llegaron a arrancar** (0,0 s, sin salida, código
+`0xC0000142`). Un hijo que no se inició se contó como hallazgo. La salida literal está en
+`guards-visuales-cortado-por-memoria.txt`. Entregado al orquestador.
+
+Y sobre `scrum601`: un control anclado por posición no sólo se rompe: **se rompe en cascada y de una
+en una**. Su segundo ancla estaba escondido detrás del primer aserto caído.
+
 🔴 **Lo que NO se arregla aquí y queda dicho:** el control positivo de `scrum601` está anclado por
 **posición**. Es su tercer re-anclaje en `homeView.js`/`invoicesView.js` y el quinto en `app.js`: se
 rompe cada vez que alguien edita por encima, y quien lo rompe no ha tocado nada de lo que mide.
