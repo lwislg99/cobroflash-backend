@@ -90,3 +90,4 @@ Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
 Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
 Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy. (SCRUM-1154)
+Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar. (SCRUM-1302)

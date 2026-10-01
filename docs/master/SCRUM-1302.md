@@ -103,9 +103,14 @@ monta a mano un doble de la base sin el modelo `attachment`: con la cuenta de fo
 y sus dos casos del presupuesto no llegaban a ejecutarse. Se le añade UNA línea
 (`attachment.count → 0`) con su porqué y el aviso de que el 0 es fijo. Ninguna aserción se toca.
 
-## H1 · La firma directa lee «ya está firmado» como lo lee el drenado
+# APÉNDICE · H1 y H6 de la cola de firmas (S2) · la firma directa lee «ya está firmado» como lo lee el drenado
 
 **Medido contra:** `origin/main` = `48babd04d40667a9ec8fbeb6e02b9e44dbf0585b` · 2026-10-01T11:09:06Z
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: el fallo fue de una sonda de usar y tirar contra yaqu.app (un interceptor de Playwright que no interceptó y dejó pasar un POST real); no hay instrumento común de sondas en el repo donde poner el control positivo.
+
+Entrada propia (encabezado de primer nivel) para que su declaración de skill no se le atribuya a las secciones F y G de arriba, que son de otros PR.
+
+## H1
 
 Carril S2 (`colaDeFirmas.js`; §11bis: «el resto es de la S2») · rama `scrum-1302-firma-directa-ya-registrada` · sesión `s2-01a`. Hallazgo 1 del recorrido de S4 de la cola de firmas sin red del albarán (Jira SCRUM-1302, c.17880). Los otros cinco de ese recorrido NO van aquí.
 
