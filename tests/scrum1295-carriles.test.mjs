@@ -26,6 +26,11 @@ const TABLA = fs.readFileSync(path.join(RAIZ, 'docs/equipo/dos-equipos.md'), 'ut
 const DE_J1 = path.join(RAIZ, 'public/dashboard/js/invoicesView.js');
 const DE_S2 = path.join(RAIZ, 'public/dashboard/js/homeView.js');
 
+// Los `node` hijos NO heredan el entorno de la tanda (SCRUM-1349): con FORCE_COLOR, NODE_OPTIONS o
+// NODE_TEST_CONTEXT del padre, el hijo cambia su salida y el test mide a la tanda, no al hijo.
+const entorno = { ...process.env };
+delete entorno.FORCE_COLOR; delete entorno.NODE_OPTIONS; delete entorno.NODE_TEST_CONTEXT;
+
 const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1295-')); t.after(() => fs.rmSync(d, { recursive: true, force: true })); return d; };
 
 /** Una mesa de juguete: carpeta con su `.yaqu-puesto.json` (o sin él) y un transcript con el nombre. */
@@ -39,16 +44,19 @@ function mesa(t, { puesto = undefined, crudo = undefined, nombre = null }) {
 }
 
 function cerradura(m, fichero, { hook = HOOK, args = [], herramienta = 'Edit' } = {}) {
+  const env = { ...process.env };
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
+  env.CLAUDE_PROJECT_DIR = m.dir;
   const r = spawnSync(process.execPath, [hook, ...args], {
     input: JSON.stringify({ tool_name: herramienta, tool_input: { file_path: fichero }, transcript_path: m.transcript, cwd: m.dir }),
-    env: { ...process.env, CLAUDE_PROJECT_DIR: m.dir },
+    env,
     encoding: 'utf8',
   });
   return { codigo: r.status, err: r.stderr };
 }
 
 test('SCRUM-1295 · lo commiteado es lo que sale de la tabla, y el comparador distingue', () => {
-  const r = spawnSync(process.execPath, [CLI, 'comprobar'], { cwd: RAIZ, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [CLI, 'comprobar'], { cwd: RAIZ, encoding: 'utf8', env: entorno });
   assert.equal(r.status, 0, `node scripts/carriles.mjs comprobar →\n${r.stdout}${r.stderr}`);
   const m = /(\d+) filas de §3 · (\d+) reglas \((\d+) con dueño\)/.exec(r.stdout);
   assert.ok(m && Number(m[1]) >= 40 && Number(m[3]) >= 80, `población inesperada: ${r.stdout}`);
@@ -116,7 +124,10 @@ test('SCRUM-1295 · EL CHOQUE: «sesion-1» en la mesa de J1 no es S1 — una so
   assert.equal(puestoDeNombre('sesion-1', { puesto: 'J1', nombre: null }), 'S1');
 
   // SessionStart cuenta lo mismo que la cerradura: no hay una segunda traducción en identidad.mjs.
-  const inicio = spawnSync(process.execPath, [INICIO], { input: JSON.stringify({ session_title: 'sesion-1', cwd: javier.dir }), env: { ...process.env, CLAUDE_PROJECT_DIR: javier.dir }, encoding: 'utf8' });
+  const env = { ...process.env };
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
+  env.CLAUDE_PROJECT_DIR = javier.dir;
+  const inicio = spawnSync(process.execPath, [INICIO], { input: JSON.stringify({ session_title: 'sesion-1', cwd: javier.dir }), env, encoding: 'utf8' });
   const ctx = JSON.parse(inicio.stdout).hookSpecificOutput.additionalContext;
   assert.match(ctx, /eres el puesto J1/);
   assert.doesNotMatch(ctx, /DISCREPANCIA/);
@@ -125,17 +136,17 @@ test('SCRUM-1295 · EL CHOQUE: «sesion-1» en la mesa de J1 no es S1 — una so
 
 test('SCRUM-1295 · la mesa de un puesto J sin --nombre no se escribe, y con él lo lleva', (t) => {
   const dir = tmp(t);
-  const sin = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir], { cwd: RAIZ, encoding: 'utf8' });
+  const sin = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir], { cwd: RAIZ, encoding: 'utf8', env: entorno });
   assert.equal(sin.status, 2);
   assert.match(sin.stdout, /NO-PUDE-MIRAR.*--nombre/);
   assert.ok(!fs.existsSync(path.join(dir, '.yaqu-puesto.json')), 'una mesa rechazada no deja identidad a medias');
-  const con = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir, '--nombre', 'sesion-1'], { cwd: RAIZ, encoding: 'utf8' });
+  const con = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir, '--nombre', 'sesion-1'], { cwd: RAIZ, encoding: 'utf8', env: entorno });
   assert.equal(con.status, 0, con.stdout + con.stderr);
   assert.deepEqual((({ puesto, nombre }) => ({ puesto, nombre }))(JSON.parse(fs.readFileSync(path.join(dir, '.yaqu-puesto.json'), 'utf8'))), { puesto: 'J1', nombre: 'sesion-1' });
-  const cruzada = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir, '--nombre', 'j2-1oct'], { cwd: RAIZ, encoding: 'utf8' });
+  const cruzada = spawnSync(process.execPath, [CLI, 'mesa', 'J1', dir, '--nombre', 'j2-1oct'], { cwd: RAIZ, encoding: 'utf8', env: entorno });
   assert.equal(cruzada.status, 2, 'un nombre que por su forma es de OTRO puesto no es una traducción');
   const luis = tmp(t);
-  assert.equal(spawnSync(process.execPath, [CLI, 'mesa', 'S3', luis], { cwd: RAIZ, encoding: 'utf8' }).status, 0, 'el equipo de Luis sigue sin necesitar --nombre');
+  assert.equal(spawnSync(process.execPath, [CLI, 'mesa', 'S3', luis], { cwd: RAIZ, encoding: 'utf8', env: entorno }).status, 0, 'el equipo de Luis sigue sin necesitar --nombre');
 });
 
 test('SCRUM-1295 · con el mapa roto la cerradura NO deja pasar', (t) => {
@@ -156,7 +167,7 @@ test('SCRUM-1295 · con el mapa roto la cerradura NO deja pasar', (t) => {
   // Control: la misma copia, con el mapa bueno, deja pasar lo que es suyo. El rojo era por el mapa.
   fs.copyFileSync(path.join(RAIZ, MAPA), path.join(dir, '.claude', 'carriles.json'));
   assert.equal(cerradura(s2, DE_S2, { hook: copia }).codigo, 0);
-  const basura = spawnSync(process.execPath, [HOOK], { input: 'esto no es json', encoding: 'utf8' });
+  const basura = spawnSync(process.execPath, [HOOK], { input: 'esto no es json', encoding: 'utf8', env: entorno });
   assert.equal(basura.status, 2);
 });
 
@@ -189,7 +200,7 @@ test('SCRUM-1295 · huecos: ve un pariente, no cruza servidor con pantalla, y si
   assert.deepEqual(nc, { conPuestoEnElNombre: 3, casos: [{ tramo: 'scripts/verificacion-s5/', dice: 'S5', puesto: 'S0', linea: 4, n: 2 }] });
 
   // El censo de verdad: mide (0 = sin huecos, 1 = hay lista), nunca 2, y con población.
-  const r = spawnSync(process.execPath, [CLI, 'huecos'], { cwd: RAIZ, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [CLI, 'huecos'], { cwd: RAIZ, encoding: 'utf8', env: entorno });
   assert.ok(r.status === 0 || r.status === 1, `huecos salió ${r.status}:\n${r.stdout}${r.stderr}`);
   const m = /(\d+) ficheros de producto .* (\d+) con fila específica · (\d+) solo por la fila general/.exec(r.stdout);
   assert.ok(m && Number(m[1]) >= 300 && Number(m[2]) >= 100 && Number(m[3]) >= 100, `población inesperada: ${r.stdout.split('\n')[0]}`);
