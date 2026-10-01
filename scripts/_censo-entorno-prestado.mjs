@@ -156,6 +156,29 @@ function seParsea(ambito, nombre, sf) {
 // hijos que rompían el TAP de todas las tandas (SCRUM-1289): scrum976 y scrum928 borraban
 // `NODE_TEST_CONTEXT` (y 976 también `FORCE_COLOR`) pero NO `NODE_OPTIONS`, que traía los reporters.
 // «Alguien pensó en lo que colaba» no basta: hay que haber pensado en LAS TRES.
+//
+// 🔴 SCRUM-1349 · Y EL BORRADO EN BUCLE CUENTA. `for (const k of ['FORCE_COLOR', 'NODE_OPTIONS',
+// 'NODE_TEST_CONTEXT']) delete entorno[k];` borra las tres, y el censo sólo reconocía el `delete`
+// escrito a mano: clasificó como «sin limpiar» a tres bancos que estaban limpios (banco-scrum1102f,
+// 1322 y 1329, el 1-oct-2026). Es la ceguera del otro lado: «no reconozco cómo lo hiciste» salía
+// como «lo hiciste mal», y eso manda a alguien a arreglar lo que funciona.
+// Sólo se resuelve lo que se LEE: la variable de un `for…of` sobre una lista LITERAL de cadenas.
+// Cualquier otra clave calculada sigue siendo «(clave no literal)» y no limpia nada.
+function clavesDelBucle(nodoDelete, clave) {
+  if (!ts.isIdentifier(clave)) return null;
+  for (let p = nodoDelete.parent; p; p = p.parent) {
+    if (!ts.isForOfStatement(p)) continue;
+    const ini = p.initializer;
+    const declara = ts.isVariableDeclarationList(ini) && ini.declarations.length === 1
+      && ts.isIdentifier(ini.declarations[0].name) && ini.declarations[0].name.text === clave.text;
+    if (!declara) continue;
+    if (!ts.isArrayLiteralExpression(p.expression)) return null;
+    if (!p.expression.elements.length || !p.expression.elements.every((e) => ts.isStringLiteralLike(e))) return null;
+    return p.expression.elements.map((e) => e.text);
+  }
+  return null;
+}
+
 function borradasAntes(sf, nombre, limite) {
   const borradas = new Set();
   if (!nombre) return borradas;
@@ -167,7 +190,11 @@ function borradasAntes(sf, nombre, limite) {
         && ts.isIdentifier(objetivo.expression) && objetivo.expression.text === nombre) {
         if (ts.isPropertyAccessExpression(objetivo)) borradas.add(objetivo.name.text);
         else if (ts.isStringLiteralLike(objetivo.argumentExpression)) borradas.add(objetivo.argumentExpression.text);
-        else borradas.add('(clave no literal)');
+        else {
+          const delBucle = clavesDelBucle(n, objetivo.argumentExpression);
+          if (delBucle) for (const k of delBucle) borradas.add(k);
+          else borradas.add('(clave no literal)');
+        }
       }
     }
     ts.forEachChild(n, rec);
@@ -353,6 +380,39 @@ export function motivosParaNoFiarse(censo) {
     m.push('Hay llamadas pero ninguna se clasificó ni LIMPIA ni ACUSADA: el clasificador no decide.');
   }
   return m;
+}
+
+/**
+ * 🔴 SCRUM-1349 · LO QUE ESTE «ME FÍO» NO CUBRE. `motivosParaNoFiarse` sólo mira UNA dirección:
+ * que el censo no se quede ciego («no vi nada»). No dice nada de la otra —acusar a un limpio
+ * escrito de una forma que no reconoce—, y con `[]` delante esa cifra se creyó sin abrir los
+ * ficheros. Un «me fío» que no dice de qué NO responde, no es un me fío: antes de repartir un
+ * acusado, se abre.
+ */
+export const NO_RESPONDE_DE = 'que cada acusado lo sea de verdad: una forma de limpiar que el censo no reconozca sale como acusada';
+
+/**
+ * 🔴 SCRUM-1349 · EL TRINQUETE. Compara los acusados del censo con los DECLARADOS (uno a uno, con
+ * dueño y motivo, en `scripts/_entorno-prestado-declarados.json`). Sólo puede BAJAR:
+ *   · `nuevos` ..... un fichero acusado que no está declarado, o con más llamadas de las declaradas.
+ *   · `sobran` ..... un declarado que ya no se acusa (o con menos): se arregló, su entrada se BORRA.
+ * Por FICHERO y con su recuento, no por línea: las líneas se mueven.
+ */
+export function contraDeclarados(acusados, declarados) {
+  const porFichero = new Map();
+  for (const a of acusados) porFichero.set(a.fichero, (porFichero.get(a.fichero) || 0) + 1);
+  const nuevos = [];
+  const sobran = [];
+  for (const [fichero, n] of porFichero) {
+    const d = declarados[fichero];
+    if (!d) nuevos.push(`${fichero} (+${n})`);
+    else if (n > d.llamadas) nuevos.push(`${fichero}: ${d.llamadas} → ${n}`);
+  }
+  for (const [fichero, d] of Object.entries(declarados)) {
+    const n = porFichero.get(fichero) || 0;
+    if (n < d.llamadas) sobran.push(`${fichero}: declaradas ${d.llamadas}, hoy ${n}`);
+  }
+  return { nuevos, sobran };
 }
 
 /** Una llamada, en una línea legible en el mensaje de un rojo — dice CÓMO arreglarla. */
