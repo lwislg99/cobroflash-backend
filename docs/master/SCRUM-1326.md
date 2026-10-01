@@ -128,7 +128,12 @@ conflictos), con `prisma generate` y build en 0:
   directa o indirectamente, el test, la ficha, su lector, el banco, `package.json`, `tsconfig.json`
   y el esquema). Control: el cierre de imports sí contiene `core/db/prisma.ts` e
   `integrations/whatsapp.ts`.
-- La tanda completa y lo que diga CI van en el comentario de entrega del ticket, no aquí.
+- **La tanda completa local NO corrió.** La lancé con el turno del orquestador y 4.688 MB libres,
+  y el arnés la detuvo a los pocos segundos por presión de memoria en la máquina. No hay
+  resultado. Dejó un TAP parcial con 1.198 resultados y 505 «not ok», que no son rojos: son tests
+  cortados al morir el proceso, y no se cuentan. Se empuja así por decisión del orquestador, con
+  el auto-merge desarmado hasta leer el log del job de CI. Lo que diga CI va en el comentario de
+  entrega del ticket, no aquí.
 
 **Sin medir, dicho:** el texto en un WhatsApp de verdad (aquí sale por un doble: los asteriscos y
 el emoji se comprueban como caracteres, no como se pintan en el teléfono); y si
