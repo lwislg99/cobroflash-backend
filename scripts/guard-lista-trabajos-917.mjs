@@ -20,6 +20,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { servirListas, abrirNavegador, abrirVista } from './_banco-lista.mjs';
 import { reglasDeDatos, EQUIPO } from './_trabajos-de-muestra.mjs';
 import { TRABAJOS, DOSCIENTOS, DOS_MONEDAS, ahora } from './_trabajos-917.mjs';
@@ -560,6 +561,10 @@ srv.close();
 
 di('');
 di(`población: ${comprobaciones} comprobaciones sobre ${TRABAJOS.length} trabajos + 200 + 2 monedas + sin equipo · a 1280 y 390`);
-if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`); process.exit(2); }
-if (fallos) { console.error(`🔴 ${fallos} de ${comprobaciones} comprobaciones en rojo.`); process.exit(1); }
+if (ciego) console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`);
+if (fallos) console.error(`🔴 ${fallos} de ${comprobaciones} comprobaciones en rojo.`);
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) { console.error(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
 di(`✅ la lista cuadra con su inventario: ${comprobaciones} de ${comprobaciones}.`);
