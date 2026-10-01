@@ -1,0 +1,41 @@
+// SCRUM-1341 · contraste WCAG de los colores de texto del bloque «Actividad del equipo», sobre los
+// tres fondos en los que caen: blanco (la tarjeta), el lienzo de la pagina y la fila en hover.
+// Los valores se LEEN de las hojas (tokens.css y styles.css), no se copian a mano.
+//   node docs/evidencias/scrum1341/contraste.mjs <raiz del arbol>
+import fs from 'node:fs';
+import path from 'node:path';
+
+const raiz = process.argv[2];
+if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
+const css = ['public/tokens.css', 'public/dashboard/css/styles.css'].map((f) => fs.readFileSync(path.join(raiz, f), 'utf8')).join('\n');
+const crudo = (nombre) => { const m = new RegExp(nombre.replace(/[-]/g, '\\-') + '\\s*:\\s*([^;]+);').exec(css); return m ? m[1].trim() : null; };
+function token(nombre, saltos = 0) {
+  const v = crudo(nombre);
+  if (!v || saltos > 4) return null;
+  const alias = /^var\((--[a-z0-9-]+)\)/.exec(v);
+  if (alias) return token(alias[1], saltos + 1);
+  const hex = /^#[0-9a-fA-F]{6}\b/.exec(v);
+  return hex ? hex[0] : null;
+}
+const lin = (c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255); };
+const razon = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+
+const TEXTOS = [
+  ['--neutral-600', 'titulo y rotulo de rol (este bloque)'],
+  ['--neutral-700', 'nombre y recuento (`.table td`)'],
+  ['--green-700', '% de aceptacion alto (este bloque)'],
+  ['--red-600', '% de aceptacion bajo'],
+  ['--neutral-500', 'lo que NO se usa: titulo y rol del panel del admin'],
+  ['--green-600', 'lo que NO se usa: % alto del panel del admin'],
+];
+const FONDOS = [['--surface', 'tarjeta'], ['--bg', 'lienzo'], ['--neutral-50', 'fila en hover']];
+const ciegos = [...TEXTOS, ...FONDOS].filter(([t]) => !token(t)).map(([t]) => t);
+if (ciegos.length) { console.log('CIEGO: no leo de las hojas ' + ciegos.join(', ')); console.log('EXIT=2'); process.exit(2); }
+console.log('POBLACION: ' + TEXTOS.length + ' colores de texto × ' + FONDOS.length + ' fondos · AA pide 4,5:1 para texto de este tamano');
+console.log('FONDOS: ' + FONDOS.map(([t, n]) => `${n} ${t} ${token(t)}`).join(' · '));
+for (const [t, uso] of TEXTOS) {
+  const filas = FONDOS.map(([f, n]) => { const r = razon(token(t), token(f)); return `${n} ${r.toFixed(2)}:1${r < 4.5 ? ' ✗' : ''}`; });
+  console.log(`${t.padEnd(14)} ${token(t)}  ${filas.join(' · ')}  — ${uso}`);
+}
+console.log('EXIT=0');
