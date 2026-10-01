@@ -24,6 +24,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
@@ -64,13 +65,52 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
  * ⚠️ Y esto NO es un segundo barrido: los SITIOS los sigue barriendo `aprobacionesDeMicrocopy()`,
  * que es el lector único. Lo que cambia es el CRITERIO de selección sobre lo que él devuelve.
  */
-function textosAprobados() {
-  const out = new Set();
-  for (const ap of aprobacionesDeMicrocopy()) {
-    if (ap.origen === 'fichero') { for (const t of citasDeTextoAprobado(ap.texto)) out.add(t); continue; }
-    for (const t of celdasDeTabla(ap.texto)) out.add(t);
+function textosAprobados(opciones) {
+  return [...new Set(citasAprobadas(opciones).map((c) => c.texto))];
+}
+
+/**
+ * Lo mismo que `textosAprobados`, pero cada texto con SU PROCEDENCIA (SCRUM-1329): de qué registro
+ * sale, si la firma de ese registro cuenta, y en qué comentario de Jira dice que se firmó.
+ *
+ * `opciones` son las del lector (`dir`, `congelado`, `limites`) y existen para lo mismo que allí:
+ * probar el extractor con fichas fabricadas en un directorio temporal, sin escribir en el real.
+ *
+ * ⚠️ «La firma cuenta» NO se decide aquí: es el `aprobada` del lector, que es quien sabe quién firma
+ * (SCRUM-726, SCRUM-861). Del registro congelado no sale ninguna firma comprobable por texto —el
+ * fichero entero es su registro—, así que para ESTA pregunta no cuenta.
+ */
+function citasAprobadas(opciones) {
+  const out = [];
+  for (const ap of aprobacionesDeMicrocopy(opciones)) {
+    const deFicha = ap.origen === 'fichero';
+    const procedencia = {
+      ruta: ap.ruta,
+      firmaQueCuenta: deFicha && ap.aprobada === true,
+      comentario: deFicha ? comentarioDeLaFirma(ap.texto) : null,
+    };
+    for (const texto of (deFicha ? citasDeTextoAprobado(ap.texto) : celdasDeTabla(ap.texto))) {
+      out.push({ texto, ...procedencia });
+    }
   }
-  return [...out];
+  return out;
+}
+
+/**
+ * El comentario de Jira que la LÍNEA DE LA FIRMA nombra, o `null`.
+ *
+ * En la misma línea, y fuera de cita: es el criterio que SCRUM-861 ya fijó para la firma delegada
+ * («en otra línea no vale: una referencia suelta en la prosa no demuestra que respalde a ESTA
+ * firma»), aplicado aquí también a la del fundador.
+ */
+function comentarioDeLaFirma(md) {
+  for (const linea of md.split(/\r?\n/)) {
+    if (/^\s*>/.test(linea)) continue;
+    if (!/^\s*\**\s*Aprobad[oa]s?\s+por\s+el\s+(fundador|orquestador\s+por\s+delegaci[oó]n\s+del\s+fundador)\b/i.test(linea)) continue;
+    const m = /\bcomentario\s+(\d+)\b/i.exec(linea);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 /** Las citas `> …` que van bajo un encabezado «Texto aprobado». */
@@ -140,6 +180,20 @@ function corpus() {
   walk(path.join(RAIZ, 'public'), /\.(js|ts|html)$/);
   walk(path.join(RAIZ, 'src'), /\.ts$/);
   return { texto: ficheros.map((f) => fs.readFileSync(f, 'utf8')).join('\n'), cuantos: ficheros.length };
+}
+
+/** A partir de aquí, una cita se trata como prosa. No se sube ni se baja para que pase un caso. */
+const LARGO_DE_PROSA = 160;
+
+/** Lo que ha entrado en el cruce y NO es copy de pantalla, con el porqué de cada uno. */
+function prosaEnElCruce(citas, textoDelCorpus) {
+  const out = [];
+  for (const texto of new Set(citas.map((c) => c.texto))) {
+    if (/\*\*/.test(texto)) { out.push({ texto, porque: 'lleva negrita de Markdown: es una nota, no copy' }); continue; }
+    if (texto.length <= LARGO_DE_PROSA) continue;
+    out.push({ texto, porque: `pasa de ${LARGO_DE_PROSA} caracteres (${texto.length})` });
+  }
+  return out;
 }
 
 /**
@@ -342,12 +396,104 @@ test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
   // Es la diferencia con `literalesAprobados()` y lo que justifica no usarla aquí: sus 150
   // literales incluyen las notas en prosa del registro. Si esa prosa entrara, el guard nacería
   // rojo por texto que nadie pinta nunca — medido el 4-sep: 13 sin aplicar, ~11 de ellos notas.
-  const prosa = textosAprobados().filter((t) => /\*\*/.test(t) || t.length > 160);
+  const prosa = prosaEnElCruce(citasAprobadas(), corpus().texto);
   assert.deepEqual(prosa, [],
-    '🔴 ha entrado PROSA en el cruce: '
-    + prosa.map((p) => JSON.stringify(p.slice(0, 50))).join(', ')
-    + '. Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que '
+    '🔴 ha entrado PROSA en el cruce:\n    '
+    + prosa.map((p) => `${JSON.stringify(p.texto.slice(0, 50))} — ${p.porque}`).join('\n    ')
+    + '\n\n  Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que '
     + 'nadie pinta.');
+});
+
+// ═══ ④ SCRUM-1329 · UNA CITA FIRMADA PUEDE SER LARGA; LA PROSA, NO ═══════════════════════════
+//
+// Fichas FABRICADAS en un directorio temporal (el lector las admite por `dir`): escribir un
+// registro de mentira en `docs/microcopy/` lo vería cualquier otro guard que corra a la vez.
+
+/** El literal que el fundador firmó en SCRUM-1258 comentario 17713, en UNA línea. */
+const LITERAL_DE_1258 = 'Esta factura se selló como factura completa (F1) y el registro la declararía '
+  + 'como simplificada (F2). El tipo forma parte de la huella y no puede cambiar después de sellar, '
+  + 'así que queda fuera del registro.';
+
+const FIRMA_CON_COMENTARIO = '**Aprobado por el fundador** el 1-oct-2026, en **SCRUM-1258** (comentario 17713).';
+const FIRMA_SIN_COMENTARIO = '**Aprobado por el fundador** el 1-oct-2026, en **SCRUM-1258**.';
+
+const fichaFabricada = (firma, citas) => [
+  '# Ficha fabricada por el test', '', firma, '', '## Texto aprobado, literal', '',
+  ...citas.flatMap((c) => ['> ' + c, '']),
+].join('\n');
+
+/** Las citas que el extractor saca de UNA ficha fabricada, sin registro congelado. */
+function citasDeUnaFichaFabricada(md) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum514-'));
+  try {
+    fs.writeFileSync(path.join(dir, '2026-10-01-SCRUM-1329-caso-fabricado.md'), md);
+    return citasAprobadas({ dir, congelado: path.join(dir, 'no-existe.md') });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** El veredicto sobre UNA cita fabricada. Aborta si la cita no llegó al extractor (A21). */
+function veredictoFabricado({ firma, cita, pintada }) {
+  const citas = citasDeUnaFichaFabricada(fichaFabricada(firma, [cita]));
+  assert.deepEqual(citas.map((c) => c.texto), [cita],
+    '🔴 CIEGO: la cita fabricada no ha llegado al extractor; lo que diga este caso no vale.');
+  return prosaEnElCruce(citas, pintada ? `const MOTIVO = '${cita}';` : 'const OTRA = 1;');
+}
+
+test('SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa', () => {
+  assert.ok(LITERAL_DE_1258.length > LARGO_DE_PROSA && !LITERAL_DE_1258.includes('\n'),
+    `🔴 el caso ya no prueba nada: el literal mide ${LITERAL_DE_1258.length} y el umbral es ${LARGO_DE_PROSA}.`);
+  assert.deepEqual(veredictoFabricado({ firma: FIRMA_CON_COMENTARIO, cita: LITERAL_DE_1258, pintada: true }), [],
+    '🔴 una cita con firma que cuenta, con su comentario de Jira y PINTADA tal cual sale como prosa '
+    + 'sólo por su longitud. Quien firme una frase larga tendría que partirla o reescribirla por una '
+    + 'restricción del instrumento (SCRUM-1329).');
+});
+
+test('SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta', () => {
+  const nota = 'Esta nota explica por qué se eligió esta redacción y no la otra, qué se le enseñó al '
+    + 'fundador antes de firmar y qué queda pendiente de decidir en la pantalla de exportación del registro.';
+  assert.ok(nota.length > LARGO_DE_PROSA);
+  const v = veredictoFabricado({ firma: FIRMA_CON_COMENTARIO, cita: nota, pintada: false });
+  assert.equal(v.length, 1, '🔴 una nota larga que nadie pinta ha pasado por ir en una ficha firmada.');
+  assert.match(v[0].porque, /NO SÉ/);
+  assert.match(v[0].porque, /no está pintado/);
+});
+
+test('SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código', () => {
+  const v = veredictoFabricado({ firma: 'Pendiente de firma.', cita: LITERAL_DE_1258, pintada: true });
+  assert.equal(v.length, 1, '🔴 un texto largo sin firma ha pasado: eso es relajar el guard.');
+  assert.match(v[0].porque, /NO SÉ/);
+  assert.match(v[0].porque, /firma que cuente/);
+});
+
+test('SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta', () => {
+  const v = veredictoFabricado({
+    firma: '**Aprobado por el asesor** el 1-oct-2026, en **SCRUM-1258** (comentario 17713).',
+    cita: LITERAL_DE_1258, pintada: true,
+  });
+  assert.equal(v.length, 1, '🔴 la firma de quien no puede aprobar ha dejado pasar un texto largo.');
+  assert.match(v[0].porque, /firma que cuente/);
+});
+
+test('SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE', () => {
+  const v = veredictoFabricado({ firma: FIRMA_SIN_COMENTARIO, cita: LITERAL_DE_1258, pintada: true });
+  assert.equal(v.length, 1, '🔴 una firma sin constancia localizable ha dejado pasar un texto largo.');
+  assert.match(v[0].porque, /NO SÉ/);
+  assert.match(v[0].porque, /comentario de Jira/);
+});
+
+test('SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada', () => {
+  const v = veredictoFabricado({ firma: FIRMA_CON_COMENTARIO, cita: '⚠️ **Ojo:** esto es una nota.', pintada: true });
+  assert.equal(v.length, 1, '🔴 una nota con negrita ha entrado en el cruce.');
+  assert.match(v[0].porque, /negrita/);
+});
+
+test('SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae', () => {
+  assert.equal(LARGO_DE_PROSA, 160, '🔴 el umbral de la prosa ha cambiado. No se sube ni se baja para que pase un caso.');
+  const justo = 'a'.repeat(LARGO_DE_PROSA);
+  assert.deepEqual(veredictoFabricado({ firma: 'Pendiente de firma.', cita: justo, pintada: false }), []);
+  assert.equal(veredictoFabricado({ firma: 'Pendiente de firma.', cita: justo + 'a', pintada: false }).length, 1);
 });
 
 test('SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes', () => {
