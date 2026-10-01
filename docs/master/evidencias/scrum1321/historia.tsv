@@ -1,0 +1,260 @@
+36481753567	2026-09-28T20:48:09Z	push	main	8a27dd4a	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132139
+36482046788	2026-09-28T20:50:42Z	pull_request	scrum-1130-demo-firmado	985c3c28	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133825
+36482588581	2026-09-28T20:55:21Z	pull_request	scrum-1249-descarga-recibidas	ddf1c1c2	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133831
+36483004720	2026-09-28T20:59:04Z	push	main	244b3078	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	131929
+36483616717	2026-09-28T21:04:27Z	push	main	eb227478	SIN-JOB	-	-	-	-
+36483993420	2026-09-28T21:07:43Z	pull_request	scrum-1205b-guard-lista-declara-modo	f931aaef	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133680
+36484536688	2026-09-28T21:12:34Z	pull_request	scrum-1232-libro-sin-justificantes	f597ee6a	cancelled	0	0	SIN-RECUENTO	114466
+36485004021	2026-09-28T21:16:36Z	push	main	ee0687fd	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	132539
+36485418647	2026-09-28T21:20:19Z	pull_request	scrum-1244-censo-fecha-cabe	50024da5	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133803
+36485715035	2026-09-28T21:22:59Z	pull_request	scrum-1232-libro-sin-justificantes	08d1138f	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	149142
+36486227919	2026-09-28T21:27:34Z	push	main	3928cf10	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132377
+36486602611	2026-09-28T21:30:57Z	pull_request	scrum-1253-quitar-justificante-contra-la-norma	c530a691	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134071
+36486618909	2026-09-28T21:31:05Z	pull_request	scrum-1218-disparada-censo-ciego	b8eb67b1	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134068
+36487217298	2026-09-28T21:36:24Z	pull_request	scrum-1244-reaper-segundo-plano	2a60c46f	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134253
+36487552753	2026-09-28T21:39:28Z	push	main	f7f318df	SIN-JOB	-	-	-	-
+36487682648	2026-09-28T21:40:40Z	push	main	f8b5e412	SIN-JOB	-	-	-	-
+36488235178	2026-09-28T21:45:47Z	push	main	4fd0b309	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	131933
+36488764698	2026-09-28T21:50:50Z	pull_request	scrum-825-expediente-nif	289d17c7	failure	0	0	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134555
+36488800248	2026-09-28T21:51:10Z	pull_request	scrum-1257-vacio-facturas-segun-modo	8881e8b9	cancelled	0	0	SIN-RECUENTO	75049
+36488991981	2026-09-28T21:53:00Z	pull_request	scrum-1257-vacio-facturas-segun-modo	328144a1	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134034
+36489414899	2026-09-28T21:57:04Z	pull_request	scrum-1136-selector-columnas-csv	06a33a82	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134215
+36489732289	2026-09-28T22:00:15Z	push	main	d216084a	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132357
+36490687701	2026-09-28T22:09:29Z	pull_request	scrum-1136-selector-columnas-csv	a771d413	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134045
+36490762491	2026-09-28T22:10:14Z	pull_request	scrum-1257-vacio-facturas-segun-modo	f8180aac	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134619
+36491209892	2026-09-28T22:14:40Z	pull_request	scrum-825-retirar-generador-j	8931af81	cancelled	0	0	SIN-RECUENTO	132208
+36491455402	2026-09-28T22:17:02Z	pull_request	scrum-825-d4-notas-master	2c8a6396	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134960
+36491681372	2026-09-28T22:19:20Z	push	main	0a0f6b79	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132783
+36491709498	2026-09-28T22:19:38Z	push	main	6112855b	SIN-JOB	-	-	-	-
+36491930354	2026-09-28T22:21:51Z	pull_request	scrum-1232-libro-sin-justificantes	558beb55	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134025
+36492117943	2026-09-28T22:23:45Z	pull_request	scrum-1259-abierto-con-trabajo-en-main	05ae0236	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134738
+36492348706	2026-09-28T22:25:58Z	push	main	204f5deb	SIN-JOB	-	-	-	-
+36492369524	2026-09-28T22:26:11Z	pull_request	scrum-825-panel-sin-justificante	c57a330a	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134227
+36492383486	2026-09-28T22:26:19Z	pull_request	scrum-825-retirar-generador-j	1400d6b2	cancelled	0	0	SIN-RECUENTO	65095
+36492622126	2026-09-28T22:28:44Z	pull_request	scrum-825-retirar-generador-j	f57b9fde	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134025
+36492719124	2026-09-28T22:29:44Z	push	main	bb542f6d	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132350
+36493621671	2026-09-28T22:38:50Z	push	main	d7592153	SIN-JOB	-	-	-	-
+36493799050	2026-09-28T22:40:40Z	pull_request	scrum-1259-abierto-con-trabajo-en-main	8abbcc10	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133867
+36494542868	2026-09-28T22:48:34Z	push	main	b7880db8	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	131979
+36494645539	2026-09-28T22:49:40Z	pull_request	scrum-1261-bloque-asesor	c80b2f84	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133846
+36494868159	2026-09-28T22:52:03Z	pull_request	scrum-1135-etiquetado-masivo-lista	26a3f480	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134026
+36495119523	2026-09-28T22:54:48Z	pull_request	scrum-1133-historial-whatsapp-cliente	e6fe11b0	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134733
+36496019643	2026-09-28T23:04:33Z	push	main	a4e664cd	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132328
+36496273931	2026-09-28T23:07:13Z	pull_request	scrum-1261-bloque-asesor	6787a7f0	cancelled	0	0	SIN-RECUENTO	94311
+36496904219	2026-09-28T23:14:14Z	pull_request	scrum-1261-bloque-asesor	65996e85	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134029
+36497716616	2026-09-28T23:23:11Z	push	main	837a9e53	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132123
+36501290501	2026-09-29T00:04:49Z	pull_request	scrum-825-panel-sin-justificante	4bf2d2e0	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133861
+36502072691	2026-09-29T00:14:07Z	push	main	ba1b0966	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	131940
+36545904068	2026-09-29T08:56:23Z	pull_request	scrum-1215-lote4-revisiones	d03a510e	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133626
+36545908571	2026-09-29T08:56:25Z	pull_request	scrum-1227-perfil-devuelve-lo-que-guarda	0645344e	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133672
+36545963781	2026-09-29T08:56:57Z	pull_request	scrum-1179-d-herramientas-no-red	ca45b040	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133669
+36546010633	2026-09-29T08:57:24Z	pull_request	scrum-1179-e-borrar-escalera-por-estado	51d6600b	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134235
+36546692440	2026-09-29T09:03:40Z	pull_request	scrum-1215-foto-oculta-en-firmado	f2035127	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133861
+36547024875	2026-09-29T09:06:41Z	push	main	438d3e71	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132635
+36547064985	2026-09-29T09:07:03Z	push	main	510ba6d9	SIN-JOB	-	-	-	-
+36547179297	2026-09-29T09:08:05Z	push	main	61a975bb	SIN-JOB	-	-	-	-
+36547507483	2026-09-29T09:11:04Z	pull_request	scrum-1180-clausulas-por-presupuesto	9ecbb416	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133480
+36548201830	2026-09-29T09:17:27Z	pull_request	scrum-1226-firma-no-baja-estado	1b81aa0d	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133810
+36548392380	2026-09-29T09:19:11Z	pull_request	scrum-1266-marca-dato-inventado	4acf1317	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134217
+36548437215	2026-09-29T09:19:36Z	pull_request	scrum-1263-empuje-solo-en-verde	dc8ea603	failure	2	0	vivas 327 · mudas 2 · ciegas 1 · ficheros muertos 0	136377
+36548513634	2026-09-29T09:20:17Z	pull_request	scrum-1215-foto-oculta-en-firmado	b1018396	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134029
+36548634036	2026-09-29T09:21:23Z	push	main	bd2964d9	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	132135
+36548947670	2026-09-29T09:24:18Z	pull_request	scrum-1233-mensaje-para-persona	d10d893e	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134011
+36549503290	2026-09-29T09:29:27Z	push	main	a818d281	SIN-JOB	-	-	-	-
+36549529564	2026-09-29T09:29:42Z	pull_request	scrum-1267-albaran-clave-idempotencia	86bddb1a	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134029
+36549810670	2026-09-29T09:32:19Z	pull_request	scrum-1233b-resto-s2	33dfcfc0	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	134143
+36549849544	2026-09-29T09:32:39Z	push	main	ae49a457	SIN-JOB	-	-	-	-
+36550120426	2026-09-29T09:35:10Z	pull_request	scrum-1263-empuje-solo-en-verde	ba463371	failure	2	0	vivas 328 · mudas 2 · ciegas 0 · ficheros muertos 0	135786
+36550120027	2026-09-29T09:35:10Z	pull_request	scrum-1266-marca-dato-inventado	731c43cc	failure	0	1	vivas 325 · mudas 0 · ciegas 1 · ficheros muertos 0	134526
+36550364413	2026-09-29T09:37:30Z	push	main	7a94abae	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133136
+36550514270	2026-09-29T09:38:55Z	pull_request	scrum-1269-irpf-put-descarta	2a21a569	success	0	0	vivas 326 · mudas 0 · ciegas 0 · ficheros muertos 0	133995
+36550654240	2026-09-29T09:40:14Z	push	main	51dcfe15	SIN-JOB	-	-	-	-
+36550851803	2026-09-29T09:42:07Z	push	main	2d1f9244	SIN-JOB	-	-	-	-
+36550900578	2026-09-29T09:42:33Z	pull_request	scrum-1270-vigia-avisa-en-el-pr	2da37c65	failure	0	1	vivas 328 · mudas 0 · ciegas 1 · ficheros muertos 0	135131
+36551085836	2026-09-29T09:44:15Z	push	main	488410b5	SIN-JOB	-	-	-	-
+36551272684	2026-09-29T09:45:59Z	push	main	84925995	SIN-JOB	-	-	-	-
+36551338230	2026-09-29T09:46:35Z	pull_request	scrum-1215-lote5-retiradas	849dadca	failure	2	0	vivas 328 · mudas 2 · ciegas 0 · ficheros muertos 0	135481
+36551402001	2026-09-29T09:47:11Z	pull_request	scrum-1179-c-tactil-panel-informativo	eea5c589	failure	2	1	vivas 328 · mudas 2 · ciegas 1 · ficheros muertos 0	136556
+36552101457	2026-09-29T09:53:42Z	push	main	bc63eb0f	SIN-JOB	-	-	-	-
+36552149130	2026-09-29T09:54:08Z	pull_request	scrum-743-cantidad-una-sola-forma	fb19799e	failure	2	0	vivas 328 · mudas 2 · ciegas 0 · ficheros muertos 0	135483
+36552232372	2026-09-29T09:54:56Z	push	main	77051e2a	failure	2	1	vivas 330 · mudas 2 · ciegas 1 · ficheros muertos 0	135290
+36552404091	2026-09-29T09:56:31Z	pull_request	scrum-1272-anulada-no-es-deuda	5ecbc63f	failure	2	0	vivas 330 · mudas 2 · ciegas 1 · ficheros muertos 0	137170
+36552504344	2026-09-29T09:57:27Z	push	main	b1d8845d	SIN-JOB	-	-	-	-
+36552665079	2026-09-29T09:59:00Z	push	main	223498dc	SIN-JOB	-	-	-	-
+36552736299	2026-09-29T09:59:41Z	pull_request	scrum-1233c-gastos-carga	af6d80ed	failure	2	0	vivas 332 · mudas 2 · ciegas 0 · ficheros muertos 0	136454
+36552965638	2026-09-29T10:01:42Z	pull_request	scrum-1268-sembrar-qa	06c88b40	cancelled	0	0	SIN-RECUENTO	94419
+36553597043	2026-09-29T10:07:32Z	push	main	fcc88992	failure	2	0	vivas 332 · mudas 2 · ciegas 0 · ficheros muertos 0	134945
+36553767885	2026-09-29T10:09:10Z	pull_request	scrum-1271-pendiente-tras-parcial-s2	415faf39	failure	2	1	vivas 330 · mudas 2 · ciegas 2 · ficheros muertos 0	137770
+36553899919	2026-09-29T10:10:24Z	pull_request	scrum-1273-alter-archivar	b6822537	failure	2	1	vivas 331 · mudas 2 · ciegas 1 · ficheros muertos 0	137494
+36554102618	2026-09-29T10:12:21Z	pull_request	scrum-1268-sembrar-qa	fec392af	failure	2	0	vivas 335 · mudas 2 · ciegas 0 · ficheros muertos 0	137138
+36554105190	2026-09-29T10:12:22Z	push	main	89fb1ec4	SIN-JOB	-	-	-	-
+36554640811	2026-09-29T10:17:27Z	push	main	57d3b900	SIN-JOB	-	-	-	-
+36554722477	2026-09-29T10:18:14Z	push	main	b071535a	SIN-JOB	-	-	-	-
+36555039967	2026-09-29T10:21:18Z	push	main	8eaee4ac	failure	2	0	vivas 335 · mudas 2 · ciegas 0 · ficheros muertos 0	135099
+36555141632	2026-09-29T10:22:15Z	pull_request	scrum-1274-adicional-con-trabajo	05b3536f	failure	2	0	vivas 334 · mudas 2 · ciegas 1 · ficheros muertos 0	137650
+36556036696	2026-09-29T10:30:52Z	pull_request	scrum-1268b-sembrar-presupuesto	ad6036fc	failure	2	0	vivas 337 · mudas 2 · ciegas 0 · ficheros muertos 0	137475
+36556826193	2026-09-29T10:38:39Z	pull_request	scrum-1179-c-clics-del-80	bf8c69a3	failure	0	0	SIN-RECUENTO	64414
+36556885076	2026-09-29T10:39:15Z	pull_request	scrum-1266b-aviso-y-es-correcto	180e6f51	cancelled	2	0	SIN-RECUENTO	131129
+36557092784	2026-09-29T10:41:18Z	pull_request	scrum-1179-c-clics-del-80	f0330051	failure	2	1	vivas 337 · mudas 2 · ciegas 1 · ficheros muertos 0	138901
+36557170591	2026-09-29T10:42:02Z	push	main	9ef54f8a	failure	2	1	vivas 336 · mudas 2 · ciegas 1 · ficheros muertos 0	136777
+36557272674	2026-09-29T10:43:00Z	pull_request	scrum-1215-lote3-albaran-firmados	3a4b85a3	failure	2	0	vivas 337 · mudas 2 · ciegas 0 · ficheros muertos 0	137811
+36557398138	2026-09-29T10:44:11Z	pull_request	scrum-1179-c-accion-del-80	e682ee46	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139241
+36557854528	2026-09-29T10:48:35Z	pull_request	scrum-1266b-aviso-y-es-correcto	490040f9	failure	2	0	vivas 337 · mudas 2 · ciegas 0 · ficheros muertos 0	138166
+36558106792	2026-09-29T10:51:05Z	pull_request	scrum-1278-banco-pantalla-de-error	6e960579	failure	2	1	vivas 336 · mudas 2 · ciegas 1 · ficheros muertos 0	139017
+36558247644	2026-09-29T10:52:27Z	push	main	59453d6a	SIN-JOB	-	-	-	-
+36558271547	2026-09-29T10:52:41Z	push	main	fcc2cc01	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137258
+36558849962	2026-09-29T10:58:22Z	pull_request	scrum-1276-decision-solo-sobre-sent	4db9c720	cancelled	0	0	SIN-RECUENTO	79009
+36559006088	2026-09-29T10:59:57Z	pull_request	scrum-1276-decision-solo-sobre-sent	4671d9d1	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	139994
+36585440098	2026-09-29T14:48:33Z	pull_request	scrum-1209-staging-medido	e41847ac	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140164
+36586596848	2026-09-29T14:58:21Z	push	main	00c07bef	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137445
+36586806494	2026-09-29T14:59:59Z	pull_request	scrum-1135-etiquetado-masivo-lista	38960349	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139146
+36587888906	2026-09-29T15:08:21Z	pull_request	scrum-1209-aplicados-en-las-tres	f27938c9	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139275
+36587969972	2026-09-29T15:08:59Z	push	main	00d98f6b	failure	2	0	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	138472
+36588888348	2026-09-29T15:16:08Z	push	main	82cb31c8	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137260
+36592594884	2026-09-29T15:45:14Z	pull_request	scrum-1212-correo-aceptado-web	cf8814aa	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139132
+36592715557	2026-09-29T15:46:11Z	pull_request	scrum-1275-fila-factura-abre	3676077f	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140163
+36592838855	2026-09-29T15:47:10Z	pull_request	scrum-1266b-aviso-y-es-correcto	1af79596	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140206
+36593437194	2026-09-29T15:51:56Z	pull_request	scrum-1189b-tipo-viaje-ruta-real	2c464fd0	cancelled	0	0	SIN-RECUENTO	82219
+36593678878	2026-09-29T15:53:50Z	push	main	d3b37ac8	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137883
+36593706553	2026-09-29T15:54:03Z	push	main	610adb8d	SIN-JOB	-	-	-	-
+36593771840	2026-09-29T15:54:34Z	pull_request	scrum-1189b-tipo-viaje-ruta-real	515a4651	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	138948
+36593849790	2026-09-29T15:55:11Z	push	main	f61f2d2e	SIN-JOB	-	-	-	-
+36594702557	2026-09-29T16:01:54Z	pull_request	scrum-1283-licencia-propietaria	aec441a5	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139143
+36595457449	2026-09-29T16:07:55Z	push	main	39c41d99	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137252
+36596028069	2026-09-29T16:12:34Z	push	main	d2451dbe	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	137807
+36596517503	2026-09-29T16:16:34Z	pull_request	scrum-1276-decision-solo-sobre-sent	b6e37535	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	139855
+36596548810	2026-09-29T16:16:50Z	pull_request	scrum-1233d-texto-local-aprobado	ee741134	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	138948
+36596843134	2026-09-29T16:19:17Z	pull_request	scrum-1280-nombre-no-declarado	e6ebf679	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140043
+36597307755	2026-09-29T16:23:02Z	pull_request	scrum-1284-minutos-actions	ee633c9c	cancelled	0	0	SIN-RECUENTO	79295
+36597386689	2026-09-29T16:23:40Z	pull_request	scrum-1278-banco-pantalla-de-error	870f670a	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139300
+36597464581	2026-09-29T16:24:21Z	pull_request	scrum-1284-minutos-actions	12498305	failure	2	0	vivas 339 · mudas 2 · ciegas 9 · ficheros muertos 0	143405
+36597577377	2026-09-29T16:25:15Z	push	main	e75b94ca	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	138113
+36597753443	2026-09-29T16:26:41Z	pull_request	scrum-1281-fixture-git-raiz-propia	4d8b10a6	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139312
+36598401990	2026-09-29T16:31:58Z	pull_request	scrum-1277-aviso-importe-aceptado	094fbc86	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139502
+36598758641	2026-09-29T16:34:54Z	pull_request	scrum-1280-nombre-no-declarado	7adc0e3e	cancelled	0	0	SIN-RECUENTO	65287
+36598935953	2026-09-29T16:36:20Z	pull_request	scrum-1276-decision-solo-sobre-sent	3fce3a73	cancelled	0	0	SIN-RECUENTO	65287
+36598960917	2026-09-29T16:36:32Z	pull_request	scrum-1276-decision-solo-sobre-sent	cf71f975	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139675
+36599000715	2026-09-29T16:36:52Z	pull_request	scrum-1280-nombre-no-declarado	79f434f4	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140710
+36599060511	2026-09-29T16:37:22Z	pull_request	scrum-1286-etiqueta-intermitente	0202c69c	cancelled	0	0	SIN-RECUENTO	82052
+36599350717	2026-09-29T16:39:47Z	pull_request	scrum-1286-etiqueta-intermitente	01a9bd61	failure	2	1	vivas 342 · mudas 2 · ciegas 6 · ficheros muertos 0	143684
+36599416411	2026-09-29T16:40:18Z	pull_request	scrum-1285-guardado-en-vuelo	6efadeee	failure	2	1	vivas 342 · mudas 2 · ciegas 1 · ficheros muertos 0	140571
+36599614406	2026-09-29T16:41:58Z	push	main	9977c40f	SIN-JOB	-	-	-	-
+36600655255	2026-09-29T16:50:34Z	pull_request	scrum-1284-minutos-actions	fb25a67b	failure	2	0	vivas 347 · mudas 2 · ciegas 1 · ficheros muertos 0	141457
+36600697196	2026-09-29T16:50:55Z	push	main	bc13b88c	SIN-JOB	-	-	-	-
+36600717743	2026-09-29T16:51:05Z	push	main	f09dfe44	SIN-JOB	-	-	-	-
+36600822681	2026-09-29T16:51:58Z	pull_request	scrum-825-guards-ciegos-a-factura	9e5ec452	cancelled	0	0	SIN-RECUENTO	82213
+36600951979	2026-09-29T16:53:03Z	push	main	3700de42	SIN-JOB	-	-	-	-
+36600974973	2026-09-29T16:53:15Z	pull_request	scrum-1279-landing-pinta-clausulas	c56a1478	failure	2	0	vivas 343 · mudas 2 · ciegas 0 · ficheros muertos 0	139452
+36601146241	2026-09-29T16:54:39Z	pull_request	scrum-825-guards-ciegos-a-factura	a965520e	cancelled	0	0	SIN-RECUENTO	86599
+36601666048	2026-09-29T16:58:59Z	push	main	3e87f326	SIN-JOB	-	-	-	-
+36601801324	2026-09-29T17:00:08Z	pull_request	scrum-825-guards-ciegos-a-factura	9571fad0	failure	2	1	vivas 347 · mudas 2 · ciegas 1 · ficheros muertos 0	141107
+36602345889	2026-09-29T17:04:29Z	pull_request	scrum-1126-pantalla-fusion-clientes	411e04c0	failure	2	0	vivas 348 · mudas 2 · ciegas 0 · ficheros muertos 0	140402
+36602442606	2026-09-29T17:05:17Z	push	main	c22f7e9c	SIN-JOB	-	-	-	-
+36603290498	2026-09-29T17:12:24Z	pull_request	scrum-1278-banco-pantalla-de-error	33070b1b	cancelled	0	0	SIN-RECUENTO	67632
+36603325946	2026-09-29T17:12:42Z	pull_request	scrum-1278-banco-pantalla-de-error	a3eefd55	failure	2	0	vivas 348 · mudas 2 · ciegas 0 · ficheros muertos 0	140168
+36603335741	2026-09-29T17:12:47Z	pull_request	scrum-1285b-plan-de-cobro-con-version	6b478383	failure	2	0	vivas 348 · mudas 2 · ciegas 0 · ficheros muertos 0	140365
+36603552726	2026-09-29T17:14:37Z	push	main	51d81311	failure	2	0	vivas 348 · mudas 2 · ciegas 0 · ficheros muertos 0	138908
+36603723586	2026-09-29T17:16:04Z	pull_request	scrum-1289-tap-del-obligatorio	0b9736e9	cancelled	0	0	SIN-RECUENTO	104336
+36603753813	2026-09-29T17:16:19Z	pull_request	scrum-1285c-censo-escrituras-sin-version	f971e25a	failure	2	0	vivas 348 · mudas 2 · ciegas 0 · ficheros muertos 0	140591
+36604225458	2026-09-29T17:20:24Z	pull_request	scrum-1286-etiqueta-intermitente	56b8e3ac	failure	2	0	vivas 353 · mudas 2 · ciegas 0 · ficheros muertos 0	141575
+36604712246	2026-09-29T17:24:35Z	pull_request	scrum-1289-tap-del-obligatorio	9bd5804c	failure	2	0	vivas 353 · mudas 2 · ciegas 1 · ficheros muertos 0	142151
+36605012714	2026-09-29T17:27:07Z	push	main	f9b5cdbf	SIN-JOB	-	-	-	-
+36605353988	2026-09-29T17:29:56Z	push	main	9911a2dc	SIN-JOB	-	-	-	-
+36605475029	2026-09-29T17:30:54Z	pull_request	scrum-1282-lista-blanca-sesion	745dbf83	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142664
+36605583311	2026-09-29T17:31:48Z	pull_request	scrum-1287-descripcion-cortada-390	d12f0213	failure	2	1	vivas 352 · mudas 2 · ciegas 1 · ficheros muertos 0	142468
+36605713508	2026-09-29T17:32:53Z	pull_request	scrum-1243-fallo-previo-deja-fila	9cabd8a1	failure	2	1	vivas 352 · mudas 2 · ciegas 1 · ficheros muertos 0	142986
+36605798204	2026-09-29T17:33:35Z	pull_request	scrum-1293-listas-de-marcadores-a-json	2ae78393	failure	2	0	vivas 353 · mudas 2 · ciegas 0 · ficheros muertos 0	142496
+36605842489	2026-09-29T17:33:57Z	pull_request	scrum-1288-dinero-es-avisos-s1	3991173f	failure	2	0	vivas 353 · mudas 2 · ciegas 0 · ficheros muertos 0	142497
+36606499941	2026-09-29T17:39:33Z	push	main	caa18b8c	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141475
+36606563535	2026-09-29T17:40:06Z	pull_request	scrum-1259-barrido-29sep	b7ebd11c	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142509
+36606654639	2026-09-29T17:40:52Z	push	main	cf69d0e4	SIN-JOB	-	-	-	-
+36606734506	2026-09-29T17:41:33Z	push	main	1183c799	SIN-JOB	-	-	-	-
+36607168461	2026-09-29T17:45:13Z	pull_request	scrum-1268c-sembrar-qa-iva-en-fraccion	17353ced	failure	2	0	vivas 356 · mudas 2 · ciegas 0 · ficheros muertos 0	142611
+36607532524	2026-09-29T17:48:19Z	push	main	45181d23	SIN-JOB	-	-	-	-
+36607783691	2026-09-29T17:50:28Z	pull_request	scrum-1294-a9-cierra-el-circulo	8d746cbc	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142283
+36607900842	2026-09-29T17:51:27Z	pull_request	scrum-1289b-reporters-como-argumentos	4ffe2c9b	cancelled	0	0	SIN-RECUENTO	82941
+36608003121	2026-09-29T17:52:20Z	push	main	f662a15e	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141804
+36608030549	2026-09-29T17:52:34Z	pull_request	scrum-1295-carriles-e-identidad	606f2bfe	cancelled	0	0	SIN-RECUENTO	91084
+36608099078	2026-09-29T17:53:09Z	pull_request	scrum-1289b-reporters-como-argumentos	727a3df2	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142663
+36608284826	2026-09-29T17:54:45Z	pull_request	scrum-1298-mesa-por-puesto	2abf2ec0	cancelled	0	0	SIN-RECUENTO	0
+36608439497	2026-09-29T17:56:02Z	pull_request	scrum-1298-mesa-por-puesto	5d163e68	failure	2	0	vivas 352 · mudas 2 · ciegas 5 · ficheros muertos 0	144807
+36608497041	2026-09-29T17:56:30Z	pull_request	scrum-1295-carriles-e-identidad	1b5add48	SIN-JOB	-	-	-	-
+36608526851	2026-09-29T17:56:45Z	pull_request	scrum-1295-carriles-e-identidad	4afa8de0	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142660
+36608818266	2026-09-29T17:59:18Z	pull_request	scrum-1296-go-del-fundador	e308ebbb	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142880
+36609065230	2026-09-29T18:01:19Z	push	main	c8d9d6b4	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141186
+36610767076	2026-09-29T18:15:29Z	pull_request	scrum-1301-bizum-hoy-de-madrugada	640e1ed5	failure	2	0	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	143738
+36611573227	2026-09-29T18:22:21Z	push	main	4b5ea2c2	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	141907
+36767496636	2026-09-30T19:42:10Z	pull_request	scrum-1296-go-del-fundador	26e734c6	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142701
+36768635837	2026-09-30T19:52:03Z	push	main	d0b29765	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	140828
+36771496759	2026-09-30T20:16:49Z	pull_request	scrum-1154-google-encargado	bfd23a1c	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142700
+36772823955	2026-09-30T20:28:03Z	push	main	483010e0	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	140787
+36773756212	2026-09-30T20:36:00Z	pull_request	scrum-1292-cobro-pagado-no-retrocede	99001326	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142670
+36774689817	2026-09-30T20:44:06Z	push	main	b6243e1c	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	140787
+36775428568	2026-09-30T20:50:27Z	pull_request	scrum-1261-decisiones-30sep	7ded81dc	cancelled	0	0	SIN-RECUENTO	85028
+36775693520	2026-09-30T20:52:48Z	pull_request	scrum-1291-fusion-mueve-direcciones-obra	19d04102	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	143755
+36775767003	2026-09-30T20:53:26Z	pull_request	scrum-1261-decisiones-30sep	57758398	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142898
+36776319601	2026-09-30T20:58:21Z	pull_request	scrum-1196-fecha-de-la-politica	a17623bd	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	143991
+36777005569	2026-09-30T21:04:23Z	push	main	fecff92a	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141169
+36777404278	2026-09-30T21:07:55Z	pull_request	scrum-1106-marcas-ia-contabilidad	5c36f6ac	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	159311
+36777418404	2026-09-30T21:08:02Z	push	main	d65cfaa9	SIN-JOB	-	-	-	-
+36778286341	2026-09-30T21:15:51Z	pull_request	scrum-1302-marca-en-la-vista-de-oficina	d2f71a26	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143069
+36778365482	2026-09-30T21:16:34Z	pull_request	scrum-1196-cloudflare-l3	716e5fd5	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	159125
+36778467724	2026-09-30T21:17:29Z	push	main	21c7163d	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141576
+36778493020	2026-09-30T21:17:44Z	pull_request	scrum-1196-fecha-de-la-politica	0ae2be8c	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	159168
+36778709915	2026-09-30T21:19:42Z	pull_request	scrum-1291-fusion-mueve-direcciones-obra	bf45175e	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143274
+36779322466	2026-09-30T21:25:24Z	pull_request	scrum-1296-esquema-cola	7de4b857	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143399
+36779542904	2026-09-30T21:27:29Z	push	main	57611a18	SIN-JOB	-	-	-	-
+36779662834	2026-09-30T21:28:36Z	pull_request	scrum-1302-envio-sin-telefono	a462dad6	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143215
+36779813790	2026-09-30T21:30:01Z	push	main	8084f273	SIN-JOB	-	-	-	-
+36780227138	2026-09-30T21:33:45Z	pull_request	scrum-1196-cloudflare-l3	e54eaa01	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143220
+36780440737	2026-09-30T21:35:46Z	push	main	d5685996	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142919
+36780524154	2026-09-30T21:36:34Z	push	main	a91203a9	SIN-JOB	-	-	-	-
+36781341006	2026-09-30T21:44:27Z	push	main	0e3b2d66	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141351
+36781558242	2026-09-30T21:46:32Z	pull_request	scrum-1302-foto-con-diez	6f1c76d4	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	159782
+36781986409	2026-09-30T21:50:37Z	pull_request	scrum-1126-textos-fusion	03b8cdc7	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142997
+36782326880	2026-09-30T21:53:57Z	pull_request	scrum-1296-cablear-envio	177f765a	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	144121
+36782547832	2026-09-30T21:56:05Z	push	main	71a4cd05	SIN-JOB	-	-	-	-
+36782970476	2026-09-30T22:00:20Z	push	main	264096a8	SIN-JOB	-	-	-	-
+36783339406	2026-09-30T22:03:56Z	push	main	0e86f5de	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141017
+36784227689	2026-09-30T22:12:43Z	pull_request	scrum-1306-censo-firma-superada	63f919c3	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	142891
+36784618902	2026-09-30T22:16:38Z	pull_request	scrum-1299-respaldo-smtp-sin-fila	bcb81e2f	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143076
+36784938260	2026-09-30T22:19:56Z	push	main	7042852f	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142280
+36785061296	2026-09-30T22:21:09Z	pull_request	scrum-1305-fuera-de-que-barrido	e32ef68d	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143035
+36785616372	2026-09-30T22:26:51Z	push	main	e96ef4ae	SIN-JOB	-	-	-	-
+36785727752	2026-09-30T22:28:01Z	push	main	79b8513d	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142411
+36785732438	2026-09-30T22:28:05Z	pull_request	scrum-1093-bulk-paid-zona	91ec06e2	cancelled	0	0	SIN-RECUENTO	105006
+36786167350	2026-09-30T22:32:33Z	pull_request	scrum-1154-apendice-google-fonts	0799c97b	cancelled	0	0	SIN-RECUENTO	95431
+36786343076	2026-09-30T22:34:23Z	pull_request	scrum-1306-trinquete-ficha-vigente	0ca3602b	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143253
+36786520786	2026-09-30T22:36:14Z	pull_request	scrum-1093-bulk-paid-zona	be73d94f	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143209
+36786701141	2026-09-30T22:38:14Z	pull_request	scrum-1154-apendice-google-fonts	6dd5bce2	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	144156
+36787066681	2026-09-30T22:42:06Z	push	main	8472603c	SIN-JOB	-	-	-	-
+36787589644	2026-09-30T22:47:41Z	push	main	776115b0	SIN-JOB	-	-	-	-
+36787741834	2026-09-30T22:49:21Z	push	main	46195e86	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141010
+36789343021	2026-09-30T23:06:43Z	pull_request	scrum-1307-negarse-con-envios	8083498b	cancelled	2	0	SIN-RECUENTO	134551
+36789497002	2026-09-30T23:08:25Z	pull_request	scrum-1308-scripts-sin-nombre-de-test	f034b56a	cancelled	2	0	SIN-RECUENTO	122957
+36789881039	2026-09-30T23:12:45Z	pull_request	scrum-1142-toque-44-anular-rectificativa	3e95cf0e	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143283
+36790213435	2026-09-30T23:16:25Z	pull_request	scrum-1307-negarse-con-envios	53184172	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143276
+36790464921	2026-09-30T23:19:17Z	pull_request	scrum-1308-scripts-sin-nombre-de-test	ac10c11b	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143413
+36790562538	2026-09-30T23:20:23Z	pull_request	scrum-1309-banner-mail-sent	e8c2ec65	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143452
+36790690938	2026-09-30T23:21:52Z	push	main	f98f3ee1	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142457
+36791201462	2026-09-30T23:27:44Z	push	main	ae8cb318	SIN-JOB	-	-	-	-
+36791215611	2026-09-30T23:27:54Z	pull_request	scrum-1303-estado-en-el-where	94bdc494	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	143249
+36791242358	2026-09-30T23:28:12Z	push	main	a0044d7f	SIN-JOB	-	-	-	-
+36791371620	2026-09-30T23:29:45Z	push	main	1dbc9c24	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	158107
+36791659401	2026-09-30T23:33:03Z	pull_request	scrum-1312-boton-email-recibo-gateado	9b4e436c	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	142271
+36792076990	2026-09-30T23:37:55Z	push	main	e8ceef0c	SIN-JOB	-	-	-	-
+36792374547	2026-09-30T23:41:25Z	push	main	e9e71cab	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	141022
+36797156697	2026-10-01T00:38:09Z	pull_request	scrum-1315-gemelos-estado-dentro-del-where	2db8965a	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	159762
+36797245799	2026-10-01T00:39:15Z	pull_request	scrum-1253-remedicion-liva-1oct	8a5eb2c2	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	158979
+36797467473	2026-10-01T00:42:00Z	pull_request	scrum-1244-cabe-hoy-medido	bc2958d3	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	160186
+36797773776	2026-10-01T00:45:41Z	pull_request	scrum-1257-p8-sin-justificantes	94c93418	cancelled	0	0	SIN-RECUENTO	83729
+36797938424	2026-10-01T00:47:40Z	pull_request	scrum-1257-p8-sin-justificantes	1c6221d4	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	160561
+36797941392	2026-10-01T00:47:42Z	pull_request	scrum-1316-censo-tipo-iva	69cd83d7	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	159529
+36798373730	2026-10-01T00:52:57Z	pull_request	scrum-1311-suelo-de-poblacion	5cd73e70	cancelled	0	0	SIN-RECUENTO	116814
+36798550297	2026-10-01T00:55:07Z	pull_request	scrum-1262-baja-whatsapp-corte-en-todas-las-vias	94f6a574	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	160972
+36798983978	2026-10-01T01:00:28Z	pull_request	scrum-1313-ciegos-editor-suelto	023bd450	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	160139
+36799027967	2026-10-01T01:00:57Z	pull_request	scrum-1311-suelo-de-poblacion	970af255	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	160144
+36799083725	2026-10-01T01:01:38Z	pull_request	scrum-1244-cabe-hoy-medido	b86ed567	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	160144
+36800436904	2026-10-01T01:18:05Z	pull_request	scrum-1313-ciegos-editor-suelto	b397e075	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	160143
+36800533840	2026-10-01T01:19:18Z	pull_request	scrum-1318-resend-ya-tiene-contrato	efc6d61c	failure	2	1	vivas 354 · mudas 2 · ciegas 1 · ficheros muertos 0	161365
+36800930882	2026-10-01T01:24:19Z	pull_request	scrum-1319-linea-progreso-sif1	50ff50e4	failure	2	0	vivas 355 · mudas 2 · ciegas 0 · ficheros muertos 0	160530

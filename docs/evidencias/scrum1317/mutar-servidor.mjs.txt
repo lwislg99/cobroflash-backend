@@ -1,0 +1,64 @@
+// Mutaciones de SERVIDOR (con build): el trinquete de scrum55 sigue mordiendo con la lista a cero,
+// y el test de comportamiento ve una ruta reabierta.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const RAIZ = process.argv[2];
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR']) delete entorno[k];
+const git = (...a) => spawnSync('git', ['-C', RAIZ, ...a], { encoding: 'utf8' }).stdout.trim();
+const build = () => spawnSync(process.execPath, [path.join(RAIZ, 'node_modules/typescript/bin/tsc')], { cwd: RAIZ, env: entorno, encoding: 'utf8' }).status;
+function correr(tests) {
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', ...tests], { cwd: RAIZ, env: entorno, encoding: 'utf8' });
+  const sal = r.stdout || '';
+  return { exit: r.status, pasan: (sal.match(/^ok \d+ - /gm) || []).length, caidos: [...sal.matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1].slice(0, 80)) };
+}
+const T55 = 'tests/scrum55-admin-fail-closed.test.mjs';
+const T1317 = 'tests/scrum1317-cierre-admin-e-inicio-del-operario.test.mjs';
+const DECL = 'src/core/http/adminRouteDeclarations.ts';
+
+const MUTACIONES = [
+  { id: 'T1 alguien vuelve a APARCAR una ruta (lista 0 -> 1, tope quieto)', f: DECL, tests: [T55],
+    de: "  // «plantillas de mensaje» y la ruta sirve plantillas de PRESUPUESTO.\n];",
+    a: "  // «plantillas de mensaje» y la ruta sirve plantillas de PRESUPUESTO.\n  { method: 'GET', path: '/admin/metrics/inicio', tanda: 3, duda: 'Una duda cualquiera, lo bastante larga para pasar el suelo' },\n];" },
+  { id: 'T2 aparca la ruta Y sube el tope a 1 (el atajo entero)', f: DECL, tests: [T55], doble: ['export const PENDIENTE_MAX = 0;', 'export const PENDIENTE_MAX = 1;'],
+    de: "  // «plantillas de mensaje» y la ruta sirve plantillas de PRESUPUESTO.\n];",
+    a: "  // «plantillas de mensaje» y la ruta sirve plantillas de PRESUPUESTO.\n  { method: 'GET', path: '/admin/metrics/inicio', tanda: 3, duda: 'Una duda cualquiera, lo bastante larga para pasar el suelo' },\n];" },
+  { id: 'T3 se le quita el requireRole a DELETE /admin/templates/:id', f: 'src/modules/templates/app/routes/templates.routes.ts', tests: [T55, T1317],
+    de: "router.delete('/:id', requireRole('admin'), async", a: "router.delete('/:id', async" },
+  { id: 'T4 se le quita el requireRole a platform-funnel', f: 'src/modules/metrics/app/routes/metrics.routes.ts', tests: [T55, T1317],
+    de: "router.get('/platform-funnel', requireRole('admin'), async", a: "router.get('/platform-funnel', async" },
+  { id: 'T5 la portada del operario pide una suma a la base', f: 'src/modules/metrics/domain/metrics.service.ts', tests: [T1317],
+    de: "    prisma.invoice.count({ where: { merchantId, status: 'pending' } }),",
+    a: "    prisma.invoice.aggregate({ where: { merchantId, status: 'pending' }, _sum: { total: true } }).then(() => 0),", },
+];
+
+console.log(`POBLACION=${MUTACIONES.length} mutaciones · HEAD=${git('rev-parse', 'HEAD')} · seguidos sin cambios=${git('status', '--porcelain', '-uno') === ''}`);
+console.log(`build base: exit=${build()}`);
+const base = correr([T55, T1317]);
+console.log(`BASE sin mutar: exit=${base.exit} pasan=${base.pasan} caen=${base.caidos.length}`);
+if (base.exit !== 0 || base.pasan === 0) { console.log('CIEGO: la base no esta verde'); process.exit(1); }
+let mudas = 0;
+for (const m of MUTACIONES) {
+  const f = path.join(RAIZ, m.f);
+  let s = fs.readFileSync(f, 'utf8');
+  const pares = [[m.de, m.a], ...(m.doble ? [m.doble] : [])];
+  let ciego = false;
+  for (const [de, a] of pares) { if (s.split(de).length !== 2) ciego = true; s = s.replace(de, a); }
+  if (ciego) { console.log(`${m.id}: CIEGO, ancla no unica`); mudas++; continue; }
+  fs.writeFileSync(f, s);
+  const numstat = git('diff', '--numstat').replace(/\s+/g, ' ');
+  const b = build();
+  const r = correr(m.tests);
+  git('restore', '--source=HEAD', '--', m.f);
+  const limpio = git('status', '--porcelain', '-uno') === '';
+  const veredicto = b !== 0 ? `NO COMPILA (exit ${b})` : (r.caidos.length ? 'CAE' : 'MUDA');
+  if (veredicto === 'MUDA') mudas++;
+  console.log(`${m.id}\n   aplicada: ${numstat} · ${veredicto} · pasan=${r.pasan} caen=${r.caidos.length} · restaurado=${limpio}\n   ${r.caidos.join('\n   ')}`);
+}
+console.log(`build final: exit=${build()}`);
+const fin = correr([T55, T1317]);
+console.log(`BASE al final: exit=${fin.exit} pasan=${fin.pasan} · mudas=${mudas}`);
+console.log(`EXIT=${mudas === 0 && fin.exit === 0 ? 0 : 1}`);
+process.exit(mudas === 0 && fin.exit === 0 ? 0 : 1);

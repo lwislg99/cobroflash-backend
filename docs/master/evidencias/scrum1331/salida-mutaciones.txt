@@ -1,0 +1,14 @@
+POBLACION: 3 mutaciones declaradas en tests/scrum1331-sin-red-se-dice.test.mjs
+BASE sin mutar: exit=0 · tests=5 · caidos=0
+#0 VIVA · scripts/censo-regla-42.mjs · numstat «1	1	scripts/censo-regla-42.mjs» · exit=1 · caidos=2/5 · restaurado=true
+     cae: SCRUM-1331 · 🔴 sin DNS, scrum804b DECLARA sus 5 casos y los 3 de red caen diciendo CIEGO · SIN RED
+     cae: SCRUM-1331 · 🔴 el censo distingue SIN_RED de SIN_REFS: «no hay red» no es «no pude leer»
+#1 VIVA · scripts/tanda-con-veredicto.mjs · numstat «1	1	scripts/tanda-con-veredicto.mjs» · exit=1 · caidos=2/5 · restaurado=true
+     cae: SCRUM-1331 · 🔴 el envoltorio dice al final qué rojos NO son un caso que falle, y no cambia el código de salid
+     cae: SCRUM-1331 · ✅ una tanda sana no dice nada, y una que no se puede leer LO DICE
+#2 VIVA · scripts/_huella-de-la-caida.mjs · numstat «1	1	scripts/_huella-de-la-caida.mjs» · exit=1 · caidos=2/5 · restaurado=true
+     cae: SCRUM-1331 · 🔴 el envoltorio dice al final qué rojos NO son un caso que falle, y no cambia el código de salid
+     cae: SCRUM-1331 · el lector, por dentro: la huella se busca SÓLO en la salida del fichero que cae
+RESULTADO: 3 vivas de 3
+git status: «»
+EXIT=0

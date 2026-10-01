@@ -41,7 +41,8 @@ const axios = requiere('axios'); // la instancia CJS: la MISMA que carga dist
 const MERCHANT = 4242;
 
 // Un PDF de verdad en disco: `sendInvoiceEmail` lo lee para adjuntarlo y, si no está, lanza ANTES
-// de llegar a Resend (`invoice_pdf_unavailable`) — que es otro fallo, sin fila, y no el que se mide.
+// de llegar a Resend (`invoice_pdf_unavailable`) — que es otro fallo, y no el que se mide aquí:
+// ése lo mide la sección ⑥ (SCRUM-1243), con la opción `pdf` del banco.
 const DIR = temporal('yaqu-1235-');
 const PDF = path.join(DIR, 'f.pdf');
 fs.writeFileSync(PDF, '%PDF-1.4\n%laboratorio 1235\n');
@@ -51,8 +52,10 @@ fs.writeFileSync(PDF, '%PDF-1.4\n%laboratorio 1235\n');
  * función que entrega el webhook y otra que lee la pantalla de cobros por `listarCobrosConCorreo` (lo que sirve `GET /admin/cobros`).
  *
  * `resend` decide qué contesta el proveedor: `'falla'` o `'acepta'`.
+ * `pdf` (SCRUM-1243) decide qué pasa ANTES de Resend: `'ok'` (está en disco), `'falta'` (la ruta
+ * no existe → `invoice_pdf_unavailable`) o `'revienta'` (`ensureInvoicePdf` lanza).
  */
-function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 'falla' } = {}) {
+function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 'falla', pdf = 'ok' } = {}) {
   const filasCorreo = [];
   const filasEvento = [];
   const cobro = {
@@ -105,13 +108,17 @@ function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 
         filasEvento.push({ chargeId: id, type: 'invoiced', payload: { invoice_id: factura.id } });
         return { ...factura };
       },
-      ensureInvoicePdf: async () => ({ diskPath: PDF, pdfUrl: '/x.pdf' }),
+      ensureInvoicePdf: async () => {
+        if (pdf === 'revienta') throw new Error('EACCES: el disco no deja leer');
+        return { diskPath: pdf === 'falta' ? path.join(DIR, 'no-existe.pdf') : PDF, pdfUrl: '/x.pdf' };
+      },
       ensureChargeReceiptToken: async () => 'tok_1235',
     },
   };
 
-  const estado = { resend };
+  const estado = { resend, posts: 0 };
   axios.post = async (url) => {
+    estado.posts += 1;
     if (!String(url).includes('api.resend.com')) throw new Error(`🔴 el banco no esperaba un POST a ${url}`);
     if (estado.resend === 'falla') {
       const e = new Error('Request failed with status code 503'); e.code = 'ERR_BAD_RESPONSE';
@@ -165,7 +172,7 @@ function banco({ chargeId = 900, invoiceId = 7000, numero = 'F260001', resend = 
     const { sendInvoiceEmail } = requiere(rutaDe('dist/lib/email.js'));
     await sendInvoiceEmail({ invoiceId, toEmail: cobro.customer.email, toName: cobro.customer.name, prisma: doble }).catch(() => {});
   };
-  return { filasCorreo, entregar, pantalla, reenviar, cobro, estado };
+  return { filasCorreo, entregar, pantalla, reenviar, cobro, estado, doble };
 }
 
 // ═══ ① SUELO — el fallo tiene que haber ocurrido de verdad, o esto no mide nada ═════════════════
@@ -313,4 +320,78 @@ test('SCRUM-1235 · ✅ sin fallo, la fila no dice nada', async () => {
   assert.match(p.texto(), /Cliente de laboratorio/, '🔴 CIEGO: el cobro ni siquiera se ha pintado');
   assert.doesNotMatch(p.texto(), /No se pudo enviar/);
   assert.equal(p.boton(), undefined);
+});
+
+// ═══ ⑥ SCRUM-1243 — EL FALLO QUE NI SIQUIERA LLEGA A RESEND ════════════════════════════════════
+//
+// Hasta SCRUM-1243, si el PDF no se podía leer (`invoice_pdf_unavailable`) o `ensureInvoicePdf`
+// lanzaba, `sendInvoiceEmail` reventaba ANTES de llamar a `enviarPorResend` y no quedaba fila: el
+// aviso de ③ no salía. GO del fundador en SCRUM-1243, comentario 17582: escribir esa fila fuera
+// de `enviarPorResend`, sin cambiar la respuesta al proveedor y sin tocar la emisión.
+//
+// 🔴 LAS DOS MITADES (condición del orquestador): el fallo previo DEJA FILA, y cuando el que falla
+// es Resend NO HAY DOS. Sin la segunda, un arreglo que duplicara pasaría igual.
+
+for (const pdf of ['falta', 'revienta']) {
+  test(`SCRUM-1243 · 🔴 el fallo ANTES de Resend (pdf: ${pdf}) deja UNA fila \`fallo_envio\` y el aviso sale`, async () => {
+    const b = banco({ pdf, resend: 'acepta' });
+    const r = await b.entregar();
+    assert.equal(b.cobro.status, 'paid', '🔴 CIEGO: el cobro no llegó a `paid`; el banco no ejercita el caso');
+    assert.equal(b.estado.posts, 0,
+      '🔴 CIEGO: el correo llegó a Resend, así que esto no mide el fallo PREVIO a Resend');
+    assert.equal(b.filasCorreo.length, 1,
+      `🔴 EL CORREO NO SALIÓ Y NO QUEDA RASTRO: ${b.filasCorreo.length} filas en email_messages.\n`
+      + '  Sin fila, el aviso de SCRUM-1235 no sale y el profesional no se entera de que su cliente\n'
+      + '  ha pagado y no tiene la factura.');
+    const [fila] = b.filasCorreo;
+    assert.equal(fila.status, 'fallo_envio');
+    assert.equal(fila.relatedType, 'invoice');
+    assert.equal(fila.relatedId, 7000);
+    assert.equal(fila.kind, 'invoice');
+    assert.equal(fila.merchantId, MERCHANT);
+    assert.equal(fila.providerId, null, 'no hubo proveedor: no se inventa un id');
+    assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7000, clase: 'invoice' });
+    // ⛔ La respuesta al proveedor NO cambia (SCRUM-1235, c.17381).
+    assert.equal(r.statusCode, 200);
+    assert.equal(r.cuerpo?.status, 'paid');
+  });
+}
+
+test('SCRUM-1243 · 🔴 NO HAY DOS FILAS cuando el que falla es Resend', async () => {
+  // La fila de este caso ya la escribe `enviarPorResend`. Si la del fallo previo se escribiera
+  // desde un `catch` que envuelve también a Resend, aquí saldrían dos.
+  const b = banco({ pdf: 'ok', resend: 'falla' });
+  await b.entregar();
+  assert.equal(b.estado.posts, 1, '🔴 CIEGO: el correo no llegó a Resend; esto no mide su fallo');
+  assert.equal(b.filasCorreo.length, 1,
+    `🔴 FILA DUPLICADA: ${b.filasCorreo.length} filas para UN envío fallido. «Una fila por envío»\n`
+    + '  es la invariante de SCRUM-501, y un duplicado no se ve hasta que alguien cuenta.');
+  assert.equal(b.filasCorreo[0].status, 'fallo_envio');
+});
+
+test('SCRUM-1243 · ✅ y cuando todo sale, UNA fila y no es de fallo', async () => {
+  const b = banco({ pdf: 'ok', resend: 'acepta' });
+  await b.entregar();
+  assert.equal(b.estado.posts, 1);
+  assert.equal(b.filasCorreo.length, 1);
+  assert.notEqual(b.filasCorreo[0].status, 'fallo_envio');
+});
+
+test('SCRUM-1243 · un justificante (J-…) que falla antes de Resend se registra como justificante', async () => {
+  const b = banco({ chargeId: 920, invoiceId: 7020, numero: 'J-2026-0002', pdf: 'falta' });
+  await b.entregar();
+  assert.equal(b.filasCorreo.length, 1);
+  assert.equal(b.filasCorreo[0].kind, 'justificante');
+  assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7020, clase: 'justificante' });
+});
+
+test('SCRUM-1243 · `sendInvoiceEmail` SIGUE LANZANDO en el fallo previo: la fila no se traga el error', async () => {
+  // «Enviar de nuevo» y el resto de llamadores detectan el fallo por la EXCEPCIÓN; registrar no puede
+  // convertirla en un retorno silencioso. Y el error que sube es el mismo que antes.
+  const b = banco({ pdf: 'falta' });
+  const { sendInvoiceEmail } = requiere(rutaDe('dist/lib/email.js'));
+  await assert.rejects(
+    sendInvoiceEmail({ invoiceId: 7000, toEmail: b.cobro.customer.email, prisma: b.doble }),
+    /invoice_pdf_unavailable/);
+  assert.equal(b.filasCorreo.length, 1);
 });

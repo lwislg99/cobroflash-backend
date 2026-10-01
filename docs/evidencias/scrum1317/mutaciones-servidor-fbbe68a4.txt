@@ -1,0 +1,24 @@
+POBLACION=5 mutaciones · HEAD=fbbe68a429a88f182e510e41e044974dcadeecbd · seguidos sin cambios=true
+build base: exit=0
+BASE sin mutar: exit=0 pasan=17 caen=0
+T1 alguien vuelve a APARCAR una ruta (lista 0 -> 1, tope quieto)
+   aplicada: 1 0 src/core/http/adminRouteDeclarations.ts · CAE · pasan=4 caen=1 · restaurado=true
+   SCRUM-55: la lista de pendientes mengua (ratchet + caducidad)
+T2 aparca la ruta Y sube el tope a 1 (el atajo entero)
+   aplicada: 2 1 src/core/http/adminRouteDeclarations.ts · MUDA · pasan=5 caen=0 · restaurado=true
+   
+T3 se le quita el requireRole a DELETE /admin/templates/:id
+   aplicada: 1 1 src/modules/templates/app/routes/templates.routes.ts · CAE · pasan=14 caen=3 · restaurado=true
+   SCRUM-1317 · 🔴 con sesión de OPERARIO, las once rutas cerradas NIEGAN — y antes
+   SCRUM-1317 · un rol que no es admin ni operario tampoco pasa (allowlist, no deny
+   SCRUM-55: toda ruta /admin declara rol (fail-closed)
+T4 se le quita el requireRole a platform-funnel
+   aplicada: 1 1 src/modules/metrics/app/routes/metrics.routes.ts · CAE · pasan=15 caen=2 · restaurado=true
+   SCRUM-1317 · el embudo de PLATAFORMA exige las dos cosas: ser admin Y ser el mer
+   SCRUM-55: toda ruta /admin declara rol (fail-closed)
+T5 la portada del operario pide una suma a la base
+   aplicada: 1 1 src/modules/metrics/domain/metrics.service.ts · CAE · pasan=11 caen=1 · restaurado=true
+   SCRUM-1317 · la portada del operario no lleva NI UN importe agregado del negocio
+build final: exit=0
+BASE al final: exit=0 pasan=17 · mudas=1
+EXIT=1

@@ -41,7 +41,10 @@ const ALBARAN_ACTION_REGISTRY = [
   // sentido si el albarán lleva precios y queda algo por facturar — y esa condición la responde
   // el derivado de tres valores, no un booleano.
   { id: 'btnEmitir',        destinos: { borrador: 'primaria',   emitido: 'oculta',     firmado: 'oculta' } },
-  { id: 'btnEnviarFirmar',  destinos: { borrador: 'oculta',     emitido: 'primaria',   firmado: 'oculta' } },
+  // SCRUM-1302 (F) · los dos ENVÍOS van por WhatsApp: sin canal su único desenlace es 409
+  // `customer_missing_phone`, así que `requiere` los oculta (el patrón de SCRUM-993 en el Trabajo).
+  { id: 'btnEnviarFirmar',  destinos: { borrador: 'oculta',     emitido: 'primaria',   firmado: 'oculta' },
+    requiere: 'cliente-con-whatsapp' },
   { id: 'btnFacturar',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'primaria' },
     cuando: 'valorado-con-pendiente' },
   // SCRUM-290 (A0.4) · LA OTRA MITAD DE LA PRIMARIA DE `firmado`, y son EXCLUYENTES por
@@ -58,7 +61,8 @@ const ALBARAN_ACTION_REGISTRY = [
   // Secundarias: como mucho dos por estado (regla 2).
   { id: 'btnFirmarAqui',    destinos: { borrador: 'oculta',     emitido: 'secundaria', firmado: 'oculta' } },
   { id: 'btnPdf',           destinos: { borrador: 'secundaria', emitido: 'secundaria', firmado: 'secundaria' } },
-  { id: 'btnWhatsApp',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'secundaria' } },
+  { id: 'btnWhatsApp',      destinos: { borrador: 'oculta',     emitido: 'oculta',     firmado: 'secundaria' },
+    requiere: 'cliente-con-whatsapp' },
   { id: 'btnEditarLineas',  destinos: { borrador: 'secundaria', emitido: 'oculta',     firmado: 'oculta' } },
 
   // El resto, al «⋮» (regla 3).
@@ -66,7 +70,9 @@ const ALBARAN_ACTION_REGISTRY = [
   // SCRUM-1215 (lote 3, c.17494) · la foto NO se ofrece en `firmado`: el servidor la rechaza SIEMPRE
   // en ese estado (`POST /admin/albaranes/:id/fotos` → 409 `albaran_locked`, «Un albarán firmado
   // está congelado»). Un botón cuya única respuesta posible es un error no se pinta.
-  { id: 'btnFoto',          destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'oculta' } },
+  // SCRUM-1302 (G) · y tampoco con las diez plazas llenas: su único desenlace es 409 `max_fotos`.
+  { id: 'btnFoto',          destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'oculta' },
+    requiere: 'caben-fotos' },
   { id: 'btnVerTrabajo',    destinos: { borrador: 'overflow',   emitido: 'overflow',   firmado: 'overflow' } },
   // SCRUM-302 · DUPLICAR. En una reforma de tres semanas cada dia es un parte: duplicar el de
   // ayer y ajustar cantidades ahorra casi todo el trabajo. Va al «⋮» en los TRES estados —

@@ -1,0 +1,25 @@
+✔ SCRUM-1216b · 🔴 declara «mi última fue la 41» → su primera factura es la 42 (43.6878ms)
+✔ SCRUM-1216b · 🔴 lo que PROMETE la vista previa es lo que SALE (declarado 41) (23.893ms)
+✔ SCRUM-1216b · 🔴 declarado 41 y ya emitidas F…0042 y F…0043 → la siguiente es la 44 (nunca repite) (18.8596ms)
+✔ SCRUM-1216b · 🔴 declaró 41 y luego contesta «No» → el arranque se BORRA (NULL explícito) y vuelve a la 0001 (23.582ms)
+✔ SCRUM-1216b · `seqDeLaSerieF`: NULL («no declaró») y 1 («declaró arranque 1») son datos distintos, y lo corrupto no fabrica un número (0.6196ms)
+✔ SCRUM-1216b · CONTROL · «No, empiezo ahora» → la 0001 (4.2911ms)
+✔ SCRUM-1216b · CONTROL SCRUM-780 · el contador VIEJO (6, por FG-001..005) no es un arranque → la 0001 (0.57ms)
+✔ SCRUM-1216b · CONTROL · el arranque es DEL AÑO: declarado este año, el 1-ene siguiente vuelve a la 0001 (3.5301ms)
+✔ SCRUM-1216b · 🔴 con facturas F ya emitidas este año, declarar un arranque se RECHAZA (choca_con_emitidas) (4.5635ms)
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94
+✖ tests\scrum1216b-numero-de-arranque.test.mjs (2358.6194ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2367.7977
+
+✖ failing tests:
+
+test at tests\scrum1216b-numero-de-arranque.test.mjs:1:1
+✖ tests\scrum1216b-numero-de-arranque.test.mjs (2358.6194ms)
+  'test failed'

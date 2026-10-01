@@ -20,6 +20,13 @@ las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aqu�
 esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
 `docs/equipo/sesion-N.md`, y tu carril en la tabla §11bis de `docs/equipo/orquestador.md`.
 
+🔴 **Un fallo no se convierte en una nota. Se convierte en una COMPROBACIÓN.** Si no se puede convertir,
+se dice que no se puede y se queda como aviso — pero sin fingir que apuntarlo lo arregla. Cómo se cumple
+(la línea `A9:` de tu registro, A10 y las cicatrices de tu puesto) está en la A9, importada aquí debajo
+junto a la A10 (SCRUM-1294). Lo exige un guard.
+
+@docs/equipo/00-normas-siempre.md
+
 ⚠️ **Lee estos ficheros desde `origin/main` (`git show origin/main:<ruta>`) o abre el chat en un worktree
 al día:** el checkout compartido `cobroflash-backend` va miles de commits por detrás, y lo que se carga
 desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-sep-2026, auditoría de la S0.)*

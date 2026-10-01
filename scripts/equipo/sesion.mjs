@@ -134,6 +134,22 @@ export function validarNombre(nombre, equipo = EQUIPO_DE_LUIS) {
 }
 
 /**
+ * SCRUM-1282 · el nombre de una acción que SOLO LEE (`contexto`). La lista blanca de arriba protege a
+ * las que lanzan, relevan, paran u olvidan una sesión: ahí un nombre ajeno es actuar sobre el equipo
+ * de otro. `contexto` no toca nada —busca por `===` en `claude agents --json` y lee un jsonl—, y con
+ * la lista blanca rechazaba los nombres con los que el equipo trabaja de verdad (`s5-29c`,
+ * `cobroflash-backend-57`): la medida buena del relevo existía y nadie la podía tomar, así que todas
+ * las sesiones restaban a mano. Aquí basta una FORMA segura: nunca llega a un proceso ni a una ruta.
+ *
+ * @returns {null | {veredicto:'NOMBRE-INVALIDO', motivo:string}}
+ */
+const NOMBRE_DE_LECTURA = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+export function validarNombreDeLectura(nombre) {
+  if (typeof nombre === 'string' && NOMBRE_DE_LECTURA.test(nombre)) return null;
+  return { veredicto: 'NOMBRE-INVALIDO', motivo: `«${nombre}» no es un nombre de sesión: letras, números, «.», «_» y «-», hasta 64, sin empezar por signo` };
+}
+
+/**
  * Los argumentos de `claude` para lanzar. Nunca recibe flags de fuera: solo el nombre (validado),
  * el sessionId (validado) y el texto del prompt, que va como UN argumento y no se interpreta.
  */
@@ -964,7 +980,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
 
   if (accion === 'contexto') {
-    const malo = validarNombre(nombre, equipo);
+    // SCRUM-1282: solo lee. La lista blanca del equipo NO aplica aquí (ver `validarNombreDeLectura`).
+    const malo = validarNombreDeLectura(nombre);
     if (malo) salir(1, malo);
     const c = leerContexto(config, nombre, leerAgentes(config));
     if (c.veredicto !== 'CONTEXTO') salir(2, c);

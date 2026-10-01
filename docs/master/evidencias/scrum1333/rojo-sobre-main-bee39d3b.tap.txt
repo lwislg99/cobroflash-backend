@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: SCRUM-1333 · SUELO Y ✅ POSITIVO: una factura sellada UNA vez deja UNA fila en la cola, con su registro tal como se selló
+ok 1 - SCRUM-1333 · SUELO Y ✅ POSITIVO: una factura sellada UNA vez deja UNA fila en la cola, con su registro tal como se selló
+  ---
+  duration_ms: 79.7244
+  type: 'test'
+  ...
+# Subtest: SCRUM-1333 · ✅ dos facturas DISTINTAS dejan cada una SU fila: no encolar dos veces no es no encolar la segunda
+ok 2 - SCRUM-1333 · ✅ dos facturas DISTINTAS dejan cada una SU fila: no encolar dos veces no es no encolar la segunda
+  ---
+  duration_ms: 67.2845
+  type: 'test'
+  ...
+# Subtest: SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola
+not ok 3 - SCRUM-1333 · 🔴 ④b · dos entregas A LA VEZ del mismo cobro → UNA factura, UNA huella, UNA fila en la cola
+  ---
+  duration_ms: 55.9263
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1333-una-factura-se-encola-una-vez.test.mjs:140:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 LA MISMA FACTURA ESTÁ 2 VECES EN LA COLA DE LA AEAT: la entrega que pierde la carrera ha vuelto a encolar su alta.
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1333-una-factura-se-encola-una-vez.test.mjs:149:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su cadena queda BYTE A BYTE
+not ok 4 - SCRUM-1333 · 🔴 una factura ya sellada que vuelve a pasar por `sellarTrasEmision` NO se encola otra vez — y su cadena queda BYTE A BYTE
+  ---
+  duration_ms: 80.9253
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1333-una-factura-se-encola-una-vez.test.mjs:154:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 LA MISMA FACTURA ESTÁ 2 VECES EN LA COLA DE LA AEAT tras una segunda pasada por `sellarTrasEmision`.
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1333-una-factura-se-encola-una-vez.test.mjs:164:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo
+not ok 5 - SCRUM-1333 · 🔴 dos encolados A LA VEZ de la misma factura → UNA fila: la pregunta va DENTRO del cerrojo
+  ---
+  duration_ms: 62.4905
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv1\\tests\\scrum1333-una-factura-se-encola-una-vez.test.mjs:173:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 DOS ENCOLADOS A LA VEZ HAN DEJADO 2 FILAS: preguntar y escribir no van bajo el mismo cerrojo.
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/scrum1333-una-factura-se-encola-una-vez.test.mjs:188:10)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1333 · ✅ si el PRIMER intento no llegó a la cola, la segunda pasada SÍ encola: manda la cola, no «quién selló»
+ok 6 - SCRUM-1333 · ✅ si el PRIMER intento no llegó a la cola, la segunda pasada SÍ encola: manda la cola, no «quién selló»
+  ---
+  duration_ms: 64.5061
+  type: 'test'
+  ...
+# Subtest: SCRUM-1333 · ✅ regla 2: una fila de OTRO comercio no cuenta como «ya encolada»
+ok 7 - SCRUM-1333 · ✅ regla 2: una fila de OTRO comercio no cuenta como «ya encolada»
+  ---
+  duration_ms: 79.5384
+  type: 'test'
+  ...
+# Subtest: SCRUM-1333 · ✅ una fila de OTRA operación de la misma factura no cuenta como su alta
+ok 8 - SCRUM-1333 · ✅ una fila de OTRA operación de la misma factura no cuenta como su alta
+  ---
+  duration_ms: 77.4168
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 5
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6348.2322

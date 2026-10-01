@@ -21,7 +21,7 @@ import path from 'node:path';
 
 import {
   censarLlamadas, censarLlamadasDeTexto, censarEscritores, emisoresConFila, emisoresSinFila,
-  REPOSITORIO, RAIZ,
+  censarSendMailDeTexto, censarSendMailDirectos, REPOSITORIO, RAIZ,
 } from './_censo-emisores-con-fila.mjs';
 import { registrarEnvio, CLASES_DE_CORREO } from '../dist/modules/messaging/domain/registroDeEnvios.js';
 import { constanciaDeEnvio, constanciaDeFallo } from '../dist/modules/messaging/domain/constanciaCorreo.js';
@@ -303,4 +303,48 @@ test('SCRUM-508 · 🔴 los emisores SIGUEN LANZANDO cuando el correo no sale', 
       + 'semántica de fallo: sus llamadores dependen de la excepción para registrarlo, y en '
       + '`lifecycle` además para no marcar como enviado un correo que no salió.');
   }
+});
+
+// ── 7 · 🔴 SCRUM-1299 · LOS `sendMail` DIRECTOS TAMBIÉN ENTRAN EN EL CENSO ─────────────────────
+//
+// Hasta SCRUM-1299 este guard estaba VERDE con un hueco dentro: los respaldos SMTP de
+// `email.service` mandan con `transporter.sendMail` a pelo, y el censo A sólo mira las llamadas a
+// `enviarCorreo`/`enviarPorResend`. No los contaba ni a favor ni en contra. El censo C los ve.
+
+test('SCRUM-1299 · 🔴 AUTOPRUEBA del censo C: distingue un sendMail con fila de uno sin ella', () => {
+  const ve = (fuente) => censarSendMailDeTexto(fuente).map((l) => `${l.fallo ? 'F' : '-'}${l.exito ? 'E' : '-'}`);
+  // Mismo token `sendMail` en las dos caras: con fila en los dos desenlaces, y sin ninguna.
+  assert.deepEqual(ve(`async function a() {
+      try { await t.sendMail(m); } catch (e) { await registrarEnvio(x); throw e; }
+      await registrarEnvio(y); }`), ['FE'],
+    '🔴 el censo C no reconoce un sendMail que deja fila al fallar y al salir.');
+  assert.deepEqual(ve('async function a() { await t.sendMail(m); return 1; }'), ['--'],
+    '🔴 el censo C da por bueno un sendMail sin ninguna fila: es la forma exacta que tenía el hueco.');
+  // Sólo la del fallo: el `registrarEnvio` de un `catch` no cuenta como «salió».
+  assert.deepEqual(ve(`async function a() {
+      try { await t.sendMail(m); } catch (e) { await registrarEnvio(x); throw e; } }`), ['F-'],
+    '🔴 el censo C cuenta el registro del catch como si fuera el del éxito.');
+  // Uno ANTERIOR al envío (el de 1243, el del PDF) no es el de este envío.
+  assert.deepEqual(ve(`async function a() {
+      try { leerPdf(); } catch (e) { await registrarEnvio(x); throw e; }
+      await t.sendMail(m); }`), ['--'],
+    '🔴 el censo C atribuye al envío un registro que está ANTES de él (el fallo del PDF de 1243).');
+  assert.deepEqual(ve('// t.sendMail(m) — sólo un comentario'), [],
+    '🔴 el censo C lee comentarios como llamadas.');
+});
+
+test('SCRUM-1299 · 🔴 todo sendMail directo de src/ deja fila al fallar Y al salir', () => {
+  const envios = censarSendMailDirectos();
+  // SUELO por identidad, no por número: los tres que existen hoy. Si uno se va, se dice a dónde.
+  assert.deepEqual([...new Set(envios.map((e) => e.fichero))].sort(),
+    ['src/integrations/enviarCorreo.ts', 'src/modules/messaging/domain/email.service.ts'],
+    `🔴 han cambiado los ficheros que mandan con sendMail directo:\n    ${envios.map((e) => `${e.fichero}:${e.linea}`).join('\n    ')}`);
+  assert.ok(envios.length >= 3, `🔴 ESCÁNER CIEGO: ${envios.length} sendMail en src/, y hay TRES (30-sep-2026).`);
+  const sinFila = envios.filter((e) => !e.fallo || !e.exito);
+  assert.deepEqual(sinFila, [],
+    '🔴 HAY ENVÍOS POR SMTP QUE NO DEJAN FILA EN ALGUNO DE SUS DOS DESENLACES:\n    '
+    + sinFila.map((e) => `${e.fichero}:${e.linea} (fallo ${e.fallo ? 'sí' : 'NO'} · éxito ${e.exito ? 'sí' : 'NO'})`).join('\n    ')
+    + '\n\n  Un envío por SMTP sin fila es invisible para el aviso de Cobros (SCRUM-1235): si falla, nadie\n'
+    + '  se entera. `registrarEnvio` en el catch (constanciaDeFallo) y después del envío\n'
+    + '  (constanciaDeEnvio(null)), como hace `enviarCorreo` por SMTP.');
 });

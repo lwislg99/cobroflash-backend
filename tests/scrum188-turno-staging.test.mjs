@@ -358,7 +358,7 @@ test('SCRUM-188 · dentro de tanda() no queda ningún process.exit (se saltaría
   // Se mira SOLO LO EJECUTABLE (SCRUM-176/168/3): el literal aparece varias veces en los
   // comentarios que explican por qué está prohibido, y un guard que mire el fichero entero se
   // caza a sí mismo. La cabecera del propio `_guard-texto.mjs` cuenta las cuatro veces que mordió.
-  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
+  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'staging-gated.mjs'));
   const i = fuente.indexOf('async function tanda()');
   assert.ok(i > 0, 'no encuentro el cuerpo de la tanda: ¿se renombró la función?');
   const cuerpo = fuente.slice(i);
@@ -371,7 +371,7 @@ test('SCRUM-188 · dentro de tanda() no queda ningún process.exit (se saltaría
 });
 
 test('SCRUM-188 · el runner toma el turno ANTES del preflight (que ya toca la BD)', () => {
-  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'test-staging-gated.mjs'));
+  const fuente = leerFuente(path.join(RAIZ, 'scripts', 'staging-gated.mjs'));
   const iLock = fuente.indexOf('adquirirLock(');
   const iPreflight = fuente.indexOf('preflight-schema-drift.mjs');
   assert.ok(iLock > 0 && iPreflight > 0);

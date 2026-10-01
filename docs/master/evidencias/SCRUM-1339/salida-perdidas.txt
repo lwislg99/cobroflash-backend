@@ -1,0 +1,51 @@
+ATRIBUCIÓN: 1155 ficheros de tests/ leídos en . · 9171 nombres literales distintos
+
+A · MISMO ÁRBOL
+  POBLACIÓN: 70 árboles probados más de una vez · 141 jobs · de ellos verdes 126 · de push a main 61
+  jobs a los que les faltan casos que su hermano sí trae: 47 de 141 (33 %)
+    · de ellos, VERDES (fail 0): 38
+    · de ellos, de push a main: 14 (verdes 14)
+  casos perdidos por job: mín 1 · mediana 9 · máx 65 · total 715
+  veredicto que tenían en el hermano los casos perdidos: pass 715
+  bloques seguidos: 65 · cola del fichero 45 · en medio 0 · cabeza 0 · fichero entero 2 · sin situar 18
+  pares emparejados por orden: 31 · por multiplicidad (el orden no bastó): 16
+  ficheros (jobs · verdes · casos):
+      17 ·  16 ·  127  scrum524b-trinquete-de-la-tabla.test.mjs
+      14 ·  12 ·  289  vigia-atascados.test.mjs
+       9 ·   7 ·  119  scrum834-puerta-avisador-rojo.test.mjs
+       6 ·   4 ·   20  scrum286-bloques-orden.test.mjs
+       4 ·   4 ·   78  scrum454-destructivo-sin-comprobacion.test.mjs
+       3 ·   1 ·   17  SIN-LOCALIZAR
+       2 ·   2 ·   15  scrum813-trinquete-de-zona.test.mjs
+       2 ·   0 ·   16  scrum237-negacion-respaldada.test.mjs
+       1 ·   1 ·    2  scrum161-evidencia-tanda.test.mjs
+       1 ·   1 ·    1  scrum176-guard-mensaje.test.mjs
+       1 ·   1 ·    6  scrum931-un-solo-importe-de-plantilla.test.mjs
+       1 ·   1 ·    2  scrum996-suelo-de-arranque.test.mjs
+       1 ·   1 ·   10  scrum888g-senal-en-la-firma.test.mjs
+       1 ·   1 ·    4  scrum522-guards-fuera-de-la-tanda.test.mjs
+       1 ·   1 ·    9  scrum1262-la-baja-corta-todas-las-vias.test.mjs
+
+B · LA LÍNEA DE MAIN (casos que traen los 2 commits de antes Y los 2 de después, y éste no)
+  POBLACIÓN: 123 jobs de push con resumen · 123 commits de main distintos · medibles (con 2 vecinos a cada lado) 119
+  commits de main cuyo «build + tests» perdió casos: 42 de 119 (35 %) · de ellos verdes: 39
+  ficheros (en cuántos commits):
+      14  vigia-atascados.test.mjs
+      13  scrum524b-trinquete-de-la-tabla.test.mjs
+      12  SIN-LOCALIZAR
+      10  scrum834-puerta-avisador-rojo.test.mjs
+       3  scrum286-bloques-orden.test.mjs
+       2  scrum853-avisador-solo-obligatorio.test.mjs
+       2  scrum454-destructivo-sin-comprobacion.test.mjs
+       2  scrum237-negacion-respaldada.test.mjs
+       2  scrum411-exports-inalcanzables.test.mjs
+       2  scrum931-un-solo-importe-de-plantilla.test.mjs
+       1  scrum312-importador-clientes.test.mjs
+       1  scrum888g-senal-en-la-firma.test.mjs
+       1  scrum595-etiquetas-del-documento.test.mjs
+       1  scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs
+       1  scrum161-evidencia-tanda.test.mjs
+       1  scrum522-guards-fuera-de-la-tanda.test.mjs
+       1  scrum388-censo-mecanismo.test.mjs
+       1  scrum813-trinquete-de-zona.test.mjs
+EXIT=0

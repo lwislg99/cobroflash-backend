@@ -1,0 +1,20 @@
+# g2-firma-con-tramos · guard-firma-con-tramos.mjs · pulsar «aceptar» no envia nada en ningun modo: 0 hallazgos, todo ciego
+# EXIT=1
+
+
+  SCRUM-892 · LA FIRMA DIBUJADA A 390 px, POR MODO Y DENSIDAD
+  ────────────────────────────────────────────────────────────────────────────────────────────────────
+  🔴 normal · densidad 1 · lienzo interno 304×150 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
+  🔴 normal · densidad 3 · lienzo interno 912×450 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
+  🔴 tramos · densidad 1 · lienzo interno 304×150 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
+  🔴 tramos · densidad 3 · lienzo interno 912×450 · en pantalla 304×150 · NO LLEGÓ A ENVIAR
+  ────────────────────────────────────────────────────────────────────────────────────────────────────
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+
+  🔴 NO SUPE MIRAR — esto NO es «la firma de 3 opciones funciona»:
+
+     · normal · densidad 1 → pulsar «aceptar» no llegó a enviar nada
+     · normal · densidad 3 → pulsar «aceptar» no llegó a enviar nada
+     · tramos · densidad 1 → pulsar «aceptar» no llegó a enviar nada
+     · tramos · densidad 3 → pulsar «aceptar» no llegó a enviar nada
+     · el CONTROL (modo normal) no produce una firma con trazo: el instrumento no está dibujando

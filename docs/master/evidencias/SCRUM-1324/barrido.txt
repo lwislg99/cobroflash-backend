@@ -1,0 +1,43 @@
+POBLACION runs=1084 · 2026-09-20T01:50:31Z → 2026-10-01T02:06:26Z · tomada 2026-10-01T02:06:21.639Z
+
+umbral de rojos seguidos (derivado): 5
+  N=2: peor job «CI / meta-guard · los guards caen cuando deben» · 23 rojos de 141 fuera de rachas ≥2 (16.3 %) → 11.53 rachas por azar en 30 días
+  N=3: peor job «CI / meta-guard · los guards caen cuando deben» · 35 rojos de 153 fuera de rachas ≥3 (22.9 %) → 4.78 rachas por azar en 30 días
+  N=4: peor job «CI / meta-guard · los guards caen cuando deben» · 41 rojos de 159 fuera de rachas ≥4 (25.8 %) → 1.70 rachas por azar en 30 días
+  N=5: peor job «CI / meta-guard · los guards caen cuando deben» · 41 rojos de 159 fuera de rachas ≥5 (25.8 %) → 0.44 rachas por azar en 30 días
+umbral de runs sin ejecutar (derivado): 22 · hueco máximo 21 en «CI / meta-guard · los guards caen cuando deben»
+umbral de horas de cron (derivado): 10 · hueco máximo 9.8 h en «Vigía de PR atascados / vigilar» desde 2026-09-28T09:00:24Z
+
+rachas rojas por job (tamaño → cuántas):
+  CI / build + tests (con banco desechable): {"1":9,"2":1}
+  CI / guards de navegador (fuera de la tanda): {"1":1,"4":1,"9":1,"10":1,"11":1,"35":1}
+  CI / meta-guard · los guards caen cuando deben: {"1":23,"2":6,"3":2,"31":1}
+  CI / trinquete · ningún test nuevo mide la zona de la máquina: {"1":11,"3":1}
+  CI / vigía del despliegue (informativo): {"1":7,"12":1}
+  CI / constancia del ALTER (informativo): {"14":1}
+  Conflicto de registro / resolver: {}
+  Vigía de PR atascados / vigilar: {}
+  Vigía del despliegue / vigia: {"1":1,"4":1}
+
+EPISODIOS DE AVISO sobre 1148 instantes: 8
+  2026-09-20T19:30:12Z → 2026-09-21T08:35:51Z (13.1 h) · ROJO-SOSTENIDO · CI / guards de navegador (fuera de la tanda)
+  2026-09-25T04:20:31Z → 2026-09-25T16:35:39Z (12.3 h) · ROJO-SOSTENIDO · Vigía del despliegue / vigia
+  2026-09-25T12:44:58Z → 2026-09-25T16:27:43Z (3.7 h) · ROJO-SOSTENIDO · CI / constancia del ALTER (informativo)
+  2026-09-25T13:24:05Z → 2026-09-25T16:27:43Z (3.1 h) · ROJO-SOSTENIDO · CI / vigía del despliegue (informativo)
+  2026-09-25T17:03:45Z → 2026-09-25T18:49:33Z (1.8 h) · ROJO-SOSTENIDO · CI / guards de navegador (fuera de la tanda)
+  2026-09-28T18:50:39Z → 2026-09-28T21:16:36Z (2.4 h) · ROJO-SOSTENIDO · CI / guards de navegador (fuera de la tanda)
+  2026-09-29T09:54:56Z → SIGUE VIVO (40.2 h) · ROJO-SOSTENIDO · CI / guards de navegador (fuera de la tanda)
+  2026-09-29T10:52:41Z → SIGUE VIVO (39.2 h) · ROJO-SOSTENIDO · CI / meta-guard · los guards caen cuando deben
+
+ESTADO en 2026-10-01T02:06:21.639Z:
+  ROJO-RECIENTE  OBLIG. CI / build + tests (con banco desechable) · 202/487 · 1 en rojo, por debajo del umbral 5: no avisa
+  ROJO-SOSTENIDO        CI / guards de navegador (fuera de la tanda) · 160/487 · 35 ejecuciones seguidas en rojo desde 2026-09-29T00:14:07Z (umbral 5)
+  ROJO-SOSTENIDO        CI / meta-guard · los guards caen cuando deben · 190/487 · 31 ejecuciones seguidas en rojo desde 2026-09-29T09:54:56Z (umbral 5)
+  VERDE                 CI / trinquete · ningún test nuevo mide la zona de la máquina · 191/487 · success · e9e71cab · 2026-09-30T23:41:25Z
+  VERDE                 CI / vigía del despliegue (informativo) · 254/487 · success · e9e71cab · 2026-09-30T23:41:25Z
+  VERDE                 CI / constancia del ALTER (informativo) · 251/487 · success · e9e71cab · 2026-09-30T23:41:25Z
+  VERDE                 Conflicto de registro / resolver · 445/487 · success · e9e71cab · 2026-09-30T23:41:25Z
+  VERDE                 Vigía de PR atascados / vigilar · 52/52 · success · 8084f273 · 2026-09-30T21:33:54Z
+  VERDE                 Vigía del despliegue / vigia · 55/56 · success · e9e71cab · 2026-10-01T00:53:22Z
+sin declarar: []
+EXIT=0

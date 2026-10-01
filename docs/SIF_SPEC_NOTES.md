@@ -6,7 +6,8 @@
 >
 > **Hoy no existe el envío a la AEAT.** No está apagado ni pendiente de activar: no está
 > escrito (auditoría `docs/legal/AUDITORIA_CAMINO_EMISION.md`, SCRUM-525, eslabones 8 y 9).
-> Tampoco existe la cola `VfSubmission` — no está en `prisma/schema.prisma`, medido.
+> La cola `VfSubmission` **existe como TABLA** desde SCRUM-1296 (`prisma/schema.prisma`), y una
+> tabla no es un envío: ver §6.
 >
 > **Por qué esta cabecera (SCRUM-566):** el inventario de SCRUM-538 midió que este documento no
 > decía en ninguna parte que el envío no estuviera construido. Ninguna frase era falsa; lo que
@@ -109,9 +110,17 @@ ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
 
 ## 6. Stack elegido para `src/modules/fiscal/verifactu/sif.client.ts` (S1-D)  **[SE HARÁ]**
 
+> 🟡 **Actualizado el 30-sep-2026 (SCRUM-1296, fase 2): emitir ENCOLA, y el envío sigue sin
+> enganchar.** Sellar una factura deja su registro de alta en la cola (`VfSubmission`, `pending`),
+> construido por el MISMO constructor que la exportación. El procesador (`sif.procesador.ts`) coge
+> lo pendiente de un obligado, respeta su `TiempoEsperaEnvio` y aplica `decidirTrasEnvio` tal cual.
+> Pero el procesador recibe el envío **inyectado**: nada en `src/` llama a `enviarSobre` ni al
+> procesador, y no hay certificado. Así que **sigue sin haber envío a la AEAT**. Con `SIF_ENABLED`
+> en OFF la cola está en pausa. Expediente: `docs/master/SCRUM-1296.md`.
+>
 > 🟡 **Actualizado el 25-sep-2026 (SCRUM-1127, fase 1):** `sif.client.ts` y `sif.cola.ts`
-> **EXISTEN pero NO ESTÁN CABLEADOS.** Nada de `src/` los llama, así que **sigue sin haber envío
-> a la AEAT**. Solo se han probado contra un servidor falso local, nunca contra la AEAT. Los
+> **existían sin cablear** (a esa fecha: la nota de arriba dice qué cambió). Nada de `src/` los
+> llamaba, así que no había envío a la AEAT. Solo se han probado contra un servidor falso local, nunca contra la AEAT. Los
 > endpoints salen solo de `VERIFACTU_AEAT_ENDPOINT` y no hay ninguno escrito en el código.
 > La respuesta se lee con un lector propio acotado al XSD `RespuestaSuministro`, **sin
 > `fast-xml-parser`**: una dependencia nueva la decide el fundador. El expediente es
@@ -119,8 +128,9 @@ ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
 >
 > Lo que sigue es el texto anterior a esa fecha y sigue siendo cierto para lo que no se ha
 > construido. `sif.client.ts` NO EXISTÍA: esta sección era la decisión de cómo se construiría,
-> no una descripción de lo que había. `fast-xml-parser` tampoco está instalado, y la cola
-> `VfSubmission` del último punto no está en el esquema.
+> no una descripción de lo que había. `fast-xml-parser` tampoco está instalado. La cola
+> `VfSubmission` del último punto **está en el esquema desde SCRUM-1296** (el modelo de
+> SCRUM-1127 §④, con `VfFlujoObligado` para el `TiempoEsperaEnvio` por obligado).
 
 - **HTTP:** `https` nativo de Node con agente mTLS (cert del merchant/colaborador en env
   o storage cifrado **[decisión de custodia con el asesor]**).

@@ -1,6 +1,7 @@
 // src/modules/templates/app/routes/templates.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
 
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /admin/templates — crear plantilla
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const name         = String(req.body?.name || '').trim();
     const currency     = String(req.body?.currency || 'EUR').slice(0, 3).toUpperCase();
@@ -59,7 +60,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /admin/templates/:id — actualizar (nombre o líneas)
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
@@ -85,7 +86,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /admin/templates/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
