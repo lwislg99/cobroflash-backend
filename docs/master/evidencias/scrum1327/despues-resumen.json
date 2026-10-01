@@ -1,0 +1,42 @@
+[
+  {
+    "id": "g1-caja-datos-del-cliente",
+    "exit": 1,
+    "veredicto": "⟦veredicto⟧ 2 hallazgos · 2 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos"
+  },
+  {
+    "id": "g1-caja-documento-suelto",
+    "exit": 1,
+    "veredicto": "⟦veredicto⟧ 1 hallazgo · 2 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos"
+  },
+  {
+    "id": "g1-portal-en-la-ficha",
+    "exit": 1,
+    "veredicto": "⟦veredicto⟧ 1 hallazgo · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos"
+  },
+  {
+    "id": "g2-aviso-bizum",
+    "exit": 2,
+    "veredicto": "⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde"
+  },
+  {
+    "id": "g2-vias-de-cobro",
+    "exit": 2,
+    "veredicto": "⟦veredicto⟧ 0 hallazgos · 8 ciegos → salida 2 (no supe medir) · un ciego no es un verde"
+  },
+  {
+    "id": "g2-firma-con-tramos",
+    "exit": 2,
+    "veredicto": "⟦veredicto⟧ 0 hallazgos · 5 ciegos → salida 2 (no supe medir) · un ciego no es un verde"
+  },
+  {
+    "id": "positivo-caja-datos-del-cliente",
+    "exit": 1,
+    "veredicto": "⟦veredicto⟧ 2 hallazgos · 0 ciegos → salida 1 (hallazgo)"
+  },
+  {
+    "id": "positivo-portal-en-la-ficha",
+    "exit": 1,
+    "veredicto": "⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)"
+  }
+]

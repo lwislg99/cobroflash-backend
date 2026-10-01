@@ -63,9 +63,7 @@
     {"clave":"export · src/modules/fiscal/verifactu/sif.client.ts::enviarSobre","donde":"src/modules/fiscal/verifactu/sif.client.ts:342","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/fiscal/verifactu/sif.client.ts::ETAPAS_ENVIO","donde":"src/modules/fiscal/verifactu/sif.client.ts:52","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/fiscal/verifactu/sif.client.ts::leerEndpointDeConfiguracion","donde":"src/modules/fiscal/verifactu/sif.client.ts:176","carril":"J1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::decidirTrasEnvio","donde":"src/modules/fiscal/verifactu/sif.cola.ts:141","carril":"J1","ticket":"SCRUM-1127"},
     {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::ESTADOS_VF_SUBMISSION","donde":"src/modules/fiscal/verifactu/sif.cola.ts:26","carril":"J1","ticket":"SCRUM-1127"},
-    {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::recuperarEnviadoSinCierre","donde":"src/modules/fiscal/verifactu/sif.cola.ts:100","carril":"J1","ticket":"SCRUM-1127"},
     {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::trocear","donde":"src/modules/fiscal/verifactu/sif.cola.ts:74","carril":"J1","ticket":"SCRUM-1127"},
     {"clave":"export · src/modules/invoicing/domain/clienteCongelado.ts::CAMPOS_CONGELADOS","donde":"src/modules/invoicing/domain/clienteCongelado.ts:86","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/invoicing/domain/criterioCaja.ts::clasificarPorCobro","donde":"src/modules/invoicing/domain/criterioCaja.ts:90","carril":"J1","ticket":"SCRUM-1185"},
@@ -155,7 +153,8 @@
     {"clave":"ruta · POST /schema-check","donde":"src/app.ts:328","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:455","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta-inalcanzable · POST /admin/ai/quote-message","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
-    {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"}
+    {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"},
+    {"clave":"export · src/modules/fiscal/verifactu/sif.procesador.ts::procesarObligado","donde":"src/modules/fiscal/verifactu/sif.procesador.ts:70","carril":"J1","ticket":"SCRUM-1296","motivo":"SE QUEDA SIN ENCHUFAR a proposito (decision D2 = X del orquestador): el envio llega inyectado y engancharlo a un cron con enviarSobre exige el certificado, cuya custodia no es de ninguna sesion. Se enchufa cuando se decida la custodia; ese dia el guard de SCRUM-1128 vera el llamante"}
   ],
   "retiradas": [
     {"clave":"ruta · GET /admin/customers/:id/fusion-preview","motivo":"SCRUM-1126: conectada en customerDetailView.js (Fusionar con otro cliente, previsualización antes de confirmar, sólo admin)"},
@@ -181,6 +180,8 @@
     {"clave":"export · src/modules/jobs/domain/albaranSerie.ts::vistaPreviaAlbaran","motivo":"SCRUM-1184: conectada. GET /admin/albaranes/serie la usa (via siguienteNumeroDeAlbaran) para la vista previa de Nuevo albaran"},
     {"clave":"cuerpo · POST /admin/templates::paymentTerms","motivo":"SCRUM-1188: conectada en quotesView.js («Guardar como plantilla»; solo FULL_UPFRONT/FIFTY_FIFTY/MANUAL, CUSTOM no cabe)"},
     {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"},
-    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","motivo":"SCRUM-1267: conectada en jobDetailView.js (crearAlbaran; la clave se acuña una vez al abrir la hoja de alta y la reutilizan los reintentos)"}
+    {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","motivo":"SCRUM-1267: conectada en jobDetailView.js (crearAlbaran; la clave se acuña una vez al abrir la hoja de alta y la reutilizan los reintentos)"},
+    {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::decidirTrasEnvio","motivo":"SCRUM-1296: conectada en sif.procesador.ts (procesarObligado aplica su decision tal cual a cada envio)"},
+    {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::recuperarEnviadoSinCierre","motivo":"SCRUM-1296: conectada en sif.procesador.ts (filas que se quedaron en sent: vuelven a pending con el intento contado)"}
   ]
 }

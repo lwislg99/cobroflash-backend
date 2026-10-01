@@ -53,9 +53,14 @@ export type CobroConEventos = {
  * son las de `fechaDeCobro.ts`, aprobadas por el fundador para las facturas en el bloque B de
  * `docs/master/SCRUM-397.md`, donde consta el criterio y su motivo. Un segundo criterio para lo
  * mismo volvería a ser dos respuestas para un solo hecho.
+ *
+ * SCRUM-1301 · `zona` es la del MERCHANT del cobro (`zonaDelMerchant`). `confirm-bizum` ya valida con
+ * ella (SCRUM-1093); si aquí se revalidaba sin ella, en UTC, el «hoy» de Madrid entre las 00:00 y las
+ * 02:00 era «mañana» y el webhook tiraba la fecha que el paso anterior acababa de aceptar. Sin zona,
+ * el día natural en UTC: lo mismo que antes, y lo correcto para un merchant que no la declara.
  */
-export function resolverInstanteDeCobro(declarada: EntradaFecha, ahora: Date = new Date()): ResolucionFecha {
-  return resolverFechaDeCobro(declarada, ahora);
+export function resolverInstanteDeCobro(declarada: EntradaFecha, ahora: Date = new Date(), zona?: string): ResolucionFecha {
+  return resolverFechaDeCobro(declarada, ahora, zona);
 }
 
 /**

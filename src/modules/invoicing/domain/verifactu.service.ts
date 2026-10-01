@@ -10,6 +10,7 @@
  */
 import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
+import type { Prisma } from '@prisma/client';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
 import { declarabilidadDe } from './tipoDocumento'; // SCRUM-413
@@ -33,7 +34,7 @@ import {
   resolverTipoRectificativa,
   type ModoSinDestinatario,
   RegistroNoEmitibleError,
-  resolverSinDestinatario,
+  resolverSinDestinatario, TipoDistintoDelSelladoError, // SCRUM-1258 (misma línea: no mueve las de abajo)
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
@@ -348,6 +349,26 @@ export async function applyVeriFactu(
     // otro advisory lock de la aplicación.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
+    // ── SCRUM-1330 · LO YA SELLADO NO SE VUELVE A SELLAR ───────────────────────────────────
+    //
+    // Esta función no miraba si la factura ya tenía huella: recalculaba y PISABA `vfHash`,
+    // `vfPrevHash` y `vfTimestamp`. Bastaba una segunda entrega del mismo cobro para dejar una
+    // factura emitida con otra huella —y, si ya tenía otra encadenada detrás, a ésa apuntando a
+    // una huella que ya no existía—. Una factura emitida no se edita (regla 29 del máster).
+    //
+    // La pregunta va DENTRO del cerrojo y no antes: dos sellados de la misma factura a la vez
+    // leerían los dos «sin huella» fuera de él. Aquí el segundo espera, y al entrar la ve.
+    //
+    // Devuelve el sello PERSISTIDO, no lanza: quien llama (`sellarTrasEmision`) tiene que poder
+    // terminar una factura que se quedó con la huella escrita y el estado sin marcar.
+    const yaSellada = await tx.invoice.findUnique({
+      where: { id: invoice.id },
+      select: { vfHash: true, vfPrevHash: true, qrData: true },
+    });
+    if (yaSellada?.vfHash) {
+      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };
+    }
+
     // ── SCRUM-177 · UNA SOLA CADENA: el alta también encadena a las anulaciones ────────────
     //
     // Antes esta consulta miraba SOLO altas (`vfHash not null`), mientras que la anulación
@@ -411,11 +432,16 @@ export async function applyVeriFactu(
       data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
     });
 
-    return { vfHash, prevHash, qrUrl };
+    return { vfHash, prevHash, qrUrl, conservada: false };
   });
 
   const { vfHash, prevHash, qrUrl } = sellado;
-  console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  if (sellado.conservada) {
+    // SCRUM-1330: que no recalcular no sea mudo. No es un sellado, y no se anuncia como uno.
+    console.warn(`[verifactu] invoice=${invoice.number} ya estaba sellada: se conserva su huella ${vfHash.slice(0, 16)}… y no se vuelve a sellar`);
+  } else {
+    console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  }
   return { vfHash, vfPrevHash: prevHash, qrUrl };
 }
 
@@ -761,7 +787,104 @@ export async function buildVerifactuRegistrosXml(
   // registro fiscal sería peor que el fallo original.
   const excluidos: Array<{ number: string; motivo: string }> = [];
 
-  const construirRegistro = (inv: (typeof invoices)[number]): string => {
+  // SCRUM-1296 · D1 (GO del fundador, SCRUM-1296 comentario 17641): el constructor del registro
+  // vive FUERA de esta función, en `construirRegistro` (más abajo), para que la cola de remisión
+  // encole EXACTAMENTE el mismo registro que esta exportación declara. Un solo constructor
+  // (SCRUM-209/240), y con el mismo nombre que tenía de closure: el catálogo de la tabla VeriFactu
+  // (SCRUM-524b) ancla sus comprobaciones a ese nombre.
+  const contexto: ContextoRegistro = { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts };
+
+  const registros: string[] = [];
+  for (const inv of invoices) {
+    try {
+      registros.push(construirRegistro(inv, contexto));
+    } catch (e) {
+      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
+      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
+      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
+      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
+      if (e instanceof RegistroNoEmitibleError) {
+        excluidos.push({ number: inv.number, motivo: e.motivo });
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
+  // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
+  // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
+  // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
+  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
+  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
+  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
+  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
+  // enseña en una inspección — que es justo donde tiene que estar.
+  const parteExclusiones = excluidos.length === 0 ? '' : `
+  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
+       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
+       numero y su motivo para que se corrijan y se vuelva a exportar.
+${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
+  -->`;
+
+  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
+  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
+  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
+  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
+  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
+  // particulares, o solo rectificativas, cae aquí entero.
+  //
+  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
+  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
+  // entregarlo; entregarlo en silencio, peor todavía.
+  if (registros.length === 0) {
+    return { xml: '', count: 0, excluidos };
+  }
+
+  // SCRUM-240: el sobre lo arma UN solo sitio del proyecto (`registro.builder.ts`), igual que
+  // el desglose desde SCRUM-209. Aquí estaba escrito a mano un segundo constructor que producía
+  // el MISMO contenido línea a línea que aquél: solo cambiaban la declaración XML, la sangría y
+  // el salto final. Ahora eso es presentación —los tres parámetros de abajo— y el contenido no
+  // se duplica.
+  //
+  // LA SALIDA DE ESTA RUTA NO CAMBIÓ NI UN BYTE, y se comprobó ejecutando: sha256 de la salida
+  // ANTES y DESPUÉS sobre siete casos (una factura, dos, con anulación, con exclusión, todo
+  // excluido, rectificativa, sin destinatario) — idénticos los siete, con el control de que la
+  // comparación SÍ veía un cambio deliberado. Esa comprobación fue del PR, **no** es un test
+  // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
+  // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
+  const xml = construirSobreRegFactu({
+    obligado: { nombreRazon: nombreEmisorDelSobre, nif: merchant.taxId },
+    registrosFacturaXml: registros,
+    comentario: parteExclusiones,
+    declaracionXml: true,
+    saltoFinal: true,
+  });
+
+  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
+  // un pack con exclusiones informaría un número que el fichero no respalda.
+  return { xml, count: registros.length, excluidos };
+}
+
+/**
+ * SCRUM-1296 · D1 — el registro de facturación de UNA factura: su `<sum:RegistroFactura>` de alta y,
+ * si la tiene sellada, el de anulación detrás.
+ *
+ * Es el cuerpo que vivía como closure dentro de `buildVerifactuRegistrosXml`, MOVIDO SIN CAMBIAR
+ * UN BYTE (GO del fundador en SCRUM-1296, comentario 17641, con la condición de que la salida de la
+ * exportación no cambiara: sha256 antes y después sobre los 7 casos de SCRUM-240). Por eso conserva
+ * la sangría de cuando era closure: las plantillas de abajo llevan esa sangría DENTRO del XML, y
+ * reindentarlas cambiaría el documento.
+ *
+ * Lo usan dos llamadores y ningún tercero: la exportación (todas las facturas del ejercicio) y la
+ * cola de remisión (`registroParaRemision`, una factura recién sellada). Mismo registro en los dos:
+ * lo que se declara en una inspección es lo que se remitió.
+ *
+ * Lanza `RegistroNoEmitibleError` si la factura no se puede declarar (el llamador decide: la
+ * exportación la excluye con su motivo; la cola deja constancia y no encola).
+ */
+function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro): string {
+  const { zona, emisorFichaViva, productor, porHuella, registrosOrdenados, opts } = contexto;
     // SCRUM-665 · el emisor de ESTA factura, congelado si lo tiene. `merchant.taxId!` ya exigía
     // NIF antes de llegar aquí (gate de arriba, sobre el merchant EN VIVO); una factura frigida
     // ANTES de tener NIF configurado es el mismo caso límite que ya cubre `excluidos` para el
@@ -955,6 +1078,21 @@ export async function buildVerifactuRegistrosXml(
       : null;
 
     const tipoFactura = sinDestinatario ? sinDestinatario.tipoFactura : tipoBase;
+
+    // ── 🔴 SCRUM-1258 · EL TIPO QUE SE DECLARA ES EL QUE ENTRÓ EN LA HUELLA ────────────────────
+    //
+    // `tipoBase` sale de la misma columna y por la misma función (`declarabilidadDe`) que usó el
+    // sellado: es el tipo que está DENTRO de `inv.vfHash`. Si lo que se va a declarar es otro, el
+    // registro no se emite. Se mira sólo en facturas selladas: sin huella no hay nada que
+    // contradecir, y el motivo firmado habla de una factura que «se selló».
+    //
+    // Aquí NO se escribe nada ni se recalcula ninguna huella: se deja de emitir un registro.
+    if (inv.vfHash && tipoFactura !== tipoBase) {
+      if (tipoBase === 'F1' && tipoFactura === 'F2') throw new TipoDistintoDelSelladoError(inv.number);
+      // Cualquier otra pareja no existe hoy y no tiene texto firmado: tumba el paquete entero,
+      // como una cadena rota, en vez de salir con un motivo que nadie ha aprobado.
+      throw new Error(`verifactu_tipo_distinto_del_sellado:${inv.number}:${tipoBase}:${tipoFactura}`);
+    }
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 
@@ -1017,76 +1155,84 @@ export async function buildVerifactuRegistrosXml(
       <sum1:ImporteTotal>${Number(inv.total).toFixed(2)}</sum1:ImporteTotal>${encadenamiento}
     </sum1:RegistroAlta>
   </sum:RegistroFactura>${anulacion}`;
+}
+
+/** La factura tal como la lee el constructor del registro (la misma consulta que la exportación). */
+export type FacturaParaRegistro = Prisma.InvoiceGetPayload<{
+  include: {
+    customer: { select: { name: true; taxId: true } };
+    rectifies: { select: { number: true; createdAt: true; lines: true } };
   };
+}>;
 
-  const registros: string[] = [];
-  for (const inv of invoices) {
-    try {
-      registros.push(construirRegistro(inv));
-    } catch (e) {
-      // SOLO se excluye lo que no se puede CALIFICAR. Una cadena rota
-      // (verifactu_cadena_rota) sigue tumbando el paquete entero A PROPÓSITO: ahí el
-      // problema no es una factura, es que el encadenamiento no se puede acreditar, y un
-      // pack al que le falta un eslabón sin decirlo es peor que no entregarlo.
-      if (e instanceof RegistroNoEmitibleError) {
-        excluidos.push({ number: inv.number, motivo: e.motivo });
-        continue;
-      }
-      throw e;
-    }
-  }
+/** Lo que el constructor necesita además de la factura. Lo arma cada llamador. */
+export interface ContextoRegistro {
+  zona: string;
+  emisorFichaViva: FichaDeEmisor;
+  productor: { nombre: string; nif: string; idSistema: string; version: string; numInstalacion: string };
+  /** Facturas con huella del emisor, por su `vfHash`: de aquí sale el `RegistroAnterior` del alta. */
+  porHuella: ReadonlyMap<string, { number: string; createdAt: Date }>;
+  /** La cadena entera ordenada por sello: sólo la usa el registro de ANULACIÓN. */
+  registrosOrdenados: { huella: string; numero: string; fecha: Date }[];
+  opts: { modoSinDestinatario?: ModoSinDestinatario; modoTipoRectificativa?: ModoTipoRectificativa };
+}
 
-  // SCRUM-145 (gap 1): envelope REAL del XSD. Antes la raíz era `<RegistrosFacturacion>` sin
-  // namespaces y el registro se llamaba `<RegistroFacturacionAlta>` — que es el nombre del
-  // TIPO, no del ELEMENTO (`SuministroInformacion.xsd:37` declara `RegistroAlta`). Nada de
-  // eso validaba. Límite duro del XSD: `RegistroFactura` maxOccurs=1000 por envío.
-  // SCRUM-209: el parte de exclusiones viaja DENTRO del documento, como comentario XML.
-  // Va aquí y no solo en el LEEME por dos razones: el endpoint suelto (`GET /verifactu.xml`)
-  // no tiene LEEME, y el ZIP y el endpuesto deben entregar el MISMO fichero (scrum82). Un
-  // comentario no altera la validación XSD y deja el rastro pegado al documento que se
-  // enseña en una inspección — que es justo donde tiene que estar.
-  const parteExclusiones = excluidos.length === 0 ? '' : `
-  <!-- ATENCION: ${excluidos.length} factura(s) de ${params.year} NO se han podido declarar y
-       quedan FUERA de este registro. No es una omision silenciosa: se listan aqui con su
-       numero y su motivo para que se corrijan y se vuelva a exportar.
-${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}`).join('\n')}
-  -->`;
-
-  // SCRUM-216: si NO queda ningún registro que declarar, no se entrega un documento vacío.
-  // El XSD exige al menos un `RegistroFactura` (`RegFactuSistemaFacturacion`: «Missing child
-  // element(s)»), así que un envelope con la cabecera sola es un XML INVÁLIDO — justo lo que
-  // toda esta cadena de tickets viene a evitar. Y no es un caso de laboratorio: con las
-  // exclusiones de SCRUM-215 y 216, un merchant cuyo ejercicio sean todo facturas a
-  // particulares, o solo rectificativas, cae aquí entero.
-  //
-  // Se devuelve `xml: ''` — «no hay nada que declarar», con el parte de exclusiones intacto
-  // para que quien llama diga POR QUÉ. Entregar un fichero inválido sería peor que no
-  // entregarlo; entregarlo en silencio, peor todavía.
-  if (registros.length === 0) {
-    return { xml: '', count: 0, excluidos };
-  }
-
-  // SCRUM-240: el sobre lo arma UN solo sitio del proyecto (`registro.builder.ts`), igual que
-  // el desglose desde SCRUM-209. Aquí estaba escrito a mano un segundo constructor que producía
-  // el MISMO contenido línea a línea que aquél: solo cambiaban la declaración XML, la sangría y
-  // el salto final. Ahora eso es presentación —los tres parámetros de abajo— y el contenido no
-  // se duplica.
-  //
-  // LA SALIDA DE ESTA RUTA NO CAMBIÓ NI UN BYTE, y se comprobó ejecutando: sha256 de la salida
-  // ANTES y DESPUÉS sobre siete casos (una factura, dos, con anulación, con exclusión, todo
-  // excluido, rectificativa, sin destinatario) — idénticos los siete, con el control de que la
-  // comparación SÍ veía un cambio deliberado. Esa comprobación fue del PR, **no** es un test
-  // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
-  // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
-  const xml = construirSobreRegFactu({
-    obligado: { nombreRazon: nombreEmisorDelSobre, nif: merchant.taxId },
-    registrosFacturaXml: registros,
-    comentario: parteExclusiones,
-    declaracionXml: true,
-    saltoFinal: true,
+/**
+ * SCRUM-1296 · el registro de ALTA de una factura recién sellada, para la cola de remisión.
+ *
+ * Lee la factura DESPUÉS del sellado —huella, sello y eslabón anterior tal como se persistieron— y
+ * la pasa por el MISMO constructor que la exportación (`construirRegistro`). Lo que se guarda
+ * en la cola es este texto, y reenviar es reenviar este texto: nunca se regenera (SCRUM-1127 §④).
+ *
+ * Sólo se lee el eslabón anterior de ESTA factura, no el ejercicio entero: el constructor sólo
+ * consulta `porHuella` por `vfPrevHash`, y `registrosOrdenados` sólo lo usa la anulación, que al
+ * emitir no existe. Así no hay tope de 1.000 facturas por ejercicio en este camino.
+ *
+ * Lanza lo mismo que el constructor (`RegistroNoEmitibleError` si la factura no se puede declarar,
+ * `verifactu_cadena_rota` si su eslabón anterior no aparece): quien encola decide.
+ */
+export async function registroParaRemision(invoiceId: number, prismaClient = defaultPrisma): Promise<string> {
+  const inv = await prismaClient.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      customer: { select: { name: true, taxId: true } },
+      rectifies: { select: { number: true, createdAt: true, lines: true } },
+    },
   });
+  if (!inv) throw new Error('invoice_not_found');
+  if (!inv.vfHash) throw new Error('verifactu_sin_sellar');
+  const merchant = await prismaClient.merchant.findUnique({ where: { id: inv.merchantId } });
+  if (!merchant || merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
 
-  // `count` = registros REALMENTE declarados, no facturas miradas. Si contara las miradas,
-  // un pack con exclusiones informaría un número que el fichero no respalda.
-  return { xml, count: registros.length, excluidos };
+  const anterior = inv.vfPrevHash && inv.vfPrevHash !== '0'
+    ? await prismaClient.invoice.findFirst({
+        where: { merchantId: inv.merchantId, vfHash: inv.vfPrevHash },
+        select: { number: true, createdAt: true },
+      })
+    : null;
+
+  return construirRegistro(inv, {
+    zona: zonaDelMerchant(merchant),
+    // Mismos campos que la exportación: la ficha viva sólo es el respaldo de las facturas
+    // anteriores al escritor del emisor (SCRUM-665); una recién emitida lleva el suyo congelado.
+    emisorFichaViva: {
+      name: merchant.name,
+      legalName: merchant.legalName,
+      taxId: merchant.taxId,
+      address: merchant.address,
+      logoUrl: merchant.logoUrl,
+      phone: merchant.whatsappPhone,
+      email: merchant.email,
+    },
+    productor: {
+      nombre: VERIFACTU_PRODUCTOR_NOMBRE,
+      nif: VERIFACTU_PRODUCTOR_NIF,
+      idSistema: VERIFACTU_ID_SISTEMA,
+      version: VERIFACTU_VERSION,
+      numInstalacion: VERIFACTU_NUM_INSTALACION,
+    },
+    porHuella: new Map(anterior ? [[inv.vfPrevHash as string, anterior]] : []),
+    registrosOrdenados: [],
+    opts: {},
+  });
 }

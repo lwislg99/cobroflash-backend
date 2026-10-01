@@ -40,6 +40,7 @@ import { createRequire } from 'node:module';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const puppeteer = createRequire(path.join(RAIZ, 'package.json'))('puppeteer-core');
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
@@ -167,8 +168,11 @@ for (const caso of Object.keys(CASOS)) {
 
 await nav.close();
 console.log('');
-if (ciego) { console.error('🔴 medición CIEGA: no se afirma nada sobre el salto.'); process.exit(2); }
-console.log(fallos === 0
-  ? '✓ ningún caso pasa de ' + LIMITE_CLS + ' de CLS'
-  : '🔴 ' + fallos + ' medición(es) por encima del límite');
-process.exit(fallos === 0 ? 0 : 1);
+if (ciego) console.error('🔴 medición CIEGA: de lo que no se pudo leer no se afirma nada sobre el salto.');
+if (fallos !== 0) console.log('🔴 ' + fallos + ' medición(es) por encima del límite');
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) { console.error(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
+console.log('✓ ningún caso pasa de ' + LIMITE_CLS + ' de CLS');
+process.exit(0);

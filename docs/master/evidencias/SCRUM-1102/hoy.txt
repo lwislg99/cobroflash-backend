@@ -1,0 +1,25 @@
+① getEmissionMode · ¿cambia con la respuesta del SII?  (merchant ES real, id 7)
+   env=undefined · sin override · No consta→receipt   Si→receipt   No→receipt
+   env=undefined · override ON  · No consta→fiscal   Si→fiscal   No→fiscal
+   env=undefined · override OFF · No consta→receipt   Si→receipt   No→receipt
+   env=true      · sin override · No consta→fiscal   Si→fiscal   No→fiscal
+   env=true      · override ON  · No consta→fiscal   Si→fiscal   No→fiscal
+   env=true      · override OFF · No consta→receipt   Si→receipt   No→receipt
+   CONTROL (el instrumento ve cambiar el modo cuando cambia lo que SI se lee): flags null→receipt · override ON→fiscal · demo(id 1)→demo · pais MX→fiscal · pais null + override ON→fiscal
+
+② PUT /admin/merchant · ¿puede el esquema dejar pasar `flags`? ¿y distingue los tres estados?
+   {flags:{INVOICING_ES_ENABLED:true}, name:"x"}  → {"name":"x"}
+   {llevaLibrosPorSii:null}                        → {"llevaLibrosPorSii":null}
+   {llevaLibrosPorSii:false}                       → {"llevaLibrosPorSii":false}
+   {llevaLibrosPorSii:true}                        → {"llevaLibrosPorSii":true}
+   {} (ausente)                                    → {}
+   {country:"MX", name:"x"} (¿puede cambiarse el PAIS?)   → {"name":"x","country":"MX"}
+   {llevaLibrosPorSii:"si"} (control: algo que NO debe pasar) → RECHAZADO
+
+③ cambiarFlagFiscal · ¿se niega a ENCENDER segun la respuesta?  (cliente doblado, sin base)
+   SII y foral = No consta → ENCENDIDO (false→true) · filas de auditoria 1 · efectivo despues: true
+   SII y foral = Si        → ENCENDIDO (false→true) · filas de auditoria 1 · efectivo despues: true
+   SII y foral = No        → ENCENDIDO (false→true) · filas de auditoria 1 · efectivo despues: true
+   CONTROL (esta puerta SI sabe negarse: confirmacion equivocada) → NEGADO: confirmacion_no_coincide
+
+TESTIGOS: 28 mediciones ejecutadas · EXIT=0

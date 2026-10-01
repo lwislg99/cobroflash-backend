@@ -14,7 +14,7 @@
 // envío sale por el guard `not_configured` → {ok:false}». Esa premisa MURIÓ el día que
 // nació el runner gateado de SCRUM-157, y el test se puso rojo acusando una fuga de dinero
 // que no existe:
-//   · `scripts/test-staging-gated.mjs` arranca la tanda QA_DB_TEST con `WHATSAPP_DRY_RUN=1`;
+//   · `scripts/staging-gated.mjs` arranca la tanda QA_DB_TEST con `WHATSAPP_DRY_RUN=1`;
 //   · en `integrations/whatsapp.ts` el guard de credenciales es
 //     `if ((!phoneNumberId || !token) && !isDryRun())` — o sea que el dry-run lo SALTA;
 //   · y la rama dry-run devuelve `{ok:true, dryRun:true}`, indistinguible de un envío real.

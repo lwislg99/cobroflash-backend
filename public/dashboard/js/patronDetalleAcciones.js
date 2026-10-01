@@ -58,6 +58,12 @@ function destinoEfectivo(accion, estado, ctx) {
   // enseñarles nada.
   if (d === undefined) return 'oculta';
 
+  // SCRUM-1302 (F) · `requiere`: una condición SIN la cual la acción sólo puede fallar, en
+  // cualquier destino (no sólo en la primaria, que es lo que gobierna `cuando`). Se oculta sólo
+  // con un `false` EXPLÍCITO del contexto: sin el dato —la lista, la copia precargada— no se
+  // decide nada y la acción sigue, porque callar por falta de dato es el defecto de SCRUM-816.
+  if (accion.requiere && ctx && ctx[accion.requiere] === false) return 'oculta';
+
   if (d !== 'primaria' || !accion.cuando) return d;
   const c = ctx || {};
   // Forma GENÉRICA: el registro nombra su condición y el contexto la responde.

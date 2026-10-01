@@ -1,0 +1,10 @@
+POBLACION · runs 260 · con recuento leído 185 · con job y SIN recuento 28 (cancelled, failure) · sin job 47
+ventana con recuento · 2026-09-28T20:48:09Z → 2026-10-01T01:24:19Z
+
+scrum853 MUDO · ANTES del merge (2026-09-29T09:44:13Z): 2 de 56 — de ellos, del propio PR causante: 2 de 2
+scrum853 MUDO · DESPUÉS: 129 de 129 (valores: 2) — en main (push): 31 de 31
+   primer run posterior con MUDO: 2026-09-29T09:46:35Z pull_request scrum-1215-lote5-retiradas 849dadca
+
+scrum859 CIEGO · antes 9 de 56 · después 37 de 129 · total 46 de 185 (25 %)
+
+EXIT=0

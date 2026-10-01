@@ -39,7 +39,7 @@ const DECLARED_EXTRAS = [
   '/tests/',
   '/scripts/seed-staging.mjs',
   '/scripts/clean-staging-tests.mjs',
-  '/scripts/test-staging-gated.mjs',
+  '/scripts/staging-gated.mjs',
   '/.github/workflows/',
   '/.github/CODEOWNERS',
   '/package-lock.json',

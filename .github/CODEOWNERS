@@ -40,7 +40,7 @@
 /tests/                            @lwislg99
 /scripts/seed-staging.mjs          @lwislg99
 /scripts/clean-staging-tests.mjs   @lwislg99
-/scripts/test-staging-gated.mjs    @lwislg99
+/scripts/staging-gated.mjs    @lwislg99
 # El doc que define la tanda de regresión: el diff de la unificación lo toca JUNTO a
 # package.json, así que sin esta línea se podría cambiar sin que lo vea nadie.
 /docs/QA/SUITE_REGRESION.md        @lwislg99

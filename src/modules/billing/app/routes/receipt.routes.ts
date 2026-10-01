@@ -150,8 +150,12 @@ router.get('/:token', async (req, res) => {
   //    que sigue haciendo lo suyo (escapar el HTML) sobre el resultado ya validado.
   // ③ `rel="noopener"`: era el único `target="_blank"` del fichero sin él. Las otras tres anclas
   //    ya lo llevaban.
+  // SCRUM-1309 · el ① de arriba, terminado: `sent` tiene el MISMO único productor
+  //    (`dev.routes.ts`, el redirect de `/dev/email-invoice`) y se pintaba sin gate. En producción,
+  //    añadir `?mail=sent` a mano hacía que la página le dijera al CLIENTE FINAL que se le mandó un
+  //    correo que nadie mandó. Misma condición que `saved`; el texto no cambia.
   const mailBanner =
-    mailParam === 'sent'
+    mailParam === 'sent' && config.NODE_ENV !== 'production'
       ? `<div class="note note-ok">📧 Email enviado correctamente.</div>`
       : mailParam === 'saved' && config.NODE_ENV !== 'production'
       ? `<div class="note note-info">📧 Email generado en <a href="${esc(
@@ -165,8 +169,11 @@ router.get('/:token', async (req, res) => {
     !!invoice.pdfUrl &&
     !invoice.pdfUrl.startsWith('PENDING');
 
+  // SCRUM-1312 · el formulario hace POST a `/dev/email-invoice`, que en producción no se monta: el
+  //    CLIENTE FINAL veía un botón que daba 404. Misma condición que `saved` (807) y `sent` (1309);
+  //    el texto no cambia. Decisión del fundador: la (a), no pintarlo (Jira, comentario 17667).
   const emailBlock =
-    hasRealPdf && ch.customer?.email
+    hasRealPdf && ch.customer?.email && config.NODE_ENV !== 'production'
       ? `<form method="post" action="${BASE_URL}/dev/email-invoice/${ch.id}" class="email-form">
            <button class="btn-email">Enviar ${docLabel} por email</button>
          </form>

@@ -1,0 +1,16 @@
+import { test, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { montarAppReal, bancoDePrisma, sesionesDe } from './_banco-camino-real.mjs';
+const app = await montarAppReal();
+after(() => app.cerrar());
+const ses = sesionesDe(77, { id: 9, role: 'technician', merchantId: 77 });
+const BASE = { invoiceSeriesPrefix: 'CF', invoiceSeriesYear: null, nextInvoiceNumber: 1, nextRectInvoiceNumber: 1, timezone: 'Europe/Madrid', country: 'ES', email: 'pro@x.es', flags: { INVOICING_ES_ENABLED: true } };
+for (let i = 0; i < 6; i++) test('peticion ' + i + ' a la ruta de la serie, sin importar el emisor', async () => {
+  bancoDePrisma().programar({
+    authSession: ses.tabla,
+    merchant: { findUnique: async () => ({ ...ses.merchant, ...BASE }), update: async (a) => ({ ...BASE, ...a.data }) },
+    invoice: { findMany: async () => [], findFirst: async () => null },
+  });
+  const r = await app.pedir('/admin/onboarding/serie', { token: ses.PROPIETARIO, metodo: 'POST', cuerpo: { vieneDeOtroSitio: true, ultimoNumero: 41 } });
+  assert.equal(r.status, 200);
+});

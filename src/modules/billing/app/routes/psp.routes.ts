@@ -17,10 +17,13 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1301
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
-import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
+import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
 // SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
 import { yaSeEnvioElCorreo, marcarCorreoEnviado } from '../../domain/correoDeFacturaEnviado';
+// SCRUM-1292: un cobro PAGADO no retrocede a fallido ni a caducado.
+import { ESTADOS_QUE_UN_FALLO_PUEDE_PISAR, elFalloPuedePisar, esFilaQueNoCasa } from '../../domain/estadoDelCobro';
 
 
 const router = Router();
@@ -102,13 +105,26 @@ router.post('/', async (req, res) => {
       return res.json({ ok: true, status: `already_${charge.status}` });
     }
 
+    // SCRUM-1292 · PRIMERA BARRERA: un cobro PAGADO no retrocede. Esta guarda es la que da la
+    // respuesta buena y ahorra la escritura; la que de verdad sujeta es la condición dentro del
+    // `update` de abajo, porque entre este `if` y aquella escritura cabe otra petición.
+    if (
+      !elFalloPuedePisar(charge.status) &&
+      (body.event === 'payment.failed' || body.event === 'payment.expired')
+    ) {
+      return res.json({ ok: true, status: `already_${charge.status}` });
+    }
+
     if (body.event === 'payment.confirmed') {
       // SCRUM-397 · el instante del cobro sale de UN generador: columna y evento con la misma
       // fecha. `body.ts` ya venía en el esquema y no lo leía nadie — es la fecha DECLARADA del
       // camino manual (confirm-bizum), y es donde el Bizum del 31-mar confirmado el 2-abr cruzaba
       // de trimestre. Los cinco reenviadores automáticos mandan el instante de proceso, así que
       // para ellos esto no cambia nada.
-      const resolucion = resolverInstanteDeCobro(body.ts);
+      // SCRUM-1301 · con la zona del merchant DEL COBRO, la misma con la que `confirm-bizum` la acaba
+      // de aceptar. Sin ella, de madrugada en Madrid el «hoy» del profesional era «mañana» aquí.
+      const merchantDelCobro = await prisma.merchant.findUnique({ where: { id: charge.merchantId }, select: { timezone: true } });
+      const resolucion = resolverInstanteDeCobro(body.ts, new Date(), zonaDelMerchant(merchantDelCobro));
       if (!resolucion.ok) {
         // Fail-closed: no se marca nada. El único llamador que trae fecha declarada la valida
         // antes con el mismo criterio, así que esto no debería verse; si se ve, es preferible un
@@ -167,11 +183,21 @@ router.post('/', async (req, res) => {
           //
           // La guarda va sobre la ESCRITURA y no sobre el `where`: asi lo demas —el numero para la
           // confirmacion al cliente— se comporta exactamente igual que hoy.
+          //
+          // 🔴 SCRUM-1303 · Y LA MISMA GUARDA VA DENTRO DEL `where`. La de arriba mira el estado leído
+          // en el `findFirst`; si el profesional anula mientras llega este pago, la fila ya está
+          // anulada al escribir. Entonces Prisma no la encuentra (P2025) y no se escribe nada. Al
+          // proveedor se le contesta lo mismo que antes: esto sólo decide si se escribe.
           if (puedeCobrarPorPasarela(linkedInvoice)) {
+          try {
           await prisma.invoice.update({
-            where: { id: linkedInvoice.id },
+            where: { id: linkedInvoice.id, status: { not: ESTADO_ANULADA } },
             data: { status: 'paid', paidAt: new Date() },
           });
+          } catch (e) {
+            if (!esFilaQueNoCasa(e)) throw e;
+            console.error(`[psp] SCRUM-1303 ${linkedInvoice.number} se anuló entre la lectura y el cobro: no se marca pagada`);
+          }
           }
         }
       } catch (e) {
@@ -221,10 +247,15 @@ router.post('/', async (req, res) => {
 
         // 👇 NUEVO: si hemos conseguido una factura, la marcamos como PAGADA
         // 🔴 SCRUM-502 · misma guarda que arriba: una anulada no se marca cobrada.
+        //
+        // 🔴 SCRUM-1315 · Y VA TAMBIÉN DENTRO DEL `where`, como la de arriba desde SCRUM-1303. La guarda
+        // mira el estado que devolvió `ensureInvoiceForCharge`; si el profesional anula después, la
+        // fila ya está anulada al escribir. Entonces Prisma no la encuentra (P2025), no se escribe
+        // nada y se dice. Lo demás —la respuesta al proveedor, los avisos— sigue igual.
         if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
           try {
             await prisma.invoice.update({
-              where: { id: invoiceId },
+              where: { id: invoiceId, status: { not: ESTADO_ANULADA } },
               data: {
                 status: 'paid',
                 // solo ponemos paidAt si no lo tenía aún, para que sea idempotente
@@ -232,7 +263,11 @@ router.post('/', async (req, res) => {
               },
             });
           } catch (e) {
-            console.error('auto-mark invoice paid error', (e as any)?.message || 'error desconocido'); // SCRUM-105
+            if (esFilaQueNoCasa(e)) {
+              console.error(`[psp] SCRUM-1315 la factura ${invoiceId} se anuló entre la lectura y el cobro: no se marca pagada`);
+            } else {
+              console.error('auto-mark invoice paid error', (e as any)?.message || 'error desconocido'); // SCRUM-105
+            }
           }
         }
   
@@ -342,26 +377,28 @@ router.post('/', async (req, res) => {
     }
 
 
-    if (body.event === 'payment.failed') {
-      await prisma.charge.update({
-        where: { id: chargeId },
-        data: {
-          status: 'failed',
-          events: { create: { type: 'failed', payload: body as any } },
-        },
-      });
-      return res.json({ ok: true, status: 'failed' });
-    }
-
-    if (body.event === 'payment.expired') {
-      await prisma.charge.update({
-        where: { id: chargeId },
-        data: {
-          status: 'expired',
-          events: { create: { type: 'expired', payload: body as any } },
-        },
-      });
-      return res.json({ ok: true, status: 'expired' });
+    // SCRUM-1292 · SEGUNDA BARRERA: la condición de estado VA EN LA ESCRITURA. Un cobro `paid` no
+    // retrocede a fallido ni a caducado por un aviso posterior —el caso normal es un Bizum ya
+    // cobrado cuya sesión de Stripe caduca después—, y si alguien paga entre la lectura de arriba y
+    // esta escritura, Prisma no encuentra la fila (P2025) y aquí no se escribe nada. El porqué de la
+    // lista, en `domain/estadoDelCobro.ts`.
+    if (body.event === 'payment.failed' || body.event === 'payment.expired') {
+      const nuevo = body.event === 'payment.failed' ? 'failed' : 'expired';
+      try {
+        await prisma.charge.update({
+          where: { id: chargeId, status: { in: ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } },
+          data: {
+            status: nuevo,
+            events: { create: { type: nuevo, payload: body as any } },
+          },
+        });
+      } catch (e) {
+        if (!esFilaQueNoCasa(e)) throw e;
+        // Pagaron entre la lectura y la escritura. No se escribe nada, y se contesta lo mismo que si
+        // se hubiera visto arriba. Para Stripe sigue siendo un 200, que es lo que evita el reintento.
+        return res.json({ ok: true, status: 'already_paid' });
+      }
+      return res.json({ ok: true, status: nuevo });
     }
 
     return res.status(400).json({ error: 'unhandled_event' });

@@ -14,6 +14,7 @@
 //
 // Salidas: 0 de acuerdo · 1 hallazgo · 2 no supe medir · 3 no arrancó el navegador.
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import {
   levantarBanco, pintarDetalle, CASOS, JOB_PAGADO, JOB_A_MEDIAS, JOB_SIN_PRESUPUESTO, JOB_COBRADO_DE_MAS,
@@ -617,6 +618,10 @@ await bancosF.ciego.cerrar();
 
 const total = bien_ + mal_;
 console.log(`\npoblación: ${total} comprobaciones · D y G sobre ${CASOS.length} casos × ${ANCHOS.length} anchuras · F sobre ${CASOS_DE_F.length} casos (${CASOS_DE_F.map((c) => c.banco).join(', ')}) × ${ANCHOS.length} anchuras (${ANCHOS.join(', ')}) · ${suelo_} no medidas`);
-if (suelo_) { console.log(`🟡 ${suelo_} cosas no supe medir: no doy veredicto.`); process.exit(2); }
-if (mal_) { console.log(`❌ el detalle NO cuadra con su inventario: ${bien_} de ${total}.`); process.exit(1); }
+if (suelo_) console.log(`🟡 ${suelo_} cosas no supe medir: de ésas no doy veredicto.`);
+if (mal_) console.log(`❌ el detalle NO cuadra con su inventario: ${bien_} de ${total}.`);
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: mal_, ciegos: suelo_ });
+if (veredictoFinal.codigo !== 0) { console.log(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
 console.log(`✅ el detalle cuadra con su inventario: ${bien_} de ${total}.`);

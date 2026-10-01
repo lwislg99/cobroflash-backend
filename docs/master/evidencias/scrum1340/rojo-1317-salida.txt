@@ -1,0 +1,10 @@
+ROJO-1317 bytes del texto = 11070
+ROJO-1317 entradas troceadas = 1
+ROJO-1317 entrada = {"clave":"SCRUM-1317.md#SCRUM-1317 · Se le cierran al operario las rutas /admin ","nombraRutaPublic":false,"fecha":null,"declara":false}
+ROJO-1317 SIN DECLARAR segun el guard (v1 real) = 0
+ROJO-1317 el control cambio el texto = true
+ROJO-1317 control: nombraRutaPublic/fecha = [[true,"2026-10-01"]]
+ROJO-1317 SIN DECLARAR segun el guard (v1 + ruta con prefijo + Fecha) = 1
+ROJO-1317 SIN DECLARAR (solo ruta con prefijo, sin Fecha) = 0
+ROJO-1317 SIN DECLARAR (solo Fecha, sin prefijo) = 0
+ROJO-1317 EXIT=0
