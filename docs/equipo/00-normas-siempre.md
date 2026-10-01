@@ -61,6 +61,7 @@ El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
+Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada. (SCRUM-1358)
 Una ventana fija es una tolerancia disfrazada.
 Un build roto no es un rojo: es un verde que no vale.
 Referenciar por posición caduca. Referenciar por identidad no.
@@ -86,6 +87,8 @@ Una operación que no se ejecutó se lee exactamente igual que un éxito.
 Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
 Una captura bonita no prueba que el botón funcione.
 «No está en el PATH» no es «no está».
+Un detector que acierta y publica donde nadie lee produce el mismo resultado que uno ciego. (SCRUM-1350)
+Antes de llamar mecanismo a lo que has visto, di sobre cuántos elementos lo mediste: un instante no es un régimen. (SCRUM-1350)
 Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
 Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
