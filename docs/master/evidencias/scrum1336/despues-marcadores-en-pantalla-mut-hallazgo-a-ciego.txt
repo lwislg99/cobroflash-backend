@@ -1,0 +1,16 @@
+# marcadores-en-pantalla-mut-hallazgo-a-ciego · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const hallazgo = (m) => { console.error(m); hallazgos.push(m
+# EXIT=2 · 30.6 s
+
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+  🔴 VISTA NUEVA CON MARCADOR: `reports` pinta 3 y no estaba en el censo.
+     «[PENDIENTE microcopy oficial] puesto por el banco de SCRUM-1»
+     O se firma el texto y desaparece, o entra AQUÍ con su motivo y quién lo retira.
+
+────────────────────────────────────────────────────────────────────────────
+🔴 SCRUM-722 · NO SUPE MIRAR 1 cosa(s): de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde

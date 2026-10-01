@@ -1,0 +1,21 @@
+# contraste-ciego-ausencia · guard-contraste.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales
+# EXIT=2 · 7.2 s
+
+páginas medidas: 8 de 9  ·  nodos con texto: 314
+
+NO MEDIBLES por este guard: 2 nodos sobre fondo con degradado.
+  Un degradado no tiene UN ratio, tiene un rango distinto en cada píxel. Ni se
+  aprueban ni se suspenden: se listan para que se sepa que existen.
+   /index.html  .h2  rgb(255, 255, 255)  36.8px/700  «Tu próxima cotización, lista e»
+   /index.html  .p  rgb(167, 243, 208)  16px/400  «Únete a los profesionales que »
+
+pares por debajo de AA: 0 nuevos · 3/4 conocidos presentes
+
+pares que cumplen por la VÍA DE TEXTO GRANDE: 1 vigilados (ratio ≥ 3,0 Y ≥18.66px Y peso ≥700)
+
+SIN JUZGAR (1) — se deducen de NO haber visto algo, y hay 1 página(s) sin medir:
+   · si rgb(107, 114, 128) sobre rgb(2,6,23) (era 4.17) sigue ocurriendo
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+🔴 NO SUPE MIRAR · /admin.html: no se pudo medir — rota a proposito por el banco de SCRUM-1336
+
+⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde

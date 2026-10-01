@@ -1,0 +1,12 @@
+# a11y-comparativa-mut-ciego-a-hallazgo · guard-a11y-comparativa.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: const noSupeMirar = (texto) => { console.error(texto); ciego
+# EXIT=1 · 1.1 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+🔴 NO SUPE MIRAR a 1280px: no encuentro la sección #comparativa ni sus filas.
+🔴 NO SUPE MIRAR a 360px: no encuentro la sección #comparativa ni sus filas.
+
+🔴 2 celda(s) mal. En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.
+⟦veredicto⟧ 2 hallazgos · 0 ciegos → salida 1 (hallazgo)

@@ -1,5 +1,5 @@
-# rastro-del-menu-hallazgo · guard-rastro-del-menu.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · el menú navega por `renderView` crudo: no deja rastro, y ningún ciego
-# EXIT=1 · 8.5 s
+# rastro-del-menu-mut-hallazgo-a-ciego · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const veredictoFinal = veredictoDe({ hallazgos: fallos, cieg
+# EXIT=2 · 8.4 s
 
 destinos del menú: 18
 
@@ -42,3 +42,4 @@ destinos del menú: 18
    · el menú deja la URL incoherente en 18 de 18 destinos: F5 lleva a otra pantalla y un enlace guardado abre la vista anterior. Navega por `window.renderAppView`, no por `renderView` crudo.
    · 18 clics del menú dejan 0 entradas de historial. Con `replaceState` no se crea ninguna y «atrás» saca de la aplicación.
    · «atrás» no vuelve: desde informes debería dar productos y luego clientes, y da reports y settings.
+⟦veredicto⟧ 0 hallazgos · 3 ciegos → salida 2 (no supe medir) · un ciego no es un verde

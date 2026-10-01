@@ -1,0 +1,207 @@
+# objetivo-tactil-mut-hallazgo-a-ciego · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const hallazgo = (s) => { console.error(s); hallazgos.push(s
+# EXIT=2 · 11.0 s
+
+
+════════════════════════════════════════════════════════════════════════════
+ANCHO 1280 px
+════════════════════════════════════════════════════════════════════════════
+⓪ control del scroll · enlaces del pie medidos SIN scroll: 0  ·  CON scroll: 5
+   ✅ el scroll es lo que hace visible el pie (+5). Sin él, este censo mentiría.
+
+① censo derivado · interactivos en el DOM: 33  ·  medidos: 29  ·  sin pintar: 2  ·  presentes pero no tocables: 2
+
+② presentes pero NO tocables (no son «pequeños»: es que ahí el dedo no los activa):
+   · [iscreen] BUTTON.ibtn «Abrir y firmar» — caja 49px — visibility:hidden
+   · [iscreen] BUTTON.ibtn «Firmar y aceptar» — caja 49px — visibility:hidden
+
+③ contra AB6 (36 px) · cumplen: 28  ·  se quedan cortos: 1  ·  de ésos, excusados con motivo: 0
+
+════════════════════════════════════════════════════════════════════════════
+ANCHO 360 px
+════════════════════════════════════════════════════════════════════════════
+⓪ control del scroll · enlaces del pie medidos SIN scroll: 0  ·  CON scroll: 5
+   ✅ el scroll es lo que hace visible el pie (+5). Sin él, este censo mentiría.
+
+① censo derivado · interactivos en el DOM: 33  ·  medidos: 25  ·  sin pintar: 6  ·  presentes pero no tocables: 2
+
+② presentes pero NO tocables (no son «pequeños»: es que ahí el dedo no los activa):
+   · [iscreen] BUTTON.ibtn «Abrir y firmar» — caja 49px — visibility:hidden
+   · [iscreen] BUTTON.ibtn «Firmar y aceptar» — caja 49px — visibility:hidden
+
+③ contra AB6 (44 px) · cumplen: 24  ·  se quedan cortos: 1  ·  de ésos, excusados con motivo: 0
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · lista de Clientes · ANCHO 929 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 29  ·  medidos: 22  ·  sin pintar: 0  ·  presentes pero no tocables: 7
+   ✅ suelo: 5 casillas de selección MEDIDAS (mínimo 5).
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TH.col-hide-mobile
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TD.col-hide-mobile
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TD.col-hide-mobile
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+
+③ contra AB6 (36 px) · cumplen: 12  ·  se quedan cortos: 10  ·  de ésos, excusados con motivo: 10
+   ⚠️ EXCEPCIÓN 31px · BUTTON.btn-secondary.btn-sm «⬆ Importar clientes» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «Portal» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-ghost.btn-sm «📊 Historial» — clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «Portal» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-ghost.btn-sm «📊 Historial» — clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.
+   ⚠️ EXCEPCIÓN 30.8px · BUTTON.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.8px · BUTTON.btn-secondary.btn-sm «Portal» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ⚠️ EXCEPCIÓN 30.8px · BUTTON.btn-ghost.btn-sm «📊 Historial» — clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.
+   ✅ todo lo que se puede pulsar en el panel llega a 36 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · lista de Clientes · ANCHO 390 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 29  ·  medidos: 21  ·  sin pintar: 1  ·  presentes pero no tocables: 7
+   ✅ suelo: 4 casillas de selección MEDIDAS (mínimo 4).
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TR
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TD.cell-title
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa BUTTON.btn-secondary.btn-sm
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TBODY
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa TD.cell-title
+   · [(suelto)] INPUT «(sin texto)» — caja 18px — lo tapa A.contacto-link
+
+③ contra AB6 (44 px) · cumplen: 20  ·  se quedan cortos: 1  ·  de ésos, excusados con motivo: 1
+   ⚠️ EXCEPCIÓN 31px · BUTTON.btn-secondary.btn-sm «⬆ Importar clientes» — clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.
+   ✅ todo lo que se puede pulsar en el panel llega a 44 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · editor de presupuesto (renderQuotesView) · ANCHO 929 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 43  ·  medidos: 41  ·  sin pintar: 1  ·  presentes pero no tocables: 1  ·  sonda: ✅ cazada  ·  umbral (36 px): sonda-30 31px cae · sonda-37 38px pasa
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] BUTTON.btn-ghost.quote-line__ajustes.is-de-siempre «IVA 21 %» — caja 44px — visibility:hidden
+
+③ contra AB6 (36 px) · cumplen: 33  ·  se quedan cortos: 8  ·  de ésos, excusados con motivo: 8
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ✅ todo lo pulsable de editor de presupuesto llega a 36 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · editor de presupuesto (renderQuotesView) · ANCHO 390 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 43  ·  medidos: 40  ·  sin pintar: 3  ·  presentes pero no tocables: 0  ·  sonda: ✅ cazada  ·  umbral (44 px): sonda-40 41px cae
+
+③ contra AB6 (44 px) · cumplen: 31  ·  se quedan cortos: 9  ·  de ésos, excusados con motivo: 9
+   ⚠️ EXCEPCIÓN 43.6px · BUTTON.btn-ghost.btn-sm «+ Añadir descuento» — LIMITACIÓN DEL BANCO, NO DECISIÓN DE PRODUCTO. «+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Aquí el instrumento no sabe medir: se RETIRA en cuanto el banco refleje `hidden` (SCRUM-1158).
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ⚠️ EXCEPCIÓN 17px · INPUT «(sin texto)» — casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.
+   ✅ todo lo pulsable de editor de presupuesto llega a 44 px (o está excusado con motivo).
+
+   ✅ suelo de renderQuotesView: 2 objetivos cortos DISTINTOS (SCRUM-1148 (26-sep-2026, con el mínimo de cada ancho) midió 2).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · ficha 360 del cliente (renderCustomer360View) · ANCHO 929 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 12  ·  medidos: 12  ·  sin pintar: 0  ·  presentes pero no tocables: 0  ·  sonda: ✅ cazada  ·  umbral (36 px): sonda-30 31px cae · sonda-37 38px pasa
+
+③ contra AB6 (36 px) · cumplen: 5  ·  se quedan cortos: 7  ·  de ésos, excusados con motivo: 7
+   ⚠️ EXCEPCIÓN 31px · BUTTON.btn-ghost.btn-sm «← Volver a Clientes» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «✎ Editar» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «🔗 Portal» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «📇 Guardar en mis contactos» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-secondary.btn-sm «Fusionar con otro cliente» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-primary.btn-sm «+ Nuevo presupuesto» — clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.
+   ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn-ghost.btn-sm «Ver →» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).
+   ✅ todo lo pulsable de ficha 360 del cliente llega a 36 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · ficha 360 del cliente (renderCustomer360View) · ANCHO 390 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 12  ·  medidos: 10  ·  sin pintar: 0  ·  presentes pero no tocables: 2  ·  sonda: ✅ cazada  ·  umbral (44 px): sonda-40 41px cae
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] BUTTON.btn-secondary.btn-sm «Fusionar con otro cliente» — caja 30px — no hay nada en ese punto: el elemento cae fuera del viewport
+   · [(suelto)] BUTTON.btn-primary.btn-sm «+ Nuevo presupuesto» — caja 30px — no hay nada en ese punto: el elemento cae fuera del viewport
+
+③ contra AB6 (44 px) · cumplen: 3  ·  se quedan cortos: 7  ·  de ésos, excusados con motivo: 7
+   ⚠️ EXCEPCIÓN 31px · BUTTON.btn-ghost.btn-sm «← Volver a Clientes» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).
+   ⚠️ EXCEPCIÓN 30.7px · BUTTON.btn-secondary.btn-sm «✎ Editar» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.7px · BUTTON.btn-secondary.btn-sm «🔗 Portal» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 30.7px · BUTTON.btn-secondary.btn-sm «📇 Guardar en mis contactos» — 🔴 DOS VÍCTIMAS Y NO SON IGUALES: «✎ Editar» (30,5–30,9 px) es pre-existente, y «🔗 Portal» (30,5–30,9 px) LO AÑADE SCRUM-795 — antes, sin token, ese botón no se pintaba. La clase es la de SCRUM-786, pero el objetivo corto es nuevo y se cuenta como nuevo. El emparejador va por selector y no sabe separarlos.
+   ⚠️ EXCEPCIÓN 41px · BUTTON «Presupuestos (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).
+   ⚠️ EXCEPCIÓN 41px · BUTTON «Facturas (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).
+   ⚠️ EXCEPCIÓN 30.6px · BUTTON.btn-ghost.btn-sm «Ver →» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-787 midió que 57 de los 76 cortos del panel son de esa clase).
+   ✅ todo lo pulsable de ficha 360 del cliente llega a 44 px (o está excusado con motivo).
+
+   ✅ suelo de renderCustomer360View: 9 objetivos cortos DISTINTOS (SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA) midió 7).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · lista de Proveedores (renderProvidersView) · ANCHO 929 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 5  ·  medidos: 5  ·  sin pintar: 0  ·  presentes pero no tocables: 0  ·  sonda: ✅ cazada  ·  umbral (36 px): sonda-30 31px cae · sonda-37 38px pasa
+
+③ contra AB6 (36 px) · cumplen: 3  ·  se quedan cortos: 2  ·  de ésos, excusados con motivo: 2
+   ⚠️ EXCEPCIÓN 30.7px · BUTTON.btn.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irreversibles. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786/787).
+   ⚠️ EXCEPCIÓN 30.7px · BUTTON.btn.btn-secondary.btn-sm «Desactivar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irreversibles. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786/787).
+   ✅ irreversible «Borrar» 44.7px ≥ 44 (caja CSS 44px).
+   ✅ todo lo pulsable de lista de Proveedores llega a 36 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · lista de Proveedores (renderProvidersView) · ANCHO 390 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 5  ·  medidos: 5  ·  sin pintar: 0  ·  presentes pero no tocables: 0  ·  sonda: ✅ cazada  ·  umbral (44 px): sonda-40 41px cae
+
+③ contra AB6 (44 px) · cumplen: 5  ·  se quedan cortos: 0  ·  de ésos, excusados con motivo: 0
+   ✅ irreversible «Borrar» 44.6px ≥ 44 (caja CSS 44px).
+   ✅ todo lo pulsable de lista de Proveedores llega a 44 px (o está excusado con motivo).
+
+   ✅ suelo de renderProvidersView: 2 objetivos cortos DISTINTOS (SCRUM-1167 (27-sep-2026, medido con la lista de excepciones VACÍA) midió 2).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · ficha del Trabajo (renderJobDetailView) · ANCHO 929 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 19  ·  medidos: 14  ·  sin pintar: 3  ·  presentes pero no tocables: 2  ·  sonda: ✅ cazada  ·  umbral (36 px): sonda-30 31px cae · sonda-37 38px pasa
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 96px — lo tapa SUMMARY.detail-plega-cab
+   · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 96px — lo tapa SUMMARY.detail-plega-cab
+
+③ contra AB6 (36 px) · cumplen: 14  ·  se quedan cortos: 0  ·  de ésos, excusados con motivo: 0
+   ✅ todo lo pulsable de ficha del Trabajo llega a 36 px (o está excusado con motivo).
+
+════════════════════════════════════════════════════════════════════════════
+PANEL · ficha del Trabajo (renderJobDetailView) · ANCHO 390 px
+════════════════════════════════════════════════════════════════════════════
+① censo derivado · interactivos en el DOM: 19  ·  medidos: 14  ·  sin pintar: 3  ·  presentes pero no tocables: 2  ·  sonda: ✅ cazada  ·  umbral (44 px): sonda-40 41px cae
+
+② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):
+   · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 96px — lo tapa SUMMARY.detail-plega-cab
+   · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 79px — lo tapa SPAN.detail-plega-rotulo
+
+③ contra AB6 (44 px) · cumplen: 14  ·  se quedan cortos: 0  ·  de ésos, excusados con motivo: 0
+   ✅ todo lo pulsable de ficha del Trabajo llega a 44 px (o está excusado con motivo).
+
+   ✅ suelo de renderJobDetailView: 0 objetivos cortos DISTINTOS (SCRUM-1193 (28-sep-2026, medido con la lista de excepciones VACÍA: 0 cortos; SCRUM-1172 midió 1, el «⋯», ya arreglado) midió 0).
+
+────────────────────────────────────────────────────────────────────────────
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✖ 21px < 36 · [probar] BUTTON.try-reset «Volver a empezar» (caja CSS 20px)
+   ✖ 21px < 44 · [probar] BUTTON.try-reset «Volver a empezar» (caja CSS 20px)
+🔴 SCRUM-542 · NO SUPE MIRAR 2 cosa(s): de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 2 ciegos → salida 2 (no supe medir) · un ciego no es un verde

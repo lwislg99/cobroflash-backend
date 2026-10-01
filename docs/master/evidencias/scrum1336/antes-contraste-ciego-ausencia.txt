@@ -1,0 +1,5 @@
+# contraste-ciego-ausencia · guard-contraste.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales
+# EXIT=1 · 1.4 s
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+✖ /admin.html: no se pudo medir — rota a proposito por el banco de SCRUM-1336

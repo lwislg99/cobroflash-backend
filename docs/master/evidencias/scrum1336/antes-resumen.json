@@ -1,5 +1,9 @@
 {
   "sha": "8c0bf72850988e5f06266f330ab4c6c869f42a36",
+  "pasadas": 33,
+  "de": 33,
+  "mutaciones": 0,
+  "deMutaciones": 17,
   "filas": [
     {
       "id": "a11y-comparativa-limpio",
@@ -320,7 +324,7 @@
       "escenario": "limpio",
       "valida": true,
       "exit": 0,
-      "segundos": 8.4,
+      "segundos": 8.6,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null
@@ -344,7 +348,55 @@
       "escenario": "hallazgo",
       "valida": true,
       "exit": 1,
-      "segundos": 8.4,
+      "segundos": 8.5,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "rastro-del-menu-gana-uno",
+      "guard": "rastro-del-menu",
+      "grupo": "septimo",
+      "escenario": "gana-uno",
+      "valida": true,
+      "exit": 0,
+      "segundos": 8.7,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "contraste-ciego-ausencia",
+      "guard": "contraste",
+      "grupo": "seis",
+      "escenario": "ciego-ausencia",
+      "valida": true,
+      "exit": 1,
+      "segundos": 1.4,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "marcadores-en-pantalla-ciego-ausencia",
+      "guard": "marcadores-en-pantalla",
+      "grupo": "seis",
+      "escenario": "ciego-ausencia",
+      "valida": true,
+      "exit": 1,
+      "segundos": 29.6,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "objetivo-tactil-ciego-ausencia",
+      "guard": "objetivo-tactil",
+      "grupo": "seis",
+      "escenario": "ciego-ausencia",
+      "valida": true,
+      "exit": 1,
+      "segundos": 9.9,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null

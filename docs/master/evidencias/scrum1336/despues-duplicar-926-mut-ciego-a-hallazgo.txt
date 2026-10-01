@@ -1,0 +1,33 @@
+# duplicar-926-mut-ciego-a-hallazgo · guard-duplicar-926.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»:   if (estado === 'ciego') ciegos.push(texto);
+# EXIT=1 · 54.9 s
+
+{
+  "casos": {
+    "G": {
+      "ciego": "no encuentro el boton «Duplicar»",
+      "errores": []
+    },
+    "P": {
+      "ciego": "no encuentro el boton «Duplicar»",
+      "errores": []
+    }
+  },
+  "controles": {}
+}
+
+── SCRUM-926 · duplicar conserva lo que cobra ──
+⬜ NO SUPE MIRAR · SUELO · el caso G se pudo abrir — no encuentro el boton «Duplicar»
+·  SIN JUZGAR (su caso no se pudo leer) · G · duplicar CONSERVA el descuento global de 25 €
+·  SIN JUZGAR (su caso no se pudo leer) · G · y deja su campo ABIERTO, no un importe detras de un boton
+⬜ NO SUPE MIRAR · SUELO · el caso P se pudo abrir — no encuentro el boton «Duplicar»
+✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
+·  SIN JUZGAR (su caso no se pudo leer) · P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
+✔ sin errores de pagina en ninguno de los dos casos
+
+NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
+                                        `currency` (el editor no tiene selector: usa la del merchant)
+
+POBLACION casillas=7 verdes=2 hallazgos=0 ciegos=2 sin-juzgar=3
+EXIT=1
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
+⟦veredicto⟧ 2 hallazgos · 0 ciegos → salida 1 (hallazgo)
