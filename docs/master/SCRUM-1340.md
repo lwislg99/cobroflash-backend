@@ -277,3 +277,38 @@ argumentos de git** —tres mensajes de error y un `update-ref` del repositorio 
 `scrum723` los acusó (y con él `scrum976` ④, que lanza `guards:entrada` de verdad). No lo cacé yo: lo cazó
 el lote. Arreglado en MI código —los mensajes dicen «la rama principal» y el repositorio de prueba ya no
 crea esa referencia—, no en la lista del guard. Preguntado después al propio censo: 0 menciones mías.
+
+## Ⓜ La exposición el día que entra, y lo que se propone a otros carriles
+
+**PR abiertos que cambian interfaz** (medido el 1-oct-2026 a las 07:25:32Z, hora de GitHub): 15 PR abiertos,
+15 con sus ficheros leídos, 123 rutas. Cambian algún `public/**.{js,css,html}` **dos**:
+
+| PR | rama | ficheros de interfaz | su registro | ¿declara? |
+|---|---|---|---|---|
+| #1959 | `scrum-743-cantidad-una-sola-forma` | `signaturePad.js` | `SCRUM-743.md` | no (0 líneas `Skill UI:`) |
+| #1965 | `scrum-1274-adicional-con-trabajo` | `jobDetailView.js`, `quotesView.js` | `SCRUM-1274.md` | no (0 líneas `Skill UI:`) |
+
+Si mergean después de este PR sin declarar, `main` queda en rojo nombrando su merge. El orquestador lo sube
+al fundador, que avisa al equipo de Luis. Fuera de los PR abiertos: SCRUM-1317 (rama local de J4, sin PR al
+medir) cambia interfaz y su registro ya declara. El orquestador contó 14 abiertos minutos antes; yo, 15.
+
+Mi primera pasada de esta medición no midió nada: el filtro de `jq` llevaba un escape inválido y devolvió
+vacío en los 15. Se veía (el error salía por pantalla), pero la columna vacía se habría leído como «ninguno
+toca interfaz». Repetida volcando las rutas a fichero, con población y un control positivo.
+
+**Texto que propongo a su dueño (S0), sin tocarlo yo** — `scripts/guards-entrada.mjs`, el comentario de este
+guard, que hoy dice «sin git, sin DB: añade ~0,3 s»:
+
+> Desde SCRUM-1340 llama a git y fabrica un repositorio temporal: ~4 s.
+
+Y `docs/equipo/sesion-2.md` y `sesion-4.md`, líneas 6-7, describen el criterio viejo («si tu entrada nombra
+una ruta…»): lo que obliga ahora es que el PR cambie `public/**.{js,css,html}`. Decisión del orquestador
+(1-oct-2026): un fichero de otro carril no se corrige de paso, aunque lo haya desfasado este PR.
+
+**La tanda completa no se corre en local**, por decisión del orquestador: el arnés mató hoy las de otras
+dos sesiones. Se empuja declarándolo, con el auto-merge desarmado hasta leer el CI, y comprobando en el
+log del obligatorio los 27 casos de este fichero por nombre.
+
+**El GO para entrar.** El orquestador me transmite la decisión del fundador, presentada con los dos PR
+delante: «1-Entra!», con el aviso al equipo de Luis saliendo a la vez. Yo no se lo oí a Javier: me llega
+por el orquestador (`cobroflash-backend-5b`), y así queda dicho.
