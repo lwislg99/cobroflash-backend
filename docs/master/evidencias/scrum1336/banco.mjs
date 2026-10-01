@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { lineaDeLosQueMidieron, clasificarPasada } from './linea.mjs';
+import { lineaDeLosQueMidieron } from './linea.mjs';
 
 const [RAIZ, REF, ETIQUETA, SALIDA, FILTRO] = process.argv.slice(2);
 if (!RAIZ || !path.isAbsolute(RAIZ) || !REF || !ETIQUETA || !SALIDA) {
@@ -75,6 +75,13 @@ const MENU_CON_UN_DESTINO_MENOS = { f: PANEL, de: '<button class="nav-item" data
 const MENU_CON_UN_DESTINO_MAS = { f: PANEL, de: '<button class="nav-item" data-view="home">', a: '<button class="nav-item" data-view="settings">uno mas</button>\n        <button class="nav-item" data-view="home">', veces: 1 };
 const MENU_POR_RENDER_CRUDO ={ f: APP, de: "btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));", a: "btn.addEventListener('click', () => renderView(btn.dataset.view));", veces: 1 };
 
+// ── Un ciego que, además, deja SIN VER algo que el guard espera ver. Sin el arreglo de este ticket
+// eso fabricaba hallazgos falsos («ya no aparece», «ha bajado», «excepción caduca»): el mismo ciego
+// pintado de 1 por otra puerta.
+const ADMIN_NO_SE_DEJA_MEDIR = { f: 'public/admin.html', de: '</body>', a: '<script>window.getComputedStyle = function () { throw new Error("rota a proposito por el banco de SCRUM-1336"); };</script></body>', veces: 1 };
+const RECIBIDAS_REVIENTA = { f: 'public/dashboard/js/facturasRecibidasView.js', de: '  function renderFacturasRecibidasView(container) {', a: "  function renderFacturasRecibidasView(container) {\n    throw new Error('rota a proposito por el banco de SCRUM-1336');", veces: 1 };
+const CLIENTES_REVIENTA = { f: 'public/dashboard/js/customersView.js', de: 'function renderCustomersView(container) {', a: "function renderCustomersView(container) {\n  throw new Error('rota a proposito por el banco de SCRUM-1336');", veces: 1 };
+
 const SEIS = 'seis';
 const SEPTIMO = 'septimo';
 const PASADAS = [
@@ -115,11 +122,57 @@ const PASADAS = [
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'ciego', que: 'el menú pierde un destino: por debajo de su suelo', cambios: [MENU_CON_UN_DESTINO_MENOS] },
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'hallazgo', que: 'el menú navega por `renderView` crudo: no deja rastro, y ningún ciego', cambios: [MENU_POR_RENDER_CRUDO] },
   { guard: 'rastro-del-menu', grupo: SEPTIMO, escenario: 'gana-uno', que: 'el menú GANA un destino (19): qué dice el guard, él solo', cambios: [MENU_CON_UN_DESTINO_MAS] },
+  // ── UN CIEGO QUE DEJA SIN VER LO QUE EL GUARD ESPERA VER (tres de los seis tienen juicios por ausencia) ──
+  { guard: 'contraste', grupo: SEIS, escenario: 'ciego-ausencia', que: 'admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales', cambios: [ADMIN_NO_SE_DEJA_MEDIR] },
+  { guard: 'marcadores-en-pantalla', grupo: SEIS, escenario: 'ciego-ausencia', que: 'revienta «facturas-recibidas», la única vista con techo en el CENSO: 0 hallazgos reales', cambios: [RECIBIDAS_REVIENTA] },
+  { guard: 'objetivo-tactil', grupo: SEIS, escenario: 'ciego-ausencia', que: 'la lista de Clientes no monta, y sus excepciones dejan de verse: 0 hallazgos reales', cambios: [CLIENTES_REVIENTA] },
 ].map((p) => ({ ...p, id: p.guard + '-' + p.escenario }));
 
-const elegidas = FILTRO
-  ? PASADAS.filter((p) => p.id === FILTRO || p.guard === FILTRO || p.escenario === FILTRO)
-  : PASADAS;
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LAS MUTACIONES, CON NAVEGADOR. Cada una rompe UNA línea del guard arreglado en el árbol desechable
+// y repite un escenario cuyo resultado sin mutar ya está en el resumen de ESTE SHA.
+//
+//   ciego-a-hallazgo .... el ciego vuelve a apuntarse como hallazgo: es el defecto del ticket, vuelto
+//                         a poner. El escenario «ciego» tiene que dejar de salir 2.
+//   hallazgo-a-ciego .... el hallazgo se apunta como ciego: es lo que la aceptación C teme. El
+//                         escenario «hallazgo» tiene que dejar de salir 1.
+//   juzga-por-ausencia .. se quita la suspensión de los juicios por ausencia. El escenario
+//                         «ciego-ausencia» tiene que dejar de salir 2.
+//
+// Sólo corren con el filtro «mutaciones» (o por su id): no son parte de la pasada normal.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const g = (nombre) => 'scripts/guard-' + nombre + '.mjs';
+const SUMIDERO_CIEGO = 'const noSupeMirar = (texto) => { console.error(texto); ciegos.push(texto); };';
+const SUMIDERO_HALLAZGO = 'const hallazgo = (texto) => { console.error(texto); hallazgos.push(texto); };';
+const MUTACIONES = [
+  { guard: 'a11y-comparativa', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('a11y-comparativa'), de: SUMIDERO_CIEGO, a: SUMIDERO_CIEGO.replace('ciegos.push', 'hallazgos.push'), veces: 1 } },
+  { guard: 'a11y-comparativa', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('a11y-comparativa'), de: SUMIDERO_HALLAZGO, a: SUMIDERO_HALLAZGO.replace('hallazgos.push', 'ciegos.push'), veces: 1 } },
+  { guard: 'a11y-landing', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('a11y-landing'), de: SUMIDERO_CIEGO, a: SUMIDERO_CIEGO.replace('ciegos.push', 'hallazgos.push'), veces: 1 } },
+  { guard: 'a11y-landing', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('a11y-landing'), de: SUMIDERO_HALLAZGO, a: SUMIDERO_HALLAZGO.replace('hallazgos.push', 'ciegos.push'), veces: 1 } },
+  { guard: 'contraste', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('contraste'), de: 'ciegos.push(...recorrido.ciegos);', a: 'hallazgos.push(...recorrido.ciegos);', veces: 1 } },
+  { guard: 'contraste', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('contraste'), de: '    hallazgos.push(`par nuevo · ', a: '    ciegos.push(`par nuevo · ', veces: 1 } },
+  { guard: 'contraste', grupo: SEIS, nombre: 'juzga-por-ausencia', base: 'ciego-ausencia', m: { f: g('contraste'), de: 'if (desaparecidos.length && !medidoEntero) {', a: 'if (false) {', veces: 1 } },
+  { guard: 'duplicar-926', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('duplicar-926'), de: "  if (estado === 'ciego') ciegos.push(texto);", a: "  if (estado === 'ciego') hallazgos.push(texto);", veces: 1 } },
+  { guard: 'duplicar-926', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('duplicar-926'), de: "  if (estado === 'hallazgo') hallazgos.push(texto);", a: "  if (estado === 'hallazgo') ciegos.push(texto);", veces: 1 } },
+  { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('marcadores-en-pantalla'), de: '  ciegos.push(...recorrido.ciegos);', a: '  hallazgos.push(...recorrido.ciegos);', veces: 1 } },
+  { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('marcadores-en-pantalla'), de: 'const hallazgo = (m) => { console.error(m); hallazgos.push(m); };', a: 'const hallazgo = (m) => { console.error(m); ciegos.push(m); };', veces: 1 } },
+  { guard: 'marcadores-en-pantalla', grupo: SEIS, nombre: 'juzga-por-ausencia', base: 'ciego-ausencia', m: { f: g('marcadores-en-pantalla'), de: 'const seVioEntera = (vista) => detectorVe && !vistasConCiego.has(vista);', a: 'const seVioEntera = (vista) => true;', veces: 1 } },
+  { guard: 'objetivo-tactil', grupo: SEIS, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('objetivo-tactil'), de: 'const noSupeMirar = (s) => { console.error(s); ciegos.push(s); };', a: 'const noSupeMirar = (s) => { console.error(s); hallazgos.push(s); };', veces: 1 } },
+  { guard: 'objetivo-tactil', grupo: SEIS, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('objetivo-tactil'), de: 'const hallazgo = (s) => { console.error(s); hallazgos.push(s); };', a: 'const hallazgo = (s) => { console.error(s); ciegos.push(s); };', veces: 1 } },
+  { guard: 'objetivo-tactil', grupo: SEIS, nombre: 'juzga-por-ausencia', base: 'ciego-ausencia', m: { f: g('objetivo-tactil'), de: 'for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length ? [] : EXCEPCIONES_PANEL)) {', a: 'for (const e of EXCEPCIONES_PANEL) {', veces: 1 } },
+  { guard: 'rastro-del-menu', grupo: SEPTIMO, nombre: 'ciego-a-hallazgo', base: 'ciego', m: { f: g('rastro-del-menu'), de: '    ciegos.push(String((e && e.message) || e));', a: '    fallos.push(String((e && e.message) || e));', veces: 1 } },
+  { guard: 'rastro-del-menu', grupo: SEPTIMO, nombre: 'hallazgo-a-ciego', base: 'hallazgo', m: { f: g('rastro-del-menu'), de: 'const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos });', a: 'const veredictoFinal = veredictoDe({ hallazgos: ciegos, ciegos: fallos });', veces: 1 } },
+].map((x) => {
+  const base = PASADAS.find((p) => p.id === x.guard + '-' + x.base);
+  return { guard: x.guard, grupo: x.grupo, escenario: 'mut-' + x.nombre, id: x.guard + '-mut-' + x.nombre, esMutacion: true, baseId: base.id,
+    que: 'MUTACIÓN «' + x.nombre + '» sobre el escenario «' + x.base + '»: ' + x.m.de.slice(0, 60), cambios: [...base.cambios, x.m] };
+});
+const TODAS = [...PASADAS, ...MUTACIONES];
+
+const elegidas = !FILTRO ? PASADAS
+  : FILTRO === 'mutaciones' ? MUTACIONES
+  : FILTRO.startsWith('mutaciones:') ? MUTACIONES.filter((p) => p.guard === FILTRO.slice('mutaciones:'.length))
+  : TODAS.filter((p) => p.id === FILTRO || (!p.esMutacion && (p.guard === FILTRO || p.escenario === FILTRO)));
 if (!elegidas.length) { console.error('🔴 el filtro «' + FILTRO + '» no casa con ninguna pasada'); process.exit(2); }
 
 // ── El árbol desechable ──────────────────────────────────────────────────────────────────────
@@ -210,11 +263,20 @@ const filas = [];
 // enseñó `objetivo-tactil`: sin `dist/` reventaba al importar, salía con 1 en 0,4 s y con salida
 // escrita —la traza—, y eso se leía igual que cuatro hallazgos.
 const controlLimpio = new Map();
+// El resumen de este MISMO SHA, si lo hay: contra él se comparan las mutaciones.
+const ficheroResumen = path.join(SALIDA, `${ETIQUETA}-resumen.json`);
+let previas = [];
+if (fs.existsSync(ficheroResumen)) {
+  const anterior = JSON.parse(fs.readFileSync(ficheroResumen, 'utf8'));
+  if (anterior.sha === sha && Array.isArray(anterior.filas)) previas = anterior.filas;
+}
 console.log(`POBLACION=${elegidas.length} pasadas (de ${PASADAS.length}) · etiqueta=${ETIQUETA} · sha=${sha} · arbol desechable=${ARBOL}`);
 for (const p of elegidas) {
-  // `public/` vuelve a nacer del prístino en CADA pasada: no hay nada que deshacer.
-  fs.rmSync(path.join(ARBOL, 'public'), { recursive: true, force: true });
-  fs.cpSync(path.join(PRISTINO, 'public'), path.join(ARBOL, 'public'), { recursive: true });
+  // `public/` y `scripts/` vuelven a nacer del prístino en CADA pasada: no hay nada que deshacer.
+  for (const dir of ['public', 'scripts']) {
+    fs.rmSync(path.join(ARBOL, dir), { recursive: true, force: true });
+    fs.cpSync(path.join(PRISTINO, dir), path.join(ARBOL, dir), { recursive: true });
+  }
   let noAplicada = null;
   for (const c of p.cambios) { noAplicada = aplicar(c); if (noAplicada) break; }
 
@@ -232,6 +294,7 @@ for (const p of elegidas) {
   else if (r.signal) invalida = 'el proceso murió por la señal ' + r.signal;
   else if (!Number.isInteger(r.status)) invalida = 'el proceso no dejó código de salida';
   else if (!salida.trim()) invalida = 'el proceso salió con ' + r.status + ' SIN SALIDA: no hay testigo de que midiera';
+  else if (p.esMutacion) { /* su control es la pasada sin mutar, más abajo */ }
   else if (p.escenario !== 'limpio' && controlLimpio.get(p.guard) === false) invalida = 'el control LIMPIO de este guard no salió 0 en este banco: no lo está midiendo';
   else if (p.escenario !== 'limpio' && !controlLimpio.has(p.guard)) console.log('  ⚠️ ' + p.id + ': en esta invocación no ha corrido el control limpio de su guard');
   if (p.escenario === 'limpio') controlLimpio.set(p.guard, !invalida && r.status === 0);
@@ -240,8 +303,16 @@ for (const p of elegidas) {
   const sinCapturar = !invalida && /\nNode\.js v\d/.test(salida) && /\n\s+at /.test(salida);
 
   const veredicto = (salida.split('\n').filter((l) => l.includes('⟦veredicto⟧')).pop() || '').trim();
-  const fila = { id: p.id, guard: p.guard, grupo: p.grupo, escenario: p.escenario, valida: !invalida, exit: r ? r.status : null, segundos: Number(segundos), sinCapturar, veredicto, invalida };
+  // UNA MUTACIÓN se lee contra su pasada SIN MUTAR, del mismo SHA: si no la hay, no dice nada.
+  let mutacion = null;
+  if (p.esMutacion && !invalida) {
+    const sinMutar = [...previas, ...filas].filter((f) => f.id === p.baseId && f.valida).pop();
+    if (!sinMutar) invalida = 'no hay pasada SIN MUTAR de «' + p.baseId + '» para este SHA: no se puede decir si la mutación se ve';
+    else mutacion = { sinMutar: sinMutar.exit, vista: sinMutar.exit !== r.status };
+  }
+  const fila = { id: p.id, guard: p.guard, grupo: p.grupo, escenario: p.escenario, valida: !invalida, exit: r ? r.status : null, segundos: Number(segundos), sinCapturar, veredicto, invalida, ...(p.esMutacion ? { esMutacion: true, baseId: p.baseId, mutacion } : {}) };
   filas.push(fila);
+  if (mutacion) console.log('           ' + (mutacion.vista ? '✅ MUTACIÓN VISTA' : '🔴 MUTACIÓN MUDA') + ': sin mutar «' + p.baseId + '» salía ' + mutacion.sinMutar + ' y mutado sale ' + r.status);
   fs.writeFileSync(path.join(SALIDA, `${ETIQUETA}-${p.id}.txt`),
     `# ${p.id} · guard-${p.guard}.mjs @ ${sha} · ${p.que}\n# ${invalida ? 'PASADA SIN CONTAR: ' + invalida : 'EXIT=' + r.status} · ${segundos} s\n\n${salida}`);
   console.log(`${String(invalida ? 'SIN CONTAR' : 'EXIT=' + r.status).padEnd(10)} ${p.id.padEnd(36)} ${segundos.padStart(6)} s  ${veredicto || '(sin línea de veredicto)'}${sinCapturar ? '  · EXCEPCIÓN SIN CAPTURAR' : ''}${invalida ? '  ← ' + invalida : ''}`);
@@ -249,7 +320,7 @@ for (const p of elegidas) {
 
 // ── La línea agregada, por grupo y por escenario. Sale SIEMPRE, también con ceros (E2). ──────
 for (const grupo of [SEIS, SEPTIMO]) {
-  const suyas = filas.filter((f) => f.grupo === grupo);
+  const suyas = filas.filter((f) => f.grupo === grupo && !f.esMutacion);
   if (!suyas.length) continue;
   console.log(`\n── ${grupo === SEIS ? 'LOS SEIS con la marca `pintaElCiegoDeHallazgo`' : 'EL SÉPTIMO, aparte (rastro-del-menu)'} ──`);
   for (const escenario of [...new Set(suyas.map((f) => f.escenario))]) {
@@ -262,17 +333,19 @@ console.log(`\nporcelain del árbol de TRABAJO tras el banco: ${String(st.stdout
 // El resumen ACUMULA entre invocaciones del MISMO SHA: el banco se lanza por trozos (un guard cada
 // vez, para que ninguno pase de diez minutos) y una pasada repetida sustituye a la suya. Con otro
 // SHA no se mezcla: se empieza de cero.
-const ficheroResumen = path.join(SALIDA, `${ETIQUETA}-resumen.json`);
-let previas = [];
-if (fs.existsSync(ficheroResumen)) {
-  const anterior = JSON.parse(fs.readFileSync(ficheroResumen, 'utf8'));
-  if (anterior.sha === sha && Array.isArray(anterior.filas)) previas = anterior.filas;
-}
 const porId = new Map([...previas, ...filas].map((f) => [f.id, f]));
-const acumuladas = PASADAS.map((p) => porId.get(p.id)).filter(Boolean);
-fs.writeFileSync(ficheroResumen, JSON.stringify({ sha, pasadas: acumuladas.length, de: PASADAS.length, filas: acumuladas }, null, 2) + '\n');
-console.log(`resumen: ${acumuladas.length} de ${PASADAS.length} pasadas acumuladas para ${sha}`);
-// Este banco no juzga: apunta. Sale 2 sólo si alguna pasada no se pudo contar.
-const sinContar = filas.filter((f) => clasificarPasada(f) === 'sin contar' && !f.valida).length;
+const acumuladas = TODAS.map((p) => porId.get(p.id)).filter(Boolean);
+const normales = acumuladas.filter((f) => !f.esMutacion).length;
+const mutadas = acumuladas.filter((f) => f.esMutacion);
+fs.writeFileSync(ficheroResumen, JSON.stringify({ sha, pasadas: normales, de: PASADAS.length, mutaciones: mutadas.length, deMutaciones: MUTACIONES.length, filas: acumuladas }, null, 2) + '\n');
+console.log(`resumen: ${normales} de ${PASADAS.length} pasadas y ${mutadas.length} de ${MUTACIONES.length} mutaciones acumuladas para ${sha}`);
+if (filas.some((f) => f.esMutacion)) {
+  const estas = filas.filter((f) => f.esMutacion);
+  const vistas = estas.filter((f) => f.valida && f.mutacion && f.mutacion.vista).length;
+  const mudas = estas.filter((f) => f.valida && f.mutacion && !f.mutacion.vista).length;
+  console.log(`MUTACIONES de esta invocación: ${estas.length} · vistas ${vistas} · MUDAS ${mudas} · sin contar ${estas.length - vistas - mudas}`);
+}
+// Este banco no juzga los guards: apunta. Sale 2 si alguna pasada no se pudo contar o una mutación quedó MUDA.
+const sinContar = filas.filter((f) => !f.valida).length + filas.filter((f) => f.esMutacion && f.mutacion && !f.mutacion.vista).length;
 console.log(`EXIT=${sinContar ? 2 : 0}`);
 process.exitCode = sinContar ? 2 : 0;

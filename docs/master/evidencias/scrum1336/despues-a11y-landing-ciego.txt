@@ -1,0 +1,29 @@
+# a11y-landing-ciego · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · .note no da nombre accesible en ningún ancho: 0 hallazgos
+# EXIT=2 · 2.3 s
+
+Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
+Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.
+
+── 1280px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ 7 regiones con nombre, las 7 publicadas entre ellas
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.1px tocables (caja 23.6px)
+   ✔ umbral __sonda-30: 31px cae contra 36
+   ✔ umbral __sonda-37: 38px pasa contra 36
+
+── 360px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ 7 regiones con nombre, las 7 publicadas entre ellas
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.6px tocables (caja 23.6px)
+   ✔ umbral __sonda-40: 41px cae contra 44
+
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+   🔴 NO SUPE MIRAR @1280px: .note no da nombre accesible
+   🔴 NO SUPE MIRAR @360px: .note no da nombre accesible
+
+🔴 NO SUPE MIRAR 2 vez/veces: de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 2 ciegos → salida 2 (no supe medir) · un ciego no es un verde

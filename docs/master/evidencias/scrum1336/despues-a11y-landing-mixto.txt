@@ -1,0 +1,31 @@
+# a11y-landing-mixto · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · .note ciega y la región sin nombre
+# EXIT=1 · 1.7 s
+
+Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
+Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.
+
+── 1280px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.1px tocables (caja 23.6px)
+   ✔ umbral __sonda-30: 31px cae contra 36
+   ✔ umbral __sonda-37: 38px pasa contra 36
+
+── 360px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.6px tocables (caja 23.6px)
+   ✔ umbral __sonda-40: 41px cae contra 44
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   🔴 NO SUPE MIRAR @1280px: .note no da nombre accesible
+   ✖ @1280px · secciones que NO llegan como región con nombre: reg-faq («Preguntas de compañeros…»)
+   🔴 NO SUPE MIRAR @360px: .note no da nombre accesible
+   ✖ @360px · secciones que NO llegan como región con nombre: reg-faq («Preguntas de compañeros…»)
+
+🔴 2 problema(s) de accesibilidad en la landing publicada.
+
+🔴 NO SUPE MIRAR 2 vez/veces: de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 2 hallazgos · 2 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

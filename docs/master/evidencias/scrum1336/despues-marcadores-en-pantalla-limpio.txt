@@ -1,0 +1,13 @@
+# marcadores-en-pantalla-limpio · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · sin romper nada
+# EXIT=0 · 30.6 s
+
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+
+────────────────────────────────────────────────────────────────────────────
+✅ ningún marcador NUEVO llega al DOM renderizado. Vigiladas las 28 vistas del router en sus tres estados (con datos, sin datos y error), con el control negativo corrido en esta misma ejecución. Los que quedan están en el CENSO, reportados al fundador y pendientes de firma.

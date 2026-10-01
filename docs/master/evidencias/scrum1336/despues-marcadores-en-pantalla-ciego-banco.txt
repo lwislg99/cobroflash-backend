@@ -1,0 +1,8 @@
+# marcadores-en-pantalla-ciego-banco · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · index.html del panel sin scripts: «el banco no es el panel», antes de medir nada
+# EXIT=2 · 0.2 s
+
+🔴 CIEGO: sólo 0 scripts derivados de index.html. El banco no es el panel.
+
+────────────────────────────────────────────────────────────────────────────
+🔴 SCRUM-722 · NO SUPE MIRAR 1 cosa(s): de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde
