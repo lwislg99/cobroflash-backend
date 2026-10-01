@@ -3,6 +3,8 @@
 **Rama:** `scrum-1293-listas-de-marcadores-a-json` · **Carril:** S3 · instrumentos (s3-29e la empezó, s3-1oct la cierra)
 **Medido contra:** `origin/main` = `fe5b3c18f038eb5c1200b8c067ed69d0bfda0898` · 2026-10-01T10:44:58Z
 
+A9: aviso → cicatriz S3 «Maté `meta:mutaciones` a medias y dejó una mutación suya sin restaurar en el árbol.» — no se pudo comprobar: el diario que lo impide está diseñado en SCRUM-1349 y todavía no está construido
+
 ## Para qué
 
 Retirar un marcador `[PENDIENTE` cuyo texto ya está firmado obligaba a editar un test (`scrum402`,
