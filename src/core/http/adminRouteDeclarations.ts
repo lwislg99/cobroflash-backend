@@ -60,6 +60,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // justo al operario que esta en la obra, que es quien mas lo necesita. Mismo criterio que /admin/entorno.
   { method: 'POST', path: '/admin/soporte', why: 'Escribirnos desde dentro del producto; el operario en obra es quien mas lo necesita y no es capacidad de admin' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
+  // SCRUM-1317 · DECISIÓN DE PERMISOS, no un trámite: es la portada del operario, y nace para
+  // poder CERRAR `/admin/metrics/home`, que era su Inicio y devuelve el dinero del negocio (lo
+  // que se debe, lo cobrado, gastos, beneficio, facturación por cliente). Ésta es una función
+  // propia (`getInicioOperario`), no un recorte de aquélla: tres recuentos de listas que ya
+  // puede abrir y los últimos presupuestos, que ya ve en Presupuestos. Ni un importe agregado.
+  { method: 'GET', path: '/admin/metrics/inicio', why: 'SCRUM-1317: su portada — los tres recuentos de los globos del menú y los últimos presupuestos, que ya ve en Presupuestos; sin ningún importe agregado del negocio' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
   { method: 'GET',  path: '/admin/customers', why: 'Ver la cartera de clientes es trabajo de campo' },
@@ -93,6 +99,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅' },
   { method: 'GET',  path: '/admin/quotes/:id', why: 'S1: quotes crear-ver ✅' },
   { method: 'GET',  path: '/admin/quotes/:id/pdf', why: 'Enseñar el presupuesto al cliente en la obra' },
+  // SCRUM-1317 · DECISIÓN DE PERMISOS, no un trámite. Son plantillas de PRESUPUESTO
+  // (`QuoteTemplate`: líneas, precios y condición de cobro), no de mensaje, y el operario crea
+  // presupuestos: cerrarle la lectura le quitaba «Usar plantilla» y las plantillas rápidas del
+  // editor. No enseña nada que no vea ya al presupuestar (los precios del catálogo son suyos en
+  // lectura). CREAR, renombrar y borrar una plantilla es configuración y exige admin.
+  { method: 'GET',  path: '/admin/templates', why: 'SCRUM-1317: usar una plantilla al montar el presupuesto (S1: quotes crear-ver); sólo lectura, crearlas y borrarlas es de admin' },
   { method: 'PUT',  path: '/admin/quotes/:id/notes', why: 'Notas internas del trabajo' },
   { method: 'POST', path: '/admin/quotes/:id/accept', why: 'Registrar la aceptación del cliente delante del cliente' },
   { method: 'POST', path: '/admin/quotes/:id/reject', why: 'Registrar el rechazo; simétrico de accept' },
@@ -295,11 +307,15 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   // resolvió el fundador partiendo el router POR VERBO (crear ✅ / leer 🔒), no en bloque.
   // Las 7 rutas están ahora declaradas: 2 abajo en TECNICO_ALLOWED, 5 con requireRole.
 
-  { method: 'GET', path: '/admin/metrics/home', tanda: 2, duda: 'KPIs de ingresos del negocio → probable admin' },
-  { method: 'GET', path: '/admin/metrics/funnel', tanda: 2, duda: 'Embudo comercial → probable admin' },
-  { method: 'GET', path: '/admin/metrics/services', tanda: 2, duda: 'Servicios más vendidos → probable admin' },
-  { method: 'GET', path: '/admin/metrics/whatsapp', tanda: 2, duda: 'Coste y entrega de WA del merchant → probable admin' },
-  { method: 'GET', path: '/admin/metrics/platform-funnel', tanda: 2, duda: 'Ya tiene gate propio por isVerifiedPlatformOwner (SCRUM-102, más estricto que admin) pero INLINE: hacerlo visible' },
+  // SCRUM-1317 (1-oct-2026): SALEN `/admin/metrics/home`, `/funnel`, `/services` y `/whatsapp`,
+  // las cuatro con `requireRole('admin')`. `/home` era el Inicio del operario: antes de cerrarla
+  // se le dio su propia ruta (`/admin/metrics/inicio`, arriba en TECNICO_ALLOWED), sin importes.
+  //
+  // Y SALE `/admin/metrics/platform-funnel`, también con `requireRole('admin')`. Su duda decía
+  // que su puerta inline era «más estricta que admin», y no lo era: era OTRA pregunta.
+  // `isVerifiedPlatformOwner` mira el MERCHANT (correo + marca en la base), no quién llama, así
+  // que un operario del merchant dueño de la plataforma pasaba. La de rol va delante y la de
+  // dueño se queda intacta detrás: ahora hacen falta las dos.
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
@@ -310,14 +326,10 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
   // — igual que le pasó a `/admin/products/export` en SCRUM-103.
   // SCRUM-312: y con ella sale `/admin/customers/import`, por el mismo criterio: un alta
   // MASIVA de clientes es catalogo entero, no una linea suelta.
-  { method: 'GET',    path: '/admin/providers', tanda: 3, duda: 'Proveedores: ligado a compras/gastos → probable admin' },
-  { method: 'POST',   path: '/admin/providers', tanda: 3, duda: 'Ídem' },
-  { method: 'PUT',    path: '/admin/providers/:id', tanda: 3, duda: 'Ídem' },
-  { method: 'DELETE', path: '/admin/providers/:id', tanda: 3, duda: 'Ídem' },
-  { method: 'GET',    path: '/admin/templates', tanda: 3, duda: 'Plantillas de mensaje: leerlas puede ser ✅, escribirlas es configuración' },
-  { method: 'POST',   path: '/admin/templates', tanda: 3, duda: 'Escribir plantillas = configuración → probable admin' },
-  { method: 'PUT',    path: '/admin/templates/:id', tanda: 3, duda: 'Ídem' },
-  { method: 'DELETE', path: '/admin/templates/:id', tanda: 3, duda: 'Ídem' },
+  // SCRUM-1317 (1-oct-2026): LA TANDA 3 SE VACÍA. Las cuatro de `/admin/providers` y `POST`,
+  // `PUT` y `DELETE` de `/admin/templates` llevan `requireRole('admin')`. `GET /admin/templates`
+  // se queda con el operario, declarada arriba con su motivo verdadero — su nota de aquí decía
+  // «plantillas de mensaje» y la ruta sirve plantillas de PRESUPUESTO.
 ];
 
 /**
@@ -350,7 +362,15 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
 // por que eso es un defecto: «un tope con holgura deja huecos libres para aparcar sin que
 // nadie se entere». Dos ramas bajaron el trinquete desde el mismo punto de partida y
 // ninguna estaba mal; lo que estaria mal es resolver eligiendo una.
-export const PENDIENTE_MAX = 13;
+//
+// 13 → 1 (SCRUM-1317, 1-oct-2026): salen doce. Once se cierran con requireRole('admin')
+// —metrics/home, funnel, services y whatsapp; las cuatro de providers; POST, PUT y DELETE de
+// templates— y GET /admin/templates pasa a TECNICO_ALLOWED.
+//
+// 1 → 0 (SCRUM-1317): sale /admin/metrics/platform-funnel, con requireRole('admin') delante de
+// su puerta de dueño de plataforma. LA LISTA QUEDA VACÍA, y el tope en cero es lo que hace que
+// siga mordiendo: una ruta nueva sin declarar ya no tiene dónde aparcarse.
+export const PENDIENTE_MAX = 0;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.

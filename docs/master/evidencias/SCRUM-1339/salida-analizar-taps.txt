@@ -1,0 +1,4 @@
+POBLACION: 627 TAP leídos (de 627 ficheros .tap)
+  con bytes NUL: 594 · con hueco en la numeración de primer nivel: 594 · sin línea «# tests»: 30
+  sanos (con resumen, sin NUL, sin hueco): 4 · de ésos, líneas de resultado == «# tests»: 4
+EXIT=0
