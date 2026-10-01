@@ -425,8 +425,11 @@ test('SCRUM-1323 ⑪ · un texto que no es el máster no da verde: da problemas 
 // LA MISMA función que corre ①, con `console.log` cambiado por un cuaderno mientras dura: quitar
 // cualquiera de las dos líneas, o vaciarlas de nombres, hace caer esto.
 //
-// Límite: fija lo que la función dice, no que ① la siga llamando. Esa llamada es una línea, y está
-// a la vista justo debajo de la función.
+// 🔴 LÍMITE: ⑫ y ⑬ fijan LO QUE LA FUNCIÓN DICE, no QUE ① LA SIGA LLAMANDO. Esa llamada es una
+// línea, y está a la vista justo debajo de la función. No se cierra con un proceso hijo que corra
+// este fichero y lea su salida: un hijo de `node --test` hereda el contexto del padre y en CI pisa
+// el TAP de la tanda (SCRUM-1308). Quien quiera cerrarlo, que lo cierre por AST —comprobar que el
+// cuerpo de ① llama a `veLosDosSitios`—, que no toca procesos. Decidido por el orquestador, 1-oct.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 /** Lo que `fn` manda a `console.log` mientras corre. El original vuelve aunque `fn` lance. */

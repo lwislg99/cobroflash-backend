@@ -237,6 +237,10 @@ de este fichero. No lo he cerrado con un proceso hijo que corra el fichero y lea
 de `node --test` hereda el contexto del padre y en CI pisa el TAP de la tanda (SCRUM-1308), y el
 riesgo que cubre es una llamada de una línea a la vista.
 
+**Decisión del orquestador (1-oct):** no al proceso hijo, por ese mismo motivo. El límite queda
+escrito en el propio fichero de test, y si alguien lo cierra algún día, que sea por AST —comprobar
+que el cuerpo de ① llama a `veLosDosSitios`—, que no toca procesos.
+
 ## Ⓝ Lo que me salió mal
 
 1. Dejé en el test un comentario a medio pensar (una frase que se corregía a sí misma dentro del
