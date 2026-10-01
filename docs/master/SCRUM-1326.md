@@ -122,12 +122,20 @@ conflictos), con `prisma generate` y build en 0:
   pregunta; `sale` pasa a preguntar; una flexión deja de aceptar; todo pregunta, también «Acepto»;
   la pregunta deja una marca en el presupuesto; la pregunta apunta que preguntó en otra tabla; una
   palabra distinta en el texto; sin «Entendido»; sin negritas; avisa también al profesional; sin
-  quitar las tildes. Corrieron antes de mezclar `main`.
+  quitar las tildes. Corrieron antes de mezclar `main`, y no se repiten porque medí que no hace
+  falta: entre `01d99084` y `eb3d3b36` `main` cambió 76 ficheros, **ninguno en `src/`**, y ninguno
+  de los 69 que las mutaciones cubren (los dos ficheros mutados, los 61 de `src/` que importan
+  directa o indirectamente, el test, la ficha, su lector, el banco, `package.json`, `tsconfig.json`
+  y el esquema). Control: el cierre de imports sí contiene `core/db/prisma.ts` e
+  `integrations/whatsapp.ts`.
 - La tanda completa y lo que diga CI van en el comentario de entrega del ticket, no aquí.
 
 **Sin medir, dicho:** el texto en un WhatsApp de verdad (aquí sale por un doble: los asteriscos y
 el emoji se comprueban como caracteres, no como se pintan en el teléfono); y si
-`BOT_INBOUND_ENABLED` está encendido en producción, que no he mirado.
+`BOT_INBOUND_ENABLED` está encendido en producción, que no he mirado. Para este arreglo no
+decide: la pregunta sale con el flag encendido y con el flag apagado (los casos por efecto corren
+con él apagado, y uno lo repite encendido). Lo que decide si tiene efecto hoy es que a producción
+le lleguen mensajes de clientes con un presupuesto enviado.
 
 ## Errores míos
 
