@@ -70,11 +70,14 @@ const MUTACIONES = [
 
 const entorno = { ...process.env };
 for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete entorno[k];
-const correr = () => spawnSync(process.execPath, ['--test', '--test-reporter=tap', TEST], { cwd: RAIZ, env: entorno, encoding: 'utf8' });
+const correr = () => spawnSync(process.execPath, ['--test', '--test-reporter=tap', TEST], { cwd: RAIZ, env: entorno, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
 const leer = (r) => {
   const out = r.stdout || '';
   const nombres = [...out.matchAll(/^(not ok|ok) \d+ - (.*)$/gm)].map((m) => ({ ok: m[1] === 'ok', nombre: m[2] }));
-  return { nombres, ok: nombres.filter((n) => n.ok).length, caen: nombres.filter((n) => !n.ok).map((n) => n.nombre) };
+  // Un proceso que muere a medias (salida mayor que el bufer, por ejemplo) deja un TAP parcial que se
+  // lee como un resultado. No lo es: se declara y no cuenta.
+  const murio = r.status === null || !/^# tests \d+/m.test(out);
+  return { murio, nombres, ok: nombres.filter((n) => n.ok).length, caen: nombres.filter((n) => !n.ok).map((n) => n.nombre) };
 };
 
 const original = fs.readFileSync(F, 'utf8');
@@ -82,7 +85,7 @@ const base = leer(correr());
 console.log(`POBLACION: ${MUTACIONES.length} mutaciones sobre ${TEST}`);
 console.log(`BASE: casos=${base.nombres.length} ok=${base.ok} caen=${base.caen.length}`);
 for (const n of base.caen) console.log(`   base en rojo (no cuenta para ninguna mutacion): ${n}`);
-if (base.ok === 0) { console.log('CIEGO: la base no ha corrido'); process.exit(2); }
+if (base.murio || base.ok === 0) { console.log('CIEGO: la base no ha corrido'); process.exit(2); }
 for (const m of MUTACIONES) {
   const suyos = base.nombres.filter((n) => n.nombre.includes(m.cae));
   if (suyos.length !== 1 || !suyos[0].ok) {
@@ -97,6 +100,7 @@ try {
     fs.writeFileSync(F, original.replace(m.de, () => m.a));
     if (fs.readFileSync(F, 'utf8') === original) { console.log(`CIEGO ${m.id}: la mutacion no se aplico`); mudas++; continue; }
     const r = leer(correr());
+    if (r.murio) { console.log('CIEGO ' + m.id + ': el test no llego al final (TAP parcial)'); mudas++; continue; }
     const nuevos = r.caen.filter((n) => !base.caen.includes(n));
     const esperado = nuevos.some((n) => n.includes(m.cae));
     if (!esperado) mudas++;
