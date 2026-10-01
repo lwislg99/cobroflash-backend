@@ -69,15 +69,22 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'CEBO REAL #1255 · PR mergeado cuando Claude termina y rama claude/pr-* nueva → RAMA-MUDA',
   },
   {
+    // 🔴 SCRUM-1321 · EL ANCLA LLEVA LA LÍNEA DE ANTES, Y NO ES ADORNO. Hasta el 29-sep-2026 era
+    // sólo el `if:`, que casaba una vez. `dc8ea603` (SCRUM-1263) añadió ANTES el paso `origen`,
+    // cuyo `if:` empieza igual; la mutación se fue a ése, la acción siguió preguntando a la
+    // puerta, y esto salió MUDO en el meta-guard más de 40 horas. Anclada al `id: accion` va al
+    // paso por su IDENTIDAD, no por ser el primero que casa.
     fichero: '.github/workflows/claude.yml',
-    de: "        if: steps.puerta.outputs.despertar == 'si'",
-    a: '        if: always()',
+    de: "        id: accion\n        if: steps.puerta.outputs.despertar == 'si'",
+    a: '        id: accion\n        if: always()',
     cae: 'claude.yml pregunta a la puerta ANTES de la acción',
   },
   {
+    // 🔴 SCRUM-1321 · lo mismo: el paso «¿Disparó CI el push?» (SCRUM-1263) repite esta orden
+    // 73 líneas más arriba. El comentario que va pegado a la de AQUÍ es lo que la distingue.
     fichero: '.github/workflows/claude.yml',
-    de: '            CUERPO="$CUERPO" node --input-type=module -e "',
-    a: '            node --input-type=module -e "',
+    de: '            # Por eso además: 1 es «lleva la mención» y 2 es «no se pudo comprobar», y se dicen distinto.\n            set +e\n            CUERPO="$CUERPO" node --input-type=module -e "',
+    a: '            # Por eso además: 1 es «lleva la mención» y 2 es «no se pudo comprobar», y se dicen distinto.\n            set +e\n            node --input-type=module -e "',
     cae: 'el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar',
   },
   {
