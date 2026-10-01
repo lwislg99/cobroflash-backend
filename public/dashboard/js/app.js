@@ -468,15 +468,12 @@ async function initApp() {
       // SCRUM-1317: mismo guard que 'settings'/'team'/'export' — un operario no entra ni
       // tecleando la vista (el hash `#providers` existe). La seguridad real la da el
       // requireRole('admin') de /admin/providers.
+      // Se REDIRIGE, como 'operarios', en vez de pintar Inicio aquí dentro: este `case` es el
+      // control positivo del censo de SCRUM-801, que exige que pinte UNA vista, la suya.
       case 'providers':
-        if (window.appUserRole !== 'admin') {
-          viewTitle.textContent = 'Inicio';
-          renderHomeView(viewContainer);
-          view = 'home';
-        } else {
-          viewTitle.textContent = 'Proveedores';
-          (window.renderProvidersView || renderProvidersView)(viewContainer);
-        }
+        if (window.appUserRole !== 'admin') return renderView('home', options);
+        viewTitle.textContent = 'Proveedores';
+        (window.renderProvidersView || renderProvidersView)(viewContainer);
         break;
       case 'libro-registro':
         // SCRUM-296 (A6). El titulo sale de la MISMA constante que la vista: dos copias del
