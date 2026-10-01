@@ -216,6 +216,9 @@ test('SCRUM-861 · f) CONTROL: todo lo que hoy firma el fundador en el árbol re
   const delFundador = reales.filter((a) => a.firmante === 'fundador');
   assert.ok(delFundador.length >= 10, `🔴 CIEGO: sólo ${delFundador.length} registros del fundador`);
   const aprobados = new Set(literalesAprobados());
+  // SCRUM-1311 · suelo AGREGADO: el de arriba cuenta registros, no los literales que se recorren dentro.
+  assert.ok(delFundador.some((a) => a.literales.length > 0),
+    '🔴 CIEGO: ningún registro del fundador trae literales: el «sigue constando aprobado» de abajo no recorre ninguno.');
   for (const a of delFundador) {
     assert.equal(a.aprobada, true, `🔴 ${a.ruta} lo firma el fundador y ya no cuenta como aprobado`);
     for (const l of a.literales) {
