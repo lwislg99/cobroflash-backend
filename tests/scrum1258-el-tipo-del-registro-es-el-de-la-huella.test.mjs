@@ -124,8 +124,13 @@ function banco(filas) {
   const invoice = {
     findUnique: async ({ where, select }) => {
       assert.equal(claves(where), 'id');
-      assert.equal(claves(select), 'lines');
       const fila = tabla.find((r) => r.id === where.id);
+      // SCRUM-1330: el sellado pregunta además, dentro del cerrojo, si la fila ya tiene huella. Es
+      // una consulta NUEVA del sellado y este doble tiene que conocerla; cualquier otra sigue reventando.
+      if (claves(select) === 'qrData,vfHash,vfPrevHash') {
+        return fila ? { vfHash: fila.vfHash, vfPrevHash: fila.vfPrevHash, qrData: fila.qrData ?? null } : null;
+      }
+      assert.equal(claves(select), 'lines');
       return fila ? { lines: fila.lines } : null;
     },
     findFirst: async ({ where }) => {
