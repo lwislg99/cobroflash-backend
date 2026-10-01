@@ -6,7 +6,7 @@ not ok 1 - tests\\scrum804b-el-barrido-de-la-42.test.mjs
 # fail 1
 # skipped 0
 
-# DESPUES · con red
+# DESPUES · con red · exit=0
 ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
 ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
 ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
@@ -17,7 +17,7 @@ ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
 # fail 0
 # skipped 0
 
-# DESPUES · sin DNS
+# DESPUES · sin DNS · exit=0
 ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
 ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
 not ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
