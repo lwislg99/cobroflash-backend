@@ -13,8 +13,18 @@
 // y se le pregunta a `location.hash`, a `window.appState.view` y a `history.length` — tres cosas
 // que sólo existen fuera del banco.
 //
-// 🔴 SUELO: si el barrido encuentra menos de 17 destinos, está ciego. Un «0 incoherencias» sobre
-// 3 botones diría que no se ha mirado, no que todo esté bien.
+// 🔴 SUELO: si el barrido encuentra menos de `MINIMO_DESTINOS` destinos, está ciego. Un «0
+// incoherencias» sobre 3 botones diría que no se ha mirado, no que todo esté bien.
+//
+// SCRUM-1336 · AQUÍ PONÍA «menos de 17» y la constante valía 18 desde SCRUM-1040; y el mensaje verde
+// decía «los 17 destinos» con 18 medidos. Un número escrito dos veces son dos números: el comentario
+// nombra la constante y el mensaje dice lo que MIDIÓ. La constante NO se ha movido. Que el menú no
+// cambie de tamaño sin remedir lo exige `tests/scrum819-el-menu-deja-rastro.test.mjs` (18 exactos).
+//
+// Y EL SUELO SALÍA CON 1: es un `throw` dentro de `medir()`, y `medir()` se llamaba con un
+// `await` a pelo, así que subía sin capturar y el proceso salía con el mismo 1 que «el menú no deja
+// rastro» (visto correr: docs/master/evidencias/scrum1336/). Ahora lo que `medir()` lance —el suelo
+// o cualquier otra cosa— se apunta como ciego y el código lo da `veredictoDe`: 2, no 1.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import http from 'node:http';
 import fs from 'node:fs';
@@ -23,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MINIMO_DESTINOS = 18; // SCRUM-1040: +1, «Facturas recibidas» junto a «Libro de registro»
@@ -53,7 +64,7 @@ function servidor() {
 const json = (res, o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
 
 /**
- * Navega por los 17 destinos de la forma que se le pida y devuelve, por destino, qué quedó.
+ * Navega por los destinos del menú de la forma que se le pida y devuelve, por destino, qué quedó.
  *
  * `como`: 'menu' pulsa el botón (lo que hace el profesional) · 'envoltorio' llama a
  * `renderAppView` (el control positivo: se sabe que ése sí escribe el hash).
@@ -135,7 +146,34 @@ export async function medir() {
 // llegar a CI, y tenía razón: el respaldo por nombre de fichero que había puesto tapaba el
 // defecto en vez de arreglarlo.
 if (ejecutadoDirectamente(import.meta.url)) {
-  const r = await medir();
+  const fallos = [];
+  const ciegos = [];
+  /** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
+  const cerrar = () => {
+    const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos });
+    if (veredictoFinal.codigo !== 0) {
+      if (fallos.length) {
+        console.error('\n🔴 RASTRO DE NAVEGACIÓN ROTO:');
+        for (const f of fallos) console.error(`   · ${f}`);
+      }
+      if (ciegos.length) {
+        console.error('\n🔴 NO SUPE MIRAR — de esto no se da veredicto, ni bueno ni malo:');
+        for (const c of ciegos) console.error(`   · ${c}`);
+      }
+      console.error(veredictoFinal.linea);
+      process.exit(veredictoFinal.codigo);
+    }
+    return veredictoFinal;
+  };
+
+  let r = null;
+  try {
+    r = await medir();
+  } catch (e) {
+    // El suelo del menú, un navegador que se cae, una página que no carga: no se ha medido.
+    ciegos.push(String((e && e.message) || e));
+    cerrar();
+  }
   const coh = (fs2) => fs2.filter((f) => f.hash === f.destino).length;
   const hist = (fs2) => fs2.reduce((a, f) => a + f.historialSumado, 0);
   console.log(`destinos del menú: ${r.destinos.length}\n`);
@@ -156,7 +194,6 @@ if (ejecutadoDirectamente(import.meta.url)) {
   console.log(`  atrás → vista ${r.atras.tras2.vista} · hash ${r.atras.tras2.hash || '(vacío)'}`);
 
   // ── EL VEREDICTO ───────────────────────────────────────────────────────────
-  const fallos = [];
   if (coh(r.porMenu) !== r.porMenu.length) {
     fallos.push(`el menú deja la URL incoherente en ${r.porMenu.length - coh(r.porMenu)} de `
       + `${r.porMenu.length} destinos: F5 lleva a otra pantalla y un enlace guardado abre la vista `
@@ -175,10 +212,9 @@ if (ejecutadoDirectamente(import.meta.url)) {
       + 'se ha quedado en blanco, que es peor que ignorarlo.');
   }
 
-  if (fallos.length) {
-    console.error('\n🔴 RASTRO DE NAVEGACIÓN ROTO:');
-    for (const f of fallos) console.error(`   · ${f}`);
-    process.exit(1);
-  }
-  console.log('\n✓ los 17 destinos dejan rastro, «atrás» vuelve, y un hash inventado no rompe nada.');
+  const veredictoFinal = cerrar();
+  console.log(`\n✓ los ${r.destinos.length} destinos del menú dejan rastro (suelo \`MINIMO_DESTINOS\` = ${MINIMO_DESTINOS}), «atrás» vuelve, y un hash inventado no rompe nada.`);
+  // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+  // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+  console.log(veredictoFinal.linea);
 }

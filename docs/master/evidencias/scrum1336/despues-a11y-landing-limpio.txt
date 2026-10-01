@@ -1,0 +1,28 @@
+# a11y-landing-limpio · guard-a11y-landing.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 1.8 s
+
+Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
+Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.
+
+── 1280px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .note suena separado: «14 días gratis Sin tarjeta Listo en 5 minutos»
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ 7 regiones con nombre, las 7 publicadas entre ellas
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.1px tocables (caja 23.6px)
+   ✔ umbral __sonda-30: 31px cae contra 36
+   ✔ umbral __sonda-37: 38px pasa contra 36
+
+── 360px
+   calibración OK: «uno dos» vs «unodos» — el medidor distingue las dos
+   ✔ .note suena separado: «14 días gratis Sin tarjeta Listo en 5 minutos»
+   ✔ .try-step suena separado: «1 Creas el presupuesto Del catálogo, en 30 segundos.»
+   ✔ 7 regiones con nombre, las 7 publicadas entre ellas
+   ✔ el logo: 45px tocables (caja 44px)
+   ✔ «Ver planes →»: 47.6px tocables (caja 23.6px)
+   ✔ umbral __sonda-40: 41px cae contra 44
+
+✓ En los dos anchos: nada suena pegado, las 7 regiones tienen nombre y los táctiles llegan a su mínimo — 44 px en móvil, 36 en escritorio, como dice DESIGN.md.
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

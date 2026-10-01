@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -264,6 +265,39 @@ const navegador = await lanzarNavegador(puppeteer, {
   args: ['--disable-gpu', '--hide-scrollbars', '--no-first-run'],
 });
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1336 · «NO SE PUDO MEDIR» NO ES «HAY UN PAR POR DEBAJO DE AA», Y NO CORTA A LAS DEMÁS.
+//
+// Este guard tenía tres salidas escritas a mano, y las tres con 1:
+//   · «no se pudo medir» una página → `process.exit(1)` DENTRO del bucle: las páginas de detrás no
+//     se medían. Visto correr (docs/master/evidencias/scrum1336/): una página que no se deja medir
+//     DELANTE de otra con un par nuevo bajo AA → salía 1 y del par nuevo no decía ni una palabra.
+//   · el suelo de nodos («no supe mirar») → 1.
+//   · el hallazgo → 1.
+// Ahora una página que no se puede medir se APUNTA como ciego y se sigue (`recorrerCasos`), y el
+// código lo da `veredictoDe` con las dos cuentas: 1 si hay hallazgos, 2 si sólo hay ciegos.
+//
+// 🔴 Y TRES JUICIOS QUE UN CIEGO VUELVE FALSOS, y por eso se suspenden cuando lo hay: «YA NO
+// APARECE», «HA PERDIDO NODOS» y «EXCEPCIONES QUE YA NO OCURREN» se deducen de NO haber visto algo.
+// Con una página sin medir, no haberlo visto no dice nada: contarlo como hallazgo sería pintar el
+// mismo ciego de 1 por otra puerta. Se dice que quedan SIN JUZGAR. Los que se deducen de algo que SÍ
+// se vio —un par nuevo, un conocido que GANA nodos, una tipografía que ya no da derecho— valen siempre.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const hallazgos = [];
+const ciegos = [];
+
+/** El ÚNICO sitio por el que este guard sale con algo que no sea 0: dice las dos cuentas. */
+function cerrar() {
+  const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+  if (veredictoFinal.codigo !== 0) {
+    console.error('\n' + veredictoFinal.linea);
+    process.exit(veredictoFinal.codigo);
+  }
+  // La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+  // que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+  console.log(veredictoFinal.linea);
+}
+
 const paginas = paginasDelProducto();
 let nodos = 0;
 const todos = [];
@@ -271,7 +305,7 @@ const bajoAA = [];
 const gradientes = [];
 const inactivos = [];
 
-for (const ruta of paginas) {
+const recorrido = await recorrerCasos(paginas, async (ruta) => {
   const page = await navegador.newPage();
   await page.setViewport({ width: 1280, height: 900 });
   try {
@@ -292,23 +326,31 @@ for (const ruta of paginas) {
       if (f.gradiente) { gradientes.push({ ...f, pagina: ruta }); continue; }
       bajoAA.push({ ...f, pagina: ruta });
     }
-  } catch (e) {
-    console.error(`✖ ${ruta}: no se pudo medir — ${e.message}`);
-    await page.close(); await navegador.close(); servidor.close();
-    process.exit(1);
+  } finally {
+    // La página se cierra pase lo que pase. Si medirla LANZA, el error sube a `recorrerCasos`, que
+    // lo apunta como ciego de ESTA página y sigue con la siguiente.
+    await page.close().catch(() => {});
   }
-  await page.close();
-}
+  return { hallazgos: [], ciegos: [] };
+}, (ruta) => ruta);
 await navegador.close();
 servidor.close();
 
-console.log(`páginas medidas: ${paginas.length}  ·  nodos con texto: ${nodos}`);
+for (const c of recorrido.ciegos) console.error(`🔴 NO SUPE MIRAR · ${c}`);
+ciegos.push(...recorrido.ciegos);
+/** ¿Se midieron TODAS las páginas? Sólo entonces «no lo he visto» quiere decir «no está». */
+const medidoEntero = recorrido.ciegos.length === 0;
+const sinJuzgar = [];
+
+console.log(`páginas medidas: ${paginas.length - recorrido.ciegos.length} de ${paginas.length}  ·  nodos con texto: ${nodos}`);
 
 // ── SUELO ───────────────────────────────────────────────────────────────────
 if (nodos < SUELO_NODOS) {
-  console.error(`\n✖ SUELO: solo ${nodos} nodos con texto (mínimo ${SUELO_NODOS}).`);
+  console.error(`\n🔴 NO SUPE MIRAR · SUELO: solo ${nodos} nodos con texto (mínimo ${SUELO_NODOS}).`);
   console.error('  Cero fallos aquí no significa «todo cumple», significa «no supe mirar».');
-  process.exit(1);
+  ciegos.push(`suelo: solo ${nodos} nodos con texto (mínimo ${SUELO_NODOS})`);
+  // Por debajo del suelo no se juzga NADA de lo de abajo: se cierra aquí, antes de medir más.
+  cerrar();
 }
 
 // ── EXENTOS POR COMPONENTE INACTIVO: se declaran, con la cita ───────────────
@@ -348,7 +390,9 @@ for (const esperado of POR_TEXTO_GRANDE) {
   const nodos = todos.filter((f) => f.texto === esperado.texto && f.fondo === esperado.fondo
     && (!esperado.clase || (f.clase || '').includes(esperado.clase)));
   if (!nodos.length) {
-    fallosTipografia.push({ ...esperado, problema: 'YA NO APARECE — bórralo de POR_TEXTO_GRANDE' });
+    // Por AUSENCIA: sólo vale si se midieron todas las páginas.
+    if (medidoEntero) fallosTipografia.push({ ...esperado, problema: 'YA NO APARECE — bórralo de POR_TEXTO_GRANDE' });
+    else sinJuzgar.push(`si ${esperado.texto} sobre ${esperado.fondo} sigue apareciendo (vía de texto grande)`);
     continue;
   }
   for (const n of nodos) {
@@ -390,17 +434,15 @@ for (const f of bajoAA) {
 
 console.log(`\npares por debajo de AA: ${nuevos.size} nuevos · ${vistosConocidos.size}/${CONOCIDOS.length} conocidos presentes`);
 
-let fallo = false;
-
 // ── Los que pasan por la vía de texto grande: se dice CUÁL de las dos mitades cayó ──
 if (POR_TEXTO_GRANDE.length) {
   console.log(`\npares que cumplen por la VÍA DE TEXTO GRANDE: ${POR_TEXTO_GRANDE.length} vigilados ` +
     `(ratio ≥ 3,0 Y ≥${MIN_PX_GRANDE}px Y peso ≥${MIN_PESO_GRANDE})`);
 }
 if (fallosTipografia.length) {
-  fallo = true;
   console.error('\n✖ UN PAR QUE PASABA POR LA VÍA DE TEXTO GRANDE HA DEJADO DE PASAR:');
   for (const f of fallosTipografia) {
+    hallazgos.push(`vía de texto grande · ${f.texto} sobre ${f.fondo}: ${f.problema}`);
     console.error(`\n   ${f.texto} sobre ${f.fondo}${f.clase ? `  (.${f.clase})` : ''}`);
     console.error(`   ${f.problema}`);
     if (f.nodo) console.error(`   página: ${f.nodo.pagina}  ·  «${f.nodo.muestra}»  ${f.nodo.px}px/${f.nodo.peso}  ratio ${f.nodo.ratio}`);
@@ -412,9 +454,9 @@ if (fallosTipografia.length) {
 }
 
 if (nuevos.size) {
-  fallo = true;
   console.error('\n✖ PARES NUEVOS por debajo de WCAG AA:');
   for (const v of [...nuevos.values()].sort((a, b) => a.ratio - b.ratio)) {
+    hallazgos.push(`par nuevo · ratio ${v.ratio} (umbral ${v.umbral}) · ${v.texto} sobre ${v.fondo} · ${[...v.paginas].join(', ')}`);
     console.error(`\n   ratio ${v.ratio} (umbral ${v.umbral})   ${v.texto}  sobre  ${v.fondo}`);
     console.error(`   páginas: ${[...v.paginas].join(', ')}`);
     console.error(`   clases:  ${[...v.clases].join(', ')}`);
@@ -429,7 +471,7 @@ for (const c of CONOCIDOS) {
   const visto = nodosPorConocido.get(k);
   if (!visto || c.nodos === undefined) continue;
   if (visto.veces > c.nodos) {
-    fallo = true;
+    hallazgos.push(`un par conocido ha ganado nodos · ${c.texto} sobre ${c.fondo}: esperados ${c.nodos}, medidos ${visto.veces}`);
     console.error(`\n✖ UN PAR CONOCIDO HA GANADO NODOS: ${c.texto} sobre ${c.fondo}`);
     console.error(`   esperados ${c.nodos}, medidos ${visto.veces}`);
     console.error(`   páginas: ${[...visto.paginas].join(', ')}`);
@@ -437,20 +479,33 @@ for (const c of CONOCIDOS) {
     console.error(`   ejemplos: ${visto.muestras.join(' · ')}`);
     console.error('   La excepción se escribió para los nodos que había, no para los que vengan.');
     console.error('   Si el nodo nuevo es legítimo, sube el contador; si no, arréglalo.');
+  } else if (visto.veces < c.nodos && !medidoEntero) {
+    // Por AUSENCIA: con una página sin medir, «menos nodos» puede ser sólo que no se miró donde estaban.
+    sinJuzgar.push(`si ${c.texto} sobre ${c.fondo} ha perdido nodos (esperados ${c.nodos}, vistos ${visto.veces})`);
   } else if (visto.veces < c.nodos) {
-    fallo = true;
+    hallazgos.push(`un par conocido ha perdido nodos · ${c.texto} sobre ${c.fondo}: esperados ${c.nodos}, medidos ${visto.veces}`);
     console.error(`\n✖ UN PAR CONOCIDO HA PERDIDO NODOS: ${c.texto} sobre ${c.fondo}`);
     console.error(`   esperados ${c.nodos}, medidos ${visto.veces} — baja el contador y anota la mejora.`);
   }
 }
 
 const desaparecidos = CONOCIDOS.filter((c) => !vistosConocidos.has(`${c.texto}|${c.fondo}`));
-if (desaparecidos.length) {
-  fallo = true;
+if (desaparecidos.length && !medidoEntero) {
+  // Por AUSENCIA: con una página sin medir, «ya no ocurre» puede ser sólo que no se miró donde ocurría.
+  for (const d of desaparecidos) sinJuzgar.push(`si ${d.texto} sobre ${d.fondo} (era ${d.ratio}) sigue ocurriendo`);
+} else if (desaparecidos.length) {
   console.error('\n✖ EXCEPCIONES QUE YA NO OCURREN — bórralas de CONOCIDOS:');
-  for (const d of desaparecidos) console.error(`   ${d.texto} sobre ${d.fondo} (era ${d.ratio})`);
+  for (const d of desaparecidos) {
+    hallazgos.push(`excepción que ya no ocurre · ${d.texto} sobre ${d.fondo} (era ${d.ratio})`);
+    console.error(`   ${d.texto} sobre ${d.fondo} (era ${d.ratio})`);
+  }
   console.error('  Una excepción que sobrevive a su causa deja de ser una nota y pasa a ser un permiso.');
 }
 
-if (fallo) process.exit(1);
+if (sinJuzgar.length) {
+  console.log(`\nSIN JUZGAR (${sinJuzgar.length}) — se deducen de NO haber visto algo, y hay ${recorrido.ciegos.length} página(s) sin medir:`);
+  for (const s of sinJuzgar) console.log('   · ' + s);
+}
+
+cerrar();
 console.log('\n✔ ningún par nuevo por debajo de AA');

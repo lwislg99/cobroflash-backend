@@ -1,0 +1,19 @@
+# a11y-comparativa-limpio · guard-a11y-comparativa.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 2.9 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+── 1280px · 6 filas · grid: 323.25px 269.375px 269.375px
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 12/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+── 360px · 6 filas · grid: no hay (apilado)
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 12/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+✓ En los dos anchos, cada celda llega con su etiqueta de columna asociada.
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
