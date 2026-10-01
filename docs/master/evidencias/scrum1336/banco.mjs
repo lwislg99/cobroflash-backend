@@ -192,10 +192,10 @@ fs.mkdirSync(PRISTINO); fs.mkdirSync(ARBOL);
 // porque este ticket no toca `src/`, y el banco lo comprueba antes de fiarse.
 const PRESTADOS = ['node_modules', 'dist'];
 const enlaceDe = (nombre) => path.join(ARBOL, nombre);
-let limpiado = false;
-function limpiar() {
-  if (limpiado) return;
-  limpiado = true;
+// El borrado va ESCRITO dentro del `process.on('exit')`, no en una función aparte: el censo de
+// temporales (`tests/scrum864c-…`) sólo da por cubierto un `mkdtempSync` cuyo borrado ve en el
+// propio manejador, y con el borrado en una función con nombre lo daba por fuga.
+process.on('exit', () => {
   // Los enlaces PRIMERO y por su nombre: borrar el árbol con ellos dentro sería pedirle a `rm`
   // que decida si los sigue.
   for (const nombre of PRESTADOS) {
@@ -204,8 +204,7 @@ function limpiar() {
     if (fs.existsSync(enlace)) { console.error('🔴 no pude quitar el enlace a ' + nombre + ': NO borro ' + TMP); return; }
   }
   fs.rmSync(TMP, { recursive: true, force: true });
-}
-process.on('exit', limpiar);
+});
 
 const tar = git(['archive', '--format=tar', sha, 'scripts', 'public', 'package.json', ...ayudantes]);
 if (tar.status !== 0 || !tar.stdout || tar.stdout.length < 1024 * 1024) {
