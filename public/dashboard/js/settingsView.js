@@ -321,7 +321,7 @@ function renderSettingsView(container) {
       '<option value="si">Sí</option>' +
       '<option value="no">No</option>';
     const siiWrapper = document.createElement("div");
-    siiWrapper.className = "field campo-hecho-fiscal";
+    siiWrapper.className = "field";
     const siiLabel = document.createElement("label");
     siiLabel.textContent = "¿Llevas los libros de IVA por el SII?";
     siiLabel.htmlFor = "merchant-lleva-libros-por-sii";
@@ -333,7 +333,7 @@ function renderSettingsView(container) {
     siiWrapper.appendChild(siiLabel);
     siiWrapper.appendChild(fLlevaLibrosPorSii);
     const foralWrapper = document.createElement("div");
-    foralWrapper.className = "field campo-hecho-fiscal";
+    foralWrapper.className = "field";
     const foralLabel = document.createElement("label");
     foralLabel.textContent = "¿Tienes el domicilio fiscal en el País Vasco o en Navarra?";
     foralLabel.htmlFor = "merchant-domicilio-fiscal-foral";
