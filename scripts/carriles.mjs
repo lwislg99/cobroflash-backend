@@ -173,7 +173,7 @@ function principal(argv) {
     for (const h of c.parientes) console.log(`PARIENTE  ${h.fichero} → ${h.puesto} solo por la fila general (${FUENTE}:${h.linea}); por el nombre se parece a ${h.pistas.map((p) => `${p.puesto} («${p.palabra}»: ${p.ejemplos.map((e) => e.slice(e.lastIndexOf('/') + 1)).join(', ')}${p.n > 2 ? `, +${p.n - 2}` : ''})`).join(' · ')}`);
     const nc = nombresQueContradicen(mapa, ficheros);
     console.log(`nombres · ${nc.conPuestoEnElNombre} rutas del repo llevan un puesto en el nombre · ${nc.casos.length} tramos contradicen a la tabla`);
-    if (!nc.conPuestoEnElNombre) { console.log('NO-PUDE-MIRAR: ninguna ruta lleva un puesto en el nombre; existen (docs/equipo/sesion-N.md), así que el lector no ve'); return 2; }
+    if (!nc.conPuestoEnElNombre) { console.log('NO-PUDE-MIRAR: ninguna ruta lleva un puesto en el nombre; existen (las fichas de los puestos), así que el lector no ve'); return 2; }
     for (const k of nc.casos) console.log(`NOMBRE    ${k.tramo} → el nombre dice ${k.dice}, la tabla dice ${k.puesto} (${FUENTE}:${k.linea}); ${k.n} fichero${k.n === 1 ? '' : 's'}`);
     const n = c.sinFila.length + c.parientes.length + nc.casos.length;
     console.log(`→ ${n} casos. No es un veredicto: es la pregunta para los jefes (¿hueco de la tabla, o de ese puesto a propósito?). Cada uno se cierra con una fila en §3.`);
