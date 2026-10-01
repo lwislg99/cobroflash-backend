@@ -1,0 +1,76 @@
+CENSO-1340 {
+ "medidoSobre": {
+  "head": "eb3d3b367e62e95ca86c217a0a39a32764200075",
+  "corte": "2026-09-22"
+ },
+ "poblacion": {
+  "registros": 907,
+  "entradas": 1384,
+  "mergesDePrimerPadreTrasElCorte": 361,
+  "deEllosConUnPadre": 3,
+  "mergesQueTocanInterfaz": 101,
+  "deEllosConRegistro": 101,
+  "deEllosSinNingunRegistro": 0
+ },
+ "entradasDeInterfazPorEfecto": {
+  "total": 92,
+  "lasMiraElGuard": 5,
+  "exentas": 87,
+  "exentasPorMotivo": {
+   "sin Fecha": 30,
+   "sin ruta public/ y sin Fecha": 52,
+   "Fecha escrita en o antes del corte": 2,
+   "sin ruta public/": 3
+  },
+  "exentasQueAunAsiDeclaran": 18,
+  "exentasQueNoDeclaran": 69,
+  "miradasQueDeclaran": 5,
+  "nacidasEnElMerge": 77,
+  "soloTocadas": 15,
+  "exentasNacidas": 72,
+  "exentasSoloTocadas": 15,
+  "exentasConFechaDeAncla": 87
+ },
+ "porUnidad": {
+  "prQueTocanInterfaz": 101,
+  "losMiraElGuard": 5,
+  "exentos": 96,
+  "exentosQueDeclaran": 22,
+  "exentosQueNoDeclaran": 74,
+  "sinNingunaEntradaAtribuida": 0,
+  "noDeclaranPorDia": {
+   "2026-10-01": 4,
+   "2026-09-30": 5,
+   "2026-09-29": 25,
+   "2026-09-28": 29,
+   "2026-09-27": 3,
+   "2026-09-26": 2,
+   "2026-09-25": 3,
+   "2026-09-24": 2,
+   "2026-09-23": 1
+  },
+  "declaranPorDia": {
+   "2026-09-28": 1,
+   "2026-09-27": 12,
+   "2026-09-26": 7,
+   "2026-09-25": 3,
+   "2026-09-24": 1,
+   "2026-09-23": 3
+  }
+ },
+ "sinCasar": 0,
+ "sondaSinGit": {
+  "entradasQueNombranRutaPublic": 360,
+  "lasMiraHoyElGuard": 9,
+  "deEllasDeclaran": 9,
+  "nombranRutaPeroSinFecha": 193,
+  "nombranRutaConFechaPreCorte": 158,
+  "loQueDiceElGuard_sinDeclarar": 0
+ },
+ "cruce": {
+  "miradasPorElGuardQueElEfectoNoVe": [
+   "SCRUM-1016.md#APÉNDICE · 23-sep-2026 · SCRUM-1016i · El titular, reescrito — dos candidatos verificados contra los tres guards",
+   "SCRUM-1016.md#APÉNDICE · 23-sep-2026 · SCRUM-1016j · Candidato 1 choca con SCRUM-537 — hallazgo de #1666 que su",
+   "SCRUM-1016.md#APÉNDICE · 23-sep-2026 · SCRUM-1016k · Expediente listo para `:428` y `:508` — Candidato 1 re-verificado, sin aplicar",
+   "SCRUM-1196.md#SCRUM-1196 · Censo de terceros que reciben datos del CLIENTE FINAL: medido sobre el HTML servido"
+  ]
