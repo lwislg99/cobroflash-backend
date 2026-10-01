@@ -13,7 +13,9 @@ import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
 import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
 // SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
-import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
+import { puedeCobrarPorPasarela, ESTADO_ANULADA } from '../../../system/invoiceAdmin';
+// SCRUM-1315: «el `update` no encontró la fila de su `where`» se reconoce con la misma función que en `/webhooks/psp`.
+import { esFilaQueNoCasa } from '../../domain/estadoDelCobro';
 
 const router = Router();
 
@@ -155,13 +157,25 @@ router.post('/', async (req, res) => {
       }
 
       // 🔴 SCRUM-502 · UNA ANULADA NO VUELVE. Esta puerta actualizaba por `id` sin mirar el estado.
-      // ⚠️ El `.catch(() => {})` de abajo se traga el fallo de escritura y NO se toca en esta tanda:
-      // es otro defecto, esta reportado, y una cosa por tanda.
+      //
+      // 🔴 SCRUM-1315 · Y LA GUARDA VA TAMBIÉN DENTRO DEL `where`, como en `/webhooks/psp` (SCRUM-1303).
+      // La de arriba mira el estado que devolvió `ensureInvoiceForCharge`; si el profesional anula
+      // después, la fila ya está anulada al escribir. Entonces Prisma no la encuentra (P2025) y no se
+      // escribe nada.
+      //
+      // ⚠️ EL `.catch` DE ABAJO: la negativa de la carrera SE DICE. Antes este `.catch` no miraba qué
+      // recibía, y un arreglo cuya negativa cae en él queda escrito sin que se entere nadie. Cualquier
+      // OTRO fallo de esta escritura se sigue tragando igual que antes: es el defecto que SCRUM-502
+      // dejó reportado, sigue abierto y no es de este ticket.
       if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
         await prisma.invoice.update({
-          where: { id: invoiceId },
+          where: { id: invoiceId, status: { not: ESTADO_ANULADA } },
           data: { status: 'paid', paidAt: new Date() },
-        }).catch(() => {});
+        }).catch((e) => {
+          if (esFilaQueNoCasa(e)) {
+            console.error(`[mpWebhook] SCRUM-1315 la factura ${invoiceId} se anuló entre la lectura y el cobro: no se marca pagada`);
+          }
+        });
       }
 
       // Confirmación de pago al cliente (J1: payment_confirmation_invoice_es, con botón

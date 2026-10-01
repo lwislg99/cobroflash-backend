@@ -323,7 +323,7 @@ async function handleTemplateButtonReply(from: string, btnText: string): Promise
     await sendWhatsAppText({
       merchantId: unicoMerchant,
       sinMerchant: unicoMerchant ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: '¡Gracias por confirmar! 🙌 Tu profesional ya lo sabe.',
     });
@@ -423,7 +423,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       }).catch(() => {});
       await sendWhatsAppText({
         to: from,
-        merchantId: albaranMsg.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
+        merchantId: albaranMsg.merchantId, exentoDeLaBaja: 'respuesta-a-entrante', // V0-2: demo solo a DEMO_SAFE_NUMBERS · SCRUM-1262: es un acuse a quien escribió
         text: 'Gracias por tu mensaje 🙌 Se lo hemos pasado a tu profesional, que te responderá en breve.',
       });
       return;
@@ -436,7 +436,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: 'Hola 👋 No tienes presupuestos pendientes en este momento.',
     });
@@ -451,7 +451,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       // rastro donde mas se usa.
       merchantId: customers.length === 1 ? customers[0].merchantId : undefined,
       sinMerchant: customers.length === 1 ? undefined : 'multi-merchant',
-      exentoDelDemo: 'respuesta-a-entrante',
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante',
       to: from,
       text: 'Tienes varios presupuestos pendientes. Para responder, por favor abre el enlace que te enviamos en cada uno.',
     });
@@ -464,7 +464,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
   if (decision === 'unknown') {
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
     });
@@ -487,7 +487,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
     });
@@ -552,7 +552,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
     await sendWhatsAppText({
       merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Hemos registrado tu rechazo del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Gracias por avisar.`,
     });
