@@ -108,6 +108,11 @@ solo juzgar si la evidencia prueba la línea.
 
 - No audita los tickets del equipo de Javier salvo que su orquestador lo pida: el canal es Jira (§5).
 - No ve un cierre correcto de un ticket mal planteado. Eso es de quien escribe la aceptación.
+- **No mide si alguien LEYÓ la señal.** Es un límite, no un olvido. Medido por S3 el 1-oct sobre seis PR suyos
+  en rojo: ninguno era solo podredumbre; cinco traían fallo propio desde que nacieron, tres por la misma causa,
+  y el guard que la detectaba (`scrum273`) estaba en rojo desde el primer día. La señal existía y funcionaba;
+  nadie la miró. Esta auditoría puede decir que un cierre tiene su check en rojo. No puede decir si quien cerró
+  lo vio. Lo más cerca que llega: contar cuánto tiempo estuvo un rojo sin que nadie empujara nada.
 - A la S0 no la audita nadie. Una pasada de cada cinco debería repetirla otra sesión sobre la misma semilla.
 
 ## Piloto de la criba
