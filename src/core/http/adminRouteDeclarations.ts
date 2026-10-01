@@ -357,8 +357,16 @@ export const PENDIENTE_MAX = 13;
  * Dos tandas desde el 2026-07-22. Si llega la fecha y la lista sigue llena, eso ES
  * la señal: el "por tandas" se convirtió en "nunca". Mover esta fecha requiere OK
  * del fundador y queda en el diff.
+ *
+ * MOVIDA del 2026-09-30 al 2026-11-01 por el fundador, el 1-oct-2026 (SCRUM-1318). Su frase
+ * literal, transcrita por el orquestador del equipo de Javier en SCRUM-1317, comentario 17689:
+ * «1-Sí mueve la fecha al 1 de noviembre».
+ *   · Esto APLAZA, no ensancha: la lista NO crece y PENDIENTE_MAX se queda en 13.
+ *   · Lo que la cierra es SCRUM-1317 (cerrar de verdad esas rutas al Operario).
+ *   · El 1-nov es PLAZO, no estimación: si llega sin que SCRUM-1317 esté hecho, el test
+ *     vuelve a caer, y eso es lo que se quiere. No se mueve otra vez sin otra decisión escrita.
  */
-export const REVISAR_ANTES_DE = '2026-09-30';
+export const REVISAR_ANTES_DE = '2026-11-01';
 
 /**
  * SCRUM-164 · GATES DE ROL POR CAMPO — enumerados a mano PORQUE la derivación no los ve.
