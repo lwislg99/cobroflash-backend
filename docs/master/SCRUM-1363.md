@@ -59,6 +59,11 @@ corre nadie. Se separó «lista este directorio» de «lo nombra», y los camina
 se les llama. Lo que lo destapó fue contar la POBLACIÓN de cada cubo antes de dar el comando por
 bueno, no el caso de `scrum713c`, que salía bien desde el principio.
 
+Y un segundo, que cazó el propio comando: la pasada parcial trajo en rojo `scrum258` («estado en una
+ruta fija del temporal») contra `scripts/tests-que-cubren.mjs`, que escribía su TAP en una ruta fija
+de `os.tmpdir()`. Ahora va a un temporal único que se borra al salir, y quien quiera conservarlo lo
+pide con `--tap=<fichero>`. Ninguna selección por nombre habría corrido `scrum258` por tocar ese script.
+
 ## Probado en ROJO
 
 | Mutación (`git diff --numstat` 1 1) | Cae |
