@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   FIRMA_1281, esFirma1281, raizDeFixturesGit, temporalDeFixtureGit, repoFixture,
 } from './_censo-fixture.mjs';
+import { temporal, caeEnElArbol } from './_temporal.mjs';
 
 const FIXTURE = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), '_censo-fixture.mjs')).href;
 
@@ -85,4 +86,40 @@ test('SCRUM-1281 ③ la familia vive en su raíz propia; en CI, fuera de la /tmp
   // solo asevera en un entorno no se comprueba en el otro (SCRUM-702 lo cazó). No hace falta: que
   // con `RUNNER_TEMP` la raíz cuelga de él lo prueba la primera línea, con el entorno INYECTADO, y
   // que `repoFixture()` vive en esa raíz lo prueba la de arriba, en cualquier máquina.
+});
+
+test('SCRUM-1281 ④ 🔴 la raíz propia NUNCA es el repositorio: `temporal()` lanza antes de crear nada', () => {
+  // El censo de SCRUM-824 da por sano todo `temporal(…)` y todo `temporalDeFixtureGit(…)` sin mirar
+  // sus argumentos. Con `dentroDe` —y con `YAQU_RAIZ_FIXTURES_GIT`, que es una variable de entorno y
+  // puede valer cualquier cosa— esa confianza hay que sujetarla POR EFECTO, o es una frase.
+  const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const enElArbol = path.join(RAIZ, 'tests', 'no-debe-existir-1281');
+  assert.equal(fs.existsSync(enElArbol), false, 'el banco está sucio: el directorio de la prueba ya existe');
+
+  assert.throws(() => temporal('caso-1281-', { dentroDe: enElArbol }), /DENTRO del repositorio/,
+    '🔴 `temporal()` acepta crear dentro del árbol: es el defecto de SCRUM-824, y el censo lo daría por sano');
+  assert.throws(() => temporal('caso-1281-', { dentroDe: RAIZ }), /DENTRO del repositorio/,
+    '🔴 `temporal()` acepta la propia raíz del repositorio como sitio');
+
+  // Y por la puerta de la familia: la variable de entorno apuntando al árbol.
+  const antes = process.env.YAQU_RAIZ_FIXTURES_GIT;
+  process.env.YAQU_RAIZ_FIXTURES_GIT = enElArbol;
+  try {
+    assert.throws(() => temporalDeFixtureGit('caso-1281-'), /DENTRO del repositorio/,
+      '🔴 `temporalDeFixtureGit()` no pasa por la negativa de `temporal()`: el censo lo da por sano '
+      + 'por su NOMBRE, y esto es lo único que sujeta ese nombre');
+  } finally {
+    if (antes === undefined) delete process.env.YAQU_RAIZ_FIXTURES_GIT;
+    else process.env.YAQU_RAIZ_FIXTURES_GIT = antes;
+  }
+  assert.equal(fs.existsSync(enElArbol), false, '🔴 lanzó, pero DESPUÉS de crear el directorio en el árbol');
+
+  // LA MITAD QUE ABSUELVE: fuera del árbol sí crea. Sin esto, un `temporal()` que lanzara siempre
+  // con `dentroDe` también pasaría lo de arriba.
+  const fuera = temporal('caso-1281-', { dentroDe: path.join(os.tmpdir(), 'yaqu-1281-control') });
+  assert.equal(fs.existsSync(fuera), true, '🔴 con una raíz de fuera del árbol no ha creado nada');
+  assert.equal(caeEnElArbol(fuera), false);
+  assert.equal(caeEnElArbol(path.join(RAIZ, 'tests')), true);
+  // Un vecino con el mismo prefijo de nombre no es el árbol: un prefijo no es un nombre.
+  assert.equal(caeEnElArbol(RAIZ + '-otro'), false, '🔴 confunde un directorio VECINO con el repositorio');
 });

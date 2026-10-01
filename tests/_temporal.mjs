@@ -49,6 +49,16 @@ function limpiarTodo() {
   pendientes.clear();
 }
 
+/** El repositorio: este fichero vive en su `tests/`. */
+const RAIZ_DEL_ARBOL = path.resolve(import.meta.dirname, '..');
+
+/** ¿Esta ruta es el repositorio o cuelga de él? En Windows, sin distinguir mayúsculas. */
+export function caeEnElArbol(dir, raiz = RAIZ_DEL_ARBOL) {
+  const norma = (p) => (process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p));
+  const rel = path.relative(norma(raiz), norma(dir));
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
 /**
  * Crea un directorio temporal y **se compromete a borrarlo** al terminar el proceso.
  *
@@ -56,9 +66,17 @@ function limpiarTodo() {
  * @param {{ dentroDe?: string }} [opciones]  `dentroDe`: la raíz donde crearlo en vez de
  *   `os.tmpdir()`. Existe para las fixtures de git de SCRUM-1281, que dejan de compartir sitio con
  *   el resto de la tanda. Se crea si no existe; al salir se borra SOLO el directorio nuevo.
+ *   🔴 NUNCA dentro del repositorio: LANZA. El censo de SCRUM-824 da por bueno todo `temporal(…)`
+ *   sin mirar sus argumentos, y con `dentroDe` esa confianza dejaba de estar sujeta por nada: un
+ *   `temporal('x-', { dentroDe: path.join(RAIZ, 'tests') })` creaba el fixture en el árbol —el
+ *   defecto exacto de 824— y salía clasificado como sano. Lo que el censo no puede ver, se impide.
  * @returns {string} la ruta del directorio, igual que `mkdtempSync`.
  */
 export function temporal(prefijo = 'yaqu-', { dentroDe } = {}) {
+  if (dentroDe && caeEnElArbol(dentroDe)) {
+    throw new Error(`temporal(): \`dentroDe\` cae DENTRO del repositorio (${path.resolve(dentroDe)}). `
+      + 'Un temporal en el árbol se lo crea a todos los tests que corren a la vez (SCRUM-824).');
+  }
   if (!enganchado) {
     // `exit` corre en la salida normal Y en `process.exit(n)` — que es como sale el runner con
     // `--test-force-exit`. Los otros dos son por si el proceso muere por señal atendible.

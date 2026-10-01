@@ -132,7 +132,14 @@ export function clasificaFuente(rutaFichero, fuente, raiz) {
       // siendo la misma. Y no es una promesa escrita: `scrum864-el-temporal-que-se-borra` tiene
       // un caso que comprueba que el helper sigue colgando de `os.tmpdir()`. El día que deje de
       // hacerlo, cae ese test — no este reconocimiento en silencio.
-      if (nom === 'temporal') return 'TMP';
+      //
+      // SCRUM-1281 · desde que `temporal()` admite `{ dentroDe }` ya no cuelga SIEMPRE de
+      // `os.tmpdir()`, y el caso de 864 —que casa el texto `os.tmpdir()` en el fuente— seguía en
+      // verde igual. Lo que sujeta ahora este reconocimiento es que `temporal()` LANZA si
+      // `dentroDe` cae en el repositorio: lo que aquí se da por bueno es «fuera del árbol», y eso
+      // lo prueba POR EFECTO `scrum1281-fixture-git-raiz-propia` (caso ④). `temporalDeFixtureGit`
+      // es su hermano de la familia de fixtures de git: llega importado igual y pasa por él.
+      if (nom === 'temporal' || nom === 'temporalDeFixtureGit') return 'TMP';
       if (['join', 'resolve', 'normalize'].includes(nom)) return raizDe(n.arguments[0], prof + 1);
       // `realpathSync`, `realpathSync.native` y `mkdtemp*` son TUBERÍAS: la raíz es la de su
       // argumento. `native` hay que nombrarlo aparte porque el nombre del método es ése, no
