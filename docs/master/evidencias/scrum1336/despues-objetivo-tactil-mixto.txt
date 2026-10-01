@@ -1,5 +1,5 @@
-# objetivo-tactil-mixto · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · la barra de anuncio no existe y «Volver a empezar» mide 20 px
-# EXIT=1 · 21.4 s
+# objetivo-tactil-mixto · guard-objetivo-tactil.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · la barra de anuncio no existe y «Volver a empezar» mide 20 px
+# EXIT=1 · 10.6 s
 
 
 ════════════════════════════════════════════════════════════════════════════
@@ -202,7 +202,7 @@ PANEL · ficha del Trabajo (renderJobDetailView) · ANCHO 390 px
    ✅ suelo de renderJobDetailView: 0 objetivos cortos DISTINTOS (SCRUM-1193 (28-sep-2026, medido con la lista de excepciones VACÍA: 0 cortos; SCRUM-1172 midió 1, el «⋯», ya arreglado) midió 0).
 
 ────────────────────────────────────────────────────────────────────────────
-⟦arranque⟧ 0.8 s COMPLETA · proceso+ws 0.8 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
    🔴 NO SUPE MIRAR: el destapar declarado `#announce` ya no existe en la página. O la sección se retiró (actualiza DESTAPAR y di por qué) o el censo está ciego ahí.
    🔴 CIEGO: falta(n) «Ver planes →» (destapado) — esperaba 1, medí 0. El verde del resto no vale.
    ✖ 21px < 36 · [probar] BUTTON.try-reset «Volver a empezar» (caja CSS 20px)

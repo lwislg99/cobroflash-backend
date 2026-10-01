@@ -1,5 +1,5 @@
-# a11y-landing-ciego · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · .note no da nombre accesible en ningún ancho: 0 hallazgos
-# EXIT=2 · 2.3 s
+# a11y-landing-ciego · guard-a11y-landing.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · .note no da nombre accesible en ningún ancho: 0 hallazgos
+# EXIT=2 · 1.7 s
 
 Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
 Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.
@@ -21,7 +21,7 @@ Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
    ✔ «Ver planes →»: 47.6px tocables (caja 23.6px)
    ✔ umbral __sonda-40: 41px cae contra 44
 
-⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
    🔴 NO SUPE MIRAR @1280px: .note no da nombre accesible
    🔴 NO SUPE MIRAR @360px: .note no da nombre accesible
 

@@ -1,5 +1,5 @@
-# a11y-landing-limpio · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · sin romper nada
-# EXIT=0 · 2.9 s
+# a11y-landing-limpio · guard-a11y-landing.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 1.8 s
 
 Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
 Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.
@@ -25,4 +25,4 @@ Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
 
 ✓ En los dos anchos: nada suena pegado, las 7 regiones tienen nombre y los táctiles llegan a su mínimo — 44 px en móvil, 36 en escritorio, como dice DESIGN.md.
 ⟦veredicto⟧ 0 hallazgos · 0 ciegos
-⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

@@ -1,5 +1,5 @@
-# rastro-del-menu-hallazgo · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · el menú navega por `renderView` crudo: no deja rastro, y ningún ciego
-# EXIT=1 · 8.6 s
+# rastro-del-menu-hallazgo · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · el menú navega por `renderView` crudo: no deja rastro, y ningún ciego
+# EXIT=1 · 8.4 s
 
 destinos del menú: 18
 
@@ -36,7 +36,7 @@ destinos del menú: 18
   clientes → productos → informes  (estoy en: reports)
   atrás → vista reports · hash no-existe-esta-vista-819
   atrás → vista settings · hash settings
-⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
 
 🔴 RASTRO DE NAVEGACIÓN ROTO:
    · el menú deja la URL incoherente en 18 de 18 destinos: F5 lleva a otra pantalla y un enlace guardado abre la vista anterior. Navega por `window.renderAppView`, no por `renderView` crudo.

@@ -1,5 +1,5 @@
-# a11y-comparativa-hallazgo · guard-a11y-comparativa.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · una celda llega sin su etiqueta de columna, y ningún ciego
-# EXIT=1 · 1.9 s
+# a11y-comparativa-hallazgo · guard-a11y-comparativa.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · una celda llega sin su etiqueta de columna, y ningún ciego
+# EXIT=1 · 1.7 s
 
 Guard de accesibilidad de la comparativa (SCRUM-541)
 Árbitro: el árbol de accesibilidad renderizado, no el marcado.

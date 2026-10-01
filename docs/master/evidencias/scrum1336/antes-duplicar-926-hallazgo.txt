@@ -1,5 +1,5 @@
 # duplicar-926-hallazgo · guard-duplicar-926.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · duplicar pierde el descuento global, y ningún ciego
-# EXIT=1 · 4.6 s
+# EXIT=1 · 4.7 s
 
 {
   "casos": {

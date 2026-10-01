@@ -1,5 +1,5 @@
-# rastro-del-menu-gana-uno · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · el menú GANA un destino (19): qué dice el guard, él solo
-# EXIT=0 · 9.2 s
+# rastro-del-menu-gana-uno · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · el menú GANA un destino (19): qué dice el guard, él solo
+# EXIT=0 · 8.6 s
 
 destinos del menú: 19
 

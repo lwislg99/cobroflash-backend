@@ -1,4 +1,4 @@
-# a11y-landing-mixto · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · .note ciega y la región sin nombre
+# a11y-landing-mixto · guard-a11y-landing.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · .note ciega y la región sin nombre
 # EXIT=1 · 1.7 s
 
 Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)

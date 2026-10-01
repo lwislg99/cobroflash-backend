@@ -1,4 +1,4 @@
-# contraste-mut-ciego-a-hallazgo · guard-contraste.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: ciegos.push(...recorrido.ciegos);
+# contraste-mut-ciego-a-hallazgo · guard-contraste.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: ciegos.push(...recorrido.ciegos);
 # EXIT=1 · 7.8 s
 
 páginas medidas: 9 de 10  ·  nodos con texto: 359

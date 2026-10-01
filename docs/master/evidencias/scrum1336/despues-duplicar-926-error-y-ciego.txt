@@ -1,4 +1,4 @@
-# duplicar-926-mixto · guard-duplicar-926.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · duplicar pierde el descuento (G) y el desplegable de cobro no se puede leer (P)
+# duplicar-926-error-y-ciego · guard-duplicar-926.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · el editor lanza un error de página Y el desplegable de cobro no se puede leer (P): el error visto cuenta igual
 # EXIT=1 · 4.7 s
 
 {
@@ -7,12 +7,14 @@
       "editorConLineas": true,
       "lineasCargadas": 2,
       "hayCampoGlobal": true,
-      "global": "",
-      "campoGlobalAbierto": false,
-      "botonAnadirVisible": true,
+      "global": "25",
+      "campoGlobalAbierto": true,
+      "botonAnadirVisible": false,
       "hayDesplegableDePago": false,
       "pago": null,
-      "errores": []
+      "errores": [
+        "error de pagina puesto por el banco de SCRUM-1336"
+      ]
     },
     "P": {
       "editorConLineas": true,
@@ -23,7 +25,9 @@
       "botonAnadirVisible": true,
       "hayDesplegableDePago": false,
       "pago": null,
-      "errores": []
+      "errores": [
+        "error de pagina puesto por el banco de SCRUM-1336"
+      ]
     }
   },
   "controles": {
@@ -42,19 +46,19 @@
 ✔ SUELO · el caso G se pudo abrir
 ✔ SUELO · el editor abre con las 2 lineas del presupuesto duplicado (G)
 ✔ CONTROL POSITIVO G · este guard SABE leer el campo del descuento global
-🔴 G · duplicar CONSERVA el descuento global de 25 €
-🔴 G · y deja su campo ABIERTO, no un importe detras de un boton
+✔ G · duplicar CONSERVA el descuento global de 25 €
+✔ G · y deja su campo ABIERTO, no un importe detras de un boton
 ✔ SUELO · el caso P se pudo abrir
 ✔ SUELO · y tambien en el caso de cobro (P)
 ⬜ NO SUPE MIRAR · CONTROL POSITIVO P · este guard SABE leer el desplegable de cobro
 ✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
 ·  SIN JUZGAR (su caso no se pudo leer) · P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
-·  SIN JUZGAR (su caso no se pudo leer) · sin errores de pagina en ninguno de los dos casos
+🔴 sin errores de pagina en ninguno de los dos casos — G: error de pagina puesto por el banco de SCRUM-1336 · P: error de pagina puesto por el banco de SCRUM-1336
 
 NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
                                         `currency` (el editor no tiene selector: usa la del merchant)
 
-POBLACION casillas=11 verdes=6 hallazgos=2 ciegos=1 sin-juzgar=2
+POBLACION casillas=11 verdes=8 hallazgos=1 ciegos=1 sin-juzgar=1
 EXIT=1
 ⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
-⟦veredicto⟧ 2 hallazgos · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos
+⟦veredicto⟧ 1 hallazgo · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

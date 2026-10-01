@@ -1,9 +1,9 @@
 {
   "sha": "8c0bf72850988e5f06266f330ab4c6c869f42a36",
-  "pasadas": 33,
-  "de": 33,
+  "pasadas": 35,
+  "de": 35,
   "mutaciones": 0,
-  "deMutaciones": 17,
+  "deMutaciones": 18,
   "filas": [
     {
       "id": "a11y-comparativa-limpio",
@@ -168,7 +168,7 @@
       "escenario": "limpio",
       "valida": true,
       "exit": 0,
-      "segundos": 4.7,
+      "segundos": 4.8,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null
@@ -192,7 +192,7 @@
       "escenario": "hallazgo",
       "valida": true,
       "exit": 1,
-      "segundos": 4.6,
+      "segundos": 4.7,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null
@@ -204,7 +204,7 @@
       "escenario": "mixto",
       "valida": true,
       "exit": 1,
-      "segundos": 4.8,
+      "segundos": 4.7,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null
@@ -397,6 +397,30 @@
       "valida": true,
       "exit": 1,
       "segundos": 9.9,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "duplicar-926-error-de-pagina",
+      "guard": "duplicar-926",
+      "grupo": "seis",
+      "escenario": "error-de-pagina",
+      "valida": true,
+      "exit": 1,
+      "segundos": 4.7,
+      "sinCapturar": false,
+      "veredicto": "",
+      "invalida": null
+    },
+    {
+      "id": "duplicar-926-error-y-ciego",
+      "guard": "duplicar-926",
+      "grupo": "seis",
+      "escenario": "error-y-ciego",
+      "valida": true,
+      "exit": 1,
+      "segundos": 4.7,
       "sinCapturar": false,
       "veredicto": "",
       "invalida": null

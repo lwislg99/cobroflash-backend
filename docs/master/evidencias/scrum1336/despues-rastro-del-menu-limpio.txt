@@ -1,5 +1,5 @@
-# rastro-del-menu-limpio · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · sin romper nada
-# EXIT=0 · 10.2 s
+# rastro-del-menu-limpio · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 8.5 s
 
 destinos del menú: 18
 
@@ -21,4 +21,4 @@ destinos del menú: 18
 
 ✓ los 18 destinos del menú dejan rastro (suelo `MINIMO_DESTINOS` = 18), «atrás» vuelve, y un hash inventado no rompe nada.
 ⟦veredicto⟧ 0 hallazgos · 0 ciegos
-⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

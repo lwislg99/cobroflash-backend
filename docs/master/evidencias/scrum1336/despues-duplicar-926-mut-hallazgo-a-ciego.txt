@@ -1,5 +1,5 @@
-# duplicar-926-mut-hallazgo-a-ciego · guard-duplicar-926.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»:   if (estado === 'hallazgo') hallazgos.push(texto);
-# EXIT=2 · 11.2 s
+# duplicar-926-mut-hallazgo-a-ciego · guard-duplicar-926.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»:   if (estado === 'hallazgo') hallazgos.push(texto);
+# EXIT=2 · 4.7 s
 
 {
   "casos": {
@@ -55,5 +55,5 @@ NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni
 
 POBLACION casillas=11 verdes=9 hallazgos=2 ciegos=0 sin-juzgar=0
 EXIT=2
-⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
 ⟦veredicto⟧ 0 hallazgos · 2 ciegos → salida 2 (no supe medir) · un ciego no es un verde

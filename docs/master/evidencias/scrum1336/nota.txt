@@ -2,15 +2,37 @@ SCRUM-1336 · CÓMO LEER ESTA CARPETA
 
 QUÉ VALE
   antes-resumen.json / antes-<guard>-<escenario>.txt ...... los guards de origin/main 8c0bf72850988e5f06266f330ab4c6c869f42a36
-  despues-resumen.json / despues-<guard>-<escenario>.txt .. los guards de d174fa4cf903f899d87e982eec3e5a1b4d77dfed (el arreglo)
+  despues-resumen.json / despues-<guard>-<escenario>.txt .. los guards de e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 (el arreglo)
   despues-<guard>-mut-<mutación>.txt ...................... el arreglo con UNA línea rota, contra su pasada sin mutar
   antes-traza.txt ......................................... lo que imprimió el banco en la tanda entera del «antes» (29 pasadas)
   mutaciones.json / mutaciones-traza.txt .................. las 8 mutaciones del test, con el motor de la casa (sin navegador)
   lista-antes-despues.mjs ................................. SALEN_A_MANO, contada en los dos SHA
   limite-de-recorrer-casos.mjs / .txt ..................... un límite de la pieza común, medido y NO arreglado
 
-  Las 33 pasadas de cada resumen son 30 + las 3 «ciego-ausencia», que se añadieron después de las
-  primeras 30 y se corrieron en los DOS SHA. «rastro-del-menu-gana-uno» también corrió en los dos.
+  Las 35 pasadas de cada resumen son 30 + las 3 «ciego-ausencia» + las 2 de c.17970
+  («duplicar-926-error-de-pagina» y «duplicar-926-error-y-ciego»), todas corridas en los DOS SHA.
+  «rastro-del-menu-gana-uno» también corrió en los dos. Las mutaciones con navegador son 18: las 17
+  de antes + «duplicar-926-mut-error-visto-sin-juzgar».
+
+POR QUÉ EL «DESPUÉS» SE CORRIÓ DOS VECES, Y CUÁL VALE
+  El primero se midió sobre d174fa4cf903f899d87e982eec3e5a1b4d77dfed (33 pasadas, 17 mutaciones) y
+  NO está aquí: se sobrescribió. El obligatorio del PR cayó por `tests/scrum622`: en
+  `guard-duplicar-926`, la casilla «sin errores de pagina…» salía ✔ cuando ningún caso se había
+  leído (c.17970). Era el CUARTO juicio por ausencia de este ticket. Al cambiar esa línea, el
+  «después» se repitió ENTERO sobre e82d47d8 —las 35 pasadas y las 18 mutaciones, no sólo las de
+  duplicar-926— porque el resumen es de UN SHA y el banco no mezcla dos: con otro SHA empieza de
+  cero. Las 50 filas que ya existían salieron idénticas en salida, validez y veredicto.
+  El «antes» no cambió de SHA: se corrieron las 6 de duplicar-926 para que las dos nuevas tengan
+  su antes, y el resumen acumuló 35.
+
+  ANTES DE LAS 35, UNA SOLA: «duplicar-926-error-de-pagina» tenía que salir 1. Si salía 0, la
+  excepción del temporizador no llegaba al `pageerror` del guard, el positivo no existía y todo lo
+  demás sobraba. Salió 1, con el error nombrado en G y en P.
+
+  LA TANDA DIRIGIDA NO BASTA PARA ESTA RAMA: `npm run tests:que-cubren` no lista
+  `tests/scrum622-desconocido-no-es-verde.test.mjs` (recorre el árbol entero y no nombra ningún
+  fichero). Se corre A MANO junto al test de este ticket:
+    node --test tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs tests/scrum622-desconocido-no-es-verde.test.mjs
 
 POR QUÉ EL «ANTES» SE CORRIÓ DOS VECES, Y CUÁL VALE
   La primera tanda del «antes» NO VALE y no está aquí: se sobrescribió con la segunda.

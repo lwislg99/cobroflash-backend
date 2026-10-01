@@ -1,5 +1,5 @@
-# a11y-landing-hallazgo · guard-a11y-landing.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · la sección de preguntas pierde su nombre de región, y ningún ciego
-# EXIT=1 · 1.8 s
+# a11y-landing-hallazgo · guard-a11y-landing.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · la sección de preguntas pierde su nombre de región, y ningún ciego
+# EXIT=1 · 1.6 s
 
 Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)
 Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.

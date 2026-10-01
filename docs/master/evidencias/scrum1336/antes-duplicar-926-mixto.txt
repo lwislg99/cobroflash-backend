@@ -1,5 +1,5 @@
 # duplicar-926-mixto · guard-duplicar-926.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · duplicar pierde el descuento (G) y el desplegable de cobro no se puede leer (P)
-# EXIT=1 · 4.8 s
+# EXIT=1 · 4.7 s
 
 {
   "casos": {

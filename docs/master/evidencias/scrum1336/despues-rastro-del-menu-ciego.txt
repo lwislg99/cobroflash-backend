@@ -1,7 +1,7 @@
-# rastro-del-menu-ciego · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · el menú pierde un destino: por debajo de su suelo
-# EXIT=2 · 5.1 s
+# rastro-del-menu-ciego · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · el menú pierde un destino: por debajo de su suelo
+# EXIT=2 · 3.6 s
 
-⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
 
 🔴 NO SUPE MIRAR — de esto no se da veredicto, ni bueno ni malo:
    · [guard] SUELO: sólo 17 destinos en el menú (mínimo 18). Un «cero incoherencias» sobre esta población diría que no he mirado.

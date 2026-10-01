@@ -1,5 +1,5 @@
-# objetivo-tactil-mut-ciego-a-hallazgo · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: const noSupeMirar = (s) => { console.error(s); ciegos.push(s
-# EXIT=1 · 10.9 s
+# objetivo-tactil-mut-ciego-a-hallazgo · guard-objetivo-tactil.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: const noSupeMirar = (s) => { console.error(s); ciegos.push(s
+# EXIT=1 · 10.8 s
 
 
 ════════════════════════════════════════════════════════════════════════════

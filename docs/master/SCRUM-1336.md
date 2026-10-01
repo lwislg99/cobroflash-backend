@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:32:11Z
 
-1-oct-2026 · **J1j** (equipo de Javier), relevo de J1i. Encargo del orquestador `cobroflash-backend-5b`.
+1-oct-2026 · **J1j** (equipo de Javier), relevo de J1i. Encargo del orquestador `cobroflash-backend-5b`. El cuarto juicio por ausencia (c.17970) lo arregló **J1k** y lo midió con navegador **J1l**.
 
 A9: comprobación → `docs/master/evidencias/scrum1336/banco.mjs`
 
@@ -15,6 +15,7 @@ A9: comprobación → `docs/master/evidencias/scrum1336/banco.mjs`
 | `contraste` deja de cortar el recorrido | c.17957 | el `process.exit(1)` del bucle es una de las tres salidas que el ticket manda retirar |
 | el suelo del menú | c.17960 | retracta lo que dije mal (ver «Lo que dije mal») |
 | un ciego que fabrica hallazgos por ausencia | c.17965 | no estaba en el encargo; salió al arreglar |
+| «sin errores de página» de `duplicar-926` | c.17970 | el cuarto sitio del mismo criterio; lo cazó `tests/scrum622` en el CI de este PR |
 
 ## El defecto, y que ocurre HOY — los siete, vistos correr
 
@@ -71,6 +72,38 @@ Ahora: **un juicio que se deduce de no haber visto algo queda SIN JUZGAR si algo
 se dice. Uno que se deduce de algo que sí se vio (par nuevo, marcador nuevo, botón corto, algo que
 sube) vale siempre.** Los tres salen 2.
 
+### El cuarto sitio del mismo criterio: «sin errores de página» en `duplicar-926` (c.17970)
+
+No eran tres: eran cuatro, y el cuarto estaba en un guard que este PR ya había tocado. La casilla
+«sin errores de pagina en ninguno de los dos casos» se decidía con `errores.length ? 'hallazgo' :
+'ok'`, y `errores` sale de dos `|| []`: una lista vacía porque no hubo errores y una lista vacía
+porque el caso **no llegó a existir** son la misma lista. Visto en la evidencia: sin botón «Duplicar»
+(ningún caso se abre) la casilla salía «✔ sin errores de pagina…», en el SHA de antes y en
+`d174fa4c`. No cambiaba el código de salida (había otros ciegos), pero era un verde sobre algo que
+nadie miró.
+
+**No lo cazó este ticket: lo cazó `tests/scrum622-desconocido-no-es-verde.test.mjs`**, un censo que
+nadie había tocado, en el obligatorio del PR (run 36892903386, sobre `31c01fdc`). El guard tenía
+razón de fondo, no de forma: su lista de excepciones no se ha tocado y la decisión no se ha
+reescrito para esquivar su AST.
+
+La línea, en `e82d47d8`: `errores.length ? 'hallazgo' : (leidoG && leidoP ? 'ok' : 'sin juzgar')`.
+Un error **visto** cuenta siempre; que **no** haya ninguno sólo vale si los dos casos se leyeron.
+
+| escenario de `duplicar-926` | antes (`8c0bf728`) | después (`e82d47d8`) | la casilla, después |
+|---|---|---|---|
+| limpio | 0 | 0 | «✔ sin errores de pagina…» |
+| ningún caso se abre (ciego) | 1, con la casilla en ✔ | 2 · «0 hallazgos · 2 ciegos» | «·  SIN JUZGAR (su caso no se pudo leer)» |
+| un error de página en los dos casos, sin ciegos | 1 | 1 · «1 hallazgo · 0 ciegos» | «🔴 … — G: … · P: …», con el error nombrado |
+| un error de página **y** el desplegable de P sin leer | 1 | 1 · «1 hallazgo · 1 ciego» | «🔴 …», con las DOS cuentas |
+
+El control que decide si el parche vale es la última fila: si al poner el «sin juzgar» un error
+visto dejara de contar, el parche sería peor que el defecto (la condición C, aplicada al parche). Y
+su mutación lo prueba: con la suspensión puesta **delante** del error, ese escenario pasa de 1 a 2
+(«0 hallazgos · 1 ciego») con el error escrito en la casilla y sin contar. Antes de las 35 pasadas se
+corrió sólo el escenario del error, para saber si la excepción del temporizador llegaba al
+`pageerror` del guard: llegó, en G y en P. Sin eso el positivo no existía.
+
 ### F · el desajuste de `rastro-del-menu`
 
 El comentario decía «menos de 17» y el mensaje verde «los 17 destinos», con `MINIMO_DESTINOS` en 18
@@ -81,8 +114,15 @@ comentario de `package.json`. **`MINIMO_DESTINOS` no se ha movido.**
 ## Antes y después, con navegador
 
 `docs/master/evidencias/scrum1336/banco.mjs`, el mismo banco con dos SHA: antes
-`8c0bf72850988e5f06266f330ab4c6c869f42a36`, después `d174fa4cf903f899d87e982eec3e5a1b4d77dfed`.
-Saca el SHA a un árbol desechable fuera del repo y rompe allí. **33 pasadas válidas de 33 en cada uno.**
+`8c0bf72850988e5f06266f330ab4c6c869f42a36`, después `e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71`.
+Saca el SHA a un árbol desechable fuera del repo y rompe allí. **35 pasadas válidas de 35 en cada uno.**
+
+El «después» se midió primero sobre `d174fa4cf903f899d87e982eec3e5a1b4d77dfed` (33 pasadas y 17
+mutaciones) y, al cambiar la línea de c.17970, **se repitió ENTERO sobre `e82d47d8`**, no sólo
+`duplicar-926`: el resumen del banco es de UN SHA, y mezclar dos sería una segunda forma de contar.
+Las 50 filas que ya existían salen idénticas en código de salida, validez y línea de veredicto;
+las 3 nuevas son los dos escenarios y la mutación de c.17970. El «antes» ganó sólo las dos pasadas
+nuevas de `duplicar-926` (se corrieron las seis de ese guard), sobre el mismo SHA de antes.
 
 | escenario | los seis · antes | los seis · después | el séptimo · antes | el séptimo · después |
 |---|---|---|---|---|
@@ -107,7 +147,7 @@ destapar hallazgos nuevos): antes 9 páginas, 359 nodos, 0 pares nuevos, sale 0;
 19» y «✓ los 17 destinos dejan rastro»; después sale 0 y dice «✓ los 19 destinos del menú dejan
 rastro (suelo `MINIMO_DESTINOS` = 18)».
 
-### Las mutaciones con navegador: 17 de 17 vistas
+### Las mutaciones con navegador: 18 de 18 vistas
 
 Cada una rompe una línea del guard arreglado en el árbol desechable y repite un escenario, contra
 su pasada sin mutar:
@@ -118,6 +158,8 @@ su pasada sin mutar:
   En los siete: el banco lo caza.
 - **se quita la suspensión de los juicios por ausencia** → vuelve el hallazgo falso, de 2 a 1. En
   los tres.
+- **la suspensión se pone delante del error visto** (sólo `duplicar-926`, c.17970) → el escenario
+  «error y ciego» pasa de 1 a 2: un error de página deja de contar porque un caso no se leyó.
 
 ## La lista (D)
 
@@ -161,6 +203,13 @@ ahí. De los guards de SCRUM-1327, `guard-caja-documento-suelto` lleva la lista 
   guard. La otra mitad está en `tests/scrum819-el-menu-deja-rastro.test.mjs` (18 exactos): con 19,
   ese test cae. Lo medí después de decirlo y lo corregí antes de que se abriera un ticket (c.17960).
 - **Dos horas a ojo** en mensajes al orquestador, una mal por más de diez minutos.
+- **La dirigida dio «0 caen» y el obligatorio cayó.** La lista de 278 ficheros no llevaba
+  `tests/scrum622-desconocido-no-es-verde.test.mjs`: ese censo recorre el árbol entero y no nombra
+  ningún fichero, así que `npm run tests:que-cubren` no lo saca. Un «0 caen» sobre 278 no dice nada
+  del fichero 279. Desde entonces `scrum622` se corre a mano antes de empujar esta rama; el hueco de
+  la lista es de SCRUM-1363 y está dicho al orquestador, no arreglado aquí.
+- **Se dijo «tres» juicios por ausencia y eran cuatro.** El cuarto estaba en `duplicar-926`, uno de
+  los seis de este mismo PR, y lo encontró un guard ajeno.
 
 ## Los controles
 

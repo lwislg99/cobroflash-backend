@@ -1,5 +1,5 @@
-# objetivo-tactil-mut-hallazgo-a-ciego · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const hallazgo = (s) => { console.error(s); hallazgos.push(s
-# EXIT=2 · 11.0 s
+# objetivo-tactil-mut-hallazgo-a-ciego · guard-objetivo-tactil.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const hallazgo = (s) => { console.error(s); hallazgos.push(s
+# EXIT=2 · 10.7 s
 
 
 ════════════════════════════════════════════════════════════════════════════

@@ -1,5 +1,5 @@
-# objetivo-tactil-limpio · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · sin romper nada
-# EXIT=0 · 11.5 s
+# objetivo-tactil-limpio · guard-objetivo-tactil.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 10.9 s
 
 
 ════════════════════════════════════════════════════════════════════════════
@@ -204,4 +204,4 @@ PANEL · ficha del Trabajo (renderJobDetailView) · ANCHO 390 px
 ────────────────────────────────────────────────────────────────────────────
 ✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo, ver EXCEPCIONES_791) — LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo (con sus botones de COBRO), ficha 360 del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167 + SCRUM-1172. Las demás vistas del panel NO están vigiladas por ningún guard que bloquee: `npm run censo:tactil-panel` (SCRUM-787) las CUENTA en cada PR, en el resumen del job informativo de guards de navegador (SCRUM-1179-C), sin frenar ningún PR — no es una red, es un número que hay que ir a leer.
 ⟦veredicto⟧ 0 hallazgos · 0 ciegos
-⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

@@ -1,4 +1,4 @@
-# contraste-mut-hallazgo-a-ciego · guard-contraste.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»:     hallazgos.push(`par nuevo · 
+# contraste-mut-hallazgo-a-ciego · guard-contraste.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»:     hallazgos.push(`par nuevo · 
 # EXIT=2 · 7.8 s
 
 páginas medidas: 10 de 10  ·  nodos con texto: 360

@@ -1,5 +1,5 @@
-# marcadores-en-pantalla-mut-ciego-a-hallazgo · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»:   ciegos.push(...recorrido.ciegos);
-# EXIT=1 · 31.5 s
+# marcadores-en-pantalla-mut-ciego-a-hallazgo · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»:   ciegos.push(...recorrido.ciegos);
+# EXIT=1 · 29.6 s
 
 SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
 

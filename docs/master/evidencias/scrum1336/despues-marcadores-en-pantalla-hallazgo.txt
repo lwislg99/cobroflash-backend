@@ -1,5 +1,5 @@
-# marcadores-en-pantalla-hallazgo · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · Informes pinta un marcador nuevo, y ningún ciego
-# EXIT=1 · 30.6 s
+# marcadores-en-pantalla-hallazgo · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · Informes pinta un marcador nuevo, y ningún ciego
+# EXIT=1 · 30.5 s
 
 SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
 

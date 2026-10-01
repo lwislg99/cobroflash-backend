@@ -1,5 +1,5 @@
-# rastro-del-menu-mut-hallazgo-a-ciego · guard-rastro-del-menu.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const veredictoFinal = veredictoDe({ hallazgos: fallos, cieg
-# EXIT=2 · 8.4 s
+# rastro-del-menu-mut-hallazgo-a-ciego · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const veredictoFinal = veredictoDe({ hallazgos: fallos, cieg
+# EXIT=2 · 8.5 s
 
 destinos del menú: 18
 

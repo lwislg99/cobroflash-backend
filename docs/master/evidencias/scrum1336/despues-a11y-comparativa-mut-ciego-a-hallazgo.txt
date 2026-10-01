@@ -1,4 +1,4 @@
-# a11y-comparativa-mut-ciego-a-hallazgo · guard-a11y-comparativa.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: const noSupeMirar = (texto) => { console.error(texto); ciego
+# a11y-comparativa-mut-ciego-a-hallazgo · guard-a11y-comparativa.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»: const noSupeMirar = (texto) => { console.error(texto); ciego
 # EXIT=1 · 1.1 s
 
 Guard de accesibilidad de la comparativa (SCRUM-541)

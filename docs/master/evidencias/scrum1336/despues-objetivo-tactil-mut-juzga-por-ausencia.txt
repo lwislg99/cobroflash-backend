@@ -1,5 +1,5 @@
-# objetivo-tactil-mut-juzga-por-ausencia · guard-objetivo-tactil.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «juzga-por-ausencia» sobre el escenario «ciego-ausencia»: for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length
-# EXIT=1 · 9.8 s
+# objetivo-tactil-mut-juzga-por-ausencia · guard-objetivo-tactil.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «juzga-por-ausencia» sobre el escenario «ciego-ausencia»: for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length
+# EXIT=1 · 9.7 s
 
 
 ════════════════════════════════════════════════════════════════════════════

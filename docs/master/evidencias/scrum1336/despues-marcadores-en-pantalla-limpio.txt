@@ -1,5 +1,5 @@
-# marcadores-en-pantalla-limpio · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · sin romper nada
-# EXIT=0 · 30.6 s
+# marcadores-en-pantalla-limpio · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · sin romper nada
+# EXIT=0 · 30.7 s
 
 SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
 

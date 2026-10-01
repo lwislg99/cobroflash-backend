@@ -1,4 +1,4 @@
-# marcadores-en-pantalla-ciego · guard-marcadores-en-pantalla.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · la vista de Informes revienta en sus tres estados: 0 hallazgos
+# marcadores-en-pantalla-ciego · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · la vista de Informes revienta en sus tres estados: 0 hallazgos
 # EXIT=2 · 29.6 s
 
 SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts

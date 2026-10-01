@@ -1,5 +1,5 @@
-# contraste-ciego-ausencia · guard-contraste.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales
-# EXIT=2 · 7.2 s
+# contraste-ciego-ausencia · guard-contraste.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · admin.html no se deja medir, y es donde vive un par CONOCIDO: 0 hallazgos reales
+# EXIT=2 · 7.1 s
 
 páginas medidas: 8 de 9  ·  nodos con texto: 314
 

@@ -1,5 +1,5 @@
-# contraste-mut-juzga-por-ausencia · guard-contraste.mjs @ d174fa4cf903f899d87e982eec3e5a1b4d77dfed · MUTACIÓN «juzga-por-ausencia» sobre el escenario «ciego-ausencia»: if (desaparecidos.length && !medidoEntero) {
-# EXIT=1 · 8.3 s
+# contraste-mut-juzga-por-ausencia · guard-contraste.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «juzga-por-ausencia» sobre el escenario «ciego-ausencia»: if (desaparecidos.length && !medidoEntero) {
+# EXIT=1 · 7.1 s
 
 páginas medidas: 8 de 9  ·  nodos con texto: 314
 
