@@ -39,7 +39,7 @@ export const LIMITES = [
   'ALCANCE CONDICIONAL: una llamada que existe pero sólo se pinta bajo un flag o un modo (el caso de `collect-rest` en modo recibo, SCRUM-1160) cuenta como consumida. La sonda lee código, no ejecuta.',
   'URLs montadas con arrays o `.join(...)`: no se reconstruyen; la llamada sale CIEGA si no deja ningún literal de ruta.',
   'Llamadas de red con URL totalmente opaca (una variable que no es `const`/`let` de cadenas del mismo fichero): salen CIEGAS, una por función envolvente; el 27-sep-2026 eran 9 llamadas en 8 funciones.',
-  'Funciones muertas encadenadas de MÁS de un nivel: si A (muerta) es la única que llama a B, B no sale; sólo A.',
+  'Funciones muertas encadenadas de MÁS de un nivel DENTRO del código vivo: si A (muerta) es la única que llama a B, B no sale; sólo A. Entre MÓDULOS del servidor sí se cierra desde SCRUM-1192: un import sólo cuenta si el fichero que importa es alcanzable desde `src/index.ts` (el caso que lo destapó: `huecosSerie.ts::huecosDeLaSerie`, importada sólo por `albaranSerie.ts`, que no importa nadie). En el front (`public/`) NO: una función del panel llamada sólo desde otra función muerta sigue saliendo viva.',
   'Claves del cuerpo: cuando el llamador manda un objeto que no se puede leer (spread, parámetro, función), el respaldo es buscar la clave como token en el fichero llamador y en los que llaman a su envoltorio. Es DÉBIL: una clave que aparece por otro motivo en ese fichero la da por mandada.',
   'Consumidores fuera de `public/` y `src/` (WhatsApp de Meta, correos ya enviados, scripts de operación, cron externo) no cuentan: por eso las rutas de operación están declaradas a mano con su carril.',
   'Campos servidos que ninguna pantalla lee: NO entran en este censo (99 candidatos el 27-sep-2026, sin método verificado; solo `firmasCompletas` confirmado, SCRUM-1181).',
@@ -47,6 +47,7 @@ export const LIMITES = [
 
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'all']);
 const EXTERNOS = [/^\/webhooks\//, /^\/health/, /^\/dev(\/|$)/, /^\/charges/, /^\/invoice(\/|$)/, /^\/outbox/];
+const RAIZ = 'src/index.ts';
 const DECLARACIONES = /^src\/core\/http\/(\w*Declarations|adminOnlyRoutes)\.ts$/;
 
 // ── Carga ──────────────────────────────────────────────────────────────────────────────────────
@@ -198,6 +199,27 @@ export function censar({ files, testsText = '' }) {
       if (ic.namedBindings && ts.isNamespaceImport(ic.namedBindings)) m.set(ic.namedBindings.name.text, { file: tgt, name: '*' });
     }
     return m;
+  }
+  // Todo lo que carga un fichero en ejecución: import (menos los de solo tipo), export-from,
+  // import() y require con literal.
+  function cargaDe(file) {
+    const out = new Set();
+    const add = (spec) => { const t = resolveImport(file, spec); if (t) out.add(t); };
+    walk(sf(file), (n) => {
+      if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier) && !n.importClause?.isTypeOnly) add(n.moduleSpecifier.text);
+      else if (ts.isExportDeclaration(n) && n.moduleSpecifier && ts.isStringLiteral(n.moduleSpecifier) && !n.isTypeOnly) add(n.moduleSpecifier.text);
+      else if (ts.isCallExpression(n) && n.arguments[0] && ts.isStringLiteralLike(n.arguments[0])
+        && (n.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(n.expression) && n.expression.text === 'require'))) add(n.arguments[0].text);
+    });
+    return out;
+  }
+  function alcanceDesde(raiz) {
+    const vistos = new Set(); const pila = [raiz];
+    while (pila.length) {
+      const f = pila.pop(); if (vistos.has(f)) continue; vistos.add(f);
+      if (/\.(ts|js|mjs)$/.test(f)) for (const t of cargaDe(f)) pila.push(t);
+    }
+    return vistos;
   }
   function exportNamesOfLocal(file) {
     const s = sf(file); const m = new Map();
@@ -466,8 +488,16 @@ export function censar({ files, testsText = '' }) {
     }
     exportsOf.set(f, out);
   }
+  // SCRUM-1192 · «tiene consumidor» no es «tiene consumidor VIVO». Sólo cuenta el import de un
+  // fichero ALCANZABLE desde la raíz de producción (`start: node dist/index.js`). Antes,
+  // `huecosSerie.ts::huecosDeLaSerie` salía viva porque la importa `albaranSerie.ts`, y a ése no lo
+  // importa nadie. Sin raíz en el árbol (los árboles fabricados de los tests) no hay alcance que
+  // medir y cuenta todo: el SUELO del test exige `alcanzables` en el árbol real.
+  const alcanzables = files.has(RAIZ) ? alcanceDesde(RAIZ) : null;
+  const vivo = (f) => !alcanzables || alcanzables.has(f);
   const usados = new Set(); const dinamicos = new Set(); const reexportStar = new Map();
   for (const f of srcFiles) {
+    if (!vivo(f)) continue;
     const s = sf(f);
     for (const [loc, v] of importsOf(f)) {
       if (v.name === '*') walk(s, (n) => { if (ts.isPropertyAccessExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === loc) usados.add(v.file + '::' + n.name.text); });
@@ -544,6 +574,7 @@ export function censar({ files, testsText = '' }) {
     poblacion: {
       ficherosSrc: srcFiles.length, ficherosPublicJs: pubJs.length, html: pubHtml.length + srcHtml.length,
       rutas: routes.length, rutasExternas: routes.filter((r) => r.externo).length, consumidores: consumidores.length,
+      alcanzables: alcanzables ? srcFiles.filter((f) => alcanzables.has(f)).length : null,
       vistas: casos.size, puertas: puertas.length, exportaciones: [...exportsOf.values()].reduce((a, b) => a + b.length, 0),
     },
     piezas: [...vistas.values()].sort((a, b) => a.clave.localeCompare(b.clave)),
