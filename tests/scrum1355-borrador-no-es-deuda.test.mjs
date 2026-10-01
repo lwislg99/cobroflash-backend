@@ -23,7 +23,7 @@ import ts from 'typescript';
 import { resolveBillingPlan } from '../dist/modules/quotes/domain/billingPlan.js';
 import { buildBillingPlanView } from '../dist/modules/quotes/domain/billingPlanView.js';
 import { estadoCobroFor, importeDeReferencia } from '../dist/modules/jobs/domain/job.service.js';
-import { dineroDelTrabajo, presupuestoAceptado } from '../dist/modules/jobs/domain/dineroDelTrabajo.js';
+import { dineroDelTrabajo } from '../dist/modules/jobs/domain/dineroDelTrabajo.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTAS = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'jobs.routes.ts');
@@ -136,13 +136,6 @@ test('SCRUM-1355 · el importe GUARDADO manda sobre cualquier presupuesto', () =
   assert.equal(salidas({ guardado: '300.00', quotes: [Q()] }).totalAceptado, 300);
   assert.equal(salidas({ guardado: 0, quotes: [Q({ status: 'accepted' })] }).totalAceptado, 0,
     'un 0 guardado es un dato, no una ausencia: no cae al presupuesto');
-});
-
-test('SCRUM-1355 · `presupuestoAceptado` sólo dice que sí a `accepted`', () => {
-  assert.equal(presupuestoAceptado({ status: 'accepted' }), true);
-  for (const q of [{ status: 'draft' }, { status: 'sent' }, {}, null, undefined]) {
-    assert.equal(presupuestoAceptado(q), false);
-  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════

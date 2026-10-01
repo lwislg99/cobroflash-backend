@@ -28,7 +28,7 @@ const ESTADO_ACEPTADO = 'accepted';
 export type PresupuestoDelTrabajo = PresupuestoConPlan & { status: string | null };
 
 /** ¿Lo ha aceptado el cliente? Ante la duda —sin estado legible— NO: no se afirma una deuda. */
-export function presupuestoAceptado(q: { status?: unknown } | null | undefined): boolean {
+function presupuestoAceptado(q: { status?: unknown } | null | undefined): boolean {
   return q?.status === ESTADO_ACEPTADO;
 }
 
