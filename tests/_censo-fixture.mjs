@@ -20,8 +20,67 @@
 // Los números van en el rango 9000+ para que no puedan colisionar nunca con un ticket de verdad.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { temporal } from './_temporal.mjs';
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1281 · EL INTERMITENTE DEL CHECK OBLIGATORIO
+//
+// 4 rojos de `build + tests` desde el 24-sep con la misma firma: git se queda sin un fichero bajo
+// `.git/objects` A MITAD de una operación, siempre en esta familia (`repoFixture`, el clon de
+// `scrum775` y el de `_fixture-alcanzabilidad`). Aislada no cae nunca (J6: 0 de 600, dos brazos);
+// dentro de la tanda (todos los ficheros de test en paralelo) cae ~0,3 % de los montajes. Causa sin nombrar.
+//
+// Dos pasos baratos, antes que un vigía con inotify (decisión del orquestador):
+//  (b) La familia deja de compartir sitio: en CI vive bajo `$RUNNER_TEMP`, no en `/tmp` con todo lo
+//      demás. Si la causa es algo que actúa sobre `/tmp`, el contador de (a) baja a cero.
+//  (a) Cuando una operación de la familia cae con la firma, se imprime `FIRMA_1281` en una línea
+//      propia. Así «¿era el intermitente?» es un DATO que el CI puede leer (la detección es de S5),
+//      no un juicio sobre un log. SIN reintento: un reintento a secas esconde el problema.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Marcador fijo, una línea, para que el CI lo busque tal cual. No cambiarlo sin avisar a S5. */
+export const FIRMA_1281 = '[SCRUM-1281-FIRMA]';
+
+/** Los textos con que git ha caído en los casos medidos (y el del control, que es el mismo). */
+const FIRMA_GIT = /(failed to copy file to .*[\\/]\.git[\\/]objects[\\/].*No such file or directory|unable to create temporary file: No such file or directory|failed to write commit object)/;
+
+/** ¿Este error de git es el del intermitente? */
+export function esFirma1281(texto) {
+  return FIRMA_GIT.test(String(texto || ''));
+}
+
+/** Raíz propia de las fixtures de git: fuera de la `/tmp` compartida cuando corre en CI. */
+export function raizDeFixturesGit(entorno = process.env) {
+  if (entorno.YAQU_RAIZ_FIXTURES_GIT) return entorno.YAQU_RAIZ_FIXTURES_GIT;
+  if (entorno.RUNNER_TEMP) return path.join(entorno.RUNNER_TEMP, 'yaqu-fixtures-git');
+  return path.join(os.tmpdir(), 'yaqu-fixtures-git');
+}
+
+/** Un directorio temporal de la familia, en su raíz propia. */
+export function temporalDeFixtureGit(prefijo) {
+  return temporal(prefijo, { dentroDe: raizDeFixturesGit() });
+}
+
+/**
+ * `git` para la familia de 1281. Igual que `execFileSync('git', …)`, salvo que si cae con la firma
+ * lo DICE en una línea propia de stderr (y en el mensaje del error, que es lo que imprime el runner).
+ */
+export function gitDeFixture(args, opciones = {}) {
+  try {
+    return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...opciones });
+  } catch (e) {
+    const salida = `${e.stderr || ''}\n${e.message || ''}`;
+    if (esFirma1281(salida)) {
+      const sub = args.find((a, i) => !a.startsWith('-') && args[i - 1] !== '-c') || args[0];
+      const linea = `${FIRMA_1281} git ${sub} perdió un fichero bajo .git/objects (cwd ${opciones.cwd || process.cwd()}): ${[...new Set(salida.split('\n').map((l) => l.trim()).filter((l) => esFirma1281(l)))].join(' | ')}`.trim();
+      process.stderr.write(`\n${linea}\n`);
+      e.message = `${linea}\n${e.message}`;
+    }
+    throw e;
+  }
+}
 
 /** Los cuatro casos del banco, reproducidos. Cada uno declara qué imita y qué debe dar. */
 export const CASOS = [
@@ -78,8 +137,8 @@ let cache = null;
 /** Crea (una vez) el repo sintético y devuelve su ruta. */
 export function repoFixture() {
   if (cache && fs.existsSync(cache)) return cache;
-  const raiz = temporal('censo-fixture-');
-  const g = (...args) => execFileSync('git', args, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const raiz = temporalDeFixtureGit('censo-fixture-');
+  const g = (...args) => gitDeFixture(args, { cwd: raiz });
 
   g('init', '-q', '-b', 'main');
   g('config', 'user.email', 'fixture@yaqu.test');
