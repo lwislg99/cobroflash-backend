@@ -40,8 +40,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/instalar.mjs',
-    de: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos };',
-    a: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt };',
+    // SCRUM-1298: la linea gano `mesas` (opcional). El ancla se re-ancla; lo que la mutacion quita
+    // sigue siendo `traspasos`, y sigue teniendo que matar.
+    de: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos, ...(mesas ? { mesas } : {}) };',
+    a: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, ...(mesas ? { mesas } : {}) };',
     cae: '🔴 A2 · el instalador graba en config.json la carpeta de los traspasos',
   },
   {
@@ -72,8 +74,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     // SCRUM-954: la linea gano el argumento `job` (el state.json de cada trabajo). El ancla se
     // re-ancla; lo que la mutacion quita sigue siendo `equipo`, y sigue teniendo que matar.
-    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, job: (id) => estadoDeJob(config, id) });',
-    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), repo: config.repo, job: (id) => estadoDeJob(config, id) });',
+    // SCRUM-1298: gano tambien `mesas`; mismo re-anclaje.
+    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, mesas: config.mesas, job: (id) => estadoDeJob(config, id) });',
+    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), repo: config.repo, mesas: config.mesas, job: (id) => estadoDeJob(config, id) });',
     cae: '🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo',
   },
   {
