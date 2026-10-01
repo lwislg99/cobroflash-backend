@@ -1,6 +1,6 @@
 # SCRUM-1336 · Un «no supe mirar» no sale con el mismo 1 que «he mirado y está mal»
 
-**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:32:11Z
+**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T17:20:06Z
 
 1-oct-2026 · **J1j** (equipo de Javier), relevo de J1i. Encargo del orquestador `cobroflash-backend-5b`. El cuarto juicio por ausencia (c.17970) lo arregló **J1k** y lo midió con navegador **J1l**.
 
@@ -213,7 +213,10 @@ ahí. De los guards de SCRUM-1327, `guard-caja-documento-suelto` lleva la lista 
 
 ## Los controles
 
-- `tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`: **12 casos**, sin navegador.
+- `tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`: **12 casos**, sin navegador. Fija
+  también lo de c.17970: 35 pasadas y 18 mutaciones en los resúmenes, los dos escenarios del error
+  de página en 1 antes y después, y la casilla en «SIN JUZGAR», «✔» y «🔴» donde toca.
+- `tests/scrum622-desconocido-no-es-verde.test.mjs`, **sin tocar**: es el que cazó el cuarto sitio.
 - **Mutaciones del test: 8 declaradas (`MUTACIONES_QUE_ME_TUMBAN`), 8 de 8 caen**, con el motor de la
   casa (`docs/master/evidencias/scrum1336/mutar.mjs` → `mutaciones.json`). Árbol restaurado.
 - `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`: el suelo sube de 29 a **30**, regenerado
@@ -221,23 +224,25 @@ ahí. De los guards de SCRUM-1327, `guard-caja-documento-suelto` lleva la lista 
 
 ## Medido
 
-Rama con `origin/main` @ `cadf00bcee699dc200ff142050986a62b692b3c4` mezclado. Entre `8c0bf728` y
-`cadf00bc`, `main` no tocó ninguno de los siete guards, ni `public/`, ni `src/`: lo medido con
-navegador sobre `d174fa4c` vale para el árbol mezclado (`git diff` vacío en esos ficheros).
+Rama con `origin/main` @ `cadf00bcee699dc200ff142050986a62b692b3c4` mezclado. El «después» se midió
+sobre `e82d47d8`, que ya lleva ese `main` dentro: es el árbol mezclado, no uno anterior. Lo que
+se empuja encima de `e82d47d8` sólo cambia `docs/` (`git diff e82d47d8 -- scripts public src tests
+prisma` vacío).
 
-`prisma generate` y `npm run build` (salida 0) antes de medir. `main` seguía en `cadf00bc` al
-empujar (leído a las 16:32:11Z).
+`main` seguía en `cadf00bc` al empujar (leído a las 17:20:06Z). `src/` y `prisma/` no cambian desde
+`8c0bf728`, y `dist/` es posterior.
 
-- **El test**: 12 casos, 12 pasan.
-- **Mutaciones del test**: 8 de 8 caen; árbol restaurado (sha256 por fichero y `git status` vacío).
-- **Con navegador**: 33 + 33 pasadas válidas y 17 mutaciones vistas, con turno, guards sueltos de uno
-  en uno. `git status` del árbol de trabajo vacío tras cada trozo. Ninguna pasada matada.
-- **`guards:entrada`**: 12 guards, 132 tests, verde.
-- **Tanda DIRIGIDA, con turno**: los 278 ficheros de 1.193 que da `npm run tests:que-cubren` sobre la
-  rama (103 nombran lo tocado, 77 recorren un directorio que lo contiene, 98 de «no sé qué leen»),
-  en cuatro trozos, concurrencia 3, TAP a fichero fuera del árbol: **2.643 tests, 2.637 pasan, 0
-  caen, 6 saltan** (4 de `QA_DB_TEST`, 1 de señales POSIX y 1 de enlaces a fichero, los dos últimos
-  por ser Windows). Mis 12 casos, por nombre, en `ok`. La primera pasada dio **un rojo mío**:
-  `scrum864c` no daba por borrado el temporal de mi banco, porque el borrado estaba en una función
-  aparte del manejador de salida; arreglado y repetidos los cuatro trozos.
-- **NO corrido**: la suite completa local; `guards:visuales` entero. El juez es el CI.
+- **El test y `scrum622`, a mano y juntos**: 24 tests (12 + 12), 24 pasan, 0 caen, 0 saltan.
+- **Mutaciones del test**: 8 de 8 caen, repetidas sobre `e82d47d8`; árbol restaurado (sha256 por
+  fichero y `git status` vacío).
+- **Con navegador**: 35 + 35 pasadas válidas y 18 mutaciones vistas, con turno, una invocación del
+  banco por guard y la memoria libre medida pegada a cada lanzamiento (entre 5.194 y 5.556 MB; el
+  umbral es 2.200). Ninguna pasada matada ni sin contar. Las 53 filas del «después» suman 548 s de
+  guard. El árbol de trabajo, tras cada trozo, sólo cambia en esta carpeta de evidencias.
+- **Tanda DIRIGIDA, con turno** (`npm run tanda:dirigida`): 278 ficheros de 1.193 (103 nombran lo
+  tocado, 77 recorren un directorio que lo contiene, 98 de «no sé qué leen»), 4 a la vez: **2.643
+  tests, 2.637 pasan, 0 caen**. Los 6 restantes no se han leído por nombre en esta pasada (el TAP no
+  se conservó); en la de J1j eran 6 saltos. **`scrum622` no está entre los 278**: va aparte, arriba.
+- **`guards:entrada`**: corrido después de escribir este registro.
+- **NO corrido**: la suite completa local; `guards:visuales` entero. El juez es el CI, y **el CI de
+  este empujón no lo ha leído quien empuja**: lo lee el relevo.
