@@ -152,3 +152,177 @@ Corregirla es **cambio de máster** (regla 35), y lo firma el fundador. Aquí no
 El asesor añadió en la misma respuesta que **el SII elimina el 347 y VeriFactu NO**. Afecta a
 SCRUM-1067. **No se ha verificado en esta medición**: queda como dicho por el asesor, pendiente de
 cotejar.
+
+---
+
+# SCRUM-1102e · La segunda sonda: las mismas citas, por la API de legislación consolidada
+
+**Medido contra:** `origin/main` = `548d5148954b04559f43949f898cbff71a8010ee` · 2026-10-01T02:33:01Z
+
+A9: sin fallo que generalice — solo docs; la premisa caducada del encargo la cazó el PASO 0 antes de escribir nada, y su lección ya es la frase de A10 de SCRUM-1154.
+
+Sesión J4b (`jv-j4b`), 1-oct-2026. **Solo docs: ni `src/`, ni esquema, ni textos de pantalla.** El
+ticket es `area-j1` y J4b es de otro carril: el cruce lo autorizó el orquestador del equipo de
+Javier (`cobroflash-backend-5b`) para este anexo, y nada más.
+
+## ⓪ Por qué existe este anexo
+
+El encargo llegó el 1-oct con la premisa del enunciado del 23-sep: «`git grep REDEME` → cero» y
+«verificar la cita es lo primero». **Las dos cosas estaban hechas desde el 25-sep** (secciones de
+arriba, PRs #1790, #1792 y #1797), y Jira no lo reflejaba. Medido hoy: `REDEME` aparece en **7**
+ficheros del repositorio, todos de `docs/`.
+
+Lo que sí aporta esta vuelta son tres cosas: una **segunda verificación por un instrumento
+distinto** (§①), un dato de la norma que cambia el diseño (§②) y una afirmación del máster que es
+una inferencia y está marcada ✅ (§③).
+
+## ① La segunda sonda
+
+J1 leyó el **HTML** del texto consolidado. Aquí se lee la **API de datos abiertos**, que entrega cada
+artículo como un `<bloque>` con todas sus `<version>` y la fecha de vigencia de cada una:
+
+    https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/<BOE-A-…>/texto   (Accept: application/xml)
+
+De cada bloque se toma la última versión con `fecha_vigencia` ≤ 2026-10-01. Ningún bloque de los
+leídos tiene versiones futuras.
+
+| norma | BOE | bytes | bloques | sha256 del XML |
+|---|---|---|---|---|
+| RIVA, RD 1624/1992 | `BOE-A-1992-28925` | 1.933.214 | 187 | `a558146bdd95724641edde646cd638840fedcfd2ffb8fa50ecbe85407f024a23` |
+| RRSIF, RD 1007/2023 | `BOE-A-2023-24840` | 88.577 | 36 | `20d704afa2d24e91cf97e8ec83c41038f1eef964a1ba724ff6f0958425a8ca38` |
+
+Descargados el 2026-10-01 hacia las 02:28Z. Los XML **no se suben** (2 MB de texto ajeno): se
+regeneran con la URL de arriba. ⚠️ El sha256 es el de ese día: si el BOE consolida un cambio en
+cualquier artículo, cambia, y eso no invalida la medición — obliga a repetirla.
+
+**Control del instrumento** (¿es el texto vigente, o el original de 1992?):
+
+- RIVA **art. 71**: 14 versiones; la vigente es la de `BOE-A-2024-26694`, **desde el 22-dic-2024**, y
+  trae el ordinal 5.º del apartado 3 que añadió la Ley 7/2024. Un artículo modificado hace poco sale
+  en su redacción nueva.
+- RIVA **art. 68 bis**: existe (2 versiones, la primera de `BOE-A-2016-11575`). En el texto de 1992
+  no existía.
+- RIVA **art. 62**: 7 versiones; el apartado 6 lo añadió el RD 596/2016.
+
+**Resultado: los literales coinciden con los de §① de J1, palabra por palabra.**
+
+| artículo | qué dice | versión vigente | desde |
+|---|---|---|---|
+| RIVA 30.1 y 30.4 | registro de devolución mensual; solicitud en noviembre | `BOE-A-2016-11575` | 2017-07-01 |
+| RIVA 71.3, 3.º | los del art. 30 liquidan por mes natural | `BOE-A-2024-26694` | 2024-12-22 |
+| RIVA 62.6, párr. 1 y 2 | mes natural → libros por la Sede; y la opción voluntaria | `BOE-A-2021-10026` | 2021-07-01 |
+| RIVA 68 bis | cómo se ejerce y se renuncia a esa opción | `BOE-A-2018-17995` | 2019-01-01 |
+| RRSIF 1.3 | territorios forales, por domicilio fiscal | `BOE-A-2023-24840` | 2023-12-07 |
+| RRSIF 3.3 | no se aplica a quien lleve los libros según el 62.6 | `BOE-A-2023-24840` | 2023-12-07 |
+| RRSIF 10.1 m) | se informa del simplificado y del recargo | `BOE-A-2023-24840` | 2023-12-07 |
+
+Las dos citas que el asesor marcó ⚠ (arts. 30 y 62.6 del RIVA) quedan verificadas por dos vías
+independientes.
+
+## ② 🔴 De la norma: la respuesta CADUCA
+
+RIVA art. 68 bis, párrafos 1 y 5, literal:
+
+> «La opción a que se refiere el artículo 62.6 de este Reglamento, podrá ejercitarse a lo largo de
+> todo el ejercicio, mediante la presentación de la correspondiente declaración censal, surtiendo
+> efecto para el primer periodo de liquidación que se inicie después de que se hubiera ejercicio
+> dicha opción.»
+
+> «Los sujetos pasivos inscritos en el registro de devolución mensual que queden excluidos del mismo
+> por aplicación de lo dispuesto en el artículo 30.6 de este Reglamento quedarán asimismo excluidos
+> de la obligación de llevar los libros registro a través de la Sede electrónica…»
+
+(«ejercicio» por «ejercido» es errata del propio BOE; se copia tal cual.)
+
+Un profesional puede **entrar** en el SII a mitad de año y puede **salir** de él. Preguntarlo una
+sola vez en el alta —que es lo que pedía el enunciado: «conviene detectarla en el alta»— deja un
+dato que envejece. **El dato tiene que poder cambiarse después.**
+
+## ③ 🔴 La exclusión foral del máster es una INFERENCIA, y está marcada ✅
+
+`docs/YAQU_MASTER.md:1858` dice hoy que queda excluido «quien tenga el domicilio fiscal en
+territorio foral», con «✅ verificado contra fuente primaria». El literal del RRSIF art. 1.3 es:
+
+> «En relación con los territorios históricos del País Vasco y en la Comunidad Foral de Navarra, el
+> presente Reglamento será de aplicación a los obligados tributarios a que se refiere el artículo 3
+> de este Reglamento cuando tengan su domicilio fiscal en territorio común.»
+
+Eso dice a quién se aplica el Reglamento **en relación con los territorios forales**. Que un
+domiciliado foral que trabaja en territorio común quede fuera es la lectura *a contrario*: **no es
+el literal**, y depende del Concierto y del Convenio, que aquí **no se han leído**.
+
+**No se toca el máster.** Va a la lista del asesor (SCRUM-1264). Hasta que conteste, esa mitad de
+la línea 1858 es «inferida», no «verificada».
+
+## ④ El censo, re-medido, y el mecanismo que ya existe
+
+Población: **455** ficheros seguidos por git en `src/`, `public/` y `prisma/` (control positivo:
+`merchantId` aparece en 153).
+
+| se busca | ficheros |
+|---|---|
+| `REDEME` · `SII` · «suministro inmediato» | 0 |
+| «foral» · «Navarra» · «País Vasco» | 0 |
+| «módulos» · «estimación objetiva» | 0 |
+| las dos columnas del SQL de 1102, en cualquiera de sus dos grafías | 0 |
+| «recargo» | 11 — el del CLIENTE (`Customer`), no el del profesional |
+| «simplificado» | 2 — un aviso de gastos que SCRUM-324 dejó apagado |
+
+Las dos columnas de `docs/sql/scrum-1102-sii-y-domicilio-foral.sql` **no están en
+`prisma/schema.prisma`** y nada las lee ni las escribe. Ese SQL dice que se aplicó en staging y en
+producción el 25-sep; `docs/MIGRATIONS_PENDING.md` confirma en dev la del domicilio foral y declara
+la del SII «no medida». **Aquí no se ha medido ninguna base.**
+
+**El mecanismo que se reusa** (no hace falta un segundo): Configuración ya tiene selectores de
+estado fiscal de **tres estados** sobre columnas del `Merchant` —el de `name="criterioCaja"`
+(`Boolean?`) y el de `name="retencionIrpfTipo"`, en `public/dashboard/js/settingsView.js`—. Es el
+mismo contrato que pide el SQL de 1102 (`NULL` no es `false`), comparten la terna que empieza por
+«No consta», se colocan con `colocar(…)` —que es lo que lee el censo de Configuración de SCRUM-284—
+y se validan en `src/core/validation/schemas.ts`.
+
+## ⑤ Lo que queda bloqueado, y de quién es
+
+Los tres han subido al fundador por el orquestador; ninguno lo decide una sesión.
+
+1. **Esquema** (regla 40): faltan las dos columnas en `prisma/schema.prisma`, y confirmar dev.
+2. **Los dos textos de pantalla** (regla 39). Se propusieron al orquestador y **no se registran
+   aquí**: un texto sin firma no se escribe en el repositorio.
+3. **Qué hace YaQu con la respuesta.** Guardar un «sí» que nadie lee repite «declarada no es
+   existente» un escalón más abajo. 🔴 **Sugerencia de IA, no de la norma ni del asesor:** que
+   encender `INVOICING_ES_ENABLED` para un comercio exija las dos respuestas en «no», sin que `NULL`
+   valga. Eso es una puerta en el camino de emisión: STOP y ticket aparte.
+
+Sigue **sin verificar** lo de §⑥ de arriba (el SII y el 347).
+
+## ⑥ El instrumento
+
+El extractor, entero, porque el original vivía en un directorio temporal. Lee el XML de la API,
+declara su población y, de cada bloque pedido, lista todas las versiones y escribe la vigente.
+
+```js
+import fs from 'node:fs';
+const HOY = '20261001';
+const [, , fichero, ...ids] = process.argv;
+const xml = fs.readFileSync(fichero, 'utf8');
+const bloques = [...xml.matchAll(/<bloque id="([^"]+)" tipo="([^"]+)"(?: titulo="([^"]*)")?[^>]*>([\s\S]*?)<\/bloque>/g)];
+console.log(`POBLACION fichero=${fichero} bytes=${xml.length} bloques=${bloques.length}`);
+const limpia = (s) => s
+  .replace(/<a [^>]*>[\s\S]*?<\/a>/g, '')
+  .replace(/<\/p>/g, '\n').replace(/<[^>]+>/g, '')
+  .replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+for (const id of ids) {
+  const b = bloques.find((x) => x[1] === id);
+  if (!b) { console.log(`##### ${id}: NO EXISTE EL BLOQUE`); continue; }
+  const versiones = [...b[4].matchAll(/<version id_norma="([^"]+)" fecha_publicacion="(\d+)"(?: fecha_vigencia="(\d*)")?[^>]*>([\s\S]*?)<\/version>/g)];
+  console.log(`##### ${id} · ${b[3] ?? ''} · versiones=${versiones.length}`);
+  for (const v of versiones) console.log(`   - ${v[1]} publicada ${v[2]} vigente desde ${v[3] || '(sin fecha)'}`);
+  const vigentes = versiones.filter((v) => (v[3] || v[2]) <= HOY);
+  const v = vigentes.at(-1);
+  console.log(`   VIGENTE HOY: ${v[1]} desde ${v[3] || v[2]} · futuras=${versiones.length - vigentes.length}`);
+  console.log(limpia(v[4]));
+}
+```
+
+Bloques leídos: en el RIVA, `a30`, `a62`, `a68bis`, `a71`; en el RRSIF, `a1`, `a3` y `a1-2`.
+⚠️ **El identificador de bloque no es el número del artículo:** en el RRSIF el art. 10 es `a1-2` y
+el 11 es `a1-3`. Se busca por el atributo `titulo`, no se deduce.
