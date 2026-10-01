@@ -40,7 +40,10 @@ async function unRun(run) {
     const ruta = path.join(dirLogs, `${j.id}.log.gz`);
     if (fs.existsSync(ruta) && fs.statSync(ruta).size > 0) { fila.log_bytes = 'ya'; continue; }
     try {
-      const log = await gh(['api', `repos/${REPO}/actions/jobs/${j.id}/logs`]);
+      // 🔴 `--allow-escape-sequences` NO es opcional: sin él `gh` se niega a escribir un log con
+      // colores, sale 1 y no deja NADA. Lo midió J6f en SCRUM-1335 y lo repetí yo aquí: la primera
+      // pasada de este guion dio 622 de 622 fallidos.
+      const log = await gh(['api', '--allow-escape-sequences', `repos/${REPO}/actions/jobs/${j.id}/logs`]);
       if (!log.length) throw new Error('log vacío');
       fs.writeFileSync(ruta, zlib.gzipSync(log));
       fila.log_bytes = log.length;
