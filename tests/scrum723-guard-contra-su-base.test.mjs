@@ -540,6 +540,12 @@ const INDIRECTAS_DECLARADAS = [
   // cuyo `origin/main` no es el de nadie, para comprobar que la mesa nace y se pone al día ahí.
   // Lo retira quien borre el banco.
   'tests/scrum1298-mesa-por-puesto.test.mjs',
+  // SCRUM-1350 · el latido pregunta «¿cómo está la punta AHORA?», que es la única pregunta que tiene:
+  // el último commit de `main` con el obligatorio en verde, las reglas vivas de la rama y si lo
+  // empujado es lo que hay en local. No censa nada contra una base, y fijarle una lo dejaría
+  // contando el estado de ayer. Herramienta de mano del orquestador; no corre en CI.
+  // Lo retira quien retire el latido.
+  'scripts/equipo/latido.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

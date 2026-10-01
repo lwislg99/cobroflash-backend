@@ -86,6 +86,8 @@ Una operación que no se ejecutó se lee exactamente igual que un éxito.
 Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
 Una captura bonita no prueba que el botón funcione.
 «No está en el PATH» no es «no está».
+Un detector que acierta y publica donde nadie lee produce el mismo resultado que uno ciego. (SCRUM-1350)
+Antes de llamar mecanismo a lo que has visto, di sobre cuántos elementos lo mediste: un instante no es un régimen. (SCRUM-1350)
 Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
 Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
