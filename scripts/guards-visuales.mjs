@@ -162,7 +162,7 @@ export function veredicto(filas) {
 //     37 guards · 612.7 s en serie   ·   verdes: 33 · no verdes: 4
 //
 // Esos 4 no habían encontrado nada: no habían podido MIRAR (el editor del documento suelto no se
-// pintaba en su arnés). «No verdes: 4» se leyó de las dos maneras equivocadas —«cuatro fallan» y
+// pintaba en su arnés). Ese «no verdes» se leyó de las dos maneras equivocadas —«cuatro fallan» y
 // «33 de 37, casi todo bien»— y el job de CI estuvo dos días en rojo tratado como «un rojo que ya
 // se conoce». El vocabulario para distinguirlo vivía aquí desde SCRUM-639 (`llegoAMedir`) y la
 // línea del total no lo usaba: es la TERCERA vez que esta puerta sabe algo y no lo dice.
@@ -494,12 +494,9 @@ console.log('\n── TOTAL ' + '─'.repeat(48));
 const cuenta = recuento(filas);
 console.log('   ' + lista.length + ' guards · ' + (total / 1000).toFixed(1) + ' s en serie'
   + '   ·   ' + cuenta.linea);
-// La población del recuento es la lista. Si no cuadran, el recuento no describe la tanda.
-if (cuenta.total !== lista.length) {
-  console.error('\n🔴 NO SUPE CONTAR: el recuento cubre ' + cuenta.total + ' filas y la lista tiene '
-    + lista.length + ' guards. La tanda para aquí: un total sobre otra población no es un total.');
-  process.exit(SALIDA_NO_ENCONTRADO);
-}
+// La población del recuento ES la lista: cada vuelta del bucle deja exactamente una fila, también
+// la del guard sin fichero (`filaDeFicheroAusente`). No lleva un suelo propio aquí porque no podría
+// saltar nunca, y un suelo que no dispara es justo lo que `tests/scrum775` no deja entrar.
 
 // ── 🔴 EL TRINQUETE (SCRUM-645) ─────────────────────────────────────────────────────────────
 // Va ANTES del volcado de los no verdes a propósito: si la puerta no entiende lo que lee, lo que

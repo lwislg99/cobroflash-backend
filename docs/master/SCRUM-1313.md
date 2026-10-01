@@ -66,8 +66,7 @@ Lo que NO se sabe: si en esos dos días hubo algún estado intermedio roto que l
 `scripts/guards-visuales.mjs`: `recuento(filas)`, pura, con la misma regla que el código de salida
 (`llegoAMedir`). La línea del total, la cabecera del volcado, el mensaje de verde y la anotación y el
 resumen de Actions dicen ahora, por ejemplo, `33 verdes · 4 CIEGOS · 0 rojos`. Si los que no
-midieron no son todos del mismo tipo, van desglosados. Y si el recuento no cubre la lista entera, la
-puerta para con 2.
+midieron no son todos del mismo tipo, van desglosados.
 
 De paso, un agujero de la misma puerta: un guard declarado cuyo fichero falta sumaba un fallo pero
 no dejaba fila, y `veredicto` —que sólo ve filas— contestaba 0. Ahora deja fila de CIEGO
@@ -141,3 +140,39 @@ del job 110163395146.
 3. La primera versión de B2 no veía a uno de los cuatro (arriba).
 
 Los dos primeros, en `docs/equipo/cicatrices/J1.md`.
+
+## SCRUM-1313 · segunda vuelta: el CI del PR #2038, y la declaración del arreglo
+
+**Medido contra:** `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2` · 2026-10-01T01:16:43Z
+A9: comprobación → `tests/scrum775-suelo-que-no-dispara.test.mjs`
+
+**El job «guards de navegador» del PR volvió a verde** (9 min 47 s) sobre `023bd450`, con los
+37 guards corridos de verdad (no es el salto de sólo-documentación de SCRUM-1284).
+
+**El check obligatorio salió rojo con cuatro tests, y dos eran míos:**
+
+| test | de quién | qué |
+|---|---|---|
+| `tests/scrum775-suelo-que-no-dispara.test.mjs` | mío | añadí a la puerta un suelo «recuento ≠ lista» que no puede saltar nunca (cada vuelta deja una fila); su censo no lo sabía leer. Retirado: sobraba |
+| `tests/scrum737-cifra-con-arbol-y-hora.test.mjs` | mío | un comentario mío citaba una cifra de recuento sin fecha. Reformulado sin número |
+| SCRUM-128 y SCRUM-55 | ajenos | trinquetes de fecha, ya rojos en `main` |
+
+Y el meta-guard cae por `scrum853`, que tampoco es de este PR (medido por J2 y J3 en otros PR).
+
+Mi error: corrí en local scrum237 y scrum976, que es lo que pide la nota de «test nuevo», y no los
+censos que barren `scripts/` y los comentarios. Los cazó el CI, que es para lo que se le dejó la tanda.
+
+### Qué buscaba el arnés antes, qué busca ahora, y por qué es lo mismo
+
+- **Antes:** abría `#invoices-new` diciéndole al panel que el modo era `'justificante'` (o `'no'`), y
+  esperaba encontrar el editor del documento suelto.
+- **Ahora:** abre la misma ruta diciéndole que el modo es `'factura'`, y espera el mismo editor, con
+  los mismos selectores y las mismas exigencias. En `un-solo-presupuesto`, además, pulsa el botón por
+  su rótulo de hoy.
+- **Por qué es lo mismo:** el editor que se pinta es el mismo código (`renderDocumentoSueltoView`)
+  y la pantalla SÍ se pinta para una persona: en modo `'factura'`, que es el único que el servidor
+  puede mandar para quien puede crear un documento suelto. En modo `'no'` no se pinta A PROPÓSITO
+  (SCRUM-825, con firma). El defecto no estaba en el producto: el arnés apuntaba a un modo retirado.
+
+El control que lo separa de una relajación es el ④ de arriba: con el arreglo puesto y el editor roto
+a mano, los cuatro salen ROJOS (salida 1), cada uno en su caso del documento suelto.
