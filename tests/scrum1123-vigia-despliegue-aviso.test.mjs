@@ -91,11 +91,11 @@ test('SCRUM-1123 · 🔴 FAIL-CLOSED: sin marca no se decide nada (no se puede d
 
 // ── EL CLI, DE VERDAD (subproceso real, no un import) ───────────────────────────────────────
 
-function correrCli(env) {
-  const r = spawnSync(process.execPath, [SCRIPT], {
-    encoding: 'utf8',
-    env: { ...process.env, ...env },
-  });
+function correrCli(extra) {
+  // El hijo NO hereda el reporter, el color ni el contexto de test del padre (SCRUM-1349/1359).
+  const env = { ...process.env, ...extra };
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
+  const r = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8', env });
   return { status: r.status, salida: r.stdout ? JSON.parse(r.stdout) : null, stderr: r.stderr };
 }
 
@@ -128,6 +128,7 @@ test('SCRUM-1123 · 🔴 CLI FAIL-CLOSED: VIGIA_ISSUES_JSON ilegible (la API pud
 test('SCRUM-1123 · 🔴 CLI FAIL-CLOSED: sin VIGIA_MARCA en el entorno → exit 1, no-se-sabe', () => {
   const env = { ...process.env, VIGIA_ISSUES_JSON: '[]', VIGIA_RENGLON: 'x', VIGIA_RUN_URL: 'https://x' };
   delete env.VIGIA_MARCA;
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
   const r = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8', env });
   assert.equal(r.status, 1);
   assert.equal(JSON.parse(r.stdout).accion, 'no-se-sabe');

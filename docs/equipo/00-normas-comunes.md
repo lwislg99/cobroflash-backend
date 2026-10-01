@@ -247,6 +247,29 @@ instrumentos se comitean ANTES de tocarlos.
 Registro de máster: un fichero por número de ticket. Si ya existe,
 ANEXAS una sección (SCRUM-Nb, Nc…) y no escribes encima.
 
+**La entrega lleva la tabla «aceptación → dónde se ve»** (SCRUM-1348; equipo de Luis desde el 1-oct-2026,
+propuesta al de Javier por su orquestador). En el comentario de entrega del ticket, una fila por CADA
+línea de su aceptación:
+
+    | aceptación (literal) | dónde se ve |
+    |---|---|
+    | <la línea, copiada> | `tests/…test.mjs` · o la URL de yaqu.app y qué se ve en ella |
+    | <la línea, copiada> | NO HECHO → <a quién se le pasa, y su ticket> |
+
+«Dónde se ve» es algo que otro puede abrir: una ruta que existe en `main` o una pantalla de `yaqu.app`.
+«Lo comprobé» no es un sitio. Una fila `NO HECHO` no impide entregar, pero **ese ticket no se cierra: se
+parte** (A18). ✗ Falla: medido el 1-oct sobre los 47 cierres de tres días, cinco estaban «Finalizada»
+diciendo en su propio comentario que no se había visto en yaqu.app.
+
+**El obligatorio de lo que empujas te lo pone delante un hook, no tu memoria** (SCRUM-1356). Al ir a
+parar, `.claude/hooks/latido-cierre.mjs` mira cada rama que TU sesión ha empujado (las saca de los
+`git push` de tu transcript) y, si alguna no está en verde, te lo dice UNA vez por estado y te deja
+seguir: lo dices en tu mensaje —verde, rojo o todavía no— o lo arreglas. Empuja con el nombre escrito
+(`git push origin HEAD:<rama>`): un `git push` a secas, o con la rama en una variable, no deja rastro y
+el hook no lo ve. Y quien reparte recibe el latido al arrancar (`latido-arranque.mjs`) sin pedirlo.
+✗ Falla: los dos hooks solo corren en sesiones lanzadas desde una carpeta que los TENGA. Si corrieron
+de verdad se mide, no se supone: `node .claude/hooks/latido-arranque.mjs corrio`.
+
 ## A9 · Cuando algo te sale mal, lo cuentas tú
 
 **El texto canónico vive en `docs/equipo/00-normas-siempre.md`**, y lo
@@ -293,6 +316,12 @@ papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar
    con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
    mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
    etiqueta VIEJA de agosto con otro significado (10 tickets la llevan) y no se reutiliza.
+   **Y nace con su ACEPTACIÓN escrita** (SCRUM-1348): una lista bajo la palabra «Aceptación», y cada línea
+   dice **qué hay que ver para decir que está hecho, y dónde se ve**. Un ticket sin aceptación **no se
+   reparte**: quien lo va a mandar la escribe antes, o no lo manda; y la sesión que recibe uno sin ella
+   lo dice y no empieza (como en A20). ✗ Falla: medido el 1-oct, **23 de los 47 cierres** de tres días no
+   tenían aceptación escrita: la mitad de lo cerrado no se puede comprobar contra nada, ni a mano ni con
+   un instrumento.
 2. **COGER.** Antes de la primera línea, **se mira el ticket**. Si está En curso y es de otro puesto u
    otro equipo, **no se toca** y se avisa al orquestador. Si está libre: **En curso + asignado al JEFE
    del equipo que lo trabaja** (Luis o Javier: las sesiones no tienen cuenta de Jira) + un comentario

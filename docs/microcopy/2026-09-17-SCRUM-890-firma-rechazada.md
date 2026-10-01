@@ -31,3 +31,16 @@ profesional creía firmado un parte que seguía en borrador.
 
 Con el parte ya abierto cuando se vacía la cola, el aviso no aparece en ese momento: sale al volver
 a abrir el parte.
+
+## Límite declarado: el código `invalid_id` (SCRUM-1352, 1-oct-2026)
+
+«Vuelve a firmar el parte» promete que repetir sirve. Con el código `invalid_id` no serviría:
+repetir daría el mismo no. Ese código está en la lista de rechazos definitivos de
+`colaDeFirmas.js`, así que este texto se pintaría también con él.
+
+Medido el 1-oct-2026 en yaqu.app: **no se alcanza firmando desde el pad**. El servidor sólo
+contesta `invalid_id` cuando el id del parte no es un entero, y el pad sólo se abre sobre un parte
+que el servidor acaba de entregar con su id entero. Por eso el texto no se cambia ni se calla.
+
+El límite caduca si la firma del parte gana otro origen de `invalid_id` o si el parte pasa a
+abrirse sin red. La medición entera está en `docs/master/SCRUM-1352.md`.

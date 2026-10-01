@@ -6,11 +6,13 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
-  RAIZ, censar, censarPrograma, programaDe, USO, RETIRADAS, clasifica, acusada, AGREGADO, NUMERA,
+  RAIZ, censar, censarPrograma, programaDe, raizMedible, USO, RETIRADAS, clasifica, acusada, AGREGADO, NUMERA,
 } from '../scripts/_censo-fecha-sin-zona.mjs';
+import { temporal } from './_temporal.mjs';
 
 const deGit = (sha, ruta) => execFileSync('git', ['show', `${sha}:${ruta}`], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 1 << 24 });
 
@@ -207,4 +209,74 @@ test('SCRUM-1093h · ⑤ NEGATIVO: `toLocaleString` sobre un `number` (mismo nom
     `🔴 acusa por el NOMBRE del método en vez de por el TIPO del receptor: ${JSON.stringify(filas)}. `
     + 'Es exactamente el defecto que demuestra el control ④ sobre albaranPdf.service.ts, más arriba en '
     + 'este fichero.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑥ 🔴 SCRUM-1377 · LA RAÍZ ES LA DEL ÁRBOL QUE SE MIDE — y si no se puede determinar, ROJO.
+//
+// Medido el 1-oct-2026: en un worktree con `node_modules` por junction, la raíz salía de dónde vive
+// `typescript` (el árbol de OTRO), y `censar('.')` devolvía 312 ficheros, 0 filas y salida 0. En
+// CI no pasa, porque allí `node_modules` es del propio árbol: por eso el caso se FABRICA aquí con
+// un árbol que no es el del script, que es la misma situación vista desde el otro lado.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const TSCONFIG_DE_LA_CASA = fs.readFileSync(path.join(RAIZ, 'tsconfig.json'), 'utf8');
+
+/**
+ * Un árbol mínimo, FUERA del repositorio. Todo lo que se crea, se crea AQUÍ y colgando a la vista
+ * del `temporal()` (SCRUM-824): `tsconfig` es su texto o `null` para no ponerlo, `src` dice si existe
+ * la carpeta, y `fuente` es el texto de `src/serie.ts` o `null` para dejarla vacía.
+ */
+function arbolFabricado({ fuente = null, tsconfig = TSCONFIG_DE_LA_CASA, src = true } = {}) {
+  const dir = temporal('yaqu-1377-');
+  if (tsconfig !== null) fs.writeFileSync(path.join(dir, 'tsconfig.json'), tsconfig);
+  if (src) fs.mkdirSync(path.join(dir, 'src'));
+  if (src && fuente !== null) fs.writeFileSync(path.join(dir, 'src', 'serie.ts'), fuente);
+  return dir;
+}
+
+test('SCRUM-1377 · la raíz por defecto es el árbol donde vive el censo, no donde vive `typescript`', () => {
+  assert.equal(path.resolve(RAIZ), path.resolve(import.meta.dirname, '..'),
+    '🔴 la RAÍZ del censo no es la del árbol de este test: está midiendo otro árbol.');
+  assert.equal(REAL.raiz, path.resolve('.'), '🔴 `censar(".")` no declara como raíz el árbol que se le pidió.');
+});
+
+test('SCRUM-1377 · 🔴 `censar(raiz)` mide ESE árbol: uno fabricado fuera del repo da su fila', () => {
+  const dir = arbolFabricado({ fuente: FABRICADO_GET_SET });
+  const r = censar(dir);
+  assert.equal(r.raiz, path.resolve(dir));
+  assert.equal(r.ficheros, 1, `población: ${r.ficheros}`);
+  assert.deepEqual(r.filas.map((f) => f.identidad), ['src/serie.ts::anioDeLaSerie'],
+    '🔴 CIEGO: el censo recibió una raíz y nombró los ficheros contra OTRA — es el defecto de SCRUM-1377: '
+    + 'población 1 y cero filas sobre un árbol que tiene la llamada.');
+});
+
+test('SCRUM-1377 · NEGATIVO DERIVADO: el mismo árbol fabricado, con la llamada UTC, da cero filas CON población', () => {
+  const r = censar(arbolFabricado({ fuente: FABRICADO_UTC }));
+  assert.equal(r.ficheros, 1);
+  assert.deepEqual(r.filas, []);
+});
+
+test('SCRUM-1377 · 🔴 una raíz que no se puede medir LANZA, nunca devuelve 0 filas', () => {
+  const sinTsconfig = arbolFabricado({ fuente: FABRICADO_GET_SET, tsconfig: null });
+  assert.throws(() => censar(sinTsconfig), /CIEGO.*tsconfig\.json/s);
+
+  const sinSrc = arbolFabricado({ src: false });
+  assert.throws(() => censar(sinSrc), /CIEGO.*ninguna de \[src\]/s);
+  assert.throws(() => raizMedible(sinSrc), /CIEGO/);
+
+  const srcVacio = arbolFabricado();
+  assert.throws(() => censar(srcVacio), /CIEGO.*ni un fichero/s);
+
+  const tsconfigRoto = arbolFabricado({ fuente: FABRICADO_GET_SET, tsconfig: '{ esto no es json' });
+  assert.throws(() => censar(tsconfigRoto), /CIEGO.*no pude leer/s);
+});
+
+test('SCRUM-1377 · 🔴 un programa nombrado contra una raíz que NO es la suya LANZA (el 0 filas de antes)', () => {
+  const dir = arbolFabricado({ fuente: FABRICADO_GET_SET });
+  const program = programaDe([path.join(dir, 'src', 'serie.ts')], new Map(), dir);
+  assert.equal(censarPrograma(program, null, dir).length, 1, 'control: con SU raíz, el programa da su fila.');
+  assert.throws(() => censarPrograma(program, null, RAIZ), /CIEGO.*FUERA de la raíz/s,
+    '🔴 un programa de otro árbol, nombrado contra la raíz de éste, devolvió un censo en vez de lanzar: '
+    + 'así salían los 312 ficheros y 0 filas.');
 });

@@ -48,22 +48,23 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
-    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', '--model', MODELO_DEL_EQUIPO, prompt];",
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', modeloValido(modelo), prompt];",
+    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', '--model', modeloValido(modelo), prompt];",
     cae: '🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte permisos',
   },
   {
     // SCRUM-990: quitar el flag es exactamente el defecto que el ticket arregla.
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', modeloValido(modelo), prompt];",
     a: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];",
-    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
+    cae: '🔴 SCRUM-1364: sin modelo declarado, una sesión nueva sale con `--model opus`',
   },
   {
+    // SCRUM-1364: lo que NO puede volver — que el lanzador baje de modelo al equipo él solo.
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "export const MODELO_DEL_EQUIPO = 'sonnet';",
-    a: "export const MODELO_DEL_EQUIPO = 'opus';",
-    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
+    de: "export const MODELO_POR_DEFECTO = 'opus';",
+    a: "export const MODELO_POR_DEFECTO = 'sonnet';",
+    cae: '🔴 SCRUM-1364: sin modelo declarado, una sesión nueva sale con `--model opus`',
   },
 ];
 
@@ -92,15 +93,20 @@ test('🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte pe
   assert.equal(args.at(-1), 'hola --dangerously-skip-permissions', '🔴 el prompt no viaja como UN argumento: podría inyectar flags');
 });
 
-test('🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`, en el orden con el que se midió', () => {
-  // Decisión del fundador (21-sep-2026): TODOS los puestos con Sonnet, sin excepción. El orden es el
-  // de `respawnFlags` en el `state.json` de una sesión de fondo lanzada así (CLI 2.1.278).
-  assert.equal(s.MODELO_DEL_EQUIPO, 'sonnet');
+test('🔴 SCRUM-1364: sin modelo declarado, una sesión nueva sale con `--model opus`', () => {
+  // Decisión del fundador (1-oct-2026, «caro con 6 si»): opus, seis puestos. Revierte la de SCRUM-990
+  // (21-sep: todos con sonnet). El orden del flag sigue siendo el medido entonces: el de `respawnFlags`
+  // en el `state.json` de una sesión de fondo lanzada así (CLI 2.1.278).
+  assert.equal(s.MODELO_POR_DEFECTO, 'opus');
+  assert.deepEqual(s.modeloDe({}), { ok: true, modelo: 'opus', declarado: false });
   for (const puesto of ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5']) {
     assert.deepEqual(s.argsLanzar({ modo: 'nueva', nombre: puesto, prompt: 'p' }),
-      ['--bg', '-n', puesto, '--permission-mode', 'auto', '--model', 'sonnet', 'p'],
-      `🔴 «${puesto}» arrancaría con el modelo por defecto y no con Sonnet`);
+      ['--bg', '-n', puesto, '--permission-mode', 'auto', '--model', 'opus', 'p'],
+      `🔴 «${puesto}» arrancaría sin modelo, o con uno más bajo del decidido`);
   }
+  // Declarado, se respeta: es una decisión escrita en el config, no una caída.
+  assert.deepEqual(s.modeloDe({ modelo: 'sonnet' }), { ok: true, modelo: 'sonnet', declarado: true });
+  assert.deepEqual(s.argsLanzar({ modo: 'nueva', nombre: 'sesion-1', prompt: 'p', modelo: 'claude-opus-5-5' }).slice(5, 7), ['--model', 'claude-opus-5-5']);
   // El modelo viaja como flag, nunca dentro del prompt (que es UN argumento sin interpretar).
   const args = s.argsLanzar({ modo: 'nueva', nombre: 'sesion-3', prompt: '--model opus' });
   assert.equal(args.filter((a) => a === '--model').length, 1, '🔴 un prompt con `--model` no puede añadir otro flag');

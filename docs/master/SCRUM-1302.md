@@ -102,3 +102,66 @@ El test de §F pasa a fijar cada acción con SU condición (los dos envíos → 
 monta a mano un doble de la base sin el modelo `attachment`: con la cuenta de fotos, el GET respondía 500
 y sus dos casos del presupuesto no llegaban a ejecutarse. Se le añade UNA línea
 (`attachment.count → 0`) con su porqué y el aviso de que el 0 es fijo. Ninguna aserción se toca.
+
+# APÉNDICE · H1 y H6 de la cola de firmas (S2) · la firma directa lee «ya está firmado» como lo lee el drenado
+
+**Medido contra:** `origin/main` = `48babd04d40667a9ec8fbeb6e02b9e44dbf0585b` · 2026-10-01T11:09:06Z
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: el fallo fue de una sonda de usar y tirar contra yaqu.app (un interceptor de Playwright que no interceptó y dejó pasar un POST real); no hay instrumento común de sondas en el repo donde poner el control positivo.
+
+Entrada propia (encabezado de primer nivel) para que su declaración de skill no se le atribuya a las secciones F y G de arriba, que son de otros PR.
+
+## H1
+
+Carril S2 (`colaDeFirmas.js`; §11bis: «el resto es de la S2») · rama `scrum-1302-firma-directa-ya-registrada` · sesión `s2-01a`. Hallazgo 1 del recorrido de S4 de la cola de firmas sin red del albarán (Jira SCRUM-1302, c.17880). Los otros cinco de ese recorrido NO van aquí.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). El cambio es de lógica en `public/dashboard/js/colaDeFirmas.js`: sin marcado, sin estilos y **sin texto nuevo**.
+
+### El defecto
+
+La cola sube la firma al volver la red y el detalle abierto se queda viejo. Firmar o «Reintentar» desde ahí recibe 409 `albaran_locked` («Este albarán ya está firmado.»). `firmarConRedDeSeguridad` lo trataba como un fallo cualquiera: devolvía ②, la vista pintaba «No hemos podido registrar la firma (…)» de una firma que SÍ estaba registrada, y la firma volvía a la cola, donde el aviso dice «si lo pierdes, se pierde» de algo que el servidor ya guarda. El drenado, en el mismo fichero, ya lo leía bien (`elServidorYaLaTiene`).
+
+### El arreglo
+
+En el `catch` de la subida, antes del rechazo definitivo: si `elServidorYaLaTiene(error)` —la MISMA función del drenado, no una segunda regla— la firma sale de la cola, se olvida su rechazo y se devuelve ③ (`FIRMA_A_SALVO`) con `yaLaTenia: true` y sin `respuesta`. Las dos vistas que llaman (`albaranDetailView.js` y `parteDetailView.js`, de S4, no tocadas) ante ③ repintan pidiendo el documento al servidor y no leen `respuesta`: leído en su fuente, no ejecutado aquí.
+
+Vale también para `parte_locked`: en las rutas de firmar del parte ese código sólo sale de `puedeFirmarCliente`/`puedeFirmarTecnico` («ya ha firmado»).
+
+### Verificado, ejecutando
+
+`tests/scrum1302h-firma-directa-ya-registrada.test.mjs`: `firmarConRedDeSeguridad` real con el `apiRequest` real y una red que responde el 409 (el `code` lo pone `api.js`, no el test).
+
+- **Rojo antes del arreglo:** caen justo los tres del defecto (`albaran_locked`, con firma previa en la cola, y `parte_locked`); el suelo y los tres controles pasan.
+- **Verde después:** 7/7. Controles: un 409 `invalid_transition` y un 500 siguen en ② **y en la cola**; con red normal sigue ③ con la respuesta del servidor.
+- Vecinos (los 15 ficheros de test que nombran la cola o el drenado): 171/171.
+
+**NO medido:** la vista del albarán montada (el recorrido con pantalla es la sonda de S4), ni yaqu.app: reproducirlo en producción exige firmar un albarán, y el fixture sólo tiene uno emitido.
+
+### H6, en la misma rama · firmar CON red ya no deja la marca de «hubo cola»
+
+Va en la misma rama y el mismo fichero porque toca la misma función y las mismas líneas que H1. **Skill UI:** la de arriba; tampoco hay marcado, estilos ni texto nuevo.
+
+**El defecto.** `yaqu_hubo_cola` se pone al encolar (antes de subir) y sólo la retiraba el drenado. Una firma que sube a la primera sale de la cola y dejaba la marca. En el arranque siguiente `detectarDesalojo` lee «hubo cola y el almacén está vacío» y la home pinta «El móvil ha borrado firmas sin subir» de una firma que está en el servidor.
+
+**Quién gana la carrera, medido en navegador real** (S4 no pudo: su banco daba 10/10 sin `persist` y 0/10 con ≥5 ms). Chromium headless contra yaqu.app (build `48babd04`), cuenta QA, sólo lectura, partiendo del estado que deja «firmar con red» (marca puesta, cola vacía), 10 arranques por tanda:
+
+| Estado de partida | Resultado del detector | Aviso pintado | Marca tras arrancar |
+| --- | --- | --- | --- |
+| sin marca (control) | 10/10 `SIN_PERDIDA` | 0/10 | no |
+| marca + cola vacía, service worker activo | 10/10 `POSIBLE_PERDIDA` | **10/10** | no (la borra el drenado, después) |
+| marca + cola vacía, service worker bloqueado | 10/10 `POSIBLE_PERDIDA` | **10/10** | no |
+
+En Chromium gana siempre el detector: el aviso falso sale el 100 % de las veces, una vez. **No medido:** Safari ni un iPhone.
+
+**El arreglo no depende de quién gane:** se quita la causa. `retirarLaMarcaSiNoQuedaNada()` en `colaDeFirmas.js`, con el criterio que ya usa el drenado (cola leída y vacía), llamada cuando la firma directa confirma (③) y cuando el servidor contesta que ya la tenía. Si queda otra firma en la cola o no se puede leer, la marca se queda.
+
+**Verificado.** Mismo fichero de test, 12/12. Rojo antes: caen los dos del defecto (confirmada y «ya la tenía»). Controles: el detector SÍ caza marca + cola vacía; si la firma no sube, la marca se queda; si sube ésta y queda otra en la cola, la marca se queda. Vecinos (17 ficheros que nombran cola, drenado, marca o detector): 197/197.
+
+**Queda abierto, dicho y no arreglado:** con marca y cola vacía DE VERDAD (un desalojo real), el aviso depende de la misma carrera — `drenarAlAbrir` también borra la marca cuando encuentra la cola ya vacía (`quedan === 0`). En Chromium gana el detector y el aviso sale; en el banco de S4 con `persist` ≥5 ms gana el drenado y **una pérdida real se callaría**. Cambiarlo es rediseñar quién es dueño de la marca; no se toca aquí sin medir Safari.
+
+### Retirada de las dos entradas declaradas (sesión `s2-1octc`, 1-oct-2026)
+
+Al mezclar `main` (que ya trae SCRUM-1351 y SCRUM-1362), `tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs` cae en «los defectos del viaje son EXACTAMENTE los declarados»: H1 y H6 ya no se observan y sus entradas seguían en `scripts/_defectos-viaje-firma-declarados.json`. Se borran `firmar-lo-ya-subido-dice-que-no-se-registro-y-reencola` y `firmar-con-red-deja-la-marca-de-que-hubo-cola`; quedan dos (`el-detalle-abierto-no-se-entera-de-que-la-cola-subio`, `cerrar-sesion-borra-la-cola-sin-avisar`), cuyos defectos siguen vivos. Ninguna aserción se toca.
+
+**Autorización:** retirada autorizada por el fundador el 1-oct-2026 («1 autorizo lo que dices»), regla en `settings.local.json:70`. La sesión anterior (`s2-1octb`) no la hizo porque tenía una denegación propia sobre ese resultado; ésta arranca sin ella.
+
+**Medido:** ese fichero de test, rojo 12/13 antes de borrar (el que cae nombra justo esas dos claves) y verde 13/13 después.

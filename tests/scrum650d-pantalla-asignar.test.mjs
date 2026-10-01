@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { escribirAsignados, loVe, principalDe, normalizarAsignados }
   from '../dist/modules/jobs/domain/asignacionDeTrabajo.js';
 import { soloCodigo, literalesDe } from './_solo-codigo.mjs';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -413,7 +414,10 @@ test('SCRUM-650d · 🔴 todo texto de pantalla lleva el marcador, y sale de UNA
   // VACÍE, no se retire, así que el UNO de aquí abajo es esa declaración huérfana, no un texto
   // sin firmar.
   const literalesConMarca = (FUENTE_FRONT.match(/'\[PENDIENTE[^']*'/g) || []);
-  assert.equal(literalesConMarca.length, 1,
+  // SCRUM-1293 (1-oct-2026) · el número sale de la lista declarada (sección `panel` de
+  // `scripts/_marcadores-pendientes-declarados.json`), la MISMA que usa el censo de SCRUM-402. Hoy
+  // es 1. La aserción no cambia: igualdad exacta. Si el fichero sale de la lista, se exige cero.
+  assert.equal(literalesConMarca.length, marcadoresDeclarados().panel['jobAsignados.js'] ?? 0,
     `🔴 hay ${literalesConMarca.length} literales con marcador en el fichero y tiene que haber ` +
     'UNO: la declaración de `MARCA_ASIGNADOS`, que SCRUM-720 exige mantener viva aunque nadie la ' +
     'use hoy. Si sube por encima de uno, alguien se ha inventado un texto nuevo (regla 30).');
