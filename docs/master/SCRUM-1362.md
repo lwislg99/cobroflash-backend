@@ -59,3 +59,17 @@ que sabe medir y dice «errata» antes de medir nada.
 Borra su entrada de `scripts/_defectos-viaje-firma-declarados.json` en el mismo commit que el
 arreglo. No hay que tocar ningún test. Si era la última, deja `"defectos": {}` y añade
 `"vacio_a_proposito": "<en qué ticket se arregló el último>"`.
+
+# SCRUM-1362 · Apéndice (1-oct-2026, S4): la rama apilada heredaba `public/` de la de abajo
+
+**Medido contra:** `origin/main` = `64dc3211d039cedece0cccf9fa3fcaf7d491319d` · 2026-10-01T13:09:14Z
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
+**Skill UI:** no cargada · este PR no cambia ningún fichero de `public/` (JSON, cargador y dos tests); lo que el guard vio era `albaranDetailView.js`, heredado de la rama de SCRUM-1353 sobre la que estaba apilada
+
+El check obligatorio de `ac49e37e` cayó (9.730 tests, 2 fallos) por el guard de SCRUM-1340: mide el
+PR entero contra su base, y esta rama llevaba debajo los commits de SCRUM-1353, que sí tocan
+`public/`. La comprobación previa («1362 no toca `public/`») era cierta del commit y falsa del PR.
+Con `main` fusionado (#2081 ya dentro) el PR vuelve a ser sólo sus cinco ficheros.
+
+El segundo fallo (`SCRUM-976 ④`, presupuesto de `guards:entrada`) no se ha tocado: se juzga en el
+CI de este empujón, ya con #2069 y #2089 dentro.
