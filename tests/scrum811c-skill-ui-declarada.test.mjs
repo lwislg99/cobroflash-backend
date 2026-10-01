@@ -593,6 +593,12 @@ test('SCRUM-1340 · la línea de la cuenta sale SIEMPRE, también con cero, y di
   assert.match(algo, /declaran 2 · heredados sin declarar 2 \(lista cerrada: nació con 2, sólo encoge\)/);
   assert.match(algo, /sin declarar y fuera de la lista 1 /);
   assert.match(algo, /lo de esta rama: DECLARA$/);
+
+  // Y cuando N y M NO coinciden, cada una va en su sitio: «a 0 de 1» no es «a 1 de 0».
+  const sinSaber = { id: 'PENDIENTE', ui: ['public/x.js'], v: { veredicto: 'NO_SE', entradas: [], motivo: 'sin registro' } };
+  const cojo = lineaDeCuenta(juicioPorEfecto({ historia: [], pendiente: sinSaber }, [], 't', 0));
+  assert.match(cojo, /exigí la skill a 0 de 1 registros de interfaz/);
+  assert.match(cojo, /no sé clasificar 1 · lo de esta rama: NO_SE$/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
