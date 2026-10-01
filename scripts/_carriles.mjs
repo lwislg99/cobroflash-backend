@@ -254,6 +254,22 @@ export function areasDePuestos(texto) {
   return areas;
 }
 
+/**
+ * El TÍTULO corto del área de cada puesto: lo que la tabla pone tras el « · » del puesto, o si no lo
+ * hay, la primera cláusula de su descripción. Va aparte de `areasDePuestos` para que nadie tenga que
+ * recuperarlo cortando el texto ya montado (eso era pegar con «: » y volver a partir).
+ */
+export function titulosDePuestos(texto) {
+  const titulos = {};
+  for (const l of texto.replace(/\r\n/g, '\n').split('\n')) {
+    const c = celdas(l);
+    if (!c || c.length < 2) continue;
+    const m = /^\*\*(S[0-5]|J[1-6])\*\*(?: · (.+))?$/.exec(c[0]);
+    if (m && !titulos[m[1]]) titulos[m[1]] = (m[2] ?? /^[^:]*/.exec(c[1])[0]).replace(/\*\*/g, '').trim();
+  }
+  return titulos;
+}
+
 export function fichaDe(puesto) {
   if (/^S[0-5]$/.test(puesto)) return `docs/equipo/sesion-${puesto.slice(1)}.md`;
   if (/^J[1-6]$/.test(puesto)) return `docs/equipo/puesto-j${puesto.slice(1)}.md`;

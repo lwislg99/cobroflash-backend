@@ -16,6 +16,20 @@
     "J5": "Competencia y producto: recorre la competencia y la convierte en propuestas priorizadas en Jira; **hace los PROTOTIPOS** de su equipo (paso 4 de `orquestador.md` §4bis). Hereda `docs/competencia/`",
     "J6": "Calidad y seguridad: sus guards nuevos, la seguridad, y **el filtro de su equipo**: el PASO 0 «¿esto existe hoy?» (paso 3 de `orquestador.md` §4bis) y las afirmaciones de SU orquestador, que apunta en `afirmaciones-verificadas-javier.md` con las mismas tres columnas que `afirmaciones-verificadas.md`"
   },
+  "titulos": {
+    "S0": "consultoría y auditoría",
+    "S1": "servidor",
+    "S2": "pantallas del panel y los contenedores comunes del front",
+    "S3": "bancos, sondas e instrumentos de medida",
+    "S4": "producto",
+    "S5": "automatización y eficiencia",
+    "J1": "Facturación y VeriFactu",
+    "J2": "Clientes y cobro (el CRM)",
+    "J3": "Alta y crecimiento",
+    "J4": "Legal y cumplimiento",
+    "J5": "Competencia y producto",
+    "J6": "Calidad y seguridad"
+  },
   "reglas": [
     {
       "patron": "src/modules/system/app/routes/quoteDecisionLanding.routes.ts",

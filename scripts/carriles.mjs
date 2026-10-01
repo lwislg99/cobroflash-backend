@@ -17,7 +17,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, fichaDe, globARegex, censoDeHuecos, puestoDeNombre } from './_carriles.mjs';
+import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, titulosDePuestos, fichaDe, globARegex, censoDeHuecos, puestoDeNombre } from './_carriles.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAPA = '.claude/carriles.json';
@@ -32,11 +32,13 @@ export function generar(textoTabla, ficheros) {
   const mapa = construirMapa(textoTabla, ficheros);
   const sha = crypto.createHash('sha256').update(textoTabla.replace(/\r\n/g, '\n')).digest('hex').slice(0, 12);
   const areas = areasDePuestos(textoTabla);
+  const titulos = titulosDePuestos(textoTabla);
   const json = {
     _: `GENERADO por scripts/carriles.mjs desde ${FUENTE} (sha256 ${sha}). NO se edita a mano: se cambia la tabla y se regenera.`,
     fuente: FUENTE,
     sha,
     areas,
+    titulos,
     reglas: mapa.reglas.map(({ patron, puesto, tipo, linea, dueno, general }) => ({ patron, puesto, tipo, linea, dueno, ...(general ? { general } : {}) })),
     excepciones: mapa.excepciones,
   };
@@ -53,7 +55,7 @@ export function generar(textoTabla, ficheros) {
       '---',
       `# Carril ${p} — GENERADO por \`scripts/carriles.mjs\` desde \`${FUENTE}\` §3. No se edita a mano.`,
       '',
-      `Este fichero es del puesto **${p}**${areas[p] ? ` (${areas[p].split(':')[0].replace(/\*\*/g, '')})` : ''}, salvo que lo cubra una fila más específica de otro puesto (abajo).`,
+      `Este fichero es del puesto **${p}**${titulos[p] ? ` (${titulos[p]})` : ''}, salvo que lo cubra una fila más específica de otro puesto (abajo).`,
       `Si tu puesto no es ${p}, **no lo edites**: se pide al dueño por Jira (\`${FUENTE}\` §5). Un cruce legítimo se declara en §3.4 con su motivo y se regenera. Lo hace cumplir \`.claude/hooks/carril.mjs\`.`,
       ...(propias.some((r) => r.tipo === 'contenedor') ? ['', `Contenedores de ${p} (cualquier puesto añade SOLO su bloque, marcado con su puesto; nunca reescribe lo ajeno): ${propias.filter((r) => r.tipo === 'contenedor').map((r) => `\`${r.patron}\``).join(', ')}.`] : []),
       ...(excepto.length ? ['', 'Tienen otro dueño aunque casen con los patrones de arriba:', ...excepto.map((r) => `- \`${r.patron}\` → ${r.puesto ?? 'sin cerradura'} (${FUENTE}:${r.linea})`)] : []),

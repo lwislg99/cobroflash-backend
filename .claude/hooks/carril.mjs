@@ -73,7 +73,7 @@ function principal(s, exigir) {
   if (!r || !r.puesto || r.tipo === 'contenedor' || r.puesto === id.puesto) return;
   if (excepcionPara(rel, id.puesto, mapa)) return;
   const quien = id.carpeta ? `tu carpeta dice ${id.carpeta}` : `tu nombre de sesión «${id.nombre}» dice ${id.porNombre}`;
-  const area = mapa.areas?.[r.puesto] ? ` — ${mapa.areas[r.puesto].split(':')[0].replace(/\*\*/g, '')}` : '';
+  const area = mapa.titulos?.[r.puesto] ? ` — ${mapa.titulos[r.puesto]}` : '';
   bloquear(`🔒 Carril: \`${rel}\` es de ${r.puesto}${area}, y tú eres ${id.puesto} (${quien}).
    Lo dice ${FUENTE}:${r.linea} (dueño «${r.dueno}», patrón \`${r.patron}\`).
    No se construye en terreno ajeno: se pide al dueño por Jira (${FUENTE} §5), o lo dices al orquestador.
