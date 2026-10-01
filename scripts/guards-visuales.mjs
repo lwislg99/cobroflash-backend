@@ -236,7 +236,7 @@ export function veredicto(filas) {
     // SCRUM-1343 · con verdes en la fila, «NINGUN guard llegó a medir» era otra frase falsa: el
     // 1-oct habría salido con 30 verdes delante.
     detalle: (filas.length > noVerdes.length
-      ? 'De los ' + noVerdes.length + ' no verdes, NINGUNO llegó a medir: '
+      ? 'De los ' + noVerdes.length + ' que no están verdes, NINGUNO llegó a medir: '
       : 'NINGUN guard llegó a medir: ') + ciegos.map((f) => f.g + ': ' + f.estado).join(', ')
       + '. Esto NO es un hallazgo de contraste ni de accesibilidad: '
       + (filas.length > noVerdes.length ? 'en ésos ' : '') + 'no se ha comprobado nada.'

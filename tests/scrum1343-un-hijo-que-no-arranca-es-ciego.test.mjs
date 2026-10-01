@@ -41,6 +41,97 @@ import { SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA } from '../scripts/_navegador.m
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUERTA = path.join(RAIZ, 'scripts', 'guards-visuales.mjs');
 
+// El meta-guard de la casa ejecuta esto. Cada una es un defecto que vuelve: las cinco primeras, el
+// del ticket (un proceso que no arrancó contado como hallazgo, o su cuenta callada); las del
+// «POSITIVO», el contrario, que es peor (un hallazgo de verdad pasando a ciego).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'return Number.isInteger(codigo) && codigo >= SUELO_DEL_CODIGO_DEL_SISTEMA;',
+    a: 'return false;',
+    cae: 'el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "if (String(salida).trim() === '') return { estado: 'PROCESO NO ARRANCÓ (' + como + ')', codigo: null, arranco: false };",
+    a: "if (String(salida).trim() === '') return { estado: 'PROCESO NO ARRANCÓ (' + como + ')', codigo: 1, arranco: false };",
+    cae: 'un binario que NO EXISTE',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "return { estado: 'CORTADO POR EL SISTEMA (' + como + ')', codigo: null, arranco: true };",
+    a: "return { estado: 'CORTADO POR EL SISTEMA (' + como + ')', codigo: 1, arranco: true };",
+    cae: 'el sistema lo cortó A MEDIAS',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'const noArrancaron = ciegos.filter((f) => f.arranco === false).length;',
+    a: 'const noArrancaron = 0;',
+    cae: 'se dice también con ceros, y suma el total',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "console.log('   ' + cuenta.lineaDeArranque);",
+    a: "if (cuenta.noArrancaron) console.log('   ' + cuenta.lineaDeArranque);",
+    cae: 'la línea de arranque se imprime SIN condición',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'export const SUELO_DEL_CODIGO_DEL_SISTEMA = 0xC0000000;',
+    a: 'export const SUELO_DEL_CODIGO_DEL_SISTEMA = 0xC0000001;',
+    cae: 'el borde sale de la constante',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "if (error === 'ETIMEDOUT') return { estado: 'TOPE', codigo: null, arranco: true };",
+    a: "if (error === 'NUNCA') return { estado: 'TOPE', codigo: null, arranco: true };",
+    cae: 'el tope sigue siendo el tope',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "? 'De los ' + noVerdes.length + ' que no están verdes, NINGUNO llegó a medir: '",
+    a: "? 'NINGUN guard llegó a medir: '",
+    cae: 'el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'const { estado, codigo, arranco } = desenlaceDelHijo(r, salida);',
+    a: "const { estado, codigo, arranco } = { estado: 'rojo(' + r.status + ')', codigo: r.status, arranco: true };",
+    cae: 'la puerta clasifica a sus hijos con',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'if (veredictoDe({ hallazgos: conDefecto, ciegos }).codigo === SALIDA_HALLAZGO) {',
+    a: 'if (conDefecto.length > 0) {',
+    cae: 'no hay una tercera forma de decidir',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'return { g, ms: 0, estado: \'CIEGO\', codigo: SALIDA_NO_ENCONTRADO, arranco: false, arranque: null, marca: null,',
+    a: 'return { g, ms: 0, estado: \'CIEGO\', codigo: SALIDA_NO_ENCONTRADO, arranco: true, arranque: null, marca: null,',
+    cae: 'se dice también con ceros, y suma el total',
+  },
+  // ── el contrario: un hallazgo de verdad que pasa a ciego ──
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'if (!sinCodigo && !esCodigoDelSistema(r.status)) {',
+    a: "if (!sinCodigo && !esCodigoDelSistema(r.status) && String(salida).trim() !== '') {",
+    cae: 'POSITIVO: lo que un guard SÍ dijo sigue siendo rojo, y uno limpio sigue saliendo 0',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'if (dicho && veredictoDe(dicho).codigo === SALIDA_HALLAZGO) {',
+    a: 'if (dicho && veredictoDe(dicho).codigo === SALIDA_HALLAZGO && false) {',
+    cae: 'si lo mató el sistema DESPUÉS de decir sus hallazgos, es rojo',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'const sinCodigo = r.status === null || r.status === undefined;',
+    a: 'const sinCodigo = r.status === null || r.status === undefined || r.status === 1;',
+    cae: 'con un hijo de verdad: reventar en la primera línea es rojo',
+  },
+];
+
 /** El número que dio Windows el 1-oct: 0xC0000142. Escrito como salió, no derivado. */
 const EL_DEL_1_DE_OCTUBRE = 3221225794;
 
@@ -68,7 +159,7 @@ test('SCRUM-1343 · el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron 
   assert.match(v.titulo, /^NO MEDIDO \(salida 2\) · CIEGO en 7 guard\(s\)$/);
   assert.match(v.detalle, /guard:no-arranco-0: PROCESO NO ARRANCÓ \(0xC0000142\)/, 'el ciego va NOMBRADO, con el código del sistema');
   // Con 30 verdes delante, «NINGUN guard llegó a medir» habría sido otra frase falsa.
-  assert.match(v.detalle, /^De los 7 no verdes, NINGUNO llegó a medir: /);
+  assert.match(v.detalle, /^De los 7 que no están verdes, NINGUNO llegó a medir: /);
 });
 
 test('SCRUM-1343 · un binario que NO EXISTE: el `spawn` de verdad falla y la fila dice que no arrancó', () => {
