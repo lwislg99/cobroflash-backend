@@ -129,15 +129,23 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1336-'));
 const PRISTINO = path.join(TMP, '_pristino');
 const ARBOL = path.join(TMP, 'arbol');
 fs.mkdirSync(PRISTINO); fs.mkdirSync(ARBOL);
-const ENLACE = path.join(ARBOL, 'node_modules');
+// Lo que NO sale de git y el árbol desechable toma PRESTADO del de trabajo, por enlace de
+// directorio: las dependencias, y `dist/` (lo lee `tests/_banco-vistas.mjs`, que monta las vistas
+// del panel para `guard-objetivo-tactil`). `dist/` es del árbol de trabajo, no del SHA medido: vale
+// porque este ticket no toca `src/`, y el banco lo comprueba antes de fiarse.
+const PRESTADOS = ['node_modules', 'dist'];
+const enlaceDe = (nombre) => path.join(ARBOL, nombre);
 let limpiado = false;
 function limpiar() {
   if (limpiado) return;
   limpiado = true;
-  // El enlace PRIMERO y por su nombre: borrar el árbol con él dentro sería pedirle a `rm` que
-  // decida si lo sigue.
-  try { fs.rmdirSync(ENLACE); } catch { try { fs.unlinkSync(ENLACE); } catch { /* no estaba */ } }
-  if (fs.existsSync(ENLACE)) { console.error('🔴 no pude quitar el enlace a node_modules: NO borro ' + TMP); return; }
+  // Los enlaces PRIMERO y por su nombre: borrar el árbol con ellos dentro sería pedirle a `rm`
+  // que decida si los sigue.
+  for (const nombre of PRESTADOS) {
+    const enlace = enlaceDe(nombre);
+    try { fs.rmdirSync(enlace); } catch { try { fs.unlinkSync(enlace); } catch { /* no estaba */ } }
+    if (fs.existsSync(enlace)) { console.error('🔴 no pude quitar el enlace a ' + nombre + ': NO borro ' + TMP); return; }
+  }
   fs.rmSync(TMP, { recursive: true, force: true });
 }
 process.on('exit', limpiar);
@@ -148,11 +156,17 @@ if (tar.status !== 0 || !tar.stdout || tar.stdout.length < 1024 * 1024) {
   process.exit(2);
 }
 for (const destino of [PRISTINO, ARBOL]) {
-  const x = spawnSync('tar', ['-x', '-f', '-', '-C', destino], { input: tar.stdout, maxBuffer: 64 * 1024 * 1024 });
+  // Con `cwd` y no con `-C <ruta>`: el `tar` de Git Bash lee las barras invertidas de una ruta de
+  // Windows como escapes (`\a` de `\arbol`) y no encuentra el directorio.
+  const x = spawnSync('tar', ['-x', '-f', '-'], { cwd: destino, input: tar.stdout, maxBuffer: 64 * 1024 * 1024 });
   if (x.status !== 0) { console.error('🔴 no pude extraer el árbol en ' + destino + ': ' + String(x.stderr || '')); process.exit(2); }
 }
-fs.symlinkSync(path.join(RAIZ, 'node_modules'), ENLACE, 'junction');
-if (!fs.existsSync(path.join(ENLACE, 'puppeteer-core'))) { console.error('🔴 el árbol desechable no ve puppeteer-core'); process.exit(2); }
+for (const nombre of PRESTADOS) fs.symlinkSync(path.join(RAIZ, nombre), enlaceDe(nombre), 'junction');
+if (!fs.existsSync(path.join(enlaceDe('node_modules'), 'puppeteer-core'))) { console.error('🔴 el árbol desechable no ve puppeteer-core'); process.exit(2); }
+if (!fs.existsSync(path.join(enlaceDe('dist'), 'app.js'))) { console.error('🔴 el árbol desechable no ve dist/: falta `npm run build` en el de trabajo'); process.exit(2); }
+// `dist/` prestado sólo vale si `src/` es el mismo en el SHA medido y en el árbol de trabajo.
+const srcDistinto = git(['diff', '--quiet', sha, '--', 'src', 'prisma'], { encoding: 'utf8' });
+if (srcDistinto.status !== 0) { console.error('🔴 `src/` o `prisma/` del árbol de trabajo no son los de ' + sha + ': el `dist/` prestado mediría otro producto'); process.exit(2); }
 
 const veces = (texto, trozo) => texto.split(trozo).length - 1;
 function listarHtml(dir, acc = []) {
@@ -187,6 +201,11 @@ for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete ent
 fs.mkdirSync(SALIDA, { recursive: true });
 const CR = String.fromCharCode(13);
 const filas = [];
+// EL CONTROL DEL BANCO, por guard: sin romper nada tiene que salir 0. Si no sale, el banco no está
+// midiendo ESE guard (le falta algo en el árbol desechable) y ninguna de sus pasadas cuenta. Lo
+// enseñó `objetivo-tactil`: sin `dist/` reventaba al importar, salía con 1 en 0,4 s y con salida
+// escrita —la traza—, y eso se leía igual que cuatro hallazgos.
+const controlLimpio = new Map();
 console.log(`POBLACION=${elegidas.length} pasadas (de ${PASADAS.length}) · etiqueta=${ETIQUETA} · sha=${sha} · arbol desechable=${ARBOL}`);
 for (const p of elegidas) {
   // `public/` vuelve a nacer del prístino en CADA pasada: no hay nada que deshacer.
@@ -209,13 +228,19 @@ for (const p of elegidas) {
   else if (r.signal) invalida = 'el proceso murió por la señal ' + r.signal;
   else if (!Number.isInteger(r.status)) invalida = 'el proceso no dejó código de salida';
   else if (!salida.trim()) invalida = 'el proceso salió con ' + r.status + ' SIN SALIDA: no hay testigo de que midiera';
+  else if (p.escenario !== 'limpio' && controlLimpio.get(p.guard) === false) invalida = 'el control LIMPIO de este guard no salió 0 en este banco: no lo está midiendo';
+  else if (p.escenario !== 'limpio' && !controlLimpio.has(p.guard)) console.log('  ⚠️ ' + p.id + ': en esta invocación no ha corrido el control limpio de su guard');
+  if (p.escenario === 'limpio') controlLimpio.set(p.guard, !invalida && r.status === 0);
+  // Una excepción sin capturar también sale con 1 y también escribe: se apunta, porque es justo
+  // una de las formas del defecto (el suelo de `rastro-del-menu` es un `throw`).
+  const sinCapturar = !invalida && /\nNode\.js v\d/.test(salida) && /\n\s+at /.test(salida);
 
   const veredicto = (salida.split('\n').filter((l) => l.includes('⟦veredicto⟧')).pop() || '').trim();
-  const fila = { id: p.id, guard: p.guard, grupo: p.grupo, escenario: p.escenario, valida: !invalida, exit: r ? r.status : null, segundos: Number(segundos), veredicto, invalida };
+  const fila = { id: p.id, guard: p.guard, grupo: p.grupo, escenario: p.escenario, valida: !invalida, exit: r ? r.status : null, segundos: Number(segundos), sinCapturar, veredicto, invalida };
   filas.push(fila);
   fs.writeFileSync(path.join(SALIDA, `${ETIQUETA}-${p.id}.txt`),
     `# ${p.id} · guard-${p.guard}.mjs @ ${sha} · ${p.que}\n# ${invalida ? 'PASADA SIN CONTAR: ' + invalida : 'EXIT=' + r.status} · ${segundos} s\n\n${salida}`);
-  console.log(`${String(invalida ? 'SIN CONTAR' : 'EXIT=' + r.status).padEnd(10)} ${p.id.padEnd(36)} ${segundos.padStart(6)} s  ${veredicto || '(sin línea de veredicto)'}${invalida ? '  ← ' + invalida : ''}`);
+  console.log(`${String(invalida ? 'SIN CONTAR' : 'EXIT=' + r.status).padEnd(10)} ${p.id.padEnd(36)} ${segundos.padStart(6)} s  ${veredicto || '(sin línea de veredicto)'}${sinCapturar ? '  · EXCEPCIÓN SIN CAPTURAR' : ''}${invalida ? '  ← ' + invalida : ''}`);
 }
 
 // ── La línea agregada, por grupo y por escenario. Sale SIEMPRE, también con ceros (E2). ──────
