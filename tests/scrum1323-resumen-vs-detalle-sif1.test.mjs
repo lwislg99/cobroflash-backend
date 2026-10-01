@@ -91,23 +91,23 @@ function sinTachado(linea) {
  *   hitos            → la población: id, estado del resumen, estados del detalle y dónde están
  *   contradicciones  → los hitos cuyos dos sitios no dicen lo mismo
  */
-export function compararResumenYDetalle(texto) {
+export function compararResumenYDetalle(texto, seccion = SECCION) {
   const problemas = [];
   const problema = (motivo, detalle) => problemas.push({ motivo, detalle });
   const lineas = texto.split(/\r?\n/);
-  const sec = escapar(SECCION);
+  const sec = escapar(seccion);
 
   // ── el resumen: UNA línea `> **<nombre>** (U1.3): …` ──
   const reResumen = new RegExp(`^> \\*\\*([^*]+)\\*\\* \\(${sec}\\):`);
   const resumenes = lineas.map((l, i) => ({ i, m: reResumen.exec(l) })).filter((x) => x.m);
-  if (resumenes.length === 0) problema('SIN_RESUMEN', `ninguna línea «> **…** (${SECCION}): …»`);
-  if (resumenes.length > 1) problema('RESUMEN_DUPLICADO', `${resumenes.length} líneas «> **…** (${SECCION}): …»`);
+  if (resumenes.length === 0) problema('SIN_RESUMEN', `ninguna línea «> **…** (${seccion}): …»`);
+  if (resumenes.length > 1) problema('RESUMEN_DUPLICADO', `${resumenes.length} líneas «> **…** (${seccion}): …»`);
 
   // ── la sección: UN encabezado `### U1.3 …`, hasta el siguiente encabezado ──
   const reSeccion = new RegExp(`^### ${sec}(?![0-9.])`);
   const secciones = lineas.map((l, i) => i).filter((i) => reSeccion.test(lineas[i]));
-  if (secciones.length === 0) problema('SIN_SECCION', `ningún encabezado «### ${SECCION}»`);
-  if (secciones.length > 1) problema('SECCION_DUPLICADA', `${secciones.length} encabezados «### ${SECCION}»`);
+  if (secciones.length === 0) problema('SIN_SECCION', `ningún encabezado «### ${seccion}»`);
+  if (secciones.length > 1) problema('SECCION_DUPLICADA', `${secciones.length} encabezados «### ${seccion}»`);
   if (resumenes.length !== 1 || secciones.length !== 1) return { problemas, hitos: [], contradicciones: [] };
 
   const iResumen = resumenes[0].i;
@@ -136,7 +136,7 @@ export function compararResumenYDetalle(texto) {
       abierta = null;
     }
   }
-  if (detalle.size === 0) problema('SIN_HITOS', `la sección «### ${SECCION}» no tiene ninguna viñeta de hito`);
+  if (detalle.size === 0) problema('SIN_HITOS', `la sección «### ${seccion}» no tiene ninguna viñeta de hito`);
 
   // ── el resumen, tramo a tramo, por el identificador del hito ──
   const resumen = sinTachado(lineas[iResumen]);
