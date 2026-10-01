@@ -109,7 +109,8 @@ for (const p of PASADAS) {
   for (const f of ficheros) {
     if (sha(f) !== original[f]) { console.error(`🔴 ${f} NO ha vuelto a su sitio tras la pasada ${p.id}`); process.exit(3); }
   }
-  const salida = r ? String(r.stdout || '') + String(r.stderr || '') : '';
+  // Sin CR: Windows los mete en lo que escribe `taskkill`, y el repo promete LF (SCRUM-480/533).
+  const salida = r ? (String(r.stdout || '') + String(r.stderr || '')).split(String.fromCharCode(13)).join('') : '';
   fs.writeFileSync(path.join(SALIDA, `${ETIQUETA}-${p.id}.txt`),
     `# ${p.id} · ${p.guard} · ${p.que}\n# ${ciego ? 'CIEGO: la rotura no se aplico — ' + ciego : 'EXIT=' + r.status}\n\n${salida}`);
   const veredicto = (salida.split('\n').filter((l) => l.includes('⟦veredicto⟧')).pop() || '').trim();

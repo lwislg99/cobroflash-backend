@@ -193,3 +193,25 @@ de 17 destinos: está ciego») es un `throw` (límite 2).
 Lo primero y lo segundo los cazó un instrumento que dice su población, no una relectura.
 
 ## Ⓘ Verificación
+
+Sobre `origin/main` = `08f37ae000397facc48c286fa354ffa7ce202039`, mergeado en la rama (1-oct-2026 ~06:40Z).
+Entre el punto de rama y ese merge, `main` no cambió ningún `scripts/guard-*.mjs` ni ningún fichero de
+los que toca este PR; la población del censo sigue siendo 40.
+
+- `prisma generate` y `npm run build`: salida 0 los dos, ANTES de los tests.
+- Los dos ficheros del ticket: 22 tests, 22 pasan.
+- **Suite completa** (con el turno del orquestador; TAP a fichero fuera del árbol, leído en un segundo
+  comando): **1.154 ficheros · 9.548 tests · 9.410 pasan · 3 caen · 135 saltados**.
+  - Dos de los tres eran MÍOS, y son el mismo: `SCRUM-480` y `SCRUM-533` (ni un CR en disco) acusaban a
+    `evidencias/scrum1327/antes-g1-caja-documento-suelto.txt`, que guardó cuatro CR de lo que Windows
+    escribe al matar el navegador. Arreglado quitando esos cuatro bytes (479 → 475) y haciendo que el
+    banco no los guarde. Vueltos a correr los dos tests: en verde (abajo).
+  - El tercero NO es de este PR: `SCRUM-1266b · corregir una descripción y «Añadir estas líneas» del
+    dictado`. Cayó una vez dentro de la suite completa y pasa 3 de 3 corrido solo (15 tests, 15 pasan).
+    Este PR no toca nada del dictado. Reportado al orquestador; no se toca.
+- Después del último cambio: los tests de CR, los dos del ticket y los guards de suite — ver el
+  comentario de entrega en Jira, que lleva las cifras de la última pasada.
+
+Y un quinto error mío, que va con los de Ⓗ: **empujé evidencias a `docs/` sin contar sus CR contra la
+regla del repo.** Los conté (la tabla de bytes los enseñaba: «CR 4») y no hice nada con el número. Lo
+cazó la suite completa, no yo.
