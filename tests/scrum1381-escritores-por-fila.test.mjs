@@ -99,6 +99,26 @@ test('SCRUM-1381 · con un ajeno a la vista manda NO-VALE aunque además haya op
   assert.equal(e.opacos.length, 1);
 });
 
+test('SCRUM-1381 · 🔴 LA UNIDAD: un sitio con dos escrituras es UN sitio y DOS líneas, y la fila lo dice', () => {
+  // La discusión que esto cierra: una sesión contó sitios y otra contó líneas sobre el mismo árbol,
+  // y las dos cifras eran ciertas. Una cifra sin unidad se discute cada vez que alguien la cita.
+  const DOS_EN_UN_SITIO = `router.put('/f/:id/notas', async (req, res) => {
+    await prisma.quote.update({ where: { id: 1 }, data: { internalNotes: req.body.notas } });
+    await prisma.quote.update({ where: { id: 1 }, data: { tags: [] } });
+  });`;
+  const e = veredictoDe('PATCH /f/:id/plan', [PLAN, DOS_EN_UN_SITIO]);
+  assert.deepEqual(e.ajenos, ['__fabricado/f.routes.ts::PUT /f/:id/notas']);
+  assert.equal(e.otros, 1, 'sitios');
+  assert.equal(e.lineasOtras, 2, 'líneas');
+  assert.equal(e.lineasAjenas, 2, 'líneas ajenas');
+  assert.equal(e.lineasDe['__fabricado/f.routes.ts::PUT /f/:id/notas'].length, 2);
+  // Y sobre el árbol real: nunca menos líneas que sitios, en ninguna candidata.
+  for (const c of r.escritores) {
+    assert.ok(c.lineasOtras >= c.otros, `${c.sitio}: ${c.lineasOtras} líneas para ${c.otros} sitios`);
+    assert.equal(Object.values(c.lineasDe).reduce((n, l) => n + l.length, 0), c.lineasOtras, `${c.sitio}: las líneas por sitio no suman`);
+  }
+});
+
 test('SCRUM-1381 · una LEE-Y-DECIDE es candidata: protege el campo sobre el que decide', () => {
   const e = veredictoDe('POST /f/:id/aceptar', [DECIDE, NOTAS]);
   assert.equal(e.yaLaLleva, false);

@@ -482,6 +482,10 @@ export function escritoresPorFila(filas, updatedAtPorModelo) {
       sitio: f.sitio, fichero: f.fichero, linea: f.linea, modelo: f.modelo, ruta: f.ruta, clase: f.clase,
       yaLaLleva, protegidos, veredicto,
       otros: sitios(otros).length, coinciden: sitios(coinciden), ajenos: sitios(ajenos), opacos: sitios(opacos),
+      // La UNIDAD, dicha: un SITIO es fichero + ruta (o función); una LÍNEA es una llamada a prisma.
+      // Un sitio puede tener varias líneas: los dos recuentos no coinciden y los dos son ciertos.
+      lineasOtras: otros.length, lineasAjenas: ajenos.length,
+      lineasDe: Object.fromEntries(sitios(otros).map((s) => [s, otros.filter((o) => o.sitio === s).map((o) => o.linea).sort((a, b) => a - b)])),
     });
   }
   return out;
@@ -619,14 +623,16 @@ if (esPrincipal) {
       + `(${r.escritores.filter((e) => e.yaLaLleva).length} ya condicionan por el updatedAt de la fila, `
       + `${r.escritores.filter((e) => !e.yaLaLleva).length} LEE-Y-DECIDE) · ${r.modelosConUpdatedAt} de ${r.modelos} modelos tienen @updatedAt`);
     console.log(VEREDICTOS.map((v) => `${v} ${r.cuentaEscritores[v]}`).join(' · '));
+    console.log('unidad: un SITIO es fichero + ruta o función; una LÍNEA es una llamada a prisma. Un sitio puede tener varias líneas.');
     for (const v of VEREDICTOS) {
       const suyas = r.escritores.filter((e) => e.veredicto === v);
       if (!suyas.length) continue;
       console.log(`\n── ${v} (${suyas.length}) ──`);
       for (const e of suyas) {
         console.log(`  ${e.yaLaLleva ? 'YA LA LLEVA' : 'candidata  '} ${e.fichero}:${e.linea} · ${e.modelo}${e.ruta ? ` · ${e.ruta}` : ''} · protege {${(e.protegidos || ['?']).join(', ')}} · `
-          + `otros sitios ${e.otros}: ${e.coinciden.length} tocan lo suyo, ${e.ajenos.length} ajenos, ${e.opacos.length} opacos`);
-        if (process.argv.includes('--todo')) for (const a of e.ajenos) console.log(`        ajeno: ${a}`);
+          + `otros escritores: ${e.otros} sitios en ${e.lineasOtras} líneas → ${e.coinciden.length} sitios tocan lo suyo, `
+          + `${e.ajenos.length} sitios ajenos (${e.lineasAjenas} líneas), ${e.opacos.length} sitios opacos`);
+        if (process.argv.includes('--todo')) for (const a of e.ajenos) console.log(`        ajeno: ${a} (:${e.lineasDe[a].join(', :')})`);
       }
     }
     process.exit(0);

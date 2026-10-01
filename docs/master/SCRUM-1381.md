@@ -55,6 +55,31 @@ La que ya lo lleva, `PATCH /:id/billing-plan`: 16 sitios más escriben `quote`, 
 recordatorio automático o poner una etiqueta también pueden dar el 409. Esto último está LEÍDO en el
 censo, no visto en pantalla.
 
+### La unidad de ese 16 (añadido el 1-oct-2026, tras una discrepancia con S2)
+
+S2 contó a mano sobre `main` y le salieron 20, no 16. Las dos cifras son ciertas y miden cosas
+distintas. Medido en esta rama el 1-oct-2026, sobre `origin/main` de ese momento más este PR:
+
+| Qué se cuenta | Total sobre `quote` | Sin contar `billing-plan` |
+|---|---|---|
+| LÍNEAS (llamadas a prisma) | 21 | 20 |
+| SITIOS (fichero + ruta o función) | 17 | 16 |
+
+La diferencia son cuatro sitios con más de una línea: `ensureJobForQuote` (`job.service.ts:78` y
+`:145`), `POST /:token/decision` (`quotes.routes.ts:468`, `:512` y `:722`) y `handleIncomingText`
+(`whatsappIncoming.routes.ts:482` y `:551`). `markReminded` y `reminder.service.ts:83` son el mismo
+escritor. `setQuoteTags` existe con ese nombre, pero vive en `src/modules/system/quoteAdmin.ts:159`,
+no en el fichero de rutas.
+
+Desde este commit la salida dice las dos unidades («N sitios en M líneas») y con `--todo` cada ajeno
+lleva sus líneas. Lo sostiene el test «LA UNIDAD» de `tests/scrum1381-escritores-por-fila.test.mjs`.
+
+🔴 `--escritores` NO existe en `main` hasta que entre este PR (#2106). Antes de eso, quien quiera
+reproducir la cifra tiene que correrlo desde esta rama.
+
+Lo que no depende de la unidad: `expireQuotes` y `markReminded` corren SOLOS. Un proceso automático
+puede dar el 409 a una persona que no ha tocado nada.
+
 ## Lo que NO hace, dicho
 
 - «Un sitio» es fichero + ruta (o función). Escribir el mismo modelo no es escribir la misma FILA:
@@ -87,3 +112,12 @@ NO MEDIDO, que es lo que tiene que pasar.
 La aceptación del ticket decía «si el ancla no sale así, el censo dice NO MEDIDO (salida 2)». Al
 escribirlo vi que eso rompería el PR de quien arregle `billing-plan`, y lo moví al test. Es un cambio
 sobre la aceptación que escribí yo misma veinte minutos antes: queda dicho aquí y en el ticket.
+
+Y dos del relevo (1-oct-2026), al añadir la unidad:
+
+- La cifra «16» salió de esta rama sin su unidad, y otra sesión contó 20 sobre el mismo árbol. No
+  había contradicción, había dos unidades. Ahora la salida dice las dos y un test lo sostiene.
+- Mutante ME (las líneas se cuentan como sitios): cae 1 de 11, el test «LA UNIDAD». Al restaurarlo
+  con `git restore --source=HEAD` sobre el fichero entero me llevé también los tres cambios aún sin
+  comitear, y hubo que rehacerlos. Un mutante se prueba sobre un árbol COMITEADO, o se deshace a
+  mano: lo dice el propio registro unas líneas más arriba («commit antes de mutar») y no lo hice.
