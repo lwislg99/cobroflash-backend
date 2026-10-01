@@ -235,7 +235,43 @@ export function sueloEfectivo(suelo, declaradosEnElArbol) {
     : { valor: suelo, de: 'declarado', derivado, medible: true };
 }
 
+/**
+ * 🔴 SCRUM-1289b · ¿SE PUEDE LEER ESTE TAP? Antes de contar nada.
+ *
+ * El 29-sep-2026 S5 midió que el TAP de TODAS las tandas del CI salía con un 94 % de NUL: un hijo
+ * `node --test` con los reporters heredados TRUNCABA el fichero y el padre seguía escribiendo en su
+ * desplazamiento. Este suelo acertaba de todos modos, POR SUERTE: el `# tests N` del padre caía en
+ * la cola, detrás del tramo de NUL. Un contador que acierta por suerte mañana miente, así que se
+ * niega a contar si el TAP trae la firma de esa avería:
+ *   · algún byte NUL, o
+ *   · más de UN resumen `# tests N` en la raíz (el del hijo + el del padre). Medido con node 24 y
+ *     subtests anidados (describe/it y t.test): node emite UNO solo en la raíz; los anidados van
+ *     sangrados y no llevan resumen.
+ * Mismo criterio que `integridadTap` de `scripts/equipo/por-que-cayo.mjs` (S5, PR #1990).
+ */
+export function integridadDelTap(texto) {
+  const t = String(texto || '');
+  const nul = (t.match(/\0/g) || []).length;
+  if (nul) {
+    const desde = t.indexOf('\0');
+    return { legible: false, motivo: `${nul} bytes NUL (${Math.round((100 * nul) / t.length)} %), desde el carácter ${desde}` };
+  }
+  const resumenes = t.split('\n').filter((l) => /^#\s+tests\s+\d+\s*$/.test(l.replace(/\r$/, ''))).length;
+  if (resumenes > 1) return { legible: false, motivo: `${resumenes} resúmenes \`# tests N\` en la raíz, y una tanda escribe UNO` };
+  return { legible: true, motivo: null };
+}
+
 export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS, declaradosEnElArbol = null) {
+  const integridad = integridadDelTap(textoTap);
+  if (!integridad.legible) {
+    return {
+      ok: false, salida: SALIDA_NO_SUPE_MIRAR, total: null, suelo, margen: null,
+      titulo: '⚠️ NO SUPE MIRAR: el TAP de la tanda está ROTO y no cuento sobre él.',
+      detalle: `   ${integridad.motivo}.\n`
+        + '   Es la firma de un `node --test` hijo que heredó los reporters y truncó el fichero (SCRUM-1289).\n'
+        + '   Esto NO es «la tanda está bien»: el número que hubiera leído podría ser el de otro proceso.',
+    };
+  }
   const total = totalDelTap(textoTap);
   const mudos = ficherosMudosDelTap(textoTap);
   const efectivo = sueloEfectivo(suelo, declaradosEnElArbol);
