@@ -260,6 +260,14 @@ efecto y se le cuenta al jefe en plano.
      (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
      quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
      rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
+5. **`.claude/**` es «de un jefe», y hoy entra sin que un jefe lo firme** (lo destapó SCRUM-1356, 1-oct-2026).
+   La fila de §3.3 dice que `.claude/**` lo firma un jefe y que la S0 prepara la propuesta. El encargo de
+   SCRUM-1356 le dio a la S0 «hooks y `settings.json`» como carril propio, y su PR (#2097: dos hooks y su
+   registro en `.claude/settings.json`) se abrió, se armó y se mergeó SOLO a los 18 minutos, con el check en
+   verde y sin firma de nadie. No hubo daño: los dos hooks avisan y dejan pasar. Pero la tabla y lo que pasó
+   no dicen lo mismo, y un hook que SÍ bloquee entraría por la misma puerta. **¿`.claude/hooks/` y
+   `.claude/settings.json` pasan a ser de la S0 con una fila, o un PR que los toca no se arma solo?** La
+   segunda es un cambio en `pr-automatico.yml` (S5). No lo decide la S0.
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el
