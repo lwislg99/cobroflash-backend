@@ -1,0 +1,5 @@
+2029:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-27T17:49:12.8429473Z [SCRUM-237] 839 negaciones · FUERTE 217 · MEDIO 370 · ESTRUCTURAL 118 · DÉBIL 134 · NINGUNO 0
+2169:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-27T17:49:12.8969037Z ✔ SCRUM-237 · autoprueba: HERMANO DEL TOKEN → FUERTE (1.579875ms)
+2170:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-27T17:49:12.8970027Z ✔ SCRUM-237 · autoprueba: SUJETO VERIFICADO por contenido → MEDIO (0.325357ms)
+2171:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-27T17:49:12.8992546Z ✔ SCRUM-237 · autoprueba: sujeto = FUENTE leída → ESTRUCTURAL (mutation-test declarada) (0.341347ms)
+2172:build + tests (con banco desechable)	UNKNOWN STEP	2026-09-27T17:49:12.8994113Z ▶ SCRUM-237 · autoprueba: token DINÁMICO sin sujeto verificado → DÉBIL (aceptado, no marcado)

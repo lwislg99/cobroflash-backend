@@ -287,3 +287,176 @@ los del 24-sep se van hoy. Las tablas derivadas (`medidos.tsv`, `mismo-arbol.tsv
     node docs/master/evidencias/SCRUM-1339/perdidas.mjs      $D .   # desde la raíz del repo
     node docs/master/evidencias/SCRUM-1339/propuesta-nombres.mjs $D .
     node docs/master/evidencias/SCRUM-1339/techo-en-ci.mjs   $D
+
+# SCRUM-1339b · Con el TAP ya entero, la señal por nombres se puede leer DENTRO del job — y la mitad de SCRUM-1366 es esto
+
+**Medido contra:** `origin/main` = `5fb7630ad564740f0fe4ba115e7dc141d18da775` · 2026-10-01T14:50Z (medición de J3g; la sube J3h, su relevo, sin re-ejecutarla)
+
+A9: aviso → cicatriz J3 «Un control que compara una cifra que el otro instrumento sólo imprime cuando sale verde se salta los rojos sin decirlo: el control cuenta también a cuántos no pudo comparar.» — no se pudo comprobar: es un control de una medición puntual sobre logs ya bajados, fuera de la tanda; lo que queda es el denominador impreso en `b-salida-controles.txt`
+
+**Quién midió y quién escribe.** La medición es de **J3g** (sólo lectura, entregada por mensaje al
+orquestador; consta en SCRUM-1339 c.17934). Esta sección la escribe **J3h** copiando las cifras de
+`b-salida-analizar.txt` y `b-salida-controles.txt`, que son del 1-oct-2026. **No he vuelto a correr
+nada**: los 99 TAP y los 95 logs no se guardaron, y los guiones `b-*.mjs` son copia byte a byte
+(sha256 comparado, 12 ficheros de 12) de los que produjeron esas salidas.
+
+## Lo medido (99 artefactos `tanda-tap`, 1-oct-2026 de 10:27Z a 14:41Z)
+
+| Qué | Cuánto |
+| --- | --- |
+| Artefactos bajados | 99 de 99 (97 runs) |
+| TAP enteros (0 NUL, un resumen, líneas `ok` = `# tests`) | 81 de 99 |
+| No enteros | 18: 14 con NUL (el último, 10:59:02Z) y 4 de tandas canceladas |
+| Enteros desde que #1990 entró en `main` (artefacto de las 11:44:39Z) | 62 de 63; el otro, cancelado |
+| Enteros con el árbol PROBADO resuelto | 79 de 81 (los otros 2, sin log) |
+| **Con nombres declarados ausentes** | **36 de 79 (46 %) · 493 nombres** |
+| De los 54 jobs verdes | 23 con pérdida |
+| De los 9 pushes a `main` | 4 con pérdida, los 4 verdes |
+| Bloques (fichero × job) | 53: 49 cola, 4 «fichero entero», 0 en medio |
+| Lo que ve el suelo de hoy (SCRUM-702 + 1380) | 4 de los 36: los que traen entrada de fichero |
+
+Los cuatro «fichero entero» son `scrum237-negacion-respaldada`, y son los únicos con entrada de
+fichero en el TAP. Los ficheros que más pierden: `scrum524b` (10 jobs), `scrum834` (9),
+`vigia-atascados` (8), `scrum1262` (5).
+
+**El árbol es el que el job probó, no el de `main`.** Se reconstruye sin red con
+`git merge-tree --write-tree <base> <cabeza>`, sacando los dos sha de la línea «Merge X into Y» del log.
+
+## Los controles del instrumento
+
+- «declara N» que imprime el suelo dentro del job == llamadas contadas en el árbol reconstruido:
+  **75 de 77**, sin ninguno distinto. Según el traspaso de J3g, los 2 que faltan son los dos jobs
+  cuyo suelo salió en rojo: el mensaje rojo no imprime esa cifra, así que el control no los pudo
+  comparar (es la cicatriz de arriba). Yo no lo he vuelto a medir.
+- `ℹ tests N` del log `spec` == `# tests N` del TAP: 76 de 77.
+- Contra la comparación a mano del equipo de Luis en #2090 (su c.17922 de SCRUM-1366): nombra 12 de
+  sus 15. Los otros 3 son de nombre construido en un bucle.
+
+## Lo que une los dos tickets
+
+`scrum237` tiene las DOS formas. El 27-sep perdió su cola (job 108673143125,
+`b-log-27sep-job-108673143125-scrum237.txt`); el 29-sep, el fichero entero con entrada de fichero, en
+un push a `main` verde (job 109481810520, `b-log-29sep-job-109481810520-scrum237.txt`), con el suelo
+diciendo ✅ porque el TAP llegaba pisado. O sea: **SCRUM-1366 no es un intermitente nuevo del 1-oct;
+se hizo visible cuando el TAP dejó de llegar pisado** (#2000 a las 10:47Z, #1990 a las 11:33Z).
+
+**Decidido por el fundador:** cada equipo sigue con su ticket. Esta sección no toca
+`scripts/suelo-de-la-tanda.mjs` ni nada de `area-s5`.
+
+## Lo que este instrumento NO ve
+
+Nombres construidos en un bucle · un nombre repetido en dos ficheros · no comprueba que lo ausente
+fuera `pass` en otro run · sólo 2 de los 79 tienen un hermano del mismo árbol. **Causa: no demostrada.**
+La hipótesis de J3g («la salida forzada gana a la escritura de los últimos informes del hijo») es de
+IA y está sin probar; no se ha construido nada sobre ella.
+
+## Lo que no está en git, y reproducir
+
+Los 99 TAP y los 95 logs (430 MB). GitHub conserva los artefactos 7 días: **caducan el 8-oct-2026**.
+
+    D=<carpeta fuera del árbol>
+    cp docs/master/evidencias/SCRUM-1339/b-arts-hoy.tsv $D/arts-hoy.tsv
+    node docs/master/evidencias/SCRUM-1339/b-bajar.mjs     $D      # taps/, logs/, bajados.tsv
+    node docs/master/evidencias/SCRUM-1339/b-analizar.mjs  $D .    # analisis.tsv, faltan-por-fichero.tsv
+    node docs/master/evidencias/SCRUM-1339/b-controles.mjs $D
+
+# SCRUM-1339c · Los avistamientos del trinquete de zona: cola contigua, también con el fichero A SOLAS
+
+**Medido contra:** `origin/main` = `8c0bf72850988e5f06266f330ab4c6c869f42a36` · 2026-10-01T15:28:36Z
+
+A9: aviso → cicatriz J3 «Rotulé como «lo que cambió a solas» la lista que imprime el trinquete de zona, que es una intersección: antes de ponerle nombre a la cifra de otro instrumento se lee cómo la filtra.» — no se pudo comprobar: el rótulo era de un instrumento de evidencias, no de la tanda; lo cazó que la cifra del log (34) no cabía en la lista (3), y el instrumento ahora imprime esa diferencia
+
+**El encargo** (orquestador, c.17938 y c.17943): ordenar por posición en el FICHERO los casos
+`pass ↔ ausente` que el trinquete de zona denunció en los PR #2072 y #2071, para saber si son
+contiguos o están salpicados. Sólo lectura de logs que ya existen. **No se ha tocado
+`tests/vigia-atascados.test.mjs`, ni `scrum524b`, ni el trinquete, ni ningún workflow.**
+
+## Lo medido
+
+Jobs de zona: `110425624435` (run `36878986636`, #2072) y `110428904670` (run `36879667635`, #2071).
+El orden sale del fuente por AST. El blob de `tests/vigia-atascados.test.mjs` es `741e399b` en la
+cabeza y la base de los dos PR y en `main`; el de `scrum524b`, `4714abda`.
+
+| run | fichero (casos) | en la pasada ENTERA | con el fichero A SOLAS (repesca) |
+| --- | --- | --- | --- |
+| #2072 | `vigia-atascados` (64) | faltan 31 en Midway: posiciones **34 a 64** | cambian 22: posiciones **43 a 64** |
+| #2071 | `vigia-atascados` (64) | faltan 3 en Midway: **62 a 64** | cambian 34; el log sólo nombra 3 (62 a 64) |
+| #2071 | `scrum524b` (41) | faltan 8 en Kiritimati: **34 a 41** | cambian 2: 38 y 39 |
+
+Las tres pérdidas de la pasada entera son **contiguas y llegan hasta el final**. En `scrum524b` el
+censo por AST sale CIEGO (sus nombres se construyen en un bucle: el punto ciego declarado, visto
+actuar), y el orden se saca del informe del job obligatorio del mismo run, donde el fichero está
+entero (`c-scrum524b-orden-de-informe-2071.txt`).
+
+## Por qué «contiguo y hasta el final» NO dice que la pasada abortara
+
+El encargo proponía: contiguos y hasta el final → abortó, no es este ticket; salpicados → sí lo es.
+**Ese criterio no separa las dos cosas**, porque la cola contigua es la firma medida de este ticket
+(§③: 45 de 45 bloques situables; SCRUM-1339b: 49 de 53). El orquestador lo retiró en c.17950.
+
+Lo que sí habla contra un aborto por contenido, medido:
+
+1. **Mismo blob, puntos de corte distintos.** En #2072, el mismo job cortó tras el caso 33 en la
+   pasada entera y tras el 42 con el fichero a solas. En #2071, tras el 61. En `main` sobre
+   `01d99084`, tras el 41 (c.17803). Un aborto por contenido cortaría siempre en el mismo sitio.
+2. **Ninguna entrada de fichero.** Entre los candidatos de los dos logs hay 0 claves cuyo nombre sea
+   una ruta. ⚠️ Sin control positivo en estos logs: ninguno trae un caso así con el que comparar.
+3. **El obligatorio de esos mismos runs trae el fichero entero, por nombre:** `vigia-atascados`
+   64 de 64 y en el orden del fichero, en los jobs `110425624016` y `110428904637`
+   (`c-salida-presentes.txt`). Control negativo del lector: 0 de 64 sobre el log del job de zona.
+   `scrum524b`: 41 líneas `✔` en cada uno de los dos, contadas por texto y no por AST (sus
+   nombres se construyen en un bucle).
+
+## Lo nuevo: se pierde también con UN fichero y sin carga
+
+La repesca del trinquete vuelve a medir cada fichero candidato **a solas**, en las dos zonas. En los
+dos jobs `vigia-atascados` volvió a cambiar de veredicto a solas (22 y 34 casos), y `scrum524b`
+también (2). Hasta hoy lo medido en local era 0 de 120 (J6f, Windows). **No construyo nada con esto:**
+un reproductor de un fichero × N con y sin `forceExit` toca el runner o un workflow.
+
+Y explica cuándo el job sale rojo: sólo cuando la pérdida de la pasada entera se REPITE a solas
+sobre los mismos nombres. Si no coincide, el job sale verde habiendo perdido casos.
+
+## Dos datos de c.17938 que la medición corrige
+
+- «Otros 9 casos del mismo fichero sí están en las dos»: no. Son las «NO CONFIRMADAS a solas»:
+  faltaron también en la pasada entera (posiciones 34 a 42). La entera perdió 31, no 22.
+- Los 22 no son lo que faltó: son lo que la repesca confirmó.
+- (Menor) El último commit que toca el fichero en `main` es `e91a3741`, del 15-sep-2026.
+
+## Lo que el trinquete no imprime (reportado, no tocado)
+
+Sus «CAMBIAN DE VEREDICTO» son la **intersección** de lo que cambió en la pasada entera y lo que
+cambió a solas. Lo que se pierde sólo a solas no sale en ningún sitio: en #2071 la línea dice
+«confirma 34 de 3», y 31 de esos 34 no se pueden situar.
+
+## Lo que NO sé
+
+- Si los casos ausentes se ejecutaron y su informe no llegó, o no se ejecutaron. Lo separaría un
+  testigo de ejecución dentro del test, y eso es tocar tests o runner.
+- En qué zona faltaron a solas: el trinquete no lo imprime.
+- Si los 2 de `scrum524b` a solas (38 y 39) son un bloque en medio o la diferencia entre dos colas
+  de distinto largo (38 a 41 y 40 a 41). El log no lo distingue.
+- **La causa. No demostrada.**
+
+## Mis errores
+
+- Mi lector por nombre importaba el otro guion, y éste ejecutaba su línea de órdenes al cargarse:
+  salió «uso:» con código 2 en vez de medir. Lo delató el código de salida. Ahora lleva la puerta
+  del principal.
+- Mi primera salida decía «REPESCA A SOLAS · cambiaron 3» donde el log decía 34: rotulé la
+  intersección como si fuera la repesca. Es la cicatriz de arriba.
+- El mismo lector decía «el orden ES el del fichero» con 0 presentes (`[].every()` es verdadero).
+  Lo vi en mi propio control negativo. Ahora dice que no puede juzgarlo.
+
+## Reproducir (desde la raíz del repo)
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/c-ordenar-por-fichero.mjs --autocontrol
+    node $E/c-ordenar-por-fichero.mjs $E/c-zona-2072.txt tests/vigia-atascados.test.mjs tests/vigia-atascados.test.mjs
+    node $E/c-ordenar-por-fichero.mjs $E/c-zona-2071.txt tests/vigia-atascados.test.mjs tests/vigia-atascados.test.mjs
+    gh run view 36878986636 --job 110425624016 --log > <fuera del árbol>/build-2072.log
+    node $E/c-presentes-en-el-obligatorio.mjs <fuera del árbol>/build-2072.log tests/vigia-atascados.test.mjs
+
+Las posiciones valen mientras el blob del fichero siga siendo `741e399b`. Los logs de los jobs no
+están en git (2,6 MB cada uno); los recortes del job de zona, sí (`c-zona-2072.txt`, `c-zona-2071.txt`).
