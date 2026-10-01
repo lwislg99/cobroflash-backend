@@ -1,0 +1,71 @@
+POBLACION: 69 jobs de zona no cancelados
+09-30T22:36 | succ | 24.21.0 | 20260920.314 | 9215 | 9224 | dif=-9 | noconf=9 | be73d94f | scrum-1093-bulk-paid-zona | scrum834-puerta-avisador-rojo:0/9
+09-30T22:38 | succ | 24.21.0 | 20260927.320 | 9195 | 9218 | dif=-23 | noconf=23 | 6dd5bce2 | scrum-1154-apendice-google-f | vigia-atascados:0/23
+09-30T22:49 | succ | 24.21.0 | 20260920.314 | 9239 | 9237 | dif=2 | noconf=2 | 46195e86 | main | scrum454-destructivo-sin-comprobacion:0/2
+09-30T23:12 | succ | 24.21.0 | 20260927.320 | 9231 | 9225 | dif=6 | noconf=18 | 3e95cf0e | scrum-1142-toque-44-anular-r | scrum931-un-solo-importe-de-plantilla:0/6 vigia-atascados:0/12
+09-30T23:16 | succ | 24.21.0 | 20260920.314 | 9234 | 9232 | dif=2 | noconf=2 | 53184172 | scrum-1307-negarse-con-envio | scrum524b-trinquete-de-la-tabla:0/2
+09-30T23:19 | succ | 24.21.0 | 20260927.320 | 9232 | 9232 | dif=0 | noconf=0 | ac10c11b | scrum-1308-scripts-sin-nombr | 
+09-30T23:20 | succ | 24.21.0 | 20260927.320 | 9232 | 9232 | dif=0 | noconf=0 | e8c2ec65 | scrum-1309-banner-mail-sent | 
+09-30T23:21 | succ | 24.21.0 | 20260920.314 | 9247 | 9247 | dif=0 | noconf=0 | f98f3ee1 | main | 
+09-30T23:27 | succ | 24.21.0 | 20260927.320 | 9251 | 9251 | dif=0 | noconf=0 | 94bdc494 | scrum-1303-estado-en-el-wher | 
+09-30T23:33 | succ | 24.21.0 | 20260927.320 | 9251 | 9251 | dif=0 | noconf=0 | 9b4e436c | scrum-1312-boton-email-recib | 
+09-30T23:41 | succ | 24.21.0 | 20260927.320 | 9270 | 9270 | dif=0 | noconf=0 | e9e71cab | main | 
+10-01T00:38 | succ | 24.21.0 | 20260927.320 | 9274 | 9274 | dif=0 | noconf=0 | 2db8965a | scrum-1315-gemelos-estado-de | 
+10-01T00:39 | succ | 24.21.0 | 20260927.320 | 9260 | 9260 | dif=0 | noconf=0 | 8a5eb2c2 | scrum-1253-remedicion-liva-1 | 
+10-01T00:42 | succ | 24.21.0 | 20260927.320 | 9260 | 9260 | dif=0 | noconf=0 | bc2958d3 | scrum-1244-cabe-hoy-medido | 
+10-01T00:47 | succ | 24.21.0 | 20260920.314 | 9265 | 9265 | dif=0 | noconf=0 | 1c6221d4 | scrum-1257-p8-sin-justifican | 
+10-01T00:47 | succ | 24.21.0 | 20260927.320 | 9260 | 9260 | dif=0 | noconf=0 | 69cd83d7 | scrum-1316-censo-tipo-iva | 
+10-01T00:55 | succ | 24.21.0 | 20260920.314 | 9272 | 9295 | dif=-23 | noconf=23 | 94f6a574 | scrum-1262-baja-whatsapp-cor | vigia-atascados:0/23
+10-01T01:00 | succ | 24.21.0 | 20260920.314 | 9270 | 9262 | dif=8 | noconf=8 | 023bd450 | scrum-1313-ciegos-editor-sue | scrum524b-trinquete-de-la-tabla:0/8
+10-01T01:00 | succ | 24.21.0 | 20260920.314 | 9260 | 9260 | dif=0 | noconf=0 | 970af255 | scrum-1311-suelo-de-poblacio | 
+10-01T01:01 | succ | 24.21.0 | 20260920.314 | 9260 | 9252 | dif=8 | noconf=8 | b86ed567 | scrum-1244-cabe-hoy-medido | scrum524b-trinquete-de-la-tabla:0/8
+10-01T01:18 | succ | 24.21.0 | 20260920.314 | 9270 | 9270 | dif=0 | noconf=0 | b397e075 | scrum-1313-ciegos-editor-sue | 
+10-01T01:19 | succ | 24.21.0 | 20260920.314 | 9264 | 9264 | dif=0 | noconf=0 | efc6d61c | scrum-1318-resend-ya-tiene-c | 
+10-01T01:24 | succ | 24.21.0 | 20260920.314 | 9239 | 9259 | dif=-20 | noconf=22 | 50ff50e4 | scrum-1319-linea-progreso-si | scrum522-guards-fuera-de-la-tanda:0/6 scrum524b-trinquete-de-la-tabla:0/1 vigia-atascados:0/15
+10-01T01:53 | succ | 24.21.0 | 20260920.314 | 9271 | 9271 | dif=0 | noconf=0 | f3ea7a5a | scrum-1322-el-bot-entiende-l | 
+10-01T01:58 | succ | 24.21.0 | 20260920.314 | 9264 | 9263 | dif=1 | noconf=1 | 9a6b5e21 | scrum-1318-resend-ya-tiene-c | scrum524b-trinquete-de-la-tabla:0/1
+10-01T01:59 | succ | 24.21.0 | 20260920.314 | 9260 | 9260 | dif=0 | noconf=0 | 88d744a0 | scrum-1128b-las-tres-por-efe | 
+10-01T02:01 | succ | 24.21.0 | 20260920.314 | 9271 | 9271 | dif=0 | noconf=0 | cd7afa56 | scrum-1321-ancla-de-mutacion | 
+10-01T02:04 | succ | 24.21.0 | 20260927.320 | 9285 | 9285 | dif=0 | noconf=0 | 9bf1075a | scrum-1323-resumen-vs-detall | 
+10-01T02:06 | fail | 24.21.0 | 20260920.314 | 9264 | 9243 | dif=21 | noconf=19 | eabcb2d5 | main | scrum524b-trinquete-de-la-tabla:0/10 scrum834-puerta-avisador-rojo:0/9 vigia-atascados:37/22
+10-01T02:10 | succ | 24.21.0 | 20260920.314 | 9274 | 9267 | dif=7 | noconf=9 | b397e075 | scrum-1313-ciegos-editor-sue | scrum237-negacion-respaldada:0/9
+10-01T02:11 | succ | 24.21.0 | 20260920.314 | 9255 | 9278 | dif=-23 | noconf=23 | 2db8965a | scrum-1315-gemelos-estado-de | vigia-atascados:0/23
+10-01T02:11 | fail | 24.21.0 | 20260927.320 | 9234 | 9257 | dif=-23 | noconf=33 | 8a5eb2c2 | scrum-1253-remedicion-liva-1 | scrum237-negacion-respaldada:0/9 vigia-atascados:6/30
+10-01T02:11 | succ | 24.21.0 | 20260920.314 | 9264 | 9264 | dif=0 | noconf=0 | b86ed567 | scrum-1244-cabe-hoy-medido | 
+10-01T02:11 | succ | 24.21.0 | 20260927.320 | 9236 | 9236 | dif=0 | noconf=2 | 970af255 | scrum-1311-suelo-de-poblacio | scrum524b-trinquete-de-la-tabla:0/1 vigia-atascados:0/1
+10-01T02:11 | succ | 24.21.0 | 20260920.314 | 9299 | 9299 | dif=0 | noconf=0 | 94f6a574 | scrum-1262-baja-whatsapp-cor | 
+10-01T02:11 | fail | 24.21.0 | 20260920.314 | 9260 | 9262 | dif=-2 | noconf=11 | f3ea7a5a | scrum-1322-el-bot-entiende-l | scrum834-puerta-avisador-rojo:19/9 scrum853-avisador-solo-obligatorio:0/11
+10-01T02:14 | succ | 24.21.0 | 20260927.320 | 9174 | 9174 | dif=0 | noconf=0 | 4d8b10a6 | scrum-1281-fixture-git-raiz- | 
+10-01T02:14 | succ | 24.21.0 | 20260920.314 | 9171 | 9171 | dif=0 | noconf=0 | 9571fad0 | scrum-825-guards-ciegos-a-fa | 
+10-01T02:14 | succ | 24.21.0 | 20260920.314 | 9171 | 9171 | dif=0 | noconf=0 | 9bd5804c | scrum-1289-tap-del-obligator | 
+10-01T02:14 | succ | 24.21.0 | 20260920.314 | 9165 | 9166 | dif=-1 | noconf=1 | f971e25a | scrum-1285c-censo-escrituras | scrum649-el-ancla-que-no-apunta:0/1
+10-01T02:14 | succ | 24.21.0 | 20260920.314 | 9160 | 9159 | dif=1 | noconf=1 | 17353ced | scrum-1268c-sembrar-qa-iva-e | scrum649-el-ancla-que-no-apunta:0/1
+10-01T02:14 | succ | 24.21.0 | 20260920.314 | 9175 | 9175 | dif=0 | noconf=0 | 727a3df2 | scrum-1289b-reporters-como-a | 
+10-01T02:15 | succ | 24.21.0 | 20260927.320 | 9172 | 9172 | dif=0 | noconf=0 | 5d163e68 | scrum-1298-mesa-por-puesto | 
+10-01T02:20 | succ | 24.21.0 | 20260927.320 | 9292 | 9280 | dif=12 | noconf=12 | bbf98561 | scrum-1323-resumen-vs-detall | scrum834-puerta-avisador-rojo:0/12
+10-01T02:20 | succ | 24.21.0 | 20260927.320 | 9309 | 9302 | dif=7 | noconf=9 | ce567ed4 | main | scrum237-negacion-respaldada:0/9
+10-01T02:36 | succ | 24.21.0 | 20260920.314 | 9323 | 9323 | dif=0 | noconf=0 | d8b4ec3b | scrum-1102e-evidencia-boe-po | 
+10-01T02:37 | succ | 24.21.0 | 20260920.314 | 9307 | 9332 | dif=-25 | noconf=25 | bb26db2c | scrum-1320-hallazgo-manda-so | scrum834-puerta-avisador-rojo:0/25
+10-01T02:47 | succ | 24.21.0 | 20260920.314 | 9322 | 9323 | dif=-1 | noconf=1 | 693c174e | scrum-1319-linea-progreso-si | scrum649-el-ancla-que-no-apunta:0/1
+10-01T02:48 | fail | 24.21.0 | 20260920.314 | 9318 | 9318 | dif=0 | noconf=22 | cae25752 | scrum-1322-el-bot-entiende-l | scrum1262-la-baja-corta-todas-las-vias:10/10 scrum834-puerta-avisador-rojo:0/16 scrum853-avisador-solo-obligatorio:0/4 scrum996-suelo-de-arranque:0/2
+10-01T02:50 | succ | 24.21.0 | 20260927.320 | 9333 | 9334 | dif=-1 | noconf=1 | 277341f2 | scrum-1321-ancla-de-mutacion | scrum649-el-ancla-que-no-apunta:0/1
+10-01T02:51 | fail | 24.21.0 | 20260920.314 | 9295 | 9298 | dif=-3 | noconf=18 | 537913a7 | scrum-1257-p8-sin-justifican | scrum237-negacion-respaldada:0/9 scrum524b-trinquete-de-la-tabla:2/1 scrum834-puerta-avisador-rojo:0/9
+10-01T02:51 | succ | 24.21.0 | 20260920.314 | 9322 | 9323 | dif=-1 | noconf=1 | 84e4a8d3 | scrum-1244-cabe-hoy-medido | scrum524b-trinquete-de-la-tabla:0/1
+10-01T02:51 | succ | 24.21.0 | 20260920.314 | 9323 | 9314 | dif=9 | noconf=9 | 157b8de0 | scrum-1316-censo-tipo-iva | scrum834-puerta-avisador-rojo:0/9
+10-01T02:51 | succ | 24.21.0 | 20260927.320 | 9321 | 9294 | dif=27 | noconf=31 | af9c6697 | scrum-1128b-las-tres-por-efe | scrum312-importador-clientes:0/2 scrum524b-trinquete-de-la-tabla:0/21 vigia-atascados:0/8
+10-01T02:52 | fail | 24.21.0 | 20260920.314 | 9321 | 9302 | dif=19 | noconf=0 | ba86ead0 | scrum-1324-nadie-vigila-el-s | vigia-atascados:30/19
+10-01T03:03 | succ | 24.21.0 | 20260920.314 | 9338 | 9338 | dif=0 | noconf=0 | ba712b6d | main | 
+10-01T03:07 | succ | 24.21.0 | 20260927.320 | 9356 | 9356 | dif=0 | noconf=0 | ae531791 | scrum-1323-resumen-vs-detall | 
+10-01T03:11 | succ | 24.21.0 | 20260927.320 | 9337 | 9330 | dif=7 | noconf=7 | 3e6dbdcd | scrum-1320-hallazgo-manda-so | scrum176-guard-mensaje:0/7
+10-01T03:13 | succ | 24.21.0 | 20260920.314 | 9326 | 9333 | dif=-7 | noconf=19 | 037e0b97 | scrum-1252-evidencias-libro- | scrum312-importador-clientes:0/6 scrum834-puerta-avisador-rojo:0/13
+10-01T03:13 | succ | 24.21.0 | 20260927.320 | 9348 | 9348 | dif=0 | noconf=0 | a83c849d | scrum-1258-el-tipo-del-regis | 
+10-01T03:19 | succ | 24.21.0 | 20260927.320 | 9338 | 9348 | dif=-10 | noconf=10 | ce3e4d29 | scrum-1102f-sii-y-foral-en-c | scrum1262-la-baja-corta-todas-las-vias:0/10
+10-01T03:22 | succ | 24.21.0 | 20260927.320 | 9358 | 9358 | dif=0 | noconf=0 | abf3181b | scrum-1325-una-tilde-no-romp | 
+10-01T03:26 | succ | 24.21.0 | 20260927.320 | 9337 | 9347 | dif=-10 | noconf=18 | 31829c7c | scrum-1321-ancla-de-mutacion | scrum237-negacion-respaldada:0/9 scrum853-avisador-solo-obligatorio:0/3 scrum931-un-solo-importe-de-plantilla:0/6
+10-01T03:27 | succ | 24.21.0 | 20260920.314 | 9377 | 9377 | dif=0 | noconf=0 | e4b969e0 | main | 
+10-01T03:38 | succ | 24.21.0 | 20260920.314 | 9402 | 9402 | dif=0 | noconf=0 | 72e790ac | scrum-1324-nadie-vigila-el-s | 
+10-01T03:44 | succ | 24.21.0 | 20260920.314 | 9415 | 9415 | dif=0 | noconf=0 | eca6c3f4 | scrum-1329-cita-firmada-larg | 
+10-01T03:49 | succ | 24.21.0 | 20260920.314 | 9414 | 9416 | dif=-2 | noconf=16 | c1fe641c | main | scrum834-puerta-avisador-rojo:0/9 vigia-atascados:0/7
+10-01T03:54 | fail | 24.21.0 | 20260927.320 | 9421 | 9399 | dif=22 | noconf=35 | 258fc29b | main | scrum834-puerta-avisador-rojo:11/12 vigia-atascados:0/34
+10-01T04:01 | succ | 24.21.0 | 20260927.320 | 9457 | 9457 | dif=0 | noconf=0 | 81de3e8e | scrum-1330-una-sellada-no-se | 
+con algun fichero en repesca (aparte de canarios y 592): 35 · de ellos rojos: 7

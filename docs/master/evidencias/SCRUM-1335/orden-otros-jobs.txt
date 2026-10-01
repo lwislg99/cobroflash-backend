@@ -1,0 +1,20 @@
+== job 110186236745 · scrum834-puerta-avisador-rojo · nombres extraidos del log: 9
+casos por regex: 53 · ausentes: 9
+ausentes casados con un caso: 9
+............................................AAAAAAAAA
+== job 110213649929 · scrum834-puerta-avisador-rojo · nombres extraidos del log: 11
+casos por regex: 53 · ausentes: 11
+ausentes casados con un caso: 11
+..........................................AAAAAAAAAAA
+== job 110185005492 · vigia-atascados · nombres extraidos del log: 22
+casos por regex: 64 · ausentes: 22
+ausentes casados con un caso: 22
+..........................................AAAAAAAAAAAAAAAAAAAAAA
+== job 110186137556 · vigia-atascados · nombres extraidos del log: 6
+casos por regex: 64 · ausentes: 6
+ausentes casados con un caso: 6
+..........................................................AAAAAA
+== job 110195238163 · scrum1262-la-baja-corta-todas-las-vias · nombres extraidos del log: 10
+casos por regex: 6 · ausentes: 10
+ausentes casados con un caso: 5
+.AAAAA
