@@ -36,6 +36,60 @@ function mensajeDeFalloAlFirmar(e, estado) {
   return 'No hemos podido registrar la firma' + (detalle ? ` (${detalle})` : '');
 }
 if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFalloAlFirmar;
+
+// ── SCRUM-1353 · LO QUE ESTE MÓVIL SABE DE LA FIRMA Y EL SERVIDOR NO ───────────────────────────
+//
+// Medido en SCRUM-1351: un albarán con su firma guardada en la cola se reabría igual que uno sin
+// firmar, y volver a firmarlo REEMPLAZABA la guardada sin decirlo. Y una firma que el servidor
+// rechazó para siempre al subir la cola desaparecía sin que esta pantalla lo contara.
+//
+// Los dos textos están en `docs/microcopy/2026-10-01-SCRUM-1353-firma-guardada-y-rechazo.md`.
+// Cada uno en UN literal, tal cual se firmó (SCRUM-1353 comentario 17881): no se parten.
+const TEXTO_YA_HAY_FIRMA_GUARDADA = 'Ya hay una firma de este albarán guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.';
+const TEXTO_FIRMA_RECHAZADA_ALBARAN = 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el albarán.';
+
+/**
+ * ¿Hay una firma de ESTE albarán esperando en la cola del móvil? `null` = no se pudo leer.
+ *
+ * Tres respuestas y no dos: sin almacén no se sabe, y «no se sabe» no puede pintarse como «no hay».
+ *
+ * ⚠️ Se mira la CLAVE de la cola (`firma:albaran:<id>`), que es la que decide qué firma reemplaza
+ * a cuál. No vale preguntárselo a `estadoDeLaFirmaDelAlbaran(id, false, cola)`: con el servidor
+ * sin confirmar contesta ① también con la cola VACÍA, y la caja saldría en todo albarán sin firmar
+ * (lo cazó el test del viaje, SCRUM-1351, antes de salir de esta máquina).
+ */
+async function firmaDeEsteAlbaranEnCola(albaranId) {
+  try {
+    const cola = await window.leerFirmasPendientes();
+    if (!cola || cola.estado !== window.GUARDADO) return null;
+    const clave = 'firma:albaran:' + String(albaranId);
+    return (cola.firmas || []).some((f) => f && f.claveIdempotencia === clave);
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * El aviso de una firma encolada que el servidor rechazó al subirla, o `null` si no hay nada
+ * cierto que decir.
+ *
+ * 🔴 CON `invalid_id` NO SE DICE: el texto promete que volver a firmar sirve, y con ese código
+ * repetir da el mismo no. Callar ahí es peor que avisar, pero afirmar algo falso es peor que callar.
+ */
+async function avisoDeFirmaRechazada(albaranId) {
+  if (typeof window.leerRechazosDeFirma !== 'function') return null;
+  let r;
+  try { r = await window.leerRechazosDeFirma(); } catch (_e) { return null; }
+  if (!r || r.estado !== window.GUARDADO || !Array.isArray(r.rechazos)) return null;
+  const clave = 'firma:albaran:' + String(albaranId);
+  const rechazo = r.rechazos.find((x) => x && x.clave === clave);
+  if (!rechazo || rechazo.codigo === 'invalid_id') return null;
+  return TEXTO_FIRMA_RECHAZADA_ALBARAN;
+}
+if (typeof window !== 'undefined') {
+  window.TEXTO_YA_HAY_FIRMA_GUARDADA = TEXTO_YA_HAY_FIRMA_GUARDADA;
+  window.TEXTO_FIRMA_RECHAZADA_ALBARAN = TEXTO_FIRMA_RECHAZADA_ALBARAN;
+}
 //
 // LA PÁGINA DE DETALLE DEL ALBARÁN. Hasta hoy el albarán no tenía página: vivía como una FILA
 // dentro de la pila de DOCUMENTOS del Trabajo, con sus acciones apretadas en la fila.
@@ -389,6 +443,35 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     page.appendChild(cajaFirma);
   }
 
+  // ── SCRUM-1353 · SIN FIRMAR PARA EL SERVIDOR, PERO ESTE MÓVIL SABE ALGO MÁS ──────────────
+  //
+  // Dos hechos que sólo viven aquí, y que hasta hoy esta pantalla no contaba:
+  //   · hay una firma de este albarán en la cola → la MISMA caja del estado ①, que es verdad
+  //     palabra por palabra aunque el servidor siga diciendo «emitido»;
+  //   · el servidor rechazó para siempre la que estaba en la cola → hay que volver a firmar.
+  // Si ya volvió a firmar (hay una nueva en la cola), el rechazo es viejo y no se repite.
+  let firmaGuardadaAqui = false;
+  if (alb.estado !== 'firmado') {
+    firmaGuardadaAqui = (await firmaDeEsteAlbaranEnCola(alb.id)) === true;
+    if (firmaGuardadaAqui) {
+      const cajaFirma = document.createElement('div');
+      cajaFirma.style.cssText = 'margin:0 0 16px';
+      cajaFirma.dataset.firmaGuardadaAqui = '1';
+      cajaFirma.innerHTML = window.pintarEstadoDeFirma(window.FIRMA_SOLO_EN_ESTE_MOVIL);
+      page.appendChild(cajaFirma);
+    } else {
+      const rechazada = await avisoDeFirmaRechazada(alb.id);
+      if (rechazada) {
+        const aviso = document.createElement('div');
+        aviso.className = 'alert warning';
+        aviso.setAttribute('role', 'alert');
+        aviso.dataset.firmaRechazada = '1';
+        aviso.textContent = rechazada;
+        page.appendChild(aviso);
+      }
+    }
+  }
+
   // ── ACCIONES · una primaria, dos secundarias, el resto en «⋮» ───────────────────────────
   const acts = document.createElement('div');
   acts.className = 'job-doc-toolbar';
@@ -500,8 +583,13 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     // botón que promete firmar y te manda a otra pantalla a buscar otro botón es peor que no
     // tenerlo. El componente de firma ya es global (`signaturePad.js`), así que esto es la MISMA
     // mecánica en otra superficie, no una nueva.
-    btnFirmarAqui: () => mk('btnFirmarAqui', () => {
+    btnFirmarAqui: () => mk('btnFirmarAqui', async () => {
       if (!window.openSignaturePad) { setStatus('error', 'El componente de firma no está cargado.'); return; }
+      // SCRUM-1353 · firmar encima de una firma guardada la REEMPLAZA (la clave de la cola es por
+      // albarán). Se puede —un cliente que firmó mal en un sótano tiene que poder repetir—, pero
+      // no en silencio. Se pregunta a la cola EN EL CLIC y no al pintar: quien firma sin red y
+      // cancela el pad sigue en esta misma pantalla, que se pintó cuando aún no había nada.
+      if ((await firmaDeEsteAlbaranEnCola(alb.id)) === true && !window.confirm(TEXTO_YA_HAY_FIRMA_GUARDADA)) return;
       window.openSignaturePad({
         title: 'Firma del cliente',
         // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
@@ -703,6 +791,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   for (const accion of (window.ALBARAN_ACTION_REGISTRY || [])) {
     const destino = window.destinoEfectivo(accion, alb.estado, ctx);
     if (destino === 'oculta' || destino === 'seccion-propia') continue;
+    // SCRUM-1353 · con una firma de este albarán ya guardada en el móvil no se ofrece mandarlo a
+    // firmar por WhatsApp: serían dos firmas compitiendo en dos dispositivos, y desde aquí la otra
+    // no se ve. «Firmar aquí mismo» se queda (avisa antes de reemplazar).
+    if (accion.id === 'btnEnviarFirmar' && firmaGuardadaAqui) continue;
     const crear = botones[accion.id];
     if (!crear) continue; // acción declarada sin botón: la caza el guard, no se inventa aquí
     const b = crear();
