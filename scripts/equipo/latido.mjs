@@ -33,6 +33,10 @@
 //                  con su edad. Medido el 1-oct: ocho, del 27 al 29-sep, ninguna contestada, y la
 //                  sección 2 no las veía porque solo mira las de hoy. Una pregunta no caduca porque
 //                  muera quien la hizo. Y un state.json que no se deja leer se DICE: antes se saltaba.
+//   7 · CONTEXTO → (SCRUM-1282) cuánta ventana ocupa cada sesión viva, leído de SU jsonl. Antes solo
+//                  lo daba `sesion.mjs contexto`, que es la copia INSTALADA: responde ALTERADO cada vez
+//                  que un PR toca `sesion.mjs` en main (medido el 1-oct con #2002) y deja a todo el
+//                  equipo sin la cifra. Aquí se lee desde un árbol y no se toca esa puerta.
 //
 // DE DÓNDE SALEN LAS SESIONES: del REGISTRO de trabajos (`~/.claude/jobs/*/state.json`), nunca del
 // panel. Medido el 1-oct: dos sesiones lanzadas desde una carpeta nueva quedaron pidiendo un permiso,
@@ -51,6 +55,10 @@ import { fileURLToPath } from 'node:url';
 import {
   esAsuntoDelVigia, causaDelAtasco, checksObligatoriosDeReglas, ultimaEjecucionPorCheck, GRACIA_MINUTOS,
 } from '../vigia-atascados.mjs';
+// Solo las funciones PURAS de `sesion.mjs`. Su puerta de integridad guarda la CLI (lanzar, parar…), no
+// estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
+// instalada esté desfasada (SCRUM-1282).
+import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } from './sesion.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -272,6 +280,37 @@ export function seccionTraspasos({ sesiones, mtimeDelTraspaso, ahora }) {
   };
 }
 
+// ───────────────────────────── 7 · CONTEXTO ─────────────────────────────
+
+const enK = (n) => `${Math.round(n / 1000)}k`;
+
+/**
+ * La ocupación de ventana de cada sesión que sigue viva, leída de SU jsonl (SCRUM-1282).
+ * @param {{sesiones:object[], contextoDe:(s:object)=>{tokens:number,cuando?:string}|null|undefined, sueltas?:{nombre:string,ctx:{tokens:number,cuando?:string}|null}[], ahora:number, umbral?:number}} e
+ * `contextoDe`: `undefined` = no encontré o no pude leer su jsonl · `null` = lo leí y no trae ni un turno con uso.
+ * `sueltas`: transcripts recientes que no son de ningún trabajo de fondo (el orquestador es uno).
+ */
+export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umbral = UMBRAL_CONTEXTO }) {
+  if (!Array.isArray(sesiones)) return ciega('CONTEXTO', 'no se pudo leer la carpeta de trabajos');
+  const vivas = sesiones.filter((s) => !ESTADOS_TERMINALES.includes(s.estado) && (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
+  const filas = []; const sinLeer = []; const sinUso = [];
+  for (const s of vivas) {
+    const c = contextoDe(s);
+    if (c === undefined) sinLeer.push(`${s.nombre} (${s.id})`);
+    else if (c === null) sinUso.push(`${s.nombre} (${s.id})`);
+    else filas.push({ nombre: `${s.nombre} (${s.id})`, ...c });
+  }
+  for (const x of sueltas) { if (x.ctx) filas.push({ nombre: x.nombre, ...x.ctx }); else sinUso.push(x.nombre); }
+  filas.sort((a, b) => b.tokens - a.tokens);
+  const hace = (f) => (Number.isFinite(Date.parse(f.cuando)) ? ` · último turno hace ${Math.round((ahora - Date.parse(f.cuando)) / 60000)} min` : '');
+  const alertas = filas.filter((f) => f.tokens > umbral)
+    .map((f) => ({ sesion: f.nombre, linea: `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega${hace(f)}` }));
+  const poblacion = `${vivas.length} sesiones vivas en ${HORAS_DE_SESION} h + ${sueltas.length} transcript(s) reciente(s) sin trabajo de fondo · ${filas.length} leídas: ${filas.map((f) => `${f.nombre.split(' (')[0] || f.nombre} ${enK(f.tokens)}`).join(' · ') || 'ninguna'}${sinUso.length ? ` · ${sinUso.length} sin ningún turno con uso todavía (${sinUso.join(', ')})` : ''} · es la ventana del ÚLTIMO turno (entrada + caché), no lo gastado: al compactar BAJA`;
+  // Una sesión viva cuyo jsonl no aparece NO ocupa cero: no se sabe cuánto ocupa.
+  if (sinLeer.length) return { nombre: 'CONTEXTO', pudo: false, motivo: `no encontré o no pude leer el jsonl de ${sinLeer.length} sesión(es) viva(s): ${sinLeer.join(', ')}. Debajo va SOLO lo que sí pude leer: ${poblacion}`, alertas, poblacion: null };
+  return { nombre: 'CONTEXTO', pudo: true, alertas, poblacion };
+}
+
 // ───────────────────────────── 4 · MAIN ─────────────────────────────
 
 /** @param {{commits:{sha:string, checkRuns:object[]|undefined}[], obligatorio?:string}} e — commits de main, del más NUEVO al más viejo. */
@@ -383,7 +422,7 @@ export function leerTrabajos(dir = dirDeTrabajos()) {
       id, nombre: s.name || (i >= 0 ? flags[i + 1] : id), estado: String(s.state || 'desconocido'), tempo: s.tempo, detalle: s.detail, needs: s.needs,
       actualizado: Date.parse(s.updatedAt) || fs.statSync(ruta).mtimeMs, creado: Date.parse(s.createdAt) || undefined,
       prs: (s.children || []).filter((c) => c && c.kind === 'pr').map((c) => Number(c.id)).filter(Number.isFinite),
-      transcript: s.linkScanPath,
+      transcript: s.linkScanPath, sessionId: s.sessionId,
     });
   }
   return { sesiones: out, ilegibles, sinEstado };
@@ -392,6 +431,45 @@ export function leerTrabajos(dir = dirDeTrabajos()) {
 export function leerSesiones(dir = dirDeTrabajos()) {
   const t = leerTrabajos(dir);
   return t && t.sesiones;
+}
+
+/** Un transcript sin tocar en más de esto no es de una sesión que esté trabajando ahora. */
+export const MINUTOS_DE_SUELTA = 60;
+
+function dirDeProyectos() { return path.join(os.homedir(), '.claude', 'projects'); }
+
+/** El jsonl de un trabajo: el que apunta su state.json, y si no está, por `sessionId` en todas las carpetas de proyecto. */
+function jsonlDe(s) {
+  if (s.transcript && fs.existsSync(s.transcript)) return s.transcript;
+  const carpetas = intentar(() => fs.readdirSync(dirDeProyectos(), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => path.join(dirDeProyectos(), e.name)));
+  return buscarJsonl({ sessionId: s.sessionId, carpetas, existe: (p) => fs.existsSync(p) }) || undefined;
+}
+
+/** `undefined` = sin ruta o ilegible · `null` = leído y sin ningún turno con uso. */
+export function contextoDeRuta(ruta) {
+  if (!ruta) return undefined;
+  const txt = intentar(() => fs.readFileSync(ruta, 'utf8'));
+  return txt === undefined ? undefined : contextoDelJsonl(txt);
+}
+
+/** Los jsonl recientes que NO son de ningún trabajo de fondo: el orquestador y las sesiones abiertas a mano. */
+function transcriptsSueltos(sesiones, ahora) {
+  const clave = (r) => path.resolve(r).toLowerCase();
+  const deTrabajo = new Set(sesiones.filter((s) => s.transcript).map((s) => clave(s.transcript)));
+  const ids = new Set(sesiones.map((s) => s.sessionId).filter(Boolean));
+  const out = []; const vistos = new Set();
+  for (const d of new Set(sesiones.filter((s) => s.transcript).map((s) => clave(path.dirname(s.transcript))))) {
+    for (const f of intentar(() => fs.readdirSync(d)) || []) {
+      const r = path.join(d, f);
+      if (!f.endsWith('.jsonl') || deTrabajo.has(clave(r)) || ids.has(f.slice(0, -6)) || vistos.has(clave(r))) continue;
+      vistos.add(clave(r));
+      const m = intentar(() => fs.statSync(r).mtimeMs);
+      if (!m || (ahora - m) / 60000 > MINUTOS_DE_SUELTA) continue;
+      const ctx = contextoDeRuta(r);
+      if (ctx !== undefined) out.push({ nombre: `(sin trabajo de fondo: ${f.slice(0, 8)})`, ctx });
+    }
+  }
+  return out;
 }
 
 function rutaDelLibro() {
@@ -542,7 +620,9 @@ function todo() {
   let libroGuardado = true;
   if (sesiones && libro !== undefined) { libro = actualizarLibro(libro || {}, sesiones); libroGuardado = guardarLibro(libro); }
   const sCem = seccionCementerio({ sesiones, ilegibles: trabajos ? trabajos.ilegibles : [], sinEstado: trabajos ? trabajos.sinEstado : [], libro, libroGuardado, ahora });
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem];
+  // 7 · contexto. Se lee el jsonl de cada una; nada de `claude agents` ni de la copia instalada.
+  const sCtx = seccionContexto({ sesiones, contextoDe: (s) => contextoDeRuta(jsonlDe(s)), sueltas: sesiones ? transcriptsSueltos(sesiones, ahora) : [], ahora });
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
   return salidaDe(secciones);
 }
