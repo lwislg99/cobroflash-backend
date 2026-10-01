@@ -1,0 +1,100 @@
+id	creado	run	intento	evento	rama	conclusion	bytes	nul	resumenes	tests	fail	lineasOk	entero	entradas	arbol	declaradas	literales	faltan	donde
+11153959409	2026-10-01T10:27:57Z	36849000731	1/1	pull_request	scrum-1295-carriles-e-identidad	cancelled	817843	0	0			3099	NO						
+11154184038	2026-10-01T10:31:19Z	36848628189	1/1	pull_request	scrum-1283b-nombre-legal	success	2421717	2276827	2	9616	0	489	NO						
+11155370047	2026-10-01T10:32:12Z	36849042279	1/1	pull_request	scrum-1289b-reporters-como-argumentos	failure	2422824	0	1	9589	3	9589	sí		0718dccb916b	9243	9135	42	vigia-atascados.test.mjs×42/64:cola
+11155037253	2026-10-01T10:35:13Z	36849220602	1/1	pull_request	scrum-1281-fixture-git-raiz-propia	failure	2443750	2295434	2	9583	5	459	NO						
+11155007850	2026-10-01T10:35:52Z	36849232992	1/1	pull_request	scrum-1285c-censo-escrituras-sin-version	cancelled	2427136	2277118	2	9615	3	489	NO						
+11155495479	2026-10-01T10:36:13Z	36849234235	1/1	pull_request	scrum-1295-carriles-e-identidad	failure	2412773	2277159	2	9569	1	446	NO						
+11154859998	2026-10-01T10:42:29Z	36849634576	1/1	pull_request	scrum-1268c-sembrar-qa-iva-en-fraccion	success	2421263	2276352	2	9615	0	489	NO						
+11155242320	2026-10-01T10:43:26Z	36849735010	1/1	pull_request	scrum-1348-auditoria-de-cierres	success	2418518	2273668	2	9606	0	489	NO						
+11155896565	2026-10-01T10:45:53Z	36849723257	1/1	push	main	success	2421692	2276777	2	9616	0	489	NO						
+11155792032	2026-10-01T10:46:30Z	36850003623	1/1	pull_request	scrum-1289b-reporters-como-argumentos	success	2425557	0	1	9631	0	9631	sí		a205d52db4af	9243	9135	0	
+11155568415	2026-10-01T10:48:48Z	36850145997	1/1	pull_request	scrum-1289-tap-del-obligatorio	failure	2428236	2119865	2	9627	2	1212	NO						
+11155412754	2026-10-01T10:53:13Z	36850429077	1/1	pull_request	scrum-1290-registro-del-exit-2	success	2421371	2276456	2	9616	0	489	NO						
+11156072534	2026-10-01T10:54:28Z	36850740736	1/1	pull_request	scrum-1274-adicional-con-trabajo	success	2422832	2277935	2	9618	0	489	NO						
+11155664227	2026-10-01T10:54:42Z	36850049968	1/1	pull_request	scrum-1285c-censo-escrituras-sin-version	success	2422225	2277315	2	9618	0	489	NO						
+11155613999	2026-10-01T10:55:40Z	36850947992	1/1	push	main	success	2419401	2274547	2	9610	0	489	NO						
+11155238677	2026-10-01T10:56:13Z	36850853893	1/1	pull_request	scrum-1295-carriles-e-identidad	success	2423770	2278854	2	9624	0	489	NO						
+11156465455	2026-10-01T10:58:48Z	36851460711	1/1	pull_request	scrum-1293-listas-de-marcadores-a-json	failure	2431212	0	1	9649	1	9649	sí		6060515e29cc	9246	9137	0	
+11156535143	2026-10-01T10:59:02Z	36850488261	1/1	pull_request	scrum-1298-mesa-por-puesto	failure	2423860	2278993	2	9624	1	489	NO						
+11156074609	2026-10-01T11:06:25Z	36851945597	1/1	pull_request	scrum-743-cantidad-una-sola-forma	cancelled	791241	0	0			2978	NO						
+11156501959	2026-10-01T11:06:46Z	36851933697	1/1	pull_request	scrum-1285b-plan-de-cobro-con-version	cancelled	1922755	0	0			7616	NO						
+11156304095	2026-10-01T11:08:33Z	36852394629	1/1	pull_request	scrum-1348b-normas-aceptacion	success	2428558	0	1	9640	0	9640	sí		d978130aab3e	9252	9144	0	
+11156229790	2026-10-01T11:12:08Z	36851820389	1/1	pull_request	scrum-1289-tap-del-obligatorio	failure	2423870	0	1	9602	2	9602	sí		4771b9f8fc25	9254	9146	40	scrum161-evidencia-tanda.test.mjs×2/22:cola scrum522-guards-fuera-de-la-tanda.test.mjs×7/17:cola vigia-atascados.test.mjs×31/64:cola
+11157960193	2026-10-01T11:13:39Z	36852648203	1/1	pull_request	scrum-1281-fixture-git-raiz-propia	failure	2443368	0	1	9643	3	9643	sí		623fce039bc2	9255	9147	0	
+11156727644	2026-10-01T11:15:43Z	36852825128	1/1	pull_request	scrum-1293-listas-de-marcadores-a-json	success	2425064	0	1	9624	0	9624	sí		d6c1c2d7a584	9255	9146	34	scrum813-trinquete-de-zona.test.mjs×10/28:cola vigia-atascados.test.mjs×24/64:cola
+11156583791	2026-10-01T11:20:06Z	36853108354	1/1	pull_request	scrum-1298-mesa-por-puesto	success	2431406	0	1	9652	0	9652	sí		5f5ab89818ef	9264	9156	0	
+11157782049	2026-10-01T11:25:29Z	36853164723	1/1	pull_request	scrum-1285b-plan-de-cobro-con-version	failure	2433115	0	1	9645	3	9645	sí		b34398ab10ed	9257	9149	0	
+11158721194	2026-10-01T11:26:25Z	36853168880	1/1	pull_request	scrum-743-cantidad-una-sola-forma	failure	2426814	0	1	9638	0	9638	sí	scrum237-negacion-respaldada.test.mjs@2002ms	9d65522b0e65	9260	9152	11	scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada scrum834-puerta-avisador-rojo.test.mjs×3/53:cola
+11158766337	2026-10-01T11:27:42Z	36852203473	1/1	push	main	success	2428938	0	1	9640	0	9640	sí		d7385ac75226	9252	9144	0	
+11158891773	2026-10-01T11:29:57Z	36853506986	1/1	pull_request	scrum-1348b-normas-aceptacion	success	2428134	0	1	9640	0	9640	sí		b83cd72d199e	9252	9144	0	
+11157897958	2026-10-01T11:31:52Z	36852883417	1/1	pull_request	scrum-1349-entorno-prestado-trinquete	success	2431180	0	1	9648	0	9648	sí		6c5d7d1d3034	9260	9152	0	
+11158472369	2026-10-01T11:33:01Z	36854553477	1/1	pull_request	scrum-1289-tap-del-obligatorio	success	2435848	0	1	9669	0	9669	sí		82c9bc67532a	9266	9157	0	
+11158818005	2026-10-01T11:37:08Z	36855464152	1/1	pull_request	scrum-1351-viaje-firma-sin-red-albaran	success	2437781	0	1	9677	0	9677	sí		bfba5c8e1186	9274	9165	0	
+11157833830	2026-10-01T11:38:11Z	36855923508	1/1	pull_request	scrum-1350-latido	success	2431326	0	1	9654	0	9654	sí		8d0155d7f9fa	9282	9171	10	scrum176-guard-mensaje.test.mjs×7/11:cola scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11158194344	2026-10-01T11:42:42Z	36856153621	1/1	pull_request	scrum-1285b-plan-de-cobro-con-version	failure	2445660	0	1	9694	2	9694	sí		46eacbd58331	9291	9182	0	
+11158944035	2026-10-01T11:43:10Z	36856531526	1/1	pull_request	scrum-1302-firma-directa-ya-registrada	failure	2445151	0	1	9696	2	9696	sí		33962e564370	9298	9189	3	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11158439616	2026-10-01T11:44:39Z	36856141923	1/1	push	main	failure	2443850	0	1	9689	2	9689	sí		aa6858c0b5a1	9286	9177	0	
+11160490269	2026-10-01T11:50:22Z	36856729105	1/1	pull_request	scrum-1295-carriles-e-identidad	failure	2458792	0	1	9716	4	9716	sí		a5b3b741fe46	9316	9205	3	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11160241826	2026-10-01T11:58:22Z	36857817203	1/1	pull_request	scrum-1348b-normas-aceptacion	failure	2449667	0	1	9711	2	9711	sí		87797df40909	9308	9197	0	
+11159952484	2026-10-01T12:01:12Z	36856653864	1/1	push	main	failure	2450034	0	1	9711	2	9711	sí		551725909b57	9308	9197	0	
+11161251226	2026-10-01T12:08:50Z	36859091123	1/1	pull_request	scrum-1355-borrador-no-es-deuda	failure	2441265	0	1	9678	2	9678	sí		fff9b55930e2	9318	9207	30	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola scrum834-puerta-avisador-rojo.test.mjs×9/53:cola vigia-atascados.test.mjs×18/64:cola
+11161396399	2026-10-01T12:09:47Z	36859053253	1/1	pull_request	scrum-1358-main-rojo-entorno-prestado	success	2446727	0	1	9711	0	9711	sí		6268b4db7f35	9308	9197	0	
+11161905943	2026-10-01T12:10:37Z	36859123187	1/1	pull_request	scrum-1357-latido-cementerio	failure	2451827	0	1	9718	2	9718	sí		16e9ebe0bf84	9315	9204	0	
+11160747882	2026-10-01T12:13:14Z	36859314576	1/1	pull_request	scrum-1295-carriles-e-identidad	failure	2451726	0	1	9719	2	9719	sí		49c6a6a77bd9	9316	9205	0	
+11161437282	2026-10-01T12:15:17Z	36859418029	1/1	pull_request	scrum-1359-s5-deja-de-prestar-el-entorno	success	2446661	0	1	9711	0	9711	sí		9acf52ec0ad6	9308	9197	0	
+11161812993	2026-10-01T12:20:42Z	36860067926	1/1	push	main	success	2446069	0	1	9706	0	9706	sí		6268b4db7f35	9308	9197	5	scrum286-bloques-orden.test.mjs×5/24:cola
+11161313790	2026-10-01T12:23:00Z	36860261197	1/1	pull_request	scrum-1348b-normas-aceptacion	success	2444915	0	1	9703	0	9703	sí		bca2c166809c	9308	9197	3	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11161828771	2026-10-01T12:24:04Z	36860171227	1/2	pull_request	scrum-1357-latido-cementerio	failure	2446341	0	1	9711	0	9711	sí	scrum237-negacion-respaldada.test.mjs@3683ms	76d567c2ead3	9315	9204	8	scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+11161319227	2026-10-01T12:24:23Z	36860610412	1/1	pull_request	scrum-1353-albaran-firma-guardada-y-rechazo	failure	2450284	0	1	9706	1	9706	sí		f227c9c71ec7	9314	9203	4	scrum524b-trinquete-de-la-tabla.test.mjs×1/12:cola scrum888g-senal-en-la-firma.test.mjs×3/10:cola
+11162145171	2026-10-01T12:28:23Z	36860717695	1/1	pull_request	scrum-1285b-plan-de-cobro-con-version	success	2446868	0	1	9710	0	9710	sí		18d5abf0890f	9313	9202	6	scrum1262-la-baja-corta-todas-las-vias.test.mjs×1/10:cola scrum312-importador-clientes.test.mjs×5/27:cola
+11161966056	2026-10-01T12:31:52Z	36860567518	1/1	pull_request	scrum-1355-borrador-no-es-deuda	success	2449305	0	1	9721	0	9721	sí		80e4d8d451a9	9318	9207	0	
+11162485750	2026-10-01T12:32:06Z	36861121169	1/1	pull_request	scrum-1281-fixture-git-raiz-propia	success	2447813	0	1	9714	0	9714	sí		fa71e5d1bdb8	9312	9201	1	scrum524b-trinquete-de-la-tabla.test.mjs×1/12:cola
+11163190427	2026-10-01T12:33:36Z	36860982250	1/1	pull_request	scrum-743-cantidad-una-sola-forma	success	2448346	0	1	9719	0	9719	sí		0b4f0dfd6563	9316	9205	0	
+11162556478	2026-10-01T12:36:37Z	36861048272	1/1	pull_request	scrum-1354-dueno-de-la-marca	success	2450312	0	1	9724	0	9724	sí		ce47505c5225	9317	9204	0	
+11163240940	2026-10-01T12:37:45Z	36861724400	1/1	pull_request	scrum-1353-albaran-firma-guardada-y-rechazo	success	2448454	0	1	9717	0	9717	sí		995e0e155936	9314	9203	0	
+11163236187	2026-10-01T12:38:06Z	36861263916	1/1	pull_request	scrum-1360-caja-albaran-firma-de-parte	success	2443177	0	1	9695	0	9695	sí		cffc7bc8ddf4	9314	9202	23	vigia-atascados.test.mjs×23/64:cola
+11162202016	2026-10-01T12:39:33Z	36862095124	1/1	pull_request	scrum-1349c-diario-del-meta-guard	success	2446102	0	1	9707	0	9707	sí		085f4ac4d8f1	9312	9201	5	scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola
+11163032993	2026-10-01T12:46:58Z	36860171227	2/2	pull_request	scrum-1357-latido-cementerio	success	2448487	0	1	9717	0	9717	sí		76d567c2ead3	9315	9204	1	scrum1323-resumen-vs-detalle-sif1.test.mjs×1/14:cola
+11162514874	2026-10-01T12:52:53Z	36861747822	1/1	pull_request	scrum-1362-defectos-del-viaje-a-json	failure	2456036	0	1	9730	2	9730	sí		460e2055c1f3	9318	9206	0	
+11162069344	2026-10-01T12:54:17Z	36862419563	1/1	pull_request	scrum-1295-carriles-e-identidad	success	2445199	0	1	9705	0	9705	sí		63dc638db87b	9331	9220	23	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola scrum834-puerta-avisador-rojo.test.mjs×14/53:cola scrum931-un-solo-importe-de-plantilla.test.mjs×6/13:cola
+11162634523	2026-10-01T12:54:20Z	36860584970	1/1	push	main	success	2447082	0	1	9711	0	9711	sí		9acf52ec0ad6	9308	9197	0	
+11161994827	2026-10-01T12:55:47Z	36863578275	1/2	pull_request	scrum-1364-modelo-del-lanzador	failure	2459316	0	1	9763	0	9763	sí	scrum237-negacion-respaldada.test.mjs@2243ms	0517f7d4eeac	9362	9248	8	scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+11164565247	2026-10-01T13:00:57Z	36864447644	1/1	pull_request	scrum-1357-latido-cementerio	success	2464018	0	1	9775	0	9775	sí		6a3fdf18d4c5	9367	9253	0	
+11163436994	2026-10-01T13:04:27Z	36863272671	1/1	push	main	success	2461520	0	1	9768	0	9768	sí		3e6cf9c96bed	9360	9246	0	
+11164191448	2026-10-01T13:06:30Z	36865176712	1/1	pull_request	scrum-1282b-ocupacion-en-el-latido	success	2464723	0	1	9779	0	9779	sí		73e66aaa7943	9371	9257	0	
+11164124022	2026-10-01T13:19:09Z	36863578275	2/2	pull_request	scrum-1364-modelo-del-lanzador	success	2457694	0	1	9755	0	9755	sí		0517f7d4eeac	9362	9248	12	scrum1323-resumen-vs-detalle-sif1.test.mjs×4/14:cola scrum312-importador-clientes.test.mjs×5/27:cola scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11164528750	2026-10-01T13:20:05Z	36866668963	1/1	pull_request	scrum-1362-defectos-del-viaje-a-json	success	2467901	0	1	9792	0	9792	sí		0e7f401db001	9375	9260	0	
+11165270718	2026-10-01T13:20:13Z	36866764935	1/1	pull_request	scrum-1231-logo-solo-imagen-subida	cancelled	2466853	0	1	9786	0	9786	sí		6f9f367e2c31	9378	9264	0	
+11165470653	2026-10-01T13:20:57Z	36866436425	1/1	push	main	success	2462760	0	1	9770	0	9770	sí		73e66aaa7943	9371	9257	9	scrum834-puerta-avisador-rojo.test.mjs×9/53:cola
+11165356455	2026-10-01T13:25:24Z	36867360073	1/1	pull_request	scrum-1368-latido-despliegue-fallido	success	2465499	0	1	9780	0	9780	sí		ebbef3bf3dae	9372	9258	0	
+11165446741	2026-10-01T13:27:07Z	36867585600	1/1	pull_request	scrum-1363-tests-que-cubren	success	2465971	0	1	9784	0	9784	sí		ca5853f20bb4	9376	9262	0	
+11166806144	2026-10-01T13:30:52Z	36867693006	1/1	pull_request	scrum-1285-plan-de-cobro-version-pantalla	success	2466701	0	1	9786	0	9786	sí		b3086224f170	9378	9264	0	
+11164922920	2026-10-01T13:31:57Z	36867966094	1/1	pull_request	scrum-1352-invalid-id-inalcanzable-desde-el-pad	cancelled	2461472	0	1	9764	0	9764	sí		1bd49013353a	9371	9257	10	scrum454-destructivo-sin-comprobacion.test.mjs×6/14:cola vigia-atascados.test.mjs×4/64:cola
+11166502048	2026-10-01T13:35:03Z	36867929811	1/1	pull_request	scrum-1231-logo-solo-imagen-subida	success	2466797	0	1	9786	0	9786	sí		3d44856f8c0e	9378	9264	0	
+11164958708	2026-10-01T13:36:29Z	36868204270	1/1	pull_request	scrum-1295-carriles-e-identidad	success	2462581	0	1	9767	0	9767	sí		641963fe0bea	9385	9270	35	scrum834-puerta-avisador-rojo.test.mjs×35/53:cola
+11166937353	2026-10-01T13:37:55Z	36868709715	1/1	pull_request	scrum-1371-reintentar-no-vuelve-a-crear	success	2469927	0	1	9800	0	9800	sí		e2ac0cfc423a	9383	9268	0	
+11166322806	2026-10-01T13:38:49Z	36868764493	1/1	push	main	success	2468189	0	1	9793	0	9793	sí		98f01a4b4a1e	9378	9263	2	scrum996-suelo-de-arranque.test.mjs×2/22:cola
+11166563147	2026-10-01T13:41:09Z	36869452118	1/1	pull_request	scrum-1368b-prod-por-detras	success	2471112	0	1	9805	0	9805	sí		edb3434ebdaa	9391	9276	3	scrum522-guards-fuera-de-la-tanda.test.mjs×3/17:cola
+11166538590	2026-10-01T13:43:10Z	36868567466	1/1	pull_request	scrum-1356-latido-enganchado	success	2473623	0	1	9813	0	9813	sí		1dba4c288eaa	9396	9281	0	
+11165494538	2026-10-01T13:44:57Z	36869390442	1/1	pull_request	scrum-1192-censo-cierre-transitivo	success	2465350	0	1	9776	0	9776	sí		81b12968454c	9391	9276	32	scrum834-puerta-avisador-rojo.test.mjs×32/53:cola
+11167900275	2026-10-01T13:52:12Z	36869558169	1/1	pull_request	scrum-1373-drenado-avisa-firmas-confirmadas	failure	2475407	0	1	9815	1	9815	sí		8dba40f76f3e	9398	9283	0	
+11168195206	2026-10-01T13:52:38Z	36869360556	1/1	pull_request	scrum-1352-invalid-id-inalcanzable-desde-el-pad	success	2472282	0	1	9807	0	9807	sí		d0cd9123a4ab	9390	9275	0	
+11167975771	2026-10-01T13:54:10Z	36871008807	1/1	pull_request	scrum-1377-censo-fecha-raiz-del-arbol	failure	2492360	0	1	9833	1	9833	sí		4fa14ffaff60	9421	9306	5	scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola
+11167078669	2026-10-01T13:55:24Z	36870942366	1/1	pull_request	scrum-1378-latido-pr-de-quien-empujo	success	2480531	0	1	9837	0	9837	sí		b624d73d691e	9420	9305	0	
+11168056827	2026-10-01T14:01:04Z	36871837399	1/1	pull_request	scrum-1381-censo-escritores-por-fila	cancelled	1244779	0	0			4952	NO						
+11168271951	2026-10-01T14:01:09Z	36871031378	1/1	pull_request	scrum-1380-suelo-corrio-y-no-reporto	failure	2487895	0	1	9814	1	9814	sí		3a1ea75f2fc6	9422	9306	25	scrum834-puerta-avisador-rojo.test.mjs×25/53:cola
+11168560474	2026-10-01T14:02:11Z	36871803226	1/1	pull_request	scrum-1382-borrador-no-es-fallo-real	success	2479636	0	1	9833	0	9833	sí		541d50c9d50f	9423	9308	4	scrum1323-resumen-vs-detalle-sif1.test.mjs×4/14:cola
+11167468696	2026-10-01T14:08:59Z	36872039381	1/1	push	main	success	2477821	0	1	9826	0	9826	sí		e4e8078d4a7a	9417	9302	3	scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+11167529063	2026-10-01T14:11:55Z	36872127553	1/1	pull_request	scrum-1302-firma-directa-ya-registrada	success	2483127	0	1	9846	0	9846	sí		3ee6b262ae11	9429	9314	0	
+11167474519	2026-10-01T14:13:23Z	36872559721	1/1	pull_request	scrum-1377-censo-fecha-raiz-del-arbol	success	2481971	0	1	9841	0	9841	sí		5ad41834725e	9426	9311	2	scrum996-suelo-de-arranque.test.mjs×2/22:cola
+11167739879	2026-10-01T14:16:42Z	36872847972	1/1	pull_request	scrum-1231-logo-solo-imagen-subida	failure	2478584	0	1	9833	0	9833	sí	scrum237-negacion-respaldada.test.mjs@2725ms	c5295efbda25	9428	9313	13	scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+11168791303	2026-10-01T14:18:50Z	36872822042	1/1	pull_request	scrum-1365-collect-rest-solo-aceptados	success	2482419	0	1	9844	0	9844	sí		396c59cce351	9427	9312	0	
+11168955893	2026-10-01T14:20:53Z	36873341958	1/1	pull_request	scrum-1376-aviso-rechazo-separado-de-los-botones	success	2475632	0	1	9817	0	9817	sí		6fa2a92a9c4b	9422	9307	22	scrum834-puerta-avisador-rojo.test.mjs×22/53:cola
+11169840878	2026-10-01T14:23:49Z	36873098548	1/1	pull_request	scrum-1385-latido-main-mira-main	success	2482119	0	1	9841	0	9841	sí		dd80008ca212	9424	9309	0	
+11170115972	2026-10-01T14:24:24Z	36873388049	1/1	pull_request	scrum-1295-carriles-e-identidad	success	2483078	0	1	9846	0	9846	sí		— (sin log)				
+11169631306	2026-10-01T14:24:39Z	36873132718	1/1	pull_request	scrum-1372-criba-de-cierres	success	2479704	0	1	9827	0	9827	sí		44d5fb1147b2	9441	9326	31	vigia-atascados.test.mjs×31/64:cola
+11170030913	2026-10-01T14:27:18Z	36873487461	1/1	pull_request	scrum-1380-suelo-corrio-y-no-reporto	success	2482357	0	1	9842	0	9842	sí		0bc4bb51e075	9433	9317	8	scrum1350-latido.test.mjs×8/32:cola
+11169263288	2026-10-01T14:33:27Z	36872965725	1/1	pull_request	scrum-1381-censo-escritores-por-fila	success	2478552	0	1	9828	0	9828	sí		7ca23bde604c	9432	9317	17	scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola scrum834-puerta-avisador-rojo.test.mjs×2/53:cola vigia-atascados.test.mjs×10/64:cola
+11169178875	2026-10-01T14:38:55Z	36874745101	1/1	pull_request	scrum-1285-alcance-de-los-escritores	success	2485810	0	1	9856	0	9856	sí		6eda39879449	9439	9324	0	
+11169259421	2026-10-01T14:41:55Z	36875190979	1/1	push	main	success	2487204	0	1	9861	0	9861	sí		— (sin log)				
