@@ -296,8 +296,15 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       // hacerlo: lo que falta no está en ninguna sección de este Trabajo, es que no existe el
       // documento. Se navega por el mismo camino que ya usan el detalle de cliente y la lista de
       // facturas —`renderAppView('quotes-new')`, sin estado—, no por uno nuevo.
+      // SCRUM-1274 · …pero CON el Trabajo y su cliente. Sin ellos, el presupuesto nacía suelto y al
+      // aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para la misma obra (SCRUM-195).
       if (h.accion === 'hacer-presupuesto') {
-        if (window.renderAppView) window.renderAppView('quotes-new');
+        if (window.renderAppView) {
+          // Por el argumento que ya existe (`template`, SCRUM-140), sin líneas: no es una plantilla.
+          window.renderAppView('quotes-new', {
+            template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+          });
+        }
         return;
       }
       // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando

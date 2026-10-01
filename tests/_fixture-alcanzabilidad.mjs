@@ -22,12 +22,10 @@
 // ── LOS CASOS, Y QUÉ IMITA CADA UNO ──────────────────────────────────────────────────────────
 // Los números van en el rango 9500+ para que no puedan colisionar nunca con un ticket de verdad
 // (ni con los 9000+ del fixture del que se deriva).
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { repoFixture } from './_censo-fixture.mjs';
-import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { repoFixture, temporalDeFixtureGit, gitDeFixture } from './_censo-fixture.mjs'; // SCRUM-1281 (y SCRUM-864: el temporal se borra pase lo que pase)
 
 /**
  * Cada caso declara QUÉ imita y QUÉ tiene que dar. La expectativa vive con el caso: un banco cuyo
@@ -98,12 +96,12 @@ let cache = null;
 export function repoAlcanzabilidad() {
   if (cache && fs.existsSync(cache)) return cache;
   const base = repoFixture();
-  const raiz = temporal('alcanzabilidad-');
+  // SCRUM-1281: en la raíz propia de la familia y con el git que marca la firma del intermitente.
+  const raiz = temporalDeFixtureGit('alcanzabilidad-');
   fs.rmSync(raiz, { recursive: true, force: true });
 
-  const gEn = (cwd) => (...args) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  execFileSync('git', ['clone', '--quiet', base, raiz], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const gEn = (cwd) => (...args) => gitDeFixture(args, { cwd });
+  gitDeFixture(['clone', '--quiet', base, raiz]);
   const g = gEn(raiz);
   g('config', 'user.email', 'fixture@yaqu.test');
   g('config', 'user.name', 'Fixture');

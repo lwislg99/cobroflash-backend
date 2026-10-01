@@ -1,0 +1,9 @@
+{
+  "_que_es": "SCRUM-1381 · Escrituras que YA condicionan por el `updatedAt` de la fila sobre una fila con otros escritores que no tocan lo que protegen: el falso 409 es posible. Las mide `scripts/_censo-escrituras-sin-version.mjs --escritores`. Quien arregla una (versión propia del trozo, no la de la fila) BORRA su entrada aquí; quien añade una nueva sin declararla ve caer `tests/scrum1381-escritores-por-fila.test.mjs`.",
+  "declaradas": [
+    {
+      "sitio": "src/modules/system/app/routes/quotesAdmin.routes.ts::PATCH /:id/billing-plan",
+      "motivo": "SCRUM-1285: medido por S2 en producción el 1-oct-2026. `PUT /:id/notes` autoguarda las notas internas y mueve el updatedAt del presupuesto: «Guardar plan» devuelve 409 por la propia nota. Arreglarlo es de S1/S2."
+    }
+  ]
+}

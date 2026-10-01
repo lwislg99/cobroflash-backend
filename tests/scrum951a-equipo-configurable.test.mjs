@@ -40,8 +40,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/instalar.mjs',
-    de: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos };',
-    a: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt };',
+    // SCRUM-1298: la linea gano `mesas` (opcional). El ancla se re-ancla; lo que la mutacion quita
+    // sigue siendo `traspasos`, y sigue teniendo que matar.
+    de: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos, ...(mesas ? { mesas } : {}) };',
+    a: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, ...(mesas ? { mesas } : {}) };',
     cae: '🔴 A2 · el instalador graba en config.json la carpeta de los traspasos',
   },
   {
@@ -72,8 +74,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     // SCRUM-954: la linea gano el argumento `job` (el state.json de cada trabajo). El ancla se
     // re-ancla; lo que la mutacion quita sigue siendo `equipo`, y sigue teniendo que matar.
-    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, job: (id) => estadoDeJob(config, id) });',
-    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), repo: config.repo, job: (id) => estadoDeJob(config, id) });',
+    // SCRUM-1298: gano tambien `mesas`; mismo re-anclaje.
+    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, mesas: config.mesas, job: (id) => estadoDeJob(config, id) });',
+    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), repo: config.repo, mesas: config.mesas, job: (id) => estadoDeJob(config, id) });',
     cae: '🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo',
   },
   {
@@ -99,6 +102,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "if (estado.status === 0 && ve?.veredicto === 'ESTADO') poner(",
     a: 'if (true) poner(',
     cae: '🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA',
+  },
+  {
+    // SCRUM-1364 · declarado e ilegible tiene que PARAR. Tratado como ausente, un config roto lanzaría igual.
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "  if (typeof m !== 'string' || !MODELO.test(m)) {",
+    a: '  if (false) {',
+    cae: '🔴 SCRUM-1364: un `modelo` declarado que no se deja leer PARA, no se sustituye por otro',
+  },
+  {
+    // SCRUM-1364 · el modelo del config tiene que LLEGAR al lanzamiento: leerlo y no pasarlo es el mismo defecto.
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "argsLanzar({ modo: 'nueva', nombre, prompt, equipo, modelo });",
+    a: "argsLanzar({ modo: 'nueva', nombre, prompt, equipo });",
+    cae: '🔴 SCRUM-1364: el `modelo` del config llega al lanzamiento y sale en el veredicto',
   },
 ];
 
@@ -381,7 +398,42 @@ test('🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo y lanza el su
     assert.deepEqual(lanzamientos(b.leerLlamadas()), [], '🔴 llegó a lanzar con un nombre ajeno');
     const suyo = b.correr('sesion.mjs', 'lanzar', 'jv-s1', promptF);
     assert.equal(suyo.v?.veredicto, 'LANZADA', `🔴 no lanza una sesión de su propio equipo: ${JSON.stringify(suyo.v)}`);
-    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-s1', '--permission-mode', 'auto', '--model', 'sonnet', 'encargo']);
+    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-s1', '--permission-mode', 'auto', '--model', 'opus', 'encargo']);
+  } finally { b.limpiar(); }
+});
+
+test('🔴 SCRUM-1364: el `modelo` del config llega al lanzamiento y sale en el veredicto', () => {
+  const b = banco({ equipo: { ...EQUIPO_JV, modelo: 'modelo-de-prueba-1' } });
+  try {
+    const suyo = b.correr('sesion.mjs', 'lanzar', 'jv-s1', b.escribir('encargo.md', 'encargo'));
+    assert.equal(suyo.v?.veredicto, 'LANZADA', `🔴 NO PUDE MIRAR: no lanzó (${JSON.stringify(suyo.v)})`);
+    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-s1', '--permission-mode', 'auto', '--model', 'modelo-de-prueba-1', 'encargo'],
+      '🔴 el config declara un modelo y la sesión sale con otro');
+    assert.equal(suyo.v.modelo, 'modelo-de-prueba-1', '🔴 el veredicto no dice con qué modelo lanzó: un cambio de modelo sería mudo');
+  } finally { b.limpiar(); }
+  // Sin la clave, el veredicto también lo dice: opus.
+  const c = banco({ equipo: EQUIPO_JV });
+  try {
+    const r = c.correr('sesion.mjs', 'lanzar', 'jv-s1', c.escribir('encargo.md', 'encargo'));
+    assert.equal(r.v?.modelo, 'opus', `🔴 sin \`modelo\` en el config no dice opus: ${JSON.stringify(r.v)}`);
+  } finally { c.limpiar(); }
+});
+
+test('🔴 SCRUM-1364: un `modelo` declarado que no se deja leer PARA, no se sustituye por otro', () => {
+  const malos = { vacío: '', nulo: null, número: 4, lista: ['opus'], 'con forma de flag': '--dangerously-skip-permissions', 'con espacio': 'opus --x', mayúsculas: 'OPUS' };
+  for (const [caso, modelo] of Object.entries(malos)) {
+    assert.equal(s.modeloDe({ modelo }).veredicto, 'NO-PUDE-MIRAR', `🔴 ${caso}: se acepta, o cae a otro modelo (${JSON.stringify(s.modeloDe({ modelo }))})`);
+    assert.throws(() => s.argsLanzar({ modo: 'nueva', nombre: 'sesion-1', prompt: 'p', modelo }), `🔴 ${caso}: argsLanzar construye un lanzamiento con él`);
+  }
+  // CONTROL: los buenos pasan, y por la misma función — si no, lo de arriba no distingue nada.
+  for (const bueno of ['opus', 'sonnet', 'claude-opus-5-5']) assert.equal(s.modeloDe({ modelo: bueno }).modelo, bueno);
+  // Y por la puerta, con la copia instalada: ni lanza ni llama a claude.
+  const b = banco({ equipo: { ...EQUIPO_JV, modelo: '' } });
+  try {
+    const r = b.correr('sesion.mjs', 'lanzar', 'jv-s1', b.escribir('encargo.md', 'encargo'));
+    assert.equal(r.v?.veredicto, 'NO-PUDE-MIRAR', `🔴 con el modelo ilegible lanza igual: ${JSON.stringify(r.v)}`);
+    assert.match(String(r.v?.motivo), /modelo/, '🔴 para, pero no dice que es por el modelo');
+    assert.deepEqual(b.leerLlamadas(), [], '🔴 llegó a llamar a claude');
   } finally { b.limpiar(); }
 });
 
@@ -400,7 +452,7 @@ test('🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo', () => {
   try {
     const r = b.correr('orquestador-arranque.mjs');
     assert.equal(r.v?.tanda?.veredicto, 'LANZADA', `🔴 la tanda no lanzó: ${JSON.stringify(r.v)}`);
-    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-jefe', '--permission-mode', 'auto', '--model', 'sonnet', PROMPT],
+    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-jefe', '--permission-mode', 'auto', '--model', 'opus', PROMPT],
       '🔴 la tanda lanza un nombre fijo en el código en vez del orquestador de su equipo');
   } finally { b.limpiar(); }
 });

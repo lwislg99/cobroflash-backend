@@ -118,7 +118,7 @@ test('scrum966: NEGATIVO — el censo de ramas no toca nada', () => {
 
 test('scrum966: la CLI nombra la rama huérfana y sale distinto de 0', () => {
   const env = { ...process.env };
-  delete env.FORCE_COLOR; delete env.NODE_TEST_CONTEXT;
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
   const r = spawnSync(process.execPath, [CLI, '--repo', principal], { encoding: 'utf8', env });
   assert.notEqual(r.status, 0, r.stderr);
   assert.match(r.stdout, /2 ramas locales sin worktree \(de 4\)/);

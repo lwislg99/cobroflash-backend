@@ -61,6 +61,7 @@ El código de salida es el del último tramo de la tubería.
 Un prefijo no es un nombre, y una subcadena tampoco.
 Cero no es «está limpio»: es «no he mirado».
 CI prueba el MERGE, no la rama.
+Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada. (SCRUM-1358)
 Una ventana fija es una tolerancia disfrazada.
 Un build roto no es un rojo: es un verde que no vale.
 Referenciar por posición caduca. Referenciar por identidad no.
@@ -86,7 +87,18 @@ Una operación que no se ejecutó se lee exactamente igual que un éxito.
 Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
 Una captura bonita no prueba que el botón funcione.
 «No está en el PATH» no es «no está».
+Un detector que acierta y publica donde nadie lee produce el mismo resultado que uno ciego. (SCRUM-1350)
+Antes de llamar mecanismo a lo que has visto, di sobre cuántos elementos lo mediste: un instante no es un régimen. (SCRUM-1350)
 Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
 Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 El límite de 200 líneas es del índice de la memoria, no de CLAUDE.md: mide cuál carga antes de recortar. (SCRUM-1294)
 Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy. (SCRUM-1154)
+Empujar no es entregar: antes de cerrar, mira el check obligatorio de tu último push, o di que no lo miraste. (SCRUM-1298)
+Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar. (SCRUM-1302)
+Que un commit no esté en main no dice que su contenido no esté: el trabajo entra por otra rama o bajo otro número. Se compara contenido, no ancestría ni número. (SCRUM-1348)
+Un lanzamiento que no cuaja dice lo mismo que uno que sí: «backgrounded» y un id. (SCRUM-1357)
+El panel vacío no es «no existe»: cuando el panel y el registro de trabajos discrepan, manda el registro. (SCRUM-1357)
+Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests; sólo el recuento lo distingue. (SCRUM-1366)
+Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido. (SCRUM-1356)
+Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
+Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)

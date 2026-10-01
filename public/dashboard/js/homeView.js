@@ -1452,19 +1452,33 @@ async function submitQuickQuote() {
       const phone = (document.getElementById("qq-customer-phone")?.value || qqState.customerPhone).trim();
       const newCustomer = await createCustomer({ name: customerName, phone: phone || null });
       customerId = newCustomer.id;
+      // SCRUM-1371 · el cliente recién creado SE RECUERDA. Si un paso de más abajo falla, el
+      // botón vuelve a encenderse, y sin esto cada reintento daba de alta al cliente otra vez.
+      // Teclear otro nombre lo olvida solo (el buscador pone `customerId` a null).
+      qqState.customerId = customerId;
     }
 
     const merchant_id = window.appMerchantId;
 
     // 3. Crear el presupuesto
-    const quote = await createQuote({
+    const cuerpoDelPresupuesto = {
       merchant_id,
       customer_id: customerId,
       currency: (window.appLocale?.currency || "EUR"),
       paymentTerms: qqState.paymentTerms,
       created_via: qqState.createdVia === 'voice' ? 'voice' : 'text', // VZ-3
       ...quotePayload,
-    });
+    };
+    // 🔴 SCRUM-1371 · REINTENTAR NO VUELVE A CREAR. Si el envío de abajo falla, el presupuesto YA
+    // existe: un segundo clic con los mismos datos creaba otro, y otro. Se recuerda el creado junto
+    // a lo que se pidió, y sólo se reutiliza si lo pedido es IDÉNTICO — si la persona cambió una
+    // línea antes de reintentar, es otro presupuesto y se crea.
+    const pedido = JSON.stringify(cuerpoDelPresupuesto);
+    let quote = qqState.creado && qqState.creado.pedido === pedido ? qqState.creado.quote : null;
+    if (!quote) {
+      quote = await createQuote(cuerpoDelPresupuesto);
+      qqState.creado = { pedido, quote };
+    }
 
     // A1.3: técnico por encima de su límite → el presupuesto nace pendiente de
     // aprobación. NO se intenta enviar (daba "API 409: pending_approval" crudo);

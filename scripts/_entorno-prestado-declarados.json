@@ -1,0 +1,11 @@
+{
+  "leeme": "SCRUM-1349 · Los ficheros que HOY lanzan un `node` hijo prestándole FORCE_COLOR / NODE_OPTIONS / NODE_TEST_CONTEXT, declarados UNO A UNO con su dueño y su motivo. Los mide scripts/_censo-entorno-prestado.mjs y los vigila tests/scrum1349-entorno-prestado-solo-baja.test.mjs. ESTA LISTA SOLO PUEDE BAJAR: un fichero nuevo aquí es un rojo, no una línea más. Quien arregla el suyo BORRA su entrada en el mismo commit (no se pone a 0). `llamadas` es cuántas llamadas acusadas tiene el fichero (por fichero y no por línea: las líneas se mueven). `confirmado: false` quiere decir que el dueño se dedujo y nadie lo ha confirmado. Daño CONTENIDO desde #2000 (los reporters ya no viajan en NODE_OPTIONS), deuda VIVA: lo próximo que alguien meta en esas variables volverá a colarse por aquí.",
+  "ficheros": {
+    "tests/scrum899d-aviso-de-uso.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin docs/master propio, atribuido por el ticket 899 que trabajó S5" },
+    "tests/node-p-capturado-sin-color.test.mjs": { "llamadas": 1, "dueno": "S5", "confirmado": false, "motivo": "le falta NODE_OPTIONS; sin número de ticket, nació en el commit «vigia y conflicto-de-registro» del 18-sep-2026" },
+    "tests/scrum815-idempotencia-del-webhook.test.mjs": { "llamadas": 1, "dueno": "S1", "confirmado": true, "motivo": "no pasa `env`: hereda entero; Carril dinero en su registro" },
+    "scripts/censo-mudez.mjs": { "llamadas": 1, "dueno": "S0", "confirmado": true, "motivo": "no pasa `env`: hereda entero; scripts/ de verificación y censos es de S0 (dos-equipos.md §3.3)" },
+    "scripts/guards-entrada.mjs": { "llamadas": 1, "dueno": "S0", "confirmado": true, "motivo": "no pasa `env`: hereda entero; scripts/ de verificación y censos es de S0 (dos-equipos.md §3.3)" },
+    "scripts/verificacion-s5/romper-los-quince.mjs": { "llamadas": 1, "dueno": "S0", "confirmado": true, "motivo": "no pasa `env`: hereda entero; la carpeta se llama verificacion-s5 pero la tabla §3.3 dice S0 (decisión del orquestador, 1-oct-2026)" }
+  }
+}
