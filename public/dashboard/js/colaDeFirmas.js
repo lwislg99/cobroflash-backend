@@ -325,6 +325,43 @@ async function olvidarElRechazo(clave) {
   try { await window.olvidarRechazoDeFirma(clave); } catch (_e) { /* best-effort */ }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1373 · EL DRENADO DICE QUÉ FIRMAS HA CONFIRMADO EL SERVIDOR
+//
+// Hasta aquí el drenado sólo repintaba la home. Una pantalla abierta sobre el documento —el
+// detalle de un albarán que sigue «emitido», ofreciendo firmar— no tenía forma de saber que su
+// firma acababa de subir.
+//
+// 🔴 AVISA, NO REPINTA. Quien sabe cuándo es seguro repintar una pantalla es la propia pantalla:
+// un repintado lanzado desde aquí al volver la red puede caer con el pad de firma abierto y
+// llevarse lo que alguien estaba haciendo. Aquí sólo se dice QUÉ ha quedado a salvo; qué hacer
+// con eso lo decide quien escucha.
+//
+// EL CONTRATO (también en `docs/master/SCRUM-1373.md`, que es donde lo lee quien no estuvo):
+//   · `window.alConfirmarseFirmas(fn)` suscribe y devuelve la función que DESUSCRIBE.
+//   · `fn` recibe una lista, nunca vacía, de `{ tipo, documentoId }`:
+//       `tipo`        'albaran' | 'parte' | 'parte-tecnico' — el de la entrada de la cola
+//                     (una entrada vieja sin tipo es 'albaran', como al subirla);
+//       `documentoId` el id del documento en la API, tal cual se encoló.
+//   · Entra en la lista una firma que el servidor TIENE y que ha SALIDO de la cola: la que acaba
+//     de subir y la que ya tenía (409 «ya firmado»). No entra la rechazada ni la que falló.
+//   · Se avisa UNA vez por drenado, al terminar. Un drenado que no confirma nada no avisa.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const oyentesDeFirmasConfirmadas = new Set();
+
+function alConfirmarseFirmas(fn) {
+  if (typeof fn !== 'function') return () => {};
+  oyentesDeFirmasConfirmadas.add(fn);
+  return () => { oyentesDeFirmasConfirmadas.delete(fn); };
+}
+
+/** Un oyente que lanza no tumba el drenado ni deja sin aviso a los demás. */
+function avisarDeFirmasConfirmadas(confirmadas) {
+  if (!confirmadas.length) return;
+  for (const fn of [...oyentesDeFirmasConfirmadas]) {
+    try { fn(confirmadas.map((c) => ({ tipo: c.tipo, documentoId: c.documentoId }))); } catch (_e) { /* el de al lado sigue */ }
+  }
+}
 
 /**
  * Vacía la cola: sube lo que pueda y deja dentro lo que no.
@@ -354,6 +391,8 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
   let subidas = 0;
   let yaEstaban = 0;
+  const confirmadas = [];   // SCRUM-1373 · las que el servidor tiene y han salido de la cola
+  const confirmada = (firma) => confirmadas.push({ tipo: firma.tipo || 'albaran', documentoId: firma.albaranId });
   const fallidas = [];
   const rechazadas = [];
 
@@ -371,7 +410,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
         // Ya está a salvo: sale de la cola igual que si la hubiéramos subido nosotros.
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
         await olvidarElRechazo(firma.claveIdempotencia);
-        if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
+        if (quitada && quitada.estado === window.GUARDADO) { yaEstaban += 1; confirmada(firma); }
         else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
         continue;
       }
@@ -403,7 +442,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
     // CONFIRMADA. Sólo aquí sale de la cola.
     const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
     await olvidarElRechazo(firma.claveIdempotencia);
-    if (quitada && quitada.estado === window.GUARDADO) subidas += 1;
+    if (quitada && quitada.estado === window.GUARDADO) { subidas += 1; confirmada(firma); }
     else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'subió y no se pudo sacar de la cola' });
   }
 
@@ -421,6 +460,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   // marca de una cola vacía es del detector, que es quien la consume al avisar.
   const teniaAlgo = cola.firmas.length > 0;
   if (teniaAlgo && quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
+  avisarDeFirmasConfirmadas(confirmadas);
   return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
@@ -562,3 +602,4 @@ window.ordenDeDrenado = ordenDeDrenado;
 window.elServidorYaLaTiene = elServidorYaLaTiene;
 window.elServidorLaRechaza = elServidorLaRechaza;
 window.drenarFirmasPendientes = drenarFirmasPendientes;
+window.alConfirmarseFirmas = alConfirmarseFirmas;   // SCRUM-1373
