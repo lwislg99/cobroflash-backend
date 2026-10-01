@@ -1,0 +1,19 @@
+node v24.18.0 · win32
+
+MORIR=0
+  declarados en el fichero ...... 5
+  ejecutados (testigo) .......... 5: uno, dos, tres, cuatro, cinco
+  test:pass recibidos ........... 5: uno | dos | tres · muere aquí | cuatro | cinco
+  test:fail recibidos ........... 0:
+  test:summary .................. {"tests":5,"failed":0,"passed":5,"cancelled":0,"skipped":0,"todo":0,"topLevel":5,"suites":0}
+  ¿«CUADRAN» (summary.tests === acumulados)? true
+
+MORIR=1
+  declarados en el fichero ...... 5
+  ejecutados (testigo) .......... 3: uno, dos, tres
+  test:pass recibidos ........... 1: [LA RUTA DEL FICHERO, no un test] cobaya-de-cinco.mjs
+  test:fail recibidos ........... 0:
+  test:summary .................. {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0}
+  ¿«CUADRAN» (summary.tests === acumulados)? true
+
+EXIT=0
