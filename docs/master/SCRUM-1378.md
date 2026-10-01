@@ -1,7 +1,7 @@
 # SCRUM-1378 · En el latido, un PR es de quien lo EMPUJÓ, no de quien lo cita
 
 **Rama:** `scrum-1378-latido-pr-de-quien-empujo` · **Carril:** S5 (s5-1octd) · **Fecha:** 1-oct-2026
-**Medido contra:** `origin/main` = `31688d6b550ea0bbc1b99b381fdf857b821bdec9` · 2026-10-01T13:36:00Z
+**Medido contra:** `origin/main` = `bc8acb9c9300b121c9afad5e8fab0239851a3436` · 2026-10-01T13:50:00Z
 
 A9: comprobación → `tests/scrum1350-latido.test.mjs`
 
@@ -72,8 +72,12 @@ no estaba abierto; aquí queda cubierto por el test, no por una pasada real.
 
 ## Dependencia
 
-Importa de `.claude/hooks/latido-cierre.mjs`, que entra con #2097 (SCRUM-1356). Esta rama se empuja
-con #2097 ya en `main`; si se empujara antes, el import no resuelve y cae toda la tanda del fichero.
+Importa de `.claude/hooks/latido-cierre.mjs`, que entró con #2097 (SCRUM-1356). El trabajo se hizo
+sobre la rama de la S0 y NO se empujó hasta que #2097 estuvo en `main` (`bc8acb9c`): la rama sale de
+ahí. La dependencia no vive en ningún prompt: si alguien retira o renombra `ramasEmpujadas`, el
+import no resuelve y `tests/scrum1350-latido.test.mjs` cae entero.
+
+La medición contra las sesiones reales de arriba se hizo sobre `31688d6b` + la rama de #2097.
 
 ## Mis errores
 
