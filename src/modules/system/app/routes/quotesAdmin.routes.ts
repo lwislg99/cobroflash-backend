@@ -19,7 +19,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { leerVersion, condicionDeVersion, esVersionSuperada, ERROR_VERSION_SUPERADA, ERROR_VERSION_INVALIDA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
+import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA, ERROR_VERSION_INVALIDA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
 import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1288
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
@@ -489,7 +489,7 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     // 🔴 SCRUM-1285 · la versión va DENTRO del `where`, no en una comprobación previa: aquí
     // reemplazaba a ciegas, y un PATCH hecho sobre una versión vieja devolvía la base al plan viejo.
     const actualizado = await prisma.quote.update({
-      where: { id: quote.id, ...condicionDeVersion(leida) },
+      where: { id: quote.id, updatedAt: leida.version ?? undefined }, // undefined = no la mandó (transición): Prisma lo ignora
       data: { customBillingPlan: req.body.customBillingPlan },
     });
     return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas, version: actualizado.updatedAt });

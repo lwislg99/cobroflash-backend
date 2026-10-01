@@ -75,7 +75,8 @@ versión escribía. Ahora:
 - La respuesta devuelve `version` (la nueva) para el siguiente guardado.
 
 **Plantilla para el censo de S3:** `src/core/db/escrituraConVersion.ts` (`leerVersion`,
-`condicionDeVersion`, `esVersionSuperada`, los dos códigos). Cuatro líneas por ruta.
+`esVersionSuperada`, los dos códigos). Cuatro líneas por ruta. El `where` lleva `updatedAt` como LITERAL
+(no un spread): un spread lo vuelve OPACO para el censo 1285c, que lo midió así en CI.
 
 ⚠️ **Transición declarada:** sin `version` se escribe como hoy, porque la pantalla aún no la manda y
 exigirla rompería el guardado normal al desplegar. **Falta (S2):** que `quotesDetailView.js:807` mande

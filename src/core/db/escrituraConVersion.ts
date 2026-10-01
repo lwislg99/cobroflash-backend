@@ -17,8 +17,8 @@
 // olvido: la pantalla aún no la manda, y exigirla rompería el guardado normal el día del despliegue.
 // Cuando todas las pantallas que escriben esa fila la manden, se exige y se retira este hueco.
 //
-// Para copiarlo en otra ruta: `leerVersion(req.body?.version)` → 400 si `!ok` → `...condicionDeVersion(v)`
-// en el `where` → `esVersionSuperada(err)` en el `catch` → 409 con `ERROR_VERSION_SUPERADA`.
+// Para copiarlo en otra ruta: `leerVersion(req.body?.version)` → 400 si `!ok` → `updatedAt: v.version ?? undefined`
+// LITERAL en el `where` (un spread lo vuelve OPACO para el censo 1285c) → `esVersionSuperada(err)` en el `catch` → 409 con `ERROR_VERSION_SUPERADA`.
 
 export const ERROR_VERSION_SUPERADA = 'version_superada';
 export const ERROR_VERSION_INVALIDA = 'version_invalida';
@@ -29,11 +29,6 @@ export function leerVersion(bruta: unknown): { ok: true; version: Date | null } 
   if (typeof bruta !== 'string' || bruta.trim() === '') return { ok: false };
   const d = new Date(bruta);
   return Number.isNaN(d.getTime()) ? { ok: false } : { ok: true, version: d };
-}
-
-/** El trozo de `where` que ata la escritura a la versión leída (vacío si no se mandó). */
-export function condicionDeVersion(v: { version: Date | null }): { updatedAt?: Date } {
-  return v.version ? { updatedAt: v.version } : {};
 }
 
 /** ¿El `update` no encontró la fila en la versión pedida? (Prisma: «Record to update not found».) */
