@@ -134,7 +134,7 @@ test('scrum946: NEGATIVO — el censo no toca nada: refs, índice y árboles igu
 
 test('scrum946: la CLI sale con 2 sobre el repo fabricado y declara la población', () => {
   const env = { ...process.env };
-  delete env.FORCE_COLOR; delete env.NODE_TEST_CONTEXT;
+  delete env.FORCE_COLOR; delete env.NODE_OPTIONS; delete env.NODE_TEST_CONTEXT;
   const r = spawnSync(process.execPath, [CLI, '--repo', principal], { encoding: 'utf8', env });
   assert.equal(r.status, 2, r.stderr);
   assert.match(r.stdout, /7 worktrees mirados · 1 con commits SIN EMPUJAR · 1 sucios recientes/);
