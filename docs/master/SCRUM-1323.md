@@ -258,6 +258,13 @@ riesgo que cubre es una llamada de una línea a la vista.
 
 - El test solo, en esta rama con `origin/main` (`eabcb2d5`) mergeado: 28 tests, 27 en verde y ② en
   rojo (el de Ⓑ: `main` todavía no lleva #2040). Con el máster de `50ff50e4`: 28/28.
-- `npm run guards:entrada`, `scrum237`, `scrum976`, `scrum1294`, `scrum525d` y los que leen el máster:
-  resultado en el cuerpo del PR y en el comentario de entrega del ticket.
-- La tanda entera va en CI.
+- Los 16 ficheros que leen el máster (éste incluido) más catorce guards de suite y de registro
+  (`scrum237`, `976`, `1294`, `525d`, `850`, `850b`, `938`, `1308`, `267`, `273`, `522`, `723`,
+  `859`, `1106`): 30 ficheros · 294 tests · 293 en verde · **1 rojo, el ② de este guard**.
+- Subtanda de 326 ficheros de `tests/` —los que nombran `readdirSync`, `docs/master`, `fixtures` o
+  el máster—: 2.904 tests · 2.888 en verde · 15 saltados (gateados por base) · **1 rojo, el mismo
+  ②**. EXIT=1 por ese rojo y por ningún otro. Corrida sobre el commit `c4794017` con `origin/main`
+  mergeado, antes de escribir esta sección; `dist/` no se recompiló tras el merge.
+- `npm run guards:entrada`, después de la última edición de este registro: resultado en el cuerpo
+  del PR.
+- La tanda entera no la lanza una sesión: va en CI.
