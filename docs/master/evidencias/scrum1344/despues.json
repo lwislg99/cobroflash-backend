@@ -1,0 +1,3484 @@
+{
+ "etiqueta": "despues",
+ "linea": "SCRUM-1344 · 36 arneses montan rutas con rol · 0 sin declararlo · y 27 montan rutas sin gate hoy · 0 sin declararlo · población: 1331 ficheros de tests/ leídos, 0 sin parsear; 63 arman un req de sesión contra un router de /admin (22 con reqDeSesion, 41 a mano, 0 sin rol) · SIN JUZGAR: 0, más 7 con un import de dist/ que no se puede resolver leyendo (y ningún req de sesión a la vista) · aparte: 2 cargan un router de /admin sin armarle un req de sesión, 31 solo routers públicos, 49 montan dist/app.js entero",
+ "filas": [
+  {
+   "fichero": "_banco-camino-real.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": null,
+    "pass": null,
+    "fail": null,
+    "skipped": null
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "_banco-emision-con-estado.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": null,
+    "pass": null,
+    "fail": null,
+    "skipped": null
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "_censo-arneses-de-router.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": null,
+    "pass": null,
+    "fail": null,
+    "skipped": null
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "_envio-doblado.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": null,
+    "pass": null,
+    "fail": null,
+    "skipped": null
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "albaran.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 17,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 2
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "bot-suite.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "pdfs.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum100-webhooks-fail-closed.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1001-sin-pago-la-pagina-lo-dice.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1008-ficha-articulo.test.mjs",
+   "ast": "sin-forma-de-sesion",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1022-importa-xlsx-real.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1035-cifras-del-cliente-todos-sus-documentos.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1040-facturas-recibidas-servidor.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 9,
+   "deSesion": 9,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 9,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1043-quien-me-debe-servidor.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1057-duplicados-antes-de-id.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1093-bulk-paid-hoy-de-madrugada.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1107b-rutas-garantia.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 9,
+   "deSesion": 9,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 9,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1108-aviso-garantia-retenida.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1108b-pantalla-garantia.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1138-patch-customers.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1151-conteo-no-deducible.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1171-trabajo-numero-whatsapp.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1184-serie-siguiente-numero.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1189b-tipo-contra-la-ruta-real.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 15,
+   "deSesion": 15,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 15,
+   "roles": [
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1199-avisos-alta-cliente.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum120-patch-job-roles.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1202-sin-accept-publico.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 1,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1212-correo-aceptado-sin-emitir-factura.test.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1226-firma-no-baja-el-estado.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 12,
+   "deSesion": 12,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 12,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1232-libro-sin-justificantes.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1235-el-correo-que-no-salio.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 11,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum124-r29-no-borrado-facturas.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1266b-aviso-no-salia-en-lo-dictado.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 30,
+   "deSesion": 30,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 30,
+   "roles": [
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum127-paywall-bloquea.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1271-importe-pendiente-de-facturar.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1276-decision-no-reabre.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 13,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1277-aviso-importe-aceptado.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1279-la-firma-ve-las-clausulas.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum128-send-endpoints-fail-closed.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1285b-plan-de-cobro-con-version.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 10,
+   "deSesion": 10,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 10,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1287-descripcion-no-se-corta.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1288-dinero-es-en-avisos-s1.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 1,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 1,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1291-fusion-mueve-direcciones-de-obra.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1292-cobro-pagado-no-retrocede.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 8,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1296-emitir-encola.test.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1299-respaldo-smtp-deja-fila.test.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1301-bizum-hoy-de-madrugada.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1302a-marca-en-la-vista-de-oficina.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 8,
+   "deSesion": 8,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 8,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1302f-envio-sin-telefono.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 8,
+   "deSesion": 8,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 8,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1302g-foto-con-diez.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1303-estado-dentro-del-where.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 11,
+   "deSesion": 9,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 9,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1304-un-cobro-una-factura.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 18,
+    "pass": 18,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 24,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1309-banner-mail-sent-gateado.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum131-resend-honesto.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1312-boton-email-recibo-gateado.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1315-gemelos-estado-dentro-del-where.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 14,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1317-cierre-admin-e-inicio-del-operario.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 41,
+   "deSesion": 41,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 41,
+   "roles": [
+    "admin",
+    "comercial",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1318-resend-dice-si-salio.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum1322-el-bot-entiende-lo-que-pide.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 9,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1326-vale-pregunta-una-vez.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 61,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1330-una-sellada-no-se-resella.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 9,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1333-una-factura-se-encola-una-vez.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 10,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum1338-la-barra-del-operario-contra-los-gates.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum1341-actividad-del-equipo-sin-importes.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 35,
+   "deSesion": 35,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 35,
+   "roles": [
+    "admin",
+    "comercial",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum136-hub-equipo.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 3
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum148-filtro-por-miembro.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 2
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum17-recapitulativa.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 12,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum170-facturacion-parcial.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum171a-consolidar-cliente.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum178-emision-manual.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum212-copy-sin-claim-fiscal.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum22-operario-readpath.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum221-export-fiscal-cero-bytes.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum24-operarios-metrics.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum244-supresion-y-anonimizado.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 10,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 6,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 6,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum25-export-zip.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum25-exports.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum257-albaran-desde-presupuesto.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum263-sin-lineas-409.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum290-adicional.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum290-endpoint-convertir.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 11,
+   "deSesion": 11,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 11,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum302-duplicar.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum302-presupuesto-y-fotos.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum303-albaran-una-pantalla.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum308-bloqueo-rectify.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum308-caracterizacion-rectify.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 8,
+   "deSesion": 8,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 8,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum329-legal-pagina-publica.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum334-destino-de-los-cta.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum342-dispute-package-quote-nulo.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum343-cabecera-gastos-unica.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum346-justificante-suelto.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 7,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 7,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum365-permisos-tarifario.test.mjs",
+   "ast": "sin-forma-de-sesion",
+   "base": {
+    "codigo": 0,
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 27,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum389-un-solo-iva.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 2
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum440-tenencia-supresion.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum47-enviar-albaran-wa.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum475-receptor-webhook.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum49-firma-remota.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum50-bot-albaranes.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum51-job-sin-quote.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum55-admin-fail-closed.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum57-operario-propagacion.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum58-jobs-n1.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum590-el-movil-es-el-canal.test.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum606-albaran-desde-presupuesto.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum66-tipo-operacion.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum68-evidencias-firma.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum688-crear-revision.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum72-pdfs-privados.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum728-serie-ocupada-postgres.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum73-verifactu-gate.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum74-recibo-token.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum761-sembrador-columnas-derivadas.test.mjs",
+   "ast": "import-sin-resolver",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum771-el-emisor-no-valida-el-tipo.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 8,
+   "deSesion": 8,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 8,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum789-health-tiempo-del-select.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum809-paywall-tras-cancelar.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 7
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum814-carrera-del-tramo.gated.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 3
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum815-el-correo-una-sola-vez.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 11,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum815-idempotencia-del-webhook.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum815c-el-escritor-de-los-cinco.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum82-zip-verifactu.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum841-el-escritor-del-albaran.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum849-escritura-no-afloja.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum85-pay-routes-token.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum885-documento-sin-enviar.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 53,
+   "deSesion": 41,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 41,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum886-exportar-clientes-desde-clientes.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum887b-descuento-global.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 3,
+   "deSesion": 3,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 3,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum887c-caso-c-bloqueado.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 7,
+   "deSesion": 4,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 4,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum888d-firma-con-descuentos.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum888g-senal-en-la-firma.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 28,
+    "pass": 28,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum889b-quitar-linea-guardada.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 39,
+   "deSesion": 39,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 39,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum892-firma-vacia.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 9,
+   "deSesion": 2,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 2,
+   "roles": [
+    "owner"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum893-solo-lo-que-puede-cobrar.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 42,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum895b-literales-firmados.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 6,
+   "deSesion": 6,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 6,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum90-pay-bank-mp-token.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum910-la-transferencia-que-no-mira.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 21,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum910d-microcopy-recibo-pendiente.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum912-leer-ticket-gasto.test.mjs",
+   "ast": "arnes-unico",
+   "base": {
+    "codigo": 0,
+    "tests": 21,
+    "pass": 21,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 19,
+   "deSesion": 19,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 19,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum92-login-operario.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum923-fallback-cuenta-conectada.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 2,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum924-pay-mp-no-inventa-estado.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 4,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "sin-sesion"
+  },
+  {
+   "fichero": "scrum937-el-nif-no-se-tira-en-silencio.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 13,
+   "deSesion": 13,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 13,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum94-register-teammember.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum943-la-categoria-se-valida.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 9,
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 34,
+   "deSesion": 34,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 34,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum960-nif-del-proveedor.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 10,
+   "deSesion": 10,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 10,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum964-la-lista-no-carga-las-fotos.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 13,
+   "deSesion": 13,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 13,
+   "roles": [
+    "admin"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum967b-el-portal-en-el-envio.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 1,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum98-public-access-fail-closed.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum984-del-presupuesto-al-albaran.test.mjs",
+   "ast": "a-mano",
+   "base": {
+    "codigo": 0,
+    "tests": 27,
+    "pass": 27,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 5,
+   "deSesion": 5,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 5,
+   "roles": [
+    "admin",
+    "tecnico"
+   ],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "con-rol"
+  },
+  {
+   "fichero": "scrum987-valido-hasta-en-el-pdf.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skipped": 0
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "scrum992-partes-recortan-por-rol.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 6,
+    "pass": 5,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "tenancy-permisos.test.mjs",
+   "ast": "monta-la-app",
+   "base": {
+    "codigo": 0,
+    "tests": 2,
+    "pass": 0,
+    "fail": 0,
+    "skipped": 2
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  },
+  {
+   "fichero": "webhooks-idempotencia.test.mjs",
+   "ast": "solo-publicos",
+   "base": {
+    "codigo": 0,
+    "tests": 3,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 1
+   },
+   "testigo": true,
+   "igual": true,
+   "llamadas": 0,
+   "deSesion": 0,
+   "sinRol": 0,
+   "sinRolConGate": 0,
+   "conRol": 0,
+   "roles": [],
+   "sinRolPorRuta": {},
+   "rolQueElGateRechaza": {},
+   "sonda": "no-observado"
+  }
+ ]
+}

@@ -19,7 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const DIST = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')).href + '/';
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
@@ -76,7 +76,7 @@ function sustituirPrisma(factura) {
 function restaurarPrisma() { for (const k of Object.keys(ORIG)) moduloPrisma.prisma[k] = ORIG[k]; }
 
 const disputePackage = (id = '11') =>
-  invocar(RUTA, 'get', '/:id/dispute-package', { params: { id }, merchantId: 7 });
+  invocar(RUTA, 'get', '/:id/dispute-package', reqDeSesion({ rol: 'admin', params: { id }, merchantId: 7 }));
 
 // ─── CARA A · CON presupuesto: renderiza igual que siempre ────────────────────────────────────────
 test('SCRUM-342 · dispute-package CON presupuesto → 200 y renderiza número, importe, firma y evidencia', async (t) => {

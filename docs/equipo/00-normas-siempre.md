@@ -102,3 +102,4 @@ Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests;
 Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido. (SCRUM-1356)
 Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
 Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)
+Un test que saca el handler de su ruta prueba el handler, no la ruta: sigue verde con el gate puesto y con el gate quitado. (SCRUM-1344)

@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import routerModulo from '../dist/modules/fiscal/librosAeat/librosAeat.routes.js';
 import { leerLibroRecibidasDelTrimestre } from '../dist/modules/fiscal/librosAeat/librosAeat.repo.js';
-import { csvLibroRecibidas } from '../dist/modules/fiscal/librosAeat/librosAeatCsv.js';
+import { csvLibroRecibidas } from '../dist/modules/fiscal/librosAeat/librosAeatCsv.js'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const router = routerModulo.default ?? routerModulo;
 const M = 11;
@@ -64,7 +64,7 @@ async function pedir(db, { merchantId = M, query = {} } = {}) {
   const orig = { expense: prisma.expense, provider: prisma.provider };
   prisma.expense = db.expense; prisma.provider = db.provider;
   try {
-    await capa.route.stack[capa.route.stack.length - 1].handle({ merchantId, query }, res);
+    await capa.route.stack[capa.route.stack.length - 1].handle(reqDeSesion({ rol: 'admin', merchantId, query }), res);
   } finally {
     prisma.expense = orig.expense; prisma.provider = orig.provider;
   }
