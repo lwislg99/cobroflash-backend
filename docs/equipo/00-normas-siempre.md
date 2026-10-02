@@ -107,3 +107,4 @@ Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se que
 Un test que saca el handler de su ruta prueba el handler, no la ruta: sigue verde con el gate puesto y con el gate quitado. (SCRUM-1344)
 Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de pedir una medición se lee el ticket entero, comentarios incluidos. (SCRUM-1398)
 Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente. (SCRUM-1372)
+Quien cierra no clasifica su propio «no lo vi»: pedírselo es justo lo que una auditoría existe para no creerse. (SCRUM-1372)
