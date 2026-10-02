@@ -23,6 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { cargarDashboard } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ANIO = new Date().getFullYear();
@@ -90,23 +91,27 @@ const CASOS_LOCALES = [
   { caso: 'decimal', valor: '4.5', espera: FIRMADOS.errorNumeroNoValido },
 ];
 
-for (const c of CASOS_LOCALES) {
-  test(`SCRUM-1216b · ALTA · 🔴 «Sí» + ${c.caso} → NO avanza, lo DICE, y no manda nada`, async () => {
-    const m = montar();
-    const titulo = await alPaso2(m);
-    await m.pulsar(m.id('ob-serie-si'));
-    const campo = m.id('ob-serie-numero');
-    campo.value = c.valor;
-    campo.validity = { badInput: !!c.badInput };
-    await m.pulsar(m.id('ob-next'));
-    assert.equal(titulo(), `¿Ya has emitido facturas en ${ANIO}?`, '🔴 avanzó con un número que no vale');
-    const aviso = m.id('ob-serie-error');
-    assert.equal(aviso.textContent, c.espera, '🔴 el aviso no es el firmado para este caso');
-    assert.notEqual(aviso.style.display, 'none', '🔴 botón MUDO: no avanza y no dice por qué (SCRUM-1162)');
-    assert.equal(campo.style.borderColor, '#dc2626', 'el campo no se marca en Peligro (DESIGN.md §Inputs)');
-    assert.deepEqual(m.guardados(), [], 'un número que no vale no se manda');
-  });
-}
+const caso2 = casosEscritos(CASOS_LOCALES, (c) => `SCRUM-1216b · ALTA · 🔴 «Sí» + ${c.caso} → NO avanza, lo DICE, y no manda nada`, async (c) => {
+  const m = montar();
+  const titulo = await alPaso2(m);
+  await m.pulsar(m.id('ob-serie-si'));
+  const campo = m.id('ob-serie-numero');
+  campo.value = c.valor;
+  campo.validity = { badInput: !!c.badInput };
+  await m.pulsar(m.id('ob-next'));
+  assert.equal(titulo(), `¿Ya has emitido facturas en ${ANIO}?`, '🔴 avanzó con un número que no vale');
+  const aviso = m.id('ob-serie-error');
+  assert.equal(aviso.textContent, c.espera, '🔴 el aviso no es el firmado para este caso');
+  assert.notEqual(aviso.style.display, 'none', '🔴 botón MUDO: no avanza y no dice por qué (SCRUM-1162)');
+  assert.equal(campo.style.borderColor, '#dc2626', 'el campo no se marca en Peligro (DESIGN.md §Inputs)');
+  assert.deepEqual(m.guardados(), [], 'un número que no vale no se manda');
+});
+test('SCRUM-1216b · ALTA · 🔴 «Sí» + vacío → NO avanza, lo DICE, y no manda nada', caso2(0));
+test('SCRUM-1216b · ALTA · 🔴 «Sí» + letras (value vacío + badInput) → NO avanza, lo DICE, y no manda nada', caso2(1));
+test('SCRUM-1216b · ALTA · 🔴 «Sí» + cero → NO avanza, lo DICE, y no manda nada', caso2(2));
+test('SCRUM-1216b · ALTA · 🔴 «Sí» + negativo → NO avanza, lo DICE, y no manda nada', caso2(3));
+test('SCRUM-1216b · ALTA · 🔴 «Sí» + decimal → NO avanza, lo DICE, y no manda nada', caso2(4));
+caso2.todos();
 
 test('SCRUM-1216b · ALTA · 🔴 el servidor dice `numero_fuera_de_rango` → NO avanza y enseña errorNumeroGrande', async () => {
   const m = montar({ guardar: () => { throw rechazo(400, { error: 'numero_fuera_de_rango' }); } });
