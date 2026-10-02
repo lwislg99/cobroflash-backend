@@ -695,3 +695,159 @@ Run `36901626137` (`pull_request`, head `601185c091d49391e4d78a4124c9c32a0e0c87f
 correr (Git Bash convirtió `origin/rama:ruta` en una ruta de Windows y git salió con `fatal`).
 Lo delató el error impreso al lado del cero. Repetido por sha y con control positivo (9 sobre
 `601185c0`), el número es 1, y es una línea de SCRUM-617 que ya estaba en `main`.
+
+---
+
+# SCRUM-1339e · La tasa, medida desde fuera: 1 de 4 con el paso, 11 de 21 por commit, y los que pierden son siempre los mismos 18 ficheros
+
+**Medido contra:** `origin/main` = `d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c` · 2026-10-02T02:29:55Z
+
+A9: aviso → cicatriz J3 «Pasé por 229 árboles un instrumento que había nacido sobre 15 sin mirar qué guardaba en memoria: lo que cabe en la muestra no dice nada del lote.» — no se pudo comprobar: es un guion de evidencias que se lanza a mano fuera de la tanda; lo que queda es el arreglo en el propio guion, que ya sólo guarda el último árbol
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-5b`, 2-oct): volver a medir
+la tasa de c.17935 sobre lo que hay HOY, desde fuera y con `gh` (c.17954 ②), y dejar la evidencia
+en git. Lo hace J3a. Sólo lectura: ni `ci.yml`, ni código de la tanda, ni Jira hasta la entrega.
+
+## En corto
+
+- **La cifra que nombra la decisión (c.17935), leída de las anotaciones del paso: 1 de 4 runs del
+  obligatorio en `main` con casos ausentes (25,0 %).** La población son los 4 commits de `main`
+  cuyo árbol ya tiene el paso (`7080ba94` → `d2ed6c8a`). Los 4 dejaron su línea. **Contra el 5 %
+  no se puede decir nada: la ventana es de 50 y hay 4.**
+- **Por commit de `main`, recalculando con el TAP del artefacto** (sirve también para antes del
+  paso): **11 de 21 medidos con ausentes (52,4 %)**, los 11 con el job en `success`. De 95 commits
+  desde el 1-oct 00:00Z, 56 no tienen artefacto y 18 traen el TAP con bytes NUL.
+- **Todos los jobs, de PR y de `main`: 48 de 110 medibles con ausentes (43,6 %)**; en `success`,
+  35 de 80 (43,8 %). 229 artefactos, 119 no medibles.
+- **No es una medición independiente de las del 1-oct.** 94 de los 110 medibles caen en la ventana
+  que ya cubrían 1339b y 1339d. Lo nuevo son 16 jobs, 6 con ausentes. Con 16 no se afirma tendencia.
+- **Los que pierden son siempre los mismos.** Los 72 bloques perdidos salen de 18 ficheros, y
+  68 de 72 son la cola. Es una propiedad de esos ficheros, no un parpadeo repartido.
+- **El paso ya avisó de una pérdida en `main`:** `16358193` (#2119) entró en verde sin 35 casos
+  (30 de 64 de `vigia-atascados`, 5 de `scrum1262`), y su run lleva los dos `::warning`.
+
+## ⓪ La población y los instrumentos
+
+229 artefactos `tanda-tap` creados entre el 2026-10-01T00:28:24Z y el 2026-10-02T02:05:33Z
+(40 de push a `main`, 189 de PR; 225 runs). La lista sale de la API de artefactos, y su control
+vio uno anterior a la hora pedida (`e-salida-listar.txt`). Bajados 229 de 229; 224 logs, y el
+que falta es el del run de `d2ed6c8a`, que seguía en marcha (es un push: su árbol sale del sha).
+
+Dos instrumentos sobre los mismos jobs:
+
+- **(A) La anotación del paso.** `e-tasa-de-main.mjs` y `e-anotaciones.mjs` leen la `::notice`
+  del check-run y la pasan por `registroDesdeLinea` y `tasaDeRegistros`, las del módulo de 1339d.
+- **(B) El recálculo.** `d-contra-los-tap.mjs` (el de 1339d) pasa el TAP del artefacto por la
+  señal contra el árbol que el job probó. No necesita que el paso existiera.
+
+No uso el listado `actions/runs?branch=main&event=push`: devolvió como últimos runs del 17 y
+18 de septiembre. Los runs de `main` se piden por el sha de cada commit del primer padre.
+
+## ① La tasa de c.17935, por las anotaciones (A)
+
+    [señal de nombres · tasa] 1 de 4 runs medidos con nombres ausentes (25.0 %) · población 4 runs
+    · sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 4
+
+Sale igual por `e-tasa-de-main.mjs` y por `node scripts/senal-de-nombres.mjs --tasa` sobre
+`e-registros-de-main.json` (`e-salida-tasa-cli.txt`). El job obligatorio corrió en los 4 commits.
+Hacia atrás, `b3b40554` es el primero sin el paso en su árbol: de ahí no hay anotación que leer.
+
+El 1-oct hubo 21 runs medibles de `main` en un día. A ese ritmo la ventana de 50 se llena antes
+del 15-oct; es una cuenta sobre un día, no una medición.
+
+## ② Por commit de `main`, con el recálculo (B)
+
+| Commits de `main` desde el 1-oct 00:00Z (primer padre de `d2ed6c8a`) | 95 |
+|---|---|
+| sin artefacto `tanda-tap` | 56 |
+| con artefacto y TAP no medible (bytes NUL) | 18 |
+| medidos | 21 |
+| **con ausentes** | **11 (52,4 % de los medidos)** |
+| · anteriores al paso | 10 de 17 |
+| · con el paso en el árbol | 1 de 4 |
+
+Los 11, uno por uno, en `e-salida-anotaciones.txt` (④) y en `e-commits-de-main.tsv`. No he
+separado por qué 56 commits no tienen artefacto (job que no corrió, o run cancelado por el
+siguiente push antes de guardar el TAP). No cuentan como limpios ni como perdidos.
+
+## ③ Todos los jobs, y lo que es nuevo
+
+| | con ausentes | medibles |
+|---|---|---|
+| todos | 48 (43,6 %) | 110 |
+| en `success` | 35 (43,8 %) | 80 |
+| push | 11 | 21 |
+| pull_request | 37 | 89 |
+| hasta el 1-oct 16:24:08Z (ya cubierto por 1339b y 1339d) | 42 | 94 |
+| después (nuevo) | 6 | 16 |
+
+Los 119 no medibles: 109 con bytes NUL y 10 sin resumen (la tanda no llegó al final).
+
+## ④ Los controles
+
+- **El lector de anotaciones ve una que existe:** el check-run `110514502040` (la punta de #2118)
+  da 3 anotaciones, una con línea de registro. Sin eso el guion no mide y sale 3.
+- **Negativo:** de 220 jobs cuyo árbol NO tiene el paso, 0 traen línea de registro.
+- **¿Habla siempre el paso?** De 9 jobs con el paso en el árbol, 8 dejaron UNA línea y ninguno
+  calló. El noveno deja dos: es el run `36901626137`, el del control ④ de 1339d, con sus tres
+  pasos rotos a propósito. Si el árbol tiene el paso se mira en el árbol, no por la hora.
+- **(A) contra (B):** misma cifra de ausentes y de dudosos en 8 de 8 comparables.
+- **Avisar, no sólo contar:** con ausentes y sin `::warning`, 0 de 2. Completos con `::warning`, 0 de 6.
+
+## ⑤ Quién pierde: 18 ficheros, y casi siempre la cola
+
+`e-por-fichero.tsv`. 72 bloques en 48 jobs, de 18 ficheros distintos sobre unos 1.190 de `tests/`:
+
+| fichero | veces | declara | faltan |
+|---|---|---|---|
+| `scrum524b-trinquete-de-la-tabla` | 16 | 12 | 1 a 3 (al menos) |
+| `scrum834-puerta-avisador-rojo` | 11 | 53 | 2 a 35 |
+| `vigia-atascados` | 11 | 64 | 4 a 42 |
+| `scrum1262-la-baja-corta-todas-las-vias` | 8 | 10 | 1 a 5 (al menos) |
+| `scrum237-negacion-respaldada` | 4 | 8 | 8 (entero) |
+| otros 13 | 1 a 3 cada uno | 10 a 32 | 1 a 10 |
+
+68 de los 72 bloques son de ficheros que sólo pierden la cola; los otros 4 son `scrum237`, que
+pierde el fichero entero. Buscando por texto no comparten nada evidente: casi todos son tests
+síncronos, sin procesos hijos ni temporizadores. **No sé qué los distingue.** Es la pregunta que
+le toca al reproductor (1339f): si la pérdida fuera azar repartido, no repetirían 18 de 1.190.
+
+## ⑥ Cómo se vuelve a medir (el 15-oct, o antes)
+
+    node docs/master/evidencias/SCRUM-1339/e-tasa-de-main.mjs origin/main <carpeta fuera del árbol>
+
+Tarda segundos y no baja ningún TAP: tres llamadas a `gh` por commit. Para cuando junta 50 runs
+medidos, y entonces la línea dice «por DEBAJO» o «por ENCIMA» del 5 %. Lo que no es un run medido
+(sin run de CI, job saltado, job que corrió y no dejó línea, «medible=no») va contado aparte.
+
+## Lo que NO sé
+
+- La tasa sobre la ventana de 50. Hay 4 runs con el paso y 21 con el recálculo.
+- Si la tasa ha cambiado desde el 1-oct. Lo nuevo son 16 jobs.
+- Por qué 56 de 95 commits de `main` no tienen artefacto.
+- Cuántos casos faltan de verdad: lo que se nombra es un suelo (1339d, ④).
+- Qué tienen en común los 18 ficheros. Y la causa, que sigue sin demostrar.
+
+## Mis errores
+
+- Pasé `d-contra-los-tap.mjs` por 229 árboles sin mirar que guardaba todos en memoria. Murió a
+  los cinco minutos con 4 GB ocupados, en una máquina que comparten seis sesiones. De esa pasada
+  no usé nada. El guion ya sólo guarda el último árbol, y la pasada se repitió entera.
+- Mi primera salida rotulaba «CALLADO» al job que dejó DOS líneas de registro. No calla: es el
+  run de los pasos rotos a propósito. El rótulo se separó en «callados» y «otra cosa».
+- Un parche pasado a `node` por un heredoc de bash no aplicó (las barras se doblan). Avisó con
+  un error y no escribió nada; los cambios se hicieron editando el fichero.
+
+## Lo que no está en git, y reproducir
+
+Los 229 TAP (115 MB) y los 224 logs no están en git: son artefactos del CI y caducan a los 7
+días. Sí está la lista para volver a bajarlos (`e-arts.tsv`) y todo lo que salió (`e-*.tsv`,
+`e-salida-*.txt`).
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/e-listar.mjs <fuera del árbol>/banco 2026-10-01T00:00:00Z            # escribe arts-hoy.tsv
+    node $E/b-bajar.mjs <fuera del árbol>/banco
+    node $E/d-contra-los-tap.mjs <fuera del árbol>/banco . <fuera del árbol>/banco
+    node $E/e-anotaciones.mjs <fuera del árbol>/banco . <fuera del árbol>/banco 2026-10-01T00:00:00Z d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c 2026-10-01T16:24:08Z
+    node $E/e-tasa-de-main.mjs origin/main <fuera del árbol>/banco
+    node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
