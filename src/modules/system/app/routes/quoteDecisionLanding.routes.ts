@@ -923,7 +923,9 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
         // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo
         // `DecisionApiError` ya declaraba `message?` y nadie lo leía.
-        renderPage('Error', `<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || json?.error || ''}</div>`)
+        // SCRUM-1431 · ESCAPADO. Hoy todo lo que llega aquí son literales nuestros, pero el mensaje
+        // del 409 lleva el nombre del negocio y sólo la redirección de arriba impide que pase.
+        renderPage('Error', `<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${esc(json?.message || json?.error || '')}</div>`)
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
