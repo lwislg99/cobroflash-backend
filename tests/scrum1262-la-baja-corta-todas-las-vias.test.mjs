@@ -30,6 +30,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 // ANTES de cargar `dist/`: `config` se congela al importarse.
 process.env.WHATSAPP_DRY_RUN = '1';
@@ -150,71 +151,97 @@ test('SCRUM-1262 · POBLACIÓN: los senders de `whatsapp.ts` son exactamente los
 // ───────────────────────────────────────────────────────────────────────────────────────────
 // ① COBERTURA · un cliente dado de baja NO recibe, por ninguna vía
 // ───────────────────────────────────────────────────────────────────────────────────────────
-for (const via of VIAS) {
-  test(`SCRUM-1262 🔴 ① ${via.nombre}: a un número DADO DE BAJA no se le envía`, async () => {
-    const { resultado, buzon, rastro } = await enviar(via, { to: DE_BAJA, dadosDeBaja: LA_BAJA });
-    assert.equal(buzon.length, 0,
-      `🔴 un cliente que pidió la baja RECIBE por ${via.nombre}: ${JSON.stringify(buzon)}`);
-    assert.equal(resultado.ok, false, `el sender dice que envió: ${JSON.stringify(resultado)}`);
-    assert.equal(resultado.reason, 'wa_opt_out', `el motivo debería ser la baja: ${JSON.stringify(resultado)}`);
-    // J5: nunca fallo silencioso. El corte deja su fila en WA-0b con el motivo.
-    assert.ok(rastro.some((f) => f.status === 'failed' && f.error === 'wa_opt_out'),
-      `el corte no dejó rastro en WA-0b: ${JSON.stringify(rastro)}`);
-  });
-}
+const cortaLaBaja = casosEscritos(VIAS, (via) => `SCRUM-1262 🔴 ① ${via.nombre}: a un número DADO DE BAJA no se le envía`, async (via) => {
+  const { resultado, buzon, rastro } = await enviar(via, { to: DE_BAJA, dadosDeBaja: LA_BAJA });
+  assert.equal(buzon.length, 0,
+    `🔴 un cliente que pidió la baja RECIBE por ${via.nombre}: ${JSON.stringify(buzon)}`);
+  assert.equal(resultado.ok, false, `el sender dice que envió: ${JSON.stringify(resultado)}`);
+  assert.equal(resultado.reason, 'wa_opt_out', `el motivo debería ser la baja: ${JSON.stringify(resultado)}`);
+  // J5: nunca fallo silencioso. El corte deja su fila en WA-0b con el motivo.
+  assert.ok(rastro.some((f) => f.status === 'failed' && f.error === 'wa_opt_out'),
+    `el corte no dejó rastro en WA-0b: ${JSON.stringify(rastro)}`);
+});
+test('SCRUM-1262 🔴 ① sendWhatsAppTemplate: a un número DADO DE BAJA no se le envía', cortaLaBaja(0));
+test('SCRUM-1262 🔴 ① sendWhatsAppWindowFirst: a un número DADO DE BAJA no se le envía', cortaLaBaja(1));
+test('SCRUM-1262 🔴 ① sendWhatsAppText: a un número DADO DE BAJA no se le envía', cortaLaBaja(2));
+test('SCRUM-1262 🔴 ① sendWhatsAppButtons: a un número DADO DE BAJA no se le envía', cortaLaBaja(3));
+test('SCRUM-1262 🔴 ① sendWhatsAppList: a un número DADO DE BAJA no se le envía', cortaLaBaja(4));
+test('SCRUM-1262 🔴 ① sendWhatsAppCtaUrl: a un número DADO DE BAJA no se le envía', cortaLaBaja(5));
+test('SCRUM-1262 🔴 ① sendWhatsAppDocument: a un número DADO DE BAJA no se le envía', cortaLaBaja(6));
+test('SCRUM-1262 🔴 ① sendWhatsAppLocationRequest: a un número DADO DE BAJA no se le envía', cortaLaBaja(7));
+cortaLaBaja.todos();
 
 // ───────────────────────────────────────────────────────────────────────────────────────────
 // ③ CONTROL POSITIVO · quien NO se dio de baja sigue recibiendo
 // ───────────────────────────────────────────────────────────────────────────────────────────
 // Sin esto, «no envía nunca» pasaría por arreglo. Y lleva el MISMO token que el negativo: en la
 // base HAY un cliente de baja —el otro—, así que el corte se ejercita y decide que éste pasa.
-for (const via of VIAS) {
-  test(`SCRUM-1262 ✅ ③ ${via.nombre}: quien NO se dio de baja SIGUE recibiendo`, async () => {
-    const { resultado, buzon, consultas } = await enviar(via, { to: DE_ALTA, dadosDeBaja: LA_BAJA });
-    assert.equal(resultado.ok, true, `no se envió a quien no pidió la baja: ${JSON.stringify(resultado)}`);
-    assert.equal(buzon.length, 1, `debía salir UN mensaje, salieron ${buzon.length}`);
-    assert.equal(buzon[0].to, DE_ALTA);
-    assert.ok(consultas >= 1, 'CIEGO: se envió sin haber preguntado por la baja');
-  });
-}
+const sigueRecibiendo = casosEscritos(VIAS, (via) => `SCRUM-1262 ✅ ③ ${via.nombre}: quien NO se dio de baja SIGUE recibiendo`, async (via) => {
+  const { resultado, buzon, consultas } = await enviar(via, { to: DE_ALTA, dadosDeBaja: LA_BAJA });
+  assert.equal(resultado.ok, true, `no se envió a quien no pidió la baja: ${JSON.stringify(resultado)}`);
+  assert.equal(buzon.length, 1, `debía salir UN mensaje, salieron ${buzon.length}`);
+  assert.equal(buzon[0].to, DE_ALTA);
+  assert.ok(consultas >= 1, 'CIEGO: se envió sin haber preguntado por la baja');
+});
+test('SCRUM-1262 ✅ ③ sendWhatsAppTemplate: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(0));
+test('SCRUM-1262 ✅ ③ sendWhatsAppWindowFirst: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(1));
+test('SCRUM-1262 ✅ ③ sendWhatsAppText: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(2));
+test('SCRUM-1262 ✅ ③ sendWhatsAppButtons: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(3));
+test('SCRUM-1262 ✅ ③ sendWhatsAppList: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(4));
+test('SCRUM-1262 ✅ ③ sendWhatsAppCtaUrl: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(5));
+test('SCRUM-1262 ✅ ③ sendWhatsAppDocument: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(6));
+test('SCRUM-1262 ✅ ③ sendWhatsAppLocationRequest: quien NO se dio de baja SIGUE recibiendo', sigueRecibiendo(7));
+sigueRecibiendo.todos();
 
 // ───────────────────────────────────────────────────────────────────────────────────────────
 // ④ FAIL-CLOSED · con la consulta de la baja reventando, NO se envía
 // ───────────────────────────────────────────────────────────────────────────────────────────
-for (const via of VIAS) {
-  test(`SCRUM-1262 🔴 ④ ${via.nombre}: si la consulta de la baja REVIENTA, no se envía`, async () => {
-    // El destino es quien NO se dio de baja: así el único motivo posible para no enviar es que
-    // no se ha podido comprobar. Con el de baja, este caso pasaría por el motivo equivocado.
-    const { resultado, buzon, consultas } = await enviar(via, { to: DE_ALTA, laConsultaRevienta: true });
-    assert.ok(consultas >= 1, 'CIEGO: la consulta no llegó a hacerse, así que no ha reventado nada');
-    assert.equal(buzon.length, 0,
-      `🔴 el corte falla ABIERTO en ${via.nombre}: no pudo comprobar la baja y envió igual`);
-    assert.equal(resultado.ok, false, `el sender dice que envió: ${JSON.stringify(resultado)}`);
-    // No se sabe si se dio de baja: decir `wa_opt_out` sería afirmarle al profesional algo falso
-    // («Este cliente se dio de baja…»). El motivo es otro, y NO tiene texto propio: los
-    // llamadores lo llevan al genérico ya firmado de «no se pudo enviar».
-    assert.equal(resultado.reason, wa.MOTIVO_BAJA_NO_COMPROBABLE);
-    assert.notEqual(resultado.reason, 'wa_opt_out');
-    assert.ok(!(resultado.reason in SEND_FAILURE_MESSAGES),
-      'el motivo nuevo no puede traer un texto nuevo al profesional (regla 39)');
-  });
-}
+const cierraSiRevienta = casosEscritos(VIAS, (via) => `SCRUM-1262 🔴 ④ ${via.nombre}: si la consulta de la baja REVIENTA, no se envía`, async (via) => {
+  // El destino es quien NO se dio de baja: así el único motivo posible para no enviar es que
+  // no se ha podido comprobar. Con el de baja, este caso pasaría por el motivo equivocado.
+  const { resultado, buzon, consultas } = await enviar(via, { to: DE_ALTA, laConsultaRevienta: true });
+  assert.ok(consultas >= 1, 'CIEGO: la consulta no llegó a hacerse, así que no ha reventado nada');
+  assert.equal(buzon.length, 0,
+    `🔴 el corte falla ABIERTO en ${via.nombre}: no pudo comprobar la baja y envió igual`);
+  assert.equal(resultado.ok, false, `el sender dice que envió: ${JSON.stringify(resultado)}`);
+  // No se sabe si se dio de baja: decir `wa_opt_out` sería afirmarle al profesional algo falso
+  // («Este cliente se dio de baja…»). El motivo es otro, y NO tiene texto propio: los
+  // llamadores lo llevan al genérico ya firmado de «no se pudo enviar».
+  assert.equal(resultado.reason, wa.MOTIVO_BAJA_NO_COMPROBABLE);
+  assert.notEqual(resultado.reason, 'wa_opt_out');
+  assert.ok(!(resultado.reason in SEND_FAILURE_MESSAGES),
+    'el motivo nuevo no puede traer un texto nuevo al profesional (regla 39)');
+});
+test('SCRUM-1262 🔴 ④ sendWhatsAppTemplate: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(0));
+test('SCRUM-1262 🔴 ④ sendWhatsAppWindowFirst: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(1));
+test('SCRUM-1262 🔴 ④ sendWhatsAppText: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(2));
+test('SCRUM-1262 🔴 ④ sendWhatsAppButtons: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(3));
+test('SCRUM-1262 🔴 ④ sendWhatsAppList: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(4));
+test('SCRUM-1262 🔴 ④ sendWhatsAppCtaUrl: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(5));
+test('SCRUM-1262 🔴 ④ sendWhatsAppDocument: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(6));
+test('SCRUM-1262 🔴 ④ sendWhatsAppLocationRequest: si la consulta de la baja REVIENTA, no se envía', cierraSiRevienta(7));
+cierraSiRevienta.todos();
 
 // ───────────────────────────────────────────────────────────────────────────────────────────
 // LA EXENCIÓN · contestar a quien acaba de escribir no es escribirle
 // ───────────────────────────────────────────────────────────────────────────────────────────
-for (const via of VIAS.filter((v) => v.exencion)) {
-  test(`SCRUM-1262 ✅ ${via.nombre}: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja`, async () => {
-    const extra = { exentoDeLaBaja: 'respuesta-a-entrante' };
-    const { resultado, buzon } = await enviar(via, { to: DE_BAJA, dadosDeBaja: LA_BAJA, extra });
-    assert.equal(resultado.ok, true, `el bot dejó sin contestar a quien le escribió: ${JSON.stringify(resultado)}`);
-    assert.equal(buzon.length, 1);
-    // Y no depende de la base: quien escribe recibe respuesta aunque la consulta esté caída.
-    const caida = await enviar(via, { to: DE_BAJA, laConsultaRevienta: true, extra });
-    assert.equal(caida.resultado.ok, true);
-    assert.equal(caida.consultas, 0, 'una respuesta declarada no necesita preguntar por la baja');
-  });
-}
+const FILAS_DE_RESPUESTA_DECLARADA = VIAS.filter((v) => v.exencion);
+const respuestaDeclarada = casosEscritos(FILAS_DE_RESPUESTA_DECLARADA, (via) => `SCRUM-1262 ✅ ${via.nombre}: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja`, async (via) => {
+  const extra = { exentoDeLaBaja: 'respuesta-a-entrante' };
+  const { resultado, buzon } = await enviar(via, { to: DE_BAJA, dadosDeBaja: LA_BAJA, extra });
+  assert.equal(resultado.ok, true, `el bot dejó sin contestar a quien le escribió: ${JSON.stringify(resultado)}`);
+  assert.equal(buzon.length, 1);
+  // Y no depende de la base: quien escribe recibe respuesta aunque la consulta esté caída.
+  const caida = await enviar(via, { to: DE_BAJA, laConsultaRevienta: true, extra });
+  assert.equal(caida.resultado.ok, true);
+  assert.equal(caida.consultas, 0, 'una respuesta declarada no necesita preguntar por la baja');
+});
+test('SCRUM-1262 ✅ sendWhatsAppText: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja', respuestaDeclarada(0));
+test('SCRUM-1262 ✅ sendWhatsAppButtons: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja', respuestaDeclarada(1));
+test('SCRUM-1262 ✅ sendWhatsAppList: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja', respuestaDeclarada(2));
+test('SCRUM-1262 ✅ sendWhatsAppCtaUrl: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja', respuestaDeclarada(3));
+test('SCRUM-1262 ✅ sendWhatsAppLocationRequest: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja', respuestaDeclarada(4));
+respuestaDeclarada.todos();
 
 test('SCRUM-1262 🔴 la exención NO se hereda del freno del demo: `exentoDelDemo` no levanta la baja', async () => {
   // Son dos políticas distintas —una protege una cuenta pública, la otra un consentimiento— y

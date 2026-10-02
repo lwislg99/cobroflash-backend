@@ -99,7 +99,7 @@ router.get('/', async (req, res) => {
 router.post('/:id/accept', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -138,7 +138,7 @@ router.post('/:id/accept', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -644,7 +644,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
@@ -706,7 +706,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId }, // multi-tenant
@@ -743,7 +743,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.post('/:id/send-email', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -788,7 +788,7 @@ router.post('/:id/send-email', async (req, res) => {
 router.post('/:id/approve', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -839,7 +839,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
 router.put('/:id/notes', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
     await prisma.quote.updateMany({
       where: { id, merchantId: req.merchantId },
@@ -867,7 +867,7 @@ router.put('/:id/notes', async (req, res) => {
 router.put('/:id/tags', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
     // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
     // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
@@ -894,7 +894,7 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 

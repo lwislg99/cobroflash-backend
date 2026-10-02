@@ -1,0 +1,18 @@
+﻿CANCELADAS DE PR · ci.yml · event=pull_request · ventana 2026-10-01T00:00:00Z → 2026-10-02T12:30:00Z
+POBLACIÓN: 251 corridas (246 terminadas, 5 aún en curso) · 127 ramas · 240 pares rama+commit
+CONCLUSIONES de las 246 terminadas: failure 108 · cancelled 70 · success 68
+
+CANCELADAS: 70 de 246 terminadas (28 %)
+    68 de 70 (97 %) · sustituida por un empujón posterior a la misma rama
+     2 de 70 (3 %) · sustituida por otra corrida del MISMO commit
+
+¿LLEGARON A ARRANCAR? 63 de 70 tenían algún job con pasos ejecutados · 7 no arrancaron ninguno
+MINUTOS DE VIDA de una cancelada: mín 0.3 · mediana 11.7 · máx 95.1
+LA SUSTITUTA de las 70 sustituidas acabó: in_progress/null 2 · completed/cancelled 21 · completed/failure 25 · completed/success 22
+
+LA CONSECUENCIA · commits cuya ÚLTIMA corrida es «cancelled» (no tienen veredicto y nada lo trae): 68 de 240
+   de ellos, son la PUNTA de su rama (el último commit con corrida en la ventana): 0 de 127 ramas
+
+LO QUE LA API NO DA: quién canceló cada corrida. «A mano» no se puede afirmar; sólo que no hubo sustituta ni plazo agotado.
+
+filas escritas en docs\master\evidencias\SCRUM-1419\canceladas-1oct-2oct.tsv: 70

@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import {
   createProduct, listProducts, getProductById, updateProduct,
@@ -268,7 +269,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const item = await getProductById(req.merchantId, id);
     if (!item) return res.status(404).json({ ok: false, error: 'not_found' });
     return res.json({ ok: true, item: veEconomiaDelNegocio(req.userRole) ? item : sinCosteDeCatalogo(item) });
@@ -342,7 +343,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
 router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const body = req.body || {};
     const patch: any = {};
     if (body.name !== undefined)       patch.name = body.name;
