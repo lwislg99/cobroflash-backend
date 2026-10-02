@@ -1,7 +1,7 @@
 # SCRUM-1424 · `npm run ya-esta -- <n>`: qué hay ya en `main` de un ticket, antes de repartirlo
 
 **Rama:** `scrum-1424-ya-esta` · **Carril:** S5 · **Fecha:** 2-oct-2026
-**Medido contra:** `origin/main` = `1586862b32bdfe7cb666bfd23b982d14504cd7ac` · 2026-10-02T13:20:00Z
+**Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:07:37Z
 
 A9: comprobación → `tests/scrum1424-ya-esta.test.mjs`
 
