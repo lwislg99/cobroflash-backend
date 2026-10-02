@@ -14,6 +14,9 @@ export async function listInvoicesAdmin(
   search?: string,
   dateFrom?: Date | null,
   dateTo?: Date | null,
+  // SCRUM-1397 · el recorte de quien pregunta (`whereFacturasVisibles`). `null` = ve todo el
+  // negocio, y entonces este `where` sale exactamente como salía.
+  recorte: Prisma.InvoiceWhereInput | null = null,
 ) {
   /**
    * SCRUM-442 · EL LISTADO DE «FACTURAS» ENSEÑA SOLO FACTURAS.
@@ -58,6 +61,10 @@ export async function listInvoicesAdmin(
     if (dateFrom) (where.createdAt as any).gte = dateFrom;
     if (dateTo)   (where.createdAt as any).lte = dateTo;
   }
+
+  // SCRUM-1397 · en `AND`, no en `OR`: el `OR` de arriba es el de la búsqueda, y mezclarlos
+  // convertiría «las suyas» en «las suyas o las que casen con lo que busca».
+  if (recorte) where.AND = [recorte];
 
   // ⚠️ SCRUM-595 (DOC-05) · ESTE `findMany` NO LLEVA `select`, y por eso `tags` sale sola.
   // Se deja dicho porque es lo CONTRARIO de lo que pasa en el presupuesto, donde la lista es una
