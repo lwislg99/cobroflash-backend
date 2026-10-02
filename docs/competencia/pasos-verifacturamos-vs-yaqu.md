@@ -248,8 +248,55 @@ modelo, y un cambio de modelo es del máster, no de una tanda. Queda descrito en
 
 **Lo que tampoco entra, y por qué.** Tres de los seis clics de nuestro editor son «Continuar», uno de ellos
 en un paso (Condiciones) que se pasa sin tocar nada. Es el mayor ahorro posible de toda la comparación, pero
-quitar pasos al asistente es rehacer una pantalla decidida, y no he leído la decisión que lo dejó así.
+quitar pasos al asistente es rehacer una pantalla decidida. La decisión, leída después, está en §11.
 
 **Lo que falta para que esta página valga del todo:** contar nuestros pasos en yaqu.app (lo denegó el
 clasificador de permisos; lo autoriza o lo recorre el fundador), y entrar en Contasimple y Billin (hay que
 recuperar sus contraseñas por correo). La cuenta de ServiceM8 tenía 7 días de prueba el 2-oct-2026.
+
+## 11 · La decisión de los cuatro pasos del editor, y el paso de Condiciones
+
+Leído en `origin/main` el 2-oct-2026. No es una propuesta: es la decisión, su motivo y la cuenta de quitar
+**ese** paso.
+
+**La decisión existe, tiene motivo y es del fundador.** Es SCRUM-915; vive en
+`docs/prototipos/SCRUM-915/direccion-de-diseno.md` y se construyó en el corte 915d
+(`docs/master/SCRUM-915.md`).
+
+| Versión (17-sep-2026) | Qué era | Qué dijo el fundador |
+|---|---|---|
+| v1 | Una hoja con un riel de cinco pasos, todos a la vista | «Mola, pero sigue siendo un poco lioso…» (comentario 15790 del ticket) |
+| v2 | Dos columnas: a la izquierda los pasos **con solo el actual abierto**; a la derecha el documento vivo. Presupuesto: Cliente → Conceptos → Condiciones → Revisar y enviar | «me gusta mucho más» |
+| v3 | La v2 con dos cambios; es la aprobada y la que cita el código | Aprobada |
+
+**El motivo es la claridad, no los pasos.** Los cuatro pasos nacen para que la pantalla deje de ser «liosa».
+Ni la dirección de diseño ni su medición (`medicion.md`: errores de consola, desplazamiento horizontal,
+tamaño de los controles, totales) cuentan pulsaciones: la palabra «clic» no aparece en la medición. La
+decisión no pesó cuántos «Continuar» costaba, porque nadie se lo preguntó. El motivo sigue vigente: tiene
+quince días.
+
+**Condiciones se diseñó para pasarse sin tocar.** La v2 lo dice así: «Condiciones ya elegidas: tres filas
+resumen (cobro, formas de pago, validez), cada una con "Cambiar"». Que el paso llegue relleno y se confirme
+con un «Continuar» no es un descuido: es lo dibujado.
+
+**¿Cuántas veces se toca? No se puede saber hoy**, y no es lo mismo que «nadie lo toca»:
+
+- El editor no deja rastro de qué paso se abre ni de qué se cambia en él (en `quotesView.js` la única
+  telemetría que hay es la del origen por voz).
+- Se podría deducir de los datos —cuántos presupuestos guardan una forma de cobro o una validez distintas de
+  las de fábrica—, pero producción no tiene clientes reales y desde aquí no se ha consultado ninguna base.
+
+**Lo que cuesta quitar ese paso, leído:**
+
+| | Qué hay | Etiqueta |
+|---|---|---|
+| El mecanismo | Ya existe y está en producción: el paso se añade con una condición, y el justificante corre con **tres** pasos (Cliente · Conceptos · Revisar). El corte 915g ya mudó su fila «Ajustes del documento» al último paso | medido leyendo |
+| Lo que habría que mudar | En el presupuesto, Condiciones lleva cuatro filas: forma de cobro, formas de pago, validez y «Ajustes del documento». Tendrían que vivir en «Revisar», como en el justificante, plegadas y con su «Cambiar» | deducido |
+| Lo que lo sujeta | `tests/scrum915d-pasos-del-editor.test.mjs` y los guards del editor que nombra el registro de SCRUM-915 fijan el orden y el reparto de bloques de hoy. Guardan una decisión firmada: no se reescriben sin el fundador | medido en su existencia; **no leídos uno a uno** |
+| Lo que ahorra | 1 clic: el editor pasa de 6 a 5. Con la entrada directa desde el inicio (§10, fila 1), a 4. Verifacturamos está en 3 | deducido (código, no pantalla) |
+| Quién decide | Cambia una pantalla aprobada el 17-sep-2026: firma del fundador y carril de la pantalla | — |
+
+**Un dato que salió al leer la decisión.** La v3 aprobada no está construida entera: su último paso es
+«Guardar y enviar», que abre una hoja con el mensaje tal como le llega al cliente. Ese corte (915f) consta en
+el registro como parado hasta un GO escrito del fundador, porque toca envío y cobro. Hoy el editor acaba en
+«Generar presupuesto» y una ventana con el PDF. En pulsaciones no cambia nada: son las mismas.

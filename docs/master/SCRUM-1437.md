@@ -65,6 +65,16 @@ comparación abre, cada una con su base, lo que ahorra, lo que cuesta leído en 
 Leído para el coste: `prisma/schema.prisma` (`customerId Int` en `Quote`), `src/core/validation/schemas.ts`
 y `public/dashboard/js/homeView.js`. No se ha leído la decisión que dejó el asistente en cuatro pasos.
 
+## Quinta entrega · la decisión de los cuatro pasos (2-oct-2026, misma rama)
+
+§11 del documento. La decisión EXISTE y tiene motivo: SCRUM-915, v2 → v3 del prototipo, aprobada por el
+fundador el 17-sep-2026 tras decir de la v1 que era «un poco lioso». El motivo es claridad; la decisión no
+contó pulsaciones. Condiciones se dibujó para llegar relleno. Cuántas veces se toca: no se puede saber hoy
+(sin rastro en el editor, sin clientes reales). Quitar ese paso ahorra 1 clic y el mecanismo existe (el
+justificante ya corre con tres pasos), pero cambia una pantalla firmada y la sujetan guards no leídos uno a
+uno. Leído: `docs/prototipos/SCRUM-915/direccion-de-diseno.md`, `medicion.md`, `docs/master/SCRUM-915.md`
+(por búsqueda, no entero: 1.180 líneas) y `public/dashboard/js/quotesView.js` en torno a `PASOS_DEL_EDITOR`.
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón
