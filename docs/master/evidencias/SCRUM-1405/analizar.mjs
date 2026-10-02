@@ -73,6 +73,8 @@ for (const d of dirs) {
     rojos: rojos.length, sembrados_en_tap: SEMBRADOS.filter((s) => rojos.some((r) => r.startsWith(s))).length,
     cola_ejecutados: colaEjecutados.size, cola_informados: colaInformados.size,
     cola_ausentes_ejecutados: [...colaEjecutados].filter((n) => !colaInformados.has(n)).length,
+    // lo mismo, leído del OTRO reportero (spec, por la salida estándar): ¿pierde lo mismo que el TAP?
+    cola_informados_spec: new Set([...(leer(path.join(d.dir, 'tanda-spec.log')) || '').matchAll(/[✔✖] zz1405 · cola · caso (\d+)/g)].map((m) => m[1])).size,
     sonda_filas: filasSonda.length || '', sonda_con_pendientes: filasSonda.length ? conPend.length : '',
     sonda_bloqueante: filasSonda.length ? [...new Set(filasSonda.map((s) => s.bloqueante))].join('|') : '',
     donde: ficherosQuePierden.map((b) => `${b.fichero.replace('.test.mjs', '')} ${b.faltan}/${b.de} ${b.forma}`).join(' | '),
@@ -146,7 +148,7 @@ for (const r of referencia) console.log(`   ${r}`);
 console.log('\n── EL TESTIGO, DENTRO DE LA TANDA (zz1405-rojo-en-la-cola: 80 casos) ──');
 for (const b of brazos) {
   const g = tandas.filter((t) => t.brazo === b);
-  console.log(`${b} · ${g.length} tandas · ejecutados ${cuenta(g.map((t) => t.cola_ejecutados))} · informados ${cuenta(g.map((t) => t.cola_informados))} · tandas con casos ejecutados y NO informados: ${g.filter((t) => t.cola_ausentes_ejecutados > 0).length}`);
+  console.log(`${b} · ${g.length} tandas · ejecutados ${cuenta(g.map((t) => t.cola_ejecutados))} · informados en el TAP ${cuenta(g.map((t) => t.cola_informados))} · informados en el spec ${cuenta(g.map((t) => t.cola_informados_spec))} · TAP y spec discrepan en ${g.filter((t) => t.cola_informados !== t.cola_informados_spec).length} · tandas con casos ejecutados y NO informados: ${g.filter((t) => t.cola_ausentes_ejecutados > 0).length}`);
 }
 
 // ── la sonda ──────────────────────────────────────────────────────────────────────────────

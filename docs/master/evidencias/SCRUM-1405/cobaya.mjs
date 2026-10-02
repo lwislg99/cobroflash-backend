@@ -59,6 +59,13 @@ const CELDAS = [
   { id: 'I-cortado-en-el-40', flag: false, ...GRANDE, copias: 1, cortaEn: 40 },
   { id: 'J-con-grande-una-copia', flag: true, ...GRANDE, copias: 1 },
   { id: 'K-sin-grande-sonda', flag: false, ...GRANDE, sonda: true },
+  // La dosis (añadidas tras el ensayo, run 36970275624): los mismos 80 casos síncronos y el mismo
+  // flag, cambiando sólo CUÁNTO escribe el fichero. Con sonda, para saber los bytes de cada una.
+  { id: 'L-con-dosis-relleno-000', flag: true, ...GRANDE, relleno: 0, sonda: true },
+  { id: 'M-con-dosis-relleno-050', flag: true, ...GRANDE, relleno: 50, sonda: true },
+  { id: 'N-con-dosis-relleno-150', flag: true, ...GRANDE, relleno: 150, sonda: true },
+  { id: 'O-con-dosis-relleno-300', flag: true, ...GRANDE, relleno: 300, sonda: true },
+  { id: 'P-con-pequena-sonda', flag: true, casos: 10, relleno: 0, copias: 4, modo: 'sinc', sonda: true },
 ].filter((c) => !SOLO || SOLO.includes(c.id.split('-')[0]));
 
 // ── la plantilla de la cobaya ─────────────────────────────────────────────────────────────
@@ -178,6 +185,7 @@ function pasadaDeCelda(celda, i) {
     sondas: celda.sonda ? sondas.length : '-', sondas_con_pendientes: celda.sonda ? pend.filter((p) => p > 0).length : '-',
     pendientes_max: celda.sonda ? (pend.length ? Math.max(...pend) : 'SIN SONDA') : '-',
     escritos_max: celda.sonda ? (sondas.length ? Math.max(...sondas.map((s) => s.escritos ?? 0)) : 'SIN SONDA') : '-',
+    total_max: celda.sonda ? (sondas.length ? Math.max(...sondas.map((s) => (s.escritos ?? 0) + Math.max(s.pendientes ?? 0, s.cola ?? 0))) : 'SIN SONDA') : '-',
     bloqueante: celda.sonda ? [...new Set(sondas.map((s) => s.bloqueante))].join('|') : '-',
     ms,
   };
@@ -239,7 +247,7 @@ for (const celda of CELDAS) {
     + ` · forma ${cuenta(conAusentes.map((f) => f.forma))}`
     + ` · salidas ${cuenta(mias.map((f) => f.salida))}`
     + (celda.rojoEn ? ` · rojos en el TAP ${suma(mias, 'rojos_en_tap')} de ${suma(mias, 'rojos_esperados')} · pasadas con salida 0: ${mias.filter((f) => f.salida === 0).length}` : '')
-    + (celda.sonda ? ` · pasadas con bytes pendientes al salir ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0).length} · de ellas con ausentes ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0 && f.ausentes > 0).length} · con ausentes y SIN pendientes ${mias.filter((f) => !(Number(f.sondas_con_pendientes) > 0) && f.ausentes > 0).length} · bloqueante ${cuenta(mias.map((f) => f.bloqueante))}` : '')
+    + (celda.sonda ? ` · pasadas con bytes pendientes al salir ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0).length} · de ellas con ausentes ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0 && f.ausentes > 0).length} · con ausentes y SIN pendientes ${mias.filter((f) => !(Number(f.sondas_con_pendientes) > 0) && f.ausentes > 0).length} · bloqueante ${cuenta(mias.map((f) => f.bloqueante))} · bytes por fichero (escritos + pendientes, máx) ${Math.max(...mias.map((f) => Number(f.total_max) || 0))} · pendientes máx ${Math.max(...mias.map((f) => Number(f.pendientes_max) || 0))}` : '')
     + (ciegas.length ? ` · 🔴 ${ciegas.length} pasadas CIEGAS (testigo vacío: la cobaya no corrió)` : ''),
   );
 }
