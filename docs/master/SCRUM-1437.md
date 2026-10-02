@@ -3,6 +3,8 @@
 **Rama:** `scrum-1437-verifacturamos-por-dentro-pasos` · **Carril:** S0 · **Fecha:** 2-oct-2026
 **Medido contra:** `origin/main` = `f30b1a4052957e245ebe1cfef53bbef410c5816b` · 2026-10-02T16:35Z (hora de GitHub)
 
+**Skill UI:** no cargada · no se toca `public/`: esta entrada solo LEE y cita ficheros de la pantalla para contar pasos y costes; el PR cambia únicamente `docs/`
+
 A9: aviso → cicatriz S0 «Un selector por posición pulsa lo que haya en esa posición: en una aplicación ajena, el control se elige por lo que dice y se excluye por nombre lo que no se pulsa.» — no se pudo comprobar: el conductor del recorrido vive fuera del repositorio y no hay test que lo alcance
 
 ## Qué entra
