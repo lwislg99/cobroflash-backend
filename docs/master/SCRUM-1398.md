@@ -123,7 +123,14 @@ del 28-sep, que fueron dos altas.
    la usa: se identifica por la factura que anula. Secuencia alta `A-0001` → anulación de `A-0001` (con
    `--serie-propia NO-ES-DE-NADIE`) → alta `A-0002`: el tercero lleva `RegistroAnterior` con
    `NumSerieFactura` = `NO-ES-DE-NADIE`. La huella encadenada sí es la de la anulación. Qué hace la AEAT
-   con eso: **sin medir**.
+   con eso: **sin medir**, y sólo se mide enviando.
+   🔴 Por qué importa (palabras del orquestador, 2-oct-2026): **el Done de S1-D pide anulaciones
+   ACEPTADAS EN CADENA.** Si la AEAT valida la identificación del registro anterior y no sólo la huella,
+   esto tumba la cadena justo en el caso que S1-D necesita demostrar.
+   Dónde está: en `scripts/sobre-soap-prueba-aeat.mjs`, donde guarda el puntero. **No** en `src/`: el
+   camino de emisión resuelve el registro anterior por la huella persistida
+   (`src/modules/invoicing/domain/verifactu.service.ts`, SCRUM-145 y SCRUM-145d) — eso está **leído, no
+   ejercitado** aquí. Lo que queda en duda es la tanda manual que se envíe con este script, no el producto.
 2. **Una anulación como primer registro de la cadena la aborta el propio script**: su control
    `nifEnEmisor` busca `IDEmisorFactura`, y una anulación sólo lo lleva dentro del registro anterior. Con
    cadena previa el control pasa, pero por el registro anterior y no por el registro.
