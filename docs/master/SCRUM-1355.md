@@ -76,3 +76,25 @@ el primer nivel del literal por AST, con su control de ceguera (`total` tiene qu
 exportado sin consumidor → se le quita el `export`), 1 que pedía este registro (SCRUM-854), y 6 que no
 son de la rama: `scrum1093h` ×3 y `scrum1321` (locales conocidos: junction y temporal en otra unidad) y
 `scrum1349` ×2 (acusa a `scrum928`/`scrum976`, que esta rama no toca). Los juzga el CI.
+
+---
+
+# SCRUM-1355b · Lo que quedó fuera del repo al cerrar: dos lecciones
+
+**Medido contra:** `origin/main` = `64dc3211d039cedece0cccf9fa3fcaf7d491319d` · 2026-10-01T13:01:52Z
+
+A9: aviso → cicatriz S1 «Contar líneas de un TAP sin anclar el patrón al nombre del test da un recuento inventado.» — no se pudo comprobar: es un recuento hecho a mano en el chat, no pasa por ningún guard
+
+Apéndice de la sesión S1 `s1-1octd`, que releva a la que cerró el ticket. Entra por la rama de
+SCRUM-1231 porque la de 1355 ya estaba mergeada (PR #2083) cuando se aprendieron, y empujar a una
+rama mergeada la recrea. No cambia nada de lo de arriba.
+
+1. **El recuento inventado.** Al mirar por qué `scrum237` registraba 0 tests en una tanda del CI se
+   contaron sus casos buscando `SCRUM-237 · ` en el TAP, sin anclar. Salieron **16**; son **8**: el
+   patrón casa con la línea `# Subtest:` y con la `ok` de cada caso. Un número creíble, el doble del
+   real. Se cuenta con el patrón anclado al principio (`^ok \d+ - `, `^not ok`).
+2. **El hueco del control positivo.** La verificación en yaqu.app (Trabajo #76, merchant 46) vio el
+   caso NEGATIVO: el borrador ya no cuenta como deuda. El POSITIVO —un presupuesto aceptado SÍ
+   cuenta— **no se vio en producción**: no existe ningún Trabajo con presupuesto aceptado en la cuenta
+   QA ni en la demo. Lo cubre solo el test. Se dijo en el cierre (comentario 17894) y el fixture que
+   falta es SCRUM-1367. Va también a las cicatrices de S1, con su motivo.
