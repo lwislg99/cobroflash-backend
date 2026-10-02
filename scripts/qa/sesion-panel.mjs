@@ -5,6 +5,7 @@
 //
 //   node scripts/qa/sesion-panel.mjs login [correo]     (por defecto demo@yaqu.app)
 //   node scripts/qa/sesion-panel.mjs get <ruta>          p. ej. get /admin/jobs
+//   node scripts/qa/sesion-panel.mjs estado [--sin-red]  ¿la sesión guardada sigue viva? (SCRUM-1430)
 //
 // Por qué existe: con `POST /auth/test-login` encendido en producción (SCRUM-1210), cada sesión
 // se montaba su propio `fetch` en un `node -e`, y el clasificador de permisos se lo dejaba pasar a
@@ -27,9 +28,22 @@
 //   exit 3  uso rechazado: método que no es GET, host ajeno, argumentos malos
 //   `test-login` responde un 404 idéntico ante cualquier fallo (secreto, correo, ruta apagada):
 //   es a propósito en el servidor, así que aquí se dice «no pude entrar» sin adivinar cuál fue.
+//
+// ── `estado` (SCRUM-1430): la sesión de `test-login` muere a las 24 h y no suena nada ───────────
+//   La fila de la base caduca a las 24 h (`auth.routes.ts`), pero la cookie sale con `Max-Age` de
+//   30 días (`authMiddleware.ts`): de la cookie NO se puede deducir su vida. Por eso `login` deja
+//   al lado (`<sesión>.caducidad.json`) la hora de apertura —la cabecera `Date` del SERVIDOR, no
+//   el reloj de esta máquina, que va adelantado— y `estado` contesta en su PRIMERA línea:
+//   exit 0  VIVA                — el servidor la acepta (o, con --sin-red, el fichero dice que no ha caducado)
+//   exit 1  MUERTA              — el servidor responde 401, o el fichero dice que ya pasó su hora
+//   exit 2  NO SE PUEDE SABER   — sin sesión, sin fichero de caducidad, el fichero es de OTRA cookie,
+//                                 o la sonda no respondió ni 2xx ni 401. Nunca «viva» por omisión.
+//   La sonda es `GET /admin/me` y MANDA sobre el fichero: un logout con esa cookie la mata antes
+//   de su hora, y eso sólo lo sabe el servidor.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 export const HOST = 'yaqu.app';
@@ -38,7 +52,46 @@ export const RUTA_SECRETO = 'C:/Users/Admin/.yaqu-qa-secret.txt';
 export const RUTA_SESION = 'C:/Users/Admin/.yaqu-qa-sesion.txt';
 export const RUTA_LOGIN = '/auth/test-login';
 export const CORREO_POR_DEFECTO = 'demo@yaqu.app';
+export const RUTA_SONDA = '/admin/me';
+// Las 24 h de `POST /auth/test-login` (auth.routes.ts). Un test las compara con el servidor: si
+// allí cambian y aquí no, cae.
+export const VIDA_SESION_MS = 24 * 60 * 60 * 1000;
 const COOKIE = 'pf_session';
+
+/** El fichero de caducidad vive AL LADO de la sesión, fuera del repositorio como ella. */
+export const rutaCaducidadDe = (rutaSesion) => `${rutaSesion}.caducidad.json`;
+
+/** Huella de la cookie: ata el fichero de caducidad a ESTA cookie sin guardarla dos veces. */
+const huellaDe = (cookie) => crypto.createHash('sha256').update(cookie).digest('hex').slice(0, 16);
+
+/** La hora de la cabecera `Date` de una respuesta, o null si no viene o no se entiende. */
+function horaDelServidor(res) {
+  const ms = Date.parse(res.headers.get('date') || '');
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/**
+ * Lo que el fichero de caducidad sabe de la cookie guardada. `{ caducaMs, correo }` sólo si el
+ * fichero existe, se entiende y es de ESTA cookie; si no, `{ motivo }` — nunca una hora supuesta.
+ */
+export function leerCaducidad(rutaCaducidad, cookie) {
+  let crudo;
+  try { crudo = fs.readFileSync(rutaCaducidad, 'utf8'); } catch {
+    return { motivo: `no hay fichero de caducidad (${rutaCaducidad}): la sesión no la abrió un \`login\` que lo escriba` };
+  }
+  let d;
+  try { d = JSON.parse(crudo); } catch { return { motivo: `el fichero de caducidad (${rutaCaducidad}) no se entiende` }; }
+  const caducaMs = Date.parse(d && d.caducaEn);
+  if (!d || !Number.isFinite(caducaMs)) return { motivo: `el fichero de caducidad (${rutaCaducidad}) no lleva una hora válida` };
+  if (d.huella !== huellaDe(cookie)) return { motivo: 'el fichero de caducidad es de OTRA cookie: la sesión guardada la escribió otra mano después' };
+  return { caducaMs, correo: String(d.correo || '') };
+}
+
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+function duracion(ms) {
+  const min = Math.floor(Math.abs(ms) / 60000);
+  return `${Math.floor(min / 60)} h ${min % 60} min`;
+}
 
 export class Rechazo extends Error {}
 
@@ -86,7 +139,7 @@ export function cookieDeSesion(res) {
  * La herramienta entera. La CLI la llama con las rutas fijas y el `fetch` real; los tests, con
  * rutas temporales y un `fetch` falso. Devuelve el código de salida; escribe por `out`/`err`.
  */
-export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSecreto = RUTA_SECRETO, rutaSesion = RUTA_SESION, out = (s) => process.stdout.write(s + '\n'), err = (s) => process.stderr.write(s + '\n') } = {}) {
+export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSecreto = RUTA_SECRETO, rutaSesion = RUTA_SESION, rutaCaducidad = rutaCaducidadDe(rutaSesion), ahora = Date.now, out =(s) => process.stdout.write(s + '\n'), err = (s) => process.stderr.write(s + '\n') } = {}) {
   const [orden, arg] = argv;
   try {
     if (orden === 'login') {
@@ -105,9 +158,74 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSecreto =
           '. (El servidor responde un 404 idéntico si la ruta está apagada, el secreto no casa o el correo no está admitido: no se puede saber cuál desde fuera.)');
         return 1;
       }
+      // Primero se retira la caducidad de la sesión ANTERIOR: si la escritura de abajo fallara,
+      // la cookie nueva quedaría sin fichero («no se puede saber») y no con la hora de otra.
+      fs.rmSync(rutaCaducidad, { force: true });
       fs.writeFileSync(rutaSesion, cookie + '\n', { mode: 0o600 });
+      const abiertaMs = horaDelServidor(res);
+      if (abiertaMs === null) {
+        out(`sesión abierta como ${correo} en ${BASE} (la cookie queda en ${rutaSesion}; no se imprime)`);
+        err('⚠️ la respuesta no trae cabecera `Date`: NO se guarda la caducidad, y `estado --sin-red` dirá «no se puede saber».');
+        return 0;
+      }
+      const caducaMs = abiertaMs + VIDA_SESION_MS;
+      fs.writeFileSync(rutaCaducidad, JSON.stringify({
+        correo, abiertaEn: iso(abiertaMs), caducaEn: iso(caducaMs), huella: huellaDe(cookie),
+        fuente: 'cabecera Date del servidor + 24 h (auth.routes.ts, test-login)',
+      }, null, 2) + '\n', { mode: 0o600 });
       out(`sesión abierta como ${correo} en ${BASE} (la cookie queda en ${rutaSesion}; no se imprime)`);
+      out(`caduca el ${iso(caducaMs)} (24 h desde la hora del servidor) · antes de medir: node scripts/qa/sesion-panel.mjs estado`);
       return 0;
+    }
+    if (orden === 'estado') {
+      if (arg !== undefined && arg !== '--sin-red') throw new Rechazo(`estado: argumento «${arg}» desconocido. Uso: estado [--sin-red]`);
+      const cookie = leerFichero(rutaSesion);
+      if (!cookie) {
+        err(`NO SE PUEDE SABER — no hay sesión guardada en ${rutaSesion}. Entra antes con: node scripts/qa/sesion-panel.mjs login`);
+        return 2;
+      }
+      const cad = leerCaducidad(rutaCaducidad, cookie);
+      const quien = cad.correo ? ` (${cad.correo})` : '';
+      // Un diagnóstico que no dice la cura deja a la siguiente igual de parada: MUERTA lleva el
+      // comando ENTERO. El 2-oct-2026 tres sesiones se quedaron paradas con el camino documentado.
+      const cura = `SE RENUEVA con: node scripts/qa/sesion-panel.mjs login ${cad.correo || '<correo de la cuenta>'}  (lee el secreto de ${rutaSecreto}; receta en docs/RUNBOOKS.md R23)`;
+      // Lo que el fichero dice a una hora dada. `relojDe` nombra de quién es esa hora.
+      const segunFichero = (ms, relojDe) => (cad.motivo
+        ? `caducidad no conocida: ${cad.motivo}`
+        : ms < cad.caducaMs
+          ? `según su fichero caduca el ${iso(cad.caducaMs)}, dentro de ${duracion(cad.caducaMs - ms)} (hora ${relojDe})`
+          : `según su fichero caducó el ${iso(cad.caducaMs)}, hace ${duracion(ms - cad.caducaMs)} (hora ${relojDe})`);
+
+      if (arg === '--sin-red') {
+        if (cad.motivo) { err(`NO SE PUEDE SABER — ${cad.motivo}. Sin --sin-red se pregunta al servidor.`); return 2; }
+        const ms = ahora();
+        const frase = segunFichero(ms, 'de ESTA máquina, que puede ir adelantada');
+        if (ms >= cad.caducaMs) { err(`MUERTA — la sesión guardada${quien}: ${frase}.`); err(cura); return 1; }
+        out(`VIVA — la sesión guardada${quien}: ${frase}. NO se ha preguntado al servidor: un logout con esa cookie la mata antes y aquí no se ve.`);
+        return 0;
+      }
+
+      let res;
+      try { res = await peticion(fetchFn, 'GET', RUTA_SONDA, { cookie }); } catch (e) {
+        if (e instanceof Rechazo) throw e;
+        err(`NO SE PUEDE SABER — la sonda GET ${RUTA_SONDA} no llegó: ${e && e.message ? e.message : e}. ${segunFichero(ahora(), 'de ESTA máquina')}.`);
+        return 2;
+      }
+      const servidorMs = horaDelServidor(res);
+      const frase = servidorMs === null ? segunFichero(ahora(), 'de ESTA máquina') : segunFichero(servidorMs, 'del servidor');
+      if (res.status >= 200 && res.status < 300) {
+        out(`VIVA — GET ${RUTA_SONDA} → ${res.status}${quien}; ${frase}.`);
+        return 0;
+      }
+      if (res.status === 401) {
+        const antes = !cad.motivo && (servidorMs ?? ahora()) < cad.caducaMs
+          ? ' 🔴 Ha muerto ANTES de su hora: alguien cerró esa sesión (un `POST /auth/logout` con esta cookie la mata para todos).' : '';
+        err(`MUERTA — GET ${RUTA_SONDA} → 401${quien}; ${frase}.${antes}`);
+        err(cura);
+        return 1;
+      }
+      err(`NO SE PUEDE SABER — GET ${RUTA_SONDA} → ${res.status}: ni 2xx ni 401, el servidor no ha dicho si la sesión vale. ${frase}.`);
+      return 2;
     }
     if (orden === 'get') {
       if (!arg) throw new Rechazo('falta la ruta: get /admin/…');
@@ -122,6 +240,10 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSecreto =
       if (res.status < 200 || res.status >= 300) {
         const donde = res.headers.get('location');
         err(`GET ${arg} → ${res.status}${donde ? ` (redirige a ${donde}, NO se sigue)` : ''}${res.status === 401 ? ': la sesión caducó o no vale, repite el login' : ''}. NO es «no hay nada».`);
+        if (res.status === 401) {
+          const cad = leerCaducidad(rutaCaducidad, cookie);
+          err(cad.motivo ? `(caducidad no conocida: ${cad.motivo})` : `(su fichero de caducidad dice ${iso(cad.caducaMs)}; la próxima vez, antes de medir: node scripts/qa/sesion-panel.mjs estado)`);
+        }
         if (cuerpo) err(cuerpo.slice(0, 2000));
         return 1;
       }
@@ -129,7 +251,7 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSecreto =
       out(cuerpo);
       return 0;
     }
-    throw new Rechazo(`orden «${orden ?? ''}» desconocida. Uso: login [correo] · get <ruta>`);
+    throw new Rechazo(`orden «${orden ?? ''}» desconocida. Uso: login [correo] · get <ruta> · estado [--sin-red]`);
   } catch (e) {
     if (e instanceof Rechazo) { err(e.message); return 3; }
     err(`NO PUDE MIRAR: ${e && e.message ? e.message : e}`);
