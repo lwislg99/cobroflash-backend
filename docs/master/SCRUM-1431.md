@@ -27,6 +27,21 @@ test: la API no lo produce hoy.
 |---|---|
 | sin `esc()`, lo de antes | 2 rojos |
 
+### Corrección del 2-oct (sesión `s1-2octd`): el CI salió ROJO, `# fail 4`, en la punta `1e2bb528`
+
+| Rojo | Causa medida | Arreglo |
+|---|---|---|
+| Los tres de SCRUM-264 «landing de presupuesto · RECHAZAR» | Su guard extrae lo que hay dentro del `${}` y lo EJECUTA con `json` como única variable. Con `esc(…)` dentro, la expresión extraída daba `esc is not defined`. La conducta no había cambiado: mensaje → código → vacío seguía igual | El escapado sale del `${}`: lo pone una etiqueta de plantilla (`escapandoLoInterpolado`). La expresión queda como la dejó SCRUM-264. El test de 264 no se toca |
+| SCRUM-553, trinquete (22 con tope 20) | Mi test buscaba `<b>` e `<i>` con el `>` pegado | El test busca con hueco para atributos. El tope no se toca |
+
+Nunca se quitó el código crudo de la vista: sigue en «Lo medido y NO tocado», punto 1.
+
+Corridos tras traer `main` (`6fb53c1a`): `scrum264`, `scrum275`, `scrum553`, `scrum567`, `scrum237`,
+`scrum1344`, `scrum1415`, `scrum212`, `scrum656`, `scrum1001`, `scrum1276` y los dos de 1431: 121/121.
+Mutante sobre `dist` (quitar la etiqueta; comprobado que cambia el fichero): 2 rojos en 1431.
+
+**Error propio de la tanda anterior:** se empujó sin correr `scrum264`, que nombra esta misma línea.
+
 ## Lo hecho (2): la tarjeta de opción ya no afirma «IVA incluido» sin cuota
 
 Medido ANTES de tocar, por la ruta real `GET /pay/quote/:token` y sin exportar nada:
