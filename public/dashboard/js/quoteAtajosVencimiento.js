@@ -138,19 +138,33 @@
   }
 
   /**
-   * El nombre accesible: el prefijo aprobado + el rótulo, p. ej. para 7 días.
+   * Los tres nombres accesibles, ENTEROS y tal cual constan en su ficha de `docs/microcopy/`.
    *
-   * ⚠️ El literal COMPLETO no se escribe en este comentario a propósito: el cruce de SCRUM-514
-   * —que exige que todo texto aprobado llegue a la pantalla— busca por subcadena, y una cita en
-   * un comentario le haría dar por APLICADO algo que no se pinta. Lo cazó él mismo: de los tres
-   * nombres accesibles saltaron dos, y el tercero se salvaba por esta línea.
+   * Van escritos uno a uno, y no sólo compuestos, porque el cruce de SCRUM-514 —que exige que todo
+   * texto aprobado llegue a la pantalla— busca el literal entero. Mientras se componían y nadie
+   * los llamaba, ese cruce los llevaba como aparcados; desde que están aquí los da por aplicados.
+   * 🔴 Y eso sólo es verdad porque la vista los pinta: quien retire la llamada de `quotesView.js`
+   * deja este literal contando como aplicado sin estarlo. Lo caza el test del botón pintado
+   * (`tests/scrum605-atajos-vencimiento.test.mjs`), no el cruce.
+   */
+  var NOMBRES_ACCESIBLES = {
+    7: 'Válido hasta dentro de 7 días',
+    14: 'Válido hasta dentro de 14 días',
+    30: 'Válido hasta dentro de 30 días',
+  };
+
+  /**
+   * El nombre accesible de un atajo: dice la acción entera, y contiene el rótulo visible.
    *
-   * ⚠️ CONSTRUIDO Y SIN CABLEAR, y se declara en vez de esconderlo: hoy `quotesView.js` pone el
-   * MISMO texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que
-   * para que digan cosas distintas hay que cambiar UNA línea de esa vista — y ese fichero es de
-   * otro carril en vuelo (SCRUM-594). Se deja listo para que sea una línea, no un rediseño.
+   * CABLEADO el 2-oct-2026: `quotesView.js` lo pone en el `aria-label` de cada atajo. Del 4-sep
+   * hasta entonces estuvo construido y sin que nadie lo llamara (la vista repetía el rótulo), con
+   * su test de literales en verde.
+   *
+   * Un atajo que no esté en la tabla —un cuarto número en `DIAS_ATAJO`— se compone con el mismo
+   * prefijo: un botón sin nombre es peor que uno con el nombre de sus hermanos.
    */
   function nombreAccesibleDeAtajo(dias) {
+    if (Object.prototype.hasOwnProperty.call(NOMBRES_ACCESIBLES, dias)) return NOMBRES_ACCESIBLES[dias];
     return PREFIJO_ACCESIBLE + ' ' + rotuloDeAtajo(dias);
   }
 
