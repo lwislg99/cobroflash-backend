@@ -43,6 +43,7 @@ import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 import { parsearReglas } from './_censo-anillo-foco.mjs';
 import { minHeightDe } from './_censo-target-tactil.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -167,18 +168,20 @@ function minHeightsEnLinea(nombre, fuente) {
   return culpables;
 }
 
-for (const [nombre, fuente] of [['reportsView.js', REPORTS], ['exportView.js', EXPORTV]]) {
-  test(`SCRUM-384 · \`${nombre}\` no vuelve a fijar \`min-height\` en línea en un BOTÓN`, () => {
-    const culpables = minHeightsEnLinea(nombre, fuente);
-    assert.deepEqual(
-      culpables, [],
-      `🔴 ha vuelto un \`min-height\` EN LÍNEA sobre un botón en \`${nombre}\` (${culpables.join(', ')}).\n`
-      + 'Un estilo inline gana a toda la hoja: repite en móvil lo que la base ya da y **pisa** el '
-      + '36 px de escritorio, dejando ese botón más alto que sus hermanos sin que nadie lo decida. '
-      + 'Si de verdad hace falta un alto distinto, va al CSS con su motivo, no en el atributo.',
-    );
-  });
-}
+const FILAS = [['reportsView.js', REPORTS], ['exportView.js', EXPORTV]];
+const caso = casosEscritos(FILAS, ([nombre, fuente]) => `SCRUM-384 · \`${nombre}\` no vuelve a fijar \`min-height\` en línea en un BOTÓN`, ([nombre, fuente]) => {
+  const culpables = minHeightsEnLinea(nombre, fuente);
+  assert.deepEqual(
+    culpables, [],
+    `🔴 ha vuelto un \`min-height\` EN LÍNEA sobre un botón en \`${nombre}\` (${culpables.join(', ')}).\n`
+    + 'Un estilo inline gana a toda la hoja: repite en móvil lo que la base ya da y **pisa** el '
+    + '36 px de escritorio, dejando ese botón más alto que sus hermanos sin que nadie lo decida. '
+    + 'Si de verdad hace falta un alto distinto, va al CSS con su motivo, no en el atributo.',
+  );
+});
+test('SCRUM-384 · `reportsView.js` no vuelve a fijar `min-height` en línea en un BOTÓN', caso(0));
+test('SCRUM-384 · `exportView.js` no vuelve a fijar `min-height` en línea en un BOTÓN', caso(1));
+caso.todos();
 
 test('SCRUM-384 · CONTROL: los `min-height` en línea de CAMPOS y LABELS siguen intactos', () => {
   // El control negativo del guard de arriba: si el detector empezara a perseguirlos, este test

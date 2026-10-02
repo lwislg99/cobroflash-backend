@@ -36,3 +36,12 @@ Sin tarjeta ni teléfono real (el paso opcional se saltó con "Skip"). El detall
 
 Esto **sí** es su producto funcionando, a diferencia de las tres capturas de arriba (solo su
 marketing y manual, sin cuenta).
+
+## Tercera tanda: el Trabajo de presupuesto a cobro, contado en pasos (2-oct-2026, SCRUM-1437)
+
+Las 10 capturas `pasos-NN-*` son de **esta** tanda, con la misma cuenta, que **sigue abierta** (le
+quedaban 7 días de prueba el 2-oct). El recuento y la comparación:
+[`docs/competencia/pasos-verifacturamos-vs-yaqu.md`](../../pasos-verifacturamos-vs-yaqu.md), §8.
+Datos inventados creados: Trabajos n.º 2 a 5 y tres clientes «Cliente Inventado Prueba …». Nada
+enviado, aprobado ni cobrado. En `pasos-16` el aviso de «no se pueden cargar los pagos» lo causó el
+conductor del recorrido, que corta las peticiones que nombran un pago; no es un fallo de ellos.

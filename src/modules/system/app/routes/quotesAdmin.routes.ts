@@ -184,7 +184,7 @@ const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
 router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);
-    if (!Number.isInteger(quoteId)) {
+    if (!cabeEnColumnaInt(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
 
@@ -504,7 +504,7 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
 router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);
-    if (!Number.isInteger(quoteId)) {
+    if (!cabeEnColumnaInt(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
 

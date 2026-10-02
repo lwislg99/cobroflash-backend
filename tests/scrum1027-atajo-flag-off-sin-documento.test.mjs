@@ -18,7 +18,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { soloEjecutable } from './_guard-texto.mjs'; // SCRUM-700: el sitio ÚNICO, no un filtro propio
+import { soloEjecutable } from './_guard-texto.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-700: el sitio ÚNICO, no un filtro propio
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -76,57 +77,65 @@ const RUTAS = [
   },
 ];
 
-for (const r of RUTAS) {
-  test(`SCRUM-1027 · SUELO: el extractor encuentra ${r.nombre}`, () => {
-    const fuente = leer(r.fichero);
-    const { nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
-    assert.ok(nodo,
-      `🔴 ESCÁNER CIEGO: no encuentro router.${r.metodo}(${JSON.stringify(r.path)}, …) en ${r.fichero}. ` +
-      'Los guards de abajo mirarían un nodo vacío y saldrían verdes sin haber comprobado nada.');
-  });
+const casoa = casosEscritos(RUTAS, (r) => `SCRUM-1027 · SUELO: el extractor encuentra ${r.nombre}`, (r) => {
+  const fuente = leer(r.fichero);
+  const { nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
+  assert.ok(nodo,
+    `🔴 ESCÁNER CIEGO: no encuentro router.${r.metodo}(${JSON.stringify(r.path)}, …) en ${r.fichero}. ` +
+    'Los guards de abajo mirarían un nodo vacío y saldrían verdes sin haber comprobado nada.');
+});
+const casob = casosEscritos(RUTAS, (r) => `SCRUM-1027 · ${r.nombre}: gatea con getEmissionMode ANTES de pedir número`, (r) => {
+  const fuente = leer(r.fichero);
+  const { arbol, nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
+  const h = sinComentarios(textoDe(arbol, nodo));
 
-  test(`SCRUM-1027 · ${r.nombre}: gatea con getEmissionMode ANTES de pedir número`, () => {
-    const fuente = leer(r.fichero);
-    const { arbol, nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
-    const h = sinComentarios(textoDe(arbol, nodo));
+  const idxGate = h.indexOf('getEmissionMode(');
+  assert.ok(idxGate >= 0,
+    `🔴 ${r.nombre} no llama a getEmissionMode. Sin el gate por MODO (el mismo mecanismo que ya ` +
+    'usan /consolidar, /facturar-parcial, /convertir-en-factura y /consolidar-albaranes), un ' +
+    'merchant ES con el flag OFF llega hasta allocateInvoiceNumber y el rechazo sale como 500, ' +
+    'no como un 409 legible.');
 
-    const idxGate = h.indexOf('getEmissionMode(');
-    assert.ok(idxGate >= 0,
-      `🔴 ${r.nombre} no llama a getEmissionMode. Sin el gate por MODO (el mismo mecanismo que ya ` +
-      'usan /consolidar, /facturar-parcial, /convertir-en-factura y /consolidar-albaranes), un ' +
-      'merchant ES con el flag OFF llega hasta allocateInvoiceNumber y el rechazo sale como 500, ' +
-      'no como un 409 legible.');
+  const idxLlamada = h.indexOf(r.llamada);
+  assert.ok(idxLlamada >= 0, `🔴 ${r.nombre} ya no llama a ${r.llamada}: la ruta ha cambiado de forma.`);
 
-    const idxLlamada = h.indexOf(r.llamada);
-    assert.ok(idxLlamada >= 0, `🔴 ${r.nombre} ya no llama a ${r.llamada}: la ruta ha cambiado de forma.`);
+  assert.ok(idxGate < idxLlamada,
+    `🔴 ${r.nombre}: el gate getEmissionMode aparece DESPUÉS de ${r.llamada} en el texto de la ` +
+    'ruta. El punto único (allocateInvoiceNumber) ya rechaza el modo receipt, pero si el gate no ' +
+    'corre ANTES, el rechazo llega tarde: con la transacción abierta y sin la respuesta 409 nombrada.');
 
-    assert.ok(idxGate < idxLlamada,
-      `🔴 ${r.nombre}: el gate getEmissionMode aparece DESPUÉS de ${r.llamada} en el texto de la ` +
-      'ruta. El punto único (allocateInvoiceNumber) ya rechaza el modo receipt, pero si el gate no ' +
-      'corre ANTES, el rechazo llega tarde: con la transacción abierta y sin la respuesta 409 nombrada.');
-
-    // El gate compara contra 'receipt', no reinventa el criterio con el flag a mano — es
-    // exactamente el error que facturaSuelta.ts documenta que NO hay que cometer (ES-only).
-    const gate = h.slice(idxGate, idxGate + 200);
-    assert.match(gate, /===\s*'receipt'/,
-      `🔴 ${r.nombre}: el gate no compara contra 'receipt'. Comparar contra el flag a mano ` +
-      '(isFlagEnabled) rompe a un merchant no-ES, que SIEMPRE es fiscal sin mirar el flag.');
-  });
-
-  test(`SCRUM-1027 · ${r.nombre}: el gate responde 409 NOMBRADO, no un 500`, () => {
-    const fuente = leer(r.fichero);
-    const { arbol, nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
-    const h = sinComentarios(textoDe(arbol, nodo));
-    const idxGate = h.indexOf('getEmissionMode(');
-    const tramoGate = h.slice(idxGate, idxGate + 300);
-    const status = tramoGate.match(/res\.status\((\d{3})\)/);
-    assert.ok(status, `🔴 ${r.nombre}: el gate no responde con un status explícito`);
-    assert.equal(status[1], '409', `🔴 ${r.nombre}: el gate tiene que responder 409, no 500 ni 200`);
-    assert.match(tramoGate, /error:\s*'facturacion_no_disponible'/,
-      `🔴 ${r.nombre}: el 409 no lleva el error NOMBRADO ya establecido en ` +
-      "albaranes.routes.ts/jobs.routes.ts (`'facturacion_no_disponible'`) para este mismo caso.");
-  });
-}
+  // El gate compara contra 'receipt', no reinventa el criterio con el flag a mano — es
+  // exactamente el error que facturaSuelta.ts documenta que NO hay que cometer (ES-only).
+  const gate = h.slice(idxGate, idxGate + 200);
+  assert.match(gate, /===\s*'receipt'/,
+    `🔴 ${r.nombre}: el gate no compara contra 'receipt'. Comparar contra el flag a mano ` +
+    '(isFlagEnabled) rompe a un merchant no-ES, que SIEMPRE es fiscal sin mirar el flag.');
+});
+const casoc = casosEscritos(RUTAS, (r) => `SCRUM-1027 · ${r.nombre}: el gate responde 409 NOMBRADO, no un 500`, (r) => {
+  const fuente = leer(r.fichero);
+  const { arbol, nodo } = handlerDe(fuente, r.fichero, r.metodo, r.path);
+  const h = sinComentarios(textoDe(arbol, nodo));
+  const idxGate = h.indexOf('getEmissionMode(');
+  const tramoGate = h.slice(idxGate, idxGate + 300);
+  const status = tramoGate.match(/res\.status\((\d{3})\)/);
+  assert.ok(status, `🔴 ${r.nombre}: el gate no responde con un status explícito`);
+  assert.equal(status[1], '409', `🔴 ${r.nombre}: el gate tiene que responder 409, no 500 ni 200`);
+  assert.match(tramoGate, /error:\s*'facturacion_no_disponible'/,
+    `🔴 ${r.nombre}: el 409 no lleva el error NOMBRADO ya establecido en ` +
+    "albaranes.routes.ts/jobs.routes.ts (`'facturacion_no_disponible'`) para este mismo caso.");
+});
+test('SCRUM-1027 · SUELO: el extractor encuentra POST /admin/jobs/:id/collect-rest', casoa(0));
+test('SCRUM-1027 · POST /admin/jobs/:id/collect-rest: gatea con getEmissionMode ANTES de pedir número', casob(0));
+test('SCRUM-1027 · POST /admin/jobs/:id/collect-rest: el gate responde 409 NOMBRADO, no un 500', casoc(0));
+test('SCRUM-1027 · SUELO: el extractor encuentra POST /admin/quotes/:id/invoice', casoa(1));
+test('SCRUM-1027 · POST /admin/quotes/:id/invoice: gatea con getEmissionMode ANTES de pedir número', casob(1));
+test('SCRUM-1027 · POST /admin/quotes/:id/invoice: el gate responde 409 NOMBRADO, no un 500', casoc(1));
+test('SCRUM-1027 · SUELO: el extractor encuentra POST /admin/quotes/:id/invoice-manual', casoa(2));
+test('SCRUM-1027 · POST /admin/quotes/:id/invoice-manual: gatea con getEmissionMode ANTES de pedir número', casob(2));
+test('SCRUM-1027 · POST /admin/quotes/:id/invoice-manual: el gate responde 409 NOMBRADO, no un 500', casoc(2));
+casoa.todos();
+casob.todos();
+casoc.todos();
 
 // ── EL CAMINO PÚBLICO (C1) — EL CLIENTE FINAL ACEPTANDO EL PRESUPUESTO ─────────────────────
 

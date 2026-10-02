@@ -33,53 +33,15 @@ import { casosEscritos, nombreEscrito } from './_casos-escritos.mjs';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Los ficheros de `DECLARADAS` tienen el MISMO motivo, medido por AST el 2-oct-2026: el bucle
- * que envuelve a cada llamada itera una tabla escrita en el propio fichero. Son convertibles
- * (con `casosEscritos`) y están pendientes: SCRUM-1416.
- */
-const PENDIENTE = 'bucle sobre una tabla escrita en el fichero · convertible, pendiente (SCRUM-1416)';
-
-/**
  * `[fichero, llamadas de nombre construido, motivo]`. Una entrada por línea.
  *
- * SÓLO BAJA. Al convertir un fichero se baja su cifra (o se quita la línea) en el mismo PR.
- * Una entrada cuyo nombre dependa de un dato que sólo existe al ejecutar NO lleva `PENDIENTE`:
- * lleva escrito por qué no se puede convertir. Hoy no hay ninguna.
+ * SÓLO BAJA. Los bucles sobre tablas del propio fichero se desenrollaron con `casosEscritos`
+ * (SCRUM-1416): un test nuevo se escribe con nombre literal, no se declara aquí.
+ * La única entrada que queda no es «no convertible»: está bloqueada por una decisión pendiente,
+ * y su motivo dice cuál y quién la retira.
  */
 const DECLARADAS = [
-  ['scrum1027-atajo-flag-off-sin-documento.test.mjs', 3, PENDIENTE],
-  ['scrum1093h-censo-fecha-sin-zona.test.mjs', 2, PENDIENTE],
-  ['scrum1106-respuestas-ia-no-son-del-asesor.test.mjs', 2, PENDIENTE],
-  ['scrum1153-censo-entorno-prestado.test.mjs', 2, PENDIENTE],
-  ['scrum1200-sin-respuesta.test.mjs', 2, PENDIENTE],
-  ['scrum1213-quoteadmin-tenencia-fail-closed.test.mjs', 2, PENDIENTE],
-  ['scrum1315-gemelos-estado-dentro-del-where.test.mjs', 5, PENDIENTE],
-  ['scrum1354-dueno-de-la-marca.test.mjs', 2, PENDIENTE],
-  ['scrum1360-caja-albaran-firma-de-parte.test.mjs', 1, PENDIENTE],
-  ['scrum1362-cargador-de-defectos-del-viaje.test.mjs', 1, PENDIENTE],
-  ['scrum1388-facturas-recibidas-literales-firmados.test.mjs', 1, PENDIENTE],
-  ['scrum176-guard-mensaje.test.mjs', 2, PENDIENTE],
-  ['scrum264-copy-que-llega-al-cliente.test.mjs', 4, PENDIENTE],
-  ['scrum330-contador-solo-activas.test.mjs', 4, PENDIENTE],
-  ['scrum384-min-height-locales.test.mjs', 1, PENDIENTE],
-  ['scrum386-hojas-fuera.test.mjs', 2, PENDIENTE],
-  ['scrum454-destructivo-sin-comprobacion.test.mjs', 4, PENDIENTE],
-  ['scrum522-guards-fuera-de-la-tanda.test.mjs', 1, PENDIENTE],
-  ['scrum542-objetivo-tactil.test.mjs', 2, PENDIENTE],
-  ['scrum562-arbitro-de-toque.test.mjs', 1, PENDIENTE],
-  ['scrum600-un-solo-front-documento.test.mjs', 1, PENDIENTE],
-  ['scrum605-atajos-vencimiento.test.mjs', 1, PENDIENTE],
-  ['scrum630-default-en-dias.test.mjs', 1, PENDIENTE],
-  ['scrum643-zona-del-merchant.test.mjs', 1, PENDIENTE],
-  ['scrum785-productos-y-proveedores-descuelgan.test.mjs', 2, PENDIENTE],
-  ['scrum809-paywall-tras-cancelar.test.mjs', 2, PENDIENTE],
-  ['scrum885-documento-sin-enviar.test.mjs', 1, PENDIENTE],
-  ['scrum893-solo-lo-que-puede-cobrar.test.mjs', 1, PENDIENTE],
-  ['scrum899d-aviso-de-uso.test.mjs', 1, PENDIENTE],
-  ['scrum905-facturar-solo-si-se-puede.test.mjs', 3, PENDIENTE],
-  ['scrum910-la-transferencia-que-no-mira.test.mjs', 1, PENDIENTE],
-  ['scrum910d-microcopy-recibo-pendiente.test.mjs', 1, PENDIENTE],
-  ['scrum931-un-solo-importe-de-plantilla.test.mjs', 4, PENDIENTE],
+  ['scrum809-paywall-tras-cancelar.test.mjs', 2, 'no es que no se pueda convertir: convertirlo sube el inventario declarado de SCRUM-419 de 42 a 44, y esa cifra también vive en `ci.yml`. Se retira cuando el fundador decida sobre el inventario.'],
 ];
 
 /** El censo de UN árbol: `fuentes` es `[{ fichero, codigo }]`. Puro, para poder fabricarle un rojo. */
