@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { montarAlmacen, porQueEstariaCiego } from './_banco-almacen-local.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = 7;
@@ -63,16 +64,18 @@ test('SCRUM-1360 · ✅ una entrada VIEJA, sin `tipo`, sigue siendo de su albar�
     '🔴 una firma de albarán encolada antes de que existiera `tipo` ha dejado de degradar su caja.');
 });
 
-for (const tipo of ['parte', 'parte-tecnico']) {
-  test(`SCRUM-1360 · 🔴 la firma en cola de «${tipo}» ${ID} NO degrada la caja del albarán ${ID} firmado`, async () => {
-    const { b, firmas } = await colaCon(ID, tipo);
-    assert.equal(b.ctx.hayFirmaEnColaDe(ID, firmas), false,
-      `🔴 la firma del ${tipo} ${ID} se cuenta como firma del ALBARÁN ${ID}: comparten número, no documento.`);
-    assert.equal(b.ctx.estadoDeLaFirmaDelAlbaran(ID, true, firmas), b.ctx.FIRMA_A_SALVO,
-      '🔴 EL ALBARÁN FIRMADO SE PINTA «SOLO EN ESTE MÓVIL» POR LA FIRMA DE UN PARTE. El servidor ya ' +
-      'tiene esa firma; la que espera en la cola es de otro documento.');
-  });
-}
+const FILAS = ['parte', 'parte-tecnico'];
+const caso = casosEscritos(FILAS, (tipo) => `SCRUM-1360 · 🔴 la firma en cola de «${tipo}» ${ID} NO degrada la caja del albarán ${ID} firmado`, async (tipo) => {
+  const { b, firmas } = await colaCon(ID, tipo);
+  assert.equal(b.ctx.hayFirmaEnColaDe(ID, firmas), false,
+    `🔴 la firma del ${tipo} ${ID} se cuenta como firma del ALBARÁN ${ID}: comparten número, no documento.`);
+  assert.equal(b.ctx.estadoDeLaFirmaDelAlbaran(ID, true, firmas), b.ctx.FIRMA_A_SALVO,
+    '🔴 EL ALBARÁN FIRMADO SE PINTA «SOLO EN ESTE MÓVIL» POR LA FIRMA DE UN PARTE. El servidor ya ' +
+    'tiene esa firma; la que espera en la cola es de otro documento.');
+});
+test('SCRUM-1360 · 🔴 la firma en cola de «parte» 7 NO degrada la caja del albarán 7 firmado', caso(0));
+test('SCRUM-1360 · 🔴 la firma en cola de «parte-tecnico» 7 NO degrada la caja del albarán 7 firmado', caso(1));
+caso.todos();
 
 test('SCRUM-1360 · ✅ parte y albarán con el mismo id EN LA MISMA COLA: manda la del albarán', async () => {
   const b = montarAlmacen(RAIZ);

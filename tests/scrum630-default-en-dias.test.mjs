@@ -66,6 +66,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -393,20 +394,24 @@ test('SCRUM-630 · CONTROL: el barrido no compara una función consigo misma', (
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS BORDES DE SCRUM-605, que el valor por defecto también tiene que respetar
 // ─────────────────────────────────────────────────────────────────────────────────────────
-for (const b of [
+const FILAS = [
   { que: '31 de enero + 30 (febrero de 28)', hoy: [2026, 0, 31], dias: 30, esperada: '2026-03-02' },
   { que: '31 de enero + 30 en BISIESTO', hoy: [2024, 0, 31], dias: 30, esperada: '2024-03-01' },
   { que: 'cambio de AÑO', hoy: [2026, 11, 15], dias: 30, esperada: '2027-01-14' },
   { que: '31 de diciembre + 7', hoy: [2026, 11, 31], dias: 7, esperada: '2027-01-07' },
-]) {
-  test(`SCRUM-630 · el valor por defecto respeta el borde: ${b.que}`, () => {
-    // Mediodía y zona ESCRITA: sin eso, el borde se mediría en la zona de la máquina y un
-    // runner en UTC daría otro día. Es la misma lección que el resto del fichero.
-    const ts = instanteDe(b.hoy[0], b.hoy[1] + 1, b.hoy[2], 12, 0, MADRID);
-    assert.equal(comoAhora(ts, MADRID, b.dias), b.esperada,
-      `🔴 sale ${comoAhora(ts, MADRID, b.dias)} y debería ${b.esperada}`);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS, (b) => `SCRUM-630 · el valor por defecto respeta el borde: ${b.que}`, (b) => {
+  // Mediodía y zona ESCRITA: sin eso, el borde se mediría en la zona de la máquina y un
+  // runner en UTC daría otro día. Es la misma lección que el resto del fichero.
+  const ts = instanteDe(b.hoy[0], b.hoy[1] + 1, b.hoy[2], 12, 0, MADRID);
+  assert.equal(comoAhora(ts, MADRID, b.dias), b.esperada,
+    `🔴 sale ${comoAhora(ts, MADRID, b.dias)} y debería ${b.esperada}`);
+});
+test('SCRUM-630 · el valor por defecto respeta el borde: 31 de enero + 30 (febrero de 28)', caso2(0));
+test('SCRUM-630 · el valor por defecto respeta el borde: 31 de enero + 30 en BISIESTO', caso2(1));
+test('SCRUM-630 · el valor por defecto respeta el borde: cambio de AÑO', caso2(2));
+test('SCRUM-630 · el valor por defecto respeta el borde: 31 de diciembre + 7', caso2(3));
+caso2.todos();
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LA VISTA · usa la primitiva, y el orden de carga que lo hace posible está VIGILADO
