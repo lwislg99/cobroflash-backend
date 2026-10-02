@@ -18,7 +18,6 @@
 // Funciones puras salvo las cuatro de abajo que tocan disco (el registro de tramos vistos), que
 // reciben su directorio: los tests les dan uno temporal.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
@@ -69,7 +68,7 @@ export function leerCiegosDeclarados(fichero) {
  * DECLARADO por su nombre exacto Y su condición se cumple en esta máquina. Declarado con la
  * condición sin cumplirse, es un rojo como cualquier otro: ahí el test sí podía medir.
  */
-export function partirCaidos(caidos, declarados, entorno = { raiz: process.cwd(), tmp: os.tmpdir() }) {
+export function partirCaidos(caidos, declarados, entorno) {
   const tuyos = [];
   const porEntorno = [];
   for (const nombre of caidos) {

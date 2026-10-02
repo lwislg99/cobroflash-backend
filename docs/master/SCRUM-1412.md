@@ -19,7 +19,10 @@ Carril S3 (instrumentos). Por encargo del orquestador (punto 4 del relevo del 2-
     node scripts/tests-que-cubren.mjs --lanzar --tramo 1/4      (y 2/4, 3/4, 4/4: cada uno en SU comando)
     node scripts/tests-que-cubren.mjs --resumen-de 4            (sólo lee: qué tramos se han visto)
 
-Cada tramo apunta su resultado FUERA del árbol (`<temporal>/yaqu-dirigida-tramos/<huella>/`). La
+Cada tramo apunta su resultado FUERA del árbol, en una carpeta con el token de la sesión
+(`<temporal>/yaqu-dirigida-tramos-<token>/<huella>/`): la primera versión usaba una ruta fija,
+compartida por toda la máquina, y la paró el guard de SCRUM-258 al correr esta herramienta sobre su
+propia rama. La
 huella es la selección, el número de tramos y el árbol (commit, lo cambiado y lo sin seguir, con su
 contenido). El veredicto de la pasada exige los n tramos de la MISMA huella:
 

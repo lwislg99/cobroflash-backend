@@ -27,6 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
+import { tokenDeSesion } from './_identidad-sesion.mjs';
 import { baseDeLaRama } from '../tests/_base-de-la-rama.mjs';
 import { temporal } from '../tests/_temporal.mjs';
 import {
@@ -185,8 +186,12 @@ export function estadoDelArbol(raiz = RAIZ) {
   return h.digest('hex');
 }
 
-/** Donde se apunta qué tramos se han visto. FUERA del árbol; se borra al completar la pasada. */
-const BASE_DE_TRAMOS = path.join(os.tmpdir(), 'yaqu-dirigida-tramos');
+/**
+ * Donde se apunta qué tramos se han visto. FUERA del árbol, y con el token de la SESIÓN (SCRUM-258):
+ * estable entre procesos del mismo árbol —el tramo 3 encuentra lo que apuntó el 1— y distinto en
+ * cada worktree, para que dos puestos no se pisen. Se borra al completar la pasada.
+ */
+const BASE_DE_TRAMOS = path.join(os.tmpdir(), `yaqu-dirigida-tramos-${tokenDeSesion(RAIZ)}`);
 
 function main() {
   const args = process.argv.slice(2);
@@ -275,7 +280,7 @@ function main() {
   }
   console.log(`\nLanzo ${aCorrer.length} ficheros de test, ${concurrencia} a la vez, en lotes de ${LOTE}…\n`);
   const r = lanzar(aCorrer, concurrencia);
-  const v = veredictoDeLaDirigida(r, leerCiegosDeclarados(path.join(RAIZ, 'scripts', '_ciegos-por-entorno-declarados.json')), { raiz: RAIZ, tmp: os.tmpdir() });
+  const v = veredictoDeLaDirigida(r, leerCiegosDeclarados(path.join(RAIZ, 'scripts', '_ciegos-por-entorno-declarados.json')), { raiz: RAIZ, tmp: path.dirname(BASE_DE_TRAMOS) });
   console.log(`\nDIRIGIDA: ${aCorrer.length} ficheros · ${r.tests} tests · ${r.pass} pass · ${r.fail} fail · ${duracion(r.ms)} medidos`);
   const destinoTap = args.find((a) => a.startsWith('--tap='))?.slice('--tap='.length);
   if (destinoTap) {
