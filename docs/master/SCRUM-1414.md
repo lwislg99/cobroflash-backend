@@ -58,6 +58,28 @@ Por día, los de más espera: 2-oct 19 % · 29-sep 17 % · 22-sep 14 % · 28-sep
 El 2-oct a las 12:10Z había **5 sesiones de puesto paradas y sin volver**, sumando 2,4 h: cuatro decían
 esperar un veredicto de CI y una un permiso del sistema.
 
+## La segunda medida: TIEMPO HASTA EL VEREDICTO (no se suma a la de arriba)
+
+Pedida por el orquestador el mismo 2-oct, por este motivo: su cura para la espera de CI es que la sesión
+empuje y siga con otra cosa. Con eso el TIEMPO PARADO baja **aunque el CI tarde lo mismo**, así que
+mirando solo esa cifra la cura parecería un éxito el primer día por construcción. Esta medida es la que
+la cura NO cambia.
+
+`--runs <fichero>` con la salida de `gh run list --limit 300 --json name,event,headSha,headBranch,createdAt,updatedAt,status,conclusion`.
+
+Medido sobre 300 corridas, del 1-oct 18:24Z al 2-oct 12:13Z (53 empujones vistos):
+
+| | |
+|---|---|
+| de empujón a veredicto | mediana **20 min** · 9 de cada 10 en menos de 26 min · 30 empujones |
+| de ello, hasta que el CI arranca | mediana 0 min · 9 de cada 10 en menos de 3 min |
+| cómo acabó la corrida entera | success 13 · failure 17 |
+| fuera de la cifra | 17 corridas canceladas · 5 en curso · 1 empujón sin CI · 1 CI sin su empujón entre las leídas |
+
+Límites: es el final de la corrida ENTERA de CI, con sus jobs informativos, así que es un techo del tiempo
+del obligatorio (y «failure 17» no son 17 obligatorios en rojo). 17 canceladas de 53 es mucho y **no he
+mirado por qué se cancelan**. La ventana son 18 horas, no la serie de dos semanas de la otra medida.
+
 ## El hallazgo
 
 **«La despertó el orquestador» no es «esperaba una decisión del orquestador».** El 84 % de la espera la
@@ -76,7 +98,9 @@ todo pasa por él, también lo que no es una decisión.
 Y tres límites del método:
 
 - «Una persona» es quien teclea en esa sesión. No distingue al fundador del prompt de arranque.
-- Los dos umbrales (15 min y 120 min) los elegí yo, mirando esta serie. No los he validado contra otra.
+- 🔴 **Los dos umbrales (15 min y 120 min) NO ESTÁN VALIDADOS.** Los elegí yo mirando la misma serie que
+  miden. Es calibrar sobre una muestra, el error de C5 y de C6 (SCRUM-1372). Está dicho también en la
+  cabecera del script. Si hay otra serie, se revisan contra ella.
 - Las horas son las del reloj de la máquina, que va unos minutos adelantado respecto a GitHub. No afecta a
   las duraciones.
 

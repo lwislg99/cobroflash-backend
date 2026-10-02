@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // SCRUM-1414 · CUÁNTO TIEMPO PASA EL EQUIPO ESPERANDO, Y A QUIÉN
 //
-//   node scripts/espera-del-equipo.mjs [--jobs <carpeta>] [--desde AAAA-MM-DD] [--hueco-min 15] [--larga-min 120]
+//   node scripts/espera-del-equipo.mjs [--jobs <carpeta>] [--desde AAAA-MM-DD] [--hueco-min 15] [--larga-min 120] [--runs <runs.json>]
+//
+// ⚠️ LOS DOS UMBRALES NO ESTÁN VALIDADOS: 15 min y 120 min se eligieron mirando la misma serie que miden
+// (17-sep → 2-oct-2026). Es calibrar sobre una muestra. Si hay otra serie, se revisan contra ella.
 //
 // POR QUÉ EXISTE. El equipo comprueba al orquestador en lo que entrega, y nadie mide lo que cuesta
 // ESPERARLE. El 2-oct-2026, media hora después de arrancar, cuatro de seis puestos estaban parados
@@ -208,7 +211,7 @@ export function medir(trabajos, { desde = null, huecoMin = HUECO_MIN, largaMin =
     `ventana: ${new Date(primero).toISOString()} → ${new Date(ultimo).toISOString()}${desde ? ` (desde ${desde})` : ''}`,
     `umbrales: hueco > ${huecoMin} min entre dos «working» · espera larga > ${largaMin} min`,
     '',
-    'LA CIFRA',
+    'TIEMPO PARADO — LA CIFRA',
     `   tiempo vivo (trabajando + esperas cortas): ${h(vivo)}`,
     `   de él, ESPERANDO: ${h(suma.corta)} = ${pct(suma.corta, vivo)} · en ${nEsperas} esperas`,
     `   de esa espera, la despertó EL ORQUESTADOR: ${h(delOrq)} = ${pct(delOrq, suma.corta)} de la espera · ${pct(delOrq, vivo)} del tiempo vivo`,
@@ -263,6 +266,61 @@ export function medir(trabajos, { desde = null, huecoMin = HUECO_MIN, largaMin =
   return { codigo: 0, lineas: out, datos: { suma, vivo, porQuien, porDice, porEstado, porDia, porPuesto, colas, ilegibles, sinTranscripcion, leidas, fuera, nEsperas, nLargas, jornada, abiertas } };
 }
 
+// ───────────────────────────── tiempo hasta el veredicto ─────────────────────────────
+//
+// OTRA COSA, y no se suma con la de arriba. El tiempo PARADO baja en cuanto una sesión deja de quedarse
+// quieta tras empujar, AUNQUE el CI tarde lo mismo: mirando solo esa cifra, cualquier cura parece un
+// éxito el primer día por construcción. Esto mide lo que esa cura NO cambia: de empujón a veredicto.
+//
+// La costura: las corridas las baja quien tiene `gh`, y se las pasa en un fichero:
+//   gh run list --limit 300 --json name,event,headSha,headBranch,createdAt,updatedAt,status,conclusion > runs.json
+// EMPUJÓN = la corrida del abridor de PR (evento `push`) de ese commit. VEREDICTO = el final de la
+// corrida de CI (evento `pull_request`) del MISMO commit. ⚠️ Es el final de la corrida ENTERA, con sus
+// jobs informativos: el obligatorio acaba ahí o antes, así que esto es un techo de su tiempo. Y si la
+// corrida se relanzó, su final es el del último intento.
+export const WF_ABRIDOR = 'PR automático (ramas scrum-)';
+export const WF_CI = 'CI';
+
+/** @param {{name:string,event:string,headSha:string,createdAt:string,updatedAt:string,status:string,conclusion:string}[]} runs */
+export function hastaElVeredicto(runs, { abridor = WF_ABRIDOR, ci = WF_CI } = {}) {
+  const empujon = new Map(); const veredicto = new Map();
+  for (const r of runs) {
+    if (r.name === abridor && r.event === 'push') { const t = Date.parse(r.createdAt); if (!empujon.has(r.headSha) || t < empujon.get(r.headSha)) empujon.set(r.headSha, t); }
+    if (r.name === ci && r.event === 'pull_request') { const v = veredicto.get(r.headSha); if (!v || Date.parse(r.createdAt) > Date.parse(v.createdAt)) veredicto.set(r.headSha, r); }
+  }
+  const medidos = []; let sinCI = 0, enCurso = 0, sinEmpujon = 0, canceladas = 0;
+  for (const [sha, t0] of empujon) {
+    const v = veredicto.get(sha);
+    if (!v) { sinCI++; continue; }
+    if (v.status !== 'completed') { enCurso++; continue; }
+    // Una corrida cancelada acabó, pero no dio veredicto: no es un tiempo de nada.
+    if (v.conclusion === 'cancelled') { canceladas++; continue; }
+    medidos.push({ sha, conclusion: v.conclusion, hastaArrancar: Date.parse(v.createdAt) - t0, total: Date.parse(v.updatedAt) - t0 });
+  }
+  for (const sha of veredicto.keys()) if (!empujon.has(sha)) sinEmpujon++;
+  return { medidos, sinCI, enCurso, sinEmpujon, canceladas, empujones: empujon.size };
+}
+
+export function seccionVeredicto(runs, opciones) {
+  const out = ['', 'TIEMPO HASTA EL VEREDICTO (de empujón a final de la corrida de CI) — OTRA medida: NO se suma al TIEMPO PARADO'];
+  if (!Array.isArray(runs) || runs.length === 0) { out.push('   🔴 NO MEDIDO: no hay corridas que leer. Esto no dice que el CI vaya rápido.'); return { lineas: out, medido: false }; }
+  const r = hastaElVeredicto(runs, opciones);
+  const fechas = runs.map((x) => Date.parse(x.createdAt)).filter(Number.isFinite);
+  out.push(`   corridas leídas: ${runs.length}, del ${new Date(Math.min(...fechas)).toISOString()} al ${new Date(Math.max(...fechas)).toISOString()} · empujones vistos: ${r.empujones}`);
+  if (r.medidos.length === 0) { out.push('   🔴 NO MEDIDO: ningún empujón tiene su corrida de CI terminada. ¿Han cambiado de nombre los workflows?'); return { lineas: out, medido: false, datos: r }; }
+  const q = (lista, p) => { const o = [...lista].sort((a, b) => a - b); return Math.round(o[Math.min(o.length - 1, Math.floor(p * o.length))] / MIN); };
+  const tot = r.medidos.map((m) => m.total); const arr = r.medidos.map((m) => m.hastaArrancar);
+  const porConclusion = {}; for (const m of r.medidos) porConclusion[m.conclusion] = (porConclusion[m.conclusion] || 0) + 1;
+  out.push(
+    `   de empujón a veredicto: mediana ${q(tot, 0.5)} min · 9 de cada 10 en menos de ${q(tot, 0.9)} min · ${r.medidos.length} empujones`,
+    `   de ello, hasta que el CI ARRANCA (el abridor abre el PR): mediana ${q(arr, 0.5)} min · 9 de cada 10 en menos de ${q(arr, 0.9)} min`,
+    `   cómo acabó la corrida entera (no solo el obligatorio): ${Object.entries(porConclusion).map(([k, v]) => `${k} ${v}`).join(' · ')}`,
+    `   fuera de la cifra: ${r.sinCI} empujones sin corrida de CI (PR en conflicto, o todavía sin abrir) · ${r.enCurso} con el CI en curso · ${r.canceladas} con la corrida cancelada (no dio veredicto; por qué se cancela NO está mirado) · ${r.sinEmpujon} corridas de CI cuyo empujón no está entre las leídas`,
+    '   ⚠️ es el final de la corrida ENTERA: techo del tiempo del obligatorio. Una corrida relanzada cuenta hasta su último intento.',
+  );
+  return { lineas: out, medido: true, datos: r };
+}
+
 /** Lee la carpeta de trabajos de verdad. Lo que no se puede leer llega como `null`, no se salta. */
 export function leerTrabajos(carpeta) {
   const trabajos = [];
@@ -288,5 +346,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   const r = medir(trabajos, { desde: arg('--desde', null), huecoMin: Number(arg('--hueco-min', HUECO_MIN)), largaMin: Number(arg('--larga-min', LARGA_MIN)) });
   console.log(r.lineas.join('\n'));
+  const rutaRuns = arg('--runs', null);
+  if (rutaRuns) {
+    let runs = null; try { runs = JSON.parse(fs.readFileSync(rutaRuns, 'utf8').replace(/^﻿/, '')); } catch { /* ilegible: la sección lo dice */ }
+    console.log(seccionVeredicto(runs).lineas.join('\n'));
+  } else console.log('\nTIEMPO HASTA EL VEREDICTO: NO MEDIDO en esta pasada (falta --runs <fichero>; la receta está en la cabecera del script).');
   process.exit(r.codigo);
 }

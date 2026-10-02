@@ -8,7 +8,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  puestoDe, quienEs, queDice, leerLinea, leerDespertadores, tramosDe, despertadorDe, paradoDeLasJornadas, medir, leerTrabajos,
+  puestoDe, quienEs, queDice, leerLinea, leerDespertadores, tramosDe, despertadorDe, paradoDeLasJornadas, medir, leerTrabajos, hastaElVeredicto, seccionVeredicto, WF_ABRIDOR, WF_CI,
   HUECO_MIN, LARGA_MIN,
 } from '../scripts/espera-del-equipo.mjs';
 
@@ -182,5 +182,55 @@ test('SCRUM-1414 · el comando de verdad: lee una carpeta de trabajos, y una que
     const mal = spawnSync(process.execPath, [SCRIPT, '--jobs', path.join(tmp, 'no-existe')], { encoding: 'utf8' });
     assert.equal(mal.status, 2);
     assert.match(mal.stdout, /NO VALE \(salida 2\)/);
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+// ───────────────────────────── tiempo hasta el veredicto ─────────────────────────────
+
+const run = (name, event, sha, creado, acabado, status = 'completed', conclusion = 'success') => ({ name, event, headSha: sha, createdAt: min(creado), updatedAt: min(acabado), status, conclusion });
+const RUNS = [
+  run(WF_ABRIDOR, 'push', 'aaa', 0, 1), run(WF_CI, 'pull_request', 'aaa', 2, 22),
+  run(WF_ABRIDOR, 'push', 'bbb', 10, 11), run(WF_CI, 'pull_request', 'bbb', 10, 40, 'completed', 'failure'),
+  run(WF_ABRIDOR, 'push', 'ccc', 20, 21), run(WF_CI, 'pull_request', 'ccc', 21, 25, 'completed', 'cancelled'),
+  run(WF_ABRIDOR, 'push', 'ddd', 30, 31), run(WF_CI, 'pull_request', 'ddd', 31, 32, 'in_progress', ''),
+  run(WF_ABRIDOR, 'push', 'eee', 40, 41),
+  run(WF_CI, 'pull_request', 'fff', 50, 70),
+  run(WF_CI, 'push', 'aaa', 100, 900), run('Zona roja', 'pull_request', 'aaa', 2, 500),
+];
+
+test('SCRUM-1414 · 🔴 tiempo hasta el veredicto: de empujón a final del CI del MISMO commit, y lo que no tiene veredicto se cuenta aparte', () => {
+  const r = hastaElVeredicto(RUNS);
+  assert.deepEqual(r.medidos.map((m) => [m.sha, m.conclusion, m.hastaArrancar / 60e3, m.total / 60e3]), [['aaa', 'success', 2, 22], ['bbb', 'failure', 0, 30]]);
+  assert.deepEqual([r.canceladas, r.enCurso, r.sinCI, r.sinEmpujon, r.empujones], [1, 1, 1, 1, 5]);
+  const t = seccionVeredicto(RUNS).lineas.join('\n');
+  assert.match(t, /TIEMPO HASTA EL VEREDICTO .* NO se suma al TIEMPO PARADO/);
+  assert.match(t, /mediana 30 min · 9 de cada 10 en menos de 30 min · 2 empujones/);
+  assert.match(t, /1 empujones sin corrida de CI .* 1 con el CI en curso · 1 con la corrida cancelada .* 1 corridas de CI cuyo empujón/);
+  assert.match(t, /techo del tiempo del obligatorio/);
+});
+
+test('SCRUM-1414 · 🔴 sin corridas, o con los workflows renombrados, NO da cifra: lo dice', () => {
+  for (const runs of [null, [], [run('otro nombre', 'push', 'aaa', 0, 1), run('otro CI', 'pull_request', 'aaa', 2, 22)]]) {
+    const s = seccionVeredicto(runs);
+    assert.equal(s.medido, false);
+    assert.match(s.lineas.join('\n'), /NO MEDIDO/);
+    assert.doesNotMatch(s.lineas.join('\n'), /mediana/);
+  }
+});
+
+test('SCRUM-1414 · las dos medidas salen con su nombre, separadas, y sin --runs la segunda dice que NO se midió', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1414b-'));
+  try {
+    const dir = path.join(tmp, 'j1'); fs.mkdirSync(dir);
+    fs.writeFileSync(path.join(dir, 'state.json'), JSON.stringify({ respawnFlags: ['-n', 's1-29a'] }));
+    fs.writeFileSync(path.join(dir, 'timeline.jsonl'), EQUIPO[0].linea);
+    const sin = spawnSync(process.execPath, [SCRIPT, '--jobs', tmp], { encoding: 'utf8' }).stdout;
+    assert.match(sin, /TIEMPO PARADO — LA CIFRA/);
+    assert.match(sin, /TIEMPO HASTA EL VEREDICTO: NO MEDIDO en esta pasada/);
+    const f = path.join(tmp, 'runs.json'); fs.writeFileSync(f, String.fromCharCode(0xFEFF) + JSON.stringify(RUNS));
+    const con = spawnSync(process.execPath, [SCRIPT, '--jobs', tmp, '--runs', f], { encoding: 'utf8' }).stdout;
+    assert.ok(con.indexOf('TIEMPO PARADO — LA CIFRA') < con.indexOf('TIEMPO HASTA EL VEREDICTO (de empujón'));
+    assert.match(con, /2 empujones/);
+    assert.match(spawnSync(process.execPath, [SCRIPT, '--jobs', tmp, '--runs', path.join(tmp, 'nada.json')], { encoding: 'utf8' }).stdout, /NO MEDIDO: no hay corridas/);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
