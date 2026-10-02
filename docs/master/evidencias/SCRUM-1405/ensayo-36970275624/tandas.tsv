@@ -1,0 +1,6 @@
+run	celda	brazo	salida	segundos	con_resumen	tap_tests	tap_pass	tap_fail	tap_skipped	senal_medible	ausentes	ficheros_con_ausentes	declarados	rojos	sembrados_en_tap	cola_ejecutados	cola_informados	cola_ausentes_ejecutados	cola_informados_spec	sonda_filas	sonda_con_pendientes	sonda_bloqueante	donde
+36970275624	con-01	con	1	444	sí	10269	10163	8	98	si	27	4	9762	8	4	80	80	0	80				scrum1262-la-baja-corta-todas-las-vias 4/10 cola | scrum813-trinquete-de-zona 7/28 cola | vigia-atascados 8/64 cola | zz1405-copia-de-vigia-atascados 8/64 cola
+36970275624	con-bloqueante-01	con-bloqueante	1	451	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36970275624	con-sonda-01	con-sonda	1	479	sí	10291	10185	8	98	si	2	1	9762	8	4	80	70	10	70	1575	2	no pedido	scrum161-evidencia-tanda 2/22 cola
+36970275624	sin-01	sin	1	500	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36970275624	sin-sonda-01	sin-sonda	1	486	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	no pedido	
