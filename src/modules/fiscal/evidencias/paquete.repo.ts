@@ -39,7 +39,12 @@ export async function leerPaqueteEvidencias(
   // merchant no se puede leer, no se arma ningun paquete de evidencias con un devengo adivinado.
   const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
   const [libro, modelo303, filasAlbaran, emisor] = await Promise.all([
-    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio }),
+    // SCRUM-1252 · el libro que va DENTRO del paquete son las facturas (RIVA 63). El criterio es el
+    // del lector (`soloFacturas`, SCRUM-1232: decide por `type` y sólo por `type`), no uno propio.
+    // ⚠️ El 303 de la línea de abajo lee el libro POR SU CUENTA y sin filtro: declara lo devengado
+    // (LIVA 75/167). Por eso los dos pueden no sumar lo mismo, y el paquete lo DICE
+    // (`AVISO_LIBRO_SOLO_FACTURAS`, en `paquete.ts`): esta línea y ese aviso entran juntos.
+    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio, soloFacturas: true }),
     leerModelo303(db, { merchantId, año: params.año, trimestre: params.trimestre }),
     db.albaran.findMany({
       // Firmados y del periodo: son los que tienen sello que comprobar.
