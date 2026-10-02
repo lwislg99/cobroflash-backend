@@ -218,6 +218,21 @@ const anterior = fs.existsSync(RUTA_ULTIMO)
   ? JSON.parse(fs.readFileSync(RUTA_ULTIMO, 'utf8'))
   : null;
 
+// 🔴 SCRUM-1399 · UN PUNTERO DE ANULACIÓN DEL GUION VIEJO NO SE USA. FALLA CERRADO.
+//
+// Hasta SCRUM-1399 este script guardaba, tras una anulación, la serie y la fecha de la PASADA
+// (ver abajo, donde se escribe el puntero). Ese fichero vive fuera de git y sobrevive al arreglo:
+// encadenarse a él saca un sobre cuyo «registro anterior» nombra una serie que no es de ningún
+// registro. Los punteros de alta y de R1 no llevan la marca y valen igual: su serie SÍ es la suya.
+if (anterior && anterior.tipo === 'anulacion' && anterior.identifica !== 'factura-anulada') {
+  console.error('🔴 SCRUM-1399 · El puntero de la cadena es de una ANULACIÓN generada con el guion viejo.');
+  console.error(`   Nombra la serie «${anterior.numSerieFactura}» (${anterior.fechaExpedicion}), que es la de aquella pasada`);
+  console.error('   y no la de la factura que se anuló: no identifica ningún registro. No se genera nada.');
+  console.error('   Antes de seguir hay que saber qué factura anuló ese registro y qué fue lo último que');
+  console.error('   aceptó la AEAT (docs/master/SCRUM-1399.md).');
+  process.exit(1);
+}
+
 if (SERIE_FORZADA || FECHA_FORZADA) {
   console.log(`⚠️  SONDA DE COLISIÓN: serie=${SERIE} fecha=${FECHA} (forzadas a mano)`);
 }
@@ -353,8 +368,21 @@ fs.writeFileSync(salida, soap, 'utf8');
 
 // El siguiente envío se encadena a éste. Se guarda DESPUÉS de que pasen los controles:
 // si el sobre no sale, la cadena no avanza.
+//
+// 🔴 SCRUM-1399 · SE GUARDA LA IDENTIDAD DEL REGISTRO, QUE NO SIEMPRE ES LA SERIE DE LA PASADA.
+//
+// Lo que se guarda aquí es lo que el sobre SIGUIENTE escribe en su `RegistroAnterior`. Un alta
+// y una R1 se identifican por su propia serie y su propia fecha. Una ANULACIÓN no tiene serie
+// propia: se identifica por la factura que anula (`NumSerieFacturaAnulada` y su fecha). Antes se
+// guardaban `SERIE` y `FECHA` para los tres tipos, y el sobre que seguía a una anulación nombraba
+// como anterior una serie que no era de ningún registro. La huella no cambia: es la de la
+// anulación, que es a lo que se encadena.
+const identidad = TIPO === 'anulacion'
+  ? { serie: objetivo.numSerieFactura, fecha: objetivo.fechaExpedicion, identifica: 'factura-anulada' }
+  : { serie: SERIE, fecha: FECHA, identifica: 'registro' };
 fs.writeFileSync(RUTA_ULTIMO, JSON.stringify({
-  idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella, tipo: TIPO,
+  idEmisorFactura: NIF, numSerieFactura: identidad.serie, fechaExpedicion: identidad.fecha, huella, tipo: TIPO,
+  identifica: identidad.identifica,
 }, null, 2));
 
 // 🔴 El puntero de ALTA sólo avanza con ALTAS. Una anulación o una R1 NO se convierten en
