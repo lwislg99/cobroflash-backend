@@ -3,9 +3,10 @@
 > **2-oct-2026 16:35 GMT (hora de GitHub) · Sesión 0 (consultoría).**
 > **Verifacturamos: VISTO POR DENTRO** el 2-oct-2026 con la cuenta de prueba autorizada (plan «Prueba», sin
 > firma electrónica), capturas `docs/competencia/capturas/verifacturamos/pasos-NN-*.png`.
-> **YaQu: CÓDIGO, NO PANTALLA** — leído en `origin/main` = `f30b1a4052957e245ebe1cfef53bbef410c5816b`. La cuenta
-> de QA volvió a estar viva a las 16:37Z, pero de yaqu.app solo se pudo abrir el inicio (§6): ninguna cifra
-> de la columna «nosotros» está vista en pantalla.
+> **YaQu: CÓDIGO, y desde el 2-oct por la tarde PARTE EN PANTALLA** — leído en `origin/main` =
+> `f30b1a4052957e245ebe1cfef53bbef410c5816b`, y después recorrido en yaqu.app con la cuenta de QA, con permiso
+> escrito del fundador. **§12 dice qué cifras están ya vistas y cuáles siguen siendo de código**, y corrige una:
+> el editor completo son **7 clics, no 6**. Donde este documento dice «código, no pantalla», manda §12.
 > Todo texto de pantalla ajeno citado aquí es dato de mercado, no propuesta (regla 39). Lo fiscal es dato, no
 > propuesta. Este documento no recomienda qué copiar.
 
@@ -31,16 +32,16 @@
 | Tramo | Verifacturamos (visto) | YaQu (código, no pantalla) | Quién gana en pasos |
 |---|---|---|---|
 | Alta de cliente | 3 clics · 1 campo · 2 pantallas | 3 clics · 1 campo · 2 pantallas | Empate |
-| Presupuesto, cliente que ya existe (sin enviar) | 3 clics · 3 campos · 2 pantallas | Editor: **6 clics** · 2 campos · 3 pantallas (asistente de 4 pasos) | **Ellos, por 3 clics** |
+| Presupuesto, cliente que ya existe (sin enviar) | 3 clics · 3 campos · 2 pantallas | Editor: **7 clics** · 2 campos · 3 pantallas (asistente de 4 pasos) | **Ellos, por 4 clics** |
 | Presupuesto SIN cliente | 2 clics · 2 campos · 2 pantallas | No hay camino: el cliente es obligatorio | **Ellos** |
-| Presupuesto + envío al cliente | ≥ 5 clics (3 + «Enviar» + elegir canal; lo que venga detrás no se pulsó) | Rápido: **3 clics** · 3 campos · 2 pantallas, y sale ya enviado. Editor: 7 clics | **Nosotros, por ≥ 2 clics** (rápido); ellos por ≥ 2 si se usa el editor |
+| Presupuesto + envío al cliente | ≥ 5 clics (3 + «Enviar» + elegir canal; lo que venga detrás no se pulsó) | Rápido: **3 clics** · 3 campos · 2 pantallas, y sale ya enviado. Editor: 8 clics | **Nosotros, por ≥ 2 clics** (rápido); ellos, por hasta 3, si se usa el editor |
 | De presupuesto a factura | 2 clics · 0 campos · 0 preguntas · no pide aceptación. Deja un **borrador** | Si el cliente firma: **0 clics**. A mano: 3 clics. Deja una factura **emitida**. **En España, hoy (flag en OFF): no hay camino** | Con firma, nosotros. A mano, ellos por 1. **Hoy en España, ellos** |
 | Emitir | No medido (no pulsado). Mínimo deducido: ≥ 3 clics + 1 campo (el NIF), y la firma electrónica una vez | 0: va dentro del tramo anterior | Nosotros (deducido, no medido) |
 | Cobrar | **No existe**: ni enlace de pago, ni medio de cobro, ni control visto para marcar pagada | Enlace de pago enviado solo al firmar (0 clics); marcar pagada: 2 clics | Nosotros: ellos no tienen el tramo |
 
 **En qué nos ganan en pasos, de mayor a menor:**
 
-1. **Nuestro editor completo cuesta el doble que el suyo: 6 clics contra 3.** Los tres de diferencia son los
+1. **Nuestro editor completo cuesta más del doble que el suyo: 7 clics contra 3.** Los cuatro de diferencia son los
    tres «Continuar» del asistente (Cliente → Conceptos → Condiciones → Revisar) más llegar a él: desde nuestro
    inicio no hay entrada directa al editor (menú «Presupuestos» + «Nuevo presupuesto»), y desde su Panel
    «Crear presupuesto» es un botón.
@@ -91,7 +92,7 @@ Fallo suyo visto dos veces: al convertir, el aviso dice «Factura null creada».
 | Alta de cliente | «Añadir cliente» (lleva a la lista) → «Nuevo cliente» (modal) → nombre → «Guardar». Solo el nombre es obligatorio | `public/dashboard/js/customersView.js` (`required` del nombre; «NIF/CIF (opcional)») · `src/core/validation/schemas.ts` (`customerCreateSchema`) | 3 clics · 1 campo · 2 pantallas |
 | Presupuesto rápido + envío, cliente existente | Botón ⚡ del inicio (modal) → teclear nombre → clic en la coincidencia → concepto → precio → «Enviar por WhatsApp». Crea, envía y abre la ficha | `public/dashboard/js/homeView.js` (`btn-quick-quote`, `qq-send`, llamada a `send-whatsapp`) | 3 clics · 3 campos · 2 pantallas |
 | Presupuesto rápido + envío, cliente nuevo | Igual, pero el nombre sin coincidencias da de alta al cliente; hace falta su teléfono para enviar | `homeView.js` (alta dentro del envío) · `src/modules/quotes/domain/sendQuote.service.ts` (`customer_missing_phone`) | 2 clics · 4 campos · 2 pantallas |
-| Presupuesto por el editor, sin enviar | «Presupuestos» → «Nuevo presupuesto» → elegir cliente → «Continuar» → concepto y precio → «Continuar» → «Continuar» (condiciones, sin tocar) → «Generar presupuesto». Abre una ventana con el PDF; queda en borrador | `public/dashboard/js/quotesView.js` (los cuatro pasos y sus `puede`) · `quotesListView.js` | 6 clics · 2 campos · 3 pantallas |
+| Presupuesto por el editor, sin enviar | «Presupuestos» → «Nuevo presupuesto» → elegir cliente → «Continuar» → concepto y precio → «Continuar» → «Continuar» (condiciones, sin tocar) → «Generar presupuesto». Abre una ventana con el PDF; queda en borrador | `public/dashboard/js/quotesView.js` (los cuatro pasos y sus `puede`) · `quotesListView.js` | 7 clics · 2 campos · 3 pantallas |
 | Enviar tras el editor | «Enviar por WhatsApp» en esa ventana, sin confirmación | `quotesView.js` | 1 clic |
 | De presupuesto a factura | Exige presupuesto aceptado. Con firma del cliente, el servidor emite solo. A mano, en la ficha: «Aceptar presupuesto» → «Confirmar aceptación» → «Generar factura (100%)». Sin borrador intermedio. **Con el flag en OFF y merchant español real, los botones no se pintan y el servidor responde 409** | `public/dashboard/js/quotesDetailView.js` · `src/modules/system/app/routes/quotesAdmin.routes.ts` (`quote_not_accepted`, `facturacion_no_disponible`) · `src/modules/quotes/app/routes/quotes.routes.ts` | 0 clics con firma · 3 a mano · sin camino con OFF |
 | Cobrar | Con «100% al aceptar», la petición de pago sale por WhatsApp al firmar. «Marcar como pagada» en la ficha del presupuesto: botón + confirmación | `quotesDetailView.js` · `public/dashboard/js/invoiceDetailView.js` | 0 clics / 2 clics |
@@ -134,7 +135,7 @@ visto con cuenta de prueba en su fecha; **(web)** = solo su página comercial.
 | **Contasimple** | No abierto por dentro. (web) existe, con firma electrónica | No abierto por dentro. (web) «con un clic», pudiendo cambiar cantidades y precios antes | No visto | (dentro) casilla para marcar la factura como cobrada, en opciones avanzadas del formulario. (web) anuncia cobro en su TPV; un enlace de pago para el cliente final, sin confirmar |
 | **Billin / TS Facturas** | No abierto por dentro. (web) con estados pendiente, aceptado, rechazado y facturado, y aviso de si el cliente lo abrió | No abierto por dentro. (web) desde el presupuesto aceptado se genera factura, albarán o proforma | (dentro) casilla «enviar por correo al emitir» en el paso 2: 1 clic más; solo correo | (dentro) bloque para añadir un método de pago y casilla de «cantidad ya pagada», vistos y sin explorar. Pasarela: sin verificar |
 | **ServiceM8** (fila del 25-sep; **la del 2-oct, vista por dentro, está en §8 y manda**) | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
-| **YaQu** (código, no pantalla) | Rápido: 3 clics · 3 campos, ya enviado. Editor: 6 clics | Con firma, 0 clics; a mano, 3. Sale emitida. En España hoy, sin camino | Dentro del propio botón (rápido) o 1 clic | Petición de pago al firmar; marcar pagada, 2 clics |
+| **YaQu** (código, no pantalla) | Rápido: 3 clics · 3 campos, ya enviado. Editor: 7 clics | Con firma, 0 clics; a mano, 3. Sale emitida. En España hoy, sin camino | Dentro del propio botón (rápido) o 1 clic | Petición de pago al firmar; marcar pagada, 2 clics |
 
 La factura suelta, que es lo único medible en los dos españoles (deducido de las notas):
 Contasimple ≈ 6 clics · 2 a 3 campos · 1 página («Crear» → «Facturas emitidas» → elegir cliente en el
@@ -223,11 +224,13 @@ enviado.
 > **A ellos los vimos por dentro; a nosotros, leyendo el código.** Verifacturamos y ServiceM8, con cuenta de
 > prueba el 2-oct-2026. YaQu, en `origin/main`, sin abrir la pantalla. Contasimple y Billin, solo de notas de
 > septiembre. Cada cifra nuestra de esta página puede cambiar cuando alguien la cuente en yaqu.app.
+> **Ya cambió una:** el 2-oct por la tarde se recorrió yaqu.app hasta la aceptación (§12) y el editor resultó
+> ser de 7 clics, no de 6. Presupuesto y aceptación están vistos; factura y cobro siguen siendo de código.
 
 **Lo medido, en cuatro líneas.**
 
 - Crear y enviar un presupuesto corto: nosotros 3 clics, Verifacturamos ≥ 5, ServiceM8 3 sin contar el envío.
-- Presupuesto por el editor completo: nosotros 6 clics, Verifacturamos 3.
+- Presupuesto por el editor completo: nosotros 7 clics, Verifacturamos 3.
 - De presupuesto a factura a mano: nosotros 3 clics y exigimos aceptación; Verifacturamos 2 y deja un borrador;
   ServiceM8 3 sobre el mismo registro, y luego pide aprobar en otra pantalla.
 - Cobrar: Verifacturamos no lo tiene; ServiceM8 apunta el cobro en ≈ 5 clics; nosotros 2, o ninguno si el
@@ -238,7 +241,7 @@ propuestas de pantalla: son la cuenta de cada una, para decidir.
 
 | | Qué es | Base | Qué ahorra | Qué cuesta en nuestro código | Etiqueta |
 |---|---|---|---|---|---|
-| 1 | **Llegar al editor completo desde el inicio** | Verifacturamos: un botón en el Panel. Nosotros: menú «Presupuestos» + «Nuevo presupuesto» | 1 clic de 6 | El destino ya existe y ya se abre con una línea desde cinco pantallas (`renderAppView('quotes-new')`); el inicio tiene tres acciones rápidas en `homeView.js`. Es un control más en el inicio, con texto que ve el usuario: pide firma (regla 39) y es del carril de la pantalla | Ahorro **deducido** (código, no pantalla) · coste **medido** leyendo |
+| 1 | **Llegar al editor completo desde el inicio** | Verifacturamos: un botón en el Panel. Nosotros: menú «Presupuestos» + «Nuevo presupuesto» | 1 clic de 7 | El destino ya existe y ya se abre con una línea desde cinco pantallas (`renderAppView('quotes-new')`); el inicio tiene tres acciones rápidas en `homeView.js`. Es un control más en el inicio, con texto que ve el usuario: pide firma (regla 39) y es del carril de la pantalla | Ahorro **deducido** (código, no pantalla) · coste **medido** leyendo |
 | 2 | **Un presupuesto sin cliente** | Verifacturamos: cliente opcional, 2 clics y 2 campos | 1 campo en el presupuesto rápido (el nombre) y 1 clic en el editor. En el rápido, teclear un nombre que no existe ya da de alta al cliente sin salir | El presupuesto lleva el cliente como dato obligatorio en tres capas: la tabla (`prisma/schema.prisma`, `customerId Int`), el validador (`src/core/validation/schemas.ts`) y el editor. Once ficheros de `src` leen el cliente del presupuesto, y el envío necesita su teléfono. **Toca el esquema: se nombra y se para** (regla 40) | Ahorro **medido** en ellos, **deducido** en nosotros · coste **medido** en su entrada, **no mirado** en sus once ficheros |
 | 3 | **Repasar la factura antes de emitirla** | Verifacturamos: «Convertir» deja un borrador que se corrige. Nosotros: «Generar factura» la deja emitida | Ningún paso: **añade** uno (de 3 a 4 clics a mano). Lo que da es poder corregir antes, en vez de rectificar después | **Es el camino de emisión: se nombra y se para** (reglas 29 y 40). No he leído qué haría falta | Diferencia **medida** en ellos, **leída** en nosotros · coste **no mirado**, a propósito |
 
@@ -246,7 +249,7 @@ propuestas de pantalla: son la cuenta de cada una, para decidir.
 un Trabajo, sobre el mismo registro y sin botón de guardar. En clics empata con nosotros; la diferencia es de
 modelo, y un cambio de modelo es del máster, no de una tanda. Queda descrito en §8 y no se cuenta su coste.
 
-**Lo que tampoco entra, y por qué.** Tres de los seis clics de nuestro editor son «Continuar», uno de ellos
+**Lo que tampoco entra, y por qué.** Tres de los siete clics de nuestro editor son «Continuar», uno de ellos
 en un paso (Condiciones) que se pasa sin tocar nada. Es el mayor ahorro posible de toda la comparación, pero
 quitar pasos al asistente es rehacer una pantalla decidida. La decisión, leída después, está en §11.
 
@@ -293,10 +296,50 @@ con un «Continuar» no es un descuido: es lo dibujado.
 | El mecanismo | Ya existe y está en producción: el paso se añade con una condición, y el justificante corre con **tres** pasos (Cliente · Conceptos · Revisar). El corte 915g ya mudó su fila «Ajustes del documento» al último paso | medido leyendo |
 | Lo que habría que mudar | En el presupuesto, Condiciones lleva cuatro filas: forma de cobro, formas de pago, validez y «Ajustes del documento». Tendrían que vivir en «Revisar», como en el justificante, plegadas y con su «Cambiar» | deducido |
 | Lo que lo sujeta | `tests/scrum915d-pasos-del-editor.test.mjs` y los guards del editor que nombra el registro de SCRUM-915 fijan el orden y el reparto de bloques de hoy. Guardan una decisión firmada: no se reescriben sin el fundador | medido en su existencia; **no leídos uno a uno** |
-| Lo que ahorra | 1 clic: el editor pasa de 6 a 5. Con la entrada directa desde el inicio (§10, fila 1), a 4. Verifacturamos está en 3 | deducido (código, no pantalla) |
+| Lo que ahorra | 1 clic: el editor pasa de 7 a 6. Con la entrada directa desde el inicio (§10, fila 1), a 5. Verifacturamos está en 3 | deducido (código, no pantalla) |
 | Quién decide | Cambia una pantalla aprobada el 17-sep-2026: firma del fundador y carril de la pantalla | — |
 
 **Un dato que salió al leer la decisión.** La v3 aprobada no está construida entera: su último paso es
 «Guardar y enviar», que abre una hoja con el mensaje tal como le llega al cliente. Ese corte (915f) consta en
 el registro como parado hasta un GO escrito del fundador, porque toca envío y cobro. Hoy el editor acaba en
 «Generar presupuesto» y una ventana con el PDF. En pulsaciones no cambia nada: son las mismas.
+
+## 12 · YaQu EN PANTALLA (2-oct-2026, yaqu.app, cuenta de QA)
+
+Con permiso escrito del fundador en la sesión. Recorrido con un conductor que **corta toda petición que no
+sea de lectura**: no se ha creado, enviado ni aceptado nada. No pulsados: «Generar presupuesto», «Enviar por
+WhatsApp», «Confirmar aceptación», «Enviar para firmar» ni «Salir». El texto de prueba tecleado («PRUEBA S0
+SCRUM-1437 recuento de pasos») no salió del navegador.
+
+**Una cifra mía estaba mal y la pantalla la corrige: el editor completo son 7 clics, no 6.** El subagente que
+leyó el código listó siete pulsaciones y sumó seis; yo copié la suma sin recontarla. Corregido en todo el
+documento.
+
+| Tramo | Visto en pantalla | Cifra | ¿Coincide con lo leído? |
+|---|---|---|---|
+| Presupuesto por el editor | «Presupuestos» → «Nuevo presupuesto» → botón del cliente → «Continuar» → concepto y precio → «Continuar» → **Condiciones, sin tocar** → «Continuar» → «Generar presupuesto» (hasta el botón) | **7 clics · 2 campos** | El camino, sí. La suma, no: eran 7 |
+| El paso de Condiciones | Llega relleno y lo dice él mismo: avisa de que ya van puestas las de siempre y de que solo se cambian si el cliente es distinto. Cuatro filas plegadas (cobro, formas de pago, validez, ajustes), cada una con «Cambiar». «Continuar» está activo sin tocar nada | 1 clic · 0 campos | Sí |
+| «Continuar» | Deshabilitado sin cliente (paso 1) y sin una línea válida (paso 2), con el motivo escrito al lado | — | Sí |
+| Presupuesto rápido | Botón del inicio → teclear el nombre → clic en la coincidencia → concepto y precio → «Enviar por WhatsApp» (hasta el botón). Un solo modal, con «+ Crear …» si el nombre no existe | **3 clics · 3 campos** | Sí |
+| Ficha de un presupuesto en borrador | PDF · Duplicar · Enviar por WhatsApp · Enviar por correo (apagado: el cliente no tiene correo) · Aceptar · Rechazar. **No ofrece facturar ni cobrar** | — | Sí (flag en OFF) |
+| Aceptar a mano | «Aceptar presupuesto» despliega en la misma ficha condiciones de pago (ya puestas) y un comentario opcional, con «Confirmar aceptación» | 2 clics · 0 campos (hasta el botón) | Sí. Y se ofrece ya en un borrador, sin haberlo enviado |
+| **Factura** | La lista de Facturas está vacía y dice que, por ahora, YaQu no genera facturas desde esa cuenta | **Sin camino** | Sí |
+| **Cobro** | La lista de Cobros está vacía, con sus filtros por método. Nada que marcar | **Sin camino** | Sí |
+
+**El tramo se corta en la aceptación, y ése es el dato.** En la cuenta de QA —un negocio español con la
+facturación apagada, como cualquiera hoy— el profesional llega a presupuesto enviado y aceptado, y ahí se
+acaba: no hay factura ni cobro que recorrer. Todo lo que este documento dice de «generar factura» y «marcar
+pagada» en YaQu **sigue siendo de código**. Para verlo en pantalla hace falta una cuenta con la facturación
+encendida; queda apuntado en SCRUM-1367, sin sembrar datos.
+
+**Lo que la pantalla enseñó y el código no me había dicho:**
+
+- **El mismo trabajo da dos totales según por dónde se entre.** Una línea de 100 € marca **100,00 €** en el
+  presupuesto rápido y **121,00 €** en el editor, que le suma el 21 %. Visto, no interpretado: qué debe decir
+  el documento es fiscal y lo lleva el orquestador.
+- En el paso 1 el cliente se elige con **un botón por cliente** (había dos) y un buscador encima: un clic, sin
+  teclear. Con más clientes de los que caben como botones, sería un campo más.
+- El editor lleva a la derecha el documento tal como lo verá el cliente, y se rehace al teclear.
+
+Lo que sigue sin verse en pantalla: lo que pasa al pulsar «Generar presupuesto» y «Enviar por WhatsApp», la
+página que abre el cliente para firmar, el albarán y el parte dentro del tramo, y todo lo de factura y cobro.
