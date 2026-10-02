@@ -119,6 +119,8 @@ El test nuevo, corrido sobre el guion de `origin/main` sin tocar (blob
 
 El caso ④ importa más que el ①: el defecto no dependía de forzar una serie a mano. En el uso normal la
 anulación generaba una serie de prueba nueva que no pertenecía a nada, y ésa era la que viajaba.
+🔴 **El defecto era peor que el enunciado: cualquier tanda manual de S1-D con anulaciones habría salido
+malformada, no sólo una con banderas.**
 
 ### Lo que cambia en el guion
 
@@ -187,6 +189,32 @@ sustituye el meta-guard.
   AST y sólo entiende literales: las habría dejado fuera sin avisar. Lo corregí antes de correr nada.
 - Hice esa corrección con `node -e` desde bash, que es justo lo que el traspaso de este puesto dice que no
   se haga. Esta vez salió bien (comprobado con el diff); no es el camino.
+- No corrí `scrum824` antes de empujar y el CI salió rojo por él. Lo cuenta la sección del rojo del CI.
+- Pasé de 200k de contexto sin avisar al orquestador, que lo había pedido: lo medí al entregar (327.974).
+
+## El rojo del CI sobre la primera punta, y su arreglo (2-oct-2026, 06:21Z)
+
+El obligatorio de la primera punta (`b0d59e94f2d1d236c3e0a8c9f44acb9ab0b4b7da`, run 36971389183) salió con
+**un rojo, y era mío**: `SCRUM-824 · 🔴 el conjunto de ficheros SIN PROBAR no crece`. Lo leyó el orquestador,
+no yo; dice que los nueve `SCRUM-1399 ·` y los siete de SCRUM-1398 pasaban.
+
+- **Qué era:** el caso ⑦ escribía el puntero viejo con `fs.writeFileSync(rutaPuntero(dir), …)`. Esa ruta
+  la devuelve una función, y el censo de temporales no puede probar que no cae dentro del árbol. Mi
+  fichero entraba en el conjunto de los «sin probar», que no puede crecer.
+- **Qué se hizo:** el puntero previo lo escribe ahora `raizAislada()`, dos líneas debajo del `temporal()`
+  del que cuelga, donde el censo lo ve. El caso ⑦ ya no genera un alta antes: parte de una raíz que sólo
+  tiene el puntero viejo y comprueba que el guion sale 1, que el puntero queda igual y que en `tmp/` no
+  aparece nada más. **No se tocó `SIN_PROBAR_CONOCIDOS`** (regla 41).
+- **Medido después:** el censo da 0 creaciones mías sin probar (antes 1, en la línea 220);
+  `tests/scrum824-temporales-fuera-del-arbol.test.mjs` a solas, 9 de 9; `scrum864c` y los dos tests del
+  guion, 20 de 20; las cinco mutaciones otra vez, cinco vivas (la del puntero viejo sigue tumbando el ⑦).
+- **Por qué pasó:** corrí `scrum864c`, que es el otro guard de temporales, y no éste. Corrí la muestra de
+  guards que conocía, no los que miden lo que mi fichero hace.
+- La fila ⑦ de la tabla del rojo de arriba describe la forma vieja del caso («salió 0 y generó el
+  sobre»). Con la forma nueva el rojo es el mismo: sobre el guion sin arreglar sale 0.
+
+`origin/main` al escribir esto: `5d7aaebc41d71d24102a4852c1de04059d9ac559` (entró SCRUM-1400). Diez
+ficheros cambiados en `main` desde mi base, cuatro míos, cero en común.
 
 ## Qué no se corrió
 
