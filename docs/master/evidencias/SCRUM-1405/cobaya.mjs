@@ -139,7 +139,7 @@ function leerElTap(ruta) {
   for (const linea of texto.split(/\r?\n/)) {
     const m = /^\s*(not ok|ok) \d+ - cobaya (\S+) caso (\d+)/.exec(linea);
     if (m) informados.set(`${m[2]} ${m[3]}`, m[1]);
-    else if (/^not ok d+ - /.test(linea)) rojosDeFichero++;
+    else if (/^not ok \d+ - /.test(linea)) rojosDeFichero++;
   }
   const numero = (clave) => {
     const m = new RegExp(`^# ${clave} (\\d+)`, 'm').exec(texto);
