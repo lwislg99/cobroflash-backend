@@ -1323,6 +1323,12 @@ function initCustomerAutocomplete() {
   });
 }
 
+// SCRUM-1198 · texto aprobado por el orquestador por delegación del fundador (2-oct-2026,
+// comentario 18206 del ticket). Es
+// verdad en los dos caminos, cliente nuevo y existente: cuando el envío dice que no hay teléfono,
+// el presupuesto ya se ha creado.
+const AVISO_QQ_GUARDADO_SIN_TELEFONO = 'No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.';
+
 async function submitQuickQuote() {
   const alertEl = document.getElementById("qq-alert");
   const btn = document.getElementById("qq-send");
@@ -1426,9 +1432,24 @@ async function submitQuickQuote() {
     }
 
     // 4. Enviar por WhatsApp
-    const sendResult = await apiRequest(`/admin/quotes/${quote.id}/send-whatsapp`, {
-      method: "POST",
-    });
+    let sendResult;
+    try {
+      sendResult = await apiRequest(`/admin/quotes/${quote.id}/send-whatsapp`, {
+        method: "POST",
+      });
+    } catch (err) {
+      // SCRUM-1198 · SIN TELÉFONO NO ES UN ERROR QUE REINTENTAR. El presupuesto ya está guardado y
+      // volver a pulsar «Enviar» daría el mismo no: el modal se quedaba abierto, con el botón
+      // encendido y «API 400: customer_missing_phone» a la vista. Se cierra, se dice fuera y se
+      // abre el presupuesto, igual que cuando el envío queda pendiente. Se decide por CÓDIGO.
+      if (!err || err.code !== 'customer_missing_phone') throw err;
+      closeQuickQuote();
+      showToast(AVISO_QQ_GUARDADO_SIN_TELEFONO, true);
+      setTimeout(() => {
+        if (window.renderAppView) renderAppView("quotes-detail", { quoteId: quote.id });
+      }, 400);
+      return;
+    }
 
     closeQuickQuote();
 
