@@ -28,6 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { llamadasDeclaradas } from '../scripts/_senal-de-nombres.mjs';
+import { casosEscritos, nombreEscrito } from './_casos-escritos.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
@@ -169,6 +170,27 @@ test('SCRUM-1415 · 🔴 MITAD ②: una cifra de la lista por encima del árbol,
   // Un fichero de la lista que ya no existe (o que el censo ha dejado de leer) es el mismo caso.
   assert.deepEqual(veredicto(c, [['nuevo.test.mjs', 1, 'x'], ['borrado.test.mjs', 3, 'x']]).deMenos,
     ['tests/borrado.test.mjs: la lista declara 3 y el árbol tiene 0']);
+});
+
+test('SCRUM-1415 · 🔴 `casosEscritos`: un nombre escrito que se separa de su fila cae, y una fila sin caso no deja cargar', () => {
+  const TABLA = [{ que: 'uno' }, { que: 'dos' }];
+  const nombreDe = (f) => `caso ${f.que}`;
+  const vistos = [];
+  const caso = casosEscritos(TABLA, nombreDe, (f) => { vistos.push(f.que); });
+  const primero = caso(0);
+  primero({ name: 'caso uno' });
+  assert.deepEqual(vistos, ['uno'], 'con el nombre bien escrito, el cuerpo corre con SU fila');
+  assert.throws(() => primero({ name: 'caso UNO, de antes' }), /ya no es el que sale de su fila/,
+    '🔴 un literal que ya no dice lo que la tabla dice tiene que caer');
+  assert.deepEqual(vistos, ['uno'], 'y el cuerpo no llega a correr con un nombre que miente');
+  assert.throws(() => caso.todos(), /1 fila\(s\) de 2 sin su caso escrito[\s\S]*«caso dos»/,
+    '🔴 la fila sin caso tiene que impedir la carga, y decir cuál es');
+  assert.throws(() => caso(0), /dos casos escritos/);
+  assert.throws(() => caso(2), /no hay fila 2/);
+  caso(1);
+  assert.doesNotThrow(() => caso.todos());
+  assert.throws(() => nombreEscrito({ name: 'umbral 3' }, 'umbral 4'), /ya no es el que sale de su dato/);
+  assert.doesNotThrow(() => nombreEscrito({ name: 'umbral 3' }, 'umbral 3'));
 });
 
 test('SCRUM-1415 · la lista está bien escrita: sin ficheros repetidos, cifras > 0 y cada entrada con su motivo', () => {
