@@ -259,6 +259,7 @@ test('SCRUM-1235 · ✅ sin ninguna fila de correo, no consta ningún fallo: se 
 // `listarCobrosConCorreo` (con `correoNoSalio`), y el botón llama al endpoint que ya existía.
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { redNormal } from './_banco-red.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const COBRO_SIN_CORREO = {
   origen: 'charge', id: 900, fecha: '2026-09-28T10:00:00.000Z', cliente: 'Cliente de laboratorio',
@@ -332,30 +333,32 @@ test('SCRUM-1235 · ✅ sin fallo, la fila no dice nada', async () => {
 // 🔴 LAS DOS MITADES (condición del orquestador): el fallo previo DEJA FILA, y cuando el que falla
 // es Resend NO HAY DOS. Sin la segunda, un arreglo que duplicara pasaría igual.
 
-for (const pdf of ['falta', 'revienta']) {
-  test(`SCRUM-1243 · 🔴 el fallo ANTES de Resend (pdf: ${pdf}) deja UNA fila \`fallo_envio\` y el aviso sale`, async () => {
-    const b = banco({ pdf, resend: 'acepta' });
-    const r = await b.entregar();
-    assert.equal(b.cobro.status, 'paid', '🔴 CIEGO: el cobro no llegó a `paid`; el banco no ejercita el caso');
-    assert.equal(b.estado.posts, 0,
-      '🔴 CIEGO: el correo llegó a Resend, así que esto no mide el fallo PREVIO a Resend');
-    assert.equal(b.filasCorreo.length, 1,
-      `🔴 EL CORREO NO SALIÓ Y NO QUEDA RASTRO: ${b.filasCorreo.length} filas en email_messages.\n`
-      + '  Sin fila, el aviso de SCRUM-1235 no sale y el profesional no se entera de que su cliente\n'
-      + '  ha pagado y no tiene la factura.');
-    const [fila] = b.filasCorreo;
-    assert.equal(fila.status, 'fallo_envio');
-    assert.equal(fila.relatedType, 'invoice');
-    assert.equal(fila.relatedId, 7000);
-    assert.equal(fila.kind, 'invoice');
-    assert.equal(fila.merchantId, MERCHANT);
-    assert.equal(fila.providerId, null, 'no hubo proveedor: no se inventa un id');
-    assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7000, clase: 'invoice' });
-    // ⛔ La respuesta al proveedor NO cambia (SCRUM-1235, c.17381).
-    assert.equal(r.statusCode, 200);
-    assert.equal(r.cuerpo?.status, 'paid');
-  });
-}
+const FILAS2 = ['falta', 'revienta'];
+const caso2 = casosEscritos(FILAS2, (pdf) => `SCRUM-1243 · 🔴 el fallo ANTES de Resend (pdf: ${pdf}) deja UNA fila \`fallo_envio\` y el aviso sale`, async (pdf) => {
+  const b = banco({ pdf, resend: 'acepta' });
+  const r = await b.entregar();
+  assert.equal(b.cobro.status, 'paid', '🔴 CIEGO: el cobro no llegó a `paid`; el banco no ejercita el caso');
+  assert.equal(b.estado.posts, 0,
+    '🔴 CIEGO: el correo llegó a Resend, así que esto no mide el fallo PREVIO a Resend');
+  assert.equal(b.filasCorreo.length, 1,
+    `🔴 EL CORREO NO SALIÓ Y NO QUEDA RASTRO: ${b.filasCorreo.length} filas en email_messages.\n`
+    + '  Sin fila, el aviso de SCRUM-1235 no sale y el profesional no se entera de que su cliente\n'
+    + '  ha pagado y no tiene la factura.');
+  const [fila] = b.filasCorreo;
+  assert.equal(fila.status, 'fallo_envio');
+  assert.equal(fila.relatedType, 'invoice');
+  assert.equal(fila.relatedId, 7000);
+  assert.equal(fila.kind, 'invoice');
+  assert.equal(fila.merchantId, MERCHANT);
+  assert.equal(fila.providerId, null, 'no hubo proveedor: no se inventa un id');
+  assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7000, clase: 'invoice' });
+  // ⛔ La respuesta al proveedor NO cambia (SCRUM-1235, c.17381).
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.cuerpo?.status, 'paid');
+});
+test('SCRUM-1243 · 🔴 el fallo ANTES de Resend (pdf: falta) deja UNA fila `fallo_envio` y el aviso sale', caso2(0));
+test('SCRUM-1243 · 🔴 el fallo ANTES de Resend (pdf: revienta) deja UNA fila `fallo_envio` y el aviso sale', caso2(1));
+caso2.todos();
 
 test('SCRUM-1243 · 🔴 NO HAY DOS FILAS cuando el que falla es Resend', async () => {
   // La fila de este caso ya la escribe `enviarPorResend`. Si la del fallo previo se escribiera

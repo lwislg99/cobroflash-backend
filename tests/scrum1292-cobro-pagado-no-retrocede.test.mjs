@@ -25,6 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -104,20 +105,22 @@ function bancoDelWebhook(estadoInicial, { alEscribir = null } = {}) {
 
 // ── EL DEFECTO ────────────────────────────────────────────────────────────────────────────
 
-for (const [n, event] of [['①', 'payment.expired'], ['②', 'payment.failed']]) {
-  test(`SCRUM-1292 · 🔴 ${n} un cobro PAGADO recibe ${event} y SIGUE pagado`, async () => {
-    const b = bancoDelWebhook('paid');
-    const r = await b.entregar(event);
-    assert.equal(b.cobro.status, 'paid',
-      `🔴 EL COBRO PAGADO HA RETROCEDIDO A «${b.cobro.status}». El dinero está en la cuenta del `
-      + 'profesional y la aplicación dice que no se ha cobrado; de ese estado cuelgan lo que el panel '
-      + 'dice que le deben, los avisos y la facturación.');
-    assert.equal(b.actualizaciones.length, 0, '🔴 y ni siquiera debería escribir: no hay nada que cambiar');
-    assert.equal(r.statusCode, 200,
-      '🔴 al proveedor se le sigue contestando 200: un 4xx o 5xx le haría reintentar tres días');
-    assert.equal(r.cuerpo.status, 'already_paid');
-  });
-}
+const FILAS_1 = [['①', 'payment.expired'], ['②', 'payment.failed']];
+const caso1 = casosEscritos(FILAS_1, ([n, event]) => `SCRUM-1292 · 🔴 ${n} un cobro PAGADO recibe ${event} y SIGUE pagado`, async ([n, event]) => {
+  const b = bancoDelWebhook('paid');
+  const r = await b.entregar(event);
+  assert.equal(b.cobro.status, 'paid',
+    `🔴 EL COBRO PAGADO HA RETROCEDIDO A «${b.cobro.status}». El dinero está en la cuenta del `
+    + 'profesional y la aplicación dice que no se ha cobrado; de ese estado cuelgan lo que el panel '
+    + 'dice que le deben, los avisos y la facturación.');
+  assert.equal(b.actualizaciones.length, 0, '🔴 y ni siquiera debería escribir: no hay nada que cambiar');
+  assert.equal(r.statusCode, 200,
+    '🔴 al proveedor se le sigue contestando 200: un 4xx o 5xx le haría reintentar tres días');
+  assert.equal(r.cuerpo.status, 'already_paid');
+});
+test('SCRUM-1292 · 🔴 ① un cobro PAGADO recibe payment.expired y SIGUE pagado', caso1(0));
+test('SCRUM-1292 · 🔴 ② un cobro PAGADO recibe payment.failed y SIGUE pagado', caso1(1));
+caso1.todos();
 
 test('SCRUM-1292 · ③ el caso completo del Bizum: se cobra y DESPUÉS caduca la sesión de Stripe', async () => {
   // El orden real, en un solo cobro: primero el pago, después la caducidad de la sesión que nadie usó.
@@ -135,20 +138,22 @@ test('SCRUM-1292 · ③ el caso completo del Bizum: se cobra y DESPUÉS caduca l
 //
 // Sin éstos, los de arriba pasarían igual si la ruta dejara de escribir del todo.
 
-for (const [n, inicial, event, esperado] of [
+const FILAS_2 = [
   ['④', 'pending', 'payment.failed', 'failed'],
   ['⑤', 'pending', 'payment.expired', 'expired'],
-]) {
-  test(`SCRUM-1292 · ✅ ${n} CONTROL POSITIVO: ${inicial} + ${event} SÍ pasa a «${esperado}»`, async () => {
-    const b = bancoDelWebhook(inicial);
-    const r = await b.entregar(event);
-    assert.equal(b.cobro.status, esperado,
-      `🔴 el camino normal ha dejado de funcionar: un cobro ${inicial} tiene que poder quedar `
-      + `«${esperado}». Sin este caso, los ① y ② pasarían aunque la ruta no escribiera nunca.`);
-    assert.equal(b.actualizaciones.length, 1, 'y escribe exactamente una vez');
-    assert.equal(r.cuerpo.status, esperado);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS_2, ([n, inicial, event, esperado]) => `SCRUM-1292 · ✅ ${n} CONTROL POSITIVO: ${inicial} + ${event} SÍ pasa a «${esperado}»`, async ([n, inicial, event, esperado]) => {
+  const b = bancoDelWebhook(inicial);
+  const r = await b.entregar(event);
+  assert.equal(b.cobro.status, esperado,
+    `🔴 el camino normal ha dejado de funcionar: un cobro ${inicial} tiene que poder quedar `
+    + `«${esperado}». Sin este caso, los ① y ② pasarían aunque la ruta no escribiera nunca.`);
+  assert.equal(b.actualizaciones.length, 1, 'y escribe exactamente una vez');
+  assert.equal(r.cuerpo.status, esperado);
+});
+test('SCRUM-1292 · ✅ ④ CONTROL POSITIVO: pending + payment.failed SÍ pasa a «failed»', caso2(0));
+test('SCRUM-1292 · ✅ ⑤ CONTROL POSITIVO: pending + payment.expired SÍ pasa a «expired»', caso2(1));
+caso2.todos();
 
 test('SCRUM-1292 · ⑥ CONTROL: el mismo aviso sobre el mismo estado sigue sin escribir', async () => {
   const b = bancoDelWebhook('failed');

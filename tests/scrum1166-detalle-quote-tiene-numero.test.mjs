@@ -11,6 +11,7 @@
 // `tieneNumeroDeContacto`, la misma función que usa el envío. Un solo sitio para el criterio.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const moduloPrisma = await import('../dist/core/db/prisma.js');
 const { getQuoteDetailAdmin } = await import('../dist/modules/system/quoteAdmin.js');
@@ -47,19 +48,23 @@ function doblar(quote) {
 const original = moduloPrisma.prisma.quote;
 test.after(() => { moduloPrisma.prisma.quote = original; });
 
-for (const [caso, customer, esperado] of [
+const FILAS = [
   ['SOLO MÓVIL', { mobile: '34000000001' }, true],
   ['SOLO FIJO', { phone: '34000000002' }, true],
   ['NINGÚN número', {}, false],
   ['números en BLANCO', { phone: '  ', mobile: '' }, false],
-]) {
-  test(`🔴 SCRUM-1166 · ${caso} → customer.tieneNumeroDeContacto = ${esperado}`, async () => {
-    doblar(presupuesto(customer));
-    const d = await getQuoteDetailAdmin(41, MERCHANT);
-    assert.equal(d.customer.tieneNumeroDeContacto, esperado,
-      `🔴 el detalle dice ${d.customer.tieneNumeroDeContacto} para un cliente con ${JSON.stringify(customer)}`);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS, ([caso, customer, esperado]) => `🔴 SCRUM-1166 · ${caso} → customer.tieneNumeroDeContacto = ${esperado}`, async ([caso, customer, esperado]) => {
+  doblar(presupuesto(customer));
+  const d = await getQuoteDetailAdmin(41, MERCHANT);
+  assert.equal(d.customer.tieneNumeroDeContacto, esperado,
+    `🔴 el detalle dice ${d.customer.tieneNumeroDeContacto} para un cliente con ${JSON.stringify(customer)}`);
+});
+test('🔴 SCRUM-1166 · SOLO MÓVIL → customer.tieneNumeroDeContacto = true', caso2(0));
+test('🔴 SCRUM-1166 · SOLO FIJO → customer.tieneNumeroDeContacto = true', caso2(1));
+test('🔴 SCRUM-1166 · NINGÚN número → customer.tieneNumeroDeContacto = false', caso2(2));
+test('🔴 SCRUM-1166 · números en BLANCO → customer.tieneNumeroDeContacto = false', caso2(3));
+caso2.todos();
 
 test('SCRUM-1166 · ADITIVO: `phone` sigue saliendo igual y el MÓVIL no viaja al front', async () => {
   doblar(presupuesto({ phone: '34000000002', mobile: '34000000001' }));
