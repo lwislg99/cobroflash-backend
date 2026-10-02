@@ -129,6 +129,10 @@ export async function mirar(num, { raiz, ref = 'origin/main', traer = true } = {
   if (traer && git(['fetch', '--quiet', '--prune', 'origin']) === undefined) ciegos.push('no se pudo traer `origin` (git fetch falló): lo que hay en disco puede ser viejo');
   const main = git(['rev-parse', '--verify', `${ref}^{commit}`]);
   if (main === undefined) { ciegos.push(`\`${ref}\` no se resuelve en ${raiz}`); return { h, main: null }; }
+  // La referencia se resuelve UNA vez y todo lo demás se mide contra ESE commit (el criterio de
+  // SCRUM-723): si `main` se mueve a mitad de la pregunta, las lecturas siguen siendo del mismo objeto,
+  // y es el sha que sale impreso en la segunda línea.
+  ref = main.trim();
 
   const { censarTicket } = await import('../../tests/_censo-tickets.mjs');
   const { reMencion, RE_CIERRE, ticketDeExpediente } = await import('../abierto-con-trabajo-en-main.mjs');
