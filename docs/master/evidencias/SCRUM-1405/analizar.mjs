@@ -188,6 +188,30 @@ if (sondas.length) {
     const tipos = cuenta(conVivos.flatMap((f) => f.vivos_al_salir.split(' ').map((x) => x.split('×')[0])));
     if (conVivos.length) console.log(`   vivos al salir, por tipo (ficheros): ${tipos}`);
   }
+  // ③ qué tienen los 18 que pierden en el CI de cada día (SCRUM-1339e): su sitio en la lista de los
+  // que MÁS ESCRIBEN. Los sembrados (zz1405-) no cuentan: no existen en el árbol de verdad.
+  const tsv18 = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', 'SCRUM-1339', 'e-por-fichero.tsv');
+  const texto18 = leer(decodeURIComponent(tsv18));
+  const porBytes = filas.filter((f) => f.brazo === 'con-sonda' && !f.fichero.startsWith('zz1405')).sort((a, b) => b.total_mediana - a.total_mediana);
+  if (texto18 && porBytes.length) {
+    const los18 = new Set(texto18.split('\n').slice(1).filter(Boolean).map((l) => l.split('\t')[0]));
+    const rangos = porBytes.map((f, i) => ({ ...f, rango: i + 1 })).filter((f) => los18.has(f.fichero));
+    const peor = Math.max(...rangos.map((f) => f.rango));
+    const asc = [...porBytes].reverse();
+    const q = (p) => asc[Math.min(asc.length - 1, Math.floor(asc.length * p))].total_mediana;
+    // si los 18 fueran ficheros cualesquiera, ¿cuántas veces caerían todos entre los `peor` primeros?
+    let logP = 0;
+    for (let i = 0; i < rangos.length; i++) logP += Math.log((peor - i) / (porBytes.length - i));
+    console.log(`\n── ③ LOS ${los18.size} QUE PIERDEN, EN LA LISTA DE LOS QUE MÁS ESCRIBEN (brazo con-sonda · ${porBytes.length} ficheros de tests/) ──`);
+    console.log(`bytes que escribe un fichero hacia su padre: mediana ${q(0.5)} · p90 ${q(0.9)} · p99 ${q(0.99)} · máximo ${porBytes[0].total_mediana} · por encima de 65.536 (lo que cabe en una tubería de Linux): ${porBytes.filter((f) => f.total_mediana > 65536).length}`);
+    console.log(`de los ${los18.size}, presentes en este árbol ${rangos.length} · todos entre los ${peor} primeros de ${porBytes.length} · entre los 10 primeros ${rangos.filter((f) => f.rango <= 10).length} · entre los 25 primeros ${rangos.filter((f) => f.rango <= 25).length}`);
+    console.log(`si fueran ${rangos.length} ficheros cualesquiera, caerían todos entre los ${peor} primeros 1 vez de cada 10^${Math.round(-logP / Math.LN10)}`);
+    for (const f of rangos) console.log(`   puesto ${f.rango} · ${f.fichero} · ${f.total_mediana} B en ${f.ms_mediana} ms · con bytes pendientes ${f.veces_con_pendientes} de ${f.filas}`);
+    console.log(`los 25 primeros (★ = es de los ${los18.size}):`);
+    porBytes.slice(0, 25).forEach((f, i) => console.log(`   ${i + 1} ${los18.has(f.fichero) ? '★' : '·'} ${f.fichero} · ${f.total_mediana} B en ${f.ms_mediana} ms · pendientes ${f.veces_con_pendientes} de ${f.filas}`));
+  } else {
+    console.log(`\n── ③ NO PUDE MIRAR los 18: ${texto18 ? 'no hay brazo con-sonda' : 'no encuentro ' + tsv18}`);
+  }
   // lo que cuesta: cuánto vive cada fichero hasta salir, con el flag y sin él (medianas por fichero)
   const vida = (b) => new Map(filas.filter((f) => f.brazo === b).map((f) => [f.fichero, f.ms_mediana]));
   const conV = vida('con-sonda'); const sinV = vida('sin-sonda');
