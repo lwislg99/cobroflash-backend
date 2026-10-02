@@ -180,7 +180,7 @@ decisión de producto y nadie la ha tomado; el orquestador lo deja anotado.
 
 **Medido contra:** `origin/main` = `f7d013778fc979caff89d7c9ac47d8ed79dca248` · 2026-10-02T03:35:59Z
 
-A9: sin fallo que generalice — el tramo es una mezcla de `main` con un conflicto de tres líneas y la repetición de un banco que ya existía; lo que tuvo parado el PR (un conflicto no vuelve a lanzar el CI, y con el auto-merge armado parece atendido) ya lo nombra el latido de arranque, que lo lista como «CONFLICTO con main» con sus horas.
+A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
 
 **Cruce de carril, declarado:** el ticket no lleva etiqueta de área y lo construyeron J2c y J2d. Este
 tramo lo hace J3b (sesión `jv-j3b`, equipo de Javier) por encargo del orquestador
@@ -231,3 +231,30 @@ banco de SCRUM-1322, que este tramo no ha lanzado sobre el árbol fusionado.
 - **No corrido:** la tanda completa en local (va con turno, y no se pidió). La
   primera pasada entera sobre la mezcla es la del CI.
 - **Sin verificación en `yaqu.app`**, igual que arriba.
+
+## El primer CI de hoy: un rojo, y era de esta rama
+
+Run 36961040260 (2-oct-2026, sobre la mezcla de `7bc129fb` con `f7d01377`), job obligatorio leído
+del log entero: 10.022 pruebas, **1 cae**, 98 saltos. Los 19 casos de este ticket salen por nombre,
+con el control positivo de SCRUM-1326 (16) y un nombre inventado que da 0.
+
+- **Lo que cae:** `SCRUM-262 · todo teléfono sembrado está en el rango imposible`. El test de efecto
+  de este ticket daba al profesional de su banco falso un móvil de rango ordinario, que puede ser de
+  alguien. Reproducido en local antes de tocar nada (1 cae de 5).
+- **El arreglo es del test, no del guard:** el profesional y el cliente salen de `telefonoDePrueba`,
+  como en el resto de la suite. El del cliente no lo veía el guard (iba en una constante, y el guard
+  lee literales en campos de teléfono) y era del mismo rango: cambiado también.
+- Después, el 2-oct-2026 sobre `9ca38abc`: `scrum262` 5 de 5; los 19 de este ticket; el banco
+  entero otra vez, **22 de 22 caen donde se esperaba**, 0 mudas, 0 ciegas.
+
+**Mi error (J3b):** di la mezcla por verde con 13 ficheros elegidos a mano, y el rojo estaba en un
+guard de suite que no estaba entre ellos. Una muestra no es la tanda; lo que lo cazó fue el guard, en
+el CI.
+
+**Ajeno, nombrado y no investigado** (familia de SCRUM-1339, los dos ficheros están en su censo de
+los que pierden casos, `docs/master/evidencias/SCRUM-1339/e-por-fichero.tsv`):
+
+- La señal de nombres del obligatorio: `tests/vigia-atascados.test.mjs`, faltan 36 de 64 (cola).
+- El trinquete de zona (no requerido) sale rojo por `tests/scrum834-puerta-avisador-rojo.test.mjs`:
+  9 casos «pass» en una zona y «ausente» en la otra. No es un cambio de veredicto: es un fichero
+  que no informó de su cola en una de las dos pasadas.
