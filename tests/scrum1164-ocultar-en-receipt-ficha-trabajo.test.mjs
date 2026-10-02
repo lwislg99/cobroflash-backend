@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -64,16 +65,19 @@ const AFIRMACIONES = [
   ['F · foco de la franja', 'Te falta por cobrar'],
 ];
 
-for (const [fila, literal] of AFIRMACIONES) {
-  test(`SCRUM-1164 · ${fila}: sale en fiscal y en demo, y en receipt NO`, async () => {
-    for (const modo of ['fiscal', 'demo']) {
-      const { texto } = await montar(modo);
-      assert.ok(texto.includes(literal), `🔴 CONTROL: en ${modo} «${literal}» tiene que seguir saliendo — ocultar no es borrar`);
-    }
-    const { texto } = await montar('receipt');
-    assert.ok(!texto.includes(literal), `🔴 en receipt la ficha sigue afirmando «${literal}»`);
-  });
-}
+const caso = casosEscritos(AFIRMACIONES, ([fila, literal]) => `SCRUM-1164 · ${fila}: sale en fiscal y en demo, y en receipt NO`, async ([fila, literal]) => {
+  for (const modo of ['fiscal', 'demo']) {
+    const { texto } = await montar(modo);
+    assert.ok(texto.includes(literal), `🔴 CONTROL: en ${modo} «${literal}» tiene que seguir saliendo — ocultar no es borrar`);
+  }
+  const { texto } = await montar('receipt');
+  assert.ok(!texto.includes(literal), `🔴 en receipt la ficha sigue afirmando «${literal}»`);
+});
+test('SCRUM-1164 · A · hueco: sale en fiscal y en demo, y en receipt NO', caso(0));
+test('SCRUM-1164 · A · acción: sale en fiscal y en demo, y en receipt NO', caso(1));
+test('SCRUM-1164 · C · nota del tipo de trabajo: sale en fiscal y en demo, y en receipt NO', caso(2));
+test('SCRUM-1164 · F · foco de la franja: sale en fiscal y en demo, y en receipt NO', caso(3));
+caso.todos();
 
 test('SCRUM-1164 · F · el chip «Pendiente» sale en fiscal y en receipt NO; «Aceptado» (dato medido) sigue', async () => {
   const chip = (texto) => texto.includes('>Pendiente</span>');
