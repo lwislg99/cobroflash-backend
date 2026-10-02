@@ -151,7 +151,28 @@ TODAVÍA», 2). No están en las 22.
 
 ## Ⓗ Lo corrido, y lo que NO
 
-Ver el anexo de abajo, que se escribe después de la última edición.
+Todo en local, sobre la rama con `main` `7779b0cb` mezclado (sin conflictos; `main` no tocó ninguno de
+estos ficheros), con el comentario del esquema ya escrito en el árbol.
+
+| qué | resultado |
+|---|---|
+| `control-solo-comentarios` sobre el commit de las dos rutas | SÓLO COMENTARIOS, salida 0; sus controles ven un literal cambiado |
+| `prisma generate` y `npm run build` | salida 0 los dos |
+| `scrum237`, `scrum976`, `scrum267`, `scrum1294`, los dos `scrum514` y los dos `scrum597` (8 ficheros, de 2 en 2) | 68 casos, 68 pasan, 0 caen, 0 saltos; los 10 «SCRUM-597 · …» leídos por nombre, y un nombre inventado da 0 |
+| `npm run guards:entrada` | 12 guards, 132 casos, 0 caen, 12,1 s de 90 |
+
+**NO corrido, y por qué:**
+
+- **La dirigida (`scripts/tests-que-cubren.mjs --lanzar`): no se corrió, por decisión del orquestador.**
+  Su razón: para este cambio, que el JavaScript emitido sea idéntico byte a byte prueba que nada cambia; una
+  dirigida sólo diría que los tests siguen pasando.
+- **La tanda completa:** no es alcanzable en esta máquina; el juez es el CI, que lee el orquestador.
+- **Los guards de navegador:** no se tocó nada de `public/`.
+- **Nada visto en yaqu.app:** el cambio no tiene nada que ver en pantalla.
+
+Lo que este control NO cubre: un guard que lea el TEXTO de los comentarios de estos ficheros (no su
+código) podría moverse y el control no lo vería. Los ocho ficheros de arriba y los de entrada son los que
+se corrieron; el resto lo dirá el CI.
 
 ## Ⓘ Mis errores de esta tanda
 
