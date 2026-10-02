@@ -24,6 +24,7 @@
 //
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { seesAllJobs, seesOnlyOwnJobs, adminOnlyParteField } from '../../../../core/http/roleCapabilities';
 import { esSuyoElTrabajo, SELECT_DUENOS, whereSuyoElTrabajo } from '../../domain/accesoAlTrabajo'; // SCRUM-992
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -84,7 +85,7 @@ type FindParteResult =
 // 404 y no 403, como los albaranes: el código de estado no le dice si el parte existe.
 async function findParte(req: any): Promise<FindParteResult> {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id)) return { ok: false, status: 400 };
+  if (!cabeEnColumnaInt(id)) return { ok: false, status: 400 };
   const parte = await prisma.parteTrabajo.findFirst({ where: { id, merchantId: req.merchantId } });
   if (!parte) return { ok: false, status: 404 };
   if (seesOnlyOwnJobs(req.userRole)) {
@@ -360,7 +361,7 @@ router.post('/', async (req: any, res) => {
   try {
     const jobId =
       req.body?.jobId === undefined || req.body?.jobId === null ? null : Number(req.body.jobId);
-    if (jobId !== null && !Number.isInteger(jobId)) {
+    if (jobId !== null && !cabeEnColumnaInt(jobId)) {
       return res.status(400).json({ error: 'invalid_job', message: 'El trabajo no es válido.' });
     }
     // 🔴 SCRUM-992 · EL TÉCNICO NO ABRE UN PARTE SIN TRABAJO. Un parte suelto no es de ningún técnico

@@ -1,4 +1,5 @@
 // src/modules/search/app/routes/search.routes.ts
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 
@@ -40,7 +41,7 @@ router.get('/', async (req, res) => {
         where: {
           merchantId: mid,
           OR: [
-            ...(Number.isInteger(Number(q)) ? [{ id: Number(q) }] : []),
+            ...(cabeEnColumnaInt(Number(q)) ? [{ id: Number(q) }] : []),
             { customer: { name: { contains: q, mode: 'insensitive' } } },
           ],
         },
