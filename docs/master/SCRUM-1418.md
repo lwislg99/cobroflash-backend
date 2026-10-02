@@ -221,6 +221,42 @@ Avisos:
 **Total leído: 10 de las 24.** Cinco ya están, una es basura, cuatro aportan (312, 418, 1132 y 1230b).
 Quedan sin leer las 14 de julio y agosto que chocan, y `scrum-240-sobre-duplicado-rebasada`.
 
+## Mitad 3 · las sesiones que acabaron su línea de tiempo en «working» (añadida el 2-oct)
+
+Era el límite que este registro dejaba abierto: una sesión que muere trabajando no escribe traspaso ni
+decide si empujar. Qué fue de cada una lo dice el `state` de su `state.json`, que es un dato estructurado.
+
+Medido el 2-oct sobre 71 (el número baila en una o dos según qué sesiones de hoy estén a mitad de turno):
+
+| | sesiones | entregó al cerrar | entregó y siguió | NO entregó |
+|---|---|---|---|---|
+| VIVA (estado «working», escribió hace menos de 15 min) | 2 | 1 | 0 | 1 |
+| ACABÓ (estado «done») | 18 | 13 | 3 | 2 |
+| **MUERTA** (estado «stopped» o «failed») | **51** | 32 | 3 | **16** |
+| NO SUPE | 0 | 0 | 0 | 0 |
+
+**51 muertas, y 16 de ellas sin traspaso.** Sumadas a las 16 de la mitad 1, son 32 sesiones que no
+entregaron en dos semanas.
+
+De las 24 muertas o acabadas que no entregaron al cerrar, el cruce por FICHERO (lo que esa sesión escribió
+y hoy sigue sin comitear en su árbol) y por rama (las que nombra y no están en `origin`) da **2**:
+
+| sesión | qué dejó | leído contra `main` |
+|---|---|---|
+| `s5-27a` (muerta, sin traspaso) | dos ficheros modificados y sin comitear en `wt-s5-999-cuota-antes-de-lanzar`, rama `scrum-1123c-vigia-neutraliza-ruido` | **El arreglo del test YA ESTÁ** en `main` (entró por SCRUM-1359: `tests/scrum1123-vigia-despliegue-aviso.test.mjs:97` y `:131`). **Lo que NO está: 74 líneas de registro** en `docs/master/SCRUM-1123.md`, la sección «SCRUM-1123c», que incluye un censo de workflows que no pueden reportar su propio fallo («tres instancias reales, en tres ficheros distintos»). Solo documentación; carril de S5 |
+| `s3-26b` (acabó, sin traspaso) | nombra `scrum-1100c-el-resumen-explica-el-corte` | ya leída arriba: YA ESTÁ |
+
+**El trabajo de código perdido por una sesión muerta, hasta donde esto ve: cero.** Lo que queda sin
+entregar es un apunte de 74 líneas con un censo dentro.
+
+Lo que esto NO ve: una sesión que cambió ficheros con una orden de consola (no con `Write`/`Edit`) no
+deja ruta que cruzar · un árbol que ya se borró no se puede mirar · otra sesión pudo tocar el mismo fichero
+después · y el umbral de 15 min para «viva» es el mismo de SCRUM-1414, sin validar contra otra serie.
+
+Probado en rojo: nueve mutaciones más sobre esta mitad. Ocho tumbaron el test. La novena («cruza también
+con árboles limpios») no cambiaba nada porque la condición que mutaba era código muerto: el cruce por
+fichero ya la cubría. Quité la condición en vez de escribirle un test.
+
 ## Una lista declarada de un guard, tocada: se dice
 
 `tests/scrum723-guard-contra-su-base.test.mjs` lleva una entrada nueva en `INDIRECTAS_DECLARADAS` para

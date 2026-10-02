@@ -49,8 +49,8 @@ const COMITEA = /\bgit\b[^\n|;&]*\bcommit\b/;
  * @returns {{cubo:'ENTREGÓ AL CERRAR'|'ENTREGÓ Y SIGUIÓ'|'NO ENTREGÓ'|'NO SUPE', motivo?:string, despues:number, llamadas:string[]}}
  */
 export function entregaDe(transcripcion) {
-  if (transcripcion == null) return { cubo: 'NO SUPE', motivo: 'sin transcripción', despues: 0, llamadas: [] };
-  let leidas = 0, rotas = 0, traspasos = 0, despues = 0; const llamadas = [];
+  if (transcripcion == null) return { cubo: 'NO SUPE', motivo: 'sin transcripción', despues: 0, llamadas: [], escritas: [] };
+  let leidas = 0, rotas = 0, traspasos = 0, despues = 0; const llamadas = []; const escritas = [];
   for (const l of transcripcion.split('\n')) {
     if (!l.trim()) continue;
     let o; try { o = JSON.parse(l); } catch { rotas++; continue; }
@@ -65,12 +65,37 @@ export function entregaDe(transcripcion) {
       if (ESCRIBE.has(b.name) && ES_TRASPASO.test(ruta)) { traspasos++; despues = 0; }
       // Lo que se escribe en la memoria después (el índice, otra nota) es parte de entregar, no trabajo nuevo.
       else if ((ESCRIBE.has(b.name) && !ES_MEMORIA.test(ruta)) || COMITEA.test(orden)) despues++;
+      if (ESCRIBE.has(b.name) && ruta && !ES_MEMORIA.test(ruta)) escritas.push(ruta);
     }
   }
-  if (rotas > 0) return { cubo: 'NO SUPE', motivo: `${rotas} línea(s) de la transcripción no se dejan leer: puede estar cortada`, despues: 0, llamadas };
-  if (leidas === 0) return { cubo: 'NO SUPE', motivo: 'transcripción vacía', despues: 0, llamadas };
-  if (traspasos === 0) return { cubo: 'NO ENTREGÓ', despues: 0, llamadas };
-  return { cubo: despues === 0 ? 'ENTREGÓ AL CERRAR' : 'ENTREGÓ Y SIGUIÓ', despues, llamadas };
+  if (rotas > 0) return { cubo: 'NO SUPE', motivo: `${rotas} línea(s) de la transcripción no se dejan leer: puede estar cortada`, despues: 0, llamadas, escritas };
+  if (leidas === 0) return { cubo: 'NO SUPE', motivo: 'transcripción vacía', despues: 0, llamadas, escritas };
+  if (traspasos === 0) return { cubo: 'NO ENTREGÓ', despues: 0, llamadas, escritas };
+  return { cubo: despues === 0 ? 'ENTREGÓ AL CERRAR' : 'ENTREGÓ Y SIGUIÓ', despues, llamadas, escritas };
+}
+
+/** Sin escribir desde hace más de esto, una sesión que dice «working» no está trabajando. */
+export const MINUTOS_DE_VIVA = 15;
+
+/**
+ * Qué fue de una sesión cuya línea de tiempo ACABA en «working». Lo dice el `state` de su `state.json`,
+ * que es un dato estructurado: `stopped`/`failed` = la pararon o cayó a mitad · `done` = acabó (y la
+ * línea de tiempo no llegó a apuntarlo) · `working` = viva, salvo que lleve callada más del umbral.
+ * Cualquier otra cosa, o ningún estado: NO SUPE.
+ */
+export function suerteDe({ estado, ultimo }, ahora) {
+  if (estado === 'stopped' || estado === 'failed') return 'MUERTA';
+  if (estado === 'done') return 'ACABÓ';
+  if (estado === 'working') return ahora - ultimo <= MINUTOS_DE_VIVA * 60e3 ? 'VIVA' : 'MUERTA';
+  return 'NO SUPE';
+}
+
+const normal = (p) => String(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+/** El árbol de trabajo al que pertenece una ruta: el MÁS PROFUNDO que la contiene (los hay anidados). */
+export function arbolDe(ruta, arboles) {
+  const r = normal(ruta); let mejor = null;
+  for (const a of arboles) { const b = normal(a.ruta); if (r.startsWith(`${b}/`) && (!mejor || b.length > normal(mejor.ruta).length)) mejor = a; }
+  return mejor;
 }
 
 /**
@@ -103,7 +128,7 @@ export function censoDeRamas(repo) {
  * @param {{trabajos:object[], repo:object|null, arboles:{ruta:string,rama:string,sucios:string[]|undefined}[]|null, controlSi?:string, controlNo?:string}} e
  * @returns {{codigo:0|2, lineas:string[], datos?:object}}
  */
-export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, controlNo = CONTROL_NO }) {
+export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, controlNo = CONTROL_NO, ahora = Date.now() }) {
   const out = ['SESIONES QUE SE PARARON Y NUNCA VOLVIERON · ¿entregaron, o se lo llevaron?'];
   const no = (motivo) => { out.push('', `🔴 NO VALE (salida 2): ${motivo}`, '   Esto NO quiere decir que no se haya perdido trabajo.'); return { codigo: 2, lineas: out }; };
   let fueraDeLaMedida = 0; const sesiones = []; let primero = Infinity, ultimo = -Infinity;
@@ -113,7 +138,7 @@ export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, control
     if (eventos.length === 0) { fueraDeLaMedida++; continue; }
     primero = Math.min(primero, eventos[0].at); ultimo = Math.max(ultimo, eventos[eventos.length - 1].at);
     const cola = tramosDe(eventos).find((x) => x.tipo === 'cola');
-    sesiones.push({ nombre: t.nombre, puesto: puestoDe(t.nombre), cola, entrega: entregaDe(t.transcripcion) });
+    sesiones.push({ nombre: t.nombre, puesto: puestoDe(t.nombre), cola, entrega: entregaDe(t.transcripcion), estado: t.estado, ultimo: eventos[eventos.length - 1].at });
   }
   out.push('', `trabajos mirados: ${trabajos.length} · sesiones de puesto con línea de tiempo: ${sesiones.length} · fuera (no es un puesto, o sin línea de tiempo): ${fueraDeLaMedida}`);
   if (sesiones.length === 0) return no('no se pudo leer la línea de tiempo de ningún puesto');
@@ -137,7 +162,7 @@ export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, control
   const fecha = (s) => new Date(s.cola.desde).toISOString().slice(0, 16).replace('T', ' ');
   out.push(
     '',
-    `MITAD 1 · LA SESIÓN — de ${sesiones.length}, se pararon y no volvieron: ${colas.length}. Las otras ${sesiones.length - colas.length} acabaron su línea de tiempo en «working»: siguen vivas, o murieron trabajando — NO están miradas aquí`,
+    `MITAD 1 · LA SESIÓN — de ${sesiones.length}, se pararon y no volvieron: ${colas.length}. Las otras ${sesiones.length - colas.length} acabaron su línea de tiempo en «working»: van en la MITAD 3`,
     '| | sesiones |', '|---|---|',
     ...Object.entries(cubos).map(([k, v]) => `| ${k} | ${v.length} |`),
   );
@@ -195,8 +220,48 @@ export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, control
     for (const a of conTrabajo) { const f = deTrabajo(a); out.push(`   · ${a.ruta} [${a.rama}] · ${f.length}: ${f.slice(0, 3).join(', ')}${f.length > 3 ? '…' : ''}`); }
     for (const a of ciegos) out.push(`   · ⚠️ ${a.ruta}: no se pudo mirar (NO cuenta como limpio)`);
   }
+  // ───────── mitad 3: las que acabaron en «working» ─────────
+  // Una sesión que murió trabajando no escribió traspaso ni decidió si empujar: es donde aún puede
+  // haber trabajo perdido. Se cruza con lo de arriba: ¿nombra una rama que no está en origin? ¿escribió
+  // en un árbol que hoy tiene cambios de trabajo sin comitear?
+  const enWorking = sesiones.filter((s) => !s.cola);
+  const suertes = { VIVA: [], 'ACABÓ': [], MUERTA: [], 'NO SUPE': [] };
+  for (const s of enWorking) suertes[suerteDe(s, ahora)].push(s);
+  out.push(
+    '', `MITAD 3 · LAS QUE ACABARON SU LÍNEA DE TIEMPO EN «WORKING» (${enWorking.length}) — qué fue de ellas, por el estado de su state.json`,
+    '| | sesiones | entregó al cerrar | entregó y siguió | NO entregó | no supe si entregó |', '|---|---|---|---|---|---|',
+  );
+  const cuantas = (lista, cubo) => lista.filter((s) => s.entrega.cubo === cubo).length;
+  for (const [k, lista] of Object.entries(suertes)) out.push(`| ${k} | ${lista.length} | ${cuantas(lista, 'ENTREGÓ AL CERRAR')} | ${cuantas(lista, 'ENTREGÓ Y SIGUIÓ')} | ${cuantas(lista, 'NO ENTREGÓ')} | ${cuantas(lista, 'NO SUPE')} |`);
+  out.push(`VIVA = su estado es «working» y escribió hace menos de ${MINUTOS_DE_VIVA} min · MUERTA = «stopped», «failed», o «working» callada más de eso · ACABÓ = «done».`);
+  if (suertes['NO SUPE'].length) out.push(`NO SUPE qué fue de: ${suertes['NO SUPE'].map((s) => `${s.nombre} (estado: ${s.estado ?? 'ninguno'})`).join(', ')}`);
+  const sucios = arboles == null ? null : arboles.filter((a) => a.sucios && a.sucios.some((f) => !RUIDO_DEL_ARNES.some((re) => re.test(f))));
+  const pendientes = [...suertes.MUERTA, ...suertes['ACABÓ']].filter((s) => s.entrega.cubo !== 'ENTREGÓ AL CERRAR');
+  const conAlgo = [];
+  for (const s of pendientes) {
+    const ramas = censo.fuera.filter((r) => mencion(r.nombre).includes(s)).map((r) => r.nombre);
+    // Por FICHERO, no por árbol: lo que ESTA sesión escribió y que hoy sigue sin comitear ahí. Un
+    // directorio sin rastrear sale en git como `carpeta/`, así que vale también el prefijo.
+    const enArboles = [];
+    if (sucios != null) {
+      const porArbol = new Map();
+      for (const p of s.entrega.escritas) {
+        const a = arbolDe(p, arboles); if (!a || !a.sucios) continue;
+        const rel = normal(p).slice(normal(a.ruta).length + 1);
+        const suyo = a.sucios.find((f) => !RUIDO_DEL_ARNES.some((re) => re.test(f)) && (normal(f) === rel || (f.endsWith('/') && rel.startsWith(normal(f) + '/'))));
+        if (suyo) { if (!porArbol.has(a.ruta)) porArbol.set(a.ruta, new Set()); porArbol.get(a.ruta).add(suyo); }
+      }
+      for (const [ruta, fs_] of porArbol) enArboles.push(`${ruta} → ${[...fs_].join(', ')}`);
+    }
+    if (ramas.length || enArboles.length) conAlgo.push(`${s.nombre} · ${suerteDe(s, ahora)} · ${s.entrega.cubo}${ramas.length ? ` · nombra ramas que no están en origin: ${ramas.join(', ')}` : ''}${enArboles.length ? ` · ficheros que escribió y siguen sin comitear: ${enArboles.join(' · ')}` : ''}`);
+  }
+  out.push(
+    '', `muertas o acabadas que NO entregaron al cerrar: ${pendientes.length}. De ellas, con algo en el disco que no está en origin: ${conAlgo.length}${sucios == null ? ' (⚠️ los árboles NO se midieron: solo se cruzó con las ramas)' : ''}`,
+    ...conAlgo.map((l) => `   · ${l}`),
+    'El cruce con un fichero dice que la sesión lo ESCRIBIÓ y que hoy está sin comitear; otra sesión pudo tocarlo después.',
+  );
   out.push('', 'Este script no borra, no empuja y no rescata nada.');
-  return { codigo: 0, lineas: out, datos: { cubos, censo, arboles, completos } };
+  return { codigo: 0, lineas: out, datos: { cubos, censo, arboles, completos, suertes, pendientes, conAlgo } };
 }
 
 /** El repositorio de verdad. Lo que git no contesta llega como `undefined`, nunca como «no». */
@@ -243,6 +308,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const carpeta = arg('--jobs', path.join(os.homedir(), '.claude', 'jobs'));
   let trabajos;
   try { trabajos = leerTrabajos(carpeta); } catch (e) { console.log(`🔴 NO VALE (salida 2): no se puede leer ${carpeta} (${e.code || e.message}).`); process.exit(2); }
+  // El estado ACTUAL de cada trabajo, de su state.json. Si no se deja leer, `undefined`: saldrá NO SUPE.
+  const fs = await import('node:fs');
+  for (const t of trabajos) { try { t.estado = JSON.parse(fs.readFileSync(path.join(carpeta, t.id, 'state.json'), 'utf8')).state; } catch { t.estado = undefined; } }
   const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const { instantanea } = await import('./_censo-alcanzabilidad.mjs');
   const r = medir({

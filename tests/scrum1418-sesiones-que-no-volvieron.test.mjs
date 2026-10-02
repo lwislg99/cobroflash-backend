@@ -2,7 +2,7 @@
 // Transcripciones y repositorio FABRICADOS: los de verdad no van al repositorio.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { entregaDe, censoDeRamas, medir, RUIDO_DEL_ARNES } from '../scripts/sesiones-que-no-volvieron.mjs';
+import { entregaDe, censoDeRamas, medir, suerteDe, arbolDe, RUIDO_DEL_ARNES, MINUTOS_DE_VIVA } from '../scripts/sesiones-que-no-volvieron.mjs';
 
 const T0 = Date.parse('2026-09-29T08:00:00Z');
 const ev = (n, state) => JSON.stringify({ at: new Date(T0 + n * 60e3).toISOString(), state, detail: '', text: '' });
@@ -125,4 +125,66 @@ test('SCRUM-1418 · 🔴 fail-closed: sin sesiones, sin git o sin árboles, se D
   assert.match(sinArboles.lineas.join('\n'), /árboles de trabajo: NO MEDIDOS en esta pasada .* No cuentan como limpios/);
   const conCiega = medir({ trabajos: TRABAJOS, repo: repoDe({ locales: [['rota', 'g']], ciegas: ['g'] }), arboles: [], ...CONTROLES });
   assert.match(conCiega.lineas.join('\n'), /⚠️ sin mirar \(NO cuentan como limpias\): rota/);
+});
+
+// ───────────────────────────── mitad 3: las que acabaron en «working» ─────────────────────────────
+
+test('SCRUM-1418 · 🔴 qué fue de una sesión que acabó en «working»: viva, muerta, acabó o NO SUPE, por el estado de su state.json', () => {
+  const ahora = T0 + 600 * 60e3;
+  const hace = (min) => ({ ultimo: ahora - min * 60e3 });
+  assert.equal(suerteDe({ estado: 'working', ...hace(MINUTOS_DE_VIVA) }, ahora), 'VIVA');
+  assert.equal(suerteDe({ estado: 'working', ...hace(MINUTOS_DE_VIVA + 1) }, ahora), 'MUERTA', 'dice «working» y lleva callada más del umbral');
+  assert.equal(suerteDe({ estado: 'stopped', ...hace(1) }, ahora), 'MUERTA');
+  assert.equal(suerteDe({ estado: 'failed', ...hace(1) }, ahora), 'MUERTA');
+  assert.equal(suerteDe({ estado: 'done', ...hace(5000) }, ahora), 'ACABÓ');
+  for (const raro of [undefined, null, '', 'blocked', 'otro']) assert.equal(suerteDe({ estado: raro, ...hace(1) }, ahora), 'NO SUPE', String(raro));
+});
+
+test('SCRUM-1418 · una ruta pertenece al árbol MÁS PROFUNDO que la contiene, y a ninguno si no está dentro', () => {
+  const arboles = [{ ruta: 'D:/repo' }, { ruta: 'D:/repo/.claude/worktrees/x' }, { ruta: 'D:/wt-1' }];
+  assert.equal(arbolDe('D:\\repo\\.claude\\worktrees\\x\\src\\a.ts', arboles).ruta, 'D:/repo/.claude/worktrees/x');
+  assert.equal(arbolDe('d:/REPO/src/a.ts', arboles).ruta, 'D:/repo');
+  assert.equal(arbolDe('D:/wt-10/src/a.ts', arboles), null, '`wt-10` no está dentro de `wt-1`: un prefijo no es una carpeta');
+  assert.equal(arbolDe('C:/otra/cosa.ts', arboles), null);
+});
+
+const VIVA_Y_MUERTAS = [ev(0, 'working'), ev(5, 'working')].join('\n');
+const escribe = (ruta) => usa('Edit', { file_path: ruta, old_string: 'a', new_string: 'b' });
+const MITAD3 = [
+  ...TRABAJOS.filter((t) => t.nombre !== 's4-viva'),
+  { ...sesion('m1', 's2-muerta-con-arbol', VIVA_Y_MUERTAS, escribe('D:\\wt-2\\tests\\nuevo.test.mjs')), estado: 'stopped' },
+  { ...sesion('m2', 's3-muerta-con-rama', VIVA_Y_MUERTAS, orden('git -C D:/wt-9 commit -m x; git checkout -b scrum-9-solo-local')), estado: 'failed' },
+  { ...sesion('m3', 's4-muerta-limpia', VIVA_Y_MUERTAS, escribe('D:\\wt-3\\src\\a.ts')), estado: 'stopped' },
+  { ...sesion('m4', 's5-muerta-entrego', VIVA_Y_MUERTAS, tr(escribe('D:\\wt-2\\x.ts'), TRASPASO)), estado: 'stopped' },
+  { ...sesion('m5', 's1-acabo', VIVA_Y_MUERTAS, escribe('D:\\wt-1\\.claude\\settings.local.json')), estado: 'done' },
+  { ...sesion('m6', 's2-viva', [ev(0, 'working'), ev(599, 'working')].join('\n'), escribe('D:\\wt-2\\y.ts')), estado: 'working' },
+  { ...sesion('m7', 's3-sin-estado', VIVA_Y_MUERTAS, CODIGO), estado: undefined },
+  // Escribió en el MISMO árbol sucio, pero otro fichero: lo que hoy está sin comitear no es lo suyo.
+  { ...sesion('m8', 's4-muerta-otro-fichero', VIVA_Y_MUERTAS, escribe('D:\\wt-2\\src\\otro.ts')), estado: 'stopped' },
+];
+
+test('SCRUM-1418 · 🔴 la mitad 3 entera: los cuatro cubos, y de las muertas o acabadas que no entregaron, cuáles dejaron algo en el disco', () => {
+  const r = medir({ trabajos: MITAD3, repo: REPO, arboles: ARBOLES, ...CONTROLES, ahora: T0 + 600 * 60e3 });
+  const t = r.lineas.join('\n');
+  assert.equal(r.codigo, 0, t);
+  assert.match(t, /MITAD 3 · LAS QUE ACABARON SU LÍNEA DE TIEMPO EN «WORKING» \(8\)/);
+  assert.match(t, /\| VIVA \| 1 \| 0 \| 0 \| 1 \| 0 \|/);
+  assert.match(t, /\| ACABÓ \| 1 \| 0 \| 0 \| 1 \| 0 \|/);
+  assert.match(t, /\| MUERTA \| 5 \| 1 \| 0 \| 4 \| 0 \|/);
+  assert.match(t, /\| NO SUPE \| 1 \| 0 \| 0 \| 1 \| 0 \|/);
+  assert.match(t, /NO SUPE qué fue de: s3-sin-estado \(estado: ninguno\)/);
+  assert.match(t, /muertas o acabadas que NO entregaron al cerrar: 5\. De ellas, con algo en el disco que no está en origin: 2$/m);
+  assert.match(t, /· s2-muerta-con-arbol · MUERTA · NO ENTREGÓ · ficheros que escribió y siguen sin comitear: D:\/wt-2 → tests\/nuevo\.test\.mjs$/m);
+  assert.match(t, /· s3-muerta-con-rama · MUERTA · NO ENTREGÓ · nombra ramas que no están en origin: scrum-9-solo-local$/m);
+  // Los negativos, con nombre: la que escribió en un árbol limpio, la que entregó al cerrar, la que solo
+  // tocó un fichero del arnés, la viva y la que no se sabe qué fue de ella NO salen en la lista.
+  const lista = r.datos.conAlgo.join('\n');
+  assert.match(lista, /s2-muerta-con-arbol/);
+  for (const n of ['s4-muerta-limpia', 's4-muerta-otro-fichero', 's5-muerta-entrego', 's1-acabo', 's2-viva', 's3-sin-estado']) assert.ok(!lista.includes(n), n);
+  assert.match(t, /otra sesión pudo tocarlo después/);
+});
+
+test('SCRUM-1418 · la mitad 3 sin árboles medidos lo DICE, y cruza solo con las ramas', () => {
+  const r = medir({ trabajos: MITAD3, repo: REPO, arboles: null, ...CONTROLES, ahora: T0 + 600 * 60e3 });
+  assert.match(r.lineas.join('\n'), /con algo en el disco que no está en origin: 1 \(⚠️ los árboles NO se midieron: solo se cruzó con las ramas\)/);
 });
