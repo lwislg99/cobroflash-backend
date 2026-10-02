@@ -148,3 +148,77 @@ código que TOMA LA DECISIÓN contra entradas fabricadas, en vez de confiar en q
   orquestador en su lugar: queda en la lista del fundador, como se acordó.
 - La próxima vez que el vigía cante DE VERDAD en producción será la primera comprobación end-to-end
   real de los dos caminos (crear y comentar) desde que existe este mecanismo.
+
+## SCRUM-1123c (seguimiento, 28-sep-2026) · entorno neutralizado en el test + censo del punto ciego pendiente
+
+**Medido contra:** `origin/main` = `cfc5e676f9c9f51c675b65c81dc8eb2136ecc70c` · 2026-09-28T14:08:55Z
+**Rama:** `scrum-1123c-vigia-neutraliza-ruido` · **Worktree:** `wt-s5-999-cuota-antes-de-lanzar`
+**Origen:** S1, corriendo de nuevo el censo AST de SCRUM-1153 sobre el árbol de hoy, encontró dos
+ocurrencias NUEVAS del patrón «spawnea un `node` hijo + parsea su `stdout` + entorno no neutralizado»
+en este mismo fichero de test, que no existían cuando SCRUM-1153 hizo su barrido (26-sep). El
+orquestador me las pasó por ser de mi carril. Aparte, sigue pendiente desde SCRUM-1123b (línea 122-124
+arriba) el censo de si OTROS workflows tienen el mismo punto ciego de `-e -o pipefail`.
+
+### El arreglo del entorno (`tests/scrum1123-vigia-despliegue-aviso.test.mjs:95` y `:131`)
+
+`correrCli()` (línea 95, usada por 2 tests) y el test FAIL-CLOSED "sin `VIGIA_MARCA`" (línea 131)
+construían el `env` del hijo con `{ ...process.env, ... }` sin neutralizar `FORCE_COLOR`,
+`NODE_OPTIONS` ni `NODE_TEST_CONTEXT` — el mismo patrón que SCRUM-938/899/899b/951a/954/959b/
+1007-1011-1026 ya tenían arreglado. Aplicado el mismo `delete` × 3 en los dos sitios.
+
+🔴 **PASO 0, dicho tal cual salió — no encontré víctima HOY para ESTE caso concreto.** Antes de
+tocar nada probé el script real (`scripts/vigia-despliegue-aviso.mjs`) con `FORCE_COLOR=1`,
+`NODE_TEST_CONTEXT=child-process` y, importante, con el `NODE_OPTIONS` REAL que `ci.yml` usa
+(`--test-reporter=spec … --test-reporter=tap …`, línea 257 de `ci.yml`): el `stdout` del CLI salió
+limpio en los tres casos, `JSON.parse` no revienta, exit 0. La única falla que sí reproduje fue
+distinta y externa al fichero: correr `node --test tests/….mjs` con `NODE_TEST_CONTEXT` YA puesto en
+el proceso PADRE hace que el propio runner de `node --test` se detecte "recursivo" y salte el
+fichero entero con exit 0 (`(node:…) Warning: node:test run() is being called recursively… skipping
+running files.`) — eso es una propiedad de cómo invoqué la prueba desde mi shell, no del código de
+este fichero. Aplico el arreglo de todos modos porque es barato, consistente con el resto de la casa,
+y cierra el hueco estático que el censo señala — pero lo declaro como refuerzo preventivo, no como
+bug confirmado con víctima, para no inflar el hallazgo. 14/14 tests siguen en verde tras el cambio.
+
+### El censo pendiente: ¿cuántos workflows no pueden reportar su propio fallo?
+
+Mirado `.github/workflows/*.yml` entero (8 ficheros) buscando el patrón exacto que costó los 8 días
+de SCRUM-1122: una tubería (`cmd | jq`/`cmd | node`/`cmd | grep`) dentro de un `run:` (que lleva
+`-e -o pipefail` por defecto) SIN `|| true` ni `if ! X="$(...)"` que la proteja, de forma que un
+fallo a mitad de tubería ABORTA el paso antes de llegar a la rama que explica por qué.
+
+**Tres instancias reales, en tres ficheros distintos** (umbral que el orquestador fijó para abrir
+ticket):
+
+1. **`vigia-despliegue.yml:214`** (el propio fichero que SCRUM-1123b arregló) — la rama `comentar`
+   del aviso (`printf '%s' "$DECISION" | jq -r '.cuerpo' | gh issue comment …`) NO lleva el mismo
+   `|| true`/manejo explícito que sí tiene la rama `crear` dos líneas más abajo (219-220, con
+   `&& echo … || { echo "::error::…"; exit 1; }`). Si `gh issue comment` falla, este paso aborta sin
+   el `::error::` ni la línea de `$GITHUB_STEP_SUMMARY` que el resto del fichero sí escribe siempre.
+   Asimetría dentro del MISMO arreglo, no algo nuevo por fuera.
+2. **`vigia-atascados.yml:208`** — `NUM="$(gh issue create --title "$TITULO" --body-file cuerpo.md |
+   grep -oE '[0-9]+$')"` sin guardar. Contrasta con el resto del mismo fichero (líneas 172-177,
+   188-192), que SÍ usa `if ! X="$(...)"; then echo "::error::…"; echo "- **…**" >> …; exit 1; fi`
+   en cada lectura de riesgo. Esta es la única escritura sin ese patrón.
+3. **`zona-roja.yml:113-115`** — `ID=$(gh api … --jq '…' 2>/dev/null | head -1)` sin guardar. Es el
+   más grave de los tres: este workflow existe para **nunca bloquear un PR** (`exit 0` explícito al
+   final, comentario "Pase lo que pase: verde. Si sale rojo, no es un aviso."), y precisamente esta
+   línea sin proteger es la única forma en que el paso PUEDE morir con `-e` antes de llegar a ese
+   `exit 0` — el propio diseño "no bloqueante" queda roto por el único punto sin guardar.
+
+**Revisados y limpios** (ya usan `if ! X="$(...)"` o el patrón `if <pipe>; then… else…fi` exento de
+`-e` a propósito, con comentario que lo explica): `avisador-rojo.yml`, `claude.yml`,
+`pr-automatico.yml` (línea 393-396 tiene el comentario más explícito de la casa sobre por qué:
+"los comandos que son condición de un `if` están exentos de `-e`"), `conflicto-de-registro.yml`
+(el único pipe sin `if !`, línea 164, va envuelto en `try/catch` dentro del propio `node -pe`, así
+que no puede tirar el pipe — no cuenta). `ci.yml` ya tiene su propio arreglo de la misma familia
+documentado en `CLAUDE.md`/SCRUM-850 (TAP a fichero, leído en un segundo comando) y no se ha vuelto
+a mirar aquí.
+
+No abro ticket yo: lo dejo aquí con las tres líneas exactas para que el orquestador lo abra con
+nombre propio, como dijo.
+
+### Verificado
+
+- `node --test --test-force-exit tests/scrum1123-vigia-despliegue-aviso.test.mjs` → 14/14 pass.
+- Censo de workflows: lectura completa de los 8 ficheros de `.github/workflows/`, sin herramienta
+  nueva — grep dirigido + lectura de cada `run:` señalado, con el código de alrededor.
