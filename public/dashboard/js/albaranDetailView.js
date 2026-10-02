@@ -47,6 +47,9 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 // Cada uno en UN literal, tal cual se firmó (SCRUM-1353 comentario 17881): no se parten.
 const TEXTO_YA_HAY_FIRMA_GUARDADA = 'Ya hay una firma de este albarán guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.';
 const TEXTO_FIRMA_RECHAZADA_ALBARAN = 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el albarán.';
+// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
+// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
+const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 /**
  * ¿Hay una firma de ESTE albarán esperando en la cola del móvil? `null` = no se pudo leer.
@@ -274,9 +277,6 @@ const ROTULOS_RAIL_ALBARAN = {
 // Reutilizado LETRA POR LETRA del precedente que ya funciona (`jobDetailView.js`, las miniaturas
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
-// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
-// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
-const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
