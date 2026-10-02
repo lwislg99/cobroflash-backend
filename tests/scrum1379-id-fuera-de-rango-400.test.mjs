@@ -17,6 +17,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 import { cabeEnColumnaInt, INT_COLUMNA_MAX, INT_COLUMNA_MIN } from '../dist/core/validation/enteroDeColumna.js';
 
 const RUTAS = '../dist/modules/jobs/app/routes/partes.routes.js';
@@ -52,7 +53,7 @@ function banco() {
     const r = { status: 200, data: undefined };
     const res = { status(s) { r.status = s; return res; }, json(j) { r.data = j; return res; } };
     const callar = console.error; console.error = () => {};
-    try { await h({ params: { id }, merchantId: MERCHANT, userRole: 'admin', teamMemberId: null }, res); }
+    try { await h(reqDeSesion({ rol: 'admin', merchantId: MERCHANT, params: { id }, teamMemberId: null }), res); }
     finally { console.error = callar; }
     return r;
   };

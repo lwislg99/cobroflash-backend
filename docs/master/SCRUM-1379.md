@@ -84,3 +84,5 @@ en verde), y se repitieron comprobando que la mutación cambia el fichero.
 - `npm run tanda:dirigida` no se corrió entera (pasa de 10 minutos y el sistema la manda a segundo
   plano). Corridos los 84 ficheros que nombran lo tocado: 737 tests, 732 pasan, 3 fallan — los tres son
   `scrum1093h`, rojo local conocido por la junction de `node_modules`, ajeno a la rama. El resto, el CI.
+
+**Segundo error propio (2-oct):** el test armaba el `req` con `userRole` a mano; SCRUM-1344 (en `main` desde después de escribirlo) exige `reqDeSesion`. Lo delató el rojo de la rama hermana (SCRUM-1369, misma forma). Corregido el test, no el guard.
