@@ -97,6 +97,8 @@ Cualquier otro fallo del envío sigue como estaba: modal abierto y botón encend
 
 ## Dos tests que cambian, y por qué
 
+**La regla (orquestador, 2-oct): se puede cambiar el MONTAJE de un test cuando la conducta firmada cambia. NO se puede cambiar lo que AFIRMA para que tu código pase.**
+
 - El último caso de `scrum1198` medía tres reintentos tras el fallo de teléfono. Ese reintento ya no existe (el modal se cierra). El «no duplica» se mide ahora en el control negativo, con un fallo que sí deja reintentar.
 - `scrum1371` usaba `customer_missing_phone` como «el envío falla» en cinco casos. Ahora usa un 500. Lo que guarda —reintentar no vuelve a crear— no cambia, ni sus asertos.
 
