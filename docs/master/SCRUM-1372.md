@@ -136,6 +136,8 @@ mirar `NO HECHO`.
 
 **Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:22:35Z
 
+A9: comprobación → `tests/scrum1372-auditoria-cierres.test.mjs`
+
 Rama `scrum-1372b-gana-el-tope-y-etiqueta-sin-trabajo` (la primera ya entró por #2109). Lo de arriba se
 queda como se escribió; donde este anexo lo contradice, manda el anexo. Los casos del test son 21, no 19.
 
