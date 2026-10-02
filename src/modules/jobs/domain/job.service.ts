@@ -68,7 +68,12 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
     // DOS Jobs reclamaran el MISMO Quote, que no es lo que pasa aquí. Silencio completo.
     //
     // Ahora se pregunta primero por `Quote.jobId`, que es el sentido que admite varios.
-    if (quote.jobId) return; // ya pertenece a un Trabajo (el original, o el suyo si es adicional)
+    // ya pertenece a un Trabajo (el original, o el suyo si es adicional)
+    if (quote.jobId) {
+      // SCRUM-1370 · no se crea Trabajo, pero el cliente acaba de aceptar más dinero en éste.
+      await escribirTotalAceptado(quote.jobId, quote.merchantId, prismaClient);
+      return;
+    }
 
     // Sentido VIEJO, mientras conviven (paso 1: `Job.quoteId` no se retira). Un par anterior al
     // backfill tiene Job pero el Quote todavía no lo sabe: no se crea nada y se ANOTA la
@@ -76,6 +81,7 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
     const existing = await prismaClient.job.findUnique({ where: { quoteId: quote.id }, select: { id: true } });
     if (existing) {
       await prismaClient.quote.update({ where: { id: quote.id }, data: { jobId: existing.id } });
+      await escribirTotalAceptado(existing.id, quote.merchantId, prismaClient); // SCRUM-1370
       return;
     }
     // ── SCRUM-317 (G2) · EL TRABAJO YA NO NACE LLAMÁNDOSE «Presupuesto #N» ──────────────
@@ -126,7 +132,9 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
         // están en el MISMO caso, en las dos versiones de sobre. La solución de fondo (congelar el
         // contenido dentro del sobre) es la propuesta P4 de `docs/master/SCRUM-431.md`, sin aprobar.
         // ─────────────────────────────────────────────────────────────────────────────────
-        totalAceptado: quote.total, // Decimal(12,2): total del Quote congelado en el accept
+        // Decimal(12,2): al nacer hay UN aceptado, así que su total ES la suma. Las aceptaciones
+        // siguientes la recalculan en `escribirTotalAceptado` (SCRUM-1370).
+        totalAceptado: quote.total,
         // totalCobrado = 0 por default (materializado; su lógica de sumar cobros = SCRUM-13)
         // SCRUM-52: autoría = creador del presupuesto (quote.teamMemberId), NO quien acepta
         // (suele ser admin). null (owner) → operarioId null.
@@ -156,6 +164,36 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
   } catch (err: any) {
     console.error('[jobs] ensureJobForQuote omitido:', err?.message || err);
   }
+}
+
+/**
+ * SCRUM-1370 · `Job.totalAceptado` = LA SUMA DE LO QUE EL CLIENTE HA ACEPTADO en ese Trabajo.
+ *
+ * EL FALLO QUE CIERRA, reproducido el 2-oct-2026: la columna sólo se escribía al CREAR el Trabajo
+ * desde una aceptación. Un adicional aceptado, o el presupuesto colgado de un Trabajo abierto sin
+ * presupuesto (SCRUM-651/1274), no la tocaba: `ensureJobForQuote` salía antes. La ficha no lo
+ * notaba (`dineroDelTrabajo` mira los presupuestos), pero los informes por operario y la
+ * exportación SUMAN la columna, y para ellos ese dinero no existía.
+ *
+ * Se recalcula ENTERA desde los presupuestos del Trabajo, como `recalcJobCobradoForJob`: una
+ * aceptación entregada dos veces no suma dos veces. Sin ningún aceptado la suma es `null`, no 0: `null` es
+ * «nadie ha aceptado nada» (SCRUM-1355). Desde su único llamador siempre hay al menos uno.
+ *
+ * 🔴 SÓLO SE LLAMA DESDE `ensureJobForQuote`, y la columna no tiene más escritor que este fichero
+ * (lo vigila `tests/scrum1370-total-aceptado-es-la-suma`). Se escribe al aceptar y no se deriva al
+ * leer porque la suman `metrics`, `team` y `exports`: derivarla serían cuatro cálculos del mismo
+ * dinero. No hay backfill: las filas anteriores cambian en su siguiente aceptación.
+ *
+ * No lanza por su cuenta: corre dentro del `try` de `ensureJobForQuote`, que es best-effort.
+ */
+async function escribirTotalAceptado(jobId: number, merchantId: number, prismaClient = prisma): Promise<void> {
+  const quoteIds = await quotesDelJob(jobId, prismaClient);
+  if (quoteIds.length === 0) return;
+  const agg = await prismaClient.quote.aggregate({
+    where: { id: { in: quoteIds }, merchantId, status: 'accepted' }, // regla 2
+    _sum: { total: true },
+  });
+  await prismaClient.job.update({ where: { id: jobId }, data: { totalAceptado: agg._sum.total } });
 }
 
 /**
