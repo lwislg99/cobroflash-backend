@@ -29,6 +29,7 @@
 // Se puede dejar sin asignar —hoy ya se puede, y no se cambia—, pero entonces **solo lo ven los
 // admin**: ningún técnico lo tiene en su listado. Se escribe aquí, donde se asigna, porque es el
 // único sitio donde alguien lo va a leer antes de dejarlo vacío.
+import { cabeEnColumnaInt } from '../../../core/validation/enteroDeColumna'; // SCRUM-1379
 
 /** El principal, para la columna que todavía se lee. `null` si no hay nadie asignado. */
 export function principalDe(ids: readonly number[]): number | null {
@@ -42,7 +43,7 @@ export function normalizarAsignados(valor: unknown): number[] {
   for (const v of bruto) {
     if (v === null || v === undefined) continue;
     const n = Number(v);
-    if (!Number.isInteger(n) || n <= 0) continue;
+    if (!cabeEnColumnaInt(n) || n <= 0) continue; // SCRUM-1379: lo que no cabe en la columna tampoco es un id
     if (!out.includes(n)) out.push(n);
   }
   return out;

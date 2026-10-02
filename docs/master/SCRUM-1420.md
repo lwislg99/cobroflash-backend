@@ -56,3 +56,48 @@ Leído en `main` antes de construir:
 - No repinta nada ni cambia ninguna vista: hoy nadie pasa `onClose`. **SCRUM-1420 sigue abierto hasta que S4 lo conecte.**
 - No visto en un navegador: el banco no dibuja (el canvas recibe un contexto que no hace nada) y su `document` no guarda oyentes; el test le pone uno para poder pulsar Escape.
 - No ejercita las dos vistas que abren el pad.
+
+# SCRUM-1420 · APÉNDICE · 2-oct-2026 · La ficha del albarán recuerda el aviso y se pone al día al cerrarse el pad (mitad S4)
+
+**Medido contra:** `origin/main` = `f480e8e8ba82b63ea92970f10bd61b7367165121` · 2026-10-02T12:35:50Z
+A9: comprobación → `tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Cambio de lógica en `public/dashboard/js/albaranDetailView.js`: sin marcado, sin estilos y **sin texto**.
+
+Carril S4 (`albaranDetailView.js`) · rama `scrum-1420-la-ficha-recuerda-el-aviso`, **apilada** sobre `scrum-1420-el-pad-avisa-al-cerrarse` (`52b9e80f3bb566f654bda7a2847c60da82bf741a`, la mitad de S2) · sesión `s4-2octb`. Construida contra el contrato de arriba, leído de este fichero.
+
+## PASO 0 · la pregunta previa
+
+¿Podía la vista enterarse del cierre desde su propio fichero? No. Abre el pad ella (`btnFirmarAqui`), pero «Cancelar», Escape y el clic en el fondo llaman al `close` interno del pad, no al `{ close }` devuelto. Lo único posible sin el `onClose` era vigilar el DOM, y se descartó.
+
+`signaturePad.js`: **sin fila propia** en la tabla de carriles, **cubierto por la fila general** de `orquestador.md` §11bis (S2).
+
+## Qué cambia
+
+- La escucha de `alConfirmarseFirmas` (SCRUM-1374), cuando el aviso de ESTE albarán llega con el pad abierto, ya no lo tira: lo apunta (`subioConElPadAbierto`).
+- Al abrir el pad se pasa `onClose`. Si hay aviso apuntado y la ficha sigue siendo la de pantalla, `await refrescar()`. Si no hay aviso, no hace nada.
+- Mientras el pad sigue abierto no se repinta: la aceptación 2 de SCRUM-1374 queda como estaba.
+
+## El suelo de `scrum379` sube de 7 a 8, a mano
+
+Aprobado por el orquestador **antes** de construir. La fila nueva es el `await refrescar()` del `onClose` del pad: una llamada que no existía (ese aviso se tiraba), no una que el censo no viera. El motivo está también encima de la constante y en el mensaje del rojo.
+
+## Verificado, ejecutando
+
+Cinco tests nuevos en `tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs`, con la vista, el pad, la cola y el almacén reales:
+
+| Test | Antes del cambio | Después |
+|---|---|---|
+| pad abierto + sube + se cierra → «firmado», UNA lectura (y ninguna mientras sigue abierto) | **rojo** («al cerrarse el pad la ficha se pide UNA vez») | verde |
+| se cierra sin aviso → ni una lectura de más | verde (control) | verde |
+| con el pad abierto llega el aviso de OTRO documento → al cerrar no se lee | verde (control) | verde |
+| aviso con el pad abierto y la ficha ya no está en pantalla → cerrar no pinta encima | verde (control) | verde |
+| firmar CON red sigue leyendo UNA vez | verde (control) | verde |
+
+Los cuatro controles estaban verdes antes porque miden que NO pase algo; el que mide lo que faltaba estaba rojo. Cada «no se lee» lleva su suelo (el pad se cerró; la cola subió y avisó).
+
+## Lo que NO está medido
+
+- **No visto en yaqu.app**: falta tras el despliegue.
+- El cierre por Escape y por clic en el fondo no se ejercitan desde la vista: aquí se cierra con «Cancelar». Que los tres pasan por el mismo `close` lo mide el test de S2.
+- El parte (`parteDetailView.js`) no entra: es SCRUM-1422.

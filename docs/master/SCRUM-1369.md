@@ -60,3 +60,41 @@ cazó el CI, que es la comprobación que ya existía. Corregido el test, no el g
   con presupuesto aceptado en la cuenta QA (SCRUM-1367). Sólo por test.
 - El doble de la base no evalúa el `where`: el filtro por `merchantId` no lo prueba este fichero.
 - La lista de Trabajos no lleva `entregaPendiente`; sólo se ha tocado el detalle.
+
+---
+
+## Segunda tanda (2-oct) · un borrador no desplaza a un aceptado
+
+**Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:07:57Z
+
+A9: sin fallo que generalice — el cambio es una línea sobre una función ya probada por la ruta, y los dos mutantes se aplicaron y cayeron a la primera
+
+Sesión S1 (relevo de `s1-2octa`) · rama `scrum-1369b-eje-es-lo-aceptado`.
+
+**La decisión que quedaba abierta, contestada** por el orquestador del equipo en mensaje entre sesiones
+(2-oct; **no es una firma del fundador**, y se dice): «un borrador no desplaza a un aceptado: el eje es
+lo que el cliente ha ACEPTADO; sin aceptado no hay eje, y eso se dice, no se rellena».
+
+| Presupuestos del Trabajo | Primera tanda | **Ahora** |
+|---|---|---|
+| borrador + aceptado | `sin_eje` | `calculado`, contra las líneas del ACEPTADO |
+| borrador + aceptado + aceptado | `sin_eje` | no calculable, `hay_adicionales` (C6, igual que sin el borrador) |
+| ninguno aceptado | `sin_eje` | `sin_eje` (sin conteo y sin total: ni un cero) |
+| aceptado + borrador | `calculado` | igual |
+
+**El arreglo:** `presupuestosQueSeEntregan` devuelve los aceptados en su orden (`lista.filter(presupuestoAceptado)`).
+Ni `entregaDelTrabajo` ni la ruta se tocan.
+
+⚠️ **Lo que deja distinto, dicho:** `quoteDelPlan` de `dineroDelTrabajo.ts` (dinero) sigue exigiendo que el
+aceptado sea el PRIMERO de la lista. Con borrador + aceptado, la entrega ya tiene eje y el plan de cobro
+no. No se ha tocado: es dinero y es otro ticket (SCRUM-1370 está al lado).
+
+**Test** — el mismo fichero, ahora 8 casos. Corridos con `scrum423`, `scrum411` y `scrum1344`: 76 de 76.
+
+| Mutante (sobre `dist`, aplicación comprobada) | Resultado (BASE 8/8) |
+|---|---|
+| lo de la primera tanda (el original sólo si está aceptado) | 3 rojos |
+| no filtra | 6 rojos |
+
+**No hecho:** no visto en yaqu.app, y no se puede ver: la cuenta QA no tiene ningún Trabajo con un
+presupuesto aceptado (SCRUM-1367). `npm run tanda:dirigida` no se corrió; el juez es el CI.

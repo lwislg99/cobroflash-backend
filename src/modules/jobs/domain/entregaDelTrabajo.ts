@@ -66,18 +66,22 @@ function cantidadLegible(l: any): boolean {
  * sin entregar» de algo que nadie ha aceptado. Misma raíz que SCRUM-1355 (dinero), otro dominio.
  *
  * El criterio de «aceptado» NO se escribe aquí: es `presupuestoAceptado`, el de
- * `dineroDelTrabajo.ts`. Y la forma es la de su `quoteDelPlan`: el eje es el ORIGINAL sólo si está
- * aceptado. Si no lo está NO se pasa el eje a otro presupuesto —un adicional aceptado detrás de un
- * borrador no se convierte en «el original»—: no hay eje, y `entregaDelTrabajo` contesta `sin_eje`.
- * Los adicionales sin aceptar tampoco cuentan para `hayAdicionales`.
+ * `dineroDelTrabajo.ts`.
  *
- * @param quotes  los presupuestos del Trabajo **con el ORIGINAL el primero** (`quotesDeJob`).
+ * UN BORRADOR NO DESPLAZA A UN ACEPTADO (decidido el 2-oct-2026, segunda tanda del ticket): el eje
+ * es el PRIMER presupuesto aceptado del Trabajo, aunque delante haya uno sin aceptar. Un Trabajo
+ * directo con un borrador viejo y un presupuesto aceptado después mide su entrega contra el
+ * aceptado. Sin ninguno aceptado no hay eje, y `entregaDelTrabajo` contesta `sin_eje`: no un cero.
+ * Los que no están aceptados tampoco cuentan para `hayAdicionales`.
+ *
+ * ⚠️ Aquí la forma YA NO es la de `quoteDelPlan` (`dineroDelTrabajo.ts`), que sigue exigiendo que
+ * el aceptado sea el primero de la lista. Esa es de dinero y no se ha tocado en este ticket.
+ *
+ * @param quotes  los presupuestos del Trabajo en el orden de `quotesDeJob` (el más antiguo primero).
  */
 export function presupuestosQueSeEntregan<T extends { status?: unknown }>(quotes: T[]): T[] {
   const lista = Array.isArray(quotes) ? quotes : [];
-  const original = lista[0];
-  if (!original || !presupuestoAceptado(original)) return [];
-  return [original, ...lista.slice(1).filter(presupuestoAceptado)];
+  return lista.filter(presupuestoAceptado);
 }
 
 /**

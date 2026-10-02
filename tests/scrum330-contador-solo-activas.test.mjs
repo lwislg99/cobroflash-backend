@@ -38,6 +38,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -130,41 +131,48 @@ const CONDICIONES = [
   ['precios.html', /var pintarPlazas = ([^;]+);/],
 ];
 
-for (const [fichero, patron] of CONDICIONES) {
-  test(`SCRUM-330 · ${fichero}: con CERO vendidas NO se pinta la escasez`, () => {
-    const pinta = condicionDe(fichero, patron);
+const casoa = casosEscritos(CONDICIONES, ([fichero, patron]) => `SCRUM-330 · ${fichero}: con CERO vendidas NO se pinta la escasez`, ([fichero, patron]) => {
+  const pinta = condicionDe(fichero, patron);
+  assert.equal(
+    pinta({ seatsLeft: FOUNDING_SEATS, seatsTotal: FOUNDING_SEATS, taken: 0 }), false,
+    `🔴 ${fichero} pinta «quedan 20 de 20» sin una sola venta. Eso no comunica escasez: ` +
+      'comunica que no ha comprado nadie, y lo dice en el sitio donde se presume lo contrario.',
+  );
+});
+const casob = casosEscritos(CONDICIONES, ([fichero, patron]) => `SCRUM-330 · ${fichero}: con ventas de verdad SÍ se pinta`, ([fichero, patron]) => {
+  // El control que impide «arreglarlo» no pintando nunca.
+  const pinta = condicionDe(fichero, patron);
+  assert.equal(pinta({ seatsLeft: 18, seatsTotal: 20, taken: 2 }), true,
+    `🔴 ${fichero} ya no pinta la escasez ni cuando es cierta: entonces esto no es un arreglo, es un borrado`);
+});
+const casoc = casosEscritos(CONDICIONES, ([fichero, patron]) => `SCRUM-330 · ${fichero}: con las 20 ocupadas NO queda un «quedan 0» eterno`, ([fichero, patron]) => {
+  const pinta = condicionDe(fichero, patron);
+  assert.equal(pinta({ seatsLeft: 0, seatsTotal: 20, taken: 20 }), false,
+    `🔴 ${fichero} sigue pintando con 0 plazas libres`);
+});
+const casod = casosEscritos(CONDICIONES, ([fichero, patron]) => `SCRUM-330 · ${fichero}: si el dato NO se puede leer, no se inventa un número`, ([fichero, patron]) => {
+  // Las tres formas de «no lo sé»: sin cuerpo, sin el campo, y con basura donde va el número.
+  const pinta = condicionDe(fichero, patron);
+  for (const roto of [null, undefined, {}, { seatsLeft: null }, { seatsLeft: 'muchas', taken: 5 }]) {
     assert.equal(
-      pinta({ seatsLeft: FOUNDING_SEATS, seatsTotal: FOUNDING_SEATS, taken: 0 }), false,
-      `🔴 ${fichero} pinta «quedan 20 de 20» sin una sola venta. Eso no comunica escasez: ` +
-        'comunica que no ha comprado nadie, y lo dice en el sitio donde se presume lo contrario.',
+      pinta(roto), false,
+      `🔴 ${fichero} pinta un número con la fuente rota (${JSON.stringify(roto)}). Un contador que ` +
+        'falla y enseña «20» es peor que uno ausente: el visitante no puede saber que es inventado.',
     );
-  });
-
-  test(`SCRUM-330 · ${fichero}: con ventas de verdad SÍ se pinta`, () => {
-    // El control que impide «arreglarlo» no pintando nunca.
-    const pinta = condicionDe(fichero, patron);
-    assert.equal(pinta({ seatsLeft: 18, seatsTotal: 20, taken: 2 }), true,
-      `🔴 ${fichero} ya no pinta la escasez ni cuando es cierta: entonces esto no es un arreglo, es un borrado`);
-  });
-
-  test(`SCRUM-330 · ${fichero}: con las 20 ocupadas NO queda un «quedan 0» eterno`, () => {
-    const pinta = condicionDe(fichero, patron);
-    assert.equal(pinta({ seatsLeft: 0, seatsTotal: 20, taken: 20 }), false,
-      `🔴 ${fichero} sigue pintando con 0 plazas libres`);
-  });
-
-  test(`SCRUM-330 · ${fichero}: si el dato NO se puede leer, no se inventa un número`, () => {
-    // Las tres formas de «no lo sé»: sin cuerpo, sin el campo, y con basura donde va el número.
-    const pinta = condicionDe(fichero, patron);
-    for (const roto of [null, undefined, {}, { seatsLeft: null }, { seatsLeft: 'muchas', taken: 5 }]) {
-      assert.equal(
-        pinta(roto), false,
-        `🔴 ${fichero} pinta un número con la fuente rota (${JSON.stringify(roto)}). Un contador que ` +
-          'falla y enseña «20» es peor que uno ausente: el visitante no puede saber que es inventado.',
-      );
-    }
-  });
-}
+  }
+});
+test('SCRUM-330 · index.html: con CERO vendidas NO se pinta la escasez', casoa(0));
+test('SCRUM-330 · index.html: con ventas de verdad SÍ se pinta', casob(0));
+test('SCRUM-330 · index.html: con las 20 ocupadas NO queda un «quedan 0» eterno', casoc(0));
+test('SCRUM-330 · index.html: si el dato NO se puede leer, no se inventa un número', casod(0));
+test('SCRUM-330 · precios.html: con CERO vendidas NO se pinta la escasez', casoa(1));
+test('SCRUM-330 · precios.html: con ventas de verdad SÍ se pinta', casob(1));
+test('SCRUM-330 · precios.html: con las 20 ocupadas NO queda un «quedan 0» eterno', casoc(1));
+test('SCRUM-330 · precios.html: si el dato NO se puede leer, no se inventa un número', casod(1));
+casoa.todos();
+casob.todos();
+casoc.todos();
+casod.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LO QUE NO SE TOCA · la oferta comparte elemento y no es de este ticket
