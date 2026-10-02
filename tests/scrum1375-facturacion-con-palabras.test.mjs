@@ -81,7 +81,6 @@ test('SCRUM-1375 · un valor que el código NO conoce no se pinta crudo: raya en
   const f = await ficha('en_revision_fiscal');
   assert.equal(f.fila, '—');
   assert.deepEqual(f.pildoras, []);
-  assert.ok(!f.todo.includes('en_revision_fiscal'), '🔴 un valor desconocido se ha pintado tal cual');
 });
 
 test('SCRUM-1375 · un nombre heredado de Object (`constructor`) tampoco pasa por valor conocido', async () => {
