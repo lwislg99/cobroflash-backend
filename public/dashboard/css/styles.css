@@ -1366,6 +1366,18 @@ html, body { overflow-x: clip; }
 /* Acción primaria con glow de marca, como el botón de pago de /pay/invoice */
 .qq-modal .modal-footer .btn-primary { box-shadow: var(--shadow-brand); }
 .qq-modal .modal-footer .btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-brand); transform: translateY(-1px); }
+/* SCRUM-1440 · «ENVIAR POR WHATSAPP» SIEMPRE A LA VISTA. La hoja entera se desplaza (`.modal`,
+   `overflow-y: auto`) y el pie iba dentro: medido en yaqu.app a 390×844, en «3 opciones» el
+   contenido mide 896 px en una hoja de 760 y el botón quedaba en y=865, fuera de la pantalla; a
+   360×640 pasaba también en «Un precio». El pie se queda pegado abajo y lo demás se desplaza por
+   detrás. Fondo opaco (el de `.modal`) y una raya, para que lo que pasa por debajo no se lea
+   encima de los botones. Cuando todo cabe no se mueve nada: es el mismo sitio. */
+.qq-modal .modal-footer {
+  position: sticky; bottom: 0; z-index: 1;
+  background: #fff;
+  border-top: 1px solid var(--neutral-200);
+  padding-top: 12px;
+}
 @media (max-width: 639px) {
   /* Campos cómodos en el bottom sheet. Los INPUT sí necesitan esto: fuera del sheet valen 42 px
      (regla de arriba) y aquí suben a 44 — la base no los toca.
