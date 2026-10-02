@@ -1,6 +1,5 @@
 {
   "leeme": "SCRUM-1362 · LOS DEFECTOS que hoy tiene el viaje de la firma sin red en la pantalla del albarán, medidos por tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs. Aquí sólo están los DATOS; las aserciones siguen en el test, intactas. Reglas: quien ARREGLA un defecto BORRA su entrada en el mismo commit (el test cae si se queda); NO se puede borrar una entrada cuyo defecto sigue ahí (el test cae por «no estaba declarado»); la clave es el identificador que usa el detector, no se renombra aquí. Si un día no queda ninguno, `defectos` se deja en {} y se añade `vacio_a_proposito` con el motivo: una sección vacía sin motivo es «no supe leer» y sale en ROJO. El cargador (tests/_defectos-viaje-firma.mjs) también sale en rojo si el fichero no se puede leer, si falta la sección, si una clave está repetida o si un valor viene vacío.",
-  "defectos": {
-    "cerrar-sesion-borra-la-cola-sin-avisar": "app.js: el logout vacía la cola sin preguntar · S2 (texto firmado en SCRUM-1302 c.17889)"
-  }
+  "defectos": {},
+  "vacio_a_proposito": "2-oct-2026: de los seis defectos que midió SCRUM-1351 no queda ninguno. Los dos últimos se retiraron el mismo día: `cerrar-sesion-borra-la-cola-sin-avisar` (SCRUM-1302, PR #2132) y `el-detalle-abierto-no-se-entera-de-que-la-cola-subio` (SCRUM-1373 + SCRUM-1374). El test sigue midiendo los seis: si uno vuelve, cae por «no estaba declarado»."
 }

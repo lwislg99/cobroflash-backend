@@ -1,6 +1,6 @@
 # SCRUM-1374 · El detalle abierto del albarán se entera de que su firma ha subido (mitad S4 de «el detalle abierto no se entera de que la cola subió»)
 
-**Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:25:11Z
+**Medido contra:** `origin/main` = `2ca4053deeb2d1badfd99922d7e1cde67efc8bf2` · 2026-10-02T11:33:06Z
 A9: comprobación → `tests/scrum379-recarga-sin-await.test.mjs`
 
 (La A9: la primera versión llamaba a `recargar()` a pelo con un `.catch` vacío, que es justo el patrón que SCRUM-379 retiró de esta pantalla. Mis cuatro tests pasaban igual; lo cazó ese guard en la tanda dirigida, antes de empujar. Ahora pasa por `refrescar()`.)
@@ -28,8 +28,11 @@ declarado). Con el oyente escrito y la entrada aún en la lista: 13 pasan de 14,
 - Cada pintado suelta la escucha del pintado anterior: hay una sola viva para esta vista.
 
 `scripts/_defectos-viaje-firma-declarados.json`: se retira
-`el-detalle-abierto-no-se-entera-de-que-la-cola-subio`. Queda una entrada
-(`cerrar-sesion-borra-la-cola-sin-avisar`, de S2), así que no hace falta `vacio_a_proposito`.
+`el-detalle-abierto-no-se-entera-de-que-la-cola-subio`. Mientras se construía esto entró en `main`
+el PR #2132 (SCRUM-1302), que retiró la otra entrada que quedaba
+(`cerrar-sesion-borra-la-cola-sin-avisar`): las dos retiradas chocaron en el merge y la lista se
+queda **vacía**. Va con `defectos: {}` y `vacio_a_proposito` con su motivo, que es lo que pide el
+cargador; el test sigue midiendo los seis defectos, y si uno vuelve cae por «no estaba declarado».
 
 `scripts/_sin-consumir-declarados.json`: `colaDeFirmas.js::alConfirmarseFirmas` pasa de `piezas` a
 `retiradas` (la declaró S2 el 2-oct mientras no tenía consumidor; el trinquete de SCRUM-1185 exige
@@ -73,4 +76,4 @@ oyente y se compara la lista).
   como antes de este ticket hasta que se reabre. El caso habitual —firmar sin red, cerrar el pad,
   recuperar la señal después— sí queda cubierto.
 - No está visto en un navegador: el banco no dibuja. Falta verlo en yaqu.app tras el despliegue.
-- Depende de SCRUM-1373 (PR #2101): la rama nace encima de la de S2.
+- SCRUM-1373 (PR #2101) entró en `main` el 2-oct a las 11:29Z; esta rama lleva `main` fusionado.

@@ -452,12 +452,15 @@ export const merchantProfileUpdateSchema = z.object({
       if (motivo) ctx.addIssue({ code: 'custom', message: `El prefijo de serie ${motivo}` });
     })
     .optional(),
-  // Logo: URL http(s) o data-URI de imagen (subida desde Configuración,
-  // redimensionada a ≤512px en cliente; cap 1,5M chars ≈ 1 MB decodificado)
-  logoUrl: z.union([
-    z.string().url(),
-    z.string().regex(/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/).max(1_500_000),
-  ]).nullable().optional(),
+  // Logo: SOLO data-URI de imagen (subida desde Configuración, redimensionada a ≤512px en
+  // cliente; cap 1,5M chars ≈ 1 MB decodificado).
+  // SCRUM-1231: aquí había una segunda rama `z.string().url()`. Con ella el profesional elegía a
+  // qué servidor iba el navegador de SU cliente en las páginas públicas (pago, albarán, portal,
+  // aceptación, perfil). Y `url()` no era «http(s)»: aceptaba cualquier esquema, así que también
+  // dejaba pasar un `data:` de cualquier tipo y tamaño, saltándose el tope de la rama de abajo.
+  // Lo ya guardado que no cumple esto se trata en `sinLogoHeredadoIntacto`.
+  logoUrl: z.string().regex(/^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/).max(1_500_000)
+    .nullable().optional(),
   whatsappPhone: z.string().min(6).max(20).optional(),
   // C1-4: móvil para Bizum manual (default en UI: whatsappPhone)
   bizumPhone: z.string().min(6).max(20).nullable().optional(),
@@ -503,6 +506,24 @@ export const merchantProfileUpdateSchema = z.object({
 export type MerchantProfileUpdateInput = z.infer<
   typeof merchantProfileUpdateSchema
 >;
+
+/**
+ * SCRUM-1231 · El logo que YA estaba guardado y hoy no pasaría el esquema (una URL externa, o el
+ * SVG que siembra la cuenta demo) no puede tumbar el guardado de TODO el perfil.
+ *
+ * Configuración manda `logoUrl` SIEMPRE, con lo que cargó. Sin esto, quien tenga un logo heredado
+ * recibiría un 400 al cambiar el IBAN: el defecto de SCRUM-1161 otra vez. Así que un `logoUrl`
+ * IDÉNTICO al guardado se lee como «no lo ha tocado» y se retira del cuerpo: ni se valida ni se
+ * escribe. Cualquier otro valor sigue yendo al esquema, que lo rechaza.
+ *
+ * ⛔ No acepta nada nuevo: solo deja de re-validar lo que no ha cambiado.
+ */
+export function sinLogoHeredadoIntacto(body: unknown, logoGuardado: string | null | undefined): unknown {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+  const { logoUrl, ...resto } = body as Record<string, unknown>;
+  if (typeof logoUrl !== 'string' || !logoGuardado || logoUrl !== logoGuardado) return body;
+  return resto;
+}
 
 // ------- CUSTOMERS (NUEVO) -------
 
