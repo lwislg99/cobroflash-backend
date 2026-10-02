@@ -150,7 +150,10 @@ test('SCRUM-1414 · el techo: la jornada del PUESTO cuenta lo que ninguna de sus
 test('SCRUM-1414 · las paradas de HOY que no han vuelto salen con nombre; las de otros días, no', () => {
   const hoy = T0 + 100 * 60e3;
   const r = medir(EQUIPO, { ahora: hoy });
-  assert.deepEqual(r.datos.abiertas.map((a) => [a.nombre, Math.round(a.ms / 60e3)]), [['s4-29a', 88], ['s1-29a', 50]]);
+  assert.deepEqual(r.datos.abiertas.map((a) => [a.nombre, Math.round(a.ms / 60e3)]), [
+    ['s4-29a', 88],
+    ['s1-29a', 50],
+  ]);
   assert.equal(medir(EQUIPO, { ahora: AHORA + 48 * 3600e3 }).datos.abiertas.length, 0);
 });
 
