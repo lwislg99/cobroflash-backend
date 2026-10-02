@@ -77,8 +77,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const NIF = '00000000T';
 const NOMBRE = 'Prueba De Laboratorio';
 
-/** Una raíz desechable con el script dentro y `dist/` alcanzable. Devuelve su ruta. */
-function raizAislada() {
+/**
+ * Una raíz desechable con el script dentro y `dist/` alcanzable. Devuelve su ruta. Con `puntero`,
+ * la deja ya con ese `tmp/ultimo-registro.json`: el censo de SCRUM-824 sólo prueba de dónde cuelga
+ * una creación si `dir` nace en el mismo ámbito, por eso se escribe aquí y no desde el test.
+ */
+function raizAislada({ puntero } = {}) {
   const dir = temporal('scrum1399-anterior-');
   fs.mkdirSync(path.join(dir, 'scripts'));
   fs.copyFileSync(SCRIPT, path.join(dir, 'scripts', path.basename(SCRIPT)));
@@ -86,6 +90,10 @@ function raizAislada() {
     const pasarela = path.join(dir, rel);
     fs.mkdirSync(path.dirname(pasarela), { recursive: true });
     fs.writeFileSync(pasarela, `module.exports = require(${JSON.stringify(path.join(RAIZ, rel))});\n`);
+  }
+  if (puntero !== undefined) {
+    fs.mkdirSync(path.join(dir, 'tmp'));
+    fs.writeFileSync(path.join(dir, 'tmp', 'ultimo-registro.json'), puntero);
   }
   return dir;
 }
@@ -211,20 +219,17 @@ test('SCRUM-1399 · ⑥ lo que NO cambia: tras un alta o una R1, el anterior es 
 test('SCRUM-1399 · ⑦ un puntero de anulación escrito por el guion VIEJO no se usa: sale 1 y no escribe nada', () => {
   // El guion viejo dejaba en el puntero, tras una anulación, la serie de la pasada. Ese fichero
   // sobrevive al arreglo (vive fuera de git), y encadenarse a él repetiría el defecto entero.
-  const dir = raizAislada();
-  assert.equal(correr(dir, ['--serie-propia', 'A-0001', '--fecha-propia', '01-09-2026']).status, 0);
   const viejo = JSON.stringify({
     idEmisorFactura: NIF, numSerieFactura: 'PRUEBA-AEAT-123456', fechaExpedicion: '15-09-2026',
     huella: 'A'.repeat(64), tipo: 'anulacion',
   }, null, 2);
-  fs.writeFileSync(rutaPuntero(dir), viejo);
-  const sobreAntes = fs.readFileSync(rutaSobre(dir), 'utf8');
+  const dir = raizAislada({ puntero: viejo });
   const r = correr(dir, ['--serie-propia', 'A-0002', '--fecha-propia', '02-09-2026']);
   assert.equal(r.status, 1, r.stdout);
   assert.match(r.stderr, /SCRUM-1399/);
   assert.match(r.stderr, /PRUEBA-AEAT-123456/);
   assert.equal(fs.readFileSync(rutaPuntero(dir), 'utf8'), viejo, 'el puntero cambió: la cadena avanzó desde un anterior que no vale');
-  assert.equal(fs.readFileSync(rutaSobre(dir), 'utf8'), sobreAntes, 'se escribió un sobre encadenado a un anterior que no vale');
+  assert.equal(fs.existsSync(rutaSobre(dir)), false, 'se escribió un sobre encadenado a un anterior que no vale');
 });
 
 test('SCRUM-1399 · ⑧ la separación funciona: el script escribió en su copia y el tmp/ del árbol no se ha movido', () => {
