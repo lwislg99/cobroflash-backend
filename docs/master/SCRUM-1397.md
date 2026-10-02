@@ -216,6 +216,65 @@ escrito y sin ejecutar ni una vez: no se sabe si alguna sale viva o ciega), la t
 orquestador, con el auto-merge desarmado, para que el trabajo no viviera sólo en un árbol. La línea
 `A9:` de arriba apunta a un banco que existe y que todavía no ha corrido.
 
+### Lo corrido después, por J2b (relevo de J2a) · 2026-10-02T02:44:11Z, `origin/main` sin moverse
+
+[Escrito por J2b. Lo de arriba es de J2a y se queda como lo dejó: dice cómo estaba al empujar.]
+
+**El banco de mutaciones, corrido por primera vez** (`tests/banco-scrum1397/mutar.mjs`, contra PGlite
+0.5.8, un servidor nuevo por pasada, una pasada cada vez):
+
+- Base 5 de 5 sin saltos; T0 (los tres ficheros transpilados sin mutar) 5 de 5.
+- **18 CAEN de 18 · mudas 0 · vivas 0 · ciegas 0 · árbol intacto por sha256.**
+- Antes de correrlo lo cambié, porque tal como estaba no sabía decir «ciega»: una mutación cuyo
+  fuente no parsea mataba el módulo y salía CAE si no exigía texto (M07 y M16 no lo exigen) o VIVA
+  si lo exigía. Ahora da cuatro salidas —CAE, MUDA (no cae nada), VIVA (cae otra cosa o por otro
+  motivo) y CIEGA (no se midió)—, mira los errores de sintaxis del fuente mutado, comprueba todas
+  las anclas antes de la primera pasada, y se prueba a sí mismo con dos controles: C1, una coma
+  colgante, tiene que salir CIEGA (salió: «Expression expected»); C2, `!=` por `!==`, tiene que
+  salir MUDA (salió). Si un control no sale como debe, el banco entero se declara CIEGO.
+- **Lo que el 18 de 18 NO dice:** M18 (el PDF pregunta a la puerta DESPUÉS de generarlo) la caza
+  sólo el caso que mira el orden de las llamadas por AST. Por efecto no la ve ningún caso: la
+  respuesta sigue siendo 404 y nadie mira si el PDF de la ajena llegó a escribirse en disco.
+- M07 y M16 no declaran texto. Leído en sus TAP: M07 cae por el `deepEqual` del conjunto vacío;
+  M16 cae en dos casos, y el de base dice `SUYA-TRABAJO-ASIGNADO`.
+
+**El check obligatorio de #2121, leído por nombre** (run 36956046612, job 110679321416, sobre
+`967196fa`; 02:32:41Z a 02:39:50Z): **ROJO.** 10.008 casos, 9.905 pasan, 5 caen, 98 saltos. La señal
+de nombres dice `ausentes=0`.
+
+- Los cinco «SCRUM-1397 · …» pasan, y los dos con base pasan de verdad (no saltan): el recorte se
+  sostiene contra `postgres:16`, no sólo contra PGlite.
+- Por nombre, sin caídas ni saltos: SCRUM-597 (11 líneas), SCRUM-55 (4), SCRUM-411 (26), SCRUM-237 (9),
+  SCRUM-976 (4), SCRUM-1294 (4), SCRUM-267 (50), SCRUM-854 (7). Son líneas que llevan ese número con
+  guion, no ficheros: un prefijo no es un nombre.
+- **Los 5 que caen son de esta rama, y los cinco señalan el fichero de test de este ticket:**
+
+| guard | qué dice | causa en `tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs` |
+|---|---|---|
+| SCRUM-409 · ningún fixture usa el merchant DEMO | 5 líneas con `merchantId: 1` | el caso sin base llama a la puerta con el id del demo |
+| SCRUM-419 · cada gateado dice POR QUÉ no corre | `skip: SALTO` en los dos casos con base | el motivo va en una constante; el guard lo exige escrito en el propio `skip` |
+| SCRUM-456 · TODO salto declara su motivo | lo mismo | la misma causa |
+| SCRUM-419 · el inventario de lo que NO corre | falta este fichero, con 2 | el gateado nuevo no está declarado en `GATEADOS_DECLARADOS` |
+| SCRUM-419 · CI DECLARA lo que no ha ejecutado | 42 !== 40 | la misma causa |
+
+  Ninguno toca el código de la puerta. **Al escribir esto NO están arreglados**: el arnés de mi sesión
+  denegó las dos escrituras (el test y el inventario de `scrum419`) y no lo he rodeado. Está dicho al
+  orquestador; mientras no se arregle, el PR sigue en rojo.
+
+**`npm run guards:entrada`:** 12 guards, 132 casos, 132 pasan, 0 caen, 0 saltos, 11 s. Corrido sobre
+`c502e506` (los dos commits del banco encima de `967196fa`). Ese verde no incluye a los tres guards
+que caen en el obligatorio: no son de entrada.
+
+**La dirigida NO se ha corrido.** El arnés denegó también calcular su lista
+(`node scripts/tests-que-cubren.mjs`). La pasada completa que hay de `967196fa` es la del
+obligatorio, con los cinco rojos de arriba y ninguno más. De los dos commits del banco y de este
+tramo del registro no hay pasada completa hasta que el CI corra otra vez.
+
+**Mi error:** la primera pasada del banco salió CIEGO por un suelo que acababa de escribir yo. Le pasé
+a `transpileModule` la ruta relativa, y con ella devuelve «not under rootDir» sobre un fuente sano; mi
+suelo lo contó como error de sintaxis. Lo paró antes de medir nada, que es para lo que estaba. Va con
+la ruta absoluta y lleva el porqué al lado (`c502e506`).
+
 ## Ⓗ Mis errores de esta tanda
 
 1. **Di por bueno un rojo sin leer por qué caía.** La primera pasada contra el banco dio «caen 2», que
