@@ -143,7 +143,10 @@ la marca que vuelve, la ficha sin la firma del fundador y una ranura prohibida t
 ## Lo que NO se hizo, y lo que queda sin medir
 
 - La tanda completa local: no es alcanzable en esta máquina (medido dos veces por el orquestador).
-  Va la dirigida de `tests-que-cubren`; el obligatorio del CI es la tanda.
+- Dirigida local NO corrida — decisión del orquestador; `guards:entrada` 12 guards / 132 tests
+  verde, y `censo:guards-navegador` 37 de 37 en 513 s, sí corridos; el obligatorio del CI es la
+  pasada entera sobre el merge. `tests-que-cubren` la calculó en 469 ficheros de 1.196. Corridos
+  en local además: el test del ticket (11 de 11) y los diez ficheros más cercanos al cambio.
 - Nada visto en yaqu.app.
 - El 500 real del gestor de errores de `src/app.ts` no se provocó: el de la sonda es fabricado.
 - Hallazgos de otro carril, sin tocar: la barra del periodo de esta pantalla lleva cuatro `style=`
