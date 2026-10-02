@@ -5,10 +5,10 @@
 // preguntar y el purgado borra la constancia. Una firma que no está en el servidor desaparece del
 // móvil sin que nadie lo diga.
 //
-// 🔴 EL LITERAL ESTÁ PENDIENTE DE FIRMA. `textoFirmasRechazadasAlCerrar` devuelve `null` en `app.js`
-// y con `null` no se pregunta. Aquí se mide TODO LO DEMÁS poniendo un texto de banco en su sitio:
-// que se cuentan antes del purgado, que se cuentan todas menos `invalid_id`, que va UNA pregunta, y
-// que «Cancelar» ni cierra ni borra. El purgado no cambia (lo fija `scrum890b`).
+// Los dos literales están aprobados (SCRUM-1383 comentario 18204, por delegación) y se comparan
+// con `===`. Se mide que se cuentan antes del purgado, que se cuentan todas menos `invalid_id`, que
+// son DOS preguntas seguidas —primero las sin subir, y las rechazadas sólo si a ésa dijo que sí— y
+// que «Cancelar» en cualquiera de las dos ni cierra ni borra. El purgado no cambia (`scrum890b`).
 //
 // Ejecuta el `logout()` REAL con `colaDeFirmas.js`, `almacenLocal.js` y `api.js` reales.
 // Lo que NO mide: un navegador de verdad, ni partes (sólo albaranes).
@@ -20,8 +20,11 @@ import { montarAlmacen, porQueEstariaCiego } from './_banco-almacen-local.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SIN_SUBIR_UNA = 'Te queda 1 firma por subir. Si cierras sesión ahora, se borra de este móvil y habrá que volver a firmar. ¿Cerrar sesión?';
+const sinSubirVarias = (n) => `Te quedan ${n} firmas por subir. Si cierras sesión ahora, se borran de este móvil y habrá que volver a firmarlas. ¿Cerrar sesión?`;
+const RECHAZADA_UNA = '1 firma no se ha podido registrar y hay que volver a pedirla. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?';
+const rechazadasVarias = (n) => `${n} firmas no se han podido registrar y hay que volver a pedirlas. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?`;
 
-function montar({ conTextoDeBanco = true } = {}) {
+function montar() {
   // `rechaza`: ids de albarán → código con el que el servidor dice que no. El resto sube.
   const red = { firmas: [], cierres: 0, rechaza: {}, falla: [] };
   const responder = (status, data) => ({
@@ -45,11 +48,12 @@ function montar({ conTextoDeBanco = true } = {}) {
   };
   red.navigator = { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } };
   const b = montarAlmacen(RAIZ, { dashboard: { red } });
-  const avisos = { acepta: true, preguntas: [] };
-  b.ctx.confirm = (texto) => { avisos.preguntas.push(String(texto)); return avisos.acepta; };
-  if (conTextoDeBanco) {
-    b.ctx.textoFirmasRechazadasAlCerrar = (rechazadas, sinSubir) => `BANCO rechazadas=${rechazadas} sinSubir=${sinSubir}`;
-  }
+  // `respuestas`: lo que contesta a cada pregunta, por orden; agotadas, contesta `acepta`.
+  const avisos = { acepta: true, respuestas: [], preguntas: [] };
+  b.ctx.confirm = (texto) => {
+    avisos.preguntas.push(String(texto));
+    return avisos.respuestas.length ? avisos.respuestas.shift() : avisos.acepta;
+  };
   return { b, red, avisos };
 }
 
@@ -73,8 +77,8 @@ async function constancias(b) {
 
 const salio = (b) => String(b.ctx.location.href).includes('/login.html');
 
-test('SCRUM-1383 · suelo: el banco ve la cola, las constancias, el `logout` real y el hueco del literal', () => {
-  const { b } = montar({ conTextoDeBanco: false });
+test('SCRUM-1383 · suelo: el banco ve la cola, las constancias, el `logout` real y la función del literal', () => {
+  const { b } = montar();
   assert.equal(porQueEstariaCiego(b, RAIZ), null);
   for (const n of ['logout', 'encolarFirma', 'drenarSiNoSeEstaDrenando', 'leerFirmasPendientes', 'leerRechazosDeFirma', 'textoFirmasRechazadasAlCerrar']) {
     assert.equal(typeof b.ctx[n], 'function', `\`${n}\` no es alcanzable desde el banco`);
@@ -108,7 +112,7 @@ test('SCRUM-1383 · 🔴 el rechazo NACE en el cierre: se pregunta antes de purg
 
   assert.equal(red.firmas.length, 1, '🔴 SUELO: no se intentó subir; el rechazo no ha podido nacer aquí');
   assert.equal(await enCola(b), 0, '🔴 SUELO: la firma rechazada sigue en la cola; se mediría el aviso de SCRUM-1302');
-  assert.deepEqual(avisos.preguntas, ['BANCO rechazadas=1 sinSubir=0'], '🔴 la firma se rechazó en el cierre y no se preguntó');
+  assert.deepEqual(avisos.preguntas, [RECHAZADA_UNA], '🔴 la firma se rechazó en el cierre y no se preguntó');
   assert.equal(await constancias(b), 1, '🔴 dijo «Cancelar» y la constancia se ha borrado igual');
   assert.equal(red.cierres, 0, '🔴 dijo «Cancelar» y se ha llamado a /auth/logout');
   assert.equal(salio(b), false, '🔴 dijo «Cancelar» y se le ha mandado al login');
@@ -139,7 +143,7 @@ test('SCRUM-1383 · se cuentan TODAS las del móvil: la rechazada de antes tambi
   await b.ctx.logout();
 
   assert.equal(red.firmas.length, 0, 'con la cola vacía no hay nada que intentar subir');
-  assert.deepEqual(avisos.preguntas, ['BANCO rechazadas=2 sinSubir=0']);
+  assert.deepEqual(avisos.preguntas, [rechazadasVarias(2)]);
   assert.equal(salio(b), false);
 });
 
@@ -164,23 +168,49 @@ test('SCRUM-1383 · `invalid_id` junto a otra: se cuenta sólo la otra', async (
 
   await b.ctx.logout();
 
-  assert.deepEqual(avisos.preguntas, ['BANCO rechazadas=1 sinSubir=0']);
+  assert.deepEqual(avisos.preguntas, [RECHAZADA_UNA]);
 });
 
-test('SCRUM-1383 · rechazadas Y sin subir: UNA sola pregunta, con las dos cifras', async () => {
+// Rechazadas Y sin subir: DOS preguntas seguidas (c.18204, decisión 4). Tres finales posibles.
+async function conLasDosCosas(respuestas) {
   const { b, red, avisos } = montar();
   red.rechaza = { 7: 'firma_invalida' };
   red.falla = [8, 9];
   await encolar(b, [7, 8, 9]);
-  avisos.acepta = false;
-
+  avisos.respuestas = respuestas;
   await b.ctx.logout();
-
   assert.equal(red.firmas.length, 3, '🔴 SUELO: no se intentaron las tres');
-  assert.deepEqual(avisos.preguntas, ['BANCO rechazadas=1 sinSubir=2'], '🔴 no es UNA pregunta con las dos cifras');
+  return { b, red, avisos };
+}
+
+test('SCRUM-1383 · rechazadas Y sin subir · dice que NO a la primera: sólo se pregunta por las sin subir', async () => {
+  const { b, red, avisos } = await conLasDosCosas([false]);
+
+  assert.deepEqual(avisos.preguntas, [sinSubirVarias(2)], '🔴 la primera pregunta no es la de las sin subir, o se preguntó de más');
   assert.equal(await enCola(b), 2, '«Cancelar» no saca nada de la cola');
   assert.equal(await constancias(b), 1);
+  assert.equal(red.cierres, 0);
   assert.equal(salio(b), false);
+});
+
+test('SCRUM-1383 · rechazadas Y sin subir · 🔴 dice que SÍ y luego que NO: dos preguntas, y ni cierra ni borra', async () => {
+  const { b, red, avisos } = await conLasDosCosas([true, false]);
+
+  assert.deepEqual(avisos.preguntas, [sinSubirVarias(2), RECHAZADA_UNA], '🔴 no son dos preguntas seguidas, en ese orden');
+  assert.equal(await enCola(b), 2, '🔴 dijo «Cancelar» a la segunda y la cola se ha borrado');
+  assert.equal(await constancias(b), 1, '🔴 dijo «Cancelar» a la segunda y la constancia se ha borrado');
+  assert.equal(red.cierres, 0, '🔴 dijo «Cancelar» a la segunda y se ha llamado a /auth/logout');
+  assert.equal(salio(b), false);
+});
+
+test('SCRUM-1383 · rechazadas Y sin subir · dice que SÍ a las dos: se cierra y se purga todo', async () => {
+  const { b, red, avisos } = await conLasDosCosas([true, true]);
+
+  assert.deepEqual(avisos.preguntas, [sinSubirVarias(2), RECHAZADA_UNA]);
+  assert.equal(await enCola(b), 0);
+  assert.equal(await constancias(b), 0);
+  assert.equal(red.cierres, 1);
+  assert.equal(salio(b), true);
 });
 
 test('SCRUM-1383 · si las constancias no se pueden LEER no se pregunta por ellas: se cierra como siempre', async () => {
@@ -196,28 +226,24 @@ test('SCRUM-1383 · si las constancias no se pueden LEER no se pregunta por ella
   assert.equal(red.cierres, 1, 'cerrar sesión tiene que funcionar siempre (SCRUM-455)');
 });
 
-test('SCRUM-1383 · HOY, sin literal firmado: con rechazadas no se pregunta, y con sin-subir sigue el texto de SCRUM-1302', async () => {
-  // Fija lo que hace `main` mientras el texto no esté firmado: nada nuevo se pinta.
-  {
-    const { b, red, avisos } = montar({ conTextoDeBanco: false });
-    assert.equal(b.ctx.textoFirmasRechazadasAlCerrar(1, 0), null, '🔴 hay un literal en `app.js`: ¿está firmado? Entonces este test y el pendiente de abajo se actualizan juntos');
-    red.rechaza = { 7: 'firma_invalida' };
-    await encolar(b, [7]);
-    avisos.acepta = false;
-    await b.ctx.logout();
-    assert.deepEqual(avisos.preguntas, []);
-    assert.equal(salio(b), true);
-  }
-  {
-    const { b, red, avisos } = montar({ conTextoDeBanco: false });
-    red.rechaza = { 7: 'firma_invalida' };
-    red.falla = [8];
-    await encolar(b, [7, 8]);
-    avisos.acepta = false;
-    await b.ctx.logout();
-    assert.deepEqual(avisos.preguntas, [SIN_SUBIR_UNA], 'sin literal combinado, la pregunta firmada de SCRUM-1302 sigue saliendo');
-    assert.equal(salio(b), false);
-  }
+test('SCRUM-1383 · con UNA sin subir y UNA rechazada, la primera pregunta es la de SCRUM-1302 en singular', async () => {
+  const { b, red, avisos } = montar();
+  red.rechaza = { 7: 'firma_invalida' };
+  red.falla = [8];
+  await encolar(b, [7, 8]);
+  avisos.respuestas = [true, false];
+  await b.ctx.logout();
+  assert.deepEqual(avisos.preguntas, [SIN_SUBIR_UNA, RECHAZADA_UNA]);
+  assert.equal(salio(b), false);
 });
 
-test('SCRUM-1383 · el literal firmado: una, varias y el combinado', { skip: 'PENDIENTE DE FIRMA del fundador (SCRUM-1383): el texto es nuevo; cuando vuelva firmado se escribe en `textoFirmasRechazadasAlCerrar` y aquí' }, () => {});
+test('SCRUM-1383 · 🔴 los DOS literales son los aprobados (c.18204), comparados con `===`, y no llevan la cifra de las sin subir', () => {
+  const { b } = montar();
+  const texto = b.ctx.textoFirmasRechazadasAlCerrar;
+  assert.equal(texto(1), RECHAZADA_UNA);
+  assert.equal(texto(2), rechazadasVarias(2));
+  assert.equal(texto(11), rechazadasVarias(11));
+  // Ya no hay texto combinado: un segundo argumento no cambia nada.
+  assert.equal(texto(1, 5), RECHAZADA_UNA, '🔴 el texto de las rechazadas ha vuelto a depender de las sin subir');
+  assert.equal(texto.length, 1);
+});
