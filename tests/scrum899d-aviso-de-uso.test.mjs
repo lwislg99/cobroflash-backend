@@ -18,6 +18,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { temporal } from './_temporal.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = path.join(RAIZ, 'scripts', 'equipo', 'uso.mjs');
@@ -106,14 +107,24 @@ test('CONTROL: una lectura fresca y válida da VERDE — el lector SABE decir ve
     'ventana ya reiniciada': () => juzgar(u.registrar(null, entradaStatusLine({ reset: Math.floor(T0 / 1000) + 30 }), T0)),
     'parámetro inválido': () => juzgar(control, T0 + MIN, { maxEdadMin: Number('diez') }),
   };
-  for (const [nombre, caso] of Object.entries(casos)) {
-    test(`🔴 NO_PUDE_MIRAR · ${nombre}`, () => {
-      const r = caso();
-      assert.equal(r.veredicto, 'NO_PUDE_MIRAR', JSON.stringify(r));
-      // Y el control, en el mismo instante, sigue en VERDE: lo que cambió es lo único que difiere.
-      assert.equal(juzgar(control).veredicto, 'VERDE');
-    });
-  }
+  const noPudeMirar = casosEscritos(Object.entries(casos), ([nombre, caso]) => `🔴 NO_PUDE_MIRAR · ${nombre}`, ([nombre, caso]) => {
+    const r = caso();
+    assert.equal(r.veredicto, 'NO_PUDE_MIRAR', JSON.stringify(r));
+    // Y el control, en el mismo instante, sigue en VERDE: lo que cambió es lo único que difiere.
+    assert.equal(juzgar(control).veredicto, 'VERDE');
+  });
+  test('🔴 NO_PUDE_MIRAR · no existe', noPudeMirar(0));
+  test('🔴 NO_PUDE_MIRAR · vacío', noPudeMirar(1));
+  test('🔴 NO_PUDE_MIRAR · no es JSON', noPudeMirar(2));
+  test('🔴 NO_PUDE_MIRAR · formato desconocido', noPudeMirar(3));
+  test('🔴 NO_PUDE_MIRAR · sin lectura vigente', noPudeMirar(4));
+  test('🔴 NO_PUDE_MIRAR · porcentaje que no es número', noPudeMirar(5));
+  test('🔴 NO_PUDE_MIRAR · hora ilegible', noPudeMirar(6));
+  test('🔴 NO_PUDE_MIRAR · vieja (11 min > 10)', noPudeMirar(7));
+  test('🔴 NO_PUDE_MIRAR · del futuro (+5 min)', noPudeMirar(8));
+  test('🔴 NO_PUDE_MIRAR · ventana ya reiniciada', noPudeMirar(9));
+  test('🔴 NO_PUDE_MIRAR · parámetro inválido', noPudeMirar(10));
+  noPudeMirar.todos();
 }
 
 test('NO_PUDE_MIRAR nunca sale con 0, y AVISO tampoco', () => {
