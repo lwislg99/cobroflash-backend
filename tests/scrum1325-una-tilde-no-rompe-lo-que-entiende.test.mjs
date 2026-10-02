@@ -26,6 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -33,7 +34,9 @@ const R = (rel) => require_.resolve(`./dist/${rel}`);
 const R_BOT = R('modules/whatsappBot/domain/botFlow.service.js');
 const poner = (r, e) => { require_.cache[r] = { id: r, filename: r, loaded: true, exports: e }; };
 
-const CLIENTE = '34611222333';
+// Ni el cliente ni el profesional llevan un móvil que pueda ser de alguien (SCRUM-262).
+const CLIENTE = telefonoDePrueba(1);
+const PROFESIONAL = telefonoDePrueba(2);
 
 /**
  * Las dos formas en que llega una letra con tilde: UN carácter (lo normal en un móvil) o letra +
@@ -65,7 +68,7 @@ async function escribe(estado, texto, datos = {}) {
       create: async (a) => { sesion = { id: 2, ...a.data }; return sesion; },
     },
     customer: { findMany: async () => [{ id: 3, merchantId: 42, name: 'Ana' }] },
-    merchant: { findUnique: async () => ({ id: 42, name: 'Fontanería Ruiz', legalName: null, whatsappPhone: '34600111222' }) },
+    merchant: { findUnique: async () => ({ id: 42, name: 'Fontanería Ruiz', legalName: null, whatsappPhone: PROFESIONAL }) },
     quoteRequest: { create: async (a) => { solicitudes.push(a.data); return { id: 77, ...a.data }; } },
   } });
   const via = (cual) => async () => { mandado.push(cual); return { ok: true }; };
