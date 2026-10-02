@@ -110,7 +110,15 @@ for (const f of FICHEROS) {
 const opciones = ts.parseJsonConfigFileContent(
   ts.readConfigFile(path.join(RAIZ, 'tsconfig.json'), ts.sys.readFile).config, ts.sys, RAIZ,
 ).options;
-const transpilar = (f, fuente) => fs.writeFileSync(enDist(f), ts.transpileModule(fuente, { compilerOptions: opciones, fileName: f }).outputText);
+// Devuelve los errores de SINTAXIS del fuente que transpila. `transpileModule` emite algo aunque el
+// fichero no parsee: sin mirar esto, una mutación mal escrita mata el módulo entero y se lee como
+// una mutación que el test caza (o que no caza), cuando no se ha medido nada.
+const transpilar = (f, fuente) => {
+  const r = ts.transpileModule(fuente, { compilerOptions: opciones, fileName: f, reportDiagnostics: true });
+  fs.writeFileSync(enDist(f), r.outputText);
+  return (r.diagnostics || []).filter((d) => d.category === ts.DiagnosticCategory.Error)
+    .map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' '));
+};
 const restaurar = () => { for (const f of FICHEROS) { fs.writeFileSync(path.join(RAIZ, f), original.get(f).src); fs.writeFileSync(enDist(f), original.get(f).dist); } };
 
 const entorno = {};
@@ -142,7 +150,10 @@ for (const m of MUTACIONES) {
 }
 
 try {
-  for (const f of FICHEROS) transpilar(f, original.get(f).src.toString('utf8'));
+  const errores = FICHEROS.flatMap((f) => transpilar(f, original.get(f).src.toString('utf8')));
+  // SUELO del detector de sintaxis: sobre el fuente sin mutar tiene que callar. Si no, toda
+  // mutación saldría CIEGA por un ruido que no es suyo.
+  if (errores.length) fin(2, 'CIEGO: el fuente SIN mutar ya da errores de sintaxis al transpilar: ' + errores.join(' · '));
   const t0 = correr('T0-transpilado-sin-mutar');
   if (t0.ciego) fin(2, 'CIEGO en T0: ' + t0.ciego);
   console.log(`T0 (los ${FICHEROS.length} ficheros transpilados SIN mutar): casos=${t0.casos.length} caen=${t0.caen.length}`);
@@ -151,32 +162,70 @@ try {
   restaurar();
 }
 
-// ── Las mutaciones ───────────────────────────────────────────────────────────────────────────
-let vivas = 0;
-let ciegas = 0;
-let n = 0;
-for (const m of MUTACIONES) {
-  n += 1;
+// ── Una pasada, con sus CUATRO salidas ───────────────────────────────────────────────────────
+//   CAE   · cae el caso esperado y dice lo esperado: el test caza la mutación.
+//   MUDA  · no cae NADA: o el test no mira ahí, o la mutación no cambia el comportamiento.
+//   VIVA  · cae otra cosa, o cae el caso por un motivo que no es el declarado.
+//   CIEGA · no se ha medido la mutación: el ancla no casa, no se aplicó, el fuente mutado no
+//           parsea, el módulo no carga o la pasada no dejó TAP. Una ciega NO es un resultado: se
+//           rehace la mutación.
+const NO_CARGA = /SyntaxError|ERR_MODULE_NOT_FOUND|Cannot find module/;
+function pasada(m, etiqueta) {
   const fuente = original.get(m.f).src.toString('utf8');
-  const veces = fuente.split(m.de).length - 1;
-  if (veces !== 1) { ciegas += 1; console.log(`${m.id} → CIEGA: el ancla aparece ${veces} veces en ${m.f} (tiene que ser 1)`); continue; }
   const mutado = fuente.replace(m.de, () => m.a);
   let r;
   try {
     fs.writeFileSync(path.join(RAIZ, m.f), mutado);
-    transpilar(m.f, mutado);
+    const errores = transpilar(m.f, mutado);
     const aplicada = sha(fs.readFileSync(path.join(RAIZ, m.f))) !== sha(original.get(m.f).src) && sha(fs.readFileSync(enDist(m.f))) !== sha(original.get(m.f).dist);
-    if (!aplicada) { ciegas += 1; console.log(`${m.id} → CIEGA: la mutación no cambió el fuente o no cambió el dist`); continue; }
-    r = correr(`M${String(n).padStart(2, '0')}`);
+    if (!aplicada) return { veredicto: 'CIEGA', detalle: 'la mutación no cambió el fuente o no cambió el dist' };
+    if (errores.length) return { veredicto: 'CIEGA', detalle: 'el fuente mutado NO PARSEA: ' + errores.join(' · ') };
+    r = correr(etiqueta);
   } finally {
     restaurar();
   }
-  if (r.ciego) { ciegas += 1; console.log(`${m.id} → CIEGA: ${r.ciego}`); continue; }
+  if (r.ciego) return { veredicto: 'CIEGA', detalle: r.ciego };
+  if (NO_CARGA.test(r.texto)) return { veredicto: 'CIEGA', detalle: `un módulo no carga (${r.texto.match(NO_CARGA)[0]}): caen ${r.caen.length} de ${r.casos.length}` };
+  if (r.caen.length === 0) return { veredicto: 'MUDA', detalle: `no cae ninguno de los ${r.casos.length} casos` };
   const cayo = r.caen.some((c) => c.includes(m.cae));
   const loDice = m.dice === '' || r.texto.includes(m.dice);
-  if (cayo && loDice) console.log(`${m.id} → CAE (${r.caen.length} caso(s)): «${m.cae}»${m.dice ? ` · dice «${m.dice}»` : ''}`);
-  else { vivas += 1; console.log(`${m.id} → VIVA: caen [${r.caen.join(' | ')}]; se esperaba «${m.cae}»${cayo ? ` y que dijera «${m.dice}»` : ''}`); }
+  const cuales = `caen ${r.caen.length} de ${r.casos.length}: [${r.caen.join(' | ')}]`;
+  if (cayo && loDice) return { veredicto: 'CAE', detalle: `${cuales}${m.dice ? ` · dice «${m.dice}»` : ''}` };
+  return { veredicto: 'VIVA', detalle: `${cuales}; se esperaba «${m.cae}»${cayo ? ` y que dijera «${m.dice}»` : ''}` };
 }
+
+// SUELO: las anclas, TODAS, antes de gastar una sola pasada.
+const sinAncla = [];
+for (const m of MUTACIONES) {
+  const veces = original.get(m.f).src.toString('utf8').split(m.de).length - 1;
+  if (veces !== 1) sinAncla.push(`${m.id}: el ancla aparece ${veces} veces en ${m.f} (tiene que ser 1)`);
+}
+if (sinAncla.length) fin(2, 'CIEGO: ' + sinAncla.join('\n       '));
+
+// ── Los CONTROLES del propio banco: que sepa decir CIEGA y que sepa decir MUDA ───────────────
+// Sin esto, «18 de 18 caen» no distingue un banco que mide de uno que llama CAE a cualquier rojo.
+const CONTROLES = [
+  { id: 'C1 control: un fuente que no parsea (coma colgante)', f: PUERTA, espera: 'CIEGA',
+    de: 'return fila != null;', a: 'return fila != null,;', cae: 'SIGUE viendo cada factura suya', dice: '' },
+  { id: 'C2 control: un cambio que no cambia nada (`!=` por `!==` sobre lo que devuelve findFirst)', f: PUERTA, espera: 'MUDA',
+    de: 'return fila != null;', a: 'return fila !== null;', cae: 'SIGUE viendo cada factura suya', dice: '' },
+];
+for (const [i, c] of CONTROLES.entries()) {
+  const r = pasada(c, `C${i + 1}`);
+  console.log(`${c.id} → ${r.veredicto}: ${r.detalle}`);
+  if (r.veredicto !== c.espera) fin(2, `CIEGO: el control tenía que salir ${c.espera} y sale ${r.veredicto}; el banco no sabe distinguir sus salidas`);
+}
+
+// ── Las mutaciones ───────────────────────────────────────────────────────────────────────────
+const cuenta = { CAE: 0, MUDA: 0, VIVA: 0, CIEGA: 0 };
+let n = 0;
+for (const m of MUTACIONES) {
+  n += 1;
+  const r = pasada(m, `M${String(n).padStart(2, '0')}`);
+  cuenta[r.veredicto] += 1;
+  console.log(`${m.id} → ${r.veredicto}: ${r.detalle}`);
+}
+const { MUDA: mudas, VIVA: vivas, CIEGA: ciegas } = cuenta;
 
 // ── Post-condición de CONTENIDO ──────────────────────────────────────────────────────────────
 let intacto = true;
@@ -184,5 +233,5 @@ for (const f of FICHEROS) {
   if (sha(fs.readFileSync(path.join(RAIZ, f))) !== sha(original.get(f).src)) { intacto = false; console.log(`🔴 ${f} NO ha vuelto a ser el que era`); }
   if (sha(fs.readFileSync(enDist(f))) !== sha(original.get(f).dist)) { intacto = false; console.log(`🔴 ${enDist(f)} NO ha vuelto a ser el que era`); }
 }
-console.log(`RESULTADO: ${MUTACIONES.length - vivas - ciegas} caen de ${MUTACIONES.length} · vivas=${vivas} · ciegas=${ciegas} · árbol intacto=${intacto}`);
-fin(vivas || ciegas || !intacto ? 1 : 0);
+console.log(`RESULTADO: ${cuenta.CAE} caen de ${MUTACIONES.length} · mudas=${mudas} · vivas=${vivas} · ciegas=${ciegas} · controles del banco=${CONTROLES.length} de ${CONTROLES.length} · árbol intacto=${intacto}`);
+fin(mudas || vivas || ciegas || !intacto ? 1 : 0);
