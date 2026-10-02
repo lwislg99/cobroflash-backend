@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
@@ -83,7 +84,7 @@ router.get('/categories', (_req, res) => {
 router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.quoteId);
-    if (!Number.isFinite(quoteId)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(quoteId)) return res.status(400).json({ error: 'invalid_id' });
     const margin = await getQuoteMargin(req.merchantId, quoteId);
     if (!margin) return res.status(404).json({ error: 'quote_not_found' });
     return res.json({ ok: true, ...margin });
@@ -117,7 +118,7 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
 router.get('/:id/foto', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const gasto = await prisma.expense.findFirst({
       where: { id, merchantId: req.merchantId },
       select: { receiptData: true },
@@ -277,7 +278,7 @@ router.post('/leer-ticket', async (req, res) => {
 router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
             baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
     const patch: any = {};
@@ -332,7 +333,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const deleted = await deleteExpense(req.merchantId, id);
     if (!deleted) return res.status(404).json({ error: 'not_found' });
     return res.json({ ok: true });

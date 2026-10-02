@@ -1,0 +1,34 @@
+﻿COLA FRENTE A EJECUCIÓN · job «build + tests…» de ci.yml · event=pull_request · ventana 2026-10-01T00:00:00Z → 2026-10-01T23:59:59Z
+POBLACIÓN: 199 corridas · 168 con el obligatorio en success/failure (MEDIDAS) · 30 con el obligatorio sin veredicto (cancelado, saltado o en curso) · 1 sin ese job · 4 de las medidas son reintentos (se mide el último intento)
+
+POR CORRIDA:
+   COLA (hasta el primer paso)        mediana 1.3 min · p90 14.3 min · máx 42.8 min · suma 13.8 h
+   EJECUCIÓN (primer paso → fin)      mediana 9.0 min · p90 10.1 min · máx 12.8 min · suma 24.3 h
+   TOTAL (arranque del intento → fin) mediana 10.9 min · p90 22.4 min · máx 51.0 min · suma 38.1 h
+
+LA FRACCIÓN QUE DECIDE: de todo el tiempo del obligatorio, COLA 36.2 % · EJECUCIÓN 63.8 %
+CORRIDAS CON COLA: > 1 min: 90 de 168 · > 5 min: 59 de 168 · > 10 min: 31 de 168
+CONTROL DE LA LECTURA: en 0 de 168 la cola leída del primer paso y la leída de `started_at` del job difieren en más de 30 s
+
+POR HORA (UTC) · corridas medidas · mediana de cola · máxima de cola:
+   2026-10-01T00h ·   7 ·   0.1 min ·   0.1 min
+   2026-10-01T01h ·   9 ·   0.1 min ·   1.1 min
+   2026-10-01T02h ·  27 ·  12.4 min ·  42.8 min
+   2026-10-01T03h ·   9 ·   5.2 min ·   9.0 min
+   2026-10-01T04h ·   1 ·   0.1 min ·   0.1 min
+   2026-10-01T06h ·  10 ·   0.1 min ·   1.0 min
+   2026-10-01T07h ·   8 ·   0.1 min ·   0.1 min
+   2026-10-01T08h ·   4 ·   0.1 min ·   0.1 min
+   2026-10-01T10h ·  16 ·   3.0 min ·  14.3 min
+   2026-10-01T11h ·  14 ·   5.4 min ·  18.8 min
+   2026-10-01T12h ·  21 ·   1.4 min ·  18.0 min
+   2026-10-01T13h ·  20 ·   4.3 min ·  10.3 min
+   2026-10-01T14h ·   9 ·  12.4 min ·  25.6 min
+   2026-10-01T15h ·   3 ·   0.1 min ·   0.1 min
+   2026-10-01T16h ·   2 ·   0.8 min ·   0.8 min
+   2026-10-01T17h ·   4 ·   0.1 min ·   0.1 min
+   2026-10-01T18h ·   4 ·   0.1 min ·   2.1 min
+
+LO QUE ESTO NO MIDE: la cola de los OTROS jobs y workflows (el abridor de PR, los informativos); ni el tiempo del empujón a que la corrida existe.
+
+filas escritas en docs\master\evidencias\SCRUM-1419\cola-1oct.tsv: 168

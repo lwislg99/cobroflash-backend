@@ -1,4 +1,5 @@
 // src/modules/quoteRequests/app/routes/quoteRequests.routes.ts
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 
@@ -47,7 +48,7 @@ router.get('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const status = req.body?.status;
     if (!['read', 'done', 'pending'].includes(status)) {

@@ -86,3 +86,56 @@ en verde), y se repitieron comprobando que la mutación cambia el fichero.
   `scrum1093h`, rojo local conocido por la junction de `node_modules`, ajeno a la rama. El resto, el CI.
 
 **Segundo error propio (2-oct):** el test armaba el `req` con `userRole` a mano; SCRUM-1344 (en `main` desde después de escribirlo) exige `reqDeSesion`. Lo delató el rojo de la rama hermana (SCRUM-1369, misma forma). Corregido el test, no el guard.
+
+---
+
+## Segunda tanda (2-oct) · las rutas que el censo por `Number.isInteger` no veía
+
+**Medido contra:** `origin/main` = `a2fe215e5fdd5f86b6b13fe009198daed27b3a5a` · 2026-10-02T12:35:47Z
+
+A9: aviso → cicatriz S1 «Un doble de `res` que contesta a cualquier propiedad también contesta a `then`, y el `async` que lo devuelve no termina nunca.» — no se pudo comprobar: el doble de `res` se escribe a mano en cada test y ningún guard lo mira
+
+Sesión S1 (relevo de `s1-2octa`) · rama `scrum-1379b-id-fuera-de-rango-resto`.
+
+El primer tramo dejó escrito que había rutas que validan el id con `Number.isNaN` y que no las había
+abierto. Abiertas ahora las de `src/` por `Number(req.params…)`, `isNaN`, `isFinite` y `parseInt`, no sólo
+por `isInteger`:
+
+| Grupo | Líneas | Qué se hace |
+|---|---|---|
+| Id de la URL · S1 · NO emisión · validado con `isNaN` o `isFinite` | 24 | **usan el helper en este PR** |
+| `desplazamientos` del parte (valor de fuera a una columna `Int?`) | 1 | **usa el helper en este PR** |
+| S1 · handler que EMITE (las 8 del primer tramo) y `dev.routes.ts` (3) | 11 | **siguen sin tocar**: falta el GO del fundador |
+| Otros carriles: `customersAdmin` (J2: 5 con `isNaN`, además de las 14) e `invoicesAdmin` (J1: 12 con `isNaN`, además de las 3) | 17 | NO HECHO: son de J2 y J1 |
+
+**Hechas (24):** `expenses.routes.ts` `GET /margin/:quoteId`, `GET /:id/foto`, `PUT /:id`, `DELETE /:id` ·
+`products.routes.ts` `GET /:id`, `PUT /:id` · `providers.routes.ts` `PUT /:id`, `DELETE /:id` ·
+`attachments.routes.ts` `GET /:id` · `quoteRequests.routes.ts` `PATCH /:id` · `team.routes.ts` `PUT /:id`,
+`POST /:id/resend`, `DELETE /:id` · `templates.routes.ts` `PUT /:id`, `DELETE /:id` · `quotesAdmin.routes.ts`
+`/:id/accept`, `/:id/reject`, `/:id/send-whatsapp`, `/:id/pdf`, `/:id/send-email`, `/:id/approve`, `/:id/notes`,
+`/:id/tags`, `GET /:id`.
+
+**Cambio de respuesta, dicho:** estas rutas dejaban pasar un decimal (`/admin/quotes/1.5`) hasta la base;
+ahora dan el mismo 400 que ya daban a `abc`. Ningún texto nuevo. `-1` y `0` siguen llegando a la base.
+
+### Test — `tests/scrum1379b-id-fuera-de-rango-resto.test.mjs` (49 casos: 1 de censo y 2 por cada una de las 24 rutas)
+
+Cada ruta por su handler de `dist/`, con la base doblada: cualquier consulta lanza si lleva un número que
+no cabe en un int4. Por ruta: SUELO (`-1`, `0` y `2147483647` consultan la base y no dan 400 ni 500) y el
+caso (`99999999999999999999`, `10000000000`, `2147483648`, `1.5` y `abc` → 400 sin consulta).
+
+| Mutante (sobre `dist`, comprobado que cambia el fichero) | Resultado (BASE 49/49) |
+|---|---|
+| el helper vuelve a `!Number.isNaN` (lo de antes) | 24 rojos |
+| el helper pasa a `Number.isSafeInteger` | 24 rojos |
+
+**Error propio (A9):** la primera corrida se colgó y el sistema la mandó a segundo plano; la paré. El `res`
+de prueba era un `Proxy` que devolvía una función para CUALQUIER propiedad, también `then`: el handler
+hace `return res.json(…)` dentro de un `async`, el motor lo toma por una promesa y espera para siempre.
+
+### Lo que NO está hecho
+
+- **No visto en yaqu.app.**
+- `desplazamientos` lleva el helper y compila, **sin test por la ruta**.
+- Los ids que llegan en el CUERPO de estas rutas (`quoteId` o `providerId` de un gasto, p. ej.) **no están abiertos**.
+- `npm run tanda:dirigida` no se corrió: corridos este fichero, `scrum1379`, `scrum1344` y `scrum1294`. El juez es el CI.
