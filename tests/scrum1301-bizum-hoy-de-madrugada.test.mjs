@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -106,18 +107,21 @@ test('SCRUM-1301 · 🔴 ① Madrid, 31-mar 23:30Z (01:30 del 1-abr allí), fech
     'la zona sale del merchant DEL COBRO (charge.merchantId), no de otro');
 });
 
-for (const [n, desc, ahora, fecha] of [
+const FILAS = [
   ['②', 'Madrid, 1-abr 10:00Z, fecha 1-abr', '2026-04-01T10:00:00Z', '2026-04-01'],
   ['③', 'Madrid, 31-mar 21:00Z (23:00 allí), fecha 31-mar', '2026-03-31T21:00:00Z', '2026-03-31'],
   ['⑤', 'Madrid, 31-mar 23:30Z, fecha 31-mar', '2026-03-31T23:30:00Z', '2026-03-31'],
-]) {
-  test(`SCRUM-1301 · ${n} ${desc} → limpio en los dos pasos`, async () => {
-    const r = await caso({ timezone: MADRID, ahora, fecha });
-    assert.equal(r.paso1.ok, true);
-    assert.equal(r.webhook.statusCode, 200, JSON.stringify(r.webhook.cuerpo));
-    assert.equal(r.banco.actualizaciones.length, 1);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS, ([n, desc, ahora, fecha]) => `SCRUM-1301 · ${n} ${desc} → limpio en los dos pasos`, async ([n, desc, ahora, fecha]) => {
+  const r = await caso({ timezone: MADRID, ahora, fecha });
+  assert.equal(r.paso1.ok, true);
+  assert.equal(r.webhook.statusCode, 200, JSON.stringify(r.webhook.cuerpo));
+  assert.equal(r.banco.actualizaciones.length, 1);
+});
+test('SCRUM-1301 · ② Madrid, 1-abr 10:00Z, fecha 1-abr → limpio en los dos pasos', caso2(0));
+test('SCRUM-1301 · ③ Madrid, 31-mar 21:00Z (23:00 allí), fecha 31-mar → limpio en los dos pasos', caso2(1));
+test('SCRUM-1301 · ⑤ Madrid, 31-mar 23:30Z, fecha 31-mar → limpio en los dos pasos', caso2(2));
+caso2.todos();
 
 test('SCRUM-1301 · 🔴 ④ merchant SIN zona (UTC), 31-mar 23:30Z, fecha 1-abr → 400 en confirm-bizum: para él todavía es 31', async () => {
   const r = await caso({ timezone: null, ahora: '2026-03-31T23:30:00Z', fecha: '2026-04-01' });

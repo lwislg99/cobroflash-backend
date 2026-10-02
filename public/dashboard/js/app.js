@@ -882,16 +882,61 @@ async function firmasSinSubirAlCerrar() {
  */
 async function confirmarCierreConFirmasSinSubir() {
   let n = await firmasSinSubirAlCerrar();
-  if (!n) return true;
   // Con red, primero se intenta subirlas: preguntar por algo que se arregla solo es ruido. El
   // drenado tiene plazo (el de `api.js`), así que un sótano no deja el botón colgado para siempre.
-  if (navigator.onLine !== false && typeof window.drenarSiNoSeEstaDrenando === 'function') {
+  if (n && navigator.onLine !== false && typeof window.drenarSiNoSeEstaDrenando === 'function') {
     try { await window.drenarSiNoSeEstaDrenando(); } catch (_e) { /* best-effort: se vuelve a contar */ }
     n = await firmasSinSubirAlCerrar();
-    if (!n) return true;
   }
+  // SCRUM-1383 · se cuentan DESPUÉS del intento: el propio intento puede crear el rechazo.
+  const rechazadas = await firmasRechazadasAlCerrar();
+  const texto = textoAlCerrarSesion(n, rechazadas);
+  if (!texto) return true;
   if (typeof window.confirm !== 'function') return true;
-  return !!window.confirm(textoFirmasSinSubirAlCerrar(n));
+  return !!window.confirm(texto);
+}
+
+// ── SCRUM-1383 · CERRAR SESIÓN CON FIRMAS QUE EL SERVIDOR RECHAZÓ ──────────────────────────────
+// Una firma rechazada sale de la cola y deja una constancia (`almacenLocal.js`, SCRUM-890). El
+// purgado la borra A PROPÓSITO (art. 32 RGPD; lo fija `scrum890b`) y eso no cambia: la constancia no
+// dice de qué cuenta es, y si sobreviviera la vería quien entrase después. Lo que faltaba es decirlo
+// ANTES: sin esto, una firma que no está en el servidor desaparecía del móvil sin que nadie lo dijera.
+
+/**
+ * 🔴 PENDIENTE DE FIRMA (SCRUM-1383): devuelve `null`, y con `null` NO se pregunta por las
+ * rechazadas (se cierra como hasta hoy). El literal entra aquí cuando lo firme el fundador; lleva
+ * también el caso combinado (`sinSubir` > 0), porque va UNA pregunta y no dos.
+ */
+function textoFirmasRechazadasAlCerrar(_rechazadas, _sinSubir) {
+  return null;
+}
+
+/**
+ * Cuántas constancias de rechazo hay en este móvil, o `null` si no se han podido LEER.
+ *
+ * Se cuentan TODAS, no sólo las de este cierre: la de ayer se pierde igual. NO se cuenta
+ * `invalid_id`, igual que la pantalla del albarán: con ese código volver a pedir la firma da el
+ * mismo no, y el aviso prometería algo falso. Límite: el aviso no dice QUÉ documento; la constancia
+ * sólo lleva el id interno.
+ */
+async function firmasRechazadasAlCerrar() {
+  if (typeof window.leerRechazosDeFirma !== 'function') return null;
+  try {
+    const r = await window.leerRechazosDeFirma();
+    if (!r || r.estado !== window.GUARDADO || !Array.isArray(r.rechazos)) return null;
+    return r.rechazos.filter((x) => x && x.codigo !== 'invalid_id').length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/** El texto de la ÚNICA pregunta, o `null` si no hay nada cierto que preguntar. */
+function textoAlCerrarSesion(sinSubir, rechazadas) {
+  if (rechazadas) {
+    const texto = textoFirmasRechazadasAlCerrar(rechazadas, sinSubir || 0);
+    if (texto) return texto;
+  }
+  return sinSubir ? textoFirmasSinSubirAlCerrar(sinSubir) : null;
 }
 
 async function logout() {

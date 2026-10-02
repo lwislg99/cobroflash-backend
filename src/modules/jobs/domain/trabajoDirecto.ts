@@ -26,6 +26,7 @@
 // son lo mismo**, y aquí la diferencia se ve en la pantalla del profesional.
 
 import { esTipoIntervencion, type TipoIntervencion } from './tipoIntervencion';
+import { cabeEnColumnaInt } from '../../../core/validation/enteroDeColumna'; // SCRUM-1379
 
 /** Lo que el profesional escribe al abrir un trabajo directo. */
 export type EntradaTrabajoDirecto = {
@@ -89,7 +90,7 @@ export function datosDeTrabajoDirecto(cuerpo: unknown): ResultadoEntrada {
   // El cliente es el ÚNICO obligatorio: sin él el Trabajo no es de nadie, y todo lo demás
   // —dirección, descripción, nombre— se puede añadir después con el PATCH que ya existe.
   const id = Number(c.customerId);
-  if (!Number.isInteger(id) || id <= 0) return { ok: false, error: 'customer_required' };
+  if (!cabeEnColumnaInt(id) || id <= 0) return { ok: false, error: 'customer_required' };
 
   return {
     ok: true,

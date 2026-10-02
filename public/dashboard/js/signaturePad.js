@@ -365,9 +365,21 @@
     okBtn.style.opacity = '.6';
     btnRow.appendChild(okBtn);
 
+    // SCRUM-1420 · EL PAD DICE CUÁNDO SE HA CERRADO. Quien lo abre sabe de su `onConfirm`, pero no
+    // de «Cancelar», Escape ni el clic en el fondo: esos se cierran aquí dentro. Contrato en
+    // `docs/master/SCRUM-1420.md`: UNA vez por pad (este `close` se puede llamar dos veces: lo
+    // tiene el llamador y además está Escape), DESPUÉS de quitar el pad del DOM, y un `onClose`
+    // que lance no impide el cierre. Sin `opts.onClose` el componente hace lo de siempre.
+    const onClose = opts && typeof opts.onClose === 'function' ? opts.onClose : null;
+    let cerrado = false;
+    let confirmada = false;
     function close() {
       document.removeEventListener('keydown', onKey);
       overlay.remove();
+      if (cerrado) return;
+      cerrado = true;
+      if (!onClose) return;
+      try { onClose({ confirmada }); } catch (_e) { /* el pad ya está cerrado: un oyente roto no lo reabre */ }
     }
     function onKey(e) { if (e.key === 'Escape') close(); }
     document.addEventListener('keydown', onKey);
@@ -428,6 +440,7 @@
         return;
       }
       okBtn.textContent = okTextoInicial;
+      confirmada = true;
       close(); // ← LO ÚLTIMO, y solo si el envío fue bien.
     });
 

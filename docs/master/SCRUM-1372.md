@@ -208,3 +208,18 @@ etiqueta no aparta (1) · se leen los de límite declarado (2) · no se dice a q
    comparar con la decisión, no al leer el diff. → comprobación: el caso del 1-oct dentro del test.
 4. **Fijé la expresión del ancla mirando una sola muestra**, y me salvó el suelo de población de mi propio
    guard. Es el mismo error que C5: calibrar sobre una muestra.
+
+## Añadido el 2-oct tras la respuesta del orquestador (rama `scrum-1372c-a10-y-notas-de-registro`)
+
+- **La forma de fallar de este instrumento, no dos anécdotas.** C5 el 1-oct y C6 el 2-oct: dos criterios
+  distintos de la misma criba, dos días seguidos, el mismo error — casar por la FORMA (unas palabras, un
+  rótulo). Todo criterio nuevo de la criba que busque texto se mide contra cierres que no se usaron para
+  escribirlo antes de darle una cifra.
+- **Convención aprobada por el orquestador de Luis y subida al fundador para el equipo de Javier:**
+  etiquetas `descartado` y `duplicado`, que pone quien cierra, al cerrar; y la sección de aceptación lleva
+  la palabra «Aceptación» en su título. NO hay etiqueta para «límite declarado»: pediría a quien cierra
+  clasificar su propio «no lo vi».
+- **La pasada completa NO se corre hasta que la convención del rótulo esté decidida** (orden del
+  orquestador): con C6 casando por el rótulo marcaría «sin aceptación» a cinco cierres que la tienen.
+- SCRUM-1131 lleva `duplicado` y SCRUM-1361 lleva `descartado` desde hoy. #2137 entró en `main` con el
+  obligatorio en verde; verde no es «todo corrió»: no comprobé mis casos por nombre en el TAP del CI.

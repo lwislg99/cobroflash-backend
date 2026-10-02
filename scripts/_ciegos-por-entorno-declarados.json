@@ -1,0 +1,7 @@
+[
+  {
+    "test": "SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando las líneas, y NO se muta nada",
+    "condicion": "temporal-en-otra-unidad",
+    "motivo": "Crea su fichero vigilado en el temporal y lo alcanza con una ruta relativa a la raíz del repo; con el temporal en otra unidad no se alcanza y el propio test se declara CIEGO con un assert (medido el 2-oct-2026: temporal en C:, árboles en D:). En el CI corre de verdad."
+  }
+]

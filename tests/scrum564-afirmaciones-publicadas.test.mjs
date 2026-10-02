@@ -28,6 +28,7 @@ import {
   CON_ANCLA, ANCLA_A_DECLARAR, FALSA, DESCARTADA, SIN_DECLARAR,
   censar, unidadesDe, afirmacionesDe, veredictos, leerLanding,
 } from '../scripts/_afirmaciones-publicadas.mjs';
+import { nombreEscrito } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
@@ -52,7 +53,8 @@ test('SUELO · las cinco secciones existen y ninguna sale vacía', () => {
   }
 });
 
-test(`SUELO · el censo llega a las ${AFIRMACIONES} afirmaciones, ni menos ni más`, () => {
+test('SUELO · el censo llega a las 19 afirmaciones, ni menos ni más', (t) => {
+  nombreEscrito(t, `SUELO · el censo llega a las ${AFIRMACIONES} afirmaciones, ni menos ni más`);
   const c = censar(html);
   assert.equal(c.afirman.length, AFIRMACIONES,
     `🔴 el censo encuentra ${c.afirman.length} afirmaciones y se midieron ${AFIRMACIONES}.\n`
@@ -106,7 +108,8 @@ test('CONTROL POSITIVO · el mecanismo distingue un ancla viva de una inventada'
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LOS TRES GRUPOS · derivados, no declarados
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test(`cada una de las ${AFIRMACIONES} tiene veredicto, y ninguna se queda sin declarar`, () => {
+test('cada una de las 19 tiene veredicto, y ninguna se queda sin declarar', (t) => {
+  nombreEscrito(t, `cada una de las ${AFIRMACIONES} tiene veredicto, y ninguna se queda sin declarar`);
   const r = veredictos(html, RAIZ, censoF);
   assert.equal(r.total, AFIRMACIONES, '🔴 el total de afirmaciones no es el medido');
   const sinDeclarar = r.veredictos.filter((v) => v.grupo === SIN_DECLARAR);

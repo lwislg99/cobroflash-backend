@@ -23,6 +23,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -107,6 +108,10 @@ function bancoBase(opts) {
   const fix = fetchDeGastos(opts);
   const banco = cargarDashboard(RAIZ, { red: { fetch: fix.fetch } });
   banco.ctx.FileReader = FileReaderFalso;
+  // SCRUM-1425 · la foto que cabe ahora se ABRE antes de mandarla, y el mini-DOM no decodifica
+  // imágenes. `FOTO_FALSA` hace de foto buena: el banco la «abre». Lo que pasa con una que NO
+  // se abre lo mide `scrum1425-foto-pequena-que-no-es-imagen.test.mjs`.
+  banco.ctx.createImageBitmap = async () => ({ width: 40, height: 30, close() {} });
   return { banco, fix };
 }
 
@@ -395,26 +400,30 @@ test('SCRUM-1038 · 🔴 ⑤ el tope de 5 lecturas al día avisa con SU texto, n
 
 // ═══ ⑥ CUALQUIER OTRO FALLO: el mismo aviso genérico, y tampoco toca el formulario ══════════
 
-for (const [nombre, respuesta] of [
+const FILAS = [
   ['sin IA configurada (503)', jsonFail(503, { ok: false, error: 'ai_not_configured' })],
   ['cuota de Google agotada (429, no es nuestro tope)', jsonFail(429, { ok: false, error: 'ai_cuota_diaria_agotada' })],
   ['formato que la IA no pudo parsear (422)', jsonFail(422, { ok: false, error: 'ai_could_not_parse' })],
   ['fallo interno (500)', jsonFail(500, { ok: false, error: 'internal_error' })],
-]) {
-  test(`SCRUM-1038 · ⑥ fallo del servidor — ${nombre} — avisa con el genérico y no toca nada`, async () => {
-    const { banco } = bancoBase({ lecturas: [respuesta] });
-    const { btn } = await prepararConFoto(banco);
-    const $ = (id) => banco.ctx.document.getElementById(id);
-    $('exp-amount').value = '7';
+];
+const caso2 = casosEscritos(FILAS, ([nombre, respuesta]) => `SCRUM-1038 · ⑥ fallo del servidor — ${nombre} — avisa con el genérico y no toca nada`, async ([nombre, respuesta]) => {
+  const { banco } = bancoBase({ lecturas: [respuesta] });
+  const { btn } = await prepararConFoto(banco);
+  const $ = (id) => banco.ctx.document.getElementById(id);
+  $('exp-amount').value = '7';
 
-    await pulsar(btn);
+  await pulsar(btn);
 
-    const error = $('exp-error');
-    assert.equal(error.style.display, 'block', `🔴 ${nombre}: no muestra ningún aviso`);
-    assert.equal(error.textContent, AVISO_FALLO, `🔴 ${nombre}: el aviso no es el genérico firmado`);
-    assert.equal($('exp-amount').value, '7', `🔴 ${nombre}: ha tocado un campo con el formulario (AC#4)`);
-  });
-}
+  const error = $('exp-error');
+  assert.equal(error.style.display, 'block', `🔴 ${nombre}: no muestra ningún aviso`);
+  assert.equal(error.textContent, AVISO_FALLO, `🔴 ${nombre}: el aviso no es el genérico firmado`);
+  assert.equal($('exp-amount').value, '7', `🔴 ${nombre}: ha tocado un campo con el formulario (AC#4)`);
+});
+test('SCRUM-1038 · ⑥ fallo del servidor — sin IA configurada (503) — avisa con el genérico y no toca nada', caso2(0));
+test('SCRUM-1038 · ⑥ fallo del servidor — cuota de Google agotada (429, no es nuestro tope) — avisa con el genérico y no toca nada', caso2(1));
+test('SCRUM-1038 · ⑥ fallo del servidor — formato que la IA no pudo parsear (422) — avisa con el genérico y no toca nada', caso2(2));
+test('SCRUM-1038 · ⑥ fallo del servidor — fallo interno (500) — avisa con el genérico y no toca nada', caso2(3));
+caso2.todos();
 
 test('SCRUM-1038 · ⑥ un fallo de RED (sin conexión) también avisa con el genérico', async () => {
   const fix = fetchDeGastos();
@@ -427,6 +436,7 @@ test('SCRUM-1038 · ⑥ un fallo de RED (sin conexión) también avisa con el ge
     },
   });
   banco.ctx.FileReader = FileReaderFalso;
+  banco.ctx.createImageBitmap = async () => ({ width: 40, height: 30, close() {} }); // SCRUM-1425, como en `bancoBase`
   const { btn } = await prepararConFoto(banco);
   await pulsar(btn);
   const error = banco.ctx.document.getElementById('exp-error');

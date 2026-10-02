@@ -1,0 +1,32 @@
+// Sonda de SOLO LECTURA: lanza el fichero como lo lanza `node --test` (hijo con NODE_TEST_CONTEXT=child-v8)
+// y mira EN QUÉ ORDEN y CUÁNDO salen por stdout el censo crudo y los eventos del informe.
+import { spawn } from 'node:child_process';
+const [fichero, ...flags] = process.argv.slice(2);
+const t0 = performance.now();
+const h = spawn(process.execPath, [...flags, fichero], { env: { ...process.env, NODE_TEST_CONTEXT: 'child-v8' }, stdio: ['ignore', 'pipe', 'pipe'] });
+const trozos = [];
+h.stdout.on('data', (b) => trozos.push({ t: performance.now() - t0, b }));
+let err = '';
+h.stderr.on('data', (b) => { err += b; });
+h.on('close', (code) => {
+  const dur = performance.now() - t0;
+  const todo = Buffer.concat(trozos.map((x) => x.b));
+  const pos = (s, enc) => { const o = []; let i = -1; const n = Buffer.from(s, enc); while ((i = todo.indexOf(n, i + 1)) !== -1) o.push(i); return o; };
+  const censoIni = pos('[SCRUM-237]', 'utf8');
+  const debilUlt = pos('    · tests/', 'utf8');
+  const ev16 = pos('autoprueba', 'utf16le');
+  const ev8 = pos('autoprueba', 'latin1');
+  const pass = [...pos('test:pass', 'latin1')];
+  const start = [...pos('test:start', 'latin1')];
+  const enq = [...pos('test:enqueue', 'latin1')];
+  console.log(JSON.stringify({
+    flags, code, dur_ms: Math.round(dur), bytes: todo.length, trozos: trozos.length,
+    primer_byte_ms: trozos.length ? Math.round(trozos[0].t) : null,
+    ultimo_byte_ms: trozos.length ? Math.round(trozos.at(-1).t) : null,
+    censo_inicio: censoIni[0] ?? null, censo_ultima_linea: debilUlt.at(-1) ?? null, lineas_debil: debilUlt.length,
+    nombre_autoprueba_utf16: [ev16[0] ?? null, ev16.length], nombre_autoprueba_latin1: [ev8[0] ?? null, ev8.length],
+    'test:enqueue': [enq[0] ?? null, enq.length], 'test:start': [start[0] ?? null, start.length], 'test:pass': [pass[0] ?? null, pass.length],
+    bytes_antes_del_censo: censoIni[0] ?? null,
+    stderr: err.slice(0, 200),
+  }));
+});

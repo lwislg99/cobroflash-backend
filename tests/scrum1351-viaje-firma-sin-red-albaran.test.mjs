@@ -543,6 +543,92 @@ test('SCRUM-1374 · una ficha que ya no está en pantalla no se repinta, y deja 
   assert.equal(/ALB-2026-007/.test(textoDe(v.contenedor)), false, 'ni la ha pintado encima de lo que haya ahora');
 });
 
+// ═══ SCRUM-1420 · EL AVISO QUE LLEGÓ CON EL PAD ABIERTO SE RECUERDA HASTA QUE SE CIERRA ════════
+//
+// SCRUM-1374 no repinta debajo de un pad abierto, y nadie se acordaba después: al cerrarlo la
+// ficha seguía en «emitido». El pad dice cuándo se cierra (`onClose`, contrato en
+// `docs/master/SCRUM-1420.md`); la vista recuerda el aviso y se pone al día entonces.
+
+/** Sin red: abre la ficha, firma, y deja el pad ABIERTO con su aviso. */
+async function conElPadAbiertoSinRed() {
+  const { b, red } = montar();
+  await b.ctx.guardarAlbaranPrecargado(PRECARGADO);
+  red.conRed = false;
+  const v = await abrirDetalle(b, { sinRed: true });
+  const r = await firmarEnPantalla(b, v.contenedor);
+  assert.equal(r.padAbierto, true, 'suelo: sin red el pad se queda abierto');
+  return { b, red, v, pad: r.pad };
+}
+
+test('SCRUM-1420 · pad abierto + la firma sube + se cierra el pad: la ficha pasa a «firmado» sin recargar a mano', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  const lecturas = getsDelAlbaran(red);
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  // El control: mientras el pad siga abierto NO se repinta (aceptación 2 de SCRUM-1374).
+  assert.equal(enDocumento(b, pad.overlay), true, 'el pad sigue en pantalla');
+  assert.equal(getsDelAlbaran(red), lecturas, 'con el pad abierto la ficha no se ha vuelto a pedir');
+  assert.equal(ofreceFirmar(v.contenedor), true, 'y debajo sigue lo que había');
+
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas + 1, 'al cerrarse el pad la ficha se pide UNA vez');
+  assert.match(textoDe(v.contenedor), /firmado/, 'la pantalla pasa a «firmado»');
+  assert.equal(ofreceFirmar(v.contenedor), false, 'y ya no ofrece «Firmar aquí mismo»');
+});
+
+test('SCRUM-1420 · el pad se cierra sin que haya llegado ningún aviso: ni una lectura de más', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  red.conRed = true; // hay red: si la ficha se pidiera, se vería. Pero nadie ha drenado ni avisado.
+  const lecturas = getsDelAlbaran(red);
+  const antes = textoDe(v.contenedor);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas, 'nadie ha vuelto a pedir la ficha');
+  assert.equal(textoDe(v.contenedor), antes, 'y la pantalla está como estaba');
+});
+
+test('SCRUM-1420 · con el pad abierto llega el aviso de OTRO documento: al cerrarlo no se lee nada', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  // La firma de este albarán sale de la cola a mano: lo que suba será sólo lo ajeno.
+  await b.ctx.quitarFirmaPendiente(CLAVE);
+  assert.equal((await cola(b)).n, 0, 'suelo: la firma de este albarán ya no está en la cola');
+  const firma = { signatureData: 'data:image/png;base64,AAAA', firmadoPorNombre: 'X' };
+  await b.ctx.encolarFirma(ID + 1, firma, 'albaran');
+  await b.ctx.encolarFirma(ID, firma, 'parte');
+  const avisado = await vuelveLaRed(b, red);
+  assert.deepEqual([...avisado].sort(), [`albaran:${ID + 1}`, `parte:${ID}`], 'suelo: las dos ajenas subieron y de las dos se avisó');
+  const lecturas = getsDelAlbaran(red);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas, 'un aviso que no es de este albarán no se recuerda');
+  assert.equal(ofreceFirmar(v.contenedor), true, 'la ficha sigue ofreciendo firmar: su firma no ha subido');
+});
+
+test('SCRUM-1420 · el aviso llega con el pad abierto y la ficha deja de estar en pantalla: cerrar el pad no la pinta encima', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  v.contenedor.innerHTML = ''; // se navegó con el pad aún abierto
+  const lecturas = getsDelAlbaran(red);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(getsDelAlbaran(red), lecturas, 'nadie ha vuelto a pedir la ficha');
+  assert.equal(/ALB-2026-007/.test(textoDe(v.contenedor)), false, 'ni la ha pintado encima de lo que haya ahora');
+});
+
+test('SCRUM-1420 · control: firmar CON red sigue leyendo la ficha UNA vez (el cierre del pad no añade otra)', async () => {
+  const { b, red } = montar();
+  const v = await abrirDetalle(b);
+  const lecturas = getsDelAlbaran(red);
+  const r = await firmarEnPantalla(b, v.contenedor);
+  await esperar(150);
+  assert.equal(r.padAbierto, false, 'suelo: con red el pad se cierra');
+  assert.equal(getsDelAlbaran(red), lecturas + 1, 'una lectura: la del refresco tras firmar');
+  assert.match(textoDe(v.contenedor), /firmado/);
+});
+
 // ═══ LOS DEFECTOS: se MIDEN, y lo medido tiene que ser lo declarado ═════════════════════════════
 
 /**

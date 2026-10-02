@@ -523,7 +523,7 @@ router.patch('/:id', async (req: any, res) => {
     }
     if (req.body?.desplazamientos !== undefined) {
       const n = req.body.desplazamientos === null ? null : Number(req.body.desplazamientos);
-      if (n !== null && !Number.isInteger(n)) {
+      if (n !== null && !cabeEnColumnaInt(n)) {
         return res
           .status(400)
           .json({ error: 'desplazamientos_invalido', message: 'Los desplazamientos son un número entero.' });
