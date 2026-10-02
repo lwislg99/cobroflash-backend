@@ -565,6 +565,16 @@ const INDIRECTAS_DECLARADAS = [
   // nombre», «no existe en main»). Herramienta de mano de la S0; no corre en CI.
   // Lo retira quien retire la criba.
   'scripts/auditoria-cierres.mjs',
+  // SCRUM-1418 · qué trabajo hay comiteado solo en local. Mismo caso que la criba de arriba y que
+  // SCRUM-637: la punta es el SUJETO —«¿esta rama local aporta algo que `main` no tiene hoy?» no se
+  // puede contestar contra la base de una rama—. NO le pasa la referencia móvil a git: recibe la
+  // `instantanea()` de SCRUM-753, que la resuelve UNA vez, y `merge-tree`, `rev-list` y `diff` van
+  // contra ese sha congelado, que imprime («medido contra la punta congelada = …»). Fuera de los
+  // argumentos nombra `main` y `origin` en los textos del informe («cuyo contenido cambiaría main»,
+  // «no está en origin»). Solo lee: no borra, no empuja, no rescata. Herramienta de mano de la S0; no
+  // corre en CI.
+  // Lo retira quien retire `scripts/sesiones-que-no-volvieron.mjs`.
+  'scripts/sesiones-que-no-volvieron.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

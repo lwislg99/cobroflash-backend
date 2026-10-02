@@ -156,6 +156,7 @@ export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, control
   if (!repo || repo.incapaz) return { ...no(`git no se deja leer${repo && repo.incapaz ? `: ${repo.incapaz}` : ''}. La mitad 1 de arriba sí vale; la 2 no está medida`), datos: { cubos } };
   const censo = censoDeRamas(repo);
   out.push(
+    `medido contra la punta congelada = ${repo.main}`,
     `ramas locales miradas: ${censo.total} · ${Object.entries(censo.cuenta).map(([k, v]) => `${v} ${k}`).join(' · ')} · no se pudieron mirar: ${censo.ciegas.length}`,
     `🔴 ramas con commits que NO están en origin y cuyo contenido cambiaría main: ${censo.fuera.length}`,
   );
@@ -199,24 +200,28 @@ export function medir({ trabajos, repo, arboles, controlSi = CONTROL_SI, control
 }
 
 /** El repositorio de verdad. Lo que git no contesta llega como `undefined`, nunca como «no». */
-export function repoDeVerdad(cwd) {
+export function repoDeVerdad(cwd, punta) {
   const g = (...a) => execFileSync('git', a, { cwd, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] });
   const sale = (...a) => { try { g(...a); return 0; } catch (e) { return typeof e.status === 'number' ? e.status : undefined; } };
-  let main, arbolMain, remotas, locales;
+  // La punta se resuelve UNA vez, con `instantanea()` de SCRUM-753, y todo va contra ESE sha congelado
+  // (se imprime en la salida). Si otra sesión trae algo mientras corre, la medida sigue siendo de un árbol.
+  if (punta.incapaz || !punta.sha) return { incapaz: punta.incapaz || 'no se pudo resolver la punta' };
+  const congelado = punta.sha;
+  let arbolDeLaPunta, remotas, locales;
   try {
-    main = g('rev-parse', 'origin/main').trim(); arbolMain = g('rev-parse', `${main}^{tree}`).trim();
+    arbolDeLaPunta = g('rev-parse', `${congelado}^{tree}`).trim();
     remotas = new Map(g('for-each-ref', 'refs/remotes/origin', '--format=%(refname:lstrip=3)\t%(objectname)').split('\n').filter(Boolean).map((l) => l.split('\t')));
     locales = g('for-each-ref', 'refs/heads', '--format=%(refname:short)\t%(objectname)\t%(committerdate:iso-strict)').split('\n').filter(Boolean).map((l) => { const [nombre, sha, fecha] = l.split('\t'); return { nombre, sha, fecha }; });
   } catch (e) { return { incapaz: String(e.message || e).split('\n')[0] }; }
   return {
-    main, locales, remota: (n) => remotas.get(n) || null,
+    main: congelado, locales, remota: (n) => remotas.get(n) || null,
     esAncestro: (a, b) => { const s = sale('merge-base', '--is-ancestor', a, b); return s === 0 ? true : s === 1 ? false : undefined; },
     fusion: (sha) => {
-      try { return g('merge-tree', '--write-tree', main, sha).split('\n')[0].trim() === arbolMain ? 'igual' : 'cambia'; } catch (e) { return e.status === 1 ? 'choca' : undefined; }
+      try { return g('merge-tree', '--write-tree', congelado, sha).split('\n')[0].trim() === arbolDeLaPunta ? 'igual' : 'cambia'; } catch (e) { return e.status === 1 ? 'choca' : undefined; }
     },
-    commits: (sha) => { try { return Number(g('rev-list', '--count', `${main}..${sha}`).trim()); } catch { return undefined; } },
-    // Lo que la rama cambió desde que se separó de main (tres puntos): sus ficheros, no los que main movió después.
-    ficheros: (sha) => { try { return g('diff', '--name-only', `${main}...${sha}`).split('\n').filter(Boolean); } catch { return undefined; } },
+    commits: (sha) => { try { return Number(g('rev-list', '--count', `${congelado}..${sha}`).trim()); } catch { return undefined; } },
+    // Lo que la rama cambió desde que se separó de la punta (tres puntos): sus ficheros, no los que se movieron después.
+    ficheros: (sha) => { try { return g('diff', '--name-only', `${congelado}...${sha}`).split('\n').filter(Boolean); } catch { return undefined; } },
   };
 }
 
@@ -239,8 +244,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let trabajos;
   try { trabajos = leerTrabajos(carpeta); } catch (e) { console.log(`🔴 NO VALE (salida 2): no se puede leer ${carpeta} (${e.code || e.message}).`); process.exit(2); }
   const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const { instantanea } = await import('./_censo-alcanzabilidad.mjs');
   const r = medir({
-    trabajos, repo: repoDeVerdad(raiz), arboles: process.argv.includes('--sin-arboles') ? null : arbolesDeVerdad(raiz),
+    trabajos, repo: repoDeVerdad(raiz, instantanea({ raiz, traer: false })), arboles: process.argv.includes('--sin-arboles') ? null : arbolesDeVerdad(raiz),
     controlSi: arg('--control-si', CONTROL_SI), controlNo: arg('--control-no', CONTROL_NO),
   });
   console.log(r.lineas.join('\n'));

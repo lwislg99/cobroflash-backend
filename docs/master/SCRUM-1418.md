@@ -158,3 +158,18 @@ sin mirar se calla. La decimotercera, abajo.
    dos entradas, y el test exige que lo que no esté en ella cuente como trabajo.
 4. **Escribí «las otras 72 siguen trabajando».** No lo sé: acabaron en «working», y eso es estar viva o
    haber muerto trabajando. Corregido en la salida antes de empujar.
+5. **Empujé el primer commit de esta rama con `guards:entrada` en ROJO.** Encadené guards, commit y push
+   en una sola orden, y el push no dependía de la salida de los guards. Dos hallazgos: una negación sin
+   respaldo en mi test (`scrum237`) y el script comparando contra una referencia móvil sin declararlo
+   (`scrum723`). Arreglados en el commit siguiente: el test lleva su positivo, y el script recibe la punta
+   ya congelada por `instantanea()` de SCRUM-753 e imprime el sha contra el que midió. → comprobación: no
+   hay test que pueda exigir el orden de mis órdenes; queda como aviso, y la cura es no encadenar el push
+   detrás de un guard con `;`.
+
+## Una lista declarada de un guard, tocada: se dice
+
+`tests/scrum723-guard-contra-su-base.test.mjs` lleva una entrada nueva en `INDIRECTAS_DECLARADAS` para
+`scripts/sesiones-que-no-volvieron.mjs`, con su motivo y quién la retira. Es el camino que el propio guard
+indica («o compara contra su punto de partida, o se declara aquí con el motivo») y el mismo caso que la
+criba de SCRUM-1372, que está justo encima. No se quitó ninguna entrada ni se cambió el detector. Antes de
+declararlo quité lo que sí era arreglable en el código: las tres llamadas a git contra la referencia móvil.

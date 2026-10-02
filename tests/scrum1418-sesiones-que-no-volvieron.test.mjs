@@ -109,6 +109,8 @@ test('SCRUM-1418 · 🔴 los controles prueban al lector: si uno no sale, o no e
   const ciego = medir({ trabajos: TRABAJOS, repo: REPO, arboles: ARBOLES, controlSi: 's1-si', controlNo: 's3-cortada' });
   assert.equal(ciego.codigo, 2, 'un control que sale NO SUPE tampoco vale');
   assert.match(ciego.lineas.join('\n'), /«s3-cortada» tenía que salir NO ENTREGÓ y sale NO SUPE/);
+  // Con un control caído no se imprime ni un cubo. El positivo: con los controles buenos, sí.
+  assert.match(medir({ trabajos: TRABAJOS, repo: REPO, arboles: ARBOLES, ...CONTROLES }).lineas.join('\n'), /MITAD 1/);
   for (const r of [alReves, falta, ciego]) assert.doesNotMatch(r.lineas.join('\n'), /MITAD 1/);
 });
 
