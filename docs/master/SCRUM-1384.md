@@ -52,6 +52,10 @@ Lo que se deduce para el reparto: el detector ya existe y ya tiene su criterio d
 el flag siga puesto la tasa no va a bajar del umbral, así que el trabajo pendiente es la causa
 (SCRUM-1405, decisión del fundador), no otro detector.
 
+**Esa decisión tiene dueño y no es S5.** La señal y su plan son del equipo de Javier (SCRUM-1339);
+si nadie decide antes del 15-oct, sigue avisando para siempre. Nuestra parte es que la cifra esté
+delante; la suya, decidir.
+
 **La única diferencia de conducta con los dos ficheros de s5-1octd** (`scripts/tests-que-no-llegaron.mjs`
 y `scripts/_tests-que-no-llegaron.mjs`, nunca comiteados): hacían la misma pregunta, pero salían 1
 si faltaba algún test (bloqueaban) y 2 si no sabían mirar. El de `main` avisa y sale 0. Si alguien se
@@ -66,10 +70,27 @@ pregunta por qué no bloquea: fue decisión de SCRUM-1339 c.17935, no un olvido.
 - No he bajado los doce TAP ni he vuelto a correr `e-exp1384.mjs`.
 - En el árbol `wt-s5-1364` quedan dos ficheros sin seguir de s5-1octd
   (`scripts/tests-que-no-llegaron.mjs` y `scripts/_tests-que-no-llegaron.mjs`): el principio de la
-  comprobación que 1339d ya entregó. El orquestador ha dicho que se borren; a la hora de este
-  commit siguen en el disco, sin tocar.
+  comprobación que 1339d ya entregó. Se quedan donde están (decisión del orquestador, 2-oct): no
+  están en git, borrarlos no se deshace y conservarlos no cuesta nada. Los sustituye 1339d.
 
 ## Mi error
 
 En el comentario 18111 escribí que lo siguiente era medir el coste de quitar el flag, sin mirar antes
 si ya estaba medido. Lo estaba (SCRUM-1405). Corregido en el 18112.
+
+## Mi segundo error: un merge empujado con los marcadores de conflicto dentro
+
+Al traer `main` a esta rama, A10 chocó con la frase de SCRUM-1372. Mi guion de resolver usó una ruta
+relativa, no tocó el fichero, y empujé (`f33d2914`) sin mirar su salida. Corregido en `2c99bb69`,
+un minuto después. Va a las cicatrices de S5.
+
+El hueco que deja ver, medido el 2-oct-2026 y NO arreglado aquí:
+
+| Qué | Resultado con los marcadores puestos en A10 |
+|---|---|
+| `tests/scrum1294-a9-leccion-en-a10.test.mjs` (lo que corrí antes de empujar) | 4 de 4 en verde |
+| `scripts/guards-entrada.mjs` | no nombra `scrum393` ni «marcador» (buscado por texto; no lo corrí con el árbol roto) |
+| `tests/scrum393-marcadores-de-conflicto.test.mjs` | existe y está en la tanda: lo para el CI, después del push |
+
+O sea: hoy se puede pasar la comprobación local con el árbol roto. Añadir `scrum393` a lo que se
+corre antes de empujar es de este carril y está sin construir.
