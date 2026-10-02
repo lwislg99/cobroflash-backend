@@ -31,6 +31,48 @@ const SCRIPT = path.join(RAIZ, 'scripts', 'sobre-soap-prueba-aeat.mjs');
 const MODULOS_DE_DIST = [...fs.readFileSync(SCRIPT, 'utf8').matchAll(/path\.join\(raiz, '(dist\/[^']+\.js)'\)/g)]
   .map((m) => m[1]);
 
+// El meta-guard de la casa ejecuta esto. Son las maneras de deshacer el arreglo sin que el guion
+// deje de generar un sobre que valida: volver a guardar la serie o la fecha de la pasada, encadenar
+// a otra huella, darle a la R1 la identidad de la factura que rectifica, y dejar pasar el puntero
+// que escribió el guion viejo.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El puntero vuelve a guardar la serie de la pasada: el defecto del ticket, tal cual.
+    fichero: 'scripts/sobre-soap-prueba-aeat.mjs',
+    de: "? { serie: objetivo.numSerieFactura, fecha: objetivo.fechaExpedicion, identifica: 'factura-anulada' }",
+    a: "? { serie: SERIE, fecha: objetivo.fechaExpedicion, identifica: 'factura-anulada' }",
+    cae: '① tras una anulación, el sobre siguiente nombra como anterior la SERIE de la factura anulada',
+  },
+  {
+    // La serie es la buena y la fecha es la de la pasada: media identidad sigue sin ser de nadie.
+    fichero: 'scripts/sobre-soap-prueba-aeat.mjs',
+    de: "? { serie: objetivo.numSerieFactura, fecha: objetivo.fechaExpedicion, identifica: 'factura-anulada' }",
+    a: "? { serie: objetivo.numSerieFactura, fecha: FECHA, identifica: 'factura-anulada' }",
+    cae: '② tras una anulación, el sobre siguiente nombra como anterior la FECHA de la factura anulada',
+  },
+  {
+    // Se guarda la huella a la que se encadenó este registro en vez de la suya: la cadena salta uno.
+    fichero: 'scripts/sobre-soap-prueba-aeat.mjs',
+    de: 'fechaExpedicion: identidad.fecha, huella, tipo: TIPO,',
+    a: 'fechaExpedicion: identidad.fecha, huella: prevHash, tipo: TIPO,',
+    cae: '③ la huella del anterior sigue siendo la de la ANULACIÓN, no la del alta anulada',
+  },
+  {
+    // El arreglo se pasa de largo y trata la R1 como una anulación.
+    fichero: 'scripts/sobre-soap-prueba-aeat.mjs',
+    de: "const identidad = TIPO === 'anulacion'",
+    a: "const identidad = TIPO !== 'alta'",
+    cae: '⑥ lo que NO cambia: tras un alta o una R1, el anterior es la serie propia de ese registro',
+  },
+  {
+    // El puntero del guion viejo vuelve a valer.
+    fichero: 'scripts/sobre-soap-prueba-aeat.mjs',
+    de: "if (anterior && anterior.tipo === 'anulacion' && anterior.identifica !== 'factura-anulada') {",
+    a: "if (false && anterior.tipo === 'anulacion' && anterior.identifica !== 'factura-anulada') {",
+    cae: '⑦ un puntero de anulación escrito por el guion VIEJO no se usa: sale 1 y no escribe nada',
+  },
+];
+
 // Un NIF con la forma de uno, que no es de nadie: aquí no se envía nada y la AEAT no lo ve.
 const NIF = '00000000T';
 const NOMBRE = 'Prueba De Laboratorio';
