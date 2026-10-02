@@ -122,6 +122,16 @@ la `escritura` de `sembrar-qa.mjs`. Ninguna lista existente se ha ensanchado.
 - Mutación (base sin mutar verde primero): 5 de 5 mutaciones declaradas tumban el test que nombran
   (dos de ellas tumban además un segundo test); árbol restaurado byte a byte y verde otra vez.
 
+- Tanda dirigida local: 234 ficheros, 2332 tests. Un rojo propio, corregido antes de empujar (abajo),
+  y el ciego de esta máquina (`scrum1321 · PUERTA 1b`).
+
+## Error propio
+
+El cerrojo de cuenta se probó con el merchant demo (id 1) como «cuenta que no es la QA», y lo cazó
+el guard de SCRUM-409 en la tanda. Es el MISMO tropiezo que tuvo el primer tramo de este ticket esa
+mañana (commit `ebf6df96`): quien releva no hereda la cicatriz, la hereda el guard. Se cambió por un
+merchant inventado.
+
 ## Lo que queda fuera, dicho
 
 - **Una factura** en la cuenta QA (botones de anular y rectificar, SCRUM-1142): emitirla es el

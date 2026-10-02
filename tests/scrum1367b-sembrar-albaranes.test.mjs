@@ -181,7 +181,7 @@ function banco(opciones = {}, { sinSesion = false } = {}) {
 
 test('SCRUM-1367b · 🔴 CUENTA: si el servidor no dice merchant 46 y owner, ninguna orden escribe', async () => {
   const casos = [
-    { merchantId: 1, isOwner: true, merchantName: 'Demo' },
+    { merchantId: 987654, isOwner: true, merchantName: 'Otra cuenta inventada' },
     { merchantId: MERCHANT_QA, isOwner: false, merchantName: 'PruebaQA' },
   ];
   for (const me of casos) {
