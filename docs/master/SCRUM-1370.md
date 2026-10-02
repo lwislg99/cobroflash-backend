@@ -91,3 +91,54 @@ Vecinos corridos en local: `scrum195-pertenencia-por-job`, `scrum195-loop-adicio
   aquí: es el plan de cobro y lo mira el fundador.
 - El comentario de `dineroDelTrabajo.ts` sobre `totalAceptado` («se congela al aceptar») ya no
   describe la columna entera. No se ha tocado ese fichero.
+
+---
+
+## Segunda tanda (2-oct) · las aceptaciones 1 y 4, por la ruta y en el informe
+
+**Medido contra:** `origin/main` = `d19852d7844a03cc9b0c93acf6e13220409c07e5` · 2026-10-02T17:16:01Z
+
+A9: aviso → cicatriz S1 «Un `git commit` que falla dentro de una orden encadenada no detiene el `git push` que va detrás: sube la rama sin el commit y no da error.» — no se pudo comprobar: es una orden tecleada en la consola de la sesión, no pasa por ningún guard
+
+Sesión S1 (`s1-2octe`) · rama `scrum-1370b-aceptaciones-1-y-4`. **Sólo un test nuevo: ninguna línea de `src/` cambia.**
+
+### Test — `tests/scrum1370b-por-la-ruta-y-en-el-informe.test.mjs` (7 casos)
+
+Se entra por la PUERTA: el handler de `POST /quote/:token/decision` de `dist/`, con una base en memoria
+con estado que comparten la ruta, `ensureJobForQuote` y `getOperariosMetrics`. El merchant es español
+sin facturación (`receipt`), así que la ruta no entra en la emisión: el fichero sólo lee el camino.
+
+| Aceptación | Caso | Cómo se ve |
+|---|---|---|
+| 1 | Trabajo directo + adicional que el cliente acepta por la ruta | la fila del Trabajo pasa de `NULL` a 121 |
+| 2 | presupuesto sin Trabajo aceptado por la ruta (control) | nace el Trabajo con su total |
+| 3 | el cliente RECHAZA por la ruta | la columna sigue `NULL` |
+| 4 | el informe por operario, antes y después de aceptar | de 0 aceptado y pendiente −21 a 121 y pendiente 100; con original y adicional, de −100 a 150,50 |
+
+| Mutante (sobre `dist`, comprobado que cambia el fichero) | Resultado (BASE 7/7) |
+|---|---|
+| lo de antes: con `jobId`, `ensureJobForQuote` sale sin escribir | 4 rojos |
+| la ruta deja de llamar a `ensureJobForQuote` al aceptar | 5 rojos |
+| el informe no lee la columna (aceptado = 0) | 3 rojos |
+| el informe resta al revés | 3 rojos |
+
+Restaurado: 7/7.
+
+**Límite, dicho:** el `groupBy` es del doble (evalúa merchant y estado, agrupa por operario y suma). Esto
+mide que el informe ENSEÑA lo que la aceptación ESCRIBIÓ; no mide el `groupBy` de Postgres. Y la
+aceptación 3 por la ruta cubre el RECHAZO; borrador, enviado y caducado siguen cubiertos por la función
+(primer fichero), porque por la ruta no se llega a ellos sin decidir.
+
+**Pendiente de la primera tanda, saldado:** al escribir el primer fichero, el guard de SCRUM-1415 cazó en
+local un `test()` con el nombre construido en un bucle; por eso sus cuatro casos de «sin aceptar» llevan
+nombre literal.
+
+### Aceptación 5 · el recuento en producción: NO MEDIBLE (no es 0)
+
+Medido el 2-oct-2026 en yaqu.app (`eca8566d`), cuenta QA, sólo lectura: el merchant 46 tiene 1 Trabajo y
+4 presupuestos, los cuatro en `draft`, ninguno aceptado. La cuenta no contiene el caso. Apuntado en SCRUM-1367.
+
+### Lo que sigue sin hacer
+
+- `teamOverview.service.ts` y `exportData.ts` suman la misma columna y no tienen caso propio aquí.
+- Lo demás de «Lo que NO está hecho» de arriba, salvo las aceptaciones 1 y 4.
