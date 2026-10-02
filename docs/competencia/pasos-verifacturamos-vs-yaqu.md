@@ -195,9 +195,13 @@ sale con el impuesto a cero. No es una herramienta fiscal española.
 | Entre terminar y cobrar | Un paso de aprobación, en otra pantalla | No hay | Aquí ellos piden más pasos que nosotros |
 | Cobrar | Apuntar el cobro: otra pantalla, ≈ 5 clics | Marcar pagada: 2 clics; petición de pago sola al firmar | Nosotros, por ≈ 3 clics en lo visto |
 
-Lo que no vi: el cobro con tarjeta, lo que hay detrás de enviar, la aplicación móvil (donde su web dice que
-se cobra «antes de irse de la obra») y cómo se reabre un Trabajo en estado Presupuesto, que no aparece en la
-lista de la pizarra.
+**Un Trabajo en estado Presupuesto no sale en la lista de trabajos de la pizarra** (filtro «All Jobs»): los
+cuatro que creé desaparecieron de ella al cerrar la ficha, y por eso gasté cuatro donde cabía uno. La pizarra
+tiene una cola aparte, «Pending Quotes», que **no abrí**: lo medido es que no están en la lista general, no
+que no estén en ningún sitio.
+
+Lo que no vi: el cobro con tarjeta, lo que hay detrás de enviar, la cola de presupuestos pendientes y la
+aplicación móvil (donde su web dice que se cobra «antes de irse de la obra»).
 
 **Contasimple y Billin: sin entrar.** De Billin no se guardó la contraseña (lo dicen sus notas del 25-sep). De
 Contasimple no hay en esta máquina ningún fichero de credencial reconocible por su nombre. En los dos casos el
@@ -213,3 +217,39 @@ Dos», «… Tres» y «… Cuatro». Nada enviado, nada aprobado, ningún cobro
 consultoría. Datos inventados creados el 2-oct-2026: cliente «Cliente Inventado Prueba», presupuestos
 P-2026-0002 y P-2026-0003 (los dos convertidos) y dos borradores de factura sin número. Nada emitido, nada
 enviado.
+
+## 10 · La página para el fundador
+
+> **A ellos los vimos por dentro; a nosotros, leyendo el código.** Verifacturamos y ServiceM8, con cuenta de
+> prueba el 2-oct-2026. YaQu, en `origin/main`, sin abrir la pantalla. Contasimple y Billin, solo de notas de
+> septiembre. Cada cifra nuestra de esta página puede cambiar cuando alguien la cuente en yaqu.app.
+
+**Lo medido, en cuatro líneas.**
+
+- Crear y enviar un presupuesto corto: nosotros 3 clics, Verifacturamos ≥ 5, ServiceM8 3 sin contar el envío.
+- Presupuesto por el editor completo: nosotros 6 clics, Verifacturamos 3.
+- De presupuesto a factura a mano: nosotros 3 clics y exigimos aceptación; Verifacturamos 2 y deja un borrador;
+  ServiceM8 3 sobre el mismo registro, y luego pide aprobar en otra pantalla.
+- Cobrar: Verifacturamos no lo tiene; ServiceM8 apunta el cobro en ≈ 5 clics; nosotros 2, o ninguno si el
+  cliente firma. Y hoy, en España, nuestro tramo de factura y cobro está apagado.
+
+**Las tres cosas que esta comparación abre**, ordenadas por lo que ahorran frente a lo que cuestan. No son
+propuestas de pantalla: son la cuenta de cada una, para decidir.
+
+| | Qué es | Base | Qué ahorra | Qué cuesta en nuestro código | Etiqueta |
+|---|---|---|---|---|---|
+| 1 | **Llegar al editor completo desde el inicio** | Verifacturamos: un botón en el Panel. Nosotros: menú «Presupuestos» + «Nuevo presupuesto» | 1 clic de 6 | El destino ya existe y ya se abre con una línea desde cinco pantallas (`renderAppView('quotes-new')`); el inicio tiene tres acciones rápidas en `homeView.js`. Es un control más en el inicio, con texto que ve el usuario: pide firma (regla 39) y es del carril de la pantalla | Ahorro **deducido** (código, no pantalla) · coste **medido** leyendo |
+| 2 | **Un presupuesto sin cliente** | Verifacturamos: cliente opcional, 2 clics y 2 campos | 1 campo en el presupuesto rápido (el nombre) y 1 clic en el editor. En el rápido, teclear un nombre que no existe ya da de alta al cliente sin salir | El presupuesto lleva el cliente como dato obligatorio en tres capas: la tabla (`prisma/schema.prisma`, `customerId Int`), el validador (`src/core/validation/schemas.ts`) y el editor. Once ficheros de `src` leen el cliente del presupuesto, y el envío necesita su teléfono. **Toca el esquema: se nombra y se para** (regla 40) | Ahorro **medido** en ellos, **deducido** en nosotros · coste **medido** en su entrada, **no mirado** en sus once ficheros |
+| 3 | **Repasar la factura antes de emitirla** | Verifacturamos: «Convertir» deja un borrador que se corrige. Nosotros: «Generar factura» la deja emitida | Ningún paso: **añade** uno (de 3 a 4 clics a mano). Lo que da es poder corregir antes, en vez de rectificar después | **Es el camino de emisión: se nombra y se para** (reglas 29 y 40). No he leído qué haría falta | Diferencia **medida** en ellos, **leída** en nosotros · coste **no mirado**, a propósito |
+
+**Lo más grande que salió y no cabe en esa tabla.** ServiceM8 no convierte documentos: cambia el estado de
+un Trabajo, sobre el mismo registro y sin botón de guardar. En clics empata con nosotros; la diferencia es de
+modelo, y un cambio de modelo es del máster, no de una tanda. Queda descrito en §8 y no se cuenta su coste.
+
+**Lo que tampoco entra, y por qué.** Tres de los seis clics de nuestro editor son «Continuar», uno de ellos
+en un paso (Condiciones) que se pasa sin tocar nada. Es el mayor ahorro posible de toda la comparación, pero
+quitar pasos al asistente es rehacer una pantalla decidida, y no he leído la decisión que lo dejó así.
+
+**Lo que falta para que esta página valga del todo:** contar nuestros pasos en yaqu.app (lo denegó el
+clasificador de permisos; lo autoriza o lo recorre el fundador), y entrar en Contasimple y Billin (hay que
+recuperar sus contraseñas por correo). La cuenta de ServiceM8 tenía 7 días de prueba el 2-oct-2026.

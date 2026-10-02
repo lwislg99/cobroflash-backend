@@ -55,6 +55,14 @@ Población: 4 Trabajos creados para un recorrido que cabía en 1. Dos se gastaro
 Presupuesto no aparece en la lista de la pizarra y no supe reabrirlo; uno, por un selector que casaba con dos
 elementos y que el conductor rechazó en vez de pulsar el primero.
 
+## Cuarta entrega · la página para el fundador (2-oct-2026, misma rama que la tercera)
+
+§10 del documento: la frase de procedencia arriba, lo medido en cuatro líneas y las tres cosas que la
+comparación abre, cada una con su base, lo que ahorra, lo que cuesta leído en nuestro código y su etiqueta
+(medido / deducido / no mirado). Dos de las tres tocan esquema o camino de emisión: se nombran y se paran.
+Leído para el coste: `prisma/schema.prisma` (`customerId Int` en `Quote`), `src/core/validation/schemas.ts`
+y `public/dashboard/js/homeView.js`. No se ha leído la decisión que dejó el asistente en cuatro pasos.
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón
