@@ -127,7 +127,7 @@ function poblacion(opciones, declaradas = NO_SE_CRUZAN, ajenas = NOTAS_AJENAS) {
     const esDe = (lista, u) => lista.some((d) => d.ficha === ap.nombre && d.texto === u.texto);
     for (const u of (deFicha ? citasDeFicha(ap.texto) : celdasDelCongelado(ap.texto))) {
       const caja = u.caja
-        || (esDe(declaradas, u) ? 'declarada' : (deFicha && esDe(ajenas, u) ? 'ajena' : 'cruce'));
+        || (esDe(declaradas, u) ? 'declarada' : (esDe(ajenas, u) ? 'ajena' : 'cruce'));
       out.push({ ...u, caja, ...procedencia });
     }
   }
@@ -715,7 +715,8 @@ function fallosDeAjena(d, { leer, textoDelCorpus, puestoDe }) {
   if (!citas.some((c) => c.texto === d.texto)) {
     return [...fallos, 'su ficha ya no tiene esa cita: la entrada SOBRA. Bórrala y baja el número de esa ficha en `TECHO_DE_AJENAS`, en el mismo commit'];
   }
-  if (textoDelCorpus.includes(d.texto)) fallos.push('el código la pinta tal cual: es un texto y se cruza solo. La entrada SOBRA');
+  const pintada = textoDelCorpus.includes(d.texto);
+  if (pintada) fallos.push('el código la pinta tal cual: es un texto y se cruza solo. La entrada SOBRA');
   // DE QUIÉN ES LA FICHA (§3.3): del puesto que usa su texto. Se mide que el fichero declarado lo usa
   // de verdad, y de quién es ese fichero.
   const codigo = d.usa ? leer(d.usa) : null;

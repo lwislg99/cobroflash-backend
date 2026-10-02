@@ -99,9 +99,15 @@ const MUTACIONES = [
     de: 'const NOTAS_AJENAS = [',
     a: "const NOTAS_AJENAS = [\n  { ficha: '2026-09-08-SCRUM-728-serie-ocupada.md', texto: 'No se pudo crear el albarán: **API 500: internal_error**', dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'src/modules/invoicing/domain/cerrojoSaturado.ts', motivo: 'Mutacion: la nota de una ficha cuyo texto usa un fichero de J1, declarada como si fuera de otro equipo.' },",
     cae: 'cada NOTA AJENA sale NOMBRADA' },
-  { id: 'M26 la caja ajena tambien saca textos del registro congelado',
-    de: "(deFicha && esDe(ajenas, u) ? 'ajena' : 'cruce')", a: "(esDe(ajenas, u) ? 'ajena' : 'cruce')",
+  // Una celda del congelado nace con su caja puesta, y por eso ni «declarada» ni «ajena» la tocan.
+  // (La primera version de esta mutacion quitaba un `deFicha &&` que era una segunda guarda de lo
+  // mismo: salio MUDA, con razon. Se quito la guarda redundante y se muta la que decide.)
+  { id: 'M26 una celda del registro congelado llega sin caja y la lista de ajenas la saca del cruce',
+    de: "      poner(t, 'cruce');", a: '      poner(t, undefined);',
     cae: 'no saca nada del registro congelado' },
+  { id: 'M29 una nota ajena que el codigo ya pinta sobrevive en la lista',
+    de: 'if (pintada) fallos.push(', a: 'if (false) fallos.push(',
+    cae: 'una nota ajena con sus tres cosas' },
   { id: 'M27 en el reparto, el resto del directorio gana a la ruta nombrada',
     de: 'proponer(f.puesto, 2000 + r.length)', a: 'proponer(f.puesto, r.length - 2000)',
     cae: 'el lector del reparto' },
