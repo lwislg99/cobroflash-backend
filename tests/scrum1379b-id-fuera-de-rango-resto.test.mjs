@@ -1,0 +1,141 @@
+// tests/scrum1379b-id-fuera-de-rango-resto.test.mjs — SCRUM-1379 (segunda tanda)
+//
+// 🔴 LAS RUTAS QUE EL PRIMER CENSO NO VIO.
+//
+// SCRUM-1379 censó por `Number.isInteger` y dejó escrito lo que no veía: las rutas que validan el id
+// con `Number.isNaN` o `Number.isFinite`. Tienen el mismo agujero (un id que no cabe en la columna
+// `Int` llega a la base y sale 500) **y además dejaban pasar un decimal**. Aquí están las 24 del
+// carril de S1 que no emiten, cada una por su handler de verdad.
+//
+// ── EL BANCO ──────────────────────────────────────────────────────────────────────────────
+// Las RUTAS de `dist/` con la base doblada por `_envio-doblado.mjs`. ⚠️ El doble MODELA la base en una
+// cosa, y se dice: CUALQUIER consulta, de cualquier modelo, lanza si entre sus argumentos viaja un
+// número que no es un entero de int4 — que es lo que hacen Postgres y Prisma. No es la base: por eso
+// cada ruta lleva su SUELO (`-1` y `0` LLEGAN a la base y no dan 400) antes de creerse el 400.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
+
+const consultas = [];
+
+function cabe(n) {
+  return Number.isInteger(n) && n >= -2147483648 && n <= 2147483647;
+}
+function numerosDe(v, acc = []) {
+  if (typeof v === 'number') acc.push(v);
+  else if (v && typeof v === 'object' && !(v instanceof Date)) for (const x of Object.values(v)) numerosDe(x, acc);
+  return acc;
+}
+function vacio(metodo) {
+  if (metodo === 'findMany') return [];
+  if (metodo === 'count') return 0;
+  if (metodo === 'aggregate') return { _max: {}, _count: 0 };
+  if (metodo === 'findUnique' || metodo === 'findFirst') return null;
+  if (metodo === 'updateMany' || metodo === 'deleteMany') return { count: 0 };
+  return {};
+}
+// Toda consulta se apunta, y revienta si lleva un número que no cabe. Responde lo vacío: «no existe».
+const respuestas = new Proxy({}, {
+  get: (_t, clave) => (args) => {
+    const nombre = String(clave);
+    consultas.push(nombre);
+    const malo = numerosDe(args).find((n) => !cabe(n));
+    if (malo !== undefined) throw new Error(`Unable to fit value ${malo} into a 32-bit signed integer`);
+    return vacio(nombre.split('.').pop());
+  },
+});
+inyectarBase(respuestas);
+
+const M = '../dist/modules/';
+/** [módulo, verbo, ruta, nombre del parámetro] — las 24, una por línea. */
+const RUTAS = [
+  ['expenses/app/routes/expenses.routes.js', 'get', '/margin/:quoteId', 'quoteId'],
+  ['expenses/app/routes/expenses.routes.js', 'get', '/:id/foto', 'id'],
+  ['expenses/app/routes/expenses.routes.js', 'put', '/:id', 'id'],
+  ['expenses/app/routes/expenses.routes.js', 'delete', '/:id', 'id'],
+  ['products/app/routes/products.routes.js', 'get', '/:id', 'id'],
+  ['products/app/routes/products.routes.js', 'put', '/:id', 'id'],
+  ['providers/app/routes/providers.routes.js', 'put', '/:id', 'id'],
+  ['providers/app/routes/providers.routes.js', 'delete', '/:id', 'id'],
+  ['quoteRequests/app/routes/attachments.routes.js', 'get', '/:id', 'id'],
+  ['quoteRequests/app/routes/quoteRequests.routes.js', 'patch', '/:id', 'id'],
+  ['team/app/routes/team.routes.js', 'put', '/:id', 'id'],
+  ['team/app/routes/team.routes.js', 'post', '/:id/resend', 'id'],
+  ['team/app/routes/team.routes.js', 'delete', '/:id', 'id'],
+  ['templates/app/routes/templates.routes.js', 'put', '/:id', 'id'],
+  ['templates/app/routes/templates.routes.js', 'delete', '/:id', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'post', '/:id/accept', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'post', '/:id/reject', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'post', '/:id/send-whatsapp', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'get', '/:id/pdf', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'post', '/:id/send-email', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'post', '/:id/approve', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'put', '/:id/notes', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'put', '/:id/tags', 'id'],
+  ['system/app/routes/quotesAdmin.routes.js', 'get', '/:id', 'id'],
+];
+
+// Un cuerpo que pasa las validaciones de forma de cada ruta, para que lo único que decida sea el id.
+const CUERPO = { status: 'read', tags: [], notes: 'nota', name: 'Nombre' };
+
+function pedidor(modulo, verbo, ruta, param) {
+  const router = moduloDeDist(M + modulo).default;
+  const capa = router.stack.find((l) => l.route && l.route.path === ruta && l.route.methods[verbo]);
+  assert.ok(capa, `🔴 CIEGO: no encuentro ${verbo.toUpperCase()} ${ruta} en ${modulo}`);
+  const h = capa.route.stack[capa.route.stack.length - 1].handle;
+  return async (valor) => {
+    consultas.length = 0;
+    const r = { status: 200, data: undefined };
+    const res = new Proxy({}, {
+      get: (_t, p) => {
+        // Los handlers hacen `return res.json(…)` dentro de un `async`: si `res` tuviera `then`, sería
+        // un thenable que nunca resuelve y el test se quedaría colgado (medido: así cayó la 1.ª corrida).
+        if (p === 'then') return undefined;
+        if (p === 'status') return (s) => { r.status = s; return res; };
+        if (p === 'json' || p === 'send') return (j) => { r.data = j; return res; };
+        return () => res;
+      },
+    });
+    const callar = console.error; console.error = () => {};
+    try {
+      await h(reqDeSesion({
+        rol: 'admin', merchantId: MERCHANT, params: { [param]: valor }, body: { ...CUERPO }, query: {},
+        teamMemberId: null,
+      }), res);
+    } finally { console.error = callar; }
+    return { ...r, consultas: consultas.length };
+  };
+}
+
+test('SCRUM-1379b · el censo de este fichero: 24 rutas, ninguna repetida', () => {
+  assert.equal(RUTAS.length, 24);
+  assert.equal(new Set(RUTAS.map((r) => r.slice(0, 3).join(' '))).size, 24);
+});
+
+for (const [modulo, verbo, ruta, param] of RUTAS) {
+  const nombre = `${verbo.toUpperCase()} ${modulo.split('/')[0]} ${ruta}`;
+
+  test(`SCRUM-1379b · ${nombre} · SUELO: \`-1\` y \`0\` LLEGAN a la base y no son un 400`, async () => {
+    const pedir = pedidor(modulo, verbo, ruta, param);
+    for (const v of ['-1', '0', '2147483647']) {
+      const r = await pedir(v);
+      assert.ok(r.consultas > 0, `🔴 CIEGO: con ${v} la ruta no ha consultado la base (status ${r.status})`);
+      assert.notEqual(r.status, 400, `\`${v}\` cabe en la columna: se consulta, no se rechaza`);
+      assert.notEqual(r.status, 500, `🔴 CIEGO: con ${v} el banco revienta, y no es por el id`);
+    }
+  });
+
+  test(`SCRUM-1379b · ${nombre} · 🔴 un id que no cabe en la columna → 400, sin tocar la base`, async () => {
+    const pedir = pedidor(modulo, verbo, ruta, param);
+    // El medido en producción, el «seguro» para JavaScript, el primero que no cabe y un decimal.
+    for (const v of ['99999999999999999999', '10000000000', '2147483648', '1.5']) {
+      const r = await pedir(v);
+      assert.equal(r.status, 400, `🔴 con ${v} responde ${r.status}: la ruta lo ha dejado pasar`);
+      assert.equal(r.consultas, 0, `🔴 con ${v} se lanzó una consulta`);
+    }
+    const abc = await pedir('abc');
+    assert.equal(abc.status, 400, '`abc` daba 400 y lo sigue dando');
+    assert.equal(abc.consultas, 0);
+  });
+}

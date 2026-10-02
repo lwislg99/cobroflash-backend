@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { createProvider, listProviders, updateProvider, deleteProvider, findProviderByName } from '../../domain/providers.service';
 import { validarNifEspanol } from '../../../../core/validation/nifEspanol';
@@ -72,7 +73,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
 router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const body = req.body || {};
     const patch: any = {};
     if (body.name !== undefined) {
@@ -105,7 +106,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const deleted = await deleteProvider(req.merchantId, id);
     if (!deleted) return res.status(404).json({ ok: false, error: 'not_found' });
     return res.json({ ok: true, deleted });
