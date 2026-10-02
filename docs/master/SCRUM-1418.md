@@ -196,7 +196,30 @@ Tres avisos sobre las dos que aportan:
   `CLAUDE.md` sigue diciendo «ninguno apunta a producción», medido el 10-ago sobre cuatro árboles. No lo
   he vuelto a medir: son ficheros con credenciales. Es decisión del fundador.
 
-De las seis: tres ya están, una es basura, dos aportan. De las 19 que chocan no he leído ninguna.
+De las seis: tres ya están, una es basura, dos aportan.
+
+### Leídas también: las cuatro de septiembre que CHOCAN (las únicas con sesión conocida)
+
+Aquí el diff no basta, porque fusionarlas da conflicto: por cada una leí lo que la rama cambia y lo que
+`main` tiene hoy en esas mismas líneas.
+
+| rama | veredicto | la evidencia |
+|---|---|---|
+| `scrum-804b-el-barrido-de-la-42` | **YA ESTÁ**, resuelto de otra forma | Reelegía a mano el ticket «negativo» del test (1099 → 1031) porque el anterior se había mergeado. `main` ya no lo escribe a mano: `tests/scrum804b-el-barrido-de-la-42.test.mjs:27` dice «EL NEGATIVO SE DERIVA DEL ESTADO VIVO». Su apunte de 42 líneas en `docs/master/SCRUM-804.md` no está en `main` y describe la elección que ya no existe |
+| `scrum-1093h-censo-guard-fecha-zona` | **YA ESTÁ**, con otra redacción | Una línea: quitaba `albaranPdf.service.ts:133` del mensaje de un assert. En `main` ese mensaje (línea 210) ya no lleva número de línea |
+| `scrum-1230b-anadir-al-parte-LOCAL` | **APORTA** · mínimo (6 líneas) | Cambia el texto del botón de `'Añadir estas líneas'` a `'Añadir al parte'`. `main` sigue con el viejo: `public/dashboard/js/parteDetailView.js:107`. El commit dice que el nuevo está aprobado en SCRUM-1215 (comentario 17375) y que el viejo no se aprobó (17367), y que se quedó en local por un permiso denegado. No he abierto esos comentarios |
+| `scrum-1132-notas-cliente-pantalla` | **APORTA** · 77 líneas de pantalla | La tarjeta «Notas» de la ficha del cliente: lista con fecha y autor, y formulario para añadir. **El servidor ya está en `main` y ninguna pantalla lo usa:** `GET` y `POST /admin/customers/:id/notes` están en `customersAdmin.routes.ts:386` y `:403` (SCRUM-1036), y en `public/` no hay ni una llamada a esa ruta |
+
+Avisos:
+
+- **`scrum-1132` toca `customerDetailView.js`, que es de J2.** Su registro cita una «excepción de carril
+  concedida por el orquestador» el 25-sep; no he comprobado en Jira que ese comentario exista. Trae textos
+  de usuario nuevos («Nota fija», «No se pudo guardar la nota.») y su propio registro dice que no se probó
+  el botón de guardar.
+- **`scrum-1230b` es un texto de usuario:** lo que valga está en los dos comentarios de SCRUM-1215.
+
+**Total leído: 10 de las 24.** Cinco ya están, una es basura, cuatro aportan (312, 418, 1132 y 1230b).
+Quedan sin leer las 14 de julio y agosto que chocan, y `scrum-240-sobre-duplicado-rebasada`.
 
 ## Una lista declarada de un guard, tocada: se dice
 
