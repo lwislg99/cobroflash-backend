@@ -39,7 +39,7 @@ function fuentesDelArbol(arbol) {
     fuentes.push({ fichero: path.basename(r), codigo: bruto.subarray(fin + 1, fin + 1 + n).toString('utf8') });
     p = fin + 1 + n + 1;
   }
-  cache.set(arbol, fuentes); return fuentes;
+  cache.clear(); cache.set(arbol, fuentes); return fuentes; // SCRUM-1339e: sólo el último árbol (con 229 árboles distintos, guardarlos todos agotó la memoria)
 }
 
 // El log es del ÚLTIMO intento del run (`b-bajar.mjs`), y vale para todos sus intentos: un
