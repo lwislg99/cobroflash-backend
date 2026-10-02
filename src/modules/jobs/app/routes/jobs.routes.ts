@@ -1388,7 +1388,7 @@ const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
 router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     if (job.status !== 'terminado') {
@@ -1643,7 +1643,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
 router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
 
@@ -1661,7 +1661,7 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
 
     // Selección del body, SCOPEADA a este Job (V1: 1 Job = 1 cliente; regla 2 tenancy).
     const rawIds: any[] = Array.isArray(req.body?.albaranIds) ? req.body.albaranIds : [];
-    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n))));
+    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => cabeEnColumnaInt(n))));
     if (ids.length === 0) return res.status(400).json({ error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' });
 
     const albaranes = await prisma.albaran.findMany({ where: { id: { in: ids }, merchantId: req.merchantId, jobId: id } });
