@@ -38,6 +38,9 @@
     // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
+    // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
+    pistaFirmaTecnico: 'Firma con el dedo dentro del recuadro.',
     // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -1095,9 +1098,9 @@
     var esTecnico = quien === 'tecnico';
     abrirPad({
       title: esTecnico ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
-      // Sin pista para el técnico: la única aprobada habla del cliente, y `null` (no `undefined`)
-      // es lo que le dice al pad que no ponga la suya por defecto, que dice lo mismo.
-      hint: esTecnico ? null : TEXTOS.pistaFirma,
+      // Cada uno lee la suya: la del cliente habla del cliente, y la del técnico (SCRUM-1215
+      // c.18205) no nombra a nadie.
+      hint: esTecnico ? TEXTOS.pistaFirmaTecnico : TEXTOS.pistaFirma,
       // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
       ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.

@@ -47,6 +47,9 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 // Cada uno en UN literal, tal cual se firmó (SCRUM-1353 comentario 17881): no se parten.
 const TEXTO_YA_HAY_FIRMA_GUARDADA = 'Ya hay una firma de este albarán guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.';
 const TEXTO_FIRMA_RECHAZADA_ALBARAN = 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el albarán.';
+// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
+// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
+const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 /**
  * ¿Hay una firma de ESTE albarán esperando en la cola del móvil? `null` = no se pudo leer.
@@ -658,6 +661,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if ((await firmaDeEsteAlbaranEnCola(alb.id)) === true && !window.confirm(TEXTO_YA_HAY_FIRMA_GUARDADA)) return;
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // SCRUM-1215 · el albarán no pasaba pista y vivía de la del pad por defecto, que era ésta.
+        // La del pad ha pasado a no nombrar a nadie (c.18205); aquí firma el cliente, y se dice.
+        hint: PISTA_FIRMA_DEL_CLIENTE,
         // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
         //
         // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni
