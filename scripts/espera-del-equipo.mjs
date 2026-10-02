@@ -245,7 +245,7 @@ export function medir(trabajos, { desde = null, huecoMin = HUECO_MIN, largaMin =
   // (su espera no ha terminado). Es justo la que alguien puede desbloquear en este momento.
   abiertas.sort((a, b) => b.ms - a.ms);
   out.push('', `PARADAS HOY Y SIN VOLVER (${abiertas.length}) — esperan, o se dieron por terminadas: no se distingue. Suman ${h(abiertas.reduce((s, a) => s + a.ms, 0))} hasta ahora`);
-  for (const a of abiertas) out.push(`   · ${a.nombre} · ${a.estado} hace ${Math.round(a.ms / MIN)} min · dijo: ${a.dice}`);
+  for (const a of abiertas) out.push(`   · ${a.nombre} · ${a.estado} desde las ${new Date(ahora - a.ms + HUSO_MS).toISOString().slice(11, 16)}, hace ${Math.round(a.ms / MIN)} min · dijo que espera: ${a.dice}`);
   out.push('', 'POR DÍA (el día en que EMPIEZA el tramo, hora de Madrid)', '| día | trabajando | esperando | al orquestador | esperas largas | huecos |', '|---|---|---|---|---|---|');
   for (const [d, v] of Object.entries(porDia).sort()) {
     out.push(`| ${d}${DIAS_RAROS[d] ? ' ⚠️' : ''} | ${h(v.trabajo)} | ${h(v.corta)} (${pct(v.corta, v.trabajo + v.corta)}) | ${h(v.orquestador)} | ${h(v.larga)} | ${h(v.hueco)} |`);
