@@ -12,7 +12,10 @@
 //      cliente generado.
 //
 // Uso (se copia a .mjs FUERA del árbol, porque node no ejecuta un .txt):
-//   node <copia>.mjs <raíz del repo> <sha de la base>
+//   node <copia>.mjs <raíz del repo> <sha de la base> [<ref de después>]
+//
+// Sin el tercer argumento, «después» es el ÁRBOL de trabajo (lo que hay en disco, commiteado o no).
+// Con él, es ese commit: sirve para medir un commit concreto aunque el árbol lleve ya otra cosa.
 //
 // Sale 0 sólo si las tres dan «sólo comentarios» Y los controles positivos caen como deben.
 // Sale 2 si no pudo mirar (CIEGO). Sale 1 si algo que no es comentario cambió.
@@ -23,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-const [raiz, base] = process.argv.slice(2);
+const [raiz, base, despuesRef] = process.argv.slice(2);
 if (!raiz || !base) {
   console.error('CIEGO: faltan <raíz del repo> y <sha de la base>');
   process.exit(2);
@@ -34,16 +37,17 @@ const ts = require('typescript');
 const git = (...args) => execFileSync('git', args, { cwd: raiz, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const sha = (texto) => createHash('sha256').update(texto).digest('hex');
 const deLaBase = (ruta) => git('show', `${base}:${ruta}`);
-const delArbol = (ruta) => readFileSync(path.join(raiz, ruta), 'utf8');
+const delArbol = (ruta) => (despuesRef ? git('show', `${despuesRef}:${ruta}`) : readFileSync(path.join(raiz, ruta), 'utf8'));
+const rango = despuesRef ? [base, despuesRef] : [base];
 
 let rojo = false;
 let ciego = false;
 const di = (linea) => console.log(linea);
 
 // ── ① EL DIFF ────────────────────────────────────────────────────────────────────────────────
-const numstat = git('diff', '--numstat', base, '--').trim().split('\n').filter(Boolean)
+const numstat = git('diff', '--numstat', ...rango, '--').trim().split('\n').filter(Boolean)
   .map((l) => { const [mas, menos, ruta] = l.split('\t'); return { mas: Number(mas), menos: Number(menos), ruta }; });
-di(`① POBLACIÓN: ${numstat.length} fichero(s) cambian entre ${base.slice(0, 8)} y el árbol`);
+di(`① POBLACIÓN: ${numstat.length} fichero(s) cambian entre ${base.slice(0, 8)} y ${despuesRef ? despuesRef.slice(0, 8) : 'el árbol'}`);
 for (const f of numstat) di(`   +${f.mas} -${f.menos}  ${f.ruta}`);
 if (numstat.length === 0) { di('   CIEGO: el diff está vacío, no hay nada que medir'); ciego = true; }
 
@@ -103,7 +107,7 @@ if (numstat.some((f) => f.ruta === RUTA_ESQUEMA)) {
   if (a !== d) rojo = true;
   if (lineasA < 500) { di('   CIEGO: el esquema sin comentarios tiene menos de 500 líneas; el filtro se lo ha llevado todo'); ciego = true; }
 
-  const anadidas = git('diff', '-U0', base, '--', RUTA_ESQUEMA).split('\n')
+  const anadidas = git('diff', '-U0', ...rango, '--', RUTA_ESQUEMA).split('\n')
     .filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
   const triples = anadidas.filter((l) => /^\s*\/\/\//.test(l));
   di(`   líneas añadidas: ${anadidas.length}; de ellas con triple barra (documentación, NO comentario): ${triples.length}`);
