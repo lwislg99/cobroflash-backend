@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos, reglasQueOcultan } from './_banco-vistas.mjs';
 import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 import { ranurasDe, MARCA } from './_ranuras-con-marcador.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(RAIZ, 'public/dashboard/js');
@@ -129,32 +130,35 @@ const FALLOS = [
   { id: 'un 200 sin `miradas`', pedir: () => respuesta(200, { filas: [] }), crudo: null },
 ];
 
-for (const fallo of FALLOS) {
-  test(`SCRUM-1388 · 🔴 con ${fallo.id} se VE el cartel, con las palabras firmadas y sin tripa`, async () => {
-    const p = await montar(fallo.pedir);
+const caso2 = casosEscritos(FALLOS, (fallo) => `SCRUM-1388 · 🔴 con ${fallo.id} se VE el cartel, con las palabras firmadas y sin tripa`, async (fallo) => {
+  const p = await montar(fallo.pedir);
 
-    // CONTROL POSITIVO de la negación de abajo: la tripa EXISTE y el patrón la ve. Es lo que el
-    // `apiRequest` real le entrega a la vista; si un día deja de componerlo, esto lo dice.
-    if (fallo.crudo) {
-      const err = await p.banco.ctx.apiRequest('/admin/libros/recibidas.json?x=1').then(() => null, (e) => e);
-      assert.ok(err, 'CIEGO: la carga no falla; no hay viaje que medir');
-      assert.equal(err.message, fallo.crudo, 'el `apiRequest` real ya no compone este mensaje: revisa el caso');
-      assert.match(err.message, TRIPA);
-    }
+  // CONTROL POSITIVO de la negación de abajo: la tripa EXISTE y el patrón la ve. Es lo que el
+  // `apiRequest` real le entrega a la vista; si un día deja de componerlo, esto lo dice.
+  if (fallo.crudo) {
+    const err = await p.banco.ctx.apiRequest('/admin/libros/recibidas.json?x=1').then(() => null, (e) => e);
+    assert.ok(err, 'CIEGO: la carga no falla; no hay viaje que medir');
+    assert.equal(err.message, fallo.crudo, 'el `apiRequest` real ya no compone este mensaje: revisa el caso');
+    assert.match(err.message, TRIPA);
+  }
 
-    // El cartel sigue APARECIENDO: si desaparece, el fallo se lee como un periodo vacío.
-    const rojos = p.carteles('error');
-    assert.equal(rojos.length, 1, `🔴 con la carga rota hay ${rojos.length} carteles de error`);
-    assert.equal(rojos[0].textContent, FIRMADO.error, '🔴 el cartel no dice el texto firmado');
-    assert.equal(seVe(rojos[0]), true, '🔴 el cartel está en el DOM y el CSS lo oculta');
+  // El cartel sigue APARECIENDO: si desaparece, el fallo se lee como un periodo vacío.
+  const rojos = p.carteles('error');
+  assert.equal(rojos.length, 1, `🔴 con la carga rota hay ${rojos.length} carteles de error`);
+  assert.equal(rojos[0].textContent, FIRMADO.error, '🔴 el cartel no dice el texto firmado');
+  assert.equal(seVe(rojos[0]), true, '🔴 el cartel está en el DOM y el CSS lo oculta');
 
-    const leido = p.leido.join(' ‖ ');
-    assert.match(leido, /No hemos podido cargar tus facturas recibidas/);
-    assert.doesNotMatch(leido, TRIPA, `🔴 la tripa del sistema en pantalla: ${leido}`);
-    assert.equal(p.tablas, 0, '🔴 tabla pintada con la carga rota: se lee como «no compraste nada»');
-    assert.ok(!p.leido.includes(FIRMADO.vacioDeVerdad), '🔴 con la carga rota la pantalla afirma que no tienes facturas recibidas');
-  });
-}
+  const leido = p.leido.join(' ‖ ');
+  assert.match(leido, /No hemos podido cargar tus facturas recibidas/);
+  assert.doesNotMatch(leido, TRIPA, `🔴 la tripa del sistema en pantalla: ${leido}`);
+  assert.equal(p.tablas, 0, '🔴 tabla pintada con la carga rota: se lee como «no compraste nada»');
+  assert.ok(!p.leido.includes(FIRMADO.vacioDeVerdad), '🔴 con la carga rota la pantalla afirma que no tienes facturas recibidas');
+});
+test('SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa', caso2(0));
+test('SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa', caso2(1));
+test('SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa', caso2(2));
+test('SCRUM-1388 · 🔴 con un 200 sin `miradas` se VE el cartel, con las palabras firmadas y sin tripa', caso2(3));
+caso2.todos();
 
 test('SCRUM-1388 · CONTROL del instrumento de «se ve»: sin tono o vacío, un cartel NO se ve', async () => {
   const { banco } = await montar(() => respuesta(200, libro()));

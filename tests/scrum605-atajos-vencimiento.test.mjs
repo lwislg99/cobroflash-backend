@@ -27,6 +27,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -85,20 +86,26 @@ const BORDES = [
   { que: 'caso corriente de 14 días', hoy: '2026-05-20T12:00:00Z', dias: 14, esperada: '2026-06-03' },
 ];
 
-for (const b of BORDES) {
-  test(`SCRUM-605 · 🔴 ${b.que}`, () => {
-    const hoy = new Date(b.hoy);
-    const obtenida = A.fechaDeAtajo(b.dias, null, hoy);
-    const desde = b.hoy.slice(0, 10);
-    assert.equal(obtenida, b.esperada,
-      `🔴 EL ATAJO DE ${b.dias} DÍAS CALCULA MAL.\n`
-      + `     desde:     ${desde}\n`
-      + `     sale:      ${obtenida}\n`
-      + `     debería:   ${b.esperada}\n`
-      + '  Es una fecha que va impresa en un documento que el cliente recibe, y de la que depende '
-      + 'que el presupuesto caduque el día que toca.');
-  });
-}
+const caso2 = casosEscritos(BORDES, (b) => `SCRUM-605 · 🔴 ${b.que}`, (b) => {
+  const hoy = new Date(b.hoy);
+  const obtenida = A.fechaDeAtajo(b.dias, null, hoy);
+  const desde = b.hoy.slice(0, 10);
+  assert.equal(obtenida, b.esperada,
+    `🔴 EL ATAJO DE ${b.dias} DÍAS CALCULA MAL.\n`
+    + `     desde:     ${desde}\n`
+    + `     sale:      ${obtenida}\n`
+    + `     debería:   ${b.esperada}\n`
+    + '  Es una fecha que va impresa en un documento que el cliente recibe, y de la que depende '
+    + 'que el presupuesto caduque el día que toca.');
+});
+test('SCRUM-605 · 🔴 fin de mes: 31 de enero + 30, febrero de 28', caso2(0));
+test('SCRUM-605 · 🔴 fin de mes en año BISIESTO: 31 de enero + 30', caso2(1));
+test('SCRUM-605 · 🔴 la fecha CAE en el 29 de febrero', caso2(2));
+test('SCRUM-605 · 🔴 cambio de AÑO con 30 días', caso2(3));
+test('SCRUM-605 · 🔴 cambio de AÑO con 7 días, desde el 31 de diciembre', caso2(4));
+test('SCRUM-605 · 🔴 mes de 30 días: 31 de marzo + 30', caso2(5));
+test('SCRUM-605 · 🔴 caso corriente de 14 días', caso2(6));
+caso2.todos();
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // CONTROL NEGATIVO del propio módulo · no inventa fechas

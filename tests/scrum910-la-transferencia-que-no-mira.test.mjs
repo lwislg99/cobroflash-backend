@@ -35,6 +35,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -173,25 +174,26 @@ const PUERTAS = [
     pedir: (m) => pedir(R_RECIBO, '/recibo', '/recibo/tok910', m), testigo: 'Recibo' },
 ];
 
-for (const p of PUERTAS) {
-  test(`SCRUM-910 · 🔴 ③ ${p.nombre}: ES con sólo CLABE NO ofrece transferencia; con IBAN SÍ`, async () => {
-    const rojo = await p.pedir(merchant({ country: 'ES', clabe: CLABE, ...CONNECT }));
-    const verde = await p.pedir(merchant({ country: 'ES', iban: IBAN, ...CONNECT }));
+const caso2 = casosEscritos(PUERTAS, (p) => `SCRUM-910 · 🔴 ③ ${p.nombre}: ES con sólo CLABE NO ofrece transferencia; con IBAN SÍ`, async (p) => {
+  const rojo = await p.pedir(merchant({ country: 'ES', clabe: CLABE, ...CONNECT }));
+  const verde = await p.pedir(merchant({ country: 'ES', iban: IBAN, ...CONNECT }));
 
-    assert.equal(rojo.status, 200, `🔴 CIEGO: ${p.nombre} devolvió HTTP ${rojo.status}.`);
-    assert.ok(rojo.cuerpo.includes(p.testigo),
-      `🔴 CIEGO: la página no contiene «${p.testigo}», así que no se pintó y «no hay transferencia» no dice nada.`);
+  assert.equal(rojo.status, 200, `🔴 CIEGO: ${p.nombre} devolvió HTTP ${rojo.status}.`);
+  assert.ok(rojo.cuerpo.includes(p.testigo),
+    `🔴 CIEGO: la página no contiene «${p.testigo}», así que no se pintó y «no hay transferencia» no dice nada.`);
 
-    assert.equal(rojo.cuerpo.includes('/pay/bank/'), false,
-      `🔴 ${p.fichero} OFRECE TRANSFERENCIA a un negocio ES con sólo CLABE. \`/pay/bank\` no puede\n`
-      + '    enseñarle ninguna cuenta —la CLABE sólo se pinta en MX— así que la clienta aterriza\n'
-      + '    en «el profesional aún no ha configurado su cuenta bancaria».');
+  assert.equal(rojo.cuerpo.includes('/pay/bank/'), false,
+    `🔴 ${p.fichero} OFRECE TRANSFERENCIA a un negocio ES con sólo CLABE. \`/pay/bank\` no puede\n`
+    + '    enseñarle ninguna cuenta —la CLABE sólo se pinta en MX— así que la clienta aterriza\n'
+    + '    en «el profesional aún no ha configurado su cuenta bancaria».');
 
-    assert.equal(verde.cuerpo.includes('/pay/bank/'), true,
-      `🔴 ${p.fichero} ESCONDE la transferencia a un negocio con IBAN, que sí puede cobrarla.\n`
-      + '    Eso no es cerrar el agujero: es cerrar el cobro.');
-  });
-}
+  assert.equal(verde.cuerpo.includes('/pay/bank/'), true,
+    `🔴 ${p.fichero} ESCONDE la transferencia a un negocio con IBAN, que sí puede cobrarla.\n`
+    + '    Eso no es cerrar el agujero: es cerrar el cobro.');
+});
+test('SCRUM-910 · 🔴 ③ el selector · GET /pay/invoice/:token: ES con sólo CLABE NO ofrece transferencia; con IBAN SÍ', caso2(0));
+test('SCRUM-910 · 🔴 ③ el recibo · GET /recibo/:token: ES con sólo CLABE NO ofrece transferencia; con IBAN SÍ', caso2(1));
+caso2.todos();
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // ④ EL CASO DEL TICKET — sin Connect y SIN IBAN

@@ -512,7 +512,21 @@ El encargo decía «el texto ya tiene firma del 4-sep: cita el comentario». Bus
 | `docs/microcopy/2026-09-04-SCRUM-605-…` | cabecera: «Aprobado por el fundador»; su última sección: «la del fundador está pedida» |
 
 Los tres rótulos visibles están en producción desde el 4-sep con esa misma firma. Esta rama se
-deja comiteada y **sin empujar** hasta que la confirmación conste en Jira (regla 39).
+dejó comiteada y **sin empujar** hasta que la confirmación constara en Jira (regla 39).
+
+### Cómo se levantó, el mismo 2-oct — y es un RELATO, no una firma
+
+Los seis literales quedan acreditados por relato del orquestador del 2-oct-2026 sobre la respuesta
+del fundador «pues confirmado»; **no hay comentario escrito por él**. La firma original del 4-sep
+es del asesor. El relato es el comentario 18197 de Jira SCRUM-605: lo escribe el orquestador con
+la cuenta del fundador (el conector no tiene otra), así que la autoría no prueba nada y lo dice él
+mismo. Lo leyó la sesión que empuja (s2-2octe) y lo dio por suficiente por dos motivos: la
+respuesta citada es explícita, y no se aprueba texto nuevo — los tres rótulos ya se leen en
+pantalla desde el 4-sep y lo que entra es que el lector de pantalla anuncie el nombre entero.
+
+Empujado con `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` mezclado. El único
+conflicto fue de dos `import` añadidos en la misma línea del test (el banco de vistas, de esta
+rama, y `_casos-escritos.mjs`, de SCRUM-1416): se quedan los dos.
 
 ## Errores propios de esta tanda
 

@@ -12,6 +12,7 @@
 // una función que ya no consulta nada).
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const moduloPrisma = await import('../dist/core/db/prisma.js');
 const { getQuoteDetailAdmin, acceptQuoteAdmin, rejectQuoteAdmin } =
@@ -43,22 +44,27 @@ const CASOS = [
   ['rejectQuoteAdmin', (m) => rejectQuoteAdmin(41, { reason: 'x' }, m)],
 ];
 
-for (const [nombre, llamar] of CASOS) {
-  test(`🔴 SCRUM-1213 · ${nombre} SIN merchantId → quote_not_found, sin leer ni escribir`, async () => {
-    for (const sinMerchant of [undefined, null]) {
-      const { preguntas, escrituras } = doblar();
-      await assert.rejects(() => llamar(sinMerchant), /quote_not_found/,
-        `🔴 ${nombre}(${sinMerchant}) no falló: sirve el presupuesto de otro negocio`);
-      assert.deepEqual(preguntas, [], `🔴 ${nombre} consultó la base sin filtro de merchant`);
-      assert.deepEqual(escrituras, [], `🔴 ${nombre} escribió sin filtro de merchant`);
-    }
-  });
-
-  test(`SCRUM-1213 · ${nombre} con otro merchantId → quote_not_found, y el where lo lleva (control positivo)`, async () => {
+const casoa = casosEscritos(CASOS, ([nombre, llamar]) => `🔴 SCRUM-1213 · ${nombre} SIN merchantId → quote_not_found, sin leer ni escribir`, async ([nombre, llamar]) => {
+  for (const sinMerchant of [undefined, null]) {
     const { preguntas, escrituras } = doblar();
-    await assert.rejects(() => llamar(7), /quote_not_found/);
-    assert.equal(preguntas.length, 1, `🔴 ${nombre} ya no consulta: el test de arriba no mediría nada`);
-    assert.equal(preguntas[0].merchantId, 7, `🔴 ${nombre} no filtra por el merchant que recibe`);
-    assert.deepEqual(escrituras, []);
-  });
-}
+    await assert.rejects(() => llamar(sinMerchant), /quote_not_found/,
+      `🔴 ${nombre}(${sinMerchant}) no falló: sirve el presupuesto de otro negocio`);
+    assert.deepEqual(preguntas, [], `🔴 ${nombre} consultó la base sin filtro de merchant`);
+    assert.deepEqual(escrituras, [], `🔴 ${nombre} escribió sin filtro de merchant`);
+  }
+});
+const casob = casosEscritos(CASOS, ([nombre, llamar]) => `SCRUM-1213 · ${nombre} con otro merchantId → quote_not_found, y el where lo lleva (control positivo)`, async ([nombre, llamar]) => {
+  const { preguntas, escrituras } = doblar();
+  await assert.rejects(() => llamar(7), /quote_not_found/);
+  assert.equal(preguntas.length, 1, `🔴 ${nombre} ya no consulta: el test de arriba no mediría nada`);
+  assert.equal(preguntas[0].merchantId, 7, `🔴 ${nombre} no filtra por el merchant que recibe`);
+  assert.deepEqual(escrituras, []);
+});
+test('🔴 SCRUM-1213 · getQuoteDetailAdmin SIN merchantId → quote_not_found, sin leer ni escribir', casoa(0));
+test('SCRUM-1213 · getQuoteDetailAdmin con otro merchantId → quote_not_found, y el where lo lleva (control positivo)', casob(0));
+test('🔴 SCRUM-1213 · acceptQuoteAdmin SIN merchantId → quote_not_found, sin leer ni escribir', casoa(1));
+test('SCRUM-1213 · acceptQuoteAdmin con otro merchantId → quote_not_found, y el where lo lleva (control positivo)', casob(1));
+test('🔴 SCRUM-1213 · rejectQuoteAdmin SIN merchantId → quote_not_found, sin leer ni escribir', casoa(2));
+test('SCRUM-1213 · rejectQuoteAdmin con otro merchantId → quote_not_found, y el where lo lleva (control positivo)', casob(2));
+casoa.todos();
+casob.todos();
