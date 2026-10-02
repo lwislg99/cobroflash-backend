@@ -130,3 +130,64 @@ mitad ② cae si la lista dice otra cosa.
 
 Quedan 13 ficheros a mano (bucles con varios `test()` o con sentencias compartidas, uno anidado y
 uno dentro de un bloque): lote 3.
+
+# SCRUM-1416c · Lote 3 — los bucles con varios `test()`, y la lista queda en cero
+
+**Medido contra:** `origin/main` = `1586862b32bdfe7cb666bfd23b982d14504cd7ac` · 2026-10-02T13:00Z
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+Rama `scrum-1416c-nombres-construidos-lote-3`, apilada sobre la del lote 2.
+
+| | sitios de nombre construido | en ficheros |
+|---|---|---|
+| antes del lote (tras el lote 2) | 35 | 13 |
+| después del lote | **0** | 0 |
+
+35 sitios en 13 ficheros → **102 casos** con su nombre literal. Población del guard tras el
+lote: `ficheros=1211 llamadas=10099 literales=10099 construidas=0 en_ficheros=0 lista=0 en_ficheros=0`. `DECLARADAS` queda vacía.
+
+Lo que no era un bucle de una sentencia, y cómo se convirtió:
+
+- **Varios `test()` por vuelta** (`scrum1027`, `scrum1093h`, `scrum1106`, `scrum1153`, `scrum1213`,
+  `scrum1315`, `scrum264`, `scrum330`, `scrum785`, `scrum809`, `scrum931`): un `casosEscritos` por
+  cada `test()` del bucle, sobre la MISMA tabla, y las líneas `test('…')` escritas fila a fila, en
+  el orden en que el bucle las registraba. Ningún bucle tenía sentencias compartidas entre sus tests.
+- **Un `test()` dentro de un `if`** (`scrum264`, `sup.tieneMapa`): su tabla es la del bucle filtrada
+  por esa misma condición, así que `todos()` sigue exigiendo un caso por fila que la cumple.
+- **`test(nombre, { skip }, fn)`** (`scrum809`): el objeto de opciones se copia tal cual en cada línea.
+- **Bucle anidado** (`scrum1200`): las dos tablas se aplanan con `flatMap` en una de filas
+  `[nombre, error, si]`, en el mismo orden.
+- **Bucle dentro de un bloque** (`scrum899d`): a mano, dentro del mismo bloque.
+
+| fichero | casos antes | casos después | fail después | conjunto de nombres |
+|---|---|---|---|---|
+| `scrum1027-atajo-flag-off-sin-documento` | 14 | 14 | 0 | idéntico |
+| `scrum1093h-censo-fecha-sin-zona` | 21 | 21 | 0 | idéntico |
+| `scrum1106-respuestas-ia-no-son-del-asesor` | 6 | 6 | 0 | idéntico |
+| `scrum1153-censo-entorno-prestado` | 15 | 15 | 0 | idéntico |
+| `scrum1200-sin-respuesta` | 8 | 8 | 0 | idéntico |
+| `scrum1213-quoteadmin-tenencia-fail-closed` | 6 | 6 | 0 | idéntico |
+| `scrum1315-gemelos-estado-dentro-del-where` | 14 | 14 | 0 | idéntico |
+| `scrum264-copy-que-llega-al-cliente` | 17 | 17 | 0 | idéntico |
+| `scrum330-contador-solo-activas` | 10 | 10 | 0 | idéntico |
+| `scrum785-productos-y-proveedores-descuelgan` | 7 | 7 | 0 | idéntico |
+| `scrum809-paywall-tras-cancelar` | 7 | 7 | 0 | idéntico |
+| `scrum899d-aviso-de-uso` | 18 | 18 | 0 | idéntico |
+| `scrum931-un-solo-importe-de-plantilla` | 25 | 25 | 0 | idéntico |
+
+13 comparados, 13 idénticos; 168 casos en total.
+
+⚠️ **Lo que esta comparación NO prueba, declarado:** `scrum809` es un test gateado y sus 7 casos
+salen `# SKIP` antes y después. Sus nombres y su directiva son idénticos, pero **el cuerpo de sus 4
+casos convertidos no se ha ejecutado**, ni aquí ni en el check obligatorio: se ejecuta en
+`npm run test:staging:gated`. La comprobación de que el nombre escrito es el de su fila corre con
+el cuerpo, así que en ese fichero tampoco ha corrido.
+
+Errores propios del lote:
+
+- El conversor asignaba al bucle un nombre de un `test()` literal posterior que casaba con la
+  plantilla del bucle (`scrum1027`: «SUELO: el extractor encuentra…» existe también suelto). Lanzó
+  por desalineado sin escribir nada; ahora corta al llegar al nombre del siguiente literal.
+- La mitad ② del guard se vio en ROJO de verdad en este lote: con los 13 ficheros convertidos y la
+  lista sin tocar, `exit 1` y «la lista declara … y el árbol tiene 0».

@@ -33,33 +33,14 @@ import { casosEscritos, nombreEscrito } from './_casos-escritos.mjs';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Los ficheros de `DECLARADAS` tienen el MISMO motivo, medido por AST el 2-oct-2026: el bucle
- * que envuelve a cada llamada itera una tabla escrita en el propio fichero. Son convertibles
- * (con `casosEscritos`) y están pendientes: SCRUM-1416.
- */
-const PENDIENTE = 'bucle sobre una tabla escrita en el fichero · convertible, pendiente (SCRUM-1416)';
-
-/**
  * `[fichero, llamadas de nombre construido, motivo]`. Una entrada por línea.
  *
- * SÓLO BAJA. Al convertir un fichero se baja su cifra (o se quita la línea) en el mismo PR.
- * Una entrada cuyo nombre dependa de un dato que sólo existe al ejecutar NO lleva `PENDIENTE`:
- * lleva escrito por qué no se puede convertir. Hoy no hay ninguna.
+ * VACÍA desde SCRUM-1416: los bucles sobre tablas del propio fichero se desenrollaron con
+ * `casosEscritos`. SÓLO BAJA, así que se queda vacía: un test nuevo se escribe con nombre literal.
+ * Una entrada sólo cabría si el nombre dependiera de un dato que no existe hasta ejecutar, y
+ * llevaría escrito por qué no se puede convertir. Hoy no hay ninguna.
  */
 const DECLARADAS = [
-  ['scrum1027-atajo-flag-off-sin-documento.test.mjs', 3, PENDIENTE],
-  ['scrum1093h-censo-fecha-sin-zona.test.mjs', 2, PENDIENTE],
-  ['scrum1106-respuestas-ia-no-son-del-asesor.test.mjs', 2, PENDIENTE],
-  ['scrum1153-censo-entorno-prestado.test.mjs', 2, PENDIENTE],
-  ['scrum1200-sin-respuesta.test.mjs', 2, PENDIENTE],
-  ['scrum1213-quoteadmin-tenencia-fail-closed.test.mjs', 2, PENDIENTE],
-  ['scrum1315-gemelos-estado-dentro-del-where.test.mjs', 5, PENDIENTE],
-  ['scrum264-copy-que-llega-al-cliente.test.mjs', 4, PENDIENTE],
-  ['scrum330-contador-solo-activas.test.mjs', 4, PENDIENTE],
-  ['scrum785-productos-y-proveedores-descuelgan.test.mjs', 2, PENDIENTE],
-  ['scrum809-paywall-tras-cancelar.test.mjs', 2, PENDIENTE],
-  ['scrum899d-aviso-de-uso.test.mjs', 1, PENDIENTE],
-  ['scrum931-un-solo-importe-de-plantilla.test.mjs', 4, PENDIENTE],
 ];
 
 /** El censo de UN árbol: `fuentes` es `[{ fichero, codigo }]`. Puro, para poder fabricarle un rojo. */
