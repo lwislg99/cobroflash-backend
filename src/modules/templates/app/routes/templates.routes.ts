@@ -1,4 +1,5 @@
 // src/modules/templates/app/routes/templates.routes.ts
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -63,7 +64,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
 router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const existing = await prisma.quoteTemplate.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -89,7 +90,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const existing = await prisma.quoteTemplate.findFirst({
       where: { id, merchantId: req.merchantId },
