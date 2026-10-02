@@ -41,10 +41,9 @@ un cuarto atajo no pide copy nuevo.
 `public/dashboard/js/quotesView.js` los pinta bajo el campo «Válido hasta» del editor de
 presupuestos: tres `button.quote-plantilla-chip` que, al pulsarse, escriben la fecha en el campo.
 
-> ⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**
-> texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que
-> digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en
-> vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño.
+**El nombre accesible se cableó el 2-oct-2026.** Del 4-sep hasta ese día estuvo construido y sin
+cablear: la vista ponía el **mismo** texto en el rótulo y en el `aria-label` (una sola llamada a
+`rotuloDeAtajo`). Ahora el `aria-label` sale de `nombreAccesibleDeAtajo`; lo que se ve no cambia.
 
 ## Las cajas medidas, que son lo que decidió el texto
 

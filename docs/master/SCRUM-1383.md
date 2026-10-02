@@ -72,3 +72,47 @@ En `confirmarCierreConFirmasSinSubir` (`app.js`):
 
 1. La firma del fundador sobre los tres literales → entran en `textoFirmasRechazadasAlCerrar` y el test saltado se escribe.
 2. Verlo en yaqu.app.
+
+# APÉNDICE · 2-oct-2026 · los dos literales, y dos preguntas seguidas en vez de una
+
+**Medido contra:** `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` · 2026-10-02T16:57:37Z
+A9: comprobación → `tests/scrum1383-rechazo-durante-el-cierre.test.mjs`
+
+Carril S2 (`public/dashboard/js/app.js`) · rama `scrum-1383-dos-preguntas-al-cerrar-sesion` · sesión `s2-2octe`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de editar `app.js`. Sin marcado y sin estilos: es el texto de un `confirm` del navegador, el mismo mecanismo que ya usa la pregunta de SCRUM-1302.
+
+## La firma, dicha como es
+
+Los dos literales están aprobados **por el orquestador, por delegación del fundador** (2-oct-2026): Jira SCRUM-1383, comentario 18204. No lo escribió el fundador; el comentario relata su respuesta («decide tu») y lo dice él mismo. Trae también las cuatro decisiones.
+
+- una: «1 firma no se ha podido registrar y hay que volver a pedirla. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?»
+- varias: «${n} firmas no se han podido registrar y hay que volver a pedirlas. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?»
+
+El texto propuesto más arriba («este aviso se borra de este móvil») y el combinado **no** son los aprobados y no se han construido.
+
+## Qué cambia respecto a lo que entró con #2146
+
+- `textoFirmasRechazadasAlCerrar(n)` devuelve el literal y ya no recibe las sin subir.
+- `textoAlCerrarSesion` desaparece; en su lugar `preguntasAlCerrarSesion(sinSubir, rechazadas)` devuelve las preguntas en orden. **Son dos seguidas, no una combinada:** primero las sin subir (texto de SCRUM-1302, c.17889) y, sólo si a ésa se dice que sí, las rechazadas. Un «Cancelar» en cualquiera de las dos sale antes del purgado.
+- No cambia: se cuentan todas las constancias del móvil menos `invalid_id`, después del intento de subida; ilegibles → no se pregunta; **la constancia se sigue purgando al cerrar** (`scrum890b`, art. 32).
+
+## Verificado, ejecutando
+
+- **Banco** (`logout()` real): rojo con el `app.js` de `main` 8 de 14, verde 14 de 14, ninguno saltado. Del test anterior cambian los dos casos que fijaban «una pregunta con las dos cifras» y «hoy, sin literal» (la decisión cambió en el c.18204), y el saltado pasa a ser el de los literales con `===`. Vecinos (`scrum1302i`, `1351`, `455`, `457`, `460`, `890b`, `1185`, `1344`, `1415`, `514`, `402`, `378`) con éste: 187 de 187.
+- **Navegador, en yaqu.app** (Chromium de escritorio, cuenta QA, build `eca8566d`). La rama no está desplegada: la sonda sirvió el `app.js` de la rama sobre su GET. Nada salió a producción: `POST …/firmar` lo contestó la sonda (400 `firma_invalida` para el albarán 46, 500 para otro id) y `POST /auth/logout` se cortó, con control positivo del corte antes de pulsar. Botón «Salir» real:
+  - 1 rechazada, «Cancelar» → la pregunta en singular, literal; sigue en el panel, 1 constancia, sin llamada de cierre.
+  - 1 rechazada y 1 sin subir, «Aceptar» y «Cancelar» → dos preguntas, en ese orden; sigue en el panel, 1 en cola y 1 constancia.
+  - 1 rechazada, «Aceptar» → la pregunta, se llama al cierre, va al login, 0 constancias.
+  - control, nada pendiente → ninguna pregunta, cierra.
+
+## Límites
+
+- El plural de las rechazadas («${n} firmas…») está medido en el banco, no en el navegador.
+- No medido en un móvil ni con partes; sólo albaranes.
+- Tras desplegar falta repetir la sonda sin servir el fichero de la rama.
+- La tanda dirigida de `app.js` pasa de 150 ficheros: no se corre en local; el juez es el CI.
+
+## Errores propios de esta tanda
+
+- Corrí el guard de la skill (`scrum811c`) antes de escribir este registro y cayó por eso mismo; no era un rojo del cambio.

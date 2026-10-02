@@ -452,3 +452,87 @@ enmienda de 633 fija los DÍAS (+30, +1), no la expresión. Reescrito en SCRUM-7
 2. **El nombre accesible sigue construido y sin cablear.** `quotesView.js` pone
    `aria-label = rotulo` («7 días»), no el literal firmado «Válido hasta dentro de 7 días».
 3. **La microcopy la firmó el ASESOR el 4-sep, no el fundador.**
+
+# APÉNDICE · 2-oct-2026 · el nombre accesible, cableado en el botón (punto 2 de §5)
+
+**Medido contra:** `origin/main` = `7d8a3ec970669bab0265fdb1a100abcda6c2c76f` · 2026-10-02T13:36:08Z
+A9: comprobación → `tests/scrum605-atajos-vencimiento.test.mjs`
+
+Carril S2 (`public/dashboard/js/quotesView.js` y `quoteAtajosVencimiento.js`, por la fila general de
+`dos-equipos.md` §3 y de §11bis) · rama `scrum-605-nombre-accesible-de-los-atajos`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) DESPUÉS de editar la línea de la vista y antes de comitear;
+se dice el orden real. El cambio es un `aria-label`: sin marcado nuevo, sin estilos, y lo que se ve
+no cambia (medido abajo). Punto de AB6 que aplica: «aria donde aplique».
+
+## Qué se ha hecho
+
+- `quotesView.js`: el `aria-label` de cada atajo sale de `nombreAccesibleDeAtajo(dias)` y ya no del
+  rótulo. Es la línea que faltaba desde el 4-sep. El fichero que la bloqueaba (SCRUM-594) mergeó ese
+  mismo día (#1008): estuvo libre cuatro semanas.
+- `quoteAtajosVencimiento.js`: los tres nombres van además escritos ENTEROS (`NOMBRES_ACCESIBLES`).
+  No estaba en el encargo y se explica: el cruce de SCRUM-514 busca el literal entero y estos se
+  componían, así que al borrar sus tres entradas de `APARCADOS` el guard caía por «texto aprobado
+  que el código no pinta». Declararlos como compuestos tampoco vale: un control del propio guard
+  prohíbe sacar del cruce lo que va bajo «Texto aprobado». El remedio que el guard nombra es
+  escribirlo literal. Un atajo que no esté en la tabla se sigue componiendo con el mismo prefijo.
+- `tests/scrum514-aprobado-y-aplicado.test.mjs`: fuera las tres entradas de `APARCADOS`, y fuera las
+  cuatro de `NOTAS_AJENAS` de la nota «construido y NO cableado» (su techo baja de 12 a 8). A esa
+  nota se le ha quitado el `>` en la ficha y se ha reescrito, porque ya no era verdad.
+
+## Verificado, ejecutando
+
+`tests/scrum605-atajos-vencimiento.test.mjs` monta el editor de presupuestos en el banco de vistas y
+lee los tres botones pintados.
+
+- **Rojo antes** (vista de `main`): 16 de 17. Cae sólo «cada atajo PINTADO lleva su nombre
+  accesible», con «el atajo de 7 días se anuncia como "7 días"». El control negativo pasa.
+- **Verde después:** 17 de 17, y `scrum514` 37 de 37. El recuento del cruce pasa de 189 pintadas y
+  6 aparcadas a 192 pintadas y 3 aparcadas.
+- **Control negativo:** el texto visible de los tres sigue siendo «7 días», «14 días», «30 días»;
+  siguen siendo `type=button`; pulsar el de 7 escribe una fecha anterior a la de +30 con que nace
+  el campo. El nombre accesible contiene el rótulo visible (WCAG 2.5.3).
+
+## Lo que NO está medido
+
+- No oído con un lector de pantalla ni visto en yaqu.app: es el banco, que no dibuja.
+- El cruce de SCRUM-514 da ahora los tres por aplicados porque el literal existe en el módulo, no
+  porque la vista lo use. Quien quite la llamada de la vista lo deja en verde; lo caza el test del
+  botón pintado.
+
+## 🔴 La firma: no hay comentario del fundador que citar
+
+El encargo decía «el texto ya tiene firma del 4-sep: cita el comentario». Buscado, y no está:
+
+| dónde | qué dice |
+|---|---|
+| esta entrada, §5.3 | «La microcopy la firmó el ASESOR el 4-sep, no el fundador.» |
+| Jira SCRUM-605 (5 comentarios, leídos el 2-oct) | ninguno es una firma de los seis textos |
+| Jira SCRUM-726, comentario 14490 (4-sep) | la línea de la ficha se corrigió a «fundador» por «una transcripción de una transcripción», y pide que el fundador lo confirme antes de cerrar. No hay comentario posterior |
+| `docs/microcopy/2026-09-04-SCRUM-605-…` | cabecera: «Aprobado por el fundador»; su última sección: «la del fundador está pedida» |
+
+Los tres rótulos visibles están en producción desde el 4-sep con esa misma firma. Esta rama se
+dejó comiteada y **sin empujar** hasta que la confirmación constara en Jira (regla 39).
+
+### Cómo se levantó, el mismo 2-oct — y es un RELATO, no una firma
+
+Los seis literales quedan acreditados por relato del orquestador del 2-oct-2026 sobre la respuesta
+del fundador «pues confirmado»; **no hay comentario escrito por él**. La firma original del 4-sep
+es del asesor. El relato es el comentario 18197 de Jira SCRUM-605: lo escribe el orquestador con
+la cuenta del fundador (el conector no tiene otra), así que la autoría no prueba nada y lo dice él
+mismo. Lo leyó la sesión que empuja (s2-2octe) y lo dio por suficiente por dos motivos: la
+respuesta citada es explícita, y no se aprueba texto nuevo — los tres rótulos ya se leen en
+pantalla desde el 4-sep y lo que entra es que el lector de pantalla anuncie el nombre entero.
+
+Empujado con `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` mezclado. El único
+conflicto fue de dos `import` añadidos en la misma línea del test (el banco de vistas, de esta
+rama, y `_casos-escritos.mjs`, de SCRUM-1416): se quedan los dos.
+
+## Errores propios de esta tanda
+
+- Di por bueno «retira las tres de `APARCADOS`» sin leer qué exige el guard al retirarlas. Primer
+  intento: declararlas compuestas en `NO_SE_CRUZAN`; lo tiró el control «lo que ya se cruzaba por
+  su título se sigue cruzando».
+- El primer rojo del test nuevo era falso dos veces: árbol sin `dist` (el banco no cargaba) y un
+  `textContent` de botón que en el banco no suma el de sus hijos (0 atajos de 3). Los suelos del
+  test lo dijeron las dos veces antes de llegar al aserto.
