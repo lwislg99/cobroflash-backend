@@ -145,3 +145,59 @@ merchant inventado.
   del firmado se ve igual; el recorrido del enlace, no.
 - La firma y las fotos son cuadrados de colores: sirven para contar y para ver cajas, no para
   juzgar cómo se ve una foto de obra.
+
+# SCRUM-1367c · La orden `sin-movil`: un albarán de un cliente sin móvil ni teléfono
+
+**Medido contra:** `origin/main` = `f30b1a4052957e245ebe1cfef53bbef410c5816b` · 2026-10-02T16:28:50Z
+
+A9: comprobación → `tests/scrum1367c-albaran-de-cliente-sin-movil.test.mjs`
+
+Puesto S3 (s3-2octe). **Capacidad. Nada ejecutado contra producción**: la cuenta QA no tiene sesión
+viva y la regla de ejecución del sembrador sigue siendo del fundador.
+
+## Qué hace
+
+`node scripts/qa/sembrar-albaranes.mjs sin-movil` deja, en la cuenta QA:
+
+| Qué | Cómo se reconoce | Si ya está |
+|---|---|---|
+| Un cliente sin móvil ni teléfono | nombre exacto «Cliente sin móvil de pruebas QA» | se usa; no se crea otro |
+| Su Trabajo | título exacto «Trabajo de un cliente sin móvil, de pruebas QA» | se usa |
+| Un albarán emitido, con las dos líneas de prueba | clave de idempotencia fija por trabajo | no se emite otra vez |
+
+- No usa el cliente #84 que otra sesión creó a mano para SCRUM-1198: no sé su nombre exacto y no se
+  puede leer hoy. El caso tiene su propio cliente y no depende de lo que haya en la cuenta.
+- Si el cliente ya existe y alguien le puso móvil o teléfono, la orden sale 1 **sin escribir nada**.
+- Al acabar relee la ficha del cliente. Si vuelve con un número, sale 1 y no da el caso por hecho.
+- No añade ninguna escritura a la lista: cliente, trabajo, albarán y emitir salen por la `escritura`
+  de `sembrar-qa.mjs`, que ya las admitía. No firma, no factura, no cobra y no envía.
+- Emitir gasta un número ALB y no se deshace, igual que las otras dos órdenes.
+
+## Verificación
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1367c-…` y `tests/scrum1367b-…` juntos | 23 tests, 23 pasan, 0 caen, 0 saltos |
+| Las 3 mutaciones declaradas, con la base sin mutar verde primero | 3 caen de 3, cada una en el caso que nombra |
+| Contra producción | NO corrido |
+
+El panel falso valida el alta del cliente con `customerCreateSchema` y la del trabajo con
+`datosDeTrabajoDirecto`, los dos de `dist/`: que el servidor acepta un cliente sin número lo dice su
+propio validador. Lo que el test no dice: qué devuelve de verdad `GET /admin/customers/:id` en
+producción. La forma (`mobile`, `phone`) está leída en `src/modules/system/customerAdmin.ts`.
+
+## Lo que sigue fuera, con su motivo
+
+| Caso | Por qué no entra |
+|---|---|
+| Una factura en la cuenta QA | Camino fiscal. Del fundador. |
+| Un parte con dictado no respaldado | Sale de la IA del dictado, no de una escritura que se pueda fijar. |
+| Una sesión de operario | Es una cuenta, no un dato. |
+| Firma por enlace público | Manda algo a un tercero; las rutas de envío están prohibidas en el sembrador. |
+
+## Error propio
+
+El primer nombre que le puse al cliente fue «Cliente de pruebas QA sin móvil», que CONTIENE el del
+cliente de base. La búsqueda del panel es por subcadena: buscar el de base habría devuelto los dos.
+Hoy `sembrar-qa.mjs` filtra por nombre exacto y no habría fallado, pero dependía de eso. Cambiado
+antes de empujar; el último caso del test fija que ningún nombre contiene al otro.
