@@ -174,6 +174,41 @@ Lo que este control NO cubre: un guard que lea el TEXTO de los comentarios de es
 código) podría moverse y el control no lo vería. Los ocho ficheros de arriba y los de entrada son los que
 se corrieron; el resto lo dirá el CI.
 
+## Ⓙ El esquema: por qué se pudo tocar, y con qué permiso
+
+`prisma/schema.prisma` es regla 40 del máster («no se toca sin ALTER previo»), una de las tres no
+negociables. Y el mismo máster ordena corregir este comentario y nombra ese fichero. Las dos cosas apuntan
+en direcciones distintas, así que **no lo interpretó la sesión ni el orquestador: se le preguntó al
+fundador.**
+
+**Autorización expresa del fundador, 2-oct-2026: literal «1-Sí». Consta en SCRUM-1400 c.18035**, que he
+leído en Jira antes de escribir esto. Decidió con la frase de hoy y con la medición delante.
+
+**Qué cubre, copiado de c.18035:** añadir líneas de comentario `//` al bloque de `QuoteAssignee` e
+`InvoiceAssignee`, en su propio commit, el último y separado, para que se pueda revertir solo. **Qué NO:**
+ninguna línea de modelo, ningún campo, ninguna `///`; no se borra la frase; y no se extiende a otros
+comentarios del esquema (los de SCRUM-1401 se preguntan aparte).
+
+**Por qué no hay ALTER: porque no hay nada que alterar.** Medido contra el esquema de `7779b0cb`:
+
+| medición | resultado |
+|---|---|
+| el diff del esquema | 6 líneas añadidas, 0 quitadas, las 6 empiezan por `//` |
+| el esquema sin sus líneas enteras de comentario `//` | idéntico antes y después: 1.128 líneas, mismo sha256 |
+| líneas añadidas con triple barra `///` | 0 |
+| `node scripts/preview-migracion.mjs --desde <esquema de main>` | «sin cambios pendientes», con su control positivo (33 tablas) |
+
+**La diferencia entre `//` y `///` es lo que hace que «sólo comentarios» esté comprobado y no supuesto.**
+En Prisma, `//` es un comentario y no sale del fichero; `///` es documentación y **entra en el cliente
+generado**. Una línea `///` se vería en un diff igual que un comentario y cambiaría lo que se genera. Por
+eso el instrumento las cuenta aparte, y tiene un control que demuestra que las ve: sembrando una `///` el
+resultado cambia; sembrando una `//`, no.
+
+Salida: `docs/evidencias/scrum1400/control-2-con-el-esquema.salida.txt`.
+
+El fichero está en `.github/CODEOWNERS` y en `scripts/zona-roja.mjs`: el PR sale marcado como zona roja.
+Medido por el orquestador (c.18035): la protección de `main` no exige revisión del dueño.
+
 ## Ⓘ Mis errores de esta tanda
 
 1. **Sembré mal un control.** El de «un comentario más no cuenta» lo pegué al final del esquema y añadía,
