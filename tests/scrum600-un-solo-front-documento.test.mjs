@@ -51,6 +51,7 @@ import {
   F9_EN_EL_CATALOGO, faltaEnF9,
 } from './_censo-dos-fronts.mjs';
 import { extraerRanurasVisibles, ranurasDelDocumento, RANURAS_NO_DERIVABLES } from './_ranuras-documento.mjs';
+import { nombreEscrito } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -159,7 +160,8 @@ test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene q
 // falta) vive en `scrum598-el-margen-sale-del-documento.test.mjs`, que es el ticket que hizo la
 // mudanza. Aquí va lo que le toca a esta red: que F9 SIGUE ESTANDO.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
+test('SCRUM-600 · 🔴 F9 NO SE PIERDE: COSTE Y MARGEN EXISTEN EN EL PRODUCTO — en el CATÁLOGO, que es su casa desde CAT-01', (t) => {
+  nombreEscrito(t, `SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`);
   const falta = faltaEnF9({
     vista: leer(F9_EN_EL_CATALOGO.ficheros.vista),
     aritmetica: leer(F9_EN_EL_CATALOGO.ficheros.aritmetica),
