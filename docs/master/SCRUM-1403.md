@@ -137,6 +137,18 @@ obligatorio, contra `postgres:16` y sobre el merge.**
   elegidos por tocar rutas de presupuesto o cliente como Técnico, más scrum237, scrum409 y scrum836: 97
   casos, 0 caen, 2 saltos.
 
+- **Tras mezclar `main` (`5d7aaebc`, sin conflictos; entró SCRUM-1400 en `quotesAdmin.routes.ts`):**
+  build, mi test 6 de 6, el de 1397 5 de 5, la sonda de J2a igual que arriba, `npm run guards:entrada`
+  12 guards y 152 casos en verde, y 18 ficheros más de uno en uno (los censos de tenencia y de origen,
+  scrum267, scrum1294, scrum419, scrum55, scrum411, scrum525d, scrum854, scrum836, scrum237, scrum409 y
+  los cuatro que piden la ficha de cliente con dobles): 165 casos, 0 caen.
+- **Un rojo MÍO que la lista «los que nombran mis ficheros» no veía**, y lo cazó elegir a mano los
+  censos: `scrum289` («todo sitio que ata una factura a su origen está CENSADO») cayó porque metí el
+  recorte en la ficha de cliente con un `...spread`, y el censo lee el `where` del texto: el fichero lo
+  avisaba dos líneas más abajo. Arreglado en el código (el recorte va como `AND:` dentro del `where`
+  literal, `undefined` para quien ve todo), no en el censo. Es justo la clase de rojo que la dirigida
+  habría enseñado y que hoy queda para el obligatorio: puede haber otro igual que yo no haya elegido.
+
 **NO corrido, y por qué:**
 
 - **La dirigida** (`node scripts/tests-que-cubren.mjs`: 304 ficheros de 1.202). Decisión del

@@ -541,18 +541,23 @@ router.get('/:id/detail', async (req, res) => {
     const [recortePresupuestos, recorteFacturas] = await Promise.all([
       wherePresupuestosVisibles(quien), whereFacturasVisibles(quien),
     ]);
+    // Van como `AND: [...]` dentro de un `where` LITERAL (los censos de tenencia y de origen leen el
+    // filtro del texto: un `...spread` los deja ciegos). `undefined` = Prisma no recibe el `AND`:
+    // la consulta de quien ve todo el negocio es la de siempre.
+    const soloSusPresupuestos = recortePresupuestos ? [recortePresupuestos] : undefined;
+    const soloSusFacturas = recorteFacturas ? [recorteFacturas] : undefined;
 
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
     const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente, garantias] = await Promise.all([
       prisma.quote.findMany({
-        where: { customerId: id, merchantId: req.merchantId, ...(recortePresupuestos ? { AND: [recortePresupuestos] } : {}) },
+        where: { customerId: id, merchantId: req.merchantId, AND: soloSusPresupuestos },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, quoteNumber: true, status: true, total: true, currency: true, createdAt: true, acceptedAt: true },
       }),
       prisma.invoice.findMany({
-        where: { customerId: id, merchantId: req.merchantId, ...(recorteFacturas ? { AND: [recorteFacturas] } : {}) },
+        where: { customerId: id, merchantId: req.merchantId, AND: soloSusFacturas },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, number: true, status: true, total: true, currency: true, createdAt: true, paidAt: true, pdfUrl: true },
