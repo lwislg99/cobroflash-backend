@@ -890,10 +890,12 @@ async function confirmarCierreConFirmasSinSubir() {
   }
   // SCRUM-1383 · se cuentan DESPUÉS del intento: el propio intento puede crear el rechazo.
   const rechazadas = await firmasRechazadasAlCerrar();
-  const texto = textoAlCerrarSesion(n, rechazadas);
-  if (!texto) return true;
   if (typeof window.confirm !== 'function') return true;
-  return !!window.confirm(texto);
+  // Una pregunta por cosa, y a la primera que diga que no, no se cierra ni se borra nada.
+  for (const texto of preguntasAlCerrarSesion(n, rechazadas)) {
+    if (!window.confirm(texto)) return false;
+  }
+  return true;
 }
 
 // ── SCRUM-1383 · CERRAR SESIÓN CON FIRMAS QUE EL SERVIDOR RECHAZÓ ──────────────────────────────
@@ -903,12 +905,15 @@ async function confirmarCierreConFirmasSinSubir() {
 // ANTES: sin esto, una firma que no está en el servidor desaparecía del móvil sin que nadie lo dijera.
 
 /**
- * 🔴 PENDIENTE DE FIRMA (SCRUM-1383): devuelve `null`, y con `null` NO se pregunta por las
- * rechazadas (se cierra como hasta hoy). El literal entra aquí cuando lo firme el fundador; lleva
- * también el caso combinado (`sinSubir` > 0), porque va UNA pregunta y no dos.
+ * Textos aprobados por el orquestador por delegación del fundador, 2-oct-2026 — SCRUM-1383
+ * comentario 18204. «Este aviso desaparece», y no «se borra la firma»: la firma ya está perdida (el
+ * servidor la rechazó); lo que se va al cerrar es la constancia de que ocurrió. No dice QUÉ
+ * documento: la constancia sólo lleva el id interno.
  */
-function textoFirmasRechazadasAlCerrar(_rechazadas, _sinSubir) {
-  return null;
+function textoFirmasRechazadasAlCerrar(n) {
+  return n === 1
+    ? '1 firma no se ha podido registrar y hay que volver a pedirla. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?'
+    : `${n} firmas no se han podido registrar y hay que volver a pedirlas. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?`;
 }
 
 /**
@@ -930,13 +935,19 @@ async function firmasRechazadasAlCerrar() {
   }
 }
 
-/** El texto de la ÚNICA pregunta, o `null` si no hay nada cierto que preguntar. */
-function textoAlCerrarSesion(sinSubir, rechazadas) {
-  if (rechazadas) {
-    const texto = textoFirmasRechazadasAlCerrar(rechazadas, sinSubir || 0);
-    if (texto) return texto;
-  }
-  return sinSubir ? textoFirmasSinSubirAlCerrar(sinSubir) : null;
+/**
+ * Las preguntas del cierre, EN ORDEN; vacío si no hay nada cierto que preguntar.
+ *
+ * Son DOS seguidas y no una combinada (SCRUM-1383 c.18204): una frase con las dos cifras tendría
+ * que ser cierta en cuatro variantes de singular y plural, y dos preguntas reutilizan texto ya
+ * firmado. Primero las SIN SUBIR, donde cerrar destruye algo que aún se puede salvar; las
+ * rechazadas, sólo si a la primera dijo que sí.
+ */
+function preguntasAlCerrarSesion(sinSubir, rechazadas) {
+  const preguntas = [];
+  if (sinSubir) preguntas.push(textoFirmasSinSubirAlCerrar(sinSubir));
+  if (rechazadas) preguntas.push(textoFirmasRechazadasAlCerrar(rechazadas));
+  return preguntas;
 }
 
 async function logout() {

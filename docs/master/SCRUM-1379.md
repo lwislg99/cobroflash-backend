@@ -193,3 +193,85 @@ y asignados por su función. Cada ruta lleva su suelo: con un id que cabe, consu
 - **`POST /admin/maintenance` no tiene test por la ruta:** va tras un flag de merchant y el esquema no
   se exporta. Lleva el techo y compila.
 - Los ids dentro de las LÍNEAS de un documento (`productId` de una línea, p. ej.) no se han abierto.
+
+---
+
+## Cuarta tanda (2-oct) · las líneas de los handlers que emiten — 8 de las 11
+
+**Medido contra:** `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` · 2026-10-02T16:57:37Z
+
+A9: sin fallo que generalice — el tropiezo fue de mi sonda de pantalla (dos avisos repetidos que el observador no vio); se repitió aislado y está contado abajo
+
+Sesión S1 (`s1-2octe`) · rama `scrum-1379d-id-en-rutas-que-emiten`.
+
+**La autorización, y quién la relata:** autorizado por el fundador el 2-oct-2026 («decide tú», respondiendo
+a la lista literal de las 11 líneas y las cuatro rutas), con el alcance congelado. **La relata el
+orquestador en su encargo a esta sesión; el fundador no la escribió en el ticket.** El alcance:
+sólo `Number.isInteger(x)` → `cabeEnColumnaInt(x)` en la misma línea; nada se mueve, nada se exporta,
+ninguna firma cambia, ningún helper se extrae.
+
+**Hechas (8), y el diff son 8 líneas quitadas y 8 puestas:** `jobs.routes.ts` `collect-rest` (id) y
+`consolidar-albaranes` (id y `albaranIds`) · `albaranes.routes.ts` `POST /consolidar` (`customerId` y
+`albaranIds`) y `findAlbaran` (id) · `quotesAdmin.routes.ts` `/:id/invoice` y `/:id/invoice-manual` (id).
+Los tres ficheros ya importaban el helper desde la primera tanda.
+
+**🔴 NO hechas (3): `dev.routes.ts`.** Ese fichero no importa el helper: cambiar sus tres líneas exige
+AÑADIR una línea de `import`, y eso ya no es «la misma línea». Se paró y se dice. Siguen con
+`Number.isInteger`; además `sim/fail/:id` y `sim/expire/:id` de ese fichero no validan el id de ninguna forma.
+
+**Cambio de conducta, dicho:** en las dos consolidaciones `albaranIds` pasa por un FILTRO, no por un
+rechazo: lo que no es un id se descarta y la selección sigue con el resto (ya era así con `abc`). Un id
+que no cabe corría antes a la base (500); ahora corre la suerte de `abc`. Mezclado con un id bueno, la
+selección sigue con el bueno. Ningún texto nuevo: los códigos son los que cada ruta ya daba.
+
+### Test — `tests/scrum1379d-id-en-rutas-que-emiten.test.mjs` (19 casos)
+
+Sólo LEE el camino: los handlers de `dist/` con la base doblada (la de `scrum1379b`). **Ningún caso emite:**
+la base contesta «no existe» y cada ruta se corta en su 404. Siete rutas por la URL (las cuatro de arriba
+y tres de las que pasan por `findAlbaran`: `facturar-parcial`, `convertir-en-factura`, `PATCH /:id`), cada
+una con su suelo (`-1`, `0`, `2147483647` consultan y dan 404), y los ids del cuerpo de las dos consolidaciones.
+
+| Mutante (sobre `dist`, UNA línea cada vez vuelve a `Number.isInteger`; comprobado que cambia el fichero) | Resultado (BASE 19/19) |
+|---|---|
+| `collect-rest` (id) | 1 rojo, el suyo |
+| `consolidar-albaranes` (id) | 1 rojo, el suyo |
+| `consolidar-albaranes` (`albaranIds`) | 2 rojos, los suyos |
+| `/consolidar` (`customerId`) | 1 rojo, el suyo |
+| `/consolidar` (`albaranIds`) | 1 rojo, el suyo |
+| `findAlbaran` (id) | 3 rojos: las tres rutas que pasan por él |
+| `/:id/invoice` (id) | 1 rojo, el suyo |
+| `/:id/invoice-manual` (id) | 1 rojo, el suyo |
+
+Restaurado: 19/19.
+
+### Visto en yaqu.app (2-oct, cuenta QA, merchant 46, `/version` = `eca8566d`) — las tandas 1.ª y 2.ª
+
+Navegador real (Playwright), con todo lo que no es `GET` abortado y su control positivo antes de medir
+(un `POST` de prueba salió «abortada»). Se abre la ficha por su dirección (`#vista/id`):
+
+| Dirección | Respuesta del servidor | Lo que se ve |
+|---|---|---|
+| `#quotes-detail/204` (control: existe) | 200 | la ficha |
+| `#quotes-detail/2147483647` (control: cabe, no existe) | 404 | lista + «Ese presupuesto ya no existe.» |
+| `#quotes-detail/99999999999999999999`, `/10000000000`, `/1.5` | 400 | lista + «Ese presupuesto ya no existe.» |
+| `#jobs-detail/99999999999999999999` | 400 | lista + «Ese trabajo ya no existe.» |
+| `#parte-detail/99999999999999999999` | 400 | lista + «Ese parte ya no existe.» |
+| `#albaran-detail/99999999999999999999` | 400 | lista + «Ese albarán ya no existe.» |
+| `#invoice-detail/99999999999999999999` (J1, sólo observado) | **500** | lista + «Esa factura ya no existe.» |
+| `#customer-360/99999999999999999999` (J2, sólo observado) | **500** | lista + «Ese cliente ya no existe.» |
+
+**🔴 Lo que esta medición NO distingue, y se dice:** la pantalla enseña el mismo aviso con un 400 y con un
+500 (`abrirFichaDesdeHash` no mira el código, a propósito: «no existe» y «no es tuyo» responden igual).
+Quien abría una dirección con un id enorme YA veía «no existe» antes del arreglo. Lo que cambió está en
+el servidor (500 → 400), no en lo que se ve. Y las fichas de factura y de cliente siguen dando 500.
+
+**Error propio:** en la primera pasada dos casos salieron «sin aviso». No era la pantalla: el aviso era
+el mismo texto que el del caso anterior, 2,5 s antes, y mi observador sólo apunta nodos nuevos.
+Repetidos aislados y con 7 s entre ellos, el aviso sale en los dos. Nada escrito en producción.
+
+### Lo que NO está hecho
+
+- `dev.routes.ts` (3 líneas): arriba.
+- Esta cuarta tanda **no está vista en yaqu.app**: sus rutas son `POST` que emiten, y no se pulsan en producción.
+- Las otras cuatro rutas que pasan por `findAlbaran` (`emitir`, `duplicar`, `firmar`, `fotos`, envíos) no tienen caso propio: comparten la línea.
+- Siguen abiertos: `CreateQuoteSchema`, los ids de las LÍNEAS de un documento, y los 500 de J1 y J2.
