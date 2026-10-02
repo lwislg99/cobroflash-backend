@@ -1,9 +1,10 @@
 // tests/scrum1252-evidencias-libro-solo-facturas.test.mjs — SCRUM-1252 · el libro que va DENTRO del
 // paquete de evidencias son las FACTURAS; el 303 del mismo paquete no se mueve.
 //
-// ⚠️ PROPUESTO, NO ENCHUFADO. Vive en `docs/master/evidencias/SCRUM-1252/` porque HOY sale rojo
-// (2 de 4) y un test rojo no entra en `tests/`. Quien aplique la línea de `paquete.repo.ts` (J1) lo
-// copia a `tests/` con el nombre de la primera línea: las rutas relativas cuentan con estar ahí.
+// ⚠️ PROPUESTO, NO ENCHUFADO. Vive en `docs/master/evidencias/SCRUM-1252/` con extensión `.txt` porque
+// HOY sale rojo (2 de 4): un test rojo no entra en `tests/`, y un `.mjs` que registra tests fuera de
+// `tests/` lo caza el guard de SCRUM-708. Quien aplique la línea de `paquete.repo.ts` (J1) lo copia a
+// `tests/` con el nombre de la primera línea (y SIN el `.txt`): las rutas relativas cuentan con estar ahí.
 //
 // De los tres sitios que nombraba el ticket, sólo éste quedaba vivo (comentarios 17451 y 17452):
 // la lista de Facturas estaba bien y la pantalla de Informes es «lo que va al 303». El paquete de
