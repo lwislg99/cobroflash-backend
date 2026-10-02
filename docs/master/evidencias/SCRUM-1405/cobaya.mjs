@@ -68,11 +68,34 @@ const CELDAS = [
   // El veredicto, sin mezcla: UNA copia con el rojo en el último caso. Si el caso rojo se pierde, no
   // queda ningún otro rojo de caso en el TAP: ¿sale la pasada con 0?
   { id: 'Q-con-rojo-en-la-cola-una-copia', flag: true, ...GRANDE, copias: 1, rojoEn: 80 },
+  // Lo que el flag COMPRA (docs/QA/SUITE_REGRESION.md, punto 2): un test que cae ANTES de cerrar lo
+  // que abrió deja el proceso vivo. Un caso, un servidor http, un rojo antes del close(). Sin el flag
+  // se espera que NO termine (tope 20 s y se mata: salida «señal»); con el flag, que salga con 1.
+  // Pocas pasadas: cada una que se cuelga deja un proceso huérfano hasta que acaba el job.
+  { id: 'R-sin-rojo-que-deja-un-servidor', flag: false, casos: 1, relleno: 0, copias: 1, modo: 'servidor', tope: 20_000, maxPasadas: 3 },
+  { id: 'S-con-rojo-que-deja-un-servidor', flag: true, casos: 1, relleno: 0, copias: 1, modo: 'servidor', tope: 20_000, maxPasadas: 3 },
   { id: 'P-con-pequena-sonda', flag: true, casos: 10, relleno: 0, copias: 4, modo: 'sinc', sonda: true },
 ].filter((c) => !SOLO || SOLO.includes(c.id.split('-')[0]));
 
 // ── la plantilla de la cobaya ─────────────────────────────────────────────────────────────
 function fuenteDeLaCobaya({ copia, casos, relleno, modo, rojoEn = 0, cortaEn = 0 }) {
+  if (modo === 'servidor') {
+    return [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "import fs from 'node:fs';",
+      "import http from 'node:http';",
+      'const TESTIGO = process.env.COBAYA_TESTIGO;',
+      `test('cobaya ${copia} caso 001 abre un servidor y cae antes de cerrarlo', async () => {`,
+      `  fs.appendFileSync(TESTIGO, '${copia} 001\\n');`,
+      '  const servidor = http.createServer(() => {});',
+      "  await new Promise((r) => servidor.listen(0, '127.0.0.1', r));",
+      "  assert.equal(1, 2, 'rojo sembrado antes de cerrar');",
+      '  servidor.close();',
+      '});',
+      '',
+    ].join('\n');
+  }
   const asinc = modo === 'asinc';
   return [
     "import test from 'node:test';",
@@ -160,7 +183,7 @@ function pasadaDeCelda(celda, i) {
   }
   const args = ['--test', ...(celda.flag ? ['--test-force-exit'] : []), '--test-reporter=tap', `--test-reporter-destination=${tap}`, ...ficheros];
   const t0 = Date.now();
-  const r = spawnSync(process.execPath, args, { cwd: base, env: entornoLimpio(extra), timeout: 180_000, windowsHide: true });
+  const r = spawnSync(process.execPath, args, { cwd: base, env: entornoLimpio(extra), timeout: celda.tope ?? 180_000, killSignal: 'SIGKILL', windowsHide: true });
   const ms = Date.now() - t0;
 
   const declarados = [];
@@ -225,7 +248,7 @@ console.log(`POBLACIÓN · node ${process.version} · ${process.platform} · ${o
 const filas = [];
 const filasReales = [];
 for (let i = 1; i <= PASADAS; i++) {
-  for (const celda of CELDAS) filas.push(pasadaDeCelda(celda, i));
+  for (const celda of CELDAS) if (i <= (celda.maxPasadas ?? Infinity)) filas.push(pasadaDeCelda(celda, i));
   for (const f of REALES) for (const flag of [true, false]) filasReales.push(pasadaDeReal(f, flag, i));
 }
 pararCargas();
