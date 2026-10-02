@@ -105,3 +105,4 @@ Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el c
 Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se queda sin juzgar. (SCRUM-1336)
 Un test que saca el handler de su ruta prueba el handler, no la ruta: sigue verde con el gate puesto y con el gate quitado. (SCRUM-1344)
 Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de pedir una medición se lee el ticket entero, comentarios incluidos. (SCRUM-1398)
+Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con sus artefactos. (SCRUM-1384)
