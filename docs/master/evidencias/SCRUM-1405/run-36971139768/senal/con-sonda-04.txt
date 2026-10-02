@@ -1,0 +1,12 @@
+
+[señal de nombres v1] medible=si ausentes=0 ficheros_con_ausentes=0 dudosos=2 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10300 tap_fail=8
+  POBLACIÓN: 1206 ficheros de tests/ · 9762 llamadas test()/it() (censo de SCRUM-708: 9762, coincide) · 9643 con nombre literal (9514 distintos)
+  PUNTO CIEGO: 119 llamadas NO se comparan (119 con el nombre construido, 0 sin nombre) en 68 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 129 nombres declarados más de una vez (129 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2620954 caracteres · 10300 líneas de test · 0 de suite · resumen: tests 10300 · fail 8 · entero
+  🟠 DUDOSOS: faltan 2 apariciones de 2 nombre(s) repetido(s), y el TAP no dice de qué fichero:
+     «el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «la pasada le da al clasificador el dato del auto-merge» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+
+::notice title=señal de nombres · 2 DUDOSO(S)::[señal de nombres v1] medible=si ausentes=0 ficheros_con_ausentes=0 dudosos=2 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10300 tap_fail=8
+::warning title=señal de nombres · dudosos::faltan 2 apariciones de 2 nombre(s) repetido(s): «el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «la pasada le da al clasificador el dato del auto-merge» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs)
