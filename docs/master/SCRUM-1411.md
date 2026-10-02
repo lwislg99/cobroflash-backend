@@ -44,3 +44,11 @@ sale el 33; no he tocado el guard. Se lo paso al orquestador para el equipo de J
 Ninguno propio que haya visto en este cambio. Lo que no he mirado: si hay OTROS guards del equipo de Javier
 que lean otros ficheros de la S0 sin que el fichero lo diga. `git grep` de `dos-equipos.md` en `tests/` y
 `scripts/` da cuatro ficheros; solo he leído cómo lo usa `scrum514`.
+
+## Añadido tras el merge (2-oct, rama `scrum-1372c-a10-y-notas-de-registro`)
+
+#2138 entró en `main` a las 11:39Z con el obligatorio en verde. **El `meta-guard` salió ROJO en este PR,
+que solo toca `docs/`**, en el paso «Cada guard cae con la mutación que declara». No lo he diagnosticado.
+Lo que sí medí: de los seis últimos PR mergeados con veredicto de ese check, tres lo traen rojo (#2132,
+#2135, #2138) y tres verde (#2137, #2139, #2140). Es informativo y no bloquea, pero un guard que se pone
+rojo con un cambio de documentación entrena a ignorarlo.
