@@ -120,7 +120,7 @@ Población del guard tras el lote: `ficheros=1211 llamadas=10032 literales=9997 
 | `scrum910-la-transferencia-que-no-mira` | 5 | 5 | 0 | idéntico |
 | `scrum910d-microcopy-recibo-pendiente` | 5 | 5 | 0 | idéntico |
 
-<<N>> comparados, 20 idénticos; 293 casos en total.
+20 comparados, 20 idénticos; 293 casos en total.
 
 Error propio: el conversor rechazó `scrum600` porque ya importaba `nombreEscrito` de
 `_casos-escritos.mjs` y daba por hecho que quien importa ese módulo importa `casosEscritos`. No
