@@ -201,3 +201,35 @@ El primer nombre que le puse al cliente fue «Cliente de pruebas QA sin móvil»
 cliente de base. La búsqueda del panel es por subcadena: buscar el de base habría devuelto los dos.
 Hoy `sembrar-qa.mjs` filtra por nombre exacto y no habría fallado, pero dependía de eso. Cambiado
 antes de empujar; el último caso del test fija que ningún nombre contiene al otro.
+
+# SCRUM-1367d · Las tres respuestas «leídas en `src/`», vistas en producción
+
+**Medido contra:** `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` · 2026-10-02T17:02Z
+
+A9: sin fallo que generalice — sólo registro: tres lecturas de producción con su fecha, sin código nuevo.
+
+Puesto S3 (s3-2octf). **Sólo lectura: tres GET con la cuenta QA, por `peticion` de
+`scripts/qa/sesion-panel.mjs`, que rechaza todo lo que no sea GET. Nada escrito ni sembrado.**
+Control positivo antes de medir: `GET /admin/me` → 200.
+
+Los tramos de arriba dejaron dicho que estas formas estaban leídas en `src/` y no vistas. Vistas el
+2-oct-2026 ~17:00Z:
+
+| Ruta | Lo que se había leído | Lo que devuelve producción |
+|---|---|---|
+| `GET /admin/customers/84` | ficha con `mobile` y `phone` | 200 · objeto plano (sin envoltorio), con `id`, `mobile` y `phone`; los dos `null` en el cliente #84 |
+| `GET /admin/albaranes` | `{ filas }` | 200 · `{ filas, contadores, ejes }`; cada fila lleva `id`, `numero`, `estado`, `jobId`, `clienteId` |
+| `GET /admin/partes` | `{ partes }` | 200 · `{ partes }`; cada parte lleva `id`, `jobId`, `estado` |
+
+Coincide con lo que leen las órdenes: `sin-movil` relee la ficha como objeto plano (`releido.id`) y
+`mismo-id` lee `filas` y `partes`.
+
+## Un dato para quien corra `mismo-id` cuando haya regla
+
+Ese día la cuenta QA tenía un albarán (id 46) y dos partes (ids 10 y 9). El contador de partes va por
+detrás del de albaranes: el caso ④ se alcanzaría creando partes, pero son bastantes más que uno. Es
+una foto de ese momento; la orden lo vuelve a medir al correr.
+
+## Lo que esto NO dice
+
+Que las ESCRITURAS de las órdenes funcionen en producción. Ninguna se ha corrido.

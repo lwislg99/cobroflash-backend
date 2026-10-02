@@ -4,8 +4,9 @@
 
 A9: aviso → A10 «Un carácter que no se ve no lo caza una revisión: lo caza un recuento.» — no se pudo comprobar: el error fue dar por entero un censo sin contar sus líneas, y que alguien cuente antes de escribir «entero» no lo vigila ningún guard.
 
-Puesto S3 (s3-2octe), por encargo del orquestador. Sólo `docs/`: no se toca `scrum237`, ni el suelo, ni
-`package.json`, ni `ci.yml`.
+Puesto S3 (s3-2octe), por encargo del orquestador. No se toca el suelo, ni `package.json`, ni `ci.yml`.
+De `scrum237` cambia sólo cómo escribe su censo (ver «El paliativo»); el diagnóstico de abajo se midió
+antes de ese cambio.
 
 ## La respuesta, en tres líneas
 
@@ -94,6 +95,41 @@ el fichero es de S5.
 
 Las dos últimas sólo se pueden comprobar en Linux bajo carga, es decir en el CI. No propongo gastar
 tandas en ellas mientras SCRUM-1405 esté sin decidir.
+
+## El paliativo: el censo en UNA escritura (autorizado por el orquestador, 2-oct ~16:40Z)
+
+Rama `scrum-1366b-censo-en-una-escritura`, aparte del diagnóstico (que entró por #2174). Toca
+`tests/scrum237-negacion-respaldada.test.mjs`. El censo se junta en una
+cadena y sale con un solo `process.stdout.write`. No cambia ninguna aserción ni el orden de la salida.
+La tercera salida de la tabla («después del informe») quedó descartada por el orquestador.
+
+| Comprobación | Antes | Después |
+|---|---|---|
+| Bytes del censo y su sha256 (salida normal) | 29.283 · `3c41f9817277b42e` | 29.283 · `3c41f9817277b42e` |
+| Bytes del censo y su sha256 (con `YAQU_LEDGER_NEGACIONES=1`) | 116.126 · `e10cbe7009f2b1b8` | 116.126 · `e10cbe7009f2b1b8` |
+| Tests que registra el fichero | 8 | 8 |
+| Con una negación sin respaldo sembrada en `tests/` (la de scrum73) | — | **cae**: 7 pasan, 1 cae, y nombra el fichero y la línea sembrados |
+| Retirado el fichero sembrado | — | 8 pasan |
+
+**Lo que esto NO prueba:** que el fichero deje de perder su informe en el CI. Eso depende de la
+hipótesis del corte por número de escrituras, que sigue sin probar, y sólo se ve contando
+avistamientos en tandas reales. Si la hipótesis es falsa, este cambio es inocuo y el fichero seguirá
+perdiendo su informe igual que antes. El chivato de SCRUM-1380 lo seguirá nombrando.
+
+**Cómo saber si sirvió:** `scrum237` dejando de salir como «CORRIÓ Y NO REPORTÓ» en el suelo de la
+tanda. Antes del cambio: 3 pérdidas en 5 corridas observadas el 1-oct. No hay cifra de después.
+
+### El primer empujón salió rojo (s3-2octf, 2-oct-2026 ~17:00Z)
+
+La tanda de `d8e22073` cayó con un solo test: el censo de cifras sin ancla de SCRUM-737 (`scrum737`).
+La causa no estaba en este registro (ese censo barre `tests/` y `scripts/`, no `docs/`): era el
+comentario que el paliativo añadió a `scrum237`, que decía cuántos tests tiene el fichero sin decir de
+cuándo es la cuenta. El censo pasaba de su valor congelado a uno más.
+
+Arreglo: el comentario se reformula sin número y remite aquí (escalón ② de la jerarquía de SCRUM-737).
+No se toca `scrum737` ni su censo congelado. Medido en local después: el censo vuelve a su valor
+congelado (ni sube ni baja) y `scrum737`, `scrum758` y `scrum237` pasan. Sólo cambia un comentario,
+así que la tabla de bytes de arriba sigue valiendo.
 
 ## Mis errores
 
