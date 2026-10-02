@@ -20,6 +20,7 @@ import { resolverNavegador, CANDIDATOS } from '../scripts/_navegador.mjs';
 import { esDeNavegador } from '../scripts/_solape-de-guards.mjs';
 // SCRUM-970 · la cifra de guards fuera de la tanda ya no se escribe aquí: se deriva de esta lista.
 import { DECLARADOS, diferencias } from './_guards-de-navegador-declarados.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PKG = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
@@ -367,26 +368,35 @@ test('SCRUM-522 · 🔴 EDGE_PATH puesta y rota NO cae hacia atrás a otro naveg
 // ③ LOS NUEVE, PORTADOS · y sin perder su propio suelo
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-for (const g of GUARDS) {
-  test(`SCRUM-522 · guard-${g} no lleva una ruta de Windows escrita a mano`, () => {
-    const src = fs.readFileSync(path.join(RAIZ, 'scripts', `guard-${g}.mjs`), 'utf8');
-    assert.ok(!src.includes("EDGE_PATH || 'C:/"),
-      '🔴 ha vuelto la ruta de Windows por defecto. Con eso este guard no puede correr en el\n'
-      + '  runner de CI, y volvería a figurar como cobertura sin serlo.');
-    // SCRUM-522 (2ª vuelta): son DOS puertas de entrada al módulo común y vale cualquiera, pero
-    // exactamente UNA. `rutaDelNavegador()` sólo resuelve; `lanzarNavegador()` resuelve Y arranca
-    // —y es la que además distingue «no arranca» (3) de «no lo encuentro» (2)—. El suelo no se
-    // relaja: las dos PARAN, así que ningún guard puede decir «no hay defectos» cuando lo que
-    // pasa es que no supo mirar. Lo que se prohíbe sigue siendo resolver por fuera del módulo.
-    const porRuta = src.split('rutaDelNavegador()').length - 1;
-    const porLanzar = src.split('lanzarNavegador(').length - 1;
-    assert.equal(porRuta + porLanzar, 1,
-      `🔴 ${g} entra al módulo común ${porRuta + porLanzar} veces (rutaDelNavegador: ${porRuta}, `
-      + `lanzarNavegador: ${porLanzar}); tiene que ser exactamente 1.\n`
-      + '  Ahí está su suelo: las dos PARAN si no hay navegador, así que ningún guard puede\n'
-      + '  llegar a decir «no hay defectos» cuando lo que pasa es que no supo mirar.');
-  });
-}
+const caso2 = casosEscritos(GUARDS, (g) => `SCRUM-522 · guard-${g} no lleva una ruta de Windows escrita a mano`, (g) => {
+  const src = fs.readFileSync(path.join(RAIZ, 'scripts', `guard-${g}.mjs`), 'utf8');
+  assert.ok(!src.includes("EDGE_PATH || 'C:/"),
+    '🔴 ha vuelto la ruta de Windows por defecto. Con eso este guard no puede correr en el\n'
+    + '  runner de CI, y volvería a figurar como cobertura sin serlo.');
+  // SCRUM-522 (2ª vuelta): son DOS puertas de entrada al módulo común y vale cualquiera, pero
+  // exactamente UNA. `rutaDelNavegador()` sólo resuelve; `lanzarNavegador()` resuelve Y arranca
+  // —y es la que además distingue «no arranca» (3) de «no lo encuentro» (2)—. El suelo no se
+  // relaja: las dos PARAN, así que ningún guard puede decir «no hay defectos» cuando lo que
+  // pasa es que no supo mirar. Lo que se prohíbe sigue siendo resolver por fuera del módulo.
+  const porRuta = src.split('rutaDelNavegador()').length - 1;
+  const porLanzar = src.split('lanzarNavegador(').length - 1;
+  assert.equal(porRuta + porLanzar, 1,
+    `🔴 ${g} entra al módulo común ${porRuta + porLanzar} veces (rutaDelNavegador: ${porRuta}, `
+    + `lanzarNavegador: ${porLanzar}); tiene que ser exactamente 1.\n`
+    + '  Ahí está su suelo: las dos PARAN si no hay navegador, así que ningún guard puede\n'
+    + '  llegar a decir «no hay defectos» cuando lo que pasa es que no supo mirar.');
+});
+test('SCRUM-522 · guard-contraste no lleva una ruta de Windows escrita a mano', caso2(0));
+test('SCRUM-522 · guard-caja-avisos no lleva una ruta de Windows escrita a mano', caso2(1));
+test('SCRUM-522 · guard-caja-semaforo no lleva una ruta de Windows escrita a mano', caso2(2));
+test('SCRUM-522 · guard-cls-barra-anuncio no lleva una ruta de Windows escrita a mano', caso2(3));
+test('SCRUM-522 · guard-primera-pantalla no lleva una ruta de Windows escrita a mano', caso2(4));
+test('SCRUM-522 · guard-vias-de-cobro no lleva una ruta de Windows escrita a mano', caso2(5));
+test('SCRUM-522 · guard-aviso-bizum no lleva una ruta de Windows escrita a mano', caso2(6));
+test('SCRUM-522 · guard-a11y-comparativa no lleva una ruta de Windows escrita a mano', caso2(7));
+test('SCRUM-522 · guard-a11y-landing no lleva una ruta de Windows escrita a mano', caso2(8));
+test('SCRUM-522 · guard-objetivo-tactil no lleva una ruta de Windows escrita a mano', caso2(9));
+caso2.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // ⑤ SCRUM-522, 2ª VUELTA · LO QUE EL CI ENSEÑÓ Y ESTE FICHERO NO VIGILABA

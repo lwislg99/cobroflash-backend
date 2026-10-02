@@ -79,6 +79,57 @@ fichero del lote: `scrum1321` PUERTA 1b (el temporal de esta máquina está en o
 repo), `scrum804` ×2 (una rama remota que el censo no ve, estado del clon) y `scrum854` (pedía
 este registro, que aún no estaba escrito). El juez es el CI.
 
+# SCRUM-1416b · Lote 2 — el resto de los bucles de UNA sentencia
+
+**Medido contra:** `origin/main` = `b06d474d32e59e2bb04b62fa7fcaf5c3c84fb486` · 2026-10-02T12:54Z
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+Rama `scrum-1416b-nombres-construidos-lote-2`, apilada sobre la del lote 1. Mismo método y mismo
+control: conversión por AST, literales sacados del TAP de ANTES, y conjunto de nombres comparado
+corriendo cada fichero.
+
+| | sitios de nombre construido | en ficheros |
+|---|---|---|
+| antes del lote (tras el lote 1) | 64 | 33 |
+| después del lote | **35** | 13 |
+
+29 bucles convertidos en 20 ficheros → **146 casos** con su nombre literal.
+Población del guard tras el lote: `ficheros=1211 llamadas=10032 literales=9997 construidas=35 en_ficheros=13 lista=35 en_ficheros=13`.
+
+| fichero | casos antes | casos después | fail después | conjunto de nombres |
+|---|---|---|---|---|
+| `scrum1354-dueno-de-la-marca` | 13 | 13 | 0 | idéntico |
+| `scrum1360-caja-albaran-firma-de-parte` | 7 | 7 | 0 | idéntico |
+| `scrum1362-cargador-de-defectos-del-viaje` | 13 | 13 | 0 | idéntico |
+| `scrum1388-facturas-recibidas-literales-firmados` | 11 | 11 | 0 | idéntico |
+| `scrum176-guard-mensaje` | 26 | 26 | 0 | idéntico |
+| `scrum384-min-height-locales` | 9 | 9 | 0 | idéntico |
+| `scrum386-hojas-fuera` | 13 | 13 | 0 | idéntico |
+| `scrum454-destructivo-sin-comprobacion` | 41 | 41 | 0 | idéntico |
+| `scrum522-guards-fuera-de-la-tanda` | 26 | 26 | 0 | idéntico |
+| `scrum542-objetivo-tactil` | 14 | 14 | 0 | idéntico |
+| `scrum562-arbitro-de-toque` | 16 | 16 | 0 | idéntico |
+| `scrum600-un-solo-front-documento` | 14 | 14 | 0 | idéntico |
+| `scrum605-atajos-vencimiento` | 15 | 15 | 0 | idéntico |
+| `scrum630-default-en-dias` | 19 | 19 | 0 | idéntico |
+| `scrum643-zona-del-merchant` | 10 | 10 | 0 | idéntico |
+| `scrum885-documento-sin-enviar` | 14 | 14 | 0 | idéntico |
+| `scrum893-solo-lo-que-puede-cobrar` | 8 | 8 | 0 | idéntico |
+| `scrum905-facturar-solo-si-se-puede` | 14 | 14 | 0 | idéntico |
+| `scrum910-la-transferencia-que-no-mira` | 5 | 5 | 0 | idéntico |
+| `scrum910d-microcopy-recibo-pendiente` | 5 | 5 | 0 | idéntico |
+
+20 comparados, 20 idénticos; 293 casos en total.
+
+Error propio: el conversor rechazó `scrum600` porque ya importaba `nombreEscrito` de
+`_casos-escritos.mjs` y daba por hecho que quien importa ese módulo importa `casosEscritos`. No
+escribió nada (lanza antes de tocar el fichero); se añadió el nombre al import a mano y se volvió a
+pasar. Lo impide el propio guard: una llamada que se queda sin convertir sigue en `DECLARADAS` y la
+mitad ② cae si la lista dice otra cosa.
+
+Quedan 13 ficheros a mano (bucles con varios `test()` o con sentencias compartidas, uno anidado y
+uno dentro de un bloque): lote 3.
 ### Añadido al lote 1 · tres sitios que entraron en `main` a la vez que el guard
 
 **Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:10Z

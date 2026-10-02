@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { leerDefectosDeclarados, defectosDeclarados, RUTA_DEFECTOS } from './_defectos-viaje-firma.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 function conFichero(contenido, fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1362-'));
@@ -47,16 +48,25 @@ const ROTOS = [
   ['con motivo de vacío y sin estar vacía', '{"defectos":{"a":"x"},"vacio_a_proposito":"ya no queda"}', /una de las dos cosas sobra/],
 ];
 
-for (const [caso, contenido, motivo] of ROTOS) {
-  test(`SCRUM-1362 · 🔴 ${caso}: el cargador dice que NO sabe, y por qué`, () => {
-    conFichero(contenido, (ruta) => {
-      const r = leerDefectosDeclarados(ruta);
-      assert.equal(r.ok, false, `«${caso}» se ha leído como bueno`);
-      assert.match(r.motivo, motivo);
-      assert.throws(() => defectosDeclarados(ruta), /CIEGO/, 'y para el test es un error, nunca una lista');
-    });
+const caso2 = casosEscritos(ROTOS, ([caso, contenido, motivo]) => `SCRUM-1362 · 🔴 ${caso}: el cargador dice que NO sabe, y por qué`, ([caso, contenido, motivo]) => {
+  conFichero(contenido, (ruta) => {
+    const r = leerDefectosDeclarados(ruta);
+    assert.equal(r.ok, false, `«${caso}» se ha leído como bueno`);
+    assert.match(r.motivo, motivo);
+    assert.throws(() => defectosDeclarados(ruta), /CIEGO/, 'y para el test es un error, nunca una lista');
   });
-}
+});
+test('SCRUM-1362 · 🔴 el fichero no existe: el cargador dice que NO sabe, y por qué', caso2(0));
+test('SCRUM-1362 · 🔴 no es JSON: el cargador dice que NO sabe, y por qué', caso2(1));
+test('SCRUM-1362 · 🔴 falta la sección: el cargador dice que NO sabe, y por qué', caso2(2));
+test('SCRUM-1362 · 🔴 la sección es una lista: el cargador dice que NO sabe, y por qué', caso2(3));
+test('SCRUM-1362 · 🔴 un valor vacío: el cargador dice que NO sabe, y por qué', caso2(4));
+test('SCRUM-1362 · 🔴 un valor que no es texto: el cargador dice que NO sabe, y por qué', caso2(5));
+test('SCRUM-1362 · 🔴 una clave repetida: el cargador dice que NO sabe, y por qué', caso2(6));
+test('SCRUM-1362 · 🔴 vacía sin motivo: el cargador dice que NO sabe, y por qué', caso2(7));
+test('SCRUM-1362 · 🔴 vacía con el motivo en blanco: el cargador dice que NO sabe, y por qué', caso2(8));
+test('SCRUM-1362 · 🔴 con motivo de vacío y sin estar vacía: el cargador dice que NO sabe, y por qué', caso2(9));
+caso2.todos();
 
 test('SCRUM-1362 · la lista vacía SÓLO vale con su motivo escrito', () => {
   conFichero('{"defectos":{},"vacio_a_proposito":"el último se arregló en SCRUM-0000"}', (ruta) => {
