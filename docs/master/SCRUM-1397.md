@@ -192,9 +192,29 @@ origen, 3 de la oficina). Lo puede correr quien tenga acceso de lectura a la bas
    fixture nacía sin sellar y el PDF de una factura propia dio 500). Es camino de emisión: lo reporto,
    no lo toco.
 
+### `scrum597` pasa, y su verde no dice nada sobre el recorte
+
+1. `tests/scrum597-asignar-usuario-al-documento.test.mjs` pasa 8 de 8 contra el `dist` de esta rama
+   (corrido a solas, un fichero, sin base). **Eso no dice nada sobre el recorte**: su doble de Prisma
+   contesta `invoice.findFirst` con la misma factura sea cual sea el `where`. La puerta pregunta, el
+   doble dice que sí, y el test no puede distinguir «la puerta filtra» de «la puerta no filtra».
+2. **Los únicos casos que ejercitan el recorte son los DOS con base de este ticket.** El recorte lo
+   sostienen dos casos, no diez. Los tres casos sin base vigilan que las rutas llamen a la puerta y lo
+   que ésta contesta sin consultar; no ejercitan el `where`.
+3. Consecuencia para quien venga: **si alguien rompe la puerta mañana, `scrum597` seguirá en verde.**
+   Y los dos casos con base saltan donde no haya `LIBRO_PG_URL`. Es un hueco de cobertura que no he
+   arreglado: el doble de `scrum597` no es de este ticket.
+
 ## Ⓖ Lo corrido
 
-Se rellena al final, con la tanda dirigida, el banco de mutaciones y el check obligatorio leído por nombre.
+**Corrido por mí, en local:** el fichero del ticket, 5 casos, 5 pasan, 0 caen, 0 saltos (los dos con
+base, contra PGlite); `scrum597` a solas, 8 de 8; la sonda de las otras puertas y el control del SELECT.
+
+**SIN CORRER al empujar, y lo hereda el relevo:** el banco de 18 mutaciones (`tests/banco-scrum1397/mutar.mjs`,
+escrito y sin ejecutar ni una vez: no se sabe si alguna sale viva o ciega), la tanda dirigida,
+`npm run guards:entrada` y la lectura del check obligatorio por nombre. Se empujó así por orden del
+orquestador, con el auto-merge desarmado, para que el trabajo no viviera sólo en un árbol. La línea
+`A9:` de arriba apunta a un banco que existe y que todavía no ha corrido.
 
 ## Ⓗ Mis errores de esta tanda
 
