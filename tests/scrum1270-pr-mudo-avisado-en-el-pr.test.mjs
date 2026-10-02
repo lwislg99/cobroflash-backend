@@ -18,6 +18,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { avisoEnElPR, UMBRAL_AVISO_EN_PR_HORAS } from '../scripts/vigia-atascados.mjs';
 import { cuerpoNoDebeDespertar } from '../scripts/puerta-avisador-rojo.mjs';
+import { nombreEscrito } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PASADA = path.join(RAIZ, 'scripts', 'vigia-pasada.mjs');
@@ -74,7 +75,8 @@ test('SCRUM-1270 · un conflicto cuyo obligatorio SÍ corrió no está mudo: no 
   assert.equal(avisoEnElPR({ fila: { numero: 1907, causa: 'DIRTY', sinPush: 16 }, sha: 'c'.repeat(40), checkRuns: CON_OBLIGATORIO, obligatorios: OBLIGATORIOS }), null);
 });
 
-test(`SCRUM-1270 · por debajo de ${UMBRAL_AVISO_EN_PR_HORAS} h no se avisa (la mayoría se resuelve sola)`, () => {
+test('SCRUM-1270 · por debajo de 3 h no se avisa (la mayoría se resuelve sola)', (t) => {
+  nombreEscrito(t, `SCRUM-1270 · por debajo de ${UMBRAL_AVISO_EN_PR_HORAS} h no se avisa (la mayoría se resuelve sola)`);
   assert.equal(avisoEnElPR({ fila: { numero: 1, causa: 'DIRTY', sinPush: UMBRAL_AVISO_EN_PR_HORAS - 0.1 }, sha: SHA_1943, checkRuns: SOLO_ABRIR_PR, obligatorios: OBLIGATORIOS }), null);
   assert.ok(avisoEnElPR({ fila: { numero: 1, causa: 'DIRTY', sinPush: UMBRAL_AVISO_EN_PR_HORAS }, sha: SHA_1943, checkRuns: SOLO_ABRIR_PR, obligatorios: OBLIGATORIOS }), 'justo en el umbral, sí');
 });

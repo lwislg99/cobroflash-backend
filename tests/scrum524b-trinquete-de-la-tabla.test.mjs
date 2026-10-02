@@ -37,6 +37,7 @@ import { execFileSync } from 'node:child_process';
 import { temporal } from './_temporal.mjs';
 import { evaluarTabla, validarCatalogo, informe, RAIZ_REPO } from '../scripts/tabla-verifactu.mjs';
 import { CATALOGO, POBLACION, FUERA_DEL_CATALOGO } from '../scripts/_tabla-verifactu-catalogo.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const CLI = path.join(RAIZ_REPO, 'scripts', 'tabla-verifactu.mjs');
 
@@ -265,26 +266,55 @@ const MUTACIONES = [
     caen: [], ausenciasCaen: ['1196'] },
 ];
 
-for (const m of MUTACIONES) {
-  test(`SCRUM-524b · 🔴 EL QUE DECIDE · ${m.que} → cae ${m.caen.length ? m.caen.join(', ') : 'NADA'}`, () => {
-    const original = leerReal(m.fichero);
-    assert.ok(original != null, `no existe ${m.fichero}`);
-    const veces = original.split(m.de).length - 1;
-    assert.equal(veces, m.apariciones ?? 1,
-      `la cobaya no existe: «${m.de}» aparece ${veces} veces en ${m.fichero}. Sin ella, este control no mide nada.`);
-    const mutado = original.replace(m.de, () => m.a);
-    assert.notEqual(mutado, original, 'la mutación no cambió nada');
-    const r = evaluarTabla({ leer: (rel) => (rel === m.fichero ? mutado : leerReal(rel)) });
-    assert.equal(r.ciego, null, `la copia mutada se declara ciega: ${r.ciego}`);
-    assert.deepEqual(caidas(r), [...m.caen].sort(),
-      `el trinquete tenía que nombrar ${JSON.stringify(m.caen)} y nombró ${JSON.stringify(caidas(r))}:\n${detalle(r)}`);
-    for (const c of m.caen) {
-      const fallos = [...r.rotas, ...r.fueraRotas].find((x) => (x.codigo ?? x.id) === c).fallos;
-      assert.ok(fallos.length && fallos.every((f) => f.startsWith('src/')), `${c} cae sin decir en qué fichero: ${fallos}`);
-    }
-    assert.deepEqual(r.ausenciasRotas.map((a) => a.codigo), m.ausenciasCaen ?? []);
-  });
-}
+const laQueDecide = casosEscritos(MUTACIONES, (m) => `SCRUM-524b · 🔴 EL QUE DECIDE · ${m.que} → cae ${m.caen.length ? m.caen.join(', ') : 'NADA'}`, (m) => {
+  const original = leerReal(m.fichero);
+  assert.ok(original != null, `no existe ${m.fichero}`);
+  const veces = original.split(m.de).length - 1;
+  assert.equal(veces, m.apariciones ?? 1,
+    `la cobaya no existe: «${m.de}» aparece ${veces} veces en ${m.fichero}. Sin ella, este control no mide nada.`);
+  const mutado = original.replace(m.de, () => m.a);
+  assert.notEqual(mutado, original, 'la mutación no cambió nada');
+  const r = evaluarTabla({ leer: (rel) => (rel === m.fichero ? mutado : leerReal(rel)) });
+  assert.equal(r.ciego, null, `la copia mutada se declara ciega: ${r.ciego}`);
+  assert.deepEqual(caidas(r), [...m.caen].sort(),
+    `el trinquete tenía que nombrar ${JSON.stringify(m.caen)} y nombró ${JSON.stringify(caidas(r))}:\n${detalle(r)}`);
+  for (const c of m.caen) {
+    const fallos = [...r.rotas, ...r.fueraRotas].find((x) => (x.codigo ?? x.id) === c).fallos;
+    assert.ok(fallos.length && fallos.every((f) => f.startsWith('src/')), `${c} cae sin decir en qué fichero: ${fallos}`);
+  }
+  assert.deepEqual(r.ausenciasRotas.map((a) => a.codigo), m.ausenciasCaen ?? []);
+});
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1130 · la validación de la serie sale del esquema → cae 1130', laQueDecide(0));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1130 · y de la otra puerta (app.ts) → cae 1130', laQueDecide(1));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1152 · /verifactu.xml deja de mirar el año → cae 1152', laQueDecide(2));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1189 · la factura sin NIF deja de pasar por el resolvedor → cae 1189', laQueDecide(3));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1189 · el resolvedor deja de excluir sin dictamen → cae 1189', laQueDecide(4));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1190 · `Destinatarios` se escribe siempre → cae 1190', laQueDecide(5));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1190 · la F2 nace por importe, con NIF → cae 1190', laQueDecide(6));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1114/1115/1117 · «es rectificativa» deja de mirar el tipo (un mecanismo, tres códigos) → cae 1114, 1115, 1117', laQueDecide(7));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1114 · la R1 deja de resolver su `TipoRectificativa` → cae 1114', laQueDecide(8));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1115 · una no rectificativa también resuelve `TipoRectificativa` → cae 1115', laQueDecide(9));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1117 · `FacturasRectificadas` se escribe siempre → cae 1117', laQueDecide(10));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1195 · `CalificacionOperacion` pasa a ser opcional → cae 1195', laQueDecide(11));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · aparece una calificación que no es S1 → cae 1207', laQueDecide(12));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica) → cae 1207', laQueDecide(13));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el arranque deja de comprobar el id del sistema → cae 1177', laQueDecide(14));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el validador deja de exigir 2 posiciones → cae 1177', laQueDecide(15));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1212 · UNA de las dos apariciones deja de ser fija → cae 1212', laQueDecide(16));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1213 · ídem → cae 1213', laQueDecide(17));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · ídem → cae 1226', laQueDecide(18));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223', laQueDecide(19));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124', laQueDecide(20));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · entra un tipo de IVA que no existe (15 %) → cae 1124', laQueDecide(21));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · tipos · el paquete anual deja de filtrar por tipo → cae tipos-declarables', laQueDecide(22));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01', laQueDecide(23));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119', laQueDecide(24));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000', laQueDecide(25));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000', laQueDecide(26));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA', laQueDecide(27));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA', laQueDecide(28));
+test('SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA', laQueDecide(29));
+laQueDecide.todos();
 
 // ── DE PUNTA A PUNTA: una COPIA en disco, por el CLI, con su código de salida ─────────────────
 

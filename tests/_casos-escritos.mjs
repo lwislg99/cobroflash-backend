@@ -23,6 +23,19 @@
 import assert from 'node:assert/strict';
 
 /**
+ * Un caso SUELTO cuyo nombre lleva dentro un dato (un umbral, una cifra medida): el nombre se
+ * escribe literal y el caso comprueba, lo primero, que sigue siendo el que sale del dato.
+ *
+ *     test('… por debajo de 3 h no se avisa', (t) => {
+ *       nombreEscrito(t, `… por debajo de ${UMBRAL} h no se avisa`);
+ */
+export function nombreEscrito(t, construido) {
+  assert.equal(t.name, construido,
+    '🔴 el nombre ESCRITO de este caso ya no es el que sale de su dato: cambió el dato y no el literal. '
+    + 'Corrige el literal: es lo que la señal por nombres busca en el TAP.');
+}
+
+/**
  * @param {readonly unknown[]} filas   la tabla
  * @param {(fila: any) => string} nombreDe   el nombre que el bucle le habría dado a esa fila
  * @param {(fila: any, t: any) => unknown} cuerpo   lo que el caso comprueba

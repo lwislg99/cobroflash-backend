@@ -55,8 +55,7 @@ function repoConVictima() {
 // 🔴 EL CONTROL QUE DECIDE — reproducir el caso EXACTO del incidente
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-774 · 🔴 EL PISOTÓN: checkout -b de OTRA sesión sobre un árbol con trabajo sin '
-  + 'commitear — con el guard YA ampliado, cae; documentado que ANTES no caía', () => {
+test('SCRUM-774 · 🔴 EL PISOTÓN: checkout -b de OTRA sesión sobre un árbol con trabajo sin commitear — con el guard YA ampliado, cae; documentado que ANTES no caía', () => {
   const dir = repoConVictima();
   const antes = spawnSync('git', ['status', '--porcelain'], { cwd: dir, encoding: 'utf8' }).stdout;
   assert.match(antes, /a\.sql/, '🔴 SUELO: la víctima tiene que tener algo sin commitear, o esto no reproduce nada');
@@ -92,8 +91,7 @@ test('SCRUM-774 · ✅ POSITIVO: checkout -b con el árbol LIMPIO no bloquea nad
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test('SCRUM-774 · ✅ NEGATIVO: cambiar a una rama YA EXISTENTE (sin -b) sigue sin bloquear, '
-  + 'aunque el árbol esté sucio — fuera de alcance a propósito (decisión del fundador)', () => {
+test('SCRUM-774 · ✅ NEGATIVO: cambiar a una rama YA EXISTENTE (sin -b) sigue sin bloquear, aunque el árbol esté sucio — fuera de alcance a propósito (decisión del fundador)', () => {
   const dir = repoConVictima();
   spawnSync('git', ['branch', 'otra-existente'], { cwd: dir });
   const r = veredicto('git checkout otra-existente', dir);
