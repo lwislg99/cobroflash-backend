@@ -26,7 +26,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { evaluar, tokenizar, acciones, coincide } from '../.claude/hooks/guard-dangerous.mjs';
-import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { temporal } from './_temporal.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const HOOK = path.join(AQUI, '..', '.claude', 'hooks', 'guard-dangerous.mjs');
@@ -67,14 +68,18 @@ const MENCIONES_QUE_DEBEN_PASAR = [
   ['un test que lleva el literal como dato', `node --test tests/x.mjs # ${FORCE}`],
 ];
 
-for (const [nombre, comando] of MENCIONES_QUE_DEBEN_PASAR) {
-  test(`SCRUM-454 · PASA (menciona, no ejecuta): ${nombre}`, () => {
-    assert.equal(bloquea(comando), false,
-      '🔴 FALSO POSITIVO: el guard bloquea un comando que solo LLEVA el literal dentro de un '
-      + 'argumento. Es el defecto que impedía leer la documentación de la propia barrera — y el '
-      + 'que hace que, a la tercera vez, alguien deje de verificarla.');
-  });
-}
+const caso1 = casosEscritos(MENCIONES_QUE_DEBEN_PASAR, ([nombre, comando]) => `SCRUM-454 · PASA (menciona, no ejecuta): ${nombre}`, ([nombre, comando]) => {
+  assert.equal(bloquea(comando), false,
+    '🔴 FALSO POSITIVO: el guard bloquea un comando que solo LLEVA el literal dentro de un '
+    + 'argumento. Es el defecto que impedía leer la documentación de la propia barrera — y el '
+    + 'que hace que, a la tercera vez, alguien deje de verificarla.');
+});
+test('SCRUM-454 · PASA (menciona, no ejecuta): medir el propio guard pasándole el comando como argumento', caso1(0));
+test('SCRUM-454 · PASA (menciona, no ejecuta): probar el propio guard con el JSON del tool call', caso1(1));
+test('SCRUM-454 · PASA (menciona, no ejecuta): BUSCAR LA REGLA EN EL RUNBOOK', caso1(2));
+test('SCRUM-454 · PASA (menciona, no ejecuta): imprimir la regla', caso1(3));
+test('SCRUM-454 · PASA (menciona, no ejecuta): un test que lleva el literal como dato', caso1(4));
+caso1.todos();
 
 // ── 1.b · Y LA MITAD QUE IMPORTA MÁS: lo que se invoca de verdad sigue cayendo ───────────────
 
@@ -92,14 +97,22 @@ const INVOCACIONES_QUE_DEBEN_BLOQUEAR = [
   ['la ruta con espacios va entrecomillada, el borrado no', 'rm -rf "D:/carpeta con espacios"'],
 ];
 
-for (const [nombre, comando] of INVOCACIONES_QUE_DEBEN_BLOQUEAR) {
-  test(`SCRUM-454 · BLOQUEA (se invoca de verdad): ${nombre}`, () => {
-    assert.equal(bloquea(comando), true,
-      `🔴 VERDADERO POSITIVO PERDIDO: "${nombre}" pasa el guard. Arreglar la autorreferencia a `
-      + 'costa de esto es peor que el problema, y no se nota nunca: un guard que ya no bloquea '
-      + 'nada se lee igual que uno sin nada que bloquear.');
-  });
-}
+const caso2 = casosEscritos(INVOCACIONES_QUE_DEBEN_BLOQUEAR, ([nombre, comando]) => `SCRUM-454 · BLOQUEA (se invoca de verdad): ${nombre}`, ([nombre, comando]) => {
+  assert.equal(bloquea(comando), true,
+    `🔴 VERDADERO POSITIVO PERDIDO: "${nombre}" pasa el guard. Arreglar la autorreferencia a `
+    + 'costa de esto es peor que el problema, y no se nota nunca: un guard que ya no bloquea '
+    + 'nada se lee igual que uno sin nada que bloquear.');
+});
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): la invocación pelada', caso2(0));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): migrate dev', caso2(1));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): push forzado', caso2(2));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): borrado recursivo con unidad de Windows', caso2(3));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): el flag entre comillas, que el shell pasa igual', caso2(4));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): envoltorio: bash -c con el comando entre comillas', caso2(5));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): sustitución de comando dentro del mensaje', caso2(6));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): envoltorio de Windows', caso2(7));
+test('SCRUM-454 · BLOQUEA (se invoca de verdad): la ruta con espacios va entrecomillada, el borrado no', caso2(8));
+caso2.todos();
 
 // ── 1.c · El mecanismo en aislado ────────────────────────────────────────────────────────────
 
@@ -195,18 +208,28 @@ const NO_PUEDEN_CAER = [
   ['borrar un árbol cuyo node_modules es carpeta REAL', 'git worktree remove real', 'LIMPIO'],
 ];
 
-for (const [nombre, comando, donde] of NO_PUEDEN_CAER) {
-  test(`SCRUM-454 · 🔴 CONTROL NEGATIVO: ${nombre}`, () => {
-    const r = donde === 'SUCIO' ? SUCIO : LIMPIO;
-    const { bloqueado, motivo } = veredicto(comando, r.dir);
-    assert.equal(bloqueado, false,
-      `🔴 EL GUARD BLOQUEA ALGO LEGÍTIMO: ${motivo}\n\n`
-      + '  Esto no es un falso positivo más: el hook corre en las cuatro sesiones a la vez. Una\n'
-      + '  barrera que estorba no se corrige, se desactiva entera — y entonces protege menos que\n'
-      + '  ninguna. Si el caso de verdad hay que bloquearlo, se decide, se escribe y se mide;\n'
-      + '  pero no puede colarse como efecto colateral de cubrir otro.');
-  });
-}
+const caso3 = casosEscritos(NO_PUEDEN_CAER, ([nombre, comando, donde]) => `SCRUM-454 · 🔴 CONTROL NEGATIVO: ${nombre}`, ([nombre, comando, donde]) => {
+  const r = donde === 'SUCIO' ? SUCIO : LIMPIO;
+  const { bloqueado, motivo } = veredicto(comando, r.dir);
+  assert.equal(bloqueado, false,
+    `🔴 EL GUARD BLOQUEA ALGO LEGÍTIMO: ${motivo}\n\n`
+    + '  Esto no es un falso positivo más: el hook corre en las cuatro sesiones a la vez. Una\n'
+    + '  barrera que estorba no se corrige, se desactiva entera — y entonces protege menos que\n'
+    + '  ninguna. Si el caso de verdad hay que bloquearlo, se decide, se escribe y se mide;\n'
+    + '  pero no puede colarse como efecto colateral de cubrir otro.');
+});
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero NUEVO', caso3(0));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: git checkout -- con el árbol LIMPIO en esa ruta', caso3(1));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección sobre un fichero que git IGNORA', caso3(2));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: añadir (>>) a un fichero existente', caso3(3));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: redirección a /dev/null', caso3(4));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: git restore --staged, que no toca el árbol', caso3(5));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: cambiar de rama', caso3(6));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: git status', caso3(7));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: git clean sin nada no rastreado que llevarse', caso3(8));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: git reset --hard con el árbol limpio', caso3(9));
+test('SCRUM-454 · 🔴 CONTROL NEGATIVO: borrar un árbol cuyo node_modules es carpeta REAL', caso3(10));
+caso3.todos();
 
 // ── 2.b · LOS CINCO DE LA TABLA · con algo que perder, se bloquea ────────────────────────────
 
@@ -219,18 +242,23 @@ const DEBEN_BLOQUEAR = [
   ['y el caso exacto del 11-ago: > sobre un .md que ya existe', 'node x.mjs > limpio.txt', /TRUNCA un fichero/],
 ];
 
-for (const [nombre, comando, esperado] of DEBEN_BLOQUEAR) {
-  test(`SCRUM-454 · BLOQUEA (hay algo que perder): ${nombre}`, () => {
-    const { bloqueado, motivo } = veredicto(comando, SUCIO.dir);
-    assert.equal(bloqueado, true,
-      `🔴 "${nombre}" pasa sin comprobación previa. Es la familia entera de SCRUM-454: cuatro `
-      + 'trabajos perdidos en un día por comandos que nadie miró ANTES de ejecutar.');
-    assert.match(motivo, esperado, `el motivo no dice qué se perdía: ${motivo}`);
-    assert.ok(/sucio\.txt|borrador\.txt|limpio\.txt/.test(motivo),
-      `🔴 el mensaje no NOMBRA lo que se perdería (${motivo}). Un bloqueo que no enseña el daño `
-      + 'obliga a repetir el comando para enterarse, que es exactamente el orden que falló.');
-  });
-}
+const caso4 = casosEscritos(DEBEN_BLOQUEAR, ([nombre, comando, esperado]) => `SCRUM-454 · BLOQUEA (hay algo que perder): ${nombre}`, ([nombre, comando, esperado]) => {
+  const { bloqueado, motivo } = veredicto(comando, SUCIO.dir);
+  assert.equal(bloqueado, true,
+    `🔴 "${nombre}" pasa sin comprobación previa. Es la familia entera de SCRUM-454: cuatro `
+    + 'trabajos perdidos en un día por comandos que nadie miró ANTES de ejecutar.');
+  assert.match(motivo, esperado, `el motivo no dice qué se perdía: ${motivo}`);
+  assert.ok(/sucio\.txt|borrador\.txt|limpio\.txt/.test(motivo),
+    `🔴 el mensaje no NOMBRA lo que se perdería (${motivo}). Un bloqueo que no enseña el daño `
+    + 'obliga a repetir el comando para enterarse, que es exactamente el orden que falló.');
+});
+test('SCRUM-454 · BLOQUEA (hay algo que perder): git checkout -- sobre una ruta con cambios', caso4(0));
+test('SCRUM-454 · BLOQUEA (hay algo que perder): git restore sobre una ruta con cambios', caso4(1));
+test('SCRUM-454 · BLOQUEA (hay algo que perder): git reset --hard con el árbol sucio', caso4(2));
+test('SCRUM-454 · BLOQUEA (hay algo que perder): git clean con no rastreados', caso4(3));
+test('SCRUM-454 · BLOQUEA (hay algo que perder): redirección que trunca un fichero existente', caso4(4));
+test('SCRUM-454 · BLOQUEA (hay algo que perder): y el caso exacto del 11-ago: > sobre un .md que ya existe', caso4(5));
+caso4.todos();
 
 test('SCRUM-454 · el junction se comprueba ANTES de seguirlo (SCRUM-429)', (t) => {
   if (!SUCIO.hayEnlace) {

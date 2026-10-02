@@ -44,6 +44,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -327,32 +328,34 @@ const PAGINAS = [
   },
 ];
 
-for (const pagina of PAGINAS) {
-  test(`SCRUM-893 · 🔴 ④ ${pagina.nombre}: sin Connect NO enseña la tarjeta; con Connect SÍ`, async () => {
-    const rojo = await pagina.pedir(SIN_CONNECT);
-    const verde = await pagina.pedir(CON_CONNECT);
+const caso2 = casosEscritos(PAGINAS, (pagina) => `SCRUM-893 · 🔴 ④ ${pagina.nombre}: sin Connect NO enseña la tarjeta; con Connect SÍ`, async (pagina) => {
+  const rojo = await pagina.pedir(SIN_CONNECT);
+  const verde = await pagina.pedir(CON_CONNECT);
 
-    // SUELO de este caso: las dos páginas se pintaron de verdad. Comparar dos errores 500 daría
-    // «ninguna enseña la tarjeta» y sería un verde perfecto sobre nada.
-    assert.equal(rojo.status, 200, `🔴 CIEGO: ${pagina.nombre} devolvió HTTP ${rojo.status} sin Connect.`);
-    assert.equal(verde.status, 200, `🔴 CIEGO: ${pagina.nombre} devolvió HTTP ${verde.status} con Connect.`);
-    assert.ok(rojo.cuerpo.includes(pagina.testigo),
-      `🔴 CIEGO: la página no contiene «${pagina.testigo}», así que no se pintó y «no hay tarjeta» `
-      + 'no dice nada. Un cero no es «está limpio»: es «no he mirado».');
+  // SUELO de este caso: las dos páginas se pintaron de verdad. Comparar dos errores 500 daría
+  // «ninguna enseña la tarjeta» y sería un verde perfecto sobre nada.
+  assert.equal(rojo.status, 200, `🔴 CIEGO: ${pagina.nombre} devolvió HTTP ${rojo.status} sin Connect.`);
+  assert.equal(verde.status, 200, `🔴 CIEGO: ${pagina.nombre} devolvió HTTP ${verde.status} con Connect.`);
+  assert.ok(rojo.cuerpo.includes(pagina.testigo),
+    `🔴 CIEGO: la página no contiene «${pagina.testigo}», así que no se pintó y «no hay tarjeta» `
+    + 'no dice nada. Un cero no es «está limpio»: es «no he mirado».');
 
-    // 🔴 ROJO REAL — el defecto del ticket.
-    assert.equal(rojo.cuerpo.includes('/pay/card/'), false,
-      `🔴 ${pagina.fichero} SIGUE OFRECIENDO LA TARJETA a un merchant sin Stripe Connect.\n`
-      + '    Es el defecto de SCRUM-893: la clienta pulsa, se lleva un 409 «no está disponible»\n'
-      + '    y «Ver otras formas de pago» la devuelve a esta misma página. Reglas 18 y 23: la\n'
-      + '    tarjeta sólo con Connect activo en ESE merchant.');
+  // 🔴 ROJO REAL — el defecto del ticket.
+  assert.equal(rojo.cuerpo.includes('/pay/card/'), false,
+    `🔴 ${pagina.fichero} SIGUE OFRECIENDO LA TARJETA a un merchant sin Stripe Connect.\n`
+    + '    Es el defecto de SCRUM-893: la clienta pulsa, se lleva un 409 «no está disponible»\n'
+    + '    y «Ver otras formas de pago» la devuelve a esta misma página. Reglas 18 y 23: la\n'
+    + '    tarjeta sólo con Connect activo en ESE merchant.');
 
-    // 🔴 VERDE REAL — sin esta mitad, un «siempre no» pasaría el test de arriba.
-    assert.equal(verde.cuerpo.includes('/pay/card/'), true,
-      `🔴 ${pagina.fichero} ESCONDE LA TARJETA a un merchant que SÍ puede cobrarla (Connect\n`
-      + '    activo). El arreglo se pasó de frenada: eso no es cerrar el bucle, es cerrar el cobro.');
-  });
-}
+  // 🔴 VERDE REAL — sin esta mitad, un «siempre no» pasaría el test de arriba.
+  assert.equal(verde.cuerpo.includes('/pay/card/'), true,
+    `🔴 ${pagina.fichero} ESCONDE LA TARJETA a un merchant que SÍ puede cobrarla (Connect\n`
+    + '    activo). El arreglo se pasó de frenada: eso no es cerrar el bucle, es cerrar el cobro.');
+});
+test('SCRUM-893 · 🔴 ④ el selector · GET /pay/invoice/:token: sin Connect NO enseña la tarjeta; con Connect SÍ', caso2(0));
+test('SCRUM-893 · 🔴 ④ el recibo · GET /recibo/:token: sin Connect NO enseña la tarjeta; con Connect SÍ', caso2(1));
+test('SCRUM-893 · 🔴 ④ el portal del cliente · GET /cliente/:token: sin Connect NO enseña la tarjeta; con Connect SÍ', caso2(2));
+caso2.todos();
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // ⑤ EL TERCER CASO — sin Connect y SIN IBAN: ¿qué se le ofrece a la clienta?
