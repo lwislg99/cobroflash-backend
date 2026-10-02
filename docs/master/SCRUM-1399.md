@@ -213,6 +213,15 @@ no yo; dice que los nueve `SCRUM-1399 ·` y los siete de SCRUM-1398 pasaban.
 - La fila ⑦ de la tabla del rojo de arriba describe la forma vieja del caso («salió 0 y generó el
   sobre»). Con la forma nueva el rojo es el mismo: sobre el guion sin arreglar sale 0.
 
+**Un commit que no es de esta sesión entró en la rama mientras tanto.** A las 06:22:07Z, `claude[bot]`
+empujó `ebdc2146e1d80ec9fbd814053ea64149a20a8dbc` con el mismo arreglo (el puntero viejo, escrito dentro
+de `raizAislada`). No sé quién lo lanzó. Lo vi al ir a empujar, porque la punta remota ya no era la mía.
+Como aquí no se fuerza un push, se mezcló: los trozos en conflicto se resolvieron a favor de mi versión,
+y el merge automático dejó además cuatro líneas del bot que nombraban una variable (`puntero`) que en mi
+versión no existe. **Un merge sin conflictos habría roto los nueve casos**; se quitaron a mano y el
+fichero quedó idéntico, por hash, al de mi commit anterior. Los dos arreglos hacen lo mismo; el del bot
+comprobaba que el sobre no existe y el mío que en `tmp/` sólo queda el puntero.
+
 `origin/main` al escribir esto: `5d7aaebc41d71d24102a4852c1de04059d9ac559` (entró SCRUM-1400). Diez
 ficheros cambiados en `main` desde mi base, cuatro míos, cero en común.
 
