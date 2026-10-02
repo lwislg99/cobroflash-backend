@@ -77,7 +77,12 @@ const CENSO = Object.freeze({
   // AA1.4, no algo que decida quien construye la pantalla. `facturasRecibidasView.js` los deja
   // marcados como corresponde; QUIEN LOS FIRME los retira de este censo (mismo camino que
   // `export`/`albaranes`/`quotes-new`, arriba). 6 = 2 nodos (`titulo`, `error`) × 3 estados.
-  'facturas-recibidas': 6,
+  //
+  // `facturas-recibidas` SALIÓ el 2-oct (SCRUM-1388): el fundador firmó el 1-oct-2026 los cuatro
+  // textos de la pantalla (título, error de carga, vacío y descuadre; ficha en
+  // `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`) y la vista ya no pinta ninguno.
+  // Estaba a 6. Misma regla: entrada BORRADA, no puesta a 0. El censo queda VACÍO: hoy ninguna
+  // vista del panel pinta un marcador, y la primera que lo haga sale como «VISTA NUEVA».
 });
 
 const ESTADOS = ['con-datos', 'sin-datos', 'error'];
