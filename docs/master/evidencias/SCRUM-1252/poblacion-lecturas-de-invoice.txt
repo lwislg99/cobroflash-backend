@@ -1,0 +1,49 @@
+src/app.ts:415: const facturasDelAnio = await prisma.invoice.findMany({
+src/app.ts:890: const emitidas = await prisma.invoice.findMany({
+src/app.ts:956: const emitidas = await prisma.invoice.findMany({
+src/app.ts:1017: const dentro = await tx.invoice.findMany({
+src/modules/billing/domain/cobros.service.ts:225: prisma.invoice.findMany({
+src/modules/billing/domain/invoiceReminder.service.ts:40: const toRemind7 = await prisma.invoice.findMany({
+src/modules/billing/domain/invoiceReminder.service.ts:63: const toRemind14 = await prisma.invoice.findMany({
+src/modules/exports/app/routes/exports.routes.ts:110: const facturas = await prisma.invoice.count({
+src/modules/exports/app/routes/exports.routes.ts:154: const invoices = seleccion.pdfs ? await prisma.invoice.findMany({
+src/modules/exports/domain/exportData.ts:200: const invoices = await prisma.invoice.findMany({
+src/modules/invoicing/domain/invoiceNumber.service.ts:244: const emitidas = await db.invoice.findMany({
+src/modules/invoicing/domain/invoiceNumber.service.ts:465: const emitidas = await tx.invoice.findMany({
+src/modules/invoicing/domain/libroRegistro.repo.ts:142: const leidas = (await db.invoice.findMany({
+src/modules/invoicing/domain/verifactu.service.ts:648: const invoices = await prismaClient.invoice.findMany({
+src/modules/invoicing/domain/verifactu.service.ts:702: const conHuella = await prismaClient.invoice.findMany({
+src/modules/jobs/app/routes/jobs.routes.ts:1488: const emitidasAhora = await tx.invoice.count({
+src/modules/jobs/domain/job.service.ts:224: *     const agg = await prisma.invoice.aggregate({ where: { quoteId, status:'paid' } });
+src/modules/jobs/domain/job.service.ts:255: const agg = await prismaClient.invoice.aggregate({
+src/modules/maintenance/domain/maintenance.service.ts:554: const rows = await prisma.invoice.findMany({
+src/modules/messaging/domain/weeklyDigest.service.ts:175: prisma.invoice.aggregate({
+src/modules/messaging/domain/weeklyDigest.service.ts:180: prisma.invoice.count({ where: { merchantId: merchant.id, createdAt: { gte: from, lte: to } } }),
+src/modules/messaging/domain/weeklyDigest.service.ts:188: prisma.invoice.aggregate({
+src/modules/messaging/domain/weeklyDigest.service.ts:284: prisma.invoice.aggregate({ where: { merchantId, status: 'paid', paidAt: { gte: weekAgo } }, _sum: { to
+src/modules/messaging/domain/weeklyDigest.service.ts:285: prisma.invoice.count({ where: { merchantId, createdAt: { gte: weekAgo } } }),
+src/modules/messaging/domain/weeklyDigest.service.ts:289: prisma.invoice.aggregate({ where: { merchantId, status: 'pending' }, _sum: { total: true }, _count: { 
+src/modules/metrics/domain/metrics.service.ts:11: prisma.invoice.aggregate({
+src/modules/metrics/domain/metrics.service.ts:23: prisma.invoice.aggregate({
+src/modules/metrics/domain/metrics.service.ts:34: prisma.invoice.groupBy({
+src/modules/metrics/domain/metrics.service.ts:92: prisma.invoice.aggregate({ where: { merchantId, status: 'paid', paidAt: { gte: weekAgo } }, _sum: { total: tru
+src/modules/metrics/domain/metrics.service.ts:93: prisma.invoice.aggregate({ where: { merchantId, status: 'paid', paidAt: { gte: twoWeeksAgo, lt: weekAgo } }, _
+src/modules/metrics/domain/metrics.service.ts:222: client.invoice.count({ where: { merchantId, createdAt: inPeriod, ...soloDePresupuesto } }),
+src/modules/metrics/domain/metrics.service.ts:223: client.invoice.count({ where: { merchantId, status: 'paid', paidAt: inPeriod, ...soloDePresupuesto } }),
+src/modules/metrics/domain/metrics.service.ts:453: prisma.invoice.findMany({
+src/modules/quotes/app/routes/quotes.routes.ts:616: const emitidasAhora = await tx.invoice.count({
+src/modules/reports/app/routes/reports.routes.ts:34: const paidInvoices = await prisma.invoice.findMany({
+src/modules/reports/app/routes/reports.routes.ts:63: const prevInvoices = await prisma.invoice.aggregate({
+src/modules/reports/app/routes/reports.routes.ts:174: const paid = await prisma.invoice.findMany({
+src/modules/reports/app/routes/reports.routes.ts:218: const pending = await prisma.invoice.findMany({
+src/modules/search/app/routes/search.routes.ts:56: prisma.invoice.findMany({
+src/modules/system/app/routes/customerPortal.routes.ts:253: prisma.invoice.findMany({
+src/modules/system/app/routes/customersAdmin.routes.ts:540: prisma.invoice.findMany({
+src/modules/system/app/routes/customersAdmin.routes.ts:554: prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: tru
+src/modules/system/app/routes/customersAdmin.routes.ts:555: prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _s
+src/modules/system/app/routes/quotesAdmin.routes.ts:298: const emitidas = await tx.invoice.count({
+src/modules/system/domain/fusionClientes.ts:109: const facturasEmitidas = (!principal || !fusionado) ? 0 : await prisma.invoice.count({
+src/modules/system/domain/fusionClientes.ts:160: const facturasEmitidas = (!principal || !fusionado) ? 0 : await prisma.invoice.count({
+src/modules/system/domain/saldoPendiente.ts:18: const filas = await prisma.invoice.groupBy({
+src/modules/system/invoiceAdmin.ts:66: return prisma.invoice.findMany({
+src/modules/system/merchantAdmin.ts:216: const emitidas = await prisma.invoice.findMany({
