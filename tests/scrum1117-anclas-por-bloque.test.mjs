@@ -15,6 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = process.env.COMPROBADOR_CITAS ?? path.join(RAIZ, 'docs/verificacion/comprobar-citas-contabilidad.mjs');
@@ -89,22 +90,26 @@ test('SCRUM-1117 · 🔴 un bloque que cambia y NO lleva la cita no hace saltar 
   assert.equal(r.code, 0, r.out);
 });
 
-for (const [nombre, escribir] of [
+const FILAS = [
   ['fichero vacio', (rel) => escribe(rel, '')],
   ['pagina de error servida con 200 (sin el id del consolidado)', (rel) => escribe(rel, '<html><body><h1>Servicio no disponible</h1></body></html>')],
   ['otra norma (id distinto)', (rel) => escribe(rel, pagina('RIVA', [bloque('a90', CITA, '20120714')]))],
   ['fichero que no existe', (rel) => fs.rmSync(path.join(TMP, rel))],
-]) {
-  test(`SCRUM-1117 · 🔴 FUENTE ILEGIBLE (${nombre}): sale 3, por su propio camino, sin afirmar nada de citas ni anclas`, () => {
-    const m = montar();
-    correr(m, '--fijar');
-    escribir(path.join(m.rel, 'fuentes', 'LIVA.html'));
-    const r = correr(m);
-    assert.equal(r.code, 3, r.out);
-    assert.match(r.out, /FUENTE ILEGIBLE/);
-    assert.doesNotMatch(r.out, /norma_cambiada|encontradas|control_ancla/);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS, ([nombre, escribir]) => `SCRUM-1117 · 🔴 FUENTE ILEGIBLE (${nombre}): sale 3, por su propio camino, sin afirmar nada de citas ni anclas`, ([nombre, escribir]) => {
+  const m = montar();
+  correr(m, '--fijar');
+  escribir(path.join(m.rel, 'fuentes', 'LIVA.html'));
+  const r = correr(m);
+  assert.equal(r.code, 3, r.out);
+  assert.match(r.out, /FUENTE ILEGIBLE/);
+  assert.doesNotMatch(r.out, /norma_cambiada|encontradas|control_ancla/);
+});
+test('SCRUM-1117 · 🔴 FUENTE ILEGIBLE (fichero vacio): sale 3, por su propio camino, sin afirmar nada de citas ni anclas', caso2(0));
+test('SCRUM-1117 · 🔴 FUENTE ILEGIBLE (pagina de error servida con 200 (sin el id del consolidado)): sale 3, por su propio camino, sin afirmar nada de citas ni anclas', caso2(1));
+test('SCRUM-1117 · 🔴 FUENTE ILEGIBLE (otra norma (id distinto)): sale 3, por su propio camino, sin afirmar nada de citas ni anclas', caso2(2));
+test('SCRUM-1117 · 🔴 FUENTE ILEGIBLE (fichero que no existe): sale 3, por su propio camino, sin afirmar nada de citas ni anclas', caso2(3));
+caso2.todos();
 
 test('SCRUM-1117 · 🔴 FUENTE ILEGIBLE gana a NORMA CAMBIADA: con la red caida no se informa de nada mas', () => {
   const m = montar();
