@@ -280,8 +280,9 @@ se ha tocado.** Mientras siga con el `>`, `scrum514` cae en 2 de sus 37 casos po
 | `scrum514` con el mecanismo | 37 casos · 35 pasan · 2 caen (1 línea, la de 728) · 0 saltos |
 | su recuento | «crucé 196 de 251 citas de 106 fichas (189 pintadas tal cual, 6 aparcadas con motivo, 1 SIN SABER). No cruzo: 20 plantillas, 11 declaradas, 3 de menos de 4 caracteres, 21 notas de OTRO EQUIPO» |
 | banco de mutaciones, 1.ª pasada (30 filas) | 26 caen · 2 controles mudos · **M10 CIEGA y M26 MUDA** (ver ⑦) |
-| banco de mutaciones, 2.ª pasada | BANCO_SEGUNDA_PASADA |
-| lo demás | LO_DEMAS_CORRIDO |
+| banco de mutaciones, 2.ª pasada (31 filas) | 29 de 29 mutaciones caen en su caso · 2 de 2 controles salen mudos · fichero restaurado por contenido · base 35 de 37 |
+| `npm run guards:entrada`, tras mezclar `main` = `f7d01377` y con `dist/` recién construido | 12 guards · 10,7 s · 2 hallazgos, 0 ciegos: los dos de `scrum514` por la línea de 728 |
+| `scrum237`, `scrum976`, los dos `scrum514`, `scrum267` y `scrum1294`, juntos | 78 casos · 75 pasan · 3 caen · 0 saltos: los dos de `scrum514` y `scrum976` ④, que cae porque corre `guards:entrada` por dentro |
 
 La tanda completa NO se ha corrido en local: no es alcanzable en esta máquina y la pasada completa es
 el CI, que lee el orquestador.
