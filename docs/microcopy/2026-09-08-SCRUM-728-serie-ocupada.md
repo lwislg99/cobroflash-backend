@@ -25,7 +25,7 @@ The timeout for this transaction was 5000 ms, however 6978 ms passed…
 
 Y en la pantalla del profesional, literalmente:
 
-> No se pudo crear el albarán: **API 500: internal_error**
+No se pudo crear el albarán: **API 500: internal_error**
 
 Un identificador interno en la cara de un fontanero. El P2028 no llegaba tal cual ni reventaba la
 pantalla: **lo tapaba un catch genérico**, que es la tercera de las tres respuestas posibles y la
