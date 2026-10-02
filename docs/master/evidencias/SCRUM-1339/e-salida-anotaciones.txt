@@ -1,0 +1,60 @@
+CONTROL POSITIVO del lector de anotaciones: check-run 110514502040 → 3 anotaciones, con línea de registro: sí
+POBLACIÓN: 229 artefactos (uno por job «build + tests» que llegó a guardar su TAP) · 225 runs · 2026-10-01T00:28:24Z → 2026-10-02T02:05:33Z
+  por evento: push 40 · pull_request 189 · otro 0
+  anotaciones: pedidas 229 · no pude pedir 0
+① ¿HABLA EL PASO? árbol con el paso 9 · sin el paso 220 · árbol sin resolver 0
+   con el paso en el árbol: dejaron UNA línea de registro 8 de 9 · CALLADOS (ninguna anotación de la señal) 0 · otra cosa 1
+   OTRA COSA 11181489101 run 36901626137 [1/1] pull_request success job 110501932336 → 2 líneas de registro (9 anotaciones) · recálculo: medible=sí ausentes=5
+   control negativo — sin el paso en el árbol y CON línea de registro: 0 de 220 (tiene que ser 0)
+② CRUCE anotación (A) ↔ recálculo (B): comparables 8 · misma cifra de ausentes y dudosos 8 de 8
+   medible en uno y no en el otro: 0
+③ TASA POR LAS ANOTACIONES (sólo jobs cuyo árbol tiene el paso: 9)
+   push a main (4):
+   [señal de nombres · tasa] 1 de 4 runs medidos con nombres ausentes (25.0 %) · población 4 runs · sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 4 · tope 2026-10-15 (SCRUM-1339 c.17935)
+   todos los jobs, PR y main (9):
+   [señal de nombres · tasa] 2 de 8 runs medidos con nombres ausentes (25.0 %) · población 9 runs · sin medir 1 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 8 · tope 2026-10-15 (SCRUM-1339 c.17935)
+   con ausentes: 2 de 8 medidos (25.0 %) · de ellos con el job en success: 2
+   jobs en success medidos: 7 · de ellos con ausentes 2 (28.6 %)
+   con ausentes y SIN ningún ::warning de la señal: 0 de 2 (tiene que ser 0)
+   completos (0 ausentes, 0 dudosos) y CON algún ::warning de la señal: 0 de 6 (tiene que ser 0)
+④ POR COMMIT DE main (primer padre de d2ed6c8a, desde 2026-10-01T00:00:00Z): 95 commits
+   sin artefacto 56 · no medible 18 · medidos 21
+   CON AUSENTES: 11 de 21 medidos (52.4 %) · sobre TODOS los commits: 11.6 % (suelo: lo no medido no cuenta como limpio ni como perdido)
+   artefactos de push a main cuyo commit no está en la lista: 1
+   VENTANA de c.17935 (los 50 últimos medidos; hay 21): 11 de 21 con ausentes (52.4 %) · ventana INCOMPLETA: faltan 29 para poder decirlo como lo pide la decisión
+   · con el paso de la señal en el árbol: 1 de 4 con ausentes (25.0 %)
+   · anteriores al paso: 10 de 17 con ausentes (58.8 %)
+   16358193 2026-10-01T19:03:24.000Z success ausentes=35 → tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve | tests/vigia-atascados.test.mjs · faltan 30 de 64 (cola) · posiciones 35–64 · líneas 449–677
+   b3b40554 2026-10-01T18:07:03.000Z success ausentes=8 → tests/scrum411-exports-inalcanzables.test.mjs · faltan 5 de 25 (cola) · posiciones 21–25 · líneas 571–643 | tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   8e03d28c 2026-10-01T17:32:02.000Z success ausentes=4 → tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan 1 de 10 (cola) · posiciones 10 · líneas 322–341 | tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   cadf00bc 2026-10-01T15:45:38.000Z success ausentes=6 → tests/scrum411-exports-inalcanzables.test.mjs · faltan 6 de 25 (cola) · posiciones 20–25 · líneas 545–643
+   204d117b 2026-10-01T15:42:54.000Z success ausentes=8 → tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve | tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   7580bcc8 2026-10-01T14:58:53.000Z success ausentes=33 → tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 33 de 53 (cola) · posiciones 21–53 · líneas 227–647
+   5fb7630a 2026-10-01T14:47:11.000Z success ausentes=4 → tests/scrum411-exports-inalcanzables.test.mjs · faltan 4 de 25 (cola) · posiciones 22–25 · líneas 586–643
+   66ba128c 2026-10-01T13:53:10.000Z success ausentes=3 → tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   31688d6b 2026-10-01T13:26:58.000Z success ausentes=2 → tests/scrum996-suelo-de-arranque.test.mjs · faltan 2 de 22 (cola) · posiciones 21–22 · líneas 561–594
+   36071b72 2026-10-01T13:07:45.000Z success ausentes=9 → tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 9 de 53 (cola) · posiciones 45–53 · líneas 533–647
+   788a50d7 2026-10-01T12:10:56.000Z success ausentes=5 → tests/scrum286-bloques-orden.test.mjs · faltan 5 de 24 (cola) · posiciones 20–24 · líneas 252–322
+⑤ TODOS LOS JOBS, CON EL RECÁLCULO: medibles 110 de 229 · con ausentes 48 (43.6 %)
+   en success: 80 · de ellos con ausentes 35 (43.8 %)
+   push: 11 de 21 con ausentes (52.4 %)
+   pull_request: 37 de 89 con ausentes (41.6 %)
+   hasta 2026-10-01T16:24:08Z (ventana que ya cubrían 1339b y 1339d): 42 de 94 con ausentes (44.7 %)
+   después de 2026-10-01T16:24:08Z (NUEVO): 6 de 16 con ausentes (37.5 %)
+   ficheros distintos que pierden casos: 18 · bloques 72 · de ficheros que SÓLO pierden la cola: 68 → e-por-fichero.tsv
+      16× scrum524b-trinquete-de-la-tabla.test.mjs (declara 12; faltan de 1 a 3; cola)
+      11× scrum834-puerta-avisador-rojo.test.mjs (declara 53; faltan de 2 a 35; cola)
+      11× vigia-atascados.test.mjs (declara 64; faltan de 4 a 42; cola)
+       8× scrum1262-la-baja-corta-todas-las-vias.test.mjs (declara 10; faltan de 1 a 5; cola)
+       4× scrum237-negacion-respaldada.test.mjs (declara 8; faltan de 8 a 8; entero)
+       3× scrum1323-resumen-vs-detalle-sif1.test.mjs (declara 14; faltan de 1 a 4; cola)
+       3× scrum411-exports-inalcanzables.test.mjs (declara 25; faltan de 4 a 6; cola)
+       2× scrum286-bloques-orden.test.mjs (declara 24; faltan de 4 a 5; cola)
+       2× scrum312-importador-clientes.test.mjs (declara 27; faltan de 5 a 5; cola)
+       2× scrum522-guards-fuera-de-la-tanda.test.mjs (declara 17; faltan de 3 a 7; cola)
+       2× scrum888g-senal-en-la-firma.test.mjs (declara 10; faltan de 3 a 3; cola)
+       2× scrum996-suelo-de-arranque.test.mjs (declara 22; faltan de 2 a 2; cola)
+       1× scrum1350-latido.test.mjs (declara 32; faltan de 8 a 8; cola)
+       1× scrum161-evidencia-tanda.test.mjs (declara 22; faltan de 2 a 2; cola)
+       1× scrum176-guard-mensaje.test.mjs (declara 11; faltan de 7 a 7; cola)
+EXIT=0

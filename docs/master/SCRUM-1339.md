@@ -287,3 +287,608 @@ los del 24-sep se van hoy. Las tablas derivadas (`medidos.tsv`, `mismo-arbol.tsv
     node docs/master/evidencias/SCRUM-1339/perdidas.mjs      $D .   # desde la raíz del repo
     node docs/master/evidencias/SCRUM-1339/propuesta-nombres.mjs $D .
     node docs/master/evidencias/SCRUM-1339/techo-en-ci.mjs   $D
+
+# SCRUM-1339b · Con el TAP ya entero, la señal por nombres se puede leer DENTRO del job — y la mitad de SCRUM-1366 es esto
+
+**Medido contra:** `origin/main` = `5fb7630ad564740f0fe4ba115e7dc141d18da775` · 2026-10-01T14:50Z (medición de J3g; la sube J3h, su relevo, sin re-ejecutarla)
+
+A9: aviso → cicatriz J3 «Un control que compara una cifra que el otro instrumento sólo imprime cuando sale verde se salta los rojos sin decirlo: el control cuenta también a cuántos no pudo comparar.» — no se pudo comprobar: es un control de una medición puntual sobre logs ya bajados, fuera de la tanda; lo que queda es el denominador impreso en `b-salida-controles.txt`
+
+**Quién midió y quién escribe.** La medición es de **J3g** (sólo lectura, entregada por mensaje al
+orquestador; consta en SCRUM-1339 c.17934). Esta sección la escribe **J3h** copiando las cifras de
+`b-salida-analizar.txt` y `b-salida-controles.txt`, que son del 1-oct-2026. **No he vuelto a correr
+nada**: los 99 TAP y los 95 logs no se guardaron, y los guiones `b-*.mjs` son copia byte a byte
+(sha256 comparado, 12 ficheros de 12) de los que produjeron esas salidas.
+
+## Lo medido (99 artefactos `tanda-tap`, 1-oct-2026 de 10:27Z a 14:41Z)
+
+| Qué | Cuánto |
+| --- | --- |
+| Artefactos bajados | 99 de 99 (97 runs) |
+| TAP enteros (0 NUL, un resumen, líneas `ok` = `# tests`) | 81 de 99 |
+| No enteros | 18: 14 con NUL (el último, 10:59:02Z) y 4 de tandas canceladas |
+| Enteros desde que #1990 entró en `main` (artefacto de las 11:44:39Z) | 62 de 63; el otro, cancelado |
+| Enteros con el árbol PROBADO resuelto | 79 de 81 (los otros 2, sin log) |
+| **Con nombres declarados ausentes** | **36 de 79 (46 %) · 493 nombres** |
+| De los 54 jobs verdes | 23 con pérdida |
+| De los 9 pushes a `main` | 4 con pérdida, los 4 verdes |
+| Bloques (fichero × job) | 53: 49 cola, 4 «fichero entero», 0 en medio |
+| Lo que ve el suelo de hoy (SCRUM-702 + 1380) | 4 de los 36: los que traen entrada de fichero |
+
+Los cuatro «fichero entero» son `scrum237-negacion-respaldada`, y son los únicos con entrada de
+fichero en el TAP. Los ficheros que más pierden: `scrum524b` (10 jobs), `scrum834` (9),
+`vigia-atascados` (8), `scrum1262` (5).
+
+**El árbol es el que el job probó, no el de `main`.** Se reconstruye sin red con
+`git merge-tree --write-tree <base> <cabeza>`, sacando los dos sha de la línea «Merge X into Y» del log.
+
+## Los controles del instrumento
+
+- «declara N» que imprime el suelo dentro del job == llamadas contadas en el árbol reconstruido:
+  **75 de 77**, sin ninguno distinto. Según el traspaso de J3g, los 2 que faltan son los dos jobs
+  cuyo suelo salió en rojo: el mensaje rojo no imprime esa cifra, así que el control no los pudo
+  comparar (es la cicatriz de arriba). Yo no lo he vuelto a medir.
+- `ℹ tests N` del log `spec` == `# tests N` del TAP: 76 de 77.
+- Contra la comparación a mano del equipo de Luis en #2090 (su c.17922 de SCRUM-1366): nombra 12 de
+  sus 15. Los otros 3 son de nombre construido en un bucle.
+
+## Lo que une los dos tickets
+
+`scrum237` tiene las DOS formas. El 27-sep perdió su cola (job 108673143125,
+`b-log-27sep-job-108673143125-scrum237.txt`); el 29-sep, el fichero entero con entrada de fichero, en
+un push a `main` verde (job 109481810520, `b-log-29sep-job-109481810520-scrum237.txt`), con el suelo
+diciendo ✅ porque el TAP llegaba pisado. O sea: **SCRUM-1366 no es un intermitente nuevo del 1-oct;
+se hizo visible cuando el TAP dejó de llegar pisado** (#2000 a las 10:47Z, #1990 a las 11:33Z).
+
+**Decidido por el fundador:** cada equipo sigue con su ticket. Esta sección no toca
+`scripts/suelo-de-la-tanda.mjs` ni nada de `area-s5`.
+
+## Lo que este instrumento NO ve
+
+Nombres construidos en un bucle · un nombre repetido en dos ficheros · no comprueba que lo ausente
+fuera `pass` en otro run · sólo 2 de los 79 tienen un hermano del mismo árbol. **Causa: no demostrada.**
+La hipótesis de J3g («la salida forzada gana a la escritura de los últimos informes del hijo») es de
+IA y está sin probar; no se ha construido nada sobre ella.
+
+## Lo que no está en git, y reproducir
+
+Los 99 TAP y los 95 logs (430 MB). GitHub conserva los artefactos 7 días: **caducan el 8-oct-2026**.
+
+    D=<carpeta fuera del árbol>
+    cp docs/master/evidencias/SCRUM-1339/b-arts-hoy.tsv $D/arts-hoy.tsv
+    node docs/master/evidencias/SCRUM-1339/b-bajar.mjs     $D      # taps/, logs/, bajados.tsv
+    node docs/master/evidencias/SCRUM-1339/b-analizar.mjs  $D .    # analisis.tsv, faltan-por-fichero.tsv
+    node docs/master/evidencias/SCRUM-1339/b-controles.mjs $D
+
+# SCRUM-1339c · Los avistamientos del trinquete de zona: cola contigua, también con el fichero A SOLAS
+
+**Medido contra:** `origin/main` = `8c0bf72850988e5f06266f330ab4c6c869f42a36` · 2026-10-01T15:28:36Z
+
+A9: aviso → cicatriz J3 «Rotulé como «lo que cambió a solas» la lista que imprime el trinquete de zona, que es una intersección: antes de ponerle nombre a la cifra de otro instrumento se lee cómo la filtra.» — no se pudo comprobar: el rótulo era de un instrumento de evidencias, no de la tanda; lo cazó que la cifra del log (34) no cabía en la lista (3), y el instrumento ahora imprime esa diferencia
+
+**El encargo** (orquestador, c.17938 y c.17943): ordenar por posición en el FICHERO los casos
+`pass ↔ ausente` que el trinquete de zona denunció en los PR #2072 y #2071, para saber si son
+contiguos o están salpicados. Sólo lectura de logs que ya existen. **No se ha tocado
+`tests/vigia-atascados.test.mjs`, ni `scrum524b`, ni el trinquete, ni ningún workflow.**
+
+## Lo medido
+
+Jobs de zona: `110425624435` (run `36878986636`, #2072) y `110428904670` (run `36879667635`, #2071).
+El orden sale del fuente por AST. El blob de `tests/vigia-atascados.test.mjs` es `741e399b` en la
+cabeza y la base de los dos PR y en `main`; el de `scrum524b`, `4714abda`.
+
+| run | fichero (casos) | en la pasada ENTERA | con el fichero A SOLAS (repesca) |
+| --- | --- | --- | --- |
+| #2072 | `vigia-atascados` (64) | faltan 31 en Midway: posiciones **34 a 64** | cambian 22: posiciones **43 a 64** |
+| #2071 | `vigia-atascados` (64) | faltan 3 en Midway: **62 a 64** | cambian 34; el log sólo nombra 3 (62 a 64) |
+| #2071 | `scrum524b` (41) | faltan 8 en Kiritimati: **34 a 41** | cambian 2: 38 y 39 |
+
+Las tres pérdidas de la pasada entera son **contiguas y llegan hasta el final**. En `scrum524b` el
+censo por AST sale CIEGO (sus nombres se construyen en un bucle: el punto ciego declarado, visto
+actuar), y el orden se saca del informe del job obligatorio del mismo run, donde el fichero está
+entero (`c-scrum524b-orden-de-informe-2071.txt`).
+
+## Por qué «contiguo y hasta el final» NO dice que la pasada abortara
+
+El encargo proponía: contiguos y hasta el final → abortó, no es este ticket; salpicados → sí lo es.
+**Ese criterio no separa las dos cosas**, porque la cola contigua es la firma medida de este ticket
+(§③: 45 de 45 bloques situables; SCRUM-1339b: 49 de 53). El orquestador lo retiró en c.17950.
+
+Lo que sí habla contra un aborto por contenido, medido:
+
+1. **Mismo blob, puntos de corte distintos.** En #2072, el mismo job cortó tras el caso 33 en la
+   pasada entera y tras el 42 con el fichero a solas. En #2071, tras el 61. En `main` sobre
+   `01d99084`, tras el 41 (c.17803). Un aborto por contenido cortaría siempre en el mismo sitio.
+2. **Ninguna entrada de fichero.** Entre los candidatos de los dos logs hay 0 claves cuyo nombre sea
+   una ruta. ⚠️ Sin control positivo en estos logs: ninguno trae un caso así con el que comparar.
+3. **El obligatorio de esos mismos runs trae el fichero entero, por nombre:** `vigia-atascados`
+   64 de 64 y en el orden del fichero, en los jobs `110425624016` y `110428904637`
+   (`c-salida-presentes.txt`). Control negativo del lector: 0 de 64 sobre el log del job de zona.
+   `scrum524b`: 41 líneas `✔` en cada uno de los dos, contadas por texto y no por AST (sus
+   nombres se construyen en un bucle).
+
+## Lo nuevo: se pierde también con UN fichero y sin carga
+
+La repesca del trinquete vuelve a medir cada fichero candidato **a solas**, en las dos zonas. En los
+dos jobs `vigia-atascados` volvió a cambiar de veredicto a solas (22 y 34 casos), y `scrum524b`
+también (2). Hasta hoy lo medido en local era 0 de 120 (J6f, Windows). **No construyo nada con esto:**
+un reproductor de un fichero × N con y sin `forceExit` toca el runner o un workflow.
+
+Y explica cuándo el job sale rojo: sólo cuando la pérdida de la pasada entera se REPITE a solas
+sobre los mismos nombres. Si no coincide, el job sale verde habiendo perdido casos.
+
+## Dos datos de c.17938 que la medición corrige
+
+- «Otros 9 casos del mismo fichero sí están en las dos»: no. Son las «NO CONFIRMADAS a solas»:
+  faltaron también en la pasada entera (posiciones 34 a 42). La entera perdió 31, no 22.
+- Los 22 no son lo que faltó: son lo que la repesca confirmó.
+- (Menor) El último commit que toca el fichero en `main` es `e91a3741`, del 15-sep-2026.
+
+## Lo que el trinquete no imprime (reportado, no tocado)
+
+Sus «CAMBIAN DE VEREDICTO» son la **intersección** de lo que cambió en la pasada entera y lo que
+cambió a solas. Lo que se pierde sólo a solas no sale en ningún sitio: en #2071 la línea dice
+«confirma 34 de 3», y 31 de esos 34 no se pueden situar.
+
+## Lo que NO sé
+
+- Si los casos ausentes se ejecutaron y su informe no llegó, o no se ejecutaron. Lo separaría un
+  testigo de ejecución dentro del test, y eso es tocar tests o runner.
+- En qué zona faltaron a solas: el trinquete no lo imprime.
+- Si los 2 de `scrum524b` a solas (38 y 39) son un bloque en medio o la diferencia entre dos colas
+  de distinto largo (38 a 41 y 40 a 41). El log no lo distingue.
+- **La causa. No demostrada.**
+
+## Mis errores
+
+- Mi lector por nombre importaba el otro guion, y éste ejecutaba su línea de órdenes al cargarse:
+  salió «uso:» con código 2 en vez de medir. Lo delató el código de salida. Ahora lleva la puerta
+  del principal.
+- Mi primera salida decía «REPESCA A SOLAS · cambiaron 3» donde el log decía 34: rotulé la
+  intersección como si fuera la repesca. Es la cicatriz de arriba.
+- El mismo lector decía «el orden ES el del fichero» con 0 presentes (`[].every()` es verdadero).
+  Lo vi en mi propio control negativo. Ahora dice que no puede juzgarlo.
+
+## Reproducir (desde la raíz del repo)
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/c-ordenar-por-fichero.mjs --autocontrol
+    node $E/c-ordenar-por-fichero.mjs $E/c-zona-2072.txt tests/vigia-atascados.test.mjs tests/vigia-atascados.test.mjs
+    node $E/c-ordenar-por-fichero.mjs $E/c-zona-2071.txt tests/vigia-atascados.test.mjs tests/vigia-atascados.test.mjs
+    gh run view 36878986636 --job 110425624016 --log > <fuera del árbol>/build-2072.log
+    node $E/c-presentes-en-el-obligatorio.mjs <fuera del árbol>/build-2072.log tests/vigia-atascados.test.mjs
+
+Las posiciones valen mientras el blob del fichero siga siendo `741e399b`. Los logs de los jobs no
+están en git (2,6 MB cada uno); los recortes del job de zona, sí (`c-zona-2072.txt`, `c-zona-2071.txt`).
+
+# SCRUM-1339d · La señal por nombres, construida: avisa con fichero y líneas, y cuenta lo que no ve
+
+**Medido contra:** `origin/main` = `cadf00bcee699dc200ff142050986a62b692b3c4` · 2026-10-01T16:51:01Z
+
+A9: comprobación → `tests/scrum1339d-senal-de-nombres.test.mjs`
+
+**El encargo** (orquestador del equipo de Javier; decisión en c.17935, autorizaciones del fundador
+en c.17951 y c.17954, enmienda en c.17961, cruce de carril y contradicción resuelta en c.17966):
+construir la cuenta de la señal como módulo puro + guion + test, y un paso NUEVO en `ci.yml` que
+sólo anota su propio run. **Cruces declarados:** el ticket es `area-j6` y lo trabaja J3 por decisión
+del orquestador; `ci.yml` es de S5 y corre en los PR de los dos equipos (autorización: c.17954).
+
+## En corto
+
+- **Construido:** `scripts/_senal-de-nombres.mjs` (puro), `scripts/senal-de-nombres.mjs` (guion,
+  sale 0 siempre) y `tests/scrum1339d-senal-de-nombres.test.mjs` (17 casos, 5 mutaciones vistas caer).
+- **Un paso nuevo en `ci.yml`**, tras «Guardar el TAP completo»: `if: always()`,
+  `continue-on-error: true`, sin `env`, sin token. No es requerido y no puede bloquear.
+- **Medido sobre 114 artefactos `tanda-tap` del 1-oct** (10:27Z a 16:12Z), cada uno contra el árbol
+  que probó su job: 91 medibles, **41 con casos ausentes (28 en `success`)** y 50 limpios.
+- **El punto ciego es mayor de lo que el diseño suponía, y va dicho en cada aviso:** lo que la
+  señal nombra es un SUELO. En un job a `scrum524b` le faltaban 26 casos y nombró 3.
+- **La punta de `main` (`cadf00bc`) perdió 6 casos de `scrum411` en su obligatorio y salió verde.**
+- **`scrum859` (lo que J3h dejó sin medir):** el contenido del registro NO hace desaparecer sus
+  cuatro casos. Salía CIEGO en el 22 % de los runs ANTES de que existiera #2114.
+
+## ⓪ Antes de construir: el paso que «ya existe»
+
+c.17935 decía «el paso ya existe y corre con `if: always()`» y c.17954 autorizaba uno nuevo. Las
+dos frases no podían sostener la misma conclusión. Medido en `ci.yml` (job `test`, líneas de
+`origin/main` en `cadf00bc`, antes de mi paso): hay cuatro pasos con `if: always()` y ninguno se
+puede usar sin editar un guion ajeno.
+
+| línea | paso | por qué no sirve |
+|---|---|---|
+| 301 | «¿Se puede leer el TAP de la tanda?» | corre `scripts/equipo/por-que-cayo.mjs` (S5) |
+| 324 | «¿Ha perdido tests la tanda?» | corre `scripts/suelo-de-la-tanda.mjs`, con PR ajenos abiertos (#1990, #2000), y **no lleva `continue-on-error`**: un fallo mío ahí pondría rojo el obligatorio |
+| 342 | «Guardar el TAP completo» | es un `uses:`, no ejecuta guion |
+| 365 | «¿Cuánto ha tardado la puerta?» | shell dentro del propio `ci.yml` |
+
+El paso nuevo es el cambio más pequeño y el único autorizado.
+
+## ① Qué compara, y con qué criterio
+
+«Todo test que el árbol declara con nombre LITERAL aparece en el TAP, tantas veces como se
+declara.» Quién declara tests lo decide el censo de SCRUM-708 (`tests/_poblacion-de-tests.mjs`),
+que se IMPORTA: da cuántas llamadas hay y no cómo se llaman, así que el módulo saca los nombres
+con su propio recorrido y **ata su recuento al del censo** — fichero a fichero con
+`testsDeclarados`, y el árbol entero con `testsDeclaradosEn(raiz)`. Si discrepan, no mide y lo dice.
+
+Tres cosas medidas antes de escribirlo (banco `d-banco-de-nombres.txt`, node 24.18):
+
+- **El escape no es invertible.** El reporter cambia primero los caracteres de control y después
+  dobla la barra: un tabulador real sale como barra-barra-t, igual que una barra seguida de «t».
+  Por eso se escapa lo DECLARADO y no se des-escapa lo registrado.
+- **El TAP dice si una línea es suite o test** (`type:` en su bloque). Sin eso, un `describe('x')`
+  taparía la pérdida de un `test('x')`.
+- **El TAP no dice de qué fichero viene cada línea.** De ahí los «dudosos» de abajo.
+
+**Multiplicidad** (la mejora de J3h): un nombre declarado dos veces tiene que llegar dos. Si no
+llega ninguna, faltan las dos y cada fichero lleva la suya. Si llega una, falta una y no se sabe
+cuál: sale como DUDOSO, contado aparte, y no se le cuelga a ningún fichero. En el árbol de hoy
+hay 1 nombre repetido entre dos ficheros, y 0 dudosos en los 91 jobs.
+
+## ② Lo medido sobre los TAP de verdad
+
+Dos bancos: los 99 artefactos que bajó J3h (10:27Z–14:41Z) y 15 posteriores (14:52Z–16:12Z).
+Instrumento: `d-contra-los-tap.mjs`. Salidas: `d-salida-contra-los-tap-*.txt`.
+
+| | banco de J3h | los 15 nuevos | suma |
+|---|---|---|---|
+| artefactos con TAP | 99 | 15 | 114 |
+| TAP no entero (NUL, o sin resumen) | 18 | 3 | 21 |
+| sin árbol probado (falta el log) | 1 | 1 | 2 |
+| **medibles** | 80 | 11 | **91** |
+| con casos ausentes | 36 | 5 | **41** |
+| … de ellos `success` | 23 | 5 | **28** |
+| limpios (0 ausentes, 0 dudosos) | 44 | 6 | **50** |
+
+- **Cruce con la sonda de J3h** (`b-analisis.tsv`, otro instrumento, mismas entradas): 79
+  comparables de 80, **mismo veredicto en 79 y misma cifra en 79**. El que falta es un push que
+  su sonda no resolvió por no tener log y la mía resuelve por el sha.
+- **El guion sobre el disco y el módulo sobre objetos de git coinciden**: el TAP del obligatorio
+  de `cadf00bc`, por los dos caminos, da 6 ausentes en `scrum411` (`d-salida-cli-arbol-real.txt`;
+  los otros 17 de esa salida son los de mi propio test, que ese TAP no podía traer).
+- **Coste:** 4,2 s sobre el árbol entero (1.193 ficheros, 9.547 llamadas), en esta máquina.
+
+## ③ 🔴 El control positivo, con una segunda sonda que no mira ningún fuente
+
+«Un run completo no anota nada» no se puede comprobar con la propia señal: si dice 0, dice 0.
+`d-hermanos.mjs` compara los TAP de dos jobs que probaron el MISMO árbol, línea a línea, sin
+leer un solo fuente. Lo que un hermano trae y el otro no es lo que se perdió de verdad.
+
+| | jobs |
+|---|---|
+| árboles con más de un job | 7 |
+| jobs en esos árboles | 14 |
+| la señal nombra exactamente lo perdido (incluidos 7 limpios con 0 y 0) | 12 |
+| la señal nombra MENOS de lo perdido | 2 (12 de 15, y 8 de 32) |
+| **la señal nombra MÁS de lo perdido (falso positivo)** | **0** |
+| hay pérdida y la señal calla | 0 |
+
+**Lo que este control NO alcanza, dicho:** el encargo pedía cero falsos positivos «sobre los 85
+jobs limpios medidos». Esos 85 son de la medición de J3g, hecha sobre nombres sacados de los LOGS
+porque entonces el TAP llegaba roto; no existen como TAP y no se pueden pasar por un lector de
+TAP. Lo que hay es: 50 jobs que la señal da por limpios, de los cuales **7 tienen un hermano que
+lo confirma** y 43 no tienen con quién compararse. Cero falsos positivos está medido sobre 14
+jobs, no sobre 85.
+
+## ④ 🔴 El punto ciego, medido: lo que se nombra es un suelo
+
+En el árbol de hoy **115 llamadas de 9.547 (1,2 %) llevan el nombre construido**, en 64
+ficheros. Parecía poco. No lo es, porque UNA llamada dentro de un bucle registra muchos casos:
+
+- job `11174308618` (push a `main`, `204d117b`, verde): le faltan **32** casos frente a su
+  hermano. La señal nombró **8**. Los otros 24 son de `scrum524b` (23, de una sola llamada en un
+  bucle) y de `scrum1262` (1).
+- job `11164124022`: faltan 15, nombró 12.
+
+La señal SÍ saltó en los dos (el fichero sale nombrado), pero la cifra se queda corta. Por eso:
+
+- el aviso dice **«faltan AL MENOS N»** cuando en el mismo hueco hay llamadas de nombre
+  construido, y dice cuántas;
+- la línea de registro de cada run lleva `no_comparables=`;
+- y queda un caso que esta señal NO ve y que el test deja escrito como tal: si se pierden SÓLO
+  casos de un bucle, da 0. No se ha visto en los 14 jobs con hermano. No está descartado.
+
+## ⑤ Los controles del encargo
+
+| control | dónde se ve |
+|---|---|
+| ① el rojo: un run con ausentes sale anotado con fichero y rango | test «① EL ROJO…»; sobre TAP reales, las 41 filas de `d-salida-contra-los-tap-*.txt` |
+| ② el positivo: un run completo no anota nada | test «② 🔴 EL POSITIVO…»; sobre TAP reales, la sección ③ de arriba |
+| ③ la línea sale siempre, con su población | test «③ la línea de registro…» y «LA TASA…» (también con 0 y con 0 medidos) |
+| ④ el guion roto sale 0 y lo dice | test «④ 🔴 EL GUION ROTO A PROPÓSITO…»: 9 roturas, entre ellas el guion sin su módulo |
+| el punto ciego, contado e impreso | test «EL PUNTO CIEGO…»; línea `PUNTO CIEGO:` de cada salida |
+| «declarados N» atado al censo | test ««declarados N» está ATADO…» |
+
+Las cinco mutaciones declaradas, vistas caer una a una (`d-salida-mutaciones.txt`): 5 vivas, 0
+mudas, 0 ciegas, sobre una base de 17 en verde.
+
+**El control ④ sobre el PASO (no sobre el guion) sólo se puede enseñar en un run de verdad:** va
+en el comentario de entrega del ticket, con el número del run.
+
+## ⑥ `scrum859`, lo que J3h declaró sin medir
+
+Su PR añadió dos secciones a este registro y el meta-guard salió rojo por `scrum859` CIEGO
+(faltan 4 de 20 en la pasada mutada). Ese test trocea `docs/master`. ¿Contribuye el contenido?
+
+- **La parte determinista, NO** (`d-salida-scrum859-local.txt`): 60 pasadas en esta máquina, con
+  el registro de antes de #2114, con el de `main` y con el de esta rama (que añade esta sección),
+  limpias y con la mutación que el propio `scrum859` declara. Las 60: 20 tests, los cuatro
+  presentes. Mutada: 12 pasan y 8 caen, y el que tiene que caer, cae. En CI la mutada dio 9 y 7:
+  son exactamente los cuatro últimos que faltan.
+- **Ya pasaba antes** (`d-salida-meta-scrum859.txt`, 150 runs del CI de hoy, 83 juzgables):
+  CIEGO en **18 de 81 runs (22 %) creados antes de que #2114 entrara en `main`**, el primero a
+  las 10:32Z. Siempre «faltan 4 de 20», siempre los mismos cuatro, que son la COLA del fichero.
+- **Después de #2114: 1 de 2.** Con dos runs no se puede decir si la frecuencia cambió.
+
+Es la forma de SCRUM-1339 (cola contigua, un solo fichero, sin carga) dentro del meta-guard. **Y
+es un candidato a reproductor que ya existe**: un fichero, una mutación, y pierde su cola una de
+cada cinco veces en Linux. No lo he construido ni tocado: es del workflow de c.17951.
+
+## Lo que NO sé
+
+- Si el contenido de `docs/master` cambia la PROBABILIDAD de esa pérdida. Lo medido descarta que
+  la cause; no que la empuje.
+- Si `file=`/`line=` cuelga la anotación del fichero. No lo uso (c.17961) y no lo he medido.
+- Cuántos casos faltan de verdad en los 34 jobs con ausentes que no tienen hermano.
+- La causa. No demostrada.
+
+## Mis errores
+
+- Di «ausentes» como si fuera la cuenta de lo perdido. Lo desmintió la segunda sonda: 8 nombrados
+  de 32. Ahora el aviso dice «al menos» y un test lo sujeta (es la línea A9 de arriba).
+- Mi primer cruce buscaba el log por artefacto y no por run: dejó dos jobs «sin árbol» que J3h sí
+  había resuelto. Lo delató que mi población medible (78) no casaba con la suya (79).
+- Mi primera comparación de hermanos tomaba el máximo de `# tests` como «el completo» y contaba
+  la línea de fichero entero como un caso: marcó «no cuadra» en cuatro jobs que cuadraban.
+- Comprobé `ci.yml` con una librería que no está instalada, pasando el código a node por la
+  línea de órdenes. No comprobó nada, y lo dijo con un error en vez de con un cero.
+
+## Lo que no está en git, y reproducir
+
+Los TAP no están en git (114, de 0,16 a 2,4 MB): son artefactos del CI y caducan a los 7 días.
+Sí están las listas para volver a bajarlos (`b-arts-hoy.tsv`, `d-arts-banco2.tsv`) y lo que salió.
+
+    E=docs/master/evidencias/SCRUM-1339
+    node --test tests/scrum1339d-senal-de-nombres.test.mjs
+    node $E/d-mutaciones.mjs . tests/scrum1339d-senal-de-nombres.test.mjs      # con el árbol commiteado
+    node $E/b-bajar.mjs <fuera del árbol>/banco                                  # pide arts-hoy.tsv dentro
+    node $E/d-contra-los-tap.mjs <fuera del árbol>/banco .
+    node $E/d-hermanos.mjs <fuera del árbol>/banco/d-contra-los-tap.tsv <fuera del árbol>/banco/taps .
+    node $E/d-scrum859-local.mjs . 10 antes=8c0bf72850988e5f06266f330ab4c6c869f42a36 main=cadf00bcee699dc200ff142050986a62b692b3c4 rama=ARBOL
+    node $E/d-meta-scrum859.mjs <fuera del árbol>/meta 150
+    node scripts/senal-de-nombres.mjs <un tanda.tap>                             # sobre el árbol del disco
+
+## ⑦ El control ④ sobre el PASO, en un run de verdad (J3j, relevo de J3i)
+
+Run `36901626137` (`pull_request`, head `601185c091d49391e4d78a4124c9c32a0e0c87f7`, creado
+2026-10-01T17:44:37Z), con tres pasos temporales rotos a propósito detrás del bueno. El job «build
++ tests (con banco desechable)» salió `success`. Leído del log del job (2.700.194 bytes):
+
+| paso | salida | qué dejó |
+|---|---|---|
+| el bueno | 0 | `::notice` «FALTAN al menos 5 en 2 fichero(s)» y 2 `::warning` con fichero y líneas |
+| el TAP no existe | 0 | «NO PUDE MEDIR: no pude leer el TAP…» y su `::warning` |
+| el TAP es basura | 0 | «NO PUDE MEDIR: el TAP no tiene resumen», `::notice` con `medible=no` y su `::warning` |
+| el guion no existe | **1** | **nada propio**: node dice «Cannot find module» y GitHub deja una anotación `failure` |
+
+- **Lo dicen dos, no tres.** «Incapaz de tumbar el job» descansa en dos construcciones: el guion,
+  que sale 0 hablando, y `continue-on-error`, que calla. Si el guion desaparece, el paso sale con
+  una ✗ roja en un job verde y sin la frase. Queda escrito en `ci.yml`, junto a esa línea.
+- **Las anotaciones no cuelgan de ningún fichero del repositorio:** `path` = `.github` y la línea
+  es la del log del paso (API de anotaciones del check-run `110501932336`). Era lo no medido de
+  c.17961.
+- **La señal cazó en su primer run:** ese obligatorio salió verde con 5 casos perdidos —
+  `scrum286-bloques-orden` (4 de 24, la cola) y `scrum524b-trinquete-de-la-tabla` (1 de 12, el
+  último). Comprobado aparte, buscando en el log los nombres declarados: los cuatro de `scrum286`
+  no aparecen; el de `scrum524b` aparece empezado (`▶`) y sin resultado. No se tocó ninguno.
+- Los 17 casos de `tests/scrum1339d-…`, 17 de 17 por nombre en ese log. Control del buscador:
+  «SCRUM-267» 50 líneas, «scrum267» 0.
+- Los tres pasos temporales se quitaron con un revert (`83a6af55`): el `ci.yml` volvió al blob del
+  commit bueno (`34e473b9`). Después se añadió la frase de la segunda red y se mezcló `main`
+  (`b3b40554`); `scrum812` chocó otra vez y su test dio 31 sobre el árbol fusionado.
+- **El trinquete de `scrum812` exige que el ancla de su mutación ④ se mueva con la constante, y
+  lo comprueba él mismo.** Subí sólo la constante (30 → 31) y cayó «mi ancla ④ muta la
+  CONSTANTE»: la mutación declarada seguía diciendo «de 30 a 29» y habría salido ciega. Van
+  juntas: la constante y las líneas `de:`/`a:` de su mutación.
+
+**Mi error (J3j):** un recuento de «restos de los temporales» dio 0 porque la orden no llegó a
+correr (Git Bash convirtió `origin/rama:ruta` en una ruta de Windows y git salió con `fatal`).
+Lo delató el error impreso al lado del cero. Repetido por sha y con control positivo (9 sobre
+`601185c0`), el número es 1, y es una línea de SCRUM-617 que ya estaba en `main`.
+
+---
+
+# SCRUM-1339e · La tasa, medida desde fuera: 1 de 4 con el paso, 11 de 21 por commit, y los que pierden son siempre los mismos 18 ficheros
+
+**Medido contra:** `origin/main` = `d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c` · 2026-10-02T02:29:55Z
+
+A9: aviso → cicatriz J3 «Pasé por 229 árboles un instrumento que había nacido sobre 15 sin mirar qué guardaba en memoria: lo que cabe en la muestra no dice nada del lote.» — no se pudo comprobar: es un guion de evidencias que se lanza a mano fuera de la tanda; lo que queda es el arreglo en el propio guion, que ya sólo guarda el último árbol
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-5b`, 2-oct): volver a medir
+la tasa de c.17935 sobre lo que hay HOY, desde fuera y con `gh` (c.17954 ②), y dejar la evidencia
+en git. Lo hace J3a. Sólo lectura: ni `ci.yml`, ni código de la tanda, ni Jira hasta la entrega.
+
+## En corto
+
+- **La cifra que nombra la decisión (c.17935), leída de las anotaciones del paso: 1 de 4 runs del
+  obligatorio en `main` con casos ausentes (25,0 %).** La población son los 4 commits de `main`
+  cuyo árbol ya tiene el paso (`7080ba94` → `d2ed6c8a`). Los 4 dejaron su línea. **Contra el 5 %
+  no se puede decir nada: la ventana es de 50 y hay 4.**
+- **Por commit de `main`, recalculando con el TAP del artefacto** (sirve también para antes del
+  paso): **11 de 21 medidos con ausentes (52,4 %)**, los 11 con el job en `success`. De 95 commits
+  desde el 1-oct 00:00Z, 56 no tienen artefacto y 18 traen el TAP con bytes NUL.
+- **Todos los jobs, de PR y de `main`: 48 de 110 medibles con ausentes (43,6 %)**; en `success`,
+  35 de 80 (43,8 %). 229 artefactos, 119 no medibles.
+- **No es una medición independiente de las del 1-oct.** 94 de los 110 medibles caen en la ventana
+  que ya cubrían 1339b y 1339d. Lo nuevo son 16 jobs, 6 con ausentes. Con 16 no se afirma tendencia.
+- **Los que pierden son siempre los mismos.** Los 72 bloques perdidos salen de 18 ficheros, y
+  68 de 72 son la cola. Es una propiedad de esos ficheros, no un parpadeo repartido.
+- **El paso ya avisó de una pérdida en `main`:** `16358193` (#2119) entró en verde sin 35 casos
+  (30 de 64 de `vigia-atascados`, 5 de `scrum1262`), y su run lleva los dos `::warning`.
+- **Un experimento del otro equipo, leído aquí (⑦):** doce tandas enteras del mismo árbol en
+  Linux. Con `--test-force-exit` pierden casos 4 de 6; sin él, 0 de 6, y las seis dan 9.838.
+
+## ⓪ La población y los instrumentos
+
+229 artefactos `tanda-tap` creados entre el 2026-10-01T00:28:24Z y el 2026-10-02T02:05:33Z
+(40 de push a `main`, 189 de PR; 225 runs). La lista sale de la API de artefactos, y su control
+vio uno anterior a la hora pedida (`e-salida-listar.txt`). Bajados 229 de 229; 224 logs, y el
+que falta es el del run de `d2ed6c8a`, que seguía en marcha (es un push: su árbol sale del sha).
+
+Dos instrumentos sobre los mismos jobs:
+
+- **(A) La anotación del paso.** `e-tasa-de-main.mjs` y `e-anotaciones.mjs` leen la `::notice`
+  del check-run y la pasan por `registroDesdeLinea` y `tasaDeRegistros`, las del módulo de 1339d.
+- **(B) El recálculo.** `d-contra-los-tap.mjs` (el de 1339d) pasa el TAP del artefacto por la
+  señal contra el árbol que el job probó. No necesita que el paso existiera.
+
+No uso el listado `actions/runs?branch=main&event=push`: devolvió como últimos runs del 17 y
+18 de septiembre. Los runs de `main` se piden por el sha de cada commit del primer padre.
+
+## ① La tasa de c.17935, por las anotaciones (A)
+
+    [señal de nombres · tasa] 1 de 4 runs medidos con nombres ausentes (25.0 %) · población 4 runs
+    · sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 4
+
+Sale igual por `e-tasa-de-main.mjs` y por `node scripts/senal-de-nombres.mjs --tasa` sobre
+`e-registros-de-main.json` (`e-salida-tasa-cli.txt`). El job obligatorio corrió en los 4 commits.
+Hacia atrás, `b3b40554` es el primero sin el paso en su árbol: de ahí no hay anotación que leer.
+
+El 1-oct hubo 21 runs medibles de `main` en un día. A ese ritmo la ventana de 50 se llena antes
+del 15-oct; es una cuenta sobre un día, no una medición.
+
+## ② Por commit de `main`, con el recálculo (B)
+
+| Commits de `main` desde el 1-oct 00:00Z (primer padre de `d2ed6c8a`) | 95 |
+|---|---|
+| sin artefacto `tanda-tap` | 56 |
+| con artefacto y TAP no medible (bytes NUL) | 18 |
+| medidos | 21 |
+| **con ausentes** | **11 (52,4 % de los medidos)** |
+| · anteriores al paso | 10 de 17 |
+| · con el paso en el árbol | 1 de 4 |
+
+Los 11, uno por uno, en `e-salida-anotaciones.txt` (④) y en `e-commits-de-main.tsv`. No he
+separado por qué 56 commits no tienen artefacto (job que no corrió, o run cancelado por el
+siguiente push antes de guardar el TAP). No cuentan como limpios ni como perdidos.
+
+## ③ Todos los jobs, y lo que es nuevo
+
+| | con ausentes | medibles |
+|---|---|---|
+| todos | 48 (43,6 %) | 110 |
+| en `success` | 35 (43,8 %) | 80 |
+| push | 11 | 21 |
+| pull_request | 37 | 89 |
+| hasta el 1-oct 16:24:08Z (ya cubierto por 1339b y 1339d) | 42 | 94 |
+| después (nuevo) | 6 | 16 |
+
+Los 119 no medibles: 109 con bytes NUL y 10 sin resumen (la tanda no llegó al final).
+
+## ④ Los controles
+
+- **El lector de anotaciones ve una que existe:** el check-run `110514502040` (la punta de #2118)
+  da 3 anotaciones, una con línea de registro. Sin eso el guion no mide y sale 3.
+- **Negativo:** de 220 jobs cuyo árbol NO tiene el paso, 0 traen línea de registro.
+- **¿Habla siempre el paso?** De 9 jobs con el paso en el árbol, 8 dejaron UNA línea y ninguno
+  calló. El noveno deja dos: es el run `36901626137`, el del control ④ de 1339d, con sus tres
+  pasos rotos a propósito. Si el árbol tiene el paso se mira en el árbol, no por la hora.
+- **(A) contra (B):** misma cifra de ausentes y de dudosos en 8 de 8 comparables.
+- **Avisar, no sólo contar:** con ausentes y sin `::warning`, 0 de 2. Completos con `::warning`, 0 de 6.
+
+## ⑤ Quién pierde: 18 ficheros, y casi siempre la cola
+
+`e-por-fichero.tsv`. 72 bloques en 48 jobs, de 18 ficheros distintos sobre unos 1.190 de `tests/`:
+
+| fichero | veces | declara | faltan |
+|---|---|---|---|
+| `scrum524b-trinquete-de-la-tabla` | 16 | 12 | 1 a 3 (al menos) |
+| `scrum834-puerta-avisador-rojo` | 11 | 53 | 2 a 35 |
+| `vigia-atascados` | 11 | 64 | 4 a 42 |
+| `scrum1262-la-baja-corta-todas-las-vias` | 8 | 10 | 1 a 5 (al menos) |
+| `scrum237-negacion-respaldada` | 4 | 8 | 8 (entero) |
+| otros 13 | 1 a 3 cada uno | 10 a 32 | 1 a 10 |
+
+68 de los 72 bloques son de ficheros que sólo pierden la cola; los otros 4 son `scrum237`, que
+pierde el fichero entero. Buscando por texto no comparten nada evidente: casi todos son tests
+síncronos, sin procesos hijos ni temporizadores. **No sé qué los distingue.** Es la pregunta que
+le toca al reproductor (1339f): si la pérdida fuera azar repartido, no repetirían 18 de 1.190.
+
+## ⑥ Cómo se vuelve a medir (el 15-oct, o antes)
+
+    node docs/master/evidencias/SCRUM-1339/e-tasa-de-main.mjs origin/main <carpeta fuera del árbol>
+
+Tarda segundos y no baja ningún TAP: tres llamadas a `gh` por commit. Para cuando junta 50 runs
+medidos, y entonces la línea dice «por DEBAJO» o «por ENCIMA» del 5 %. Lo que no es un run medido
+(sin run de CI, job saltado, job que corrió y no dejó línea, «medible=no») va contado aparte.
+
+## ⑦ Lo que dicen los doce TAP del experimento del otro equipo (leído, no concluido)
+
+El equipo de Luis corrió el 1-oct a las 14:00:51Z un experimento para SCRUM-1384: rama
+`exp-1384-informe-truncado` (no está en `main`), workflow propio, run `36873018664`. Doce tandas
+ENTERAS del mismo árbol (`1da4852f`, sobre `3017ae0c`) en Linux: seis con `--test-force-exit` y
+seis sin. Su ticket no tiene comentarios y los doce TAP caducan a los tres días. Los pasé por la
+señal de nombres contra el árbol de su commit (`e-exp1384.mjs`). Sólo lectura: ni su rama, ni su
+workflow, ni su ticket.
+
+| brazo | tandas medibles | con ausentes | `# tests` de cada tanda |
+|---|---|---|---|
+| con `--test-force-exit` | 6 de 6 | **4** | 9.838 · 9.820 · 9.837 · 9.812 · 9.838 · 9.828 |
+| sin `--test-force-exit` | 6 de 6 | **0** | 9.838 las seis |
+
+- **Las seis sin el flag dan el mismo recuento, 9.838, que es el máximo de las seis con el flag.**
+  Con el flag faltan 18, 1, 26 y 10 casos por recuento (55); la señal nombra 39. Es un suelo.
+- **Pierden los mismos:** `scrum834` (20 y 10 de 53), `scrum1262`, `scrum524b` y `scrum888g`.
+  Los cuatro están entre los 18 de ⑤, y siempre es la cola.
+- Ninguna de las doce tiene fallos. Las seis sin el flag llegaron a su resumen y tardaron lo
+  mismo que las otras (371 a 544 s frente a 318 a 518 s): ninguna se quedó colgada.
+
+**Lo que esto NO dice.** Son seis tandas por brazo, de un solo árbol y de una sola tarde: si el
+flag no influyera, que las cuatro pérdidas cayeran todas en el mismo brazo pasaría 3 veces de
+cada 100. No es una demostración de la causa, y la conclusión del experimento es de quien lo
+diseñó. Tampoco dice qué costaría quitar el flag: no lo he medido, y no es una decisión de aquí.
+
+**Lo que cambia para el reproductor (1339f, sin empezar).** c.17951 pedía «con y sin
+`--test-force-exit`» sobre un fichero. Ese contraste ya existe sobre la tanda entera. Lo que sigue
+sin saberse, y es lo que un reproductor puede contestar, es qué tienen esos 18 ficheros y si los
+casos que faltan se ejecutaron.
+
+## El hueco declarado
+
+Dirigida local NO corrida — decisión del orquestador; `guards:entrada` sí: 12 guards, 132
+tests, 0 caen, 17 s; el obligatorio del CI es la primera pasada entera sobre esta rama. La rama
+sólo toca `docs/`.
+
+## Lo que NO sé
+
+- La tasa sobre la ventana de 50. Hay 4 runs con el paso y 21 con el recálculo.
+- Si la tasa ha cambiado desde el 1-oct. Lo nuevo son 16 jobs.
+- Por qué 56 de 95 commits de `main` no tienen artefacto.
+- Cuántos casos faltan de verdad: lo que se nombra es un suelo (1339d, ④).
+- Qué tienen en común los 18 ficheros. Y la causa, que sigue sin demostrar.
+
+## Mis errores
+
+- Pasé `d-contra-los-tap.mjs` por 229 árboles sin mirar que guardaba todos en memoria. Murió a
+  los cinco minutos con 4 GB ocupados, en una máquina que comparten seis sesiones. De esa pasada
+  no usé nada. El guion ya sólo guarda el último árbol, y la pasada se repitió entera.
+- Mi primera salida rotulaba «CALLADO» al job que dejó DOS líneas de registro. No calla: es el
+  run de los pasos rotos a propósito. El rótulo se separó en «callados» y «otra cosa».
+- Un parche pasado a `node` por un heredoc de bash no aplicó (las barras se doblan). Avisó con
+  un error y no escribió nada; los cambios se hicieron editando el fichero.
+
+## Lo que no está en git, y reproducir
+
+Los 229 TAP (115 MB) y los 224 logs no están en git: son artefactos del CI y caducan a los 7
+días. Sí está la lista para volver a bajarlos (`e-arts.tsv`) y todo lo que salió (`e-*.tsv`,
+`e-salida-*.txt`).
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/e-listar.mjs <fuera del árbol>/banco 2026-10-01T00:00:00Z            # escribe arts-hoy.tsv
+    node $E/b-bajar.mjs <fuera del árbol>/banco
+    node $E/d-contra-los-tap.mjs <fuera del árbol>/banco . <fuera del árbol>/banco
+    node $E/e-anotaciones.mjs <fuera del árbol>/banco . <fuera del árbol>/banco 2026-10-01T00:00:00Z d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c 2026-10-01T16:24:08Z
+    node $E/e-tasa-de-main.mjs origin/main <fuera del árbol>/banco
+    node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
+    git fetch origin exp-1384-informe-truncado                                   # mientras exista la rama
+    node $E/e-exp1384.mjs <fuera del árbol>/banco . $E/e-por-fichero.tsv         # los TAP caducan el 4-oct

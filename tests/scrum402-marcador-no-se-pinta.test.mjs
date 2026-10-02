@@ -730,7 +730,12 @@ const CENSO = marcadoresDeclarados().panel;
   // constante `MARCADOR`, así que aprobar el copy los apaga de golpe. Las cabeceras de columna
   // (Fecha, Proveedor, NIF, Base, IVA, Total) NO llevan marcador: son los términos que impone la
   // propia aceptación del ticket, no copy inventada.
-  // ↳ ENTRADA `facturasRecibidasView.js` (su número, en el JSON)
+  //
+  // 🔴 SCRUM-1388 · 2-oct-2026 · `facturasRecibidasView.js` SALE del censo: el fundador firmó el
+  // 1-oct-2026 los cuatro textos que colgaban de esa constante (título, error de carga, vacío y
+  // descuadre; `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`) y la constante se
+  // retiró entera. La entrada se BORRA del JSON, no se pone a 0 (SCRUM-424/405). El rótulo de menú
+  // que nombra el párrafo de arriba nunca llevó marcador (SCRUM-420 §④).
 }
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

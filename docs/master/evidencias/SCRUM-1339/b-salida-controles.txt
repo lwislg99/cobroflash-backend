@@ -1,0 +1,41 @@
+CONTROL ① árbol: «declara N» que imprime el suelo DENTRO del job == llamadas que yo cuento en el árbol reconstruido: 75 de 77
+CONTROL ② mismo run: «ℹ tests N» del log spec == «# tests N» del TAP: 76 de 77 · distintos: 11169178875: spec 5 vs TAP 9856
+
+POBLACIÓN medida: 79 jobs con TAP entero y árbol resuelto · creados 2026-10-01T10:32:12Z → 2026-10-01T14:38:55Z
+  por conclusión del job: {"failure":23,"success":54,"cancelled":2} · por evento: {"pull_request":70,"push":9}
+CON NOMBRES AUSENTES: 36 de 79 (46 %) · nombres ausentes en total 493
+  por conclusión: {"failure":12,"success":23,"cancelled":1} · por evento: {"pull_request":32,"push":4}
+  de los 54 jobs VERDES: con pérdida 23
+  de los 9 de push a main: con pérdida 4 ({"success":4})
+
+BLOQUES (fichero × job): 53 · por forma: {"cola":49,"entero":4} · por entrada: {"sin entrada":49,"con entrada de fichero":4}
+   10 jobs ·   26 nombres · cola · scrum524b-trinquete-de-la-tabla.test.mjs
+    9 jobs ·  151 nombres · cola · scrum834-puerta-avisador-rojo.test.mjs
+    8 jobs ·  183 nombres · cola · vigia-atascados.test.mjs
+    5 jobs ·   21 nombres · cola · scrum1262-la-baja-corta-todas-las-vias.test.mjs
+    4 jobs ·   32 nombres · entero · scrum237-negacion-respaldada.test.mjs
+    3 jobs ·    9 nombres · cola · scrum1323-resumen-vs-detalle-sif1.test.mjs
+    2 jobs ·   10 nombres · cola · scrum522-guards-fuera-de-la-tanda.test.mjs
+    2 jobs ·   10 nombres · cola · scrum312-importador-clientes.test.mjs
+    2 jobs ·    4 nombres · cola · scrum996-suelo-de-arranque.test.mjs
+    1 jobs ·    2 nombres · cola · scrum161-evidencia-tanda.test.mjs
+    1 jobs ·   10 nombres · cola · scrum813-trinquete-de-zona.test.mjs
+    1 jobs ·    7 nombres · cola · scrum176-guard-mensaje.test.mjs
+    1 jobs ·    5 nombres · cola · scrum286-bloques-orden.test.mjs
+    1 jobs ·    3 nombres · cola · scrum888g-senal-en-la-firma.test.mjs
+    1 jobs ·    6 nombres · cola · scrum931-un-solo-importe-de-plantilla.test.mjs
+    1 jobs ·    6 nombres · cola · scrum454-destructivo-sin-comprobacion.test.mjs
+    1 jobs ·    8 nombres · cola · scrum1350-latido.test.mjs
+
+LO QUE VE EL SUELO DE HOY (SCRUM-702 + 1380): jobs con una entrada de fichero: 4 de 36 con pérdida
+  nombres ausentes dentro de un fichero ENTERO: 32 de 493
+  jobs con pérdida y SIN ninguna entrada de fichero (el suelo no puede verlos): 32 · de ellos verdes 23
+  jobs con entrada de fichero que ADEMÁS perdieron la cola de otro fichero: 2
+
+VEREDICTO DEL SUELO en los logs (último intento): ✅ 89 · 🔴 2 · otro 4
+  11158721194 → 🔴 1 FICHERO(S) DE TEST NO REGISTRARON NI UN TEST: tests/scrum237-negacion-respaldada.test.mjs.
+  11167739879 → 🔴 1 FICHERO(S) DE TEST NO REGISTRARON NI UN TEST: tests/scrum237-negacion-respaldada.test.mjs.
+
+TAP NO ENTEROS: 18 · con NUL 14 (último 2026-10-01T10:59:02Z) · cancelados sin resumen 4
+  desde el merge de #1990 a main (artefacto de main de 11:44:39Z): 63 artefactos · enteros 62 · con NUL 0 · cancelados sin resumen 1
+EXIT=0

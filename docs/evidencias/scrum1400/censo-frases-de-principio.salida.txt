@@ -1,0 +1,1193 @@
+POBLACIÓN: 416 ficheros en src, prisma, public (416 leídos) · 44651 líneas de comentario · 3755 frases distintas en mayúsculas
+EN DOS O MÁS FICHEROS: 258
+CONTROL · «ASIGNAR NO ES UN PERMISO»: 4 ficheros
+CONTROL · «ASIGNAR NO ES UN PERMIZO»: 0, como debe
+
+17 · Y ES DELIBERADO
+    public/dashboard/js/descuentoPorDefecto.js:27
+    public/dashboard/js/etiquetasDelDocumento.js:18
+    public/dashboard/js/tipoDestinatarioPendiente.js:23
+    src/core/config/contacto.ts:14
+    src/core/documentos/sinMarcadorPendiente.ts:23
+    src/modules/auth/domain/auth.service.ts:21
+    src/modules/billing/app/routes/stripe.routes.ts:111
+    src/modules/fiscal/verifactu/productor.ts:22
+    src/modules/invoicing/domain/recargoEquivalencia.ts:27
+    src/modules/invoicing/domain/suplidos.ts:44
+    src/modules/jobs/domain/presupuestosParaAlbaran.ts:45
+    src/modules/messaging/domain/lifecycle.service.ts:23
+    src/modules/messaging/domain/merchantNotifications.ts:11
+    src/modules/messaging/domain/weeklyDigest.service.ts:18
+    src/modules/quotes/domain/revision.ts:26
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:209
+    src/modules/system/customerAdmin.ts:272
+
+14 · EL DEFECTO QUE CIERRA
+    public/dashboard/js/api.js:358
+    public/dashboard/js/jobCobroHuecos.js:137
+    public/dashboard/js/paidViaEtiquetas.js:7
+    src/core/db/escrituraConVersion.ts:3
+    src/core/http/huellaEstaticos.ts:6
+    src/modules/billing/domain/estadoDelCobro.ts:5
+    src/modules/billing/domain/transferenciaDisponible.ts:6
+    src/modules/billing/domain/viasDeCobro.ts:6
+    src/modules/fiscal/verifactu/productor.ts:14
+    src/modules/invoicing/domain/modoVisible.ts:6
+    src/modules/jobs/app/routes/jobs.routes.ts:167
+    src/modules/jobs/domain/albaranVerificacion.ts:7
+    src/modules/messaging/domain/lifecycle.service.ts:92
+    src/modules/system/app/routes/quoteDecisionLanding.routes.ts:942
+
+10 · NO SE EXPORTA
+    src/modules/billing/domain/metodoDeCobro.ts:216,264
+    src/modules/invoicing/domain/criterioDelMerchant.ts:52
+    src/modules/jobs/domain/asignacionDeTrabajo.ts:69
+    src/modules/jobs/domain/parteDictado.ts:183
+    src/modules/quotes/domain/clausulas.ts:77
+    src/modules/quotes/domain/presupuestoParaPdf.ts:60,75
+    src/modules/quotes/domain/validez.ts:30
+    src/modules/reports/domain/cobrosPorCubo.ts:110,142
+    src/modules/system/domain/etiquetadoMasivo.ts:14
+    src/modules/system/domain/fusionClientes.ts:56
+
+10 · UN SOLO SITIO
+    public/dashboard/js/cuerpoDelDocumentoSuelto.js:4
+    public/dashboard/js/jobDetailView.js:911
+    public/dashboard/js/jobsView.js:384
+    public/dashboard/js/productsView.js:1115
+    public/dashboard/js/quotesView.js:811,4122
+    src/core/documentos/direccionObra.ts:120
+    src/modules/jobs/domain/albaranContenidoFuentes.ts:3
+    src/modules/jobs/domain/albaranVerificacion.ts:9
+    src/modules/quotes/domain/presupuestoSello.ts:271
+    src/modules/system/domain/borradoMerchant.ts:7
+
+9 · EN UN SOLO SITIO
+    public/dashboard/js/api.js:581,1168
+    public/dashboard/js/jobDetailView.js:1403,1704
+    public/dashboard/js/jobNextAction.js:3
+    public/dashboard/js/settingsSubmenus.js:3
+    public/dashboard/js/textoDelDocumento.js:4
+    public/dashboard/js/tiposDeIva.js:4
+    src/core/config/contacto.ts:3
+    src/core/csv/csv.ts:3
+    src/modules/system/tagsDelCliente.ts:30
+
+9 · POR QUÉ EXISTE
+    public/dashboard/js/albaranAccion.js:6
+    public/dashboard/js/etiquetasDelDocumento.js:12
+    public/dashboard/js/invoiceAccion.js:6
+    public/dashboard/js/nifEspanol.js:5
+    public/dashboard/js/parteOficinaView.js:5
+    src/core/documentos/nombreParaDocumento.ts:6
+    src/core/documentos/sinMarcadorPendiente.ts:6
+    src/integrations/whatsapp.ts:528
+    src/modules/messaging/domain/registroDeEnvios.ts:6
+
+7 · LA DIRECCIÓN DE LA OBRA
+    prisma/schema.prisma:602
+    public/dashboard/js/quoteDireccionObra.js:5
+    public/dashboard/js/quotesView.js:710
+    src/core/validation/schemas.ts:304
+    src/modules/invoicing/infra/pdf/pdf.service.ts:208,834
+    src/modules/jobs/domain/jobDireccion.ts:3
+    src/modules/quotes/domain/revision.ts:223
+
+7 · Y NO ES UN OLVIDO
+    public/dashboard/js/albaranesView.js:473
+    public/dashboard/js/jobDetailView.js:1876
+    src/core/zonaDelMerchant.ts:22
+    src/modules/fiscal/evidencias/paquete.ts:60
+    src/modules/jobs/app/routes/albaranes.routes.ts:1465
+    src/modules/jobs/app/routes/jobs.routes.ts:559
+    src/modules/jobs/domain/albaran.service.ts:646
+
+6 · LO QUE ESTE MÓDULO NO HACE
+    src/core/zonaDelMerchant.ts:22
+    src/integrations/firmaResend.ts:66
+    src/modules/invoicing/domain/cerrojoSaturado.ts:23
+    src/modules/invoicing/domain/clienteCongelado.ts:30
+    src/modules/messaging/domain/constanciaCorreo.ts:29
+    src/modules/metrics/domain/metricasEquipo.ts:11
+
+6 · NO SE TOCA
+    public/dashboard/js/quotesView.js:5626
+    src/modules/jobs/domain/parteTrabajo.ts:23
+    src/modules/maintenance/domain/maintenance.service.ts:327
+    src/modules/quotes/domain/presentacionIva.ts:126
+    src/modules/quotes/domain/presupuestoSello.ts:20
+    src/modules/system/domain/identificadoresDuplicados.ts:33
+
+5 · DECISIÓN DEL FUNDADOR
+    src/core/http/adminRouteDeclarations.ts:41
+    src/modules/billing/domain/founding.ts:39
+    src/modules/invoicing/domain/invoiceLines.service.ts:26
+    src/modules/products/domain/products.service.ts:97
+    src/modules/quotes/domain/billingPlan.ts:177
+
+5 · EL FALLO QUE CIERRA
+    src/core/http/roleCapabilities.ts:5
+    src/modules/expenses/domain/expenses.service.ts:241
+    src/modules/jobs/app/routes/jobs.routes.ts:468
+    src/modules/jobs/domain/dineroDelTrabajo.ts:5
+    src/modules/jobs/domain/presupuestosDelTrabajo.ts:49,69
+
+5 · EL PARTE DE TRABAJO
+    prisma/schema.prisma:1615
+    public/dashboard/js/jobDetailView.js:1508
+    src/app.ts:581
+    src/core/http/adminRouteDeclarations.ts:151
+    src/modules/jobs/domain/parteTrabajo.ts:3
+
+5 · EN LA ZONA DEL MERCHANT
+    public/dashboard/js/quotesView.js:1068
+    src/core/validation/fiscalInput.ts:133
+    src/modules/billing/domain/garantiasRetenidas.ts:47
+    src/modules/jobs/domain/albaran.service.ts:272
+    src/modules/jobs/domain/consolidacionCliente.service.ts:89
+
+5 · LO QUE ESTE MÓDULO
+    public/dashboard/js/facturaPreEmision.js:18
+    public/dashboard/js/quoteMargen.js:20
+    src/modules/invoicing/domain/emisorCongelado.ts:21
+    src/modules/jobs/domain/albaranContenidoFuentes.ts:18
+    src/modules/jobs/domain/albaranEmision.ts:31
+
+5 · MICROCOPY SIN APROBAR
+    public/dashboard/js/albaranDetailView.js:14
+    public/dashboard/js/jobDetailView.js:2622
+    public/dashboard/js/quotesView.js:389
+    src/modules/fiscal/librosAeat/librosAeat.ts:41
+    src/modules/jobs/domain/tipoIntervencion.ts:47
+
+5 · NO SE SABE
+    public/dashboard/js/margenCatalogo.js:58
+    public/dashboard/js/quotesView.js:4041
+    public/dashboard/js/terminadoSinCobrar.js:17
+    src/core/validation/schemas.ts:130
+    src/modules/invoicing/domain/modoVisible.ts:38
+
+5 · POR QUÉ EXISTE ESTE FICHERO
+    public/dashboard/js/jobAgendar.js:6
+    public/dashboard/js/jobNextAction.js:6
+    src/core/http/adminMounts.ts:3
+    src/modules/invoicing/infra/pdf/conceptoLinea.ts:5
+    src/modules/jobs/domain/recapitulativa.service.ts:5
+
+5 · Y POR QUÉ
+    public/dashboard/js/albaranActionsRegistry.js:29
+    public/dashboard/js/app.js:74
+    public/dashboard/js/jobDetailView.js:419
+    src/core/visibilidadEconomica.ts:123
+    src/modules/metrics/domain/actividadEquipo.ts:25
+
+4 · AQUÍ HABÍA UN
+    public/dashboard/js/app.js:122
+    public/dashboard/js/customersView.js:522
+    public/dashboard/js/invoicesView.js:159
+    src/modules/billing/domain/cobros.service.ts:306
+
+4 · ASIGNAR NO ES UN PERMISO
+    prisma/schema.prisma:1723
+    src/core/documentos/asignacionDeDocumento.ts:6
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:1308
+    src/modules/system/app/routes/quotesAdmin.routes.ts:978
+
+4 · ASIGNAR USUARIOS AL DOCUMENTO
+    prisma/schema.prisma:1708
+    public/dashboard/js/documentoAsignados.js:3
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:1302
+    src/modules/system/app/routes/quotesAdmin.routes.ts:972
+
+4 · EL DESCUENTO GLOBAL
+    public/dashboard/js/quotesDetailView.js:645
+    public/dashboard/js/quotesView.js:1822
+    src/core/utils/utils.ts:230
+    src/modules/quotes/domain/revision.ts:209
+
+4 · ESTO ES UN TRASLADO
+    public/dashboard/js/albaranAccion.js:17
+    public/dashboard/js/invoiceAccion.js:21
+    public/dashboard/js/jobAgendar.js:22
+    public/dashboard/js/jobNextAction.js:21
+
+4 · IS NOT NULL
+    prisma/schema.prisma:385,631
+    public/dashboard/js/customersView.js:1572
+    src/modules/system/customerAdmin.ts:230
+    src/modules/system/tagsDelCliente.ts:16,38
+
+4 · LA PUERTA DE ÚLTIMA OPORTUNIDAD
+    public/dashboard/js/app.js:69
+    public/dashboard/js/puertaSerie.js:3
+    public/dashboard/js/settingsView.js:459
+    src/core/validation/fiscalInput.ts:313
+
+4 · LAS ETIQUETAS DEL DOCUMENTO
+    prisma/schema.prisma:623,813
+    public/dashboard/js/invoicesView.js:298
+    public/dashboard/js/quotesListView.js:7
+    src/modules/quotes/domain/revision.ts:237
+
+4 · NI UN IMPORTE
+    public/dashboard/js/parteDetailView.js:1184
+    src/modules/ai/domain/ai.service.ts:411
+    src/modules/jobs/app/routes/partes.routes.ts:795
+    src/modules/jobs/domain/parteTrabajo.ts:587
+
+4 · NO UN REDISEÑO
+    public/dashboard/js/albaranAccion.js:17
+    public/dashboard/js/invoiceAccion.js:21
+    public/dashboard/js/jobAgendar.js:22
+    public/dashboard/js/jobNextAction.js:21
+
+4 · TODO O NADA
+    src/modules/jobs/domain/albaran.service.ts:339
+    src/modules/jobs/domain/albaranContenidoFuentes.ts:84
+    src/modules/jobs/domain/albaranVerificacion.ts:314,336
+    src/modules/jobs/domain/jobDireccion.ts:98
+
+4 · UNO A UNO
+    src/modules/exports/app/routes/exports.routes.ts:129,365
+    src/modules/jobs/app/routes/jobs.routes.ts:1086
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:1336
+    src/modules/system/app/routes/quotesAdmin.routes.ts:1006
+
+3 · A QUÉ TRABAJO
+    prisma/schema.prisma:568
+    src/modules/jobs/app/routes/albaranes.routes.ts:246
+    src/modules/jobs/domain/albaranOrigenDelPresupuesto.ts:6
+
+3 · DIRECCIÓN DE LA OBRA
+    public/dashboard/js/jobDetailView.js:1117
+    public/dashboard/js/quotesView.js:731
+    src/modules/jobs/app/routes/jobs.routes.ts:1043
+
+3 · EL CERROJO PRIMERO
+    src/modules/jobs/app/routes/jobs.routes.ts:1509
+    src/modules/quotes/app/routes/quotes.routes.ts:609
+    src/modules/system/app/routes/quotesAdmin.routes.ts:282
+
+3 · EL DEFECTO QUE ESTO CIERRA
+    src/modules/jobs/domain/parteTrabajo.ts:376
+    src/modules/quotes/domain/presupuestoParaPdf.ts:6
+    src/modules/quotes/domain/validez.ts:6
+
+3 · EL FALLO MUDO
+    public/dashboard/js/voiceInput.js:170
+    src/app.ts:465
+    src/modules/billing/domain/avisoBizumSinTelefono.ts:3
+
+3 · EL MODO DE EMISIÓN
+    public/dashboard/js/app.js:48
+    public/dashboard/js/settingsView.js:179
+    src/app.ts:507
+
+3 · EN CALIDAD DE QUÉ
+    prisma/schema.prisma:1457,1669
+    public/dashboard/js/albaranDetailView.js:631
+    src/modules/jobs/domain/albaran.service.ts:891
+
+3 · EN EL MOMENTO
+    src/modules/expenses/domain/expenses.service.ts:23
+    src/modules/fiscal/verifactu/sif.client.ts:151
+    src/modules/system/audit.service.ts:213
+
+3 · EN ESE MOMENTO
+    src/modules/billing/domain/metodoDeCobro.ts:326
+    src/modules/jobs/domain/parteTrabajo.ts:286
+    src/modules/system/invoiceAdmin.ts:223
+
+3 · ESTO NO ES
+    src/modules/billing/domain/viasDeCobro.ts:63
+    src/modules/jobs/app/routes/jobs.routes.ts:604
+    src/modules/jobs/domain/entregaPendiente.ts:6
+
+3 · FIRMADO POR EL FUNDADOR
+    public/dashboard/js/atajoNuevo.js:40
+    public/dashboard/js/buscadorDeClientes.js:82
+    public/dashboard/js/customersView.js:1021
+
+3 · HOY NO EXISTE
+    prisma/schema.prisma:1633
+    src/modules/jobs/domain/parteTrabajo.ts:219
+    src/modules/jobs/domain/ventanaDeFirma.ts:59
+
+3 · IVA NO INCLUIDO
+    public/dashboard/js/quotesView.js:833
+    src/modules/invoicing/infra/pdf/pdf.service.ts:1104
+    src/modules/quotes/domain/presentacionIva.ts:82
+
+3 · LAS DOS COSAS
+    public/dashboard/js/voiceInput.js:48
+    src/modules/jobs/domain/albaranEmision.ts:4
+    src/modules/system/domain/borradoMerchant.ts:37
+
+3 · LO QUE ESTO
+    src/core/documentos/sinMarcadorPendiente.ts:23
+    src/core/zonaDelMerchant.ts:174
+    src/modules/billing/domain/cardCharge.ts:47
+
+3 · NO PRECARGA NADA
+    prisma/schema.prisma:1216
+    src/core/validation/schemas.ts:666
+    src/modules/system/domain/sitiosDelCliente.ts:9
+
+3 · NO SE APLICA SOLO
+    public/dashboard/js/descuentoPorDefecto.js:11
+    public/dashboard/js/formaDePagoPorDefecto.js:11
+    public/dashboard/js/quotesView.js:1216,1887
+
+3 · NO SE DESTRUYE
+    public/dashboard/js/customersView.js:1752
+    public/dashboard/js/productsView.js:486
+    public/dashboard/js/providersView.js:200
+
+3 · NO SE VE
+    public/dashboard/js/jobDetailView.js:474
+    public/dashboard/js/libroRegistroView.js:210
+    public/dashboard/js/quotesView.js:2152
+
+3 · NO UNA COPIA
+    public/dashboard/js/cobrosView.js:14
+    public/dashboard/js/invoicesView.js:245
+    src/modules/billing/domain/metodoDeCobro.ts:24
+
+3 · POR QUÉ NO
+    src/core/utils/concurrencia.ts:7
+    src/modules/jobs/domain/precarga.service.ts:55
+    src/modules/jobs/domain/presupuestosParaAlbaran.ts:8
+
+3 · POR QUÉ NO VALE
+    public/dashboard/js/productsView.js:74
+    src/modules/jobs/app/routes/jobs.routes.ts:392
+    src/modules/quotes/domain/revision.ts:103
+
+3 · SE DERIVA DE
+    src/core/validation/tiposIvaEmitibles.ts:27
+    src/modules/invoicing/domain/libroRegistro.repo.ts:21
+    src/modules/system/quoteAdmin.ts:470
+
+3 · SIGUE LANZANDO CUANDO NO SALE
+    src/modules/messaging/domain/lifecycle.service.ts:23
+    src/modules/messaging/domain/merchantNotifications.ts:11
+    src/modules/messaging/domain/weeklyDigest.service.ts:18
+
+3 · UNA SOLA FUENTE
+    public/dashboard/js/rotulosDelDocumento.js:18
+    src/modules/invoicing/domain/suplidos.ts:134
+    src/modules/jobs/domain/tipoIntervencion.ts:3
+
+3 · UNA SOLA FUENTE DE VERDAD
+    prisma/schema.prisma:1713
+    public/dashboard/js/jobDetailView.js:345
+    src/core/documentos/asignacionDeDocumento.ts:27
+
+3 · Y EL RECUENTO DENTRO
+    src/modules/jobs/app/routes/jobs.routes.ts:1509
+    src/modules/quotes/app/routes/quotes.routes.ts:609
+    src/modules/system/app/routes/quotesAdmin.routes.ts:282
+
+3 · Y SE DESCUELGA DEL BODY
+    public/dashboard/js/customersView.js:1738
+    public/dashboard/js/productsView.js:477
+    public/dashboard/js/providersView.js:195
+
+3 · Y SE RETIRA
+    public/dashboard/js/app.js:122,141
+    public/dashboard/js/jobsView.js:693
+    public/dashboard/js/quotesView.js:3987
+
+2 · A LA VISTA
+    public/dashboard/js/quotesView.js:603
+    src/modules/jobs/app/routes/albaranes.routes.ts:1563
+
+2 · A QUIÉN SE PUEDE ASIGNAR
+    public/dashboard/js/documentoAsignados.js:60
+    public/dashboard/js/jobAsignados.js:54
+
+2 · ABRIR UN TRABAJO SIN PRESUPUESTO
+    public/dashboard/js/jobNuevoModal.js:3
+    src/modules/jobs/app/routes/jobs.routes.ts:861
+
+2 · ACABA DE ESCRIBIR
+    src/integrations/whatsapp.ts:156
+    src/integrations/whatsappPolicy.ts:17
+
+2 · ADOPTADO LITERAL DEL ALBARÁN
+    public/dashboard/js/quoteDireccionObra.js:23
+    src/core/documentos/direccionObra.ts:18
+
+2 · AL TERMINAR CON ÉXITO
+    src/modules/billing/app/routes/stripe.routes.ts:198
+    src/modules/billing/domain/gatewayEvents.service.ts:153
+
+2 · ÁMBITO GLOBAL COMPARTIDO
+    public/dashboard/js/quoteAtajosVencimiento.js:13
+    public/dashboard/js/rotulosDelDocumento.js:41
+
+2 · BYTE A BYTE
+    public/dashboard/js/customerDetailView.js:378
+    src/modules/invoicing/domain/huecosSerie.ts:130
+
+2 · CABECERA DE APARTADO
+    public/dashboard/js/quotesDetailView.js:586
+    src/core/validation/schemas.ts:194
+
+2 · CON LA CAJA MEDIDA
+    public/dashboard/js/customersView.js:970
+    public/dashboard/js/quotesView.js:1255
+
+2 · CUANDO APLICAR CUESTA EN AMBOS SENTIDOS
+    public/dashboard/js/formaDePagoPorDefecto.js:23
+    public/dashboard/js/quotesView.js:1221
+
+2 · DE LA LÍNEA
+    public/dashboard/js/quotesView.js:3620,3987
+    src/core/validation/schemas.ts:644
+
+2 · DECIDE QUÉ CAMPOS ENSEÑA
+    prisma/schema.prisma:1054
+    src/core/validation/schemas.ts:516
+
+2 · DECISIÓN DE PERMISOS
+    src/core/http/adminRouteDeclarations.ts:13,32,46,54,63,69,108,131
+    src/modules/billing/app/routes/cobrosAdmin.routes.ts:22
+
+2 · DECLARA QUE NO RETIENE
+    prisma/schema.prisma:174
+    src/app.ts:490
+
+2 · DEVUELVE UN DATO
+    public/dashboard/js/descuentoPorDefecto.js:17
+    public/dashboard/js/formaDePagoPorDefecto.js:27
+
+2 · DEVUELVE UN PARTE
+    src/modules/messaging/domain/lifecycle.service.ts:183
+    src/modules/messaging/domain/weeklyDigest.service.ts:48
+
+2 · EL CASO NULL
+    public/dashboard/js/switchFormaJuridica.js:15
+    public/dashboard/js/switchTipoArticulo.js:19
+
+2 · EL CATÁLOGO SE CIERRA A ESCRITURA
+    src/core/http/adminRouteDeclarations.ts:215
+    src/modules/products/app/routes/products.routes.ts:282
+
+2 · EL CONTENIDO YA NO ES EL QUE SE FIRMÓ
+    src/modules/fiscal/evidencias/atestiguamiento.ts:11
+    src/modules/jobs/domain/albaranVerificacion.ts:465,502
+
+2 · EL CUERPO DEL PATCH
+    public/dashboard/js/documentoAsignados.js:195
+    public/dashboard/js/jobAsignados.js:195
+
+2 · EL DESCUENTO PACTADO CON EL CLIENTE
+    public/dashboard/js/descuentoPorDefecto.js:5
+    public/dashboard/js/quotesView.js:1881
+
+2 · EL ESTADO QUE NO RECONOCEMOS SE DICE
+    public/dashboard/js/albaranDetailView.js:770
+    public/dashboard/js/invoiceDetailView.js:312
+
+2 · EL HUECO QUE CIERRA
+    src/core/db/schemaDrift.ts:5
+    src/core/db/unicidadNombreProducto.ts:6
+
+2 · EL INICIO DEL OPERARIO
+    public/dashboard/js/homeView.js:119
+    src/modules/metrics/domain/metrics.service.ts:195
+
+2 · EL LISTADO GLOBAL DE ALBARANES
+    public/dashboard/js/albaranesView.js:3
+    src/modules/jobs/domain/albaranesListado.ts:3
+
+2 · EL MÓVIL SÓLO VIAJA SI HAY MÓVIL
+    public/dashboard/js/customerDetailView.js:1184
+    public/dashboard/js/customersView.js:1817
+
+2 · EL NÚMERO DE ARRANQUE
+    public/dashboard/js/onboardingView.js:173
+    public/dashboard/js/puertaSerie.js:42
+
+2 · EL PRESUPUESTO DE ORIGEN
+    src/modules/jobs/app/routes/albaranes.routes.ts:853
+    src/modules/jobs/domain/albaran.service.ts:803
+
+2 · EL QUINTO ESLABON
+    src/modules/system/customerAdmin.ts:50
+    src/modules/system/quoteAdmin.ts:121,275
+
+2 · EL QUINTO ESLABÓN
+    public/dashboard/js/customersView.js:1710
+    src/modules/system/customerAdmin.ts:32
+
+2 · EL REGISTRO DECLARATIVO
+    public/dashboard/js/invoiceActionsRegistry.js:3
+    public/dashboard/js/jobActionsRegistry.js:3
+
+2 · EL REPARTO DE LA PILA
+    public/dashboard/js/jobDetailView.js:2313
+    public/dashboard/js/jobDocsReparto.js:3
+
+2 · EL SUELO DEL TICKET
+    src/modules/invoicing/domain/devengoPorCaja.ts:38
+    src/modules/system/app/routes/soporteAdmin.routes.ts:62
+
+2 · EL TERCER ESTADO
+    public/dashboard/js/cobrosView.js:450
+    public/dashboard/js/customersView.js:546
+
+2 · EL TEXTO LO ESCRIBE EL MERCHANT
+    public/dashboard/js/settingsView.js:978
+    src/modules/quotes/domain/clausulas.ts:20
+
+2 · EN EL MÓVIL DEL PRO
+    public/dashboard/js/signaturePad.js:2
+    src/modules/jobs/app/routes/albaranes.routes.ts:992
+
+2 · EN EL ORDEN
+    public/dashboard/js/jobRailBlocks.js:191
+    src/core/utils/concurrencia.ts:3
+
+2 · EN EL PAPEL
+    public/dashboard/js/quotesView.js:3229
+    src/modules/jobs/app/routes/partes.routes.ts:103
+
+2 · EN FUNCIONES PURAS
+    public/dashboard/js/quoteApartados.js:3
+    public/dashboard/js/quoteSuplido.js:3
+
+2 · EN LA CASILLA
+    public/dashboard/js/documentoAsignados.js:166
+    public/dashboard/js/jobAsignados.js:166
+
+2 · EN LA MISMA FILA
+    public/dashboard/js/quotesView.js:4086
+    public/dashboard/js/reportsView.js:326
+
+2 · EN LA PANTALLA
+    public/dashboard/js/estadoFirma.js:74
+    public/dashboard/js/quoteDireccionObra.js:5
+
+2 · EN SU ORDEN
+    src/modules/jobs/domain/albaranVerificacion.ts:185
+    src/modules/jobs/domain/parteTrabajo.ts:531
+
+2 · EN SU ORDEN DE INSERCIÓN
+    src/modules/jobs/domain/albaran.service.ts:395
+    src/modules/quotes/domain/presupuestoSello.ts:23
+
+2 · EN UNA LÍNEA
+    src/modules/jobs/domain/albaranEdicion.ts:4
+    src/modules/messaging/domain/avisoConstancia.ts:7
+
+2 · ENTERO DE PORCENTAJE
+    prisma/schema.prisma:990
+    src/modules/expenses/domain/justificante.ts:62,173
+
+2 · ES EL MECANISMO
+    src/modules/ai/domain/ai.service.ts:222,260
+    src/modules/jobs/domain/parteDictado.ts:28
+
+2 · ES EL TICKET
+    public/dashboard/js/customersView.js:1024
+    public/dashboard/js/tipoDestinatarioPendiente.js:48
+
+2 · ESCONDER NO ES BORRAR
+    public/dashboard/js/switchFormaJuridica.js:123
+    public/dashboard/js/switchTipoArticulo.js:125
+
+2 · ESCRITO A PELO
+    src/integrations/whatsappNotifications.ts:5
+    src/modules/messaging/domain/emailLayout.ts:7
+
+2 · ESTE MÓDULO NO LO LLAMA NADIE TODAVÍA
+    src/modules/invoicing/domain/recargoEquivalencia.ts:27
+    src/modules/invoicing/domain/retencionIrpf.ts:6
+
+2 · ESTO ES UNA SEGUNDA COPIA DELIBERADA DE
+    public/dashboard/js/cobrosView.js:243
+    public/dashboard/js/nifEspanol.js:3
+
+2 · ESTO NO ENCIENDE NADA
+    src/modules/invoicing/domain/facturaSuelta.ts:76
+    src/modules/invoicing/domain/modoVisible.ts:31
+
+2 · ETIQUETAR LA SELECCIÓN
+    public/dashboard/js/customersView.js:455
+    public/dashboard/js/filtroClientes.js:544
+
+2 · FALLA EN SILENCIO
+    public/dashboard/js/onboardingView.js:347
+    src/modules/messaging/domain/lifecycle.service.ts:213
+
+2 · FILA DE TABLA
+    public/dashboard/js/jobDetailView.js:1986
+    public/dashboard/js/quotesView.js:1692
+
+2 · FILTRA POR MERCHANT AQUÍ TAMBIÉN
+    src/modules/invoicing/domain/libroRecibidas.ts:154
+    src/modules/invoicing/domain/libroRegistro.ts:158
+
+2 · FUERA DEL SOBRE DE LA FIRMA
+    src/modules/jobs/domain/albaranPrecios.ts:66
+    src/modules/jobs/infra/albaranPdf.service.ts:37
+
+2 · JUSTIFICANTE DE COBRO
+    src/modules/invoicing/domain/emission.service.ts:4
+    src/modules/invoicing/infra/pdf/pdf.service.ts:387
+
+2 · JUSTIFICANTES DE COBRO
+    public/dashboard/js/invoicesView.js:58
+    public/dashboard/js/jobRailBlocks.js:120
+
+2 · LA DECISIÓN DEL FUNDADOR
+    src/core/validation/schemas.ts:20
+    src/modules/jobs/domain/ventanaDeFirma.ts:17
+
+2 · LA DESCRIPCIÓN DE LA LÍNEA
+    public/dashboard/js/quotesView.js:4053
+    src/core/validation/schemas.ts:91
+
+2 · LA DIRECCIÓN DE FACTURACIÓN
+    src/core/validation/schemas.ts:584
+    src/modules/system/customerAdmin.ts:57
+
+2 · LA EMPRESA A LA QUE PERTENECE ESTA PERSONA
+    prisma/schema.prisma:241
+    src/core/validation/schemas.ts:551
+
+2 · LA FACTURA SUELTA
+    src/modules/invoicing/domain/facturaSuelta.ts:3
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:101
+
+2 · LA REFERENCIA INTERNA
+    prisma/schema.prisma:430
+    public/dashboard/js/customersView.js:1331
+
+2 · LA REGLA DEL HUECO
+    public/dashboard/js/jobDetailView.js:2429
+    public/dashboard/js/jobRailBlocks.js:15
+
+2 · LA RETENCIÓN DE IRPF
+    src/core/validation/schemas.ts:423
+    src/modules/invoicing/domain/retencionIrpf.ts:3
+
+2 · LA REVISIÓN ANTES DE EMITIR
+    public/dashboard/js/facturaPreEmision.js:1
+    public/dashboard/js/jobDetailView.js:3118,3298
+
+2 · LA SELECCIÓN SE RECORTA A LO VISIBLE
+    public/dashboard/js/customersView.js:650
+    public/dashboard/js/filtroClientes.js:492
+
+2 · LA TERCERA FORMA
+    public/dashboard/js/api.js:609
+    src/core/utils/utils.ts:117
+
+2 · LAS CABECERAS DE APARTADO NO SUMAN
+    public/dashboard/js/quoteDescuentos.js:152
+    src/core/utils/utils.ts:203
+
+2 · LAS CLÁUSULAS DE CIERRE
+    public/dashboard/js/quotesView.js:1525
+    src/modules/invoicing/infra/pdf/pdf.service.ts:1222
+
+2 · LAS CLÁUSULAS DE CIERRE DEL PRESUPUESTO
+    public/dashboard/js/settingsView.js:973
+    src/core/validation/schemas.ts:391
+
+2 · LAS DOS FIRMAS
+    public/dashboard/js/parteDetailView.js:110
+    src/modules/jobs/domain/parteTrabajo.ts:449
+
+2 · LAS ETIQUETAS DEL CONTACTO
+    prisma/schema.prisma:376
+    src/modules/system/tagsDelCliente.ts:4
+
+2 · LAS FORMAS DE PAGO PACTADAS CON EL CLIENTE
+    public/dashboard/js/formaDePagoPorDefecto.js:5
+    public/dashboard/js/quotesView.js:1210
+
+2 · LAS TRES MARCADAS
+    public/dashboard/js/formaDePagoPorDefecto.js:18
+    public/dashboard/js/quotesView.js:1218
+
+2 · LEE ESTO PRIMERO
+    src/modules/jobs/domain/albaran.service.ts:390
+    src/modules/jobs/domain/parteTrabajo.ts:27
+
+2 · LLEVA EL ATAJO
+    public/dashboard/js/productsView.js:653
+    public/dashboard/js/providersView.js:252
+
+2 · LO QUE EL PROFESIONAL PUEDE ELEGIR
+    src/app.ts:536
+    src/modules/billing/domain/metodoDeCobro.ts:287
+
+2 · LO QUE ESTE FICHERO NO ES
+    src/modules/fiscal/verifactu/sif.client.ts:6
+    src/modules/fiscal/verifactu/sif.procesador.ts:7
+
+2 · LO QUE HABÍA
+    src/modules/messaging/domain/avisoConstancia.ts:14
+    src/modules/whatsappBot/domain/decisionPorTexto.ts:6
+
+2 · LO QUE NO SE HACE
+    public/dashboard/js/productsView.js:1128
+    src/modules/jobs/domain/presupuestosParaAlbaran.ts:45
+
+2 · LO QUE PASA HOY
+    src/modules/billing/domain/avisoBizumSinTelefono.ts:7
+    src/modules/invoicing/domain/verifactu.service.ts:940
+
+2 · LO QUE PASABA
+    public/dashboard/js/productsView.js:6
+    src/modules/invoicing/infra/pdf/pdf.service.ts:568
+
+2 · LO ÚNICO QUE LAS TRES FORMAS COMPARTEN
+    public/dashboard/js/api.js:599
+    src/core/utils/utils.ts:65
+
+2 · LOS DOS LADOS
+    public/dashboard/js/buscadorDeClientes.js:120
+    src/modules/invoicing/domain/huecosSerie.ts:121
+
+2 · LOS DOS TEXTOS LIBRES DEL DOCUMENTO
+    public/dashboard/js/quotesView.js:1497
+    public/dashboard/js/textoDelDocumento.js:4
+
+2 · LOS TRES EJES
+    src/modules/jobs/app/routes/jobs.routes.ts:807
+    src/modules/jobs/domain/accesoAlTrabajo.ts:30
+
+2 · MICROCOPY APROBADA AL COMPLETO
+    public/dashboard/js/jobNuevoModal.js:10
+    public/dashboard/js/parteOficinaView.js:20
+
+2 · MICROCOPY APROBADA POR EL ASESOR
+    public/dashboard/js/quoteAtajosVencimiento.js:66
+    src/modules/jobs/domain/albaranSinPresupuesto.ts:104
+
+2 · MICROCOPY APROBADA POR EL FUNDADOR
+    public/dashboard/js/exportView.js:328
+    public/dashboard/js/jobsCierreTrabajo.js:37
+
+2 · MICROCOPY FIRMADA POR EL ASESOR
+    public/dashboard/js/quotesView.js:1253,2314
+    public/dashboard/js/rotulosDelDocumento.js:45
+
+2 · MICROCOPY FIRMADA POR EL FUNDADOR
+    public/dashboard/js/atajoNuevo.js:30
+    public/dashboard/js/documentoAsignados.js:27
+
+2 · MODO DE EMISIÓN
+    src/modules/invoicing/domain/facturaSuelta.ts:21,79
+    src/modules/messaging/domain/weeklyDigest.service.ts:104
+
+2 · NO EL PROMPT
+    src/modules/ai/domain/ai.service.ts:222
+    src/modules/jobs/domain/parteDictado.ts:28
+
+2 · NO ERA TEÓRICO
+    public/dashboard/js/api.js:834
+    public/dashboard/js/quoteAtajosVencimiento.js:24
+
+2 · NO ES ADMIN-ONLY
+    public/dashboard/js/jobNextAction.js:105
+    src/modules/jobs/app/routes/jobs.routes.ts:870
+
+2 · NO ES DECORACIÓN
+    public/dashboard/js/settingsView.js:422
+    src/app.ts:272
+
+2 · NO ES UN ESTADO
+    src/modules/jobs/domain/albaranesListado.ts:17
+    src/modules/jobs/domain/precarga.service.ts:43
+
+2 · NO HAY BACKFILL
+    prisma/schema.prisma:987
+    src/modules/billing/domain/instanteDeCobro.ts:29
+
+2 · NO HUBO ENVÍO
+    src/modules/messaging/domain/avisoConstancia.ts:86
+    src/modules/messaging/domain/lifecycle.service.ts:127
+
+2 · NO LO SÉ
+    public/dashboard/js/api.js:226
+    public/dashboard/js/invoicesView.js:108
+
+2 · NO PUDE COMPROBAR
+    src/core/db/schemaDrift.ts:228
+    src/core/db/unicidadNombreProducto.ts:141
+
+2 · NO SE BORRA
+    src/modules/reports/domain/cobrosPorCubo.ts:228
+    src/modules/system/domain/anonimizarMerchant.ts:5,43
+
+2 · NO SE CALLA
+    public/dashboard/js/albaranDetailView.js:770
+    public/dashboard/js/invoiceDetailView.js:312
+
+2 · NO SE COPIA LA LISTA
+    public/dashboard/js/quotesView.js:810
+    src/core/validation/tiposIvaEmitibles.ts:27
+
+2 · NO SE GUARDA
+    public/dashboard/js/api.js:196
+    src/modules/quotes/domain/quoteNumber.service.ts:61
+
+2 · NO SE IMPIDE
+    public/dashboard/js/jobsView.js:764
+    public/dashboard/js/productsView.js:619
+
+2 · NO SE INVENTA UN ESTADO QUE NO CONSTA
+    src/modules/messaging/domain/avisoDeCorreo.ts:14
+    src/modules/messaging/domain/constanciaCorreo.ts:19
+
+2 · NO SE LLEVE UNA FIRMA EN SILENCIO
+    public/dashboard/js/app.js:768
+    public/dashboard/js/resistenciaAlmacen.js:3
+
+2 · NO SE PINTA
+    public/dashboard/js/jobDetailView.js:758,2983
+    public/dashboard/js/quotesDetailView.js:344
+
+2 · NO SE PROPONE
+    src/modules/ai/domain/lineasSugeridas.ts:15
+    src/modules/maintenance/domain/maintenance.service.ts:318
+
+2 · NO SE PUDO COMPROBAR
+    src/integrations/firmaResend.ts:45
+    src/integrations/whatsapp.ts:168
+
+2 · NO SE PUEDE
+    src/integrations/firmaResend.ts:161
+    src/modules/jobs/domain/presupuestosParaAlbaran.ts:140
+
+2 · NO SE RECORTA
+    src/modules/ai/domain/ai.service.ts:248
+    src/modules/jobs/domain/albaranIdempotencia.ts:74
+
+2 · NO TOCA EL CAMINO DE EMISIÓN
+    public/dashboard/js/jobDetailView.js:3304
+    src/modules/invoicing/domain/huecosSerie.ts:10
+
+2 · NO UN BLOQUEO
+    public/dashboard/js/customersView.js:1042,1162
+    src/modules/system/app/routes/customersAdmin.routes.ts:58
+
+2 · NUNCA DEBIÓ EXISTIR
+    public/dashboard/js/invoiceDetailView.js:681
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:830
+
+2 · NUNCA LAS DOS
+    public/dashboard/js/switchFormaJuridica.js:6
+    public/dashboard/js/switchTipoArticulo.js:15
+
+2 · NUNCA SE ESCONDE UN CAMPO QUE TIENE ALGO ESCRITO
+    public/dashboard/js/switchFormaJuridica.js:127
+    public/dashboard/js/switchTipoArticulo.js:129
+
+2 · OJO CON EL NOMBRE
+    public/dashboard/js/jobDetailView.js:1510
+    src/core/http/adminRouteDeclarations.ts:153
+
+2 · PLAZO DE VALIDEZ
+    public/dashboard/js/settingsView.js:975
+    src/modules/quotes/domain/clausulas.ts:7
+
+2 · POR DÓNDE ENTRÓ EL DINERO
+    src/modules/billing/domain/metodoDeCobro.ts:232
+    src/modules/reports/domain/cobrosPorCubo.ts:213
+
+2 · POR EL CLIENTE
+    prisma/schema.prisma:1668
+    src/modules/jobs/app/routes/partes.routes.ts:636
+
+2 · POR QUÉ AQUÍ
+    src/modules/jobs/app/routes/jobs.routes.ts:1569
+    src/modules/quotes/app/routes/quotes.routes.ts:664
+
+2 · POR QUÉ ESTE FICHERO EXISTE
+    src/core/contacto/canalDeWhatsApp.ts:6
+    src/modules/invoicing/domain/libroRegistro.repo.ts:4
+
+2 · POR QUÉ NÚMERO VAS
+    src/app.ts:858
+    src/core/validation/fiscalInput.ts:236
+
+2 · POR QUÉ VIVE AQUÍ Y NO EN
+    public/dashboard/js/productsView.js:13
+    public/dashboard/js/providersView.js:12
+
+2 · POR SU TEXTO
+    src/modules/jobs/domain/asignacionDeTrabajo.ts:167
+    src/modules/system/invoiceAdmin.ts:249
+
+2 · PRESENTE Y MAL
+    src/core/config/env.ts:250
+    src/index.ts:16
+
+2 · QUÉ COMPRUEBA Y QUÉ NO
+    src/core/db/schemaDrift.ts:24
+    src/core/db/unicidadNombreProducto.ts:33
+
+2 · QUÉ CUENTA COMO
+    public/dashboard/js/atajoNuevo.js:126
+    src/modules/invoicing/domain/lineasFacturables.ts:26
+
+2 · QUÉ FALTA PARA COBRAR
+    public/dashboard/js/jobCobroHuecos.js:3
+    public/dashboard/js/jobDetailView.js:157,748
+
+2 · QUÉ FIRMÓ EL CLIENTE
+    src/modules/quotes/app/routes/quotes.routes.ts:427
+    src/modules/quotes/domain/presupuestoSello.ts:4
+
+2 · QUE NO ES DOCUMENTO FISCAL
+    src/core/utils/utils.ts:236
+    src/modules/quotes/domain/presentacionIva.ts:136
+
+2 · QUÉ PROBLEMA RESUELVE
+    src/modules/exports/domain/portabilidadRegistro.ts:6
+    src/modules/jobs/domain/albaranIdempotencia.ts:6
+
+2 · QUÉ REVISIONES HAY Y CUÁL ESTÁ VIGENTE
+    src/modules/quotes/domain/revision.ts:333
+    src/modules/system/quoteAdmin.ts:197
+
+2 · QUÉ SE HACE CON EL VEREDICTO
+    src/core/db/schemaDrift.ts:218
+    src/core/db/unicidadNombreProducto.ts:129
+
+2 · QUÉ SE VE EN CADA LADO
+    public/dashboard/js/switchFormaJuridica.js:116
+    public/dashboard/js/switchTipoArticulo.js:119
+
+2 · QUIÉN LLEVA ESTE DOCUMENTO
+    public/dashboard/js/invoiceDetailView.js:247
+    public/dashboard/js/quotesDetailView.js:529
+
+2 · REAJUSTAR LOS TRAMOS QUE QUEDAN
+    public/dashboard/js/quotesDetailView.js:690
+    src/modules/system/app/routes/quotesAdmin.routes.ts:411
+
+2 · REGLA DEL PRESUPUESTO
+    src/core/utils/utils.ts:236
+    src/modules/quotes/domain/presentacionIva.ts:136
+
+2 · RETENCIÓN DE GARANTÍA DE OBRA
+    prisma/schema.prisma:505
+    src/modules/billing/domain/retencionGarantia.ts:3
+
+2 · RETENCIÓN DE IRPF
+    prisma/schema.prisma:170
+    public/dashboard/js/settingsView.js:408
+
+2 · SALE DE LA CABECERA
+    public/dashboard/js/invoicesView.js:543
+    public/dashboard/js/quotesListView.js:213
+
+2 · SE LLEVA AL SITIO ÚNICO
+    src/modules/fiscal/evidencias/paquete.ts:60
+    src/modules/jobs/domain/albaran.service.ts:646
+
+2 · SE VALIDA ESTRICTO
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:526
+    src/modules/system/app/routes/quotesAdmin.routes.ts:870
+
+2 · SELLAR AL EMITIR
+    src/modules/jobs/app/routes/jobs.routes.ts:1557
+    src/modules/quotes/app/routes/quotes.routes.ts:652
+
+2 · SI HAS VENIDO A DEDUPLICAR ESTO
+    src/modules/jobs/domain/albaran.service.ts:390
+    src/modules/jobs/domain/albaranVerificacion.ts:184
+
+2 · SI LA VERSIÓN NO LLEGA
+    src/modules/jobs/domain/albaranEdicion.ts:55
+    src/modules/jobs/domain/albaranFirmante.ts:391
+
+2 · SIGUE OCUPANDO SU NOMBRE
+    public/dashboard/js/productsView.js:864
+    src/modules/products/app/routes/products.routes.ts:421
+
+2 · SIN PRESUPUESTO ACEPTADO
+    public/dashboard/js/jobCobroHuecos.js:131
+    public/dashboard/js/jobDetailView.js:210
+
+2 · SIN PRIMARIA NO SE PINTA NADA
+    public/dashboard/js/albaranesView.js:453
+    public/dashboard/js/jobDetailView.js:2098
+
+2 · SÓLO PARA COMPARAR
+    src/modules/system/customerAdmin.ts:175
+    src/modules/system/domain/identificadoresDuplicados.ts:54
+
+2 · TOTAL IVA INCLUIDO
+    public/dashboard/js/quotesView.js:834
+    src/modules/quotes/domain/presentacionIva.ts:10
+
+2 · UN CÓDIGO DEL SERVIDOR NO ES UN MENSAJE PARA UNA PERSONA
+    public/dashboard/js/productsView.js:4
+    public/dashboard/js/providersView.js:4
+
+2 · UN SOLO MECANISMO PARA LAS CUATRO LISTAS
+    public/dashboard/js/app.js:682
+    public/dashboard/js/atajoNuevo.js:4
+
+2 · UN SOLO SITIO QUE CONTESTA
+    src/modules/billing/domain/transferenciaDisponible.ts:3
+    src/modules/billing/domain/viasDeCobro.ts:3
+
+2 · UN SOLO USO
+    public/dashboard/js/albaranDetailView.js:740
+    public/dashboard/js/jobDetailView.js:563
+
+2 · UN TRABAJO SE ASIGNA A VARIOS EMPLEADOS
+    prisma/schema.prisma:1582
+    src/modules/jobs/domain/asignacionDeTrabajo.ts:3
+
+2 · UNA ANULADA NO VUELVE
+    src/modules/billing/app/routes/mpWebhook.routes.ts:159
+    src/modules/billing/app/routes/psp.routes.ts:179
+
+2 · UNA SOLA CADENA
+    public/dashboard/js/jobDetailView.js:224,257
+    src/modules/invoicing/domain/verifactu.service.ts:372
+
+2 · UNA SOLA PIEZA
+    public/dashboard/js/quoteActionsRegistry.js:19
+    public/dashboard/js/selectorMetodoCobro.js:4
+
+2 · UNA SOLA VEZ
+    src/modules/jobs/domain/albaran.service.ts:660
+    src/modules/jobs/domain/recapitulativa.service.ts:3
+
+2 · VA ANTES DE
+    src/modules/jobs/app/routes/partes.routes.ts:317
+    src/modules/system/app/routes/customersAdmin.routes.ts:62
+
+2 · VA EN LA ESCRITURA
+    src/modules/billing/app/routes/psp.routes.ts:380
+    src/modules/quotes/app/routes/quotes.routes.ts:464
+
+2 · VACÍO ES VÁLIDO
+    public/dashboard/js/nifEspanol.js:62
+    src/core/validation/nifEspanol.ts:105
+
+2 · VE Y FIRMA
+    prisma/schema.prisma:659
+    public/dashboard/js/quotesView.js:1825
+
+2 · Y ANTES ERA
+    src/modules/messaging/domain/lifecycle.service.ts:183
+    src/modules/messaging/domain/weeklyDigest.service.ts:48
+
+2 · Y AQUÍ NO HAY
+    prisma/schema.prisma:1482,1666
+    src/modules/jobs/app/routes/albaranes.routes.ts:729
+
+2 · Y CONSTA COMO TAL
+    public/dashboard/js/cobrosView.js:243
+    public/dashboard/js/nifEspanol.js:3
+
+2 · Y DE DÓNDE SALE LA LISTA
+    src/core/http/huellaEstaticos.ts:178
+    src/modules/quotes/domain/presupuestoSello.ts:38
+
+2 · Y EL PROPIETARIO SE QUEDA FUERA
+    public/dashboard/js/documentoAsignados.js:67
+    public/dashboard/js/jobAsignados.js:61
+
+2 · Y ES EL PUNTO DEL TICKET
+    public/dashboard/js/invoicesView.js:300
+    src/modules/jobs/app/routes/jobs.routes.ts:649
+
+2 · Y ES LA MITAD DEL TICKET
+    src/modules/invoicing/domain/retencionIrpf.ts:14
+    src/modules/quotes/domain/presentacionIva.ts:19
+
+2 · Y ES UNA DECISIÓN
+    src/modules/exports/app/routes/exports.routes.ts:615
+    src/modules/invoicing/domain/libroRegistro.repo.ts:21
+
+2 · Y ESO ES DELIBERADO
+    src/core/documentos/nombreParaDocumento.ts:30
+    src/modules/invoicing/domain/retencionIrpf.ts:6
+
+2 · Y ESO NO ES UN OLVIDO
+    prisma/schema.prisma:275
+    public/dashboard/js/jobActionsRegistry.js:8
+
+2 · Y LO QUE NO
+    public/dashboard/js/quoteSuplido.js:12
+    src/modules/invoicing/domain/criterioCaja.ts:6
+
+2 · Y LO ÚNICO QUE NO PUEDE DIVERGIR
+    public/dashboard/js/api.js:599
+    src/core/utils/utils.ts:65
+
+2 · Y NADA MÁS
+    public/dashboard/js/customersView.js:378
+    public/dashboard/js/parteDetailView.js:1175
+
+2 · Y NO EN
+    public/dashboard/js/quotesView.js:712
+    src/modules/system/domain/notasDelCliente.ts:8
+
+2 · Y NO ES
+    src/modules/exports/domain/portabilidadRegistro.ts:6
+    src/modules/jobs/app/routes/jobs.routes.ts:1324
+
+2 · Y NO ES CELO
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:526
+    src/modules/system/app/routes/quotesAdmin.routes.ts:870
+
+2 · Y NO ES OLVIDO
+    public/dashboard/js/jobDetailView.js:2080
+    src/modules/jobs/domain/albaranAFactura.ts:298
+
+2 · Y NO ES UN DETALLE DE ESTILO
+    public/dashboard/js/atajoNuevo.js:151
+    src/modules/jobs/infra/albaranPdf.service.ts:345
+
+2 · Y NO ES UN HUECO
+    public/dashboard/js/productsView.js:653
+    public/dashboard/js/providersView.js:252
+
+2 · Y NO EXISTE EN LA FACTURA
+    public/dashboard/js/quotesView.js:839
+    src/core/validation/schemas.ts:334
+
+2 · Y NO TOCA EL DOCUMENTO
+    src/modules/system/app/routes/invoicesAdmin.routes.ts:1313
+    src/modules/system/app/routes/quotesAdmin.routes.ts:983
+
+2 · Y POR ESO NO HAY
+    public/dashboard/js/prefijosPais.js:6
+    public/dashboard/js/settingsView.js:1191
+
+2 · Y POR MODELO
+    src/integrations/gemini.ts:63
+    src/modules/expenses/domain/lecturaTicket.ts:43
+
+2 · Y SI LA CONSULTA FALLA
+    src/modules/payments/disputes.service.ts:29
+    src/modules/system/customerEvents.service.ts:49
+
+2 · YA NO VIVEN AQUÍ
+    public/dashboard/js/jobDetailView.js:368
+    public/dashboard/js/jobsView.js:819
+
+2 · ZONA DE DINERO
+    src/modules/jobs/app/routes/albaranes.routes.ts:1228
+    src/modules/jobs/app/routes/jobs.routes.ts:1633
+
+2 · ZONA SIN MARCADOR
+    public/dashboard/js/productsView.js:14
+    public/dashboard/js/providersView.js:12
+
+EXIT=0

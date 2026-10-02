@@ -1,0 +1,9 @@
+POBLACION: 6 colores de texto × 3 fondos · AA pide 4,5:1 para texto de este tamano
+FONDOS: tarjeta --surface #ffffff · lienzo --bg #f6f7f5 · fila en hover --neutral-50 #f7f8f6
+--neutral-600  #4b554f  tarjeta 7.74:1 · lienzo 7.21:1 · fila en hover 7.27:1  — titulo y rotulo de rol (este bloque)
+--neutral-700  #333c37  tarjeta 11.40:1 · lienzo 10.61:1 · fila en hover 10.70:1  — nombre y recuento (`.table td`)
+--green-700    #15803d  tarjeta 5.02:1 · lienzo 4.67:1 · fila en hover 4.71:1  — % de aceptacion alto (este bloque)
+--red-600      #dc2626  tarjeta 4.83:1 · lienzo 4.49:1 ✗ · fila en hover 4.53:1  — % de aceptacion bajo
+--neutral-500  #6b756f  tarjeta 4.77:1 · lienzo 4.44:1 ✗ · fila en hover 4.48:1 ✗  — lo que NO se usa: titulo y rol del panel del admin
+--green-600    #16a34a  tarjeta 3.30:1 ✗ · lienzo 3.07:1 ✗ · fila en hover 3.09:1 ✗  — lo que NO se usa: % alto del panel del admin
+EXIT=0

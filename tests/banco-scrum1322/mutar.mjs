@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 const RAIZ = path.resolve(import.meta.dirname, '../..');
 const MOD = path.join(RAIZ, 'src/modules/whatsappBot/domain/decisionPorTexto.ts');
 const RUTA = path.join(RAIZ, 'src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts');
+const TILDES = path.join(RAIZ, 'src/core/texto/sinTildes.ts');
 const TEST = 'tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs';
 
 const MUTACIONES = [
@@ -23,7 +24,8 @@ const MUTACIONES = [
     de: "if (!clase) return 'unknown';", a: 'if (!clase) { i += 1; continue; }' },
   { id: 'M4 una palabra mas en la cortesia', f: MOD,
     de: "  'hola': ", a: "  'pero': 'colada a proposito por la mutacion',\n  'hola': " },
-  { id: 'M5 sin quitar las tildes', f: MOD,
+  // SCRUM-1325: quitar las tildes ya no vive en el modulo, sino en el helper unico de la casa.
+  { id: 'M5 sin quitar las tildes', f: TILDES,
     de: ".replace(/\\p{M}/gu, '')", a: '' },
   { id: 'M6 con las dos direcciones gana el rechazo, como antes', f: MOD,
     de: "if (acepta === rechaza) return 'unknown';", a: "if (rechaza) return 'reject'; if (!acepta) return 'unknown';" },

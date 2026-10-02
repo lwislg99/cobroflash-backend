@@ -1,0 +1,79 @@
+// docs/evidencias/scrum1400/censo-frases-de-principio.mjs.txt — SCRUM-1400, parte ③
+//
+// LA PREGUNTA: ¿cuántas AFIRMACIONES DE PRINCIPIO están escritas, con las mismas palabras, en los
+// comentarios de más de un fichero? Ésas son las que una decisión del fundador puede dejar falsas
+// en varios sitios a la vez, como le pasó a «ASIGNAR NO ES UN PERMISO».
+//
+// QUÉ CUENTA COMO CANDIDATA, y es una definición estrecha a propósito: una racha de TRES o más
+// palabras seguidas en MAYÚSCULAS dentro de una línea que es entera comentario. Es la forma en que
+// esta casa escribe sus principios («ASIGNAR NO ES UN PERMISO», «UNA SOLA FUENTE DE VERDAD»).
+//
+// DE QUÉ NO RESPONDE, declarado:
+//   · un principio escrito en minúsculas, o con otras palabras en cada sitio, NO sale;
+//   · un comentario al final de una línea de código NO se lee (sólo líneas enteras);
+//   · la racha se corta en el final de línea: una frase partida en dos líneas sale partida;
+//   · que una frase se repita no dice que sea de PRODUCTO: eso se clasifica a mano, después.
+//
+// Uso (copiado a .mjs fuera del árbol):  node <copia>.mjs <raíz del repo> <ref>
+// Lee de git (`git show <ref>:…`), no del árbol: el árbol puede estar a medias.
+
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+
+const [raiz, ref] = process.argv.slice(2);
+if (!raiz || !ref) { console.error('CIEGO: faltan <raíz> y <ref>'); process.exit(2); }
+const git = (...args) => execFileSync('git', args, { cwd: path.resolve(raiz), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+
+const AMBITO = ['src', 'prisma', 'public'];
+const ES_FUENTE = /\.(ts|js|mjs|prisma)$/;
+const ficheros = git('ls-tree', '-r', '--name-only', ref, '--', ...AMBITO).split('\n').filter((f) => ES_FUENTE.test(f));
+
+// Una palabra en mayúsculas: letras mayúsculas (con acentos y Ñ), de 1 o más; se admiten dígitos
+// y guiones DENTRO. Una racha: tres o más, separadas SÓLO por espacios. La coma CORTA la racha:
+// en la primera pasada no la cortaba, y «ASIGNAR NO ES UN PERMISO, Y ES LO PRIMERO QUE HAY QUE
+// DECIR» salía como una frase distinta de «ASIGNAR NO ES UN PERMISO» — el control positivo dio 3
+// ficheros en vez de 4 y el censo salió CIEGO, bien dado.
+const PALABRA = '[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ0-9-]*';
+const RACHA = new RegExp(`(?<![\\p{L}\\p{N}])${PALABRA}(?: ${PALABRA}){2,}(?![\\p{L}\\p{N}])`, 'gu');
+const ES_COMENTARIO = /^\s*(\/\/|\*|\/\*)/;
+
+const dondeSale = new Map(); // frase → Map(fichero → [líneas])
+let lineasDeComentario = 0;
+let leidos = 0;
+for (const f of ficheros) {
+  let texto;
+  try { texto = git('show', `${ref}:${f}`); } catch { continue; }
+  leidos += 1;
+  texto.replace(/\r\n/g, '\n').split('\n').forEach((linea, i) => {
+    if (!ES_COMENTARIO.test(linea)) return;
+    lineasDeComentario += 1;
+    for (const m of linea.matchAll(RACHA)) {
+      const frase = m[0].replace(/,/g, '').replace(/\s+/g, ' ').trim();
+      if (!dondeSale.has(frase)) dondeSale.set(frase, new Map());
+      const porFichero = dondeSale.get(frase);
+      if (!porFichero.has(f)) porFichero.set(f, []);
+      porFichero.get(f).push(i + 1);
+    }
+  });
+}
+
+console.log(`POBLACIÓN: ${ficheros.length} ficheros en ${AMBITO.join(', ')} (${leidos} leídos) · ${lineasDeComentario} líneas de comentario · ${dondeSale.size} frases distintas en mayúsculas`);
+
+const repetidas = [...dondeSale.entries()].filter(([, porFichero]) => porFichero.size >= 2)
+  .sort((a, b) => b[1].size - a[1].size || a[0].localeCompare(b[0]));
+console.log(`EN DOS O MÁS FICHEROS: ${repetidas.length}`);
+
+// Control positivo: la frase del ticket TIENE que salir, y en sus cuatro ficheros.
+const testigo = dondeSale.get('ASIGNAR NO ES UN PERMISO');
+console.log(`CONTROL · «ASIGNAR NO ES UN PERMISO»: ${testigo ? `${testigo.size} ficheros` : 'NO SALE'}`);
+// Control negativo: una frase que no existe da 0.
+console.log(`CONTROL · «ASIGNAR NO ES UN PERMIZO»: ${dondeSale.has('ASIGNAR NO ES UN PERMIZO') ? 'SALE (mal)' : '0, como debe'}`);
+
+for (const [frase, porFichero] of repetidas) {
+  console.log(`\n${porFichero.size} · ${frase}`);
+  for (const [f, lineas] of porFichero) console.log(`    ${f}:${lineas.join(',')}`);
+}
+
+const ciego = leidos !== ficheros.length || lineasDeComentario === 0 || !testigo || testigo.size !== 4;
+console.log(`\nEXIT=${ciego ? 2 : 0}`);
+process.exit(ciego ? 2 : 0);

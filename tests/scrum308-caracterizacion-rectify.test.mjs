@@ -18,7 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const DIST = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')).href + '/';
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
@@ -97,7 +97,7 @@ function sustituirPrisma(orig) {
 function restaurarPrisma() { for (const k of Object.keys(ORIG)) moduloPrisma.prisma[k] = ORIG[k]; }
 
 const rectify = (id = '11') =>
-  invocar(RUTA, 'post', '/:id/rectify', { params: { id }, body: {}, merchantId: 7, teamMemberId: null, query: {}, headers: {} });
+  invocar(RUTA, 'post', '/:id/rectify', reqDeSesion({ rol: 'admin', params: { id }, body: {}, merchantId: 7, teamMemberId: null, query: {}, headers: {} }));
 
 // ─── 1. LOS DE ÉXITO (los que faltaban): R1 sobre pending y sobre paid FUNCIONA ──────────────────
 test('SCRUM-308 · caracterización · R1 sobre una factura PENDING → HOY emite (201)', async (t) => {
@@ -169,7 +169,7 @@ test('SCRUM-308 · caracterización · corte isReceiptNumber (J-) → 409 cannot
 test('SCRUM-308 · caracterización · id no numérico → 400 · factura inexistente → 404', async (t) => {
   t.after(restaurarPrisma);
   sustituirPrisma(original('paid'));
-  const rBad = await invocar(RUTA, 'post', '/:id/rectify', { params: { id: 'abc' }, body: {}, merchantId: 7, query: {}, headers: {} });
+  const rBad = await invocar(RUTA, 'post', '/:id/rectify', reqDeSesion({ rol: 'admin', params: { id: 'abc' }, body: {}, merchantId: 7, query: {}, headers: {} }));
   assert.equal(rBad.code, 400, 'id no numérico');
   moduloPrisma.prisma.invoice.findFirst = async () => null; // no existe
   const rNo = await rectify();

@@ -1,0 +1,21 @@
+POBLACION: 6 logs del obligatorio de main · líneas con duración: 9768, 9811, 9796, 9851, 9822, 9848
+
+① los cuatro tests con un `{ timeout }` escrito
+   «una que NO RESPONDE tampoco bloquea» · plazo 8 s · aplicado (scrum358)
+      tardó (s): 0.2 · 0.2 · 0.2 · 0.2 · 0.1 · 0.2 → el peor 0.2 s = 3 % del plazo · margen ×40.0
+   «SCRUM-976 ④ mitad POSITIVA» · plazo 120 s · aplicado (scrum976)
+      tardó (s): 12.4 · 16.6 · 16.4 · 13.7 · 11.0 · 17.0 → el peor 17.0 s = 14 % del plazo · margen ×7.1
+   «SCRUM-1011 · 🔴 ROJO: la sesión NUNCA» · plazo 20 s · ESCRITO Y NO APLICADO (scrum1007: va después de la función)
+      tardó (s): 8.5 · 8.6 · 8.6 · 8.6 · 8.6 · 8.6 → el peor 8.6 s = 43 % del plazo · margen ×2.3
+   «SCRUM-1011 · 🟢 CONTROL POSITIVO» · plazo 20 s · ESCRITO Y NO APLICADO (scrum1007: va después de la función)
+      tardó (s): 1.3 · 1.4 · 1.3 · 1.3 · 1.3 · 1.3 → el peor 1.4 s = 7 % del plazo · margen ×14.3
+
+② el test más lento de la tanda, contra los 300 s por test de `run()`
+   bt-36875190979.log · «ℹ tests 9861» · más de 30 s: 1 · los tres más lentos: 82.1 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.4 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.4 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   bt-36879091133.log · «ℹ tests 9904» · más de 30 s: 1 · los tres más lentos: 82.4 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.5 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.5 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   bt-36880659605.log · «ℹ tests 9889» · más de 30 s: 1 · los tres más lentos: 82.3 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.5 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.5 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   bt-36883824732.log · «ℹ tests 9944» · más de 30 s: 1 · los tres más lentos: 82.2 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.5 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.4 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   bt-36886428643.log · «ℹ tests 9915» · más de 30 s: 1 · los tres más lentos: 82.0 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.4 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.4 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   bt-36886780786.log · «ℹ tests 9941» · más de 30 s: 1 · los tres más lentos: 82.5 s «SCRUM-814 · los dos caminos que el test de stagi» · 27.6 s «🔴 CLIENTE FINAL · tres carreras en `/:token/dec» · 27.5 s «🔴 COBRAR EL RESTO · tres carreras en `/:id/coll»
+   EL MÁS LENTO en 6 logs: 82.5 s = 27 % de 300 s · margen ×3.6
+EXIT=0

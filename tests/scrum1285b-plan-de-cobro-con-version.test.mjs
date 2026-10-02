@@ -9,7 +9,7 @@
 // `@updatedAt` (sube la versión en cada escritura). ⛔ Sin red ni base.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
+import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RUTAS = '../dist/modules/system/app/routes/quotesAdmin.routes.js';
 const copia = (x) => JSON.parse(JSON.stringify(x));
@@ -40,7 +40,7 @@ function banco() {
   const guardar = async (body) => {
     const r = { status: 200, data: undefined };
     const res = { status(s) { r.status = s; return res; }, json(j) { r.data = copia(j); return res; } };
-    await h({ params: { id: String(fila.id) }, body, merchantId: MERCHANT, headers: {} }, res);
+    await h(reqDeSesion({ rol: 'admin', params: { id: String(fila.id) }, body, merchantId: MERCHANT, headers: {} }), res);
     return r;
   };
   const versionLeida = () => new Date(fila.updatedAt).toISOString(); // lo que la pantalla recibe en el GET

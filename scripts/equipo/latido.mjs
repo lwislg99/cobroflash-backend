@@ -79,6 +79,9 @@ export const HORAS_DE_SESION = 24;
 const REPO = 'lwislg99/cobroflash-backend';
 const OBLIGATORIO_POR_DEFECTO = 'build + tests';
 const URL_DE_VERSION = 'https://yaqu.app/version';
+/** El workflow cuyo job es el check obligatorio. Sus corridas por `push` a main son la única prueba del MERGE. */
+const WORKFLOW_DEL_OBLIGATORIO = 'ci.yml';
+const POBLACION_DE_MAIN = 'commits de main recorridos (sus corridas del CI por push, no los checks de las ramas)';
 
 // ───────────────────────────── 1 · PR ─────────────────────────────
 
@@ -338,11 +341,43 @@ export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umb
 
 // ───────────────────────────── 4 · MAIN ─────────────────────────────
 
-/** @param {{commits:{sha:string, checkRuns:object[]|undefined}[], obligatorio?:string}} e — commits de main, del más NUEVO al más viejo. */
+/**
+ * SCRUM-1385 · de las corridas del workflow a lo que `seccionMain` recorre. SÓLO las de `main` por `push`.
+ *
+ * Antes se recorría `commits?sha=main` mirando los check-runs de cada commit. Esa lista trae todos los
+ * commits ALCANZABLES desde main, también los de las ramas ya mergeadas, y la punta de un PR lleva el
+ * verde de SU PR. Medido el 1-oct-2026: la sección dio «último verde de main: 4048a415», que es la punta
+ * de la rama de #2093; sus seis check-suites son de esa rama y ninguna de main. «CI prueba el MERGE, no
+ * la rama» (A10), y ese verde era de la rama.
+ *
+ * Una corrida CANCELADA no se abre: no tiene veredicto y casi siempre ni arrancó. Medido el mismo día:
+ * 21 de las últimas 30 de main, con 0 jobs la que se miró. No es que `cancel-in-progress: false` falle:
+ * GitHub guarda UNA sola corrida pendiente por grupo de concurrencia y la sustituye al llegar otro merge.
+ *
+ * @param {object[]|undefined} corridas  `workflow_runs` de la API, del más NUEVO al más viejo.
+ * @param {(c:object)=>object[]|undefined} jobsDe  los jobs de una corrida · `undefined` = no se pudo leer.
+ * @returns {{sha:string, checkRuns:object[]|undefined, cancelada:boolean}[]|undefined}
+ */
+export function commitsDeCorridas(corridas, jobsDe, obligatorio = OBLIGATORIO_POR_DEFECTO) {
+  if (!Array.isArray(corridas)) return undefined;
+  const commits = [];
+  for (const c of corridas) {
+    if (!c || c.event !== 'push' || c.head_branch !== 'main' || typeof c.head_sha !== 'string') continue;
+    const cancelada = c.status === 'completed' && c.conclusion === 'cancelled';
+    const checkRuns = cancelada ? [] : jobsDe(c);
+    commits.push({ sha: c.head_sha, checkRuns, cancelada });
+    if (Array.isArray(checkRuns) && checkRuns.some((r) => String(r.name || '').startsWith(obligatorio) && r.status === 'completed' && /^(success|failure)$/.test(r.conclusion))) break;
+  }
+  return commits;
+}
+
+/** @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string}} e — commits de main, del más NUEVO al más viejo. */
 export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO }) {
-  if (!Array.isArray(commits) || commits.length === 0) return ciega('MAIN', 'no llegaron commits de main');
-  let detras = 0;
+  if (!Array.isArray(commits) || commits.length === 0) return ciega('MAIN', 'no llegaron corridas del CI sobre main (push)');
+  let detras = 0; let canceladas = 0;
   const alertas = [];
+  // Cuántos de los que no tienen veredicto es porque su corrida se canceló: no es lo mismo que «aún corre».
+  const sinVeredicto = () => `${detras} commit(s) más nuevos sin veredicto${canceladas ? ` (${canceladas} con su corrida CANCELADA: no se comprobaron ni se van a comprobar)` : ''}`;
   for (const c of commits) {
     if (!Array.isArray(c.checkRuns)) return ciega('MAIN', `no se pudieron leer los checks de ${c.sha.slice(0, 8)}`);
     const run = c.checkRuns.filter((r) => String(r.name || '').startsWith(obligatorio))
@@ -351,17 +386,18 @@ export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO }) 
     if (veredicto === 'success') {
       return {
         nombre: 'MAIN', pudo: true, alertas,
-        poblacion: `${commits.length} commits de main recorridos · último con el obligatorio VERDE: ${c.sha.slice(0, 8)} · ${detras} commit(s) más nuevos sin veredicto`,
+        poblacion: `${commits.length} ${POBLACION_DE_MAIN} · último con el obligatorio VERDE: ${c.sha.slice(0, 8)} · ${sinVeredicto()}`,
       };
     }
     if (veredicto === 'failure') {
-      alertas.push({ linea: `main ${c.sha.slice(0, 8)} tiene el obligatorio en ROJO (${detras} commit(s) más nuevos sin veredicto)` });
-      return { nombre: 'MAIN', pudo: true, alertas, poblacion: `${commits.length} commits de main recorridos` };
+      alertas.push({ linea: `main ${c.sha.slice(0, 8)} tiene el obligatorio en ROJO (${sinVeredicto()})` });
+      return { nombre: 'MAIN', pudo: true, alertas, poblacion: `${commits.length} ${POBLACION_DE_MAIN}` };
     }
     detras++;
+    if (c.cancelada) canceladas++;
   }
-  alertas.push({ linea: `ninguno de los últimos ${commits.length} commits de main tiene veredicto del obligatorio` });
-  return { nombre: 'MAIN', pudo: true, alertas, poblacion: `${commits.length} commits de main recorridos, NINGUNO con veredicto` };
+  alertas.push({ linea: `ninguno de los últimos ${commits.length} commits de main tiene veredicto del obligatorio${canceladas ? ` (${canceladas} con su corrida CANCELADA)` : ''}` });
+  return { nombre: 'MAIN', pudo: true, alertas, poblacion: `${commits.length} ${POBLACION_DE_MAIN}, NINGUNO con veredicto` };
 }
 
 // ───────────────────────────── 5 · DESPLIEGUE ─────────────────────────────
@@ -663,13 +699,8 @@ async function todo() {
     : seccionTraspasos({ sesiones, ahora, mtimeDelTraspaso: (n) => { const r = path.join(dT, `project_s${n}_traspaso.md`); return fs.existsSync(r) ? fs.statSync(r).mtimeMs : null; } });
   tramo('sesiones');
   // 4 · main
-  const shas = intentar(() => ghJson(['api', `repos/${REPO}/commits?sha=main&per_page=${COMMITS_DE_MAIN}`]).map((c) => c.sha));
-  const commits = [];
-  for (const sha of shas || []) {
-    const checkRuns = intentar(() => ghJson(['api', `repos/${REPO}/commits/${sha}/check-runs?per_page=100`]).check_runs);
-    commits.push({ sha, checkRuns });
-    if (Array.isArray(checkRuns) && checkRuns.some((r) => String(r.name).startsWith(OBLIGATORIO_POR_DEFECTO) && r.status === 'completed' && /^(success|failure)$/.test(r.conclusion))) break;
-  }
+  const corridas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_OBLIGATORIO}/runs?branch=main&event=push&per_page=${COMMITS_DE_MAIN}`]).workflow_runs);
+  const commits = commitsDeCorridas(corridas, (c) => intentar(() => ghJson(['api', `repos/${REPO}/actions/runs/${c.id}/jobs?per_page=100`]).jobs));
   const sMain = seccionMain({ commits });
   tramo('main');
   // 5 · despliegue

@@ -22,29 +22,29 @@
 // compraste nada». Por eso la carga rota NO pinta tabla, y el servidor manda `miradas` para que
 // «no había» y «no supe leer» salgan con avisos distintos.
 //
-// MICROCOPY: todas las ranuras van marcadas (regla 30), salvo las que reutilizan texto ya
-// existente en otra pantalla («Cargando…») o los avisos que YA aprobó el fundador el 10-ago-2026
-// (`avisosLibroRecibidas`, `librosAeat.ts`) y que aquí solo se pintan tal cual llegan del
-// servidor. Las cabeceras de columna (fecha, proveedor, NIF, base, IVA, total) son los términos
-// que impone la propia aceptación del ticket, igual que «Fecha»/«Base»/«IVA»/«Total» en el libro
-// de emitidas no llevan marcador.
+// MICROCOPY: `titulo`, `error`, `vacioDeVerdad` y `descuadre` los firmó el fundador el 1-oct-2026
+// (SCRUM-1388; `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`) y ya no llevan marca
+// de pendiente: en este fichero no queda ninguna. «Cargando…» es de otra pantalla, los avisos del
+// servidor (`avisosLibroRecibidas`, `librosAeat.ts`) los aprobó el fundador el 10-ago-2026 y se
+// pintan tal cual llegan, y las cabeceras de columna son los términos de la aceptación de
+// SCRUM-1040. Un texto NUEVO aquí vuelve a firma (regla 39): no se escribe y se marca después.
 (function () {
-  const MARCADOR = '[PENDIENTE microcopy oficial]';
-  function rotulo(t) { return MARCADOR + ' ' + t; }
+  // 🔴 `descuadre` NO SE ACORTA NI SE FUNDE CON `vacioDeVerdad`: es lo único que separa «no
+  // compraste» de «no supimos leer». Con `miradas === 1` va «1 gasto»: el singular es del firmado.
 
   const COPY = {
-    titulo: rotulo('Facturas recibidas'),
+    titulo: 'Facturas recibidas',
     // SIN marcador (SCRUM-420 §④): el rótulo de la barra nunca lo lleva, esté o no aprobado el
     // texto. `app.js` no lo lee para la barra —la barra es HTML estático—; esta ranura existe
     // para que el HTML y aquí no puedan divergir en silencio (ver el test de cableado).
     menu: 'Facturas recibidas',
     cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en libroRegistroView.js/invoicesView.js
     recuento: (n) => (n === 1 ? '1 factura recibida' : n + ' facturas recibidas'),
-    error: rotulo('No se ha podido cargar el libro. Vuelve a intentarlo.'),
-    vacioDeVerdad: rotulo('Todavía no tienes facturas recibidas en este periodo.'),
-    descuadre: (miradas) => rotulo(
-      'El libro no cuadra: se han revisado ' + miradas + (miradas === 1 ? ' gasto' : ' gastos')
-      + ' y no ha salido ningún asiento. No lo tomes como que no compraste.'),
+    error: 'No hemos podido cargar tus facturas recibidas. Vuelve a intentarlo.',
+    vacioDeVerdad: 'Todavía no tienes facturas recibidas en este periodo.',
+    descuadre: (miradas) => (
+      'Hemos revisado ' + miradas + (miradas === 1 ? ' gasto' : ' gastos')
+      + ' y no ha salido ninguna factura. No lo tomes como que no compraste: puede que no hayamos sabido leer alguno.'),
     colFecha: 'Fecha',
     colProveedor: 'Proveedor',
     colNif: 'NIF',
@@ -209,12 +209,17 @@
       try {
         const qs = new URLSearchParams({ 'año': String(anio), trimestre: String(tri) });
         pintar(await apiRequest('/admin/libros/recibidas.json?' + qs));
-      } catch (err) {
-        pintarError(err);
+      } catch {
+        pintarError();
       }
     }
 
-    function pintarError(err) {
+    // SCRUM-1388 · EL CARTEL DICE SOLO LAS PALABRAS FIRMADAS. Debajo iba un párrafo con el texto
+    // del error tal cual, y lo que leía el profesional era «API 403: forbidden», «Failed to fetch»
+    // o el `respuesta_incompleta` que fabrica `pintar`. Esta ruta no manda nunca una frase para
+    // una persona, así que no hay nada que rescatar de ahí. El cartel NO se quita: es lo único
+    // que distingue una carga rota de un periodo vacío.
+    function pintarError() {
       subtitle.textContent = '';
       body.innerHTML = '';
       // ⚠️ `.alert` sin modificador de tono está OCULTA por CSS: un aviso invisible aquí sería
@@ -223,10 +228,6 @@
       aviso.className = 'alert error fr-alert';
       aviso.textContent = COPY.error;
       body.appendChild(aviso);
-      const detalle = document.createElement('p');
-      detalle.className = 'fr-alert-detail';
-      detalle.textContent = String((err && err.message) || err || '');
-      body.appendChild(detalle);
     }
 
     function avisar(texto, tono) {
@@ -241,7 +242,7 @@
       const filas = libro && Array.isArray(libro.filas) ? libro.filas : null;
       // `miradas` tiene que venir SIEMPRE: es lo que distingue «no había» de «no supe leer».
       if (!filas || typeof libro.miradas !== 'number') {
-        pintarError(new Error('respuesta_incompleta'));
+        pintarError();
         return;
       }
 

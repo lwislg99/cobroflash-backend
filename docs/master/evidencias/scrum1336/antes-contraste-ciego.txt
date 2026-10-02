@@ -1,0 +1,5 @@
+# contraste-ciego · guard-contraste.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · una página que no se deja medir: 0 hallazgos
+# EXIT=1 · 7.7 s
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+✖ /zz-ciego-1336.html: no se pudo medir — rota a proposito por el banco de SCRUM-1336

@@ -299,16 +299,46 @@ function censarFuente(ts, modelos, nombre, texto) {
     return null;
   };
 
+  // SCRUM-1381 · la función con nombre que encierra la escritura (para decir QUIÉN escribe cuando no
+  // hay ruta): declaración, método, o `const f = () => …`. null si es del cuerpo del módulo.
+  const funcionConNombre = (n) => {
+    for (let a = n.parent; a; a = a.parent) {
+      if ((ts.isFunctionDeclaration(a) || ts.isMethodDeclaration(a) || ts.isFunctionExpression(a)) && a.name) return a.name.getText(sf);
+      if (ts.isVariableDeclaration(a) && ts.isIdentifier(a.name) && a.initializer
+        && (ts.isArrowFunction(a.initializer) || ts.isFunctionExpression(a.initializer))) return a.name.text;
+    }
+    return null;
+  };
+  // SCRUM-1381 · los campos que el `data` escribe. null = no se pueden leer (no es un literal, o
+  // lleva un spread o una clave calculada): ese escritor es OPACO para el recuento, nunca «no toca».
+  const camposDelData = (data) => {
+    data = data && pelar(data);
+    if (!data || !ts.isObjectLiteralExpression(data)) return null;
+    const campos = [];
+    for (const p of data.properties) {
+      if (!(ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p))) return null;
+      const k = nombreProp(p);
+      if (k === null) return null;
+      campos.push(k);
+    }
+    return campos;
+  };
+
   const visitar = (n) => {
     const l = llamadaAModelo(n);
     if (l && METODOS.has(l.metodo)) {
       const linea = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
-      const fila = { fichero: nombre, linea, modelo: l.modelo, metodo: l.metodo, ruta: rutaQueEncierra(n), clase: 'OPACO', motivo: '', claves: [] };
+      const ruta = rutaQueEncierra(n);
+      const fila = {
+        fichero: nombre, linea, modelo: l.modelo, metodo: l.metodo, ruta, clase: 'OPACO', motivo: '', claves: [],
+        sitio: `${nombre}::${ruta || funcionConNombre(n) || '(módulo)'}`, campos: null, campoDecidido: null,
+      };
       const arg = n.arguments[0] && pelar(n.arguments[0]);
       if (!arg || !ts.isObjectLiteralExpression(arg)) fila.motivo = 'el argumento no es un literal';
       else {
         const w = prop(arg, 'where');
         const d = prop(arg, l.metodo === 'upsert' ? 'update' : 'data');
+        fila.campos = d ? camposDelData(valor(d)) : null;
         const claves = w ? clavesDelWhere(valor(w)) : null;
         if (claves === null) fila.motivo = w ? 'el where no es un literal' : 'sin where';
         else if (!d) fila.motivo = 'sin data';
@@ -328,6 +358,7 @@ function censarFuente(ts, modelos, nombre, texto) {
           else {
             const lecturas = lecturasAntes(fn, l.modelo, pos);
             const dec = lecturas.length ? decide(fn, lecturas, pos, valor(d)) : null;
+            if (dec && dec.deValor) fila.campoDecidido = dec.campo;
             if (dec && dec.deValor) { fila.clase = 'LEE-Y-DECIDE'; fila.motivo = `decide sobre el valor de «${dec.campo}» leído antes y lo escribe; where solo {${claves.join(', ')}}`; }
             else if (dec) { fila.clase = 'LEE-Y-RELLENA'; fila.motivo = `rellena «${dec.campo}» si faltaba al leer; where solo {${claves.join(', ')}}`; }
             else if (lecturas.length) { fila.clase = 'LEE-SIN-DECIDIR'; fila.motivo = `lee ${l.modelo} antes, pero lo que escribe no depende de una decisión sobre lo leído; where solo {${claves.join(', ')}}`; }
@@ -384,6 +415,115 @@ function control(ts, modelos) {
   return { ok: true, modelo };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1381 · ¿CUÁNTOS ESCRITORES TIENE LA FILA? — «el `updatedAt` de una fila no es la versión de
+// un trozo de esa fila».
+//
+// El arreglo de 1285 mete el `updatedAt` de la fila en el `where`. Vale si la fila tiene UN escritor.
+// Si otro sitio escribe OTRO campo de la misma fila, Prisma mueve el `updatedAt` igual, y el que
+// guardaba su trozo recibe un 409 por un cambio que no le toca. Medido por S2 en producción: las
+// notas internas del presupuesto se autoguardan, y «Guardar plan» devolvía 409 por la propia nota.
+//
+// Para cada CANDIDATA —una escritura LEE-Y-DECIDE (a la que se le querría poner el patrón) o una
+// CONDICIONADO cuya condición ya es el `updatedAt` (la que ya lo lleva)— se cuentan los OTROS sitios
+// que escriben el mismo modelo, y se parten en tres:
+//   coinciden .. tocan alguno de los campos protegidos: un cambio suyo SÍ debe invalidar la versión.
+//   ajenos ..... sus campos se leen y NO tocan ninguno protegido: mueven el `updatedAt` sin motivo.
+//   opacos ..... su `data` no se puede leer. No se cuentan como ajenos ni como inocuos.
+// Veredicto, de TRES valores (más el que no aplica), nunca dos:
+//   VALE ............ ningún ajeno y ningún opaco.
+//   NO-VALE ......... al menos un ajeno: el falso 409 es posible.
+//   NO-SE ........... ningún ajeno a la vista, pero hay opacos (o no se sabe qué protege).
+//   SIN-UPDATEDAT ... el modelo no tiene campo `@updatedAt`: el patrón ni siquiera se puede copiar.
+//
+// LO QUE NO VE: «un sitio» es fichero + ruta (o función). Un escritor que vive en un servicio llamado
+// desde la MISMA ruta cuenta como otro sitio. Y escribir el mismo modelo no es escribir la misma
+// FILA: dos sitios que nunca coinciden sobre un registro salen igual. Sobrecuenta, no infracuenta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+export const VEREDICTOS = ['VALE', 'NO-VALE', 'NO-SE', 'SIN-UPDATEDAT'];
+
+/** Modelos del esquema → nombre de su campo `@updatedAt` (los que no lo tienen, no están). */
+export function camposUpdatedAt(textoEsquema) {
+  const out = new Map();
+  const re = /^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm;
+  let m;
+  while ((m = re.exec(textoEsquema))) {
+    for (const linea of m[2].split('\n')) {
+      const t = linea.trim();
+      if (!t || t.startsWith('//')) continue;
+      const campo = t.match(/^(\w+)\s+\S+.*?@updatedAt\b/);
+      if (campo) out.set(m[1].charAt(0).toLowerCase() + m[1].slice(1), campo[1]);
+    }
+  }
+  return out;
+}
+
+/** Una fila por candidata, con sus escritores partidos en tres y su veredicto. */
+export function escritoresPorFila(filas, updatedAtPorModelo) {
+  const out = [];
+  for (const f of filas) {
+    const campoVersion = updatedAtPorModelo.get(f.modelo) || null;
+    const yaLaLleva = f.clase === 'CONDICIONADO' && campoVersion !== null && f.claves.includes(campoVersion);
+    if (f.clase !== 'LEE-Y-DECIDE' && !yaLaLleva) continue;
+    const protegidos = yaLaLleva ? f.campos : [f.campoDecidido];
+    const otros = filas.filter((o) => o.modelo === f.modelo && o.sitio !== f.sitio);
+    const sitios = (lista) => [...new Set(lista.map((o) => o.sitio))].sort();
+    const opacos = otros.filter((o) => o.campos === null);
+    const legibles = otros.filter((o) => o.campos !== null);
+    const toca = (o) => protegidos !== null && o.campos.some((c) => protegidos.includes(c));
+    const ajenos = protegidos === null ? [] : legibles.filter((o) => !toca(o));
+    const coinciden = protegidos === null ? [] : legibles.filter(toca);
+    let veredicto;
+    if (campoVersion === null) veredicto = 'SIN-UPDATEDAT';
+    else if (ajenos.length) veredicto = 'NO-VALE';
+    else if (opacos.length || protegidos === null) veredicto = 'NO-SE';
+    else veredicto = 'VALE';
+    out.push({
+      sitio: f.sitio, fichero: f.fichero, linea: f.linea, modelo: f.modelo, ruta: f.ruta, clase: f.clase,
+      yaLaLleva, protegidos, veredicto,
+      otros: sitios(otros).length, coinciden: sitios(coinciden), ajenos: sitios(ajenos), opacos: sitios(opacos),
+      // La UNIDAD, dicha: un SITIO es fichero + ruta (o función); una LÍNEA es una llamada a prisma.
+      // Un sitio puede tener varias líneas: los dos recuentos no coinciden y los dos son ciertos.
+      lineasOtras: otros.length, lineasAjenas: ajenos.length,
+      lineasDe: Object.fromEntries(sitios(otros).map((s) => [s, otros.filter((o) => o.sitio === s).map((o) => o.linea).sort((a, b) => a - b)])),
+    });
+  }
+  return out;
+}
+
+/** El control positivo del recuento de escritores: tres árboles sintéticos, tres veredictos. */
+function controlEscritores(ts, modelos, updatedAtPorModelo) {
+  const modelo = [...updatedAtPorModelo.keys()].find((m) => modelos.has(m));
+  if (!modelo) return { ok: false, motivo: 'ningún modelo del esquema tiene `@updatedAt` para montar el control de escritores' };
+  const v = updatedAtPorModelo.get(modelo);
+  const plan = `router.patch('/c/:id/plan', async (req, res) => {
+      await prisma.${modelo}.update({ where: { id: 1, ${v}: req.body.version }, data: { campoPlan: req.body.plan } });
+    });`;
+  const notas = `router.patch('/c/:id/notas', async (req, res) => {
+      await prisma.${modelo}.update({ where: { id: 1 }, data: { campoNotas: req.body.notas } });
+    });`;
+  const mismoCampo = `router.post('/c/:id/reset', async (req, res) => {
+      await prisma.${modelo}.update({ where: { id: 1 }, data: { campoPlan: null } });
+    });`;
+  const opaco = `router.patch('/c/:id', async (req, res) => {
+      await prisma.${modelo}.update({ where: { id: 1 }, data: cambios });
+    });`;
+  const casos = [
+    ['el plan condicionado por la versión de la fila, con las notas escribiendo al lado', [plan, notas], 'NO-VALE'],
+    ['el mismo plan, solo en la fila', [plan], 'VALE'],
+    ['el mismo plan, con otro escritor que toca SU campo', [plan, mismoCampo], 'VALE'],
+    ['el mismo plan, con un escritor que no se puede leer', [plan, opaco], 'NO-SE'],
+  ];
+  for (const [que, fuentes, esperado] of casos) {
+    const r = censarFuente(ts, modelos, '__control-escritores.routes.ts', fuentes.join('\n'));
+    const cand = r.filas ? escritoresPorFila(r.filas, updatedAtPorModelo).filter((c) => c.ruta === 'PATCH /c/:id/plan') : [];
+    if (cand.length !== 1 || cand[0].veredicto !== esperado) {
+      return { ok: false, motivo: `escritores · ${que}: salió «${cand.map((c) => c.veredicto).join(', ') || 'sin candidata'}», no ${esperado}` };
+    }
+  }
+  return { ok: true, modelo };
+}
+
 // Anclas en el ÁRBOL REAL, las dos que ya conocemos. La que se arregló esta mañana (1276) NO puede
 // salir LEE-Y-DECIDE; si saliera, el censo no distingue arreglado de roto. La del plan de cobro
 // (1285) tiene que estar: LEE-Y-DECIDE mientras siga rota, CONDICIONADO cuando S1 la arregle.
@@ -428,6 +568,9 @@ export function medir({ raiz = RAIZ_REPO, piezasExtra = [] } = {}) {
   const ts = cargarTs(raiz);
   const ctl = control(ts, modelos);
   if (!ctl.ok) return { noMedido: `CONTROL POSITIVO FALLIDO: ${ctl.motivo}` };
+  const updatedAtPorModelo = camposUpdatedAt(fs.readFileSync(esquema, 'utf8'));
+  const ctlEscritores = controlEscritores(ts, modelos, updatedAtPorModelo);
+  if (!ctlEscritores.ok) return { noMedido: `CONTROL POSITIVO FALLIDO: ${ctlEscritores.motivo}` };
 
   const filas = [];
   const ficheros = ficherosTs(path.join(raiz, 'src'));
@@ -448,7 +591,17 @@ export function medir({ raiz = RAIZ_REPO, piezasExtra = [] } = {}) {
   const anclas = comprobarAnclas(filas);
   if (!anclas.ok) return { noMedido: `ANCLA EN EL ÁRBOL REAL: ${anclas.motivo}` };
   const cuenta = Object.fromEntries(CLASES.map((c) => [c, filas.filter((f) => f.clase === c).length]));
-  return { filas, cuenta, ficheros: ficheros.length, modelos: modelos.size, control: ctl.modelo, anclas: anclas.informe };
+  const escritores = escritoresPorFila(filas, updatedAtPorModelo);
+  const cuentaEscritores = Object.fromEntries(VEREDICTOS.map((v) => [v, escritores.filter((e) => e.veredicto === v).length]));
+  return {
+    filas, cuenta, ficheros: ficheros.length, modelos: modelos.size, control: ctl.modelo, anclas: anclas.informe,
+    escritores, cuentaEscritores, modelosConUpdatedAt: updatedAtPorModelo.size,
+  };
+}
+
+/** Las que YA condicionan por el `updatedAt` de la fila y no pueden fiarse de él. Es lo que el trinquete vigila. */
+export function versionDeFilaDudosa(escritores) {
+  return escritores.filter((e) => e.yaLaLleva && e.veredicto !== 'VALE');
 }
 
 const esPrincipal = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -465,6 +618,25 @@ if (esPrincipal) {
   console.log(`Escrituras sin versión (SCRUM-1285) · población: ${r.filas.length} escrituras en ${r.ficheros} ficheros de src/ · ${r.modelos} modelos · control positivo cazado (modelo ${r.control})`);
   console.log(CLASES.map((c) => `${c} ${r.cuenta[c]}`).join(' · '));
   console.log(`anclas: ${r.anclas.join(' · ')}`);
+  if (process.argv.includes('--escritores')) {
+    console.log(`\nEscritores por fila (SCRUM-1381) · población: ${r.escritores.length} candidatas `
+      + `(${r.escritores.filter((e) => e.yaLaLleva).length} ya condicionan por el updatedAt de la fila, `
+      + `${r.escritores.filter((e) => !e.yaLaLleva).length} LEE-Y-DECIDE) · ${r.modelosConUpdatedAt} de ${r.modelos} modelos tienen @updatedAt`);
+    console.log(VEREDICTOS.map((v) => `${v} ${r.cuentaEscritores[v]}`).join(' · '));
+    console.log('unidad: un SITIO es fichero + ruta o función; una LÍNEA es una llamada a prisma. Un sitio puede tener varias líneas.');
+    for (const v of VEREDICTOS) {
+      const suyas = r.escritores.filter((e) => e.veredicto === v);
+      if (!suyas.length) continue;
+      console.log(`\n── ${v} (${suyas.length}) ──`);
+      for (const e of suyas) {
+        console.log(`  ${e.yaLaLleva ? 'YA LA LLEVA' : 'candidata  '} ${e.fichero}:${e.linea} · ${e.modelo}${e.ruta ? ` · ${e.ruta}` : ''} · protege {${(e.protegidos || ['?']).join(', ')}} · `
+          + `otros escritores: ${e.otros} sitios en ${e.lineasOtras} líneas → ${e.coinciden.length} sitios tocan lo suyo, `
+          + `${e.ajenos.length} sitios ajenos (${e.lineasAjenas} líneas), ${e.opacos.length} sitios opacos`);
+        if (process.argv.includes('--todo')) for (const a of e.ajenos) console.log(`        ajeno: ${a} (:${e.lineasDe[a].join(', :')})`);
+      }
+    }
+    process.exit(0);
+  }
   const verTodo = process.argv.includes('--todo');
   for (const c of verTodo ? CLASES : ['LEE-Y-DECIDE', 'OPACO']) {
     const fs_ = r.filas.filter((f) => f.clase === c);

@@ -1,0 +1,6 @@
+✔ [5,6,7,8] de 8 → CONTIGUOS, y hasta el FINAL (cola)
+✔ [3,4,5] de 8 → CONTIGUOS, pero NO llegan al final (bloque en medio)
+✔ [2,5,6,8] de 8 → SALPICADOS (3 tramos)
+✔ [] de 8 → VACÍO
+✔ censo AST: 2 literales en orden y 1 nombre construido DENUNCIADO (línea 3)
+AUTOCONTROL · 5 casos · 0 mal

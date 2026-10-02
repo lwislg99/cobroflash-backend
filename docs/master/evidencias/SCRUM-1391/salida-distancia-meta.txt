@@ -1,0 +1,31 @@
+meta-36875190979.log · POBLACION: 385 veredictos · tramo 1011 s · vivas 385 · mudas 0 · ciegas 0 · ficheros muertos 0
+     26.2 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.2 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     21.6 s (7 % del plazo) · ✔ scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con
+     mediana 1.4 s · mas de 30 s: 0 · mas de 60 s: 0
+meta-36879091133.log · POBLACION: 385 veredictos · tramo 1003 s · vivas 385 · mudas 0 · ciegas 0 · ficheros muertos 0
+     26.2 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.1 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     21.3 s (7 % del plazo) · ✔ scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con
+     mediana 1.4 s · mas de 30 s: 0 · mas de 60 s: 0
+meta-36880659605.log · POBLACION: 399 veredictos · tramo 994 s · vivas 399 · mudas 0 · ciegas 0 · ficheros muertos 0
+     26.2 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.0 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     20.6 s (7 % del plazo) · ✔ scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con
+     mediana 1.4 s · mas de 30 s: 0 · mas de 60 s: 0
+meta-36883824732.log · POBLACION: 399 veredictos · tramo 1001 s · vivas 399 · mudas 0 · ciegas 0 · ficheros muertos 0
+     26.2 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.2 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     20.8 s (7 % del plazo) · ✔ scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con
+     mediana 1.4 s · mas de 30 s: 0 · mas de 60 s: 0
+meta-36886428643.log · POBLACION: 405 veredictos · tramo 1125 s · vivas 405 · mudas 0 · ciegas 0 · ficheros muertos 0
+     30.7 s (10 % del plazo) · ✔ scrum976-guards-entrada-con-techo.test.mjs · SCRUM-1386 ⑦ un runner que acaba SIN su resumen   (+1 test(s) m
+     26.1 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.1 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     mediana 1.4 s · mas de 30 s: 1 · mas de 60 s: 0
+meta-36886780786.log · POBLACION: 405 veredictos · tramo 1103 s · vivas 404 · mudas 0 · ciegas 1 · ficheros muertos 0
+     29.2 s (10 % del plazo) · ✔ scrum976-guards-entrada-con-techo.test.mjs · SCRUM-1386 ⑦ un runner que acaba SIN su resumen   (+1 test(s) m
+     26.2 s (9 % del plazo) · ✔ scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se invent
+     26.2 s (9 % del plazo) · ✔ scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres,
+     mediana 1.4 s · mas de 30 s: 0 · mas de 60 s: 0
+PEOR INTERVALO en 6 logs: 30.7 s = 10 % del plazo de 300 s · margen ×9.8

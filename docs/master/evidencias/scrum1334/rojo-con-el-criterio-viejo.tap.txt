@@ -1,0 +1,429 @@
+TAP version 13
+# Subtest: SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra
+ok 1 - SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra
+  ---
+  duration_ms: 434.1337
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO
+ok 2 - SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO
+  ---
+  duration_ms: 2.0212
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo)
+ok 3 - SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo)
+  ---
+  duration_ms: 209.7633
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · 🔴 RECUENTO: el guard DICE lo que cruza y lo que no — «crucé N de M»
+not ok 4 - SCRUM-1334 · 🔴 RECUENTO: el guard DICE lo que cruza y lo que no — «crucé N de M»
+  ---
+  duration_ms: 78.2796
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:581:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 el extractor ve 112 citas en las fichas y a pelo hay 251: se está dejando citas fuera sin meterlas en ninguna caja, que es justo lo que SCRUM-1334 vino a cerrar.
+    
+    112 !== 251
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 251
+  actual: 112
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:598:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · 🔴 cada DECLARADA sigue en su ficha, sigue sin pintarse tal cual y sus partes fijas siguen en su fichero
+not ok 5 - SCRUM-1334 · 🔴 cada DECLARADA sigue en su ficha, sigue sin pintarse tal cual y sus partes fijas siguen en su fichero
+  ---
+  duration_ms: 4.3417
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:620:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la declaración de «No se puede facturar: este presupuesto tiene un descuento global y var» (2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md) ya no se sostiene. Una declaración que sobrevive a su prueba parece una decisión y no protege nada: o se corrige, o se borra.
+    + actual - expected
+    
+    + [
+    +   'su ficha ya no tiene esa cita: la declaración sobra'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'su ficha ya no tiene esa cita: la declaración sobra'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:623:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo
+ok 6 - SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo
+  ---
+  duration_ms: 79.4082
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en el código
+ok 7 - SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en el código
+  ---
+  duration_ms: 52.0804
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
+ok 8 - SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
+  ---
+  duration_ms: 28.2444
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa
+ok 9 - SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa
+  ---
+  duration_ms: 3.5181
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta
+ok 10 - SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta
+  ---
+  duration_ms: 2.9582
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código
+ok 11 - SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código
+  ---
+  duration_ms: 2.8892
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta
+ok 12 - SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta
+  ---
+  duration_ms: 52.5307
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE
+ok 13 - SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE
+  ---
+  duration_ms: 27.2355
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: el comentario nombrado en OTRA línea no respalda a la firma
+ok 14 - SCRUM-1329 · CONTROL: el comentario nombrado en OTRA línea no respalda a la firma
+  ---
+  duration_ms: 4.6047
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · la firma DELEGADA, con su comentario, vale igual que la del fundador
+ok 15 - SCRUM-1329 · la firma DELEGADA, con su comentario, vale igual que la del fundador
+  ---
+  duration_ms: 2.6034
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una celda larga del registro CONGELADO no tiene firma que mirar — NO SÉ
+ok 16 - SCRUM-1329 · CONTROL: una celda larga del registro CONGELADO no tiene firma que mirar — NO SÉ
+  ---
+  duration_ms: 2.3112
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada
+ok 17 - SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada
+  ---
+  duration_ms: 2.3325
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae
+ok 18 - SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae
+  ---
+  duration_ms: 4.3448
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · 🔴 una cita entra en el cruce vaya bajo el encabezado que vaya, o bajo ninguno
+not ok 19 - SCRUM-1334 · 🔴 una cita entra en el cruce vaya bajo el encabezado que vaya, o bajo ninguno
+  ---
+  duration_ms: 4.4036
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:831:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 bajo «Textos aprobados, literales» la cita no entra en el cruce: el título del apartado vuelve a decidir qué se mira, y un texto firmado puede quedarse sin comprobar sólo por cómo tituló su ficha quien la escribió.
+    + actual - expected
+    
+    + []
+    - [
+    -   [
+    -     'Guardar los cambios del taller',
+    -     'cruce'
+    -   ]
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      0: 'Guardar los cambios del taller'
+      1: 'cruce'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:834:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · 🔴 TESTIGO REAL: la cita de 276 caracteres de SCRUM-1247 («Textos aprobados», en plural) se cruza
+not ok 20 - SCRUM-1334 · 🔴 TESTIGO REAL: la cita de 276 caracteres de SCRUM-1247 («Textos aprobados», en plural) se cruza
+  ---
+  duration_ms: 41.5715
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:841:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la cita larga de SCRUM-1247 no está en el cruce. Es el caso que destapó el defecto: pasaba sin que nadie la mirase porque su encabezado dice «Textos aprobados», en plural.
+    + actual - expected
+    
+    + []
+    - [
+    -   [
+    -     276,
+    -     'Textos aprobados, literales',
+    -     'cruce'
+    -   ]
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      0: 276
+      1: 'Textos aprobados, literales'
+      2: 'cruce'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:844:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · 🔴 una cita que el código NO pinta, bajo un título cualquiera, sale en rojo y dice dónde
+not ok 21 - SCRUM-1334 · 🔴 una cita que el código NO pinta, bajo un título cualquiera, sale en rojo y dice dónde
+  ---
+  duration_ms: 2.6085
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:856:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 una cita de una ficha firmada que el código no pinta ha pasado en silencio.
+    + actual - expected
+    
+    + []
+    - [
+    -   'Guardar los cambios del taller'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'Guardar los cambios del taller'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:859:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · CONTROL: la prosa de una ficha que NO va en cita sigue sin pasar por texto aprobado
+not ok 22 - SCRUM-1334 · CONTROL: la prosa de una ficha que NO va en cita sigue sin pasar por texto aprobado
+  ---
+  duration_ms: 2.9902
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:868:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 ha entrado en la población algo que no es una línea de cita. Abrir el cruce a todas las secciones no es abrirlo a toda la ficha: sólo la cita `>` es un texto aprobado.
+    + actual - expected
+    
+    + []
+    - [
+    -   'Guardar los cambios del taller'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'Guardar los cambios del taller'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:876:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · CONTROL: lo que ya se cruzaba por su título se sigue cruzando, entero
+ok 23 - SCRUM-1334 · CONTROL: lo que ya se cruzaba por su título se sigue cruzando, entero
+  ---
+  duration_ms: 91.5969
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · una plantilla y una cita corta siguen fuera del cruce, y ahora constan en su caja
+not ok 24 - SCRUM-1334 · una plantilla y una cita corta siguen fuera del cruce, y ahora constan en su caja
+  ---
+  duration_ms: 37.4572
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:905:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   [
+    -     'Hola {nombre}, gracias por tu visita',
+    -     'plantilla'
+    -   ],
+    -   [
+    -     'Sí',
+    -     'corta'
+    -   ],
+    -   [
+    -     'Guardar los cambios del taller',
+    -     'cruce'
+    -   ]
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      0: 'Hola {nombre}, gracias por tu visita'
+      1: 'plantilla'
+    1:
+      0: 'Sí'
+      1: 'corta'
+    2:
+      0: 'Guardar los cambios del taller'
+      1: 'cruce'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:909:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · una cita declarada sale del cruce SÓLO en su ficha: la declaración no es del texto
+not ok 25 - SCRUM-1334 · una cita declarada sale del cruce SÓLO en su ficha: la declaración no es del texto
+  ---
+  duration_ms: 30.4367
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:934:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'declarada'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'declarada'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:936:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · una declaración con su prueba vale; sin ella, dice qué le falta
+not ok 26 - SCRUM-1334 · una declaración con su prueba vale; sin ella, dice qué le falta
+  ---
+  duration_ms: 0.4851
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:945:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la declaración fabricada completa no vale: el caso no prueba nada.
+    + actual - expected
+    
+    + [
+    +   'su ficha ya no tiene esa cita: la declaración sobra'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'su ficha ya no tiene esa cita: la declaración sobra'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:946:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · CONTROL: una NOTA no cuela como «compuesta» metiéndola entera en un dato
+ok 27 - SCRUM-1334 · CONTROL: una NOTA no cuela como «compuesta» metiéndola entera en un dato
+  ---
+  duration_ms: 0.4349
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes
+ok 28 - SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes
+  ---
+  duration_ms: 77.3303
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 19
+# fail 9
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1951.9134

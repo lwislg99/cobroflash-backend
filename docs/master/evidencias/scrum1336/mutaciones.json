@@ -1,0 +1,72 @@
+{
+  "guard": "scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs",
+  "poblacion": 8,
+  "vivas": 8,
+  "sinRestaurar": 0,
+  "filas": [
+    {
+      "cae": "los sumideros: «no supe mirar» va a `ciegos` y el hallazgo a `hallazgos`",
+      "a": "const noSupeMirar = (texto) => { console.error(texto); hallazgos.push(texto); };",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "ningún «NO SUPE MIRAR» ni «CIEGO» se le pasa al sumidero de hallazgos",
+      "a": "hallazgo(`   🔴 NO SUPE MIRAR @${ancho}px: el árbol de accesibilidad",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "LOS SEIS con la marca salen SÓLO por `veredictoDe`",
+      "a": "    process.exit(1);",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "EL SÉPTIMO, aparte",
+      "a": "    fallos.push(String((e && e.message) || e));",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "los sumideros: «no supe mirar» va a `ciegos` y el hallazgo a `hallazgos`",
+      "a": "const hallazgo = (s) => { console.error(s); ciegos.push(s); };",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "E1 · cada uno de los siete dice SIEMPRE sus dos cuentas",
+      "a": "else console.log('');",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "F · el mensaje de `guard-rastro-del-menu` dice lo que MIDIÓ",
+      "a": "✓ los 17 destinos del menú dejan rastro",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "E2 · la línea agregada del banco sale SIEMPRE",
+      "a": "const k = 0;",
+      "veredicto": "VIVA",
+      "caidos": 2,
+      "restaurado": true,
+      "detalle": null
+    }
+  ]
+}
