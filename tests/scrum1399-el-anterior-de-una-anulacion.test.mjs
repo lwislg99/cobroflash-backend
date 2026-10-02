@@ -77,9 +77,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const NIF = '00000000T';
 const NOMBRE = 'Prueba De Laboratorio';
 
-/** Una raíz desechable con el script dentro y `dist/` alcanzable. Devuelve su ruta. */
-function raizAislada() {
+/**
+ * Una raíz desechable con el script dentro y `dist/` alcanzable. Devuelve su ruta.
+ *
+ * `punteroPrevio`, si llega, se deja escrito como puntero de la cadena ANTES de la primera pasada.
+ * Se escribe AQUÍ y no en el caso que lo pide para que se vea de dónde cuelga: del `temporal()`
+ * de dos líneas más arriba. Escrito desde el caso, a través de una ruta que devuelve otra función,
+ * el censo de SCRUM-824 no podía probar que no cayera en el árbol.
+ */
+function raizAislada(punteroPrevio = null) {
   const dir = temporal('scrum1399-anterior-');
+  if (punteroPrevio !== null) {
+    fs.mkdirSync(path.join(dir, 'tmp'));
+    fs.writeFileSync(path.join(dir, 'tmp', 'ultimo-registro.json'), punteroPrevio);
+  }
   fs.mkdirSync(path.join(dir, 'scripts'));
   fs.copyFileSync(SCRIPT, path.join(dir, 'scripts', path.basename(SCRIPT)));
   for (const rel of MODULOS_DE_DIST) {
@@ -211,20 +222,18 @@ test('SCRUM-1399 · ⑥ lo que NO cambia: tras un alta o una R1, el anterior es 
 test('SCRUM-1399 · ⑦ un puntero de anulación escrito por el guion VIEJO no se usa: sale 1 y no escribe nada', () => {
   // El guion viejo dejaba en el puntero, tras una anulación, la serie de la pasada. Ese fichero
   // sobrevive al arreglo (vive fuera de git), y encadenarse a él repetiría el defecto entero.
-  const dir = raizAislada();
-  assert.equal(correr(dir, ['--serie-propia', 'A-0001', '--fecha-propia', '01-09-2026']).status, 0);
   const viejo = JSON.stringify({
     idEmisorFactura: NIF, numSerieFactura: 'PRUEBA-AEAT-123456', fechaExpedicion: '15-09-2026',
     huella: 'A'.repeat(64), tipo: 'anulacion',
   }, null, 2);
-  fs.writeFileSync(rutaPuntero(dir), viejo);
-  const sobreAntes = fs.readFileSync(rutaSobre(dir), 'utf8');
+  const dir = raizAislada(viejo);
   const r = correr(dir, ['--serie-propia', 'A-0002', '--fecha-propia', '02-09-2026']);
   assert.equal(r.status, 1, r.stdout);
   assert.match(r.stderr, /SCRUM-1399/);
   assert.match(r.stderr, /PRUEBA-AEAT-123456/);
   assert.equal(fs.readFileSync(rutaPuntero(dir), 'utf8'), viejo, 'el puntero cambió: la cadena avanzó desde un anterior que no vale');
-  assert.equal(fs.readFileSync(rutaSobre(dir), 'utf8'), sobreAntes, 'se escribió un sobre encadenado a un anterior que no vale');
+  assert.deepEqual(fs.readdirSync(path.join(dir, 'tmp')), ['ultimo-registro.json'],
+    'se escribió algo más que el puntero que ya estaba: un sobre encadenado a un anterior que no vale');
 });
 
 test('SCRUM-1399 · ⑧ la separación funciona: el script escribió en su copia y el tmp/ del árbol no se ha movido', () => {
