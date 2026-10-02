@@ -18,6 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RUTAS = '../dist/modules/jobs/app/routes/partes.routes.js';
 const copia = (x) => JSON.parse(JSON.stringify(x));
@@ -99,33 +100,34 @@ const CASOS = [
   { nombre: 'firma el TÉCNICO sobre un parte facturado que solo firmó el cliente', inicial: { estado: 'facturado', cliente: true }, firma: 'firmaTecnico', columna: 'signatureTecnicoUrl' },
 ];
 
-for (const c of CASOS) {
-  test(`🔴 SCRUM-1226 · ${c.nombre}: sigue en «facturado» y los precios siguen cerrados`, async () => {
-    const b = banco(c.inicial);
+const caso = casosEscritos(CASOS, (c) => `🔴 SCRUM-1226 · ${c.nombre}: sigue en «facturado» y los precios siguen cerrados`, async (c) => {
+  const b = banco(c.inicial);
 
-    // SUELO: el parte de partida es el que el test dice (facturado, precios cerrados).
-    const antes = await b.oficina();
-    assert.equal(antes.status, 200, `🔴 CIEGO: el GET de oficina no responde (${antes.status})`);
-    assert.equal(antes.data.puedeEditarPrecios.ok, false, '🔴 CIEGO: el parte de partida no tiene los precios cerrados');
+  // SUELO: el parte de partida es el que el test dice (facturado, precios cerrados).
+  const antes = await b.oficina();
+  assert.equal(antes.status, 200, `🔴 CIEGO: el GET de oficina no responde (${antes.status})`);
+  assert.equal(antes.data.puedeEditarPrecios.ok, false, '🔴 CIEGO: el parte de partida no tiene los precios cerrados');
 
-    const r = await b[c.firma]();
-    assert.equal(r.status, 200, `la firma se rechazó: ${JSON.stringify(r.data)}`);
-    assert.equal(b.escrituras.length, 1, 'SUELO: la firma no llegó a escribir');
+  const r = await b[c.firma]();
+  assert.equal(r.status, 200, `la firma se rechazó: ${JSON.stringify(r.data)}`);
+  assert.equal(b.escrituras.length, 1, 'SUELO: la firma no llegó a escribir');
 
-    // (2) La firma SE GUARDA: la segunda firma es un dato válido y se conserva.
-    assert.equal(b.fila[c.columna], TRAZO, '🔴 la segunda firma no se guardó');
+  // (2) La firma SE GUARDA: la segunda firma es un dato válido y se conserva.
+  assert.equal(b.fila[c.columna], TRAZO, '🔴 la segunda firma no se guardó');
 
-    // (1) El estado NO BAJA.
-    assert.equal(b.fila.estado, 'facturado', '🔴 la firma devolvió un parte FACTURADO a «firmado»');
+  // (1) El estado NO BAJA.
+  assert.equal(b.fila.estado, 'facturado', '🔴 la firma devolvió un parte FACTURADO a «firmado»');
 
-    // (3) Y el daño que eso causaba: los precios siguen cerrados, medido por el PATCH de verdad.
-    const despues = await b.oficina();
-    assert.equal(despues.data.puedeEditarPrecios.ok, false, '🔴 la firma REABRIÓ los precios de un parte facturado');
-    const v = await b.valora();
-    assert.equal(v.status, 409, `🔴 se pudieron cambiar los precios de un parte facturado tras la firma (${v.status})`);
-    assert.equal(b.fila.lineas[0].precioUnitario, 30, '🔴 el precio de un parte facturado cambió');
-  });
-}
+  // (3) Y el daño que eso causaba: los precios siguen cerrados, medido por el PATCH de verdad.
+  const despues = await b.oficina();
+  assert.equal(despues.data.puedeEditarPrecios.ok, false, '🔴 la firma REABRIÓ los precios de un parte facturado');
+  const v = await b.valora();
+  assert.equal(v.status, 409, `🔴 se pudieron cambiar los precios de un parte facturado tras la firma (${v.status})`);
+  assert.equal(b.fila.lineas[0].precioUnitario, 30, '🔴 el precio de un parte facturado cambió');
+});
+test('🔴 SCRUM-1226 · firma el CLIENTE sobre un parte facturado que solo firmó el técnico: sigue en «facturado» y los precios siguen cerrados', caso(0));
+test('🔴 SCRUM-1226 · firma el TÉCNICO sobre un parte facturado que solo firmó el cliente: sigue en «facturado» y los precios siguen cerrados', caso(1));
+caso.todos();
 
 // ── CONTROLES: lo de siempre sigue igual ───────────────────────────────────────────────────
 
