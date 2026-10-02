@@ -28,6 +28,7 @@ import {
   calcularSemaforo, fechaLimiteRecapitulativa,
 } from '../dist/modules/jobs/domain/pendientesFacturar.service.js';
 import { seleccionarConsolidablesDeCliente } from '../dist/modules/jobs/domain/consolidacionCliente.service.js';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -93,28 +94,30 @@ const ESCENARIOS = [
   { zona: 'UTC', quien: 'como hoy', mes: '2026-04', semaforo: 'rojo', enRango: false },
 ];
 
-for (const e of ESCENARIOS) {
-  test(`SCRUM-643 · 🔴 ${e.quien}: el albarán del 1-abr 00:30 EN SU ZONA es de ABRIL`, () => {
-    const f = aLasCeroTreinta(e.zona);
+const caso2 = casosEscritos(ESCENARIOS, (e) => `SCRUM-643 · 🔴 ${e.quien}: el albarán del 1-abr 00:30 EN SU ZONA es de ABRIL`, (e) => {
+  const f = aLasCeroTreinta(e.zona);
 
-    // ① la rotura por mes natural (art. 13)
-    assert.equal(mesNaturalKey(f, e.zona), e.mes,
-      `🔴 el albarán se atribuye a ${mesNaturalKey(f, e.zona)} y es de ${e.mes}. Eso lo mete en la `
-      + 'recapitulativa del mes que no toca — una factura EMITIDA con un parte que no le corresponde.');
+  // ① la rotura por mes natural (art. 13)
+  assert.equal(mesNaturalKey(f, e.zona), e.mes,
+    `🔴 el albarán se atribuye a ${mesNaturalKey(f, e.zona)} y es de ${e.mes}. Eso lo mete en la `
+    + 'recapitulativa del mes que no toca — una factura EMITIDA con un parte que no le corresponde.');
 
-    // ② el semáforo del plazo del art. 13.2, con el plazo de MARZO ya vencido
-    const limite = fechaLimiteRecapitulativa('2026-03', 'PARTICULAR');
-    assert.equal(limite, '2026-03-31', '🔴 el plazo legal de marzo ha cambiado');
-    assert.equal(calcularSemaforo(limite, f, e.zona), e.semaforo,
-      '🔴 el semáforo dice que el plazo NO ha vencido cuando en el calendario del merchant SÍ. '
-      + 'Deja de avisar justo cuando más falta, y el plazo del art. 13.2 es LEY.');
+  // ② el semáforo del plazo del art. 13.2, con el plazo de MARZO ya vencido
+  const limite = fechaLimiteRecapitulativa('2026-03', 'PARTICULAR');
+  assert.equal(limite, '2026-03-31', '🔴 el plazo legal de marzo ha cambiado');
+  assert.equal(calcularSemaforo(limite, f, e.zona), e.semaforo,
+    '🔴 el semáforo dice que el plazo NO ha vencido cuando en el calendario del merchant SÍ. '
+    + 'Deja de avisar justo cuando más falta, y el plazo del art. 13.2 es LEY.');
 
-    // ③ el corte «hasta el 31 de marzo»
-    const r = seleccionarConsolidablesDeCliente([alb(f)], CLIENTE, { desde: '2026-03-01', hasta: '2026-03-31' }, e.zona);
-    assert.equal(r.elegibles.length === 1, e.enRango,
-      '🔴 un albarán del 1 de abril entra en el rango «hasta el 31 de marzo»');
-  });
-}
+  // ③ el corte «hasta el 31 de marzo»
+  const r = seleccionarConsolidablesDeCliente([alb(f)], CLIENTE, { desde: '2026-03-01', hasta: '2026-03-31' }, e.zona);
+  assert.equal(r.elegibles.length === 1, e.enRango,
+    '🔴 un albarán del 1 de abril entra en el rango «hasta el 31 de marzo»');
+});
+test('SCRUM-643 · 🔴 península: el albarán del 1-abr 00:30 EN SU ZONA es de ABRIL', caso2(0));
+test('SCRUM-643 · 🔴 Canarias: el albarán del 1-abr 00:30 EN SU ZONA es de ABRIL', caso2(1));
+test('SCRUM-643 · 🔴 como hoy: el albarán del 1-abr 00:30 EN SU ZONA es de ABRIL', caso2(2));
+caso2.todos();
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 🔴 QUE DISTINGUE LAS ZONAS · el MISMO instante, tres merchants
