@@ -1,0 +1,19 @@
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · 30 pasadas por celda · 0 celdas de cobaya · 6 ficheros reales · carga 0 procesos
+
+── LA COBAYA ──
+
+── FICHEROS REALES, A SOLAS (sin testigo: no se tocan) ──
+real-scrum834-puerta-avisador-rojo-con · carga 0 · 30 pasadas · 23 por debajo del máximo del fichero (53) · # tests 27×1 28×1 29×1 30×2 31×1 32×2 35×1 37×1 39×1 43×1 44×1 45×2 46×3 47×2 50×2 51×1 53×7 · salidas 0×30
+real-scrum834-puerta-avisador-rojo-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (53) · # tests 53×30 · salidas 0×30
+real-vigia-atascados-con · carga 0 · 30 pasadas · 26 por debajo del máximo del fichero (64) · # tests 27×1 28×1 29×1 30×6 31×3 32×2 34×1 36×1 41×1 42×1 43×1 45×1 47×1 53×4 55×1 64×4 · salidas 0×30
+real-vigia-atascados-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (64) · # tests 64×30 · salidas 0×30
+real-scrum524b-trinquete-de-la-tabla-con · carga 0 · 30 pasadas · 7 por debajo del máximo del fichero (41) · # tests 29×1 31×1 33×1 36×1 37×1 39×1 40×1 41×23 · salidas 0×30
+real-scrum524b-trinquete-de-la-tabla-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (41) · # tests 41×30 · salidas 0×30
+real-scrum1262-la-baja-corta-todas-las-vias-con · carga 0 · 30 pasadas · 6 por debajo del máximo del fichero (35) · # tests 28×2 29×2 33×1 34×1 35×24 · salidas 0×30
+real-scrum1262-la-baja-corta-todas-las-vias-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (35) · # tests 35×30 · salidas 0×30
+real-scrum237-negacion-respaldada-con · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (8) · # tests 8×30 · salidas 0×30
+real-scrum237-negacion-respaldada-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (8) · # tests 8×30 · salidas 0×30
+real-scrum1216b-numero-de-arranque-con · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (9) · # tests 9×30 · salidas 0×30
+real-scrum1216b-numero-de-arranque-sin · carga 0 · 30 pasadas · 0 por debajo del máximo del fichero (9) · # tests 9×30 · salidas 0×30
+
+EXIT=0 · filas 0 + 360 · /home/runner/work/_temp/reales/cobaya-pasadas-carga0.tsv

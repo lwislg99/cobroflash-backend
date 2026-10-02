@@ -95,7 +95,13 @@ for (const b of brazos) {
   const med = g.filter((t) => t.senal_medible === 'si');
   const pierden = med.filter((t) => Number(t.ausentes) > 0);
   const seg = g.map((t) => Number(t.segundos)).filter((x) => x > 0);
-  resumen[b] = { n: med.length, pierden: pierden.length };
+  // La señal de nombres es un SUELO (no ve los nombres construidos en bucle, 1339d ④). La segunda
+  // sonda es el recuento: el mismo árbol declara los mismos casos, así que una tanda por debajo
+  // del máximo de TODAS las tandas ha perdido casos, los nombre la señal o no.
+  const maximo = Math.max(...tandas.map((t) => Number(t.tap_tests) || 0));
+  const cortas = g.filter((t) => Number(t.tap_tests) < maximo);
+  resumen[b] = { n: med.length, pierden: pierden.length, nRecuento: g.length, cortas: cortas.length };
+  console.log(`${b} · POR RECUENTO: ${cortas.length} de ${g.length} tandas por debajo del máximo de las ${tandas.length} (${maximo}) · casos que faltan por recuento ${cortas.reduce((a, t) => a + (maximo - Number(t.tap_tests)), 0)}`);
   console.log(`${b} · ${g.length} tandas · medibles ${med.length} · CON AUSENTES ${pierden.length} de ${med.length} · casos ausentes ${pierden.reduce((a, t) => a + Number(t.ausentes), 0)}`
     + ` · # tests ${cuenta(g.map((t) => t.tap_tests))} · salidas ${cuenta(g.map((t) => t.salida))} · sin resumen ${g.filter((t) => t.con_resumen === 'NO').length}`
     + ` · segundos ${Math.min(...seg)}–${mediana(seg)}–${Math.max(...seg)} (mín–mediana–máx)`);
@@ -117,7 +123,10 @@ const fisher = (rot, con, sin) => {
   console.log(`${rot}: con ${con.pierden} de ${con.n} · sin ${sin.pierden} de ${sin.n} · Fisher exacto a una cola p = ${p.toExponential(2)} (1 de cada ${Math.round(1 / p).toLocaleString('es-ES')})`);
 };
 console.log('\n── SI EL FLAG NO INFLUYERA, ¿CUÁNTAS VECES SALDRÍA ESTE REPARTO? ──');
-fisher('este experimento, con vs sin', resumen.con, resumen.sin);
+fisher('este experimento, con vs sin (por la señal de nombres)', resumen.con, resumen.sin);
+const porRecuento = (r) => (r ? { n: r.nRecuento, pierden: r.cortas } : null);
+fisher('este experimento, con vs sin (por recuento)', porRecuento(resumen.con), porRecuento(resumen.sin));
+fisher('con el flag: tubería normal vs bloqueante (por recuento)', porRecuento(resumen.con), porRecuento(resumen['con-bloqueante']));
 fisher('control del instrumento: el del 1-oct (4 de 6 vs 0 de 6) tiene que dar 3,0e-2', { n: 6, pierden: 4 }, { n: 6, pierden: 0 });
 if (resumen.con && resumen.sin) fisher('los dos juntos (árboles distintos: es una suma, no una réplica)', { n: resumen.con.n + 6, pierden: resumen.con.pierden + 4 }, { n: resumen.sin.n + 6, pierden: resumen.sin.pierden });
 if (resumen['con-bloqueante']) fisher('con el flag: tubería normal vs tubería bloqueante', resumen.con, resumen['con-bloqueante']);
@@ -229,7 +238,7 @@ if (sondas.length) {
   for (const t of tandas.filter((x) => x.sonda_filas)) {
     const pierden = new Set(t._pierden); const pend = new Set(t._pend);
     const ambos = [...pierden].filter((f) => pend.has(f));
-    console.log(`${t.celda} · ficheros con sonda ${t.sonda_filas} · pierden ${pierden.size} · con pendientes ${pend.size} · las dos cosas ${ambos.length} · pierden SIN pendientes ${[...pierden].filter((f) => !pend.has(f)).join(', ') || '0'} · pendientes y la señal no ve pérdida ${[...pend].filter((f) => !pierden.has(f)).join(', ') || '0'}`);
+    console.log(`${t.celda} · filas de sonda ${t.sonda_filas} · pierden ${pierden.size} · con pendientes ${pend.size} · las dos cosas ${ambos.length} · pierden SIN pendientes ${[...pierden].filter((f) => !pend.has(f)).join(', ') || '0'} · pendientes y la señal no ve pérdida ${[...pend].filter((f) => !pierden.has(f)).join(', ') || '0'}`);
   }
 }
 console.log(`\nEXIT=0 · ${tandas.length} tandas · tablas en ${carpeta}`);

@@ -238,6 +238,20 @@ function pasadaDeReal(fichero, flag, i) {
 fs.mkdirSync(DIR, { recursive: true });
 fs.copyFileSync(path.join(AQUI, 'sonda.mjs'), path.join(DIR, 'sonda.mjs'));
 
+// CONTROL POSITIVO DEL LECTOR, antes de lanzar nada. En el run 36971139768 el contador de rojos de
+// fichero dio 0 en todas las filas porque su expresión había perdido una barra: no miraba. Ahora el
+// lector se prueba contra un TAP fabricado que tiene lo que cuenta, y si no lo ve, no se lanza el lote.
+{
+  const fabricado = path.join(DIR, 'control-del-lector.tap');
+  fs.writeFileSync(fabricado, 'TAP version 13\nok 1 - cobaya c1 caso 001 x\nnot ok 2 - cobaya c1 caso 002 x\nnot ok 3 - cobaya-c1.test.mjs\n# tests 3\n# fail 2\n');
+  const c = leerElTap(fabricado);
+  const bien = c && c.informados.size === 2 && c.informados.get('c1 002') === 'not ok' && c.rojosDeFichero === 1 && c.tests === 3 && c.fail === 2;
+  if (!bien) {
+    console.error(`🔴 el lector del TAP no ve lo que hay en un TAP fabricado (${JSON.stringify(c && { informados: c.informados.size, rojosDeFichero: c.rojosDeFichero, tests: c.tests, fail: c.fail })}): no lanzo nada.`);
+    process.exit(1);
+  }
+}
+
 const cargas = [];
 for (let k = 0; k < CARGA; k++) cargas.push(spawn(process.execPath, ['-e', 'for(;;){}'], { stdio: 'ignore', windowsHide: true }));
 const pararCargas = () => { for (const c of cargas) { try { c.kill('SIGKILL'); } catch { /* ya no está */ } } };
