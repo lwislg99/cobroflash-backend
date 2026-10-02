@@ -1,7 +1,9 @@
 # SCRUM-1374 · El detalle abierto del albarán se entera de que su firma ha subido (mitad S4 de «el detalle abierto no se entera de que la cola subió»)
 
 **Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:25:11Z
-A9: sin fallo que generalice — la tanda no tuvo tropiezo propio; el hueco que queda (el pad abierto en el momento del aviso) está declarado abajo, no arreglado
+A9: comprobación → `tests/scrum379-recarga-sin-await.test.mjs`
+
+(La A9: la primera versión llamaba a `recargar()` a pelo con un `.catch` vacío, que es justo el patrón que SCRUM-379 retiró de esta pantalla. Mis cuatro tests pasaban igual; lo cazó ese guard en la tanda dirigida, antes de empujar. Ahora pasa por `refrescar()`.)
 **Skill UI:** cargada
 
 2-oct-2026 · **S4** (`s4-2octa`). Es la otra mitad de SCRUM-1373 (S2): la cola avisa con
@@ -19,7 +21,7 @@ declarado). Con el oyente escrito y la entrada aún en la lista: 13 pasan de 14,
 `public/dashboard/js/albaranDetailView.js`, sólo lógica: sin marcado, sin estilos y **sin texto**.
 
 - Al pintarse, si el albarán no está firmado, la ficha se suscribe a `alConfirmarseFirmas`.
-- Cuando llega un aviso, repinta (`recargar()`) sólo si se cumplen las tres:
+- Cuando llega un aviso, repinta (por `refrescar()`, como toda recarga de esta pantalla) sólo si se cumplen las tres:
   1. la ficha sigue siendo la que está en pantalla (si no, se desuscribe sola);
   2. en la lista viene **su** albarán: `tipo === 'albaran'` y el mismo id, comparado como texto;
   3. **no hay pad de firma abierto** (`[data-sp-aviso]` en el documento).

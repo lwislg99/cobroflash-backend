@@ -425,7 +425,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if (!vieneEsteAlbaran(confirmadas, alb.id)) return;
       // 🔴 Con el pad abierto NO se repinta: alguien está firmando, o leyendo el aviso del pad.
       if (hayPadDeFirmaAbierto()) return;
-      recargar().catch(() => {});
+      // Por `refrescar`, como toda recarga de esta pantalla: la firma YA salió, y si la lectura
+      // falla se dice eso, no se deja una promesa rechazada sin dueño (SCRUM-379).
+      refrescar();
     });
     dejarDeEscucharLaColaDelAlbaran = dejar;
   }
