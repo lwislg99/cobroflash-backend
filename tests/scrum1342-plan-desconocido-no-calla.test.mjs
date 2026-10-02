@@ -295,7 +295,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // El defecto del ticket: el plan desconocido vuelve a caer en silencio.
     fichero: 'src/core/entitlements.ts',
     de: '  console.warn(',
-    a: '  void (',
+    // `String(` y no `void (`: la llamada acaba en coma colgante, que `void (…,)` no admite — el
+    // fichero entero dejaba de cargar y el test nombrado no llegaba a correr (mutación CIEGA).
+    a: '  String(',
     cae: 'deja UN aviso con el valor recibido',
   },
   {
