@@ -171,3 +171,139 @@ carga, no el instrumento.
 - `node tests/banco-scrum1334/mutar.mjs`
 - `node tests/banco-scrum1334/quitar-cita-a-las-notas.mjs`
 - `npm run guards:entrada`
+
+# SCRUM-1334b · las notas que el guard no cruza y son de otro equipo: nombradas, con dueño, y sólo bajan
+
+**Medido contra:** `origin/main` = `f7d013778fc979caff89d7c9ac47d8ed79dca248` · 2026-10-02T03:39:35Z (J2c, equipo de Javier)
+
+A9: comprobación → `tests/scrum514-aprobado-y-aplicado.test.mjs`
+
+**Decisión:** del orquestador del equipo de Javier (`cobroflash-backend-5b`), en SCRUM-1334 comentario
+18018 (2-oct-2026) y en dos mensajes suyos de esa madrugada, que este anexo transcribe en ② y ③. No es
+del fundador: no toca texto de usuario, dinero, emisión ni ningún estado o flag. Este tramo no toca
+ninguna ficha de `docs/microcopy/`, ni `src/`, ni `public/`.
+
+## ① Por qué hacía falta
+
+El PR #2054 llevaba desde el 1-oct a las 06:08Z rojo a propósito y con el auto-merge armado: no iba a
+entrar nunca, y nada avisaba. Lo que lo tenía rojo eran 22 líneas de nota escritas como cita en cinco
+fichas (704, 605, 722, 728, 832), a la espera de que su dueño les quitara el `>`.
+
+Re-medido el 2-oct sobre `main` = `bbe633ac` mezclado en la rama (commit `59a728c1`, sin conflictos): el
+rojo era el mismo —`scrum514`, 28 casos, 26 pasan, 2 caen, las mismas 22 líneas— sobre una población
+mayor: 251 citas de 106 fichas (el 1-oct eran 246 de 101). Las cinco fichas nuevas de `main` cruzan
+todas. TAP: `docs/master/evidencias/scrum1334/rojo-del-2-oct-sobre-main-bbe633ac.tap.txt`.
+
+## ② Lo decidido (comentario 18018)
+
+1. El guard sigue juzgando TODAS las fichas. No se recorta su ámbito.
+2. Lo que no puede cruzar porque la ficha es de otro equipo sale NOMBRADO, uno por uno, con su dueño,
+   y no tumba el obligatorio.
+3. El recuento es un trinquete que sólo baja.
+4. Cada entrada lleva motivo, dueño y fecha.
+
+Con una precondición: «es de otro equipo» se MIDE, derivándolo de la propiedad de la ficha y nunca de
+un patrón en el nombre del fichero. Y lo que al medirlo resulte de este equipo se arregla, no se declara.
+
+## ③ La precondición, medida por tres vías — y no cuadraban
+
+| vía | qué mide | resultado |
+|---|---|---|
+| etiqueta de equipo en Jira | la del ticket de la ficha | **no existe**: SCRUM-704, 605, 722, 728 y 832 llevan `labels = []` las cinco (control: SCRUM-1154 sí lleva `equipo-javier`) |
+| `git blame`, línea a línea | quién TECLEÓ cada nota | 18 de 22 la identidad «Luis»; **4 la identidad de Javier**: las de «Dónde se pinta» de la ficha de 605, en el commit `7f695c75` (4-sep-2026), que además es el que CREÓ esa ficha |
+| `dos-equipos.md` §3.3 | «cada registro, el puesto que usa el texto» | 704 → `parteDetailView.js` (S4); 832 → `app.js` (S2); 722 → 15 ficheros, todos de S1, S2 o S4; **728 → `src/modules/invoicing/domain/cerrojoSaturado.ts`, que §3.1 da a J1**; 605 → no se deduce solo (abajo) |
+
+**Corrige al tramo de arriba.** Donde dice «SCRUM-704, 605, 722, 728 y 832 (22 líneas, fichas del
+equipo de Luis)», y donde la entrega de J2f en Jira (comentario 17779) dice «cinco fichas que creó
+Luis»: es falso para dos. La de 605 la creó la identidad de Javier. Y la de 728, por la regla escrita
+de propiedad, es de J1, que es de este equipo.
+
+**El orquestador decidió el eje** (mensaje del 2-oct, ~03:30Z): manda §3.3. `git blame` contesta quién
+tecleó; §3.3 contesta de quién es, y es la regla que el repositorio escribió. El commit de las cuatro
+líneas es anterior a que existiera el reparto de carriles. Y editar cuatro líneas de la ficha de otro
+equipo, en un PR propio, para que el guard propio salga verde, tiene la forma de «hacer que el rojo
+desaparezca». Así que las cuatro NO se editan: se declaran con dueño «equipo de Luis» y **llevan
+escrita la discrepancia en su motivo**, para que decida su dueño con el dato delante.
+
+**La ficha de 605 no se deduce sola de «quién contiene el texto».** Sus citas pintadas son «7 días»,
+«14 días» y «30 días», que por subcadena salen en ficheros de los dos equipos; «14 días» ni siquiera
+está en `quoteAtajosVencimiento.js`. Por eso la entrada DECLARA qué fichero usa el texto y el guard
+comprueba la declaración, en vez de deducirlo.
+
+## ④ Lo construido, en `tests/scrum514-aprobado-y-aplicado.test.mjs`
+
+- **Caja `ajena`.** Una cita que está en `NOTAS_AJENAS` (por ficha y texto) sale del cruce y entra en
+  el recuento con su nombre: «N notas de OTRO EQUIPO que no sé cruzar».
+- **`NOTAS_AJENAS`: 21 entradas** (704: 6 · 605: 12 · 722: 1 · 832: 2), cada una con `dueno`, `motivo`,
+  `fecha` y `usa`: el fichero que usa los textos de su ficha.
+- **`fallosDeAjena` mide en cada pasada**, y cae si: falta el motivo, la fecha o el dueño; el dueño no
+  es otro equipo; la ficha ya no tiene esa cita (la entrada SOBRA: se borra y se baja el techo); el
+  código pinta la línea (no era una nota); `usa` no existe o no pinta ninguna cita de esa ficha; las
+  tablas de §3 no dicen de quién es `usa` (CIEGO); o `usa` es de un puesto J («es de este equipo: se
+  arregla»).
+- **El reparto se LEE de `docs/equipo/dos-equipos.md` §3.1 y §3.2**, no se copia al test. Gana la ruta
+  nombrada, después el directorio con `/**`, y al final «todo lo demás de». Con su suelo: 33 filas el
+  2-oct (cae por debajo de 25) y diez ficheros de control de los dos equipos.
+- **`TECHO_DE_AJENAS`, por ficha, con igualdad.** Si una ficha tiene más que su techo, cae (no sube).
+  Si tiene menos, cae pidiendo que se baje el número (no baja callado). Una ficha sin techo tiene 0.
+- **Cada nota sale nombrada** en el diagnóstico de su caso: ficha, sección, texto, dueño, puesto y
+  fichero por el que se sabe, y fecha en que se declaró.
+
+Una nota NUEVA sin cruzar, en la ficha que sea, sigue cayendo en el caso de siempre («TODO texto
+APROBADO…»), que ahora dice además que no se añade a `NOTAS_AJENAS`.
+
+### Lo que NO hace, y se dice
+
+- **No arregla `constaAprobado`:** con el `>` puesto, las 21 siguen constando como firmadas. Esto las
+  nombra; el arreglo sigue siendo quitarles el `>`, y es de su dueño.
+- **No impide elegir un fichero de coincidencia** como `usa` en una ficha de citas cortas. Lo frena el
+  techo y quien revise la entrada, no un mecanismo.
+- **Ata el guard al formato de las tablas de §3**, que son de la S0. Si cambian de forma, cae el suelo
+  diciendo que no las lee: es un rojo en el PR que las cambie.
+- **Cuando su dueño arregle una nota, su PR tendrá que borrar la entrada y bajar el techo** (una línea
+  por nota). Lo aceptó el orquestador: es la única forma de que la lista mengüe de verdad.
+
+## ⑤ La línea de la ficha de 728: SIN RESOLVER al escribir esto
+
+`> No se pudo crear el albarán: **API 500: internal_error**` (sección «Qué se veía antes, medido
+corriendo»). El guard se niega a declararla ajena, porque el único fichero que pinta el texto de esa
+ficha es de J1. Por la decisión, ésa se arregla. Preguntado el orquestador si se le quita el `>` en
+este PR (es cruce de carril dentro del equipo: `area-j1`); sin respuesta al escribir este anexo. **No
+se ha tocado.** Mientras siga con el `>`, `scrum514` cae en 2 de sus 37 casos por esa línea y sólo por
+ésa, nombrada.
+
+## ⑥ Lo corrido
+
+| qué | resultado |
+|---|---|
+| `scrum514` antes del mecanismo, sobre `main` mezclado | 28 casos · 26 pasan · 2 caen (22 líneas) |
+| `scrum514` con el mecanismo | 37 casos · 35 pasan · 2 caen (1 línea, la de 728) · 0 saltos |
+| su recuento | «crucé 196 de 251 citas de 106 fichas (189 pintadas tal cual, 6 aparcadas con motivo, 1 SIN SABER). No cruzo: 20 plantillas, 11 declaradas, 3 de menos de 4 caracteres, 21 notas de OTRO EQUIPO» |
+| banco de mutaciones, 1.ª pasada (30 filas) | 26 caen · 2 controles mudos · **M10 CIEGA y M26 MUDA** (ver ⑦) |
+| banco de mutaciones, 2.ª pasada | BANCO_SEGUNDA_PASADA |
+| lo demás | LO_DEMAS_CORRIDO |
+
+La tanda completa NO se ha corrido en local: no es alcanzable en esta máquina y la pasada completa es
+el CI, que lee el orquestador.
+
+## ⑦ Lo que me salió mal
+
+- **Construí primero sobre `git blame`** (quién tecleó la línea y cuándo) y se lo conté al orquestador
+  como plan. Era medir una propiedad que el repositorio no usa para decir de quién es algo. Lo cortó su
+  decisión, no yo. La versión con `blame` no llegó a ningún commit.
+- **El banco tenía dos filas que no valían, y las dos por código mío.** La M10 salió CIEGA porque al
+  escribir `fallosDeAjena` repetí letra por letra la línea que ella muta: su ancla dejó de ser única. Y
+  la M26 salió MUDA porque mutaba un `deFicha &&` que era una segunda guarda de lo que ya garantiza
+  otra línea: quitarla no cambiaba nada. Quité la guarda redundante y la mutación va ahora a la que
+  decide.
+- **Pasé de 200k de contexto sin avisar** (medido: 312.212 cuando lo miré). Y puse dos horas «a ojo» en
+  mensajes al orquestador («~03:45Z» cuando GitHub decía 03:3x). Las dos son cicatrices de J2 ya
+  escritas; no las repito allí.
+
+## ⑧ Lo que NO está hecho
+
+- La línea de 728 (⑤).
+- Pedirle al equipo de Luis que quite el `>` a sus 21 notas: es un ticket con `equipo-luis` y el área
+  dueña (`dos-equipos.md` §5), y lo abre el orquestador. El ticket lleva `aviso-a-luis` desde el 2-oct.
+- El PR trae de J2f un cambio en `docs/microcopy/README.md`, que §3.3 da a la S4. Dicho al orquestador.
+- `tests/banco-scrum1334/quitar-cita-a-las-notas.mjs` sigue preparado para las 22 y sin aplicar.
