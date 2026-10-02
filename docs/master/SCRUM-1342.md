@@ -199,4 +199,22 @@ cerrados (regla 27), y la lista del esquema tiene uno menos que la del código.
 
 ## Ⓙ La tanda
 
-%%TANDA%%
+**La tanda dirigida NO se ha corrido entera, y la completa tampoco.** La dirigida (`npm run
+tanda:dirigida`: 352 ficheros de 1.196, con el turno del orquestador y 3.226 MB libres al lanzarla) la
+mató el arnés por falta de memoria antes de imprimir un solo resultado. De esa pasada no se cuenta
+nada: no hay línea de salida ni recuento. Al mirar después quedaban 2.122 MB libres, por debajo del
+umbral del equipo (2.200), y no se relanzó. La completa no es alcanzable en esta máquina. Se empuja así
+por orden del orquestador: **el juez es el obligatorio del CI**, que es la tanda.
+
+Lo que sí corrió, cada cosa con su población y sin procesos muertos:
+
+| qué | resultado |
+|---|---|
+| `tests/scrum1342-plan-desconocido-no-calla.test.mjs` | 13 tests · 13 pasan |
+| `scrum237`, `scrum1344`, `scrum512`, `scrum809`, `scrum147`, `scrum1318` y el de este ticket | 70 tests · 63 pasan · 0 caen · 7 saltan (los de SCRUM-809, sin `QA_DB_TEST`) |
+| `scrum976` y `scrum622` | 23 tests · 23 pasan |
+| los de registros y anclas: `scrum1294`, `scrum267`, `scrum525d`, `scrum859`, `scrum1306` y los dos `scrum514` | 70 tests · 70 pasan |
+| `npm run guards:entrada` | 12 guards · 132 tests · verde en 10,5 s |
+| `npm run build` | salida 0, antes de todo lo anterior |
+
+En el CI hay que mirar por nombre los 13 casos «SCRUM-1342 · …», con el guion.
