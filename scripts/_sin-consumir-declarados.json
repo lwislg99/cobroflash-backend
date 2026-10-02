@@ -114,7 +114,6 @@
     {"clave":"front-funcion · public/dashboard/js/api.js::getQuotesList","donde":"public/dashboard/js/api.js:1462","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): ayudante antiguo sin llamador; quotesListView.js pide la lista por su cuenta."},
     {"clave":"front-funcion · public/dashboard/js/api.js::progressBar","donde":"public/dashboard/js/api.js:1011","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): sin llamador. El «progressbar» de jobDetailView.js es un atributo role, no una llamada a esta función."},
     {"clave":"front-funcion · public/dashboard/js/api.js::rejectQuoteAdmin","donde":"public/dashboard/js/api.js:1491","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): gemela sin uso. La decisión manual la hace quotesDetailView.js (submitDecision) con fetch directo a /admin/quotes/:id/reject."},
-    {"clave":"front-funcion · public/dashboard/js/colaDeFirmas.js::alConfirmarseFirmas","donde":"public/dashboard/js/colaDeFirmas.js:385","carril":"S4","ticket":"SCRUM-1374","motivo":"MITAD ABIERTA (S2, 2-oct, SCRUM-1373): la mitad que la consume es de S4 y está abierta (SCRUM-1374). El consumidor vive en albaranDetailView.js: sólo la vista sabe cuándo es seguro repintar. Se retira cuando S4 la conecte."},
     {"clave":"front-funcion · public/dashboard/js/estadoFirma.js::estadoTrasIntentarSubir","donde":"public/dashboard/js/estadoFirma.js:234","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/facturaPreEmision.js::hayQuePreguntarAntesDeEmitir","donde":"public/dashboard/js/facturaPreEmision.js:82","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/jobDetailView.js::jdAddRow","donde":"public/dashboard/js/jobDetailView.js:292","carril":"S4","ticket":"SCRUM-1185"},
@@ -158,6 +157,7 @@
     {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::recuperarEnviadoSinCierre","donde":"src/modules/fiscal/verifactu/sif.cola.ts:99","carril":"J1","ticket":"SCRUM-1192","motivo":"VUELVE de «retiradas» (SCRUM-1192): mismo caso que decidirTrasEnvio; su unico llamador es sif.procesador.ts, que no es alcanzable desde src/index.ts"}
   ],
   "retiradas": [
+    {"clave":"front-funcion · public/dashboard/js/colaDeFirmas.js::alConfirmarseFirmas","motivo":"SCRUM-1374: conectada en albaranDetailView.js (el detalle abierto escucha el drenado y se recarga si viene su albarán y no hay pad de firma abierto)"},
     {"clave":"export · src/core/utils/utils.ts::formatNumeroEs","motivo":"SCRUM-743: conectada en albaranPdf.service.ts (fmtQty) y albaranPublicVista.ts (fmtCantidadAlbaran): la cantidad del albaran, una sola forma en el PDF y en la pantalla de firma"},
     {"clave":"ruta · GET /admin/customers/:id/fusion-preview","motivo":"SCRUM-1126: conectada en customerDetailView.js (Fusionar con otro cliente, previsualización antes de confirmar, sólo admin)"},
     {"clave":"ruta · POST /admin/customers/:id/fusionar","motivo":"SCRUM-1126: conectada en customerDetailView.js (botón «Fusionar» de la previsualización, sólo admin)"},
