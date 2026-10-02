@@ -17,7 +17,7 @@ Firmado el 2-oct-2026. La delegación de microcopy es la permanente de `docs/equ
 ## Lo que no cambia
 
 Cuando firma el cliente —en el parte y en el albarán— la pista sigue siendo «Pide al cliente que firme con el dedo
-dentro del recuadro.» (`docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`). El albarán la pasa él: antes la
+dentro del recuadro.», firmada en SCRUM-720. El albarán la pasa él: antes la
 tomaba del valor por defecto del pad.
 
 ## Por qué
