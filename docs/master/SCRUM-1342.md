@@ -169,8 +169,10 @@ Los 14 que divergen:
 
 **Cómo se midió, y hasta dónde llega.** La comparación de 34 la hizo un agente de solo lectura, que cita
 `fichero:línea`; los dos que el censo añadió (1335 y 1448) los miré yo, y coinciden. De los 14 que
-divergen comprobé yo contra la fuente seis: 70, 892, 1138, 1270, 1274 y 1277. **Los otros ocho son la
-lectura del agente, sin repetir.** Ninguno se ha ejecutado: es comparación de texto contra texto.
+divergen comprobé yo contra la fuente once: 70, 580, 672, 892, 1138, 1157, 1270, 1274, 1277, 1563 y
+1571. **Los otros tres (1198, 1409 y 1412) son la lectura del agente, sin repetir**: mi búsqueda sobre
+el 1198 salió vacía —ciega, no limpia— y la del 1409 mezcla el `entityType` de otros modelos. Ninguno
+se ha ejecutado: es comparación de texto contra texto.
 
 Ninguno se arregla aquí. El que más se parece al del ticket es el 1138: los estados del bot son
 cerrados (regla 27), y la lista del esquema tiene uno menos que la del código.
