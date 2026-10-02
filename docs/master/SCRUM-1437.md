@@ -40,6 +40,21 @@ cifras van como deducidas; (2) la hipótesis «ninguno tiene cobro» **no se sos
 Verifacturamos está confirmado sin él, y el recuento del 21-sep ya daba al menos nueve de trece con cobro en
 línea.
 
+## Tercera entrega · ServiceM8 por dentro (2-oct-2026, rama `scrum-1437b-servicem8-por-dentro`)
+
+Rama nueva porque #2175 mergeó (verde, `b3b9f7a6`) mientras se hacía este recorrido.
+
+Encargo del orquestador: entrar en ServiceM8 y en Contasimple; Billin fuera (contraseña sin guardar).
+ServiceM8 hecho (§8 del documento, 10 capturas `pasos-*` en su carpeta): el Trabajo pasa de presupuesto a
+factura cambiando un campo de estado, 3 clics y 0 campos, sobre el mismo registro; hay un paso de aprobación
+antes de «esperando pago»; cobrar es apuntar un cobro en otra pantalla. No pulsados: enviar, aprobar ni
+añadir pago. **Contasimple NO hecho:** no hay credencial reconocible en la máquina; como Billin, pide
+recuperar la contraseña por correo, que es del fundador.
+
+Población: 4 Trabajos creados para un recorrido que cabía en 1. Dos se gastaron porque un Trabajo en estado
+Presupuesto no aparece en la lista de la pizarra y no supe reabrirlo; uno, por un selector que casaba con dos
+elementos y que el conductor rechazó en vez de pulsar el primero.
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón

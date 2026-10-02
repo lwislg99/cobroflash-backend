@@ -133,7 +133,7 @@ visto con cuenta de prueba en su fecha; **(web)** = solo su página comercial.
 | **Verifacturamos** (dentro, 2-oct) | 3 clics · 3 campos; sin cliente, 2 clics | 2 clics, sin preguntas; deja un borrador | ≥ 2 clics; correo, y WhatsApp en los planes de 19 € y 29 € | **No tiene**: ni enlace de pago ni pasarela; no vi cómo marcar pagada |
 | **Contasimple** | No abierto por dentro. (web) existe, con firma electrónica | No abierto por dentro. (web) «con un clic», pudiendo cambiar cantidades y precios antes | No visto | (dentro) casilla para marcar la factura como cobrada, en opciones avanzadas del formulario. (web) anuncia cobro en su TPV; un enlace de pago para el cliente final, sin confirmar |
 | **Billin / TS Facturas** | No abierto por dentro. (web) con estados pendiente, aceptado, rechazado y facturado, y aviso de si el cliente lo abrió | No abierto por dentro. (web) desde el presupuesto aceptado se genera factura, albarán o proforma | (dentro) casilla «enviar por correo al emitir» en el paso 2: 1 clic más; solo correo | (dentro) bloque para añadir un método de pago y casilla de «cantidad ya pagada», vistos y sin explorar. Pasarela: sin verificar |
-| **ServiceM8** | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
+| **ServiceM8** (fila del 25-sep; **la del 2-oct, vista por dentro, está en §8 y manda**) | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
 | **YaQu** (código, no pantalla) | Rápido: 3 clics · 3 campos, ya enviado. Editor: 6 clics | Con firma, 0 clics; a mano, 3. Sale emitida. En España hoy, sin camino | Dentro del propio botón (rápido) o 1 clic | Petición de pago al firmar; marcar pagada, 2 clics |
 
 La factura suelta, que es lo único medible en los dos españoles (deducido de las notas):
@@ -160,9 +160,56 @@ separa de Verifacturamos.
 Lo que este material **no** contesta, de ninguno de los tres: cuántos clics cuesta su presupuesto, cuántos su
 conversión, y cuántos cobrar. Para eso hay que entrar.
 
-## 8 · Cuenta de prueba
+## 8 · ServiceM8 por dentro (2-oct-2026): un Trabajo que cambia de estado, no un documento que se convierte
 
-Sigue **abierta** (competidor: Verifacturamos · alta: 21-sep-2026). Darla de baja es lo último de la
+👁 **Visto por dentro** el 2-oct-2026 con la cuenta de prueba del 25-sep (periodo de prueba: le quedan 7 días).
+Capturas `docs/competencia/capturas/servicem8/pasos-NN-*.png`. Corrige y sustituye la fila de ServiceM8 del §7.
+No pulsados: «Send Quote», «Send Invoice», «Email Invoice», «Approve» y «Add Payment». La propia cuenta avisa
+de que no puede mandar correo ni SMS hasta verificar el correo del titular.
+
+**El modelo.** No hay «presupuesto» ni «factura» como documentos: hay un **Trabajo** con un campo de estado
+(Presupuesto · Orden de trabajo · Terminado · No conseguido). La pestaña de importes es la misma siempre; lo
+que cambia con el estado es cómo se llama y qué botón ofrece. Todo se guarda solo: no existe botón de guardar.
+
+| Tramo | Camino (visto) | Captura | Cifra |
+|---|---|---|---|
+| Presupuesto, con cliente nuevo | «New Job» (el Trabajo ya existe, con número y en estado Presupuesto) → teclear el nombre del cliente y salir del campo (queda creado, con un «Deshacer» a mano) → pestaña «Billing» → teclear en la fila de líneas → clic en la sugerencia, que trae su precio | `pasos-04`, `pasos-05`, `pasos-08`, `pasos-09` | **3 clics · 2 campos · 1 pantalla** |
+| Enviar | Botón «Send Quote» con desplegable al lado, en la misma pestaña | `pasos-09` | ≥ 1 clic; no pulsado |
+| De presupuesto a factura | Pestaña «Details» → abrir «Job Status» → «Completed». Al volver a «Billing»: cabecera verde, la descripción pasa a ser de factura, el botón pasa a «Send Invoice» y aparecen «Paid» y «Balance Due». Ni cliente ni líneas se tocan | `pasos-10`, `pasos-12` | **3 clics · 0 campos · 0 pantallas nuevas** (2 si ya se está en «Details») |
+| Aprobar | Hay un paso que no tenemos ni nosotros ni Verifacturamos: el Trabajo terminado cae en «Invoicing» → «Awaiting Approval», y hasta que se aprueba no pasa a «Awaiting Payment» | `pasos-13`, `pasos-14`, `pasos-15` | 4 clics deducidos (Invoicing → pestaña → fila → «Approve»); «Approve» no pulsado |
+| Cobrar | En «Invoicing», con la fila elegida: «Receive Payment» abre una ventana con importe, fecha (hoy), método (por defecto, efectivo) y nota, y «Add Payment». Es **apuntar** un cobro. Cobro con tarjeta al cliente: su web lo anuncia; por dentro no lo he visto | `pasos-16` | 5 clics · 1 campo deducidos (Invoicing → pestaña → fila → «Receive Payment» → importe → «Add Payment»); «Add Payment» no pulsado |
+
+En `pasos-16` la ventana enseña un error de «no se pueden cargar los pagos»: lo provoqué yo. Mi conductor
+corta toda petición cuya ruta nombre un pago, y la lista de pagos se carga con una de ésas.
+
+**Sin impuestos en la línea**, como ya decían las notas del 25-sep: el total del presupuesto y de la factura
+sale con el impuesto a cero. No es una herramienta fiscal española.
+
+**Ellos · nosotros · la diferencia**, en este tramo:
+
+| | ServiceM8 (visto) | YaQu (código, no pantalla) | La diferencia que nota |
+|---|---|---|---|
+| De presupuesto a factura | Un campo de estado en el mismo registro: 3 clics, nada que volver a mirar | Un documento nuevo: con firma del cliente sale solo; a mano, 3 clics, y exige aceptación | Empate en clics a mano. Con ellos el profesional no tiene la sensación de «hacer otra cosa»: sigue en la misma ficha y la ve cambiar de color |
+| Guardar | No existe: cada cambio queda guardado | Botones de continuar, generar y guardar | Con ellos no hay un momento de «¿lo he guardado?» |
+| Cliente nuevo | Se crea al teclear el nombre y salir del campo | En el rápido, al enviar; en el editor, modal de alta | Parecido en el rápido; ellos no piden nada más |
+| Entre terminar y cobrar | Un paso de aprobación, en otra pantalla | No hay | Aquí ellos piden más pasos que nosotros |
+| Cobrar | Apuntar el cobro: otra pantalla, ≈ 5 clics | Marcar pagada: 2 clics; petición de pago sola al firmar | Nosotros, por ≈ 3 clics en lo visto |
+
+Lo que no vi: el cobro con tarjeta, lo que hay detrás de enviar, la aplicación móvil (donde su web dice que
+se cobra «antes de irse de la obra») y cómo se reabre un Trabajo en estado Presupuesto, que no aparece en la
+lista de la pizarra.
+
+**Contasimple y Billin: sin entrar.** De Billin no se guardó la contraseña (lo dicen sus notas del 25-sep). De
+Contasimple no hay en esta máquina ningún fichero de credencial reconocible por su nombre. En los dos casos el
+camino es recuperar la contraseña por correo, y eso es del fundador. Sus filas del §7 se quedan como están.
+
+## 9 · Cuentas de prueba
+
+**ServiceM8** (alta: 25-sep-2026) sigue **abierta**, con 7 días de prueba por delante el 2-oct. Datos
+inventados creados el 2-oct-2026: Trabajos n.º 2 (vacío), 3, 4 y 5, y los clientes «Cliente Inventado Prueba
+Dos», «… Tres» y «… Cuatro». Nada enviado, nada aprobado, ningún cobro apuntado.
+
+**Verifacturamos** sigue **abierta** (alta: 21-sep-2026). Darla de baja es lo último de la
 consultoría. Datos inventados creados el 2-oct-2026: cliente «Cliente Inventado Prueba», presupuestos
 P-2026-0002 y P-2026-0003 (los dos convertidos) y dos borradores de factura sin número. Nada emitido, nada
 enviado.
