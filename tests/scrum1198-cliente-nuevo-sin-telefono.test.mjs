@@ -8,9 +8,10 @@
 // producción y acepta el alta sin `phone`. El envío sin teléfono contesta el 400
 // `customer_missing_phone` de producción.
 //
-// Lo que este fichero NO arregla ni mide: qué se le dice a la persona. Tras este cambio se sigue
-// leyendo un código interno (el del envío); eso es la parte (b) del ticket y espera texto firmado.
-// Tampoco mide el servidor de verdad: eso está en el registro, medido contra yaqu.app.
+// (b)(c)(d) · QUÉ SE LE DICE: cuando el envío contesta que no hay teléfono, el modal se cierra y el
+// aviso se da fuera, con su texto aprobado. Antes se quedaba abierto con el botón encendido y
+// «API 400: customer_missing_phone» a la vista. Vale igual con cliente nuevo y con existente.
+// Lo que NO mide: el servidor de verdad (está en el registro, medido contra yaqu.app).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -27,7 +28,7 @@ const respuesta = (status, cuerpo) => ({
 const vueltas = async (n = 60) => { for (let i = 0; i < n; i++) await new Promise((r) => setImmediate(r)); };
 
 function montar() {
-  const hecho = { altasDeCliente: [], clientes: [], presupuestos: [], envios: [] };
+  const hecho = { altasDeCliente: [], clientes: [], presupuestos: [], envios: [], avisos: [], vistas: [], elEnvioContesta: null };
   const fetch = async (url, opts = {}) => {
     const metodo = String(opts.method || 'GET').toUpperCase();
     const u = String(url);
@@ -47,6 +48,7 @@ function montar() {
     const m = u.match(/\/admin\/quotes\/(\d+)\/send-whatsapp$/);
     if (m) {
       hecho.envios.push(Number(m[1]));
+      if (hecho.elEnvioContesta) return hecho.elEnvioContesta();
       const presupuesto = hecho.presupuestos[Number(m[1]) - 501];
       const cliente = hecho.clientes.find((c) => c.id === presupuesto.customer_id || c.id === presupuesto.customerId);
       if (cliente && !cliente.phone) return respuesta(400, { ok: false, error: 'customer_missing_phone' });
@@ -56,8 +58,8 @@ function montar() {
   };
   const { ctx } = cargarDashboard(RAIZ, { red: { fetch } });
   ctx.appMerchantId = 46;
-  ctx.renderAppView = () => {};
-  ctx.showToast = () => {};
+  ctx.renderAppView = (vista, datos) => { hecho.vistas.push([vista, datos && datos.quoteId]); };
+  ctx.showToast = (texto) => { hecho.avisos.push(String(texto)); };
   const $ = (id) => ctx.document.getElementById(id);
   ctx.openQuickQuoteModal();
   assert.ok($('qq-send'), '🔴 CIEGO: el modal del presupuesto rápido no se pintó');
@@ -69,9 +71,21 @@ function montar() {
     $('qq-customer-phone').value = telefono;
     e.products = [{ concept: 'Punto de luz', qty: 1, price: 50 }];
   };
+  // Cliente que YA existe y no tiene teléfono: se elige, no se da de alta.
+  const elegirExistente = () => {
+    hecho.clientes.push({ id: 84, name: 'Cliente que ya existe', phone: null });
+    const e = vm.runInContext('qqState', ctx);
+    e.customerName = 'Cliente que ya existe';
+    e.customerId = 84;
+    e.products = [{ concept: 'Punto de luz', qty: 1, price: 50 }];
+  };
   const pulsar = async () => { await ctx.submitQuickQuote(); await vueltas(); };
-  return { hecho, rellenar, pulsar, $ };
+  // Todo lo que la persona puede leer: el modal (si sigue) y los avisos de fuera.
+  const loQueSeLee = () => [($('qq-alert') && $('qq-alert').textContent) || '', ...hecho.avisos].join(' | ');
+  return { hecho, rellenar, elegirExistente, pulsar, loQueSeLee, $ };
 }
+
+const AVISO = 'No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.';
 
 test('SCRUM-1198 · suelo: la red de mentira rechaza `phone: null` como producción, y acepta que no venga', async () => {
   const m = montar();
@@ -108,14 +122,41 @@ test('SCRUM-1198 · CONTROL: con teléfono, el alta lo lleva tal cual y el enví
   assert.deepEqual(m.hecho.envios, [501]);
 });
 
-test('SCRUM-1198 · 🔴 reintentar tras el fallo del envío NO vuelve a crear ni cliente ni presupuesto (SCRUM-1371 sigue valiendo)', async () => {
+// ── (b)(c)(d) · lo que se le dice, y dónde ─────────────────────────────────────────────────────
+const seCierraYSeDiceFuera = (camino) => async () => {
   const m = montar();
+  if (camino === 'nuevo') m.rellenar(''); else m.elegirExistente();
+  await m.pulsar();
+  assert.deepEqual(m.hecho.envios, [501], '🔴 CIEGO: el envío no se intentó; no hay rechazo que medir');
+  assert.equal(m.hecho.presupuestos.length, 1, '🔴 el aviso dice «se ha guardado» y no hay presupuesto');
+  assert.equal(m.$('qq-send'), null, '🔴 el modal sigue abierto: la persona vuelve a pulsar «Enviar» y vuelve a fallar');
+  assert.deepEqual(m.hecho.avisos, [AVISO], '🔴 el aviso de fuera no es el literal aprobado, o no es uno solo');
+  assert.doesNotMatch(m.loQueSeLee(), /customer_missing_phone|API \d{3}/, '🔴 se lee un código interno');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(m.hecho.vistas, [['quotes-detail', 501]], '🔴 no se abre el presupuesto que se ha guardado');
+};
+test('SCRUM-1198 · 🔴 cliente NUEVO sin teléfono: el modal se CIERRA y el aviso aprobado se da fuera', seCierraYSeDiceFuera('nuevo'));
+test('SCRUM-1198 · 🔴 cliente EXISTENTE sin teléfono: el modal se CIERRA y el aviso aprobado se da fuera', seCierraYSeDiceFuera('existente'));
+
+test('SCRUM-1198 · CONTROL NEGATIVO: otro fallo del envío NO se disfraza de «sin teléfono», y deja reintentar', async () => {
+  const m = montar();
+  m.hecho.elEnvioContesta = () => respuesta(500, { ok: false, error: 'server_error' });
   m.rellenar('');
   await m.pulsar();
-  assert.equal(m.$('qq-send') && m.$('qq-send').disabled, false, '🔴 CIEGO: tras el fallo el botón no se rehabilita; no hay reintento que medir');
+  assert.ok(m.$('qq-send'), '🔴 el modal se cerró con un fallo que no es el de teléfono');
+  assert.equal(m.$('qq-send').disabled, false, 'el botón se rehabilita: este fallo sí se reintenta');
+  assert.deepEqual(m.hecho.avisos, [], '🔴 se dijo «no tiene teléfono» de un fallo que no lo es');
+  // Y el reintento sigue sin duplicar (SCRUM-1371).
   await m.pulsar();
+  assert.equal(m.hecho.altasDeCliente.length, 1);
+  assert.equal(m.hecho.presupuestos.length, 1);
+  assert.deepEqual(m.hecho.envios, [501, 501]);
+});
+
+test('SCRUM-1198 · CONTROL: cuando el envío sale, no aparece el aviso de «sin teléfono»', async () => {
+  const m = montar();
+  m.rellenar('34000001198');
   await m.pulsar();
-  assert.equal(m.hecho.altasDeCliente.length, 1, '🔴 cada reintento da de alta al cliente otra vez');
-  assert.equal(m.hecho.presupuestos.length, 1, '🔴 cada reintento crea otro presupuesto');
-  assert.deepEqual(m.hecho.envios, [501, 501, 501], 'los reintentos vuelven a intentar el envío del MISMO presupuesto');
+  assert.equal(m.$('qq-send'), null);
+  assert.equal(m.hecho.avisos.includes(AVISO), false);
 });
