@@ -275,6 +275,22 @@ const ROTULOS_RAIL_ALBARAN = {
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
 
+// SCRUM-1375 · EL ESTADO DE FACTURACIÓN, CON PALABRAS. La ficha escribía el valor del dato tal
+// cual («sin_facturar», con su guion bajo). La fila y la píldora dicen LO MISMO: dos vocabularios
+// para un hecho es lo que se quiso evitar al firmarlo. Ficha:
+// `docs/microcopy/2026-10-02-SCRUM-1375-facturacion-del-albaran.md`.
+const TEXTOS_FACTURACION_ALBARAN = {
+  sin_facturar: 'Sin facturar', // APROBADO · SCRUM-1375 comentario 18203
+  parcial: 'Facturado en parte', // APROBADO · SCRUM-1375 comentario 18203
+  facturado: 'Facturado', // APROBADO · SCRUM-1375 comentario 18203
+};
+
+/** El texto de un `estadoFacturacion`, o `null` si el código no lo conoce: lo desconocido NO se pinta crudo. */
+function textoDeFacturacion(valor) {
+  return Object.prototype.hasOwnProperty.call(TEXTOS_FACTURACION_ALBARAN, valor)
+    ? TEXTOS_FACTURACION_ALBARAN[valor] : null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
 //
@@ -418,13 +434,18 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // SCRUM-1374 · con la firma en la cola y esta ficha abierta, el drenado la sube y aquí seguía
   // «emitido», ofreciendo «Firmar aquí mismo». Un albarán que el servidor ya da por firmado no
   // tiene nada que esperar de la cola, y no escucha.
+  //
+  // SCRUM-1420 · si el aviso llega con el pad abierto no se repinta, pero SE RECUERDA: al cerrarse
+  // el pad (`onClose`, más abajo) la ficha se pone al día. Antes se tiraba, y cerrar el pad dejaba
+  // «emitido» con el servidor ya firmado.
+  let subioConElPadAbierto = false;
   if (alb.estado !== 'firmado' && typeof window.alConfirmarseFirmas === 'function') {
     const dejar = window.alConfirmarseFirmas(async (confirmadas) => {
       // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
       if (container.querySelector('.detail-page') !== page) { dejar(); return; }
       if (!vieneEsteAlbaran(confirmadas, alb.id)) return;
       // 🔴 Con el pad abierto NO se repinta: alguien está firmando, o leyendo el aviso del pad.
-      if (hayPadDeFirmaAbierto()) return;
+      if (hayPadDeFirmaAbierto()) { subioConElPadAbierto = true; return; }
       // Por `refrescar`, como toda recarga de esta pantalla: la firma YA salió, y si la lectura
       // falla se dice eso, no se deja una promesa rechazada sin dueño (SCRUM-379).
       await refrescar();
@@ -452,8 +473,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   chips.innerHTML =
     `<span class="status-pill">${esc(alb.estado)}</span>` +
     (alb.enviadoParaFirma ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
-    (alb.estadoFacturacion && alb.estadoFacturacion !== 'sin_facturar'
-      ? `<span class="status-pill">${esc(alb.estadoFacturacion)}</span>` : '');
+    // SCRUM-1375 · las mismas palabras que la fila «Facturación» de abajo. Un valor que no se
+    // conoce no lleva píldora: la fila ya pinta su raya.
+    (alb.estadoFacturacion !== 'sin_facturar' && textoDeFacturacion(alb.estadoFacturacion)
+      ? `<span class="status-pill">${esc(textoDeFacturacion(alb.estadoFacturacion))}</span>` : '');
   page.appendChild(chips);
 
   // ── SCRUM-356 (H2) · DÓNDE ESTÁ LA FIRMA, que no es lo mismo que «guardada» ──────────────
@@ -718,6 +741,15 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           // roto y la peor escena. «Inocuo en datos» no es inocuo.
           await refrescar();
         },
+        // SCRUM-1420 · el pad avisa al cerrarse, por el camino que sea y ya fuera del DOM (contrato
+        // en `docs/master/SCRUM-1420.md`). Sólo se lee si la cola avisó mientras estaba abierto, y
+        // sólo si esta ficha sigue siendo la de pantalla: tras confirmar con éxito ya se repintó.
+        onClose: async () => {
+          if (!subioConElPadAbierto) return;
+          subioConElPadAbierto = false;
+          if (container.querySelector('.detail-page') !== page) return;
+          await refrescar();
+        },
       });
     }),
     btnPdf: () => mk('btnPdf', () => window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank')),
@@ -889,7 +921,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     fila('Trabajo', alb.job?.titulo) +
     fila('Cliente', alb.customer?.name) +
     fila('Dirección', alb.job?.direccion) +
-    fila('Facturación', alb.estadoFacturacion) +
+    fila('Facturación', textoDeFacturacion(alb.estadoFacturacion)) +
     // El «parcial» se enseña con su detalle: decir «parcial» sin decir QUÉ queda es la mitad del
     // dato, y es el caso normal en una obra por fases.
     (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} ${pendientes.length === 1 ? 'línea' : 'líneas'}`) : '');

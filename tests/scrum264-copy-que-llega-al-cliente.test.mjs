@@ -41,6 +41,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
@@ -117,47 +118,58 @@ const invocar = (fn, sup, cuerpo, mapa = {}) => (sup.variables.length > 1 ? fn(c
 // LA PROPIEDAD, IGUAL EN LAS CUATRO
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-for (const sup of SUPERFICIES) {
-  test(`SCRUM-264 · ${sup.nombre}: el mensaje humano GANA al código`, () => {
-    const mostrar = expresionDe(sup);
-    assert.equal(
-      invocar(mostrar, sup, { error: CODIGO, message: 'Un texto para la persona.' }),
-      'Un texto para la persona.',
-      `🔴 «${sup.nombre}» enseña un IDENTIFICADOR INTERNO teniendo delante el texto humano. ` +
-        'Es el arreglo de SCRUM-151 (api.js:35-37), que nunca llegó a esta pantalla.',
-    );
-  });
-
-  test(`SCRUM-264 · ${sup.nombre}: sin copy, el código NO se pierde`, () => {
-    // Preferir el texto humano no puede convertirse en tragarse el fallo: la mayoría de los
-    // endpoints públicos aún no mandan `message` (27 de 36, censo de SCRUM-275) y para esos un
-    // código es mejor que un genérico — al menos se puede buscar. Cambia la PRIORIDAD, no lo
-    // que se ve cuando no hay copy.
-    const mostrar = expresionDe(sup);
-    assert.equal(invocar(mostrar, sup, { error: CODIGO }), CODIGO);
-  });
-
-  test(`SCRUM-264 · ${sup.nombre}: sin nada, su texto por defecto`, () => {
-    const mostrar = expresionDe(sup);
-    assert.equal(invocar(mostrar, sup, sup.variables[0] === 'json' ? null : {}), sup.porDefecto);
-  });
-
-  if (sup.tieneMapa) {
-    test(`SCRUM-264 · ${sup.nombre}: la tabla de la página se CONSULTA`, () => {
-      // 🔑 EL HALLAZGO DE SCRUM-275, y por eso este caso existe: `login.html` YA tenía la tabla,
-      // bien escrita, con «El enlace ha caducado o ya fue usado. Solicita uno nuevo.» dentro…
-      // declarada con `const` DENTRO de un `if`, así que desde `sendLink()` no estaba ni en el
-      // alcance. No es que no se aplicara: es que no se podía. El arreglo no fue escribir
-      // textos — fue sacar la tabla de la llave.
-      const mostrar = expresionDe(sup);
-      assert.equal(
-        invocar(mostrar, sup, { error: CODIGO }, { [CODIGO]: DEL_MAPA }),
-        DEL_MAPA,
-        `🔴 «${sup.nombre}» tiene una tabla de traducción y no la mira al pintar el error de la API`,
-      );
-    });
-  }
-}
+const casoa = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: el mensaje humano GANA al código`, (sup) => {
+  const mostrar = expresionDe(sup);
+  assert.equal(
+    invocar(mostrar, sup, { error: CODIGO, message: 'Un texto para la persona.' }),
+    'Un texto para la persona.',
+    `🔴 «${sup.nombre}» enseña un IDENTIFICADOR INTERNO teniendo delante el texto humano. ` +
+      'Es el arreglo de SCRUM-151 (api.js:35-37), que nunca llegó a esta pantalla.',
+  );
+});
+const casob = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: sin copy, el código NO se pierde`, (sup) => {
+  // Preferir el texto humano no puede convertirse en tragarse el fallo: la mayoría de los
+  // endpoints públicos aún no mandan `message` (27 de 36, censo de SCRUM-275) y para esos un
+  // código es mejor que un genérico — al menos se puede buscar. Cambia la PRIORIDAD, no lo
+  // que se ve cuando no hay copy.
+  const mostrar = expresionDe(sup);
+  assert.equal(invocar(mostrar, sup, { error: CODIGO }), CODIGO);
+});
+const casoc = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: sin nada, su texto por defecto`, (sup) => {
+  const mostrar = expresionDe(sup);
+  assert.equal(invocar(mostrar, sup, sup.variables[0] === 'json' ? null : {}), sup.porDefecto);
+});
+const casod = casosEscritos(SUPERFICIES.filter((sup) => sup.tieneMapa), (sup) => `SCRUM-264 · ${sup.nombre}: la tabla de la página se CONSULTA`, (sup) => {
+  // 🔑 EL HALLAZGO DE SCRUM-275, y por eso este caso existe: `login.html` YA tenía la tabla,
+  // bien escrita, con «El enlace ha caducado o ya fue usado. Solicita uno nuevo.» dentro…
+  // declarada con `const` DENTRO de un `if`, así que desde `sendLink()` no estaba ni en el
+  // alcance. No es que no se aplicara: es que no se podía. El arreglo no fue escribir
+  // textos — fue sacar la tabla de la llave.
+  const mostrar = expresionDe(sup);
+  assert.equal(
+    invocar(mostrar, sup, { error: CODIGO }, { [CODIGO]: DEL_MAPA }),
+    DEL_MAPA,
+    `🔴 «${sup.nombre}» tiene una tabla de traducción y no la mira al pintar el error de la API`,
+  );
+});
+test('SCRUM-264 · landing de presupuesto · ACEPTAR: el mensaje humano GANA al código', casoa(0));
+test('SCRUM-264 · landing de presupuesto · ACEPTAR: sin copy, el código NO se pierde', casob(0));
+test('SCRUM-264 · landing de presupuesto · ACEPTAR: sin nada, su texto por defecto', casoc(0));
+test('SCRUM-264 · landing de presupuesto · RECHAZAR: el mensaje humano GANA al código', casoa(1));
+test('SCRUM-264 · landing de presupuesto · RECHAZAR: sin copy, el código NO se pierde', casob(1));
+test('SCRUM-264 · landing de presupuesto · RECHAZAR: sin nada, su texto por defecto', casoc(1));
+test('SCRUM-264 · página de acceso · /login.html: el mensaje humano GANA al código', casoa(2));
+test('SCRUM-264 · página de acceso · /login.html: sin copy, el código NO se pierde', casob(2));
+test('SCRUM-264 · página de acceso · /login.html: sin nada, su texto por defecto', casoc(2));
+test('SCRUM-264 · página de acceso · /login.html: la tabla de la página se CONSULTA', casod(0));
+test('SCRUM-264 · página de alta · /register.html (control positivo): el mensaje humano GANA al código', casoa(3));
+test('SCRUM-264 · página de alta · /register.html (control positivo): sin copy, el código NO se pierde', casob(3));
+test('SCRUM-264 · página de alta · /register.html (control positivo): sin nada, su texto por defecto', casoc(3));
+test('SCRUM-264 · página de alta · /register.html (control positivo): la tabla de la página se CONSULTA', casod(1));
+casoa.todos();
+casob.todos();
+casoc.todos();
+casod.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // COBERTURA DE LA TABLA DE /login.html · DERIVADA DE LA RUTA, no escrita a mano

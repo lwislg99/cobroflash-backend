@@ -1151,6 +1151,10 @@
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
         return r;
       },
+      // SCRUM-1422 · el pad avisa al cerrarse, por el camino que sea (contrato en
+      // `docs/master/SCRUM-1420.md`). Viaja en el mismo objeto, así que le llega igual al pad
+      // inyectado. Si no es una función, el pad lo ignora.
+      onClose: o.alCerrarElPad,
     });
     return true;
   }
@@ -1248,14 +1252,28 @@
     }
   }
 
-  async function renderParteDetailView(contenedor, parteId, opciones) {
+  // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
+  var dejarDeEscucharLaColaDelParte = null;
+
+  /** ¿Hay un pad de firma en pantalla? Se mira el DOM, igual que en el albarán (SCRUM-1374). */
+  function hayPadDeFirmaAbierto() {
+    return !!(document.querySelector && document.querySelector('[data-sp-aviso]'));
+  }
+
+  /**
+   * `parteYaTraido` es para quien YA lo ha leído del servidor y sólo quiere pintarlo (SCRUM-1422):
+   * así una lectura que falla no tapa la ficha. No viaja en `opciones` a propósito — las opciones
+   * se heredan en cada repintado, y un parte heredado sería un parte viejo.
+   */
+  async function renderParteDetailView(contenedor, parteId, opciones, parteYaTraido) {
     var o = opciones || {};
     var pedir = o.apiRequest || window.apiRequest;
     if (!contenedor || typeof pedir !== 'function') return false;
+    if (dejarDeEscucharLaColaDelParte) { dejarDeEscucharLaColaDelParte(); dejarDeEscucharLaColaDelParte = null; }
 
     var parte;
     try {
-      parte = await pedir('/admin/partes/' + parteId);
+      parte = parteYaTraido || await pedir('/admin/partes/' + parteId);
     } catch (e) {
       // 🔴 SUELO: si el parte no se pudo traer NO se pinta un parte vacío. Un técnico que ve
       // un parte en blanco cree que no apuntó nada, y lo que pasa es que la respuesta no llegó.
@@ -1691,6 +1709,50 @@
       aviso.textContent = texto;
       seccion.appendChild(aviso);
     };
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-1422 · LA FICHA ABIERTA SE ENTERA DE QUE SU FIRMA HA SUBIDO.
+    //
+    // Se firmaba sin red, volvía la señal, la cola subía la firma y avisaba (`alConfirmarseFirmas`,
+    // SCRUM-1373), y esta ficha no escuchaba: seguía ofreciendo firmar lo que el servidor ya tenía.
+    //
+    // Sólo escucha por los recuadros que aún no están firmados. Con el pad abierto NO se repinta
+    // —alguien está firmando, o leyendo su aviso—: se apunta, y se pone al día cuando el pad se
+    // cierra. Y se LEE antes de pintar: si la lectura falla, la ficha se queda como estaba en vez
+    // de taparse con un error que el técnico no ha provocado.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var seccionDeFirmas = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
+    var sigueEnPantalla = function () {
+      return !!seccionDeFirmas && contenedor.querySelector('[data-parte-firmas]') === seccionDeFirmas;
+    };
+    var subioConElPadAbierto = false;
+    var ponerseAlDia = async function () {
+      try {
+        var fresco = await pedir('/admin/partes/' + parteId);
+        if (sigueEnPantalla()) await renderParteDetailView(contenedor, parteId, o, fresco);
+      } catch (_e) { /* la firma ya subió; lo que ha fallado es leer. La ficha sigue como estaba. */ }
+    };
+    var tiposQueEspera = [];
+    if (!parte.firmoElCliente) tiposQueEspera.push(FIRMAS.cliente.tipo);
+    if (!parte.firmoElTecnico) tiposQueEspera.push(FIRMAS.tecnico.tipo);
+    if (seccionDeFirmas && tiposQueEspera.length && typeof window.alConfirmarseFirmas === 'function') {
+      var dejar = window.alConfirmarseFirmas(async function (confirmadas) {
+        // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
+        if (!sigueEnPantalla()) { dejar(); return; }
+        var esDeEsteParte = (Array.isArray(confirmadas) ? confirmadas : []).some(function (c) {
+          return c && tiposQueEspera.indexOf(c.tipo) !== -1 && String(c.documentoId) === String(parte.id);
+        });
+        if (!esDeEsteParte) return;
+        if (hayPadDeFirmaAbierto()) { subioConElPadAbierto = true; return; }
+        await ponerseAlDia();
+      });
+      dejarDeEscucharLaColaDelParte = dejar;
+    }
+    var alCerrarElPad = async function () {
+      if (!subioConElPadAbierto) return;
+      subioConElPadAbierto = false;
+      if (sigueEnPantalla()) await ponerseAlDia();
+    };
+
     [['[data-parte-firmar]', 'cliente'], ['[data-parte-firmar-tecnico]', 'tecnico']].forEach(function (par) {
       var boton = contenedor.querySelector && contenedor.querySelector(par[0]);
       if (!boton || !boton.addEventListener) return;
@@ -1698,6 +1760,7 @@
         firmarParte(parte, Object.assign({}, o, {
           alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
           avisar: avisar,
+          alCerrarElPad: alCerrarElPad,
         }), par[1]);
       });
     });

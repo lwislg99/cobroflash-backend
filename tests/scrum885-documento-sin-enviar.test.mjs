@@ -351,6 +351,7 @@ test('SCRUM-885 · NINGÚN envío nuevo: los envíos son los de hoy en todos los
 // que nombre la función no cuenta como llamada (SCRUM-203), y una copia del literal en la vista sí
 // se ve aunque vaya partida en un template.
 import ts from 'typescript'; import { reqDeSesion } from './_arnes-de-router.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 function arbolDe(rel) {
   const fuente = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -425,20 +426,22 @@ test('SCRUM-885 · la fila de la factura del trabajo pinta el aviso DESDE la reg
   sinCopiaDelLiteral(rel);
 });
 
-for (const rel of ['public/dashboard/js/jobDetailView.js', 'public/dashboard/js/invoiceDetailView.js']) {
-  test(`SCRUM-885 · «Confirmar Bizum» en ${path.basename(rel)} avisa DESDE la regla, con la respuesta del confirm-bizum`, () => {
-    const toast = llamadasALaRegla(rel).filter((c) => c.confirmaBizum);
-    assert.equal(toast.length, 1, `🔴 ${rel}: el manejador de confirm-bizum no llama a avisoDocumentoSinEnviar`);
-    const [c] = toast;
-    assert.ok(c.origen, `🔴 ${rel}: no encuentro de dónde sale «${c.objeto}», el objeto del que se lee envioDocumento`);
-    // La respuesta: o el `await apiRequest(`…/confirm-bizum`)` o el `await r.json()` de ese fetch.
-    const init = c.origen.initializer?.getText() ?? '';
-    assert.ok(/confirm-bizum/.test(init) || /\.json\(\)/.test(init),
-      `🔴 ${rel}: «${c.objeto}» no es la respuesta de confirm-bizum (${init.slice(0, 80)})`);
-    assert.deepEqual(c.destinos, ['showToast'], `🔴 ${rel}: el .texto de la regla tiene que ir al toast`);
-    sinCopiaDelLiteral(rel);
-  });
-}
+const FILAS = ['public/dashboard/js/jobDetailView.js', 'public/dashboard/js/invoiceDetailView.js'];
+const caso2 = casosEscritos(FILAS, (rel) => `SCRUM-885 · «Confirmar Bizum» en ${path.basename(rel)} avisa DESDE la regla, con la respuesta del confirm-bizum`, (rel) => {
+  const toast = llamadasALaRegla(rel).filter((c) => c.confirmaBizum);
+  assert.equal(toast.length, 1, `🔴 ${rel}: el manejador de confirm-bizum no llama a avisoDocumentoSinEnviar`);
+  const [c] = toast;
+  assert.ok(c.origen, `🔴 ${rel}: no encuentro de dónde sale «${c.objeto}», el objeto del que se lee envioDocumento`);
+  // La respuesta: o el `await apiRequest(`…/confirm-bizum`)` o el `await r.json()` de ese fetch.
+  const init = c.origen.initializer?.getText() ?? '';
+  assert.ok(/confirm-bizum/.test(init) || /\.json\(\)/.test(init),
+    `🔴 ${rel}: «${c.objeto}» no es la respuesta de confirm-bizum (${init.slice(0, 80)})`);
+  assert.deepEqual(c.destinos, ['showToast'], `🔴 ${rel}: el .texto de la regla tiene que ir al toast`);
+  sinCopiaDelLiteral(rel);
+});
+test('SCRUM-885 · «Confirmar Bizum» en jobDetailView.js avisa DESDE la regla, con la respuesta del confirm-bizum', caso2(0));
+test('SCRUM-885 · «Confirmar Bizum» en invoiceDetailView.js avisa DESDE la regla, con la respuesta del confirm-bizum', caso2(1));
+caso2.todos();
 
 test('SCRUM-885b · la ficha de la factura deja el aviso FIJO desde la regla, con el envioDocumento de la factura', () => {
   const rel = 'public/dashboard/js/invoiceDetailView.js';

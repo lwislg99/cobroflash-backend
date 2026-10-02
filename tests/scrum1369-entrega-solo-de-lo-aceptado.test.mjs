@@ -76,11 +76,31 @@ test('SCRUM-1369 · enviado, rechazado, caducado o sin estado legible: mismo tra
   }
 });
 
-test('SCRUM-1369 · original en borrador + adicional ACEPTADO: el eje NO se pasa al adicional', async () => {
-  // PASO 0 del ticket. Antes: eje = el borrador, y «hay adicionales» → no calculable.
-  // Ahora: sin eje. En ninguno de los dos casos se afirma un número de líneas.
+test('SCRUM-1369 · 🔴 un borrador NO desplaza a un aceptado: el eje es el primer ACEPTADO', async () => {
+  // Decidido el 2-oct-2026. Primera tanda: `sin_eje`. Ahora la entrega se mide contra el aceptado:
+  // las 3 líneas son las SUYAS, no la 1 del borrador que tiene delante.
   const e = await entregaDelDetalle([Q(203, 'draft', 1), Q(204, 'accepted', 3)]);
+  assert.equal(e.estado, 'calculado', `🔴 el borrador de delante deja al aceptado sin eje: ${JSON.stringify(e)}`);
+  assert.equal(e.calculable, true, '🔴 el borrador cuenta como «hay adicionales»');
+  assert.equal(e.lineasPendientes, 3, '🔴 se han contado las líneas de otro presupuesto');
+
+  // Da igual dónde esté el borrador y cuántos haya.
+  const varios = await entregaDelDetalle([Q(201, 'draft', 1), Q(202, 'rejected', 5), Q(204, 'accepted', 2), Q(205, 'sent', 4)]);
+  assert.equal(varios.lineasPendientes, 2);
+});
+
+test('SCRUM-1369 · CONTROL: sin NINGÚN aceptado no hay eje — ni un cero ni un número', async () => {
+  const e = await entregaDelDetalle([Q(201, 'draft', 1), Q(202, 'sent', 2), Q(203, 'rejected', 3)]);
   assert.equal(e.estado, 'sin_eje');
+  assert.equal(e.calculable, false);
+  assert.equal(e.lineasPendientes, undefined, '🔴 viaja un conteo sin que nadie haya aceptado nada');
+  assert.equal(e.pendienteTotal, undefined, '🔴 viaja un total (¿un cero?) sin que nadie haya aceptado nada');
+});
+
+test('SCRUM-1369 · borrador delante + DOS aceptados: el segundo aceptado sigue siendo «hay adicionales»', async () => {
+  const e = await entregaDelDetalle([Q(203, 'draft', 1), Q(204, 'accepted', 3), Q(205, 'accepted', 1)]);
+  assert.equal(e.calculable, false, 'CONTROL: con dos aceptados C6 no afirma un número');
+  assert.equal(e.motivo, 'hay_adicionales');
 });
 
 test('SCRUM-1369 · original aceptado + adicional: sólo el ACEPTADO cuenta como «hay adicionales»', async () => {
@@ -93,10 +113,11 @@ test('SCRUM-1369 · original aceptado + adicional: sólo el ACEPTADO cuenta como
   assert.equal(conAceptado.motivo, 'hay_adicionales');
 });
 
-test('SCRUM-1369 · la función: el original sólo si está aceptado, y detrás sólo los aceptados', () => {
+test('SCRUM-1369 · la función: sólo los aceptados, en su orden', () => {
   const a = { id: 1, status: 'accepted' }, b = { id: 2, status: 'draft' }, c = { id: 3, status: 'accepted' };
   assert.deepEqual(presupuestosQueSeEntregan([a, b, c]), [a, c]);
-  assert.deepEqual(presupuestosQueSeEntregan([b, a]), []);
+  assert.deepEqual(presupuestosQueSeEntregan([b, a]), [a]);
+  assert.deepEqual(presupuestosQueSeEntregan([b]), []);
   assert.deepEqual(presupuestosQueSeEntregan([]), []);
   assert.deepEqual(presupuestosQueSeEntregan(null), []);
 });

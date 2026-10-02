@@ -314,6 +314,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     if (!supplierRef.ok) return res.status(400).json({ ok: false, error: supplierRef.error });
     const unit = textoOpcional(req.body?.unit, 'unit', 40);
     if (!unit.ok) return res.status(400).json({ ok: false, error: unit.error });
+    // SCRUM-1379 · el id del CUERPO va a la base igual que el de la URL.
+    if (providerId != null && !cabeEnColumnaInt(Number(providerId))) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const created = await createProduct(req.merchantId, {
       name, description,
       price: priceNum,
@@ -359,6 +361,8 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (body.vat !== undefined)        patch.vat  = body.vat  == null ? null : Number(body.vat);
     if (body.isActive !== undefined)   patch.isActive = Boolean(body.isActive);
     if (body.providerId !== undefined) patch.providerId = body.providerId == null ? null : Number(body.providerId);
+    // SCRUM-1379 · el id del CUERPO va a la base igual que el de la URL.
+    if (patch.providerId != null && !cabeEnColumnaInt(patch.providerId)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     // SCRUM-609 · misma lista cerrada que en el alta. `undefined` no toca la columna.
     if (body.itemKind !== undefined) {
       const lado = itemKindSchema.safeParse(body.itemKind);
