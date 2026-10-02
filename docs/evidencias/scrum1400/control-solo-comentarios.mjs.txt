@@ -1,0 +1,136 @@
+// docs/evidencias/scrum1400/control-solo-comentarios.mjs.txt — SCRUM-1400
+//
+// EL CONTROL DEL TICKET: «si un test se mueve, has tocado algo que no era un comentario».
+// Correr la tanda entera para saberlo no es alcanzable en esta máquina, así que se mide lo que la
+// tanda mediría, pero en el origen: que entre la BASE y el ÁRBOL no cambia NADA que no sea un
+// comentario. Tres preguntas, cada una con su control de que el instrumento VE:
+//
+//   ① el diff: qué ficheros cambian, y que ninguno PIERDE una línea (la frase no se borra);
+//   ② los .ts: el JavaScript que emite TypeScript SIN comentarios es idéntico byte a byte;
+//   ③ el esquema: quitando las líneas enteras de comentario `//`, el texto es idéntico; y ninguna
+//      línea añadida es `///`, que en Prisma NO es comentario sino documentación que entra en el
+//      cliente generado.
+//
+// Uso (se copia a .mjs FUERA del árbol, porque node no ejecuta un .txt):
+//   node <copia>.mjs <raíz del repo> <sha de la base> [<ref de después>]
+//
+// Sin el tercer argumento, «después» es el ÁRBOL de trabajo (lo que hay en disco, commiteado o no).
+// Con él, es ese commit: sirve para medir un commit concreto aunque el árbol lleve ya otra cosa.
+//
+// Sale 0 sólo si las tres dan «sólo comentarios» Y los controles positivos caen como deben.
+// Sale 2 si no pudo mirar (CIEGO). Sale 1 si algo que no es comentario cambió.
+
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const [raiz, base, despuesRef] = process.argv.slice(2);
+if (!raiz || !base) {
+  console.error('CIEGO: faltan <raíz del repo> y <sha de la base>');
+  process.exit(2);
+}
+const require = createRequire(path.join(path.resolve(raiz), 'package.json'));
+const ts = require('typescript');
+
+const git = (...args) => execFileSync('git', args, { cwd: raiz, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+const sha = (texto) => createHash('sha256').update(texto).digest('hex');
+const deLaBase = (ruta) => git('show', `${base}:${ruta}`);
+const delArbol = (ruta) => (despuesRef ? git('show', `${despuesRef}:${ruta}`) : readFileSync(path.join(raiz, ruta), 'utf8'));
+const rango = despuesRef ? [base, despuesRef] : [base];
+
+let rojo = false;
+let ciego = false;
+const di = (linea) => console.log(linea);
+
+// ── ① EL DIFF ────────────────────────────────────────────────────────────────────────────────
+const numstat = git('diff', '--numstat', ...rango, '--').trim().split('\n').filter(Boolean)
+  .map((l) => { const [mas, menos, ruta] = l.split('\t'); return { mas: Number(mas), menos: Number(menos), ruta }; });
+di(`① POBLACIÓN: ${numstat.length} fichero(s) cambian entre ${base.slice(0, 8)} y ${despuesRef ? despuesRef.slice(0, 8) : 'el árbol'}`);
+for (const f of numstat) di(`   +${f.mas} -${f.menos}  ${f.ruta}`);
+if (numstat.length === 0) { di('   CIEGO: el diff está vacío, no hay nada que medir'); ciego = true; }
+
+const esDocumento = (ruta) => ruta.startsWith('docs/');
+const conCodigo = numstat.filter((f) => !esDocumento(f.ruta));
+di(`   de ellos, fuera de docs/: ${conCodigo.length}`);
+for (const f of conCodigo) {
+  if (f.menos !== 0) { di(`   🔴 ${f.ruta} PIERDE ${f.menos} línea(s): la frase no se borra, se le añade`); rojo = true; }
+}
+
+// ── ② LOS .ts: LO QUE EMITE TYPESCRIPT SIN COMENTARIOS ───────────────────────────────────────
+const emitido = (texto, ruta) => ts.transpileModule(texto, {
+  fileName: path.join(path.resolve(raiz), ruta),
+  compilerOptions: { removeComments: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+}).outputText;
+
+const fuentes = conCodigo.filter((f) => /\.(ts|js|mjs)$/.test(f.ruta));
+di(`② POBLACIÓN: ${fuentes.length} fuente(s) con cambios`);
+for (const f of fuentes) {
+  const antes = deLaBase(f.ruta);
+  const despues = delArbol(f.ruta);
+  const a = sha(emitido(antes, f.ruta));
+  const d = sha(emitido(despues, f.ruta));
+  const igual = a === d;
+  di(`   ${igual ? '✔ idéntico' : '🔴 DISTINTO'}  ${f.ruta}`);
+  di(`      emitido antes   ${a}`);
+  di(`      emitido después ${d}`);
+  if (!igual) rojo = true;
+
+  // Control de que el instrumento VE un cambio de código: el mismo texto de después, con UN
+  // literal cambiado. Si esto diera «idéntico», el ✔ de arriba no valdría nada.
+  const testigo = "'invalid_id'";
+  if (!despues.includes(testigo)) { di(`      CIEGO: el testigo ${testigo} no está en el fuente; el control no se puede sembrar`); ciego = true; continue; }
+  const envenenado = despues.replace(testigo, "'invalid_idX'");
+  const e = sha(emitido(envenenado, f.ruta));
+  di(`      control (un literal cambiado): ${e === d ? '🔴 NO LO VE — instrumento ciego' : 'lo ve, emitido distinto'}`);
+  if (e === d) ciego = true;
+}
+
+// ── ③ EL ESQUEMA ─────────────────────────────────────────────────────────────────────────────
+const RUTA_ESQUEMA = 'prisma/schema.prisma';
+const sinComentarios = (texto) => texto.replace(/\r\n/g, '\n').split('\n')
+  // Una línea ENTERA de comentario es `//` y NO `///`: la triple barra es documentación de Prisma.
+  .filter((l) => !/^\s*\/\/(?!\/)/.test(l)).join('\n');
+
+if (numstat.some((f) => f.ruta === RUTA_ESQUEMA)) {
+  const antes = deLaBase(RUTA_ESQUEMA);
+  const despues = delArbol(RUTA_ESQUEMA);
+  const a = sha(sinComentarios(antes));
+  const d = sha(sinComentarios(despues));
+  const lineasA = sinComentarios(antes).split('\n').length;
+  const lineasD = sinComentarios(despues).split('\n').length;
+  di(`③ POBLACIÓN: ${antes.split('\n').length} líneas antes, ${despues.split('\n').length} después; sin comentarios ${lineasA} y ${lineasD}`);
+  di(`   ${a === d ? '✔ idéntico' : '🔴 DISTINTO'}  ${RUTA_ESQUEMA} sin sus líneas de comentario`);
+  di(`      antes   ${a}`);
+  di(`      después ${d}`);
+  if (a !== d) rojo = true;
+  if (lineasA < 500) { di('   CIEGO: el esquema sin comentarios tiene menos de 500 líneas; el filtro se lo ha llevado todo'); ciego = true; }
+
+  const anadidas = git('diff', '-U0', ...rango, '--', RUTA_ESQUEMA).split('\n')
+    .filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
+  const triples = anadidas.filter((l) => /^\s*\/\/\//.test(l));
+  di(`   líneas añadidas: ${anadidas.length}; de ellas con triple barra (documentación, NO comentario): ${triples.length}`);
+  if (triples.length) rojo = true;
+
+  // Controles: una línea de comentario más NO mueve el resultado; un campo más SÍ; y una `///` SÍ.
+  // Los tres se siembran DENTRO del texto, en una línea propia delante de un ancla que existe:
+  // pegarlos al final añadía además una línea en blanco, y el control del comentario salía rojo
+  // por esa línea y no por el comentario (primera pasada del 2-oct: veredicto CIEGO, bien dado).
+  const ANCLA = 'model QuoteAssignee {';
+  const sembrado = despues.includes(ANCLA) && despues.includes('@@map("quote_assignees")');
+  const masComentario = sha(sinComentarios(despues.replace(ANCLA, `// un comentario más\n${ANCLA}`)));
+  const masCampo = sha(sinComentarios(despues.replace('@@map("quote_assignees")', 'nota String?\n  @@map("quote_assignees")')));
+  const masTriple = sha(sinComentarios(despues.replace(ANCLA, `/// documentación de Prisma\n${ANCLA}`)));
+  di(`   control (un comentario más): ${masComentario === d ? 'no lo cuenta, como debe' : '🔴 lo cuenta'}`);
+  di(`   control (un campo más): ${!sembrado ? 'CIEGO: no se pudo sembrar' : masCampo === d ? '🔴 NO LO VE' : 'lo ve'}`);
+  di(`   control (una línea ///): ${masTriple === d ? '🔴 NO LA VE' : 'la ve'}`);
+  if (masComentario !== d || !sembrado || masCampo === d || masTriple === d) ciego = true;
+} else {
+  di('③ el esquema no cambia en este diff');
+}
+
+const salida = ciego ? 2 : rojo ? 1 : 0;
+di(`VEREDICTO: ${ciego ? 'CIEGO' : rojo ? 'HA CAMBIADO ALGO QUE NO ES UN COMENTARIO' : 'SÓLO COMENTARIOS'}`);
+di(`EXIT=${salida}`);
+process.exit(salida);
