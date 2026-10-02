@@ -222,3 +222,69 @@ nombre propio, como dijo.
 - `node --test --test-force-exit tests/scrum1123-vigia-despliegue-aviso.test.mjs` → 14/14 pass.
 - Censo de workflows: lectura completa de los 8 ficheros de `.github/workflows/`, sin herramienta
   nueva — grep dirigido + lectura de cada `run:` señalado, con el código de alrededor.
+
+## SCRUM-1123c · rescate y re-medición (2-oct-2026)
+
+**Medido contra:** `origin/main` = `7d8a3ec970669bab0265fdb1a100abcda6c2c76f` · 2026-10-02T13:31:59Z (cabecera `Date:` de GitHub)
+**Rama:** `wip-s5-1123c-censo-workflows` (aparcada: no empieza por `scrum-`, no abre PR) · **Worktree:** `wt-s5-1123c`
+
+**De dónde sale el tramo de arriba.** `s5-27a` murió sin traspaso y dejó la sección «SCRUM-1123c
+(seguimiento, 28-sep-2026)» SIN COMITEAR en `wt-s5-999-cuota-antes-de-lanzar`. Lo encontró S0 barriendo
+sesiones muertas. Está copiado TAL CUAL (74 líneas, `git diff` del árbol muerto aplicado sobre `main`),
+sin corregir nada dentro: lo que hoy ya no se sostiene se dice aquí abajo, no se reescribe allí.
+
+- **El arreglo del test que describe NO viaja en este commit:** ya está en `main`
+  (`tests/scrum1123-vigia-despliegue-aviso.test.mjs:97` y `:131`), entró por otro camino.
+- **El ticket que pedía («que el orquestador lo abra con nombre propio») no se abrió nunca:** ningún
+  registro de `docs/master/` recoge este censo (buscado por la frase y por las tres líneas).
+
+### 🔴 La premisa del censo es FALSA, y lo que cambia
+
+El censo —y el comentario de `vigia-despliegue.yml:204-207`— dicen que los `run:` de Actions «llevan
+`-e -o pipefail` por defecto». **Medido en el log de una corrida real de cada uno de los tres
+workflows: `shell: /usr/bin/bash -e {0}`.** `-e` sí; `pipefail` NO (ése sólo lo pone Actions cuando el
+paso declara `shell: bash`, y ninguno de los tres lo declara). Corridas leídas: `zona-roja`
+35366350410 · `vigia-atascados` 36987638530 · `vigia-despliegue` 36979669018.
+
+Consecuencia: **sin `pipefail`, en una tubería sólo cuenta el ÚLTIMO comando.** Las tres líneas siguen
+vivas, pero no por la razón escrita, y no pesan lo mismo.
+
+### Las tres, contra `main` de hoy
+
+| # | Dónde (hoy) | ¿Sigue igual? | Qué pasa de verdad si falla | Peso |
+|---|---|---|---|---|
+| 1 | `vigia-despliegue.yml:214` | Sí, misma línea | Si falla `gh issue comment` (el último), el paso aborta ROJO sin `::error::` ni línea en el resumen. Si falla el `jq` de en medio, **no aborta**: `gh` recibe un cuerpo vacío. | Bajo: sale rojo, sólo falta el porqué |
+| 2 | `vigia-atascados.yml:220` (era `:208`; la movió SCRUM-1270) | Sí, mismo texto | Si `gh issue create` falla, `grep` no casa, sale 1 y el paso aborta ROJO sin `::error::`. Nunca verde en falso. | Bajo: igual que el 1 |
+| 3 | `zona-roja.yml:113-115` | Sí, misma línea | El paso hace `set -uo pipefail` y **cree** no llevar `-e` (comentario de la línea 71: «`set -e` NO»). Lo lleva: lo pone Actions al invocar. Si `gh api` falla, la asignación sale ≠0 y el paso MUERE antes del `exit 0` de la línea 128. | **Alto: el workflow que «no puede salir rojo» puede** |
+
+**Mecanismo probado en local, cada uno con su control** (bash 5.2, mismas opciones que el log):
+- 2 · `bash -e -c 'NUM="$(false | grep -oE "[0-9]+$")"; echo …'` → exit 1, no imprime. Control con
+  entrada buena → imprime `#12`, exit 0.
+- 3 · `bash -e -c 'set -uo pipefail; ID=$(false | head -1); echo LLEGA; exit 0'` → **exit 1, no llega**.
+  Control con `gh` bueno → llega, exit 0. Control SIN `-e` (lo que el fichero cree tener) → llega, exit 0.
+  La diferencia entre «llega» y «no llega» es exactamente el `-e` que el comentario niega.
+
+### Lo que NO he podido mirar
+
+- **¿Ha habido víctima?** `zona-roja` tiene **6 corridas con conclusión `failure`** en su historia
+  (6-ago · 16-sep ×4 · 17-sep), en un workflow cuyo contrato es no salir nunca rojo. La línea 113 ya
+  existía en esas fechas (comprobado en `9ff07948`). **Pero GitHub ya no guarda ni sus jobs ni su log**
+  (`jobs.total_count = 0`, «log not found»): no sé en qué paso murieron. Puede ser esta línea o no.
+  En las últimas 500 corridas: 484 `success`, 16 `cancelled`, 0 `failure`.
+- `vigia-atascados`: 115 de 115 `success`. `vigia-despliegue`: 5 `failure` de 167, sin atribuir (un rojo
+  suyo es también su señal legítima de «producción congelada»).
+- `ci.yml` no se ha mirado (es del fundador).
+
+### Lo que este censo NO es
+
+No es la familia de «`main` rojo y nadie lo vio» del 2-oct. Aquello es un rojo que nadie RECIBE; esto
+es un paso que muere sin DECIR por qué (1 y 2) o que sale rojo cuando prometió no hacerlo (3). Medido
+el mismo día: de las 12 últimas corridas de `ci.yml` por push a `main`, 4 `failure` y 8 `cancelled`;
+el obligatorio `build + tests` sólo cayó en una, `643e9a65` (13:02Z) — las rojas de 11:59Z, 12:18Z y
+12:40Z fueron de jobs informativos (meta-guard, trinquete) con el obligatorio en verde.
+
+### Qué queda
+
+Nada arreglado aquí: sólo registro. Los tres ficheros son workflows; el arreglo (un `if !` en cada
+línea, y en `zona-roja` un `set +e` explícito o corregir el comentario) es ticket aparte y lo abre el
+orquestador si lo quiere.
