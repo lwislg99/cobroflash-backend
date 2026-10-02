@@ -72,7 +72,7 @@ Medido sobre 300 corridas, del 1-oct 18:24Z al 2-oct 12:13Z (53 empujones vistos
 | | |
 |---|---|
 | de empujón a veredicto | mediana **20 min** · 9 de cada 10 en menos de 26 min · 30 empujones |
-| de ello, hasta que el CI arranca | mediana 0 min · 9 de cada 10 en menos de 3 min |
+| de ello, hasta que la corrida de CI EXISTE | mediana 0 min · 9 de cada 10 en menos de 3 min. ⚠️ No mide la cola (ver «Mis errores», 3) |
 | cómo acabó la corrida entera | success 13 · failure 17 |
 | fuera de la cifra | 17 corridas canceladas · 5 en curso · 1 empujón sin CI · 1 CI sin su empujón entre las leídas |
 
@@ -141,3 +141,11 @@ como de hoy.
 2. **La foto de hoy no salía.** Las sesiones paradas ahora mismo no han vuelto, así que eran «colas» y no
    contaban: el día que motivó el ticket daba 2 esperas con 5 puestos parados. → comprobación: el caso «las
    paradas de HOY que no han vuelto salen con nombre».
+3. **Rotulé «hasta que el CI ARRANCA» lo que era «hasta que la corrida EXISTE»**, y el orquestador leyó
+   «mediana 0 min» como «no hay cola» y paró un encargo de S5 con ello. El dato era correcto; el rótulo
+   decía más de lo que el campo (`createdAt` de la corrida) sabe: una corrida recién creada puede estar
+   en cola sin runner, y ese tiempo va dentro del total. Lo vi al leer su conclusión, no al escribir el
+   rótulo; y tenía un indicio propio en contra (el abridor de mis dos ramas estuvo 7 y 9 min en cola).
+   → comprobación: no hay test que pueda exigir que una palabra no prometa de más; queda la regla escrita
+   en la cabecera del script (un rótulo nombra el dato que se leyó, no lo que se cree que significa) y el
+   aviso impreso junto a la cifra, que el test «tiempo hasta el veredicto» exige.

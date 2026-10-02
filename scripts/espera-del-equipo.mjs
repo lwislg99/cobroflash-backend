@@ -278,6 +278,11 @@ export function medir(trabajos, { desde = null, huecoMin = HUECO_MIN, largaMin =
 // corrida de CI (evento `pull_request`) del MISMO commit. ⚠️ Es el final de la corrida ENTERA, con sus
 // jobs informativos: el obligatorio acaba ahí o antes, así que esto es un techo de su tiempo. Y si la
 // corrida se relanzó, su final es el del último intento.
+//
+// REGLA DE LOS RÓTULOS DE ESTE SCRIPT (nace de un error: «hasta que el CI ARRANCA» rotulaba el instante
+// en que la corrida se CREA, y se leyó como «no hay cola»): un rótulo nombra EL DATO QUE SE LEYÓ
+// (`createdAt`, `state`, `origin.kind`), no lo que uno cree que ese dato significa. Si la palabra del
+// rótulo no sale del campo, la palabra decide la lectura — y es la misma familia que casar por palabras.
 export const WF_ABRIDOR = 'PR automático (ramas scrum-)';
 export const WF_CI = 'CI';
 
@@ -313,7 +318,8 @@ export function seccionVeredicto(runs, opciones) {
   const porConclusion = {}; for (const m of r.medidos) porConclusion[m.conclusion] = (porConclusion[m.conclusion] || 0) + 1;
   out.push(
     `   de empujón a veredicto: mediana ${q(tot, 0.5)} min · 9 de cada 10 en menos de ${q(tot, 0.9)} min · ${r.medidos.length} empujones`,
-    `   de ello, hasta que el CI ARRANCA (el abridor abre el PR): mediana ${q(arr, 0.5)} min · 9 de cada 10 en menos de ${q(arr, 0.9)} min`,
+    `   de ello, hasta que la corrida de CI EXISTE (GitHub la crea; puede seguir en cola sin runner): mediana ${q(arr, 0.5)} min · 9 de cada 10 en menos de ${q(arr, 0.9)} min`,
+    '   ⚠️ esto NO mide la cola: el tiempo esperando runner va DENTRO del total. Separarlo pide el `started_at` de los jobs de cada corrida, y aquí no se lee.',
     `   cómo acabó la corrida entera (no solo el obligatorio): ${Object.entries(porConclusion).map(([k, v]) => `${k} ${v}`).join(' · ')}`,
     `   fuera de la cifra: ${r.sinCI} empujones sin corrida de CI (PR en conflicto, o todavía sin abrir) · ${r.enCurso} con el CI en curso · ${r.canceladas} con la corrida cancelada (no dio veredicto; por qué se cancela NO está mirado) · ${r.sinEmpujon} corridas de CI cuyo empujón no está entre las leídas`,
     '   ⚠️ es el final de la corrida ENTERA: techo del tiempo del obligatorio. Una corrida relanzada cuenta hasta su último intento.',

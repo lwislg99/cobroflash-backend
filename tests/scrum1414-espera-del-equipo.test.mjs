@@ -207,6 +207,10 @@ test('SCRUM-1414 · 🔴 tiempo hasta el veredicto: de empujón a final del CI d
   assert.match(t, /mediana 30 min · 9 de cada 10 en menos de 30 min · 2 empujones/);
   assert.match(t, /1 empujones sin corrida de CI .* 1 con el CI en curso · 1 con la corrida cancelada .* 1 corridas de CI cuyo empujón/);
   assert.match(t, /techo del tiempo del obligatorio/);
+  // El rótulo nombra el dato leído (la corrida EXISTE), y dice al lado lo que ese dato NO mide.
+  assert.match(t, /hasta que la corrida de CI EXISTE/);
+  assert.match(t, /esto NO mide la cola/);
+  assert.doesNotMatch(t, /ARRANCA/);
 });
 
 test('SCRUM-1414 · 🔴 sin corridas, o con los workflows renombrados, NO da cifra: lo dice', () => {
