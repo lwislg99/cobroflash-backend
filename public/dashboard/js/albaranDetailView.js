@@ -418,13 +418,18 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // SCRUM-1374 · con la firma en la cola y esta ficha abierta, el drenado la sube y aquí seguía
   // «emitido», ofreciendo «Firmar aquí mismo». Un albarán que el servidor ya da por firmado no
   // tiene nada que esperar de la cola, y no escucha.
+  //
+  // SCRUM-1420 · si el aviso llega con el pad abierto no se repinta, pero SE RECUERDA: al cerrarse
+  // el pad (`onClose`, más abajo) la ficha se pone al día. Antes se tiraba, y cerrar el pad dejaba
+  // «emitido» con el servidor ya firmado.
+  let subioConElPadAbierto = false;
   if (alb.estado !== 'firmado' && typeof window.alConfirmarseFirmas === 'function') {
     const dejar = window.alConfirmarseFirmas(async (confirmadas) => {
       // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
       if (container.querySelector('.detail-page') !== page) { dejar(); return; }
       if (!vieneEsteAlbaran(confirmadas, alb.id)) return;
       // 🔴 Con el pad abierto NO se repinta: alguien está firmando, o leyendo el aviso del pad.
-      if (hayPadDeFirmaAbierto()) return;
+      if (hayPadDeFirmaAbierto()) { subioConElPadAbierto = true; return; }
       // Por `refrescar`, como toda recarga de esta pantalla: la firma YA salió, y si la lectura
       // falla se dice eso, no se deja una promesa rechazada sin dueño (SCRUM-379).
       await refrescar();
@@ -716,6 +721,15 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ
           // delante de él, y al terminar lee «Este albarán ya está firmado» (409). Ningún dato
           // roto y la peor escena. «Inocuo en datos» no es inocuo.
+          await refrescar();
+        },
+        // SCRUM-1420 · el pad avisa al cerrarse, por el camino que sea y ya fuera del DOM (contrato
+        // en `docs/master/SCRUM-1420.md`). Sólo se lee si la cola avisó mientras estaba abierto, y
+        // sólo si esta ficha sigue siendo la de pantalla: tras confirmar con éxito ya se repintó.
+        onClose: async () => {
+          if (!subioConElPadAbierto) return;
+          subioConElPadAbierto = false;
+          if (container.querySelector('.detail-page') !== page) return;
           await refrescar();
         },
       });
