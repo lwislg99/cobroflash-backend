@@ -31,6 +31,7 @@ import {
   resumenEntrega, fraseDeCuenta,
   type ResumenEntrega, type AlbaranParaEntrega,
 } from './entregaPendiente';
+import { presupuestoAceptado } from './dineroDelTrabajo'; // SCRUM-1369
 
 export const SIN_EJE = 'sin_eje';
 export const ILEGIBLE = 'ilegible';
@@ -55,6 +56,28 @@ function cantidadLegible(l: any): boolean {
   // `.env`-style: los Json de Prisma a veces traen números como cadena. Se acepta solo si de
   // verdad es un número; `''` y `[]` NO lo son (familia SCRUM-271: `Number([])` es 0).
   return typeof q === 'string' && q.trim() !== '' && Number.isFinite(Number(q));
+}
+
+/**
+ * SCRUM-1369 · QUÉ PRESUPUESTOS DEL TRABAJO SON UN COMPROMISO DE ENTREGA.
+ *
+ * EL FALLO QUE CIERRA, medido en producción el 1-oct-2026 (Trabajo #76, presupuesto #203): un
+ * Trabajo abierto sin presupuesto al que se le cuelga un BORRADOR decía «1 línea del presupuesto
+ * sin entregar» de algo que nadie ha aceptado. Misma raíz que SCRUM-1355 (dinero), otro dominio.
+ *
+ * El criterio de «aceptado» NO se escribe aquí: es `presupuestoAceptado`, el de
+ * `dineroDelTrabajo.ts`. Y la forma es la de su `quoteDelPlan`: el eje es el ORIGINAL sólo si está
+ * aceptado. Si no lo está NO se pasa el eje a otro presupuesto —un adicional aceptado detrás de un
+ * borrador no se convierte en «el original»—: no hay eje, y `entregaDelTrabajo` contesta `sin_eje`.
+ * Los adicionales sin aceptar tampoco cuentan para `hayAdicionales`.
+ *
+ * @param quotes  los presupuestos del Trabajo **con el ORIGINAL el primero** (`quotesDeJob`).
+ */
+export function presupuestosQueSeEntregan<T extends { status?: unknown }>(quotes: T[]): T[] {
+  const lista = Array.isArray(quotes) ? quotes : [];
+  const original = lista[0];
+  if (!original || !presupuestoAceptado(original)) return [];
+  return [original, ...lista.slice(1).filter(presupuestoAceptado)];
 }
 
 /**

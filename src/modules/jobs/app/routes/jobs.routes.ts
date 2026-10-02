@@ -50,7 +50,7 @@ import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 // SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
 // toca: esto sólo resuelve sus tres entradas con datos que este serializador ya tiene cargados.
-import { entregaDelTrabajo, entregaParaVista } from '../../domain/entregaDelTrabajo';
+import { entregaDelTrabajo, entregaParaVista, presupuestosQueSeEntregan } from '../../domain/entregaDelTrabajo';
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -776,7 +776,9 @@ async function serializeJobDetail(job: any) {
   // ORIGINAL el primero, que es lo que `entregaDelTrabajo` necesita para decidir el eje y
   // `hayAdicionales`. Los albaranes van CRUDOS —`albaranesRaw`— y no los serializados: el cálculo
   // mira `lineas`, `estado` y `modoValoracion`, y el serializado no está obligado a conservarlos.
-  const entrega = entregaParaVista(entregaDelTrabajo(quotesDelTrabajo, albaranesRaw));
+  // SCRUM-1369 · sólo lo ACEPTADO es un compromiso de entrega: un borrador no deja líneas «sin
+  // entregar». El criterio es el de `dineroDelTrabajo.ts`, aplicado en `presupuestosQueSeEntregan`.
+  const entrega = entregaParaVista(entregaDelTrabajo(presupuestosQueSeEntregan(quotesDelTrabajo), albaranesRaw));
 
   return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
 }
