@@ -132,9 +132,137 @@ La consulta que haría falta, por base (sólo lectura): cuántas filas de `invoi
     ./node_modules/.bin/prisma generate
     npm run build
 
-Después se copia `docs/master/evidencias/SCRUM-1252/propuesto-scrum1252-evidencias-libro-solo-facturas.mjs.txt`
-a la carpeta de tests, con el nombre que dice su primera línea (sin el `.txt`: lleva esa extensión para que
-el guard de SCRUM-708 no lo cuente como un fichero que registra tests y nadie ejecuta), y se corre con `node --test`. Sale 2 de 4
-en rojo hasta que se aplique `diff-propuesto.diff` y se recompile. La ruta de destino no se escribe aquí
-a propósito: el guard de SCRUM-391 exige que todo test que un registro declara exista en el árbol, y
-éste todavía no existe.
+Después se corre `tests/scrum1252-evidencias-libro-solo-facturas.test.mjs` con `node --test`. Hasta el
+2-oct-2026 este párrafo mandaba copiarlo a mano desde un `.mjs.txt` de la carpeta de evidencias, porque
+contra el `main` de entonces salía 2 de 4 en rojo (`salida-rojo-main.txt`) y un test rojo no entra en la
+carpeta de tests. SCRUM-1252b lo movió allí junto con la línea que lo pone verde. `diff-propuesto.diff` se
+conserva como evidencia de lo que se propuso; ya no aplica, porque su línea está dentro. Lo que cambió
+después de esta medición está en el anexo de abajo.
+
+## Anexo SCRUM-1252b · la línea y el literal, juntos
+
+**Medido contra:** `origin/main` = `35e1060e365a4cc11f16e4ccee393581679e73d9` · 2026-10-02T05:58:25Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+Lo que cazó ese hook: al heredar el árbol había un renombrado preparado sin comitear, de la sesión
+anterior, y fui a descartarlo con `git restore`. El hook lo paró y enseñó lo que se perdía. Se deshizo
+con el movimiento inverso (`git mv`), que no descarta nada: el fichero volvió a su sitio con el mismo
+blob. Los demás tropiezos, en «Lo que hice mal», al final.
+
+Sesión J1c (`jv-j1c`), 2-oct-2026, por encargo del orquestador de Javier (`cobroflash-backend-5b`).
+El permiso es el comentario 18028 de SCRUM-1252 (GO del orquestador) sobre la firma del fundador del
+comentario 17726, que dice que la línea la aplica J1 y que **no entra sin el texto**.
+
+### ① Qué entra
+
+| fichero | qué |
+|---|---|
+| `src/modules/fiscal/evidencias/paquete.repo.ts` | la llamada al lector del libro pide `soloFacturas: true` |
+| `src/modules/fiscal/evidencias/paquete.ts` | la constante `AVISO_LIBRO_SOLO_FACTURAS` (el literal firmado) y una línea que la mete en `avisos` cuando `justificantesFuera > 0` |
+| `tests/scrum1252-evidencias-libro-solo-facturas.test.mjs` | el test propuesto de J6d (4 casos, sin tocarles un aserto) más 3 casos para el aviso |
+| `docs/microcopy/2026-10-01-SCRUM-1252-libro-solo-facturas.md` | la ficha de la firma |
+
+No se escribe ningún criterio: qué es un justificante lo decide `esJustificante` (SCRUM-1232, por `type`
+y sólo por `type`) y el recuento es el `justificantesFuera` que ya devuelve el lector.
+
+El aviso sale **sólo cuando el libro dejó algo fuera**. Lo decidió el orquestador (2-oct-2026, por el
+canal de sesiones): un aviso que sale siempre deja de leerse. El comentario 17726 dice «dentro del ZIP»
+y no dice dónde; va en `avisos`, que viaja en `manifiesto.json`, que es lo que proponía el §③ de arriba.
+
+### ② Antes de tocar: ¿está el paquete de evidencias en el camino de emisión?
+
+No. Medido por AST sobre este `main` (`b-camino-de-emision.cjs.txt`, salida en
+`b-camino-de-emision-salida.txt`): 315 ficheros `.ts` en `src/`, 0 imports relativos sin resolver.
+
+- A `fiscal/evidencias/` sólo llegan `src/app.ts` (monta la ruta) y `src/index.ts`.
+- Desde `paquete.repo.ts` se alcanzan 15 módulos, y ninguno llama a `create`, `update`, `upsert`,
+  `delete`, `$executeRaw` ni `$transaction`. Control positivo del mismo detector: 6 en
+  `verifactu.service.ts` y 1 en `invoiceNumber.service.ts`.
+- El cierre de imports de ocho ficheros del camino de emisión (`lib/invoicing`, `registro.builder`,
+  `invoiceNumber.service`, `selladoEstado`, `verifactu.service`, `pdf.service`, `invoice.routes`,
+  `facturaSuelta`) no toca ni `evidencias/` ni el lector del libro ni el del 303.
+
+El detector marca dos `crypto.createHash('sha256').update`: no son escrituras en base. Uno recalcula el
+sello de un albarán para verificarlo. El otro (`paquete.ts`) es el resumen de cada fichero del ZIP que
+va en `manifiesto.json`: no es la cadena de VeriFactu, se calcula en cada descarga y no se guarda en
+ningún sitio (la ruta no escribe). El orquestador lo leyó igual: no es el STOP de la regla 40.
+
+### ③ El positivo que podía tumbar el trabajo: el 303 no se mueve
+
+Mismo `dist/`, compilado con la línea y sin ella, misma muestra (la de SCRUM-1232), cliente falso en
+memoria, ninguna base. Salidas enteras en `b-paquete-antes.txt` y `b-paquete-despues.txt`
+(instrumento: `b-medir-paquete.cjs.txt`).
+
+| muestra | fichero del ZIP | antes | después |
+|---|---|---|---|
+| con un justificante propio | `modelo-303.csv` | `2e5cecbe…ebf1537b` · TOTAL 250,00 / 52,50 | **idéntico** |
+| con un justificante propio | `libro-registro.csv` | 4 filas, con `J-2026-0001` | 3 filas: `F260001`, `J-20260805-AB12`, `R260001` |
+| con un justificante propio | `indice.csv` | 4 filas | las mismas 3 |
+| con un justificante propio | `manifiesto.json` | 1.475 B, 2 avisos | 1.707 B, 3 avisos (el nuevo) |
+| sin justificantes propios | los 7 ficheros | — | **los 7 idénticos**, manifiesto incluido |
+
+Las tres facturas siguen en libro e índice (la `F1` con número `J-` entre ellas). Los otros tres
+ficheros del ZIP (verificación de albaranes, entregas y alcance) no cambian en ninguna muestra.
+
+Con un justificante en el periodo cambian también cuatro cifras de `resumen` del manifiesto, porque
+cuentan asientos del libro: `asientos` 4→3, `miradas` 5→4, `facturasSinAlbaran` 4→3,
+`facturasSueltas` 4→3.
+
+**Consecuencia medida, para quien ya tenga un ZIP descargado:** si en ese trimestre había un
+justificante, una descarga nueva trae otro `libro-registro.csv` y otro `indice.csv`, y por tanto otros
+`sha256` en el manifiesto (y otro manifiesto). Si no había ninguno, la descarga nueva es byte a byte
+la misma. El ZIP es un export que se genera en el momento; no hay ningún resumen guardado que deje de
+cuadrar.
+
+### ④ Las mutaciones, vistas en rojo
+
+Cada una sobre el árbol comiteado, recompilando, y restaurada después (`git status` sin cambios en
+`src/`). El test tiene 7 casos.
+
+| mutación | caen | cuáles |
+|---|---|---|
+| sin la línea (el `main` de hoy) | 4 | libro, índice, «la línea no entra sola», y el control del aviso |
+| **la línea sin el texto** (no se mete el aviso) | 2 | «la línea no entra sola» y el control del aviso |
+| el aviso sale siempre | 1 | el control «sin nada fuera, el aviso NO sale» |
+| una letra distinta en el literal («solo» por «sólo») | 1, y 2 de `scrum514` | «letra a letra, el texto que firmó el fundador» |
+| el 303 también filtra (parcheando `dist/`, sin tocar `src/`) | 3 | «el 303 es IDÉNTICO», y los dos del aviso |
+
+### ⑤ Lo corrido
+
+- Tipos: `tsc --noEmit` sobre los 316 ficheros de `src/`, 0 errores, con el cliente de Prisma del árbol
+  `cobroflash-jv1` (generado hoy, mismo `schema.prisma`). El worktree donde se trabajó hereda los
+  `node_modules` del checkout compartido, cuyo cliente es viejo: con él salen 6 errores en `app.ts`,
+  `invoiceNumber.service.ts` y `merchantAdmin.ts` por columnas que ese cliente no conoce, ninguno en
+  lo que este cambio toca.
+- El test y sus 9 ficheros vecinos (`scrum297` ×4, `scrum294c`, `scrum1232`, `scrum438` ×2,
+  `scrum636`): 92 casos, 90 pasan, 0 caen, 2 saltan. Los dos que saltan son de
+  `scrum297-evidencias-postgres` y piden un Postgres desechable (`LIBRO_PG_URL`): **no corridos
+  aquí**. Su muestra no lleva justificantes.
+- La tanda completa y la dirigida no se han corrido: las cubre el CI.
+
+### ⑥ Lo que no entra, y lo que se ha visto
+
+- Los puntos B y C del comentario 17723, Informes, el 303 y el censo de los cinco documentos: fuera,
+  como estaban.
+- Un comentario de `invoicing/domain/libroRegistro.repo.ts` (el de `soloFacturas`) dice que las
+  evidencias «siguen leyendo lo de siempre». Desde este cambio ya no es verdad. No se ha tocado: ese
+  fichero no está en el permiso.
+- El comentario 17726 dice que el literal son dos frases. Son tres, y mide 217 caracteres. El texto es
+  el del comentario, letra a letra. Y la razón que daba para partirlo ya no aplica: desde SCRUM-1329
+  `scrum514` admite un texto firmado largo entero en una línea de cita, que es como va en la ficha.
+- Un justificante **sin número** contaría en `justificantesFuera` y haría salir el aviso, aunque no
+  estaba ni en el libro ni en el 303. Por el código de hoy no puede existir (el tipo se derivaba del
+  número `J-`); en datos no se ha medido.
+- El literal se copió de lo que la herramienta de Jira devuelve del comentario 17726. Si el original
+  llevara algún carácter invisible distinto (un espacio duro), desde aquí no se ve.
+
+### Lo que hice mal
+
+- Fui a descartar el renombrado heredado con `git restore`. Lo paró el hook (arriba).
+- Un `grep` con un paréntesis sin cerrar falló y lo vi por el error, no por su resultado: repetido con
+  el patrón partido y con control positivo.
+- Le pregunté a `scripts/zona-roja.mjs` por mis ficheros y leí la salida vacía sin un control al lado.
+  La lista se leyó después entera: ninguno de mis ficheros está en ella.
+- Medí primero sobre el árbol heredado, que iba 5 ficheros de `src/` por detrás de `main`. Lo vi al
+  comparar los dos y repetí la medición del camino de emisión en un árbol nacido de `origin/main`.
