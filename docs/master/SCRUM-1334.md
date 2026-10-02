@@ -263,14 +263,24 @@ APROBADO…»), que ahora dice además que no se añade a `NOTAS_AJENAS`.
 - **Cuando su dueño arregle una nota, su PR tendrá que borrar la entrada y bajar el techo** (una línea
   por nota). Lo aceptó el orquestador: es la única forma de que la lista mengüe de verdad.
 
-## ⑤ La línea de la ficha de 728: SIN RESOLVER al escribir esto
+## ⑤ La línea de la ficha de 728: es nuestra, y SIGUE SIN ARREGLAR
 
 `> No se pudo crear el albarán: **API 500: internal_error**` (sección «Qué se veía antes, medido
-corriendo»). El guard se niega a declararla ajena, porque el único fichero que pinta el texto de esa
-ficha es de J1. Por la decisión, ésa se arregla. Preguntado el orquestador si se le quita el `>` en
-este PR (es cruce de carril dentro del equipo: `area-j1`); sin respuesta al escribir este anexo. **No
-se ha tocado.** Mientras siga con el `>`, `scrum514` cae en 2 de sus 37 casos por esa línea y sólo por
-ésa, nombrada.
+corriendo», línea 28 de `docs/microcopy/2026-09-08-SCRUM-728-serie-ocupada.md`). El guard se niega a
+declararla ajena, porque el único fichero que pinta el texto de esa ficha es de J1. Por la decisión,
+ésa se arregla quitándole el `>`.
+
+El orquestador contestó que sí (mensaje del 2-oct, después del primer empuje): por §3.3 la ficha es
+de este equipo, y por contenido la línea no debía llevar `>` — es lo que se veía ANTES del arreglo de
+SCRUM-728, y si ese texto siguiera en el código el arreglo no existiría. Con eso se corrige a sí
+mismo: había dicho «las 22 son de Luis por §3.3», y son 21.
+
+**Pero la línea NO se ha tocado.** El arnés de la sesión J2c denegó esa edición, sin dar motivo, y no
+se ha rodeado: ni con otra herramienta, ni con `quitar-cita-a-las-notas.mjs`, ni pasándosela a otra
+sesión. Queda para quien tenga el permiso. Es UNA línea, en sitio y sin mover las demás.
+
+Mientras siga con el `>`, `scrum514` cae en 2 de sus 37 casos por esa línea y sólo por ésa, nombrada,
+y `scrum976` ④ con ellos.
 
 ## ⑥ Lo corrido
 

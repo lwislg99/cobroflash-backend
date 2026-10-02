@@ -95,6 +95,8 @@ const MUTACIONES = [
   { id: 'M24 la lista REAL crece: un texto mas declarado ajeno en una ficha con techo',
     de: "    '[PENDIENTE microcopy oficial] Nuevo albarán',\n  ]),", a: "    '[PENDIENTE microcopy oficial] Nuevo albarán',\n    'Nuevo albarán',\n  ]),",
     cae: 'TRINQUETE' },
+  // Mientras esa linea siga siendo una cita, la mutacion cae por «es de J1: se ARREGLA». El dia que
+  // se le quite el `>` caera por «la entrada SOBRA». El caso que cae es el mismo.
   { id: 'M25 la nota REAL de una ficha de este equipo (728, la usa un fichero de J1) se declara ajena',
     de: 'const NOTAS_AJENAS = [',
     a: "const NOTAS_AJENAS = [\n  { ficha: '2026-09-08-SCRUM-728-serie-ocupada.md', texto: 'No se pudo crear el albarán: **API 500: internal_error**', dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'src/modules/invoicing/domain/cerrojoSaturado.ts', motivo: 'Mutacion: la nota de una ficha cuyo texto usa un fichero de J1, declarada como si fuera de otro equipo.' },",
