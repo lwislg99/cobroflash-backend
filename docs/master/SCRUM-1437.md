@@ -17,7 +17,7 @@ A9: aviso → cicatriz S0 «Un selector por posición pulsa lo que haya en esa p
 |---|---|---|
 | 1 | Método escrito antes de la cifra, igual para los dos lados | Hecho (§1) |
 | 2 | Verifacturamos por dentro: cliente, presupuesto, conversión, envío y cobro, con cifras y capturas | Hecho hasta el botón: «Enviar», «WhatsApp» y «Emitir» no pulsados (§4, §6) |
-| 3 | YaQu medido igual y EN PANTALLA | **NO HECHO.** Leído en código; la cuenta de QA la renueva el fundador |
+| 3 | YaQu medido igual y EN PANTALLA | **NO HECHO.** Leído en código. Con la cuenta de QA renovada (16:37Z) se abrió el inicio; el clasificador de permisos denegó pulsar y teclear en producción, y no se ha rodeado |
 | 4 | Tabla de tres columnas con el dato de pasos arriba | Hecho (§2, §3), con la columna «nosotros» sin ver en pantalla |
 | 5 | Dicho qué se vio y qué no | Hecho (§6) |
 | 6 | Sin copiar código, textos ni plantillas | Hecho |

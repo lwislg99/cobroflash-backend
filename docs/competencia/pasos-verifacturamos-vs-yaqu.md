@@ -4,8 +4,8 @@
 > **Verifacturamos: VISTO POR DENTRO** el 2-oct-2026 con la cuenta de prueba autorizada (plan «Prueba», sin
 > firma electrónica), capturas `docs/competencia/capturas/verifacturamos/pasos-NN-*.png`.
 > **YaQu: CÓDIGO, NO PANTALLA** — leído en `origin/main` = `f30b1a4052957e245ebe1cfef53bbef410c5816b`. La cuenta
-> de QA de yaqu.app está caducada y la renueva el fundador; hasta entonces ninguna cifra de la columna
-> «nosotros» está vista en pantalla.
+> de QA volvió a estar viva a las 16:37Z, pero de yaqu.app solo se pudo abrir el inicio (§6): ninguna cifra
+> de la columna «nosotros» está vista en pantalla.
 > Todo texto de pantalla ajeno citado aquí es dato de mercado, no propuesta (regla 39). Lo fiscal es dato, no
 > propuesta. Este documento no recomienda qué copiar.
 
@@ -110,7 +110,7 @@ Fallo suyo visto dos veces: al convertir, el aviso dice «Factura null creada».
 
 | Qué | Por qué |
 |---|---|
-| Todo YaQu en pantalla | Cuenta de QA caducada; la renueva el fundador |
+| YaQu en pantalla, salvo el inicio | El fundador renovó la cuenta de QA el 2-oct-2026 a las 16:37Z. Con ella se abrió **solo el inicio** de yaqu.app (lectura, con toda petición que no fuera de lectura cortada): confirma los tres botones de «Acciones rápidas» (presupuesto «en 30 segundos», añadir cliente, pendientes de cobro) y que no hay entrada directa al editor completo. El siguiente paso —abrir el presupuesto rápido y teclear en él, sin enviar— lo **denegó el clasificador de permisos** de la sesión por tocar producción. No se ha rodeado: lo autoriza el fundador o lo recorre él |
 | Lo que hay detrás de «Enviar» y de «WhatsApp» en Verifacturamos | No se pulsa: enviar es enviar |
 | «Emitir factura» y la firma electrónica de Verifacturamos | No se pulsa; emitir remite a la AEAT |
 | Si Verifacturamos tiene un control para marcar una factura pagada | No apareció en una factura emitida sin enviar; puede aparecer en otro estado |
