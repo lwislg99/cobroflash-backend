@@ -44,7 +44,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -459,7 +459,7 @@ async function invocarDetalle({ job, quote }) {
     setHeader() { return this; },
   };
   const hs = capa.route.stack;
-  await hs[hs.length - 1].handle({ params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }, res, () => {});
+  await hs[hs.length - 1].handle(reqDeSesion({ rol: 'admin', params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }), res, () => {});
   return { salida, wheres };
 }
 

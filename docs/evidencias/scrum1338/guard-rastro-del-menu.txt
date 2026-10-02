@@ -1,0 +1,25 @@
+guard:rastro-del-menu (navegador de verdad, sesion de ADMIN simulada) sobre la rama de SCRUM-1338, arbol de trabajo encima de 8939b4faaf78c11f23a40cb016c089caa4f3d2f9.
+J4e · 2026-10-01, despues de la lectura de GitHub 07:58:40Z · en primer plano, 4.801 MB libres medidos antes · 10 s · salida 0.
+Es el UNICO guard de navegador que se corrio (1 de los 37 de guards:visuales). Mide que al ADMIN el menu le sigue llevando a sus 18 destinos; NO mide al operario.
+
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+destinos del menú: 18
+
+════════ POR EL MENÚ (lo que hace el profesional) ════════
+  hash coherente con el destino: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL POSITIVO · por `renderAppView` ════════
+  hash coherente: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL NEGATIVO · hash inventado ════════
+  vista: settings · nodos pintados: 186
+
+════════ «ATRÁS», PULSADO DE VERDAD ════════
+  clientes → productos → informes  (estoy en: reports)
+  atrás → vista products · hash products
+  atrás → vista customers · hash customers
+
+✓ los 17 destinos dejan rastro, «atrás» vuelve, y un hash inventado no rompe nada.
+EXIT=0

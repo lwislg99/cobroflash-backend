@@ -19,7 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
-import { withMerchant } from './_merchant-fixture.mjs';
+import { withMerchant } from './_merchant-fixture.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const URL_BANCO = process.env.LIBRO_PG_URL || '';
 const ENABLED = URL_BANCO !== '';
@@ -52,7 +52,7 @@ function llamarVat(router, merchantId, year, quarter) {
   assert.ok(capa, '🔴 la ruta /vat ya no existe en el router de Informes.');
   return new Promise((resolve, reject) => {
     capa.route.stack[0].handle(
-      { merchantId, query: { year, quarter } },
+      reqDeSesion({ rol: 'admin', merchantId, query: { year, quarter } }),
       { json: resolve, status: (c) => ({ json: (b) => reject(new Error(`HTTP ${c}: ${JSON.stringify(b)}`)) }) },
       reject,
     );

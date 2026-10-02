@@ -1,0 +1,45 @@
++0.2s BANCO SCRUM-1391 · puerta «censo-mudez (con FORCE_COLOR)» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.4s copia en C:\Users\JAVIER~1\AppData\Local\Temp\scrum1391-mudez-lfcEcR · scripts/censo-mudez.mjs sha256 2fb19f312d7badc1 (el del árbol: 2fb19f312d7badc1)
++0.5s POBLACION: 20 guards de mentira = 16 vivos + 1 mudo (control) + 1 que sólo nombra el filtro + 1 MUDO que tarda 200 s sólo al mutar + 1 que tarda 200 s siempre · plazo de la puerta 180000 ms
++182.7s censo-mudez terminó en 182 s · salida 0 · signal null · el filtro de la copia quedó idéntico: true
+      | Guards que mencionan el filtro de comentarios: 20
+      | 
+      | ① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro
+      |    llaman al filtro de verdad: 19 · sólo lo mencionan: 1
+      | 
+      | ② Pasada mutada — `soloEjecutable` devuelve la cadena vacía
+      | 
+      | ════════ VEREDICTO ════════
+      |   VIVO       0
+      |   MUDO       0
+      |   CIEGO      20
+      |   NO APLICA  0
+      |   YA ROJO    0
+      | 
+      | ⚠️ CIEGOS — no ejecutaron ni un test. Verde por no mirar:
+      |     c1-lento-siempre.test.mjs
+      |     m1-mudo-control.test.mjs
+      |     m2-mudo-lento-al-mutar.test.mjs
+      |     n1-no-aplica-control.test.mjs
+      |     v01-vivo.test.mjs
+      |     v02-vivo.test.mjs
+      |     v03-vivo.test.mjs
+      |     v04-vivo.test.mjs
+      |     v05-vivo.test.mjs
+      |     v06-vivo.test.mjs
+      |     v07-vivo.test.mjs
+      |     v08-vivo.test.mjs
+      |     v09-vivo.test.mjs
+      |     v10-vivo.test.mjs
+      |     v11-vivo.test.mjs
+      |     v12-vivo.test.mjs
+      |     v13-vivo.test.mjs
+      |     v14-vivo.test.mjs
+      |     v15-vivo.test.mjs
+      |     v16-vivo.test.mjs
+      | 
+      | ✓ `tests/_guard-texto.mjs` comprobado idéntico al original.
+      | 
++182.7s copia desmontada: enlace quitado=true · node_modules de verdad intacto=true · carpeta borrada=true
+VEREDICTO-PUERTA {"puerta":"censo-mudez","variante":"con FORCE_COLOR=3","ejercitada":true,"forma":null,"frase":"con el color que heredan las sesiones: VIVO 0 · MUDO 0 · CIEGO 20 · salida 0"}
+EXIT=0

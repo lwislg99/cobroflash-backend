@@ -1,0 +1,25 @@
+POBLACIÓN: 150 runs del workflow CI · del 2026-10-01T10:31:56Z al 2026-10-01T16:33:37Z
+  meta-guard por conclusión: in_progress 1 · success 57 · cancelled 29 · failure 26 · sin job 36 · ERROR 1
+  juzgables (success, o failure con el log leído): 83 de 150
+  ANTES de #2114 (2026-10-01T15:45:38Z): 81 juzgables · scrum859 CIEGO en 18 (22 %) · otros rojos del meta-guard 7
+      2026-10-01T15:34:57Z run 36885380576 pull_request scrum-1339b-comparacion-y-discriminador · vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T15:10:16Z run 36882137364 pull_request scrum-1341-actividad-del-equipo-sin-importes · vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T13:59:22Z run 36872822042 pull_request scrum-1365-collect-rest-solo-aceptados · vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T13:53:13Z run 36872039381 push main · vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T13:18:13Z run 36867693006 pull_request scrum-1285-plan-de-cobro-version-pantalla · vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T13:17:19Z run 36867585600 pull_request scrum-1363-tests-que-cubren · vivas 382 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T13:07:49Z run 36866436425 push main · vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T12:39:55Z run 36863272671 push main · vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T12:19:58Z run 36861048272 pull_request scrum-1354-dueno-de-la-marca · vivas 378 · mudas 0 · ciegas 1 · ficheros muertos 1 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T12:16:56Z run 36860717695 pull_request scrum-1285b-plan-de-cobro-con-version · vivas 379 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T11:37:30Z run 36856531526 pull_request scrum-1302-firma-directa-ya-registrada · vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T11:33:52Z run 36856153621 pull_request scrum-1285b-plan-de-cobro-con-version · vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T11:33:45Z run 36856141923 push main · vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T11:04:52Z run 36853108354 pull_request scrum-1298-mesa-por-puesto · vivas 367 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T10:56:12Z run 36852203473 push main · vivas 365 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T10:42:58Z run 36850853893 pull_request scrum-1295-carriles-e-identidad · vivas 365 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T10:34:40Z run 36850003623 pull_request scrum-1289b-reporters-como-argumentos · vivas 364 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+      2026-10-01T10:32:03Z run 36849735010 pull_request scrum-1348-auditoria-de-cierres · vivas 364 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+  DESPUÉS de #2114 (2026-10-01T15:45:38Z): 2 juzgables · scrum859 CIEGO en 1 (50 %) · otros rojos del meta-guard 0
+      2026-10-01T15:45:42Z run 36886780786 push main · vivas 404 · mudas 0 · ciegas 1 · ficheros muertos 0 · FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+EXIT=0

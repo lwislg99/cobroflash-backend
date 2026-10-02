@@ -47,6 +47,7 @@ const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -163,7 +164,21 @@ function celdaLlegaConSuEtiqueta(t, textoCelda, etiqueta) {
 }
 
 const log = (...a) => console.log(...a);
-let fallos = 0;
+
+// ── SCRUM-1336 · «NO SUPE MIRAR» NO ES «HE MIRADO Y ESTÁ MAL» ────────────────────────────────
+// Aquí había UNA cuenta (`fallos`) para las dos cosas, y un «NO SUPE MIRAR» salía con el mismo 1
+// que una celda sin su columna. Visto correr (docs/master/evidencias/scrum1336/): sin la sección en
+// la página, en los dos anchos, salía 1 y decía «2 problema(s)». Quien lo viera buscaba una celda
+// mal etiquetada donde sólo había un guard que no encontró qué medir.
+// Ahora son dos listas y el código lo da `veredictoDe`: 1 si hay hallazgos, 2 si sólo hay ciegos.
+// Van en el módulo y no dentro de cada ancho a propósito: si un ancho LANZA a mitad, lo que ya
+// había encontrado no se pierde.
+const hallazgos = [];
+const ciegos = [];
+const hallazgo = (texto) => { console.error(texto); hallazgos.push(texto); };
+const noSupeMirar = (texto) => { console.error(texto); ciegos.push(texto); };
+/** Lo que devuelve cada ancho a `recorrerCasos`: sus cuentas ya están apuntadas arriba. */
+const YA_APUNTADO = Object.freeze({ hallazgos: Object.freeze([]), ciegos: Object.freeze([]) });
 
 const srv = servidor();
 // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
@@ -186,7 +201,8 @@ try {
   log('Guard de accesibilidad de la comparativa (SCRUM-541)');
   log('Árbitro: el árbol de accesibilidad renderizado, no el marcado.\n');
 
-  for (const ancho of ANCHOS) {
+  // `recorrerCasos` y no un `for`: un ancho que lanza es un ciego de ESE ancho, y el otro se mide igual.
+  const recorrido = await recorrerCasos(ANCHOS, async (ancho) => {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
@@ -211,18 +227,18 @@ try {
 
     // ── SUELO ①: ¿estoy midiendo lo que creo? ──────────────────────────────────
     if (!estado || !estado.filas) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: no encuentro la sección #comparativa ni sus filas.`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: no encuentro la sección #comparativa ni sus filas.`);
+      await page.close(); return YA_APUNTADO;
     }
     // ── SUELO ②: ¿se aplicó el CSS? El grid tiene que EXISTIR a 1280 y NO existir a 360.
     const hayGrid = estado.grid !== 'none' && estado.grid.split(' ').length === 3;
     if (ancho >= 641 && !hayGrid) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: se esperaba grid de 3 columnas y llegó «${estado.grid}». ¿Se sirvió el CSS?`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: se esperaba grid de 3 columnas y llegó «${estado.grid}». ¿Se sirvió el CSS?`);
+      await page.close(); return YA_APUNTADO;
     }
     if (ancho < 641 && hayGrid) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: NO debería haber grid y llegó «${estado.grid}».`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: NO debería haber grid y llegó «${estado.grid}».`);
+      await page.close(); return YA_APUNTADO;
     }
 
     // ── SUELO ③ · CALIBRACIÓN: ¿el medidor SABE LEER? ────────────────────────
@@ -230,8 +246,8 @@ try {
     // leería como un defecto de la página en vez de como un medidor mudo.
     const cal = await calibrar(page);
     if (!cal.ok) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: la calibración devolvió «${cal.nombre}» y se esperaba «uno dos».`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: la calibración devolvió «${cal.nombre}» y se esperaba «uno dos».`);
+      await page.close(); return YA_APUNTADO;
     }
 
     // Lo que se oye de cada celda, preguntándoselo al algoritmo accname del navegador.
@@ -243,15 +259,15 @@ try {
     // sí, el verde de abajo no valdría nada y es preferible no dar veredicto.
     const prueba = celdaLlegaConSuEtiqueta(seOyen[0], estado.celdas[0].texto, 'ETIQUETA QUE NO EXISTE');
     if (prueba.ok) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: el detector aprueba una etiqueta INVENTADA. No sabe fallar.`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: el detector aprueba una etiqueta INVENTADA. No sabe fallar.`);
+      await page.close(); return YA_APUNTADO;
     }
     // ── SUELO ⑤: y tiene que saber decir que SÍ cuando el texto está. Sin este control
     // positivo, un detector que devolviera siempre `false` pasaría el ④ y parecería riguroso.
     const pruebaSi = celdaLlegaConSuEtiqueta(seOyen[0], estado.celdas[0].texto, estado.celdas[0].texto.slice(0, 10));
     if (!pruebaSi.ok && !pruebaSi.motivo.includes('PEGADA')) {
-      console.error(`🔴 NO SUPE MIRAR a ${ancho}px: el detector rechaza algo que SÍ está en la celda. Sólo sabe decir que no.`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`🔴 NO SUPE MIRAR a ${ancho}px: el detector rechaza algo que SÍ está en la celda. Sólo sabe decir que no.`);
+      await page.close(); return YA_APUNTADO;
     }
 
     log(`── ${ancho}px · ${estado.filas} filas · grid: ${hayGrid ? estado.grid : 'no hay (apilado)'}`);
@@ -263,23 +279,29 @@ try {
       const etiqueta = COLUMNAS[celda.columna];
       const r = celdaLlegaConSuEtiqueta(seOyen[i], celda.texto, etiqueta);
       if (r.ok) { okAncho++; if (!ejemplo) ejemplo = r.seOye; }
-      else {
-        console.error(`   ✖ fila "${celda.fila}" · columna «${etiqueta}» → ${r.motivo}`);
-        fallos++;
-      }
+      else hallazgo(`   ✖ @${ancho}px · fila "${celda.fila}" · columna «${etiqueta}» → ${r.motivo}`);
     }
     log(`   ✔ ${okAncho}/${estado.celdas.length} celdas llegan con su etiqueta de columna asociada`);
     if (ejemplo) log(`     se oye: «${ejemplo}»`);
     log('');
     await page.close();
-  }
+    return YA_APUNTADO;
+  }, (ancho) => `${ancho}px`);
+  // Lo que apunta el propio recorrido: un ancho que LANZÓ, o que no se recorrió ninguno.
+  for (const c of recorrido.ciegos) noSupeMirar(`🔴 NO SUPE MIRAR a ${c}`);
 } finally {
   await navegador.close();
   srv.close();
 }
 
-if (fallos) {
-  console.error(`\n🔴 ${fallos} problema(s). En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.`);
-  process.exit(1);
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  if (hallazgos.length) console.error(`\n🔴 ${hallazgos.length} celda(s) mal. En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.`);
+  if (ciegos.length) console.error(`\n🔴 NO SUPE MIRAR ${ciegos.length} vez/veces: de eso no se da veredicto, ni bueno ni malo.`);
+  console.error(veredictoFinal.linea);
+  process.exit(veredictoFinal.codigo);
 }
 console.log('✓ En los dos anchos, cada celda llega con su etiqueta de columna asociada.');
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log(veredictoFinal.linea);

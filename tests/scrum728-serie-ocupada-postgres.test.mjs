@@ -40,7 +40,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
-import { withMerchant } from './_merchant-fixture.mjs';
+import { withMerchant } from './_merchant-fixture.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -86,10 +86,10 @@ function pedir(jobId, merchantId) {
   res.status = (c) => { res.code = c; return res; };
   res.json = (b) => { res.cuerpo = b; return res; };
   res.send = (b) => { res.cuerpo = b; return res; };
-  const req = {
+  const req = reqDeSesion({ rol: 'admin',
     params: { id: String(jobId) }, merchantId, teamMemberId: null, query: {},
     body: { modoValoracion: 'SIN_VALORAR', notas: 'sonda 728' },
-  };
+  });
   return handler(req, res, (e) => { throw e; })
     .then(() => ({ code: res.code, cuerpo: res.cuerpo }))
     .catch((e) => ({ code: 'EXCEPCION SIN CAPTURAR', cuerpo: { name: e.name, code: e.code } }));

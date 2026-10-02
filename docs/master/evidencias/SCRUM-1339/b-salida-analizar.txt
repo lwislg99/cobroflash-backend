@@ -1,0 +1,53 @@
+POBLACIÓN: 99 artefactos · con TAP en disco 99
+① ENTEROS (0 NUL, 1 resumen, líneas ok = # tests): 81 de 99
+   no enteros: 18 · con NUL 14 · el último no entero: 2026-10-01T14:01:04Z · el primero entero: 2026-10-01T10:32:12Z
+   no entero SIN NUL: 11153959409 2026-10-01T10:27:57Z resumenes=0 tests=null lineasOk=3099 cancelled
+   no entero SIN NUL: 11156074609 2026-10-01T11:06:25Z resumenes=0 tests=null lineasOk=2978 cancelled
+   no entero SIN NUL: 11156501959 2026-10-01T11:06:46Z resumenes=0 tests=null lineasOk=7616 cancelled
+   no entero SIN NUL: 11168056827 2026-10-01T14:01:04Z resumenes=0 tests=null lineasOk=4952 cancelled
+② SEÑAL POR NOMBRES sobre el TAP del job: árbol probado resuelto en 79 de 81 enteros
+   sin árbol: {"— (sin log)":2}
+   jobs con 0 nombres ausentes: 43 · con alguno: 36
+   de los 36: verdes (success) 23 · fail=0 en la tanda 28
+   11155370047 run 36849042279 [1/1] pull_request failure tests=9589 fail=3 faltan=42 → vigia-atascados.test.mjs×42/64:cola
+   11156229790 run 36851820389 [1/1] pull_request failure tests=9602 fail=2 faltan=40 → scrum161-evidencia-tanda.test.mjs×2/22:cola scrum522-guards-fuera-de-la-tanda.test.mjs×7/17:cola vigia-atascados.test.mjs×31/64:cola
+   11156727644 run 36852825128 [1/1] pull_request success tests=9624 fail=0 faltan=34 → scrum813-trinquete-de-zona.test.mjs×10/28:cola vigia-atascados.test.mjs×24/64:cola
+   11158721194 run 36853168880 [1/1] pull_request failure tests=9638 fail=0 faltan=11 → scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada scrum834-puerta-avisador-rojo.test.mjs×3/53:cola
+   11157833830 run 36855923508 [1/1] pull_request success tests=9654 fail=0 faltan=10 → scrum176-guard-mensaje.test.mjs×7/11:cola scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11158944035 run 36856531526 [1/1] pull_request failure tests=9696 fail=2 faltan=3 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11160490269 run 36856729105 [1/1] pull_request failure tests=9716 fail=4 faltan=3 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11161251226 run 36859091123 [1/1] pull_request failure tests=9678 fail=2 faltan=30 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola scrum834-puerta-avisador-rojo.test.mjs×9/53:cola vigia-atascados.test.mjs×18/64:cola
+   11161812993 run 36860067926 [1/1] push success tests=9706 fail=0 faltan=5 → scrum286-bloques-orden.test.mjs×5/24:cola
+   11161313790 run 36860261197 [1/1] pull_request success tests=9703 fail=0 faltan=3 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11161828771 run 36860171227 [1/2] pull_request failure tests=9711 fail=0 faltan=8 → scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+   11161319227 run 36860610412 [1/1] pull_request failure tests=9706 fail=1 faltan=4 → scrum524b-trinquete-de-la-tabla.test.mjs×1/12:cola scrum888g-senal-en-la-firma.test.mjs×3/10:cola
+   11162145171 run 36860717695 [1/1] pull_request success tests=9710 fail=0 faltan=6 → scrum1262-la-baja-corta-todas-las-vias.test.mjs×1/10:cola scrum312-importador-clientes.test.mjs×5/27:cola
+   11162485750 run 36861121169 [1/1] pull_request success tests=9714 fail=0 faltan=1 → scrum524b-trinquete-de-la-tabla.test.mjs×1/12:cola
+   11163236187 run 36861263916 [1/1] pull_request success tests=9695 fail=0 faltan=23 → vigia-atascados.test.mjs×23/64:cola
+   11162202016 run 36862095124 [1/1] pull_request success tests=9707 fail=0 faltan=5 → scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola
+   11163032993 run 36860171227 [2/2] pull_request success tests=9717 fail=0 faltan=1 → scrum1323-resumen-vs-detalle-sif1.test.mjs×1/14:cola
+   11162069344 run 36862419563 [1/1] pull_request success tests=9705 fail=0 faltan=23 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola scrum834-puerta-avisador-rojo.test.mjs×14/53:cola scrum931-un-solo-importe-de-plantilla.test.mjs×6/13:cola
+   11161994827 run 36863578275 [1/2] pull_request failure tests=9763 fail=0 faltan=8 → scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+   11164124022 run 36863578275 [2/2] pull_request success tests=9755 fail=0 faltan=12 → scrum1323-resumen-vs-detalle-sif1.test.mjs×4/14:cola scrum312-importador-clientes.test.mjs×5/27:cola scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11165470653 run 36866436425 [1/1] push success tests=9770 fail=0 faltan=9 → scrum834-puerta-avisador-rojo.test.mjs×9/53:cola
+   11164922920 run 36867966094 [1/1] pull_request cancelled tests=9764 fail=0 faltan=10 → scrum454-destructivo-sin-comprobacion.test.mjs×6/14:cola vigia-atascados.test.mjs×4/64:cola
+   11164958708 run 36868204270 [1/1] pull_request success tests=9767 fail=0 faltan=35 → scrum834-puerta-avisador-rojo.test.mjs×35/53:cola
+   11166322806 run 36868764493 [1/1] push success tests=9793 fail=0 faltan=2 → scrum996-suelo-de-arranque.test.mjs×2/22:cola
+   11166563147 run 36869452118 [1/1] pull_request success tests=9805 fail=0 faltan=3 → scrum522-guards-fuera-de-la-tanda.test.mjs×3/17:cola
+   11165494538 run 36869390442 [1/1] pull_request success tests=9776 fail=0 faltan=32 → scrum834-puerta-avisador-rojo.test.mjs×32/53:cola
+   11167975771 run 36871008807 [1/1] pull_request failure tests=9833 fail=1 faltan=5 → scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola
+   11168271951 run 36871031378 [1/1] pull_request failure tests=9814 fail=1 faltan=25 → scrum834-puerta-avisador-rojo.test.mjs×25/53:cola
+   11168560474 run 36871803226 [1/1] pull_request success tests=9833 fail=0 faltan=4 → scrum1323-resumen-vs-detalle-sif1.test.mjs×4/14:cola
+   11167468696 run 36872039381 [1/1] push success tests=9826 fail=0 faltan=3 → scrum524b-trinquete-de-la-tabla.test.mjs×3/12:cola
+   11167474519 run 36872559721 [1/1] pull_request success tests=9841 fail=0 faltan=2 → scrum996-suelo-de-arranque.test.mjs×2/22:cola
+   11167739879 run 36872847972 [1/1] pull_request failure tests=9833 fail=0 faltan=13 → scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola scrum237-negacion-respaldada.test.mjs×8/8:ENTERO+entrada
+   11168955893 run 36873341958 [1/1] pull_request success tests=9817 fail=0 faltan=22 → scrum834-puerta-avisador-rojo.test.mjs×22/53:cola
+   11169631306 run 36873132718 [1/1] pull_request success tests=9827 fail=0 faltan=31 → vigia-atascados.test.mjs×31/64:cola
+   11170030913 run 36873487461 [1/1] pull_request success tests=9842 fail=0 faltan=8 → scrum1350-latido.test.mjs×8/32:cola
+   11169263288 run 36872965725 [1/1] pull_request success tests=9828 fail=0 faltan=17 → scrum1262-la-baja-corta-todas-las-vias.test.mjs×5/10:cola scrum834-puerta-avisador-rojo.test.mjs×2/53:cola vigia-atascados.test.mjs×10/64:cola
+③ ENTRADAS DE FICHERO en TAP enteros: 4 jobs
+   11158721194 run 36853168880 [1/1] failure → scrum237-negacion-respaldada.test.mjs@2002ms
+   11161828771 run 36860171227 [1/2] failure → scrum237-negacion-respaldada.test.mjs@3683ms
+   11161994827 run 36863578275 [1/2] failure → scrum237-negacion-respaldada.test.mjs@2243ms
+   11167739879 run 36872847972 [1/1] failure → scrum237-negacion-respaldada.test.mjs@2725ms
+EXIT=0

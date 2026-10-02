@@ -1,0 +1,121 @@
+// Banco de SCRUM-1388 · ¿el test del ticket CAE cuando el defecto vuelve?
+//
+// Por cada mutación: se aplica sobre el árbol (ruta absoluta), se comprueba que ENTRÓ (el fichero
+// cambió y `git diff --numstat` lo dice), se corre el test del ticket en un proceso hijo con el
+// entorno hecho a mano, y se restaura con `git restore --source=HEAD`. Al final el árbol tiene que
+// quedar limpio, y se comprueba.
+//
+// La primera fila es la BASE sin mutar: sin ella, un test inestable se lee como un mutante muerto.
+//
+// Uso (desde fuera del árbol, con TODO comiteado):  node banco-rojos.mjs <raíz del árbol> <sha de la vista de antes>
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync, spawnSync } from 'node:child_process';
+
+const raiz = path.resolve(process.argv[2] || '');
+const shaAntes = process.argv[3];
+const fin = (c) => { console.log('EXIT=' + c); process.exit(c); };
+if (!fs.existsSync(path.join(raiz, '.git')) || !shaAntes) { console.log('CIEGO: faltan la raíz del árbol o el sha de antes'); fin(2); }
+const git = (...a) => execFileSync('git', a, { cwd: raiz, encoding: 'utf8' });
+if (git('status', '--porcelain').trim() !== '') { console.log('CIEGO: el árbol no está limpio; comitea antes de mutar'); fin(2); }
+
+const VISTA = 'public/dashboard/js/facturasRecibidasView.js';
+const FICHA = 'docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md';
+const TEST = 'tests/scrum1388-facturas-recibidas-literales-firmados.test.mjs';
+const abs = (rel) => path.join(raiz, rel);
+
+/** Sustituye UNA aparición exacta; lanza si no está o si está más de una vez. */
+function cambiar(rel, de, a) {
+  const s = fs.readFileSync(abs(rel), 'utf8');
+  const n = s.split(de).length - 1;
+  if (n !== 1) throw new Error(`la diana aparece ${n} veces en ${rel}: «${de.slice(0, 50)}»`);
+  fs.writeFileSync(abs(rel), s.replace(de, a));
+}
+
+const MUTACIONES = [
+  { id: 'BASE · sin mutar', hacer: null, cae: [] },
+  { id: 'M1 · la vista entera de ANTES (' + shaAntes.slice(0, 8) + ')',
+    hacer: () => fs.writeFileSync(abs(VISTA), execFileSync('git', ['show', shaAntes + ':' + VISTA], { cwd: raiz })),
+    cae: ['CUATRO literales', 'singular', '403', 'red caída', '500', 'sin `miradas`', 'NO se confunden', 'ninguna marca'] },
+  { id: 'M2 · el cartel de error deja de añadirse', hacer: () => cambiar(VISTA,
+    "aviso.textContent = COPY.error;\n      body.appendChild(aviso);", "aviso.textContent = COPY.error;"),
+    cae: ['403', 'red caída', '500', 'sin `miradas`', 'NO se confunden'] },
+  { id: 'M3 · el cartel pierde el tono (el CSS lo oculta)', hacer: () => cambiar(VISTA, "'alert error fr-alert'", "'alert fr-alert'"),
+    cae: ['403', 'red caída', '500', 'sin `miradas`'] },
+  { id: 'M4 · el descuadre se funde con el vacío', hacer: () => cambiar(VISTA,
+    "if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');", "if (false) avisar(COPY.descuadre(libro.miradas), 'warning');"),
+    cae: ['NO se confunden'] },
+  { id: 'M5 · vuelve el párrafo con `err.message` bajo el cartel', hacer: () => {
+    cambiar(VISTA, "} catch {\n        pintarError();", "} catch (err) {\n        pintarError(err);");
+    cambiar(VISTA, "function pintarError() {", "function pintarError(err) {");
+    cambiar(VISTA, "aviso.textContent = COPY.error;\n      body.appendChild(aviso);",
+      "aviso.textContent = COPY.error;\n      body.appendChild(aviso);\n      const d = document.createElement('p');\n      d.textContent = String((err && err.message) || '');\n      body.appendChild(d);");
+  }, cae: ['403', 'red caída', '500'] },
+  { id: 'M6 · una palabra distinta en `error`', hacer: () => cambiar(VISTA, "error: 'No hemos podido cargar", "error: 'No se han podido cargar"),
+    cae: ['CUATRO literales', '403', 'red caída', '500', 'sin `miradas`'] },
+  { id: 'M7 · el descuadre pierde el singular', hacer: () => cambiar(VISTA, "(miradas === 1 ? ' gasto' : ' gastos')", "(' gastos')"),
+    cae: ['singular'] },
+  { id: 'M8 · el descuadre se acorta (sin el porqué)', hacer: () => cambiar(VISTA, " No lo tomes como que no compraste: puede que no hayamos sabido leer alguno.'", "'"),
+    cae: ['CUATRO literales', 'singular', 'NO se confunden'] },
+  { id: 'M9 · vuelve la marca de pendiente al título', hacer: () => cambiar(VISTA, "titulo: 'Facturas recibidas',", "titulo: '[PENDIENTE microcopy oficial] Facturas recibidas',"),
+    cae: ['CUATRO literales', 'ninguna marca'] },
+  { id: 'M10 · la ficha deja de llevar la firma del fundador', hacer: () => cambiar(FICHA, '**Aprobado por el fundador**', '**Aprobado por el orquestador**'),
+    cae: ['SU ficha'] },
+  { id: 'M11 · se toca una ranura que el ticket prohíbe (`etiquetaAnio`)', hacer: () => cambiar(VISTA, "etiquetaAnio: 'Año',", "etiquetaAnio: 'Ejercicio',"),
+    cae: ['no se ha tocado'] },
+];
+
+// El entorno del hijo, a mano: heredar el del padre mete el color y el contexto de `node --test`.
+const ENTORNO = {};
+for (const k of ['PATH', 'Path', 'SystemRoot', 'TEMP', 'TMP', 'USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA', 'ComSpec', 'PATHEXT']) {
+  if (process.env[k]) ENTORNO[k] = process.env[k];
+}
+
+function correr() {
+  const tap = path.join(os.tmpdir(), 'scrum1388-banco-' + process.pid + '.tap');
+  fs.rmSync(tap, { force: true });
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', '--test-reporter-destination=' + tap, TEST],
+    { cwd: raiz, env: ENTORNO, encoding: 'utf8' });
+  const texto = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
+  fs.rmSync(tap, { force: true });
+  const casos = [...texto.matchAll(/^(ok|not ok) \d+ - (.*)$/gm)].map((m) => ({ ok: m[1] === 'ok', nombre: m[2] }));
+  return { salida: r.status, casos };
+}
+
+console.log('BANCO SCRUM-1388 · POBLACIÓN: ' + MUTACIONES.length + ' filas (1 base + ' + (MUTACIONES.length - 1) + ' mutaciones) · HEAD ' + git('rev-parse', 'HEAD').trim());
+let mudas = 0; let ciegas = 0; let totalBase = null;
+for (const m of MUTACIONES) {
+  let aplicada = '(sin cambios)';
+  try {
+    if (m.hacer) {
+      m.hacer();
+      aplicada = git('diff', '--numstat').trim().replace(/\s+/g, ' ');
+      if (!aplicada) { console.log('CIEGA  ' + m.id + ' → la mutación no cambió nada'); ciegas++; continue; }
+    }
+    const r = correr();
+    if (!r.casos.length) { console.log('CIEGA  ' + m.id + ' → el test no produjo ni un caso (salida ' + r.salida + ')'); ciegas++; continue; }
+    if (totalBase === null) totalBase = r.casos.length;
+    const rojos = r.casos.filter((c) => !c.ok).map((c) => c.nombre);
+    const esperadosSinCaer = m.cae.filter((trozo) => !rojos.some((n) => n.includes(trozo)));
+    const inesperados = rojos.filter((n) => !m.cae.some((trozo) => n.includes(trozo)));
+    let veredicto;
+    if (!m.hacer) veredicto = rojos.length === 0 ? 'VERDE ' : 'ROTA  ';
+    else if (rojos.length === 0) { veredicto = 'MUDA  '; mudas++; }
+    else veredicto = 'VIVA  ';
+    console.log(veredicto + ' ' + m.id + ' · numstat: ' + aplicada + ' · casos ' + r.casos.length + ' · rojos ' + rojos.length + ' · salida ' + r.salida);
+    for (const n of rojos) console.log('         ✖ ' + n);
+    if (esperadosSinCaer.length) console.log('         ⚠ esperaba que cayera y NO cayó: ' + esperadosSinCaer.join(' · '));
+    if (inesperados.length) console.log('         ⚠ cayó sin que lo esperase: ' + inesperados.length);
+    if (r.casos.length !== totalBase) console.log('         ⚠ casos ' + r.casos.length + ' ≠ los ' + totalBase + ' de la base: algún caso no llegó a informar');
+    if (!m.hacer && rojos.length) { console.log('CIEGO: la base no está verde; ninguna fila de abajo valdría'); fin(2); }
+  } catch (e) {
+    console.log('CIEGA  ' + m.id + ' → ' + String(e.message).slice(0, 160)); ciegas++;
+  } finally {
+    git('restore', '--source=HEAD', '--', VISTA, FICHA);
+  }
+}
+const sucio = git('status', '--porcelain').trim();
+console.log('árbol al terminar: ' + (sucio === '' ? 'limpio' : 'SUCIO → ' + sucio));
+console.log('mutaciones ' + (MUTACIONES.length - 1) + ' · mudas ' + mudas + ' · ciegas ' + ciegas);
+fin(sucio !== '' || ciegas ? 2 : mudas ? 1 : 0);

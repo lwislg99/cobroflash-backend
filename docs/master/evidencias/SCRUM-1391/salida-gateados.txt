@@ -1,0 +1,27 @@
++0.1s BANCO SCRUM-1391 · puerta «censo-guards-gateados» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.4s copia en C:\Users\JAVIER~1\AppData\Local\Temp\scrum1391-gateados-vCyErr · scripts/censo-guards-gateados.mjs sha256 353177e5a1936816 (el del árbol: 353177e5a1936816)
++0.7s POBLACION: 6 ficheros de mentira · 3 son gateados de verdad (g1, g4, g5) y los tres «declaran» · plazo de la puerta 300000 ms
++2.9s PASADA con esperas de 2000 ms · tardó 2.1 s
+      g1-gateado-control → {"reales":0,"saltados":2}
+      g2-real-control → {"reales":1,"saltados":0}
+      g3-real-lento-async → {"reales":1,"saltados":2}
+      g4-gateado-con-before-lento → {"reales":0,"saltados":2}
+      g5-gateado-que-muere → {"reales":1,"saltados":0}
+      g6-real-lento-sync → {"reales":1,"saltados":2}
++2.9s    el censo dice: gateados [g1, g4] · expuestos [g1, g4] · la verdad: gateados [g1, g4, g5] · expuestos [g1, g4, g5]
++62.9s … medirGateados sigue sin volver
++122.9s … medirGateados sigue sin volver
++182.9s … medirGateados sigue sin volver
++242.9s … medirGateados sigue sin volver
++302.9s … medirGateados sigue sin volver
++332.9s PASADA con esperas de 330000 ms · tardó 330.1 s
+      g1-gateado-control → {"reales":0,"saltados":2}
+      g2-real-control → {"reales":1,"saltados":0}
+      g3-real-lento-async → {"reales":1,"saltados":2}
+      g4-gateado-con-before-lento → {"reales":2,"saltados":0}
+      g5-gateado-que-muere → {"reales":1,"saltados":0}
+      g6-real-lento-sync → {"reales":1,"saltados":2}
++332.9s    el censo dice: gateados [g1] · expuestos [g1] · la verdad: gateados [g1, g4, g5] · expuestos [g1, g4, g5]
++333.0s copia desmontada: enlace quitado=true · node_modules de verdad intacto=true · carpeta borrada=true
+VEREDICTO-PUERTA {"puerta":"censo-guards-gateados","ejercitada":true,"forma":"inversa","frase":"bajo el plazo, el gateado con un `before` lento cuenta como gateado y expuesto; con el plazo vencido DESAPARECE de las dos listas; el gateado que muere al cargar no aparece en ninguna de las dos pasadas"}
+EXIT=0

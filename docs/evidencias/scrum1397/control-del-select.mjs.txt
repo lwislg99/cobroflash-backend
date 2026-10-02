@@ -1,0 +1,63 @@
+// Control de `huerfanas.sql.txt` (SCRUM-1397): se siembra UNA factura de cada clase en un banco
+// DESECHABLE y el SELECT tiene que contarlas como se sabe que son. Un SELECT que nadie ha visto
+// contar bien un caso conocido no se le pasa a quien tiene la base de verdad.
+//
+// Uso: copiar a un .mjs y `LIBRO_PG_URL=<banco> node <fichero> <raiz del arbol, con dist/>`.
+// El banco tiene que estar VACÍO de facturas (uno recién creado): el SELECT cuenta la base entera.
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const fin = (codigo, linea) => { if (linea) console.log(linea); console.log('EXIT=' + codigo); process.exit(codigo); };
+const raiz = process.argv[2];
+if (!raiz) fin(2, 'CIEGO: falta la raiz del arbol');
+const url = process.env.LIBRO_PG_URL || '';
+const u = url ? new URL(url) : null;
+if (!u || !['127.0.0.1', 'localhost'].includes(u.hostname) || !u.pathname.endsWith('_test')) fin(2, 'CIEGO: LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»)');
+process.env.DATABASE_URL = url;
+
+const { prisma } = await import(pathToFileURL(path.join(raiz, 'dist/core/db/prisma.js')).href);
+const sql = fs.readFileSync(path.join(raiz, 'docs/evidencias/scrum1397/huerfanas.sql.txt'), 'utf8');
+if (await prisma.invoice.count() !== 0) fin(2, 'CIEGO: el banco ya tiene facturas; el control necesita uno recién creado');
+
+const m = await prisma.merchant.create({ data: { country: 'ES', onboardingCompleted: true, name: 'Control 1397', email: `control-1397-${Date.now()}@test.local` } });
+const ana = await prisma.teamMember.create({ data: { merchantId: m.id, name: 'Ana', email: `control1397-${Date.now()}@test.local`, role: 'tecnico', status: 'active' } });
+const c = await prisma.customer.create({ data: { merchantId: m.id, name: 'C' } });
+let nq = 0;
+const presupuesto = (autorId, extra = {}) => prisma.quote.create({ data: { merchantId: m.id, customerId: c.id, total: '1', currency: 'EUR', lines: [], quoteNumber: ++nq, status: 'accepted', teamMemberId: autorId, ...extra } });
+const factura = (numero, extra = {}) => prisma.invoice.create({ data: { merchantId: m.id, customerId: c.id, number: numero, total: '1', currency: 'EUR', pdfUrl: 'PENDING_PDF', qrData: 'PENDING', quoteId: null, ...extra } });
+const trabajo = (extra = {}) => prisma.job.create({ data: { merchantId: m.id, customerId: c.id, ...extra } });
+const albaran = (jobId, numero, extra = {}) => prisma.albaran.create({ data: { merchantId: m.id, jobId, numero, lineas: [], ...extra } });
+
+// ── DE ALGUIEN (7) ──
+const q1 = await presupuesto(ana.id); await factura('ALGUIEN-autor', { quoteId: q1.id });
+const q2 = await presupuesto(null); await trabajo({ quoteId: q2.id, operarioId: ana.id }); await factura('ALGUIEN-trabajo-por-presupuesto', { quoteId: q2.id });
+const j3 = await trabajo({ assignedUserId: ana.id }); const f3 = await factura('ALGUIEN-albaran-entero'); await albaran(j3.id, 'A3', { invoiceId: f3.id });
+const j4 = await trabajo(); await prisma.jobAssignee.create({ data: { jobId: j4.id, teamMemberId: ana.id } });
+const a4 = await albaran(j4.id, 'A4'); const f4 = await factura('ALGUIEN-albaran-parcial');
+await prisma.albaranLineaFacturada.create({ data: { merchantId: m.id, albaranId: a4.id, lineaIndex: 0, invoiceId: f4.id, cantidad: '1' } });
+const f5 = await factura('ALGUIEN-asignada'); await prisma.invoiceAssignee.create({ data: { invoiceId: f5.id, teamMemberId: ana.id } });
+await factura('ALGUIEN-rectificativa-de-albaran', { type: 'R1', rectifiesId: f4.id });
+const q6o = await presupuesto(null); const j6 = await trabajo({ quoteId: q6o.id, operarioId: ana.id });
+const q6 = await presupuesto(null, { jobId: j6.id, esAdicional: true }); await factura('ALGUIEN-adicional', { quoteId: q6.id });
+// ── DE NINGÚN EJE, SIN ORIGEN (3): la suelta, la del cobro sin presupuesto y la rectificativa de una suelta ──
+const s1 = await factura('NADIE-suelta');
+await factura('NADIE-cobro-sin-presupuesto', { type: 'JUST' });
+await factura('NADIE-rectificativa-de-suelta', { type: 'R1', rectifiesId: s1.id });
+// ── DE NINGÚN EJE, DE LA OFICINA (3): tienen origen, pero sin nadie del equipo detrás ──
+const q7 = await presupuesto(null); await factura('OFICINA-presupuesto-sin-trabajo', { quoteId: q7.id });
+const q8 = await presupuesto(null); await trabajo({ quoteId: q8.id }); await factura('OFICINA-trabajo-sin-nadie', { quoteId: q8.id });
+const j9 = await trabajo(); const f9 = await factura('OFICINA-albaran-de-trabajo-sin-nadie'); await albaran(j9.id, 'A9', { invoiceId: f9.id });
+
+const [fila] = await prisma.$queryRawUnsafe(sql);
+const visto = Object.fromEntries(Object.entries(fila).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v]));
+const esperado = { total: 13, con_presupuesto: 5, de_alguien: 7, de_ningun_eje: 6, de_ningun_eje_y_sin_presupuesto_ni_albaran: 3, de_ningun_eje_y_de_la_oficina: 3 };
+console.log('POBLACION: 13 documentos sembrados, uno por clase · base: ' + visto.base);
+let mal = 0;
+for (const [k, v] of Object.entries(esperado)) {
+  const ok = visto[k] === v;
+  if (!ok) mal += 1;
+  console.log(`  ${ok ? 'ok ' : 'MAL'} ${k}: visto ${visto[k]} · esperado ${v}`);
+}
+await prisma.$disconnect();
+fin(mal ? 1 : 0, mal ? `🔴 el SELECT cuenta mal ${mal} cifra(s)` : 'el SELECT cuenta las trece como son');

@@ -1,0 +1,72 @@
+// SCRUM-1338 · mutaciones de FRONT: cada una estropea el producto y el guard tiene que caer.
+//   node mutar-1338.mjs <raiz ABSOLUTA del repo>
+// Base sin mutar primero. Tras cada mutación: `git restore --source=HEAD` y árbol limpio comprobado.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+
+const RAIZ = path.resolve(process.argv[2]);
+const TEST = 'tests/scrum1338-la-barra-del-operario-contra-los-gates.test.mjs';
+const entorno = { ...process.env };
+for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete entorno[k];
+const git = (...a) => spawnSync('git', a, { cwd: RAIZ, encoding: 'utf8' });
+
+function correr() {
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', TEST], { cwd: RAIZ, encoding: 'utf8', env: entorno });
+  const out = String(r.stdout || '');
+  const n = (k) => Number((new RegExp('^# ' + k + ' (\\d+)', 'm').exec(out) || [])[1] ?? NaN);
+  const caidos = [...out.matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1].slice(0, 110));
+  return { exit: r.status, tests: n('tests'), pass: n('pass'), fail: n('fail'), caidos, bytes: out.length };
+}
+
+const MUTACIONES = [
+  { nombre: 'M1 · Cobros nace SIN declarar (la entrada hacia un 403 vuelve a la vista)', f: 'public/dashboard/index.html',
+    de: '<button class="nav-item" data-view="cobros" id="nav-cobros" data-rol="admin">', a: '<button class="nav-item" data-view="cobros" id="nav-cobros">' },
+  { nombre: 'M2 · Clientes se le oculta al operario (se le quita algo suyo)', f: 'public/dashboard/index.html',
+    de: '<button class="nav-item" data-view="customers">', a: '<button class="nav-item" data-view="customers" data-rol="admin">' },
+  { nombre: 'M3 · aplicarRolALaBarra deja de ocultar', f: 'public/dashboard/js/app.js',
+    de: "if (el.dataset.rol === 'admin') el.style.display = 'none';\n    else visibles += 1;", a: 'visibles += 1;' },
+  { nombre: 'M4 · se quita el veto de la vista tecleada', f: 'public/dashboard/js/app.js',
+    de: "    if (vistaVedadaPorRol(document, window.appUserRole, view)) return renderView('home', options);\n", a: '    void 0;\n' },
+  { nombre: 'M5 · el rótulo de una sección vacía se queda pintado', f: 'public/dashboard/js/app.js',
+    de: "if (rotulo && visibles === 0) rotulo.style.display = 'none';", a: 'void 0;' },
+  { nombre: 'M6 · «Crear producto» vuelve a estar pulsable para el operario', f: 'public/dashboard/js/productsView.js',
+    de: "if (window.appUserRole !== 'admin' && createBtn) {", a: 'if (false && createBtn) {' },
+  { nombre: 'M7 · la barra se escribe como denylist de «tecnico»', f: 'public/dashboard/js/app.js',
+    de: "function aplicarRolALaBarra(documento, rol) {\n  if (rol === 'admin') return;", a: "function aplicarRolALaBarra(documento, rol) {\n  if (rol !== 'tecnico') return;" },
+  { nombre: 'M8 · initApp deja de aplicar el rol a la barra', f: 'public/dashboard/js/app.js',
+    de: '  aplicarRolALaBarra(document, window.appUserRole);\n', a: '  void 0;\n' },
+  { nombre: 'M9 · «Crear producto» deshabilitado pero SIN su nota', f: 'public/dashboard/js/productsView.js',
+    de: "      createBtn.parentNode.insertAdjacentElement('afterend', roleLockedNote());\n", a: '' },
+  { nombre: 'M10 · vistaVedadaPorRol veta también al admin', f: 'public/dashboard/js/app.js',
+    de: "function vistaVedadaPorRol(documento, rol, view) {\n  if (rol === 'admin') return false;", a: 'function vistaVedadaPorRol(documento, rol, view) {' },
+];
+
+console.log(`POBLACION=${MUTACIONES.length} mutaciones · HEAD=${git('rev-parse', 'HEAD').stdout.trim()}`);
+const sucio0 = git('status', '--porcelain').stdout.trim();
+if (sucio0) { console.log('ARBOL SUCIO AL EMPEZAR, no se muta:\n' + sucio0); process.exit(2); }
+const base = correr();
+console.log(`BASE sin mutar: exit=${base.exit} tests=${base.tests} pass=${base.pass} fail=${base.fail} (salida ${base.bytes} B)`);
+if (base.exit !== 0 || !(base.tests > 0)) { console.log('BASE NO VERDE o CIEGA: no se muta'); process.exit(2); }
+
+let caen = 0, mudas = 0, ciegas = 0;
+for (const m of MUTACIONES) {
+  const abs = path.join(RAIZ, m.f);
+  const src = fs.readFileSync(abs, 'utf8');
+  const veces = src.split(m.de).length - 1;
+  if (veces !== 1) { ciegas++; console.log(`\n${m.nombre}\n   CIEGA: el texto a mutar aparece ${veces} veces`); continue; }
+  fs.writeFileSync(abs, src.replace(m.de, m.a));
+  const numstat = git('diff', '--numstat').stdout.trim().replace(/\s+/g, ' ');
+  const r = correr();
+  git('restore', '--source=HEAD', '--', m.f);
+  const limpio = git('status', '--porcelain').stdout.trim() === '';
+  const veredicto = !(r.tests > 0) ? 'CIEGA' : (r.fail > 0 ? 'CAE' : 'MUDA');
+  if (veredicto === 'CAE') caen++; else if (veredicto === 'MUDA') mudas++; else ciegas++;
+  console.log(`\n${m.nombre}\n   aplicada: ${numstat} · exit=${r.exit} tests=${r.tests} pass=${r.pass} fail=${r.fail} → ${veredicto} · árbol limpio tras restaurar: ${limpio}`);
+  for (const c of r.caidos) console.log(`     ✖ ${c}`);
+  if (!limpio) { console.log('EL ARBOL NO QUEDO LIMPIO: paro'); process.exit(3); }
+}
+const fin = correr();
+console.log(`\nBASE después: exit=${fin.exit} tests=${fin.tests} pass=${fin.pass} fail=${fin.fail}`);
+console.log(`RESULTADO: ${caen} caen · ${mudas} mudas · ${ciegas} ciegas, de ${MUTACIONES.length}`);
+console.log(`EXIT=${mudas || ciegas || fin.exit ? 1 : 0}`);

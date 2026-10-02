@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const require = createRequire(path.join(RAIZ, 'package.json'));
@@ -102,7 +102,7 @@ async function llamar(router, ruta, query = {}) {
     json(b) { this.cuerpo = b; return this; },
     send(b) { this.cuerpo = b; return this; },
   };
-  await capa.route.stack[0].handle({ merchantId: MIO, query }, res, (e) => { throw e ?? new Error('next'); });
+  await capa.route.stack[0].handle(reqDeSesion({ rol: 'admin', merchantId: MIO, query }), res, (e) => { throw e ?? new Error('next'); });
   return res;
 }
 

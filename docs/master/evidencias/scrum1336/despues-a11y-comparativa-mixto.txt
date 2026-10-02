@@ -1,0 +1,19 @@
+# a11y-comparativa-mixto · guard-a11y-comparativa.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · ciego a 1280 (no hay grid) y la celda sin etiqueta a 360
+# EXIT=1 · 1.5 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+── 360px · 6 filas · grid: no hay (apilado)
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 11/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+🔴 NO SUPE MIRAR a 1280px: se esperaba grid de 3 columnas y llegó «none». ¿Se sirvió el CSS?
+   ✖ @360px · fila "firma" · columna «Con YaQu» → llega SIN su etiqueta de columna. Se oiría: «Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.»
+
+🔴 1 celda(s) mal. En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.
+
+🔴 NO SUPE MIRAR 1 vez/veces: de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 1 hallazgo · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

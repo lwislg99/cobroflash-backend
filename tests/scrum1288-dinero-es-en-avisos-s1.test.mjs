@@ -14,7 +14,7 @@
 process.env.WHATSAPP_DRY_RUN = '1';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
+import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RUTAS_QUOTES = '../dist/modules/quotes/app/routes/quotes.routes.js';
 const RUTAS_ADMIN = '../dist/modules/system/app/routes/quotesAdmin.routes.js';
@@ -50,10 +50,10 @@ test('🔴 SCRUM-1288 · 1 · «pendiente de tu aprobación»: el WhatsApp al pr
   globalThis.__waDryRunOutbox = [];
   const h = manejador(moduloDeDist(RUTAS_QUOTES).default, 'post', '/create');
   const { r, res } = respuesta();
-  await h({
+  await h(reqDeSesion({ rol: 'admin',
     body: { merchant_id: MERCHANT, customer_id: CLIENTE, currency: 'eur', lines: [{ concept: 'Cuadro', qty: 1, price: 1020.25, tax: 0.21 }] },
     merchantId: MERCHANT, headers: { cookie: 'pf_session=tok1288' },
-  }, res);
+  }), res);
   await esperar(50);
   const aviso = globalThis.__waDryRunOutbox.find((m) => m.to === TEL_PRO);
   assert.ok(aviso, `CIEGO: no salió el aviso de aprobación (status ${r.status} ${JSON.stringify(r.data)})`);
@@ -90,7 +90,7 @@ test('🔴 SCRUM-1288 · 3 · enviar por email: el historial dice 1.234,50 €',
   }, [RUTAS_ADMIN, EVENTOS, '../dist/modules/messaging/domain/email.service.js']);
   const h = manejador(moduloDeDist(RUTAS_ADMIN).default, 'post', '/:id/send-email');
   const { r, res } = respuesta();
-  await h({ params: { id: '8' }, merchantId: MERCHANT, headers: {} }, res);
+  await h(reqDeSesion({ rol: 'admin', params: { id: '8' }, merchantId: MERCHANT, headers: {} }), res);
   await esperar(50);
   const fila = eventos.find((e) => e.type === 'quote_sent');
   assert.ok(fila, `CIEGO: no se escribió la línea del historial (status ${r.status} ${JSON.stringify(r.data)})`);

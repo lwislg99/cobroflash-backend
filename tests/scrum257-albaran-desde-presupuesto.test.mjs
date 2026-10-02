@@ -17,7 +17,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -139,7 +139,7 @@ function sustituirPrisma(job) {
   });
 }
 
-const REQ = (id, body = {}) => ({ params: { id: String(id) }, body, merchantId: 7, query: {}, headers: {} });
+const REQ = (id, body = {}) => (reqDeSesion({ rol: 'admin', params: { id: String(id) }, body, merchantId: 7, query: {}, headers: {} }));
 
 // 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-684), y NO es un debilitamiento: es que la REGLA cambió.
 //
