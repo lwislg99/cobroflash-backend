@@ -246,8 +246,9 @@ Cada una sobre el árbol comiteado, recompilando, y restaurada después (`git st
 - Los puntos B y C del comentario 17723, Informes, el 303 y el censo de los cinco documentos: fuera,
   como estaban.
 - Un comentario de `invoicing/domain/libroRegistro.repo.ts` (el de `soloFacturas`) dice que las
-  evidencias «siguen leyendo lo de siempre». Desde este cambio ya no es verdad. No se ha tocado: ese
-  fichero no está en el permiso.
+  evidencias «siguen leyendo lo de siempre». Desde este cambio ya no es verdad. En la entrega no se
+  tocó; después el orquestador pidió corregirlo (2-oct-2026, canal de sesiones) y lleva una nota
+  fechada al final de ese mismo párrafo, sin borrar la frase y sin mover ninguna línea del fichero.
 - El comentario 17726 dice que el literal son dos frases. Son tres, y mide 217 caracteres. El texto es
   el del comentario, letra a letra. Y la razón que daba para partirlo ya no aplica: desde SCRUM-1329
   `scrum514` admite un texto firmado largo entero en una línea de cita, que es como va en la ficha.
