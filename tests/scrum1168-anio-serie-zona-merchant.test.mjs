@@ -29,6 +29,7 @@ import { allocateInvoiceNumber } from '../dist/modules/invoicing/domain/invoiceN
 import {
   anioDeLaSerie, numerosDeLaSerie, bloqueoCambioDeSerie, debeOfrecerArranqueDeSerie,
 } from '../dist/core/validation/fiscalInput.js';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -71,15 +72,19 @@ const CONTROL_UTC = { zona: 'UTC', iso: '2026-12-31T23:30:00Z', anio: 2026 };
 // ① COMPORTAMIENTO
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-for (const c of [...FRONTERA, CONTROL_UTC]) {
-  test(`SCRUM-1168 · ① ${c.zona} a ${c.iso}: la puerta y el emisor usan el MISMO año (${c.anio})`, async () => {
-    const instante = new Date(c.iso);
-    const delEmisor = await anioDelEmisor(c.zona, instante);
-    assert.equal(delEmisor, c.anio, `el emisor numeró con ${delEmisor}: el caso no es el que dice ser`);
-    assert.equal(anioDeLaSerie({ timezone: c.zona }, instante), delEmisor,
-      '🔴 la puerta de la serie razona sobre un año distinto del que numera `allocateInvoiceNumber`');
-  });
-}
+const FILAS_1 = [...FRONTERA, CONTROL_UTC];
+const caso1 = casosEscritos(FILAS_1, (c) => `SCRUM-1168 · ① ${c.zona} a ${c.iso}: la puerta y el emisor usan el MISMO año (${c.anio})`, async (c) => {
+  const instante = new Date(c.iso);
+  const delEmisor = await anioDelEmisor(c.zona, instante);
+  assert.equal(delEmisor, c.anio, `el emisor numeró con ${delEmisor}: el caso no es el que dice ser`);
+  assert.equal(anioDeLaSerie({ timezone: c.zona }, instante), delEmisor,
+    '🔴 la puerta de la serie razona sobre un año distinto del que numera `allocateInvoiceNumber`');
+});
+test('SCRUM-1168 · ① Europe/Madrid a 2026-12-31T23:30:00Z: la puerta y el emisor usan el MISMO año (2027)', caso1(0));
+test('SCRUM-1168 · ① America/Mexico_City a 2027-01-01T02:00:00Z: la puerta y el emisor usan el MISMO año (2026)', caso1(1));
+test('SCRUM-1168 · ① America/Bogota a 2027-01-01T03:00:00Z: la puerta y el emisor usan el MISMO año (2026)', caso1(2));
+test('SCRUM-1168 · ① UTC a 2026-12-31T23:30:00Z: la puerta y el emisor usan el MISMO año (2026)', caso1(3));
+caso1.todos();
 
 test('SCRUM-1168 · ① CONTROL: los casos de frontera SON frontera (el reloj del proceso discrepa)', async () => {
   // Sin esto, ① podría pasar con casos donde UTC y la zona coinciden — y entonces no probaría nada.
@@ -115,18 +120,20 @@ function decisiones(anio) {
   };
 }
 
-for (const c of FRONTERA) {
-  test(`SCRUM-1168 · ② ${c.zona}: con el año del PROCESO las puertas deciden otra cosa que con el del emisor`, async () => {
-    const instante = new Date(c.iso);
-    const delEmisor = await anioDelEmisor(c.zona, instante);
-    const correcta = decisiones(delEmisor);
-    // El rojo medido: lo que hacían las puertas con `new Date().getFullYear()` en un proceso UTC.
-    assert.notDeepEqual(decisiones(instante.getUTCFullYear()), correcta,
-      'el caso no separa: con los dos años las puertas deciden lo mismo, así que no mide nada');
-    assert.deepEqual(decisiones(anioDeLaSerie({ timezone: c.zona }, instante)), correcta,
-      '🔴 con `anioDeLaSerie` las puertas no deciden lo mismo que el año con el que se numera');
-  });
-}
+const caso2 = casosEscritos(FRONTERA, (c) => `SCRUM-1168 · ② ${c.zona}: con el año del PROCESO las puertas deciden otra cosa que con el del emisor`, async (c) => {
+  const instante = new Date(c.iso);
+  const delEmisor = await anioDelEmisor(c.zona, instante);
+  const correcta = decisiones(delEmisor);
+  // El rojo medido: lo que hacían las puertas con `new Date().getFullYear()` en un proceso UTC.
+  assert.notDeepEqual(decisiones(instante.getUTCFullYear()), correcta,
+    'el caso no separa: con los dos años las puertas deciden lo mismo, así que no mide nada');
+  assert.deepEqual(decisiones(anioDeLaSerie({ timezone: c.zona }, instante)), correcta,
+    '🔴 con `anioDeLaSerie` las puertas no deciden lo mismo que el año con el que se numera');
+});
+test('SCRUM-1168 · ② Europe/Madrid: con el año del PROCESO las puertas deciden otra cosa que con el del emisor', caso2(0));
+test('SCRUM-1168 · ② America/Mexico_City: con el año del PROCESO las puertas deciden otra cosa que con el del emisor', caso2(1));
+test('SCRUM-1168 · ② America/Bogota: con el año del PROCESO las puertas deciden otra cosa que con el del emisor', caso2(2));
+caso2.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ③ ESTRUCTURA — por AST sobre los fuentes reales
@@ -177,13 +184,16 @@ function censaPuerta(fuente, p) {
   return censaNodo(nodo);
 }
 
-for (const p of PUERTAS) {
-  test(`SCRUM-1168 · ③ ${p.fichero} · ${p.nombre}: el año sale de \`anioDeLaSerie\`, no de un get*FullYear()`, () => {
-    const c = censaPuerta(fs.readFileSync(path.join(RAIZ, p.fichero), 'utf8'), p);
-    assert.ok(c.anioDeLaSerieLlamadas >= 1, `🔴 ${p.nombre} no deriva el año con anioDeLaSerie(merchant)`);
-    assert.deepEqual(c.fullYear, [], `🔴 ${p.nombre} sigue leyendo el año con ${c.fullYear.join(', ')}()`);
-  });
-}
+const caso3 = casosEscritos(PUERTAS, (p) => `SCRUM-1168 · ③ ${p.fichero} · ${p.nombre}: el año sale de \`anioDeLaSerie\`, no de un get*FullYear()`, (p) => {
+  const c = censaPuerta(fs.readFileSync(path.join(RAIZ, p.fichero), 'utf8'), p);
+  assert.ok(c.anioDeLaSerieLlamadas >= 1, `🔴 ${p.nombre} no deriva el año con anioDeLaSerie(merchant)`);
+  assert.deepEqual(c.fullYear, [], `🔴 ${p.nombre} sigue leyendo el año con ${c.fullYear.join(', ')}()`);
+});
+test('SCRUM-1168 · ③ src/app.ts · GET /admin/me: el año sale de `anioDeLaSerie`, no de un get*FullYear()', caso3(0));
+test('SCRUM-1168 · ③ src/app.ts · POST /admin/onboarding/serie/previa: el año sale de `anioDeLaSerie`, no de un get*FullYear()', caso3(1));
+test('SCRUM-1168 · ③ src/app.ts · POST /admin/onboarding/serie: el año sale de `anioDeLaSerie`, no de un get*FullYear()', caso3(2));
+test('SCRUM-1168 · ③ src/modules/system/merchantAdmin.ts · updateMerchantProfile: el año sale de `anioDeLaSerie`, no de un get*FullYear()', caso3(3));
+caso3.todos();
 
 test('SCRUM-1168 · ③ CONTROL: el censo CAZA la forma del defecto y ABSUELVE la del arreglo', () => {
   const p = { fichero: 'src/modules/system/merchantAdmin.ts', nombre: 'updateMerchantProfile' };

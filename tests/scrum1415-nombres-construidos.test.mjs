@@ -33,7 +33,7 @@ import { casosEscritos, nombreEscrito } from './_casos-escritos.mjs';
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Los 56 ficheros de `DECLARADAS` tienen el MISMO motivo, medido por AST el 2-oct-2026: el bucle
+ * Los ficheros de `DECLARADAS` tienen el MISMO motivo, medido por AST el 2-oct-2026: el bucle
  * que envuelve a cada llamada itera una tabla escrita en el propio fichero. Son convertibles
  * (con `casosEscritos`) y están pendientes: SCRUM-1416.
  */
@@ -48,60 +48,17 @@ const PENDIENTE = 'bucle sobre una tabla escrita en el fichero · convertible, p
  */
 const DECLARADAS = [
   ['scrum1027-atajo-flag-off-sin-documento.test.mjs', 3, PENDIENTE],
-  ['scrum1038-leer-el-ticket-gasto.test.mjs', 1, PENDIENTE],
   ['scrum1093h-censo-fecha-sin-zona.test.mjs', 2, PENDIENTE],
   ['scrum1106-respuestas-ia-no-son-del-asesor.test.mjs', 2, PENDIENTE],
-  ['scrum1108b-pantalla-garantia.test.mjs', 1, PENDIENTE],
-  ['scrum1117-anclas-por-bloque.test.mjs', 1, PENDIENTE],
   ['scrum1153-censo-entorno-prestado.test.mjs', 2, PENDIENTE],
-  ['scrum1160-cobrar-ahora-modo-recibo.test.mjs', 4, PENDIENTE],
-  ['scrum1164-ocultar-en-receipt-ficha-trabajo.test.mjs', 1, PENDIENTE],
-  ['scrum1164-ocultar-en-receipt-inicio-planes.test.mjs', 1, PENDIENTE],
-  ['scrum1166-detalle-quote-tiene-numero.test.mjs', 1, PENDIENTE],
-  ['scrum1167-irreversible-gana-la-cascada.test.mjs', 1, PENDIENTE],
-  ['scrum1168-anio-serie-zona-merchant.test.mjs', 3, PENDIENTE],
-  ['scrum1169-linea-tiempo-modo-recibo.test.mjs', 2, PENDIENTE],
-  ['scrum1170-seccion-facturas-modo-recibo.test.mjs', 2, PENDIENTE],
-  ['scrum1188-plantilla-guarda-el-cobro.test.mjs', 1, PENDIENTE],
-  ['scrum1193-mas-acciones-44.test.mjs', 1, PENDIENTE],
   ['scrum1200-sin-respuesta.test.mjs', 2, PENDIENTE],
   ['scrum1213-quoteadmin-tenencia-fail-closed.test.mjs', 2, PENDIENTE],
-  ['scrum1216b-pantalla-arranque.test.mjs', 1, PENDIENTE],
-  ['scrum1226-firma-no-baja-el-estado.test.mjs', 1, PENDIENTE],
-  ['scrum1235-el-correo-que-no-salio.test.mjs', 1, PENDIENTE],
-  ['scrum1292-cobro-pagado-no-retrocede.test.mjs', 2, PENDIENTE],
-  ['scrum1293-cargador-de-marcadores.test.mjs', 1, PENDIENTE],
-  ['scrum1301-bizum-hoy-de-madrugada.test.mjs', 1, PENDIENTE],
-  ['scrum1302a-marca-en-la-vista-de-oficina.test.mjs', 1, PENDIENTE],
-  ['scrum1302f-envio-sin-telefono.test.mjs', 1, PENDIENTE],
   ['scrum1315-gemelos-estado-dentro-del-where.test.mjs', 5, PENDIENTE],
-  ['scrum1323-resumen-vs-detalle-sif1.test.mjs', 1, PENDIENTE],
-  ['scrum1344-arnes-de-prueba-con-rol.test.mjs', 1, PENDIENTE],
-  ['scrum1354-dueno-de-la-marca.test.mjs', 2, PENDIENTE],
-  ['scrum1360-caja-albaran-firma-de-parte.test.mjs', 1, PENDIENTE],
-  ['scrum1362-cargador-de-defectos-del-viaje.test.mjs', 1, PENDIENTE],
-  ['scrum1388-facturas-recibidas-literales-firmados.test.mjs', 1, PENDIENTE],
-  ['scrum176-guard-mensaje.test.mjs', 2, PENDIENTE],
   ['scrum264-copy-que-llega-al-cliente.test.mjs', 4, PENDIENTE],
   ['scrum330-contador-solo-activas.test.mjs', 4, PENDIENTE],
-  ['scrum384-min-height-locales.test.mjs', 1, PENDIENTE],
-  ['scrum386-hojas-fuera.test.mjs', 2, PENDIENTE],
-  ['scrum454-destructivo-sin-comprobacion.test.mjs', 4, PENDIENTE],
-  ['scrum522-guards-fuera-de-la-tanda.test.mjs', 1, PENDIENTE],
-  ['scrum542-objetivo-tactil.test.mjs', 2, PENDIENTE],
-  ['scrum562-arbitro-de-toque.test.mjs', 1, PENDIENTE],
-  ['scrum600-un-solo-front-documento.test.mjs', 1, PENDIENTE],
-  ['scrum605-atajos-vencimiento.test.mjs', 1, PENDIENTE],
-  ['scrum630-default-en-dias.test.mjs', 1, PENDIENTE],
-  ['scrum643-zona-del-merchant.test.mjs', 1, PENDIENTE],
   ['scrum785-productos-y-proveedores-descuelgan.test.mjs', 2, PENDIENTE],
   ['scrum809-paywall-tras-cancelar.test.mjs', 2, PENDIENTE],
-  ['scrum885-documento-sin-enviar.test.mjs', 1, PENDIENTE],
-  ['scrum893-solo-lo-que-puede-cobrar.test.mjs', 1, PENDIENTE],
   ['scrum899d-aviso-de-uso.test.mjs', 1, PENDIENTE],
-  ['scrum905-facturar-solo-si-se-puede.test.mjs', 3, PENDIENTE],
-  ['scrum910-la-transferencia-que-no-mira.test.mjs', 1, PENDIENTE],
-  ['scrum910d-microcopy-recibo-pendiente.test.mjs', 1, PENDIENTE],
   ['scrum931-un-solo-importe-de-plantilla.test.mjs', 4, PENDIENTE],
 ];
 

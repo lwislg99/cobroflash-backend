@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const respirar = () => new Promise((r) => setTimeout(r, 80));
@@ -120,25 +121,27 @@ async function pulsarFicha(m, nombre) {
   await pulsar(ficha);
 }
 
-for (const condicion of ['FIFTY_FIFTY', 'MANUAL']) {
-  test(`SCRUM-1188 · 🔴 EL VIAJE: guardar con ${condicion} → recargar → la ficha rápida la devuelve`, async () => {
-    const srv = servidor();
-    const antes = await montar(srv);
-    elegir(antes.condiciones, condicion);
-    await guardarComoPlantilla(antes, 'Caldera');
-    assert.equal(srv.guardadas.length, 1, '🔴 guardar no llegó al servidor');
-    assert.equal(srv.guardadas[0].paymentTerms, condicion, '🔴 la plantilla se guarda SIN la condición de cobro elegida');
-    const a = alertaVisible(antes);
-    assert.match(a.texto, /^Plantilla "Caldera" guardada\. /, 'con una condición que SÍ se guarda sale el éxito de siempre');
-    assert.doesNotMatch(a.texto, /sin el plan de cobro/, '🔴 el aviso de «Personalizado» sale donde la condición sí se guardó');
+const FILAS = ['FIFTY_FIFTY', 'MANUAL'];
+const caso = casosEscritos(FILAS, (condicion) => `SCRUM-1188 · 🔴 EL VIAJE: guardar con ${condicion} → recargar → la ficha rápida la devuelve`, async (condicion) => {
+  const srv = servidor();
+  const antes = await montar(srv);
+  elegir(antes.condiciones, condicion);
+  await guardarComoPlantilla(antes, 'Caldera');
+  assert.equal(srv.guardadas.length, 1, '🔴 guardar no llegó al servidor');
+  assert.equal(srv.guardadas[0].paymentTerms, condicion, '🔴 la plantilla se guarda SIN la condición de cobro elegida');
+  const a = alertaVisible(antes);
+  assert.match(a.texto, /^Plantilla "Caldera" guardada\. /, 'con una condición que SÍ se guarda sale el éxito de siempre');
+  assert.doesNotMatch(a.texto, /sin el plan de cobro/, '🔴 el aviso de «Personalizado» sale donde la condición sí se guardó');
 
-    const despues = await montar(srv); // editor nuevo: lo único que sabe es lo que devuelve el servidor
-    assert.equal(despues.condiciones.value, 'FULL_UPFRONT', 'SUELO: el editor nace en FULL_UPFRONT');
-    await pulsarFicha(despues, 'Caldera');
-    assert.equal(despues.condiciones.value, condicion,
-      '🔴 empezar con la plantilla no trae su condición de cobro: se queda en la de por defecto, sin que se vea');
-  });
-}
+  const despues = await montar(srv); // editor nuevo: lo único que sabe es lo que devuelve el servidor
+  assert.equal(despues.condiciones.value, 'FULL_UPFRONT', 'SUELO: el editor nace en FULL_UPFRONT');
+  await pulsarFicha(despues, 'Caldera');
+  assert.equal(despues.condiciones.value, condicion,
+    '🔴 empezar con la plantilla no trae su condición de cobro: se queda en la de por defecto, sin que se vea');
+});
+test('SCRUM-1188 · 🔴 EL VIAJE: guardar con FIFTY_FIFTY → recargar → la ficha rápida la devuelve', caso(0));
+test('SCRUM-1188 · 🔴 EL VIAJE: guardar con MANUAL → recargar → la ficha rápida la devuelve', caso(1));
+caso.todos();
 
 test('SCRUM-1188 · 🔴 EL VIAJE por «Usar» desde Plantillas (la plantilla como argumento del editor)', async () => {
   const srv = servidor();

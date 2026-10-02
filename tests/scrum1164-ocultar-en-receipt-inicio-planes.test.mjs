@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -44,14 +45,17 @@ const DEL_CHECKLIST = [
   ['nota «tras pagar» de reseñas', 'Se lo pedimos al cliente tras pagar'],
 ];
 
-for (const [que, literal] of DEL_CHECKLIST) {
-  test(`SCRUM-1164 · #4 · ${que}: sale en fiscal y en demo, y en receipt NO`, () => {
-    for (const modo of ['fiscal', 'demo']) {
-      assert.ok(checklist(modo).includes(literal), `🔴 CONTROL: en ${modo} «${literal}» tiene que seguir saliendo — ocultar no es borrar`);
-    }
-    assert.ok(!checklist('receipt').includes(literal), `🔴 en receipt el checklist sigue afirmando «${literal}»`);
-  });
-}
+const caso = casosEscritos(DEL_CHECKLIST, ([que, literal]) => `SCRUM-1164 · #4 · ${que}: sale en fiscal y en demo, y en receipt NO`, ([que, literal]) => {
+  for (const modo of ['fiscal', 'demo']) {
+    assert.ok(checklist(modo).includes(literal), `🔴 CONTROL: en ${modo} «${literal}» tiene que seguir saliendo — ocultar no es borrar`);
+  }
+  assert.ok(!checklist('receipt').includes(literal), `🔴 en receipt el checklist sigue afirmando «${literal}»`);
+});
+test('SCRUM-1164 · #4 · paso «Cobra tu primer trabajo»: sale en fiscal y en demo, y en receipt NO', caso(0));
+test('SCRUM-1164 · #4 · paso «Configura cómo cobras»: sale en fiscal y en demo, y en receipt NO', caso(1));
+test('SCRUM-1164 · #4 · nota «…o paguen» de WhatsApp: sale en fiscal y en demo, y en receipt NO', caso(2));
+test('SCRUM-1164 · #4 · nota «tras pagar» de reseñas: sale en fiscal y en demo, y en receipt NO', caso(3));
+caso.todos();
 
 test('SCRUM-1164 · #4 · en receipt se quedan los pasos que SÍ se pueden cumplir, y el recuento cuadra con ellos', () => {
   const texto = checklist('receipt');

@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -54,21 +55,26 @@ async function pasosDeLaLinea(modo, quote = presupuesto()) {
   return PASOS.filter((p) => hojas.some((n) => String(n.textContent || '').trim() === p));
 }
 
-for (const modo of ['fiscal', 'demo']) {
-  test(`SCRUM-1169 · en modo \`${modo}\` la línea tiene los 5 pasos (control positivo)`, async () => {
-    assert.deepEqual(await pasosDeLaLinea(modo), PASOS);
-  });
-}
+const FILAS_1 = ['fiscal', 'demo'];
+const caso1 = casosEscritos(FILAS_1, (modo) => `SCRUM-1169 · en modo \`${modo}\` la línea tiene los 5 pasos (control positivo)`, async (modo) => {
+  assert.deepEqual(await pasosDeLaLinea(modo), PASOS);
+});
+test('SCRUM-1169 · en modo `fiscal` la línea tiene los 5 pasos (control positivo)', caso1(0));
+test('SCRUM-1169 · en modo `demo` la línea tiene los 5 pasos (control positivo)', caso1(1));
+caso1.todos();
 
-for (const [nombre, modo] of [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]]) {
-  test(`SCRUM-1169 · 🔴 en modo ${nombre} y sin facturas, NO hay «Facturada» ni «Cobrada»`, async () => {
-    const pasos = await pasosDeLaLinea(modo);
-    assert.ok(pasos.includes('Creada') && pasos.includes('Aceptada'),
-      `🔴 CIEGO: la línea de tiempo no se pintó (pasos vistos: ${pasos.join(', ') || 'ninguno'}).`);
-    assert.deepEqual(pasos, ['Creada', 'Enviada', 'Aceptada'],
-      '🔴 en modo justificante la línea promete pasos que la regla 24 no deja ocurrir.');
-  });
-}
+const FILAS_2 = [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]];
+const caso2 = casosEscritos(FILAS_2, ([nombre, modo]) => `SCRUM-1169 · 🔴 en modo ${nombre} y sin facturas, NO hay «Facturada» ni «Cobrada»`, async ([nombre, modo]) => {
+  const pasos = await pasosDeLaLinea(modo);
+  assert.ok(pasos.includes('Creada') && pasos.includes('Aceptada'),
+    `🔴 CIEGO: la línea de tiempo no se pintó (pasos vistos: ${pasos.join(', ') || 'ninguno'}).`);
+  assert.deepEqual(pasos, ['Creada', 'Enviada', 'Aceptada'],
+    '🔴 en modo justificante la línea promete pasos que la regla 24 no deja ocurrir.');
+});
+test('SCRUM-1169 · 🔴 en modo receipt y sin facturas, NO hay «Facturada» ni «Cobrada»', caso2(0));
+test('SCRUM-1169 · 🔴 en modo desconocido (null) y sin facturas, NO hay «Facturada» ni «Cobrada»', caso2(1));
+test('SCRUM-1169 · 🔴 en modo sin dato (undefined) y sin facturas, NO hay «Facturada» ni «Cobrada»', caso2(2));
+caso2.todos();
 
 test('SCRUM-1169 · en `receipt` con una factura YA existente, los 5 pasos siguen (lo que ya ocurrió se enseña)', async () => {
   const q = presupuesto({ invoices: [{ id: 9, status: 'paid', createdAt: '2026-09-21T10:00:00.000Z', paidAt: '2026-09-22T10:00:00.000Z' }] });
