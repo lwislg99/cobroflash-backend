@@ -43,12 +43,12 @@ jobs:
           echo "tubería, tamaño máximo: $(cat /proc/sys/fs/pipe-max-size)"
           node --no-deprecation "$E/codigo-de-node.mjs"
       - name: Cobaya, sin carga
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 15 --carga 0 > "$RUNNER_TEMP/salida-cobaya-carga0.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga 0 > "$RUNNER_TEMP/salida-cobaya-carga0.txt" 2>&1
       - name: Lo que dijo (sin carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-cobaya-carga0.txt"
       - name: Cobaya, con un proceso de carga por hilo
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 15 --carga "$(nproc)" > "$RUNNER_TEMP/salida-cobaya-cargaN.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga "$(nproc)" > "$RUNNER_TEMP/salida-cobaya-cargaN.txt" 2>&1
       - name: Lo que dijo (con carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-cobaya-cargaN.txt"
@@ -90,14 +90,14 @@ jobs:
       - name: A solas, sin carga
         env:
           REALES: tests/scrum834-puerta-avisador-rojo.test.mjs,tests/vigia-atascados.test.mjs,tests/scrum524b-trinquete-de-la-tabla.test.mjs,tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs,tests/scrum237-negacion-respaldada.test.mjs,tests/scrum1216b-numero-de-arranque.test.mjs
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 4 --solo NINGUNA --carga 0 --reales "$REALES" > "$RUNNER_TEMP/salida-reales-carga0.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 30 --solo NINGUNA --carga 0 --reales "$REALES" > "$RUNNER_TEMP/salida-reales-carga0.txt" 2>&1
       - name: Lo que dijo (sin carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-reales-carga0.txt"
       - name: A solas, con un proceso de carga por hilo
         env:
           REALES: tests/scrum834-puerta-avisador-rojo.test.mjs,tests/vigia-atascados.test.mjs,tests/scrum524b-trinquete-de-la-tabla.test.mjs,tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs,tests/scrum237-negacion-respaldada.test.mjs,tests/scrum1216b-numero-de-arranque.test.mjs
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 4 --solo NINGUNA --carga "$(nproc)" --reales "$REALES" > "$RUNNER_TEMP/salida-reales-cargaN.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 30 --solo NINGUNA --carga "$(nproc)" --reales "$REALES" > "$RUNNER_TEMP/salida-reales-cargaN.txt" 2>&1
       - name: Lo que dijo (con carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-reales-cargaN.txt"
@@ -121,8 +121,12 @@ jobs:
       # Deja sitio en la cola a los CI de los dos equipos: un experimento no retrasa un PR.
       max-parallel: 8
       matrix:
-        # ENSAYO: una tirada por brazo, para ver que el workflow corre antes de lanzar las 52.
-        celda: [con-01, sin-01, con-bloqueante-01, con-sonda-01, sin-sonda-01]
+        celda: [con-01, con-02, con-03, con-04, con-05, con-06, con-07, con-08, con-09, con-10, con-11, con-12, con-13, con-14, con-15, con-16,
+                sin-01, sin-02, sin-03, sin-04, sin-05, sin-06, sin-07, sin-08, sin-09, sin-10, sin-11, sin-12, sin-13, sin-14, sin-15, sin-16,
+                con-bloqueante-01, con-bloqueante-02, con-bloqueante-03, con-bloqueante-04, con-bloqueante-05, con-bloqueante-06,
+                con-bloqueante-07, con-bloqueante-08, con-bloqueante-09, con-bloqueante-10, con-bloqueante-11, con-bloqueante-12,
+                con-sonda-01, con-sonda-02, con-sonda-03, con-sonda-04, con-sonda-05, con-sonda-06,
+                sin-sonda-01, sin-sonda-02]
     services:
       postgres:
         image: postgres:16-alpine
