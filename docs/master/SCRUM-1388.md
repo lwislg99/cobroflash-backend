@@ -5,7 +5,7 @@
 2-oct-2026 · **J4a** (equipo de Javier), por encargo del orquestador (`cobroflash-backend-5b`).
 Rama `scrum-1388-facturas-recibidas-literales-firmados`.
 
-A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: el recuento de carteles por subcadena estaba en la primera versión de mi sonda de navegador, que es un fichero de evidencias y no un guard de la tanda; lo cazó leer mi propia salida (dos carteles donde la captura enseñaba uno) y nada impide que la próxima sonda nazca igual.
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
 
 **Fecha:** 2-oct-2026
 **Skill UI:** cargada (`yaqu-premium-ui`). No entra ningún componente, token, color ni clase nueva:
@@ -101,6 +101,16 @@ marcas. **No se toca.** Lo que baja son cuatro censos distintos, todos a entrada
 | `tests/scrum1233…` `TECHO` (el `.message` crudo) | `facturasRecibidasView.js: 1`, total 15 | sin entrada, total 14, y en la lista de «lo arreglado se queda en cero» |
 
 Ninguno sube. Cada uno lo comprueba su propio test contra el árbol, no una resta a mano.
+
+**Y una consecuencia que no vi hasta el CI.** Al salir la entrada del JSON, `settingsView.js` pasó a
+ser la última de la lista y perdió su coma final. La primera mutación declarada de
+`tests/scrum1293-cargador-de-marcadores.test.mjs` estaba anclada a esa línea ENTERA, coma incluida,
+y se quedó sin referente: `SCRUM-836 · NINGUNA mutación declarada tiene el ancla caducada` salió
+rojo en el obligatorio (run 36956367056, un solo fallo). Reproducido en local antes de tocar nada.
+No se restaura el JSON: se REANCLA la mutación a la clave con su valor, sin la coma
+(`"settingsView.js": 1`), que vale esté donde esté en la lista. Toco por eso la declaración de
+`scrum1293`, que no es de este ticket. Comprobado que la mutación reanclada se aplica y sigue
+tumbando su test: `docs/evidencias/scrum1388/reancla-scrum1293.salida.txt`.
 `tests/scrum1040…` gana las cuatro ranuras en su lista de firmadas, con el texto; `descuadre` es una
 función y se firma lo que pinta con 40 y con 1.
 
@@ -153,11 +163,22 @@ la marca que vuelve, la ficha sin la firma del fundador y una ranura prohibida t
   en línea que su cabecera dice no tener; el aviso del servidor dice «Importe total: 363.» sin
   moneda; y en el descuadre se leen dos avisos seguidos que cuentan lo mismo con palabras distintas.
 
+## Lo que el CI dijo y no es de este PR
+
+La señal de nombres del obligatorio (run 36956367056) avisa: `tests/vigia-atascados.test.mjs`,
+faltan 23 de 64 casos (cola), posiciones 42 a 64. Leído por el orquestador, no por mí. No es un
+fichero de este PR; es el patrón de SCRUM-1339. Se nombra y no se persigue.
+
 ## Mis errores
+
+0. **El que rompió el CI.** Antes de borrar la entrada del JSON busqué quién nombraba la PANTALLA
+   y no quién medía sobre el FICHERO que editaba (A12). `scrum836` no estaba entre los diez tests
+   que corrí, y empujé sin la dirigida, que lo habría seleccionado. Es la línea A9 de arriba: el
+   guard que lo impide existe y lo cazó, en el CI y no en mi mesa.
 
 1. La primera versión de la sonda contaba los carteles buscando «alert» como subcadena de la
    clase, y `fr-alert-detail` casaba: dijo 2 carteles donde había 1. Corregido antes de guardar el
-   ANTES (ahora mira la clase), y es la línea A9 de arriba.
+   ANTES (ahora mira la clase), y va a las frases de la casa: «Un prefijo no es un nombre, y una subcadena tampoco.»
 2. Encadené una orden que falló con la lectura de un fichero de salida: lo que leí después era la
    salida de la pasada anterior. Lo vi porque el error estaba impreso encima; borré la salida y
    repetí la pasada en un comando solo.

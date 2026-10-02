@@ -98,9 +98,15 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El incidente del PR #1065, en su sitio de hoy: una clave repetida, MISMO valor, en la lista
     // REAL del panel. Antes la declaraba SCRUM-751 sobre el literal `CENSO` de scrum402.
+    //
+    // 🔄 SCRUM-1388 (2-oct-2026) · REANCLADA, no restaurada. El ancla era la línea ENTERA, con su
+    // coma final: valía mientras `settingsView.js` no fuera la última entrada. Al firmarse los
+    // textos de `facturasRecibidasView.js` su entrada salió del JSON, `settingsView.js` pasó a
+    // cerrar la lista sin coma, y el ancla dejó de existir (lo cazó SCRUM-836 en el CI). Ahora se
+    // ancla a la CLAVE con su valor, sin la coma: vale esté donde esté en la lista.
     fichero: 'scripts/_marcadores-pendientes-declarados.json',
-    de: '      "settingsView.js": 1,',
-    a: '      "settingsView.js": 1,\n      "settingsView.js": 1,',
+    de: '"settingsView.js": 1',
+    a: '"settingsView.js": 1,\n      "settingsView.js": 1',
     cae: 'CONTROL POSITIVO: el fichero REAL se lee, y trae las tres secciones con algo',
   },
   {
