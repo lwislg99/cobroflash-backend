@@ -1,0 +1,108 @@
+guards:visuales sobre 1cddd6158dd8188b049bc8b34c0416b4df788cc1 · J4d · 1-oct-2026 · CORTADO: Claude Code mato el proceso por memoria critica del sistema cuando iba por el guard 30 de 37.
+Los 7 ultimos salen rojo(3221225794) = 0xC0000142 en 0,0 s y sin salida: NO ARRANCARON. La puerta los cuenta como hallazgos.
+----- salida literal -----
+
+> yaqu-backend@1.0.0 guards:visuales
+> node scripts/guards-visuales.mjs
+
+guards de navegador FUERA de `npm test`: 37
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+⟦calentamiento⟧ 0.6 s · proceso+ws 0.6 s · primera-página 0.0 s  (tope 120000 ms)
+
+   ✔ guard:contraste              8.2 s   arranque   0.6 s   verde
+       └ arranque COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+   ✔ guard:caja-avisos            3.0 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:caja-semaforo          2.9 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:caja-documento-suelto   8.7 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:portal-en-la-ficha     3.2 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:caja-datos-del-cliente   5.1 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:cls-barra-anuncio     16.0 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:primera-pantalla       5.7 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:vias-de-cobro          6.5 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:arranque-sin-red      15.2 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:descuento-redibuja    17.1 s   arranque   0.6 s   verde
+       └ arranque COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+   ✔ guard:descuentos-en-el-detalle   4.4 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:rotulos-de-la-linea   24.4 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:pasos-del-editor      14.8 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:un-solo-presupuesto   19.6 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:documento-vivo        21.1 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:conceptos-limpios     16.4 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:cabecera-del-editor   17.9 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:ajustes-del-justificante  17.9 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:firma-con-tramos       8.3 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:falta-en-otra-pestana   7.9 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:foto-del-gasto         8.4 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:completar-lleva-al-campo 120.7 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:aviso-bizum            4.6 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:a11y-comparativa       2.1 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:a11y-landing           2.4 s   arranque   0.4 s   verde
+       └ arranque COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+   ✔ guard:objetivo-tactil       10.6 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✔ guard:lista-trabajos        11.4 s   (arranque: ?)   verde
+   ✔ guard:lista-trabajos-917     7.9 s   (arranque: ?)   verde
+   ✔ guard:detalle-trabajo-917   31.4 s   arranque   0.3 s   verde
+       └ arranque COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✖ guard:escalera-por-estado    0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:albaranes-con-acciones   0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:nif-del-gasto          0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:lista-gastos           0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:duplicar-conserva      0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:rastro-del-menu        0.0 s   (arranque: ?)   rojo(3221225794)
+   ✖ guard:marcadores-en-pantalla   0.0 s   (arranque: ?)   rojo(3221225794)
+
+── TOTAL ────────────────────────────────────────────────
+   37 guards · 443.8 s en serie   ·   30 verdes · 0 CIEGOS · 7 rojos
+
+════════════════════════════════════════════════════════════════════════
+🔴 7 guard(s) de navegador no están verdes (30 verdes · 0 CIEGOS · 7 rojos). Lo que dijeron:
+════════════════════════════════════════════════════════════════════════
+
+── guard:escalera-por-estado  [rojo(3221225794)] ─────────────────────────
+   (sin salida)
+
+── guard:albaranes-con-acciones  [rojo(3221225794)] ──────────────────────
+   (sin salida)
+
+── guard:nif-del-gasto  [rojo(3221225794)] ───────────────────────────────
+   (sin salida)
+
+── guard:lista-gastos  [rojo(3221225794)] ────────────────────────────────
+   (sin salida)
+
+── guard:duplicar-conserva  [rojo(3221225794)] ───────────────────────────
+   (sin salida)
+
+── guard:rastro-del-menu  [rojo(3221225794)] ─────────────────────────────
+   (sin salida)
+
+── guard:marcadores-en-pantalla  [rojo(3221225794)] ──────────────────────
+   (sin salida)
+
+DEFECTOS (salida 1) · 7 guard(s) midieron y encontraron algo
+Han medido y hay hallazgos: guard:escalera-por-estado, guard:albaranes-con-acciones, guard:nif-del-gasto, guard:lista-gastos, guard:duplicar-conserva, guard:rastro-del-menu, guard:marcadores-en-pantalla.

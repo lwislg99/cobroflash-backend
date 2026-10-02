@@ -1,0 +1,154 @@
+POBLACION=2 roles, modo main
+⟦arranque⟧ 0.9 s COMPLETA · proceso+ws 0.9 s · primera-página 0.0 s
+{
+ "rol": "tecnico",
+ "modo": "main",
+ "rolEnPanel": "tecnico",
+ "menu": [
+  "home",
+  "quote-requests",
+  "jobs",
+  "quotes-list",
+  "albaranes",
+  "partes-oficina",
+  "invoices",
+  "cobros",
+  "customers",
+  "products",
+  "providers",
+  "reports",
+  "libro-registro",
+  "facturas-recibidas"
+ ],
+ "inicio": {
+  "heroe": true,
+  "heroeAlto": 137.546875,
+  "resumen": true,
+  "semana": true,
+  "tops": true,
+  "actividad": true,
+  "acciones": true,
+  "cartelDeError": false,
+  "esqueletos": 0,
+  "globos": [
+   "1",
+   "5",
+   "3"
+  ]
+ },
+ "productos": {
+  "filas": 0,
+  "grifo": false,
+  "erroresDePagina": [
+   "renderAppView('products') LANZA: TypeError: Cannot read properties of null (reading 'addEventListener')\n    at cablearMargen (http://127.0.0.1:56876/dashboard/js/productsView.js:604:18)\n    at renderProductsView (http://127.0.0.1:56876/dashboard/js/productsView.js:643:5)\n    at renderView (http://127.0.0.1:56876/dashboard/js/app.js"
+  ]
+ },
+ "hash_providers": {
+  "vista": "providers",
+  "titulo": "Proveedores"
+ },
+ "hash_reports": {
+  "vista": "reports",
+  "titulo": "Informes"
+ },
+ "plantillas": [
+  "📋 Usar",
+  "Renombrar",
+  "Borrar"
+ ],
+ "editor": {
+  "menu": [
+   "💾 Guardar como plantilla",
+   "Limpiar formulario"
+  ],
+  "usarPlantilla": []
+ },
+ "negadas": [
+  "GET /admin/reports/resumen-trimestre",
+  "GET /admin/reports/pl",
+  "GET /admin/reports/vat",
+  "GET /admin/reports/resumen-trimestre",
+  "GET /admin/reports/x2",
+  "GET /admin/reports/pl",
+  "GET /admin/reports/pl"
+ ],
+ "peticiones": 27,
+ "erroresDePagina": [
+  "renderAppView('products') LANZA: TypeError: Cannot read properties of null (reading 'addEventListener')\n    at cablearMargen (http://127.0.0.1:56876/dashboard/js/productsView.js:604:18)\n    at renderProductsView (http://127.0.0.1:56876/dashboard/js/productsView.js:643:5)\n    at renderView (http://127.0.0.1:56876/dashboard/js/app.js"
+ ]
+}
+⟦arranque⟧ 0.7 s COMPLETA · proceso+ws 0.7 s · primera-página 0.0 s
+{
+ "rol": "admin",
+ "modo": "main",
+ "rolEnPanel": "admin",
+ "menu": [
+  "home",
+  "quote-requests",
+  "jobs",
+  "quotes-list",
+  "albaranes",
+  "partes-oficina",
+  "invoices",
+  "cobros",
+  "customers",
+  "products",
+  "providers",
+  "expenses",
+  "reports",
+  "libro-registro",
+  "facturas-recibidas",
+  "team",
+  "plans",
+  "settings"
+ ],
+ "inicio": {
+  "heroe": true,
+  "heroeAlto": 137.546875,
+  "resumen": true,
+  "semana": true,
+  "tops": true,
+  "actividad": true,
+  "acciones": true,
+  "cartelDeError": false,
+  "esqueletos": 0,
+  "globos": [
+   "1",
+   "5",
+   "3"
+  ]
+ },
+ "productos": {
+  "filas": 1,
+  "grifo": true,
+  "erroresDePagina": []
+ },
+ "hash_providers": {
+  "vista": "providers",
+  "titulo": "Proveedores"
+ },
+ "hash_reports": {
+  "vista": "reports",
+  "titulo": "Informes"
+ },
+ "plantillas": [
+  "📋 Usar",
+  "Renombrar",
+  "Borrar"
+ ],
+ "editor": {
+  "menu": [
+   "💾 Guardar como plantilla",
+   "Limpiar formulario"
+  ],
+  "usarPlantilla": []
+ },
+ "negadas": [],
+ "peticiones": 31,
+ "erroresDePagina": [
+  "Cannot read properties of undefined (reading 'length')",
+  "Cannot read properties of undefined (reading 'revenueBase')",
+  "Cannot read properties of undefined (reading 'totalCuota')"
+ ]
+}
+EXIT=0

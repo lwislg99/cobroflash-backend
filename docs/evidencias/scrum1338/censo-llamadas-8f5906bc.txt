@@ -1,0 +1,175 @@
+CADA LLAMADA DEL PANEL A /admin, CONTRA SU GATE. Censo ESTATICO por AST sobre public/dashboard/js de origin/main 8f5906bc51c1c17dfd4fd3d44c1bd028324b8f48; gates de dist.
+J4e · 2026-10-01, entre las lecturas de GitHub 07:41:10Z y 07:48:46Z · instrumento: censo-llamadas.mjs.txt.
+Dice A QUE ruta llama cada sitio y que rol exige. NO dice quien ve el boton: eso esta en triaje-leido.txt, y esta LEIDO, no corrido.
+
+POBLACION · ficheros=95 · sitios apiRequest/fetch=218 (apiRequest=180, fetch=38) · fuera de /admin=3
+a /admin: ADMIN=102 · OPERARIO=96 · MIXTO_SEGUN_METODO=0 · SIN_RUTA=7 · RUTA_NO_LITERAL=10
+
+POR FICHERO
+  aiQuoteAssistant.js                OPERARIO=2
+  albaranDesdePresupuestoModal.js    OPERARIO=1
+  albaranDetailView.js               OPERARIO=7 SIN_RUTA=1 ADMIN=1
+  albaranesView.js                   OPERARIO=1
+  almacenLocal.js                    OPERARIO=1
+  api.js                             RUTA_NO_LITERAL=2 OPERARIO=7 ADMIN=1 SIN_RUTA=2
+  app.js                             OPERARIO=4 ADMIN=1 RUTA_NO_LITERAL=1
+  cobrosView.js                      ADMIN=2
+  colaDeFirmas.js                    RUTA_NO_LITERAL=1
+  csvImport.js                       ADMIN=2
+  customerDetailView.js              OPERARIO=6 ADMIN=4
+  customersView.js                   ADMIN=1 OPERARIO=2
+  etiquetasDelDocumento.js           RUTA_NO_LITERAL=1
+  expensesView.js                    ADMIN=5 OPERARIO=3
+  exportView.js                      SIN_RUTA=1
+  facturasRecibidasView.js           ADMIN=1
+  globalSearch.js                    OPERARIO=1
+  homeView.js                        RUTA_NO_LITERAL=2 OPERARIO=4 ADMIN=3
+  invoiceDetailView.js               OPERARIO=1 ADMIN=10
+  invoicesView.js                    RUTA_NO_LITERAL=1 OPERARIO=2 ADMIN=1
+  jobDetailView.js                   OPERARIO=23 ADMIN=11
+  jobNuevoModal.js                   OPERARIO=2
+  jobsView.js                        OPERARIO=4 ADMIN=3
+  libroRegistroView.js               ADMIN=1
+  onboardingView.js                  ADMIN=4 OPERARIO=1
+  parteOficinaView.js                ADMIN=2 OPERARIO=1
+  plansView.js                       ADMIN=4
+  productsView.js                    OPERARIO=2 ADMIN=6
+  providersView.js                   OPERARIO=1 ADMIN=4
+  puertaSerie.js                     ADMIN=2
+  quoteRequestsView.js               OPERARIO=2
+  quotesDetailView.js                OPERARIO=5 ADMIN=5 SIN_RUTA=2
+  quotesListView.js                  ADMIN=1 SIN_RUTA=1
+  quotesView.js                      OPERARIO=7 RUTA_NO_LITERAL=1 ADMIN=2
+  reportsView.js                     ADMIN=10
+  settingsView.js                    ADMIN=8 OPERARIO=2 RUTA_NO_LITERAL=1
+  teamView.js                        ADMIN=5 OPERARIO=2
+  templatesView.js                   OPERARIO=1 ADMIN=2
+  tutorial.js                        OPERARIO=1
+
+== ADMIN
+  albaranDetailView.js:477 apiRequest POST /admin/albaranes/~/convertir-en-factura  -> POST /admin/albaranes/:id/convertir-en-factura
+  api.js:1502 apiRequest PUT /admin/merchant  -> PUT /admin/merchant
+  app.js:115 apiRequest POST /admin/billing/portal  -> POST /admin/billing/portal
+  cobrosView.js:111 apiRequest POST /admin/invoices/~/send-email  -> POST /admin/invoices/:id/send-email
+  cobrosView.js:710 apiRequest GET /admin/cobros  -> GET /admin/cobros
+  csvImport.js:123 apiRequest POST /admin/customers/import/preparar  -> POST /admin/customers/import/preparar
+  csvImport.js:224 apiRequest POST /admin/customers/import  -> POST /admin/customers/import
+  customerDetailView.js:226 apiRequest GET /admin/customers/~/whatsapp  -> GET /admin/customers/:id/whatsapp
+  customerDetailView.js:670 apiRequest GET /admin/customers/~/whatsapp  -> GET /admin/customers/:id/whatsapp
+  customerDetailView.js:952 apiRequest GET /admin/customers/~/fusion-preview  -> GET /admin/customers/:id/fusion-preview
+  customerDetailView.js:986 apiRequest POST /admin/customers/~/fusionar  -> POST /admin/customers/:id/fusionar
+  customersView.js:496 apiRequest POST /admin/customers/bulk-tags  -> POST /admin/customers/bulk-tags
+  expensesView.js:245 apiRequest GET /admin/expenses/summary  -> GET /admin/expenses/summary
+  expensesView.js:290 apiRequest GET /admin/expenses  -> GET /admin/expenses
+  expensesView.js:465 apiRequest DELETE /admin/expenses/~  -> DELETE /admin/expenses/:id
+  expensesView.js:702 apiRequest GET /admin/providers  -> GET /admin/providers
+  expensesView.js:1000 apiRequest PUT /admin/expenses/~  -> PUT /admin/expenses/:id
+  facturasRecibidasView.js:211 apiRequest GET /admin/libros/recibidas.json  -> GET /admin/libros/recibidas.json
+  homeView.js:381 apiRequest GET /admin/reports/resumen-trimestre  -> GET /admin/reports/resumen-trimestre
+  homeView.js:382 apiRequest GET /admin/reports/pl  -> GET /admin/reports/pl
+  homeView.js:731 apiRequest GET /admin/metrics/team  -> GET /admin/metrics/team
+  invoiceDetailView.js:386 fetch POST /admin/invoices/~/resend-whatsapp  -> POST /admin/invoices/:id/resend-whatsapp
+  invoiceDetailView.js:407 apiRequest POST /admin/invoices/~/send-email  -> POST /admin/invoices/:id/send-email
+  invoiceDetailView.js:423 apiRequest POST /admin/invoices/~/send-email  -> POST /admin/invoices/:id/send-email
+  invoiceDetailView.js:471 apiRequest POST /admin/invoices/~/payment-anomaly  -> POST /admin/invoices/:id/payment-anomaly
+  invoiceDetailView.js:490 fetch PUT /admin/invoices/~/status  -> PUT /admin/invoices/:id/status
+  invoiceDetailView.js:576 fetch POST /admin/charges/~/confirm-bizum  -> POST /admin/charges/:id/confirm-bizum
+  invoiceDetailView.js:612 fetch POST /admin/invoices/~/send-reminder  -> POST /admin/invoices/:id/send-reminder
+  invoiceDetailView.js:653 fetch POST /admin/invoices/~/rectify  -> POST /admin/invoices/:id/rectify
+  invoiceDetailView.js:743 fetch POST /admin/invoices/~/regenerate-pdf  -> POST /admin/invoices/:id/regenerate-pdf
+  invoiceDetailView.js:874 fetch POST /admin/invoices/~/annul  -> POST /admin/invoices/:id/annul
+  invoicesView.js:486 apiRequest POST /admin/invoices/bulk-paid  -> POST /admin/invoices/bulk-paid
+  jobDetailView.js:930 apiRequest POST /admin/jobs/~/collect-rest  -> POST /admin/jobs/:id/collect-rest
+  jobDetailView.js:939 apiRequest POST /admin/invoices/~/send-reminder  -> POST /admin/invoices/:id/send-reminder
+  jobDetailView.js:1176 apiRequest GET /admin/team  -> GET /admin/team
+  jobDetailView.js:1450 apiRequest POST /admin/invoices/~/send-email  -> POST /admin/invoices/:id/send-email
+  jobDetailView.js:1669 apiRequest POST /admin/jobs/~/consolidar-albaranes  -> POST /admin/jobs/:id/consolidar-albaranes
+  jobDetailView.js:2178 apiRequest POST /admin/invoices/~/payment-anomaly  -> POST /admin/invoices/:id/payment-anomaly
+  jobDetailView.js:2184 apiRequest PUT /admin/invoices/~/status  -> PUT /admin/invoices/:id/status
+  jobDetailView.js:2211 apiRequest POST /admin/charges/~/confirm-bizum  -> POST /admin/charges/:id/confirm-bizum
+  jobDetailView.js:2233 apiRequest POST /admin/invoices/~/send-reminder  -> POST /admin/invoices/:id/send-reminder
+  jobDetailView.js:2249 apiRequest POST /admin/invoices/~/resend-whatsapp  -> POST /admin/invoices/:id/resend-whatsapp
+  jobDetailView.js:3398 apiRequest POST /admin/albaranes/~/facturar-parcial  -> POST /admin/albaranes/:id/facturar-parcial
+  jobsView.js:132 apiRequest GET /admin/team  -> GET /admin/team
+  jobsView.js:843 apiRequest GET /admin/team  -> GET /admin/team
+  jobsView.js:1128 apiRequest POST /admin/jobs/~/collect-rest  -> POST /admin/jobs/:id/collect-rest
+  libroRegistroView.js:179 apiRequest GET /admin/libro-registro  -> GET /admin/libro-registro
+  onboardingView.js:250 apiRequest POST /admin/onboarding/serie/previa  -> POST /admin/onboarding/serie/previa
+  onboardingView.js:284 apiRequest POST /admin/onboarding/serie  -> POST /admin/onboarding/serie
+  onboardingView.js:328 apiRequest POST /admin/products/load-catalog  -> POST /admin/products/load-catalog
+  onboardingView.js:496 fetch POST /admin/onboarding/complete  -> POST /admin/onboarding/complete
+  parteOficinaView.js:50 apiRequest GET /admin/partes/oficina/pendientes  -> GET /admin/partes/oficina/pendientes
+  parteOficinaView.js:102 apiRequest GET /admin/partes/~/oficina  -> GET /admin/partes/:id/oficina
+  plansView.js:7 apiRequest GET /admin/billing/plans  -> GET /admin/billing/plans
+  plansView.js:210 apiRequest POST /admin/billing/checkout  -> POST /admin/billing/checkout
+  plansView.js:263 apiRequest POST /admin/billing/accept-alcance  -> POST /admin/billing/accept-alcance
+  plansView.js:275 apiRequest POST /admin/billing/portal  -> POST /admin/billing/portal
+  productsView.js:716 fetch GET /admin/providers  -> GET /admin/providers
+  productsView.js:723 fetch POST /admin/products  -> POST /admin/products
+  productsView.js:734 fetch PUT /admin/products/~  -> PUT /admin/products/:id
+  productsView.js:749 fetch POST /admin/products/import  -> POST /admin/products/import
+  productsView.js:1010 fetch POST /admin/products/import  -> POST /admin/products/import
+  productsView.js:1147 apiRequest POST /admin/products/load-catalog  -> POST /admin/products/load-catalog
+  providersView.js:304 fetch GET /admin/providers  -> GET /admin/providers
+  providersView.js:311 fetch POST /admin/providers  -> POST /admin/providers
+  providersView.js:322 fetch PUT /admin/providers/~  -> PUT /admin/providers/:id
+  providersView.js:334 fetch DELETE /admin/providers/~  -> DELETE /admin/providers/:id
+  puertaSerie.js:213 apiRequest POST /admin/onboarding/serie/previa  -> POST /admin/onboarding/serie/previa
+  puertaSerie.js:240 apiRequest POST /admin/onboarding/serie  -> POST /admin/onboarding/serie
+  quotesDetailView.js:807 apiRequest PATCH /admin/quotes/~/billing-plan  -> PATCH /admin/quotes/:id/billing-plan
+  quotesDetailView.js:870 fetch PUT /admin/invoices/~/status  -> PUT /admin/invoices/:id/status
+  quotesDetailView.js:1073 apiRequest GET /admin/expenses/margin/~  -> GET /admin/expenses/margin/:quoteId
+  quotesDetailView.js:1429 apiRequest DELETE /admin/maintenance/~  -> DELETE /admin/maintenance/:id
+  quotesDetailView.js:1459 apiRequest POST /admin/maintenance  -> POST /admin/maintenance
+  quotesListView.js:331 apiRequest POST /admin/quotes/~/approve  -> POST /admin/quotes/:id/approve
+  quotesView.js:4929 apiRequest POST /admin/templates  -> POST /admin/templates
+  quotesView.js:5443 apiRequest POST /admin/invoices  -> POST /admin/invoices
+  reportsView.js:166 apiRequest GET /admin/reports/pl  -> GET /admin/reports/pl
+  reportsView.js:398 apiRequest GET /admin/reports/vat  -> GET /admin/reports/vat
+  reportsView.js:526 apiRequest GET /admin/reports/resumen-trimestre  -> GET /admin/reports/resumen-trimestre
+  reportsView.js:527 apiRequest GET /admin/libros/recibidas.json  -> GET /admin/libros/recibidas.json
+  reportsView.js:528 apiRequest GET /admin/reports/pl  -> GET /admin/reports/pl
+  reportsView.js:673 apiRequest GET /admin/reports/x2  -> GET /admin/reports/x2
+  reportsView.js:745 apiRequest GET /admin/metrics/funnel  -> GET /admin/metrics/funnel
+  reportsView.js:746 apiRequest GET /admin/metrics/services  -> GET /admin/metrics/services
+  reportsView.js:761 apiRequest GET /admin/metrics/whatsapp  -> GET /admin/metrics/whatsapp
+  reportsView.js:842 apiRequest GET /admin/metrics/platform-funnel  -> GET /admin/metrics/platform-funnel
+  settingsView.js:623 apiRequest GET /admin/connect/status  -> GET /admin/connect/status
+  settingsView.js:646 apiRequest POST /admin/connect/onboard  -> POST /admin/connect/onboard
+  settingsView.js:736 apiRequest GET /admin/digest/preview  -> GET /admin/digest/preview
+  settingsView.js:1224 apiRequest GET /admin/metrics/whatsapp  -> GET /admin/metrics/whatsapp
+  settingsView.js:1344 apiRequest GET /admin/connect/status  -> GET /admin/connect/status
+  settingsView.js:1687 apiRequest GET /admin/referral  -> GET /admin/referral
+  settingsView.js:1726 apiRequest POST /admin/referral/redeem  -> POST /admin/referral/redeem
+  settingsView.js:1811 apiRequest POST /admin/datos-ejemplo/eliminar  -> POST /admin/datos-ejemplo/eliminar
+  teamView.js:74 apiRequest GET /admin/team  -> GET /admin/team
+  teamView.js:164 apiRequest POST /admin/team/~/resend  -> POST /admin/team/:id/resend
+  teamView.js:186 apiRequest DELETE /admin/team/~  -> DELETE /admin/team/:id
+  teamView.js:268 apiRequest POST /admin/team  -> POST /admin/team
+  teamView.js:332 apiRequest PUT /admin/team/~  -> PUT /admin/team/:id
+  templatesView.js:146 apiRequest DELETE /admin/templates/~  -> DELETE /admin/templates/:id
+  templatesView.js:195 apiRequest PUT /admin/templates/~  -> PUT /admin/templates/:id
+
+== MIXTO_SEGUN_METODO
+
+== SIN_RUTA
+  albaranDetailView.js:400 apiRequest POST /admin/albaranes/~
+  api.js:1512 apiRequest GET /admin/customers~
+  api.js:1549 apiRequest GET /admin/quotes~
+  exportView.js:169 apiRequest GET /admin/exports/datos.zip/info~
+  quotesDetailView.js:983 fetch POST /admin/quotes/~/~
+  quotesDetailView.js:1261 fetch POST /admin/quotes/~/~
+  quotesListView.js:426 apiRequest GET /admin/quotes~
+
+== RUTA_NO_LITERAL
+  api.js:269 fetch (método dinámico) url
+  api.js:445 fetch GET url
+  app.js:633 apiRequest GET d.ruta(id)
+  colaDeFirmas.js:464 apiRequest POST base(firma.albaranId)
+  etiquetasDelDocumento.js:115 apiRequest PUT endpoint
+  homeView.js:136 apiRequest GET veNegocio ? "/admin/metrics/home" : "/admin/metrics/inicio"
+  homeView.js:284 apiRequest GET window.appUserRole === 'admin' ? '/admin/metrics/home' : '/admin/metrics/inicio'
+  invoicesView.js:51 fetch GET url.toString()
+  quotesView.js:3674 fetch GET url
+  settingsView.js:1649 fetch GET url
+EXIT=0

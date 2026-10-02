@@ -27,6 +27,7 @@ import http from 'node:http';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { firmaTieneTrazo } from '../dist/modules/quotes/domain/firmaConTrazo.js';
 import { prisma } from '../dist/core/db/prisma.js';
 import { quoteDecisionLandingRouter } from '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
@@ -138,24 +139,37 @@ const controles = filas.filter((f) => f.caso.modo === 'normal');
 for (const f of filas) {
   if (!f.llegoAEnviar) ciegos.push(`${f.caso.modo} · densidad ${f.caso.dpr} → pulsar «aceptar» no llegó a enviar nada`);
 }
-if (controles.length < 2 || controles.some((f) => !f.conTrazo)) {
+const controlVale = controles.length >= 2 && controles.every((f) => f.conTrazo);
+if (!controlVale) {
   ciegos.push('el CONTROL (modo normal) no produce una firma con trazo: el instrumento no está dibujando');
 }
-if (ciegos.length) {
+const ciegosUnicos = [...new Set(ciegos)];
+if (ciegosUnicos.length) {
   console.error('\n  🔴 NO SUPE MIRAR — esto NO es «la firma de 3 opciones funciona»:\n');
-  for (const c of [...new Set(ciegos)]) console.error('     · ' + c);
-  process.exit(1);
+  for (const c of ciegosUnicos) console.error('     · ' + c);
 }
 
-const malas = filas.filter((f) => f.caso.modo === 'tramos' && (!f.conTrazo || f.errores.length
+// SCRUM-1327 · un caso que no llegó a enviar es CIEGO, no una firma sin trazo; y si el control no
+// dibuja, de «3 opciones» no se juzga nada. Antes esto no hacía falta decirlo porque cualquier
+// ciego salía ANTES de mirar las malas — con 1, el mismo número que el defecto.
+const malas = !controlVale ? [] : filas.filter((f) => f.caso.modo === 'tramos' && f.llegoAEnviar && (!f.conTrazo || f.errores.length
   || f.lienzo.ancho !== Math.round(f.lienzo.anchoPantalla * f.lienzo.dpr)));
 if (malas.length) {
   console.error(`\n  🔴 «3 OPCIONES»: LA CLIENTE DIBUJA Y NO QUEDA FIRMA (${malas.length} de ${filas.length - controles.length}).\n`);
   console.error('  El bloque de firma nace oculto y el lienzo no toma tamaño al mostrarse. El modo normal,');
   console.error('  con el mismo lienzo y el mismo trazo, sí firma: la diferencia es cuándo se mide.');
   console.error('  Mira `resize()` y su ResizeObserver en `quoteDecisionLanding.routes.ts` (SIG_JS).\n');
-  process.exit(1);
 }
+
+// El código sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`), no de este fichero.
+const veredictoFinal = veredictoDe({ hallazgos: malas, ciegos: ciegosUnicos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
+}
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log('  ' + veredictoFinal.linea);
 
 console.log('\n  ✔ «3 opciones» firma igual que el modo normal: el lienzo toma su tamaño al mostrarse y lo');
 console.log('    que se envía tiene trazo, a densidad 1 y 3. El modo normal hizo de control.\n');

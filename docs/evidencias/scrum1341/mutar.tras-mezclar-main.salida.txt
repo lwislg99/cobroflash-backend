@@ -1,0 +1,94 @@
+BASE: pasan=13 caen=0
+M1 la fila de cada persona devuelve su id: CAE (se esperaba: lista CERRADA) · pasan=10 caen=3
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M2 las filas se pasan enteras, como vienen de la base: CAE (se esperaba: lista CERRADA) · pasan=10 caen=3
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M3 la consulta de presupuestos pide el total: CAE (se esperaba: por EFECTO en la base) · pasan=12 caen=1
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+M4 la funcion consulta las facturas cobradas: CAE (se esperaba: por EFECTO en la base) · pasan=12 caen=1
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+M5 la ruta recorta por campo el panel del admin y se deja la estrella: CAE (se esperaba: NI UN EURO) · pasan=7 caen=6
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+      - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M6 la ruta recorta por campo y deja la clave de «Sin asignar», vacia: CAE (se esperaba: los cinco mecanismos) · pasan=8 caen=5
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+      - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+M7 la respuesta lleva el total cobrado del negocio: CAE (se esperaba: NI UN EURO) · pasan=8 caen=5
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+      - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+M8 las filas salen ordenadas por lo cobrado, sin la cifra: CAE (se esperaba: NI UN EURO) · pasan=9 caen=4
+      - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M9 la consulta de miembros pierde su orderBy: CAE (se esperaba: el orden está DECLARADO) · pasan=12 caen=1
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+M10 la ruta nueva exige admin: CAE (se esperaba: lista CERRADA) · pasan=8 caen=5
+      - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+      - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+      - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M11 la ruta del dinero pierde su requireRole: CAE (se esperaba: le sigue contestando 403) · pasan=12 caen=1
+      - SCRUM-1341 · 🔴 `/admin/metrics/team` le sigue contestando 403 al Técnico, y antes de tocar la base
+M12 la ruta nueva sale de TECNICO_ALLOWED: CAE (se esperaba: DECLARADAS) · pasan=12 caen=1
+      - SCRUM-1341 · las dos rutas están DECLARADAS: la nueva con su motivo, la del admin con su 403, y el tope sigue en 0
+M13 PENDIENTE_MAX sube a 1: CAE (se esperaba: DECLARADAS) · pasan=12 caen=1
+      - SCRUM-1341 · las dos rutas están DECLARADAS: la nueva con su motivo, la del admin con su 403, y el tope sigue en 0
+M14 el recuento de aceptados diverge del del admin: CAE (se esperaba: persona a persona) · pasan=12 caen=1
+      - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+M15 la consulta de miembros no filtra por merchant: CAE (se esperaba: por EFECTO en la base) · pasan=12 caen=1
+      - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+M16 el titulo pierde el separador firmado: CAE (se esperaba: título firmado) · pasan=12 caen=1
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+M17 el bloque del Tecnico pide la ruta del admin: CAE (se esperaba: título firmado) · pasan=11 caen=2
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+      - SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto
+M18 el bloque del Tecnico pinta la estrella: CAE (se esperaba: aunque le LLEGUE) · pasan=11 caen=2
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+M19 el bloque del Tecnico gana la columna de lo cobrado: CAE (se esperaba: aunque le LLEGUE) · pasan=11 caen=2
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+M20 el bloque del Tecnico pinta el aviso de inactividad: CAE (se esperaba: aunque le LLEGUE) · pasan=12 caen=1
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+M21 el bloque del Tecnico lleva el boton al hub: CAE (se esperaba: aunque le LLEGUE) · pasan=11 caen=2
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+M22 al Tecnico no se le pinta nada, como antes: CAE (se esperaba: título firmado) · pasan=10 caen=3
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+      - SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto
+M23 al admin se le pinta el bloque del Tecnico: CAE (se esperaba: Inicio del ADMIN sigue) · pasan=11 caen=2
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+      - SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta, su título, sus cuatro columnas y su dinero
+M24 el admin pierde la columna «Cobrado»: CAE (se esperaba: Inicio del ADMIN sigue) · pasan=11 caen=2
+      - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+      - SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta, su título, sus cuatro columnas y su dinero
+M25 el bloque se pinta aunque no haya equipo de campo: CAE (se esperaba: sin equipo de campo) · pasan=12 caen=1
+      - SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto
+M26 el titulo lleva un estilo en linea: CAE (se esperaba: título firmado) · pasan=12 caen=1
+      - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+M27 el rotulo de rol vuelve al gris del panel del admin: CAE (se esperaba: llega a AA) · pasan=12 caen=1
+      - SCRUM-1341 · todo color de texto del bloque llega a AA (4,5:1) sobre el fondo en el que cae
+M28 el % alto vuelve al verde de marca: CAE (se esperaba: llega a AA) · pasan=12 caen=1
+      - SCRUM-1341 · todo color de texto del bloque llega a AA (4,5:1) sobre el fondo en el que cae
+
+POBLACION: 28 mutaciones de 28 · mudas o ciegas: 0
+FINAL: build=0 · pasan=13 caen=0
+ARBOL: limpio
+EXIT=0

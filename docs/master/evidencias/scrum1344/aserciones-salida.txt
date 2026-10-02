@@ -1,0 +1,28 @@
+BASE=origin/main (8e03d28cf2eddc658493a2a2bb00e2b94303bd18)
+POBLACION=23 ficheros de tests/ modificados · 3 nuevos (no se comparan) · 0 borrados o renombrados
+IGUALES  · tests/scrum1040-facturas-recibidas-servidor.test.mjs · 16 aserciones antes, 16 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1057-duplicados-antes-de-id.test.mjs · 6 aserciones antes, 6 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1138-patch-customers.test.mjs · 11 aserciones antes, 11 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1151-conteo-no-deducible.test.mjs · 10 aserciones antes, 10 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1184-serie-siguiente-numero.test.mjs · 12 aserciones antes, 12 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1232-libro-sin-justificantes.test.mjs · 28 aserciones antes, 28 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1285b-plan-de-cobro-con-version.test.mjs · 18 aserciones antes, 18 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum1288-dinero-es-en-avisos-s1.test.mjs · 11 aserciones antes, 11 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum244-supresion-y-anonimizado.test.mjs · 44 aserciones antes, 44 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum257-albaran-desde-presupuesto.test.mjs · 22 aserciones antes, 22 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum263-sin-lineas-409.test.mjs · 8 aserciones antes, 8 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum302-presupuesto-y-fotos.test.mjs · 21 aserciones antes, 21 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum303-albaran-una-pantalla.test.mjs · 49 aserciones antes, 49 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum308-caracterizacion-rectify.test.mjs · 17 aserciones antes, 17 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum342-dispute-package-quote-nulo.test.mjs · 11 aserciones antes, 11 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum343-cabecera-gastos-unica.test.mjs · 11 aserciones antes, 11 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum389-un-solo-iva.test.mjs · 17 aserciones antes, 17 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum440-tenencia-supresion.test.mjs · 18 aserciones antes, 18 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum728-serie-ocupada-postgres.test.mjs · 26 aserciones antes, 26 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum771-el-emisor-no-valida-el-tipo.test.mjs · 44 aserciones antes, 44 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum885-documento-sin-enviar.test.mjs · 58 aserciones antes, 58 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum887c-caso-c-bloqueado.test.mjs · 30 aserciones antes, 30 ahora · líneas que siguen distintas tras deshacer el envoltorio: ninguna
+IGUALES  · tests/scrum912-leer-ticket-gasto.test.mjs · 79 aserciones antes, 79 ahora · líneas que siguen distintas tras deshacer el envoltorio: 65
+CONTROL POSITIVO (una aserción cambiada sale distinta): sí
+RESULTADO: 567 aserciones comparadas en 23 ficheros · 0 ficheros con alguna distinta
+EXIT=0

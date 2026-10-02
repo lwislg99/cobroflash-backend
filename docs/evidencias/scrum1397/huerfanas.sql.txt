@@ -1,0 +1,73 @@
+-- SCRUM-1397 · CUÁNTAS FACTURAS NO SON DE NINGÚN EJE. SÓLO LECTURA: un SELECT, ninguna escritura.
+--
+-- Qué cuenta: por cada documento de `invoices` (facturas, rectificativas y justificantes), si
+-- alguna PERSONA DEL EQUIPO lo tiene por alguno de los tres ejes de la decisión:
+--   · autor       → su presupuesto tiene autor (`quotes.team_member_id`)
+--   · trabajo     → llega a un Trabajo (por el presupuesto que lo abrió, por un adicional, o por
+--                   un albarán: `albaranes.invoice_id` o el libro de líneas facturadas) y ese
+--                   Trabajo tiene a alguien (operario, asignado o tabla de asignados)
+--   · documento   → tiene alguna fila en `invoice_assignees`
+-- Una rectificativa hereda los ejes de la factura a la que rectifica (un nivel).
+--
+-- Las tres cifras que importan:
+--   de_ningun_eje ................ no la ve ningún Técnico; sólo la administración
+--   …y_sin_presupuesto_ni_albaran  de ésas, las que además no nacen de nada: la factura suelta y
+--                                  la del cobro sin presupuesto. Sólo asignándolas pasan a ser de alguien.
+--   …y_de_la_oficina ............. de ésas, las que sí tienen presupuesto o albarán, pero sin nadie
+--                                  del equipo detrás (las hizo la persona propietaria)
+--
+-- CONTROLES, y sin ellos el número no vale:
+--   1. `base` tiene que ser la base que crees que estás mirando.
+--   2. de_alguien + de_ningun_eje = total, y las dos sub-cifras suman de_ningun_eje.
+--   3. `con_presupuesto` no puede ser 0 en una cuenta que ha aceptado algún presupuesto: si lo es,
+--      la consulta no está viendo la tabla que crees.
+WITH propio AS (
+  SELECT
+    i.id,
+    i.rectifies_id,
+    (i."quoteId" IS NOT NULL) AS con_presupuesto,
+    (q.team_member_id IS NOT NULL) AS autor,
+    EXISTS (SELECT 1 FROM invoice_assignees a WHERE a.invoice_id = i.id) AS documento,
+    EXISTS (
+      SELECT 1 FROM jobs j
+      WHERE j.merchant_id = i."merchantId"
+        AND (
+          j.quote_id = i."quoteId"
+          OR j.id = q.job_id
+          OR j.id IN (SELECT al.job_id FROM albaranes al WHERE al.invoice_id = i.id)
+          OR j.id IN (SELECT al.job_id FROM albaranes al
+                      JOIN albaran_lineas_facturadas l ON l.albaran_id = al.id
+                      WHERE l.invoice_id = i.id)
+        )
+        AND (
+          j.operario_id IS NOT NULL
+          OR j.assigned_user_id IS NOT NULL
+          OR EXISTS (SELECT 1 FROM job_assignees ja WHERE ja.job_id = j.id)
+        )
+    ) AS trabajo,
+    (i."quoteId" IS NULL
+      AND NOT EXISTS (SELECT 1 FROM albaranes al WHERE al.invoice_id = i.id)
+      AND NOT EXISTS (SELECT 1 FROM albaran_lineas_facturadas l WHERE l.invoice_id = i.id)
+    ) AS sin_origen
+  FROM invoices i
+  LEFT JOIN quotes q ON q.id = i."quoteId"
+),
+f AS (
+  SELECT
+    p.id,
+    (p.con_presupuesto OR COALESCE(o.con_presupuesto, false)) AS con_presupuesto,
+    (p.autor OR p.documento OR p.trabajo
+      OR COALESCE(o.autor OR o.documento OR o.trabajo, false)) AS de_alguien,
+    (p.sin_origen AND COALESCE(o.sin_origen, true)) AS sin_origen
+  FROM propio p
+  LEFT JOIN propio o ON o.id = p.rectifies_id
+)
+SELECT
+  current_database()                                          AS base,
+  count(*)                                                    AS total,
+  count(*) FILTER (WHERE con_presupuesto)                     AS con_presupuesto,
+  count(*) FILTER (WHERE de_alguien)                          AS de_alguien,
+  count(*) FILTER (WHERE NOT de_alguien)                      AS de_ningun_eje,
+  count(*) FILTER (WHERE NOT de_alguien AND sin_origen)       AS de_ningun_eje_y_sin_presupuesto_ni_albaran,
+  count(*) FILTER (WHERE NOT de_alguien AND NOT sin_origen)   AS de_ningun_eje_y_de_la_oficina
+FROM f;

@@ -32,6 +32,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 
@@ -198,7 +199,6 @@ console.log('  ' + '─'.repeat(100));
 if (ciegos.length) {
   console.error('\n  🔴 NO SUPE MEDIR — esto NO es «el detalle cuadra»:\n');
   for (const c of ciegos) console.error('     · ' + c);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
 }
 if (hallazgos.length) {
   console.error(`\n  🔴 ${hallazgos.length} DE ${CASOS.length} CASOS NO PINTAN LO ESPERADO:\n`);
@@ -207,6 +207,12 @@ if (hallazgos.length) {
     for (const m of h.mal) console.error('       · ' + m);
   }
   console.error('\n  El profesional lee una base y un IVA que no suman el total que firma el cliente.');
-  process.exit(SALIDA_HALLAZGO);
+}
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error('\n  ' + veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
 }
 console.log(`\n  ✔ los ${CASOS.length} casos: sin descuentos igual que hoy; con descuentos, la misma cuenta que el editor.\n`);

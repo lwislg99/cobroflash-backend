@@ -1,0 +1,28 @@
+POBLACION=8 mutaciones · HEAD=40b6e4dadfd1cd7d644cf977d346d134d82a3c9c · arbol limpio=true
+BASE sin mutar: exit=0 pasan=11 caen=0
+M1 el Inicio del operario vuelve a pedir /home
+   aplicada: 1 1 public/dashboard/js/homeView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ EL INICIO DEL OPERARIO PINTA, con sus globos, y sin ped
+M2 no se le quitan los bloques del negocio
+   aplicada: 1 1 public/dashboard/js/homeView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ EL INICIO DEL OPERARIO PINTA, con sus globos, y sin ped
+M3 los globos del arranque vuelven a /home
+   aplicada: 1 1 public/dashboard/js/homeView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · los globos del arranque (`refreshSidebarBadges`) también 
+M4 el aviso del trimestre vuelve a preguntar a /admin/reports
+   aplicada: 0 1 public/dashboard/js/homeView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ EL INICIO DEL OPERARIO PINTA, con sus globos, y sin ped
+M5 Productos vuelve a pedir proveedores
+   aplicada: 1 1 public/dashboard/js/productsView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ la lista de PRODUCTOS del operario carga sin pedir prov
+M6 Productos vuelve a cablear el margen sin mirar
+   aplicada: 1 1 public/dashboard/js/productsView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ la lista de PRODUCTOS del operario carga sin pedir prov
+M7 Plantillas vuelve a pintar Renombrar y Borrar
+   aplicada: 1 1 public/dashboard/js/templatesView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ en Plantillas el operario puede USAR, y no ve «Renombra
+M8 el editor vuelve a pintar Guardar como plantilla
+   aplicada: 1 1 public/dashboard/js/quotesView.js · CAE · pasan=10 caen=1 · restaurado=true
+   SCRUM-1317 · ✅ en el editor el operario puede usar plantillas, y «Guar
+BASE al final: exit=0 pasan=11 · mudas=0
+EXIT=0

@@ -1,0 +1,189 @@
+2026-10-01T14:46:54.2882492Z HEAD is now at 7c0b31a Merge eb8d075719e578ae3ade787489aa4e23227d0bc6 into 762f4fbba51ea214fd6c2473baa577d69c088791
+2026-10-01T14:47:17.2758189Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:47:17.2759779Z TRINQUETE DE ZONA HORARIA · ¿ha crecido la familia de tests que miden la máquina?
+2026-10-01T14:47:17.2760819Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:47:17.2761968Z   árbol ......... /home/runner/work/cobroflash-backend/cobroflash-backend
+2026-10-01T14:47:17.2762610Z   zonas ......... Pacific/Kiritimati  ·  Pacific/Midway
+2026-10-01T14:47:17.2763233Z   censadas ...... 1 (las que HOY dependen de la zona, a propósito)
+2026-10-01T14:47:17.2763720Z   alcance ....... la tanda entera + los 4 canarios
+2026-10-01T14:47:17.2763945Z 
+2026-10-01T14:47:17.2764176Z SONDA · ¿llega de verdad la zona al proceso hijo?
+2026-10-01T14:47:17.2764728Z 
+2026-10-01T14:47:17.3579751Z    ✔ Pacific/Kiritimati     el hijo ve: Pacific/Kiritimati
+2026-10-01T14:47:17.3580472Z    ✔ Pacific/Midway         el hijo ve: Pacific/Midway
+2026-10-01T14:47:17.3624161Z 
+2026-10-01T14:47:17.3624780Z    1190 ficheros de la tanda + 4 canarios = 1194
+2026-10-01T14:47:17.3625088Z 
+2026-10-01T14:52:09.5667829Z    midiendo en Pacific/Kiritimati     …  9839 pruebas · 292 s · el hijo vio Pacific/Kiritimati
+2026-10-01T14:56:57.5554101Z    midiendo en Pacific/Midway         …  9781 pruebas · 288 s · el hijo vio Pacific/Midway
+2026-10-01T14:56:57.5720934Z 
+2026-10-01T14:56:57.5722068Z    árbol quieto durante las dos pasadas ✔
+2026-10-01T14:56:57.5831647Z 
+2026-10-01T14:56:57.5833042Z REPESCA · 7 fichero(s) con candidatos, medidos a solas
+2026-10-01T14:56:57.5833435Z 
+2026-10-01T14:56:57.7275546Z    canario-dependiente-este.test.mjs              confirma 1 de 1
+2026-10-01T14:56:57.8763138Z    canario-dependiente-oeste.test.mjs             confirma 1 de 1
+2026-10-01T14:56:59.0538531Z    scrum1262-la-baja-corta-todas-las-vias.test.mjs confirma 0 de 14
+2026-10-01T14:56:59.2528855Z    scrum1350-latido.test.mjs                      confirma 0 de 7
+2026-10-01T14:56:59.5150065Z    scrum592-numeracion-doc02.test.mjs             confirma 1 de 1
+2026-10-01T14:57:00.2083337Z    scrum931-un-solo-importe-de-plantilla.test.mjs confirma 0 de 6
+2026-10-01T14:57:00.4071767Z    vigia-atascados.test.mjs                       confirma 22 de 31
+2026-10-01T14:57:00.4072267Z 
+2026-10-01T14:57:00.4073005Z AUTOCONTROL · los cuatro canarios, por el mismo camino y en las mismas zonas
+2026-10-01T14:57:00.4073491Z 
+2026-10-01T14:57:00.4073952Z    ✔ DEPENDIENTE  canario-dependiente-oeste.test.mjs DENUNCIADO (se esperaba que lo fuera)
+2026-10-01T14:57:00.4074896Z    ✔ DEPENDIENTE  canario-dependiente-este.test.mjs  DENUNCIADO (se esperaba que lo fuera)
+2026-10-01T14:57:00.4075663Z    ✔ FIJADO       canario-fijado.test.mjs            no denunciado (se esperaba que no)
+2026-10-01T14:57:00.4076392Z    ✔ FIJADO       canario-sin-fechas.test.mjs        no denunciado (se esperaba que no)
+2026-10-01T14:57:00.4076711Z 
+2026-10-01T14:57:00.4076718Z 
+2026-10-01T14:57:00.4077196Z CAMBIAN DE VEREDICTO EN EL ÁRBOL: 23  (censadas: 1)
+2026-10-01T14:57:00.4077432Z 
+2026-10-01T14:57:00.4077736Z    · SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa
+2026-10-01T14:57:00.4078272Z         tests/scrum592-numeracion-doc02.test.mjs
+2026-10-01T14:57:00.4078787Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → fail
+2026-10-01T14:57:00.4079885Z         censada: docs/master/SCRUM-643.md §2·A — misma familia: el año se deriva del reloj del proceso.
+2026-10-01T14:57:00.4080682Z    🔴 NUEVA el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+2026-10-01T14:57:00.4081392Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4081874Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4082614Z    🔴 NUEVA el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+2026-10-01T14:57:00.4083200Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4083657Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4084263Z    🔴 NUEVA la pasada le da al clasificador el dato del auto-merge
+2026-10-01T14:57:00.4084679Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4085160Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4085864Z    🔴 NUEVA la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+2026-10-01T14:57:00.4086400Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4087046Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4087697Z    🔴 NUEVA los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+2026-10-01T14:57:00.4088141Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4088575Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4089109Z    🔴 NUEVA pasar A una causa que espera no es empeorar (un push arregló el rojo y CI corre)
+2026-10-01T14:57:00.4089604Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4089992Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4091209Z    🔴 NUEVA sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+2026-10-01T14:57:00.4091721Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4092260Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4092900Z    🔴 NUEVA un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+2026-10-01T14:57:00.4093329Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4093803Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4094401Z    🔴 NUEVA un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco
+2026-10-01T14:57:00.4094933Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4095345Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4095864Z    🔴 NUEVA y el que espera y entró en silencio avisa al cruzar las 24 h
+2026-10-01T14:57:00.4096342Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4096773Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4097472Z    🔴 NUEVA y una cuenta que solo se le parece NO
+2026-10-01T14:57:00.4097852Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4098258Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4098959Z    🔴 NUEVA 🔴 CEBO REAL #1190 · del bot, sin auto-merge y todo en verde → SIN-AUTO-MERGE, no ESPERANDO
+2026-10-01T14:57:00.4099436Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4099920Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4100413Z    🔴 NUEVA 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+2026-10-01T14:57:00.4100774Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4101160Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4101694Z    🔴 NUEVA 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa
+2026-10-01T14:57:00.4102107Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4102454Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4102861Z    🔴 NUEVA 🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+2026-10-01T14:57:00.4103430Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4103809Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4104370Z    🔴 NUEVA 🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+2026-10-01T14:57:00.4104737Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4105081Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4105559Z    🔴 NUEVA 🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+2026-10-01T14:57:00.4105958Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4106359Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4106788Z    🔴 NUEVA 🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+2026-10-01T14:57:00.4107413Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4107982Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4108462Z    🔴 NUEVA 🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY
+2026-10-01T14:57:00.4108827Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4109169Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4109705Z    🔴 NUEVA 🔴 pasar DE una causa que espera a una que no, sí: el #1205 de ESPERANDO a ROJO-OBLIGATORIO
+2026-10-01T14:57:00.4110099Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4110440Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4110905Z    🔴 NUEVA 🔴 una causa que NO se arregla esperando avisa al entrar, sin esperar a la edad
+2026-10-01T14:57:00.4111278Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4111642Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4112025Z    🔴 NUEVA 🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+2026-10-01T14:57:00.4112326Z         tests/vigia-atascados.test.mjs
+2026-10-01T14:57:00.4112684Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T14:57:00.4112884Z 
+2026-10-01T14:57:00.4113170Z ⚠️ NO CONFIRMADAS a solas · 36 — parpadeo, o dependencia que sólo
+2026-10-01T14:57:00.4113622Z    sale en compañía. NO cuentan para el veredicto, y por eso se imprimen aquí.
+2026-10-01T14:57:00.4114049Z 
+2026-10-01T14:57:00.4115279Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 · la exención SÓLO la declara quien procesa el entrante, y hacia quien escribió
+2026-10-01T14:57:00.4116358Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 · los 8 senders pasan por el corte, y la decisión vive en UN sitio
+2026-10-01T14:57:00.4117813Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ la CONFIRMACIÓN de la propia baja sigue saliendo (va sin merchant)
+2026-10-01T14:57:00.4118920Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ sendWhatsAppButtons: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+2026-10-01T14:57:00.4120180Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ sendWhatsAppCtaUrl: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+2026-10-01T14:57:00.4121265Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ sendWhatsAppList: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+2026-10-01T14:57:00.4122176Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ sendWhatsAppLocationRequest: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+2026-10-01T14:57:00.4123172Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 ✅ sendWhatsAppText: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+2026-10-01T14:57:00.4124034Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 la exención NO se hereda del freno del demo: `exentoDelDemo` no levanta la baja
+2026-10-01T14:57:00.4124859Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 las vías que inicia el negocio NO pueden declararse respuesta
+2026-10-01T14:57:00.4125843Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 ④ sendWhatsAppCtaUrl: si la consulta de la baja REVIENTA, no se envía
+2026-10-01T14:57:00.4126787Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 ④ sendWhatsAppDocument: si la consulta de la baja REVIENTA, no se envía
+2026-10-01T14:57:00.4127975Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 ④ sendWhatsAppList: si la consulta de la baja REVIENTA, no se envía
+2026-10-01T14:57:00.4128852Z    · tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs::SCRUM-1262 🔴 ④ sendWhatsAppLocationRequest: si la consulta de la baja REVIENTA, no se envía
+2026-10-01T14:57:00.4129653Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y dice cuánto llevan
+2026-10-01T14:57:00.4130403Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · contra disco: el ÚLTIMO turno con uso (baja al compactar), y sin fichero es «no pude», no cero
+2026-10-01T14:57:00.4131217Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó
+2026-10-01T14:57:00.4131957Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CONTEXTO: cada sesión viva sale con su ocupación, y la que pasa del umbral se avisa
+2026-10-01T14:57:00.4132802Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · NEGATIVO del libro: la que SIGUIÓ trabajando sale sola; la «contestada» deja de avisar; otra pregunta nueva vuelve a avisar
+2026-10-01T14:57:00.4133617Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 el lector cuenta lo que NO pudo leer en vez de saltárselo (contra disco)
+2026-10-01T14:57:00.4134371Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 una pregunta NO caduca porque paren a quien la hizo: el libro la conserva cuando el registro la borra
+2026-10-01T14:57:00.4135214Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 LA PUERTA: el importe entra como NÚMERO en los cuatro builders
+2026-10-01T14:57:00.4136029Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 LA PUERTA: ninguna plantilla acepta el importe YA formateado
+2026-10-01T14:57:00.4136768Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 SUELO: el correo se está leyendo de verdad
+2026-10-01T14:57:00.4137696Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 SUELO: el lector encuentra la llamada de plantilla en los siete productores
+2026-10-01T14:57:00.4138765Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 TRINQUETE: ningún productor formatea el importe por su cuenta
+2026-10-01T14:57:00.4139874Z    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs::SCRUM-931 · 🔴 el correo manda el importe en la forma de la casa
+2026-10-01T14:57:00.4140994Z    · tests/vigia-atascados.test.mjs::CEBO REAL #1248 · rojo SOLO en checks NO obligatorios → no es atasco rojo (y de hecho entró)
+2026-10-01T14:57:00.4142225Z    · tests/vigia-atascados.test.mjs::el conflicto sigue mandando sobre el rojo: resolverlo empuja y relanza CI
+2026-10-01T14:57:00.4143259Z    · tests/vigia-atascados.test.mjs::la lista de obligatorios se DERIVA de las reglas vivas de main, no se escribe a mano
+2026-10-01T14:57:00.4144234Z    · tests/vigia-atascados.test.mjs::sin datos de checks el clasificador se comporta como antes (no inventa rojo)
+2026-10-01T14:57:00.4145055Z    · tests/vigia-atascados.test.mjs::un obligatorio TODAVÍA CORRIENDO es ESPERANDO de verdad
+2026-10-01T14:57:00.4145929Z    · tests/vigia-atascados.test.mjs::🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO
+2026-10-01T14:57:00.4147001Z    · tests/vigia-atascados.test.mjs::🔴 SUELO de la lista: vacía, ilegible o sin regla NO es «nada es obligatorio»
+2026-10-01T14:57:00.4147888Z    · tests/vigia-atascados.test.mjs::🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que aparezca
+2026-10-01T14:57:00.4148844Z    · tests/vigia-atascados.test.mjs::🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO
+2026-10-01T14:57:00.4149319Z 
+2026-10-01T14:57:00.4149713Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:57:00.4150348Z 🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+2026-10-01T14:57:00.4150890Z    censadas. Han entrado con este cambio o con uno reciente.
+2026-10-01T14:57:00.4151167Z 
+2026-10-01T14:57:00.4151568Z      · tests/vigia-atascados.test.mjs::el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+2026-10-01T14:57:00.4152282Z      · tests/vigia-atascados.test.mjs::el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo
+2026-10-01T14:57:00.4152890Z      · tests/vigia-atascados.test.mjs::la pasada le da al clasificador el dato del auto-merge
+2026-10-01T14:57:00.4153524Z      · tests/vigia-atascados.test.mjs::la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso
+2026-10-01T14:57:00.4154161Z      · tests/vigia-atascados.test.mjs::los umbrales de edad: 24 h, 72 h, 168 h y después cada semana
+2026-10-01T14:57:00.4154910Z      · tests/vigia-atascados.test.mjs::pasar A una causa que espera no es empeorar (un push arregló el rojo y CI corre)
+2026-10-01T14:57:00.4155573Z      · tests/vigia-atascados.test.mjs::sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+2026-10-01T14:57:00.4156204Z      · tests/vigia-atascados.test.mjs::un PR que se MUEVE (push nuevo) baja de umbral, y eso no es empeorar
+2026-10-01T14:57:00.4156963Z      · tests/vigia-atascados.test.mjs::un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco
+2026-10-01T14:57:00.4157664Z      · tests/vigia-atascados.test.mjs::y el que espera y entró en silencio avisa al cruzar las 24 h
+2026-10-01T14:57:00.4158199Z      · tests/vigia-atascados.test.mjs::y una cuenta que solo se le parece NO
+2026-10-01T14:57:00.4158888Z      · tests/vigia-atascados.test.mjs::🔴 CEBO REAL #1190 · del bot, sin auto-merge y todo en verde → SIN-AUTO-MERGE, no ESPERANDO
+2026-10-01T14:57:00.4159573Z      · tests/vigia-atascados.test.mjs::🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad
+2026-10-01T14:57:00.4160264Z      · tests/vigia-atascados.test.mjs::🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa
+2026-10-01T14:57:00.4160965Z      · tests/vigia-atascados.test.mjs::🔴 CONTROL NEGATIVO · mismo atasco, sin cruzar umbral → SILENCIO
+2026-10-01T14:57:00.4161579Z      · tests/vigia-atascados.test.mjs::🔴 CONTROL NEGATIVO · un PR recién empujado no avisa, ni por atasco ni por edad
+2026-10-01T14:57:00.4162254Z      · tests/vigia-atascados.test.mjs::🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+2026-10-01T14:57:00.4162900Z      · tests/vigia-atascados.test.mjs::🔴 edad desconocida NO cuenta como vieja ni dispara aviso por edad
+2026-10-01T14:57:00.4163643Z      · tests/vigia-atascados.test.mjs::🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY
+2026-10-01T14:57:00.4164438Z      · tests/vigia-atascados.test.mjs::🔴 pasar DE una causa que espera a una que no, sí: el #1205 de ESPERANDO a ROJO-OBLIGATORIO
+2026-10-01T14:57:00.4165099Z      · tests/vigia-atascados.test.mjs::🔴 una causa que NO se arregla esperando avisa al entrar, sin esperar a la edad
+2026-10-01T14:57:00.4165737Z      · tests/vigia-atascados.test.mjs::🔴 y al cruzar el SIGUIENTE umbral vuelve a avisar
+2026-10-01T14:57:00.4165977Z 
+2026-10-01T14:57:00.4166152Z    QUÉ HACER, y en este orden:
+2026-10-01T14:57:00.4166577Z      ① Arreglar el TEST fijando su zona a mano — y la zona que se fija es la de la
+2026-10-01T14:57:00.4167294Z         máquina donde ESE código corre de verdad: front → la del profesional;
+2026-10-01T14:57:00.4167741Z         servidor → UTC, que es lo que corre en Railway.
+2026-10-01T14:57:00.4168195Z      ② Si además está mal EL PRODUCTO, eso es otro ticket y NO se arregla fijando el
+2026-10-01T14:57:00.4168611Z         test: fijarlo esconde el defecto. Se mide, se escribe y se para.
+2026-10-01T14:57:00.4169102Z      ③ Meterlo en `CENSADAS` sólo si se decide NO arreglarlo, con el motivo escrito.
+2026-10-01T14:57:00.4169653Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:57:00.4169854Z 
+2026-10-01T14:57:00.4233773Z ##[error]Process completed with exit code 1.

@@ -34,7 +34,7 @@ import {
   resolverTipoRectificativa,
   type ModoSinDestinatario,
   RegistroNoEmitibleError,
-  resolverSinDestinatario,
+  resolverSinDestinatario, TipoDistintoDelSelladoError, // SCRUM-1258 (misma línea: no mueve las de abajo)
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
@@ -349,6 +349,26 @@ export async function applyVeriFactu(
     // otro advisory lock de la aplicación.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
+    // ── SCRUM-1330 · LO YA SELLADO NO SE VUELVE A SELLAR ───────────────────────────────────
+    //
+    // Esta función no miraba si la factura ya tenía huella: recalculaba y PISABA `vfHash`,
+    // `vfPrevHash` y `vfTimestamp`. Bastaba una segunda entrega del mismo cobro para dejar una
+    // factura emitida con otra huella —y, si ya tenía otra encadenada detrás, a ésa apuntando a
+    // una huella que ya no existía—. Una factura emitida no se edita (regla 29 del máster).
+    //
+    // La pregunta va DENTRO del cerrojo y no antes: dos sellados de la misma factura a la vez
+    // leerían los dos «sin huella» fuera de él. Aquí el segundo espera, y al entrar la ve.
+    //
+    // Devuelve el sello PERSISTIDO, no lanza: quien llama (`sellarTrasEmision`) tiene que poder
+    // terminar una factura que se quedó con la huella escrita y el estado sin marcar.
+    const yaSellada = await tx.invoice.findUnique({
+      where: { id: invoice.id },
+      select: { vfHash: true, vfPrevHash: true, qrData: true },
+    });
+    if (yaSellada?.vfHash) {
+      return { vfHash: yaSellada.vfHash, prevHash: yaSellada.vfPrevHash ?? '', qrUrl: yaSellada.qrData, conservada: true };
+    }
+
     // ── SCRUM-177 · UNA SOLA CADENA: el alta también encadena a las anulaciones ────────────
     //
     // Antes esta consulta miraba SOLO altas (`vfHash not null`), mientras que la anulación
@@ -412,11 +432,16 @@ export async function applyVeriFactu(
       data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
     });
 
-    return { vfHash, prevHash, qrUrl };
+    return { vfHash, prevHash, qrUrl, conservada: false };
   });
 
   const { vfHash, prevHash, qrUrl } = sellado;
-  console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  if (sellado.conservada) {
+    // SCRUM-1330: que no recalcular no sea mudo. No es un sellado, y no se anuncia como uno.
+    console.warn(`[verifactu] invoice=${invoice.number} ya estaba sellada: se conserva su huella ${vfHash.slice(0, 16)}… y no se vuelve a sellar`);
+  } else {
+    console.log(`[verifactu] invoice=${invoice.number} hash=${vfHash.slice(0, 16)}…`);
+  }
   return { vfHash, vfPrevHash: prevHash, qrUrl };
 }
 
@@ -1053,6 +1078,21 @@ function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro)
       : null;
 
     const tipoFactura = sinDestinatario ? sinDestinatario.tipoFactura : tipoBase;
+
+    // ── 🔴 SCRUM-1258 · EL TIPO QUE SE DECLARA ES EL QUE ENTRÓ EN LA HUELLA ────────────────────
+    //
+    // `tipoBase` sale de la misma columna y por la misma función (`declarabilidadDe`) que usó el
+    // sellado: es el tipo que está DENTRO de `inv.vfHash`. Si lo que se va a declarar es otro, el
+    // registro no se emite. Se mira sólo en facturas selladas: sin huella no hay nada que
+    // contradecir, y el motivo firmado habla de una factura que «se selló».
+    //
+    // Aquí NO se escribe nada ni se recalcula ninguna huella: se deja de emitir un registro.
+    if (inv.vfHash && tipoFactura !== tipoBase) {
+      if (tipoBase === 'F1' && tipoFactura === 'F2') throw new TipoDistintoDelSelladoError(inv.number);
+      // Cualquier otra pareja no existe hoy y no tiene texto firmado: tumba el paquete entero,
+      // como una cadena rota, en vez de salir con un motivo que nadie ha aprobado.
+      throw new Error(`verifactu_tipo_distinto_del_sellado:${inv.number}:${tipoBase}:${tipoFactura}`);
+    }
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 

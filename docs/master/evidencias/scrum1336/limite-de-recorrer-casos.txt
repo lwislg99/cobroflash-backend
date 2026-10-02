@@ -1,0 +1,5 @@
+POBLACIÓN: 1 caso que apunta UN hallazgo y después lanza
+① lista del CASO   → ⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2 (no supe medir) · un ciego no es un verde   (hallazgos que llegan: 0)
+② lista del MÓDULO → ⟦veredicto⟧ 1 hallazgo · 1 ciego → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos   (hallazgos que llegan: 1)
+EL LÍMITE EXISTE: con la lista en la mano, el hallazgo se pierde y sale 2.
+EXIT=0

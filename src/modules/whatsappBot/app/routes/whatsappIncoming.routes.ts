@@ -17,6 +17,7 @@ import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messagin
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { handleBotMessage, handleUnsupportedMedia, handleIncomingPhoto, isMidIntake, type BotInput } from '../../domain/botFlow.service';
+import { parseDecision } from '../../domain/decisionPorTexto';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
 
@@ -349,15 +350,7 @@ async function tryLegacyDecision(phone: string, from: string, text: string): Pro
 }
 
 // ── Lógica de decisión ────────────────────────────────────────────────────
-type Decision = 'accept' | 'reject' | 'unknown';
-
-function parseDecision(text: string): Decision {
-  const t = text.toLowerCase().trim();
-  // Rechazo primero (tiene prioridad ante "no gracias", "no me interesa")
-  if (/\b(no|rechaz|cancel|paso|mejor no|no gracias|negativo|nel)\b/i.test(t)) return 'reject';
-  if (/\b(acept|s[ií]|ok|okay|okey|dale|vale|confirm|adelante|de acuerdo|perfecto|me interesa|quiero|listo|va|sale|claro)\b/i.test(t)) return 'accept';
-  return 'unknown';
-}
+// SCRUM-1322: qué cuenta como decisión vive en `decisionPorTexto.ts` (puro, con su test).
 
 async function handleIncomingText(from: string, text: string): Promise<void> {
   const phone = normalizePhone(from);
@@ -467,6 +460,20 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
       text: `Para responder al presupuesto #${(quote as any).quoteNumber ?? quote.id}, escribe *Acepto* o *No*. También puedes firmarlo desde el enlace que te enviamos.`,
+    });
+    return;
+  }
+
+  // SCRUM-1326: «vale», «ok», «va», «perfecto»… (la lista `PREGUNTA`), sueltas, pueden ser sólo «recibido».
+  // No aceptan: se pregunta, y el presupuesto NO se toca ni se apunta en ningún sitio que se
+  // preguntó. Si el cliente no contesta, sigue en `sent`. Texto firmado (comentario 17692,
+  // `docs/microcopy/2026-10-01-SCRUM-1326-vale-pregunta-una-vez.md`): ni una palabra distinta.
+  if (decision === 'ask') {
+    await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // responde a quien acaba de escribir
+      to: from,
+      text: `Entendido 🙌 Para que no haya dudas sobre el presupuesto #${(quote as any).quoteNumber ?? quote.id}: escribe *Acepto* y avisamos a tu profesional, o *No* si prefieres rechazarlo.`,
     });
     return;
   }

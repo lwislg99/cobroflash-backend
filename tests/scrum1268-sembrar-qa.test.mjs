@@ -16,6 +16,12 @@ import {
   TITULO_TRABAJO_QA, MOVIL_CLIENTE_QA, MARCA_PRESUPUESTO_QA, CABECERA_QA, PIE_QA,
 } from '../scripts/qa/sembrar-qa.mjs';
 import { Rechazo } from '../scripts/qa/sesion-panel.mjs';
+// 🔴 SCRUM-1268c · LOS ESQUEMAS DE VERDAD, no una imitación. El panel falso de abajo aceptaba
+// CUALQUIER cuerpo en `POST /quote/create`, y el guion salió con `tax: 21` cuando el esquema exige
+// la FRACCIÓN desde SCRUM-217: este test daba verde y en producción cada `sembrar` moría con
+// `400 validation_error`, con la cuenta QA a CERO presupuestos. Un servidor de mentira que dice que
+// sí a todo prueba el guion contra sí mismo. Ahora el cuerpo pasa por el mismo esquema que en la ruta.
+import { CreateQuoteSchema, customerCreateSchema } from '../dist/core/validation/schemas.js';
 
 // El rojo, declarado: lo ejecuta `npm run meta:mutaciones`.
 export const MUTACIONES_QUE_ME_TUMBAN = [
@@ -54,6 +60,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    if (false) {',
     cae: 'SCRUM-1268b · 🔴 presupuesto: se RELEE; si el servidor se comió la cabecera, lo dice y sale 1',
   },
+  {
+    // SCRUM-1268c · el IVA en porcentaje: el esquema de verdad lo rechaza (400), y el sembrado muere.
+    fichero: 'scripts/qa/sembrar-qa.mjs',
+    de: "price: 10, tax: 0.21 }",
+    a: "price: 10, tax: 21 }",
+    cae: 'SCRUM-1268 · sembrar desde cero: cliente, trabajo, albarán EMITIDO y parte en borrador, con sus ids',
+  },
 ];
 
 const COOKIE = 'pf_session=tok1268abcdef';
@@ -81,7 +94,13 @@ function panel({ me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'P
     if (falla[clave]) return resp(falla[clave], { error: 'forzado' });
     if (clave === 'GET /admin/me') return resp(200, me);
     if (clave === 'GET /admin/customers') return resp(200, s.clientes.filter((c) => c.name.includes(u.searchParams.get('search') || '')));
-    if (clave === 'POST /admin/customers') { const c = { id: ++id, ...cuerpo }; s.clientes.push(c); return resp(201, c); }
+    const invalido = (esquema) => {
+      const v = esquema.safeParse(cuerpo);
+      return v.success ? null : resp(400, { error: 'validation_error', issues: v.error.issues });
+    };
+    if (clave === 'POST /admin/customers') { const no = invalido(customerCreateSchema); if (no) return no; }
+    if (clave === 'POST /quote/create') { const no = invalido(CreateQuoteSchema); if (no) return no; }
+    if (clave === 'POST /admin/customers') { const c ={ id: ++id, ...cuerpo }; s.clientes.push(c); return resp(201, c); }
     if (clave === 'GET /admin/jobs') return resp(200, s.trabajos);
     if (clave === 'POST /admin/jobs') { const j = { id: ++id, tituloPropio: cuerpo.titulo, customer: { id: cuerpo.customerId } }; s.trabajos.push(j); return resp(201, j); }
     let r = u.pathname.match(/^\/admin\/jobs\/(\d+)\/albaranes$/);

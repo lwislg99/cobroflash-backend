@@ -1,0 +1,55 @@
+MUTACIONES DE FRONT contra tests/scrum1338-la-barra-del-operario-contra-los-gates.test.mjs. Instrumento: mutar.mjs.txt.
+J4e · 2026-10-01, antes de la lectura de GitHub 07:57:04Z. La primera pasada (HEAD b5617ead) dio 9 de 10: la M9 era MUDA; se arreglo el test y esta es la segunda.
+
+POBLACION=10 mutaciones · HEAD=76d25de8d38ff60a73f8b057bc7085b23dccb917
+BASE sin mutar: exit=0 tests=9 pass=9 fail=0 (salida 2764 B)
+
+M1 · Cobros nace SIN declarar (la entrada hacia un 403 vuelve a la vista)
+   aplicada: 1 1 public/dashboard/index.html · exit=1 tests=9 pass=7 fail=2 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · 🔴 ninguna entrada que el OPERARIO ve abre pidiendo una ruta de admin
+     ✖ SCRUM-1338 · ✅ y no se le oculta nada que SÍ puede usar: toda entrada oculta pide alguna ruta de admin
+
+M2 · Clientes se le oculta al operario (se le quita algo suyo)
+   aplicada: 1 1 public/dashboard/index.html · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · ✅ y no se le oculta nada que SÍ puede usar: toda entrada oculta pide alguna ruta de admin
+
+M3 · aplicarRolALaBarra deja de ocultar
+   aplicada: 1 2 public/dashboard/js/app.js · exit=1 tests=9 pass=3 fail=6 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · 🔴 ninguna entrada que el OPERARIO ve abre pidiendo una ruta de admin
+     ✖ SCRUM-1338 · ✅ y no se le oculta nada que SÍ puede usar: toda entrada oculta pide alguna ruta de admin
+     ✖ SCRUM-1338 · la declaración manda sola: se oculta lo declarado de admin, y nada más
+     ✖ SCRUM-1338 · un rótulo de sección sin ninguna entrada debajo tampoco se pinta («CUENTA»)
+     ✖ SCRUM-1338 · la vista TECLEADA pasa por la misma declaración (`\#cobros` no abre Cobros al operario)
+     ✖ SCRUM-1338 · 🔴 AUTOPRUEBA: una entrada de admin que nazca SIN declarar, cae; y una del operario declarada de 
+
+M4 · se quita el veto de la vista tecleada
+   aplicada: 1 1 public/dashboard/js/app.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · la vista TECLEADA pasa por la misma declaración (`\#cobros` no abre Cobros al operario)
+
+M5 · el rótulo de una sección vacía se queda pintado
+   aplicada: 1 1 public/dashboard/js/app.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · un rótulo de sección sin ninguna entrada debajo tampoco se pinta («CUENTA»)
+
+M6 · «Crear producto» vuelve a estar pulsable para el operario
+   aplicada: 1 1 public/dashboard/js/productsView.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · Productos: «Crear producto» va DESHABILITADO y con su nota para el operario; el admin, igual que 
+
+M7 · la barra se escribe como denylist de «tecnico»
+   aplicada: 1 1 public/dashboard/js/app.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · la declaración manda sola: se oculta lo declarado de admin, y nada más
+
+M8 · initApp deja de aplicar el rol a la barra
+   aplicada: 1 1 public/dashboard/js/app.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · la vista TECLEADA pasa por la misma declaración (`\#cobros` no abre Cobros al operario)
+
+M9 · «Crear producto» deshabilitado pero SIN su nota
+   aplicada: 0 1 public/dashboard/js/productsView.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · Productos: «Crear producto» va DESHABILITADO y con su nota para el operario; el admin, igual que 
+
+M10 · vistaVedadaPorRol veta también al admin
+   aplicada: 0 1 public/dashboard/js/app.js · exit=1 tests=9 pass=8 fail=1 → CAE · árbol limpio tras restaurar: true
+     ✖ SCRUM-1338 · la vista TECLEADA pasa por la misma declaración (`\#cobros` no abre Cobros al operario)
+
+BASE después: exit=0 tests=9 pass=9 fail=0
+RESULTADO: 10 caen · 0 mudas · 0 ciegas, de 10
+EXIT=0

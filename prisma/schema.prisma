@@ -52,6 +52,13 @@ model Merchant {
   // nativos y sin `@default`: NULL = no consta (nadie lo pregunto) · false = declara que no ·
   // true = si. Colapsarlos haria que «no se pregunto» se leyera como «declara que no».
   criterioCaja               Boolean?  @map("criterio_caja")
+  // SCRUM-1102 · los dos HECHOS que el profesional conoce y que el RD 1007/2023 mira (art. 3.3 y
+  // art. 1; el expediente, en docs/master/SCRUM-1102.md). Aqui solo se GUARDA lo que contesta:
+  // ninguna puerta lee todavia estas columnas. TRES estados nativos y sin `@default`, como
+  // `criterioCaja`: NULL = no consta (nadie lo pregunto) · false = dijo que no · true = dijo que si.
+  // El DDL ya estaba aplicado (docs/sql/scrum-1102-sii-y-domicilio-foral.sql): esto es A5 paso ③.
+  llevaLibrosPorSii          Boolean?  @map("lleva_libros_por_sii")
+  domicilioFiscalForal       Boolean?  @map("domicilio_fiscal_foral")
   googleReviewUrl            String?   @map("google_review_url")
 
   // CONNECT-1 (C1-0): cuenta Stripe Connect Express del merchant. El estado lo
@@ -87,7 +94,7 @@ model Merchant {
 
   // Auth / plan
   onboardingCompleted  Boolean   @default(false) @map("onboarding_completed")
-  plan                 String    @default("trial") // trial | basic | pro | empresa
+  plan                 String    @default("trial") // los valores que valen NO se listan aquí: los decide BY_PLAN en src/core/entitlements.ts (regla 34, SCRUM-1342)
   planExpiresAt        DateTime? @map("plan_expires_at")
   stripeCustomerId     String?   @map("stripe_customer_id")
   stripeSubscriptionId String?   @map("stripe_subscription_id")

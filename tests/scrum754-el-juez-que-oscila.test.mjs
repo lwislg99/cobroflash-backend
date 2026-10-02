@@ -664,6 +664,10 @@ function sonda(rutaFixture) {
   // habría salido verde midiendo nada.
   const entorno = { ...process.env };
   delete entorno.NODE_TEST_CONTEXT;
+  // SCRUM-1349 · y las otras dos de la familia: la sonda parsea su stdout y corre `node:test` por
+  // dentro, así que ni el color ni los reporters de la tanda (`NODE_OPTIONS`) son suyos.
+  delete entorno.FORCE_COLOR;
+  delete entorno.NODE_OPTIONS;
   const salida = execFileSync(process.execPath, [path.join(RAIZ, 'tests', '_sonda-saltados.mjs'), rutaFixture],
     { cwd: RAIZ, encoding: 'utf8', env: entorno });
   const linea = salida.trim().split(/\r?\n/).filter((l) => l.startsWith('{')).pop();

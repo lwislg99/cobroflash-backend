@@ -326,3 +326,324 @@ for (const id of ids) {
 Bloques leídos: en el RIVA, `a30`, `a62`, `a68bis`, `a71`; en el RRSIF, `a1`, `a3` y `a1-2`.
 ⚠️ **El identificador de bloque no es el número del artículo:** en el RRSIF el art. 10 es `a1-2` y
 el 11 es `a1-3`. Se busca por el atributo `titulo`, no se deduce.
+
+---
+
+# SCRUM-1102f · Configuración pregunta por el SII y el domicilio foral, y lo guarda
+
+**Medido contra:** `origin/main` = `ba712b6d2d1938d2eb5bb4d27a970468a3041377` · 2026-10-01T03:10:58Z
+
+A9: comprobación → `tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs`
+
+Sesión J2d (`jv-j2`), 1-oct-2026. Es el paso ③ de A5: esquema + código + tests en un PR.
+
+**Cruce de carril, autorizado por el orquestador del equipo de Javier (`cobroflash-backend-5b`) el
+1-oct-2026, por mensaje:** el ticket es `area-j1` y toca `settingsView.js` (pestaña fiscal, J1) y
+`merchantAdmin.ts` (J3). Se asigna a J2 porque J1 y J4 pidieron relevo con el ticket a medias y
+éste era el árbol libre cuando el fundador desbloqueó el esquema y firmó los textos. No hay
+criterio de especialidad detrás, y lo dijo así.
+
+## ⓪ De dónde sale cada permiso
+
+Ninguno se lo oí yo al fundador: los tres están en Jira, transcritos por el orquestador, y ahí los
+leí antes de escribir.
+
+| qué | comentario de SCRUM-1102 | literal del fundador |
+|---|---|---|
+| las dos líneas en `prisma/schema.prisma`, sin ALTER | 17709 | «1-Ok go, y dev lo revisas tú» |
+| los dos enunciados | 17709 | «2-Sí firmo» |
+| las opciones «No consta / Sí / No» | 17721 | «1-Ok las firmo» |
+| que las columnas existen en producción, anulables y sin valor por defecto | 17714 | medición suya, no firma |
+
+## ① Qué entra
+
+- `prisma/schema.prisma`: `llevaLibrosPorSii` y `domicilioFiscalForal`, `Boolean?`, sin `@default`,
+  sobre las columnas que creó `docs/sql/scrum-1102-sii-y-domicilio-foral.sql`. **Ningún ALTER y
+  ningún `db push`:** el fichero se pone al día con un DDL ya aplicado.
+- `src/core/validation/schemas.ts`: las dos claves en el esquema del PUT, `boolean` anulable y
+  opcional. Sin ellas `z.object` las descarta en silencio (el fallo de SCRUM-1269).
+- `src/modules/system/merchantAdmin.ts`: las dos en el `select` del GET. Sin ellas el siguiente
+  guardado de cualquier ajuste las devolvería a NULL (el fallo de SCRUM-1227).
+- `public/dashboard/js/settingsView.js` y `settingsSubmenus.js`: dos selectores de tres estados en
+  la pestaña Empresa, debajo de «Criterio de caja», con el mismo mecanismo que ya existía.
+- `docs/microcopy/`: una ficha para los dos enunciados y otra para las opciones.
+- `docs/sql/deriva-prod.sql`: regenerado con su script (509 → 511 columnas).
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md:36`: el ancla de `vf_hash` pasa de `910-911` a `917-918`.
+  Las siete líneas nuevas del modelo `Merchant` la movieron; la afirmación no cambia.
+
+## ② Qué NO entra
+
+- **Ninguna puerta lee estas columnas.** Encender `INVOICING_ES_ENABLED` no las mira. Eso es
+  camino de emisión: ticket aparte y STOP aparte (comentario 17709, §③). Hoy la respuesta se
+  guarda y nadie actúa sobre ella.
+- **El alta no las pregunta.** Van sólo en Configuración.
+- **Ningún texto de ayuda.** La caja de cada selector es la pregunta y sus opciones (regla 7).
+
+## ③ Dos cosas que el encargo daba por hechas y no lo estaban
+
+**Los rótulos de las opciones no estaban firmados.** El comentario 17709 decía «la terna que ya
+existe: No consta / Sí / No». La terna que existe en `settingsView.js` es «No consta / Sí, estoy
+acogido / No estoy acogido», y la del recargo, «Sí, está en recargo / No está en recargo». «Sí» y
+«No» a secas no constaban como literal aprobado en `docs/microcopy/` ni en el registro congelado.
+Se avisó antes de escribir código; lo corrige el comentario 17717 y lo firma el 17721.
+
+**La ficha de encargo no declaraba el cruce de carril.** Se preguntó antes de empezar (A20) y el
+orquestador lo confirmó con su motivo, que es el párrafo de arriba.
+
+## ④ Cómo se midió
+
+**Rojo primero.** Con el `dist/` de `f5d99bd7` y el test ya escrito, los tres casos del viaje por
+el servidor caen: «mando null y en la base queda true», «guardar una ha movido la otra» y «acepta
+"si"». Las dos claves no sobrevivían al esquema del PUT.
+
+**El test del ticket**, `tests/scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs`: 9
+casos. Esquema contra el DDL; los tres estados de cada columna por el PUT y de vuelta por el GET;
+la pantalla montada en el banco de vistas (pinta lo guardado, y al guardar lo devuelve igual); los
+enunciados y las opciones contra su ficha, por ticket y ranura.
+
+**Mutaciones**, `tests/banco-scrum1102f/mutar.mjs`: 14 de 14 caen, cada una en el caso que se
+esperaba. Base verde antes de mutar, build entre mutaciones de `src/`, árbol limpio al acabar.
+
+**Navegador**, `tests/banco-scrum1102f/navegador.mjs`, a 390 y a 1280 px: los dos selectores se
+ven en la pestaña Empresa al abrir, miden 44,5 px, la pregunta cabe y la página no desborda. Con
+«Sí» y «No» guardados se pintan «Sí» y «No»; tras elegir «No consta» y «Sí» y pulsar «Guardar
+cambios» se manda `null` y `true`, y el criterio de caja no se mueve. Control positivo: el selector
+del criterio de caja, que ya existía, se ve con el mismo instrumento. Este instrumento se lanza a
+mano; no está en `guards:visuales`.
+
+**Guards que saltaron al cambiar el esquema, y eran el aviso:** `scrum222` y `scrum461` (el censo
+de deriva no conocía las dos columnas) y `scrum525d` (el ancla de arriba). `scrum1227` y
+`scrum1269` piden que su fixture cubra todo lo que la pantalla guarda: se añadieron las dos claves
+a `GUARDADO`, sin tocar ninguna aserción.
+
+## ⑤ Mis errores
+
+1. **Di por guardado algo que no se había mandado.** Al montar la pantalla por primera vez, mi
+   perfil de prueba no llevaba teléfono; el formulario avisó y no guardó, y mi sonda dijo
+   «0 guardados» sin error. Es la A10 «una operación que no se ejecutó se lee exactamente igual
+   que un éxito». **La comprobación:** en el test, `guardar()` exige exactamente un PUT y si no se
+   declara ciego. Es la línea `A9:` de arriba.
+2. **Añadí una regla de 44 px sin medir si hacía falta.** La base de `.field select` ya da 44,5.
+   Lo medí después, en navegador, y quité la regla y su clase. No llegó a empujarse.
+3. **Compilé sin regenerar el cliente de Prisma** tras tocar el esquema: build roto, un minuto.
+   Es A1, y estaba escrita.
+
+## ⑥ Lo que queda sin medir
+
+- **Dev.** `MIGRATIONS_PENDING.md` confirma la columna foral y dice que la del SII no se midió.
+  Este árbol no la ha medido tampoco. Quien arranque en local contra dev puede encontrarse
+  «columna que no existe» en cualquier lectura de `Merchant`. El comentario 17709 deja esa
+  medición a cargo del orquestador.
+- **Staging**: que el ALTER está aplicado lo dice la cabecera del SQL; aquí no se ha medido.
+- **La pantalla en yaqu.app**: se mide después del despliegue.
+
+---
+
+# SCRUM-1102g · Dónde se enciende `INVOICING_ES_ENABLED` y qué forma tendría el corte
+
+**Medido contra:** `origin/main` = `bee39d3b51e300ff4efdda3befcb1eff4626f988` · 2026-10-01T06:10:09Z
+
+A9: sin fallo que generalice — medición de sólo lectura; mis tres tropiezos los delató un control al lado y van en «Mis errores»
+
+Sesión J6f (`jv-j6`), 1-oct-2026, por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-5b`). **Es medición y propuesta. No se construye nada**: la puerta es camino de
+emisión (regla 40), y va en ticket aparte con su propio GO. `src/` y `public/` sólo se han leído.
+
+## ⓪ En corto
+
+1. **Hoy la respuesta no la lee nadie, medido por efecto:** con «Sí» en el SII, el interruptor se
+   enciende igual y el modo sale `fiscal` igual (`hoy.txt`).
+2. **Encender el flag para un merchant tiene UN camino en `src/`** (`cambiarFlagFiscal`) y **un solo
+   llamador**: el guion que ejecuta el fundador a mano. Ahí cabe el corte más barato.
+3. **Pero hay tres caminos que ese corte no ve:** la variable de entorno, los dos guiones que crean
+   merchants con el flag ya puesto, y —hallazgo— **cambiar el país en Configuración**.
+4. **La respuesta caduca** (§② de SCRUM-1102e): un corte sólo al encender no cubre a quien conteste
+   «Sí» después. Eso pide un segundo corte, en la lectura, que es más caro.
+5. **Recomiendo dos pasos, no uno:** ahora, la puerta de encendido más la vigilancia; antes de que un
+   merchant real pase tiempo encendido, el corte en el modo. La foral, en los dos, **avisa y no
+   bloquea**.
+
+## ① Dónde se enciende hoy: todos los caminos, con su población
+
+`isFlagEnabled` (`src/core/flags.ts:68`) resuelve por precedencia: país → override del merchant →
+variable de entorno → valor por defecto (`false`). De ahí salen los caminos.
+
+| # | camino | quién lo escribe | población medida |
+|---|---|---|---|
+| A | override en `merchants.flags` por la puerta con constancia | `cambiarFlagFiscal` (`flagFiscal.service.ts:117`) | **1** escritura en `src/` de 23 escrituras de `merchant`; **0** llamadores en `src/`; **1** guion: `scripts/cambiar-flag-fiscal.mjs`. Sin ruta HTTP, a propósito |
+| B | override escrito al CREAR el merchant, sin pasar por A | `scripts/seed-video.mjs:376` y `scripts/medir-concurrencia-emision.mjs:85` | **2** guiones de 266 ficheros de `scripts/` y `prisma/`. El primero pide confirmar el host; el segundo lee la base de dev |
+| C | override por SQL a mano | nadie en el repo | **0** sentencias en `src/`, `scripts/` y `docs/sql/`. Por construcción no se puede censar: deja el flag sin fila `cambio_flag` |
+| D | variable de entorno `INVOICING_ES_ENABLED=true` | Railway | **0** asignaciones en workflows, `package.json` y ficheros de entorno seguidos por git. **Railway no se ve desde aquí** |
+| E | el país deja de ser `ES` | `PUT /admin/merchant` (rol `admin`), desde el selector de país de Configuración | el esquema lo deja pasar (medido por efecto); ver §④ |
+| F | el merchant demo (id 1) | — | modo `demo` siempre, con o sin flag |
+
+Por el alta no entra: `registerMerchant` crea el merchant sin `flags`. Y por `PUT /admin/merchant`
+tampoco entra el flag: el esquema descarta la clave `flags` (medido: entra `{flags, name}` y sale
+`{name}`).
+
+Dos sondas independientes dan el mismo conjunto de escritores de `flags` hacia la base, tres:
+la mía por AST (`sonda-lectores-y-escritores.txt`) y el censo de la casa
+(`node scripts/censo-usos-de-campo.mjs flags`, `censo-usos-flags-escrituras.txt`).
+
+**Cuántos merchants tienen hoy el override puesto: no lo he medido** (no he tocado ninguna base). El
+instrumento existe: `scripts/guard-acreditacion-invoicing-es.mjs` (SCRUM-1097).
+
+## ② Hoy nadie lee la respuesta — por efecto
+
+`evidencias/SCRUM-1102/hoy.mjs`, sobre `dist/` compilado en este commit, 28 mediciones:
+
+- `getEmissionMode` da el mismo modo para «No consta», «Sí» y «No», en las seis combinaciones de
+  override y entorno. Control: el modo **sí** cambia con el override, con el demo y con el país.
+- `cambiarFlagFiscal`, con un cliente doblado: **enciende en los tres casos** y escribe su fila de
+  auditoría. Control: con la confirmación equivocada **se niega**.
+- En `src/` las dos columnas aparecen en dos sitios: el `select` de `merchantAdmin.ts:148` y el
+  esquema de validación. Ninguna condición las mira (`censo-usos-llevaLibrosPorSii.txt`).
+
+## ③ Dónde se LEE el flag: los sitios donde cabe un corte
+
+| sitio | qué decide | población |
+|---|---|---|
+| `isFlagEnabled` (`core/flags.ts`) | todos los flags | 39 llamadas en `src/`; 6 con este flag |
+| `getEmissionMode` (`emission.service.ts:36`) | `fiscal` / `demo` / `receipt` | 16 llamadas en 10 ficheros; de aquí cuelgan las rutas, los correos y lo que el panel pinta |
+| `allocateInvoiceNumber` (`invoiceNumber.service.ts:335`) | el embudo: reserva el número o lanza | 7 llamadores; su propio `select` del merchant (línea 375) |
+| `exports.routes.ts:145` y `:544` | si se entrega el XML | 2 lecturas directas, sin pasar por el modo |
+
+Dato que decide entre ellos: **emitir en España y generar el registro VeriFactu son hoy el mismo
+acto**. `sellarTrasEmision` se llama tras cada emisión (7 sitios) y `SIF_ENABLED` sólo pausa la cola de
+remisión (`sif.procesador.ts:77`). No existe «factura sin registro» para un merchant español.
+
+El embudo ya rechaza con `invoicing_es_disabled` cuando el modo es `receipt`
+(`invoiceNumber.service.ts:448`), pero **nadie captura ese error por su nombre** (0 sitios en `src/` y
+`public/`): quien de verdad para al usuario antes es el modo, en cada ruta.
+
+## ④ Hallazgo aparte: el país se cambia desde Configuración
+
+`getEmissionMode` devuelve `fiscal` para todo país que no sea `ES`, sin mirar el flag
+(`emission.service.ts:38`). Eso ya se sabía. Lo que no constaba:
+
+- El esquema de `PUT /admin/merchant` **acepta `country`** (`schemas.ts:471`; medido: entra
+  `{country:"MX"}` y sale `{country:"MX"}`), y Configuración tiene el selector
+  (`settingsView.js:373`).
+- `updateMerchantProfile` escribe lo que sobrevive al esquema (`merchantAdmin.ts:251`) y no mira el
+  país. Esto último es **lectura**: no lo he ejecutado contra una base.
+
+O sea: un merchant español con rol `admin` está a un guardado de quedar en modo `fiscal` sin el flag,
+sin registro VeriFactu (`sellarTrasEmision` marca «no aplica» lo que no entra en la cadena) y fuera
+del guard de SCRUM-1097, que filtra por `country = 'ES'`. **Cualquier corte por el SII pensado para
+España queda igual de fuera.** No he encontrado ticket que lo nombre. No lo arreglo: lo reporto.
+
+## ⑤ Las formas del corte, con su coste
+
+**W · La puerta de encendido.** `cambiarFlagFiscal` lee las dos columnas en el `select` que ya hace
+(`flagFiscal.service.ts:87`) y se niega a ENCENDER `INVOICING_ES_ENABLED` si el SII no es «No».
+Apagar nunca se bloquea.
+
+- Coste: 1 función, 1 guion que imprime la negativa, 3 ficheros de test que la nombran. Dos códigos
+  de error nuevos, internos (los ve el fundador en su terminal, no un usuario).
+- Cubre: el camino A, que es el único con constancia y el único que el fundador usa.
+- No cubre: B, C, D, E, ni a quien conteste «Sí» **después** de encendido.
+
+**V · La vigilancia.** El guard de SCRUM-1097 añade las dos columnas a su consulta y lista los
+merchants con el flag puesto y el SII distinto de «No».
+
+- Coste: 1 guion de sólo lectura y su test. No es camino de emisión y es de este puesto.
+- Cubre: A, B y C, y también la respuesta que caduca, pero **detecta, no impide**.
+- No cubre: D (lo dice su propia cabecera) ni E. Y sólo habla si alguien lo lanza: la tarea
+  programada de SCRUM-1109 es de Railway y **no sé si está desplegada**.
+
+**M · El modo lo sabe.** `getEmissionMode` devuelve `receipt` para un español no demo con el flag
+puesto y el SII distinto de «No». Todo lo que cuelga del modo se comporta como con el flag apagado.
+
+- Coste: `MerchantLike` gana un campo; 16 llamadas en 10 ficheros tienen que traer la columna en su
+  `select`; el del embudo también; y los tests que montan un merchant con el flag puesto —**33
+  ficheros** lo nombran encendido, cota superior— necesitan el campo o pasan a `receipt`. Los dos
+  guiones del camino B, igual. Una negativa nueva que ve el usuario pide texto con firma (regla 39).
+- Cubre: A, B, C y D, y la respuesta que caduca.
+- No cubre: E. Y deja dos lecturas directas (`exports.routes.ts`) diciendo lo contrario que el modo.
+- 🔴 Efecto que hay que decidir, no un detalle: con M, un merchant que ya emite y guarda «Sí» en
+  Configuración **se queda sin documento y sin cobro** (regla 24) al pulsar «Guardar cambios», y la
+  pantalla, por la regla 7, no puede decirle por qué.
+
+**Descartadas.** Cortar sólo en el embudo: el rechazo llegaría a 7 caminos que no saben
+traducirlo, y las pantallas seguirían ofreciendo facturar. Cortar en `isFlagEnabled`: 39 llamadas y
+un contexto que comparten los trece flags.
+
+**Recomendación.** W + V ahora. M, en su propio ticket, **antes** de que un merchant real quede
+encendido de forma estable: mientras el único que enciende sea el fundador y a mano, W cubre el
+presente; lo que W no puede cubrir nunca es el dato que envejece.
+
+## ⑥ SII y foral, por separado
+
+| | SII | domicilio foral |
+|---|---|---|
+| en qué se apoya | literal: RRSIF art. 3.3 | inferencia del art. 1.3; espera al asesor (SCRUM-1264) |
+| en W | **bloquea** el encendido si no es «No» | **no bloquea**: el guion enseña la respuesta antes de encender y la fila de auditoría la guarda |
+| en V | lista al merchant como hallazgo | lo lista aparte, como «pendiente del asesor» |
+| en M | pasa a `receipt` | **no entra en M** |
+| si el asesor confirma | — | se añade como segunda condición de W, y entonces se decide M |
+| si el asesor lo niega | — | se retira el aviso; la pregunta de Configuración se queda sin efecto y hay que decidir si se quita |
+
+No he medido si algún guard fija la forma del `payload` de la fila `cambio_flag`; guardar ahí las dos
+respuestas puede pedir tocar ese guard.
+
+## ⑦ «No consta» no es «No»: los tres sitios donde se pierde
+
+1. **En la condición.** `!== true` trata «No consta» como «No»: deja encender a quien no ha
+   contestado, y la puerta no sirve. La condición tiene que ser `=== false`, con tres desenlaces:
+   «No» pasa; «Sí» se niega; «No consta» **se niega con otro código**, porque lo que pide es otra
+   cosa (que conteste, no que se vaya).
+2. **En el `select`.** Un sitio que no trae la columna entrega `undefined`, que frente a
+   `=== false` es lo mismo que «No consta». En W hay un solo `select`. En M hay 16 llamadas: si el
+   campo de `MerchantLike` es **obligatorio** en el tipo, el que lo olvide no compila; si es
+   opcional, el olvido es mudo. `allocateInvoiceNumber` ya pagó esto una vez con `flags`
+   (SCRUM-81, comentario de la línea 379).
+3. **En los datos de prueba.** Un doble de test sin la columna ejercita «No consta» sin saberlo. Con
+   la condición bien puesta eso da rojo, que es lo correcto; con `!== true` daría verde sobre el caso
+   que la puerta existe para parar.
+
+Y un borde: el merchant demo tiene las dos columnas en «No consta». En M la comprobación va **después**
+de la rama del demo, o el demo deja de emitir.
+
+## ⑧ 🔴 Lo que es mío, de IA, y no está en la norma
+
+1. **Que «No consta» bloquee el encendido.** La norma no habla de respuestas sin dar. Es diseño: la
+   idea original era de J4b y ya iba marcada así. La alternativa —avisar y dejar encender— es
+   legítima y más floja.
+2. **Que el excluido «no pueda ser cliente».** El literal del art. 3.3 dice que el Reglamento «no se
+   aplicará» a quien lleve los libros por el SII. Que por eso no pueda usar el módulo es la frase
+   del asesor (23-sep), no la del BOE. No he verificado si alguien no obligado puede usar un sistema
+   VeriFactu por su cuenta. La decisión de bloquear ya está tomada; dejo dicho en qué se apoya.
+3. **Qué pasa con quien entra en el SII ya encendido.** El art. 68 bis fija **desde cuándo** surte
+   efecto la opción («el primer periodo de liquidación que se inicie después»). Una columna de sí o
+   no **no tiene fecha**: no puede decir desde cuándo. Y qué se hace con los registros ya emitidos no
+   sale de nada de lo leído. Es pregunta para el asesor.
+4. **Que el corte sea «sin documento y sin cobro».** Es consecuencia de la regla 24 y de que aquí
+   emitir y sellar son un solo acto, no de la norma. Atender a un profesional del SII con facturas
+   sin registro sería otro producto; no lo propongo.
+
+## ⑨ Sin medir
+
+- La variable de entorno en Railway, y si la tarea programada de SCRUM-1109 está desplegada.
+- Cuántos merchants tienen el override, en cualquier base.
+- Escrituras de `merchant` anidadas dentro de la creación de otro modelo: mi sonda sólo ve
+  `<x>.merchant.<método>(…)`. El censo de la casa, que mira el campo y no la llamada, tampoco las saca.
+- El camino E de punta a punta contra una base.
+- Los «33 ficheros de test» son los que nombran el flag encendido, no los que caerían: es una cota.
+
+## Mis errores
+
+- **Dije que el país no se podía cambiar desde el perfil** tras buscar `country` en un tramo de
+  líneas del esquema que no llegaba a donde está declarado. Lo tumbó ejecutar el esquema: `country`
+  pasa. De ahí sale el §④.
+- Mi sonda imprimió **«portadores del flag: 0»** por leer mal lo que devuelve el censo de la casa.
+  Corregido, da 1.788: el cierre pasa por `isFlagEnabled` y arrastra todos los flags, así que **no
+  sirve para esta pregunta** y no lo uso (`portadores.txt`).
+- Conté «27 mediciones» en una pasada de `hoy.mjs` y son 28 tras añadir la del país.
+
+## Reproducir
+
+    npm run build
+    node docs/master/evidencias/SCRUM-1102/hoy.mjs .
+    node docs/master/evidencias/SCRUM-1102/sonda-lectores-y-escritores.mjs .
+    node scripts/censo-usos-de-campo.mjs flags
+    node scripts/censo-usos-de-campo.mjs llevaLibrosPorSii

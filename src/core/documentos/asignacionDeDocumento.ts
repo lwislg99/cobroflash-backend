@@ -14,6 +14,11 @@
 // si un día alguien lee `quote_assignees` para decidir un 403, la asignación se habrá convertido
 // en permiso sin que nadie lo decida.
 //
+// 🔵 2-oct-2026 (SCRUM-1397) · ALGUIEN LO DECIDIÓ, Y SÓLO PARA **VER**. El fundador firmó el
+// 1-oct-2026 (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un
+// Técnico lo VEA. Esa lectura vive en `accesoALaFactura.ts`, no aquí: este fichero sigue sin
+// exportar ningún «¿puede?». Para EDITAR y EMITIR todo lo de arriba sigue siendo verdad tal cual.
+//
 // ⚠️ Y TAMPOCO ABRE LA ECONOMÍA. Un técnico asignado a un documento sigue sin ver coste ni
 // margen: eso lo decide `visibilidadEconomica.ts` por ROL, y la asignación no entra en esa
 // pregunta (P-DOC-3, fundador, 7-sep-2026).

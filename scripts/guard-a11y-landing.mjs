@@ -42,6 +42,7 @@ const RAIZ = path.join(AQUI, '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -173,7 +174,20 @@ function aplanar(n, acc = []) { if (!n) return acc; acc.push(n); for (const h of
 const caja = (s) => s.toLocaleUpperCase('es');
 
 const log = (...a) => console.log(...a);
-let fallos = 0;
+
+// ── SCRUM-1336 · «NO SUPE MIRAR» NO ES «HE MIRADO Y ESTÁ MAL» ────────────────────────────────
+// Aquí había UNA cuenta (`fallos`) para las dos cosas, y un «NO SUPE MIRAR» salía con el mismo 1
+// que un defecto de accesibilidad. Visto correr (docs/master/evidencias/scrum1336/): con `.note`
+// sin nombre accesible en los dos anchos salía 1 y decía «2 problema(s) de accesibilidad».
+// Ahora son dos listas y el código lo da `veredictoDe`: 1 si hay hallazgos, 2 si sólo hay ciegos.
+// Van en el módulo y no dentro de cada ancho a propósito: si un ancho LANZA a mitad, lo que ya
+// había encontrado no se pierde.
+const hallazgos = [];
+const ciegos = [];
+const hallazgo = (texto) => { console.error(texto); hallazgos.push(texto); };
+const noSupeMirar = (texto) => { console.error(texto); ciegos.push(texto); };
+/** Lo que devuelve cada ancho a `recorrerCasos`: sus cuentas ya están apuntadas arriba. */
+const YA_APUNTADO = Object.freeze({ hallazgos: Object.freeze([]), ciegos: Object.freeze([]) });
 
 // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
 // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
@@ -191,7 +205,8 @@ try {
   log('Guard de accesibilidad de la landing PUBLICADA (SCRUM-543)');
   log('Árbitros: el árbol de accesibilidad y el área que RECIBE EL TOQUE.\n');
 
-  for (const ancho of ANCHOS) {
+  // `recorrerCasos` y no un `for`: un ancho que lanza es un ciego de ESE ancho, y el otro se mide igual.
+  const recorrido = await recorrerCasos(ANCHOS, async (ancho) => {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 900 });
     const MIN = minimoPara(ancho);
@@ -206,28 +221,28 @@ try {
     const raiz = await page.accessibility.snapshot({ interestingOnly: false });
     const nodos = aplanar(raiz);
     if (!raiz || nodos.length < 20) {
-      console.error(`   🔴 NO SUPE MIRAR: el árbol de accesibilidad vino con ${nodos.length} nodos.`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`   🔴 NO SUPE MIRAR @${ancho}px: el árbol de accesibilidad vino con ${nodos.length} nodos.`);
+      await page.close(); return YA_APUNTADO;
     }
 
     // ── ① SEPARADORES ────────────────────────────────────────────────────────
     const cal = await calibrar(page);
     if (!cal.ok) {
-      console.error(`   🔴 NO SUPE MIRAR: la calibración falla — con espacio dio «${cal.con}» y sin espacio «${cal.sin}»; se esperaba «uno dos» y «unodos».`);
-      fallos++; await page.close(); continue;
+      noSupeMirar(`   🔴 NO SUPE MIRAR @${ancho}px: la calibración falla — con espacio dio «${cal.con}» y sin espacio «${cal.sin}»; se esperaba «uno dos» y «unodos».`);
+      await page.close(); return YA_APUNTADO;
     }
     log(`   calibración OK: «${cal.con}» vs «${cal.sin}» — el medidor distingue las dos`);
     for (const caso of SEPARADORES) {
       const t = await loQueSeOye(page, caso.sel);
-      if (!t) { console.error(`   🔴 NO SUPE MIRAR: ${caso.sel} no da nombre accesible`); fallos++; continue; }
+      if (!t) { noSupeMirar(`   🔴 NO SUPE MIRAR @${ancho}px: ${caso.sel} no da nombre accesible`); continue; }
       let mal = 0;
       for (const p of caso.pegado) {
-        if (caja(t).includes(caja(p))) { console.error(`   ✖ ${caso.sel} se oye PEGADO: «…${p}…»`); fallos++; mal++; }
+        if (caja(t).includes(caja(p))) { hallazgo(`   ✖ @${ancho}px · ${caso.sel} se oye PEGADO: «…${p}…»`); mal++; }
       }
       // CONTROL POSITIVO: no basta con que no esté lo pegado — tiene que estar lo separado. Si el
       // nodo se quedara vacío, «no está lo pegado» sería verdad y el guard daría verde.
       for (const s of caso.separado) {
-        if (!caja(t).includes(caja(s))) { console.error(`   ✖ ${caso.sel} NO trae «${s}»: ¿ha cambiado el texto?`); fallos++; mal++; }
+        if (!caja(t).includes(caja(s))) { hallazgo(`   ✖ @${ancho}px · ${caso.sel} NO trae «${s}»: ¿ha cambiado el texto?`); mal++; }
       }
       if (!mal) log(`   ✔ ${caso.sel} suena separado: «${t.slice(0, 62)}»`);
     }
@@ -240,8 +255,7 @@ try {
       if (!regiones.some((r) => caja(r).includes(caja(esperado)))) faltan.push(`${id} («${esperado}…»)`);
     }
     if (faltan.length) {
-      console.error(`   ✖ secciones que NO llegan como región con nombre: ${faltan.join(', ')}`);
-      fallos++;
+      hallazgo(`   ✖ @${ancho}px · secciones que NO llegan como región con nombre: ${faltan.join(', ')}`);
     } else {
       log(`   ✔ ${regiones.length} regiones con nombre, las ${Object.keys(REGIONES).length} publicadas entre ellas`);
     }
@@ -254,10 +268,9 @@ try {
         return m.error ? m : { ...m, cumple: m.tocable >= min };
       }, t.sel, INTERACTIVOS, MIN);
 
-      if (medida.error) { console.error(`   🔴 NO SUPE MIRAR ${t.nombre}: ${medida.error}`); fallos++; continue; }
+      if (medida.error) { noSupeMirar(`   🔴 NO SUPE MIRAR @${ancho}px ${t.nombre}: ${medida.error}`); continue; }
       if (!medida.cumple) {
-        console.error(`   ✖ ${t.nombre}: área tocable ${medida.tocable}px < ${MIN} (AB6/DESIGN.md)`);
-        fallos++;
+        hallazgo(`   ✖ @${ancho}px · ${t.nombre}: área tocable ${medida.tocable}px < ${MIN} (AB6/DESIGN.md)`);
       } else {
         log(`   ✔ ${t.nombre}: ${medida.tocable}px tocables (caja ${medida.caja}px)`);
       }
@@ -275,28 +288,38 @@ try {
         return r.error ? r : { ...r, cumple: r.tocable >= min };
       }, `#${sonda.id}`, INTERACTIVOS, MIN);
       if (m.error) {
-        console.error(`   🔴 NO SUPE MIRAR la sonda ${sonda.id}: ${m.error}`);
-        fallos++;
+        noSupeMirar(`   🔴 NO SUPE MIRAR @${ancho}px la sonda ${sonda.id}: ${m.error}`);
       } else if (m.cumple !== sonda.debePasar) {
-        console.error(`   ✖ UMBRAL MAL APLICADO @${ancho}px: «${sonda.id}» mide ${m.tocable}px contra un `
+        // SCRUM-1336 · ES UN CIEGO, y se decide aquí con su porqué: la sonda la pone este guard, no la
+        // página. Si mide mal una sonda de tamaño conocido, lo roto es el INSTRUMENTO, y lo que diga
+        // de los táctiles de verdad a este ancho no vale: no es un defecto de la landing.
+        noSupeMirar(`   🔴 NO SUPE MIRAR · UMBRAL MAL APLICADO @${ancho}px: «${sonda.id}» mide ${m.tocable}px contra un `
           + `mínimo de ${MIN} y ${m.cumple ? 'PASA' : 'CAE'}. Con los dos táctiles de esta página por `
           + 'encima de 44, sin esta sonda el mínimo podría estar mal y el guard seguiría verde.');
-        fallos++;
       } else {
         log(`   ✔ umbral ${sonda.id}: ${m.tocable}px ${m.cumple ? 'pasa' : 'cae'} contra ${MIN}`);
       }
     }
     log('');
     await page.close();
-  }
+    return YA_APUNTADO;
+  }, (ancho) => `${ancho}px`);
+  // Lo que apunta el propio recorrido: un ancho que LANZÓ, o que no se recorrió ninguno.
+  for (const c of recorrido.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR @${c}`);
 } finally {
   await navegador.close();
   srv.close();
 }
 
-if (fallos) {
-  console.error(`\n🔴 ${fallos} problema(s) de accesibilidad en la landing publicada.`);
-  process.exit(1);
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  if (hallazgos.length) console.error(`\n🔴 ${hallazgos.length} problema(s) de accesibilidad en la landing publicada.`);
+  if (ciegos.length) console.error(`\n🔴 NO SUPE MIRAR ${ciegos.length} vez/veces: de eso no se da veredicto, ni bueno ni malo.`);
+  console.error(veredictoFinal.linea);
+  process.exit(veredictoFinal.codigo);
 }
 console.log(`✓ En los dos anchos: nada suena pegado, las 7 regiones tienen nombre y los táctiles llegan a su `
   + `mínimo — ${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md.`);
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log(veredictoFinal.linea);

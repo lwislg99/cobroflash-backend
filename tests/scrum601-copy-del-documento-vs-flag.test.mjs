@@ -299,7 +299,12 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // hoja de presupuesto rápido de `homeView.js`, que se calla en `receipt` con
   // `window.appModoEmision === 'receipt'` (SCRUM-1164). Los otros tres (`jobDetailView.js`) heredan la
   // dependencia por `jobNextAction` y su condición local no mira el modo: servirían peor de control.
-  const boton = en('public/dashboard/js/homeView.js', 864);
+  //
+  // SCRUM-1317 (1-oct-2026) · 864 → 885: el Inicio del operario mete 31 líneas y quita 10 POR ENCIMA
+  // de la nota (`git diff --numstat` de `homeView.js`: 31 10). Cifra MEDIDA, no deducida, y se vuelve
+  // a medir igual: `grep -n '"100% al aceptar" genera' public/dashboard/js/homeView.js` da una sola
+  // línea, y es ésta. Segundo re-anclaje por posición de este control (el primero, SCRUM-1124).
+  const boton = en('public/dashboard/js/homeView.js', 885);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
@@ -317,7 +322,10 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1075 · 366 → 367: `app.js` gana `window.appTeamMemberId` por encima (medido, no deducido).
   // SCRUM-825 D1 · 367 → 370: la normalización de `appDocumentoSuelto` gana su comentario (y pierde la
   // lista de dos valores) por encima. Medido con el propio censo sobre el árbol resultante, no contado.
-  const menu = en('public/dashboard/js/app.js', 370);
+  // SCRUM-1317 · 370 → 386: `app.js` gana por encima las 8 líneas que le quitan Proveedores e Informes
+  // de la barra al operario y las 8 netas del guard de rol de `case 'reports'`. Medido, no deducido:
+  // `grep -n "textContent = 'Facturas'" public/dashboard/js/app.js` da una sola línea, y es ésta.
+  const menu = en('public/dashboard/js/app.js', 386);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);

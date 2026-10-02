@@ -1,0 +1,66 @@
+job	run	intento	evento	conclusion	empezo	tests	hermano	tests_hermano	casos_del_bloque	fichero	posicion	metodo
+107672560751	36011346585	1	push	success	2026-09-24T14:14:33Z	8227	107669564689	8236	9	SIN-LOCALIZAR	sin situar	orden
+108075640675	36136471571	1	push	success	2026-09-25T12:42:25Z	8269	108072781974	8277	8	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108086565610	36139805618	1	pr	success	2026-09-25T13:15:26Z	8291	108089564314	8294	2	scrum161-evidencia-tanda.test.mjs	cola	orden
+108086565610	36139805618	1	pr	success	2026-09-25T13:15:26Z	8291	108089564314	8294	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	orden
+108118429514	36149361977	1	pr	success	2026-09-25T14:43:15Z	8309	108122866675	8318	5	scrum286-bloques-orden.test.mjs	cola	orden
+108118429514	36149361977	1	pr	success	2026-09-25T14:43:15Z	8309	108122866675	8318	4	scrum834-puerta-avisador-rojo.test.mjs	cola	orden
+108127424850	36152039414	1	pr	failure	2026-09-25T15:07:19Z	8297	108133645166	8318	21	vigia-atascados.test.mjs	cola	orden
+108127884890	36152176419	1	pr	failure	2026-09-25T15:08:34Z	8322	108141523315	8314	4	scrum834-puerta-avisador-rojo.test.mjs	cola	multiplicidad
+108141523315	36152176419	2	pr	failure	2026-09-25T15:45:16Z	8314	108127884890	8322	12	vigia-atascados.test.mjs	cola	multiplicidad
+108178634601	36167452844	1	push	success	2026-09-25T17:29:49Z	8317	108175986269	8344	27	vigia-atascados.test.mjs	cola	orden
+108190243971	36171008437	1	pr	success	2026-09-25T18:03:49Z	8346	108193544610	8328	1	scrum176-guard-mensaje.test.mjs	cola	multiplicidad
+108190243971	36171008437	1	pr	success	2026-09-25T18:03:49Z	8346	108193544610	8328	6	scrum931-un-solo-importe-de-plantilla.test.mjs	cola	multiplicidad
+108193544610	36172001450	1	push	success	2026-09-25T18:15:27Z	8328	108190243971	8346	25	vigia-atascados.test.mjs	cola	multiplicidad
+108206534639	36175869339	1	push	success	2026-09-25T18:56:29Z	8355	108203616319	8357	2	scrum834-puerta-avisador-rojo.test.mjs	cola	orden
+108229441094	36182940382	1	push	success	2026-09-25T19:58:50Z	8419	108226531075	8427	8	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108358124911	36225327292	1	pr	success	2026-09-26T06:58:00Z	8436	108360887065	8451	15	scrum834-puerta-avisador-rojo.test.mjs	cola	orden
+108365443916	36227934467	1	push	success	2026-09-26T07:49:11Z	8445	108364548275	8450	5	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108400245733	36240603489	1	pr	success	2026-09-26T12:01:07Z	8429	108401563926	8452	23	scrum454-destructivo-sin-comprobacion.test.mjs	cola	orden
+108653668529	36331314638	1	push	success	2026-09-27T15:55:22Z	8484	108652197209	8549	24	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108653668529	36331314638	1	push	success	2026-09-27T15:55:22Z	8484	108652197209	8549	41	vigia-atascados.test.mjs	cola	orden
+108667910627	36336384330	1	pr	success	2026-09-27T17:17:32Z	8618	108670679753	8634	5	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108667910627	36336384330	1	pr	success	2026-09-27T17:17:32Z	8618	108670679753	8634	2	scrum996-suelo-de-arranque.test.mjs	cola	orden
+108667910627	36336384330	1	pr	success	2026-09-27T17:17:32Z	8618	108670679753	8634	9	vigia-atascados.test.mjs	cola	orden
+108673604350	36338413437	1	pr	success	2026-09-27T17:50:25Z	8632	108675678571	8660	5	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+108673604350	36338413437	1	pr	success	2026-09-27T17:50:25Z	8632	108675678571	8660	23	vigia-atascados.test.mjs	cola	orden
+108956394707	36430869593	1	pr	success	2026-09-28T13:45:22Z	8670	108960496521	8674	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	orden
+108956394707	36430869593	1	pr	success	2026-09-28T13:45:22Z	8670	108960496521	8674	3	vigia-atascados.test.mjs	cola	orden
+109079283183	36466942745	1	pr	success	2026-09-28T18:41:17Z	8843	109082989527	8849	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	orden
+109079283183	36466942745	1	pr	success	2026-09-28T18:41:17Z	8843	109082989527	8849	5	vigia-atascados.test.mjs	cola	orden
+109124928758	36480581856	1	pr	success	2026-09-28T20:38:04Z	8922	109129066356	8929	7	scrum454-destructivo-sin-comprobacion.test.mjs	borde sin situar	orden
+109129803193	36482046788	1	pr	success	2026-09-28T20:50:45Z	8932	109134684774	8933	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	orden
+109136276862	36483993420	1	pr	success	2026-09-28T21:07:46Z	8910	109140330288	8933	24	scrum454-destructivo-sin-comprobacion.test.mjs	cola	multiplicidad
+109140330288	36485004021	1	push	success	2026-09-28T21:18:28Z	8933	109136276862	8910	1	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	multiplicidad
+109141033683	36485418647	1	pr	success	2026-09-28T21:20:22Z	8907	109145603934	8936	6	scrum813-trinquete-de-zona.test.mjs	cola	orden
+109141033683	36485418647	1	pr	success	2026-09-28T21:20:22Z	8907	109145603934	8936	23	vigia-atascados.test.mjs	cola	orden
+109170911615	36494542868	1	push	success	2026-09-28T22:48:37Z	8960	109168504773	8965	5	scrum286-bloques-orden.test.mjs	cola	orden
+109175672580	36496019643	1	push	success	2026-09-28T23:04:35Z	8940	109172780547	8973	33	vigia-atascados.test.mjs	cola	orden
+109178721790	36496904219	1	pr	success	2026-09-28T23:15:05Z	8953	109181067748	8973	11	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+109178721790	36496904219	1	pr	success	2026-09-28T23:15:05Z	8953	109181067748	8973	9	scrum813-trinquete-de-zona.test.mjs	cola	orden
+109332109897	36545908571	1	pr	success	2026-09-29T08:56:28Z	8960	109335763397	8982	22	vigia-atascados.test.mjs	cola	orden
+109365294001	36556036696	1	pr	success	2026-09-29T10:30:55Z	9079	109369007049	9082	3	scrum286-bloques-orden.test.mjs	cola	orden
+109464369378	36585440098	1	pr	success	2026-09-29T14:48:35Z	9087	109468470597	9064	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	multiplicidad
+109468470597	36586596848	1	push	success	2026-09-29T14:58:24Z	9064	109464369378	9087	24	scrum454-destructivo-sin-comprobacion.test.mjs	cola	multiplicidad
+109469205939	36586806494	1	pr	success	2026-09-29T15:00:02Z	9070	109475165878	9068	14	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	multiplicidad
+109469205939	36586806494	1	pr	success	2026-09-29T15:00:02Z	9070	109475165878	9068	10	scrum888g-senal-en-la-firma.test.mjs	borde sin situar	multiplicidad
+109475165878	36587969972	1	push	success	2026-09-29T15:13:18Z	9068	109469205939	9070	26	scrum834-puerta-avisador-rojo.test.mjs	cola	multiplicidad
+109489236819	36592594884	1	pr	success	2026-09-29T15:45:17Z	9055	109492978977	9096	1	scrum286-bloques-orden.test.mjs	cola	orden
+109489236819	36592594884	1	pr	success	2026-09-29T15:45:17Z	9055	109492978977	9096	17	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+109489236819	36592594884	1	pr	success	2026-09-29T15:45:17Z	9055	109492978977	9096	23	vigia-atascados.test.mjs	cola	orden
+109502823386	36596548810	1	pr	success	2026-09-29T16:16:53Z	9117	109512061713	9126	9	scrum834-puerta-avisador-rojo.test.mjs	cola	orden
+109533255908	36605475029	1	pr	success	2026-09-29T17:30:57Z	9191	109537154046	9195	4	scrum522-guards-fuera-de-la-tanda.test.mjs	cola	orden
+109551284909	36610767076	1	pr	success	2026-09-29T18:15:32Z	9194	109557694532	9222	28	scrum834-puerta-avisador-rojo.test.mjs	cola	orden
+110065234503	36767496636	1	pr	success	2026-09-30T19:42:12Z	9199	110069062176	9222	23	scrum524b-trinquete-de-la-tabla.test.mjs	borde sin situar	orden
+110185726613	36797941392	2	pr	failure	2026-10-01T02:09:32Z	9342	110165573865	9343	1	scrum524b-trinquete-de-la-tabla.test.mjs	cola	orden
+110165842739	36797938424	1	pr	failure	2026-10-01T00:48:45Z	9338	110185717988	9327	1	SIN-LOCALIZAR	sin situar	multiplicidad
+110165842739	36797938424	1	pr	failure	2026-10-01T00:48:45Z	9338	110185717988	9327	6	SIN-LOCALIZAR	sin situar	multiplicidad
+110185717988	36797938424	2	pr	failure	2026-10-01T02:09:30Z	9327	110165842739	9338	8	scrum237-negacion-respaldada.test.mjs	fichero entero	multiplicidad
+110185717988	36797938424	2	pr	failure	2026-10-01T02:09:30Z	9327	110165842739	9338	1	scrum286-bloques-orden.test.mjs	cola	multiplicidad
+110185717988	36797938424	2	pr	failure	2026-10-01T02:09:30Z	9327	110165842739	9338	9	scrum834-puerta-avisador-rojo.test.mjs	cola	multiplicidad
+110174857527	36800930882	1	pr	failure	2026-10-01T01:24:22Z	9338	110186213916	9343	5	scrum286-bloques-orden.test.mjs	cola	orden
+110181935419	36803221288	1	pr	failure	2026-10-01T01:53:20Z	9354	110186236587	9347	1	SIN-LOCALIZAR	sin situar	multiplicidad
+110186236587	36804665953	1	pr	failure	2026-10-01T02:25:43Z	9347	110181935419	9354	8	scrum237-negacion-respaldada.test.mjs	fichero entero	multiplicidad
+110186209126	36804656838	1	pr	success	2026-10-01T02:13:32Z	9338	110188662066	9347	9	scrum1262-la-baja-corta-todas-las-vias.test.mjs	borde sin situar	multiplicidad
+110186209126	36804656838	1	pr	success	2026-10-01T02:13:32Z	9338	110188662066	9347	22	vigia-atascados.test.mjs	cola	multiplicidad
+110188662066	36805414513	1	push	success	2026-10-01T02:43:37Z	9347	110186209126	9338	22	scrum834-puerta-avisador-rojo.test.mjs	cola	multiplicidad

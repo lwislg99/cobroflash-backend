@@ -46,7 +46,7 @@ import {
   ERROR_TIPO_IVA_NO_EMITIBLE,
 } from '../dist/core/validation/tiposIvaEmitibles.js';
 import { invalidTipoIva, TIPOS_IVA_ES_BP } from '../dist/core/validation/fiscalInput.js';
-import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
+import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs'; // SCRUM-796
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(RAIZ, 'src');
@@ -399,13 +399,13 @@ async function emitirPorLaMano(tax) {
   const handler = capa.route.stack[capa.route.stack.length - 1].handle;
 
   let salida = null;
-  const req = {
+  const req = reqDeSesion({ rol: 'admin',
     // id INVENTADO (SCRUM-409): el demo no se comporta como un merchant normal —marca de agua,
     // política de WhatsApp por id, pasarela desviada— y un fixture ahí mediría otra cosa.
     merchantId: 71,
     user: { id: 7, role: 'admin', email: 'pro@ejemplo.invalid' },
     body: { customerId: 7, lines: [{ concept: 'Reparación de bajante', qty: 1, price: 100, tax }] },
-  };
+  });
   const res = {
     status: (c) => ({ json: (b) => { salida = { http: c, body: b }; } }),
     json: (b) => { salida = { http: 200, body: b }; },

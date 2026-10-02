@@ -2,6 +2,7 @@ import { prisma } from '../../../core/db/prisma';
 import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mismo semáforo que la lista de Trabajos
 import { isFieldMember } from '../../../core/http/roleCapabilities'; // SCRUM-147
 import { ensamblarMetricasEquipo } from './metricasEquipo'; // SCRUM-236
+import { ensamblarActividadEquipo } from './actividadEquipo'; // SCRUM-1341
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -190,6 +191,52 @@ function monthRange(offset = 0) {
  * `client` es inyectable SOLO para poder probar la relación entre etapas sin BD. Producción
  * nunca lo pasa: usa el `prisma` global. (Mismo patrón que `buildVerifactuRegistrosXml`.)
  */
+/**
+ * SCRUM-1317 · EL INICIO DEL OPERARIO — lo que pinta su portada, y nada más.
+ *
+ * `getHomeMetrics` devuelve 16 campos y 9 son dinero del negocio (lo que se debe, lo cobrado,
+ * los gastos, el beneficio, la facturación por cliente). Su ruta pasa a admin; ésta es la que
+ * se queda el operario, y por eso NO es un recorte de aquélla: es una función propia, que no
+ * consulta ni un importe agregado. Si mañana se añade un KPI a la portada del admin, aquí no
+ * aparece solo.
+ *
+ *   · los tres RECUENTOS de los globos del menú (solicitudes, presupuestos esperando, facturas
+ *     pendientes): son recuentos de listas que el operario ya puede abrir (S1: «ver sí»);
+ *   · la actividad reciente: los últimos presupuestos del negocio, con importe. El Técnico SÍ ve
+ *     la actividad de sus compañeros: lo decidió el fundador el 1-oct-2026 y está en la tabla
+ *     «Qué VE el Técnico en Inicio» de la Parte S1 del máster (SCRUM-1337). Son los mismos
+ *     presupuestos que ya tiene en la pantalla de Presupuestos.
+ */
+export async function getInicioOperario(merchantId: number) {
+  const [pendingCount, quotesAwaiting, pendingRequests, recentQuotes] = await Promise.all([
+    prisma.invoice.count({ where: { merchantId, status: 'pending' } }),
+    prisma.quote.count({ where: { merchantId, status: 'sent' } }),
+    prisma.quoteRequest.count({ where: { merchantId, status: 'pending' } }),
+    prisma.quote.findMany({
+      where: { merchantId },
+      include: { customer: { select: { name: true } } },
+      orderBy: { updatedAt: 'desc' },
+      take: 5,
+    }),
+  ]);
+
+  return {
+    pendingCount,
+    quotesAwaiting,
+    pendingRequests,
+    recentActivity: recentQuotes.map((q) => ({
+      type: 'quote' as const,
+      id: q.id,
+      quoteNumber: q.quoteNumber,
+      status: q.status,
+      customer: q.customer?.name ?? '—',
+      total: Number(q.total),
+      currency: q.currency,
+      updatedAt: q.updatedAt,
+    })),
+  };
+}
+
 export async function funnelForPeriod(
   merchantId: number,
   start: Date,
@@ -468,6 +515,46 @@ export async function getTeamMetrics(merchantId: number) {
     monthQuotes,
     paidInvoices,
     nombrePropietario: merchant?.legalName || merchant?.name || 'Tu (propietario)',
+    weekAgo,
+  });
+}
+
+/**
+ * SCRUM-1341 · «Actividad del equipo»: lo que el TÉCNICO ve de sus compañeros, sin importes.
+ *
+ * Función propia, no un recorte por rol de `getTeamMetrics` (mismo criterio que
+ * `getInicioOperario` con `getHomeMetrics`): NO CONSULTA FACTURAS, y de los presupuestos pide
+ * autor, estado y fecha — no el total. Un importe que no se lee de la base no puede salir en la
+ * respuesta, ni en un campo, ni en un total, ni en una estrella, ni en un orden.
+ *
+ * La ventana es la del panel del admin (`monthRange(0).start` es su mismo `monthStart`): los
+ * recuentos de una persona son los mismos en las dos pantallas.
+ */
+export async function getActividadEquipo(merchantId: number) {
+  const monthStart = monthRange(0).start;
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+
+  const [merchant, members, monthQuotes] = await Promise.all([
+    prisma.merchant.findUnique({ where: { id: merchantId }, select: { name: true, legalName: true } }),
+    prisma.teamMember.findMany({
+      where: { merchantId },
+      select: { id: true, name: true, role: true, status: true },
+      // Explícito: la consulta del panel del admin no lleva ninguno, y un orden sin declarar es
+      // un orden que puede cambiar solo. Por `id` (el alta), que no depende de nada que se cuente.
+      orderBy: { id: 'asc' },
+    }),
+    prisma.quote.findMany({
+      where: { merchantId, status: { not: 'draft' }, createdAt: { gte: monthStart } },
+      select: { teamMemberId: true, status: true, createdAt: true },
+    }),
+  ]);
+
+  return ensamblarActividadEquipo({
+    members,
+    monthQuotes,
+    // Sin el «Tu (propietario)» de `getTeamMetrics`: quien lee esta pantalla NO es el propietario.
+    // `name` es obligatorio en el esquema; si viniera vacío, la fila conserva su rol debajo.
+    nombrePropietario: merchant?.legalName || merchant?.name || '',
     weekAgo,
   });
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createProvider, listProviders, updateProvider, deleteProvider, findProviderByName } from '../../domain/providers.service';
 import { validarNifEspanol } from '../../../../core/validation/nifEspanol';
+import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
 
@@ -32,7 +33,7 @@ function nifParaGuardar(bruto: unknown): { ok: true; valor: string | null } | { 
 
 router.get('/ping', (_req, res) => res.json({ ok: true, module: 'providers' }));
 
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const items = await listProviders(req.merchantId);
     return res.json({ ok: true, items });
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const { name, phone, email, notes, taxId, isActive } = req.body || {};
     if (!name || typeof name !== 'string') return res.status(400).json({ ok: false, error: 'name_required' });
@@ -68,7 +69,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -101,7 +102,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });

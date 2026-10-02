@@ -103,7 +103,7 @@
              firmados. RÓTULO APROBADO por el fundador el 3-sep-2026 (regla 30); hasta ese día
              la entrada no estuvo aquí, porque la barra es lo primero que ve el profesional cada
              día y no admite un marcador — lo pedía el guard ④ de SCRUM-420. -->
-        <button class="nav-item" data-view="partes-oficina" id="nav-partes-oficina">
+        <button class="nav-item" data-view="partes-oficina" id="nav-partes-oficina" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg>
           <span id="nav-partes-oficina-label">Partes por valorar</span>
         </button>
@@ -117,7 +117,7 @@
         <!-- SCRUM-285 (B4): «Cobros», separado de Facturas. El diseno §B1 lo pone aqui, cerrando
              el ciclo: Presupuestos -> Albaranes -> Facturas -> Cobros. La entrada entra en el
              MISMO commit que su pantalla: el menu crece cuando existe el destino, nunca antes. -->
-        <button class="nav-item" data-view="cobros" id="nav-cobros">
+        <button class="nav-item" data-view="cobros" id="nav-cobros" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           <span>Cobros</span>
         </button>
@@ -134,17 +134,17 @@
           <span>Productos</span>
         </button>
 
-        <button class="nav-item" data-view="providers">
+        <button class="nav-item" data-view="providers" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span>Proveedores</span>
         </button>
 
-        <button class="nav-item" data-view="expenses">
+        <button class="nav-item" data-view="expenses" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
           <span>Gastos</span>
         </button>
 
-        <button class="nav-item" data-view="reports">
+        <button class="nav-item" data-view="reports" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span>Informes</span>
         </button>
@@ -155,7 +155,7 @@
              del guion H2. Va en NEGOCIO y no en VENTA porque un libro registro no es un paso del
              ciclo (Presupuestos → Albaranes → Facturas → Cobros): es un registro del negocio, y
              vive con Informes. -->
-        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro">
+        <button class="nav-item" data-view="libro-registro" id="nav-libro-registro" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h7"/></svg>
           <span id="nav-libro-registro-label">Libro de registro</span>
         </button>
@@ -166,7 +166,7 @@
              que sigue sin firmar es la copy DE DENTRO de la pantalla (título, estados, avisos),
              que sí lleva marcador — ver `facturasRecibidasView.js`. El rótulo es literal del
              propio ticket («Facturas recibidas») y de `LIBROS_DISPONIBLES` en el servidor. -->
-        <button class="nav-item" data-view="facturas-recibidas" id="nav-facturas-recibidas">
+        <button class="nav-item" data-view="facturas-recibidas" id="nav-facturas-recibidas" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7"/><path d="M9 11h4"/></svg>
           <span id="nav-facturas-recibidas-label">Facturas recibidas</span>
         </button>
@@ -184,17 +184,17 @@
              ⚠️ La vista `operarios` SIGUE existiendo en el router y NO tiene entrada de barra: es
              excepción CONOCIDA, con ticket propio (SCRUM-433). El test la nombra citándolo — una
              excepción sin ticket deja de ser excepción y pasa a ser el comportamiento. -->
-        <button class="nav-item" data-view="team" id="nav-team">
+        <button class="nav-item" data-view="team" id="nav-team" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
           <span>Equipo</span>
         </button>
 
-        <button class="nav-item" data-view="plans" id="nav-plans">
+        <button class="nav-item" data-view="plans" id="nav-plans" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           <span>Planes</span>
         </button>
 
-        <button class="nav-item" data-view="settings">
+        <button class="nav-item" data-view="settings" data-rol="admin">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           <span>Configuración</span>
         </button>

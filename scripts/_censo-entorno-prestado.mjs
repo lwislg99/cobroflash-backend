@@ -41,11 +41,13 @@
 //      `require(...).X`), cuyo primer argumento es `process.execPath` o el literal `'node'` /
 //      `'node.exe'` — un `node` HIJO, no cualquier proceso.
 //   2. Su resultado se parsea: `<r>.stdout` encadenado con `.match(`/`.test(`/`.split(`, o
-//      envuelto en `JSON.parse(...)`.
+//      envuelto en `JSON.parse(...)`. O BIEN (SCRUM-1289b) lanza `'--test'`, o su `env` borra
+//      `NODE_TEST_CONTEXT`: ese hijo es un orquestador de tests, y con el `NODE_OPTIONS` del padre
+//      trunca el TAP de la tanda aunque sólo mire el `status`.
 //   3. Su `env` NO está construido a mano: falta del todo, es `process.env` a secas, o es
-//      `{ ...process.env }` (con o sin propiedades añadidas) sin que la variable que lo guarda
-//      reciba luego un `delete` antes de usarse. Un `delete` demuestra que alguien pensó en lo
-//      que colaba; su ausencia no lo demuestra.
+//      `{ ...process.env }` (con o sin propiedades añadidas) sin que las TRES variables conocidas
+//      queden borradas (`delete`) o fijadas en el literal antes de usarse. Borrar UNA no basta
+//      (SCRUM-1289b: así se escaparon scrum976 y scrum928).
 //
 // ⛔ NO EJECUTA NADA. Sólo AST (`typescript`, ya en el árbol — regla 36), nunca `grep`.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -148,22 +150,68 @@ function seParsea(ambito, nombre, sf) {
  * arriba, no la de la llamada. Buscar sólo dentro de `correr` daba un falso ACUSADO sobre código
  * ya arreglado.
  */
-function tieneDeleteAntes(sf, nombre, limite) {
-  if (!nombre) return false;
-  let hallado = false;
+//
+// 🔴 SCRUM-1289b · Y DEVUELVE **QUÉ** SE BORRÓ, NO SÓLO SI SE BORRÓ ALGO. La primera versión daba
+// por limpio el `env` en cuanto veía UN `delete`, fuera el que fuera. Así se le escaparon los dos
+// hijos que rompían el TAP de todas las tandas (SCRUM-1289): scrum976 y scrum928 borraban
+// `NODE_TEST_CONTEXT` (y 976 también `FORCE_COLOR`) pero NO `NODE_OPTIONS`, que traía los reporters.
+// «Alguien pensó en lo que colaba» no basta: hay que haber pensado en LAS TRES.
+//
+// 🔴 SCRUM-1349 · Y EL BORRADO EN BUCLE CUENTA. `for (const k of ['FORCE_COLOR', 'NODE_OPTIONS',
+// 'NODE_TEST_CONTEXT']) delete entorno[k];` borra las tres, y el censo sólo reconocía el `delete`
+// escrito a mano: clasificó como «sin limpiar» a tres bancos que estaban limpios (banco-scrum1102f,
+// 1322 y 1329, el 1-oct-2026). Es la ceguera del otro lado: «no reconozco cómo lo hiciste» salía
+// como «lo hiciste mal», y eso manda a alguien a arreglar lo que funciona.
+// Sólo se resuelve lo que se LEE: la variable de un `for…of` sobre una lista LITERAL de cadenas.
+// Cualquier otra clave calculada sigue siendo «(clave no literal)» y no limpia nada.
+function clavesDelBucle(nodoDelete, clave) {
+  if (!ts.isIdentifier(clave)) return null;
+  for (let p = nodoDelete.parent; p; p = p.parent) {
+    if (!ts.isForOfStatement(p)) continue;
+    const ini = p.initializer;
+    const declara = ts.isVariableDeclarationList(ini) && ini.declarations.length === 1
+      && ts.isIdentifier(ini.declarations[0].name) && ini.declarations[0].name.text === clave.text;
+    if (!declara) continue;
+    if (!ts.isArrayLiteralExpression(p.expression)) return null;
+    if (!p.expression.elements.length || !p.expression.elements.every((e) => ts.isStringLiteralLike(e))) return null;
+    return p.expression.elements.map((e) => e.text);
+  }
+  return null;
+}
+
+function borradasAntes(sf, nombre, limite) {
+  const borradas = new Set();
+  if (!nombre) return borradas;
   const rec = (n) => {
-    if (hallado || n.getStart(sf) >= limite.getStart(sf)) return;
+    if (n.getStart(sf) >= limite.getStart(sf)) return;
     if (n.kind === ts.SyntaxKind.DeleteExpression) {
       const objetivo = n.expression;
-      if (ts.isPropertyAccessExpression(objetivo) || ts.isElementAccessExpression(objetivo)) {
-        if (ts.isIdentifier(objetivo.expression) && objetivo.expression.text === nombre) hallado = true;
+      if ((ts.isPropertyAccessExpression(objetivo) || ts.isElementAccessExpression(objetivo))
+        && ts.isIdentifier(objetivo.expression) && objetivo.expression.text === nombre) {
+        if (ts.isPropertyAccessExpression(objetivo)) borradas.add(objetivo.name.text);
+        else if (ts.isStringLiteralLike(objetivo.argumentExpression)) borradas.add(objetivo.argumentExpression.text);
+        else {
+          const delBucle = clavesDelBucle(n, objetivo.argumentExpression);
+          if (delBucle) for (const k of delBucle) borradas.add(k);
+          else borradas.add('(clave no literal)');
+        }
       }
     }
     ts.forEachChild(n, rec);
   };
   rec(sf);
-  return hallado;
+  return borradas;
 }
+
+/** Las claves que un literal `{ ...process.env, X: … }` fija a mano (tapan la heredada). */
+function fijadasEnLiteral(obj, sf) {
+  return new Set(obj.properties
+    .filter((p) => (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && p.name)
+    .map((p) => (ts.isStringLiteralLike(p.name) ? p.name.text : p.name.getText(sf))));
+}
+
+/** Qué variables de las tres conocidas siguen colándose, dadas las borradas y las fijadas a mano. */
+const quedan = (tratadas) => VARS_CONOCIDAS.filter((v) => !tratadas.has(v));
 
 /** ¿El objeto `obj` es (sólo, o entre otras) un spread de `process.env`? */
 function tieneSpreadDeProcessEnv(obj, sf) {
@@ -178,22 +226,38 @@ function tieneSpreadDeProcessEnv(obj, sf) {
  *   · null ................. no hay `env`: hereda ENTERO (violación).
  *   · 'DIRECTO' ............ `env: process.env` (violación).
  *   · 'SPREAD_SIN_LIMPIAR' . `{ ...process.env, ... }` sin `delete` que lo sanee (violación).
- *   · 'A_MANO' ............. sin spread de `process.env`, o con `delete` antes de usarse (limpio).
+ *   · 'SPREAD_A_MEDIAS' .... `{ ...process.env }` que borra o fija ALGUNA de las tres variables pero
+ *                            no todas (violación; `faltan` dice cuáles) — SCRUM-1289b.
+ *   · 'A_MANO' ............. sin spread de `process.env`, o con las TRES tratadas antes de usarse (limpio).
  *   · 'NO_DECIDIBLE' ....... el valor no se pudo resolver (no cuenta como limpio ni como acusado).
+ *
+ * Devuelve `{ clase, faltan, borradas }`: `borradas` sirve para decidir el alcance (quien borra
+ * `NODE_TEST_CONTEXT` está diciendo que su hijo corre un `node --test`).
  */
 function clasificaEnv(nodoLlamada, ambito, sf) {
+  const sinNada = (clase) => ({ clase, faltan: clase === null || clase === 'DIRECTO' ? [...VARS_CONOCIDAS] : [], borradas: new Set() });
   const opciones = nodoLlamada.arguments[nodoLlamada.arguments.length - 1];
-  if (!opciones || !ts.isObjectLiteralExpression(opciones)) return null;
-  const envProp = opciones.properties.find((p) => ts.isPropertyAssignment(p) && p.name.getText(sf) === 'env');
-  if (!envProp) return null;
-  const valor = envProp.initializer;
+  if (!opciones || !ts.isObjectLiteralExpression(opciones)) return sinNada(null);
+  // 🔴 SCRUM-1289b · también la forma ABREVIADA `{ cwd, env }`. Sin ella, scrum976 (`{ …, env }`)
+  // salía como «sin env» y, al no borrar nada a la vista, ni siquiera entraba en el censo.
+  const envProp = opciones.properties.find((p) => (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p))
+    && p.name.getText(sf) === 'env');
+  if (!envProp) return sinNada(null);
+  const valor = ts.isShorthandPropertyAssignment(envProp) ? envProp.name : envProp.initializer;
 
   if (ts.isPropertyAccessExpression(valor) && ts.isIdentifier(valor.expression)
-    && valor.expression.text === 'process' && valor.name.text === 'env') return 'DIRECTO';
+    && valor.expression.text === 'process' && valor.name.text === 'env') return sinNada('DIRECTO');
 
-  if (ts.isObjectLiteralExpression(valor)) {
-    return tieneSpreadDeProcessEnv(valor, sf) ? 'SPREAD_SIN_LIMPIAR' : 'A_MANO';
-  }
+  const juzgar = (literal, borradas) => {
+    if (!tieneSpreadDeProcessEnv(literal, sf)) return { clase: 'A_MANO', faltan: [], borradas };
+    const tratadas = new Set([...borradas, ...fijadasEnLiteral(literal, sf)]);
+    const faltan = quedan(tratadas);
+    if (!faltan.length) return { clase: 'A_MANO', faltan, borradas };
+    const tocoAlguna = VARS_CONOCIDAS.some((v) => tratadas.has(v));
+    return { clase: tocoAlguna ? 'SPREAD_A_MEDIAS' : 'SPREAD_SIN_LIMPIAR', faltan, borradas };
+  };
+
+  if (ts.isObjectLiteralExpression(valor)) return juzgar(valor, new Set());
 
   if (ts.isIdentifier(valor)) {
     // Resolver la declaración de esa variable EN EL MISMO ámbito (o el módulo entero).
@@ -206,13 +270,17 @@ function clasificaEnv(nodoLlamada, ambito, sf) {
       ts.forEachChild(n, buscar);
     };
     buscar(sf);
-    if (!declaracion || !ts.isObjectLiteralExpression(declaracion.initializer)) return 'NO_DECIDIBLE';
-    const spreadea = tieneSpreadDeProcessEnv(declaracion.initializer, sf);
-    if (!spreadea) return 'A_MANO';
-    return tieneDeleteAntes(sf, valor.text, nodoLlamada) ? 'A_MANO' : 'SPREAD_SIN_LIMPIAR';
+    if (!declaracion || !ts.isObjectLiteralExpression(declaracion.initializer)) return sinNada('NO_DECIDIBLE');
+    return juzgar(declaracion.initializer, borradasAntes(sf, valor.text, nodoLlamada));
   }
 
-  return 'NO_DECIDIBLE';
+  return sinNada('NO_DECIDIBLE');
+}
+
+/** ¿El segundo argumento es un array con el literal `'--test'`? Ese hijo es un orquestador de tests. */
+function lanzaTest(nodo) {
+  const a = nodo.arguments[1];
+  return !!a && ts.isArrayLiteralExpression(a) && a.elements.some((e) => ts.isStringLiteralLike(e) && e.text === '--test');
 }
 
 /**
@@ -234,14 +302,26 @@ export function clasificaFuente(rel, fuente) {
         const ambito = ambitoDe(n);
         const resultado = variableDeResultado(n);
         const parseaSalida = seParsea(ambito, resultado, sf);
-        const envClase = clasificaEnv(n, ambito, sf);
-        if (parseaSalida) {
+        const env = clasificaEnv(n, ambito, sf);
+        // 🔴 SCRUM-1289b · EL ALCANCE YA NO ES SÓLO «parsea stdout». Un hijo que corre `node --test`
+        // con el `NODE_OPTIONS` del padre TRUNCA el TAP de la tanda aunque sólo mire su `status`
+        // (scrum928). Y quien borra `NODE_TEST_CONTEXT` lo hace porque su hijo corre un `node --test`,
+        // aunque sea por dentro de un guion (scrum976 → `guards-entrada.mjs`): lo dice él mismo.
+        const motivos = [
+          parseaSalida && 'parsea stdout',
+          lanzaTest(n) && 'lanza --test',
+          env.borradas.has('NODE_TEST_CONTEXT') && 'borra NODE_TEST_CONTEXT (su hijo corre --test)',
+        ].filter(Boolean);
+        if (motivos.length) {
           salida.push({
             fichero: rel,
             linea: line + 1,
             llamada: nombreDeLlamada(n),
-            envClase,
-            acusado: envClase === null || envClase === 'DIRECTO' || envClase === 'SPREAD_SIN_LIMPIAR',
+            envClase: env.clase,
+            faltan: env.faltan,
+            motivos,
+            acusado: env.clase === null || env.clase === 'DIRECTO' || env.clase === 'SPREAD_SIN_LIMPIAR'
+              || env.clase === 'SPREAD_A_MEDIAS',
           });
         }
       }
@@ -302,9 +382,42 @@ export function motivosParaNoFiarse(censo) {
   return m;
 }
 
+/**
+ * 🔴 SCRUM-1349 · LO QUE ESTE «ME FÍO» NO CUBRE. `motivosParaNoFiarse` sólo mira UNA dirección:
+ * que el censo no se quede ciego («no vi nada»). No dice nada de la otra —acusar a un limpio
+ * escrito de una forma que no reconoce—, y con `[]` delante esa cifra se creyó sin abrir los
+ * ficheros. Un «me fío» que no dice de qué NO responde, no es un me fío: antes de repartir un
+ * acusado, se abre.
+ */
+export const NO_RESPONDE_DE = 'que cada acusado lo sea de verdad: una forma de limpiar que el censo no reconozca sale como acusada';
+
+/**
+ * 🔴 SCRUM-1349 · EL TRINQUETE. Compara los acusados del censo con los DECLARADOS (uno a uno, con
+ * dueño y motivo, en `scripts/_entorno-prestado-declarados.json`). Sólo puede BAJAR:
+ *   · `nuevos` ..... un fichero acusado que no está declarado, o con más llamadas de las declaradas.
+ *   · `sobran` ..... un declarado que ya no se acusa (o con menos): se arregló, su entrada se BORRA.
+ * Por FICHERO y con su recuento, no por línea: las líneas se mueven.
+ */
+export function contraDeclarados(acusados, declarados) {
+  const porFichero = new Map();
+  for (const a of acusados) porFichero.set(a.fichero, (porFichero.get(a.fichero) || 0) + 1);
+  const nuevos = [];
+  const sobran = [];
+  for (const [fichero, n] of porFichero) {
+    const d = declarados[fichero];
+    if (!d) nuevos.push(`${fichero} (+${n})`);
+    else if (n > d.llamadas) nuevos.push(`${fichero}: ${d.llamadas} → ${n}`);
+  }
+  for (const [fichero, d] of Object.entries(declarados)) {
+    const n = porFichero.get(fichero) || 0;
+    if (n < d.llamadas) sobran.push(`${fichero}: declaradas ${d.llamadas}, hoy ${n}`);
+  }
+  return { nuevos, sobran };
+}
+
 /** Una llamada, en una línea legible en el mensaje de un rojo — dice CÓMO arreglarla. */
 export const comoLinea = (l) => `${l.fichero}:${l.linea} · ${l.llamada}(…) → env: ${l.envClase ?? '(sin env)'}`
   + (l.acusado
-    ? '  ·  🔴 hereda process.env sin limpiar: construir `{ ...process.env }` y `delete` '
+    ? `  ·  🔴 se le cuela ${(l.faltan || VARS_CONOCIDAS).join('/')}: construir \`{ ...process.env }\` y \`delete\` `
       + VARS_CONOCIDAS.join('/') + ' antes de usarlo'
     : '  ·  limpio');

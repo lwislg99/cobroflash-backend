@@ -24,6 +24,19 @@ const CONDICIONES_QUE_GUARDA_UNA_PLANTILLA = ['FULL_UPFRONT', 'FIFTY_FIFTY', 'MA
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
 function renderQuotesView(container, template, documentoSuelto) {
+  // SCRUM-1274 · EL PRESUPUESTO QUE NACE DESDE UN TRABAJO. «Hacer presupuesto» en la ficha del Trabajo
+  // abría esta pantalla sin estado, y al aceptarlo `ensureJobForQuote` creaba un SEGUNDO Trabajo para
+  // la misma obra. El servidor ya sabe engancharlo (`job_id`, SCRUM-195): aquí solo se le manda.
+  // Viene con su cliente, que se deja elegido; si el profesional lo cambia, el `job_id` NO viaja (el
+  // servidor comprueba el negocio, no el cliente, y un presupuesto de otro cliente no es de esta obra).
+  // ⚠️ Viaja DENTRO de `template` (`template.deTrabajo`) y no como cuarto argumento: la firma está
+  // fijada por SCRUM-140 y por la garantía de la regla 29 de SCRUM-600b. Sin `lines`, `template` no
+  // carga nada de plantilla (ver «if (template && Array.isArray(template.lines)…»), así que no hay
+  // aviso de «Plantilla cargada» ni líneas fantasma.
+  const origen = template && template.deTrabajo;
+  const trabajoDeOrigen = (origen && Number.isInteger(Number(origen.jobId)) && Number(origen.jobId) > 0)
+    ? { jobId: Number(origen.jobId), customerId: origen.customerId != null ? String(origen.customerId) : null }
+    : null;
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
 
@@ -2081,10 +2094,15 @@ descWrapper.appendChild(descLabel);
   // El menú es el helper compartido de AB3, con su rótulo por defecto, «Más acciones» (firmado en
   // el comentario 15868). Si no estuviera cargado, los dos botones se quedan en la fila del título:
   // perder el menú no puede costar la posibilidad de vaciar el documento.
+  // SCRUM-1317 · guardar una plantilla es admin en el servidor (`POST /admin/templates`). Al
+  // operario el botón no se le pinta: USAR una plantilla sigue siendo suyo, crearla no, y un
+  // botón que acaba en 403 es peor que no tenerlo (SCRUM-1312).
+  const puedeGuardarPlantilla = window.appUserRole === "admin";
   const masAccionesBtn =
-    typeof overflowMenu === "function"
-      ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
-      : null;
+    typeof overflowMenu !== "function" ? null
+      : puedeGuardarPlantilla
+        ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
+        : overflowMenu([resetBtn], { label: "Más acciones" });
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
@@ -2102,7 +2120,10 @@ descWrapper.appendChild(descLabel);
   // SCRUM-915i · en la fila del título, delante del «⋯».
   if (!esDocumentoSuelto) headingRow.appendChild(draftIndicator);
   if (masAccionesBtn) headingRow.appendChild(masAccionesBtn);
-  else { headingRow.appendChild(saveTemplateBtn); headingRow.appendChild(resetBtn); }
+  else {
+    if (puedeGuardarPlantilla) headingRow.appendChild(saveTemplateBtn);
+    headingRow.appendChild(resetBtn);
+  }
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»
@@ -5035,7 +5056,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
       // Restaurar borrador autoguardado (si no venimos de una plantilla)
       let draftRestored = false;
-      if (!templatePending) {
+      // SCRUM-1274 · desde un Trabajo NO se restaura el borrador guardado: traería otro cliente y
+      // otras líneas a un presupuesto que es de ESTA obra.
+      if (!templatePending && !trabajoDeOrigen) {
         const restored = loadDraft();
         if (restored) {
           draftRestored = true;
@@ -5048,6 +5071,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         }
       }
       if (!draftRestored) setAlert(null, "");
+      // SCRUM-1274 · el cliente del Trabajo, elegido como si se hubiera pulsado su botón.
+      if (trabajoDeOrigen && trabajoDeOrigen.customerId
+        && customersList.some(function (c) { return String(c.id) === trabajoDeOrigen.customerId; })) {
+        elegirCliente(trabajoDeOrigen.customerId);
+      }
       // SCRUM-586 (CONT-13): la lista de clientes acaba de llegar y el borrador ya ha puesto su
       // cliente, así que ÉSTE es el primer momento en que se puede saber si hay algo pactado. Sin
       // esta llamada, un borrador restaurado no propondría NADA hasta que el profesional volviera
@@ -5690,6 +5718,9 @@ payloadLines.push(lineaParaPayload({
         // SCRUM-1180 · las cláusulas del negocio que ESTE presupuesto no lleva, por su `id`. A MANO,
         // por el censo de SCRUM-286. Sin casillas no viaja (no se sabe cuáles tiene el negocio).
         clausulasExcluidas: clausulasExcluidasElegidas(),
+        // SCRUM-1274 · el Trabajo de origen, A MANO (censo de SCRUM-286). Solo si el cliente elegido
+        // sigue siendo el del Trabajo: con otro cliente, el presupuesto no es de esta obra.
+        job_id: trabajoDeOrigen && String(customerId) === trabajoDeOrigen.customerId ? trabajoDeOrigen.jobId : undefined,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,

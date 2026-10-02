@@ -640,7 +640,11 @@ function renderProductsView(container) {
     const skuI = form.querySelector('input[name="sku"]');
     const supplierRefI = form.querySelector('input[name="supplierRef"]');
     const unitI = form.querySelector('input[name="unit"]');
-    cablearMargen(costI, priceI, margenI);
+    // SCRUM-1317 · sólo si los tres campos siguen ahí. A quien no ve economía se le han retirado
+    // «Coste» y «Margen %» veinte líneas más arriba (SCRUM-597), y cablearlos lanzaba un
+    // TypeError que dejaba al operario con la lista de productos VACÍA: `refresh()` no llegaba a
+    // correr. Medido en Edge sobre main el 1-oct-2026. El modal de edición ya se protegía igual.
+    if (costI && margenI) cablearMargen(costI, priceI, margenI);
     // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
     // aqui declararia por el profesional en cada alta, que es lo que la columna nullable evita.
@@ -663,7 +667,15 @@ function renderProductsView(container) {
     //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
     // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-product");
-  
+    // SCRUM-1338 · `POST /admin/products` exige admin desde SCRUM-614 (el catálogo es sólo lectura
+    // para el operario) y este botón era el único de la pantalla que no lo sabía: se pulsaba y daba
+    // 403. Mismo trato que Exportar, Importar, Editar y Desactivar de aquí mismo (SCRUM-89):
+    // deshabilitado y con su nota, no oculto — la pantalla es suya; la acción, no (c.17829).
+    if (window.appUserRole !== 'admin' && createBtn) {
+      lockActionForRole(createBtn);
+      createBtn.parentNode.insertAdjacentElement('afterend', roleLockedNote());
+    }
+
     // --- table ---
     const tableWrap = document.createElement("div");
     tableWrap.className = "table-scroll";
@@ -909,9 +921,13 @@ function renderProductsView(container) {
       uiSkeletonRows(tbody, 8, 6);
       const merchantId = _merchantId || (_merchantId = await getMerchantId());
 
+      // SCRUM-1317 · sólo el admin pide los proveedores. `GET /admin/providers` pasa a admin, y
+      // con las dos peticiones en el mismo `Promise.all` su 403 se llevaba por delante la lista
+      // de productos del operario, que sí es suya (S1). Los proveedores sólo alimentan el
+      // desplegable del alta y de la edición, que él no puede usar desde SCRUM-614.
       const [items, providers] = await Promise.all([
         listProducts(merchantId),
-        listProviders(merchantId),
+        window.appUserRole === 'admin' ? listProviders(merchantId) : [],
       ]);
 
       _providers = Array.isArray(providers) ? providers : [];

@@ -1,0 +1,19 @@
+== obligatorio de #2072 · job 110425624016 · tests/vigia-atascados.test.mjs
+POBLACIÓN · 64 nombres literales (0 construidos, no buscados) · 13820 líneas de log · 9933 con marca de resultado
+PRESENTES por nombre: 64 de 64 · el orden del informe ES el del fichero
+EXIT=0
+== obligatorio de #2071 · job 110428904637 · tests/vigia-atascados.test.mjs
+POBLACIÓN · 64 nombres literales (0 construidos, no buscados) · 13812 líneas de log · 9924 con marca de resultado
+PRESENTES por nombre: 64 de 64 · el orden del informe ES el del fichero
+EXIT=0
+== CONTROL NEGATIVO del lector · el log del job de ZONA de #2072 (no trae resultados de tanda)
+POBLACIÓN · 64 nombres literales (0 construidos, no buscados) · 637 líneas de log · 8 con marca de resultado
+PRESENTES por nombre: 0 de 64 · no se puede juzgar el orden (menos de dos presentes)
+   falta 1:auto-merge armado → lo vigila (la máquina prometió mergearlo)
+   falta 2:lo abrió el bot y no llegó a armar → lo vigila (es el caso del #1190)
+   falta 3:🔴 PR de una persona SIN auto-merge → NO lo vigila, y dice por qué
+   falta 4:draft → no lo vigila
+   falta 5:la ETIQUETA gana al título: `no-mergear` lo saca del censo
+   … y 59 más
+EXIT=0
+(código 0)

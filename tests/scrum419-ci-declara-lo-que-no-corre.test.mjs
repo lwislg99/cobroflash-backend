@@ -147,6 +147,17 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // negativo. Necesita banco porque lo que prueba es que el ALTER ya aplicado y el dominio
   // escriben y leen la MISMA fila, no que «se pinta el campo» (mismo motivo que SCRUM-324).
   'scrum1103-retencion-practicada-en-gastos.test.mjs': 2,
+  // SCRUM-1333: el encolado del alta para la AEAT, una vez por factura. Necesita banco porque lo
+  // que vigila es del MOTOR: que `pg_advisory_xact_lock` hace esperar de verdad al segundo
+  // encolado (se mira en `pg_locks`) y que su recuento, lanzado tras conseguir el cerrojo, ve la
+  // fila que acaba de confirmar el primero. El banco en memoria de su test hermano no lo prueba.
+  'scrum1333-carrera-del-encolado-postgres.test.mjs': 3,
+  // SCRUM-1397: los DOS que ejercitan el recorte de facturas del Tecnico contra Prisma de verdad.
+  // Necesitan banco porque lo que vigilan es el WHERE: que la puerta deje de devolver las facturas
+  // del negocio y siga devolviendo las suyas por los tres ejes. Sin base no sirve un doble: medido
+  // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
+  // pasa 8 de 8 y no dice NADA del recorte.
+  'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

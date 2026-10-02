@@ -1,0 +1,112 @@
+// Sonda de SCRUM-1341 · ① ¿qué queda del panel «Rendimiento del equipo» cuando se quita el dinero?
+// y ④ ¿por qué caminos de la respuesta se cuela?
+//
+// Ejecuta la función PURA real `ensamblarMetricasEquipo` (dist/) con la ACTIVIDAD FIJA y el DINERO
+// variando, y compara las respuestas RUTA A RUTA. Una ruta que cambia entre dos escenarios que sólo
+// difieren en lo cobrado depende del dinero; el resto es lo que queda.
+// Sólo lee; no toca ninguna base. Uso: node sonda-que-queda.mjs <raiz del arbol, con dist/>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.argv[2];
+if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
+const { ensamblarMetricasEquipo } = await import(pathToFileURL(path.join(raiz, 'dist/modules/metrics/domain/metricasEquipo.js')).href);
+
+const ahora = new Date();
+const haceDiez = new Date(ahora.getTime() - 10 * 86_400_000);
+const actividad = {
+  members: [
+    { id: 11, name: 'Ana', role: 'tecnico', status: 'active' },
+    { id: 12, name: 'Blas', role: 'tecnico', status: 'active' },
+    { id: 13, name: 'Caro', role: 'tecnico', status: 'active' },   // sin actividad esta semana
+    { id: 14, name: 'Dani', role: 'admin', status: 'active' },     // admin de oficina, sin presupuestos
+  ],
+  monthQuotes: [
+    { teamMemberId: 11, status: 'accepted', createdAt: ahora },
+    { teamMemberId: 11, status: 'accepted', createdAt: ahora },
+    { teamMemberId: 11, status: 'sent', createdAt: ahora },
+    { teamMemberId: 12, status: 'sent', createdAt: ahora },
+    { teamMemberId: 13, status: 'rejected', createdAt: haceDiez },
+    { teamMemberId: null, status: 'accepted', createdAt: ahora },  // el propietario
+  ],
+  nombrePropietario: 'Dueña',
+  weekAgo: new Date(ahora.getTime() - 7 * 86_400_000),
+};
+const f = (total, tm) => ({ total, quoteId: 1, quote: { teamMemberId: tm } });
+const suelto = (total) => ({ total, quoteId: null, quote: null });
+
+// Los escenarios SOLO difieren en `paidInvoices`.
+const escenarios = {
+  'A · Ana 100, Blas 900, suelto 50': [f(100, 11), f(900, 12), suelto(50)],
+  'B · Ana 900, Blas 100, suelto 50': [f(900, 11), f(100, 12), suelto(50)],
+  'C · como A, sin cobros sueltos':   [f(100, 11), f(900, 12)],
+  'D · nadie ha cobrado nada':        [],
+  'E · sólo cobra la dueña 300':      [f(300, null)],
+  'F · Caro cobra 5000 (sin actividad esta semana)': [f(5000, 13)],
+};
+
+// Aplana un valor a { ruta: valor } con rutas del tipo members[Ana].collected.
+function aplanar(v, pre, sal) {
+  if (Array.isArray(v)) {
+    if (v.length === 0) { sal[pre + '[]'] = '(vacía)'; return; }
+    v.forEach((x, i) => {
+      const clave = x && typeof x === 'object' && 'name' in x ? x.name : String(i);
+      aplanar(x, pre + '[' + clave + ']', sal);
+    });
+    // El ORDEN es un dato aparte: se guarda como una ruta más.
+    if (v[0] && typeof v[0] === 'object' && 'name' in v[0]) sal[pre + '.ORDEN'] = v.map((x) => x.name).join(' > ');
+  } else if (v && typeof v === 'object') {
+    for (const k of Object.keys(v)) aplanar(v[k], pre ? pre + '.' + k : k, sal);
+  } else {
+    sal[pre] = v === null ? 'null' : String(v);
+  }
+}
+
+const planos = {};
+for (const [nombre, facturas] of Object.entries(escenarios)) {
+  const r = ensamblarMetricasEquipo({ ...actividad, paidInvoices: facturas });
+  const p = {}; aplanar(r, '', p); planos[nombre] = p;
+}
+const nombres = Object.keys(planos);
+const rutas = [...new Set(nombres.flatMap((n) => Object.keys(planos[n])))].sort();
+console.log('POBLACION: ' + nombres.length + ' escenarios · ' + rutas.length + ' rutas distintas en la respuesta');
+console.log('CLAVES de la respuesta: ' + Object.keys(ensamblarMetricasEquipo({ ...actividad, paidInvoices: escenarios[nombres[0]] })).join(', '));
+
+const dependen = [], quietas = [];
+for (const ruta of rutas) {
+  const valores = nombres.map((n) => (ruta in planos[n] ? planos[n][ruta] : '(no existe)'));
+  (new Set(valores).size > 1 ? dependen : quietas).push({ ruta, valores });
+}
+
+console.log('\n── RUTAS QUE CAMBIAN SÓLO CON EL DINERO: ' + dependen.length);
+for (const d of dependen) console.log('  ' + d.ruta.padEnd(34) + d.valores.join(' | '));
+
+// Se agrupan por CAMPO (sin la persona) para decir cuántos caminos distintos son.
+const campo = (r) => r.replace(/\[[^\]]*\]/g, '[]');
+const caminos = [...new Set(dependen.map((d) => campo(d.ruta)))];
+console.log('\n── CAMINOS DISTINTOS POR LOS QUE SALE EL DINERO: ' + caminos.length + ' → ' + caminos.join(' · '));
+
+console.log('\n── RUTAS QUE NO SE MUEVEN (lo que queda): ' + quietas.length);
+for (const q of quietas) console.log('  ' + q.ruta.padEnd(34) + q.valores[0]);
+// Un campo que se mueve para UNA persona es un campo de dinero para todas: la fila de quien no
+// tiene nada que cobrar (Dani) sale «quieta» en `collected` e `isBest`, y no por eso quedan.
+const camposQuietos = [...new Set(quietas.map((q) => campo(q.ruta)))].filter((c) => !caminos.includes(c));
+console.log('\n── CAMPOS QUE QUEDAN: ' + camposQuietos.length + ' → ' + camposQuietos.join(' · '));
+
+// Controles. Positivo: el instrumento VE el dinero donde sabemos que está (`collected` de Blas).
+const veElDinero = dependen.some((d) => d.ruta === 'members[Blas].collected');
+// Control de la estrella, por efecto: de A a B sólo se cruza lo cobrado y la estrella cambia de persona.
+const A = planos[nombres[0]], B = planos[nombres[1]];
+const estrella = A['members[Blas].isBest'] === 'true' && A['members[Ana].isBest'] === 'false'
+  && B['members[Ana].isBest'] === 'true' && B['members[Blas].isBest'] === 'false';
+// El orden de las filas: ¿se mueve con el dinero?
+const ordenSeMueve = dependen.some((d) => d.ruta === 'members.ORDEN');
+// La mera EXISTENCIA de «sinAsignar» (objeto o null) ¿delata dinero?
+const existenciaDelata = planos[nombres[0]]['sinAsignar.label'] !== undefined && planos[nombres[2]]['sinAsignar'] === 'null';
+console.log('\n¿el instrumento ve el dinero donde se sabe que está?        ' + veElDinero);
+console.log('¿la estrella cambia de persona SÓLO con lo cobrado?         ' + estrella);
+console.log('¿el ORDEN de las filas se mueve con lo cobrado?             ' + ordenSeMueve);
+console.log('¿que «sinAsignar» EXISTA o sea null delata un cobro suelto? ' + existenciaDelata);
+const ok = veElDinero && quietas.length > 0;
+console.log('EXIT=' + (ok ? 0 : 2));
+process.exit(ok ? 0 : 2);
