@@ -104,3 +104,13 @@ marca · un árbol sin mirar se da por limpio · con dos del mismo nombre elige 
    caso lleva ahora un fichero editado SOLO antes del commit, que no puede aparecer.
 2. **En el diseño dije «34 sesiones sin traspaso» como si las 34 hubieran perdido algo.** Con la función
    construida, 10 de ellas no hicieron nada que mute. La cifra que importa es 24.
+3. **Corrí los guards de tres ramas en una sola orden** y pasó de diez minutos: el sistema la mandó sola a
+   segundo plano. La paré en cuanto lo vi y la repetí rama a rama.
+
+## Un dato de la máquina que salió al empujar (2-oct)
+
+**La falta de memoria no solo mata sesiones: también vuelve ciegos los guards.** Con 38 procesos de node
+vivos en la máquina, `guards:entrada` cortó a su runner al pasar el plazo de 90 s y salió CIEGO (salida 2:
+«no terminé; no sé nada de tus guards»). Repetido solo, minutos después y sin cambiar una línea: verde en
+57,6 s. Una sesión muerta se ve; un guard ciego se parece a un guard. Lo que lo salvó es que el guard DIJO
+que estaba ciego en vez de dar un verde, y que no se empujó con él.
