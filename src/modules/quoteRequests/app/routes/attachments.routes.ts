@@ -1,6 +1,7 @@
 // src/modules/quoteRequests/app/routes/attachments.routes.ts — MEDIA-1 (FASE 3)
 // Sirve los bytes de un adjunto guardado en Postgres. Montado bajo /admin
 // (requireAuth ya inyecta req.merchantId) → tenancy estricta por merchant.
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 
@@ -10,7 +11,7 @@ const router = Router();
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const att = await prisma.attachment.findFirst({
       where: { id, merchantId: req.merchantId },
