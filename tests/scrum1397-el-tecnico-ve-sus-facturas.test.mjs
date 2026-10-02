@@ -46,7 +46,6 @@ if (URL_BANCO) {
   process.env.DATABASE_URL = URL_BANCO;
 }
 const CON_BASE = URL_BANCO !== '';
-const SALTO = !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI';
 
 // La conexión se suelta al acabar el fichero, no en cada caso: los dos comparten cliente.
 after(async () => {
@@ -114,7 +113,7 @@ async function equipoDe(prisma, merchant, marca) {
 // ① y ② · EL CÁLCULO DE J2i TIENE QUE DEJAR DE SALIR — con su mismo negocio y sus mismas cifras
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1397 · 🔴 un Técnico ya NO reconstruye el total cobrado del negocio ni lo cobrado por un compañero', { skip: SALTO }, async () => {
+test('SCRUM-1397 · 🔴 un Técnico ya NO reconstruye el total cobrado del negocio ni lo cobrado por un compañero', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -183,7 +182,7 @@ test('SCRUM-1397 · 🔴 un Técnico ya NO reconstruye el total cobrado del nego
 // ③ · EL QUE MANDA: SIGUE VIENDO LO SUYO, POR CADA CAMINO — y ④ el admin, todo
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1397 · ✅ el Técnico SIGUE viendo cada factura suya (autor · Trabajo · asignada), y sólo ésas; el admin las ve todas', { skip: SALTO }, async () => {
+test('SCRUM-1397 · ✅ el Técnico SIGUE viendo cada factura suya (autor · Trabajo · asignada), y sólo ésas; el admin las ve todas', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -392,13 +391,13 @@ test('SCRUM-1397 · las TRES rutas de factura pasan por la puerta, y antes de le
 test('SCRUM-1397 · la puerta no recorta a quien ve todo el negocio, y sin identidad no casa nada', async () => {
   const { whereFacturasVisibles, puedeVerLaFactura } = await import('../dist/core/documentos/accesoALaFactura.js');
   // Ninguno de estos cuatro llega a consultar: por eso corren sin base.
-  assert.equal(await whereFacturasVisibles({ merchantId: 1, userRole: 'admin', teamMemberId: null }), null, 'la dueña (sesión sin miembro) no lleva recorte');
-  assert.equal(await whereFacturasVisibles({ merchantId: 1, userRole: 'admin', teamMemberId: 7 }), null, 'un miembro admin no lleva recorte');
-  assert.equal(await puedeVerLaFactura({ merchantId: 1, userRole: 'admin', teamMemberId: 7 }, 123), true);
+  assert.equal(await whereFacturasVisibles({ merchantId: 71, userRole: 'admin', teamMemberId: null }), null, 'la dueña (sesión sin miembro) no lleva recorte');
+  assert.equal(await whereFacturasVisibles({ merchantId: 71, userRole: 'admin', teamMemberId: 7 }), null, 'un miembro admin no lleva recorte');
+  assert.equal(await puedeVerLaFactura({ merchantId: 71, userRole: 'admin', teamMemberId: 7 }, 123), true);
   // Un rol que no es «admin» y no trae identidad: el conjunto VACÍO, nunca «las de la oficina».
-  assert.deepEqual(await whereFacturasVisibles({ merchantId: 1, userRole: 'tecnico', teamMemberId: null }), { id: { in: [] } });
+  assert.deepEqual(await whereFacturasVisibles({ merchantId: 71, userRole: 'tecnico', teamMemberId: null }), { id: { in: [] } });
   // Un rol desconocido queda recortado (allowlist): no se le devuelve «sin recorte».
-  assert.deepEqual(await whereFacturasVisibles({ merchantId: 1, userRole: 'otro', teamMemberId: undefined }), { id: { in: [] } });
+  assert.deepEqual(await whereFacturasVisibles({ merchantId: 71, userRole: 'otro', teamMemberId: undefined }), { id: { in: [] } });
 });
 
 test('SCRUM-1397 · los ejes del Trabajo se le PIDEN a `whereSuyoElTrabajo`, no se copian en la puerta', () => {
