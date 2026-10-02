@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { suggestQuoteLines, generateQuoteMessage, isAiConfigured, suggestAlbaranLines } from '../../domain/ai.service';
@@ -110,7 +111,7 @@ router.post('/suggest-albaran-lines', async (req, res) => {
 
   const albaranId = Number(req.body?.albaranId);
   const description = String(req.body?.description || '').trim();
-  if (!Number.isInteger(albaranId) || albaranId <= 0) return res.status(400).json({ error: 'albaran_id_required' });
+  if (!cabeEnColumnaInt(albaranId) || albaranId <= 0) return res.status(400).json({ error: 'albaran_id_required' });
   if (!description) return res.status(400).json({ error: 'description_required' });
   if (description.length > 2000) return res.status(400).json({ error: 'description_too_long' });
 
@@ -159,7 +160,7 @@ router.post('/quote-message', async (req, res) => {
     let total: string;
     let currency: string;
 
-    if (quoteId && Number.isInteger(quoteId)) {
+    if (quoteId && cabeEnColumnaInt(quoteId)) {
       const quote = await prisma.quote.findFirst({
         where: { id: quoteId, merchantId: req.merchantId },
         include: { customer: true, merchant: true },

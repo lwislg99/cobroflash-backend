@@ -7,6 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { zonaDelMerchant, diaExiste } from '../../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-749
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
@@ -318,7 +319,7 @@ router.get('/presupuestos', async (req, res) => {
 router.get('/consolidables', async (req, res) => {
   try {
     const customerId = Number(req.query.customerId);
-    if (!Number.isInteger(customerId)) {
+    if (!cabeEnColumnaInt(customerId)) {
       return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
     }
 
@@ -801,7 +802,7 @@ router.patch('/:id', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!albaran) return res.status(404).json({ error: 'not_found' });
