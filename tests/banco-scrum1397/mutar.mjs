@@ -114,7 +114,9 @@ const opciones = ts.parseJsonConfigFileContent(
 // fichero no parsee: sin mirar esto, una mutación mal escrita mata el módulo entero y se lee como
 // una mutación que el test caza (o que no caza), cuando no se ha medido nada.
 const transpilar = (f, fuente) => {
-  const r = ts.transpileModule(fuente, { compilerOptions: opciones, fileName: f, reportDiagnostics: true });
+  // `fileName` ABSOLUTO: con la ruta relativa, `rootDir` protesta de un fichero «fuera» y ese aviso
+  // (que no es de sintaxis) haría saltar el suelo de abajo sobre un fuente sano.
+  const r = ts.transpileModule(fuente, { compilerOptions: opciones, fileName: path.join(RAIZ, f), reportDiagnostics: true });
   fs.writeFileSync(enDist(f), r.outputText);
   return (r.diagnostics || []).filter((d) => d.category === ts.DiagnosticCategory.Error)
     .map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' '));
