@@ -419,7 +419,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // «emitido», ofreciendo «Firmar aquí mismo». Un albarán que el servidor ya da por firmado no
   // tiene nada que esperar de la cola, y no escucha.
   if (alb.estado !== 'firmado' && typeof window.alConfirmarseFirmas === 'function') {
-    const dejar = window.alConfirmarseFirmas((confirmadas) => {
+    const dejar = window.alConfirmarseFirmas(async (confirmadas) => {
       // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
       if (container.querySelector('.detail-page') !== page) { dejar(); return; }
       if (!vieneEsteAlbaran(confirmadas, alb.id)) return;
@@ -427,7 +427,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if (hayPadDeFirmaAbierto()) return;
       // Por `refrescar`, como toda recarga de esta pantalla: la firma YA salió, y si la lectura
       // falla se dice eso, no se deja una promesa rechazada sin dueño (SCRUM-379).
-      refrescar();
+      await refrescar();
     });
     dejarDeEscucharLaColaDelAlbaran = dejar;
   }

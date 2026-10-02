@@ -35,6 +35,11 @@ declarado). Con el oyente escrito y la entrada aún en la lista: 13 pasan de 14,
 `retiradas` (la declaró S2 el 2-oct mientras no tenía consumidor; el trinquete de SCRUM-1185 exige
 moverla al conectarla).
 
+`tests/scrum379-recarga-sin-await.test.mjs`: su suelo de sitios que refrescan pasa de 6 a **7**, a
+mano, que es como ese guard dice que se sube (lo hizo SCRUM-290 de 5 a 6). El guard no se relaja:
+sigue exigiendo el número exacto, `await` en todos y ninguna `recargar()` a pelo; el séptimo sitio
+es éste y va nombrado en su mensaje.
+
 ## Tests
 
 En `tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs`, cuatro nuevos «SCRUM-1374 · …», con el
