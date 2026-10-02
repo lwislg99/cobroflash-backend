@@ -1,6 +1,6 @@
 # SCRUM-1412 · `tanda:dirigida` nombra lo que cuenta, aparta lo que no es tuyo y se corre por tramos
 
-**Medido contra:** `origin/main` = `2ca4053d` (rama salida de ahí) · 2026-10-02T12:10Z
+**Medido contra:** `origin/main` = `2ca4053deeb2d1badfd99922d7e1cde67efc8bf2` · 2026-10-02T12:10Z
 
 A9: comprobación → `tests/scrum1412-tanda-por-tramos.test.mjs`
 
