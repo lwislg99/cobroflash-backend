@@ -165,3 +165,48 @@ Al mezclar `main` (que ya trae SCRUM-1351 y SCRUM-1362), `tests/scrum1351-viaje-
 **Autorización:** retirada autorizada por el fundador el 1-oct-2026 («1 autorizo lo que dices»), regla en `settings.local.json:70`. La sesión anterior (`s2-1octb`) no la hizo porque tenía una denegación propia sobre ese resultado; ésta arranca sin ella.
 
 **Medido:** ese fichero de test, rojo 12/13 antes de borrar (el que cae nombra justo esas dos claves) y verde 13/13 después.
+
+# APÉNDICE · Aviso al cerrar sesión con firmas sin subir (S2)
+
+**Medido contra:** `origin/main` = `3017ae0c8008e93ed3ff230ebf64bbebd44b6e2a` · 2026-10-01T13:58:44Z
+A9: comprobación → `tests/scrum1302i-aviso-cerrar-sesion.test.mjs`
+
+Entrada propia (encabezado de primer nivel) para que su declaración de skill no se le atribuya a los PR de arriba. Carril S2 (`public/dashboard/js/app.js`) · rama `scrum-1302-aviso-cerrar-sesion`, apilada sobre la de H1/H6 (#2080).
+
+**Skill UI:** cargada (`yaqu-premium-ui`) en esta sesión. Dicho como fue: la cargué DESPUÉS de la primera edición de `app.js` y antes del commit; no cambió nada del diff. El cambio no lleva marcado ni estilos: es un `window.confirm` nativo, el patrón que ya usa el panel (`albaranDetailView.js`, `jobsView.js`), con texto firmado.
+
+## El defecto
+
+`logout()` purga los datos locales, y el purgado vacía `firmasPendientes` a propósito (SCRUM-455, art. 32 RGPD). Lo hacía callado: una firma hecha sin cobertura y aún sin subir desaparecía al cerrar sesión. Era la entrada `cerrar-sesion-borra-la-cola-sin-avisar` de `scripts/_defectos-viaje-firma-declarados.json`.
+
+## El texto
+
+Aprobado por el orquestador por delegación del fundador, 1-oct-2026 — SCRUM-1302 comentario 17889. Dos literales, sin cambios:
+
+- una: «Te queda 1 firma por subir. Si cierras sesión ahora, se borra de este móvil y habrá que volver a firmar. ¿Cerrar sesión?»
+- varias: «Te quedan ${n} firmas por subir. Si cierras sesión ahora, se borran de este móvil y habrá que volver a firmarlas. ¿Cerrar sesión?»
+
+## Lo construido: las tres mitades, juntas
+
+En `app.js`, antes del purgado (`confirmarCierreConFirmasSinSubir`):
+
+- **(a)** la cola se lee ANTES del purgado;
+- **(b)** si `navigator.onLine` no dice que no hay red, se intenta subir con el drenado de siempre (`drenarSiNoSeEstaDrenando`, que tiene el plazo de `api.js`) y se vuelve a contar; si queda en cero, se cierra sin preguntar;
+- **(c)** si quedan, se pregunta con la cifra que QUEDA; «Cancelar» sale de `logout()` antes del purgado: ni se borra nada ni se llama a `/auth/logout` ni se va al login.
+
+Sin cifra cierta no se pregunta: cola ilegible (antes o después del intento), o sin `leerFirmasPendientes`/`confirm`. En esos casos se cierra sesión como hasta hoy. El orden de SCRUM-455/457 (purgado antes del POST) no cambia.
+
+## Verificado, ejecutando
+
+`tests/scrum1302i-aviso-cerrar-sesion.test.mjs`: el `logout()` real con `colaDeFirmas.js`, `almacenLocal.js` y `api.js` reales sobre `fake-indexeddb`.
+
+- **Rojo antes** (con el `app.js` anterior): 3/8; caen los cinco del defecto y pasan el suelo, el control de cola vacía y el de cola ilegible.
+- **Verde después:** 8/8. Incluye «`onLine` miente» (dice que hay red y no la hay: se pregunta igual) y «la red no las acepta» (500: se intenta, quedan, se pregunta por las que quedan).
+- Vecinos que llaman a `logout()` (scrum1351, scrum455, scrum457, scrum460, scrum890b) más éste: 64/64, con la entrada ya retirada del JSON. Queda una entrada (`el-detalle-abierto-no-se-entera-de-que-la-cola-subio`), así que `vacio_a_proposito` no aplica. Medido antes de mezclar `main` (`3017ae0c`).
+- La tanda dirigida para `app.js` son 459 ficheros de 1.183: NO se corrió en local (norma del 1-oct); el juez es el CI.
+
+**NO medido:** yaqu.app ni un navegador real (el `confirm` nativo, Safari, un iPhone). Verlo en producción exige dejar una firma en la cola de la cuenta QA sin red.
+
+## Queda abierto: SCRUM-1383
+
+Leído en el código, NO ejecutado. Durante el intento de subida de (b) el servidor puede rechazar una firma de forma definitiva (`RECHAZOS_DEFINITIVOS`). Sale de la cola dejando una constancia en `localStorage`, la cola queda en cero, se cierra sin preguntar y el purgado borra la constancia (`almacenLocal.js`, patrón `yaqu_firma_rechazada_`, `purga: true`). La mitad (b) puede crear ese agujero, no sólo heredarlo. El texto firmado no sirve ahí (no «queda por subir», está rechazada): necesita texto nuevo, que se propone y se para.
