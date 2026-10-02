@@ -63,3 +63,52 @@ Una línea: sin teléfono, `phone` no viaja. Con teléfono, viaja igual que ante
 - Medido en Chromium sin cabeza a 1280 px; no en un móvil.
 - El fichero medido contra producción es el de la rama servido por la sonda, no uno desplegado.
 - `providersView.js` también manda `phone: phone || null` (dos sitios). No se ha mirado si su alta lo rechaza igual: es otra pantalla y no se toca aquí.
+
+# APÉNDICE · 2-oct-2026 · partes (b), (c) y (d): el modal se cierra y se dice fuera, con su texto
+
+**Medido contra:** `origin/main` = `eca8566d130fc35e455b27508b1f3c199dc6263b` · 2026-10-02T16:57:37Z
+A9: comprobación → `tests/scrum1198-cliente-nuevo-sin-telefono.test.mjs`
+
+Carril S2 (`public/dashboard/js/homeView.js`) · rama `scrum-1198-sin-telefono-se-guarda-y-se-dice` · sesión `s2-2octe`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) en esta sesión, antes de editar. Sin marcado ni estilos nuevos: el aviso sale por `showToast`, el mismo que ya usa esta pantalla cuando el envío queda pendiente.
+
+## La firma, dicha como es
+
+El literal está aprobado **por el orquestador, por delegación del fundador**: Jira SCRUM-1198, comentario 18206 (2-oct-2026). No lo escribió el fundador; el comentario relata su «decide tu». Cuando se construyó, ese comentario aún no estaba publicado: se construyó en local, se avisó, y se empujó cuando estuvo en el ticket.
+
+> «No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.»
+
+## Lo construido
+
+Cuando el envío contesta `customer_missing_phone` (se decide por el CÓDIGO, no por el texto):
+
+- **(b)** no se pinta «API 400: customer_missing_phone».
+- **(c)** el modal se cierra, el aviso sale fuera y se abre el presupuesto guardado, igual que cuando el envío queda pendiente. Antes se quedaba abierto con el botón encendido: pulsar otra vez daba el mismo no.
+- **(d)** el literal de arriba. Uno solo: vale para cliente nuevo y para existente, porque en los dos el presupuesto ya está creado cuando el envío falla.
+
+Cualquier otro fallo del envío sigue como estaba: modal abierto y botón encendido para reintentar.
+
+## Verificado, ejecutando
+
+- **Banco:** rojo con el `homeView.js` de `main` 2 de 8 (los dos caminos de «el modal se cierra»), verde 8 de 8. Con `scrum1371`: 14 de 14.
+- **Navegador, en yaqu.app** (Chromium de escritorio, cuenta QA, build `eca8566d`). Antes, con el fichero de producción: tres clics, el modal abierto y «API 400: customer_missing_phone» las tres veces, en los dos caminos. Después, con el `homeView.js` de la rama servido por la sonda: un clic, el modal cerrado, el aviso literal, y la pantalla en `#quotes-detail/205`; no hay segundo clic posible. Cliente nuevo y cliente existente (#84).
+- Nada se escribió en producción: el alta de cliente, la del presupuesto y el envío los contestó la sonda (201, 201 y 400 `customer_missing_phone`), con control positivo del corte antes de pulsar.
+
+## Dos tests que cambian, y por qué
+
+- El último caso de `scrum1198` medía tres reintentos tras el fallo de teléfono. Ese reintento ya no existe (el modal se cierra). El «no duplica» se mide ahora en el control negativo, con un fallo que sí deja reintentar.
+- `scrum1371` usaba `customer_missing_phone` como «el envío falla» en cinco casos. Ahora usa un 500. Lo que guarda —reintentar no vuelve a crear— no cambia, ni sus asertos.
+
+## Límites
+
+- El 400 del envío lo dio la sonda. Que producción contesta ese código está medido arriba, en la parte (a).
+- El modo «3 opciones» pasa por la misma función; no se ha pulsado aparte.
+- No medido en un móvil. Tras desplegar falta repetir la sonda sin servir el fichero de la rama.
+- La persona sigue sin poder enviar ese presupuesto hasta que el cliente tenga teléfono: el aviso no ofrece añadirlo. Decidido así en el c.18206.
+
+## Errores propios de esta tanda
+
+- Fui a leer la firma al ticket después de medir, no antes: no estaba. Se cazó antes de escribir el literal.
+- Escribí los dos casos nuevos en un bucle con el nombre compuesto, y lo paró el guard de SCRUM-1415 (nombres de test construidos). Reescritos con el nombre entero.
+- El primer intento de añadir este apéndice, desde PowerShell, no escribió nada y no dio error: lo dijo el guard de la skill (`scrum811c`), no yo.

@@ -123,20 +123,20 @@ test('SCRUM-1198 · CONTROL: con teléfono, el alta lo lleva tal cual y el enví
 });
 
 // ── (b)(c)(d) · lo que se le dice, y dónde ─────────────────────────────────────────────────────
-for (const camino of ['nuevo', 'existente']) {
-  test(`SCRUM-1198 · 🔴 cliente ${camino} sin teléfono: el modal se CIERRA y el aviso aprobado se da fuera`, async () => {
-    const m = montar();
-    if (camino === 'nuevo') m.rellenar(''); else m.elegirExistente();
-    await m.pulsar();
-    assert.deepEqual(m.hecho.envios, [501], '🔴 CIEGO: el envío no se intentó; no hay rechazo que medir');
-    assert.equal(m.hecho.presupuestos.length, 1, '🔴 el aviso dice «se ha guardado» y no hay presupuesto');
-    assert.equal(m.$('qq-send'), null, '🔴 el modal sigue abierto: la persona vuelve a pulsar «Enviar» y vuelve a fallar');
-    assert.deepEqual(m.hecho.avisos, [AVISO], '🔴 el aviso de fuera no es el literal aprobado, o no es uno solo');
-    assert.doesNotMatch(m.loQueSeLee(), /customer_missing_phone|API \d{3}/, '🔴 se lee un código interno');
-    await new Promise((r) => setTimeout(r, 500));
-    assert.deepEqual(m.hecho.vistas, [['quotes-detail', 501]], '🔴 no se abre el presupuesto que se ha guardado');
-  });
-}
+const seCierraYSeDiceFuera = (camino) => async () => {
+  const m = montar();
+  if (camino === 'nuevo') m.rellenar(''); else m.elegirExistente();
+  await m.pulsar();
+  assert.deepEqual(m.hecho.envios, [501], '🔴 CIEGO: el envío no se intentó; no hay rechazo que medir');
+  assert.equal(m.hecho.presupuestos.length, 1, '🔴 el aviso dice «se ha guardado» y no hay presupuesto');
+  assert.equal(m.$('qq-send'), null, '🔴 el modal sigue abierto: la persona vuelve a pulsar «Enviar» y vuelve a fallar');
+  assert.deepEqual(m.hecho.avisos, [AVISO], '🔴 el aviso de fuera no es el literal aprobado, o no es uno solo');
+  assert.doesNotMatch(m.loQueSeLee(), /customer_missing_phone|API \d{3}/, '🔴 se lee un código interno');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(m.hecho.vistas, [['quotes-detail', 501]], '🔴 no se abre el presupuesto que se ha guardado');
+};
+test('SCRUM-1198 · 🔴 cliente NUEVO sin teléfono: el modal se CIERRA y el aviso aprobado se da fuera', seCierraYSeDiceFuera('nuevo'));
+test('SCRUM-1198 · 🔴 cliente EXISTENTE sin teléfono: el modal se CIERRA y el aviso aprobado se da fuera', seCierraYSeDiceFuera('existente'));
 
 test('SCRUM-1198 · CONTROL NEGATIVO: otro fallo del envío NO se disfraza de «sin teléfono», y deja reintentar', async () => {
   const m = montar();
