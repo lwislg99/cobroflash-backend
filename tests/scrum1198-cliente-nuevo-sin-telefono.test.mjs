@@ -100,9 +100,10 @@ test('SCRUM-1198 · un teléfono de sólo espacios es «sin teléfono»', async 
 
 test('SCRUM-1198 · CONTROL: con teléfono, el alta lo lleva tal cual y el envío sale', async () => {
   const m = montar();
-  m.rellenar('34600111222');
+  // Rango imposible de SCRUM-262 (`340…`): un teléfono de prueba no puede ser el de nadie.
+  m.rellenar('34000001198');
   await m.pulsar();
-  assert.deepEqual(m.hecho.altasDeCliente, [{ name: 'Cliente nuevo de pruebas', phone: '34600111222' }]);
+  assert.deepEqual(m.hecho.altasDeCliente, [{ name: 'Cliente nuevo de pruebas', phone: '34000001198' }]);
   assert.equal(m.hecho.presupuestos.length, 1);
   assert.deepEqual(m.hecho.envios, [501]);
 });

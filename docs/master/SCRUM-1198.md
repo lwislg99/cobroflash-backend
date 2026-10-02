@@ -40,6 +40,7 @@ Una línea: sin teléfono, `phone` no viaja. Con teléfono, viaja igual que ante
 
 - **Rojo antes** (con el `homeView.js` de `main`): 3 de 5 caen (sin teléfono, teléfono de sólo espacios, y el reintento). Pasan el suelo y el control con teléfono.
 - **Verde después:** 5 de 5.
+- **Corrección del propio test (s2-2octc):** el caso CONTROL escribía un teléfono de rango móvil real (`346…`) y el guard de SCRUM-262 lo cazó en el obligatorio (1 rojo de 10258). Estaba en el test, no en nada que mande la pantalla. Ahora lleva uno del rango imposible (`340…`); el guard no se ha tocado.
 
 **Contra yaqu.app**, con el `homeView.js` de esta rama servido por la sonda en lugar del de producción (todo lo demás, producción). Service worker bloqueado; control positivo del interceptor antes de pulsar. Tres clics seguidos en «Enviar»:
 
