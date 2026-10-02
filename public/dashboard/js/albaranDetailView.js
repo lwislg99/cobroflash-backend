@@ -274,6 +274,9 @@ const ROTULOS_RAIL_ALBARAN = {
 // Reutilizado LETRA POR LETRA del precedente que ya funciona (`jobDetailView.js`, las miniaturas
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
+// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
+// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
+const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
@@ -640,6 +643,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if ((await firmaDeEsteAlbaranEnCola(alb.id)) === true && !window.confirm(TEXTO_YA_HAY_FIRMA_GUARDADA)) return;
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // SCRUM-1215 · el albarán no pasaba pista y vivía de la del pad por defecto, que era ésta.
+        // La del pad ha pasado a no nombrar a nadie (c.18205); aquí firma el cliente, y se dice.
+        hint: PISTA_FIRMA_DEL_CLIENTE,
         // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
         //
         // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni

@@ -45,11 +45,11 @@
   function openSignaturePad(opts) {
     const onConfirm = (opts && opts.onConfirm) || function () {};
     const title = (opts && opts.title) || 'Firma del cliente';
-    // SCRUM-1229 · `hint: null` = SIN pista. Hace falta distinguirlo de «no la pasé»: la pista por
-    // defecto habla del CLIENTE, y el parte también abre este pad para que firme el TÉCNICO.
+    // SCRUM-1229 · `hint: null` = SIN pista, distinto de «no la pasé». SCRUM-1215 · la pista por
+    // defecto ya no nombra a nadie: la del cliente la pasa quien abre el pad para el cliente.
     const hint = opts && opts.hint === null
       ? null
-      : ((opts && opts.hint) || 'Pide al cliente que firme con el dedo dentro del recuadro.');
+      : ((opts && opts.hint) || 'Firma con el dedo dentro del recuadro.'); // APROBADO · SCRUM-1215 comentario 18205
     const firmante = (opts && opts.firmante) || null;
 
     const overlay = document.createElement('div');

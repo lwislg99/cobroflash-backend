@@ -170,3 +170,36 @@ fundador: c.17494 (6 de 8) y c.17496 (el 3, «Facturar lo entregado»).
 - Tanda de los ficheros que tocan la vista del albarán o el censo (26 ficheros): 230 · 230 pass.
 
 **Medido contra:** `origin/main` = `8eaee4ac18dc8096cedc8a603aa99b372d0861bb` · 2026-09-29T10:42:39Z
+
+# SCRUM-1215 · lote 1 (parte) — `pistaFirma`: el técnico lee una pista cierta, y la del pad por defecto deja de nombrar al cliente
+
+**Medido contra:** `origin/main` = `d73c5ad9102dc0c5aba8a7ec4ea37ac383db06b0` · 2026-10-02T17:23:44Z
+A9: comprobación → `tests/scrum1215c-pista-del-tecnico.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Cambio de texto en `public/dashboard/js/parteDetailView.js`, `public/dashboard/js/signaturePad.js` y `public/dashboard/js/albaranDetailView.js`: sin marcado, sin estilos y sin clases nuevas.
+
+2-oct-2026 · **S4** (`s4-2octd`) · rama `scrum-1215-pista-del-tecnico`. Firma: SCRUM-1215 c.18205. Ficha: `docs/microcopy/2026-10-02-SCRUM-1215-pista-del-tecnico.md`.
+
+## Qué había, medido antes de tocar
+
+El defecto que relata la firma (al técnico se le decía «Pide al cliente que firme…») **ya no existía**: lo quitó SCRUM-1229, que le pasa `hint: null` al pad. Visto en yaqu.app el 2-oct-2026 (build `eca8566d130fc35e455b27508b1f3c199dc6263b`, parte 9 de la cuenta QA): el pad del técnico salía **sin pista**. Lo que este cambio aporta es que lea una pista cierta en vez de ninguna.
+
+## Qué cambia
+
+- `TEXTOS.pistaFirmaTecnico` = «Firma con el dedo dentro del recuadro.», y `firmarParte` la pasa cuando firma el técnico.
+- `signaturePad.js`: la pista por defecto pasa a ser esa misma frase, que no nombra a nadie. Se toca esa línea y el comentario de encima, que habría quedado diciendo lo contrario. El fichero es de S2 por la fila general de carriles; el cambio lo autorizó el orquestador.
+- `albaranDetailView.js`: el albarán **no pasaba pista** y vivía de la del pad por defecto. Cambiar el defecto sin más le habría quitado «Pide al cliente que firme…» sin que nadie lo decidiera. Ahora la pasa él (`PISTA_FIRMA_DEL_CLIENTE`, el mismo literal ya firmado en SCRUM-720).
+- `hint: null` sigue siendo «sin pista».
+
+## Verificado, ejecutando
+
+`tests/scrum1215c-pista-del-tecnico.test.mjs`, 5 tests, con el pad de verdad abierto desde las pantallas de verdad.
+
+- **Antes: 2 rojos** (técnico sin pista; la pista por defecto habla del cliente) **y 3 verdes**, los controles.
+- **A mitad del cambio**, con el pad y el parte ya cambiados y el albarán sin tocar: el test del albarán cae en rojo. Es el defecto nuevo que el arreglo habría creado.
+- **Después: 5 de 5.**
+
+## Lo que NO entra aquí
+
+- `sinLineas` en un parte firmado: **ya estaba** en `main` desde el 28-sep («No se apuntó nada en este apartado.», c.17367, apéndice de más arriba). La firma del c.18205 decía «…en este parte.»; se retiró en el c.18207 porque el texto se pinta por bloque y bajo «Materiales» habría sido falso en un parte con horas.
+- `confirmarPropuesta`: sigue esperando al fundador (lo bloquea el clasificador de permisos). No se reintenta.
