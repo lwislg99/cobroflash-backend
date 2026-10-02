@@ -89,7 +89,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // ciego para el único rol que lo necesita. Es SOLO LECTURA y no revela nada que no devuelva ya
   // `GET /admin/customers`, que también es de campo.
   { method: 'GET',  path: '/admin/customers/duplicados', why: 'Avisar del duplicado a quien da de alta desde la obra' },
-  { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar' },
+  { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar — la ficha entera; de sus documentos, sólo los suyos (SCRUM-1403)' },
   { method: 'GET',  path: '/admin/customers/:id/historial', why: 'SCRUM-980: los trabajos del cliente que va a visitar (solo los suyos)' },
   { method: 'GET',  path: '/admin/customers/:id/portal-url', why: 'Link del portal para dárselo al cliente en mano' },
   // SCRUM-1014 (CRM): la agenda de sitios (direcciones de obra) es la misma clase de dato que
@@ -102,8 +102,8 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'DELETE', path: '/admin/customers/:id/sites/:siteId', why: 'Quitar un sitio dado de alta por error, mismo nivel que crearlo' },
 
   // Presupuestos — S1: "quotes crear-ver · enviar WA" ✅. EMITIR FACTURA no (ver /invoice).
-  { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅' },
-  { method: 'GET',  path: '/admin/quotes/:id', why: 'S1: quotes crear-ver ✅' },
+  { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅ — SÓLO LOS SUYOS: autor, asignado o Trabajo suyo (SCRUM-1403)' },
+  { method: 'GET',  path: '/admin/quotes/:id', why: 'S1: quotes crear-ver ✅ — sólo los suyos; 404 en el ajeno (SCRUM-1403)' },
   { method: 'GET',  path: '/admin/quotes/:id/pdf', why: 'Enseñar el presupuesto al cliente en la obra' },
   // SCRUM-1317 · DECISIÓN DE PERMISOS, no un trámite. Son plantillas de PRESUPUESTO
   // (`QuoteTemplate`: líneas, precios y condición de cobro), no de mensaje, y el operario crea

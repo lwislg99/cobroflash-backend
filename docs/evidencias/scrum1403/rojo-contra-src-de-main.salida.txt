@@ -1,0 +1,21 @@
+BANCO LISTO · tablas=33 · 127.0.0.1:55616 · motor 18.3
+POBLACION: 1 fichero(s) · banco: puesto
+casos=6 · pasan=0 · caen=6 · saltos=0 · cancelados=0
+  ✖ not ok 1 - SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ni las facturas ni las fichas de presupuesto dan ya la cifra; las CIFRAS de la ficha de cliente siguen dándola
+      motivo: 🔴 el Técnico lista por autor los presupuestos de un compañero
+  ✖ not ok 2 - SCRUM-1403 · ✅ el Técnico SIGUE viendo cada presupuesto suyo (autor · asignado · Trabajo · revisión), y sólo ésos; el admin los ve todos
+      motivo: '🔴 el Técnico ve en la lista un presupuesto que no es suyo: AJENO-AUTOR-BLAS'
+  ✖ not ok 3 - SCRUM-1403 · ✅ la ficha del cliente se le sigue abriendo al Técnico, con sus datos; de los documentos trae sólo los suyos, y al admin todos
+      motivo: 🔴 la ficha de un cliente ajeno le trae documentos que no son suyos
+  ✖ not ok 4 - SCRUM-1403 · la lista y la ficha de presupuesto pasan por la puerta ANTES de leer, y la ficha de cliente pide las dos
+      motivo: 🔴 GET /admin/quotes/ no pregunta a la puerta (wherePresupuestosVisibles)
+  ✖ not ok 5 - SCRUM-1403 · la puerta de presupuestos no recorta a quien ve todo el negocio, y sin identidad no casa nada
+      motivo: "Cannot find module 'dist\\core\\documentos\\accesoAlPresupuesto.js' imported from tests\\scrum1403-el-tecnico-y-las-otras-puertas.test.mjs"
+  ✖ not ok 6 - SCRUM-1403 · las dos puertas comparten criterio: los Trabajos de la persona se leen en UN sitio, y quién ve todo lo dice `seesAllJobs`
+      motivo: "ENOENT: no such file or directory, open 'src\\core\\documentos\\accesoAlPresupuesto.ts'"
+líneas «not ok»: 6
+EXIT=1
+
+--- stderr ---
+
+CORRER_EXIT=1

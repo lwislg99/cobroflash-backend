@@ -2,6 +2,9 @@
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
+// SCRUM-1403 · qué presupuestos ve quien pregunta: la MISMA regla que las facturas (SCRUM-1397).
+import { quienPideDe } from '../../../../core/documentos/accesoALaFactura';
+import { wherePresupuestosVisibles, puedeVerElPresupuesto } from '../../../../core/documentos/accesoAlPresupuesto';
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -77,15 +80,17 @@ router.get('/', async (req, res) => {
     // miembro del hub de Equipo). 'owner' es EXPLÍCITO a propósito: el propietario se guarda
     // con teamMemberId null, y un parámetro vacío o un 0 accidental no pueden significar "el
     // propietario" por descuido. Lo que no se entiende NO filtra (undefined) — devolver la
-    // lista completa es el fallo seguro aquí: esta ruta ya la ve entera cualquier rol que
-    // llegue a ella (S1: `TECNICO_ALLOWED` para GET /admin/quotes), así que no filtrar no
-    // enseña nada que el llamante no pudiera pedir sin el parámetro.
+    // lista completa es el fallo seguro aquí: no filtrar no enseña nada que el llamante no
+    // pudiera pedir sin el parámetro. ⚠️ «La lista completa» es la de QUIEN PREGUNTA: desde
+    // SCRUM-1403 un Técnico ya no ve entera esta ruta, sólo lo suyo (el recorte de abajo).
     const raw = req.query.teamMemberId;
     let teamMemberId: number | null | undefined;
     if (raw === 'owner') teamMemberId = null;
     else if (raw !== undefined && cabeEnColumnaInt(Number(raw))) teamMemberId = Number(raw);
 
-    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
+    // SCRUM-1403 · un Técnico lista SUS presupuestos (autor, asignado o Trabajo); el admin, todos.
+    const recorte = await wherePresupuestosVisibles(quienPideDe(req));
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId, recorte);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);
@@ -896,6 +901,12 @@ router.get('/:id', async (req, res) => {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
+    }
+
+    // SCRUM-1403 · la misma puerta que la lista. El ajeno contesta igual que el que no existe.
+    // Las facturas que trae la ficha de uno SUYO se le enseñan todas: es su presupuesto (c.17932).
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
     }
 
     const detail = await getQuoteDetailAdmin(id, req.merchantId); // A12.1: scoped
