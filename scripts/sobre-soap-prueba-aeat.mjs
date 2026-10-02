@@ -159,7 +159,27 @@ function altaObjetivo() {
 // ────────────────────────────────────────────────────── el registro (UNO solo)
 
 // Primer registro de la cadena → huella anterior VACÍA (conformidad verificada en S1-A).
-const SERIE = 'PRUEBA-AEAT-' + String(Date.now()).slice(-6);
+// ═══════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1211b · --serie-propia / --fecha-propia: PARA MEDIR LA COLISIÓN, no por comodidad
+//
+// SCRUM-1211 DEDUJO —y lo declaró como deducción, no como medición— que la AEAT identifica
+// un registro por Emisor + SerieYNúmero + FechaExpedición, y que por tanto DOS registros con
+// la MISMA serie y número pero DISTINTA fecha se aceptarían los dos. De eso depende si la
+// opción A de SCRUM-1203 tiene un agujero real o sólo teórico.
+//
+// 🔴 NOMBRES DISTINTOS A PROPÓSITO. `--serie` y `--fecha` ya existen y significan OTRA
+// COSA: la factura SOBRE LA QUE se anula o se rectifica (`altaObjetivo`). Reutilizarlos aquí
+// habría FUNCIONADO —`altaObjetivo` no se llama cuando el tipo es alta— y habría dejado una
+// bandera que significa dos cosas según otra bandera. Eso se lee mal el día que falle.
+//
+// CONTROL POSITIVO, YA OBTENIDO, y no hay que gastar un envío en repetirlo: el 28-sep-2026
+// se mandó dos veces PRUEBA-AEAT-970375 con la MISMA fecha y la AEAT contestó error 3000,
+// «Registro de facturación duplicado». O sea que la AEAT SÍ detecta duplicados. Si ahora
+// acepta dos con distinta fecha, no es que no mire: es que la FECHA forma parte de la
+// identidad, y entonces el agujero de la opción A es real.
+// ═══════════════════════════════════════════════════════════════════════════════════
+const SERIE_FORZADA = arg('serie-propia');
+const SERIE = SERIE_FORZADA || ('PRUEBA-AEAT-' + String(Date.now()).slice(-6));
 
 // 🔴 LA HORA ES AHORA, NO UNA CONSTANTE. Medido contra la AEAT real el 24-sep-2026: con un
 // sello escrito a mano (junio) contesto 'AceptadoConErrores' + codigo 2004:
@@ -179,7 +199,14 @@ const _p = new Intl.DateTimeFormat('en-GB', {
 const _g = (k) => _p.find((x) => x.type === k).value;
 const _off = _g('timeZoneName').replace('GMT', '') || '+00:00';
 const TS = `${_g('year')}-${_g('month')}-${_g('day')}T${_g('hour')}:${_g('minute')}:${_g('second')}${_off}`;
-const FECHA = `${_g('day')}-${_g('month')}-${_g('year')}`;
+const FECHA_FORZADA = arg('fecha-propia');
+if (FECHA_FORZADA && !/^\d{2}-\d{2}-\d{4}$/.test(FECHA_FORZADA)) {
+  // FALLA CERRADO: una fecha con otro formato la rechazaría la AEAT por el FORMATO, y ese
+  // rechazo llevaría a concluir que la colisión no existe cuando lo que falló fue la sonda.
+  console.error(`🔴 --fecha-propia debe ser dd-mm-aaaa. Recibido: «${FECHA_FORZADA}».`);
+  process.exit(1);
+}
+const FECHA = FECHA_FORZADA || `${_g('day')}-${_g('month')}-${_g('year')}`;
 
 // 🔴 ENCADENAMIENTO. Medido contra la AEAT REAL el 24-sep-2026: al mandar un segundo
 // registro con `primerRegistro: true` contestó código 2007 — «No debe informarse como
@@ -191,6 +218,9 @@ const anterior = fs.existsSync(RUTA_ULTIMO)
   ? JSON.parse(fs.readFileSync(RUTA_ULTIMO, 'utf8'))
   : null;
 
+if (SERIE_FORZADA || FECHA_FORZADA) {
+  console.log(`⚠️  SONDA DE COLISIÓN: serie=${SERIE} fecha=${FECHA} (forzadas a mano)`);
+}
 const objetivo = TIPO === 'alta' ? null : altaObjetivo();
 const prevHash = anterior ? anterior.huella : '';
 
