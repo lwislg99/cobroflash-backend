@@ -38,8 +38,10 @@ El ticket decía: «el `?? BY_PLAN.trial` es fail-closed y eso está bien». Eje
 no saltaba. Población: los 12 nombres propios de `Object.prototype`, y los 12 devolvían algo sin
 límite. En la ruta, `1 + activos >= undefined` es `false`: medido por `POST /admin/team` con la base
 doblada, una cuenta con plan `constructor` y 3 miembros **cruzaba el límite** y llegaba a
-`createTeamMember`. Para lo desconocido «normal» sí era fail-closed; para esos doce nombres era sin
-límite. El orquestador decidió por mensaje que cerrarlo entra en el ticket: es hacer verdadera su frase.
+`createTeamMember`. Para lo desconocido «normal» sí era fail-closed; para esos doce nombres no era «el
+límite más pequeño», como decía el enunciado: era **ningún límite**. Una puerta de límite que se abría
+escribiendo un nombre de plan. El orquestador decidió por mensaje que cerrarlo entra en el ticket, y
+con el arreglo la frase «es fail-closed» pasa a ser verdad para cualquier valor por primera vez.
 
 Lo que acota el daño, y lo que no sé: hace falta que alguien escriba uno de esos nombres en `plan`. El
 único escritor del código es el webhook de Stripe, que guarda `metadata.plan` **tal cual llega**
