@@ -83,6 +83,8 @@ este registro, que aún no estaba escrito). El juez es el CI.
 
 **Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:10Z
 
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
 `tests/scrum1379b-id-fuera-de-rango-resto.test.mjs` (2 sitios, 48 casos) y
 `tests/scrum1420-el-pad-avisa-al-cerrarse.test.mjs` (1 sitio, 4 casos) entraron en `main` con
 llamadas de nombre construido que `DECLARADAS` no tiene: sus PR se probaron antes de que el guard de
