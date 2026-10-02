@@ -133,7 +133,7 @@ visto con cuenta de prueba en su fecha; **(web)** = solo su página comercial.
 | **Verifacturamos** (dentro, 2-oct) | 3 clics · 3 campos; sin cliente, 2 clics | 2 clics, sin preguntas; deja un borrador | ≥ 2 clics; correo, y WhatsApp en los planes de 19 € y 29 € | **No tiene**: ni enlace de pago ni pasarela; no vi cómo marcar pagada |
 | **Contasimple** | No abierto por dentro. (web) existe, con firma electrónica | No abierto por dentro. (web) «con un clic», pudiendo cambiar cantidades y precios antes | No visto | (dentro) casilla para marcar la factura como cobrada, en opciones avanzadas del formulario. (web) anuncia cobro en su TPV; un enlace de pago para el cliente final, sin confirmar |
 | **Billin / TS Facturas** | No abierto por dentro. (web) con estados pendiente, aceptado, rechazado y facturado, y aviso de si el cliente lo abrió | No abierto por dentro. (web) desde el presupuesto aceptado se genera factura, albarán o proforma | (dentro) casilla «enviar por correo al emitir» en el paso 2: 1 clic más; solo correo | (dentro) bloque para añadir un método de pago y casilla de «cantidad ya pagada», vistos y sin explorar. Pasarela: sin verificar |
-| **ServiceM8** | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
+| **ServiceM8** (fila del 25-sep; **la del 2-oct, vista por dentro, está en §8 y manda**) | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
 | **YaQu** (código, no pantalla) | Rápido: 3 clics · 3 campos, ya enviado. Editor: 6 clics | Con firma, 0 clics; a mano, 3. Sale emitida. En España hoy, sin camino | Dentro del propio botón (rápido) o 1 clic | Petición de pago al firmar; marcar pagada, 2 clics |
 
 La factura suelta, que es lo único medible en los dos españoles (deducido de las notas):
@@ -160,9 +160,143 @@ separa de Verifacturamos.
 Lo que este material **no** contesta, de ninguno de los tres: cuántos clics cuesta su presupuesto, cuántos su
 conversión, y cuántos cobrar. Para eso hay que entrar.
 
-## 8 · Cuenta de prueba
+## 8 · ServiceM8 por dentro (2-oct-2026): un Trabajo que cambia de estado, no un documento que se convierte
 
-Sigue **abierta** (competidor: Verifacturamos · alta: 21-sep-2026). Darla de baja es lo último de la
+👁 **Visto por dentro** el 2-oct-2026 con la cuenta de prueba del 25-sep (periodo de prueba: le quedan 7 días).
+Capturas `docs/competencia/capturas/servicem8/pasos-NN-*.png`. Corrige y sustituye la fila de ServiceM8 del §7.
+No pulsados: «Send Quote», «Send Invoice», «Email Invoice», «Approve» y «Add Payment». La propia cuenta avisa
+de que no puede mandar correo ni SMS hasta verificar el correo del titular.
+
+**El modelo.** No hay «presupuesto» ni «factura» como documentos: hay un **Trabajo** con un campo de estado
+(Presupuesto · Orden de trabajo · Terminado · No conseguido). La pestaña de importes es la misma siempre; lo
+que cambia con el estado es cómo se llama y qué botón ofrece. Todo se guarda solo: no existe botón de guardar.
+
+| Tramo | Camino (visto) | Captura | Cifra |
+|---|---|---|---|
+| Presupuesto, con cliente nuevo | «New Job» (el Trabajo ya existe, con número y en estado Presupuesto) → teclear el nombre del cliente y salir del campo (queda creado, con un «Deshacer» a mano) → pestaña «Billing» → teclear en la fila de líneas → clic en la sugerencia, que trae su precio | `pasos-04`, `pasos-05`, `pasos-08`, `pasos-09` | **3 clics · 2 campos · 1 pantalla** |
+| Enviar | Botón «Send Quote» con desplegable al lado, en la misma pestaña | `pasos-09` | ≥ 1 clic; no pulsado |
+| De presupuesto a factura | Pestaña «Details» → abrir «Job Status» → «Completed». Al volver a «Billing»: cabecera verde, la descripción pasa a ser de factura, el botón pasa a «Send Invoice» y aparecen «Paid» y «Balance Due». Ni cliente ni líneas se tocan | `pasos-10`, `pasos-12` | **3 clics · 0 campos · 0 pantallas nuevas** (2 si ya se está en «Details») |
+| Aprobar | Hay un paso que no tenemos ni nosotros ni Verifacturamos: el Trabajo terminado cae en «Invoicing» → «Awaiting Approval», y hasta que se aprueba no pasa a «Awaiting Payment» | `pasos-13`, `pasos-14`, `pasos-15` | 4 clics deducidos (Invoicing → pestaña → fila → «Approve»); «Approve» no pulsado |
+| Cobrar | En «Invoicing», con la fila elegida: «Receive Payment» abre una ventana con importe, fecha (hoy), método (por defecto, efectivo) y nota, y «Add Payment». Es **apuntar** un cobro. Cobro con tarjeta al cliente: su web lo anuncia; por dentro no lo he visto | `pasos-16` | 5 clics · 1 campo deducidos (Invoicing → pestaña → fila → «Receive Payment» → importe → «Add Payment»); «Add Payment» no pulsado |
+
+En `pasos-16` la ventana enseña un error de «no se pueden cargar los pagos»: lo provoqué yo. Mi conductor
+corta toda petición cuya ruta nombre un pago, y la lista de pagos se carga con una de ésas.
+
+**Sin impuestos en la línea**, como ya decían las notas del 25-sep: el total del presupuesto y de la factura
+sale con el impuesto a cero. No es una herramienta fiscal española.
+
+**Ellos · nosotros · la diferencia**, en este tramo:
+
+| | ServiceM8 (visto) | YaQu (código, no pantalla) | La diferencia que nota |
+|---|---|---|---|
+| De presupuesto a factura | Un campo de estado en el mismo registro: 3 clics, nada que volver a mirar | Un documento nuevo: con firma del cliente sale solo; a mano, 3 clics, y exige aceptación | Empate en clics a mano. Con ellos el profesional no tiene la sensación de «hacer otra cosa»: sigue en la misma ficha y la ve cambiar de color |
+| Guardar | No existe: cada cambio queda guardado | Botones de continuar, generar y guardar | Con ellos no hay un momento de «¿lo he guardado?» |
+| Cliente nuevo | Se crea al teclear el nombre y salir del campo | En el rápido, al enviar; en el editor, modal de alta | Parecido en el rápido; ellos no piden nada más |
+| Entre terminar y cobrar | Un paso de aprobación, en otra pantalla | No hay | Aquí ellos piden más pasos que nosotros |
+| Cobrar | Apuntar el cobro: otra pantalla, ≈ 5 clics | Marcar pagada: 2 clics; petición de pago sola al firmar | Nosotros, por ≈ 3 clics en lo visto |
+
+**Un Trabajo en estado Presupuesto no sale en la lista de trabajos de la pizarra** (filtro «All Jobs»): los
+cuatro que creé desaparecieron de ella al cerrar la ficha, y por eso gasté cuatro donde cabía uno. La pizarra
+tiene una cola aparte, «Pending Quotes», que **no abrí**: lo medido es que no están en la lista general, no
+que no estén en ningún sitio.
+
+Lo que no vi: el cobro con tarjeta, lo que hay detrás de enviar, la cola de presupuestos pendientes y la
+aplicación móvil (donde su web dice que se cobra «antes de irse de la obra»).
+
+**Contasimple y Billin: sin entrar.** De Billin no se guardó la contraseña (lo dicen sus notas del 25-sep). De
+Contasimple no hay en esta máquina ningún fichero de credencial reconocible por su nombre. En los dos casos el
+camino es recuperar la contraseña por correo, y eso es del fundador. Sus filas del §7 se quedan como están.
+
+## 9 · Cuentas de prueba
+
+**ServiceM8** (alta: 25-sep-2026) sigue **abierta**, con 7 días de prueba por delante el 2-oct. Datos
+inventados creados el 2-oct-2026: Trabajos n.º 2 (vacío), 3, 4 y 5, y los clientes «Cliente Inventado Prueba
+Dos», «… Tres» y «… Cuatro». Nada enviado, nada aprobado, ningún cobro apuntado.
+
+**Verifacturamos** sigue **abierta** (alta: 21-sep-2026). Darla de baja es lo último de la
 consultoría. Datos inventados creados el 2-oct-2026: cliente «Cliente Inventado Prueba», presupuestos
 P-2026-0002 y P-2026-0003 (los dos convertidos) y dos borradores de factura sin número. Nada emitido, nada
 enviado.
+
+## 10 · La página para el fundador
+
+> **A ellos los vimos por dentro; a nosotros, leyendo el código.** Verifacturamos y ServiceM8, con cuenta de
+> prueba el 2-oct-2026. YaQu, en `origin/main`, sin abrir la pantalla. Contasimple y Billin, solo de notas de
+> septiembre. Cada cifra nuestra de esta página puede cambiar cuando alguien la cuente en yaqu.app.
+
+**Lo medido, en cuatro líneas.**
+
+- Crear y enviar un presupuesto corto: nosotros 3 clics, Verifacturamos ≥ 5, ServiceM8 3 sin contar el envío.
+- Presupuesto por el editor completo: nosotros 6 clics, Verifacturamos 3.
+- De presupuesto a factura a mano: nosotros 3 clics y exigimos aceptación; Verifacturamos 2 y deja un borrador;
+  ServiceM8 3 sobre el mismo registro, y luego pide aprobar en otra pantalla.
+- Cobrar: Verifacturamos no lo tiene; ServiceM8 apunta el cobro en ≈ 5 clics; nosotros 2, o ninguno si el
+  cliente firma. Y hoy, en España, nuestro tramo de factura y cobro está apagado.
+
+**Las tres cosas que esta comparación abre**, ordenadas por lo que ahorran frente a lo que cuestan. No son
+propuestas de pantalla: son la cuenta de cada una, para decidir.
+
+| | Qué es | Base | Qué ahorra | Qué cuesta en nuestro código | Etiqueta |
+|---|---|---|---|---|---|
+| 1 | **Llegar al editor completo desde el inicio** | Verifacturamos: un botón en el Panel. Nosotros: menú «Presupuestos» + «Nuevo presupuesto» | 1 clic de 6 | El destino ya existe y ya se abre con una línea desde cinco pantallas (`renderAppView('quotes-new')`); el inicio tiene tres acciones rápidas en `homeView.js`. Es un control más en el inicio, con texto que ve el usuario: pide firma (regla 39) y es del carril de la pantalla | Ahorro **deducido** (código, no pantalla) · coste **medido** leyendo |
+| 2 | **Un presupuesto sin cliente** | Verifacturamos: cliente opcional, 2 clics y 2 campos | 1 campo en el presupuesto rápido (el nombre) y 1 clic en el editor. En el rápido, teclear un nombre que no existe ya da de alta al cliente sin salir | El presupuesto lleva el cliente como dato obligatorio en tres capas: la tabla (`prisma/schema.prisma`, `customerId Int`), el validador (`src/core/validation/schemas.ts`) y el editor. Once ficheros de `src` leen el cliente del presupuesto, y el envío necesita su teléfono. **Toca el esquema: se nombra y se para** (regla 40) | Ahorro **medido** en ellos, **deducido** en nosotros · coste **medido** en su entrada, **no mirado** en sus once ficheros |
+| 3 | **Repasar la factura antes de emitirla** | Verifacturamos: «Convertir» deja un borrador que se corrige. Nosotros: «Generar factura» la deja emitida | Ningún paso: **añade** uno (de 3 a 4 clics a mano). Lo que da es poder corregir antes, en vez de rectificar después | **Es el camino de emisión: se nombra y se para** (reglas 29 y 40). No he leído qué haría falta | Diferencia **medida** en ellos, **leída** en nosotros · coste **no mirado**, a propósito |
+
+**Lo más grande que salió y no cabe en esa tabla.** ServiceM8 no convierte documentos: cambia el estado de
+un Trabajo, sobre el mismo registro y sin botón de guardar. En clics empata con nosotros; la diferencia es de
+modelo, y un cambio de modelo es del máster, no de una tanda. Queda descrito en §8 y no se cuenta su coste.
+
+**Lo que tampoco entra, y por qué.** Tres de los seis clics de nuestro editor son «Continuar», uno de ellos
+en un paso (Condiciones) que se pasa sin tocar nada. Es el mayor ahorro posible de toda la comparación, pero
+quitar pasos al asistente es rehacer una pantalla decidida. La decisión, leída después, está en §11.
+
+**Lo que falta para que esta página valga del todo:** contar nuestros pasos en yaqu.app (lo denegó el
+clasificador de permisos; lo autoriza o lo recorre el fundador), y entrar en Contasimple y Billin (hay que
+recuperar sus contraseñas por correo). La cuenta de ServiceM8 tenía 7 días de prueba el 2-oct-2026.
+
+## 11 · La decisión de los cuatro pasos del editor, y el paso de Condiciones
+
+Leído en `origin/main` el 2-oct-2026. No es una propuesta: es la decisión, su motivo y la cuenta de quitar
+**ese** paso.
+
+**La decisión existe, tiene motivo y es del fundador.** Es SCRUM-915; vive en
+`docs/prototipos/SCRUM-915/direccion-de-diseno.md` y se construyó en el corte 915d
+(`docs/master/SCRUM-915.md`).
+
+| Versión (17-sep-2026) | Qué era | Qué dijo el fundador |
+|---|---|---|
+| v1 | Una hoja con un riel de cinco pasos, todos a la vista | «Mola, pero sigue siendo un poco lioso…» (comentario 15790 del ticket) |
+| v2 | Dos columnas: a la izquierda los pasos **con solo el actual abierto**; a la derecha el documento vivo. Presupuesto: Cliente → Conceptos → Condiciones → Revisar y enviar | «me gusta mucho más» |
+| v3 | La v2 con dos cambios; es la aprobada y la que cita el código | Aprobada |
+
+**El motivo es la claridad, no los pasos.** Los cuatro pasos nacen para que la pantalla deje de ser «liosa».
+Ni la dirección de diseño ni su medición (`medicion.md`: errores de consola, desplazamiento horizontal,
+tamaño de los controles, totales) cuentan pulsaciones: la palabra «clic» no aparece en la medición. La
+decisión no pesó cuántos «Continuar» costaba, porque nadie se lo preguntó. El motivo sigue vigente: tiene
+quince días.
+
+**Condiciones se diseñó para pasarse sin tocar.** La v2 lo dice así: «Condiciones ya elegidas: tres filas
+resumen (cobro, formas de pago, validez), cada una con "Cambiar"». Que el paso llegue relleno y se confirme
+con un «Continuar» no es un descuido: es lo dibujado.
+
+**¿Cuántas veces se toca? No se puede saber hoy**, y no es lo mismo que «nadie lo toca»:
+
+- El editor no deja rastro de qué paso se abre ni de qué se cambia en él (en `quotesView.js` la única
+  telemetría que hay es la del origen por voz).
+- Se podría deducir de los datos —cuántos presupuestos guardan una forma de cobro o una validez distintas de
+  las de fábrica—, pero producción no tiene clientes reales y desde aquí no se ha consultado ninguna base.
+
+**Lo que cuesta quitar ese paso, leído:**
+
+| | Qué hay | Etiqueta |
+|---|---|---|
+| El mecanismo | Ya existe y está en producción: el paso se añade con una condición, y el justificante corre con **tres** pasos (Cliente · Conceptos · Revisar). El corte 915g ya mudó su fila «Ajustes del documento» al último paso | medido leyendo |
+| Lo que habría que mudar | En el presupuesto, Condiciones lleva cuatro filas: forma de cobro, formas de pago, validez y «Ajustes del documento». Tendrían que vivir en «Revisar», como en el justificante, plegadas y con su «Cambiar» | deducido |
+| Lo que lo sujeta | `tests/scrum915d-pasos-del-editor.test.mjs` y los guards del editor que nombra el registro de SCRUM-915 fijan el orden y el reparto de bloques de hoy. Guardan una decisión firmada: no se reescriben sin el fundador | medido en su existencia; **no leídos uno a uno** |
+| Lo que ahorra | 1 clic: el editor pasa de 6 a 5. Con la entrada directa desde el inicio (§10, fila 1), a 4. Verifacturamos está en 3 | deducido (código, no pantalla) |
+| Quién decide | Cambia una pantalla aprobada el 17-sep-2026: firma del fundador y carril de la pantalla | — |
+
+**Un dato que salió al leer la decisión.** La v3 aprobada no está construida entera: su último paso es
+«Guardar y enviar», que abre una hoja con el mensaje tal como le llega al cliente. Ese corte (915f) consta en
+el registro como parado hasta un GO escrito del fundador, porque toca envío y cobro. Hoy el editor acaba en
+«Generar presupuesto» y una ventana con el PDF. En pulsaciones no cambia nada: son las mismas.
