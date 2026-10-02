@@ -175,3 +175,59 @@ decisión de producto y nadie la ha tomado; el orquestador lo deja anotado.
 5. **Pares mal hechos en la sonda de medición.** Tres no eran pares («corrige» / «corrígelo») o no
    eran castellano («bajá», «nó»). No llegaron a ninguna cifra publicada; las del registro salen de
    los tests.
+
+# SCRUM-1325b · El PR llevaba un día en conflicto con `main`: la mezcla, y el banco repetido sobre ella
+
+**Medido contra:** `origin/main` = `f7d013778fc979caff89d7c9ac47d8ed79dca248` · 2026-10-02T03:35:59Z
+
+A9: sin fallo que generalice — el tramo es una mezcla de `main` con un conflicto de tres líneas y la repetición de un banco que ya existía; lo que tuvo parado el PR (un conflicto no vuelve a lanzar el CI, y con el auto-merge armado parece atendido) ya lo nombra el latido de arranque, que lo lista como «CONFLICTO con main» con sus horas.
+
+**Cruce de carril, declarado:** el ticket no lleva etiqueta de área y lo construyeron J2c y J2d. Este
+tramo lo hace J3b (sesión `jv-j3b`, equipo de Javier) por encargo del orquestador
+(`cobroflash-backend-5b`), que lo asume por mensaje entre sesiones el 2-oct-2026.
+
+## Qué pasaba
+
+El PR #2051 estaba en `DIRTY` / `CONFLICTING` desde el 1-oct-2026 (cabeza `abf3181b`, último cambio
+a las 03:44Z de ese día) con el auto-merge armado. Un PR en conflicto no lanza el CI: el rojo que
+enseñaba era de una base que ya no existía.
+
+## La mezcla
+
+- `git merge origin/main` dentro de la rama, sin rebase. Dos mezclas: la de `bbe633ac` (punta
+  `140045f68e0b7dd430a8dc057b9c4c8f463f8de1`) y la de `f7d01377`, que sólo traía dos registros de
+  `docs/master/` y entró sin conflicto.
+- **Un conflicto, en un fichero:** `src/modules/whatsappBot/domain/decisionPorTexto.ts`. La rama
+  añadía el `import` de `sinTildes` justo encima del tipo `Decision`; `main` (SCRUM-1326) cambió ese
+  tipo para añadir `'ask'`. Se conservan las dos mitades: el `import`, y el tipo con `'ask'`.
+- Comprobado por efecto, el 2-oct-2026 sobre `140045f6`: el fichero resuelto difiere del de `main`
+  sólo en lo de esta rama (el `import` y `tramos()` pasando por `sinTildes`); ningún marcador de
+  conflicto; el diff del PR contra `main` son los mismos 12 ficheros de antes de mezclar. De esos
+  12, `main` sólo había tocado ése. Ningún literal del bot cambia.
+- El trinquete de `scrum812` no chocó y pasa sin regenerar nada.
+- El guard de este ticket sale verde sobre el árbol fusionado: lo que trajo `main` a `src/` no mete
+  ninguna expresión sin declarar.
+
+## El banco: el 22 de 22 de arriba había caducado, y se ha repetido
+
+El «22 lanzadas, 22 caen» de «Cómo se comprobó» lo midió J2c el 1-oct-2026 sobre `40972fc0`, antes
+de que SCRUM-1326 entrara en `main` y cambiara `decisionPorTexto.ts`. Sobre el árbol fusionado ese
+dato no valía: era de otro árbol.
+
+**Repetido el 2-oct-2026 sobre `140045f6`** (`node tests/banco-scrum1325/mutar.mjs`, entero, 163 s):
+base verde (efecto 9 de 9, guard 10 de 10); **22 mutaciones de 22, las 22 caen donde se esperaba,
+0 mudas, 0 ciegas**; al final build limpio y árbol limpio. En las 22 filas los casos que informan
+suman 9 en el test de efecto y 10 en el del guard: ninguna fila perdió casos.
+
+Lo que el banco NO mide, y sigue sin medirse aquí: no muta `decisionPorTexto.ts`. A ese fichero sólo
+le llegan S9 y S10, que mutan el helper que usa. Las mutaciones propias de ese fichero son las del
+banco de SCRUM-1322, que este tramo no ha lanzado sobre el árbol fusionado.
+
+## Lo corrido en local antes de empujar, y lo que no
+
+- El 2-oct-2026 sobre `140045f6`: build limpio; 13 ficheros de test a mano, de uno en uno y sin
+  `--test-force-exit`: 107 casos, 107 pasan, 0 saltos. Por nombre, los 19 de este ticket (9 de
+  efecto y 10 del guard). `guards:entrada`: 12 guards en verde. `scrum976` a solas: 11 de 11.
+- **No corrido:** la tanda completa en local (va con turno, y no se pidió). La
+  primera pasada entera sobre la mezcla es la del CI.
+- **Sin verificación en `yaqu.app`**, igual que arriba.
