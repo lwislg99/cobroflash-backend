@@ -21,6 +21,9 @@ import {
 } from '../../domain/importarClientes.service';
 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
+// SCRUM-1403 · las dos puertas de «autor o asignado», para la pestaña de documentos de la ficha.
+import { whereFacturasVisibles, quienPideDe } from '../../../../core/documentos/accesoALaFactura';
+import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto';
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
 import { garantiasRetenidasPorCliente } from '../../../billing/domain/garantiasRetenidas'; // SCRUM-1108
@@ -528,17 +531,28 @@ router.get('/:id/detail', async (req, res) => {
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
+    // SCRUM-1403 · la pestaña de documentos de la ficha pasa por las MISMAS puertas que las listas
+    // de presupuestos y de facturas: un Técnico ve aquí los suyos (autor, asignado o Trabajo) y el
+    // admin, todos (`null` = sin recorte, el `where` sale como salía). La ficha del cliente se le
+    // sigue abriendo entera: lo que se recorta son los documentos ajenos, no el cliente.
+    // ⚠️ Las CIFRAS (`stats`) y los eventos NO se tocan aquí: qué recibe de ellos un Técnico está
+    // sin decidir (SCRUM-1403, pregunta al fundador).
+    const quien = quienPideDe(req);
+    const [recortePresupuestos, recorteFacturas] = await Promise.all([
+      wherePresupuestosVisibles(quien), whereFacturasVisibles(quien),
+    ]);
+
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
     const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente, garantias] = await Promise.all([
       prisma.quote.findMany({
-        where: { customerId: id, merchantId: req.merchantId },
+        where: { customerId: id, merchantId: req.merchantId, ...(recortePresupuestos ? { AND: [recortePresupuestos] } : {}) },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, quoteNumber: true, status: true, total: true, currency: true, createdAt: true, acceptedAt: true },
       }),
       prisma.invoice.findMany({
-        where: { customerId: id, merchantId: req.merchantId },
+        where: { customerId: id, merchantId: req.merchantId, ...(recorteFacturas ? { AND: [recorteFacturas] } : {}) },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, number: true, status: true, total: true, currency: true, createdAt: true, paidAt: true, pdfUrl: true },
