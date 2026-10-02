@@ -28,6 +28,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -102,23 +103,26 @@ const CASOS = [
   { nombre: 'ninguno', merchant: merchant({}), esperado: NINGUNO, prohibidos: [AMBOS, SOLO_BANCO, SOLO_TARJETA] },
 ];
 
-for (const c of CASOS) {
-  test(`SCRUM-910 ②: /recibo pendiente, caso «${c.nombre}» → el texto nombra SOLO lo que se pinta`, async () => {
-    const r = await pedirRecibo(c.merchant);
-    assert.equal(r.status, 200, `🔴 CIEGO: /recibo devolvió HTTP ${r.status}.`);
-    assert.ok(
-      r.cuerpo.includes(c.esperado),
-      `🔴 falta el literal de «${c.nombre}»: «${c.esperado}»`,
+const caso2 = casosEscritos(CASOS, (c) => `SCRUM-910 ②: /recibo pendiente, caso «${c.nombre}» → el texto nombra SOLO lo que se pinta`, async (c) => {
+  const r = await pedirRecibo(c.merchant);
+  assert.equal(r.status, 200, `🔴 CIEGO: /recibo devolvió HTTP ${r.status}.`);
+  assert.ok(
+    r.cuerpo.includes(c.esperado),
+    `🔴 falta el literal de «${c.nombre}»: «${c.esperado}»`,
+  );
+  for (const otro of c.prohibidos) {
+    assert.equal(
+      r.cuerpo.includes(otro),
+      false,
+      `🔴 el caso «${c.nombre}» pinta un literal de OTRO caso: «${otro}» — nombra un botón que no está.`,
     );
-    for (const otro of c.prohibidos) {
-      assert.equal(
-        r.cuerpo.includes(otro),
-        false,
-        `🔴 el caso «${c.nombre}» pinta un literal de OTRO caso: «${otro}» — nombra un botón que no está.`,
-      );
-    }
-  });
-}
+  }
+});
+test('SCRUM-910 ②: /recibo pendiente, caso «ambos» → el texto nombra SOLO lo que se pinta', caso2(0));
+test('SCRUM-910 ②: /recibo pendiente, caso «solo banco» → el texto nombra SOLO lo que se pinta', caso2(1));
+test('SCRUM-910 ②: /recibo pendiente, caso «solo tarjeta» → el texto nombra SOLO lo que se pinta', caso2(2));
+test('SCRUM-910 ②: /recibo pendiente, caso «ninguno» → el texto nombra SOLO lo que se pinta', caso2(3));
+caso2.todos();
 
 // Control positivo del propio detector (guarda del detector, SCRUM-113): si los cuatro literales
 // fueran indistinguibles entre sí (p. ej. por un `includes` que casa con una subcadena de otro),
