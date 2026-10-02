@@ -191,3 +191,24 @@ Errores propios del lote:
   por desalineado sin escribir nada; ahora corta al llegar al nombre del siguiente literal.
 - La mitad ② del guard se vio en ROJO de verdad en este lote: con los 13 ficheros convertidos y la
   lista sin tocar, `exit 1` y «la lista declara … y el árbol tiene 0».
+### Añadido al lote 1 · tres sitios que entraron en `main` a la vez que el guard
+
+**Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:10Z
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+`tests/scrum1379b-id-fuera-de-rango-resto.test.mjs` (2 sitios, 48 casos) y
+`tests/scrum1420-el-pad-avisa-al-cerrarse.test.mjs` (1 sitio, 4 casos) entraron en `main` con
+llamadas de nombre construido que `DECLARADAS` no tiene: sus PR se probaron antes de que el guard de
+SCRUM-1415 estuviera en `main`, y el guard entró sin ellos. Con los tres juntos, la mitad ① del guard
+cae sobre `main` (visto en esta rama al traer `main`: `construidas=66 … lista=64`, `fail 1`).
+
+No se añaden a la lista (sólo baja): se convierten aquí. En `scrum1379b` el bucle llevaba una
+constante `nombre` que sólo se usaba dentro de los dos nombres; se ha metido en las dos plantillas.
+
+| fichero | casos antes | casos después | fail después | conjunto de nombres |
+|---|---|---|---|---|
+| `scrum1379b-id-fuera-de-rango-resto` | 49 | 49 | 0 | idéntico |
+| `scrum1420-el-pad-avisa-al-cerrarse` | 11 | 11 | 0 | idéntico |
+
+Población del guard tras el añadido: `ficheros=1214 llamadas=9992 literales=9928 construidas=64 en_ficheros=33 lista=64 en_ficheros=33`.
