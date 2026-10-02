@@ -98,7 +98,8 @@ tandas en ellas mientras SCRUM-1405 esté sin decidir.
 
 ## El paliativo: el censo en UNA escritura (autorizado por el orquestador, 2-oct ~16:40Z)
 
-Hecho en este mismo PR, sobre `tests/scrum237-negacion-respaldada.test.mjs`. El censo se junta en una
+Rama `scrum-1366b-censo-en-una-escritura`, aparte del diagnóstico (que entró por #2174). Toca
+`tests/scrum237-negacion-respaldada.test.mjs`. El censo se junta en una
 cadena y sale con un solo `process.stdout.write`. No cambia ninguna aserción ni el orden de la salida.
 La tercera salida de la tabla («después del informe») quedó descartada por el orquestador.
 
