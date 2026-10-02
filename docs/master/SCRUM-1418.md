@@ -166,6 +166,38 @@ sin mirar se calla. La decimotercera, abajo.
    hay test que pueda exigir el orden de mis órdenes; queda como aviso, y la cura es no encadenar el push
    detrás de un guard con `;`.
 
+## Leídas: las seis ramas que entran limpias (2-oct, por encargo del orquestador)
+
+Leído contra la punta `de59fe731c623f8797142dc6a877f998a1056f68`. El juez es el diff de cada rama desde
+que se separó, y lo que `main` tiene hoy en esos ficheros; no el estado del ticket. Ninguna se fusionó,
+ni en local. `scrum-1415` (de una sesión viva) y `scrum-240-sobre-duplicado-rebasada` (camino de emisión,
+y choca) no se abrieron.
+
+| rama | veredicto | la evidencia |
+|---|---|---|
+| `scrum-114-enviar-para-firmar-ok-false` | **YA ESTÁ** | Añade `process.env.WHATSAPP_DRY_RUN = '1'` a dos tests. `main` ya lo tiene: `tests/scrum47-enviar-albaran-wa.test.mjs:23` y `tests/scrum49-firma-remota.test.mjs:24`. Lo único que no está son sus dos comentarios |
+| `scrum-938-arregla-censo-lista-fixture` | **YA ESTÁ** | Una sola cosa: el ancla de `docs/master/SCRUM-938.md` con el sha completo. `main` ya la tiene con el sha de 40 |
+| `scrum-1100c-el-resumen-explica-el-corte` | **YA ESTÁ** | Una sola cosa: el formato del ancla de SCRUM-1100c en `docs/master/SCRUM-1100.md`. `main` ya la tiene bien formada (línea 260) |
+| `ci-prueba-en-rojo` | **BASURA** | Un fichero, `tests/zz-ci-prueba-rojo.test.mjs`, que se declara a sí mismo «FICHERO DE PRUEBA — NO MERGEAR»: un fallo inyectado para ver el check en rojo (SCRUM-154). Su propio texto dice que se borra en cuanto se compruebe |
+| `scrum-312-importador-clientes` | **APORTA** · pequeño (30 líneas, 2 ficheros) | **El defecto que arregla sigue vivo en `main`:** `src/modules/system/domain/importarClientes.service.ts:342` pone `String(e?.message ?? e).slice(0, 120)` como motivo del rechazo, o sea que el profesional lee el error de la base en crudo. La rama lo manda al log, pone un texto fijo y trae su test, con el positivo de la negación. En `main` no está ni el texto ni el test |
+| `scrum-418-puerta-de-produccion` | **APORTA** · mediano (243 líneas, 4 ficheros) | `src/core/db/puertaDeProduccion.ts` NO existe en `main`, ni su test, ni la llamada en `src/core/db/prisma.ts`. Es una puerta en el punto de conexión: si el host es el de producción y falta una variable declarada, no conecta |
+
+Tres avisos sobre las dos que aportan:
+
+- **`scrum-312`: el texto que pone es de usuario** («No hemos podido guardar esta fila.»). El commit dice
+  «copy aprobada (regla 30)»; no he encontrado esa frase en `docs/microcopy/` ni en ningún otro sitio de
+  `main`. Sin la firma delante es regla 39. Y el fichero es del carril de J2 (`dos-equipos.md` §3.1).
+- **`scrum-418`: su trabajo SÍ está en `origin`.** La rama de `origin` está en `5057179d`, el commit con
+  la puerta; la local solo le saca un merge de `main`. «Va por detrás» era cierto y no había trabajo sin
+  empujar. Lo que no tiene es PR.
+- **`scrum-418` no se puede fusionar sin más:** exige una variable nueva en Railway de producción
+  (`YAQU_DESTINO_PRODUCCION`); sin ella producción no conectaría. Y su commit afirma algo que contradice
+  a `CLAUDE.md`: que el 11-ago, de 199 árboles, 11 tenían un fichero de entorno apuntando a producción.
+  `CLAUDE.md` sigue diciendo «ninguno apunta a producción», medido el 10-ago sobre cuatro árboles. No lo
+  he vuelto a medir: son ficheros con credenciales. Es decisión del fundador.
+
+De las seis: tres ya están, una es basura, dos aportan. De las 19 que chocan no he leído ninguna.
+
 ## Una lista declarada de un guard, tocada: se dice
 
 `tests/scrum723-guard-contra-su-base.test.mjs` lleva una entrada nueva en `INDIRECTAS_DECLARADAS` para
