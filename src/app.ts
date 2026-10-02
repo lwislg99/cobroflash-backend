@@ -100,7 +100,7 @@ import quoteRequestsRouter from './modules/quoteRequests/app/routes/quoteRequest
 import attachmentsRouter   from './modules/quoteRequests/app/routes/attachments.routes';
 import searchRouter        from './modules/search/app/routes/search.routes';
 
-import { merchantProfileUpdateSchema } from './core/validation/schemas';
+import { merchantProfileUpdateSchema, sinLogoHeredadoIntacto } from './core/validation/schemas';
 // SCRUM-314 (D3): el barrido derivado del demo y quién es el demo.
 import { barridoDemo } from './modules/system/domain/barridoDemo';
 import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
@@ -724,7 +724,16 @@ app.get('/admin/merchant', async (req, res, next) => {
 
 app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
   try {
-    const parsed = merchantProfileUpdateSchema.safeParse(req.body);
+    let parsed = merchantProfileUpdateSchema.safeParse(req.body);
+    // SCRUM-1231: un logo heredado que el formulario devuelve SIN TOCAR no tumba el guardado.
+    // Solo se lee la fila cuando el esquema ya ha rechazado el logo: el camino normal no paga nada.
+    if (!parsed.success && parsed.error.issues.some((i) => i.path[0] === 'logoUrl')) {
+      const actual = await prisma.merchant.findUnique({
+        where: { id: req.merchantId },
+        select: { logoUrl: true },
+      });
+      parsed = merchantProfileUpdateSchema.safeParse(sinLogoHeredadoIntacto(req.body, actual?.logoUrl));
+    }
     if (!parsed.success) {
       return res.status(400).json({ error: 'validation_error', details: parsed.error.flatten() });
     }
