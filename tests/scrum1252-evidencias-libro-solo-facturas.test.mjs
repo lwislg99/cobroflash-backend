@@ -1,10 +1,15 @@
 // tests/scrum1252-evidencias-libro-solo-facturas.test.mjs — SCRUM-1252 · el libro que va DENTRO del
 // paquete de evidencias son las FACTURAS; el 303 del mismo paquete no se mueve.
 //
-// ⚠️ PROPUESTO, NO ENCHUFADO. Vive en `docs/master/evidencias/SCRUM-1252/` con extensión `.txt` porque
-// HOY sale rojo (2 de 4): un test rojo no entra en `tests/`, y un `.mjs` que registra tests fuera de
-// `tests/` lo caza el guard de SCRUM-708. Quien aplique la línea de `paquete.repo.ts` (J1) lo copia a
-// `tests/` con el nombre de la primera línea (y SIN el `.txt`): las rutas relativas cuentan con estar ahí.
+// Los cuatro primeros casos los escribió J6d el 1-oct-2026 como test PROPUESTO (vivía en
+// `docs/master/evidencias/SCRUM-1252/` porque contra `main` salía 2 de 4 en rojo). Entran en `tests/`
+// con la línea de `paquete.repo.ts` que los pone verdes (SCRUM-1252b), sin cambiarles un aserto.
+//
+// 🔴 LA LÍNEA Y EL LITERAL ENTRAN JUNTOS (fundador, SCRUM-1252 comentario 17726). Con el filtro, el
+// justificante sale del libro del ZIP pero su IVA sigue en el 303 del mismo ZIP: el libro deja de
+// sumar lo que su 303. La línea sola convertiría un descuadre visible en uno invisible, así que el
+// paquete lo DICE, con el texto firmado, en `avisos`. Los tres últimos casos vigilan eso: que el
+// aviso sale cuando hay algo fuera, que no sale cuando no lo hay, y que es letra a letra el de su ficha.
 //
 // De los tres sitios que nombraba el ticket, sólo éste quedaba vivo (comentarios 17451 y 17452):
 // la lista de Facturas estaba bien y la pantalla de Informes es «lo que va al 303». El paquete de
@@ -25,6 +30,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const require = createRequire(path.join(RAIZ, 'package.json'));
@@ -55,9 +61,9 @@ const FACTURAS_QUE_QUEDAN = ['F260001', 'J-20260805-AB12', 'R260001'];
 // Lo que el libro traía ANTES de filtrar, en su orden (misma fecha → por número).
 const TODO_LO_NUMERADO = ['F260001', 'J-2026-0001', 'J-20260805-AB12', 'R260001'];
 
-function clienteFalso() {
+function clienteFalso(filas = FILAS) {
   return {
-    invoice: { findMany: async (a) => FILAS.filter((r) => r.merchantId === (a.where ?? {}).merchantId) },
+    invoice: { findMany: async (a) => filas.filter((r) => r.merchantId === (a.where ?? {}).merchantId) },
     quote: { findMany: async () => [] },
     albaran: { findMany: async () => [] },
     expense: { findMany: async () => [] },
@@ -68,7 +74,7 @@ function clienteFalso() {
 }
 
 const { leerPaqueteEvidencias } = require('./dist/modules/fiscal/evidencias/paquete.repo.js');
-const { construirPaqueteEvidencias, FICHEROS } = require('./dist/modules/fiscal/evidencias/paquete.js');
+const { construirPaqueteEvidencias, FICHEROS, AVISO_LIBRO_SOLO_FACTURAS } = require('./dist/modules/fiscal/evidencias/paquete.js');
 const { leerLibroRegistro } = require('./dist/modules/invoicing/domain/libroRegistro.repo.js');
 const { leerModelo303 } = require('./dist/modules/fiscal/modelo303/modelo303.repo.js');
 const { rangoTrimestre } = require('./dist/modules/fiscal/modelo303/modelo303.js');
@@ -141,4 +147,71 @@ test('SCRUM-1252 · ⛔ el 303 del paquete es IDÉNTICO con filtro y sin él, y 
   assert.equal(total[4], base.toFixed(2).replace('.', ','),
     '🔴 la base total del 303 del paquete no es la de todo lo devengado en la muestra.');
   assert.equal(base, 250, 'la muestra ha cambiado: 100 + 200 (justificante) + 50 − 100.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1252b · LA LÍNEA NO ENTRA SOLA: EL PAQUETE DICE LO QUE DEJA FUERA
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+const RANURA = 'libro-solo-facturas';
+const avisosDelManifiesto = (paquete) => JSON.parse(fichero(paquete, FICHEROS.manifiesto)).avisos;
+/** Las veces que ESTE aviso sale en una lista de avisos: se compara la lista, no una ausencia. */
+const esteAviso = (avisos) => avisos.filter((a) => a === AVISO_LIBRO_SOLO_FACTURAS);
+const numero = (celda) => Number(String(celda).replace(',', '.'));
+/** La suma de la columna `base` del libro del paquete, y la base TOTAL de su 303. */
+const baseDelLibro = (paquete) => filasCsv(fichero(paquete, FICHEROS.libro)).reduce((s, c) => s + numero(c[4]), 0);
+const baseDel303 = (paquete) => numero(filasCsv(fichero(paquete, FICHEROS.modelo303)).find((c) => c[3] === 'TOTAL')[4]);
+const BASE_DEL_JUSTIFICANTE = FILAS.find((r) => r.number === JUSTIFICANTE_MIO).lines[0].price;
+const SIN_JUSTIFICANTE_MIO = FILAS.filter((r) => r.number !== JUSTIFICANTE_MIO);
+
+test('SCRUM-1252 · 🔴 la línea no entra sola: con un justificante fuera del libro, el paquete lo DICE en `avisos` y dentro del ZIP', async () => {
+  const paquete = await leerPaqueteEvidencias(clienteFalso(), PERIODO);
+
+  // El descuadre que el aviso explica EXISTE en esta muestra: al libro del ZIP le falta, respecto
+  // al 303 del mismo ZIP, exactamente la base del justificante.
+  assert.equal(baseDel303(paquete) - baseDelLibro(paquete), BASE_DEL_JUSTIFICANTE,
+    '🔴 el libro y el 303 del paquete no se separan por la base del justificante: la muestra ya no ' +
+    'reproduce el descuadre y este caso no mide nada.');
+  assert.equal(BASE_DEL_JUSTIFICANTE, 200, 'la muestra ha cambiado: el justificante propio era de 200.');
+
+  assert.deepEqual(esteAviso(paquete.avisos), [AVISO_LIBRO_SOLO_FACTURAS],
+    '🔴 el paquete deja un justificante fuera del libro y NO lo dice. Su IVA sigue en el 303 del mismo ' +
+    'ZIP: quien sume los dos documentos ve dos totales y nada le explica por qué. La línea de ' +
+    '`paquete.repo.ts` y este aviso entran juntos (fundador, SCRUM-1252 comentario 17726).');
+  assert.deepEqual(esteAviso(avisosDelManifiesto(paquete)), [AVISO_LIBRO_SOLO_FACTURAS],
+    '🔴 el aviso está en el objeto pero no viaja DENTRO del ZIP (`manifiesto.json`): quien abre el ' +
+    'paquete no lo lee.');
+});
+
+test('SCRUM-1252 · CONTROL: sin nada fuera del libro, el aviso NO sale — ni sin justificantes, ni con el libro sin filtrar', async () => {
+  // (a) El camino real, con una muestra SIN justificante propio (el del otro merchant sigue ahí).
+  const limpio = await leerPaqueteEvidencias(clienteFalso(SIN_JUSTIFICANTE_MIO), PERIODO);
+  assert.deepEqual(primeraColumna(fichero(limpio, FICHEROS.libro)), FACTURAS_QUE_QUEDAN);
+  assert.equal(baseDel303(limpio), baseDelLibro(limpio),
+    '🔴 sin justificantes, el libro y el 303 del paquete tienen que sumar la misma base.');
+  assert.deepEqual(esteAviso(limpio.avisos), [],
+    '🔴 el aviso sale sin que el libro haya dejado nada fuera: explica un descuadre que no existe.');
+  assert.deepEqual(esteAviso(avisosDelManifiesto(limpio)), []);
+
+  // (b) El paquete como salía ANTES (libro sin filtrar): el justificante está en el libro, los dos
+  // documentos suman lo mismo y no hay nada que explicar.
+  const antes = await paqueteSinFiltrar();
+  assert.equal(baseDel303(antes), baseDelLibro(antes));
+  assert.deepEqual(esteAviso(antes.avisos), []);
+
+  // El mismo instrumento SÍ ve el aviso cuando toca: sin esto, las listas vacías de arriba podrían
+  // ser un filtro que no encuentra nunca nada.
+  const conJustificante = await leerPaqueteEvidencias(clienteFalso(), PERIODO);
+  assert.equal(esteAviso(conJustificante.avisos).length, 1);
+});
+
+test('SCRUM-1252 · el aviso es, letra a letra, el texto que firmó el fundador (su ficha de `docs/microcopy/`)', () => {
+  const ficha = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1252' && a.ranura === RANURA);
+  assert.ok(ficha, '🔴 no encuentro la ficha de la firma de este texto en docs/microcopy/.');
+  assert.equal(ficha.aprobada, true, '🔴 la ficha existe pero su firma no cuenta como aprobación.');
+  // Un texto firmado largo va ENTERO en UNA línea de cita y el código lo pinta en un solo literal
+  // (SCRUM-1329): ni se parte ni se reescribe para que quepa.
+  assert.deepEqual(ficha.literales, [AVISO_LIBRO_SOLO_FACTURAS],
+    '🔴 el aviso que emite el código no es, letra a letra, el que consta firmado en su ficha ' +
+    '(regla 39: ni una palabra distinta sin volver a firmar).');
 });

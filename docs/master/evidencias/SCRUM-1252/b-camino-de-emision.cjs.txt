@@ -1,0 +1,131 @@
+// Medición de SÓLO LECTURA (regla 38): ¿está el paquete de evidencias en el camino de emisión?
+// Por AST (TypeScript), no por grep. Uso: node camino.cjs <raíz del árbol>
+const fs = require('fs');
+const path = require('path');
+const { createRequire } = require('module');
+const RAIZ = path.resolve(process.argv[2]);
+const ts = createRequire(path.join(RAIZ, 'package.json'))('typescript');
+
+const SRC = path.join(RAIZ, 'src');
+const ficheros = [];
+(function walk(d) {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = path.join(d, e.name);
+    if (e.isDirectory()) walk(p);
+    else if (/\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name)) ficheros.push(p);
+  }
+})(SRC);
+const rel = (p) => path.relative(RAIZ, p).replace(/\\/g, '/');
+
+const ESCRITURAS = new Set(['create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany',
+  '$executeRaw', '$executeRawUnsafe', '$transaction', 'createManyAndReturn']);
+const grafo = new Map();      // fichero → Set(ficheros que importa, de valor o de tipo)
+const grafoValor = new Map(); // fichero → Set(ficheros que importa EN RUNTIME: sin `import type`)
+const escribe = new Map();    // fichero → [nombres de llamada de escritura]
+let sinResolver = 0;
+
+function resolver(desde, spec) {
+  if (!spec.startsWith('.')) return null;
+  const base = path.resolve(path.dirname(desde), spec);
+  for (const c of [base + '.ts', path.join(base, 'index.ts'), base]) {
+    if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+  }
+  sinResolver += 1;
+  return null;
+}
+
+for (const f of ficheros) {
+  const sf = ts.createSourceFile(f, fs.readFileSync(f, 'utf8'), ts.ScriptTarget.Latest, true);
+  const todos = new Set(); const valor = new Set(); const llamadas = [];
+  (function visita(n) {
+    if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier)) {
+      const r = resolver(f, n.moduleSpecifier.text);
+      if (r) {
+        todos.add(r);
+        const c = n.importClause;
+        const soloTipo = c && (c.isTypeOnly || (!c.name && c.namedBindings && ts.isNamedImports(c.namedBindings)
+          && c.namedBindings.elements.length > 0 && c.namedBindings.elements.every((e) => e.isTypeOnly)));
+        if (!soloTipo) valor.add(r);
+      }
+    }
+    if (ts.isExportDeclaration(n) && n.moduleSpecifier && ts.isStringLiteral(n.moduleSpecifier)) {
+      const r = resolver(f, n.moduleSpecifier.text);
+      if (r) { todos.add(r); if (!n.isTypeOnly) valor.add(r); }
+    }
+    if (ts.isCallExpression(n)) {
+      // require('...') e import('...') dinámico
+      if ((n.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(n.expression) && n.expression.text === 'require'))
+        && n.arguments[0] && ts.isStringLiteral(n.arguments[0])) {
+        const r = resolver(f, n.arguments[0].text);
+        if (r) { todos.add(r); valor.add(r); }
+      }
+      if (ts.isPropertyAccessExpression(n.expression) && ESCRITURAS.has(n.expression.name.text)) {
+        llamadas.push(n.expression.getText(sf).replace(/\s+/g, ''));
+      }
+    }
+    ts.forEachChild(n, visita);
+  })(sf);
+  grafo.set(f, todos); grafoValor.set(f, valor); escribe.set(f, llamadas);
+}
+
+function cierre(g, raices) {
+  const vistos = new Set(raices); const cola = [...raices];
+  while (cola.length) { const x = cola.pop(); for (const y of (g.get(x) || [])) if (!vistos.has(y)) { vistos.add(y); cola.push(y); } }
+  return vistos;
+}
+function inverso(g) {
+  const inv = new Map();
+  for (const [a, bs] of g) for (const b of bs) { if (!inv.has(b)) inv.set(b, new Set()); inv.get(b).add(a); }
+  return inv;
+}
+const abs = (r) => path.join(RAIZ, r);
+const EVID = ficheros.filter((f) => rel(f).startsWith('src/modules/fiscal/evidencias/'));
+
+console.log(`POBLACION: ${ficheros.length} ficheros .ts en src/ · imports relativos sin resolver: ${sinResolver}`);
+console.log(`evidencias/: ${EVID.length} ficheros → ${EVID.map(rel).join(', ')}`);
+
+console.log('\n① QUIÉN LLEGA a evidencias/ (cierre inverso, imports de valor y de tipo):');
+const llegan = [...cierre(inverso(grafo), EVID)].filter((f) => !EVID.includes(f)).map(rel).sort();
+console.log(llegan.length ? llegan.map((x) => '   ' + x).join('\n') : '   (nadie)');
+
+console.log('\n② A QUÉ LLEGA evidencias.routes.ts EN RUNTIME (cierre directo, sin `import type`), y cuáles ESCRIBEN:');
+const desde = cierre(grafoValor, [abs('src/modules/fiscal/evidencias/evidencias.routes.ts')]);
+for (const f of [...desde].map(rel).sort()) {
+  const w = escribe.get(abs(f)) || [];
+  console.log(`   ${f}${w.length ? `   ← ${w.length} llamada(s) de escritura: ${[...new Set(w)].slice(0, 6).join(' · ')}` : ''}`);
+}
+
+console.log('\n②bis Lo mismo SIN pasar por core/ (el singleton de prisma y la config no son camino de emisión):');
+const sinCore = new Map([...grafoValor].map(([k, v]) => [k, new Set([...v].filter((x) => !rel(x).startsWith('src/core/')))]));
+const desde2 = cierre(sinCore, [abs('src/modules/fiscal/evidencias/paquete.repo.ts')]);
+let escritoras = 0;
+for (const f of [...desde2].map(rel).sort()) {
+  const w = escribe.get(abs(f)) || [];
+  if (w.length) escritoras += 1;
+  console.log(`   ${f}${w.length ? `   ← ESCRIBE: ${[...new Set(w)].slice(0, 6).join(' · ')}` : ''}`);
+}
+console.log(`   → ${desde2.size} módulos alcanzados desde paquete.repo.ts · ${escritoras} con llamadas de escritura`);
+
+console.log('\n③ EL CAMINO DE EMISIÓN (anclas de docs/legal/AUDITORIA_CAMINO_EMISION.md): ¿su cierre directo toca evidencias/ o el lector del libro?');
+const ANCLAS = ['src/lib/invoicing.ts', 'src/modules/fiscal/verifactu/registro.builder.ts',
+  'src/modules/invoicing/domain/invoiceNumber.service.ts', 'src/modules/invoicing/domain/selladoEstado.ts',
+  'src/modules/invoicing/domain/verifactu.service.ts', 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+  'src/modules/invoicing/app/routes/invoice.routes.ts', 'src/modules/invoicing/domain/facturaSuelta.ts'];
+const VIGILADOS = [...EVID.map(rel), 'src/modules/invoicing/domain/libroRegistro.repo.ts', 'src/modules/invoicing/domain/libroRegistro.ts',
+  'src/modules/fiscal/modelo303/modelo303.repo.ts'];
+for (const a of ANCLAS) {
+  if (!fs.existsSync(abs(a))) { console.log(`   ${a}: NO EXISTE (ancla caducada, no se juzga)`); continue; }
+  const c = cierre(grafo, [abs(a)]);
+  const toca = VIGILADOS.filter((v) => c.has(abs(v)));
+  console.log(`   ${a}: cierre de ${c.size} · escrituras propias ${(escribe.get(abs(a)) || []).length} · toca vigilados: ${toca.length ? toca.join(', ') : 'ninguno'}`);
+}
+
+console.log('\nCONTROL POSITIVO del detector de escrituras (debe ser > 0):');
+for (const a of ['src/modules/invoicing/domain/verifactu.service.ts', 'src/modules/invoicing/domain/invoiceNumber.service.ts']) {
+  console.log(`   ${a}: ${(escribe.get(abs(a)) || []).length}`);
+}
+console.log('CONTROL POSITIVO del cierre inverso (libroRegistro.repo.ts debe tener importadores; esperados 5 directos):');
+console.log('   ' + [...(inverso(grafo).get(abs('src/modules/invoicing/domain/libroRegistro.repo.ts')) || [])].map(rel).sort().join('\n   '));
+console.log('\nEscrituras dentro de evidencias/ (por AST):');
+for (const f of EVID) console.log(`   ${rel(f)}: ${(escribe.get(f) || []).join(' · ') || '0'}`);
+console.log('EXIT=0');

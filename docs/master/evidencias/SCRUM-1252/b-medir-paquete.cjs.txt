@@ -1,0 +1,54 @@
+// Mide el paquete de evidencias que arma el `dist/` de un árbol, con la muestra de SCRUM-1232/1252
+// y un cliente Prisma falso en memoria. Ninguna base. Uso: node medir-paquete.cjs <raíz> <etiqueta>
+const path = require('path');
+const crypto = require('crypto');
+const RAIZ = path.resolve(process.argv[2]);
+const ETIQUETA = process.argv[3] || '';
+const { leerPaqueteEvidencias } = require(path.join(RAIZ, 'dist/modules/fiscal/evidencias/paquete.repo.js'));
+
+const MIO = 7; const OTRO = 8;
+const DIA = new Date('2026-08-10T10:00:00.000Z');
+const PERIODO = { merchantId: MIO, año: 2026, trimestre: 3 };
+const fila = (id, merchantId, number, type, precio) => ({
+  id, merchantId, number, createdAt: DIA, paidAt: DIA, type,
+  total: Math.round(precio * 121) / 100, currency: 'EUR', status: 'paid',
+  customerId: null, quoteId: null, chargeId: null, albaranRefs: null,
+  lines: [{ concept: 'Trabajo', qty: 1, price: precio, tax: 0.21 }],
+});
+const FILAS = [
+  fila(1, MIO, 'F260001', 'F1', 100),
+  fila(2, MIO, 'J-2026-0001', 'JUST', 200),
+  fila(3, MIO, 'J-20260805-AB12', 'F1', 50),
+  fila(4, MIO, 'R260001', 'R1', -100),
+  fila(5, MIO, null, 'F1', 10),
+  fila(6, OTRO, 'J-2026-0099', 'JUST', 999),
+];
+const cliente = (filas) => ({
+  invoice: { findMany: async (a) => filas.filter((r) => r.merchantId === (a.where ?? {}).merchantId) },
+  quote: { findMany: async () => [] }, albaran: { findMany: async () => [] }, expense: { findMany: async () => [] },
+  job: { findMany: async () => [] }, customer: { findMany: async () => [] },
+  merchant: { findUnique: async () => ({ id: MIO, country: 'ES', name: 'Muestra', legalName: null, taxId: null }) },
+});
+const sha = (s) => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
+const sinBom = (c) => (c.charCodeAt(0) === 0xFEFF ? c.slice(1) : c);
+
+(async () => {
+  const muestras = [
+    ['CON justificante propio', FILAS],
+    ['SIN justificante propio', FILAS.filter((r) => r.number !== 'J-2026-0001')],
+  ];
+  console.log(`=== ${ETIQUETA} · dist de ${RAIZ}`);
+  for (const [nombre, filas] of muestras) {
+    const p = await leerPaqueteEvidencias(cliente(filas), PERIODO);
+    console.log(`--- muestra ${nombre} · ${p.ficheros.length} ficheros en el ZIP`);
+    for (const f of p.ficheros) console.log(`   ${sha(f.contenido)}  ${String(Buffer.byteLength(f.contenido, 'utf8')).padStart(5)} B  ${f.nombre}`);
+    const csv = (n) => sinBom(p.ficheros.find((f) => f.nombre === n).contenido).split('\r\n').slice(1).filter(Boolean).map((l) => l.split(';'));
+    console.log(`   libro  (numero): ${csv('libro-registro.csv').map((c) => c[0]).join(' ')}`);
+    console.log(`   indice (numero): ${csv('indice.csv').map((c) => c[0]).join(' ')}`);
+    console.log(`   303 fila TOTAL : ${csv('modelo-303.csv').find((c) => c[3] === 'TOTAL').join(';')}`);
+    console.log(`   resumen        : ${JSON.stringify(p.resumen)}`);
+    console.log(`   avisos (${p.avisos.length}):`);
+    for (const a of p.avisos) console.log(`      · ${a}`);
+  }
+  console.log('EXIT=0');
+})().catch((e) => { console.error(e); process.exit(1); });
