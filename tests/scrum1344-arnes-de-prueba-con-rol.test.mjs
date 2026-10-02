@@ -38,6 +38,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analizarFuente, clasificar, censoDeArneses, ficherosDeTests, CLASES, CONSTRUCTOR } from './_censo-arneses-de-router.mjs';
 import { reqDeSesion, ROLES_DE_SESION } from './_arnes-de-router.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const censo = await censoDeArneses(RAIZ);
@@ -297,14 +298,24 @@ const SIN_ROL = {
   'lo carga con un createRequire de otro nombre': "import { createRequire } from 'node:module';\nconst traer = createRequire(import.meta.url);\nconst mod = traer(path.join(RAIZ, 'dist/modules/zz-autoprueba/zz.routes.js'));\nawait handler({ merchantId: 7, query: {} }, res);\n",
 };
 
-for (const [caso, fuente] of Object.entries(SIN_ROL)) {
-  test(`SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · ${caso}`, () => {
-    const c = juzgar(fuente);
-    assert.equal(c.clase, CLASES.K, `tenía que salir «${CLASES.K}» y sale «${c.clase}»`);
-    assert.deepEqual(c.deAdmin, [ROUTER_FALSO]);
-    assert.ok(c.sitios.length >= 1 && c.sitios.every((s) => Number.isInteger(s.linea)), 'y dice en qué línea');
-  });
-}
+const FILAS = Object.entries(SIN_ROL);
+const caso2 = casosEscritos(FILAS, ([caso, fuente]) => `SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · ${caso}`, ([caso, fuente]) => {
+  const c = juzgar(fuente);
+  assert.equal(c.clase, CLASES.K, `tenía que salir «${CLASES.K}» y sale «${c.clase}»`);
+  assert.deepEqual(c.deAdmin, [ROUTER_FALSO]);
+  assert.ok(c.sitios.length >= 1 && c.sitios.every((s) => Number.isInteger(s.linea)), 'y dice en qué línea');
+});
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · saca el handler de route.stack y lo llama', caso2(0));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · llama a una función con (req, res)', caso2(1));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · llama a lo que devuelve un `handlerDe…()`', caso2(2));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · literal con claves de req que se le pasa a un envoltorio', caso2(3));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · variable `req`', caso2(4));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · middleware que asigna `req.merchantId`', caso2(5));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · `...resto` en un fichero que no nombra el rol', caso2(6));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · carga el router por un ayudante, con la ruta a secas', caso2(7));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · lo carga con DIST + ruta', caso2(8));
+test('SCRUM-1344 · ⑫ el analizador VE el arnés sin rol · lo carga con un createRequire de otro nombre', caso2(9));
+caso2.todos();
 
 test('SCRUM-1344 · ⑬ el mismo arnés con `reqDeSesion` deja de ser «sin rol» (el arreglo se reconoce)', () => {
   const antes = IMPORTA + "await capa.route.stack[1].handle({ merchantId: 7, params: {} }, res);\n";

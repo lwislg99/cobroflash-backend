@@ -27,6 +27,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { soloCodigo } from './_solo-codigo.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -99,15 +100,20 @@ test('SCRUM-1167 · CONTROL: el mismo botón SIN la clase irreversible se queda 
   assert.equal(g.px, 30, `🔴 el control no da 30 px (da ${g.px}, regla \`${g.sel}\`): el cálculo no está mirando lo que cree.`);
 });
 
-for (const irr of IRREVERSIBLES) {
-  test(`SCRUM-1167 · 🔴 ${irr.nombre}: la regla que GANA la cascada fija ≥ 44 px, y sin !important`, () => {
-    const g = minHeightQueGana(irr.clases);
-    assert.ok(g, `🔴 CIEGO: ninguna regla da min-height a ${irr.nombre}.`);
-    assert.ok(g.px >= 44,
-      `🔴 ${irr.nombre} lleva \`accion-irreversible-btn-44\` y gana \`${g.sel}\` con ${g.px} px: la clase pierde la cascada.`);
-    assert.equal(g.importante, false, `🔴 ${irr.nombre} gana con !important (\`${g.sel}\`): el ticket lo prohíbe.`);
-  });
-}
+const caso = casosEscritos(IRREVERSIBLES, (irr) => `SCRUM-1167 · 🔴 ${irr.nombre}: la regla que GANA la cascada fija ≥ 44 px, y sin !important`, (irr) => {
+  const g = minHeightQueGana(irr.clases);
+  assert.ok(g, `🔴 CIEGO: ninguna regla da min-height a ${irr.nombre}.`);
+  assert.ok(g.px >= 44,
+    `🔴 ${irr.nombre} lleva \`accion-irreversible-btn-44\` y gana \`${g.sel}\` con ${g.px} px: la clase pierde la cascada.`);
+  assert.equal(g.importante, false, `🔴 ${irr.nombre} gana con !important (\`${g.sel}\`): el ticket lo prohíbe.`);
+});
+test('SCRUM-1167 · 🔴 «Borrar» proveedor: la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(0));
+test('SCRUM-1167 · 🔴 «Borrar» plantilla: la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(1));
+test('SCRUM-1167 · 🔴 «Emitir» albarán (primaria): la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(2));
+test('SCRUM-1167 · 🔴 «Anular factura…»: la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(3));
+test('SCRUM-1167 · 🔴 «Anular factura» (modal): la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(4));
+test('SCRUM-1167 · 🔴 «Emitir factura rectificativa» (⋯): la regla que GANA la cascada fija ≥ 44 px, y sin !important', caso(5));
+caso.todos();
 
 // El patrón hermano de SCRUM-1111: un guard que se pone verde RETIRANDO la pantalla que vigila.
 test('SCRUM-1167 · el guard táctil sigue vigilando Proveedores y exige «Borrar» como irreversible', () => {
