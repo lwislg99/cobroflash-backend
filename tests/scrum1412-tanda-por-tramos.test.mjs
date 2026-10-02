@@ -136,7 +136,10 @@ test('SCRUM-1412 · ② 🔴 con la condición SIN cumplirse, el mismo caído es
   assert.equal(v.salida, 1);
   // En Linux no hay unidades: la condición no se cumple nunca, y en el CI el test cuenta siempre.
   assert.equal(CONDICIONES['temporal-en-otra-unidad']({ raiz: '/home/runner/work/repo', tmp: '/tmp' }), false);
+  // 🔴 Este control cayó en el CI (PR #2141): la condición leía las rutas con el `path` del
+  // sistema, y en Linux dos rutas de Windows comparten raíz. Tiene que dar lo mismo en los dos.
   assert.equal(CONDICIONES['temporal-en-otra-unidad'](OTRA_UNIDAD), true);
+  assert.equal(CONDICIONES['temporal-en-otra-unidad'](MISMA_UNIDAD), false);
   assert.equal(CONDICIONES['temporal-en-otra-unidad']({ raiz: 'd:\\a', tmp: 'D:\\b' }), false, 'la letra de la unidad no distingue mayúsculas');
 });
 
@@ -220,6 +223,9 @@ test('SCRUM-1412 · ④ 🔴 si falta un tramo, la pasada es CIEGA aunque lo vis
   assert.match(texto, /VEREDICTO DE LA PASADA: CIEGO/);
   assert.doesNotMatch(texto, /VERDE/);
   assert.equal(resumenDeTramos([], 4).veredicto, 'CIEGO', 'sin ningún tramo visto tampoco hay verde');
+  // Una pasada de CERO tramos no tiene ninguno que falte ni ninguno ciego, y tampoco es verde:
+  // el verde se afirma con tramos vistos, no se hereda de no haber encontrado un problema.
+  assert.equal(resumenDeTramos([], 0).veredicto, 'CIEGO', '🔴 cero tramos vistos de cero pedidos salía VERDE');
   // Un tramo de OTRA partición (2/5) no rellena el hueco de la de 4.
   assert.deepEqual(resumenDeTramos([tramo(1, 4), tramo(2, 5)], 4).faltan, [2, 3, 4]);
 });

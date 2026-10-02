@@ -62,3 +62,21 @@ de más a una pasada que ya tiene un rojo: nunca esconde uno.
 | 3. Una línea por lote al terminar | mismo test («③») |
 | 4. `--tramo i/n`; el resumen exige los n del mismo árbol, o CIEGO | mismo test (los seis «④») |
 | 5. Ninguna estimación que no salga de una medida | mismo test («⑤») |
+
+## El primer CI salió ROJO, y los tres rojos eran de esta rama
+
+Run 37003969458, punta `24760be2ac014a096fc1c276798d9e475b6b1957`: `tests 10129 · pass 10028 · fail 3`
+(leído del artefacto `tanda-tap`, 2026-10-02T12:29Z). Ninguno era la pérdida de casos del flag.
+
+| caído | causa | arreglo |
+|---|---|---|
+| los dos «②» de `scrum1412` | la condición `temporal-en-otra-unidad` leía las rutas con el `path` del SISTEMA: en Linux `D:\…` y `C:\…` son dos rutas relativas con la misma raíz, y la condición decía «misma unidad» | se leen siempre con `path.win32`; el caso comprueba además `MISMA_UNIDAD` |
+| `SCRUM-622 · EL CENSO` | `ciego ? 'CIEGO' : 'VERDE'`: el verde era el valor por defecto. Y tenía víctima: una pasada de CERO tramos de cero pedidos salía VERDE | el veredicto nace CIEGO y sólo pasa a verde con `n ≥ 1` y sin ciegos; caso añadido al «④ si falta un tramo» |
+
+Reproducido sin salir de esta máquina: la condición vieja evaluada con `path.posix` da `false` para
+`D:\arbol\repo` contra `C:\Users\…\Temp`; con `path.win32`, `true`. La nueva da `true` con los dos.
+
+Error propio de este puesto: un control que distingue entornos se probó sólo en el entorno donde la
+condición se cumple. La comprobación queda en el propio caso «② con la condición SIN cumplirse», que
+ya no depende de en qué sistema corra; y la tanda dirigida local no corría `scrum622` contra el
+fichero nuevo porque el censo lo recorre por directorio, no lo nombra.

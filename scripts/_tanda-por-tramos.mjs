@@ -42,9 +42,17 @@ export function sinNombrar(fail, caidos) {
  * de la declaración, no un ciego: se lanza.
  */
 export const CONDICIONES = {
-  /** El temporal y el árbol en unidades distintas: `path.relative` entre los dos no se alcanza. */
+  /**
+   * El temporal y el árbol en unidades distintas: `path.relative` entre los dos no se alcanza.
+   *
+   * Una «unidad» es cosa de Windows, así que la ruta se lee SIEMPRE como ruta de Windows
+   * (`path.win32`), corra donde corra. Con el `path` del sistema, en Linux `D:\x` y `C:\y` son
+   * dos rutas relativas con la misma raíz y la condición daba lo contrario de lo que decía
+   * medir: el caso de este fichero pasó aquí y cayó en el CI (PR #2141, run 37003969458).
+   * Dos rutas POSIX (`/home/…`, `/tmp`) tienen la misma raíz: ahí no se cumple nunca.
+   */
   'temporal-en-otra-unidad': ({ raiz, tmp }) => {
-    const unidad = (p) => path.parse(path.resolve(p)).root.toLowerCase();
+    const unidad = (p) => path.win32.parse(String(p)).root.toLowerCase();
     return unidad(raiz) !== unidad(tmp);
   },
 };
@@ -173,7 +181,13 @@ export function resumenDeTramos(registros, n) {
   };
   const rojo = total.tuyos.length > 0 || total.sinNombrar > 0;
   const ciego = faltan.length > 0 || total.ciegos.length > 0;
-  const veredicto = rojo ? 'ROJO' : ciego ? 'CIEGO' : 'VERDE';
+  // «Verde» se AFIRMA, no se hereda: nace CIEGO y sólo pasa a verde con los n tramos vistos (y
+  // n ≥ 1) y ninguno ciego. Escrito como «si no es rojo ni ciego, verde», una pasada de CERO
+  // tramos salía verde sin haber visto nada — la red que caza `scrum622`.
+  const completo = n >= 1 && !ciego;
+  let veredicto = 'CIEGO';
+  if (rojo) veredicto = 'ROJO';
+  else if (completo) veredicto = 'VERDE';
   return { n, vistos: [...vistos.keys()].sort((a, b) => a - b), faltan, total, veredicto };
 }
 
