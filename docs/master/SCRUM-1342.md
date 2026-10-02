@@ -196,6 +196,17 @@ cerrados (regla 27), y la lista del esquema tiene uno menos que la del código.
 - **Una lista hecha a ojo antes que el instrumento.** Conté los comentarios-lista con un `grep` y salieron
   34; el censo escrito después encontró 36 (los dos de más: líneas 1335 y 1448). La revisión contra el
   código ya estaba lanzada sobre los 34, y esos dos los miré aparte.
+- **Una atribución al fundador sin decir dónde consta, y la cazó el CI, no yo** (relevo J5b). El
+  comentario de `LIMITES_FIRMADOS` en el test remitía a «W3» a secas. El obligatorio del PR #2124
+  sobre `0dcda610` cayó en UN caso de 9.969: el trinquete de
+  `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`, 29 contra 28. Reproducido en local antes
+  de tocar nada (13 tests · 12 pasan · 1 cae). El trinquete NO se ha movido: el comentario cita ahora
+  `docs/YAQU_MASTER.md`, Parte W, y el guard lo juzga `rastreable`. Y al leer la Parte W para citarla,
+  «W3» resultó corto: W3 da los usuarios (1 Pro, 5 Equipo), el fair use (300 y 1.000) está en W2,
+  Founding sale de W1, y **`trial` no tiene número propio en la Parte W** — el suyo es el que
+  `entitlements.ts` ya daba («prueba = como Pro»). El comentario lo dice así. Los cuatro pares de
+  números del test no cambian. `scrum921c` no entró en la muestra de guards que se corrió antes de
+  empujar: es el guard de la casa para esto y ya está en el obligatorio.
 
 ## Ⓙ La tanda
 
@@ -216,5 +227,7 @@ Lo que sí corrió, cada cosa con su población y sin procesos muertos:
 | los de registros y anclas: `scrum1294`, `scrum267`, `scrum525d`, `scrum859`, `scrum1306` y los dos `scrum514` | 70 tests · 70 pasan |
 | `npm run guards:entrada` | 12 guards · 132 tests · verde en 10,5 s |
 | `npm run build` | salida 0, antes de todo lo anterior |
+| tras el arreglo del comentario (J5b), cada fichero suelto: `scrum921c` | 13 tests · 13 pasan (antes: 12 pasan · 1 cae) |
+| ídem: el de este ticket, `scrum237`, `scrum976`, `scrum921`, los dos `scrum387`, `scrum534d`, `scrum710b` | 80 tests · 80 pasan · 0 saltan |
 
 En el CI hay que mirar por nombre los 13 casos «SCRUM-1342 · …», con el guion.

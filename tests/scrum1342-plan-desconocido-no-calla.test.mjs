@@ -99,7 +99,10 @@ function invitar({ plan, activos, hayMerchant = true }) {
 
 const LIMITES_DE_TRIAL = { maxUsers: 1, waFairUseMonthly: 300 };
 
-// Lo que el fundador firmó en W3. NO se deriva del código: si se derivara, no fijaría nada.
+// Lo que el fundador firmó en `docs/YAQU_MASTER.md`, Parte W (SCRUM-1342): W3, 1 usuario Pro y 5
+// Equipo; W2, fair use 300 y 1.000; W1, Founding es Pro con otro precio. `trial` NO tiene número
+// propio en la Parte W: se fija el que `entitlements.ts` ya daba («prueba = como Pro»).
+// NO se deriva del código: si se derivara, no fijaría nada.
 const LIMITES_FIRMADOS = {
   trial: { maxUsers: 1, waFairUseMonthly: 300 },
   pro: { maxUsers: 1, waFairUseMonthly: 300 },
