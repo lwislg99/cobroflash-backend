@@ -1,0 +1,121 @@
+SONDA SCRUM-1388 · POBLACIÓN: 8 casos × 2 anchos (390, 1280 px) · árbol (ruta local omitida)
+vista: sha256 100032a4de1c82e3415d71b8bf658e9465c05407aeffd53fac5fa2874d1f3dce
+
+── CASO 403 · REAL · la puerta `requireRole(admin)` ante un rol técnico
+  @390 px · el servidor contestó: 403 {"error":"forbidden","required_role":"admin"}
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (63 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «API 403: forbidden»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «API 403: forbidden»
+  @1280 px · el servidor contestó: 403 {"error":"forbidden","required_role":"admin"}
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (42 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «API 403: forbidden»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «API 403: forbidden»
+
+── CASO sin-red · REAL · el servidor corta la conexión sin contestar
+  @390 px · el servidor contestó: — (conexión cortada)
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (63 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «Failed to fetch»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «Failed to fetch»
+  @1280 px · el servidor contestó: — (conexión cortada)
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (42 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «Failed to fetch»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «Failed to fetch»
+
+── CASO 500 · FABRICADO · 500 {"error":"internal_error"}
+  @390 px · el servidor contestó: 500 {"error":"internal_error"}
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (63 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «API 500: internal_error»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «API 500: internal_error»
+  @1280 px · el servidor contestó: 500 {"error":"internal_error"}
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (42 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «API 500: internal_error»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «API 500: internal_error»
+
+── CASO sin-miradas · FABRICADO · 200 {"filas":[]} sin `miradas`
+  @390 px · el servidor contestó: 200 {"filas":[]}
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (63 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «respuesta_incompleta»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «respuesta_incompleta»
+  @1280 px · el servidor contestó: 200 {"filas":[]}
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  div.alert.error.fr-alert (42 px) «[PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.»
+      SE VE  p.fr-alert-detail (19 px) «respuesta_incompleta»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: «respuesta_incompleta»
+
+── CASO vacio · REAL · admin, el periodo no tiene ningún gasto
+  @390 px · el servidor contestó: 200 {"filas":[],"miradas":0,"avisos":["Formato provisional: no contrastado contra especificación oficial."],"desde":"2026-09-30T23:00:00.000Z","hasta":"2026-12-31T2
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (63 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  p.fr-empty (43 px) «[PENDIENTE microcopy oficial] Todavía no tienes facturas recibidas en este periodo.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: ninguna
+  @1280 px · el servidor contestó: 200 {"filas":[],"miradas":0,"avisos":["Formato provisional: no contrastado contra especificación oficial."],"desde":"2026-09-30T23:00:00.000Z","hasta":"2026-12-31T2
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (42 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  p.fr-empty (22 px) «[PENDIENTE microcopy oficial] Todavía no tienes facturas recibidas en este periodo.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 1 · tripa a la vista: ninguna
+
+── CASO descuadre-3 · REAL · admin, 3 gastos sin datos de IVA: mirados 3, filas 0
+  @390 px · el servidor contestó: 200 {"filas":[],"miradas":3,"avisos":["Formato provisional: no contrastado contra especificación oficial.","3 gastos sin datos de IVA no figuran en este libro. Impo
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (63 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  div.alert.fr-alert-top.warning (63 px) «3 gastos sin datos de IVA no figuran en este libro. Importe total: 363.»
+      SE VE  div.alert.fr-alert-top.warning (83 px) «[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 3 gastos y no ha salido ningún asiento. No lo tomes como que no compraste.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 3 · tripa a la vista: ninguna
+  @1280 px · el servidor contestó: 200 {"filas":[],"miradas":3,"avisos":["Formato provisional: no contrastado contra especificación oficial.","3 gastos sin datos de IVA no figuran en este libro. Impo
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (42 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  div.alert.fr-alert-top.warning (42 px) «3 gastos sin datos de IVA no figuran en este libro. Importe total: 363.»
+      SE VE  div.alert.fr-alert-top.warning (42 px) «[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 3 gastos y no ha salido ningún asiento. No lo tomes como que no compraste.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 3 · tripa a la vista: ninguna
+
+── CASO descuadre-1 · REAL · admin, 1 gasto sin datos de IVA: mirados 1, filas 0
+  @390 px · el servidor contestó: 200 {"filas":[],"miradas":1,"avisos":["Formato provisional: no contrastado contra especificación oficial.","1 gasto sin datos de IVA no figura en este libro. Import
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (63 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  div.alert.fr-alert-top.warning (63 px) «1 gasto sin datos de IVA no figura en este libro. Importe total: 121.»
+      SE VE  div.alert.fr-alert-top.warning (83 px) «[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 1 gasto y no ha salido ningún asiento. No lo tomes como que no compraste.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 3 · tripa a la vista: ninguna
+  @1280 px · el servidor contestó: 200 {"filas":[],"miradas":1,"avisos":["Formato provisional: no contrastado contra especificación oficial.","1 gasto sin datos de IVA no figura en este libro. Import
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «0 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (42 px) «Formato provisional: no contrastado contra especificación oficial.»
+      SE VE  div.alert.fr-alert-top.warning (42 px) «1 gasto sin datos de IVA no figura en este libro. Importe total: 121.»
+      SE VE  div.alert.fr-alert-top.warning (42 px) «[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 1 gasto y no ha salido ningún asiento. No lo tomes como que no compraste.»
+      → tablas 0 · filas 0 · marcadores a la vista 2 · carteles visibles 3 · tripa a la vista: ninguna
+
+── CASO con-datos · REAL · admin, 2 gastos clasificados: SUELO, la tabla se pinta
+  @390 px · el servidor contestó: 200 {"filas":[{"numeroProveedor":"A-2026/441","fechaExpedicion":"2026-08-11","fechaApunte":"2026-08-11","nifProveedor":"B12345678","nombreProveedor":"Suministros Pe
+      SE VE  h2.fr-title (56 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «2 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (63 px) «Formato provisional: no contrastado contra especificación oficial.»
+      → tablas 1 · filas 2 · marcadores a la vista 1 · carteles visibles 1 · tripa a la vista: ninguna
+  @1280 px · el servidor contestó: 200 {"filas":[{"numeroProveedor":"A-2026/441","fechaExpedicion":"2026-08-11","fechaApunte":"2026-08-11","nifProveedor":"B12345678","nombreProveedor":"Suministros Pe
+      SE VE  h2.fr-title (28 px) «[PENDIENTE microcopy oficial] Facturas recibidas»
+      SE VE  p.fr-subtitle (20 px) «2 facturas recibidas»
+      SE VE  div.alert.fr-alert-top.info (42 px) «Formato provisional: no contrastado contra especificación oficial.»
+      → tablas 1 · filas 2 · marcadores a la vista 1 · carteles visibles 1 · tripa a la vista: ninguna
+
+── RESUMEN (a 390 px) · 16 medidas de 16
+  403          marcadores 2 · tripa 1 · carteles 1 · tablas 0
+  sin-red      marcadores 2 · tripa 1 · carteles 1 · tablas 0
+  500          marcadores 2 · tripa 1 · carteles 1 · tablas 0
+  sin-miradas  marcadores 2 · tripa 1 · carteles 1 · tablas 0
+  vacio        marcadores 2 · tripa 0 · carteles 1 · tablas 0
+  descuadre-3  marcadores 2 · tripa 0 · carteles 3 · tablas 0
+  descuadre-1  marcadores 2 · tripa 0 · carteles 3 · tablas 0
+  con-datos    marcadores 1 · tripa 0 · carteles 1 · tablas 1
+  ¿se lee distinto?  vacio / descuadre-3: DISTINTOS · vacio / 403: DISTINTOS · descuadre-3 / 403: DISTINTOS
+  marcadores a la vista en TODOS los casos (sale siempre, también con cero): 15
+EXIT=0

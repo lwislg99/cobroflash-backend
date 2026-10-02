@@ -1,0 +1,7 @@
+ancla «"settingsView.js": 1»: aparece 1 vez/veces en scripts/_marcadores-pendientes-declarados.json
+BASE     casos 18 · rojos 0 · salida 0
+numstat: 1	0	scripts/_marcadores-pendientes-declarados.json
+MUTADA   casos 18 · rojos 1 · salida 1 · VIVA: cae «CONTROL POSITIVO: el fichero REAL se lee, y trae las tres secciones con algo»
+   ✖ SCRUM-1293 · CONTROL POSITIVO: el fichero REAL se lee, y trae las tres secciones con algo
+árbol al terminar: limpio
+EXIT=0
