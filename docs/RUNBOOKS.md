@@ -851,3 +851,12 @@ Antes: `node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com` y `n
 | `… mismo-id --crear-hasta N` | Hasta N partes en borrador (tope 50 por orden), hasta que uno coincida con el id de un albarán. | No borra: cada parte creado se queda. Si el contador de partes ya pasó del mayor albarán, para al primero y lo dice. |
 
 Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) · 2 CIEGO: sin sesión · 3 rechazado.
+
+**Los dos casos de albarán (SCRUM-1367b)** viven en `scripts/qa/sembrar-albaranes.mjs`, un fichero aparte con SU permiso: tampoco se ha ejecutado nunca contra producción (`tests/scrum1367b-sembrar-albaranes.test.mjs`). Cada orden usa un albarán PROPIO, distinto del de base, con dos líneas de prueba (2,5 m y 12345 ud).
+
+| Orden | Qué deja | Qué NO hace |
+|---|---|---|
+| `node scripts/qa/sembrar-albaranes.mjs diez-fotos` | Un albarán emitido con exactamente 10 fotos (cuadrados de colores), contadas al releer. Emitirlo gasta un número ALB. | No lo firma (un firmado no admite fotos). Si ya hay fotos de otra mano, sube sólo las que caben. |
+| `node scripts/qa/sembrar-albaranes.mjs firmado` | Otro albarán, emitido y **firmado en el sitio** con una firma de prueba y el firmante `FIRMA DE PRUEBA QA - NO ES UN CLIENTE REAL`. | 🔴 **No se deshace:** queda congelado. No envía nada. **No firma con el perfil fiscal vacío** (razón social y NIF entran en el hash): antes va `sembrar-casos.mjs perfil-fiscal`. |
+
+Ninguna de las dos factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.
