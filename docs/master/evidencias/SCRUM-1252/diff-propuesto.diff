@@ -1,0 +1,11 @@
+--- a/src/modules/fiscal/evidencias/paquete.repo.ts
++++ b/src/modules/fiscal/evidencias/paquete.repo.ts
+@@ -39,7 +39,7 @@ export async function leerPaqueteEvidencias(
+   // merchant no se puede leer, no se arma ningun paquete de evidencias con un devengo adivinado.
+   const criterio = await criterioDelMerchantParaElLibro(db as never, merchantId);
+   const [libro, modelo303, filasAlbaran, emisor] = await Promise.all([
+-    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio }),
++    leerLibroRegistro(db, { merchantId, desde, hasta, ...criterio, soloFacturas: true }),
+     leerModelo303(db, { merchantId, año: params.año, trimestre: params.trimestre }),
+     db.albaran.findMany({
+       // Firmados y del periodo: son los que tienen sello que comprobar.
