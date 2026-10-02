@@ -41,6 +41,11 @@
     // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
     // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
     pistaFirmaTecnico: 'Firma con el dedo dentro del recuadro.',
+    // SCRUM-1426 · la pregunta antes de firmar ENCIMA de una firma guardada en este móvil. Dos, y
+    // no una: la cola guarda la del cliente y la del técnico por separado, y hay que decir cuál se
+    // sustituye. Ficha: `docs/microcopy/2026-10-02-SCRUM-1426-parte-firma-guardada.md`.
+    yaHayFirmaGuardadaCliente: 'Ya hay una firma del cliente de este parte guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.', // APROBADO · SCRUM-1426 comentario 18232
+    yaHayFirmaGuardadaTecnico: 'Ya hay una firma del técnico de este parte guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.', // APROBADO · SCRUM-1426 comentario 18232
     // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -1750,21 +1755,87 @@
       });
       dejarDeEscucharLaColaDelParte = dejar;
     }
-    var alCerrarElPad = async function () {
-      if (!subioConElPadAbierto) return;
-      subioConElPadAbierto = false;
-      if (sigueEnPantalla()) await ponerseAlDia();
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-1426 · LO QUE ESTE MÓVIL SABE Y EL SERVIDOR TODAVÍA NO.
+    //
+    // Con una firma de este parte en la cola, la ficha se veía igual que si nadie hubiera
+    // firmado: decía «falta» y dejaba firmar encima sin avisar. Es lo que SCRUM-1353 arregló en
+    // el albarán; aquí hay DOS firmas, y la cola guarda cada una con su clave.
+    //
+    // 🔴 Tres respuestas y no dos: `null` = no se pudo leer el almacén, y entonces NO se afirma
+    // nada — ni caja, ni pregunta, y «falta» se sigue diciendo.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var firmasGuardadasAqui = async function () {
+      try {
+        if (typeof window.leerFirmasPendientes !== 'function') return null;
+        var cola = await window.leerFirmasPendientes();
+        if (!cola || cola.estado !== window.GUARDADO) return null;
+        var enCola = function (tipo) {
+          var clave = 'firma:' + tipo + ':' + String(parte.id);
+          return (cola.firmas || []).some(function (f) { return f && f.claveIdempotencia === clave; });
+        };
+        return { cliente: enCola(FIRMAS.cliente.tipo), tecnico: enCola(FIRMAS.tecnico.tipo) };
+      } catch (_e) {
+        return null;
+      }
     };
+    // La caja es la del albarán, tal cual (`estadoFirma.js`), y va DENTRO de la caja de su firma:
+    // el literal no dice de quién es, lo dice el sitio (c.18232). Donde hay firma guardada no se
+    // dice «falta». Se puede llamar más de una vez: no repite la caja.
+    var pintarLoGuardadoAqui = async function () {
+      var guardadas = await firmasGuardadasAqui();
+      if (!guardadas || !sigueEnPantalla() || typeof window.pintarEstadoDeFirma !== 'function') return;
+      [['cliente', parte.firmoElCliente], ['tecnico', parte.firmoElTecnico]].forEach(function (par) {
+        if (par[1] || !guardadas[par[0]]) return;
+        var caja = seccionDeFirmas.querySelector('[data-parte-caja-firma="' + par[0] + '"]');
+        if (!caja || caja.querySelector('[data-parte-firma-guardada]')) return;
+        var falta = caja.querySelector('[data-parte-falta-firma]');
+        if (falta && falta.remove) falta.remove();
+        var guardada = document.createElement('div');
+        guardada.setAttribute('data-parte-firma-guardada', par[0]);
+        guardada.style.marginTop = '8px';
+        guardada.innerHTML = window.pintarEstadoDeFirma(window.FIRMA_SOLO_EN_ESTE_MOVIL);
+        caja.appendChild(guardada);
+      });
+    };
+    await pintarLoGuardadoAqui();
+
+    var alCerrarElPad = async function () {
+      if (subioConElPadAbierto) {
+        subioConElPadAbierto = false;
+        if (sigueEnPantalla()) await ponerseAlDia();
+        return;
+      }
+      // SCRUM-1426 · se firmó sin red y se cierra el pad: la firma está en la cola y esta ficha
+      // se pintó cuando aún no había nada. No se pide nada al servidor: sólo se mira el móvil.
+      await pintarLoGuardadoAqui();
+    };
+
+    var PREGUNTA_ANTES_DE_REEMPLAZAR = { cliente: TEXTOS.yaHayFirmaGuardadaCliente, tecnico: TEXTOS.yaHayFirmaGuardadaTecnico };
 
     [['[data-parte-firmar]', 'cliente'], ['[data-parte-firmar-tecnico]', 'tecnico']].forEach(function (par) {
       var boton = contenedor.querySelector && contenedor.querySelector(par[0]);
       if (!boton || !boton.addEventListener) return;
       boton.addEventListener('click', function () {
-        firmarParte(parte, Object.assign({}, o, {
-          alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
-          avisar: avisar,
-          alCerrarElPad: alCerrarElPad,
-        }), par[1]);
+        var firmar = function () {
+          firmarParte(parte, Object.assign({}, o, {
+            alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
+            avisar: avisar,
+            alCerrarElPad: alCerrarElPad,
+          }), par[1]);
+        };
+        // Un parte que no va a abrir el pad (vacío, o sin líneas legibles) no tiene nada que
+        // reemplazar: va por el camino de siempre, EN EL MISMO CLIC. Su aviso sale junto al botón
+        // sin esperar a la cola (SCRUM-890).
+        var lineas = lineasOCeguera(parte);
+        if (!lineas || lineas.length === 0) { firmar(); return; }
+        // Firmar encima de una firma guardada la REEMPLAZA (la clave de la cola es por parte y
+        // tipo). Se puede, pero no en silencio. Se pregunta EN EL CLIC y no al pintar: quien firma
+        // sin red y cierra el pad sigue en esta pantalla, pintada cuando no había nada.
+        firmasGuardadasAqui().then(function (guardadas) {
+          if (guardadas && guardadas[par[1]] && !window.confirm(PREGUNTA_ANTES_DE_REEMPLAZAR[par[1]])) return;
+          firmar();
+        });
       });
     });
 
