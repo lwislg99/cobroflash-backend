@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getHomeMetrics, getInicioOperario, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
+import { getHomeMetrics, getInicioOperario, getFunnelMetrics, getServiceMetrics, getTeamMetrics, getActividadEquipo, getPlatformFunnel, getOperariosMetrics } from '../../domain/metrics.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
@@ -90,6 +90,18 @@ router.get('/team', requireRole('admin'), async (req, res) => {
     return res.json(metrics);
   } catch (err) {
     console.error('[GET /admin/metrics/team]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// SCRUM-1341: la actividad del equipo que ve el TÉCNICO, sin importes. Ruta propia y no un
+// recorte por rol de `/team`: `/team` sigue exigiendo admin y ésta no consulta ni una factura.
+// Declarada en TECNICO_ALLOWED con su motivo.
+router.get('/actividad-equipo', async (req, res) => {
+  try {
+    return res.json(await getActividadEquipo(req.merchantId));
+  } catch (err) {
+    console.error('[GET /admin/metrics/actividad-equipo]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

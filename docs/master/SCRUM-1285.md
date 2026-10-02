@@ -201,3 +201,84 @@ tiene la doble transición a `paid` de `psp:119`), y la carrera de sellado de `e
 
 Nada de `src/`, `public/` ni del esquema. Carriles de lo encontrado: dinero y cobros → S1/J (según `dos-equipos.md`);
 lo fiscal (`invoiceAdmin.ts`, `invoice.routes.ts`, `invoicing.ts`) → J1, **solo se ha leído**.
+
+# APÉNDICE · La pantalla manda la versión y el aviso del 409 sólo sale cuando el plan ha cambiado (S2)
+
+**Medido contra:** `origin/main` = `64dc3211d039cedece0cccf9fa3fcaf7d491319d` · 2026-10-01T13:03:46Z
+A9: comprobación → `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`
+
+Carril S2 (`public/dashboard/js/quotesDetailView.js`) · rama `scrum-1285-plan-de-cobro-version-pantalla` · sesión `s2-1octb`. Entrada propia (encabezado de primer nivel) para que su declaración de skill no se atribuya a los PR de arriba.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Un párrafo nuevo en la sección «Plan de cobro», con una clase que ya existía (`cobro-aviso`): sin estilos nuevos ni en línea, sin componente nuevo. Texto: el aprobado, registrado en `docs/microcopy/2026-10-01-SCRUM-1285-plan-de-cobro-cambiado.md`.
+
+(La A9: iba a pintar el texto a cada 409, que es lo que decía el encargo — «son ~3 líneas». Antes de pintarlo comprobé lo que afirma, y no se sostenía. La comprobación es el test de la nota, abajo.)
+
+## Lo que se encargó y lo que se midió
+
+El encargo: mandar `version: quote.updatedAt`, y ante el 409 `version_superada` recargar y pintar «Este plan de cobro ha cambiado desde que lo abriste…».
+
+La versión que compara el servidor es el `updatedAt` **del presupuesto entero**. En esta misma ficha, las notas internas se guardan solas al teclear y no repintan la ficha; las etiquetas, igual.
+
+Medido en yaqu.app, cuenta de pruebas, presupuesto #203: `updatedAt` antes `2026-10-01T11:00:24.453Z` → guardar la nota interna, 200 → después `2026-10-01T12:54:38.985Z`. La nota se restauró.
+
+Es decir: apuntar una nota y después guardar el plan da 409, y el texto diría que el plan ha cambiado cuando lo único que cambió fue la nota. Y se descartaría el cambio de la persona.
+
+## Lo construido
+
+1. «Guardar plan» manda la versión que leyó la ficha.
+2. Ante 409 `version_superada` se relee el presupuesto y se compara lo que la persona ve del plan (tramos, reparto y cuántos tramos están facturados) con lo vigente:
+   - **es otro** → no se reenvía nada, se repinta la ficha con el plan vigente y sale el aviso aprobado, una vez, dentro de la sección;
+   - **es el mismo** → se reenvía su cambio con la versión nueva, sin decir nada. Si entre la relectura y el reenvío alguien cambia el plan, el servidor vuelve a rechazarlo: la protección no baja.
+3. Si el reenvío también choca, sale el respaldo que la pantalla ya tenía («No se pudo guardar el plan») y no el identificador interno.
+4. Todo ocurre con la sección congelada (`congelarMientrasGuarda`): sigue habiendo un solo guardado en vuelo.
+
+Retirada `billing-plan::version` de las declaradas de `scripts/_sin-consumir-declarados.json` (pasa a `retiradas`).
+
+## Verificado, ejecutando
+
+`tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`, vista real en el banco y red retenida:
+
+- **Con la vista de `main`:** 1 de 7 (pasa sólo el control del 409 que no es de versión).
+- **Con el cambio:** 7 de 7.
+
+## Lo que NO está medido o queda abierto
+
+- **En pantalla contra yaqu.app:** la cuenta de pruebas no tiene ningún presupuesto con plan de cobro propio (#203 es un borrador sin plan). Es el mismo hueco de datos de prueba que SCRUM-1367 (no hay Trabajo con presupuesto aceptado): dos verificaciones distintas paradas por lo mismo.
+- **La tanda completa en esta máquina no terminó:** el sistema la paró por falta de memoria. Corrida una tanda dirigida de 22 ficheros (plan de cobro, trinquetes 1185 y 713, censos de copy, skill UI, A9): 195 de 195.
+- **Un tramo facturado de más cuenta como «el plan ha cambiado».** Los tramos son los mismos, pero uno ha pasado a fijo. El criterio: lo que la persona está a punto de guardar ya no es válido — su pantalla describe un estado que ya se superó, y guardarlo sería escribir sobre una factura emitida. Y entre molestarla con el aviso y dejarle pisar un plan con un tramo ya facturado, lo segundo es el daño.
+- **El mismo defecto de fondo sigue en el servidor:** cualquier escritura del presupuesto mueve la versión del plan. Aquí se absorbe en la pantalla; una versión propia del plan sería cambio de esquema (S1, con su ALTER).
+
+# APÉNDICE · El alcance real: quién más mueve la versión del plan (S2)
+
+**Medido contra:** `origin/main` = `3017ae0c8008e93ed3ff230ebf64bbebd44b6e2a` · 2026-10-01T13:58:44Z
+A9: sin fallo que generalice — apéndice de alcance, sin código; la cifra es un recuento propio y dice cómo se obtuvo
+
+Sesión `s2-1octc`. Sólo documentación: no toca `public/` ni `src/`.
+
+## Lo medido
+
+El apéndice de arriba encontró UN escritor ajeno que mueve el `updatedAt` del presupuesto: las notas internas. No es el único.
+
+`node scripts/_censo-escrituras-sin-version.mjs --todo`, en ese commit, lista **21 sitios de `src/` que escriben `quote`** (`quote.update` o `quote.updateMany`). Uno es el propio `PATCH /:id/billing-plan` (`quotesAdmin.routes.ts:491`, el único con `updatedAt` en el `where`). **Quedan 20 sitios ajenos.** Contados a mano sobre la salida del censo; leídos, NO vistos en pantalla. Es una lista de candidatos, no de defectos reproducidos: no se ha comprobado sitio a sitio cuáles pueden ocurrir con la ficha abierta (el de `POST /create`, por ejemplo, escribe al crear).
+
+Los que importan para quien tiene la ficha abierta:
+
+| Sitio | Qué es | Quién lo dispara |
+| --- | --- | --- |
+| `quotesAdmin.routes.ts:843` · `PUT /:id/notes` | la nota interna | la persona, tecleando (el caso ya medido en yaqu.app) |
+| `quotesAdmin.routes.ts:724` · `GET /:id/pdf` | abrir el PDF | la persona, sin editar nada |
+| `quotes/domain/expire.service.ts:17` | caducar presupuestos | **nadie: un proceso automático** |
+| `quotes/domain/reminder.service.ts:83` | marcar el recordatorio | **nadie: un proceso automático** |
+
+Los otros 16: `sendQuote.service.ts:113`, `quotesAdmin.routes.ts:759` y `:804`, `quoteAdmin.ts:159`, `:377` y `:424`, `job.service.ts:78` y `:145`, `quoteToken.service.ts:21`, `quotes.routes.ts:263`, `:468`, `:512` y `:722`, `whatsappIncoming.routes.ts:482` y `:551`, `fusionClientes.ts:177`.
+
+## Lo que significa
+
+Con el encargo original (pintar el aviso a cada 409), mirar el PDF y luego guardar el plan habría dicho «Este plan de cobro ha cambiado desde que lo abriste». Y con los dos automáticos, se lo habría dicho a alguien que no ha hecho nada y a quien nadie le ha cambiado nada.
+
+Lo construido arriba —releer y comparar lo que la persona ve del plan antes de avisar— no depende de QUIÉN movió la versión: si el plan es el mismo, reenvía en silencio. Por eso cubre a los 20 y no sólo a la nota. **Lo que está probado y lo que no:** `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs` prueba el mecanismo con el caso genérico («la versión se movió y el plan es igual»); no ejercita cada uno de los 20 sitios.
+
+## Lo que NO está aquí
+
+- La cifra de «escritores distintos» de S3 (`--escritores`, SCRUM-1381): al escribir esto vive en un PR abierto y no se puede correr desde `main`. Puede no coincidir con 20 porque cuenta otra cosa (escritores, no sitios). No se copia; cuando entre, la reconcilia quien la corra.
+- El arreglo de fondo sigue siendo el mismo y sigue siendo esquema: una versión propia del plan (S1, con su ALTER).

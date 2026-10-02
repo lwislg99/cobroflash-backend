@@ -87,7 +87,10 @@ const CENSO_DE_SITIOS = {
   // vacío y aviso de descuadre salen de una sola constante `MARCADOR` (vía `rotulo()`), así que
   // aprobar el copy los apaga de golpe. El rótulo de la BARRA no cuenta aquí: SCRUM-420 §④ le
   // prohíbe llevar marcador, así que sale como texto plano desde que nace.
-  'facturasRecibidasView.js': 1,
+  // 🔴 SCRUM-1388 (2-oct-2026) · `facturasRecibidasView.js` SALE (tenía 1): el fundador firmó el
+  // 1-oct-2026 título, error de carga, vacío y descuadre, y la constante `MARCADOR` se retiró entera
+  // con su `rotulo()`. Consta en `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`.
+  // Entrada BORRADA, no puesta a 0.
   // 🔴 SCRUM-1124 (25-sep-2026) · `invoicesView.js` SALE (tenía 1): el orquestador firmó
   // «Estado no reconocido: ${codigo}» por delegación del fundador (comentario 17002). Consta en
   // `docs/microcopy/2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md`. Entrada BORRADA.
@@ -171,7 +174,8 @@ const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0
 const PINTAN_Y_NO_CUENTAN = {
   // 🔴 SCRUM-1041 · 22-sep-2026 · `exportView.js` SALE: ya no pinta marcador (ver
   // `CENSO_DE_SITIOS` arriba). Entrada BORRADA, no puesta a 0 (SCRUM-424 / SCRUM-405).
-  'facturasRecibidasView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera (mismo criterio que libroRegistroView.js), y `scrum1040-pantalla-facturas-recibidas` la compara ranura a ranura',
+  // 🔴 SCRUM-1388 · 2-oct-2026 · `facturasRecibidasView.js` SALE: ya no pinta marcador (ver
+  // `CENSO_DE_SITIOS` arriba). Entrada BORRADA.
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
   'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',

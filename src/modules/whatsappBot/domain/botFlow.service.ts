@@ -22,6 +22,7 @@ import { notifyMerchantAlert } from '../../../integrations/whatsappNotifications
 import { recordCustomerEvent } from '../../system/customerEvents.service';
 import { saveQuoteRequestPhoto } from '../../quoteRequests/domain/attachment.service';
 import { isFlagEnabled } from '../../../core/flags';
+import { sinTildes } from '../../../core/texto/sinTildes';
 import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 
@@ -78,28 +79,31 @@ function merchantDisplayName(m: { legalName?: string | null; name?: string | nul
 }
 
 // ── A18: validación mínima de la captación (sin IA, solo descartar basura) ──
+// SCRUM-1325: las expresiones de este fichero que miran lo que ESCRIBE el cliente van en ASCII y se
+// aplican a `sinTildes(texto)`, nunca al texto crudo (el porqué, en `core/texto/sinTildes.ts`).
 // Saludos/cortesías sueltas que NO son ni una descripción ni una zona.
-const GREETING_ONLY_RE = /^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|men[uú]|opciones|hey|hi|hello|holi|gracias|ok|okay|okey|vale|s[ií]|no|👋)[\s!.,👋🙂🙋‍♂️🙋‍♀️]*$/iu;
+const GREETING_ONLY_RE = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|menu|opciones|hey|hi|hello|holi|gracias|ok|okay|okey|vale|si|no|👋)[\s!.,👋🙂🙋‍♂️🙋‍♀️]*$/iu;
 // Petición explícita de abandonar el flujo.
-const CANCEL_RE = /^(cancelar|cancela|salir|s[aá]lir|d[eé]jalo|dejarlo|olv[ií]dalo|olvida|nada|volver|atr[aá]s|men[uú])[\s!.]*$/iu;
+const CANCEL_RE = /^(cancelar|cancela|salir|dejalo|dejarlo|olvidalo|olvida|nada|volver|atras|menu)[\s!.]*$/iu;
 // Respuestas de zona "sin zona concreta" que SÍ son válidas.
-const NO_ZONE_RE = /^(no lo s[eé]|no s[eé]|a domicilio|domicilio|cualquiera|donde sea|indiferente)\b/i;
+// ⚠️ REDUNDANTE, medido en SCRUM-1325: todo lo que casa aquí pasa también por la otra rama de
+// `isValidZone` (no es un saludo y tiene 2 letras o más). No decide nada; se conserva como estaba.
+const NO_ZONE_RE = /^(no lo se|no se|a domicilio|domicilio|cualquiera|donde sea|indiferente)\b/i;
 
 /** Nº de caracteres "útiles" (letras/números Unicode); ignora espacios/emojis/signos. */
 function usefulLen(text: string): number {
   const m = (text || '').match(/[\p{L}\p{N}]/gu);
   return m ? m.length : 0;
 }
-function isGreetingOnly(text: string): boolean { return GREETING_ONLY_RE.test((text || '').trim()); }
-function isCancel(text: string): boolean { return CANCEL_RE.test((text || '').trim()); }
+function isGreetingOnly(text: string): boolean { return GREETING_ONLY_RE.test(sinTildes(text || '').trim()); }
+function isCancel(text: string): boolean { return CANCEL_RE.test(sinTildes(text || '').trim()); }
 /** Descripción válida = no es un saludo suelto y tiene algo de sustancia. */
 function isValidDescription(text: string): boolean {
   return !isGreetingOnly(text) && usefulLen(text) >= 4;
 }
 /** Zona válida = "no lo sé"/"a domicilio", o algo que no sea un saludo suelto. */
 function isValidZone(text: string): boolean {
-  const t = (text || '').trim();
-  if (NO_ZONE_RE.test(t)) return true;
+  if (NO_ZONE_RE.test(sinTildes(text || '').trim())) return true;
   return !isGreetingOnly(text) && usefulLen(text) >= 2;
 }
 
@@ -449,9 +453,9 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
 
   // Paso 3: confirmación — [✅ Enviar] crea la solicitud; [✏️ Reescribir] reinicia.
   if (session?.state === 'confirming_request') {
-    const t = (text || '').trim().toLowerCase();
+    const t = sinTildes(text || '').trim();
     const wantsSend = listId === 'bot_confirm_send'
-      || /^(s[ií]|env[ií]a(?:r|lo|la)?|vale|ok(?:ay|ey)?|correcto|confirmo?|adelante|dale|perfecto)\b/.test(t);
+      || /^(si|envia(?:r|lo|la)?|vale|ok(?:ay|ey)?|correcto|confirmo?|adelante|dale|perfecto)\b/.test(t);
     const wantsEdit = listId === 'bot_confirm_edit'
       || /^(no|edita(?:r|lo)?|reescrib|cambia(?:r|lo)?|corrige|corregir)\b/.test(t);
 
@@ -672,7 +676,7 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   // ── Saludos: son una petición explícita de menú, NO "texto fuera de
   // flujo" (los clientes dicen "hola" siempre; sin esto, dos holas seguidos
   // disparaban el handoff K1 y el bot enmudecía 24h). Resetea el contador.
-  if (/^(hola|buenas|buenos d[ií]as|buenas tardes|buenas noches|men[uú]|opciones|hey|hi|hello|empezar|inicio)[\s!.👋🙂🙋]*$/iu.test(text)) {
+  if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|menu|opciones|hey|hi|hello|empezar|inicio)[\s!.👋🙂🙋]*$/iu.test(sinTildes(text))) {
     await sendMenu(from, merchantId, businessName);
     await setSession(phone, { merchantId, state: 'menu', data: { offMenuCount: 0 } }, session);
     return true;

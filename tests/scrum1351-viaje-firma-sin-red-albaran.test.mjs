@@ -436,6 +436,31 @@ test('SCRUM-1353 · el rechazo definitivo del servidor se dice en el albarán �
   }
 });
 
+// SCRUM-1376 · visto en yaqu.app: el aviso de rechazo se pintaba suelto en la página y su borde
+// tocaba la barra de acciones. La caja «Solo en este móvil», que ocupa ese mismo sitio en el otro
+// caso, va dentro de un envoltorio que deja aire debajo. Los dos van en el MISMO envoltorio.
+test('SCRUM-1376 · el aviso de rechazo va en el mismo envoltorio que la caja «Solo en este móvil», no suelto sobre los botones', async () => {
+  // La referencia: el envoltorio de la caja, que es el que ya separa bien.
+  const guardada = await conUnaFirmaEnCola();
+  const caja = cajaDeFirmaGuardada((await abrirDetalle(guardada.b, { sinRed: true })).contenedor);
+  assert.ok(caja, 'suelo: la caja se pinta');
+  const separacion = caja.style.cssText;
+  assert.match(separacion, /margin/, 'suelo: el envoltorio de la caja lleva su separación (si no, comparo «» con «»)');
+
+  const m = await conUnaFirmaEnCola();
+  m.red.conRed = true;
+  m.red.modoPost = 'firma_invalida';
+  await m.b.ctx.drenarAlAbrir();
+  const v = await abrirDetalle(m.b);
+  const aviso = avisoDeRechazo(v.contenedor);
+  assert.ok(aviso, 'suelo: el aviso de rechazo se pinta');
+  const barra = todos(v.contenedor).find((n) => n && n.className === 'job-doc-toolbar');
+  assert.ok(barra, 'suelo: la barra de acciones está');
+  assert.notEqual(aviso._padre, barra._padre, 'el aviso NO es hermano directo de la barra de acciones');
+  assert.equal(aviso._padre.style.cssText, separacion, 'su envoltorio separa igual que el de la caja');
+  assert.match(aviso.className, /^alert warning$/, 'y el aviso sigue siendo el componente de siempre');
+});
+
 test('SCRUM-1353 · sin almacén que leer no se afirma nada: ni caja, ni aviso, ni pregunta', async () => {
   const { b, avisos } = montar({ sinIndexedDB: true });
   const v = await abrirDetalle(b);

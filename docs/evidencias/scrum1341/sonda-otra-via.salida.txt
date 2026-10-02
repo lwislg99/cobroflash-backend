@@ -1,0 +1,19 @@
+POBLACION: 4 presupuestos y 4 facturas fabricados · quien pregunta: Técnico id 11
+GET /admin/quotes            → estado 200 · rol declarado en la ruta: NINGUNO · filas: 4
+  claves de cada fila: id, number, customerName, customerPhone, createdAt, currency, totalAmount, status, method, chargeId, internalNotes, tags, waDelivery
+  ¿la fila dice quién lo hizo (`teamMemberId`)?  false
+GET /admin/quotes?teamMemberId=12 → estado 200 · filas: 2 · where que armó la ruta: {"merchantId":1,"teamMemberId":12}
+  lo que le llega del compañero: #102 accepted 900 EUR · #103 sent 400 EUR
+GET /admin/invoices          → estado 200 · rol declarado en la ruta: NINGUNO · filas: 4
+  claves de cada fila: id, merchantId, type, number, status, total, paidAt, createdAt, quoteId, lines, quote
+
+── LO QUE EL TÉCNICO RECONSTRUYE DE SU COMPAÑERO (id 12), contra el panel de admin
+  enviados:   por la otra vía 2 · panel 2
+  aceptados:  por la otra vía 1 · panel 1
+  COBRADO:    por la otra vía 900 · panel 900
+  TOTAL COBRADO del negocio: por la otra vía 1050 · panel 1050
+
+¿el doble filtra de verdad (4 sin filtro, 2 con él)?                    true
+¿un Técnico reconstruye HOY lo cobrado de un compañero por otra vía?    true
+¿y el total cobrado del negocio?                                        true
+EXIT=0

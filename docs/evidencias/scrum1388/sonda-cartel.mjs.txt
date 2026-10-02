@@ -1,0 +1,214 @@
+// Sonda de SCRUM-1388 · «¿qué LEE el profesional en Facturas recibidas cuando la carga falla?»
+//
+// QUÉ ES DE VERDAD
+//   · el navegador (Edge por puppeteer-core, el mismo resolutor que los guards de la casa);
+//   · la pantalla: `public/dashboard/js/facturasRecibidasView.js` + `api.js` (el `apiRequest` real)
+//     + `tokens.css` y `styles.css` del árbol que se le pasa;
+//   · la puerta: `requireRole('admin')` de `dist/core/http/authMiddleware.js`, la MISMA función que
+//     `src/app.ts` monta delante de `/admin/libros`;
+//   · la ruta: el router de `dist/modules/fiscal/librosAeat/librosAeat.routes.js`, con su motor.
+// QUÉ ES DOBLE, y se dice
+//   · la sesión: no hay `requireAuth`; un middleware pone `req.userRole` y `req.merchantId`, que es
+//     lo que `requireAuth` deja puesto. El 403 lo contesta la puerta real, no la sonda;
+//   · Prisma: `expense.findMany` y `provider.findMany` devuelven lo que el caso dice. No se abre
+//     ninguna base, y la sonda se niega a arrancar si el entorno trae una cadena de conexión;
+//   · los casos «500» y «respuesta sin miradas» los contesta la sonda (FABRICADOS): no hay forma
+//     de pedírselos a la ruta real sin romperla.
+//
+// QUÉ NO MIDE: producción. Ni la sesión real, ni Cloudflare, ni el sellado del index.
+//
+// Uso (desde fuera del árbol):  node sonda-cartel.mjs <raíz del árbol, con dist/> [dir de capturas]
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.argv[2] ? path.resolve(process.argv[2]) : null;
+const dirCapturas = process.argv[3] ? path.resolve(process.argv[3]) : null;
+const fin = (codigo) => { console.log('EXIT=' + codigo); process.exit(codigo); };
+if (!raiz || !fs.existsSync(path.join(raiz, 'dist', 'app.js'))) {
+  console.log('CIEGO: falta la raíz del árbol, o no tiene dist/ construido'); fin(2);
+}
+const pide = createRequire(path.join(raiz, 'package.json'));
+
+process.env.DISABLE_CRONS = 'true';
+const { requireRole } = pide('./dist/core/http/authMiddleware.js');
+const { prisma } = pide('./dist/core/db/prisma.js');
+const rutasLibros = pide('./dist/modules/fiscal/librosAeat/librosAeat.routes.js').default;
+const express = pide('express');
+const puppeteer = pide('puppeteer-core');
+const { lanzarNavegador } = await import(pathToFileURL(path.join(raiz, 'scripts', '_navegador.mjs')).href);
+
+// Se mira DESPUÉS de cargar `dist/`, que es cuando `loadEnv` ya ha leído lo que hubiera.
+const conBase = Object.keys(process.env).filter((k) => /DATABASE_URL/i.test(k) && process.env[k]);
+if (conBase.length) {
+  console.log('CIEGO: el entorno trae ' + conBase.length + ' cadena(s) de conexión (' + conBase.join(', ')
+    + '). Esta sonda dobla Prisma y no debe correr donde un doble olvidado llegaría a una base.');
+  fin(2);
+}
+if (typeof requireRole !== 'function' || typeof rutasLibros !== 'function') {
+  console.log('CIEGO: no encuentro `requireRole` o el router de libros en dist/'); fin(2);
+}
+
+const MARCADOR = '[PENDIENTE microcopy oficial]';
+const TRIPA = /API \d{3}|forbidden|Failed to fetch|respuesta_incompleta|internal_error|Internal Server Error/;
+
+const gasto = (i, extra = {}) => ({
+  id: i, merchantId: 1, date: new Date('2026-08-1' + i + 'T10:00:00.000Z'), concept: 'Material ' + i,
+  amount: 121, currency: 'EUR', providerId: null, baseAmount: null, vatRate: null, vatAmount: null,
+  vatDeducible: null, providerInvoiceNumber: null, providerInvoiceDate: null, category: null, ...extra,
+});
+const clasificado = (i) => gasto(i, {
+  providerId: 7, baseAmount: 100, vatRate: 21, vatAmount: 21, vatDeducible: true,
+  providerInvoiceNumber: 'A-2026/44' + i, providerInvoiceDate: new Date('2026-08-1' + i + 'T00:00:00.000Z'),
+});
+
+const CASOS = [
+  { id: '403', que: 'REAL · la puerta `requireRole(admin)` ante un rol técnico', rol: 'tecnico', gastos: [] },
+  { id: 'sin-red', que: 'REAL · el servidor corta la conexión sin contestar', rol: 'admin', corte: true, gastos: [] },
+  { id: '500', que: 'FABRICADO · 500 {"error":"internal_error"}', rol: 'admin', fabricado: [500, { error: 'internal_error' }], gastos: [] },
+  { id: 'sin-miradas', que: 'FABRICADO · 200 {"filas":[]} sin `miradas`', rol: 'admin', fabricado: [200, { filas: [] }], gastos: [] },
+  { id: 'vacio', que: 'REAL · admin, el periodo no tiene ningún gasto', rol: 'admin', gastos: [] },
+  { id: 'descuadre-3', que: 'REAL · admin, 3 gastos sin datos de IVA: mirados 3, filas 0', rol: 'admin', gastos: [gasto(1), gasto(2), gasto(3)] },
+  { id: 'descuadre-1', que: 'REAL · admin, 1 gasto sin datos de IVA: mirados 1, filas 0', rol: 'admin', gastos: [gasto(1)] },
+  { id: 'con-datos', que: 'REAL · admin, 2 gastos clasificados: SUELO, la tabla se pinta', rol: 'admin', gastos: [clasificado(1), clasificado(2)] },
+];
+const ANCHOS = [390, 1280];
+
+let caso = CASOS[0];
+let contestado = null;
+prisma.expense.findMany = async () => caso.gastos;
+prisma.provider.findMany = async () => [{ id: 7, name: 'Suministros Peña', taxId: 'B12345678' }];
+
+const PUBLIC = path.join(raiz, 'public');
+const app = express();
+app.get('/__sonda.html', (_q, res) => res.type('html').send(
+  '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">'
+  + '</head><body><div id="v"></div>'
+  + '<script src="/dashboard/js/api.js"></script><script src="/dashboard/js/facturasRecibidasView.js"></script>'
+  + '</body></html>'));
+app.use('/admin/libros', (req, res, next) => {
+  if (caso.corte) { contestado = { estado: null, cuerpo: '(conexión cortada)' }; return req.socket.destroy(); }
+  const json = res.json.bind(res);
+  res.json = (cuerpo) => { contestado = { estado: res.statusCode, cuerpo: JSON.stringify(cuerpo).slice(0, 160) }; return json(cuerpo); };
+  if (caso.fabricado) return res.status(caso.fabricado[0]).json(caso.fabricado[1]);
+  // Lo que `requireAuth` deja puesto en la petición. Quién contesta 403 es la puerta de abajo.
+  req.userRole = caso.rol; req.merchantId = 1;
+  next();
+}, requireRole('admin'), rutasLibros);
+app.use((req, res, next) => {
+  const f = path.join(PUBLIC, decodeURIComponent(req.path).replace(/^\//, ''));
+  if (!f.startsWith(PUBLIC) || !fs.existsSync(f) || !fs.statSync(f).isFile()) return next();
+  res.type(f.endsWith('.css') ? 'text/css' : f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream')
+    .send(fs.readFileSync(f));
+});
+const srv = http.createServer(app);
+await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
+const PUERTO = srv.address().port;
+
+// Dentro de la página: pinta la vista y devuelve lo que se LEE, nodo a nodo, fuera de la barra del periodo.
+const LEER = new Function('MARCADOR', `
+  return (async () => {
+    const cont = document.getElementById('v');
+    if (typeof window.renderFacturasRecibidasView !== 'function') return { ciego: 'la vista no ha publicado su render' };
+    window.renderFacturasRecibidasView(cont);
+    const t0 = Date.now();
+    while (Date.now() - t0 < 6000) {
+      const sub = cont.querySelector('.fr-subtitle');
+      if (sub && sub.textContent !== 'Cargando…') break;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    await new Promise((r) => setTimeout(r, 150));
+    const nodos = [];
+    for (const el of cont.querySelectorAll('*')) {
+      if (el.closest('.data-card-toolbar') || el.closest('table')) continue;
+      const propio = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join('').replace(/\\s+/g, ' ').trim();
+      if (!propio) continue;
+      const caja = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      nodos.push({
+        quien: el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\\s+/).join('.') : ''),
+        texto: propio,
+        seVe: caja.width > 0 && caja.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0,
+        alto: Math.round(caja.height),
+        desborda: el.scrollWidth > el.clientWidth + 1,
+        esCartel: el.classList.contains('alert'),
+      });
+    }
+    return {
+      nodos,
+      tablas: cont.querySelectorAll('table').length,
+      filas: cont.querySelectorAll('tr[data-fila]').length,
+      desbordaPagina: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    };
+  })();
+`);
+
+const ciegos = [];
+const resumen = [];
+console.log('SONDA SCRUM-1388 · POBLACIÓN: ' + CASOS.length + ' casos × ' + ANCHOS.length + ' anchos (' + ANCHOS.join(', ') + ' px) · árbol ' + raiz);
+console.log('vista: sha256 ' + pide('node:crypto').createHash('sha256')
+  .update(fs.readFileSync(path.join(PUBLIC, 'dashboard', 'js', 'facturasRecibidasView.js'))).digest('hex'));
+
+let navegador;
+try {
+  navegador = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--disable-dev-shm-usage'] });
+  for (const c of CASOS) {
+    caso = c;
+    console.log('\n── CASO ' + c.id + ' · ' + c.que);
+    for (const ancho of ANCHOS) {
+      contestado = null;
+      const pag = await navegador.newPage();
+      const errores = [];
+      pag.on('pageerror', (e) => errores.push(String(e.message).slice(0, 100)));
+      await pag.setViewport({ width: ancho, height: 844 });
+      await pag.goto('http://127.0.0.1:' + PUERTO + '/__sonda.html', { waitUntil: 'load' });
+      const r = await pag.evaluate(LEER, MARCADOR);
+      if (r.ciego || !r.nodos.length) { ciegos.push(c.id + ' @' + ancho + ' → ' + (r.ciego || 'no pintó ningún texto')); await pag.close(); continue; }
+      const visibles = r.nodos.filter((n) => n.seVe);
+      const leido = visibles.map((n) => n.texto);
+      const marcadores = leido.reduce((t, x) => t + (x.split(MARCADOR).length - 1), 0);
+      const tripa = leido.filter((x) => TRIPA.test(x));
+      // Por la CLASE, no por subcadena: `fr-alert-detail` contiene «alert» y no es un cartel.
+      const cartel = visibles.filter((n) => n.esCartel);
+      console.log('  @' + ancho + ' px · el servidor contestó: ' + (contestado ? (contestado.estado ?? '—') + ' ' + contestado.cuerpo : '(nada registrado)'));
+      for (const n of r.nodos) {
+        console.log('      ' + (n.seVe ? 'SE VE ' : 'OCULTO') + ' ' + n.quien + ' (' + n.alto + ' px' + (n.desborda ? ', DESBORDA' : '') + ') «' + n.texto + '»');
+      }
+      console.log('      → tablas ' + r.tablas + ' · filas ' + r.filas + ' · marcadores a la vista ' + marcadores
+        + ' · carteles visibles ' + cartel.length + ' · tripa a la vista: ' + (tripa.length ? tripa.map((x) => '«' + x + '»').join(' ') : 'ninguna')
+        + (r.desbordaPagina ? ' · LA PÁGINA DESBORDA' : '') + (errores.length ? ' · errores de página: ' + errores.join(' | ') : ''));
+      resumen.push({ id: c.id, ancho, leido: leido.join(' ‖ '), marcadores, tripa: tripa.length, carteles: cartel.length, tablas: r.tablas });
+      if (dirCapturas && ancho === 390) {
+        fs.mkdirSync(dirCapturas, { recursive: true });
+        const el = await pag.$('#v');
+        await el.screenshot({ path: path.join(dirCapturas, c.id + '-390.png') });
+      }
+      await pag.close();
+    }
+  }
+} finally {
+  if (navegador) await navegador.close().catch(() => {});
+  srv.close();
+}
+
+// ── Lo que se compara: CONJUNTOS de lo leído, no cuentas ─────────────────────────────────────
+const de = (id) => resumen.find((r) => r.id === id && r.ancho === 390);
+console.log('\n── RESUMEN (a 390 px) · ' + resumen.length + ' medidas de ' + (CASOS.length * ANCHOS.length));
+for (const c of CASOS) {
+  const r = de(c.id);
+  console.log('  ' + c.id.padEnd(12) + (r ? ' marcadores ' + r.marcadores + ' · tripa ' + r.tripa + ' · carteles ' + r.carteles + ' · tablas ' + r.tablas : ' SIN MEDIR'));
+}
+const par = (a, b) => {
+  const x = de(a); const y = de(b);
+  if (!x || !y) return a + ' / ' + b + ': SIN MEDIR';
+  return a + ' / ' + b + ': ' + (x.leido === y.leido ? 'IGUALES — se confunden' : 'DISTINTOS');
+};
+console.log('  ¿se lee distinto?  ' + par('vacio', 'descuadre-3') + ' · ' + par('vacio', '403') + ' · ' + par('descuadre-3', '403'));
+console.log('  marcadores a la vista en TODOS los casos (sale siempre, también con cero): '
+  + resumen.filter((r) => r.ancho === 390).reduce((t, r) => t + r.marcadores, 0));
+if (ciegos.length) { console.log('\nCIEGOS (' + ciegos.length + '): ' + ciegos.join(' · ')); fin(2); }
+fin(0);

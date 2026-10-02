@@ -1,0 +1,107 @@
+2026-10-01T14:54:10.6848005Z HEAD is now at 546bae5 Merge a1a36385b57f612522ebbe27d5fedacdb862bedd into 5fb7630ad564740f0fe4ba115e7dc141d18da775
+2026-10-01T14:54:38.3695570Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:54:38.3696712Z TRINQUETE DE ZONA HORARIA · ¿ha crecido la familia de tests que miden la máquina?
+2026-10-01T14:54:38.3697718Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T14:54:38.3698546Z   árbol ......... /home/runner/work/cobroflash-backend/cobroflash-backend
+2026-10-01T14:54:38.3699304Z   zonas ......... Pacific/Kiritimati  ·  Pacific/Midway
+2026-10-01T14:54:38.3700185Z   censadas ...... 1 (las que HOY dependen de la zona, a propósito)
+2026-10-01T14:54:38.3700746Z   alcance ....... la tanda entera + los 4 canarios
+2026-10-01T14:54:38.3701098Z 
+2026-10-01T14:54:38.3701409Z SONDA · ¿llega de verdad la zona al proceso hijo?
+2026-10-01T14:54:38.3701723Z 
+2026-10-01T14:54:38.4463111Z    ✔ Pacific/Kiritimati     el hijo ve: Pacific/Kiritimati
+2026-10-01T14:54:38.4515028Z    ✔ Pacific/Midway         el hijo ve: Pacific/Midway
+2026-10-01T14:54:38.4518602Z 
+2026-10-01T14:54:38.4519337Z    1190 ficheros de la tanda + 4 canarios = 1194
+2026-10-01T14:54:38.4519741Z 
+2026-10-01T15:01:12.2187263Z    midiendo en Pacific/Kiritimati     …  9825 pruebas · 393 s · el hijo vio Pacific/Kiritimati
+2026-10-01T15:07:37.4589391Z    midiendo en Pacific/Midway         …  9817 pruebas · 385 s · el hijo vio Pacific/Midway
+2026-10-01T15:07:37.4864251Z 
+2026-10-01T15:07:37.4865864Z    árbol quieto durante las dos pasadas ✔
+2026-10-01T15:07:37.5004405Z 
+2026-10-01T15:07:37.5005991Z REPESCA · 8 fichero(s) con candidatos, medidos a solas
+2026-10-01T15:07:37.5006608Z 
+2026-10-01T15:07:37.6860369Z    canario-dependiente-este.test.mjs              confirma 1 de 1
+2026-10-01T15:07:37.8654322Z    canario-dependiente-oeste.test.mjs             confirma 1 de 1
+2026-10-01T15:07:38.1230775Z    scrum1350-latido.test.mjs                      confirma 0 de 9
+2026-10-01T15:07:38.3705864Z    scrum161-evidencia-tanda.test.mjs              confirma 0 de 1
+2026-10-01T15:07:44.3022876Z    scrum524b-trinquete-de-la-tabla.test.mjs       confirma 2 de 8
+2026-10-01T15:07:44.6341771Z    scrum592-numeracion-doc02.test.mjs             confirma 1 de 1
+2026-10-01T15:07:45.0374604Z    scrum595-etiquetas-del-documento.test.mjs      confirma 0 de 5
+2026-10-01T15:07:45.2822585Z    vigia-atascados.test.mjs                       confirma 34 de 3
+2026-10-01T15:07:45.2823346Z 
+2026-10-01T15:07:45.2824720Z AUTOCONTROL · los cuatro canarios, por el mismo camino y en las mismas zonas
+2026-10-01T15:07:45.2825360Z 
+2026-10-01T15:07:45.2826122Z    ✔ DEPENDIENTE  canario-dependiente-oeste.test.mjs DENUNCIADO (se esperaba que lo fuera)
+2026-10-01T15:07:45.2826787Z    ✔ DEPENDIENTE  canario-dependiente-este.test.mjs  DENUNCIADO (se esperaba que lo fuera)
+2026-10-01T15:07:45.2827420Z    ✔ FIJADO       canario-fijado.test.mjs            no denunciado (se esperaba que no)
+2026-10-01T15:07:45.2828070Z    ✔ FIJADO       canario-sin-fechas.test.mjs        no denunciado (se esperaba que no)
+2026-10-01T15:07:45.2828367Z 
+2026-10-01T15:07:45.2828378Z 
+2026-10-01T15:07:45.2828776Z CAMBIAN DE VEREDICTO EN EL ÁRBOL: 6  (censadas: 1)
+2026-10-01T15:07:45.2829049Z 
+2026-10-01T15:07:45.2829395Z    🔴 NUEVA SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+2026-10-01T15:07:45.2830168Z         tests/scrum524b-trinquete-de-la-tabla.test.mjs
+2026-10-01T15:07:45.2830738Z         Pacific/Kiritimati → ausente   ·   Pacific/Midway → pass
+2026-10-01T15:07:45.2831640Z    🔴 NUEVA SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+2026-10-01T15:07:45.2832324Z         tests/scrum524b-trinquete-de-la-tabla.test.mjs
+2026-10-01T15:07:45.2832928Z         Pacific/Kiritimati → ausente   ·   Pacific/Midway → pass
+2026-10-01T15:07:45.2833361Z    · SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa
+2026-10-01T15:07:45.2833924Z         tests/scrum592-numeracion-doc02.test.mjs
+2026-10-01T15:07:45.2834385Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → fail
+2026-10-01T15:07:45.2835105Z         censada: docs/master/SCRUM-643.md §2·A — misma familia: el año se deriva del reloj del proceso.
+2026-10-01T15:07:45.2835977Z    🔴 NUEVA el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+2026-10-01T15:07:45.2836548Z         tests/vigia-atascados.test.mjs
+2026-10-01T15:07:45.2837055Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T15:07:45.2837597Z    🔴 NUEVA la pasada le da al clasificador el dato del auto-merge
+2026-10-01T15:07:45.2838071Z         tests/vigia-atascados.test.mjs
+2026-10-01T15:07:45.2838692Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T15:07:45.2839259Z    🔴 NUEVA sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+2026-10-01T15:07:45.2839722Z         tests/vigia-atascados.test.mjs
+2026-10-01T15:07:45.2840190Z         Pacific/Kiritimati → pass   ·   Pacific/Midway → ausente
+2026-10-01T15:07:45.2840519Z 
+2026-10-01T15:07:45.2840882Z ⚠️ NO CONFIRMADAS a solas · 21 — parpadeo, o dependencia que sólo
+2026-10-01T15:07:45.2841676Z    sale en compañía. NO cuentan para el veredicto, y por eso se imprimen aquí.
+2026-10-01T15:07:45.2842017Z 
+2026-10-01T15:07:45.2843315Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y dice cuánto llevan
+2026-10-01T15:07:45.2845437Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · contra disco: el ÚLTIMO turno con uso (baja al compactar), y sin fichero es «no pude», no cero
+2026-10-01T15:07:45.2846821Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó
+2026-10-01T15:07:45.2848175Z    · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CONTEXTO: cada sesión viva sale con su ocupación, y la que pasa del umbral se avisa
+2026-10-01T15:07:45.2849454Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · NEGATIVO del libro: la que SIGUIÓ trabajando sale sola; la «contestada» deja de avisar; otra pregunta nueva vuelve a avisar
+2026-10-01T15:07:45.2850827Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · NEGATIVO: sin bloqueadas viejas no acusa a nadie, y las de hoy las deja a SESIONES (contadas)
+2026-10-01T15:07:45.2852224Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 CIEGO: un state.json ilegible NO es una sesión que no existe — sale 2 y enseña lo que sí leyó
+2026-10-01T15:07:45.2853350Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 el lector cuenta lo que NO pudo leer en vez de saltárselo (contra disco)
+2026-10-01T15:07:45.2855195Z    · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 una pregunta NO caduca porque paren a quien la hizo: el libro la conserva cuando el registro la borra
+2026-10-01T15:07:45.2856492Z    · tests/scrum161-evidencia-tanda.test.mjs::SCRUM-161 · el recibo se escribe DESPUÉS de los guards de «no pude comprobar»
+2026-10-01T15:07:45.2857820Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+2026-10-01T15:07:45.2859065Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+2026-10-01T15:07:45.2860626Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+2026-10-01T15:07:45.2861884Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+2026-10-01T15:07:45.2863119Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+2026-10-01T15:07:45.2865316Z    · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+2026-10-01T15:07:45.2866344Z    · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · ⛔ la pieza de la ficha NO inventa ni un literal
+2026-10-01T15:07:45.2867717Z    · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · 🔴 SUELO: el censo se declara CIEGO si no encuentra ni un documento
+2026-10-01T15:07:45.2868799Z    · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · 🔴 `index.html` carga la pieza ANTES que quien la consume
+2026-10-01T15:07:45.2869818Z    · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · 🔴 las DOS fichas montan EL MISMO bloque de edición, no dos parecidos
+2026-10-01T15:07:45.2871220Z    · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · 🔴 una revisión del presupuesto HEREDA sus etiquetas
+2026-10-01T15:07:45.2871632Z 
+2026-10-01T15:07:45.2872013Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T15:07:45.2872646Z 🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+2026-10-01T15:07:45.2873205Z    censadas. Han entrado con este cambio o con uno reciente.
+2026-10-01T15:07:45.2874009Z 
+2026-10-01T15:07:45.2874682Z      · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+2026-10-01T15:07:45.2875868Z      · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+2026-10-01T15:07:45.2876759Z      · tests/vigia-atascados.test.mjs::el rojo obligatorio manda sobre la falta de auto-merge: primero hace falta un push
+2026-10-01T15:07:45.2877491Z      · tests/vigia-atascados.test.mjs::la pasada le da al clasificador el dato del auto-merge
+2026-10-01T15:07:45.2878204Z      · tests/vigia-atascados.test.mjs::sin el dato del auto-merge el clasificador no inventa SIN-AUTO-MERGE
+2026-10-01T15:07:45.2878582Z 
+2026-10-01T15:07:45.2878755Z    QUÉ HACER, y en este orden:
+2026-10-01T15:07:45.2879310Z      ① Arreglar el TEST fijando su zona a mano — y la zona que se fija es la de la
+2026-10-01T15:07:45.2880032Z         máquina donde ESE código corre de verdad: front → la del profesional;
+2026-10-01T15:07:45.2880629Z         servidor → UTC, que es lo que corre en Railway.
+2026-10-01T15:07:45.2881380Z      ② Si además está mal EL PRODUCTO, eso es otro ticket y NO se arregla fijando el
+2026-10-01T15:07:45.2881922Z         test: fijarlo esconde el defecto. Se mide, se escribe y se para.
+2026-10-01T15:07:45.2882718Z      ③ Meterlo en `CENSADAS` sólo si se decide NO arreglarlo, con el motivo escrito.
+2026-10-01T15:07:45.2883425Z ══════════════════════════════════════════════════════════════════════════════════════════════
+2026-10-01T15:07:45.2883937Z 
+2026-10-01T15:07:45.2981231Z ##[error]Process completed with exit code 1.

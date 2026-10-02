@@ -1,0 +1,40 @@
+POBLACIÓN: 11 jobs medibles · 9 árboles · con más de un job: 2
+  ef814a02d615 11172835639 [1/1] pull_request success · tests 9944 · unión de hermanos 9944 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  ef814a02d615 11175030704 [1/1] push success · tests 9944 · unión de hermanos 9944 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  e2f3e1482ce9 11174496991 [1/1] pull_request success · tests 9947 · unión de hermanos 9947 · perdidos frente a la unión 0 · señal 0 · CUADRA
+  e2f3e1482ce9 11174308618 [1/1] push success · tests 9915 · unión de hermanos 9947 · perdidos frente a la unión 32 · señal 8 · CIEGO: la señal nombra 8 de 32
+        1× SCRUM-1262 ✅ sendWhatsAppLocationRequest: la RESPUESTA DECLARADA a un entrante sale aunque esté de baja
+        1× SCRUM-1262 🔴 la exención NO se hereda del freno del demo: `exentoDelDemo` no levanta la baja
+        1× SCRUM-1262 🔴 las vías que inicia el negocio NO pueden declararse respuesta
+        1× SCRUM-1262 ✅ la CONFIRMACIÓN de la propia baja sigue saliendo (va sin merchant)
+        1× SCRUM-1262 · la exención SÓLO la declara quien procesa el entrante, y hacia quien escribió
+        1× SCRUM-1262 · los 8 senders pasan por el corte, y la decisión vive en UN sitio
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1114/1115/1117 · «es rectificativa» deja de mirar el tipo (un mecanismo, tres códigos) → cae 1114, 1115, 1117
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1114 · la R1 deja de resolver su `TipoRectificativa` → cae 1114
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1115 · una no rectificativa también resuelve `TipoRectificativa` → cae 1115
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1117 · `FacturasRectificadas` se escribe siempre → cae 1117
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1195 · `CalificacionOperacion` pasa a ser opcional → cae 1195
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · aparece una calificación que no es S1 → cae 1207
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica) → cae 1207
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el arranque deja de comprobar el id del sistema → cae 1177
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1177 · el validador deja de exigir 2 posiciones → cae 1177
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1212 · UNA de las dos apariciones deja de ser fija → cae 1212
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1213 · ídem → cae 1213
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1226 · ídem → cae 1226
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1223 · el emisor deja de exigir el NIF del productor → cae 1223
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · el esquema deja de validar el tipo de IVA → cae 1124
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1124 · entra un tipo de IVA que no existe (15 %) → cae 1124
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · tipos · el paquete anual deja de filtrar por tipo → cae tipos-declarables
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · TipoHuella · el alta del builder deja de fijar 01 → cae tipo-huella-01
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · 1118 · la sustitutiva sale sin `ImporteRectificacion` → cae 1118-1119
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · tope · el paquete deja de cortar a 1.000 → cae tope-1000
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · tope · la constante deja de ser la del XSD → cae tope-1000
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un reformateo no es quitar una comprobación → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · NEGATIVO · un comentario que nombra `OperacionExenta` no la escribe → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE · AUSENCIA · alguien empieza a escribir `OperacionExenta` → cae NADA
+        1× SCRUM-524b · 🔴 EL QUE DECIDE, de punta a punta: copia de src/ en disco → 0; se quita 1130 → sale 1 y la nombra
+        1× SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2
+        1× SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice
+RESUMEN: 2 árboles con hermanos · 4 jobs · cuadran 3 · con pérdidas que la señal no nombra enteras 1 · con pérdida y señal MUDA (0 nombrados) 0
+         casos perdidos frente a la unión 32 · nombrados por la señal 8
+EXIT=0

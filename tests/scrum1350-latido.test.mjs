@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, seccionDespliegue,
+  seccionPRs, seccionSesiones, seccionTraspasos, seccionMain, commitsDeCorridas, seccionDespliegue, shaDeVersion,
   seccionCementerio, actualizarLibro, leerTrabajos, leerLibro,
   seccionContexto, contextoDeRuta,
   fallosDelLog, salidaDe, informe, puestoDe,
@@ -84,19 +84,78 @@ test('SCRUM-1350 · 🔴 una sesión bloqueada sale con lo que ESPERA, no solo c
   assert.match(s.poblacion, /2 con actividad en 24 h \(1 blocked, 1 working\)/);
 });
 
-test('SCRUM-1350 · 🔴 NADIE VUELVE: la sesión que ya no trabaja con un PR suyo rojo, o sin veredicto', () => {
-  const filasPR = [{ numero: 10, causa: 'ROJO-OBLIGATORIO' }, { numero: 11, causa: 'ESPERANDO' }];
+// `ramas` es lo que la sesión EMPUJÓ (lo que `ramasDe` saca de su transcript); sin el campo, no se pudo leer.
+const ramasDe = (s) => s.ramas;
+const FILAS = [{ numero: 10, rama: 'scrum-10-x', causa: 'ROJO-OBLIGATORIO' }, { numero: 11, rama: 'scrum-11-x', causa: 'ESPERANDO' }];
+
+test('SCRUM-1350 · 🔴 NADIE VUELVE: la sesión que ya no trabaja con un PR que EMPUJÓ rojo, o sin veredicto', () => {
   const s = seccionSesiones({
-    sesiones: [sesion('s1-1oct', 'done', { prs: [10, 11, 12] }), sesion('s2-1oct', 'working', { prs: [10] })],
-    filasPR, ahora: AHORA,
+    // La rama de `scrum-12-x` ya no tiene PR abierto: mergeado o cerrado, no es asunto de nadie.
+    sesiones: [sesion('s1-1oct', 'done', { ramas: ['scrum-10-x', 'scrum-11-x', 'scrum-12-x'] }), sesion('s2-1oct', 'working', { ramas: [] })],
+    filasPR: FILAS, ramasDe, ahora: AHORA,
   });
-  assert.equal(s.alertas.length, 2, '🔴 dos avisos: el rojo y el que cerró sin veredicto. El #12 ya no está abierto, y la que TRABAJA no se acusa');
-  assert.match(s.alertas[0].linea, /s1-1oct .* ya NO trabaja \(done\) y su PR #10 sigue ROJO-OBLIGATORIO: nadie vuelve/);
-  assert.match(s.alertas[1].linea, /PR #11 sigue ABIERTO sin veredicto \(ESPERANDO\)/);
+  assert.equal(s.pudo, true);
+  assert.equal(s.alertas.length, 2, '🔴 dos avisos: el rojo y el que cerró sin veredicto');
+  assert.match(s.alertas[0].linea, /s1-1oct \(s1-1oct, done\) ya NO trabaja y el PR #10, cuya rama scrum-10-x EMPUJÓ, sigue ROJO-OBLIGATORIO: nadie vuelve/);
+  assert.match(s.alertas[1].linea, /PR #11, cuya rama scrum-11-x EMPUJÓ, sigue ABIERTO sin veredicto \(ESPERANDO\)/);
+});
+
+test('SCRUM-1378 · 🔴 un PR es de quien lo EMPUJÓ, no de quien lo cita: `children` ya no acusa a nadie', () => {
+  // El caso medido por la S0 el 1-oct: el #1681 estaba en `children` de cuatro sesiones que no lo abrieron.
+  const cita = { prs: [10], children: [{ kind: 'pr', id: '10' }], ramas: [] };
+  const s = seccionSesiones({
+    sesiones: [sesion('s0-1oct', 'done', cita), sesion('s1-1oct', 'stopped', cita), sesion('s4-1oct', 'done', { ramas: ['scrum-10-x'] })],
+    filasPR: FILAS, ramasDe, ahora: AHORA,
+  });
+  assert.equal(s.alertas.length, 1, '🔴 sólo se nombra a la que lo empujó; las dos que lo citan, no');
+  assert.match(s.alertas[0].linea, /^s4-1oct /);
+  assert.doesNotMatch(s.alertas.map((a) => a.linea).join('\n'), /s0-1oct|s1-1oct/);
+});
+
+test('SCRUM-1378 · 🔴 FAIL-CLOSED: si nadie leído empujó la rama, se dice «NO SUPE DE QUIÉN» y no se acusa a nadie', () => {
+  const s = seccionSesiones({ sesiones: [sesion('s1-1oct', 'done', { ramas: ['otra-rama'] })], filasPR: FILAS, ramasDe, ahora: AHORA });
+  assert.deepEqual(s.alertas, []);
+  // Sólo el que tiene problema: el #11 espera su CI sin dueña conocida y eso no es un hallazgo.
+  assert.match(s.poblacion, /1 PR con problema y NO SUPE DE QUIÉN SON \(#10\).*no acuso a nadie/);
+  // Y una sesión cuyo transcript no se deja leer NO es «no empujó nada»: la sección sale CIEGA, con su nombre.
+  const ciego = seccionSesiones({ sesiones: [sesion('s1-1oct', 'done'), sesion('s4-1oct', 'done', { ramas: ['scrum-10-x'] })], filasPR: FILAS, ramasDe, ahora: AHORA });
+  assert.equal(ciego.pudo, false);
+  assert.equal(salidaDe([ciego]), SALIDA_CIEGO);
+  assert.match(ciego.motivo, /no pude leer el transcript de 1 sesión\(es\) \(s1-1oct \(s1-1oct\)\): NO SÉ qué ramas empujaron/);
+  assert.equal(ciego.alertas.length, 1, 'lo que SÍ se pudo atribuir sigue saliendo debajo');
+  // `null` es otra cosa: la sesión que no llegó a escribir un turno no pudo empujar. Se cuenta, no ciega.
+  const sinTurno = seccionSesiones({ sesiones: [sesion('s3-1octb', 'stopped', { ramas: null })], filasPR: FILAS, ramasDe, ahora: AHORA });
+  assert.equal(sinTurno.pudo, true);
+  assert.match(sinTurno.poblacion, /1 sin transcript porque no llegaron a escribir un turno \(s3-1octb\)/);
+  // Sin `ramasDe` no se atribuye NADA: el defecto de fábrica es no saber, no acusar.
+  assert.deepEqual(seccionSesiones({ sesiones: [sesion('s1-1oct', 'done', { prs: [10] })], filasPR: FILAS, ahora: AHORA }).alertas, []);
+});
+
+test('SCRUM-1378 · el relevo no hereda la culpa: si una de las que empujó la rama sigue trabajando, alguien vuelve', () => {
+  const dos = [sesion('s5-1octc', 'done', { ramas: ['scrum-10-x'] }), sesion('s5-1octd', 'working', { ramas: ['scrum-10-x'] })];
+  assert.deepEqual(seccionSesiones({ sesiones: dos, filasPR: FILAS, ramasDe, ahora: AHORA }).alertas, []);
+  // CONTROL: con las dos paradas sí sale, UNA línea que nombra a las dos.
+  const paradas = seccionSesiones({ sesiones: dos.map((x) => ({ ...x, estado: 'done' })), filasPR: FILAS, ramasDe, ahora: AHORA });
+  assert.equal(paradas.alertas.length, 1);
+  assert.match(paradas.alertas[0].linea, /s5-1octc .* y s5-1octd .* ya NO trabaja y el PR #10/);
+});
+
+test('SCRUM-1378 · `leerTrabajos` no saca PR de `children`, y el lector de ramas es el del hook de cierre', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'latido-1378-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'aaa'));
+    fs.writeFileSync(path.join(dir, 'aaa', 'state.json'), JSON.stringify({ name: 's0-1oct', state: 'done', children: [{ kind: 'pr', id: '1681' }] }));
+    const [s] = leerTrabajos(dir).sesiones;
+    assert.equal(s.prs, undefined, '🔴 `children` ha vuelto a leerse como «sus PR»');
+    assert.doesNotMatch(JSON.stringify(s), /1681/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  const fuente = fs.readFileSync(new URL('../scripts/equipo/latido.mjs', import.meta.url), 'utf8');
+  assert.match(fuente, /import \{ ramasEmpujadas \} from '\.\.\/\.\.\/\.claude\/hooks\/latido-cierre\.mjs'/, '🔴 hay un segundo lector de «qué empujó»');
 });
 
 test('SCRUM-1350 · sin la sección PR, las sesiones lo DICEN en vez de callar el cruce', () => {
   const s = seccionSesiones({ sesiones: [sesion('s1-1oct', 'done', { prs: [10] })], filasPR: null, ahora: AHORA });
+  assert.equal(s.pudo, true, 'sin PR que cruzar no hace falta leer transcripts: no es un ciego nuevo');
   assert.match(s.poblacion, /sin la sección PR no se pudo cruzar/);
   assert.equal(seccionSesiones({ sesiones: undefined, filasPR: [], ahora: AHORA }).pudo, false);
 });
@@ -137,6 +196,51 @@ test('SCRUM-1350 · 🔴 MAIN en rojo se avisa; sin NINGÚN veredicto también; 
   assert.equal(seccionMain({ commits: [] }).pudo, false);
 });
 
+// SCRUM-1385 · una corrida de la API, con lo que `commitsDeCorridas` mira de ella.
+const corrida = (sha, extra = {}) => ({ id: sha, head_sha: sha.padEnd(40, '0'), event: 'push', head_branch: 'main', status: 'completed', conclusion: 'success', ...extra });
+
+test('SCRUM-1385 · 🔴 el verde de la RAMA de un PR no es un verde de main: sólo cuentan las corridas de main por push', () => {
+  // El caso del 1-oct: 4048a415 era la punta de la rama de #2093, verde en SU PR, y la sección lo dio
+  // por «último verde de main». Aquí su corrida viene con la rama y el evento de un PR.
+  const jobs = { ramaa: [check('success')], maina: [check('success')] };
+  const corridas = [
+    corrida('ramaa', { event: 'pull_request', head_branch: 'scrum-1368-latido-despliegue-fallido' }),
+    corrida('ramab', { event: 'push', head_branch: 'scrum-otra' }),
+    corrida('ramac', { event: 'pull_request', head_branch: 'main' }),
+    corrida('maina'),
+  ];
+  const commits = commitsDeCorridas(corridas, (c) => jobs[c.id]);
+  assert.deepEqual(commits.map((c) => c.sha.slice(0, 5)), ['maina'], '🔴 se ha colado una corrida que no es de main por push');
+  assert.match(seccionMain({ commits }).poblacion, /último con el obligatorio VERDE: maina000/);
+  // CONTROL: si lo ÚNICO verde es de la rama, main NO tiene verde, y se avisa.
+  const sinMain = commitsDeCorridas(corridas.slice(0, 3), (c) => jobs[c.id]);
+  assert.deepEqual(sinMain, []);
+  assert.equal(seccionMain({ commits: sinMain }).pudo, false, '🔴 sin corridas de main la sección tiene que decir «no pude mirar», no ✅');
+});
+
+test('SCRUM-1385 · las CANCELADAS se cuentan y se dicen, sin abrirlas; y se para en el primer veredicto', () => {
+  const pedidos = [];
+  const jobsDe = (c) => { pedidos.push(c.id); return c.id === 'd' ? [check('success')] : c.id === 'a' ? [check(null, { status: 'in_progress' })] : undefined; };
+  const cancelada = { conclusion: 'cancelled' };
+  const commits = commitsDeCorridas([corrida('a', { status: 'in_progress', conclusion: null }), corrida('b', cancelada), corrida('c', cancelada), corrida('d'), corrida('e')], jobsDe);
+  assert.deepEqual(pedidos, ['a', 'd'], '🔴 una cancelada no se abre (no tiene veredicto), y después del primer veredicto no se sigue');
+  assert.deepEqual(commits.map((c) => c.cancelada), [false, true, true, false]);
+  const s = seccionMain({ commits });
+  assert.deepEqual(s.alertas, []);
+  assert.match(s.poblacion, /último con el obligatorio VERDE: d0{7} · 3 commit\(s\) más nuevos sin veredicto \(2 con su corrida CANCELADA/);
+  // En rojo, lo mismo dentro del aviso.
+  const rojo = seccionMain({ commits: commitsDeCorridas([corrida('b', cancelada), corrida('f')], () => [check('failure')]) });
+  assert.match(rojo.alertas[0].linea, /main f0{7} tiene el obligatorio en ROJO \(1 commit\(s\) más nuevos sin veredicto \(1 con su corrida CANCELADA/);
+  // Y si TODAS están canceladas, no hay verde que dar: se avisa.
+  assert.match(seccionMain({ commits: commitsDeCorridas([corrida('b', cancelada), corrida('c', cancelada)], jobsDe) }).alertas[0].linea, /ninguno de los últimos 2 commits de main tiene veredicto del obligatorio \(2 con su corrida CANCELADA\)/);
+});
+
+test('SCRUM-1385 · 🔴 CIEGO: sin la lista de corridas, o sin poder leer los jobs de una que sí corrió, MAIN no sale verde', () => {
+  assert.equal(commitsDeCorridas(undefined, () => []), undefined);
+  assert.equal(seccionMain({ commits: commitsDeCorridas(undefined, () => []) }).pudo, false);
+  assert.equal(seccionMain({ commits: commitsDeCorridas([corrida('a')], () => undefined) }).pudo, false);
+});
+
 test(`SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de ${MINUTOS_DE_DESPLIEGUE} min es ATASCADO; uno recién lanzado no`, () => {
   const d = (min, estados) => ({ sha: 'e'.repeat(40), creado: new Date(AHORA - min * 60000).toISOString(), estados });
   assert.equal(seccionDespliegue({ despliegues: [d(30, ['in_progress', 'in_progress'])], ahora: AHORA }).alertas.length, 1);
@@ -157,6 +261,31 @@ test('SCRUM-1368 · 🔴 DESPLIEGUE: el ÚLTIMO en failure se AVISA (salía en v
   // NEGATIVO: el fallo es del anterior y el más nuevo salió bien — o todavía está en marcha.
   assert.deepEqual(seccionDespliegue({ despliegues: [d('bbbbbbbb', ['success', 'in_progress']), d('36071b72', ['failure', 'in_progress'])], ahora: AHORA }).alertas, []);
   assert.deepEqual(seccionDespliegue({ despliegues: [d('cccccccc', ['in_progress']), d('36071b72', ['failure'])], ahora: AHORA }).alertas, []);
+});
+
+test('SCRUM-1368 · DESPLIEGUE: el aviso dice CUÁNTOS commits va producción por detrás de main; si no lo sabe, lo DICE', () => {
+  const d = (sha, estados) => ({ sha: sha.padEnd(40, '0'), creado: new Date(AHORA - 5 * 60000).toISOString(), estados });
+  const roto = [d('36071b72', ['failure', 'in_progress']), d('425065aa', ['success', 'in_progress'])];
+  const sha = '425065aa'.padEnd(40, '0');
+  // El caso del 1-oct por la tarde: último despliegue en failure y producción cuatro commits detrás.
+  const s = seccionDespliegue({ despliegues: roto, servido: { sha, detras: 4 }, ahora: AHORA });
+  assert.match(s.alertas[0].linea, /producción sirve 425065aa: 4 commit\(s\) POR DETRÁS de main/);
+  assert.match(s.poblacion, /4 commit\(s\) POR DETRÁS de main/);
+  // Falló el despliegue pero lo servido YA es la punta (un redespliegue): se dice, y no se confunde con «detrás».
+  assert.match(seccionDespliegue({ despliegues: roto, servido: { sha, detras: 0 }, ahora: AHORA }).alertas[0].linea, /ES la punta de main \(0 commits por detrás\)/);
+  // NEGATIVO de la cifra: «no pude leer» y «leí y no supe contar» NO son «0 por detrás».
+  for (const servido of [undefined, { sha }, { sha, detras: NaN }]) {
+    const c = seccionDespliegue({ despliegues: roto, servido, ahora: AHORA });
+    assert.match(c.alertas[0].linea, servido ? /NO SUPE contar/ : /NO PUDE LEER qué sirve producción/);
+    assert.doesNotMatch(`${c.alertas[0].linea} ${c.poblacion}`, /\d+ commit/);
+  }
+  // Sin fallo no hay aviso, pero la cifra va SIEMPRE en la población: es la que dice si un rojo importa.
+  const bien = seccionDespliegue({ despliegues: [d('bbbbbbbb', ['success'])], servido: { sha, detras: 2 }, ahora: AHORA });
+  assert.deepEqual(bien.alertas, []);
+  assert.match(bien.poblacion, /2 commit\(s\) POR DETRÁS/);
+  // El sha sale de `{"version":"…"}`; una página de error o un sha corto no son un sha.
+  assert.equal(shaDeVersion(JSON.stringify({ version: sha })), sha);
+  for (const malo of ['', '<html>502</html>', '{"version":"425065aa"}', '{}', undefined]) assert.equal(shaDeVersion(malo), undefined);
 });
 
 test('SCRUM-1350 · lo que cayó: los nombres del resumen `spec`; sin resumen es «no supe», NO «cero fallos»', () => {

@@ -1,0 +1,139 @@
+LA BARRA DEL OPERARIO, DESPUES. Rama scrum-1338-menu-del-operario-contra-los-gates @ 76d25de8d38ff60a73f8b057bc7085b23dccb917.
+J4e · 2026-10-01, entre las lecturas de GitHub 07:48:46Z y 07:57:04Z (la hora exacta no se leyó) · mismo instrumento, misma pasada que el ANTES.
+
+POBLACION_RUTAS=190 · con rol admin=113 · sin rol=77
+control gate: GET /admin/cobros -> "admin" · GET /admin/customers -> null · GET /admin/no-existe -> null
+rótulos de sección para el operario: Venta [se pinta] · Negocio [se pinta] · Cuenta [OCULTO]
+qué se le oculta al operario: EJECUTANDO aplicarRolALaBarra sobre el nav de index.html
+POBLACION_BARRA=18 · casos del dispatch=29
+
+[(sin rótulo)] home · fn=renderHomeView · oculta hoy al operario=no · guard en el case=no
+   operario: 3 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/metrics/inicio  -> /admin/metrics/inicio [sin rol]
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+      200 GET /admin/bot/handoffs  -> /admin/bot/handoffs [sin rol]
+   pinta (operario): nodos=35 botones=3 esqueletos=0 carteles=["alert warning: No hemos podido comprobar si te queda algo por subir."]
+   control admin: 6 peticiones · negadas=0 · nodos=145 · error=null
+
+[(sin rótulo)] quote-requests #nav-requests · fn=renderQuoteRequestsView · oculta hoy al operario=no · guard en el case=no
+   operario: 1 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/quote-requests  -> /admin/quote-requests [sin rol]
+   pinta (operario): nodos=16 botones=0 esqueletos=0 carteles=["alert: ","customers-card empty-state: ","empty-state-icon: 📋","empty-state-title: Sin solicitudes"]
+   control admin: 1 peticiones · negadas=0 · nodos=16 · error=null
+
+[(sin rótulo)] jobs #nav-jobs · fn=renderJobsView · oculta hoy al operario=no · guard en el case=no
+   operario: 1 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/jobs  -> /admin/jobs [sin rol]
+   pinta (operario): nodos=16 botones=2 esqueletos=0 carteles=["empty-state: ","empty-state-icon: 🔧","empty-state-title: Aquí verás tus trabajos","empty-state-desc: Todavía no tienes ningún trabajo. Se crean solos cuando un cliente acepta un presupuesto, "]
+   control admin: 1 peticiones · negadas=0 · nodos=16 · error=null
+
+[Venta] quotes-list · fn=renderQuotesListView · oculta hoy al operario=no · guard en el case=no
+   operario: 1 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/quotes  -> /admin/quotes [sin rol]
+   pinta (operario): nodos=48 botones=4 esqueletos=0 carteles=["empty-state: ","empty-state-icon: 📋","empty-state-title: Envía tu primer presupuesto y consigue más trabajos","empty-state-desc: La mayoría de clientes responden en menos de 2 horas cuando lo reciben por WhatsApp. Crea "]
+   control admin: 1 peticiones · negadas=0 · nodos=48 · error=null
+
+[Venta] albaranes #nav-albaranes · fn=renderAlbaranesView · oculta hoy al operario=no · guard en el case=no
+   operario: 1 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/albaranes  -> /admin/albaranes [sin rol]
+   pinta (operario): nodos=10 botones=1 esqueletos=0 carteles=["alert error: No se han podido cargar los albaranes. Vuelve a intentarlo."]
+   control admin: 1 peticiones · negadas=0 · nodos=10 · error=null
+
+[Venta] partes-oficina #nav-partes-oficina · fn=renderPartesOficinaView · oculta hoy al operario=SI · guard en el case=no
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/partes/oficina/pendientes  -> /admin/partes/oficina/pendientes [admin]
+   pinta (operario): nodos=11 botones=1 esqueletos=0 carteles=["state-error: ","state-error-ico: ⚠️","state-error-msg: No se han podido cargar los partes","state-error-retry: Reintentar"]
+   control admin: 1 peticiones · negadas=0 · nodos=11 · error=null
+
+[Venta] invoices · fn=renderInvoicesView · oculta hoy al operario=no · guard en el case=no
+   operario: 2 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/invoices  -> /admin/invoices [sin rol]
+      200 GET /admin/albaranes/pendientes-facturar  -> /admin/albaranes/pendientes-facturar [sin rol]
+   pinta (operario): nodos=55 botones=5 esqueletos=0 carteles=["alert: ","empty-state: ","empty-state-icon: 🧾","empty-state-title: Aquí verás tus facturas"]
+   control admin: 2 peticiones · negadas=0 · nodos=55 · error=null
+
+[Venta] cobros #nav-cobros · fn=renderCobrosView · oculta hoy al operario=SI · guard en el case=no
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/cobros  -> /admin/cobros [admin]
+   pinta (operario): nodos=24 botones=6 esqueletos=0 carteles=[]
+   control admin: 1 peticiones · negadas=0 · nodos=27 · error=null
+
+[Negocio] customers · fn=renderCustomersView · oculta hoy al operario=no · guard en el case=no
+   operario: 1 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/customers  -> /admin/customers [sin rol]
+   pinta (operario): nodos=77 botones=6 esqueletos=0 carteles=["empty-state: ","empty-state-icon: 👥","empty-state-title: Añade a tu primer cliente","empty-state-desc: Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos."]
+   control admin: 1 peticiones · negadas=0 · nodos=82 · error=null
+
+[Negocio] products · fn=renderProductsView · oculta hoy al operario=no · guard en el case=no
+   operario: 2 peticiones · 0 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+      200 GET /admin/products  -> /admin/products [sin rol]
+   pinta (operario): nodos=80 botones=6 esqueletos=0 · «Crear producto»: DESHABILITADO carteles=["alert: ","empty-state: ","empty-state-icon: 📦","empty-state-title: Crea tu catálogo de servicios"]
+   control admin: 3 peticiones · negadas=0 · nodos=84 · error=null
+
+[Negocio] providers · fn=renderProvidersView · oculta hoy al operario=SI · guard en el case=SI
+   operario: 2 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+      403 GET /admin/providers  -> /admin/providers [admin]
+   pinta (operario): nodos=105 botones=2 esqueletos=35 carteles=["alert error: Error cargando proveedores."]
+   control admin: 2 peticiones · negadas=0 · nodos=46 · error=null
+
+[Negocio] expenses · fn=renderExpensesView · oculta hoy al operario=SI · guard en el case=no
+   operario: 2 peticiones · 2 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/expenses/summary  -> /admin/expenses/summary [admin]
+      403 GET /admin/expenses  -> /admin/expenses [admin]
+   pinta (operario): nodos=41 botones=3 esqueletos=0 carteles=["gastos-error: No se han podido cargar los gastos. Vuelve a intentarlo."]
+   control admin: 2 peticiones · negadas=0 · nodos=51 · error=null
+
+[Negocio] reports · fn=renderReportsView · oculta hoy al operario=SI · guard en el case=SI
+   operario: 10 peticiones · 10 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/metrics/funnel  -> /admin/metrics/funnel [admin]
+      403 GET /admin/metrics/services  -> /admin/metrics/services [admin]
+      403 GET /admin/metrics/whatsapp  -> /admin/metrics/whatsapp [admin]
+      403 GET /admin/metrics/platform-funnel  -> /admin/metrics/platform-funnel [admin]
+      403 GET /admin/reports/pl  -> /admin/reports/pl [admin]
+      403 GET /admin/reports/vat  -> /admin/reports/vat [admin]
+      403 GET /admin/reports/resumen-trimestre  -> /admin/reports/resumen-trimestre [admin]
+      403 GET /admin/libros/recibidas.json  -> /admin/libros/recibidas.json [admin]
+      403 GET /admin/reports/pl  -> /admin/reports/pl [admin]
+      403 GET /admin/reports/x2  -> /admin/reports/x2 [admin]
+   pinta (operario): nodos=33 botones=0 esqueletos=0 carteles=["alert: "]
+   control admin: 10 peticiones · negadas=0 · nodos=148 · error=null
+
+[Negocio] libro-registro #nav-libro-registro · fn=renderLibroRegistroView · oculta hoy al operario=SI · guard en el case=no
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/libro-registro  -> /admin/libro-registro [admin]
+   pinta (operario): nodos=9 botones=0 esqueletos=0 carteles=["alert error: No se ha podido cargar el libro. Vuelve a intentarlo."]
+   control admin: 1 peticiones · negadas=0 · nodos=9 · error=null
+
+[Negocio] facturas-recibidas #nav-facturas-recibidas · fn=renderFacturasRecibidasView · oculta hoy al operario=SI · guard en el case=no
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/libros/recibidas.json  -> /admin/libros/recibidas.json [admin]
+   pinta (operario): nodos=22 botones=2 esqueletos=0 carteles=["alert error fr-alert: [PENDIENTE microcopy oficial] No se ha podido cargar el libro. Vuelve a intentarlo.","fr-alert-detail: API 403: forbidden"]
+   control admin: 1 peticiones · negadas=0 · nodos=22 · error=null
+
+[Cuenta] team #nav-team · fn=renderTeamView · oculta hoy al operario=SI · guard en el case=SI
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/team  -> /admin/team [admin]
+   pinta (operario): nodos=13 botones=2 esqueletos=0 carteles=["alert: ","state-error: ","state-error-ico: ⚠️","state-error-msg: No pudimos cargar el equipo."]
+   control admin: 1 peticiones · negadas=0 · nodos=14 · error=null
+
+[Cuenta] plans #nav-plans · fn=renderPlansView · oculta hoy al operario=SI · guard en el case=no
+   operario: 1 peticiones · 1 NEGADAS · error=null · noMedida=null · rechazos=0
+      403 GET /admin/billing/plans  -> /admin/billing/plans [admin]
+   pinta (operario): nodos=5 botones=0 esqueletos=0 carteles=["empty-state: ","empty-state-icon: ⚠️","empty-state-title: Error cargando el plan","empty-state-desc: API 403: forbidden"]
+   control admin: 1 peticiones · negadas=0 · nodos=3 · error=null
+
+[Cuenta] settings · fn=renderSettingsView · oculta hoy al operario=SI · guard en el case=SI
+   operario: 6 peticiones · 3 NEGADAS · error=null · noMedida=null · rechazos=0
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+      403 GET /admin/referral  -> /admin/referral [admin]
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+      403 GET /admin/connect/status  -> /admin/connect/status [admin]
+      403 GET /admin/metrics/whatsapp  -> /admin/metrics/whatsapp [admin]
+      200 GET /admin/merchant  -> /admin/merchant [sin rol]
+   pinta (operario): nodos=162 botones=16 esqueletos=0 carteles=["alert: "]
+   control admin: 6 peticiones · negadas=0 · nodos=187 · error=null
+
+RESUMEN · barra=18 · ocultas hoy al operario=10 · visibles=8 · visibles que piden una ruta de admin al abrirse=0: 
+EXIT=0

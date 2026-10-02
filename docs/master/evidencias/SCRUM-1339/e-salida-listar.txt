@@ -1,0 +1,6 @@
+POBLACIÓN: la API dice 766 artefactos «tanda-tap» en total · páginas leídas 4 · el más viejo que vi es de 2026-09-28T22:29:21Z
+  desde 2026-10-01T00:00:00Z: 229 artefactos · caducados 0 · runs distintos 225
+  por rama: main 40 · otra rama 189
+  rango: 2026-10-01T00:28:24Z → 2026-10-02T02:05:33Z
+  CONTROL de que la lista llega hasta «desde»: sí, se vio al menos un artefacto anterior
+EXIT=0

@@ -1,0 +1,14 @@
+CENSO de `timeout:` en C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas\tests
+POBLACION: 1328 ficheros .mjs · 1192 son .test.mjs · ilegibles 0
+apariciones de `timeout:` en un objeto literal: 42 en 26 ficheros
+  ① PLAZO DE TEST (el objeto es argumento de test/it/describe/hook): 4 plazos en 3 ficheros
+     scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs:221 · test · 20_000
+     scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs:239 · test · 20_000
+     scrum358-drenado.test.mjs:244 · test · 8000
+     scrum976-guards-entrada-con-techo.test.mjs:228 · test · 120000
+  ② OTROS (el objeto va a otra llamada): 38 en 23 ficheros
+     spawnSync · 30 en 17 ficheros
+     prisma.$transaction · 5 en 4 ficheros
+     execFileSync · 2 en 1 ficheros
+     execFile · 1 en 1 ficheros
+CONTROL POSITIVO · scrum976 (se que lleva un plazo de test): VISTO en la linea 228 (120000)

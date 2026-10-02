@@ -1,0 +1,32 @@
++0.1s BANCO SCRUM-1391 · puerta «censo-mudez» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.4s copia en C:\Users\JAVIER~1\AppData\Local\Temp\scrum1391-mudez-OQUaz9 · scripts/censo-mudez.mjs sha256 2fb19f312d7badc1 (el del árbol: 2fb19f312d7badc1)
++0.4s POBLACION: 20 guards de mentira = 16 vivos + 1 mudo (control) + 1 que sólo nombra el filtro + 1 MUDO que tarda 200 s sólo al mutar + 1 que tarda 200 s siempre · plazo de la puerta 180000 ms
++364.5s censo-mudez terminó en 364 s · salida 1 · signal null · el filtro de la copia quedó idéntico: true
+      | Guards que mencionan el filtro de comentarios: 20
+      | 
+      | ① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro
+      |    llaman al filtro de verdad: 19 · sólo lo mencionan: 1
+      | 
+      | ② Pasada mutada — `soloEjecutable` devuelve la cadena vacía
+      | 
+      | ════════ VEREDICTO ════════
+      |   VIVO       17
+      |   MUDO       1
+      |   CIEGO      1
+      |   NO APLICA  1
+      |   YA ROJO    0
+      | 
+      | 🔴 MUDOS — su negación pasaría igual sobre un fichero vacío:
+      |     m1-mudo-control.test.mjs  (1 tests)
+      | 
+      | ⚠️ CIEGOS — no ejecutaron ni un test. Verde por no mirar:
+      |     c1-lento-siempre.test.mjs
+      | 
+      | 📌 NO APLICA — nunca llamaron al filtro; su verde no dice nada de ellos:
+      |     n1-no-aplica-control.test.mjs  (1 tests)
+      | 
+      | ✓ `tests/_guard-texto.mjs` comprobado idéntico al original.
+      | 
++364.5s copia desmontada: enlace quitado=true · node_modules de verdad intacto=true · carpeta borrada=true
+VEREDICTO-PUERTA {"puerta":"censo-mudez","ejercitada":true,"forma":"si","frase":"plazo vencido en la pasada LIMPIA → CIEGO (true); plazo vencido en la pasada MUTADA → el guard mudo cuenta como VIVO (17 vivos con 16 de verdad)"}
+EXIT=0

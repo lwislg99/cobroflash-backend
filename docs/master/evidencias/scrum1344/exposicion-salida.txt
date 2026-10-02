@@ -1,0 +1,12 @@
+origin/main=8e03d28cf2eddc658493a2a2bb00e2b94303bd18 · HEAD=2c410ca59fee4842d2d8cb3eb4cf3c9c6500fc46
+POBLACION=8 PR abiertos · 23 ficheros de tests/ que este árbol modifica
+#2001 scrum-1295-carriles-e-identidad (borrador) · 1 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2049 scrum-1252-evidencias-libro-solo-facturas · 0 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2051 scrum-1325-una-tilde-no-rompe-lo-que-entiende · 6 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2054 scrum-1334-el-guard-dice-lo-que-no-cruza · 4 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2092 scrum-1231-logo-solo-imagen-subida · 1 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2101 scrum-1373-drenado-avisa-firmas-confirmadas · 1 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2116 scrum-1336-un-ciego-no-se-pinta-de-hallazgo · 3 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+#2117 scrum-1391-las-cinco-puertas-ejecutadas · 0 cambios en tests/ · caería: 0 · toca arneses migrados: 0
+RESULTADO: 8 PR mirados · 0 con algún arnés que el guard rechazaría · 0 que tocan un arnés migrado · 0 ciegos
+EXIT=0

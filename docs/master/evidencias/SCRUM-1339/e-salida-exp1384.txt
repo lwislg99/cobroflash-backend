@@ -1,0 +1,20 @@
+RUN 36873018664 · exp-1384 · informe truncado · rama exp-1384-informe-truncado · sha 1da4852f5b9d45393e609d1f1f44ef751608886b · push · success · 2026-10-01T14:00:51Z
+POBLACIÓN: 12 jobs · 12 artefactos · caducados 0
+  árbol probado: 1183 ficheros de tests/ en 1da4852f
+  con 1 · job success (518 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  con 2 · job success (506 s) · medible sí · tap_tests 9820 · fail 0 · ausentes 5 · dudosos 0 → tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+  con 3 · job success (318 s) · medible sí · tap_tests 9837 · fail 0 · ausentes 1 · dudosos 0 → tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan 1 de 12 (cola) · posiciones 12 · líneas 327–335
+  con 4 · job success (398 s) · medible sí · tap_tests 9812 · fail 0 · ausentes 23 · dudosos 0 → tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 20 de 53 (cola) · posiciones 34–53 · líneas 350–647 | tests/scrum888g-senal-en-la-firma.test.mjs · faltan AL MENOS 3 de 10 (cola) · posiciones 8–10 · líneas 190–238 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+  con 5 · job success (507 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  con 6 · job success (487 s) · medible sí · tap_tests 9828 · fail 0 · ausentes 10 · dudosos 0 → tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 10 de 53 (cola) · posiciones 44–53 · líneas 519–647
+  sin 1 · job success (431 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  sin 2 · job success (543 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  sin 3 · job success (385 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  sin 4 · job success (371 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  sin 5 · job success (544 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+  sin 6 · job success (527 s) · medible sí · tap_tests 9838 · fail 0 · ausentes 0 · dudosos 0
+BRAZO «con --test-force-exit»: 6 tandas · medibles 6 · CON AUSENTES 4 de 6 · casos ausentes en total 39 · tap_tests de 9812 a 9838 · con algún fallo 0
+   ficheros que pierden: scrum1262-la-baja-corta-todas-las-vias.test.mjs, scrum524b-trinquete-de-la-tabla.test.mjs, scrum834-puerta-avisador-rojo.test.mjs, scrum888g-senal-en-la-firma.test.mjs
+   de ellos, entre los 18 que pierden en el CI de cada día (e-por-fichero.tsv): 4 de 4
+BRAZO «sin --test-force-exit»: 6 tandas · medibles 6 · CON AUSENTES 0 de 6 · casos ausentes en total 0 · tap_tests de 9838 a 9838 · con algún fallo 0
+EXIT=0

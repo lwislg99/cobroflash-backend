@@ -94,7 +94,7 @@ model Merchant {
 
   // Auth / plan
   onboardingCompleted  Boolean   @default(false) @map("onboarding_completed")
-  plan                 String    @default("trial") // trial | basic | pro | empresa
+  plan                 String    @default("trial") // los valores que valen NO se listan aquí: los decide BY_PLAN en src/core/entitlements.ts (regla 34, SCRUM-1342)
   planExpiresAt        DateTime? @map("plan_expires_at")
   stripeCustomerId     String?   @map("stripe_customer_id")
   stripeSubscriptionId String?   @map("stripe_subscription_id")
@@ -1723,6 +1723,12 @@ model ParteTrabajo {
 // ⚠️ ASIGNAR NO ES UN PERMISO. Estas filas no deciden quién edita ni quién emite —eso lo dan el
 // rol y `requireRole`— y tampoco abren la visibilidad de coste ni de margen (P-DOC-3): un técnico
 // asignado a un documento sigue sin verlos.
+//
+// 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026
+// (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un Técnico lo
+// VEA: estas filas SÍ entran en quién ve el documento. Para EDITAR, EMITIR, coste y margen, lo
+// de arriba sigue siendo verdad tal cual. La regla de quién ve vive en el máster, Parte S1
+// («autor o asignado»), no en este comentario.
 //
 // Un documento SIN NINGUNA fila aquí es exactamente lo que hay hoy: sin asignar, y se comporta
 // igual que siempre en listas, filtros y orden.

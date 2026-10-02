@@ -1,0 +1,247 @@
+// Censo de SCRUM-1390 · «¿en cuántos sitios recibe el Técnico un documento que no es suyo?»
+//
+// POBLACIÓN: TODAS las entradas de `TECNICO_ALLOWED` (dist/core/http/adminRouteDeclarations.js),
+// que es la lista cerrada de lo que un Técnico alcanza bajo /admin (la vigila scrum55).
+//
+// QUÉ SE EJECUTA DE VERDAD: los manejadores reales de cada ruta (dist/), dos veces: con una
+// petición de rol `admin` y con una de rol `tecnico` (id 11). No se abre servidor ni se toca
+// ninguna base.
+// QUÉ ES DOBLE: Prisma. El doble NO aplica el `where`: lo APUNTA. Lo que se mide es qué `where`
+// arma la ruta para cada rol, no a Prisma (el mismo límite que declaró J2i en SCRUM-1341).
+//
+// DOS PASADAS por ruta y rol:
+//   A · «vacío»: las lecturas devuelven nada. Se comparan los `where` sobre los modelos de
+//       documento entre admin y técnico. Distintos → la ruta RECORTA en la consulta.
+//   B · «ajeno»: findFirst/findUnique devuelven un documento del COMPAÑERO (id 12: autor, operario
+//       y asignado son el 12). Si el técnico recibe 403/404 y el admin no → RECORTA después de leer.
+//
+// VEREDICTO por ruta:
+//   NO-DISTINGUE   · ALGUNO de sus modelos de documento se consulta igual para admin y técnico,
+//                    y al técnico no se le niega el ajeno
+//   RECORTA        · el rol cambia la consulta de TODOS sus modelos de documento (A) o le niega el ajeno (B)
+//   SIN-DOCUMENTO  · contestó y no consultó ningún modelo de documento
+//   NO-LLEGO       · las cuatro corridas acabaron en 4xx/5xx sin consultar ningún documento: NO MEDIDA
+//   CIEGO          · no encontré la ruta montada
+//
+// Uso: node censo-que-ve-el-tecnico.mjs <raiz del arbol, con dist/>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { PassThrough } from 'node:stream';
+
+const raiz = process.argv[2];
+if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
+const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+
+process.env.DISABLE_CRONS = 'true';
+const { app } = await de('app.js');
+const { getAdminMounts } = await de('core/http/adminMounts.js');
+const { TECNICO_ALLOWED } = await de('core/http/adminRouteDeclarations.js');
+const { prisma } = await de('core/db/prisma.js');
+
+// 🔴 ANTES DE EJECUTAR UN SOLO MANEJADOR. Este censo corre también los POST del Técnico: enviar un
+// presupuesto por WhatsApp o por correo, pedirle algo a la IA. Con Prisma doblado no se escribe en
+// ninguna base, pero una integración con credenciales SÍ saldría a la red. La primera pasada se
+// lanzó sin mirar esto y sólo no envió nada porque el árbol no tenía ninguna («Credenciales no
+// configuradas, mensaje omitido» en su stderr): eso fue suerte medida después, no un control.
+// Se mira DESPUÉS de importar la app, que es cuando `loadEnv` ya ha cargado lo que hubiera.
+const PELIGRO = Object.keys(process.env).filter((k) => process.env[k]
+  && /WHATSAPP|RESEND|GEMINI|ANTHROPIC|OPENAI|STRIPE|MERCADOPAGO|DATABASE_URL|SMTP|MAILER/i.test(k));
+if (PELIGRO.length) {
+  console.log('CIEGO: el entorno lleva ' + PELIGRO.length + ' variable(s) de integración o de base (' + PELIGRO.join(', ')
+    + '). No ejecuto manejadores que envían: lánzalo en un entorno sin ellas.');
+  console.log('EXIT=2'); process.exit(2);
+}
+
+// ── Los modelos. «De documento» son los que la decisión nombra (presupuesto, factura) más los
+// que cuelgan del Trabajo (albarán, parte) y el propio Trabajo: se apuntan todos para ver el eje.
+const DOCUMENTO = ['quote', 'invoice', 'albaran', 'parteTrabajo', 'job'];
+const LECTURAS_UNA = ['findFirst', 'findUnique', 'findFirstOrThrow', 'findUniqueOrThrow'];
+const ESCRITURAS = ['create', 'update', 'updateMany', 'delete', 'deleteMany', 'upsert', 'createMany'];
+
+const modelos = Object.keys(prisma).filter((k) => !k.startsWith('$') && !k.startsWith('_')
+  && prisma[k] && typeof prisma[k].findMany === 'function');
+const faltan = DOCUMENTO.filter((m) => !modelos.includes(m));
+if (faltan.length) { console.log('CIEGO: el cliente no tiene los modelos ' + faltan.join(', ')); console.log('EXIT=2'); process.exit(2); }
+
+const ahora = new Date();
+const trabajoAjeno = { id: 77, merchantId: 1, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
+  status: 'en_curso', titulo: 'T', direccion: 'D', tipoOperacion: 'TRABAJO_UNICO', quoteId: 102, customerId: 5,
+  createdAt: ahora, updatedAt: ahora, albaranes: [], quotes: [], invoices: [], totalAceptado: 900, totalCobrado: 0 };
+const AJENO = {
+  id: 102, merchantId: 1, teamMemberId: 12, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
+  asignados: [], status: 'accepted', estado: 'emitido', total: 900, subtotal: 743.8, tax: 156.2, currency: 'EUR',
+  quoteNumber: 2, number: 'A-2', numero: 'ALB-2026-002', type: 'F1', lines: [], lineas: [], invoices: [], albaranes: [],
+  createdAt: ahora, updatedAt: ahora, fecha: ahora, paidAt: null, jobId: 77, quoteId: 102, customerId: 5,
+  modoValoracion: 'SIN_VALORAR', pdfPath: null, pdfUrl: null, publicToken: 'tok', token: 'tok',
+  customer: { id: 5, merchantId: 1, name: 'Cliente', phone: '600000000', email: null },
+  merchant: { id: 1, name: 'Negocio', legalName: 'Negocio SL', flags: {}, country: 'ES', currency: 'EUR' },
+  job: trabajoAjeno, quote: { id: 102, merchantId: 1, teamMemberId: 12, quoteNumber: 2, total: 900, jobId: 77, job: trabajoAjeno },
+  charge: null, tags: [], internalNotes: null,
+};
+
+let apuntes = [];
+let pasada = 'A';
+for (const m of modelos) {
+  const d = prisma[m];
+  const apunta = (op, args) => { apuntes.push({ modelo: m, op, where: args && args.where !== undefined ? args.where : null }); };
+  for (const op of LECTURAS_UNA) d[op] = async (args) => { apunta(op, args); return pasada === 'B' ? (m === 'job' ? trabajoAjeno : AJENO) : null; };
+  d.findMany = async (args) => { apunta('findMany', args); return []; };
+  d.count = async (args) => { apunta('count', args); return 0; };
+  d.aggregate = async (args) => { apunta('aggregate', args); return { _sum: {}, _count: { _all: 0 }, _avg: {}, _max: {}, _min: {} }; };
+  d.groupBy = async (args) => { apunta('groupBy', args); return []; };
+  for (const op of ESCRITURAS) d[op] = async (args) => { apunta(op, args); return pasada === 'B' ? AJENO : {}; };
+}
+prisma.$transaction = async (x) => (typeof x === 'function' ? x(prisma) : Promise.all(x));
+prisma.$queryRaw = async () => { apuntes.push({ modelo: '$raw', op: '$queryRaw', where: null }); return []; };
+prisma.$queryRawUnsafe = prisma.$queryRaw;
+prisma.$executeRaw = async () => 0;
+prisma.$executeRawUnsafe = prisma.$executeRaw;
+
+// ── Dónde vive cada ruta declarada. Una ruta puede estar registrada DOS veces
+// (`app.post(ruta, requireActivePlan)` delante del router): se juntan todas sus manos, en orden de
+// montaje. Quedarse con la primera medía sólo la puerta del plan — pasó en la primera pasada de
+// este censo con `POST /admin/quotes/:id/send-whatsapp`, que salió «sin documento».
+function manosDe(method, ruta) {
+  const m = method.toLowerCase();
+  const manos = [];
+  for (const layer of app.router.stack) {
+    if (layer.route && layer.route.path === ruta && layer.route.methods[m]) manos.push(...layer.route.stack);
+  }
+  for (const mount of getAdminMounts()) {
+    for (const layer of mount.router.stack) {
+      if (!layer.route) continue;
+      const rel = layer.route.path === '/' ? '' : layer.route.path;
+      if (mount.prefix + rel === ruta && layer.route.methods[m]) manos.push(...layer.route.stack);
+    }
+  }
+  return manos;
+}
+
+function peticion(rol, ruta, method) {
+  const params = {};
+  for (const seg of ruta.split('/')) if (seg.startsWith(':')) params[seg.slice(1)] = '102';
+  const base = rol === 'admin'
+    ? { userRole: 'admin', teamMemberId: null, isOwner: true }
+    : { userRole: 'tecnico', teamMemberId: 11, isOwner: false };
+  // La query lleva lo que piden los buscadores: sin `q`, /admin/search contesta vacío sin consultar.
+  return { ...base, merchantId: 1, params, query: { q: 'obra', customerId: '5', mes: '2026-09' }, body: {},
+    headers: { 'user-agent': 'censo' }, method, path: ruta, originalUrl: ruta, url: ruta, ip: '127.0.0.1', cookies: {},
+    get() { return undefined; }, header() { return undefined; }, socket: { remoteAddress: '127.0.0.1' }, app };
+}
+
+async function pedir(manos, req) {
+  let estado = 200; let acabado = false;
+  const res = new PassThrough();
+  res.on('error', () => {});
+  res.resume();
+  const fin = () => { acabado = true; return res; };
+  res.status = (n) => { estado = n; return res; };
+  res.sendStatus = (n) => { estado = n; return fin(); };
+  res.json = () => fin();
+  res.send = () => fin();
+  res.set = () => res; res.setHeader = () => res; res.header = () => res; res.type = () => res;
+  res.attachment = () => res; res.cookie = () => res; res.locals = {};
+  res.redirect = (a) => { estado = typeof a === 'number' ? a : 302; return fin(); };
+  res.sendFile = () => fin();
+  res.download = () => fin();
+  res.once('finish', () => { acabado = true; });
+  let error = null;
+  const m = req.method.toLowerCase();
+  try {
+    for (const s of manos) {
+      if (s.method && s.method !== m) continue;
+      let sigue = false;
+      await Promise.race([
+        (async () => { await s.handle(req, res, (e) => { if (e) error = e; else sigue = true; }); })(),
+        new Promise((ok) => setTimeout(ok, 4000)),
+      ]);
+      // un manejador que no espera su promesa: darle un respiro para que conteste
+      for (let i = 0; i < 20 && !sigue && !acabado && !error; i++) await new Promise((ok) => setTimeout(ok, 25));
+      if (!sigue || error || acabado) break;
+    }
+  } catch (e) { error = e; }
+  return { estado: error && !acabado ? 'EXC' : estado, error: error ? String(error.message || error).slice(0, 90) : null };
+}
+
+const canon = (x) => JSON.stringify(x, (k, v) => (v instanceof Date ? 'FECHA' : v));
+const soloDoc = (l) => l.filter((a) => DOCUMENTO.includes(a.modelo));
+const firma = (l, modelo) => soloDoc(l).filter((a) => !modelo || a.modelo === modelo)
+  .map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');
+const CORRIDAS = ['Aadmin', 'Atecnico', 'Badmin', 'Btecnico'];
+const esNo = (e) => e === 'EXC' || (typeof e === 'number' && e >= 400);
+
+const filas = [];
+for (const d of TECNICO_ALLOWED) {
+  const manos = manosDe(d.method, d.path);
+  if (!manos.length) { filas.push({ ...d, veredicto: 'CIEGO', nota: 'no encuentro la ruta montada', porModelo: {} }); continue; }
+  const r = {};
+  for (const p of ['A', 'B']) {
+    for (const rol of ['admin', 'tecnico']) {
+      pasada = p; apuntes = [];
+      const out = await pedir(manos, peticion(rol, d.path, d.method));
+      r[p + rol] = { ...out, apuntes };
+    }
+  }
+  const modelosDoc = [...new Set(CORRIDAS.flatMap((k) => soloDoc(r[k].apuntes).map((a) => a.modelo)))];
+  const niegaB = [403, 404].includes(r.Btecnico.estado) && !([403, 404].includes(r.Badmin.estado));
+  // Por MODELO: ¿la consulta que la ruta arma sobre ESE modelo cambia con el rol?
+  const porModelo = {};
+  for (const m of modelosDoc) {
+    const distinto = firma(r.Aadmin.apuntes, m) !== firma(r.Atecnico.apuntes, m)
+      || firma(r.Badmin.apuntes, m) !== firma(r.Btecnico.apuntes, m);
+    porModelo[m] = (niegaB || distinto) ? 'RECORTA' : 'NO-DISTINGUE';
+  }
+  const noLlego = modelosDoc.length === 0 && CORRIDAS.every((k) => esNo(r[k].estado));
+  let veredicto;
+  if (noLlego) veredicto = 'NO-LLEGO';
+  else if (modelosDoc.length === 0) veredicto = 'SIN-DOCUMENTO';
+  else if (Object.values(porModelo).some((v) => v === 'NO-DISTINGUE')) veredicto = 'NO-DISTINGUE';
+  else veredicto = 'RECORTA';
+  filas.push({ ...d, veredicto, porModelo, niegaB, manos: manos.length,
+    estados: `A adm ${r.Aadmin.estado} tec ${r.Atecnico.estado} · B adm ${r.Badmin.estado} tec ${r.Btecnico.estado}`,
+    whereTec: firma(r.Atecnico.apuntes) || firma(r.Btecnico.apuntes),
+    whereAdm: firma(r.Aadmin.apuntes) || firma(r.Badmin.apuntes),
+    otros: [...new Set(CORRIDAS.flatMap((k) => r[k].apuntes.filter((a) => !DOCUMENTO.includes(a.modelo)).map((a) => a.modelo)))],
+    err: r.Btecnico.error || r.Atecnico.error || null });
+}
+
+console.log('POBLACION: ' + TECNICO_ALLOWED.length + ' rutas en TECNICO_ALLOWED · ' + modelos.length + ' modelos doblados · modelos de documento: ' + DOCUMENTO.join(', '));
+const por = (v) => filas.filter((f) => f.veredicto === v);
+const CLASES = ['NO-DISTINGUE', 'RECORTA', 'SIN-DOCUMENTO', 'NO-LLEGO', 'CIEGO'];
+for (const v of CLASES) {
+  console.log('\n== ' + v + ' · ' + por(v).length);
+  for (const f of por(v)) {
+    const pm = Object.entries(f.porModelo || {}).map(([m, x]) => m + '=' + x).join(' · ');
+    console.log(`${f.method.padEnd(6)} ${f.path}` + (pm ? '  [' + pm + ']' : ''));
+    if (f.estados) console.log('         ' + f.estados + (f.niegaB ? '  (al técnico le NIEGA el ajeno)' : ''));
+    if (v === 'NO-DISTINGUE' || v === 'RECORTA') {
+      console.log('         técnico: ' + (f.whereTec || '—').slice(0, 520));
+      if (f.whereAdm !== f.whereTec) console.log('         admin:   ' + (f.whereAdm || '—').slice(0, 520));
+    }
+    if ((v === 'SIN-DOCUMENTO' || v === 'NO-LLEGO') && f.otros && f.otros.length) console.log('         consulta: ' + f.otros.join(', '));
+    if (f.nota) console.log('         ' + f.nota);
+    if (f.err && v !== 'RECORTA' && v !== 'NO-DISTINGUE') console.log('         error: ' + f.err);
+  }
+}
+
+// ── La tabla que se pide: por modelo de documento, cuántas rutas NO distinguen.
+console.log('\n-- POR MODELO: rutas del Técnico que consultan ese modelo SIN distinguir el rol');
+for (const m of DOCUMENTO) {
+  const todas = filas.filter((f) => f.porModelo && f.porModelo[m]);
+  const no = todas.filter((f) => f.porModelo[m] === 'NO-DISTINGUE');
+  console.log(`  ${m.padEnd(13)} ${no.length} de ${todas.length} que lo consultan`);
+  for (const f of no) console.log('      ' + f.method.padEnd(6) + ' ' + f.path);
+}
+
+// ── Controles del instrumento. Sin ellos un «NO-DISTINGUE» podría ser que no ve ningún recorte.
+const ver = (m, p) => (filas.find((f) => f.method === m && f.path === p) || {}).veredicto;
+const positivos = [['GET', '/admin/jobs'], ['GET', '/admin/jobs/:id'], ['GET', '/admin/albaranes'], ['GET', '/admin/albaranes/:id'], ['GET', '/admin/partes']];
+const negativos = [['GET', '/admin/quotes'], ['GET', '/admin/quotes/:id'], ['GET', '/admin/invoices'], ['GET', '/admin/metrics/inicio']];
+console.log('\n-- CONTROLES');
+let ok = true;
+for (const [m, p] of positivos) { const v = ver(m, p); if (v !== 'RECORTA') ok = false; console.log(`  positivo (recorte conocido: SCRUM-23/467/992)  ${m} ${p} → ${v}`); }
+for (const [m, p] of negativos) { const v = ver(m, p); if (v !== 'NO-DISTINGUE') ok = false; console.log(`  negativo (medido en yaqu.app por J4g / por J2i)   ${m} ${p} → ${v}`); }
+console.log('¿los controles salen como se sabe que son?  ' + ok);
+console.log('TOTALES: ' + CLASES.map((v) => v + ' ' + por(v).length).join(' · ') + ' · suma ' + filas.length);
+console.log('EXIT=' + (ok ? 0 : 1));
+process.exit(ok ? 0 : 1);

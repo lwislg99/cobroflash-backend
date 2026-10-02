@@ -1,0 +1,16 @@
+id	creado	run	intento	evento	conclusion	arbol	medible	tap_entero	declarados	literales	no_comparables	tap_tests	tap_fail	ausentes	dudosos	j3h_faltan	motivo	donde	dudas
+11170816607	2026-10-01T14:52:56Z	36878649258	1/1	pull_request	cancelled	cc0ccd9c9116	sí	sí	9500	9385	115	9917	0	0	0				
+11170333117	2026-10-01T14:56:40Z	36878986636	1/1	pull_request	success	b46b50512329	sí	sí	9505	9390	115	9922	0	0	0				
+11171756403	2026-10-01T14:59:48Z	36879091133	1/1	push	success	2b908f434b55	sí	sí	9491	9376	115	9904	0	4	0			tests/scrum411-exports-inalcanzables.test.mjs · faltan 4 de 25 (cola) · posiciones 22–25 · líneas 586–643	
+11171825926	2026-10-01T15:03:50Z	36879667635	1/1	pull_request	success	8edbb3c72798	sí	sí	9500	9385	115	9913	0	3	0			tests/scrum888g-senal-en-la-firma.test.mjs · faltan AL MENOS 3 de 10 (cola) · posiciones 8–10 · líneas 190–238 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve	
+11171214885	2026-10-01T15:17:14Z	36880659605	1/1	push	success	a1d219d54b27	sí	sí	9505	9390	115	9889	0	33	0			tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 33 de 53 (cola) · posiciones 21–53 · líneas 227–647	
+11172835639	2026-10-01T15:19:41Z	36882137364	1/1	pull_request	success	ef814a02d615	sí	sí	9527	9412	115	9944	0	0	0				
+11175030704	2026-10-01T15:33:38Z	36883824732	1/1	push	success	ef814a02d615	sí	sí	9527	9412	115	9944	0	0	0				
+11174496991	2026-10-01T15:39:23Z	36884663586	1/1	pull_request	success	e2f3e1482ce9	sí	sí	9530	9415	115	9947	0	0	0				
+11174732253	2026-10-01T15:43:12Z	36885380576	1/1	pull_request	success	1a860f37d46a	sí	sí	9527	9412	115	9944	0	0	0				
+11174308618	2026-10-01T15:50:41Z	36886428643	1/1	push	success	e2f3e1482ce9	sí	sí	9530	9415	115	9915	0	8	0			tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve | tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve	
+11175921066	2026-10-01T16:03:01Z	36888164178	1/1	pull_request	cancelled	930d4f2d7f25	NO	NO	9530	9415	115						el TAP no tiene resumen (`# tests N`): la tanda no llegó al final		
+11175538980	2026-10-01T16:09:43Z	36888848950	1/1	pull_request	cancelled	a16f74e17bd4	NO	NO	9530	9415	115						el TAP no tiene resumen (`# tests N`): la tanda no llegó al final		
+11175713200	2026-10-01T16:12:22Z	36886780786	1/1	push	success	2aca0a7b9f24	sí	sí	9530	9415	115	9941	0	6	0			tests/scrum411-exports-inalcanzables.test.mjs · faltan 6 de 25 (cola) · posiciones 20–25 · líneas 545–643	
+11175459720	2026-10-01T16:13:53Z	36889740689	1/1	pull_request	cancelled	e21cb6cb8b40	NO	NO	9530	9415	115						el TAP no tiene resumen (`# tests N`): la tanda no llegó al final		
+11176179470	2026-10-01T16:24:08Z	36890335441	1/1	pull_request	success	— (sin log)	sin árbol	sí									sin log		

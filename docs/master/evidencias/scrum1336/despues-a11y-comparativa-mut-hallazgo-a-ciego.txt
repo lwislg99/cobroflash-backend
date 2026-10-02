@@ -1,0 +1,22 @@
+# a11y-comparativa-mut-hallazgo-a-ciego · guard-a11y-comparativa.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «hallazgo-a-ciego» sobre el escenario «hallazgo»: const hallazgo = (texto) => { console.error(texto); hallazgo
+# EXIT=2 · 1.7 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+── 1280px · 6 filas · grid: 323.25px 269.375px 269.375px
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 11/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+── 360px · 6 filas · grid: no hay (apilado)
+   calibración «uno dos» · el detector rechaza una etiqueta inventada y acepta la que sí está
+   ✔ 11/12 celdas llegan con su etiqueta de columna asociada
+     se oye: «TU MÉTODO ACTUAL Tu palabra contra la suya.»
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+   ✖ @1280px · fila "firma" · columna «Con YaQu» → llega SIN su etiqueta de columna. Se oiría: «Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.»
+   ✖ @360px · fila "firma" · columna «Con YaQu» → llega SIN su etiqueta de columna. Se oiría: «Lo aceptó con su firma y su fecha, y la firma queda dentro del PDF.»
+
+🔴 NO SUPE MIRAR 2 vez/veces: de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 2 ciegos → salida 2 (no supe medir) · un ciego no es un verde

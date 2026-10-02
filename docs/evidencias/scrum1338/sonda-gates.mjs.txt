@@ -1,0 +1,78 @@
+// Recon SCRUM-1338 · cada entrada de la barra, montada con rol de operario, contra el gate REAL
+// de la ruta que pide. Los gates salen de `dist/app.js` (misma enumeración que scrum55).
+//   node censo-menu.mjs <raiz del repo>
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const imp = (rel) => import(pathToFileURL(path.join(RAIZ, rel)).href);
+const { app } = await imp('dist/app.js');
+const { getAdminMounts } = await imp('dist/core/http/adminMounts.js');
+
+// ── 1 · los gates del servidor ──────────────────────────────────────────────────────────────
+const roleOf = (h) => (h && h.__requiredRole) || null;
+const rutas = new Map();
+const add = (method, p, role) => {
+  const k = `${method.toUpperCase()} ${p}`;
+  const prev = rutas.get(k);
+  if (prev) { prev.role = prev.role || role; return; }
+  rutas.set(k, { method: method.toUpperCase(), path: p, role });
+};
+for (const layer of app.router.stack) {
+  if (!layer.route) continue;
+  const p = layer.route.path;
+  if (typeof p !== 'string' || !p.startsWith('/admin')) continue;
+  const role = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+  for (const m of Object.keys(layer.route.methods)) add(m, p, role);
+}
+for (const mount of getAdminMounts()) {
+  const mountRole = mount.gates.map(roleOf).find(Boolean) || null;
+  const useRole = mount.router.stack.filter((l) => !l.route).map((l) => roleOf(l.handle)).find(Boolean) || null;
+  for (const layer of mount.router.stack) {
+    if (!layer.route) continue;
+    const routeRole = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+    const rel = layer.route.path === '/' ? '' : layer.route.path;
+    for (const m of Object.keys(layer.route.methods)) add(m, mount.prefix + rel, mountRole || useRole || routeRole);
+  }
+}
+const tabla = [...rutas.values()].map((r) => ({
+  ...r,
+  literales: r.path.split('/').filter((s) => s && !s.startsWith(':')).length,
+  re: new RegExp('^' + r.path.split('/').map((s) => (s.startsWith(':') ? '[^/]+' : s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('/') + '/?$'),
+}));
+function gate(method, url) {
+  const p = String(url).replace(/^https?:\/\/[^/]+/, '').replace(/[?#].*$/, '');
+  const c = tabla.filter((r) => r.method === method.toUpperCase() && r.re.test(p)).sort((a, b) => b.literales - a.literales);
+  return c.length ? c[0] : null;
+}
+console.log(`POBLACION_RUTAS=${tabla.length} · con rol admin=${tabla.filter((r) => r.role === 'admin').length} · sin rol=${tabla.filter((r) => !r.role).length}`);
+console.log(`control gate: GET /admin/cobros -> ${JSON.stringify(gate('GET', '/admin/cobros')?.role)} · GET /admin/customers -> ${JSON.stringify(gate('GET', '/admin/customers')?.role)} · GET /admin/no-existe -> ${JSON.stringify(gate('GET', '/admin/no-existe'))}`);
+const citas = [
+  ['A', 'invoiceDetailView.js:387', 'POST', '/admin/invoices/1/resend-whatsapp'],
+  ['A', 'invoiceDetailView.js:407,423', 'POST', '/admin/invoices/1/send-email'],
+  ['A', 'invoiceDetailView.js:471', 'POST', '/admin/invoices/1/payment-anomaly'],
+  ['A', 'invoiceDetailView.js:490', 'PATCH', '/admin/invoices/1/status'],
+  ['A', 'invoiceDetailView.js:490', 'POST', '/admin/invoices/1/status'],
+  ['A', 'invoiceDetailView.js:490', 'PUT', '/admin/invoices/1/status'],
+  ['A', 'invoiceDetailView.js:576', 'POST', '/admin/charges/1/confirm-bizum'],
+  ['A', 'invoiceDetailView.js:612', 'POST', '/admin/invoices/1/send-reminder'],
+  ['A', 'invoiceDetailView.js:653', 'POST', '/admin/invoices/1/rectify'],
+  ['A', 'invoiceDetailView.js:743', 'POST', '/admin/invoices/1/regenerate-pdf'],
+  ['A', 'invoiceDetailView.js:874 (ya vetado)', 'POST', '/admin/invoices/1/annul'],
+  ['A', 'invoicesView.js:486', 'POST', '/admin/invoices/bulk-paid'],
+  ['A', 'quotesView.js:5463', 'POST', '/admin/invoices'],
+  ['B', 'quotesDetailView.js:924', 'PATCH', '/admin/invoices/1/status'],
+  ['B', 'quotesDetailView.js:1127', 'GET', '/admin/expenses/margin/1'],
+  ['B', 'quotesDetailView.js:1483', 'DELETE', '/admin/maintenance/1'],
+  ['B', 'quotesDetailView.js:1513', 'POST', '/admin/maintenance'],
+  ['B', 'albaranDetailView.js:564', 'POST', '/admin/albaranes/1/convertir-en-factura'],
+  ['B', 'jobsView.js:132,843', 'GET', '/admin/team'],
+  ['C', 'cobrosView.js:710', 'GET', '/admin/cobros'],
+  ['C', 'facturasRecibidasView.js:211', 'GET', '/admin/libros/recibidas.json'],
+  ['ctl', 'control sin rol', 'GET', '/admin/customers'],
+  ['ctl', 'control inexistente', 'GET', '/admin/no-existe'],
+];
+console.log(`POBLACION_CITAS=${citas.length}`);
+for (const [t, donde, m, u] of citas) { const g = gate(m, u); console.log(`${t}\t${donde}\t${m} ${u}\t-> ${g ? (g.role || 'SIN ROL') + ' (' + g.path + ')' : 'NO CASA con ninguna ruta'}`); }
+console.log('EXIT=0');
