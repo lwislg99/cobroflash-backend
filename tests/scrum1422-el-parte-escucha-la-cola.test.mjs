@@ -154,21 +154,28 @@ async function vuelveLaRed(b, red) {
 
 // ═══ ACEPTACIÓN 1 · pad cerrado, la firma sube: la ficha se pone al día sola ════════════════════
 
-for (const [quien, tipo] of [['cliente', 'parte'], ['tecnico', 'parte-tecnico']]) {
-  test(`SCRUM-1422 · ficha abierta + firma del ${quien} en la cola + vuelve la red: deja de ofrecer firmar y dice que firmó`, async () => {
-    const { b, red, pad } = montar();
-    const cont = await abrirFicha(b, pad);
-    await firmarSinRed(b, red, pad, cont, quien);
-    pad.cerrar(false); // «Cancelar», aún sin red: no ha llegado ningún aviso
-    assert.equal(ofreceFirmar(cont, quien), true, 'suelo: antes de volver la red la ficha ofrece firmar');
-    const lecturas = red.lecturas;
+// Los nombres van LITERALES (SCRUM-1415): la señal por nombres no ve uno construido en un bucle.
+async function seponeAlDiaSola(quien, tipo) {
+  const { b, red, pad } = montar();
+  const cont = await abrirFicha(b, pad);
+  await firmarSinRed(b, red, pad, cont, quien);
+  pad.cerrar(false); // «Cancelar», aún sin red: no ha llegado ningún aviso
+  assert.equal(ofreceFirmar(cont, quien), true, 'suelo: antes de volver la red la ficha ofrece firmar');
+  const lecturas = red.lecturas;
 
-    assert.deepEqual(await vuelveLaRed(b, red), [`${tipo}:${ID}`], 'suelo: la cola subió y avisó de ESTE parte');
-    assert.equal(red.lecturas, lecturas + 1, 'la ficha se vuelve a pedir UNA vez');
-    assert.equal(ofreceFirmar(cont, quien), false, '🔴 la ficha sigue ofreciendo firmar lo que el servidor ya tiene');
-    assert.equal(diceFirmado(cont, quien), true, 'y dice que ya firmó');
-  });
+  assert.deepEqual(await vuelveLaRed(b, red), [`${tipo}:${ID}`], 'suelo: la cola subió y avisó de ESTE parte');
+  assert.equal(red.lecturas, lecturas + 1, 'la ficha se vuelve a pedir UNA vez');
+  assert.equal(ofreceFirmar(cont, quien), false, '🔴 la ficha sigue ofreciendo firmar lo que el servidor ya tiene');
+  assert.equal(diceFirmado(cont, quien), true, 'y dice que ya firmó');
 }
+
+test('SCRUM-1422 · ficha abierta + firma del cliente en la cola + vuelve la red: deja de ofrecer firmar y dice que firmó', async () => {
+  await seponeAlDiaSola('cliente', 'parte');
+});
+
+test('SCRUM-1422 · ficha abierta + firma del tecnico en la cola + vuelve la red: deja de ofrecer firmar y dice que firmó', async () => {
+  await seponeAlDiaSola('tecnico', 'parte-tecnico');
+});
 
 // ═══ ACEPTACIÓN 2 · con el pad abierto no se repinta; al cerrarlo, sí ═══════════════════════════
 

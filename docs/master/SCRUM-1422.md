@@ -42,6 +42,12 @@ Con la firma ya subida y la lectura fallando había dos salidas sin texto nuevo:
 
 ⚠️ Para quien escriba otro test del cierre: los pads falsos de `scrum890b` y `scrum919` sólo guardan `onConfirm`. Un test del cierre tiene que llamar él a `onClose`, o no mide nada.
 
+## Tres rojos de CI en la punta `526a9a3ac772424ee8e28195337578bd7d6df7b4`, y qué eran (2-oct-2026 ~16:10Z, `s4-2octc`)
+
+- **SCRUM-1415** — error de este registro: los dos primeros tests salían de un bucle con el nombre en una plantilla. Ahora son dos `test()` de nombre literal sobre una función común. Siguen siendo 9. Censo después: `construidas=2 lista=2` (las de `scrum809`, ajenas).
+- **SCRUM-1340** y **SCRUM-976 ④** — no se ha tocado nada para ellos. Con `main` traído (PR #2154 ya mergeado) el primero dice `lo de esta rama: DECLARA` y el segundo sale 0. **No reproduje el rojo de 1340 sobre la punta vieja**: que viniera de ir apilada sobre #2154 es una inferencia, no una medición.
+- Corridos en local tras el arreglo: `scrum811c` + `scrum1415` 33 de 33; `scrum976` + este fichero 20 de 20. La tanda entera no la he corrido.
+
 ## Lo que NO está medido, y lo que queda fuera
 
 - **No visto en yaqu.app.**
