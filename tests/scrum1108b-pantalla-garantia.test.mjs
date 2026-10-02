@@ -17,6 +17,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(path.join(RAIZ, 'package.json'));
@@ -144,16 +145,21 @@ async function declarar(timezone, liberacion) {
   }
 }
 
-for (const zona of ['America/Mexico_City', 'America/Bogota', 'Europe/Madrid', 'Atlantic/Canary', 'Pacific/Auckland']) {
-  test(`SCRUM-1108b · 🔴 «2027-09-23» declarado en ${zona} se lee 23 en ${zona}, no el día de antes`, async () => {
-    const r = await declarar(zona, '2027-09-23');
-    assert.equal(r.status, 200, `🔴 CIEGO: ${JSON.stringify(r.cuerpo)}`);
-    assert.equal(r.escritas.length, 1);
-    const guardada = r.escritas[0].retencionGarantiaLiberacion;
-    assert.ok(guardada instanceof Date, '🔴 CIEGO: la ruta no escribió la fecha de liberación');
-    assert.equal(diaNaturalEn(guardada, zona), '2027-09-23');
-  });
-}
+const FILAS = ['America/Mexico_City', 'America/Bogota', 'Europe/Madrid', 'Atlantic/Canary', 'Pacific/Auckland'];
+const caso = casosEscritos(FILAS, (zona) => `SCRUM-1108b · 🔴 «2027-09-23» declarado en ${zona} se lee 23 en ${zona}, no el día de antes`, async (zona) => {
+  const r = await declarar(zona, '2027-09-23');
+  assert.equal(r.status, 200, `🔴 CIEGO: ${JSON.stringify(r.cuerpo)}`);
+  assert.equal(r.escritas.length, 1);
+  const guardada = r.escritas[0].retencionGarantiaLiberacion;
+  assert.ok(guardada instanceof Date, '🔴 CIEGO: la ruta no escribió la fecha de liberación');
+  assert.equal(diaNaturalEn(guardada, zona), '2027-09-23');
+});
+test('SCRUM-1108b · 🔴 «2027-09-23» declarado en America/Mexico_City se lee 23 en America/Mexico_City, no el día de antes', caso(0));
+test('SCRUM-1108b · 🔴 «2027-09-23» declarado en America/Bogota se lee 23 en America/Bogota, no el día de antes', caso(1));
+test('SCRUM-1108b · 🔴 «2027-09-23» declarado en Europe/Madrid se lee 23 en Europe/Madrid, no el día de antes', caso(2));
+test('SCRUM-1108b · 🔴 «2027-09-23» declarado en Atlantic/Canary se lee 23 en Atlantic/Canary, no el día de antes', caso(3));
+test('SCRUM-1108b · 🔴 «2027-09-23» declarado en Pacific/Auckland se lee 23 en Pacific/Auckland, no el día de antes', caso(4));
+caso.todos();
 
 test('SCRUM-1108b · un día que no existe («2027-02-30») es un 400, no el 2 de marzo', async () => {
   const r = await declarar('Europe/Madrid', '2027-02-30');
