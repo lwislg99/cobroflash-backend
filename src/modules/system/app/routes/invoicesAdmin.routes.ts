@@ -1,6 +1,8 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
+// SCRUM-1397 · qué facturas ve quien pregunta: UNA puerta para la lista, la ficha y el PDF.
+import { whereFacturasVisibles, puedeVerLaFactura, type QuienPide } from '../../../../core/documentos/accesoALaFactura';
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -68,6 +70,11 @@ import {
 
 const router = Router();
 
+/** SCRUM-1397 · quién pregunta, tal como lo deja `requireAuth`, para la puerta de las facturas. */
+const quienPide = (req: Request): QuienPide => ({
+  merchantId: req.merchantId!, userRole: req.userRole, teamMemberId: req.teamMemberId,
+});
+
 /**
  * GET /admin/invoices?status=pending|paid|expired|all&search=texto
  */
@@ -78,7 +85,9 @@ router.get('/', async (req, res) => {
     const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : null;
     const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
 
-    const invoices = await listInvoicesAdmin(req.merchantId, status, search, dateFrom, dateTo);
+    // SCRUM-1397 · un Técnico lista SUS facturas (autor, Trabajo o asignada); el admin, todas.
+    const recorte = await whereFacturasVisibles(quienPide(req));
+    const invoices = await listInvoicesAdmin(req.merchantId, status, search, dateFrom, dateTo, recorte);
     // El listado devuelve la fila ENTERA de `invoices`, y `lines` es una columna: el coste
     // congelado viajaba también por aquí, no sólo por el detalle.
     res.json(veEconomiaDelNegocio(req.userRole) ? invoices : sinCosteEnDocumentos(invoices as unknown as Array<Record<string, unknown>>));
@@ -235,6 +244,11 @@ router.get('/:id', async (req, res) => {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: 'invalid_id' });
+    }
+
+    // SCRUM-1397 · la misma puerta que la lista. La ajena contesta igual que la que no existe.
+    if (!(await puedeVerLaFactura(quienPide(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
     }
 
     const invoice = await getInvoiceDetailAdmin(id, req.merchantId); // A21.3: scoped
@@ -1257,6 +1271,9 @@ router.get('/:id/pdf', async (req, res) => {
     // Scope multi-tenant: 404 si no es del merchant.
     const owned = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
     if (!owned) return res.status(404).json({ error: 'not_found' });
+    // SCRUM-1397 · y que sea de quien la pide, ANTES de generar nada: el PDF de una ajena no se
+    // llega a producir.
+    if (!(await puedeVerLaFactura(quienPide(req), id))) return res.status(404).json({ error: 'not_found' });
 
     // Genera el PDF bajo demanda si falta (helper compartido) y lo sirve.
     const { diskPath, number } = await ensureInvoicePdf(id, prisma);

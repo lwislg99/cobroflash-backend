@@ -25,7 +25,7 @@
 //
 // Sin `LIBRO_PG_URL` los casos con base SALTAN diciendo por qué. La mitad sin base (abajo del
 // todo) corre siempre: es la que avisa si las tres rutas dejan de pasar por la puerta.
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,6 +48,13 @@ if (URL_BANCO) {
 const CON_BASE = URL_BANCO !== '';
 const SALTO = !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI';
 
+// La conexión se suelta al acabar el fichero, no en cada caso: los dos comparten cliente.
+after(async () => {
+  if (!CON_BASE) return;
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  await prisma.$disconnect();
+});
+
 // ── Lo común a los casos con base ────────────────────────────────────────────────────────────
 
 async function montar(app) {
@@ -66,8 +73,9 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
 
 const pedir = async (port, token, ruta) => {
   const r = await fetch(`http://127.0.0.1:${port}${ruta}`, { headers: { cookie: `pf_session=${token}` } });
-  const cuerpo = await r.json().catch(() => null);
-  return { status: r.status, cuerpo };
+  const tipo = r.headers.get('content-type') || '';
+  const cuerpo = tipo.includes('json') ? await r.json().catch(() => null) : (await r.arrayBuffer(), null);
+  return { status: r.status, cuerpo, tipo };
 };
 
 /** Un negocio con dos Técnicos y una administradora. Devuelve los creadores que usan los casos. */
@@ -90,7 +98,9 @@ async function equipoDe(prisma, merchant, marca) {
   const factura = (numero, total, extra = {}) => prisma.invoice.create({
     data: {
       merchantId: merchant.id, customerId: cliente.id, number: numero, total: String(total), currency: 'EUR',
-      pdfUrl: 'PENDING_PDF', qrData: 'PENDING', status: 'pending', type: 'F1', quoteId: null, ...extra,
+      pdfUrl: 'PENDING_PDF', qrData: 'PENDING', status: 'pending', type: 'F1', quoteId: null,
+      vfEstado: 'no_aplica', // el negocio sembrado no lleva NIF: sus documentos no entran en la cadena y el PDF sale
+      ...extra,
     },
   });
   const trabajo = (extra = {}) => prisma.job.create({ data: { merchantId: merchant.id, customerId: cliente.id, ...extra } });
@@ -268,15 +278,24 @@ test('SCRUM-1397 · ✅ el Técnico SIGUE viendo cada factura suya (autor · Tra
       }
       assert.deepEqual(vistas, [...SUYAS].sort(), 'la lista de Ana no es exactamente el conjunto de las suyas');
 
+      // ── BUSCAR NO ABRE LA PUERTA: el recorte va en AND con la búsqueda, no en OR ──────────
+      const numerosDe = async (token, consulta) => (await pedir(port, token, `/admin/invoices?${consulta}`)).cuerpo.map((f) => f.number).sort();
+      assert.deepEqual(await numerosDe(tokenAna, 'search=AJENA'), [], '🔴 buscando por número, el Técnico encuentra facturas ajenas');
+      assert.deepEqual(await numerosDe(tokenAna, `search=${encodeURIComponent('Cliente QA 1397')}`), [...SUYAS].sort(),
+        '🔴 buscando por cliente, la lista del Técnico deja de ser la de las suyas');
+      // El positivo del mismo filtro: buscar una suya la encuentra, y la misma búsqueda del admin ve las ajenas.
+      assert.deepEqual(await numerosDe(tokenAna, 'search=SUYA-AUTORA'), ['SUYA-AUTORA']);
+      assert.deepEqual(await numerosDe(tokenJefa, 'search=AJENA'), [...AJENAS].sort());
+
       // ── FICHA y PDF, una a una, por la misma puerta ───────────────────────────────────────
       for (const numero of SUYAS) {
         const ficha = await pedir(port, tokenAna, `/admin/invoices/${idDe[numero]}`);
         assert.equal(ficha.status, 200, `🔴 el operario no puede abrir la FICHA de una factura suya: ${numero}`);
         assert.equal(ficha.cuerpo.number, numero);
-        // Las facturas sembradas nacen sin sellar, así que el PDF de una SUYA lo para el sellado
-        // (409, SCRUM-206), que es otra regla y va DESPUÉS de la puerta. Lo que no puede ser es 404.
+        // El PDF de una SUYA se genera de verdad y sale: no «no es 404», sino el documento.
         const pdf = await pedir(port, tokenAna, `/admin/invoices/${idDe[numero]}/pdf`);
-        assert.equal(pdf.status, 409, `🔴 el PDF de una factura suya no llega hasta el sellado (${pdf.status}): ${numero}`);
+        assert.equal(pdf.status, 200, `🔴 el operario no puede abrir el PDF de una factura suya (${pdf.status}): ${numero}`);
+        assert.match(pdf.tipo, /application\/pdf/, `lo que sale por el PDF de ${numero} no es un PDF`);
       }
       for (const numero of AJENAS) {
         const ficha = await pedir(port, tokenAna, `/admin/invoices/${idDe[numero]}`);
@@ -299,11 +318,100 @@ test('SCRUM-1397 · ✅ el Técnico SIGUE viendo cada factura suya (autor · Tra
         assert.deepEqual(l.cuerpo.map((f) => f.number).sort(), NO_JUST, `🔴 ${quien} ya no ve todas las facturas del negocio`);
         for (const f of todas) {
           assert.equal((await pedir(port, token, `/admin/invoices/${f.id}`)).status, 200, `🔴 ${quien} no abre la ficha de ${f.number}`);
-          assert.equal((await pedir(port, token, `/admin/invoices/${f.id}/pdf`)).status, 409, `🔴 ${quien} no llega al PDF de ${f.number}`);
+          assert.equal((await pedir(port, token, `/admin/invoices/${f.id}/pdf`)).status, 200, `🔴 ${quien} no abre el PDF de ${f.number}`);
         }
       }
     } finally {
       await cerrar();
+      // Los PDF generados se quedan en `storage/invoices/`: se quitan los de ESTAS facturas, por su
+      // nombre exacto. Nunca por prefijo: el id del merchant de un banco recién creado es un 1 o un 2.
+      for (const f of todas) {
+        fs.rmSync(path.join(RAIZ, 'storage', 'invoices', `${merchant.id}-${f.number}.pdf`), { force: true });
+      }
     }
   });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SIN BASE · corre siempre. Lo que avisa aunque los casos de arriba salten.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const RUTAS = 'src/modules/system/app/routes/invoicesAdmin.routes.ts';
+const PUERTA = 'src/core/documentos/accesoALaFactura.ts';
+
+/** Los manejadores `router.get(<ruta>, …)` del fichero de rutas, por su ruta. AST, no texto. */
+function manejadoresGet() {
+  const fuente = fs.readFileSync(path.join(RAIZ, RUTAS), 'utf8');
+  const sf = ts.createSourceFile(RUTAS, fuente, ts.ScriptTarget.Latest, true);
+  const out = new Map();
+  const visita = (n) => {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+      && n.expression.expression.getText(sf) === 'router' && n.expression.name.text === 'get'
+      && n.arguments.length >= 2 && ts.isStringLiteral(n.arguments[0])) {
+      out.set(n.arguments[0].text, n.arguments[n.arguments.length - 1]);
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return { sf, out };
+}
+
+/** Las LLAMADAS a `nombre` dentro de un nodo, con su posición. Un comentario no es una llamada. */
+function llamadasA(nodo, nombre) {
+  const out = [];
+  const visita = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === nombre) out.push(n.getStart());
+    ts.forEachChild(n, visita);
+  };
+  visita(nodo);
+  return out;
+}
+
+test('SCRUM-1397 · las TRES rutas de factura pasan por la puerta, y antes de leer la factura', () => {
+  const { out } = manejadoresGet();
+  // SUELO: el lector encuentra las tres rutas. Si el fichero cambia de forma, que lo diga.
+  for (const ruta of ['/', '/:id', '/:id/pdf']) {
+    assert.ok(out.has(ruta), `🔴 CIEGO: no encuentro router.get('${ruta}') en ${RUTAS}`);
+  }
+
+  const lista = out.get('/');
+  assert.equal(llamadasA(lista, 'whereFacturasVisibles').length, 1, '🔴 la LISTA de facturas no pide el recorte a la puerta');
+  assert.ok(llamadasA(lista, 'whereFacturasVisibles')[0] < llamadasA(lista, 'listInvoicesAdmin')[0],
+    '🔴 la lista pide el recorte DESPUÉS de leer las facturas');
+
+  for (const [ruta, lectura] of [['/:id', 'getInvoiceDetailAdmin'], ['/:id/pdf', 'ensureInvoicePdf']]) {
+    const manejador = out.get(ruta);
+    const puerta = llamadasA(manejador, 'puedeVerLaFactura');
+    const lee = llamadasA(manejador, lectura);
+    assert.equal(lee.length, 1, `🔴 CIEGO: GET ${ruta} ya no llama a ${lectura}; re-mide qué es «leer la factura» aquí`);
+    assert.equal(puerta.length, 1, `🔴 GET /admin/invoices${ruta} no pregunta a la puerta`);
+    assert.ok(puerta[0] < lee[0], `🔴 GET /admin/invoices${ruta} pregunta a la puerta DESPUÉS de ${lectura}`);
+  }
+});
+
+test('SCRUM-1397 · la puerta no recorta a quien ve todo el negocio, y sin identidad no casa nada', async () => {
+  const { whereFacturasVisibles, puedeVerLaFactura } = await import('../dist/core/documentos/accesoALaFactura.js');
+  // Ninguno de estos cuatro llega a consultar: por eso corren sin base.
+  assert.equal(await whereFacturasVisibles({ merchantId: 1, userRole: 'admin', teamMemberId: null }), null, 'la dueña (sesión sin miembro) no lleva recorte');
+  assert.equal(await whereFacturasVisibles({ merchantId: 1, userRole: 'admin', teamMemberId: 7 }), null, 'un miembro admin no lleva recorte');
+  assert.equal(await puedeVerLaFactura({ merchantId: 1, userRole: 'admin', teamMemberId: 7 }, 123), true);
+  // Un rol que no es «admin» y no trae identidad: el conjunto VACÍO, nunca «las de la oficina».
+  assert.deepEqual(await whereFacturasVisibles({ merchantId: 1, userRole: 'tecnico', teamMemberId: null }), { id: { in: [] } });
+  // Un rol desconocido queda recortado (allowlist): no se le devuelve «sin recorte».
+  assert.deepEqual(await whereFacturasVisibles({ merchantId: 1, userRole: 'otro', teamMemberId: undefined }), { id: { in: [] } });
+});
+
+test('SCRUM-1397 · los ejes del Trabajo se le PIDEN a `whereSuyoElTrabajo`, no se copian en la puerta', () => {
+  const fuente = fs.readFileSync(path.join(RAIZ, PUERTA), 'utf8');
+  const sf = ts.createSourceFile(PUERTA, fuente, ts.ScriptTarget.Latest, true);
+  assert.equal(llamadasA(sf, 'whereSuyoElTrabajo').length, 1, '🔴 la puerta ya no reusa los ejes del Trabajo de la casa');
+  // Y que no los escriba además por su cuenta: una propiedad `operarioId` o `assignedUserId` en
+  // este fichero sería la segunda copia del criterio.
+  const propias = [];
+  const visita = (n) => {
+    if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && ['operarioId', 'assignedUserId', 'assignees'].includes(n.name.text)) propias.push(n.name.text);
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  assert.deepEqual(propias, [], `🔴 la puerta escribe por su cuenta ejes del Trabajo: ${propias.join(', ')}`);
 });

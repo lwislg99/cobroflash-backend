@@ -118,9 +118,9 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST', path: '/admin/quotes/:id/send-email', why: 'Mismo envío que WA por otro canal' },
 
   // Facturas — S1: "Facturas: emitir/anular/R1 ❌ (VER SÍ)". Solo lectura.
-  { method: 'GET', path: '/admin/invoices', why: 'S1: ver facturas ✅' },
-  { method: 'GET', path: '/admin/invoices/:id', why: 'S1: ver facturas ✅' },
-  { method: 'GET', path: '/admin/invoices/:id/pdf', why: 'S1: ver facturas ✅ (solo lectura, no regenera)' },
+  { method: 'GET', path: '/admin/invoices', why: 'S1: ver facturas ✅ — SÓLO LAS SUYAS: autor, Trabajo suyo o asignada (SCRUM-1397)' },
+  { method: 'GET', path: '/admin/invoices/:id', why: 'S1: ver facturas ✅ — sólo las suyas; 404 en la ajena (SCRUM-1397)' },
+  { method: 'GET', path: '/admin/invoices/:id/pdf', why: 'S1: ver facturas ✅ (solo lectura, no regenera) — sólo las suyas; 404 en la ajena (SCRUM-1397)' },
 
   // Trabajos — A13/JOB-1. Además hay filtro ROW-LEVEL por operarioId (SCRUM-23):
   // el técnico solo ve los suyos. Esa segunda capa la cubre tenancy-permisos.test.mjs.
