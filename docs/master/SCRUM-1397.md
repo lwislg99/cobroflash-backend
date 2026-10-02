@@ -214,7 +214,7 @@ base, contra PGlite); `scrum597` a solas, 8 de 8; la sonda de las otras puertas 
 escrito y sin ejecutar ni una vez: no se sabe si alguna sale viva o ciega), la tanda dirigida,
 `npm run guards:entrada` y la lectura del check obligatorio por nombre. Se empujó así por orden del
 orquestador, con el auto-merge desarmado, para que el trabajo no viviera sólo en un árbol. La línea
-`A9:` de arriba apunta a un banco que existe y que todavía no ha corrido.
+`A9:` de arriba apunta a un banco que existe y que todavía no ha corrido. **[SUPERADO — marca de SCRUM-1407: este párrafo dice cómo estaba al empujar J2a; el banco corrió después, dos veces. Ver «Anexo de SCRUM-1407», al final.]**
 
 ### Lo corrido después, por J2b (relevo de J2a) · 2026-10-02T02:44:11Z, `origin/main` sin moverse
 
@@ -299,3 +299,83 @@ la ruta absoluta y lleva el porqué al lado (`c502e506`).
    que un Técnico no asignado abra una factura de la oficina»). Corrido a solas contra el `dist` de la
    rama: 8 de 8. Su doble de Prisma contesta `invoice.findFirst` sin mirar el `where`, así que ese
    fichero no ejercita el recorte nuevo. Es el error 2 otra vez, una hora después de escribirlo.
+
+## Anexo de SCRUM-1407 · cómo quedó después de lo escrito arriba
+
+**Medido contra:** `origin/main` = `bbe633acb852b1aaca413df4c5ebef76f1291e6c` · 2026-10-02T03:15:20Z
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: que un registro se quedó viejo al mergear su rama sólo lo vería un guard nuevo, y este ticket es de sólo `docs/`.
+
+[Escrito por **J5b** (puesto J5, equipo de Javier), por encargo del orquestador (`cobroflash-backend-5b`).
+CRUCE DE CARRIL declarado: esto es `area-j2`. Nada de lo de arriba se ha borrado ni reescrito: cada tramo
+dice cómo estaba a SU hora. Lo único tocado arriba es una marca al final del párrafo «SIN CORRER al
+empujar», añadida sin mover ninguna línea. De cada dato de abajo se dice quién lo midió.]
+
+### Qué frases de arriba ya no describen `main`
+
+Son verdad para su hora y no para ahora. Quien lea una sola de ellas se lleva un estado que ya no existe:
+
+| frase de arriba | de quién y de cuándo | cómo está ahora |
+|---|---|---|
+| el banco de mutaciones, «escrito y sin ejecutar ni una vez», y «todavía no ha corrido» | J2a, al empujar `967196fa` | corrió dos veces: la primera ya consta arriba («Lo corrido después, por J2b»); la segunda, tras el arreglo, está en este anexo |
+| «Al escribir esto NO están arreglados» y «mientras no se arregle, el PR sigue en rojo» | J2b, 02:44:11Z | arreglados en `9e47c9f9`; el PR entró en `main` |
+| «no hay pasada completa hasta que el CI corra otra vez» | J2b, 02:44:11Z | el obligatorio corrió sobre `9e47c9f9` y salió `success` |
+
+### En `main` y en producción
+
+- **PR #2121 mergeado a las 03:10:12Z**, merge `bbe633acb852b1aaca413df4c5ebef76f1291e6c`, punta de la rama
+  `9e47c9f9a631b5bcd8385371669f27c8603b1468`. Leído por mí con `gh pr view 2121`.
+- **Producción sirve ese merge:** `https://yaqu.app/version` contesta
+  `bbe633acb852b1aaca413df4c5ebef76f1291e6c`, con cabecera `Date` de las 03:13:40 GMT. Leído por mí. Eso dice
+  qué commit está desplegado. No dice que nadie haya visto el cambio funcionar (ver «Sin hacer»).
+
+### Los cinco rojos: arreglados, y por quién
+
+- **Arreglados en el commit `9e47c9f9`**, que toca dos ficheros y los dos son de `tests/`
+  (`scrum1397-el-tecnico-ve-sus-facturas.test.mjs` y `scrum419-ci-declara-lo-que-no-corre.test.mjs`): leído
+  por mí con `git show --stat`. Son los cinco de la tabla de arriba: SCRUM-409, SCRUM-419 (tres casos) y
+  SCRUM-456.
+- **El obligatorio sobre `9e47c9f9`:** run 36957895689, job 110684953743, de 02:56:32Z a 03:06:03Z,
+  `success` — la conclusión y las horas, leídas por mí con `gh run view`. Por nombre lo leyó **J2b**
+  (SCRUM-1397 comentario 18025): los cinco «SCRUM-1397 · …» pasan y ninguno salta; SCRUM-409, SCRUM-419 y
+  SCRUM-456 pasan. **Yo no lo he leído por nombre.**
+- ⚠️ **Ese verde perdió casos**, según el mismo comentario: `ausentes=17` en 3 ficheros, ninguno de este
+  ticket. Es SCRUM-1405 y no está investigado.
+- **Quién lo aplicó, porque no es lo normal.** No lo escribió la sesión que lo diagnosticó. El arnés le
+  denegó a J2b esas escrituras («Security Test Removal»); J2b no lo rodeó y lo subió. El orquestador no
+  quiso aplicarlo por su cuenta y llevó las dos vías a Javier: aprobarlo dentro de la sesión de J2b, o
+  encargárselo al orquestador. La respuesta de Javier, literal, fue «El que consideres mejor»: delegó la
+  elección. Lo aplicó el orquestador. Consta en SCRUM-1397 comentario 18026 y en el mensaje del propio
+  commit; yo lo he leído en los dos sitios, no lo he presenciado.
+
+### El banco de mutaciones, repetido después del arreglo
+
+**Medido por J2b, no por mí** (SCRUM-1397 comentario 18025): `tests/banco-scrum1397/mutar.mjs`, repetido
+sobre `9e47c9f9` — el 18 de 18 de arriba era sobre el test de antes y el arreglo lo hacía caducar —:
+**18 caen de 18 · 0 mudas · 0 vivas · 0 ciegas · árbol intacto**, con sus dos controles como deben.
+Contra PGlite local, no contra `postgres:16`. Yo no lo he repetido: muta `src/` y este ticket es de sólo
+`docs/`. La salida de esa pasada no está en el repositorio: la fuente escrita es ese comentario.
+
+Lo que ese resultado sigue sin decir es lo mismo que arriba: a M18 la caza sólo el caso que mira el orden
+de las llamadas; por efecto no la ve ninguno.
+
+### Lo que este anexo NO cambia
+
+Las dos frases de Ⓒ siguen exactamente como están, y que el ticket esté en producción no mueve ninguna:
+
+- ⛔ FALSO: «el Técnico ya no reconstruye el total del negocio».
+- ✅ VERDADERO: «el Técnico ya no lo reconstruye **por las tres rutas de factura**».
+
+Por las fichas de cliente sigue saliendo 1.050 de 1.050 y por las de presupuesto 900 de 900 (medido por
+J2a por ejecución, tabla de Ⓒ). Eso es SCRUM-1403 y sigue abierto.
+
+### Sin hacer, a las 03:15Z
+
+- **Verlo en `yaqu.app` con sesión de Técnico.** Nadie lo ha visto: ni J2a, ni J2b, ni yo.
+- **El número real de facturas que no son de ningún eje.** Sigue SIN MEDIR: no hay base autorizada. Lo que
+  hay es el recuento estructural y el SELECT con su control (Ⓔ).
+- **La reconstrucción con datos reales.** Los porcentajes de Ⓒ son aritmética del negocio fabricado.
+- **La tanda dirigida** no se corrió nunca sobre esta rama; la pasada completa es la del obligatorio.
+- Heredado y sin tocar, según SCRUM-1397 comentario 18025: el máster sigue declarando esto «sin construir»
+  (no es de este ticket tocarlo), los dos textos de pantalla de Ⓕ siguen pendientes de firma, y el PDF de
+  una factura `pendiente_de_sellado` contesta 500 (SCRUM-1404).
