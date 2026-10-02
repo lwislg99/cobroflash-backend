@@ -6,8 +6,8 @@
 // La señal de SCRUM-1339d (`scripts/_senal-de-nombres.mjs`) compara los nombres LITERALES que el
 // árbol declara contra los que la tanda registró. Una llamada `test(…)` cuyo nombre se construye
 // (una plantilla con sustituciones dentro de un bucle, una concatenación) no tiene literal que
-// buscar: si la tanda la pierde, no lo ve nadie. Medido en `exp-1384`: de 55 casos perdidos la
-// señal nombró 39, y los otros 16 eran de éstos.
+// buscar: si la tanda la pierde, no lo ve nadie. Medido en `exp-1384`: la señal nombró
+// sólo una parte de lo perdido, y el resto era de éstos (cifras y fecha en `docs/master/SCRUM-1415.md`).
 //
 // Este guard NO detecta pérdidas (eso es de 1339d). Hace dos cosas con el punto ciego:
 //   · lo CUENTA, con el mismo criterio que la señal (`llamadasDeclaradas`, por AST), fichero a

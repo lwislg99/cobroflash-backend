@@ -5,7 +5,8 @@
 // `for (const f of TABLA) test(`… ${f.que}`, …)` registra un caso por fila, pero su nombre se
 // CONSTRUYE al ejecutar: en el fuente no hay literal que buscar, así que la señal por nombres de
 // SCRUM-1339d (`scripts/_senal-de-nombres.mjs`) no puede decir que falta si la tanda lo pierde.
-// Medido en `exp-1384`: de 55 casos perdidos, 16 eran de éstos y no los nombró nadie.
+// Medido en `exp-1384`: parte de lo que se perdió era de éstos y no lo nombró nadie (las cifras,
+// con su fecha, en `docs/master/SCRUM-1415.md`).
 //
 // Con esto el bucle se escribe desenrollado, y cada caso lleva su nombre LITERAL:
 //
