@@ -216,20 +216,25 @@ const LLAMADAS = (() => {
 // SCRUM-1374 lo sube a SIETE, también a mano: la ficha abierta refresca cuando la cola avisa de
 // que SU firma ha subido. No es una acción del profesional, pero es la misma situación —la
 // escritura ya ocurrió y lo que puede fallar es la lectura— y pasa por `refrescar` como las otras.
-const SITIOS_QUE_REFRESCAN = 7;
+//
+// SCRUM-1420 lo sube a OCHO, a mano y con el sí del orquestador ANTES de construir: el cierre del
+// pad de firma (`onClose`) refresca si la cola avisó mientras el pad estaba abierto. Es una
+// llamada que no existía —antes ese aviso se tiraba—, no una que el censo no viera.
+const SITIOS_QUE_REFRESCAN = 8;
 
-test('SCRUM-379 · SUELO: los SIETE sitios siguen ahí', () => {
+test('SCRUM-379 · SUELO: los OCHO sitios siguen ahí', () => {
   assert.equal(
     LLAMADAS.length, SITIOS_QUE_REFRESCAN,
     `🔴 esperaba ${SITIOS_QUE_REFRESCAN} refrescos y veo ${LLAMADAS.length} `
-    + `(líneas ${LLAMADAS.map((l) => l.linea).join(', ') || 'ninguna'}). Los siete son: emitir, `
-    + 'enviar para firmar, firmar aquí, enviar por WhatsApp, subir foto, convertir en factura y '
-    + 'el aviso de la cola de firmas (SCRUM-1374). '
+    + `(líneas ${LLAMADAS.map((l) => l.linea).join(', ') || 'ninguna'}). Los ocho son: emitir, `
+    + 'enviar para firmar, firmar aquí, enviar por WhatsApp, subir foto, convertir en factura, '
+    + 'el aviso de la cola de firmas (SCRUM-1374) y el cierre del pad de firma con un aviso '
+    + 'recordado (SCRUM-1420). '
     + 'Si uno se fue, o la acción desapareció o volvió a llamar a la recarga por su cuenta.',
   );
 });
 
-test('SCRUM-379 · los siete refrescos van con `await`', () => {
+test('SCRUM-379 · los ocho refrescos van con `await`', () => {
   const sinAwait = LLAMADAS.filter((l) => !l.conAwait).map((l) => `línea ${l.linea}`);
   assert.deepEqual(
     sinAwait, [],
