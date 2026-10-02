@@ -32,13 +32,27 @@ function banco({ responde, reloj = APERTURA }) {
   const dir = temporal('scrum1430-');
   const rutaSecreto = path.join(dir, 'secreto.txt');
   const rutaSesion = path.join(dir, 'sesion.txt');
+  // La ruta se escribe aquí entera, colgando de `dir`, para que se VEA que cae en el temporal;
+  // que sea la misma que deriva el instrumento lo comprueba el último test de rutas.
+  const rutaCaducidad = path.join(dir, 'sesion.txt.caducidad.json');
   fs.writeFileSync(rutaSecreto, SECRETO);
-  const b = { rutaSesion, rutaCaducidad: rutaCaducidadDe(rutaSesion), llamadas: [], out: [], err: [], reloj, responde };
+  const b = { rutaSesion, rutaCaducidad, llamadas: [], out: [], err: [], reloj, responde };
   const fetchFn = async (url, init) => { b.llamadas.push({ url, ...init }); return b.responde(url, init); };
   b.correr = (argv) => {
     b.out.length = 0; b.err.length = 0;
-    return ejecutar(argv, { fetchFn, rutaSecreto, rutaSesion, ahora: () => b.reloj, out: (s) => b.out.push(s), err: (s) => b.err.push(s) });
+    return ejecutar(argv, { fetchFn, rutaSecreto, rutaSesion, rutaCaducidad: enUso, ahora: () => b.reloj, out: (s) => b.out.push(s), err: (s) => b.err.push(s) });
   };
+  // Lo que los tests tocan a mano se hace AQUÍ, donde se ve que la ruta cuelga de `dir`.
+  // El fichero que escribe `login` sólo se LEE o se borra. Un fichero de caducidad estropeado es
+  // OTRO fichero, escrito de cero, y el instrumento se apunta a él: nada se lee y se reescribe.
+  const rutaEstropeada = path.join(dir, 'caducidad-estropeada.json');
+  let enUso = rutaCaducidad;
+  b.leerCaducidad = () => fs.readFileSync(rutaCaducidad, 'utf8');
+  b.hayCaducidad = () => fs.existsSync(rutaCaducidad);
+  b.borrarCaducidad = () => fs.rmSync(rutaCaducidad);
+  b.conCaducidadEstropeada = (texto) => { fs.writeFileSync(rutaEstropeada, texto); enUso = rutaEstropeada; };
+  b.conLaCaducidadDelLogin = () => { enUso = rutaCaducidad; };
+  b.escribirSesion = (texto) => fs.writeFileSync(rutaSesion, texto);
   b.todo = () => [...b.out, ...b.err].join('\n');
   b.limpiar = () => borrarTemporal(dir);
   return b;
@@ -57,12 +71,12 @@ test('SCRUM-1430 · login deja la caducidad AL LADO: hora del SERVIDOR + 24 h, n
   const b = banco({ reloj: APERTURA + 3 * HORA });
   try {
     await abierta(b);
-    const d = JSON.parse(fs.readFileSync(b.rutaCaducidad, 'utf8'));
+    const d = JSON.parse(b.leerCaducidad());
     assert.equal(d.abiertaEn, '2026-10-01T13:18:30Z');
     assert.equal(d.caducaEn, '2026-10-02T13:18:30Z');
     assert.equal(d.correo, 'qa@example.test');
-    assert.equal(fs.readFileSync(b.rutaCaducidad, 'utf8').includes(TOKEN), false, 'la cookie está en el fichero de caducidad');
-    assert.equal(fs.readFileSync(b.rutaCaducidad, 'utf8').includes(SECRETO), false);
+    assert.equal(b.leerCaducidad().includes(TOKEN), false, 'la cookie está en el fichero de caducidad');
+    assert.equal(b.leerCaducidad().includes(SECRETO), false);
   } finally { b.limpiar(); }
 });
 
@@ -70,10 +84,10 @@ test('SCRUM-1430 · login sin cabecera Date: abre la sesión, NO inventa una hor
   const b = banco({});
   try {
     await abierta(b);
-    assert.ok(fs.existsSync(b.rutaCaducidad), 'control: la primera sesión dejó su fichero');
+    assert.ok(b.hayCaducidad(), 'control: la primera sesión dejó su fichero');
     b.responde = () => respuesta(200, '{"ok":true}', { 'set-cookie': 'pf_session=otra1430; Path=/' });
     assert.equal(await b.correr(['login', 'qa@example.test']), 0, b.todo());
-    assert.equal(fs.existsSync(b.rutaCaducidad), false, 'quedó la caducidad de la sesión ANTERIOR al lado de la cookie nueva');
+    assert.equal(b.hayCaducidad(), false, 'quedó la caducidad de la sesión ANTERIOR al lado de la cookie nueva');
     assert.match(b.err.join('\n'), /NO se guarda la caducidad/);
     assert.equal(await b.correr(['estado', '--sin-red']), 2);
   } finally { b.limpiar(); }
@@ -115,25 +129,26 @@ test('SCRUM-1430 · fail-closed: sin sesión, sin fichero, fichero roto o de OTR
   const b = banco({});
   try {
     await abierta(b);
-    const bueno = fs.readFileSync(b.rutaCaducidad, 'utf8');
     assert.equal(await b.correr(['estado', '--sin-red']), 0, 'control positivo: con el fichero bueno dice VIVA');
 
     // La cookie de hoy: la escribió un login anterior a este fichero (o una mano), sin caducidad.
-    fs.rmSync(b.rutaCaducidad);
+    b.borrarCaducidad();
     assert.equal(await b.correr(['estado', '--sin-red']), 2);
     assert.match(b.err[0], /^NO SE PUEDE SABER — no hay fichero de caducidad/);
 
-    fs.writeFileSync(b.rutaCaducidad, '{ esto no es json');
+    b.conCaducidadEstropeada('{ esto no es json');
     assert.equal(await b.correr(['estado', '--sin-red']), 2);
     assert.match(b.err[0], /no se entiende/);
 
-    fs.writeFileSync(b.rutaCaducidad, JSON.stringify({ ...JSON.parse(bueno), caducaEn: 'mañana' }));
+    b.conCaducidadEstropeada(JSON.stringify({ correo: 'qa@example.test', caducaEn: 'mañana', huella: 'da-igual' }));
     assert.equal(await b.correr(['estado', '--sin-red']), 2);
     assert.match(b.err[0], /no lleva una hora válida/);
 
-    // Otra mano reescribe la cookie: el fichero bueno ya no habla de ella.
-    fs.writeFileSync(b.rutaCaducidad, bueno);
-    fs.writeFileSync(b.rutaSesion, 'pf_session=escrita-a-mano-1430\n');
+    // Otra mano reescribe la cookie: el fichero bueno (el de un login nuevo) ya no habla de ella.
+    b.conLaCaducidadDelLogin();
+    await abierta(b);
+    assert.equal(await b.correr(['estado', '--sin-red']), 0, 'control positivo: el login nuevo dejó un fichero bueno');
+    b.escribirSesion('pf_session=escrita-a-mano-1430\n');
     assert.equal(await b.correr(['estado', '--sin-red']), 2);
     assert.match(b.err[0], /de OTRA cookie/);
     assert.deepEqual(b.out, []);
@@ -179,7 +194,7 @@ test('SCRUM-1430 · la sonda MANDA: 401 es MUERTA, y si llega antes de su hora n
     assert.match(b.err[0], /POST \/auth\/logout/);
 
     // Sin fichero de caducidad la sonda sigue contestando: es el caso de la cookie de hoy.
-    fs.rmSync(b.rutaCaducidad);
+    b.borrarCaducidad();
     assert.equal(await b.correr(['estado']), 1);
     assert.match(b.err[0], /^MUERTA — .*caducidad no conocida/);
     assert.match(b.err[1], /^SE RENUEVA con: node scripts\/qa\/sesion-panel\.mjs login <correo de la cuenta> /);
@@ -217,7 +232,7 @@ test('SCRUM-1430 · get con 401 dice lo que su fichero sabe de la caducidad', as
     assert.equal(await b.correr(['get', '/admin/jobs']), 1);
     assert.match(b.err.join('\n'), /caducó o no vale/);
     assert.match(b.err.join('\n'), /fichero de caducidad dice 2026-10-02T13:18:30Z/);
-    fs.rmSync(b.rutaCaducidad);
+    b.borrarCaducidad();
     assert.equal(await b.correr(['get', '/admin/jobs']), 1);
     assert.match(b.err.join('\n'), /caducidad no conocida/);
   } finally { b.limpiar(); }
@@ -234,6 +249,8 @@ test('SCRUM-1430 · uso: un argumento que no es --sin-red sale 3 sin leer ni son
 test('SCRUM-1430 · el fichero de caducidad de verdad vive al lado de la sesión, fuera del repositorio', () => {
   const r = rutaCaducidadDe(RUTA_SESION);
   assert.ok(r.startsWith(RUTA_SESION), 'no vive al lado de la sesión');
+  // Y es la ruta que el banco de arriba escribe a mano: si la derivación cambia, el banco miente.
+  assert.equal(rutaCaducidadDe(path.join('x', 'sesion.txt')), path.join('x', 'sesion.txt.caducidad.json'));
   assert.ok(path.win32.isAbsolute(r));
   assert.equal(r.replace(/\\/g, '/').toLowerCase().startsWith(RAIZ.replace(/\\/g, '/').toLowerCase()), false, 'cae dentro del repo');
 });
