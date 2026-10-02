@@ -226,7 +226,9 @@ nombre propio, como dijo.
 ## SCRUM-1123c · rescate y re-medición (2-oct-2026)
 
 **Medido contra:** `origin/main` = `7d8a3ec970669bab0265fdb1a100abcda6c2c76f` · 2026-10-02T13:31:59Z (cabecera `Date:` de GitHub)
-**Rama:** `wip-s5-1123c-censo-workflows` (aparcada: no empieza por `scrum-`, no abre PR) · **Worktree:** `wt-s5-1123c`
+**Rama:** `scrum-1123c-censo-workflows-y-su-desmentido` (viajó aparcada como `wip-s5-1123c-censo-workflows` hasta que el orquestador autorizó abrir PR) · **Worktree:** `wt-s5-1123c`
+
+A9: aviso → A10 «Antes de llamar mecanismo a lo que has visto, di sobre cuántos elementos lo mediste: un instante no es un régimen.» — no se pudo comprobar: el censo del 28-sep afirmó «`-e -o pipefail` por defecto» sobre CERO corridas leídas (lo copió de un comentario del YAML); qué opciones pone Actions sólo está en el log de una corrida, y ningún test del árbol puede leerlo
 
 **De dónde sale el tramo de arriba.** `s5-27a` murió sin traspaso y dejó la sección «SCRUM-1123c
 (seguimiento, 28-sep-2026)» SIN COMITEAR en `wt-s5-999-cuota-antes-de-lanzar`. Lo encontró S0 barriendo
@@ -288,3 +290,8 @@ el obligatorio `build + tests` sólo cayó en una, `643e9a65` (13:02Z) — las r
 Nada arreglado aquí: sólo registro. Los tres ficheros son workflows; el arreglo (un `if !` en cada
 línea, y en `zona-roja` un `set +e` explícito o corregir el comentario) es ticket aparte y lo abre el
 orquestador si lo quiere.
+
+**Abierto el 2-oct-2026: SCRUM-1434, sólo para `zona-roja.yml`** (la 3). Las otras dos (1 y 2) van
+dentro de ese ticket como nota, no como tarea: les falta el `::error::`, nunca salen verdes en falso.
+El ticket no autoriza a tocar ningún workflow: son del fundador. Las tres líneas, releídas ese día
+contra `origin/main` = `10828add`, siguen en el mismo sitio y con el mismo texto.
