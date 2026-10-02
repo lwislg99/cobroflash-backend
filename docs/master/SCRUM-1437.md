@@ -31,6 +31,15 @@ enseña la longitud de la contraseña. YaQu: 10 tramos leídos por un subagente 
 mano 7 de sus citas, 6 exactas y 1 con la ruta mal (`quotesAdmin.routes.ts` vive en
 `src/modules/system/app/routes/`, no en `quotes`), corregida en el documento.
 
+## Segunda entrega · los otros tres (2-oct-2026, misma rama)
+
+Encargo del orquestador: el mismo recuento sobre Contasimple, Billin y ServiceM8 con el material ya escrito.
+Hecho en §7 del documento, con dos avisos medidos: (1) ese material recorre la **factura suelta** de
+Contasimple y Billin, no su presupuesto, su conversión ni su cobro, y describe campos, no pulsaciones: las
+cifras van como deducidas; (2) la hipótesis «ninguno tiene cobro» **no se sostiene**: de los cuatro, solo
+Verifacturamos está confirmado sin él, y el recuento del 21-sep ya daba al menos nueve de trece con cobro en
+línea.
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón

@@ -116,7 +116,51 @@ Fallo suyo visto dos veces: al convertir, el aviso dice «Factura null creada».
 | Si Verifacturamos tiene un control para marcar una factura pagada | No apareció en una factura emitida sin enviar; puede aparecer en otro estado |
 | Sus albaranes, productos, plantillas y facturas recurrentes | Fuera de este tramo |
 
-## 7 · Cuenta de prueba
+## 7 · Los otros tres, con el mismo método — DE NOTAS Y CAPTURAS, NO DE PANTALLA DE HOY
+
+Fuente: `docs/producto/_RAW-flujo-crear-factura.md` (Contasimple, 22-sep-2026; Billin y ServiceM8,
+25-sep-2026), `docs/competencia/matriz.md` y `docs/competencia/con-que-venden-sin-cobro-21sep-j5.md`
+(21-sep-2026). Nadie ha vuelto a entrar hoy.
+
+**Lo que ese material permite y lo que no.** Las notas de Contasimple y de Billin recorren **crear una
+factura suelta**; su presupuesto, su conversión y su cobro **no se abrieron por dentro**. Las notas describen
+campos, no pulsaciones: toda cifra de esta tabla es **deducida** de la descripción, no contada en pantalla, y
+por eso lleva «≈». Donde el material no llega, la casilla lo dice. Cada dato lleva su origen: **(dentro)** =
+visto con cuenta de prueba en su fecha; **(web)** = solo su página comercial.
+
+| Competidor | Presupuesto | Convertir a factura | Enviar | Cobrar |
+|---|---|---|---|---|
+| **Verifacturamos** (dentro, 2-oct) | 3 clics · 3 campos; sin cliente, 2 clics | 2 clics, sin preguntas; deja un borrador | ≥ 2 clics; correo, y WhatsApp en los planes de 19 € y 29 € | **No tiene**: ni enlace de pago ni pasarela; no vi cómo marcar pagada |
+| **Contasimple** | No abierto por dentro. (web) existe, con firma electrónica | No abierto por dentro. (web) «con un clic», pudiendo cambiar cantidades y precios antes | No visto | (dentro) casilla para marcar la factura como cobrada, en opciones avanzadas del formulario. (web) anuncia cobro en su TPV; un enlace de pago para el cliente final, sin confirmar |
+| **Billin / TS Facturas** | No abierto por dentro. (web) con estados pendiente, aceptado, rechazado y facturado, y aviso de si el cliente lo abrió | No abierto por dentro. (web) desde el presupuesto aceptado se genera factura, albarán o proforma | (dentro) casilla «enviar por correo al emitir» en el paso 2: 1 clic más; solo correo | (dentro) bloque para añadir un método de pago y casilla de «cantidad ya pagada», vistos y sin explorar. Pasarela: sin verificar |
+| **ServiceM8** | (dentro) no hay documento: se crea un Trabajo, con el cliente dado de alta solo al teclear su nombre y la línea elegida de una lista con precio. ≈ 3 clics · 2 campos | (dentro) **no se convierte**: se cambia el estado del Trabajo (abrir el desplegable y elegir, 2 clics · 0 campos) y el mismo registro pasa de presupuesto a factura | (dentro) un botón de enviar con desplegable, en presupuesto y en factura; no pulsado | (dentro) al pasar a factura aparecen «pagado» y «saldo pendiente». (web) anuncia cobro con tarjeta antes de irse de la obra; no visto por dentro |
+| **YaQu** (código, no pantalla) | Rápido: 3 clics · 3 campos, ya enviado. Editor: 6 clics | Con firma, 0 clics; a mano, 3. Sale emitida. En España hoy, sin camino | Dentro del propio botón (rápido) o 1 clic | Petición de pago al firmar; marcar pagada, 2 clics |
+
+La factura suelta, que es lo único medible en los dos españoles (deducido de las notas):
+Contasimple ≈ 6 clics · 2 a 3 campos · 1 página («Crear» → «Facturas emitidas» → elegir cliente en el
+desplegable → obtener número → «Crear factura»); Billin ≈ 4 clics · 3 campos · asistente de 2 pasos con vista
+previa antes de emitir («Crear factura» → cliente por buscador → continuar → guardar o emitir).
+
+### Cuántos tienen cobro
+
+**No es «ninguno».** De estos cuatro:
+
+| | ¿Cobro del cliente final? | Origen |
+|---|---|---|
+| Verifacturamos | **No** | dentro, 2-oct |
+| Contasimple | Apunta el cobro; anuncia cobro en TPV. Enlace de pago, sin confirmar | dentro (casilla) y web |
+| Billin | Método de pago y «ya pagado» en la factura. Pasarela, sin verificar | dentro, sin explorar |
+| ServiceM8 | Sí según su web; por dentro se ve el saldo, no el pago | web y dentro |
+
+Uno confirmado sin cobro, uno con cobro anunciado, dos sin poder decirlo. Y el recuento del 21-sep sobre
+trece competidores (solo web) ya decía que **al menos nueve ofrecen cobro en línea** al cliente final y que
+solo Verifacturamos está confirmado sin él. Con este material, «tener cobro» no nos separa del mercado; nos
+separa de Verifacturamos.
+
+Lo que este material **no** contesta, de ninguno de los tres: cuántos clics cuesta su presupuesto, cuántos su
+conversión, y cuántos cobrar. Para eso hay que entrar.
+
+## 8 · Cuenta de prueba
 
 Sigue **abierta** (competidor: Verifacturamos · alta: 21-sep-2026). Darla de baja es lo último de la
 consultoría. Datos inventados creados el 2-oct-2026: cliente «Cliente Inventado Prueba», presupuestos
