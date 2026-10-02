@@ -37,9 +37,9 @@ Si tu puesto no es J2, **no lo edites**: se pide al dueño por Jira (`docs/equip
 Contenedores de J2 (cualquier puesto añade SOLO su bloque, marcado con su puesto; nunca reescribe lo ajeno): `src/modules/billing/app/routes/stripe.routes.ts`.
 
 Tienen otro dueño aunque casen con los patrones de arriba:
-- `src/modules/billing/app/routes/subscriptions.routes.ts` → J3 (docs/equipo/dos-equipos.md:111)
-- `src/modules/billing/domain/invoiceWhatsApp.service.ts` → J1 (docs/equipo/dos-equipos.md:108)
-- `src/modules/billing/domain/correoDeFacturaEnviado.ts` → J1 (docs/equipo/dos-equipos.md:108)
-- `src/modules/billing/domain/envioDelDocumento.ts` → J1 (docs/equipo/dos-equipos.md:108)
-- `src/modules/billing/domain/stripePrices.ts` → J3 (docs/equipo/dos-equipos.md:111)
-- `src/modules/billing/domain/founding.ts` → J3 (docs/equipo/dos-equipos.md:111)
+- `src/modules/billing/app/routes/subscriptions.routes.ts` → J3 (docs/equipo/dos-equipos.md:122)
+- `src/modules/billing/domain/invoiceWhatsApp.service.ts` → J1 (docs/equipo/dos-equipos.md:119)
+- `src/modules/billing/domain/correoDeFacturaEnviado.ts` → J1 (docs/equipo/dos-equipos.md:119)
+- `src/modules/billing/domain/envioDelDocumento.ts` → J1 (docs/equipo/dos-equipos.md:119)
+- `src/modules/billing/domain/stripePrices.ts` → J3 (docs/equipo/dos-equipos.md:122)
+- `src/modules/billing/domain/founding.ts` → J3 (docs/equipo/dos-equipos.md:122)

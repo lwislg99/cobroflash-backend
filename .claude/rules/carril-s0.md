@@ -13,5 +13,5 @@ Este fichero es del puesto **S0** (consultoría y auditoría), salvo que lo cubr
 Si tu puesto no es S0, **no lo edites**: se pide al dueño por Jira (`docs/equipo/dos-equipos.md` §5). Un cruce legítimo se declara en §3.4 con su motivo y se regenera. Lo hace cumplir `.claude/hooks/carril.mjs`.
 
 Tienen otro dueño aunque casen con los patrones de arriba:
-- `scripts/_suelo-*` → S3 (docs/equipo/dos-equipos.md:161)
-- `scripts/equipo/**` → S5 (docs/equipo/dos-equipos.md:154)
+- `scripts/_suelo-*` → S3 (docs/equipo/dos-equipos.md:172)
+- `scripts/equipo/**` → S5 (docs/equipo/dos-equipos.md:165)
