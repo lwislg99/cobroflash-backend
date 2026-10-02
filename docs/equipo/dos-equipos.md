@@ -99,6 +99,17 @@ y **el otro equipo añade SOLO su bloque o su línea, marcada con su puesto** (`
 Medido el 18-sep-2026 sobre 405 ficheros de producto (294 de `src/`, 111 de `public/` sin imágenes),
 clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba (se dice en cada caso).
 
+> 🔴 **Las tablas §3.1 y §3.2 las LEE UN GUARD DEL OTRO EQUIPO, y su formato no se cambia sin avisar.**
+> `tests/scrum514-aprobado-y-aplicado.test.mjs` (equipo de Javier, SCRUM-1334) las parsea en cada pasada
+> para saber de qué puesto es un fichero. Si el formato cambia, el rojo le sale a quien las tocó, en el
+> check obligatorio. Lo que lee, y por tanto lo que no se mueve sin un aviso por Jira a su orquestador (§5):
+> los títulos de §3.1 y §3.3 tal como empiezan hoy (corta entre los dos, así que §3.2 va en medio) · cada
+> fila en UNA línea que empieza por la barra · la ruta en la primera celda, entre comillas invertidas · el
+> dueño en la segunda, en negrita y con la forma letra + cifra · la fila del resto, escrita «todo lo demás
+> de» y su ruta · y un suelo de 25 filas con dueño (medidas el 2-oct-2026 con su misma función: 29).
+> Añadir, quitar o cambiar de dueño una fila con este formato NO necesita aviso: es para lo que las lee.
+> (SCRUM-1411)
+
 ### 3.1 · Servidor (`src/`)
 
 | ruta | dueño | nota |
