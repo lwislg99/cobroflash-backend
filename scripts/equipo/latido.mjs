@@ -37,6 +37,12 @@
 //                  lo daba `sesion.mjs contexto`, que es la copia INSTALADA: responde ALTERADO cada vez
 //                  que un PR toca `sesion.mjs` en main (medido el 1-oct con #2002) y deja a todo el
 //                  equipo sin la cifra. Aquí se lee desde un árbol y no se toca esa puerta.
+//   8 · EXPERIMENTOS → (SCRUM-1413) todo run TERMINADO de una rama `exp-*` cuyo id no está citado en
+//                  `docs/master/` de `origin/main`, con la fecha en que caducan sus artefactos. El
+//                  1-oct-2026 se lanzó el de SCRUM-1384, nadie leyó el resultado y lo rescató el otro
+//                  equipo antes de que caducara (el detalle, en `docs/master/SCRUM-1413.md`). «Citado
+//                  en main» y no «comentado en Jira»: el latido no tiene credenciales de Jira, y un
+//                  comentario no salva los datos.
 //
 // DE DÓNDE SALEN LAS SESIONES: del REGISTRO de trabajos (`~/.claude/jobs/*/state.json`), nunca del
 // panel. Medido el 1-oct: dos sesiones lanzadas desde una carpeta nueva quedaron pidiendo un permiso,
@@ -443,6 +449,72 @@ export function seccionDespliegue({ despliegues, servido, ahora }) {
   };
 }
 
+// ───────────────────────────── 8 · EXPERIMENTOS ─────────────────────────────
+
+/** Prefijo de las ramas de experimento: no empiezan por `scrum-`, así que el bot no les abre PR y nada las vigila. */
+export const PREFIJO_DE_EXPERIMENTO = 'exp-';
+
+/** ¿Está `id` en `texto` como número ENTERO? Una subcadena de otro número más largo no es una cita. */
+export function citaElRun(texto, id) {
+  return new RegExp(`(^|[^0-9])${String(id).replace(/[^0-9]/g, '')}([^0-9]|$)`).test(String(texto || ''));
+}
+
+/**
+ * Un experimento es un run de una rama `exp-*`. Su resultado está LEÍDO cuando alguien lo escribió donde
+ * no caduca: un fichero de `docs/master/` en main que cite el id del run.
+ *
+ * @param {{
+ *   ramas: string[]|undefined,
+ *   runsDe: (rama:string)=>{total:number, runs:{id:number|string, status:string, created_at?:string}[]}|undefined,
+ *   artefactosDe: (id:number|string)=>{total:number, artefactos:{expired:boolean, expires_at:string}[]}|undefined,
+ *   citadoEnMain: (id:number|string)=>boolean|undefined,
+ *   ahora: number,
+ * }} e — todo `undefined` es «no se pudo leer», y nunca se toma por «no hay».
+ */
+export function seccionExperimentos({ ramas, runsDe, artefactosDe, citadoEnMain, ahora }) {
+  const N = 'EXPERIMENTOS';
+  if (!Array.isArray(ramas)) return ciega(N, `no se pudieron listar las ramas \`${PREFIJO_DE_EXPERIMENTO}*\` del remoto`);
+  let terminados = 0; let citados = 0; let corriendo = 0; let sinArtefactos = 0;
+  const hallados = []; const sinRuns = [];
+  for (const rama of ramas) {
+    const r = runsDe(rama);
+    if (!r || !Array.isArray(r.runs)) return ciega(N, `no se pudieron leer los runs de ${rama}`);
+    if (!Number.isFinite(r.total) || r.total > r.runs.length) return ciega(N, `${rama} declara ${r.total} runs y llegaron ${r.runs.length}: la lista está cortada`);
+    // Una rama de experimento sin ningún run no es «nada que leer». Medido el 2-oct-2026 al estrenar esta
+    // sección: la API devolvió la lista VACÍA para una rama que tenía su run, y la pasada siguiente lo trajo.
+    if (r.runs.length === 0) { sinRuns.push(rama); continue; }
+    for (const run of r.runs) {
+      if (run.status !== 'completed') { corriendo++; continue; }
+      terminados++;
+      const citado = citadoEnMain(run.id);
+      if (citado === undefined) return ciega(N, `no se pudo buscar el run ${run.id} en docs/master de origin/main`);
+      if (citado) { citados++; continue; }
+      const a = artefactosDe(run.id);
+      if (!a || !Array.isArray(a.artefactos)) return ciega(N, `no se pudieron leer los artefactos del run ${run.id} (${rama})`);
+      if (!Number.isFinite(a.total) || a.total > a.artefactos.length) return ciega(N, `el run ${run.id} declara ${a.total} artefactos y llegaron ${a.artefactos.length}: la lista está cortada`);
+      if (a.total === 0) { sinArtefactos++; continue; }
+      const vivos = a.artefactos.filter((x) => !x.expired);
+      const caduca = Math.min(...vivos.map((x) => Date.parse(x.expires_at)));
+      if (vivos.length > 0 && !Number.isFinite(caduca)) return ciega(N, `algún artefacto del run ${run.id} no trae fecha de caducidad legible`);
+      hallados.push({ rama, id: run.id, creado: run.created_at, total: a.total, vivos: vivos.length, caduca: vivos.length ? caduca : -Infinity });
+    }
+  }
+  // Primero lo perdido, luego lo que caduca antes: es el orden en que hay que ir a leerlo.
+  hallados.sort((x, y) => x.caduca - y.caduca);
+  const alertas = hallados.map((h) => {
+    const de = `${h.rama} · run ${h.id}${h.creado ? ` (${String(h.creado).slice(0, 16)}Z)` : ''}`;
+    if (h.vivos === 0) return { linea: `${de} · PERDIDO: sus ${h.total} artefacto(s) YA CADUCARON y nadie escribió el resultado en docs/master de main` };
+    const horas = (h.caduca - ahora) / 36e5;
+    const falta = horas < 0 ? 'fecha ya pasada' : `faltan ${edadDe(horas * 36e5)}`;
+    return { linea: `${de} · SIN LEER: no está citado en docs/master de main · ${h.vivos} de ${h.total} artefacto(s) vivos, el primero CADUCA el ${new Date(h.caduca).toISOString().slice(0, 16)}Z (${falta})` };
+  });
+  for (const rama of sinRuns) alertas.push({ linea: `${rama} · la API no devuelve NINGÚN run de esta rama: o nunca corrió, o la lista llegó vacía. NO es «nada que leer»: vuelve a mirar` });
+  return {
+    nombre: N, pudo: true, alertas,
+    poblacion: `${ramas.length} rama(s) \`${PREFIJO_DE_EXPERIMENTO}*\` (${sinRuns.length} sin ningún run) · ${terminados} run(s) terminados: ${citados} citados en docs/master de main, ${hallados.length} sin citar con artefactos, ${sinArtefactos} sin citar y sin artefactos · ${corriendo} aún corriendo (no se juzgan)`,
+  };
+}
+
 // ───────────────────────────── el veredicto ─────────────────────────────
 
 function ciega(nombre, motivo) { return { nombre, pudo: false, motivo, alertas: [], poblacion: null }; }
@@ -729,8 +801,33 @@ async function todo() {
   const sCem = seccionCementerio({ sesiones, ilegibles: trabajos ? trabajos.ilegibles : [], sinEstado: trabajos ? trabajos.sinEstado : [], libro, libroGuardado, ahora });
   // 7 · contexto. Se lee el jsonl de cada una; nada de `claude agents` ni de la copia instalada.
   const sCtx = seccionContexto({ sesiones, contextoDe: (s) => contextoDeRuta(jsonlDe(s)), sueltas: sesiones ? transcriptsSueltos(sesiones, ahora) : [], ahora });
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx];
   tramo('cementerio y contexto');
+  // 8 · experimentos. `main` se trae antes de buscar la cita: con un `origin/main` viejo, un resultado ya
+  // escrito saldría como «sin leer». Si no se puede traer, la búsqueda no vale y la sección lo dice.
+  const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const git = (args) => execFileSync('git', ['-C', raiz, ...args], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
+  const mainTraido = intentar(() => { git(['fetch', '--quiet', 'origin', '+refs/heads/main:refs/remotes/origin/main']); return true; }) === true;
+  const refs = intentar(() => ghJson(['api', `repos/${REPO}/git/matching-refs/heads/${PREFIJO_DE_EXPERIMENTO}?per_page=100`]));
+  const sExp = seccionExperimentos({
+    // Cien justas es una página llena: puede haber más, y entonces no se sabe.
+    ramas: Array.isArray(refs) && refs.length < 100 ? refs.map((r) => String(r.ref).replace(/^refs\/heads\//, '')) : undefined,
+    // Una lista vacía se pide OTRA vez antes de creérsela (ver `seccionExperimentos`); si repite, la sección lo dice.
+    runsDe: (rama) => intentar(() => {
+      const pedir = () => ghJson(['api', `repos/${REPO}/actions/runs?branch=${encodeURIComponent(rama)}&per_page=100`]);
+      let j = pedir();
+      if (Array.isArray(j.workflow_runs) && j.workflow_runs.length === 0) j = pedir();
+      return { total: j.total_count, runs: j.workflow_runs };
+    }),
+    artefactosDe: (id) => intentar(() => { const j = ghJson(['api', `repos/${REPO}/actions/runs/${id}/artifacts?per_page=100`]); return { total: j.total_count, artefactos: j.artifacts }; }),
+    citadoEnMain: (id) => {
+      if (!mainTraido) return undefined;
+      // `git grep` sale 1 cuando no hay ninguna coincidencia: eso es un «no», no un error.
+      try { return citaElRun(git(['grep', '-h', '-F', String(id), 'origin/main', '--', 'docs/master']), id); } catch (e) { return e && e.status === 1 ? false : undefined; }
+    },
+    ahora,
+  });
+  tramo('experimentos');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
