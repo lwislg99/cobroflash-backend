@@ -134,7 +134,7 @@ barrido vuelve vacío: cero es «no supe mirar», nunca «no hay aprobaciones».
 de más de 160 caracteres. Un texto firmado puede pasar de ahí, y entonces la ficha lo dice de forma
 que el guard lo pueda comprobar leyendo. Las tres cosas a la vez:
 
-1. El texto va **entero en UNA línea de cita**, bajo el encabezado «Texto aprobado».
+1. El texto va **entero en UNA línea de cita** (el encabezado ya no cuenta: SCRUM-1334, abajo).
 2. La **línea de la firma nombra el comentario de Jira** donde se firmó, en esa misma línea:
    `**Aprobado por el fundador** el <fecha>, en **SCRUM-<n>** (comentario <id>).` La firma delegada
    ya lo lleva.
@@ -147,3 +147,29 @@ el código las pinta por separado.
 
 Lo que el guard **no** comprueba: que ese comentario contenga ese texto. Un test no lee Jira; la
 referencia es para que una persona pueda ir a mirarlo.
+
+## En una ficha, toda cita es un texto aprobado (SCRUM-1334)
+
+Hasta el 1-oct-2026 `tests/scrum514-aprobado-y-aplicado.test.mjs` sólo cruzaba con el código las
+citas que iban bajo un encabezado «Texto aprobado»: 110 de 248. Las demás no se miraban, y bastaba
+titular el apartado con otras palabras para quedarse fuera. Ahora **ningún encabezado decide nada**:
+de una ficha se cruzan **todas** sus líneas de cita, vayan donde vayan. Es la misma unidad que ya usa
+`constaAprobado`.
+
+Así que al escribir una ficha:
+
+- **Una línea de cita (`>`) es un texto firmado, y nada más va en cita.** Una nota, un aviso o un
+  «qué había antes» se escriben como párrafo normal. Con el `>` delante, el guard los busca en el
+  código y cae, y `constaAprobado` los da por firmados.
+- **Un texto con huecos** se escribe con llaves, `{n} fotos`: el guard no lo cruza y lo cuenta
+  como plantilla.
+- **Un texto que el código compone** y que se cita con un ejemplo (`3 fotos`), o que el código
+  tiene partido en dos literales, no aparece tal cual. Se declara en `NO_SE_CRUZAN`, dentro del
+  propio guard, con el fichero donde se compone y sus partes fijas; el guard comprueba en cada
+  pasada que esas partes siguen ahí.
+- **Lo que no sea ninguna de esas cosas y el código no pinte, cae**, y el rojo dice la ficha y la
+  sección. O se aplica, o se aparca en `APARCADOS` con su motivo.
+
+En cada pasada el guard dice lo que ha hecho: «crucé N de M citas», y cuántas no cruza y por qué
+(plantillas, declaradas, de menos de 4 caracteres). ⛔ Un texto firmado no se cambia para que cruce
+(regla 39), y el guard no se afloja para que pase (regla 41).

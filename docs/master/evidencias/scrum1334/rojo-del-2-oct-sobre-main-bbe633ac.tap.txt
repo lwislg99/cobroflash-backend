@@ -1,0 +1,418 @@
+TAP version 13
+# Subtest: SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra
+ok 1 - SCRUM-514 · SUELO: la fuente se lee y tiene textos de sobra
+  ---
+  duration_ms: 535.1883
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO
+ok 2 - SCRUM-514 · SUELO: el cruce sabe decir SÍ y sabe decir NO
+  ---
+  duration_ms: 1.3521
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo)
+not ok 3 - SCRUM-514 · 🔴 TODO texto APROBADO está aplicado (salvo lo aparcado, con su motivo)
+  ---
+  duration_ms: 164.8665
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:561:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 HAY TEXTO APROBADO QUE EL CÓDIGO NO PINTA TAL CUAL, Y NO SÉ POR QUÉ:
+        "⚠️ **Y el censo de marcadores dice UNO, no veintiséis, y las dos cifras son correctas.** Ese censo"
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "cuenta **literales que contienen la marca**, y esta pantalla la factoriza en una constante que"
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "concatena veintiséis veces. Quien lea ese «1» no debe deducir «un rótulo pendiente»."
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "Por eso la entrada de `parteDetailView.js` en `tests/scrum402-marcador-no-se-pinta.test.mjs`"
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "**sigue en 1 y no se retira**: aplicar este aviso no ha cambiado el número, porque este aviso"
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "nunca fue un literal marcado aparte."
+            docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md · sección «Qué queda sin firmar en esa pantalla»
+        "⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "alguien la hubiera escrito. Dos afirmaciones distintas con el mismo verde."
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "atribuía mal, y el hueco del guard se cierra en SCRUM-726."
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Los tres atajos de «Válido hasta» del presupuesto»
+        "⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Dónde se pinta»
+        "texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Dónde se pinta»
+        "digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en"
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Dónde se pinta»
+        "vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño."
+            docs/microcopy/2026-09-04-SCRUM-605-atajos-valido-hasta.md · sección «Dónde se pinta»
+        "[PENDIENTE microcopy oficial] Nuevo albarán"
+            docs/microcopy/2026-09-07-SCRUM-722-nuevo-albaran.md · sección «Qué había antes»
+        "No se pudo crear el albarán: **API 500: internal_error**"
+            docs/microcopy/2026-09-08-SCRUM-728-serie-ocupada.md · sección «Qué se veía antes, medido corriendo»
+        "«Dos respuestas distintas a \"no existe\" y \"no es tuyo\" convierten la lista de ids en un"
+            docs/microcopy/2026-09-09-SCRUM-832-la-ficha-que-ya-no-esta.md · sección «🔒 Por qué los cinco valen para DOS situaciones distintas, y es a propósito»
+        "directorio de la competencia.»"
+            docs/microcopy/2026-09-09-SCRUM-832-la-ficha-que-ya-no-esta.md · sección «🔒 Por qué los cinco valen para DOS situaciones distintas, y es a propósito»
+    
+      En una ficha de `docs/microcopy/` toda línea de cita es un texto firmado, vaya bajo el encabezado que vaya (SCRUM-1334). De cada una de arriba no sé cuál de estas tres cosas es, y no la dejo pasar sin saberlo:
+       · Un texto firmado que NO se ha aplicado: un profesional no lo está viendo. Se aplica —copiándolo LITERAL, con sus tildes y su «…» de un solo carácter— o se aparca en `APARCADOS` con su motivo y quién lo desbloquea.
+       · Un texto que el código COMPONE (un plural, un número) o tiene partido en dos literales: se declara en `NO_SE_CRUZAN` con el fichero y sus partes fijas.
+       · Una NOTA, o un «qué había antes», escritos como cita: se les quita el `>` en la ficha. No se declaran aquí: con el `>` puesto, `constaAprobado` las sigue dando por firmadas.
+      ⛔ No se cambia un texto firmado para que cruce (regla 39), ni se afloja esto (regla 41).
+    + actual - expected
+    
+    + [
+    +   '⚠️ **Y el censo de marcadores dice UNO, no veintiséis, y las dos cifras son correctas.** Ese censo',
+    +   'cuenta **literales que contienen la marca**, y esta pantalla la factoriza en una constante que',
+    +   'concatena veintiséis veces. Quien lea ese «1» no debe deducir «un rótulo pendiente».',
+    +   'Por eso la entrada de `parteDetailView.js` en `tests/scrum402-marcador-no-se-pinta.test.mjs`',
+    +   '**sigue en 1 y no se retira**: aplicar este aviso no ha cambiado el número, porque este aviso',
+    +   'nunca fue un literal marcado aparte.',
+    +   '⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»',
+    +   'y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El',
+    +   'fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación',
+    +   'igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo',
+    +   'firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que',
+    +   'alguien la hubiera escrito. Dos afirmaciones distintas con el mismo verde.',
+    +   'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la',
+    +   'atribuía mal, y el hueco del guard se cierra en SCRUM-726.',
+    +   '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**',
+    +   'texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que',
+    +   'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en',
+    +   'vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño.',
+    +   '[PENDIENTE microcopy oficial] Nuevo albarán',
+    +   'No se pudo crear el albarán: **API 500: internal_error**',
+    +   '«Dos respuestas distintas a "no existe" y "no es tuyo" convierten la lista de ids en un',
+    +   'directorio de la competencia.»'
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '⚠️ **Y el censo de marcadores dice UNO, no veintiséis, y las dos cifras son correctas.** Ese censo'
+    1: 'cuenta **literales que contienen la marca**, y esta pantalla la factoriza en una constante que'
+    2: 'concatena veintiséis veces. Quien lea ese «1» no debe deducir «un rótulo pendiente».'
+    3: 'Por eso la entrada de `parteDetailView.js` en `tests/scrum402-marcador-no-se-pinta.test.mjs`'
+    4: '**sigue en 1 y no se retira**: aplicar este aviso no ha cambiado el número, porque este aviso'
+    5: 'nunca fue un literal marcado aparte.'
+    6: '⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»'
+    7: 'y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El'
+    8: 'fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación'
+    9: 'igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo'
+    10: 'firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que'
+    11: 'alguien la hubiera escrito. Dos afirmaciones distintas con el mismo verde.'
+    12: 'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la'
+    13: 'atribuía mal, y el hueco del guard se cierra en SCRUM-726.'
+    14: '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**'
+    15: 'texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que'
+    16: 'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en'
+    17: 'vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño.'
+    18: '[PENDIENTE microcopy oficial] Nuevo albarán'
+    19: 'No se pudo crear el albarán: **API 500: internal_error**'
+    20: '«Dos respuestas distintas a "no existe" y "no es tuyo" convierten la lista de ids en un'
+    21: 'directorio de la competencia.»'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:564:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1334 · 🔴 RECUENTO: el guard DICE lo que cruza y lo que no — «crucé N de M»
+ok 4 - SCRUM-1334 · 🔴 RECUENTO: el guard DICE lo que cruza y lo que no — «crucé N de M»
+  ---
+  duration_ms: 280.1784
+  type: 'test'
+  ...
+# SCRUM-514 · fichas: crucé 217 de 251 citas de 106 fichas (189 pintadas tal cual, 6 aparcadas con motivo, 22 SIN SABER). No cruzo: 20 plantillas con huecos, 11 declaradas (compuestas o partidas, con su prueba), 3 de menos de 4 caracteres.
+# SCRUM-514 · registro congelado: crucé 94 de 119 textos. No cruzo: 2 plantillas, 20 rutas o constantes, 3 de menos de 4 caracteres.
+# Subtest: SCRUM-1334 · 🔴 cada DECLARADA sigue en su ficha, sigue sin pintarse tal cual y sus partes fijas siguen en su fichero
+ok 5 - SCRUM-1334 · 🔴 cada DECLARADA sigue en su ficha, sigue sin pintarse tal cual y sus partes fijas siguen en su fichero
+  ---
+  duration_ms: 27.4203
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo
+ok 6 - SCRUM-514 · 🔴 cada APARCADO sigue sin aplicar, y lleva su motivo
+  ---
+  duration_ms: 32.6713
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en el código
+ok 7 - SCRUM-514 · CONTROL NEGATIVO: un texto NO aprobado no entra por estar en el código
+  ---
+  duration_ms: 55.7936
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
+not ok 8 - SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga PROSA del registro
+  ---
+  duration_ms: 46.3546
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-jv-j2\\tests\\scrum514-aprobado-y-aplicado.test.mjs:662:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 ha entrado PROSA en el cruce:
+        "⚠️ **Y el censo de marcadores dice UNO, no veintis" — lleva negrita de Markdown: es una nota, no copy
+        "cuenta **literales que contienen la marca**, y est" — lleva negrita de Markdown: es una nota, no copy
+        "**sigue en 1 y no se retira**: aplicar este aviso " — lleva negrita de Markdown: es una nota, no copy
+        "⚠️ **Cómo estaba escrito antes, y por qué se corri" — lleva negrita de Markdown: es una nota, no copy
+        "y añadía, con toda razón, «a la espera de la firma" — lleva negrita de Markdown: es una nota, no copy
+        "fichero era escrupuloso: el defecto estaba en `con" — lleva negrita de Markdown: es una nota, no copy
+        "igualmente, porque sólo miraba que el texto estuvi" — lleva negrita de Markdown: es una nota, no copy
+        "firmaba**. La regla 30 dice que la microcopy la ap" — lleva negrita de Markdown: es una nota, no copy
+        "La firma del fundador llegó, así que **la aprobaci" — lleva negrita de Markdown: es una nota, no copy
+        "⚠️ **El nombre accesible está construido y NO cabl" — lleva negrita de Markdown: es una nota, no copy
+        "digan cosas distintas hace falta **una línea** en " — lleva negrita de Markdown: es una nota, no copy
+        "No se pudo crear el albarán: **API 500: internal_e" — lleva negrita de Markdown: es una nota, no copy
+    
+      Son notas del registro, no copy de pantalla, y el guard se pondría rojo por algo que nadie pinta. Si es una nota, quítale el `>` en su ficha: una nota no va en cita. Si es un texto FIRMADO y largo (SCRUM-1329): va entero en UNA línea de cita, la línea de la firma nombra su comentario de Jira («… en SCRUM-n (comentario NNNNN)») y el código lo pinta tal cual. ⛔ No lo partas ni lo reescribas para que quepa: el texto manda sobre el instrumento.
+    + actual - expected
+    
+    + [
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: '⚠️ **Y el censo de marcadores dice UNO, no veintiséis, y las dos cifras son correctas.** Ese censo'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'cuenta **literales que contienen la marca**, y esta pantalla la factoriza en una constante que'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: '**sigue en 1 y no se retira**: aplicar este aviso no ha cambiado el número, porque este aviso'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: '⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en'
+    +   },
+    +   {
+    +     porque: 'lleva negrita de Markdown: es una nota, no copy',
+    +     texto: 'No se pudo crear el albarán: **API 500: internal_error**'
+    +   }
+    + ]
+    - []
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      texto: '⚠️ **Y el censo de marcadores dice UNO, no veintiséis, y las dos cifras son correctas.** Ese censo'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    1:
+      texto: 'cuenta **literales que contienen la marca**, y esta pantalla la factoriza en una constante que'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    2:
+      texto: '**sigue en 1 y no se retira**: aplicar este aviso no ha cambiado el número, porque este aviso'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    3:
+      texto: '⚠️ **Cómo estaba escrito antes, y por qué se corrige.** Nació diciendo «Aprobado por el **ASESOR**»'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    4:
+      texto: 'y añadía, con toda razón, «a la espera de la firma del fundador — esto no es su firma». **El'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    5:
+      texto: 'fichero era escrupuloso: el defecto estaba en `constaAprobado()`**, que lo contaba como aprobación'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    6:
+      texto: 'igualmente, porque sólo miraba que el texto estuviera escrito en `docs/microcopy/` y **no quién lo'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    7:
+      texto: 'firmaba**. La regla 30 dice que la microcopy la aprueba el fundador; el guard comprobaba que'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    8:
+      texto: 'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    9:
+      texto: '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    10:
+      texto: 'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+    11:
+      texto: 'No se pudo crear el albarán: **API 500: internal_error**'
+      porque: 'lleva negrita de Markdown: es una nota, no copy'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv-j2/tests/scrum514-aprobado-y-aplicado.test.mjs:667:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa
+ok 9 - SCRUM-1329 · 🔴 el literal firmado de SCRUM-1258 (comentario 17713), en UNA línea, NO es prosa
+  ---
+  duration_ms: 2.7601
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta
+ok 10 - SCRUM-1329 · CONTROL: una nota larga dentro de una ficha FIRMADA sigue cayendo — nadie la pinta
+  ---
+  duration_ms: 2.1182
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código
+ok 11 - SCRUM-1329 · CONTROL: una prosa larga SIN FIRMA sigue cayendo, aunque esté en el código
+  ---
+  duration_ms: 2.1932
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta
+ok 12 - SCRUM-1329 · CONTROL: una firma que no es del fundador ni delegada no abre la puerta
+  ---
+  duration_ms: 1.8658
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE
+ok 13 - SCRUM-1329 · CONTROL: firmada y pintada, pero sin decir en qué comentario — el guard dice que NO SABE
+  ---
+  duration_ms: 1.8119
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: el comentario nombrado en OTRA línea no respalda a la firma
+ok 14 - SCRUM-1329 · CONTROL: el comentario nombrado en OTRA línea no respalda a la firma
+  ---
+  duration_ms: 1.8412
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · la firma DELEGADA, con su comentario, vale igual que la del fundador
+ok 15 - SCRUM-1329 · la firma DELEGADA, con su comentario, vale igual que la del fundador
+  ---
+  duration_ms: 1.9812
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: una celda larga del registro CONGELADO no tiene firma que mirar — NO SÉ
+ok 16 - SCRUM-1329 · CONTROL: una celda larga del registro CONGELADO no tiene firma que mirar — NO SÉ
+  ---
+  duration_ms: 1.8719
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada
+ok 17 - SCRUM-1329 · CONTROL: la negrita de Markdown sigue siendo prosa, con firma y pintada
+  ---
+  duration_ms: 1.8157
+  type: 'test'
+  ...
+# Subtest: SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae
+ok 18 - SCRUM-1329 · CONTROL: el umbral no se ha movido — sin firma, LARGO_DE_PROSA pasa y uno más cae
+  ---
+  duration_ms: 3.5474
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · 🔴 una cita entra en el cruce vaya bajo el encabezado que vaya, o bajo ninguno
+ok 19 - SCRUM-1334 · 🔴 una cita entra en el cruce vaya bajo el encabezado que vaya, o bajo ninguno
+  ---
+  duration_ms: 11.8618
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · 🔴 TESTIGO REAL: la cita de 276 caracteres de SCRUM-1247 («Textos aprobados», en plural) se cruza
+ok 20 - SCRUM-1334 · 🔴 TESTIGO REAL: la cita de 276 caracteres de SCRUM-1247 («Textos aprobados», en plural) se cruza
+  ---
+  duration_ms: 49.6227
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · 🔴 una cita que el código NO pinta, bajo un título cualquiera, sale en rojo y dice dónde
+ok 21 - SCRUM-1334 · 🔴 una cita que el código NO pinta, bajo un título cualquiera, sale en rojo y dice dónde
+  ---
+  duration_ms: 3.2456
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · CONTROL: la prosa de una ficha que NO va en cita sigue sin pasar por texto aprobado
+ok 22 - SCRUM-1334 · CONTROL: la prosa de una ficha que NO va en cita sigue sin pasar por texto aprobado
+  ---
+  duration_ms: 2.5868
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · CONTROL: lo que ya se cruzaba por su título se sigue cruzando, entero
+ok 23 - SCRUM-1334 · CONTROL: lo que ya se cruzaba por su título se sigue cruzando, entero
+  ---
+  duration_ms: 91.0575
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · una plantilla y una cita corta siguen fuera del cruce, y ahora constan en su caja
+ok 24 - SCRUM-1334 · una plantilla y una cita corta siguen fuera del cruce, y ahora constan en su caja
+  ---
+  duration_ms: 2.1049
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · una cita declarada sale del cruce SÓLO en su ficha: la declaración no es del texto
+ok 25 - SCRUM-1334 · una cita declarada sale del cruce SÓLO en su ficha: la declaración no es del texto
+  ---
+  duration_ms: 5.3031
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · una declaración con su prueba vale; sin ella, dice qué le falta
+ok 26 - SCRUM-1334 · una declaración con su prueba vale; sin ella, dice qué le falta
+  ---
+  duration_ms: 0.3255
+  type: 'test'
+  ...
+# Subtest: SCRUM-1334 · CONTROL: una NOTA no cuela como «compuesta» metiéndola entera en un dato
+ok 27 - SCRUM-1334 · CONTROL: una NOTA no cuela como «compuesta» metiéndola entera en un dato
+  ---
+  duration_ms: 0.1872
+  type: 'test'
+  ...
+# Subtest: SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes
+ok 28 - SCRUM-514 · CONTROL NEGATIVO: el extractor no se traga rutas ni constantes
+  ---
+  duration_ms: 43.3286
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 26
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1473.1366

@@ -1724,6 +1724,12 @@ model ParteTrabajo {
 // rol y `requireRole`— y tampoco abren la visibilidad de coste ni de margen (P-DOC-3): un técnico
 // asignado a un documento sigue sin verlos.
 //
+// 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026
+// (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un Técnico lo
+// VEA: estas filas SÍ entran en quién ve el documento. Para EDITAR, EMITIR, coste y margen, lo
+// de arriba sigue siendo verdad tal cual. La regla de quién ve vive en el máster, Parte S1
+// («autor o asignado»), no en este comentario.
+//
 // Un documento SIN NINGUNA fila aquí es exactamente lo que hay hoy: sin asignar, y se comporta
 // igual que siempre en listas, filtros y orden.
 // ═════════════════════════════════════════════════════════════════════════════════════════
