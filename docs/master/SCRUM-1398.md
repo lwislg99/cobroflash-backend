@@ -146,5 +146,10 @@ Se reportan al orquestador; es herramienta de laboratorio, no el camino de emisi
 
 ## Qué no se corrió
 
-La tanda completa local (no cabe en esta máquina: decisión del orquestador). Se corrió la dirigida, que
-se declara en el comentario de entrega del ticket; el obligatorio del CI es la tanda.
+Dirigida local NO corrida — decisión del orquestador; corridos: el test del ticket (7/7, visto en rojo
+primero), `scrum267`, `scrum1294`, `scrum622` y `guards:entrada`; el obligatorio del CI es la pasada entera
+sobre el merge. La dirigida eran 224 ficheros de 1.196 (`npm run tests:que-cubren`). La tanda completa local
+tampoco: no cabe en esta máquina. Es un hueco declarado, no un paso saltado; lo compensa leer los siete
+casos `SCRUM-1398 ·` por nombre en el obligatorio, que es lo que dice el comentario de entrega del ticket.
+
+El defecto de la anulación tiene ticket propio: SCRUM-1399. Aquí no se toca.
