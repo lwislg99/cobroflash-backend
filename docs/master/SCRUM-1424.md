@@ -73,6 +73,21 @@ El caso «no puedo mirar» se fabrica en el test cortando el acceso de cuatro ma
 remoto del repositorio de juguete, se pide una referencia que no existe, se lanza sobre una carpeta
 que no es un repositorio, y se lanza sin número.
 
+## Dos entradas añadidas a la lista declarada de un guard (SCRUM-723)
+
+`guards:entrada` paró el primer intento de empujar: `tests/scrum723-guard-contra-su-base.test.mjs`
+lleva una lista cerrada de los ficheros que nombran una referencia móvil (`origin/main`) fuera de los
+argumentos de git, cada uno con su motivo y con quién lo retira. Los dos ficheros nuevos la nombran.
+
+- **Lo que era código se arregló en el código:** la referencia se resuelve una vez y todo se mide
+  contra ese sha, que sale impreso.
+- **Lo que queda es declararse**, y se ha hecho: `scripts/equipo/ya-esta.mjs` y
+  `tests/scrum1424-ya-esta.test.mjs`, cada uno con su motivo y su «lo retira». No se quita ninguna
+  entrada ni se toca el detector.
+- **Quién lo decidió:** el orquestador, el 2-oct-2026, con el criterio de que usar la lista que el
+  guard provee no es arreglar el guard, y con los precedentes de SCRUM-996, SCRUM-637 y SCRUM-1372 en
+  esa misma lista. Yo lo había parado para preguntarlo.
+
 ## Mi error
 
 La primera tanda de mutaciones dio once rojos, pero uno era falso: mi mutante de «fetch fallido»
