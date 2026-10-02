@@ -1,6 +1,7 @@
 // src/modules/jobs/app/routes/jobs.routes.ts — A13.2/A13.3 (EXT3, JOB-1)
 // Lista "Esta semana" + FSM + .ics por trabajo + "Cobrar el resto" (V2: el
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
@@ -50,7 +51,7 @@ import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
 // SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
 // toca: esto sólo resuelve sus tres entradas con datos que este serializador ya tiene cargados.
-import { entregaDelTrabajo, entregaParaVista } from '../../domain/entregaDelTrabajo';
+import { entregaDelTrabajo, entregaParaVista, presupuestosQueSeEntregan } from '../../domain/entregaDelTrabajo';
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
@@ -776,7 +777,9 @@ async function serializeJobDetail(job: any) {
   // ORIGINAL el primero, que es lo que `entregaDelTrabajo` necesita para decidir el eje y
   // `hayAdicionales`. Los albaranes van CRUDOS —`albaranesRaw`— y no los serializados: el cálculo
   // mira `lineas`, `estado` y `modoValoracion`, y el serializado no está obligado a conservarlos.
-  const entrega = entregaParaVista(entregaDelTrabajo(quotesDelTrabajo, albaranesRaw));
+  // SCRUM-1369 · sólo lo ACEPTADO es un compromiso de entrega: un borrador no deja líneas «sin
+  // entregar». El criterio es el de `dineroDelTrabajo.ts`, aplicado en `presupuestosQueSeEntregan`.
+  const entrega = entregaParaVista(entregaDelTrabajo(presupuestosQueSeEntregan(quotesDelTrabajo), albaranesRaw));
 
   return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
 }
@@ -838,7 +841,7 @@ router.get('/', async (req, res) => {
       // operarioId null. Un parámetro vacío o un 0 accidental NO pueden significar "los del
       // propietario" por descuido; lo que no se entiende, no filtra.
       if (raw === 'owner') where.operarioId = null;
-      else if (raw !== undefined && Number.isInteger(Number(raw))) where.operarioId = Number(raw);
+      else if (raw !== undefined && cabeEnColumnaInt(Number(raw))) where.operarioId = Number(raw);
     }
     const jobs = await prisma.job.findMany({
       where,
@@ -908,7 +911,7 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     // SCRUM-23: row-level por operario dentro del MISMO merchant. Un técnico no abre por
@@ -953,7 +956,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/gastos', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
@@ -974,7 +977,7 @@ router.get('/:id/gastos', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
@@ -1141,7 +1144,7 @@ router.patch('/:id', async (req, res) => {
 router.get('/:id/ics', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     if (!job.scheduledAt) return res.status(409).json({ error: 'not_scheduled' });
@@ -1181,7 +1184,7 @@ router.get('/:id/ics', async (req, res) => {
 router.post('/:id/albaranes', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
     // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.

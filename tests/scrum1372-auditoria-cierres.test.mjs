@@ -13,7 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   cribarUno, pasada, validarFichero, elegirMuestra, senalC5, leerTablaA8, citasDeTest, rutasDelRepo, paqueteDe,
-  puestoDe, esDeLuis, numeroDe, CANARIO, ESPERADO_DEL_CANARIO, TOPE, RESERVA_AZAR, TECHO_C5, NORMA_A8_DESDE,
+  puestoDe, esDeLuis, numeroDe, CANARIO, ESPERADO_DEL_CANARIO, TOPE, RESERVA_AZAR, TECHO_C5, NORMA_A8_DESDE, ETIQUETAS_SIN_TRABAJO,
 } from '../scripts/auditoria-cierres.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -104,9 +104,10 @@ test('SCRUM-1372 · 🔴 C5 distingue el «no se vio» que da su MOTIVO del que 
   const sin = cribarUno(cierre(110, { ultimoComentario: 'Mergeado. No se ha visto en producción.' }), repoDe());
   assert.match(con.notas.join(' '), /límite DECLARADO, no un cierre malo/);
   assert.match(sin.notas.join(' '), /sin decir por qué/);
-  // Y en la muestra va antes el que calla: es el que nadie ha explicado.
+  // Y se lee SOLO al que calla: es el que nadie ha explicado. El del límite declarado se nombra, no se lee.
   const m = elegirMuestra([con, sin], { fecha: '2026-10-01' });
-  assert.deepEqual(m.c5.map((c) => c.clave), ['SCRUM-110', 'SCRUM-109']);
+  assert.deepEqual(m.c5.map((c) => c.clave), ['SCRUM-110']);
+  assert.deepEqual(m.conLimiteDeclarado.map((c) => c.clave), ['SCRUM-109']);
 });
 
 test('SCRUM-1372 · C6: sin aceptación no se acusa, se cuenta aparte — y no entra en el azar', () => {
@@ -242,10 +243,12 @@ test('SCRUM-1372 · 🔴 la misma fecha da la MISMA muestra; otra fecha, otra; y
   assert.deepEqual(a.c5.map((c) => c.clave), ['SCRUM-21']);
   for (const c of a.azar) { assert.deepEqual(c.senales, []); assert.equal(c.conAceptacion, true); }
   assert.equal(new Set(a.azar.map((c) => c.puesto)).size, a.azar.length, 'uno por puesto, no dos del mismo');
-  assert.equal(a.azar.length, 5, 'cinco puestos con algún cierre limpio (J1, S2, J4, S5, sin-area) y cinco huecos');
+  assert.equal(a.azar.length, RESERVA_AZAR, 'cinco puestos con algún cierre limpio (J1, S2, J4, S5, sin-area) y tres lecturas al azar');
+  assert.equal(a.puestosSinLeer.length, 5 - RESERVA_AZAR);
+  assert.deepEqual([...a.azar.map((c) => c.puesto), ...a.puestosSinLeer].sort(), ['J1', 'J4', 'S2', 'S5', 'sin-area'], 'leídos y no leídos suman TODOS los puestos: ninguno desaparece');
 });
 
-test('SCRUM-1372 · el tope: los C1/C2 van todos, los C5 no se comen la reserva del azar, y lo que queda fuera se DICE', () => {
+test('SCRUM-1372 · 🔴 GANA EL TOPE: nunca se leen más de seis, los C1/C2 no gastan lectura, y a quién NO se leyó se dice con nombre', () => {
   const muchos = [
     ...[30, 31, 32, 33, 34].map((n) => cierre(n, { ultimoComentario: 'Sin verificar.' })),
     ...[40, 41, 42, 43, 44, 45, 46, 47, 48].map((n, i) => cierre(n, { etiquetas: [`area-j${i + 1}`] })),
@@ -253,14 +256,44 @@ test('SCRUM-1372 · el tope: los C1/C2 van todos, los C5 no se comen la reserva 
   ];
   const repo = repoDe({ sinRastro: [50, 51, 52, 53, 54, 55, 56, 57] });
   const m = elegirMuestra(muchos.map((c) => cribarUno(c, repo)), { fecha: '2026-10-01' });
-  assert.equal(m.seguros.length, 8, 'ocho sin rastro: van los ocho aunque el tope sea seis');
+  assert.equal(m.seguros.length, 8, 'ocho sin rastro: se nombran los ocho, y ninguno gasta una lectura');
   assert.equal(m.c5.length, TOPE - RESERVA_AZAR);
-  assert.deepEqual(m.c5FueraDeTope.map((c) => c.clave), ['SCRUM-33', 'SCRUM-34']);
+  assert.deepEqual(m.fueraDeTope.map((c) => c.clave), ['SCRUM-33', 'SCRUM-34']);
   assert.equal(m.azar.length, RESERVA_AZAR);
+  assert.ok(m.c5.length + m.azar.length <= TOPE, 'gana el tope');
   assert.equal(m.puestosSinLeer.length, 9 - RESERVA_AZAR);
+  assert.deepEqual([...m.azar.map((c) => c.puesto), ...m.puestosSinLeer].sort(), ['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'J9']);
   const t = pasada({ datos: fichero(muchos), repo, desde: DESDE, fecha: '2026-10-01', ahora: AHORA }).lineas.join('\n');
-  assert.match(t, /2 más quedan FUERA del tope: SCRUM-33, SCRUM-34/);
-  assert.match(t, /puestos sin lectura esta pasada/);
+  assert.match(t, /6 lecturas · tope 6 y GANA EL TOPE/);
+  assert.match(t, /C5 sin motivo que no cupieron en el tope: SCRUM-33, SCRUM-34/);
+  assert.match(t, new RegExp(`SIN lectura al azar esta pasada: ${m.puestosSinLeer.join(', ')}$`, 'm'), 'los seis puestos sin leer salen con su nombre');
+  // El caso del 1-oct: UN C5 que calla y cinco con el límite dicho son CUATRO lecturas, no seis ni quince.
+  const delDia = [
+    cierre(60, { ultimoComentario: 'Mergeado. No se ha visto en producción.' }),
+    ...[61, 62, 63, 64, 65].map((n) => cierre(n, { ultimoComentario: 'No se ha visto en producción porque el fixture no las tiene.' })),
+    ...[70, 71, 72, 73].map((n, i) => cierre(n, { etiquetas: [`area-s${i + 1}`] })),
+  ];
+  const d = elegirMuestra(delDia.map((c) => cribarUno(c, repoDe())), { fecha: '2026-10-01' });
+  assert.deepEqual([d.c5.map((c) => c.clave), d.azar.length, d.conLimiteDeclarado.length, d.puestosSinLeer.length], [['SCRUM-60'], 3, 5, 1]);
+});
+
+test('SCRUM-1372 · 🔴 la etiqueta `descartado` o `duplicado` aparta un cierre sin trabajo: ni C1 ni A8 ni azar — y sin ella, C1 sigue saltando', () => {
+  const repo = repoDe({ sinRastro: [80, 81, 82] });
+  const vacio = { ...DE_LUIS, ultimoComentario: 'Se descarta.' };
+  for (const e of ETIQUETAS_SIN_TRABAJO) {
+    const c = cribarUno(cierre(80, { ...vacio, etiquetas: [...DE_LUIS.etiquetas, e] }), repo);
+    assert.deepEqual(c.senales, [], e);
+    assert.equal(c.sinTrabajo, e);
+    assert.match(c.notas.join(' '), /cierre sin trabajo, por su etiqueta/);
+  }
+  assert.deepEqual(senales(cierre(81, vacio), repo), ['C1', 'A8'], 'el negativo: sin la etiqueta, el mismo cierre se marca');
+  assert.deepEqual(senales(cierre(82, { ...vacio, etiquetas: [...DE_LUIS.etiquetas, 'descartados'] }), repo), ['C1', 'A8'], 'una etiqueta que solo se le parece no aparta');
+  // Lo demás se le sigue mirando: descartado y con una rama con contenido fuera es trabajo fuera.
+  const conRama = repoDe({ sinRastro: [80], ramas: { 80: [{ rama: 'scrum-80-x', cambia: true, ficheros: ['a.md'] }] } });
+  assert.ok(senales(cierre(80, { ...vacio, etiquetas: [...DE_LUIS.etiquetas, 'descartado'] }), conRama).includes('C2'));
+  // Y no entra en el azar: leer contra su aceptación un ticket que no se hizo no mide al equipo.
+  const m = elegirMuestra([cribarUno(cierre(80, { etiquetas: ['area-s2', 'duplicado'] }), repo)], { fecha: '2026-10-01' });
+  assert.deepEqual([m.azar.length, m.limpios], [0, 0]);
 });
 
 test('SCRUM-1372 · 🔴 el paquete de lectura lleva la aceptación literal y NO lleva el comentario de entrega', () => {

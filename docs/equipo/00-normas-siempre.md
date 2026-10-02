@@ -101,8 +101,13 @@ El panel vacío no es «no existe»: cuando el panel y el registro de trabajos d
 Un fichero que corre y pierde su informe se ve idéntico a un fichero sin tests; sólo el recuento lo distingue. (SCRUM-1366)
 Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido. (SCRUM-1356)
 Limpiar la máquina borra pruebas: el libro se escribe antes de parar, no después. (SCRUM-1357)
+El `updatedAt` de una fila no es la versión de un trozo de esa fila. (SCRUM-1285)
 Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el contenido. (SCRUM-1368)
 Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se queda sin juzgar. (SCRUM-1336)
 Un test que saca el handler de su ruta prueba el handler, no la ruta: sigue verde con el gate puesto y con el gate quitado. (SCRUM-1344)
 Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de pedir una medición se lee el ticket entero, comentarios incluidos. (SCRUM-1398)
+<<<<<<< HEAD
 Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con sus artefactos. (SCRUM-1384)
+=======
+Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente. (SCRUM-1372)
+>>>>>>> origin/main

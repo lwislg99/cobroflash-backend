@@ -96,6 +96,25 @@ Con el tope de 6 del diseño se leen 6 de los 15 que hacen falta para tener un c
 puesto y todos los que dicen de sí mismos que no se vieron. **El tope y «uno por puesto» no caben juntos
 con nueve puestos cerrando.** Es una decisión de gasto, no del instrumento.
 
+### Decidido el 1-oct-2026 (orquestador): GANA EL TOPE, y se leen CUATRO
+
+La tabla de arriba es la de la primera pasada y se queda como estaba. Con la decisión, la misma pasada
+(mismos 61 cierres, misma semilla) da esto:
+
+| | quiénes |
+|---|---|
+| **se leen (4)** | 1229, el único que dice que no se vio y calla el motivo · al azar: 1272 (S2), 1291 (sin área), 1305 (J6) |
+| no se leen: límite ya declarado | 1142, 1171, 1276, 1279, 1355 — apuntan a SCRUM-1367, medido cuatro veces: confirmarlo rinde casi nada |
+| no se leen: ya medidos (C1/C2) | 1131, 1196, 1361 — se resuelven, no se leen |
+| 🔴 **puestos SIN lectura al azar** | **J1, J2, J3, J4, S1, S5** |
+
+Una muestra que no dice a quién no miró parece cubrir a todos: la última fila sale en cada pasada, con
+nombres, también cuando está vacía.
+
+Un cierre con la etiqueta `descartado` o `duplicado` en Jira no se acusa de «sin rastro» ni entra en el
+azar: no tiene trabajo que buscar. Sin la etiqueta, Jira lo deja igual que un cierre vacío y la criba lo
+marcaría cada día.
+
 ## Cómo se corre
 
 1. Una sesión baja los cierres de la ventana con el conector de Jira y los deja en un fichero (la forma
