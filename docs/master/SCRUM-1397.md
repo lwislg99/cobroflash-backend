@@ -213,3 +213,10 @@ Se rellena al final, con la tanda dirigida, el banco de mutaciones y el check ob
 5. **Pasé texto a `node -e` por bash** para dos reemplazos en el test. Salió bien porque el texto no
    llevaba acentos ni comillas invertidas; la nota de la máquina dice que no se hace. El resto, con la
    herramienta de ficheros.
+6. **No medí mi contexto hasta los 411.440.** El aviso de los 200k no le llegó al orquestador: lo medí
+   cuando ya tenía tres commits, y lo que quedaba (mutaciones, dirigida, empujar, leer el CI) ya no
+   cabía. Traspaso escrito en ese punto.
+7. **Le anuncié al orquestador un rojo de `scrum597` que no existe.** Lo deduje leyendo el test («pide
+   que un Técnico no asignado abra una factura de la oficina»). Corrido a solas contra el `dist` de la
+   rama: 8 de 8. Su doble de Prisma contesta `invoice.findFirst` sin mirar el `where`, así que ese
+   fichero no ejercita el recorte nuevo. Es el error 2 otra vez, una hora después de escribirlo.
