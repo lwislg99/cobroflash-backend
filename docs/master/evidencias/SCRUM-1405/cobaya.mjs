@@ -256,8 +256,11 @@ if (REALES.length) {
   for (const id of [...new Set(filasReales.map((f) => f.celda))]) {
     const mias = filasReales.filter((f) => f.celda === id);
     const n = mias.map((f) => f.tap_tests).filter((x) => typeof x === 'number');
-    const max = n.length ? Math.max(...n) : null;
-    console.log(`${id} · carga ${CARGA} · ${mias.length} pasadas · ${n.filter((x) => x < max).length} por debajo de su máximo (${max}) · # tests ${cuenta(mias.map((f) => f.tap_tests))} · salidas ${cuenta(mias.map((f) => f.salida))}`);
+    // El máximo es el del FICHERO, juntando sus dos brazos: el del brazo solo se queda corto cuando
+    // el brazo pierde en todas sus pasadas (ensayo, run 36970275624: scrum834 «con» daba máximo 34 de 53).
+    const hermanas = filasReales.filter((f) => f.celda.replace(/-(con|sin)$/, '') === id.replace(/-(con|sin)$/, '')).map((f) => f.tap_tests).filter((x) => typeof x === 'number');
+    const max = hermanas.length ? Math.max(...hermanas) : null;
+    console.log(`${id} · carga ${CARGA} · ${mias.length} pasadas · ${n.filter((x) => x < max).length} por debajo del máximo del fichero (${max}) · # tests ${cuenta(mias.map((f) => f.tap_tests))} · salidas ${cuenta(mias.map((f) => f.salida))}`);
   }
 }
 console.log(`\nEXIT=0 · filas ${filas.length} + ${filasReales.length} · ${path.join(DIR, `cobaya-pasadas-${sufijo}.tsv`)}`);
