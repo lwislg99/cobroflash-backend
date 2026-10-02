@@ -51,10 +51,19 @@ if (!tap || dato('tests') === undefined) {
   process.exit(2);
 }
 console.log(`casos=${dato('tests')} · pasan=${dato('pass')} · caen=${dato('fail')} · saltos=${dato('skipped')} · cancelados=${dato('cancelled')}`);
-for (const l of tap.split(/\r?\n/)) {
-  if (/^\s*not ok /.test(l)) console.log('  ✖ ' + l.trim());
+// Cada caída sale CON SU MOTIVO. «Caen 2» cuando se esperaban 2 no dice nada: la primera pasada de
+// este ticket cayó por el banco («prepared statement already exists») y el recuento era el esperado.
+const lineas = tap.split(/\r?\n/);
+lineas.forEach((l, i) => {
   if (/# SKIP/.test(l)) console.log('  ↷ ' + l.trim());
-}
+  if (!/^\s*not ok /.test(l)) return;
+  console.log('  ✖ ' + l.trim());
+  const j = lineas.findIndex((x, k) => k > i && /^\s+error:/.test(x));
+  if (j < 0) return;
+  const enLinea = lineas[j].replace(/^\s+error:\s*/, '');
+  const motivo = /^\|/.test(enLinea) ? (lineas.slice(j + 1, j + 8).find((x) => x.trim() !== '') || '') : enLinea;
+  console.log('      motivo: ' + motivo.trim().slice(0, 300));
+});
 console.log(`líneas «not ok»: ${cuenta(/^\s*not ok /gm)}`);
 console.log(`EXIT=${r.status}`);
 process.exit(r.status ?? 2);
