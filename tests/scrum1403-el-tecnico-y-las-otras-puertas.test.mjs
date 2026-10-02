@@ -36,6 +36,7 @@ import crypto from 'node:crypto';
 import ts from 'typescript';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262: rango imposible, nunca de alguien
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
@@ -346,7 +347,7 @@ test('SCRUM-1403 · ✅ la ficha del cliente se le sigue abriendo al Técnico, c
     // Un cliente con documentos de los dos, y otro en el que Ana no tiene NADA: el que la oficina
     // da de alta para la visita de mañana.
     const mixto = await e.cliente('Cliente mixto');
-    const ajeno = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente de la visita', phone: '600140300', billingAddress: 'Calle de la obra, 3' } });
+    const ajeno = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente de la visita', phone: telefonoDePrueba(1403), billingAddress: 'Calle de la obra, 3' } });
     const pSuyo = await e.presupuesto(mixto, e.ana.id, 100, { internalNotes: 'P-SUYO' });
     const pAjeno = await e.presupuesto(mixto, e.blas.id, 900, { internalNotes: 'P-AJENO' });
     await e.factura(mixto, 'F-SUYA', 100, { quoteId: pSuyo.id });
@@ -371,7 +372,7 @@ test('SCRUM-1403 · ✅ la ficha del cliente se le sigue abriendo al Técnico, c
       const visita = await pedir(port, tokenAna, `/admin/customers/${ajeno.id}/detail`);
       assert.equal(visita.status, 200, '🔴 el operario no puede abrir la ficha del cliente al que va a visitar');
       assert.equal(visita.cuerpo.customer.name, 'Cliente de la visita');
-      assert.equal(visita.cuerpo.customer.phone, '600140300', '🔴 la ficha del cliente ya no le da el teléfono');
+      assert.equal(visita.cuerpo.customer.phone, telefonoDePrueba(1403), '🔴 la ficha del cliente ya no le da el teléfono');
       assert.equal(visita.cuerpo.customer.billingAddress, 'Calle de la obra, 3', '🔴 la ficha del cliente ya no le da la dirección');
       assert.deepEqual(pestana(visita), { presupuestos: [], facturas: [] }, '🔴 la ficha de un cliente ajeno le trae documentos que no son suyos');
 
