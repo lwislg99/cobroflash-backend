@@ -43,19 +43,19 @@ jobs:
           echo "tubería, tamaño máximo: $(cat /proc/sys/fs/pipe-max-size)"
           node --no-deprecation "$E/codigo-de-node.mjs"
       - name: Cobaya, sin carga
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga 0 > "$RUNNER_TEMP/salida-cobaya-carga0.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 3 --solo R,S --carga 0 > "$RUNNER_TEMP/salida-cobaya-carga0.txt" 2>&1
       - name: Lo que dijo (sin carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-cobaya-carga0.txt"
       - name: Cobaya, con un proceso de carga por hilo
-        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga "$(nproc)" > "$RUNNER_TEMP/salida-cobaya-cargaN.txt" 2>&1
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 3 --solo R,S --carga "$(nproc)" > "$RUNNER_TEMP/salida-cobaya-cargaN.txt" 2>&1
       - name: Lo que dijo (con carga)
         if: always()
         run: cat "$RUNNER_TEMP/salida-cobaya-cargaN.txt"
       - name: Una fila de sonda de cada brazo, como muestra
         if: always()
         run: |
-          for d in C-con-grande-bloqueante D-con-grande-sonda K-sin-grande-sonda; do
+          for d in ; do
             echo "── $d"; find "$RUNNER_TEMP/cobaya/$d/sonda" -name '*.json' | head -n 2 | xargs -r cat
           done
       - name: Guardar
@@ -70,6 +70,7 @@ jobs:
           if-no-files-found: warn
 
   reales:
+    if: false   # SOLO-RS: este push sólo corre las celdas R y S de la cobaya
     name: seis ficheros reales, a solas (con y sin el flag)
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -113,6 +114,7 @@ jobs:
           if-no-files-found: warn
 
   tanda:
+    if: false   # SOLO-RS: este push sólo corre las celdas R y S de la cobaya
     name: tanda · ${{ matrix.celda }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
