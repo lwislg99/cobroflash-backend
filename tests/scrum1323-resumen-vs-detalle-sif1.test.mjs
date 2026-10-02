@@ -51,6 +51,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MASTER = path.join(RAIZ, 'docs/YAQU_MASTER.md');
@@ -400,15 +401,29 @@ const CIEGOS = [
     (t) => cambiar(t, 'S1-F ⏳ (revisión asesor)', 'S1-F ~~✅ ⏳ (revisión asesor)')],
 ];
 
-for (const [caso, motivo, mutar] of CIEGOS) {
-  test(`SCRUM-1323 ⑩ · si ${caso}, lo DICE (${motivo}) en vez de pasar`, () => {
-    const antes = historico();
-    const despues = mutar(antes);
-    assert.notEqual(despues, antes, 'la mutación no se aplicó');
-    assert.ok(motivos(compararResumenYDetalle(despues)).includes(motivo),
-      `esperaba ${motivo} y dijo: ${JSON.stringify(motivos(compararResumenYDetalle(despues)))}`);
-  });
-}
+const caso2 = casosEscritos(CIEGOS, ([caso, motivo, mutar]) => `SCRUM-1323 ⑩ · si ${caso}, lo DICE (${motivo}) en vez de pasar`, ([caso, motivo, mutar]) => {
+  const antes = historico();
+  const despues = mutar(antes);
+  assert.notEqual(despues, antes, 'la mutación no se aplicó');
+  assert.ok(motivos(compararResumenYDetalle(despues)).includes(motivo),
+    `esperaba ${motivo} y dijo: ${JSON.stringify(motivos(compararResumenYDetalle(despues)))}`);
+});
+test('SCRUM-1323 ⑩ · si el resumen desaparece, lo DICE (SIN_RESUMEN) en vez de pasar', caso2(0));
+test('SCRUM-1323 ⑩ · si el resumen está dos veces, lo DICE (RESUMEN_DUPLICADO) en vez de pasar', caso2(1));
+test('SCRUM-1323 ⑩ · si la sección de detalle desaparece, lo DICE (SIN_SECCION) en vez de pasar', caso2(2));
+test('SCRUM-1323 ⑩ · si la sección está dos veces, lo DICE (SECCION_DUPLICADA) en vez de pasar', caso2(3));
+test('SCRUM-1323 ⑩ · si la sección con ese código es de otro sprint, lo DICE (SECCION_DE_OTRO) en vez de pasar', caso2(4));
+test('SCRUM-1323 ⑩ · si la sección se queda sin viñetas, lo DICE (SIN_HITOS) en vez de pasar', caso2(5));
+test('SCRUM-1323 ⑩ · si una viñeta deja de llevar el identificador en negrita, lo DICE (VIÑETA_ILEGIBLE) en vez de pasar', caso2(6));
+test('SCRUM-1323 ⑩ · si un hito del resumen no tiene viñeta, lo DICE (HITO_SIN_DETALLE) en vez de pasar', caso2(7));
+test('SCRUM-1323 ⑩ · si un hito con viñeta no está en el resumen, lo DICE (HITO_SIN_RESUMEN) en vez de pasar', caso2(8));
+test('SCRUM-1323 ⑩ · si un hito pierde el símbolo en el resumen, lo DICE (SIN_SIMBOLO) en vez de pasar', caso2(9));
+test('SCRUM-1323 ⑩ · si el símbolo ya no va pegado al identificador, lo DICE (SIN_SIMBOLO) en vez de pasar', caso2(10));
+test('SCRUM-1323 ⑩ · si un hito lleva un símbolo que no es un estado conocido, lo DICE (SIMBOLO_DESCONOCIDO) en vez de pasar', caso2(11));
+test('SCRUM-1323 ⑩ · si el resumen da dos estados al mismo hito, lo DICE (RESUMEN_AMBIGUO) en vez de pasar', caso2(12));
+test('SCRUM-1323 ⑩ · si dos viñetas para el mismo hito, lo DICE (HITO_DUPLICADO) en vez de pasar', caso2(13));
+test('SCRUM-1323 ⑩ · si un tachado sin cerrar en el resumen, lo DICE (TACHADO_ABIERTO) en vez de pasar', caso2(14));
+caso2.todos();
 
 test('SCRUM-1323 ⑪ · un texto que no es el máster no da verde: da problemas y población cero', () => {
   for (const t of ['', '# otro documento\n\n- **S1-A** ✅\n']) {

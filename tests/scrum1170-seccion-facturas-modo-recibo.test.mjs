@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,23 +56,28 @@ async function montar(modo, quote = presupuesto()) {
   return { titulos, texto };
 }
 
-for (const modo of ['fiscal', 'demo']) {
-  test(`SCRUM-1170 · en modo \`${modo}\` la sección «Facturas» está, con su vacío (control positivo)`, async () => {
-    const m = await montar(modo);
-    assert.ok(m.titulos.includes('Facturas'), `🔴 falta la sección «Facturas» (secciones: ${m.titulos.join(', ')})`);
-    assert.match(m.texto, /No hay facturas generadas\./);
-  });
-}
+const FILAS_1 = ['fiscal', 'demo'];
+const caso1 = casosEscritos(FILAS_1, (modo) => `SCRUM-1170 · en modo \`${modo}\` la sección «Facturas» está, con su vacío (control positivo)`, async (modo) => {
+  const m = await montar(modo);
+  assert.ok(m.titulos.includes('Facturas'), `🔴 falta la sección «Facturas» (secciones: ${m.titulos.join(', ')})`);
+  assert.match(m.texto, /No hay facturas generadas\./);
+});
+test('SCRUM-1170 · en modo `fiscal` la sección «Facturas» está, con su vacío (control positivo)', caso1(0));
+test('SCRUM-1170 · en modo `demo` la sección «Facturas» está, con su vacío (control positivo)', caso1(1));
+caso1.todos();
 
-for (const [nombre, modo] of [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]]) {
-  test(`SCRUM-1170 · 🔴 en modo ${nombre} y sin facturas, NO hay sección «Facturas»`, async () => {
-    const m = await montar(modo);
-    // Suelo: la ficha pintó sus otras secciones; si no, «no está» sería ceguera.
-    assert.ok(m.titulos.includes('Conceptos'), `🔴 CIEGO: la ficha no pintó sus secciones (vistas: ${m.titulos.join(', ') || 'ninguna'})`);
-    assert.ok(!m.titulos.includes('Facturas'), '🔴 en modo justificante la ficha enseña una sección «Facturas» que no tendrá contenido.');
-    assert.doesNotMatch(m.texto, /No hay facturas generadas/);
-  });
-}
+const FILAS_2 = [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]];
+const caso2 = casosEscritos(FILAS_2, ([nombre, modo]) => `SCRUM-1170 · 🔴 en modo ${nombre} y sin facturas, NO hay sección «Facturas»`, async ([nombre, modo]) => {
+  const m = await montar(modo);
+  // Suelo: la ficha pintó sus otras secciones; si no, «no está» sería ceguera.
+  assert.ok(m.titulos.includes('Conceptos'), `🔴 CIEGO: la ficha no pintó sus secciones (vistas: ${m.titulos.join(', ') || 'ninguna'})`);
+  assert.ok(!m.titulos.includes('Facturas'), '🔴 en modo justificante la ficha enseña una sección «Facturas» que no tendrá contenido.');
+  assert.doesNotMatch(m.texto, /No hay facturas generadas/);
+});
+test('SCRUM-1170 · 🔴 en modo receipt y sin facturas, NO hay sección «Facturas»', caso2(0));
+test('SCRUM-1170 · 🔴 en modo desconocido (null) y sin facturas, NO hay sección «Facturas»', caso2(1));
+test('SCRUM-1170 · 🔴 en modo sin dato (undefined) y sin facturas, NO hay sección «Facturas»', caso2(2));
+caso2.todos();
 
 test('SCRUM-1170 · en `receipt` con una factura YA existente, la sección sale con ella', async () => {
   const m = await montar('receipt', presupuesto({ invoices: UNA_FACTURA }));
