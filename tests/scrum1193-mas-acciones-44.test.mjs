@@ -21,6 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { soloCodigo } from './_solo-codigo.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -86,14 +87,16 @@ test('SCRUM-1193 · CONTROL: el mismo botón SIN `overflow-trigger` se queda en 
   assert.equal(g.px, 30, `el control da ${g.px} (\`${g.sel}\`): el cálculo no mira lo que cree`);
 });
 
-for (const prop of ['min-height', 'min-width']) {
-  test(`SCRUM-1193 · 🔴 el «⋯» de overflowMenu: la regla que GANA fija ${prop} ≥ 44 px, sin !important`, () => {
-    const g = queGana(clasesDelDisparador(), prop);
-    assert.ok(g, `🔴 ninguna regla da ${prop} al «⋯»: se queda en lo que diga \`.btn-sm\``);
-    assert.ok(g.px >= 44, `🔴 el «⋯» gana \`${g.sel}\` con ${g.px} px de ${prop}: por debajo de AB6`);
-    assert.equal(g.importante, false, `🔴 gana con !important (\`${g.sel}\`)`);
-  });
-}
+const FILAS = ['min-height', 'min-width'];
+const caso = casosEscritos(FILAS, (prop) => `SCRUM-1193 · 🔴 el «⋯» de overflowMenu: la regla que GANA fija ${prop} ≥ 44 px, sin !important`, (prop) => {
+  const g = queGana(clasesDelDisparador(), prop);
+  assert.ok(g, `🔴 ninguna regla da ${prop} al «⋯»: se queda en lo que diga \`.btn-sm\``);
+  assert.ok(g.px >= 44, `🔴 el «⋯» gana \`${g.sel}\` con ${g.px} px de ${prop}: por debajo de AB6`);
+  assert.equal(g.importante, false, `🔴 gana con !important (\`${g.sel}\`)`);
+});
+test('SCRUM-1193 · 🔴 el «⋯» de overflowMenu: la regla que GANA fija min-height ≥ 44 px, sin !important', caso(0));
+test('SCRUM-1193 · 🔴 el «⋯» de overflowMenu: la regla que GANA fija min-width ≥ 44 px, sin !important', caso(1));
+caso.todos();
 
 test('SCRUM-1193 · ninguna regla (con descendiente o dentro de @media) baja el «⋯» de 44 px', () => {
   const t = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
