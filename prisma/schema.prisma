@@ -94,7 +94,7 @@ model Merchant {
 
   // Auth / plan
   onboardingCompleted  Boolean   @default(false) @map("onboarding_completed")
-  plan                 String    @default("trial") // trial | basic | pro | empresa
+  plan                 String    @default("trial") // los valores que valen NO se listan aquí: los decide BY_PLAN en src/core/entitlements.ts (regla 34, SCRUM-1342)
   planExpiresAt        DateTime? @map("plan_expires_at")
   stripeCustomerId     String?   @map("stripe_customer_id")
   stripeSubscriptionId String?   @map("stripe_subscription_id")

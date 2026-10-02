@@ -1,0 +1,17 @@
+ok 1 - SCRUM-1342 · ✅ los CUATRO planes conocidos dan exactamente sus límites, y sin un solo aviso
+not ok 2 - SCRUM-1342 · ✅ la lista de planes que existen se exporta y es la de entitlements, ni uno más ni uno menos
+not ok 3 - SCRUM-1342 · 🔴 un plan PRESENTE y desconocido sigue cayendo a trial, y deja UN aviso con el valor recibido
+not ok 4 - SCRUM-1342 · ✅ el aviso dice de QUIÉN es el plan cuando el llamante lo sabe, y no se rompe cuando no
+not ok 5 - SCRUM-1342 · 🔴 AUSENTE NO ES DESCONOCIDO: null y undefined dan trial SIN aviso (y la escucha oye)
+not ok 6 - SCRUM-1342 · 🔴 un plan con nombre heredado de Object (constructor, toString, __proto__…) NO abre el límite
+ok 7 - SCRUM-1342 · ✅ CONTROL POSITIVO de la ruta: con plan `equipo` y 3 miembros, la puerta SE CRUZA y nadie avisa
+ok 8 - SCRUM-1342 · ✅ con plan `equipo` y la cuenta llena, 409 `user_limit` con sus 5
+not ok 9 - SCRUM-1342 · 🔴 con plan `empresa`, la ruta sigue contestando 1 usuario — y AHORA queda escrito por qué, con el merchant
+not ok 10 - SCRUM-1342 · 🔴 con plan `constructor` y 3 miembros, la ruta NO deja entrar al quinto usuario
+not ok 11 - SCRUM-1342 · ✅ si la ruta no encuentra el merchant, cae a trial SIN aviso (ausente, no desconocido)
+ok 12 - SCRUM-1342 · ✅ CONTROL: el lector del esquema VE la lista que había (la línea de antes nombra cuatro planes)
+not ok 13 - SCRUM-1342 · 🔴 el comentario de `Merchant.plan` no enumera planes: remite a entitlements.ts
+# tests 13
+# pass 4
+# fail 9
+# skipped 0
