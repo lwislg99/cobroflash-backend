@@ -832,3 +832,19 @@ lo asume — nunca "declarado, pendiente de aplicar" como único registro, que e
 
 `node scripts/qa/sesion-panel.mjs login [correo]` (demo@yaqu.app por defecto; secreto SOLO en `C:/Users/Admin/.yaqu-qa-secret.txt`, la cookie queda en `C:/Users/Admin/.yaqu-qa-sesion.txt` y no se imprime) y luego `node scripts/qa/sesion-panel.mjs get /admin/…`.
 Sólo GET contra `https://yaqu.app` (rechaza otro método u otro host antes de salir a la red); exit 1 = no pude entrar / no 2xx, 2 = CIEGO (sin secreto o sin sesión), 3 = uso rechazado. Nunca un `fetch` a mano: esta es la única vía, para que la cubra una sola regla de permiso.
+
+## R24 · Los casos que le faltan a la cuenta QA: cómo se crean sin tocar producción a mano (SCRUM-1367)
+
+🔴 **`scripts/qa/sembrar-casos.mjs` NO se ha ejecutado nunca contra producción y no se ejecuta hasta que el fundador diga con qué regla.** Lo de abajo es lo que hará cada orden cuando la haya; hoy está probado sin red (`tests/scrum1367-sembrar-casos.test.mjs`).
+
+Antes: `node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com` y `node scripts/qa/sembrar-qa.mjs sembrar` (el cliente, el Trabajo y el albarán de base: los casos se montan encima). Sólo escribe si el servidor dice merchant 46 y owner.
+
+| Orden | Qué deja | Qué NO hace |
+|---|---|---|
+| `node scripts/qa/sembrar-casos.mjs aceptado` | Un presupuesto `[QA-1367-ACEPTADO]` en `accepted` y el Trabajo que el servidor crea al aceptarlo, con su importe aceptado. | No emite documento, no cobra, no envía. No deja un tramo emitido («Parcial» sigue sin caso). |
+| `node scripts/qa/sembrar-casos.mjs plan` | Un presupuesto `[QA-1367-PLAN]` en borrador con plan de cobro propio (dos tramos, 40 % y 60 %). | No lo acepta. |
+| `node scripts/qa/sembrar-casos.mjs perfil-fiscal` | Razón social, NIF, dirección y WhatsApp **de prueba** en el merchant QA (`PRUEBAS QA YAQU - NO ES UNA EMPRESA REAL`, `B00000000`). | No pisa un campo que ya tenga otro valor. ⚠️ Razón social y NIF entran en el hash de la firma de los albaranes: uno firmado ANTES dejará de verificar. |
+| `node scripts/qa/sembrar-casos.mjs mismo-id` | Nada: dice si hay un albarán y un parte con el mismo id. | No escribe. |
+| `… mismo-id --crear-hasta N` | Hasta N partes en borrador (tope 50 por orden), hasta que uno coincida con el id de un albarán. | No borra: cada parte creado se queda. Si el contador de partes ya pasó del mayor albarán, para al primero y lo dice. |
+
+Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) · 2 CIEGO: sin sesión · 3 rechazado.

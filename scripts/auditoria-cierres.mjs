@@ -39,7 +39,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-/** Cuántos cierres se leen por pasada, sin contar los C1/C2 (que no son muestra: van siempre). */
+/** Cuántos cierres se leen por pasada COMO MUCHO. Los C1/C2 no cuentan: no se leen, ya están medidos. */
 export const TOPE = 6;
 /** Huecos del tope que son SIEMPRE del azar: si solo se lee a los marcados, se mide a la criba, no al equipo. */
 export const RESERVA_AZAR = 3;
@@ -47,6 +47,8 @@ export const RESERVA_AZAR = 3;
 export const TECHO_C5 = 1 / 3;
 /** Un fichero de cierres más viejo que esto ya no es «la ventana»: le faltan los cierres de después. */
 export const HORAS_DE_FICHERO = 24;
+/** Las etiquetas de Jira que dicen «este cierre no tiene trabajo dentro» (decisión del orquestador, 1-oct-2026). */
+export const ETIQUETAS_SIN_TRABAJO = Object.freeze(['descartado', 'duplicado']);
 /** Cuándo entró en main la norma de la tabla (A8, PR #2076). Antes de esto, no tenerla no es una falta. */
 export const NORMA_A8_DESDE = '2026-10-01T12:27:10Z';
 
@@ -147,7 +149,11 @@ export function cribarUno(c, repo) {
 
   const senales = []; const notas = [];
   const commits = repo.commits(n);
-  if (!repo.tieneRegistro(n) && commits.length === 0) senales.push('C1');
+  // Un cierre por descarte o por duplicado NO tiene trabajo que buscar, y Jira lo deja con el mismo
+  // estado que un cierre vacío. Si lo dice su etiqueta, la criba no lo acusa cada día de lo que no es.
+  const sinTrabajo = c.etiquetas.find((e) => ETIQUETAS_SIN_TRABAJO.includes(e)) || null;
+  if (sinTrabajo) notas.push(`cierre sin trabajo, por su etiqueta «${sinTrabajo}»: no se le busca rastro ni tabla`);
+  else if (!repo.tieneRegistro(n) && commits.length === 0) senales.push('C1');
 
   for (const r of repo.ramasFuera(n)) {
     if (r.cambia === false) notas.push(`rama zombi ${r.rama}: fuera de main, pero fusionarla no cambia nada`);
@@ -168,7 +174,7 @@ export function cribarUno(c, repo) {
 
   // A8 · la tabla. Sin aceptación no hay filas que contar: eso ya lo dice C6.
   const tabla = c.tablaA8 ? leerTablaA8(c.tablaA8) : null;
-  const obligado = esDeLuis(c.etiquetas) && Date.parse(c.resuelto) >= Date.parse(NORMA_A8_DESDE) && c.aceptacion.length > 0;
+  const obligado = !sinTrabajo && esDeLuis(c.etiquetas) && Date.parse(c.resuelto) >= Date.parse(NORMA_A8_DESDE) && c.aceptacion.length > 0;
   if (c.tablaA8 && !tabla) return { clave: c.clave, cribado: false, motivo: 'trae `tablaA8` y no sé leerla como tabla «aceptación → dónde se ve»' };
   if (!tabla && obligado) { senales.push('A8'); notas.push('sin tabla «aceptación → dónde se ve» (cerrado con la norma ya viva)'); }
   if (tabla) {
@@ -183,7 +189,7 @@ export function cribarUno(c, repo) {
 
   return {
     clave: c.clave, cribado: true, puesto: puestoDe(c.etiquetas), senales: [...new Set(senales)], notas,
-    conAceptacion: c.aceptacion.length > 0, commits, c5ConMotivo: c5 ? c5.conMotivo : null,
+    conAceptacion: c.aceptacion.length > 0, commits, c5ConMotivo: c5 ? c5.conMotivo : null, sinTrabajo,
   };
 }
 
@@ -221,27 +227,38 @@ function barajar(lista, azar) {
 }
 
 /**
- * A quién se lee. `seguros` (C1 y C2) van TODOS y no gastan tope. Los C5, hasta TOPE − RESERVA_AZAR.
- * El resto del tope es del AZAR entre los no marcados que tienen aceptación, uno por puesto.
+ * A quién se lee. GANA EL TOPE (decisión del orquestador, 1-oct-2026): «uno por puesto» y «tope 6» no
+ * caben juntos con nueve puestos cerrando, y una muestra que no dice a quién no miró parece cubrir a todos.
+ *   · los C1/C2 van TODOS y no gastan tope: son un hecho que la criba ya midió (no hay rastro, o hay una
+ *     rama con contenido fuera), no una lectura. Se listan para que alguien los resuelva;
+ *   · los C5 que NO dan su motivo se leen, como mucho TOPE − RESERVA_AZAR;
+ *   · los C5 con el motivo dicho NO se leen: su límite ya está declarado, y confirmarlo rinde casi nada;
+ *   · al AZAR, RESERVA_AZAR entre los no marcados con aceptación, uno por puesto. No rellena el tope
+ *     cuando sobran huecos: la lectura cuesta agentes, y la cifra del equipo sale de estos, no de más;
+ *   · y todo lo que se queda fuera se DEVUELVE con nombre, para que la pasada lo diga.
  */
 export function elegirMuestra(cribados, { fecha }) {
   const orden = [...cribados].sort((a, b) => a.clave.localeCompare(b.clave, 'en', { numeric: true }));
   const es = (c, s) => c.senales.includes(s);
   const seguros = orden.filter((c) => es(c, 'C1') || es(c, 'C2'));
-  // Primero los que no dicen por qué: son los que nadie ha explicado. Los de límite declarado, después.
-  const deC5 = orden.filter((c) => es(c, 'C5') && !seguros.includes(c)).sort((a, b) => Number(a.c5ConMotivo) - Number(b.c5ConMotivo));
-  const c5 = deC5.slice(0, TOPE - RESERVA_AZAR);
+  const deC5 = orden.filter((c) => es(c, 'C5') && !seguros.includes(c));
+  const callan = deC5.filter((c) => c.c5ConMotivo === false);
+  const c5 = callan.slice(0, TOPE - RESERVA_AZAR);
   // «No marcados» = sin señal que acuse. C6 no acusa, pero sin aceptación no hay contra qué leer.
-  const limpios = orden.filter((c) => c.conAceptacion && c.senales.length === 0);
+  const limpios = orden.filter((c) => c.conAceptacion && c.senales.length === 0 && !c.sinTrabajo);
   const azar = azarDe(fecha);
   const porPuesto = new Map();
   for (const c of limpios) { if (!porPuesto.has(c.puesto)) porPuesto.set(c.puesto, []); porPuesto.get(c.puesto).push(c); }
   const puestos = barajar([...porPuesto.keys()].sort(), azar);
   for (const p of puestos) porPuesto.set(p, barajar(porPuesto.get(p), azar));
-  const huecos = TOPE - c5.length;
   const alAzar = []; const sinLeer = [];
-  for (const p of puestos) { if (alAzar.length < huecos) alAzar.push(porPuesto.get(p)[0]); else sinLeer.push(p); }
-  return { seguros, c5, c5FueraDeTope: deC5.slice(TOPE - RESERVA_AZAR), azar: alAzar, puestosSinLeer: sinLeer, limpios: limpios.length };
+  for (const p of puestos) { if (alAzar.length < RESERVA_AZAR) alAzar.push(porPuesto.get(p)[0]); else sinLeer.push(p); }
+  return {
+    seguros, c5, azar: alAzar, limpios: limpios.length,
+    fueraDeTope: callan.slice(TOPE - RESERVA_AZAR),
+    conLimiteDeclarado: deC5.filter((c) => c.c5ConMotivo === true),
+    puestosSinLeer: sinLeer.sort(),
+  };
 }
 
 // ───────────────────────────── la pasada ─────────────────────────────
@@ -290,13 +307,17 @@ export function pasada({ datos, repo, desde, fecha, ahora = Date.now(), conCanar
   const m = elegirMuestra(cribados, { fecha });
   out.push(
     '',
-    `A QUIÉN SE LEE (mitad 2, NO mecánica) · semilla ${fecha} · tope ${TOPE}, ${RESERVA_AZAR} reservados al azar`,
-    `   seguros, C1/C2 (van todos, no son muestra): ${m.seguros.map((c) => c.clave).join(', ') || 'ninguno'}`,
-    `   marcados por C5: ${m.c5.map((c) => c.clave).join(', ') || 'ninguno'}${m.c5FueraDeTope.length ? ` · ⚠️ ${m.c5FueraDeTope.length} más quedan FUERA del tope: ${m.c5FueraDeTope.map((c) => c.clave).join(', ')}` : ''}`,
-    `   al azar entre ${m.limpios} no marcados con aceptación: ${m.azar.map((c) => `${c.clave} (${c.puesto})`).join(', ') || 'NINGUNO'}${m.puestosSinLeer.length ? ` · ⚠️ puestos sin lectura esta pasada: ${m.puestosSinLeer.join(', ')}` : ''}`,
+    `A QUIÉN SE LEE (mitad 2, NO mecánica) · semilla ${fecha} · ${m.c5.length + m.azar.length} lecturas · tope ${TOPE} y GANA EL TOPE · ${RESERVA_AZAR} al azar`,
+    `   dicen que no se vio y NO dan motivo (C5): ${m.c5.map((c) => c.clave).join(', ') || 'ninguno'}`,
+    `   al azar entre ${m.limpios} no marcados con aceptación: ${m.azar.map((c) => `${c.clave} (${c.puesto})`).join(', ') || 'NINGUNO'}`,
+    'A QUIÉN NO SE LEE, y se dice:',
+    `   sin rastro o con trabajo fuera (C1/C2; ya medidos, se resuelven, no se leen): ${m.seguros.map((c) => c.clave).join(', ') || 'ninguno'}`,
+    `   C5 sin motivo que no cupieron en el tope: ${m.fueraDeTope.map((c) => c.clave).join(', ') || 'ninguno'}`,
+    `   C5 con el límite declarado (no se leen: confirmar un límite ya dicho rinde casi nada): ${m.conLimiteDeclarado.map((c) => c.clave).join(', ') || 'ninguno'}`,
+    `   puestos con cierres limpios y SIN lectura al azar esta pasada: ${m.puestosSinLeer.join(', ') || 'ninguno'}`,
   );
   if (m.azar.length === 0) out.push('   ⚠️ Sin lecturas al azar NO hay cifra del equipo: leer solo a los marcados mide a la criba.');
-  out.push('', marcados.length ? '→ HAY CIERRES MARCADOS (salida 1). Marcado no es culpable: todo lo marcado pasa por lectura.' : '→ ningún cierre marcado (salida 0). No marcado NO es aprobado.');
+  out.push('', marcados.length ? '→ HAY CIERRES MARCADOS (salida 1). Marcado no es culpable; y a quién NO se lee está dicho arriba.' : '→ ningún cierre marcado (salida 0). No marcado NO es aprobado.');
   return { codigo: marcados.length ? 1 : 0, lineas: out, cribados, muestra: m };
 }
 
