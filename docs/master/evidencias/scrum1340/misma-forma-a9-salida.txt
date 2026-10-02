@@ -1,0 +1,4 @@
+A9 poblacion: merges de primer padre desde 2026-09-30T00:00Z = 55 · entradas nacidas en ellos = 47
+A9 de ellas, con ancla ANTERIOR al corte o sin ancla (el guard no las mira) = 1 · y de esas SIN linea A9 = 0
+A9 con A9 · ancla 2026-09-29 · merge d0b29765 2026-09-30T19:52:00Z · SCRUM-1296.md#SCRUM-1296 · SIF-1 fase 2: cablear el envío a la AEAT con la emisión — el GO del fundador
+A9 EXIT=0

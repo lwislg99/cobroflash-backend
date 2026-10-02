@@ -237,12 +237,24 @@ test('SCRUM-1040 · toda la copy DESCRIPTIVA de esta pantalla va marcada, salvo 
     { ranura: 'descargaVacia', texto: 'No hay facturas recibidas en este periodo.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
     { ranura: 'descargaLista', texto: 'Descarga lista.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
     { ranura: 'descargaFallida', texto: 'No hemos podido preparar la descarga. Inténtalo otra vez.', firma: 'SCRUM-1249 comentario 17432 · 28-sep-2026' },
+    // 🔴 SCRUM-1388 · las cuatro que iban marcadas desde que nació la pantalla. Firma del fundador
+    // del 1-oct-2026, registrada en `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`.
+    // `descuadre` es una FUNCIÓN: se firma el texto que pinta con un recuento dado (`con`), y con el
+    // singular aparte, que es parte de lo firmado. Si cambia cualquiera de los dos, la exención cae.
+    { ranura: 'titulo', texto: 'Facturas recibidas', firma: 'SCRUM-1388 · fundador · 1-oct-2026' },
+    { ranura: 'error', texto: 'No hemos podido cargar tus facturas recibidas. Vuelve a intentarlo.', firma: 'SCRUM-1388 · fundador · 1-oct-2026' },
+    { ranura: 'vacioDeVerdad', texto: 'Todavía no tienes facturas recibidas en este periodo.', firma: 'SCRUM-1388 · fundador · 1-oct-2026' },
+    { ranura: 'descuadre', con: 40, texto: 'Hemos revisado 40 gastos y no ha salido ninguna factura. No lo tomes como que no compraste: puede que no hayamos sabido leer alguno.', firma: 'SCRUM-1388 · fundador · 1-oct-2026' },
+    { ranura: 'descuadre', con: 1, texto: 'Hemos revisado 1 gasto y no ha salido ninguna factura. No lo tomes como que no compraste: puede que no hayamos sabido leer alguno.', firma: 'SCRUM-1388 · fundador · 1-oct-2026' },
   ];
-  const firmada = (ranura, texto) => APROBADAS_CON_FIRMA.some((a) => a.ranura === ranura && a.texto === texto);
+  /** Lo que la ranura PINTA para esa firma: el literal, o la función con el recuento firmado. */
+  const pintadoPara = (a) => (typeof COPY[a.ranura] === 'function' ? COPY[a.ranura](a.con) : COPY[a.ranura]);
+  const firmasDe = (ranura) => APROBADAS_CON_FIRMA.filter((a) => a.ranura === ranura);
+  const firmada = (ranura) => firmasDe(ranura).length > 0 && firmasDe(ranura).every((a) => pintadoPara(a) === a.texto);
   const sinMarcar = [];
   for (const [ranura, v] of Object.entries(COPY)) {
     if (DECLARADAS_FUERA.includes(ranura) || ranura === 'recuento') continue;
-    if (typeof v === 'string' && firmada(ranura, v)) continue;
+    if (firmada(ranura)) continue;
     const texto = typeof v === 'function' ? v(1) : v;
     if (!String(texto).startsWith(MARCADOR)) sinMarcar.push(`${ranura}: ${JSON.stringify(texto)}`);
   }
@@ -250,6 +262,6 @@ test('SCRUM-1040 · toda la copy DESCRIPTIVA de esta pantalla va marcada, salvo 
     `🔴 estas ranuras llevan texto que nadie ha aprobado y no lo dicen:\n   ${sinMarcar.join('\n   ')}`);
   // Una firma que ya no ampara nada (ranura quitada o texto cambiado) se retira de la lista: si se
   // queda, es un permiso esperando a que alguien vuelva a escribir ese literal sin mirar.
-  const huerfanas = APROBADAS_CON_FIRMA.filter((a) => COPY[a.ranura] !== a.texto).map((a) => `${a.ranura} (${a.firma})`);
+  const huerfanas = APROBADAS_CON_FIRMA.filter((a) => pintadoPara(a) !== a.texto).map((a) => `${a.ranura} (${a.firma})`);
   assert.deepEqual(huerfanas, [], '🔴 firmas que ya no amparan el texto de la pantalla: retíralas o pide firma nueva');
 });

@@ -1,0 +1,10 @@
+POBLACIÓN: 6 mutaciones declaradas en tests/scrum976-guards-entrada-con-techo.test.mjs
+BASE: 11 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (2 caen) · «const terminado = !agotado;» → SCRUM-1386 ⑦ un runner que acaba SIN su resumen
+  ✔ VIVA           (1 caen) · «if (agotado) {» → SCRUM-1386 ⑨ el comando de verdad
+  ✔ VIVA           (1 caen) · «ficherosMuertos(salida, opciones).filter(() => false)» → SCRUM-1386 ⑧ un fichero MUERTO
+  ✔ VIVA           (1 caen) · «ficherosMuertos(salida, opciones).filter(() => true)» → SCRUM-1386 ⑧ un fichero MUERTO
+  ✔ VIVA           (3 caen) · «const fichero = m && m[1];» → SCRUM-1386 ⑧ un fichero MUERTO
+  ✔ VIVA           (2 caen) · «return { hallazgos: 0, ciegos: 1, vistos, terminado, callados: [] };» → SCRUM-1386 ⑦ un runner que acaba SIN su resumen
+
+RESULTADO: 6 de 6 caen · sin restaurar: 0

@@ -1,0 +1,151 @@
+databaseId	createdAt	event	headBranch	headSha	conclusion	metaJob	meta	log	veredicto	scrum859	faltan
+36892903386	2026-10-01T16:33:37Z	pull_request	scrum-1336-un-ciego-no-se-pinta-de-hallazgo	31c01fdce24846ad305ea1427077a3bb0ca4aa18		110472655141	in_progress				
+36890335441	2026-10-01T16:13:13Z	pull_request	scrum-1390-master-s1-autor-o-asignado	f73c1ce54f94d0e572e17222784386141ee82aa4	success	110464370849	success				
+36889740689	2026-10-01T16:08:36Z	pull_request	scrum-1390-master-s1-autor-o-asignado	f3ebf59585e09f3555e687f75fe1bb3175f33a01	cancelled	110462555356	cancelled				
+36888848950	2026-10-01T16:01:39Z	pull_request	scrum-1390-master-s1-autor-o-asignado	a8ac131a8cc784f1c830b28bc84775f693eeb504	cancelled	110459637443	cancelled				
+36888164178	2026-10-01T15:56:23Z	pull_request	scrum-1390-master-s1-autor-o-asignado	0787a1fd9e2730b8919ee1ce2ec6332e1bc88208	cancelled	110456700208	cancelled				
+36886780786	2026-10-01T15:45:42Z	push	main	cadf00bcee699dc200ff142050986a62b692b3c4	failure	110459324104	failure	leído	vivas 404 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36886428643	2026-10-01T15:42:58Z	push	main	204d117b96ccd2ade5436187e5fea27d3cc851f4	success	110450807409	success				
+36885380576	2026-10-01T15:34:57Z	pull_request	scrum-1339b-comparacion-y-discriminador	ff4e6681414dbddf159b48f55aaf7d119f7f1177	failure	110447245009	failure	leído	vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36884663586	2026-10-01T15:29:27Z	pull_request	scrum-1386-runner-matado-es-ciego	a3a72750f684e4437fd9cbb05b1ab2bf8f437f5c	success	110444786693	success				
+36883824732	2026-10-01T15:23:06Z	push	main	8c0bf72850988e5f06266f330ab4c6c869f42a36	success	110442528066	success				
+36882137364	2026-10-01T15:10:16Z	pull_request	scrum-1341-actividad-del-equipo-sin-importes	620f7d76c33aa05faf3c4dc7d019bb5ce0f557d1	failure	110436288837	failure	leído	vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36881969807	2026-10-01T15:09:02Z	push	main	cae4c5cc6fb65aea21f7267525930ee44d8d4631	cancelled		sin job				
+36880659605	2026-10-01T14:58:58Z	push	main	7580bcc876d6d86f35e3578d4f1cf06c807f44a6	success	110434910722	success				
+36879667635	2026-10-01T14:51:30Z	pull_request	scrum-1338-menu-del-operario-contra-los-gates	a1a36385b57f612522ebbe27d5fedacdb862bedd	failure	110428904877	success				
+36879091133	2026-10-01T14:47:15Z	push	main	5fb7630ad564740f0fe4ba115e7dc141d18da775	success	110426973175	success				
+36878986636	2026-10-01T14:46:28Z	pull_request	scrum-1343-un-hijo-que-no-arranca-es-ciego	eb8d075719e578ae3ade787489aa4e23227d0bc6	failure	110425624302	success				
+36878649258	2026-10-01T14:43:56Z	pull_request	scrum-1338-menu-del-operario-contra-los-gates	92eed0586594e185fe59a4f1eeeb3d29621c9677	cancelled	110424482355	cancelled				
+36877586427	2026-10-01T14:35:56Z	push	main	762f4fbba51ea214fd6c2473baa577d69c088791	cancelled		sin job				
+36876497639	2026-10-01T14:27:40Z	push	main	939440c5da8b0dbb1bf9287d7972a4c50c6b89e8	cancelled		sin job				
+36876201887	2026-10-01T14:25:22Z	push	main	ea48348aca10a8fa4ac5d216607460fb687d1347	cancelled		sin job				
+36876103522	2026-10-01T14:24:37Z	push	main	a6afb5e2250c8434f2ae1dc976721470000a7856	cancelled		sin job				
+36875680992	2026-10-01T14:21:21Z	push	main	206f06dc5fb12d5f61eccca131325c8be1a92126	cancelled		sin job				
+36875536287	2026-10-01T14:20:16Z	push	main	ed8b218f415bb7d3a3dd380a25ec77007cecde38	cancelled		sin job				
+36875190979	2026-10-01T14:17:36Z	push	main	7cf884665e561cde70ccd51aaade946234b972e4	success	110413280648	success				
+36874745101	2026-10-01T14:14:12Z	pull_request	scrum-1285-alcance-de-los-escritores	d6d3dd51a199a93a04f7baf031e1debae650ecdc	success	110411178466	success				
+36874501627	2026-10-01T14:12:17Z	push	main	8593279341e1843f077ed2dc38deaf97b5ab35a9	cancelled		sin job				
+36873487461	2026-10-01T14:04:27Z	pull_request	scrum-1380-suelo-corrio-y-no-reporto	8ac981fc5f2f76ada09816e3be3b066a8957cf49	success	110407224680	success				
+36873400330	2026-10-01T14:03:46Z	push	main	ad26231a03828b2a4dd48bf506999972de844a2c	cancelled		sin job				
+36873388049	2026-10-01T14:03:41Z	pull_request	scrum-1295-carriles-e-identidad	629237b32528742d12becbe3d4f8f2810e570fd4	failure	110407137152	failure	leído	vivas 384 · mudas 0 · ciegas 0 · ficheros muertos 1	false	
+36873356617	2026-10-01T14:03:28Z	pull_request	scrum-1295-carriles-e-identidad	1f7a1de1779066777d3620c0f841fbfadbf2483e	cancelled		sin job				
+36873341958	2026-10-01T14:03:19Z	pull_request	scrum-1376-aviso-rechazo-separado-de-los-botones	2c3c8d4b8f544cb781a768888a01c4ad06d0145b	success	110406396014	success				
+36873132718	2026-10-01T14:01:42Z	pull_request	scrum-1372-criba-de-cierres	ab1fef5bb2cff3f639bf1e6dd78aa8a81d06890c	success	110405682780	success				
+36873098548	2026-10-01T14:01:26Z	pull_request	scrum-1385-latido-main-mira-main	65234a3f0a7357892e339f462d5b71ed2e615400	success	110405563047	success				
+36872965725	2026-10-01T14:00:28Z	pull_request	scrum-1381-censo-escritores-por-fila	77c5245e87672e0d5ad91a8b8d5ea55e71ad3400	success	110405771259	success				
+36872847972	2026-10-01T13:59:35Z	pull_request	scrum-1231-logo-solo-imagen-subida	ca4a5942eefac53260a103ab4e6c32c4f009c90c	failure	110404745826	failure	leído	vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0	false	FALTAN 26 de los 64 tests que SÍ aparecieron en la pasada limpia 
+36872822042	2026-10-01T13:59:22Z	pull_request	scrum-1365-collect-rest-solo-aceptados	540e497d5be5204f125eb1d968764e2568866d55	failure	110404646060	failure	leído	vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36872791738	2026-10-01T13:59:08Z	pull_request	scrum-1231-logo-solo-imagen-subida	cadda8a7c610d39788c0b358cb03e699b3de5859	cancelled	110404542353	cancelled				
+36872559721	2026-10-01T13:57:19Z	pull_request	scrum-1377-censo-fecha-raiz-del-arbol	cd2363e84118de9c1aa8d4a8019d69b270261ffd	failure	110404324721	success				
+36872393460	2026-10-01T13:56:00Z	pull_request	scrum-1295-carriles-e-identidad	7b5d2693b19b9c9e9153cda3d7cbde5697867f6c	cancelled	110403190010	cancelled				
+36872366911	2026-10-01T13:55:48Z	push	main	3017ae0c8008e93ed3ff230ebf64bbebd44b6e2a	cancelled		sin job				
+36872127553	2026-10-01T13:53:56Z	pull_request	scrum-1302-firma-directa-ya-registrada	7efa6b3d7d15d4e37556b11e73eb3bf8a553531c	success	110402279264	success				
+36872039381	2026-10-01T13:53:13Z	push	main	66ba128c699de3000d806440d3ca0751927e3f48	failure	110402153492	failure	leído	vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36871837399	2026-10-01T13:51:37Z	pull_request	scrum-1381-censo-escritores-por-fila	d9de62ebac9868ca24b95ad6a165c6c3b77f5ba3	cancelled	110401301149	cancelled				
+36871803226	2026-10-01T13:51:20Z	pull_request	scrum-1382-borrador-no-es-fallo-real	80bde49068ab74a4459dbe05135254021cbbae8c	success	110401161499	success				
+36871214903	2026-10-01T13:46:44Z	push	main	7f30ee8c38065a58e36272df3e23773719443a2a	cancelled		sin job				
+36871031378	2026-10-01T13:45:17Z	pull_request	scrum-1380-suelo-corrio-y-no-reporto	a4deb2b03c0b7657cb763ad47ce02103e95c59f3	cancelled	110398533528	cancelled				
+36871008807	2026-10-01T13:45:08Z	pull_request	scrum-1377-censo-fecha-raiz-del-arbol	82c233d216d5d808d005723f4992b734c95be0b9	cancelled	110398463133	cancelled				
+36870942366	2026-10-01T13:44:36Z	pull_request	scrum-1378-latido-pr-de-quien-empujo	8697ac48a5f3907118334d7e1c2839dcc256b6cc	success	110398237325	success				
+36870787175	2026-10-01T13:43:21Z	push	main	bc8acb9c9300b121c9afad5e8fab0239851a3436	cancelled		sin job				
+36870616421	2026-10-01T13:42:00Z	push	main	0e34846094748e1071bd349b7de1de81d0efbd61	cancelled		sin job				
+36870262122	2026-10-01T13:39:12Z	push	main	6ce9bf9a0f583063072d05dcac22f26cd6b419cc	cancelled		sin job				
+36869558169	2026-10-01T13:33:31Z	pull_request	scrum-1373-drenado-avisa-firmas-confirmadas	b428f7c3291c8e1be1e349b492b9e4669b64c408	failure	110393511532	success				
+36869452118	2026-10-01T13:32:40Z	pull_request	scrum-1368b-prod-por-detras	da4ebd1ab28c04b5b7ed82690a6ae11108358b25	failure	110393151997	success				
+36869390442	2026-10-01T13:32:09Z	pull_request	scrum-1192-censo-cierre-transitivo	d569131ddcc8be79ad24011171cfd189699f1fd7	success	110392943381	success				
+36869360556	2026-10-01T13:31:55Z	pull_request	scrum-1352-invalid-id-inalcanzable-desde-el-pad	cbc5bb09dfc8e245b05ff3226b6c4e39b6291052	success	110393317381	success				
+36869259804	2026-10-01T13:31:09Z	push	main	8995084a0b7be02ec89c0aaa1d7eb3958ec89283	cancelled		sin job				
+36869029238	2026-10-01T13:29:13Z	push	main	160a919eb3f1b9559b3b5b48a5afa270cf08a567	cancelled		sin job				
+36868764493	2026-10-01T13:27:02Z	push	main	31688d6b550ea0bbc1b99b381fdf857b821bdec9	failure	110391096980	success				
+36868709715	2026-10-01T13:26:35Z	pull_request	scrum-1371-reintentar-no-vuelve-a-crear	ca945145251d48da2a01010298a59408c0fd4ba6	success	110390626574	success				
+36868567466	2026-10-01T13:25:26Z	pull_request	scrum-1356-latido-enganchado	c0a49846b6b8132e615ac979b83349a218eee755	success	110390163865	success				
+36868204270	2026-10-01T13:22:22Z	pull_request	scrum-1295-carriles-e-identidad	97bc7f386e0093a28349183e5d7f3be11cb6f058	failure	110388952663	failure	leído	vivas 382 · mudas 0 · ciegas 0 · ficheros muertos 1	false	
+36868152641	2026-10-01T13:21:58Z	pull_request	scrum-1356-latido-enganchado	66132ce9899953eefdec3ffc760094c301268385	cancelled	110388782240	cancelled				
+36868138329	2026-10-01T13:21:51Z	push	main	2cb81e326a1274c4e86015fb41c11cc68f79dce2	cancelled		sin job				
+36868070313	2026-10-01T13:21:18Z	push	main	0bf1dc9b89e04f2a33af3f8ce6ffb9a612e8e633	cancelled		sin job				
+36867966094	2026-10-01T13:20:28Z	pull_request	scrum-1352-invalid-id-inalcanzable-desde-el-pad	2e8507961e758ed0b74b9e1359a7bdb955425866	cancelled	110388161556	cancelled				
+36867929811	2026-10-01T13:20:11Z	pull_request	scrum-1231-logo-solo-imagen-subida	7fcb58d20718b2cd77e1f9196dc9d345f9ad0108	success	110388510169	success				
+36867693006	2026-10-01T13:18:13Z	pull_request	scrum-1285-plan-de-cobro-version-pantalla	b7fbec508637a8eeddca7fcd9762b3fb24e91bf4	failure	110387233206	failure	leído	vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36867585600	2026-10-01T13:17:19Z	pull_request	scrum-1363-tests-que-cubren	3fed28e21f404cb211a1a13141922b403135d672	failure	110386862738	failure	leído	vivas 382 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36867360073	2026-10-01T13:15:25Z	pull_request	scrum-1368-latido-despliegue-fallido	4048a41522a26c1df7dcac6790aa12a43a973e76	failure	110386089219	failure	leído	vivas 380 · mudas 0 · ciegas 0 · ficheros muertos 1	false	
+36866764935	2026-10-01T13:10:31Z	pull_request	scrum-1231-logo-solo-imagen-subida	c680fc7c5c41d33b8fce39f080638ea76e867904	cancelled	110384069476	cancelled				
+36866668963	2026-10-01T13:09:46Z	pull_request	scrum-1362-defectos-del-viaje-a-json	c093529e01116a222b11dbacf491d3d8ab626b1d	success	110383747174	success				
+36866436425	2026-10-01T13:07:49Z	push	main	36071b72e69f04d3b7b39f2942c899f7f27037ae	failure	110384291929	failure	leído	vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36865870029	2026-10-01T13:02:23Z	push	main	425065aafd6857f72f92d48ff9d51dbcb0cfab7d	cancelled		sin job				
+36865176712	2026-10-01T12:56:30Z	pull_request	scrum-1282b-ocupacion-en-el-latido	b056e97832fcecbb3f6aad6310e29d45aad15d34	failure	110378799796	success				
+36864447644	2026-10-01T12:50:12Z	pull_request	scrum-1357-latido-cementerio	8cc4ab1a6af6e1903c587ffd6efb66149cc609d6	success	110376658597	success				
+36863578275	2026-10-01T12:42:35Z	pull_request	scrum-1364-modelo-del-lanzador	d64406097c4af11737315ab515b778885029f8ca	success	110383667860	success				
+36863272671	2026-10-01T12:39:55Z	push	main	64dc3211d039cedece0cccf9fa3fcaf7d491319d	failure	110377980526	failure	leído	vivas 380 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36863261106	2026-10-01T12:39:49Z	push	main	0a91081a3e2133345eec738fe5aa1d7d3f64b7a6	cancelled		sin job				
+36863093543	2026-10-01T12:38:19Z	push	main	abc7f2e0ccef0de2cb6d9076f9a6a5e06407aff9	cancelled		sin job				
+36862960384	2026-10-01T12:37:07Z	push	main	5ee573251dc94036656d5f861c4fd1bfbc1ccea8	cancelled		sin job				
+36862617716	2026-10-01T12:34:02Z	push	main	426a91c4fea7a41af51676722cfe6dd05af7bc80	cancelled		sin job				
+36862446208	2026-10-01T12:32:31Z	push	main	d9c39fc232d02f71670130fa00ef36cc98f28219	cancelled		sin job				
+36862419563	2026-10-01T12:32:18Z	pull_request	scrum-1295-carriles-e-identidad	22a68ed7b8f2241659def245ca0bf6d14d855535	success	110370146363	success				
+36862403804	2026-10-01T12:32:09Z	push	main	519a102085964dc5221b192c06d569e6a09a34a7	cancelled		sin job				
+36862143729	2026-10-01T12:29:55Z	push	main	ffbe1c26b5fae96905a607e8b60b8e5bad31a60f	cancelled		sin job				
+36862095124	2026-10-01T12:29:29Z	pull_request	scrum-1349c-diario-del-meta-guard	406f0bc5d0a8e582e46aafbf450e6eb35fffa48e	success	110368530540	success				
+36861845021	2026-10-01T12:27:13Z	push	main	4169945f8aa9014614f47e375d540a38af9aa724	cancelled		sin job				
+36861747822	2026-10-01T12:26:21Z	pull_request	scrum-1362-defectos-del-viaje-a-json	ac49e37e5ca3e7fdc8f01e86bd493c1696a6eb40	failure	110367383993	success				
+36861724400	2026-10-01T12:26:08Z	pull_request	scrum-1353-albaran-firma-guardada-y-rechazo	2f002f09be5c93e5a854629fd93e794106042b47	success	110367841322	success				
+36861583754	2026-10-01T12:24:53Z	pull_request	scrum-1362-defectos-del-viaje-a-json	4bfc8d14944a1b4004156007c09e0d64292218a5	cancelled	110366832137	cancelled				
+36861263916	2026-10-01T12:21:58Z	pull_request	scrum-1360-caja-albaran-firma-de-parte	a9d6fec62eae59a25cf13a1e09b8864c89fd0859	success	110365773974	success				
+36861121169	2026-10-01T12:20:37Z	pull_request	scrum-1281-fixture-git-raiz-propia	ed568b19ede5cc0b767d3b8caabcf92107ceb441	success	110365293665	success				
+36861048272	2026-10-01T12:19:58Z	pull_request	scrum-1354-dueno-de-la-marca	97f37a43f8ca270557b0f4775e22cd4f89f7eba0	failure	110365059848	failure	leído	vivas 378 · mudas 0 · ciegas 1 · ficheros muertos 1	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36860982250	2026-10-01T12:19:22Z	pull_request	scrum-743-cantidad-una-sola-forma	cb248ce003d32d47d704e3e3867bef4d4a39b5d4	failure	110364835946	success				
+36860717695	2026-10-01T12:16:56Z	pull_request	scrum-1285b-plan-de-cobro-con-version	ab6c989974232139953e684e5b8a3a997da5045a	failure	110363955654	failure	leído	vivas 379 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36860627983	2026-10-01T12:16:06Z	pull_request	scrum-1295-carriles-e-identidad	d9a35a6452ea646320caeea467c7c2ba2e6464c5	cancelled	110363948122	cancelled				
+36860610412	2026-10-01T12:15:57Z	pull_request	scrum-1353-albaran-firma-guardada-y-rechazo	3254c37d7b863041a338fb1bdd1971b892e72be9	cancelled	110363604693	cancelled				
+36860584970	2026-10-01T12:15:43Z	push	main	e4ebbfc8e6c63554206be600006c3bad21c50166	success	110367627379	success				
+36860567518	2026-10-01T12:15:33Z	pull_request	scrum-1355-borrador-no-es-deuda	adb746a278c93da0179c81c5beafb9fd4686a41f	success	110363574365	success				
+36860261197	2026-10-01T12:12:47Z	pull_request	scrum-1348b-normas-aceptacion	d6e0ebc47abbd1161fa27e050f6c394d90ce9560	success	110362450903	success				
+36860171227	2026-10-01T12:11:57Z	pull_request	scrum-1357-latido-cementerio	da0130fbbe0cb6dfae56a292a0e588273d86b029	cancelled	110368534681	cancelled				
+36860067926	2026-10-01T12:10:59Z	push	main	788a50d77dfff22422ceb7cab4cd728e061aee98	success	110361813874	success				
+36859418029	2026-10-01T12:04:53Z	pull_request	scrum-1359-s5-deja-de-prestar-el-entorno	569f97ef2d28112d60e07bd8ff97ee4aca915968	success	110359665400	success				
+36859314576	2026-10-01T12:03:54Z	pull_request	scrum-1295-carriles-e-identidad	725c04d033e41899f0a51f7b3342d2acc9a32cd6	cancelled	110359322141	cancelled				
+36859123187	2026-10-01T12:02:06Z	pull_request	scrum-1357-latido-cementerio	04b31be19fac93f73fc2fad2dc10de56b892d7dc	cancelled	110358691476	cancelled				
+36859091123	2026-10-01T12:01:48Z	pull_request	scrum-1355-borrador-no-es-deuda	81f04d939ad42d4d2121c8a04d8c006959f02460	cancelled	110358587272	cancelled				
+36859053253	2026-10-01T12:01:27Z	pull_request	scrum-1358-main-rojo-entorno-prestado	07354dffe2b87b0193270fbe546290fa1d22b8c4	success	110358462218	success				
+36857817203	2026-10-01T11:49:50Z	pull_request	scrum-1348b-normas-aceptacion	ce1aa89ccf42fc995152f747665617d3505f7936	failure	110354424397	failure	leído	vivas 378 · mudas 0 · ciegas 2 · ficheros muertos 0	false	
+36856729105	2026-10-01T11:39:23Z	pull_request	scrum-1295-carriles-e-identidad	1481455568fb578db5232baaebd757703d15b625	failure	110350865053	failure	leído	vivas 378 · mudas 0 · ciegas 2 · ficheros muertos 0	false	
+36856653864	2026-10-01T11:38:40Z	push	main	7a30dbb0e50e1cc4d54949619f7be8d4aac0193f	failure	110355478145	failure	leído	vivas 378 · mudas 0 · ciegas 2 · ficheros muertos 0	false	
+36856542767	2026-10-01T11:37:36Z	push	main	ca2d787ff43595787b2d0940bbee626db8fe0ba1	cancelled		sin job				
+36856531526	2026-10-01T11:37:30Z	pull_request	scrum-1302-firma-directa-ya-registrada	f8c959bfaf636a722e3332aeed5d013dad0c3bd0	failure	110350222076	failure	leído	vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36856153621	2026-10-01T11:33:52Z	pull_request	scrum-1285b-plan-de-cobro-con-version	c8a344a75da37040dcb93ad0c8fbc2b68cf7bfea	failure	110348996666	failure	leído	vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36856141923	2026-10-01T11:33:45Z	push	main	ba930e80e29d267f010b2086e2d4f3503210aec8	failure	110349788430	failure	leído	vivas 377 · mudas 0 · ciegas 3 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36856082374	2026-10-01T11:33:10Z	push	main	a6ba4700b27177b1bd1dc8e3b3be301adfb06b11	cancelled		sin job				
+36855923508	2026-10-01T11:31:38Z	pull_request	scrum-1350-latido	67bb37e3fc0e7e18eb5e803bd98461c9818bb331	success	110348254606	success				
+36855464152	2026-10-01T11:27:19Z	pull_request	scrum-1351-viaje-firma-sin-red-albaran	6e3425dc2aa09af063b391d1b6ec3a4ff24ec1ce	success	110346796730	success				
+36854754309	2026-10-01T11:20:30Z	push	main	78f45431a34e052e798acdaebc19ce9a79c1bab3	cancelled		sin job				
+36854553477	2026-10-01T11:18:35Z	pull_request	scrum-1289-tap-del-obligatorio	ea42ac4d17410c2258b81209b8f120d367e3513e	success	110344194510	success				
+36854314863	2026-10-01T11:16:17Z	push	main	c00cc5056f159743b0e0d2083360f833312c1d52	cancelled		sin job				
+36853506986	2026-10-01T11:08:38Z	pull_request	scrum-1348b-normas-aceptacion	718b276c1cbc80288aa557ffaf2ba4c3d7fb6e5a	success	110340853152	success				
+36853168880	2026-10-01T11:05:24Z	pull_request	scrum-743-cantidad-una-sola-forma	97af793788da807943b1ebf55e829e52c8d8d273	failure	110339980097	success				
+36853164723	2026-10-01T11:05:22Z	pull_request	scrum-1285b-plan-de-cobro-con-version	fb9f8499b7741f36b628a7b2da0c3f7c829c55d1	failure	110339829304	success				
+36853108354	2026-10-01T11:04:52Z	pull_request	scrum-1298-mesa-por-puesto	a7f65247423cef5d94c2fe5330ba124620badef9	failure	110339774024	failure	leído	vivas 367 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36852883417	2026-10-01T11:02:43Z	pull_request	scrum-1349-entorno-prestado-trinquete	6b7a2899db29bc018725bef10f6b6c7bd841f04b	success	110338812040	success				
+36852825128	2026-10-01T11:02:09Z	pull_request	scrum-1293-listas-de-marcadores-a-json	bec96e71cd5e5c9ac0c17965b03eb40ddc3c9169	success	110338733362	success				
+36852648203	2026-10-01T11:00:30Z	pull_request	scrum-1281-fixture-git-raiz-propia	31151a6829398bfff402097d300d3bf5d9ab2d42	failure		ERROR				
+36852561104	2026-10-01T10:59:43Z	pull_request	scrum-1349-entorno-prestado-trinquete	5aec854a7714738f01f83ce0588f422d93e0e1fe	cancelled	110337393397	cancelled				
+36852394629	2026-10-01T10:58:04Z	pull_request	scrum-1348b-normas-aceptacion	87208f7fdd817e101551e8c569cb79ad3385e47c	cancelled	110337072609	cancelled				
+36852203473	2026-10-01T10:56:12Z	push	main	48babd04d40667a9ec8fbeb6e02b9e44dbf0585b	failure	110342151015	failure	leído	vivas 365 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36852184536	2026-10-01T10:56:01Z	push	main	70deab14e2383fe7597888fe4a7a775706af0aa0	cancelled		sin job				
+36851974482	2026-10-01T10:53:56Z	push	main	590a124b755000d8b9a3393b8b16e8e4b8355556	cancelled		sin job				
+36851945597	2026-10-01T10:53:38Z	pull_request	scrum-743-cantidad-una-sola-forma	ae8f45ae33c2d7371137033a7e12587659f17e56	cancelled	110335409802	cancelled				
+36851933697	2026-10-01T10:53:32Z	pull_request	scrum-1285b-plan-de-cobro-con-version	fa9067620635327f3ae23f397943c1e807c9c5d6	cancelled	110335371649	cancelled				
+36851820389	2026-10-01T10:52:24Z	pull_request	scrum-1289-tap-del-obligatorio	f867c48a5de8829c73793fecc33931d63a7df14e	cancelled	110335017136	cancelled				
+36851672276	2026-10-01T10:50:55Z	pull_request	scrum-1348b-normas-aceptacion	9dff269b6d0abe3ac190e3c149b3e7b325e0ae81	cancelled	110334533074	cancelled				
+36851502105	2026-10-01T10:49:15Z	pull_request	scrum-1289-tap-del-obligatorio	4c3bddde823a3d81a987c1d25ac80e74b6c559d6	cancelled	110334548826	cancelled				
+36851460711	2026-10-01T10:48:51Z	pull_request	scrum-1293-listas-de-marcadores-a-json	e907807af31fb25ab372dd7552546fa2fe5d0d5c	cancelled	110333843155	cancelled				
+36851277963	2026-10-01T10:47:05Z	push	main	bdebd30ee4c39ce79a565fca2f314f33fe799430	cancelled		sin job				
+36850947992	2026-10-01T10:43:54Z	push	main	6bcfa3c4bad759e30f65763d4db7fe3ee59fa2e0	success	110333070091	success				
+36850853893	2026-10-01T10:42:58Z	pull_request	scrum-1295-carriles-e-identidad	e332ae96c4805103329b11e227f35f71c902e75d	failure	110332214833	failure	leído	vivas 365 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36850829533	2026-10-01T10:42:44Z	push	main	c3f01e3ffc88f37e8dcea7e6c89feb21e06a03db	cancelled		sin job				
+36850740736	2026-10-01T10:41:51Z	pull_request	scrum-1274-adicional-con-trabajo	b40487885d62c55bba149c432fee12642eaaade8	failure	110331515088	success				
+36850488261	2026-10-01T10:39:24Z	pull_request	scrum-1298-mesa-por-puesto	39450656fd9683748ecfddef15c30e0bfe425449	cancelled	110330699152	cancelled				
+36850429077	2026-10-01T10:38:49Z	pull_request	scrum-1290-registro-del-exit-2	409c5487274f1eaa24ba76462db04f193c63fda5	success	110330511386	success				
+36850145997	2026-10-01T10:36:03Z	pull_request	scrum-1289-tap-del-obligatorio	131ff7cf49654f6965102a7822b2cd2aead3258e	cancelled	110329597089	cancelled				
+36850049968	2026-10-01T10:35:07Z	pull_request	scrum-1285c-censo-escrituras-sin-version	a562ade3bb8f528c52cc07d008e5fdcc607da045	success	110329979832	success				
+36850003623	2026-10-01T10:34:40Z	pull_request	scrum-1289b-reporters-como-argumentos	acd1ea234113643ed156737559623975031ebbd3	failure	110329731214	failure	leído	vivas 364 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36849735010	2026-10-01T10:32:03Z	pull_request	scrum-1348-auditoria-de-cierres	4e6257a12fc292b0258f189f53646b276c01811d	failure	110328269501	failure	leído	vivas 364 · mudas 0 · ciegas 1 · ficheros muertos 0	true	FALTAN 4 de los 20 tests que SÍ aparecieron en la pasada limpia 
+36849723257	2026-10-01T10:31:56Z	push	main	fe5b3c18f038eb5c1200b8c067ed69d0bfda0898	success	110328231975	success				

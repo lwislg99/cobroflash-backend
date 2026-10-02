@@ -1,0 +1,121 @@
+// Recon SCRUM-1338 · cada sitio de `public/dashboard/js` que llama a una ruta /admin, contra su gate.
+//   node censo-llamadas.mjs <raiz>
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import ts from 'typescript';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const imp = (rel) => import(pathToFileURL(path.join(RAIZ, rel)).href);
+const { app } = await imp('dist/app.js');
+const { getAdminMounts } = await imp('dist/core/http/adminMounts.js');
+
+const roleOf = (h) => (h && h.__requiredRole) || null;
+const rutas = new Map();
+const add = (method, p, role) => {
+  const k = `${method.toUpperCase()} ${p}`;
+  const prev = rutas.get(k);
+  if (prev) { prev.role = prev.role || role; return; }
+  rutas.set(k, { method: method.toUpperCase(), path: p, role });
+};
+for (const layer of app.router.stack) {
+  if (!layer.route) continue;
+  const p = layer.route.path;
+  if (typeof p !== 'string' || !p.startsWith('/admin')) continue;
+  const role = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+  for (const m of Object.keys(layer.route.methods)) add(m, p, role);
+}
+for (const mount of getAdminMounts()) {
+  const mountRole = mount.gates.map(roleOf).find(Boolean) || null;
+  const useRole = mount.router.stack.filter((l) => !l.route).map((l) => roleOf(l.handle)).find(Boolean) || null;
+  for (const layer of mount.router.stack) {
+    if (!layer.route) continue;
+    const routeRole = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+    const rel = layer.route.path === '/' ? '' : layer.route.path;
+    for (const m of Object.keys(layer.route.methods)) add(m, mount.prefix + rel, mountRole || useRole || routeRole);
+  }
+}
+const tabla = [...rutas.values()].map((r) => ({
+  ...r,
+  literales: r.path.split('/').filter((s) => s && !s.startsWith(':')).length,
+  re: new RegExp('^' + r.path.split('/').map((s) => (s.startsWith(':') ? '[^/]+' : s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('/') + '/?$'),
+}));
+const gate = (method, p) => tabla.filter((r) => r.method === method && r.re.test(p)).sort((a, b) => b.literales - a.literales)[0] || null;
+const gatesDeCualquierMetodo = (p) => tabla.filter((r) => r.re.test(p));
+
+/** La forma de una expresión de ruta: literales tal cual, lo interpolado → `~`. `null` si no es texto. */
+function forma(n, sf) {
+  if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+  if (ts.isTemplateExpression(n)) return n.head.text + n.templateSpans.map((s) => '~' + s.literal.text).join('');
+  if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    const a = forma(n.left, sf); const b = forma(n.right, sf);
+    return (a === null ? '~' : a) + (b === null ? '~' : b);
+  }
+  if (ts.isParenthesizedExpression(n)) return forma(n.expression, sf);
+  return null;
+}
+const limpia = (f) => f.replace(/[?#].*$/, '').replace(/~+/g, '~').replace(/\/$/, '');
+
+const dir = path.join(RAIZ, 'public/dashboard/js');
+const sitios = [];
+let ficheros = 0;
+for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.js'))) {
+  ficheros++;
+  const src = fs.readFileSync(path.join(dir, f), 'utf8');
+  const sf = ts.createSourceFile(f, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const visita = (n) => {
+    if (ts.isCallExpression(n)) {
+      const callee = n.expression.getText(sf);
+      const esApi = /^(window\.)?apiRequest$/.test(callee);
+      const esFetch = /^(window\.)?fetch$/.test(callee);
+      if ((esApi || esFetch) && n.arguments.length) {
+        const fr = forma(n.arguments[0], sf);
+        let method = 'GET'; let metodoDinamico = false;
+        const o = n.arguments[1];
+        if (o && ts.isObjectLiteralExpression(o)) {
+          for (const p of o.properties) {
+            if (ts.isPropertyAssignment(p) && (p.name.text || p.name.escapedText) === 'method') {
+              if (ts.isStringLiteral(p.initializer)) method = p.initializer.text.toUpperCase();
+              else metodoDinamico = true;
+            }
+            if (ts.isShorthandPropertyAssignment(p) && p.name.text === 'method') metodoDinamico = true;
+          }
+        } else if (o) metodoDinamico = true;
+        sitios.push({ f, linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1, via: esApi ? 'apiRequest' : 'fetch', forma: fr, method, metodoDinamico, texto: n.arguments[0].getText(sf).replace(/\s+/g, ' ').slice(0, 80) });
+      }
+    }
+    // enlaces y descargas: cualquier literal que empiece por /admin fuera de una llamada ya contada
+    ts.forEachChild(n, visita);
+  };
+  ts.forEachChild(sf, visita);
+}
+
+const out = [];
+let sinForma = 0, noAdmin = 0, sinRuta = 0;
+for (const s of sitios) {
+  if (s.forma === null) { sinForma++; out.push({ ...s, clase: 'RUTA_NO_LITERAL' }); continue; }
+  const p = limpia(s.forma);
+  if (!p.startsWith('/admin')) { noAdmin++; continue; }
+  const candidato = p.replace(/~/g, '0');
+  let g = s.metodoDinamico ? null : gate(s.method, candidato);
+  if (s.metodoDinamico) {
+    const gs = gatesDeCualquierMetodo(candidato);
+    out.push({ ...s, p, clase: gs.length ? (gs.every((x) => x.role === 'admin') ? 'ADMIN' : gs.some((x) => x.role === 'admin') ? 'MIXTO_SEGUN_METODO' : 'OPERARIO') : 'SIN_RUTA', ruta: gs.map((x) => `${x.method} ${x.path}[${x.role || '-'}]`).join(' | ') });
+    if (!gs.length) sinRuta++;
+    continue;
+  }
+  if (!g) { sinRuta++; out.push({ ...s, p, clase: 'SIN_RUTA' }); continue; }
+  out.push({ ...s, p, clase: g.role === 'admin' ? 'ADMIN' : 'OPERARIO', ruta: `${g.method} ${g.path}` });
+}
+const cuenta = (c) => out.filter((x) => x.clase === c).length;
+console.log(`POBLACION · ficheros=${ficheros} · sitios apiRequest/fetch=${sitios.length} (apiRequest=${sitios.filter((s) => s.via === 'apiRequest').length}, fetch=${sitios.filter((s) => s.via === 'fetch').length}) · fuera de /admin=${noAdmin}`);
+console.log(`a /admin: ADMIN=${cuenta('ADMIN')} · OPERARIO=${cuenta('OPERARIO')} · MIXTO_SEGUN_METODO=${cuenta('MIXTO_SEGUN_METODO')} · SIN_RUTA=${cuenta('SIN_RUTA')} · RUTA_NO_LITERAL=${cuenta('RUTA_NO_LITERAL')}`);
+const porFichero = {};
+for (const x of out) { porFichero[x.f] = porFichero[x.f] || {}; porFichero[x.f][x.clase] = (porFichero[x.f][x.clase] || 0) + 1; }
+console.log('\nPOR FICHERO');
+for (const [f, c] of Object.entries(porFichero).sort()) console.log(`  ${f.padEnd(34)} ${Object.entries(c).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+for (const clase of ['ADMIN', 'MIXTO_SEGUN_METODO', 'SIN_RUTA', 'RUTA_NO_LITERAL']) {
+  console.log(`\n== ${clase}`);
+  for (const x of out.filter((y) => y.clase === clase)) console.log(`  ${x.f}:${x.linea} ${x.via} ${x.metodoDinamico ? '(método dinámico)' : x.method} ${x.p || x.texto}${x.ruta ? '  -> ' + x.ruta : ''}`);
+}
+console.log('EXIT=0');

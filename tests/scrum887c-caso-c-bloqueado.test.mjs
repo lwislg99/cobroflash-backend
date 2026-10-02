@@ -27,7 +27,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
-import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; import { reqDeSesion } from './_arnes-de-router.mjs'; // SCRUM-262
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -156,10 +156,10 @@ function exigirRechazo(resp, codigo, texto, escrituras, quien) {
 test('SCRUM-887c · 🔴 A2: POST /quote/create con un C → 400 con L1 y CERO escrituras', async () => {
   const escrituras = [];
   prismaDeDoble(null, escrituras);
-  const resp = await invocar('modules/quotes/app/routes/quotes.routes.js', 'post', '/create', {
+  const resp = await invocar('modules/quotes/app/routes/quotes.routes.js', 'post', '/create', reqDeSesion({ rol: 'admin',
     merchantId: 7, params: {}, query: {}, headers: {},
     body: { merchant_id: 7, customer_id: 2, currency: 'EUR', lines: C3, discountGlobalAmount: 25 },
-  });
+  }));
   exigirRechazo(resp, 400, L1, escrituras, '/quote/create');
   assert.equal(resp.body.error, CODIGO, '🔴 /quote/create: el rechazo no lleva su código');
 });
@@ -167,10 +167,10 @@ test('SCRUM-887c · 🔴 A2: POST /quote/create con un C → 400 con L1 y CERO e
 test('SCRUM-887c · ✅ CONTROL: POST /quote/create con el mismo presupuesto en UN IVA sí llega a guardar', async () => {
   const escrituras = [];
   prismaDeDoble(null, escrituras);
-  await invocar('modules/quotes/app/routes/quotes.routes.js', 'post', '/create', {
+  await invocar('modules/quotes/app/routes/quotes.routes.js', 'post', '/create', reqDeSesion({ rol: 'admin',
     merchantId: 7, params: {}, query: {}, headers: {},
     body: { merchant_id: 7, customer_id: 2, currency: 'EUR', lines: C3_UN_IVA, discountGlobalAmount: 25 },
-  }).catch(() => null);
+  })).catch(() => null);
   assert.ok(escrituras.includes('$transaction'), `🔴 CIEGO: sin C tampoco llega a guardar (${escrituras.join(', ') || 'nada'})`);
 });
 
@@ -179,7 +179,7 @@ test('SCRUM-887c · 🔴 A2: POST /admin/quotes/:id/revisiones sobre un C → 40
   prismaDeDoble(quoteC({ signatureUrl: 'data:image/png;base64,FIRMA' }), escrituras);
   moduloPrisma.prisma.quote.findMany = async () => [{ id: 7, revision: 0, signatureUrl: 'data:image/png;base64,FIRMA' }];
   const resp = await invocar('modules/system/app/routes/quotesAdmin.routes.js', 'post', '/:id/revisiones',
-    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} });
+    reqDeSesion({ rol: 'admin', params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }));
   exigirRechazo(resp, 400, L2R, escrituras, '/revisiones');
   assert.equal(resp.body.error, CODIGO, '🔴 /revisiones: el rechazo no lleva su código');
 });
@@ -195,7 +195,7 @@ test('SCRUM-887c · 🔴 A3: facturar un C desde el panel → 409 con L2, en las
     prismaDeDoble(quote, escrituras);
     const job = { id: 3, merchantId: 7, quoteId: 7, status: 'terminado', quote };
     moduloPrisma.prisma.job = { findFirst: async () => job, findUnique: async () => job, update: async () => { escrituras.push('job.update'); } };
-    const resp = await invocar(modulo, 'post', ruta, { ...req, merchantId: 7, query: {}, headers: {} });
+    const resp = await invocar(modulo, 'post', ruta, reqDeSesion({ rol: 'admin', ...req, merchantId: 7, query: {}, headers: {} }));
     exigirRechazo(resp, 409, L2, escrituras, ruta);
     assert.equal(resp.body.error, CODIGO, `🔴 ${ruta}: el rechazo no lleva su código`);
   }

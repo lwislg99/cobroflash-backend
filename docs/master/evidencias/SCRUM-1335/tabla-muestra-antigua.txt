@@ -1,0 +1,49 @@
+POBLACION: 47 jobs de zona no cancelados
+09-22T09:58 | succ | 24.20.0 | 20260907.300 | 8040 | 8040 | dif=0 | noconf=0 | 7c7b6bf3 | scrum-1016g-regla-26-aplicad | quoteNumber:1/1
+09-22T10:03 | succ | 24.20.0 | 20260907.300 | 8040 | 8018 | dif=22 | noconf=22 | 3e7bf34b | scrum-665-verifactu-xml-emis | quoteNumber:1/1 vigia-atascados:0/22
+09-22T10:04 | succ | 24.20.0 | 20260907.300 | 8050 | 8025 | dif=25 | noconf=25 | dab42627 | main | quoteNumber:1/1 scrum454-destructivo-sin-comprobacion:0/24 scrum888g-senal-en-la-firma:0/1
+09-22T10:05 | succ | 24.20.0 | 20260907.300 | 8042 | 8019 | dif=23 | noconf=23 | ed7b8b59 | scrum-1080-guard-cobro-profe | quoteNumber:1/1 vigia-atascados:0/23
+09-22T10:08 | succ | 24.20.0 | 20260907.300 | 8045 | 8013 | dif=32 | noconf=32 | 9961916a | scrum-1061-fotos-en-historia | quoteNumber:1/1 vigia-atascados:0/32
+09-22T10:15 | succ | 24.20.0 | 20260907.300 | 8048 | 8048 | dif=0 | noconf=0 | 90df28d2 | scrum-1057-fusionar-clientes | quoteNumber:1/1
+09-22T10:15 | succ | 24.20.0 | 20260907.300 | 8042 | 8042 | dif=0 | noconf=0 | 5c05363e | scrum-977-veto-erp-crm-const | quoteNumber:1/1
+09-22T10:16 | succ | 24.21.0 | 20260920.314 | 8056 | 8035 | dif=21 | noconf=23 | ed63671c | main | quoteNumber:1/1 scrum853-avisador-solo-obligatorio:0/1 vigia-atascados:9/22
+09-22T10:19 | succ | 24.20.0 | 20260907.300 | 8050 | 8050 | dif=0 | noconf=0 | 37cda9a7 | scrum-952-respaldo-gemini-co | quoteNumber:1/1
+09-22T10:19 | succ | 24.20.0 | 20260907.300 | 8047 | 8047 | dif=0 | noconf=0 | f027063a | scrum-991-puerta-cerrada-tra | quoteNumber:1/1
+09-22T10:25 | succ | 24.20.0 | 20260907.300 | 8047 | 8047 | dif=0 | noconf=0 | cc0e4f3c | scrum-868c-grupo-c-medido | quoteNumber:1/1
+09-22T10:28 | fail | 24.20.0 | 20260907.300 | 8050 | 8037 | dif=13 | noconf=13 | a41c59f9 | main | quoteNumber:1/1 scrum980-historial-del-cliente:1/1 vigia-atascados:0/13
+09-22T10:30 | succ | 24.20.0 | 20260907.300 | 8056 | 8056 | dif=0 | noconf=1 | 8eb65d1f | scrum-1057-fusionar-clientes | quoteNumber:1/1 scrum980-historial-del-cliente:0/1
+09-22T10:30 | succ | 24.20.0 | 20260907.300 | 8050 | 8050 | dif=0 | noconf=0 | c94d2efe | scrum-1081-mismo-mecanismo-9 | quoteNumber:1/1
+09-22T10:31 | succ | 24.20.0 | 20260907.300 | 8053 | 8057 | dif=-4 | noconf=4 | 801af286 | scrum-1042-ajuste-foto-tecni | quoteNumber:1/1 scrum286-bloques-orden:0/4
+09-22T10:35 | fail | 24.20.0 | 20260907.300 |  |  | dif=? | noconf=0 | 9cb232b6 | scrum-665-enchufe-emisor-con | 
+09-22T10:39 | succ | 24.20.0 | 20260907.300 | 8049 | 8050 | dif=-1 | noconf=1 | 388bc95f | scrum-1082-flujo-crear-factu | quoteNumber:1/1 scrum931-un-solo-importe-de-plantilla:0/1
+09-22T10:39 | succ | 24.20.0 | 20260907.300 | 8060 | 8060 | dif=0 | noconf=0 | b1ef6fe0 | main | quoteNumber:1/1
+09-22T10:45 | succ | 24.20.0 | 20260907.300 | 8060 | 8060 | dif=0 | noconf=0 | d8b61cd0 | main | quoteNumber:1/1
+09-28T13:48 | succ | 24.21.0 | 20260920.314 | 8594 | 8576 | dif=18 | noconf=18 | bb3319ec | scrum-1162-onboarding-paso2 | scrum454-destructivo-sin-comprobacion:0/18
+09-28T13:49 | succ | 24.21.0 | 20260920.314 | 8595 | 8595 | dif=0 | noconf=0 | 4426a0e6 | scrum-1161-alta-cliente-sin- | 
+09-28T13:53 | succ | 24.21.0 | 20260920.314 | 8605 | 8605 | dif=0 | noconf=0 | 3d5f04fd | scrum-1168-anio-serie-zona-m | 
+09-28T13:55 | succ | 24.21.0 | 20260920.314 | 8601 | 8601 | dif=0 | noconf=0 | dedc9292 | main | 
+09-28T13:57 | succ | 24.21.0 | 20260920.314 | 8591 | 8591 | dif=0 | noconf=0 | 71a9fd8e | scrum-1199-microcopy-alta-cl | 
+09-28T13:59 | succ | 24.21.0 | 20260920.314 | 8595 | 8595 | dif=0 | noconf=0 | 956d7ad3 | scrum-1201-retirar-tramo-mue | 
+09-28T14:00 | succ | 24.21.0 | 20260920.314 | 8596 | 8596 | dif=0 | noconf=0 | 4916f377 | scrum-1197-enum-en-aplicador | 
+09-28T14:04 | succ | 24.21.0 | 20260920.314 | 8617 | 8617 | dif=0 | noconf=0 | 1ee719fa | scrum-1188-plantilla-guarda- | 
+09-28T14:06 | succ | 24.21.0 | 20260920.314 | 8622 | 8622 | dif=0 | noconf=0 | 3a752913 | main | 
+09-28T14:10 | succ | 24.21.0 | 20260920.314 | 8625 | 8625 | dif=0 | noconf=0 | 29b492b0 | main | 
+09-28T14:18 | succ | 24.21.0 | 20260920.314 | 8615 | 8592 | dif=23 | noconf=23 | 3719ad28 | scrum-1209-registro-7-alter- | vigia-atascados:0/23
+09-28T14:18 | succ | 24.21.0 | 20260920.314 | 8585 | 8581 | dif=4 | noconf=14 | 2e2cd515 | scrum-1165-ocultar-verifactu | scrum524b-trinquete-de-la-tabla:0/5 vigia-atascados:0/9
+09-28T14:22 | succ | 24.21.0 | 20260920.314 | 8615 | 8605 | dif=10 | noconf=10 | 95213d01 | scrum-1211-serie-nueva-desde | scrum524b-trinquete-de-la-tabla:0/4 scrum931-un-solo-importe-de-plantilla:0/6
+09-28T14:22 | succ | 24.21.0 | 20260920.314 | 8620 | 8620 | dif=0 | noconf=0 | 3aa1b85c | scrum-1188-plantilla-guarda- | 
+09-28T14:22 | succ | 24.21.0 | 20260920.314 | 8620 | 8620 | dif=0 | noconf=0 | ca13b012 | scrum-1202-cerrar-accept-sin | 
+09-28T14:26 | succ | 24.21.0 | 20260920.314 | 8625 | 8625 | dif=0 | noconf=0 | 8c8dff6a | scrum-1157-censo-convenio-mi | 
+09-29T16:23 | succ | 24.21.0 | 20260920.314 | 9042 | 9042 | dif=0 | noconf=0 | 870f670a | scrum-1278-banco-pantalla-de | 
+09-29T16:24 | succ |  |  |  |  | dif=undefined | noconf=undefined | 12498305 | scrum-1284-minutos-actions | LOG VACIO
+09-29T16:26 | succ | 24.21.0 | 20260920.314 | 9042 | 9046 | dif=-4 | noconf=4 | 4d8b10a6 | scrum-1281-fixture-git-raiz- | scrum888g-senal-en-la-firma:0/4
+09-29T16:31 | succ | 24.21.0 | 20260920.314 | 9047 | 9047 | dif=0 | noconf=0 | 094fbc86 | scrum-1277-aviso-importe-ace | 
+09-29T16:36 | succ | 24.21.0 | 20260920.314 | 9053 | 9019 | dif=34 | noconf=34 | cf71f975 | scrum-1276-decision-solo-sob | scrum834-puerta-avisador-rojo:0/10 vigia-atascados:0/24
+09-29T16:36 | succ | 24.21.0 | 20260920.314 | 9048 | 9048 | dif=0 | noconf=0 | 79f434f4 | scrum-1280-nombre-no-declara | 
+09-29T16:39 | succ | 24.21.0 | 20260920.314 | 9055 | 9001 | dif=54 | noconf=54 | 01a9bd61 | scrum-1286-etiqueta-intermit | scrum454-destructivo-sin-comprobacion:0/24 scrum580-tags-por-contacto:0/1 vigia-atascados:0/29
+09-29T16:40 | succ | 24.21.0 | 20260920.314 | 9052 | 9052 | dif=0 | noconf=0 | 6efadeee | scrum-1285-guardado-en-vuelo | 
+09-29T16:50 | succ | 24.21.0 | 20260920.314 | 9055 | 9055 | dif=0 | noconf=0 | fb25a67b | scrum-1284-minutos-actions | 
+09-29T16:53 | succ | 24.21.0 | 20260920.314 | 9075 | 9072 | dif=3 | noconf=3 | c56a1478 | scrum-1279-landing-pinta-cla | scrum312-importador-clientes:0/3
+09-29T17:00 | succ | 24.21.0 | 20260920.314 | 9079 | 9079 | dif=0 | noconf=0 | 9571fad0 | scrum-825-guards-ciegos-a-fa | 
+09-29T17:04 | succ | 24.21.0 | 20260920.314 | 9082 | 9068 | dif=14 | noconf=28 | 411e04c0 | scrum-1126-pantalla-fusion-c | scrum237-negacion-respaldada:0/9 scrum522-guards-fuera-de-la-tanda:0/5 scrum524b-trinquete-de-la-tabla:0/8 scrum834-puerta-avisador-rojo:0/6
+con algun fichero en repesca (aparte de canarios y 592): 27 · de ellos rojos: 1

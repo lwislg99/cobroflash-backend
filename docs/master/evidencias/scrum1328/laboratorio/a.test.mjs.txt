@@ -1,0 +1,5 @@
+// a.test.mjs - relleno: 300 casos del PADRE, antes del que lanza al hijo.
+import test from 'node:test';
+for (let i = 1; i <= 300; i++) {
+  test(`PADRE-A caso ${String(i).padStart(3, '0')} - relleno para que el padre lleve escrito bastante mas que el hijo`, () => {});
+}

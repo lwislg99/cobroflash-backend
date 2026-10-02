@@ -1,0 +1,13 @@
+POBLACION=8 pasadas · etiqueta=antes · arbol=C:/Users/Javier Pereira/cobroflash-jv5
+EXIT=2   g1-caja-datos-del-cliente          (sin línea de veredicto)
+EXIT=2   g1-caja-documento-suelto           (sin línea de veredicto)
+EXIT=2   g1-portal-en-la-ficha              (sin línea de veredicto)
+EXIT=1   g2-aviso-bizum                     (sin línea de veredicto)
+EXIT=1   g2-vias-de-cobro                   (sin línea de veredicto)
+EXIT=1   g2-firma-con-tramos                (sin línea de veredicto)
+EXIT=1   positivo-caja-datos-del-cliente    (sin línea de veredicto)
+EXIT=1   positivo-portal-en-la-ficha        (sin línea de veredicto)
+porcelain tras deshacer: 
+?? docs/master/evidencias/scrum1327/
+
+EXIT=0

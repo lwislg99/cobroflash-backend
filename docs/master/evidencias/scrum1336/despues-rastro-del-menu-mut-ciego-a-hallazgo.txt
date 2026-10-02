@@ -1,0 +1,8 @@
+# rastro-del-menu-mut-ciego-a-hallazgo · guard-rastro-del-menu.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · MUTACIÓN «ciego-a-hallazgo» sobre el escenario «ciego»:     ciegos.push(String((e && e.message) || e));
+# EXIT=1 · 3.7 s
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+
+🔴 RASTRO DE NAVEGACIÓN ROTO:
+   · [guard] SUELO: sólo 17 destinos en el menú (mínimo 18). Un «cero incoherencias» sobre esta población diría que no he mirado.
+⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)

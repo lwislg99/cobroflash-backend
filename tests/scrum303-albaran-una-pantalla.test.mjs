@@ -24,7 +24,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -518,7 +518,7 @@ async function invocarAlta(job, cuerpo = {}) {
   };
   const handlers = capa.route.stack;
   await handlers[handlers.length - 1].handle(
-    { params: { id: String(job?.id ?? 1) }, body: cuerpo, merchantId: 7, query: {}, headers: {} },
+    reqDeSesion({ rol: 'admin', params: { id: String(job?.id ?? 1) }, body: cuerpo, merchantId: 7, query: {}, headers: {} }),
     res, () => {},
   );
   return salida;

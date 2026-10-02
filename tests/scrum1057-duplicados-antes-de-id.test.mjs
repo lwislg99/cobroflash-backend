@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const DIST = pathToFileURL(
   path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')).href + '/';
@@ -24,7 +24,7 @@ const DIST = pathToFileURL(
 function despachar(router, method, url, extra = {}) {
   return new Promise((resolve) => {
     let salida = null;
-    const req = { method, url, headers: {}, query: {}, params: {}, merchantId: 7, ...extra };
+    const req = reqDeSesion({ rol: 'admin', method, url, headers: {}, query: {}, params: {}, merchantId: 7, ...extra });
     const res = {
       status(c) { this._c = c; return this; },
       json(b) { salida = { code: this._c ?? 200, body: b }; resolve(salida); return this; },

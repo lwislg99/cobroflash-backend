@@ -43,6 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // NUNCA `new URL().pathname`: no decodifica (SCRUM-730)
 
 import { ranurasDelPanel, ranurasDe, contadoresDe, MARCA } from './_ranuras-con-marcador.mjs';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(RAIZ, 'public/dashboard/js');
@@ -86,7 +87,10 @@ const CENSO_DE_SITIOS = {
   // vacío y aviso de descuadre salen de una sola constante `MARCADOR` (vía `rotulo()`), así que
   // aprobar el copy los apaga de golpe. El rótulo de la BARRA no cuenta aquí: SCRUM-420 §④ le
   // prohíbe llevar marcador, así que sale como texto plano desde que nace.
-  'facturasRecibidasView.js': 1,
+  // 🔴 SCRUM-1388 (2-oct-2026) · `facturasRecibidasView.js` SALE (tenía 1): el fundador firmó el
+  // 1-oct-2026 título, error de carga, vacío y descuadre, y la constante `MARCADOR` se retiró entera
+  // con su `rotulo()`. Consta en `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`.
+  // Entrada BORRADA, no puesta a 0.
   // 🔴 SCRUM-1124 (25-sep-2026) · `invoicesView.js` SALE (tenía 1): el orquestador firmó
   // «Estado no reconocido: ${codigo}» por delegación del fundador (comentario 17002). Consta en
   // `docs/microcopy/2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md`. Entrada BORRADA.
@@ -170,7 +174,8 @@ const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0
 const PINTAN_Y_NO_CUENTAN = {
   // 🔴 SCRUM-1041 · 22-sep-2026 · `exportView.js` SALE: ya no pinta marcador (ver
   // `CENSO_DE_SITIOS` arriba). Entrada BORRADA, no puesta a 0 (SCRUM-424 / SCRUM-405).
-  'facturasRecibidasView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera (mismo criterio que libroRegistroView.js), y `scrum1040-pantalla-facturas-recibidas` la compara ranura a ranura',
+  // 🔴 SCRUM-1388 · 2-oct-2026 · `facturasRecibidasView.js` SALE: ya no pinta marcador (ver
+  // `CENSO_DE_SITIOS` arriba). Entrada BORRADA.
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
   'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',
@@ -311,10 +316,10 @@ test('SCRUM-755 · los que pintan y no cuentan: cada uno con su MOTIVO escrito',
 test('SCRUM-755 · ninguno de ellos está DESNUDO: los cubre el censo de SCRUM-402', () => {
   // No se copia aquí el censo de SCRUM-402: se LEEN sus claves. Copiarlo sería crear la segunda
   // lista a mano que este ticket entero viene a evitar.
-  const fuente402 = fs.readFileSync(path.join(RAIZ, 'tests/scrum402-marcador-no-se-pinta.test.mjs'), 'utf8');
-  const ini = fuente402.indexOf('const CENSO = Object.freeze({');
-  const bloque = fuente402.slice(ini, fuente402.indexOf('});', ini));
-  const censo402 = new Set([...bloque.matchAll(/^\s*'([^']+\.js)':\s*\d+/gm)].map((m) => m[1]));
+  // SCRUM-1293 (1-oct-2026) · esas claves ya no están escritas dentro del test de SCRUM-402: viven
+  // en `scripts/_marcadores-pendientes-declarados.json` (sección `panel`) y se leen con el MISMO
+  // cargador que usa él. Sigue sin haber segunda lista. El suelo de abajo no cambia.
+  const censo402 = new Set(Object.keys(marcadoresDeclarados().panel));
 
   // SUELO: si el lector no encuentra el censo ajeno, el «todos cubiertos» de abajo sería el
   // verde de no haber mirado.

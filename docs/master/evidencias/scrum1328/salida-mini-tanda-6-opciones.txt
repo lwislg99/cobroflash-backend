@@ -1,0 +1,14 @@
+POBLACION ficheros=6 via=opciones node=v24.18.0
+ENTERO  salida=0 consola: tests=362 fail=0 · TAP: bytes=83199 NUL=0 recuentos=[362] casos_legibles=362 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum754-el-juez-que-oscila.test.mjs
+PISADO  salida=0 consola: tests=346 fail=0 · TAP: bytes=79224 NUL=76821 (993..77814) recuentos=[2,346] casos_legibles=8 relleno_A_legible=0/300
+          cabeza: «ESTE TEST FALLA A PROPOSITO»  tests/scrum850b-las-formas-que-mienten.test.mjs
+PISADO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78672 NUL=77551 (255..77806) recuentos=[2,344] casos_legibles=6 relleno_A_legible=0/300
+          cabeza: «a»  tests/scrum928-guards-entrada-recuento-con-color.test.mjs
+PISADO  salida=0 consola: tests=344 fail=0 · TAP: bytes=78883 NUL=21723 (56082..77805) recuentos=[122,344] casos_legibles=126 relleno_A_legible=0/300
+          cabeza: «public/ · SUELO: el guard encuentra los ficheros que dice comprobar»  tests/scrum976-guards-entrada-con-techo.test.mjs
+ENTERO  salida=0 consola: tests=347 fail=0 · TAP: bytes=79628 NUL=0 recuentos=[347] casos_legibles=347 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum966-censo-ve-las-ramas.test.mjs
+ENTERO  salida=0 consola: tests=356 fail=0 · TAP: bytes=81369 NUL=0 recuentos=[356] casos_legibles=356 relleno_A_legible=600/300
+          cabeza: «PADRE-A caso 001 - relleno para que el padre lleve escrito bastante ma»  tests/scrum853d-cortacircuitos.test.mjs
+EXIT=0

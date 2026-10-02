@@ -110,9 +110,34 @@ function tituladosQueDeclaran() {
  * ⬆️ **26** (SCRUM-1321, 1-oct-2026): `scrum836-ancla-de-mutacion-viva.test.mjs` pasa a DECLARAR
  * (la mutacion que apaga `ambiguedadDelAncla`) y ya tenia un test titulado GUARD («…se DENUNCIA,
  * con guard y fichero»). Medido sobre `origin/main` = `e9e71cab67574538943cd94392bdecf5f3dcbfa2`.
+ *
+ * ⬆️ **27** (SCRUM-1298, 1-oct-2026): entra `scrum1298-mesa-por-puesto.test.mjs`, que declara sus
+ * mutaciones y nombra el guard en un título («el guard del segundo orquestador ve al equipo…»).
+ * Medido sobre `origin/main` = `36f1eee3` mezclado en la rama.
+ *
+ * ⬆️ **28** (SCRUM-1343, 1-oct-2026): entra `scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs`,
+ * que declara sus 14 mutaciones y tiene tests titulados GUARD («…lo que un guard SÍ dijo sigue
+ * siendo rojo…»). Las dos ramas decían 27 y chocaron al mezclar: la cifra NO se eligió ni se sumó,
+ * la dio este mismo test sobre el árbol fusionado con `origin/main` =
+ * `762f4fbba51ea214fd6c2473baa577d69c088791`.
+ *
+ * ⬆️ **29** (SCRUM-1386, 1-oct-2026): `scrum976-guards-entrada-con-techo.test.mjs` pasa a DECLARAR
+ * (seis mutaciones sobre `scripts/guards-entrada.mjs`) y ya nombraba los guards en un título. En su
+ * rama decía 28, lo mismo que SCRUM-1343 en la suya; al mezclar, la cifra la dio este test sobre el
+ * árbol fusionado con `origin/main` = `cae4c5cc6fb65aea21f7267525930ee44d8d4631`.
+ *
+ * ⬆️ **30** (SCRUM-1336, 1-oct-2026): entra `scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`,
+ * que declara sus 8 mutaciones y nombra los guards en sus títulos («…`guard-rastro-del-menu` sale
+ * por `veredictoDe`…»). La cifra la dio este test sobre el árbol fusionado con `origin/main` =
+ * `cadf00bcee699dc200ff142050986a62b692b3c4` (decía 29; subió a 30).
+ *
+ * ⬆️ **31** (SCRUM-1339d, 1-oct-2026): entra `scrum1339d-senal-de-nombres.test.mjs`, que declara
+ * sus cinco mutaciones y nombra el meta-guard en un título («CASO REAL (meta-guard de main…»). En
+ * su rama decía 30, lo mismo que SCRUM-1336 en la suya; al mezclar, la cifra la dio este test sobre
+ * el árbol fusionado con `origin/main` = `b3b40554ed5441c285c780590a98d1665636e778`.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 26;
+export const SUELO_GUARD_QUE_DECLARAN = 31;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -295,8 +320,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 26;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 25;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 31;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 30;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

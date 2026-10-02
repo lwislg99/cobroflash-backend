@@ -1,0 +1,121 @@
+// Sonda de SCRUM-1341 · «si OTRA pantalla del Técnico ya le da por otra vía los importes de un
+// compañero: búscalo antes de dar esto por suficiente» (enunciado del ticket).
+//
+// Pregunta: con las dos listas que el Técnico YA tiene abiertas (GET /admin/quotes y
+// GET /admin/invoices, las dos en TECNICO_ALLOWED), ¿puede reconstruir lo COBRADO del mes de un
+// compañero, que es justo lo que «Rendimiento del equipo» le niega?
+//
+// Qué se ejecuta DE VERDAD: los manejadores reales de las dos rutas (dist/), con una petición de
+// rol `tecnico`, y la función pura real `ensamblarMetricasEquipo` como patrón de comparación.
+// Qué es DOBLE: `prisma.*.findMany`. El doble aplica el `where` que la ruta le pasa, así que lo
+// que se mide es QUÉ where arma la ruta para un Técnico y QUÉ campos deja salir — no a Prisma.
+// No abre servidor ni toca ninguna base. Uso: node sonda-otra-via.mjs <raiz del arbol, con dist/>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const raiz = process.argv[2];
+if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
+const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+
+const { prisma } = await de('core/db/prisma.js');
+const { ensamblarMetricasEquipo } = await de('modules/metrics/domain/metricasEquipo.js');
+const routerDe = (m) => (m.default && m.default.stack ? m.default : m.default.default);
+const quotesRouter = routerDe(await de('modules/system/app/routes/quotesAdmin.routes.js'));
+const invoicesRouter = routerDe(await de('modules/system/app/routes/invoicesAdmin.routes.js'));
+
+// ── El negocio fabricado. Ana (11) es quien pregunta; Blas (12) es el compañero.
+const ahora = new Date();
+const QUOTES = [
+  { id: 101, quoteNumber: 1, merchantId: 1, teamMemberId: 11, status: 'accepted', total: 100, createdAt: ahora, customer: { name: 'C1', phone: '1' }, charge: null },
+  { id: 102, quoteNumber: 2, merchantId: 1, teamMemberId: 12, status: 'accepted', total: 900, createdAt: ahora, customer: { name: 'C2', phone: '2' }, charge: null },
+  { id: 103, quoteNumber: 3, merchantId: 1, teamMemberId: 12, status: 'sent',     total: 400, createdAt: ahora, customer: { name: 'C3', phone: '3' }, charge: null },
+  { id: 104, quoteNumber: 4, merchantId: 1, teamMemberId: null, status: 'accepted', total: 300, createdAt: ahora, customer: { name: 'C4', phone: '4' }, charge: null },
+];
+const INVOICES = [
+  { id: 1, merchantId: 1, type: 'F1', number: 'A-1', status: 'paid',    total: 100, paidAt: ahora, createdAt: ahora, quoteId: 101, lines: [], quote: { id: 101 } },
+  { id: 2, merchantId: 1, type: 'F1', number: 'A-2', status: 'paid',    total: 900, paidAt: ahora, createdAt: ahora, quoteId: 102, lines: [], quote: { id: 102 } },
+  { id: 3, merchantId: 1, type: 'F1', number: 'A-3', status: 'pending', total: 400, paidAt: null,  createdAt: ahora, quoteId: 103, lines: [], quote: { id: 103 } },
+  { id: 4, merchantId: 1, type: 'F1', number: 'A-4', status: 'paid',    total: 50,  paidAt: ahora, createdAt: ahora, quoteId: null, lines: [], quote: null },
+];
+
+// ── Los dobles: aplican el where que reciben y lo guardan para enseñarlo.
+const vistos = { quote: [], invoice: [] };
+prisma.quote.findMany = async (args) => {
+  vistos.quote.push(args.where);
+  return QUOTES.filter((q) => q.merchantId === args.where.merchantId
+    && (!('teamMemberId' in args.where) || q.teamMemberId === args.where.teamMemberId));
+};
+prisma.invoice.findMany = async (args) => {
+  vistos.invoice.push(args.where);
+  return INVOICES.filter((i) => i.merchantId === args.where.merchantId && i.type !== 'JUST'
+    && (!args.where.status || i.status === args.where.status));
+};
+prisma.whatsAppMessage.findMany = async () => [];
+
+// ── Pasa una petición por TODAS las manos de `GET /` del router, en orden, como haría Express.
+async function pedir(router, req) {
+  const capa = router.stack.find((l) => l.route && l.route.path === '/' && l.route.methods.get);
+  if (!capa) return { ciego: 'no encuentro GET / en el router' };
+  let estado = 200, cuerpo;
+  const res = { status(n) { estado = n; return this; }, json(o) { cuerpo = o; return this; } };
+  for (const s of capa.route.stack) {
+    let sigue = false;
+    await s.handle(req, res, () => { sigue = true; });
+    if (!sigue) break;
+  }
+  return { estado, cuerpo, manos: capa.route.stack.length, rol: capa.route.stack[0].handle.__requiredRole || 'NINGUNO' };
+}
+
+const tecnico = { userRole: 'tecnico', teamMemberId: 11, merchantId: 1 };
+
+// ① La lista de presupuestos SIN filtro: ¿proyecta el autor?
+const lista = await pedir(quotesRouter, { ...tecnico, query: {} });
+if (lista.ciego) { console.log('CIEGO: ' + lista.ciego); console.log('EXIT=2'); process.exit(2); }
+console.log('POBLACION: ' + QUOTES.length + ' presupuestos y ' + INVOICES.length + ' facturas fabricados · quien pregunta: Técnico id 11');
+console.log('GET /admin/quotes            → estado ' + lista.estado + ' · rol declarado en la ruta: ' + lista.rol + ' · filas: ' + lista.cuerpo.length);
+console.log('  claves de cada fila: ' + Object.keys(lista.cuerpo[0]).join(', '));
+const proyectaAutor = lista.cuerpo.some((q) => 'teamMemberId' in q);
+console.log('  ¿la fila dice quién lo hizo (`teamMemberId`)?  ' + proyectaAutor);
+
+// ② La misma lista CON el filtro de autor, pedida por un Técnico: ¿le filtra por el compañero?
+const deBlas = await pedir(quotesRouter, { ...tecnico, query: { teamMemberId: '12' } });
+console.log('GET /admin/quotes?teamMemberId=12 → estado ' + deBlas.estado + ' · filas: ' + deBlas.cuerpo.length + ' · where que armó la ruta: ' + JSON.stringify(vistos.quote.at(-1)));
+console.log('  lo que le llega del compañero: ' + deBlas.cuerpo.map((q) => '#' + q.id + ' ' + q.status + ' ' + q.totalAmount + ' EUR').join(' · '));
+const idsDeBlas = new Set(deBlas.cuerpo.map((q) => q.id));
+const enviadosBlas = deBlas.cuerpo.length;
+const aceptadosBlas = deBlas.cuerpo.filter((q) => q.status === 'accepted').length;
+
+// ③ La lista de facturas, pedida por un Técnico: ¿trae total, estado, fecha de cobro y presupuesto?
+const facturas = await pedir(invoicesRouter, { ...tecnico, query: {} });
+console.log('GET /admin/invoices          → estado ' + facturas.estado + ' · rol declarado en la ruta: ' + facturas.rol + ' · filas: ' + facturas.cuerpo.length);
+console.log('  claves de cada fila: ' + Object.keys(facturas.cuerpo[0]).join(', '));
+const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+const cobradas = facturas.cuerpo.filter((f) => f.status === 'paid' && f.paidAt && new Date(f.paidAt) >= inicioMes);
+const cobradoBlasPorLaOtraVia = cobradas.filter((f) => idsDeBlas.has(f.quoteId)).reduce((a, f) => a + Number(f.total), 0);
+const cobradoNegocioPorLaOtraVia = cobradas.reduce((a, f) => a + Number(f.total), 0);
+
+// ④ El patrón: lo que el panel de admin dice de Blas con LOS MISMOS datos.
+const panel = ensamblarMetricasEquipo({
+  members: [{ id: 11, name: 'Ana', role: 'tecnico', status: 'active' }, { id: 12, name: 'Blas', role: 'tecnico', status: 'active' }],
+  monthQuotes: QUOTES.map((q) => ({ teamMemberId: q.teamMemberId, status: q.status, createdAt: q.createdAt })),
+  paidInvoices: INVOICES.filter((i) => i.status === 'paid').map((i) => ({ total: i.total, quoteId: i.quoteId, quote: i.quoteId ? { teamMemberId: QUOTES.find((q) => q.id === i.quoteId).teamMemberId } : null })),
+  nombrePropietario: 'Dueña',
+  weekAgo: new Date(ahora.getTime() - 7 * 86_400_000),
+});
+const blas = panel.members.find((m) => m.name === 'Blas');
+
+console.log('\n── LO QUE EL TÉCNICO RECONSTRUYE DE SU COMPAÑERO (id 12), contra el panel de admin');
+console.log('  enviados:   por la otra vía ' + enviadosBlas + ' · panel ' + blas.sent);
+console.log('  aceptados:  por la otra vía ' + aceptadosBlas + ' · panel ' + blas.accepted);
+console.log('  COBRADO:    por la otra vía ' + cobradoBlasPorLaOtraVia + ' · panel ' + blas.collected);
+console.log('  TOTAL COBRADO del negocio: por la otra vía ' + cobradoNegocioPorLaOtraVia + ' · panel ' + panel.totalCollected);
+
+// Control positivo del instrumento: el doble SÍ filtra (si no, «2 filas» sería una coincidencia).
+const dobleFiltra = lista.cuerpo.length === QUOTES.length && deBlas.cuerpo.length === 2;
+const reconstruye = dobleFiltra && cobradoBlasPorLaOtraVia === blas.collected && blas.collected > 0
+  && cobradoNegocioPorLaOtraVia === panel.totalCollected;
+console.log('\n¿el doble filtra de verdad (4 sin filtro, 2 con él)?                    ' + dobleFiltra);
+console.log('¿un Técnico reconstruye HOY lo cobrado de un compañero por otra vía?    ' + reconstruye);
+console.log('¿y el total cobrado del negocio?                                        ' + (cobradoNegocioPorLaOtraVia === panel.totalCollected));
+console.log('EXIT=0');
+process.exit(0);

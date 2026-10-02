@@ -107,6 +107,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -468,9 +469,38 @@ const srv = http.createServer((req, res) => {
   res.end(fs.readFileSync(abs));                 // del DISCO en cada petición
 });
 
-let fallos = 0;
 const decir = (s) => console.log(s);
-const mal = (s) => { console.error(s); fallos += 1; };
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1336 · «NO SUPE MIRAR» NO ES «HAY UN BOTÓN CORTO».
+//
+// Aquí había UNA cuenta (`fallos`) y un solo `mal()` para las dos cosas, y las dos salían con 1.
+// Visto correr (docs/master/evidencias/scrum1336/): con la barra de anuncio fuera de la página
+// —tres «NO SUPE MIRAR / CIEGO» y ningún botón corto— salía 1 y decía «3 problema(s). AB6 no se
+// baja». Quien lo viera buscaba un botón de 30 px donde sólo había un censo que no encontró qué medir.
+//
+// Ahora son dos sumideros y el código lo da `veredictoDe`: 1 si hay hallazgos, 2 si sólo hay ciegos.
+//
+//   hallazgo ....... se ha MEDIDO y está mal: un táctil corto, una irreversible por debajo de 44, o
+//                    una excepción que ya no hace falta.
+//   noSupeMirar .... no se ha podido medir, o el INSTRUMENTO falla su propio control (el scroll no
+//                    discrimina, una sonda de tamaño conocido sale mal, falta un conocido). De eso
+//                    no se da veredicto.
+//
+// 🔴 Y UN JUICIO QUE UN CIEGO VUELVE FALSO: «EXCEPCIÓN CADUCA / SOBRANTE» se deduce de NO haber
+// visto corto un selector en NINGÚN ancho. Si algún ancho de esa superficie no se midió, no haberlo
+// visto no dice nada: contarlo como hallazgo sería pintar el mismo ciego de 1 por otra puerta. Con
+// algún ancho sin medir, las excepciones de esa superficie quedan SIN JUZGAR, y se dice.
+//
+// Los dos sumideros son del módulo y no de cada ancho a propósito: si un ancho LANZA a mitad, lo
+// que ya había encontrado no se pierde.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+const hallazgos = [];
+const ciegos = [];
+const hallazgo = (s) => { console.error(s); hallazgos.push(s); };
+const noSupeMirar = (s) => { console.error(s); ciegos.push(s); };
+/** Lo que devuelve cada ancho a `recorrerCasos`: sus cuentas ya están apuntadas arriba. */
+const YA_APUNTADO = Object.freeze({ hallazgos: Object.freeze([]), ciegos: Object.freeze([]) });
 
 // SCRUM-620 · el servidor se levanta por el módulo común: el ÚNICO sitio donde se decide
 // qué pasa si NO se puede. Antes cada guard hacía su propio `listen` sin tratar el error, y un
@@ -555,7 +585,8 @@ const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {
   return { medidos, sinPintar, noTocables, total: todos.length, destapados };
 })`;
 
-for (const ancho of ANCHOS) {
+// SCRUM-1336 · `recorrerCasos` y no un `for`: un ancho que LANZA es un ciego de ESE ancho, y el otro se mide igual.
+const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   const page = await navegador.newPage();
   const MIN = minimoPara(ancho);
   await page.setViewport({ width: ancho, height: 900 });
@@ -574,9 +605,9 @@ for (const ancho of ANCHOS) {
   const pieCon = r.medidos.filter((m) => m.seccion === 'footer').length;
   decir(`⓪ control del scroll · enlaces del pie medidos SIN scroll: ${pieSin}  ·  CON scroll: ${pieCon}`);
   if (pieCon === 0) {
-    mal('   🔴 NO SUPE MIRAR: ni con scroll aparece el pie. El cero de abajo sería ceguera.');
+    noSupeMirar('   🔴 NO SUPE MIRAR: ni con scroll aparece el pie. El cero de abajo sería ceguera.');
   } else if (pieSin >= pieCon) {
-    mal('   🔴 EL CONTROL NO DISCRIMINA: sin scroll se mide lo mismo. O el scroll no hace falta '
+    noSupeMirar('   🔴 EL CONTROL NO DISCRIMINA: sin scroll se mide lo mismo. O el scroll no hace falta '
       + '(y este guard cree saber algo que no sabe), o el medidor no está usándolo.');
   } else {
     decir(`   ✅ el scroll es lo que hace visible el pie (+${pieCon - pieSin}). Sin él, este censo mentiría.`);
@@ -585,7 +616,7 @@ for (const ancho of ANCHOS) {
   for (const d of DESTAPAR) {
     const hecho = r.destapados.find((x) => x.sel === d.sel);
     if (!hecho || !hecho.ok) {
-      mal(`   🔴 NO SUPE MIRAR: el destapar declarado \`${d.sel}\` ya no existe en la página. `
+      noSupeMirar(`   🔴 NO SUPE MIRAR: el destapar declarado \`${d.sel}\` ya no existe en la página. `
         + 'O la sección se retiró (actualiza DESTAPAR y di por qué) o el censo está ciego ahí.');
     }
   }
@@ -595,14 +626,14 @@ for (const ancho of ANCHOS) {
 
   // ── ① SUELO ────────────────────────────────────────────────────────────────────────────
   if (r.medidos.length === 0) {
-    mal('   🔴 CIEGO: cero táctiles medidos. Eso no es «no hay defectos», es «no supe mirar».');
+    noSupeMirar('   🔴 CIEGO: cero táctiles medidos. Eso no es «no hay defectos», es «no supe mirar».');
     await page.close();
-    continue;
+    return YA_APUNTADO;
   }
   for (const c of CONOCIDOS[ancho] || []) {
     const n = r.medidos.filter(c.busca).length;
     const esperados = c.cuantos || 1;
-    if (n < esperados) mal(`   🔴 CIEGO: falta(n) ${c.nombre} — esperaba ${esperados}, medí ${n}. El verde del resto no vale.`);
+    if (n < esperados) noSupeMirar(`   🔴 CIEGO: falta(n) ${c.nombre} — esperaba ${esperados}, medí ${n}. El verde del resto no vale.`);
   }
 
   // ── ② LOS QUE NO SE PUDIERON MEDIR, CON SU MOTIVO ──────────────────────────────────────
@@ -619,7 +650,7 @@ for (const ancho of ANCHOS) {
   decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
     + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
   for (const m of culpables) {
-    mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+    hallazgo(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
   }
   for (const m of excusados) {
     const e = EXCEPCIONES.find((x) => x.sel === m.sel);
@@ -628,7 +659,9 @@ for (const ancho of ANCHOS) {
   if (!culpables.length) decir(`   ✅ todo lo que se puede pulsar llega a ${MIN} px.`);
 
   await page.close();
-}
+  return YA_APUNTADO;
+}, (ancho) => `LANDING @${ancho}px`);
+for (const c of recorridoLanding.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR · ${c}`);
 
 /**
  * 🔴 SCRUM-782 · EXCEPCIONES **DEL PANEL**, y por qué existen separadas de las de la landing.
@@ -665,12 +698,14 @@ const EXCEPCIONES_PANEL = [
 const ANCHOS_PANEL = [929, 390];
 /** Por selector: si en ALGUNA anchura se queda corto, su excepción sigue haciendo falta. */
 const vistosEnPanel = new Map();
+/** SCRUM-1336 · en cuántos anchos se llegó a medir el panel. Con alguno sin medir, sus excepciones no se juzgan. */
+let anchosDelPanelMedidos = 0;
 
 if (!PANEL_HTML) {
-  mal(`   🔴 CIEGO: no he podido montar la vista del panel (${PANEL.aviso}). `
+  noSupeMirar(`   🔴 CIEGO: no he podido montar la vista del panel (${PANEL.aviso}). `
     + 'El verde de la landing NO cubre esta superficie, así que esto no se traga.');
 } else {
-  for (const ancho of ANCHOS_PANEL) {
+  const recorridoPanel = await recorrerCasos(ANCHOS_PANEL, async (ancho) => {
     const page = await navegador.newPage();
     const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
@@ -687,9 +722,9 @@ if (!PANEL_HTML) {
 
     // ── SUELO ①: sin táctiles medidos no hay veredicto, hay ceguera.
     if (r.medidos.length === 0) {
-      mal('   🔴 CIEGO: cero táctiles medidos en el panel. Eso no es «no hay defectos».');
+      noSupeMirar('   🔴 CIEGO: cero táctiles medidos en el panel. Eso no es «no hay defectos».');
       await page.close();
-      continue;
+      return YA_APUNTADO;
     }
 
     // ── SUELO ②, EL QUE IMPORTA: las CASILLAS DE SELECCIÓN tienen que estar entre lo medido.
@@ -698,7 +733,7 @@ if (!PANEL_HTML) {
     const casillas = r.medidos.filter((m) => m.sel.startsWith('INPUT'));
     const MINIMO_CASILLAS = ancho === 390 ? 4 : 5;   // a 390 la cabecera va oculta (`thead:none`)
     if (casillas.length < MINIMO_CASILLAS) {
-      mal(`   🔴 CIEGO: sólo ${casillas.length} casillas medidas y esperaba al menos `
+      noSupeMirar(`   🔴 CIEGO: sólo ${casillas.length} casillas medidas y esperaba al menos `
         + `${MINIMO_CASILLAS}. O el selector volvió a dejarlas fuera, o la vista dejó de pintarlas: `
         + 'en los dos casos el verde de abajo no significa nada.');
     } else {
@@ -716,7 +751,7 @@ if (!PANEL_HTML) {
     decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
       + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
     for (const m of culpables) {
-      mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+      hallazgo(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
     }
     // Las excepciones se IMPRIMEN una a una: una deuda que no se ve por pantalla deja de existir.
     for (const m of excusados) {
@@ -728,10 +763,13 @@ if (!PANEL_HTML) {
       if (!vistosEnPanel.has(m.sel)) vistosEnPanel.set(m.sel, { corto: false });
       if (!m.cumple) vistosEnPanel.get(m.sel).corto = true;
     }
+    anchosDelPanelMedidos += 1;
     if (!culpables.length) decir(`   ✅ todo lo que se puede pulsar en el panel llega a ${MIN} px (o está excusado con motivo).`);
 
     await page.close();
-  }
+    return YA_APUNTADO;
+  }, (ancho) => `PANEL/clientes @${ancho}px`);
+  for (const c of recorridoPanel.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR · ${c}`);
 }
 
 // ═══ SCRUM-791 · LAS DOS SUPERFICIES NUEVAS ══════════════════════════════════════════════════
@@ -810,15 +848,16 @@ const EXCEPCIONES_791 = {
 
 for (const s of SUPERFICIES_791) {
   if (!s.html) {
-    mal(`   🔴 CIEGO: no he podido montar «${s.vista}» (${s.aviso}). No se cuenta como cero: `
+    noSupeMirar(`   🔴 CIEGO: no he podido montar «${s.vista}» (${s.aviso}). No se cuenta como cero: `
       + 'esa superficie NO está medida.');
     continue;
   }
   const excs = EXCEPCIONES_791[s.vista] || [];
   const vistos = new Map();          // selector → { corto } — para el detector de sobrantes
   const distintos = new Set();       // sel|texto — para el suelo que reencuentra lo ya medido
+  let anchosMedidos = 0;             // SCRUM-1336 · con alguno sin medir, sus excepciones no se juzgan
 
-  for (const ancho of ANCHOS_PANEL) {
+  const recorridoSuperficie = await recorrerCasos(ANCHOS_PANEL, async (ancho) => {
     const page = await navegador.newPage();
     const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
@@ -831,10 +870,10 @@ for (const s of SUPERFICIES_791) {
     const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda) {
-      mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px ni siquiera se ha `
+      noSupeMirar(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px ni siquiera se ha `
         + 'medido. Todo lo que diga esta superficie es ceguera.');
     } else if (sonda.cumple) {
-      mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px sale como que `
+      noSupeMirar(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px sale como que `
         + `CUMPLE los ${MIN} px. El medidor no está midiendo lo que cree.`);
     }
     // SCRUM-711 · las sondas de umbral: lo que TIENE que caer y lo que TIENE que pasar a este ancho.
@@ -845,12 +884,15 @@ for (const s of SUPERFICIES_791) {
     for (const [texto, debePasar] of esperadas) {
       const u = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === texto);
       if (!u) {
-        mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda «${texto}» ni siquiera se ha medido.`);
+        noSupeMirar(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda «${texto}» ni siquiera se ha medido.`);
         continue;
       }
       umbrales.push(`${texto} ${u.tocable}px ${u.cumple ? 'pasa' : 'cae'}`);
       if (u.cumple !== debePasar) {
-        mal(`   🔴 UMBRAL MAL APLICADO · ${s.vista} @${ancho}px: «${texto}» mide ${u.tocable} px contra un mínimo de ${MIN} y `
+        // SCRUM-1336 · ES UN CIEGO, no un hallazgo: la sonda la pone este guard, no la pantalla. Si
+        // una sonda de tamaño conocido sale mal, lo roto es el instrumento, y lo que diga de los
+        // botones de verdad a este ancho no vale.
+        noSupeMirar(`   🔴 UMBRAL MAL APLICADO · ${s.vista} @${ancho}px: «${texto}» mide ${u.tocable} px contra un mínimo de ${MIN} y `
           + (debePasar
             ? 'CAE: el guard vuelve a exigir en escritorio más de lo que dice DESIGN.md.'
             : 'PASA: el guard se ha quedado ciego a ese umbral.'));
@@ -869,9 +911,9 @@ for (const s of SUPERFICIES_791) {
       + `  ·  umbral (${MIN} px): ${umbrales.join(' · ') || '🔴 sin medir'}`);
 
     if (r.medidos.length === 0) {
-      mal(`   🔴 CIEGO: cero táctiles medidos en ${s.vista}. Eso no es «no hay defectos».`);
+      noSupeMirar(`   🔴 CIEGO: cero táctiles medidos en ${s.vista}. Eso no es «no hay defectos».`);
       await page.close();
-      continue;
+      return YA_APUNTADO;
     }
     if (r.noTocables.length) {
       decir('\n② presentes pero NO tocables (no son «pequeños»: ahí el dedo no los activa):');
@@ -885,7 +927,7 @@ for (const s of SUPERFICIES_791) {
     decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
       + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
     for (const m of culpables) {
-      mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+      hallazgo(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
     }
     for (const m of excusados) {
       const e = excs.find((x) => x.sel === m.sel);
@@ -895,13 +937,13 @@ for (const s of SUPERFICIES_791) {
     for (const texto of s.irreversibles || []) {
       const suyas = r.medidos.filter((m) => m.texto === texto && m.sel.split('.').includes(CLASE_IRREVERSIBLE));
       if (!suyas.length) {
-        mal(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ninguna acción irreversible «${texto}» con `
+        noSupeMirar(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ninguna acción irreversible «${texto}» con `
           + `\`${CLASE_IRREVERSIBLE}\`. O la vista dejó de pintarla, o dejó de llevar la clase: el verde no vale.`);
         continue;
       }
       for (const m of suyas) {
         if (m.tocable < MINIMO_TACTIL) {
-          mal(`   ✖ IRREVERSIBLE ${m.tocable}px < ${MINIMO_TACTIL} · ${m.sel} «${m.texto}» (caja CSS ${m.caja}px) — `
+          hallazgo(`   ✖ IRREVERSIBLE ${m.tocable}px < ${MINIMO_TACTIL} · ${m.sel} «${m.texto}» (caja CSS ${m.caja}px) — `
             + 'lleva la clase de 44 px y NO mide 44: la clase pierde la cascada.');
         } else {
           decir(`   ✅ irreversible «${m.texto}» ${m.tocable}px ≥ ${MINIMO_TACTIL} (caja CSS ${m.caja}px).`);
@@ -916,7 +958,7 @@ for (const s of SUPERFICIES_791) {
     for (const texto of s.conocidos || []) {
       const hallados = r.medidos.filter((m) => m.texto === texto);
       if (!hallados.length) {
-        mal(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ningún botón «${texto}». O el fixture `
+        noSupeMirar(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ningún botón «${texto}». O el fixture `
           + 'dejó de activarlo, o la pantalla dejó de pintarlo: en los dos casos el verde de arriba no lo cubre.');
       }
     }
@@ -924,9 +966,12 @@ for (const s of SUPERFICIES_791) {
       if (!vistos.has(m.sel)) vistos.set(m.sel, { corto: false });
       if (!m.cumple) vistos.get(m.sel).corto = true;
     }
+    anchosMedidos += 1;
     if (!culpables.length) decir(`   ✅ todo lo pulsable de ${s.titulo} llega a ${MIN} px (o está excusado con motivo).`);
     await page.close();
-  }
+    return YA_APUNTADO;
+  }, (ancho) => `${s.vista} @${ancho}px`);
+  for (const c of recorridoSuperficie.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR · ${c}`);
 
   // 🔴 EL SUELO QUE DECIDE: el guard tiene que REENCONTRAR lo que ya midió el censo de SCRUM-787.
   // Si encuentra MENOS, ha entrado ciego — y ése es el peor resultado posible, porque la
@@ -934,7 +979,7 @@ for (const s of SUPERFICIES_791) {
   // mediciones: el mismo botón medido a dos anchuras es UNO, y confundirlo fue el error del dato
   // de partida de SCRUM-787 (los «13» de Clientes eran 11 sumados dos veces).
   if (distintos.size < s.distintosEsperados) {
-    mal(`   🔴 CIEGO · ${s.vista}: he encontrado ${distintos.size} objetivos cortos DISTINTOS y `
+    noSupeMirar(`   🔴 CIEGO · ${s.vista}: he encontrado ${distintos.size} objetivos cortos DISTINTOS y `
       + `${s.origen || 'el censo de SCRUM-787'} midió ${s.distintosEsperados}. Faltan ${s.distintosEsperados - distintos.size}: `
       + 'o la vista ya no pinta lo mismo con estos datos, o el censo dejó de verlos. Un verde aquí '
       + 'diría que la pantalla está cubierta cuando no lo está.');
@@ -948,12 +993,15 @@ for (const s of SUPERFICIES_791) {
   // Y el detector de sobrantes, ACOTADO a esta superficie y SOBRE LAS DOS ANCHURAS — que es la
   // corrección que ya costó un falso rojo en Clientes: `BUTTON.btn-ghost.btn-sm` cumple a 390 y no
   // a 929, así que una excepción sólo sobra cuando ya no hace falta EN NINGUNA.
-  for (const e of excs) {
+  if (anchosMedidos < ANCHOS_PANEL.length && excs.length) {
+    decir(`   · SIN JUZGAR · ${s.vista}: sus ${excs.length} excepción(es) no se revisan — sólo se midió en ${anchosMedidos} de ${ANCHOS_PANEL.length} anchos, y «ya no hace falta» se deduce de no haberla visto corta en NINGUNO.`);
+  }
+  for (const e of (anchosMedidos < ANCHOS_PANEL.length ? [] : excs)) {
     const v = vistos.get(e.sel);
     if (!v) {
-      mal(`   🔴 EXCEPCIÓN CADUCA · ${s.vista}: \`${e.sel}\` ya no aparece en esa pantalla. Bórrala.`);
+      hallazgo(`   🔴 EXCEPCIÓN CADUCA · ${s.vista}: \`${e.sel}\` ya no aparece en esa pantalla. Bórrala.`);
     } else if (!v.corto) {
-      mal(`   🔴 EXCEPCIÓN SOBRANTE · ${s.vista}: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las `
+      hallazgo(`   🔴 EXCEPCIÓN SOBRANTE · ${s.vista}: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las `
         + 'anchuras medidas. Bórrala: mientras esté, ese objetivo no está vigilado.');
     }
   }
@@ -965,13 +1013,16 @@ for (const s of SUPERFICIES_791) {
 // ⚠️ SE COMPRUEBA SOBRE LAS DOS ANCHURAS, NO DENTRO DEL BUCLE. La primera versión lo hacía por
 // anchura y saltó en falso: `BUTTON.btn-ghost.btn-sm` cumple a 390 px —la tabla apila y el botón
 // gana sitio— y NO cumple a 929. Una excepción sólo sobra cuando ya no hace falta EN NINGUNA.
-for (const e of EXCEPCIONES_PANEL) {
+if (anchosDelPanelMedidos < ANCHOS_PANEL.length) {
+  decir(`   · SIN JUZGAR · panel/clientes: sus ${EXCEPCIONES_PANEL.length} excepción(es) no se revisan — sólo se midió en ${anchosDelPanelMedidos} de ${ANCHOS_PANEL.length} anchos, y «ya no hace falta» se deduce de no haberla visto corta en NINGUNO.`);
+}
+for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length ? [] : EXCEPCIONES_PANEL)) {
   const v = vistosEnPanel.get(e.sel);
   if (!v) {
-    mal(`   🔴 EXCEPCIÓN CADUCA: \`${e.sel}\` ya no aparece en el panel. Bórrala: una excepción `
+    hallazgo(`   🔴 EXCEPCIÓN CADUCA: \`${e.sel}\` ya no aparece en el panel. Bórrala: una excepción `
       + 'para algo que no existe es ruido que tapa a la siguiente.');
   } else if (!v.corto) {
-    mal(`   🔴 EXCEPCIÓN SOBRANTE: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las anchuras `
+    hallazgo(`   🔴 EXCEPCIÓN SOBRANTE: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las anchuras `
       + 'medidas. Bórrala de EXCEPCIONES_PANEL: mientras esté, ese botón no está vigilado.');
   }
 }
@@ -980,10 +1031,15 @@ await navegador.close();
 srv.close();
 
 decir('\n' + '─'.repeat(76));
-if (fallos) {
-  console.error(`🔴 SCRUM-542 · ${fallos} problema(s). AB6 no se baja: si algún caso no llega a su mínimo `
-    + `—${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md—, va a EXCEPCIONES con su motivo y quién la retira.`);
-  process.exit(1);
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  if (hallazgos.length) {
+    console.error(`🔴 SCRUM-542 · ${hallazgos.length} problema(s). AB6 no se baja: si algún caso no llega a su mínimo `
+      + `—${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md—, va a EXCEPCIONES con su motivo y quién la retira.`);
+  }
+  if (ciegos.length) console.error(`🔴 SCRUM-542 · NO SUPE MIRAR ${ciegos.length} cosa(s): de eso no se da veredicto, ni bueno ni malo.`);
+  console.error(veredictoFinal.linea);
+  process.exit(veredictoFinal.codigo);
 }
 // El mensaje final NOMBRA LAS SEIS. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
@@ -1000,3 +1056,6 @@ decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móv
   + 'del panel NO están vigiladas por ningún guard que bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
   + 'las CUENTA en cada PR, en el resumen del job informativo de guards de navegador (SCRUM-1179-C), sin frenar ningún PR '
   + '— no es una red, es un número que hay que ir a leer.');
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log(veredictoFinal.linea);

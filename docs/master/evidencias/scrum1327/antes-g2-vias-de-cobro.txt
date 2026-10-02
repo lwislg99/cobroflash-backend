@@ -1,0 +1,21 @@
+# g2-vias-de-cobro · guard-vias-de-cobro.mjs · la ranura del aviso no existe en ningun caso: 0 hallazgos, todo ciego
+# EXIT=1
+
+
+  SCRUM-519 · LAS DOS PANTALLAS, MEDIDAS EN EL DOM RENDERIZADO
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+
+  🔴 EL ESCÁNER NO SUPO MIRAR — esto NO es «las pantallas son coherentes»:
+
+     · —    · —          · —             → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · —    · —          · whatsappPhone → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · —    · bizumPhone · —             → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · —    · bizumPhone · whatsappPhone → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · IBAN · —          · —             → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · IBAN · —          · whatsappPhone → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · IBAN · bizumPhone · —             → no existe input[name=bizumPhone]: falta la ranura del aviso
+     · IBAN · bizumPhone · whatsappPhone → no existe input[name=bizumPhone]: falta la ranura del aviso
+
+  Sin haber encontrado las dos pantallas no se puede afirmar que digan lo mismo.

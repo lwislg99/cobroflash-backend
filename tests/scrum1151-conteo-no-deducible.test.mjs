@@ -14,7 +14,7 @@
 // y a `leerLibroRecibidas` (selecciona `CAMPOS_GASTO`, superconjunto) — un solo mock basta porque
 // Prisma no filtra columnas del lado del cliente en este doble.
 import test from 'node:test';
-import assert from 'node:assert/strict';
+import assert from 'node:assert/strict'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const DIST = '../dist/';
 
@@ -34,7 +34,7 @@ function llamarResumen(router, merchantId, year, quarter) {
   assert.ok(capa, '🔴 la ruta /resumen-trimestre ya no existe en el router de Informes.');
   return new Promise((resolve, reject) => {
     capa.route.stack[0].handle(
-      { merchantId, query: { year, quarter } },
+      reqDeSesion({ rol: 'admin', merchantId, query: { year, quarter } }),
       { json: resolve, status: (c) => ({ json: (b) => reject(new Error(`HTTP ${c}: ${JSON.stringify(b)}`)) }) },
       reject,
     );

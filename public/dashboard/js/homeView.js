@@ -116,20 +116,36 @@ async function renderHomeView(container) {
   document.getElementById("btn-view-pending").addEventListener("click", () => window.renderAppView && renderAppView('invoices'));
   document.getElementById("btn-home-prefs")?.addEventListener("click", openHomePrefsPanel);
 
+  // SCRUM-1317 · EL INICIO DEL OPERARIO. Las cifras del negocio (lo que se debe, lo cobrado,
+  // gastos, beneficio, la semana, los tops) son del admin: su ruta `/admin/metrics/home` exige
+  // admin, y al operario esos bloques se le QUITAN del DOM — no se le dejan cargando ni vacíos.
+  // Se queda con lo que es de su trabajo: el saludo, los tres avisos de riesgo, las acciones
+  // rápidas, «Te esperan en WhatsApp» y la actividad reciente, que pide a SU ruta.
+  // `#home-hero` no se quita: vacío no ocupa nada y es el ancla de la tarjeta de WhatsApp.
+  const veNegocio = window.appUserRole === 'admin';
+  if (!veNegocio) {
+    container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
+      .forEach((bloque) => bloque.remove());
+  }
+
   // A6.7: aplicar preferencias cacheadas al instante (sin flash en re-renders)
   if (window.appHomePrefs) applyHomePrefs(window.appHomePrefs);
 
   try {
     const [data, merchant] = await Promise.all([
-      apiRequest("/admin/metrics/home"),
+      apiRequest(veNegocio ? "/admin/metrics/home" : "/admin/metrics/inicio"),
       apiRequest("/admin/merchant").catch(() => null),
     ]);
-    renderHero(data);
-    renderKpis(data);
-    renderWeekSummary(data);
+    if (veNegocio) {
+      renderHero(data);
+      renderKpis(data);
+      renderWeekSummary(data);
+    }
     renderActivity(data.recentActivity || []);
-    renderTopCustomers(data.topCustomers || []);
-    renderTopServices(data.topServices || []);
+    if (veNegocio) {
+      renderTopCustomers(data.topCustomers || []);
+      renderTopServices(data.topServices || []);
+    }
 
     // Setup checklist para usuarios nuevos
     if (merchant) renderSetupChecklist(merchant, data);
@@ -153,13 +169,15 @@ async function renderHomeView(container) {
     // Rendimiento del equipo (ANA-3) — solo admin con técnicos
     renderTeamPerformance(container);
   } catch (err) {
+    // SCRUM-1317: el operario no tiene `kpi-grid`; su error va donde iba a ir su contenido.
+    const af = document.getElementById("activity-feed");
+    const kpis = document.getElementById("kpi-grid");
+    if (kpis && af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
     uiErrorState(
-      document.getElementById("kpi-grid"),
+      kpis || af,
       "No pudimos cargar tus métricas. Revisa tu conexión.",
       () => renderHomeView(container)
     );
-    const af = document.getElementById("activity-feed");
-    if (af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
   }
 
   // SCRUM-356 (H2) · FUERA del try/catch a propósito: si las métricas fallan —que es justo cuando
@@ -262,7 +280,8 @@ window.updateSidebarBadges = updateSidebarBadges;
 // Refresca los badges del sidebar sin renderizar el Home (para usar al iniciar la app).
 async function refreshSidebarBadges() {
   try {
-    const data = await apiRequest('/admin/metrics/home');
+    // SCRUM-1317: los globos del operario salen de SU ruta; `/admin/metrics/home` exige admin.
+    const data = await apiRequest(window.appUserRole === 'admin' ? '/admin/metrics/home' : '/admin/metrics/inicio');
     updateSidebarBadges(data);
   } catch { /* silencioso */ }
 }
@@ -343,6 +362,8 @@ async function pintarResumenTrimestreEnHome() {
   const caja = document.getElementById('home-resumen-trimestre');
   if (!caja) return;
   caja.innerHTML = '';
+  // SCRUM-1317: `/admin/reports/*` exige admin desde SCRUM-55; el operario no lo pregunta.
+  if (window.appUserRole !== 'admin') return;
 
   const { anio, trimestre } = trimestreAnteriorMadrid();
   const clave = claveDescarteResumenTrimestre(anio, trimestre);
@@ -702,8 +723,8 @@ function renderTopServices(items) {
 }
 
 async function renderTeamPerformance(container) {
-  // Solo para el propietario/admin
-  if (window.appUserRole && window.appUserRole !== 'admin') return;
+  // Sólo para el propietario/admin. El Técnico tiene SU bloque, sin importes y con su ruta (SCRUM-1341, al final).
+  if (window.appUserRole && window.appUserRole !== 'admin') return renderTeamActivity(container);
 
   let data;
   try {
@@ -1361,19 +1382,33 @@ async function submitQuickQuote() {
       const phone = (document.getElementById("qq-customer-phone")?.value || qqState.customerPhone).trim();
       const newCustomer = await createCustomer({ name: customerName, phone: phone || null });
       customerId = newCustomer.id;
+      // SCRUM-1371 · el cliente recién creado SE RECUERDA. Si un paso de más abajo falla, el
+      // botón vuelve a encenderse, y sin esto cada reintento daba de alta al cliente otra vez.
+      // Teclear otro nombre lo olvida solo (el buscador pone `customerId` a null).
+      qqState.customerId = customerId;
     }
 
     const merchant_id = window.appMerchantId;
 
     // 3. Crear el presupuesto
-    const quote = await createQuote({
+    const cuerpoDelPresupuesto = {
       merchant_id,
       customer_id: customerId,
       currency: (window.appLocale?.currency || "EUR"),
       paymentTerms: qqState.paymentTerms,
       created_via: qqState.createdVia === 'voice' ? 'voice' : 'text', // VZ-3
       ...quotePayload,
-    });
+    };
+    // 🔴 SCRUM-1371 · REINTENTAR NO VUELVE A CREAR. Si el envío de abajo falla, el presupuesto YA
+    // existe: un segundo clic con los mismos datos creaba otro, y otro. Se recuerda el creado junto
+    // a lo que se pidió, y sólo se reutiliza si lo pedido es IDÉNTICO — si la persona cambió una
+    // línea antes de reintentar, es otro presupuesto y se crea.
+    const pedido = JSON.stringify(cuerpoDelPresupuesto);
+    let quote = qqState.creado && qqState.creado.pedido === pedido ? qqState.creado.quote : null;
+    if (!quote) {
+      quote = await createQuote(cuerpoDelPresupuesto);
+      qqState.creado = { pedido, quote };
+    }
 
     // A1.3: técnico por encima de su límite → el presupuesto nace pendiente de
     // aprobación. NO se intenta enviar (daba "API 409: pending_approval" crudo);
@@ -1494,4 +1529,78 @@ function openHomePrefsPanel() {
       showToast('No se pudo guardar: ' + (err && err.message ? err.message : 'inténtalo de nuevo'), 'error');
     }
   });
+}
+
+// SCRUM-1341 · «ACTIVIDAD DEL EQUIPO»: lo que el Técnico ve de sus compañeros, SIN IMPORTES.
+//
+// El fundador firmó que el operario ve la actividad de sus compañeros (SCRUM-1337) y que no ve lo
+// cobrado (tabla S1). «Rendimiento del equipo» (`renderTeamPerformance`, más arriba) reparte lo
+// cobrado del mes por persona, así que al Técnico no se le da ese panel recortado: se le da ÉSTE,
+// que pide SU ruta (`/admin/metrics/actividad-equipo`, que no consulta facturas) y pinta la misma
+// tabla con tres de sus cuatro columnas.
+//
+// Va al FINAL del fichero a propósito, y no al lado de `renderTeamPerformance`: este fichero tiene
+// un control anclado por NÚMERO DE LÍNEA (`tests/scrum601-copy-del-documento-vs-flag.test.mjs`, la
+// nota de condiciones del presupuesto rápido) y 68 líneas metidas por encima lo dejaban sin su
+// positivo. Aquí abajo no desplaza a nadie.
+//
+// Pinta por LISTA CERRADA: nombre, rol, enviados y % de aceptación. No recorre `data` ni las
+// claves de cada fila, así que un campo que llegara de más no acaba en pantalla.
+//
+// Lo que NO lleva, y está decidido (SCRUM-1341, comentarios 17825 y 17827):
+//   · la columna «Cobrado», el pie «Sin asignar» y el «Total cobrado»: son el dinero;
+//   · la estrella «Mejor del mes»: se calcula por lo cobrado;
+//   · el aviso «Sin actividad esta semana»: es herramienta de gestión, le dice a un jefe a quién
+//     perseguir;
+//   · el botón «Ver equipo →»: lleva a una pantalla sólo-admin.
+//
+// El título es texto FIRMADO por el fundador el 1-oct-2026 (c.17827) y no es el del admin a
+// propósito: sin la columna de importes esto ya no es rendimiento, es actividad. Las tres
+// cabeceras son las del panel del admin, reusadas tal cual (c.17825 ④).
+const TONO_DE_ACEPTACION = {
+  alta: 'equipo-actividad-num equipo-actividad-tasa-alta',
+  media: 'equipo-actividad-num equipo-actividad-tasa-media',
+  baja: 'equipo-actividad-num equipo-actividad-tasa-baja',
+};
+
+async function renderTeamActivity(container) {
+  let data;
+  try {
+    data = await apiRequest('/admin/metrics/actividad-equipo');
+  } catch { return; }
+  if (!data || !data.hasTeam || !Array.isArray(data.members)) return;
+
+  const section = document.createElement('div');
+  section.className = 'equipo-actividad';
+
+  const rows = data.members.map((m) => {
+    const tasa = Number(m.acceptanceRate) || 0;
+    // Mismos cortes que el panel del admin: 50 y 25.
+    const tono = tasa >= 50 ? TONO_DE_ACEPTACION.alta : tasa >= 25 ? TONO_DE_ACEPTACION.media : TONO_DE_ACEPTACION.baja;
+    // SCRUM-136 (A20.3): las mismas dos palabras que el panel del admin para los mismos roles.
+    const roleLabel = m.role === 'owner' ? 'Propietario' : m.role === 'tecnico' ? 'Operario' : m.role;
+    return `
+      <tr>
+        <td class="equipo-actividad-miembro">${esc(m.name)}<div class="equipo-actividad-rol">${esc(roleLabel)}</div></td>
+        <td class="equipo-actividad-num">${Number(m.sent) || 0}</td>
+        <td class="${tono}">${tasa}%</td>
+      </tr>`;
+  }).join('');
+
+  section.innerHTML = `
+    <div class="equipo-actividad-titulo">Actividad del equipo · este mes</div>
+    <div class="data-card">
+      <div class="table-scroll">
+        <table class="table equipo-actividad-tabla">
+          <thead><tr>
+            <th>Miembro</th>
+            <th class="equipo-actividad-num">Cotizaciones</th>
+            <th class="equipo-actividad-num">Aceptación</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  container.appendChild(section);
 }

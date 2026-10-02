@@ -1,0 +1,38 @@
+HEAD=2c410ca59fee4842d2d8cb3eb4cf3c9c6500fc46 · base de M1=origin/main (8e03d28cf2eddc658493a2a2bb00e2b94303bd18) · 23 arneses migrados
+POBLACION=16 mutaciones
+BASE sin mutar: código 0 · pasan 27 · caen 0
+VIVA   · M1 · el árbol de ANTES: los arneses migrados vuelven a como están en la base
+         esperado: «④ NINGÚN arnés arma un `req` de sesión sin rol» · caen 2: ④ NINGÚN arnés arma un `req` de sesión sin rol contra un rou | ⑥ la lista de heredados no se queda con nombres de más (no b
+VIVA   · M2 · nace un arnés nuevo que saca el handler y lo llama sin rol
+         esperado: «④ NINGÚN arnés arma un `req` de sesión sin rol» · caen 1: ④ NINGÚN arnés arma un `req` de sesión sin rol contra un rou
+VIVA   · M3 · nace un arnés nuevo que escribe `userRole` a mano (el parche de scrum960, la vez 21)
+         esperado: «⑤ un arnés NUEVO no declara el rol a mano» · caen 1: ⑤ un arnés NUEVO no declara el rol a mano: usa `reqDeSesion`
+VIVA   · M4 · se cuela un nombre de más en HEREDADOS_A_MANO
+         esperado: «⑥ la lista de heredados no se queda con nombres de más» · caen 1: ⑥ la lista de heredados no se queda con nombres de más (no b
+VIVA   · M5 · nace un fichero que carga un router de /admin sin armarle un req
+         esperado: «⑦ «carga un router de /admin y no le arma ningún req de sesión» es lista cerrada» · caen 1: ⑦ «carga un router de /admin y no le arma ningún req de sesi
+VIVA   · M6 · nace un fichero que no se puede parsear
+         esperado: «⑧ lo que no se pudo mirar se cuenta APARTE» · caen 1: ⑧ lo que no se pudo mirar se cuenta APARTE y con su motivo (
+VIVA   · M7 · `reqDeSesion` gana un rol por defecto
+         esperado: «⑨ `reqDeSesion` no tiene rol por defecto» · caen 1: ⑨ `reqDeSesion` no tiene rol por defecto: sin rol, LANZA
+VIVA   · M8 · `reqDeSesion` inventa un campo
+         esperado: «⑪ `reqDeSesion` devuelve lo que se le da más `userRole`, y NADA más» · caen 1: ⑪ `reqDeSesion` devuelve lo que se le da más `userRole`, y N
+VIVA   · M9 · el analizador deja de ver el handler sacado de route.stack
+         esperado: «⑫ el analizador VE el arnés sin rol · saca el handler de route.stack y lo llama» · caen 1: ⑫ el analizador VE el arnés sin rol · saca el handler de rou
+VIVA   · M9b · el analizador deja de ver la llamada (req, res)
+         esperado: «⑫ el analizador VE el arnés sin rol · llama a una función con (req, res)» · caen 3: ⑥ la lista de heredados no se queda con nombres de más (no b | ⑦ «carga un router de /admin y no le arma ningún req de sesi | ⑫ el analizador VE el arnés sin rol · llama a una función co
+VIVA   · M9c · el analizador deja de ver lo que devuelve un `handlerDe…()`
+         esperado: «⑫ el analizador VE el arnés sin rol · llama a lo que devuelve un `handlerDe…()`» · caen 1: ⑫ el analizador VE el arnés sin rol · llama a lo que devuelv
+VIVA   · M10 · el analizador deja de reconocer un createRequire con otro nombre
+         esperado: «⑰ lo que no se puede mirar sale SIN JUZGAR, nunca limpio» · caen 1: ⑰ lo que no se puede mirar sale SIN JUZGAR, nunca limpio
+VIVA   · M10b · nombrar el router en un literal deja de contar como cargarlo
+         esperado: «⑫ el analizador VE el arnés sin rol · carga el router por un ayudante, con la ruta a secas» · caen 3: ⑥ la lista de heredados no se queda con nombres de más (no b | ⑦ «carga un router de /admin y no le arma ningún req de sesi | ⑫ el analizador VE el arnés sin rol · carga el router por un
+VIVA   · M11 · un fichero que no parsea pasa por limpio
+         esperado: «⑰ lo que no se puede mirar sale SIN JUZGAR, nunca limpio» · caen 1: ⑰ lo que no se puede mirar sale SIN JUZGAR, nunca limpio
+VIVA   · M12 · el emparejamiento router↔fichero se queda ciego (no encuentra ninguno)
+         esperado: «① la línea sale SIEMPRE, con su población, y el censo no está ciego» · caen 4: ① la línea sale SIEMPRE, con su población, y el censo no est | ② el control del ticket: `scrum960` está, declara rol y su r | ⑥ la lista de heredados no se queda con nombres de más (no b | ⑦ «carga un router de /admin y no le arma ningún req de sesi
+VIVA   · M13 · el gate de una ruta deja de mirar el verbo
+         esperado: «⑱ las DOS cifras: la ruta que el arnés nombra decide si tiene gate hoy» · caen 1: ⑱ las DOS cifras: la ruta que el arnés nombra decide si tien
+DESPUÉS de restaurar: código 0 · pasan 27 · caen 0 · árbol limpio
+RESULTADO: 16 vivas de 16 · 0 mudas · 0 ciegas
+EXIT=0

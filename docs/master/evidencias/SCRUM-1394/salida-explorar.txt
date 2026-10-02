@@ -1,0 +1,36 @@
+CATÁLOGO del meta-guard: 122 guards · 418 declaraciones
+tests/*.test.mjs seguidos: 1194
+tests que contienen el texto MUTACIONES_QUE_ME_TUMBAN: 124 · de ellos en el catálogo: 122
+registros docs/master/SCRUM-N.md: 954 · que hablan de mutación/mutante: 412
+ficheros de evidencias: 1041 · con «mut» en el nombre: 95 · en 31 carpetas
+   docs/evidencias/scrum1317 → mutaciones-40b6e4da.txt, mutaciones-servidor-fbbe68a4.txt, mutar-servidor.mjs.txt, mutar.mjs.txt
+   docs/evidencias/scrum1338 → mutaciones-76d25de8.txt, mutar.mjs.txt
+   docs/evidencias/scrum1341 → mutar.salida.txt, mutar.tras-mezclar-main.salida.txt
+   docs/master/evidencias/SCRUM-1324 → mutaciones.txt, mutar.mjs
+   docs/master/evidencias/SCRUM-1339 → d-mutaciones.mjs, d-salida-mutaciones.txt
+   docs/master/evidencias/SCRUM-1345 → mutar.mjs, salida-mutar.txt
+   docs/master/evidencias/SCRUM-1386 → mutar.mjs, salida-mutar.txt
+   docs/master/evidencias/SCRUM-1391 → salida-mudez-mutada-copia.jsonl, salida-mudez-mutada-copia.txt
+   docs/master/evidencias/SCRUM-912 → mutacion-912.mjs
+   docs/master/evidencias/SCRUM-917 → mutar-917g.mjs, salida-mutaciones-917g.txt
+   docs/master/evidencias/scrum1304 → mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1321 → salida-mutaciones-nuevas.txt
+   docs/master/evidencias/scrum1326 → mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1327 → mutaciones-traza.txt, mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1330 → mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1331 → mutar.mjs, salida-mutaciones.txt
+   docs/master/evidencias/scrum1332 → mutar.mjs, salida-mutaciones.txt
+   docs/master/evidencias/scrum1333 → mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1336 → despues-a11y-comparativa-mut-ciego-a-hallazgo.txt, despues-a11y-comparativa-mut-hallazgo-a-ciego.txt, despues-a11y-landing-mut-ciego-a-hallazgo.txt, despues-a11y-landing-mut-hallazgo-a-ciego.txt, despues-contraste-mut-ciego-a-hallazgo.txt, despues-contraste-mut-hallazgo-a-ciego.txt, despues-contraste-mut-juzga-por-ausencia.txt, despues-duplicar-926-mut-ciego-a-hallazgo.txt, despues-duplicar-926-mut-error-visto-sin-juzgar.txt, despues-duplicar-926-mut-hallazgo-a-ciego.txt, despues-marcadores-en-pantalla-mut-ciego-a-hallazgo.txt, despues-marcadores-en-pantalla-mut-hallazgo-a-ciego.txt, despues-marcadores-en-pantalla-mut-juzga-por-ausencia.txt, despues-objetivo-tactil-mut-ciego-a-hallazgo.txt, despues-objetivo-tactil-mut-hallazgo-a-ciego.txt, despues-objetivo-tactil-mut-juzga-por-ausencia.txt, despues-rastro-del-menu-mut-ciego-a-hallazgo.txt, despues-rastro-del-menu-mut-hallazgo-a-ciego.txt, mutaciones-traza.txt, mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1340 → mutaciones-traza.txt, mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum1343 → mutaciones-traza.txt, mutaciones.json, mutar.mjs
+   docs/master/evidencias/scrum864 → mutacion.mjs, salida-mutacion.txt
+   docs/master/evidencias/scrum864c → mutacion.mjs, salida-mutacion.txt
+   docs/master/evidencias/scrum908b → banco-mut2.mjs, salida-mut2-N40.txt
+   docs/master/evidencias/scrum908c → mut2-todos.json, mut2-todos.mjs, mut2-todos.out, mutar2.mjs, nombres-mut2.out, sonda-mut2.json, sonda-mut2.out
+   docs/master/evidencias/scrum908c/ventana-866 → mut2-todos.json, mut2-todos.out
+   docs/master/evidencias/scrum920 → mutar-920d-final-A.txt, mutar-920d-final-B.txt, mutar-920d-final-C.txt, mutar-920d-salida-1.txt, mutar-920d-salida-2.txt, mutar-920d-salida-3.txt, mutar-920d.mjs, mutar-920j-salida.txt, mutar-920j.mjs
+   docs/master/evidencias/scrum933 → mutar-y-correr.mjs
+   docs/master/evidencias/scrum951a → mutar.mjs, salida-mutar.txt
+   docs/master/evidencias/scrum951d → salida-mutar.txt
+   docs/master/evidencias/scrum982 → mutar-nota-982.mjs, salida-mutaciones-21sep.txt, salida-mutaciones-fusionado-21sep.txt

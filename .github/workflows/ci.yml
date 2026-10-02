@@ -257,7 +257,11 @@ jobs:
           NODE_OPTIONS: >-
             --test-reporter=spec --test-reporter-destination=stdout
             --test-reporter=tap --test-reporter-destination=${{ runner.temp }}/tanda.tap
-        run: npm test
+        # SCRUM-1289 · el log `spec` se guarda TAMBIÉN en un fichero: es la segunda fuente del «por
+        # qué cayó» cuando el TAP no se puede leer. SIN TUBERÍA a propósito: con la tanda entubada a `tee` el
+        # código de salida del paso depende de que alguien se acuerde del `pipefail`, y SCRUM-850 lo
+        # denuncia con razón. Con la sustitución de proceso, el código que sale es el de `npm test`.
+        run: npm test > >(tee "$RUNNER_TEMP/tanda-spec.log") 2>&1
 
       # SCRUM-871 · `scrum814` VA SOLO, Y NO ES PRUDENCIA: ESTÁ MEDIDO.
       #
@@ -279,21 +283,27 @@ jobs:
         run: node --test --test-force-exit tests/scrum814-carrera-de-tramos-postgres.test.mjs
 
       # Sólo cuando hay rojo. En verde no imprime nada y no cuesta un segundo.
-      - name: Por qué cayó (del TAP, sólo si la tanda falla)
+      #
+      # 🔴 SCRUM-1289 · ANTES ERA UN `awk` SOBRE EL TAP, Y EL TAP ESTABA ROTO EN TODAS LAS TANDAS:
+      # 94 % de NUL, medido en los cuatro rojos del ticket. El paso imprimía su cabecera y NADA, y
+      # eso se leía como «no cayó nada». Ahora el guion mira primero si el TAP se puede leer, y si
+      # no, lo DICE y va al log `spec`. Sus tres salidas no se confunden: CAYERON (con la fuente),
+      # la tanda NO tiene fallos (el rojo es de otro paso), o NO SUPE MIRAR.
+      # Nunca tumba el job: el guion sale siempre 0, y el `|| true` cubre que ni arranque.
+      - name: Por qué cayó (sólo si la tanda falla)
         if: failure()
+        run: node scripts/equipo/por-que-cayo.mjs "${{ runner.temp }}/tanda.tap" "${{ runner.temp }}/tanda-spec.log" || true
+
+      # SCRUM-1289 · ¿SE PUEDE LEER EL TAP? En CADA tanda, también en verde, porque la avería que
+      # lo rompía (un `node --test` hijo con los reporters de `NODE_OPTIONS` heredados) salía VERDE.
+      # Los dos pasos de abajo leen este mismo fichero. Informativo: `continue-on-error`, así que
+      # un TAP roto se ve como aviso en este paso y en el resumen, y nunca pone el job en rojo.
+      - name: ¿Se puede leer el TAP de la tanda? (informativo)
+        if: always()
+        continue-on-error: true
         run: |
-          tap="${{ runner.temp }}/tanda.tap"
-          if [ ! -s "$tap" ]; then
-            echo "🔴 NO SUPE MIRAR: no hay TAP en $tap, así que el rojo de arriba es lo único que hay."
-            echo "   (¿ha cambiado el script \`test\`, o node dejó de aceptar los reporters en NODE_OPTIONS?)"
-            exit 0
-          fi
-          echo "── Lo que cayó, con su motivo ─────────────────────────────────────────"
-          echo "   Si el fallo es de un SUBTEST, aquí sale su nombre."
-          echo "   Si el fichero cayó a nivel de PROCESO, aquí salen \`exitCode\` y \`signal\`,"
-          echo "   que es justo lo que el log de arriba no dice."
-          echo
-          awk '/^not ok /{p=1} p{print} p&&/^  \.\.\./{p=0}' "$tap"
+          set -o pipefail
+          node scripts/equipo/por-que-cayo.mjs --integridad "${{ runner.temp }}/tanda.tap" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # ═══════════════════════════════════════════════════════════════════════════════════
       # 🔴 SCRUM-672 · UN TEST QUE DESAPARECE NO ES UN TEST QUE FALLA
@@ -337,6 +347,31 @@ jobs:
           path: ${{ runner.temp }}/tanda.tap
           retention-days: 7
           if-no-files-found: warn
+
+      # ── SCRUM-1339d · ¿FALTAN CASOS DECLARADOS EN EL TAP? AVISA, NO BLOQUEA ────────────────
+      #
+      # La tanda pierde casos y sale verde (SCRUM-1339: 41 de 91 jobs medidos el 1-oct, 28 de
+      # ellos en `success`). El suelo de arriba no puede verlo: compara un NÚMERO con holgura.
+      # Esto compara NOMBRES —los que el árbol declara contra los que hay en el TAP— y anota en
+      # el run qué falta, con su fichero y su rango de líneas dentro del texto del aviso.
+      #
+      #   · NO BLOQUEA, y no por intención: `continue-on-error` aquí, y el guion sale 0 hasta
+      #     cuando revienta, DICIENDO que no pudo medir (lo vigila `tests/scrum1339d-…`).
+      #     Decisión del fundador: SCRUM-1339 c.17935 y c.17954. Hacerlo requerido es OTRA.
+      #   · `if: always()`: el defecto que persigue sale VERDE; y en rojo también interesa.
+      #   · Sin `env`, sin token y sin `permissions`: sólo lee el TAP y `tests/*.test.mjs`. La
+      #     tasa sobre los últimos runs se calcula FUERA, con `gh`.
+      #   · Deja SIEMPRE una `::notice` con su población, también con 0: si sólo hablara cuando
+      #     falta algo, su silencio no distinguiría «no faltó» de «alguien quitó la cuenta».
+      - name: ¿Faltan casos declarados en el TAP? (señal de nombres · avisa, no bloquea)
+        if: always()
+        # 🔴 ESTA LÍNEA ES LA SEGUNDA RED, Y ES LA QUE CALLA. La primera es el guion, que sale 0
+        # DICIENDO «NO PUDE MEDIR». Ésta sólo actúa cuando el guion no llega a hablar —no está,
+        # se renombró, node no arranca—: entonces el paso sale con una ✗ roja dentro de un job
+        # verde y SIN esa frase. Un paso con ✗ y sin «NO PUDE MEDIR» significa «el guion no
+        # está», no «no faltó nada». Medido en el run 36901626137 (SCRUM-1339d, control ④).
+        continue-on-error: true
+        run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"
 
       # ── 🔴 SCRUM-972 · EL AVISO DE LA PUERTA ──────────────────────────────────────────────
       #

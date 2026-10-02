@@ -1,0 +1,13 @@
+brazo	tirada	artefacto	bytes	job	conclusion	paso_tanda	segundos	medible	declarados	tap_tests	tap_fail	ausentes	dudosos	motivo	donde
+con	1	11169117933	483044	110405295824	success	success	518	sí	9421	9838	0	0	0		
+con	2	11168782685	482443	110405295901	success	success	506	sí	9421	9820	0	5	0		tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+con	3	11167749629	481570	110405295710	success	success	318	sí	9421	9837	0	1	0		tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan 1 de 12 (cola) · posiciones 12 · líneas 327–335
+con	4	11168871969	481314	110405295777	success	success	398	sí	9421	9812	0	23	0		tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 20 de 53 (cola) · posiciones 34–53 · líneas 350–647 | tests/scrum888g-senal-en-la-firma.test.mjs · faltan AL MENOS 3 de 10 (cola) · posiciones 8–10 · líneas 190–238 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+con	5	11168865266	483047	110405295227	success	success	507	sí	9421	9838	0	0	0		
+con	6	11169852483	482723	110405295712	success	success	487	sí	9421	9828	0	10	0		tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 10 de 53 (cola) · posiciones 44–53 · líneas 519–647
+sin	1	11169141704	483231	110405295648	success	success	431	sí	9421	9838	0	0	0		
+sin	2	11168897905	484152	110405295785	success	success	543	sí	9421	9838	0	0	0		
+sin	3	11169556121	482876	110405295851	success	success	385	sí	9421	9838	0	0	0		
+sin	4	11167888412	482614	110405295547	success	success	371	sí	9421	9838	0	0	0		
+sin	5	11169308288	484046	110405295859	success	success	544	sí	9421	9838	0	0	0		
+sin	6	11170091197	483846	110405295789	success	success	527	sí	9421	9838	0	0	0		

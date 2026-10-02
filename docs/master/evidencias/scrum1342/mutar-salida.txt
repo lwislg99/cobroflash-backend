@@ -1,0 +1,11 @@
+POBLACION: 6 mutaciones declaradas en tests/scrum1342-plan-desconocido-no-calla.test.mjs
+BASE sin mutar: 13 tests · 13 ok · 0 not ok · salida 0
+✔ VIVA  1/6 · src/core/entitlements.ts · «NO abre el límite» — caen 2 de 13
+✔ VIVA  2/6 · src/core/entitlements.ts · «deja UN aviso con el valor recibido» — caen 6 de 13
+✔ VIVA  3/6 · src/core/entitlements.ts · «AUSENTE NO ES DESCONOCIDO» — caen 2 de 13
+✔ VIVA  4/6 · src/core/entitlements.ts · «los CUATRO planes conocidos dan exactamente sus límites» — caen 2 de 13
+✔ VIVA  5/6 · src/core/entitlements.ts · «la ruta sigue contestando 1 usuario» — caen 5 de 13
+✔ VIVA  6/6 · src/modules/team/app/routes/team.routes.ts · «la ruta sigue contestando 1 usuario» — caen 1 de 13
+DESPUÉS de restaurar: 13 tests · 13 ok · salida 0
+vivas 6 · mudas 0 · ciegas 0 · de 6
+EXIT=0

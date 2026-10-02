@@ -1,0 +1,178 @@
+BANCO SCRUM-1343 · POBLACIÓN: 5 escenario(s) · puerta: C:\Users\Javier Pereira\cobroflash-jv1\scripts\guards-visuales.mjs
+plataforma: win32 · node v24.18.0
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+ESCENARIO nativo · guards: limpio, sale-nativo, otro-sale-nativo
+████████████████████████████████████████████████████████████████████████████████████████████████████
+guards de navegador FUERA de `npm test`: 3
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+   ✔ guard:limpio                 0.0 s   (arranque: ?)   verde
+   ✖ guard:sale-nativo            0.1 s   (arranque: ?)   PROCESO NO ARRANCÓ (0xC0000142)
+   ✖ guard:otro-sale-nativo       0.0 s   (arranque: ?)   PROCESO NO ARRANCÓ (0xC0000142)
+
+── TOTAL ────────────────────────────────────────────────
+   3 guards · 0.1 s en serie   ·   1 verde · 2 CIEGOS (2 PROCESO NO ARRANCÓ (0xC0000142)) · 0 rojos
+   1 guard midió · 2 no arrancaron · 0 arrancaron y no llegaron a medir
+⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.
+   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,
+   simplemente el primero volverá a pagar el arranque en frío.
+
+
+════════════════════════════════════════════════════════════════════════
+🔴 2 guard(s) de navegador no están verdes (1 verde · 2 CIEGOS (2 PROCESO NO ARRANCÓ (0xC0000142)) · 0 rojos). Lo que dijeron:
+════════════════════════════════════════════════════════════════════════
+
+── guard:sale-nativo  [PROCESO NO ARRANCÓ (0xC0000142)] ─────────────────────────────────
+   (sin salida)
+
+── guard:otro-sale-nativo  [PROCESO NO ARRANCÓ (0xC0000142)] ────────────────────────────
+   (sin salida)
+
+NO MEDIDO (salida 2) · CIEGO en 2 guard(s)
+De los 2 que no están verdes, NINGUNO llegó a medir: guard:sale-nativo: PROCESO NO ARRANCÓ (0xC0000142), guard:otro-sale-nativo: PROCESO NO ARRANCÓ (0xC0000142). Esto NO es un hallazgo de contraste ni de accesibilidad: en ésos no se ha comprobado nada.
+
+EXIT=2 · testigo «TOTAL»: sí
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+ESCENARIO enoent · guards: renombra-el-binario, limpio, otro-limpio
+████████████████████████████████████████████████████████████████████████████████████████████████████
+guards de navegador FUERA de `npm test`: 3
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+   ✔ guard:renombra-el-binario    0.1 s   (arranque: ?)   verde
+   ✖ guard:limpio                 0.0 s   (arranque: ?)   PROCESO NO ARRANCÓ (spawn ENOENT)
+   ✖ guard:otro-limpio            0.0 s   (arranque: ?)   PROCESO NO ARRANCÓ (spawn ENOENT)
+
+── TOTAL ────────────────────────────────────────────────
+   3 guards · 0.1 s en serie   ·   1 verde · 2 CIEGOS (2 PROCESO NO ARRANCÓ (spawn ENOENT)) · 0 rojos
+   1 guard midió · 2 no arrancaron · 0 arrancaron y no llegaron a medir
+⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.
+   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,
+   simplemente el primero volverá a pagar el arranque en frío.
+
+
+════════════════════════════════════════════════════════════════════════
+🔴 2 guard(s) de navegador no están verdes (1 verde · 2 CIEGOS (2 PROCESO NO ARRANCÓ (spawn ENOENT)) · 0 rojos). Lo que dijeron:
+════════════════════════════════════════════════════════════════════════
+
+── guard:limpio  [PROCESO NO ARRANCÓ (spawn ENOENT)] ──────────────────────────────────────
+   (sin salida)
+
+── guard:otro-limpio  [PROCESO NO ARRANCÓ (spawn ENOENT)] ─────────────────────────────────
+   (sin salida)
+
+NO MEDIDO (salida 2) · CIEGO en 2 guard(s)
+De los 2 que no están verdes, NINGUNO llegó a medir: guard:limpio: PROCESO NO ARRANCÓ (spawn ENOENT), guard:otro-limpio: PROCESO NO ARRANCÓ (spawn ENOENT). Esto NO es un hallazgo de contraste ni de accesibilidad: en ésos no se ha comprobado nada.
+
+EXIT=2 · testigo «TOTAL»: sí
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+ESCENARIO positivo · guards: limpio, con-hallazgo, revienta-en-la-primera-linea, sale-1-mudo, codigo-desconocido
+████████████████████████████████████████████████████████████████████████████████████████████████████
+guards de navegador FUERA de `npm test`: 5
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+   ✔ guard:limpio                 0.1 s   (arranque: ?)   verde
+   ✖ guard:con-hallazgo           0.1 s   (arranque: ?)   rojo(1) · 1 hallazgo · 0 ciegos
+   ✖ guard:revienta-en-la-primera-linea   0.1 s   (arranque: ?)   rojo(1)
+   ✖ guard:sale-1-mudo            0.1 s   (arranque: ?)   rojo(1)
+   ✖ guard:codigo-desconocido     0.1 s   (arranque: ?)   rojo(77)
+
+── TOTAL ────────────────────────────────────────────────
+   5 guards · 0.3 s en serie   ·   1 verde · 0 CIEGOS · 4 rojos
+   5 guards midieron · 0 no arrancaron · 0 arrancaron y no llegaron a medir
+⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.
+   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,
+   simplemente el primero volverá a pagar el arranque en frío.
+
+
+════════════════════════════════════════════════════════════════════════
+🔴 4 guard(s) de navegador no están verdes (1 verde · 0 CIEGOS · 4 rojos). Lo que dijeron:
+════════════════════════════════════════════════════════════════════════
+
+── guard:con-hallazgo  [rojo(1)] ────────────────────────────────
+⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)
+🔴 HALLAZGOS 1: 390 px: la nota no cabe
+
+── guard:revienta-en-la-primera-linea  [rojo(1)] ────────────────
+file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-positivo-SgW4Ja/scripts/guard-banco-revienta-en-la-primera-linea.mjs:1
+throw new Error('reventé en la primera línea');
+      ^
+
+Error: reventé en la primera línea
+    at file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-positivo-SgW4Ja/scripts/guard-banco-revienta-en-la-primera-linea.mjs:1:7
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.18.0
+
+── guard:sale-1-mudo  [rojo(1)] ─────────────────────────────────
+   (sin salida)
+
+── guard:codigo-desconocido  [rojo(77)] ──────────────────────────
+salgo con un código que la puerta no conoce
+
+DEFECTOS (salida 1) · 4 guard(s) midieron y encontraron algo
+Han medido y hay hallazgos: guard:con-hallazgo, guard:revienta-en-la-primera-linea, guard:sale-1-mudo, guard:codigo-desconocido.
+
+EXIT=1 · testigo «TOTAL»: sí
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+ESCENARIO limpio · guards: limpio, otro-limpio
+████████████████████████████████████████████████████████████████████████████████████████████████████
+guards de navegador FUERA de `npm test`: 2
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+   ✔ guard:limpio                 0.0 s   (arranque: ?)   verde
+   ✔ guard:otro-limpio            0.0 s   (arranque: ?)   verde
+
+── TOTAL ────────────────────────────────────────────────
+   2 guards · 0.1 s en serie   ·   2 verdes · 0 CIEGOS · 0 rojos
+   2 guards midieron · 0 no arrancaron · 0 arrancaron y no llegaron a medir
+
+✅ los 2 guards de navegador están verdes (2 verdes · 0 CIEGOS · 0 rojos).
+⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.
+   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,
+   simplemente el primero volverá a pagar el arranque en frío.
+
+EXIT=0 · testigo «TOTAL»: sí
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+ESCENARIO mezcla · guards: limpio, con-hallazgo, sale-nativo
+████████████████████████████████████████████████████████████████████████████████████████████████████
+guards de navegador FUERA de `npm test`: 3
+navegador: Edge (Windows) → C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe
+
+   ✔ guard:limpio                 0.0 s   (arranque: ?)   verde
+   ✖ guard:con-hallazgo           0.0 s   (arranque: ?)   rojo(1) · 1 hallazgo · 0 ciegos
+   ✖ guard:sale-nativo            0.0 s   (arranque: ?)   PROCESO NO ARRANCÓ (0xC0000142)
+
+── TOTAL ────────────────────────────────────────────────
+   3 guards · 0.1 s en serie   ·   1 verde · 1 CIEGO (1 PROCESO NO ARRANCÓ (0xC0000142)) · 1 rojo
+   2 guards midieron · 1 no arrancó · 0 arrancaron y no llegaron a medir
+⟦calentamiento⟧ ⚠️ SALTADO: no hay `puppeteer-core` en este árbol.
+   No es un hallazgo y no cambia el veredicto: los nueve guards siguen igual,
+   simplemente el primero volverá a pagar el arranque en frío.
+
+
+════════════════════════════════════════════════════════════════════════
+🔴 2 guard(s) de navegador no están verdes (1 verde · 1 CIEGO (1 PROCESO NO ARRANCÓ (0xC0000142)) · 1 rojo). Lo que dijeron:
+════════════════════════════════════════════════════════════════════════
+
+── guard:con-hallazgo  [rojo(1)] ────────────────────────────────
+⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)
+🔴 HALLAZGOS 1: 390 px: la nota no cabe
+
+── guard:sale-nativo  [PROCESO NO ARRANCÓ (0xC0000142)] ─────────────────────────────────
+   (sin salida)
+
+DEFECTOS (salida 1) · 1 guard(s) midieron y encontraron algo
+Han medido y hay hallazgos: guard:con-hallazgo. ⚠️ Y ADEMÁS 1 guard(s) NO llegaron a medir (guard:sale-nativo: PROCESO NO ARRANCÓ (0xC0000142)), así que esta tanda NO es la lista completa de defectos.
+
+EXIT=1 · testigo «TOTAL»: sí
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+RESUMEN · nativo → EXIT=2 · enoent → EXIT=2 · positivo → EXIT=1 · limpio → EXIT=0 · mezcla → EXIT=1
+BANCO=0
