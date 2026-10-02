@@ -111,10 +111,11 @@ test('SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO 
 
   // ── SALIDA (A): recuento por nivel SIEMPRE; detalle SOLO de las DÉBIL; ledger completo tras flag.
   const rel = (r) => path.relative(path.join(DIR_TESTS, '..'), r).replace(/\\/g, '/');
-  // SCRUM-1366 · el censo se junta y sale en UNA escritura, al final de este bloque. Eran ~170, una
+  // SCRUM-1366 · el censo se junta y sale en UNA escritura, al final de este bloque. Antes era una
   // por línea, y TODAS van por el canal antes que el primer evento del informe de este fichero: en
-  // el CI el corte caía dentro del censo y el runner no registraba ninguno de los 8 tests (medido en
-  // docs/master/SCRUM-1366.md). Los bytes son los mismos; cambia cuántas veces se escribe.
+  // el CI el corte caía dentro del censo y el runner no registraba ningún test de este fichero (las
+  // cifras, con su fecha, en docs/master/SCRUM-1366.md). Los bytes son los mismos; cambia cuántas
+  // veces se escribe.
   let censo = '';
   censo += (
     `\n[SCRUM-237] ${corpus.totalNeg} negaciones · FUERTE ${s.FUERTE} · MEDIO ${s.MEDIO} · ` +

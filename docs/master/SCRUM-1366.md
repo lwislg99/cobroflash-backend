@@ -119,6 +119,18 @@ perdiendo su informe igual que antes. El chivato de SCRUM-1380 lo seguirá nombr
 **Cómo saber si sirvió:** `scrum237` dejando de salir como «CORRIÓ Y NO REPORTÓ» en el suelo de la
 tanda. Antes del cambio: 3 pérdidas en 5 corridas observadas el 1-oct. No hay cifra de después.
 
+### El primer empujón salió rojo (s3-2octf, 2-oct-2026 ~17:00Z)
+
+La tanda de `d8e22073` cayó con un solo test: el censo de cifras sin ancla de SCRUM-737 (`scrum737`).
+La causa no estaba en este registro (ese censo barre `tests/` y `scripts/`, no `docs/`): era el
+comentario que el paliativo añadió a `scrum237`, que decía cuántos tests tiene el fichero sin decir de
+cuándo es la cuenta. El censo pasaba de su valor congelado a uno más.
+
+Arreglo: el comentario se reformula sin número y remite aquí (escalón ② de la jerarquía de SCRUM-737).
+No se toca `scrum737` ni su censo congelado. Medido en local después: el censo vuelve a su valor
+congelado (ni sube ni baja) y `scrum737`, `scrum758` y `scrum237` pasan. Sólo cambia un comentario,
+así que la tabla de bytes de arriba sigue valiendo.
+
 ## Mis errores
 
 1. Mi primera lectura fue que la ráfaga al final era lo propio de `scrum237`, por las ~3 s que pasa
