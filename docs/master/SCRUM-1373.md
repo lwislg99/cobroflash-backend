@@ -49,3 +49,11 @@ Vecinos tras el cambio (`scrum1351`, `scrum1354`, `scrum356`, `scrum358`, `scrum
 - No repinta nada.
 - No cambia lo que devuelve `drenarFirmasPendientes`.
 - No está visto en un navegador: es un aviso sin nadie que lo escuche todavía.
+
+## 2-oct-2026 · la pieza queda DECLARADA sin consumir (rojo del obligatorio)
+
+El obligatorio de #2101 cayó con un solo fallo: `SCRUM-1185 · ① ninguna pieza NUEVA construida y sin consumir`. El trinquete tiene razón: `alConfirmarseFirmas` no tiene consumidor. La mitad que la consume es de S4 y está abierta (SCRUM-1374); vive en `albaranDetailView.js`, y sólo la vista sabe cuándo es seguro repintar, así que S2 no la conecta.
+
+Declarada en `scripts/_sin-consumir-declarados.json` con la clave que da el trinquete al ejecutarlo (`front-funcion · public/dashboard/js/colaDeFirmas.js::alConfirmarseFirmas`), carril S4, ticket SCRUM-1374. Se retira (a `retiradas`) cuando S4 la conecte: el propio trinquete lo exige en su caso ②.
+
+`scrum1185` + `scrum1373`, con main mezclado: 19 de 19.
