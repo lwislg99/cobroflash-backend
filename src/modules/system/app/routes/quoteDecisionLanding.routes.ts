@@ -280,7 +280,7 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
               </div>`).join('')}
           </div>
           <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
-          <div class="tier-vat-note">IVA incluido</div>
+          ${calcVatBreakdown(tier.lines || []).cuota > 0 ? `<div class="tier-vat-note">IVA incluido</div>` : '' /* SCRUM-1431: la MISMA condición que SCRUM-212 puso al rótulo grande (`hasVat`): sin cuota no se afirma nada sobre el IVA */}
           <button class="btn-tier" onclick="selectTier('${esc(tier.id)}', '${esc(token)}')">
             Elegir este plan
           </button>

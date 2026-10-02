@@ -27,27 +27,52 @@ test: la API no lo produce hoy.
 |---|---|
 | sin `esc()`, lo de antes | 2 rojos |
 
-## Lo medido y NO tocado
+## Lo hecho (2): la tarjeta de opción ya no afirma «IVA incluido» sin cuota
 
-**1 · El cliente lee el código crudo.** Con 404 y 500 no hay `message` y bajo «No se pudo registrar
-el rechazo.» sale `quote_not_found` o `internal_error`. Sustituirlo pide un texto: espera firma
-(regla 39). Propuesta en el ticket.
-
-**2 · «IVA incluido» en la tarjeta de cada opción (`:283`), sin condición.** Ejecutado por la ruta
-real `GET /pay/quote/:token`, sin exportar nada:
+Medido ANTES de tocar, por la ruta real `GET /pay/quote/:token` y sin exportar nada:
 
 | Líneas de la opción | Total de la tarjeta | Nota | ¿Cierto? |
 |---|---|---|---|
 | 100 € al 21 % | 121,00 € | «IVA incluido» | sí |
 | 100 € con `tax` 0 | 100,00 € | «IVA incluido» | no |
 
-`tier.total` es `calcTotal(tier.lines)`: lleva el IVA sólo si las líneas lo llevan. Es el defecto de
-SCRUM-212, vivo en la tarjeta. Espera el GO: es texto visible donde el cliente firma.
+`tier.total` es `calcTotal(tier.lines)`: lleva el IVA sólo si las líneas lo llevan.
 
-**3 · En la misma tarjeta, la línea va sin impuesto y el total con él** (`:279`): «100,00 €» encima
-de «121,00 €». Las líneas no suman su total. Sin tocar.
+**De dónde sale cada fila, dicho porque lo preguntó S2:** el 21 % lo puse YO en la línea de la
+sonda; no lo produce ninguna pantalla. El único sitio que crea opciones es el presupuesto rápido
+(`public/dashboard/js/homeView.js:1354`), que manda siempre `tax: 0`, y el servidor no lo cambia
+(`quotes.routes.ts:134` copia la opción y sólo le calcula el total). Así que la fila que HOY ve un
+cliente es la segunda: con las opciones que crea el panel, «IVA incluido» era falso siempre. La
+primera sólo se alcanza por la API o por una plantilla guardada con opciones que lleven impuesto.
+
+**El criterio es el de SCRUM-212, no uno nuevo:** «de `cuota === 0` no se deduce nada». Allí el rótulo
+grande pasó a depender de `calcVatBreakdown(lines).cuota > 0` (`hasVat`). Aquí la tarjeta usa la MISMA
+función y la MISMA comparación, sobre las líneas de su opción. Sin cuota no se pinta la nota; con cuota
+sale igual que antes. No hay texto nuevo: se retira uno falso.
+
+**De quién es el GO:** del orquestador, por mensaje entre sesiones el 2-oct-2026, aplicando el
+criterio que el fundador firmó en SCRUM-212. No es una firma nueva del fundador.
+
+### Test — `tests/scrum1431-tarjeta-sin-claim-de-iva.test.mjs` (3 casos)
+
+| Mutante (sobre `dist`, comprobado que cambia el fichero) | Resultado (BASE 3/3) |
+|---|---|
+| siempre lo dice (lo de antes) | 2 rojos |
+| nunca lo dice (arreglarlo borrando el texto) | 2 rojos |
+
+Corridos también `scrum212`, `scrum656`, `scrum1001` y `scrum1276`: verdes.
+
+## Lo medido y NO tocado
+
+**1 · El cliente lee el código crudo.** Con 404 y 500 no hay `message` y bajo «No se pudo registrar
+el rechazo.» sale `quote_not_found` o `internal_error`. Sustituirlo pide un texto: espera firma
+(regla 39). Propuesta en el ticket.
+
+**2 · En la tarjeta, la línea va sin impuesto y el total con él** (`:279`): «100,00 €» encima de
+«121,00 €». Las líneas no suman su total. Tiene ticket propio, PARADO: SCRUM-1433. Sólo ocurre con líneas con
+impuesto, que el panel hoy no produce en las opciones.
 
 ## Lo que NO está hecho
 
 - **No visto en yaqu.app.**
-- Las aceptaciones 2 y 3 del ticket.
+- La aceptación 3 del ticket (el código crudo).
