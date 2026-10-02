@@ -278,3 +278,52 @@ test('SCRUM-1342 · 🔴 el comentario de `Merchant.plan` no enumera planes: rem
   assert.ok(comentario.includes('src/core/entitlements.ts'),
     `y dice DÓNDE están los que valen, porque quien pone un plan a mano mira aquí: «${comentario.trim()}»`);
 });
+
+// ── LO QUE TIENE QUE TUMBAR ESTE FICHERO (lo ejecuta `npm run meta:mutaciones`) ──────────
+// La línea del esquema NO se declara aquí: nadie en la casa muta `prisma/schema.prisma` desde un
+// instrumento y este ticket no lo estrena. Su rojo se vio sobre el fichero real antes del arreglo
+// (`docs/master/evidencias/scrum1342/rojo-antes.txt`) y su lector lleva el control de arriba.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El agujero: se vuelve a preguntar por lo que el objeto HEREDA.
+    fichero: 'src/core/entitlements.ts',
+    de: "  if (typeof plan === 'string' && Object.prototype.hasOwnProperty.call(BY_PLAN, plan)) return BY_PLAN[plan];",
+    a: "  if (typeof plan === 'string' && BY_PLAN[plan]) return BY_PLAN[plan];",
+    cae: 'NO abre el límite',
+  },
+  {
+    // El defecto del ticket: el plan desconocido vuelve a caer en silencio.
+    fichero: 'src/core/entitlements.ts',
+    de: '  console.warn(',
+    a: '  void (',
+    cae: 'deja UN aviso con el valor recibido',
+  },
+  {
+    // El fallo que haría que alguien quitara el aviso en un mes: salta también sin plan.
+    fichero: 'src/core/entitlements.ts',
+    de: '  if (plan === null || plan === undefined) return BY_PLAN.trial;',
+    a: '  if (false) return BY_PLAN.trial;',
+    cae: 'AUSENTE NO ES DESCONOCIDO',
+  },
+  {
+    // Un límite que se mueve «de paso». No es de este ticket ni de ninguna sesión: es del fundador.
+    fichero: 'src/core/entitlements.ts',
+    de: '  equipo:   { maxUsers: 5, waFairUseMonthly: 1000 },  // oferta manual W1',
+    a: '  equipo:   { maxUsers: 10, waFairUseMonthly: 1000 },  // oferta manual W1',
+    cae: 'los CUATRO planes conocidos dan exactamente sus límites',
+  },
+  {
+    // El fail-closed, del revés: lo desconocido cae al plan MÁS grande.
+    fichero: 'src/core/entitlements.ts',
+    de: '  );\n  return BY_PLAN.trial;',
+    a: '  );\n  return BY_PLAN.equipo;',
+    cae: 'la ruta sigue contestando 1 usuario',
+  },
+  {
+    // La ruta deja de decir de quién es el plan: el aviso vuelve a ser un rastro sin dueño.
+    fichero: 'src/modules/team/app/routes/team.routes.ts',
+    de: 'getEntitlements(merchant?.plan, { merchantId: req.merchantId });',
+    a: 'getEntitlements(merchant?.plan);',
+    cae: 'la ruta sigue contestando 1 usuario',
+  },
+];
