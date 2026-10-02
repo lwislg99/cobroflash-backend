@@ -65,6 +65,9 @@ const CELDAS = [
   { id: 'M-con-dosis-relleno-050', flag: true, ...GRANDE, relleno: 50, sonda: true },
   { id: 'N-con-dosis-relleno-150', flag: true, ...GRANDE, relleno: 150, sonda: true },
   { id: 'O-con-dosis-relleno-300', flag: true, ...GRANDE, relleno: 300, sonda: true },
+  // El veredicto, sin mezcla: UNA copia con el rojo en el último caso. Si el caso rojo se pierde, no
+  // queda ningún otro rojo de caso en el TAP: ¿sale la pasada con 0?
+  { id: 'Q-con-rojo-en-la-cola-una-copia', flag: true, ...GRANDE, copias: 1, rojoEn: 80 },
   { id: 'P-con-pequena-sonda', flag: true, casos: 10, relleno: 0, copias: 4, modo: 'sinc', sonda: true },
 ].filter((c) => !SOLO || SOLO.includes(c.id.split('-')[0]));
 
@@ -109,15 +112,17 @@ function leerElTap(ruta) {
   let texto = '';
   try { texto = fs.readFileSync(ruta, 'utf8'); } catch { return null; }
   const informados = new Map(); // «copia nnn» → 'ok' | 'not ok'
+  let rojosDeFichero = 0; // un «not ok» de primer nivel que no es un caso: el fichero entero, por su ruta
   for (const linea of texto.split(/\r?\n/)) {
     const m = /^\s*(not ok|ok) \d+ - cobaya (\S+) caso (\d+)/.exec(linea);
     if (m) informados.set(`${m[2]} ${m[3]}`, m[1]);
+    else if (/^not ok d+ - /.test(linea)) rojosDeFichero++;
   }
   const numero = (clave) => {
     const m = new RegExp(`^# ${clave} (\\d+)`, 'm').exec(texto);
     return m ? Number(m[1]) : null;
   };
-  return { informados, tests: numero('tests'), pass: numero('pass'), fail: numero('fail'), bytes: Buffer.byteLength(texto) };
+  return { informados, rojosDeFichero, tests: numero('tests'), pass: numero('pass'), fail: numero('fail'), bytes: Buffer.byteLength(texto) };
 }
 
 function leerLasSondas(dirSonda) {
@@ -182,6 +187,7 @@ function pasadaDeCelda(celda, i) {
     ausentes: ausentes.length, ausentes_ejecutados: ausentesEjecutados.length, ausentes_no_ejecutados: ausentes.length - ausentesEjecutados.length,
     forma, tap_tests: t ? t.tests : 'SIN TAP', tap_fail: t ? t.fail : 'SIN TAP',
     rojos_esperados: celda.rojoEn ? celda.copias : 0, rojos_en_tap: [...informados.values()].filter((v) => v === 'not ok').length,
+    rojos_de_fichero: t ? t.rojosDeFichero : 'SIN TAP',
     sondas: celda.sonda ? sondas.length : '-', sondas_con_pendientes: celda.sonda ? pend.filter((p) => p > 0).length : '-',
     pendientes_max: celda.sonda ? (pend.length ? Math.max(...pend) : 'SIN SONDA') : '-',
     escritos_max: celda.sonda ? (sondas.length ? Math.max(...sondas.map((s) => s.escritos ?? 0)) : 'SIN SONDA') : '-',
@@ -246,7 +252,7 @@ for (const celda of CELDAS) {
     + ` · casos ausentes ${suma(mias, 'ausentes')} (ejecutados ${suma(mias, 'ausentes_ejecutados')}, NO ejecutados ${suma(mias, 'ausentes_no_ejecutados')})`
     + ` · forma ${cuenta(conAusentes.map((f) => f.forma))}`
     + ` · salidas ${cuenta(mias.map((f) => f.salida))}`
-    + (celda.rojoEn ? ` · rojos en el TAP ${suma(mias, 'rojos_en_tap')} de ${suma(mias, 'rojos_esperados')} · pasadas con salida 0: ${mias.filter((f) => f.salida === 0).length}` : '')
+    + (celda.rojoEn ? ` · rojos en el TAP ${suma(mias, 'rojos_en_tap')} de ${suma(mias, 'rojos_esperados')} · pasadas con salida 0: ${mias.filter((f) => f.salida === 0).length} · pasadas SIN NINGÚN rojo de caso en el TAP: ${mias.filter((f) => f.rojos_en_tap === 0).length} (de ellas con salida 0: ${mias.filter((f) => f.rojos_en_tap === 0 && f.salida === 0).length}; con el fichero en rojo por su ruta: ${mias.filter((f) => f.rojos_en_tap === 0 && Number(f.rojos_de_fichero) > 0).length})` : '')
     + (celda.sonda ? ` · pasadas con bytes pendientes al salir ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0).length} · de ellas con ausentes ${mias.filter((f) => Number(f.sondas_con_pendientes) > 0 && f.ausentes > 0).length} · con ausentes y SIN pendientes ${mias.filter((f) => !(Number(f.sondas_con_pendientes) > 0) && f.ausentes > 0).length} · bloqueante ${cuenta(mias.map((f) => f.bloqueante))} · bytes por fichero (escritos + pendientes, máx) ${Math.max(...mias.map((f) => Number(f.total_max) || 0))} · pendientes máx ${Math.max(...mias.map((f) => Number(f.pendientes_max) || 0))}` : '')
     + (ciegas.length ? ` · 🔴 ${ciegas.length} pasadas CIEGAS (testigo vacío: la cobaya no corrió)` : ''),
   );
