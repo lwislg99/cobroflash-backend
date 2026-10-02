@@ -75,6 +75,22 @@ justificante ya corre con tres pasos), pero cambia una pantalla firmada y la suj
 uno. Leído: `docs/prototipos/SCRUM-915/direccion-de-diseno.md`, `medicion.md`, `docs/master/SCRUM-915.md`
 (por búsqueda, no entero: 1.180 líneas) y `public/dashboard/js/quotesView.js` en torno a `PASOS_DEL_EDITOR`.
 
+## Sexta entrega · YaQu en pantalla (2-oct-2026, misma rama)
+
+Con permiso escrito del fundador en la sesión. §12 del documento. Recorrido en yaqu.app con la cuenta de QA y
+toda petición que no fuera de lectura cortada: **nada creado, enviado ni aceptado**. Visto: el editor
+completo hasta «Generar presupuesto», el presupuesto rápido hasta «Enviar por WhatsApp», la ficha de un
+borrador, el formulario de aceptar a mano, y las listas de Facturas, Cobros, Albaranes y Trabajos.
+
+**Punto 3 de la aceptación: HECHO HASTA DONDE LA CUENTA DEJA.** Presupuesto y aceptación, vistos. Factura y
+cobro NO: la cuenta de QA tiene la facturación apagada y la pantalla lo dice. No es un hueco de datos que se
+siembre: hace falta una cuenta con la facturación encendida (apuntado en SCRUM-1367).
+
+**Cifra corregida por la pantalla:** el editor son 7 clics, no 6. El subagente listó siete pulsaciones y sumó
+seis; copié la suma sin recontarla y la repetí en cuatro entregas y en dos mensajes al orquestador.
+
+A9: aviso → cicatriz S0 «Una suma que trae un subagente se recuenta contra su propia lista antes de copiarla: la lista era de siete y la suma decía seis.» — no se pudo comprobar: es un recuento a mano sobre un informe en prosa, sin fichero que un test pueda leer
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón
