@@ -107,6 +107,10 @@ function bancoBase(opts) {
   const fix = fetchDeGastos(opts);
   const banco = cargarDashboard(RAIZ, { red: { fetch: fix.fetch } });
   banco.ctx.FileReader = FileReaderFalso;
+  // SCRUM-1425 · la foto que cabe ahora se ABRE antes de mandarla, y el mini-DOM no decodifica
+  // imágenes. `FOTO_FALSA` hace de foto buena: el banco la «abre». Lo que pasa con una que NO
+  // se abre lo mide `scrum1425-foto-pequena-que-no-es-imagen.test.mjs`.
+  banco.ctx.createImageBitmap = async () => ({ width: 40, height: 30, close() {} });
   return { banco, fix };
 }
 
@@ -427,6 +431,7 @@ test('SCRUM-1038 · ⑥ un fallo de RED (sin conexión) también avisa con el ge
     },
   });
   banco.ctx.FileReader = FileReaderFalso;
+  banco.ctx.createImageBitmap = async () => ({ width: 40, height: 30, close() {} }); // SCRUM-1425, como en `bancoBase`
   const { btn } = await prepararConFoto(banco);
   await pulsar(btn);
   const error = banco.ctx.document.getElementById('exp-error');
