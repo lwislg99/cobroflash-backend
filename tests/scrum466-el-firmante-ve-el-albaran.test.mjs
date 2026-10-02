@@ -116,7 +116,9 @@ test('SCRUM-466 · 🔴 el firmante VE el albarán: líneas, cliente, fecha y lu
   // Uno a uno y NOMBRADOS: «no ve el contenido» sin decir qué no sirve para arreglar nada.
   const faltan = [];
   if (!r.texto.includes(CONCEPTO)) faltan.push('las LÍNEAS (el concepto)');
-  if (!r.texto.includes(String(CANTIDAD))) faltan.push('la CANTIDAD');
+  // SCRUM-743 (decisión en su comentario 17508): la cantidad se escribe como en el PDF, «4.321» y no
+  // «4321». Se sigue exigiendo que ESTÉ; lo que cambia es la forma, a propósito.
+  if (!r.texto.includes('4.321')) faltan.push('la CANTIDAD');
   if (!r.texto.includes(CLIENTE)) faltan.push('el CLIENTE');
   if (!r.texto.includes('01/08/2026')) faltan.push('la FECHA');
   if (!r.texto.includes(LUGAR)) faltan.push('el LUGAR de entrega');
@@ -160,7 +162,7 @@ test('SCRUM-466 · 🔴 CONTROL NEGATIVO: NO aparece NINGÚN importe, ni con un 
   // esto, «no hay importes» se cumpliría también con un pad que no pinta nada.
   assert.ok(r.texto.includes(CONCEPTO),
     '🔴 tampoco se ve el concepto: el test de arriba estaría pasando por no pintar nada.');
-  assert.ok(r.texto.includes(String(CANTIDAD)), '🔴 tampoco se ve la cantidad.');
+  assert.ok(r.texto.includes('4.321'), '🔴 tampoco se ve la cantidad.'); // SCRUM-743 c.17508: con la forma del PDF
 });
 
 test('SCRUM-466 · el llamador NO le pasa importes al pad — imposible por construcción', () => {

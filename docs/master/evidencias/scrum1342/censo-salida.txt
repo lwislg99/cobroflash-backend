@@ -1,0 +1,44 @@
+POBLACION: 1828 líneas · 33 modelos · 56 campos con comentario en su línea · 873 líneas que son solo comentario
+
+A · en la línea del campo: 19
+    18  Merchant.trade  // electricista|fontanero|reformista|pintor|cerrajero|climatizacion|otro
+    67  Merchant.connectStatus  // none|pending|active|restricted
+    72  Merchant.subscriptionStatus  // active | past_due | canceled
+   201  AuthSession.type  // magic_link | session
+   580  Quote.origin  // null|manual … | maintenance
+   973  Expense.category  // materiales|desplazamiento|herramientas|subcontrata|otros
+  1115  QuoteRequest.status  // pending | read | done
+  1138  BotSession.state  // menu|choosing_merchant|asking_description|asking_zone|done|handoff (K1)
+  1157  QuoteTemplate.paymentTerms  // FULL_UPFRONT | FIFTY_FIFTY | MANUAL
+  1174  TeamMember.role  // admin | tecnico
+  1175  TeamMember.status  // invited | active | suspended
+  1198  CustomerEvent.type  // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_re
+  1270  WhatsAppMessage.type  // 'template' | 'service'
+  1274  WhatsAppMessage.status  // queued → sent → delivered → read | failed
+  1409  Attachment.entityType  // quote_request | job
+  1412  Attachment.kind  // photo | audio (audio = F2, no F1)
+  1453  Albaran.estado  // borrador | emitido | firmado (Parte L)
+  1563  EmailMessage.kind  // invoice | quote | magic_link | digest | ...
+  1571  EmailMessage.relatedType  // invoice | quote | charge
+
+B · en línea propia: 17
+    70  Merchant  // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
+   217  Customer  // SCRUM-574 (CONT-01) · FORMA JURÍDICA DEL CONTACTO: `EMPRESA | PERSONA`.
+   328  Customer  // SCRUM-69 (FACT-1): PARTICULAR | EMPRESARIO — determina el plazo legal de la factura
+   396  Customer  /// SCRUM-171b (FACT-2d): periodicidad PACTADA de facturación — `NINGUNA | QUINCENAL | MENSUAL`.
+   609  Quote  /// `shippingAddressMode`: no_mostrar | facturacion | personalizada. NULL = nadie decidió, que
+   672  Quote  // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
+   688  Quote  // SCRUM-805: evidencias probatorias de la firma DEL CLIENTE — { v, canal(remoto|in_situ),
+   725  Quote  // SCRUM-656 (T7) · como presenta el IVA ESTE presupuesto: 'sumar' | 'no_incluido'.
+   892  Invoice  // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
+  1050  Product  // SCRUM-609 (CAT-01) · el LADO del catálogo: PRODUCTO | SERVICIO. Mismo patrón y misma forma
+  1277  WhatsAppMessage  // Documento relacionado para el chip de entrega (quote | invoice | charge)
+  1335  Job  // visitas → recapitulativa mensual, art. 13) | TRABAJO_UNICO (una prestación → factura al
+  1426  (fuera de modelo)  // entityType:'albaran'. Estados Parte L: borrador | emitido | firmado.
+  1448  Albaran  // SCRUM-65: SIN_VALORAR (hoy, sin precios) | VALORADO (líneas con precioUnitario+tipoIva
+  1474  Albaran  // SCRUM-68: evidencias probatorias de la firma — { v, canal(remoto|in_situ), firmadoAt, ip, ua,
+  1636  ParteTrabajo  /// reparacion_asistencia | mantenimiento | instalacion (TIPOS_PARTE)
+  1642  ParteTrabajo  /// borrador | firmado | facturado (ESTADOS_PARTE)
+
+TOTAL: 36 comentarios que enumeran con «|»
+EXIT=0

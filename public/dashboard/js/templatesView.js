@@ -101,7 +101,7 @@ async function renderTemplatesView(container) {
         <td class="cell-actions"></td>
       `;
 
-      const actionsCell = tr.querySelector('td:last-child');
+      const actionsCell = tr.querySelector('.cell-actions');
       const actDiv = document.createElement('div');
       actDiv.style.cssText = 'display:flex;gap:6px;justify-content:flex-end';
 
@@ -118,6 +118,14 @@ async function renderTemplatesView(container) {
         if (window.renderAppView) renderAppView('quotes-new', { template: tpl });
       };
       actDiv.appendChild(btnUse);
+
+      // SCRUM-1317 · renombrar y borrar una plantilla son admin en el servidor (`PUT` y `DELETE
+      // /admin/templates/:id`). Al operario no se le pintan: usar la plantilla sigue siendo suyo.
+      if (window.appUserRole !== 'admin') {
+        actionsCell.appendChild(actDiv);
+        tbody.appendChild(tr);
+        return;
+      }
 
       // Renombrar
       const btnRename = document.createElement('button');

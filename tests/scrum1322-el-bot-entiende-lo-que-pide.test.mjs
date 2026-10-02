@@ -94,16 +94,18 @@ test('🔴 SCRUM-1322 · la palabra que el bot pide escribir, el bot la entiende
 const ACEPTAN = [
   'Acepto', 'acepto', 'ACEPTO', 'Acepto.', '*Acepto*',
   'sí', 'Sí', 'SÍ', 'sí.', 'si', 'Si', 'si!',
-  'ok', 'vale',
   // lo que ya se entendía suelto antes de este ticket, y tiene que seguir:
-  'acept', 'okay', 'okey', 'dale', 'confirm', 'adelante', 'de acuerdo', 'perfecto', 'me interesa',
-  'quiero', 'listo', 'va', 'sale', 'claro',
+  'acept', 'dale', 'confirm', 'adelante', 'de acuerdo', 'me interesa',
+  'quiero', 'sale',
   // las conjugaciones que la raíz dejaba fuera:
   'aceptar', 'aceptado', 'aceptamos', 'lo acepto', 'acepto el presupuesto', 'confirmo', 'confirmar', 'confirmado',
   // varias a la vez y con cortesía:
-  'sí, acepto', 'si acepto', 'vale, gracias', 'ok perfecto', 'hola, acepto', 'sí, por favor', 'claro que sí',
-  'vale, muchas gracias',
+  'sí, acepto', 'si acepto', 'hola, acepto', 'sí, por favor', 'claro que sí',
+  'sí, gracias', 'acepto, muchas gracias',
 ];
+// SCRUM-1326 (firmado por el fundador, comentarios 17692 y 17802): estas ocho, sueltas, YA NO aceptan: el
+// bot pregunta. Hasta ese ticket estaban arriba, en ACEPTAN. Su test es `tests/scrum1326-…`.
+const PREGUNTAN = ['ok', 'okay', 'okey', 'vale', 'va', 'perfecto', 'listo', 'claro', 'vale, gracias', 'ok perfecto', 'vale, muchas gracias'];
 const RECHAZAN = [
   'no', 'No', 'NO', 'No.', '*No*',
   'rechazo', 'cancelar',
@@ -115,6 +117,7 @@ const RECHAZAN = [
 test('SCRUM-1322 · control positivo: lo que es una decisión se entiende', () => {
   cadaUna(ACEPTAN, 'accept', 'una aceptación deja de entenderse');
   cadaUna(RECHAZAN, 'reject', 'un rechazo deja de entenderse');
+  cadaUna(PREGUNTAN, 'ask', 'una de las ocho de SCRUM-1326 deja de preguntar');
 });
 
 test('SCRUM-1322 · «sí» con tilde, en las dos formas en que puede llegar el carácter', () => {
@@ -124,7 +127,9 @@ test('SCRUM-1322 · «sí» con tilde, en las dos formas en que puede llegar el 
   cadaUna([compuesta, descompuesta, compuesta.toUpperCase()], 'accept', '«sí» con tilde no se entiende');
   // Una tilde EN MEDIO de la palabra (el corrector del móvil) no la parte en dos: sin quitar las
   // tildes, «vále» serían «va» y «le». Es el caso que separa «quitar la tilde» de «partir por ella».
-  cadaUna(['v\xe1le', 'ac\xe9pto'], 'accept', 'una tilde en medio de la palabra la parte en dos');
+  // («vále» pregunta desde SCRUM-1326; partida en «va» + «le» sería `unknown`.)
+  cadaUna(['ac\xe9pto'], 'accept', 'una tilde en medio de la palabra la parte en dos');
+  cadaUna(['v\xe1le'], 'ask', 'una tilde en medio de la palabra la parte en dos');
 });
 
 // ── 3 · 🔴 Lo que NO es una decisión ───────────────────────────────────────────────────────────
@@ -182,11 +187,11 @@ test('🔴 SCRUM-1322 · la cortesía es una lista BLANCA: ésta, entera, y cada
 test('SCRUM-1322 · el vocabulario que decide es éste, entero', () => {
   const { ACEPTA, RECHAZA, CORTESIA } = listasDelModulo();
   assert.deepEqual([...ACEPTA].sort(), [
-    'acept', 'aceptado', 'aceptamos', 'aceptar', 'acepto', 'acepto el presupuesto', 'adelante', 'claro',
+    'acept', 'aceptado', 'aceptamos', 'aceptar', 'acepto', 'acepto el presupuesto', 'adelante',
     'claro que si', 'confirm', 'confirmado', 'confirmamos', 'confirmar', 'confirmo', 'dale', 'de acuerdo',
-    'listo', 'lo acepto', 'lo confirmo', 'lo quiero', 'me interesa', 'ok', 'okay', 'okey', 'perfecto',
-    'quiero', 'sale', 'si', 'va', 'vale',
-  ]);
+    'lo acepto', 'lo confirmo', 'lo quiero', 'me interesa',
+    'quiero', 'sale', 'si',
+  ]); // sin `claro`, `listo`, `ok`, `okay`, `okey`, `perfecto`, `va`, `vale`: desde SCRUM-1326 están en `PREGUNTA`
   assert.deepEqual([...RECHAZA].sort(), [
     'cancel', 'cancelado', 'cancelamos', 'cancelar', 'cancelo', 'claro que no', 'lo rechazo', 'mejor no',
     'negativo', 'nel', 'no', 'no acepto', 'no lo acepto', 'no lo quiero', 'no me interesa', 'no quiero',

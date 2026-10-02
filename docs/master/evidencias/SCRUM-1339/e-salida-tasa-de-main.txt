@@ -1,0 +1,12 @@
+CONTROL POSITIVO del lector de anotaciones: check-run 110514502040 → 3 anotaciones, con línea de registro: sí
+POBLACIÓN: commits de la línea principal con el paso en su árbol, desde d2ed6c8a hacia atrás: 4 (2026-10-01T18:37:11.000Z → 2026-10-02T01:54:30.000Z)
+  por qué paré: b3b40554 (2026-10-01T18:07:03.000Z) es el primer commit SIN el paso en su árbol: de ahí hacia atrás no hay anotación que leer
+    3 × completo
+    1 × CON AUSENTES
+  el job obligatorio corrió en 4 de 4 commits (0 saltado, 0 sin run de CI, 0 con el run sin acabar, 0 que no pude preguntar)
+LA TASA (runs del obligatorio en main, de más nuevo a más viejo):
+  [señal de nombres · tasa] 1 de 4 runs medidos con nombres ausentes (25.0 %) · población 4 runs · sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 4 · tope 2026-10-15 (SCRUM-1339 c.17935)
+  16358193 2026-10-01T19:03:24.000Z run 36911463721 job success ausentes=35 → tests/vigia-atascados.test.mjs · faltan 30 de 64 (cola) · posiciones 35–64 · líneas 449–677. La tanda no informó de ellos y salió igual. | tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve. La tanda no informó de ellos y salió igual.
+  con ausentes y SIN ::warning de la señal: 0 de 1 · completos y CON ::warning: 0 de 3 (las dos tienen que ser 0)
+  escrito e-tasa-de-main.tsv y e-registros-de-main.json (4 entradas; «null» = corrió y no dejó registro) → node scripts/senal-de-nombres.mjs --tasa <ese json>
+EXIT=0

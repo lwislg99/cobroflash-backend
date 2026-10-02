@@ -1,0 +1,20 @@
++0.1s BANCO SCRUM-1391 · puerta «meta-guard (sync)» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.4s copia en C:\Users\JAVIER~1\AppData\Local\Temp\scrum1391-meta-sync-KDUijt · scripts/meta-guard-mutaciones.mjs sha256 12bc97dbc4a66a03 (el del árbol: 12bc97dbc4a66a03)
++0.7s POBLACION: 1 guard de mentira (MUDO por construcción) · 2 mutaciones (control + la que sólo tarda) · espera 330000 ms · forma sync
++1.0s LIMPIA · pasados 3 · caídos [] · errores {} · resumen {"tests":3,"passed":3,"failed":0,"cancelled":0} · duró 98 ms de 300000 · movidos 0
++1.3s MUTACIÓN M0 · control: mutación inofensiva → MUDA · tardó 0.3 s
++1.3s    testigo de la cobaya: carga MODO=otro-valor | entra MODO=otro-valor | sale MODO=otro-valor
++1.3s    mudo: el guard NO cayó. Test que debía ponerse rojo: «T-DECLARADO» → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 3 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 3 pasados · 0 caídos.
++1.3s    sujeto restaurado: true
++61.0s … aplicarUna sigue sin volver (el plazo de la puerta son 300 s)
++121.0s … aplicarUna sigue sin volver (el plazo de la puerta son 300 s)
++181.0s … aplicarUna sigue sin volver (el plazo de la puerta son 300 s)
++241.0s … aplicarUna sigue sin volver (el plazo de la puerta son 300 s)
++301.1s … aplicarUna sigue sin volver (el plazo de la puerta son 300 s)
++331.6s MUTACIÓN M1 · la mutación SÓLO lo hace tardar (cuelga-sync) → MUDA · tardó 330.3 s
++331.6s    testigo de la cobaya: carga MODO=cuelga-sync | entra MODO=cuelga-sync | sale MODO=cuelga-sync
++331.6s    mudo: el guard NO cayó. Test que debía ponerse rojo: «T-DECLARADO» → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 3 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 3 pasados · 0 caídos.
++331.6s    sujeto restaurado: true
++331.7s copia desmontada: enlace quitado=true · node_modules de verdad intacto=true · carpeta borrada=true
+VEREDICTO-PUERTA {"puerta":"meta-guard","variante":"sync","ejercitada":true,"forma":"no","frase":"un guard MUDO (control: MUDA) cuya mutación sólo lo hace tardar 330 s en sync sale MUDA a los 330 s"}
+EXIT=0

@@ -1,0 +1,13 @@
+POBLACIÓN: 8 mutaciones declaradas en tests/scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs
+BASE: 12 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (1 caen) · los sumideros: «no supe mirar» va a `ciegos` y el hallazgo a `hallazgos`
+  ✔ VIVA           (1 caen) · ningún «NO SUPE MIRAR» ni «CIEGO» se le pasa al sumidero de hallazgos
+  ✔ VIVA           (1 caen) · LOS SEIS con la marca salen SÓLO por `veredictoDe`
+  ✔ VIVA           (1 caen) · EL SÉPTIMO, aparte
+  ✔ VIVA           (1 caen) · los sumideros: «no supe mirar» va a `ciegos` y el hallazgo a `hallazgos`
+  ✔ VIVA           (1 caen) · E1 · cada uno de los siete dice SIEMPRE sus dos cuentas
+  ✔ VIVA           (1 caen) · F · el mensaje de `guard-rastro-del-menu` dice lo que MIDIÓ
+  ✔ VIVA           (2 caen) · E2 · la línea agregada del banco sale SIEMPRE
+
+RESULTADO: 8 de 8 caen · sin restaurar: 0
+EXIT=0

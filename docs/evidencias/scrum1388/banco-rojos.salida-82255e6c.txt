@@ -1,0 +1,52 @@
+BANCO SCRUM-1388 · POBLACIÓN: 12 filas (1 base + 11 mutaciones) · HEAD 82255e6c31968ab90c04085a8db1992bf06cd4c2
+VERDE  BASE · sin mutar · numstat: (sin cambios) · casos 11 · rojos 0 · salida 0
+VIVA   M1 · la vista entera de ANTES (d2ed6c8a) · numstat: 22 23 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 8 · salida 1
+         ✖ SCRUM-1388 · 🔴 los CUATRO literales son los firmados, carácter a carácter
+         ✖ SCRUM-1388 · el singular del descuadre se conserva: con 1 mirado va «1 gasto»
+         ✖ SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 200 sin `miradas` se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 vacío de verdad, descuadre y error de carga NO se confunden
+         ✖ SCRUM-1388 · 🔴 en la pantalla no queda ninguna marca de pendiente, ni en el fichero ni en lo pintado
+VIVA   M2 · el cartel de error deja de añadirse · numstat: 0 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 5 · salida 1
+         ✖ SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 200 sin `miradas` se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 vacío de verdad, descuadre y error de carga NO se confunden
+VIVA   M3 · el cartel pierde el tono (el CSS lo oculta) · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 4 · salida 1
+         ✖ SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 200 sin `miradas` se VE el cartel, con las palabras firmadas y sin tripa
+VIVA   M4 · el descuadre se funde con el vacío · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 1 · salida 1
+         ✖ SCRUM-1388 · 🔴 vacío de verdad, descuadre y error de carga NO se confunden
+VIVA   M5 · vuelve el párrafo con `err.message` bajo el cartel · numstat: 6 3 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 3 · salida 1
+         ✖ SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa
+VIVA   M6 · una palabra distinta en `error` · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 6 · salida 1
+         ✖ SCRUM-1388 · 🔴 los CUATRO literales son los firmados, carácter a carácter
+         ✖ SCRUM-1388 · 🔴 con un 403 de la puerta de rol se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con la red caída se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 500 sin frase se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 con un 200 sin `miradas` se VE el cartel, con las palabras firmadas y sin tripa
+         ✖ SCRUM-1388 · 🔴 vacío de verdad, descuadre y error de carga NO se confunden
+         ⚠ cayó sin que lo esperase: 1
+VIVA   M7 · el descuadre pierde el singular · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 1 · salida 1
+         ✖ SCRUM-1388 · el singular del descuadre se conserva: con 1 mirado va «1 gasto»
+VIVA   M8 · el descuadre se acorta (sin el porqué) · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 3 · salida 1
+         ✖ SCRUM-1388 · 🔴 los CUATRO literales son los firmados, carácter a carácter
+         ✖ SCRUM-1388 · el singular del descuadre se conserva: con 1 mirado va «1 gasto»
+         ✖ SCRUM-1388 · 🔴 vacío de verdad, descuadre y error de carga NO se confunden
+VIVA   M9 · vuelve la marca de pendiente al título · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 2 · salida 1
+         ✖ SCRUM-1388 · 🔴 los CUATRO literales son los firmados, carácter a carácter
+         ✖ SCRUM-1388 · 🔴 en la pantalla no queda ninguna marca de pendiente, ni en el fichero ni en lo pintado
+VIVA   M10 · la ficha deja de llevar la firma del fundador · numstat: 1 1 docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md · casos 11 · rojos 1 · salida 1
+         ✖ SCRUM-1388 · los cuatro constan en SU ficha, y la firma es del fundador
+VIVA   M11 · se toca una ranura que el ticket prohíbe (`etiquetaAnio`) · numstat: 1 1 public/dashboard/js/facturasRecibidasView.js · casos 11 · rojos 1 · salida 1
+         ✖ SCRUM-1388 · lo que no se firmó no se ha tocado: menú, «Cargando…», columnas y periodo
+árbol al terminar: limpio
+mutaciones 11 · mudas 0 · ciegas 0
+EXIT=0

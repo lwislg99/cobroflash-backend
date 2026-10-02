@@ -1,0 +1,264 @@
+{
+  "medidoSobre": "rama local scrum-1330-una-sellada-no-se-resella: pasada 1 sobre afa903a4 (33 casos), pasada 2 sobre f7f2a0a9 (34 casos); origin/main dentro: 84e1fd80",
+  "fecha": "2026-10-01",
+  "ficherosDeTest": [
+    "tests/scrum1330-una-sellada-no-se-resella.test.mjs",
+    "tests/scrum1304-un-cobro-una-factura.test.mjs"
+  ],
+  "nota": "MB-calla salió MUDA en la pasada 1: ningún caso sujetaba que conservar la huella se dijera, ni que no se anunciara como un sellado. Se añadió el caso y se repitió la tanda entera: cae. Las otras cinco cayeron a la primera.",
+  "pasada1": [
+    {
+      "id": "BASE sin mutar",
+      "build": 0,
+      "exit": 0,
+      "tests": 33,
+      "pass": 33,
+      "fail": 0,
+      "caidos": []
+    },
+    {
+      "id": "MA la guarda del punto de llamada no decide (B sigue puesta)",
+      "numstat": [
+        "1\t1\tsrc/lib/invoicing.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 33,
+      "pass": 32,
+      "fail": 1,
+      "caidos": [
+        "SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado n"
+      ]
+    },
+    {
+      "id": "MB la guarda de dentro del cerrojo no decide (A sigue puesta)",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 33,
+      "pass": 27,
+      "fail": 6,
+      "caidos": [
+        "SCRUM-1304 · 🔴 ESPAÑA ④b: dos entregas a la vez → UNA factura, sellada UNA vez (SCRUM-1330)",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MAB ninguna de las dos decide (el defecto entero)",
+      "numstat": [
+        "1\t1\tsrc/lib/invoicing.ts",
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 33,
+      "pass": 22,
+      "fail": 11,
+      "caidos": [
+        "SCRUM-1304 · 🔴 ESPAÑA ④a: una entrega REPETIDA no vuelve a sellar la factura (SCRUM-1330)",
+        "SCRUM-1304 · 🔴 ESPAÑA ④b: dos entregas a la vez → UNA factura, sellada UNA vez (SCRUM-1330)",
+        "SCRUM-1304 · 🔴 ESPAÑA ④f: cobrar el enlace de una factura sellada hace tiempo NO la re-sella, y la cadena sig",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · 🔴 ④a · ESPAÑA: una entrega REPETIDA del mismo cobro no toca la factura ya sellada",
+        "SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez",
+        "SCRUM-1330 · 🔴 ④f · ESPAÑA: cobrar el enlace de una factura sellada hace un mes NO la re-sella — cadena BYTE ",
+        "SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado n",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MB-lanza la guarda de dentro LANZA en vez de devolver el sello persistido",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 33,
+      "pass": 28,
+      "fail": 5,
+      "caidos": [
+        "SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MB-anterior la guarda de dentro devuelve como anterior la PROPIA huella",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 33,
+      "pass": 30,
+      "fail": 3,
+      "caidos": [
+        "SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la "
+      ]
+    },
+    {
+      "id": "MB-calla lo conservado se anuncia como un sellado",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 0,
+      "tests": 33,
+      "pass": 33,
+      "fail": 0,
+      "caidos": []
+    },
+    {
+      "id": "RESTAURADO",
+      "build": 0,
+      "porcelainDeSrc": "",
+      "exit": 0,
+      "tests": 33,
+      "pass": 33,
+      "fail": 0,
+      "caidos": []
+    }
+  ],
+  "pasada2": [
+    {
+      "id": "BASE sin mutar",
+      "build": 0,
+      "exit": 0,
+      "tests": 34,
+      "pass": 34,
+      "fail": 0,
+      "caidos": []
+    },
+    {
+      "id": "MA la guarda del punto de llamada no decide (B sigue puesta)",
+      "numstat": [
+        "1\t1\tsrc/lib/invoicing.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 33,
+      "fail": 1,
+      "caidos": [
+        "SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado n"
+      ]
+    },
+    {
+      "id": "MB la guarda de dentro del cerrojo no decide (A sigue puesta)",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 27,
+      "fail": 7,
+      "caidos": [
+        "SCRUM-1304 · 🔴 ESPAÑA ④b: dos entregas a la vez → UNA factura, sellada UNA vez (SCRUM-1330)",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MAB ninguna de las dos decide (el defecto entero)",
+      "numstat": [
+        "1\t1\tsrc/lib/invoicing.ts",
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 22,
+      "fail": 12,
+      "caidos": [
+        "SCRUM-1304 · 🔴 ESPAÑA ④a: una entrega REPETIDA no vuelve a sellar la factura (SCRUM-1330)",
+        "SCRUM-1304 · 🔴 ESPAÑA ④b: dos entregas a la vez → UNA factura, sellada UNA vez (SCRUM-1330)",
+        "SCRUM-1304 · 🔴 ESPAÑA ④f: cobrar el enlace de una factura sellada hace tiempo NO la re-sella, y la cadena sig",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · 🔴 ④a · ESPAÑA: una entrega REPETIDA del mismo cobro no toca la factura ya sellada",
+        "SCRUM-1330 · 🔴 ④b · ESPAÑA: dos entregas A LA VEZ → UNA factura, sellada UNA vez",
+        "SCRUM-1330 · 🔴 ④f · ESPAÑA: cobrar el enlace de una factura sellada hace un mes NO la re-sella — cadena BYTE ",
+        "SCRUM-1330 · 🔴 A · con la fila ya `sellado`, `ensurePdfAndEvent` NO entra en `sellarTrasEmision`: ni estado n",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MB-lanza la guarda de dentro LANZA en vez de devolver el sello persistido",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 28,
+      "fail": 6,
+      "caidos": [
+        "SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la ",
+        "SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado",
+        "SCRUM-1330 · ✅ B · una fila con huella que se quedó `pendiente_de_sellado` se TERMINA sin tocarle la huella",
+        "SCRUM-1330 · ⚠️ RESIDUAL CONOCIDO (SCRUM-1333) · ④b: la entrega que pierde la carrera vuelve a ENCOLAR el alta"
+      ]
+    },
+    {
+      "id": "MB-anterior la guarda de dentro devuelve como anterior la PROPIA huella",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 31,
+      "fail": 3,
+      "caidos": [
+        "SCRUM-1330 · transcripción de scrum173 (SCRUM-177, excluirId): «resellar» un alta no la encadena a sí misma",
+        "SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena qued",
+        "SCRUM-1330 · 🔴 B · dos sellados A LA VEZ de la MISMA factura → se escribe UNA huella, y los dos devuelven la "
+      ]
+    },
+    {
+      "id": "MB-calla lo conservado se anuncia como un sellado",
+      "numstat": [
+        "1\t1\tsrc/modules/invoicing/domain/verifactu.service.ts"
+      ],
+      "build": 0,
+      "exit": 1,
+      "tests": 34,
+      "pass": 33,
+      "fail": 1,
+      "caidos": [
+        "SCRUM-1330 · ⚠️ B · conservar la huella NO es mudo, y NO se anuncia como un sellado"
+      ]
+    },
+    {
+      "id": "RESTAURADO",
+      "build": 0,
+      "porcelainDeSrc": "",
+      "exit": 0,
+      "tests": 34,
+      "pass": 34,
+      "fail": 0,
+      "caidos": []
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# marcadores-en-pantalla-ciego · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · la vista de Informes revienta en sus tres estados: 0 hallazgos
+# EXIT=2 · 29.6 s
+
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+
+🔴 3 par(es) (vista,estado) CIEGOS. No es «limpio»: es que no he podido mirar,
+   y un guard que no puede mirar no puede aprobar:
+     reports · con-datos → Error: rota a proposito por el banco de SCRUM-1336 @js/reportsView.js:6:9)
+     reports · sin-datos → Error: rota a proposito por el banco de SCRUM-1336 @js/reportsView.js:6:9)
+     reports · error → Error: rota a proposito por el banco de SCRUM-1336 @js/reportsView.js:6:9)
+
+────────────────────────────────────────────────────────────────────────────
+🔴 SCRUM-722 · NO SUPE MIRAR 3 cosa(s): de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 0 hallazgos · 3 ciegos → salida 2 (no supe medir) · un ciego no es un verde

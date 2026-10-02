@@ -41,6 +41,7 @@ import ts from 'typescript';
 
 // CommonJS con doble vida (script clásico + module.exports): se importa por defecto.
 import registro from '../public/dashboard/js/invoiceActionsRegistry.js';
+import { marcadoresDeclarados } from './_marcadores-declarados.mjs';
 const { INVOICE_ACTION_REGISTRY, destinoEfectivo } = registro;
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -51,7 +52,14 @@ const MARCA = '[PENDIENTE';
  * CENSO MEDIDO el 7-ago-2026. Números por fichero, no un total: mover un marcador de una pantalla
  * a otra tiene que verse, y un total lo escondería (la lección del suelo por FUNCIÓN de SCRUM-392).
  */
-const CENSO = Object.freeze({
+const CENSO = marcadoresDeclarados().panel;
+// 🔴 SCRUM-1293 (1-oct-2026) · LA LISTA YA NO VIVE AQUÍ: está en
+// `scripts/_marcadores-pendientes-declarados.json` (sección `panel`), y la carga
+// `tests/_marcadores-declarados.mjs`, que sale en ROJO si no puede leerla, si viene vacía, si un
+// número es 0 o si una clave está repetida. Retirar un marcador firmado ya no obliga a editar este
+// test. Las ASERCIONES (R4, R4b) no han cambiado. Lo que sigue es la HISTORIA de cada entrada, tal
+// como estaba escrita dentro del literal; donde había una entrada viva queda un «↳ ENTRADA».
+{
   // Sprint Tecnosel (3-sep-2026) · el título de `app.js` ENTRÓ y SALIÓ el mismo día: el fundador
   // firmó «Partes por valorar». Su entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405):
   // `censoActual()` sólo lista ficheros CON marcadores. El trinquete APRIETA.
@@ -112,7 +120,7 @@ const CENSO = Object.freeze({
   // (`tests/scrum720-marcadores-en-lo-pintado.test.mjs`), para que el rótulo que alguien añada
   // mañana sin firmar siga naciendo marcado. El 1 de aquí es esa declaración huérfana, mismo
   // reparto que `productsView.js`/`providersView.js` con su marcador de último recurso.
-  'jobAsignados.js': 1,
+  // ↳ ENTRADA `jobAsignados.js` (su número, en el JSON)
   // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
   // rótulos («me parecen genial los rótulos»), registrados en
   // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
@@ -462,7 +470,7 @@ const CENSO = Object.freeze({
   // ⚠️ Y la caja de ese texto está **CALCULADA, no medida**: el MCP de Playwright estaba caído. El
   // asesor firmó sabiéndolo y dejando la condición escrita — si al medirla no cabe, el que falla
   // es el cálculo y se cambia el texto. Consta en `docs/microcopy/`.
-  'productsView.js': 1,
+  // ↳ ENTRADA `productsView.js` (su número, en el JSON)
   // SCRUM-644 (2-sep-2026) · SUBIDA A CONCIENCIA: `providersView.js` ENTRA con 1. Es el MISMO
   // defecto y el MISMO criterio que SCRUM-641 arriba —no se inventa uno nuevo—, en el otro fichero
   // que tenía el camino COMPLETO: `throw new Error(data?.error || …)` en un extremo y `e.message`
@@ -487,7 +495,7 @@ const CENSO = Object.freeze({
   // que si el siguiente ticket añade otro código mapeado reutilizando la constante, **este número
   // NO se moverá** y entrará una superficie sin firmar en silencio. Quien añada un código mapeado
   // le pone SU constante, para que el fundador pueda firmar uno sin firmar los dos.
-  'providersView.js': 1,
+  // ↳ ENTRADA `providersView.js` (su número, en el JSON)
   // 🔴 SCRUM-575 (2-sep-2026) · `customersView.js` SALE DEL CENSO: pasó de 2 a 1 y de 1 a 0 en el
   // mismo ticket, y la entrada se BORRA — no se pone a 0 — como dejaron escrito SCRUM-424,
   // SCRUM-405 y SCRUM-593 aquí mismo: `censoActual()` sólo lista ficheros CON marcadores, así que
@@ -527,7 +535,7 @@ const CENSO = Object.freeze({
   // rótulo del enlace a mapa del bloque DÓNDE, y el asesor aprobó «Abrir en mapa» (regla 30). El
   // trinquete APRIETA: la entrada se borra en vez de bajar a 0 — `censoActual()` solo lista
   // ficheros con marcadores, así que un 0 escrito aquí sería una bajada permanente sin anotar.
-  'libroRegistroView.js': 1,
+  // ↳ ENTRADA `libroRegistroView.js` (su número, en el JSON)
   // 🔴 17-ago-2026 · `nuevaFacturaModal.js` SALE DEL CENSO (tenía 1). Esa única marca escrita
   // pintaba **22 superficies** —el modal entero: título, botón de cerrar, cinco placeholders, ocho
   // `aria-label`, la opción vacía, dos errores, dos botones, el estado de «emitiendo» y el aviso
@@ -565,7 +573,7 @@ const CENSO = Object.freeze({
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
   // 🔴 17-ago-2026 (tanda B) · SALE DEL CENSO: el fundador aprobó los cuatro títulos de bloque del formulario (esa marca pintaba CUATRO). Entrada BORRADA, no
   // puesta a 0 (SCRUM-424 / SCRUM-405): `censoActual()` solo lista ficheros CON marcadores.
-  'semaforoFiscal.js': 1,
+  // ↳ ENTRADA `semaforoFiscal.js` (su número, en el JSON)
   // SCRUM-574 (24-ago-2026) · SUBIDA A CONCIENCIA: el switch «Empresa | Persona» de la ficha de
   // cliente sale con marcador en sus TRES rótulos — la pregunta que lo encabeza y las dos
   // etiquetas. No están aprobados y no se inventan (regla 30): las etiquetas del switch son del
@@ -623,7 +631,7 @@ const CENSO = Object.freeze({
   // (`invoicesView.js`, que referencia la constante en vez de repetir el literal). Aprobar UN
   // texto no las apaga las dos: son dos textos distintos que hoy comparten marcador, y el día que
   // el fundador los escriba habrá que partir la constante.
-  'tipoDestinatarioPendiente.js': 1,
+  // ↳ ENTRADA `tipoDestinatarioPendiente.js` (su número, en el JSON)
   // 🔴 SCRUM-652 (T3 fase C) · 2-sep-2026 · `parteDetailView.js` ENTRA con 1, A CONCIENCIA.
   //
   // Es la pantalla del parte en el móvil del técnico. Su microcopy NO está aprobada (regla 30):
@@ -645,8 +653,8 @@ const CENSO = Object.freeze({
   // retirarla y SE REVIRTIÓ: SCRUM-720 exige que el mecanismo se VACÍE, no se retire
   // (`tests/scrum720-marcadores-en-lo-pintado.test.mjs`). El 1 de aquí es esa declaración
   // huérfana, no un texto sin firmar.
-  'parteDetailView.js': 1,
-  'settingsSubmenus.js': 1,
+  // ↳ ENTRADA `parteDetailView.js` (su número, en el JSON)
+  // ↳ ENTRADA `settingsSubmenus.js` (su número, en el JSON)
   // SCRUM-674 (2-sep-2026) · `voiceInput.js` SALE del censo: el fundador aprobo el texto del
   // aviso de dictado sin conexion, y sale ya sin marca. La entrada se BORRA, no se pone a 0:
   // un 0 declara «este fichero se vigila y tiene cero», y aqui lo cierto es que no hay nada
@@ -683,7 +691,7 @@ const CENSO = Object.freeze({
   // de retención de IRPF y los dos avisos de Bizum. QUEDA UNO, y se queda A PROPÓSITO:
   // `PENDIENTE_MODO_EMISION` — su rama `receipt` toca terreno de la regla 26 y esa pregunta se
   // responde SOLO con el guion H2, así que no se aprueba de refilón con el resto de la pantalla.
-  'settingsView.js': 1,
+  // ↳ ENTRADA `settingsView.js` (su número, en el JSON)
   // 🔴 SCRUM-648 (fase B) · 5-sep-2026 · `invoicesView.js` ENTRÓ con 1 y SALIÓ el mismo día: el
   // fundador firmó «No hemos podido comprobar el plazo.» (35 caracteres; el tope de 50 lo ata
   // `scrum648b`). Entrada BORRADA, no puesta a 0 — un 0 es un sujeto que se mide y da cero; una
@@ -695,6 +703,10 @@ const CENSO = Object.freeze({
   // antes de congelarlo. El censo declaraba 1 mientras la pantalla pintaba 2, el trinquete no
   // podía apretar y el PR #1065 se mergeó en ROJO. Lo que faltaba no era una entrada nueva: era
   // subir a 2 la que ya había. Que no vuelva a colarse lo vigila **R4c**.
+  // (SCRUM-1293, 1-oct-2026: «R4c» NO es un test de este fichero y nunca lo fue. El MISMO commit
+  // que escribió esta frase, `83d993bf` de SCRUM-751, construyó el guard con otro nombre:
+  // `tests/scrum751-clave-duplicada-en-silencio.test.mjs`. Y desde que la lista vive en el JSON,
+  // las claves repetidas de ESTE censo las caza el cargador, `tests/_marcadores-declarados.mjs`.)
   // ── SCRUM-607 (ALB-02) · 4-sep-2026 · ENTRÓ CON 2 Y SALIÓ EL MISMO DÍA ─────────────────
   //
   // Los dos literales del interruptor que quita los precios del albarán entraron con marcador por
@@ -718,8 +730,13 @@ const CENSO = Object.freeze({
   // constante `MARCADOR`, así que aprobar el copy los apaga de golpe. Las cabeceras de columna
   // (Fecha, Proveedor, NIF, Base, IVA, Total) NO llevan marcador: son los términos que impone la
   // propia aceptación del ticket, no copy inventada.
-  'facturasRecibidasView.js': 1,
-});
+  //
+  // 🔴 SCRUM-1388 · 2-oct-2026 · `facturasRecibidasView.js` SALE del censo: el fundador firmó el
+  // 1-oct-2026 los cuatro textos que colgaban de esa constante (título, error de carga, vacío y
+  // descuadre; `docs/microcopy/2026-10-01-SCRUM-1388-facturas-recibidas.md`) y la constante se
+  // retiró entera. La entrada se BORRA del JSON, no se pone a 0 (SCRUM-424/405). El rótulo de menú
+  // que nombra el párrafo de arriba nunca llevó marcador (SCRUM-420 §④).
+}
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */
 function marcadoresEnLiterales(codigo, nombre) {

@@ -16,13 +16,17 @@
 // Lleva un signo de pregunta → `unknown`. Se falla hacia «no he entendido», que no mueve el
 // presupuesto, y nunca hacia una decisión que el cliente no ha tomado.
 //
-// ⚠️ Las tres listas son CERRADAS y `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs` las
+// ⚠️ Las listas son CERRADAS y `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs` las
 // enumera enteras (las lee de este fuente, no se exportan): añadir una entrada es cambiar el test
 // a propósito. Van ya normalizadas (minúsculas, sin tildes), que es como se compara.
+//
+// SCRUM-1326: hay una cuarta respuesta, `ask`. Ocho palabras que aceptaban —las de `PREGUNTA`—
+// pueden ser sólo «recibido», y aceptar crea el Trabajo y avisa al profesional. Sueltas ya no
+// aceptan: quien llama pregunta al cliente, y el presupuesto no se mueve.
 
 import { sinTildes } from '../../../core/texto/sinTildes';
 
-export type Decision = 'accept' | 'reject' | 'unknown';
+export type Decision = 'accept' | 'reject' | 'ask' | 'unknown';
 
 /** Lo que acepta. Una entrada de varias palabras sólo casa con esas palabras seguidas. */
 const ACEPTA: readonly string[] = [
@@ -30,10 +34,20 @@ const ACEPTA: readonly string[] = [
   'acepto', 'aceptar', 'aceptado', 'aceptamos', 'lo acepto', 'acepto el presupuesto',
   'si', 'claro que si',
   'confirmo', 'confirmar', 'confirmado', 'confirmamos', 'lo confirmo',
-  // lo que ya se entendía suelto antes de este ticket (las raíces, tal cual, incluidas)
-  'acept', 'confirm', 'ok', 'okay', 'okey', 'dale', 'vale', 'adelante', 'de acuerdo', 'perfecto',
-  'me interesa', 'quiero', 'lo quiero', 'listo', 'va', 'sale', 'claro',
+  // lo que ya se entendía suelto antes de SCRUM-1322 (las raíces, tal cual, incluidas)
+  'acept', 'confirm', 'dale', 'adelante', 'de acuerdo',
+  'me interesa', 'quiero', 'lo quiero', 'sale',
 ];
+
+/**
+ * 🔴 SCRUM-1326 · Las que NO aceptan solas: el bot pregunta. Son las ocho que firmó el fundador
+ * (comentarios 17692 y 17802), ni una más: `tests/scrum1326-vale-pregunta-una-vez.test.mjs` las
+ * enumera. El criterio firmado: un acuse de recibo pregunta; una autorización o un deseo, acepta.
+ * `okay` y `okey` van con `ok`; `va` es «vale» abreviado. `sale` ACEPTA: lo decidió el fundador.
+ * Junto a una entrada de `ACEPTA` («sí, vale») no añaden un paso; junto a una de `RECHAZA`, el
+ * mensaje no decide nada, igual que antes.
+ */
+const PREGUNTA: readonly string[] = ['vale', 'ok', 'okay', 'okey', 'perfecto', 'listo', 'claro', 'va'];
 
 /** Lo que rechaza. Las que niegan una palabra de aceptar («no acepto») van aquí ENTERAS. */
 const RECHAZA: readonly string[] = [
@@ -57,10 +71,11 @@ const CORTESIA: Readonly<Record<string, string>> = {
   'por favor': '«sí, por favor»; ni «por» ni «favor» entran sueltas',
 };
 
-type Clase = 'accept' | 'reject' | 'cortesia';
+type Clase = 'accept' | 'reject' | 'ask' | 'cortesia';
 
 const CLASE_DE = new Map<string, Clase>([
   ...ACEPTA.map((e): [string, Clase] => [e, 'accept']),
+  ...PREGUNTA.map((e): [string, Clase] => [e, 'ask']),
   ...RECHAZA.map((e): [string, Clase] => [e, 'reject']),
   ...Object.keys(CORTESIA).map((e): [string, Clase] => [e, 'cortesia']),
 ]);
@@ -84,6 +99,7 @@ export function parseDecision(text: string): Decision {
 
   let acepta = false;
   let rechaza = false;
+  let pregunta = false;
   for (const palabras of tramos(text)) {
     let i = 0;
     while (i < palabras.length) {
@@ -97,9 +113,11 @@ export function parseDecision(text: string): Decision {
       if (!clase) return 'unknown'; // una palabra que no es de ninguna lista: no es una decisión
       if (clase === 'accept') acepta = true;
       if (clase === 'reject') rechaza = true;
+      if (clase === 'ask') pregunta = true;
       i += largo;
     }
   }
-  if (acepta === rechaza) return 'unknown'; // ni una ni otra, o las dos
-  return acepta ? 'accept' : 'reject';
+  if ((acepta || pregunta) === rechaza) return 'unknown'; // ni una ni otra, o las dos
+  if (rechaza) return 'reject';
+  return acepta ? 'accept' : 'ask'; // sin una aceptación clara al lado, «vale» no acepta: se pregunta
 }

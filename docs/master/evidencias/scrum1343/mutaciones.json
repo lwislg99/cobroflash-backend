@@ -1,0 +1,120 @@
+{
+  "guard": "scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs",
+  "poblacion": 14,
+  "vivas": 14,
+  "sinRestaurar": 0,
+  "filas": [
+    {
+      "cae": "el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos",
+      "a": "return false;",
+      "veredicto": "VIVA",
+      "caidos": 7,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "un binario que NO EXISTE",
+      "a": "if (String(salida).trim() === '') return { estado: 'PROCESO NO ARRANCÓ (' + como + ')', codigo: 1, arranco: false };",
+      "veredicto": "VIVA",
+      "caidos": 6,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "el sistema lo cortó A MEDIAS",
+      "a": "return { estado: 'CORTADO POR EL SISTEMA (' + como + ')', codigo: 1, arranco: true };",
+      "veredicto": "VIVA",
+      "caidos": 2,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "se dice también con ceros, y suma el total",
+      "a": "const noArrancaron = 0;",
+      "veredicto": "VIVA",
+      "caidos": 3,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "la línea de arranque se imprime SIN condición",
+      "a": "if (cuenta.noArrancaron) console.log('   ' + cuenta.lineaDeArranque);",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "el borde sale de la constante",
+      "a": "export const SUELO_DEL_CODIGO_DEL_SISTEMA = 0xC0000001;",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "el tope sigue siendo el tope",
+      "a": "if (error === 'NUNCA') return { estado: 'TOPE', codigo: null, arranco: true };",
+      "veredicto": "VIVA",
+      "caidos": 2,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "el caso del 1-oct: 30 verdes y 7 procesos que no arrancaron NO son 7 hallazgos",
+      "a": "? 'NINGUN guard llegó a medir: '",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "la puerta clasifica a sus hijos con",
+      "a": "const { estado, codigo, arranco } = { estado: 'rojo(' + r.status + ')', codigo: r.status, arranco: true };",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "no hay una tercera forma de decidir",
+      "a": "if (conDefecto.length > 0) {",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "se dice también con ceros, y suma el total",
+      "a": "return { g, ms: 0, estado: 'CIEGO', codigo: SALIDA_NO_ENCONTRADO, arranco: true, arranque: null, marca: null,",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "POSITIVO: lo que un guard SÍ dijo sigue siendo rojo, y uno limpio sigue saliendo 0",
+      "a": "if (!sinCodigo && !esCodigoDelSistema(r.status) && String(salida).trim() !== '') {",
+      "veredicto": "VIVA",
+      "caidos": 2,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "si lo mató el sistema DESPUÉS de decir sus hallazgos, es rojo",
+      "a": "if (dicho && veredictoDe(dicho).codigo === SALIDA_HALLAZGO && false) {",
+      "veredicto": "VIVA",
+      "caidos": 1,
+      "restaurado": true,
+      "detalle": null
+    },
+    {
+      "cae": "con un hijo de verdad: reventar en la primera línea es rojo",
+      "a": "const sinCodigo = r.status === null || r.status === undefined || r.status === 1;",
+      "veredicto": "VIVA",
+      "caidos": 4,
+      "restaurado": true,
+      "detalle": null
+    }
+  ]
+}

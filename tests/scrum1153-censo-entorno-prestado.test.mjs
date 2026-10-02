@@ -107,15 +107,77 @@ test('SCRUM-1153 · NEGATIVO: un hijo que NO es `node` no se acusa, aunque parse
   assert.deepEqual(hallados, [], '🔴 acusa a cualquier `spawnSync`, no sólo a los que lanzan un `node` hijo: eso mediría la mitad de la casa.');
 });
 
-test('SCRUM-1153 · NEGATIVO: si no se parsea `stdout`, no es este defecto (sólo mira el status)', () => {
+test('SCRUM-1153 · NEGATIVO: si no se parsea `stdout` NI corre `--test`, no es este defecto (sólo mira el status)', () => {
+  // SCRUM-1289b · el caso sigue siendo el mismo —un `node` hijo que sólo mira su código de
+  // salida—, pero sin `--test`: desde 1289b, correr `--test` YA es motivo por sí solo (ver abajo).
+  const soloStatus = FABRICADO.replace(
+    "return Number((r.stdout.match(/^\\u2139 tests (\\d+)/m) || [])[1] || 0);",
+    'return r.status;',
+  ).replace("['--test', ruta]", '[ruta]');
+  const hallados = clasificaFuente('fabricado.mjs', soloStatus);
+  assert.deepEqual(hallados, [],
+    '🔴 acusa una llamada que sólo mira el código de salida: eso es `reales-por-biseccion.mjs` '
+    + '(SCRUM-940), y ese fichero no parsea NADA — no es este defecto.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ 🔴 SCRUM-1289b · LOS DOS QUE ROMPÍAN EL TAP DE TODAS LAS TANDAS, Y ESTE CENSO NO VIO
+//
+// scrum976 y scrum928 lanzaban un `node --test` con el `NODE_OPTIONS` del CI heredado: truncaban
+// `tanda.tap` (94 % de NUL, SCRUM-1289). El censo no los vio por TRES cegueras, cada una medida:
+//   · daba por limpio el `env` con UN `delete` cualquiera (los dos borraban `NODE_TEST_CONTEXT`);
+//   · sólo contaba hijos que PARSEAN stdout (928 no parsea el suyo en el mismo ámbito; 976 lo
+//     devuelve a quien lo llama);
+//   · no reconocía `{ cwd, env }` abreviado: 976 salía como «sin env» y ni entraba.
+// Control positivo REAL: el código de antes del arreglo de S5, leído de git (`9911a2dc` = main del
+// 29-sep-2026, con los dos todavía rotos). Negativo DERIVADO: el mismo texto con el arreglo de S5
+// aplicado por sustitución —`delete env.NODE_OPTIONS`—, no un segundo fixture.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const ANTES_DE_1289 = '9911a2dc';
+const LOS_DOS = [
+  { ruta: 'tests/scrum976-guards-entrada-con-techo.test.mjs', ancla: '  delete env.FORCE_COLOR;\n' },
+  { ruta: 'tests/scrum928-guards-entrada-recuento-con-color.test.mjs', ancla: '    delete env.NODE_TEST_CONTEXT;\n' },
+];
+
+for (const { ruta, ancla } of LOS_DOS) {
+  test(`SCRUM-1289b · 🔴 ⑤ CONTROL POSITIVO REAL: \`${ruta}\` de antes del arreglo se acusa, y por NODE_OPTIONS`, () => {
+    const viejo = deGit(ANTES_DE_1289, ruta);
+    const acusados = clasificaFuente(ruta, viejo).filter((h) => h.acusado);
+    assert.equal(acusados.length, 1, `🔴 EL CENSO SIGUE CIEGO al hijo que rompía el TAP: ${JSON.stringify(clasificaFuente(ruta, viejo))}`);
+    assert.deepEqual(acusados[0].faltan, ['NODE_OPTIONS'],
+      '🔴 lo acusa, pero no por lo que rompía el TAP: tiene que decir que se le cuela `NODE_OPTIONS`.');
+  });
+
+  test(`SCRUM-1289b · ✅ ⑤ NEGATIVO DERIVADO: \`${ruta}\` con \`delete env.NODE_OPTIONS\` sale limpio`, () => {
+    const viejo = deGit(ANTES_DE_1289, ruta);
+    const indent = ancla.match(/^\s*/)[0];
+    const arreglado = viejo.replace(ancla, `${ancla}${indent}delete env.NODE_OPTIONS;\n`);
+    assert.notEqual(arreglado, viejo, '🔴 la sustitución no tocó nada: el negativo no prueba el arreglo.');
+    const hallados = clasificaFuente(ruta, arreglado);
+    assert.ok(hallados.length >= 1, '🔴 el saneado rompió el reconocimiento de la llamada');
+    assert.deepEqual(hallados.filter((h) => h.acusado), [], `🔴 sigue acusando tras borrar NODE_OPTIONS: ${JSON.stringify(hallados)}`);
+  });
+}
+
+test('SCRUM-1289b · 🔴 un `node --test` hijo que sólo mira el status SE ACUSA: trunca el TAP igual', () => {
   const soloStatus = FABRICADO.replace(
     "return Number((r.stdout.match(/^\\u2139 tests (\\d+)/m) || [])[1] || 0);",
     'return r.status;',
   );
   const hallados = clasificaFuente('fabricado.mjs', soloStatus);
-  assert.deepEqual(hallados, [],
-    '🔴 acusa una llamada que sólo mira el código de salida: eso es `reales-por-biseccion.mjs` '
-    + '(SCRUM-940), y ese fichero no parsea NADA — no es este defecto.');
+  assert.equal(hallados.length, 1, `🔴 no ve al orquestador hijo: ${JSON.stringify(hallados)}`);
+  assert.equal(hallados[0].acusado, true);
+  assert.deepEqual(hallados[0].motivos, ['lanza --test']);
+});
+
+test('SCRUM-1289b · 🔴 borrar UNA de las tres no basta: se acusa diciendo cuáles faltan', () => {
+  const aMedias = saneado(FABRICADO).replace(' delete entorno.NODE_OPTIONS;', '');
+  const hallados = clasificaFuente('fabricado.mjs', aMedias);
+  assert.equal(hallados.length, 1);
+  assert.equal(hallados[0].envClase, 'SPREAD_A_MEDIAS');
+  assert.deepEqual(hallados[0].faltan, ['NODE_OPTIONS']);
+  assert.equal(hallados[0].acusado, true);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

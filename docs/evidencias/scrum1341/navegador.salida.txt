@@ -1,0 +1,13 @@
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+POBLACION: 2 anchos × 2 roles (admin de control, Técnico medido)
+390px · control ADMIN: cabeceras=["Miembro","Cotizaciones","Aceptación","Cobrado"] botones=1 con «€»=true pide=["/admin/metrics/team"]
+390px · TÉCNICO: clase=«equipo-actividad» visible=true título=«Actividad del equipo · este mes» (13px, rgb(75, 85, 79)) cabeceras=["Miembro","Cotizaciones","Aceptación"]
+390px · TÉCNICO: filas=[["Instalaciones y Reformas Hermanos Martínez de la Fuente e Hijos SL Propietario","1","100%"],["Ana Operario","3","67%"],["Blas Operario","4","25%"],["Caro Operario","1","0%"]]
+390px · TÉCNICO: tabla=364px en caja de 364px · barra horizontal=false · la página desborda=false · el nombre largo cabe=true · alineación=["start","right","right"]
+390px · TÉCNICO: color del rol=rgb(75, 85, 79) · % alto=rgb(21, 128, 61) · % medio=rgb(75, 85, 79) · % bajo=rgb(220, 38, 38) · botones=0 · nodos con estilo en línea=0 · pide=["/admin/metrics/actividad-equipo"]
+1280px · control ADMIN: cabeceras=["Miembro","Cotizaciones","Aceptación","Cobrado"] botones=1 con «€»=true pide=["/admin/metrics/team"]
+1280px · TÉCNICO: clase=«equipo-actividad» visible=true título=«Actividad del equipo · este mes» (13px, rgb(75, 85, 79)) cabeceras=["Miembro","Cotizaciones","Aceptación"]
+1280px · TÉCNICO: filas=[["Instalaciones y Reformas Hermanos Martínez de la Fuente e Hijos SL Propietario","1","100%"],["Ana Operario","3","67%"],["Blas Operario","4","25%"],["Caro Operario","1","0%"]]
+1280px · TÉCNICO: tabla=1230px en caja de 1230px · barra horizontal=false · la página desborda=false · el nombre largo cabe=true · alineación=["start","right","right"]
+1280px · TÉCNICO: color del rol=rgb(75, 85, 79) · % alto=rgb(21, 128, 61) · % medio=rgb(75, 85, 79) · % bajo=rgb(220, 38, 38) · botones=0 · nodos con estilo en línea=0 · pide=["/admin/metrics/actividad-equipo"]
+EXIT=0

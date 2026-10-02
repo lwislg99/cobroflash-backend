@@ -1,0 +1,2 @@
+CIEGO: el entorno lleva 1 variable(s) de integración o de base (WHATSAPP_ACCESS_TOKEN). No ejecuto manejadores que envían: lánzalo en un entorno sin ellas.
+EXIT=2

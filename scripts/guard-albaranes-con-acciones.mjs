@@ -24,6 +24,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { veredictoDe } from './_hallazgos-y-ciegos.mjs';
 import { servirListas, abrirNavegador, abrirVista } from './_banco-lista.mjs';
 import { reglasDeDatos, ALBARANES } from './_trabajos-de-muestra.mjs';
 
@@ -213,6 +214,10 @@ if (!r.error) {
 await browser.close();
 srv.close();
 di('');
-if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`); process.exit(2); }
-if (fallos) { console.error(`🔴 ${fallos} defecto(s).`); process.exit(1); }
+if (ciego) console.error(`🔴 NO SUPE MIRAR en ${ciego} sitio(s): un silencio así no es un verde.`);
+if (fallos) console.error(`🔴 ${fallos} defecto(s).`);
+// SCRUM-1320 · el veredicto sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`): el hallazgo da el
+// código aunque haya ciegos, y la línea dice las dos. Antes el ciego se miraba primero y lo tapaba.
+const veredictoFinal = veredictoDe({ hallazgos: fallos, ciegos: ciego });
+if (veredictoFinal.codigo !== 0) { console.error(veredictoFinal.linea); process.exit(veredictoFinal.codigo); }
 di('✅ cada estado ofrece su siguiente paso, la ranura de acciones es de las acciones, y la primaria lleva sin escribir.');

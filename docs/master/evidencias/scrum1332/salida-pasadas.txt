@@ -1,0 +1,23 @@
+# Pasadas del fichero SOLO con --test-force-exit y 10 procesos de carga (pasadas.sh). Windows 11, node v24.18.0, 1-oct-2026.
+# Una linea RESULTADO por tanda de pasadas. ok = codigo de salida 0; muerte nativa = frase de libuv o exitCode 3221226505 en el TAP.
+
+## ANTES (origin/main 258fc29b)
+RESULTADO base-force (tests/scrum1216b…): ok=33 · muertes nativas=7 · otros rojos=0 · de 40
+
+## VARIANTES (variante-<letra>.mjs.txt)
+RESULTADO var-c: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO var-b: ok=11 · muertes nativas=29 · otros rojos=0 · de 40
+RESULTADO var-a: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO var-f: ok=7 · muertes nativas=33 · otros rojos=0 · de 40
+RESULTADO var-g: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO var-e: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO var-h: ok=33 · muertes nativas=7 · otros rojos=0 · de 40
+RESULTADO var-i: ok=33 · muertes nativas=7 · otros rojos=0 · de 40
+# h e i corrieron a la vez que otra pasada de guards: su carga no es comparable con las demas.
+
+## DESPUES (el banco pide con node:http)
+RESULTADO fix-1: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO fix-2: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+RESULTADO fix-597: ok=40 · muertes nativas=0 · otros rojos=0 · de 40
+fix-597 (tests/scrum597…): INCOMPLETA. 19 pasadas escritas de 40, las 19 con '# fail 0' y sin huella nativa.
+# El sistema paro la orden por falta de memoria con la sesion ociosa; no se relanzo.

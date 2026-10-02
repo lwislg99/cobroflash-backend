@@ -28,7 +28,13 @@
 // vista que no pinta no tiene botón, y ese «no hay botón» se lee igual que el defecto — que es
 // justo la confusión que este guard existe para deshacer. Si algo no se puede medir: exit 2.
 //
-// SALIDAS: 0 las dos pantallas de acuerdo · 1 hallazgo · 2 no supe medir.
+// ── 🔴 SCRUM-1327 · UN CASO CIEGO YA NO CORTA EL RECORRIDO ───────────────────────────────────
+// El primer caso que no pintaba hacía `break`, y los hallazgos se calculaban después: con «SIN
+// token» ciego, «CON token» ni se medía. Visto ocurrir en navegador: salida 2 y ni una palabra de
+// un botón que, con token, había desaparecido. Ahora los casos los recorre `recorrerCasos` —que
+// no deja de mirar— y el código lo da `veredictoDe` con las DOS cuentas.
+//
+// SALIDAS: 0 las dos pantallas de acuerdo · 1 hallazgo (haya ciegos o no) · 2 sólo ciegos.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,13 +42,11 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';   // SCRUM-730
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
+import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
 
 const AQUI = fileURLToPath(import.meta.url);
 const RAIZ = path.join(path.dirname(AQUI), '..');
 const JS = path.join(RAIZ, 'public', 'dashboard', 'js');
-
-export const SALIDA_HALLAZGO = 1;
-export const SALIDA_NO_SUPE_MEDIR = 2;
 
 /** El id del botón de la ficha. Sale del propio fuente, no de una copia de aquí. */
 const ID_BOTON_FICHA = 'btn-copy-portal-360';
@@ -115,13 +119,13 @@ const base = `http://127.0.0.1:${servidor.address().port}`;
 
 const navegador = await lanzarNavegador(puppeteer, {});
 const filas = [];
-let ciego = null;
+let cuentas;
 
 try {
   const page = await navegador.newPage();
   await page.setViewport({ width: 1280, height: 900 });
 
-  for (const caso of CASOS) {
+  cuentas = await recorrerCasos(CASOS, async (caso) => {
     await page.goto(`${base}/${caso.nombre.replace(' ', '-')}`, { waitUntil: 'networkidle0' });
 
     const r = await page.evaluate(async (idBoton) => {
@@ -147,11 +151,23 @@ try {
       return out;
     }, ID_BOTON_FICHA);
 
-    if (r.error) { ciego = `${caso.nombre}: ${r.error}`; break; }
-    if (!r.pintoFicha) { ciego = `${caso.nombre}: la FICHA 360 no ha pintado (sin \`#btn-edit-360\`). Sin ancla, «no hay botón» no dice nada.`; break; }
-    if (!r.pintoLista) { ciego = `${caso.nombre}: la LISTA no ha pintado ningún botón${r.errorLista ? ` (${r.errorLista})` : ''}.`; break; }
+    // Un caso que no ha pintado es CIEGO en ESE caso, y sólo en ése: el siguiente se mide igual.
+    const soloCiego = (porque) => ({ hallazgos: [], ciegos: [`${caso.nombre}: ${porque}`] });
+    if (r.error) return soloCiego(r.error);
+    if (!r.pintoFicha) return soloCiego('la FICHA 360 no ha pintado (sin `#btn-edit-360`). Sin ancla, «no hay botón» no dice nada.');
+    if (!r.pintoLista) return soloCiego(`la LISTA no ha pintado ningún botón${r.errorLista ? ` (${r.errorLista})` : ''}.`);
     filas.push({ caso: caso.nombre, ficha: r.botonFicha, lista: r.botonLista, peticiones: r.peticiones });
-  }
+
+    // El juicio es de CADA caso, con lo que ese caso midió: no espera a tener los dos.
+    const suyos = [];
+    if (caso.portalUrl === null) {
+      if (!r.botonLista) suyos.push('la LISTA no pinta el botón sin token: ha cambiado el lado que estaba bien');
+      if (!r.botonFicha) suyos.push('la FICHA 360 NO pinta el botón sin token: las dos pantallas del mismo cliente no dicen lo mismo');
+    } else if (!r.botonFicha || !r.botonLista) {
+      suyos.push('con token alguna de las dos ha dejado de pintarlo');
+    }
+    return { hallazgos: suyos, ciegos: [] };
+  }, (caso) => caso.nombre);
 } finally {
   await navegador.close().catch(() => {});
   servidor.close();
@@ -161,22 +177,15 @@ console.log(`\n${'═'.repeat(84)}`);
 console.log('EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado');
 console.log(`${'═'.repeat(84)}`);
 
-if (ciego) {
-  console.error(`\n🔴 NO SUPE MEDIR — no se da ningún veredicto:\n   · ${ciego}\n`);
-  process.exit(SALIDA_NO_SUPE_MEDIR);
+const { hallazgos, ciegos } = cuentas;
+if (ciegos.length) {
+  console.error(`\n🔴 NO SUPE MEDIR — de esto no se da ningún veredicto:\n   · ${ciegos.join('\n   · ')}\n`);
 }
 
 console.log('  caso        LISTA    FICHA 360');
 for (const f of filas) {
   console.log(`  ${f.caso.padEnd(12)}${(f.lista ? 'botón' : 'NO').padEnd(9)}${f.ficha ? 'botón' : 'NO EXISTE'}`);
 }
-
-const sinToken = filas.find((f) => f.caso === 'SIN token');
-const conToken = filas.find((f) => f.caso === 'CON token');
-const hallazgos = [];
-if (!sinToken.lista) hallazgos.push('la LISTA no pinta el botón sin token: ha cambiado el lado que estaba bien');
-if (!sinToken.ficha) hallazgos.push('la FICHA 360 NO pinta el botón sin token: las dos pantallas del mismo cliente no dicen lo mismo');
-if (!conToken.ficha || !conToken.lista) hallazgos.push('con token alguna de las dos ha dejado de pintarlo');
 
 // 🔴 Y LA OTRA MITAD: abrir la ficha NO puede pedir `/portal-url`. Si lo pidiera, abrir la
 // pantalla dispararía la cura — una ESCRITURA — sin que nadie pulse nada, que es exactamente la
@@ -187,8 +196,15 @@ if (abrirPide) hallazgos.push('ABRIR la ficha llama a `/portal-url`: eso CURA, y
 console.log('\n  peticiones al abrir (las dos vistas):');
 for (const f of filas) console.log(`    ${f.caso.padEnd(12)}${f.peticiones.join(' · ') || '(ninguna)'}`);
 
-if (hallazgos.length) {
-  console.error('\n🔴 HALLAZGOS:\n  · ' + hallazgos.join('\n  · ') + '\n');
-  process.exit(SALIDA_HALLAZGO);
+if (hallazgos.length) console.error('\n🔴 HALLAZGOS:\n  · ' + hallazgos.join('\n  · ') + '\n');
+
+// SCRUM-1327 · el código sale de las DOS cuentas (`_hallazgos-y-ciegos.mjs`), no de este fichero.
+const veredictoFinal = veredictoDe({ hallazgos, ciegos });
+if (veredictoFinal.codigo !== 0) {
+  console.error(veredictoFinal.linea + '\n');
+  process.exit(veredictoFinal.codigo);
 }
+// La línea de las dos cuentas sale SIEMPRE, también en verde: si sólo saliera con algo que contar,
+// que no esté no distinguiría «0 hallazgos · 0 ciegos» de «nadie llegó a contar».
+console.log(veredictoFinal.linea);
 console.log('\n✅ Las dos pantallas dicen lo mismo, y abrir la ficha no cura.\n');

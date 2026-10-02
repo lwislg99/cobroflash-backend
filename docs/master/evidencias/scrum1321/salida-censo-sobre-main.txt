@@ -1,0 +1,31 @@
+POBLACION declaraciones=357 · guards=107 · ancla ausente=0 · AMBIGUAS=6
+
+· scrum758-cabecera-no-miente.test.mjs → tests/scrum758-cabecera-no-miente.test.mjs  [SE MUTA A SÍ MISMO]
+    cae: SCRUM-758 · ✅ CONTROL POSITIVO: el detector CAZA una cabecera que mien
+    veces 2 · líneas 118, 350
+    de: "  if (dice === 'ninguna' && e.marcadas > 0) {"
+
+· scrum758-cabecera-no-miente.test.mjs → tests/scrum758-cabecera-no-miente.test.mjs  [SE MUTA A SÍ MISMO]
+    cae: SCRUM-758 · 🔴 EL SUELO: la zona ciega NO CRECE — una entrada nueva en
+    veces 2 · líneas 198, 369
+    de: "export const TOPE_PROSA_MUDA = 44;"
+
+· scrum767-portal-token.test.mjs → src/modules/system/app/routes/customerPortal.routes.ts
+    cae: SCRUM-767 · 🔴 EL CENSO QUE DECIDE: qué lee el token SIN pasar por la 
+    veces 2 · líneas 226, 515
+    de: "    where: { portalToken: token },"
+
+· scrum812-el-rotulo-declara-su-poblacion.test.mjs → tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs  [SE MUTA A SÍ MISMO]
+    cae: SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO 
+    veces 2 · líneas 111, 294
+    de: "export const SUELO_GUARD_QUE_DECLARAN = 25;"
+
+· scrum853-avisador-solo-obligatorio.test.mjs → .github/workflows/claude.yml
+    cae: claude.yml pregunta a la puerta ANTES de la acción
+    veces 2 · líneas 252, 271
+    de: "        if: steps.puerta.outputs.despertar == 'si'"
+
+· scrum853-avisador-solo-obligatorio.test.mjs → .github/workflows/claude.yml
+    cae: el aviso de rama muda se comprueba sobre el fichero que de verdad se v
+    veces 2 · líneas 430, 503
+    de: "            CUERPO=\"$CUERPO\" node --input-type=module -e \""
