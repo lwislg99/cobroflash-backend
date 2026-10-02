@@ -26,6 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -313,4 +314,80 @@ test('SCRUM-605 · CONTROL NEGATIVO: el RÓTULO no decide la fecha', () => {
   // copy. Ahora contra el literal aprobado, que es lo que el rótulo tiene que ser.
   assert.equal(A.rotuloDeAtajo(7), '7 días',
     '🔴 el rótulo no se ha restaurado: el resto del fichero mediría otra cosa.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL NOMBRE ACCESIBLE, EN EL BOTÓN PINTADO · no en el módulo, que ya lo tenía
+// ─────────────────────────────────────────────────────────────────────────────────────────
+//
+// Del 4-sep al 2-oct-2026 `nombreAccesibleDeAtajo` existió, tuvo su test de literales (arriba) y NO
+// LO LLAMABA NADIE: la vista ponía el rótulo también en el `aria-label`. Todo lo de arriba mide el
+// módulo, y por eso seguía verde. Esto mide el BOTÓN, montando el editor en el banco de vistas.
+//
+// El servidor de mentira es el de `scrum1219-plantilla-sin-condiciones`: lo justo para que monte.
+const respirar = () => new Promise((r) => setTimeout(r, 80));
+// Lo que SE VE de una ficha es el texto de su `span` de nombre: en el banco, el `textContent` de
+// un nodo no suma el de sus hijos (medido: buscando por el del botón salían 0 atajos de 3).
+const textoDe = (n) => todos(n).map((h) => String(h.textContent || '')).join('');
+
+async function atajosPintados() {
+  const fetch = async (url) => {
+    const u = String(url);
+    let cuerpo = {};
+    if (/\/admin\/templates$/.test(u) || /\/admin\/customers/.test(u)) cuerpo = [];
+    else if (/\/admin\/merchant/.test(u)) cuerpo = { id: 1, name: 'Taller', defaultCurrency: 'EUR', country: 'ES' };
+    return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => cuerpo, text: async () => '' };
+  };
+  const red = { navigator: { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } }, fetch };
+  const b = cargarDashboard(RAIZ, { red });
+  b.ctx.appDocumentoSuelto = 'no';
+  b.ctx.appMerchantId = 1;
+  b.ctx.renderAppView = () => {};
+  const r = await pintarVista(b, 'renderQuotesView', null, false);
+  assert.equal(r.error, null, `🔴 SUELO: el editor no monta: ${r.error && r.error.message}`);
+  await respirar();
+  const campo = todos(r.contenedor).find((x) => x.tagName === 'INPUT' && x.id === 'quote-valid-until');
+  assert.ok(campo, '🔴 SUELO: el editor no monta el campo «Válido hasta»');
+  // Los atajos son las fichas cuyo rótulo es uno de los tres: las plantillas rápidas usan la misma
+  // clase (AB3), y con el servidor de arriba no hay ninguna, pero no se cuenta con ello.
+  const rotulos = A.DIAS_ATAJO.map((d) => A.rotuloDeAtajo(d));
+  const chips = todos(r.contenedor).filter((x) => x.tagName === 'BUTTON'
+    && String(x.className || '').includes('quote-plantilla-chip')
+    && rotulos.includes(textoDe(x).trim()));
+  return { chips, campo };
+}
+
+test('SCRUM-605 · 🔴 cada atajo PINTADO lleva su nombre accesible, y no el rótulo repetido', async () => {
+  const { chips } = await atajosPintados();
+  assert.equal(chips.length, A.DIAS_ATAJO.length,
+    `🔴 SUELO: he encontrado ${chips.length} atajos pintados y son ${A.DIAS_ATAJO.length}. Sin los `
+    + 'botones delante, lo de abajo no mide nada.');
+  A.DIAS_ATAJO.forEach((dias, i) => {
+    const nombre = chips[i]._attrs && chips[i]._attrs['aria-label'];
+    assert.equal(nombre, A.nombreAccesibleDeAtajo(dias),
+      `🔴 el atajo de ${dias} días se anuncia como ${JSON.stringify(nombre)}. Un lector de pantalla `
+      + 'puede no dar el campo de al lado como contexto, y el número con su unidad no dice qué va a '
+      + 'pasar al pulsar: el nombre accesible aprobado dice la acción entera.');
+    // WCAG 2.5.3: lo que se ve tiene que estar dentro de lo que se anuncia, o quien dicta el
+    // rótulo visible por voz no acierta el botón.
+    assert.ok(nombre.includes(A.rotuloDeAtajo(dias)),
+      `🔴 el nombre accesible de ${dias} días no contiene su rótulo visible.`);
+  });
+});
+
+test('SCRUM-605 · CONTROL NEGATIVO: lo que SE VE y lo que el atajo ESCRIBE no cambian con el nombre', async () => {
+  const { chips, campo } = await atajosPintados();
+  assert.equal(chips.length, A.DIAS_ATAJO.length, '🔴 SUELO: no están los tres atajos pintados');
+  assert.deepEqual(chips.map((c) => textoDe(c).trim()), ['7 días', '14 días', '30 días'],
+    '🔴 ha cambiado el texto VISIBLE de los atajos: el nombre accesible no se ve, y cablearlo no '
+    + 'puede mover ni una letra de la pantalla.');
+  for (const c of chips) {
+    assert.equal(c.type, 'button', '🔴 un atajo sin `type=button` ENVÍA el presupuesto al pulsarlo');
+  }
+  const antes = campo.value;
+  assert.match(antes, /^\d{4}-\d{2}-\d{2}$/, '🔴 SUELO: el campo no nace con una fecha');
+  chips[0].disparar('click'); // 7 días
+  assert.match(campo.value, /^\d{4}-\d{2}-\d{2}$/, '🔴 el atajo ha dejado el campo sin fecha');
+  assert.ok(campo.value < antes,
+    `🔴 pulsar «7 días» deja ${campo.value} y el campo nacía en ${antes} (+30): el atajo no escribe.`);
 });

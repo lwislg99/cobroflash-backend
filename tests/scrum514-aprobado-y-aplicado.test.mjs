@@ -339,33 +339,6 @@ const APARCADOS = [
       + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
   },
   {
-    texto: 'Válido hasta dentro de 7 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
-    texto: 'Válido hasta dentro de 14 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
-    texto: 'Válido hasta dentro de 30 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
     texto: '2. Líneas',
     motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
       + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
@@ -568,7 +541,7 @@ const equipoDelPuesto = (puesto) => (puesto.startsWith('J') ? 'equipo de Javier'
  */
 const TECHO_DE_AJENAS = {
   '2026-09-03-SCRUM-704-guardar-lineas-dictadas.md': 6,
-  '2026-09-04-SCRUM-605-atajos-valido-hasta.md': 12,
+  '2026-09-04-SCRUM-605-atajos-valido-hasta.md': 8,
   '2026-09-07-SCRUM-722-nuevo-albaran.md': 1,
   '2026-09-09-SCRUM-832-la-ficha-que-ya-no-esta.md': 2,
 };
@@ -607,23 +580,6 @@ const NOTAS_AJENAS = [
     'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la',
     'atribuía mal, y el hueco del guard se cierra en SCRUM-726.',
   ]),
-  ...conNota(ajenasDe('2026-09-04-SCRUM-605-atajos-valido-hasta.md', {
-    dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'public/dashboard/js/quoteAtajosVencimiento.js',
-    motivo: 'NOTA DE ESTADO ESCRITA COMO CITA (sección «Dónde se pinta»): cuatro líneas que avisan de que '
-      + 'el nombre accesible de los atajos está construido y sin cablear. No es texto de pantalla. Sale '
-      + 'de aquí cuando su dueño le quite el `>`.',
-  }, [
-    '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**',
-    'texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que',
-    'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en',
-    'vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño.',
-  ]), '⚠️ DISCREPANCIA MEDIDA el 2-oct-2026, y la decisión es de su dueño: (a) la ficha es del equipo de '
-    + 'Luis por §3.3, porque el texto lo usa `quoteAtajosVencimiento.js`, de S2; (b) `git blame` dice '
-    + 'que estas cuatro líneas las tecleó la identidad del equipo de Javier en el commit 7f695c75, el '
-    + '4-sep-2026, que es el que creó la ficha, antes de que hubiera reparto de carriles; (c) la '
-    + 'etiqueta de equipo no existe en Jira para SCRUM-605 (`labels = []`). El orquestador del equipo '
-    + 'de Javier decidió NO editarlas (SCRUM-1334). Si el equipo de Luis dice que son de Javier, se '
-    + 'las pasa y este equipo les quita el `>`.'),
   ...ajenasDe('2026-09-07-SCRUM-722-nuevo-albaran.md', {
     dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'public/dashboard/js/albaranDetailView.js',
     motivo: '«QUÉ HABÍA ANTES», ESCRITO COMO CITA: el marcador que la pantalla pintaba hasta SCRUM-722, '
