@@ -30,6 +30,16 @@ Leído en `origin/main`, no ejecutado:
 | `tests/scrum1430-sesion-qa-estado.test.mjs` | 11 tests sin red. |
 | `docs/RUNBOOKS.md` R23 | El comando, las tres respuestas y la norma del logout. |
 
+**MUERTA dice la cura** (pedido por el orquestador el 2-oct, con la orden ya construida): debajo
+del veredicto va el comando ENTERO, `node scripts/qa/sesion-panel.mjs login <correo>`, con el correo
+de la sesión que murió si el fichero lo sabe, y dónde está la receta. Ese día el camino existía y
+estaba en R23, y tres sesiones se quedaron paradas sin encontrarlo.
+
+**Dos guards del árbol señalaron el test nuevo y se arregló el test** (regla 41): SCRUM-824 (rutas
+temporales que el censo no sabía resolver) y SCRUM-1179-B (leer un fichero y reescribirlo bajo un
+`finally`). Las escrituras a mano viven ahora dentro de `banco()`, colgando de `dir` a la vista, y
+el fichero de caducidad estropeado es OTRO fichero escrito de cero. Ninguna lista declarada creció.
+
 No escribe en producción: la única salida nueva a la red es un GET, por el mismo `peticion` que ya
 rechaza todo lo que no sea GET antes de salir.
 
