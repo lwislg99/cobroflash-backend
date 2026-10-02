@@ -165,7 +165,7 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
 
   return {
     emisiones, correos, filasWa,
-    confirmarBizum: () => entregarA(confirmar, { params: { id: String(chargeId) }, body: {}, merchantId }),
+    confirmarBizum: () => entregarA(confirmar, reqDeSesion({ rol: 'admin', params: { id: String(chargeId) }, body: {}, merchantId })),
     detalleDelTrabajo: () => entregarA(detalle, { params: { id: String(jobId) }, merchantId, userRole: 'admin' }),
     fichaDeLaFactura: () => entregarA(ficha, { params: { id: String(invoiceId) }, merchantId, userRole: 'admin' }),
     chargeId,
@@ -350,7 +350,7 @@ test('SCRUM-885 · NINGÚN envío nuevo: los envíos son los de hoy en todos los
 // el `envioDocumento` de la respuesta que toca, y lo que pinta es su `.texto`. Por AST: un comentario
 // que nombre la función no cuenta como llamada (SCRUM-203), y una copia del literal en la vista sí
 // se ve aunque vaya partida en un template.
-import ts from 'typescript';
+import ts from 'typescript'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 function arbolDe(rel) {
   const fuente = fs.readFileSync(path.join(RAIZ, rel), 'utf8');

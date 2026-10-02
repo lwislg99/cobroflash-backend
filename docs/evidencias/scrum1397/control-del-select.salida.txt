@@ -1,0 +1,11 @@
+BANCO LISTO · tablas=33 · 127.0.0.1:55497
+POBLACION: 13 documentos sembrados, uno por clase · base: postgres
+  ok  total: visto 13 · esperado 13
+  ok  con_presupuesto: visto 5 · esperado 5
+  ok  de_alguien: visto 7 · esperado 7
+  ok  de_ningun_eje: visto 6 · esperado 6
+  ok  de_ningun_eje_y_sin_presupuesto_ni_albaran: visto 3 · esperado 3
+  ok  de_ningun_eje_y_de_la_oficina: visto 3 · esperado 3
+el SELECT cuenta las trece como son
+EXIT=0
+CORRER_EXIT=0

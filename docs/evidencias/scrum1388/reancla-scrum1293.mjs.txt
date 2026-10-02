@@ -1,0 +1,45 @@
+// SCRUM-1388 · ¿la mutación reanclada de scrum1293 SE APLICA y sigue tumbando su test?
+// Uso: node reancla.mjs <raíz del árbol>   (con todo comiteado)
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+
+const raiz = path.resolve(process.argv[2]);
+const git = (...a) => execFileSync('git', a, { cwd: raiz, encoding: 'utf8' });
+if (git('status', '--porcelain').trim() !== '') { console.log('CIEGO: árbol sucio'); console.log('EXIT=2'); process.exit(2); }
+const { MUTACIONES_QUE_ME_TUMBAN } = await import(pathToFileURL(path.join(raiz, 'tests/scrum1293-cargador-de-marcadores.test.mjs')).href + '?solo-leer');
+const m = MUTACIONES_QUE_ME_TUMBAN[0];
+const ENTORNO = {};
+for (const k of ['PATH', 'Path', 'SystemRoot', 'TEMP', 'TMP', 'USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA', 'ComSpec', 'PATHEXT']) if (process.env[k]) ENTORNO[k] = process.env[k];
+function correr() {
+  const tap = path.join(os.tmpdir(), 'scrum1388-reancla-' + process.pid + '.tap');
+  fs.rmSync(tap, { force: true });
+  const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', '--test-reporter-destination=' + tap, 'tests/scrum1293-cargador-de-marcadores.test.mjs'], { cwd: raiz, env: ENTORNO, encoding: 'utf8' });
+  const t = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
+  fs.rmSync(tap, { force: true });
+  const casos = [...t.matchAll(/^(ok|not ok) \d+ - (.*)$/gm)].map((x) => ({ ok: x[1] === 'ok', nombre: x[2] }));
+  return { salida: r.status, casos };
+}
+const f = path.join(raiz, m.fichero);
+const antes = fs.readFileSync(f, 'utf8');
+console.log('ancla «' + m.de + '»: aparece ' + (antes.split(m.de).length - 1) + ' vez/veces en ' + m.fichero);
+const base = correr();
+console.log('BASE     casos ' + base.casos.length + ' · rojos ' + base.casos.filter((c) => !c.ok).length + ' · salida ' + base.salida);
+let codigo = 0;
+try {
+  fs.writeFileSync(f, antes.replace(m.de, m.a));
+  console.log('numstat: ' + git('diff', '--numstat').trim());
+  const r = correr();
+  const rojos = r.casos.filter((c) => !c.ok).map((c) => c.nombre);
+  const cae = rojos.some((n) => n.includes(m.cae));
+  console.log('MUTADA   casos ' + r.casos.length + ' · rojos ' + rojos.length + ' · salida ' + r.salida + ' · ' + (cae ? 'VIVA: cae «' + m.cae + '»' : 'MUDA: no cae el test declarado'));
+  for (const n of rojos) console.log('   ✖ ' + n);
+  if (!cae || base.casos.some((c) => !c.ok) || !base.casos.length) codigo = 1;
+} finally {
+  git('restore', '--source=HEAD', '--', m.fichero);
+}
+console.log('árbol al terminar: ' + (git('status', '--porcelain').trim() === '' ? 'limpio' : 'SUCIO'));
+console.log('EXIT=' + codigo);
+process.exit(codigo);

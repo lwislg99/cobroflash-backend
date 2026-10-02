@@ -1,0 +1,8 @@
++0.1s BANCO SCRUM-1391 · puerta «puerta-claude-empuje» · árbol C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas @ ee8238ed901e54a18e5c693c1d7ef41583ac496a · node v24.18.0 · win32
++0.1s POBLACION: 4 ficheros de mentira (2 controles + 2 que agotan el plazo) · plazo pasado a pasadaLocal: 3000 ms
++0.5s verde · TAP: ok el que cayo en CI · resumen: SÍ → VERDE → EMPUJA-GUARD-VERDE (empujar=true)
++0.6s rojo · TAP: not ok el que cayo en CI · resumen: SÍ → ROJO → NO-EMPUJA-SIGUE-ROJO (empujar=false)
++3.6s cuelga-el-nombrado · TAP: ok otro que pasa · resumen: NO → SIN-CORRER → NO-EMPUJA-CIEGO (empujar=false)
++6.7s cuelga-otro-despues · TAP: ok el que cayo en CI · resumen: NO → VERDE → EMPUJA-GUARD-VERDE (empujar=true)
+VEREDICTO-PUERTA {"puerta":"puerta-claude-empuje","ejercitada":true,"forma":"no","frase":"el test nombrado que agota el plazo sale NO-EMPUJA-CIEGO; si el nombrado ya salió `ok` y lo que cuelga es otro, EMPUJA-GUARD-VERDE"}
+EXIT=0

@@ -1,0 +1,95 @@
+QUIÉN VE CADA BOTÓN QUE LLAMA A UNA RUTA DE ADMIN. LEÍDO, NO CORRIDO.
+J4e · 2026-10-01, entre las lecturas de GitHub 07:41:10Z y 07:48:46Z · sobre origin/main 8f5906bc51c1c17dfd4fd3d44c1bd028324b8f48.
+Tres subagentes de sólo lectura, uno por grupo de ficheros. Nadie pulsó nada: lo que sigue dice qué condición de rol
+hay ESCRITA entre el control y la llamada, no qué pasa en el navegador. Un «VISIBLE» de aquí es una hipótesis a medir.
+De dónde salen los sitios: censo-llamadas-8f5906bc.txt (102 llamadas a rutas de admin). 42 viven en pantallas que son
+sólo del admin (reports 10, settings 8, team 5, plans 4, providers 4, expenses 5, cobros 2, libro 1, recibidas 1,
+parte-oficina 2) y no se triaron; 3 más (templatesView.js:146 y :195, quotesView.js:4929) ya las vetó y midió SCRUM-1317.
+Las otras 57 son éstas, en 60 filas: api.js:1502 es un solo sitio con cuatro llamadores.
+
+POBLACIÓN=60 filas triadas (15 + 18 + 27) · 57 sitios · 42 + 3 + 57 = 102
+
+── GRUPO A · Trabajos y albarán (15 sitios) ──────────────────────────────────────────────────
+jobDetailView.js:930   «Cobrar el resto» / «Cobrar siguiente tramo» (cabecera)   OCULTO_POR_ROL (no se pinta)   jobDetailView.js:902 → jobNextAction.js:74
+jobDetailView.js:939   «Recordar pago» (cabecera)                               OCULTO_POR_ROL (no se pinta)   jobDetailView.js:902 → jobNextAction.js:86
+jobDetailView.js:1176  carga automática (selector de asignados)                 OCULTO_POR_ROL (no se llama)   jobDetailView.js:1174
+jobDetailView.js:1450  «Enviar por email» (barra tras fallo de WhatsApp)        OCULTO_POR_ROL (indirecto: el botón padre va disabled)   jobDetailView.js:2277-2278
+jobDetailView.js:1669  «Consolidar en factura» → … → «Crear N factura(s)»       OCULTO_POR_ROL (primer botón disabled)   jobDetailView.js:1597-1598
+jobDetailView.js:2178  «Marcar como PAGADA»                                     OCULTO_POR_ROL (disabled)      jobDetailView.js:2277-2278
+jobDetailView.js:2184  «Marcar como PAGADA»                                     OCULTO_POR_ROL (disabled)      jobDetailView.js:2277-2278
+jobDetailView.js:2211  «Confirmar Bizum recibido»                               OCULTO_POR_ROL (disabled)      jobDetailView.js:2277-2278
+jobDetailView.js:2233  «Recordar pago» (fila de factura)                        OCULTO_POR_ROL (disabled)      jobDetailView.js:2277-2278
+jobDetailView.js:2249  «Reenviar por WhatsApp»                                  OCULTO_POR_ROL (disabled)      jobDetailView.js:2277-2278
+jobDetailView.js:3398  emitir de la hoja de facturar parcial (botón de fila del albarán, 2102)   OCULTO_POR_ROL (disabled)   jobDetailView.js:2106
+jobsView.js:132        carga automática al abrir Trabajos; el catch se traga el error   VISIBLE_OPERARIO        —
+jobsView.js:843        «⋯» → «Técnicos»; el catch pinta «No se pudo cargar el equipo»   VISIBLE_OPERARIO        —
+jobsView.js:1128       «Cobrar el resto» (fila)                                 OCULTO_POR_ROL (disabled)      jobsView.js:1148
+albaranDetailView.js:477  «Facturar con el presupuesto»                         VISIBLE_OPERARIO               — (sin condición de rol en albaranDetailView.js, albaranAccion.js, albaranActionsRegistry.js ni patronDetalleAcciones.js)
+Dudas del grupo: todos los vetos comparan `appUserRole === 'tecnico'` exacto (jobDetailView.js:739, jobsView.js:984): con
+otro valor que no sea admin no se aplicaría ninguno. No se leyó el cuerpo de openFacturarParcialSheet.
+
+── GRUPO B · Facturas y presupuestos (18 sitios) ─────────────────────────────────────────────
+invoiceDetailView.js:386  «Enviar por WhatsApp»                                 VISIBLE_OPERARIO   —
+invoiceDetailView.js:407  «Enviar por email» (barra tras fallo de WhatsApp)     VISIBLE_OPERARIO   —
+invoiceDetailView.js:423  ídem, rama catch                                      VISIBLE_OPERARIO   —
+invoiceDetailView.js:471  «Marcar como cobrada» (importe distinto)              VISIBLE_OPERARIO   —
+invoiceDetailView.js:490  «Marcar como cobrada»                                 VISIBLE_OPERARIO   —
+invoiceDetailView.js:576  «Cobrar por Bizum» (2.º toque)                        VISIBLE_OPERARIO   — (sólo el flag appBizumManualEnabled, :556)
+invoiceDetailView.js:612  «Enviar recordatorio de pago»                         VISIBLE_OPERARIO   —
+invoiceDetailView.js:653  «Emitir factura rectificativa»                        VISIBLE_OPERARIO   —
+invoiceDetailView.js:743  «Volver a generar el PDF»                             VISIBLE_OPERARIO   —
+invoiceDetailView.js:874  «Anular factura…» → modal                             OCULTO_POR_ROL (disabled, sin listener)   invoiceDetailView.js:719-724
+invoicesView.js:486       «Marcar como pagadas» (barra de lote)                 VISIBLE_OPERARIO   —
+quotesView.js:5443        «Emitir factura» (vista invoices-new)                 VISIBLE_OPERARIO   — (sólo appDocumentoSuelto: app.js:411, invoicesView.js:205)
+quotesDetailView.js:807   «Guardar plan»                                        OCULTO_POR_ROL (disabled)   quotesDetailView.js:714, 797
+quotesDetailView.js:870   «Marcar como pagada»                                  VISIBLE_OPERARIO   —
+quotesDetailView.js:1073  carga automática del margen; el catch se traga el error   VISIBLE_OPERARIO   —
+quotesDetailView.js:1429  «Cancelar» (mantenimiento)                            VISIBLE_OPERARIO   —
+quotesDetailView.js:1459  «Crear recordatorio»                                  VISIBLE_OPERARIO   —
+quotesListView.js:331     «Aprobar»                                             OCULTO_POR_ROL (no se pinta)   quotesListView.js:322
+Dudas del grupo: no se leyeron patronDetalleAcciones.js ni invoiceActionsRegistry.js (sólo consta que no nombran el rol).
+Varios controles dependen de datos del servidor (appDocumentoSuelto, appBizumManualEnabled, quote.maintenance): no se miró
+si el servidor los varía por rol.
+
+── GRUPO C · Clientes, productos, Inicio, arranque (27 sitios) ───────────────────────────────
+customerDetailView.js:226  carga automática (catch traga)                       OCULTO_POR_ROL   customerDetailView.js:221
+customerDetailView.js:670  «ver más» de la pestaña WhatsApp                     OCULTO_POR_ROL   :221 → :514-519
+customerDetailView.js:952  «Fusionar con otro cliente» → candidato              OCULTO_POR_ROL   customerDetailView.js:280
+customerDetailView.js:986  mismo modal → confirmar                              OCULTO_POR_ROL   customerDetailView.js:280
+customersView.js:496       «Añadir etiqueta» / «Quitar etiqueta»                OCULTO_POR_ROL   customersView.js:462, 479
+csvImport.js:123           Clientes → «Importar clientes» → «Continuar»         OCULTO_POR_ROL (disabled y sin cablear)   customersView.js:104-108
+csvImport.js:224           … → «Está bien, importar»                            OCULTO_POR_ROL (disabled y sin cablear)   customersView.js:104-108
+productsView.js:716        carga automática (refresh)                           OCULTO_POR_ROL   productsView.js:922
+productsView.js:723        «Crear producto»                                     VISIBLE_OPERARIO   —   ← MEDIDO por efecto y ARREGLADO en este ticket
+productsView.js:734        «Editar» → «Guardar»; «Desactivar» / «Activar»       OCULTO_POR_ROL (sólo disabled; listeners cableados)   productsView.js:870-873
+productsView.js:749        ninguno: importProductsCsv no tiene llamadores       DUDA (código muerto)
+productsView.js:1010       «Importar CSV»                                       OCULTO_POR_ROL (sólo disabled)   productsView.js:258-261
+productsView.js:1147       «Cargar el catálogo de mi gremio»                    OCULTO_POR_ROL (disabled y sin cablear)   productsView.js:795-800
+homeView.js:381            carga automática (catch traga)                       OCULTO_POR_ROL   homeView.js:366
+homeView.js:382            carga automática (catch traga)                       OCULTO_POR_ROL   homeView.js:366
+homeView.js:731            carga automática (catch traga)                       OCULTO_POR_ROL   homeView.js:727
+api.js:1502 ← homeView.js:1508            Inicio: «Personalizar» → «Guardar»    OCULTO_POR_ROL   homeView.js:16
+api.js:1502 ← settingsView.js:1165, 1545  Configuración: guardados              OCULTO_POR_ROL   app.js (vista sólo de admin)
+api.js:1502 ← productsView.js:1224        Productos: elegir oficio              OCULTO_POR_ROL   productsView.js:800
+api.js:1502 ← onboardingView.js:164, 165  Asistente, paso 1 «Siguiente»         VISIBLE (CONDICIONAL: sólo si un operario ve el asistente)
+app.js:115                 banner «Revisar pago»                                VISIBLE (CONDICIONAL: sólo mira `past_due`, no el rol)
+puertaSerie.js:213         sólo desde Configuración                             OCULTO_POR_ROL   app.js (vista sólo de admin)
+puertaSerie.js:240         sólo desde Configuración                             OCULTO_POR_ROL   app.js (vista sólo de admin)
+onboardingView.js:250      paso 2: «Sí» o teclear número                        VISIBLE (CONDICIONAL)
+onboardingView.js:284      paso 2: «Siguiente» / «Es correcto»                  VISIBLE (CONDICIONAL)
+onboardingView.js:328      paso 3: «Siguiente» con la casilla marcada           VISIBLE (CONDICIONAL)
+onboardingView.js:496      «Saltar por ahora» / «Explorar el panel» / «Enviar mi primera cotización»   VISIBLE (CONDICIONAL)
+Dudas del grupo: el asistente se abre en app.js con `if (!me.onboardingCompleted)`, dato del merchant y no del usuario; no
+se determinó si puede haber un operario con sesión mientras el merchant no lo ha completado. Criterios de rol distintos
+según el fichero: productsView `=== 'tecnico'`, customersView `!== 'tecnico' && !== 'operario'`, el resto `=== 'admin'`.
+
+── RECUENTO (sobre las 60 filas de arriba) ───────────────────────────────────────────────────
+OCULTO_POR_ROL ............................ 34   (12 del grupo A · 3 del grupo B · 19 del grupo C)
+VISIBLE_OPERARIO, sin ninguna condición ... 19   (3 del grupo A · 15 del grupo B · 1 del grupo C)
+VISIBLE, condicional ....................... 6   (5 del asistente de alta · 1 banner de pago)
+DUDA (código muerto) ....................... 1
+                                            ──
+                                            60
+Los 19, por control (dos llamadas pueden ser un solo botón): Factura 7 · lista de facturas 1 · factura suelta 1 ·
+presupuesto 3 controles y 1 carga automática · albarán 1 · Trabajos 1 control y 1 carga automática · Productos 1.
+Son 15 controles y 2 cargas automáticas. De los 15 controles, este ticket mide y arregla UNO («Crear producto»).

@@ -24,6 +24,8 @@
 // pueden ser sólo «recibido», y aceptar crea el Trabajo y avisa al profesional. Sueltas ya no
 // aceptan: quien llama pregunta al cliente, y el presupuesto no se mueve.
 
+import { sinTildes } from '../../../core/texto/sinTildes';
+
 export type Decision = 'accept' | 'reject' | 'ask' | 'unknown';
 
 /** Lo que acepta. Una entrada de varias palabras sólo casa con esas palabras seguidas. */
@@ -85,8 +87,7 @@ const PALABRAS_DE_LA_MAS_LARGA = Math.max(...[...CLASE_DE.keys()].map((e) => e.s
  * Los asteriscos de la negrita y los emojis no son palabras ni parten nada.
  */
 function tramos(texto: string): string[][] {
-  const plano = texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-  return plano
+  return sinTildes(texto)
     .split(/[,.;:!¡()\n]+/)
     .map((tramo) => tramo.match(/[\p{L}\p{N}]+/gu) ?? [])
     .filter((palabras) => palabras.length > 0);

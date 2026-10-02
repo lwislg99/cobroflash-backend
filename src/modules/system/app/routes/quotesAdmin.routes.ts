@@ -980,6 +980,12 @@ router.get('/:id', async (req, res) => {
  * rutas. Y tampoco abre la economía: un técnico asignado sigue sin ver coste ni margen, porque
  * eso lo decide `visibilidadEconomica.ts` por ROL y la asignación no entra en esa pregunta.
  *
+ * 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026
+ * (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un Técnico lo
+ * VEA. Para EDITAR y EMITIR sigue siendo verdad tal cual, y esta ruta sigue sin decidir nada de
+ * eso: sólo escribe la fila. La regla de quién ve vive en el máster, Parte S1 («autor o
+ * asignado»), no en este comentario.
+ *
  * 🔴 Y NO TOCA EL DOCUMENTO (regla 29). Escribe SOLO en la tabla puente. Asignar a una factura
  * emitida no puede cambiar su número, su total ni su PDF: no hay ninguna escritura que pudiera.
  *

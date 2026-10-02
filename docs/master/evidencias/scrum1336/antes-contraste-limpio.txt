@@ -1,0 +1,25 @@
+# contraste-limpio · guard-contraste.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · sin romper nada
+# EXIT=0 · 7.1 s
+
+páginas medidas: 9  ·  nodos con texto: 359
+
+NO MEDIBLES por este guard: 12 nodos sobre fondo con degradado.
+  Un degradado no tiene UN ratio, tiene un rango distinto en cada píxel. Ni se
+  aprueban ni se suspenden: se listan para que se sepa que existen.
+   /admin.html  .page-title  rgb(229, 231, 235)  24px/400  «YaQu – Panel Admin interno»
+   /admin.html  .page-subtitle  rgb(156, 163, 175)  13px/400  «Configura tu negocio y gestion»
+   /admin.html  .badge.badge-green  rgb(34, 197, 94)  11px/400  «SOLO USO INTERNO DEMO»
+   /admin.html  .helper  rgb(107, 114, 128)  11px/400  «Se usará como remitente por de»
+   /admin.html  .span  rgb(107, 114, 128)  11px/400  «Error al cargar el merchant»
+   /admin.html  .code  rgb(107, 114, 128)  11px/400  «/admin/customers»
+   /admin.html  .btn-ghost  rgb(2, 44, 34)  13px/500  «Limpiar resultado»
+   /admin.html  .div  rgb(107, 114, 128)  11px/400  «Personas a las que se envían p»
+   /index.html  .h2  rgb(255, 255, 255)  36.8px/700  «Tu próxima cotización, lista e»
+   /index.html  .p  rgb(167, 243, 208)  16px/400  «Únete a los profesionales que »
+
+pares por debajo de AA: 0 nuevos · 4/4 conocidos presentes
+
+pares que cumplen por la VÍA DE TEXTO GRANDE: 1 vigilados (ratio ≥ 3,0 Y ≥18.66px Y peso ≥700)
+
+✔ ningún par nuevo por debajo de AA
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

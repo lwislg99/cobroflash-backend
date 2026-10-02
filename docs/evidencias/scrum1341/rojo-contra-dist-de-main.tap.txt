@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: SCRUM-1341 · 🔴 `/admin/metrics/team` le sigue contestando 403 al Técnico, y antes de tocar la base
+ok 1 - SCRUM-1341 · 🔴 `/admin/metrics/team` le sigue contestando 403 al Técnico, y antes de tocar la base
+  ---
+  duration_ms: 30.4775
+  type: 'test'
+  ...
+# Subtest: SCRUM-1341 · las dos rutas están DECLARADAS: la nueva con su motivo, la del admin con su 403, y el tope sigue en 0
+not ok 2 - SCRUM-1341 · las dos rutas están DECLARADAS: la nueva con su motivo, la del admin con su 403, y el tope sigue en 0
+  ---
+  duration_ms: 1.1426
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:178:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la ruta nueva no está declarada en TECNICO_ALLOWED exactamente una vez
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:180:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# Subtest: SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+not ok 3 - SCRUM-1341 · ✅ la ruta nueva le contesta 200 al Técnico, con una lista CERRADA de campos — sin `id`
+  ---
+  duration_ms: 5.4741
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:195:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la ruta del Técnico no le contesta: 404
+    
+    404 !== 200
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:197:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+not ok 4 - SCRUM-1341 · 🔴 NI UN EURO: seis escenarios que sólo difieren en lo cobrado dan la MISMA respuesta, ruta a ruta
+  ---
+  duration_ms: 33.4315
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:209:1'
+  failureType: 'testCodeFailure'
+  error: '🔴 CIEGO: la respuesta del Técnico sólo tiene 1 rutas; no se ha medido nada'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:225:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+not ok 5 - SCRUM-1341 · 🔴 los cinco mecanismos, uno a uno, sobre la respuesta real — y ningún importe en ningún valor
+  ---
+  duration_ms: 25.8243
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:233:1'
+  failureType: 'testCodeFailure'
+  error: 'Cannot convert undefined or null to object'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Object.hasOwn (<anonymous>)
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:242:25)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+not ok 6 - SCRUM-1341 · 🔴 por EFECTO en la base: la ruta nueva no consulta facturas, ni pide el total de un presupuesto
+  ---
+  duration_ms: 3.0853
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:266:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 la ruta del Técnico le pide a la base otra cosa que el negocio, sus miembros y sus presupuestos del mes
+    + actual - expected
+    
+    + []
+    - [
+    -   'merchant.findUnique',
+    -   'quote.findMany',
+    -   'teamMember.findMany'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'merchant.findUnique'
+    1: 'quote.findMany'
+    2: 'teamMember.findMany'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:269:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+not ok 7 - SCRUM-1341 · el orden está DECLARADO en la consulta, y no depende de nada que se cuente
+  ---
+  duration_ms: 3.0419
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:289:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'args')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:291:70)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+not ok 8 - SCRUM-1341 · ✅ persona a persona, la actividad del Técnico es la MISMA que ve el admin (las dos copias del recuento no divergen)
+  ---
+  duration_ms: 5.1042
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\scrum-1341-j2j\\tests\\scrum1341-actividad-del-equipo-sin-importes.test.mjs:304:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of null (reading 'members')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1341-j2j/tests/scrum1341-actividad-del-equipo-sin-importes.test.mjs:309:28)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+ok 9 - SCRUM-1341 · ✅ el Inicio del TÉCNICO pinta «Actividad del equipo» con su ruta, el título firmado y tres columnas
+  ---
+  duration_ms: 84.2808
+  type: 'test'
+  ...
+# Subtest: SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+ok 10 - SCRUM-1341 · 🔴 aunque le LLEGUE el dinero, el bloque del Técnico no pinta ni un importe, ni la estrella, ni el aviso, ni el botón
+  ---
+  duration_ms: 101.7216
+  type: 'test'
+  ...
+# Subtest: SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta, su título, sus cuatro columnas y su dinero
+ok 11 - SCRUM-1341 · ✅ el Inicio del ADMIN sigue siendo el de siempre: su ruta, su título, sus cuatro columnas y su dinero
+  ---
+  duration_ms: 47.7479
+  type: 'test'
+  ...
+# Subtest: SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto
+ok 12 - SCRUM-1341 · sin equipo de campo no se pinta nada: ni una tabla vacía ni el título suelto
+  ---
+  duration_ms: 36.4947
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 5
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1324.6933

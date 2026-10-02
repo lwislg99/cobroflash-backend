@@ -667,7 +667,15 @@ function renderProductsView(container) {
     //    abra el alta; entonces el atajo tendría a qué colgarse. Ver `docs/master/SCRUM-769.md`.
     // ═══════════════════════════════════════════════════════════════════════════════════════
     const createBtn = form.querySelector("#pf-create-product");
-  
+    // SCRUM-1338 · `POST /admin/products` exige admin desde SCRUM-614 (el catálogo es sólo lectura
+    // para el operario) y este botón era el único de la pantalla que no lo sabía: se pulsaba y daba
+    // 403. Mismo trato que Exportar, Importar, Editar y Desactivar de aquí mismo (SCRUM-89):
+    // deshabilitado y con su nota, no oculto — la pantalla es suya; la acción, no (c.17829).
+    if (window.appUserRole !== 'admin' && createBtn) {
+      lockActionForRole(createBtn);
+      createBtn.parentNode.insertAdjacentElement('afterend', roleLockedNote());
+    }
+
     // --- table ---
     const tableWrap = document.createElement("div");
     tableWrap.className = "table-scroll";

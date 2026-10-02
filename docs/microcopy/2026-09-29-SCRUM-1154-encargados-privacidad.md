@@ -19,12 +19,12 @@ frase son las dos mitades del cambio — *firmo* la fila de Google, *quítala* l
 No se reescribe: **se borra.** Y el motivo va con la decisión, porque es lo que impide que alguien
 la «arregle» mañana:
 
-> **Hoy no le llega nada.** Sólo se usaría si faltara `GEMINI_API_KEY`, y `ANTHROPIC_API_KEY` **ni
-> está puesta**. El «proveedor de respaldo» **se midió y no existe**: con un 429 de Google, cero
-> llamadas a Anthropic.
->
-> Una política de privacidad lista **quién recibe datos**. Anthropic no recibe ninguno, así que no
-> se lista.
+**Hoy no le llega nada.** Sólo se usaría si faltara `GEMINI_API_KEY`, y `ANTHROPIC_API_KEY` **ni
+está puesta**. El «proveedor de respaldo» **se midió y no existe**: con un 429 de Google, cero
+llamadas a Anthropic.
+
+Una política de privacidad lista **quién recibe datos**. Anthropic no recibe ninguno, así que no
+se lista.
 
 ⚠️ **El día que se encienda, vuelve a firma.** No queda un texto «por si acaso».
 

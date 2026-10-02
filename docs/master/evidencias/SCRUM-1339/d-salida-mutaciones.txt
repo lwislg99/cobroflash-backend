@@ -1,0 +1,18 @@
+POBLACIÓN: 5 mutaciones declaradas en tests/scrum1339d-senal-de-nombres.test.mjs
+BASE sin mutar: tests 17 · pass 17 · fail 0 · salida 0
+  1. VIVA  · scripts/_senal-de-nombres.mjs · mutada: tests 17 · fail 14 (de 17 en la base) · restaurado: sí
+       cae: «SCRUM-1339d · ② 🔴 EL POSITIVO: un TAP completo no lleva NINGÚN aviso, y la línea de registro sale igual»
+       además cayeron 13: «SCRUM-1339d · ① EL ROJO: a un TAP le falta la cola y sale co» «SCRUM-1339d · ③ la línea de registro sale SIEMPRE con su pob» «SCRUM-1339d · «declarados N» está ATADO al censo de SCRUM-70» «SCRUM-1339d · EL PUNTO CIEGO va CONTADO e impreso: nombres c» «SCRUM-1339d · MULTIPLICIDAD: el mismo nombre en dos ficheros» «SCRUM-1339d · una SUITE que se llama igual que un test no ta» «SCRUM-1339d · EL ESCAPE es el del reporter de node: se escap» «SCRUM-1339d · un test SALTADO o TODO está registrado; un «\#» «SCRUM-1339d · LAS FORMAS: entero, cola, cabeza y medio; y el» «SCRUM-1339d · CASO REAL (meta-guard de main, run 36886780786» «SCRUM-1339d · las anotaciones caben en el tope de GitHub, y » «SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabr» «SCRUM-1339d · EL GUION calcula la tasa desde fuera: registro»
+  2. VIVA  · scripts/_senal-de-nombres.mjs · mutada: tests 17 · fail 2 (de 17 en la base) · restaurado: sí
+       cae: «SCRUM-1339d · MULTIPLICIDAD: el mismo nombre en dos ficheros con UNA sola línea en el TAP no cuenta como prese»
+       además cayeron 1: «SCRUM-1339d · las anotaciones caben en el tope de GitHub, y »
+  3. VIVA  · scripts/_senal-de-nombres.mjs · mutada: tests 17 · fail 3 (de 17 en la base) · restaurado: sí
+       cae: «SCRUM-1339d · un TAP que NO está entero no se mide: vacío, con NUL, sin resumen, con dos resúmenes, o con meno»
+       además cayeron 2: «SCRUM-1339d · ③ la línea de registro sale SIEMPRE con su pob» «SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE q»
+  4. VIVA  · scripts/_senal-de-nombres.mjs · mutada: tests 17 · fail 1 (de 17 en la base) · restaurado: sí
+       cae: «SCRUM-1339d · LA TASA es pura y sale SIEMPRE con su población: lo que no se midió no cuenta como limpio»
+  5. VIVA  · scripts/senal-de-nombres.mjs · mutada: tests 17 · fail 1 (de 17 en la base) · restaurado: sí
+       cae: «SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pudo medir: nunca calla y nunca tumba el job»
+vivas 5 · mudas 0 · ciegas 0 · de 5
+git status de scripts/ y tests/ al acabar: limpio
+EXIT=0

@@ -71,7 +71,7 @@ router.post('/', async (req, res) => {
     // A10.3 (W3, regla 34): límite de usuarios por plan — 1 Pro/Founding, 5
     // Equipo. Cuenta = owner (1) + miembros no suspendidos. Al tope: mensaje
     // digno con la oferta Equipo (W1: oferta manual, no autoservicio).
-    const { maxUsers } = getEntitlements(merchant?.plan);
+    const { maxUsers } = getEntitlements(merchant?.plan, { merchantId: req.merchantId }); // SCRUM-1342: si el plan no existe, el aviso dice de quién es
     const activeMembers = await prisma.teamMember.count({
       where: { merchantId: req.merchantId, status: { not: 'suspended' } },
     });

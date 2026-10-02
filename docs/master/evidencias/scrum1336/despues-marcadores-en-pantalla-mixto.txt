@@ -1,0 +1,23 @@
+# marcadores-en-pantalla-mixto · guard-marcadores-en-pantalla.mjs @ e82d47d87fcc0fcf01a22cc99ffcb5934ca78e71 · Informes pinta un marcador nuevo y Proveedores revienta
+# EXIT=1 · 29.6 s
+
+SCRUM-722 · marcadores en el DOM renderizado — 28 vistas × 3 estados · 94 scripts
+
+  ✅ control negativo: el marcador inyectado se detecta (1)
+  · estados de albarán servidos: borrador, emitido, firmado
+
+  · facturas-recibidas: 6 (en su techo)
+
+🔴 3 par(es) (vista,estado) CIEGOS. No es «limpio»: es que no he podido mirar,
+   y un guard que no puede mirar no puede aprobar:
+     providers · con-datos → Error: rota a proposito por el banco de SCRUM-1336 @js/providersView.js:66:11)
+     providers · sin-datos → Error: rota a proposito por el banco de SCRUM-1336 @js/providersView.js:66:11)
+     providers · error → Error: rota a proposito por el banco de SCRUM-1336 @js/providersView.js:66:11)
+  🔴 VISTA NUEVA CON MARCADOR: `reports` pinta 3 y no estaba en el censo.
+     «[PENDIENTE microcopy oficial] puesto por el banco de SCRUM-1»
+     O se firma el texto y desaparece, o entra AQUÍ con su motivo y quién lo retira.
+
+────────────────────────────────────────────────────────────────────────────
+🔴 SCRUM-722 · 1 problema(s) con los marcadores en pantalla.
+🔴 SCRUM-722 · NO SUPE MIRAR 3 cosa(s): de eso no se da veredicto, ni bueno ni malo.
+⟦veredicto⟧ 1 hallazgo · 3 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

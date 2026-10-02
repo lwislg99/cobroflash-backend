@@ -1,0 +1,5 @@
+POBLACIÓN: 99 artefactos · 97 runs
+canario ok: 11153959409 110325943237 cancelled
+..................................................................................................
+taps en disco 99 de 99 · logs en disco 95 · con error 0 · con error de log 2
+EXIT=0

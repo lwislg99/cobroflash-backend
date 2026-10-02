@@ -1,0 +1,17 @@
+POBLACIÓN: 15 artefactos · con TAP en disco 15 · sin TAP 0
+  medibles (TAP entero y árbol probado resuelto): 11 · TAP no entero: 3 · sin árbol: 1
+       3× no medible: el TAP no tiene resumen (`# tests N`): la tanda no llegó al final
+① CON AUSENTES: 5 de 11 · de ellos success 5
+   11171756403 run 36879091133 [1/1] push success ausentes=4 dudosos=0 → tests/scrum411-exports-inalcanzables.test.mjs · faltan 4 de 25 (cola) · posiciones 22–25 · líneas 586–643
+   11171825926 run 36879667635 [1/1] pull_request success ausentes=3 dudosos=0 → tests/scrum888g-senal-en-la-firma.test.mjs · faltan AL MENOS 3 de 10 (cola) · posiciones 8–10 · líneas 190–238 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   11171214885 run 36880659605 [1/1] push success ausentes=33 dudosos=0 → tests/scrum834-puerta-avisador-rojo.test.mjs · faltan 33 de 53 (cola) · posiciones 21–53 · líneas 227–647
+   11174308618 run 36886428643 [1/1] push success ausentes=8 dudosos=0 → tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan AL MENOS 5 de 10 (cola) · posiciones 6–10 · líneas 219–341 · en el mismo hueco hay 4 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve | tests/scrum524b-trinquete-de-la-tabla.test.mjs · faltan AL MENOS 3 de 12 (cola) · posiciones 10–12 · líneas 299–335 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+   11175713200 run 36886780786 [1/1] push success ausentes=6 dudosos=0 → tests/scrum411-exports-inalcanzables.test.mjs · faltan 6 de 25 (cola) · posiciones 20–25 · líneas 545–643
+② LIMPIOS (0 ausentes, 0 dudosos): 6 de 11
+   SÓLO DUDOSOS (0 ausentes, algún repetido que llega menos veces de las declaradas): 0
+③ CRUCE CON LA SONDA DE J3h (b-analisis.tsv): comparables 0 de 11
+   mismo veredicto (falta algo / no falta nada): 0 de 0 · misma cifra de ausentes: 0 de 0
+④ PUNTO CIEGO por job: llamadas no comparables mín 115 · mediana 115 · máx 115 (de 9530 declaradas en el último)
+⑤ TASA sobre los jobs de push de este banco (5):
+   [señal de nombres · tasa] 4 de 5 runs medidos con nombres ausentes (80.0 %) · población 5 runs · sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 5 · tope 2026-10-15 (SCRUM-1339 c.17935)
+EXIT=0

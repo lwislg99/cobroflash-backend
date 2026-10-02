@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { censo, tomasDeMerchantEn } from './_censo-merchant-de-la-url.mjs';
 // SCRUM-497: los modelos que hay que doblar se DERIVAN de la lista real (ver `doblarCliente`).
-import { CAMPOS_PERSONALES } from '../dist/modules/system/domain/anonimizarMerchant.js';
+import { CAMPOS_PERSONALES } from '../dist/modules/system/domain/anonimizarMerchant.js'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
@@ -90,7 +90,7 @@ test('SCRUM-440 · 🔴 pedir la supresión de OTRO merchant: 404 y NI UNA CONSU
   try {
     const res = resFalso();
     await handlerDeLaRuta()(
-      { params: { merchantId: '99' }, merchantId: 7, body: { confirmacion: 'lo que sea' } },
+      reqDeSesion({ rol: 'admin', params: { merchantId: '99' }, merchantId: 7, body: { confirmacion: 'lo que sea' } }),
       res,
     );
 
@@ -125,7 +125,7 @@ test('SCRUM-440 · CONTROL POSITIVO: el merchant PROPIO sí puede pedir su supre
   try {
     const res = resFalso();
     await handlerDeLaRuta()(
-      { params: { merchantId: '7' }, merchantId: 7, body: { confirmacion: 'Fontaneria Perez' } },
+      reqDeSesion({ rol: 'admin', params: { merchantId: '7' }, merchantId: 7, body: { confirmacion: 'Fontaneria Perez' } }),
       res,
     );
     assert.equal(res.code, 200,
@@ -143,7 +143,7 @@ test('SCRUM-440 · la tenencia se comprueba ANTES que el flag no la haga irrelev
   const restaurar = doblarCliente(diario);
   try {
     const res = resFalso();
-    await handlerDeLaRuta()({ params: { merchantId: '99' }, merchantId: 7, body: {} }, res);
+    await handlerDeLaRuta()(reqDeSesion({ rol: 'admin', params: { merchantId: '99' }, merchantId: 7, body: {} }), res);
     assert.equal(res.code, 404);
     assert.deepEqual(diario, [], '🔴 con el flag apagado ya se consulta la base.');
   } finally { restaurar(); }

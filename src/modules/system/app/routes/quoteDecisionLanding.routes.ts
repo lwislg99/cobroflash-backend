@@ -23,6 +23,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 // SCRUM-987 · «Válido hasta el …»: la frase y su fecha, en el sitio que comparte con el PDF.
 import { textoDeValidez } from '../../../quotes/domain/validez';
+import { sinTildes } from '../../../../core/texto/sinTildes';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -350,7 +351,7 @@ function selectTier(tierId, qId) {
 </script>`;
 
 function lineIcon(concept: string): string {
-  const c = String(concept || '').toLowerCase();
+  const c = sinTildes(String(concept || '')); // SCRUM-1325
   if (/(mano de obra|hora|jornal|instalaci|montaj|reparaci)/.test(c)) return '🔧';
   if (/(material|tuber|cable|pintura|placa|cemento|pieza|grifo|caldera)/.test(c)) return '📦';
   if (/(desplaz|viaje|\bkm\b|transporte|dieta)/.test(c)) return '🚚';

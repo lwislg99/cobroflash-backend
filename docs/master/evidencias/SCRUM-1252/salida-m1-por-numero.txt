@@ -1,0 +1,45 @@
+✔ SCRUM-1252 · SUELO: sin filtrar, el paquete SÍ pinta el justificante — la muestra no está ciega
+✖ SCRUM-1252 · el `libro-registro.csv` del paquete son las FACTURAS, y todas
+✖ SCRUM-1252 · el `indice.csv` del paquete lleva una fila por FACTURA
+✔ SCRUM-1252 · ⛔ el 303 del paquete es IDÉNTICO con filtro y sin él, y sigue llevando el IVA del justificante
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+✖ failing tests:
+test at tests\scrum1252-evidencias-libro-solo-facturas.test.mjs:111:1
+✖ SCRUM-1252 · el `libro-registro.csv` del paquete son las FACTURAS, y todas
+  AssertionError [ERR_ASSERTION]: 🔴 el libro del paquete de evidencias no es la lista de facturas del periodo. Si sobra «J-2026-0001», el paquete lee el libro sin `soloFacturas` (RIVA 63: el libro son las facturas expedidas). Si falta una, el filtro se lleva de más — y una `F1` con número `J-` es una FACTURA (fundador, 28-sep-2026): el criterio es el `type`, no el número.
+  + actual - expected
+    [
+      'F260001',
+  -   'J-20260805-AB12',
+      'R260001'
+    ]
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'F260001', 'R260001' ],
+    expected: [ 'F260001', 'J-20260805-AB12', 'R260001' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+test at tests\scrum1252-evidencias-libro-solo-facturas.test.mjs:120:1
+✖ SCRUM-1252 · el `indice.csv` del paquete lleva una fila por FACTURA
+  AssertionError [ERR_ASSERTION]: 🔴 el índice del paquete no coincide con las facturas del periodo.
+  + actual - expected
+    [
+      'F260001',
+  -   'J-20260805-AB12',
+      'R260001'
+    ]
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'F260001', 'R260001' ],
+    expected: [ 'F260001', 'J-20260805-AB12', 'R260001' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+EXIT=1

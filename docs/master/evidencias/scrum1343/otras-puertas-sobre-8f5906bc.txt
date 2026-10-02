@@ -1,0 +1,886 @@
+BANCO SCRUM-1343 (otras puertas) · plataforma win32 · node v24.18.0
+POBLACIÓN: 3 puertas — scripts/tanda-con-veredicto.mjs, scripts/guards-entrada.mjs, scripts/meta-guard-mutaciones.mjs (su `correr`)
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 1 · tanda-con-veredicto · CONTROL: un limpio y un rojo de verdad
+████████████████████████████████████████████████████████████████████████████████████████████████████
+✔ caso limpio del banco (0.5285ms)
+✖ caso que cae de verdad (1.3354ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.8934
+
+✖ failing tests:
+
+test at ..\..\JAVIER~1\AppData\Local\Temp\scrum1343-otras-8Kmx91\rojo.test.mjs:3:1
+✖ caso que cae de verdad (1.3354ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at TestContext.<anonymous> (file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/rojo.test.mjs:3:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+EXIT=1
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 2 · tanda-con-veredicto · CONTROL: dos limpios
+████████████████████████████████████████████████████████████████████████████████████████████████████
+✔ caso limpio del banco (0.7172ms)
+✔ otro caso limpio del banco (0.51ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 149.3986
+
+EXIT=0
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 3 · tanda-con-veredicto · su hijo DIRECTO no existe (ENOENT)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+
+🔴 TANDA SIN VEREDICTO (SCRUM-858): no se pudo lanzar «<banco>\este-node-no-existe.exe»: spawn <banco>\este-node-no-existe.exe ENOENT
+
+EXIT=2
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 4 · tanda-con-veredicto · un NIETO sale con 0xC0000142 sin una letra (imitación)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+✔ caso limpio del banco (0.5145ms)
+✖ <banco>\nativo.test.mjs (37.63ms)
+✔ otro caso limpio del banco (0.6842ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 153.8749
+
+✖ failing tests:
+
+test at ..\..\JAVIER~1\AppData\Local\Temp\scrum1343-otras-8Kmx91\nativo.test.mjs:1:1
+✖ <banco>\nativo.test.mjs (37.63ms)
+  'test failed'
+
+EXIT=1
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 5 · tanda-con-veredicto · dos NIETOS no arrancan (ENOENT: el binario desaparece a mitad)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+✔ renombra el binario (1.0508ms)
+✖ <banco>\limpio.test.mjs (1.488ms)
+✖ <banco>\otro-limpio.test.mjs (0.9127ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.3436
+
+✖ failing tests:
+
+test at ..\..\JAVIER~1\AppData\Local\Temp\scrum1343-otras-8Kmx91\limpio.test.mjs:1:1
+✖ <banco>\limpio.test.mjs (1.488ms)
+  Error: spawn <banco>\node-copia.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=1', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\limpio.test.mjs' ]
+  }
+
+test at ..\..\JAVIER~1\AppData\Local\Temp\scrum1343-otras-8Kmx91\otro-limpio.test.mjs:1:1
+✖ <banco>\otro-limpio.test.mjs (0.9127ms)
+  Error: spawn <banco>\node-copia.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=1', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\otro-limpio.test.mjs' ]
+  }
+
+EXIT=1
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 6 · guards-entrada · su hijo DIRECTO (el `node --test`) no existe (ENOENT)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+Guards de entrada del registro (12):
+  · scrum273-registro-por-fichero.test.mjs — el fichero se llama SCRUM-<n>.md y el trabajo no se escribe en YAQU_MASTER.md
+  · scrum267-ancla-de-medicion.test.mjs — la entrada declara contra qué `origin/main` se midió, con sha de 40 y hora con huso
+  · scrum391-guards-declarados-presentes.test.mjs — todo test que la entrada DECLARA existe en el árbol
+  · scrum242-scripts-no-prometen-documentos.test.mjs — no se nombra un documento que no existe (la promesa que se lee y no se busca)
+  · public-js-parsea.test.mjs — todo .js que se sirve al navegador PARSEA (un backtick suelto borra una pantalla entera)
+  · scrum237-negacion-respaldada.test.mjs — ninguna negación de la suite se queda sin respaldo (el rojo del #1541: cayó en CI y aquí salía verde)
+  · scrum258-nota-por-sesion.test.mjs — la nota del turno es de la SESIÓN: una no puede soltar el turno vivo de otra
+  · scrum514-aprobado-y-aplicado.test.mjs — todo texto APROBADO está aplicado en la pantalla (la mitad de la regla 30 que faltaba)
+  · scrum522-guards-fuera-de-la-tanda.test.mjs — la puerta de los guards de navegador sigue existiendo, el workflow la invoca y su lista sale derivada
+  · scrum548-peaje-package-json.test.mjs — el censo de guards cuenta todos los declarados y el detector de solape sigue discriminando
+  · scrum723-guard-contra-su-base.test.mjs — un guard compara contra el punto de partida de la rama, no contra la punta móvil de main
+  · scrum811c-skill-ui-declarada.test.mjs — toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no
+
+
+🔴 solo se ejecutaron 0 tests entre 12 ficheros.
+  Los ficheros están, pero no han corrido: «0 tests, 0 fallos» también sale verde.
+
+EXIT=1
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 7 · guards-entrada · parte de sus NIETOS (un proceso por fichero) no arrancan (ENOENT)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+Guards de entrada del registro (12):
+  · scrum273-registro-por-fichero.test.mjs — el fichero se llama SCRUM-<n>.md y el trabajo no se escribe en YAQU_MASTER.md
+  · scrum267-ancla-de-medicion.test.mjs — la entrada declara contra qué `origin/main` se midió, con sha de 40 y hora con huso
+  · scrum391-guards-declarados-presentes.test.mjs — todo test que la entrada DECLARA existe en el árbol
+  · scrum242-scripts-no-prometen-documentos.test.mjs — no se nombra un documento que no existe (la promesa que se lee y no se busca)
+  · public-js-parsea.test.mjs — todo .js que se sirve al navegador PARSEA (un backtick suelto borra una pantalla entera)
+  · scrum237-negacion-respaldada.test.mjs — ninguna negación de la suite se queda sin respaldo (el rojo del #1541: cayó en CI y aquí salía verde)
+  · scrum258-nota-por-sesion.test.mjs — la nota del turno es de la SESIÓN: una no puede soltar el turno vivo de otra
+  · scrum514-aprobado-y-aplicado.test.mjs — todo texto APROBADO está aplicado en la pantalla (la mitad de la regla 30 que faltaba)
+  · scrum522-guards-fuera-de-la-tanda.test.mjs — la puerta de los guards de navegador sigue existiendo, el workflow la invoca y su lista sale derivada
+  · scrum548-peaje-package-json.test.mjs — el censo de guards cuenta todos los declarados y el detector de solape sigue discriminando
+  · scrum723-guard-contra-su-base.test.mjs — un guard compara contra el punto de partida de la rama, no contra la punta móvil de main
+  · scrum811c-skill-ui-declarada.test.mjs — toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no
+
+✔ public/ · SUELO: el guard encuentra los ficheros que dice comprobar (102.7765ms)
+ℹ suelo por cociente · «los .js de public/» · población 98 (recorrido 98 · censo 98) · de acuerdo 98 · cociente 1.0000 · mínimo 1 → umbral 98
+✖ public/ · 🔴 todo .js que se sirve al navegador PARSEA (72.3147ms)
+
+[SCRUM-237] 972 negaciones · FUERTE 256 · MEDIO 433 · ESTRUCTURAL 120 · DÉBIL 163 · NINGUNO 0
+  (ESTRUCTURAL = respaldo por mutation-test, NO verificada por este guard — declarada, no fingida)
+  ⚠️ LÍMITE: las DÉBIL se ACEPTAN y NO tienen techo. Si esta lista crece mucho, DÉBIL se vuelve el
+     vertedero de lo que no encaja y el guard vale MENOS de lo que parece. No hay ratchet a mano
+     (los sabemos acabar mal); pero míralas de vez en cuando — un DÉBIL que sube sin parar es una señal.
+  DÉBIL (aceptadas y declaradas — mirar si alguna debería reforzarse):
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:86  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:129  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1032-contacto-con-un-toque.test.mjs:153  «undefined|null» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1038-leer-el-ticket-gasto.test.mjs:392  «lecturas_agotadas|429|error t[eé]cnico» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum106-trabajos-fecha.test.mjs:85  «ejecutadoEnJulio.titulo» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum106-trabajos-fecha.test.mjs:93  «sinAgendar.titulo» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1105-semilla-destino-por-bandera.test.mjs:58  «u:p» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1105-semilla-destino-por-bandera.test.mjs:100  «u:p» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1106-respuestas-ia-no-son-del-asesor.test.mjs:49  «RE_ATRIBUCION» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum111-canario-zip.test.mjs:70  «CANARIO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1127-sif-client.test.mjs:401  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1127-sif-client.test.mjs:402  «CLAVE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1135-etiquetar-seleccion.test.mjs:90  «Ya la tenía» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1135-etiquetar-seleccion.test.mjs:142  «\b20\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1142-irreversibles-factura-44.test.mjs:95  «new RegExp(CLASE)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1142-irreversibles-factura-44.test.mjs:103  «CLASE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1147-resumen-del-servidor.test.mjs:77  «prohibida» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-ficha-trabajo.test.mjs:89  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:52  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:77  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs:97  «literal» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1175c-datos-del-parte-plegados.test.mjs:103  «falso» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1179c-censo-accion-informativo.test.mjs:70  «name: build \+ tests» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1179c-censo-clics-informativo.test.mjs:68  «name: build \+ tests» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1188-plantilla-guarda-el-cobro.test.mjs:163  «success» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1214-clasificador-apretado.test.mjs:41  «ADD COLUMN» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1215b-sin-lineas-cerrado.test.mjs:49  «Todavía» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1216a-serie-sin-promesa.test.mjs:119  «PASO_SERIE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1232-libro-sin-justificantes.test.mjs:119  «j» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1257-vacio-facturas-segun-modo.test.mjs:86  «RECEIPT» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1278-banco-dice-no-medida.test.mjs:40  «CARTEL» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1286-intermitente-1281.test.mjs:160  «@claude» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum1288-dinero-es-en-avisos-s1.test.mjs:61  «\bEUR\b|\d\.\d{2}\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum1309-banner-mail-sent-gateado.test.mjs:106  «GENERADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1312-boton-email-recibo-gateado.test.mjs:114  «ENVIADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1312-boton-email-recibo-gateado.test.mjs:118  «GENERADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:301  «INSTRUCCION» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum188-turno-staging.test.mjs:331  «['@ ]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum192-borrado-merchant.test.mjs:96  «botSession» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:50  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:72  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:76  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:89  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:129  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:130  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum195-url-bd-sin-fuga.test.mjs:143  «SECRETO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum206-sin-huella-no-salen-bytes.test.mjs:247  «prohibida.toLowerCase()» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum221-export-fiscal-cero-bytes.test.mjs:117  «attachment» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum232-turno-contexto.test.mjs:216  «['\\$]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum236-equipo-sin-asignar.test.mjs:137  «ETIQUETA_SIN_ASIGNAR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum246-sin-lineas-no-se-emite.test.mjs:270  «vuelve a intentarlo|inténtalo» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum249-latido-turno.test.mjs:140  «\+\d{4}-\d{2}-\d{2}T» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum253-adopcion.test.mjs:194  «new RegExp(`\\.${process.pid}$`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum253-adopcion.test.mjs:229  «new RegExp(`p${process.pid}`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum258-nota-por-sesion.test.mjs:78  «new RegExp(`p${process.pid}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum260-rastro-limpieza.test.mjs:63  «E1» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum283-tabla-patron-factura.test.mjs:202  «p» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum285-pantalla-cobros.test.mjs:199  «\bOtro\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum289b-factura-suelta.test.mjs:189  «^(update|updateMany|delete|deleteMany|upsert)$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum294-recargo-caja.test.mjs:219  «p» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum295-modelo-303-postgres.test.mjs:36  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum296-lector-tenencia.test.mjs:127  «signatureUrl» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum296-libro-postgres.test.mjs:60  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum297-evidencias-postgres.test.mjs:29  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum298-modo-visible.test.mjs:95  «r» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum300-firmante-ids-y-microcopy.test.mjs:261  «PENDIENTE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum300-firmante-ids-y-microcopy.test.mjs:287  «PENDIENTE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum302-patron-albaran.test.mjs:114  «facturado» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum303-albaran-una-pantalla.test.mjs:226  «[PENDIENTE microcopy oficial]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum303-albaran-una-pantalla.test.mjs:242  «(s)» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum304-albaranes-tabla.test.mjs:432  «[PENDIENTE microcopy oficial]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum317-trabajo-por-su-nombre.test.mjs:121  «^·|·$|· *·» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum318-rail-contenido.test.mjs:161  «donde» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum319-documentos-por-tipo.test.mjs:223  «id» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum331-heroe.test.mjs:140  «PENDIENTE» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum331-heroe.test.mjs:208  «s» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum344-cierre-con-saldo.test.mjs:156  «PALABRAS» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum347-origen-de-la-factura.test.mjs:245  «C7» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum351-topologia-node-modules.test.mjs:91  «wtC» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum356-tres-estados.test.mjs:134  «[.,]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum356-tres-estados.test.mjs:349  «^[✓✔√●•]+$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum359-tres-relojes.test.mjs:151  «fecha_entrega|albaran_fecha$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum361-version-al-firmar.test.mjs:114  «PENDIENTE|TODO|\[.*microcopy» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum372-un-dato-un-nombre.test.mjs:195  «new RegExp(`\\b(alb|albaran)\\.${RETIRADO}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum389-un-solo-iva.test.mjs:36  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum404-trazo-no-se-pierde.test.mjs:128  «promesa» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum405-microcopy-descarga.test.mjs:142  «CULPA_A_LA_RED» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum405-microcopy-descarga.test.mjs:163  «CULPA_AL_USUARIO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:210  «PROHIBIDO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:405  «MOTOR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum423-entrega-en-que-falta.test.mjs:410  «ENCHUFE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum424-donde-tiene-dato.test.mjs:103  «[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum427-composicion-detalle.test.mjs:230  «[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum438-atestiguar.test.mjs:237  «[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum447-byte-invisible-en-patrones.test.mjs:79  «BACKSPACE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum451-plazo-de-red.test.mjs:109  «numeroAMano» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum452-pdf-lo-que-se-sello.test.mjs:258  «RAYA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum452-pdf-lo-que-se-sello.test.mjs:316  «new RegExp(`\\b${mala}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum457-logout-purga-claves.test.mjs:62  «Comunidad Los Olivos|Sustituir bajante|1450\.00» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum457-logout-purga-claves.test.mjs:64  «Codo 90 PVC|4\.20» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum462-firmado-sin-sobre.test.mjs:133  «estado:\s*'firmado'» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum466-el-firmante-ve-el-albaran.test.mjs:211  «HABLA_DE_DINERO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum466-el-firmante-ve-el-albaran.test.mjs:213  «SIN_APROBAR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum475-receptor-webhook.test.mjs:226  «ana@obra\.example» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum476-reconciliar-censos.test.mjs:469  «new RegExp(`\\b${n}\\b`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum481-metodo-en-castellano.test.mjs:306  «·\s*$» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum481-metodo-en-castellano.test.mjs:309  «:» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum481-metodo-en-castellano.test.mjs:311  «function|\[native code\]|\[object» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum497-dato-personal-no-sobrevive.test.mjs:266  «@» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum500-suplidos.test.mjs:446  «\bPOR CUENTA\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum505-dato-personal-en-contenido.test.mjs:187  «CORREO_FABRICADO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum505-dato-personal-en-contenido.test.mjs:190  «FORMA_DE_MOVIL» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum514-leeme-multilinea.test.mjs:68  «duplicado» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum521-resolvedor-de-importadores.test.mjs:123  «ajeno» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum549-nada-publicable-sin-marcar.test.mjs:90  «e» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum55-admin-fail-closed.test.mjs:379  «CITA_S1_COMO_DECIDIDO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum55-admin-fail-closed.test.mjs:390  «CONFIRMADA_ABIERTA_EN_PROD» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum553-etiquetas-pegadas.test.mjs:167  «PILOTO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum587-descuento-por-defecto.test.mjs:332  «\[PENDIENTE» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:211  «presupuest» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:222  «presupuest» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum652c-parte-en-el-movil.test.mjs:464  «precioUnitario|tipoIva|"38"|:38|\u20ac» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:65  «FIJO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:69  «FIJO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:84  «COLETILLA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum653c-firmas-sin-coletilla.test.mjs:94  «precio|importe» — sujeto = constante/estructura de datos (heurística SINTÁCTICA por MAYÚSCULAS, no garantía): guard de membresía, no salida generada
+    · tests/scrum656-iva-y-clausulas.test.mjs:168  «marca» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum662-lista-de-scripts.test.mjs:106  «INTRUSO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum665e-el-escritor-del-emisor.test.mjs:126  «FICHA_DE_HOY.taxId» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum665e-el-escritor-del-emisor.test.mjs:131  «FICHA_DE_HOY.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum676-hojas-del-indice.test.mjs:67  «^https?:|^\/\/» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum701-sellado-ve-las-dos-comillas.test.mjs:84  «new RegExp(`[?&]${PARAM_HUELLA}=`)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum703-rotulos-del-tipo.test.mjs:77  «MARCADOR» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:258  «__» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs:261  «\bundefined\b|\bnull\b|\bNaN\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum728-serie-ocupada-postgres.test.mjs:61  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum728-serie-ocupada-postgres.test.mjs:200  «JERGA» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum728d-ms-en-loopback.test.mjs:57  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum729-el-escritor-del-cliente.test.mjs:146  «FICHA_DE_HOY.taxId» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum73-verifactu-gate.test.mjs:75  «new RegExp(invoice.number)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:74  «A.customer.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:75  «A.customer.email» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum74-recibo-token.test.mjs:89  «A.invoice.number» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum742-internos-de-prisma.test.mjs:71  «SE_EXCLUYE» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum746b-guarda-en-la-conexion.test.mjs:71  «:\/\/|u:p@» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum746b-guarda-en-la-conexion.test.mjs:87  «PROD_HOST» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum806-el-pdf-del-portal.test.mjs:109  «pdfUrl» — hermano del token en OTRO fichero (respaldo cross-file, débil): el token es real, no imposible
+    · tests/scrum806-el-pdf-del-portal.test.mjs:120  «\$\{q\.id\}|\/pay\/quote\/\$\{q\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum814-carrera-de-tramos-postgres.test.mjs:81  «p.base» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs:190  «conHuso» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum844c-el-xml-que-se-remite.test.mjs:99  «`>${MERCHANT.name}<`» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum85-pay-routes-token.test.mjs:60  «A.merchant.name» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum90-pay-bank-mp-token.test.mjs:66  «A.merchant.iban» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum912-leer-ticket-gasto.test.mjs:476  «NIF_MALO» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum917g-el-trabajo-plegable.test.mjs:145  «€|EUR|\d[.,]\d» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs:265  «NO\s+est[aá]\s+firmad» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum931-un-solo-importe-de-plantilla.test.mjs:172  «€» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/scrum932-el-turno-tiene-mecanismo.test.mjs:261  «new RegExp(VALOR)» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum967b-el-portal-en-el-envio.test.mjs:150  «tokParte» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum979-ultima-visita.test.mjs:49  «5» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/scrum986-chip-whatsapp-en-la-lista.test.mjs:198  «\b(null|undefined)\b» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+    · tests/tenancy-permisos.test.mjs:160  «CANARIO_A» — token dinámico (new RegExp(var)) sin sujeto verificado: no comprobable estáticamente
+    · tests/tenancy-permisos.test.mjs:185  «:» — token no concreto (char-class/regex) sin respaldo: guard de patrón prohibido, aceptado y declarado
+✔ SCRUM-237 · autoprueba: HERMANO DEL TOKEN → FUERTE (0.9176ms)
+✔ SCRUM-237 · autoprueba: SUJETO VERIFICADO por contenido → MEDIO (0.1833ms)
+✔ SCRUM-237 · autoprueba: sujeto = FUENTE leída → ESTRUCTURAL (mutation-test declarada) (0.2304ms)
+✔ SCRUM-237 · autoprueba: token DINÁMICO sin sujeto verificado → DÉBIL (aceptado, no marcado) (0.1432ms)
+✔ SCRUM-237 · autoprueba: char-class prohibida sin respaldo → DÉBIL (guard de patrón, no scrum73) (0.143ms)
+✔ SCRUM-237 · autoprueba: EL BUG DE SCRUM73 (token concreto imposible, sin respaldo) → NINGUNO (0.1644ms)
+✔ SCRUM-237 · suelo: el analizador NO está ciego (parse, presencia, canario) (0.7416ms)
+✔ SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO = 0) (2.7103ms)
+✔ SCRUM-242 · SUELO: el detector ve scripts y ve referencias a documento (136.2219ms)
+✔ SCRUM-242 · la salida que un script GENERA no cuenta como promesa (123.0761ms)
+✔ SCRUM-242 · ningún script nombra un documento que no existe (139.5055ms)
+✔ SCRUM-258 · la ruta de la nota es distinta por árbol y la MISMA entre procesos (8.2588ms)
+✔ SCRUM-258 · la ruta NO depende de nada que el humano exporte (0.7369ms)
+✔ SCRUM-258 · la nota se describe a sí misma: una marca ajena no se devuelve (26.2429ms)
+✔ SCRUM-258 · EL CASO GRAVE — con la marca correcta pero AJENA, no se suelta (2.3176ms)
+✔ SCRUM-258 · el turno PROPIO se sigue soltando igual (1.2608ms)
+✔ SCRUM-258 · sin dueño se conserva el comportamiento anterior (0.9563ms)
+✔ SCRUM-258 · los llamadores de casa SÍ pasan el dueño (330.7277ms)
+✔ SCRUM-258 · ningún script guarda estado en una ruta fija compartida por la máquina (51.9572ms)
+✔ SCRUM-258 · SUELO: el analizador recorre los scripts de verdad (2.5709ms)
+✔ SCRUM-258 · ningún script usa un nombre que no existe (2961.7492ms)
+✔ SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala (1.6464ms)
+✔ SCRUM-267 · ② el barrido encuentra entradas de verdad (148.6853ms)
+✔ SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo (209.2718ms)
+✔ SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien (0.2665ms)
+✔ SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados (443.9736ms)
+✔ SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer (177.3236ms)
+✔ SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total (196.6674ms)
+✔ SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo (177.6227ms)
+✔ SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE (2.9425ms)
+✔ SCRUM-267 · el formato declarado en el README incluye el ancla (0.6915ms)
+✔ SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada (126.4812ms)
+✔ SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE (288.0316ms)
+✔ SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una (0.1272ms)
+✔ SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver (170.8212ms)
+✔ SCRUM-273 · SUELO: el extractor encuentra las entradas que ya existen (4.2404ms)
+✔ SCRUM-273 · ninguna entrada de trabajo NUEVA se escribe en YAQU_MASTER.md (3.7794ms)
+✔ SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket (1.0286ms)
+✔ SCRUM-273 · 🔴 el mensaje del guard ENUNCIA LA ALTERNATIVA, no solo la prohibición (0.3073ms)
+✔ SCRUM-273 · el mensaje bueno es el que se USA de verdad (0.326ms)
+✔ SCRUM-273 · el máster dice dónde vive el registro ahora (1.3786ms)
+✖ tests\scrum391-guards-declarados-presentes.test.mjs (10.4742ms)
+✖ tests\scrum514-aprobado-y-aplicado.test.mjs (10.6605ms)
+✖ tests\scrum522-guards-fuera-de-la-tanda.test.mjs (9.425ms)
+✖ tests\scrum548-peaje-package-json.test.mjs (8.1547ms)
+✖ tests\scrum723-guard-contra-su-base.test.mjs (6.6711ms)
+✖ tests\scrum811c-skill-ui-declarada.test.mjs (1.811ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 42
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3786.4629
+
+✖ failing tests:
+
+test at tests\public-js-parsea.test.mjs:133:1
+✖ public/ · 🔴 todo .js que se sirve al navegador PARSEA (72.3147ms)
+  AssertionError [ERR_ASSERTION]: 🔴 HAY FICHEROS DEL FRONT QUE NO PARSEAN:
+      public/dashboard/js/aiQuoteAssistant.js:? — no parsea
+        
+      public/dashboard/js/albaranAccion.js:? — no parsea
+        
+      public/dashboard/js/albaranActionsRegistry.js:? — no parsea
+        
+      public/dashboard/js/albaranDesdePresupuestoModal.js:? — no parsea
+        
+      public/dashboard/js/albaranDetailView.js:? — no parsea
+        
+      public/dashboard/js/albaranesView.js:? — no parsea
+        
+      public/dashboard/js/almacenLocal.js:? — no parsea
+        
+      public/dashboard/js/api.js:? — no parsea
+        
+      public/dashboard/js/app.js:? — no parsea
+        
+      public/dashboard/js/arranqueSinCobertura.js:? — no parsea
+        
+      public/dashboard/js/atajoNuevo.js:? — no parsea
+        
+      public/dashboard/js/avisoDocumentoSinEnviar.js:? — no parsea
+        
+      public/dashboard/js/buscadorDeClientes.js:? — no parsea
+        
+      public/dashboard/js/cobrosView.js:? — no parsea
+        
+      public/dashboard/js/colaDeFirmas.js:? — no parsea
+        
+      public/dashboard/js/contacto.js:? — no parsea
+        
+      public/dashboard/js/csvImport.js:? — no parsea
+        
+      public/dashboard/js/cuerpoDelDocumentoSuelto.js:? — no parsea
+        
+      public/dashboard/js/customerDetailView.js:? — no parsea
+        
+      public/dashboard/js/customersView.js:? — no parsea
+        
+      public/dashboard/js/descuentoPorDefecto.js:? — no parsea
+        
+      public/dashboard/js/documentoAsignados.js:? — no parsea
+        
+      public/dashboard/js/economiaVisible.js:? — no parsea
+        
+      public/dashboard/js/estadoFirma.js:? — no parsea
+        
+      public/dashboard/js/etiquetasDelDocumento.js:? — no parsea
+        
+      public/dashboard/js/expensesView.js:? — no parsea
+        
+      public/dashboard/js/exportView.js:? — no parsea
+        
+      public/dashboard/js/facturaPreEmision.js:? — no parsea
+        
+      public/dashboard/js/facturasRecibidasView.js:? — no parsea
+        
+      public/dashboard/js/filtroClientes.js:? — no parsea
+        
+      public/dashboard/js/formaDePagoPorDefecto.js:? — no parsea
+        
+      public/dashboard/js/globalSearch.js:? — no parsea
+        
+      public/dashboard/js/homeView.js:? — no parsea
+        
+      public/dashboard/js/invoiceAccion.js:? — no parsea
+        
+      public/dashboard/js/invoiceActionsRegistry.js:? — no parsea
+        
+      public/dashboard/js/invoiceDetailView.js:? — no parsea
+        
+      public/dashboard/js/invoicesView.js:? — no parsea
+        
+      public/dashboard/js/jobActionsRegistry.js:? — no parsea
+        
+      public/dashboard/js/jobAgendar.js:? — no parsea
+        
+      public/dashboard/js/jobAsignados.js:? — no parsea
+        
+      public/dashboard/js/jobCobroHuecos.js:? — no parsea
+        
+      public/dashboard/js/jobDetailView.js:? — no parsea
+        
+      public/dashboard/js/jobDocsReparto.js:? — no parsea
+        
+      public/dashboard/js/jobNextAction.js:? — no parsea
+        
+      public/dashboard/js/jobNuevoModal.js:? — no parsea
+        
+      public/dashboard/js/jobRailBlocks.js:? — no parsea
+        
+      public/dashboard/js/jobsCierreTrabajo.js:? — no parsea
+        
+      public/dashboard/js/jobsView.js:? — no parsea
+        
+      public/dashboard/js/jobTrabajoPlegable.js:? — no parsea
+        
+      public/dashboard/js/libroRegistroView.js:? — no parsea
+        
+      public/dashboard/js/margenCatalogo.js:? — no parsea
+        
+      public/dashboard/js/modalHeader.js:? — no parsea
+        
+      public/dashboard/js/nifEspanol.js:? — no parsea
+        
+      public/dashboard/js/onboardingView.js:? — no parsea
+        
+      public/dashboard/js/paidViaEtiquetas.js:? — no parsea
+        
+      public/dashboard/js/parteDetailView.js:? — no parsea
+        
+      public/dashboard/js/parteOficinaView.js:? — no parsea
+        
+      public/dashboard/js/patronDetalleAcciones.js:? — no parsea
+        
+      public/dashboard/js/plansView.js:? — no parsea
+        
+      public/dashboard/js/prefijosPais.js:? — no parsea
+        
+      public/dashboard/js/productsView.js:? — no parsea
+        
+      public/dashboard/js/providersView.js:? — no parsea
+        
+      public/dashboard/js/puertaSerie.js:? — no parsea
+        
+      public/dashboard/js/quoteActionsRegistry.js:? — no parsea
+        
+      public/dashboard/js/quoteApartados.js:? — no parsea
+        
+      public/dashboard/js/quoteAtajosVencimiento.js:? — no parsea
+        
+      public/dashboard/js/quoteCaducidad.js:? — no parsea
+        
+      public/dashboard/js/quoteDescuentos.js:? — no parsea
+        
+      public/dashboard/js/quoteDireccionObra.js:? — no parsea
+        
+      public/dashboard/js/quoteMargen.js:? — no parsea
+        
+      public/dashboard/js/quoteRequestsView.js:? — no parsea
+        
+      public/dashboard/js/quoteRevisiones.js:? — no parsea
+        
+      public/dashboard/js/quotesDetailView.js:? — no parsea
+        
+      public/dashboard/js/quotesListView.js:? — no parsea
+        
+      public/dashboard/js/quotesTabs.js:? — no parsea
+        
+      public/dashboard/js/quoteSuplido.js:? — no parsea
+        
+      public/dashboard/js/quotesView.js:? — no parsea
+        
+      public/dashboard/js/reportsView.js:? — no parsea
+        
+      public/dashboard/js/resistenciaAlmacen.js:? — no parsea
+        
+      public/dashboard/js/rotulosDelDocumento.js:? — no parsea
+        
+      public/dashboard/js/selectorMetodoCobro.js:? — no parsea
+        
+      public/dashboard/js/semaforoFiscal.js:? — no parsea
+        
+      public/dashboard/js/settingsSubmenus.js:? — no parsea
+        
+      public/dashboard/js/settingsView.js:? — no parsea
+        
+      public/dashboard/js/signaturePad.js:? — no parsea
+        
+      public/dashboard/js/switchFormaJuridica.js:? — no parsea
+        
+      public/dashboard/js/switchTipoArticulo.js:? — no parsea
+        
+      public/dashboard/js/teamView.js:? — no parsea
+        
+      public/dashboard/js/templatesView.js:? — no parsea
+        
+      public/dashboard/js/terminadoSinCobrar.js:? — no parsea
+        
+      public/dashboard/js/textoDelDocumento.js:? — no parsea
+        
+      public/dashboard/js/tipoDestinatarioPendiente.js:? — no parsea
+        
+      public/dashboard/js/tiposDeIva.js:? — no parsea
+        
+      public/dashboard/js/tutorial.js:? — no parsea
+        
+      public/dashboard/js/voiceInput.js:? — no parsea
+        
+      public/js/atribucion.js:? — no parsea
+        
+      public/js/contacto-publico.js:? — no parsea
+        
+      public/sw.js:? — no parsea
+        
+  
+    Un fichero que no parsea no falla a medias: el navegador lo descarta ENTERO y la pantalla
+    no se renderiza. Y no se nota en ninguna otra prueba, porque el resto de la suite corre
+    contra `dist/`, no contra `public/`.
+  
+    La causa habitual, y la que hizo falta este guard: un **backtick dentro de un template
+    literal**. Un comentario HTML del tipo <!-- sin `style="..."` --> escrito dentro de un
+    `innerHTML = `…`` CIERRA el template en ese backtick. Usa «comillas angulares» en los
+    comentarios de dentro del template, no backticks.
+  + actual - expected
+  
+  + [
+  +   'public/dashboard/js/aiQuoteAssistant.js:? — no parsea\n      ',
+  +   'public/dashboard/js/albaranAccion.js:? — no parsea\n      ',
+  +   'public/dashboard/js/albaranActionsRegistry.js:? — no parsea\n      ',
+  +   'public/dashboard/js/albaranDesdePresupuestoModal.js:? — no parsea\n      ',
+  +   'public/dashboard/js/albaranDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/albaranesView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/almacenLocal.js:? — no parsea\n      ',
+  +   'public/dashboard/js/api.js:? — no parsea\n      ',
+  +   'public/dashboard/js/app.js:? — no parsea\n      ',
+  +   'public/dashboard/js/arranqueSinCobertura.js:? — no parsea\n      ',
+  +   'public/dashboard/js/atajoNuevo.js:? — no parsea\n      ',
+  +   'public/dashboard/js/avisoDocumentoSinEnviar.js:? — no parsea\n      ',
+  +   'public/dashboard/js/buscadorDeClientes.js:? — no parsea\n      ',
+  +   'public/dashboard/js/cobrosView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/colaDeFirmas.js:? — no parsea\n      ',
+  +   'public/dashboard/js/contacto.js:? — no parsea\n      ',
+  +   'public/dashboard/js/csvImport.js:? — no parsea\n      ',
+  +   'public/dashboard/js/cuerpoDelDocumentoSuelto.js:? — no parsea\n      ',
+  +   'public/dashboard/js/customerDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/customersView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/descuentoPorDefecto.js:? — no parsea\n      ',
+  +   'public/dashboard/js/documentoAsignados.js:? — no parsea\n      ',
+  +   'public/dashboard/js/economiaVisible.js:? — no parsea\n      ',
+  +   'public/dashboard/js/estadoFirma.js:? — no parsea\n      ',
+  +   'public/dashboard/js/etiquetasDelDocumento.js:? — no parsea\n      ',
+  +   'public/dashboard/js/expensesView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/exportView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/facturaPreEmision.js:? — no parsea\n      ',
+  +   'public/dashboard/js/facturasRecibidasView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/filtroClientes.js:? — no parsea\n      ',
+  +   'public/dashboard/js/formaDePagoPorDefecto.js:? — no parsea\n      ',
+  +   'public/dashboard/js/globalSearch.js:? — no parsea\n      ',
+  +   'public/dashboard/js/homeView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/invoiceAccion.js:? — no parsea\n      ',
+  +   'public/dashboard/js/invoiceActionsRegistry.js:? — no parsea\n      ',
+  +   'public/dashboard/js/invoiceDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/invoicesView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobActionsRegistry.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobAgendar.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobAsignados.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobCobroHuecos.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobDocsReparto.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobNextAction.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobNuevoModal.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobRailBlocks.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobsCierreTrabajo.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobsView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/jobTrabajoPlegable.js:? — no parsea\n      ',
+  +   'public/dashboard/js/libroRegistroView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/margenCatalogo.js:? — no parsea\n      ',
+  +   'public/dashboard/js/modalHeader.js:? — no parsea\n      ',
+  +   'public/dashboard/js/nifEspanol.js:? — no parsea\n      ',
+  +   'public/dashboard/js/onboardingView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/paidViaEtiquetas.js:? — no parsea\n      ',
+  +   'public/dashboard/js/parteDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/parteOficinaView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/patronDetalleAcciones.js:? — no parsea\n      ',
+  +   'public/dashboard/js/plansView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/prefijosPais.js:? — no parsea\n      ',
+  +   'public/dashboard/js/productsView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/providersView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/puertaSerie.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteActionsRegistry.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteApartados.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteAtajosVencimiento.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteCaducidad.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteDescuentos.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteDireccionObra.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteMargen.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteRequestsView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteRevisiones.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quotesDetailView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quotesListView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quotesTabs.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quoteSuplido.js:? — no parsea\n      ',
+  +   'public/dashboard/js/quotesView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/reportsView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/resistenciaAlmacen.js:? — no parsea\n      ',
+  +   'public/dashboard/js/rotulosDelDocumento.js:? — no parsea\n      ',
+  +   'public/dashboard/js/selectorMetodoCobro.js:? — no parsea\n      ',
+  +   'public/dashboard/js/semaforoFiscal.js:? — no parsea\n      ',
+  +   'public/dashboard/js/settingsSubmenus.js:? — no parsea\n      ',
+  +   'public/dashboard/js/settingsView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/signaturePad.js:? — no parsea\n      ',
+  +   'public/dashboard/js/switchFormaJuridica.js:? — no parsea\n      ',
+  +   'public/dashboard/js/switchTipoArticulo.js:? — no parsea\n      ',
+  +   'public/dashboard/js/teamView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/templatesView.js:? — no parsea\n      ',
+  +   'public/dashboard/js/terminadoSinCobrar.js:? — no parsea\n      ',
+  +   'public/dashboard/js/textoDelDocumento.js:? — no parsea\n      ',
+  +   'public/dashboard/js/tipoDestinatarioPendiente.js:? — no parsea\n      ',
+  +   'public/dashboard/js/tiposDeIva.js:? — no parsea\n      ',
+  +   'public/dashboard/js/tutorial.js:? — no parsea\n      ',
+  +   'public/dashboard/js/voiceInput.js:? — no parsea\n      ',
+  +   'public/js/atribucion.js:? — no parsea\n      ',
+  +   'public/js/contacto-publico.js:? — no parsea\n      ',
+  +   'public/sw.js:? — no parsea\n      '
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-jv1/tests/public-js-parsea.test.mjs:143:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [
+      'public/dashboard/js/aiQuoteAssistant.js:? — no parsea\n      ',       'public/dashboard/js/albaranAccion.js:? — no parsea\n      ',
+      'public/dashboard/js/albaranActionsRegistry.js:? — no parsea\n      ', 'public/dashboard/js/albaranDesdePresupuestoModal.js:? — no parsea\n      ',
+      'public/dashboard/js/albaranDetailView.js:? — no parsea\n      ',      'public/dashboard/js/albaranesView.js:? — no parsea\n      ',
+      'public/dashboard/js/almacenLocal.js:? — no parsea\n      ',           'public/dashboard/js/api.js:? — no parsea\n      ',
+      'public/dashboard/js/app.js:? — no parsea\n      ',                    'public/dashboard/js/arranqueSinCobertura.js:? — no parsea\n      ',
+      'public/dashboard/js/atajoNuevo.js:? — no parsea\n      ',             'public/dashboard/js/avisoDocumentoSinEnviar.js:? — no parsea\n      ',
+      'public/dashboard/js/buscadorDeClientes.js:? — no parsea\n      ',     'public/dashboard/js/cobrosView.js:? — no parsea\n      ',
+      'public/dashboard/js/colaDeFirmas.js:? — no parsea\n      ',           'public/dashboard/js/contacto.js:? — no parsea\n      ',
+      'public/dashboard/js/csvImport.js:? — no parsea\n      ',              'public/dashboard/js/cuerpoDelDocumentoSuelto.js:? — no parsea\n      ',
+      'public/dashboard/js/customerDetailView.js:? — no parsea\n      ',     'public/dashboard/js/customersView.js:? — no parsea\n      ',
+      'public/dashboard/js/descuentoPorDefecto.js:? — no parsea\n      ',    'public/dashboard/js/documentoAsignados.js:? — no parsea\n      ',
+      'public/dashboard/js/economiaVisible.js:? — no parsea\n      ',        'public/dashboard/js/estadoFirma.js:? — no parsea\n      ',
+      'public/dashboard/js/etiquetasDelDocumento.js:? — no parsea\n      ',  'public/dashboard/js/expensesView.js:? — no parsea\n      ',
+      'public/dashboard/js/exportView.js:? — no parsea\n      ',             'public/dashboard/js/facturaPreEmision.js:? — no parsea\n      ',
+      'public/dashboard/js/facturasRecibidasView.js:? — no parsea\n      ',  'public/dashboard/js/filtroClientes.js:? — no parsea\n      ',
+      'public/dashboard/js/formaDePagoPorDefecto.js:? — no parsea\n      ',  'public/dashboard/js/globalSearch.js:? — no parsea\n      ',
+      'public/dashboard/js/homeView.js:? — no parsea\n      ',               'public/dashboard/js/invoiceAccion.js:? — no parsea\n      ',
+      'public/dashboard/js/invoiceActionsRegistry.js:? — no parsea\n      ', 'public/dashboard/js/invoiceDetailView.js:? — no parsea\n      ',
+      'public/dashboard/js/invoicesView.js:? — no parsea\n      ',           'public/dashboard/js/jobActionsRegistry.js:? — no parsea\n      ',
+      'public/dashboard/js/jobAgendar.js:? — no parsea\n      ',             'public/dashboard/js/jobAsignados.js:? — no parsea\n      ',
+      'public/dashboard/js/jobCobroHuecos.js:? — no parsea\n      ',         'public/dashboard/js/jobDetailView.js:? — no parsea\n      ',
+      'public/dashboard/js/jobDocsReparto.js:? — no parsea\n      ',         'public/dashboard/js/jobNextAction.js:? — no parsea\n      ',
+      'public/dashboard/js/jobNuevoModal.js:? — no parsea\n      ',          'public/dashboard/js/jobRailBlocks.js:? — no parsea\n      ',
+      'public/dashboard/js/jobsCierreTrabajo.js:? — no parsea\n      ',      'public/dashboard/js/jobsView.js:? — no parsea\n      ',
+      'public/dashboard/js/jobTrabajoPlegable.js:? — no parsea\n      ',     'public/dashboard/js/libroRegistroView.js:? — no parsea\n      ',
+      'public/dashboard/js/margenCatalogo.js:? — no parsea\n      ',         'public/dashboard/js/modalHeader.js:? — no parsea\n      ',
+      'public/dashboard/js/nifEspanol.js:? — no parsea\n      ',             'public/dashboard/js/onboardingView.js:? — no parsea\n      ',
+      'public/dashboard/js/paidViaEtiquetas.js:? — no parsea\n      ',       'public/dashboard/js/parteDetailView.js:? — no parsea\n      ',
+      'public/dashboard/js/parteOficinaView.js:? — no parsea\n      ',       'public/dashboard/js/patronDetalleAcciones.js:? — no parsea\n      ',
+      'public/dashboard/js/plansView.js:? — no parsea\n      ',              'public/dashboard/js/prefijosPais.js:? — no parsea\n      ',
+      'public/dashboard/js/productsView.js:? — no parsea\n      ',           'public/dashboard/js/providersView.js:? — no parsea\n      ',
+      'public/dashboard/js/puertaSerie.js:? — no parsea\n      ',            'public/dashboard/js/quoteActionsRegistry.js:? — no parsea\n      ',
+      'public/dashboard/js/quoteApartados.js:? — no parsea\n      ',         'public/dashboard/js/quoteAtajosVencimiento.js:? — no parsea\n      ',
+      'public/dashboard/js/quoteCaducidad.js:? — no parsea\n      ',         'public/dashboard/js/quoteDescuentos.js:? — no parsea\n      ',
+      'public/dashboard/js/quoteDireccionObra.js:? — no parsea\n      ',     'public/dashboard/js/quoteMargen.js:? — no parsea\n      ',
+      'public/dashboard/js/quoteRequestsView.js:? — no parsea\n      ',      'public/dashboard/js/quoteRevisiones.js:? — no parsea\n      ',
+      'public/dashboard/js/quotesDetailView.js:? — no parsea\n      ',       'public/dashboard/js/quotesListView.js:? — no parsea\n      ',
+      'public/dashboard/js/quotesTabs.js:? — no parsea\n      ',             'public/dashboard/js/quoteSuplido.js:? — no parsea\n      ',
+      'public/dashboard/js/quotesView.js:? — no parsea\n      ',             'public/dashboard/js/reportsView.js:? — no parsea\n      ',
+      'public/dashboard/js/resistenciaAlmacen.js:? — no parsea\n      ',     'public/dashboard/js/rotulosDelDocumento.js:? — no parsea\n      ',
+      'public/dashboard/js/selectorMetodoCobro.js:? — no parsea\n      ',    'public/dashboard/js/semaforoFiscal.js:? — no parsea\n      ',
+      'public/dashboard/js/settingsSubmenus.js:? — no parsea\n      ',       'public/dashboard/js/settingsView.js:? — no parsea\n      ',
+      'public/dashboard/js/signaturePad.js:? — no parsea\n      ',           'public/dashboard/js/switchFormaJuridica.js:? — no parsea\n      ',
+      'public/dashboard/js/switchTipoArticulo.js:? — no parsea\n      ',     'public/dashboard/js/teamView.js:? — no parsea\n      ',
+      'public/dashboard/js/templatesView.js:? — no parsea\n      ',          'public/dashboard/js/terminadoSinCobrar.js:? — no parsea\n      ',
+      'public/dashboard/js/textoDelDocumento.js:? — no parsea\n      ',      'public/dashboard/js/tipoDestinatarioPendiente.js:? — no parsea\n      ',
+      'public/dashboard/js/tiposDeIva.js:? — no parsea\n      ',             'public/dashboard/js/tutorial.js:? — no parsea\n      ',
+      'public/dashboard/js/voiceInput.js:? — no parsea\n      ',             'public/js/atribucion.js:? — no parsea\n      ',
+      'public/js/contacto-publico.js:? — no parsea\n      ',                 'public/sw.js:? — no parsea\n      '
+    ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum391-guards-declarados-presentes.test.mjs:1:1
+✖ tests\scrum391-guards-declarados-presentes.test.mjs (10.4742ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum391-guards-declarados-presentes.test.mjs' ]
+  }
+
+test at tests\scrum514-aprobado-y-aplicado.test.mjs:1:1
+✖ tests\scrum514-aprobado-y-aplicado.test.mjs (10.6605ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum514-aprobado-y-aplicado.test.mjs' ]
+  }
+
+test at tests\scrum522-guards-fuera-de-la-tanda.test.mjs:1:1
+✖ tests\scrum522-guards-fuera-de-la-tanda.test.mjs (9.425ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum522-guards-fuera-de-la-tanda.test.mjs' ]
+  }
+
+test at tests\scrum548-peaje-package-json.test.mjs:1:1
+✖ tests\scrum548-peaje-package-json.test.mjs (8.1547ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum548-peaje-package-json.test.mjs' ]
+  }
+
+test at tests\scrum723-guard-contra-su-base.test.mjs:1:1
+✖ tests\scrum723-guard-contra-su-base.test.mjs (6.6711ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum723-guard-contra-su-base.test.mjs' ]
+  }
+
+test at tests\scrum811c-skill-ui-declarada.test.mjs:1:1
+✖ tests\scrum811c-skill-ui-declarada.test.mjs (1.811ms)
+  Error: spawn <banco>\node-copia-entrada.exe ENOENT
+      at ChildProcess._handle.onexit (node:internal/child_process:287:19)
+      at onErrorNT (node:internal/child_process:508:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    path: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\node-copia-entrada.exe',
+    spawnargs: [ '--use-largepages=off', '--trace-event-file-pattern=node_trace.${rotation}.log', '--v8-pool-size=4', '--node-snapshot', '--cpu-prof-interval=1000', '--report-signal=SIGUSR2', '--tls-cipher-list=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA', '--secure-heap=0', '--secure-heap-min=2', '--stack-trace-limit=10', '--test-isolation=process', '--network-family-autoselection-attempt-timeout=250', '--heapsnapshot-near-heap-limit=0', '--heap-prof-interval=524288', '--max-http-header-size=16384', '--test-concurrency=0', '--test-timeout=0', '--test-coverage-branches=0', '--test-coverage-functions=0', '--test-coverage-lines=0', '--watch-kill-signal=SIGTERM', '--import=file:///C:/Users/JAVIER%7E1/AppData/Local/Temp/scrum1343-otras-8Kmx91/renombra-desde-el-primer-nieto.mjs', '--inspect-port=127.0.0.1:9229', '--inspect-publish-uid=stderr,http', 'tests\\scrum811c-skill-ui-declarada.test.mjs' ]
+  }
+
+🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,
+  el PR sale rojo y cuesta una vuelta entera.
+
+EXIT=1
+TESTIGO del caso de los nietos: binario renombrado = sí
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 8 · meta-guard · `correr()` sobre un fichero cuyo proceso no arranca
+████████████████████████████████████████████████████████████████████████████████████████████████████
+A · línea base, el proceso arranca:
+   pasados=["caso limpio del banco"] · caidos=[]
+   errores=[]
+   murioElFichero=false · cayo(«caso limpio»)=false · cayo(«limpio»)=false
+B · el fichero sale con 0xC0000142 sin una letra (imitación):
+   pasados=[] · caidos=["nativo.test.mjs"]
+   errores=[{"nombre":"Error","code":"ERR_TEST_FAILURE","mensaje":"test failed"}]
+   murioElFichero=true · cayo(«caso limpio»)=false · cayo(«limpio»)=false
+C · el proceso del fichero NO EXISTE (ENOENT):
+   pasados=[] · caidos=["limpio.test.mjs"]
+   errores=[{"nombre":"Error","code":"ENOENT","mensaje":"spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1343-otras-8Kmx91\\este-node-no-existe.exe ENOENT"}]
+   murioElFichero=true · cayo(«caso limpio»)=false · cayo(«limpio»)=true
+MUERTE_CUENTA_COMO=ciega
+declaraciones censadas=365 · con «cae» contenido en la ruta de su fichero=0
+
+EXIT=0
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+CASOS CORRIDOS=8 · BANCO=0

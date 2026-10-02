@@ -1,0 +1,169 @@
+// Recon SCRUM-1338 · cada entrada de la barra, montada con rol de operario, contra el gate REAL
+// de la ruta que pide. Los gates salen de `dist/app.js` (misma enumeración que scrum55).
+//   node censo-menu.mjs <raiz del repo>
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import ts from 'typescript';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const imp = (rel) => import(pathToFileURL(path.join(RAIZ, rel)).href);
+const { app } = await imp('dist/app.js');
+const { getAdminMounts } = await imp('dist/core/http/adminMounts.js');
+const { cargarDashboard, pintarVista, todos, datosDeMuestra } = await imp('tests/_banco-vistas.mjs');
+
+// ── 1 · los gates del servidor ──────────────────────────────────────────────────────────────
+const roleOf = (h) => (h && h.__requiredRole) || null;
+const rutas = new Map();
+const add = (method, p, role) => {
+  const k = `${method.toUpperCase()} ${p}`;
+  const prev = rutas.get(k);
+  if (prev) { prev.role = prev.role || role; return; }
+  rutas.set(k, { method: method.toUpperCase(), path: p, role });
+};
+for (const layer of app.router.stack) {
+  if (!layer.route) continue;
+  const p = layer.route.path;
+  if (typeof p !== 'string' || !p.startsWith('/admin')) continue;
+  const role = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+  for (const m of Object.keys(layer.route.methods)) add(m, p, role);
+}
+for (const mount of getAdminMounts()) {
+  const mountRole = mount.gates.map(roleOf).find(Boolean) || null;
+  const useRole = mount.router.stack.filter((l) => !l.route).map((l) => roleOf(l.handle)).find(Boolean) || null;
+  for (const layer of mount.router.stack) {
+    if (!layer.route) continue;
+    const routeRole = layer.route.stack.map((s) => roleOf(s.handle)).find(Boolean) || null;
+    const rel = layer.route.path === '/' ? '' : layer.route.path;
+    for (const m of Object.keys(layer.route.methods)) add(m, mount.prefix + rel, mountRole || useRole || routeRole);
+  }
+}
+const tabla = [...rutas.values()].map((r) => ({
+  ...r,
+  literales: r.path.split('/').filter((s) => s && !s.startsWith(':')).length,
+  re: new RegExp('^' + r.path.split('/').map((s) => (s.startsWith(':') ? '[^/]+' : s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('/') + '/?$'),
+}));
+function gate(method, url) {
+  const p = String(url).replace(/^https?:\/\/[^/]+/, '').replace(/[?#].*$/, '');
+  const c = tabla.filter((r) => r.method === method.toUpperCase() && r.re.test(p)).sort((a, b) => b.literales - a.literales);
+  return c.length ? c[0] : null;
+}
+console.log(`POBLACION_RUTAS=${tabla.length} · con rol admin=${tabla.filter((r) => r.role === 'admin').length} · sin rol=${tabla.filter((r) => !r.role).length}`);
+console.log(`control gate: GET /admin/cobros -> ${JSON.stringify(gate('GET', '/admin/cobros')?.role)} · GET /admin/customers -> ${JSON.stringify(gate('GET', '/admin/customers')?.role)} · GET /admin/no-existe -> ${JSON.stringify(gate('GET', '/admin/no-existe'))}`);
+
+// ── 2 · la barra y el dispatch ──────────────────────────────────────────────────────────────
+const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
+const nav = (html.match(/<nav[^>]*sidebar-nav[\s\S]*?<\/nav>/) || [html])[0];
+const barra = [];
+let seccion = '(sin rótulo)';
+for (const m of nav.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<div class="nav-section-label">([^<]+)<\/div>|<button[^>]*class="nav-item"[^>]*>/g)) {
+  if (m[1]) { seccion = m[1].trim(); continue; }
+  const v = /data-view="([^"]+)"/.exec(m[0]);
+  const id = /\bid="([^"]+)"/.exec(m[0]);
+  if (v) barra.push({ vista: v[1], id: id ? id[1] : null, seccion });
+}
+const appSrc = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/app.js'), 'utf8');
+const sf = ts.createSourceFile('app.js', appSrc, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+let sw = null;
+(function busca(n) {
+  if (ts.isFunctionDeclaration(n) && n.name && n.name.text === 'renderView') (function d(x) { if (ts.isSwitchStatement(x) && !sw) sw = x; ts.forEachChild(x, d); })(n);
+  ts.forEachChild(n, busca);
+})(sf);
+const dispatch = new Map();
+for (const c of sw.caseBlock.clauses) {
+  if (!ts.isCaseClause(c)) continue;
+  const nombre = c.expression.getText(sf).replace(/^['"]|['"]$/g, '');
+  const fns = new Set();
+  let miraRol = false;
+  const v = (n) => {
+    if (ts.isIdentifier(n) && /^render\w+View$/.test(n.text) && n.text !== 'renderView') fns.add(n.text);
+    if (ts.isIdentifier(n) && n.text === 'appUserRole') miraRol = true;
+    ts.forEachChild(n, v);
+  };
+  c.statements.forEach(v);
+  dispatch.set(nombre, { fns: [...fns], miraRol });
+}
+// Qué entradas se le ocultan al operario. Dos formas, según el árbol que se mida:
+//   · si app.js publica `aplicarRolALaBarra` (SCRUM-1338), se EJECUTA sobre el nav real;
+//   · si no (main anterior), se lee el bloque de nombres del arranque de app.js.
+const sonda = cargarDashboard(RAIZ, { rol: "tecnico" });
+let ocultaHoy; let comoSeMide;
+if (typeof sonda.ctx.aplicarRolALaBarra === "function") {
+  comoSeMide = "EJECUTANDO aplicarRolALaBarra sobre el nav de index.html";
+  const cont = sonda.mk("nav"); cont.className = "sidebar-nav"; sonda.ctx.document.body.appendChild(cont);
+  cont.innerHTML = nav.replace(/<!--[\s\S]*?-->/g, '').replace(/^<nav[^>]*>/, '').replace(/<\/nav>$/, '');
+  sonda.ctx.aplicarRolALaBarra(sonda.ctx.document, "tecnico");
+  const ocultas = new Set(cont.children.filter((n) => String(n.style.display) === "none" && n.dataset.view).map((n) => n.dataset.view));
+  const rot = cont.children.filter((n) => String(n.className).includes("nav-section-label")).map((n) => String(n.textContent).trim() + (String(n.style.display) === "none" ? " [OCULTO]" : " [se pinta]"));
+  console.log("rótulos de sección para el operario: " + rot.join(" · "));
+  ocultaHoy = (e) => ocultas.has(e.vista);
+} else {
+  comoSeMide = "LEYENDO el bloque de nombres del arranque de app.js (no hay función que ejecutar)";
+  const bloque = appSrc.slice(appSrc.indexOf("// Ocultar elementos de navegación para técnicos"), appSrc.indexOf("// Badge de solicitudes pendientes"));
+  ocultaHoy = (e) => (!!e.id && bloque.includes("'" + e.id + "'")) || bloque.includes("data-view=\"" + e.vista + "\"") || bloque.includes("'" + e.vista + "'");
+}
+console.log("qué se le oculta al operario: " + comoSeMide);
+console.log(`POBLACION_BARRA=${barra.length} · casos del dispatch=${dispatch.size}`);
+
+// ── 3 · montar cada vista como operario, con una red que contesta lo que el gate diría ──────
+async function montar(rol, fn, args = []) {
+  const peticiones = [];
+  const fetch = async (url, opts) => {
+    const method = (opts && opts.method) || 'GET';
+    const g = gate(method, url);
+    const niega = g && g.role === 'admin' && rol !== 'admin';
+    peticiones.push({ method, url: String(url).replace(/^https?:\/\/[^/]+/, '').replace(/\?.*$/, ''), ruta: g ? g.path : null, rol: g ? g.role : undefined, status: niega ? 403 : 200 });
+    if (niega) {
+      return { ok: false, status: 403, headers: { get: () => 'application/json' }, json: async () => ({ error: 'forbidden', required_role: 'admin' }), text: async () => '{"error":"forbidden","required_role":"admin"}', blob: async () => ({}) };
+    }
+    return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => (/\/admin\/merchant(\?|$)/.test(String(url)) ? { id: 1, name: 'Taller', defaultCurrency: 'EUR', country: 'ES' } : /\/admin\/(products|providers)(\?|$)/.test(String(url)) ? { ok: true, items: [] } : datosDeMuestra(String(url))), text: async () => '', blob: async () => ({}) };
+  };
+  const b = cargarDashboard(RAIZ, { rol, red: { navigator: { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } }, fetch } });
+  b.ctx.appMerchantId = 1;
+  b.ctx.appDocumentoSuelto = 'no';
+  b.ctx.renderAppView = () => {};
+  const v = await pintarVista(b, fn, ...args);
+  for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r));
+  let pinta = null;
+  if (v.contenedor) {
+    const ns = todos(v.contenedor);
+    const cls = (n) => String(n.className || '');
+    pinta = {
+      nodos: ns.length,
+      esqueletos: ns.filter((n) => /skeleton|skel\b/.test(cls(n))).length,
+      carteles: ns.filter((n) => /error|empty-state|alert/.test(cls(n))).map((n) => `${cls(n)}: ${String(n.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 90)}`).slice(0, 4),
+      botones: ns.filter((n) => n.tagName === 'BUTTON').length,
+      crearProducto: (() => { const b = ns.find((n) => n.id === 'pf-create-product'); return b ? (b.disabled ? 'DESHABILITADO' : 'pulsable') : null; })(),
+    };
+  }
+  return { peticiones, error: v.error ? String(v.error.message) : null, noMedida: v.noMedida || null, rechazos: v.rechazos || [], pinta };
+}
+
+const filas = [];
+for (const e of barra) {
+  const d = dispatch.get(e.vista);
+  const fn = d && d.fns.find((f) => f !== 'renderHomeView') || (e.vista === 'home' ? 'renderHomeView' : null);
+  const fila = { ...e, fn, guardEnElCase: !!(d && d.miraRol), ocultaHoy: ocultaHoy(e) };
+  if (fn) {
+    fila.operario = await montar('tecnico', fn, e.vista === 'partes-oficina' ? [{}] : []);
+    fila.admin = await montar('admin', fn, e.vista === 'partes-oficina' ? [{}] : []);
+  }
+  filas.push(fila);
+}
+
+for (const f of filas) {
+  const o = f.operario;
+  const neg = o ? o.peticiones.filter((p) => p.status === 403) : [];
+  const sinRuta = o ? o.peticiones.filter((p) => p.ruta === null && p.url.startsWith('/admin')) : [];
+  console.log(`\n[${f.seccion}] ${f.vista}${f.id ? ' #' + f.id : ''} · fn=${f.fn} · oculta hoy al operario=${f.ocultaHoy ? 'SI' : 'no'} · guard en el case=${f.guardEnElCase ? 'SI' : 'no'}`);
+  if (!o) { console.log('   CIEGO: sin función de vista'); continue; }
+  console.log(`   operario: ${o.peticiones.length} peticiones · ${neg.length} NEGADAS · error=${o.error} · noMedida=${o.noMedida} · rechazos=${o.rechazos.length}`);
+  for (const p of o.peticiones) console.log(`      ${p.status} ${p.method} ${p.url}  -> ${p.ruta === null ? 'SIN RUTA EN LA TABLA' : p.ruta + ' [' + (p.rol || 'sin rol') + ']'}`);
+  if (sinRuta.length) console.log(`   ⚠ ${sinRuta.length} peticiones a /admin que la tabla no reconoce`);
+  if (o.pinta) console.log(`   pinta (operario): nodos=${o.pinta.nodos} botones=${o.pinta.botones} esqueletos=${o.pinta.esqueletos}${o.pinta.crearProducto ? ' · «Crear producto»: ' + o.pinta.crearProducto : ''} carteles=${JSON.stringify(o.pinta.carteles)}`);
+  if (f.admin) console.log(`   control admin: ${f.admin.peticiones.length} peticiones · negadas=${f.admin.peticiones.filter((p) => p.status === 403).length} · nodos=${f.admin.pinta && f.admin.pinta.nodos} · error=${f.admin.error}`);
+}
+const visibles = filas.filter((f) => !f.ocultaHoy);
+const haciaUn403 = visibles.filter((f) => f.operario && f.operario.peticiones.some((p) => p.status === 403));
+console.log(`\nRESUMEN · barra=${filas.length} · ocultas hoy al operario=${filas.length - visibles.length} · visibles=${visibles.length} · visibles que piden una ruta de admin al abrirse=${haciaUn403.length}: ${haciaUn403.map((f) => f.vista).join(', ')}`);
+console.log('EXIT=0');
