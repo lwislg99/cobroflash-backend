@@ -66,8 +66,8 @@ sale de su fila (`casosEscritos`).
 
 ### Lo que NO lleva este lote
 
-- 20 ficheros enteramente mecánicos (30 sitios): lote 2.
-- 13 ficheros a mano (35 sitios: los 34 de arriba y uno mecÃ¡nico que comparte fichero con otro que no lo es): `scrum1027`, `scrum1093h`, `scrum1106`, `scrum1153`,
+- 20 ficheros enteramente mecánicos (29 sitios): lote 2.
+- 13 ficheros a mano (35 sitios: los 34 de arriba y uno mecánico que comparte fichero con otro que no lo es): `scrum1027`, `scrum1093h`, `scrum1106`, `scrum1153`,
   `scrum1200`, `scrum1213`, `scrum1315`, `scrum264`, `scrum330`, `scrum785`, `scrum809`,
   `scrum899d`, `scrum931`.
 
