@@ -334,7 +334,7 @@ test('SCRUM-1367 · ④ --crear-hasta se agota sin coincidir: sale 1 y dice cuá
 
 test('SCRUM-1367 · 🔴 CERROJO DE CUENTA: si el servidor no dice merchant 46 y owner, NINGUNA de las cuatro órdenes escribe', async () => {
   const ordenes = [['aceptado'], ['plan'], ['perfil-fiscal'], ['mismo-id', '--crear-hasta', '5']];
-  for (const me of [{ merchantId: 1, isOwner: true, merchantName: 'Demo' }, { merchantId: MERCHANT_QA, isOwner: false, merchantName: 'PruebaQA' }]) {
+  for (const me of [{ merchantId: 71, isOwner: true, merchantName: 'Otro taller' }, { merchantId: MERCHANT_QA, isOwner: false, merchantName: 'PruebaQA' }]) {
     for (const orden of ordenes) {
       const p = panel({ me });
       const r = await correr(orden, p);
