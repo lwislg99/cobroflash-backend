@@ -68,7 +68,7 @@ que ese mismo obligado ya expidió en 2026**.
 Por tanto el 3000 sólo saltaría si las dos `F260001` tienen también la misma fecha, y sólo si el
 programa anterior también las envió. En el caso normal, con fechas distintas, **la AEAT acepta las
 dos**, y el obligado queda con dos facturas `F260001` en 2026 sin que nada avise. Esto último es una
-inferencia a partir de la composición del identificador que da A3, no un caso probado contra la AEAT.
+inferencia a partir de la composición del identificador que da A3, no un caso probado contra la AEAT. **[Corregido el 2-oct-2026, SCRUM-1398: SE PROBÓ el 28-sep-2026 en el entorno de pruebas, con otra serie (`PRUEBA-COLISION-0001`), y la AEAT aceptó las dos. La medición, en `docs/master/SCRUM-1398.md`.]**
 
 **Qué ve YaQu hoy:** nada. La serie F deriva su secuencia de lo ya emitido *en YaQu* (SCRUM-1203 (b)),
 y lo que el profesional declara en el alta no se lee.
@@ -137,4 +137,4 @@ Queda **sin determinar**, sin fuente leída:
 1. Si el cambio de programa es una «razón que lo justifique» para abrir serie (①).
 2. Si la normativa dice algo del cambio de sistema a mitad de año (③).
 3. Qué hace la AEAT con dos `F260001` del mismo NIF con fechas distintas. La inferencia de ④(b) sale
-   de A3; no se ha probado.
+   de A3; no se ha probado. **[Corregido el 2-oct-2026, SCRUM-1398: ya no está sin determinar. Se probó el 28-sep-2026 en el entorno de pruebas, con la serie `PRUEBA-COLISION-0001`: las acepta. Ver `docs/master/SCRUM-1398.md`.]**

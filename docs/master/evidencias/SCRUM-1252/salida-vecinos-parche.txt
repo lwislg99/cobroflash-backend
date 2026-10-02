@@ -1,0 +1,75 @@
+✔ SCRUM-1232 · el libro de la pantalla NO trae justificantes (`type JUST`)
+✔ SCRUM-1232 · una F1 con número J- SE QUEDA en el libro: es una factura con el número mal puesto
+✔ SCRUM-1232 · POSITIVO: las facturas de verdad siguen en el libro — un filtro que se lleva de más es peor
+✔ SCRUM-1232 · con SÓLO justificantes el libro dice «no hay», no «no cuadra»
+✔ SCRUM-1232 · un justificante AJENO que se cuele no desaparece: sigue contando en `ajenas`
+✔ SCRUM-1232 · el libro de expedidas para la AEAT tampoco lleva justificantes
+✔ SCRUM-1232 · ⛔ el 303 SIGUE declarando el IVA de los justificantes (lo devengado, no lo documentado)
+✔ SCRUM-1232 · el 303 pide el libro SIN el filtro de facturas
+✔ SCRUM-1232 · el recuento concuerda en singular: «1 factura», no «1 facturas»
+✔ SCRUM-294c · SUELO: el cable existe y las dos puntas hablan
+✔ SCRUM-294c · 🔴 CONTROL NEGATIVO: sin criterio de caja se devenga por EMISIÓN, como hoy
+✔ SCRUM-294c · 🔴 NULL no se comporta como `false`: no recorren el mismo camino
+✔ SCRUM-294c · los tres estados nativos, uno a uno
+✔ SCRUM-294c · 🔴 acogido al RECC: el libro devenga por COBRO
+✔ SCRUM-294c · 🔴 SUELO: si el merchant no se pudo leer, LANZA — no cae a «sin criterio»
+✔ SCRUM-294c · un valor que no es booleano NO se traduce aquí: lo rechaza la fase B
+✔ SCRUM-294c · 🔴 LOS TRES repos del libro pasan el criterio, y ninguno se queda fuera
+✔ SCRUM-294c · 🔴 la pantalla ofrece TRES opciones, no una casilla
+✔ SCRUM-294c · 🔴 el campo se PERSISTE, y los tres estados sobreviven al validador
+✔ SCRUM-294c · 🔴 el campo existe en el esquema, con los tres estados
+﹣ SCRUM-297 · el paquete de evidencias: suelo, tenencia y los dos controles positivos # sin LIBRO_PG_URL (banco local)
+﹣ SCRUM-297 · un sello que NO cuadra se DECLARA: ni se corrige, ni se oculta, ni se deja fuera # sin LIBRO_PG_URL (banco local)
+✔ SCRUM-297 · SUELO: la firma del sellador se lee, y tiene fuentes
+✔ SCRUM-297 · SUELO: el adaptador y el esquema también se leen
+✔ SCRUM-297 · toda fuente del SELLADOR la produce el adaptador
+✔ SCRUM-297 · el paquete SELECCIONA todas las columnas que el adaptador va a leer
+✔ SCRUM-297 · CONTROL POSITIVO: con las fuentes de hoy, el paquete está completo
+✔ SCRUM-297/300 · SUELO: el montaje sella de verdad y el verificador se pronuncia
+✔ SCRUM-297/300 · 🔴 R1: un sobre v:1 sigue verificando OK — con el select nuevo Y con el viejo
+✔ SCRUM-297/300 · 🔴 R2: un sobre v:2 con las cuatro columnas verifica OK
+✔ SCRUM-297/300 · 🔴 con el select VIEJO, un v:2 intacto se lee como MANIPULADO
+✔ SCRUM-297/300 · 🔴 R3: quitar CUALQUIERA de las cuatro rompe la verificación de un v:2
+✔ SCRUM-297/300 · el `select` de producción trae LAS CUATRO (no una, ni tres)
+✔ SCRUM-297 · SUELO: el paquete produce ficheros con contenido
+✔ SCRUM-297 · el paquete lleva SUS CINCO PIEZAS, cada una nombrada
+✔ SCRUM-297 · el manifiesto sella TODAS las demás piezas
+✔ SCRUM-297 · el estado del índice sale del verificador, sin traducir (regla 26)
+✔ SCRUM-297 · un sello que no cuadra NO se corrige ni se oculta: sale en el índice
+✔ SCRUM-297 · el suelo del verificador viaja: «no se pudo mirar» no es «todo cuadra»
+✔ SCRUM-297 · un importe ilegible NO se imprime como 0,00
+✔ SCRUM-297 · el paquete es LECTURA: ni prisma, ni escrituras, ni camino de emisión
+✔ SCRUM-438 · CONTROL POSITIVO: atestigua un sobre que CUADRA, y el registro reproduce la verificación
+✔ SCRUM-438 · 🔴 el documento DICE QUÉ ES: una verificación fechada, NO una firma
+✔ SCRUM-438 · 🔴 SUELO: si no puede leer el sobre o distinguir la versión, FALLA declarándose ciego
+✔ SCRUM-438 · un hash que NO cuadra SÍ produce documento — eso sí se ha podido mirar
+✔ SCRUM-438 · 🔴 si cambia uno de los cinco campos, se NOMBRA cuál y que el atestiguamiento es ANTERIOR
+✔ SCRUM-438 · 🔴 REGLA 29: la herramienta SOLO LEE — ni el sobre, ni el albarán, ni AuditLog
+✔ SCRUM-438 · el texto del alcance es el APROBADO, palabra por palabra (regla 30)
+✔ SCRUM-438 · 🔴 SEGUNDA CAPA: el alcance no puede insinuar que esto es una firma
+✔ SCRUM-438 · 🔴 la política va SIEMPRE dentro del ZIP, cuadren o no los albaranes
+✔ SCRUM-438 · 🔴 la invocación de producción vive en el `--help` y NO expone la credencial
+✔ SCRUM-438 · los cinco campos vivos son LOS del sobre, no una lista aparte que envejece
+✔ SCRUM-636 · SUELO: el sitio único y su consumidor responden
+✔ SCRUM-636 · 🔴 el tramo 1.000–9.999 € YA SE AGRUPA — el defecto que cada copia reintrodujo
+✔ SCRUM-636 · 🔴 EL SEXTO SITIO: el PDF del albarán y su vista escriben IGUAL
+✔ SCRUM-636 · el albarán conserva su ESPACIO NORMAL antes del símbolo
+✔ SCRUM-636 · 🔴 sólo cambia la PRESENTACIÓN, nunca el número
+✔ SCRUM-636 · 🔴 SUELO del trinquete: el detector VE los formateadores que ya existen
+✔ SCRUM-636 · 🔴 TRINQUETE: un formateador NUEVO en utils.ts hace caer este guard
+✔ SCRUM-636 · 🔴 el SELLADOR sigue con `.toFixed(2)` — el XML de la AEAT exige punto
+✔ SCRUM-636 · 🔴 el CSV de evidencias sigue SIN agrupar
+✔ SCRUM-636 · 🔴 SUELO: el censo de copias VE la forma que busca
+✔ SCRUM-636 · 🔴 no queda NI UNA copia de la expresión en todo `src/`
+✔ SCRUM-636 · 🔴 la FACTURA y el PRESUPUESTO beben ya del sitio único
+✔ SCRUM-636 · 🔴 EL PDF DE LA FACTURA escribe los doce con la convención española
+✔ SCRUM-636 · 🔴 y NINGUNA CIFRA cambia: sólo su escritura
+✔ SCRUM-636 · 🔴 la banda 1.000–9.999 € ya NO se escribe sin agrupar
+ℹ tests 67
+ℹ suites 0
+ℹ pass 65
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 0
+EXIT=0

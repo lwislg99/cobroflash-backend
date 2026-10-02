@@ -1,0 +1,28 @@
+J4f · sonda-gates.mjs sobre 92eed0586594e185fe59a4f1eeeb3d29621c9677 · entre las lecturas de GitHub 2026-10-01T14:45:16Z y 14:47:19Z · de la salida, las lineas del instrumento (el arranque de dist/app.js escribe ademas su propio registro)
+POBLACION_RUTAS=190 · con rol admin=113 · sin rol=77
+control gate: GET /admin/cobros -> "admin" · GET /admin/customers -> null · GET /admin/no-existe -> null
+POBLACION_CITAS=23
+A	invoiceDetailView.js:387	POST /admin/invoices/1/resend-whatsapp	-> admin (/admin/invoices/:id/resend-whatsapp)
+A	invoiceDetailView.js:407,423	POST /admin/invoices/1/send-email	-> admin (/admin/invoices/:id/send-email)
+A	invoiceDetailView.js:471	POST /admin/invoices/1/payment-anomaly	-> admin (/admin/invoices/:id/payment-anomaly)
+A	invoiceDetailView.js:490	PATCH /admin/invoices/1/status	-> NO CASA con ninguna ruta
+A	invoiceDetailView.js:490	POST /admin/invoices/1/status	-> NO CASA con ninguna ruta
+A	invoiceDetailView.js:490	PUT /admin/invoices/1/status	-> admin (/admin/invoices/:id/status)
+A	invoiceDetailView.js:576	POST /admin/charges/1/confirm-bizum	-> admin (/admin/charges/:id/confirm-bizum)
+A	invoiceDetailView.js:612	POST /admin/invoices/1/send-reminder	-> admin (/admin/invoices/:id/send-reminder)
+A	invoiceDetailView.js:653	POST /admin/invoices/1/rectify	-> admin (/admin/invoices/:id/rectify)
+A	invoiceDetailView.js:743	POST /admin/invoices/1/regenerate-pdf	-> admin (/admin/invoices/:id/regenerate-pdf)
+A	invoiceDetailView.js:874 (ya vetado)	POST /admin/invoices/1/annul	-> admin (/admin/invoices/:id/annul)
+A	invoicesView.js:486	POST /admin/invoices/bulk-paid	-> admin (/admin/invoices/bulk-paid)
+A	quotesView.js:5463	POST /admin/invoices	-> admin (/admin/invoices)
+B	quotesDetailView.js:924	PATCH /admin/invoices/1/status	-> NO CASA con ninguna ruta
+B	quotesDetailView.js:1127	GET /admin/expenses/margin/1	-> admin (/admin/expenses/margin/:quoteId)
+B	quotesDetailView.js:1483	DELETE /admin/maintenance/1	-> admin (/admin/maintenance/:id)
+B	quotesDetailView.js:1513	POST /admin/maintenance	-> admin (/admin/maintenance)
+B	albaranDetailView.js:564	POST /admin/albaranes/1/convertir-en-factura	-> admin (/admin/albaranes/:id/convertir-en-factura)
+B	jobsView.js:132,843	GET /admin/team	-> admin (/admin/team)
+C	cobrosView.js:710	GET /admin/cobros	-> admin (/admin/cobros)
+C	facturasRecibidasView.js:211	GET /admin/libros/recibidas.json	-> admin (/admin/libros/recibidas.json)
+ctl	control sin rol	GET /admin/customers	-> SIN ROL (/admin/customers)
+ctl	control inexistente	GET /admin/no-existe	-> NO CASA con ninguna ruta
+EXIT=0

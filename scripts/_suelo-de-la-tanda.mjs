@@ -212,6 +212,45 @@ export function ficherosMudosDelTap(texto) {
 }
 
 /**
+ * 🔴 SCRUM-1380 · UN FICHERO QUE CORRIÓ Y PERDIÓ SU INFORME deja la MISMA entrada que uno sin tests.
+ *
+ * Medido el 1-oct-2026 (SCRUM-1366): `tests/scrum237-negacion-respaldada.test.mjs` corre entero en el
+ * CI, imprime su censo y el runner no registra ninguno de sus tests. En el TAP queda
+ * `ok 352 - tests/scrum237-….test.mjs`, idéntica a la de un fichero vacío, y el mensaje mandaba a
+ * buscar un `import` roto en una rama que no tenía nada. Lo único que separa los dos casos es el
+ * `duration_ms` de esa entrada:
+ *
+ *     corrió y no reportó   →  2242,9 ms (run 36863578275) · 3682 ms (run 36860171227)
+ *     carga y no registra   →  55,9 – 57,7 ms (laboratorio, tres tiradas, Node 24.8)
+ *
+ * El umbral queda a 17× lo segundo y a menos de la mitad de lo primero. Es un corte entre dos
+ * poblaciones medidas con DOS y TRES puntos: por eso el mensaje imprime siempre la duración, para
+ * que quien lea juzgue el número y no sólo la etiqueta.
+ */
+export const MS_DE_HABER_CORRIDO = 1000;
+
+/** Cada fichero mudo con el `duration_ms` de SU entrada · `ms: null` si la entrada no lo trae (no es cero). */
+export function duracionesDeLosMudos(texto) {
+  const lineas = String(texto || '').split('\n');
+  const out = [];
+  lineas.forEach((linea, i) => {
+    const m = linea.match(/^\s*(?:not )?ok \d+ - (\S+\.test\.mjs)\s*$/);
+    if (!m) return;
+    let ms = null;
+    // El bloque YAML de la entrada: de `---` a `...`, justo debajo. Fuera de él no se busca.
+    for (let j = i + 1; j < lineas.length && j <= i + 8; j++) {
+      const l = lineas[j].trim();
+      if (j === i + 1 && l !== '---') break;
+      const d = l.match(/^duration_ms:\s*([\d.]+)$/);
+      if (d && Number.isFinite(Number(d[1]))) { ms = Number(d[1]); break; }
+      if (l === '...') break;
+    }
+    out.push({ fichero: m[1], ms });
+  });
+  return out;
+}
+
+/**
  * El veredicto. **PURO**: entra el texto del TAP y el suelo, sale qué decir y con qué código.
  *
  * Separarlo del disco es lo que permite ejercitar el rojo, el control negativo y el mensaje del
@@ -299,10 +338,29 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS, declaradosEnElA
   // dieran los dos a la vez y mandara el margen, el mensaje acusaría al árbol de un defecto que
   // está localizado y con nombre y apellidos.
   if (mudos.length) {
+    // SCRUM-1380 · el veredicto es el MISMO rojo; lo que cambia es a dónde manda a mirar.
+    const duraciones = duracionesDeLosMudos(textoTap);
+    const corrieron = duraciones.filter((d) => d.ms !== null && d.ms >= MS_DE_HABER_CORRIDO);
+    const sinDuracion = duraciones.filter((d) => d.ms === null);
+    const seg = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+    const aviso = (corrieron.length
+      ? `   🔴 ${corrieron.length === mudos.length ? 'ESTO' : `EN ${corrieron.length} DE ${mudos.length}, ESTO`} NO ES UN FICHERO SIN TESTS: CORRIÓ Y NO REPORTÓ.\n`
+        + corrieron.map((d) => `     · ${d.fichero} corrió ${seg(d.ms)} y el runner no registró ninguno de sus tests.\n`).join('')
+        + `   Un fichero que carga y no registra nada tarda milésimas (medido: ~56 ms); éste tardó segundos.\n`
+        + '   Es el intermitente de SCRUM-1366 (causa SIN diagnosticar): el fichero corre entero y su\n'
+        + '   informe se pierde. NO es tu rama, y no se arregla tocándola. Relanzar el job repite la\n'
+        + '   tirada; apunta el avistamiento en SCRUM-1366 con el id de la corrida.\n\n'
+      : '')
+      + (sinDuracion.length
+        ? `   ⚠️ NO SUPE cuánto corrió ${sinDuracion.map((d) => d.fichero).join(', ')}: su entrada no trae \`duration_ms\`.\n`
+          + '   Sin ese dato no distingo «corrió y perdió su informe» de «no tiene tests».\n\n'
+        : '');
     return {
-      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos,
-      titulo: `🔴 ${mudos.length} FICHERO(S) DE TEST NO REGISTRARON NI UN TEST: ${mudos.join(', ')}.`,
-      detalle: '   No es una sospecha por el recuento: está en el TAP. `node --test` emite una entrada\n'
+      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos, duraciones,
+      titulo: `🔴 ${mudos.length} FICHERO(S) DE TEST NO REGISTRARON NI UN TEST: ${mudos.join(', ')}.`
+        + (corrieron.length ? ` ${corrieron.length} de ellos CORRIÓ Y NO REPORTÓ (no es la rama: SCRUM-1366).` : ''),
+      detalle: aviso
+        + '   No es una sospecha por el recuento: está en el TAP. `node --test` emite una entrada\n'
         + '   con el NOMBRE DEL FICHERO cuando el fichero carga y no registra nada — y la emite EN\n'
         + '   VERDE, contando como un test, así que el total baja menos de lo que se ha perdido y\n'
         + '   el porcentaje de verdes hasta mejora.\n\n'

@@ -1,0 +1,5 @@
+# contraste-mixto · guard-contraste.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · la página que no se deja medir va ANTES de la que trae el par nuevo
+# EXIT=1 · 7.8 s
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+✖ /zz-ciego-1336.html: no se pudo medir — rota a proposito por el banco de SCRUM-1336

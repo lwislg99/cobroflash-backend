@@ -443,7 +443,7 @@ test('SCRUM-716c · ✅ CONTROL: el arreglo no ha tocado lo que el vigía DECIDE
 // sustituye es el campo que este control interroga.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-test(String.raw`SCRUM-824b · 🔴 EL NEGATIVO: si la lectura anterior no publica un sha legible, el vigía SIGUE diciendo NO SE SABE`, async () => {
+test('SCRUM-824b · 🔴 EL NEGATIVO: si la lectura anterior no publica un sha legible, el vigía SIGUE diciendo NO SE SABE', async () => {
   const { constanciaDeEjecucion } = await import('../scripts/_vigilante-de-despliegue.mjs');
   const { lecturaDeLaConstancia } = await import('../scripts/_ritmo-de-despliegue.mjs');
   const { dir, shas } = repoDePrueba();

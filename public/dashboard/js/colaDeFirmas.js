@@ -142,6 +142,24 @@ async function noCabeOtraFirma(clave, cuerpo) {
   return Boolean(espacio && espacio.estado === window.SIN_ESPACIO);
 }
 
+/**
+ * SCRUM-1302 · La marca `yaqu_hubo_cola` se pone al ENCOLAR, antes de subir, y sólo la retiraba el
+ * drenado. Una firma que sube a la primera sale de la cola pero dejaba la marca, y el arranque
+ * siguiente leía «hubo cola y el almacén está vacío»: avisaba de una pérdida que no hubo (medido
+ * en Chromium contra yaqu.app, 10 de 10 arranques).
+ *
+ * Mismo criterio que el drenado: se retira SÓLO si la cola se ha podido leer y está vacía. Si
+ * queda otra firma, o no se puede leer, la marca se queda — sigue habiendo algo que perder.
+ */
+async function retirarLaMarcaSiNoQuedaNada() {
+  if (typeof window.olvidarQueHuboCola !== 'function' || typeof window.leerFirmasPendientes !== 'function') return;
+  let cola;
+  try { cola = await window.leerFirmasPendientes(); } catch (_e) { return; }
+  if (cola && cola.estado === window.GUARDADO && Array.isArray(cola.firmas) && cola.firmas.length === 0) {
+    window.olvidarQueHuboCola();
+  }
+}
+
 async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   const clave = claveDeFirma(documentoId, tipo);
   if (!clave) {
@@ -163,6 +181,20 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   try {
     respuesta = await subir();
   } catch (error) {
+    // 🔴 SCRUM-1302 · EL 409 `albaran_locked` / `parte_locked` TAMBIÉN AQUÍ ES «YA LA TIENE». El
+    // drenado lo sabía (`elServidorYaLaTiene`) y la firma directa no: con el detalle abierto y viejo
+    // —la cola subió la firma al volver la red y esa pantalla no se enteró—, firmar o «Reintentar»
+    // devolvía ②, la vista decía que no se había podido registrar una firma que SÍ estaba
+    // registrada, y la firma volvía a la cola con el servidor ya en firmado. Es la MISMA función
+    // que usa el drenado, no una segunda regla. Se desencola aunque este intento no la encolara:
+    // puede venir de uno anterior, con la misma clave. Sin `respuesta`: las vistas repintan
+    // pidiendo el documento al servidor, que es quien sabe con qué firma se quedó.
+    if (elServidorYaLaTiene(error)) {
+      await window.quitarFirmaPendiente(clave);
+      await olvidarElRechazo(clave);
+      await retirarLaMarcaSiNoQuedaNada();
+      return { estado: window.FIRMA_A_SALVO, encolada, yaLaTenia: true };
+    }
     // SCRUM-890 · el servidor ha LEÍDO la firma y la rechaza por el documento: reintentarla da el
     // mismo no. Sale de la cola; el trazo sigue en pantalla porque la vista relanza el error.
     if (elServidorLaRechaza(error)) {
@@ -187,6 +219,7 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   // ya ha declarado: la firma ESTÁ a salvo, y eso no depende de que el móvil sepa olvidarla.
   if (encolada) await window.quitarFirmaPendiente(clave);
   await olvidarElRechazo(clave);
+  await retirarLaMarcaSiNoQuedaNada();
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
@@ -325,6 +358,43 @@ async function olvidarElRechazo(clave) {
   try { await window.olvidarRechazoDeFirma(clave); } catch (_e) { /* best-effort */ }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1373 · EL DRENADO DICE QUÉ FIRMAS HA CONFIRMADO EL SERVIDOR
+//
+// Hasta aquí el drenado sólo repintaba la home. Una pantalla abierta sobre el documento —el
+// detalle de un albarán que sigue «emitido», ofreciendo firmar— no tenía forma de saber que su
+// firma acababa de subir.
+//
+// 🔴 AVISA, NO REPINTA. Quien sabe cuándo es seguro repintar una pantalla es la propia pantalla:
+// un repintado lanzado desde aquí al volver la red puede caer con el pad de firma abierto y
+// llevarse lo que alguien estaba haciendo. Aquí sólo se dice QUÉ ha quedado a salvo; qué hacer
+// con eso lo decide quien escucha.
+//
+// EL CONTRATO (también en `docs/master/SCRUM-1373.md`, que es donde lo lee quien no estuvo):
+//   · `window.alConfirmarseFirmas(fn)` suscribe y devuelve la función que DESUSCRIBE.
+//   · `fn` recibe una lista, nunca vacía, de `{ tipo, documentoId }`:
+//       `tipo`        'albaran' | 'parte' | 'parte-tecnico' — el de la entrada de la cola
+//                     (una entrada vieja sin tipo es 'albaran', como al subirla);
+//       `documentoId` el id del documento en la API, tal cual se encoló.
+//   · Entra en la lista una firma que el servidor TIENE y que ha SALIDO de la cola: la que acaba
+//     de subir y la que ya tenía (409 «ya firmado»). No entra la rechazada ni la que falló.
+//   · Se avisa UNA vez por drenado, al terminar. Un drenado que no confirma nada no avisa.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const oyentesDeFirmasConfirmadas = new Set();
+
+function alConfirmarseFirmas(fn) {
+  if (typeof fn !== 'function') return () => {};
+  oyentesDeFirmasConfirmadas.add(fn);
+  return () => { oyentesDeFirmasConfirmadas.delete(fn); };
+}
+
+/** Un oyente que lanza no tumba el drenado ni deja sin aviso a los demás. */
+function avisarDeFirmasConfirmadas(confirmadas) {
+  if (!confirmadas.length) return;
+  for (const fn of [...oyentesDeFirmasConfirmadas]) {
+    try { fn(confirmadas.map((c) => ({ tipo: c.tipo, documentoId: c.documentoId }))); } catch (_e) { /* el de al lado sigue */ }
+  }
+}
 
 /**
  * Vacía la cola: sube lo que pueda y deja dentro lo que no.
@@ -354,6 +424,8 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
   let subidas = 0;
   let yaEstaban = 0;
+  const confirmadas = [];   // SCRUM-1373 · las que el servidor tiene y han salido de la cola
+  const confirmada = (firma) => confirmadas.push({ tipo: firma.tipo || 'albaran', documentoId: firma.albaranId });
   const fallidas = [];
   const rechazadas = [];
 
@@ -371,7 +443,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
         // Ya está a salvo: sale de la cola igual que si la hubiéramos subido nosotros.
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
         await olvidarElRechazo(firma.claveIdempotencia);
-        if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
+        if (quitada && quitada.estado === window.GUARDADO) { yaEstaban += 1; confirmada(firma); }
         else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
         continue;
       }
@@ -403,7 +475,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
     // CONFIRMADA. Sólo aquí sale de la cola.
     const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
     await olvidarElRechazo(firma.claveIdempotencia);
-    if (quitada && quitada.estado === window.GUARDADO) subidas += 1;
+    if (quitada && quitada.estado === window.GUARDADO) { subidas += 1; confirmada(firma); }
     else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'subió y no se pudo sacar de la cola' });
   }
 
@@ -421,6 +493,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   // marca de una cola vacía es del detector, que es quien la consume al avisar.
   const teniaAlgo = cola.firmas.length > 0;
   if (teniaAlgo && quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
+  avisarDeFirmasConfirmadas(confirmadas);
   return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
@@ -562,3 +635,4 @@ window.ordenDeDrenado = ordenDeDrenado;
 window.elServidorYaLaTiene = elServidorYaLaTiene;
 window.elServidorLaRechaza = elServidorLaRechaza;
 window.drenarFirmasPendientes = drenarFirmasPendientes;
+window.alConfirmarseFirmas = alConfirmarseFirmas;   // SCRUM-1373

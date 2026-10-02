@@ -557,6 +557,28 @@ const INDIRECTAS_DECLARADAS = [
   // contando el estado de ayer. Herramienta de mano del orquestador; no corre en CI.
   // Lo retira quien retire el latido.
   'scripts/equipo/latido.mjs',
+  // SCRUM-1372 · la criba de cierres. Aquí la punta es el SUJETO, igual que en SCRUM-753 y SCRUM-637:
+  // «¿el trabajo de este cierre está DENTRO de `main` hoy?» no se puede contestar contra la base de una
+  // rama. NO le pasa la referencia móvil a git: usa `instantanea()` de SCRUM-753, que la resuelve UNA
+  // vez, y todo (árbol, historial, `merge-tree`) va contra ese sha congelado, que imprime en su segunda
+  // línea. Fuera de los argumentos nombra `main` en los textos del informe («commit en main que lo
+  // nombre», «no existe en main»). Herramienta de mano de la S0; no corre en CI.
+  // Lo retira quien retire la criba.
+  'scripts/auditoria-cierres.mjs',
+  // SCRUM-1424 · `ya-esta`, que se corre ANTES de repartir un ticket. Aquí la punta es el SUJETO, igual
+  // que en SCRUM-637 y SCRUM-1372: «¿qué hay YA en `main` de este ticket?» sólo se contesta contra la
+  // punta de `main`; contra la base de una rama diría que no está lo que entró ayer. La resuelve UNA
+  // vez (`rev-parse`) y todo lo demás —el árbol de `docs/master`, el historial, la alcanzabilidad de
+  // las ramas del ticket— va contra ESE sha, que imprime en su segunda línea. Fuera de los argumentos
+  // la nombra como valor por defecto de `--ref` y en los textos del informe («YA ESTÁ en origin/main»).
+  // Sólo lee; herramienta de mano del orquestador, no corre en CI.
+  // Lo retira quien retire el comando.
+  'scripts/equipo/ya-esta.mjs',
+  // SCRUM-1424 · su test: mismo caso que 1298, 899b y 973 — el comando se lanza contra un repositorio
+  // SINTÉTICO en el temporal cuyo `origin/main` no es el de nadie. Fuera de los argumentos de git la
+  // nombra en las aserciones sobre el texto del informe y en el ancla fabricada de un registro.
+  // Lo retira quien borre el test.
+  'tests/scrum1424-ya-esta.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

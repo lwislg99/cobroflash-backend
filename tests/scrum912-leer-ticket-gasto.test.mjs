@@ -10,7 +10,7 @@
 //   ④ La ruta: códigos y no frases, el tope diario, y ni la foto ni el NIF en el log.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
+import express from 'express'; import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const { config } = await import('../dist/core/config/env.js');
 const { partesDelUsuario, cuotasDelError, geminiComplete, geminiCompleteConModelo } = await import('../dist/integrations/gemini.js');
@@ -62,7 +62,7 @@ const respuestaGemini = (objeto) => new Response(
 async function conApp(merchantId, fn) {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
-  app.use((req, _res, next) => { req.merchantId = merchantId; next(); });
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId })); next(); });
   app.use('/admin/expenses', router);
   const server = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
   const base = `http://127.0.0.1:${server.address().port}/admin/expenses`;

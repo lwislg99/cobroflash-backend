@@ -81,8 +81,7 @@ test('SCRUM-942 · 🔴 EL ROJO: un .mjs sembrado con ESC cae, y el censo dice D
   assert.deepEqual(sano, [], '🔴 CONTROL: el fichero limpio no debería dar ningún hallazgo');
 });
 
-test('SCRUM-942 · 🔴 EL ROJO QUE VALE DOBLE: un .mjs sembrado con NUL cae — aquí es donde un '
-  + 'instrumento mal hecho (`git grep -I`, o un `readFileSync(...,\'utf8\')`) se queda MUDO', () => {
+test('SCRUM-942 · 🔴 EL ROJO QUE VALE DOBLE: un .mjs sembrado con NUL cae — aquí es donde un instrumento mal hecho (`git grep -I`, o un `readFileSync(...,\'utf8\')`) se queda MUDO', () => {
   const dir = temporal('scrum942-nul-');
   const f = path.join(dir, 'sembrado.mjs');
   fs.writeFileSync(f, Buffer.from([99, 111, 110, 115, 116, 0x00, 59])); // "const" + NUL + ";"
@@ -167,8 +166,7 @@ test('SCRUM-942 · ✅ NEGATIVO: un binario real (PNG) no entra en la población
   assert.ok(!esTextoPorExtension(pngs[0]), '🔴 un .png está pasando el filtro de "texto"');
 });
 
-test('SCRUM-942 · 🔴 CONTROL POSITIVO del filtro binario: el MISMO byte 0x1B que el censo detecta '
-  + 'en texto SÍ está presente en un PNG real, y el filtro lo descarta a propósito (no por casualidad)', () => {
+test('SCRUM-942 · 🔴 CONTROL POSITIVO del filtro binario: el MISMO byte 0x1B que el censo detecta en texto SÍ está presente en un PNG real, y el filtro lo descarta a propósito (no por casualidad)', () => {
   const pngs = execFileSync('git', ['ls-files', '*.png'], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })
     .split('\n').filter(Boolean).slice(0, 40);
   let algunoConEsc = false;

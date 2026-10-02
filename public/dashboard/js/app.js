@@ -137,32 +137,29 @@ async function initApp() {
   };
 
   // Ocultar elementos de navegación para técnicos
-  if (window.appUserRole !== 'admin') {
-    // SCRUM-24/136: la gestión y supervisión del equipo es solo del admin (S1). Ocultar el
-    // nav es UX; la seguridad real la da el requireRole('admin') de /admin/team (backend, S3).
-    ['nav-plans', 'nav-team', 'nav-export'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    // A1.3: Configuración es solo del admin (datos fiscales, IBAN, umbrales)
-    const settingsNav = document.querySelector('.nav-item[data-view="settings"]');
-    if (settingsNav) settingsNav.style.display = 'none';
-    // SCRUM-107: Gastos se oculta porque la PANTALLA no es para el técnico — lista
-    // completa, totales del mes y margen son economía del negocio, y sus 403 dejarían
-    // la vista medio rota (loadSummary traga el error en un catch vacío). Crear un gasto
-    // SÍ es suyo: POST /admin/expenses sigue abierto y el endpoint queda listo para el
-    // alta rápida, que no se construye hasta que exista Expense.teamMemberId.
-    const expensesNav = document.querySelector('.nav-item[data-view="expenses"]');
-    if (expensesNav) expensesNav.style.display = 'none';
-    // SCRUM-1317: Proveedores e Informes salen de la barra del operario ANTES de cerrarle sus
-    // rutas (`/admin/providers`, `/admin/metrics/funnel|services|whatsapp`). Informes ya le
-    // fallaba desde SCRUM-55 (`/admin/reports` exige admin en el montaje) con la entrada a la
-    // vista: una entrada de menú que lleva a un 403 es peor que no tenerla (SCRUM-1312).
-    ['providers', 'reports'].forEach((vista) => {
-      const el = document.querySelector(`.nav-item[data-view="${vista}"]`);
-      if (el) el.style.display = 'none';
-    });
-  }
+  //
+  // 🔴 SCRUM-1338 · AQUÍ HABÍA UNA LISTA DE NOMBRES, Y SE RETIRA. Eran siete, puestos a mano
+  // (`nav-plans`, `nav-team`, `nav-export` —que ya no existía—, Configuración, Gastos, Proveedores
+  // e Informes), cada uno por el ticket que se dio cuenta, y nadie comprobaba que estuvieran
+  // todos: Partes por valorar, Cobros, Libro de registro y Facturas recibidas seguían a la vista
+  // del operario, y las cuatro abren pidiendo una ruta que el servidor le niega.
+  //
+  // Ahora QUIÉN ve una entrada lo dice la propia entrada, en `index.html`: `data-rol="admin"`.
+  // Y que esa declaración sea verdad no se le confía a quien la escribe: la comprueba
+  // `tests/scrum1338-la-barra-del-operario-contra-los-gates.test.mjs`, montando cada vista con
+  // rol de operario contra los gates REALES del servidor. Una entrada sin declarar que pida una
+  // ruta de admin sale en rojo; y una declarada que no pida ninguna, también (sería quitarle algo suyo).
+  //
+  // Los motivos de cada una, que no se pierden con la lista:
+  //   · Equipo y Planes (SCRUM-24/136) y Configuración (A1.3): gestión de la cuenta, sólo admin.
+  //   · Gastos (SCRUM-107): la PANTALLA no es del técnico —totales del mes y margen—, aunque
+  //     crear un gasto sí lo es (`POST /admin/expenses` sigue abierto para el alta rápida).
+  //   · Proveedores e Informes (SCRUM-1317): sus rutas se le cerraron, y una entrada de menú que
+  //     lleva a un 403 es peor que no tenerla (SCRUM-1312).
+  //
+  // Ocultar el nav es UX; la seguridad real la da el `requireRole('admin')` del servidor.
+  // La función vive al final del fichero, a nivel superior, para que el banco de vistas la EJECUTE.
+  aplicarRolALaBarra(document, window.appUserRole);
 
   // Badge de solicitudes pendientes
   function updateRequestsBadge() {
@@ -280,6 +277,9 @@ async function initApp() {
 
   // 7. Render view
   function renderView(view, options = {}) {
+    // SCRUM-1338 · la vista tecleada (`#cobros`) o abierta desde otra pantalla pasa por la MISMA
+    // declaración que la barra: si su entrada es sólo del admin, quien no lo es cae en Inicio.
+    if (vistaVedadaPorRol(document, window.appUserRole, view)) return renderView('home', options);
     const state = window.appState;
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
@@ -850,7 +850,99 @@ function vigilarVueltaDeLaRed() {
   });
 }
 
+// ── SCRUM-1302 · CERRAR SESIÓN CON FIRMAS SIN SUBIR ────────────────────────────────────────────
+// El purgado de abajo vacía la cola de firmas A PROPÓSITO (SCRUM-455, art. 32 RGPD). Lo que faltaba
+// era decirlo antes: una firma hecha en un sótano y aún sin subir se iba con el logout y nadie
+// avisaba. Textos firmados en SCRUM-1302, comentario 17889. Las tres mitades van juntas o el texto
+// miente: se CUENTA antes de purgar, se INTENTA subir antes de preguntar, y «Cancelar» no cierra
+// sesión ni borra nada.
+function textoFirmasSinSubirAlCerrar(n) {
+  return n === 1
+    ? 'Te queda 1 firma por subir. Si cierras sesión ahora, se borra de este móvil y habrá que volver a firmar. ¿Cerrar sesión?'
+    : `Te quedan ${n} firmas por subir. Si cierras sesión ahora, se borran de este móvil y habrá que volver a firmarlas. ¿Cerrar sesión?`;
+}
+
+/** Cuántas firmas hay en la cola, o `null` si no se ha podido LEER: «no supe mirar» no es un cero. */
+async function firmasSinSubirAlCerrar() {
+  if (typeof window.leerFirmasPendientes !== 'function') return null;
+  try {
+    const cola = await window.leerFirmasPendientes();
+    if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) return null;
+    return cola.firmas.length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * ¿Se sigue adelante con el cierre de sesión? `false` sólo si la persona dice que no.
+ *
+ * Sin cifra cierta NO se pregunta —ni con la cola ilegible ni sin `confirm`—: cerrar sesión tiene
+ * que funcionar siempre (SCRUM-455), y un aviso con un número inventado sería otra mentira.
+ */
+async function confirmarCierreConFirmasSinSubir() {
+  let n = await firmasSinSubirAlCerrar();
+  // Con red, primero se intenta subirlas: preguntar por algo que se arregla solo es ruido. El
+  // drenado tiene plazo (el de `api.js`), así que un sótano no deja el botón colgado para siempre.
+  if (n && navigator.onLine !== false && typeof window.drenarSiNoSeEstaDrenando === 'function') {
+    try { await window.drenarSiNoSeEstaDrenando(); } catch (_e) { /* best-effort: se vuelve a contar */ }
+    n = await firmasSinSubirAlCerrar();
+  }
+  // SCRUM-1383 · se cuentan DESPUÉS del intento: el propio intento puede crear el rechazo.
+  const rechazadas = await firmasRechazadasAlCerrar();
+  const texto = textoAlCerrarSesion(n, rechazadas);
+  if (!texto) return true;
+  if (typeof window.confirm !== 'function') return true;
+  return !!window.confirm(texto);
+}
+
+// ── SCRUM-1383 · CERRAR SESIÓN CON FIRMAS QUE EL SERVIDOR RECHAZÓ ──────────────────────────────
+// Una firma rechazada sale de la cola y deja una constancia (`almacenLocal.js`, SCRUM-890). El
+// purgado la borra A PROPÓSITO (art. 32 RGPD; lo fija `scrum890b`) y eso no cambia: la constancia no
+// dice de qué cuenta es, y si sobreviviera la vería quien entrase después. Lo que faltaba es decirlo
+// ANTES: sin esto, una firma que no está en el servidor desaparecía del móvil sin que nadie lo dijera.
+
+/**
+ * 🔴 PENDIENTE DE FIRMA (SCRUM-1383): devuelve `null`, y con `null` NO se pregunta por las
+ * rechazadas (se cierra como hasta hoy). El literal entra aquí cuando lo firme el fundador; lleva
+ * también el caso combinado (`sinSubir` > 0), porque va UNA pregunta y no dos.
+ */
+function textoFirmasRechazadasAlCerrar(_rechazadas, _sinSubir) {
+  return null;
+}
+
+/**
+ * Cuántas constancias de rechazo hay en este móvil, o `null` si no se han podido LEER.
+ *
+ * Se cuentan TODAS, no sólo las de este cierre: la de ayer se pierde igual. NO se cuenta
+ * `invalid_id`, igual que la pantalla del albarán: con ese código volver a pedir la firma da el
+ * mismo no, y el aviso prometería algo falso. Límite: el aviso no dice QUÉ documento; la constancia
+ * sólo lleva el id interno.
+ */
+async function firmasRechazadasAlCerrar() {
+  if (typeof window.leerRechazosDeFirma !== 'function') return null;
+  try {
+    const r = await window.leerRechazosDeFirma();
+    if (!r || r.estado !== window.GUARDADO || !Array.isArray(r.rechazos)) return null;
+    return r.rechazos.filter((x) => x && x.codigo !== 'invalid_id').length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/** El texto de la ÚNICA pregunta, o `null` si no hay nada cierto que preguntar. */
+function textoAlCerrarSesion(sinSubir, rechazadas) {
+  if (rechazadas) {
+    const texto = textoFirmasRechazadasAlCerrar(rechazadas, sinSubir || 0);
+    if (texto) return texto;
+  }
+  return sinSubir ? textoFirmasSinSubirAlCerrar(sinSubir) : null;
+}
+
 async function logout() {
+  // SCRUM-1302 · ANTES de purgar: después ya no habría cola que contar ni firma que salvar.
+  if (!(await confirmarCierreConFirmasSinSubir())) return;
+
   // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
   //
   // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la
@@ -1031,3 +1123,39 @@ document.addEventListener('visibilitychange', () => {
 document.addEventListener('DOMContentLoaded', () => {
   initApp(); startVersionWatch(); precargarSiTocaAhora();
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1338 · LA BARRA SEGÚN EL ROL. Dos funciones a nivel superior y sin estado: reciben el
+// documento y el rol, para que el banco de vistas las ejecute sobre el `index.html` de verdad.
+//
+// La declaración es UNA y vive en la entrada: `data-rol="admin"` en su `<button class="nav-item">`.
+// Aquí no hay ningún nombre de vista. Quien no es admin —el técnico, o un rol que aún no existe—
+// cae del lado restringido (misma dirección que `seesAllJobs` en `roleCapabilities.ts`).
+// ════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Quita de la barra lo que no es de este rol, y con ello el rótulo de la sección que se quede
+ * sin ninguna entrada debajo: un «CUENTA» encima de nada es un título de una lista vacía.
+ */
+function aplicarRolALaBarra(documento, rol) {
+  if (rol === 'admin') return;
+  const nav = documento.querySelector('.sidebar-nav');
+  if (!nav) return;
+  let rotulo = null;
+  let visibles = 0;
+  const cerrarSeccion = () => { if (rotulo && visibles === 0) rotulo.style.display = 'none'; };
+  Array.from(nav.children).forEach((el) => {
+    if (el.classList.contains('nav-section-label')) { cerrarSeccion(); rotulo = el; visibles = 0; return; }
+    if (!el.classList.contains('nav-item')) return;
+    if (el.dataset.rol === 'admin') el.style.display = 'none';
+    else visibles += 1;
+  });
+  cerrarSeccion();
+}
+
+/** ¿Esta vista tiene entrada en la barra y esa entrada es sólo del admin? Sin entrada, no veta. */
+function vistaVedadaPorRol(documento, rol, view) {
+  if (rol === 'admin') return false;
+  const entrada = documento.querySelector('.nav-item[data-view="' + view + '"]');
+  return !!entrada && entrada.dataset.rol === 'admin';
+}

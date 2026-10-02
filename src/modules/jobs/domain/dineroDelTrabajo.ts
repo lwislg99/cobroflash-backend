@@ -27,8 +27,13 @@ const ESTADO_ACEPTADO = 'accepted';
  */
 export type PresupuestoDelTrabajo = PresupuestoConPlan & { status: string | null };
 
-/** ¿Lo ha aceptado el cliente? Ante la duda —sin estado legible— NO: no se afirma una deuda. */
-function presupuestoAceptado(q: { status?: unknown } | null | undefined): boolean {
+/**
+ * ¿Lo ha aceptado el cliente? Ante la duda —sin estado legible— NO: no se afirma una deuda.
+ *
+ * SCRUM-1365 · exportado porque `POST /admin/jobs/:id/collect-rest` lo consume: la escritura
+ * (emitir un tramo) usa EL MISMO criterio que las lecturas de arriba, no una copia.
+ */
+export function presupuestoAceptado(q: { status?: unknown } | null | undefined): boolean {
   return q?.status === ESTADO_ACEPTADO;
 }
 

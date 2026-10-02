@@ -64,6 +64,25 @@
 //
 // El número NO sube: siguen siendo 90 s. Las mediciones y los controles, en `docs/master/SCRUM-1345.md`.
 //
+// ── 🔴 EL 1-OCT-2026, POR LA TARDE (SCRUM-1386): UN RUNNER AL QUE MATAN TAMPOCO HA ENCONTRADO NADA ──
+// El plazo era UNA forma de no terminar. La otra es que al runner lo maten desde fuera (el arnés, por
+// memoria), y ésa seguía saliendo 1. Medido matándolo de verdad, siete casos con su testigo: a los 9 s
+// había 97 tests en ✔ en su propio stdout y este comando dijo «solo se ejecutaron 0 tests». Contaba el
+// resumen, no los tests. Y si el matado era UN proceso por fichero, el runner lo pintaba `✖ <ruta>` y
+// de ahí salía «1 hallazgo».
+//
+// El código de salida NO lo distingue (`taskkill` y el kill de node dan 1; `Stop-Process`, 4294967295).
+// Lo que sí: **un `node --test` que termina por su pie escribe SIEMPRE su resumen («tests N»), caiga lo
+// que caiga; uno al que cortan no lo escribe nunca** (cinco formas de matar, cinco sin resumen).
+//
+//   · RUNNER SIN RESUMEN = no terminó: la MISMA rama que el plazo agotado. Un ciego, y de hallazgos
+//     los ✖ que ya había escrito. Aquí no se mira ningún número de salida.
+//   · FICHERO MUERTO (el caído es la RUTA del fichero, no un test): si no dejó NI UNA LETRA antes de
+//     su ✖, es un ciego; si dejó su traza, arrancó y reventó: hallazgo. Es la regla de SCRUM-1343.
+//
+// ⚠️ El residuo, dicho: un fichero matado y uno que hace `process.exit(1)` callado son indistinguibles,
+// y los dos salen ciegos. Las mediciones y los controles, en `docs/master/SCRUM-1386.md`.
+//
 // ⚠️ Esto NO sustituye a `npm test`. Comprueba lo barato de comprobar, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -109,6 +128,11 @@ export const GUARDS = [
   // SCRUM-811 · el duodécimo. Reutiliza el troceador de scrum267 (sin git, sin DB): añade ~0,3 s.
   { fichero: 'tests/scrum811c-skill-ui-declarada.test.mjs',
     porque: 'toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no' },
+  // SCRUM-1417 · el decimotercero. Lee el árbol, sin `dist` ni base. El caso que lo decide: el
+  // 2-oct-2026 se empujó a #2134 un merge con los marcadores dentro de A10, y este comando daba VERDE
+  // sobre ese árbol. El CI lo habría parado con este mismo test; aquí se para antes del push.
+  { fichero: 'tests/scrum393-marcadores-de-conflicto.test.mjs',
+    porque: 'ningún fichero del árbol lleva marcadores de conflicto de git (un merge mal resuelto se empuja igual de verde)' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -127,7 +151,7 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 12;
+export const MINIMO = 13;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
@@ -191,21 +215,83 @@ function fallosDelResumen(salida) {
 }
 
 /**
+ * SCRUM-1386 · ¿Trae la salida EL RESUMEN del runner? Es lo que separa «terminó» de «lo cortaron»: un
+ * `node --test` que acaba por su pie lo escribe siempre, con tests caídos o sin ellos; uno al que matan
+ * no lo escribe nunca. Mismo lector que `recuentoDeTests`, pero sin confundir «no hay resumen» con
+ * «el resumen dice 0» (esa confusión era el «solo se ejecutaron 0 tests» con 97 en verde delante).
+ */
+export function traeResumen(salida) {
+  return /^[^\n]*\btests\s+\d+\s*$/m.test((salida || '').replace(ANSI, ''));
+}
+
+/** Los resultados en verde que el runner llegó a escribir. Sólo para DECIRLOS: no deciden nada. */
+export function verdesVistos(salida) {
+  return (salida || '').replace(ANSI, '').split(/\r?\n/).filter((l) => /^\s*(?:✔|ok\b)/.test(l)).length;
+}
+
+// Una línea que escribe EL RUNNER (reporter `spec`): un resultado, un diagnóstico o un grupo.
+const LINEA_DEL_RUNNER = /^\s*(?:✔|✖|ℹ|﹣|▶)/;
+// El resultado de primer nivel de algo que cayó: `✖ <nombre> (12.3ms)`. Sin sangría: no es un subtest.
+const CAIDO_DE_PRIMER_NIVEL = /^✖ (.+) \(\d+(?:\.\d+)?ms\)\s*$/;
+
+/**
+ * SCRUM-1386 · LOS FICHEROS MUERTOS de una pasada que terminó: aquellos cuyo caído es LA RUTA del
+ * fichero y no uno de sus tests. El runner lo pinta así cuando el proceso de ese fichero acabó mal sin
+ * que el fallo fuera de un test: lo mataron, salió solo, o reventó al cargar.
+ *
+ * De cada uno dice si `callado`: no dejó NI UNA LETRA suya antes de su ✖ (lo que le precede es otra
+ * línea del runner, o nada). Con traza delante, arrancó y reventó: eso es suyo.
+ *
+ * La ruta se compara RESUELTA contra la lista, no por texto (`tests\x` y `tests/x` son el mismo). Y
+ * sólo se mira ANTES del resumen: después, el runner repite los caídos en «failing tests».
+ *
+ * ⚠️ Límites: es texto, y del reporter `spec`. Con otro reporter no reconoce ningún muerto y todo
+ * caído sigue contando como hallazgo: el lado cerrado. Y si OTRO fichero deja texto suelto justo
+ * delante del ✖ de un muerto callado, ése sale «con traza»: también el lado cerrado.
+ */
+export function ficherosMuertos(salida, { raiz = RAIZ, ficheros = GUARDS.map((g) => g.fichero) } = {}) {
+  const lineas = (salida || '').replace(ANSI, '').split(/\r?\n/);
+  const fin = lineas.findIndex((l) => /^[^\n]*\btests\s+\d+\s*$/.test(l));
+  const hasta = fin === -1 ? lineas.length : fin;
+  const rutas = new Map(ficheros.map((f) => [path.resolve(raiz, f), f]));
+  const muertos = [];
+  for (let i = 0; i < hasta; i += 1) {
+    const m = CAIDO_DE_PRIMER_NIVEL.exec(lineas[i]);
+    const fichero = m && rutas.get(path.resolve(raiz, m[1]));
+    if (!fichero) continue;
+    let j = i - 1;
+    while (j >= 0 && lineas[j].trim() === '') j -= 1;
+    muertos.push({ fichero, callado: j < 0 || LINEA_DEL_RUNNER.test(lineas[j]) });
+  }
+  return muertos;
+}
+
+/**
  * Las DOS cuentas de una pasada, para dárselas a `veredictoDe` (SCRUM-1320). Aquí no se decide ningún
  * código de salida: sólo se cuenta.
  *
- *   · `agotado` (se cortó por el plazo): un ciego SIEMPRE —de lo que no acabó no se sabe nada—, y de
+ *   · NO TERMINÓ —se cortó por el plazo (`agotado`), o acabó sin dejar su resumen (SCRUM-1386: lo
+ *     mataron, o ni se pudo lanzar)—: un ciego SIEMPRE —de lo que no acabó no se sabe nada—, y de
  *     hallazgos, los tests que ya habían caído antes del corte. Ésos son reales y no se pierden.
- *   · terminó con estado ≠ 0: hallazgos, los que dice su resumen (y al menos uno: salió distinto de 0).
+ *   · terminó con estado ≠ 0: hallazgos, los que dice su resumen MENOS los ficheros que murieron sin
+ *     decir una letra, que son ciegos (SCRUM-1386). Y si no queda nada contado, al menos un hallazgo:
+ *     salió distinto de 0.
  *   · terminó con 0: ni una cosa ni otra.
+ *
+ * `opciones` es sólo para probar `ficherosMuertos` contra una lista que no es la del árbol.
  */
-export function cuentasDeLaPasada({ agotado, status, salida }) {
-  if (agotado) {
+export function cuentasDeLaPasada({ agotado, status, salida }, opciones) {
+  const terminado = !agotado && traeResumen(salida);
+  if (!terminado) {
     const vistos = fallosVistos(salida);
-    return { hallazgos: vistos.length, ciegos: 1, vistos };
+    return { hallazgos: vistos.length, ciegos: 1, vistos, terminado, callados: [] };
   }
-  if (status !== 0) return { hallazgos: Math.max(1, fallosDelResumen(salida)), ciegos: 0, vistos: [] };
-  return { hallazgos: 0, ciegos: 0, vistos: [] };
+  if (status !== 0) {
+    const callados = ficherosMuertos(salida, opciones).filter((f) => f.callado).map((f) => f.fichero);
+    const hallazgos = Math.max(0, fallosDelResumen(salida) - callados.length);
+    return { hallazgos: hallazgos === 0 && callados.length === 0 ? 1 : hallazgos, ciegos: callados.length, vistos: [], terminado, callados };
+  }
+  return { hallazgos: 0, ciegos: 0, vistos: [], terminado, callados: [] };
 }
 
 /** La línea que sale SIEMPRE, también en verde y también si no se lanzó nada: población, tiempo y plazo. */
@@ -297,13 +383,25 @@ const cuentas = cuentasDeLaPasada({ agotado, status: r.status, salida: r.stdout 
 const veredicto = veredictoDe(cuentas);
 const linea = lineaDeLaPasada({ guards: GUARDS.length, ms, plazoMs: techo });
 
-if (agotado) {
+// SCRUM-1386 · NO TERMINÓ: por el plazo, o porque acabó sin dejar su resumen (lo mataron, o ni se pudo
+// lanzar). Las dos son la misma rama: de lo que no acabó no se sabe nada, y lo que ya había caído vale.
+if (!cuentas.terminado) {
   const vistos = cuentas.vistos;
+  const corte = agotado ? `plazo de ${techo / 1000} s`
+    : (r.error ? `no se pudo lanzar: ${r.error.code || r.error.message}` : 'el runner acabó sin dejar su resumen');
   if (vistos.length > 0) {
-    console.error(`\n🔴 HALLAZGO, y además no terminé. Antes del corte (plazo de ${techo / 1000} s) ya habían caído ${vistos.length}:`);
+    console.error(`\n🔴 HALLAZGO, y además no terminé. Antes del corte (${corte}) ya habían caído ${vistos.length}:`);
     for (const l of vistos) console.error(`   ${l}`);
     console.error('  Ésos son reales: arréglalos ANTES de empujar. Y la lista NO es completa: de los guards');
     console.error('  que no llegaron a acabar no sé nada.');
+  } else if (!agotado) {
+    console.error('\n⬜ CIEGO — no terminé; no sé nada de tus guards. ' + (r.error
+      ? `El runner no llegó a arrancar (${r.error.code || r.error.message}).`
+      : `El runner acabó sin escribir su resumen (estado ${r.status}${r.signal ? ', señal ' + r.signal : ''}).`));
+    console.error('  Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha');
+    console.error(`  dicho que esté bien. Había escrito ${verdesVistos(r.stdout || '')} resultado(s) en verde y ninguno caído.`);
+    console.error('  Un runner que termina por su pie escribe SIEMPRE su resumen, caiga lo que caiga; uno al que');
+    console.error('  cortan desde fuera, no (SCRUM-1386). Relánzalo; si se repite, mira qué lo mata.');
   } else {
     console.error(`\n⬜ CIEGO — no terminé; no sé nada de tus guards. Corté al runner al pasar el plazo de ${techo / 1000} s.`);
     console.error('  Esto NO es un rojo: ningún guard ha dicho que algo esté mal. Tampoco es un verde: ninguno ha');
@@ -328,8 +426,18 @@ if (ejecutados < MINIMO) {
 }
 
 if (r.status !== 0) {
-  console.error('\n🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,');
-  console.error('  el PR sale rojo y cuesta una vuelta entera.');
+  // SCRUM-1386 · un fichero cuyo proceso murió sin decir una letra no ha encontrado nada: se nombra
+  // aparte. Si además hay un caído de verdad, manda el caído (lo decide `veredictoDe`, no este `if`).
+  if (cuentas.callados.length > 0) {
+    console.error(`\n⬜ ${cuentas.callados.length} guard(s) NO ACABARON DE MEDIR: su proceso murió sin dejar una letra de por qué.`);
+    for (const f of cuentas.callados) console.error(`   · ${f}`);
+    console.error('  Ningún test suyo ha caído: el que cae es el fichero entero, y callado. Es lo que deja un');
+    console.error('  proceso al que matan desde fuera (SCRUM-1386). No es un rojo ni un verde. Relánzalo.');
+  }
+  if (cuentas.hallazgos > 0) {
+    console.error('\n🔴 Algún guard de entrada está en rojo. Arréglalo ANTES de empujar: si entra así,');
+    console.error('  el PR sale rojo y cuesta una vuelta entera.');
+  }
   console.error(`  ${veredicto.linea}`);
   console.log(linea);
   process.exit(veredicto.codigo);

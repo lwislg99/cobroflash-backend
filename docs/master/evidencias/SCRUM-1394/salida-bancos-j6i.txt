@@ -1,0 +1,99 @@
+BANCOS de mutación en git · 24 carpetas · catálogo 118 guards
+
+docs/evidencias/scrum1317
+   LISTA PROPIA, fuera del catálogo · entradas propias≈13
+   tests del ticket: 2 (en el catálogo: 0) · tests a los que apunta el guion: 2 (en el catálogo: 0)
+
+docs/master/evidencias/SCRUM-1324
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/SCRUM-1345
+   LISTA PROPIA, fuera del catálogo · entradas propias≈6
+   tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/SCRUM-912
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/SCRUM-917
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 3 (en el catálogo: 0) · tests a los que apunta el guion: 10 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1304
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1321
+   SÓLO SALIDAS (sin guion en git) · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1326
+   LISTA PROPIA, fuera del catálogo · entradas propias≈20
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1327
+   LISTA PROPIA, fuera del catálogo · entradas propias≈21
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 2 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1330
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 2 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1331
+   TOMA LAS DEL TEST (catálogo) · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1332
+   TOMA LAS DEL TEST (catálogo) · entradas propias≈0
+   tests del ticket: 1 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1333
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 0) · tests a los que apunta el guion: 4 (en el catálogo: 0)
+
+docs/master/evidencias/scrum1340
+   LISTA PROPIA, fuera del catálogo · entradas propias≈18
+   tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+docs/master/evidencias/scrum864
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum864c
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 1) · tests a los que apunta el guion: 3 (en el catálogo: 2)
+
+docs/master/evidencias/scrum908b
+   TOMA LAS DEL TEST (catálogo) · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 1) · tests a los que apunta el guion: 1 (en el catálogo: 1)
+
+docs/master/evidencias/scrum908c
+   LISTA PROPIA, fuera del catálogo · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 1) · tests a los que apunta el guion: 2 (en el catálogo: 1)
+
+docs/master/evidencias/scrum908c/ventana-866
+   SÓLO SALIDAS (sin guion en git) · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 1) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum920
+   LISTA PROPIA, fuera del catálogo · entradas propias≈19
+   tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum933
+   LISTA PROPIA, fuera del catálogo · entradas propias≈1
+   tests del ticket: 0 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 1)
+
+docs/master/evidencias/scrum951a
+   TOMA LAS DEL TEST (catálogo) · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 2) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum951d
+   SÓLO SALIDAS (sin guion en git) · entradas propias≈0
+   tests del ticket: 2 (en el catálogo: 2) · tests a los que apunta el guion: 0 (en el catálogo: 0)
+
+docs/master/evidencias/scrum982
+   LISTA PROPIA, fuera del catálogo · entradas propias≈13
+   tests del ticket: 1 (en el catálogo: 0) · tests a los que apunta el guion: 1 (en el catálogo: 0)
+
+RECUENTO sobre 24 carpetas: lista propia fuera del catálogo 17 · toma las del test 4 · mixto 0 · sólo salidas 3

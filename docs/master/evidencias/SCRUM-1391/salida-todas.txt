@@ -1,0 +1,28 @@
++0.0s BANCO SCRUM-1391 · 9 pasadas en paralelo · salidas en C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1391-las-cinco-puertas-ejecutadas\docs\master\evidencias\SCRUM-1391
++1.3s terminó staging · salida 0 · 1 veredicto(s) · salida-staging.txt
++6.7s terminó empuje · salida 0 · 1 veredicto(s) · salida-empuje.txt
++9.5s terminó plazo-test · salida 0 · 1 veredicto(s) · salida-plazo-test.txt
++20.5s terminó sonda · salida 0 · 0 veredicto(s) · salida-sonda.txt
++182.9s terminó mudez-con-color · salida 0 · 1 veredicto(s) · salida-mudez-con-color.txt
++301.7s terminó meta-async · salida 0 · 1 veredicto(s) · salida-meta-async.txt
++331.8s terminó meta-sync · salida 0 · 1 veredicto(s) · salida-meta-sync.txt
++333.1s terminó gateados · salida 0 · 1 veredicto(s) · salida-gateados.txt
++364.6s terminó mudez · salida 0 · 1 veredicto(s) · salida-mudez.txt
+
+NO EJERCITADA · staging-gated · forma: sin juzgar
+     no se puede lanzar sin base (toma el turno de staging antes del primer hijo); ejecutadas sus dos mitades puras: el plazo se reconoce (true) y el recibo lo separa del rojo ([hijo] frente a [rojo]); que los dos acaben en `fallaron` y salida 1 queda LEÍDO
+EJERCITADA · meta-guard · forma: SÍ
+     [async] un guard MUDO (control: MUDA) cuya mutación sólo lo hace tardar 330 s en async sale VIVA a los 300 s
+     [sync] un guard MUDO (control: MUDA) cuya mutación sólo lo hace tardar 330 s en sync sale MUDA a los 330 s
+EJERCITADA · censo-guards-gateados · forma: LA INVERSA (el plazo borra un hallazgo)
+     bajo el plazo, el gateado con un `before` lento cuenta como gateado y expuesto; con el plazo vencido DESAPARECE de las dos listas; el gateado que muere al cargar no aparece en ninguna de las dos pasadas
+EJERCITADA · censo-mudez · forma: SÍ
+     plazo vencido en la pasada LIMPIA → CIEGO (true); plazo vencido en la pasada MUTADA → el guard mudo cuenta como VIVO (17 vivos con 16 de verdad)
+     [con FORCE_COLOR=3] con el color que heredan las sesiones: VIVO 0 · MUDO 0 · CIEGO 20 · salida 0
+EJERCITADA · tests con plazo propio · forma: SÍ
+     el plazo vencido sale `not ok`, salida 1, contado como `cancelled` y no como `fail`; unas opciones escritas DESPUÉS de la función se IGNORAN (el test de 2 s pasa con plazo de 500 ms)
+EJERCITADA · puerta-claude-empuje · forma: NO
+     el test nombrado que agota el plazo sale NO-EMPUJA-CIEGO; si el nombrado ya salió `ok` y lo que cuelga es otro, EMPUJA-GUARD-VERDE
+
+5 puertas ejercitadas · 3 con la forma · 1 que no se pudieron ejercitar   (de 6 · 1 con la forma inversa · pasadas que no terminaron: ninguna)
+EXIT=0

@@ -1,4 +1,5 @@
 // src/modules/system/app/routes/quotesAdmin.routes.ts
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
@@ -82,7 +83,7 @@ router.get('/', async (req, res) => {
     const raw = req.query.teamMemberId;
     let teamMemberId: number | null | undefined;
     if (raw === 'owner') teamMemberId = null;
-    else if (raw !== undefined && Number.isInteger(Number(raw))) teamMemberId = Number(raw);
+    else if (raw !== undefined && cabeEnColumnaInt(Number(raw))) teamMemberId = Number(raw);
 
     const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
     return res.json(quotes);
@@ -98,7 +99,7 @@ router.get('/', async (req, res) => {
 router.post('/:id/accept', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -137,7 +138,7 @@ router.post('/:id/accept', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -440,7 +441,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
 router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     const creada = await crearRevisionDeQuote(req.merchantId, id);
     return res.status(201).json({ ok: true, ...creada });
@@ -466,7 +467,7 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
 router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     // SCRUM-1285 · la versión que leyó la pantalla (ver `core/db/escrituraConVersion.ts`).
     const leida = leerVersion(req.body?.version);
@@ -643,7 +644,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
@@ -705,7 +706,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId }, // multi-tenant
@@ -742,7 +743,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.post('/:id/send-email', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -787,7 +788,7 @@ router.post('/:id/send-email', async (req, res) => {
 router.post('/:id/approve', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -838,7 +839,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
 router.put('/:id/notes', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
     await prisma.quote.updateMany({
       where: { id, merchantId: req.merchantId },
@@ -866,7 +867,7 @@ router.put('/:id/notes', async (req, res) => {
 router.put('/:id/tags', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
     // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
     // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
@@ -893,7 +894,7 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -980,6 +981,12 @@ router.get('/:id', async (req, res) => {
  * rutas. Y tampoco abre la economía: un técnico asignado sigue sin ver coste ni margen, porque
  * eso lo decide `visibilidadEconomica.ts` por ROL y la asignación no entra en esa pregunta.
  *
+ * 🔵 2-oct-2026 (SCRUM-1400) · ESA FRASE YA NO CUBRE **VER**. El fundador firmó el 1-oct-2026
+ * (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un Técnico lo
+ * VEA. Para EDITAR y EMITIR sigue siendo verdad tal cual, y esta ruta sigue sin decidir nada de
+ * eso: sólo escribe la fila. La regla de quién ve vive en el máster, Parte S1 («autor o
+ * asignado»), no en este comentario.
+ *
  * 🔴 Y NO TOCA EL DOCUMENTO (regla 29). Escribe SOLO en la tabla puente. Asignar a una factura
  * emitida no puede cambiar su número, su total ni su PDF: no hay ninguna escritura que pudiera.
  *
@@ -991,7 +998,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
     // asignarían documentos de otro merchant sabiendo contar.

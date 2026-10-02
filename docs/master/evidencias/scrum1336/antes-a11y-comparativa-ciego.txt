@@ -1,0 +1,11 @@
+# a11y-comparativa-ciego · guard-a11y-comparativa.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · la sección #comparativa no existe en ningún ancho: 0 hallazgos, todo ciego
+# EXIT=1 · 1.1 s
+
+Guard de accesibilidad de la comparativa (SCRUM-541)
+Árbitro: el árbol de accesibilidad renderizado, no el marcado.
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+🔴 NO SUPE MIRAR a 1280px: no encuentro la sección #comparativa ni sus filas.
+🔴 NO SUPE MIRAR a 360px: no encuentro la sección #comparativa ni sus filas.
+
+🔴 2 problema(s). En una comparativa, una celda sin su columna no confunde: INVIERTE el mensaje.

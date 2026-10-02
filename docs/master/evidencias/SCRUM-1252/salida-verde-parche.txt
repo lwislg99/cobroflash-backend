@@ -1,0 +1,12 @@
+✔ SCRUM-1252 · SUELO: sin filtrar, el paquete SÍ pinta el justificante — la muestra no está ciega
+✔ SCRUM-1252 · el `libro-registro.csv` del paquete son las FACTURAS, y todas
+✔ SCRUM-1252 · el `indice.csv` del paquete lleva una fila por FACTURA
+✔ SCRUM-1252 · ⛔ el 303 del paquete es IDÉNTICO con filtro y sin él, y sigue llevando el IVA del justificante
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+EXIT=0

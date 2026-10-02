@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { isSupportedRole, SUPPORTED_ROLES } from '../../../../core/http/roleCapabilities'; // SCRUM-147
@@ -71,7 +72,7 @@ router.post('/', async (req, res) => {
     // A10.3 (W3, regla 34): límite de usuarios por plan — 1 Pro/Founding, 5
     // Equipo. Cuenta = owner (1) + miembros no suspendidos. Al tope: mensaje
     // digno con la oferta Equipo (W1: oferta manual, no autoservicio).
-    const { maxUsers } = getEntitlements(merchant?.plan);
+    const { maxUsers } = getEntitlements(merchant?.plan, { merchantId: req.merchantId }); // SCRUM-1342: si el plan no existe, el aviso dice de quién es
     const activeMembers = await prisma.teamMember.count({
       where: { merchantId: req.merchantId, status: { not: 'suspended' } },
     });
@@ -107,7 +108,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const name = req.body?.name ? String(req.body.name).trim() : undefined;
     // SCRUM-147: `undefined` = "no se cambia el rol" (sigue siendo válido). Pero un rol PRESENTE
@@ -131,7 +132,7 @@ router.put('/:id', async (req, res) => {
 router.post('/:id/resend', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // SCRUM-131: `sent` es la única verdad sobre si el email salió (contrato de sendOutcome.ts).
     // Antes se respondía `{ok:true}` fijo aunque Resend fallara: el admin leía "invitación
@@ -151,7 +152,7 @@ router.post('/:id/resend', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // No puede suspenderse a sí mismo
     if (req.teamMemberId === id) {

@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { leerMarcadoresDeclarados, marcadoresDeclarados, RUTA_DECLARADOS } from './_marcadores-declarados.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const SANO = {
   panel: { ficheros: { 'a.js': 1 } },
@@ -75,21 +76,36 @@ const ROTOS = [
     /`papel\.constantes` repite "MARCADOR_X"/],
 ];
 
-for (const [caso, contenido, motivo] of ROTOS) {
-  test(`SCRUM-1293 · 🔴 ${caso}: NO se lee como bueno, y el motivo lo nombra`, (t) => {
-    const ruta = contenido === null
-      ? path.join(os.tmpdir(), `scrum1293-no-existe-${process.pid}.json`)
-      : temporal(t, contenido);
-    // Que el caso esté de verdad ROTO como dice: si el `replace` de arriba no casara, el fixture
-    // sería el fichero sano y este test probaría otra cosa.
-    if (typeof contenido === 'string') assert.notEqual(contenido, texto(SANO), '🔴 el fixture no se ha roto');
-    const r = leerMarcadoresDeclarados(ruta);
-    assert.equal(r.ok, false, `🔴 «${caso}» se ha leído como BUENO: ${JSON.stringify(r)}`);
-    assert.match(r.motivo, motivo, `🔴 el motivo no nombra la causa: «${r.motivo}»`);
-    // Y la entrada que usan los tests LANZA: no hay valor por defecto.
-    assert.throws(() => marcadoresDeclarados(ruta), /NO SE PUEDE LEER LA LISTA DE MARCADORES DECLARADOS/);
-  });
-}
+const caso2 = casosEscritos(ROTOS, ([caso, contenido, motivo]) => `SCRUM-1293 · 🔴 ${caso}: NO se lee como bueno, y el motivo lo nombra`, ([caso, contenido, motivo], t) => {
+  const ruta = contenido === null
+    ? path.join(os.tmpdir(), `scrum1293-no-existe-${process.pid}.json`)
+    : temporal(t, contenido);
+  // Que el caso esté de verdad ROTO como dice: si el `replace` de arriba no casara, el fixture
+  // sería el fichero sano y este test probaría otra cosa.
+  if (typeof contenido === 'string') assert.notEqual(contenido, texto(SANO), '🔴 el fixture no se ha roto');
+  const r = leerMarcadoresDeclarados(ruta);
+  assert.equal(r.ok, false, `🔴 «${caso}» se ha leído como BUENO: ${JSON.stringify(r)}`);
+  assert.match(r.motivo, motivo, `🔴 el motivo no nombra la causa: «${r.motivo}»`);
+  // Y la entrada que usan los tests LANZA: no hay valor por defecto.
+  assert.throws(() => marcadoresDeclarados(ruta), /NO SE PUEDE LEER LA LISTA DE MARCADORES DECLARADOS/);
+});
+test('SCRUM-1293 · 🔴 fichero AUSENTE: NO se lee como bueno, y el motivo lo nombra', caso2(0));
+test('SCRUM-1293 · 🔴 no es JSON: NO se lee como bueno, y el motivo lo nombra', caso2(1));
+test('SCRUM-1293 · 🔴 sección `panel` AUSENTE: NO se lee como bueno, y el motivo lo nombra', caso2(2));
+test('SCRUM-1293 · 🔴 sección `servidor` AUSENTE: NO se lee como bueno, y el motivo lo nombra', caso2(3));
+test('SCRUM-1293 · 🔴 sección `papel` AUSENTE: NO se lee como bueno, y el motivo lo nombra', caso2(4));
+test('SCRUM-1293 · 🔴 sección `panel` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(5));
+test('SCRUM-1293 · 🔴 sección `servidor` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(6));
+test('SCRUM-1293 · 🔴 sección `papel` VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(7));
+test('SCRUM-1293 · 🔴 sección que es una LISTA: NO se lee como bueno, y el motivo lo nombra', caso2(8));
+test('SCRUM-1293 · 🔴 un número a CERO: NO se lee como bueno, y el motivo lo nombra', caso2(9));
+test('SCRUM-1293 · 🔴 un número NEGATIVO: NO se lee como bueno, y el motivo lo nombra', caso2(10));
+test('SCRUM-1293 · 🔴 un número que es TEXTO: NO se lee como bueno, y el motivo lo nombra', caso2(11));
+test('SCRUM-1293 · 🔴 una condición del papel VACÍA: NO se lee como bueno, y el motivo lo nombra', caso2(12));
+test('SCRUM-1293 · 🔴 clave REPETIDA con el MISMO valor (el incidente del PR #1065): NO se lee como bueno, y el motivo lo nombra', caso2(13));
+test('SCRUM-1293 · 🔴 clave REPETIDA con valor DISTINTO: NO se lee como bueno, y el motivo lo nombra', caso2(14));
+test('SCRUM-1293 · 🔴 clave REPETIDA en el papel: NO se lee como bueno, y el motivo lo nombra', caso2(15));
+caso2.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LAS MUTACIONES QUE ME TUMBAN (SCRUM-745) · las ejecuta `npm run meta:mutaciones`
@@ -98,9 +114,15 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El incidente del PR #1065, en su sitio de hoy: una clave repetida, MISMO valor, en la lista
     // REAL del panel. Antes la declaraba SCRUM-751 sobre el literal `CENSO` de scrum402.
+    //
+    // 🔄 SCRUM-1388 (2-oct-2026) · REANCLADA, no restaurada. El ancla era la línea ENTERA, con su
+    // coma final: valía mientras `settingsView.js` no fuera la última entrada. Al firmarse los
+    // textos de `facturasRecibidasView.js` su entrada salió del JSON, `settingsView.js` pasó a
+    // cerrar la lista sin coma, y el ancla dejó de existir (lo cazó SCRUM-836 en el CI). Ahora se
+    // ancla a la CLAVE con su valor, sin la coma: vale esté donde esté en la lista.
     fichero: 'scripts/_marcadores-pendientes-declarados.json',
-    de: '      "settingsView.js": 1,',
-    a: '      "settingsView.js": 1,\n      "settingsView.js": 1,',
+    de: '"settingsView.js": 1',
+    a: '"settingsView.js": 1,\n      "settingsView.js": 1',
     cae: 'CONTROL POSITIVO: el fichero REAL se lee, y trae las tres secciones con algo',
   },
   {

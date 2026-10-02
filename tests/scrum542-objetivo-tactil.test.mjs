@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANDING = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8');
@@ -69,12 +70,16 @@ const PIEZAS = [
   },
 ];
 
-for (const p of PIEZAS) {
-  test(`SCRUM-542 · sigue puesta: ${p.que}`, () => {
-    assert.equal(veces(LANDING, p.ancla), 1,
-      `🔴 falta o está duplicada la regla \`${p.ancla}\` — ${p.porque}`);
-  });
-}
+const caso1 = casosEscritos(PIEZAS, (p) => `SCRUM-542 · sigue puesta: ${p.que}`, (p) => {
+  assert.equal(veces(LANDING, p.ancla), 1,
+    `🔴 falta o está duplicada la regla \`${p.ancla}\` — ${p.porque}`);
+});
+test('SCRUM-542 · sigue puesta: la decoración de .cta-band ya no intercepta el toque', caso1(0));
+test('SCRUM-542 · sigue puesta: los enlaces del nav tienen los 2 px de padding que faltaban', caso1(1));
+test('SCRUM-542 · sigue puesta: «Volver a empezar» tiene alto mínimo', caso1(2));
+test('SCRUM-542 · sigue puesta: los enlaces del pie dejaron de ser cajas en línea de 17 px', caso1(3));
+test('SCRUM-542 · sigue puesta: sólo los .p-link que son ENLACE llevan el alto mínimo', caso1(4));
+caso1.todos();
 
 // ── ③ CONTROL DE LOS DETECTORES ────────────────────────────────────────────────────────────
 // Cinco anclas que aparecen una vez cada una podrían ser cinco anclas que casan con cualquier
@@ -109,11 +114,15 @@ const TRIPAS = [
   ['CIEGO: cero táctiles medidos', 'el suelo: un cero tiene que fallar, no aprobar.'],
   ['const ANCHOS = [1280, 360];', 'los dos anchos: un arreglo que sirva en uno y rompa el otro no vale.'],
 ];
-for (const [ancla, porque] of TRIPAS) {
-  test(`SCRUM-542 · el guard conserva: ${ancla}`, () => {
-    assert.ok(GUARD.includes(ancla), `🔴 el guard perdió \`${ancla}\` — ${porque}`);
-  });
-}
+const caso2 = casosEscritos(TRIPAS, ([ancla, porque]) => `SCRUM-542 · el guard conserva: ${ancla}`, ([ancla, porque]) => {
+  assert.ok(GUARD.includes(ancla), `🔴 el guard perdió \`${ancla}\` — ${porque}`);
+});
+test('SCRUM-542 · el guard conserva: MINIMO_TACTIL = 44', caso2(0));
+test('SCRUM-542 · el guard conserva: scrollIntoView', caso2(1));
+test('SCRUM-542 · el guard conserva: .closest(INTERACTIVOS) === el', caso2(2));
+test('SCRUM-542 · el guard conserva: CIEGO: cero táctiles medidos', caso2(3));
+test('SCRUM-542 · el guard conserva: const ANCHOS = [1280, 360];', caso2(4));
+caso2.todos();
 
 // ── ⑤ NINGUNA EXCEPCIÓN SIN MOTIVO ─────────────────────────────────────────────────────────
 // Hoy la lista está vacía. El día que alguien meta una, que no pueda meterla a secas: una

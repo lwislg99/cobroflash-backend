@@ -1,0 +1,381 @@
+# SCRUM-1397 · El Técnico ve sus facturas, por una sola puerta — y lo que eso NO cierra
+
+**Medido contra:** `origin/main` = `d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c` · 2026-10-02T02:04:22Z
+
+2-oct-2026 · **J2a** (puesto J2, equipo de Javier), por encargo del orquestador (`cobroflash-backend-5b`).
+[Escrito por J2a. Las frases del fundador las transcribe el orquestador en Jira; aquí se citan de allí, y
+los comentarios que se nombran los he leído en Jira, no en el mensaje del encargo.]
+
+A9: comprobación → `tests/banco-scrum1397/mutar.mjs`
+
+## Ⓐ Qué se decidió, quién, y dónde consta
+
+| qué | quién | dónde lo leo |
+|---|---|---|
+| El Técnico ve sólo SUS facturas | fundador, «1-Ok la B» | SCRUM-1346 c.17828 |
+| «Suya» = de lo que es autor MÁS lo que se le ha asignado como trabajo; «mejor ser más laxo al principio y evitar errores» | fundador | SCRUM-1346 c.17932 |
+| Vale para facturas y para presupuestos | fundador, «1-Para los dos» | SCRUM-1346 c.17952 |
+| Estar asignado AL DOCUMENTO cuenta para verlo | fundador, «1-Sí» | SCRUM-1390 c.17962 |
+| La regla es: autor del documento O `esSuyoElTrabajo` O asignado al documento | orquestador, corrigiendo c.17962 con la medición de J4h | SCRUM-1390 c.17964 |
+| El eje del Trabajo son los TRES de la casa, no sólo `Job.operarioId` (el ticket decía eso y era más estrecho) | orquestador, por mensaje, al avisarle yo de que el ticket y c.17964 no decían lo mismo | mensaje del 2-oct; la fuente escrita es c.17964 |
+
+El máster ya lo declaraba decidido y sin construir (`docs/YAQU_MASTER.md:665`, SCRUM-1390).
+
+## Ⓑ Qué se ha construido
+
+**Una puerta**, `src/core/documentos/accesoALaFactura.ts`, con dos funciones que son el mismo criterio:
+
+- `whereFacturasVisibles(quien)` devuelve el recorte de `invoices` para quien pregunta. Para quien ve
+  todo el negocio devuelve `null` y su consulta sale como salía.
+- `puedeVerLaFactura(quien, id)` aplica ese mismo recorte a un id.
+
+Las tres rutas de `src/modules/system/app/routes/invoicesAdmin.routes.ts` pasan por ella: la lista le
+pide el recorte y se lo da a `listInvoicesAdmin`; la ficha y el PDF preguntan antes de leer la factura. Una
+factura ajena contesta `404 not_found`, igual que una que no existe. No hay ningún texto nuevo.
+
+**Quién ve todo** lo decide `seesAllJobs` (`src/core/http/roleCapabilities.ts`), la allowlist que ya
+existía: sólo `admin`. La persona propietaria entra con sesión sin miembro y `requireAuth` le pone `admin`.
+
+**Qué es «suya»**, en el orden en que está escrito en la puerta:
+
+| eje de la decisión | cómo se mira | caso que lo prueba (número de la factura sembrada) |
+|---|---|---|
+| autor | `quote.teamMemberId` | `SUYA-AUTORA` |
+| asignada al documento | `invoice_assignees` | `SUYA-ASIGNADA-AL-DOCUMENTO` |
+| Trabajo, por el presupuesto que lo abrió | `Job.quoteId`, con los tres ejes del Trabajo | `SUYA-TRABAJO-OPERARIO`, `-ASIGNADO`, `-TABLA` |
+| Trabajo, por un adicional | `Quote.jobId` | `SUYA-TRABAJO-ADICIONAL` |
+| Trabajo, por un albarán entero (recapitulativa) | `Albaran.invoiceId` | `SUYA-ALBARAN-ENTERO` |
+| Trabajo, por un albarán a medias (parcial) | `AlbaranLineaFacturada.invoiceId` | `SUYA-ALBARAN-PARCIAL` |
+| la rectificativa de una suya | `rectifiesId`, un nivel | `SUYA-RECTIFICATIVA` |
+
+Los tres ejes DEL TRABAJO (operario, asignado, tabla de asignados) no se escriben en la puerta: se le
+piden a `whereSuyoElTrabajo` (`src/modules/jobs/domain/accesoAlTrabajo.ts`). Un caso del test lo vigila
+por AST.
+
+### Son tres lecturas antes de la consulta, y no se pueden juntar
+
+`Invoice` no tiene relación de Prisma con `Job` ni con `Albaran`. `Job.quoteId`, `Quote.jobId`,
+`Albaran.invoiceId` y `AlbaranLineaFacturada.invoiceId` son columnas sueltas, así que un único `where`
+sobre `invoices` no llega al Trabajo. La puerta lee primero los Trabajos de la persona, luego los
+albaranes de esos Trabajos y luego el libro de líneas facturadas, y con esos ids arma el recorte.
+Quien quiera dejarlo en una consulta pierde un camino entero: las facturas parciales y las
+recapitulativas nacen sin presupuesto, y el operario dejaría de ver facturas de su propia obra sin que
+nada falle. Las mutaciones M12, M13 y M14 del banco son exactamente eso.
+
+Los ids viajan en listas `in`. Con miles de Trabajos por persona habría que cambiarlo por una
+subconsulta. No lo he medido con volumen.
+
+### Lo que NO se ha tocado, a propósito
+
+- **`prisma/schema.prisma`**, ni una línea. Su comentario «ASIGNAR NO ES UN PERMISO» queda falso para
+  VER desde c.17962. Lo dejo como está: tiene su ticket, SCRUM-1400, y el máster dice que se corrige en
+  un paso propio.
+- La misma frase en `src/core/documentos/asignacionDeDocumento.ts` **se conserva**; debajo va una línea
+  fechada que dice que para ver sí cuenta, y que para editar y emitir sigue siendo verdad. Autorizado
+  por el orquestador por mensaje.
+- `requireRole` de ninguna ruta. El camino de emisión. Ningún workflow.
+- **`docs/YAQU_MASTER.md:665`** sigue diciendo «sin construir». Después de este PR es verdad a medias
+  (ver Ⓒ). No la he tocado: es una fila del máster y su literal no es mío.
+- Las otras 17 rutas del censo de SCRUM-1390.
+
+## Ⓒ Lo que este cambio cierra, y lo que no
+
+Dos frases, y sólo una es verdad:
+
+- ⛔ FALSO: «el Técnico ya no reconstruye el total del negocio».
+- ✅ VERDADERO: «el Técnico ya no lo reconstruye **por las tres rutas de factura**».
+
+El cálculo que hizo J2i el 1-oct (SCRUM-1346) sumaba `GET /admin/invoices`. Contra el build de `main`
+sale exacto y el test lo dice en su fallo: «1050 = 1050». Con el cambio, la misma Técnica suma 100 de
+1.050 y 0 de los 900 de su compañero.
+
+Pero el resultado sigue a su alcance por otras dos puertas. Medido por ejecución
+(`docs/evidencias/scrum1397/sonda-otras-puertas.mjs.txt` y su `.salida.txt`), con el mismo negocio:
+
+| por dónde | qué suma | resultado |
+|---|---|---|
+| la lista de facturas (cerrada aquí) | las cobradas de su lista | 100 de 1.050 |
+| las fichas de cliente (ruta 8 del censo): `GET /admin/customers` y `GET /admin/customers/:id/detail` | el `totalPaid` de cada ficha | **1.050 de 1.050** |
+| las fichas de presupuesto (rutas 2 y 3): `GET /admin/quotes?teamMemberId=` y `GET /admin/quotes/:id` | las facturas cobradas que trae cada ficha | **900 de 900** del compañero |
+
+`totalPaid` es un agregado sin tope y no necesita el filtro por autor. Filtrar las facturas que enseña
+la ficha no lo arregla. Lo lleva SCRUM-1403; aquí no se toca.
+
+**Límites de esa medición:** es el negocio fabricado de J2i (4 clientes, 4 facturas), no datos de
+ninguna cuenta. La ficha de cliente trae sólo las 20 últimas facturas de cada uno, pero eso no acota el
+camino del agregado.
+
+### «Cuánto sigue reconstruyendo» (③ del ticket)
+
+Por las tres rutas de factura, un Técnico suma lo suyo y nada más: en el negocio de J2i, el 9,5 %
+(100 de 1.050). Eso es aritmética del fixture, no una medida de ninguna cuenta: en un negocio de una
+persona propietaria y un operario que lleva todos los Trabajos, «lo suyo» es todo lo que pasa por un
+Trabajo y el porcentaje se acerca a 100. No lo he medido con datos reales porque no hay base
+autorizada. Y por las otras dos puertas el porcentaje es 100 hoy, tenga el equipo el tamaño que tenga.
+
+## Ⓓ Los controles del ticket, y dónde se ven
+
+Todos en `tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs`. Los dos primeros casos hablan por HTTP
+con `dist/app.js` y con Prisma de verdad sobre el banco desechable (`LIBRO_PG_URL`); sin él saltan
+diciendo por qué.
+
+| control del ticket | caso | qué afirma |
+|---|---|---|
+| ① el rojo primero | commit `0ff720a9`, `docs/evidencias/scrum1397/rojo-contra-dist-de-main.tap.txt` | contra el build de `main` caen los dos casos con base; el primero dice «1050 = 1050» |
+| ② el cálculo de J2i deja de salir | «un Técnico ya NO reconstruye…» | el panel dice 1.050 y 900 (suelo); la Técnica suma 100 y 0; su lista es exactamente `A-1` |
+| ③ sigue viendo las suyas | «el Técnico SIGUE viendo cada factura suya…» | las 9 formas de ser suya, por nombre: en la lista, ficha 200 y PDF 200 `application/pdf`; un justificante suyo abre |
+| lo ajeno no | el mismo caso | las 5 formas de no ser suya: fuera de la lista, ficha 404, PDF 404; buscando por número o por cliente tampoco; el compañero ve las suyas y no las de ella |
+| ④ el admin, todo | el mismo caso | la administradora y la propietaria listan las 14 y abren ficha y PDF de las 16 |
+| ⑤ Prisma de verdad | los dos casos con base | el `where` lo contesta Postgres |
+
+Otros tres casos corren sin base: las tres rutas llaman a la puerta antes de leer (AST); la puerta no
+recorta al admin y sin identidad no casa nada; y los ejes del Trabajo no están copiados en la puerta.
+
+**Dos avisos sobre «Prisma de verdad»:**
+
+- El banco desechable nace de `prisma/schema.prisma`, así que coincide con el esquema por construcción.
+  Sirve para probar que este `where` hace lo que digo. No dice nada sobre los datos reales.
+- En local no hay Postgres. Lo he corrido contra PGlite 0.5.8 (Postgres 18 en memoria), instalado fuera
+  del repo. El check obligatorio corre `postgres:16`. No es el mismo motor: el veredicto que cuenta es
+  el del obligatorio, leído por nombre.
+
+## Ⓔ Las huérfanas: el recuento que se puede dar y el que no
+
+**El número real está SIN MEDIR.** No tengo base: este árbol no lleva ningún `.env`, y el orquestador
+no autoriza ni producción ni staging. Lo que hay es el recuento estructural, por camino de creación, y
+el SELECT para quien tenga la base.
+
+Hay diez sitios en `src/` que crean un documento en `invoices` (buscados por las llamadas a
+`emitInvoice` y `crearFacturaEmitida`):
+
+| # | dónde | `quoteId` | otro vínculo | ¿puede nacer sin ningún eje? |
+|---|---|---|---|---|
+| 1 | `POST /admin/invoices` (la factura suelta) | `null` | ninguno | **siempre** |
+| 2 | `ensureInvoiceForCharge` (`src/lib/invoicing.ts`), el documento de un cobro | el del presupuesto del cobro, o `null` | ninguno | **siempre que el cobro no venga de un presupuesto** |
+| 3 | `POST /admin/albaranes/:id/facturar-parcial` | `null` | libro de líneas | si el Trabajo del albarán no tiene a nadie |
+| 4 | `emitirRecapitulativas` | `null` | `Albaran.invoiceId` | si ninguno de sus Trabajos tiene a nadie |
+| 5 | `POST /admin/albaranes/:id/convertir-en-factura` | el del presupuesto | libro de líneas | si no hay autor ni nadie en el Trabajo |
+| 6 | `POST /admin/jobs/:id/collect-rest` | el del presupuesto | — | ídem |
+| 7 | `POST /quote/:token/decision` (la aceptación pública) | el del presupuesto | — | ídem |
+| 8 | `POST /admin/quotes/:id/invoice` | el del presupuesto | — | ídem |
+| 9 | `POST /admin/quotes/:id/invoice-manual` | el del presupuesto | — | ídem |
+| 10 | `POST /admin/invoices/:id/rectify` | el de la original | `rectifiesId` | hereda lo de la original |
+
+**Dos caminos dejan la factura sin ningún eje por construcción**: la suelta (1) y la del cobro sin
+presupuesto (2). Sólo pasan a ser de alguien si se les asigna a mano. Otros dos (3 y 4) nacen sin
+presupuesto y dependen de que el Trabajo tenga a alguien. Los cinco restantes llevan presupuesto: son
+de nadie del equipo cuando el presupuesto lo hizo la persona propietaria y el Trabajo no tiene operario
+ni asignado — que no es una factura «huérfana», es una factura de la oficina.
+
+Con el cambio, a ninguna de ésas la ve un Técnico. El admin las ve todas. Qué se hace con ellas no lo
+decido yo.
+
+**El SELECT**, de sólo lectura: `docs/evidencias/scrum1397/huerfanas.sql.txt`. Devuelve una fila con el
+nombre de la base, el total, y tres cifras: de ningún eje; de ésas, las que no nacen de nada; y las que
+son de la oficina. Lleva sus tres controles escritos en la cabecera. Lo he visto contar bien trece
+documentos sembrados, uno por clase (`control-del-select.mjs.txt` y su salida: 7 de alguien, 3 sin
+origen, 3 de la oficina). Lo puede correr quien tenga acceso de lectura a la base; yo no.
+
+## Ⓕ Lo que he visto y no es de este ticket
+
+1. **La pantalla, y hace falta una decisión de texto.** No he cambiado ninguno. Dos cosas que el Técnico
+   va a leer:
+   - Con cero facturas suyas, la lista dice «Aquí verás tus facturas» y «Cuando un cliente acepte un
+     presupuesto, sus facturas aparecerán aquí.» (`public/dashboard/js/invoicesView.js`). Para él la
+     segunda frase ya no es exacta: sólo aparecerán si el presupuesto o el Trabajo son suyos.
+   - Si abre desde la ficha de un cliente una factura que no es suya (la ficha se las sigue listando,
+     ruta 8), la pantalla dice «Error cargando la factura.» (`invoiceDetailView.js`). No es un error.
+   Leído en el fuente; no visto en navegador.
+2. **`GET /admin/invoices/:id/pdf` contesta 500 `pdf_generation_failed` para una factura
+   `pendiente_de_sellado`**, no el 409 que su propio `catch` prepara. `ensureInvoicePdf` lanza
+   `invoice_pendiente_de_sellado` y la ruta sólo reconoce `invoice_sin_sellar`. Ejecutado (mi primer
+   fixture nacía sin sellar y el PDF de una factura propia dio 500). Es camino de emisión: lo reporto,
+   no lo toco.
+
+### `scrum597` pasa, y su verde no dice nada sobre el recorte
+
+1. `tests/scrum597-asignar-usuario-al-documento.test.mjs` pasa 8 de 8 contra el `dist` de esta rama
+   (corrido a solas, un fichero, sin base). **Eso no dice nada sobre el recorte**: su doble de Prisma
+   contesta `invoice.findFirst` con la misma factura sea cual sea el `where`. La puerta pregunta, el
+   doble dice que sí, y el test no puede distinguir «la puerta filtra» de «la puerta no filtra».
+2. **Los únicos casos que ejercitan el recorte son los DOS con base de este ticket.** El recorte lo
+   sostienen dos casos, no diez. Los tres casos sin base vigilan que las rutas llamen a la puerta y lo
+   que ésta contesta sin consultar; no ejercitan el `where`.
+3. Consecuencia para quien venga: **si alguien rompe la puerta mañana, `scrum597` seguirá en verde.**
+   Y los dos casos con base saltan donde no haya `LIBRO_PG_URL`. Es un hueco de cobertura que no he
+   arreglado: el doble de `scrum597` no es de este ticket.
+
+## Ⓖ Lo corrido
+
+**Corrido por mí, en local:** el fichero del ticket, 5 casos, 5 pasan, 0 caen, 0 saltos (los dos con
+base, contra PGlite); `scrum597` a solas, 8 de 8; la sonda de las otras puertas y el control del SELECT.
+
+**SIN CORRER al empujar, y lo hereda el relevo:** el banco de 18 mutaciones (`tests/banco-scrum1397/mutar.mjs`,
+escrito y sin ejecutar ni una vez: no se sabe si alguna sale viva o ciega), la tanda dirigida,
+`npm run guards:entrada` y la lectura del check obligatorio por nombre. Se empujó así por orden del
+orquestador, con el auto-merge desarmado, para que el trabajo no viviera sólo en un árbol. La línea
+`A9:` de arriba apunta a un banco que existe y que todavía no ha corrido. **[SUPERADO — marca de SCRUM-1407: este párrafo dice cómo estaba al empujar J2a; el banco corrió después, dos veces. Ver «Anexo de SCRUM-1407», al final.]**
+
+### Lo corrido después, por J2b (relevo de J2a) · 2026-10-02T02:44:11Z, `origin/main` sin moverse
+
+[Escrito por J2b. Lo de arriba es de J2a y se queda como lo dejó: dice cómo estaba al empujar.]
+
+**El banco de mutaciones, corrido por primera vez** (`tests/banco-scrum1397/mutar.mjs`, contra PGlite
+0.5.8, un servidor nuevo por pasada, una pasada cada vez):
+
+- Base 5 de 5 sin saltos; T0 (los tres ficheros transpilados sin mutar) 5 de 5.
+- **18 CAEN de 18 · mudas 0 · vivas 0 · ciegas 0 · árbol intacto por sha256.**
+- Antes de correrlo lo cambié, porque tal como estaba no sabía decir «ciega»: una mutación cuyo
+  fuente no parsea mataba el módulo y salía CAE si no exigía texto (M07 y M16 no lo exigen) o VIVA
+  si lo exigía. Ahora da cuatro salidas —CAE, MUDA (no cae nada), VIVA (cae otra cosa o por otro
+  motivo) y CIEGA (no se midió)—, mira los errores de sintaxis del fuente mutado, comprueba todas
+  las anclas antes de la primera pasada, y se prueba a sí mismo con dos controles: C1, una coma
+  colgante, tiene que salir CIEGA (salió: «Expression expected»); C2, `!=` por `!==`, tiene que
+  salir MUDA (salió). Si un control no sale como debe, el banco entero se declara CIEGO.
+- **Lo que el 18 de 18 NO dice:** M18 (el PDF pregunta a la puerta DESPUÉS de generarlo) la caza
+  sólo el caso que mira el orden de las llamadas por AST. Por efecto no la ve ningún caso: la
+  respuesta sigue siendo 404 y nadie mira si el PDF de la ajena llegó a escribirse en disco.
+- M07 y M16 no declaran texto. Leído en sus TAP: M07 cae por el `deepEqual` del conjunto vacío;
+  M16 cae en dos casos, y el de base dice `SUYA-TRABAJO-ASIGNADO`.
+
+**El check obligatorio de #2121, leído por nombre** (run 36956046612, job 110679321416, sobre
+`967196fa`; 02:32:41Z a 02:39:50Z): **ROJO.** 10.008 casos, 9.905 pasan, 5 caen, 98 saltos. La señal
+de nombres dice `ausentes=0`.
+
+- Los cinco «SCRUM-1397 · …» pasan, y los dos con base pasan de verdad (no saltan): el recorte se
+  sostiene contra `postgres:16`, no sólo contra PGlite.
+- Por nombre, sin caídas ni saltos: SCRUM-597 (11 líneas), SCRUM-55 (4), SCRUM-411 (26), SCRUM-237 (9),
+  SCRUM-976 (4), SCRUM-1294 (4), SCRUM-267 (50), SCRUM-854 (7). Son líneas que llevan ese número con
+  guion, no ficheros: un prefijo no es un nombre.
+- **Los 5 que caen son de esta rama, y los cinco señalan el fichero de test de este ticket:**
+
+| guard | qué dice | causa en `tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs` |
+|---|---|---|
+| SCRUM-409 · ningún fixture usa el merchant DEMO | 5 líneas con `merchantId: 1` | el caso sin base llama a la puerta con el id del demo |
+| SCRUM-419 · cada gateado dice POR QUÉ no corre | `skip: SALTO` en los dos casos con base | el motivo va en una constante; el guard lo exige escrito en el propio `skip` |
+| SCRUM-456 · TODO salto declara su motivo | lo mismo | la misma causa |
+| SCRUM-419 · el inventario de lo que NO corre | falta este fichero, con 2 | el gateado nuevo no está declarado en `GATEADOS_DECLARADOS` |
+| SCRUM-419 · CI DECLARA lo que no ha ejecutado | 42 !== 40 | la misma causa |
+
+  Ninguno toca el código de la puerta. **Al escribir esto NO están arreglados**: el arnés de mi sesión
+  denegó las dos escrituras (el test y el inventario de `scrum419`) y no lo he rodeado. Está dicho al
+  orquestador; mientras no se arregle, el PR sigue en rojo.
+
+**`npm run guards:entrada`:** 12 guards, 132 casos, 132 pasan, 0 caen, 0 saltos, 11 s. Corrido sobre
+`c502e506` (los dos commits del banco encima de `967196fa`). Ese verde no incluye a los tres guards
+que caen en el obligatorio: no son de entrada.
+
+**La dirigida NO se ha corrido.** El arnés denegó también calcular su lista
+(`node scripts/tests-que-cubren.mjs`). La pasada completa que hay de `967196fa` es la del
+obligatorio, con los cinco rojos de arriba y ninguno más. De los dos commits del banco y de este
+tramo del registro no hay pasada completa hasta que el CI corra otra vez.
+
+**Mi error:** la primera pasada del banco salió CIEGO por un suelo que acababa de escribir yo. Le pasé
+a `transpileModule` la ruta relativa, y con ella devuelve «not under rootDir» sobre un fuente sano; mi
+suelo lo contó como error de sintaxis. Lo paró antes de medir nada, que es para lo que estaba. Va con
+la ruta absoluta y lleva el porqué al lado (`c502e506`).
+
+## Ⓗ Mis errores de esta tanda
+
+1. **Di por bueno un rojo sin leer por qué caía.** La primera pasada contra el banco dio «caen 2», que
+   era el número que esperaba, y caían por el banco: «prepared statement "s0" already exists». Lo vi al
+   abrir el TAP. Ahora el lanzador imprime el motivo de cada caída, y el banco de mutaciones exige el
+   texto del fallo además del caso. Es la línea `A9:` de arriba.
+2. **Deduje un 409 leyendo el `if` de la ruta del PDF, y era un 500.** Escribí el caso positivo del PDF
+   contra lo que la ruta «debía» contestar. Lo cazó el propio test. De ahí salió el hallazgo 2 de Ⓕ, y
+   el positivo es ahora un PDF generado de verdad (200).
+3. **Escribí una limpieza que borraba por prefijo** (`<id del merchant>-`) en `storage/invoices/`. En un
+   banco recién creado ese id es 1 o 2: se habría llevado los PDF de cualquier otro merchant con ese id
+   en esa máquina. Lo vi antes de ejecutarlo. Borra por nombre exacto.
+4. **Puse «~02:50Z» a ojo** en un mensaje al orquestador; GitHub decía 02:18Z. Es la cuarta sesión de J2
+   que lo hace. Corregido en el mensaje siguiente.
+5. **Pasé texto a `node -e` por bash** para dos reemplazos en el test. Salió bien porque el texto no
+   llevaba acentos ni comillas invertidas; la nota de la máquina dice que no se hace. El resto, con la
+   herramienta de ficheros.
+6. **No medí mi contexto hasta los 411.440.** El aviso de los 200k no le llegó al orquestador: lo medí
+   cuando ya tenía tres commits, y lo que quedaba (mutaciones, dirigida, empujar, leer el CI) ya no
+   cabía. Traspaso escrito en ese punto.
+7. **Le anuncié al orquestador un rojo de `scrum597` que no existe.** Lo deduje leyendo el test («pide
+   que un Técnico no asignado abra una factura de la oficina»). Corrido a solas contra el `dist` de la
+   rama: 8 de 8. Su doble de Prisma contesta `invoice.findFirst` sin mirar el `where`, así que ese
+   fichero no ejercita el recorte nuevo. Es el error 2 otra vez, una hora después de escribirlo.
+
+## Anexo de SCRUM-1407 · cómo quedó después de lo escrito arriba
+
+**Medido contra:** `origin/main` = `bbe633acb852b1aaca413df4c5ebef76f1291e6c` · 2026-10-02T03:15:20Z
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: que un registro se quedó viejo al mergear su rama sólo lo vería un guard nuevo, y este ticket es de sólo `docs/`.
+
+[Escrito por **J5b** (puesto J5, equipo de Javier), por encargo del orquestador (`cobroflash-backend-5b`).
+CRUCE DE CARRIL declarado: esto es `area-j2`. Nada de lo de arriba se ha borrado ni reescrito: cada tramo
+dice cómo estaba a SU hora. Lo único tocado arriba es una marca al final del párrafo «SIN CORRER al
+empujar», añadida sin mover ninguna línea. De cada dato de abajo se dice quién lo midió.]
+
+### Qué frases de arriba ya no describen `main`
+
+Son verdad para su hora y no para ahora. Quien lea una sola de ellas se lleva un estado que ya no existe:
+
+| frase de arriba | de quién y de cuándo | cómo está ahora |
+|---|---|---|
+| el banco de mutaciones, «escrito y sin ejecutar ni una vez», y «todavía no ha corrido» | J2a, al empujar `967196fa` | corrió dos veces: la primera ya consta arriba («Lo corrido después, por J2b»); la segunda, tras el arreglo, está en este anexo |
+| «Al escribir esto NO están arreglados» y «mientras no se arregle, el PR sigue en rojo» | J2b, 02:44:11Z | arreglados en `9e47c9f9`; el PR entró en `main` |
+| «no hay pasada completa hasta que el CI corra otra vez» | J2b, 02:44:11Z | el obligatorio corrió sobre `9e47c9f9` y salió `success` |
+
+### En `main` y en producción
+
+- **PR #2121 mergeado a las 03:10:12Z**, merge `bbe633acb852b1aaca413df4c5ebef76f1291e6c`, punta de la rama
+  `9e47c9f9a631b5bcd8385371669f27c8603b1468`. Leído por mí con `gh pr view 2121`.
+- **Producción sirve ese merge:** `https://yaqu.app/version` contesta
+  `bbe633acb852b1aaca413df4c5ebef76f1291e6c`, con cabecera `Date` de las 03:13:40 GMT. Leído por mí. Eso dice
+  qué commit está desplegado. No dice que nadie haya visto el cambio funcionar (ver «Sin hacer»).
+
+### Los cinco rojos: arreglados, y por quién
+
+- **Arreglados en el commit `9e47c9f9`**, que toca dos ficheros y los dos son de `tests/`
+  (`scrum1397-el-tecnico-ve-sus-facturas.test.mjs` y `scrum419-ci-declara-lo-que-no-corre.test.mjs`): leído
+  por mí con `git show --stat`. Son los cinco de la tabla de arriba: SCRUM-409, SCRUM-419 (tres casos) y
+  SCRUM-456.
+- **El obligatorio sobre `9e47c9f9`:** run 36957895689, job 110684953743, de 02:56:32Z a 03:06:03Z,
+  `success` — la conclusión y las horas, leídas por mí con `gh run view`. Por nombre lo leyó **J2b**
+  (SCRUM-1397 comentario 18025): los cinco «SCRUM-1397 · …» pasan y ninguno salta; SCRUM-409, SCRUM-419 y
+  SCRUM-456 pasan. **Yo no lo he leído por nombre.**
+- ⚠️ **Ese verde perdió casos**, según el mismo comentario: `ausentes=17` en 3 ficheros, ninguno de este
+  ticket. Es SCRUM-1405 y no está investigado.
+- **Quién lo aplicó, porque no es lo normal.** No lo escribió la sesión que lo diagnosticó. El arnés le
+  denegó a J2b esas escrituras («Security Test Removal»); J2b no lo rodeó y lo subió. El orquestador no
+  quiso aplicarlo por su cuenta y llevó las dos vías a Javier: aprobarlo dentro de la sesión de J2b, o
+  encargárselo al orquestador. La respuesta de Javier, literal, fue «El que consideres mejor»: delegó la
+  elección. Lo aplicó el orquestador. Consta en SCRUM-1397 comentario 18026 y en el mensaje del propio
+  commit; yo lo he leído en los dos sitios, no lo he presenciado.
+
+### El banco de mutaciones, repetido después del arreglo
+
+**Medido por J2b, no por mí** (SCRUM-1397 comentario 18025): `tests/banco-scrum1397/mutar.mjs`, repetido
+sobre `9e47c9f9` — el 18 de 18 de arriba era sobre el test de antes y el arreglo lo hacía caducar —:
+**18 caen de 18 · 0 mudas · 0 vivas · 0 ciegas · árbol intacto**, con sus dos controles como deben.
+Contra PGlite local, no contra `postgres:16`. Yo no lo he repetido: muta `src/` y este ticket es de sólo
+`docs/`. La salida de esa pasada no está en el repositorio: la fuente escrita es ese comentario.
+
+Lo que ese resultado sigue sin decir es lo mismo que arriba: a M18 la caza sólo el caso que mira el orden
+de las llamadas; por efecto no la ve ninguno.
+
+### Lo que este anexo NO cambia
+
+Las dos frases de Ⓒ siguen exactamente como están, y que el ticket esté en producción no mueve ninguna:
+
+- ⛔ FALSO: «el Técnico ya no reconstruye el total del negocio».
+- ✅ VERDADERO: «el Técnico ya no lo reconstruye **por las tres rutas de factura**».
+
+Por las fichas de cliente sigue saliendo 1.050 de 1.050 y por las de presupuesto 900 de 900 (medido por
+J2a por ejecución, tabla de Ⓒ). Eso es SCRUM-1403 y sigue abierto.
+
+### Sin hacer, a las 03:15Z
+
+- **Verlo en `yaqu.app` con sesión de Técnico.** Nadie lo ha visto: ni J2a, ni J2b, ni yo.
+- **El número real de facturas que no son de ningún eje.** Sigue SIN MEDIR: no hay base autorizada. Lo que
+  hay es el recuento estructural y el SELECT con su control (Ⓔ).
+- **La reconstrucción con datos reales.** Los porcentajes de Ⓒ son aritmética del negocio fabricado.
+- **La tanda dirigida** no se corrió nunca sobre esta rama; la pasada completa es la del obligatorio.
+- Heredado y sin tocar, según SCRUM-1397 comentario 18025: el máster sigue declarando esto «sin construir»
+  (no es de este ticket tocarlo), los dos textos de pantalla de Ⓕ siguen pendientes de firma, y el PDF de
+  una factura `pendiente_de_sellado` contesta 500 (SCRUM-1404).

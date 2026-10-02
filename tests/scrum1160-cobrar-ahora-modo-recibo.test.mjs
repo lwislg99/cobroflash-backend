@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -58,16 +59,18 @@ async function montar(modo, quote = presupuesto()) {
   };
 }
 
-for (const modo of ['fiscal', 'demo']) {
-  test(`SCRUM-1160 · en modo \`${modo}\` la ficha SÍ ofrece «Cobrar ahora» y «Generar factura» (control positivo)`, async () => {
-    const m = await montar(modo);
-    assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
-    assert.ok(m.nodos.length > 60, `🔴 CIEGO: la ficha montó ${m.nodos.length} nodos; no es la pantalla entera`);
-    assert.equal(m.cobrar.length, 1, '🔴 en modo emisión el presupuesto aceptado debe ofrecer «Cobrar ahora»');
-    assert.equal(m.generar.length, 1, '🔴 en modo emisión debe estar «Generar factura»');
-    assert.match(m.generar[0].textContent, /Generar factura \(100%\)/);
-  });
-}
+const FILAS_1 = ['fiscal', 'demo'];
+const caso1 = casosEscritos(FILAS_1, (modo) => `SCRUM-1160 · en modo \`${modo}\` la ficha SÍ ofrece «Cobrar ahora» y «Generar factura» (control positivo)`, async (modo) => {
+  const m = await montar(modo);
+  assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
+  assert.ok(m.nodos.length > 60, `🔴 CIEGO: la ficha montó ${m.nodos.length} nodos; no es la pantalla entera`);
+  assert.equal(m.cobrar.length, 1, '🔴 en modo emisión el presupuesto aceptado debe ofrecer «Cobrar ahora»');
+  assert.equal(m.generar.length, 1, '🔴 en modo emisión debe estar «Generar factura»');
+  assert.match(m.generar[0].textContent, /Generar factura \(100%\)/);
+});
+test('SCRUM-1160 · en modo `fiscal` la ficha SÍ ofrece «Cobrar ahora» y «Generar factura» (control positivo)', caso1(0));
+test('SCRUM-1160 · en modo `demo` la ficha SÍ ofrece «Cobrar ahora» y «Generar factura» (control positivo)', caso1(1));
+caso1.todos();
 
 test('SCRUM-1160 · control: en modo `receipt` CON Trabajo de origen, «Siguiente paso» sigue ahí con «Nuevo albarán»', async () => {
   const m = await montar('receipt', presupuesto({ albaranOrigen: { elegible: true, jobId: 77, motivo: null } }));
@@ -94,20 +97,23 @@ test('SCRUM-1160 · 🔴 con condiciones MANUAL en modo `receipt`, ni botón ni 
   assert.doesNotMatch(m.textoTodo, /Estas condiciones no generan tramos automáticos/, '🔴 la nota se quedó sin el botón al que acompaña');
 });
 
-for (const [nombre, modo] of [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]]) {
-  test(`SCRUM-1160 · 🔴 en modo ${nombre} NO hay «Cobrar ahora» ni «Generar factura»: el 409 no se alcanza desde la pantalla`, async () => {
-    const m = await montar(modo);
-    assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
-    assert.ok(m.nodos.length > 60, `🔴 CIEGO: la ficha montó ${m.nodos.length} nodos; «no está» no vale si la ficha no se pintó`);
-    assert.match(m.textoTodo, /Conceptos|Punto de luz/i, '🔴 CIEGO: no veo las líneas del presupuesto');
-    assert.doesNotMatch(m.textoTodo, /Siguiente paso/, '🔴 sin ninguna acción, «Siguiente paso» es un rótulo vacío');
-    assert.equal(m.cobrar.length, 0, '🔴 «Cobrar ahora» se ofrece en un modo que solo puede acabar en 409');
-    assert.equal(m.generar.length, 0, '🔴 «Generar factura» se ofrece en un modo que solo puede acabar en 409');
-    assert.doesNotMatch(m.textoTodo, /Estas condiciones no generan tramos automáticos/,
-      '🔴 la nota acompaña al botón de facturar; sin botón, sobra');
-    assert.doesNotMatch(m.textoTodo, /PENDIENTE microcopy/, '🔴 hay un marcador en pantalla');
-  });
-}
+const FILAS_2 = [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]];
+const caso2 = casosEscritos(FILAS_2, ([nombre, modo]) => `SCRUM-1160 · 🔴 en modo ${nombre} NO hay «Cobrar ahora» ni «Generar factura»: el 409 no se alcanza desde la pantalla`, async ([nombre, modo]) => {
+  const m = await montar(modo);
+  assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
+  assert.ok(m.nodos.length > 60, `🔴 CIEGO: la ficha montó ${m.nodos.length} nodos; «no está» no vale si la ficha no se pintó`);
+  assert.match(m.textoTodo, /Conceptos|Punto de luz/i, '🔴 CIEGO: no veo las líneas del presupuesto');
+  assert.doesNotMatch(m.textoTodo, /Siguiente paso/, '🔴 sin ninguna acción, «Siguiente paso» es un rótulo vacío');
+  assert.equal(m.cobrar.length, 0, '🔴 «Cobrar ahora» se ofrece en un modo que solo puede acabar en 409');
+  assert.equal(m.generar.length, 0, '🔴 «Generar factura» se ofrece en un modo que solo puede acabar en 409');
+  assert.doesNotMatch(m.textoTodo, /Estas condiciones no generan tramos automáticos/,
+    '🔴 la nota acompaña al botón de facturar; sin botón, sobra');
+  assert.doesNotMatch(m.textoTodo, /PENDIENTE microcopy/, '🔴 hay un marcador en pantalla');
+});
+test('SCRUM-1160 · 🔴 en modo receipt NO hay «Cobrar ahora» ni «Generar factura»: el 409 no se alcanza desde la pantalla', caso2(0));
+test('SCRUM-1160 · 🔴 en modo desconocido (null) NO hay «Cobrar ahora» ni «Generar factura»: el 409 no se alcanza desde la pantalla', caso2(1));
+test('SCRUM-1160 · 🔴 en modo sin dato (undefined) NO hay «Cobrar ahora» ni «Generar factura»: el 409 no se alcanza desde la pantalla', caso2(2));
+caso2.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // EL SEGUNDO CORTE: «💰 Cobrar el resto» de un Trabajo terminado (`collect-rest`, 409 en `receipt`)
@@ -129,20 +135,25 @@ function escaleraCon(modo) {
   return banco.ctx.jobNextAction;
 }
 
-for (const modo of ['fiscal', 'demo']) {
-  test(`SCRUM-1160 · Trabajo terminado con saldo, modo \`${modo}\`: la primaria SÍ es «Cobrar el resto» (control positivo)`, () => {
-    const acc = escaleraCon(modo)(terminadoConSaldo(), true);
-    assert.equal(acc && acc.kind, 'cobrar', '🔴 en modo emisión, un terminado con saldo debe proponer cobrar');
-    assert.match(acc.label, /Cobrar el resto/);
-  });
-}
+const FILAS_3 = ['fiscal', 'demo'];
+const caso3 = casosEscritos(FILAS_3, (modo) => `SCRUM-1160 · Trabajo terminado con saldo, modo \`${modo}\`: la primaria SÍ es «Cobrar el resto» (control positivo)`, (modo) => {
+  const acc = escaleraCon(modo)(terminadoConSaldo(), true);
+  assert.equal(acc && acc.kind, 'cobrar', '🔴 en modo emisión, un terminado con saldo debe proponer cobrar');
+  assert.match(acc.label, /Cobrar el resto/);
+});
+test('SCRUM-1160 · Trabajo terminado con saldo, modo `fiscal`: la primaria SÍ es «Cobrar el resto» (control positivo)', caso3(0));
+test('SCRUM-1160 · Trabajo terminado con saldo, modo `demo`: la primaria SÍ es «Cobrar el resto» (control positivo)', caso3(1));
+caso3.todos();
 
-for (const [nombre, modo] of [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]]) {
-  test(`SCRUM-1160 · 🔴 Trabajo terminado con saldo, modo ${nombre}: la escalera SALTA «Cobrar el resto»`, () => {
-    const acc = escaleraCon(modo)(terminadoConSaldo(), true);
-    assert.notEqual(acc && acc.kind, 'cobrar', '🔴 la primaria de un trabajo terminado sólo sabe acabar en 409');
-  });
-}
+const FILAS_4 = [['receipt', 'receipt'], ['desconocido (null)', null], ['sin dato (undefined)', undefined]];
+const caso4 = casosEscritos(FILAS_4, ([nombre, modo]) => `SCRUM-1160 · 🔴 Trabajo terminado con saldo, modo ${nombre}: la escalera SALTA «Cobrar el resto»`, ([nombre, modo]) => {
+  const acc = escaleraCon(modo)(terminadoConSaldo(), true);
+  assert.notEqual(acc && acc.kind, 'cobrar', '🔴 la primaria de un trabajo terminado sólo sabe acabar en 409');
+});
+test('SCRUM-1160 · 🔴 Trabajo terminado con saldo, modo receipt: la escalera SALTA «Cobrar el resto»', caso4(0));
+test('SCRUM-1160 · 🔴 Trabajo terminado con saldo, modo desconocido (null): la escalera SALTA «Cobrar el resto»', caso4(1));
+test('SCRUM-1160 · 🔴 Trabajo terminado con saldo, modo sin dato (undefined): la escalera SALTA «Cobrar el resto»', caso4(2));
+caso4.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // EL CINTURÓN: si pese a todo llega el 409, no se pinta el `message` sin firmar

@@ -1,0 +1,30 @@
+① POBLACIÓN: 9 fichero(s) cambian entre 7779b0cb y el árbol
+   +79 -0  docs/evidencias/scrum1400/censo-frases-de-principio.mjs.txt
+   +1193 -0  docs/evidencias/scrum1400/censo-frases-de-principio.salida.txt
+   +24 -0  docs/evidencias/scrum1400/control-0-primera-pasada-tres-ficheros.salida.txt
+   +18 -0  docs/evidencias/scrum1400/control-1-las-dos-rutas.salida.txt
+   +136 -0  docs/evidencias/scrum1400/control-solo-comentarios.mjs.txt
+   +189 -0  docs/master/SCRUM-1400.md
+   +6 -0  prisma/schema.prisma
+   +6 -0  src/modules/system/app/routes/invoicesAdmin.routes.ts
+   +6 -0  src/modules/system/app/routes/quotesAdmin.routes.ts
+   de ellos, fuera de docs/: 3
+② POBLACIÓN: 2 fuente(s) con cambios
+   ✔ idéntico  src/modules/system/app/routes/invoicesAdmin.routes.ts
+      emitido antes   59fee7f905ecb547d7de91716f77f5ce03e40ba199422cf5313a21d79ba766c8
+      emitido después 59fee7f905ecb547d7de91716f77f5ce03e40ba199422cf5313a21d79ba766c8
+      control (un literal cambiado): lo ve, emitido distinto
+   ✔ idéntico  src/modules/system/app/routes/quotesAdmin.routes.ts
+      emitido antes   426fc211fa0067595fcd74c4252ba1b1261ef69ec55e5b2f34f33a456ec9934a
+      emitido después 426fc211fa0067595fcd74c4252ba1b1261ef69ec55e5b2f34f33a456ec9934a
+      control (un literal cambiado): lo ve, emitido distinto
+③ POBLACIÓN: 1828 líneas antes, 1834 después; sin comentarios 1128 y 1128
+   ✔ idéntico  prisma/schema.prisma sin sus líneas de comentario
+      antes   81e97a3910114eadff5daaf5081f6ac47e4d1eef21407ac2e3664af964406904
+      después 81e97a3910114eadff5daaf5081f6ac47e4d1eef21407ac2e3664af964406904
+   líneas añadidas: 6; de ellas con triple barra (documentación, NO comentario): 0
+   control (un comentario más): no lo cuenta, como debe
+   control (un campo más): lo ve
+   control (una línea ///): la ve
+VEREDICTO: SÓLO COMENTARIOS
+EXIT=0

@@ -1,0 +1,462 @@
+CENSO mutaciones-fuera-del-catálogo · raíz C:\Users\Javier Pereira\cobroflash-jv6 @ d0169aa0cfc18d34470943739928a9097c66896c
+CATÁLOGO: 122 guards · 418 declaraciones · nació el 2026-09-04T22:52:36+01:00
+POBLACIÓN: 954 registros · 306 AFIRMAN mutaciones (línea con «mutar» + cuenta o resultado) · tests seguidos 1194
+
+A · test propio EN el catálogo: 83  (registro nacido DESPUÉS del catálogo: 79)
+
+B · tiene test propio y NINGUNO está en el catálogo: 186  (registro nacido DESPUÉS del catálogo: 121)
+   SCRUM-285 · 2026-08-05 · propios=[scrum285-bloque-cobro.test.mjs, scrum285-censo-cobro-factura.test.mjs, scrum285-cobro-a-factura.test.mjs, scrum285-pantalla-cobros.test.mjs]
+      «(mutación confirmada, `antes: 1 · después: 0`), el test cae nombrándolo. Restaurado y verde.»
+   SCRUM-286 · 2026-08-04 · propios=[scrum286-bloques-orden.test.mjs, scrum286-censo-nuevo-presupuesto.test.mjs]
+      «que la mutación no cambiase nada y el test seguiría verde «demostrando» un rojo que nunca ocurrió.»
+   SCRUM-293 · 2026-08-07 · propios=[scrum293-censo-or-numerico.test.mjs, scrum293-cero-literales-retencion.test.mjs, scrum293-retencion-control-negativo.test.mjs, scrum293-retencion-irpf.test.mjs, scrum293-tres-estados-retencion.test.mjs]
+      «**Rojo demostrado con UN CÉNTIMO**, y con la mutación **verificada como aplicada antes de creerse el»  (+1 líneas)
+   SCRUM-298 · 2026-08-07 · propios=[scrum298-modo-visible.test.mjs]
+      «aprobado lo pone **rojo** (mutación verificada en disco, fichero restaurado idéntico).»  (+1 líneas)
+   SCRUM-329 · 2026-08-10 · propios=[scrum329-legal-pagina-publica.test.mjs]
+      «Se vació `/privacidad` (mutación confirmada: 71 bytes). El test cae **nombrando la página y»
+   SCRUM-351 · 2026-08-11 · propios=[scrum351-diagnostico-dependencias.test.mjs, scrum351-topologia-node-modules.test.mjs]
+      «### 🔴 EL ROJO POR MUTACIÓN, Y UNO NO SALIÓ A LA PRIMERA»  (+1 líneas)
+   SCRUM-356 · 2026-08-07 · propios=[scrum356-tres-estados.test.mjs]
+      «| Mutación (post-condición en disco) | Cae |»  (+1 líneas)
+   SCRUM-358 · 2026-08-10 · propios=[scrum358-alta-idempotente.test.mjs, scrum358-drenado.test.mjs, scrum358-encolar-firma.test.mjs]
+      «| Mutación (post-condición en disco) | Cae |»  (+4 líneas)
+   SCRUM-360 · 2026-08-10 · propios=[scrum360-desalojo.test.mjs, scrum360-entorno-guardado.test.mjs, scrum360-entorno-instalada.test.mjs]
+      «## Verificado en rojo — con post-condición de que la mutación llegó al disco»  (+1 líneas)
+   SCRUM-361 · 2026-08-10 · propios=[scrum361-version-al-editar.test.mjs, scrum361-version-al-firmar.test.mjs]
+      «| Mutación | Cae diciendo |»  (+1 líneas)
+   SCRUM-362 · 2026-08-10 · propios=[scrum362-banco-sin-cobertura.test.mjs, scrum362-residuales.test.mjs]
+      «### 🔴 EL ROJO POR MUTACIÓN — y el harness mintió dos veces antes de que saliera uno solo»
+   SCRUM-368 · 2026-08-05 · propios=[scrum368-anillo-foco-primario.test.mjs, scrum368-contraste-tokens.test.mjs, scrum368-residuo-btn-sm.test.mjs]
+      «`var(--brand-tint-ink)`. **Rojo verificado** —con la mutación **confirmada aplicada** antes de»
+   SCRUM-381 · 2026-08-06 · propios=[scrum381-scripts-cargables.test.mjs, scrum381-semilla.test.mjs]
+      «sha byte a byte. Uno de ellos salió «mutación no aplicada» a la primera y se rehízo: un rojo que no»
+   SCRUM-388 · 2026-08-07 · propios=[scrum388-censo-mecanismo.test.mjs, scrum388-centinela-main.test.mjs]
+      «## Verificado en rojo — 7 mutaciones, inyección comprobada en disco»
+   SCRUM-394 · 2026-08-07 · propios=[scrum394-plan-mudo.test.mjs]
+      «## Verificado en rojo — 9 mutaciones, inyección comprobada en disco»  (+1 líneas)
+   SCRUM-398 · 2026-08-07 · propios=[scrum398-vocabulario-de-cobro.test.mjs]
+      «## Verificado en rojo — 7 mutaciones, inyección comprobada en disco»
+   SCRUM-399 · 2026-08-07 · propios=[scrum399-hambre-del-lote.test.mjs]
+      «## Verificado en rojo — 7 mutaciones, inyección comprobada en disco»
+   SCRUM-415 · 2026-08-10 · propios=[scrum415-version-del-sello.test.mjs]
+      «del disco** para confirmar que llegó: un rojo que sale verde porque la mutación nunca se escribió»
+   SCRUM-420 · 2026-08-10 · propios=[scrum420-barra-lateral.test.mjs, scrum420-barra-navegable-por-hash.test.mjs]
+      «Rojo probado con la mutación confirmada aplicada: quitar `albaranes` de la lista → `exit 1`, y el»
+   SCRUM-438 · 2026-08-10 · propios=[scrum438-atestiguar.test.mjs, scrum438-v3-sobre.test.mjs]
+      «| Mutación | Cae diciendo |»  (+3 líneas)
+   SCRUM-444 · 2026-08-10 · propios=[scrum444-avisos-no-se-pisan.test.mjs]
+      «## Verificado en rojo — con post-condición de que la mutación llegó al disco»
+   SCRUM-447 · 2026-08-10 · propios=[scrum447-byte-invisible-en-patrones.test.mjs]
+      «Rojo probado **sobre el árbol real**, con la mutación confirmada y retirada:»
+   SCRUM-451 · 2026-08-10 · propios=[scrum451-plazo-de-red.test.mjs]
+      «decir nada—; **corregido, y probado en rojo con la mutación que sí lo rompe.**»  (+1 líneas)
+   SCRUM-452 · 2026-08-10 · propios=[scrum452-pdf-lo-que-se-sello.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-453 · 2026-08-10 · propios=[scrum453-precache-con-huella.test.mjs]
+      «aplicados con post-condición que verifica en disco que la mutación se escribió — un rojo que sale»
+   SCRUM-455 · 2026-08-10 · propios=[scrum455-almacen-local.test.mjs]
+      «| Mutación | Cae | Y sólo ése |»
+   SCRUM-461 · 2026-08-11 · propios=[scrum461-censo-no-encoge.test.mjs]
+      «| Mutación (post-condición en disco) | Cae |»
+   SCRUM-462 · 2026-08-11 · propios=[scrum462-firmado-sin-sobre.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-466 · 2026-08-11 · propios=[scrum466-el-firmante-ve-el-albaran.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-469 · 2026-08-11 · propios=[scrum469-aviso-desalojo.test.mjs]
+      «## Verificado en rojo — 5 mutaciones, 5 rojos POR SU MOTIVO»
+   SCRUM-475 · 2026-08-11 · propios=[scrum475-constancia-correo.test.mjs, scrum475-firma-del-webhook.test.mjs, scrum475-ignoran-el-resultado.test.mjs, scrum475-receptor-webhook.test.mjs, scrum475-schema-vs-sql.test.mjs, scrum475-un-solo-emisor.test.mjs]
+      «| Mutación | Cae diciendo |»  (+2 líneas)
+   SCRUM-476 · 2026-08-11 · propios=[scrum476-reconciliar-censos.test.mjs]
+      «### 🔴 EL ROJO POR MUTACIÓN, Y UNO NO SALÍA A LA PRIMERA»
+   SCRUM-477 · 2026-08-11 · propios=[scrum477-avisos-con-constancia.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-488 · 2026-08-12 · propios=[scrum488-un-solo-vocabulario.test.mjs]
+      «## ⑦.6 🔴 ROJO POR EL MECANISMO — DOS mutaciones, y lo que la primera destapó»  (+2 líneas)
+   SCRUM-491 · 2026-08-12 · propios=[scrum491-metodo-y-registro.test.mjs]
+      «| mutación | qué se rompe | qué cae |»  (+1 líneas)
+   SCRUM-493 · 2026-08-12 · propios=[scrum493-dos-instrumentos.test.mjs]
+      «| Mutación | Cae diciendo | Tests |»
+   SCRUM-494 · 2026-08-12 · propios=[scrum494-export-que-sobra.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-498 · 2026-08-12 · propios=[scrum498-cifra-derivada.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-499 · 2026-08-12 · propios=[scrum499-el-registro-tiene-sitio.test.mjs]
+      «| mutación | qué se rompe | qué cae |»  (+1 líneas)
+   SCRUM-501 · 2026-08-12 · propios=[scrum501-una-fila-por-envio.test.mjs]
+      «| Mutación | Cae diciendo |»
+   SCRUM-503 · 2026-08-12 · propios=[scrum503-desconocido-no-es-error.test.mjs]
+      «## ⑤ 🔴 EL ROJO POR EL MECANISMO, y la mutación que hubo que rehacer»  (+1 líneas)
+   SCRUM-506 · 2026-08-12 · propios=[scrum506-cobros-distingue-el-desconocido.test.mjs]
+      «| mutación | qué cae |»
+   SCRUM-508 · 2026-08-13 · propios=[scrum508-los-cinco-dejan-fila.test.mjs]
+      «> esta semana que un rojo por mutación me caza un guard mío que ya daba verde en todo lo demás, y la»  (+1 líneas)
+   SCRUM-514 · 2026-09-03 · propios=[scrum514-aprobado-y-aplicado.test.mjs, scrum514-leeme-multilinea.test.mjs]
+      «### El rojo, probado por el mecanismo — cuatro mutaciones con post-condición»  (+1 líneas)
+   SCRUM-524 · 2026-09-17 · propios=[scrum524b-trinquete-de-la-tabla.test.mjs]
+      «| 🔴 **EL QUE DECIDE** · una comprobación quitada en una COPIA | **26 mutaciones**, una por mecanismo: cada una tumba **exactamente** lo que tiene que tumbar y lo nombra con fichero y motivo. `esRectificativa` sin el tipo tumba **»
+   SCRUM-530 · 2026-09-16 · propios=[scrum530-la-alerta-que-no-puede-pronunciarse.test.mjs]
+      «| 🔴 **MUTACIÓN** | con `muestraCorta = false` vuelve el silencio y caen dos casos; fuente restaurado `IDÉNTICO` |»
+   SCRUM-575 · 2026-09-02 · propios=[scrum575-nif-espanol.test.mjs, scrum575b-nif-cableado.test.mjs]
+      «## El rojo, probado por el mecanismo — cuatro mutaciones con post-condición»  (+1 líneas)
+   SCRUM-579 · 2026-09-02 · propios=[scrum579-direccion-de-facturacion.test.mjs]
+      «## El rojo, probado por el mecanismo — seis mutaciones con post-condición»
+   SCRUM-582 · 2026-09-04 · propios=[scrum582-seleccion-multiple-clientes.test.mjs]
+      «| Mutación | Cae | Qué nombra |»
+   SCRUM-584 · 2026-09-02 · propios=[scrum584-selector-de-columnas.test.mjs]
+      «### El rojo, probado por el mecanismo — cinco mutaciones con post-condición»
+   SCRUM-587 · 2026-09-04 · propios=[scrum587-descuento-por-defecto.test.mjs]
+      «Seis mutaciones sobre `descuentoPorDefecto.js`, cada una rompiendo **una** cosa. Las seis caen, y»
+   SCRUM-590 · 2026-09-06 · propios=[scrum590-el-destino-pasa-por-el-resolvedor.test.mjs, scrum590-el-movil-es-el-canal.test.mjs, scrum590b-el-campo-en-la-pantalla.test.mjs]
+      «**Probado en rojo, dos mutaciones:**»
+   SCRUM-591 · 2026-09-03 · propios=[scrum591-alta-desde-el-documento.test.mjs]
+      «| Mutación | Cae | Qué nombra |»
+   SCRUM-595 · 2026-09-07 · propios=[scrum595-etiquetas-del-documento.test.mjs]
+      «porque la sustitución **falló en el shell y la mutación nunca llegó al fichero**. Un rojo que no»
+   SCRUM-602 · 2026-09-04 · propios=[scrum602-direccion-obra.test.mjs]
+      «**Probados en ROJO por mutación**, ocho defectos inyectados y cada uno cae por su test: la»
+   SCRUM-605 · 2026-09-01 · propios=[scrum605-atajos-vencimiento.test.mjs]
+      «mencionar `rotulo` ni `MARCA_MICROCOPY`. Con esa mutación, **cae y nombra el acoplamiento**.»
+   SCRUM-618 · 2026-09-15 · propios=[scrum618-leer-el-ci.test.mjs]
+      «step 7: Cada guard cae con la mutación que declara»
+   SCRUM-628 · 2026-09-16 · propios=[scrum628-cobertura-visual-del-dashboard.test.mjs]
+      «homeView.js            mutación ENTRÓ: sí · cae «🔴 homeView.js SE MONTA y pinta su contenedor»»  (+4 líneas)
+   SCRUM-643 · 2026-09-02 · propios=[scrum643-huso-del-sello-fiscal.test.mjs, scrum643-zona-del-merchant.test.mjs]
+      «| Mutación | Qué cae | Mensaje |»  (+1 líneas)
+   SCRUM-648 · 2026-09-04 · propios=[scrum648-verde-que-no-sabe.test.mjs, scrum648b-motivo-del-ambar.test.mjs]
+      «| Mutación | Qué cae |»  (+1 líneas)
+   SCRUM-661 · 2026-09-02 · propios=[scrum661-el-coste-no-llega-al-papel.test.mjs, scrum661b-el-coste-sobrevive-el-viaje.test.mjs]
+      «### El rojo, probado por el mecanismo — seis mutaciones, cada una con post-condición»
+   SCRUM-664 · 2026-09-03 · propios=[scrum664-el-compilador-como-censo.test.mjs]
+      «| Mutación | Cae |»
+   SCRUM-669 · 2026-09-15 · propios=[scrum669-restos-de-doc08.test.mjs]
+      «| mutación | ¿entró? | qué cae |»
+   SCRUM-670 · 2026-09-02 · propios=[scrum670-un-solo-extractor.test.mjs]
+      «### Rojo POR EL MECANISMO, sobre el índice REAL (mutación + post-condición)»
+   SCRUM-676 · 2026-09-02 · propios=[scrum676-hojas-del-indice.test.mjs]
+      «| Mutación | Cae | Qué nombra |»
+   SCRUM-688 · 2026-09-16 · propios=[scrum688-crear-revision.test.mjs]
+      «después se lee exactamente igual que un «✅ la mutación cae». El censo definitivo lleva control»  (+2 líneas)
+   SCRUM-694 · 2026-09-02 · propios=[scrum694-los-guards-migrados.test.mjs, scrum694b-el-filtro-que-no-ve-la-url.test.mjs, scrum694c-el-corte-a-pelo.test.mjs]
+      «riesgo en hecho — `scrum745` sobre `scripts/meta-guard-mutaciones.mjs:515`:»
+   SCRUM-697 · 2026-09-02 · propios=[scrum697-un-solo-render.test.mjs]
+      «## El rojo, probado por el mecanismo — cuatro mutaciones con post-condición»  (+2 líneas)
+   SCRUM-698 · 2026-09-03 · propios=[scrum698-vistas-que-no-se-miden.test.mjs]
+      «## El rojo, probado por el mecanismo — cinco mutaciones con post-condición»
+   SCRUM-699 · 2026-09-04 · propios=[scrum699-tabla-en-su-carril.test.mjs]
+      «## Verificado en rojo — cuatro mutaciones, cada una con post-condición»
+   SCRUM-710 · 2026-09-04 · propios=[scrum710b-anclaje-por-identidad.test.mjs]
+      «## El rojo, probado por el mecanismo — cuatro mutaciones con post-condición»
+   SCRUM-728 · 2026-09-04 · propios=[scrum728-seccion-critica-de-la-serie.test.mjs, scrum728-serie-ocupada-postgres.test.mjs, scrum728b-aviso-legible.test.mjs, scrum728d-ms-en-loopback.test.mjs, scrum728d-viajes-de-la-reserva.test.mjs]
+      «| Mutación | Qué cae |»
+   SCRUM-733 · 2026-09-04 · propios=[scrum733-el-censo-no-se-encoge-en-silencio.test.mjs]
+      «## Verificado en rojo — cuatro mutaciones y una ejecución real»
+   SCRUM-742 · 2026-09-04 · propios=[scrum742-internos-de-prisma.test.mjs]
+      «## Verificado en rojo — cinco mutaciones y un caso real»
+   SCRUM-744 · 2026-09-04 · propios=[scrum744-el-guard-mira-la-accion.test.mjs]
+      «## Verificado en rojo — siete mutaciones»
+   SCRUM-746 · 2026-09-04 · propios=[scrum746-barrera-y-punto-de-conexion.test.mjs, scrum746b-guarda-en-la-conexion.test.mjs]
+      «host-check, suelo anti-silencio, guard de borrado, GO explícito). La mutación ⑦ rompe una y cae.»  (+1 líneas)
+   SCRUM-747 · 2026-09-04 · propios=[scrum747-validar-antes-de-normalizar.test.mjs]
+      «| Mutación | Qué cae |»
+   SCRUM-789 · 2026-09-21 · propios=[scrum789-health-tiempo-del-select.test.mjs]
+      «Handler real con `prisma.$queryRaw` doblado: SUELO (ok/db up, una consulta), una espera de 40 ms sale entre 35 y 400, y en la caída no hay `dbMs`. 3 mutaciones en rojo (constante 0 · medir después de la consulta · `dbMs` en la caí»
+   SCRUM-821 · 2026-09-07 · propios=[scrum821-la-lista-que-decide-que-se-mira.test.mjs, scrum821b-las-capturas-que-ya-existian.test.mjs]
+      «**Probado en rojo, dos mutaciones:** alterar un byte de `06-customers.png` → cae el hash»
+   SCRUM-822 · 2026-09-07 · propios=[scrum822-el-arbol-con-punto.test.mjs]
+      «**③ EL GUARD NUEVO cae con la mutación que declara.** Revertida UNA de las seis llamadas a la»
+   SCRUM-824 · 2026-09-08 · propios=[scrum824-temporales-fuera-del-arbol.test.mjs, scrum824b-el-mas-antiguo-no-es-el-primero.test.mjs, scrum824b-el-sha-que-parecia-un-numero.test.mjs]
+      «| | mutación | cae |»  (+1 líneas)
+   SCRUM-844 · 2026-09-09 · propios=[scrum844-sellar-dentro-de-transaccion.test.mjs, scrum844b-que-documento-se-declara.test.mjs, scrum844c-el-xml-que-se-remite.test.mjs, scrum844d-quien-entra-en-la-cadena.test.mjs, scrum844e-el-libro-es-una-declaracion.test.mjs, scrum844f-lo-que-cambia-el-importe.test.mjs, scrum844g-el-tipo-de-lo-recibido.test.mjs]
+      «**② La mutación del puesto 3 dio `pass 0 · fail 1`**, que parece «el test cae». No lo era: metí el»  (+1 líneas)
+   SCRUM-848 · 2026-09-15 · propios=[scrum848b-el-fixture-llega-a-la-pantalla.test.mjs]
+      «| mutación | tests en rojo |»
+   SCRUM-855 · 2026-09-15 · propios=[scrum855-el-doble-llama-al-callback.test.mjs]
+      «| mutación | qué cae |»
+   SCRUM-861 · 2026-09-15 · propios=[scrum861-firma-por-delegacion.test.mjs]
+      «Cada rojo se provocó **mutando el oráculo ya comiteado**, comprobando antes que la mutación entraba»  (+3 líneas)
+   SCRUM-862 · 2026-09-16 · propios=[scrum862-el-fallo-entra-en-el-denominador.test.mjs]
+      «| 🔴 **MUTACIÓN** | sacar el fallo del denominador devuelve el 100 % mentiroso: **CAE**, y se comprobó que **ENTRÓ en `dist/`** antes de creerse el rojo. Fuente y `dist/` restaurados `IDÉNTICO` |»
+   SCRUM-878 · 2026-09-17 · propios=[scrum878-poblacion-del-guard-29.test.mjs]
+      «| `tests/scrum878-poblacion-del-guard-29.test.mjs` | 8 casos: suelo, población, clasificación, verde/rojo real, mutación, los dos controles del spread |»  (+3 líneas)
+   SCRUM-885 · 2026-09-16 · propios=[scrum885-documento-sin-enviar.test.mjs]
+      «| mutante | caen |»
+   SCRUM-887 · 2026-09-16 · propios=[scrum887-el-cobro-es-lo-firmado.test.mjs, scrum887b-descuento-global.test.mjs, scrum887c-caso-c-bloqueado.test.mjs]
+      «- **Arreglo** `b4dfc1bdf221e4a6a849c58478ba67d9e478050d`. Mutantes: descuento al final → 3 rojos · sin rechazo del global total → 1 · rechazo con el marcador → 1. Revertido: 18/18.»  (+1 líneas)
+   SCRUM-888 · 2026-09-16 · propios=[scrum888b-descuento-redibuja.test.mjs, scrum888c-descuentos-en-lineas.test.mjs, scrum888d-detalle-con-descuento-global.test.mjs, scrum888d-firma-con-descuentos.test.mjs, scrum888g-senal-en-la-firma.test.mjs]
+      «## Mutaciones — cada una en rojo»  (+2 líneas)
+   SCRUM-889 · 2026-09-16 · propios=[scrum889-anadir-linea-del-parte.test.mjs, scrum889b-quitar-linea-guardada.test.mjs]
+      «**Rama:** `scrum-889-parte-anadir-linea` · **Estado:** EN PR — rojo, arreglo, mutantes y QA corriendo hechos. El dictado se separa (depende de una clave de IA: coste, regla 36). Hallazgo abierto: la «×» de una línea ya guardada.»  (+2 líneas)
+   SCRUM-890 · 2026-09-16 · propios=[scrum890-parte-vacio.test.mjs, scrum890b-rechazo-visible.test.mjs]
+      «## 2 · Rojo, verde y mutaciones»  (+1 líneas)
+   SCRUM-893 · 2026-09-17 · propios=[scrum893-solo-lo-que-puede-cobrar.test.mjs]
+      «| mutación | casos que caen | casos AJENOS de ④ |»  (+1 líneas)
+   SCRUM-894 · 2026-09-17 · propios=[scrum894-falta-en-otra-pestana.test.mjs]
+      «- **Mutante** (quitar la comprobación «algo se ve»): el guard cae en los 4 negativos; `npm test` también.»  (+1 líneas)
+   SCRUM-897 · 2026-09-17 · propios=[scrum897-repintar-reemplaza.test.mjs]
+      «| Mutante | Cae |»
+   SCRUM-901 · 2026-09-17 · propios=[scrum901-banco-fiel-a-la-inicio.test.mjs]
+      «- **scrum897 test 3:** su instrumento suponía un parser plano («hijos directos = etiquetas del último marcado»). Con anidado, `.quote-totals` tiene 2 hijos y 6 descendientes. Ahora cuenta descendientes, y **sigue cayendo** con el »  (+1 líneas)
+   SCRUM-905 · 2026-09-17 · propios=[scrum905-facturar-solo-si-se-puede.test.mjs]
+      «## ③ Rojo, verde y mutaciones»  (+1 líneas)
+   SCRUM-912 · 2026-09-18 · propios=[scrum912-leer-ticket-gasto.test.mjs]
+      «**Mutación** (`docs/master/evidencias/SCRUM-912/mutacion-912.mjs`, sobre el JS compilado; aborta si un texto a mutar no aparece exactamente una vez; restaura `dist/` y comprueba que queda byte a byte): **17 mutantes, 17 muertos**,»
+   SCRUM-915 · 2026-09-18 · propios=[scrum915d-pasos-del-editor.test.mjs, scrum915j-cliente-por-botones.test.mjs]
+      «1. dos mutantes en ROJO sobre la fuente real (con comprobación de que la mutación se aplicó):»  (+12 líneas)
+   SCRUM-917 · 2026-09-18 · propios=[scrum917d-titulo-propio-en-la-lista.test.mjs, scrum917f-lo-que-falta.test.mjs, scrum917g-el-trabajo-plegable.test.mjs]
+      «| mutación | cae |»  (+2 líneas)
+   SCRUM-918 · 2026-09-17 · propios=[scrum918-arranque-sin-red.test.mjs]
+      «Mutantes: `decidirArranque` siempre al login → rojo en el guard (2 hallazgos) y en `tests/scrum918-arranque-sin-red.test.mjs`;»
+   SCRUM-919 · 2026-09-17 · propios=[scrum919-cola-al-volver-la-red.test.mjs]
+      «## ③ Rojo, verde y mutaciones»  (+1 líneas)
+   SCRUM-921 · 2026-09-17 · propios=[scrum921-firmas-con-respaldo.test.mjs, scrum921c-firma-con-respaldo-en-codigo.test.mjs]
+      «| mutación | qué cae |»  (+1 líneas)
+   SCRUM-931 · 2026-09-18 · propios=[scrum931-un-solo-importe-de-plantilla.test.mjs]
+      «| mutación | qué cae | qué NO cae |»
+   SCRUM-935 · 2026-09-20 · propios=[scrum935b-main-no-cancela.test.mjs]
+      «perfil acumulado de una pasada de 307 mutaciones, y sale lo que habría durado:»  (+2 líneas)
+   SCRUM-937 · 2026-09-18 · propios=[scrum937-el-nif-no-se-tira-en-silencio.test.mjs]
+      «| mutación | qué cae |»  (+2 líneas)
+   SCRUM-940 · 2026-09-17 · propios=[scrum940-el-censo-de-suelos.test.mjs]
+      «| 20 | — | — | NO DECIDIBLE | `scripts/meta-guard-mutaciones.mjs:120` (ya rojo con su propio valor) |»
+   SCRUM-946 · 2026-09-18 · propios=[scrum946-censo-de-huerfanos.test.mjs]
+      «11:54 que nadie buscaba)**, `ancla-mutacion` (9-sep), `wt-716c` (4-sep), `scrum-200-recon-emision` (julio).»  (+1 líneas)
+   SCRUM-961 · 2026-09-20 · propios=[scrum961b-el-nif-que-no-cuela.test.mjs]
+      «| Mutación en `lecturaTicket.ts` | Qué cae | Qué NO cae |»
+   SCRUM-967 · 2026-09-21 · propios=[scrum967b-el-portal-en-el-envio.test.mjs]
+      «| mutación | cae con |»
+   SCRUM-974 · 2026-09-21 · propios=[scrum974-firmado-sin-facturar-en-el-lunes.test.mjs]
+      «| mutación | cae con |»
+   SCRUM-979 · 2026-09-21 · propios=[scrum979-ultima-visita.test.mjs]
+      «| mutación | cae con |»
+   SCRUM-980 · 2026-09-21 · propios=[scrum980-historial-del-cliente.test.mjs, scrum980b-pestana-trabajos.test.mjs]
+      «| mutación | cae con |»  (+1 líneas)
+   SCRUM-982 · 2026-09-21 · propios=[scrum982-la-nota-del-cliente-en-el-trabajo.test.mjs]
+      «- **Rojo** — `docs/master/evidencias/scrum982/mutar-nota-982.mjs`: BASE sin mutar 15/15 y **13 mutaciones,»
+   SCRUM-984 · 2026-09-21 · propios=[scrum984-del-presupuesto-al-albaran.test.mjs]
+      «Diecinueve mutaciones sobre el árbol comiteado, cada una con el `git diff --numstat` a la vista (`1 1`), `npm run build` antes de cada mutante de `src/` **y otra vez tras restaurarlo**, y `git restore --source=HEAD` comprobado con»  (+2 líneas)
+   SCRUM-985 · 2026-09-21 · propios=[scrum985-el-aviso-de-importar-no-promete-excel.test.mjs]
+      «**Verificado en rojo** (cada mutación sobre el árbol, con el `git diff --numstat` a la vista, y restaurado»
+   SCRUM-986 · 2026-09-21 · propios=[scrum986-chip-whatsapp-en-la-lista.test.mjs]
+      «Nueve mutaciones, restauradas con `fs` (no PowerShell), **ninguna sobrevive**: M1 la lista no proyecta `waDelivery` · M2 la consulta agrupada olvida el merchant (cae en 2 pruebas) · M3 el orden invertido · M4 la pantalla no pinta »
+   SCRUM-987 · 2026-09-21 · propios=[scrum987-valido-hasta-en-el-pdf.test.mjs]
+      «| mutación | cae |»  (+2 líneas)
+   SCRUM-988 · 2026-09-26 · propios=[scrum988-revisiones-en-la-ficha.test.mjs]
+      «**5/5 rojo** con `quotesDetailView.js` y `quoteRevisiones.js` de main. Mutación aislada (solo el»
+   SCRUM-992 · 2026-09-21 · propios=[scrum992-partes-recortan-por-rol.test.mjs]
+      «| mutación | cae con |»  (+1 líneas)
+   SCRUM-1001 · 2026-09-21 · propios=[scrum1001-sin-pago-la-pagina-lo-dice.test.mjs]
+      «Handler real con req/res mínimos: SUELO (la página se monta), ES real → el literal exactamente una vez, demo y MX → sin él. Mutaciones (3, todas en rojo; restaurado, verde): siempre, nunca, literal alterado.»
+   SCRUM-1022 · 2026-09-21 · propios=[scrum1022-importa-xlsx-real.test.mjs, scrum1022c-selector-ofrece-xlsx.test.mjs]
+      «3. Mutación: quitar `pareceXlsx(bytes)` de la ruta `/import` → `scrum985` cae con «veo 1». Árbol»
+   SCRUM-1032 · 2026-09-21 · propios=[scrum1032-contacto-con-un-toque.test.mjs]
+      «Tres mutaciones (tope de un ticket S), restauradas con `fs`, **ninguna sobrevive**: M1 `wa.me` con el `+` (cae en 4 pruebas) · M2 los enlaces de la lista dejan de frenar el clic · M3 WhatsApp al fijo aunque haya móvil (3).»
+   SCRUM-1033 · 2026-09-22 · propios=[scrum1033-1034-cabecera-etiquetas-cliente.test.mjs]
+      «Quité `tags` del `select` y confirmé que `SCRUM-1033 · 🔴 el select del /detail trae etiquetas, dirección y referencia interna` cae (`actual: ['tags'], expected: []`); lo restauré y volvió a verde. No repetí la mutación sobre el `»
+   SCRUM-1035 · 2026-09-21 · propios=[scrum1035-cifras-del-cliente-todos-sus-documentos.test.mjs]
+      «Handler real sobre un mini-Prisma en memoria que respeta `where`/`take`/`aggregate`: 25 facturas (10 pagadas de 100 €, 15 pendientes de 50 €) y 23 presupuestos → 1.750 / 1.000 / 750 / 15 / 23 / 9; la lista sigue en 20; otro mercha»
+   SCRUM-1042 · 2026-09-22 · propios=[scrum1042-ajuste-foto-tecnico.test.mjs]
+      «Mutación real: quité la fusión (`homePrefs: {showTechPhotoToClient: …}` a secas, sin `Object.assign`) → caen 2 de 7 pruebas; restaurado, vuelve a 7/7.»
+   SCRUM-1043 · 2026-09-21 · propios=[scrum1043-quien-me-debe-servidor.test.mjs]
+      «Handler real sobre un mini-Prisma: 3 clientes del merchant (deuda 500, sin deuda, deuda parcial 700 sobre 1.000) y otro merchant con facturas propias incluso sobre el mismo id; orden por saldo distinto del orden de la lista; técni»
+   SCRUM-1057 · 2026-09-22 · propios=[scrum1057-duplicados-antes-de-id.test.mjs, scrum1057b-fusion-clientes-postgres.test.mjs]
+      «decía; el código no lo hacía). Verificado en rojo→verde con una mutación real (renombrar la ruta»
+   SCRUM-1061 · 2026-09-22 · propios=[scrum1061-fotos-en-historial.test.mjs]
+      «Mutación real: cambié el texto de sobrante de «+n más» a «+n fotos» → cae el test que fija el literal firmado; restaurado, vuelve a verde. `guards:entrada`/`guards:visuales`/build: ver el pie de este expediente tras correrlos.»
+   SCRUM-1063 · 2026-09-22 · propios=[scrum1063b-303-soportado-resultado.test.mjs]
+      «- **Rojo por mutación** (sobre `dist/`, restaurado y comprobado con `cmp` después). La BASE sin»  (+1 líneas)
+   SCRUM-1070 · 2026-09-21 · propios=[scrum1070-vivas-relevo.test.mjs]
+      «| 1 | **Relevo a 200k tras una entrega, vigilado** | Σcontexto **−43 %** simulado (64 sesiones: 1.870 M → 1.064 M, +97 relevos; sobre las 13 vivas, −44,7 %) | HECHO: `gasto-arranque.mjs vivas` (~90 líneas, 7 tests, 4/4 mutaciones)»
+   SCRUM-1078 · 2026-09-21 · propios=[scrum1078-precios-del-parte-solo-admin.test.mjs]
+      «## Mutaciones (3, todas caen en rojo; restaurado, verde)»
+   SCRUM-1093 · 2026-09-23 · propios=[scrum1093-bulk-paid-hoy-de-madrugada.test.mjs, scrum1093-quotenumber-zona-merchant.test.mjs, scrum1093f-albarannumber-zona-merchant.test.mjs, scrum1093g-parte-numero-zona-merchant.test.mjs, scrum1093h-censo-fecha-sin-zona.test.mjs]
+      «**Mutaciones** sobre `dist/`, restauradas con sha256. Caen las cinco:»  (+1 líneas)
+   SCRUM-1102 · 2026-09-25 · propios=[scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs]
+      «**Mutaciones**, `tests/banco-scrum1102f/mutar.mjs`: 14 de 14 caen, cada una en el caso que se»
+   SCRUM-1106 · 2026-09-23 · propios=[scrum1106-respuestas-ia-no-son-del-asesor.test.mjs]
+      «- **Mutación del control:** si Q-C9 de `CONTABILIDAD.md` se marca también como IA, cae su control»
+   SCRUM-1108 · 2026-09-25 · propios=[scrum1108-aviso-garantia-retenida.test.mjs, scrum1108b-pantalla-garantia.test.mjs]
+      «- **En rojo primero, por mutación sobre `dist/`**, las cuatro muertas: sin `status: 'paid'` (caen 2),»
+   SCRUM-1117 · 2026-09-25 · propios=[scrum1117-anclas-por-bloque.test.mjs]
+      «Nota del instrumento: mi primer intento de ese rojo salió exit 0 porque mi mutación cambió el `id` del»
+   SCRUM-1126 · 2026-09-29 · propios=[scrum1126-fusion-de-clientes.test.mjs]
+      «**Mutaciones (todas CAEN), con el código quieto, fichero restaurado por sha256:** sin bloquear el»  (+1 líneas)
+   SCRUM-1127 · 2026-09-25 · propios=[scrum1127-sif-client.test.mjs, scrum1127-sif-cola.test.mjs]
+      «## ⑤ Verificado en rojo: 4 mutaciones sobre `dist/`, las 4 caen»
+   SCRUM-1135 · 2026-09-28 · propios=[scrum1135-etiquetar-seleccion.test.mjs]
+      «(mutación: «Exportar» añadido → cae) y cae si se pierde una de las dos (mutación: sin «Quitar» → cae).»  (+1 líneas)
+   SCRUM-1142 · 2026-10-01 · propios=[scrum1142-irreversibles-factura-44.test.mjs]
+      «Mutación: la clase puesta ANTES de `ubicarAccion` → cae el caso ②.»
+   SCRUM-1154 · 2026-09-30 · propios=[scrum1154-google-encargado.test.mjs]
+      «Tres mutaciones sobre la página, cada una con el caso en el que tenía que caer, **y las tres caen**:»  (+1 líneas)
+   SCRUM-1180 · 2026-09-28 · propios=[scrum1180-detalle-con-clausulas-excluidas.test.mjs, scrum1180-editor-clausulas-excluidas.test.mjs]
+      «por el `CreateQuoteSchema` real (dist) conservándolas. Rojo por mutación (sin la clave en el payload,»
+   SCRUM-1185 · 2026-09-27 · propios=[scrum1185-trinquete-sin-consumir.test.mjs]
+      «| mutación | test que cae |»
+   SCRUM-1196 · 2026-09-28 · propios=[scrum1196-cloudflare-encargado.test.mjs, scrum1196-fecha-de-la-politica.test.mjs]
+      «**Interrogado, y las dos mutaciones caen donde deben:** con la fecha de julio cae «EL QUE DECIDE»;»
+   SCRUM-1199 · 2026-09-28 · propios=[scrum1199-avisos-alta-cliente.test.mjs]
+      «→ aviso pintado. Rojo verificado por mutación y con el árbol devuelto al commit: con el servidor»
+   SCRUM-1212 · 2026-09-28 · propios=[scrum1212-correo-aceptado-sin-emitir-factura.test.mjs, scrum1212b-correo-aceptado-sin-firma.test.mjs, scrum1212c-ajuste-correo-aceptado-desde-whatsapp.test.mjs]
+      «- **El cinturón** (`tests/scrum1212b-correo-aceptado-sin-firma.test.mjs`): por AST sobre `src/`, ningún camino que llame a `sendMerchantQuoteAcceptedEmail` puede conocer `signatureUrl` ni `signatureData`. Tiene un control positivo»
+   SCRUM-1216 · 2026-09-28 · propios=[scrum1216a-serie-sin-promesa.test.mjs, scrum1216b-numero-de-arranque.test.mjs, scrum1216b-pantalla-arranque.test.mjs]
+      «nuevo, por eso vale la mutación y no ese rojo.»
+   SCRUM-1222 · 2026-09-28 · propios=[scrum1222-sesion-panel.test.mjs]
+      «**Rojo probado por mutación:** aceptar cualquier método → cae el test de solo lectura; quitar la»
+   SCRUM-1228 · 2026-09-28 · propios=[scrum1228b-permisos-no-reintentan.test.mjs]
+      «Mutación: quitando SÓLO la rama nueva de la cola (en `dist/`, y restaurado compilando), caen los casos 3»
+   SCRUM-1230 · 2026-09-28 · propios=[scrum1230-colocar-lineas-dictadas.test.mjs]
+      «Tests nuevos en `scrum1230-colocar-lineas-dictadas.test.mjs` (4/4). **Rojo comprobado por mutación**: sin la»
+   SCRUM-1234 · 2026-09-28 · propios=[scrum1234-inter-autoalojada.test.mjs]
+      «Rojo antes (mutación: `payBank.routes.ts` devuelto a `origin/main`) → caen los 2 guards; restaurado →»
+   SCRUM-1235 · 2026-09-28 · propios=[scrum1235-el-correo-que-no-salio.test.mjs]
+      «- Mutaciones con el código quieto: sin pintar el aviso → caen 4 casos de pantalla; sin el chequeo»
+   SCRUM-1259 · 2026-09-28 · propios=[scrum1259-abierto-con-trabajo-en-main.test.mjs]
+      «6 mutaciones, y **era un segundo censo**, que es justo lo que el encargo prohibía. El motor ya existía:»  (+1 líneas)
+   SCRUM-1262 · 2026-10-01 · propios=[scrum1262-la-baja-corta-todas-las-vias.test.mjs]
+      «- **5 mutaciones sobre el compilado, las 5 caen:** el `catch` deja pasar (8 rojos) · la exención»
+   SCRUM-1266 · 2026-09-29 · propios=[scrum1266-marca-dato-inventado.test.mjs, scrum1266b-aviso-no-salia-en-lo-dictado.test.mjs]
+      «cambia. **Rojo por mutación, uno de uno:** sin la marca en `lineasConfirmadas` → 4 pass · 1 fail; sin»
+   SCRUM-1267 · 2026-09-29 · propios=[scrum1267-alta-albaran-idempotente.test.mjs]
+      «- Rojo por mutación: sin la clave en el cuerpo caen 3 de 4. Con la clave acuñada en cada clic cae el»
+   SCRUM-1271 · 2026-09-29 · propios=[scrum1271-importe-pendiente-de-facturar.test.mjs, scrum1271-pendiente-tras-parcial.test.mjs]
+      «- Rojo de la mitad de S2 probado por mutación: con el `jobCobroHuecos.js` de `main`, caen los dos casos de la parcial (400,00 € y el hueco que debe desaparecer).»
+   SCRUM-1272 · 2026-09-29 · propios=[scrum1272-anulada-no-es-deuda.test.mjs]
+      «- Rojo por mutación: con el `jobCobroHuecos.js` de `origin/main` caen 4 de 5; solo pasa el control normal.»
+   SCRUM-1274 · 2026-09-29 · propios=[scrum1274-presupuesto-desde-el-trabajo.test.mjs]
+      «- Rojo por mutación: con la `jobDetailView.js` de `main` cae el viaje, y con la `quotesView.js` de `main`»
+   SCRUM-1280 · 2026-09-29 · propios=[scrum1280-nombres-no-declarados.test.mjs]
+      «| Mutante: el modelo de globales no reconoce `window` | 2 tests en rojo (falsos en la pieza de control y en el panel) |»
+   SCRUM-1281 · 2026-09-29 · propios=[scrum1281-fixture-git-raiz-propia.test.mjs]
+      «| Mutante: `esFirma1281` siempre falso | ① y ② en rojo |»  (+1 líneas)
+   SCRUM-1285 · 2026-09-29 · propios=[scrum1285-guardado-en-vuelo.test.mjs, scrum1285b-plan-de-cobro-con-version.test.mjs, scrum1285c-censo-escrituras-sin-version.test.mjs, scrum1285d-plan-de-cobro-version-pantalla.test.mjs]
+      «- **Mutantes (el censo sale con exit 2 y los tests en rojo):**»  (+1 líneas)
+   SCRUM-1291 · 2026-09-30 · propios=[scrum1291-fusion-mueve-direcciones-de-obra.test.mjs]
+      «| Mutación | Cae |»
+   SCRUM-1296 · 2026-09-29 · propios=[scrum1296-emitir-encola.test.mjs, scrum1296-esquema-cola.test.mjs, scrum1296-procesador-cola.test.mjs]
+      «**El test, interrogado.** Base: 5 de 5 en verde. Tres mutaciones del esquema, las tres en rojo:»  (+3 líneas)
+   SCRUM-1299 · 2026-09-30 · propios=[scrum1299-respaldo-smtp-deja-fila.test.mjs]
+      «- Mutación: si se quita del `dist/` el `registrarEnvio` del éxito de la factura, cae ese caso y»
+   SCRUM-1301 · 2026-09-29 · propios=[scrum1301-bizum-hoy-de-madrugada.test.mjs]
+      «**Mutaciones sobre `psp.routes.ts` (build en cada una, todas CAEN, fuente restaurado por sha256):**»
+   SCRUM-1302 · 2026-09-30 · propios=[scrum1302a-marca-en-la-vista-de-oficina.test.mjs, scrum1302f-envio-sin-telefono.test.mjs, scrum1302g-foto-con-diez.test.mjs, scrum1302h-firma-directa-ya-registrada.test.mjs]
+      «- mutación: quitar la marca del serializador en `dist` → cae el caso `admin`; restaurado y»
+   SCRUM-1315 · 2026-10-01 · propios=[scrum1315-gemelos-estado-dentro-del-where.test.mjs]
+      «- **Mutaciones sobre el compilado, las tres caen:** la negativa de MercadoPago otra vez tragada → cae»
+   SCRUM-1317 · 2026-10-01 · propios=[scrum1317-cierre-admin-e-inicio-del-operario.test.mjs, scrum1317-productos-del-operario.test.mjs]
+      «- **Mutaciones de front:** 8 de 8 caen, con la base verde antes y después (11 casos).»
+   SCRUM-1318 · 2026-10-01 · propios=[scrum1318-resend-dice-si-salio.test.mjs]
+      «Y el test habría visto el defecto viejo. Tres mutaciones sobre el compilado, las tres caen: la ruta»  (+1 líneas)
+   SCRUM-1320 · 2026-10-01 · propios=[scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs]
+      «| mutación | qué cae |»
+   SCRUM-1322 · 2026-10-01 · propios=[scrum1322-el-bot-entiende-lo-que-pide.test.mjs]
+      «- **10 mutaciones, 10 caen** (`tests/banco-scrum1322/mutar.mjs`, un build entero por mutación, base»
+   SCRUM-1323 · 2026-10-01 · propios=[scrum1323-resumen-vs-detalle-sif1.test.mjs]
+      «| mutación | tests que caen |»  (+1 líneas)
+   SCRUM-1324 · 2026-10-01 · propios=[scrum1324-nadie-vigila-el-silencio.test.mjs]
+      «- Las 15 mutaciones de §⑤, repetidas sobre el script arreglado: 15 de 15 muertas, y las 15 líneas»
+   SCRUM-1327 · 2026-10-01 · propios=[scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs]
+      «reconocible y cae por «no lo sé» (mutación C2).»  (+3 líneas)
+   SCRUM-1333 · 2026-10-01 · propios=[scrum1333-carrera-del-encolado-postgres.test.mjs, scrum1333-una-factura-se-encola-una-vez.test.mjs]
+      «| Mutación | Caen |»
+   SCRUM-1338 · 2026-10-01 · propios=[scrum1338-la-barra-del-operario-contra-los-gates.test.mjs]
+      «**Visto caer.** 10 mutaciones de front, base verde antes y después (9 tests): **10 de 10 caen**»
+   SCRUM-1341 · 2026-10-01 · propios=[scrum1341-actividad-del-equipo-sin-importes.test.mjs]
+      «a ésos el rojo se lo dio el banco de mutaciones (Ⓕ).»  (+3 líneas)
+   SCRUM-1350 · 2026-10-01 · propios=[scrum1350-latido.test.mjs]
+      «- 10 mutaciones a mano, una por pieza (umbral de 2 h, ciego gana a aviso, PR ciega, bloqueadas, nadie»  (+1 líneas)
+   SCRUM-1351 · 2026-10-01 · propios=[scrum1351-viaje-firma-sin-red-albaran.test.mjs]
+      «| defecto arreglado (mutación local: `albaran_locked` tratado como «ya la tiene» en la firma directa) y aún declarado | 6 de 7, cae por «ya NO se observa» y lo nombra |»
+   SCRUM-1355 · 2026-10-01 · propios=[scrum1355-borrador-no-es-deuda.test.mjs]
+      «Mutantes, todos cazados (BASE 10/10 verde):»
+   SCRUM-1362 · 2026-10-01 · propios=[scrum1362-cargador-de-defectos-del-viaje.test.mjs]
+      «| defecto arreglado (mutación local de `colaDeFirmas.js`) y aún en el JSON | 12 de 13, cae por «ya NO se observa» |»
+   SCRUM-1365 · 2026-10-01 · propios=[scrum1365-cobrar-resto-solo-aceptados.test.mjs]
+      «| Mutante | Resultado (BASE 6/6) |»
+   SCRUM-1380 · 2026-10-01 · propios=[scrum1380-suelo-corrio-y-no-reporto.test.mjs]
+      «| Mutación: el corte a `Infinity` | caen 3 de los 6 tests nuevos |»
+   SCRUM-1381 · 2026-10-01 · propios=[scrum1381-escritores-por-fila.test.mjs]
+      «| Mutante | Qué rompe | Caen |»  (+1 líneas)
+
+C1 · sin test propio; nombra alguno que SÍ está: 13  (registro nacido DESPUÉS del catálogo: 13)
+   SCRUM-773 · 2026-09-17 · propios=[] · nombrados=4
+      «en `scripts/meta-guard-mutaciones.mjs` (3 de 38 runs en CI, 0 de 50 pasadas en local) — no se toca.»
+   SCRUM-788 · 2026-09-06 · propios=[] · nombrados=3
+      «si no distingue. Dio **1 mutación «rompe la sintaxis»**: `public/dashboard/index.html`. **Es un»  (+2 líneas)
+   SCRUM-796 · 2026-09-06 · propios=[] · nombrados=1
+      «| 🔴 **el que decide** — su **propia** mutación aplicada | el aserto del ancla **NO cae** (antes sí) |»
+   SCRUM-933 · 2026-09-18 · propios=[] · nombrados=1
+      «# SCRUM-933 · El caso que mata la segunda mutación de `scrum864c`»  (+7 líneas)
+   SCRUM-999 · 2026-09-26 · propios=[] · nombrados=7
+      «Verificado a mano el rojo↔verde de las dos mutaciones nuevas (`if (uso.veredicto !== 'VERDE')`»
+   SCRUM-1081 · 2026-09-22 · propios=[] · nombrados=1
+      «fichero cuando el RADIO de una mutación mata el proceso entero (ejemplo documentado: mutar una»
+   SCRUM-1100 · 2026-09-23 · propios=[] · nombrados=5
+      «`tests/vigia-atascados.test.mjs` —`correr()` limpio + `aplicarUna()` de sus 5 mutaciones»  (+4 líneas)
+   SCRUM-1244 · 2026-09-28 · propios=[] · nombrados=2
+      «**Control positivo: tres mutaciones, las tres caen** (el test entero, sin tocarlo):»  (+1 líneas)
+   SCRUM-1337 · 2026-10-01 · propios=[] · nombrados=1
+      «| meta-guard | **salió con 2 (ciego), y no es de este cambio**: 365 mediciones, 364 mutaciones vivas, 0 mudas, 0 ciegas y **un fichero muerto**, `scrum834-puerta-avisador-rojo.test.mjs`: al mutar, el fichero no reportó ni un nombr»
+   SCRUM-1345 · 2026-10-01 · propios=[] · nombrados=11
+      «| mutación | fichero | cae |»  (+4 líneas)
+   SCRUM-1359 · 2026-10-01 · propios=[] · nombrados=6
+      «| `tests/scrum836-ancla-de-mutacion-viva.test.mjs` | — | 17 tests, 16 pasan. El que cae nombra solo 3 anclas de `scrum608` a ficheros de `dist/`, y este árbol no tiene `dist`: no es de este cambio |»
+   SCRUM-1364 · 2026-10-01 · propios=[] · nombrados=1
+      «| Mutación: defecto `opus` → `sonnet` | cae «sin modelo declarado, una sesión nueva sale con `--model opus`» |»  (+3 líneas)
+   SCRUM-1386 · 2026-10-01 · propios=[] · nombrados=6
+      «**Mutaciones: 6 declaradas en el test (`MUTACIONES_QUE_ME_TUMBAN`), 6 de 6 caen**»  (+3 líneas)
+
+C2 · sin test propio; nombra tests y NINGUNO está: 17  (registro nacido DESPUÉS del catálogo: 14)
+   SCRUM-307 · 2026-08-10 · propios=[] · nombrados=1
+      «- **Puppeteer `setOfflineMode(true)` como único corte:** ni siquiera la petición directa falla. Es el ROJO de `control-red.mjs`: con esa mutación sale `✗ NO SUPE MIRAR` y exit 2. Con el proxy sale exit 0.»
+   SCRUM-456 · 2026-08-10 · propios=[] · nombrados=1
+      «| Mutación | Cae diciendo |»
+   SCRUM-509 · 2026-08-13 · propios=[] · nombrados=4
+      «| mutación | qué cae |»  (+1 líneas)
+   SCRUM-828 · 2026-09-08 · propios=[] · nombrados=1
+      «**Ocho mutaciones, cada una verificada presente en el disco antes de correr, todas caen:** borrar»
+   SCRUM-840 · 2026-09-09 · propios=[] · nombrados=1
+      «| dos escalones: tests **directos** → tests **transitivos** | un test que no importa el módulo ni de rebote **no puede** notar la mutación, así que los transitivos son la población completa de un «vivo». Pero correrla entera por m»
+   SCRUM-926 · 2026-09-20 · propios=[] · nombrados=1
+      «| mutación | `--numstat` | qué cae |»
+   SCRUM-945 · 2026-09-18 · propios=[] · nombrados=1
+      «- **Mutante**: la l.213 sin `String` → el guard cae nombrando `vigia-atascados.yml:220`.»
+   SCRUM-947 · 2026-09-18 · propios=[] · nombrados=1
+      «| mutante | cae |»
+   SCRUM-1197 · 2026-09-28 · propios=[] · nombrados=1
+      «- **Mutación:** ensanchada la expresión a la FAMILIA (`^CREATE\s+TYPE\s+[\s\S]+$`), cae el test de»
+   SCRUM-1224 · 2026-09-28 · propios=[] · nombrados=1
+      «- **Mutación:** con la comprobación nueva desactivada (`return true`) caen los dos tests del»
+   SCRUM-1243 · 2026-09-29 · propios=[] · nombrados=1
+      «**Rojo visto en las dos mitades (mutaciones con el código quieto, restauradas después):**»
+   SCRUM-1329 · 2026-10-01 · propios=[] · nombrados=1
+      «Mutaciones (`tests/banco-scrum1329/mutar.mjs`): 9 de 9 tumban su caso, base verde antes y después,»
+   SCRUM-1340 · 2026-10-01 · propios=[] · nombrados=2
+      «| id | la mutación | cae |»  (+1 líneas)
+   SCRUM-1357 · 2026-10-01 · propios=[] · nombrados=1
+      «- 12 mutaciones a mano, con la BASE sin mutar verde antes: las 12 caen (tempo no cuenta · needs no cuenta · ilegible saltado · cementerio no ciego · libro corrupto leído como vacío · ciego tapa lo leído · parada = contestada · sol»  (+1 líneas)
+   SCRUM-1368 · 2026-10-01 · propios=[] · nombrados=1
+      «| Mutación: quitar la comprobación | cae el test nuevo |»
+   SCRUM-1377 · 2026-10-01 · propios=[] · nombrados=3
+      «| Mutante | Qué deshace | Caen |»
+   SCRUM-1394 · 2026-10-01 · propios=[] · nombrados=1
+      «# SCRUM-1394 · El censo de bancos de mutación fuera del catálogo, subido y re-anclado: hoy son 18 de 31, y «fuera» dice menos de lo que parece»  (+3 líneas)
+
+C3 · sin test propio y sin nombrar ninguno: 7  (registro nacido DESPUÉS del catálogo: 5)
+   SCRUM-516 · 2026-08-19 · propios=[] · nombrados=0
+      «# SCRUM-475 (parte 3) · MUTACION SCRUM-516 · apendice con el sha ABREVIADO»
+   SCRUM-866 · 2026-09-17 · propios=[] · nombrados=0
+      «sueloDeEjecucion({vivas:0, mudas:0})        → "NO SE HA EJECUTADO NI UNA MUTACIÓN. Este exit no»  (+2 líneas)
+   SCRUM-871 · 2026-09-16 · propios=[] · nombrados=0
+      «| mutación | ¿cae? | con qué mensaje |»
+   SCRUM-920 ·  · propios=[] · nombrados=0
+      «**Rojo medido por mutación** sobre una copia de `public/` (nunca sobre el árbol): 11 fallos inyectados, **los 11 caen**,»  (+4 líneas)
+   SCRUM-972 · 2026-09-20 · propios=[] · nombrados=0
+      «con el trabajo (allí, el número de mutaciones pasó de 275 a 307 en un día) y el runner más lento»
+   SCRUM-990 · 2026-09-21 · propios=[] · nombrados=0
+      «A y B están declaradas en `MUTACIONES_QUE_ME_TUMBAN` (las corre `meta:mutaciones`; el `cae` de cada una es»  (+1 líneas)
+   SCRUM-1174 · 2026-09-27 · propios=[] · nombrados=0
+      «fila en su estado real. Mutación medida: código montado + `SCRUM-593.md` de main → **cae**.»
+
+CONTROL POSITIVO · SCRUM-1327 (sé que está FUERA: tiene test propio, `scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs`, y ese test no declara ninguna mutación): B · tiene test propio y NINGUNO está en el catálogo
+CONTROL NEGATIVO · SCRUM-1336 (sé que está DENTRO: su test propio, `scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs`, declara las suyas): A · test propio EN el catálogo

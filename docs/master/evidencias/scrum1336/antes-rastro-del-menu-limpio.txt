@@ -1,0 +1,23 @@
+# rastro-del-menu-limpio · guard-rastro-del-menu.mjs @ 8c0bf72850988e5f06266f330ab4c6c869f42a36 · sin romper nada
+# EXIT=0 · 8.6 s
+
+destinos del menú: 18
+
+════════ POR EL MENÚ (lo que hace el profesional) ════════
+  hash coherente con el destino: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL POSITIVO · por `renderAppView` ════════
+  hash coherente: 18/18
+  entradas de historial creadas: 18
+
+════════ CONTROL NEGATIVO · hash inventado ════════
+  vista: settings · nodos pintados: 186
+
+════════ «ATRÁS», PULSADO DE VERDAD ════════
+  clientes → productos → informes  (estoy en: reports)
+  atrás → vista products · hash products
+  atrás → vista customers · hash customers
+
+✓ los 17 destinos dejan rastro, «atrás» vuelve, y un hash inventado no rompe nada.
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
