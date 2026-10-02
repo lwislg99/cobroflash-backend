@@ -139,7 +139,7 @@ fs.writeFileSync(path.join(carpeta, 'rojos.tsv'), aTsv(filasRojos, Object.keys(f
 for (const b of brazos) {
   const g = filasRojos.filter((f) => f.brazo === b);
   console.log(`${b} · ${g.length} tandas · con salida 0: ${g.filter((f) => f.salida === '0').length} · los 5 sembrados en el TAP: ${cuenta(g.map((f) => f.sembrados_en_tap))} · tandas a las que les FALTA algún rojo de referencia: ${g.filter((f) => f.faltan > 0).length} · con rojos de más: ${g.filter((f) => f.sobran > 0).length}`);
-  for (const f of g.filter((x) => x.faltan > 0)) console.log(`   ${f.celda} (salida ${f.salida}) NO trae: ${f.cuales_faltan}`);
+  for (const f of g.filter((x) => x.faltan > 0 || x.sobran > 0)) console.log(`   ${f.celda} (salida ${f.salida}) NO trae: ${f.cuales_faltan || '(nada)'} · y trae de más: ${f.cuales_sobran || '(nada)'}`);
 }
 console.log(`rojos de referencia (${referencia.length}):`);
 for (const r of referencia) console.log(`   ${r}`);
@@ -187,6 +187,18 @@ if (sondas.length) {
     for (const f of conPend.sort((x, y) => y.veces_con_pendientes - x.veces_con_pendientes).slice(0, 40)) console.log(`   pendientes · ${f.fichero} · ${f.veces_con_pendientes} de ${f.filas} · máx ${f.pendientes_max} B · escribe ${f.total_mediana} B en ${f.ms_mediana} ms`);
     const tipos = cuenta(conVivos.flatMap((f) => f.vivos_al_salir.split(' ').map((x) => x.split('×')[0])));
     if (conVivos.length) console.log(`   vivos al salir, por tipo (ficheros): ${tipos}`);
+  }
+  // lo que cuesta: cuánto vive cada fichero hasta salir, con el flag y sin él (medianas por fichero)
+  const vida = (b) => new Map(filas.filter((f) => f.brazo === b).map((f) => [f.fichero, f.ms_mediana]));
+  const conV = vida('con-sonda'); const sinV = vida('sin-sonda');
+  if (conV.size && sinV.size) {
+    const comunes = [...conV.keys()].filter((k) => sinV.has(k));
+    const total = (m) => comunes.reduce((a, k) => a + m.get(k), 0);
+    console.log(`\n── LO QUE VIVE CADA FICHERO HASTA SALIR (ms, mediana por fichero; ${comunes.length} ficheros en los dos brazos) ──`);
+    console.log(`suma con el flag ${total(conV)} ms · suma sin el flag ${total(sinV)} ms · diferencia ${total(sinV) - total(conV)} ms (repartida entre los hilos del runner)`);
+    const delta = comunes.map((k) => ({ k, d: sinV.get(k) - conV.get(k), con: conV.get(k), sin: sinV.get(k) })).sort((a, b) => b.d - a.d);
+    console.log(`ficheros que viven más de 1 s MÁS sin el flag: ${delta.filter((x) => x.d > 1000).length} · más de 5 s: ${delta.filter((x) => x.d > 5000).length}`);
+    for (const x of delta.slice(0, 15)) console.log(`   +${x.d} ms · ${x.k} · con ${x.con} · sin ${x.sin}`);
   }
   // el cruce que decide: en cada tanda con sonda, ¿los que pierden son los que tenían bytes pendientes?
   console.log('\n── EL CRUCE: PERDER CASOS (señal de nombres) × TENER BYTES PENDIENTES (sonda), por tanda ──');
