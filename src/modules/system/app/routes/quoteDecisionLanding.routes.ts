@@ -46,6 +46,15 @@ function brandOverrideCss(brandColor?: string | null): string {
   </style>`;
 }
 
+/**
+ * SCRUM-1431 · etiqueta de plantilla: el HTML literal pasa tal cual y TODO lo interpolado sale
+ * por `esc`. Sólo para trozos cuyo `${}` es texto; un `${}` que ya trae HTML saldría doblemente
+ * escapado.
+ */
+function escapandoLoInterpolado(trozos: TemplateStringsArray, ...valores: Array<string | number | null | undefined>): string {
+  return trozos.reduce((html, trozo, i) => html + trozo + (i < valores.length ? esc(valores[i]) : ''), '');
+}
+
 function renderPage(title: string, body: string, brandColor?: string | null): string {
   return `<!doctype html>
 <html lang="es">
@@ -925,7 +934,10 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
         // `DecisionApiError` ya declaraba `message?` y nadie lo leía.
         // SCRUM-1431 · ESCAPADO. Hoy todo lo que llega aquí son literales nuestros, pero el mensaje
         // del 409 lleva el nombre del negocio y sólo la redirección de arriba impide que pase.
-        renderPage('Error', `<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${esc(json?.message || json?.error || '')}</div>`)
+        // El escapado lo pone la ETIQUETA de la plantilla y no un `esc(…)` dentro del `${}`: la
+        // expresión de SCRUM-264 (mensaje → código → vacío) queda tal cual, que es lo que su guard
+        // extrae y ejecuta.
+        renderPage('Error', escapandoLoInterpolado`<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || json?.error || ''}</div>`)
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(

@@ -54,13 +54,14 @@ test('SCRUM-1431 · SUELO: un mensaje de texto llano se pinta tal cual, bajo el 
 test('SCRUM-1431 · 🔴 un `message` con marcado sale ESCAPADO', async () => {
   const r = await rechazar(fallo({ error: 'x', message: 'Reformas <b>Pérez</b> & Hijos' }));
   assert.ok(r.html.includes('Reformas &lt;b&gt;Pérez&lt;/b&gt; &amp; Hijos'), '🔴 el mensaje no sale escapado');
-  assert.ok(!r.html.includes('<b>Pérez</b>'), '🔴 el marcado del mensaje ha entrado en la página');
+  // Con hueco para atributos (SCRUM-553): una etiqueta con el `>` pegado no vería `<b class="x">`.
+  assert.ok(!/<b[^>]*>Pérez/.test(r.html), '🔴 el marcado del mensaje ha entrado en la página');
 });
 
 test('SCRUM-1431 · 🔴 sin `message`, el `error` también sale ESCAPADO', async () => {
   const r = await rechazar(fallo({ error: 'a<i>b</i>' }));
   assert.ok(r.html.includes('a&lt;i&gt;b&lt;/i&gt;'));
-  assert.ok(!r.html.includes('<i>b</i>'));
+  assert.ok(!/<i[^>]*>b/.test(r.html));
 });
 
 test('SCRUM-1431 · una respuesta que no es JSON no rompe la página: titular solo', async () => {
