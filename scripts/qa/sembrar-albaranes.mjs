@@ -10,6 +10,7 @@
 //
 //   node scripts/qa/sembrar-albaranes.mjs diez-fotos   ⑤ un albarán EMITIDO con líneas (una con decimales) y 10 fotos
 //   node scripts/qa/sembrar-albaranes.mjs firmado      ⑥ un albarán FIRMADO en el sitio, con una firma DE PRUEBA
+//   node scripts/qa/sembrar-albaranes.mjs sin-movil    ⑦ un albarán EMITIDO de un cliente SIN móvil ni teléfono (SCRUM-1367c)
 //
 // Los huecos, medidos el 2-oct-2026 por S2 en yaqu.app (SCRUM-1367, comentario 18143): no se pudo
 // ver «foto» con diez ya subidas (SCRUM-1302), ni las cantidades «2,5» y «12.345» en el resumen del
@@ -29,7 +30,11 @@
 //      dice que es de prueba. ⚠️ La razón social y el NIF del merchant entran en el hash de la
 //      firma: por eso la orden NO firma si el perfil fiscal está vacío (se rellenaría después y el
 //      albarán dejaría de verificar). Antes: `sembrar-casos.mjs perfil-fiscal`.
-//   Ninguna de las dos emite factura, cobra ni envía. «Ninguna factura en la cuenta QA» sigue sin
+//   ⑦ El cliente sin móvil es SUYO (nombre fijo), con su Trabajo y su albarán: no se apoya en el
+//      cliente #84 que otra sesión creó a mano. Si alguien le pone un número, la orden se NIEGA
+//      antes de escribir: ya no sería el caso. No añade ninguna escritura a la lista: cliente,
+//      trabajo, albarán y emitir salen por la `escritura` de `sembrar-qa.mjs`.
+//   Ninguna de las tres emite factura, cobra ni envía. «Ninguna factura en la cuenta QA» sigue sin
 //   caso: emitirla es el camino fiscal y no entra por aquí nunca.
 //
 // SALIDAS: las de `sembrar-qa.mjs` — 0 hecho · 1 NO PUDE · 2 CIEGO: sin sesión · 3 rechazado.
@@ -49,6 +54,12 @@ export const LINEAS_QA = [
   { concepto: 'Tubo de pruebas QA', cantidad: 2.5, unidad: 'm' },
   { concepto: 'Tornillos de pruebas QA', cantidad: 12345, unidad: 'ud' },
 ];
+/** ⑦ El cliente que NO tiene a dónde mandarle nada: ni móvil ni teléfono (SCRUM-1302). */
+// Ninguno de los dos nombres CONTIENE al del sembrado base: la búsqueda del panel es por subcadena.
+export const NOMBRE_CLIENTE_SIN_MOVIL = 'Cliente sin móvil de pruebas QA';
+export const TITULO_TRABAJO_SIN_MOVIL = 'Trabajo de un cliente sin móvil, de pruebas QA';
+export const claveAlbaranSinMovil = (jobId) => `qa-1367-albaran-cliente-sin-movil-trabajo-${jobId}`;
+const LIMITE_LISTA = 200; // las listas del panel cortan en 200: si llega llena, «no está» no se sabe
 /** 🔴 No es nadie, y lo dice. Si lo ves firmando en una cuenta que no es la QA, es un error de cuenta. */
 export const FIRMANTE_QA = 'FIRMA DE PRUEBA QA - NO ES UN CLIENTE REAL';
 
@@ -237,10 +248,67 @@ export async function casoFirmado(fetchFn, cookie) {
   return lineas;
 }
 
+const sinNumero = (v) => v == null || String(v).trim() === '';
+const numerosDe = (c) => ['mobile', 'phone'].filter((k) => !sinNumero(c[k]));
+
+/** ⑦ Un albarán emitido de un cliente sin móvil ni teléfono. Lo que queda se RELEE del servidor. */
+export async function casoSinMovil(fetchFn, cookie) {
+  const cuenta = await cuentaQA(fetchFn, cookie);
+  const leer = lector(fetchFn, cookie);
+  const escribir = async (ruta, cuerpo) => leerJSON(await escritura(fetchFn, 'POST', ruta, { cuenta, cuerpo }), `POST ${ruta}`);
+
+  // El cliente, por nombre EXACTO (la búsqueda del panel es por subcadena).
+  const hallados = lista(await leer(`/admin/customers?search=${encodeURIComponent(NOMBRE_CLIENTE_SIN_MOVIL)}`), 'la búsqueda de clientes');
+  const suyos = hallados.filter((c) => c && c.name === NOMBRE_CLIENTE_SIN_MOVIL);
+  if (suyos.length > 1) throw new NoPude(`hay ${suyos.length} clientes «${NOMBRE_CLIENTE_SIN_MOVIL}» (ids ${suyos.map((c) => c.id).join(', ')}): no elijo uno a ciegas.`);
+  if (!suyos.length && hallados.length >= LIMITE_LISTA) throw new NoPude(`la búsqueda de clientes llega llena (${hallados.length}): no puedo afirmar que el cliente no exista.`);
+  let cliente = suyos[0];
+  const clienteNuevo = !cliente;
+  // Se mira ANTES de crear trabajo ni albarán: un cliente con número ya no es este caso.
+  if (cliente && numerosDe(cliente).length) {
+    throw new NoPude(`el cliente #${cliente.id} «${NOMBRE_CLIENTE_SIN_MOVIL}» TIENE ${numerosDe(cliente).join(' y ')}: alguien se lo puso y ya no es el caso «sin móvil». No se ha escrito nada.`);
+  }
+  if (!cliente) {
+    cliente = await escribir('/admin/customers', {
+      name: NOMBRE_CLIENTE_SIN_MOVIL, notes: 'Cliente de prueba SIN móvil ni teléfono, a propósito (scripts/qa/sembrar-albaranes.mjs, SCRUM-1367c). No le pongas número.',
+    });
+  }
+  if (!Number.isInteger(cliente.id)) throw new NoPude('el cliente no trae id');
+
+  const trabajos = lista(await leer('/admin/jobs'), 'la lista de trabajos');
+  const delCliente = trabajos.filter((j) => j && j.customer && j.customer.id === cliente.id && j.tituloPropio === TITULO_TRABAJO_SIN_MOVIL);
+  if (delCliente.length > 1) throw new NoPude(`hay ${delCliente.length} trabajos «${TITULO_TRABAJO_SIN_MOVIL}» de ese cliente: no elijo uno a ciegas.`);
+  if (!delCliente.length && trabajos.length >= LIMITE_LISTA) throw new NoPude(`la lista de trabajos llega llena (${trabajos.length}): no puedo afirmar que el trabajo no exista.`);
+  let trabajo = delCliente[0];
+  const trabajoNuevo = !trabajo;
+  if (!trabajo) trabajo = await escribir('/admin/jobs', { customerId: cliente.id, titulo: TITULO_TRABAJO_SIN_MOVIL });
+  if (!Number.isInteger(trabajo.id)) throw new NoPude('el trabajo no trae id');
+
+  const caso = await albaranDelCaso(fetchFn, cuenta, trabajo, claveAlbaranSinMovil(trabajo.id),
+    'Albarán de pruebas QA de un cliente sin móvil (SCRUM-1367). Nadie lo ha recibido.', { admiteFirmado: true });
+
+  // Se RELEE el cliente: que el alta no llevara número no dice que haya quedado sin él.
+  const releido = await leer(`/admin/customers/${cliente.id}`);
+  const lineas = [
+    `cuenta comprobada en el servidor: merchant ${cuenta.merchantId} («${cuenta.nombre}»), owner`,
+    `cliente   #${cliente.id} «${NOMBRE_CLIENTE_SIN_MOVIL}» · ${clienteNuevo ? 'CREADO' : 'ya estaba'}`,
+    `trabajo   #${trabajo.id} «${TITULO_TRABAJO_SIN_MOVIL}» · ${trabajoNuevo ? 'CREADO' : 'ya estaba'}`,
+    fraseAlbaran(caso),
+  ];
+  if (releido.id !== cliente.id || numerosDe(releido).length) {
+    const que = releido.id !== cliente.id ? 'no es el que se pidió' : `tiene ${numerosDe(releido).join(' y ')}`;
+    throw new NoPude(`al RELEER, el cliente #${cliente.id} ${que}. El caso NO está completo.\n${lineas.join('\n')}`);
+  }
+  lineas.push('cliente al RELEER: sin móvil y sin teléfono');
+  if (caso.albaran.estado === 'firmado') lineas.push('⚠️ el albarán está FIRMADO: lo firmó otra mano; este caso lo deja sólo emitido');
+  lineas.push('no se ha firmado, facturado, cobrado ni enviado nada');
+  return lineas;
+}
+
 export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSesion = RUTA_SESION, out = (s) => process.stdout.write(s + '\n'), err = (s) => process.stderr.write(s + '\n') } = {}) {
   const [orden, ...resto] = argv;
   try {
-    const ORDENES = ['diez-fotos', 'firmado'];
+    const ORDENES = ['diez-fotos', 'firmado', 'sin-movil'];
     if (!ORDENES.includes(orden)) throw new Rechazo(`orden «${orden ?? ''}» desconocida. Uso: ${ORDENES.join(' · ')}`);
     if (resto.length) throw new Rechazo(`argumentos de más: ${resto.join(' ')}`);
     let cookie = '';
@@ -249,7 +317,8 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSesion = 
       err(`CIEGO — no hay sesión guardada en ${rutaSesion}. Entra antes con: node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com`);
       return 2;
     }
-    const lineas = orden === 'diez-fotos' ? await casoDiezFotos(fetchFn, cookie) : await casoFirmado(fetchFn, cookie);
+    const CASOS = { 'diez-fotos': casoDiezFotos, firmado: casoFirmado, 'sin-movil': casoSinMovil };
+    const lineas = await CASOS[orden](fetchFn, cookie);
     for (const l of lineas) out(l);
     return 0;
   } catch (e) {

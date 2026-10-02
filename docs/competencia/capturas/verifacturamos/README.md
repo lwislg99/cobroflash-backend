@@ -28,3 +28,14 @@ Se paró **en el paso 2 del asistente** por cierre de la sesión (fin de uso), *
 que importa: las opciones de cada documento (presupuesto, albarán, factura), el dashboard de tres
 botones y el «Convertir en factura»**. Para seguir: entrar en `app.verifacturamos.com/login` con el
 correo y la contraseña guardada fuera de git; el asistente puede quedar en el paso 2.
+
+## Segunda pasada · 2-oct-2026 · de presupuesto a factura, contado en pasos (SCRUM-1437)
+
+👁 **Visto por dentro** con la misma cuenta, que **sigue abierta** (darla de baja es lo último de la
+consultoría). Capturas `pasos-02` a `pasos-26`; la de la pantalla de entrada no se guarda. El recuento y la
+tabla ellos · nosotros · la diferencia: `docs/competencia/pasos-verifacturamos-vs-yaqu.md`.
+
+Datos inventados creados: cliente «Cliente Inventado Prueba», presupuestos P-2026-0002 y P-2026-0003 (los
+dos convertidos) y dos borradores de factura sin número. **Nada emitido ni enviado.** No pulsados: «Emitir
+factura», «Enviar al cliente» y «WhatsApp». El «Dónde se paró» de arriba ya no vale: el panel, los
+presupuestos, las facturas y «Convertir en factura» están vistos; los albaranes, no.

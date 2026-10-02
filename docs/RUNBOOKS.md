@@ -858,5 +858,6 @@ Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) ·
 |---|---|---|
 | `node scripts/qa/sembrar-albaranes.mjs diez-fotos` | Un albarán emitido con exactamente 10 fotos (cuadrados de colores), contadas al releer. Emitirlo gasta un número ALB. | No lo firma (un firmado no admite fotos). Si ya hay fotos de otra mano, sube sólo las que caben. |
 | `node scripts/qa/sembrar-albaranes.mjs firmado` | Otro albarán, emitido y **firmado en el sitio** con una firma de prueba y el firmante `FIRMA DE PRUEBA QA - NO ES UN CLIENTE REAL`. | 🔴 **No se deshace:** queda congelado. No envía nada. **No firma con el perfil fiscal vacío** (razón social y NIF entran en el hash): antes va `sembrar-casos.mjs perfil-fiscal`. |
+| `node scripts/qa/sembrar-albaranes.mjs sin-movil` | (SCRUM-1367c) Un cliente PROPIO, «Cliente sin móvil de pruebas QA», sin móvil ni teléfono, con su Trabajo y un albarán emitido. Emitirlo gasta un número ALB. | No usa el cliente #84. **Si alguien le pone un número al cliente, la orden se niega** sin escribir: ya no es el caso. No firma. |
 
-Ninguna de las dos factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.
+Ninguna de las tres factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.
