@@ -725,6 +725,8 @@ en git. Lo hace J3a. Sólo lectura: ni `ci.yml`, ni código de la tanda, ni Jira
   68 de 72 son la cola. Es una propiedad de esos ficheros, no un parpadeo repartido.
 - **El paso ya avisó de una pérdida en `main`:** `16358193` (#2119) entró en verde sin 35 casos
   (30 de 64 de `vigia-atascados`, 5 de `scrum1262`), y su run lleva los dos `::warning`.
+- **Un experimento del otro equipo, leído aquí (⑦):** doce tandas enteras del mismo árbol en
+  Linux. Con `--test-force-exit` pierden casos 4 de 6; sin él, 0 de 6, y las seis dan 9.838.
 
 ## ⓪ La población y los instrumentos
 
@@ -820,6 +822,43 @@ Tarda segundos y no baja ningún TAP: tres llamadas a `gh` por commit. Para cuan
 medidos, y entonces la línea dice «por DEBAJO» o «por ENCIMA» del 5 %. Lo que no es un run medido
 (sin run de CI, job saltado, job que corrió y no dejó línea, «medible=no») va contado aparte.
 
+## ⑦ Lo que dicen los doce TAP del experimento del otro equipo (leído, no concluido)
+
+El equipo de Luis corrió el 1-oct a las 14:00:51Z un experimento para SCRUM-1384: rama
+`exp-1384-informe-truncado` (no está en `main`), workflow propio, run `36873018664`. Doce tandas
+ENTERAS del mismo árbol (`1da4852f`, sobre `3017ae0c`) en Linux: seis con `--test-force-exit` y
+seis sin. Su ticket no tiene comentarios y los doce TAP caducan a los tres días. Los pasé por la
+señal de nombres contra el árbol de su commit (`e-exp1384.mjs`). Sólo lectura: ni su rama, ni su
+workflow, ni su ticket.
+
+| brazo | tandas medibles | con ausentes | `# tests` de cada tanda |
+|---|---|---|---|
+| con `--test-force-exit` | 6 de 6 | **4** | 9.838 · 9.820 · 9.837 · 9.812 · 9.838 · 9.828 |
+| sin `--test-force-exit` | 6 de 6 | **0** | 9.838 las seis |
+
+- **Las seis sin el flag dan el mismo recuento, 9.838, que es el máximo de las seis con el flag.**
+  Con el flag faltan 18, 1, 26 y 10 casos por recuento (55); la señal nombra 39. Es un suelo.
+- **Pierden los mismos:** `scrum834` (20 y 10 de 53), `scrum1262`, `scrum524b` y `scrum888g`.
+  Los cuatro están entre los 18 de ⑤, y siempre es la cola.
+- Ninguna de las doce tiene fallos. Las seis sin el flag llegaron a su resumen y tardaron lo
+  mismo que las otras (371 a 544 s frente a 318 a 518 s): ninguna se quedó colgada.
+
+**Lo que esto NO dice.** Son seis tandas por brazo, de un solo árbol y de una sola tarde: si el
+flag no influyera, que las cuatro pérdidas cayeran todas en el mismo brazo pasaría 3 veces de
+cada 100. No es una demostración de la causa, y la conclusión del experimento es de quien lo
+diseñó. Tampoco dice qué costaría quitar el flag: no lo he medido, y no es una decisión de aquí.
+
+**Lo que cambia para el reproductor (1339f, sin empezar).** c.17951 pedía «con y sin
+`--test-force-exit`» sobre un fichero. Ese contraste ya existe sobre la tanda entera. Lo que sigue
+sin saberse, y es lo que un reproductor puede contestar, es qué tienen esos 18 ficheros y si los
+casos que faltan se ejecutaron.
+
+## El hueco declarado
+
+Dirigida local NO corrida — decisión del orquestador; `guards:entrada` sí: 12 guards, 132
+tests, 0 caen, 17 s; el obligatorio del CI es la primera pasada entera sobre esta rama. La rama
+sólo toca `docs/`.
+
 ## Lo que NO sé
 
 - La tasa sobre la ventana de 50. Hay 4 runs con el paso y 21 con el recálculo.
@@ -851,3 +890,5 @@ días. Sí está la lista para volver a bajarlos (`e-arts.tsv`) y todo lo que sa
     node $E/e-anotaciones.mjs <fuera del árbol>/banco . <fuera del árbol>/banco 2026-10-01T00:00:00Z d2ed6c8a2c4d2b3487c4557094d12915e9dfb83c 2026-10-01T16:24:08Z
     node $E/e-tasa-de-main.mjs origin/main <fuera del árbol>/banco
     node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
+    git fetch origin exp-1384-informe-truncado                                   # mientras exista la rama
+    node $E/e-exp1384.mjs <fuera del árbol>/banco . $E/e-por-fichero.tsv         # los TAP caducan el 4-oct
