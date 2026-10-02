@@ -14,6 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 import { presupuestosQueSeEntregan } from '../dist/modules/jobs/domain/entregaDelTrabajo.js';
 
 const RUTAS = '../dist/modules/jobs/app/routes/jobs.routes.js';
@@ -47,7 +48,7 @@ async function entregaDelDetalle(quotes) {
   const res = { status(s) { r.status = s; return res; }, json(j) { r.data = j; return res; } };
   const errores = [];
   const callar = console.error; console.error = (...a) => errores.push(a.join(' '));
-  try { await h({ params: { id: String(JOB_ID) }, merchantId: MERCHANT, userRole: 'admin', teamMemberId: null }, res); }
+  try { await h(reqDeSesion({ rol: 'admin', merchantId: MERCHANT, params: { id: String(JOB_ID) }, teamMemberId: null }), res); }
   finally { console.error = callar; }
   assert.equal(r.status, 200, `🔴 CIEGO: el detalle no responde 200 (${r.status}): ${errores.join(' | ')}`);
   assert.ok(r.data && 'entregaPendiente' in r.data, '🔴 CIEGO: el detalle no trae `entregaPendiente`');

@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:24:06Z
 
-A9: sin fallo que generalice — el arreglo y el test salieron a la primera y los tres mutantes se aplicaron de verdad (el mutador comprueba que el fichero cambia antes de contar)
+A9: comprobación → `tests/scrum1344-arnes-de-prueba-con-rol.test.mjs`
 
 Sesión S1 (relevo de `s1-1octe`) · carril: `src/modules/jobs/**` · rama `scrum-1369-entrega-solo-de-lo-aceptado`.
 
@@ -47,6 +47,11 @@ Entra por la ruta real (`GET /:id` de `dist/…/jobs.routes.js`) con la base dob
 | la ruta no filtra | 4 rojos |
 | el criterio acepta todo | 5 rojos |
 | los adicionales no se filtran | 2 rojos |
+
+**Error propio (A9):** el primer empujón (`5319d86a`) salió ROJO en el obligatorio, con `# fail 1`: el
+test armaba el `req` escribiendo `userRole` a mano, y SCRUM-1344 exige `reqDeSesion`. No corrí ese guard
+en local: elegí los tests «que nombran lo tocado», y un guard que censa `tests/` no nombra nada. Lo
+cazó el CI, que es la comprobación que ya existía. Corregido el test, no el guard.
 
 ## Lo que NO está hecho
 
