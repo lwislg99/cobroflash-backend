@@ -30,6 +30,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
@@ -82,46 +83,49 @@ async function pantalla(vista) {
 
 // ═══ ① EL QUE DECIDE, sobre el código REAL de cada pantalla ══════════════════════════════════
 
-for (const { vista, quien } of PANTALLAS) {
-  test(`SCRUM-785 · 🔴 ${quien}: tras EDITAR y cerrar NO queda un modal colgado del body`, async () => {
-    const p = await pantalla(vista);
-    assert.equal(p.overlays(), 0, `🔴 SUELO: ${quien} ya deja un overlay colgado con sólo montarse.`);
+const casoa = casosEscritos(PANTALLAS, ({ vista, quien }) => `SCRUM-785 · 🔴 ${quien}: tras EDITAR y cerrar NO queda un modal colgado del body`, async ({ vista, quien }) => {
+  const p = await pantalla(vista);
+  assert.equal(p.overlays(), 0, `🔴 SUELO: ${quien} ya deja un overlay colgado con sólo montarse.`);
 
-    p.pulsar(p.editar);
-    assert.equal(p.overlays(), 1,
-      `🔴 CIEGO: al pulsar «Editar» no se ha construido ningún overlay en ${quien}, así que el `
-      + '`catch` del banco está tapando un no-op y no estoy midiendo nada.');
+  p.pulsar(p.editar);
+  assert.equal(p.overlays(), 1,
+    `🔴 CIEGO: al pulsar «Editar» no se ha construido ningún overlay en ${quien}, así que el `
+    + '`catch` del banco está tapando un no-op y no estoy midiendo nada.');
 
-    const cerrarBtn = p.cerrar();
-    assert.ok(cerrarBtn, `🔴 CIEGO: no encuentro por dónde se cierra el modal de ${quien}.`);
-    p.pulsar(cerrarBtn);
+  const cerrarBtn = p.cerrar();
+  assert.ok(cerrarBtn, `🔴 CIEGO: no encuentro por dónde se cierra el modal de ${quien}.`);
+  p.pulsar(cerrarBtn);
 
-    assert.equal(p.overlays(), 0,
-      `🔴 ${quien} SIGUE DEJANDO SU MODAL COLGADO DEL BODY tras cerrarlo. Con ese nodo presente, `
-      + '`body:has(.modal-overlay) #tut-help-btn` apaga el botón flotante de ayuda para el resto '
-      + 'de la sesión: `:has()` mira si el nodo EXISTE, no si se ve. Medido en Edge: con el '
-      + 'residuo el «?» computa `display:none` y caja 0×0.');
-  });
+  assert.equal(p.overlays(), 0,
+    `🔴 ${quien} SIGUE DEJANDO SU MODAL COLGADO DEL BODY tras cerrarlo. Con ese nodo presente, `
+    + '`body:has(.modal-overlay) #tut-help-btn` apaga el botón flotante de ayuda para el resto '
+    + 'de la sesión: `:has()` mira si el nodo EXISTE, no si se ve. Medido en Edge: con el '
+    + 'residuo el «?» computa `display:none` y caja 0×0.');
+});
+const casob = casosEscritos(PANTALLAS, ({ vista, quien }) => `SCRUM-785 · 🔴 ${quien}: se DESCUELGA, no se destruye — reabre y es el MISMO nodo`, async ({ vista, quien }) => {
+  const p = await pantalla(vista);
+  p.pulsar(p.editar);
+  const primera = p.doc.querySelector('.modal-overlay');
+  assert.ok(primera, `🔴 CIEGO: no se ha abierto ningún overlay en ${quien}.`);
+  p.pulsar(p.cerrar());
+  assert.equal(p.overlays(), 0, `🔴 ${quien} no ha descolgado su modal al cerrarlo.`);
 
-  test(`SCRUM-785 · 🔴 ${quien}: se DESCUELGA, no se destruye — reabre y es el MISMO nodo`, async () => {
-    const p = await pantalla(vista);
-    p.pulsar(p.editar);
-    const primera = p.doc.querySelector('.modal-overlay');
-    assert.ok(primera, `🔴 CIEGO: no se ha abierto ningún overlay en ${quien}.`);
-    p.pulsar(p.cerrar());
-    assert.equal(p.overlays(), 0, `🔴 ${quien} no ha descolgado su modal al cerrarlo.`);
-
-    p.pulsar(p.editar);
-    const segunda = p.doc.querySelector('.modal-overlay');
-    assert.ok(segunda,
-      `🔴 EL MODAL DE ${quien.toUpperCase()} YA NO SE REABRE. Descolgarlo al cerrar ha roto su `
-      + 'ciclo de vida: la vista lo reutiliza (`if (!editOverlay) …`) y hay que volver a colgarlo '
-      + 'del `body` al reabrir.');
-    assert.equal(segunda, primera,
-      `🔴 el modal de ${quien} se ha RECONSTRUIDO en vez de reutilizarse. Su `
-      + '`build…()` cablea campos y oyentes UNA sola vez: reconstruirlo es otro ciclo de vida.');
-  });
-}
+  p.pulsar(p.editar);
+  const segunda = p.doc.querySelector('.modal-overlay');
+  assert.ok(segunda,
+    `🔴 EL MODAL DE ${quien.toUpperCase()} YA NO SE REABRE. Descolgarlo al cerrar ha roto su `
+    + 'ciclo de vida: la vista lo reutiliza (`if (!editOverlay) …`) y hay que volver a colgarlo '
+    + 'del `body` al reabrir.');
+  assert.equal(segunda, primera,
+    `🔴 el modal de ${quien} se ha RECONSTRUIDO en vez de reutilizarse. Su `
+    + '`build…()` cablea campos y oyentes UNA sola vez: reconstruirlo es otro ciclo de vida.');
+});
+test('SCRUM-785 · 🔴 Productos: tras EDITAR y cerrar NO queda un modal colgado del body', casoa(0));
+test('SCRUM-785 · 🔴 Productos: se DESCUELGA, no se destruye — reabre y es el MISMO nodo', casob(0));
+test('SCRUM-785 · 🔴 Proveedores: tras EDITAR y cerrar NO queda un modal colgado del body', casoa(1));
+test('SCRUM-785 · 🔴 Proveedores: se DESCUELGA, no se destruye — reabre y es el MISMO nodo', casob(1));
+casoa.todos();
+casob.todos();
 
 // ═══ ② EL CENSO QUE FALTABA: ¿QUIÉN MÁS DEPENDE DE QUE UN OVERLAY EXISTA? ════════════════════
 

@@ -833,6 +833,9 @@ lo asume — nunca "declarado, pendiente de aplicar" como único registro, que e
 `node scripts/qa/sesion-panel.mjs login [correo]` (demo@yaqu.app por defecto; secreto SOLO en `C:/Users/Admin/.yaqu-qa-secret.txt`, la cookie queda en `C:/Users/Admin/.yaqu-qa-sesion.txt` y no se imprime) y luego `node scripts/qa/sesion-panel.mjs get /admin/…`.
 Sólo GET contra `https://yaqu.app` (rechaza otro método u otro host antes de salir a la red); exit 1 = no pude entrar / no 2xx, 2 = CIEGO (sin secreto o sin sesión), 3 = uso rechazado. Nunca un `fetch` a mano: esta es la única vía, para que la cubra una sola regla de permiso.
 
+**Antes de medir nada en producción: `node scripts/qa/sesion-panel.mjs estado`** (SCRUM-1430). La sesión de `test-login` muere a las **24 h** de abrirse aunque su cookie declare 30 días, y no suena nada: el 2-oct-2026 se cayeron todas las verificaciones a la misma hora. La primera línea dice una de tres cosas: **VIVA** (exit 0) · **MUERTA** (exit 1) · **NO SE PUEDE SABER** (exit 2: sin sesión, sin fichero de caducidad, fichero de otra cookie, o la sonda no dio ni 2xx ni 401). Hace UN `GET /admin/me`; con `--sin-red` contesta sólo con el fichero `C:/Users/Admin/.yaqu-qa-sesion.txt.caducidad.json`, que escribe `login` con la hora del servidor. Una sesión muerta se renueva con `login`, nada más.
+🔴 **Nunca un `POST /auth/logout` de verdad con esa cookie:** la mata para TODAS las sesiones. Quien pruebe el cierre de sesión en producción corta ese POST antes de pulsar.
+
 ## R24 · Los casos que le faltan a la cuenta QA: cómo se crean sin tocar producción a mano (SCRUM-1367)
 
 🔴 **`scripts/qa/sembrar-casos.mjs` NO se ha ejecutado nunca contra producción y no se ejecuta hasta que el fundador diga con qué regla.** Lo de abajo es lo que hará cada orden cuando la haya; hoy está probado sin red (`tests/scrum1367-sembrar-casos.test.mjs`).
@@ -848,3 +851,12 @@ Antes: `node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com` y `n
 | `… mismo-id --crear-hasta N` | Hasta N partes en borrador (tope 50 por orden), hasta que uno coincida con el id de un albarán. | No borra: cada parte creado se queda. Si el contador de partes ya pasó del mayor albarán, para al primero y lo dice. |
 
 Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) · 2 CIEGO: sin sesión · 3 rechazado.
+
+**Los dos casos de albarán (SCRUM-1367b)** viven en `scripts/qa/sembrar-albaranes.mjs`, un fichero aparte con SU permiso: tampoco se ha ejecutado nunca contra producción (`tests/scrum1367b-sembrar-albaranes.test.mjs`). Cada orden usa un albarán PROPIO, distinto del de base, con dos líneas de prueba (2,5 m y 12345 ud).
+
+| Orden | Qué deja | Qué NO hace |
+|---|---|---|
+| `node scripts/qa/sembrar-albaranes.mjs diez-fotos` | Un albarán emitido con exactamente 10 fotos (cuadrados de colores), contadas al releer. Emitirlo gasta un número ALB. | No lo firma (un firmado no admite fotos). Si ya hay fotos de otra mano, sube sólo las que caben. |
+| `node scripts/qa/sembrar-albaranes.mjs firmado` | Otro albarán, emitido y **firmado en el sitio** con una firma de prueba y el firmante `FIRMA DE PRUEBA QA - NO ES UN CLIENTE REAL`. | 🔴 **No se deshace:** queda congelado. No envía nada. **No firma con el perfil fiscal vacío** (razón social y NIF entran en el hash): antes va `sembrar-casos.mjs perfil-fiscal`. |
+
+Ninguna de las dos factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.

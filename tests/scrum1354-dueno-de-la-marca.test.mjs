@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { montarAlmacen, porQueEstariaCiego } from './_banco-almacen-local.mjs';
 import { redNormal, falloDelServidor } from './_banco-red.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CUERPO = Object.freeze({ signatureData: 'data:image/png;base64,AAAA', firmadoPorNombre: 'Aurora Benítez' });
@@ -87,15 +88,18 @@ test('SCRUM-1354 · 🔴 desalojo real, el DETECTOR va antes que el drenado → 
   assert.equal(r.desalojo.estado, b.ctx.POSIBLE_PERDIDA);
 });
 
-for (const ms of [0, 5, 40]) {
-  test(`SCRUM-1354 · 🔴 desalojo real, lanzados como en app.js con persist() a ${ms} ms → avisa`, async () => {
-    const b = montar(redNormal({ estado: 'firmado' }), ms);
-    b.ctx.marcarQueHuboCola();
-    const r = await arrancarComoLaApp(b);
-    assert.equal(r.desalojo.estado, b.ctx.POSIBLE_PERDIDA,
-      `🔴 con persist() a ${ms} ms el resultado cambia: el aviso depende de la carrera.`);
-  });
-}
+const FILAS_1 = [0, 5, 40];
+const caso1 = casosEscritos(FILAS_1, (ms) => `SCRUM-1354 · 🔴 desalojo real, lanzados como en app.js con persist() a ${ms} ms → avisa`, async (ms) => {
+  const b = montar(redNormal({ estado: 'firmado' }), ms);
+  b.ctx.marcarQueHuboCola();
+  const r = await arrancarComoLaApp(b);
+  assert.equal(r.desalojo.estado, b.ctx.POSIBLE_PERDIDA,
+    `🔴 con persist() a ${ms} ms el resultado cambia: el aviso depende de la carrera.`);
+});
+test('SCRUM-1354 · 🔴 desalojo real, lanzados como en app.js con persist() a 0 ms → avisa', caso1(0));
+test('SCRUM-1354 · 🔴 desalojo real, lanzados como en app.js con persist() a 5 ms → avisa', caso1(1));
+test('SCRUM-1354 · 🔴 desalojo real, lanzados como en app.js con persist() a 40 ms → avisa', caso1(2));
+caso1.todos();
 
 // ── ② UNA VEZ ───────────────────────────────────────────────────────────────────────────────
 
@@ -110,20 +114,23 @@ test('SCRUM-1354 · 🔴 el aviso sale UNA vez: el arranque siguiente, sin cola 
 
 // ── ③ COLA CON FIRMAS + RED: SE SUBEN Y NO HAY AVISO, EN LOS DOS ÓRDENES ───────────────────
 
-for (const ms of [0, 5, 40]) {
-  test(`SCRUM-1354 · ✅ cola con firmas y red, persist() a ${ms} ms → se suben, sin aviso y sin marca`, async () => {
-    const b = montar(redNormal({ estado: 'firmado' }), ms);
-    await b.ctx.encolarFirma(42, CUERPO);
-    await b.ctx.encolarFirma(43, CUERPO);
-    assert.equal(await cuantas(b), 2, '🔴 CIEGO: las firmas no entraron en la cola.');
-    const r = await arrancarComoLaApp(b);
-    assert.equal(await cuantas(b), 0, '🔴 CIEGO: el drenado no subió las firmas; el caso no se montó.');
-    assert.equal(r.desalojo.estado, b.ctx.SIN_PERDIDA,
-      '🔴 AVISO FALSO: el drenado vació la cola subiéndolo todo y el detector lo lee como pérdida.');
-    assert.equal(b.ctx.huboColaAlgunaVez(), false,
-      '🔴 el drenado vació una cola que tenía firmas y no retiró la marca: el arranque siguiente avisará en falso.');
-  });
-}
+const FILAS_2 = [0, 5, 40];
+const caso2 = casosEscritos(FILAS_2, (ms) => `SCRUM-1354 · ✅ cola con firmas y red, persist() a ${ms} ms → se suben, sin aviso y sin marca`, async (ms) => {
+  const b = montar(redNormal({ estado: 'firmado' }), ms);
+  await b.ctx.encolarFirma(42, CUERPO);
+  await b.ctx.encolarFirma(43, CUERPO);
+  assert.equal(await cuantas(b), 2, '🔴 CIEGO: las firmas no entraron en la cola.');
+  const r = await arrancarComoLaApp(b);
+  assert.equal(await cuantas(b), 0, '🔴 CIEGO: el drenado no subió las firmas; el caso no se montó.');
+  assert.equal(r.desalojo.estado, b.ctx.SIN_PERDIDA,
+    '🔴 AVISO FALSO: el drenado vació la cola subiéndolo todo y el detector lo lee como pérdida.');
+  assert.equal(b.ctx.huboColaAlgunaVez(), false,
+    '🔴 el drenado vació una cola que tenía firmas y no retiró la marca: el arranque siguiente avisará en falso.');
+});
+test('SCRUM-1354 · ✅ cola con firmas y red, persist() a 0 ms → se suben, sin aviso y sin marca', caso2(0));
+test('SCRUM-1354 · ✅ cola con firmas y red, persist() a 5 ms → se suben, sin aviso y sin marca', caso2(1));
+test('SCRUM-1354 · ✅ cola con firmas y red, persist() a 40 ms → se suben, sin aviso y sin marca', caso2(2));
+caso2.todos();
 
 // ── ④ COLA CON FIRMAS + SIN RED ────────────────────────────────────────────────────────────
 

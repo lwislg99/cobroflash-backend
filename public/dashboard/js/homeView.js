@@ -1380,7 +1380,10 @@ async function submitQuickQuote() {
     let customerId = qqState.customerId;
     if (!customerId) {
       const phone = (document.getElementById("qq-customer-phone")?.value || qqState.customerPhone).trim();
-      const newCustomer = await createCustomer({ name: customerName, phone: phone || null });
+      // SCRUM-1198 · SIN TELÉFONO, `phone` NO VIAJA. El alta lo admite si no viene, pero rechaza
+      // un `null` («expected string, received null»): mandarlo vacío perdía lo tecleado antes de
+      // crear nada. El teléfono hace falta para ENVIAR, no para que el cliente exista.
+      const newCustomer = await createCustomer(phone ? { name: customerName, phone } : { name: customerName });
       customerId = newCustomer.id;
       // SCRUM-1371 · el cliente recién creado SE RECUERDA. Si un paso de más abajo falla, el
       // botón vuelve a encenderse, y sin esto cada reintento daba de alta al cliente otra vez.
