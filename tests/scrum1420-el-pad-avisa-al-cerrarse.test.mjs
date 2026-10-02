@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { montarAlmacen } from './_banco-almacen-local.mjs';
 import { todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PNG = 'data:image/png;base64,' + 'A'.repeat(400);
@@ -84,21 +85,25 @@ test('SCRUM-1420 · suelo: el pad real se monta, y sin `onClose` se cierra como 
   assert.equal(m.teclas.length, 0, 'al cerrarse suelta su oyente de teclado');
 });
 
-for (const [nombre, cerrar] of [
+const FILAS = [
   ['«Cancelar»', (p) => p.cancelar()],
   ['Escape', (p) => p.escape()],
   ['el clic en el fondo', (p) => p.fondo()],
   ['el `close` que se devuelve al llamador', (p) => p.pad.close()],
-]) {
-  test(`SCRUM-1420 · 🔴 al cerrar con ${nombre} avisa UNA vez, sin firma, y con el pad ya fuera del DOM`, async () => {
-    const m = montar();
-    const p = abrir(m);
-    assert.deepEqual(p.cierres, [], 'abrir no avisa de ningún cierre');
-    await cerrar(p);
-    assert.equal(p.estaEnElDom(), false, '🔴 SUELO: el pad no se ha cerrado');
-    assert.deepEqual(p.cierres, [{ info: { confirmada: false }, padEnElDom: false }]);
-  });
-}
+];
+const caso = casosEscritos(FILAS, ([nombre, cerrar]) => `SCRUM-1420 · 🔴 al cerrar con ${nombre} avisa UNA vez, sin firma, y con el pad ya fuera del DOM`, async ([nombre, cerrar]) => {
+  const m = montar();
+  const p = abrir(m);
+  assert.deepEqual(p.cierres, [], 'abrir no avisa de ningún cierre');
+  await cerrar(p);
+  assert.equal(p.estaEnElDom(), false, '🔴 SUELO: el pad no se ha cerrado');
+  assert.deepEqual(p.cierres, [{ info: { confirmada: false }, padEnElDom: false }]);
+});
+test('SCRUM-1420 · 🔴 al cerrar con «Cancelar» avisa UNA vez, sin firma, y con el pad ya fuera del DOM', caso(0));
+test('SCRUM-1420 · 🔴 al cerrar con Escape avisa UNA vez, sin firma, y con el pad ya fuera del DOM', caso(1));
+test('SCRUM-1420 · 🔴 al cerrar con el clic en el fondo avisa UNA vez, sin firma, y con el pad ya fuera del DOM', caso(2));
+test('SCRUM-1420 · 🔴 al cerrar con el `close` que se devuelve al llamador avisa UNA vez, sin firma, y con el pad ya fuera del DOM', caso(3));
+caso.todos();
 
 test('SCRUM-1420 · 🔴 al confirmar: avisa UNA vez con `confirmada: true`, y DESPUÉS de que `onConfirm` haya terminado', async () => {
   const m = montar();

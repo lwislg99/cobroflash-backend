@@ -26,6 +26,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
 import { nodo, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const RUTAS = '../dist/modules/jobs/app/routes/partes.routes.js';
@@ -119,23 +120,25 @@ async function editarDescripcion(cont, valor) {
   await vaciar();
 }
 
-for (const rol of ['admin', 'tecnico']) {
-  test(`SCRUM-1302 A · 🔴 ${rol}: editar la descripción de una línea marcada CONSERVA el aviso mientras el dato siga escrito`, async () => {
-    const fila = filaDelParte();
-    const srv = servidorDeVerdad(fila, rol);
-    const cont = await montar(srv);
-    assert.ok(aviso(cont), `🔴 SUELO: ${rol} no ve el aviso ni al abrir; lo de abajo no mediría nada`);
+const FILAS = ['admin', 'tecnico'];
+const caso = casosEscritos(FILAS, (rol) => `SCRUM-1302 A · 🔴 ${rol}: editar la descripción de una línea marcada CONSERVA el aviso mientras el dato siga escrito`, async (rol) => {
+  const fila = filaDelParte();
+  const srv = servidorDeVerdad(fila, rol);
+  const cont = await montar(srv);
+  assert.ok(aviso(cont), `🔴 SUELO: ${rol} no ve el aviso ni al abrir; lo de abajo no mediría nada`);
 
-    await editarDescripcion(cont, INVENTADA + ' y purga');
-    const patch = srv.respuestas.find((r) => r.metodo === 'patch');
-    assert.ok(patch && patch.status === 200, `🔴 NO PUDE MIRAR: el PATCH no salió o falló: ${JSON.stringify(patch)}`);
-    assert.deepEqual(fila.lineas[0].datosNoRespaldados, MARCA, '🔴 la marca se ha perdido EN LA BASE, no sólo en pantalla');
-    assert.deepEqual(patch.data.lineas[0].datosNoRespaldados, MARCA,
-      `🔴 la ruta con rol ${rol} responde la línea SIN la marca, aunque la base la conserva: ` + JSON.stringify(patch.data.lineas[0]));
-    assert.ok(aviso(cont),
-      `🔴 con rol ${rol}, tras editar la descripción el aviso del dato inventado DESAPARECE de la pantalla (y la marca sigue en la base).`);
-  });
-}
+  await editarDescripcion(cont, INVENTADA + ' y purga');
+  const patch = srv.respuestas.find((r) => r.metodo === 'patch');
+  assert.ok(patch && patch.status === 200, `🔴 NO PUDE MIRAR: el PATCH no salió o falló: ${JSON.stringify(patch)}`);
+  assert.deepEqual(fila.lineas[0].datosNoRespaldados, MARCA, '🔴 la marca se ha perdido EN LA BASE, no sólo en pantalla');
+  assert.deepEqual(patch.data.lineas[0].datosNoRespaldados, MARCA,
+    `🔴 la ruta con rol ${rol} responde la línea SIN la marca, aunque la base la conserva: ` + JSON.stringify(patch.data.lineas[0]));
+  assert.ok(aviso(cont),
+    `🔴 con rol ${rol}, tras editar la descripción el aviso del dato inventado DESAPARECE de la pantalla (y la marca sigue en la base).`);
+});
+test('SCRUM-1302 A · 🔴 admin: editar la descripción de una línea marcada CONSERVA el aviso mientras el dato siga escrito', caso(0));
+test('SCRUM-1302 A · 🔴 tecnico: editar la descripción de una línea marcada CONSERVA el aviso mientras el dato siga escrito', caso(1));
+caso.todos();
 
 test('SCRUM-1302 A · ✅ el dueño que CORRIGE el dato ve irse el aviso (sigue a lo escrito, no se queda pegado)', async () => {
   const fila = filaDelParte();
