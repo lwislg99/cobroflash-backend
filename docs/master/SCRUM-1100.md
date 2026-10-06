@@ -447,6 +447,8 @@ Visto en rojo: con `if (llegaron === 0)` cambiado por `if (true)` caen 2 casos; 
   limpio: `orquestador.md` §11bis pone el meta-guard en S5 y `dos-equipos.md` §3.3 da `scripts/` a
   S0. Lo que sostiene que lo lleve S3 es el uso (1100b, 1100c, 1349c y el registro de SCRUM-1321).
   Se lo dije antes de empujar y lo asignó por escrito en SCRUM-1335, c.18387.
+- sonda-flag.mjs borraba su temporal sólo si todo iba bien. Lo cazó el trinquete de SCRUM-864c en
+  la tanda dirigida, antes de empujar; ahora lo borra en un inally y está vuelta a correr.
 
 ## 6 · Reproducir
 
