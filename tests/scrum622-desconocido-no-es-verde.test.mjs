@@ -108,7 +108,11 @@ test('SCRUM-622 · ✅ la compatibilidad de `showToast(msg, true)` NO se ha toca
   assert.equal(front.colorDeToast(true), AMBAR,
     '🔴 `true` ya no se normaliza a `warn`: esa compatibilidad estaba escrita y tiene un llamador vivo.');
   const home = leer('public/dashboard/js/homeView.js');
-  assert.equal(home.split('showToast(sendResult.message || `${qCap} creado. Envío WhatsApp pendiente.`, true);').length - 1, 1,
+  // SCRUM-1443 (6-oct-2026, comentario 18333): el TEXTO de respaldo de esa llamada cambió por una
+  // firma. Lo que este test afirma no cambia —que sigue habiendo un llamador con `true`—; cambia la
+  // cadena con la que se le busca. Hasta ese día era
+  // «showToast(sendResult.message || `${qCap} creado. Envío WhatsApp pendiente.`, true);».
+  assert.equal(home.split('showToast(sendResult.message || avisoQqGuardadoNoHaSalido(), true);').length - 1, 1,
     'CARACTERIZACIÓN: el llamador con `true` sigue ahí. Si desaparece, la rama de compatibilidad de '
     + '`colorDeToast` se queda sin usuarios y se puede retirar — con su decisión escrita, no de paso.');
 });

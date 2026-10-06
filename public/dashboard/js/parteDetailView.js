@@ -86,6 +86,10 @@
     // ✅ APROBADO literal por el fundador el 3-sep-2026, sin cambiar una letra. Consta en
     // `docs/microcopy/2026-09-03-SCRUM-704-guardar-lineas-dictadas.md`.
     noSeGuardo: 'No se han podido guardar las líneas — vuelve a intentarlo',
+    // Un campo de la cabecera que no se guarda. Calcado de `noSeGuardo`: el mismo fallo, con las
+    // mismas palabras. «las líneas» ahí sería falso: lo que no se guardó es una casilla.
+    // APROBADO · SCRUM-1302 comentario 18288
+    noSeGuardoElCambio: 'No se ha podido guardar el cambio — vuelve a intentarlo',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -112,7 +116,9 @@
     noSalioEnLoDictado: 'No salía en lo dictado: ',
     // APROBADO · SCRUM-1266 comentario 17498. Limpia la marca de esa línea y NO toca la descripción.
     esCorrecto: 'Es correcto',
-    confirmarPropuesta: 'Añadir estas líneas',
+    // APROBADO · SCRUM-1215 comentario 17375. Sustituye a «Añadir estas líneas», que no se aprobó
+    // (c.17367): una línea sin cantidad no entra, y «estas» prometía que entraban las que se ven.
+    confirmarPropuesta: 'Añadir al parte',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
@@ -244,7 +250,7 @@
    * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
    *
    * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
-   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * («×», «Añadir línea», «Añadir al parte», «Es correcto») salen a la vez: si el segundo arma su
    * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
    * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
    */
@@ -1260,6 +1266,45 @@
     }
   }
 
+  function quitarAvisoDeCampoNoGuardado(contenedor, nombre) {
+    var previo = contenedor.querySelector &&
+      contenedor.querySelector('[data-parte-campo-no-guardado="' + nombre + '"]');
+    if (previo && previo.remove) previo.remove();
+  }
+
+  /**
+   * SCRUM-1302 (B) · el aviso de UN campo de la cabecera que no se guardó, sobre la ficha ya
+   * repintada desde el servidor. Va en el paso de ese campo —las horas, o su línea plegada, que
+   * se abre— y no arriba: el dato que ha vuelto atrás está ahí. Si la relectura también falló ya
+   * no hay casilla, y la ficha dice entera que no se ha podido cargar: no se añade nada.
+   *
+   * 🔴 SCRUM-1475 · Y SE TRAE A LA VISTA. Colgarlo no basta: con el campo al borde inferior de la
+   * ventana el aviso caía casi fuera (medido en yaqu.app: asomaban 13 px en móvil y 5 en
+   * escritorio). `nearest` y no `start`: si ya se ve entero la página no se mueve, y si no, se mueve
+   * lo justo. Va DESPUÉS de colgarlo y de abrir su línea, que antes no hay nada que traer. Que no
+   * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
+   * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
+   */
+  function avisarCampoNoGuardado(contenedor, nombre) {
+    if (!contenedor || !contenedor.querySelector) return;
+    var casilla = contenedor.querySelector(nombre === 'tipo'
+      ? 'input[name="parte-tipo"]' : '[data-parte-campo="' + nombre + '"]');
+    if (!casilla || !casilla.closest) return;
+    var linea = casilla.closest('[data-parte-plegable]');
+    if (linea) linea.setAttribute('open', '');
+    var paso = linea ? linea.querySelector('.parte-plegable-cuerpo') : casilla.closest('.parte-horas');
+    if (!paso) return;
+    quitarAvisoDeCampoNoGuardado(contenedor, nombre);
+    var aviso = document.createElement('div');
+    aviso.className = 'alert error';
+    aviso.setAttribute('role', 'alert');
+    aviso.setAttribute('data-parte-campo-no-guardado', nombre);
+    aviso.style.marginTop = '8px';
+    aviso.textContent = TEXTOS.noSeGuardoElCambio;
+    paso.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
+  }
+
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
   var dejarDeEscucharLaColaDelParte = null;
 
@@ -1307,14 +1352,21 @@
     //
     // ⚠️ Si el `PATCH` falla NO se deja el valor nuevo en pantalla como si se hubiera guardado: se
     // repinta desde el servidor, que es lo que quedó. Es el mismo criterio que tras firmar.
+    //
+    // 🔴 SCRUM-1302 (B) · Y SE DICE. Repintar a secas devolvía el valor viejo y cerraba la línea
+    // plegada sin una palabra: el profesional veía desaparecer lo que acababa de escribir y no
+    // sabía si lo había tecleado mal. El aviso va junto a la casilla, con su línea abierta. Si ese
+    // mismo campo se guarda después, el aviso se quita: seguir diciéndolo sería ya mentira.
     var guardarCampo = async function (nombre, valor) {
       try {
         await pedir('/admin/partes/' + parteId, {
           method: 'PATCH',
           body: JSON.stringify(cuerpoDeCampo(nombre, valor)),
         });
+        quitarAvisoDeCampoNoGuardado(contenedor, nombre);
       } catch (e) {
         await renderParteDetailView(contenedor, parteId, o);
+        avisarCampoNoGuardado(contenedor, nombre);
       }
     };
     var casillas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-campo]') : [];
@@ -1501,7 +1553,7 @@
     // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
     // apuntar ni una línea a mano, y sin el dictado no le quedaba otra.
     //
-    // El patrón es el de «Añadir estas líneas» del dictado (`confirmarLoDictado`), no uno nuevo:
+    // El patrón es el de «Añadir al parte» del dictado (`confirmarLoDictado`), no uno nuevo:
     //   · pulsar AÑADE UNA FILA en su bloque y no escribe nada — vacía no hay nada que guardar;
     //   · se guarda cuando tiene cantidad (> 0) Y descripción, igual que `lineasConfirmadas`: una
     //     línea sin cantidad no sale, y así no se viaja para volver con un 400;
@@ -1667,7 +1719,7 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
-          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
           // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
           // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
           // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el

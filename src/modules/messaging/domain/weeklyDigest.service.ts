@@ -13,6 +13,7 @@ import { getPendientesFacturar } from '../../jobs/domain/pendientesFacturar.serv
 import { getEmissionMode } from '../../invoicing/domain/emission.service';
 // SCRUM-1116: la retención de garantía la calcula J2 (SCRUM-1108). Se LEE; el cálculo no se rehace.
 import { garantiasRetenidasPorCliente } from '../../billing/domain/garantiasRetenidas';
+import { zonaDelMerchant } from '../../../core/zonaDelMerchant'; // SCRUM-1472
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -69,6 +70,8 @@ export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
     select: {
       // SCRUM-974: `country` y `flags` son lo que lee `getEmissionMode` (solo lectura).
       id: true, name: true, email: true, defaultCurrency: true, country: true, flags: true,
+      // SCRUM-1472: la zona del negocio, para pintar la semana del asunto.
+      timezone: true,
     },
   });
 
@@ -161,7 +164,7 @@ function diaEs(dia: string): string {
 }
 
 async function sendDigestForMerchant(
-  merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown },
+  merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown; timezone: string | null },
   from: Date,
   to: Date,
 ): Promise<ResultadoCorreo> {
@@ -205,7 +208,11 @@ async function sendDigestForMerchant(
     return '';
   });
 
-  const weekStr = `${from.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} — ${new Date(to.getTime() - 1).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  // SCRUM-1472 · los dos extremos, en la zona del NEGOCIO (la forma de SCRUM-633). Para las dos
+  // zonas españolas el asunto NO cambia —`from` es la medianoche del proceso y `to` las 09:00 del
+  // cron—: lo que cambia es que deja de depender de con qué zona arranque el contenedor.
+  const zonaDelNegocio = zonaDelMerchant(merchant);
+  const weekStr = `${from.toLocaleDateString('es-ES', { timeZone: zonaDelNegocio, day: '2-digit', month: 'short' })} — ${new Date(to.getTime() - 1).toLocaleDateString('es-ES', { timeZone: zonaDelNegocio, day: '2-digit', month: 'short', year: 'numeric' })}`;
 
   const subject = `📊 Tu semana en YaQu (${weekStr})`;
 

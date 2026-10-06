@@ -14,6 +14,7 @@ import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
 
 const router = Router();
 
@@ -244,11 +245,15 @@ router.get('/:token', async (req, res) => {
        </details>`
       : '';
 
+  // SCRUM-1471 · las fechas de este recibo se pintan en la zona del NEGOCIO, con la misma forma
+  // que la página pública (SCRUM-633). Sin `timeZone` salían del reloj del proceso (UTC en
+  // Railway) y un pago de las 00:30 se imprimía con la víspera.
+  const zonaDelNegocio = zonaDelMerchant((ch as any).merchant);
   const eventsList = (ch.events || [])
     .sort((a, b) => +new Date(a.ts) - +new Date(b.ts))
     .map(
       (e) =>
-        `<li>${esc(e.type)} · ${esc(new Date(e.ts).toLocaleString())}</li>`,
+        `<li>${esc(e.type)} · ${esc(new Date(e.ts).toLocaleString(undefined, { timeZone: zonaDelNegocio }))}</li>`,
     )
     .join('');
 
@@ -290,7 +295,7 @@ router.get('/:token', async (req, res) => {
     ch.status === 'paid'
       ? [
           fechaPago
-            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
+            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { timeZone: zonaDelNegocio, day: '2-digit', month: 'long', year: 'numeric' })}`
             : 'Pagado',
           methodLabel(ch.method),
         ]

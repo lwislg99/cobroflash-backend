@@ -87,10 +87,19 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
   'scrum979-ultima-visita.test.mjs': 1,
   // SCRUM-809: el acceso tras cancelar. Necesita banco porque lo que mide es lo que le CONTESTA el producto al
-  // profesional que pagó y canceló (una petición real a las rutas con paywall). El census cuenta 5 llamadas a
-  // `test(` con salto —dos de ellas generadas por las dos puertas de cancelación—. Su mitad sin banco
+  // profesional que pagó y canceló (una petición real a las rutas con paywall). Su mitad sin banco
   // vive en `scrum809b-paywall-sin-banco.test.mjs`, que sí corre en cada `npm test` y en el meta-guard.
-  'scrum809-paywall-tras-cancelar.test.mjs': 5,
+  //
+  // 🔴 DE 5 A 7 EL 6-oct-2026 (SCRUM-1469), Y NO ES UN GATEADO NUEVO. Este inventario cuenta LLAMADAS
+  // `test(` ESCRITAS, no casos. El 21-sep-2026 se declaró con 5 (`2fad7621`): dos dentro de un bucle
+  // sobre las dos puertas de cancelación y tres fuera. SCRUM-1415 pide el nombre de cada caso escrito
+  // literal, y desenrollar ese bucle escribe cuatro llamadas donde había dos.
+  // EL INVARIANTE, que es la cifra que protege algo: el fichero registra 7 CASOS antes y 7 después, con
+  // los mismos nombres y en el mismo orden (medido el 6-oct con y sin el bucle; `docs/master/SCRUM-1469.md`).
+  // Ningún test ha dejado de ejecutarse: ha cambiado cuántas veces está escrito `test(`.
+  // La decisión es del ORQUESTADOR (mensaje del 6-oct-2026, copiado en SCRUM-1469), no del fundador: la
+  // cifra vive sólo en esta lista, no en `ci.yml`, y lo que se corrige es la unidad de medida, no el listón.
+  'scrum809-paywall-tras-cancelar.test.mjs': 7,
   // SCRUM-992: los partes recortados por rol. Necesita banco porque lo que vigila es lo que el técnico
   // puede LEER, EDITAR y FIRMAR sobre partes de otros —las nueve rutas, la app entera, tres sesiones—.
   // La mitad estructural (AST) no lo necesita y corre en cada `npm test`.
@@ -158,6 +167,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
+  // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
+  // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
+  // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 3,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

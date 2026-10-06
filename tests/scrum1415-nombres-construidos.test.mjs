@@ -37,11 +37,12 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
  *
  * SÓLO BAJA. Los bucles sobre tablas del propio fichero se desenrollaron con `casosEscritos`
  * (SCRUM-1416): un test nuevo se escribe con nombre literal, no se declara aquí.
- * La única entrada que queda no es «no convertible»: está bloqueada por una decisión pendiente,
- * y su motivo dice cuál y quién la retira.
+ * VACÍA desde el 6-oct-2026 (SCRUM-1469). La última entrada era `scrum809-paywall-tras-cancelar`,
+ * con dos llamadas, parada desde el 2-oct porque convertirla subía el inventario de SCRUM-419 de
+ * 42 a 44. Su motivo decía además que esa cifra «también vive en `ci.yml`», y no era verdad: vive
+ * sólo en `GATEADOS_DECLARADOS` de `scrum419`. La decisión y su porqué están allí, junto al número.
  */
 const DECLARADAS = [
-  ['scrum809-paywall-tras-cancelar.test.mjs', 2, 'no es que no se pueda convertir: convertirlo sube el inventario declarado de SCRUM-419 de 42 a 44, y esa cifra también vive en `ci.yml`. Se retira cuando el fundador decida sobre el inventario.'],
 ];
 
 /** El censo de UN árbol: `fuentes` es `[{ fichero, codigo }]`. Puro, para poder fabricarle un rojo. */

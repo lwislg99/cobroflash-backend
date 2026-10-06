@@ -1,0 +1,25 @@
+SCRUM-1399 · el rojo, ANTES de tocar el guion
+Corrido sobre origin/main = 35e1060e365a4cc11f16e4ccee393581679e73d9 con scripts/sobre-soap-prueba-aeat.mjs sin tocar (blob b781339c4a503995c8e6aabfd1572325adfd5be4).
+Orden: node --test --test-reporter=tap tests/scrum1399-el-anterior-de-una-anulacion.test.mjs · codigo de salida de node: 1
+Lo de abajo son las lineas ok / not ok y el recuento del TAP, sin las trazas (llevan rutas de la maquina).
+
+ok 1 - SCRUM-1399 · ⓪ la copia aislada tiene de dónde cargar: el script declara sus módulos de dist y existen
+not ok 2 - SCRUM-1399 · ① tras una anulación, el sobre siguiente nombra como anterior la SERIE de la factura anulada
+not ok 3 - SCRUM-1399 · ② tras una anulación, el sobre siguiente nombra como anterior la FECHA de la factura anulada
+ok 4 - SCRUM-1399 · ③ la huella del anterior sigue siendo la de la ANULACIÓN, no la del alta anulada
+not ok 5 - SCRUM-1399 · ④ sin banderas, que es como se usa: el anterior es la factura anulada y no la serie que se generó la pasada
+not ok 6 - SCRUM-1399 · ⑤ anulando una factura señalada con --serie y --fecha, el anterior es ESA y no la última alta
+ok 7 - SCRUM-1399 · ⑥ lo que NO cambia: tras un alta o una R1, el anterior es la serie propia de ese registro
+not ok 8 - SCRUM-1399 · ⑦ un puntero de anulación escrito por el guion VIEJO no se usa: sale 1 y no escribe nada
+ok 9 - SCRUM-1399 · ⑧ la separación funciona: el script escribió en su copia y el tmp/ del árbol no se ha movido
+# tests 9
+# pass 4
+# fail 5
+# skipped 0
+
+Lo que dijo cada caso que cae:
+  ① el registro anterior lleva la serie «NO-ES-DE-NADIE», que no es la de la factura anulada
+  ② el registro anterior lleva la fecha «15-09-2026», que no es la de la factura anulada
+  ④ deepEqual: la serie del anterior es OTRA serie de prueba, la que se genero en la pasada de la anulacion (la fecha coincide: todo es del mismo dia)
+  ⑤ deepEqual: ni la serie ni la fecha del anterior son las de la factura anulada (OBJETIVO-0007, 20-08-2026)
+  ⑦ salio 0 y genero el sobre: el guion se encadena a un puntero de anulacion del guion viejo

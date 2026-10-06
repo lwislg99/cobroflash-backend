@@ -110,7 +110,18 @@
 
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+/* SCRUM-1464 (b) · LO QUE SE TRAE A LA VISTA NO ACABA DEBAJO DEL BOTÓN DE AYUDA. `#tut-help-btn` es
+   fijo: 48 px, a 20 del borde. Sin `scroll-padding-bottom`, un `scrollIntoView({ block: 'nearest' })`
+   o el foco del teclado dejan lo traído pegado al borde inferior de la ventana, o sea DEBAJO del
+   botón (medido a 390 y a 360 sobre el aviso «No se ha podido guardar el cambio» del parte: tapaba
+   letras). Con él el navegador da por ocupados los 80 px de abajo —los que reserva `.view-container`—
+   y lo deja por encima. Es de la página, no de cada aviso: vale para todo lo que se traiga a la vista.
+   POR ARRIBA ES EL MISMO DEFECTO EN EL BORDE OPUESTO: `.topbar` es fija y mide `--topbar-h`. Sin
+   `scroll-padding-top`, lo traído con `start` (o con `nearest` desde abajo) acaba en y = 0, DEBAJO de
+   la cabecera (medido en Configuración a 390, 360 y 1280: tapaba «Datos de la empresa»). Su alto +
+   12 de aire, el mismo aire que abajo. Los dos bordes van en la misma regla: no se separan.
+   ⚠️ No desplaza nada por sí solo: sólo cuenta cuando ALGO lleva la página hasta un elemento. */
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--topbar-h) + 12px); scroll-padding-bottom: 80px; }
 body {
   font-family: var(--font);
   font-size: 15px;
@@ -382,7 +393,13 @@ img { max-width: 100%; display: block; }
   min-width: 0;
 }
 .view-container {
-  padding: 24px;
+  /* SCRUM-1464 · EL HUECO DE ABAJO ES DEL BOTÓN DE AYUDA, TAMBIÉN EN ESCRITORIO. `#tut-help-btn`
+     es fijo: 48 px, a 20 del borde. Con 24 px de relleno, lo último de una pantalla bajada del todo
+     quedaba DEBAJO del botón y no había más recorrido para apartarlo (medido a 1280×800: en Inicio
+     tapaba dos botones «Ir →»; en la ficha del presupuesto, el rótulo «Total»). En móvil el hueco
+     ya existía (80 y 88 px, más abajo) y por eso allí bastaba con seguir bajando.
+     80 = 20 + 48 + 12 de aire. Una pantalla que cabe entera no gana barra de desplazamiento. */
+  padding: 24px 24px 80px;
   flex: 1;
   min-width: 0;
   max-width: 100%;
@@ -1118,6 +1135,9 @@ html, body { overflow-x: clip; }
   display: flex; align-items: center; justify-content: center;
   color: var(--neutral-500);
   transition: background .12s;
+  /* SCRUM-1215: un título que parte en dos líneas ENCOGÍA el botón de cerrar (medido a 320 px:
+     30 → 26 px, y 22 con un número largo). El que cede es el título, no la ✕. */
+  flex-shrink: 0; margin-left: 8px;
 }
 .modal-close:hover { background: var(--neutral-200); color: var(--neutral-800); }
 .modal-body {
@@ -3067,7 +3087,14 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   .table--cards-mobile tbody tr:hover { background: var(--neutral-50); }
   .table--cards-mobile td { display: block; padding: 0; border: 0; }
   .table--cards-mobile td.cell-id { grid-area: id; font-size: 12px; color: var(--muted); }
-  .table--cards-mobile td.cell-client { grid-area: client; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  /* SCRUM-1462 · EL NOMBRE DEL CLIENTE ENVUELVE EN LA TARJETA, EN TODAS LAS LISTAS. Esta regla ya
+     pedía `overflow-wrap: anywhere`, pero la tabla hereda `white-space: nowrap` (≤768 px) y con
+     `nowrap` no hay dónde partir: el nombre se salía de la tarjeta, cortado a media palabra.
+     Se había arreglado DOS veces por separado —`.table--trabajos` (SCRUM-727b) y
+     `.table--albaranes` (SCRUM-1450)— y seguía roto en las demás (medido en Presupuestos, 390 y
+     320 px). Va aquí, en la regla compartida, para que la siguiente lista no nazca con él.
+     Número, fecha, importe y estado NO se tocan: siguen en una línea. */
+  .table--cards-mobile td.cell-client { grid-area: client; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; white-space: normal; }
   .table--cards-mobile td.cell-date { grid-area: date; font-size: 12px; align-self: center; }
   .table--cards-mobile td.cell-amount { grid-area: amount; align-self: start; font-size: 16.5px; text-align: right; }
   .table--cards-mobile td.cell-status { grid-area: status; justify-self: end; }
@@ -4208,9 +4235,17 @@ textarea.parte-linea-desc {
    cambiar un píxel — y el trinquete de estilos en línea SÓLO BAJA. */
 .alb-enlace { color: var(--green-700); }
 .alb-numero { font-weight: 600; color: var(--green-700); }
-.alb-chip-cobro { margin-left: 6px; }
+.alb-chip-cobro { margin-left: 6px; white-space: nowrap; } /* SCRUM-1450: «Facturado en parte» no se parte en dos */
 
 @media (max-width: 640px) {
+  /* SCRUM-1450 · la marca de facturación va DEBAJO del estado, no a su lado. Con «Facturado en
+     parte» las dos en línea piden 209 px y a 320 px la celda pisaba el número del albarán (medido).
+     Apiladas piden 127. En escritorio ya salían una bajo la otra.
+     Y el estado ya no baja hasta la línea del cliente (ver la rejilla de abajo): apilada ahí, la
+     marca tapaba un nombre largo. El cliente pasa a ancho completo y envuelve. */
+  .table--albaranes td.cell-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .table--albaranes td.cell-status .alb-chip-cobro { margin-left: 0; }
+  .table--albaranes td.cell-client { white-space: normal; }
   /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
      `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
      movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
@@ -4221,12 +4256,13 @@ textarea.parte-linea-desc {
   .table--albaranes tbody tr {
     grid-template-areas:
       "id       status"
-      "client   status"
+      "client   client"
       "date     date"
       "trabajo  trabajo"
       "actions  actions";
   }
-  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; }
+  /* SCRUM-1462 · y el título del Trabajo también envuelve: es texto libre a ancho completo. */
+  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
   /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
      Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
   .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }

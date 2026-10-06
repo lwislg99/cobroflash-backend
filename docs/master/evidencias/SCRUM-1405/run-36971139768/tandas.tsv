@@ -1,0 +1,53 @@
+run	celda	brazo	salida	segundos	con_resumen	tap_tests	tap_pass	tap_fail	tap_skipped	senal_medible	ausentes	ficheros_con_ausentes	declarados	rojos	sembrados_en_tap	cola_ejecutados	cola_informados	cola_ausentes_ejecutados	cola_informados_spec	sonda_filas	sonda_con_pendientes	sonda_bloqueante	donde
+36971139768	con-01	con	1	415	sí	10293	10187	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	con-02	con	1	425	sí	10257	10151	8	98	si	5	1	9762	8	5	80	80	0	80				scrum286-bloques-orden 5/24 cola
+36971139768	con-03	con	1	317	sí	10227	10121	8	98	si	52	3	9762	8	4	80	80	0	80				scrum454-destructivo-sin-comprobacion 6/14 cola | vigia-atascados 23/64 cola | zz1405-copia-de-vigia-atascados 23/64 cola
+36971139768	con-04	con	1	489	sí	10296	10190	8	98	si	6	1	9762	8	5	80	80	0	80				scrum1344-arnes-de-prueba-con-rol 6/18 cola
+36971139768	con-05	con	1	416	sí	10223	10117	8	98	si	40	2	9762	8	2	80	77	3	77				vigia-atascados 20/64 cola | zz1405-copia-de-vigia-atascados 20/64 cola
+36971139768	con-06	con	1	456	sí	10260	10154	8	98	si	11	2	9762	8	5	80	80	0	80				scrum1262-la-baja-corta-todas-las-vias 5/10 cola | scrum1344-arnes-de-prueba-con-rol 6/18 cola
+36971139768	con-07	con	1	428	sí	10293	10187	8	98	si	0	0	9762	8	4	80	80	0	80				
+36971139768	con-08	con	1	412	sí	10280	10174	8	98	si	3	1	9762	8	4	80	69	11	69				scrum1323-resumen-vs-detalle-sif1 3/14 cola
+36971139768	con-09	con	1	361	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	con-10	con	1	463	sí	10287	10181	8	98	si	5	1	9762	8	5	80	80	0	80				scrum853-avisador-solo-obligatorio 5/34 cola
+36971139768	con-11	con	1	356	sí	10282	10176	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	con-12	con	1	436	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	con-13	con	1	472	sí	10301	10195	8	98	si	1	1	9762	8	5	80	80	0	80				scrum1262-la-baja-corta-todas-las-vias 1/10 cola
+36971139768	con-14	con	1	355	sí	10278	10172	8	98	si	0	0	9762	8	4	80	66	14	66				
+36971139768	con-15	con	1	481	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	con-16	con	1	353	sí	10286	10180	8	98	si	8	1	9762	8	4	80	80	0	80				scrum237-negacion-respaldada 8/8 entero
+36971139768	con-bloqueante-01	con-bloqueante	1	466	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-02	con-bloqueante	1	483	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-03	con-bloqueante	1	467	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-04	con-bloqueante	1	281	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-05	con-bloqueante	1	360	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-06	con-bloqueante	1	297	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-07	con-bloqueante	1	357	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-08	con-bloqueante	1	469	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-09	con-bloqueante	1	472	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-10	con-bloqueante	1	356	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-11	con-bloqueante	1	358	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-bloqueante-12	con-bloqueante	1	376	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	puesto|sin setBlocking	
+36971139768	con-sonda-01	con-sonda	1	461	sí	10295	10189	8	98	si	6	1	9762	8	5	80	80	0	80	1575	1	no pedido	scrum454-destructivo-sin-comprobacion 6/14 cola
+36971139768	con-sonda-02	con-sonda	1	470	sí	10299	10193	8	98	si	3	1	9762	8	5	80	80	0	80	1575	1	no pedido	scrum1262-la-baja-corta-todas-las-vias 3/10 cola
+36971139768	con-sonda-03	con-sonda	1	476	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	no pedido	
+36971139768	con-sonda-04	con-sonda	1	462	sí	10300	10194	8	98	si	0	0	9762	8	4	80	80	0	80	1575	1	no pedido	
+36971139768	con-sonda-05	con-sonda	1	467	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	no pedido	
+36971139768	con-sonda-06	con-sonda	1	289	sí	10220	10114	8	98	si	12	2	9762	8	1	80	71	9	71	1575	7	no pedido	scrum454-destructivo-sin-comprobacion 6/14 cola | scrum931-un-solo-importe-de-plantilla 6/13 cola
+36971139768	sin-01	sin	1	486	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-02	sin	1	480	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-03	sin	1	507	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-04	sin	1	484	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-05	sin	1	487	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-06	sin	1	469	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-07	sin	1	491	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-08	sin	1	302	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-09	sin	1	516	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-10	sin	1	483	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-11	sin	1	486	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-12	sin	1	493	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-13	sin	1	491	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-14	sin	1	490	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-15	sin	1	314	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-16	sin	1	459	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80				
+36971139768	sin-sonda-01	sin-sonda	1	487	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	no pedido	
+36971139768	sin-sonda-02	sin-sonda	1	492	sí	10302	10196	8	98	si	0	0	9762	8	5	80	80	0	80	1575	0	no pedido	

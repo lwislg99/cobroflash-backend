@@ -23,6 +23,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 // SCRUM-987 · «Válido hasta el …»: la frase y su fecha, en el sitio que comparte con el PDF.
 import { textoDeValidez } from '../../../quotes/domain/validez';
+import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
 
 type DecisionApiError = { message?: string; error?: string };
@@ -54,6 +55,13 @@ function brandOverrideCss(brandColor?: string | null): string {
 function escapandoLoInterpolado(trozos: TemplateStringsArray, ...valores: Array<string | number | null | undefined>): string {
   return trozos.reduce((html, trozo, i) => html + trozo + (i < valores.length ? esc(valores[i]) : ''), '');
 }
+
+/**
+ * SCRUM-1431 · lo que la página del rechazo le dice al cliente cuando el fallo es nuestro: la API
+ * no contesta o contesta un 5xx. UN literal para los dos sitios; dos frases parecidas para el
+ * mismo hecho en la misma página acaban diciendo cosas distintas.
+ */
+const CONSEJO_DE_REINTENTAR = 'Inténtalo más tarde.';
 
 function renderPage(title: string, body: string, brandColor?: string | null): string {
   return `<!doctype html>
@@ -489,7 +497,7 @@ function renderQuoteDetail(
       ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
     </div>
     <h1>Hola, ${customerName} 👋</h1>
-    <div class="quote-meta">Presupuesto #${esc(String(quote.quoteNumber ?? quote.id))}</div>
+    <div class="quote-meta">Presupuesto #${esc(numeroQueImprimeElPapel(quote))}</div>
     ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}${cabeceraHtml /* SCRUM-1279: pegado, para que sin texto la página sea byte a byte la de antes (888d) */}
     ${linesHtml}
     ${vatHtml}
@@ -621,11 +629,11 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
           : '';
         const waBtnExp = proPhoneExp
-          ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id} caducó, ¿me pasas uno actualizado?`)}"
+          ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)} caducó, ¿me pasas uno actualizado?`)}"
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno actualizado por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} caducada`, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteExpiredTitle, `<div class="status-ok" style="text-align:center">
             <strong>Este ${locale.quoteVerb} caducó${fechaCad ? ` el ${fechaCad}` : ''}.</strong><br/>
             Pide uno actualizado 👇<br/>${waBtnExp}
           </div>`, brandColor)
@@ -658,7 +666,9 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           })
           : null;
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok" style="text-align:center">
+          // SCRUM-1476 · el título viene ENTERO del locale: `${locale.quote} ya aceptada` daba
+          // «Presupuesto ya aceptada». Igual los de caducado (arriba) y rechazado (abajo).
+          renderPage(locale.quoteAcceptedTitle, `<div class="status-ok" style="text-align:center">
             <strong>Ya aceptaste este ${locale.quoteVerb}${fechaAcept ? ` el ${fechaAcept}` : ''}.</strong><br/>
             El profesional te informará de los siguientes pasos.
           </div>`, brandColor)
@@ -678,11 +688,11 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           : '';
         const merchName = esc(quote.merchant?.legalName || quote.merchant?.name || 'el profesional');
         const waBtn = proPhone
-          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id}: he cambiado de opinión, ¿me lo reenvías?`)}"
+          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)}: he cambiado de opinión, ¿me lo reenvías?`)}"
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} rechazada`, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteRejectedTitle, `<div class="status-ok" style="text-align:center">
             <strong>Rechazaste este ${locale.quoteVerb}${fechaRechazo ? ` el ${fechaRechazo}` : ''}.</strong><br/>
             ¿Has cambiado de opinión? Pídele uno nuevo a ${merchName} 👇<br/>${waBtn}
           </div>`, brandColor)
@@ -707,7 +717,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   const proPhone = (loadedQuote?.merchant as any)?.whatsappPhone
     ? String((loadedQuote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
     : '';
-  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${loadedQuote.quoteNumber ?? loadedQuote.id}`);
+  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${numeroQueImprimeElPapel(loadedQuote)}`);
   const dudaHtml = proPhone
     ? `<a class="btn-duda" href="https://wa.me/${proPhone}?text=${dudaTextEnc}">💬 Tengo una duda</a>`
     : '';
@@ -907,12 +917,12 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
   const q = token
     ? await prisma.quote.findUnique({
         where: { decisionToken: token },
-        select: { id: true, quoteNumber: true, merchant: { select: { country: true } } },
+        select: { id: true, quoteNumber: true, revision: true, merchant: { select: { country: true } } },
       }).catch(() => null)
     : null;
   const locale = getLocale(q?.merchant?.country);
   const delDeLa = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'de la' : 'del';
-  const displayNum = q ? (q.quoteNumber ?? q.id) : '';
+  const displayNum = q ? numeroQueImprimeElPapel(q) : '';
 
   try {
     const apiResponse = await fetch(
@@ -929,15 +939,21 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
       return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
     }
     if (!apiResponse.ok) {
+      // SCRUM-1431 (6-oct-2026) · sin texto humano, bajo el titular NO se pinta el código
+      // (`quote_not_found`, `internal_error`): lo lee el cliente final. Un fallo NUESTRO (5xx)
+      // lleva el consejo que esta página ya da cuando la API no contesta (el `catch` de abajo);
+      // un 404 se queda con el titular solo, porque reintentar sobre un presupuesto que no existe
+      // no funciona nunca.
+      const consejo = !json?.message && apiResponse.status >= 500 ? CONSEJO_DE_REINTENTAR : '';
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
         // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo
         // `DecisionApiError` ya declaraba `message?` y nadie lo leía.
         // SCRUM-1431 · ESCAPADO. Hoy todo lo que llega aquí son literales nuestros, pero el mensaje
         // del 409 lleva el nombre del negocio y sólo la redirección de arriba impide que pase.
-        // El escapado lo pone la ETIQUETA de la plantilla y no un `esc(…)` dentro del `${}`: la
-        // expresión de SCRUM-264 (mensaje → código → vacío) queda tal cual, que es lo que su guard
-        // extrae y ejecuta.
-        renderPage('Error', escapandoLoInterpolado`<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || json?.error || ''}</div>`)
+        // El escapado lo pone la ETIQUETA de la plantilla y no un `esc(…)` dentro del `${}`: el
+        // primer `${}` (mensaje → vacío) es lo que el guard de SCRUM-264 extrae y ejecuta con
+        // `json` como única variable, y por eso el consejo va en un `${}` aparte.
+        renderPage('Error', escapandoLoInterpolado`<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || ''}${consejo}</div>`)
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
@@ -945,7 +961,7 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     );
   } catch {
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(
-      renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> Inténtalo más tarde.</div>`)
+      renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> ${CONSEJO_DE_REINTENTAR}</div>`)
     );
   }
 });
