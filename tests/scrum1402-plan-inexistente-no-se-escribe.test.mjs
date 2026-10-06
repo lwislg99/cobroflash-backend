@@ -284,6 +284,7 @@ test('SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que NO existe 
 test('SCRUM-1402 · ✅ el rechazo NO es un fallo de entrega: el evento queda PROCESADO en el registro, sin error anotado (Stripe no reintenta)', async () => {
   const r = await emitir('customer.subscription.updated', suscripcion('empresa', 'active'));
   assert.equal(r.res.status, 200);
+  assert.deepEqual(r.escrituras, [], 'rechazado: no se escribe en el merchant');
   assert.deepEqual(r.registro.map(([op]) => op), ['create', 'update'], 'se abre el registro y se cierra: dos apuntes');
   const cierre = r.registro[1][1].data;
   assert.ok(cierre.processedAt, `🔴 el evento rechazado NO ha quedado como procesado: ${JSON.stringify(cierre)}`);

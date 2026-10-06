@@ -15,6 +15,8 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import {
   llevaRegistro, abrirRegistroDeEvento, marcarEventoProcesado, anotarFalloDeEvento,
 } from '../../domain/gatewayEvents.service';
+// SCRUM-1402: qué planes existen lo dice `entitlements.ts` (regla 34). Aquí NO se copia la lista.
+import { PLANES_CONOCIDOS } from '../../../../core/entitlements';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -30,6 +32,25 @@ export function isDuplicateStripeEvent(id: string): boolean { // A12.2: exportad
   seenStripeEvents.add(id);
   seenOrder.push(id);
   if (seenOrder.length > 500) seenStripeEvents.delete(seenOrder.shift() as string);
+  return false;
+}
+
+// SCRUM-1402 — `metadata.plan` llegaba a `Merchant.plan` TAL CUAL, con que no viniera vacío. Decisión
+// del fundador (SCRUM-1402, comentario 18019, opción A): un plan que no existe SE RECHAZA — no se
+// escribe nada en la fila y el merchant se queda con el que tenía — y el rechazo es RUIDOSO, porque
+// uno callado deja a alguien pagando sin que nadie se entere. El aviso tiene la forma del de
+// `getEntitlements` (SCRUM-1342): el valor recibido entre comillas, de quién es y los planes que
+// existen; y además el evento, que es por donde se busca el pago en Stripe.
+// ⛔ Rechazar NO devuelve el dinero ni lo compensa: eso lo resuelve el fundador a mano, caso por caso.
+// El checkout propio solo manda `pro` o `founding`; lo demás llega escrito a mano en Stripe.
+function planQueExiste(planId: string, merchantId: number, event: { id: string; type: string }): boolean {
+  if (PLANES_CONOCIDOS.includes(planId)) return true;
+  console.warn(
+    `[stripe] ⚠️ plan desconocido ${JSON.stringify(planId.slice(0, 60))} (merchant ${merchantId}) en `
+    + `${event.type} ${event.id}: NO se cambia el plan, el merchant se queda con el que tenía. `
+    + `Hay que mirarlo a mano en Stripe: puede haber un pago sin plan activado. `
+    + `Los planes que existen: ${PLANES_CONOCIDOS.join(', ')}.`,
+  );
   return false;
 }
 
@@ -94,7 +115,7 @@ router.post('/', async (req, res) => {
         // Suscripción nueva
         const merchantId = Number(s.metadata?.merchant_id);
         const planId = String(s.metadata?.plan || '');
-        if (Number.isInteger(merchantId) && planId && s.customer) {
+        if (Number.isInteger(merchantId) && planId && s.customer && planQueExiste(planId, merchantId, event)) {
           // SCRUM-475: el `select` es para saber a QUIÉN no se le avisó si el correo no sale. Un
           // rastro que no identifica el caso no es constancia: es ruido.
           const activado = await prisma.merchant.update({
@@ -142,8 +163,10 @@ router.post('/', async (req, res) => {
         //   SE CONSERVA: gracia con banner + portal, no se degrada a trial) ·
         //   canceled/incomplete_expired → canceled → plan trial.
         const st = String(sub.status);
+        // SCRUM-1402: las dos ramas que escriben `planId` preguntan antes si existe. La cancelación
+        // no pregunta: escribe el literal `trial`, no lo que llega.
         if (st === 'active' || st === 'trialing') {
-          await prisma.merchant.update({
+          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({
             where: { id: merchantId },
             data: {
               plan: planId,
@@ -153,7 +176,7 @@ router.post('/', async (req, res) => {
             },
           });
         } else if (st === 'past_due' || st === 'unpaid') {
-          await prisma.merchant.update({
+          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({
             where: { id: merchantId },
             data: { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },
           });
