@@ -633,7 +633,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno actualizado por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} caducada`, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteExpiredTitle, `<div class="status-ok" style="text-align:center">
             <strong>Este ${locale.quoteVerb} caducó${fechaCad ? ` el ${fechaCad}` : ''}.</strong><br/>
             Pide uno actualizado 👇<br/>${waBtnExp}
           </div>`, brandColor)
@@ -666,7 +666,9 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           })
           : null;
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} ya aceptada`, `<div class="status-ok" style="text-align:center">
+          // SCRUM-1476 · el título viene ENTERO del locale: `${locale.quote} ya aceptada` daba
+          // «Presupuesto ya aceptada». Igual los de caducado (arriba) y rechazado (abajo).
+          renderPage(locale.quoteAcceptedTitle, `<div class="status-ok" style="text-align:center">
             <strong>Ya aceptaste este ${locale.quoteVerb}${fechaAcept ? ` el ${fechaAcept}` : ''}.</strong><br/>
             El profesional te informará de los siguientes pasos.
           </div>`, brandColor)
@@ -690,7 +692,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
-          renderPage(`${locale.quote} rechazada`, `<div class="status-ok" style="text-align:center">
+          renderPage(locale.quoteRejectedTitle, `<div class="status-ok" style="text-align:center">
             <strong>Rechazaste este ${locale.quoteVerb}${fechaRechazo ? ` el ${fechaRechazo}` : ''}.</strong><br/>
             ¿Has cambiado de opinión? Pídele uno nuevo a ${merchName} 👇<br/>${waBtn}
           </div>`, brandColor)
