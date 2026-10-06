@@ -1,0 +1,8 @@
+POBLACIÓN · 42 sesiones con turnos el 2026-10-06 · 27 con algún push · 50 empujones distintos (los separados por menos de 5k cuentan como uno)
+(1) CONTEXTO QUE CONSUME UNA ENTREGA · del arranque al primer push: n=27 · mín 21k · mediana 164k · p90 243k · máx 329k
+                                     · de un push al siguiente:    n=23 · mín 18k · mediana 64k · p90 169k · máx 216k
+(2) CON «SE RELEVA AL ENTREGAR POR ENCIMA DE 300k» se habrían relevado 14 sesiones, a: n=14 · mín 304k · mediana 340k · p90 412k · máx 416k
+    304k · 307k · 310k · 313k · 318k · 318k · 339k · 340k · 344k · 381k · 394k · 395k · 412k · 416k
+(3) CRUZAN 300k Y NO VUELVEN A EMPUJAR: 6 · acaban en: s0-6octc 823k [done] · s4-6octb 393k [done] · s3-6octg 318k [done] · s1-6octg 344k [blocked] · s3-6octd 330k [done] · s1-6octf 344k [blocked]
+(4) De las 14 de (2), SIGUIERON trabajando después de ese push 14; lo que crecieron después: n=14 · mín 10k · mediana 94k · p90 155k · máx 192k
+EXIT=0

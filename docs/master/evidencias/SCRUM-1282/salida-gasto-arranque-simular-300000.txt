@@ -1,0 +1,49 @@
+vivas · ventana 30 h · umbral de relevo 200000 (fundador, 21-sep) · contexto = último turno medido
+s0-6octc       turnos=  96 contexto= 823026 RELEVAR · último turno hace 425 min · parada 425 min: caché fría, RELEVO antes de reanudar
+s5-6octd       turnos= 112 contexto= 531436 RELEVAR · último turno hace 348 min · parada 348 min: caché fría, RELEVO antes de reanudar
+s1-6octc       turnos= 155 contexto= 511962 RELEVAR · último turno hace 403 min · parada 403 min: caché fría, RELEVO antes de reanudar
+s3-6octc       turnos= 132 contexto= 502415 RELEVAR · último turno hace 375 min · parada 375 min: caché fría, RELEVO antes de reanudar
+s2-6octb       turnos= 122 contexto= 494673 RELEVAR · último turno hace 421 min · parada 421 min: caché fría, RELEVO antes de reanudar
+s0-6octd       turnos= 127 contexto= 464762 RELEVAR · último turno hace 353 min · parada 353 min: caché fría, RELEVO antes de reanudar
+s4-6octc       turnos= 106 contexto= 427096 RELEVAR · último turno hace 363 min · parada 363 min: caché fría, RELEVO antes de reanudar
+s1-6octd       turnos= 104 contexto= 423469 RELEVAR · último turno hace 359 min · parada 359 min: caché fría, RELEVO antes de reanudar
+s0-2octb       turnos= 128 contexto= 420103 RELEVAR · último turno hace 5866 min · parada 5866 min: caché fría, RELEVO antes de reanudar
+s5-6octf       turnos= 107 contexto= 415127 RELEVAR · último turno hace 109 min · parada 109 min: caché fría, RELEVO antes de reanudar
+s4-6octg       turnos=  82 contexto= 411718 RELEVAR · último turno hace 48 min
+s0-6octf       turnos= 120 contexto= 403612 RELEVAR · último turno hace 105 min · parada 105 min: caché fría, RELEVO antes de reanudar
+s4-6octb       turnos=  80 contexto= 393296 RELEVAR · último turno hace 459 min · parada 459 min: caché fría, RELEVO antes de reanudar
+s5-6octb       turnos=  75 contexto= 372183 RELEVAR · último turno hace 460 min · parada 460 min: caché fría, RELEVO antes de reanudar
+s3-6oct        turnos=  69 contexto= 354668 RELEVAR · último turno hace 497 min · parada 497 min: caché fría, RELEVO antes de reanudar
+s1-6octg       turnos=  66 contexto= 344395 RELEVAR · último turno hace 75 min · parada 75 min: caché fría, RELEVO antes de reanudar
+s1-6octf       turnos=  66 contexto= 344149 RELEVAR · último turno hace 130 min · parada 130 min: caché fría, RELEVO antes de reanudar
+s2-6octd       turnos= 107 contexto= 333188 RELEVAR · último turno hace 356 min · parada 356 min: caché fría, RELEVO antes de reanudar
+s5-6octg       turnos=  76 contexto= 332587 RELEVAR · último turno hace 54 min
+s3-6octd       turnos=  53 contexto= 330157 RELEVAR · último turno hace 348 min · parada 348 min: caché fría, RELEVO antes de reanudar
+s3-6octg       turnos=  93 contexto= 317660 RELEVAR · último turno hace 36 min
+s0-6octg       turnos=  94 contexto= 297545 RELEVAR · último turno hace 48 min
+s4-6octf       turnos=  43 contexto= 291054 RELEVAR · último turno hace 130 min · parada 130 min: caché fría, RELEVO antes de reanudar
+s2-6oct        turnos=  43 contexto= 277395 RELEVAR · último turno hace 524 min · parada 524 min: caché fría, RELEVO antes de reanudar
+s1-6oct        turnos=  56 contexto= 273350 RELEVAR · último turno hace 510 min · parada 510 min: caché fría, RELEVO antes de reanudar
+s4-6oct        turnos=  28 contexto= 271023 RELEVAR · último turno hace 531 min · parada 531 min: caché fría, RELEVO antes de reanudar
+s2-6octf       turnos=  36 contexto= 264449 RELEVAR · último turno hace 135 min · parada 135 min: caché fría, RELEVO antes de reanudar
+s3-6octf       turnos=  68 contexto= 257614 RELEVAR · último turno hace 100 min · parada 100 min: caché fría, RELEVO antes de reanudar
+s1-6octe       turnos=  40 contexto= 255317 RELEVAR · último turno hace 348 min · parada 348 min: caché fría, RELEVO antes de reanudar
+s1-6octb       turnos=  24 contexto= 246615 RELEVAR · último turno hace 485 min · parada 485 min: caché fría, RELEVO antes de reanudar
+s1-6octh       turnos=  38 contexto= 236579 RELEVAR · último turno hace 0 min
+s2-6octh       turnos=  25 contexto= 234357 RELEVAR · último turno hace 0 min
+s4-6octd       turnos=  33 contexto= 226855 RELEVAR · último turno hace 340 min · parada 340 min: caché fría, RELEVO antes de reanudar
+s4-6octh       turnos=  25 contexto= 224908 RELEVAR · último turno hace 0 min
+s2-6octg       turnos=  24 contexto= 206535 RELEVAR · último turno hace 87 min · parada 87 min: caché fría, RELEVO antes de reanudar
+s0-6octb       turnos=  18 contexto= 202974 RELEVAR · último turno hace 483 min · parada 483 min: caché fría, RELEVO antes de reanudar
+s0-6octh       turnos=  28 contexto= 196413 ok      · último turno hace 0 min
+s0-6oct        turnos=  25 contexto= 190683 ok      · último turno hace 531 min · parada 531 min: caché fría, RELEVO antes de reanudar
+s5-6oct        turnos=  35 contexto= 185910 ok      · último turno hace 528 min · parada 528 min: caché fría, RELEVO antes de reanudar
+s2-6octe       turnos=  21 contexto= 183586 ok      · último turno hace 352 min · parada 352 min: caché fría, RELEVO antes de reanudar
+s5-6octh       turnos=  29 contexto= 144622 ok      · último turno hace 0 min
+s3-6octh       turnos=  13 contexto= 144131 ok      · último turno hace 3 min
+s3-prueba      turnos=   1 contexto=  62633 ok      · último turno hace 160 min · parada 160 min: caché fría, RELEVO antes de reanudar
+VIVAS 43 · a relevar (≥ 200000): 36 · mediana 297545
+SIMULADO relevo a 300000 sobre estas 43: Σcontexto 733.3M → 518.2M (29.3 % menos) · +24 relevos · arranque tras relevo 85000 SUPUESTO; es una simulación de Σcontexto, no del coste ni de la eficiencia (mirar rojos de CI y correcciones tras entregar)
+POBLACION: 322 state.json · 317 con jsonl · 43 con actividad en la ventana · 43 con ≥ 1 turnos
+LECTURA: líneas rotas=0 · state.json ilegibles=0 · jsonl ilegibles=0
+gasto-arranque vivas · EXIT=1

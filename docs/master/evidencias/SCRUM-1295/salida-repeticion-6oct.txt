@@ -1,0 +1,49 @@
+POBLACIÓN · 43 sesiones de fondo con jsonl tocado desde 2026-10-06T00:00Z · 1 carpetas de jobs sin state.json legible · 0 jsonl ilegibles · 42 con algún turno ese día
+¿CORRE EL CANDADO? carpeta de arranque con el hook en .claude/settings.json: 0 · sin él: 42 · no pude mirar: 0
+    24 · D:\MILLONARIO\cobroFlash\cobroflash-backend [hook=false]
+    18 · d:\MILLONARIO\cobroFlash\cobroflash-backend [hook=false]
+IDENTIDAD por nombre: con puesto 42 · ORQ 0 · sin puesto 0
+EDICIONES de sesiones con puesto: 910 · fuera del repo 328 · PASARÍAN 582 (por excepción §3.4: 0) · BLOQUEARÍA 0
+   s0-6oct                    S0   ·    3 ediciones · fuera   3 · pasa    0 · bloquea   0
+   s0-6octb                   S0   ·    2 ediciones · fuera   2 · pasa    0 · bloquea   0
+   s0-6octc                   S0   ·   19 ediciones · fuera  19 · pasa    0 · bloquea   0
+   s0-6octd                   S0   ·   63 ediciones · fuera  31 · pasa   32 · bloquea   0
+   s0-6octf                   S0   ·   24 ediciones · fuera  12 · pasa   12 · bloquea   0
+   s0-6octg                   S0   ·   23 ediciones · fuera   7 · pasa   16 · bloquea   0
+   s0-6octh                   S0   ·   16 ediciones · fuera   5 · pasa   11 · bloquea   0
+   s1-6oct                    S1   ·   26 ediciones · fuera   4 · pasa   22 · bloquea   0
+   s1-6octb                   S1   ·    5 ediciones · fuera   5 · pasa    0 · bloquea   0
+   s1-6octc                   S1   ·   64 ediciones · fuera  19 · pasa   45 · bloquea   0
+   s1-6octd                   S1   ·   28 ediciones · fuera   9 · pasa   19 · bloquea   0
+   s1-6octe                   S1   ·    5 ediciones · fuera   3 · pasa    2 · bloquea   0
+   s1-6octf                   S1   ·   13 ediciones · fuera   4 · pasa    9 · bloquea   0
+   s1-6octg                   S1   ·   17 ediciones · fuera   8 · pasa    9 · bloquea   0
+   s1-6octh                   S1   ·   10 ediciones · fuera   1 · pasa    9 · bloquea   0
+   s2-6oct                    S2   ·   22 ediciones · fuera   9 · pasa   13 · bloquea   0
+   s2-6octb                   S2   ·   58 ediciones · fuera   8 · pasa   50 · bloquea   0
+   s2-6octd                   S2   ·   28 ediciones · fuera  13 · pasa   15 · bloquea   0
+   s2-6octe                   S2   ·    3 ediciones · fuera   3 · pasa    0 · bloquea   0
+   s2-6octf                   S2   ·    4 ediciones · fuera   4 · pasa    0 · bloquea   0
+   s2-6octg                   S2   ·    5 ediciones · fuera   5 · pasa    0 · bloquea   0
+   s2-6octh                   S2   ·    6 ediciones · fuera   0 · pasa    6 · bloquea   0
+   s3-6oct                    S3   ·   29 ediciones · fuera   9 · pasa   20 · bloquea   0
+   s3-6octc                   S3   ·   34 ediciones · fuera  20 · pasa   14 · bloquea   0
+   s3-6octd                   S3   ·   37 ediciones · fuera   4 · pasa   33 · bloquea   0
+   s3-6octf                   S3   ·   14 ediciones · fuera  10 · pasa    4 · bloquea   0
+   s3-6octg                   S3   ·   20 ediciones · fuera  10 · pasa   10 · bloquea   0
+   s3-6octh                   S3   ·    4 ediciones · fuera   4 · pasa    0 · bloquea   0
+   s3-prueba                  S3   ·    0 ediciones · fuera   0 · pasa    0 · bloquea   0
+   s4-6oct                    S4   ·    2 ediciones · fuera   2 · pasa    0 · bloquea   0
+   s4-6octb                   S4   ·   22 ediciones · fuera  14 · pasa    8 · bloquea   0
+   s4-6octc                   S4   ·   45 ediciones · fuera  13 · pasa   32 · bloquea   0
+   s4-6octd                   S4   ·   11 ediciones · fuera   5 · pasa    6 · bloquea   0
+   s4-6octf                   S4   ·    6 ediciones · fuera   6 · pasa    0 · bloquea   0
+   s4-6octg                   S4   ·   22 ediciones · fuera  13 · pasa    9 · bloquea   0
+   s4-6octh                   S4   ·   13 ediciones · fuera   2 · pasa   11 · bloquea   0
+   s5-6oct                    S5   ·   14 ediciones · fuera   2 · pasa   12 · bloquea   0
+   s5-6octb                   S5   ·   55 ediciones · fuera  14 · pasa   41 · bloquea   0
+   s5-6octd                   S5   ·   67 ediciones · fuera  10 · pasa   57 · bloquea   0
+   s5-6octf                   S5   ·   32 ediciones · fuera   4 · pasa   28 · bloquea   0
+   s5-6octg                   S5   ·   29 ediciones · fuera  10 · pasa   19 · bloquea   0
+   s5-6octh                   S5   ·   10 ediciones · fuera   2 · pasa    8 · bloquea   0
+EXIT=0
