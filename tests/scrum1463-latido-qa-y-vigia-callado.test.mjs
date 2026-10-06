@@ -7,9 +7,14 @@
 // Sólo lo PURO: ni `gh` ni la petición a producción se prueban aquí.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  seccionQA, pasadaDelVigia, seccionVigia, salidaDe, HORAS_DE_VIGIA_CALLADO, SALIDA_CIEGO, SALIDA_AVISO, SALIDA_OK,
+  seccionQA, pasadaDelVigia, seccionVigia, salidaDe, informe, NOTAS_FIJAS, HORAS_DE_VIGIA_CALLADO, SALIDA_CIEGO, SALIDA_AVISO, SALIDA_OK,
 } from '../scripts/equipo/latido.mjs';
+
+const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const AHORA = Date.parse('2026-10-06T11:30:00Z');
 const corrida = (created_at, conclusion = 'success', status = 'completed') => ({ created_at, status, conclusion });
@@ -59,6 +64,27 @@ test('SCRUM-1463 · QA, CIEGO antes que verde: «no se puede saber», un código
   }
   assert.match(seccionQA(casos['no se puede saber']).motivo, /^NO SE PUEDE SABER — no hay sesión guardada/);
   assert.match(seccionQA(casos['reventó']).motivo, /código ninguno: reventó, dijo: reventó: fetch failed/);
+});
+
+// ── el puntero a lo que el latido NO mide ─────────────────────────────────────────────────────
+
+test('SCRUM-1463 · el puntero de Jira sale en cada latido, no cambia la salida, y el comando que señala EXISTE y sigue pidiendo lo que el puntero dice', () => {
+  const verde = [seccionQA({ codigo: 0, lineas: ['VIVA — GET /admin/me → 200'] })];
+  const con = informe(verde, { ahora: AHORA, notas: NOTAS_FIJAS });
+  const sin = informe(verde, { ahora: AHORA });
+  assert.match(con, /ℹ️ JIRA · .* NO lo hace el latido: no tiene credenciales de Jira/);
+  assert.match(con, /node scripts\/abierto-con-trabajo-en-main\.mjs --jira <foto\.json …>/);
+  assert.match(con, /la foto vale 12 h/);
+  assert.match(con, /NO es «terminado»/);
+  assert.doesNotMatch(sin, /JIRA/);
+  // No es una sección: ni alerta ni ciega. La última línea es la misma con y sin él.
+  assert.equal(con.split('\n').pop(), sin.split('\n').pop());
+  assert.match(con.split('\n').pop(), /nada que atender \(salida 0\)/);
+  assert.equal(salidaDe(verde), SALIDA_OK);
+  // Un puntero a un comando que ya no existe, o que ha cambiado de argumentos, es peor que no tenerlo.
+  const fuente = fs.readFileSync(path.join(RAIZ, 'scripts', 'abierto-con-trabajo-en-main.mjs'), 'utf8');
+  assert.match(fuente, /argv\.indexOf\('--jira'\)/);
+  assert.match(fuente, /\[--horas-max 12\]/);
 });
 
 // ── el vigía callado ──────────────────────────────────────────────────────────────────────────

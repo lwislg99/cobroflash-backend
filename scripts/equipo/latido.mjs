@@ -709,7 +709,17 @@ export function salidaDe(secciones) {
   return SALIDA_OK;
 }
 
-export function informe(secciones, { ahora, fallosDe = () => undefined }) {
+/**
+ * (SCRUM-1463) Lo que el latido NO mide y hay que hacer a mano: se SEÑALA en cada pasada, para que no
+ * dependa de que alguien se acuerde. Un puntero no afirma nada y no cuenta para la salida. El 6-oct-2026
+ * el cruce de Jira se hizo a mano sobre 40 tickets «En curso» y 36 tenían su trabajo en main; el comando
+ * que lo hace existía desde SCRUM-1259 y nadie lo corría.
+ */
+export const NOTAS_FIJAS = [
+  'ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (los que no están en Done, TODAS las páginas) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h: con una más vieja el comando se declara CIEGO y sale 2 · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida',
+];
+
+export function informe(secciones, { ahora, fallosDe = () => undefined, notas = [] }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
     if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); for (const a of s.alertas) out.push(`   · ${a.linea}`); continue; }
@@ -721,6 +731,7 @@ export function informe(secciones, { ahora, fallosDe = () => undefined }) {
       else if (f === null) out.push('       (no supe leer qué cayó: el log no llegó a su resumen)');
     }
   }
+  if (notas.length) out.push('', ...notas);
   const c = salidaDe(secciones);
   out.push('', c === SALIDA_CIEGO ? '→ ALGUNA SECCIÓN NO PUDO MIRAR (salida 2)' : c === SALIDA_AVISO ? '→ HAY COSAS QUE ATENDER (salida 1)' : '→ nada que atender (salida 0)');
   return out.join('\n');
@@ -1037,7 +1048,7 @@ async function todo() {
   const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
   tramo('QA');
   const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
-  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
+  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
 }

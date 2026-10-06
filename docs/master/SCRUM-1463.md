@@ -115,7 +115,23 @@ Mutaciones, con la base sin mutar en 8/8 primero. Doce de doce mueren:
   tienen su trabajo en `main`. Es lo que el orquestador hizo a mano sobre 40 tickets.
 - No se ha corrido hoy: no hay foto.
 
-Devuelto al orquestador con las dos salidas posibles. No se elige aquí.
+Devuelto al orquestador con dos salidas (A: no tocar el latido · B: que lea una foto en una ruta
+fija, descartada porque saldría 2 casi siempre). **Decidido por él el 6-oct (~11:44Z): la A, más un
+puntero.**
+
+### El puntero
+
+El latido imprime en cada pasada, antes del veredicto, una línea fija:
+
+```
+ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (…) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h (…) · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida
+```
+
+- No es una sección: no alerta, no ciega y no cambia la salida.
+- No afirma nada sobre Jira. Convierte «acordarse de correr el cruce» en «leerlo».
+- El test comprueba que el comando señalado existe y sigue aceptando `--jira` y el tope de 12 h: un
+  puntero a un comando que cambió es peor que no tenerlo.
+- El comando real lleva `--jira` delante de la foto (el encargo lo citaba sin él).
 
 ## Lo que sigue sin mirar
 
