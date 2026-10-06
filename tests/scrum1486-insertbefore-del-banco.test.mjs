@@ -26,6 +26,98 @@ import { cargarDashboard, pintarVista, todos, datosDeMuestra } from './_banco-vi
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+// 🔴 MUTACIONES_QUE_ME_TUMBAN · cada una devuelve al banco UNA de las formas del defecto, y dice
+// qué caso tiene que caer. Se ejecutan con `npm run meta:mutaciones`. El banco de antes ENTERO
+// (las tres piezas a la vez) no cabe en un reemplazo: su rojo está en
+// `docs/master/evidencias/SCRUM-1486/`.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  // ① EL DEFECTO DE ORIGEN: la referencia se ignora y todo va el primero.
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);',
+    a: '      n.hijos.unshift(h);',
+    cae: 'antes de un nodo INTERMEDIO',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);',
+    a: '      n.hijos.unshift(h);',
+    cae: 'referencia NULA: al final',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);',
+    a: '      n.hijos.unshift(h);',
+    cae: 'MOVER un nodo que ya era hijo',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);',
+    a: '      n.hijos.unshift(h);',
+    cae: 'nodo real · Ajustes',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);',
+    a: '      n.hijos.unshift(h);',
+    cae: 'el aviso en rojo va JUSTO',
+  },
+  // ② EL ARREGLO A MEDIAS: `insertBefore` fiel y sin `firstChild`. Lo que hoy cae bien por
+  //    accidente se iría al final.
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get firstChild() { return n.hijos[0] || null; },',
+    a: '    get primerHijoQuitado() { return null; },',
+    cae: 'la referencia es el PRIMER hijo',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get firstChild() { return n.hijos[0] || null; },',
+    a: '    get primerHijoQuitado() { return null; },',
+    cae: 'la puerta de serie se pone la PRIMERA',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get firstChild() { return n.hijos[0] || null; },',
+    a: '    get primerHijoQuitado() { return null; },',
+    cae: 'existen, y cuando no hay dan',
+  },
+  // ③ Y sin `nextSibling`: «detrás de Y» se convierte en «al final del padre».
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get nextSibling() {',
+    a: '    get siguienteQuitado() {',
+    cae: 'el aviso en rojo va JUSTO',
+  },
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get nextSibling() {',
+    a: '    get siguienteQuitado() {',
+    cae: 'existen, y cuando no hay dan',
+  },
+  // ④ `undefined` donde el navegador da `null`.
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '    get firstChild() { return n.hijos[0] || null; },',
+    a: '    get firstChild() { return n.hijos[0]; },',
+    cae: 'existen, y cuando no hay dan',
+  },
+  // ⑤ LA REFERENCIA AJENA SE TRAGA: el nodo acaba al final en vez de lanzar.
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      if (r && !n.hijos.includes(r)) {',
+    a: '      if (false) {',
+    cae: 'una referencia que NO es hija',
+  },
+  // ⑥ Insertar un nodo antes de sí mismo lo manda al final.
+  {
+    fichero: 'tests/_banco-vistas.mjs',
+    de: '      if (r && r === h) r = h.nextSibling;',
+    a: '      if (false) r = h.nextSibling;',
+    cae: 'MOVER un nodo que ya era hijo',
+  },
+];
+
 /** Un padre con hijos NOMBRADOS: el orden se compara por nombre, y un nombre repetido delata un duplicado. */
 function familia(banco, ...nombres) {
   const padre = banco.mk('div');
