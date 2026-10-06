@@ -16,6 +16,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   veredictoDe, informe, ultimaAncla, YA_ESTA, NO_ESTA, NO_PUDE, SALIDA_MIRADO, SALIDA_CIEGO,
+  duenoDelAsunto, repartirCommits,
 } from '../scripts/equipo/ya-esta.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -128,7 +129,14 @@ function juguete() {
   g(clon, 'checkout', '--quiet', 'main'); g(clon, 'fetch', '--quiet', 'origin');
   return { base, clon, origen };
 }
-const lanzar = (clon, ...args) => spawnSync(process.execPath, [GUION, ...args, '--raiz', clon], { encoding: 'utf8', timeout: 60000 });
+const lanzar = (clon, ...args) => {
+  // El hijo no hereda el reporter, el color ni el contexto de test de quien lo lanza (SCRUM-1349).
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  return spawnSync(process.execPath, [GUION, ...args, '--raiz', clon], { encoding: 'utf8', timeout: 60000, env: entornoHijo });
+};
 
 test('SCRUM-1424 · el COMANDO: un ticket que SÍ está sale YA ESTÁ con su fecha, su registro y sus evidencias', (t) => {
   const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
@@ -178,7 +186,112 @@ test('SCRUM-1424 · el COMANDO, CIEGO: con el acceso cortado dice NO HE PODIDO M
   assert.equal(sinRepo.status, SALIDA_CIEGO);
   assert.match(sinRepo.stdout.split('\n')[0], /NO HE PODIDO MIRAR/);
   // ④ sin número.
-  const sinNumero = spawnSync(process.execPath, [GUION], { encoding: 'utf8' });
+  const entornoSinNumero = { ...process.env };
+  delete entornoSinNumero.FORCE_COLOR;
+  delete entornoSinNumero.NODE_OPTIONS;
+  delete entornoSinNumero.NODE_TEST_CONTEXT;
+  const sinNumero = spawnSync(process.execPath, [GUION], { encoding: 'utf8', env: entornoSinNumero });
   assert.equal(sinNumero.status, SALIDA_CIEGO);
   assert.match(sinNumero.stdout, /NO HE PODIDO MIRAR: falta el número/);
+});
+
+// ══ SCRUM-1454 · el commit de OTRO ticket que lo nombra, y preguntar por varios a la vez ══════════
+//
+// Medido el 6-oct-2026: `ya-esta 1434` decía YA ESTÁ y 1434 estaba «Por hacer». Lo único «suyo» era
+// `da3798df SCRUM-1123c: … y el ticket abierto (SCRUM-1434)`: un commit de 1123 que lo ABRE. Y el mismo
+// día el orquestador preguntó por 40 tickets con un bucle propio y `2>/dev/null`, y leyó 40 vacíos como
+// «no hay nada». Los asuntos de abajo son los de verdad, recortados.
+const ASUNTO_AJENO = 'SCRUM-1123c: el censo rescatado y su desmentido viajan juntos; linea A9 y el ticket abierto (SCRUM-1434)';
+
+test('SCRUM-1454 · de quién es un commit lo dice el PRIMER ticket de su asunto, no cualquiera que nombre', () => {
+  assert.equal(duenoDelAsunto(ASUNTO_AJENO), 1123);
+  assert.equal(duenoDelAsunto('SCRUM-1434: el paso no puede morir antes del exit 0'), 1434);
+  assert.equal(duenoDelAsunto('SCRUM-684b: la fase B'), 684);
+  assert.equal(duenoDelAsunto('feat(quotes): el recordatorio (SCRUM-7)'), 7);
+  assert.equal(duenoDelAsunto('Merge pull request #2148 from lwislg99/scrum-1419-canceladas-de-pr'), 1419);
+  assert.equal(duenoDelAsunto("Merge remote-tracking branch 'origin/main' into scrum-1424-ya-esta"), 1424);
+  assert.equal(duenoDelAsunto('arreglo sin ticket'), null);
+
+  const c = (asunto) => ({ sha: 'abc1234', fecha: '2026-10-02', asunto });
+  const r = repartirCommits(1434, [c(ASUNTO_AJENO), c('SCRUM-1434: lo suyo')]);
+  assert.deepEqual(r.propios.map((x) => x.asunto), ['SCRUM-1434: lo suyo']);
+  assert.deepEqual(r.ajenos.map((x) => [x.asunto, x.dueno]), [[ASUNTO_AJENO, 1123]]);
+  // El mismo commit, preguntado por su dueño, SÍ es suyo: no se pierde, cambia de lado.
+  assert.equal(repartirCommits(1123, [c(ASUNTO_AJENO)]).propios.length, 1);
+  // 🔴 El caso exacto: con sólo ese commit, 1434 NO ESTÁ.
+  const solo = repartirCommits(1434, [c(ASUNTO_AJENO)]);
+  const h = nada({ commits: solo.propios, commitsAjenos: solo.ajenos });
+  assert.equal(veredictoDe(h).respuesta, NO_ESTA);
+  const texto = informe(1434, h, veredictoDe(h), { main: SHA }).join('\n');
+  assert.match(texto, /1 commit\(s\) de OTRO ticket lo citan en su asunto/);
+  assert.match(texto, /abc1234 2026-10-02 \(es de SCRUM-1123\)/);
+});
+
+/** El juguete, más un commit de SCRUM-50 que abre SCRUM-51 nombrándolo en su asunto. */
+function jugueteConAjeno() {
+  const j = juguete();
+  const g = (...a) => execFileSync('git', ['-C', j.clon, '-c', 'user.name=prueba', '-c', 'user.email=prueba@example.invalid', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  // Commit VACÍO: lo que se prueba es el asunto, y así el test no crea ningún fichero (SCRUM-824).
+  g('commit', '--quiet', '--allow-empty', '-m', 'SCRUM-50c: el censo y su desmentido; y el ticket abierto (SCRUM-51)');
+  g('push', '--quiet', 'origin', 'main'); g('fetch', '--quiet', 'origin');
+  return j;
+}
+
+test('SCRUM-1454 · el COMANDO: un ticket que sólo NOMBRA un commit ajeno sale NO ESTÁ, y el commit se enseña con su dueño', (t) => {
+  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const abierto = lanzar(j.clon, '51');
+  assert.equal(abierto.status, SALIDA_MIRADO, abierto.stdout + abierto.stderr);
+  assert.match(abierto.stdout.split('\n')[0], /SCRUM-51 · NO ESTÁ en origin\/main con ese número/);
+  assert.match(abierto.stdout, /commits {4}· ninguno de main es suyo/);
+  assert.match(abierto.stdout, /1 commit\(s\) de OTRO ticket lo citan en su asunto/);
+  assert.match(abierto.stdout, /\(es de SCRUM-50\) SCRUM-50c: el censo/);
+  // Control: su dueño SÍ está, por ese mismo commit.
+  const dueno = lanzar(j.clon, '50');
+  assert.match(dueno.stdout.split('\n')[0], /SCRUM-50 · YA ESTÁ/);
+  assert.match(dueno.stdout, /commits {4}· 1 en main/);
+});
+
+test('SCRUM-1454 · el COMANDO con VARIOS: una respuesta por ticket, un recuento que dice cuántos se preguntaron, y sale 2 si UNO no se pudo mirar', (t) => {
+  const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  const cabezas = (r) => r.stdout.split('\n').filter((l) => /^(🟢|⚪|🔴) SCRUM-/u.test(l));
+  const tres = lanzar(j.clon, '41', '99', '51');
+  assert.equal(tres.status, SALIDA_MIRADO, tres.stdout + tres.stderr);
+  assert.deepEqual(cabezas(tres).map((l) => l.match(/SCRUM-\S+ · (YA ESTÁ|NO ESTÁ|NO HE PODIDO MIRAR)/)[1]), [YA_ESTA, NO_ESTA, NO_ESTA]);
+  assert.match(tres.stdout, /RECUENTO · 3 preguntado\(s\) · 1 YA ESTÁ · 2 NO ESTÁ · 0 NO HE PODIDO MIRAR/);
+
+  // Uno que no es un número no se salta ni se calla: es un «no he podido mirar» más, y manda en la salida.
+  const conBasura = lanzar(j.clon, '41', 'x41', '99');
+  assert.equal(conBasura.status, SALIDA_CIEGO, conBasura.stdout + conBasura.stderr);
+  assert.equal(cabezas(conBasura).length, 3, 'tantas respuestas como preguntas');
+  assert.match(conBasura.stdout, /RECUENTO · 3 preguntado\(s\) · 1 YA ESTÁ · 1 NO ESTÁ · 1 NO HE PODIDO MIRAR/);
+  assert.match(conBasura.stdout.trimEnd().split('\n').pop(), /la salida es 2/);
+
+  // Sin remoto: los tres ciegos, ninguno «no está».
+  fs.rmSync(j.origen, { recursive: true, force: true });
+  const ciegos = lanzar(j.clon, '41', '99', '51');
+  assert.equal(ciegos.status, SALIDA_CIEGO);
+  assert.match(ciegos.stdout, /RECUENTO · 3 preguntado\(s\) · 0 YA ESTÁ · 0 NO ESTÁ · 3 NO HE PODIDO MIRAR/);
+  assert.doesNotMatch(ciegos.stdout, /NO ESTÁ en origin/);
+});
+
+test('SCRUM-1454 · el COMANDO sin sus motores: lo dice por su SALIDA y sale 2 — con el stderr tirado sigue habiendo respuesta', (t) => {
+  // Lo más cerca que se puede fabricar del 6-oct: el guion, solo, en un árbol donde no está lo que importa.
+  const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+  // Fuera del árbol y donde se vea de qué cuelga (SCRUM-824): un temporal propio, no una subcarpeta del juguete.
+  const arbolSuelto = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-ya-esta-suelto-'));
+  t.after(() => fs.rmSync(arbolSuelto, { recursive: true, force: true }));
+  const suelto = path.join(arbolSuelto, 'scripts', 'equipo');
+  fs.mkdirSync(suelto, { recursive: true });
+  fs.copyFileSync(GUION, path.join(suelto, 'ya-esta.mjs'));
+  // El hijo no hereda el reporter, el color ni el contexto de test de quien lo lanza (SCRUM-1349).
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  // `stdio` con el stderr a `ignore` es el `2>/dev/null` de quien lo lanzó aquel día.
+  const r = spawnSync(process.execPath, [path.join(suelto, 'ya-esta.mjs'), '41', '99', '--raiz', j.clon], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'ignore'], env: entornoHijo });
+  assert.equal(r.status, SALIDA_CIEGO, r.stdout);
+  assert.equal(r.stdout.split('\n').filter((l) => /NO HE PODIDO MIRAR/.test(l) && /^🔴 SCRUM-/u.test(l)).length, 2, r.stdout);
+  assert.match(r.stdout, /el comando reventó/);
+  assert.match(r.stdout, /RECUENTO · 2 preguntado\(s\) · 0 YA ESTÁ · 0 NO ESTÁ · 2 NO HE PODIDO MIRAR/);
 });
