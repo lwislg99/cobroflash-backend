@@ -199,3 +199,65 @@ Leído sitio a sitio en `origin/main`. De S0: `00-normas-comunes.md`, A19 (tres 
    distinta mayúscula en la ruta. Lo vi en las filas repetidas, no en el total.
 3. **Puse la hora a ojo tres veces** en notas de Jira (13:35Z, 13:25Z y 13:45Z cuando eran 13:16Z, 13:19Z
    y 13:27Z). La hora buena es la que marca Jira en cada una.
+
+---
+
+# SCRUM-1282 · cuarta parte: el número (500k al entregar, 800k a mitad) — ESCRITO Y SIN EMPUJAR (S0)
+
+**Medido contra:** `origin/main` = `78426f7ad5d75af2f43ebb553eb5fe7604f2eafc` · 2026-10-06T17:38:02Z
+
+A9: aviso → cicatriz S0 «Un comando que se cita en una norma se copia de la terminal donde corrió: cité el simulador de relevo sin su número, y así no arranca.» — no se pudo comprobar: ningún test ejecuta los comandos que una norma cita en prosa
+
+⏳ **Este commit NO se empuja solo y NO se empuja todavía.** Dos motivos, y los dos constan:
+
+1. **Es una decisión de coste y el fundador no la ha dicho de primera mano.** El orquestador de Luis la tomó el
+   6-oct (SCRUM-1479, comentario 18480) diciendo que el fundador se la había delegado. `limites-del-fundador.md`
+   deja el coste fuera de su delegación, y una autorización contada por otra sesión no se hereda (A19). La S5
+   paró su mitad por lo mismo, y yo la mía: mi orden de arranque decía de la nota de la A19 «no la cambies».
+2. **Entra junto con su gemelo de código**, SCRUM-1479 (la constante de `sesion.mjs`, `gasto-arranque.mjs`, tres
+   tests y `orquestador-autonomo.md`, de la S5). Ningún test ata el texto de la norma a la constante
+   (`scrum1070`, `scrum1350` y `scrum899c` no leen `00-normas-comunes.md`), así que dos PR podrían entrar con
+   minutos de diferencia. Acordado con la S5: fusiona esta rama LOCAL en la suya y empuja una vez. Ese PR lleva
+   dos tickets en una rama, y se declara.
+
+Antes de empujar hay que completar, en la A19, la línea «⏳ Quién lo autorizó»: quién, dónde y a qué hora.
+
+## Qué cambia en `docs/equipo/00-normas-comunes.md`
+
+- A19: 200k → **500k** en «cuándo se releva», en la casilla 3 y en «cuándo no se releva»; 500k → **800k** en
+  «en mitad de una entrega» y en su excepción.
+- A19: sale la nota «en revisión» del 6-oct y entra la medición, el coste y el motivo, fechados, con el comando
+  entero para recalcularlo.
+- A19: la frase «el latido no avisa de este caso», con su ticket (SCRUM-1484, abierto hoy para la S5).
+- A19: por qué son dos números.
+- A25: su línea del relevo dice 500k y 800k, y conserva lo medido el 21-sep como historia.
+
+## Un tercer sitio que NO es mío y sigue diciendo 200k
+
+`docs/equipo/orquestador.md:105` (lo apunté en la tercera parte, «Dónde vive el 200k»). Es del orquestador de
+Luis. Si la norma y la constante entran sin esa línea, quedan dos textos de acuerdo y uno que los desmiente. No
+lo toco: se lo digo, y o lo cambia él o lo autoriza por escrito para el mismo PR.
+
+## Lo medido, y con qué
+
+| qué | cifra | instrumento |
+|---|---|---|
+| sesiones por encima de 200k y de 500k, ~13:20Z | 18 y 3 de 21 | la S5, `gasto-arranque.mjs vivas` (SCRUM-1479, comentario 18416) |
+| ídem y por encima de 800k, ~17:15Z, MÁXIMO del día | 26, 5 y 2 de 32 | script de la S0 sobre los jsonl del día; NO está en git |
+| turno en que una sesión cruza 200k | del 10 al 44, mediana 20, sobre 25 | el mismo script |
+| simulación a 200k, 500k y 800k, ~13:20Z, 21 sesiones, Σ 412,3 M | 207,2 M · 388,6 M · 403,4 M | la S5 |
+| ídem, 17:37Z, 31 sesiones, Σ 586,6 M | 301,5 M · 554,1 M · 577,3 M | `node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular <umbral>`, corrido tres veces por la S0 |
+
+**Dos cifras que parecían contradecirse y no:** «2 de 21 por encima de 800k» (S0, máximo del día) y «1 de 21»
+(S5, último turno). Una sesión pasó de 800k, compactó y acabó por debajo. La norma lleva las dos con lo que mide
+cada una.
+
+**Lo que NO está en git:** el script del recuento por máximo del día vive fuera del árbol. La norma da como
+comando de recálculo el de la S5, que sí está en `main`.
+
+## Mis errores
+
+- La nota que entró esta mañana (tercera parte) citaba `gasto-arranque.mjs vivas --simular` sin umbral. Así no
+  arranca: `--simular` exige el número. Lo copié de un comentario de Jira y no lo corrí. Corregido aquí.
+- Puse tres horas a ojo en mensajes de esta tarde (17:20Z, 17:25Z, 17:30Z con GitHub en 17:15-17:17Z). El
+  «recuento de 17:25Z» es de ~17:15Z, y así va escrito.
