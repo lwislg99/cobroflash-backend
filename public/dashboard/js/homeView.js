@@ -1323,11 +1323,59 @@ function initCustomerAutocomplete() {
   });
 }
 
-// SCRUM-1198 · texto aprobado por el orquestador por delegación del fundador (2-oct-2026,
-// comentario 18206 del ticket). Es
-// verdad en los dos caminos, cliente nuevo y existente: cuando el envío dice que no hay teléfono,
-// el presupuesto ya se ha creado.
-const AVISO_QQ_GUARDADO_SIN_TELEFONO = 'No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.';
+/**
+ * SCRUM-1443 · LA PALABRA DEL PAÍS, EN MINÚSCULA: «presupuesto» o «cotización» (`quoteVerb`).
+ *
+ * 🔴 REGLA DE ESTA PANTALLA (SCRUM-1443 comentario 18313): NINGÚN PRONOMBRE APUNTA AL DOCUMENTO.
+ * La palabra cambia de género por país, así que un «enviarlo» o un «está guardado» que la señale
+ * se rompe en la mitad de ellos. Lo que haya que nombrar se nombra («el WhatsApp», «el teléfono»),
+ * y del documento se habla en voz activa («hemos guardado tu…»), que no concuerda con nada.
+ */
+function palabraDelPresupuestoQq() {
+  return (window.appLocale && window.appLocale.quoteVerb) || 'presupuesto';
+}
+
+// SCRUM-1198 · el aviso de «sin teléfono» se aprobó el 2-oct-2026 (comentario 18206 de aquel
+// ticket) como «No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se
+// ha guardado.». Lo SUSTITUYE el comentario 18313 de SCRUM-1443 (6-oct-2026): con la palabra del
+// país y sin pronombre. Es verdad en los dos caminos, cliente nuevo y existente: cuando el envío
+// dice que no hay teléfono, el presupuesto ya se ha creado.
+function avisoQqGuardadoSinTelefono() {
+  return `No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu ${palabraDelPresupuestoQq()}.`;
+}
+
+// SCRUM-1443 · APROBADOS · comentario 18307 del ticket (6-oct-2026).
+function textoQqNoCreado() {
+  return `No hemos podido crear tu ${palabraDelPresupuestoQq()}. Vuelve a intentarlo.`;
+}
+function textoQqGuardadoEnvioIncierto() {
+  return `Hemos guardado tu ${palabraDelPresupuestoQq()}, pero no sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.`;
+}
+// SCRUM-1443 · APROBADO · comentario 18313 del ticket (6-oct-2026).
+function avisoQqGuardadoTelefonoNoValido() {
+  return `Hemos guardado tu ${palabraDelPresupuestoQq()}, pero el teléfono de este cliente no es válido, así que el WhatsApp no ha salido. Corrige el teléfono y vuelve a enviarlo.`;
+}
+
+/**
+ * SCRUM-1443 · LOS OTROS FALLOS DEL ENVÍO EN LOS QUE EL SERVIDOR DICE QUE NO LLEGÓ A INTENTARLO
+ * (`quotesAdmin.routes.ts`, «precondición real: nunca se intentó el envío»). De éstos SÍ se sabe
+ * que el WhatsApp no ha salido, así que «no sabemos si ha salido» sería falso, y no tienen texto
+ * firmado: se quedan como estaban. Justo después de crear el presupuesto no deberían darse.
+ */
+const QQ_ENVIO_NO_INTENTADO_SIN_TEXTO = ['not_found', 'invalid_id'];
+
+/**
+ * SCRUM-1443 · QUÉ SE LEE EN EL MODAL CUANDO ALGO FALLA. Antes era `err.message`: «API 500:
+ * internal_error», o el «Failed to fetch» del navegador.
+ *
+ * @param {any} err
+ * @param {boolean} guardado si el presupuesto de ESTE intento quedó guardado antes del fallo.
+ */
+function textoDelFalloQq(err, guardado) {
+  if (!guardado) return mensajeParaPersona(err, textoQqNoCreado());
+  if (err && QQ_ENVIO_NO_INTENTADO_SIN_TEXTO.includes(err.code)) return err.message;
+  return mensajeParaPersona(err, textoQqGuardadoEnvioIncierto());
+}
 
 /**
  * SCRUM-1198 · SIN TELÉFONO NO ES UN ERROR QUE REINTENTAR. El presupuesto ya está guardado y volver
@@ -1335,16 +1383,24 @@ const AVISO_QQ_GUARDADO_SIN_TELEFONO = 'No hemos podido enviarlo porque este cli
  * «API 400: customer_missing_phone» a la vista. Se cierra, se dice fuera y se abre el presupuesto,
  * igual que cuando el envío queda pendiente.
  *
- * Se decide por CÓDIGO y SÓLO para ése: cualquier otro fallo del envío (sin red, el servidor, Meta)
+ * Se decide por CÓDIGO y SÓLO para ésos: cualquier otro fallo del envío (sin red, el servidor, Meta)
  * devuelve `false`, y quien llama lo relanza — el modal sigue abierto para reintentar y este aviso
  * no se pinta, porque de ese fallo sería mentira.
  *
- * @returns {boolean} `true` si era «sin teléfono» y ya se ha avisado.
+ * SCRUM-1443 · el teléfono NO VÁLIDO (`invalid_phone_format`) es el mismo caso con otro texto: el
+ * servidor tampoco llegó a intentar el envío y desde este modal no se corrige el teléfono de un
+ * cliente que ya existe, así que reintentar daría el mismo no.
+ *
+ * @returns {boolean} `true` si era uno de los dos y ya se ha avisado.
  */
 function avisarGuardadoSinTelefono(err, quote) {
-  if (!err || err.code !== 'customer_missing_phone') return false;
+  const aviso = !err ? null
+    : err.code === 'customer_missing_phone' ? avisoQqGuardadoSinTelefono()
+    : err.code === 'invalid_phone_format' ? avisoQqGuardadoTelefonoNoValido()
+    : null;
+  if (!aviso) return false;
   closeQuickQuote();
-  showToast(AVISO_QQ_GUARDADO_SIN_TELEFONO, true);
+  showToast(aviso, true);
   setTimeout(() => {
     if (window.renderAppView) renderAppView("quotes-detail", { quoteId: quote.id });
   }, 400);
@@ -1403,6 +1459,11 @@ async function submitQuickQuote() {
   btn.disabled = true;
   btn.textContent = "Enviando…";
 
+  // SCRUM-1443 · ¿quedó guardado el presupuesto de ESTE intento? No vale `qqState.creado`, que
+  // recuerda el del intento anterior: si la persona cambia una línea y el alta nueva falla, seguiría
+  // lleno con el viejo y se diría «hemos guardado» de otro presupuesto.
+  let guardadoEnEsteIntento = false;
+
   try {
     // 1. Si es cliente nuevo, crearlo primero
     let customerId = qqState.customerId;
@@ -1440,6 +1501,8 @@ async function submitQuickQuote() {
       quote = await createQuote(cuerpoDelPresupuesto);
       qqState.creado = { pedido, quote };
     }
+    // Creado ahora, o reutilizado porque lo pedido es IDÉNTICO: en los dos casos es el de este intento.
+    guardadoEnEsteIntento = true;
 
     // A1.3: técnico por encima de su límite → el presupuesto nace pendiente de
     // aprobación. NO se intenta enviar (daba "API 409: pending_approval" crudo);
@@ -1460,7 +1523,7 @@ async function submitQuickQuote() {
         method: "POST",
       });
     } catch (err) {
-      if (!avisarGuardadoSinTelefono(err, quote)) throw err; // SCRUM-1198: sólo «sin teléfono»
+      if (!avisarGuardadoSinTelefono(err, quote)) throw err; // SCRUM-1198 y 1443: sin teléfono, o no válido
       return;
     }
 
@@ -1487,7 +1550,7 @@ async function submitQuickQuote() {
     // jamás enseñar "API 409: pending_approval" crudo.
     const msg = (err && err.data && err.data.error === 'pending_approval')
       ? '📋 Enviado a un administrador para aprobación'
-      : (err.message || "Error al crear la cotización.");
+      : textoDelFalloQq(err, guardadoEnEsteIntento);
     showQqAlert(msg);
     btn.disabled = false;
     btn.textContent = "Enviar por WhatsApp";
