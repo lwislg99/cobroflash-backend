@@ -1,0 +1,164 @@
+POBLACIÓN · árbol f8da1ec83777c4110228e82093047e69a671dfe1 · 296 ficheros rastreados en scripts/ · 8 workflows · 3304 líneas de yml, 1567 de ellas comentario (no cuentan como ejecución)
+CONTROL POSITIVO · ¿ve scripts/vigia-pasada.mjs (vigia-atascados.yml:210 lo corre)? SÍ
+CONTROL NEGATIVO · ¿deja fuera scripts/_evidencia-tanda.mjs (ci.yml sólo lo nombra en un comentario)? SÍ
+
+npm vistos en líneas ejecutables: 10
+  ci.yml › npm test → npm run build = tsc
+  ci.yml → npm run build = tsc
+  ci.yml → npm run censo:accion-del-80 = node scripts/censo-accion-del-80.mjs
+  ci.yml → npm run censo:clics-del-80 = node scripts/censo-clics-del-80.mjs
+  ci.yml → npm run censo:tactil-panel = node scripts/censo-objetivo-tactil-panel.mjs
+  ci.yml → npm run guards:visuales = node scripts/guards-visuales.mjs
+  ci.yml → npm run meta:mutaciones = node scripts/meta-guard-mutaciones.mjs
+  ci.yml → npm run trinquete:zona = node scripts/trinquete-de-zona.mjs
+  ci.yml → npm test = npm run build && node scripts/tanda-con-veredicto.mjs node --test --test-force-exit tests/
+  claude.yml → npm run build = tsc
+
+RECUENTO
+  A · los EJECUTA un workflow (ruta o npm run en una línea no comentada): 24 (con fila 3 · SIN fila 21)
+  B · sólo llegan por import desde los de A: 20 (con fila 1 · SIN fila 19)
+  A + B: 44 (con fila 4 · SIN fila 40) · ficheros leídos por AST 44
+
+--- A · SIN FILA PROPIA ---
+scripts/_navegador.mjs
+    lo ejecuta: ci.yml
+    nace 2026-08-20 «SCRUM-522: los nueve guards de navegador pasan a correr en CADA PR» · 7 commits · último 2026-09-02
+    tickets: 522×2 626×1 673×1 671×1 642×1 617×1
+    autores: Javier Pereira Fernández×5, Luis×2
+scripts/censo-accion-del-80.mjs
+    lo ejecuta: ci.yml › npm run censo:accion-del-80
+    nace 2026-09-08 «Censo de las cinco listas + el canon del control que no puede explicar» · 2 commits · último 2026-09-29
+    tickets: 1179×1
+    autores: Luis×2
+scripts/censo-clics-del-80.mjs
+    lo ejecuta: ci.yml › npm run censo:clics-del-80
+    nace 2026-09-08 «Censo de las cinco listas + el canon del control que no puede explicar» · 2 commits · último 2026-09-29
+    tickets: 1179×1
+    autores: Luis×2
+scripts/censo-objetivo-tactil-panel.mjs
+    lo ejecuta: ci.yml › npm run censo:tactil-panel
+    nace 2026-09-06 «SCRUM-787: el censo de objetivo táctil del panel — 76 distintos, y .bt» · 3 commits · último 2026-09-09
+    tickets: 848×1 795×1 787×1
+    autores: Luis×1, Javier Pereira Fernández×2
+scripts/clasificar-fallo-automerge.mjs
+    lo ejecuta: pr-automatico.yml
+    nace 2026-09-08 «Auto-merge: el permiso que faltaba, y dejar de pintar de rojo lo norma» · 2 commits · último 2026-10-01
+    tickets: 1382×1
+    autores: Luis×2
+scripts/conflicto-de-registro.mjs
+    lo ejecuta: conflicto-de-registro.yml
+    nace 2026-09-16 «SCRUM-839d: merge=union solo en docs/master + job que resuelve conflic» · 3 commits · último 2026-09-16
+    tickets: 839×3
+    autores: Luis×3
+scripts/constancia-del-alter.mjs
+    lo ejecuta: ci.yml
+    nace 2026-09-02 «SCRUM-687: la constancia del ALTER — y la da PRODUCCION, no el autor d» · 1 commits · último 2026-09-02
+    tickets: 687×1
+    autores: Javier Pereira Fernández×1
+scripts/guards-visuales.mjs
+    lo ejecuta: ci.yml › npm run guards:visuales
+    nace 2026-08-20 «SCRUM-522: los nueve guards de navegador pasan a correr en CADA PR» · 13 commits · último 2026-10-01
+    tickets: 1343×2 1313×2 522×2 1320×1 626×1 673×1 645×1 639×1 621×1 617×1
+    autores: Javier Pereira Fernández×12, Luis×1
+scripts/meta-guard-mutaciones.mjs
+    lo ejecuta: ci.yml › npm run meta:mutaciones
+    nace 2026-09-04 «SCRUM-745: cada guard DECLARA la mutacion que lo tumba, y un meta-guar» · 25 commits · último 2026-10-06
+    tickets: 1100×3 754×3 765×3 745×3 1321×2 812×2 808×2 788×2 1179×1 908×1 757×1 784×1 748×1
+    autores: Luis×4, Javier Pereira Fernández×21
+scripts/puerta-avisador-rojo.mjs
+    lo ejecuta: avisador-rojo.yml | claude.yml | pr-automatico.yml
+    nace 2026-09-09 «SCRUM-834: avisar a la sesion cuando su PR se pone rojo» · 5 commits · último 2026-09-15
+    tickets: 834×4 853×1
+    autores: Luis×5
+scripts/puerta-claude-empuje.mjs
+    lo ejecuta: claude.yml
+    nace 2026-09-29 «SCRUM-1263: si lo despertó el avisador, Claude solo empuja con el guar» · 1 commits · último 2026-09-29
+    tickets: 1263×1
+    autores: Luis×1
+scripts/puerta-claude.mjs
+    lo ejecuta: claude.yml
+    nace 2026-09-15 «SCRUM-853: el avisador despierta solo por rojo obligatorio, y nadie es» · 2 commits · último 2026-09-16
+    tickets: 853×2
+    autores: Luis×2
+scripts/senal-de-nombres.mjs
+    lo ejecuta: ci.yml
+    nace 2026-10-01 «SCRUM-1339d: la señal por nombres avisa de los casos que la tanda pier» · 1 commits · último 2026-10-01
+    tickets: 1339×1
+    autores: Javier Pereira Fernández×1
+scripts/suelo-de-la-tanda.mjs
+    lo ejecuta: ci.yml
+    nace 2026-09-02 «SCRUM-672: un test que desaparece no falla — el suelo de la tanda» · 2 commits · último 2026-09-16
+    tickets: 736×1 672×1
+    autores: Javier Pereira Fernández×2
+scripts/tanda-con-veredicto.mjs
+    lo ejecuta: ci.yml › npm test
+    nace 2026-09-17 «SCRUM-858b · npm test pasa por un envoltorio: sin veredicto, nunca ver» · 5 commits · último 2026-10-01
+    tickets: 928×2 1331×1 1289×1 858×1
+    autores: Javier Pereira Fernández×1, Luis×4
+scripts/trinquete-de-zona.mjs
+    lo ejecuta: ci.yml › npm run trinquete:zona
+    nace 2026-09-07 «SCRUM-813: el trinquete de zona horaria — para que no pueda volver a e» · 4 commits · último 2026-09-17
+    tickets: 813×4
+    autores: Javier Pereira Fernández×4
+scripts/vigia-atascados.mjs
+    lo ejecuta: claude.yml
+    nace 2026-09-09 «SCRUM-840: el vigia de PR atascados» · 4 commits · último 2026-09-29
+    tickets: 839×2 1270×1 840×1
+    autores: Luis×4
+scripts/vigia-despliegue-aviso.mjs
+    lo ejecuta: vigia-despliegue.yml
+    nace 2026-09-26 «SCRUM-1123: saca la decision de avisar (crear/comentar Issue) del YAML» · 1 commits · último 2026-09-26
+    tickets: 1123×1
+    autores: Luis×1
+scripts/vigia-pasada.mjs
+    lo ejecuta: vigia-atascados.yml
+    nace 2026-09-09 «SCRUM-840: el vigia de PR atascados» · 4 commits · último 2026-09-29
+    tickets: 839×2 1270×1 840×1
+    autores: Luis×4
+scripts/vigilante-de-despliegue.mjs
+    lo ejecuta: ci.yml | vigia-despliegue.yml
+    nace 2026-09-02 «SCRUM-677: el vigia del despliegue — y el Guard 2 PARA donde mandaba e» · 4 commits · último 2026-09-08
+    tickets: 824×1 716×1 727×1 677×1
+    autores: Javier Pereira Fernández×4
+scripts/zona-roja.mjs
+    lo ejecuta: zona-roja.yml
+    nace 2026-07-27 «SCRUM-168: aviso no bloqueante de zona roja -- la UNICA senal que hay» · 1 commits · último 2026-07-27
+    tickets: 168×1
+    autores: Luis×1
+
+--- A · CON FILA PROPIA ---
+scripts/equipo/intermitente-1281.mjs  [S5 · scripts/equipo/**]  ← avisador-rojo.yml
+scripts/equipo/por-que-cayo.mjs  [S5 · scripts/equipo/**]  ← ci.yml
+scripts/equipo/solo-docs.mjs  [S5 · scripts/equipo/**]  ← ci.yml
+
+--- B · SIN FILA PROPIA ---
+scripts/_arbol-quieto.mjs  ← importado por meta-guard-mutaciones.mjs
+scripts/_banco-lista.mjs  ← importado por censo-clics-del-80.mjs
+scripts/_hallazgos-y-ciegos.mjs  ← importado por guards-visuales.mjs
+scripts/_huella-de-la-caida.mjs  ← importado por tanda-con-veredicto.mjs
+scripts/_marca-de-arbol.mjs  ← importado por meta-guard-mutaciones.mjs
+scripts/_medidor-de-toque.mjs  ← importado por censo-objetivo-tactil-panel.mjs
+scripts/_pagina-panel.mjs  ← importado por censo-objetivo-tactil-panel.mjs
+scripts/_prisma-client-guard.mjs  ← importado por guards-visuales.mjs
+scripts/_puerta-de-entrada.mjs  ← importado por meta-guard-mutaciones.mjs
+scripts/_reporters-de-node-options.mjs  ← importado por tanda-con-veredicto.mjs
+scripts/_ritmo-de-despliegue.mjs  ← importado por vigilante-de-despliegue.mjs
+scripts/_senal-de-nombres.mjs  ← importado por senal-de-nombres.mjs
+scripts/_servidor.mjs  ← importado por guards-visuales.mjs
+scripts/_solape-de-guards.mjs  ← importado por guards-visuales.mjs
+scripts/_trabajos-de-muestra.mjs  ← importado por censo-clics-del-80.mjs
+scripts/_trinquete-de-zona.mjs  ← importado por trinquete-de-zona.mjs
+scripts/_vigilante-de-despliegue.mjs  ← importado por vigilante-de-despliegue.mjs
+scripts/censo-regla-42.mjs  ← importado por _huella-de-la-caida.mjs
+scripts/frontera-dist.mjs  ← importado por meta-guard-mutaciones.mjs
+
+--- B · CON FILA PROPIA ---
+scripts/_suelo-de-la-tanda.mjs  [S3 · scripts/_suelo-*]  ← importado por suelo-de-la-tanda.mjs
+
+--- sólo NOMBRADOS en un comentario de un yml, sin ejecutarse desde ninguno (2) ---
+scripts/_evidencia-tanda.mjs  ← ci.yml
+scripts/git-push.sh  ← claude.yml
+
+TICKETS de los asuntos de A sin fila (50): 168,522,617,621,626,639,642,645,671,672,673,677,687,716,727,736,745,748,754,757,765,784,787,788,795,808,812,813,824,834,839,840,848,853,858,908,928,1100,1123,1179,1263,1270,1289,1313,1320,1321,1331,1339,1343,1382
+
+EXIT=0
