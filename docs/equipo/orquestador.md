@@ -102,7 +102,7 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
    `orquestador-autonomo.md` §5bis). Al fundador se le piden las **autorizaciones**, que no se
    heredan.
 5bis. 🔴 **RELEVAR EN VEZ DE REANUDAR.** Antes de mandarle el encargo siguiente a una sesión, se
-   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **200k** tras una entrega verificada, si
+   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **300k** tras una entrega verificada, si
    lleva **más de 1 h parada** o si empieza la **tanda del día siguiente**, no se le escribe: **se
    la releva** (A19, «El PUESTO es fijo; la SESIÓN se releva» · `orquestador-autonomo.md` §5bis).
    Nunca a mitad de una entrega, y nunca sin que haya dejado su traspaso.
