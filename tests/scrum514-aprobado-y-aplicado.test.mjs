@@ -467,6 +467,9 @@ const NO_SE_CRUZAN = [
   { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
     partes: ['No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu ', dato('{quote}'), '.'],
     motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero el WhatsApp no ha salido. Envíalo desde aquí.'],
+    motivo: MOTIVO_DE_1443 },
   { ficha: '2026-09-25-SCRUM-1124-direccion-albaran-firmado.md', clase: 'partida',
     fichero: 'src/modules/jobs/domain/jobDireccion.ts',
     partes: [

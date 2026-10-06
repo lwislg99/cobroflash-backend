@@ -4,6 +4,10 @@
 
 **Aprobado por el orquestador por delegación del fundador** el 6-oct-2026 — SCRUM-1443 comentario 18313.
 
+**Aprobado por el orquestador por delegación del fundador** el 6-oct-2026 — SCRUM-1443 comentario 18331.
+
+**Aprobado por el orquestador por delegación del fundador** el 6-oct-2026 — SCRUM-1443 comentario 18333.
+
 La delegación de microcopy es la permanente de `docs/equipo/limites-del-fundador.md`. El comentario 18307 sustituye al
 18284 de ese mismo día, que no se podía construir. El 18313 añade el tercer texto y corrige el aviso de «sin teléfono»,
 que venía de SCRUM-1198 (comentario 18206, 2-oct-2026).
@@ -28,6 +32,17 @@ El documento está guardado y el teléfono del cliente no es válido (comentario
 El documento está guardado y el cliente no tiene teléfono (comentario 18313):
 
 > No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu {quote}.
+
+El WhatsApp ha salido (comentario 18331):
+
+> ✓ WhatsApp enviado al cliente
+
+El documento está guardado, el WhatsApp no ha salido y el servidor no dice por qué (comentario 18333):
+
+> Hemos guardado tu {quote}, pero el WhatsApp no ha salido. Envíalo desde aquí.
+
+Este último es un respaldo: cuando el envío se intenta y no sale, el servidor manda su propia frase y es la que se lee.
+«Aquí» es la ficha del presupuesto, que se abre a continuación.
 
 ## Dónde se pinta
 
