@@ -168,7 +168,9 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `tests/`: bancos e instrumentos (`_banco-*`, `_suelo-*`, mutación) | **S3** | |
 | `tests/`: guards nuevos de J6 | **J6** | |
 | `tests/`: el test de un ticket | el puesto que trabaja el ticket | |
-| `scripts/` (verificación, censos de consulta) | **S0** | salvo `scripts/equipo/` (S5) y `scripts/_suelo-*` (S3) |
+| `scripts/` (verificación, censos de consulta) | **S0** | salvo `scripts/equipo/` (S5), `scripts/_suelo-*` (S3) y las dos filas de abajo. **Esta fila no recoge lo que nadie clasificó:** un fichero de `scripts/` que no sea verificación ni censo de consulta y no tenga fila propia NO es de S0; le falta una fila, y se le pide a la S0 (SCRUM-1480) |
+| `scripts/qa/**` (la sesión del panel y los sembradores de la cuenta QA) | **S3** | son sondas e instrumentos (§2.1), y los sembradores ESCRIBEN en la cuenta QA de producción: no son «censos de consulta». Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/vigia-sesiones-jv.mjs` (el vigía de sesiones) | **S5** | los vigías son de S5 (§2.1; a J6 no se le mandan, §2.2). ⚠️ Lo escribió el equipo de Javier para una tarea programada de SU máquina (SCRUM-1000): quien lo cambie avisa antes a su orquestador por Jira (§5). Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
 | `docs/master/SCRUM-N.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
 | `docs/microcopy/` | **S4** el README; cada registro, el puesto que usa el texto | la firma es de un jefe o de la delegación de SU orquestador |
 | `docs/prototipos/` | S4 / **J5**, por ticket | |
