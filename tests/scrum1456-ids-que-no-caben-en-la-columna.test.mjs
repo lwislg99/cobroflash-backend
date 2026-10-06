@@ -8,9 +8,12 @@
 // SCRUM-1379). Los dos tickets, y SCRUM-1457, la usan tal cual; aquí no se escribe otra.
 //
 // ── QUÉ CUBRE Y QUÉ NO ────────────────────────────────────────────────────────────────────
-// Las lecturas de id que NO son dinero, emisión ni borrado: 19 de clientes y 5 de facturas. Las
+// Las lecturas de id que NO son dinero, emisión ni borrado: 19 de clientes y 7 de facturas. Las
 // que esperan el GO de un jefe (cobro, anular, rectificar, borrar, fusionar, webhooks) NO están en
 // este fichero: están nombradas, una a una, en `docs/master/SCRUM-1456.md`.
+// Tampoco está `POST invoices /:id/send-email`: con un id que no cabe contesta HOY 200 con
+// `sent: false` (su `catch` convierte cualquier fallo en «el correo no salió»), no 500. Pasarlo a
+// 400 cambia lo que la pantalla hace con la respuesta, así que es una decisión y no este arreglo.
 //
 // ── EL BANCO ──────────────────────────────────────────────────────────────────────────────
 // El de `scrum1379b`: CUALQUIER consulta lanza si entre sus argumentos viaja un número que no cabe
@@ -89,6 +92,8 @@ const LECTURAS = [
   [FACTURAS, 'put', '/:id/tags', 'params', 'id', 'llegan'],
   [FACTURAS, 'get', '/:id/pdf', 'params', 'id', 'llegan'],
   [FACTURAS, 'patch', '/:id/asignados', 'params', 'id', 'llegan'],
+  [FACTURAS, 'post', '/:id/resend-whatsapp', 'params', 'id', 'llegan'],
+  [FACTURAS, 'post', '/:id/send-reminder', 'params', 'id', 'llegan'],
 ];
 
 // Un cuerpo que pasa las validaciones de forma de cada ruta, para que lo único que decida sea el id.
@@ -130,11 +135,11 @@ function pedidor([modulo, verbo, ruta, donde, cual]) {
 const nombreDe = ([modulo, verbo, ruta, donde, cual]) =>
   `${verbo.toUpperCase()} ${modulo.includes('customers') ? 'customers' : 'invoices'} ${ruta} · \`${cual}\` (${donde})`;
 
-test('SCRUM-1456 · el censo de este fichero: 24 lecturas (19 de clientes, 5 de facturas), ninguna repetida', () => {
-  assert.equal(LECTURAS.length, 24);
-  assert.equal(new Set(LECTURAS.map((l) => l.slice(0, 5).join(' '))).size, 24);
+test('SCRUM-1456 · el censo de este fichero: 26 lecturas (19 de clientes, 7 de facturas), ninguna repetida', () => {
+  assert.equal(LECTURAS.length, 26);
+  assert.equal(new Set(LECTURAS.map((l) => l.slice(0, 5).join(' '))).size, 26);
   assert.equal(LECTURAS.filter((l) => l[0] === CLIENTES).length, 19);
-  assert.equal(LECTURAS.filter((l) => l[0] === FACTURAS).length, 5);
+  assert.equal(LECTURAS.filter((l) => l[0] === FACTURAS).length, 7);
 });
 
 const suelo = casosEscritos(LECTURAS, (l) => `SCRUM-1456 · ${nombreDe(l)} · SUELO: un id que cabe LLEGA a la base, y \`-1\` y \`0\` contestan lo de antes`, async (l) => {
@@ -220,6 +225,10 @@ test('SCRUM-1456 · GET invoices /:id/pdf · `id` (params) · SUELO: un id que c
 test('SCRUM-1456 · GET invoices /:id/pdf · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(22));
 test('SCRUM-1456 · PATCH invoices /:id/asignados · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(23));
 test('SCRUM-1456 · PATCH invoices /:id/asignados · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(23));
+test('SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(24));
+test('SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(24));
+test('SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · SUELO: un id que cabe LLEGA a la base, y `-1` y `0` contestan lo de antes', suelo(25));
+test('SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base', caso(25));
 suelo.todos();
 caso.todos();
 

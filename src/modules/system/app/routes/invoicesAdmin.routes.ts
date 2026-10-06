@@ -645,7 +645,7 @@ router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
 router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
@@ -732,7 +732,7 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },

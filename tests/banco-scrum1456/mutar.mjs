@@ -55,6 +55,8 @@ const ESPERADO = {
     ['GET invoices /:id · `id` (params)'],
     ['GET invoices /:id/dispute-package · `id` (params)'],
     ['PUT invoices /:id/tags · `id` (params)'],
+    ['POST invoices /:id/resend-whatsapp · `id` (params)'],
+    ['POST invoices /:id/send-reminder · `id` (params)'],
     ['GET invoices /:id/pdf · `id` (params)'],
     ['PATCH invoices /:id/asignados · `id` (params)'],
   ],
