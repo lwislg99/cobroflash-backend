@@ -109,3 +109,4 @@ Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de p
 Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente. (SCRUM-1372)
 Quien cierra no clasifica su propio «no lo vi»: pedírselo es justo lo que una auditoría existe para no creerse. (SCRUM-1372)
 Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con sus artefactos. (SCRUM-1384)
+Una salida recortada para leerla cómoda es media salida: el corte cae donde no estabas mirando. (SCRUM-1282)

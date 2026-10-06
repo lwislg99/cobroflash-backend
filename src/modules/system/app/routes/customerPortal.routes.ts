@@ -41,7 +41,19 @@ function fmt(n: number) {
   return formatImporteEs(n);
 }
 
-function dateShort(d: Date | string) {
+// SCRUM-1471 · la fecha corta, en la zona del NEGOCIO: la misma forma que la página pública
+// (SCRUM-633). Sin `timeZone` salía del reloj del proceso (UTC en Railway) y un pago de las 00:30
+// se leía con la víspera. La zona llega ya resuelta por `zonaDelMerchant`.
+function dateShort(d: Date | string, zona: string) {
+  return new Date(d).toLocaleDateString('es', { timeZone: zona, day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// SCRUM-1471 · 🔴 LA FECHA DE LA FACTURA SIGUE CON EL RELOJ DEL PROCESO, Y NO ES UN OLVIDO. Su gemelo
+// es la «Fecha:» del PDF de esa factura (`dateStr`, en `pdf.service.ts`), que se pinta igual, y esa
+// fecha es fiscal: qué día imprime la decide el fundador (SCRUM-1470, aceptación 2). El papel y su
+// gemelo cambian juntos o no cambian; el día que se decida, esta función desaparece y la tarjeta
+// entera usa `dateShort`.
+function fechaDeLaFactura(d: Date | string) {
   return new Date(d).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
@@ -320,6 +332,8 @@ router.get('/:token', async (req, res) => {
 
   // A22.1: el portal habla el idioma del documento del país (ES → "Presupuesto")
   const locale = getLocale((customer.merchant as any)?.country);
+  // SCRUM-1471: una sola vez para toda la página, como `puedeTarjeta`.
+  const zonaDelNegocio = zonaDelMerchant(m);
 
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
@@ -358,7 +372,7 @@ router.get('/:token', async (req, res) => {
               <div class="pf-card-row">
                 <div>
                   <div class="pf-card-title">${locale.quote} #${q.quoteNumber ?? q.id}</div>
-                  <div class="pf-card-meta">${dateShort(q.createdAt)}</div>
+                  <div class="pf-card-meta">${dateShort(q.createdAt, zonaDelNegocio)}</div>
                 </div>
                 <div>
                   <div class="pf-card-amount">${formatMoneyEs(Number(q.total), q.currency)}</div>
@@ -409,7 +423,7 @@ router.get('/:token', async (req, res) => {
               <div class="pf-card-row">
                 <div>
                   <div class="pf-card-title">Factura ${esc(inv.number)}</div>
-                  <div class="pf-card-meta">${dateShort(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt) : ''}</div>
+                  <div class="pf-card-meta">${fechaDeLaFactura(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt, zonaDelNegocio) : ''}</div>
                 </div>
                 <div>
                   <div class="pf-card-amount">${formatMoneyEs(Number(inv.total), inv.currency)}</div>

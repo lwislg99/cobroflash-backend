@@ -785,8 +785,104 @@ export function errorDelFicheroMuerto(resultado, guard, dir = DIR_TESTS) {
  * no tiene NADA que ver con lo que promete vigilar — eso sería el sello de goma. Medido: hoy
  * ninguna de las declaraciones del árbol dispara este veredicto, así que la elección no mueve
  * ningún número de hoy; sólo decide qué pasará la próxima vez.
+ *
+ * ⚠️ 6-oct-2026 (SCRUM-1100d): «ninguna lo dispara» dejó de ser verdad. En CI este veredicto sale
+ * a diario, y casi nunca porque el fichero muera: sale cuando el caso rojo no llega con nombre y
+ * el proceso sí sale con rojo. La serie, en `docs/master/SCRUM-1100.md`. La constante NO cambia.
  */
 export const MUERTE_CUENTA_COMO = 'ciega'; // 'ciega' | 'caida'
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1100d · EL ROJO DICE LO QUE SABE, Y LO QUE NO.
+ *
+ * Dos mensajes de este instrumento nombraban una causa que no habían comprobado, y mandaban a
+ * arreglar lo que no estaba roto. Medido sobre los logs del job en CI (`docs/master/SCRUM-1100.md`,
+ * sección 1100d):
+ *
+ *   · «EL FICHERO MURIÓ AL MUTAR … nunca llegó a ejecutarse … Acota la mutación». Lo único que
+ *     el código miraba era si la RUTA del fichero estaba entre los caídos. No miraba si habían
+ *     llegado otros tests de esa misma pasada, y casi siempre habían llegado: el fichero corrió.
+ *   · «O el fichero no llegó a ejecutarse, o ese test ya fallaba, o el nombre caducó». Tres causas
+ *     por la misma puerta, con el MISMO texto para un test que CAYÓ en la pasada limpia (un rojo
+ *     de verdad del árbol) y para uno que NO LLEGÓ (un informe perdido).
+ *
+ * ⛔ ESTO NO CAMBIA NINGÚN VEREDICTO. Las dos funciones sólo redactan: quien las llama sigue
+ * devolviendo `ciego` o `muerto` exactamente en los mismos casos, y el job sale con el mismo
+ * código. Lo que cambia es que el texto separa lo que el instrumento VIO de lo que no puede saber.
+ *
+ * PURAS a propósito: se ejercitan en `npm test` sin mutar nada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const RECUENTO_DE = (r) => `${(r?.pasados || []).length} pasados · ${(r?.caidos || []).length} caídos · `
+  + `${(r?.saltados || []).length} saltados`;
+
+/**
+ * PUERTA 1: el test declarado no está en verde en la pasada LIMPIA. Antes de decir por qué, se
+ * mira lo que sí se sabe: ¿cayó, o no llegó? ¿murió el fichero? ¿sigue escrito su nombre?
+ *
+ * @param {{ limpia: object, cae: string, ficheroMuerto?: boolean, vecesEscrito?: number|null }} d
+ *   `vecesEscrito`: cuántas veces aparece `cae` en el fuente del guard, o `null` si no se miró.
+ */
+export function mensajeDeLimpiaSinVerde({ limpia, cae, ficheroMuerto = false, vecesEscrito = null }) {
+  const cabecera = `el test «${cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada.`;
+  const recuento = `Recuento de la LIMPIA: ${RECUENTO_DE(limpia)}.`;
+  if (cayo(limpia, cae)) {
+    return `${cabecera} Ese test CAYÓ en la pasada limpia: ya falla SIN mutar nada. Eso no lo ha `
+      + 'producido este instrumento. Mira `build + tests` de este mismo run: si allí también cae, '
+      + 'es un rojo del árbol; si allí pasa, falla sólo en el entorno de este job. Mientras caiga '
+      + `no hay línea base sobre la que juzgar la mutación. ${recuento}`;
+  }
+  const escrito = vecesEscrito === null ? ''
+    : vecesEscrito >= 2
+      ? ` Su nombre está escrito ${vecesEscrito} veces en el fuente del guard (además de en la declaración): NO ha caducado.`
+      : ' En el fuente del guard no lo encuentro escrito más que una vez o ninguna: o el nombre se '
+        + 'construye al ejecutar, o lleva escapes, o la declaración caducó. No afirmo cuál.';
+  if (ficheroMuerto) {
+    return `${cabecera} Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. El fichero entero está `
+      + 'entre los caídos, así que murió antes de registrarlo (una dependencia que falta: `dist/` '
+      + `sin compilar, por ejemplo).${escrito} ${recuento} NO es que el guard esté mudo: es que no `
+      + 'se ha podido medir.';
+  }
+  return `${cabecera} Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe `
+    + `no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos.${escrito} ${recuento} `
+    + 'Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe '
+    + 'medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). '
+    + 'Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, '
+    + 'el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que '
+    + 'no se ha podido medir.';
+}
+
+/**
+ * EL CUARTO VEREDICTO: el fichero está entre los caídos y el test declarado no. Lo que distingue
+ * «murió al cargar» de «corrió y su rojo no llegó con nombre» es si llegó ALGÚN otro test.
+ *
+ * @param {{ cae: string, pasados: number, caidosConNombre: number, saltados: number,
+ *           ausentes: string[], enLimpia: number, causa: object|null }} d
+ */
+export function mensajeDeMuerto({ cae, pasados, caidosConNombre, saltados, ausentes, enLimpia, causa }) {
+  const llegaron = pasados + caidosConNombre + saltados;
+  const loQueDejo = causa
+    ? `${causa.nombre || '(sin nombre)'}${causa.code ? ` · ${causa.code}` : ''}${causa.mensaje ? ` · ${causa.mensaje}` : ''}`
+    : 'sin error capturado (apunta a un SIGKILL/OOM externo, no a una excepción de JS)';
+  const cabecera = 'EL FICHERO SALIÓ ROJO POR SU RUTA y el test declarado '
+    + `—«${cae}»— no llegó con nombre. NO SÉ si ese test cayó o si no llegó a correr.\n`
+    + `    → lo que el proceso dejó dicho: ${loQueDejo}.\n`;
+  if (llegaron === 0) {
+    return `${cabecera}    → de la pasada MUTADA no ha llegado NI UN test con nombre (la limpia trajo `
+      + `${enLimpia}): el fichero murió antes de registrar nada. Aquí SÍ encaja una mutación de `
+      + 'RADIO más ancho que el defecto que quiere imitar (rompe la carga del fichero, o hace que '
+      + 'un `import` ejecute algo). Acota la mutación, o declara otra que produzca el mismo '
+      + 'defecto sin tumbar el proceso.';
+  }
+  return `${cabecera}    → de la pasada MUTADA SÍ llegaron ${llegaron} tests con nombre (${pasados} pasados · `
+    + `${caidosConNombre} caídos · ${saltados} saltados) y faltan ${ausentes.length} de los ${enLimpia} de la limpia`
+    + `${ausentes.length ? `: ${ausentes.slice(0, 8).map((n) => `«${n}»`).join(', ')}${ausentes.length > 8 ? `, y ${ausentes.length - 8} más` : ''}` : ''}. `
+    + 'El fichero NO murió al cargar: corrió, al menos hasta ahí. Su proceso salió con rojo y el '
+    + 'caso que cayó no llegó con nombre: es la pérdida de informe medida en SCRUM-1405 (se pierde '
+    + 'QUÉ caso cayó, no QUE el fichero cayó). Esto NO acusa a la mutación: no la acotes por este '
+    + 'mensaje.';
+}
 
 /**
  * 🔴 SCRUM-748 · LA LÍNEA BASE, Y POR QUÉ NO SE RECONOCE EL MENSAJE DE ERROR.
@@ -1102,12 +1198,19 @@ export async function aplicarUna(mut, guard, limpia) {
   }
 
   if (!paso(limpia, mut.cae)) {
+    // SCRUM-1100d · el veredicto es el de siempre (CIEGO, sin mutar). El texto ya no reparte tres
+    // causas a ciegas: dice si el test CAYÓ o NO LLEGÓ, que es lo que separa un rojo del árbol de
+    // un informe perdido. Lo del nombre se cuenta en el fuente y, si no se puede leer, no se afirma.
+    let vecesEscrito = null;
+    try {
+      const fuenteDelGuard = fs.readFileSync(path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard), 'utf8');
+      vecesEscrito = fuenteDelGuard.split(mut.cae).length - 1;
+    } catch { /* sin fuente no se afirma nada del nombre */ }
     return {
       ok: false,
-      ciego: `el test «${mut.cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha `
-        + 'mutado nada. O el fichero no llegó a ejecutarse (una dependencia que falta: '
-        + '`dist/` sin compilar, por ejemplo), o ese test ya fallaba, o el nombre de la '
-        + 'declaración caducó. NO es que el guard esté mudo: es que no se ha podido medir.',
+      ciego: mensajeDeLimpiaSinVerde({
+        limpia, cae: mut.cae, ficheroMuerto: murioElFichero(limpia, guard), vecesEscrito,
+      }),
     };
   }
 
@@ -1239,18 +1342,21 @@ export async function aplicarUna(mut, guard, limpia) {
       // de cada `test:fail`, incluida la muerte del fichero) y este mensaje nunca lo enseñaba —
       // «no se sabe si HABRÍA caído» sobre un dato que el proceso, un momento antes, sí tenía.
       const causa = errorDelFicheroMuerto(tras, guard);
+      // SCRUM-1100d · el veredicto es el de siempre (`muerto`). Lo que cambia es que el texto ya
+      // no afirma «no ha reportado ni un nombre de test … nunca llegó a ejecutarse» sin mirarlo:
+      // cuenta los tests que SÍ llegaron de esta pasada y los que faltan respecto a la limpia.
+      const esElFichero = (n) => murioElFichero({ caidos: [n] }, guard);
       resultado = {
         ok: false,
-        muerto: `EL FICHERO MURIÓ AL MUTAR. \`node:test\` no ha reportado ni un nombre de test: el `
-          + `único caído es el propio fichero. El guard SÍ se puso rojo, pero el test declarado `
-          + `—«${mut.cae}»— nunca llegó a ejecutarse, así que no se sabe si HABRÍA caído.\n`
-          + `    → lo que murió con él: ${causa
-            ? `${causa.nombre || '(sin nombre)'}${causa.code ? ` · ${causa.code}` : ''}`
-              + `${causa.mensaje ? ` · ${causa.mensaje}` : ''}`
-            : 'sin error capturado (apunta a un SIGKILL/OOM externo, no a una excepción de JS)'}.\n`
-          + '    Suele significar que la mutación tiene un RADIO más ancho que el defecto que '
-          + 'quiere imitar (rompe la carga del fichero, o hace que un `import` ejecute algo). '
-          + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
+        muerto: mensajeDeMuerto({
+          cae: mut.cae,
+          pasados: (tras?.pasados || []).length,
+          caidosConNombre: (tras?.caidos || []).filter((n) => !esElFichero(n)).length,
+          saltados: (tras?.saltados || []).length,
+          ausentes: ausentesRespectoALaLimpia(tras, limpia),
+          enLimpia: (limpia?.pasados || []).length + (limpia?.caidos || []).length + (limpia?.saltados || []).length,
+          causa,
+        }),
       };
     } else {
       // 🔴 SCRUM-908 · LA MUDA SE EXPLICA SOLA, o el siguiente que la vea vuelve a empezar de cero.
@@ -1276,7 +1382,9 @@ export async function aplicarUna(mut, guard, limpia) {
       if (esCegueraNoMudez(donde)) {
         resultado = {
           ok: false,
-          ciego: `no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «${mut.cae}»${recuento}`,
+          // SCRUM-1100d: «NO APARECE» no dice si cayó o si no corrió, y el mensaje lo dice así.
+          ciego: `no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «${mut.cae}»`
+            + `${donde.startsWith('NO APARECE') ? ' — NO SÉ si cayó o si no llegó a correr; lo que sí sé va debajo.' : ''}${recuento}`,
         };
       } else {
         resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»${recuento}` };

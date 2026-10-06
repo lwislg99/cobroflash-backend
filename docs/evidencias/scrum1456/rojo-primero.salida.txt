@@ -1,0 +1,31 @@
+ROJO PRIMERO · tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs contra el build de origin/main 8dcc6d2ad6cab55e9b550220868b12adc82eb40e (sin el arreglo)
+# tests 51
+# pass 27
+# fail 24
+# skipped 0
+Que responde la ruta al primer valor que no cabe: {"404":2,"500":22}
+
+not ok 3 - SCRUM-1456 · GET customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 5 - SCRUM-1456 · PUT customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 7 - SCRUM-1456 · PATCH customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 9 - SCRUM-1456 · GET customers /:id/portal-url · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 11 - SCRUM-1456 · GET customers /:id/historial · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 13 - SCRUM-1456 · GET customers /:id/historial · `despuesDe` (query) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 15 - SCRUM-1456 · GET customers /:id/whatsapp · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 17 - SCRUM-1456 · GET customers /:id/whatsapp · `despuesDe` (query) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 19 - SCRUM-1456 · GET customers /:id/notes · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 21 - SCRUM-1456 · POST customers /:id/notes · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 23 - SCRUM-1456 · GET customers /:id/sites · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 25 - SCRUM-1456 · POST customers /:id/sites · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 27 - SCRUM-1456 · PUT customers /:id/sites/:siteId · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 29 - SCRUM-1456 · PUT customers /:id/sites/:siteId · `siteId` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 31 - SCRUM-1456 · DELETE customers /:id/sites/:siteId · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 33 - SCRUM-1456 · DELETE customers /:id/sites/:siteId · `siteId` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 35 - SCRUM-1456 · GET customers /:id/detail · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 37 - SCRUM-1456 · GET customers /:id/fusion-preview · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 39 - SCRUM-1456 · GET customers /:id/fusion-preview · `con` (query) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 41 - SCRUM-1456 · GET invoices /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 43 - SCRUM-1456 · GET invoices /:id/dispute-package · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 45 - SCRUM-1456 · PUT invoices /:id/tags · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 47 - SCRUM-1456 · GET invoices /:id/pdf · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base
+not ok 49 - SCRUM-1456 · PATCH invoices /:id/asignados · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base

@@ -1,0 +1,108 @@
+[
+ {
+  "guard": "scrum859-identidad-y-motivo-cerrado.test.mjs",
+  "limpia": "20p+0c+0s",
+  "nLimpia": 20,
+  "bytesLimpia": 34826,
+  "muts": [
+   {
+    "n": 1,
+    "fichero": "tests/scrum267-ancla-de-medicion.test.mjs",
+    "cae": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+    "estado": "MEDIDA",
+    "mutada": "18p+2c+0s",
+    "nMutada": 20,
+    "bytes": 315290,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 19,
+    "ficheroComoCaido": false,
+    "orden": "ppppppcpppppppppppcp",
+    "faltanRespectoALimpia": 0
+   },
+   {
+    "n": 2,
+    "fichero": "tests/scrum267-ancla-de-medicion.test.mjs",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave",
+    "estado": "MEDIDA",
+    "mutada": "12p+8c+0s",
+    "nMutada": 20,
+    "bytes": 1095001,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 17,
+    "ficheroComoCaido": false,
+    "orden": "ppcppcccpppcpcpccppp",
+    "faltanRespectoALimpia": 0
+   }
+  ]
+ },
+ {
+  "guard": "scrum757-la-declaracion-que-nadie-lee.test.mjs",
+  "limpia": "9p+0c+0s",
+  "nLimpia": 9,
+  "bytesLimpia": 16659,
+  "muts": [
+   {
+    "n": 1,
+    "fichero": "scripts/meta-guard-mutaciones.mjs",
+    "cae": "una declaración NO EVALUABLE se DENUNCIA con fichero y línea",
+    "estado": "MEDIDA",
+    "mutada": "6p+3c+0s",
+    "nMutada": 9,
+    "bytes": 34411,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 1,
+    "ficheroComoCaido": false,
+    "orden": "cpppppccp",
+    "faltanRespectoALimpia": 0
+   },
+   {
+    "n": 2,
+    "fichero": "scripts/meta-guard-mutaciones.mjs",
+    "cae": "una declaración NO EVALUABLE se DENUNCIA con fichero y línea",
+    "estado": "MEDIDA",
+    "mutada": "8p+1c+0s",
+    "nMutada": 9,
+    "bytes": 22825,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 1,
+    "ficheroComoCaido": false,
+    "orden": "cpppppppp",
+    "faltanRespectoALimpia": 0
+   },
+   {
+    "n": 3,
+    "fichero": "scripts/meta-guard-mutaciones.mjs",
+    "cae": "una declaración NO EVALUABLE se DENUNCIA con fichero y línea",
+    "estado": "MEDIDA",
+    "mutada": "8p+1c+0s",
+    "nMutada": 9,
+    "bytes": 24633,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 1,
+    "ficheroComoCaido": false,
+    "orden": "cpppppppp",
+    "faltanRespectoALimpia": 0
+   },
+   {
+    "n": 4,
+    "fichero": "scripts/meta-guard-mutaciones.mjs",
+    "cae": "NEGATIVO: un objeto cualquiera del fichero NO se denuncia",
+    "estado": "MEDIDA",
+    "mutada": "7p+2c+0s",
+    "nMutada": 9,
+    "bytes": 2075413,
+    "salidaHijo": 1,
+    "declarado": "CAE",
+    "posicion": 5,
+    "ficheroComoCaido": false,
+    "orden": "pppccpppp",
+    "faltanRespectoALimpia": 0
+   }
+  ]
+ }
+]

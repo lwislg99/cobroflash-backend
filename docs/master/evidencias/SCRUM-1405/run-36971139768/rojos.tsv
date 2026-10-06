@@ -1,0 +1,53 @@
+run	celda	brazo	salida	rojos	sembrados_en_tap	faltan	sobran	cuales_faltan	cuales_sobran
+36971139768	con-01	con	1	8	5	0	0		
+36971139768	con-02	con	1	8	5	0	0		
+36971139768	con-03	con	1	8	4	1	1	zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-vigia-atascados.test.mjs
+36971139768	con-04	con	1	8	5	0	0		
+36971139768	con-05	con	1	8	2	3	3	zz1405 · cola · caso 080 | zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL | zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs | tests/zz1405-copia-de-vigia-atascados.test.mjs | tests/zz1405-rojo-en-la-cola.test.mjs
+36971139768	con-06	con	1	8	5	0	0		
+36971139768	con-07	con	1	8	4	1	1	zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs
+36971139768	con-08	con	1	8	4	1	1	zz1405 · cola · caso 080	tests/zz1405-rojo-en-la-cola.test.mjs
+36971139768	con-09	con	1	8	5	0	0		
+36971139768	con-10	con	1	8	5	0	0		
+36971139768	con-11	con	1	8	5	0	0		
+36971139768	con-12	con	1	8	5	0	0		
+36971139768	con-13	con	1	8	5	0	0		
+36971139768	con-14	con	1	8	4	1	1	zz1405 · cola · caso 080	tests/zz1405-rojo-en-la-cola.test.mjs
+36971139768	con-15	con	1	8	5	0	0		
+36971139768	con-16	con	1	8	4	1	1	zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs
+36971139768	con-bloqueante-01	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-02	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-03	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-04	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-05	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-06	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-07	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-08	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-09	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-10	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-11	con-bloqueante	1	8	5	0	0		
+36971139768	con-bloqueante-12	con-bloqueante	1	8	5	0	0		
+36971139768	con-sonda-01	con-sonda	1	8	5	0	0		
+36971139768	con-sonda-02	con-sonda	1	8	5	0	0		
+36971139768	con-sonda-03	con-sonda	1	8	5	0	0		
+36971139768	con-sonda-04	con-sonda	1	8	4	1	1	zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-vigia-atascados.test.mjs
+36971139768	con-sonda-05	con-sonda	1	8	5	0	0		
+36971139768	con-sonda-06	con-sonda	1	8	1	4	4	zz1405 · cola · caso 080 | zz1405 · copia de scrum524b-trinquete-de-la-tabla · ROJO SEMBRADO AL FINAL | zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL | zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL	tests/zz1405-copia-de-scrum524b-trinquete-de-la-tabla.test.mjs | tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs | tests/zz1405-copia-de-vigia-atascados.test.mjs | tests/zz1405-rojo-en-la-cola.test.mjs
+36971139768	sin-01	sin	1	8	5	0	0		
+36971139768	sin-02	sin	1	8	5	0	0		
+36971139768	sin-03	sin	1	8	5	0	0		
+36971139768	sin-04	sin	1	8	5	0	0		
+36971139768	sin-05	sin	1	8	5	0	0		
+36971139768	sin-06	sin	1	8	5	0	0		
+36971139768	sin-07	sin	1	8	5	0	0		
+36971139768	sin-08	sin	1	8	5	0	0		
+36971139768	sin-09	sin	1	8	5	0	0		
+36971139768	sin-10	sin	1	8	5	0	0		
+36971139768	sin-11	sin	1	8	5	0	0		
+36971139768	sin-12	sin	1	8	5	0	0		
+36971139768	sin-13	sin	1	8	5	0	0		
+36971139768	sin-14	sin	1	8	5	0	0		
+36971139768	sin-15	sin	1	8	5	0	0		
+36971139768	sin-16	sin	1	8	5	0	0		
+36971139768	sin-sonda-01	sin-sonda	1	8	5	0	0		
+36971139768	sin-sonda-02	sin-sonda	1	8	5	0	0		

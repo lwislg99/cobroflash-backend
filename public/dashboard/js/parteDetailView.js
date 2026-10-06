@@ -116,7 +116,9 @@
     noSalioEnLoDictado: 'No salía en lo dictado: ',
     // APROBADO · SCRUM-1266 comentario 17498. Limpia la marca de esa línea y NO toca la descripción.
     esCorrecto: 'Es correcto',
-    confirmarPropuesta: 'Añadir estas líneas',
+    // APROBADO · SCRUM-1215 comentario 17375. Sustituye a «Añadir estas líneas», que no se aprobó
+    // (c.17367): una línea sin cantidad no entra, y «estas» prometía que entraban las que se ven.
+    confirmarPropuesta: 'Añadir al parte',
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
@@ -248,7 +250,7 @@
    * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
    *
    * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
-   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * («×», «Añadir línea», «Añadir al parte», «Es correcto») salen a la vez: si el segundo arma su
    * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
    * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
    */
@@ -1275,6 +1277,13 @@
    * repintada desde el servidor. Va en el paso de ese campo —las horas, o su línea plegada, que
    * se abre— y no arriba: el dato que ha vuelto atrás está ahí. Si la relectura también falló ya
    * no hay casilla, y la ficha dice entera que no se ha podido cargar: no se añade nada.
+   *
+   * 🔴 SCRUM-1475 · Y SE TRAE A LA VISTA. Colgarlo no basta: con el campo al borde inferior de la
+   * ventana el aviso caía casi fuera (medido en yaqu.app: asomaban 13 px en móvil y 5 en
+   * escritorio). `nearest` y no `start`: si ya se ve entero la página no se mueve, y si no, se mueve
+   * lo justo. Va DESPUÉS de colgarlo y de abrir su línea, que antes no hay nada que traer. Que no
+   * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
+   * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
    */
   function avisarCampoNoGuardado(contenedor, nombre) {
     if (!contenedor || !contenedor.querySelector) return;
@@ -1293,6 +1302,7 @@
     aviso.style.marginTop = '8px';
     aviso.textContent = TEXTOS.noSeGuardoElCambio;
     paso.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
@@ -1543,7 +1553,7 @@
     // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
     // apuntar ni una línea a mano, y sin el dictado no le quedaba otra.
     //
-    // El patrón es el de «Añadir estas líneas» del dictado (`confirmarLoDictado`), no uno nuevo:
+    // El patrón es el de «Añadir al parte» del dictado (`confirmarLoDictado`), no uno nuevo:
     //   · pulsar AÑADE UNA FILA en su bloque y no escribe nada — vacía no hay nada que guardar;
     //   · se guarda cuando tiene cantidad (> 0) Y descripción, igual que `lineasConfirmadas`: una
     //     línea sin cantidad no sale, y así no se viaja para volver con un 400;
@@ -1709,7 +1719,7 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
-          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
           // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
           // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
           // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el
