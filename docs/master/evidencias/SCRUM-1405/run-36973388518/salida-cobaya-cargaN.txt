@@ -1,0 +1,8 @@
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · 100 pasadas por celda · 3 celdas de cobaya · 0 ficheros reales · carga 4 procesos
+
+── LA COBAYA ──
+G-con-rojo-en-la-cola · carga 4 · 100 pasadas · 100 con casos ausentes · casos ausentes 2101 (ejecutados 2101, NO ejecutados 0) · forma cola×100 · salidas 1×100 · rojos en el TAP 150 de 400 · pasadas con salida 0: 0 · pasadas SIN NINGÚN rojo de caso en el TAP: 14 (de ellas con salida 0: 0; con el fichero en rojo por su ruta: 14)
+H-sin-rojo-en-la-cola · carga 4 · 100 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 1×100 · rojos en el TAP 400 de 400 · pasadas con salida 0: 0 · pasadas SIN NINGÚN rojo de caso en el TAP: 0 (de ellas con salida 0: 0; con el fichero en rojo por su ruta: 0)
+Q-con-rojo-en-la-cola-una-copia · carga 4 · 100 pasadas · 69 con casos ausentes · casos ausentes 642 (ejecutados 642, NO ejecutados 0) · forma cola×69 · salidas 1×100 · rojos en el TAP 31 de 100 · pasadas con salida 0: 0 · pasadas SIN NINGÚN rojo de caso en el TAP: 69 (de ellas con salida 0: 0; con el fichero en rojo por su ruta: 69)
+
+EXIT=0 · filas 300 + 0 · /home/runner/work/_temp/cobaya/cobaya-pasadas-carga4.tsv
