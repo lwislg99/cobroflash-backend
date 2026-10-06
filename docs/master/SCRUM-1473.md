@@ -165,3 +165,54 @@ de un comentario de Jira no las mira ningún guard.
 - La memoria de la máquina, que es lo que hoy impide correr la suite completa: no es esta sección.
 - La línea de órdenes del barrido (`--horas`, `--borrar`) no tiene test propio: se prueban las funciones
   que llama.
+
+# SCRUM-1473b · El obligatorio cayó en el CI por un test que sólo pasaba en Windows
+
+**Medido contra:** `origin/main` = `f8da1ec83777c4110228e82093047e69a671dfe1` · 2026-10-06T17:06:26Z
+
+A9: aviso → cicatriz S5 «Empujé con «12 de 12 en local» un test que comparaba rutas con el separador de la máquina: en Windows pasaba y en el CI, que es Linux, cayó» — no se pudo comprobar: en esta máquina no hay Linux donde correr un test antes de empujarlo, y censar los 60 tests que usan `path.sep` es otro ticket
+
+## Qué pasó
+
+El PR #2221 se abrió a las 13:47Z, con «12 de 12» en local. Su check obligatorio salió **rojo** a las
+14:09Z (run 37473629008, sobre la punta `db94a77986f0d61a087897bef45fecd2d6061388`): 1 test caído, el del
+barrido que comprueba que sólo se vacía el contenido de `tmp`. Nadie lo miró hasta las 17:02Z.
+
+**El barrido hacía lo correcto. Lo roto era el test.**
+
+| | En Windows | En Linux (el CI) |
+|---|---|---|
+| El renglón de la carpeta en la foto | `vieja001\tmp/` | `vieja001/tmp/` |
+| El prefijo de «lo de dentro» que el test apartaba | `vieja001\tmp\` | `vieja001/tmp/` |
+| ¿El prefijo se lleva también la carpeta? | no | **sí** |
+
+En Linux el test quitaba de «lo esperado» la propia carpeta `tmp`, que es justo la que tiene que quedarse.
+La carpeta seguía ahí después de barrer, como manda el ticket, y el test lo daba por cambio.
+
+## Qué cambia
+
+Sólo `tests/scrum1473-latido-disco-y-barrido.test.mjs`. Ni `barrer-jobs.mjs` ni `disco.mjs` se tocan.
+
+- La foto de una carpeta escribe sus rutas **siempre con «/»**. Lo que se compara en Windows es lo mismo
+  que compara el CI.
+- «Lo de dentro del `tmp`» deja de incluir el renglón de la carpeta.
+
+## Cómo se ha visto
+
+| Paso | Resultado |
+|---|---|
+| La foto con «/» y el filtro de antes, en Windows | **rojo**, 11 de 12, con el mismo renglón de más que el CI: `+ 'vieja001/tmp/'` |
+| Con el filtro arreglado | 12 de 12 |
+| El test, la familia del latido y los censos que enumeran `tests/` | 22 ficheros · 239 de 239 · 0 saltados |
+
+**No visto en Linux desde aquí**: lo dirá el check obligatorio de la punta nueva.
+
+## Un error propio
+
+Di por bueno un verde de Windows para un test que hace cuentas con rutas, y no miré el veredicto del CI
+antes de irme: el rojo estuvo tres horas sin que nadie lo leyera. Lo segundo ya tiene mecanismo (el aviso
+de cierre de SCRUM-1356); lo primero no, y por eso va como cicatriz y no como comprobación.
+
+Medido antes de escribir «no hay Linux»: `wsl.exe` existe pero es sólo el instalador (no lista ninguna
+distribución, sale con 1), y Docker no está ni en el PATH ni en su carpeta por defecto. Instalar uno es un
+coste nuevo: lo decide el fundador.

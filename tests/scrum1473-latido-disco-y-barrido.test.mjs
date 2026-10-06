@@ -103,13 +103,17 @@ function bajoBase(ruta) {
   return rel;
 }
 /** Todo lo que hay bajo una carpeta, con su tamaño: para comparar un árbol antes y después. */
+// Las rutas de la foto van SIEMPRE con «/», en Windows y en Linux: así lo que se compara aquí es lo
+// mismo que compara el CI. Con el separador de la máquina, `vieja001\tmp/` (la carpeta) y
+// `vieja001\tmp\…` (lo de dentro) se distinguían en Windows y en Linux eran el mismo prefijo.
 const foto = (raiz) => {
   const out = [];
+  const rel = (p) => path.relative(raiz, p).split(path.sep).join('/');
   const baja = (d) => {
     for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const p = path.join(d, e.name);
-      if (e.isSymbolicLink()) out.push(`${path.relative(raiz, p)} → enlace`);
-      else if (e.isDirectory()) { out.push(`${path.relative(raiz, p)}/`); baja(p); } else out.push(`${path.relative(raiz, p)} ${fs.readFileSync(p).toString('hex')}`);
+      if (e.isSymbolicLink()) out.push(`${rel(p)} → enlace`);
+      else if (e.isDirectory()) { out.push(`${rel(p)}/`); baja(p); } else out.push(`${rel(p)} ${fs.readFileSync(p).toString('hex')}`);
     }
   };
   baja(raiz);
@@ -384,7 +388,8 @@ test('SCRUM-1473 · 🔴 al barrer sólo se vacía el CONTENIDO de `tmp` de lo l
   trabajo(jobs, 'hoy00002', { hace: 2 });
   trabajo(jobs, 'curra003', { estado: 'working', hace: 100 });
   trabajo(jobs, 'rota0004', { hace: 100, state: 'no es json' });
-  const fuera = (f) => f.filter((l) => !l.startsWith(path.join('vieja001', 'tmp') + path.sep));
+  // «Lo de dentro» es lo que cuelga de la carpeta, NO la carpeta: ésa se queda, y su renglón es el prefijo exacto.
+  const fuera = (f) => f.filter((l) => l === 'vieja001/tmp/' || !l.startsWith('vieja001/tmp/'));
   const antes = foto(jobs);
   assert.ok(antes.length > fuera(antes).length, 'SUELO: había algo dentro del tmp que se va a vaciar');
   const r = barrer(jobs, { huella: huellaDe(censar(jobs, { ahora: AHORA })), ahora: AHORA });
@@ -393,7 +398,7 @@ test('SCRUM-1473 · 🔴 al barrer sólo se vacía el CONTENIDO de `tmp` de lo l
   assert.deepEqual(r.resultados[0].r, { ficheros: 3, carpetas: 2, bytes: 10050, enlaces: 0, fallos: [] });
   const despues = foto(jobs);
   assert.deepEqual(despues, fuera(antes), '🔴 ha cambiado algo que no era el contenido de ese tmp');
-  assert.ok(despues.includes(`${path.join('vieja001', 'tmp')}/`), 'la carpeta `tmp` se queda: quien siga la encuentra');
+  assert.ok(despues.includes('vieja001/tmp/'), 'la carpeta `tmp` se queda: quien siga la encuentra');
   assert.deepEqual(fs.readdirSync(path.join(jobs, 'vieja001', 'tmp')), []);
   assert.equal(fs.readFileSync(path.join(jobs, 'vieja001', 'salida.log'), 'utf8'), 'no me toques');
   // Y repetirlo no encuentra nada: ya está vacío.
