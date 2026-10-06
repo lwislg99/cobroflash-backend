@@ -88,8 +88,91 @@ acaba de crear (sólo recibe el id).
 
 ## Lo que NO está hecho
 
-- Ninguna frase (aceptaciones 1, 2 y 4 del ticket): esperan firma.
+- Ninguna frase (aceptaciones 1, 2 y 4 del ticket): esperan firma. *(Tres de ellas van en el tramo
+  SCRUM-1465b, al final de este registro.)*
 - **No visto en yaqu.app.** Que la base falle después de enviar no se puede provocar desde fuera:
   sólo lo cubre el test.
 - `sendAlbaranParaFirmarWhatsApp` apunta `enviadoParaFirmaAt` ANTES de enviar
   (`albaranWhatsApp.service.ts:133`). Es el orden contrario y no lo he ejecutado: lo nombro.
+
+---
+
+## SCRUM-1465b (6-oct) · tres frases firmadas del WhatsApp que no sale
+
+**Medido contra:** `origin/main` = `a3a2f3b0de69803c1f16444b72a69f6908a5254e` · 2026-10-06T12:33:04Z
+
+A9: aviso → cicatriz S1 «La hora de un mensaje o de un ticket se saca de GitHub en el momento de escribirla: calculada desde la última que miré, se adelanta.» — no se pudo comprobar: es una cifra tecleada en un mensaje a otra sesión o en Jira, y ningún guard los lee
+
+Sesión S1 (`s1-6octc`) · rama `scrum-1465b-frases-del-envio`, encima de la del tramo anterior.
+Firma: comentario 18357 del ticket (orquestador, por la delegación de microcopy). Ficha:
+`docs/microcopy/2026-10-06-SCRUM-1465-envio-que-no-sale.md`.
+
+### Lo que cambia en `POST /admin/quotes/:id/send-whatsapp`
+
+| Caso | Antes | Ahora |
+|---|---|---|
+| Meta dice que no · no contesta a tiempo · no llegamos a mandarlo | «No se pudo enviar por WhatsApp: (texto de Meta, o el error de red, o "WhatsApp rechazó el envío"). El presupuesto quedó guardado; puedes reintentarlo.» | «No sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.» |
+| Tope diario del negocio | la frase del diccionario | «El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.» |
+| El cliente está dado de baja | la frase del diccionario | «El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.» |
+| Tope diario por cliente · cuenta demo | la frase del diccionario | igual |
+
+El motivo (`error`) y el `detail` de la respuesta no cambian. Lo que contestó Meta sigue en `detail`,
+y `whatsapp.ts` lo deja en el log y en la fila del mensaje: no se pierde, deja de leerlo la persona.
+
+### La desviación de SCRUM-126, declarada
+
+SCRUM-126 unificó en `SEND_FAILURE_MESSAGES` «un mensaje humano ÚNICO por motivo» para los nueve
+envíos del panel. Desde hoy la baja y el tope del negocio se leen de otra forma en un presupuesto
+que en una factura o un albarán. Es a propósito y lo aceptó el orquestador (c.18357): lo que el
+profesional tiene que hacer no es lo mismo en cada documento. `src/lib/sendOutcome.ts` no se ha
+tocado (`git diff` vacío) y `tests/scrum126-send-outcome.test.mjs` tampoco.
+
+**La versión de la FACTURA debería recibir el mismo trato, y es de J1:** `daily_cap` y
+`customer_daily_cap` dicen «envíalo por email», un pronombre que apunta al documento. Lo nombro; no
+lo toco.
+
+### Lo firmado que NO se ha construido, y por qué
+
+- **El tope por cliente.** La frase firmada dice «WhatsApp no deja mandarle más». El límite es de
+  YaQu: `config.WA_CUSTOMER_DAILY_CAP`, 3 al día por defecto, aplicado en `whatsapp.ts` bajo el
+  comentario «J6: tope duro … por CLIENTE y día». Se queda con la frase de hoy hasta nueva firma.
+- **El correo que no sale.** La frase firmada dice «El email no ha salido. Vuelve a enviarlo.».
+  `enviarPorResend` contesta lo mismo si el proveedor dice que no que si no contesta en 15 s, y en
+  el segundo caso el correo puede haber salido. Leído, no ejecutado. Se queda como estaba.
+
+Los dos están dichos al orquestador y escritos en la ficha.
+
+### Una rama que no se alcanza y queda imprecisa
+
+`ventana_cerrada` no tiene caso propio en la ruta y caería en «No sabemos si…», cuando ahí se sabe
+que no se mandó. No se alcanza desde esta ruta: nadie le pasa `sinPlantilla`. Antes caía en «WhatsApp
+rechazó el envío», que tampoco era cierto.
+
+### Test — `tests/scrum1465b-las-frases-del-envio.test.mjs` (9 casos)
+
+Por la ruta de `dist/`. La baja y los topes pasan por los guards de verdad de `whatsapp.ts`; lo que
+contesta Meta se dobla con la forma que devuelve su `catch`. Un caso repite las tres frases con un
+negocio de México y exige que sean las mismas y que no nombren el documento.
+
+En rojo ANTES de tocar `src/`: 9 casos, 6 rojos; verdes el suelo y los dos controles. Después, 33
+ficheros, **386 de 386**. **No corrida la tanda entera.**
+
+| Mutante (sobre `dist`; BASE 9/9; comprobado que cambia y que se restaura idéntico) | Rojos |
+|---|---|
+| la baja vuelve a la frase del diccionario | 2 |
+| el tope del negocio vuelve a la frase del diccionario | 2 |
+| el texto de Meta vuelve a la frase | 4 |
+| el motivo de Meta se pierde (sin `detail`) | 1 |
+
+### Error propio
+
+Después de confesar arriba las horas puestas a ojo, en el siguiente mensaje al orquestador escribí
+«12:31Z (mirada ahora)» sin haberla mirado: eran las 12:28:40Z. La cicatriz ya estaba escrita y no
+bastó, que es lo que dice A9 de apuntar.
+
+### Lo que NO está hecho
+
+- **No visto en yaqu.app.** La baja se puede mirar con la cuenta QA marcando la casilla de un cliente
+  de prueba; los topes y Meta no se pueden provocar a mano.
+- El ticket para J2 (que `whatsapp.ts` devuelva con nombre «sin respuesta de Meta»): pedido por el
+  orquestador en el c.18357, sin abrir al escribir esto.
