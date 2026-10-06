@@ -99,6 +99,10 @@ test('SCRUM-1465 · correo · CONTROL: si el correo NO sale, la ruta sigue dicie
   assert.equal(r.status, 200);
   assert.equal(r.cuerpo.sent, false);
   assert.equal(r.cuerpo.error, 'email_send_failed');
+  // La frase firmada (c.18371, forma «si no se puede distinguir»): el envío de correo contesta lo
+  // mismo si el proveedor dice que no que si no contesta a tiempo, y ahí puede haber salido. Por
+  // eso no afirma que no salió ni manda reenviar.
+  assert.equal(r.cuerpo.message, 'No sabemos si el email ha salido. Pregúntale a tu cliente antes de volver a enviarlo.');
   assert.deepEqual(r.marcados, [], '🔴 se ha marcado como enviado un presupuesto cuyo correo no salió');
 });
 

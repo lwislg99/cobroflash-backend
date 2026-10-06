@@ -62,6 +62,36 @@ import { firmaTieneTrazo } from '../../../quotes/domain/firmaConTrazo';
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
+
+/**
+ * SCRUM-1465 · lo que lee el profesional cuando el WhatsApp de SU presupuesto no sale. Firmado en
+ * el comentario 18357; ficha en `docs/microcopy/2026-10-06-SCRUM-1465-envio-que-no-sale.md`.
+ *
+ * NO son las frases de `SEND_FAILURE_MESSAGES` (SCRUM-126) y es a propósito: ese diccionario lo
+ * leen también la factura y el albarán, y lo que hay que hacer con un presupuesto que no ha
+ * salido —mandar el enlace— no es lo que hay que hacer con ellos.
+ *
+ * NINGUNA nombra el documento. La palabra cambia de género con el país («el presupuesto», «la
+ * cotización») y aquí no hace falta: «Hemos guardado tu …» lo dice la pantalla que acaba de
+ * guardarlo, que es la única que lo sabe. Esta ruta sólo recibe un id.
+ *
+ * `noSeSabe` cubre TODA la rama sin motivo con nombre: Meta dijo que no, Meta no contestó a
+ * tiempo, o no llegamos a mandarlo. Distinguirlas pediría leer la forma de lo que devuelve
+ * `whatsapp.ts`. Y si no contestó, el mensaje puede haber salido: decir «no ha salido,
+ * reinténtalo» se lo manda dos veces al cliente.
+ */
+const ENVIO_NO_SALIO = {
+  noSeSabe: 'No sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.',
+  topeDelNegocio: 'El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.',
+  baja: 'El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.',
+  // Comentario 18371. El límite es de YaQu (`WA_CUSTOMER_DAILY_CAP`), y la frase lo dice. Va sin
+  // la cifra: es una variable de entorno y la forma firmada con cifra no tiene literal completo.
+  topePorCliente: 'El WhatsApp no ha salido: YaQu limita los mensajes diarios a un mismo cliente para no saturarlo. Vuelve a intentarlo mañana o envía el enlace por email.',
+  // Comentario 18371, forma «si no se puede distinguir». El envío de correo contesta lo mismo si el
+  // proveedor dice que no que si no contesta a tiempo, y en el segundo caso puede haber salido.
+  emailNoSeSabe: 'No sabemos si el email ha salido. Pregúntale a tu cliente antes de volver a enviarlo.',
+} as const;
+
 const router = Router();
 
 /**
@@ -664,25 +694,28 @@ router.post('/:id/send-whatsapp', async (req, res) => {
           return res.status(400).json({ ok: false, error: 'invalid_phone_format' });
         case 'pending_approval':
           return res.status(409).json({ ok: false, error: 'pending_approval' });
-        // SCRUM-126: envío intentado, no salió — SIEMPRE 200, vocabulario compartido
-        // (src/lib/sendOutcome.ts). Antes cada motivo repetía su mensaje aquí a mano.
-        case 'demo_safe_numbers':
+        // SCRUM-126: envío intentado, no salió — SIEMPRE 200. El motivo (`error`) es el del
+        // vocabulario compartido (src/lib/sendOutcome.ts).
+        // SCRUM-1465: la FRASE de la baja y las de los dos topes son las del presupuesto
+        // (`ENVIO_NO_SALIO`), no las del diccionario.
         case 'wa_opt_out':
+          return res.status(200).json(sendFailureBody('wa_opt_out', { message: ENVIO_NO_SALIO.baja }));
         case 'daily_cap':
+          return res.status(200).json(sendFailureBody('daily_cap', { message: ENVIO_NO_SALIO.topeDelNegocio }));
         case 'customer_daily_cap':
+          return res.status(200).json(sendFailureBody('customer_daily_cap', { message: ENVIO_NO_SALIO.topePorCliente }));
+        // El aviso de la demo sigue con la frase del diccionario: sólo se alcanza en el merchant 1.
+        case 'demo_safe_numbers':
           return res.status(200).json(sendFailureBody(result.reason));
-        default: {
-          // P3-2: NO devolver un 502 crudo. El presupuesto sigue guardado; informamos
-          // con un mensaje claro (incluyendo el motivo de Meta si lo hay).
-          const metaMsg =
-            (result.error as any)?.error?.message ||
-            (typeof result.error === 'string' ? result.error : '') ||
-            'WhatsApp rechazó el envío';
+        default:
+          // P3-2: NO devolver un 502 crudo.
+          // SCRUM-1465: lo que contestó Meta (en inglés y con su código) o el error de red ya no
+          // van en la frase que lee el profesional. No se pierden: viajan en `detail`, y
+          // `whatsapp.ts` los deja en el log y en la fila del mensaje.
           return res.status(200).json(sendFailureBody('whatsapp_send_failed', {
-            message: `No se pudo enviar por WhatsApp: ${metaMsg}. El presupuesto quedó guardado; puedes reintentarlo.`,
+            message: ENVIO_NO_SALIO.noSeSabe,
             detail: result.error,
           }));
-        }
       }
     }
 
@@ -785,7 +818,7 @@ router.post('/:id/send-email', async (req, res) => {
     }
     console.error('[POST /admin/quotes/:id/send-email]', err?.message || err);
     return res.status(200).json(sendFailureBody('email_send_failed', {
-      message: 'No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.',
+      message: ENVIO_NO_SALIO.emailNoSeSabe,
     }));
   }
 });
