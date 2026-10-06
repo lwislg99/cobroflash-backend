@@ -94,6 +94,19 @@ y cambiarlo es una propuesta de cambio de máster pendiente.
 - **Permiso acotado para SCRUM-899 (sesiones de prueba `control-899-*` y tareas programadas de un solo uso):
   autorizado por él.** La regla la pone él a mano, porque al orquestador se le bloquea tocar la configuración.
 
+## El límite de relevo de una sesión (6-oct-2026, de viva voz)
+
+**Luis, 6-oct-2026 (18:50Z):** «El límite de relevo lo pongo en 300.000. Autorizado el coste.»
+
+- Es el número de la A19 (`00-normas-comunes.md`): una sesión se releva al terminar una entrega verificada
+  si su contexto pasa de 300k. Era 200k desde el 21-sep-2026. La medición y el coste simulado que
+  autorizó están en la A19, con su fecha y su comando.
+- **Autorizó UN número.** El de «se releva ya, aunque sea a mitad de una entrega» (500k) no lo ha vuelto a
+  decidir: sigue valiendo el de antes.
+- Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479 (comentario 18513). Esta entrada la
+  escribe la Sesión 0 con la autorización escrita del orquestador de Luis, dueño de este fichero (orden
+  de arranque de la tanda del 6-oct-2026, ~19:25Z), en el mismo PR que cambia la norma.
+
 ## El horario del equipo (17-sep-2026)
 
 «Que el equipo arranque por la mañana y haga varias tandas al día, cuando haya uso de nuevo.» Provisional:
