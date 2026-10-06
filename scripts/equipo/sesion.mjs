@@ -95,8 +95,18 @@ export const UNA_HORA_MS = 60 * 60 * 1000;
 export const MODELO_POR_DEFECTO = 'opus';
 /** Un alias o un id de modelo. Nunca empieza por guion: viaja como argumento y no puede leerse como flag. */
 const MODELO = /^[a-z0-9][a-z0-9.-]{0,63}$/;
-/** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
-export const UMBRAL_CONTEXTO = 200_000;
+/**
+ * A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. Es el ÚNICO sitio donde vive el número:
+ * `gasto-arranque.mjs` y el latido lo toman de aquí.
+ *   · 500k desde el 6-oct-2026 (SCRUM-1479; propuesta del orquestador de Luis, gemela del texto de la A19;
+ *     ⏳ AUTORIZACIÓN DE COSTE DEL FUNDADOR: PENDIENTE — esta línea se cierra con su respuesta antes de empujar).
+ *     Medido ese día sobre las 21 sesiones con algún turno: 18 pasaban de 200k —una sesión lo cruza antes
+ *     de su primera entrega— y 3 de 500k. Un aviso que sale en todas no distingue a ninguna.
+ *   · 200k desde el 21-sep-2026 (SCRUM-1070b; decisión del orquestador, y tocar esta constante llevó la
+ *     autorización escrita del fundador: `docs/master/SCRUM-1070.md`). Antes, 300k.
+ * La A19 tiene un segundo número, 800k A MITAD de una entrega: no vive en el código (`docs/master/SCRUM-1479.md`).
+ */
+export const UMBRAL_CONTEXTO = 500_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */

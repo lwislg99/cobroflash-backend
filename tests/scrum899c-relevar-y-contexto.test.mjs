@@ -153,15 +153,21 @@ test('🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la de
 // decidirRelevo — los tres casos de la A19
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('los tres casos de la A19, y sus dos lados del umbral (200k desde A25)', () => {
-  assert.equal(s.UMBRAL_CONTEXTO, 200_000, '🔴 A25: el relevo es a 200k, no a 300k');
+// LO QUE ESTE TEST AFIRMABA, Y LO QUE AFIRMA AHORA — las dos fechas, para que el cambio no sea silencioso:
+//   · del 21-sep-2026 al 6-oct-2026 (SCRUM-1070b, A25): «el relevo es a 200k, no a 300k».
+//   · desde el 6-oct-2026 (SCRUM-1479): 500k. Medido ese día: 18 de 21 sesiones pasaban de 200k, y una
+//     sesión lo cruza antes de su primera entrega; a 500k pasaban 3.
+test('los tres casos de la A19, y sus dos lados del umbral (500k desde el 6-oct-2026; fue 200k desde el 21-sep-2026)', () => {
+  assert.equal(s.UMBRAL_CONTEXTO, 500_000, '🔴 A19, 6-oct-2026 (SCRUM-1479): el relevo al entregar es a 500k; el 200k del 21-sep (SCRUM-1070b) ya no rige');
   const ahora = Date.parse('2026-09-17T19:00:00Z');
   const hace5min = ahora - 5 * 60 * 1000;
   const ctx = (t) => ({ tokens: t, turnos: 10, cuando: null });
 
-  assert.equal(s.decidirRelevo({ contexto: ctx(200_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
-  assert.equal(s.decidirRelevo({ contexto: ctx(199_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
+  assert.equal(s.decidirRelevo({ contexto: ctx(500_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
+  assert.equal(s.decidirRelevo({ contexto: ctx(499_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
     '🔴 releva por debajo del umbral: la A19 dice que el encargo siguiente entra en la misma sesión');
+  // El caso que el 200k acusaba y el 500k no: una sesión de 409k recién entregada SIGUE.
+  assert.equal(s.decidirRelevo({ contexto: ctx(409_000), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR');
 
   const hace2h = ahora - 2 * 60 * 60 * 1000;
   assert.equal(s.decidirRelevo({ contexto: ctx(10_000), ultimaActividad: hace2h, ahora }).veredicto, 'RELEVAR',

@@ -43,6 +43,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// Sólo la constante: importar `sesion.mjs` no pasa por su puerta de integridad, que guarda la CLI.
+import { UMBRAL_CONTEXTO } from './sesion.mjs';
 
 export const PESOS = { input: 1, creation: 1.25, read: 0.1, output: 5 };
 export const BYTES_POR_TOKEN = 2.2;
@@ -63,7 +65,7 @@ const USO = [
   '  sesiones   [--horas 24] [--min-turnos 40] [--desde <ISO con huso>] [--nombre <sN>]',
   '  arranque   <nombre> [--turnos 24]',
   '  resultados [--horas 24] [--min-turnos 40]',
-  '  vivas      [--horas 2] [--umbral 200000] [--simular <umbral>]   quién toca relevar YA (SCRUM-1070)',
+  `  vivas      [--horas 2] [--umbral ${UMBRAL_CONTEXTO}] [--simular <umbral>]   quién toca relevar YA (SCRUM-1070)`,
   '  traspaso   <sN> | --fichero <ruta> [--tope 5120]',
 ].join('\n');
 
@@ -644,7 +646,10 @@ function subcomandoTraspaso(args, ctx) {
 // Medido el 21-sep-2026 (55 sesiones ≥ 40 turnos, 30 h): la mediana ACABA en 337k y 38 de 55 pasan de
 // 300k; con relevo a 200k, Σcontexto baja ~44 % (simulado, no medido; ver simularRelevo).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-export const UMBRAL_RELEVO = 200000; // fundador, 21-sep (la A19 decía 300k)
+// (SCRUM-1479, 6-oct-2026) El umbral ya no se escribe aquí: es el de `sesion.mjs`, que es el que manda. Eran dos
+// constantes con el mismo número puestas a mano. Hoy vale 500k; el 200k con el que se midió lo de arriba fue
+// del 21-sep al 6-oct (decisión del orquestador; el fundador autorizó por escrito tocar `sesion.mjs`).
+export const UMBRAL_RELEVO = UMBRAL_CONTEXTO;
 export const CTX_TRAS_RELEVO = 85000; // supuesto: ≈ U8 mediano de una sesión nacida (57k de suelo + arranque + traspaso)
 export const OCIOSA_MIN = 60; // A19 caso 2: la caché de prompt caduca a la hora
 

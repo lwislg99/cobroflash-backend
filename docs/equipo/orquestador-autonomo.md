@@ -82,11 +82,17 @@ que **nació como A19**. Al leer, se comprueba el título, no el número.
 
 ### 5bis.1 · Cuándo se releva
 
-Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 200k**; más de
-**1 hora parada**; o el comienzo de la tanda del día siguiente. **Nunca a mitad de una entrega**, y **no en cada
-tarea**: si una entrega cierra por debajo de 200k, el encargo siguiente entra en la misma sesión.
+Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 500k**; más de
+**1 hora parada**; o el comienzo de la tanda del día siguiente. **No en cada tarea**: si una entrega cierra por
+debajo de 500k, el encargo siguiente entra en la misma sesión. **Y nunca a mitad de una entrega, salvo por
+encima de 800k**: ahí la sesión busca el primer punto seguro (un commit local), escribe su traspaso y pide el relevo.
 
-Para saber si pasa de 200k no se estima: se mide, con `sesion.mjs contexto N`.
+Para saber si pasa de 500k no se estima: se mide, con `sesion.mjs contexto N` o con la sección CONTEXTO del latido.
+
+*(6-oct-2026, SCRUM-1479, gemelo en código del texto de la A19. Hasta ese día este párrafo decía 200k —desde el
+21-sep-2026, SCRUM-1070b— y el caso «a mitad» era 500k. El número de «al entregar» vive en un solo sitio,
+`UMBRAL_CONTEXTO` de `sesion.mjs`; el de 800k no está en el código: el latido avisa por encima de 500k con la
+misma frase para los dos casos.)*
 
 ### 5bis.2 · Cómo se releva
 
