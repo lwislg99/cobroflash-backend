@@ -58,6 +58,10 @@
 //                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
 //  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
 //                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
+//  11 · DISCO    → (SCRUM-1473) el espacio libre de la unidad de la casa (transcripts, temporales) y de la de
+//                  los árboles, con aviso por debajo de seis días de lo que se escribe en cada una; cuánto de
+//                  lo ocupado es del EQUIPO y cuánto no; y lo que devolvería barrer los `tmp` de trabajos.
+//                  El 6-oct-2026 la primera se quedó a 79 MB y se supo por un ENOSPC a mitad de una tanda.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -89,6 +93,9 @@ import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } fr
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
 // (SCRUM-1463) El estado de la sesión QA lo dice SU instrumento; aquí sólo se le pregunta `estado`.
 import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
+// (SCRUM-1473) La máquina: el disco y lo que el barrido de `tmp` devolvería. El latido sólo mide; no borra.
+import { seccionDisco, medirDisco } from './disco.mjs';
+import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } from './barrer-jobs.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -1248,7 +1255,13 @@ async function todo() {
   const codigoQA = await ejecutarQA(['estado'], { out: (s) => dichoQA.push(s), err: (s) => dichoQA.push(s) }).catch((e) => { dichoQA.push(`reventó: ${String((e && e.message) || e).split('\n')[0]}`); return undefined; });
   const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
   tramo('QA');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
+  // 11 · disco. La unidad de la casa (transcripts, temporales) y la de los árboles. Sólo lee.
+  const disco = intentar(() => medirDisco({ arboles: raiz }));
+  const censoTmp = intentar(() => censarTmp(dirDeTrabajos()));
+  const barrible = censoTmp && censoTmp.pudo ? { bytes: tmpBarribles(censoTmp).reduce((a, f) => a + f.bytes, 0), trabajos: tmpBarribles(censoTmp).length, horas: HORAS_SIN_ACTIVIDAD } : null;
+  const sDis = seccionDisco({ unidades: disco && disco.unidades, zonas: disco ? disco.zonas : [], barrible });
+  tramo('disco');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
