@@ -154,12 +154,12 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 
 | ruta | dueño | nota |
 |---|---|---|
-| `docs/equipo/00-normas-comunes.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
+| `docs/equipo/00-normas-comunes.md`, `00-normas-siempre.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
 | `docs/equipo/afirmaciones-verificadas-javier.md` | **J6** | lo crea J6 en su primera tanda |
 | `docs/equipo/orquestador.md` | **orquestador de Luis** | método común. Mientras no haya otro dueño, cada cambio se avisa al otro equipo con un comentario en Jira |
 | `docs/equipo/traspaso.md` / `traspaso-javier.md` | orquestador de Luis / **orquestador de Javier** | el ESTADO va por equipo; el de Javier lo crea su orquestador |
 | `docs/equipo/limites-del-fundador.md` | **orquestador de Luis** | pasa a «límites de los jefes»: cada decisión lleva quién la tomó y la fecha. El de Javier propone por Jira |
-| `docs/equipo/sesion-N.md` / `puesto-jN.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
+| `docs/equipo/sesion-*.md` / `docs/equipo/puesto-j*.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
 | `docs/equipo/orquestador-javier.md` | **orquestador de Javier** | solo lo que cambia para su equipo: el método es `orquestador.md` |
 | `docs/equipo/prompt-tanda-orquestador.md` | contenido **S0**; el cableado, **S5** | UN solo prompt para los dos equipos |
 | `docs/equipo/orquestador-autonomo.md`, `instalacion-*.md`, `scripts/equipo/**` | **S5** | |
@@ -168,10 +168,14 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `tests/`: bancos e instrumentos (`_banco-*`, `_suelo-*`, mutación) | **S3** | |
 | `tests/`: guards nuevos de J6 | **J6** | |
 | `tests/`: el test de un ticket | el puesto que trabaja el ticket | |
-| `scripts/` (verificación, censos de consulta) | **S0** | salvo `scripts/equipo/` (S5), `scripts/_suelo-*` (S3) y las dos filas de abajo. **Esta fila no recoge lo que nadie clasificó:** un fichero de `scripts/` que no sea verificación ni censo de consulta y no tenga fila propia NO es de S0; le falta una fila, y se le pide a la S0 (SCRUM-1480) |
+| `scripts/` (verificación, censos de consulta) | **S0**, sólo lo que sea verificación o censo de consulta | salvo `scripts/equipo/` (S5), `scripts/_suelo-*` (S3) y las filas de abajo. **Esta fila no recoge lo que nadie clasificó:** un fichero de `scripts/` que no sea verificación ni censo de consulta y no tenga fila propia NO es de S0; le falta una fila, y se le pide a la S0 (SCRUM-1480). Por eso el dueño de esta fila no va escrito como un puesto a secas: donde nadie ha decidido no hay cerradura (decisión del orquestador de Luis, 6-oct-2026; medido ese día ANTES de añadir las dos filas de scripts de workflow de abajo: 273 de los 296 ficheros de `scripts/` sólo los cubría esta fila; con esas dos filas dentro, y ya con 298 ficheros, son 250, contados con `node docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs <raíz>`) |
 | `scripts/qa/**` (la sesión del panel y los sembradores de la cuenta QA) | **S3** | son sondas e instrumentos (§2.1), y los sembradores ESCRIBEN en la cuenta QA de producción: no son «censos de consulta». Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
 | `scripts/vigia-sesiones-jv.mjs` (el vigía de sesiones) | **S5** | los vigías son de S5 (§2.1; a J6 no se le mandan, §2.2). ⚠️ Lo escribió el equipo de Javier para una tarea programada de SU máquina (SCRUM-1000): quien lo cambie avisa antes a su orquestador por Jira (§5). Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
-| `docs/master/SCRUM-N.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
+| `scripts/vigia-atascados.mjs`, `scripts/vigia-pasada.mjs`, `scripts/vigia-despliegue-aviso.mjs`, `scripts/vigilante-de-despliegue.mjs`, `scripts/_vigilante-de-despliegue.mjs`, `scripts/_ritmo-de-despliegue.mjs`, `scripts/puerta-avisador-rojo.mjs`, `scripts/puerta-claude.mjs`, `scripts/puerta-claude-empuje.mjs`, `scripts/clasificar-fallo-automerge.mjs`, `scripts/conflicto-de-registro.mjs`, `scripts/tanda-con-veredicto.mjs`, `scripts/_huella-de-la-caida.mjs`, `scripts/_reporters-de-node-options.mjs`, `scripts/zona-roja.mjs`, `scripts/constancia-del-alter.mjs` (los 16 scripts del bucle PR → CI → merge → aviso que ejecuta un workflow, con lo que importan sólo ellos) | **S5** | son «los workflows y sus scripts» (`orquestador.md` §11bis) y los vigías (§2.1). Tres avisos: la lista `ZONA_ROJA` de `zona-roja.mjs` la decide el fundador (lo dice `.github/CODEOWNERS`); lo que exige `constancia-del-alter.mjs` es A5 y no se relaja sin un jefe; y `vigia-silencio-de-main.mjs` NO está aquí: lo escribió J6 y SCRUM-1324 sigue En curso con `area-j6`, así que sigue sin fila hasta que lo hablen los dos orquestadores. Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/censo-objetivo-tactil-panel.mjs`, `scripts/censo-clics-del-80.mjs`, `scripts/censo-accion-del-80.mjs`, `scripts/meta-guard-mutaciones.mjs`, `scripts/_arbol-quieto.mjs`, `scripts/frontera-dist.mjs`, `scripts/suelo-de-la-tanda.mjs` (los 7 instrumentos que corre el CI: los censos del panel, el meta-guard de mutaciones y el suelo de la tanda, con los dos ficheros que, de entre los scripts, sólo importa el meta-guard) | **S3** | son instrumentos de medida y mutación (§2.1 y la fila de `tests/` de arriba). Lo que NO está aquí, a propósito: `guards-visuales.mjs` y `senal-de-nombres.mjs` (con sus ayudantes `_solape-de-guards.mjs` y `_senal-de-nombres.mjs`), que tienen ticket vivo del equipo de Javier (SCRUM-1313, 1320 y 1339); los diez ayudantes compartidos (`_navegador.mjs`, con 51 importadores medidos ese día, `_hallazgos-y-ciegos.mjs`, `_servidor.mjs`, `_puerta-de-entrada.mjs`, `_banco-lista.mjs`, `_trabajos-de-muestra.mjs`, `_prisma-client-guard.mjs`, `_marca-de-arbol.mjs`, y los dos del censo táctil: `_medidor-de-toque.mjs`, que también importan `guard-objetivo-tactil.mjs` y `guard-a11y-landing.mjs`, y `_pagina-panel.mjs`, que también importa `guard-objetivo-tactil.mjs`; esos dos guards no tienen fila), que no se clasifican antes que quienes los usan; y `trinquete-de-zona.mjs` con `_trinquete-de-zona.mjs`, que S3 toca sólo por la excepción escrita en SCRUM-1335 (comentario 18387): es un permiso para un trabajo, no un carril, y ese ticket lleva `area-j6`, así que es un cruce que se coordina. Los dos ayudantes del censo táctil entraron en esta fila y salieron el mismo día (SCRUM-1480c): el censo es de S3 y sus dos ayudantes siguen en la fila general, sin cerradura. Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/_suelo-*` | **S3** | |
+| `docs/equipo/cicatrices/*.md` | cada puesto, la suya | A9 (SCRUM-1294): en qué se equivoca ese puesto, con su comprobación al lado |
+| `docs/master/SCRUM-*.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
 | `docs/microcopy/` | **S4** el README; cada registro, el puesto que usa el texto | la firma es de un jefe o de la delegación de SU orquestador |
 | `docs/prototipos/` | S4 / **J5**, por ticket | |
 | `docs/competencia/` | **J5** | la S0 deja ahí el resultado de Holded (§2.1) |
@@ -179,6 +183,18 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `CLAUDE.md`, `.claude/**`, `docs/YAQU_MASTER.md` | **un jefe** | derivados del máster (regla 35); la S0 prepara la propuesta |
 | `DESIGN.md` | **S2** propone | firma un jefe |
 | `package.json` | cada uno SU línea de script | **una dependencia nueva la decide un jefe** |
+
+### 3.4 · Excepciones declaradas — el cruce de carril legítimo, a la vista
+
+Esta tabla y la de §3.1–3.3 se convierten solas en `.claude/carriles.json` y `.claude/rules/carril-*.md`
+(`node scripts/carriles.mjs generar`, SCRUM-1295), y la cerradura `.claude/hooks/carril.mjs` **bloquea**
+editar un fichero de otro puesto. Un cruce legítimo **no se hace con un permiso silencioso: se declara
+aquí**, con quién, por qué y el ticket, y se regenera. Si la tabla y lo generado no coinciden, el check
+obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todos` o una lista de puestos.
+
+| ruta | quién | motivo | ticket |
+|---|---|---|---|
+| `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
@@ -236,6 +252,37 @@ efecto y se le cuenta al jefe en plano.
 1. Merchant QA propio para el equipo de Javier (§5.1).
 2. Si un jefe puede cambiar una decisión escrita por el otro (§1).
 3. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
+4. **Los huecos de carril** (`node scripts/carriles.mjs huecos`, SCRUM-1295). Un fichero que solo cubre la
+   fila general («todo lo demás de `src/`» o «de `public/`») y cuyo nombre se parece a los de OTRO puesto
+   es un viaje esperando: alguien deducirá el dueño por el dominio y la tabla dirá otra cosa. Medido el
+   1-oct-2026 sobre `36f1eee3`: 432 ficheros de producto, 241 solo por la fila general, **32 con pariente
+   en otro puesto**. El censo no decide. Para cada uno, la pregunta es de los dos jefes: **¿es un hueco de
+   la tabla, o es de ese puesto a propósito?** Se cierra escribiendo su fila en §3 (aunque sea para
+   confirmar al dueño actual: con fila propia deja de salir). Las preguntas se hacen por FAMILIA, no por
+   fichero: una pregunta sobre un grupo se contesta una vez; siete sobre ficheros se quedan sin contestar.
+   - **¿De quién es la familia «cliente» del servidor?** Hoy **S1**, solo por la fila general; por el
+     nombre, de J2 (que tiene `customerAdmin.ts`, `tagsDelCliente.ts`, `importarClientes.service.ts`). Son
+     ocho ficheros: seis en `src/modules/system/domain/` (`fusionClientes.ts`, que costó un viaje el
+     29-sep, `historialDelCliente.ts`, `historialWhatsAppDelCliente.ts`, `notasDelCliente.ts`,
+     `sitiosDelCliente.ts`, `puertaClienteReal.ts`), más `jobs/domain/consolidacionCliente.service.ts` y
+     `quotes/domain/decisionDelCliente.ts`.
+   - **¿De quién son las pantallas de parte y albarán que no son la ficha?** Hoy **S2**, solo por la fila
+     general; por el nombre, de S4 (que tiene `parteDetailView.js` y `albaranDetailView.js`). Son cuatro:
+     `parteOficinaView.js` (costó un viaje el 29-sep), `albaranAccion.js`, `albaranActionsRegistry.js` y
+     `albaranDesdePresupuestoModal.js`.
+   - El resto de la lista (20 ficheros sueltos) la da el censo; ninguno ha costado un viaje todavía.
+   - **Y un tipo distinto: el nombre contradice a la tabla** (lo encontró S3 el 1-oct). `scripts/verificacion-s5/`
+     (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
+     quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
+     rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
+5. **`.claude/**` es «de un jefe», y hoy entra sin que un jefe lo firme** (lo destapó SCRUM-1356, 1-oct-2026).
+   La fila de §3.3 dice que `.claude/**` lo firma un jefe y que la S0 prepara la propuesta. El encargo de
+   SCRUM-1356 le dio a la S0 «hooks y `settings.json`» como carril propio, y su PR (#2097: dos hooks y su
+   registro en `.claude/settings.json`) se abrió, se armó y se mergeó SOLO a los 18 minutos, con el check en
+   verde y sin firma de nadie. No hubo daño: los dos hooks avisan y dejan pasar. Pero la tabla y lo que pasó
+   no dicen lo mismo, y un hook que SÍ bloquee entraría por la misma puerta. **¿`.claude/hooks/` y
+   `.claude/settings.json` pasan a ser de la S0 con una fila, o un PR que los toca no se arma solo?** La
+   segunda es un cambio en `pr-automatico.yml` (S5). No lo decide la S0.
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el

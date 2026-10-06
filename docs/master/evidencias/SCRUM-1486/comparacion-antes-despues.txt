@@ -1,0 +1,34 @@
+La dirigida de `tests/_banco-vistas.mjs`, ANTES y DESPUÉS, comparada por conjuntos de (veredicto, nombre).
+Selección: `node scripts/tests-que-cubren.mjs tests/_banco-vistas.mjs --lanzar --tramo i/10`, 10 tramos, 2 ficheros a la vez.
+POBLACIÓN de las dos pasadas: 404 de 1260 ficheros de test · 3817 tests.
+ANTES  = la rama en f5c90ed17c68cc654283b280a59e09ff8dff67d5 con el banco de origin/main 8f77f96dd12c0cc7cad87f94d166b58601741b5f (commit local 431007b0, deshecho, nunca empujado) · 3799 pass · 13 fail · 5 saltados
+DESPUÉS = la rama en 412e5b68bfc19c0791f1945260525dbf00fd2384 (banco arreglado) · 3810 pass · 2 fail · 5 saltados
+Medido el 6-oct-2026, las dos pasadas dentro de la ventana 17:53:54Z – 18:38:34Z (las dos horas son del `Date:` de GitHub, tomadas antes de empezar y después de acabar; no hay hora por pasada). node v24.8.0, Windows.
+
+Salida de `compara-tap.mjs <antes> <después>` (sale 1 porque hay diferencias: las 11 de abajo):
+
+POBLACIÓN: base 3817 resultados (3817 nombres) · candidato 3817 resultados (3817 nombres)
+sólo en base: 0 · sólo en candidato: 0 · con veredicto distinto: 11
+  CAMBIA         SCRUM-1486 · 🔴 antes de un nodo INTERMEDIO: justo delante de la referencia: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 la referencia es el PRIMER hijo: queda el primero, y por la referencia: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 referencia NULA: al final, no al principio: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 MOVER un nodo que ya era hijo: cambia de sitio y sigue siendo uno: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 `firstChild` y `nextSibling` existen, y cuando no hay dan `null`: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 una referencia que NO es hija del padre LANZA, y no mueve nada: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 nodo real · Ajustes: título, subtítulo y navegación, en ese orden: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 `X.firstChild` · la puerta de serie se pone la PRIMERA de su panel: not ok → ok
+  CAMBIA         SCRUM-1486 · 🔴 `Y.nextSibling` · el aviso en rojo va JUSTO DETRÁS de su botón: not ok → ok
+  CAMBIA         SCRUM-737 · 🔴 el censo de cifras SIN ancla no crece, y si baja hay que anotarlo: not ok → ok
+  CAMBIA         SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada: not ok → ok
+caídos: base 13 · candidato 2
+EXIT=1
+
+Las 11, una a una:
+  · 9 son los casos NUEVOS de `tests/scrum1486-…`: con el banco de antes caen, que es su rojo.
+  · SCRUM-737 caía en ANTES por dos cifras sin fecha en la cabecera del test nuevo (mías). Reformuladas en 412e5b68.
+  · SCRUM-836 caía en ANTES porque las anclas de las mutaciones que declara el test nuevo no existen en el banco de antes.
+Las dos últimas ya existían. Medidas aparte sobre origin/main 8f77f96d SIN la rama: 22 de 22 en verde
+(`scrum737-cifra-con-arbol-y-hora` y `scrum836-ancla-de-mutacion-viva`). Respecto a `main`, ninguna cambia.
+
+Los 2 que caen en DESPUÉS: SCRUM-1321 (ciego por entorno de esta máquina, ya declarado) y SCRUM-854 (la rama aún no traía su registro al medir).
+EXIT_DEL_COMPARADOR=1
