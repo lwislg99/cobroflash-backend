@@ -84,6 +84,12 @@ const ENVIO_NO_SALIO = {
   noSeSabe: 'No sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.',
   topeDelNegocio: 'El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.',
   baja: 'El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.',
+  // Comentario 18371. El límite es de YaQu (`WA_CUSTOMER_DAILY_CAP`), y la frase lo dice. Va sin
+  // la cifra: es una variable de entorno y la forma firmada con cifra no tiene literal completo.
+  topePorCliente: 'El WhatsApp no ha salido: YaQu limita los mensajes diarios a un mismo cliente para no saturarlo. Vuelve a intentarlo mañana o envía el enlace por email.',
+  // Comentario 18371, forma «si no se puede distinguir». El envío de correo contesta lo mismo si el
+  // proveedor dice que no que si no contesta a tiempo, y en el segundo caso puede haber salido.
+  emailNoSeSabe: 'No sabemos si el email ha salido. Pregúntale a tu cliente antes de volver a enviarlo.',
 } as const;
 
 const router = Router();
@@ -690,16 +696,16 @@ router.post('/:id/send-whatsapp', async (req, res) => {
           return res.status(409).json({ ok: false, error: 'pending_approval' });
         // SCRUM-126: envío intentado, no salió — SIEMPRE 200. El motivo (`error`) es el del
         // vocabulario compartido (src/lib/sendOutcome.ts).
-        // SCRUM-1465: la FRASE de la baja y la del tope del negocio son las del presupuesto
+        // SCRUM-1465: la FRASE de la baja y las de los dos topes son las del presupuesto
         // (`ENVIO_NO_SALIO`), no las del diccionario.
         case 'wa_opt_out':
           return res.status(200).json(sendFailureBody('wa_opt_out', { message: ENVIO_NO_SALIO.baja }));
         case 'daily_cap':
           return res.status(200).json(sendFailureBody('daily_cap', { message: ENVIO_NO_SALIO.topeDelNegocio }));
-        // Estos dos siguen con la frase del diccionario. El tope por cliente tiene la suya
-        // propuesta y SIN FIRMAR; el aviso de la demo sólo se alcanza en el merchant 1.
-        case 'demo_safe_numbers':
         case 'customer_daily_cap':
+          return res.status(200).json(sendFailureBody('customer_daily_cap', { message: ENVIO_NO_SALIO.topePorCliente }));
+        // El aviso de la demo sigue con la frase del diccionario: sólo se alcanza en el merchant 1.
+        case 'demo_safe_numbers':
           return res.status(200).json(sendFailureBody(result.reason));
         default:
           // P3-2: NO devolver un 502 crudo.
@@ -812,7 +818,7 @@ router.post('/:id/send-email', async (req, res) => {
     }
     console.error('[POST /admin/quotes/:id/send-email]', err?.message || err);
     return res.status(200).json(sendFailureBody('email_send_failed', {
-      message: 'No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.',
+      message: ENVIO_NO_SALIO.emailNoSeSabe,
     }));
   }
 });

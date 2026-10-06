@@ -97,24 +97,27 @@ acaba de crear (sólo recibe el id).
 
 ---
 
-## SCRUM-1465b (6-oct) · tres frases firmadas del WhatsApp que no sale
+## SCRUM-1465b (6-oct) · las cinco frases firmadas del envío que no sale
 
 **Medido contra:** `origin/main` = `a3a2f3b0de69803c1f16444b72a69f6908a5254e` · 2026-10-06T12:33:04Z
 
 A9: aviso → cicatriz S1 «La hora de un mensaje o de un ticket se saca de GitHub en el momento de escribirla: calculada desde la última que miré, se adelanta.» — no se pudo comprobar: es una cifra tecleada en un mensaje a otra sesión o en Jira, y ningún guard los lee
 
 Sesión S1 (`s1-6octc`) · rama `scrum-1465b-frases-del-envio`, encima de la del tramo anterior.
-Firma: comentario 18357 del ticket (orquestador, por la delegación de microcopy). Ficha:
-`docs/microcopy/2026-10-06-SCRUM-1465-envio-que-no-sale.md`.
+Firma: comentarios 18357 y 18371 del ticket (orquestador, por la delegación de microcopy). Fichas:
+`docs/microcopy/2026-10-06-SCRUM-1465-envio-que-no-sale.md` (c.18357) y
+`docs/microcopy/2026-10-06-SCRUM-1465-tope-por-cliente-y-correo.md` (c.18371).
 
-### Lo que cambia en `POST /admin/quotes/:id/send-whatsapp`
+### Lo que cambia en `POST /admin/quotes/:id/send-whatsapp` y en `…/send-email`
 
 | Caso | Antes | Ahora |
 |---|---|---|
 | Meta dice que no · no contesta a tiempo · no llegamos a mandarlo | «No se pudo enviar por WhatsApp: (texto de Meta, o el error de red, o "WhatsApp rechazó el envío"). El presupuesto quedó guardado; puedes reintentarlo.» | «No sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.» |
 | Tope diario del negocio | la frase del diccionario | «El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.» |
 | El cliente está dado de baja | la frase del diccionario | «El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.» |
-| Tope diario por cliente · cuenta demo | la frase del diccionario | igual |
+| Tope diario por cliente | la frase del diccionario | «El WhatsApp no ha salido: YaQu limita los mensajes diarios a un mismo cliente para no saturarlo. Vuelve a intentarlo mañana o envía el enlace por email.» |
+| El correo no consta enviado (`send-email`) | «No se pudo enviar el email. El presupuesto quedó guardado; puedes reintentarlo.» | «No sabemos si el email ha salido. Pregúntale a tu cliente antes de volver a enviarlo.» |
+| Cuenta demo | la frase del diccionario | igual |
 
 El motivo (`error`) y el `detail` de la respuesta no cambian. Lo que contestó Meta sigue en `detail`,
 y `whatsapp.ts` lo deja en el log y en la fila del mensaje: no se pierde, deja de leerlo la persona.
@@ -122,7 +125,7 @@ y `whatsapp.ts` lo deja en el log y en la fila del mensaje: no se pierde, deja d
 ### La desviación de SCRUM-126, declarada
 
 SCRUM-126 unificó en `SEND_FAILURE_MESSAGES` «un mensaje humano ÚNICO por motivo» para los nueve
-envíos del panel. Desde hoy la baja y el tope del negocio se leen de otra forma en un presupuesto
+envíos del panel. Desde hoy la baja y los dos topes se leen de otra forma en un presupuesto
 que en una factura o un albarán. Es a propósito y lo aceptó el orquestador (c.18357): lo que el
 profesional tiene que hacer no es lo mismo en cada documento. `src/lib/sendOutcome.ts` no se ha
 tocado (`git diff` vacío) y `tests/scrum126-send-outcome.test.mjs` tampoco.
@@ -131,16 +134,27 @@ tocado (`git diff` vacío) y `tests/scrum126-send-outcome.test.mjs` tampoco.
 `customer_daily_cap` dicen «envíalo por email», un pronombre que apunta al documento. Lo nombro; no
 lo toco.
 
-### Lo firmado que NO se ha construido, y por qué
+### Dos frases de la primera firma que no se sostuvieron al medirlas
 
-- **El tope por cliente.** La frase firmada dice «WhatsApp no deja mandarle más». El límite es de
+Las dos se pararon antes de construirlas y se volvieron a firmar en el c.18371.
+
+- **El tope por cliente.** La primera firma decía «WhatsApp no deja mandarle más». El límite es de
   YaQu: `config.WA_CUSTOMER_DAILY_CAP`, 3 al día por defecto, aplicado en `whatsapp.ts` bajo el
-  comentario «J6: tope duro … por CLIENTE y día». Se queda con la frase de hoy hasta nueva firma.
-- **El correo que no sale.** La frase firmada dice «El email no ha salido. Vuelve a enviarlo.».
-  `enviarPorResend` contesta lo mismo si el proveedor dice que no que si no contesta en 15 s, y en
-  el segundo caso el correo puede haber salido. Leído, no ejecutado. Se queda como estaba.
+  comentario «J6: tope duro … por CLIENTE y día». La nueva lo dice. La firma dejaba elegir entre
+  esa forma y una con la cifra («…más de N mensajes al día»): **va sin cifra.** El valor se puede
+  leer desde la ruta, pero la forma con cifra no tiene un literal completo firmado y componerla
+  sería redactar.
+- **El correo que no sale.** La primera firma decía «El email no ha salido. Vuelve a enviarlo.».
+  `enviarPorResend` contesta `fallo_envio` igual si el proveedor dice que no que si no contesta en
+  15 s, y en el segundo caso el correo puede haber salido. Leído, no ejecutado. La firma nueva trae
+  dos formas; **va la de «si no se puede distinguir»**: `sendQuoteEmail` lanza un error sin motivo
+  y la ruta no sabe cuál de los dos fue. Distinguirlo pide que `enviarCorreo.ts` devuelva el
+  motivo con nombre: es de S1, lo usan también los correos de factura, y no está hecho.
+  No hay tercer caso: `registrarEnvio`, lo único que va después del envío dentro de ese `try`,
+  no lanza (leído en `registroDeEnvios.ts`).
 
-Los dos están dichos al orquestador y escritos en la ficha.
+Esa frase del correo sale también cuando la base falla ANTES de enviar, que es un caso en el que sí
+se sabe que no salió. Impreciso en la dirección que no duplica.
 
 ### Una rama que no se alcanza y queda imprecisa
 

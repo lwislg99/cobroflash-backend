@@ -42,10 +42,8 @@ La primera frase es la del presupuesto rápido (SCRUM-1443, comentario 18307) si
 
 ## Lo que no cubre
 
-- El tope diario por cliente. La firma del comentario 18357 traía su frase, pero afirma que ese
-  límite lo pone WhatsApp, y es de YaQu (`WA_CUSTOMER_DAILY_CAP`). No se ha aplicado: ese caso sigue
-  con la frase del diccionario hasta que se vuelva a firmar.
-- El correo que no sale (`POST /admin/quotes/:id/send-email`). Su frase firmada afirma que no ha
-  salido, y con el plazo vencido no se sabe. Sigue como estaba.
+- El tope diario por cliente y el correo que no sale. El comentario 18357 traía una frase para cada
+  uno y ninguna de las dos se sostuvo al medirla. Se volvieron a firmar en el comentario 18371 y
+  tienen su ficha: `2026-10-06-SCRUM-1465-tope-por-cliente-y-correo.md`.
 - El aviso de la cuenta demo, que sólo se alcanza en esa cuenta.
 - Las frases del diccionario `SEND_FAILURE_MESSAGES`, que siguen leyendo la factura y el albarán.

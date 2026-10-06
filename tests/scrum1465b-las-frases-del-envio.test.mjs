@@ -4,11 +4,15 @@
 //
 // `POST /admin/quotes/:id/send-whatsapp` contesta 200 `sent:false` con una frase en `message`, y
 // tres pantallas la pintan tal cual (el presupuesto rápido, la ficha y la lista). Firmadas por el
-// orquestador en SCRUM-1465 c.18357, tres de ellas:
+// orquestador en SCRUM-1465 (c.18357, y D re-firmada en c.18371):
 //
 //   A · no se sabe si salió  (Meta dice que no, no contesta, o no llegamos a mandarlo)
 //   C · tope diario del negocio
+//   D · tope diario por cliente
 //   E · el cliente está dado de baja
+//
+// La del CORREO que no sale (F) se comprueba en `scrum1465-lo-que-salio-salio`, que es donde está
+// doblado el correo.
 //
 // Las tres reglas que este fichero sujeta:
 //   1. EL TEXTO DE META NO LLEGA A LA PERSONA. Antes leía «(#131026) Message undeliverable».
@@ -18,10 +22,8 @@
 //   3. LA PALABRA DEL DOCUMENTO NO ESTÁ EN EL SERVIDOR. Ni «presupuesto» ni «cotización»: así no
 //      hay género que concordar. «Hemos guardado tu …» lo pone la pantalla que acaba de guardar.
 //
-// 🔴 LO QUE NO CAMBIA, y está aquí como control para que nadie lo «arregle» de paso: el tope por
-// cliente y el aviso de la cuenta demo siguen saliendo del diccionario compartido. El primero
-// tiene texto propuesto y SIN FIRMAR (la firma de c.18357 afirmaba que el tope es de WhatsApp, y
-// es nuestro: `WA_CUSTOMER_DAILY_CAP`); el segundo sólo se alcanza en el merchant 1.
+// 🔴 LO QUE NO CAMBIA, y está aquí como control para que nadie lo «arregle» de paso: el aviso de
+// la cuenta demo sigue saliendo del diccionario compartido. Sólo se alcanza en el merchant 1.
 //
 // ── EL BANCO ──────────────────────────────────────────────────────────────────────────────
 // El handler REAL de `dist/` con la base doblada (`_envio-doblado.mjs`). La baja y los topes pasan
@@ -44,6 +46,7 @@ const TEL = '34000000001';
 const A = 'No sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.';
 const C = 'El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.';
 const E = 'El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.';
+const D = 'El WhatsApp no ha salido: YaQu limita los mensajes diarios a un mismo cliente para no saturarlo. Vuelve a intentarlo mañana o envía el enlace por email.';
 
 /**
  * Manda el presupuesto por la ruta. `meta` es lo que contestaría `sendWhatsAppWindowFirst`; sin
@@ -140,8 +143,9 @@ test('SCRUM-1465 · frases · 🔴 A: Meta no contesta a tiempo → no se afirma
 test('SCRUM-1465 · frases · A: si no llegamos a mandarlo ya no se dice que «WhatsApp rechazó el envío»', async () => {
   const r = await enviar({ meta: { ok: false, via: 'template', reason: 'not_configured' } });
   noSalio(r, 'whatsapp_send_failed');
-  assert.equal(r.cuerpo.message, A);
-  assert.ok(!r.cuerpo.message.includes('rechazó'), '🔴 se culpa a WhatsApp de un envío que no llegó a intentarse');
+  // La frase entera, por identidad: antes aquí se leía «…WhatsApp rechazó el envío…», y WhatsApp
+  // no había rechazado nada.
+  assert.equal(r.cuerpo.message, A, '🔴 se culpa a WhatsApp de un envío que no llegó a intentarse');
 });
 
 test('SCRUM-1465 · frases · 🔴 las tres frases no llevan la palabra del documento, tampoco con un negocio de México', async () => {
@@ -151,15 +155,21 @@ test('SCRUM-1465 · frases · 🔴 las tres frases no llevan la palabra del docu
     (await enviar({ meta: metaDiceQueNo, pais: 'MX' })).cuerpo.message,
   ];
   assert.deepEqual(leidas, [E, C, A], '🔴 la frase cambia con el país: algo la está componiendo con la palabra del documento');
+  // Control del detector: ve la palabra de los dos países cuando está (SCRUM-237).
+  assert.match('Hemos guardado tu presupuesto', /presupuesto|cotizaci/i);
+  assert.match('Hemos guardado tu cotización', /presupuesto|cotizaci/i);
   for (const frase of leidas) {
-    assert.ok(!/presupuesto|cotizaci/i.test(frase), `🔴 «${frase}» nombra el documento: con «la cotización» no concordaría`);
+    assert.doesNotMatch(frase, /presupuesto|cotizaci/i, `🔴 «${frase}» nombra el documento: con «la cotización» no concordaría`);
   }
 });
 
-test('SCRUM-1465 · frases · CONTROL: el tope por cliente sigue con la frase del diccionario (la suya está SIN FIRMAR)', async () => {
+test('SCRUM-1465 · frases · D: con el tope diario por cliente se lee la frase firmada, que dice de quién es el límite', async () => {
   const r = await enviar({ respuestas: elTopePorCliente });
   noSalio(r, 'customer_daily_cap');
-  assert.equal(r.cuerpo.message, SEND_FAILURE_MESSAGES.customer_daily_cap);
+  assert.equal(r.cuerpo.message, D);
+  // El límite lo pone YaQu (`WA_CUSTOMER_DAILY_CAP`). La primera firma decía «WhatsApp no deja
+  // mandarle más», y no era verdad.
+  assert.match(r.cuerpo.message, /YaQu limita/);
 });
 
 test('SCRUM-1465 · frases · CONTROL: la cuenta demo sigue con la frase del diccionario', async () => {
