@@ -1,0 +1,47 @@
+CENSO EN EJECUCIÓN de `insertBefore` / `firstChild` / `nextSibling` del banco — quién los llama al correr.
+Medido por la sesión S3 anterior el 6-oct-2026 (~17:30Z) sobre main 31ff91d9, con una sonda temporal en el banco
+(el candidato más una línea de registro por llamada) y la dirigida del banco: 401 de 1257 ficheros de test.
+La sonda no está en git. «destino 0» = coincide con lo que hacía el banco de antes (siempre el primero).
+
+POBLACIÓN: 188 líneas de sonda
+ilegibles: 0
+
+PROCESOS QUE LLAMARON: 22
+  DIVERGE  · scrum768-listas-sin-atajo.test.mjs · insertBefore 28 (divergen 21, coinciden 7) · firstChild 0 · nextSibling 0 · nodo:28
+  DIVERGE  · scrum1102f-sii-y-foral-se-preguntan-y-se-guardan.test.mjs · insertBefore 20 (divergen 10, coinciden 10) · firstChild 0 · nextSibling 0 · nodo:20
+  DIVERGE  · scrum698-vistas-que-no-se-miden.test.mjs · insertBefore 12 (divergen 9, coinciden 3) · firstChild 0 · nextSibling 0 · nodo:12
+  DIVERGE  · scrum1317-cierre-admin-e-inicio-del-operario.test.mjs · insertBefore 3 (divergen 3, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:3
+  DIVERGE  · scrum1338-la-barra-del-operario-contra-los-gates.test.mjs · insertBefore 4 (divergen 3, coinciden 1) · firstChild 0 · nextSibling 0 · nodo:4
+  DIVERGE  · scrum451-plazo-de-red.test.mjs · insertBefore 4 (divergen 3, coinciden 1) · firstChild 0 · nextSibling 0 · nodo:4
+  DIVERGE  · scrum697-un-solo-render.test.mjs · insertBefore 5 (divergen 3, coinciden 2) · firstChild 0 · nextSibling 0 · nodo:4 undefined:1
+  DIVERGE  · scrum1317-productos-del-operario.test.mjs · insertBefore 2 (divergen 2, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:2
+  DIVERGE  · scrum1341-actividad-del-equipo-sin-importes.test.mjs · insertBefore 2 (divergen 2, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:2
+  DIVERGE  · scrum628-cobertura-visual-del-dashboard.test.mjs · insertBefore 2 (divergen 2, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:2
+  DIVERGE  · scrum785-productos-y-proveedores-descuelgan.test.mjs · insertBefore 4 (divergen 2, coinciden 2) · firstChild 0 · nextSibling 0 · nodo:4
+  DIVERGE  · scrum769-el-motivo-de-las-dos-que-no.test.mjs · insertBefore 1 (divergen 1, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:1
+  DIVERGE  · scrum901-banco-fiel-a-la-inicio.test.mjs · insertBefore 1 (divergen 1, coinciden 0) · firstChild 0 · nextSibling 0 · nodo:1
+  coincide · scrum1164-ocultar-en-receipt-ficha-trabajo.test.mjs · insertBefore 17 (divergen 0, coinciden 17) · firstChild 17 · nextSibling 0 · nodo:17
+  coincide · scrum1164-ocultar-en-receipt-inicio-planes.test.mjs · insertBefore 14 (divergen 0, coinciden 14) · firstChild 0 · nextSibling 0 · nodo:14
+  coincide · scrum1180-editor-clausulas-excluidas.test.mjs · insertBefore 6 (divergen 0, coinciden 6) · firstChild 6 · nextSibling 0 · nodo:6
+  coincide · scrum1200-sin-respuesta.test.mjs · insertBefore 2 (divergen 0, coinciden 2) · firstChild 2 · nextSibling 0 · null:2
+  coincide · scrum1216a-serie-sin-promesa.test.mjs · insertBefore 1 (divergen 0, coinciden 1) · firstChild 1 · nextSibling 0 · null:1
+  coincide · scrum1216b-pantalla-arranque.test.mjs · insertBefore 5 (divergen 0, coinciden 5) · firstChild 5 · nextSibling 0 · null:5
+  coincide · scrum1271-pendiente-tras-parcial.test.mjs · insertBefore 2 (divergen 0, coinciden 2) · firstChild 2 · nextSibling 0 · nodo:2
+  coincide · scrum1274-presupuesto-desde-el-trabajo.test.mjs · insertBefore 6 (divergen 0, coinciden 6) · firstChild 6 · nextSibling 0 · nodo:6
+  coincide · scrum600d-el-envio-tras-emitir.test.mjs · insertBefore 4 (divergen 0, coinciden 4) · firstChild 4 · nextSibling 0 · nodo:4
+
+CON ALGUNA LLAMADA QUE DIVERGE: 13 de 22
+
+SITIOS DISTINTOS (padre ← hijo): 11
+  23× en 6 fichero(s) · DIV.customers-card# ← H2.# · ref=nodo · destino 0 de 1
+  23× en 6 fichero(s) · DIV.customers-card# ← P.# · ref=nodo · destino 1 de 2
+  23× en 10 fichero(s) · DIV.quote-block# ← FIELDSET.field segmented-field# · ref=nodo · destino 1 de 5
+  19× en 2 fichero(s) · TD.cell-id# ← LABEL.# · ref=nodo · destino 0 de 2
+  16× en 7 fichero(s) · DIV.# ← DIV.# · ref=nodo · destino 1 de 2
+  14× en 1 fichero(s) · DIV.# ← DIV.# · ref=nodo · destino 0 de 1
+  8× en 3 fichero(s) · DIV.modal-share# ← BUTTON.btn btn-secondary# · ref=nodo · destino 0 de 1
+  8× en 3 fichero(s) · DIV.modal-share# ← BUTTON.btn btn-primary# · ref=nodo · destino 0 de 2
+  8× en 3 fichero(s) · DIV.# ← DIV.field#puerta-serie · ref=null · destino 0 de 0
+  2× en 1 fichero(s) · DIV.modal-body# ← FIELDSET.field segmented-field# · ref=nodo · destino 0 de 3
+  1× en 1 fichero(s) · DIV.# ← SPAN.# · ref=undefined · destino 0 de 0
+EXIT=0
