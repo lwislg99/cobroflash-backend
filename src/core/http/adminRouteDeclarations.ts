@@ -260,7 +260,10 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // lee el motivo para decidir si es el que toca, y con la mitad escrita revisa sobre una premisa
   // falsa. El rol NO cambia; lo que se corrige es lo que dice servir.
   { method: 'GET',   path: '/admin/attachments/:id', why: 'Fotos que mandó el cliente con la solicitud y fotos del albarán del trabajo' },
-  { method: 'GET',   path: '/admin/search', why: 'Busca clientes/quotes/facturas: todo ello ya es visible para él' },
+  // SCRUM-1489: el motivo decía «todo ello ya es visible para él», y dejó de ser cierto el
+  // 1-oct-2026 (SCRUM-1346 c.17952, SCRUM-1390 c.17962): de presupuestos y facturas ve los suyos.
+  // El rol NO cambia; la ruta recorta con las puertas de SCRUM-1403 y SCRUM-1397.
+  { method: 'GET',   path: '/admin/search', why: 'Busca clientes (la cartera entera) y, de presupuestos y facturas, sólo los suyos: autor, asignado o Trabajo' },
   { method: 'GET',   path: '/admin/bot/handoffs', why: 'Conversaciones del bot que piden persona (A8.3)' },
 
   // IA — ayuda a redactar/montar el presupuesto, que es su trabajo. Consume API de

@@ -43,6 +43,10 @@ const TABLA = [
 /** ¿Casa esta fila con este `where`? Lo que no se sabe evaluar LANZA. */
 function casa(fila, where) {
   for (const [clave, valor] of Object.entries(where)) {
+    // SCRUM-1489: la ruta lleva ahora `AND: <recorte de quien pregunta>`, que para el admin de
+    // estos casos es `undefined`. Prisma ignora una clave `undefined`; el doble también. Un `AND`
+    // CON recorte sigue lanzando aquí: quién ve qué lo mide `scrum1489-…`, no este fichero.
+    if (valor === undefined) continue;
     if (clave === 'OR') {
       assert.ok(Array.isArray(valor) && valor.length > 0, '🔴 un OR vacío: en Prisma no casa nada');
       if (!valor.some((w) => casa(fila, w))) return false;
