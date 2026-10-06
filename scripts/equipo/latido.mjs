@@ -44,6 +44,13 @@
 //                  equipo antes de que caducara (el detalle, en `docs/master/SCRUM-1413.md`). «Citado
 //                  en main» y no «comentado en Jira»: el latido no tiene credenciales de Jira, y un
 //                  comentario no salva los datos.
+//   9 · VIGÍA    → (SCRUM-1459) los avisos que `vigia-atascados` COMENTA en su issue y que nadie ha
+//                  leído, con su edad, mientras alguno de sus PR siga abierto. Del 2 al 6-oct-2026 comentó
+//                  tres veces sobre cuatro PR y nadie lo abrió. Y la línea de MAIN dice cuánto hace de
+//                  su último commit.
+//
+// ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
+// no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
 //
 // DE DÓNDE SALEN LAS SESIONES: del REGISTRO de trabajos (`~/.claude/jobs/*/state.json`), nunca del
 // panel. Medido el 1-oct: dos sesiones lanzadas desde una carpeta nueva quedaron pidiendo un permiso,
@@ -408,9 +415,32 @@ export function commitsDeCorridas(corridas, jobsDe, obligatorio = OBLIGATORIO_PO
   return commits;
 }
 
-/** @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string}} e — commits de main, del más NUEVO al más viejo. */
-export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO }) {
+/**
+ * (SCRUM-1459) Cuánto hace del último commit de main, para la línea de MAIN. Medido el 6-oct-2026: tras
+ * 88 h sin un merge la línea decía «último con el obligatorio VERDE: …» igual que un martes cualquiera.
+ * Sólo lo DICE: el aviso de parón es de `vigia-atascados` (S0), y dos umbrales para lo mismo divergen.
+ * @param {{sha?:string, fecha?:string}} ultimo  @returns {string|null} `null` = la fecha no se deja leer.
+ */
+export function edadDelUltimoMerge(ultimo, ahora) {
+  const t = Date.parse(ultimo && ultimo.fecha);
+  if (!Number.isFinite(t) || !Number.isFinite(ahora)) return null;
+  const h = (ahora - t) / 3600000;
+  const cuanto = h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : h >= 1 ? `${h.toFixed(1)} h` : `${Math.max(0, Math.round(h * 60))} min`;
+  return `main no recibe un commit desde hace ${cuanto} (${String(ultimo.sha || '?').slice(0, 8)}, ${String(ultimo.fecha).slice(0, 16)}Z)`;
+}
+
+/**
+ * @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string, ultimoMerge?:{sha:string,fecha:string}|null, ahora?:number}} e
+ *   commits de main, del más NUEVO al más viejo · `ultimoMerge`: `undefined` = no se pregunta · `null` = se preguntó y no se pudo leer.
+ */
+export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO, ultimoMerge, ahora }) {
   if (!Array.isArray(commits) || commits.length === 0) return ciega('MAIN', 'no llegaron corridas del CI sobre main (push)');
+  if (ultimoMerge !== undefined) {
+    const edad = edadDelUltimoMerge(ultimoMerge, ahora);
+    if (edad === null) return ciega('MAIN', 'no se pudo leer la fecha del último commit de main: no sé cuánto lleva parado');
+    const s = seccionMain({ commits, obligatorio });
+    return s.pudo ? { ...s, poblacion: `${edad} · ${s.poblacion}` } : s;
+  }
   let detras = 0; let canceladas = 0;
   const alertas = [];
   // Cuántos de los que no tienen veredicto es porque su corrida se canceló: no es lo mismo que «aún corre».
@@ -543,6 +573,62 @@ export function seccionExperimentos({ ramas, runsDe, artefactosDe, citadoEnMain,
   return {
     nombre: N, pudo: true, alertas,
     poblacion: `${ramas.length} rama(s) \`${PREFIJO_DE_EXPERIMENTO}*\` (${sinRuns.length} sin ningún run) · ${terminados} run(s) terminados: ${citados} citados en docs/master de main, ${hallados.length} sin citar con artefactos, ${sinArtefactos} sin citar y sin artefactos · ${corriendo} aún corriendo (no se juzgan)`,
+  };
+}
+
+// ───────────────────────────── 9 · VIGÍA ─────────────────────────────
+
+/** El título del issue donde escribe `vigia-atascados.yml` (su `TITULO`). Se busca por él, no por número. */
+export const TITULO_DEL_VIGIA = '[vigía] PR atascados';
+/** Así empieza cada aviso que el vigía COMENTA (lo demás lo reescribe en el cuerpo, sin notificar). */
+const MARCA_DE_AVISO = 'la lista de PR atascados ha **EMPEORADO**';
+
+/** Los PR que nombra un aviso del vigía: sus viñetas son `- **#2129 entra** …` / `- **#2129 cruza 24 h** …`. */
+export function prsDelAviso(cuerpo) {
+  return [...new Set([...String(cuerpo || '').matchAll(/^\s*-\s+\*\*#(\d+)\b/gm)].map((m) => Number(m[1])))];
+}
+
+/**
+ * (SCRUM-1459) Los avisos del vigía que NADIE ha leído. Medido el 6-oct-2026: durante un parón de 88 h el
+ * vigía comentó tres veces en su issue (2, 3 y 5-oct) nombrando #2128-#2131; los 43 comentarios del issue
+ * tenían cero reacciones y ninguna respuesta. El vigía escribía donde nadie lee, y el latido no leía lo
+ * que el vigía escribe.
+ *
+ * LEÍDO = el comentario tiene alguna reacción, o una PERSONA ha comentado después en el issue. GitHub no
+ * guarda «visto»: es la única huella que deja quien lo abre, y se dice en la salida cómo dejarla.
+ * VIVO  = nombra algún PR que sigue abierto. El que ya no, se cuenta y no se enseña: no hay nada que hacer.
+ *
+ * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number}} e
+ *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
+ */
+export function seccionVigia({ issue, comentarios, abiertos, ahora }) {
+  if (issue === undefined) return ciega('VIGÍA', `no se pudo buscar el issue «${TITULO_DEL_VIGIA}»`);
+  if (issue === null) return ciega('VIGÍA', `no hay ningún issue ABIERTO titulado «${TITULO_DEL_VIGIA}»: o el vigía no ha corrido nunca, o alguien lo cerró`);
+  if (!Array.isArray(comentarios)) return ciega('VIGÍA', `no se pudieron leer los comentarios del issue #${issue}`);
+  if (!Array.isArray(abiertos)) return ciega('VIGÍA', 'la lista de PR abiertos no llegó: no sé qué avisos siguen vivos');
+  const orden = [...comentarios].sort((a, b) => String(a.creado).localeCompare(String(b.creado)));
+  const ultimaPersona = orden.filter((c) => !c.esBot).map((c) => String(c.creado)).pop() || '';
+  const avisos = orden.filter((c) => c.esBot && String(c.cuerpo || '').includes(MARCA_DE_AVISO));
+  // Un aviso sin ningún PR legible no se da por «sin PR abierto»: el formato cambió y no sé leerlo.
+  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0);
+  if (ilegibles.length) return ciega('VIGÍA', `${ilegibles.length} aviso(s) del issue #${issue} no nombran ningún PR que yo sepa leer (el primero, del ${String(ilegibles[0].creado).slice(0, 16)}Z): el formato del vigía ha cambiado`);
+  const sinLeer = avisos.filter((c) => !(c.reacciones > 0) && String(c.creado) > ultimaPersona);
+  const hoy = new Set(abiertos);
+  const alertas = []; let muertos = 0;
+  for (const c of sinLeer) {
+    const nombra = prsDelAviso(c.cuerpo);
+    const siguen = nombra.filter((n) => hoy.has(n));
+    if (siguen.length === 0) { muertos++; continue; }
+    const h = (ahora - Date.parse(c.creado)) / 3600000;
+    const edad = !Number.isFinite(h) ? 'edad DESCONOCIDA' : h >= 48 ? `${(h / 24).toFixed(1)} días` : `${h.toFixed(1)} h`;
+    alertas.push({
+      id: c.id, siguen,
+      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · nombra ${nombra.length} PR, ${siguen.length} siguen abiertos: ${siguen.map((n) => `#${n}`).join(' ')} · comentario ${c.id}`,
+    });
+  }
+  return {
+    nombre: 'VIGÍA', pudo: true, alertas,
+    poblacion: `issue #${issue} · ${comentarios.length} comentarios, ${avisos.length} son avisos del vigía · ${sinLeer.length} sin leer (${alertas.length} con algún PR aún abierto, ${muertos} ya sin ninguno: no se enseñan) · «leído» = una reacción en el comentario o una respuesta posterior de una persona (\`gh api repos/${REPO}/issues/comments/<id>/reactions -f content=eyes\`)`,
   };
 }
 
@@ -809,7 +895,10 @@ async function todo() {
   // 4 · main
   const corridas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_OBLIGATORIO}/runs?branch=main&event=push&per_page=${COMMITS_DE_MAIN}`]).workflow_runs);
   const commits = commitsDeCorridas(corridas, (c) => intentar(() => ghJson(['api', `repos/${REPO}/actions/runs/${c.id}/jobs?per_page=100`]).jobs));
-  const sMain = seccionMain({ commits });
+  // La punta de main, con su fecha: `null` si no se deja leer (y entonces la sección lo dice, no lo calla).
+  const punta = intentar(() => ghJson(['api', `repos/${REPO}/commits/main`]));
+  const ultimoMerge = punta && punta.sha && punta.commit && punta.commit.committer ? { sha: punta.sha, fecha: punta.commit.committer.date } : null;
+  const sMain = seccionMain({ commits, ultimoMerge, ahora });
   tramo('main');
   // 5 · despliegue
   const ds = intentar(() => ghJson(['api', `repos/${REPO}/deployments?per_page=5`]));
@@ -863,7 +952,17 @@ async function todo() {
     ahora,
   });
   tramo('experimentos');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp];
+  // 9 · vigía. El issue se busca por su título (el número no está escrito en ningún sitio del vigía).
+  const issues = intentar(() => ghJson(['issue', 'list', '--state', 'open', '--search', `${TITULO_DEL_VIGIA} in:title`, '--json', 'number,title', '--limit', '20']));
+  const elIssue = !Array.isArray(issues) ? undefined : (issues.find((i) => i.title === TITULO_DEL_VIGIA) || { number: null }).number;
+  // Una línea JSON por comentario: con `--paginate`, varias páginas pegadas no son UN JSON.
+  const comentarios = !elIssue ? undefined : intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues/${elIssue}/comments?per_page=100`, '-q',
+    '.[] | {id, creado: .created_at, autor: .user.login, esBot: (.user.type == "Bot"), cuerpo: .body, reacciones: .reactions.total_count}'])
+    .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)));
+  // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora });
+  tramo('vigía');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);

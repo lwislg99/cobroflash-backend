@@ -417,6 +417,10 @@ const MOTIVO_DE_917 = 'SINGULAR QUE EL CÓDIGO ELIGE CON N = 1 (SCRUM-917 coment
 const MOTIVO_DE_974 = 'EJEMPLO DEL DETALLE CON SUS PLURALES (SCRUM-974 comentario 16056): '
   + '`bloqueFirmadoSinFacturar` compone «{partes} parte(s) firmado(s) de {clientes} cliente(s)» con '
   + 'plurales de verdad; la ficha cita tres casos. Leído en el servicio, no ejecutado: consulta la base.';
+const MOTIVO_DE_1215_HOJA = 'EL NÚMERO DEL ALBARÁN ES UN DATO (SCRUM-1215 comentario 18283): '
+  + '`openFacturarParcialSheet` compone el título y el `aria-label` de la hoja con `alb.numero` '
+  + 'detrás de la parte fija. Ejecutado el 6-oct-2026 en el banco de vistas '
+  + '(`tests/scrum1215d-hoja-facturar-lo-entregado.test.mjs`): lo pintado es la cita con el número.';
 
 const NO_SE_CRUZAN = [
   { ficha: '2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md', clase: 'compuesta',
@@ -474,6 +478,12 @@ const NO_SE_CRUZAN = [
       + '(orquestador, 1-oct-2026): ese fichero es del sellado del albarán (regla 29) y tocarlo para '
       + 'que un guard pueda leerlo sería mover lo serio por lo cómodo. Sale de aquí el día que quien '
       + 'lleve ese carril lo escriba en una línea.' },
+  { ficha: '2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobDetailView.js',
+    partes: ['Facturar lo entregado · ', dato('{número}')], motivo: MOTIVO_DE_1215_HOJA },
+  { ficha: '2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobDetailView.js',
+    partes: ['Facturar lo entregado del albarán ', dato('{número}')], motivo: MOTIVO_DE_1215_HOJA },
 ].map((d) => ({ ...d, texto: textoDe(d.partes) }));
 
 /** A partir de aquí un «dato» deja de ser un número, una fecha o un hueco, y es una frase. */
