@@ -63,6 +63,48 @@ Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva
 el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
 
+## 🔴🔴 LA PRIORIDAD Nº 1 (6-oct-2026, de viva voz): CERRAR, NO ABRIR
+
+**Esto no es una preferencia de estilo. Está por encima de encontrar defectos nuevos.** Sus palabras,
+literales:
+
+> «sobre todo lo que me interesa es limpiar tareas de jira y mandar lotes de tareas donde una sesion
+> coja una tarea la arregle y la cierre, coja otra la arregle y la cierre. no es tan dificil, no puede
+> ser que abramos siempre mas y mas. y si encuentra un defecto arreglando una tarea, pues lo soluciona,
+> lo arregla, lo cierra y vuelve con la que estaba, la termina de arreglar y la cierra. simple y llano.»
+
+> «esto es fuego y tenemos que quitarnos ya las 280 tareas. llevamos demasiados meses arreglando
+> gilipolleces y sin poder vender el producto porque no para de abrir cosas y arreglar otras que rompen
+> otras.»
+
+**Luis, fundador, 6-oct-2026.** Transcrito por su orquestador sin cambiar una palabra.
+
+### Cómo se cumple
+
+1. **Cada puesto recibe un LOTE de 3 a 5 tickets EN ORDEN**, no uno. **Si se bloquea en el primero,
+   baja al siguiente**; no espera al orquestador. Lo que necesite de él, lo escribe en el ticket.
+2. **Una tarea se cierra ANTES de coger la siguiente.** Cerrar sigue siendo del orquestador (A13.4):
+   la sesión entrega **COMPLETA contra su aceptación, o QUÉ LE FALTA**, y no se lleva dos a medias.
+3. 🔴 **Un defecto encontrado DE PASO se arregla, se cierra y se vuelve a la tarea de origen.
+   NO se abre ticket.** Es la frase del fundador y es la que más se incumplía.
+4. **Se abre ticket SÓLO si:** tiene víctima **y** no se puede arreglar en el momento · **o** tiene
+   FECHA · **o** cruza al otro equipo. **Lo demás se nombra sin número** en la entrega.
+5. **El orquestador reporta ABIERTOS contra CERRADOS cada tanda, en una línea.**
+6. **Un «En curso» que nadie toca vuelve a «Por hacer».** Un estado que miente es peor que no tenerlo.
+
+### Lo medido el 6-oct-2026, que es el motivo
+
+| Qué | Cuánto |
+|---|---|
+| Tickets en «En curso» | **más de 100**, con **seis** sesiones trabajando |
+| De esos, sin tocarse 4 días o más | **85** · el más viejo desde el **16-sep** |
+| Abiertos ese día frente a cerrados | **8 abiertos, 2 cerrados** |
+| Abiertos que parecían hechos y lo estaban | **42 de 118** |
+| Terminados que lo decían en Jira | **7 de 44** |
+
+**El tablero miente en las dos direcciones a la vez:** dice «En curso» de lo que nadie toca, y no dice
+«hecho» de lo que ya está en producción.
+
 ## El objetivo vigente (17-sep-2026, de viva voz)
 
 **Producto y automatización A LA VEZ, los dos a fuego.** Sus palabras: «quiero en paralelo avanzar a
