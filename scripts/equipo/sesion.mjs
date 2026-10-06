@@ -107,10 +107,17 @@ const MODELO = /^[a-z0-9][a-z0-9.-]{0,63}$/;
  *     500k, 4. Un aviso que sale en casi todas no distingue a ninguna, y uno que no sale casi nunca tampoco.
  *   · 200k del 21-sep-2026 al 6-oct-2026 (SCRUM-1070b; decisión del orquestador, y tocar esta constante llevó
  *     la autorización escrita del fundador: `docs/master/SCRUM-1070.md`). Antes, 300k.
- * La A19 tiene un segundo número, el de «a MITAD de una entrega» (500k; el 6-oct-2026 NO se volvió a decidir):
- * no vive aquí y el latido no lo distingue (SCRUM-1484).
+ * La A19 tiene un segundo número, el de «a MITAD de una entrega»: es la constante de abajo.
  */
 export const UMBRAL_CONTEXTO = 300_000;
+/**
+ * A19, el SEGUNDO número (SCRUM-1484): por encima de esto NO se espera a terminar la entrega. Primer punto
+ * seguro (un commit local), traspaso y relevo. El latido lo toma de aquí para decir una frase distinta.
+ * 500k es el que la A19 lleva escrito («en mitad de una entrega, si pasa de 500k»), leído el 6-oct-2026 en
+ * `docs/equipo/00-normas-comunes.md`. Ese día el fundador volvió a decidir el de arriba y NO éste: aquí se
+ * copia el de la norma, no se propone otro. Quien lo decida cambia esta línea y la norma JUNTAS.
+ */
+export const UMBRAL_CONTEXTO_A_MITAD = 500_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */
