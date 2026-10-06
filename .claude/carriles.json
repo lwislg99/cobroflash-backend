@@ -1,0 +1,1142 @@
+{
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 3dd485e5e1b5). NO se edita a mano: se cambia la tabla y se regenera.",
+  "fuente": "docs/equipo/dos-equipos.md",
+  "sha": "3dd485e5e1b5",
+  "areas": {
+    "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
+    "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
+    "S2": "pantallas del panel y los contenedores comunes del front",
+    "S3": "bancos, sondas e instrumentos de medida",
+    "S4": "producto: microcopy firmada, parte, albarán, lista de Trabajos, **prototipos**",
+    "S5": "automatización y eficiencia: CI, vigías, relevo de sesiones, gasto de tokens",
+    "J1": "Facturación y VeriFactu: facturas, VeriFactu, rectificativas (R1) y anulación, libros, y la entrega a la gestoría (SCRUM-280, 322, 323; con revisión de J4 porque salen datos de clientes a un tercero: propuesta de la S0, sin decidir). **Prioridad nº 1 del máster** (SIF-1). Revisa todo lo que borre o anonimice datos (regla 29: una factura emitida no se borra NUNCA)",
+    "J2": "Clientes y cobro (el CRM): ficha de cliente completa; historial de presupuestos, trabajos y facturas; seguimiento y recordatorios; qué debe cada cliente; los medios de pago (Stripe Connect, Bizum, webhooks) hasta encender el cobro; la supresión y la portabilidad de los datos del CLIENTE FINAL",
+    "J3": "Alta y crecimiento: registro, prueba, suscripción a YaQu, configuración, del alta al primer presupuesto enviado, y retención; el borrado y la anonimización de la cuenta del MERCHANT; construye las páginas legales (los textos los propone J4)",
+    "J4": "Legal y cumplimiento: privacidad, RGPD, textos legales, preguntas al asesor. **Propone; firma un jefe.** Primer caso: SCRUM-950",
+    "J5": "Competencia y producto: recorre la competencia y la convierte en propuestas priorizadas en Jira; **hace los PROTOTIPOS** de su equipo (paso 4 de `orquestador.md` §4bis). Hereda `docs/competencia/`",
+    "J6": "Calidad y seguridad: sus guards nuevos, la seguridad, y **el filtro de su equipo**: el PASO 0 «¿esto existe hoy?» (paso 3 de `orquestador.md` §4bis) y las afirmaciones de SU orquestador, que apunta en `afirmaciones-verificadas-javier.md` con las mismas tres columnas que `afirmaciones-verificadas.md`"
+  },
+  "titulos": {
+    "S0": "consultoría y auditoría",
+    "S1": "servidor",
+    "S2": "pantallas del panel y los contenedores comunes del front",
+    "S3": "bancos, sondas e instrumentos de medida",
+    "S4": "producto",
+    "S5": "automatización y eficiencia",
+    "J1": "Facturación y VeriFactu",
+    "J2": "Clientes y cobro (el CRM)",
+    "J3": "Alta y crecimiento",
+    "J4": "Legal y cumplimiento",
+    "J5": "Competencia y producto",
+    "J6": "Calidad y seguridad"
+  },
+  "reglas": [
+    {
+      "patron": "src/modules/system/app/routes/quoteDecisionLanding.routes.ts",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 131,
+      "dueno": "**S1**"
+    },
+    {
+      "patron": "src/modules/billing/app/routes/subscriptions.routes.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 122,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/system/app/routes/customerPortal.routes.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/app/routes/customersAdmin.routes.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/domain/identificadoresDuplicados.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/domain/supresionMerchant.service.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/billing/domain/invoiceWhatsApp.service.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 119,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/system/app/routes/invoicesAdmin.routes.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 118,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/system/domain/importarClientes.service.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/billing/domain/correoDeFacturaEnviado.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 119,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/messaging/domain/weeklyDigest.service.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 126,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/messaging/domain/whatsappLog.service.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/exports/domain/portabilidadCompleta.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/exports/domain/portabilidadRegistro.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/system/app/routes/legalPages.routes.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 129,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/messaging/domain/lifecycle.service.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 126,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/system/app/routes/supresion.routes.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/exports/app/routes/exports.routes.ts",
+      "puesto": "S1",
+      "tipo": "contenedor",
+      "linea": 130,
+      "dueno": "**S1** (contenedor)"
+    },
+    {
+      "patron": "src/modules/billing/app/routes/stripe.routes.ts",
+      "puesto": "J2",
+      "tipo": "contenedor",
+      "linea": 121,
+      "dueno": "**J2** (contenedor)"
+    },
+    {
+      "patron": "src/modules/billing/domain/envioDelDocumento.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 119,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/system/domain/anonimizarMerchant.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/system/domain/flagFiscal.service.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 118,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "docs/equipo/afirmaciones-verificadas-javier.md",
+      "puesto": "J6",
+      "tipo": "puesto",
+      "linea": 158,
+      "dueno": "**J6**"
+    },
+    {
+      "patron": "public/dashboard/js/invoiceActionsRegistry.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "public/dashboard/js/formaDePagoPorDefecto.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/customerEvents.service.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/domain/borradoMerchant.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 128,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/dashboard/js/selectorMetodoCobro.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/switchFormaJuridica.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/billing/domain/stripePrices.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 122,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/dashboard/js/buscadorDeClientes.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/customerDetailView.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/integrations/whatsappNotifications.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/albaranDetailView.js",
+      "puesto": "S4",
+      "tipo": "puesto",
+      "linea": 149,
+      "dueno": "**S4**"
+    },
+    {
+      "patron": "public/dashboard/js/facturaPreEmision.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "public/dashboard/js/invoiceDetailView.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "public/dashboard/js/libroRegistroView.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/quotes/domain/billingPlan.ts",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 131,
+      "dueno": "**S1**"
+    },
+    {
+      "patron": "docs/equipo/afirmaciones-verificadas.md",
+      "puesto": "S0",
+      "tipo": "puesto",
+      "linea": 157,
+      "dueno": "**S0**"
+    },
+    {
+      "patron": "docs/equipo/prompt-tanda-orquestador.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 164,
+      "dueno": "contenido **S0**; el cableado, **S5**"
+    },
+    {
+      "patron": "public/dashboard/js/paidViaEtiquetas.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/settingsSubmenus.js",
+      "puesto": "J3",
+      "tipo": "contenedor",
+      "linea": 146,
+      "dueno": "**J3** (contenedor)"
+    },
+    {
+      "patron": "scripts/censo-objetivo-tactil-panel.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "public/dashboard/js/parteDetailView.js",
+      "puesto": "S4",
+      "tipo": "puesto",
+      "linea": 149,
+      "dueno": "**S4**"
+    },
+    {
+      "patron": "scripts/_reporters-de-node-options.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/clasificar-fallo-automerge.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/modules/billing/domain/founding.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 122,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/dashboard/js/filtroClientes.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/onboardingView.js",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 145,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/dashboard/js/semaforoFiscal.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/integrations/whatsappTemplates.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/customersView.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/invoiceAccion.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "scripts/_vigilante-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/modules/system/domain/soporte.ts",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 126,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "src/modules/system/tagsDelCliente.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "docs/equipo/limites-del-fundador.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 161,
+      "dueno": "**orquestador de Luis**"
+    },
+    {
+      "patron": "docs/equipo/orquestador-autonomo.md",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 165,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "public/dashboard/js/invoicesView.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "public/dashboard/js/settingsView.js",
+      "puesto": "J3",
+      "tipo": "contenedor",
+      "linea": 146,
+      "dueno": "**J3** (contenedor)"
+    },
+    {
+      "patron": "scripts/vigilante-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/modules/system/customerAdmin.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 125,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/merchantAdmin.ts",
+      "puesto": "J3",
+      "tipo": "contenedor",
+      "linea": 127,
+      "dueno": "**J3** (contenedor)"
+    },
+    {
+      "patron": "docs/equipo/trampas-del-entorno.md",
+      "puesto": "S0",
+      "tipo": "puesto",
+      "linea": 157,
+      "dueno": "**S0**"
+    },
+    {
+      "patron": "public/dashboard/js/puertaSerie.js",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 143,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "scripts/vigia-despliegue-aviso.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/integrations/whatsappPolicy.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/system/invoiceAdmin.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 118,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "docs/equipo/orquestador-javier.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 163,
+      "dueno": "**orquestador de Javier**"
+    },
+    {
+      "patron": "public/dashboard/js/cobrosView.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "scripts/conflicto-de-registro.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/meta-guard-mutaciones.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "docs/equipo/00-normas-comunes.md",
+      "puesto": "S0",
+      "tipo": "puesto",
+      "linea": 157,
+      "dueno": "**S0**"
+    },
+    {
+      "patron": "docs/equipo/00-normas-siempre.md",
+      "puesto": "S0",
+      "tipo": "puesto",
+      "linea": 157,
+      "dueno": "**S0**"
+    },
+    {
+      "patron": "public/dashboard/js/csvImport.js",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 144,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/js/plansView.js",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 145,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "scripts/_ritmo-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/constancia-del-alter.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/puerta-avisador-rojo.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/puerta-claude-empuje.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "public/dashboard/css/styles.css",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "public/dashboard/js/homeView.js",
+      "puesto": "S2",
+      "tipo": "puesto",
+      "linea": 151,
+      "dueno": "**S2**",
+      "general": true
+    },
+    {
+      "patron": "public/dashboard/js/jobsView.js",
+      "puesto": "S4",
+      "tipo": "puesto",
+      "linea": 149,
+      "dueno": "**S4**"
+    },
+    {
+      "patron": "public/dashboard/js/teamView.js",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 145,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/dashboard/js/tutorial.js",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 145,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "scripts/_huella-de-la-caida.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/censo-accion-del-80.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/tanda-con-veredicto.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/integrations/mercadopago.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 123,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "docs/equipo/traspaso-javier.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 160,
+      "dueno": "orquestador de Luis / **orquestador de Javier**"
+    },
+    {
+      "patron": "scripts/censo-clics-del-80.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/suelo-de-la-tanda.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/vigia-sesiones-jv.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 173,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/integrations/whatsapp.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "public/dashboard/index.html",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "scripts/vigia-atascados.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "docs/equipo/dos-equipos.md",
+      "puesto": "S0",
+      "tipo": "puesto",
+      "linea": 157,
+      "dueno": "**S0**"
+    },
+    {
+      "patron": "docs/equipo/orquestador.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 159,
+      "dueno": "**orquestador de Luis**"
+    },
+    {
+      "patron": "public/dashboard/js/api.js",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "public/dashboard/js/app.js",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "src/integrations/stripe.ts",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 123,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "scripts/_arbol-quieto.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/frontera-dist.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/puerta-claude.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/vigia-pasada.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "src/prisma/schema.prisma",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 137,
+      "dueno": "**nadie**"
+    },
+    {
+      "patron": "docs/equipo/traspaso.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 160,
+      "dueno": "orquestador de Luis / **orquestador de Javier**"
+    },
+    {
+      "patron": "public/js/atribucion.js",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/privacidad.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 148,
+      "dueno": "**J3** construye"
+    },
+    {
+      "patron": "scripts/zona-roja.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "public/register.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/terminos.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 148,
+      "dueno": "**J3** construye"
+    },
+    {
+      "patron": "src/lib/invoicing.ts",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 117,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "docs/YAQU_MASTER.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 183,
+      "dueno": "**un jefe**"
+    },
+    {
+      "patron": "public/precios.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/sitemap.xml",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/index.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/login.html",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/robots.txt",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "public/tokens.css",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "src/api/routes.ts",
+      "puesto": "S1",
+      "tipo": "contenedor",
+      "linea": 132,
+      "dueno": "**S1** (contenedor)"
+    },
+    {
+      "patron": "src/core/flags.ts",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 134,
+      "dueno": "**S1**"
+    },
+    {
+      "patron": "public/auth.css",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 147,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "package.json",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 185,
+      "dueno": "cada uno SU línea de script"
+    },
+    {
+      "patron": "public/sw.js",
+      "puesto": "S2",
+      "tipo": "contenedor",
+      "linea": 150,
+      "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "src/app.ts",
+      "puesto": "S1",
+      "tipo": "contenedor",
+      "linea": 132,
+      "dueno": "**S1** (contenedor)"
+    },
+    {
+      "patron": "CLAUDE.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 183,
+      "dueno": "**un jefe**"
+    },
+    {
+      "patron": "DESIGN.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 184,
+      "dueno": "**S2** propone"
+    },
+    {
+      "patron": "src/modules/whatsappBot/**",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 124,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "docs/equipo/cicatrices/*.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 177,
+      "dueno": "cada puesto, la suya"
+    },
+    {
+      "patron": "src/modules/invoicing/**",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 117,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": "src/modules/payments/**",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 123,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "docs/equipo/puesto-j*.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 162,
+      "dueno": "cada puesto, la suya"
+    },
+    {
+      "patron": "src/core/documentos/**",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 133,
+      "dueno": "**S1**"
+    },
+    {
+      "patron": "src/modules/billing/**",
+      "puesto": "J2",
+      "tipo": "puesto",
+      "linea": 120,
+      "dueno": "**J2**"
+    },
+    {
+      "patron": "src/modules/reports/**",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 135,
+      "dueno": "**S1**"
+    },
+    {
+      "patron": "docs/equipo/sesion-*.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 162,
+      "dueno": "cada puesto, la suya"
+    },
+    {
+      "patron": "src/modules/fiscal/**",
+      "puesto": "J1",
+      "tipo": "puesto",
+      "linea": 117,
+      "dueno": "**J1**"
+    },
+    {
+      "patron": ".github/workflows/**",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 166,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "docs/master/SCRUM-*.md",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 178,
+      "dueno": "quien trabaja el ticket"
+    },
+    {
+      "patron": "docs/competencia/**",
+      "puesto": "J5",
+      "tipo": "puesto",
+      "linea": 181,
+      "dueno": "**J5**"
+    },
+    {
+      "patron": "src/modules/auth/**",
+      "puesto": "J3",
+      "tipo": "puesto",
+      "linea": 126,
+      "dueno": "**J3**"
+    },
+    {
+      "patron": "docs/prototipos/**",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 180,
+      "dueno": "S4 / **J5**, por ticket"
+    },
+    {
+      "patron": "docs/microcopy/**",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 179,
+      "dueno": "**S4** el README; cada registro, el puesto que usa el texto"
+    },
+    {
+      "patron": "scripts/_suelo-*",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 176,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/equipo/**",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 165,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "tests/_banco-*",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 168,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "tests/_suelo-*",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 168,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "instalacion-*.md",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 165,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "docs/legal/**",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 182,
+      "dueno": "**J4** propone"
+    },
+    {
+      "patron": "scripts/qa/**",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 172,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "src/core/**",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 136,
+      "dueno": "**S1**",
+      "general": true
+    },
+    {
+      "patron": ".claude/**",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 183,
+      "dueno": "**un jefe**"
+    },
+    {
+      "patron": "scripts/**",
+      "puesto": null,
+      "tipo": "sin-cerradura",
+      "linea": 171,
+      "dueno": "**S0**, sólo lo que sea verificación o censo de consulta"
+    },
+    {
+      "patron": "public/**",
+      "puesto": "S2",
+      "tipo": "puesto",
+      "linea": 151,
+      "dueno": "**S2**",
+      "general": true
+    },
+    {
+      "patron": "src/**",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 136,
+      "dueno": "**S1**",
+      "general": true
+    }
+  ],
+  "excepciones": [
+    {
+      "patron": "docs/equipo/00-normas-siempre.md",
+      "quien": [
+        "*"
+      ],
+      "motivo": "A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0",
+      "ticket": "SCRUM-1294",
+      "linea": 197
+    }
+  ]
+}
