@@ -1,0 +1,19 @@
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · 4 pasadas por celda · 0 celdas de cobaya · 6 ficheros reales · carga 0 procesos
+
+── LA COBAYA ──
+
+── FICHEROS REALES, A SOLAS (sin testigo: no se tocan) ──
+real-scrum834-puerta-avisador-rojo-con · carga 0 · 4 pasadas · 3 por debajo de su máximo (34) · # tests 30×1 31×1 32×1 34×1 · salidas 0×4
+real-scrum834-puerta-avisador-rojo-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (53) · # tests 53×4 · salidas 0×4
+real-vigia-atascados-con · carga 0 · 4 pasadas · 3 por debajo de su máximo (64) · # tests 32×1 34×1 35×1 64×1 · salidas 0×4
+real-vigia-atascados-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (64) · # tests 64×4 · salidas 0×4
+real-scrum524b-trinquete-de-la-tabla-con · carga 0 · 4 pasadas · 2 por debajo de su máximo (41) · # tests 36×1 37×1 41×2 · salidas 0×4
+real-scrum524b-trinquete-de-la-tabla-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (41) · # tests 41×4 · salidas 0×4
+real-scrum1262-la-baja-corta-todas-las-vias-con · carga 0 · 4 pasadas · 0 por debajo de su máximo (35) · # tests 35×4 · salidas 0×4
+real-scrum1262-la-baja-corta-todas-las-vias-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (35) · # tests 35×4 · salidas 0×4
+real-scrum237-negacion-respaldada-con · carga 0 · 4 pasadas · 0 por debajo de su máximo (8) · # tests 8×4 · salidas 0×4
+real-scrum237-negacion-respaldada-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (8) · # tests 8×4 · salidas 0×4
+real-scrum1216b-numero-de-arranque-con · carga 0 · 4 pasadas · 0 por debajo de su máximo (9) · # tests 9×4 · salidas 0×4
+real-scrum1216b-numero-de-arranque-sin · carga 0 · 4 pasadas · 0 por debajo de su máximo (9) · # tests 9×4 · salidas 0×4
+
+EXIT=0 · filas 0 + 48 · /home/runner/work/_temp/reales/cobaya-pasadas-carga0.tsv

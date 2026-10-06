@@ -1,0 +1,11 @@
+
+[señal de nombres v1] medible=si ausentes=1 ficheros_con_ausentes=1 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10301 tap_fail=8
+  POBLACIÓN: 1206 ficheros de tests/ · 9762 llamadas test()/it() (censo de SCRUM-708: 9762, coincide) · 9643 con nombre literal (9514 distintos)
+  PUNTO CIEGO: 119 llamadas NO se comparan (119 con el nombre construido, 0 sin nombre) en 68 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 129 nombres declarados más de una vez (129 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2622222 caracteres · 10301 líneas de test · 0 de suite · resumen: tests 10301 · fail 8 · entero
+  🔴 FALTAN AL MENOS 1 casos declarados, en 1 fichero(s). La tanda no informó de ellos:
+     tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan 1 de 10 (cola) · posiciones 10 · líneas 322–341
+
+::notice title=señal de nombres · FALTAN al menos 1 en 1 fichero(s)::[señal de nombres v1] medible=si ausentes=1 ficheros_con_ausentes=1 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10301 tap_fail=8
+::warning title=señal de nombres · faltan casos::tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan 1 de 10 (cola) · posiciones 10 · líneas 322–341. La tanda no informó de ellos y salió igual.
