@@ -382,7 +382,13 @@ img { max-width: 100%; display: block; }
   min-width: 0;
 }
 .view-container {
-  padding: 24px;
+  /* SCRUM-1464 · EL HUECO DE ABAJO ES DEL BOTÓN DE AYUDA, TAMBIÉN EN ESCRITORIO. `#tut-help-btn`
+     es fijo: 48 px, a 20 del borde. Con 24 px de relleno, lo último de una pantalla bajada del todo
+     quedaba DEBAJO del botón y no había más recorrido para apartarlo (medido a 1280×800: en Inicio
+     tapaba dos botones «Ir →»; en la ficha del presupuesto, el rótulo «Total»). En móvil el hueco
+     ya existía (80 y 88 px, más abajo) y por eso allí bastaba con seguir bajando.
+     80 = 20 + 48 + 12 de aire. Una pantalla que cabe entera no gana barra de desplazamiento. */
+  padding: 24px 24px 80px;
   flex: 1;
   min-width: 0;
   max-width: 100%;
