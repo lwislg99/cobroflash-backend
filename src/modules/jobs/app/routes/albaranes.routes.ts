@@ -7,6 +7,7 @@
 // precondiciones. Todo lo demás de aquí sigue sin tocar facturación.
 // Tenancy SIEMPRE findFirst { id, merchantId } → 404 (regla 2). Editable hasta 'firmado'
 // (409 albaran_locked).
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { zonaDelMerchant, diaExiste } from '../../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-749
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
@@ -318,7 +319,7 @@ router.get('/presupuestos', async (req, res) => {
 router.get('/consolidables', async (req, res) => {
   try {
     const customerId = Number(req.query.customerId);
-    if (!Number.isInteger(customerId)) {
+    if (!cabeEnColumnaInt(customerId)) {
       return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
     }
 
@@ -442,7 +443,7 @@ router.get('/consolidables', async (req, res) => {
 router.post('/consolidar', requireRole('admin'), async (req, res) => {
   try {
     const customerId = Number(req.body?.customerId);
-    if (!Number.isInteger(customerId)) {
+    if (!cabeEnColumnaInt(customerId)) {
       return res.status(400).json({ error: 'customer_requerido', message: 'Indica el cliente.' });
     }
     // Tenancy (regla 2): el cliente tiene que ser de este merchant o no existe.
@@ -453,7 +454,7 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
     const rawIds: any[] = Array.isArray(req.body?.albaranIds) ? req.body.albaranIds : [];
-    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => Number.isInteger(n))));
+    const ids: number[] = Array.from(new Set<number>(rawIds.map((x) => Number(x)).filter((n) => cabeEnColumnaInt(n))));
     if (ids.length === 0) {
       return res.status(400).json({ error: 'seleccion_vacia', message: 'Selecciona al menos un parte de trabajo firmado.' });
     }
@@ -590,7 +591,7 @@ type FindAlbaranResult =
 // puede decirle si el documento existe.
 async function findAlbaran(req: any): Promise<FindAlbaranResult> {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id)) return { ok: false, status: 400 };
+  if (!cabeEnColumnaInt(id)) return { ok: false, status: 400 };
   const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
   if (!albaran) return { ok: false, status: 404 };
   if (seesOnlyOwnJobs(req.userRole)) {
@@ -801,7 +802,7 @@ router.patch('/:id', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const albaran = await prisma.albaran.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!albaran) return res.status(404).json({ error: 'not_found' });

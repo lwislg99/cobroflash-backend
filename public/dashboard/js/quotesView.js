@@ -1139,7 +1139,9 @@ descWrapper.appendChild(descLabel);
         nombre.className = "quote-plantilla-chip__nombre";
         nombre.textContent = rotulo;
         chip.appendChild(nombre);
-        chip.setAttribute("aria-label", rotulo);
+        // SCRUM-605 · el nombre accesible NO es el rótulo: dice la acción entera, porque un lector
+        // de pantalla puede no dar como contexto el campo de al lado. Contiene el rótulo visible.
+        chip.setAttribute("aria-label", atajosVenc.nombreAccesibleDeAtajo(dias));
         chip.addEventListener("click", function () {
           // 🔴 SCRUM-750 · EL MERCHANT VA DENTRO. Sin él, el atajo calculaba el día en la zona del
           // NAVEGADOR mientras el valor por defecto y el `min` de este mismo campo lo calculan en

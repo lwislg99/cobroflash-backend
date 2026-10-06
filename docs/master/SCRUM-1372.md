@@ -129,3 +129,97 @@ mirar `NO HECHO`.
 2. **El primer comando reventaba antes de validar**: llamaba a la criba del canario con un repositorio
    vacío. Lo vi leyendo, antes de correrlo. → comprobación: «el comando de verdad», que lo lanza como
    proceso en cinco casos.
+
+---
+
+# Anexo · 2-oct-2026 · gana el tope, la etiqueta de cierre sin trabajo y la segunda medida
+
+**Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:22:35Z
+
+A9: comprobación → `tests/scrum1372-auditoria-cierres.test.mjs`
+
+Rama `scrum-1372b-gana-el-tope-y-etiqueta-sin-trabajo` (la primera ya entró por #2109). Lo de arriba se
+queda como se escribió; donde este anexo lo contradice, manda el anexo. Los casos del test son 21, no 19.
+
+## Lo decidido por el orquestador, y lo que cambia
+
+| decisión | qué hace ahora el script | dónde se ve |
+|---|---|---|
+| Se leen **cuatro** (1229 + 3 al azar), no seis ni quince | Los C5 con el motivo dicho NO se leen. Al azar van `RESERVA_AZAR` (3), sin rellenar el tope | test «GANA EL TOPE» (el caso del 1-oct: 1 que calla + 5 con límite = 4 lecturas) |
+| **Gana el tope**, y la pasada dice a quién no leyó | Bloque «A QUIÉN NO SE LEE, y se dice», con cuatro filas que salen siempre, también vacías | el mismo test; `docs/equipo/auditoria-de-cierres.md` |
+| Etiqueta `descartado` / `duplicado` | Con ella no hay C1 ni A8 ni azar. C2 se sigue mirando | test «la etiqueta `descartado` o `duplicado`» |
+
+La misma pasada de ayer (61 cierres, semilla 2026-10-01) con el script nuevo: **4 lecturas** — 1229, y al
+azar 1272 (S2), 1291 (sin área), 1305 (J6). **Sin lectura: J1, J2, J3, J4, S1, S5.**
+
+## El defecto de diseño: el tope y «uno por puesto» eran incompatibles
+
+Estaba dicho arriba (punto 2) y estaba mal resuelto: el script avisaba de los puestos sin lectura al final
+de una línea larga, detrás de un `⚠️`. Una muestra que no dice a quién no miró parece cubrir a todos. Ahora
+los no leídos tienen bloque propio, y el test exige que leídos y no leídos sumen TODOS los puestos.
+
+## La historia de C5, entera y en orden
+
+| versión | marcaba | qué pasaba |
+|---|---|---|
+| primera | **28 de 41** | gritaba: casaba con cualquier «pendiente» o «sin» cerca de «verificar» |
+| segunda | **0 de 61** | callaba: las tres formas exactas del piloto, y ese día nadie escribió ninguna |
+| tercera | **6 de 61** | una negación pegada a ver/verificar |
+
+La causa de las dos primeras es la misma: **el criterio estaba calibrado sobre las PALABRAS del piloto**,
+no sobre lo que querían decir. Un criterio que casa por la forma de la frase casa con una convención que
+nadie acordó. Va a A10 con este PR.
+
+## Segunda medida: los tickets nacidos con la norma A13.1
+
+Ayer: 31 de 61 cierres sin aceptación, y **0 abiertos después de la norma**. Hoy, por JQL
+(`created >= "2026-10-01 14:27"`, hora de Madrid = `2026-10-01T12:27Z`):
+
+| | |
+|---|---|
+| tickets abiertos desde que la norma vive | 48 |
+| de ellos, cerrados | 7: 1363, 1386, 1388, 1397, 1398, 1400, 1407 |
+| con una sección ROTULADA «Aceptación» | **2 de 7** (1363, 1398) |
+| con el criterio de cierre escrito bajo otro rótulo («Los controles», «Lo que pide», «Lo decidido») | 5 de 7 (1386, 1388, 1397, 1400, 1407) |
+| sin nada contra lo que cerrar | 0 de 7 |
+| del equipo de Luis | 1 de 7 (1363). Los otros 6 son del equipo de Javier |
+
+Lo que se puede decir: la norma ya tiene tickets sobre los que aplicarse, y ninguno de los 7 nació sin
+criterio de cierre. Lo que NO se puede decir: que «2 de 7» sea incumplimiento. La criba cuenta por el
+rótulo, y cinco tickets traen la aceptación con otro nombre: **C6 tiene hoy el mismo defecto que tuvo C5**,
+casa por la forma. Con la regla de ayer («no se deduce del resto») esos cinco saldrían «sin aceptación».
+No lo he corregido en el script: qué rótulos valen como aceptación es una convención que tienen que
+acordar los dos orquestadores, no una lista que yo saque de siete tickets.
+
+**Lo que NO se ha medido hoy:** la pasada completa. Jira dice 77 cierres en la ventana desde el 29-sep
+(ayer 61). No los he bajado: son unos 100.000 tokens y la comparación pedida era la de la norma. Los 7 de
+arriba los leí yo en la descripción; no he leído sus comentarios ni su tabla A8.
+
+## Probado en rojo (hoy)
+
+Cuatro mutaciones sobre el script, y las cuatro tumban el test: el azar rellena el tope (2 fallos) · la
+etiqueta no aparta (1) · se leen los de límite declarado (2) · no se dice a quién no se leyó (2).
+
+## Mis errores (hoy)
+
+3. **El cambio que heredé a medias dejaba fuera de la lectura a 1229**, el único cierre que la decisión
+   mandaba leer: metía a los tres C1/C2 en el tope y le quitaban el sitio. Sus tests estaban en rojo y no
+   lo decían, porque seguían escritos para el diseño de antes. Lo vi al correr la pasada de ayer y
+   comparar con la decisión, no al leer el diff. → comprobación: el caso del 1-oct dentro del test.
+4. **Fijé la expresión del ancla mirando una sola muestra**, y me salvó el suelo de población de mi propio
+   guard. Es el mismo error que C5: calibrar sobre una muestra.
+
+## Añadido el 2-oct tras la respuesta del orquestador (rama `scrum-1372c-a10-y-notas-de-registro`)
+
+- **La forma de fallar de este instrumento, no dos anécdotas.** C5 el 1-oct y C6 el 2-oct: dos criterios
+  distintos de la misma criba, dos días seguidos, el mismo error — casar por la FORMA (unas palabras, un
+  rótulo). Todo criterio nuevo de la criba que busque texto se mide contra cierres que no se usaron para
+  escribirlo antes de darle una cifra.
+- **Convención aprobada por el orquestador de Luis y subida al fundador para el equipo de Javier:**
+  etiquetas `descartado` y `duplicado`, que pone quien cierra, al cerrar; y la sección de aceptación lleva
+  la palabra «Aceptación» en su título. NO hay etiqueta para «límite declarado»: pediría a quien cierra
+  clasificar su propio «no lo vi».
+- **La pasada completa NO se corre hasta que la convención del rótulo esté decidida** (orden del
+  orquestador): con C6 casando por el rótulo marcaría «sin aceptación» a cinco cierres que la tienen.
+- SCRUM-1131 lleva `duplicado` y SCRUM-1361 lleva `descartado` desde hoy. #2137 entró en `main` con el
+  obligatorio en verde; verde no es «todo corrió»: no comprobé mis casos por nombre en el TAP del CI.

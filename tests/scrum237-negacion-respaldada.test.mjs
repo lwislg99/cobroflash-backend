@@ -111,7 +111,13 @@ test('SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO 
 
   // ── SALIDA (A): recuento por nivel SIEMPRE; detalle SOLO de las DÉBIL; ledger completo tras flag.
   const rel = (r) => path.relative(path.join(DIR_TESTS, '..'), r).replace(/\\/g, '/');
-  process.stdout.write(
+  // SCRUM-1366 · el censo se junta y sale en UNA escritura, al final de este bloque. Antes era una
+  // por línea, y TODAS van por el canal antes que el primer evento del informe de este fichero: en
+  // el CI el corte caía dentro del censo y el runner no registraba ningún test de este fichero (las
+  // cifras, con su fecha, en docs/master/SCRUM-1366.md). Los bytes son los mismos; cambia cuántas
+  // veces se escribe.
+  let censo = '';
+  censo += (
     `\n[SCRUM-237] ${corpus.totalNeg} negaciones · FUERTE ${s.FUERTE} · MEDIO ${s.MEDIO} · ` +
     `ESTRUCTURAL ${s.ESTRUCTURAL} · DÉBIL ${s.DEBIL} · NINGUNO ${s.NINGUNO}\n` +
     `  (ESTRUCTURAL = respaldo por mutation-test, NO verificada por este guard — declarada, no fingida)\n` +
@@ -119,13 +125,14 @@ test('SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO 
     `     vertedero de lo que no encaja y el guard vale MENOS de lo que parece. No hay ratchet a mano\n` +
     `     (los sabemos acabar mal); pero míralas de vez en cuando — un DÉBIL que sube sin parar es una señal.\n`);
   if (debiles.length) {
-    process.stdout.write('  DÉBIL (aceptadas y declaradas — mirar si alguna debería reforzarse):\n');
-    for (const d of debiles) process.stdout.write(`    · ${rel(d.ruta)}:${d.linea}  «${d.token}» — ${d.motivo}\n`);
+    censo += '  DÉBIL (aceptadas y declaradas — mirar si alguna debería reforzarse):\n';
+    for (const d of debiles) censo += `    · ${rel(d.ruta)}:${d.linea}  «${d.token}» — ${d.motivo}\n`;
   }
   if (process.env.YAQU_LEDGER_NEGACIONES === '1') {
-    process.stdout.write('  LEDGER COMPLETO:\n');
-    for (const i of corpus.items) process.stdout.write(`    [${i.nivel}] ${rel(i.ruta)}:${i.linea}  «${i.token}»\n`);
+    censo += '  LEDGER COMPLETO:\n';
+    for (const i of corpus.items) censo += `    [${i.nivel}] ${rel(i.ruta)}:${i.linea}  «${i.token}»\n`;
   }
+  process.stdout.write(censo);
 
   // ── El veredicto: rojo duro SOLO si hay NINGUNO (la clase de scrum73). Todo lo demás está respaldado.
   assert.deepEqual(

@@ -61,7 +61,10 @@ function montar({ envio }) {
   return { hecho, abrir, cerrar, rellenar, pulsar, estado, $ };
 }
 
-const sinTelefono = () => respuesta(400, { ok: false, error: 'customer_missing_phone' });
+// Un fallo que SÍ deja reintentar. Hasta SCRUM-1198 (b)(c) aquí iba `customer_missing_phone`; ese
+// código ya no deja el modal abierto (se cierra y se avisa fuera: lo mide `scrum1198`), así que el
+// reintento se mide con un fallo del servidor. Lo que este fichero guarda no cambia.
+const elEnvioFalla = () => respuesta(500, { ok: false, error: 'server_error' });
 const enviado = () => respuesta(200, { ok: true, sent: true });
 
 test('SCRUM-1371 · ✅ CONTROL POSITIVO: un clic con todo bien crea UN presupuesto y lo envía', async () => {
@@ -74,7 +77,7 @@ test('SCRUM-1371 · ✅ CONTROL POSITIVO: un clic con todo bien crea UN presupue
 });
 
 test('SCRUM-1371 · 🔴 cliente EXISTENTE y el envío falla: dos clics, UN presupuesto', async () => {
-  const m = montar({ envio: sinTelefono });
+  const m = montar({ envio: elEnvioFalla });
   m.abrir(); m.rellenar({ existente: true });
   await m.pulsar();
   assert.equal(m.$('qq-send').disabled, false, '🔴 CIEGO: tras el fallo el botón no se rehabilita; no hay reintento que medir');
@@ -85,7 +88,7 @@ test('SCRUM-1371 · 🔴 cliente EXISTENTE y el envío falla: dos clics, UN pres
 });
 
 test('SCRUM-1371 · 🔴 cliente NUEVO y el envío falla: dos clics, UN cliente y UN presupuesto', async () => {
-  const m = montar({ envio: sinTelefono });
+  const m = montar({ envio: elEnvioFalla });
   m.abrir(); m.rellenar({ telefono: '34000000001' });
   await m.pulsar();
   await m.pulsar();
@@ -96,7 +99,7 @@ test('SCRUM-1371 · 🔴 cliente NUEVO y el envío falla: dos clics, UN cliente 
 });
 
 test('SCRUM-1371 · ✅ el envío falla y a la segunda sale: sigue habiendo UNO, y se envía ése', async () => {
-  const m = montar({ envio: (n) => (n === 1 ? sinTelefono() : enviado()) });
+  const m = montar({ envio: (n) => (n === 1 ? elEnvioFalla() : enviado()) });
   m.abrir(); m.rellenar({ existente: true });
   await m.pulsar();
   await m.pulsar();
@@ -105,7 +108,7 @@ test('SCRUM-1371 · ✅ el envío falla y a la segunda sale: sigue habiendo UNO,
 });
 
 test('SCRUM-1371 · ✅ si se CAMBIAN las líneas antes de reintentar, es otro presupuesto: no se reenvía el viejo', async () => {
-  const m = montar({ envio: sinTelefono });
+  const m = montar({ envio: elEnvioFalla });
   m.abrir(); m.rellenar({ existente: true, precio: 50 });
   await m.pulsar();
   m.estado().products = [{ concept: 'Punto de luz', qty: 1, price: 80 }];
@@ -116,7 +119,7 @@ test('SCRUM-1371 · ✅ si se CAMBIAN las líneas antes de reintentar, es otro p
 });
 
 test('SCRUM-1371 · ✅ cerrar y abrir el modal empieza de cero: lo recordado no pasa a otro presupuesto', async () => {
-  const m = montar({ envio: sinTelefono });
+  const m = montar({ envio: elEnvioFalla });
   m.abrir(); m.rellenar({ existente: true });
   await m.pulsar();
   // Se CIERRA antes: `openQuickQuoteModal` no hace nada si el modal sigue en pantalla, y sin

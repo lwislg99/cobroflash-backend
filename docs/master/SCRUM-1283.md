@@ -100,3 +100,38 @@ El cambio se hizo en un **árbol de trabajo aparte** (`wt-1283`) porque `guard-d
 `npm run arbol:mio` devolvió **`INFORMATIVO`**, es decir **no supo contestar si el árbol era mío**,
 que era justo lo que se le preguntaba: otro instrumento que no distingue «no puedo medir» de una
 respuesta. Ante la duda, no se forzó el guard.
+
+## Apéndice · 2-oct-2026 · la frase de titularidad del `LICENSE` (rama `scrum-1283b-licencia-titularidad`)
+
+**Firma del fundador, literal, 2-oct-2026:** pregunta → «¿Cambio la frase del fichero `LICENSE`? De
+"que lo han creado conjuntamente" a "que son sus titulares conjuntamente"»; respuesta → **«pues si
+piensas que es mejor sí»**. Regla 39 cumplida: es texto que se lee, y lo firma él.
+
+**Procedencia:** lo pide la asesora del fundador el 2-oct-2026, dentro de un lote de siete
+correcciones al documento de descripción del software. Las otras seis eran del documento y ya están
+aplicadas allí; **ésta es la única que toca el repositorio.**
+
+**El motivo, que es el que recorre las siete:** el texto decía **quién CREÓ** el software. Crear es
+un hecho; **ser titular es un derecho**, y es el derecho lo que importa para la cesión a la sociedad
+que se está montando. Un aviso de licencia que habla de creación invita a leer la titularidad como
+si siguiera el reparto de la escritura, que no es el caso: **la titularidad es del 50 % cada uno**.
+
+**Qué cambia, exactamente:**
+
+```diff
+-Este software y su documentación (en adelante, «el Software») son propiedad de
+-los titulares del copyright arriba indicados, que lo han creado conjuntamente.
++Este software y su documentación (en adelante, «el Software») son propiedad
++conjunta de los titulares del copyright arriba indicados.
+```
+
+⚠️ **Y una desviación deliberada de la frase que pidió la asesora, para que conste y se pueda
+revocar:** su redacción literal era «…son propiedad de los titulares del copyright arriba
+indicados, **que son sus titulares conjuntamente**», que dice «titulares» dos veces en la misma
+oración y se muerde la cola. Se ha aplicado **su intención** —propiedad, no creación— **sin la
+circularidad**, moviendo «conjunta» al predicado. **Si ella prefiere su redacción exacta, se cambia
+y no hay discusión: es su criterio el que manda en el texto legal, no el mío.**
+
+**Lo que este apéndice NO hace y queda pendiente del fundador:** la **cesión de los derechos a la
+SL**. Hoy, con este fichero y con el anterior, el Software es de **las dos personas físicas**; la
+sociedad no es propietaria. Lo está preparando la asesora (confirmado por el fundador el 2-oct-2026).

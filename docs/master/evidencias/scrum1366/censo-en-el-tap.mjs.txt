@@ -1,0 +1,14 @@
+// Lee un TAP de tanda y dice qué quedó del censo de scrum237 y de sus 8 tests.
+import fs from 'node:fs';
+for (const f of process.argv.slice(2)) {
+  const L = fs.readFileSync(f, 'utf8').split('\n');
+  const ini = L.findIndex((l) => l.includes('[SCRUM-237]') && l.includes('negaciones'));
+  const debil = [];
+  let fin = ini;
+  if (ini >= 0) for (let i = ini + 1; i < L.length; i++) { if (/^\s*#?\s*· tests\//.test(L[i])) { debil.push(L[i]); fin = i; } else if (debil.length && !/DÉBIL|LÍMITE|vertedero|sabemos|ESTRUCTURAL/.test(L[i])) break; }
+  const sub = L.filter((l) => /^\s*(not )?ok \d+ - SCRUM-237 · /.test(l)).length;
+  const ent = L.find((l) => /ok \d+ - tests\/scrum237-negacion/.test(l));
+  const dur = ent ? L[L.indexOf(ent) + 2] : null;
+  console.log(JSON.stringify({ f: f.split(/[\\/]/).at(-2), censo_en_linea: ini, cabecera: ini >= 0 ? L[ini].trim().slice(0, 110) : null, lineas_debil: debil.length,
+    ultima_debil: debil.at(-1)?.trim().slice(0, 120), siguiente: L[fin + 1]?.slice(0, 100), subtests_237: sub, entrada_fichero: ent?.trim(), dur }));
+}

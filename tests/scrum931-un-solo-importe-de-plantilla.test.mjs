@@ -55,6 +55,7 @@ import {
   validateTemplateComponents,
 } from '../dist/integrations/whatsappTemplates.js';
 import { formatMoneyEs } from '../dist/core/utils/utils.js';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -139,50 +140,65 @@ test('SCRUM-931 · 🔴 SUELO: cuatro cifras enteras SÍ se agrupan (el defecto 
 // LO QUE MIDE LA ARITMÉTICA DEL FORMATO — los cuatro builders, con el importe del enunciado
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-for (const b of BUILDERS) {
-  test(`SCRUM-931 · ${b.plantilla}: el importe sale de \`formatMoneyEs\`, no de \`toFixed\``, () => {
-    const msg = b.llamar(419.87, 'EUR');
-    const vars = textosDelBody(msg);
-    const salida = vars[b.idx];
+const casoa = casosEscritos(BUILDERS, (b) => `SCRUM-931 · ${b.plantilla}: el importe sale de \`formatMoneyEs\`, no de \`toFixed\``, (b) => {
+  const msg = b.llamar(419.87, 'EUR');
+  const vars = textosDelBody(msg);
+  const salida = vars[b.idx];
 
-    assert.equal(salida, formatMoneyEs(419.87, 'EUR'),
-      `🔴 ${b.nombre}: la variable {{${b.idx + 1}}} de ${b.plantilla} vale «${vis(salida)}» y tiene que ser `
-      + `exactamente «${vis(formatMoneyEs(419.87, 'EUR'))}», la forma de la casa (A6.6). `
-      + 'Si vale «undefined», el builder todavía espera el importe YA formateado: la puerta sigue abierta.');
+  assert.equal(salida, formatMoneyEs(419.87, 'EUR'),
+    `🔴 ${b.nombre}: la variable {{${b.idx + 1}}} de ${b.plantilla} vale «${vis(salida)}» y tiene que ser `
+    + `exactamente «${vis(formatMoneyEs(419.87, 'EUR'))}», la forma de la casa (A6.6). `
+    + 'Si vale «undefined», el builder todavía espera el importe YA formateado: la puerta sigue abierta.');
 
-    assert.ok(!String(salida).includes('419.87'),
-      `🔴 ${b.nombre}: sigue saliendo el formato extranjero «419.87» en ${b.plantilla}. Es el importe `
-      + 'que el cliente lee en su móvil, y el punto es su separador de MILES.');
-  });
-
-  test(`SCRUM-931 · ${b.plantilla}: agrupa el millar (1.234,50), que es donde CLDR falla`, () => {
-    const salida = textosDelBody(b.llamar(1234.5, 'EUR'))[b.idx];
-    assert.equal(salida, formatMoneyEs(1234.5, 'EUR'),
-      `🔴 ${b.nombre}: «${vis(salida)}» en vez de «${vis(formatMoneyEs(1234.5, 'EUR'))}».`);
-    assert.ok(!vis(salida).startsWith('1234'),
-      `🔴 ${b.nombre}: «${vis(salida)}» no agrupa el millar. Es el tramo del importe corriente de un trabajo.`);
-  });
-
-  test(`SCRUM-931 · ${b.plantilla}: fuera del euro sale el CÓDIGO, no un € impostado`, () => {
-    // A6.6 dice «1.500,00 MXN» fuera del euro. Formatear dentro del builder no puede convertir
-    // en euros un cobro que no lo es: eso sería un defecto peor que el que se viene a arreglar.
-    const salida = textosDelBody(b.llamar(1500, 'MXN'))[b.idx];
-    assert.equal(salida, formatMoneyEs(1500, 'MXN'),
-      `🔴 ${b.nombre}: «${vis(salida)}» no es la forma de la casa para MXN.`);
-    assert.ok(!String(salida).includes('€'),
-      `🔴 ${b.nombre}: ha colado un «€» en un importe en MXN: «${vis(salida)}».`);
-  });
-
-  test(`SCRUM-931 · ${b.plantilla}: sigue pasando el validador de Meta (no se ha movido la estructura)`, () => {
-    // Formatear NO puede cambiar el nº de variables ni el botón: eso es lo que Meta sí rechaza
-    // (#132000/#132001). Este es el «esto no se ha movido» del ticket.
-    const msg = b.llamar(419.87, 'EUR');
-    assert.equal(validateTemplateComponents(msg.templateName, msg.components), null,
-      `🔴 ${b.nombre}: el payload ha dejado de cumplir la spec aprobada en Meta.`);
-    assert.equal(msg.templateName, b.plantilla);
-    assert.equal(msg.languageCode, 'es');
-  });
-}
+  assert.ok(!String(salida).includes('419.87'),
+    `🔴 ${b.nombre}: sigue saliendo el formato extranjero «419.87» en ${b.plantilla}. Es el importe `
+    + 'que el cliente lee en su móvil, y el punto es su separador de MILES.');
+});
+const casob = casosEscritos(BUILDERS, (b) => `SCRUM-931 · ${b.plantilla}: agrupa el millar (1.234,50), que es donde CLDR falla`, (b) => {
+  const salida = textosDelBody(b.llamar(1234.5, 'EUR'))[b.idx];
+  assert.equal(salida, formatMoneyEs(1234.5, 'EUR'),
+    `🔴 ${b.nombre}: «${vis(salida)}» en vez de «${vis(formatMoneyEs(1234.5, 'EUR'))}».`);
+  assert.ok(!vis(salida).startsWith('1234'),
+    `🔴 ${b.nombre}: «${vis(salida)}» no agrupa el millar. Es el tramo del importe corriente de un trabajo.`);
+});
+const casoc = casosEscritos(BUILDERS, (b) => `SCRUM-931 · ${b.plantilla}: fuera del euro sale el CÓDIGO, no un € impostado`, (b) => {
+  // A6.6 dice «1.500,00 MXN» fuera del euro. Formatear dentro del builder no puede convertir
+  // en euros un cobro que no lo es: eso sería un defecto peor que el que se viene a arreglar.
+  const salida = textosDelBody(b.llamar(1500, 'MXN'))[b.idx];
+  assert.equal(salida, formatMoneyEs(1500, 'MXN'),
+    `🔴 ${b.nombre}: «${vis(salida)}» no es la forma de la casa para MXN.`);
+  assert.ok(!String(salida).includes('€'),
+    `🔴 ${b.nombre}: ha colado un «€» en un importe en MXN: «${vis(salida)}».`);
+});
+const casod = casosEscritos(BUILDERS, (b) => `SCRUM-931 · ${b.plantilla}: sigue pasando el validador de Meta (no se ha movido la estructura)`, (b) => {
+  // Formatear NO puede cambiar el nº de variables ni el botón: eso es lo que Meta sí rechaza
+  // (#132000/#132001). Este es el «esto no se ha movido» del ticket.
+  const msg = b.llamar(419.87, 'EUR');
+  assert.equal(validateTemplateComponents(msg.templateName, msg.components), null,
+    `🔴 ${b.nombre}: el payload ha dejado de cumplir la spec aprobada en Meta.`);
+  assert.equal(msg.templateName, b.plantilla);
+  assert.equal(msg.languageCode, 'es');
+});
+test('SCRUM-931 · quote_decision_es: el importe sale de `formatMoneyEs`, no de `toFixed`', casoa(0));
+test('SCRUM-931 · quote_decision_es: agrupa el millar (1.234,50), que es donde CLDR falla', casob(0));
+test('SCRUM-931 · quote_decision_es: fuera del euro sale el CÓDIGO, no un € impostado', casoc(0));
+test('SCRUM-931 · quote_decision_es: sigue pasando el validador de Meta (no se ha movido la estructura)', casod(0));
+test('SCRUM-931 · payment_request_es: el importe sale de `formatMoneyEs`, no de `toFixed`', casoa(1));
+test('SCRUM-931 · payment_request_es: agrupa el millar (1.234,50), que es donde CLDR falla', casob(1));
+test('SCRUM-931 · payment_request_es: fuera del euro sale el CÓDIGO, no un € impostado', casoc(1));
+test('SCRUM-931 · payment_request_es: sigue pasando el validador de Meta (no se ha movido la estructura)', casod(1));
+test('SCRUM-931 · payment_confirmation_es: el importe sale de `formatMoneyEs`, no de `toFixed`', casoa(2));
+test('SCRUM-931 · payment_confirmation_es: agrupa el millar (1.234,50), que es donde CLDR falla', casob(2));
+test('SCRUM-931 · payment_confirmation_es: fuera del euro sale el CÓDIGO, no un € impostado', casoc(2));
+test('SCRUM-931 · payment_confirmation_es: sigue pasando el validador de Meta (no se ha movido la estructura)', casod(2));
+test('SCRUM-931 · payment_confirmation_invoice_es: el importe sale de `formatMoneyEs`, no de `toFixed`', casoa(3));
+test('SCRUM-931 · payment_confirmation_invoice_es: agrupa el millar (1.234,50), que es donde CLDR falla', casob(3));
+test('SCRUM-931 · payment_confirmation_invoice_es: fuera del euro sale el CÓDIGO, no un € impostado', casoc(3));
+test('SCRUM-931 · payment_confirmation_invoice_es: sigue pasando el validador de Meta (no se ha movido la estructura)', casod(3));
+casoa.todos();
+casob.todos();
+casoc.todos();
+casod.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LA PUERTA — por TIPO. Esto es lo que impide el octavo sitio.

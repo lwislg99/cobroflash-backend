@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import {
   veredictoDelSuelo, duracionesDeLosMudos, ficherosMudosDelTap, MS_DE_HABER_CORRIDO, SALIDA_POR_DEBAJO,
 } from '../scripts/_suelo-de-la-tanda.mjs';
+import { nombreEscrito } from './_casos-escritos.mjs';
 
 // El tramo REAL del TAP de #2090 (run 36863578275, intento 1), líneas 14846-14853, tal cual salió.
 const REAL = [
@@ -56,7 +57,8 @@ test('SCRUM-1380 · NEGATIVO: un fichero que carga en milésimas y no registra n
   assert.match(v.detalle, /un `import \* as X` cuya propiedad ya no existe/);
 });
 
-test(`SCRUM-1380 · el corte es ${MS_DE_HABER_CORRIDO} ms: justo por debajo no se llama «corrió», y en el corte sí`, () => {
+test('SCRUM-1380 · el corte es 1000 ms: justo por debajo no se llama «corrió», y en el corte sí', (t) => {
+  nombreEscrito(t, `SCRUM-1380 · el corte es ${MS_DE_HABER_CORRIDO} ms: justo por debajo no se llama «corrió», y en el corte sí`);
   const con = (ms) => veredictoDelSuelo(tap(entrada('tests/x.test.mjs', ['  ---', `  duration_ms: ${ms}`, '  ...'])), 1, null);
   assert.doesNotMatch(con(MS_DE_HABER_CORRIDO - 1).titulo, /CORRIÓ/);
   assert.match(con(MS_DE_HABER_CORRIDO).titulo, /CORRIÓ/);

@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import {
   censarIdioma, censarPseudos, clasificar, reglasDePseudo, SUPERFICIE_PUBLICA, ZONAS_VENDIDAS,
 } from '../scripts/censo-arbitro-de-toque.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -121,11 +122,15 @@ const PIEZAS = [
   ['el detector no lo alcanza ni en su centro', 'el control positivo del propio detector.'],
   ['no sabe decir que no', 'el control negativo: 400 px más abajo no puede seguir siendo suyo.'],
 ];
-for (const [ancla, porque] of PIEZAS) {
-  test(`SCRUM-562 · el medidor conserva: ${ancla.slice(0, 34)}`, () => {
-    assert.ok(MEDIDOR.includes(ancla), `🔴 el medidor perdió \`${ancla}\` — ${porque}`);
-  });
-}
+const caso2 = casosEscritos(PIEZAS, ([ancla, porque]) => `SCRUM-562 · el medidor conserva: ${ancla.slice(0, 34)}`, ([ancla, porque]) => {
+  assert.ok(MEDIDOR.includes(ancla), `🔴 el medidor perdió \`${ancla}\` — ${porque}`);
+});
+test('SCRUM-562 · el medidor conserva: arriba.closest(SEL) === el', caso2(0));
+test('SCRUM-562 · el medidor conserva: let top = cy, bottom = cy;', caso2(1));
+test('SCRUM-562 · el medidor conserva: const afinar = (bueno, malo)', caso2(2));
+test('SCRUM-562 · el medidor conserva: el detector no lo alcanza ni en su', caso2(3));
+test('SCRUM-562 · el medidor conserva: no sabe decir que no', caso2(4));
+caso2.todos();
 
 test('SCRUM-562 · los dos guards cuelgan del medidor único', () => {
   for (const rel of ['scripts/guard-objetivo-tactil.mjs', 'scripts/guard-a11y-landing.mjs']) {

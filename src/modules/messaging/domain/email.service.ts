@@ -17,6 +17,7 @@ import { CLASES_DE_CORREO, registrarEnvio } from './registroDeEnvios';
 import { constanciaDeEnvio, constanciaDeFallo } from './constanciaCorreo';
 import { portalUrlDelCliente } from '../../system/customerAdmin'; // SCRUM-967b
 import { getLocale } from '../../../core/i18n/locales';
+import { numeroQueImprimeElPapel } from '../../quotes/domain/revision'; // SCRUM-1444
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -187,7 +188,8 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   if (!toEmail) throw new Error('customer_missing_email');
 
   const business = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
-  const displayNum = `#${(quote as any).quoteNumber ?? quote.id}`;
+  // SCRUM-1444 · el número del PAPEL que este correo lleva adjunto: una revisión es `#12.1`, no `#12`.
+  const displayNum = `#${numeroQueImprimeElPapel(quote)}`;
   // SCRUM-931 · el TERCER canal. El ticket hablaba de WhatsApp, pero el mismo presupuesto sale
   // también por correo, y salía con el mismo `419.87 EUR` — y en el sitio más visible del mensaje
   // (26 px, negrita, centrado). Arreglar sólo WhatsApp habría movido la divergencia de canal.

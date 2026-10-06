@@ -478,6 +478,15 @@ export function escritoresPorFila(filas, updatedAtPorModelo) {
     else if (ajenos.length) veredicto = 'NO-VALE';
     else if (opacos.length || protegidos === null) veredicto = 'NO-SE';
     else veredicto = 'VALE';
+    // SCRUM-1381b: la clase es de la LÍNEA, no del sitio. Un sitio con una línea ajena y otra opaca
+    // cuenta en las dos clases, así que los sitios por clase pueden sumar más que `otros`; las
+    // líneas no: cada una está en una clase y sólo en una, y eso es lo que tiene que cuadrar.
+    const sinClasificar = protegidos === null ? legibles : [];
+    const porSitio = (lista) => Object.fromEntries(sitios(lista).map((s) => [s, lista.filter((o) => o.sitio === s).map((o) => o.linea).sort((a, b) => a - b)]));
+    const clasesDe = new Map();
+    for (const [clase, lista] of [['suyo', coinciden], ['ajeno', ajenos], ['opaco', opacos], ['sin clasificar', sinClasificar]]) {
+      for (const s of sitios(lista)) clasesDe.set(s, [...(clasesDe.get(s) ?? []), clase]);
+    }
     out.push({
       sitio: f.sitio, fichero: f.fichero, linea: f.linea, modelo: f.modelo, ruta: f.ruta, clase: f.clase,
       yaLaLleva, protegidos, veredicto,
@@ -485,6 +494,9 @@ export function escritoresPorFila(filas, updatedAtPorModelo) {
       // La UNIDAD, dicha: un SITIO es fichero + ruta (o función); una LÍNEA es una llamada a prisma.
       // Un sitio puede tener varias líneas: los dos recuentos no coinciden y los dos son ciertos.
       lineasOtras: otros.length, lineasAjenas: ajenos.length,
+      lineasSuyas: coinciden.length, lineasOpacas: opacos.length, lineasSinClasificar: sinClasificar.length,
+      lineasPorClase: { suyo: porSitio(coinciden), ajeno: porSitio(ajenos), opaco: porSitio(opacos), 'sin clasificar': porSitio(sinClasificar) },
+      mixtos: [...clasesDe].filter(([, c]) => c.length > 1).map(([s, c]) => `${s} (${c.join(' + ')})`).sort(),
       lineasDe: Object.fromEntries(sitios(otros).map((s) => [s, otros.filter((o) => o.sitio === s).map((o) => o.linea).sort((a, b) => a - b)])),
     });
   }
@@ -630,9 +642,17 @@ if (esPrincipal) {
       console.log(`\n── ${v} (${suyas.length}) ──`);
       for (const e of suyas) {
         console.log(`  ${e.yaLaLleva ? 'YA LA LLEVA' : 'candidata  '} ${e.fichero}:${e.linea} · ${e.modelo}${e.ruta ? ` · ${e.ruta}` : ''} · protege {${(e.protegidos || ['?']).join(', ')}} · `
-          + `otros escritores: ${e.otros} sitios en ${e.lineasOtras} líneas → ${e.coinciden.length} sitios tocan lo suyo, `
-          + `${e.ajenos.length} sitios ajenos (${e.lineasAjenas} líneas), ${e.opacos.length} sitios opacos`);
-        if (process.argv.includes('--todo')) for (const a of e.ajenos) console.log(`        ajeno: ${a} (:${e.lineasDe[a].join(', :')})`);
+          + `otros escritores: ${e.otros} sitios en ${e.lineasOtras} líneas → ${e.coinciden.length} sitios tocan lo suyo (${e.lineasSuyas} líneas), `
+          + `${e.ajenos.length} sitios ajenos (${e.lineasAjenas} líneas), ${e.opacos.length} sitios opacos (${e.lineasOpacas} líneas)`
+          + (e.lineasSinClasificar ? `, ${e.lineasSinClasificar} líneas sin clasificar (no se sabe qué protege)` : '')
+          + (e.mixtos.length ? ` · ${e.mixtos.length} sitios cuentan en más de una clase` : ''));
+        if (process.argv.includes('--todo')) {
+          // Cada clase lista SUS líneas, no todas las del sitio: la lista tiene que sumar lo que dice el resumen.
+          for (const [clase, porSitio] of Object.entries(e.lineasPorClase)) {
+            for (const [s, lineas] of Object.entries(porSitio)) console.log(`        ${clase}: ${s} (:${lineas.join(', :')})`);
+          }
+          for (const m of e.mixtos) console.log(`        en más de una clase: ${m}`);
+        }
       }
     }
     process.exit(0);
