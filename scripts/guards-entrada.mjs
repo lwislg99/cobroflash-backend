@@ -128,6 +128,11 @@ export const GUARDS = [
   // SCRUM-811 · el duodécimo. Reutiliza el troceador de scrum267 (sin git, sin DB): añade ~0,3 s.
   { fichero: 'tests/scrum811c-skill-ui-declarada.test.mjs',
     porque: 'toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no' },
+  // SCRUM-1417 · el decimotercero. Lee el árbol, sin `dist` ni base. El caso que lo decide: el
+  // 2-oct-2026 se empujó a #2134 un merge con los marcadores dentro de A10, y este comando daba VERDE
+  // sobre ese árbol. El CI lo habría parado con este mismo test; aquí se para antes del push.
+  { fichero: 'tests/scrum393-marcadores-de-conflicto.test.mjs',
+    porque: 'ningún fichero del árbol lleva marcadores de conflicto de git (un merge mal resuelto se empuja igual de verde)' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -146,7 +151,7 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 12;
+export const MINIMO = 13;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega

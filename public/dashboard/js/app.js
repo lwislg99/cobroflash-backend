@@ -850,7 +850,110 @@ function vigilarVueltaDeLaRed() {
   });
 }
 
+// ── SCRUM-1302 · CERRAR SESIÓN CON FIRMAS SIN SUBIR ────────────────────────────────────────────
+// El purgado de abajo vacía la cola de firmas A PROPÓSITO (SCRUM-455, art. 32 RGPD). Lo que faltaba
+// era decirlo antes: una firma hecha en un sótano y aún sin subir se iba con el logout y nadie
+// avisaba. Textos firmados en SCRUM-1302, comentario 17889. Las tres mitades van juntas o el texto
+// miente: se CUENTA antes de purgar, se INTENTA subir antes de preguntar, y «Cancelar» no cierra
+// sesión ni borra nada.
+function textoFirmasSinSubirAlCerrar(n) {
+  return n === 1
+    ? 'Te queda 1 firma por subir. Si cierras sesión ahora, se borra de este móvil y habrá que volver a firmar. ¿Cerrar sesión?'
+    : `Te quedan ${n} firmas por subir. Si cierras sesión ahora, se borran de este móvil y habrá que volver a firmarlas. ¿Cerrar sesión?`;
+}
+
+/** Cuántas firmas hay en la cola, o `null` si no se ha podido LEER: «no supe mirar» no es un cero. */
+async function firmasSinSubirAlCerrar() {
+  if (typeof window.leerFirmasPendientes !== 'function') return null;
+  try {
+    const cola = await window.leerFirmasPendientes();
+    if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) return null;
+    return cola.firmas.length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * ¿Se sigue adelante con el cierre de sesión? `false` sólo si la persona dice que no.
+ *
+ * Sin cifra cierta NO se pregunta —ni con la cola ilegible ni sin `confirm`—: cerrar sesión tiene
+ * que funcionar siempre (SCRUM-455), y un aviso con un número inventado sería otra mentira.
+ */
+async function confirmarCierreConFirmasSinSubir() {
+  let n = await firmasSinSubirAlCerrar();
+  // Con red, primero se intenta subirlas: preguntar por algo que se arregla solo es ruido. El
+  // drenado tiene plazo (el de `api.js`), así que un sótano no deja el botón colgado para siempre.
+  if (n && navigator.onLine !== false && typeof window.drenarSiNoSeEstaDrenando === 'function') {
+    try { await window.drenarSiNoSeEstaDrenando(); } catch (_e) { /* best-effort: se vuelve a contar */ }
+    n = await firmasSinSubirAlCerrar();
+  }
+  // SCRUM-1383 · se cuentan DESPUÉS del intento: el propio intento puede crear el rechazo.
+  const rechazadas = await firmasRechazadasAlCerrar();
+  if (typeof window.confirm !== 'function') return true;
+  // Una pregunta por cosa, y a la primera que diga que no, no se cierra ni se borra nada.
+  for (const texto of preguntasAlCerrarSesion(n, rechazadas)) {
+    if (!window.confirm(texto)) return false;
+  }
+  return true;
+}
+
+// ── SCRUM-1383 · CERRAR SESIÓN CON FIRMAS QUE EL SERVIDOR RECHAZÓ ──────────────────────────────
+// Una firma rechazada sale de la cola y deja una constancia (`almacenLocal.js`, SCRUM-890). El
+// purgado la borra A PROPÓSITO (art. 32 RGPD; lo fija `scrum890b`) y eso no cambia: la constancia no
+// dice de qué cuenta es, y si sobreviviera la vería quien entrase después. Lo que faltaba es decirlo
+// ANTES: sin esto, una firma que no está en el servidor desaparecía del móvil sin que nadie lo dijera.
+
+/**
+ * Textos aprobados por el orquestador por delegación del fundador, 2-oct-2026 — SCRUM-1383
+ * comentario 18204. «Este aviso desaparece», y no «se borra la firma»: la firma ya está perdida (el
+ * servidor la rechazó); lo que se va al cerrar es la constancia de que ocurrió. No dice QUÉ
+ * documento: la constancia sólo lleva el id interno.
+ */
+function textoFirmasRechazadasAlCerrar(n) {
+  return n === 1
+    ? '1 firma no se ha podido registrar y hay que volver a pedirla. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?'
+    : `${n} firmas no se han podido registrar y hay que volver a pedirlas. Si cierras sesión ahora, este aviso desaparece y no volverás a verlo. ¿Cerrar sesión?`;
+}
+
+/**
+ * Cuántas constancias de rechazo hay en este móvil, o `null` si no se han podido LEER.
+ *
+ * Se cuentan TODAS, no sólo las de este cierre: la de ayer se pierde igual. NO se cuenta
+ * `invalid_id`, igual que la pantalla del albarán: con ese código volver a pedir la firma da el
+ * mismo no, y el aviso prometería algo falso. Límite: el aviso no dice QUÉ documento; la constancia
+ * sólo lleva el id interno.
+ */
+async function firmasRechazadasAlCerrar() {
+  if (typeof window.leerRechazosDeFirma !== 'function') return null;
+  try {
+    const r = await window.leerRechazosDeFirma();
+    if (!r || r.estado !== window.GUARDADO || !Array.isArray(r.rechazos)) return null;
+    return r.rechazos.filter((x) => x && x.codigo !== 'invalid_id').length;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * Las preguntas del cierre, EN ORDEN; vacío si no hay nada cierto que preguntar.
+ *
+ * Son DOS seguidas y no una combinada (SCRUM-1383 c.18204): una frase con las dos cifras tendría
+ * que ser cierta en cuatro variantes de singular y plural, y dos preguntas reutilizan texto ya
+ * firmado. Primero las SIN SUBIR, donde cerrar destruye algo que aún se puede salvar; las
+ * rechazadas, sólo si a la primera dijo que sí.
+ */
+function preguntasAlCerrarSesion(sinSubir, rechazadas) {
+  const preguntas = [];
+  if (sinSubir) preguntas.push(textoFirmasSinSubirAlCerrar(sinSubir));
+  if (rechazadas) preguntas.push(textoFirmasRechazadasAlCerrar(rechazadas));
+  return preguntas;
+}
+
 async function logout() {
+  // SCRUM-1302 · ANTES de purgar: después ya no habría cola que contar ni firma que salvar.
+  if (!(await confirmarCierreConFirmasSinSubir())) return;
+
   // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
   //
   // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la

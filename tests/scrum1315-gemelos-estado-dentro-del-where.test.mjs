@@ -31,6 +31,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
 import { casa, filaNoEncontrada } from './_where-como-prisma.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -206,86 +207,91 @@ test('SCRUM-1315 · SUELO: sin enlace por `chargeId`, la otra escritura de `/web
     + 'que el gemelo, y los casos de abajo medirían ESA escritura, no la de este ticket.');
 });
 
-for (const puerta of PUERTAS) {
-  // ── LO QUE HAY HOY: CON EL FLAG APAGADO NO SE LLEGA ────────────────────────────────────
+// ── LO QUE HAY HOY: CON EL FLAG APAGADO NO SE LLEGA ────────────────────────────────────
+const caso1a = casosEscritos(PUERTAS, (puerta) => `SCRUM-1315 · ${puerta.nombre} · con el flag APAGADO (lo que hay hoy) no se llega a la escritura`, async (puerta) => {
+  nuevaFila('pending');
+  const r = await conElFlag(false, puerta.avisoDePago);
+  assert.ok(puerta.llegoAlFinal(r), `precondición: el aviso se procesó entero (${JSON.stringify(r.cuerpo)} · ${r.dicho.errores.join(' | ')})`);
+  assert.equal(estado.asegurar, 0, '🔴 se ha llamado a `ensureInvoiceForCharge` con el flag apagado');
+  assert.equal(estado.escrituras.length, 0);
+  assert.equal(estado.fila.status, 'pending');
+});
+// ── CONTROL POSITIVO: EL DINERO SIGUE ENTRANDO ─────────────────────────────────────────
+const caso1b = casosEscritos(PUERTAS, (puerta) => `SCRUM-1315 · ✅ ${puerta.nombre} · CONTROL POSITIVO: factura pendiente y cobro confirmado → sigue marcando \`paid\``, async (puerta) => {
+  nuevaFila('pending');
+  const r = await conElFlag(true, puerta.avisoDePago);
+  assert.equal(estado.asegurar, 1, '🔴 MUDO: no se ha pasado por `ensureInvoiceForCharge`, así que no se llegó a la escritura que se mide');
+  assert.ok(puerta.contestoComoSiempre(r), JSON.stringify(r.cuerpo));
+  assert.equal(estado.fila.status, 'paid', '🔴 la vía por la que entra el dinero ha dejado de marcar la factura');
+  assert.ok(estado.fila.paidAt instanceof Date);
+  assert.equal(estado.escrituras.length, 1, 'y escribe exactamente una vez');
+  assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
+});
+const caso1c = casosEscritos(PUERTAS, (puerta) => `SCRUM-1315 · ✅ ${puerta.nombre} · un reintento sobre una ya \`paid\` sigue escribiendo (idempotente, SCRUM-502)`, async (puerta) => {
+  nuevaFila('paid');
+  const r = await conElFlag(true, puerta.avisoDePago);
+  assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
+  assert.equal(estado.escrituras.length, 1,
+    '🔴 el `where` excluye más que la anulada: un reintento del proveedor ya no escribe. El GO era la guarda de anulada.');
+  assert.equal(estado.fila.status, 'paid');
+  assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
+});
+// ── LA PRIMERA BARRERA (SCRUM-502) SIGUE AHÍ ───────────────────────────────────────────
+const caso1d = casosEscritos(PUERTAS, (puerta) => `SCRUM-1315 · ${puerta.nombre} · una factura que YA llega anulada no se intenta escribir (SCRUM-502)`, async (puerta) => {
+  nuevaFila('annulled');
+  const r = await conElFlag(true, puerta.avisoDePago);
+  assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
+  assert.equal(estado.fila.status, 'annulled');
+  assert.equal(estado.escrituras.length, 0);
+  assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
+});
+// ── LA CARRERA ─────────────────────────────────────────────────────────────────────────
+const caso1e = casosEscritos(PUERTAS, (puerta) => `SCRUM-1315 · 🔴 ${puerta.nombre} · el profesional anula entre \`ensureInvoiceForCharge\` y la escritura → NO se cobra una anulada, y se DICE`, async (puerta) => {
+  nuevaFila('pending');
+  let anulacion = null;
+  estado.alEscribir = async (a) => { if (a.data.status === 'paid') anulacion = await anular(); };
+  const r = await conElFlag(true, puerta.avisoDePago);
 
-  test(`SCRUM-1315 · ${puerta.nombre} · con el flag APAGADO (lo que hay hoy) no se llega a la escritura`, async () => {
-    nuevaFila('pending');
-    const r = await conElFlag(false, puerta.avisoDePago);
-    assert.ok(puerta.llegoAlFinal(r), `precondición: el aviso se procesó entero (${JSON.stringify(r.cuerpo)} · ${r.dicho.errores.join(' | ')})`);
-    assert.equal(estado.asegurar, 0, '🔴 se ha llamado a `ensureInvoiceForCharge` con el flag apagado');
-    assert.equal(estado.escrituras.length, 0);
-    assert.equal(estado.fila.status, 'pending');
-  });
+  assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
+  assert.equal(anulacion?.statusCode, 200, `precondición: la anulación de en medio entró (${JSON.stringify(anulacion?.cuerpo)})`);
+  assert.equal(estado.fila.status, 'annulled',
+    '🔴 UN AVISO DE PAGO HA MARCADO COBRADA UNA FACTURA ANULADA. La guarda de SCRUM-502 miró el estado '
+    + 'que devolvió `ensureInvoiceForCharge`; la anulación entró antes de la escritura. El estado tiene '
+    + 'que ir en el `where`.');
+  assert.equal(estado.fila.paidAt, null, '🔴 la anulada lleva fecha de cobro');
+  // Sólo las escrituras DE ESTADO: el sellado de la anulación escribe además su eslabón en la fila,
+  // sin `status`, y eso no es lo que se mide.
+  assert.deepEqual(estado.escrituras.map((e) => e.data.status).filter(Boolean), ['annulled'],
+    'la única escritura de estado es la de la anulación');
 
-  // ── CONTROL POSITIVO: EL DINERO SIGUE ENTRANDO ─────────────────────────────────────────
+  // Y SE DICE. Sin esto el arreglo queda escrito y no se entera nadie: en MercadoPago la negativa
+  // caía en un `.catch(() => {})`.
+  const negativas = r.dicho.errores.filter((l) => l.includes('SCRUM-1315'));
+  assert.equal(negativas.length, 1,
+    `🔴 la negativa NO SE HA DICHO (o se ha dicho ${negativas.length} veces). Lo que salió por console.error: `
+    + `${JSON.stringify(r.dicho.errores)}`);
+  assert.ok(negativas[0].includes(String(FACTURA)), 'y nombra la factura');
 
-  test(`SCRUM-1315 · ✅ ${puerta.nombre} · CONTROL POSITIVO: factura pendiente y cobro confirmado → sigue marcando \`paid\``, async () => {
-    nuevaFila('pending');
-    const r = await conElFlag(true, puerta.avisoDePago);
-    assert.equal(estado.asegurar, 1, '🔴 MUDO: no se ha pasado por `ensureInvoiceForCharge`, así que no se llegó a la escritura que se mide');
-    assert.ok(puerta.contestoComoSiempre(r), JSON.stringify(r.cuerpo));
-    assert.equal(estado.fila.status, 'paid', '🔴 la vía por la que entra el dinero ha dejado de marcar la factura');
-    assert.ok(estado.fila.paidAt instanceof Date);
-    assert.equal(estado.escrituras.length, 1, 'y escribe exactamente una vez');
-    assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
-  });
-
-  test(`SCRUM-1315 · ✅ ${puerta.nombre} · un reintento sobre una ya \`paid\` sigue escribiendo (idempotente, SCRUM-502)`, async () => {
-    nuevaFila('paid');
-    const r = await conElFlag(true, puerta.avisoDePago);
-    assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
-    assert.equal(estado.escrituras.length, 1,
-      '🔴 el `where` excluye más que la anulada: un reintento del proveedor ya no escribe. El GO era la guarda de anulada.');
-    assert.equal(estado.fila.status, 'paid');
-    assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
-  });
-
-  // ── LA PRIMERA BARRERA (SCRUM-502) SIGUE AHÍ ───────────────────────────────────────────
-
-  test(`SCRUM-1315 · ${puerta.nombre} · una factura que YA llega anulada no se intenta escribir (SCRUM-502)`, async () => {
-    nuevaFila('annulled');
-    const r = await conElFlag(true, puerta.avisoDePago);
-    assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
-    assert.equal(estado.fila.status, 'annulled');
-    assert.equal(estado.escrituras.length, 0);
-    assert.ok(puerta.llegoAlFinal(r), r.dicho.errores.join(' | '));
-  });
-
-  // ── LA CARRERA ─────────────────────────────────────────────────────────────────────────
-
-  test(`SCRUM-1315 · 🔴 ${puerta.nombre} · el profesional anula entre \`ensureInvoiceForCharge\` y la escritura → NO se cobra una anulada, y se DICE`, async () => {
-    nuevaFila('pending');
-    let anulacion = null;
-    estado.alEscribir = async (a) => { if (a.data.status === 'paid') anulacion = await anular(); };
-    const r = await conElFlag(true, puerta.avisoDePago);
-
-    assert.equal(estado.asegurar, 1, '🔴 MUDO: no se llegó a la escritura');
-    assert.equal(anulacion?.statusCode, 200, `precondición: la anulación de en medio entró (${JSON.stringify(anulacion?.cuerpo)})`);
-    assert.equal(estado.fila.status, 'annulled',
-      '🔴 UN AVISO DE PAGO HA MARCADO COBRADA UNA FACTURA ANULADA. La guarda de SCRUM-502 miró el estado '
-      + 'que devolvió `ensureInvoiceForCharge`; la anulación entró antes de la escritura. El estado tiene '
-      + 'que ir en el `where`.');
-    assert.equal(estado.fila.paidAt, null, '🔴 la anulada lleva fecha de cobro');
-    // Sólo las escrituras DE ESTADO: el sellado de la anulación escribe además su eslabón en la fila,
-    // sin `status`, y eso no es lo que se mide.
-    assert.deepEqual(estado.escrituras.map((e) => e.data.status).filter(Boolean), ['annulled'],
-      'la única escritura de estado es la de la anulación');
-
-    // Y SE DICE. Sin esto el arreglo queda escrito y no se entera nadie: en MercadoPago la negativa
-    // caía en un `.catch(() => {})`.
-    const negativas = r.dicho.errores.filter((l) => l.includes('SCRUM-1315'));
-    assert.equal(negativas.length, 1,
-      `🔴 la negativa NO SE HA DICHO (o se ha dicho ${negativas.length} veces). Lo que salió por console.error: `
-      + `${JSON.stringify(r.dicho.errores)}`);
-    assert.ok(negativas[0].includes(String(FACTURA)), 'y nombra la factura');
-
-    // Lo demás no cambia: al proveedor se le contesta igual y el cobro se procesa entero.
-    assert.ok(puerta.contestoComoSiempre(r), JSON.stringify(r.cuerpo));
-    assert.ok(puerta.llegoAlFinal(r), `🔴 la negativa ha cortado el resto del aviso: ${r.dicho.errores.join(' | ')}`);
-    assert.equal(estado.cobro.status, 'paid', 'el COBRO sí queda pagado: el dinero entró');
-  });
-}
+  // Lo demás no cambia: al proveedor se le contesta igual y el cobro se procesa entero.
+  assert.ok(puerta.contestoComoSiempre(r), JSON.stringify(r.cuerpo));
+  assert.ok(puerta.llegoAlFinal(r), `🔴 la negativa ha cortado el resto del aviso: ${r.dicho.errores.join(' | ')}`);
+  assert.equal(estado.cobro.status, 'paid', 'el COBRO sí queda pagado: el dinero entró');
+});
+test('SCRUM-1315 · ① /webhooks/psp · con el flag APAGADO (lo que hay hoy) no se llega a la escritura', caso1a(0));
+test('SCRUM-1315 · ✅ ① /webhooks/psp · CONTROL POSITIVO: factura pendiente y cobro confirmado → sigue marcando `paid`', caso1b(0));
+test('SCRUM-1315 · ✅ ① /webhooks/psp · un reintento sobre una ya `paid` sigue escribiendo (idempotente, SCRUM-502)', caso1c(0));
+test('SCRUM-1315 · ① /webhooks/psp · una factura que YA llega anulada no se intenta escribir (SCRUM-502)', caso1d(0));
+test('SCRUM-1315 · 🔴 ① /webhooks/psp · el profesional anula entre `ensureInvoiceForCharge` y la escritura → NO se cobra una anulada, y se DICE', caso1e(0));
+test('SCRUM-1315 · ② /webhooks/mp · con el flag APAGADO (lo que hay hoy) no se llega a la escritura', caso1a(1));
+test('SCRUM-1315 · ✅ ② /webhooks/mp · CONTROL POSITIVO: factura pendiente y cobro confirmado → sigue marcando `paid`', caso1b(1));
+test('SCRUM-1315 · ✅ ② /webhooks/mp · un reintento sobre una ya `paid` sigue escribiendo (idempotente, SCRUM-502)', caso1c(1));
+test('SCRUM-1315 · ② /webhooks/mp · una factura que YA llega anulada no se intenta escribir (SCRUM-502)', caso1d(1));
+test('SCRUM-1315 · 🔴 ② /webhooks/mp · el profesional anula entre `ensureInvoiceForCharge` y la escritura → NO se cobra una anulada, y se DICE', caso1e(1));
+caso1a.todos();
+caso1b.todos();
+caso1c.todos();
+caso1d.todos();
+caso1e.todos();
 
 // ── LOS OTROS FALLOS DE ESCRITURA: NO SE CONFUNDEN CON LA NEGATIVA ──────────────────────
 

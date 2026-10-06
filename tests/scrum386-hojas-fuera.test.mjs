@@ -32,6 +32,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTA = path.join(RAIZ, 'public/dashboard/js/jobDetailView.js');
@@ -105,37 +106,43 @@ test('SCRUM-386 · SUELO: el parser encuentra la vista y sus funciones de módul
 
 // ── ① Declaradas a nivel de módulo ───────────────────────────────────────────
 
-for (const nombre of FUERA) {
-  test(`SCRUM-386 · ${nombre} está a nivel de MÓDULO, no anidada`, () => {
-    const mod = funcionesDeModulo();
-    assert.ok(
-      mod.has(nombre),
-      `🔴 ${nombre} ha vuelto DENTRO de renderJobDetailView. Anidada, la página del albarán no ` +
-        'puede hacerla: solo navegar hasta la fila, y vuelven los callejones sin salida de C2.',
-    );
-  });
-}
+const caso1 = casosEscritos(FUERA, (nombre) => `SCRUM-386 · ${nombre} está a nivel de MÓDULO, no anidada`, (nombre) => {
+  const mod = funcionesDeModulo();
+  assert.ok(
+    mod.has(nombre),
+    `🔴 ${nombre} ha vuelto DENTRO de renderJobDetailView. Anidada, la página del albarán no ` +
+      'puede hacerla: solo navegar hasta la fila, y vuelven los callejones sin salida de C2.',
+  );
+});
+test('SCRUM-386 · albTotalesJS está a nivel de MÓDULO, no anidada', caso1(0));
+test('SCRUM-386 · buildAlbEditor está a nivel de MÓDULO, no anidada', caso1(1));
+test('SCRUM-386 · openAlbEditorSheet está a nivel de MÓDULO, no anidada', caso1(2));
+test('SCRUM-386 · openFacturarParcialSheet está a nivel de MÓDULO, no anidada', caso1(3));
+caso1.todos();
 
 // ── ② Y sin atar nada del ámbito de la vista ─────────────────────────────────
 
-for (const nombre of FUERA) {
-  test(`SCRUM-386 · ${nombre} no captura nada del ámbito de renderJobDetailView`, () => {
-    const externa = buscarFuncion('renderJobDetailView');
-    const fn = buscarFuncion(nombre);
-    assert.ok(fn, `no encuentro ${nombre}`);
+const caso2 = casosEscritos(FUERA, (nombre) => `SCRUM-386 · ${nombre} no captura nada del ámbito de renderJobDetailView`, (nombre) => {
+  const externa = buscarFuncion('renderJobDetailView');
+  const fn = buscarFuncion(nombre);
+  assert.ok(fn, `no encuentro ${nombre}`);
 
-    const delaVista = declaradosEn(externa);
-    const propios = declaradosEn(fn);
-    const atados = [...usadosEn(fn)].filter((n) => delaVista.has(n) && !propios.has(n));
+  const delaVista = declaradosEn(externa);
+  const propios = declaradosEn(fn);
+  const atados = [...usadosEn(fn)].filter((n) => delaVista.has(n) && !propios.has(n));
 
-    assert.deepEqual(
-      atados, [],
-      `🔴 ${nombre} sigue usando ${atados.join(', ')} del ámbito de renderJobDetailView. Está ` +
-        'fuera pero atada: llamarla desde otra pantalla reventaría con un ReferenceError, que es ' +
-        'exactamente lo que esta mudanza venía a evitar.',
-    );
-  });
-}
+  assert.deepEqual(
+    atados, [],
+    `🔴 ${nombre} sigue usando ${atados.join(', ')} del ámbito de renderJobDetailView. Está ` +
+      'fuera pero atada: llamarla desde otra pantalla reventaría con un ReferenceError, que es ' +
+      'exactamente lo que esta mudanza venía a evitar.',
+  );
+});
+test('SCRUM-386 · albTotalesJS no captura nada del ámbito de renderJobDetailView', caso2(0));
+test('SCRUM-386 · buildAlbEditor no captura nada del ámbito de renderJobDetailView', caso2(1));
+test('SCRUM-386 · openAlbEditorSheet no captura nada del ámbito de renderJobDetailView', caso2(2));
+test('SCRUM-386 · openFacturarParcialSheet no captura nada del ámbito de renderJobDetailView', caso2(3));
+caso2.todos();
 
 // ── El contexto entra por parámetro, y con los mismos nombres ────────────────
 

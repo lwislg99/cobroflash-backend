@@ -13,6 +13,7 @@ import {
   RAIZ, censar, censarPrograma, programaDe, raizMedible, USO, RETIRADAS, clasifica, acusada, AGREGADO, NUMERA,
 } from '../scripts/_censo-fecha-sin-zona.mjs';
 import { temporal } from './_temporal.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const deGit = (sha, ruta) => execFileSync('git', ['show', `${sha}:${ruta}`], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 1 << 24 });
 
@@ -93,27 +94,32 @@ const HISTORICOS = [
   },
 ];
 
-for (const h of HISTORICOS) {
-  test(`SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: ${h.nombre} se acusaba ANTES del arreglo`, () => {
-    const abs = path.join(RAIZ, h.ruta);
-    const viejo = deGit(`${h.antesDe}^`, h.ruta);
-    const program = programaDe([abs], new Map([[abs, viejo]]));
-    const filas = censarPrograma(program, [h.ruta]);
-    assert.ok(filas.length > 0,
-      `🔴 EL CENSO NO VE EL DEFECTO QUE LO ORIGINÓ en ${h.ruta}@${h.antesDe}^: esperaba al menos `
-      + 'una llamada get*/set*/toLocale* sobre un receptor `Date`.');
-    assert.ok(filas.some((f) => f.clase === 'GET_SET'),
-      `🔴 esperaba un get*/set* (el patrón \`.getFullYear()\` del año de la serie), y salió: ${JSON.stringify(filas)}`);
-  });
-
-  test(`SCRUM-1093h · CONTROL NEGATIVO DERIVADO: ${h.nombre} en HEAD ya no se acusa`, () => {
-    const filas = REAL.filas.filter((f) => f.fichero === h.ruta);
-    assert.deepEqual(filas, [],
-      `🔴 FALSO POSITIVO sobre código ya arreglado: ${h.ruta} sigue dando llamadas de la familia `
-      + `en HEAD: ${JSON.stringify(filas)}. El arreglo usa diaNaturalEn(fecha, zonaDelMerchant(m)) `
-      + 'y no debería dejar ningún get*/set*/toLocale* sin zona sobre la fecha de la serie.');
-  });
-}
+const casoa = casosEscritos(HISTORICOS, (h) => `SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: ${h.nombre} se acusaba ANTES del arreglo`, (h) => {
+  const abs = path.join(RAIZ, h.ruta);
+  const viejo = deGit(`${h.antesDe}^`, h.ruta);
+  const program = programaDe([abs], new Map([[abs, viejo]]));
+  const filas = censarPrograma(program, [h.ruta]);
+  assert.ok(filas.length > 0,
+    `🔴 EL CENSO NO VE EL DEFECTO QUE LO ORIGINÓ en ${h.ruta}@${h.antesDe}^: esperaba al menos `
+    + 'una llamada get*/set*/toLocale* sobre un receptor `Date`.');
+  assert.ok(filas.some((f) => f.clase === 'GET_SET'),
+    `🔴 esperaba un get*/set* (el patrón \`.getFullYear()\` del año de la serie), y salió: ${JSON.stringify(filas)}`);
+});
+const casob = casosEscritos(HISTORICOS, (h) => `SCRUM-1093h · CONTROL NEGATIVO DERIVADO: ${h.nombre} en HEAD ya no se acusa`, (h) => {
+  const filas = REAL.filas.filter((f) => f.fichero === h.ruta);
+  assert.deepEqual(filas, [],
+    `🔴 FALSO POSITIVO sobre código ya arreglado: ${h.ruta} sigue dando llamadas de la familia `
+    + `en HEAD: ${JSON.stringify(filas)}. El arreglo usa diaNaturalEn(fecha, zonaDelMerchant(m)) `
+    + 'y no debería dejar ningún get*/set*/toLocale* sin zona sobre la fecha de la serie.');
+});
+test('SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: quoteNumber.service.ts (SCRUM-1093, a0f454f3) se acusaba ANTES del arreglo', casoa(0));
+test('SCRUM-1093h · CONTROL NEGATIVO DERIVADO: quoteNumber.service.ts (SCRUM-1093, a0f454f3) en HEAD ya no se acusa', casob(0));
+test('SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: albaranNumber.service.ts (SCRUM-1093f, f0ff43df) se acusaba ANTES del arreglo', casoa(1));
+test('SCRUM-1093h · CONTROL NEGATIVO DERIVADO: albaranNumber.service.ts (SCRUM-1093f, f0ff43df) en HEAD ya no se acusa', casob(1));
+test('SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: partes.routes.ts (SCRUM-1093g, 5cb43c1c) se acusaba ANTES del arreglo', casoa(2));
+test('SCRUM-1093h · CONTROL NEGATIVO DERIVADO: partes.routes.ts (SCRUM-1093g, 5cb43c1c) en HEAD ya no se acusa', casob(2));
+casoa.todos();
+casob.todos();
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ④ 🔴 EL FALSO POSITIVO REAL — `albaranPdf.service.ts:133`, un `toLocaleString` sobre un

@@ -20,7 +20,8 @@
 // LO QUE MIRA, y cada sección declara su POBLACIÓN o dice «NO PUDE MIRAR» (nunca cero filas mudas):
 //   1 · PR       → obligatorio ROJO ≥ 2 h con lo que cayó · punta SIN check con la EDAD del push
 //                  («sin check» a los 2 min de empujar es «aún no ha arrancado»: medido el 1-oct,
-//                  y confundirlos costó tirar una corrida buena).
+//                  y confundirlos costó tirar una corrida buena) · (SCRUM-1453) SIN auto-merge ≥ 2 h,
+//                  con QUIÉN lo desarmó: el vigía ya lo clasificaba y aquí no se decía.
 //   2 · SESIONES → bloqueadas con lo que esperan (`needs`/`detail` de su state.json) · y la que ya
 //                  NO trabaja teniendo un PR suyo en rojo o sin veredicto: «nadie vuelve».
 //   3 · TRASPASO → de cada sesión que ya no trabaja, ¿su traspaso existe y es posterior a su arranque?
@@ -37,6 +38,22 @@
 //                  lo daba `sesion.mjs contexto`, que es la copia INSTALADA: responde ALTERADO cada vez
 //                  que un PR toca `sesion.mjs` en main (medido el 1-oct con #2002) y deja a todo el
 //                  equipo sin la cifra. Aquí se lee desde un árbol y no se toca esa puerta.
+//   8 · EXPERIMENTOS → (SCRUM-1413) todo run TERMINADO de una rama `exp-*` cuyo id no está citado en
+//                  `docs/master/` de `origin/main`, con la fecha en que caducan sus artefactos. El
+//                  1-oct-2026 se lanzó el de SCRUM-1384, nadie leyó el resultado y lo rescató el otro
+//                  equipo antes de que caducara (el detalle, en `docs/master/SCRUM-1413.md`). «Citado
+//                  en main» y no «comentado en Jira»: el latido no tiene credenciales de Jira, y un
+//                  comentario no salva los datos.
+//   9 · VIGÍA    → (SCRUM-1459) los avisos que `vigia-atascados` COMENTA en su issue y que nadie ha
+//                  leído, con su edad, mientras alguno de sus PR siga abierto. Del 2 al 6-oct-2026 comentó
+//                  tres veces sobre cuatro PR y nadie lo abrió. Y la línea de MAIN dice cuánto hace de
+//                  su último commit. (SCRUM-1463) Y si el vigía lleva más de 12 h sin CORRER, o su última
+//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
+//  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
+//                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
+//
+// ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
+// no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
 //
 // DE DÓNDE SALEN LAS SESIONES: del REGISTRO de trabajos (`~/.claude/jobs/*/state.json`), nunca del
 // panel. Medido el 1-oct: dos sesiones lanzadas desde una carpeta nueva quedaron pidiendo un permiso,
@@ -62,6 +79,8 @@ import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } fr
 // Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
 // distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
+// (SCRUM-1463) El estado de la sesión QA lo dice SU instrumento; aquí sólo se le pregunta `estado`.
+import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -99,9 +118,35 @@ export function fallosDelLog(texto) {
 }
 
 /**
- * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, ahora?:number}} e
+ * (SCRUM-1453) De dónde viene un «sin auto-merge», leído de la línea de tiempo del PR. Medido el 2 y el
+ * 6-oct-2026 sobre #2128-#2131: los armó `yaqu-bot[bot]` y los desarmó una PERSONA a los 16-35 s. «Sin
+ * armar» a secas se leyó TRES veces como «el paso que arma miente» y se encargó investigarlo las tres.
+ * Manda el ÚLTIMO evento. Sin la lista no se sabe (`NO-PUDE-MIRAR`), y eso no es «nunca se armó».
+ * @param {{event?:string, actor?:string, created_at?:string}[]|undefined} eventos
  */
-export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush }) {
+export function origenDelSinArmar(eventos) {
+  if (!Array.isArray(eventos)) return { tipo: 'NO-PUDE-MIRAR', texto: 'NO PUDE MIRAR quién lo desarmó, ni si llegó a armarse' };
+  const suyos = eventos
+    .filter((e) => e && (e.event === 'auto_merge_enabled' || e.event === 'auto_merge_disabled'))
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const ultimo = suyos[suyos.length - 1];
+  if (!ultimo) return { tipo: 'NUNCA', texto: 'NUNCA se armó (ningún armado en su línea de tiempo)' };
+  const quien = (e) => e.actor || 'actor DESCONOCIDO';
+  const cuando = (e) => String(e.created_at || 'fecha DESCONOCIDA').slice(0, 16);
+  if (ultimo.event === 'auto_merge_enabled') {
+    return { tipo: 'DISCREPA', texto: `su línea de tiempo acaba en un ARMADO de ${quien(ultimo)} (${cuando(ultimo)}) y la lista lo da sin armar: NO SÉ cuál vale` };
+  }
+  const armado = suyos.filter((e) => e.event === 'auto_merge_enabled').pop();
+  return {
+    tipo: 'DESARMADO',
+    texto: `lo DESARMÓ ${quien(ultimo)} el ${cuando(ultimo)}${armado ? ` (lo había armado ${quien(armado)}): el paso que arma hizo su trabajo` : ''}`,
+  };
+}
+
+/**
+ * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, eventosDeArmado?:(n:number)=>object[]|undefined, ahora?:number}} e
+ */
+export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined }) {
   if (!Array.isArray(prs)) return ciega('PR', 'la lista de PR abiertos no llegó');
   const obligatorios = checksObligatoriosDeReglas(reglas);
   const filas = [];
@@ -135,6 +180,10 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush }) {
       alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · punta SIN ningún check · ${edad}` });
     } else if (/^(DIRTY|CONFLICTO)/.test(f.causa)) {
       alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · CONFLICTO con main · ${edad}` });
+    } else if (f.causa === 'SIN-AUTO-MERGE' && (h === null || h >= HORAS_DE_ROJO)) {
+      // (SCRUM-1453) El clasificador ya lo decía y aquí se tiraba: cuatro PR, cuatro días, sección en ✅.
+      const o = origenDelSinArmar(eventosDeArmado(f.numero));
+      alertas.push({ ...f, origen: o.tipo, linea: `#${f.numero} ${f.rama} · SIN auto-merge: aunque todo pase a verde, nadie lo va a mergear · ${o.texto} · ${edad}` });
     }
   }
   return {
@@ -371,9 +420,32 @@ export function commitsDeCorridas(corridas, jobsDe, obligatorio = OBLIGATORIO_PO
   return commits;
 }
 
-/** @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string}} e — commits de main, del más NUEVO al más viejo. */
-export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO }) {
+/**
+ * (SCRUM-1459) Cuánto hace del último commit de main, para la línea de MAIN. Medido el 6-oct-2026: tras
+ * 88 h sin un merge la línea decía «último con el obligatorio VERDE: …» igual que un martes cualquiera.
+ * Sólo lo DICE: el aviso de parón es de `vigia-atascados` (S0), y dos umbrales para lo mismo divergen.
+ * @param {{sha?:string, fecha?:string}} ultimo  @returns {string|null} `null` = la fecha no se deja leer.
+ */
+export function edadDelUltimoMerge(ultimo, ahora) {
+  const t = Date.parse(ultimo && ultimo.fecha);
+  if (!Number.isFinite(t) || !Number.isFinite(ahora)) return null;
+  const h = (ahora - t) / 3600000;
+  const cuanto = h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : h >= 1 ? `${h.toFixed(1)} h` : `${Math.max(0, Math.round(h * 60))} min`;
+  return `main no recibe un commit desde hace ${cuanto} (${String(ultimo.sha || '?').slice(0, 8)}, ${String(ultimo.fecha).slice(0, 16)}Z)`;
+}
+
+/**
+ * @param {{commits:{sha:string, checkRuns:object[]|undefined, cancelada?:boolean}[], obligatorio?:string, ultimoMerge?:{sha:string,fecha:string}|null, ahora?:number}} e
+ *   commits de main, del más NUEVO al más viejo · `ultimoMerge`: `undefined` = no se pregunta · `null` = se preguntó y no se pudo leer.
+ */
+export function seccionMain({ commits, obligatorio = OBLIGATORIO_POR_DEFECTO, ultimoMerge, ahora }) {
   if (!Array.isArray(commits) || commits.length === 0) return ciega('MAIN', 'no llegaron corridas del CI sobre main (push)');
+  if (ultimoMerge !== undefined) {
+    const edad = edadDelUltimoMerge(ultimoMerge, ahora);
+    if (edad === null) return ciega('MAIN', 'no se pudo leer la fecha del último commit de main: no sé cuánto lleva parado');
+    const s = seccionMain({ commits, obligatorio });
+    return s.pudo ? { ...s, poblacion: `${edad} · ${s.poblacion}` } : s;
+  }
   let detras = 0; let canceladas = 0;
   const alertas = [];
   // Cuántos de los que no tienen veredicto es porque su corrida se canceló: no es lo mismo que «aún corre».
@@ -443,6 +515,190 @@ export function seccionDespliegue({ despliegues, servido, ahora }) {
   };
 }
 
+// ───────────────────────────── 8 · EXPERIMENTOS ─────────────────────────────
+
+/** Prefijo de las ramas de experimento: no empiezan por `scrum-`, así que el bot no les abre PR y nada las vigila. */
+export const PREFIJO_DE_EXPERIMENTO = 'exp-';
+
+/** ¿Está `id` en `texto` como número ENTERO? Una subcadena de otro número más largo no es una cita. */
+export function citaElRun(texto, id) {
+  return new RegExp(`(^|[^0-9])${String(id).replace(/[^0-9]/g, '')}([^0-9]|$)`).test(String(texto || ''));
+}
+
+/**
+ * Un experimento es un run de una rama `exp-*`. Su resultado está LEÍDO cuando alguien lo escribió donde
+ * no caduca: un fichero de `docs/master/` en main que cite el id del run.
+ *
+ * @param {{
+ *   ramas: string[]|undefined,
+ *   runsDe: (rama:string)=>{total:number, runs:{id:number|string, status:string, created_at?:string}[]}|undefined,
+ *   artefactosDe: (id:number|string)=>{total:number, artefactos:{expired:boolean, expires_at:string}[]}|undefined,
+ *   citadoEnMain: (id:number|string)=>boolean|undefined,
+ *   ahora: number,
+ * }} e — todo `undefined` es «no se pudo leer», y nunca se toma por «no hay».
+ */
+export function seccionExperimentos({ ramas, runsDe, artefactosDe, citadoEnMain, ahora }) {
+  const N = 'EXPERIMENTOS';
+  if (!Array.isArray(ramas)) return ciega(N, `no se pudieron listar las ramas \`${PREFIJO_DE_EXPERIMENTO}*\` del remoto`);
+  let terminados = 0; let citados = 0; let corriendo = 0; let sinArtefactos = 0;
+  const hallados = []; const sinRuns = [];
+  for (const rama of ramas) {
+    const r = runsDe(rama);
+    if (!r || !Array.isArray(r.runs)) return ciega(N, `no se pudieron leer los runs de ${rama}`);
+    if (!Number.isFinite(r.total) || r.total > r.runs.length) return ciega(N, `${rama} declara ${r.total} runs y llegaron ${r.runs.length}: la lista está cortada`);
+    // Una rama de experimento sin ningún run no es «nada que leer». Medido el 2-oct-2026 al estrenar esta
+    // sección: la API devolvió la lista VACÍA para una rama que tenía su run, y la pasada siguiente lo trajo.
+    if (r.runs.length === 0) { sinRuns.push(rama); continue; }
+    for (const run of r.runs) {
+      if (run.status !== 'completed') { corriendo++; continue; }
+      terminados++;
+      const citado = citadoEnMain(run.id);
+      if (citado === undefined) return ciega(N, `no se pudo buscar el run ${run.id} en docs/master de origin/main`);
+      if (citado) { citados++; continue; }
+      const a = artefactosDe(run.id);
+      if (!a || !Array.isArray(a.artefactos)) return ciega(N, `no se pudieron leer los artefactos del run ${run.id} (${rama})`);
+      if (!Number.isFinite(a.total) || a.total > a.artefactos.length) return ciega(N, `el run ${run.id} declara ${a.total} artefactos y llegaron ${a.artefactos.length}: la lista está cortada`);
+      if (a.total === 0) { sinArtefactos++; continue; }
+      const vivos = a.artefactos.filter((x) => !x.expired);
+      const caduca = Math.min(...vivos.map((x) => Date.parse(x.expires_at)));
+      if (vivos.length > 0 && !Number.isFinite(caduca)) return ciega(N, `algún artefacto del run ${run.id} no trae fecha de caducidad legible`);
+      hallados.push({ rama, id: run.id, creado: run.created_at, total: a.total, vivos: vivos.length, caduca: vivos.length ? caduca : -Infinity });
+    }
+  }
+  // Primero lo perdido, luego lo que caduca antes: es el orden en que hay que ir a leerlo.
+  hallados.sort((x, y) => x.caduca - y.caduca);
+  const alertas = hallados.map((h) => {
+    const de = `${h.rama} · run ${h.id}${h.creado ? ` (${String(h.creado).slice(0, 16)}Z)` : ''}`;
+    if (h.vivos === 0) return { linea: `${de} · PERDIDO: sus ${h.total} artefacto(s) YA CADUCARON y nadie escribió el resultado en docs/master de main` };
+    const horas = (h.caduca - ahora) / 36e5;
+    const falta = horas < 0 ? 'fecha ya pasada' : `faltan ${edadDe(horas * 36e5)}`;
+    return { linea: `${de} · SIN LEER: no está citado en docs/master de main · ${h.vivos} de ${h.total} artefacto(s) vivos, el primero CADUCA el ${new Date(h.caduca).toISOString().slice(0, 16)}Z (${falta})` };
+  });
+  for (const rama of sinRuns) alertas.push({ linea: `${rama} · la API no devuelve NINGÚN run de esta rama: o nunca corrió, o la lista llegó vacía. NO es «nada que leer»: vuelve a mirar` });
+  return {
+    nombre: N, pudo: true, alertas,
+    poblacion: `${ramas.length} rama(s) \`${PREFIJO_DE_EXPERIMENTO}*\` (${sinRuns.length} sin ningún run) · ${terminados} run(s) terminados: ${citados} citados en docs/master de main, ${hallados.length} sin citar con artefactos, ${sinArtefactos} sin citar y sin artefactos · ${corriendo} aún corriendo (no se juzgan)`,
+  };
+}
+
+// ───────────────────────────── 9 · VIGÍA ─────────────────────────────
+
+/** El título del issue donde escribe `vigia-atascados.yml` (su `TITULO`). Se busca por él, no por número. */
+export const TITULO_DEL_VIGIA = '[vigía] PR atascados';
+/** Así empieza cada aviso que el vigía COMENTA (lo demás lo reescribe en el cuerpo, sin notificar). */
+const MARCA_DE_AVISO = 'la lista de PR atascados ha **EMPEORADO**';
+
+/** Los PR que nombra un aviso del vigía: sus viñetas son `- **#2129 entra** …` / `- **#2129 cruza 24 h** …`. */
+export function prsDelAviso(cuerpo) {
+  return [...new Set([...String(cuerpo || '').matchAll(/^\s*-\s+\*\*#(\d+)\b/gm)].map((m) => Number(m[1])))];
+}
+
+/**
+ * (SCRUM-1459) Los avisos del vigía que NADIE ha leído. Medido el 6-oct-2026: durante un parón de 88 h el
+ * vigía comentó tres veces en su issue (2, 3 y 5-oct) nombrando #2128-#2131; los 43 comentarios del issue
+ * tenían cero reacciones y ninguna respuesta. El vigía escribía donde nadie lee, y el latido no leía lo
+ * que el vigía escribe.
+ *
+ * LEÍDO = el comentario tiene alguna reacción, o una PERSONA ha comentado después en el issue. GitHub no
+ * guarda «visto»: es la única huella que deja quien lo abre, y se dice en la salida cómo dejarla.
+ * VIVO  = nombra algún PR que sigue abierto. El que ya no, se cuenta y no se enseña: no hay nada que hacer.
+ *
+ * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number}} e
+ *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
+ */
+export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
+  // (SCRUM-1463) `pasadas`: `undefined` = no se pregunta (sólo los avisos) · cualquier otra cosa = se juzga.
+  if (pasadas !== undefined) {
+    const p = pasadaDelVigia(pasadas, ahora);
+    if (p.ciego) return ciega('VIGÍA', p.ciego);
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora });
+    if (!s.pudo) return s;
+    return { ...s, alertas: [...p.alertas, ...s.alertas], poblacion: `${p.texto} · ${s.poblacion}` };
+  }
+  if (issue === undefined) return ciega('VIGÍA', `no se pudo buscar el issue «${TITULO_DEL_VIGIA}»`);
+  if (issue === null) return ciega('VIGÍA', `no hay ningún issue ABIERTO titulado «${TITULO_DEL_VIGIA}»: o el vigía no ha corrido nunca, o alguien lo cerró`);
+  if (!Array.isArray(comentarios)) return ciega('VIGÍA', `no se pudieron leer los comentarios del issue #${issue}`);
+  if (!Array.isArray(abiertos)) return ciega('VIGÍA', 'la lista de PR abiertos no llegó: no sé qué avisos siguen vivos');
+  const orden = [...comentarios].sort((a, b) => String(a.creado).localeCompare(String(b.creado)));
+  const ultimaPersona = orden.filter((c) => !c.esBot).map((c) => String(c.creado)).pop() || '';
+  const avisos = orden.filter((c) => c.esBot && String(c.cuerpo || '').includes(MARCA_DE_AVISO));
+  // Un aviso sin ningún PR legible no se da por «sin PR abierto»: el formato cambió y no sé leerlo.
+  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0);
+  if (ilegibles.length) return ciega('VIGÍA', `${ilegibles.length} aviso(s) del issue #${issue} no nombran ningún PR que yo sepa leer (el primero, del ${String(ilegibles[0].creado).slice(0, 16)}Z): el formato del vigía ha cambiado`);
+  const sinLeer = avisos.filter((c) => !(c.reacciones > 0) && String(c.creado) > ultimaPersona);
+  const hoy = new Set(abiertos);
+  const alertas = []; let muertos = 0;
+  for (const c of sinLeer) {
+    const nombra = prsDelAviso(c.cuerpo);
+    const siguen = nombra.filter((n) => hoy.has(n));
+    if (siguen.length === 0) { muertos++; continue; }
+    const h = (ahora - Date.parse(c.creado)) / 3600000;
+    const edad = !Number.isFinite(h) ? 'edad DESCONOCIDA' : h >= 48 ? `${(h / 24).toFixed(1)} días` : `${h.toFixed(1)} h`;
+    alertas.push({
+      id: c.id, siguen,
+      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · nombra ${nombra.length} PR, ${siguen.length} siguen abiertos: ${siguen.map((n) => `#${n}`).join(' ')} · comentario ${c.id}`,
+    });
+  }
+  return {
+    nombre: 'VIGÍA', pudo: true, alertas,
+    poblacion: `issue #${issue} · ${comentarios.length} comentarios, ${avisos.length} son avisos del vigía · ${sinLeer.length} sin leer (${alertas.length} con algún PR aún abierto, ${muertos} ya sin ninguno: no se enseñan) · «leído» = una reacción en el comentario o una respuesta posterior de una persona (\`gh api repos/${REPO}/issues/comments/<id>/reactions -f content=eyes\`)`,
+  };
+}
+
+/** El workflow del vigía: sus CORRIDAS dicen cuándo miró. Sus comentarios no: sólo comenta si la lista empeora. */
+const WORKFLOW_DEL_VIGIA = 'vigia-atascados.yml';
+/**
+ * Cuánto puede callar el vigía antes de que su silencio deje de ser «nada nuevo». Su cron pide cada 3 h y
+ * GitHub lo retrasa: hueco mediano 4,9 h y máximo 9,8 h en 60 pasadas (SCRUM-1270, 17 → 29-sep-2026), y
+ * máximo 10,1 h en las 30 del 29-sep al 6-oct. Doce horas queda por encima de todo lo medido.
+ */
+export const HORAS_DE_VIGIA_CALLADO = 12;
+
+/**
+ * (SCRUM-1463) ¿Sigue corriendo el vigía? Sin esto, un vigía parado y un vigía sin nada que decir dan la
+ * misma sección en ✅: es «no pude mirar = no hay» en el instrumento que avisa.
+ * @param {{created_at?:string, status?:string, conclusion?:string}[]|null} corridas  del más NUEVO al más viejo · `null` = no se pudieron leer
+ * @returns {{ciego?:string, alertas:{linea:string}[], texto:string}}
+ */
+export function pasadaDelVigia(corridas, ahora) {
+  if (!Array.isArray(corridas)) return { ciego: 'no se pudo leer cuándo corrió el vigía por última vez (las corridas de su workflow no llegaron): no sé si sigue mirando', alertas: [], texto: '' };
+  const terminadas = corridas.filter((c) => c && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas del vigía que llegaron está terminada y fechada: no sé cuándo miró por última vez`, alertas: [], texto: '' };
+  const horas = (c) => (ahora - Date.parse(c.created_at)) / 3600000;
+  const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
+  const ultima = terminadas[0];
+  const buena = terminadas.find((c) => c.conclusion === 'success');
+  const alertas = [];
+  if (ultima.conclusion !== 'success') {
+    alertas.push({ linea: `la última pasada del vigía (${String(ultima.created_at).slice(0, 16)}Z) terminó en ${String(ultima.conclusion).toUpperCase()}: NO miró. ${buena ? `La última buena es de hace ${cuanto(horas(buena))}` : `Ninguna buena entre las ${terminadas.length} que llegaron`}. Que no haya avisos nuevos NO es que no haya atascos` });
+  } else if (horas(ultima) > HORAS_DE_VIGIA_CALLADO) {
+    alertas.push({ linea: `el vigía NO CORRE desde hace ${cuanto(horas(ultima))} (${String(ultima.created_at).slice(0, 16)}Z) y se le pide cada 3 h (hueco mayor medido: 10,1 h; tope ${HORAS_DE_VIGIA_CALLADO} h). Que no haya avisos nuevos NO es que no haya atascos` });
+  }
+  return { alertas, texto: `última pasada del vigía hace ${cuanto(horas(ultima))} (${ultima.conclusion})` };
+}
+
+// ───────────────────────────── 10 · QA ─────────────────────────────
+
+/**
+ * (SCRUM-1463) La sesión de la cuenta QA, dicha con las palabras de `scripts/qa/sesion-panel.mjs estado`
+ * (se LLAMA, no se copia). Del 3 al 6-oct-2026 estuvo muerta y cuatro tickets con su código en producción
+ * quedaron sin verificar; el orquestador dijo cuatro días que la renovaba el fundador, y la renovó él en
+ * un comando. Por eso MUERTA dice QUIÉN. El latido sólo lee: no entra, no renueva, no cierra sesión.
+ * @param {{codigo:number|undefined, lineas:string[]}} e  la salida de `estado`: 0 VIVA · 1 MUERTA · 2 NO SE PUEDE SABER
+ */
+export function seccionQA({ codigo, lineas = [] }) {
+  const dicho = lineas.map((l) => String(l).trim()).filter(Boolean);
+  const texto = dicho.join(' · ');
+  if (codigo === 0 && /^VIVA\b/.test(dicho[0] || '')) return { nombre: 'QA', pudo: true, alertas: [], poblacion: `sesión de la cuenta QA: ${texto}` };
+  if (codigo === 1 && /^MUERTA\b/.test(dicho[0] || '')) {
+    return {
+      nombre: 'QA', pudo: true, poblacion: 'sesión de la cuenta QA: MUERTA — nada de lo mergeado se puede ver en yaqu.app hasta renovarla',
+      alertas: [{ linea: `${texto} · LA RENUEVA EL ORQUESTADOR, o cualquier sesión de esta máquina: el secreto está en disco y no hace falta el fundador. ⛔ Una vez viva, nadie prueba «cerrar sesión»: la mata para todas` }],
+    };
+  }
+  return ciega('QA', codigo === 2 && texto ? texto : `\`sesion-panel.mjs estado\` no contestó ninguna de sus tres respuestas (código ${codigo === undefined ? 'ninguno: reventó' : codigo}${texto ? `, dijo: ${texto}` : ', sin texto'})`);
+}
+
 // ───────────────────────────── el veredicto ─────────────────────────────
 
 function ciega(nombre, motivo) { return { nombre, pudo: false, motivo, alertas: [], poblacion: null }; }
@@ -453,7 +709,17 @@ export function salidaDe(secciones) {
   return SALIDA_OK;
 }
 
-export function informe(secciones, { ahora, fallosDe = () => undefined }) {
+/**
+ * (SCRUM-1463) Lo que el latido NO mide y hay que hacer a mano: se SEÑALA en cada pasada, para que no
+ * dependa de que alguien se acuerde. Un puntero no afirma nada y no cuenta para la salida. El 6-oct-2026
+ * el cruce de Jira se hizo a mano sobre 40 tickets «En curso» y 36 tenían su trabajo en main; el comando
+ * que lo hace existía desde SCRUM-1259 y nadie lo corría.
+ */
+export const NOTAS_FIJAS = [
+  'ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (los que no están en Done, TODAS las páginas) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h: con una más vieja el comando se declara CIEGO y sale 2 · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida',
+];
+
+export function informe(secciones, { ahora, fallosDe = () => undefined, notas = [] }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
     if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); for (const a of s.alertas) out.push(`   · ${a.linea}`); continue; }
@@ -465,6 +731,7 @@ export function informe(secciones, { ahora, fallosDe = () => undefined }) {
       else if (f === null) out.push('       (no supe leer qué cayó: el log no llegó a su resumen)');
     }
   }
+  if (notas.length) out.push('', ...notas);
   const c = salidaDe(secciones);
   out.push('', c === SALIDA_CIEGO ? '→ ALGUNA SECCIÓN NO PUDO MIRAR (salida 2)' : c === SALIDA_AVISO ? '→ HAY COSAS QUE ATENDER (salida 1)' : '→ nada que atender (salida 0)');
   return out.join('\n');
@@ -680,7 +947,12 @@ async function todo() {
     const t = Date.parse(fecha);
     minutos.set(p.number, Number.isFinite(t) ? (ahora - t) / 60000 : undefined);
   }
-  const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n) });
+  // La línea de tiempo sólo se pide del PR que sale SIN auto-merge (una llamada por cada uno, no por todos).
+  // Una línea JSON por evento: con `--paginate`, varias páginas pegadas no son UN JSON.
+  const eventosDeArmado = (n) => intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues/${n}/timeline?per_page=100`, '-q',
+    '.[] | select(.event == "auto_merge_enabled" or .event == "auto_merge_disabled") | {event, actor: .actor.login, created_at}'])
+    .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)));
+  const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n), eventosDeArmado });
   tramo('PR');
   // 2 y 3 · sesiones y traspasos
   const trabajos = leerTrabajos();
@@ -701,7 +973,10 @@ async function todo() {
   // 4 · main
   const corridas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_OBLIGATORIO}/runs?branch=main&event=push&per_page=${COMMITS_DE_MAIN}`]).workflow_runs);
   const commits = commitsDeCorridas(corridas, (c) => intentar(() => ghJson(['api', `repos/${REPO}/actions/runs/${c.id}/jobs?per_page=100`]).jobs));
-  const sMain = seccionMain({ commits });
+  // La punta de main, con su fecha: `null` si no se deja leer (y entonces la sección lo dice, no lo calla).
+  const punta = intentar(() => ghJson(['api', `repos/${REPO}/commits/main`]));
+  const ultimoMerge = punta && punta.sha && punta.commit && punta.commit.committer ? { sha: punta.sha, fecha: punta.commit.committer.date } : null;
+  const sMain = seccionMain({ commits, ultimoMerge, ahora });
   tramo('main');
   // 5 · despliegue
   const ds = intentar(() => ghJson(['api', `repos/${REPO}/deployments?per_page=5`]));
@@ -729,9 +1004,51 @@ async function todo() {
   const sCem = seccionCementerio({ sesiones, ilegibles: trabajos ? trabajos.ilegibles : [], sinEstado: trabajos ? trabajos.sinEstado : [], libro, libroGuardado, ahora });
   // 7 · contexto. Se lee el jsonl de cada una; nada de `claude agents` ni de la copia instalada.
   const sCtx = seccionContexto({ sesiones, contextoDe: (s) => contextoDeRuta(jsonlDe(s)), sueltas: sesiones ? transcriptsSueltos(sesiones, ahora) : [], ahora });
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx];
   tramo('cementerio y contexto');
-  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
+  // 8 · experimentos. `main` se trae antes de buscar la cita: con un `origin/main` viejo, un resultado ya
+  // escrito saldría como «sin leer». Si no se puede traer, la búsqueda no vale y la sección lo dice.
+  const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const git = (args) => execFileSync('git', ['-C', raiz, ...args], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
+  const mainTraido = intentar(() => { git(['fetch', '--quiet', 'origin', '+refs/heads/main:refs/remotes/origin/main']); return true; }) === true;
+  const refs = intentar(() => ghJson(['api', `repos/${REPO}/git/matching-refs/heads/${PREFIJO_DE_EXPERIMENTO}?per_page=100`]));
+  const sExp = seccionExperimentos({
+    // Cien justas es una página llena: puede haber más, y entonces no se sabe.
+    ramas: Array.isArray(refs) && refs.length < 100 ? refs.map((r) => String(r.ref).replace(/^refs\/heads\//, '')) : undefined,
+    // Una lista vacía se pide OTRA vez antes de creérsela (ver `seccionExperimentos`); si repite, la sección lo dice.
+    runsDe: (rama) => intentar(() => {
+      const pedir = () => ghJson(['api', `repos/${REPO}/actions/runs?branch=${encodeURIComponent(rama)}&per_page=100`]);
+      let j = pedir();
+      if (Array.isArray(j.workflow_runs) && j.workflow_runs.length === 0) j = pedir();
+      return { total: j.total_count, runs: j.workflow_runs };
+    }),
+    artefactosDe: (id) => intentar(() => { const j = ghJson(['api', `repos/${REPO}/actions/runs/${id}/artifacts?per_page=100`]); return { total: j.total_count, artefactos: j.artifacts }; }),
+    citadoEnMain: (id) => {
+      if (!mainTraido) return undefined;
+      // `git grep` sale 1 cuando no hay ninguna coincidencia: eso es un «no», no un error.
+      try { return citaElRun(git(['grep', '-h', '-F', String(id), 'origin/main', '--', 'docs/master']), id); } catch (e) { return e && e.status === 1 ? false : undefined; }
+    },
+    ahora,
+  });
+  tramo('experimentos');
+  // 9 · vigía. El issue se busca por su título (el número no está escrito en ningún sitio del vigía).
+  const issues = intentar(() => ghJson(['issue', 'list', '--state', 'open', '--search', `${TITULO_DEL_VIGIA} in:title`, '--json', 'number,title', '--limit', '20']));
+  const elIssue = !Array.isArray(issues) ? undefined : (issues.find((i) => i.title === TITULO_DEL_VIGIA) || { number: null }).number;
+  // Una línea JSON por comentario: con `--paginate`, varias páginas pegadas no son UN JSON.
+  const comentarios = !elIssue ? undefined : intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues/${elIssue}/comments?per_page=100`, '-q',
+    '.[] | {id, creado: .created_at, autor: .user.login, esBot: (.user.type == "Bot"), cuerpo: .body, reacciones: .reactions.total_count}'])
+    .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)));
+  // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
+  // Cuándo CORRIÓ: las corridas de su workflow. `null` si no llegan (la sección lo dice; no lo da por bueno).
+  const pasadas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA}/runs?per_page=10`]).workflow_runs) ?? null;
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas });
+  tramo('vigía');
+  // 10 · QA. Una petición GET a producción con la cookie guardada: lo mismo que `estado`. No entra ni renueva.
+  const dichoQA = [];
+  const codigoQA = await ejecutarQA(['estado'], { out: (s) => dichoQA.push(s), err: (s) => dichoQA.push(s) }).catch((e) => { dichoQA.push(`reventó: ${String((e && e.message) || e).split('\n')[0]}`); return undefined; });
+  const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
+  tramo('QA');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
+  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
 }

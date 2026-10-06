@@ -119,6 +119,39 @@ test('SCRUM-1381 · 🔴 LA UNIDAD: un sitio con dos escrituras es UN sitio y DO
   }
 });
 
+test('SCRUM-1381b · 🔴 EL RESUMEN CUADRA CON SU LISTA: un sitio con una línea ajena y otra opaca cuenta en las dos clases, y cada línea en una sola', () => {
+  // Lo que no cuadraba (aviso de S2, registrado en SCRUM-1285): el resumen decía «16 sitios ajenos
+  // (19 líneas), 1 sitios opacos» y la lista de ajenos sumaba 20 líneas, sin nombrar el opaco. La
+  // línea opaca vivía dentro de un sitio ajeno y la lista imprimía TODAS las líneas del sitio.
+  const MIXTO = `router.put('/f/:id/notas', async (req, res) => {
+    await prisma.quote.update({ where: { id: 1 }, data: { internalNotes: req.body.notas } });
+    await prisma.quote.update({ where: { id: 1 }, data: cambios });
+  });`;
+  const S = '__fabricado/f.routes.ts::PUT /f/:id/notas';
+  const e = veredictoDe('PATCH /f/:id/plan', [PLAN, MIXTO]);
+  assert.equal(e.otros, 1, 'es UN sitio');
+  assert.deepEqual([e.ajenos, e.opacos], [[S], [S]], 'y cuenta como ajeno Y como opaco');
+  assert.deepEqual([e.lineasOtras, e.lineasAjenas, e.lineasOpacas, e.lineasSuyas], [2, 1, 1, 0]);
+  assert.equal(e.lineasPorClase.ajeno[S].length, 1, '🔴 la lista de ajenos vuelve a traer la línea opaca del sitio');
+  assert.equal(e.lineasPorClase.opaco[S].length, 1, '🔴 el opaco no sale nombrado');
+  assert.notDeepEqual(e.lineasPorClase.ajeno[S], e.lineasPorClase.opaco[S]);
+  assert.deepEqual(e.mixtos, [`${S} (ajeno + opaco)`], '🔴 un sitio en dos clases tiene que decirse, o los sitios por clase no suman y nadie sabe por qué');
+  // Sobre el árbol real, en TODAS las candidatas: lo listado suma lo que el resumen dice.
+  let mixtos = 0;
+  for (const c of r.escritores) {
+    const listadas = (clase) => Object.values(c.lineasPorClase[clase]).reduce((n, l) => n + l.length, 0);
+    assert.deepEqual([listadas('suyo'), listadas('ajeno'), listadas('opaco'), listadas('sin clasificar')],
+      [c.lineasSuyas, c.lineasAjenas, c.lineasOpacas, c.lineasSinClasificar], `${c.sitio}: la lista de una clase no suma lo que dice su resumen`);
+    assert.equal(c.lineasSuyas + c.lineasAjenas + c.lineasOpacas + c.lineasSinClasificar, c.lineasOtras, `${c.sitio}: hay líneas en dos clases o en ninguna`);
+    assert.deepEqual([Object.keys(c.lineasPorClase.suyo), Object.keys(c.lineasPorClase.ajeno), Object.keys(c.lineasPorClase.opaco)],
+      [c.coinciden, c.ajenos, c.opacos], `${c.sitio}: los sitios listados no son los contados`);
+    assert.equal(c.coinciden.length + c.ajenos.length + c.opacos.length + Object.keys(c.lineasPorClase['sin clasificar']).length - c.otros,
+      c.mixtos.reduce((n, m) => n + m.split(' + ').length - 1, 0), `${c.sitio}: lo que los sitios por clase pasan de «otros» no es lo que se declara como mixto`);
+    mixtos += c.mixtos.length;
+  }
+  console.log(`[escritores por fila] candidatas=${r.escritores.length} con_sitios_en_mas_de_una_clase=${r.escritores.filter((c) => c.mixtos.length).length} sitios_mixtos=${mixtos}`);
+});
+
 test('SCRUM-1381 · una LEE-Y-DECIDE es candidata: protege el campo sobre el que decide', () => {
   const e = veredictoDe('POST /f/:id/aceptar', [DECIDE, NOTAS]);
   assert.equal(e.yaLaLleva, false);

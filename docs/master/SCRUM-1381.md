@@ -121,3 +121,46 @@ Y dos del relevo (1-oct-2026), al añadir la unidad:
   con `git restore --source=HEAD` sobre el fichero entero me llevé también los tres cambios aún sin
   comitear, y hubo que rehacerlos. Un mutante se prueba sobre un árbol COMITEADO, o se deshace a
   mano: lo dice el propio registro unas líneas más arriba («commit antes de mutar») y no lo hice.
+
+# SCRUM-1381b · El resumen de `--escritores` cuadra con su lista, y el opaco sale nombrado
+
+**Medido contra:** `origin/main` = `643e9a65a5756b9729c9f8d4b911ea0c536988b3` · 2026-10-02T13:19Z
+
+A9: comprobación → `tests/scrum1381-escritores-por-fila.test.mjs`
+
+Carril S3. Aviso de S2 (registrado en `docs/master/SCRUM-1285.md`): en la fila
+`quotesAdmin.routes.ts · PATCH /:id/billing-plan`, el resumen decía «16 sitios ajenos (19 líneas),
+1 sitios opacos» y la lista de ajenos sumaba 20 líneas, sin nombrar el opaco.
+
+## La causa, en el instrumento
+
+La clase (suyo / ajeno / opaco) se decide por LÍNEA, pero la salida la contaba por SITIO y, con
+`--todo`, listaba de cada sitio ajeno TODAS sus líneas. `quotes.routes.ts::POST /:token/decision`
+tiene dos líneas ajenas (:512, :722) y una opaca (:468): salía como ajeno con tres líneas, y el
+opaco —el mismo sitio— no se listaba. Las cifras del resumen eran ciertas; la lista no era la suya.
+
+## Lo que cambia
+
+- Cada fila lleva `lineasPorClase` (sitio → sus líneas DE ESA CLASE), `lineasSuyas`, `lineasOpacas`,
+  `lineasSinClasificar` y `mixtos` (los sitios que cuentan en más de una clase, con cuáles).
+- El resumen dice las líneas de las tres clases, y cuántos sitios cuentan en más de una.
+- `--todo` lista suyo, ajeno y opaco, cada uno con sus líneas, y nombra los sitios mixtos.
+- No cambia ningún veredicto ni ninguna cifra que ya se imprimía: `VALE 1 · NO-VALE 21 · NO-SE 0 ·
+  SIN-UPDATEDAT 6` antes y después.
+
+La fila del aviso, después: «16 sitios en 20 líneas → 0 sitios tocan lo suyo (0 líneas), 16 sitios
+ajenos (19 líneas), 1 sitios opacos (1 líneas) · 1 sitios cuentan en más de una clase», con 19
+líneas listadas como ajenas, `opaco: …POST /:token/decision (:468)` y el sitio mixto nombrado.
+
+## Población y rojo
+
+`[escritores por fila] candidatas=28 con_sitios_en_mas_de_una_clase=12 sitios_mixtos=13`: el
+descuadre no era de una fila, estaba en 12 de las 28.
+
+El caso nuevo comprueba, sobre un sitio fabricado con una línea ajena y otra opaca y sobre las 28
+candidatas reales, que lo listado en cada clase suma lo que dice el resumen, que las clases suman
+las líneas totales y que lo que los sitios por clase pasan de «otros» es lo declarado como mixto.
+Visto en ROJO con el instrumento de `main` y el test nuevo: `exit 1` Â· `pass 11 fail 1`.
+
+Lo que NO cambia y sigue declarado en la cabecera del instrumento: «un sitio» es fichero + ruta, y
+escribir el mismo modelo no es escribir la misma fila.

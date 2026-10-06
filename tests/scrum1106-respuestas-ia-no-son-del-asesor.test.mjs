@@ -20,6 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const PREGUNTAS = 'docs/legal/PREGUNTAS_ASESOR.md';
@@ -53,29 +54,33 @@ test('SCRUM-1106 · 🔴 AUTOPRUEBA: el detector ve la atribución y no ve la ma
   assert.ok(e.has('Q-C3'), '🔴 el lector de entradas no ve una fila de tabla: los asertos de abajo estarían ciegos.');
 });
 
-for (const f of [PREGUNTAS, CONTABILIDAD]) {
-  test(`SCRUM-1106 · ${f}: las siete del lote llevan la marca de IA`, () => {
-    const e = entradas(leer(f));
-    for (const q of DEL_LOTE) {
-      const l = e.get(q);
-      assert.ok(l, `🔴 SUELO: no encuentro la entrada ${q} en ${f}. Si se ha movido, el guard está ciego.`);
-      assert.ok(l.includes(MARCA_IA),
-        `🔴 ${q} en ${f} ya no dice que es una respuesta de IA sin revisión profesional:\n    ${l.slice(0, 160)}\n`
-        + '  Decisión ① del fundador, SCRUM-1261 comentario 17638: la escribió una herramienta.');
-      assert.doesNotMatch(l, /\b(RESPONDIDA|RESUELTA)\b/,
-        `🔴 ${q} en ${f} vuelve a darse por respondida:\n    ${l.slice(0, 160)}`);
-    }
-  });
-
-  test(`SCRUM-1106 · ${f}: Q-C9 conserva su «RESPONDIDA por cita» (control)`, () => {
-    const l = entradas(leer(f)).get('Q-C9');
-    assert.ok(l, `🔴 SUELO: no encuentro Q-C9 en ${f}.`);
-    assert.match(l, /RESPONDIDA por cita/,
-      `🔴 Q-C9 en ${f} ha perdido su marca. Se apoya en LIVA arts. 7 y 20 cotejados por script, no en `
-      + 'el lote del 23-sep: marcarla como IA borraría una fuente real.');
-    assert.ok(!l.includes(MARCA_IA), `🔴 Q-C9 en ${f} lleva la marca de IA y no es del lote.`);
-  });
-}
+const FILAS = [PREGUNTAS, CONTABILIDAD];
+const casoa = casosEscritos(FILAS, (f) => `SCRUM-1106 · ${f}: las siete del lote llevan la marca de IA`, (f) => {
+  const e = entradas(leer(f));
+  for (const q of DEL_LOTE) {
+    const l = e.get(q);
+    assert.ok(l, `🔴 SUELO: no encuentro la entrada ${q} en ${f}. Si se ha movido, el guard está ciego.`);
+    assert.ok(l.includes(MARCA_IA),
+      `🔴 ${q} en ${f} ya no dice que es una respuesta de IA sin revisión profesional:\n    ${l.slice(0, 160)}\n`
+      + '  Decisión ① del fundador, SCRUM-1261 comentario 17638: la escribió una herramienta.');
+    assert.doesNotMatch(l, /\b(RESPONDIDA|RESUELTA)\b/,
+      `🔴 ${q} en ${f} vuelve a darse por respondida:\n    ${l.slice(0, 160)}`);
+  }
+});
+const casob = casosEscritos(FILAS, (f) => `SCRUM-1106 · ${f}: Q-C9 conserva su «RESPONDIDA por cita» (control)`, (f) => {
+  const l = entradas(leer(f)).get('Q-C9');
+  assert.ok(l, `🔴 SUELO: no encuentro Q-C9 en ${f}.`);
+  assert.match(l, /RESPONDIDA por cita/,
+    `🔴 Q-C9 en ${f} ha perdido su marca. Se apoya en LIVA arts. 7 y 20 cotejados por script, no en `
+    + 'el lote del 23-sep: marcarla como IA borraría una fuente real.');
+  assert.ok(!l.includes(MARCA_IA), `🔴 Q-C9 en ${f} lleva la marca de IA y no es del lote.`);
+});
+test('SCRUM-1106 · docs/legal/PREGUNTAS_ASESOR.md: las siete del lote llevan la marca de IA', casoa(0));
+test('SCRUM-1106 · docs/legal/PREGUNTAS_ASESOR.md: Q-C9 conserva su «RESPONDIDA por cita» (control)', casob(0));
+test('SCRUM-1106 · docs/producto/CONTABILIDAD.md: las siete del lote llevan la marca de IA', casoa(1));
+test('SCRUM-1106 · docs/producto/CONTABILIDAD.md: Q-C9 conserva su «RESPONDIDA por cita» (control)', casob(1));
+casoa.todos();
+casob.todos();
 
 test('SCRUM-1106 · ningún documento de legal/ ni producto/ atribuye al asesor el lote del 23-sep', () => {
   const ficheros = ['docs/legal', 'docs/producto'].flatMap((d) => fs.readdirSync(path.join(RAIZ, d))

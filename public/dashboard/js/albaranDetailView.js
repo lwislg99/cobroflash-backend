@@ -47,6 +47,9 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 // Cada uno en UN literal, tal cual se firmó (SCRUM-1353 comentario 17881): no se parten.
 const TEXTO_YA_HAY_FIRMA_GUARDADA = 'Ya hay una firma de este albarán guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.';
 const TEXTO_FIRMA_RECHAZADA_ALBARAN = 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el albarán.';
+// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
+// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
+const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 /**
  * ¿Hay una firma de ESTE albarán esperando en la cola del móvil? `null` = no se pudo leer.
@@ -89,6 +92,57 @@ async function avisoDeFirmaRechazada(albaranId) {
 if (typeof window !== 'undefined') {
   window.TEXTO_YA_HAY_FIRMA_GUARDADA = TEXTO_YA_HAY_FIRMA_GUARDADA;
   window.TEXTO_FIRMA_RECHAZADA_ALBARAN = TEXTO_FIRMA_RECHAZADA_ALBARAN;
+}
+
+// ── SCRUM-1460 · LA COPIA DEL CLIENTE, JUSTO DESPUÉS DE FIRMAR EN EL PAD ───────────────────────
+//
+// Firmar en el pad NO manda la copia: SCRUM-47 lo hizo manual a propósito (el cliente está delante
+// y el profesional decide), y sólo la firma remota la envía sola (SCRUM-49). Medido en yaqu.app el
+// 6-oct-2026: tras «Confirmar firma» lo único que se leía era «A salvo — Guardado en YaQu», que es
+// verdad sobre la firma y suena a «ya está todo».
+//
+// Ficha: `docs/microcopy/2026-10-06-SCRUM-1460-recordatorio-de-la-copia.md`.
+// Los literales son de c.18330; c.18374 amplía CUÁNDO salen (también al cerrar el pad si la firma
+// subió por la cola con él abierto) sin tocarlos.
+const TEXTO_COPIA_SIN_ENVIAR = 'El cliente todavía no tiene su copia. Envíasela por WhatsApp.'; // APROBADO · SCRUM-1460 comentario 18330
+const TEXTO_COPIA_SIN_WHATSAPP = 'No podemos enviarle la copia por WhatsApp a este cliente. Descarga el PDF para dársela.'; // APROBADO · SCRUM-1460 comentario 18330
+
+/**
+ * El recordatorio de la copia que toca en esta ficha, o `null`. PURO: ni DOM ni red.
+ *
+ * 🔴 SÓLO EN LA FICHA QUE QUEDA AL CERRARSE EL PAD: al confirmar la firma, o al cerrarlo cuando la
+ * firma subió por la cola mientras estaba abierto (c.18374). Son los momentos en que «todavía no
+ * tiene su copia» es cierto seguro Y hay alguien mirando: la ficha no sabe si la copia se mandó, y
+ * una ficha recargada o abierta mañana lo diría también después de enviarla.
+ *
+ * Cada texto nombra un botón, y sólo sale si ese botón está en la barra. «No podemos enviarle»
+ * pide además SABER que el cliente no puede recibir WhatsApp: sin el dato no se afirma.
+ */
+function recordatorioDeLaCopia({ recienFirmadoEnElPad, estado, ofreceEnviarPorWhatsApp, ofreceDescargarPdf, clienteConWhatsApp }) {
+  if (recienFirmadoEnElPad !== true || estado !== 'firmado') return null;
+  if (ofreceEnviarPorWhatsApp) return { via: 'whatsapp', tono: 'info', texto: TEXTO_COPIA_SIN_ENVIAR };
+  if (clienteConWhatsApp === false && ofreceDescargarPdf) return { via: 'pdf', tono: 'warning', texto: TEXTO_COPIA_SIN_WHATSAPP };
+  return null;
+}
+
+// ── SCRUM-1374 · EL DETALLE ABIERTO SE ENTERA DE QUE SU FIRMA HA SUBIDO ────────────────────────
+//
+// La cola avisa de lo que el servidor ya tiene (`alConfirmarseFirmas`, SCRUM-1373; el contrato
+// está en `docs/master/SCRUM-1373.md`). Repintar es de esta pantalla porque sólo ella sabe cuándo
+// es seguro: el aviso llega al volver la red, y puede caer con el pad de firma abierto.
+//
+// Una sola escucha viva para esta vista: cada pintado suelta la del pintado anterior.
+let dejarDeEscucharLaColaDelAlbaran = null;
+
+/** ¿Hay un pad de firma en pantalla? Se mira el DOM, que es donde vive: el pad no avisa al cerrarse. */
+function hayPadDeFirmaAbierto() {
+  return !!document.querySelector('[data-sp-aviso]');
+}
+
+/** ¿Viene ESTE albarán entre lo confirmado? Un parte con el mismo número no es este albarán. */
+function vieneEsteAlbaran(confirmadas, albaranId) {
+  return (Array.isArray(confirmadas) ? confirmadas : [])
+    .some((c) => c && c.tipo === 'albaran' && String(c.documentoId) === String(albaranId));
 }
 //
 // LA PÁGINA DE DETALLE DEL ALBARÁN. Hasta hoy el albarán no tenía página: vivía como una FILA
@@ -255,6 +309,22 @@ const ROTULOS_RAIL_ALBARAN = {
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
 
+// SCRUM-1375 · EL ESTADO DE FACTURACIÓN, CON PALABRAS. La ficha escribía el valor del dato tal
+// cual («sin_facturar», con su guion bajo). La fila y la píldora dicen LO MISMO: dos vocabularios
+// para un hecho es lo que se quiso evitar al firmarlo. Ficha:
+// `docs/microcopy/2026-10-02-SCRUM-1375-facturacion-del-albaran.md`.
+const TEXTOS_FACTURACION_ALBARAN = {
+  sin_facturar: 'Sin facturar', // APROBADO · SCRUM-1375 comentario 18203
+  parcial: 'Facturado en parte', // APROBADO · SCRUM-1375 comentario 18203
+  facturado: 'Facturado', // APROBADO · SCRUM-1375 comentario 18203
+};
+
+/** El texto de un `estadoFacturacion`, o `null` si el código no lo conoce: lo desconocido NO se pinta crudo. */
+function textoDeFacturacion(valor) {
+  return Object.prototype.hasOwnProperty.call(TEXTOS_FACTURACION_ALBARAN, valor)
+    ? TEXTOS_FACTURACION_ALBARAN[valor] : null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
 //
@@ -292,7 +362,7 @@ if (typeof module !== 'undefined' && module.exports) {
   // SCRUM-375 dejó escrito por qué esto hace falta: sin el `module.exports`, el decisor de arriba
   // solo se podría comprobar LEYENDO su texto, que es justo lo que no distingue «lo gestiona» de
   // «se pierde por otro sitio».
-  module.exports = { COPY_ALBARAN_SIN_REFRESCO, resultadoAccionAlbaran };
+  module.exports = { COPY_ALBARAN_SIN_REFRESCO, resultadoAccionAlbaran, recordatorioDeLaCopia };
 }
 
 // EL CONTRATO CON LA FILA DEL TRABAJO, en un sitio que una máquina puede leer.
@@ -308,6 +378,7 @@ const PUENTES_A_LA_FILA = {
 };
 
 async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
+  if (dejarDeEscucharLaColaDelAlbaran) { dejarDeEscucharLaColaDelAlbaran(); dejarDeEscucharLaColaDelAlbaran = null; }
   container.innerHTML = '';
   const page = document.createElement('div');
   page.className = 'detail-page';
@@ -372,7 +443,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // aquí, que es el único momento en que está mirando una copia descargada.
   if (sinRed) setStatus('info', COPY_SIN_RED_NO_SE_CREA);
 
-  const recargar = () => renderAlbaranDetailView(container, albaranId, { avisoSiNoCarga: COPY_ALBARAN_SIN_REFRESCO });
+  // SCRUM-1460 · `extra` viaja UNA vez, de quien refresca a la ficha que sale de ese refresco. La
+  // recarga siguiente no lo lleva: lo que dependía de él deja de pintarse.
+  const recargar = (extra) => renderAlbaranDetailView(container, albaranId,
+    { ...extra, avisoSiNoCarga: COPY_ALBARAN_SIN_REFRESCO });
 
   /**
    * SCRUM-379 · REFRESCAR DESPUÉS DE UNA ESCRITURA QUE YA SALIÓ BIEN.
@@ -386,13 +460,36 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
    * escritura. Y el rechazo se gestiona aquí dentro, de modo que la promesa que esta función
    * devuelve no puede quedar sin gestionar aunque alguien vuelva a olvidarse del `await`.
    */
-  const refrescar = async () => {
+  const refrescar = async (extra) => {
     let recargaOk = true;
-    try { await recargar(); } catch { recargaOk = false; }
+    try { await recargar(extra); } catch { recargaOk = false; }
     const r = resultadoAccionAlbaran({ escrituraOk: true, recargaOk });
     if (r.texto) setStatus(r.tono, r.texto);
     return r;
   };
+
+  // SCRUM-1374 · con la firma en la cola y esta ficha abierta, el drenado la sube y aquí seguía
+  // «emitido», ofreciendo «Firmar aquí mismo». Un albarán que el servidor ya da por firmado no
+  // tiene nada que esperar de la cola, y no escucha.
+  //
+  // SCRUM-1420 · si el aviso llega con el pad abierto no se repinta, pero SE RECUERDA: al cerrarse
+  // el pad (`onClose`, más abajo) la ficha se pone al día. Antes se tiraba, y cerrar el pad dejaba
+  // «emitido» con el servidor ya firmado.
+  let subioConElPadAbierto = false;
+  if (alb.estado !== 'firmado' && typeof window.alConfirmarseFirmas === 'function') {
+    const dejar = window.alConfirmarseFirmas(async (confirmadas) => {
+      // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
+      if (container.querySelector('.detail-page') !== page) { dejar(); return; }
+      if (!vieneEsteAlbaran(confirmadas, alb.id)) return;
+      // 🔴 Con el pad abierto NO se repinta: alguien está firmando, o leyendo el aviso del pad.
+      if (hayPadDeFirmaAbierto()) { subioConElPadAbierto = true; return; }
+      // Por `refrescar`, como toda recarga de esta pantalla: la firma YA salió, y si la lectura
+      // falla se dice eso, no se deja una promesa rechazada sin dueño (SCRUM-379).
+      await refrescar();
+    });
+    dejarDeEscucharLaColaDelAlbaran = dejar;
+  }
+
   const esc = (s) => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -413,8 +510,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   chips.innerHTML =
     `<span class="status-pill">${esc(alb.estado)}</span>` +
     (alb.enviadoParaFirma ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
-    (alb.estadoFacturacion && alb.estadoFacturacion !== 'sin_facturar'
-      ? `<span class="status-pill">${esc(alb.estadoFacturacion)}</span>` : '');
+    // SCRUM-1375 · las mismas palabras que la fila «Facturación» de abajo. Un valor que no se
+    // conoce no lleva píldora: la fila ya pinta su raya.
+    (alb.estadoFacturacion !== 'sin_facturar' && textoDeFacturacion(alb.estadoFacturacion)
+      ? `<span class="status-pill">${esc(textoDeFacturacion(alb.estadoFacturacion))}</span>` : '');
   page.appendChild(chips);
 
   // ── SCRUM-356 (H2) · DÓNDE ESTÁ LA FIRMA, que no es lo mismo que «guardada» ──────────────
@@ -477,9 +576,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   }
 
   // ── ACCIONES · una primaria, dos secundarias, el resto en «⋮» ───────────────────────────
+  // Se cuelga de la página más abajo, ya con los botones resueltos: el recordatorio de la copia
+  // (SCRUM-1460) va justo encima y depende de cuáles se ofrecen.
   const acts = document.createElement('div');
   acts.className = 'job-doc-toolbar';
-  page.appendChild(acts);
 
   const post = async (ruta, body) => {
     setStatus('info', TEXTO_PROCESANDO);
@@ -596,6 +696,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if ((await firmaDeEsteAlbaranEnCola(alb.id)) === true && !window.confirm(TEXTO_YA_HAY_FIRMA_GUARDADA)) return;
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // SCRUM-1215 · el albarán no pasaba pista y vivía de la del pad por defecto, que era ésta.
+        // La del pad ha pasado a no nombrar a nadie (c.18205); aquí firma el cliente, y se dice.
+        hint: PISTA_FIRMA_DEL_CLIENTE,
         // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
         //
         // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni
@@ -677,7 +780,20 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ
           // delante de él, y al terminar lee «Este albarán ya está firmado» (409). Ningún dato
           // roto y la peor escena. «Inocuo en datos» no es inocuo.
-          await refrescar();
+          //
+          // SCRUM-1460 · y la ficha que sale de ESTE refresco es la única que recuerda la copia.
+          await refrescar({ recienFirmadoEnElPad: true });
+        },
+        // SCRUM-1420 · el pad avisa al cerrarse, por el camino que sea y ya fuera del DOM (contrato
+        // en `docs/master/SCRUM-1420.md`). Sólo se lee si la cola avisó mientras estaba abierto, y
+        // sólo si esta ficha sigue siendo la de pantalla: tras confirmar con éxito ya se repintó.
+        onClose: async () => {
+          if (!subioConElPadAbierto) return;
+          subioConElPadAbierto = false;
+          if (container.querySelector('.detail-page') !== page) return;
+          // SCRUM-1460 (c.18374) · también aquí se recuerda la copia: la firma subió por la cola,
+          // que no envía nada, y quien cierra el pad está mirando la ficha.
+          await refrescar({ recienFirmadoEnElPad: true });
         },
       });
     }),
@@ -809,6 +925,30 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     if (accion.id === 'btnEmitir') b.classList.add('accion-irreversible-btn-44');
     cubos[destino].push(b);
   }
+
+  // ── SCRUM-1460 · EL RECORDATORIO DE LA COPIA, encima de los botones que nombra ──────────
+  // Se decide con los botones YA resueltos, no con una segunda lectura del registro: el texto
+  // manda a pulsar uno, y tiene que ser uno que esté en la barra.
+  const enLaBarra = (id) => [...cubos.primaria, ...cubos.secundaria, ...cubos.overflow]
+    .some((b) => b.dataset.accion === id);
+  const copia = recordatorioDeLaCopia({
+    recienFirmadoEnElPad: opciones.recienFirmadoEnElPad,
+    estado: alb.estado,
+    ofreceEnviarPorWhatsApp: enLaBarra('btnWhatsApp'),
+    ofreceDescargarPdf: enLaBarra('btnPdf'),
+    clienteConWhatsApp: ctx['cliente-con-whatsapp'],
+  });
+  if (copia) {
+    const aviso = document.createElement('div');
+    aviso.className = 'alert ' + copia.tono;
+    aviso.setAttribute('role', 'status');
+    aviso.dataset.copiaSinEnviar = copia.via;
+    aviso.textContent = copia.texto;
+    // En el envoltorio de la caja «A salvo», como el rechazo (SCRUM-1376): sin estilo nuevo.
+    cajaDeFirma('').appendChild(aviso);
+  }
+  page.appendChild(acts);
+
   const avisoA = avisoEstadoNoReconocido(document, window.ALBARAN_ACTION_REGISTRY || [], alb.estado);
   if (avisoA) acts.appendChild(avisoA);
   for (const b of cubos.primaria) acts.appendChild(b);
@@ -850,7 +990,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     fila('Trabajo', alb.job?.titulo) +
     fila('Cliente', alb.customer?.name) +
     fila('Dirección', alb.job?.direccion) +
-    fila('Facturación', alb.estadoFacturacion) +
+    fila('Facturación', textoDeFacturacion(alb.estadoFacturacion)) +
     // El «parcial» se enseña con su detalle: decir «parcial» sin decir QUÉ queda es la mitad del
     // dato, y es el caso normal en una obra por fases.
     (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} ${pendientes.length === 1 ? 'línea' : 'líneas'}`) : '');

@@ -31,6 +31,7 @@ import {
   resumenEntrega, fraseDeCuenta,
   type ResumenEntrega, type AlbaranParaEntrega,
 } from './entregaPendiente';
+import { presupuestoAceptado } from './dineroDelTrabajo'; // SCRUM-1369
 
 export const SIN_EJE = 'sin_eje';
 export const ILEGIBLE = 'ilegible';
@@ -55,6 +56,32 @@ function cantidadLegible(l: any): boolean {
   // `.env`-style: los Json de Prisma a veces traen números como cadena. Se acepta solo si de
   // verdad es un número; `''` y `[]` NO lo son (familia SCRUM-271: `Number([])` es 0).
   return typeof q === 'string' && q.trim() !== '' && Number.isFinite(Number(q));
+}
+
+/**
+ * SCRUM-1369 · QUÉ PRESUPUESTOS DEL TRABAJO SON UN COMPROMISO DE ENTREGA.
+ *
+ * EL FALLO QUE CIERRA, medido en producción el 1-oct-2026 (Trabajo #76, presupuesto #203): un
+ * Trabajo abierto sin presupuesto al que se le cuelga un BORRADOR decía «1 línea del presupuesto
+ * sin entregar» de algo que nadie ha aceptado. Misma raíz que SCRUM-1355 (dinero), otro dominio.
+ *
+ * El criterio de «aceptado» NO se escribe aquí: es `presupuestoAceptado`, el de
+ * `dineroDelTrabajo.ts`.
+ *
+ * UN BORRADOR NO DESPLAZA A UN ACEPTADO (decidido el 2-oct-2026, segunda tanda del ticket): el eje
+ * es el PRIMER presupuesto aceptado del Trabajo, aunque delante haya uno sin aceptar. Un Trabajo
+ * directo con un borrador viejo y un presupuesto aceptado después mide su entrega contra el
+ * aceptado. Sin ninguno aceptado no hay eje, y `entregaDelTrabajo` contesta `sin_eje`: no un cero.
+ * Los que no están aceptados tampoco cuentan para `hayAdicionales`.
+ *
+ * ⚠️ Aquí la forma YA NO es la de `quoteDelPlan` (`dineroDelTrabajo.ts`), que sigue exigiendo que
+ * el aceptado sea el primero de la lista. Esa es de dinero y no se ha tocado en este ticket.
+ *
+ * @param quotes  los presupuestos del Trabajo en el orden de `quotesDeJob` (el más antiguo primero).
+ */
+export function presupuestosQueSeEntregan<T extends { status?: unknown }>(quotes: T[]): T[] {
+  const lista = Array.isArray(quotes) ? quotes : [];
+  return lista.filter(presupuestoAceptado);
 }
 
 /**

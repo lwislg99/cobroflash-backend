@@ -11,6 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { clasificaFuente, motivosParaNoFiarse, censar } from '../scripts/_censo-entorno-prestado.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const deGit = (sha, ruta) => execFileSync('git', ['show', `${sha}:${ruta}`], { encoding: 'utf8', maxBuffer: 1 << 24 });
 
@@ -140,25 +141,28 @@ const LOS_DOS = [
   { ruta: 'tests/scrum928-guards-entrada-recuento-con-color.test.mjs', ancla: '    delete env.NODE_TEST_CONTEXT;\n' },
 ];
 
-for (const { ruta, ancla } of LOS_DOS) {
-  test(`SCRUM-1289b · 🔴 ⑤ CONTROL POSITIVO REAL: \`${ruta}\` de antes del arreglo se acusa, y por NODE_OPTIONS`, () => {
-    const viejo = deGit(ANTES_DE_1289, ruta);
-    const acusados = clasificaFuente(ruta, viejo).filter((h) => h.acusado);
-    assert.equal(acusados.length, 1, `🔴 EL CENSO SIGUE CIEGO al hijo que rompía el TAP: ${JSON.stringify(clasificaFuente(ruta, viejo))}`);
-    assert.deepEqual(acusados[0].faltan, ['NODE_OPTIONS'],
-      '🔴 lo acusa, pero no por lo que rompía el TAP: tiene que decir que se le cuela `NODE_OPTIONS`.');
-  });
-
-  test(`SCRUM-1289b · ✅ ⑤ NEGATIVO DERIVADO: \`${ruta}\` con \`delete env.NODE_OPTIONS\` sale limpio`, () => {
-    const viejo = deGit(ANTES_DE_1289, ruta);
-    const indent = ancla.match(/^\s*/)[0];
-    const arreglado = viejo.replace(ancla, `${ancla}${indent}delete env.NODE_OPTIONS;\n`);
-    assert.notEqual(arreglado, viejo, '🔴 la sustitución no tocó nada: el negativo no prueba el arreglo.');
-    const hallados = clasificaFuente(ruta, arreglado);
-    assert.ok(hallados.length >= 1, '🔴 el saneado rompió el reconocimiento de la llamada');
-    assert.deepEqual(hallados.filter((h) => h.acusado), [], `🔴 sigue acusando tras borrar NODE_OPTIONS: ${JSON.stringify(hallados)}`);
-  });
-}
+const casoa = casosEscritos(LOS_DOS, ({ ruta, ancla }) => `SCRUM-1289b · 🔴 ⑤ CONTROL POSITIVO REAL: \`${ruta}\` de antes del arreglo se acusa, y por NODE_OPTIONS`, ({ ruta, ancla }) => {
+  const viejo = deGit(ANTES_DE_1289, ruta);
+  const acusados = clasificaFuente(ruta, viejo).filter((h) => h.acusado);
+  assert.equal(acusados.length, 1, `🔴 EL CENSO SIGUE CIEGO al hijo que rompía el TAP: ${JSON.stringify(clasificaFuente(ruta, viejo))}`);
+  assert.deepEqual(acusados[0].faltan, ['NODE_OPTIONS'],
+    '🔴 lo acusa, pero no por lo que rompía el TAP: tiene que decir que se le cuela `NODE_OPTIONS`.');
+});
+const casob = casosEscritos(LOS_DOS, ({ ruta, ancla }) => `SCRUM-1289b · ✅ ⑤ NEGATIVO DERIVADO: \`${ruta}\` con \`delete env.NODE_OPTIONS\` sale limpio`, ({ ruta, ancla }) => {
+  const viejo = deGit(ANTES_DE_1289, ruta);
+  const indent = ancla.match(/^\s*/)[0];
+  const arreglado = viejo.replace(ancla, `${ancla}${indent}delete env.NODE_OPTIONS;\n`);
+  assert.notEqual(arreglado, viejo, '🔴 la sustitución no tocó nada: el negativo no prueba el arreglo.');
+  const hallados = clasificaFuente(ruta, arreglado);
+  assert.ok(hallados.length >= 1, '🔴 el saneado rompió el reconocimiento de la llamada');
+  assert.deepEqual(hallados.filter((h) => h.acusado), [], `🔴 sigue acusando tras borrar NODE_OPTIONS: ${JSON.stringify(hallados)}`);
+});
+test('SCRUM-1289b · 🔴 ⑤ CONTROL POSITIVO REAL: `tests/scrum976-guards-entrada-con-techo.test.mjs` de antes del arreglo se acusa, y por NODE_OPTIONS', casoa(0));
+test('SCRUM-1289b · ✅ ⑤ NEGATIVO DERIVADO: `tests/scrum976-guards-entrada-con-techo.test.mjs` con `delete env.NODE_OPTIONS` sale limpio', casob(0));
+test('SCRUM-1289b · 🔴 ⑤ CONTROL POSITIVO REAL: `tests/scrum928-guards-entrada-recuento-con-color.test.mjs` de antes del arreglo se acusa, y por NODE_OPTIONS', casoa(1));
+test('SCRUM-1289b · ✅ ⑤ NEGATIVO DERIVADO: `tests/scrum928-guards-entrada-recuento-con-color.test.mjs` con `delete env.NODE_OPTIONS` sale limpio', casob(1));
+casoa.todos();
+casob.todos();
 
 test('SCRUM-1289b · 🔴 un `node --test` hijo que sólo mira el status SE ACUSA: trunca el TAP igual', () => {
   const soloStatus = FABRICADO.replace(

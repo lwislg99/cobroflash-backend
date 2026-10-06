@@ -1,6 +1,7 @@
 // src/modules/maintenance/app/routes/maintenance.routes.ts — MANT-1 (A15.1)
 // Alta del plan desde el toggle del presupuesto aceptado + cancelación.
 // Todo tras flag MAINTENANCE_ENABLED (merchant opt-in, OFF): sin flag → 404.
+import { cabeEnColumnaInt, INT_COLUMNA_MAX } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../../../core/db/prisma';
@@ -19,8 +20,9 @@ async function maintenanceEnabled(merchantId: number): Promise<boolean> {
 }
 
 const createSchema = z.object({
-  customerId: z.number().int().positive(),
-  quoteId: z.number().int().positive().nullable().optional(),
+  // SCRUM-1379 · con techo: un id que no cabe en la columna es un 400 aquí, no un 500 en la base.
+  customerId: z.number().int().positive().max(INT_COLUMNA_MAX),
+  quoteId: z.number().int().positive().max(INT_COLUMNA_MAX).nullable().optional(),
   title: z.string().trim().min(1).max(120),
   intervalMonths: z.number().int().min(1).max(60),
 });
@@ -79,7 +81,7 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
       return res.status(404).json({ error: 'not_found' });
     }
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const plan = await prisma.maintenancePlan.findFirst({
       where: { id, merchantId: req.merchantId },
     });
