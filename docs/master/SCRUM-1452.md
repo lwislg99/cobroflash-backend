@@ -113,5 +113,6 @@ mismo texto lleva una moneda» y el caso está en el test (`lejos`).
 
 - No se arregla ningún sitio: cambiar un número o un importe visible es texto que lee el usuario (regla 39).
 - Ningún sitio visto en pantalla ni en un mensaje real.
-- Suite completa en local: no corrida (1.595 MB libres, por debajo del umbral). Corridos el fichero
-  propio y `npm run guards:entrada`.
+- Suite completa en local: no corrida. Corridos, tras `npm run build`: `npm run guards:entrada` (13 guards,
+  158 tests, verde) y `npm run tanda:dirigida` (232 ficheros de 1.235, 2.301 tests, 1 fail: `scrum1321`
+  PUERTA 1b, el ciego conocido de esta máquina). El veredicto es el del CI.
