@@ -109,6 +109,11 @@
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
     // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
+    // «Ordenar en líneas» cuando la ruta NO contesta (sin red, 5xx, 502). Vive aquí y no en los
+    // `avisos` del servidor: es justo el caso en que el servidor no ha dicho nada. No es el de
+    // «ninguna línea», que dice que el servicio contestó y por eso no invita a repetir.
+    // APROBADO · SCRUM-1302 comentario 18491
+    noSePudoOrdenar: 'No se ha podido ordenar el dictado — vuelve a intentarlo o escribe las líneas tú',
     // SCRUM-1266 · el dato que la máquina escribió y el dictado no decía, dicho en SU línea de la tabla.
     // Van seguidos de los datos, separados por coma y espacio. Sólo con el parte editable; nunca en
     // el sello (la marca no entra en `lineasCanonicasParte`).
@@ -732,6 +737,9 @@
       esc(TEXTOS.pistaDictado) + '</p>' +
       '<button type="button" data-dictado-ordenar="1" style="width:100%">' +
       esc(TEXTOS.ordenarDictado) + '</button>' +
+      // SCRUM-1302 (C) · el sitio del aviso de «no se ha podido ordenar»: bajo el botón y FUERA del
+      // hueco de la propuesta, para poder decirlo sin pintar encima de lo que el técnico corrigió.
+      '<div data-dictado-aviso="1"></div>' +
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
@@ -976,6 +984,16 @@
    *
    * 🔴 Y SI FALLA, NO BLOQUEA: se pinta el aviso y el técnico sigue escribiendo a mano. El dictado
    * del teclado de su móvil funciona sin nosotros; ordenar es el extra que puede faltar.
+   *
+   * 🔴 SCRUM-1302 (C) · Y SI FALLA, NO BORRA. Un intento que no sale pintaba una propuesta vacía
+   * encima de la que hubiera: tres líneas, una corregida a mano, y un 500 se las llevaba sin una
+   * palabra (medido en yaqu.app, c.18486). Aquí no se toca el hueco de la propuesta: lo que el
+   * técnico tenía sigue ahí. Tres salidas, firmadas en c.18491:
+   *   · no llega o 5xx → el aviso, en su sitio bajo el botón. Repetir puede funcionar: el dictado
+   *     sigue escrito en su casilla;
+   *   · 409 y 404 → se relee el parte, como hace un campo que no se guarda. Ahí repetir no va a
+   *     funcionar nunca: la ficha sale firmada, o dice que no se ha podido cargar;
+   *   · cualquier otro rechazo → nada. No hay texto firmado para él y el de arriba no se estira.
    */
   async function ordenarElDictado(parte, contenedor, opciones) {
     var o = opciones || {};
@@ -985,21 +1003,45 @@
     if (typeof pedir !== 'function' || !destino || !campo) return false;
 
     var dictado = String(campo.value || '').trim();
+    var respuesta;
     try {
-      var respuesta = await pedir('/admin/partes/' + parte.id + '/dictado', {
+      respuesta = await pedir('/admin/partes/' + parte.id + '/dictado', {
         method: 'POST',
         body: JSON.stringify({ dictado: dictado }),
       });
-      return pintarPropuesta(destino, respuesta);
     } catch (e) {
-      // Un fallo de red aquí NO es un fallo del parte. Se dice con el texto aprobado del caso
-      // «no ha salido nada» y se sigue: el suelo es que la pantalla no se quede muda.
-      pintarPropuesta(destino, {
-        propuesta: { vacia: true, motivo: 'sin_lineas_reconocidas', mano_obra: [], materiales: [], sinBloque: [] },
-        avisos: o.avisos || {},
-      });
+      var codigo = e && e.status;
+      if (codigo === 409 || codigo === 404) {
+        await renderParteDetailView(contenedor, parte.id, o);
+        return false;
+      }
+      if (!codigo || codigo >= 500) avisarDictadoNoOrdenado(contenedor);
       return false;
     }
+    // Contestó: lo que hubiera que decir del intento anterior ya no es verdad.
+    quitarAvisoDeDictadoNoOrdenado(contenedor);
+    return pintarPropuesta(destino, respuesta);
+  }
+
+  function quitarAvisoDeDictadoNoOrdenado(contenedor) {
+    var previo = contenedor.querySelector && contenedor.querySelector('[data-dictado-no-ordenado]');
+    if (previo && previo.remove) previo.remove();
+  }
+
+  /** El aviso de «no se ha podido ordenar», en su sitio y traído a la vista (como SCRUM-1475). */
+  function avisarDictadoNoOrdenado(contenedor) {
+    var sitio = contenedor.querySelector && contenedor.querySelector('[data-dictado-aviso]');
+    // Sin sitio donde colgarlo no se cuelga, y no se lanza: ordenar es un extra y su aviso también.
+    if (!sitio || !sitio.appendChild) return;
+    quitarAvisoDeDictadoNoOrdenado(contenedor);
+    var aviso = document.createElement('div');
+    aviso.className = 'alert error';
+    aviso.setAttribute('role', 'alert');
+    aviso.setAttribute('data-dictado-no-ordenado', '1');
+    aviso.style.marginTop = '8px';
+    aviso.textContent = TEXTOS.noSePudoOrdenar;
+    sitio.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
 
   /**
@@ -1702,14 +1744,19 @@
         // Se desactiva mientras viaja: dos pulsaciones seguidas son dos llamadas al modelo, y la
         // segunda pisaría la propuesta que el técnico ya está corrigiendo.
         botonDictado.disabled = true;
+        var hayPropuestaNueva = false;
         try {
           // 🔴 SIN RED NO SE BLOQUEA EL PARTE. `ordenarElDictado` ya pinta el aviso y devuelve
           // `false` cuando no hay propuesta: el técnico sigue escribiendo a mano, que es lo que
           // funciona sin nosotros. Ordenar es el extra que puede faltar.
-          await ordenarElDictado(parte, contenedor, o);
+          hayPropuestaNueva = await ordenarElDictado(parte, contenedor, o);
         } finally {
           botonDictado.disabled = false;
         }
+        // 🔴 SCRUM-1302 (C) · SÓLO SE ATA LO QUE ACABA DE NACER. Desde que un intento fallido deja
+        // en pantalla la propuesta de antes, su botón de añadir YA tiene escucha: atarle otra aquí
+        // guardaría las líneas dos veces con un solo toque, en un documento que se firma.
+        if (!hayPropuestaNueva) return;
 
         // ⚠️ El botón de confirmar NACE con la propuesta, así que se ata DESPUÉS de pintarla. Si se
         // atara antes no existiría todavía, y volveríamos a tener un botón pintado y muerto — el
