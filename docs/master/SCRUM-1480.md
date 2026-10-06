@@ -66,3 +66,92 @@ Los dos van al orquestador como pregunta.
 El PR #2001 (en borrador) genera ficheros con el número de línea de cada fila de este documento y con su
 huella. Al traer `main` con estas tres líneas hay que volver a correr `node scripts/carriles.mjs generar`
 después del commit de la fusión.
+
+---
+
+# SCRUM-1480b · Los scripts de workflow, contados: dos filas más y una fila general sin cerradura
+
+**Medido contra:** `origin/main` = `f8da1ec83777c4110228e82093047e69a671dfe1` · 2026-10-06T17:18:24Z
+
+A9: aviso → cicatriz S0 «Una frase que resume una lista se comprueba contra la lista antes de escribirla: la fila decía que sus ayudantes sólo los importaban sus scripts, y dos tenían más importadores.» — no se pudo comprobar: es prosa de una celda de la tabla de dueños, y ningún test lee qué afirma una nota
+
+Carril S0 (`docs/equipo/dos-equipos.md` y `docs/equipo/cicatrices/S0.md` son suyos). `docs/equipo/orquestador.md`
+es del orquestador de Luis: se le quita UNA palabra con su autorización escrita (abajo).
+
+## La pregunta, y lo que resultó ser
+
+La primera entrega dejó dos preguntas al orquestador: `vigia-silencio-de-main.mjs` y «los scripts de los
+workflows que viven en `scripts/`… no los he contado todos». Su encargo de la tarde: contarlos antes de decidir.
+
+Contados sobre 296 ficheros rastreados en `scripts/` y 8 workflows (3.304 líneas de yml; 1.567 son comentario
+y no cuentan como ejecución):
+
+| qué | cuántos | con fila propia | sin fila |
+|---|---|---|---|
+| A · los ejecuta un workflow: su ruta, o un `npm run` que resuelve a ella, en una línea no comentada | 24 | 3 | 21 |
+| B · sólo llegan por `import` desde los de A (leído con el compilador de TypeScript, no por texto) | 20 | 1 | 19 |
+| A + B | 44 | 4 | 40 |
+
+El orquestador había nombrado tres «y otros». Eran 21 directos y 40 con sus imports.
+`vigia-silencio-de-main.mjs` no lo ejecuta ningún workflow: es el número 41 y va aparte.
+
+Y debajo hay un hueco mayor que la pregunta: **273 de los 296 ficheros de `scripts/` sólo los cubre la fila
+general.** Esos no se clasifican aquí.
+
+El censo lleva un control positivo (ve `vigia-pasada.mjs`, que `vigia-atascados.yml` corre) y uno negativo
+(deja fuera `_evidencia-tanda.mjs`, que `ci.yml` sólo nombra en un comentario). Se repite con:
+
+    node docs/master/evidencias/SCRUM-1480/censo-scripts-de-workflow.mjs <raíz del árbol>
+    node docs/master/evidencias/SCRUM-1480/importadores.mjs <raíz del árbol> docs/master/evidencias/SCRUM-1480/lista-de-los-45.txt
+
+Las salidas de ese día están al lado (`salida-*.txt`). La función `fila()` del censo lleva escritas las filas
+que había ANTES de este cambio: su «sin fila» es la foto de partida, no la de después.
+
+## Lo que se firmó y lo que no
+
+Propuse 17 ficheros a S5, 23 a S3 y uno que se queda en S0. El orquestador de Luis firmó con recortes
+(mensaje a la S0 del 6-oct-2026, tarde):
+
+| fichero o grupo | propuesto | firmado | motivo del orquestador |
+|---|---|---|---|
+| 16 del bucle PR → CI → merge → aviso | S5 | **S5** | lo dicen §3.3 (`.github/workflows/**`) y `orquestador.md` §11bis |
+| `vigia-silencio-de-main.mjs` | S5 | **sin fila** | lo escribió J6 y SCRUM-1324 sigue En curso con `area-j6`; pregunta a los dos orquestadores |
+| ocho ayudantes compartidos (de 5 a 51 importadores) | S3 | **sin fila** | no se clasifica un ayudante antes que quienes lo usan |
+| `guards-visuales.mjs`, `senal-de-nombres.mjs` | S3 | **sin fila** | ticket vivo del equipo de Javier (SCRUM-1313, 1320, 1339) |
+| `trinquete-de-zona.mjs`, `_trinquete-de-zona.mjs` | S3 | **sin fila; excepción** | S3 los toca por SCRUM-1335, comentario 18387; el ticket lleva `area-j6` |
+| `meta-guard-mutaciones.mjs` | S3 (dos textos se contradecían) | **S3** | §3.3 da «mutación» a S3 y la medición de hoy es suya |
+| el resto de instrumentos del CI | S3 | **S3** | |
+| `censo-regla-42.mjs` | S0 | S0 (fila general) | es un censo de consulta |
+
+**Desviación mía, declarada:** el orquestador contó 13 en la fila de S3 y la fila lleva 9. Dos salen porque él
+mismo los pasa a excepción (el trinquete de zona). Los otros dos son `_solape-de-guards.mjs` y
+`_senal-de-nombres.mjs`: son los ayudantes de `guards-visuales.mjs` y de `senal-de-nombres.mjs`, que él dejó
+fuera, y un ayudante no se queda en un carril mientras su script espera a otro equipo. Es su misma regla
+aplicada a dos ficheros que no nombró; si no la quiere así, se devuelven a la fila.
+
+## El cambio
+
+- `docs/equipo/dos-equipos.md` §3.3: fila nueva de 16 rutas → S5; fila nueva de 9 rutas → S3; y la fila general
+  de `scripts/` deja de llevar el dueño como un puesto a secas. Esto último es la decisión (a) del orquestador
+  para el PR #2001: su cerradura lee esa celda, y con «**S0**» a secas cerraba con llave 275 ficheros a nombre
+  de S0. Corrido el hook de #2001 con siete casos: bloqueaba a una sesión de S5 en `vigia-atascados.mjs` y a una
+  de S3 en `meta-guard-mutaciones.mjs`, y dejaba pasar a una de S0 en el vigía, que la propia fila dice que no
+  es suyo. Donde nadie ha decidido no hay cerradura.
+- `docs/equipo/orquestador.md` §11bis, fila de S5: sale «meta-guard» de la lista del bucle. Autorización escrita
+  del orquestador de Luis, dueño del fichero, en ese mismo mensaje: «te AUTORIZO por escrito a quitar
+  "meta-guard" de la fila de S5 en el mismo PR».
+- `docs/equipo/cicatrices/S0.md`: dos líneas.
+
+No toca §3.1 ni §3.2, que son las que lee `tests/scrum514-aprobado-y-aplicado.test.mjs`.
+
+## Lo que sigue sin fila, dicho
+
+- `vigia-silencio-de-main.mjs`, `guards-visuales.mjs` y `senal-de-nombres.mjs` (con sus dos ayudantes): esperan a
+  que lo hablen los dos orquestadores, y el canal entre ellos es un jefe.
+- Los ocho ayudantes compartidos y el resto de los 273 de la fila general. Clasificarlos es una tanda entera y
+  no está encargada.
+
+## Para #2001
+
+Al traer `main` con estas filas: `node scripts/carriles.mjs generar` después del commit de la fusión, y volver a
+correr la sonda de la cerradura. Se marca listo al EMPEZAR una tanda, no al final (decisión del orquestador).
