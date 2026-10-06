@@ -231,6 +231,7 @@ test('SCRUM-1468 · de qué rama es un PR se le pregunta a GitHub UNA vez, y un 
   assert.deepEqual([m.get(77), m.get(1681), m.get(500)], ['scrum-9-censo', RAMA_DEL_ARRANQUE, undefined]);
   assert.equal(ramasDeGithub([77], 'o/r', () => { throw new Error('sin red'); }), null, 'no pudo preguntar: null, no un mapa vacío');
   assert.equal(ramasDeGithub([77], 'o/r', () => 'esto no es JSON'), null);
+  assert.equal(ramasDeGithub([77], 'o/r', () => JSON.stringify({ errors: [{ message: 'sin cuota' }] })), null, 'contestó, pero sin el repositorio: tampoco es un mapa vacío');
   assert.equal(ramasDeGithub([77], 'sin-barra', contesta('{}')), null, 'sin repositorio reconocible no se pregunta');
   assert.equal(ramasDeGithub([], 'o/r', () => { throw new Error('no debería llamar'); }).size, 0, 'sin PR que preguntar no se llama a nadie');
 });
