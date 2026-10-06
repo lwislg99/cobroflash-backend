@@ -1,0 +1,33 @@
+=== DESPUES (416d12a5) · dist de C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1252b-linea-y-literal
+--- muestra CON justificante propio · 7 ficheros en el ZIP
+   dba3cd9a8e3172fef1aa6a310134a8408c220962c5b69b4ac7ef0540d1a03101    413 B  indice.csv
+   4e040102d492bebdf114f3a2bad5ecba76b02ec64fe3e33623940c21eda857e9    298 B  libro-registro.csv
+   2e5cecbe8233f3956e1d864031361a37da4c63b197329baf5e9a6315ebf1537b    145 B  modelo-303.csv
+   e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57     46 B  albaranes-verificacion.csv
+   95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f     63 B  entregas-por-linea.csv
+   95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1    824 B  alcance-de-la-verificacion.txt
+   9fd11deec51e04ae9c8c024f52c59bfb3cb9a710711496464a983ee49307604a   1707 B  manifiesto.json
+   libro  (numero): F260001 J-20260805-AB12 R260001
+   indice (numero): F260001 J-20260805-AB12 R260001
+   303 fila TOTAL : ;;27;TOTAL;250,00;52,50
+   resumen        : {"asientos":3,"miradas":4,"albaranesExaminados":0,"albaranesQueCuadran":0,"albaranesConHallazgo":0,"facturasSinAlbaran":3,"facturasSueltas":3}
+   avisos (3):
+      · 1 factura(s) sin número fuera del libro
+      · El libro registro incluye sólo facturas. Si emitiste justificantes de cobro, no aparecen aquí — pero su IVA sí está en el modelo 303 de este mismo paquete. Por eso los totales de los dos documentos pueden no coincidir.
+      · no se examinó ningún albarán firmado: el sello no se ha comprobado
+--- muestra SIN justificante propio · 7 ficheros en el ZIP
+   dba3cd9a8e3172fef1aa6a310134a8408c220962c5b69b4ac7ef0540d1a03101    413 B  indice.csv
+   4e040102d492bebdf114f3a2bad5ecba76b02ec64fe3e33623940c21eda857e9    298 B  libro-registro.csv
+   9ea595397b0a92361d77fad66e16ae7d46f1c306efc626cf43b77d839cd07859    143 B  modelo-303.csv
+   e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57     46 B  albaranes-verificacion.csv
+   95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f     63 B  entregas-por-linea.csv
+   95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1    824 B  alcance-de-la-verificacion.txt
+   6c2d69111aea6100317f08ec8380ab48349b6f26029676cdcd011091ed06f793   1475 B  manifiesto.json
+   libro  (numero): F260001 J-20260805-AB12 R260001
+   indice (numero): F260001 J-20260805-AB12 R260001
+   303 fila TOTAL : ;;27;TOTAL;50,00;10,50
+   resumen        : {"asientos":3,"miradas":4,"albaranesExaminados":0,"albaranesQueCuadran":0,"albaranesConHallazgo":0,"facturasSinAlbaran":3,"facturasSueltas":3}
+   avisos (2):
+      · 1 factura(s) sin número fuera del libro
+      · no se examinó ningún albarán firmado: el sello no se ha comprobado
+EXIT=0
