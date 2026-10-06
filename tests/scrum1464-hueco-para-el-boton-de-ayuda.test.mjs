@@ -46,8 +46,31 @@ function rellenosInferiores(css) {
   return out;
 }
 
+/**
+ * SCRUM-1464 (b) · lo que la PÁGINA da por ocupado abajo al traer algo a la vista: el
+ * `scroll-padding-bottom` (px) de cada regla cuyo selector es exactamente `html`. La página es la
+ * que se desplaza (`document.scrollingElement`), así que la reserva sólo cuenta puesta ahí.
+ */
+function reservasAlTraerALaVista(css) {
+  const limpio = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(limpio))) {
+    if (!m[1].split(',').map((s) => s.trim()).includes('html')) continue;
+    const largo = /(?:^|;)\s*scroll-padding-bottom\s*:\s*([^;]+)/.exec(m[2]);
+    const corto = /(?:^|;)\s*scroll-padding\s*:\s*([^;]+)/.exec(m[2]);
+    if (largo) { out.push(parseFloat(largo[1])); continue; }
+    if (!corto) continue;
+    const v = corto[1].trim().split(/\s+/).map(parseFloat);
+    out.push(v.length <= 2 ? v[0] : v[2]);
+  }
+  return out;
+}
+
 const BOTON = altoQueOcupaElBoton(leer('public/dashboard/js/tutorial.js'));
 const RELLENOS = rellenosInferiores(leer('public/dashboard/css/styles.css'));
+const RESERVAS = reservasAlTraerALaVista(leer('public/dashboard/css/styles.css'));
 
 test('SCRUM-1464 · SUELO: se lee cuánto ocupa el botón y cuánto reserva cada regla de la página', () => {
   assert.ok(Number.isFinite(BOTON) && BOTON >= 44,
@@ -72,4 +95,29 @@ test('SCRUM-1464 · CONTROL POSITIVO: con los 24 px de antes, el lector CAE; y e
     'ni un comentario ni `.view-container img` son la regla de la página');
   assert.equal(altoQueOcupaElBoton("btn.id = 'tut-help-btn';\nbtn.style.cssText = `position:fixed;bottom:20px;right:20px;width:48px;height:48px;`"), 68);
   assert.equal(altoQueOcupaElBoton('nada que ver'), null);
+});
+
+// ── (b) · lo que se trae a la vista ──────────────────────────────────────────────────────────────
+// El relleno de arriba sólo sirve con la página bajada DEL TODO. A mitad de página, un
+// `scrollIntoView({ block: 'nearest' })` o el foco dejan lo traído pegado al borde inferior, debajo
+// del botón: medido en yaqu.app a 390 y a 360 sobre el aviso del parte (tapaba letras). Lo que lo
+// evita es que la página dé por ocupado ese trozo. QUÉ NO MIDE: que algo traiga el aviso a la
+// vista. Eso es de cada pantalla, y la del parte hoy no lo hace (`docs/master/SCRUM-1464.md`).
+
+test('SCRUM-1464 (b) · 🔴 al traer algo a la vista, la página da por ocupado abajo lo que ocupa el botón de ayuda', () => {
+  assert.ok(RESERVAS.length >= 1,
+    `🔴 ninguna regla de \`html\` declara \`scroll-padding-bottom\` (leídas: ${RESERVAS.length}): lo que se traiga a la vista con `
+    + '`nearest` acaba pegado al borde inferior, debajo del botón de ayuda.');
+  const cortas = RESERVAS.filter((r) => !(r >= BOTON));
+  assert.deepEqual(cortas, [],
+    `🔴 la página reserva ${cortas.join(', ')} px al traer algo a la vista y el botón ocupa ${BOTON} px.`);
+});
+
+test('SCRUM-1464 (b) · CONTROL POSITIVO: sin la reserva, o con una corta, el lector lo ve; y no se confunde de regla', () => {
+  assert.deepEqual(reservasAlTraerALaVista('html { scroll-behavior: smooth; }'), [], 'sin reserva no se inventa una');
+  assert.deepEqual(reservasAlTraerALaVista('html { scroll-behavior: smooth; scroll-padding-bottom: 80px; }'), [80]);
+  assert.deepEqual(reservasAlTraerALaVista('html, body { scroll-padding: 10px 0 24px; }'), [24]);
+  assert.deepEqual(reservasAlTraerALaVista('html { scroll-padding: 40px; }'), [40]);
+  assert.deepEqual(reservasAlTraerALaVista('/* html { scroll-padding-bottom: 999px; } */ html.x { scroll-padding-bottom: 999px; } .modal { scroll-padding-bottom: 999px; }'), [],
+    'ni un comentario, ni `html.x`, ni otro contenedor son la página');
 });

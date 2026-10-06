@@ -110,7 +110,14 @@
 
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+/* SCRUM-1464 (b) · LO QUE SE TRAE A LA VISTA NO ACABA DEBAJO DEL BOTÓN DE AYUDA. `#tut-help-btn` es
+   fijo: 48 px, a 20 del borde. Sin `scroll-padding-bottom`, un `scrollIntoView({ block: 'nearest' })`
+   o el foco del teclado dejan lo traído pegado al borde inferior de la ventana, o sea DEBAJO del
+   botón (medido a 390 y a 360 sobre el aviso «No se ha podido guardar el cambio» del parte: tapaba
+   letras). Con él el navegador da por ocupados los 80 px de abajo —los que reserva `.view-container`—
+   y lo deja por encima. Es de la página, no de cada aviso: vale para todo lo que se traiga a la vista.
+   ⚠️ No desplaza nada por sí solo: sólo cuenta cuando ALGO lleva la página hasta un elemento. */
+html { scroll-behavior: smooth; scroll-padding-bottom: 80px; }
 body {
   font-family: var(--font);
   font-size: 15px;

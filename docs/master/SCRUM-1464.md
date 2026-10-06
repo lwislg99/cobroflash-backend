@@ -60,3 +60,54 @@ Sonda `sondas-s2/fab-censo.mjs`: en cada pantalla, qué texto y qué controles q
 
 - **Con el `styles.css` de `origin/main`: 1 rojo** (los 24 px) y 2 verdes.
 - **Con el de la rama: 3 de 3.** Lleva su control positivo.
+
+# APÉNDICE · SCRUM-1464b · Lo que se trae a la vista no acaba debajo del botón de ayuda (S2)
+
+**Medido contra:** `origin/main` = `eb1fdefaf9e660bd706e1fbba31c90f868343ad1` · 2026-10-06T12:52:23Z
+A9: aviso → cicatriz S2 «Medí un aviso que mi propia sonda había traído a la vista y lo conté como lo que ve el técnico: el producto no lo traía, y nadie midió la pantalla sin ese empujón.» — no se pudo comprobar: la sonda de navegador vive fuera del repo; desde hoy mide primero el momento «tal como queda», sin desplazar ella
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Una declaración en la regla `html` de `public/dashboard/css/styles.css` (`scroll-padding-bottom`): sin marcado, sin clases nuevas, sin tokens nuevos, sin texto.
+
+6-oct-2026 · **S2** · rama `scrum-1464b-lo-traido-a-la-vista-no-cae-bajo-la-ayuda`. Decisión del orquestador (relato suyo en el encargo, no cita de Jira): «el aviso se trae a la vista por encima del botón; el botón no se mueve».
+
+## 🔴 Lo primero: la premisa de la decisión no se sostenía, y el fallo es mío
+
+La fila «aviso recién traído a la vista» de arriba (y la del ticket) describe un estado que **provocó la sonda**: `fab-tapa.mjs` llamaba ella a `scrollIntoView({ block: 'nearest' })` sobre el aviso antes de medir. **El producto no trae ese aviso a la vista**: `avisarCampoNoGuardado` (`parteDetailView.js`, de S4) lo cuelga debajo del campo y no desplaza nada. Lo medido arriba es lo que pasaría SI algo lo trajera.
+
+Sonda nueva, `sondas-s2/fab-aviso.mjs` (fuera del repo): mide primero «tal como queda», sin desplazar ella. En yaqu.app, cuenta QA 46, parte 9, build `eb1fdefa`; el 500 del `PATCH` lo pone la sonda y nada que no sea GET sale (control positivo antes de tocar). Población: 4 ventanas (390×844, 360×640, 1280×800, 1280×600), campo «Notas».
+
+**Tal como queda hoy en producción: el aviso cae casi entero FUERA de la ventana en 4 de 4** (asoman 13 px de su caja en móvil y 5 en escritorio; su texto no entra entero en ninguna). ⚠️ Esa posición depende de dónde estaba el campo al tocarlo, y en la sonda lo coloca Playwright al borde inferior: es UNA posición posible, no «lo que ve siempre el técnico». Lo que sí es fijo: nada lleva la página hasta el aviso.
+
+## Qué cambia
+
+`html { scroll-padding-bottom: 80px; }`. Al traer algo a la vista, el navegador da por ocupados los 80 px de abajo —los mismos que reserva `.view-container`— y lo deja por encima del botón. Es de la página (la que se desplaza es `document.scrollingElement`), no de cada aviso. **No desplaza nada por sí solo.**
+
+## Medido: las dos mitades, por separado y juntas
+
+«La línea de S4» = `if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' })` tras colgar el aviso, **servida por la sonda** sobre una copia de `parteDetailView.js`. No está en esta rama ni en ninguna: el fichero es de S4.
+
+| qué se sirve | 390×844 | 360×640 | 1280×800 y 1280×600 |
+| --- | --- | --- | --- |
+| producción tal cual | aviso casi fuera | aviso casi fuera | aviso casi fuera |
+| sólo la línea de S4 | entero, **pisa letras 3×16** | entero, **pisa letras 33×16** | entero, pisa 44×28 de caja (letras no) |
+| sólo esta regla | donde caiga (no lo trae nadie) | donde caiga | donde caiga |
+| **las dos** | **entero y libre** | **entero y libre** | **entero y libre** |
+
+Y con esta regla sola, cuando lo trae la sonda (`nearest`): libre en 4 de 4 (antes: letras 3×16 y 33×16 en móvil, 44×22 de caja en escritorio).
+
+**El caso de escritorio de arriba no se rompe:** página bajada del todo, aviso libre en las 4 ventanas, igual que antes; y el censo de las 27 pantallas a 1280×800 (`fab-censo.mjs`, con el CSS de esta rama): 27 de 27 abajo del todo, texto bajo el botón en 0, controles en 0.
+
+## 🔴 Lo que este cambio NO arregla, y queda abierto
+
+- **El técnico sigue sin ver el aviso si el campo estaba abajo.** Falta la mitad de S4 (que el parte traiga su aviso): ticket gemelo, citado en Jira SCRUM-1464. **Este ticket no se cierra sin su gemelo hecho o declarado.**
+- **Por arriba no hay reserva, y hace falta una decisión.** Si el aviso queda POR ENCIMA de la ventana y algo lo trae, acaba en y = 0–62 (móvil) y 0–42 (escritorio), **debajo de la cabecera fija** (`header.topbar`, 0–60): tapado entero en 4 de 4. Medido con el campo «Entrada», la página bajada del todo y la línea de S4 servida. El arreglo sería un `scroll-padding-top`, pero su medida no está decidida y no la he puesto.
+
+## Lo que NO se ha podido mirar
+
+- Los 12 sitios del panel que ya llaman a `scrollIntoView` (leídos, no ejecutados): 5 con `nearest`, 5 con `center` (quedan 40 px más arriba), 2 con `start` (esta regla no les afecta). Ni el foco del teclado.
+- Un móvil de verdad: con el teclado en pantalla el campo no está donde lo deja la sonda.
+- Desplegado: «después» es el `styles.css` de la rama servido por la sonda sobre producción.
+
+## Verificado, ejecutando
+
+`tests/scrum1464-hueco-para-el-boton-de-ayuda.test.mjs`, 5 casos (los 3 de antes y 2 nuevos): toda regla de `html` con `scroll-padding-bottom` reserva al menos lo que ocupa el botón (68 px), y tiene que haber una.
