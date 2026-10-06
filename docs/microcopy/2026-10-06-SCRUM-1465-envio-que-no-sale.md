@@ -44,6 +44,6 @@ La primera frase es la del presupuesto rápido (SCRUM-1443, comentario 18307) si
 
 - El tope diario por cliente y el correo que no sale. El comentario 18357 traía una frase para cada
   uno y ninguna de las dos se sostuvo al medirla. Se volvieron a firmar en el comentario 18371 y
-  tienen su ficha: `2026-10-06-SCRUM-1465-tope-por-cliente-y-correo.md`.
+  tienen su propia ficha, de este mismo día y ticket.
 - El aviso de la cuenta demo, que sólo se alcanza en esa cuenta.
 - Las frases del diccionario `SEND_FAILURE_MESSAGES`, que siguen leyendo la factura y el albarán.

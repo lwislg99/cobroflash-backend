@@ -4,7 +4,7 @@
 
 La delegación de microcopy es la permanente de `docs/equipo/limites-del-fundador.md`. Este comentario
 vuelve a firmar dos frases del comentario 18357 que no se sostuvieron al medirlas; las otras tres
-de aquel comentario están en `2026-10-06-SCRUM-1465-envio-que-no-sale.md`.
+de aquel comentario están en la otra ficha de este mismo día y ticket.
 
 ## Textos aprobados, literales
 

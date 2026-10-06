@@ -194,6 +194,18 @@ Después de confesar arriba las horas puestas a ojo, en el siguiente mensaje al 
 «12:31Z (mirada ahora)» sin haberla mirado: eran las 12:28:40Z. La cicatriz ya estaba escrita y no
 bastó, que es lo que dice A9 de apuntar.
 
+**El primer empujón de esta rama salió ROJO** (`cbb2fe00`, corrida `37465272904`: 10.568 casos, 2
+fallos), y los dos fallos eran de ficheros nuevos míos. Ninguno pedía tocar un guard:
+
+| Guard | Qué cazó | Arreglo |
+|---|---|---|
+| `tests/scrum409-fixtures-sin-merchant-demo.test.mjs` | el control de la cuenta demo llama con `merchantId: 1` sin decirlo | la línea lleva su marca. Medido antes de marcarla: con un id normal (7) ese caso SALE (`sent: true`), así que el `1` es el caso y no un fixture cómodo |
+| `tests/scrum709-microcopy-por-fichero.test.mjs` | las dos fichas de microcopy se nombraban una a la otra por su fichero | quitadas las dos referencias; cada ficha se sostiene sola |
+
+Corrí los tests que nombran lo tocado y `scrum1344`; estos dos censan `tests/` y `docs/microcopy/`
+enteros y no nombran nada. Con un fichero nuevo en esas dos carpetas se corren los dos antes de
+empujar.
+
 ### Lo que NO está hecho
 
 - **No visto en yaqu.app.** La baja se puede mirar con la cuenta QA marcando la casilla de un cliente

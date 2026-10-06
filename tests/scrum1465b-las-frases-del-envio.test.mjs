@@ -173,7 +173,9 @@ test('SCRUM-1465 · frases · D: con el tope diario por cliente se lee la frase 
 });
 
 test('SCRUM-1465 · frases · CONTROL: la cuenta demo sigue con la frase del diccionario', async () => {
-  const r = await enviar({ merchantId: 1 });
+  // Con un id normal este mismo caso SALE (`sent: true`, medido con el 7): el corte lo pone la
+  // política de WhatsApp por el id de la cuenta demo, y es justo lo que este control mira.
+  const r = await enviar({ merchantId: 1 }); // MERCHANT DEMO A PROPOSITO (SCRUM-409): `demo_safe_numbers` sólo se alcanza en la cuenta demo
   noSalio(r, 'demo_safe_numbers');
   assert.equal(r.cuerpo.message, SEND_FAILURE_MESSAGES.demo_safe_numbers);
 });
