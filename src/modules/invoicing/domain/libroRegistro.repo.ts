@@ -73,7 +73,7 @@ export interface RangoLibro {
    *
    * Por eso es opcional y va apagado: lo encienden la pantalla del libro y el libro de la AEAT, y el
    * 303, las evidencias e Informes siguen leyendo lo de siempre. Encenderlo por defecto cambiaría el
-   * 303 sin que su código moviera una letra.
+   * 303 sin que su código moviera una letra. ⚠️ 2-oct-2026 · SCRUM-1252: las evidencias YA lo encienden (su 303, no).
    */
   soloFacturas?: boolean;
 }

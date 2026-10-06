@@ -1,0 +1,1701 @@
+celda	pasada	flag	modo	casos	copias	carga	salida	declarados	ejecutados	informados	ausentes	ausentes_ejecutados	ausentes_no_ejecutados	forma	tap_tests	tap_fail	rojos_esperados	rojos_en_tap	rojos_de_fichero	sondas	sondas_con_pendientes	pendientes_max	escritos_max	total_max	bloqueante	ms
+A-con-grande	1	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	306
+B-sin-grande	1	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	348
+C-con-grande-bloqueante	1	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	305
+D-con-grande-sonda	1	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	28785	336288	337166	no pedido	302
+E-con-asincrona	1	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	298
+F-con-pequena	1	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	175
+G-con-rojo-en-la-cola	1	con	sinc	80	4	0	1	320	320	295	25	25	0	cola	298	4	4	1	0	-	-	-	-	-	-	300
+H-sin-rojo-en-la-cola	1	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	1	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	1	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	1	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	318
+L-con-dosis-relleno-000	1	con	sinc	80	4	0	0	320	320	248	72	72	0	cola	248	0	0	0	0	4	2	47210	97938	98205	no pedido	442
+M-con-dosis-relleno-050	1	con	sinc	80	4	0	0	320	320	262	58	58	0	cola	262	0	0	0	0	4	3	43196	117938	118211	no pedido	286
+N-con-dosis-relleno-150	1	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	4	2	22950	158338	158758	no pedido	274
+O-con-dosis-relleno-300	1	con	sinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	4	1	4656	218338	218908	no pedido	292
+Q-con-rojo-en-la-cola-una-copia	1	con	sinc	80	1	0	1	80	80	71	9	9	0	cola	72	1	1	0	0	-	-	-	-	-	-	136
+P-con-pequena-sonda	1	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	189
+A-con-grande	2	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	2	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+C-con-grande-bloqueante	2	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	299
+D-con-grande-sonda	2	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	2	45619	336288	337106	no pedido	292
+E-con-asincrona	2	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	2	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	2	con	sinc	80	4	0	1	320	320	306	14	14	0	cola	308	4	4	2	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	2	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	313
+I-cortado-en-el-40	2	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	108
+J-con-grande-una-copia	2	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	143
+K-sin-grande-sonda	2	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	309
+L-con-dosis-relleno-000	2	con	sinc	80	4	0	0	320	320	256	64	64	0	cola	256	0	0	0	0	4	2	53781	97938	98219	no pedido	266
+M-con-dosis-relleno-050	2	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	45277	117938	118270	no pedido	285
+N-con-dosis-relleno-150	2	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	55755	158338	158712	no pedido	285
+O-con-dosis-relleno-300	2	con	sinc	80	4	0	0	320	320	264	56	56	0	cola	264	0	0	0	0	4	3	60888	218338	218919	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	2	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	2	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	218
+A-con-grande	3	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	-	-	-	-	-	-	547
+B-sin-grande	3	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	491
+C-con-grande-bloqueante	3	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	3	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	3	26282	336288	337153	no pedido	296
+E-con-asincrona	3	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	317
+F-con-pequena	3	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	180
+G-con-rojo-en-la-cola	3	con	sinc	80	4	0	1	320	320	308	12	12	0	cola	309	4	4	3	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	3	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	3	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	109
+J-con-grande-una-copia	3	con	sinc	80	1	0	0	80	80	74	6	6	0	cola	74	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	3	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	306
+L-con-dosis-relleno-000	3	con	sinc	80	4	0	0	320	320	219	101	101	0	cola	219	0	0	0	0	4	2	52804	97938	98160	no pedido	271
+M-con-dosis-relleno-050	3	con	sinc	80	4	0	0	320	320	227	93	93	0	cola	227	0	0	0	0	4	3	63779	117938	118211	no pedido	278
+N-con-dosis-relleno-150	3	con	sinc	80	4	0	0	320	320	273	47	47	0	cola	273	0	0	0	0	4	3	34039	158338	158756	no pedido	280
+O-con-dosis-relleno-300	3	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	2	52164	218338	218861	no pedido	281
+Q-con-rojo-en-la-cola-una-copia	3	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	3	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	176
+A-con-grande	4	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	-	-	-	-	-	-	287
+B-sin-grande	4	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	294
+C-con-grande-bloqueante	4	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	283
+D-con-grande-sonda	4	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	2	46485	336288	337153	no pedido	282
+E-con-asincrona	4	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	4	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	180
+G-con-rojo-en-la-cola	4	con	sinc	80	4	0	1	320	320	282	38	38	0	cola	285	4	4	1	0	-	-	-	-	-	-	322
+H-sin-rojo-en-la-cola	4	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	312
+I-cortado-en-el-40	4	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	4	con	sinc	80	1	0	0	80	80	74	6	6	0	cola	74	0	0	0	0	-	-	-	-	-	-	132
+K-sin-grande-sonda	4	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	289
+L-con-dosis-relleno-000	4	con	sinc	80	4	0	0	320	320	240	80	80	0	cola	240	0	0	0	0	4	2	57690	97938	98160	no pedido	267
+M-con-dosis-relleno-050	4	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	2	58497	117938	118211	no pedido	287
+N-con-dosis-relleno-150	4	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	34039	158338	158756	no pedido	283
+O-con-dosis-relleno-300	4	con	sinc	80	4	0	0	320	320	283	37	37	0	cola	283	0	0	0	0	4	2	58707	218338	218861	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	4	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	4	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	179
+A-con-grande	5	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	-	-	-	-	-	-	285
+B-sin-grande	5	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	297
+C-con-grande-bloqueante	5	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	5	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	3	59950	336288	337166	no pedido	280
+E-con-asincrona	5	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	5	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	5	con	sinc	80	4	0	1	320	320	297	23	23	0	cola	300	4	4	1	0	-	-	-	-	-	-	282
+H-sin-rojo-en-la-cola	5	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	5	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	109
+J-con-grande-una-copia	5	con	sinc	80	1	0	0	80	80	75	5	5	0	cola	75	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	5	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	5	con	sinc	80	4	0	0	320	320	216	104	104	0	cola	216	0	0	0	0	4	2	57468	97938	98218	no pedido	270
+M-con-dosis-relleno-050	5	con	sinc	80	4	0	0	320	320	265	55	55	0	cola	265	0	0	0	0	4	3	52612	117938	118211	no pedido	270
+N-con-dosis-relleno-150	5	con	sinc	80	4	0	0	320	320	310	10	10	0	cola	310	0	0	0	0	4	2	11421	158338	158712	no pedido	291
+O-con-dosis-relleno-300	5	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	54913	218338	218906	no pedido	276
+Q-con-rojo-en-la-cola-una-copia	5	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	140
+P-con-pequena-sonda	5	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	6	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	289
+B-sin-grande	6	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+C-con-grande-bloqueante	6	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	6	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	4	3	45620	336288	337107	no pedido	287
+E-con-asincrona	6	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	6	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	6	con	sinc	80	4	0	1	320	320	298	22	22	0	cola	300	4	4	2	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	6	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	6	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	6	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	6	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	313
+L-con-dosis-relleno-000	6	con	sinc	80	4	0	0	320	320	184	136	136	0	cola	184	0	0	0	0	4	3	53560	97938	98218	no pedido	269
+M-con-dosis-relleno-050	6	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	3	39981	117936	118254	no pedido	279
+N-con-dosis-relleno-150	6	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	4	2	49849	158338	158756	no pedido	283
+O-con-dosis-relleno-300	6	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	2	54345	218338	218861	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	6	con	sinc	80	1	0	1	80	80	75	5	5	0	cola	76	1	1	0	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	6	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	7	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	274
+B-sin-grande	7	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	7	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	7	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	2	29650	336288	337153	no pedido	282
+E-con-asincrona	7	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+F-con-pequena	7	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	7	con	sinc	80	4	0	1	320	320	297	23	23	0	cola	300	4	4	1	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	7	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	303
+I-cortado-en-el-40	7	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	7	con	sinc	80	1	0	0	80	80	66	14	14	0	cola	66	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	7	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	7	con	sinc	80	4	0	0	320	320	213	107	107	0	cola	213	0	0	0	0	4	2	62575	97938	98160	no pedido	277
+M-con-dosis-relleno-050	7	con	sinc	80	4	0	0	320	320	260	60	60	0	cola	260	0	0	0	0	4	2	61168	117938	118255	no pedido	290
+N-con-dosis-relleno-150	7	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	3	43884	158338	158758	no pedido	277
+O-con-dosis-relleno-300	7	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	3	52164	218338	218921	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	7	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	140
+P-con-pequena-sonda	7	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	8	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	8	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	8	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	291
+D-con-grande-sonda	8	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	3	58268	336288	337165	no pedido	281
+E-con-asincrona	8	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	8	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	174
+G-con-rojo-en-la-cola	8	con	sinc	80	4	0	1	320	320	292	28	28	0	cola	295	4	4	1	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	8	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	8	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	8	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	8	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	310
+L-con-dosis-relleno-000	8	con	sinc	80	4	0	0	320	320	254	66	66	0	cola	254	0	0	0	0	4	3	31578	97937	98205	no pedido	277
+M-con-dosis-relleno-050	8	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	8997	117938	118211	no pedido	286
+N-con-dosis-relleno-150	8	con	sinc	80	4	0	0	320	320	255	65	65	0	cola	255	0	0	0	0	4	3	41944	158338	158756	no pedido	278
+O-con-dosis-relleno-300	8	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	2	27619	218338	218921	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	8	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	8	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	193
+A-con-grande	9	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	-	-	-	-	-	-	284
+B-sin-grande	9	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	287
+C-con-grande-bloqueante	9	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	9	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	3	56585	336288	337152	no pedido	289
+E-con-asincrona	9	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+F-con-pequena	9	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	9	con	sinc	80	4	0	1	320	320	297	23	23	0	cola	300	4	4	1	0	-	-	-	-	-	-	304
+H-sin-rojo-en-la-cola	9	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	295
+I-cortado-en-el-40	9	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	9	con	sinc	80	1	0	0	80	80	72	8	8	0	cola	72	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	9	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	9	con	sinc	80	4	0	0	320	320	260	60	60	0	cola	260	0	0	0	0	4	2	48675	97938	98218	no pedido	273
+M-con-dosis-relleno-050	9	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	3	61426	117938	118211	no pedido	267
+N-con-dosis-relleno-150	9	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	1	54592	158338	158756	no pedido	286
+O-con-dosis-relleno-300	9	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	1	52164	218338	218861	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	9	con	sinc	80	1	0	1	80	80	64	16	16	0	cola	65	1	1	0	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	9	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	10	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	10	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	294
+C-con-grande-bloqueante	10	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	10	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	4	43923	335308	337166	no pedido	290
+E-con-asincrona	10	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	319
+F-con-pequena	10	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	10	con	sinc	80	4	0	1	320	320	292	28	28	0	cola	295	4	4	1	0	-	-	-	-	-	-	284
+H-sin-rojo-en-la-cola	10	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	10	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	10	con	sinc	80	1	0	0	80	80	67	13	13	0	cola	67	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	10	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	302
+L-con-dosis-relleno-000	10	con	sinc	80	4	0	0	320	320	223	97	97	0	cola	223	0	0	0	0	4	3	55234	97937	98218	no pedido	275
+M-con-dosis-relleno-050	10	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	2	29072	117938	118211	no pedido	282
+N-con-dosis-relleno-150	10	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	4	3	23742	158338	158770	no pedido	279
+O-con-dosis-relleno-300	10	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	10	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	10	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	176
+A-con-grande	11	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	11	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	11	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	289
+D-con-grande-sonda	11	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	2	59951	336288	337151	no pedido	280
+E-con-asincrona	11	con	asinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	11	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	184
+G-con-rojo-en-la-cola	11	con	sinc	80	4	0	1	320	320	303	17	17	0	cola	305	4	4	2	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	11	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	11	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	11	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	11	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	306
+L-con-dosis-relleno-000	11	con	sinc	80	4	0	0	320	320	197	123	123	0	cola	197	0	0	0	0	4	2	62842	97938	98205	no pedido	274
+M-con-dosis-relleno-050	11	con	sinc	80	4	0	0	320	320	222	98	98	0	cola	222	0	0	0	0	4	3	59402	117938	118269	no pedido	273
+N-con-dosis-relleno-150	11	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	4	2	49431	158338	158769	no pedido	290
+O-con-dosis-relleno-300	11	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	11	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	146
+P-con-pequena-sonda	11	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	189
+A-con-grande	12	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	12	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	12	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	289
+D-con-grande-sonda	12	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	3	59951	336288	337166	no pedido	283
+E-con-asincrona	12	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	316
+F-con-pequena	12	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	12	con	sinc	80	4	0	1	320	320	305	15	15	0	cola	308	4	4	1	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	12	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	296
+I-cortado-en-el-40	12	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	12	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	12	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	296
+L-con-dosis-relleno-000	12	con	sinc	80	4	0	0	320	320	245	75	75	0	cola	245	0	0	0	0	4	3	43510	97938	98207	no pedido	284
+M-con-dosis-relleno-050	12	con	sinc	80	4	0	0	320	320	210	110	110	0	cola	210	0	0	0	0	4	3	53789	117938	118268	no pedido	273
+N-con-dosis-relleno-150	12	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	37201	158338	158756	no pedido	274
+O-con-dosis-relleno-300	12	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	1	52164	218338	218861	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	12	con	sinc	80	1	0	1	80	80	74	6	6	0	cola	75	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	12	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	13	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	13	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	289
+C-con-grande-bloqueante	13	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	13	con	sinc	80	4	0	0	320	320	279	41	41	0	cola	279	0	0	0	0	4	3	47290	336288	337153	no pedido	285
+E-con-asincrona	13	con	asinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	-	-	-	-	-	-	319
+F-con-pequena	13	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	13	con	sinc	80	4	0	1	320	320	311	9	9	0	cola	313	4	4	2	0	-	-	-	-	-	-	295
+H-sin-rojo-en-la-cola	13	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	13	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	13	con	sinc	80	1	0	0	80	80	68	12	12	0	cola	68	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	13	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	13	con	sinc	80	4	0	0	320	320	188	132	132	0	cola	188	0	0	0	0	4	3	62073	97938	98218	no pedido	277
+M-con-dosis-relleno-050	13	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	17597	117938	118257	no pedido	284
+N-con-dosis-relleno-150	13	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	2	34039	158338	158758	no pedido	286
+O-con-dosis-relleno-300	13	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	2	46698	218338	218907	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	13	con	sinc	80	1	0	1	80	80	66	14	14	0	cola	67	1	1	0	0	-	-	-	-	-	-	162
+P-con-pequena-sonda	13	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	185
+A-con-grande	14	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	288
+B-sin-grande	14	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	297
+C-con-grande-bloqueante	14	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	279
+D-con-grande-sonda	14	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	3	57391	336287	337153	no pedido	289
+E-con-asincrona	14	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	14	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	14	con	sinc	80	4	0	1	320	320	313	7	7	0	cola	314	4	4	3	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	14	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	298
+I-cortado-en-el-40	14	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	14	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	14	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	309
+L-con-dosis-relleno-000	14	con	sinc	80	4	0	0	320	320	212	108	108	0	cola	212	0	0	0	0	4	2	61376	97938	98218	no pedido	266
+M-con-dosis-relleno-050	14	con	sinc	80	4	0	0	320	320	264	56	56	0	cola	264	0	0	0	0	4	3	59674	117938	118211	no pedido	273
+N-con-dosis-relleno-150	14	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	2	54174	158338	158756	no pedido	272
+O-con-dosis-relleno-300	14	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	2	35784	218338	218848	no pedido	294
+Q-con-rojo-en-la-cola-una-copia	14	con	sinc	80	1	0	1	80	80	67	13	13	0	cola	68	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	14	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	15	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	-	-	-	-	-	-	292
+B-sin-grande	15	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	15	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	15	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	21232	336288	337166	no pedido	291
+E-con-asincrona	15	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+F-con-pequena	15	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	15	con	sinc	80	4	0	1	320	320	300	20	20	0	cola	302	4	4	2	0	-	-	-	-	-	-	289
+H-sin-rojo-en-la-cola	15	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	15	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	15	con	sinc	80	1	0	0	80	80	62	18	18	0	cola	62	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	15	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	306
+L-con-dosis-relleno-000	15	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	1	37173	97938	98160	no pedido	280
+M-con-dosis-relleno-050	15	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	2	27035	117938	118255	no pedido	280
+N-con-dosis-relleno-150	15	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	3	53370	158338	158756	no pedido	280
+O-con-dosis-relleno-300	15	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	2	59275	218338	218906	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	15	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	15	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	16	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	16	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+C-con-grande-bloqueante	16	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	289
+D-con-grande-sonda	16	con	sinc	80	4	0	0	320	320	310	10	10	0	cola	310	0	0	0	0	4	1	33017	336288	337153	no pedido	290
+E-con-asincrona	16	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+F-con-pequena	16	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	173
+G-con-rojo-en-la-cola	16	con	sinc	80	4	0	1	320	320	309	11	11	0	cola	311	4	4	2	0	-	-	-	-	-	-	282
+H-sin-rojo-en-la-cola	16	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	16	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	16	con	sinc	80	1	0	0	80	80	61	19	19	0	cola	61	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	16	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	296
+L-con-dosis-relleno-000	16	con	sinc	80	4	0	0	320	320	256	64	64	0	cola	256	0	0	0	0	4	3	43790	97938	98218	no pedido	278
+M-con-dosis-relleno-050	16	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	4	3	33508	117938	118270	no pedido	279
+N-con-dosis-relleno-150	16	con	sinc	80	4	0	0	320	320	232	88	88	0	cola	232	0	0	0	0	4	4	54174	136615	158771	no pedido	292
+O-con-dosis-relleno-300	16	con	sinc	80	4	0	0	320	320	282	38	38	0	cola	282	0	0	0	0	4	2	58707	218338	218861	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	16	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	16	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	191
+A-con-grande	17	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	289
+B-sin-grande	17	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	17	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	301
+D-con-grande-sonda	17	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	2	63312	336288	337166	no pedido	292
+E-con-asincrona	17	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+F-con-pequena	17	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	187
+G-con-rojo-en-la-cola	17	con	sinc	80	4	0	1	320	320	313	7	7	0	cola	314	4	4	3	0	-	-	-	-	-	-	286
+H-sin-rojo-en-la-cola	17	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	315
+I-cortado-en-el-40	17	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	17	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	17	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	306
+L-con-dosis-relleno-000	17	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	1	42533	97938	98146	no pedido	286
+M-con-dosis-relleno-050	17	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	2	25858	117938	118255	no pedido	277
+N-con-dosis-relleno-150	17	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	62079	158338	158711	no pedido	283
+O-con-dosis-relleno-300	17	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	272
+Q-con-rojo-en-la-cola-una-copia	17	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	17	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	178
+A-con-grande	18	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	18	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+C-con-grande-bloqueante	18	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	289
+D-con-grande-sonda	18	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	2	54902	336288	337166	no pedido	284
+E-con-asincrona	18	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	18	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	186
+G-con-rojo-en-la-cola	18	con	sinc	80	4	0	1	320	320	303	17	17	0	cola	306	4	4	1	0	-	-	-	-	-	-	285
+H-sin-rojo-en-la-cola	18	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	294
+I-cortado-en-el-40	18	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	18	con	sinc	80	1	0	0	80	80	75	5	5	0	cola	75	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	18	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	308
+L-con-dosis-relleno-000	18	con	sinc	80	4	0	0	320	320	274	46	46	0	cola	274	0	0	0	0	4	1	46233	97938	98205	no pedido	290
+M-con-dosis-relleno-050	18	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	3	50833	117937	118211	no pedido	280
+N-con-dosis-relleno-150	18	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	1	24537	158338	158758	no pedido	287
+O-con-dosis-relleno-300	18	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	16101	218338	218921	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	18	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	18	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	188
+A-con-grande	19	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	-	-	-	-	-	-	287
+B-sin-grande	19	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+C-con-grande-bloqueante	19	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	19	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	3	49852	336288	337164	no pedido	284
+E-con-asincrona	19	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+F-con-pequena	19	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	184
+G-con-rojo-en-la-cola	19	con	sinc	80	4	0	1	320	320	307	13	13	0	cola	309	4	4	2	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	19	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	19	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	99
+J-con-grande-una-copia	19	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	19	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	302
+L-con-dosis-relleno-000	19	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	1	24472	97938	98160	no pedido	275
+M-con-dosis-relleno-050	19	con	sinc	80	4	0	0	320	320	253	67	67	0	cola	253	0	0	0	0	4	3	61756	117938	118270	no pedido	278
+N-con-dosis-relleno-150	19	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	4	1	54174	158338	158711	no pedido	284
+O-con-dosis-relleno-300	19	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	2	29223	218338	218908	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	19	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	19	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	20	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	-	-	-	-	-	-	294
+B-sin-grande	20	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	294
+C-con-grande-bloqueante	20	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	287
+D-con-grande-sonda	20	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	4	2	22916	336288	337153	no pedido	297
+E-con-asincrona	20	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	317
+F-con-pequena	20	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	20	con	sinc	80	4	0	1	320	320	291	29	29	0	cola	295	4	4	0	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	20	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	301
+I-cortado-en-el-40	20	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	20	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	20	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	310
+L-con-dosis-relleno-000	20	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	3	13472	97938	98220	no pedido	283
+M-con-dosis-relleno-050	20	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	3	42924	117938	118269	no pedido	279
+N-con-dosis-relleno-150	20	con	sinc	80	4	0	0	320	320	247	73	73	0	cola	247	0	0	0	0	4	3	49849	158338	158756	no pedido	273
+O-con-dosis-relleno-300	20	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	2	52164	218338	218862	no pedido	299
+Q-con-rojo-en-la-cola-una-copia	20	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	20	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	21	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	21	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	292
+C-con-grande-bloqueante	21	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	290
+D-con-grande-sonda	21	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	3	51535	336288	337166	no pedido	276
+E-con-asincrona	21	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	21	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	21	con	sinc	80	4	0	1	320	320	312	8	8	0	cola	314	4	4	2	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	21	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	310
+I-cortado-en-el-40	21	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	21	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	21	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	296
+L-con-dosis-relleno-000	21	con	sinc	80	4	0	0	320	320	248	72	72	0	cola	248	0	0	0	0	4	2	57468	97938	98220	no pedido	273
+M-con-dosis-relleno-050	21	con	sinc	80	4	0	0	320	320	262	58	58	0	cola	262	0	0	0	0	4	3	60249	117938	118270	no pedido	284
+N-con-dosis-relleno-150	21	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	2	20569	158338	158771	no pedido	295
+O-con-dosis-relleno-300	21	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	1	30330	218338	218862	no pedido	277
+Q-con-rojo-en-la-cola-una-copia	21	con	sinc	80	1	0	1	80	80	63	17	17	0	cola	64	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	21	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	22	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	22	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	318
+C-con-grande-bloqueante	22	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	291
+D-con-grande-sonda	22	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	54901	336287	337165	no pedido	286
+E-con-asincrona	22	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	319
+F-con-pequena	22	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	22	con	sinc	80	4	0	1	320	320	300	20	20	0	cola	303	4	4	1	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	22	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	317
+I-cortado-en-el-40	22	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	22	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	22	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	306
+L-con-dosis-relleno-000	22	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	2	24472	97938	98160	no pedido	286
+M-con-dosis-relleno-050	22	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	4	1	24681	117938	118255	no pedido	285
+N-con-dosis-relleno-150	22	con	sinc	80	4	0	0	320	320	246	74	74	0	cola	246	0	0	0	0	4	3	47046	158337	158755	no pedido	278
+O-con-dosis-relleno-300	22	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	2	36367	218338	218921	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	22	con	sinc	80	1	0	1	80	80	73	7	7	0	cola	74	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	22	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	23	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	-	-	-	-	-	-	288
+B-sin-grande	23	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	23	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	23	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	3	63312	336288	337151	no pedido	284
+E-con-asincrona	23	con	asinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	-	-	-	-	-	-	300
+F-con-pequena	23	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	23	con	sinc	80	4	0	1	320	320	303	17	17	0	cola	305	4	4	2	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	23	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	303
+I-cortado-en-el-40	23	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	23	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	23	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	307
+L-con-dosis-relleno-000	23	con	sinc	80	4	0	0	320	320	225	95	95	0	cola	225	0	0	0	0	4	2	58934	97938	98205	no pedido	269
+M-con-dosis-relleno-050	23	con	sinc	80	4	0	0	320	320	220	100	100	0	cola	220	0	0	0	0	4	2	63205	117938	118268	no pedido	278
+N-con-dosis-relleno-150	23	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	4	1	14221	158338	158771	no pedido	293
+O-con-dosis-relleno-300	23	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	3	17207	218338	218862	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	23	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	23	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	24	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	24	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+C-con-grande-bloqueante	24	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	291
+D-con-grande-sonda	24	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	2	64116	336288	337093	no pedido	291
+E-con-asincrona	24	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	315
+F-con-pequena	24	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	24	con	sinc	80	4	0	1	320	320	295	25	25	0	cola	297	4	4	2	0	-	-	-	-	-	-	295
+H-sin-rojo-en-la-cola	24	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	24	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	24	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	24	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	307
+L-con-dosis-relleno-000	24	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	1	24472	97938	98160	no pedido	280
+M-con-dosis-relleno-050	24	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	2	30249	117938	118211	no pedido	291
+N-con-dosis-relleno-150	24	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	2	32817	158338	158771	no pedido	287
+O-con-dosis-relleno-300	24	con	sinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	4	3	12834	218338	218862	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	24	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	24	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	192
+A-con-grande	25	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	288
+B-sin-grande	25	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	25	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	287
+D-con-grande-sonda	25	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	2	13620	336288	337107	no pedido	291
+E-con-asincrona	25	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	321
+F-con-pequena	25	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	25	con	sinc	80	4	0	1	320	320	305	15	15	0	cola	306	4	4	3	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	25	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	25	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	25	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	25	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	310
+L-con-dosis-relleno-000	25	con	sinc	80	4	0	0	320	320	248	72	72	0	cola	248	0	0	0	0	4	2	58934	97938	98220	no pedido	275
+M-con-dosis-relleno-050	25	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	1	43771	117938	118196	no pedido	284
+N-con-dosis-relleno-150	25	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	2	27711	158338	158758	no pedido	285
+O-con-dosis-relleno-300	25	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	1	54913	218338	218906	no pedido	277
+Q-con-rojo-en-la-cola-una-copia	25	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	25	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	179
+A-con-grande	26	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	-	-	-	-	-	-	284
+B-sin-grande	26	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	296
+C-con-grande-bloqueante	26	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	26	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	2	56585	336288	337153	no pedido	293
+E-con-asincrona	26	con	asinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	26	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	188
+G-con-rojo-en-la-cola	26	con	sinc	80	4	0	1	320	320	285	35	35	0	cola	288	4	4	1	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	26	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	307
+I-cortado-en-el-40	26	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	98
+J-con-grande-una-copia	26	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	133
+K-sin-grande-sonda	26	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	305
+L-con-dosis-relleno-000	26	con	sinc	80	4	0	0	320	320	261	59	59	0	cola	261	0	0	0	0	4	2	44767	97938	98218	no pedido	267
+M-con-dosis-relleno-050	26	con	sinc	80	4	0	0	320	320	243	77	77	0	cola	243	0	0	0	0	4	3	58497	117938	118211	no pedido	269
+N-con-dosis-relleno-150	26	con	sinc	80	4	0	0	320	320	246	74	74	0	cola	246	0	0	0	0	4	2	63287	158338	158769	no pedido	281
+O-con-dosis-relleno-300	26	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	13404	218338	218921	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	26	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	26	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	187
+A-con-grande	27	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	273
+B-sin-grande	27	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	295
+C-con-grande-bloqueante	27	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	281
+D-con-grande-sonda	27	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1697	336288	336468	no pedido	270
+E-con-asincrona	27	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	27	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	185
+G-con-rojo-en-la-cola	27	con	sinc	80	4	0	1	320	320	290	30	30	0	cola	293	4	4	1	0	-	-	-	-	-	-	302
+H-sin-rojo-en-la-cola	27	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	301
+I-cortado-en-el-40	27	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	27	con	sinc	80	1	0	0	80	80	72	8	8	0	cola	72	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	27	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	27	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	42533	97938	98147	no pedido	277
+M-con-dosis-relleno-050	27	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	4	1	64110	117938	118268	no pedido	288
+N-con-dosis-relleno-150	27	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	2	21363	158338	158758	no pedido	294
+O-con-dosis-relleno-300	27	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	2	54913	218338	218908	no pedido	300
+Q-con-rojo-en-la-cola-una-copia	27	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	27	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	28	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	-	-	-	-	-	-	292
+B-sin-grande	28	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+C-con-grande-bloqueante	28	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	28	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	1	50657	336288	337093	no pedido	275
+E-con-asincrona	28	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+F-con-pequena	28	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	185
+G-con-rojo-en-la-cola	28	con	sinc	80	4	0	1	320	320	310	10	10	0	cola	312	4	4	2	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	28	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	300
+I-cortado-en-el-40	28	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	28	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	28	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	294
+L-con-dosis-relleno-000	28	con	sinc	80	4	0	0	320	320	204	116	116	0	cola	204	0	0	0	0	4	2	62073	97938	98146	no pedido	269
+M-con-dosis-relleno-050	28	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	8997	117938	118211	no pedido	279
+N-con-dosis-relleno-150	28	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	2	35202	158338	158712	no pedido	287
+O-con-dosis-relleno-300	28	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	28	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	28	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	29	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	29	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	29	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	29	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	2	61631	336288	337164	no pedido	289
+E-con-asincrona	29	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	316
+F-con-pequena	29	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	29	con	sinc	80	4	0	1	320	320	317	3	3	0	cola	319	4	4	2	0	-	-	-	-	-	-	297
+H-sin-rojo-en-la-cola	29	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	29	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	29	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	29	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	296
+L-con-dosis-relleno-000	29	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	1	49874	97938	98160	no pedido	289
+M-con-dosis-relleno-050	29	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	31743	117938	118255	no pedido	280
+N-con-dosis-relleno-150	29	con	sinc	80	4	0	0	320	320	274	46	46	0	cola	274	0	0	0	0	4	3	59334	158338	158755	no pedido	290
+O-con-dosis-relleno-300	29	con	sinc	80	4	0	0	320	320	247	73	73	0	cola	247	0	0	0	0	4	3	59784	218338	218918	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	29	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	29	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	30	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	-	-	-	-	-	-	295
+B-sin-grande	30	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	30	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	30	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	4	55721	331891	337107	no pedido	293
+E-con-asincrona	30	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	314
+F-con-pequena	30	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	30	con	sinc	80	4	0	1	320	320	312	8	8	0	cola	314	4	4	2	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	30	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	30	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	110
+J-con-grande-una-copia	30	con	sinc	80	1	0	0	80	80	65	15	15	0	cola	65	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	30	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	296
+L-con-dosis-relleno-000	30	con	sinc	80	4	0	0	320	320	182	138	138	0	cola	182	0	0	0	0	4	3	51118	97938	98218	no pedido	277
+M-con-dosis-relleno-050	30	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	8997	117938	118211	no pedido	286
+N-con-dosis-relleno-150	30	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	2	28071	158338	158698	no pedido	284
+O-con-dosis-relleno-300	30	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	1	57094	218338	218906	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	30	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	147
+P-con-pequena-sonda	30	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	31	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	-	-	-	-	-	-	288
+B-sin-grande	31	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	313
+C-con-grande-bloqueante	31	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	31	con	sinc	80	4	0	0	320	320	313	7	7	0	cola	313	0	0	0	0	4	1	22916	336288	337153	no pedido	279
+E-con-asincrona	31	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	315
+F-con-pequena	31	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	180
+G-con-rojo-en-la-cola	31	con	sinc	80	4	0	1	320	320	270	50	50	0	cola	273	4	4	1	0	-	-	-	-	-	-	284
+H-sin-rojo-en-la-cola	31	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	310
+I-cortado-en-el-40	31	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	31	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	31	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	307
+L-con-dosis-relleno-000	31	con	sinc	80	4	0	0	320	320	208	112	112	0	cola	208	0	0	0	0	4	2	64307	97938	98218	no pedido	284
+M-con-dosis-relleno-050	31	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	3	37038	117938	118267	no pedido	293
+N-con-dosis-relleno-150	31	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	34039	158338	158756	no pedido	286
+O-con-dosis-relleno-300	31	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	2	60365	218338	218919	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	31	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	31	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	32	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	289
+B-sin-grande	32	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	294
+C-con-grande-bloqueante	32	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	300
+D-con-grande-sonda	32	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	3	64992	336288	337165	no pedido	283
+E-con-asincrona	32	con	asinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	-	-	-	-	-	-	292
+F-con-pequena	32	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	32	con	sinc	80	4	0	1	320	320	317	3	3	0	cola	319	4	4	2	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	32	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	310
+I-cortado-en-el-40	32	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	32	con	sinc	80	1	0	0	80	80	66	14	14	0	cola	66	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	32	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	298
+L-con-dosis-relleno-000	32	con	sinc	80	4	0	0	320	320	240	80	80	0	cola	240	0	0	0	0	4	2	48187	97937	98218	no pedido	281
+M-con-dosis-relleno-050	32	con	sinc	80	4	0	0	320	320	236	84	84	0	cola	236	0	0	0	0	4	3	50832	117938	118267	no pedido	267
+N-con-dosis-relleno-150	32	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	3	22156	158338	158771	no pedido	280
+O-con-dosis-relleno-300	32	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	46189	218338	218906	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	32	con	sinc	80	1	0	1	80	80	74	6	6	0	cola	75	1	1	0	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	32	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	178
+A-con-grande	33	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	33	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+C-con-grande-bloqueante	33	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	33	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	3	64992	336288	337166	no pedido	279
+E-con-asincrona	33	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+F-con-pequena	33	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	33	con	sinc	80	4	0	1	320	320	301	19	19	0	cola	303	4	4	2	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	33	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	33	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	33	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	33	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	33	con	sinc	80	4	0	0	320	320	252	68	68	0	cola	252	0	0	0	0	4	2	64529	97938	98160	no pedido	265
+M-con-dosis-relleno-050	33	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	3	48479	117938	118211	no pedido	278
+N-con-dosis-relleno-150	33	con	sinc	80	4	0	0	320	320	273	47	47	0	cola	273	0	0	0	0	4	3	46687	158338	158756	no pedido	283
+O-con-dosis-relleno-300	33	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	65250	218338	218861	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	33	con	sinc	80	1	0	1	80	80	71	9	9	0	cola	72	1	1	0	0	-	-	-	-	-	-	136
+P-con-pequena-sonda	33	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	34	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	284
+B-sin-grande	34	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	34	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	296
+D-con-grande-sonda	34	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	279
+E-con-asincrona	34	con	asinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	292
+F-con-pequena	34	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	34	con	sinc	80	4	0	1	320	320	293	27	27	0	cola	295	4	4	2	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	34	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	310
+I-cortado-en-el-40	34	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	34	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	34	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	311
+L-con-dosis-relleno-000	34	con	sinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	4	1	3360	97938	98147	no pedido	292
+M-con-dosis-relleno-050	34	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	3	44690	117938	118255	no pedido	282
+N-con-dosis-relleno-150	34	con	sinc	80	4	0	0	320	320	274	46	46	0	cola	274	0	0	0	0	4	3	34039	158338	158756	no pedido	282
+O-con-dosis-relleno-300	34	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	3	25432	218338	218921	no pedido	273
+Q-con-rojo-en-la-cola-una-copia	34	con	sinc	80	1	0	1	80	80	68	12	12	0	cola	69	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	34	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	35	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	-	-	-	-	-	-	273
+B-sin-grande	35	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	301
+C-con-grande-bloqueante	35	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	35	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	3	62449	336288	337166	no pedido	291
+E-con-asincrona	35	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	298
+F-con-pequena	35	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	35	con	sinc	80	4	0	1	320	320	289	31	31	0	cola	292	4	4	1	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	35	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	35	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	35	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	35	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	297
+L-con-dosis-relleno-000	35	con	sinc	80	4	0	0	320	320	228	92	92	0	cola	228	0	0	0	0	4	2	49372	97938	98146	no pedido	274
+M-con-dosis-relleno-050	35	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	2	16414	117938	118257	no pedido	289
+N-con-dosis-relleno-150	35	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	3	34039	158338	158771	no pedido	286
+O-con-dosis-relleno-300	35	con	sinc	80	4	0	0	320	320	273	47	47	0	cola	273	0	0	0	0	4	3	40736	218338	218921	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	35	con	sinc	80	1	0	1	80	80	64	16	16	0	cola	65	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	35	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	176
+A-con-grande	36	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	36	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	36	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	36	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	4	2	22916	336288	337153	no pedido	282
+E-con-asincrona	36	con	asinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	-	-	-	-	-	-	313
+F-con-pequena	36	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	186
+G-con-rojo-en-la-cola	36	con	sinc	80	4	0	1	320	320	304	16	16	0	cola	307	4	4	1	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	36	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	36	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	36	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	36	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	296
+L-con-dosis-relleno-000	36	con	sinc	80	4	0	0	320	320	244	76	76	0	cola	244	0	0	0	0	4	2	62073	97938	98161	no pedido	272
+M-con-dosis-relleno-050	36	con	sinc	80	4	0	0	320	320	239	81	81	0	cola	239	0	0	0	0	4	2	54694	117938	118268	no pedido	275
+N-con-dosis-relleno-150	36	con	sinc	80	4	0	0	320	320	279	41	41	0	cola	279	0	0	0	0	4	2	34038	158338	158755	no pedido	281
+O-con-dosis-relleno-300	36	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	2	21582	218338	218921	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	36	con	sinc	80	1	0	1	80	80	67	13	13	0	cola	68	1	1	0	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	36	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	37	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	294
+B-sin-grande	37	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	37	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	296
+D-con-grande-sonda	37	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	2	47290	336288	337107	no pedido	278
+E-con-asincrona	37	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	37	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	171
+G-con-rojo-en-la-cola	37	con	sinc	80	4	0	1	320	320	298	22	22	0	cola	301	4	4	1	0	-	-	-	-	-	-	293
+H-sin-rojo-en-la-cola	37	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	317
+I-cortado-en-el-40	37	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	37	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	37	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	294
+L-con-dosis-relleno-000	37	con	sinc	80	4	0	0	320	320	246	74	74	0	cola	246	0	0	0	0	4	2	55234	97938	98218	no pedido	279
+M-con-dosis-relleno-050	37	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	1	52009	117938	118195	no pedido	282
+N-con-dosis-relleno-150	37	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	4	3	41153	158338	158769	no pedido	278
+O-con-dosis-relleno-300	37	con	sinc	80	4	0	0	320	320	250	70	70	0	cola	250	0	0	0	0	4	3	60365	218338	218919	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	37	con	sinc	80	1	0	1	80	80	73	7	7	0	cola	74	1	1	0	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	37	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	38	con	sinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	-	-	-	-	-	-	295
+B-sin-grande	38	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	38	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	38	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	3	62449	336287	337151	no pedido	286
+E-con-asincrona	38	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+F-con-pequena	38	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	38	con	sinc	80	4	0	1	320	320	295	25	25	0	cola	298	4	4	1	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	38	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	316
+I-cortado-en-el-40	38	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	38	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	38	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	38	con	sinc	80	4	0	0	320	320	201	119	119	0	cola	201	0	0	0	0	4	2	64796	97938	98205	no pedido	287
+M-con-dosis-relleno-050	38	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	3	8997	117938	118270	no pedido	289
+N-con-dosis-relleno-150	38	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	2	33621	158338	158711	no pedido	277
+O-con-dosis-relleno-300	38	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1557	218338	218523	no pedido	296
+Q-con-rojo-en-la-cola-una-copia	38	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	38	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	187
+A-con-grande	39	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	39	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	298
+C-con-grande-bloqueante	39	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	301
+D-con-grande-sonda	39	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	2	59088	336288	337166	no pedido	293
+E-con-asincrona	39	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	318
+F-con-pequena	39	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	186
+G-con-rojo-en-la-cola	39	con	sinc	80	4	0	1	320	320	308	12	12	0	cola	311	4	4	1	0	-	-	-	-	-	-	289
+H-sin-rojo-en-la-cola	39	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	39	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	39	con	sinc	80	1	0	0	80	80	61	19	19	0	cola	61	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	39	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	294
+L-con-dosis-relleno-000	39	con	sinc	80	4	0	0	320	320	214	106	106	0	cola	214	0	0	0	0	4	2	63050	97938	98160	no pedido	285
+M-con-dosis-relleno-050	39	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	59674	117938	118210	no pedido	272
+N-con-dosis-relleno-150	39	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	53370	158338	158711	no pedido	275
+O-con-dosis-relleno-300	39	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	1	59275	218338	218906	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	39	con	sinc	80	1	0	1	80	80	65	15	15	0	cola	66	1	1	0	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	39	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	40	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	40	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+C-con-grande-bloqueante	40	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	40	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	1	43923	336288	337093	no pedido	286
+E-con-asincrona	40	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	292
+F-con-pequena	40	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	169
+G-con-rojo-en-la-cola	40	con	sinc	80	4	0	1	320	320	289	31	31	0	cola	292	4	4	1	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	40	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	301
+I-cortado-en-el-40	40	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	40	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	40	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	301
+L-con-dosis-relleno-000	40	con	sinc	80	4	0	0	320	320	213	107	107	0	cola	213	0	0	0	0	4	2	58164	97938	98160	no pedido	276
+M-con-dosis-relleno-050	40	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	4	3	15822	117938	118270	no pedido	274
+N-con-dosis-relleno-150	40	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	2	34039	158338	158770	no pedido	286
+O-con-dosis-relleno-300	40	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	3	53241	218338	218848	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	40	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	40	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	41	con	sinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	-	-	-	-	-	-	277
+B-sin-grande	41	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+C-con-grande-bloqueante	41	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	286
+D-con-grande-sonda	41	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	4	2	23721	336288	337093	no pedido	283
+E-con-asincrona	41	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	313
+F-con-pequena	41	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	41	con	sinc	80	4	0	1	320	320	318	2	2	0	cola	319	4	4	3	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	41	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	315
+I-cortado-en-el-40	41	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	99
+J-con-grande-una-copia	41	con	sinc	80	1	0	0	80	80	73	7	7	0	cola	73	0	0	0	0	-	-	-	-	-	-	150
+K-sin-grande-sonda	41	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	300
+L-con-dosis-relleno-000	41	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	1	28158	97938	98218	no pedido	272
+M-con-dosis-relleno-050	41	con	sinc	80	4	0	0	320	320	250	70	70	0	cola	250	0	0	0	0	4	3	64382	117938	118270	no pedido	275
+N-con-dosis-relleno-150	41	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	34039	158338	158756	no pedido	269
+O-con-dosis-relleno-300	41	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	53821	218338	218919	no pedido	280
+Q-con-rojo-en-la-cola-una-copia	41	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	150
+P-con-pequena-sonda	41	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	42	con	sinc	80	4	0	0	320	320	310	10	10	0	cola	310	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	42	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	301
+C-con-grande-bloqueante	42	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	287
+D-con-grande-sonda	42	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	4	3	22916	336288	337153	no pedido	291
+E-con-asincrona	42	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	42	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	174
+G-con-rojo-en-la-cola	42	con	sinc	80	4	0	1	320	320	291	29	29	0	cola	294	4	4	1	0	-	-	-	-	-	-	272
+H-sin-rojo-en-la-cola	42	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	296
+I-cortado-en-el-40	42	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	42	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	42	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	301
+L-con-dosis-relleno-000	42	con	sinc	80	4	0	0	320	320	225	95	95	0	cola	225	0	0	0	0	4	2	63551	97938	98203	no pedido	279
+M-con-dosis-relleno-050	42	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	3	40240	117938	118270	no pedido	282
+N-con-dosis-relleno-150	42	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	1	28504	158338	158771	no pedido	281
+O-con-dosis-relleno-300	42	con	sinc	80	4	0	0	320	320	317	3	3	0	cola	317	0	0	0	0	4	1	7353	218338	218848	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	42	con	sinc	80	1	0	1	80	80	69	11	11	0	cola	70	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	42	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	43	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	-	-	-	-	-	-	277
+B-sin-grande	43	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+C-con-grande-bloqueante	43	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	43	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	4	2	33017	336288	337153	no pedido	290
+E-con-asincrona	43	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	43	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	43	con	sinc	80	4	0	1	320	320	302	18	18	0	cola	304	4	4	2	0	-	-	-	-	-	-	273
+H-sin-rojo-en-la-cola	43	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	307
+I-cortado-en-el-40	43	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	43	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	43	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	290
+L-con-dosis-relleno-000	43	con	sinc	80	4	0	0	320	320	217	103	103	0	cola	217	0	0	0	0	4	2	63819	97938	98205	no pedido	271
+M-con-dosis-relleno-050	43	con	sinc	80	4	0	0	320	320	258	62	62	0	cola	258	0	0	0	0	4	3	47302	117938	118270	no pedido	275
+N-con-dosis-relleno-150	43	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	34829	158338	158769	no pedido	290
+O-con-dosis-relleno-300	43	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	37461	218338	218908	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	43	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	43	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	44	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	-	-	-	-	-	-	286
+B-sin-grande	44	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	286
+C-con-grande-bloqueante	44	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	286
+D-con-grande-sonda	44	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	4	43118	322668	337166	no pedido	290
+E-con-asincrona	44	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	44	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	44	con	sinc	80	4	0	1	320	320	288	32	32	0	cola	292	4	4	0	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	44	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	44	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	44	con	sinc	80	1	0	0	80	80	66	14	14	0	cola	66	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	44	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	298
+L-con-dosis-relleno-000	44	con	sinc	80	4	0	0	320	320	183	137	137	0	cola	183	0	0	0	0	4	3	61376	97937	98218	no pedido	279
+M-con-dosis-relleno-050	44	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	8997	117938	118211	no pedido	283
+N-con-dosis-relleno-150	44	con	sinc	80	4	0	0	320	320	258	62	62	0	cola	258	0	0	0	0	4	2	55382	158338	158769	no pedido	274
+O-con-dosis-relleno-300	44	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	2	42917	218338	218921	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	44	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	44	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	45	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	45	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	291
+C-con-grande-bloqueante	45	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	289
+D-con-grande-sonda	45	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	3	52354	336288	337153	no pedido	281
+E-con-asincrona	45	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	314
+F-con-pequena	45	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	45	con	sinc	80	4	0	1	320	320	297	23	23	0	cola	301	4	4	0	0	-	-	-	-	-	-	282
+H-sin-rojo-en-la-cola	45	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	291
+I-cortado-en-el-40	45	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	45	con	sinc	80	1	0	0	80	80	72	8	8	0	cola	72	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	45	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	308
+L-con-dosis-relleno-000	45	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1742	97938	98123	no pedido	274
+M-con-dosis-relleno-050	45	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	2	16414	117938	118257	no pedido	274
+N-con-dosis-relleno-150	45	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	158338	158338	no pedido	283
+O-con-dosis-relleno-300	45	con	sinc	80	4	0	0	320	320	281	39	39	0	cola	281	0	0	0	0	4	2	45098	218338	218919	no pedido	268
+Q-con-rojo-en-la-cola-una-copia	45	con	sinc	80	1	0	1	80	80	78	2	2	0	cola	79	1	1	0	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	45	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	185
+A-con-grande	46	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	-	-	-	-	-	-	276
+B-sin-grande	46	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	46	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	272
+D-con-grande-sonda	46	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	1	29650	336288	337153	no pedido	279
+E-con-asincrona	46	con	asinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	46	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	172
+G-con-rojo-en-la-cola	46	con	sinc	80	4	0	1	320	320	304	16	16	0	cola	308	4	4	0	0	-	-	-	-	-	-	290
+H-sin-rojo-en-la-cola	46	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	300
+I-cortado-en-el-40	46	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	46	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	46	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	300
+L-con-dosis-relleno-000	46	con	sinc	80	4	0	0	320	320	190	130	130	0	cola	190	0	0	0	0	4	4	56491	92107	98218	no pedido	271
+M-con-dosis-relleno-050	46	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	4	3	56460	117938	118255	no pedido	274
+N-con-dosis-relleno-150	46	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	2	34039	158338	158771	no pedido	277
+O-con-dosis-relleno-300	46	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	4	2	59275	218338	218906	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	46	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	46	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	179
+A-con-grande	47	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	47	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	297
+C-con-grande-bloqueante	47	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	278
+D-con-grande-sonda	47	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	3	59088	336288	337153	no pedido	286
+E-con-asincrona	47	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	47	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	47	con	sinc	80	4	0	1	320	320	306	14	14	0	cola	308	4	4	2	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	47	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	298
+I-cortado-en-el-40	47	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	47	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	47	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	305
+L-con-dosis-relleno-000	47	con	sinc	80	4	0	0	320	320	251	69	69	0	cola	251	0	0	0	0	4	2	36196	97938	98218	no pedido	289
+M-con-dosis-relleno-050	47	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	52010	117938	118211	no pedido	275
+N-con-dosis-relleno-150	47	con	sinc	80	4	0	0	320	320	317	3	3	0	cola	317	0	0	0	0	4	1	6285	158338	158770	no pedido	285
+O-con-dosis-relleno-300	47	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	3	47801	218338	218920	no pedido	277
+Q-con-rojo-en-la-cola-una-copia	47	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	140
+P-con-pequena-sonda	47	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	48	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	-	-	-	-	-	-	284
+B-sin-grande	48	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	48	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	48	con	sinc	80	4	0	0	320	320	310	10	10	0	cola	310	0	0	0	0	4	3	22051	336288	337166	no pedido	295
+E-con-asincrona	48	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	48	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	171
+G-con-rojo-en-la-cola	48	con	sinc	80	4	0	1	320	320	284	36	36	0	cola	287	4	4	1	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	48	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	305
+I-cortado-en-el-40	48	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	48	con	sinc	80	1	0	0	80	80	73	7	7	0	cola	73	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	48	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	295
+L-con-dosis-relleno-000	48	con	sinc	80	4	0	0	320	320	227	93	93	0	cola	227	0	0	0	0	4	2	55514	97938	98218	no pedido	272
+M-con-dosis-relleno-050	48	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	2	27895	117938	118211	no pedido	288
+N-con-dosis-relleno-150	48	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	4	2	50208	158338	158756	no pedido	283
+O-con-dosis-relleno-300	48	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	48	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	48	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	49	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	49	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+C-con-grande-bloqueante	49	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	284
+D-con-grande-sonda	49	con	sinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	4	1	12815	336288	337153	no pedido	283
+E-con-asincrona	49	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	49	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	172
+G-con-rojo-en-la-cola	49	con	sinc	80	4	0	1	320	320	308	12	12	0	cola	311	4	4	1	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	49	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	49	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	99
+J-con-grande-una-copia	49	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	49	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	290
+L-con-dosis-relleno-000	49	con	sinc	80	4	0	0	320	320	232	88	88	0	cola	232	0	0	0	0	4	2	57957	97938	98205	no pedido	275
+M-con-dosis-relleno-050	49	con	sinc	80	4	0	0	320	320	272	48	48	0	cola	272	0	0	0	0	4	2	50833	117938	118270	no pedido	281
+N-con-dosis-relleno-150	49	con	sinc	80	4	0	0	320	320	317	3	3	0	cola	317	0	0	0	0	4	2	5853	158338	158698	no pedido	289
+O-con-dosis-relleno-300	49	con	sinc	80	4	0	0	320	320	272	48	48	0	cola	272	0	0	0	0	4	3	54345	218338	218908	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	49	con	sinc	80	1	0	1	80	80	66	14	14	0	cola	67	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	49	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	50	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	50	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	296
+C-con-grande-bloqueante	50	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	276
+D-con-grande-sonda	50	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	2	60755	336288	337107	no pedido	287
+E-con-asincrona	50	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	50	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	172
+G-con-rojo-en-la-cola	50	con	sinc	80	4	0	1	320	320	307	13	13	0	cola	309	4	4	2	0	-	-	-	-	-	-	286
+H-sin-rojo-en-la-cola	50	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	305
+I-cortado-en-el-40	50	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	98
+J-con-grande-una-copia	50	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	50	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	289
+L-con-dosis-relleno-000	50	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	1	40859	97938	98218	no pedido	280
+M-con-dosis-relleno-050	50	con	sinc	80	4	0	0	320	320	224	96	96	0	cola	224	0	0	0	0	4	2	64957	117938	118268	no pedido	276
+N-con-dosis-relleno-150	50	con	sinc	80	4	0	0	320	320	237	83	83	0	cola	237	0	0	0	0	4	3	63660	158338	158769	no pedido	275
+O-con-dosis-relleno-300	50	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	2	57603	218338	218919	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	50	con	sinc	80	1	0	1	80	80	73	7	7	0	cola	74	1	1	0	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	50	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	175
+A-con-grande	51	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	-	-	-	-	-	-	282
+B-sin-grande	51	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	295
+C-con-grande-bloqueante	51	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	298
+D-con-grande-sonda	51	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	4	57391	336288	337107	no pedido	284
+E-con-asincrona	51	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+F-con-pequena	51	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	186
+G-con-rojo-en-la-cola	51	con	sinc	80	4	0	1	320	320	298	22	22	0	cola	301	4	4	1	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	51	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	295
+I-cortado-en-el-40	51	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	51	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	51	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	295
+L-con-dosis-relleno-000	51	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	1	31089	97938	98218	no pedido	281
+M-con-dosis-relleno-050	51	con	sinc	80	4	0	0	320	320	223	97	97	0	cola	223	0	0	0	0	4	3	58497	117938	118270	no pedido	275
+N-con-dosis-relleno-150	51	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	3	34039	158338	158758	no pedido	285
+O-con-dosis-relleno-300	51	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	2	54912	218338	218921	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	51	con	sinc	80	1	0	1	80	80	64	16	16	0	cola	65	1	1	0	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	51	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	52	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	-	-	-	-	-	-	261
+B-sin-grande	52	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+C-con-grande-bloqueante	52	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	294
+D-con-grande-sonda	52	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	3	53219	336288	337166	no pedido	280
+E-con-asincrona	52	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+F-con-pequena	52	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	174
+G-con-rojo-en-la-cola	52	con	sinc	80	4	0	1	320	320	293	27	27	0	cola	297	4	4	0	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	52	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	313
+I-cortado-en-el-40	52	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	52	con	sinc	80	1	0	0	80	80	70	10	10	0	cola	70	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	52	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	294
+L-con-dosis-relleno-000	52	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	2	12981	97938	98220	no pedido	273
+M-con-dosis-relleno-050	52	con	sinc	80	4	0	0	320	320	245	75	75	0	cola	245	0	0	0	0	4	3	55283	117938	118255	no pedido	281
+N-con-dosis-relleno-150	52	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	3	16182	158338	158712	no pedido	270
+O-con-dosis-relleno-300	52	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	2	30330	218338	218921	no pedido	277
+Q-con-rojo-en-la-cola-una-copia	52	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	52	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	176
+A-con-grande	53	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	287
+B-sin-grande	53	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	53	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	53	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	52354	336288	337153	no pedido	287
+E-con-asincrona	53	con	asinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	-	-	-	-	-	-	303
+F-con-pequena	53	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	173
+G-con-rojo-en-la-cola	53	con	sinc	80	4	0	1	320	320	306	14	14	0	cola	308	4	4	2	0	-	-	-	-	-	-	297
+H-sin-rojo-en-la-cola	53	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	302
+I-cortado-en-el-40	53	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	53	con	sinc	80	1	0	0	80	80	73	7	7	0	cola	73	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	53	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	308
+L-con-dosis-relleno-000	53	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	6814	97938	98219	no pedido	280
+M-con-dosis-relleno-050	53	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	4	1	64110	117938	118268	no pedido	279
+N-con-dosis-relleno-150	53	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	34039	158338	158756	no pedido	280
+O-con-dosis-relleno-300	53	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	3	49983	218338	218908	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	53	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	53	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	177
+A-con-grande	54	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	54	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	291
+C-con-grande-bloqueante	54	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	285
+D-con-grande-sonda	54	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	4	40556	325157	337153	no pedido	287
+E-con-asincrona	54	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+F-con-pequena	54	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	54	con	sinc	80	4	0	1	320	320	280	40	40	0	cola	283	4	4	1	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	54	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	301
+I-cortado-en-el-40	54	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	99
+J-con-grande-una-copia	54	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	54	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	304
+L-con-dosis-relleno-000	54	con	sinc	80	4	0	0	320	320	230	90	90	0	cola	230	0	0	0	0	4	2	47417	97938	98146	no pedido	273
+M-con-dosis-relleno-050	54	con	sinc	80	4	0	0	320	320	273	47	47	0	cola	273	0	0	0	0	4	2	30248	117938	118210	no pedido	283
+N-con-dosis-relleno-150	54	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	3	20569	158338	158771	no pedido	280
+O-con-dosis-relleno-300	54	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	268
+Q-con-rojo-en-la-cola-una-copia	54	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	54	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	180
+A-con-grande	55	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	-	-	-	-	-	-	276
+B-sin-grande	55	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+C-con-grande-bloqueante	55	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	283
+D-con-grande-sonda	55	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	4	2	22051	336288	337107	no pedido	285
+E-con-asincrona	55	con	asinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	294
+F-con-pequena	55	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	175
+G-con-rojo-en-la-cola	55	con	sinc	80	4	0	1	320	320	293	27	27	0	cola	296	4	4	1	0	-	-	-	-	-	-	282
+H-sin-rojo-en-la-cola	55	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	55	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	55	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	55	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	295
+L-con-dosis-relleno-000	55	con	sinc	80	4	0	0	320	320	253	67	67	0	cola	253	0	0	0	0	4	2	55736	97938	98207	no pedido	279
+M-con-dosis-relleno-050	55	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	2	14639	117938	118270	no pedido	283
+N-con-dosis-relleno-150	55	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	2	5853	158338	158758	no pedido	279
+O-con-dosis-relleno-300	55	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	4	3	49460	218338	218919	no pedido	276
+Q-con-rojo-en-la-cola-una-copia	55	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	55	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	175
+A-con-grande	56	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	56	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	301
+C-con-grande-bloqueante	56	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	56	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	3	37189	336288	337153	no pedido	286
+E-con-asincrona	56	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	287
+F-con-pequena	56	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	173
+G-con-rojo-en-la-cola	56	con	sinc	80	4	0	1	320	320	300	20	20	0	cola	303	4	4	1	0	-	-	-	-	-	-	293
+H-sin-rojo-en-la-cola	56	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	294
+I-cortado-en-el-40	56	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	56	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	56	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	310
+L-con-dosis-relleno-000	56	con	sinc	80	4	0	0	320	320	231	89	89	0	cola	231	0	0	0	0	4	2	48674	97938	98217	no pedido	280
+M-con-dosis-relleno-050	56	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	3	50575	117938	118255	no pedido	276
+N-con-dosis-relleno-150	56	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	2	33621	158338	158711	no pedido	282
+O-con-dosis-relleno-300	56	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	4	2	28713	218338	218908	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	56	con	sinc	80	1	0	1	80	80	65	15	15	0	cola	66	1	1	0	0	-	-	-	-	-	-	136
+P-con-pequena-sonda	56	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	176
+A-con-grande	57	con	sinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	57	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+C-con-grande-bloqueante	57	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	57	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	1	54024	336288	337093	no pedido	281
+E-con-asincrona	57	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+F-con-pequena	57	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	176
+G-con-rojo-en-la-cola	57	con	sinc	80	4	0	1	320	320	289	31	31	0	cola	292	4	4	1	0	-	-	-	-	-	-	289
+H-sin-rojo-en-la-cola	57	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	294
+I-cortado-en-el-40	57	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	57	con	sinc	80	1	0	0	80	80	68	12	12	0	cola	68	0	0	0	0	-	-	-	-	-	-	133
+K-sin-grande-sonda	57	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	57	con	sinc	80	4	0	0	320	320	215	105	105	0	cola	215	0	0	0	0	4	2	61864	97938	98204	no pedido	270
+M-con-dosis-relleno-050	57	con	sinc	80	4	0	0	320	320	243	77	77	0	cola	243	0	0	0	0	4	2	56143	117938	118210	no pedido	268
+N-con-dosis-relleno-150	57	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	2	59335	158338	158756	no pedido	277
+O-con-dosis-relleno-300	57	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	2	59275	218338	218906	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	57	con	sinc	80	1	0	1	80	80	78	2	2	0	cola	79	1	1	0	0	-	-	-	-	-	-	137
+P-con-pequena-sonda	57	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	175
+A-con-grande	58	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	284
+B-sin-grande	58	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	298
+C-con-grande-bloqueante	58	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	286
+D-con-grande-sonda	58	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	3	44801	336288	337166	no pedido	282
+E-con-asincrona	58	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	58	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	58	con	sinc	80	4	0	1	320	320	303	17	17	0	cola	306	4	4	1	0	-	-	-	-	-	-	284
+H-sin-rojo-en-la-cola	58	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	294
+I-cortado-en-el-40	58	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	58	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	58	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	305
+L-con-dosis-relleno-000	58	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	1	45464	97938	98146	no pedido	281
+M-con-dosis-relleno-050	58	con	sinc	80	4	0	0	320	320	250	70	70	0	cola	250	0	0	0	0	4	2	64699	117938	118257	no pedido	271
+N-con-dosis-relleno-150	58	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	2	26917	158338	158771	no pedido	290
+O-con-dosis-relleno-300	58	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	2	18871	218338	218921	no pedido	273
+Q-con-rojo-en-la-cola-una-copia	58	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	58	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	174
+A-con-grande	59	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	-	-	-	-	-	-	287
+B-sin-grande	59	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	59	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	296
+D-con-grande-sonda	59	con	sinc	80	4	0	0	320	320	313	7	7	0	cola	313	0	0	0	0	4	1	25418	336288	337107	no pedido	295
+E-con-asincrona	59	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+F-con-pequena	59	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	191
+G-con-rojo-en-la-cola	59	con	sinc	80	4	0	1	320	320	309	11	11	0	cola	311	4	4	2	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	59	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	59	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	59	con	sinc	80	1	0	0	80	80	68	12	12	0	cola	68	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	59	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	308
+L-con-dosis-relleno-000	59	con	sinc	80	4	0	0	320	320	223	97	97	0	cola	223	0	0	0	0	4	2	55026	97938	98205	no pedido	281
+M-con-dosis-relleno-050	59	con	sinc	80	4	0	0	320	320	219	101	101	0	cola	219	0	0	0	0	4	3	64382	117938	118270	no pedido	263
+N-con-dosis-relleno-150	59	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	4	2	21723	158338	158712	no pedido	277
+O-con-dosis-relleno-300	59	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	2	60888	218338	218861	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	59	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	59	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	60	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	-	-	-	-	-	-	275
+B-sin-grande	60	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	60	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	287
+D-con-grande-sonda	60	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	3	43923	336288	337166	no pedido	284
+E-con-asincrona	60	con	asinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	60	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	60	con	sinc	80	4	0	1	320	320	292	28	28	0	cola	295	4	4	1	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	60	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	297
+I-cortado-en-el-40	60	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	60	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	60	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	299
+L-con-dosis-relleno-000	60	con	sinc	80	4	0	0	320	320	216	104	104	0	cola	216	0	0	0	0	4	2	55736	97938	98160	no pedido	266
+M-con-dosis-relleno-050	60	con	sinc	80	4	0	0	320	320	274	46	46	0	cola	274	0	0	0	0	4	2	48479	117938	118210	no pedido	283
+N-con-dosis-relleno-150	60	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	2	62856	158338	158698	no pedido	278
+O-con-dosis-relleno-300	60	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	4	1	19395	218338	218862	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	60	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	147
+P-con-pequena-sonda	60	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	187
+A-con-grande	61	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	61	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+C-con-grande-bloqueante	61	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	280
+D-con-grande-sonda	61	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	4	2	48987	336288	337107	no pedido	280
+E-con-asincrona	61	con	asinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	-	-	-	-	-	-	310
+F-con-pequena	61	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	61	con	sinc	80	4	0	1	320	320	319	1	1	0	cola	320	4	4	3	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	61	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	61	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	61	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	61	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	301
+L-con-dosis-relleno-000	61	con	sinc	80	4	0	0	320	320	138	182	182	0	cola	138	0	0	0	0	4	3	63330	97938	98218	no pedido	266
+M-con-dosis-relleno-050	61	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	31426	117938	118210	no pedido	280
+N-con-dosis-relleno-150	61	con	sinc	80	4	0	0	320	320	263	57	57	0	cola	263	0	0	0	0	4	2	58544	158338	158769	no pedido	273
+O-con-dosis-relleno-300	61	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	56003	218338	218921	no pedido	281
+Q-con-rojo-en-la-cola-una-copia	61	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	61	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	174
+A-con-grande	62	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	-	-	-	-	-	-	281
+B-sin-grande	62	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+C-con-grande-bloqueante	62	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	283
+D-con-grande-sonda	62	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	4	41434	335850	337166	no pedido	274
+E-con-asincrona	62	con	asinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	-	-	-	-	-	-	310
+F-con-pequena	62	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	62	con	sinc	80	4	0	1	320	320	293	27	27	0	cola	295	4	4	2	0	-	-	-	-	-	-	276
+H-sin-rojo-en-la-cola	62	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	312
+I-cortado-en-el-40	62	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	99
+J-con-grande-una-copia	62	con	sinc	80	1	0	0	80	80	68	12	12	0	cola	68	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	62	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	302
+L-con-dosis-relleno-000	62	con	sinc	80	4	0	0	320	320	230	90	90	0	cola	230	0	0	0	0	4	2	50629	97938	98218	no pedido	279
+M-con-dosis-relleno-050	62	con	sinc	80	4	0	0	320	320	283	37	37	0	cola	283	0	0	0	0	4	3	30566	117938	118255	no pedido	283
+N-con-dosis-relleno-150	62	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	34038	158338	158755	no pedido	288
+O-con-dosis-relleno-300	62	con	sinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	4	2	4086	218338	218862	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	62	con	sinc	80	1	0	1	80	80	72	8	8	0	cola	73	1	1	0	0	-	-	-	-	-	-	146
+P-con-pequena-sonda	62	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	63	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	-	-	-	-	-	-	277
+B-sin-grande	63	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	297
+C-con-grande-bloqueante	63	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	280
+D-con-grande-sonda	63	con	sinc	80	4	0	0	320	320	310	10	10	0	cola	310	0	0	0	0	4	2	22915	336288	337153	no pedido	283
+E-con-asincrona	63	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	325
+F-con-pequena	63	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	180
+G-con-rojo-en-la-cola	63	con	sinc	80	4	0	1	320	320	305	15	15	0	cola	306	4	4	3	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	63	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	307
+I-cortado-en-el-40	63	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	63	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	63	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	308
+L-con-dosis-relleno-000	63	con	sinc	80	4	0	0	320	320	214	106	106	0	cola	214	0	0	0	0	4	2	60399	97938	98218	no pedido	277
+M-con-dosis-relleno-050	63	con	sinc	80	4	0	0	320	320	221	99	99	0	cola	221	0	0	0	0	4	2	63780	117938	118268	no pedido	270
+N-con-dosis-relleno-150	63	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	3	55381	158338	158771	no pedido	277
+O-con-dosis-relleno-300	63	con	sinc	80	4	0	0	320	320	283	37	37	0	cola	283	0	0	0	0	4	3	51059	218337	218921	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	63	con	sinc	80	1	0	1	80	80	64	16	16	0	cola	65	1	1	0	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	63	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	174
+A-con-grande	64	con	sinc	80	4	0	0	320	320	279	41	41	0	cola	279	0	0	0	0	-	-	-	-	-	-	270
+B-sin-grande	64	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	283
+C-con-grande-bloqueante	64	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	287
+D-con-grande-sonda	64	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	1	64116	336288	337092	no pedido	281
+E-con-asincrona	64	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	310
+F-con-pequena	64	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	64	con	sinc	80	4	0	1	320	320	290	30	30	0	cola	292	4	4	2	0	-	-	-	-	-	-	289
+H-sin-rojo-en-la-cola	64	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	296
+I-cortado-en-el-40	64	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	64	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	64	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	64	con	sinc	80	4	0	0	320	320	251	69	69	0	cola	251	0	0	0	0	4	2	49164	97938	98205	no pedido	269
+M-con-dosis-relleno-050	64	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	8997	117938	118211	no pedido	277
+N-con-dosis-relleno-150	64	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	1	65241	158338	158711	no pedido	280
+O-con-dosis-relleno-300	64	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	2	58706	218338	218862	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	64	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	64	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	65	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	-	-	-	-	-	-	277
+B-sin-grande	65	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	291
+C-con-grande-bloqueante	65	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	296
+D-con-grande-sonda	65	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	2	63312	336288	337153	no pedido	280
+E-con-asincrona	65	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+F-con-pequena	65	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	65	con	sinc	80	4	0	1	320	320	299	21	21	0	cola	302	4	4	1	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	65	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	301
+I-cortado-en-el-40	65	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	65	con	sinc	80	1	0	0	80	80	73	7	7	0	cola	73	0	0	0	0	-	-	-	-	-	-	136
+K-sin-grande-sonda	65	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	309
+L-con-dosis-relleno-000	65	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	1	31311	97938	98160	no pedido	265
+M-con-dosis-relleno-050	65	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	3	29072	117938	118211	no pedido	270
+N-con-dosis-relleno-150	65	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	34039	158338	158756	no pedido	290
+O-con-dosis-relleno-300	65	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	4	3	58184	218338	218919	no pedido	281
+Q-con-rojo-en-la-cola-una-copia	65	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	65	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	66	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	-	-	-	-	-	-	294
+B-sin-grande	66	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	66	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	294
+D-con-grande-sonda	66	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	21232	336288	337166	no pedido	298
+E-con-asincrona	66	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+F-con-pequena	66	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	66	con	sinc	80	4	0	1	320	320	305	15	15	0	cola	308	4	4	1	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	66	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	308
+I-cortado-en-el-40	66	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	66	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	66	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	302
+L-con-dosis-relleno-000	66	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	4	2	25924	97938	98205	no pedido	282
+M-con-dosis-relleno-050	66	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	4	1	63780	117938	118196	no pedido	283
+N-con-dosis-relleno-150	66	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	34039	158338	158756	no pedido	278
+O-con-dosis-relleno-300	66	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	4	2	19395	218338	218921	no pedido	280
+Q-con-rojo-en-la-cola-una-copia	66	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	66	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	187
+A-con-grande	67	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	67	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	67	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	300
+D-con-grande-sonda	67	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	22916	336288	337153	no pedido	287
+E-con-asincrona	67	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+F-con-pequena	67	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	67	con	sinc	80	4	0	1	320	320	292	28	28	0	cola	295	4	4	1	0	-	-	-	-	-	-	279
+H-sin-rojo-en-la-cola	67	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	308
+I-cortado-en-el-40	67	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	67	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	143
+K-sin-grande-sonda	67	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	306
+L-con-dosis-relleno-000	67	con	sinc	80	4	0	0	320	320	264	56	56	0	cola	264	0	0	0	0	4	1	56003	97938	98205	no pedido	286
+M-con-dosis-relleno-050	67	con	sinc	80	4	0	0	320	320	236	84	84	0	cola	236	0	0	0	0	4	3	64699	117938	118255	no pedido	275
+N-con-dosis-relleno-150	67	con	sinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	4	1	7080	158338	158758	no pedido	287
+O-con-dosis-relleno-300	67	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	2	63069	218338	218906	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	67	con	sinc	80	1	0	1	80	80	78	2	2	0	cola	79	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	67	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	68	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	-	-	-	-	-	-	289
+B-sin-grande	68	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	68	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	286
+D-con-grande-sonda	68	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	3	40556	336288	337153	no pedido	279
+E-con-asincrona	68	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	313
+F-con-pequena	68	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	68	con	sinc	80	4	0	1	320	320	300	20	20	0	cola	302	4	4	2	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	68	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	68	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	110
+J-con-grande-una-copia	68	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	68	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	322
+L-con-dosis-relleno-000	68	con	sinc	80	4	0	0	320	320	229	91	91	0	cola	229	0	0	0	0	4	2	48675	97938	98218	no pedido	272
+M-con-dosis-relleno-050	68	con	sinc	80	4	0	0	320	320	256	64	64	0	cola	256	0	0	0	0	4	3	58225	117938	118270	no pedido	285
+N-con-dosis-relleno-150	68	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	158338	158338	no pedido	274
+O-con-dosis-relleno-300	68	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	2	58707	218338	218921	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	68	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	68	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	175
+A-con-grande	69	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	287
+B-sin-grande	69	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	288
+C-con-grande-bloqueante	69	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	284
+D-con-grande-sonda	69	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	3	59088	336288	337153	no pedido	288
+E-con-asincrona	69	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	305
+F-con-pequena	69	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	174
+G-con-rojo-en-la-cola	69	con	sinc	80	4	0	1	320	320	301	19	19	0	cola	303	4	4	2	0	-	-	-	-	-	-	280
+H-sin-rojo-en-la-cola	69	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	69	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	69	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	69	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	301
+L-con-dosis-relleno-000	69	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	4	1	34242	97938	98160	no pedido	273
+M-con-dosis-relleno-050	69	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	117938	117938	no pedido	286
+N-con-dosis-relleno-150	69	con	sinc	80	4	0	0	320	320	259	61	61	0	cola	259	0	0	0	0	4	3	56963	158338	158771	no pedido	282
+O-con-dosis-relleno-300	69	con	sinc	80	4	0	0	320	320	262	58	58	0	cola	262	0	0	0	0	4	3	60888	218338	218919	no pedido	288
+Q-con-rojo-en-la-cola-una-copia	69	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	69	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	185
+A-con-grande	70	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	70	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	70	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	277
+D-con-grande-sonda	70	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	3	38886	336288	337153	no pedido	292
+E-con-asincrona	70	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+F-con-pequena	70	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	190
+G-con-rojo-en-la-cola	70	con	sinc	80	4	0	1	320	320	308	12	12	0	cola	311	4	4	1	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	70	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	298
+I-cortado-en-el-40	70	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	70	con	sinc	80	1	0	0	80	80	76	4	4	0	cola	76	0	0	0	0	-	-	-	-	-	-	134
+K-sin-grande-sonda	70	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	70	con	sinc	80	4	0	0	320	320	254	66	66	0	cola	254	0	0	0	0	4	2	65004	97938	98207	no pedido	277
+M-con-dosis-relleno-050	70	con	sinc	80	4	0	0	320	320	221	99	99	0	cola	221	0	0	0	0	4	2	62345	117938	118255	no pedido	275
+N-con-dosis-relleno-150	70	con	sinc	80	4	0	0	320	320	274	46	46	0	cola	274	0	0	0	0	4	2	63659	158338	158712	no pedido	271
+O-con-dosis-relleno-300	70	con	sinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	4	2	12309	218337	218920	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	70	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	70	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	175
+A-con-grande	71	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	276
+B-sin-grande	71	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	295
+C-con-grande-bloqueante	71	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	71	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	3	56586	336288	337153	no pedido	284
+E-con-asincrona	71	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	297
+F-con-pequena	71	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	71	con	sinc	80	4	0	1	320	320	298	22	22	0	cola	300	4	4	2	0	-	-	-	-	-	-	283
+H-sin-rojo-en-la-cola	71	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	297
+I-cortado-en-el-40	71	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	100
+J-con-grande-una-copia	71	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	135
+K-sin-grande-sonda	71	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	301
+L-con-dosis-relleno-000	71	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	34997	97938	98218	no pedido	285
+M-con-dosis-relleno-050	71	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	2	32001	117938	118211	no pedido	275
+N-con-dosis-relleno-150	71	con	sinc	80	4	0	0	320	320	287	33	33	0	cola	287	0	0	0	0	4	3	34039	158338	158771	no pedido	291
+O-con-dosis-relleno-300	71	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	13404	218338	218908	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	71	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	138
+P-con-pequena-sonda	71	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	72	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	-	-	-	-	-	-	278
+B-sin-grande	72	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	72	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	284
+D-con-grande-sonda	72	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	3	54902	336288	337166	no pedido	278
+E-con-asincrona	72	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+F-con-pequena	72	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	72	con	sinc	80	4	0	1	320	320	301	19	19	0	cola	303	4	4	2	0	-	-	-	-	-	-	302
+H-sin-rojo-en-la-cola	72	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	312
+I-cortado-en-el-40	72	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	101
+J-con-grande-una-copia	72	con	sinc	80	1	0	0	80	80	72	8	8	0	cola	72	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	72	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	306
+L-con-dosis-relleno-000	72	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	4	1	15156	97938	98147	no pedido	282
+M-con-dosis-relleno-050	72	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	3	34355	117938	118211	no pedido	278
+N-con-dosis-relleno-150	72	con	sinc	80	4	0	0	320	320	233	87	87	0	cola	233	0	0	0	0	4	3	58917	158338	158756	no pedido	280
+O-con-dosis-relleno-300	72	con	sinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	4	1	3562	218338	218921	no pedido	298
+Q-con-rojo-en-la-cola-una-copia	72	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	72	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	178
+A-con-grande	73	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+B-sin-grande	73	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+C-con-grande-bloqueante	73	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	294
+D-con-grande-sonda	73	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	3	64992	336288	337164	no pedido	288
+E-con-asincrona	73	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	324
+F-con-pequena	73	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	73	con	sinc	80	4	0	1	320	320	309	11	11	0	cola	311	4	4	2	0	-	-	-	-	-	-	300
+H-sin-rojo-en-la-cola	73	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	73	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	73	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	73	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	315
+L-con-dosis-relleno-000	73	con	sinc	80	4	0	0	320	320	206	114	114	0	cola	206	0	0	0	0	4	2	65284	97938	98218	no pedido	278
+M-con-dosis-relleno-050	73	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	8997	117938	118211	no pedido	290
+N-con-dosis-relleno-150	73	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	2	34039	158338	158756	no pedido	290
+O-con-dosis-relleno-300	73	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	4	3	18288	218338	218921	no pedido	292
+Q-con-rojo-en-la-cola-una-copia	73	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	139
+P-con-pequena-sonda	73	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	74	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	74	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	74	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	74	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	4	1	38886	336288	337107	no pedido	286
+E-con-asincrona	74	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	74	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	74	con	sinc	80	4	0	1	320	320	311	9	9	0	cola	313	4	4	2	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	74	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	295
+I-cortado-en-el-40	74	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	74	con	sinc	80	1	0	0	80	80	67	13	13	0	cola	67	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	74	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	301
+L-con-dosis-relleno-000	74	con	sinc	80	4	0	0	320	320	275	45	45	0	cola	275	0	0	0	0	4	2	30809	97938	98207	no pedido	278
+M-con-dosis-relleno-050	74	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	1	51163	117938	118268	no pedido	297
+N-con-dosis-relleno-150	74	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	3	39945	158338	158756	no pedido	280
+O-con-dosis-relleno-300	74	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	2	29223	218338	218862	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	74	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	74	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	172
+A-con-grande	75	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	-	-	-	-	-	-	280
+B-sin-grande	75	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	75	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	291
+D-con-grande-sonda	75	con	sinc	80	4	0	0	320	320	290	30	30	0	cola	290	0	0	0	0	4	3	59951	336288	337151	no pedido	296
+E-con-asincrona	75	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	322
+F-con-pequena	75	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	75	con	sinc	80	4	0	1	320	320	294	26	26	0	cola	296	4	4	2	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	75	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	75	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	75	con	sinc	80	1	0	0	80	80	66	14	14	0	cola	66	0	0	0	0	-	-	-	-	-	-	143
+K-sin-grande-sonda	75	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	298
+L-con-dosis-relleno-000	75	con	sinc	80	4	0	0	320	320	233	87	87	0	cola	233	0	0	0	0	4	2	53782	97938	98160	no pedido	276
+M-con-dosis-relleno-050	75	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	3	34355	117938	118210	no pedido	276
+N-con-dosis-relleno-150	75	con	sinc	80	4	0	0	320	320	262	58	58	0	cola	262	0	0	0	0	4	3	37201	158337	158758	no pedido	290
+O-con-dosis-relleno-300	75	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	2	40155	218338	218848	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	75	con	sinc	80	1	0	1	80	80	77	3	3	0	cola	78	1	1	0	0	-	-	-	-	-	-	140
+P-con-pequena-sonda	75	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	189
+A-con-grande	76	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	76	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	76	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	76	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	3	27088	336288	337153	no pedido	286
+E-con-asincrona	76	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+F-con-pequena	76	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	76	con	sinc	80	4	0	1	320	320	287	33	33	0	cola	290	4	4	1	0	-	-	-	-	-	-	302
+H-sin-rojo-en-la-cola	76	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	76	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	76	con	sinc	80	1	0	0	80	80	77	3	3	0	cola	77	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	76	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	312
+L-con-dosis-relleno-000	76	con	sinc	80	4	0	0	320	320	209	111	111	0	cola	209	0	0	0	0	4	2	59422	97938	98218	no pedido	270
+M-con-dosis-relleno-050	76	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	1	61756	117938	118268	no pedido	277
+N-con-dosis-relleno-150	76	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	3	34039	158337	158756	no pedido	290
+O-con-dosis-relleno-300	76	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	2	60363	218337	218917	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	76	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	76	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	77	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	-	-	-	-	-	-	285
+B-sin-grande	77	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	293
+C-con-grande-bloqueante	77	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	303
+D-con-grande-sonda	77	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	3	22916	336288	337166	no pedido	291
+E-con-asincrona	77	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	77	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	77	con	sinc	80	4	0	1	320	320	299	21	21	0	cola	301	4	4	2	0	-	-	-	-	-	-	378
+H-sin-rojo-en-la-cola	77	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	303
+I-cortado-en-el-40	77	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	77	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	77	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	313
+L-con-dosis-relleno-000	77	con	sinc	80	4	0	0	320	320	245	75	75	0	cola	245	0	0	0	0	4	3	43510	97938	98217	no pedido	293
+M-con-dosis-relleno-050	77	con	sinc	80	4	0	0	320	320	276	44	44	0	cola	276	0	0	0	0	4	3	37886	117938	118257	no pedido	290
+N-con-dosis-relleno-150	77	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	2	20943	158338	158771	no pedido	294
+O-con-dosis-relleno-300	77	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	1	59784	218338	218847	no pedido	293
+Q-con-rojo-en-la-cola-una-copia	77	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	77	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	189
+A-con-grande	78	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	-	-	-	-	-	-	279
+B-sin-grande	78	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	78	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	291
+D-con-grande-sonda	78	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	3	46485	336288	337153	no pedido	293
+E-con-asincrona	78	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+F-con-pequena	78	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	187
+G-con-rojo-en-la-cola	78	con	sinc	80	4	0	1	320	320	306	14	14	0	cola	308	4	4	2	0	-	-	-	-	-	-	289
+H-sin-rojo-en-la-cola	78	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	319
+I-cortado-en-el-40	78	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	78	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	78	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	311
+L-con-dosis-relleno-000	78	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	1	51606	97938	98218	no pedido	282
+M-con-dosis-relleno-050	78	con	sinc	80	4	0	0	320	320	261	59	59	0	cola	261	0	0	0	0	4	3	36451	117938	118270	no pedido	281
+N-con-dosis-relleno-150	78	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	3	14221	158338	158771	no pedido	289
+O-con-dosis-relleno-300	78	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	1	54913	218338	218906	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	78	con	sinc	80	1	0	1	80	80	78	2	2	0	cola	79	1	1	0	0	-	-	-	-	-	-	146
+P-con-pequena-sonda	78	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	79	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	-	-	-	-	-	-	277
+B-sin-grande	79	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+C-con-grande-bloqueante	79	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	300
+D-con-grande-sonda	79	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	3	49852	336288	337153	no pedido	282
+E-con-asincrona	79	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+F-con-pequena	79	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	180
+G-con-rojo-en-la-cola	79	con	sinc	80	4	0	1	320	320	312	8	8	0	cola	313	4	4	3	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	79	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	79	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	110
+J-con-grande-una-copia	79	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	145
+K-sin-grande-sonda	79	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	314
+L-con-dosis-relleno-000	79	con	sinc	80	4	0	0	320	320	197	123	123	0	cola	197	0	0	0	0	4	3	46233	97938	98205	no pedido	272
+M-con-dosis-relleno-050	79	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	8724	117938	118270	no pedido	295
+N-con-dosis-relleno-150	79	con	sinc	80	4	0	0	320	320	248	72	72	0	cola	248	0	0	0	0	4	3	49058	158338	158769	no pedido	285
+O-con-dosis-relleno-300	79	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	1	64727	218338	218919	no pedido	293
+Q-con-rojo-en-la-cola-una-copia	79	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	79	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	80	con	sinc	80	4	0	0	320	320	306	14	14	0	cola	306	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	80	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	298
+C-con-grande-bloqueante	80	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	300
+D-con-grande-sonda	80	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	3	43923	336288	337153	no pedido	287
+E-con-asincrona	80	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	80	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	80	con	sinc	80	4	0	1	320	320	296	24	24	0	cola	300	4	4	0	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	80	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	80	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	80	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	80	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	302
+L-con-dosis-relleno-000	80	con	sinc	80	4	0	0	320	320	261	59	59	0	cola	261	0	0	0	0	4	1	59142	97938	98146	no pedido	292
+M-con-dosis-relleno-050	80	con	sinc	80	4	0	0	320	320	250	70	70	0	cola	250	0	0	0	0	4	3	42924	117938	118268	no pedido	283
+N-con-dosis-relleno-150	80	con	sinc	80	4	0	0	320	320	261	59	59	0	cola	261	0	0	0	0	4	2	60916	158338	158756	no pedido	289
+O-con-dosis-relleno-300	80	con	sinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	4	1	4086	218338	218862	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	80	con	sinc	80	1	0	1	80	80	62	18	18	0	cola	63	1	1	0	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	80	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	191
+A-con-grande	81	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	-	-	-	-	-	-	276
+B-sin-grande	81	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	315
+C-con-grande-bloqueante	81	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	305
+D-con-grande-sonda	81	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	3	22915	336288	337166	no pedido	294
+E-con-asincrona	81	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	325
+F-con-pequena	81	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	81	con	sinc	80	4	0	1	320	320	310	10	10	0	cola	313	4	4	1	0	-	-	-	-	-	-	292
+H-sin-rojo-en-la-cola	81	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	305
+I-cortado-en-el-40	81	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	81	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	143
+K-sin-grande-sonda	81	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	296
+L-con-dosis-relleno-000	81	con	sinc	80	4	0	0	320	320	149	171	171	0	cola	149	0	0	0	0	4	3	65284	97938	98218	no pedido	278
+M-con-dosis-relleno-050	81	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	8997	117938	118211	no pedido	291
+N-con-dosis-relleno-150	81	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	3	35202	158338	158756	no pedido	292
+O-con-dosis-relleno-300	81	con	sinc	80	4	0	0	320	320	304	16	16	0	cola	304	0	0	0	0	4	2	22152	218338	218908	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	81	con	sinc	80	1	0	1	80	80	64	16	16	0	cola	65	1	1	0	0	-	-	-	-	-	-	146
+P-con-pequena-sonda	81	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	187
+A-con-grande	82	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	285
+B-sin-grande	82	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	300
+C-con-grande-bloqueante	82	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	82	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	4	3	60755	336288	337107	no pedido	294
+E-con-asincrona	82	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	312
+F-con-pequena	82	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	82	con	sinc	80	4	0	1	320	320	272	48	48	0	cola	275	4	4	1	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	82	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	82	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	109
+J-con-grande-una-copia	82	con	sinc	80	1	0	0	80	80	66	14	14	0	cola	66	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	82	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	313
+L-con-dosis-relleno-000	82	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	1	62841	97938	98204	no pedido	287
+M-con-dosis-relleno-050	82	con	sinc	80	4	0	0	320	320	220	100	100	0	cola	220	0	0	0	0	4	2	62933	117938	118268	no pedido	282
+N-con-dosis-relleno-150	82	con	sinc	80	4	0	0	320	320	262	58	58	0	cola	262	0	0	0	0	4	2	59335	158338	158756	no pedido	285
+O-con-dosis-relleno-300	82	con	sinc	80	4	0	0	320	320	286	34	34	0	cola	286	0	0	0	0	4	3	45097	218338	218918	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	82	con	sinc	80	1	0	1	80	80	75	5	5	0	cola	76	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	82	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	83	con	sinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	83	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	296
+C-con-grande-bloqueante	83	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	280
+D-con-grande-sonda	83	con	sinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	4	2	6886	336288	337153	no pedido	293
+E-con-asincrona	83	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+F-con-pequena	83	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	83	con	sinc	80	4	0	1	320	320	296	24	24	0	cola	300	4	4	0	0	-	-	-	-	-	-	299
+H-sin-rojo-en-la-cola	83	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	308
+I-cortado-en-el-40	83	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	83	con	sinc	80	1	0	0	80	80	76	4	4	0	cola	76	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	83	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	310
+L-con-dosis-relleno-000	83	con	sinc	80	4	0	0	320	320	248	72	72	0	cola	248	0	0	0	0	4	2	37440	97938	98205	no pedido	280
+M-con-dosis-relleno-050	83	con	sinc	80	4	0	0	320	320	252	68	68	0	cola	252	0	0	0	0	4	3	63780	117938	118257	no pedido	274
+N-con-dosis-relleno-150	83	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	2	34039	158338	158771	no pedido	285
+O-con-dosis-relleno-300	83	con	sinc	80	4	0	0	320	320	317	3	3	0	cola	317	0	0	0	0	4	1	6843	218338	218908	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	83	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	147
+P-con-pequena-sonda	83	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	196
+A-con-grande	84	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	-	-	-	-	-	-	292
+B-sin-grande	84	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+C-con-grande-bloqueante	84	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	84	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	4	50657	331072	337166	no pedido	286
+E-con-asincrona	84	con	asinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	-	-	-	-	-	-	320
+F-con-pequena	84	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	84	con	sinc	80	4	0	1	320	320	313	7	7	0	cola	315	4	4	2	0	-	-	-	-	-	-	276
+H-sin-rojo-en-la-cola	84	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	309
+I-cortado-en-el-40	84	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	84	con	sinc	80	1	0	0	80	80	74	6	6	0	cola	74	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	84	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	308
+L-con-dosis-relleno-000	84	con	sinc	80	4	0	0	320	320	202	118	118	0	cola	202	0	0	0	0	4	2	59142	97938	98205	no pedido	286
+M-con-dosis-relleno-050	84	con	sinc	80	4	0	0	320	320	185	135	135	0	cola	185	0	0	0	0	4	3	60851	117938	118255	no pedido	273
+N-con-dosis-relleno-150	84	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	2	51012	158338	158711	no pedido	286
+O-con-dosis-relleno-300	84	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	1	57094	218338	218906	no pedido	285
+Q-con-rojo-en-la-cola-una-copia	84	con	sinc	80	1	0	1	80	80	66	14	14	0	cola	67	1	1	0	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	84	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	85	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	-	-	-	-	-	-	288
+B-sin-grande	85	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	303
+C-con-grande-bloqueante	85	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	85	con	sinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	4	1	3519	336288	337093	no pedido	282
+E-con-asincrona	85	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	321
+F-con-pequena	85	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	85	con	sinc	80	4	0	1	320	320	291	29	29	0	cola	294	4	4	1	0	-	-	-	-	-	-	282
+H-sin-rojo-en-la-cola	85	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	300
+I-cortado-en-el-40	85	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	85	con	sinc	80	1	0	0	80	80	77	3	3	0	cola	77	0	0	0	0	-	-	-	-	-	-	140
+K-sin-grande-sonda	85	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	85	con	sinc	80	4	0	0	320	320	279	41	41	0	cola	279	0	0	0	0	4	1	41836	97938	98218	no pedido	283
+M-con-dosis-relleno-050	85	con	sinc	80	4	0	0	320	320	265	55	55	0	cola	265	0	0	0	0	4	3	58814	117938	118255	no pedido	279
+N-con-dosis-relleno-150	85	con	sinc	80	4	0	0	320	320	228	92	92	0	cola	228	0	0	0	0	4	3	59335	158338	158756	no pedido	287
+O-con-dosis-relleno-300	85	con	sinc	80	4	0	0	320	320	268	52	52	0	cola	268	0	0	0	0	4	3	54913	218338	218921	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	85	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	144
+P-con-pequena-sonda	85	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	86	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	-	-	-	-	-	-	268
+B-sin-grande	86	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	86	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	86	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	22051	336288	337107	no pedido	300
+E-con-asincrona	86	con	asinc	80	4	0	0	320	320	316	4	4	0	cola	316	0	0	0	0	-	-	-	-	-	-	306
+F-con-pequena	86	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	86	con	sinc	80	4	0	1	320	320	294	26	26	0	cola	296	4	4	2	0	-	-	-	-	-	-	278
+H-sin-rojo-en-la-cola	86	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	303
+I-cortado-en-el-40	86	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	86	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	146
+K-sin-grande-sonda	86	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	304
+L-con-dosis-relleno-000	86	con	sinc	80	4	0	0	320	320	282	38	38	0	cola	282	0	0	0	0	4	1	39127	97938	98160	no pedido	277
+M-con-dosis-relleno-050	86	con	sinc	80	4	0	0	320	320	229	91	91	0	cola	229	0	0	0	0	4	3	62345	117938	118255	no pedido	279
+N-con-dosis-relleno-150	86	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	3	64437	158338	158697	no pedido	282
+O-con-dosis-relleno-300	86	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	218338	218338	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	86	con	sinc	80	1	0	1	80	80	79	1	1	0	cola	80	1	1	0	0	-	-	-	-	-	-	147
+P-con-pequena-sonda	86	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	184
+A-con-grande	87	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	299
+B-sin-grande	87	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	87	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	293
+D-con-grande-sonda	87	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	2	49852	336288	337153	no pedido	291
+E-con-asincrona	87	con	asinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	87	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	87	con	sinc	80	4	0	1	320	320	310	10	10	0	cola	311	4	4	3	0	-	-	-	-	-	-	295
+H-sin-rojo-en-la-cola	87	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	299
+I-cortado-en-el-40	87	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	87	con	sinc	80	1	0	0	80	80	72	8	8	0	cola	72	0	0	0	0	-	-	-	-	-	-	146
+K-sin-grande-sonda	87	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	320
+L-con-dosis-relleno-000	87	con	sinc	80	4	0	0	320	320	244	76	76	0	cola	244	0	0	0	0	4	3	44012	97938	98218	no pedido	278
+M-con-dosis-relleno-050	87	con	sinc	80	4	0	0	320	320	266	54	54	0	cola	266	0	0	0	0	4	1	65287	117938	118268	no pedido	296
+N-con-dosis-relleno-150	87	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	2	53011	158338	158771	no pedido	287
+O-con-dosis-relleno-300	87	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1188	218338	218521	no pedido	293
+Q-con-rojo-en-la-cola-una-copia	87	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	87	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	192
+A-con-grande	88	con	sinc	80	4	0	0	320	320	319	1	1	0	cola	319	0	0	0	0	-	-	-	-	-	-	291
+B-sin-grande	88	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	88	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	292
+D-con-grande-sonda	88	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	2	36384	336288	337153	no pedido	290
+E-con-asincrona	88	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	88	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	88	con	sinc	80	4	0	1	320	320	301	19	19	0	cola	303	4	4	2	0	-	-	-	-	-	-	293
+H-sin-rojo-en-la-cola	88	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	308
+I-cortado-en-el-40	88	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	88	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	147
+K-sin-grande-sonda	88	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	303
+L-con-dosis-relleno-000	88	con	sinc	80	4	0	0	320	320	282	38	38	0	cola	282	0	0	0	0	4	1	38625	97938	98146	no pedido	284
+M-con-dosis-relleno-050	88	con	sinc	80	4	0	0	320	320	250	70	70	0	cola	250	0	0	0	0	4	3	62345	117938	118255	no pedido	277
+N-con-dosis-relleno-150	88	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	2	33621	158338	158711	no pedido	294
+O-con-dosis-relleno-300	88	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	2	34180	218338	218921	no pedido	275
+Q-con-rojo-en-la-cola-una-copia	88	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	88	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
+A-con-grande	89	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	-	-	-	-	-	-	292
+B-sin-grande	89	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	315
+C-con-grande-bloqueante	89	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	89	con	sinc	80	4	0	0	320	320	318	2	2	0	cola	318	0	0	0	0	4	1	6081	336288	337153	no pedido	304
+E-con-asincrona	89	con	asinc	80	4	0	0	320	320	315	5	5	0	cola	315	0	0	0	0	-	-	-	-	-	-	306
+F-con-pequena	89	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	185
+G-con-rojo-en-la-cola	89	con	sinc	80	4	0	1	320	320	290	30	30	0	cola	292	4	4	2	0	-	-	-	-	-	-	296
+H-sin-rojo-en-la-cola	89	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	311
+I-cortado-en-el-40	89	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	89	con	sinc	80	1	0	0	80	80	69	11	11	0	cola	69	0	0	0	0	-	-	-	-	-	-	146
+K-sin-grande-sonda	89	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	311
+L-con-dosis-relleno-000	89	con	sinc	80	4	0	0	320	320	205	115	115	0	cola	205	0	0	0	0	4	3	49874	97938	98160	no pedido	276
+M-con-dosis-relleno-050	89	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	3	22327	117938	118257	no pedido	298
+N-con-dosis-relleno-150	89	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	4	2	20136	158338	158698	no pedido	279
+O-con-dosis-relleno-300	89	con	sinc	80	4	0	0	320	320	302	18	18	0	cola	302	0	0	0	0	4	1	40736	218338	218919	no pedido	284
+Q-con-rojo-en-la-cola-una-copia	89	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	89	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	90	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	-	-	-	-	-	-	286
+B-sin-grande	90	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	310
+C-con-grande-bloqueante	90	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	296
+D-con-grande-sonda	90	con	sinc	80	4	0	0	320	320	296	24	24	0	cola	296	0	0	0	0	4	4	47290	335850	337153	no pedido	282
+E-con-asincrona	90	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	90	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	90	con	sinc	80	4	0	1	320	320	303	17	17	0	cola	306	4	4	1	0	-	-	-	-	-	-	297
+H-sin-rojo-en-la-cola	90	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	310
+I-cortado-en-el-40	90	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	103
+J-con-grande-una-copia	90	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	90	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	304
+L-con-dosis-relleno-000	90	con	sinc	80	4	0	0	320	320	269	51	51	0	cola	269	0	0	0	0	4	1	51828	97938	98160	no pedido	274
+M-con-dosis-relleno-050	90	con	sinc	80	4	0	0	320	320	228	92	92	0	cola	228	0	0	0	0	4	2	63521	117938	118268	no pedido	276
+N-con-dosis-relleno-150	90	con	sinc	80	4	0	0	320	320	281	39	39	0	cola	281	0	0	0	0	4	2	35620	158338	158771	no pedido	290
+O-con-dosis-relleno-300	90	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1898	218338	218494	no pedido	301
+Q-con-rojo-en-la-cola-una-copia	90	con	sinc	80	1	0	1	80	80	62	18	18	0	cola	63	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	90	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	91	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	-	-	-	-	-	-	296
+B-sin-grande	91	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+C-con-grande-bloqueante	91	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	91	con	sinc	80	4	0	0	320	320	305	15	15	0	cola	305	0	0	0	0	4	3	33016	336288	337166	no pedido	293
+E-con-asincrona	91	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	313
+F-con-pequena	91	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	91	con	sinc	80	4	0	1	320	320	319	1	1	0	cola	320	4	4	3	0	-	-	-	-	-	-	288
+H-sin-rojo-en-la-cola	91	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	315
+I-cortado-en-el-40	91	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	91	con	sinc	80	1	0	0	80	80	77	3	3	0	cola	77	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	91	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	308
+L-con-dosis-relleno-000	91	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	4	1	53280	97938	98146	no pedido	286
+M-con-dosis-relleno-050	91	con	sinc	80	4	0	0	320	320	276	44	44	0	cola	276	0	0	0	0	4	3	39665	117938	118211	no pedido	291
+N-con-dosis-relleno-150	91	con	sinc	80	4	0	0	320	320	256	64	64	0	cola	256	0	0	0	0	4	3	55755	158338	158758	no pedido	296
+O-con-dosis-relleno-300	91	con	sinc	80	4	0	0	320	320	294	26	26	0	cola	294	0	0	0	0	4	1	57094	218338	218906	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	91	con	sinc	80	1	0	1	80	80	66	14	14	0	cola	67	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	91	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	192
+A-con-grande	92	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	92	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	299
+C-con-grande-bloqueante	92	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	92	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	3	49852	336288	337166	no pedido	299
+E-con-asincrona	92	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	313
+F-con-pequena	92	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	177
+G-con-rojo-en-la-cola	92	con	sinc	80	4	0	1	320	320	286	34	34	0	cola	289	4	4	1	0	-	-	-	-	-	-	281
+H-sin-rojo-en-la-cola	92	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	312
+I-cortado-en-el-40	92	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	102
+J-con-grande-una-copia	92	con	sinc	80	1	0	0	80	80	78	2	2	0	cola	78	0	0	0	0	-	-	-	-	-	-	142
+K-sin-grande-sonda	92	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	313
+L-con-dosis-relleno-000	92	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	1	43510	97938	98146	no pedido	279
+M-con-dosis-relleno-050	92	con	sinc	80	4	0	0	320	320	261	59	59	0	cola	261	0	0	0	0	4	2	59674	117937	118257	no pedido	288
+N-con-dosis-relleno-150	92	con	sinc	80	4	0	0	320	320	285	35	35	0	cola	285	0	0	0	0	4	3	34039	158338	158758	no pedido	291
+O-con-dosis-relleno-300	92	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	4	2	18871	218338	218921	no pedido	289
+Q-con-rojo-en-la-cola-una-copia	92	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	92	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	192
+A-con-grande	93	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	286
+B-sin-grande	93	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+C-con-grande-bloqueante	93	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	301
+D-con-grande-sonda	93	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	3	59088	336288	337153	no pedido	287
+E-con-asincrona	93	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	311
+F-con-pequena	93	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	183
+G-con-rojo-en-la-cola	93	con	sinc	80	4	0	1	320	320	292	28	28	0	cola	295	4	4	1	0	-	-	-	-	-	-	286
+H-sin-rojo-en-la-cola	93	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	313
+I-cortado-en-el-40	93	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	93	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	137
+K-sin-grande-sonda	93	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	303
+L-con-dosis-relleno-000	93	con	sinc	80	4	0	0	320	320	208	112	112	0	cola	208	0	0	0	0	4	2	58934	97938	98205	no pedido	282
+M-con-dosis-relleno-050	93	con	sinc	80	4	0	0	320	320	249	71	71	0	cola	249	0	0	0	0	4	3	52340	117938	118268	no pedido	280
+N-con-dosis-relleno-150	93	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	2	33621	158338	158769	no pedido	295
+O-con-dosis-relleno-300	93	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	4	2	34180	218338	218921	no pedido	287
+Q-con-rojo-en-la-cola-una-copia	93	con	sinc	80	1	0	1	80	80	63	17	17	0	cola	64	1	1	0	0	-	-	-	-	-	-	146
+P-con-pequena-sonda	93	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	94	con	sinc	80	4	0	0	320	320	267	53	53	0	cola	267	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	94	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	302
+C-con-grande-bloqueante	94	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	301
+D-con-grande-sonda	94	con	sinc	80	4	0	0	320	320	293	27	27	0	cola	293	0	0	0	0	4	3	44801	336288	337166	no pedido	290
+E-con-asincrona	94	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	309
+F-con-pequena	94	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	179
+G-con-rojo-en-la-cola	94	con	sinc	80	4	0	1	320	320	291	29	29	0	cola	294	4	4	1	0	-	-	-	-	-	-	277
+H-sin-rojo-en-la-cola	94	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	315
+I-cortado-en-el-40	94	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	111
+J-con-grande-una-copia	94	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	144
+K-sin-grande-sonda	94	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	310
+L-con-dosis-relleno-000	94	con	sinc	80	4	0	0	320	320	279	41	41	0	cola	279	0	0	0	0	4	2	29357	97938	98160	no pedido	283
+M-con-dosis-relleno-050	94	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	3	56718	117938	118257	no pedido	286
+N-con-dosis-relleno-150	94	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	4	2	34039	158338	158756	no pedido	290
+O-con-dosis-relleno-300	94	con	sinc	80	4	0	0	320	320	300	20	20	0	cola	300	0	0	0	0	4	1	45098	218338	218919	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	94	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	94	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	95	con	sinc	80	4	0	0	320	320	309	11	11	0	cola	309	0	0	0	0	-	-	-	-	-	-	290
+B-sin-grande	95	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+C-con-grande-bloqueante	95	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	95	con	sinc	80	4	0	0	320	320	288	32	32	0	cola	288	0	0	0	0	4	3	40556	336288	337166	no pedido	300
+E-con-asincrona	95	con	asinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	-	-	-	-	-	-	318
+F-con-pequena	95	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	178
+G-con-rojo-en-la-cola	95	con	sinc	80	4	0	1	320	320	309	11	11	0	cola	311	4	4	2	0	-	-	-	-	-	-	299
+H-sin-rojo-en-la-cola	95	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	313
+I-cortado-en-el-40	95	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	106
+J-con-grande-una-copia	95	con	sinc	80	1	0	0	80	80	63	17	17	0	cola	63	0	0	0	0	-	-	-	-	-	-	138
+K-sin-grande-sonda	95	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	309
+L-con-dosis-relleno-000	95	con	sinc	80	4	0	0	320	320	271	49	49	0	cola	271	0	0	0	0	4	1	49164	97938	98205	no pedido	287
+M-con-dosis-relleno-050	95	con	sinc	80	4	0	0	320	320	280	40	40	0	cola	280	0	0	0	0	4	3	39393	117938	118268	no pedido	295
+N-con-dosis-relleno-150	95	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	2	9834	158338	158712	no pedido	290
+O-con-dosis-relleno-300	95	con	sinc	80	4	0	0	320	320	291	29	29	0	cola	291	0	0	0	0	4	3	44517	218338	218921	no pedido	286
+Q-con-rojo-en-la-cola-una-copia	95	con	sinc	80	1	0	1	80	80	65	15	15	0	cola	66	1	1	0	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	95	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	186
+A-con-grande	96	con	sinc	80	4	0	0	320	320	284	36	36	0	cola	284	0	0	0	0	-	-	-	-	-	-	286
+B-sin-grande	96	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+C-con-grande-bloqueante	96	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	295
+D-con-grande-sonda	96	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	4	3	33017	336288	337166	no pedido	293
+E-con-asincrona	96	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	317
+F-con-pequena	96	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	185
+G-con-rojo-en-la-cola	96	con	sinc	80	4	0	1	320	320	300	20	20	0	cola	303	4	4	1	0	-	-	-	-	-	-	293
+H-sin-rojo-en-la-cola	96	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	319
+I-cortado-en-el-40	96	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	105
+J-con-grande-una-copia	96	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	143
+K-sin-grande-sonda	96	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	310
+L-con-dosis-relleno-000	96	con	sinc	80	4	0	0	320	320	254	66	66	0	cola	254	0	0	0	0	4	2	45464	97938	98218	no pedido	287
+M-con-dosis-relleno-050	96	con	sinc	80	4	0	0	320	320	314	6	6	0	cola	314	0	0	0	0	4	1	8724	117938	118270	no pedido	298
+N-con-dosis-relleno-150	96	con	sinc	80	4	0	0	320	320	260	60	60	0	cola	260	0	0	0	0	4	3	59335	158338	158756	no pedido	288
+O-con-dosis-relleno-300	96	con	sinc	80	4	0	0	320	320	272	48	48	0	cola	272	0	0	0	0	4	3	56526	218337	218861	no pedido	278
+Q-con-rojo-en-la-cola-una-copia	96	con	sinc	80	1	0	1	80	80	76	4	4	0	cola	77	1	1	0	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	96	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	97	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	295
+B-sin-grande	97	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+C-con-grande-bloqueante	97	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	284
+D-con-grande-sonda	97	con	sinc	80	4	0	0	320	320	311	9	9	0	cola	311	0	0	0	0	4	2	22916	336288	337153	no pedido	285
+E-con-asincrona	97	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	307
+F-con-pequena	97	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	184
+G-con-rojo-en-la-cola	97	con	sinc	80	4	0	1	320	320	318	2	2	0	cola	319	4	4	3	0	-	-	-	-	-	-	294
+H-sin-rojo-en-la-cola	97	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	304
+I-cortado-en-el-40	97	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	97	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	145
+K-sin-grande-sonda	97	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	296
+L-con-dosis-relleno-000	97	con	sinc	80	4	0	0	320	320	259	61	61	0	cola	259	0	0	0	0	4	3	49874	97938	98220	no pedido	276
+M-con-dosis-relleno-050	97	con	sinc	80	4	0	0	320	320	277	43	43	0	cola	277	0	0	0	0	4	2	37628	117938	118255	no pedido	290
+N-con-dosis-relleno-150	97	con	sinc	80	4	0	0	320	320	299	21	21	0	cola	299	0	0	0	0	4	1	34039	158338	158756	no pedido	286
+O-con-dosis-relleno-300	97	con	sinc	80	4	0	0	320	320	289	31	31	0	cola	289	0	0	0	0	4	2	48879	218338	218921	no pedido	293
+Q-con-rojo-en-la-cola-una-copia	97	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	145
+P-con-pequena-sonda	97	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	183
+A-con-grande	98	con	sinc	80	4	0	0	320	320	298	22	22	0	cola	298	0	0	0	0	-	-	-	-	-	-	283
+B-sin-grande	98	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	308
+C-con-grande-bloqueante	98	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	288
+D-con-grande-sonda	98	con	sinc	80	4	0	0	320	320	303	17	17	0	cola	303	0	0	0	0	4	2	51535	336288	337166	no pedido	308
+E-con-asincrona	98	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	314
+F-con-pequena	98	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	182
+G-con-rojo-en-la-cola	98	con	sinc	80	4	0	1	320	320	310	10	10	0	cola	312	4	4	2	0	-	-	-	-	-	-	287
+H-sin-rojo-en-la-cola	98	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	313
+I-cortado-en-el-40	98	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	111
+J-con-grande-una-copia	98	con	sinc	80	1	0	0	80	80	80	0	0	0	-	80	0	0	0	0	-	-	-	-	-	-	141
+K-sin-grande-sonda	98	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	307
+L-con-dosis-relleno-000	98	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	4	1	50141	97938	98205	no pedido	290
+M-con-dosis-relleno-050	98	con	sinc	80	4	0	0	320	320	260	60	60	0	cola	260	0	0	0	0	4	2	64699	117938	118255	no pedido	289
+N-con-dosis-relleno-150	98	con	sinc	80	4	0	0	320	320	278	42	42	0	cola	278	0	0	0	0	4	3	61275	158338	158771	no pedido	275
+O-con-dosis-relleno-300	98	con	sinc	80	4	0	0	320	320	297	23	23	0	cola	297	0	0	0	0	4	1	52164	218338	218861	no pedido	291
+Q-con-rojo-en-la-cola-una-copia	98	con	sinc	80	1	0	1	80	80	67	13	13	0	cola	68	1	1	0	0	-	-	-	-	-	-	142
+P-con-pequena-sonda	98	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	181
+A-con-grande	99	con	sinc	80	4	0	0	320	320	301	19	19	0	cola	301	0	0	0	0	-	-	-	-	-	-	272
+B-sin-grande	99	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	301
+C-con-grande-bloqueante	99	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	297
+D-con-grande-sonda	99	con	sinc	80	4	0	0	320	320	312	8	8	0	cola	312	0	0	0	0	4	2	20354	336288	337165	no pedido	284
+E-con-asincrona	99	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	304
+F-con-pequena	99	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	181
+G-con-rojo-en-la-cola	99	con	sinc	80	4	0	1	320	320	294	26	26	0	cola	297	4	4	1	0	-	-	-	-	-	-	301
+H-sin-rojo-en-la-cola	99	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	306
+I-cortado-en-el-40	99	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	107
+J-con-grande-una-copia	99	con	sinc	80	1	0	0	80	80	79	1	1	0	cola	79	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	99	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336288	336288	no pedido	299
+L-con-dosis-relleno-000	99	con	sinc	80	4	0	0	320	320	224	96	96	0	cola	224	0	0	0	0	4	2	56713	97938	98160	no pedido	278
+M-con-dosis-relleno-050	99	con	sinc	80	4	0	0	320	320	257	63	63	0	cola	257	0	0	0	0	4	2	52009	117938	118255	no pedido	280
+N-con-dosis-relleno-150	99	con	sinc	80	4	0	0	320	320	307	13	13	0	cola	307	0	0	0	0	4	2	19776	158338	158771	no pedido	298
+O-con-dosis-relleno-300	99	con	sinc	80	4	0	0	320	320	292	28	28	0	cola	292	0	0	0	0	4	1	61965	218338	218847	no pedido	282
+Q-con-rojo-en-la-cola-una-copia	99	con	sinc	80	1	0	1	80	80	71	9	9	0	cola	72	1	1	0	0	-	-	-	-	-	-	141
+P-con-pequena-sonda	99	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	189
+A-con-grande	100	con	sinc	80	4	0	0	320	320	295	25	25	0	cola	295	0	0	0	0	-	-	-	-	-	-	289
+B-sin-grande	100	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	306
+C-con-grande-bloqueante	100	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	338338	338338	puesto	301
+D-con-grande-sonda	100	con	sinc	80	4	0	0	320	320	313	7	7	0	cola	313	0	0	0	0	4	1	22916	336288	337153	no pedido	294
+E-con-asincrona	100	con	asinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	-	-	-	-	-	-	319
+F-con-pequena	100	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	-	-	-	-	-	-	186
+G-con-rojo-en-la-cola	100	con	sinc	80	4	0	1	320	320	313	7	7	0	cola	314	4	4	3	0	-	-	-	-	-	-	291
+H-sin-rojo-en-la-cola	100	sin	sinc	80	4	0	1	320	320	320	0	0	0	-	320	4	4	4	0	-	-	-	-	-	-	315
+I-cortado-en-el-40	100	sin	sinc	80	1	0	0	80	40	0	80	40	40	cola	1	0	0	0	0	-	-	-	-	-	-	104
+J-con-grande-una-copia	100	con	sinc	80	1	0	0	80	80	68	12	12	0	cola	68	0	0	0	0	-	-	-	-	-	-	139
+K-sin-grande-sonda	100	sin	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	0	0	336289	336289	no pedido	308
+L-con-dosis-relleno-000	100	con	sinc	80	4	0	0	320	320	270	50	50	0	cola	270	0	0	0	0	4	2	33532	97938	98205	no pedido	293
+M-con-dosis-relleno-050	100	con	sinc	80	4	0	0	320	320	223	97	97	0	cola	223	0	0	0	0	4	3	58225	117938	118268	no pedido	285
+N-con-dosis-relleno-150	100	con	sinc	80	4	0	0	320	320	308	12	12	0	cola	308	0	0	0	0	4	3	8667	158338	158770	no pedido	280
+O-con-dosis-relleno-300	100	con	sinc	80	4	0	0	320	320	320	0	0	0	-	320	0	0	0	0	4	1	1899	218338	218495	no pedido	283
+Q-con-rojo-en-la-cola-una-copia	100	con	sinc	80	1	0	1	80	80	80	0	0	0	-	80	1	1	1	0	-	-	-	-	-	-	143
+P-con-pequena-sonda	100	con	sinc	10	4	0	0	40	40	40	0	0	0	-	40	0	0	0	0	4	0	0	13645	13645	no pedido	182
