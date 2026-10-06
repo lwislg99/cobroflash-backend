@@ -75,3 +75,18 @@ punto, 4 de 4; con la del punto, 3 de 4.
   actualizado», «¿me lo reenvías?», y los dos sitios que deducen el género de cómo acaba la palabra
   (`qg` y `delDeLa`). Nombradas en el ticket, sin tocar: cada una pide su literal firmado por país y
   hoy no hay negocios fuera de España.
+
+## El rojo de CI sobre `7bbe2a227c0d8ecf845f53178690aa3d5e627545`, y su arreglo
+
+Sesión S1 (`s1-6octe`) · 2026-10-06T13:37:29Z (GitHub) · con `origin/main` =
+`fdac6867180adf6892fa3cb0f514ebbf69d04ab5` traído.
+
+`build + tests` salió ROJO: 10.590 tests, **1 fallo**, y era de este ticket. El trinquete de
+SCRUM-553 (`tests/scrum553-etiquetas-pegadas.test.mjs`) contó 21 extractores con el `>` pegado
+sobre un tope de 20; el que sobraba era el del test nuevo, que leía el título de la página con la
+etiqueta cerrada a ras. Se arregla **el test, no el tope**: el extractor deja el hueco de los
+atributos, como pide el propio mensaje del trinquete. Una línea; el código de la página no cambia.
+
+Por qué pasó: antes de empujar se corrieron los guards que censan la carpeta de tests que la sesión
+tenía apuntados (SCRUM-409 y SCRUM-709) y no éste, que también la censa entera. La trampa estaba
+escrita en el traspaso del puesto desde el 2-oct y no se releyó.

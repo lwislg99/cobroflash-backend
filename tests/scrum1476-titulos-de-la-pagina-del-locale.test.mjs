@@ -55,7 +55,7 @@ async function pestana(quote) {
   const manejador = capa.route.stack[capa.route.stack.length - 1].handle;
   try { await manejador({ params: { token: TOKEN }, query: {}, headers: {} }, res); }
   finally { prisma.quote.findUnique = original; }
-  const titulo = html.match(/<title>([^<]*)<\/title>/);
+  const titulo = html.match(/<title[^>]*>([^<]*)<\/title>/);
   assert.ok(titulo, '🔴 CIEGO: la página no trae <title>');
   return { titulo: titulo[1], html };
 }
