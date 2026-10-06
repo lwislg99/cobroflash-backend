@@ -1,0 +1,235 @@
+# ⛔ EXPERIMENTO DESECHABLE · SCRUM-1405 · ESTE FICHERO NO SE MERGEA NUNCA A `main`.
+#
+# Qué es: el workflow NUEVO Y APARTE que el fundador autorizó en SCRUM-1339 c.17951 («workflow aparte,
+# no toca el obligatorio»). Vive SÓLO en la rama `exp-1405-force-exit`, que no empieza por `scrum-`
+# (el bot no le abre PR) y no entra en `main`. Se dispara SÓLO con un push a esa rama: no es check de
+# ningún PR, no es requerido y no puede bloquear nada. Si lo encuentras en otra rama, sobra: bórralo.
+# No toca `ci.yml`, ni el script `test` de `package.json`, ni nada de `area-s5`.
+#
+# Qué pregunta: ¿`--test-force-exit` es la causa de los casos que la tanda pierde en verde?
+#   · cobaya  — un fichero generado, lanzado N veces con y sin el flag, con un TESTIGO dentro de cada
+#               caso (separa «no se ejecutó» de «se ejecutó y no informó»).
+#   · reales  — seis de los ficheros que pierden, a solas, sin tocarlos, con y sin el flag.
+#   · tanda   — la tanda ENTERA, con rojos sembrados en la copia del runner, en cinco brazos.
+#
+# Si una tanda sin el flag se cuelga, muere en el techo y ESO es el resultado: no se repite.
+# El repositorio es público y estos logs también: aquí no hay ni se imprime ningún secreto.
+name: exp-1405 · force-exit y los casos perdidos
+
+on:
+  push:
+    branches: [exp-1405-force-exit]
+
+permissions:
+  contents: read
+
+env:
+  E: docs/master/evidencias/SCRUM-1405
+
+jobs:
+  cobaya:
+    name: cobaya con testigo (N pasadas, con y sin el flag)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Qué máquina y qué node
+        run: |
+          node -v
+          echo "hilos: $(nproc)"
+          echo "tubería, tamaño máximo: $(cat /proc/sys/fs/pipe-max-size)"
+          node --no-deprecation "$E/codigo-de-node.mjs"
+      - name: Cobaya, sin carga
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga 0 > "$RUNNER_TEMP/salida-cobaya-carga0.txt" 2>&1
+      - name: Lo que dijo (sin carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-cobaya-carga0.txt"
+      - name: Cobaya, con un proceso de carga por hilo
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/cobaya" --pasadas 100 --carga "$(nproc)" > "$RUNNER_TEMP/salida-cobaya-cargaN.txt" 2>&1
+      - name: Lo que dijo (con carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-cobaya-cargaN.txt"
+      - name: Una fila de sonda de cada brazo, como muestra
+        if: always()
+        run: |
+          for d in C-con-grande-bloqueante D-con-grande-sonda K-sin-grande-sonda; do
+            echo "── $d"; find "$RUNNER_TEMP/cobaya/$d/sonda" -name '*.json' | head -n 2 | xargs -r cat
+          done
+      - name: Guardar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp1405-cobaya
+          path: |
+            ${{ runner.temp }}/salida-cobaya-*.txt
+            ${{ runner.temp }}/cobaya/*.tsv
+          retention-days: 7
+          if-no-files-found: warn
+
+  reales:
+    name: seis ficheros reales, a solas (con y sin el flag)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Traer `main`
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+      - name: Compilar (tsc)
+        run: npm run build
+      - name: A solas, sin carga
+        env:
+          REALES: tests/scrum834-puerta-avisador-rojo.test.mjs,tests/vigia-atascados.test.mjs,tests/scrum524b-trinquete-de-la-tabla.test.mjs,tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs,tests/scrum237-negacion-respaldada.test.mjs,tests/scrum1216b-numero-de-arranque.test.mjs
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 30 --solo NINGUNA --carga 0 --reales "$REALES" > "$RUNNER_TEMP/salida-reales-carga0.txt" 2>&1
+      - name: Lo que dijo (sin carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-reales-carga0.txt"
+      - name: A solas, con un proceso de carga por hilo
+        env:
+          REALES: tests/scrum834-puerta-avisador-rojo.test.mjs,tests/vigia-atascados.test.mjs,tests/scrum524b-trinquete-de-la-tabla.test.mjs,tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs,tests/scrum237-negacion-respaldada.test.mjs,tests/scrum1216b-numero-de-arranque.test.mjs
+        run: node "$E/cobaya.mjs" "$RUNNER_TEMP/reales" --pasadas 30 --solo NINGUNA --carga "$(nproc)" --reales "$REALES" > "$RUNNER_TEMP/salida-reales-cargaN.txt" 2>&1
+      - name: Lo que dijo (con carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-reales-cargaN.txt"
+      - name: Guardar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp1405-reales
+          path: |
+            ${{ runner.temp }}/salida-reales-*.txt
+            ${{ runner.temp }}/reales/*.tsv
+          retention-days: 7
+          if-no-files-found: warn
+
+  tanda:
+    name: tanda · ${{ matrix.celda }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      # Deja sitio en la cola a los CI de los dos equipos: un experimento no retrasa un PR.
+      max-parallel: 8
+      matrix:
+        celda: [con-01, con-02, con-03, con-04, con-05, con-06, con-07, con-08, con-09, con-10, con-11, con-12, con-13, con-14, con-15, con-16,
+                sin-01, sin-02, sin-03, sin-04, sin-05, sin-06, sin-07, sin-08, sin-09, sin-10, sin-11, sin-12, sin-13, sin-14, sin-15, sin-16,
+                con-bloqueante-01, con-bloqueante-02, con-bloqueante-03, con-bloqueante-04, con-bloqueante-05, con-bloqueante-06,
+                con-bloqueante-07, con-bloqueante-08, con-bloqueante-09, con-bloqueante-10, con-bloqueante-11, con-bloqueante-12,
+                con-sonda-01, con-sonda-02, con-sonda-03, con-sonda-04, con-sonda-05, con-sonda-06,
+                sin-sonda-01, sin-sonda-02]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Traer `main`
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+      - name: Compilar (tsc)
+        run: npm run build
+      - name: Banco desechable
+        env:
+          PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          test -n "$PGPORT_HOST" || { echo "no se pudo leer el puerto del servicio"; exit 1; }
+          npx prisma migrate diff --from-empty \
+            --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
+          test -s "$RUNNER_TEMP/esquema.sql" || { echo "el esquema salió VACÍO"; exit 1; }
+          for BASE in yaqu_libro_test yaqu_serie_test yaqu_tramos_test; do
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c "CREATE DATABASE $BASE"
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -q -f "$RUNNER_TEMP/esquema.sql"
+          done
+      - name: Sembrar los rojos (sólo en esta copia del runner)
+        run: node "$E/sembrar-rojos.mjs" --runner "$GITHUB_WORKSPACE"
+      # El MISMO comando que `npm test` (sin repetir el build), con o sin el flag según el brazo.
+      - name: La tanda
+        env:
+          CELDA: ${{ matrix.celda }}
+          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+          SERIE_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_serie_test
+        run: |
+          BRAZO="${CELDA%-*}"
+          case "$BRAZO" in con*) FLAG=--test-force-exit ;; *) FLAG= ;; esac
+          EXTRA=""
+          case "$BRAZO" in
+            *-sonda|*-bloqueante)
+              mkdir -p "$RUNNER_TEMP/sonda"
+              export SONDA_1405_DIR="$RUNNER_TEMP/sonda"
+              EXTRA="--import=file://$GITHUB_WORKSPACE/$E/sonda.mjs" ;;
+          esac
+          case "$BRAZO" in *-bloqueante) export SONDA_1405_BLOQUEANTE=1 ;; esac
+          export NODE_OPTIONS="--test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=$RUNNER_TEMP/tanda.tap $EXTRA"
+          export COBAYA_TESTIGO="$RUNNER_TEMP/testigo.txt"
+          echo "brazo=$BRAZO flag='$FLAG' extra='$EXTRA'"
+          echo "$BRAZO" > "$RUNNER_TEMP/brazo.txt"
+          date +%s > "$RUNNER_TEMP/t0.txt"
+          set +e
+          node scripts/tanda-con-veredicto.mjs node --test $FLAG tests/*.test.mjs > "$RUNNER_TEMP/tanda-spec.log" 2>&1
+          echo $? > "$RUNNER_TEMP/salida.txt"
+          set -e
+          date +%s > "$RUNNER_TEMP/t1.txt"
+          echo "la tanda salió con $(cat "$RUNNER_TEMP/salida.txt") en $(( $(cat "$RUNNER_TEMP/t1.txt") - $(cat "$RUNNER_TEMP/t0.txt") )) s"
+      - name: Resumen
+        if: always()
+        run: |
+          grep -E '^# (tests|pass|fail|skipped|duration_ms) ' "$RUNNER_TEMP/tanda.tap" || echo "el TAP no llegó a su resumen"
+          echo "rojos en el TAP: $(grep -c '^not ok' "$RUNNER_TEMP/tanda.tap" || true)"
+          echo "líneas del testigo de la cola sembrada: $(wc -l < "$RUNNER_TEMP/testigo.txt" 2>/dev/null || echo 'SIN TESTIGO')"
+          tail -n 5 "$RUNNER_TEMP/tanda-spec.log" || true
+      - name: Señal de nombres (la misma del obligatorio, sobre este TAP)
+        if: always()
+        continue-on-error: true
+        run: node scripts/senal-de-nombres.mjs "$RUNNER_TEMP/tanda.tap" > "$RUNNER_TEMP/senal.txt" 2>&1; tail -n 40 "$RUNNER_TEMP/senal.txt"
+      - name: Juntar la sonda
+        if: always()
+        run: |
+          if [ -d "$RUNNER_TEMP/sonda" ]; then
+            find "$RUNNER_TEMP/sonda" -name '*.json' -exec cat {} + > "$RUNNER_TEMP/sonda.jsonl"
+            echo "filas de sonda: $(wc -l < "$RUNNER_TEMP/sonda.jsonl")"
+          else
+            echo "este brazo no lleva sonda"
+          fi
+      - name: Guardar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp1405-tanda-${{ matrix.celda }}
+          path: |
+            ${{ runner.temp }}/tanda.tap
+            ${{ runner.temp }}/tanda-spec.log
+            ${{ runner.temp }}/senal.txt
+            ${{ runner.temp }}/salida.txt
+            ${{ runner.temp }}/brazo.txt
+            ${{ runner.temp }}/t0.txt
+            ${{ runner.temp }}/t1.txt
+            ${{ runner.temp }}/testigo.txt
+            ${{ runner.temp }}/sonda.jsonl
+          retention-days: 7
+          if-no-files-found: warn
