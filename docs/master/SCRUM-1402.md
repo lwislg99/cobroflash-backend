@@ -1,4 +1,4 @@
-# SCRUM-1402 · El webhook de Stripe ya no escribe un plan que no existe, y lo dice
+# SCRUM-1402 · El webhook de Stripe ya no escribe un plan que no existe, y lo dice · CRUCE DE CARRIL en UN fichero: `tests/scrum815-idempotencia-del-webhook.test.mjs` es compartido con el equipo de Luis (sección Ⓚ)
 
 **Medido contra:** `origin/main` = `6aaec0dc8f0267518a50f626299ae901f81e2ae1` · 2026-10-06T13:26:13Z
 
@@ -140,4 +140,61 @@ corrido en local: la corre el CI.
 
 ## Ⓙ Lo corrido
 
-%%TANDA%%
+Sobre la rama con `origin/main` = `6aaec0dc` ya mezclado, `dist/` emitido después del merge, y sin
+`FORCE_COLOR` (comprobado en el mismo comando).
+
+| qué | resultado |
+|---|---|
+| el test nuevo, solo | 12 casos · 12 pasan · 0 caen · 0 saltan |
+| 30 ficheros sueltos (el nuevo, `scrum237`, `scrum976`, `scrum622`, los de registro `scrum267`/`scrum1294`/`scrum525d`/`scrum859`/`scrum1306`, `scrum921*`, `scrum710b`, `scrum850`, `scrum824`, `scrum864c`, los de `scrum815*`, `scrum475`, `scrum512`, `scrum1342`, `webhooks-idempotencia`) | 236 casos · 234 pasan · **1 cae** · 1 salta (pide `QA_DB_TEST`). El que cae es el censo de efectos de SCRUM-815: sección Ⓚ. Fue ANTES de declararlo |
+| `npm run tanda:dirigida`, con turno del orquestador, 3.609 MB libres medidos justo antes | 306 ficheros de 1.248 · 2.956 casos · 2.949 pasan · **1 cae** · los 6 restantes no los desglosa el resumen (el TAP no se conservó). Terminó sola (5 min 39 s), no la mató nadie. Ya con el censo declarado |
+| después de escribir este registro: el test nuevo, el de SCRUM-815 y los guards de registro y de suite (`scrum267`, `scrum1294`, `scrum525d`, `scrum921*`, `scrum710b`, `scrum859`, `scrum1306`, `scrum514`, `scrum237`, `scrum976`) | 163 casos · 163 pasan · 0 caen · 0 saltan |
+| `npm run guards:entrada`, lo último | 13 guards · 158 casos · 0 caen |
+| las mutaciones que OTROS tests declaran sobre el mismo fichero | 7 tests mirados, 10 mutaciones (8 de este ticket, 2 de `scrum809b`): las 10 siguen casando una sola vez |
+
+**El único caído de la dirigida no es de este cambio:** «SCRUM-476 · SUELO: el censo de directorios
+`node_modules` no puede dar cero» (`tests/scrum476-reconciliar-censos.test.mjs`). Este worktree es
+anidado y no tiene `node_modules` propio —node resuelve hacia arriba—, así que ese suelo cae aquí por
+la máquina. En el CI el árbol sí lo tiene. No lo he corrido en un árbol con `node_modules`: lo dirá el
+obligatorio.
+
+**No corrido:** la tanda completa (no es alcanzable en esta máquina; la da el obligatorio del CI), los
+tests gateados por base (`scrum809`, `scrum340`, `scrum330`: recorren este mismo webhook contra un
+Postgres; solo los ejecuta el CI) y `npm run meta:mutaciones`.
+
+## Ⓚ El trinquete de SCRUM-815 que saltó, y lo que pide
+
+`tests/scrum815-idempotencia-del-webhook.test.mjs`, caso «el censo de EFECTOS del manejador no crece
+sin decirlo», cayó con el arreglo: cuenta por AST toda llamada no pura del manejador y `planQueExiste`
+aparece tres veces. El fichero es compartido (lleva commits de los dos equipos), así que tocarlo es
+cruce de carril; el orquestador lo autorizó por mensaje y avisa él al equipo de Luis.
+
+**Lo que NO se hizo:** sacar la validación antes del corte del despacho para que el censo no la viera.
+Habría dejado el guard verde sin medir nada.
+
+**Lo que se hizo:** declararla. Una entrada, `planQueExiste: 3`, con su motivo. Ninguna otra cifra
+cambia. Interrogado después: con una cuarta llamada inyectada (`git diff --numstat` 1/0), el caso
+**cae** diciendo `planQueExiste: 4` contra `3`. Retirada la inyección, el árbol vuelve a ser el del
+commit (0 diferencias).
+
+**Y lo que el mensaje del guard manda hacer: releer la propuesta de columnas** (`docs/master/SCRUM-815.md`,
+paso ①, §2 y §4, y el §4 del apéndice 815b). Releída con este cambio dentro:
+
+- La propuesta **ya está aplicada** (la tabla `gateway_events` existe y el escritor está encendido para
+  cinco tipos). Lo que queda por comprobar es si lo que la sostenía sigue siendo verdad.
+- **El reparto de efectos no cambia:** 1 disputa, 3 salidas HTTP, 5 escrituras de plan, 1 recompensa y
+  1 correo. No nace ningún efecto, y ninguno pasa de reversible a no reversible. Un rechazo solo
+  **quita**: salta una escritura de plan y, en el checkout, también la recompensa y el correo.
+- **El protocolo de tres pasos sigue igual:** un evento rechazado termina sin excepción, así que se
+  cierra con `processed_at`; una segunda entrega del mismo evento se contesta sin trabajo. Repetirla no
+  cambiaría nada: el plan seguiría sin existir.
+- **Un matiz que la propuesta no contemplaba:** para ella `processed_at` puesto significa «terminó
+  bien». Desde hoy también puede significar «se atendió y se rechazó». La tabla no distingue los dos:
+  el rechazo consta **solo en el log**, no en `gateway_events` (`last_error` queda vacío). No he
+  construido esa marca: no está en el comentario 18019.
+
+Conclusión: **la propuesta sigue en pie.** Con ese matiz dicho.
+
+Una cosa más, **inferida y no medida**: si alguien corrige el nombre del plan en la suscripción desde
+Stripe, Stripe manda un `customer.subscription.updated` nuevo, con otro identificador, y ése sí entra y
+escribe el plan. El premio al referido y el correo de primer pago no salen por ese camino.
