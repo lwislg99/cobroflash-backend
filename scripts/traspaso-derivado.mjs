@@ -65,7 +65,8 @@ const comoEntrada = (orden) => JSON.stringify({ message: { content: [{ type: 'to
 const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.filter((b) => b && b.type === 'text').map((b) => b.text).join('\n') : '');
 
 const GH_WINDOWS = 'C:\\Program Files\\GitHub CLI\\gh.exe';
-const ghDeVerdad = (args) => execFileSync(process.env.GH_BIN || (process.platform === 'win32' && fs.existsSync(GH_WINDOWS) ? GH_WINDOWS : 'gh'), args, { encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] });
+// Sin mirar la plataforma: donde esa ruta no existe, se usa el `gh` del PATH.
+const ghDeVerdad = (args) => execFileSync(process.env.GH_BIN || (fs.existsSync(GH_WINDOWS) ? GH_WINDOWS : 'gh'), args, { encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] });
 
 /**
  * De qué rama es cada PR, preguntado a GitHub en UNA llamada. Una entrada `pr-link` no lo trae.

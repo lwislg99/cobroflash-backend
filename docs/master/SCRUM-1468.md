@@ -107,6 +107,10 @@ vacío · el enlazado se pierde en vez de salir aparte.
 2. **Una mutación sobrevivió a la primera tanda:** una respuesta de GitHub sin el repositorio se leía
    igual devolviendo un mapa vacío que devolviendo «no pude preguntar». → comprobación: el caso de la
    respuesta con sólo errores, en el test de `ramasDeGithub`.
-3. **El ticket describe mal el mecanismo, y lo abrió este puesto:** dice que el enlace entra por arrancar
+3. **Metí una lectura de la plataforma para encontrar `gh`** y el tope de SCRUM-702 (ficheros que leen
+   una señal del entorno: 20) saltó a 21. No lo cazó `guards:entrada`, que salió verde: lo cazó correr los
+   117 tests que enumeran `scripts/`, `tests/` o `docs/master/`. → Quitada la lectura: se prueba la ruta y,
+   si no existe, se usa el `gh` del PATH. El tope sigue en 20.
+4. **El ticket describe mal el mecanismo, y lo abrió este puesto:** dice que el enlace entra por arrancar
    en el checkout compartido. Medido, no aparece al arrancar sino tras un `git push`. El defecto que
    describe es cierto; su explicación, no.
