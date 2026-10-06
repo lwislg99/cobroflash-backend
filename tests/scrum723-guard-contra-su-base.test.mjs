@@ -277,6 +277,15 @@ const HALLAZGOS_DECLARADOS = [
   // producción está en `main`, y cuántos lleva de retraso?». Contra la base de una rama no
   // significaría nada. Corre en su propio workflow, con `fetch-depth: 0`.
   'scripts/vigilante-de-despliegue.mjs [rev-parse]',
+  // SCRUM-1458 · la pasada del vigía de atascados. Su pregunta es «¿cuántas horas lleva la PUNTA de
+  // `main` sin moverse?» (`git log -1 --format=%cI origin/main`): la referencia móvil es el sujeto,
+  // misma familia que el vigía del despliegue de arriba. Contra la base de una rama daría la edad
+  // de esa base, que no es ningún parón. No acusa a ninguna rama: no corre en la tanda, sino en su
+  // propio workflow, que ya trae `main` con `fetch-depth: 0`; y si la fecha no se deja leer lo DICE
+  // en vez de dar a `main` por al día (`tests/scrum1458-vigia-main-parado.test.mjs`).
+  // Lo retira: quien le pase a la pasada la fecha ya leída (un fichero más de los que prepara el
+  // workflow), o quien retire el aviso de `main` parado.
+  'scripts/vigia-pasada.mjs [log]',
   // Este mismo fichero: la lógica VIEJA, conservada para poder enseñar el rojo del ticket. Vive
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
@@ -589,6 +598,17 @@ const INDIRECTAS_DECLARADAS = [
   // nombra en las aserciones sobre el texto del informe y en el ancla fabricada de un registro.
   // Lo retira quien borre el test.
   'tests/scrum1424-ya-esta.test.mjs',
+  // SCRUM-1458 · la pasada del vigía de atascados, que desde este ticket lee la fecha de la punta
+  // (su entrada de arriba, en los hallazgos, dice por qué). Fuera de los argumentos de git nombra
+  // `main` en lo que escribe en el issue y en su traza: «`main` está PARADO», «no se pudo leer la
+  // edad de `main`».
+  // Lo retira quien retire el aviso de `main` parado.
+  'scripts/vigia-pasada.mjs',
+  // SCRUM-1458 · su test: mismo caso que 1298, 899b y 1424 — la pasada se lanza contra un repositorio
+  // SINTÉTICO en el temporal cuyo `origin/main` no es el de nadie (un commit fechado a propósito).
+  // Fuera de los argumentos de git nombra `main` en los nombres de sus tests y en sus aserciones.
+  // Lo retira quien borre el test.
+  'tests/scrum1458-vigia-main-parado.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
