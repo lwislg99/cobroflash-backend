@@ -181,6 +181,7 @@ test('SCRUM-719 · 📌 `leerFuente` sigue siendo el camino corto, y ahora admit
   // El ancla es OPCIONAL aquí a propósito: por este camino también pasan tests que EXIGEN algo,
   // y a ésos el filtro no puede cegarlos —una afirmación positiva sobre la nada falla sola—.
   // Quien PROHÍBE es quien necesita el suelo, y ahora puede pedirlo sin cambiar de función.
+  // ⚠️ 6-oct-2026 · SCRUM-1395: esa opcionalidad vale ya SÓLO para los heredados declarados en `tests/_filtro-sin-suelo-heredados.json`; para un test NUEVO el ancla es obligatoria (lo exige el caso ② de más abajo).
   const propio = path.join(RAIZ, 'tests', '_guard-texto.mjs');
   assert.ok(leerFuente(propio).includes('soloEjecutable'), '🔴 `leerFuente` sin ancla ha dejado de leer');
   assert.ok(leerFuente(propio, { ancla: 'export function soloEjecutable' }).length > 1000);

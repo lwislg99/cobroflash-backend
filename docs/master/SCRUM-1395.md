@@ -155,8 +155,14 @@ decisión a mano. Lo que hace el trinquete es que se vea en el diff.
 - **Tensión con SCRUM-719, dicha:** `leerFuente` dejó el `ancla` opcional a propósito, porque también lo
   usan tests que sólo exigen. Desde hoy un test NUEVO tiene que dársela aunque sólo exija. Cuesta una
   opción, y es lo que hace que no haya que distinguir a mano quién prohíbe y quién exige.
-- **`package.json`, comentario `//censo:mudez`:** sigue diciendo que la red es la lista de los trece. No
-  se ha tocado.
+  El orquestador eligió el trinquete ancho (un test nuevo da siempre el ancla): el estrecho obligaría a
+  juzgar en cada revisión si una aserción es «sólo positiva», y ese juicio es el que dejó pasar a
+  `scrum589`. En `tests/scrum719-el-suelo-de-los-doce.test.mjs` se ANEXA una línea fechada al comentario
+  que decía «opcional a propósito»; lo que firmó SCRUM-719 no se borra.
+- **Dos comentarios que quedan diciendo lo de antes, PENDIENTES y sin tocar:**
+  - `tests/_guard-texto.mjs`, dentro de `leerFuente`: «el `ancla` es opcional aqui … a proposito». Para un
+    test nuevo ya no lo es. No se edita aquí: es el fichero que el censo de mudez muta y restaura.
+  - `package.json`, comentario `//censo:mudez`: sigue diciendo que la red es la lista de los trece.
 
 ## Exposición
 
@@ -175,7 +181,12 @@ sonda no lleva control positivo: no había ningún PR abierto que se supiera exp
 ## Errores propios
 
 - El primer recuento de población fue por texto y dio «61 llaman a `soloEjecutable` directo»; por AST
-  son 85 ficheros sin suelo contando `leerFuente` sin ancla. Al orquestador le di «≈60–90».
+  son 85 ficheros sin suelo contando `leerFuente` sin ancla. Al orquestador le di «≈60–90». La
+  diferencia —los que sólo usan `leerFuente` sin ancla— era justo la población que decidía si el
+  trinquete iba ancho o estrecho: un recuento por texto y uno por AST no son dos aproximaciones, son
+  dos poblaciones.
+- El control del sufijo antes del push lo hice primero con un comodín en `ls-remote` y salió vacío
+  también para la rama de control: ciego. Lo repetí sobre la lista entera (161 ramas, control presente).
 - La sonda de exposición no tiene control positivo.
 - Medí mi contexto tarde: a ojo dije «por debajo de 200k» y eran 261.491.
 - Un `git merge` sin `-q` me devolvió cien líneas de ficheros ajenos.
