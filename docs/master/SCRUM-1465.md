@@ -168,15 +168,25 @@ Por la ruta de `dist/`. La baja y los topes pasan por los guards de verdad de `w
 contesta Meta se dobla con la forma que devuelve su `catch`. Un caso repite las tres frases con un
 negocio de México y exige que sean las mismas y que no nombren el documento.
 
-En rojo ANTES de tocar `src/`: 9 casos, 6 rojos; verdes el suelo y los dos controles. Después, 33
-ficheros, **386 de 386**. **No corrida la tanda entera.**
+La frase del correo se comprueba en `tests/scrum1465-lo-que-salio-salio.test.mjs`, en el caso del
+correo que no sale: es donde está doblado el correo.
 
-| Mutante (sobre `dist`; BASE 9/9; comprobado que cambia y que se restaura idéntico) | Rojos |
+En rojo ANTES de tocar `src/`, en dos tandas: primero A, C y E (9 casos, 6 rojos; verdes el suelo y
+los dos controles) y, tras la segunda firma, D y el correo (16 casos entre los dos ficheros, 2
+rojos). Después, 34 ficheros, **394 de 394**. **No corrida la tanda entera.**
+
+| Mutante (sobre `dist`; BASE 16/16 en los dos ficheros; comprobado que cambia y que se restaura idéntico) | Rojos |
 |---|---|
 | la baja vuelve a la frase del diccionario | 2 |
 | el tope del negocio vuelve a la frase del diccionario | 2 |
 | el texto de Meta vuelve a la frase | 4 |
 | el motivo de Meta se pierde (sin `detail`) | 1 |
+| el tope por cliente vuelve a la frase del diccionario | 1 |
+| el correo vuelve a afirmar que no salió | 1 |
+
+`tests/scrum237-negacion-respaldada` cazó en local dos negaciones mías sin respaldo («rechazó» y la
+palabra del documento): una sobraba, porque la frase ya se compara entera, y la otra lleva ahora su
+control del detector.
 
 ### Error propio
 
