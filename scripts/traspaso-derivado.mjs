@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SCRUM-1427 · EL TRASPASO DERIVADO — lo que una sesión dejó, sacado de su rastro
 //
-//   node scripts/traspaso-derivado.mjs <nombre-de-la-sesión> [--jobs <carpeta>] [--sin-arboles]
+//   node scripts/traspaso-derivado.mjs <nombre-de-la-sesión> [--jobs <carpeta>] [--sin-arboles] [--sin-github]
 //
 // POR QUÉ EXISTE. El traspaso se escribe al FINAL, y una sesión a la que le cortan la cuota o que muere
 // a mitad de turno no llega al final. Medido en SCRUM-1418: 32 sesiones sin traspaso en dos semanas, y
@@ -17,8 +17,15 @@
 //   el encargo                 `intent` de su `state.json`
 //   el último mensaje recibido la última entrada de usuario con `origin` (peer / human) de su transcripción
 //   tickets de Jira            llamadas a las herramientas de Jira que ESCRIBEN (comentar, transicionar, editar)
-//   PR                         las entradas `pr-link` de la transcripción
-//   lo que empujó              sus órdenes `git … push` (⚠️ aquí sí se lee una orden de consola: se imprime
+//   PR                         las entradas `pr-link` de la transcripción, partidas en TRES (SCRUM-1468):
+//                              EMPUJADOS (su rama está entre las que la sesión empujó, por `ramasEmpujadas`
+//                              del hook de cierre) · ENLAZADOS, NO EMPUJADOS · NO SUPE DE QUIÉN. Un
+//                              `pr-link` no trae la rama: se le pregunta a GitHub en una llamada, y sólo
+//                              si la sesión dio alguna orden de empujar. ⚠️ Un PR enlazado NO es un PR
+//                              tocado. Medido el 6-oct-2026: 22 sesiones llevan enlazado el #1681 (el de
+//                              la rama del checkout compartido) y NINGUNA empujó esa rama; en 20 de las
+//                              22 su primer enlace sigue a un `git push` de OTRA rama dado desde allí
+//   lo que empujó             sus órdenes `git … push` (⚠️ aquí sí se lee una orden de consola: se imprime
 //                              la orden, no una rama deducida)
 //   ficheros tras el último commit   sus `Write`/`Edit` posteriores a su última orden `git … commit`
 //   cómo se cortó              `isApiErrorMessage` / `error` de la entrada: el motivo lo da el arnés
@@ -39,8 +46,10 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { arbolDe, arbolesDeVerdad, RUIDO_DEL_ARNES } from './sesiones-que-no-volvieron.mjs';
+import { ramasEmpujadas } from '../.claude/hooks/latido-cierre.mjs';
 
 export const MARCA = 'TRASPASO DERIVADO — NO LO ESCRIBIÓ LA SESIÓN. Sale de su rastro: dice QUÉ tocó, no por qué ni qué iba a hacer.';
 
@@ -51,25 +60,56 @@ const EMPUJA = /\bgit\b[^\n|;&]*\bpush\b[^\n|;&]*/;
 const JIRA_ESCRIBE = /jira/i;
 const VERBO_JIRA = /(addComment|transition|editJira|addWorklog)/i;
 const recorte = (s, n) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n)}…` : t; };
+/** Una orden suelta con la forma de entrada que lee `ramasEmpujadas`: se le pregunta a ella, no se la copia. */
+const comoEntrada = (orden) => JSON.stringify({ message: { content: [{ type: 'tool_use', input: { command: orden } }] } });
 const textoDe = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.filter((b) => b && b.type === 'text').map((b) => b.text).join('\n') : '');
+
+const GH_WINDOWS = 'C:\\Program Files\\GitHub CLI\\gh.exe';
+const ghDeVerdad = (args) => execFileSync(process.env.GH_BIN || (process.platform === 'win32' && fs.existsSync(GH_WINDOWS) ? GH_WINDOWS : 'gh'), args, { encoding: 'utf8', timeout: 30000, stdio: ['ignore', 'pipe', 'pipe'] });
+
+/**
+ * De qué rama es cada PR, preguntado a GitHub en UNA llamada. Una entrada `pr-link` no lo trae.
+ * @param {number[]} numeros
+ * @param {string} repo  `dueño/nombre`, tal como viene en `prRepository`
+ * @returns {Map<number,string>|null}  `null` = no se pudo preguntar. Un PR que no viene en el mapa es
+ *   «GitHub no dijo de qué rama es», no «no es suyo».
+ */
+export function ramasDeGithub(numeros, repo, correr = ghDeVerdad) {
+  const m = new Map();
+  if (numeros.length === 0) return m;
+  const [dueno, nombre] = String(repo || '').split('/');
+  if (!dueno || !nombre) return null;
+  const consulta = `query { repository(owner: ${JSON.stringify(dueno)}, name: ${JSON.stringify(nombre)}) { ${numeros.map((n) => `p${n}: pullRequest(number: ${n}) { headRefName }`).join(' ')} } }`;
+  let datos;
+  try { datos = JSON.parse(correr(['api', 'graphql', '-f', `query=${consulta}`])); } catch (e) {
+    // Con un PR que no existe `gh` sale ≠ 0 y aun así trae los demás por stdout: se aprovechan.
+    try { datos = JSON.parse(String(e && e.stdout)); } catch { return null; }
+  }
+  const r = datos && datos.data && datos.data.repository;
+  if (!r) return null;
+  for (const n of numeros) if (r[`p${n}`] && typeof r[`p${n}`].headRefName === 'string') m.set(n, r[`p${n}`].headRefName);
+  return m;
+}
 
 /** ¿Esta entrada la escribió el ARNÉS y no la sesión? Dato estructurado, no su texto. */
 export const esDelArnes = (o) => Boolean(o && (o.isApiErrorMessage || (o.message && o.message.model === '<synthetic>')));
 
 /**
  * @param {{nombre:string, estado?:string, intent?:string, transcripcion:string|null}} s
+ * @param {{ramaDe?:((n:number)=>string|null|undefined)|null, sinRamaPorque?:string}} [o]
+ *   `ramaDe`: de qué rama es un PR (`ramasDeGithub`). Sin ella, a quien empujó no se le atribuye ninguno.
  * @returns {{cubo:'CON RASTRO'|'NO HIZO NADA QUE MUTE'|'NO SUPE', motivo?:string, [k:string]:any}}
  */
-export function derivar(s) {
+export function derivar(s, { ramaDe = null, sinRamaPorque = 'no se preguntó a GitHub de qué rama es' } = {}) {
   const base = { nombre: s.nombre, estado: s.estado ?? null, encargo: s.intent ? recorte(s.intent, 400) : null };
   if (s.transcripcion == null) return { ...base, cubo: 'NO SUPE', motivo: 'no hay transcripción (¿se limpió la carpeta del trabajo?). Esto NO dice que no hiciera nada' };
-  const r = { ...base, jira: new Set(), prs: new Set(), empujes: [], trasElUltimoCommit: [], commits: 0, ediciones: 0, ultimoRecibido: null, ultimasPalabras: null, corte: null };
+  const r = { ...base, jira: new Set(), enlazados: new Set(), repos: new Set(), empujes: [], empujesSinRama: 0, trasElUltimoCommit: [], commits: 0, ediciones: 0, ultimoRecibido: null, ultimasPalabras: null, corte: null };
   let leidas = 0, rotas = 0;
   for (const l of s.transcripcion.split('\n')) {
     if (!l.trim()) continue;
     let o; try { o = JSON.parse(l); } catch { rotas++; continue; }
     leidas++;
-    if (o.type === 'pr-link' && o.prNumber != null) { r.prs.add(Number(o.prNumber)); continue; }
+    if (o.type === 'pr-link' && o.prNumber != null) { r.enlazados.add(Number(o.prNumber)); if (o.prRepository) r.repos.add(String(o.prRepository)); continue; }
     if (o.type === 'user' && o.origin && o.toolUseResult === undefined) {
       const texto = textoDe(o.message && o.message.content);
       const de = /from-name="([^"]+)"/.exec(texto);
@@ -87,15 +127,34 @@ export function derivar(s) {
       const ruta = b.input.file_path || b.input.notebook_path || '';
       const orden = typeof b.input.command === 'string' ? b.input.command : '';
       if (JIRA_ESCRIBE.test(b.name) && VERBO_JIRA.test(b.name) && b.input.issueIdOrKey) r.jira.add(String(b.input.issueIdOrKey));
-      const e = EMPUJA.exec(orden); if (e) r.empujes.push(recorte(e[0], 160));
+      const e = EMPUJA.exec(orden);
+      if (e) { r.empujes.push(recorte(e[0], 160)); if (ramasEmpujadas(comoEntrada(orden)).length === 0) r.empujesSinRama++; }
       if (COMITEA.test(orden)) { r.commits++; r.trasElUltimoCommit = []; }
       if (ESCRIBE.has(b.name) && ruta && !ES_MEMORIA.test(ruta)) { r.ediciones++; if (!r.trasElUltimoCommit.includes(ruta)) r.trasElUltimoCommit.push(ruta); }
     }
   }
   if (leidas === 0) return { ...base, cubo: 'NO SUPE', motivo: 'la transcripción está vacía' };
-  r.jira = [...r.jira].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })); r.prs = [...r.prs].sort((a, b) => a - b);
+  r.jira = [...r.jira].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  r.enlazados = [...r.enlazados].sort((a, b) => a - b); r.repos = [...r.repos].sort();
+  // DE QUIÉN ES UN PR (SCRUM-1468). De quien EMPUJÓ su rama: la misma regla del hook de cierre y del
+  // latido (`ramasEmpujadas`), no una tercera. Que salga enlazado en la transcripción no lo hace suyo:
+  // medido el 6-oct-2026, 22 sesiones llevaban el #1681 y ninguna empujó su rama.
+  r.ramas = ramasEmpujadas(s.transcripcion).sort();
+  r.prs = []; r.prsEnlazados = []; r.prsSinSaber = [];
+  for (const n of r.enlazados) {
+    // Quien no dio ninguna orden de empujar no pudo empujar la rama de ese PR: no hace falta preguntar.
+    if (r.empujes.length === 0) { r.prsEnlazados.push(n); continue; }
+    if (!ramaDe) { r.prsSinSaber.push({ numero: n, motivo: sinRamaPorque }); continue; }
+    const rama = ramaDe(n);
+    if (!rama) r.prsSinSaber.push({ numero: n, motivo: 'GitHub no dijo de qué rama es' });
+    else if (r.ramas.includes(rama)) r.prs.push(n);
+    // Un `git push` sin nombre de rama pudo ser a ésta: ni se atribuye ni se descarta.
+    else if (r.empujesSinRama > 0) r.prsSinSaber.push({ numero: n, motivo: `su rama (${rama}) no está entre las que empujó con nombre, pero hay ${r.empujesSinRama} orden(es) de empujar sin nombre de rama` });
+    else r.prsEnlazados.push(n);
+  }
   if (rotas > 0) return { ...r, cubo: 'NO SUPE', motivo: `${rotas} línea(s) de la transcripción no se dejan leer: puede estar cortada. Lo de abajo es SOLO lo que se pudo leer` };
-  const muto = r.ediciones > 0 || r.commits > 0 || r.empujes.length > 0 || r.jira.length > 0 || r.prs.length > 0;
+  // Un PR no entra aquí: el empujado ya cuenta por su orden de empujar, y el enlazado no es una mutación.
+  const muto = r.ediciones > 0 || r.commits > 0 || r.empujes.length > 0 || r.jira.length > 0;
   return { ...r, cubo: muto ? 'CON RASTRO' : 'NO HIZO NADA QUE MUTE' };
 }
 
@@ -112,8 +171,12 @@ export function informe(d, arboles) {
   out.push(
     '', `EL ÚLTIMO MENSAJE QUE RECIBIÓ${d.ultimoRecibido ? ` (de ${d.ultimoRecibido.de}${d.ultimoRecibido.cuando ? `, ${d.ultimoRecibido.cuando}` : ''})` : ''}: ${d.ultimoRecibido ? d.ultimoRecibido.texto : 'ninguno'}`,
     '', `TICKETS DONDE ESCRIBIÓ EN JIRA (${d.jira.length}): ${d.jira.join(', ') || 'ninguno'}`,
-    `PR (${d.prs.length}): ${d.prs.map((n) => `#${n}`).join(', ') || 'ninguno'}`,
-    `ÓRDENES DE EMPUJAR (${d.empujes.length})${d.empujes.length ? ' — la orden tal cual, no una rama deducida:' : ': ninguna'}`,
+    `PR EMPUJADOS POR ESTA SESIÓN (${d.prs.length}): ${d.prs.map((n) => `#${n}`).join(', ') || 'ninguno'}${d.prs.length ? ' — su rama está entre las que empujó con nombre' : ''}`,
+    `PR ENLAZADOS, NO EMPUJADOS POR ESTA SESIÓN (${d.prsEnlazados.length}): ${d.prsEnlazados.map((n) => `#${n}`).join(', ') || 'ninguno'}${d.prsEnlazados.length ? ' — salen en su transcripción; eso no dice que los tocara' : ''}`,
+    `PR DE LOS QUE NO SUPE DE QUIÉN SON (${d.prsSinSaber.length})${d.prsSinSaber.length ? ':' : ': ninguno'}`,
+    ...d.prsSinSaber.map((p) => `   · #${p.numero} — ${p.motivo}`),
+    `RAMAS QUE EMPUJÓ CON NOMBRE (${d.ramas.length}): ${d.ramas.join(', ') || 'ninguna'}`,
+    `ÓRDENES DE EMPUJAR (${d.empujes.length}${d.empujesSinRama ? `, ${d.empujesSinRama} sin nombre de rama` : ''})${d.empujes.length ? ' — la orden tal cual, no una rama deducida:' : ': ninguna'}`,
     ...d.empujes.slice(-6).map((e) => `   · ${e}`),
     ...(d.empujes.length > 6 ? [`   (y ${d.empujes.length - 6} anteriores)`] : []),
     '', `FICHEROS QUE ESCRIBIÓ DESPUÉS DE SU ÚLTIMO COMMIT (${d.trasElUltimoCommit.length})${d.commits === 0 ? ' — no comiteó nunca: son todos los que escribió' : ''}:`,
@@ -165,7 +228,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (halladas.length === 0) no(`no hay ninguna sesión llamada «${nombre}» en ${carpeta}. Si su carpeta se limpió, su rastro ya no existe: eso NO dice que no hiciera nada`);
   if (halladas.length > 1) no(`hay ${halladas.length} sesiones llamadas «${nombre}» (${halladas.map((h) => h.id).join(', ')}). No elijo una por ti`);
   const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const r = informe(derivar(halladas[0]), args.includes('--sin-arboles') ? null : arbolesDeVerdad(raiz));
+  let d = derivar(halladas[0], { sinRamaPorque: 'no se preguntó a GitHub de qué rama es (--sin-github)' });
+  // Sólo se pregunta si hace falta: quien no empujó nada no necesita que nadie diga de qué rama es cada PR.
+  if (!args.includes('--sin-github') && d.prsSinSaber && d.prsSinSaber.length > 0) {
+    const mapa = d.repos.length === 1 ? ramasDeGithub(d.enlazados, d.repos[0]) : null;
+    d = derivar(halladas[0], mapa ? { ramaDe: (n) => mapa.get(n) } : { sinRamaPorque: d.repos.length === 1 ? 'GitHub no contestó de qué rama es' : `no supe a qué repositorio preguntar (${d.repos.length} en sus enlaces)` });
+  }
+  const r = informe(d, args.includes('--sin-arboles') ? null : arbolesDeVerdad(raiz));
   console.log(r.lineas.join('\n'));
   process.exit(r.codigo);
 }
