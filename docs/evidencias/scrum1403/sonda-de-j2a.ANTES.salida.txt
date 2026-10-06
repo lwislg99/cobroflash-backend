@@ -1,0 +1,20 @@
+BANCO LISTO · tablas=33 · 127.0.0.1:55611 · motor 18.3
+POBLACION: 4 presupuestos y 4 facturas sembrados · pregunta la Técnica id 1 · panel de admin: total cobrado 1050, Blas 900
+
+A · GET /admin/invoices → estado 200 · filas 1 (A-1) · suma de las cobradas: 100 de 1050
+
+B · GET /admin/customers → estado 200 · clientes 4 · fichas leídas 4
+    suma de «totalPaid» de las fichas de cliente:        1050 · panel 1050 · ¿exacto? true
+    suma de las facturas cobradas que traen las fichas:  1050 · panel 1050 · ¿exacto? true
+
+C · GET /admin/quotes?teamMemberId=2 → estado 200 · presupuestos del compañero 2 · fichas leídas 2
+    cobrado por Blas sumando las facturas de sus fichas de presupuesto: 900 · panel 900 · ¿exacto? true
+    claves de la factura que viaja en la ficha del presupuesto: id, number, total, currency, pdfUrl, createdAt, status, stageLabel
+
+RESUMEN
+  por la lista de facturas (cerrada aquí):   total 100 de 1050
+  por las fichas de cliente (ruta 8):        total 1050 de 1050
+  por las fichas de presupuesto (rutas 2-3): Blas 900 de 900
+EXIT=0
+
+CORRER_EXIT=0
