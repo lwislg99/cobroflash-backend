@@ -22,6 +22,12 @@
 //   NO ESTÁ            no hay nada con su número en `origin/main` (salida 0)
 //   NO HE PODIDO MIRAR no se pudo traer `main`, o un motor no pudo medir (salida 2)
 //
+// VARIOS A LA VEZ (SCRUM-1454): `npm run ya-esta -- 1419 1424 1434`. Una respuesta por ticket y, al
+// final, un RECUENTO con cuántos se preguntaron; si UNO no se pudo mirar, sale 2. No lo metas en un bucle
+// tuyo con `2>/dev/null`: el 6-oct-2026 eso dio 40 respuestas vacías que se leyeron como «no hay nada».
+// ⚠️ LO QUE NO PUEDE DEFENDER DESDE DENTRO: si este fichero NO EXISTE en el árbol desde el que se lanza
+// (el checkout compartido va miles de commits por detrás), quien habla es node, por el stderr.
+//
 // LO QUE NO MIRA, y lo dice siempre: Jira (los comentarios del ticket), y el trabajo hecho bajo OTRO
 // número sin nombrar éste. NO cierra, no transiciona, no escribe en ningún sitio: informa.
 import path from 'node:path';
@@ -42,12 +48,38 @@ export function ultimaAncla(texto) {
 }
 
 /**
+ * SCRUM-1454 · de qué ticket ES un commit: el PRIMERO que nombra su asunto. `null` si no nombra ninguno.
+ *
+ * El censo (SCRUM-388) acepta cualquier mención en el asunto, y para lo suyo vale. Aquí no: medido el
+ * 6-oct-2026, `ya-esta 1434` decía YA ESTÁ por `da3798df SCRUM-1123c: … y el ticket abierto
+ * (SCRUM-1434)`, un commit de 1123 que ABRE 1434. La casa pone el ticket delante (`SCRUM-N: …`), y un
+ * merge lo lleva en el nombre de su rama; la convención vieja `feat(x): … (SCRUM-N)` sólo nombra uno,
+ * así que también es el primero. Con dos tickets en el asunto, el segundo es una referencia.
+ * Se equivoca hacia «falta trabajo», nunca hacia «ya está».
+ */
+export function duenoDelAsunto(asunto) {
+  const m = /SCRUM-0*(\d+)(?![0-9])/i.exec(String(asunto || ''));
+  return m ? Number(m[1]) : null;
+}
+
+/** Pura. Los commits que NOMBRAN el ticket, separados: los suyos y los de otro ticket que lo citan. */
+export function repartirCommits(num, commits) {
+  const propios = []; const ajenos = [];
+  for (const c of commits || []) {
+    const dueno = duenoDelAsunto(c.asunto);
+    if (dueno === null || dueno === Number(num)) propios.push(c); else ajenos.push({ ...c, dueno });
+  }
+  return { propios, ajenos };
+}
+
+/**
  * Pura. Lo que se sabe del ticket → una de las tres respuestas.
  * @param {{
  *   ciegos: string[],                       motivos por los que NO se pudo mirar (vacío = se miró todo)
  *   registros: {fichero:string, primera:string|null, ultima:string|null, ancla:object|null}[],
  *   evidencias: {carpeta:string, ficheros:number, primera:string|null}[],
- *   commits: {sha:string, fecha:string, asunto:string}[],
+ *   commits: {sha:string, fecha:string, asunto:string}[],          SÓLO los suyos (`repartirCommits`)
+ *   commitsAjenos?: {sha:string, fecha:string, asunto:string, dueno:number}[],   no cuentan: informan
  *   ramasEnMain: {nombre:string, fecha:string|null}[],
  *   ramasVivas: {nombre:string, fecha:string|null, adelanto:number}[],
  *   cierresAjenos: {fichero:string, linea:number, texto:string}[],
@@ -87,7 +119,13 @@ export function informe(num, h, v, { main, ms } = {}) {
     const orden = [...h.commits].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
     out.push(`   commits    · ${h.commits.length} en main lo nombran en su asunto · del ${orden[0].fecha} al ${orden[orden.length - 1].fecha}`);
     for (const c of orden.slice(-3)) out.push(`                ${c.sha} ${c.fecha} ${String(c.asunto).slice(0, 100)}`);
-  } else out.push('   commits    · ninguno de main lo nombra en su asunto');
+  } else out.push('   commits    · ninguno de main es suyo (ninguno lleva su número por delante en el asunto)');
+  const ajenos = h.commitsAjenos || [];
+  if (ajenos.length) {
+    out.push(`   🟠 lo citan · ${ajenos.length} commit(s) de OTRO ticket lo citan en su asunto — NO cuentan como trabajo suyo (suele ser el commit que lo ABRE):`);
+    for (const c of ajenos.slice(0, 5)) out.push(`                ${c.sha} ${c.fecha} (es de SCRUM-${c.dueno}) ${String(c.asunto).slice(0, 100)}`);
+    if (ajenos.length > 5) out.push(`                … y ${ajenos.length - 5} más`);
+  }
   for (const r of h.ramasEnMain) out.push(`   rama       · ${r.nombre} · DENTRO de main${r.fecha ? ` · ${r.fecha}` : ''}`);
   for (const r of h.ramasVivas) out.push(`   rama       · ${r.nombre} · 🟡 VIVA, SIN MERGEAR · ${r.adelanto} commit(s) fuera de main${r.fecha ? ` · ${r.fecha}` : ''} — alguien lo tiene empezado`);
   if (h.ramasEnMain.length + h.ramasVivas.length === 0) out.push('   rama       · ninguna rama remota con su número (las mergeadas se borran: mira los commits)');
@@ -122,11 +160,21 @@ function gitDe(raiz) {
   };
 }
 
-export async function mirar(num, { raiz, ref = 'origin/main', traer = true } = {}) {
+const CIEGO_SIN_TRAER = 'no se pudo traer `origin` (git fetch falló): lo que hay en disco puede ser viejo';
+
+/** Trae `origin` UNA vez. `null` si fue bien; el motivo del ciego si no. Para preguntar por varios sin traer N veces. */
+export function traerOrigen(raiz) {
+  return gitDe(raiz)(['fetch', '--quiet', '--prune', 'origin']) === undefined ? CIEGO_SIN_TRAER : null;
+}
+
+const hVacio = (ciegos = []) => ({ ciegos, registros: [], evidencias: [], commits: [], commitsAjenos: [], ramasEnMain: [], ramasVivas: [], cierresAjenos: [], citas: [] });
+
+/** `ciegosPrevios`: lo que quien llama ya sabe que no se pudo mirar (p. ej. que no se trajo `origin`). */
+export async function mirar(num, { raiz, ref = 'origin/main', traer = true, ciegosPrevios = [] } = {}) {
   const git = gitDe(raiz);
-  const ciegos = [];
-  const h = { ciegos, registros: [], evidencias: [], commits: [], ramasEnMain: [], ramasVivas: [], cierresAjenos: [], citas: [] };
-  if (traer && git(['fetch', '--quiet', '--prune', 'origin']) === undefined) ciegos.push('no se pudo traer `origin` (git fetch falló): lo que hay en disco puede ser viejo');
+  const ciegos = [...ciegosPrevios];
+  const h = hVacio(ciegos);
+  if (traer) { const c = traerOrigen(raiz); if (c) ciegos.push(c); }
   const main = git(['rev-parse', '--verify', `${ref}^{commit}`]);
   if (main === undefined) { ciegos.push(`\`${ref}\` no se resuelve en ${raiz}`); return { h, main: null }; }
   // La referencia se resuelve UNA vez y todo lo demás se mide contra ESE commit (el criterio de
@@ -143,7 +191,9 @@ export async function mirar(num, { raiz, ref = 'origin/main', traer = true } = {
   if (censo) {
     if (censo.veredicto === 'NO_MEDIBLE') ciegos.push(`el censo no puede atribuirle nada: ${censo.porque || 'sin motivo declarado'}`);
     for (const nm of censo.noMedibles || []) if (nm.fuente !== 'docs/master') ciegos.push(`el censo no pudo medir «${nm.fuente}»: ${nm.motivo}`);
-    h.commits = censo.commits || [];
+    // SCRUM-1454 · el censo da los que lo NOMBRAN; suyos son sólo los que lo llevan por delante.
+    const reparto = repartirCommits(num, censo.commits || []);
+    h.commits = reparto.propios; h.commitsAjenos = reparto.ajenos;
   }
 
   // 2 · ramas. Los NOMBRES son los del motor (`censo.ramas`: convención `scrum-<n>[letra]-…`, SCRUM-738).
@@ -213,17 +263,42 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const ref = valor('--ref') || 'origin/main';
   const raizArg = valor('--raiz');
   const sinTraer = args.includes('--sin-traer');
-  const num = (args.find((a) => !a.startsWith('--')) || '').replace(/^scrum-/i, '');
-  if (!/^\d+$/.test(num)) {
-    console.log(`🔴 ${NO_PUDE}: falta el número del ticket.\n   uso: npm run ya-esta -- <número> [--ref origin/main] [--sin-traer]`);
+  // SCRUM-1454 · NUNCA sale sin respuesta por su salida estándar. Lo que no esté previsto abajo cae aquí
+  // y se dice igual que lo demás: por stdout, con las mismas palabras y saliendo 2. Un fallo que sólo
+  // fuese al stderr lo borra quien lo lanza con `2>/dev/null`, y entonces el vacío se lee como «no hay».
+  const reventon = (e) => {
+    console.log(`🔴 ${NO_PUDE}: el comando reventó sin llegar a contestar: ${String((e && e.message) || e).split('\n')[0]}\n   Esto NO quiere decir que no esté hecho: no se ha podido comprobar.`);
+    process.exit(SALIDA_CIEGO);
+  };
+  process.on('uncaughtException', reventon);
+  process.on('unhandledRejection', reventon);
+
+  const pedidos = args.filter((a) => !a.startsWith('--')).map((a) => a.replace(/^scrum-/i, ''));
+  if (pedidos.length === 0) {
+    console.log(`🔴 ${NO_PUDE}: falta el número del ticket.\n   uso: npm run ya-esta -- <número> [<número> …] [--ref origin/main] [--sin-traer]`);
     process.exit(SALIDA_CIEGO);
   }
   const raiz = raizArg ? path.resolve(raizArg) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const t0 = Date.now();
-  let res;
-  try { res = await mirar(num, { raiz, ref, traer: !sinTraer }); }
-  catch (e) { res = { h: { ciegos: [`el comando reventó: ${String(e && e.message).split('\n')[0]}`], registros: [], evidencias: [], commits: [], ramasEnMain: [], ramasVivas: [], cierresAjenos: [], citas: [] }, main: null }; }
-  const v = veredictoDe(res.h);
-  console.log(informe(num, res.h, v, { main: res.main, ms: Date.now() - t0 }).join('\n'));
-  process.exit(v.salida);
+  // `origin` se trae UNA vez para todos; si no se pudo, ninguno se ha podido mirar.
+  const previos = sinTraer ? [] : [traerOrigen(raiz)].filter(Boolean);
+  const cuenta = { [YA_ESTA]: 0, [NO_ESTA]: 0, [NO_PUDE]: 0 };
+  for (const [i, num] of pedidos.entries()) {
+    const t0 = Date.now();
+    let res;
+    if (!/^\d+$/.test(num)) res = { h: hVacio([`«${num}» no es un número de ticket: no se ha preguntado por nada`]), main: null };
+    else {
+      try { res = await mirar(num, { raiz, ref, traer: false, ciegosPrevios: previos }); }
+      catch (e) { res = { h: hVacio([`el comando reventó: ${String(e && e.message).split('\n')[0]}`]), main: null }; }
+    }
+    const v = veredictoDe(res.h);
+    cuenta[v.respuesta]++;
+    console.log((i ? '\n' : '') + informe(num, res.h, v, { main: res.main, ms: Date.now() - t0 }).join('\n'));
+  }
+  const ciego = cuenta[NO_PUDE] > 0;
+  // Con varios, el recuento va SIEMPRE y al final: quien cuente líneas sabe cuántas tenían que salir.
+  if (pedidos.length > 1) {
+    console.log(`\nRECUENTO · ${pedidos.length} preguntado(s) · ${cuenta[YA_ESTA]} ${YA_ESTA} · ${cuenta[NO_ESTA]} ${NO_ESTA} · ${cuenta[NO_PUDE]} ${NO_PUDE}`
+      + (ciego ? ` · 🔴 la salida es ${SALIDA_CIEGO}: lo que no se pudo mirar NO es «no está»` : ''));
+  }
+  process.exit(ciego ? SALIDA_CIEGO : SALIDA_MIRADO);
 }

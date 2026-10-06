@@ -403,7 +403,12 @@ const MOTIVO_DE_887 = 'FRASE COMPLETA QUE EL CÓDIGO COMPONE (SCRUM-887 comentar
   + 'la constante `REMEDIO_DESCUENTO_GLOBAL_VARIOS_IVA`, que comparten las dos frases. Ejecutado el '
   + '1-oct-2026 contra `dist/`: la constante compuesta es idéntica a la cita. Sale de aquí si algún '
   + 'día el código la escribe entera en un solo literal.';
-const MOTIVO_DE_915 = 'FORMATO DEL RESUMEN DE UN PASO CERRADO (SCRUM-915 comentario 15868): `N`, el '
+const FICHA_DE_1443 = '2026-10-06-SCRUM-1443-presupuesto-rapido-fallos.md';
+const MOTIVO_DE_1443 = 'LA PALABRA DEL PAÍS ES UN DATO (SCRUM-1443 comentarios 18307 y 18313): `homeView.js` '
+  + 'compone cada texto con «presupuesto» o «cotización» (`quoteVerb`) dentro de la frase fija. '
+  + 'Ejecutado el 6-oct-2026 en el banco de vistas con las dos palabras '
+  + '(`tests/scrum1443-rapido-dice-que-ha-pasado.test.mjs`): lo pintado es la cita con la palabra puesta.';
+const MOTIVO_DE_915 ='FORMATO DEL RESUMEN DE UN PASO CERRADO (SCRUM-915 comentario 15868): `N`, el '
   + 'total, la condición de pago y la fecha son datos, y la ficha lo dice debajo de la cita. Leído '
   + 'en `quotesView.js` (los `texto` de los pasos), no ejecutado: vive dentro del editor.';
 const MOTIVO_DE_917 = 'SINGULAR QUE EL CÓDIGO ELIGE CON N = 1 (SCRUM-917 comentario 15938): '
@@ -451,6 +456,17 @@ const NO_SE_CRUZAN = [
     motivo: 'PLURAL QUE EL CÓDIGO COMPONE (SCRUM-980): el nombre accesible de las fotos sale de '
       + '`ariaFotos(n)`, que devuelve «1 foto» o el número seguido de « fotos». El singular sí está '
       + 'tal cual y se cruza. Leído en `customerDetailView.js`, no ejecutado.' },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['No hemos podido crear tu ', dato('{quote}'), '. Vuelve a intentarlo.'], motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero no sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.'],
+    motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero el teléfono de este cliente no es válido, así que el WhatsApp no ha salido. Corrige el teléfono y vuelve a enviarlo.'],
+    motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu ', dato('{quote}'), '.'],
+    motivo: MOTIVO_DE_1443 },
   { ficha: '2026-09-25-SCRUM-1124-direccion-albaran-firmado.md', clase: 'partida',
     fichero: 'src/modules/jobs/domain/jobDireccion.ts',
     partes: [

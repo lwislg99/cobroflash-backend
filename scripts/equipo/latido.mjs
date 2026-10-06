@@ -47,7 +47,10 @@
 //   9 · VIGÍA    → (SCRUM-1459) los avisos que `vigia-atascados` COMENTA en su issue y que nadie ha
 //                  leído, con su edad, mientras alguno de sus PR siga abierto. Del 2 al 6-oct-2026 comentó
 //                  tres veces sobre cuatro PR y nadie lo abrió. Y la línea de MAIN dice cuánto hace de
-//                  su último commit.
+//                  su último commit. (SCRUM-1463) Y si el vigía lleva más de 12 h sin CORRER, o su última
+//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
+//  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
+//                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -76,6 +79,8 @@ import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } fr
 // Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
 // distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
+// (SCRUM-1463) El estado de la sesión QA lo dice SU instrumento; aquí sólo se le pregunta `estado`.
+import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -601,7 +606,15 @@ export function prsDelAviso(cuerpo) {
  * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number}} e
  *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
  */
-export function seccionVigia({ issue, comentarios, abiertos, ahora }) {
+export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
+  // (SCRUM-1463) `pasadas`: `undefined` = no se pregunta (sólo los avisos) · cualquier otra cosa = se juzga.
+  if (pasadas !== undefined) {
+    const p = pasadaDelVigia(pasadas, ahora);
+    if (p.ciego) return ciega('VIGÍA', p.ciego);
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora });
+    if (!s.pudo) return s;
+    return { ...s, alertas: [...p.alertas, ...s.alertas], poblacion: `${p.texto} · ${s.poblacion}` };
+  }
   if (issue === undefined) return ciega('VIGÍA', `no se pudo buscar el issue «${TITULO_DEL_VIGIA}»`);
   if (issue === null) return ciega('VIGÍA', `no hay ningún issue ABIERTO titulado «${TITULO_DEL_VIGIA}»: o el vigía no ha corrido nunca, o alguien lo cerró`);
   if (!Array.isArray(comentarios)) return ciega('VIGÍA', `no se pudieron leer los comentarios del issue #${issue}`);
@@ -632,6 +645,60 @@ export function seccionVigia({ issue, comentarios, abiertos, ahora }) {
   };
 }
 
+/** El workflow del vigía: sus CORRIDAS dicen cuándo miró. Sus comentarios no: sólo comenta si la lista empeora. */
+const WORKFLOW_DEL_VIGIA = 'vigia-atascados.yml';
+/**
+ * Cuánto puede callar el vigía antes de que su silencio deje de ser «nada nuevo». Su cron pide cada 3 h y
+ * GitHub lo retrasa: hueco mediano 4,9 h y máximo 9,8 h en 60 pasadas (SCRUM-1270, 17 → 29-sep-2026), y
+ * máximo 10,1 h en las 30 del 29-sep al 6-oct. Doce horas queda por encima de todo lo medido.
+ */
+export const HORAS_DE_VIGIA_CALLADO = 12;
+
+/**
+ * (SCRUM-1463) ¿Sigue corriendo el vigía? Sin esto, un vigía parado y un vigía sin nada que decir dan la
+ * misma sección en ✅: es «no pude mirar = no hay» en el instrumento que avisa.
+ * @param {{created_at?:string, status?:string, conclusion?:string}[]|null} corridas  del más NUEVO al más viejo · `null` = no se pudieron leer
+ * @returns {{ciego?:string, alertas:{linea:string}[], texto:string}}
+ */
+export function pasadaDelVigia(corridas, ahora) {
+  if (!Array.isArray(corridas)) return { ciego: 'no se pudo leer cuándo corrió el vigía por última vez (las corridas de su workflow no llegaron): no sé si sigue mirando', alertas: [], texto: '' };
+  const terminadas = corridas.filter((c) => c && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas del vigía que llegaron está terminada y fechada: no sé cuándo miró por última vez`, alertas: [], texto: '' };
+  const horas = (c) => (ahora - Date.parse(c.created_at)) / 3600000;
+  const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
+  const ultima = terminadas[0];
+  const buena = terminadas.find((c) => c.conclusion === 'success');
+  const alertas = [];
+  if (ultima.conclusion !== 'success') {
+    alertas.push({ linea: `la última pasada del vigía (${String(ultima.created_at).slice(0, 16)}Z) terminó en ${String(ultima.conclusion).toUpperCase()}: NO miró. ${buena ? `La última buena es de hace ${cuanto(horas(buena))}` : `Ninguna buena entre las ${terminadas.length} que llegaron`}. Que no haya avisos nuevos NO es que no haya atascos` });
+  } else if (horas(ultima) > HORAS_DE_VIGIA_CALLADO) {
+    alertas.push({ linea: `el vigía NO CORRE desde hace ${cuanto(horas(ultima))} (${String(ultima.created_at).slice(0, 16)}Z) y se le pide cada 3 h (hueco mayor medido: 10,1 h; tope ${HORAS_DE_VIGIA_CALLADO} h). Que no haya avisos nuevos NO es que no haya atascos` });
+  }
+  return { alertas, texto: `última pasada del vigía hace ${cuanto(horas(ultima))} (${ultima.conclusion})` };
+}
+
+// ───────────────────────────── 10 · QA ─────────────────────────────
+
+/**
+ * (SCRUM-1463) La sesión de la cuenta QA, dicha con las palabras de `scripts/qa/sesion-panel.mjs estado`
+ * (se LLAMA, no se copia). Del 3 al 6-oct-2026 estuvo muerta y cuatro tickets con su código en producción
+ * quedaron sin verificar; el orquestador dijo cuatro días que la renovaba el fundador, y la renovó él en
+ * un comando. Por eso MUERTA dice QUIÉN. El latido sólo lee: no entra, no renueva, no cierra sesión.
+ * @param {{codigo:number|undefined, lineas:string[]}} e  la salida de `estado`: 0 VIVA · 1 MUERTA · 2 NO SE PUEDE SABER
+ */
+export function seccionQA({ codigo, lineas = [] }) {
+  const dicho = lineas.map((l) => String(l).trim()).filter(Boolean);
+  const texto = dicho.join(' · ');
+  if (codigo === 0 && /^VIVA\b/.test(dicho[0] || '')) return { nombre: 'QA', pudo: true, alertas: [], poblacion: `sesión de la cuenta QA: ${texto}` };
+  if (codigo === 1 && /^MUERTA\b/.test(dicho[0] || '')) {
+    return {
+      nombre: 'QA', pudo: true, poblacion: 'sesión de la cuenta QA: MUERTA — nada de lo mergeado se puede ver en yaqu.app hasta renovarla',
+      alertas: [{ linea: `${texto} · LA RENUEVA EL ORQUESTADOR, o cualquier sesión de esta máquina: el secreto está en disco y no hace falta el fundador. ⛔ Una vez viva, nadie prueba «cerrar sesión»: la mata para todas` }],
+    };
+  }
+  return ciega('QA', codigo === 2 && texto ? texto : `\`sesion-panel.mjs estado\` no contestó ninguna de sus tres respuestas (código ${codigo === undefined ? 'ninguno: reventó' : codigo}${texto ? `, dijo: ${texto}` : ', sin texto'})`);
+}
+
 // ───────────────────────────── el veredicto ─────────────────────────────
 
 function ciega(nombre, motivo) { return { nombre, pudo: false, motivo, alertas: [], poblacion: null }; }
@@ -642,7 +709,17 @@ export function salidaDe(secciones) {
   return SALIDA_OK;
 }
 
-export function informe(secciones, { ahora, fallosDe = () => undefined }) {
+/**
+ * (SCRUM-1463) Lo que el latido NO mide y hay que hacer a mano: se SEÑALA en cada pasada, para que no
+ * dependa de que alguien se acuerde. Un puntero no afirma nada y no cuenta para la salida. El 6-oct-2026
+ * el cruce de Jira se hizo a mano sobre 40 tickets «En curso» y 36 tenían su trabajo en main; el comando
+ * que lo hace existía desde SCRUM-1259 y nadie lo corría.
+ */
+export const NOTAS_FIJAS = [
+  'ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (los que no están en Done, TODAS las páginas) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h: con una más vieja el comando se declara CIEGO y sale 2 · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida',
+];
+
+export function informe(secciones, { ahora, fallosDe = () => undefined, notas = [] }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
     if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); for (const a of s.alertas) out.push(`   · ${a.linea}`); continue; }
@@ -654,6 +731,7 @@ export function informe(secciones, { ahora, fallosDe = () => undefined }) {
       else if (f === null) out.push('       (no supe leer qué cayó: el log no llegó a su resumen)');
     }
   }
+  if (notas.length) out.push('', ...notas);
   const c = salidaDe(secciones);
   out.push('', c === SALIDA_CIEGO ? '→ ALGUNA SECCIÓN NO PUDO MIRAR (salida 2)' : c === SALIDA_AVISO ? '→ HAY COSAS QUE ATENDER (salida 1)' : '→ nada que atender (salida 0)');
   return out.join('\n');
@@ -960,10 +1038,17 @@ async function todo() {
     '.[] | {id, creado: .created_at, autor: .user.login, esBot: (.user.type == "Bot"), cuerpo: .body, reacciones: .reactions.total_count}'])
     .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)));
   // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
-  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora });
+  // Cuándo CORRIÓ: las corridas de su workflow. `null` si no llegan (la sección lo dice; no lo da por bueno).
+  const pasadas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA}/runs?per_page=10`]).workflow_runs) ?? null;
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas });
   tramo('vigía');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig];
-  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n) }));
+  // 10 · QA. Una petición GET a producción con la cookie guardada: lo mismo que `estado`. No entra ni renueva.
+  const dichoQA = [];
+  const codigoQA = await ejecutarQA(['estado'], { out: (s) => dichoQA.push(s), err: (s) => dichoQA.push(s) }).catch((e) => { dichoQA.push(`reventó: ${String((e && e.message) || e).split('\n')[0]}`); return undefined; });
+  const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
+  tramo('QA');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
+  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
 }
