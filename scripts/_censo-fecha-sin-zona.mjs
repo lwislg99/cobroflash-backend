@@ -233,7 +233,7 @@ function rutaDeHandler(fn, sf) {
  * ninguna de las dos, es del cuerpo del módulo — límite declarado, no oculto: un fichero con dos
  * llamadas de la familia sueltas fuera de toda función y toda ruta las funde en una identidad.
  */
-function identidadDe(nodo, sf) {
+export function identidadDe(nodo, sf) {
   for (let p = nodo.parent; p; p = p.parent) {
     if ((ts.isFunctionDeclaration(p) || ts.isMethodDeclaration(p) || ts.isFunctionExpression(p)) && p.name) {
       return p.name.getText(sf);
