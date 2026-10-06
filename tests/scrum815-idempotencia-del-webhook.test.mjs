@@ -202,7 +202,13 @@ test('SCRUM-815 · 📌 el censo de EFECTOS del manejador no crece sin decirlo',
     // del despacho, que es donde el corte de arriba deja de contar.
     marcarEventoProcesado: 1,        // BD: `processed_at` al TERMINAR, y sólo entonces
     anotarFalloDeEvento: 1,          // BD: `last_error` en el `catch`; `processed_at` sigue NULL
-  }, '🔴 HA CAMBIADO LO QUE HACE EL MANEJADOR. La decisión de SCRUM-815 se tomó sobre estos '
+    // ── SCRUM-1402, 6-oct-2026: la pregunta «¿este plan existe?», delante de las TRES escrituras que
+    // copiaban `metadata.plan`. No es un efecto: no escribe en BD ni sale del proceso — mira una lista
+    // y, si el plan no está, deja un `console.warn`. Se declara porque el censo vigila lo que hace el
+    // manejador. El reparto de reversibles no cambia; lo que cambia es que un rechazo SALTA la
+    // escritura, la recompensa y el correo, y el evento se cierra igual como procesado.
+    planQueExiste: 3,                // sin BD y sin salida: pregunta y avisa
+  },'🔴 HA CAMBIADO LO QUE HACE EL MANEJADOR. La decisión de SCRUM-815 se tomó sobre estos '
     + 'efectos: tres salidas fuera del proceso, cinco escrituras de plan, una recompensa y un '
     + 'correo. Si la lista cambia, la propuesta de columnas hay que releerla antes de aplicarla.');
 });

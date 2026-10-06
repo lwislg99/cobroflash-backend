@@ -167,6 +167,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
+  // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
+  // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
+  // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 3,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

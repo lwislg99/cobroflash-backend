@@ -1,0 +1,51 @@
+
+NO-APARECE · 41 instancias
+     39  PREFIJO-EXACTO
+      2  SIN-PAREJA-LOCAL
+
+MUERTO · 44 instancias
+     44  COHERENTE (el declarado es el PRIMER caído: antes de él no hay ningún rojo que llegue)
+
+LIMPIA-SIN-VERDE · 25 instancias
+     22  CON-PAREJA
+      3  SIN-PAREJA-LOCAL
+   ⚠ 37455139532 scrum834-puerta-avisador-rojo «SCRUM-859 · 🔴 insertar una entrada en medio NO mu» SIN-PAREJA-LOCAL
+   ⚠ 37451560421 scrum834-puerta-avisador-rojo «SCRUM-859 · 🔴 insertar una entrada en medio NO mu» SIN-PAREJA-LOCAL
+   (limpia sin pareja) 37456412455 scrum1349-entorno-prestado-solo-baja «CONTROL POSITIVO DEL TRINQUETE»
+   (limpia sin pareja) 37456412455 scrum1349-entorno-prestado-solo-baja «son EXACTAMENTE los declarados»
+   (limpia sin pareja) 37003969458 scrum1412-tanda-por-tramos «SCRUM-1412 · ② 🔴 con la condición SIN cumplirse, »
+
+POSICIÓN del test declarado · todas las declaraciones de los 6 ficheros · veces que salió ciega/muerta en CI
+     0 veces · posición 19/20 · mutada  315290 B · limpia 34826 B · scrum859-identidad-y-m · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrad»
+    27 veces · posición 17/20 · mutada 1095001 B · limpia 34826 B · scrum859-identidad-y-m · «SCRUM-859 · 🔴 insertar una entrada en medio NO »
+     0 veces · posición  1/9 · mutada   34411 B · limpia 16659 B · scrum757-la-declaracio · «una declaración NO EVALUABLE se DENUNCIA con fic»
+     0 veces · posición  1/9 · mutada   22825 B · limpia 16659 B · scrum757-la-declaracio · «una declaración NO EVALUABLE se DENUNCIA con fic»
+     0 veces · posición  1/9 · mutada   24633 B · limpia 16659 B · scrum757-la-declaracio · «una declaración NO EVALUABLE se DENUNCIA con fic»
+     2 veces · posición  5/9 · mutada 2075413 B · limpia 16659 B · scrum757-la-declaracio · «NEGATIVO: un objeto cualquiera del fichero NO se»
+     0 veces · posición  7/64 · mutada  114570 B · limpia 92455 B · vigia-atascados.test.m · «SIN-CHECKS es una causa PROPIA, no «esperando»»
+     2 veces · posición 36/64 · mutada  118342 B · limpia 92455 B · vigia-atascados.test.m · «🔴 CEBO REAL #1205 · su obligatorio en FAILURE d»
+     8 veces · posición 45/64 · mutada  110880 B · limpia 92455 B · vigia-atascados.test.m · «🔴 CEBO REAL #1212 · con la memoria REAL del iss»
+     8 veces · posición 50/64 · mutada   96088 B · limpia 92455 B · vigia-atascados.test.m · «🔴 `gh pr list` devuelve al bot como `app/yaqu-b»
+    13 veces · posición 55/64 · mutada   96432 B · limpia 92455 B · vigia-atascados.test.m · «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado»
+     5 veces · posición 43/53 · mutada   88667 B · limpia 83121 B · scrum834-puerta-avisad · «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot de»
+    19 veces · posición 45/53 · mutada   87142 B · limpia 83121 B · scrum834-puerta-avisad · «SCRUM-1263 · 🔴 el guard SALTADO no es un guard »
+     0 veces · posición  1/34 · mutada   61442 B · limpia 57740 B · scrum853-avisador-solo · «CEBO REAL #1255 · rojo SOLO en checks NO obligat»
+     0 veces · posición  3/34 · mutada   61204 B · limpia 57740 B · scrum853-avisador-solo · «sin lista de obligatorios NO despierta, y lo DIC»
+     0 veces · posición 11/34 · mutada   72108 B · limpia 57740 B · scrum853-avisador-solo · «CEBO REAL #1255 · el aviso salió 18 s DESPUÉS de»
+     0 veces · posición 16/34 · mutada   67132 B · limpia 57740 B · scrum853-avisador-solo · «CEBO REAL #1255 · claude.yml NO arranca sobre un»
+     0 veces · posición 20/34 · mutada   61412 B · limpia 57740 B · scrum853-avisador-solo · «CEBO REAL #1255 · PR mergeado cuando Claude term»
+     5 veces · posición 30/34 · mutada   70598 B · limpia 57740 B · scrum853-avisador-solo · «claude.yml pregunta a la puerta ANTES de la acci»
+     2 veces · posición 33/34 · mutada   75274 B · limpia 57740 B · scrum853-avisador-solo · «el aviso de rama muda se comprueba sobre el fich»
+     1 veces · posición 26/34 · mutada   67214 B · limpia 57740 B · scrum853-avisador-solo · «un 404 que llega como CUERPO DEL ERROR no es una»
+     4 veces · posición 28/34 · mutada   61394 B · limpia 57740 B · scrum853-avisador-solo · «lo que añade el 853 no se queda con la salida de»
+     0 veces · posición  5/28 · mutada   76326 B · limpia 47321 B · scrum813-trinquete-de- · «el trinquete HABLA: un test que depende de la zo»
+     0 veces · posición  6/28 · mutada   69093 B · limpia 47321 B · scrum813-trinquete-de- · «el trinquete NO denuncia a los tests que YA fija»
+     0 veces · posición  1/28 · mutada   96046 B · limpia 47321 B · scrum813-trinquete-de- · «SUELO: la zona LLEGA al proceso hijo, y se compr»
+     0 veces · posición 10/28 · mutada   56446 B · limpia 47321 B · scrum813-trinquete-de- · «una CENSADA que deja de cambiar de veredicto pon»
+     0 veces · posición 11/28 · mutada   51046 B · limpia 47321 B · scrum813-trinquete-de- · «SUELO: CERO dependientes teniendo censadas NO es»
+     0 veces · posición 21/28 · mutada   56326 B · limpia 47321 B · scrum813-trinquete-de- · «SUELO: si el detalle por ruta NO ve nada pero la»
+     0 veces · posición 20/28 · mutada   57280 B · limpia 47321 B · scrum813-trinquete-de- · «EL QUE DECIDE: un fichero de TEST tocado durante»
+     0 veces · posición 23/28 · mutada   52908 B · limpia 47321 B · scrum813-trinquete-de- · «la marca REAL trae el detalle, y cuadra con lo q»
+     2 veces · posición 25/28 · mutada   68294 B · limpia 47321 B · scrum813-trinquete-de- · «EL QUE DECIDE: un fichero de TEST tocado a mano »
+     4 veces · posición 27/28 · mutada   62702 B · limpia 47321 B · scrum813-trinquete-de- · «con la lista VACÍA nada se ampara: cualquier rut»
+     3 veces · posición 24/28 · mutada   59182 B · limpia 47321 B · scrum813-trinquete-de- · «POSITIVO: la tanda escribiendo LO SUYO no ciega »

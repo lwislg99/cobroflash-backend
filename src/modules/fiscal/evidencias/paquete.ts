@@ -171,6 +171,24 @@ A partir de la versión 3, los cinco datos viajan dentro de la firma y esta
 limitación no se aplica.
 `;
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1252 · EL LIBRO DEL PAQUETE SON LAS FACTURAS, Y EL PAQUETE DICE LO QUE DEJA FUERA.
+// **Firmado por el fundador el 1-oct-2026** (SCRUM-1252, comentario 17726; regla 39).
+//
+// Desde SCRUM-1252 el lector pide el libro con `soloFacturas`: un justificante de cobro no sale en
+// `libro-registro.csv` ni en `indice.csv`. Pero su IVA SIGUE en `modelo-303.csv`, que declara lo
+// devengado y se lee aparte. Sin este aviso, quien sume el libro no llega al total del 303 del
+// mismo ZIP y nada le explica por qué: el descuadre pasaría de visible a invisible, que es justo
+// lo que la cabecera de este fichero prohíbe.
+//
+// Va en `avisos` y SÓLO cuando el lector dejó fuera algún justificante (`justificantesFuera`, el
+// recuento que ya devuelve él: aquí no se vuelve a decidir qué es un justificante). Con cero
+// fuera, el libro y el 303 no se separan por este motivo.
+//
+// ⛔ Es UN literal, entero y en una sola línea: así lo cruza `scrum514` con su ficha de
+// `docs/microcopy/` (SCRUM-1329). Ni una palabra distinta sin volver a firmar.
+export const AVISO_LIBRO_SOLO_FACTURAS = 'El libro registro incluye sólo facturas. Si emitiste justificantes de cobro, no aparecen aquí — pero su IVA sí está en el modelo 303 de este mismo paquete. Por eso los totales de los dos documentos pueden no coincidir.';
+
 /** El estado de un asiento a partir de los albaranes que le apuntan. */
 function estadoDelAsiento(resultados: ResultadoSobre[]): string {
   if (resultados.length === 0) return 'sin_albaranes';
@@ -245,6 +263,8 @@ export function construirPaqueteEvidencias(params: {
   if (params.libro.importesIlegibles.length > 0) {
     avisos.push(`${params.libro.importesIlegibles.length} importe(s) ilegibles: ${params.libro.importesIlegibles.join(' ')}`);
   }
+  // SCRUM-1252: lo que el libro deja fuera se dice. El recuento es el del lector, no uno propio.
+  if ((params.libro.justificantesFuera ?? 0) > 0) avisos.push(AVISO_LIBRO_SOLO_FACTURAS);
   if (params.informeVerificacion.conclusion === 'no_se_pudo_mirar') {
     avisos.push('no se examinó ningún albarán firmado: el sello no se ha comprobado');
   }

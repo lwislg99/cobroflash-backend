@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+const z = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+const cuenta = (xs) => xs.reduce((m, x) => m.set(x, (m.get(x) || 0) + 1), new Map());
+const tabla = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `   ${String(v).padStart(4)}  ${k}`).join('\n');
+console.log(`POBLACION · ${z.length} runs\nconclusión del job del trinquete de zona:\n` + tabla(cuenta(z.map((x) => x.zona))));
+const c = z.filter((x) => x.zona === 'failure');
+console.log(`\nCAÍDOS ${c.length} · paso:\n` + tabla(cuenta(c.map((x) => x.paso))));
+console.log('¿imprime «EL TRINQUETE HABLA»?\n' + tabla(cuenta(c.map((x) => String(x.habla)))));
+console.log('forma: nuevas / de ellas con «ausente» en una zona:\n' + tabla(cuenta(c.map((x) => `nuevas ${x.nuevas} · con ausente ${x.conAusente}${x.nuevas === x.conAusente ? ' (TODAS)' : ''}`))));
+console.log('pares de veredicto vistos:\n' + tabla(cuenta(c.flatMap((x) => x.pares || []))));
+console.log('ficheros acusados (runs):\n' + tabla(cuenta(c.flatMap((x) => x.ficheros || []))));
+for (const x of c) console.log(`   ${x.id} ${x.creado} ${x.evento} ${String(x.rama).slice(0, 40)} · nuevas ${x.nuevas} · ausente ${x.conAusente} · ${(x.pares || []).join(',')} · ${(x.ficheros || []).map((f) => String(f).replace('tests/', '').replace('.test.mjs', '')).join(',')}`);
+for (const x of c.filter((y) => !y.nuevas)) console.log(`   (sin nuevas) ${x.id}: ${(x.otro || []).join(' | ')}`);

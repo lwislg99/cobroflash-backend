@@ -1,4 +1,5 @@
 // src/modules/system/quoteAdmin.ts
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../core/db/prisma';
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
@@ -41,6 +42,9 @@ export async function listQuotesAdmin(
   // `null` ese if es falso y el filtro "del propietario" se caería en silencio, devolviendo
   // TODOS los presupuestos del negocio bajo el nombre de una persona.
   teamMemberId?: number | null,
+  // SCRUM-1403 · el recorte de quien pregunta (`wherePresupuestosVisibles`). `null` = ve todo el
+  // negocio, y entonces este `where` sale exactamente como salía.
+  recorte: Prisma.QuoteWhereInput | null = null,
 ) {
   const where: any = { merchantId };
 
@@ -68,6 +72,11 @@ export async function listQuotesAdmin(
     if (dateFrom) where.createdAt.gte = dateFrom;
     if (dateTo)   where.createdAt.lte = dateTo;
   }
+
+  // SCRUM-1403 · en `AND`, no en `OR`: el `OR` de arriba es el de la búsqueda, y mezclarlos
+  // convertiría «los suyos» en «los suyos o los que casen con lo que busca». Y se suma al filtro
+  // por autor: pedir los de un compañero devuelve, de esos, los que además son suyos.
+  if (recorte) where.AND = [recorte];
 
   const quotes = await prisma.quote.findMany({
     where,
