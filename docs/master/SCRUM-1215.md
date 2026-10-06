@@ -259,3 +259,51 @@ El título nuevo no se sale ni pisa la ✕ en ningún ancho. A 320 px parte en d
 ## Lo que NO entra aquí
 
 `confirmarPropuesta` y el lote 2 (libro registro): el ticket sigue abierto por ellos (c.18283).
+
+# SCRUM-1215 · `confirmarPropuesta` — el botón del dictado dice «Añadir al parte»
+
+**Medido contra:** `origin/main` = `eb1fdefaf9e660bd706e1fbba31c90f868343ad1` · 2026-10-06T12:47:43Z
+A9: comprobación → `tests/scrum1230-colocar-lineas-dictadas.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Un literal en `public/dashboard/js/parteDetailView.js`: sin marcado nuevo, sin estilos y sin clases nuevas.
+
+6-oct-2026 · **S4** · rama `scrum-1215-anadir-al-parte`. Firma: SCRUM-1215 c.17375 (28-sep-2026), con su motivo corregido en c.17377. Ficha: `docs/microcopy/2026-09-28-SCRUM-1215-anadir-al-parte.md`.
+
+## Qué había
+
+El texto estaba firmado desde el 28-sep y el botón seguía diciendo «Añadir estas líneas», que no se aprobó (c.17367). Aplicarlo pide cuatro cosas, y una estaba parada: mover la entrada del texto de `acusadas` a `retiradas` en `scripts/_censo-convenio-microcopy-declarados.json`. Esa edición se denegó el 28-sep (más arriba en este registro: «[Logging/Audit Tampering]») y desde entonces constaba como «no se reintenta».
+
+## El permiso, y por dónde llegó
+
+- **Permiso del fundador, transmitido por el orquestador:** «que S4 lo pruebe». No me lo dijo a mí y no lo he comprobado: está escrito por el orquestador en SCRUM-1215 c.18381, con el alcance (ese fichero, esa entrada, ese cambio).
+- **Carril:** por la tabla (`docs/equipo/dos-equipos.md:171`) `scripts/` es de S0. La excepción para esta edición está en el mismo c.18381. El descuadre entre la tabla y la práctica —este JSON lo he editado seis veces dentro de lotes de microcopy— queda abierto y no lo resuelve esta rama.
+- La primera vez que el orquestador pidió reintentarlo, sin el permiso, no se intentó.
+
+## Qué pasó al intentarlo
+
+**Entró sin bloqueo**, a las ~12:46Z: dos ediciones con la herramienta normal. No hay un veto sobre el fichero; después de la denegación del 28-sep ya se había editado dos veces más (`849dadca`, `3a4b85a3`).
+
+## Qué cambia
+
+- `TEXTOS.confirmarPropuesta`: «Añadir al parte», con su `// APROBADO · SCRUM-1215 comentario 17375` encima.
+- Tres comentarios del mismo fichero que nombraban el rótulo viejo.
+- El JSON del censo: la entrada sale de `acusadas` y entra en `retiradas` con su motivo.
+- `tests/scrum1230-colocar-lineas-dictadas.test.mjs`: dos mensajes de assert nombraban el rótulo viejo (lo que afirman no cambia), y un test nuevo que lee el botón en el banco y exige el literal firmado.
+
+## Verificado, ejecutando
+
+- El test nuevo, con el literal viejo: **rojo**. Con el cambio: verde.
+- `tests/scrum1157-censo-convenio-microcopy.test.mjs` con la marca puesta y el JSON sin mover: **rojo** («SOBRA … TEXTOS.confirmarPropuesta»). Con la entrada en `retiradas`: verde. La edición del JSON hacía falta.
+
+## El gemelo, buscado
+
+`git grep "Añadir estas líneas"` en `public/`, `src/` y `tests/`: en `public/` no queda más que el comentario que explica la sustitución. En `tests/` quedan cuatro menciones, en comentarios y en el nombre de un test de `scrum1266b` (lo cita `docs/master/SCRUM-1327.md`): no se tocan. `jobDetailView.js:2865` (S2) ya pintaba «Añadir al parte» en otro botón.
+
+## Lo que NO está medido
+
+- **En yaqu.app:** nada todavía. Se ve en el parte 9 de la cuenta QA: dictar, «Ordenar en líneas» y leer el botón. Pide una llamada a la IA de verdad, o contestarla desde la sonda.
+- Ancho del botón: el texto nuevo es más corto que el viejo (15 caracteres frente a 19) y el botón ocupa todo el ancho; no medido.
+
+## Lo que NO entra aquí
+
+El lote 2 (libro registro, SCRUM-1428, J1). Con esto, de SCRUM-1215 queda sólo eso.
