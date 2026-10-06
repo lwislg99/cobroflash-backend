@@ -393,7 +393,12 @@ const COPY_APROBADA = {
   // prefiere otra palabra aquí, se cambia en este renglón y en la cabecera de la vista.
   columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones'],
   filtroTodos: 'Facturación: todos',
-  cobro: { sin_facturar: 'sin facturar', parcial: 'parcial', facturado: 'facturado' },
+  // SCRUM-1450 · ESTA RANURA CAMBIÓ DE DECISIÓN, no de implementación. Hasta el 2-oct-2026 decía
+  // `sin facturar` · `parcial` · `facturado` (aprobado el 5-ago-2026). El 2-oct se firmaron para el
+  // mismo dato «Sin facturar» · «Facturado en parte» · «Facturado» (SCRUM-1375 comentario 18203) y
+  // el orquestador decidió que la lista usa ESOS (SCRUM-1450): dos vocabularios para un hecho era
+  // lo que la firma quería evitar. Sigue siendo ranura a ranura; lo que se compara es la firma nueva.
+  cobro: { sin_facturar: 'Sin facturar', parcial: 'Facturado en parte', facturado: 'Facturado' },
 };
 
 /**
@@ -465,8 +470,13 @@ function etiquetaEstadoSegunLaVista(valor) {
 }
 function etiquetaCobroSegunLaVista(valor) {
   const cuerpo = VISTA.slice(VISTA.indexOf('function etiquetaCobro('), VISTA.indexOf('function esc('));
+  // SCRUM-1450 · la lista ya no tiene texto propio: lo pide al mapa de la ficha, que carga antes.
+  // Se le pone delante ESE mapa, leído de su fichero, igual que hace `index.html`.
+  const ficha = fs.readFileSync(path.join(path.dirname(F_INDEX), 'js', 'albaranDetailView.js'), 'utf8');
+  const mapa = ficha.slice(ficha.indexOf('const TEXTOS_FACTURACION_ALBARAN'), ficha.indexOf('// ───', ficha.indexOf('function textoDeFacturacion(')));
+  assert.ok(mapa.includes('function textoDeFacturacion('), 'SUELO: no encuentro el mapa de facturación de la ficha');
   // eslint-disable-next-line no-new-func
-  return new Function(cuerpo + '; return etiquetaCobro(' + JSON.stringify(valor) + ');')();
+  return new Function(mapa + ';' + cuerpo + '; return etiquetaCobro(' + JSON.stringify(valor) + ');')();
 }
 
 test('SCRUM-301 · la copy APROBADA está, ranura a ranura, y el marcador se ha retirado', () => {

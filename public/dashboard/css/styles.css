@@ -4208,9 +4208,17 @@ textarea.parte-linea-desc {
    cambiar un píxel — y el trinquete de estilos en línea SÓLO BAJA. */
 .alb-enlace { color: var(--green-700); }
 .alb-numero { font-weight: 600; color: var(--green-700); }
-.alb-chip-cobro { margin-left: 6px; }
+.alb-chip-cobro { margin-left: 6px; white-space: nowrap; } /* SCRUM-1450: «Facturado en parte» no se parte en dos */
 
 @media (max-width: 640px) {
+  /* SCRUM-1450 · la marca de facturación va DEBAJO del estado, no a su lado. Con «Facturado en
+     parte» las dos en línea piden 209 px y a 320 px la celda pisaba el número del albarán (medido).
+     Apiladas piden 127. En escritorio ya salían una bajo la otra.
+     Y el estado ya no baja hasta la línea del cliente (ver la rejilla de abajo): apilada ahí, la
+     marca tapaba un nombre largo. El cliente pasa a ancho completo y envuelve. */
+  .table--albaranes td.cell-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .table--albaranes td.cell-status .alb-chip-cobro { margin-left: 0; }
+  .table--albaranes td.cell-client { white-space: normal; }
   /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
      `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
      movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
@@ -4221,7 +4229,7 @@ textarea.parte-linea-desc {
   .table--albaranes tbody tr {
     grid-template-areas:
       "id       status"
-      "client   status"
+      "client   client"
       "date     date"
       "trabajo  trabajo"
       "actions  actions";
