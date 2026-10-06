@@ -108,19 +108,29 @@ export async function sendQuoteWhatsAppToCustomer(
     return { ok: false, sent: false, reason: 'whatsapp_send_failed', error: (result as { error?: unknown }).error };
   }
 
-  // Marcar como enviado si estaba en draft
-  if (quote.status === 'draft') {
-    await prisma.quote.update({ where: { id: quote.id }, data: { status: 'sent' } });
-  }
+  // SCRUM-1465 · EL MENSAJE YA SALIÓ. Lo que sigue es el apunte, y un apunte que falla no convierte
+  // el envío en «no salió»: si esto lanzara, la ruta contestaría un error, el profesional
+  // reintentaría y el cliente recibiría el presupuesto dos veces. Se deja escrito y se sigue.
+  try {
+    // Marcar como enviado si estaba en draft
+    if (quote.status === 'draft') {
+      await prisma.quote.update({ where: { id: quote.id }, data: { status: 'sent' } });
+    }
 
-  // ENT-3: historial
-  recordCustomerEvent({
-    merchantId: quote.merchantId,
-    customerId: quote.customerId,
-    type: 'quote_sent',
-    title: `Presupuesto #${displayNum} enviado por WhatsApp`,
-    detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
-  });
+    // ENT-3: historial
+    recordCustomerEvent({
+      merchantId: quote.merchantId,
+      customerId: quote.customerId,
+      type: 'quote_sent',
+      title: `Presupuesto #${displayNum} enviado por WhatsApp`,
+      detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
+    });
+  } catch (err) {
+    console.error(
+      `[sendQuote] el presupuesto ${quote.id} SALIÓ por WhatsApp y no se pudo apuntar (sigue como «${quote.status}»):`,
+      (err as Error)?.message || err,
+    );
+  }
 
   return { ok: true, sent: true, to, quoteId: quote.id };
 }
