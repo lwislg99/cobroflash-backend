@@ -27,9 +27,9 @@ import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifi
 import { temporal } from '../tests/_temporal.mjs';
 
 import {
-  CANARIOS, CENSADAS, ESCRITURAS_DE_LA_TANDA, RAIZ, SALIDA_CIEGO, ZONAS,
-  arbolQuieto, cambianDeVeredicto, escribirCanarios, ficherosDeLaTanda, juzgarCanarios,
-  marcaDelArbol, medirEnZona, sondaDeZona, veredicto,
+  AUSENTE, CANARIOS, CENSADAS, ESCRITURAS_DE_LA_TANDA, RAIZ, SALIDA_CIEGO, ZONAS,
+  arbolQuieto, compararZonas, escribirCanarios, ficherosDeLaTanda, juzgarCanarios,
+  marcaDelArbol, medirEnZona, repescar, resolverRepesca, sondaDeZona, veredicto,
 } from './_trinquete-de-zona.mjs';
 
 const AQUI = fileURLToPath(import.meta.url);
@@ -121,7 +121,12 @@ if ((quieto.amparadas || []).length) {
   for (const r of quieto.amparadas) console.log(`      · ${r.ruta}   ${r.antes} → ${r.despues}   [declarada]`);
 }
 
-let cambian = medidas.every((m) => m.ok) ? cambianDeVeredicto(medidas) : [];
+// 🔴 SCRUM-1335b · DOS LISTAS, NO UNA. `cambian` son las que tienen dos veredictos reales y
+// distintos; `sinComparar`, las que en alguna zona no dejaron resultado. Antes iban juntas y las
+// segundas acusaban: el motivo entero está en `compararZonas`.
+const enLaTanda = medidas.every((m) => m.ok) ? compararZonas(medidas) : { cambian: [], sinComparar: [] };
+let cambian = enLaTanda.cambian;
+let sinComparar = enLaTanda.sinComparar;
 
 // ── ④ LA REPESCA · fichero a fichero, para no confundir zona con parpadeo ──────────────────
 //
@@ -130,30 +135,33 @@ let cambian = medidas.every((m) => m.ok) ? cambianDeVeredicto(medidas) : [];
 // grita en falso se apaga. Cada candidato se vuelve a medir con SU FICHERO SOLO, en las mismas
 // zonas. Cuesta segundos porque son pocos ficheros.
 //
+// Y los que no se pudieron comparar van a la repesca igual: a solas la mayoría SÍ se compara, y
+// «no pude comparar» sólo se dice de los que siguen sin resultado después de intentarlo.
+//
 // ⚠️ LÍMITE DECLARADO: una dependencia de zona que sólo se manifieste EN COMPAÑÍA de otros
 // ficheros no se confirmaría, y aquí saldría como «no confirmada» en vez de como hallazgo. No se
 // ha visto ningún caso así; se escribe porque no se ha demostrado que no pueda existir.
-const noConfirmadas = [];
-if (cambian.length && !sinConfirmar) {
+let noConfirmadas = [];
+let resueltas = [];
+if ((cambian.length || sinComparar.length) && !sinConfirmar) {
+  const candidatas = [...cambian, ...sinComparar];
   const porFichero = new Map();
-  for (const c of cambian) {
-    const abs = path.isAbsolute(c.fichero) ? c.fichero : path.join(RAIZ, c.fichero);
-    if (!porFichero.has(abs)) porFichero.set(abs, []);
-    porFichero.get(abs).push(c);
-  }
+  for (const c of candidatas) porFichero.set(c.fichero, (porFichero.get(c.fichero) || 0) + 1);
   console.log(`\nREPESCA · ${porFichero.size} fichero(s) con candidatos, medidos a solas\n`);
-  const confirmadas = new Set();
-  for (const [abs] of porFichero) {
-    const solo = ZONAS_USADAS.map((zona) => medirEnZona({
-      zona, ficheros: [abs], raiz: RAIZ,
-      salida: path.join(dirTrabajo, `solo-${path.basename(abs)}-${zona.replace(/\W/g, '_')}.json`),
-    }));
-    const otra = solo.every((m) => m.ok) ? cambianDeVeredicto(solo) : [];
-    for (const c of otra) confirmadas.add(c.clave);
-    console.log(`   ${path.basename(abs).padEnd(46)} confirma ${otra.length} de ${porFichero.get(abs).length}`);
-  }
-  for (const c of cambian) if (!confirmadas.has(c.clave)) noConfirmadas.push(c);
-  cambian = cambian.filter((c) => confirmadas.has(c.clave));
+  const aSolas = repescar({
+    candidatas, zonas: ZONAS_USADAS, raiz: RAIZ, dirTrabajo,
+    alMedir: (fichero, solo) => {
+      const r = solo.every((m) => m.ok) ? compararZonas(solo) : null;
+      console.log(`   ${path.basename(fichero).padEnd(46)} `
+        + (r ? `a solas: cambian ${r.cambian.length} · sin comparar ${r.sinComparar.length}` : '🔴 a solas NO se pudo medir')
+        + `   (candidatas en la tanda: ${porFichero.get(fichero)})`);
+    },
+  });
+  const r = resolverRepesca({ cambian, sinComparar, aSolas });
+  cambian = r.confirmadas;
+  noConfirmadas = r.noConfirmadas;
+  resueltas = r.resueltas;
+  sinComparar = r.sinComparar;
 }
 
 // ── ⑤ los canarios juzgan al instrumento ANTES de que el instrumento juzgue al árbol ───────
@@ -164,8 +172,9 @@ if (cambian.length && !sinConfirmar) {
 // del árbol se colara como canario —y con ello a que el autocontrol se diera por bueno sin serlo.
 const rutasCanario = new Set(canarios.map((c) => c.rutaClave));
 const esCanario = (c) => rutasCanario.has(c.fichero);
-const controles = juzgarCanarios(cambian, canarios);
+const controles = juzgarCanarios(cambian, canarios, sinComparar);
 const enElArbol = cambian.filter((c) => !esCanario(c));
+const sinCompararEnElArbol = sinComparar.filter((c) => !esCanario(c));
 
 console.log('\nAUTOCONTROL · los cuatro canarios, por el mismo camino y en las mismas zonas\n');
 for (const c of canarios) {
@@ -188,6 +197,7 @@ const v = veredicto({
   medidas,
   controles,
   quieto,
+  sinComparar: sinCompararEnElArbol,
 });
 
 console.log(soloCanarios
@@ -198,6 +208,14 @@ for (const c of enElArbol) {
   console.log(`   ${censada ? '·' : '🔴 NUEVA'} ${c.prueba}`);
   console.log(`        ${c.fichero}`);
   console.log(`        ${c.porZona.map((p) => `${p.zona} → ${p.veredicto}`).join('   ·   ')}`);
+  if (c.porElFichero) {
+    console.log('        el resultado no llegó en una zona, pero EL FICHERO cae en una y en la otra no:');
+    console.log('        su código de salida no depende de que el resultado llegue.');
+  }
+  if (c.sinRefutar) {
+    console.log(`        a solas: ${c.sinRefutar}. La diferencia de la tanda se VIO en las dos zonas y`);
+    console.log('        nada la ha desmentido, así que queda en pie.');
+  }
   if (censada) console.log(`        censada: ${censada.parado_en}`);
 }
 if (!enElArbol.length) console.log('   (ninguna)');
@@ -206,6 +224,40 @@ if (noConfirmadas.length) {
   console.log(`\n⚠️ NO CONFIRMADAS a solas · ${noConfirmadas.length} — parpadeo, o dependencia que sólo`);
   console.log('   sale en compañía. NO cuentan para el veredicto, y por eso se imprimen aquí.\n');
   for (const c of noConfirmadas) console.log(`   · ${c.clave}`);
+}
+
+// ── ⑤bis LO QUE NO SE PUDO COMPARAR · se dice, con su cifra, y NO acusa ─────────────────────
+//
+// 🔴 SCRUM-1335b. Una prueba con resultado en una zona y sin él en la otra no ha cambiado de
+// veredicto: le falta una medida. Antes salía arriba como «🔴 NUEVA» y ponía el job en rojo; el
+// 6-oct-2026 eran 289 de 289 acusaciones. Ahora sale AQUÍ, contada, en verde o en rojo.
+//
+// La línea de cifras se imprime SIEMPRE, también con ceros: un «0 sin comparar» escrito es una
+// medida; una sección que no aparece no dice si no hubo o si no se miró.
+//
+// Con `--solo-canarios` no se imprime: el árbol no se ha mirado, y su cero no sería una medida.
+const enLaTandaDelArbol = enLaTanda.sinComparar.filter((c) => !esCanario(c)).length;
+const resueltasDelArbol = resueltas.filter((c) => !esCanario(c)).length;
+const CIFRAS_SIN_COMPARAR = `en la tanda ${enLaTandaDelArbol}`
+  + (sinConfirmar ? ' · sin repesca (`--sin-confirmar`)' : ` · comparadas a solas, con el mismo veredicto ${resueltasDelArbol}`)
+  + ` · SIGUEN SIN COMPARAR ${sinCompararEnElArbol.length}`;
+if (!soloCanarios) console.log(`\nNO PUDE COMPARAR · ${CIFRAS_SIN_COMPARAR}`);
+if (!soloCanarios && sinCompararEnElArbol.length) {
+  console.log('   Su resultado falta en alguna zona, también a solas. NO es una acusación: no se sabe si');
+  console.log('   dependen de la zona, y fijarles la zona no arregla nada. Lo que falta es el resultado');
+  console.log('   (el hijo corre con `forceExit`: SCRUM-1405).\n');
+  const porFichero = new Map();
+  for (const c of sinCompararEnElArbol) {
+    if (!porFichero.has(c.fichero)) porFichero.set(c.fichero, []);
+    porFichero.get(c.fichero).push(c);
+  }
+  for (const [fichero, lista] of porFichero) {
+    const faltan = ZONAS_USADAS
+      .map((z) => [z, lista.filter((c) => c.porZona.some((p) => p.zona === z && p.veredicto === AUSENTE)).length])
+      .filter(([, n]) => n > 0)
+      .map(([z, n]) => `faltan ${n} en ${z}`);
+    console.log(`   · ${fichero}   ${lista.length} prueba(s) · ${faltan.join(' · ')}`);
+  }
 }
 
 console.log('');
@@ -218,6 +270,10 @@ if (v.estado === 'OK' && soloCanarios) {
   console.log(`✔ TRINQUETE EN VERDE · la familia no ha crecido, y las ${CENSADAS.length} censadas siguen ahí.`);
   console.log('  Esto NO dice que el árbol no tenga defectos de zona: dice que ninguno CAMBIA DE');
   console.log(`  VEREDICTO entre ${ZONAS_USADAS.join(' y ')}. Un borde que caiga fuera de esas dos no se ve.`);
+  if (v.sinComparar.length) {
+    console.log(`  ⚠️ Y ${v.sinComparar.length} prueba(s) NO SE PUDIERON COMPARAR (arriba, con su fichero): de ésas`);
+    console.log('  este verde no dice nada. No son una acusación, y tampoco un «son iguales».');
+  }
 } else if (v.estado === 'CIEGO') {
   console.log('🔴 CIEGO · NO se emite veredicto sobre el árbol:');
   for (const m of v.motivos) console.log(`     · ${m}`);
