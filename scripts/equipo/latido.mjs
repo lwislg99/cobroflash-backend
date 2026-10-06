@@ -20,7 +20,8 @@
 // LO QUE MIRA, y cada sección declara su POBLACIÓN o dice «NO PUDE MIRAR» (nunca cero filas mudas):
 //   1 · PR       → obligatorio ROJO ≥ 2 h con lo que cayó · punta SIN check con la EDAD del push
 //                  («sin check» a los 2 min de empujar es «aún no ha arrancado»: medido el 1-oct,
-//                  y confundirlos costó tirar una corrida buena).
+//                  y confundirlos costó tirar una corrida buena) · (SCRUM-1453) SIN auto-merge ≥ 2 h,
+//                  con QUIÉN lo desarmó: el vigía ya lo clasificaba y aquí no se decía.
 //   2 · SESIONES → bloqueadas con lo que esperan (`needs`/`detail` de su state.json) · y la que ya
 //                  NO trabaja teniendo un PR suyo en rojo o sin veredicto: «nadie vuelve».
 //   3 · TRASPASO → de cada sesión que ya no trabaja, ¿su traspaso existe y es posterior a su arranque?
@@ -105,9 +106,35 @@ export function fallosDelLog(texto) {
 }
 
 /**
- * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, ahora?:number}} e
+ * (SCRUM-1453) De dónde viene un «sin auto-merge», leído de la línea de tiempo del PR. Medido el 2 y el
+ * 6-oct-2026 sobre #2128-#2131: los armó `yaqu-bot[bot]` y los desarmó una PERSONA a los 16-35 s. «Sin
+ * armar» a secas se leyó TRES veces como «el paso que arma miente» y se encargó investigarlo las tres.
+ * Manda el ÚLTIMO evento. Sin la lista no se sabe (`NO-PUDE-MIRAR`), y eso no es «nunca se armó».
+ * @param {{event?:string, actor?:string, created_at?:string}[]|undefined} eventos
  */
-export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush }) {
+export function origenDelSinArmar(eventos) {
+  if (!Array.isArray(eventos)) return { tipo: 'NO-PUDE-MIRAR', texto: 'NO PUDE MIRAR quién lo desarmó, ni si llegó a armarse' };
+  const suyos = eventos
+    .filter((e) => e && (e.event === 'auto_merge_enabled' || e.event === 'auto_merge_disabled'))
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  const ultimo = suyos[suyos.length - 1];
+  if (!ultimo) return { tipo: 'NUNCA', texto: 'NUNCA se armó (ningún armado en su línea de tiempo)' };
+  const quien = (e) => e.actor || 'actor DESCONOCIDO';
+  const cuando = (e) => String(e.created_at || 'fecha DESCONOCIDA').slice(0, 16);
+  if (ultimo.event === 'auto_merge_enabled') {
+    return { tipo: 'DISCREPA', texto: `su línea de tiempo acaba en un ARMADO de ${quien(ultimo)} (${cuando(ultimo)}) y la lista lo da sin armar: NO SÉ cuál vale` };
+  }
+  const armado = suyos.filter((e) => e.event === 'auto_merge_enabled').pop();
+  return {
+    tipo: 'DESARMADO',
+    texto: `lo DESARMÓ ${quien(ultimo)} el ${cuando(ultimo)}${armado ? ` (lo había armado ${quien(armado)}): el paso que arma hizo su trabajo` : ''}`,
+  };
+}
+
+/**
+ * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, eventosDeArmado?:(n:number)=>object[]|undefined, ahora?:number}} e
+ */
+export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined }) {
   if (!Array.isArray(prs)) return ciega('PR', 'la lista de PR abiertos no llegó');
   const obligatorios = checksObligatoriosDeReglas(reglas);
   const filas = [];
@@ -141,6 +168,10 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush }) {
       alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · punta SIN ningún check · ${edad}` });
     } else if (/^(DIRTY|CONFLICTO)/.test(f.causa)) {
       alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · CONFLICTO con main · ${edad}` });
+    } else if (f.causa === 'SIN-AUTO-MERGE' && (h === null || h >= HORAS_DE_ROJO)) {
+      // (SCRUM-1453) El clasificador ya lo decía y aquí se tiraba: cuatro PR, cuatro días, sección en ✅.
+      const o = origenDelSinArmar(eventosDeArmado(f.numero));
+      alertas.push({ ...f, origen: o.tipo, linea: `#${f.numero} ${f.rama} · SIN auto-merge: aunque todo pase a verde, nadie lo va a mergear · ${o.texto} · ${edad}` });
     }
   }
   return {
@@ -752,7 +783,12 @@ async function todo() {
     const t = Date.parse(fecha);
     minutos.set(p.number, Number.isFinite(t) ? (ahora - t) / 60000 : undefined);
   }
-  const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n) });
+  // La línea de tiempo sólo se pide del PR que sale SIN auto-merge (una llamada por cada uno, no por todos).
+  // Una línea JSON por evento: con `--paginate`, varias páginas pegadas no son UN JSON.
+  const eventosDeArmado = (n) => intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues/${n}/timeline?per_page=100`, '-q',
+    '.[] | select(.event == "auto_merge_enabled" or .event == "auto_merge_disabled") | {event, actor: .actor.login, created_at}'])
+    .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)));
+  const sPR = seccionPRs({ prs, reglas, checksDe: (n) => checks.get(n), minutosDesdePush: (n) => minutos.get(n), eventosDeArmado });
   tramo('PR');
   // 2 y 3 · sesiones y traspasos
   const trabajos = leerTrabajos();
