@@ -31,5 +31,8 @@ Un valor que el código no conozca no se pinta tal cual: la fila pinta la raya �
 
 ## Fuera de esta ficha
 
-La lista de albaranes (`albaranesView.js`) sigue diciendo «sin facturar», «parcial» y «facturado» en sus pestañas
-y en la marca de cada fila. No es de este ticket ni está firmado que cambie.
+La lista de albaranes (`albaranesView.js`) no es de este ticket. Desde el 6-oct-2026 dice la facturación con
+estas mismas palabras (SCRUM-1450, PR #2193).
+
+Corregido el 6-oct-2026: hasta ese día este apartado decía que la lista seguía con «sin facturar», «parcial» y
+«facturado» y que no estaba firmado que cambiara. Dejó de ser cierto al entrar SCRUM-1450.
