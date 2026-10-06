@@ -1,0 +1,54 @@
+SONDA REAL ANTES · POBLACION=51 peticiones · base sonda_1456_test en 127.0.0.1 · comercio 1 · cliente 1 · cobro 1
+200  GET /admin/customers/1  ->  {"id":1,"merchantId":1,"name":"Cliente que existe","phone":null,"email
+404  GET /admin/customers/2147483647  ->  {"error":"not_found"}
+404  GET /admin/customers/-1  ->  {"error":"not_found"}
+404  GET /admin/customers/0  ->  {"error":"not_found"}
+500  GET /admin/customers/2147483648  ->  {"error":"internal_error"}
+500  GET /admin/customers/10000000000  ->  {"error":"internal_error"}
+500  GET /admin/customers/99999999999999999999  ->  {"error":"internal_error"}
+200  GET /admin/customers/1.5  ->  {"id":1,"merchantId":1,"name":"Cliente que existe","phone":null,"email
+400  GET /admin/customers/abc  ->  {"error":"invalid_id"}
+200  GET /admin/customers/1/detail  ->  {"customer":{"id":1,"name":"Cliente que existe","phone":null,"mobile":
+404  GET /admin/customers/2147483647/detail  ->  {"error":"not_found"}
+404  GET /admin/customers/-1/detail  ->  {"error":"not_found"}
+404  GET /admin/customers/0/detail  ->  {"error":"not_found"}
+500  GET /admin/customers/2147483648/detail  ->  {"error":"internal_error"}
+500  GET /admin/customers/10000000000/detail  ->  {"error":"internal_error"}
+500  GET /admin/customers/99999999999999999999/detail  ->  {"error":"internal_error"}
+200  GET /admin/customers/1.5/detail  ->  {"customer":{"id":1,"name":"Cliente que existe","phone":null,"mobile":
+400  GET /admin/customers/abc/detail  ->  {"error":"invalid_id"}
+200  GET /admin/customers/1/sites  ->  {"sitios":[]}
+404  GET /admin/customers/2147483647/sites  ->  {"error":"not_found"}
+400  GET /admin/customers/-1/sites  ->  {"error":"invalid_id"}
+400  GET /admin/customers/0/sites  ->  {"error":"invalid_id"}
+500  GET /admin/customers/2147483648/sites  ->  {"error":"internal_error"}
+500  GET /admin/customers/10000000000/sites  ->  {"error":"internal_error"}
+500  GET /admin/customers/99999999999999999999/sites  ->  {"error":"internal_error"}
+400  GET /admin/customers/1.5/sites  ->  {"error":"invalid_id"}
+400  GET /admin/customers/abc/sites  ->  {"error":"invalid_id"}
+200  GET /admin/customers/1/historial?despuesDe=1  ->  {"trabajos":[],"partesSueltos":[]}
+200  GET /admin/customers/1/historial?despuesDe=2147483647  ->  {"trabajos":[],"partesSueltos":[]}
+500  GET /admin/customers/1/historial?despuesDe=2147483648  ->  {"error":"internal_error"}
+500  GET /admin/customers/1/historial?despuesDe=99999999999999999999  ->  {"error":"internal_error"}
+404  GET /admin/invoices/2147483647  ->  {"error":"not_found"}
+404  GET /admin/invoices/-1  ->  {"error":"not_found"}
+404  GET /admin/invoices/0  ->  {"error":"not_found"}
+500  GET /admin/invoices/2147483648  ->  {"error":"internal_error"}
+500  GET /admin/invoices/10000000000  ->  {"error":"internal_error"}
+500  GET /admin/invoices/99999999999999999999  ->  {"error":"internal_error"}
+404  GET /admin/invoices/1.5  ->  {"error":"not_found"}
+400  GET /admin/invoices/abc  ->  {"error":"invalid_id"}
+404  GET /admin/invoices/2147483647/pdf  ->  {"error":"not_found"}
+500  GET /admin/invoices/2147483648/pdf  ->  {"error":"pdf_generation_failed"}
+500  GET /admin/invoices/99999999999999999999/pdf  ->  {"error":"pdf_generation_failed"}
+404  GET /admin/invoices/1.5/pdf  ->  {"error":"not_found"}
+404  GET /admin/invoices/2147483647/dispute-package  ->  {"error":"not_found"}
+500  GET /admin/invoices/2147483648/dispute-package  ->  {"error":"internal_error"}
+500  GET /admin/invoices/99999999999999999999/dispute-package  ->  {"error":"internal_error"}
+400  GET /admin/invoices/1.5/dispute-package  ->  {"error":"invalid_id"}
+404  POST /webhooks/psp {"event":"payment.confirmed","charge_id":2147483647,"ts":"2026-10-06T00:00:00Z"}  ->  {"error":"charge_not_found"}
+500  POST /webhooks/psp {"event":"payment.confirmed","charge_id":2147483648,"ts":"2026-10-06T00:00:00Z"}  ->  {"error":"internal_error"}
+500  POST /webhooks/psp {"event":"payment.confirmed","charge_id":10000000000,"ts":"2026-10-06T00:00:00Z"}  ->  {"error":"internal_error"}
+500  POST /webhooks/psp {"event":"payment.confirmed","charge_id":100000000000000000000,"ts":"2026-10-06T00:00:00Z"}  ->  {"error":"internal_error"}
+POR CODIGO: {"200":7,"400":8,"404":15,"500":21}
+EXIT=0
