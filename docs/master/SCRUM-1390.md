@@ -223,3 +223,13 @@ firma el fundador. Las propuestas se le mandan al orquestador por mensaje; no es
    guard; segunda tanda, 0 caen.
 4. **Pasé texto con acentos a un intérprete por un heredoc de bash** y reventó. La nota ya estaba en la
    memoria de la máquina y no me paró. Escrito con la herramienta de ficheros la segunda vez.
+
+## SCRUM-1489 · la fila 9 del censo (`GET /admin/search`, el buscador general)
+
+[Anexado por S1, equipo de Luis, el 6-oct-2026, sobre `origin/main` `bafb0734`. No toca nada de lo de
+arriba: la tabla sigue siendo la medición del 1-oct.]
+
+La fila 9 la cierra SCRUM-1489: la ruta pide el recorte a las dos puertas (`wherePresupuestosVisibles`,
+`whereFacturasVisibles`) y lo pone en `AND` en sus consultas de presupuestos y de facturas. Los
+clientes que devuelve no se recortan (la cartera entera ya es del Técnico por `GET /admin/customers`).
+Medición, mutantes y lo que queda sin ver en yaqu.app: `docs/master/SCRUM-1489.md`.
