@@ -27,7 +27,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { evaluar, descontarTexto } from '../.claude/hooks/guard-dangerous.mjs';
-import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { temporal } from './_temporal.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const HOOK_MJS = path.join(AQUI, '..', '.claude', 'hooks', 'guard-dangerous.mjs');
@@ -77,18 +78,25 @@ const PROSA_QUE_DEBE_PASAR = [
   ['--message= en su forma larga', llamada('git commit --message="chore: documenta el db push"')],
 ];
 
-for (const [nombre, entrada] of PROSA_QUE_DEBE_PASAR) {
-  test(`SCRUM-176 · PASA (prosa, no accion): ${nombre}`, () => {
-    const { bloqueado, motivo } = evaluar(entrada, SENTINEL_FALSO);
-    assert.equal(
-      bloqueado,
-      false,
-      `🔴 FALSO POSITIVO: el guard bloqueó un comando inofensivo por el TEXTO que lleva ` +
-        `dentro (${motivo}). Es el bug de SCRUM-176: documentar mejor la regla no puede ` +
-        `costar más bloqueos. Y cada falso positivo empuja a --no-verify, que apaga el guard entero.`,
-    );
-  });
-}
+const caso1 = casosEscritos(PROSA_QUE_DEBE_PASAR, ([nombre, entrada]) => `SCRUM-176 · PASA (prosa, no accion): ${nombre}`, ([nombre, entrada]) => {
+  const { bloqueado, motivo } = evaluar(entrada, SENTINEL_FALSO);
+  assert.equal(
+    bloqueado,
+    false,
+    `🔴 FALSO POSITIVO: el guard bloqueó un comando inofensivo por el TEXTO que lleva ` +
+      `dentro (${motivo}). Es el bug de SCRUM-176: documentar mejor la regla no puede ` +
+      `costar más bloqueos. Y cada falso positivo empuja a --no-verify, que apaga el guard entero.`,
+  );
+});
+test('SCRUM-176 · PASA (prosa, no accion): mensaje de commit con el literal entre comillas dobles', caso1(0));
+test('SCRUM-176 · PASA (prosa, no accion): mensaje de commit con comillas simples', caso1(1));
+test('SCRUM-176 · PASA (prosa, no accion): mensaje de commit que menciona --force', caso1(2));
+test('SCRUM-176 · PASA (prosa, no accion): mensaje de commit que menciona rm -rf con ruta absoluta', caso1(3));
+test('SCRUM-176 · PASA (prosa, no accion): el campo description lleva la prosa y el comando es inofensivo', caso1(4));
+test('SCRUM-176 · PASA (prosa, no accion): here-string de PowerShell como cuerpo del mensaje (flujo multilinea del CLAUDE.md)', caso1(5));
+test('SCRUM-176 · PASA (prosa, no accion): heredoc de bash con delimitador entrecomillado', caso1(6));
+test('SCRUM-176 · PASA (prosa, no accion): --message= en su forma larga', caso1(7));
+caso1.todos();
 
 // ── 2. Verdaderos positivos: la acción de verdad, incluidas las formas "entre comillas" ───
 
@@ -105,19 +113,27 @@ const ACCION_QUE_DEBE_BLOQUEAR = [
   ['npm --force', llamada('npm install --force'), '--force'],
 ];
 
-for (const [nombre, entrada, esperado] of ACCION_QUE_DEBE_BLOQUEAR) {
-  test(`SCRUM-176 · BLOQUEA (accion real): ${nombre}`, () => {
-    const { bloqueado, motivo } = evaluar(entrada, SENTINEL_FALSO);
-    assert.equal(
-      bloqueado,
-      true,
-      `🔴 VERDADERO POSITIVO PERDIDO: "${nombre}" pasó el guard. Arreglar el falso positivo ` +
-        `de SCRUM-176 a costa de esto es peor que el problema original, y no se nota nunca: ` +
-        `un guard que ya no bloquea nada se lee igual que uno sin nada que bloquear.`,
-    );
-    assert.ok(motivo.includes(esperado), `el motivo deberia citar "${esperado}", dijo: ${motivo}`);
-  });
-}
+const caso2 = casosEscritos(ACCION_QUE_DEBE_BLOQUEAR, ([nombre, entrada, esperado]) => `SCRUM-176 · BLOQUEA (accion real): ${nombre}`, ([nombre, entrada, esperado]) => {
+  const { bloqueado, motivo } = evaluar(entrada, SENTINEL_FALSO);
+  assert.equal(
+    bloqueado,
+    true,
+    `🔴 VERDADERO POSITIVO PERDIDO: "${nombre}" pasó el guard. Arreglar el falso positivo ` +
+      `de SCRUM-176 a costa de esto es peor que el problema original, y no se nota nunca: ` +
+      `un guard que ya no bloquea nada se lee igual que uno sin nada que bloquear.`,
+  );
+  assert.ok(motivo.includes(esperado), `el motivo deberia citar "${esperado}", dijo: ${motivo}`);
+});
+test('SCRUM-176 · BLOQUEA (accion real): db push directo', caso2(0));
+test('SCRUM-176 · BLOQUEA (accion real): migrate dev directo', caso2(1));
+test('SCRUM-176 · BLOQUEA (accion real): git push --force', caso2(2));
+test('SCRUM-176 · BLOQUEA (accion real): --force-with-lease', caso2(3));
+test('SCRUM-176 · BLOQUEA (accion real): rm -rf con unidad de Windows', caso2(4));
+test('SCRUM-176 · BLOQUEA (accion real): rm -rf con ruta absoluta unix', caso2(5));
+test('SCRUM-176 · BLOQUEA (accion real): shell anidado: el comando va entre comillas pero -c no es flag de mensaje', caso2(6));
+test('SCRUM-176 · BLOQUEA (accion real): sustitucion de comando DENTRO del argumento de -m', caso2(7));
+test('SCRUM-176 · BLOQUEA (accion real): npm --force', caso2(8));
+caso2.todos();
 
 // ── 3. Fail-closed: si el JSON no se puede leer, se vuelve a mirar el blob crudo ──────────
 

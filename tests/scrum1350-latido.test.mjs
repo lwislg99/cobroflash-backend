@@ -17,6 +17,7 @@ import {
   fallosDelLog, salidaDe, informe, puestoDe,
   SALIDA_OK, SALIDA_AVISO, SALIDA_CIEGO, HORAS_DE_ROJO, MINUTOS_DE_DESPLIEGUE,
 } from '../scripts/equipo/latido.mjs';
+import { nombreEscrito } from './_casos-escritos.mjs';
 
 const OBLIG = 'build + tests (con banco desechable)';
 const REGLAS = [{ type: 'required_status_checks', parameters: { required_status_checks: [{ context: OBLIG }] } }];
@@ -40,7 +41,8 @@ test('SCRUM-1350 · SUELO: el clasificador prestado reconoce el cebo (si no, nad
   assert.match(s.poblacion, /1 PR abiertos .* obligatorios: build \+ tests/);
 });
 
-test(`SCRUM-1350 · 🔴 un PR con el obligatorio rojo ≥ ${HORAS_DE_ROJO} h sale, con su rama y su edad`, () => {
+test('SCRUM-1350 · 🔴 un PR con el obligatorio rojo ≥ 2 h sale, con su rama y su edad', (t) => {
+  nombreEscrito(t, `SCRUM-1350 · 🔴 un PR con el obligatorio rojo ≥ ${HORAS_DE_ROJO} h sale, con su rama y su edad`);
   const s = prs({ lista: [pr(1), pr(2)], checks: { 1: [check('failure')], 2: [check('failure')] }, minutos: { 1: 180, 2: 30 } });
   assert.deepEqual(s.alertas.map((a) => a.numero), [1], '🔴 el de 3 h se avisa; el de 30 min todavía puede estar mirándolo su dueño');
   assert.match(s.alertas[0].linea, /#1 scrum-1-x · ROJO-OBLIGATORIO · 3\.0 h desde su último push/);
@@ -241,7 +243,8 @@ test('SCRUM-1385 · 🔴 CIEGO: sin la lista de corridas, o sin poder leer los j
   assert.equal(seccionMain({ commits: commitsDeCorridas([corrida('a')], () => undefined) }).pudo, false);
 });
 
-test(`SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de ${MINUTOS_DE_DESPLIEGUE} min es ATASCADO; uno recién lanzado no`, () => {
+test('SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de 10 min es ATASCADO; uno recién lanzado no', (t) => {
+  nombreEscrito(t, `SCRUM-1350 · 🔴 DESPLIEGUE: in_progress más de ${MINUTOS_DE_DESPLIEGUE} min es ATASCADO; uno recién lanzado no`);
   const d = (min, estados) => ({ sha: 'e'.repeat(40), creado: new Date(AHORA - min * 60000).toISOString(), estados });
   assert.equal(seccionDespliegue({ despliegues: [d(30, ['in_progress', 'in_progress'])], ahora: AHORA }).alertas.length, 1);
   assert.deepEqual(seccionDespliegue({ despliegues: [d(3, ['in_progress'])], ahora: AHORA }).alertas, []);

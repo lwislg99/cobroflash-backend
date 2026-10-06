@@ -53,6 +53,28 @@ export function numeroConRevision(q: RevisionDePresupuesto): string {
 }
 
 /**
+ * El número de un presupuesto tal y como lo imprime su PAPEL, sin la almohadilla: `12` la
+ * original, `12.1` su primera revisión (SCRUM-1444).
+ *
+ * 🔴 ES LA REGLA DE `generateQuotePdf` (`pdf.service.ts`, SCRUM-688), ESCRITA AQUÍ PARA LO QUE NO
+ * ES EL PAPEL. La página donde el cliente firma y el correo que le lleva el presupuesto pintaban
+ * `quoteNumber ?? id` a pelo: la revisión salía con el MISMO número que el original, en la página
+ * desde la que se abre un PDF que dice `#12.1`. Dos nombres para el documento que se firma.
+ *
+ * El respaldo al `id` es el del papel, igual que estaba: sobre un id no se pinta revisión. Que un
+ * presupuesto sin número enseñe una clave interna es un asunto propio (la familia de SCRUM-95) y
+ * no se decide aquí.
+ *
+ * ⚠️ `pdf.service.ts` conserva su copia de la regla (es de J1): si cambia allí, cambia aquí.
+ */
+export function numeroQueImprimeElPapel(
+  q: { id: number; quoteNumber?: number | null; revision?: number | null },
+): string {
+  if (q.quoteNumber == null) return String(q.id);
+  return numeroConRevision({ numero: String(q.quoteNumber), revision: Number(q.revision ?? 0) });
+}
+
+/**
  * Cuál es la VIGENTE de un grupo de revisiones del mismo presupuesto: la de revisión más alta.
  *
  * 🔴 Y LAS DEMÁS SIGUEN AHÍ. Esta función no borra, no marca y no devuelve «la buena y basura»:

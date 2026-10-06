@@ -20,6 +20,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -110,26 +111,33 @@ test('SCRUM-905 · 🔴 ① con `receipt` el albarán VALORADO no ofrece «Factu
 
 // ═══ ② modo desconocido: nada de facturar ═══════════════════════════════════════════════════
 
-for (const modo of [null, undefined, 'fiscalish']) {
-  test(`SCRUM-905 · 🔴 ② con el modo DESCONOCIDO (${String(modo)}) no se ofrece facturar en ninguna pantalla`, async () => {
-    const p = await pantallas(modo);
-    assert.ok(!p.detalle.VALORADO.includes('btnFacturar'), `🔴 modo ${String(modo)}: el detalle VALORADO ofrece facturar`);
-    assert.ok(!p.detalle.SIN_VALORAR.includes('btnConvertirFactura'), `🔴 modo ${String(modo)}: el detalle SIN_VALORAR ofrece convertir en factura`);
-    assert.ok(!p.fila.includes(p.rotuloFacturar), `🔴 modo ${String(modo)}: la fila ofrece «Facturar lo entregado»`);
-  });
-}
+const FILAS_1 = [null, undefined, 'fiscalish'];
+const caso1 = casosEscritos(FILAS_1, (modo) => `SCRUM-905 · 🔴 ② con el modo DESCONOCIDO (${String(modo)}) no se ofrece facturar en ninguna pantalla`, async (modo) => {
+  const p = await pantallas(modo);
+  assert.ok(!p.detalle.VALORADO.includes('btnFacturar'), `🔴 modo ${String(modo)}: el detalle VALORADO ofrece facturar`);
+  assert.ok(!p.detalle.SIN_VALORAR.includes('btnConvertirFactura'), `🔴 modo ${String(modo)}: el detalle SIN_VALORAR ofrece convertir en factura`);
+  assert.ok(!p.fila.includes(p.rotuloFacturar), `🔴 modo ${String(modo)}: la fila ofrece «Facturar lo entregado»`);
+});
+test('SCRUM-905 · 🔴 ② con el modo DESCONOCIDO (null) no se ofrece facturar en ninguna pantalla', caso1(0));
+test('SCRUM-905 · 🔴 ② con el modo DESCONOCIDO (undefined) no se ofrece facturar en ninguna pantalla', caso1(1));
+test('SCRUM-905 · 🔴 ② con el modo DESCONOCIDO (fiscalish) no se ofrece facturar en ninguna pantalla', caso1(2));
+caso1.todos();
 
 // ═══ ③ un id interno nunca se ve ═════════════════════════════════════════════════════════════
 
-for (const modo of ['fiscal', 'demo', 'receipt', null]) {
-  test(`SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (${String(modo)})`, async () => {
-    const p = await pantallas(modo);
-    const crudos = p.fila.filter((t) => p.ids.includes(t.trim()));
-    assert.deepEqual(crudos, [], `🔴 la fila pinta el identificador interno de una acción: ${JSON.stringify(crudos)}`);
-    const marcadores = p.fila.filter((t) => t.includes('[PENDIENTE'));
-    assert.deepEqual(marcadores, [], `🔴 la fila pinta un marcador de microcopy: ${JSON.stringify(marcadores)}`);
-  });
-}
+const FILAS_2 = ['fiscal', 'demo', 'receipt', null];
+const caso2 = casosEscritos(FILAS_2, (modo) => `SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (${String(modo)})`, async (modo) => {
+  const p = await pantallas(modo);
+  const crudos = p.fila.filter((t) => p.ids.includes(t.trim()));
+  assert.deepEqual(crudos, [], `🔴 la fila pinta el identificador interno de una acción: ${JSON.stringify(crudos)}`);
+  const marcadores = p.fila.filter((t) => t.includes('[PENDIENTE'));
+  assert.deepEqual(marcadores, [], `🔴 la fila pinta un marcador de microcopy: ${JSON.stringify(marcadores)}`);
+});
+test('SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (fiscal)', caso2(0));
+test('SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (demo)', caso2(1));
+test('SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (receipt)', caso2(2));
+test('SCRUM-905 · 🔴 ③ la fila del Trabajo no pinta un id de acción ni un marcador (null)', caso2(3));
+caso2.todos();
 
 // ═══ POSITIVO · demo conserva facturar ════════════════════════════════════════════════════════
 
@@ -151,13 +159,15 @@ test('SCRUM-905 · SUELO: con `fiscal` la ficha ofrece «Consolidar en factura»
   assert.ok(p.fila.includes(CONSOLIDAR), '🔴 SUELO: con fiscal y un VALORADO elegible no sale consolidar. Fila: ' + JSON.stringify(p.fila));
 });
 
-for (const modo of ['receipt', null]) {
-  test(`SCRUM-905 · 🔴 ④ con el modo ${String(modo)} la ficha NO ofrece «Consolidar en factura»`, async () => {
-    const p = await pantallas(modo);
-    assert.ok(!p.fila.includes(CONSOLIDAR),
-      `🔴 modo ${String(modo)}: se ofrece consolidar y la ruta responde 409 consolidacion_no_disponible. Fila: ${JSON.stringify(p.fila)}`);
-  });
-}
+const FILAS_3 = ['receipt', null];
+const caso3 = casosEscritos(FILAS_3, (modo) => `SCRUM-905 · 🔴 ④ con el modo ${String(modo)} la ficha NO ofrece «Consolidar en factura»`, async (modo) => {
+  const p = await pantallas(modo);
+  assert.ok(!p.fila.includes(CONSOLIDAR),
+    `🔴 modo ${String(modo)}: se ofrece consolidar y la ruta responde 409 consolidacion_no_disponible. Fila: ${JSON.stringify(p.fila)}`);
+});
+test('SCRUM-905 · 🔴 ④ con el modo receipt la ficha NO ofrece «Consolidar en factura»', caso3(0));
+test('SCRUM-905 · 🔴 ④ con el modo null la ficha NO ofrece «Consolidar en factura»', caso3(1));
+caso3.todos();
 
 // ═══ ⑤ literal firmado (SCRUM-905 comentario 15696) ═════════════════════════════════════════
 //

@@ -74,8 +74,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'src/modules/system/app/routes/quoteDecisionLanding.routes.ts',
-    de: "const displayNum = q ? (q.quoteNumber ?? q.id) : '';",
-    a: "const displayNum = q ? (q.quoteNumber ?? q.internalNotes ?? q.id) : '';",
+    // SCRUM-1444 (S1): REANCLADA, sin cambiar lo que imita. La línea pasó a llamar a
+    // `numeroQueImprimeElPapel` y el ancla vieja dejó de existir (lo cantó SCRUM-836).
+    de: "const displayNum = q ? numeroQueImprimeElPapel(q) : '';",
+    a: "const displayNum = q ? (q.internalNotes ?? numeroQueImprimeElPapel(q)) : '';",
     cae: 'SCRUM-596 · 🔴 LA LANDING DEL CLIENTE NO LEE LA NOTA INTERNA',
   },
 ];

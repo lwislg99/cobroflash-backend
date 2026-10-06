@@ -60,9 +60,9 @@ const ID = 7;
 const CLAVE = 'firma:albaran:' + ID;
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const albaranDelServidor = (estado) => ({
+const albaranDelServidor = (estado, cliente = {}) => ({
   id: ID, numero: 'ALB-2026-007', estado, fecha: '2026-09-29T08:00:00.000Z', lugarEntrega: 'C/ Mayor 3',
-  lineas: [{ concepto: 'Sustituir bajante', cantidad: 1, unidad: 'ud' }], customer: { name: 'Comunidad Los Olivos' },
+  lineas: [{ concepto: 'Sustituir bajante', cantidad: 1, unidad: 'ud' }], customer: { name: 'Comunidad Los Olivos', ...cliente },
   job: { id: 3, titulo: 'Baño Los Olivos', direccion: 'C/ Mayor 3' }, estadoFacturacion: 'sin_facturar',
   modoValoracion: 'SIN_VALORAR', pendientes: [], enviadoParaFirma: false,
 });
@@ -74,7 +74,9 @@ const PRECARGADO = {
 
 /** Un servidor que se enciende y se apaga, y que recuerda si ya tiene la firma. */
 function nuevaRed() {
-  const e = { conRed: true, modoPost: 'ok', servidorFirmado: false, posts: [] };
+  // `cliente` y `respuestaWhatsApp` son de SCRUM-1460: lo que el servidor dice del cliente del
+  // albarán, y lo que contesta al mandar la copia. Vacíos, el banco se porta como antes.
+  const e = { conRed: true, modoPost: 'ok', servidorFirmado: false, posts: [], gets: [], cliente: {}, respuestaWhatsApp: {} };
   const responder = (status, data) => ({
     ok: status >= 200 && status < 300, status, statusText: String(status),
     headers: { get: () => 'application/json' },
@@ -85,8 +87,9 @@ function nuevaRed() {
     const metodo = (opts && opts.method) || 'GET';
     if (!e.conRed) throw new TypeError('Failed to fetch');
     if (metodo === 'GET') {
+      e.gets.push(u);
       if (/\/admin\/albaranes\/\d+\/fotos/.test(u)) return responder(200, []);
-      if (/\/admin\/albaranes\/\d+$/.test(u)) return responder(200, albaranDelServidor(e.servidorFirmado ? 'firmado' : 'emitido'));
+      if (/\/admin\/albaranes\/\d+$/.test(u)) return responder(200, albaranDelServidor(e.servidorFirmado ? 'firmado' : 'emitido', e.cliente));
       return responder(200, {});
     }
     e.posts.push(u);
@@ -97,6 +100,7 @@ function nuevaRed() {
       e.servidorFirmado = true;
       return responder(200, { id: ID, estado: 'firmado' });
     }
+    if (/\/enviar-whatsapp$/.test(u)) return responder(200, e.respuestaWhatsApp);
     return responder(200, {});
   };
   e.navigator = { userAgent: 'banco', language: 'es-ES', onLine: true, serviceWorker: { register: async () => ({}) } };
@@ -469,6 +473,305 @@ test('SCRUM-1353 · sin almacén que leer no se afirma nada: ni caja, ni aviso, 
   const aviso = await pulsarFirmar(b, v.contenedor);
   assert.ok(aviso, 'el pad se abre igual');
   assert.equal(avisos.confirm, 0);
+});
+
+// ═══ SCRUM-1374 · EL DETALLE ABIERTO SE ENTERA DE QUE SU FIRMA HA SUBIDO ═══════════════════════
+//
+// La cola avisa (`alConfirmarseFirmas`, SCRUM-1373) y la vista decide. Cada «no se repinta» de
+// abajo lleva al lado su suelo: el drenado SUBIÓ y el aviso SALIÓ. Sin eso, una pantalla quieta
+// porque no pasó nada se leería igual que una pantalla que supo no repintarse.
+
+const getsDelAlbaran = (red) => red.gets.filter((u) => /\/admin\/albaranes\/\d+$/.test(u)).length;
+
+/** Vuelve la red con el drenado enganchado, como en la app. Devuelve lo que la cola avisó. */
+async function vuelveLaRed(b, red) {
+  const avisado = [];
+  const dejar = b.ctx.alConfirmarseFirmas((l) => { avisado.push(...l.map((c) => `${c.tipo}:${c.documentoId}`)); });
+  const { win, doc } = emisores();
+  b.ctx.activarDrenadoAlVolver(win, doc);
+  red.conRed = true;
+  win.disparar('online');
+  await esperar(300);
+  dejar();
+  return avisado;
+}
+
+test('SCRUM-1374 · detalle abierto + firma en la cola + vuelve la red: pasa a «firmado» solo y deja de ofrecer firmar', async () => {
+  const { b, red } = await conUnaFirmaEnCola();
+  const v = await abrirDetalle(b, { sinRed: true });
+  assert.equal(ofreceFirmar(v.contenedor), true, 'suelo: antes de volver la red la pantalla ofrece firmar');
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.match(textoDe(v.contenedor), /firmado/, 'la pantalla pasa a «firmado» sin recargar a mano');
+  assert.equal(ofreceFirmar(v.contenedor), false, 'y ya no ofrece «Firmar aquí mismo»');
+  assert.equal(cajaDeFirmaGuardada(v.contenedor), undefined, 'ni dice que la firma sigue sólo en este móvil');
+});
+
+test('SCRUM-1374 · con el pad de firma ABIERTO no se repinta', async () => {
+  const { b, red } = montar();
+  await b.ctx.guardarAlbaranPrecargado(PRECARGADO);
+  red.conRed = false;
+  const v = await abrirDetalle(b, { sinRed: true });
+  const r = await firmarEnPantalla(b, v.contenedor);
+  assert.equal(r.padAbierto, true, 'suelo: sin red el pad se queda abierto, con el trazo a la vista');
+  const antes = textoDe(v.contenedor);
+  const lecturas = getsDelAlbaran(red);
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.equal(enDocumento(b, r.pad.overlay), true, 'el pad sigue en pantalla');
+  assert.equal(getsDelAlbaran(red), lecturas, 'la ficha no se ha vuelto a pedir');
+  assert.equal(textoDe(v.contenedor), antes, 'y lo de debajo del pad está como estaba');
+});
+
+test('SCRUM-1374 · el aviso de OTRO documento no repinta: ni otro albarán, ni un parte con el mismo número', async () => {
+  const { b, red } = montar();
+  const v = await abrirDetalle(b);
+  const antes = textoDe(v.contenedor);
+  const lecturas = getsDelAlbaran(red);
+  red.conRed = false;
+  const firma = { signatureData: 'data:image/png;base64,AAAA', firmadoPorNombre: 'X' };
+  await b.ctx.encolarFirma(ID + 1, firma, 'albaran');
+  await b.ctx.encolarFirma(ID, firma, 'parte');
+  const avisado = await vuelveLaRed(b, red);
+  assert.deepEqual([...avisado].sort(), [`albaran:${ID + 1}`, `parte:${ID}`], 'suelo: las dos subieron y de las dos se avisó');
+  assert.equal(getsDelAlbaran(red), lecturas, 'la ficha no se ha vuelto a pedir');
+  assert.equal(textoDe(v.contenedor), antes, 'y la pantalla está como estaba');
+});
+
+test('SCRUM-1374 · una ficha que ya no está en pantalla no se repinta, y deja de escuchar', async () => {
+  const { b, red } = await conUnaFirmaEnCola();
+  const v = await abrirDetalle(b, { sinRed: true });
+  v.contenedor.innerHTML = ''; // se navegó a otra pantalla: el contenedor es el mismo, la ficha no está
+  const lecturas = getsDelAlbaran(red);
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.equal(getsDelAlbaran(red), lecturas, 'nadie ha vuelto a pedir la ficha');
+  assert.equal(/ALB-2026-007/.test(textoDe(v.contenedor)), false, 'ni la ha pintado encima de lo que haya ahora');
+});
+
+// ═══ SCRUM-1420 · EL AVISO QUE LLEGÓ CON EL PAD ABIERTO SE RECUERDA HASTA QUE SE CIERRA ════════
+//
+// SCRUM-1374 no repinta debajo de un pad abierto, y nadie se acordaba después: al cerrarlo la
+// ficha seguía en «emitido». El pad dice cuándo se cierra (`onClose`, contrato en
+// `docs/master/SCRUM-1420.md`); la vista recuerda el aviso y se pone al día entonces.
+
+/** Sin red: abre la ficha, firma, y deja el pad ABIERTO con su aviso. */
+async function conElPadAbiertoSinRed() {
+  const { b, red } = montar();
+  await b.ctx.guardarAlbaranPrecargado(PRECARGADO);
+  red.conRed = false;
+  const v = await abrirDetalle(b, { sinRed: true });
+  const r = await firmarEnPantalla(b, v.contenedor);
+  assert.equal(r.padAbierto, true, 'suelo: sin red el pad se queda abierto');
+  return { b, red, v, pad: r.pad };
+}
+
+test('SCRUM-1420 · pad abierto + la firma sube + se cierra el pad: la ficha pasa a «firmado» sin recargar a mano', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  const lecturas = getsDelAlbaran(red);
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  // El control: mientras el pad siga abierto NO se repinta (aceptación 2 de SCRUM-1374).
+  assert.equal(enDocumento(b, pad.overlay), true, 'el pad sigue en pantalla');
+  assert.equal(getsDelAlbaran(red), lecturas, 'con el pad abierto la ficha no se ha vuelto a pedir');
+  assert.equal(ofreceFirmar(v.contenedor), true, 'y debajo sigue lo que había');
+
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas + 1, 'al cerrarse el pad la ficha se pide UNA vez');
+  assert.match(textoDe(v.contenedor), /firmado/, 'la pantalla pasa a «firmado»');
+  assert.equal(ofreceFirmar(v.contenedor), false, 'y ya no ofrece «Firmar aquí mismo»');
+});
+
+test('SCRUM-1420 · el pad se cierra sin que haya llegado ningún aviso: ni una lectura de más', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  red.conRed = true; // hay red: si la ficha se pidiera, se vería. Pero nadie ha drenado ni avisado.
+  const lecturas = getsDelAlbaran(red);
+  const antes = textoDe(v.contenedor);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas, 'nadie ha vuelto a pedir la ficha');
+  assert.equal(textoDe(v.contenedor), antes, 'y la pantalla está como estaba');
+});
+
+test('SCRUM-1420 · con el pad abierto llega el aviso de OTRO documento: al cerrarlo no se lee nada', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  // La firma de este albarán sale de la cola a mano: lo que suba será sólo lo ajeno.
+  await b.ctx.quitarFirmaPendiente(CLAVE);
+  assert.equal((await cola(b)).n, 0, 'suelo: la firma de este albarán ya no está en la cola');
+  const firma = { signatureData: 'data:image/png;base64,AAAA', firmadoPorNombre: 'X' };
+  await b.ctx.encolarFirma(ID + 1, firma, 'albaran');
+  await b.ctx.encolarFirma(ID, firma, 'parte');
+  const avisado = await vuelveLaRed(b, red);
+  assert.deepEqual([...avisado].sort(), [`albaran:${ID + 1}`, `parte:${ID}`], 'suelo: las dos ajenas subieron y de las dos se avisó');
+  const lecturas = getsDelAlbaran(red);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(enDocumento(b, pad.overlay), false, 'suelo: el pad se ha cerrado');
+  assert.equal(getsDelAlbaran(red), lecturas, 'un aviso que no es de este albarán no se recuerda');
+  assert.equal(ofreceFirmar(v.contenedor), true, 'la ficha sigue ofreciendo firmar: su firma no ha subido');
+});
+
+test('SCRUM-1420 · el aviso llega con el pad abierto y la ficha deja de estar en pantalla: cerrar el pad no la pinta encima', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  v.contenedor.innerHTML = ''; // se navegó con el pad aún abierto
+  const lecturas = getsDelAlbaran(red);
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(getsDelAlbaran(red), lecturas, 'nadie ha vuelto a pedir la ficha');
+  assert.equal(/ALB-2026-007/.test(textoDe(v.contenedor)), false, 'ni la ha pintado encima de lo que haya ahora');
+});
+
+test('SCRUM-1420 · control: firmar CON red sigue leyendo la ficha UNA vez (el cierre del pad no añade otra)', async () => {
+  const { b, red } = montar();
+  const v = await abrirDetalle(b);
+  const lecturas = getsDelAlbaran(red);
+  const r = await firmarEnPantalla(b, v.contenedor);
+  await esperar(150);
+  assert.equal(r.padAbierto, false, 'suelo: con red el pad se cierra');
+  assert.equal(getsDelAlbaran(red), lecturas + 1, 'una lectura: la del refresco tras firmar');
+  assert.match(textoDe(v.contenedor), /firmado/);
+});
+
+// ═══ SCRUM-1460 · LA COPIA DEL CLIENTE, RECORDADA JUSTO DESPUÉS DE FIRMAR EN EL PAD ════════════
+//
+// Firmar en el pad no manda la copia (SCRUM-47, a propósito). Medido en yaqu.app el 6-oct-2026:
+// tras «Confirmar firma» sólo se leía «A salvo — Guardado en YaQu». Los dos literales y dónde salen
+// están firmados en SCRUM-1460 comentario 18330; aquí van letra por letra.
+//
+// Cada «no sale» de abajo lleva su suelo al lado: la ficha SÍ está firmada y SÍ pinta «A salvo».
+// Sin eso, un recordatorio que no sale porque la ficha no se pintó se leería igual.
+
+const R1_COPIA = 'El cliente todavía no tiene su copia. Envíasela por WhatsApp.';
+const R2_COPIA = 'No podemos enviarle la copia por WhatsApp a este cliente. Descarga el PDF para dársela.';
+const recordatorios = (cont) => todos(cont).filter((n) => n && n.dataset && n.dataset.copiaSinEnviar);
+const firmadaYASalvo = (cont) => /firmado/.test(textoDe(cont)) && /A salvo/.test(textoDe(cont));
+
+/** Con red: abre la ficha, firma en el pad y devuelve la ficha que queda. */
+async function recienFirmadoConRed(cliente = {}) {
+  const m = montar();
+  m.red.cliente = cliente;
+  const v = await abrirDetalle(m.b);
+  assert.deepEqual(recordatorios(v.contenedor), [], 'suelo: antes de firmar no hay recordatorio');
+  const r = await firmarEnPantalla(m.b, v.contenedor);
+  await esperar(150);
+  assert.equal(r.padAbierto, false, 'suelo: con red el pad se cierra');
+  assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: la ficha que queda está firmada y dice «A salvo»');
+  return { ...m, v };
+}
+
+async function recuerdaMandarLaCopiaPorWhatsApp(cliente) {
+  const { v } = await recienFirmadoConRed(cliente);
+  const [aviso, ...mas] = recordatorios(v.contenedor);
+  assert.ok(aviso, 'tiene que salir el recordatorio: sin él lo último que se lee es «A salvo»');
+  assert.deepEqual(mas, [], 'y uno solo');
+  assert.equal(aviso._texto, R1_COPIA, 'el literal firmado, letra por letra');
+  assert.equal(aviso.className, 'alert info');
+  assert.equal(aviso.dataset.copiaSinEnviar, 'whatsapp');
+  assert.ok(acciones(v.contenedor).includes('btnWhatsApp'), 'el botón que el texto manda pulsar está en la barra');
+}
+
+test('SCRUM-1460 · tras firmar en el pad, la ficha recuerda mandar la copia (el servidor dice que el cliente puede recibir WhatsApp)', async () => {
+  await recuerdaMandarLaCopiaPorWhatsApp({ puedeRecibirWhatsApp: true });
+});
+
+test('SCRUM-1460 · tras firmar en el pad, la ficha recuerda mandar la copia (el servidor no dice nada del canal y el botón se ofrece igual)', async () => {
+  await recuerdaMandarLaCopiaPorWhatsApp({});
+});
+
+test('SCRUM-1460 · el recordatorio va DEBAJO de «A salvo» y ENCIMA de los botones, con la separación de la caja', async () => {
+  const { v } = await recienFirmadoConRed();
+  const nodos = todos(v.contenedor);
+  const aSalvo = nodos.findIndex((n) => n && n._texto === 'A salvo');
+  const aviso = nodos.indexOf(recordatorios(v.contenedor)[0]);
+  const barra = nodos.findIndex((n) => n && n.className === 'job-doc-toolbar');
+  assert.ok(aSalvo >= 0 && aviso >= 0 && barra >= 0, `suelo: los tres están en la ficha (${aSalvo}, ${aviso}, ${barra})`);
+  assert.ok(aSalvo < aviso && aviso < barra, `orden en pantalla: «A salvo» ${aSalvo} · recordatorio ${aviso} · botones ${barra}`);
+  // Como el rechazo (SCRUM-1376): en un envoltorio con el margen de la caja, no pegado a la barra.
+  const envoltorio = nodos[aviso]._padre;
+  assert.notEqual(envoltorio, nodos[barra]._padre, 'no es hermano directo de la barra de acciones');
+  const cajaASalvo = nodos[aSalvo]._padre;
+  assert.match(cajaASalvo.style.cssText, /margin/, 'suelo: el envoltorio de «A salvo» lleva su separación');
+  assert.equal(envoltorio.style.cssText, cajaASalvo.style.cssText, 'el del recordatorio separa igual');
+});
+
+test('SCRUM-1460 · cliente que NO puede recibir WhatsApp: se dice eso y se manda al PDF, que sí está', async () => {
+  const { v } = await recienFirmadoConRed({ puedeRecibirWhatsApp: false });
+  const [aviso, ...mas] = recordatorios(v.contenedor);
+  assert.ok(aviso, 'tiene que salir: es el cliente al que no le queda nada que hable de su copia');
+  assert.deepEqual(mas, []);
+  assert.equal(aviso._texto, R2_COPIA, 'el literal firmado, letra por letra');
+  assert.equal(aviso.className, 'alert warning');
+  assert.equal(aviso.dataset.copiaSinEnviar, 'pdf');
+  const barra = acciones(v.contenedor);
+  assert.ok(barra.includes('btnPdf'), 'el botón que el texto manda pulsar está en la barra');
+  assert.equal(barra.includes('btnWhatsApp'), false, 'y el de WhatsApp no se ofrece: por eso no se le nombra');
+});
+
+test('SCRUM-1460 · al REABRIR la ficha ya firmada el recordatorio no sale: la ficha no sabe si la copia se mandó', async () => {
+  const { b, v } = await recienFirmadoConRed();
+  assert.equal(recordatorios(v.contenedor).length, 1, 'suelo: recién firmado sí sale');
+  const otra = await abrirDetalle(b);
+  assert.equal(firmadaYASalvo(otra.contenedor), true, 'suelo: la ficha reabierta está firmada y dice «A salvo»');
+  assert.deepEqual(recordatorios(otra.contenedor), [], 'reabierta, no afirma nada de la copia');
+});
+
+test('SCRUM-1460 · LÍMITE FIRMADO: la firma que sube desde la cola SIN pad abierto no trae recordatorio', async () => {
+  const { b, red } = await conUnaFirmaEnCola();
+  const v = await abrirDetalle(b, { sinRed: true });
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: la ficha pasó sola a firmada');
+  assert.deepEqual(recordatorios(v.contenedor), [],
+    'la firma de SCRUM-1460 (c.18330 y c.18374) deja fuera la subida por la cola sin pad; ampliarlo pide firma');
+});
+
+// c.18374 amplía la firma: firmar sin red, vuelve la señal con el pad abierto, y al cerrarlo la
+// ficha pasa a firmada. La cola no manda la copia y quien cierra el pad está mirando la ficha.
+test('SCRUM-1460 · firmar sin red, sube con el pad ABIERTO y se cierra el pad: la ficha firmada recuerda la copia', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.deepEqual(recordatorios(v.contenedor), [], 'suelo: con el pad abierto la ficha de debajo no se ha tocado');
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: al cerrar el pad la ficha pasa a firmada');
+  const [aviso, ...mas] = recordatorios(v.contenedor);
+  assert.ok(aviso, 'tiene que salir: la copia no ha salido por ningún camino y hay alguien mirando');
+  assert.deepEqual(mas, []);
+  assert.equal(aviso._texto, R1_COPIA, 'el mismo literal: c.18374 cambia cuándo, no qué');
+});
+
+test('SCRUM-1460 · mandar la copia y que salga bien QUITA el recordatorio', async () => {
+  const { red, v } = await recienFirmadoConRed();
+  assert.equal(recordatorios(v.contenedor).length, 1, 'suelo: antes de mandarla el recordatorio está');
+  red.respuestaWhatsApp = { sent: true };
+  todos(v.contenedor).find((n) => n && n.dataset && n.dataset.accion === 'btnWhatsApp').click();
+  await esperar(150);
+  assert.deepEqual(red.posts.slice(-1), [`/admin/albaranes/${ID}/enviar-whatsapp`], 'suelo: el envío se pidió');
+  assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: la ficha sigue pintada y firmada');
+  assert.deepEqual(recordatorios(v.contenedor), [], 'la copia ya salió: «todavía no tiene su copia» sería falso');
+});
+
+test('SCRUM-1460 · si el envío NO sale, el recordatorio se queda (el cliente sigue sin su copia)', async () => {
+  const { red, v } = await recienFirmadoConRed();
+  red.respuestaWhatsApp = { sent: false, message: 'No se pudo enviar el WhatsApp.' };
+  todos(v.contenedor).find((n) => n && n.dataset && n.dataset.accion === 'btnWhatsApp').click();
+  await esperar(150);
+  assert.deepEqual(red.posts.slice(-1), [`/admin/albaranes/${ID}/enviar-whatsapp`], 'suelo: el envío se pidió');
+  assert.match(textoDe(v.contenedor), /No se pudo enviar el WhatsApp\./, 'suelo: el fallo se dice');
+  assert.equal(recordatorios(v.contenedor).length, 1, 'y el recordatorio sigue ahí');
+  assert.equal(recordatorios(v.contenedor)[0]._texto, R1_COPIA);
+});
+
+test('SCRUM-1460 · el decisor: cada texto pide SU botón, y «no podemos» pide SABER que no hay canal', () => {
+  const { recordatorioDeLaCopia } = require('../public/dashboard/js/albaranDetailView.js');
+  const base = { recienFirmadoEnElPad: true, estado: 'firmado', ofreceEnviarPorWhatsApp: true, ofreceDescargarPdf: true, clienteConWhatsApp: true };
+  assert.equal(recordatorioDeLaCopia(base).texto, R1_COPIA, 'suelo: el caso normal contesta');
+  assert.equal(recordatorioDeLaCopia({ ...base, recienFirmadoEnElPad: undefined }), null, 'sin venir de firmar en el pad');
+  assert.equal(recordatorioDeLaCopia({ ...base, estado: 'emitido' }), null, 'el servidor aún no lo da por firmado');
+  const sinBoton = { ...base, ofreceEnviarPorWhatsApp: false };
+  assert.equal(recordatorioDeLaCopia({ ...sinBoton, clienteConWhatsApp: false }).texto, R2_COPIA, 'suelo: sin canal, contesta el otro');
+  assert.equal(recordatorioDeLaCopia({ ...sinBoton, clienteConWhatsApp: undefined }), null, 'sin botón y sin saber del canal: no se afirma');
+  assert.equal(recordatorioDeLaCopia({ ...sinBoton, clienteConWhatsApp: true }), null, 'sin botón, no se manda a pulsarlo');
+  assert.equal(recordatorioDeLaCopia({ ...sinBoton, clienteConWhatsApp: false, ofreceDescargarPdf: false }), null, 'sin PDF, no se manda a descargarlo');
 });
 
 // ═══ LOS DEFECTOS: se MIDEN, y lo medido tiene que ser lo declarado ═════════════════════════════

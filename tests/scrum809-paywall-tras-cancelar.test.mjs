@@ -59,6 +59,7 @@ import crypto from 'node:crypto';
 import http from 'node:http';
 import Stripe from 'stripe';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113: la limpieza no depende de que yo me acuerde
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415: un caso por puerta, con el nombre escrito
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 
 // 🔴 SCRUM-809 (21-sep-2026) · ESTE GUARD SALÍA MUDO EN EL META-GUARD, y el motivo era el gate: solo se
@@ -240,92 +241,117 @@ const nuevo = (extra) => ({
   ...extra,
 });
 
-for (const puerta of PUERTAS) {
-  test(
-    `SCRUM-809 · 🔴 EL QUE DECIDE · ${puerta.nombre}: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer`,
-    { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
-    async () => {
-      await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
-        await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
-          const cookie = await cookieDe(m.id);
+// Nombres LITERALES, uno por puerta (SCRUM-1415): un nombre construido en un bucle no lo ve la señal
+// por nombres. Son los MISMOS cuatro casos que registraba el bucle, y en el mismo orden (A, A, B, B);
+// `casosEscritos` hace caer el caso cuyo nombre se separe de su puerta, y no deja cargar el fichero si
+// una puerta nueva se queda sin los suyos (SCRUM-1469).
+const elQueDecide = casosEscritos(
+  PUERTAS,
+  (puerta) => `SCRUM-809 · 🔴 EL QUE DECIDE · ${puerta.nombre}: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer`,
+  async (puerta) => {
+    await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
+      await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
+        const cookie = await cookieDe(m.id);
 
-          // ── PAGA. Periodo corto A PROPÓSITO: se va a cruzar con el reloj de verdad.
-          const finPeriodo = Date.now() + VENTANA_MS;
-          await emitir('customer.subscription.updated', subDe(m.id, finPeriodo));
-          const pagado = await prisma.merchant.findUnique({
-            where: { id: m.id },
-            select: { plan: true, planExpiresAt: true, subscriptionStatus: true },
-          });
-          assert.equal(pagado.plan, 'pro', 'el pago no activó el plan: el escenario no llegó a montarse');
-          assert.ok(pagado.planExpiresAt, 'el pago no fijó `planExpiresAt`: no hay periodo que conservar');
-
-          // PRESENCIA: pagando y con el periodo vivo, trabaja. Sin esto, un 403 posterior podría
-          // deberse a que esta ruta nunca funcionó para esta fixture.
-          const trabajando = await intentarTrabajar(cookie);
-          assert.ok(llegoAlHandler(trabajando),
-            `con plan pagado y vigente la ruta debía llegar al handler (400 validation_error) y contestó ${trabajando.status} ${trabajando.cuerpo}`);
-
-          // ── CANCELA por ESTA puerta.
-          await puerta.enviar(emitir, subDe(m.id, finPeriodo));
-          const cancelado = await prisma.merchant.findUnique({
-            where: { id: m.id },
-            select: { plan: true, planExpiresAt: true, subscriptionStatus: true },
-          });
-          assert.equal(cancelado.subscriptionStatus, 'canceled', `la puerta ${puerta.nombre} no marcó la cancelación`);
-
-          // ── 🔴 LO QUE LE IMPORTA AL FUNDADOR, Y VA PRIMERO: cancelar NO puede cerrarle la
-          // puerta mientras el periodo que pagó siga vivo. Cobrarle y no dejarle pasar sería
-          // peor que el defecto de hoy.
-          const antes = await intentarTrabajar(cookie);
-          const instanteAntes = Date.now();
-
-          // SUELO: si la máquina tardó tanto que el "antes" cayó ya pasada la fecha, esta medida
-          // NO dice nada. Se declara CIEGA en vez de dar un verde que no se ha ganado.
-          assert.ok(instanteAntes < finPeriodo,
-            `CIEGO: la comprobación «antes de vencer» ocurrió ${instanteAntes - finPeriodo} ms DESPUÉS del vencimiento. `
-            + 'No mide lo que dice medir; sube VENTANA_MS y repite.');
-          assert.ok(!bloqueado(antes),
-            'CANCELÓ Y SE LE CERRÓ LA PUERTA CON EL PERIODO PAGADO TODAVÍA VIVO. La firma del fundador dice '
-            + `«conserva el acceso hasta el fin del periodo que ya pagó»: ${antes.status} ${antes.cuerpo}`);
-          assert.ok(llegoAlHandler(antes),
-            `tras cancelar y con el periodo vivo debía seguir trabajando igual: ${antes.status} ${antes.cuerpo}`);
-
-          // ── Y AHORA SE CRUZA LA FECHA. Reloj real, mismo merchant, misma cookie.
-          await new Promise((r) => setTimeout(r, Math.max(0, finPeriodo - Date.now()) + 750));
-
-          const despues = await intentarTrabajar(cookie);
-          assert.ok(Date.now() > finPeriodo, 'CIEGO: no se llegó a cruzar el vencimiento');
-          assert.ok(bloqueado(despues),
-            '🔴 EL DEFECTO DE SCRUM-809: venció el periodo que pagó y el paywall NO le alcanza. Si '
-            + '`planExpiresAt` vuelve a null al cancelar, `plan === \'trial\' && planExpiresAt && …` es '
-            + `INSATISFACIBLE y este merchant se queda el producto gratis para siempre. Recibió: ${despues.status} ${despues.cuerpo}`);
+        // ── PAGA. Periodo corto A PROPÓSITO: se va a cruzar con el reloj de verdad.
+        const finPeriodo = Date.now() + VENTANA_MS;
+        await emitir('customer.subscription.updated', subDe(m.id, finPeriodo));
+        const pagado = await prisma.merchant.findUnique({
+          where: { id: m.id },
+          select: { plan: true, planExpiresAt: true, subscriptionStatus: true },
         });
-      });
-    },
-  );
+        assert.equal(pagado.plan, 'pro', 'el pago no activó el plan: el escenario no llegó a montarse');
+        assert.ok(pagado.planExpiresAt, 'el pago no fijó `planExpiresAt`: no hay periodo que conservar');
 
-  test(
-    `SCRUM-809 · la pregunta que dejó abierta el fundador · ${puerta.nombre}: si la fecha YA estaba vencida al cancelar, le alcanza YA`,
-    { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
-    async () => {
-      await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
-        await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
-          const cookie = await cookieDe(m.id);
+        // PRESENCIA: pagando y con el periodo vivo, trabaja. Sin esto, un 403 posterior podría
+        // deberse a que esta ruta nunca funcionó para esta fixture.
+        const trabajando = await intentarTrabajar(cookie);
+        assert.ok(llegoAlHandler(trabajando),
+          `con plan pagado y vigente la ruta debía llegar al handler (400 validation_error) y contestó ${trabajando.status} ${trabajando.cuerpo}`);
 
-          // Paga un periodo que YA venció (el caso de la pregunta: cancela tarde, sin periodo vivo).
-          const finVencido = Date.now() - DIA;
-          await emitir('customer.subscription.updated', subDe(m.id, finVencido));
-          await puerta.enviar(emitir, subDe(m.id, finVencido));
-
-          const r = await intentarTrabajar(cookie);
-          assert.ok(bloqueado(r),
-            'cancelando SIN periodo pagado vivo, el paywall debe alcanzarle inmediatamente '
-            + `(no hay nada que conservar). Recibió: ${r.status} ${r.cuerpo}`);
+        // ── CANCELA por ESTA puerta.
+        await puerta.enviar(emitir, subDe(m.id, finPeriodo));
+        const cancelado = await prisma.merchant.findUnique({
+          where: { id: m.id },
+          select: { plan: true, planExpiresAt: true, subscriptionStatus: true },
         });
+        assert.equal(cancelado.subscriptionStatus, 'canceled', `la puerta ${puerta.nombre} no marcó la cancelación`);
+
+        // ── 🔴 LO QUE LE IMPORTA AL FUNDADOR, Y VA PRIMERO: cancelar NO puede cerrarle la
+        // puerta mientras el periodo que pagó siga vivo. Cobrarle y no dejarle pasar sería
+        // peor que el defecto de hoy.
+        const antes = await intentarTrabajar(cookie);
+        const instanteAntes = Date.now();
+
+        // SUELO: si la máquina tardó tanto que el "antes" cayó ya pasada la fecha, esta medida
+        // NO dice nada. Se declara CIEGA en vez de dar un verde que no se ha ganado.
+        assert.ok(instanteAntes < finPeriodo,
+          `CIEGO: la comprobación «antes de vencer» ocurrió ${instanteAntes - finPeriodo} ms DESPUÉS del vencimiento. `
+          + 'No mide lo que dice medir; sube VENTANA_MS y repite.');
+        assert.ok(!bloqueado(antes),
+          'CANCELÓ Y SE LE CERRÓ LA PUERTA CON EL PERIODO PAGADO TODAVÍA VIVO. La firma del fundador dice '
+          + `«conserva el acceso hasta el fin del periodo que ya pagó»: ${antes.status} ${antes.cuerpo}`);
+        assert.ok(llegoAlHandler(antes),
+          `tras cancelar y con el periodo vivo debía seguir trabajando igual: ${antes.status} ${antes.cuerpo}`);
+
+        // ── Y AHORA SE CRUZA LA FECHA. Reloj real, mismo merchant, misma cookie.
+        await new Promise((r) => setTimeout(r, Math.max(0, finPeriodo - Date.now()) + 750));
+
+        const despues = await intentarTrabajar(cookie);
+        assert.ok(Date.now() > finPeriodo, 'CIEGO: no se llegó a cruzar el vencimiento');
+        assert.ok(bloqueado(despues),
+          '🔴 EL DEFECTO DE SCRUM-809: venció el periodo que pagó y el paywall NO le alcanza. Si '
+          + '`planExpiresAt` vuelve a null al cancelar, `plan === \'trial\' && planExpiresAt && …` es '
+          + `INSATISFACIBLE y este merchant se queda el producto gratis para siempre. Recibió: ${despues.status} ${despues.cuerpo}`);
       });
-    },
-  );
-}
+    });
+  },
+);
+
+const siYaVencio = casosEscritos(
+  PUERTAS,
+  (puerta) => `SCRUM-809 · la pregunta que dejó abierta el fundador · ${puerta.nombre}: si la fecha YA estaba vencida al cancelar, le alcanza YA`,
+  async (puerta) => {
+    await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
+      await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
+        const cookie = await cookieDe(m.id);
+
+        // Paga un periodo que YA venció (el caso de la pregunta: cancela tarde, sin periodo vivo).
+        const finVencido = Date.now() - DIA;
+        await emitir('customer.subscription.updated', subDe(m.id, finVencido));
+        await puerta.enviar(emitir, subDe(m.id, finVencido));
+
+        const r = await intentarTrabajar(cookie);
+        assert.ok(bloqueado(r),
+          'cancelando SIN periodo pagado vivo, el paywall debe alcanzarle inmediatamente '
+          + `(no hay nada que conservar). Recibió: ${r.status} ${r.cuerpo}`);
+      });
+    });
+  },
+);
+
+test(
+  'SCRUM-809 · 🔴 EL QUE DECIDE · A · customer.subscription.updated (status=canceled): paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
+  elQueDecide(0),
+);
+test(
+  'SCRUM-809 · la pregunta que dejó abierta el fundador · A · customer.subscription.updated (status=canceled): si la fecha YA estaba vencida al cancelar, le alcanza YA',
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
+  siYaVencio(0),
+);
+test(
+  'SCRUM-809 · 🔴 EL QUE DECIDE · B · customer.subscription.deleted: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
+  elQueDecide(1),
+);
+test(
+  'SCRUM-809 · la pregunta que dejó abierta el fundador · B · customer.subscription.deleted: si la fecha YA estaba vencida al cancelar, le alcanza YA',
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
+  siYaVencio(1),
+);
+elQueDecide.todos();
+siYaVencio.todos();
 
 test(
   'SCRUM-809 · ✅ POSITIVO · el que NUNCA pagó y agota su trial acaba donde acababa: bloqueado',

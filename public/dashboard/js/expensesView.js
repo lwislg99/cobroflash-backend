@@ -1135,9 +1135,42 @@ const FOTO_TECHO_DATAURI = 1.5 * 1024 * 1024;
 // docs/microcopy/2026-09-18-SCRUM-947-foto-del-gasto.md.
 const AVISO_FOTO_NO_SE_ABRE = 'No hemos podido abrir esta foto. Prueba con otra o haz una captura de pantalla del ticket.';
 
+// ═══ SCRUM-1425 · LA QUE CABE TAMBIÉN TIENE QUE SER UNA FOTO ══════════════════════════════════
+// La que cabía se mandaba sin mirarla: un fichero pequeño que no es una imagen viajaba como
+// justificante y la pantalla no decía nada (medido en yaqu.app el 2-oct-2026). Ahora se ABRE
+// siempre; lo que se manda cuando abre sigue siendo el ORIGINAL, sin recomprimir.
+//
+// ⚠️ LA EXCEPCIÓN, y por qué: una HEIC pequeña en un navegador que no sabe abrir HEIC (Chrome)
+// hoy se guarda bien y el servidor la lee (`lecturaTicket.ts` admite `image/heic`). «No la sé
+// abrir» ahí no es «no es una foto». Se reconoce por su CABECERA (`ftyp` + marca HEIF), no por el
+// nombre ni por el tipo que declara el fichero, y sólo entonces pasa sin abrirse.
+const MARCAS_HEIF = ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'];
+function esHeifPorSuCabecera(dataUri) {
+  try {
+    const coma = String(dataUri).indexOf(',');
+    if (coma === -1 || typeof atob !== 'function') return false;
+    const cabecera = atob(String(dataUri).slice(coma + 1, coma + 17)); // 16 de base64 = 12 bytes
+    return cabecera.slice(4, 8) === 'ftyp' && MARCAS_HEIF.indexOf(cabecera.slice(8, 12)) !== -1;
+  } catch {
+    return false;
+  }
+}
+async function esUnaFotoQueSeAbre(file) {
+  let img;
+  try { img = await abrirFoto(file); } catch { return false; }
+  try {
+    return !!((img.naturalWidth || img.width) && (img.naturalHeight || img.height));
+  } finally {
+    if (typeof img.close === 'function') img.close();
+  }
+}
+
 async function fotoParaGuardar(file) {
   const original = await fileToBase64(file);
-  if (original.length <= FOTO_TECHO_DATAURI) return original;
+  if (original.length <= FOTO_TECHO_DATAURI) {
+    if (!(await esUnaFotoQueSeAbre(file)) && !esHeifPorSuCabecera(original)) throw errorParaPersona(AVISO_FOTO_NO_SE_ABRE);
+    return original;
+  }
 
   let img;
   try { img = await abrirFoto(file); } catch { throw errorParaPersona(AVISO_FOTO_NO_SE_ABRE); }

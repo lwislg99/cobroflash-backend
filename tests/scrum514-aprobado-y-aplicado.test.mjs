@@ -339,33 +339,6 @@ const APARCADOS = [
       + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
   },
   {
-    texto: 'Válido hasta dentro de 7 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
-    texto: 'Válido hasta dentro de 14 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
-    texto: 'Válido hasta dentro de 30 días',
-    motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
-      + '`quoteAtajosVencimiento.js` (`nombreAccesibleDeAtajo`) pero la vista pone el MISMO '
-      + 'texto en el rotulo y en el `aria-label` con una sola llamada, asi que cablearlo es UNA '
-      + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
-      + 'esa sesion al '
-      + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
-  },
-  {
     texto: '2. Líneas',
     motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
       + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
@@ -430,7 +403,12 @@ const MOTIVO_DE_887 = 'FRASE COMPLETA QUE EL CÓDIGO COMPONE (SCRUM-887 comentar
   + 'la constante `REMEDIO_DESCUENTO_GLOBAL_VARIOS_IVA`, que comparten las dos frases. Ejecutado el '
   + '1-oct-2026 contra `dist/`: la constante compuesta es idéntica a la cita. Sale de aquí si algún '
   + 'día el código la escribe entera en un solo literal.';
-const MOTIVO_DE_915 = 'FORMATO DEL RESUMEN DE UN PASO CERRADO (SCRUM-915 comentario 15868): `N`, el '
+const FICHA_DE_1443 = '2026-10-06-SCRUM-1443-presupuesto-rapido-fallos.md';
+const MOTIVO_DE_1443 = 'LA PALABRA DEL PAÍS ES UN DATO (SCRUM-1443 comentarios 18307 y 18313): `homeView.js` '
+  + 'compone cada texto con «presupuesto» o «cotización» (`quoteVerb`) dentro de la frase fija. '
+  + 'Ejecutado el 6-oct-2026 en el banco de vistas con las dos palabras '
+  + '(`tests/scrum1443-rapido-dice-que-ha-pasado.test.mjs`): lo pintado es la cita con la palabra puesta.';
+const MOTIVO_DE_915 ='FORMATO DEL RESUMEN DE UN PASO CERRADO (SCRUM-915 comentario 15868): `N`, el '
   + 'total, la condición de pago y la fecha son datos, y la ficha lo dice debajo de la cita. Leído '
   + 'en `quotesView.js` (los `texto` de los pasos), no ejecutado: vive dentro del editor.';
 const MOTIVO_DE_917 = 'SINGULAR QUE EL CÓDIGO ELIGE CON N = 1 (SCRUM-917 comentario 15938): '
@@ -439,6 +417,10 @@ const MOTIVO_DE_917 = 'SINGULAR QUE EL CÓDIGO ELIGE CON N = 1 (SCRUM-917 coment
 const MOTIVO_DE_974 = 'EJEMPLO DEL DETALLE CON SUS PLURALES (SCRUM-974 comentario 16056): '
   + '`bloqueFirmadoSinFacturar` compone «{partes} parte(s) firmado(s) de {clientes} cliente(s)» con '
   + 'plurales de verdad; la ficha cita tres casos. Leído en el servicio, no ejecutado: consulta la base.';
+const MOTIVO_DE_1215_HOJA = 'EL NÚMERO DEL ALBARÁN ES UN DATO (SCRUM-1215 comentario 18283): '
+  + '`openFacturarParcialSheet` compone el título y el `aria-label` de la hoja con `alb.numero` '
+  + 'detrás de la parte fija. Ejecutado el 6-oct-2026 en el banco de vistas '
+  + '(`tests/scrum1215d-hoja-facturar-lo-entregado.test.mjs`): lo pintado es la cita con el número.';
 
 const NO_SE_CRUZAN = [
   { ficha: '2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md', clase: 'compuesta',
@@ -474,6 +456,20 @@ const NO_SE_CRUZAN = [
     motivo: 'PLURAL QUE EL CÓDIGO COMPONE (SCRUM-980): el nombre accesible de las fotos sale de '
       + '`ariaFotos(n)`, que devuelve «1 foto» o el número seguido de « fotos». El singular sí está '
       + 'tal cual y se cruza. Leído en `customerDetailView.js`, no ejecutado.' },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['No hemos podido crear tu ', dato('{quote}'), '. Vuelve a intentarlo.'], motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero no sabemos si el WhatsApp ha salido. Pregúntale a tu cliente antes de volver a enviarlo.'],
+    motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero el teléfono de este cliente no es válido, así que el WhatsApp no ha salido. Corrige el teléfono y vuelve a enviarlo.'],
+    motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu ', dato('{quote}'), '.'],
+    motivo: MOTIVO_DE_1443 },
+  { ficha: FICHA_DE_1443, clase: 'compuesta', fichero: 'public/dashboard/js/homeView.js',
+    partes: ['Hemos guardado tu ', dato('{quote}'), ', pero el WhatsApp no ha salido. Envíalo desde aquí.'],
+    motivo: MOTIVO_DE_1443 },
   { ficha: '2026-09-25-SCRUM-1124-direccion-albaran-firmado.md', clase: 'partida',
     fichero: 'src/modules/jobs/domain/jobDireccion.ts',
     partes: [
@@ -485,6 +481,12 @@ const NO_SE_CRUZAN = [
       + '(orquestador, 1-oct-2026): ese fichero es del sellado del albarán (regla 29) y tocarlo para '
       + 'que un guard pueda leerlo sería mover lo serio por lo cómodo. Sale de aquí el día que quien '
       + 'lleve ese carril lo escriba en una línea.' },
+  { ficha: '2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobDetailView.js',
+    partes: ['Facturar lo entregado · ', dato('{número}')], motivo: MOTIVO_DE_1215_HOJA },
+  { ficha: '2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md', clase: 'compuesta',
+    fichero: 'public/dashboard/js/jobDetailView.js',
+    partes: ['Facturar lo entregado del albarán ', dato('{número}')], motivo: MOTIVO_DE_1215_HOJA },
 ].map((d) => ({ ...d, texto: textoDe(d.partes) }));
 
 /** A partir de aquí un «dato» deja de ser un número, una fecha o un hueco, y es una frase. */
@@ -568,7 +570,7 @@ const equipoDelPuesto = (puesto) => (puesto.startsWith('J') ? 'equipo de Javier'
  */
 const TECHO_DE_AJENAS = {
   '2026-09-03-SCRUM-704-guardar-lineas-dictadas.md': 6,
-  '2026-09-04-SCRUM-605-atajos-valido-hasta.md': 12,
+  '2026-09-04-SCRUM-605-atajos-valido-hasta.md': 8,
   '2026-09-07-SCRUM-722-nuevo-albaran.md': 1,
   '2026-09-09-SCRUM-832-la-ficha-que-ya-no-esta.md': 2,
 };
@@ -607,23 +609,6 @@ const NOTAS_AJENAS = [
     'La firma del fundador llegó, así que **la aprobación no se retira**: se corrige la línea que la',
     'atribuía mal, y el hueco del guard se cierra en SCRUM-726.',
   ]),
-  ...conNota(ajenasDe('2026-09-04-SCRUM-605-atajos-valido-hasta.md', {
-    dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'public/dashboard/js/quoteAtajosVencimiento.js',
-    motivo: 'NOTA DE ESTADO ESCRITA COMO CITA (sección «Dónde se pinta»): cuatro líneas que avisan de que '
-      + 'el nombre accesible de los atajos está construido y sin cablear. No es texto de pantalla. Sale '
-      + 'de aquí cuando su dueño le quite el `>`.',
-  }, [
-    '⚠️ **El nombre accesible está construido y NO cableado todavía.** Hoy la vista pone el **mismo**',
-    'texto en el rótulo y en el `aria-label` (una sola llamada a `rotuloDeAtajo`), así que para que',
-    'digan cosas distintas hace falta **una línea** en `quotesView.js` — fichero de otro carril en',
-    'vuelo (SCRUM-594). Queda listo para que sea una línea y no un rediseño.',
-  ]), '⚠️ DISCREPANCIA MEDIDA el 2-oct-2026, y la decisión es de su dueño: (a) la ficha es del equipo de '
-    + 'Luis por §3.3, porque el texto lo usa `quoteAtajosVencimiento.js`, de S2; (b) `git blame` dice '
-    + 'que estas cuatro líneas las tecleó la identidad del equipo de Javier en el commit 7f695c75, el '
-    + '4-sep-2026, que es el que creó la ficha, antes de que hubiera reparto de carriles; (c) la '
-    + 'etiqueta de equipo no existe en Jira para SCRUM-605 (`labels = []`). El orquestador del equipo '
-    + 'de Javier decidió NO editarlas (SCRUM-1334). Si el equipo de Luis dice que son de Javier, se '
-    + 'las pasa y este equipo les quita el `>`.'),
   ...ajenasDe('2026-09-07-SCRUM-722-nuevo-albaran.md', {
     dueno: 'equipo de Luis', fecha: '2026-10-02', usa: 'public/dashboard/js/albaranDetailView.js',
     motivo: '«QUÉ HABÍA ANTES», ESCRITO COMO CITA: el marcador que la pantalla pintaba hasta SCRUM-722, '

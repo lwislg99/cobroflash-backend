@@ -51,6 +51,7 @@ import {
   F9_EN_EL_CATALOGO, faltaEnF9,
 } from './_censo-dos-fronts.mjs';
 import { extraerRanurasVisibles, ranurasDelDocumento, RANURAS_NO_DERIVABLES } from './_ranuras-documento.mjs';
+import { casosEscritos, nombreEscrito } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
@@ -103,28 +104,34 @@ test('SCRUM-600 · PASO 0: el front que queda las tiene TODAS, y el retirado ten
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LA RED · los OCHO. Uno por uno, con nombre, y con su control negativo.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-for (const f of LOS_OCHO) {
-  test(`SCRUM-600 · 🔴 ${f.id} NO SE PIERDE: ${f.que}`, () => {
-    const fuente = leer(f.fichero);
+const caso = casosEscritos(LOS_OCHO, (f) => `SCRUM-600 · 🔴 ${f.id} NO SE PIERDE: ${f.que}`, (f) => {
+  const fuente = leer(f.fichero);
 
-    // CONTROL POSITIVO — hoy esta.
-    assert.ok(f.detecta(arbol(fuente, f.fichero)),
-      `🔴 SE HA PERDIDO ${f.id} (${f.que}) en ${f.fichero}. `
-      + `El encargo de SCRUM-600 lo declara innegociable: si se ha quitado a proposito, es cambio `
-      + `de master ANTES de codificar, no un borrado de paso.`);
+  // CONTROL POSITIVO — hoy esta.
+  assert.ok(f.detecta(arbol(fuente, f.fichero)),
+    `🔴 SE HA PERDIDO ${f.id} (${f.que}) en ${f.fichero}. `
+    + `El encargo de SCRUM-600 lo declara innegociable: si se ha quitado a proposito, es cambio `
+    + `de master ANTES de codificar, no un borrado de paso.`);
 
-    // El ancla tiene que ser UNICA, o el control negativo estaria quitando otra cosa.
-    const veces = fuente.split(f.ancla).length - 1;
-    assert.equal(veces, 1,
-      `🔴 el ancla de ${f.id} aparece ${veces} veces en ${f.fichero}: el control negativo no seria fiable`);
+  // El ancla tiene que ser UNICA, o el control negativo estaria quitando otra cosa.
+  const veces = fuente.split(f.ancla).length - 1;
+  assert.equal(veces, 1,
+    `🔴 el ancla de ${f.id} aparece ${veces} veces en ${f.fichero}: el control negativo no seria fiable`);
 
-    // CONTROL NEGATIVO — sobre una copia EN MEMORIA. El detector tiene que saber decir «no».
-    const mutilada = fuente.replace(f.ancla, '');
-    assert.equal(f.detecta(arbol(mutilada, f.fichero)), false,
-      `🔴 DETECTOR TAUTOLOGICO en ${f.id}: sigue diciendo que si con el ancla quitada, `
-      + `asi que no vigila nada y su verde no vale.`);
-  });
-}
+  // CONTROL NEGATIVO — sobre una copia EN MEMORIA. El detector tiene que saber decir «no».
+  const mutilada = fuente.replace(f.ancla, '');
+  assert.equal(f.detecta(arbol(mutilada, f.fichero)), false,
+    `🔴 DETECTOR TAUTOLOGICO en ${f.id}: sigue diciendo que si con el ancla quitada, `
+    + `asi que no vigila nada y su verde no vale.`);
+});
+test('SCRUM-600 · 🔴 F7 NO SE PIERDE: VISTA PREVIA EN VIVO mientras escribes, al lado del formulario', caso(0));
+test('SCRUM-600 · 🔴 F8 NO SE PIERDE: SUPLIDO como concepto de primera clase: la marca VIAJA en la linea', caso(1));
+test('SCRUM-600 · 🔴 F10 NO SE PIERDE: LA COMISION SE DECLARA EN EL PROPIO FORMULARIO', caso(2));
+test('SCRUM-600 · 🔴 F11 NO SE PIERDE: plantillas + Sugerir con IA + Usar plantilla, GRATIS Y EN PRIMER PLANO', caso(3));
+test('SCRUM-600 · 🔴 F12 NO SE PIERDE: EL SELECTOR DE FORMAS DE PAGO DICE QUE FALTA', caso(4));
+test('SCRUM-600 · 🔴 F13 NO SE PIERDE: albaranes con enlace al TRABAJO DE ORIGEN', caso(5));
+test('SCRUM-600 · 🔴 F14 NO SE PIERDE: LA FIRMA DEL CLIENTE SALE EN EL PDF con trazo manuscrito', caso(6));
+caso.todos();
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // R-CONTAR · el numero de vigilados no baja sin que se vea. Quitar una entrada de `LOS_OCHO`
@@ -159,7 +166,8 @@ test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene q
 // falta) vive en `scrum598-el-margen-sale-del-documento.test.mjs`, que es el ticket que hizo la
 // mudanza. Aquí va lo que le toca a esta red: que F9 SIGUE ESTANDO.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
+test('SCRUM-600 · 🔴 F9 NO SE PIERDE: COSTE Y MARGEN EXISTEN EN EL PRODUCTO — en el CATÁLOGO, que es su casa desde CAT-01', (t) => {
+  nombreEscrito(t, `SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`);
   const falta = faltaEnF9({
     vista: leer(F9_EN_EL_CATALOGO.ficheros.vista),
     aritmetica: leer(F9_EN_EL_CATALOGO.ficheros.aritmetica),

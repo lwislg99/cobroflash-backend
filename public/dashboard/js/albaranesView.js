@@ -53,9 +53,9 @@
 // plural del español (vocal → +s, consonante → +es) produce EXACTAMENTE los tres rótulos aprobados,
 // y un test los fija uno a uno.
 //
-// Las etiquetas de estado dentro de cada fila imprimen EL VALOR DEL MODELO tal cual (`emitido`,
-// `parcial`): dato, no copy. Es lo que impide repetir el error de B2 — nadie va a escribir
-// «Enviado» en una pantalla que pone `emitido`.
+// La etiqueta de ESTADO dentro de cada fila imprime EL VALOR DEL MODELO tal cual (`emitido`):
+// dato, no copy. Es lo que impide repetir el error de B2 — nadie va a escribir «Enviado» en una
+// pantalla que pone `emitido`. La de FACTURACIÓN ya no (SCRUM-1450): dice lo que dice la ficha.
 (function () {
   const TODOS = '__todos__'; // valor de pestaña, no un estado del modelo
 
@@ -75,8 +75,17 @@
     return plural.charAt(0).toUpperCase() + plural.slice(1);
   }
 
-  /** El eje de cobro se lee como se escribe: `sin_facturar` → `sin facturar`. Sin plural. */
-  function etiquetaCobro(valor) { return String(valor).replace(/_/g, ' '); }
+  // SCRUM-1450 · EL EJE DE FACTURACIÓN DICE LO MISMO QUE LA FICHA. Aquí se leía el dato
+  // (`sin_facturar` → `sin facturar`, y `parcial` tal cual en la marca de la fila) mientras la ficha
+  // decía «Facturado en parte»: dos vocabularios para un hecho. Los literales son los de SCRUM-1375
+  // comentario 18203 y NO se escriben aquí: se piden al mapa de la ficha (`textoDeFacturacion`,
+  // `albaranDetailView.js`, que `index.html` carga antes). Una segunda lista sería el gemelo otra vez.
+  //
+  // Devuelve `null` para un valor que ese mapa no conoce —y si el mapa no está—: lo desconocido NO
+  // se pinta crudo. Quien llama, sin texto, no pinta.
+  function etiquetaCobro(valor) {
+    return typeof textoDeFacturacion === 'function' ? textoDeFacturacion(valor) : null;
+  }
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
@@ -263,7 +272,9 @@
       // lo que se cuenta. «Todas» arrastra a pensar en facturas, que es justo el objeto que este
       // filtro NO cuenta.
       const opciones = [{ valor: TODOS, texto: 'Facturación: todos', n: contadores.total }]
-        .concat(ejes.cobro.map((v) => ({ valor: v, texto: etiquetaCobro(v), n: contadores.porCobro[v] || 0 })));
+        .concat(ejes.cobro.map((v) => ({ valor: v, texto: etiquetaCobro(v), n: contadores.porCobro[v] || 0 })))
+        // SCRUM-1450 · un valor sin texto no tiene opción: sus albaranes siguen en «todos».
+        .filter((o) => o.texto !== null);
       for (const o of opciones) {
         const op = document.createElement('option');
         op.value = o.valor;
@@ -426,11 +437,12 @@
         pill.textContent = f.estado; // el VALOR del modelo, no un rótulo inventado
         tdEstado.appendChild(pill);
         const cls = claseCobro(f.estadoFacturacion);
-        if (cls) {
+        const textoCobro = etiquetaCobro(f.estadoFacturacion); // SCRUM-1450: las palabras de la ficha
+        if (cls && textoCobro) {
           const chip = document.createElement('span');
           // SCRUM-831 · el margen a la hoja: era `style.cssText`.
           chip.className = cls + ' alb-chip-cobro';
-          chip.textContent = f.estadoFacturacion;
+          chip.textContent = textoCobro;
           tdEstado.appendChild(chip);
         }
         tr.appendChild(tdEstado);

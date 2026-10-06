@@ -1,4 +1,5 @@
 // src/modules/system/app/routes/quotesAdmin.routes.ts
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
@@ -82,7 +83,7 @@ router.get('/', async (req, res) => {
     const raw = req.query.teamMemberId;
     let teamMemberId: number | null | undefined;
     if (raw === 'owner') teamMemberId = null;
-    else if (raw !== undefined && Number.isInteger(Number(raw))) teamMemberId = Number(raw);
+    else if (raw !== undefined && cabeEnColumnaInt(Number(raw))) teamMemberId = Number(raw);
 
     const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
     return res.json(quotes);
@@ -98,7 +99,7 @@ router.get('/', async (req, res) => {
 router.post('/:id/accept', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -137,7 +138,7 @@ router.post('/:id/accept', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -183,7 +184,7 @@ const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
 router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);
-    if (!Number.isInteger(quoteId)) {
+    if (!cabeEnColumnaInt(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
 
@@ -440,7 +441,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
 router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     const creada = await crearRevisionDeQuote(req.merchantId, id);
     return res.status(201).json({ ok: true, ...creada });
@@ -466,7 +467,7 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
 router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_quote_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     // SCRUM-1285 · la versión que leyó la pantalla (ver `core/db/escrituraConVersion.ts`).
     const leida = leerVersion(req.body?.version);
@@ -503,7 +504,7 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
 router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.id);
-    if (!Number.isInteger(quoteId)) {
+    if (!cabeEnColumnaInt(quoteId)) {
       return res.status(400).json({ error: 'invalid_quote_id' });
     }
 
@@ -643,7 +644,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-whatsapp', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
@@ -705,7 +706,7 @@ router.post('/:id/send-whatsapp', async (req, res) => {
 router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId }, // multi-tenant
@@ -742,7 +743,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.post('/:id/send-email', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -755,17 +756,27 @@ router.post('/:id/send-email', async (req, res) => {
     const { sendQuoteEmail } = await import('../../../messaging/domain/email.service');
     await sendQuoteEmail({ quoteId: id, prisma });
 
-    if (quote.status === 'draft') {
-      await prisma.quote.update({ where: { id }, data: { status: 'sent' } });
-    }
+    // SCRUM-1465 · EL CORREO YA SALIÓ. Lo que sigue es el apunte, y si falla NO puede caer en el
+    // `catch` de abajo: ese `catch` contesta «no se pudo enviar», el profesional reintenta y el
+    // cliente recibe el presupuesto dos veces. Mismo criterio que el WhatsApp (`sendQuote.service`).
+    try {
+      if (quote.status === 'draft') {
+        await prisma.quote.update({ where: { id }, data: { status: 'sent' } });
+      }
 
-    recordCustomerEvent({
-      merchantId: quote.merchantId,
-      customerId: quote.customerId,
-      type: 'quote_sent',
-      title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
-      detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
-    });
+      recordCustomerEvent({
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        type: 'quote_sent',
+        title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
+        detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
+      });
+    } catch (errDelApunte: any) {
+      console.error(
+        `[POST /admin/quotes/:id/send-email] el presupuesto ${id} SALIÓ por email y no se pudo apuntar (sigue como «${quote.status}»):`,
+        errDelApunte?.message || errDelApunte,
+      );
+    }
 
     return res.json(sendSuccessBody());
   } catch (err: any) {
@@ -787,7 +798,7 @@ router.post('/:id/send-email', async (req, res) => {
 router.post('/:id/approve', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -838,7 +849,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
 router.put('/:id/notes', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
     await prisma.quote.updateMany({
       where: { id, merchantId: req.merchantId },
@@ -866,7 +877,7 @@ router.put('/:id/notes', async (req, res) => {
 router.put('/:id/tags', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
     // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
     // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
@@ -893,7 +904,7 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -997,7 +1008,7 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
     // asignarían documentos de otro merchant sabiendo contar.
