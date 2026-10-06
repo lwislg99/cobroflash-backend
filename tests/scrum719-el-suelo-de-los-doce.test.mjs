@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { ejecutableDe, ejecutablesDe, leerFuente } from './_guard-texto.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
 import { analizarFiltro, clasificarFiltro, censoDelFiltro, FORMAS } from './_censo-filtro-sin-suelo.mjs'; // SCRUM-1395
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -323,13 +324,30 @@ const FORMAS_VISTAS_1395 = [
   ['✅ sólo lo nombra en un comentario', `${IMPORTA_1395('ejecutableDe')}// antes: soloEjecutable(src)\nconst c = ejecutableDe(src, { ancla: 'x' });\n`, FORMAS.CON_SUELO],
   ['✅ un `soloEjecutable` propio, que no viene del filtro', 'const soloEjecutable = (s) => s;\nconst c = soloEjecutable(src);\n', null],
 ];
-for (const [nombre, fuente, esperada] of FORMAS_VISTAS_1395) {
-  test(`SCRUM-1395 · ⑤ el analizador clasifica · ${nombre}`, () => {
-    const a = analizarFiltro(fuente, 'caso.mjs');
-    assert.equal(a.ok, true, 'el caso de prueba tiene que parsear');
-    assert.equal(clasificarFiltro(a), esperada);
-  });
-}
+// Un caso por fila, con el nombre ESCRITO (SCRUM-1415): con el bucle, el nombre se construía al
+// ejecutar y la señal por nombres no podía decir que faltaba uno si la tanda lo perdía.
+const clasifica1395 = casosEscritos(FORMAS_VISTAS_1395, ([nombre]) => `SCRUM-1395 · ⑤ el analizador clasifica · ${nombre}`, ([, fuente, esperada]) => {
+  const a = analizarFiltro(fuente, 'caso.mjs');
+  assert.equal(a.ok, true, 'el caso de prueba tiene que parsear');
+  assert.equal(clasificarFiltro(a), esperada);
+});
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable(x)` directo', clasifica1395(0));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable` con alias', clasifica1395(1));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable` pasado sin llamar', clasifica1395(2));
+test('SCRUM-1395 · ⑤ el analizador clasifica · por `import * as`', clasifica1395(3));
+test('SCRUM-1395 · ⑤ el analizador clasifica · por `await import()`', clasifica1395(4));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `leerFuente(r)` sin opciones', clasifica1395(5));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `leerFuente(r, {})` sin ancla', clasifica1395(6));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `ejecutableDe` con `sinAncla`', clasifica1395(7));
+test('SCRUM-1395 · ⑤ el analizador clasifica · opciones que no se pueden leer', clasifica1395(8));
+test('SCRUM-1395 · ⑤ el analizador clasifica · una con suelo y otra sin él', clasifica1395(9));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `ejecutableDe` con ancla', clasifica1395(10));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `leerFuente` con ancla', clasifica1395(11));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `ejecutablesDe`', clasifica1395(12));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `leerFuente` con comentarios (no filtra)', clasifica1395(13));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ sólo lo nombra en un comentario', clasifica1395(14));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ un `soloEjecutable` propio, que no viene del filtro', clasifica1395(15));
+clasifica1395.todos();
 
 test('SCRUM-1395 · ⑥ un fuente que no parsea sale SIN JUZGAR, nunca limpio', () => {
   const roto = analizarFiltro(`${IMPORTA_1395('soloEjecutable')}const c = soloEjecutable(src;\n`, 'roto.mjs');

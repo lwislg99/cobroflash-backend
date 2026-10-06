@@ -190,3 +190,76 @@ sonda no lleva control positivo: no había ningún PR abierto que se supiera exp
 - La sonda de exposición no tiene control positivo.
 - Medí mi contexto tarde: a ojo dije «por debajo de 200k» y eran 261.491.
 - Un `git merge` sin `-q` me devolvió cien líneas de ficheros ajenos.
+
+# SCRUM-1395 · APÉNDICE · 6-oct-2026 · El obligatorio del PR #2224 salió ROJO: los casos del ⑤ no se podían ver por nombre
+
+**Medido contra:** `origin/main` = `ee4331a46b2d89864d1f044dcdc43af32e4c4479` · 2026-10-06T14:02:00Z
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+6-oct-2026 · **J4e** (puesto J4, relevo de J4c), por encargo del orquestador (`cobroflash-backend-90`).
+
+## Lo que cayó
+
+El obligatorio del PR #2224 sobre `4356ca71` salió FAILURE (job `112305101969`, leído por el
+orquestador). Un caso, de `tests/scrum1415-nombres-construidos.test.mjs`:
+
+> `SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido son exactamente las de la lista, ni una más ni una menos`
+> `tests/scrum719-el-suelo-de-los-doce.test.mjs: 1 de nombre construido (líneas 327) y la lista declara 0`
+
+Visto caer en local ANTES de tocar nada, sobre la rama tal como estaba mezclada con `ee4331a4`:
+`scrum1415` 5 de 6, con ese mismo `actual`.
+
+## La ironía, que vale más que el arreglo
+
+**SCRUM-1395 existe porque un guard puede PASAR sin medir nada.** Y lo que ha cazado `scrum1415` es
+que los casos nuevos del ⑤ del propio 1395 no se pueden ver por nombre: salían de un bucle sobre
+`FORMAS_VISTAS_1395` con el nombre construido por plantilla, así que la señal por nombres
+(SCRUM-1339d) no habría podido decir que faltaban si la tanda los perdía. **Es el mismo defecto, en
+el arreglo del defecto.**
+
+La cifra: el guard cuenta UNA llamada (la de la línea 327), y esa llamada registraba **16 casos**, uno
+por fila de la tabla. En el encargo venían como «cinco»; contados en el TAP son 16 (los otros cinco
+del 1395 en ese fichero, ①②③④⑥, ya tenían nombre literal).
+
+## El arreglo
+
+El que dicta el mensaje del guard: `casosEscritos` de `tests/_casos-escritos.mjs`. El bucle se
+escribe desenrollado en `tests/scrum719-el-suelo-de-los-doce.test.mjs`, 16 `test('…', clasifica1395(i))`
+con el nombre literal, y `clasifica1395.todos()` al final, que no deja cargar el fichero si una fila
+se queda sin caso. Cada caso compara su nombre escrito con el que sale de su fila. El cuerpo y la
+tabla no cambian: ninguna aserción se toca.
+
+No se toca: `tests/scrum1415-nombres-construidos.test.mjs`, su lista (sólo baja), el trinquete de
+1395, la lista de 85 heredados, `tests/_guard-texto.mjs` ni `package.json`.
+
+## Lo que se corrió y lo que no
+
+Una pasada de ocho ficheros, TAP a fichero fuera del árbol, leído después: **87 de 87, 0 fallos, 0
+saltos**. Por nombre:
+
+| prefijo en el TAP | casos |
+| --- | --- |
+| `SCRUM-1415 · ` | 6 de 6 |
+| `SCRUM-719 · ` | 8 |
+| `SCRUM-1395 · ` (en `scrum719`; el fichero, 29 de 29) | 21 |
+| de ellos, `SCRUM-1395 · ⑤ el analizador clasifica · ` | 16, cada uno con su nombre literal |
+| `SCRUM-589` | 7 |
+| `SCRUM-237` 8 · `SCRUM-976` 4 · `SCRUM-267` 10 · `SCRUM-1294` 4 · `SCRUM-525d` 8 | 34 |
+| de regalo en esos ficheros: `SCRUM-1345` 4 · `SCRUM-1386` 3 · `SCRUM-649` 4 | 11 |
+| control: `SCRUM-9999 · inventado` | 0 |
+
+La línea del trinquete en esta pasada: «110 guards llaman al filtro de comentarios · 85 sin suelo (85
+heredados declarados · 0 nuevos) · 24 con suelo · 1 no filtran · población: 1254 ficheros».
+
+- **NO corrido:** la tanda completa (no es alcanzable en esta máquina), `censo:mudez`, nada gateado.
+- `dist/` con `tsc --noCheck` en un worktree anidado, sin `prisma generate`.
+- No comprobé con una mutación propia que un literal cambiado cae: lo afirma el caso 4 de `scrum1415`
+  (`casosEscritos`: un nombre escrito que se separa de su fila cae), que pasó.
+
+## Errores propios (J4e)
+
+- La primera pasada de `scrum589` salió roja por MÍ: el worktree nuevo no tenía `dist/` y el fichero
+  no cargaba. No era un rojo del cambio; compilé y repetí la pasada entera.
+- Conté los cinco casos ①②③④⑥ con una clase de caracteres en `grep` y me devolvió 21, los mismos que
+  el prefijo entero: la clase casaba con todo. Repetido con cadena fija, uno por uno: ① 1 · ② 1 · ③ 1 ·
+  ④ 1 · ⑥ 1 · ⑤ 16 · y un ⑦ inventado, 0.
