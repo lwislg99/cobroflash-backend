@@ -90,7 +90,8 @@ const ENLACES = [];
 after(() => {
   // Primero los enlaces, de uno en uno y sin recursión: un borrado recursivo no tiene por qué entrar por ellos.
   for (const e of ENLACES) { try { fs.rmdirSync(e); } catch { try { fs.unlinkSync(e); } catch { /* ya no está */ } } }
-  fs.rmSync(BASE, { recursive: true, force: true });
+  // Con reintentos: en Windows la carpeta recién vaciada a veces sigue cogida un instante y se quedaba, vacía.
+  fs.rmSync(BASE, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 /** Un enlace a una carpeta: junction en Windows (no pide permisos), enlace simbólico en lo demás. */
