@@ -171,5 +171,9 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
       createdAt: quote.createdAt,
       merchant,
     }),
+    // SCRUM-1470 · la zona del negocio, EN CRUDO: quien la resuelve (y cae a UTC si falta o no
+    // vale) es `zonaDelMerchant`, dentro del documento. Con ella la fecha de la firma del papel es
+    // la misma que dice la página pública.
+    zona: merchant.timezone ?? null,
   };
 }

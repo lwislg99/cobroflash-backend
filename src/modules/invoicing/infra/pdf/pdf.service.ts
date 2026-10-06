@@ -16,6 +16,7 @@ import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentaci
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
 import { numeroConRevision } from '../../../quotes/domain/revision';
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1470
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
@@ -264,6 +265,17 @@ export type ParamsPdfPresupuesto = {
    * Ausente o `null` = el documento sale EXACTAMENTE como salía. Es lo que pasa con todo lo firmado.
    */
   validez?: string | null;
+  /**
+   * SCRUM-1470 · LA ZONA DEL NEGOCIO (`Merchant.timezone`, en crudo), para la fecha de la firma.
+   *
+   * La página pública de este mismo presupuesto dice «Ya aceptaste … el 03 de octubre» en la zona
+   * del negocio desde SCRUM-633, y este papel decía «Firmado … el 02 de octubre» con el reloj del
+   * proceso (Railway va en UTC): un presupuesto aceptado a las 00:30 se contradecía con su página.
+   *
+   * Ausente, `null` o una zona que `Intl` no conozca = UTC (`zonaDelMerchant`, decisión A del
+   * fundador en SCRUM-643), que es lo que este papel ya imprimía en producción.
+   */
+  zona?: string | null;
 };
 
 export async function generateInvoicePdf(params: {
@@ -1133,9 +1145,12 @@ if (params.signatureData) {
   try {
     const base64 = params.signatureData.replace(/^data:image\/\w+;base64,/, '');
     const imgBuffer = Buffer.from(base64, 'base64');
+    // SCRUM-1470 · la MISMA forma que la página pública (SCRUM-633): `timeZone` explícito, y la
+    // zona la resuelve `zonaDelMerchant`. Sin él, este día salía del reloj del proceso.
+    const zonaDelNegocio = zonaDelMerchant({ timezone: params.zona });
     const signDate = params.signedAt
-      ? params.signedAt.toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })
-      : new Date().toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' });
+      ? params.signedAt.toLocaleDateString('es', { timeZone: zonaDelNegocio, day: '2-digit', month: 'long', year: 'numeric' })
+      : new Date().toLocaleDateString('es', { timeZone: zonaDelNegocio, day: '2-digit', month: 'long', year: 'numeric' });
 
     // Salto de página si no cabe
     if (doc.y + 120 > doc.page.height - doc.page.margins.bottom) doc.addPage();
