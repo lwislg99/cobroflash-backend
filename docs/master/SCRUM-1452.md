@@ -116,3 +116,18 @@ mismo texto lleva una moneda» y el caso está en el test (`lejos`).
 - Suite completa en local: no corrida. Corridos, tras `npm run build`: `npm run guards:entrada` (13 guards,
   158 tests, verde) y `npm run tanda:dirigida` (232 ficheros de 1.235, 2.301 tests, 1 fail: `scrum1321`
   PUERTA 1b, el ciego conocido de esta máquina). El veredicto es el del CI.
+
+# SCRUM-1452b · Corrección: los sitios de deuda que el texto no veía son 8, no 9
+
+**Medido contra:** `origin/main` = `8c589a8e48b69bf39141181f126239610ed4e03f` · 2026-10-06T11:08Z
+
+A9: aviso → A10 «Un número derivado no se elige: se recalcula.» — no se pudo comprobar: la cifra vive en prosa de un registro y ningún guard la recalcula
+
+Arriba dice «11 sitios de NUMERO que no estaban, 9 de ellos deuda». Los 11 están bien contados; los de
+deuda son **8**: de los 11, tres son LEGITIMO (el del PDF y los dos de `qrPagina`). Uno por uno: tres en
+`sendQuote.service.ts`, dos en `quoteDecisionLanding.routes.ts` (la página de rechazo y el «Cotización #token»),
+`payCard.routes.ts`, `jobs.routes.ts` y `trabajoDirecto.ts`.
+
+Escribí el 9 restando de memoria en vez de contar la tabla que tenía debajo, y lo repetí en el comentario
+de entrega de Jira (18281), corregido allí también. No cambia ni el censo ni la lista declarada: `DECLARADOS`
+sale del censo, no de esta frase.
