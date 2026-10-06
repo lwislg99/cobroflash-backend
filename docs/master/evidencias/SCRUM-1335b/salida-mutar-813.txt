@@ -1,0 +1,64 @@
+POBLACION · 22 mutaciones declaradas · node v24.8.0
+BASE sin mutar · exit 0 · 43 pruebas · caídas 0
+   1 · el trinquete HABLA: un test que depende de la zona sale denunciado
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 6
+        además: SCRUM-813 · los canarios juzgan al instrumento, y el veredicto lo dice | SCRUM-1335b · 🔴 ① una diferencia REAL pasa/cae sigue cambiando de veredicto | SCRUM-1335b · 🔴 ① lo que la tanda no pudo comparar y a solas CAMBIA es un hallazgo | SCRUM-1335b · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo | SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s
+   2 · el trinquete NO denuncia a los tests que YA fijan su zona
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 13
+        además: SCRUM-813 · los canarios juzgan al instrumento, y el veredicto lo dice | SCRUM-813 · un fichero que MUERE AL CARGAR en una zona sola sigue cambiando de veredicto | SCRUM-1335b · «ausente» NO es un veredicto: pasa en una zona y falta en la otra NO acusa | SCRUM-1335b · ② lo que no se pudo comparar se CUENTA, con su zona: no desaparece | SCRUM-1335b · 🔴 ① una diferencia REAL pasa/cae sigue cambiando de veredicto | SCRUM-1335b · 🔴 ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fic | SCRUM-1335b · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona | SCRUM-1335b · ③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale d | SCRUM-1335b · 🔴 ① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA  | SCRUM-1335b · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo | SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s | SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS
+   3 · SUELO: la zona LLEGA al proceso hijo, y se comprueba antes de medir
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 8
+        además: SCRUM-813 · SUELO: las dos pasadas de canarios midieron de verdad | SCRUM-813 · 🔴 el trinquete HABLA: un test que depende de la zona sale denunciado | SCRUM-813 · los canarios juzgan al instrumento, y el veredicto lo dice | SCRUM-813 · 🔴 el hijo NO hereda `NODE_TEST_CONTEXT` ni `NODE_OPTIONS`, y sí el resto | SCRUM-1335b · SUELO del sembrado: las dos pasadas midieron, y en Midway FALTAN resultados | SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s | SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS
+   4 · una CENSADA que deja de cambiar de veredicto pone el trinquete en ROJO
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-813 · una NUEVA manda sobre el suelo: primero se dice lo que ha entrado
+   5 · SUELO: CERO dependientes teniendo censadas NO es un cero — es CIEGO
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+   6 · SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue s
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-813 · 🔴 si el árbol se MUEVE entre las dos pasadas, el veredicto es CIEGO
+   7 · EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo CIEG
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-813c · 🔴 EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue 
+   8 · la marca REAL trae el detalle, y cuadra con lo que dice git
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+   9 · EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue sien
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 4
+        además: SCRUM-813b · 🔴 EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo  | SCRUM-813c · 🔴 la excepción es CERRADA: lo que NO está declarado ciega, aunque se le pare | SCRUM-813c · 🔴 con la lista VACÍA nada se ampara: cualquier ruta sigue cegando
+  10 · con la lista VACÍA nada se ampara: cualquier ruta sigue cegando
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 3
+        además: SCRUM-813b · 🔴 EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo  | SCRUM-813c · 🔴 EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue 
+  11 · POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-813c · 🔴 la excepción es CERRADA: lo que NO está declarado ciega, aunque se le pare
+  12 · «ausente» NO es un veredicto: pasa en una zona y falta en la otra NO acusa
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 10
+        además: SCRUM-813 · un fichero que MUERE AL CARGAR en una zona sola sigue cambiando de veredicto | SCRUM-1335b · ② lo que no se pudo comparar se CUENTA, con su zona: no desaparece | SCRUM-1335b · 🔴 ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fic | SCRUM-1335b · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona | SCRUM-1335b · ③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale d | SCRUM-1335b · 🔴 ① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA  | SCRUM-1335b · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo | SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s | SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS
+  13 · ② lo que no se pudo comparar se CUENTA, con su zona: no desaparece
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 5
+        además: SCRUM-813 · un fichero que MUERE AL CARGAR en una zona sola sigue cambiando de veredicto | SCRUM-1335b · 🔴 ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fic | SCRUM-1335b · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona | SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS
+  14 · ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fichero
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 3
+        además: SCRUM-813 · un fichero que MUERE AL CARGAR en una zona sola sigue cambiando de veredicto | SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s
+  15 · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+  16 · ① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA EN PI
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+  17 · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo f
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s
+  18 · ③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale de 
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+  19 · ② el VERDE lleva consigo lo que no pudo comparar, y sigue siendo verde
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS
+  20 · una CENSADA que no se pudo comparar no está viva ni apagada: es CIEGO
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+  21 · un CANARIO que no se pudo comparar no aprueba el autocontrol
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 1
+  22 · ① lo que la tanda no pudo comparar y a solas CAMBIA es un hallazgo
+        aplicada · exit 1 · 43 pruebas · cae lo suyo: SÍ · caídas 2
+        además: SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no s
+FINAL restaurado · exit 0 · 43 pruebas · caídas 0
+RESUMEN · 22 de 22 mutaciones tumban su caso
+EXIT=0

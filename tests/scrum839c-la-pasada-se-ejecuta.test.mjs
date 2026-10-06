@@ -207,12 +207,24 @@ test('SCRUM-839c · 🔴 pero SÍ falla cuando es ELLA la que no puede hacer su 
 test('SCRUM-839c · 🔴 un atasco NUEVO deja aviso, y el aviso menciona a alguien', () => {
   // «Escribir en un issue» y «avisar a alguien» no son lo mismo: sin la mención, el comentario
   // no le llega a nadie. Es literalmente el título del ticket, «y nadie se entera».
+  //
+  // 🔴 LO QUE ESTE TEST AFIRMA HA CAMBIADO, y lleva las dos fechas:
+  //   · 15-sep-2026 (SCRUM-839b): la mención va en TODO aviso. Eso afirmaba este test.
+  //   · 6-oct-2026 (SCRUM-1458, decisión del orquestador de Luis): va sólo si `main` está parado
+  //     o si un PR cruza 72 h o más. El issue llevaba 43 comentarios y los 43 mencionaban.
+  // El caso de aquí sigue mencionando porque el atasco entra con 146 h sin push. El de 1 h, que
+  // desde el 6-oct avisa SIN mención, va justo debajo; los dos sentidos enteros, en
+  // `tests/scrum1458-vigia-main-parado.test.mjs`.
   const r = correrPasada({ prs: [pr(1212)], estados: [enConflicto(1212)], antes: [] });
   assert.equal(r.code, 0);
   assert.equal(r.veredicto.empeora, true);
   assert.ok(r.aviso, '🔴 empeora y no ha dejado aviso.md: nadie se entera, que es el defecto entero');
-  assert.match(r.aviso, /@lwislg99/, '🔴 el aviso no menciona a nadie');
+  assert.match(r.aviso, /@lwislg99/, '🔴 un atasco de 146 h entra y el aviso no menciona a nadie');
   assert.match(r.aviso, /#1212/);
+  const reciente = correrPasada({ prs: [pr(1212)], estados: [enConflicto(1212, 1)], antes: [] });
+  assert.equal(reciente.veredicto.empeora, true);
+  assert.ok(reciente.aviso, '🔴 el atasco de 1 h tiene que seguir dejando aviso: lo que pierde es la mención, no el aviso');
+  assert.ok(!reciente.aviso.includes('@lwislg99'), '🔴 desde el 6-oct-2026 un atasco de 1 h no menciona al dueño');
 });
 
 test('SCRUM-839c · 🔴 EL CASO DEL TICKET: el mismo atasco, quieto, VUELVE a avisar al envejecer', () => {
