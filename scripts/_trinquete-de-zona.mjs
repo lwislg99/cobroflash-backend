@@ -119,7 +119,12 @@ const HIJO = path.join(path.dirname(AQUI), '_trinquete-de-zona-hijo.mjs');
  */
 export const ZONAS = ['Pacific/Kiritimati', 'Pacific/Midway'];
 
-/** Los tres estados que puede tener una prueba en una zona. `ausente` es el cuarto y se deriva. */
+/**
+ * Los tres estados que puede tener una prueba en una zona son `pass`, `fail` y `skip`.
+ *
+ * 🔴 `ausente` NO ES EL CUARTO (SCRUM-1335b, 6-oct-2026). Es «en esta zona no me llegó su
+ * resultado», y eso es una medida que falta, no un veredicto. Ver `compararZonas`.
+ */
 export const AUSENTE = 'ausente';
 
 export const SALIDA_OK = 0;
@@ -659,21 +664,171 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida }) {
  * no pueda haberlo.
  */
 export function cambianDeVeredicto(medidas) {
+  return compararZonas(medidas).cambian;
+}
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1335b · «AUSENTE» NO ES UN VEREDICTO — es una medida que falta, y se dice así.
+ *
+ * LO QUE HABÍA: una prueba con resultado en una zona y sin él en la otra contaba como «cambia de
+ * veredicto», igual que un pasa/cae. MEDIDO el 6-oct-2026 sobre 177 corridas del job (1→6 oct):
+ * **34 rojos, 289 acusaciones, y las 289 eran `pass`↔`ausente`. Ninguna `pass`↔`fail`.** La prueba
+ * había corrido y pasado en las dos zonas; lo que faltaba era su RESULTADO, que no llegó a quien
+ * cuenta (el hijo corre con `forceExit`, SCRUM-1405). El instrumento acusaba de «depende de la
+ * zona» a partir de un dato que no tenía, y mandaba a fijar la zona de tests que no la miran.
+ *
+ * LO QUE HAY (decisión del orquestador, SCRUM-1335 c.18387, con sus tres condiciones):
+ *
+ *   · `cambian`     — hay DOS veredictos reales y son distintos. Es la acusación, igual que antes.
+ *   · `sinComparar` — en alguna zona no hay resultado. **No acusa y no se calla**: se cuenta
+ *                     aparte y se imprime con su cifra. «No pude comparar» no es «son iguales».
+ *
+ * 🔴 Y UNA CAÍDA REAL NO SE ESCAPA POR AHÍ, que es la condición que decide. Si a una prueba que
+ * cae sólo en una zona se le pierde el resultado, queda `pass`↔`ausente` y parecería ruido. Pero
+ * el fichero que la contiene **sale con código ≠ 0 en esa zona y con 0 en la otra**, y el código
+ * de salida no viaja por la tubería que pierde resultados: `run()` lo ve siempre, y lo entrega como
+ * un `fail` —el de la prueba si llegó, el del fichero si no—. Así que:
+ *
+ *     un `fail` frente a un `ausente` SIGUE SIENDO «cambia» cuando, en la zona donde falta,
+ *     ESE FICHERO NO TIENE NINGUNA CAÍDA. El fichero cae en una zona y en la otra no.
+ *
+ * Eso cubre también al fichero que MUERE AL CARGAR en una zona sola (un `fail` con la ruta por
+ * nombre, y sus pruebas ausentes), que es la dependencia de zona más gorda que hay.
+ *
+ * Y si el fichero cae TAMBIÉN en la zona donde falta el resultado, no se sabe si es la misma
+ * prueba: `sinComparar`, no acusación. Las cinco formas están medidas con ficheros sembrados
+ * (`docs/master/evidencias/SCRUM-1335b/`) y fijadas en `tests/scrum813-trinquete-de-zona.test.mjs`.
+ *
+ * ⚠️ LÍMITES DECLARADOS:
+ *   · la pérdida real sólo se ha visto en el runner de Linux; aquí se IMITA (el fichero sembrado
+ *     deja de escribir su salida). Lo que se ha medido es que el código de salida llega sin ella.
+ *   · un fichero cuya salida se pierde ENTERA deja una entrada de más: `run()` informa del fichero
+ *     mismo como una prueba que pasa. Cuenta en `sinComparar`; no cambia ningún veredicto.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function compararZonas(medidas) {
   const claves = new Set();
   for (const m of medidas) for (const k of m.veredictos.keys()) claves.add(k);
 
-  const out = [];
+  // Por cada zona, los ficheros que CAEN en ella: los que tienen al menos un `fail`.
+  const caidos = medidas.map((m) => {
+    const ficheros = new Set();
+    for (const [clave, v] of m.veredictos) if (v === 'fail') ficheros.add(clave.split('::')[0]);
+    return ficheros;
+  });
+
+  const cambian = [];
+  const sinComparar = [];
   for (const clave of [...claves].sort()) {
     const porZona = medidas.map((m) => ({
       zona: m.zona, veredicto: m.veredictos.get(clave) ?? AUSENTE,
     }));
-    const distintos = new Set(porZona.map((p) => p.veredicto));
+    const [fichero, ...resto] = clave.split('::');
+    const entrada = { clave, fichero, prueba: resto.join('::'), porZona };
+    const distintos = new Set(porZona.map((p) => p.veredicto).filter((v) => v !== AUSENTE));
     if (distintos.size > 1) {
-      const [fichero, ...resto] = clave.split('::');
-      out.push({ clave, fichero, prueba: resto.join('::'), porZona });
+      cambian.push(entrada);
+    } else if (porZona.some((p) => p.veredicto === AUSENTE)) {
+      const elFicheroCaeSoloDondeSeVio = distintos.has('fail')
+        && porZona.every((p, i) => p.veredicto !== AUSENTE || !caidos[i].has(fichero));
+      if (elFicheroCaeSoloDondeSeVio) cambian.push({ ...entrada, porElFichero: true });
+      else sinComparar.push(entrada);
     }
   }
-  return out;
+  return { cambian, sinComparar };
+}
+
+/**
+ * LA REPESCA, la parte que MIDE: cada fichero con candidatas, a solas y en las mismas zonas.
+ *
+ * Devuelve `fichero → medidas a solas`. Vive aquí y no en el guion para que la red de cada tanda
+ * (`tests/scrum813-…`) la corra por el mismo camino que el job, con ficheros sembrados.
+ */
+export function repescar({
+  candidatas, zonas = ZONAS, raiz = RAIZ, dirTrabajo, medir = medirEnZona, alMedir = () => {},
+}) {
+  const aSolas = new Map();
+  for (const c of candidatas) {
+    if (aSolas.has(c.fichero)) continue;
+    const abs = path.isAbsolute(c.fichero) ? c.fichero : path.join(raiz, c.fichero);
+    const solo = zonas.map((zona) => medir({
+      zona, ficheros: [abs], raiz,
+      salida: path.join(dirTrabajo, `solo-${aSolas.size}-${path.basename(abs)}-${zona.replace(/\W/g, '_')}.json`),
+    }));
+    aSolas.set(c.fichero, solo);
+    alMedir(c.fichero, solo);
+  }
+  return aSolas;
+}
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * LA REPESCA, la parte que DECIDE. No mide nada: recibe la tanda y las medidas a solas.
+ *
+ * Con «ausente» fuera de los veredictos, a solas puede pasar una tercera cosa que antes no
+ * existía —que tampoco se pueda comparar— y hay que decir qué se hace con ella EN CADA SENTIDO:
+ *
+ *   una que CAMBIABA en la tanda (dos veredictos reales, distintos)
+ *     · a solas cambia otra vez ...................... `confirmadas`
+ *     · a solas da lo MISMO en las dos zonas ......... `noConfirmadas` (parpadeo, como siempre)
+ *     · a solas NO se pudo comparar o no se midió .... `confirmadas`, marcada `sinRefutar`
+ *
+ *   una que NO SE PUDO COMPARAR en la tanda
+ *     · a solas cambia ............................... `confirmadas` (el hallazgo estaba debajo)
+ *     · a solas da lo mismo .......................... `resueltas` (se comparó, y no era nada)
+ *     · a solas sigue sin poder compararse ........... `sinComparar` — se cuenta y se dice
+ *
+ * 🔴 `sinRefutar` ES LA MITAD QUE NO SE PUEDE REGALAR. Una diferencia que se VIO, con resultado en
+ * las dos zonas, sólo la desmiente otra medida que la vea igual. Si a solas falta el resultado, la
+ * diferencia de la tanda queda en pie: de lo contrario, la misma pérdida que este cambio deja de
+ * acusar serviría para borrar un hallazgo de verdad.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function resolverRepesca({ cambian, sinComparar, aSolas }) {
+  const comparadas = new Map();
+  const aSolasDe = (c, cambiabaEnLaTanda) => {
+    const solo = aSolas.get(c.fichero);
+    if (!solo || !solo.length || !solo.every((m) => m.ok)) return { estado: 'sin medir' };
+    if (!comparadas.has(c.fichero)) comparadas.set(c.fichero, compararZonas(solo));
+    const r = comparadas.get(c.fichero);
+    if (r.cambian.some((x) => x.clave === c.clave)) return { estado: 'cambia' };
+    // El fichero cae a solas en una zona y en la otra no: confirma a una candidata de ESE fichero
+    // que YA CAMBIABA en la tanda, aunque esta vez el resultado con su nombre no haya llegado.
+    // A una que sólo «no se pudo comparar» NO la confirma: de ella no se ha visto nada.
+    const delFichero = r.cambian.filter((x) => x.fichero === c.fichero);
+    const loConfirmaElFichero = cambiabaEnLaTanda && delFichero.some((x) => x.porElFichero || c.porElFichero);
+    if (loConfirmaElFichero) {
+      return { estado: 'cambia', conNombre: delFichero.filter((x) => !x.porElFichero) };
+    }
+    // Una candidata que lo es POR EL FICHERO se compara por el fichero, y el código de salida
+    // llega siempre: si a solas no cae en una zona sí y en otra no, se comparó y es lo mismo.
+    if (c.porElFichero) return { estado: 'igual' };
+    return { estado: solo.every((m) => m.veredictos.has(c.clave)) ? 'igual' : 'sin comparar' };
+  };
+
+  const porClave = new Map();
+  const confirmar = (c) => { if (!porClave.has(c.clave)) porClave.set(c.clave, c); };
+  const noConfirmadas = [];
+  for (const c of cambian) {
+    const s = aSolasDe(c, true);
+    if (s.estado === 'igual') noConfirmadas.push(c);
+    else if (s.estado !== 'cambia') confirmar({ ...c, sinRefutar: s.estado });
+    // 🔴 Lo que en la tanda sólo se supo POR EL FICHERO y a solas se ve CON NOMBRE, se queda con el
+    // nombre. Sin esto, una censada cuyo resultado se perdió en la tanda saldría dos veces: como
+    // ella misma (a solas) y como una «nueva» sin nombre (el fichero), que no lo es.
+    else if (c.porElFichero && s.conNombre?.length) for (const x of s.conNombre) confirmar(x);
+    else confirmar(c);
+  }
+  const resueltas = [];
+  const siguen = [];
+  for (const c of sinComparar) {
+    const s = aSolasDe(c, false);
+    if (s.estado === 'cambia') confirmar(c);
+    else if (s.estado === 'igual') resueltas.push(c);
+    else siguen.push(c);
+  }
+  return { confirmadas: [...porClave.values()], noConfirmadas, resueltas, sinComparar: siguen };
 }
 
 /**
@@ -683,11 +838,20 @@ export function cambianDeVeredicto(medidas) {
  *   · un DEPENDIENTE que no sale denunciado ⇒ el trinquete no ve el defecto que existe para ver.
  *   · un FIJADO que sale denunciado ⇒ denuncia a los inocentes, y así se apaga solo por ruido.
  */
-export function juzgarCanarios(cambian, canarios) {
+export function juzgarCanarios(cambian, canarios, sinComparar = []) {
   const denunciadas = new Set(cambian.map((c) => c.fichero));
+  const sinMedida = new Set(sinComparar.map((c) => c.fichero));
   const fallos = [];
   for (const c of canarios) {
     const visto = denunciadas.has(c.rutaClave);
+    // 🔴 SCRUM-1335b · un canario que no se pudo comparar NO es un control cumplido, en ninguno de
+    // los dos sentidos. Antes, a un dependiente le bastaba faltar en una zona para darse por
+    // «denunciado»: el autocontrol se aprobaba con un resultado que no había llegado.
+    if (!visto && sinMedida.has(c.rutaClave)) {
+      fallos.push(`el canario \`${c.fichero}\` NO SE PUDO COMPARAR: su resultado falta en alguna zona, `
+        + 'también a solas. Sin él no se sabe si el trinquete ve, así que no opina del árbol.');
+      continue;
+    }
     if (c.clase === 'dependiente' && !visto) {
       fallos.push(`el canario DEPENDIENTE \`${c.fichero}\` NO salió denunciado: el trinquete no ve `
         + 'el defecto que existe para ver. Si has cambiado `ZONAS`, comprueba que cubren los DOS '
@@ -705,7 +869,9 @@ export function juzgarCanarios(cambian, canarios) {
  * EL VEREDICTO. Recibe lo ya medido y no mide nada: así se puede probar entero sin correr la
  * tanda, que es lo que hace `tests/scrum813-trinquete-de-zona.test.mjs`.
  */
-export function veredicto({ cambianEnElArbol, censadas = CENSADAS, medidas = [], controles, quieto }) {
+export function veredicto({
+  cambianEnElArbol, censadas = CENSADAS, medidas = [], controles, quieto, sinComparar = [],
+}) {
   const problemas = [];
 
   // ── CIEGO ────────────────────────────────────────────────────────────────────────────────
@@ -723,14 +889,28 @@ export function veredicto({ cambianEnElArbol, censadas = CENSADAS, medidas = [],
       + 'zona. Repítelo con el árbol quieto.');
   }
   if (problemas.length) {
-    return { estado: 'CIEGO', salida: SALIDA_CIEGO, motivos: problemas, nuevas: [], apagadas: [] };
+    return { estado: 'CIEGO', salida: SALIDA_CIEGO, motivos: problemas, nuevas: [], apagadas: [], sinComparar };
   }
 
   const porClave = new Map(censadas.map((c) => [c.clave, c]));
   const vistas = new Set(cambianEnElArbol.map((c) => c.clave));
 
-  const nuevas = cambianEnElArbol.filter((c) => !porClave.has(c.clave));
-  const apagadas = censadas.filter((c) => !vistas.has(c.clave));
+  // 🔴 SCRUM-1335b · UNA CENSADA QUE NO SE PUDO COMPARAR NO ESTÁ «VIVA» NI «APAGADA».
+  //
+  // Antes, que a una censada le faltara el resultado en una zona contaba como «sigue cambiando»:
+  // la alarma se daba por viva con un dato que no había llegado. Y lo contrario sería peor —
+  // llamarla APAGADA es acusar a alguien de haberla arreglado en silencio. Ninguna de las dos
+  // cosas se sabe, así que es CIEGO y lo dice con su nombre (más abajo).
+  //
+  // Lo mismo si su fichero cae en una zona y en la otra no pero el `fail` llegó sin el nombre de
+  // la prueba: casi seguro es ella, y por eso mismo no se le cuelga a nadie como NUEVA.
+  const sinVeredicto = new Set(sinComparar.map((c) => c.clave));
+  const censadasSinComparar = censadas.filter((c) => !vistas.has(c.clave) && sinVeredicto.has(c.clave));
+  const ficherosDeEsas = new Set(censadasSinComparar.map((c) => c.clave.split('::')[0]));
+
+  const nuevas = cambianEnElArbol.filter((c) => !porClave.has(c.clave)
+    && !(c.porElFichero && ficherosDeEsas.has(c.fichero)));
+  const apagadas = censadas.filter((c) => !vistas.has(c.clave) && !sinVeredicto.has(c.clave));
 
   // 🔴 EL SUELO · un cero sobre una lista base que espera hallazgos NO es un cero.
   //
@@ -746,13 +926,21 @@ export function veredicto({ cambianEnElArbol, censadas = CENSADAS, medidas = [],
 
   if (nuevas.length) {
     return {
-      estado: 'HABLA', salida: SALIDA_HABLA, nuevas, apagadas, cieloRaso,
+      estado: 'HABLA', salida: SALIDA_HABLA, nuevas, apagadas, cieloRaso, sinComparar,
       motivos: nuevas.map((n) => `NUEVA · ${n.clave}`),
+    };
+  }
+  if (censadasSinComparar.length) {
+    return {
+      estado: 'CIEGO', salida: SALIDA_CIEGO, nuevas, apagadas, cieloRaso: false, sinComparar,
+      motivos: censadasSinComparar.map((c) => `la censada \`${c.clave}\` NO SE PUDO COMPARAR: su `
+        + 'resultado falta en alguna zona, también a solas. No se sabe si sigue cambiando de '
+        + 'veredicto, así que no se da por viva ni por apagada.'),
     };
   }
   if (cieloRaso) {
     return {
-      estado: 'CIEGO', salida: SALIDA_CIEGO, nuevas, apagadas, cieloRaso,
+      estado: 'CIEGO', salida: SALIDA_CIEGO, nuevas, apagadas, cieloRaso, sinComparar,
       motivos: [`CERO pruebas cambian de veredicto y hay ${censadas.length} censadas que deberían `
         + 'estar cambiando. Antes de creer que se han arreglado las '
         + `${censadas.length} a la vez, comprueba que la tanda corrió de verdad: los conteos por `
@@ -761,9 +949,12 @@ export function veredicto({ cambianEnElArbol, censadas = CENSADAS, medidas = [],
   }
   if (apagadas.length) {
     return {
-      estado: 'APAGADA', salida: SALIDA_APAGADA, nuevas, apagadas, cieloRaso,
+      estado: 'APAGADA', salida: SALIDA_APAGADA, nuevas, apagadas, cieloRaso, sinComparar,
       motivos: apagadas.map((a) => `APAGADA · ${a.clave}`),
     };
   }
-  return { estado: 'OK', salida: SALIDA_OK, nuevas: [], apagadas: [], cieloRaso, motivos: [] };
+  // 🔴 SCRUM-1335b · EL VERDE LLEVA CONSIGO LO QUE NO PUDO COMPARAR. No lo vuelve rojo —un resultado
+  // que no llegó no acusa a nadie— pero viaja en el veredicto con su cifra, para que el guion lo
+  // imprima y nadie lea «0 nuevas» como «las comparé todas».
+  return { estado: 'OK', salida: SALIDA_OK, nuevas: [], apagadas: [], cieloRaso, sinComparar, motivos: [] };
 }

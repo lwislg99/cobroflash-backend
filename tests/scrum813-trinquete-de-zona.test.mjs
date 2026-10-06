@@ -41,9 +41,9 @@ import { temporal } from './_temporal.mjs';
 
 import {
   AUSENTE, CANARIOS, CENSADAS, SALIDA_APAGADA, SALIDA_CIEGO, SALIDA_HABLA, SALIDA_OK, ZONAS,
-  arbolQuieto, cambianDeVeredicto, claveDe, entornoLimpio, escribirCanarios, ficherosDeLaTanda,
-  ESCRITURAS_DE_LA_TANDA, huellaPorRuta, juzgarCanarios, marcaDelArbol, medirEnZona,
-  sondaDeZona, veredicto,
+  arbolQuieto, cambianDeVeredicto, claveDe, compararZonas, entornoLimpio, escribirCanarios,
+  ficherosDeLaTanda, ESCRITURAS_DE_LA_TANDA, huellaPorRuta, juzgarCanarios, marcaDelArbol,
+  medirEnZona, repescar, resolverRepesca, sondaDeZona, veredicto,
 } from '../scripts/_trinquete-de-zona.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -78,7 +78,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   // ④ UNA CENSADA QUE SE APAGA DEJA DE SER ROJA: el peor movimiento de los dos, en silencio.
   {
     fichero: 'scripts/_trinquete-de-zona.mjs',
-    de: '  const apagadas = censadas.filter((c) => !vistas.has(c.clave));',
+    // ⚠️ REAPUNTADA en SCRUM-1335b: la línea ganó `&& !sinVeredicto.has(c.clave)` (una censada que
+    // no se pudo comparar no es una apagada). La mutación es la misma: nada sale nunca apagado.
+    de: '  const apagadas = censadas.filter((c) => !vistas.has(c.clave) && !sinVeredicto.has(c.clave));',
     a: '  const apagadas = [];',
     cae: 'una CENSADA que deja de cambiar de veredicto pone el trinquete en ROJO',
   },
@@ -161,6 +163,91 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  return declaradas.some((d) => r === d.ruta',
     a: '  return [].some((d) => r === d.ruta',
     cae: 'POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto',
+  },
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-1335b · «AUSENTE» NO ES UN VEREDICTO. Dos mitades, y las mutaciones van a las dos:
+  // que lo que no se puede sostener deje de acusar (⑫ ⑮ ⑰), y que al quitarlo NO se apague ni se
+  // calle nada (⑬ ⑭ ⑯ ⑱ ⑲ ⑳ ㉑ ㉒).
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // ⑫ EL DEFECTO VUELVE: un resultado que no llegó cuenta otra vez como un veredicto distinto.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '    const distintos = new Set(porZona.map((p) => p.veredicto).filter((v) => v !== AUSENTE));',
+    a: '    const distintos = new Set(porZona.map((p) => p.veredicto));',
+    cae: '«ausente» NO es un veredicto: pasa en una zona y falta en la otra NO acusa',
+  },
+  // ⑬ SE CALLA: lo que deja de acusar desaparece, y un cero se lee como «se comparó todo».
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '      else sinComparar.push(entrada);',
+    a: '      else void entrada;',
+    cae: '② lo que no se pudo comparar se CUENTA, con su zona: no desaparece',
+  },
+  // ⑭ SE APAGA: la caída real cuyo resultado se pierde deja de verse por el fichero.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '      if (elFicheroCaeSoloDondeSeVio) cambian.push({ ...entrada, porElFichero: true });',
+    a: '      if (false) cambian.push({ ...entrada, porElFichero: true });',
+    cae: '① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fichero',
+  },
+  // ⑮ LA REGLA DEL FICHERO SE VUELVE «TODO `fail` ACUSA»: un fichero que cae en las dos zonas
+  //    pasa por dependiente de la zona.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '        && porZona.every((p, i) => p.veredicto !== AUSENTE || !caidos[i].has(fichero));',
+    a: '        && true;',
+    cae: 'una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona',
+  },
+  // ⑯ LA PÉRDIDA BORRA UN HALLAZGO: una diferencia vista deja de contar si a solas falta el
+  //    resultado. Es la forma en que este cambio apagaría el trinquete por la puerta de atrás.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: "    else if (s.estado !== 'cambia') confirmar({ ...c, sinRefutar: s.estado });",
+    a: "    else if (s.estado !== 'cambia') noConfirmadas.push(c);",
+    cae: '① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA EN PIE',
+  },
+  // ⑰ UNA CAÍDA SIN NOMBRE CONFIRMA A CUALQUIERA: vuelve la acusación sin dato, por la repesca.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '    const loConfirmaElFichero = cambiabaEnLaTanda && delFichero.some(',
+    a: '    const loConfirmaElFichero = delFichero.some(',
+    cae: 'la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo faltaba',
+  },
+  // ⑱ LO COMPARADO A SOLAS SIGUE CONTANDO COMO «NO PUDE»: la cifra dejaría de ser una medida.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: "    else if (s.estado === 'igual') resueltas.push(c);",
+    a: "    else if (s.estado === 'igual') siguen.push(c);",
+    cae: '③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale de la cuenta',
+  },
+  // ⑲ EL VERDE PIERDE LA CUENTA: «0 nuevas» vuelve a leerse como «las comparé todas».
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: "  return { estado: 'OK', salida: SALIDA_OK, nuevas: [], apagadas: [], cieloRaso, sinComparar, motivos: [] };",
+    a: "  return { estado: 'OK', salida: SALIDA_OK, nuevas: [], apagadas: [], cieloRaso, sinComparar: [], motivos: [] };",
+    cae: '② el VERDE lleva consigo lo que no pudo comparar, y sigue siendo verde',
+  },
+  // ⑳ UNA CENSADA QUE NO SE VIO SE DA POR BUENA: la alarma «sigue viva» sin haberla mirado.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '  if (censadasSinComparar.length) {',
+    a: '  if (false) {',
+    cae: 'una CENSADA que no se pudo comparar no está viva ni apagada: es CIEGO',
+  },
+  // ㉑ UN CANARIO QUE NO SE VIO APRUEBA EL AUTOCONTROL.
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: '    if (!visto && sinMedida.has(c.rutaClave)) {',
+    a: '    if (false) {',
+    cae: 'un CANARIO que no se pudo comparar no aprueba el autocontrol',
+  },
+  // ㉒ LA REPESCA DEJA DE VER EL CAMBIO A SOLAS: una prueba que la tanda no pudo comparar y que a
+  //    solas pasa en una zona y cae en la otra saldría como «comparada, y da lo mismo».
+  {
+    fichero: 'scripts/_trinquete-de-zona.mjs',
+    de: "    if (r.cambian.some((x) => x.clave === c.clave)) return { estado: 'cambia' };",
+    a: "    if (false) return { estado: 'cambia' };",
+    cae: '① lo que la tanda no pudo comparar y a solas CAMBIA es un hallazgo',
   },
 ];
 
@@ -405,15 +492,26 @@ test('SCRUM-813 · 🔴 sin controles, o con una pasada muda, se declara CIEGO y
   assert.equal(unaSolaZona.estado, 'CIEGO', '🔴 con una sola zona no hay diferencial que medir');
 });
 
-test('SCRUM-813 · una prueba que EXISTE en una zona y no en la otra también cambia de veredicto', () => {
-  // Un fichero que muere al cargar en una zona sola es la forma más gorda de dependencia de zona,
-  // y no se puede escapar por no tener «pass» ni «fail» en las dos.
-  const cambian2 = cambianDeVeredicto([
-    medidaFalsa('A', [['x::y', 'pass']]),
-    medidaFalsa('B', []),
+test('SCRUM-813 · un fichero que MUERE AL CARGAR en una zona sola sigue cambiando de veredicto', () => {
+  // Es la forma más gorda de dependencia de zona, y no se puede escapar por no tener «pass» ni
+  // «fail» con el mismo nombre en las dos: en la zona donde muere, `run()` entrega UN `fail` con
+  // la ruta del fichero por nombre, y sus pruebas no existen.
+  //
+  // ⚠️ REESCRITO en SCRUM-1335b. Este caso se llamaba «una prueba que EXISTE en una zona y no en la
+  // otra también cambia de veredicto» y lo probaba con `pass` contra NADA — que no es un fichero
+  // que muere: es un resultado que no llegó, y era justo la afirmación que el instrumento no podía
+  // sostener (289 de 289 acusaciones el 6-oct-2026). Lo que el caso quería proteger se protege
+  // aquí con la forma que de verdad tiene, medida con un fichero sembrado.
+  const { cambian: c2, sinComparar: s2 } = compararZonas([
+    medidaFalsa('A', [['x::y', 'pass'], ['x::z', 'pass']]),
+    medidaFalsa('B', [['x::/ruta/x', 'fail']]),
   ]);
-  assert.equal(cambian2.length, 1);
-  assert.equal(cambian2[0].porZona.find((p) => p.zona === 'B').veredicto, AUSENTE);
+  assert.deepEqual(c2.map((c) => c.clave), ['x::/ruta/x'],
+    '🔴 un fichero que cae en una zona y en la otra no ha dejado de ser un hallazgo');
+  assert.equal(c2[0].porElFichero, true);
+  assert.equal(c2[0].porZona.find((p) => p.zona === 'A').veredicto, AUSENTE);
+  assert.deepEqual(s2.map((c) => c.clave), ['x::y', 'x::z'],
+    'sus pruebas no se pudieron comparar una a una, y se dice');
 });
 
 test('SCRUM-813 · 🔴 el hijo NO hereda `NODE_TEST_CONTEXT` ni `NODE_OPTIONS`, y sí el resto', () => {
@@ -740,4 +838,371 @@ test('SCRUM-813c · la lista declarada es EXACTAMENTE ésta, y cada entrada dice
       `🔴 \`${e.quien}\` ya NO contiene \`${e.expresion}\`. O se arregló —y entonces esta entrada `
       + 'SOBRA y hay que retirarla— o se reescribió y la excepción está amparando otra cosa.');
   }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1335b · «AUSENTE» NO ES UN VEREDICTO
+//
+// EL DEFECTO, MEDIDO el 6-oct-2026 sobre 177 corridas del job: 34 rojos, 289 acusaciones, y las
+// 289 eran `pass` en una zona y NADA en la otra. Ninguna pasa/cae. El resultado de la prueba no
+// había llegado (el hijo corre con `forceExit`: SCRUM-1405) y el instrumento lo leía como
+// «depende de la zona».
+//
+// LA DECISIÓN (orquestador, SCRUM-1335 c.18387) y sus TRES condiciones, cada una con sus casos:
+//
+//   ① una diferencia REAL pasa/cae sigue en ROJO ........ casos «🔴 ①»  — y el sembrado de abajo
+//   ② «ausente» se DICE, no se calla .................... casos «②»
+//   ③ no se apaga: lo que deja de acusar, se cuenta ..... casos «③»
+//
+// ⛔ LO QUE ESTO NO ES: una lista de excepciones. No hay ningún fichero ni prueba nombrados; lo
+//    que cambia es qué cuenta como «dos veredictos distintos».
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1335b · «ausente» NO es un veredicto: pasa en una zona y falta en la otra NO acusa', () => {
+  // La forma exacta de las 289: el fichero corre entero en las dos zonas, todo pasa, y a una de
+  // las dos le faltan resultados. Ningún `fail` en ninguna parte.
+  const { cambian: c } = compararZonas([
+    medidaFalsa('A', [['x::uno', 'pass'], ['x::dos', 'pass'], ['x::tres', 'pass']]),
+    medidaFalsa('B', [['x::uno', 'pass']]),
+  ]);
+  assert.deepEqual(c, [],
+    '🔴 un resultado que NO LLEGÓ vuelve a contar como «cambia de veredicto». Eso es acusar de '
+    + 'depender de la zona a una prueba de la que en una zona no se sabe nada.');
+});
+
+test('SCRUM-1335b · ② lo que no se pudo comparar se CUENTA, con su zona: no desaparece', () => {
+  const { sinComparar } = compararZonas([
+    medidaFalsa('A', [['x::uno', 'pass'], ['x::dos', 'pass'], ['x::tres', 'skip']]),
+    medidaFalsa('B', [['x::uno', 'pass']]),
+  ]);
+  assert.deepEqual(sinComparar.map((s) => s.clave), ['x::dos', 'x::tres'],
+    '🔴 lo que deja de acusar se ha CALLADO. La condición es que se diga: «no pude comparar» no '
+    + 'es «son iguales», y un cero aquí se leería como que se comparó todo.');
+  for (const s of sinComparar) {
+    assert.equal(s.porZona.find((p) => p.zona === 'B').veredicto, AUSENTE, 'y dice en qué zona falta');
+  }
+});
+
+test('SCRUM-1335b · 🔴 ① una diferencia REAL pasa/cae sigue cambiando de veredicto', () => {
+  // Con los dos resultados delante no ha cambiado nada: es la acusación de siempre. Y `skip`
+  // contra `pass` también son dos veredictos reales.
+  const { cambian: c, sinComparar } = compararZonas([
+    medidaFalsa('A', [['x::cae', 'pass'], ['x::salta', 'pass'], ['x::igual', 'pass']]),
+    medidaFalsa('B', [['x::cae', 'fail'], ['x::salta', 'skip'], ['x::igual', 'pass']]),
+  ]);
+  assert.deepEqual(c.map((x) => x.clave), ['x::cae', 'x::salta']);
+  assert.equal(c.some((x) => x.porElFichero), false, 'se vio con su nombre: no hace falta el fichero');
+  assert.deepEqual(sinComparar, []);
+});
+
+test('SCRUM-1335b · 🔴 ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fichero', () => {
+  // EL CASO QUE DECIDE SI ESTO ES ARREGLAR O APAGAR. La prueba cae sólo en B y su resultado no
+  // llega: queda `pass` contra nada, igual que el ruido. Pero el fichero sale con código ≠ 0 en B
+  // y `run()` lo entrega como un `fail` con la ruta por nombre — medido con ficheros sembrados, y
+  // aunque el resto de resultados del fichero sí lleguen.
+  const { cambian: c, sinComparar } = compararZonas([
+    medidaFalsa('A', [['x::antes', 'pass'], ['x::cae en B', 'pass']]),
+    medidaFalsa('B', [['x::antes', 'pass'], ['x::/ruta/x', 'fail']]),
+  ]);
+  assert.deepEqual(c.map((x) => x.clave), ['x::/ruta/x'],
+    '🔴 SE HA APAGADO: una prueba que cae en una zona sola se escapa en cuanto se pierde su '
+    + 'resultado. El fichero cae en B y en A no, y eso no depende de que el resultado llegue.');
+  assert.equal(c[0].porElFichero, true);
+  assert.deepEqual(sinComparar.map((s) => s.clave), ['x::cae en B']);
+
+  // Y al revés: la caída se VE con su nombre en A y lo que se pierde en B es un `pass`.
+  const alReves = compararZonas([
+    medidaFalsa('A', [['x::cae en A', 'fail']]),
+    medidaFalsa('B', []),
+  ]);
+  assert.deepEqual(alReves.cambian.map((x) => x.clave), ['x::cae en A'],
+    '🔴 un `fail` visto, frente a un fichero que en la otra zona no cae, es un hallazgo');
+});
+
+test('SCRUM-1335b · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona', () => {
+  // El control negativo de la regla del fichero, y sin él la regla sería «todo `fail` acusa»: aquí
+  // el fichero cae en A (se ve la prueba) y TAMBIÉN en B (se ve el fichero). No se sabe si es la
+  // misma prueba, así que no se puede comparar — pero desde luego no «cae en una y en la otra no».
+  const { cambian: c, sinComparar } = compararZonas([
+    medidaFalsa('A', [['x::cae siempre', 'fail']]),
+    medidaFalsa('B', [['x::/ruta/x', 'fail']]),
+  ]);
+  assert.deepEqual(c, [],
+    '🔴 se acusa de depender de la zona a un fichero que cae en las dos');
+  assert.deepEqual(sinComparar.map((s) => s.clave), ['x::/ruta/x', 'x::cae siempre']);
+});
+
+// ── la repesca, que ahora tiene un tercer resultado posible ──────────────────────────────────
+
+const entrada = (clave, a, b, extra = {}) => ({
+  clave, fichero: clave.split('::')[0], prueba: clave.split('::')[1],
+  porZona: [{ zona: 'A', veredicto: a }, { zona: 'B', veredicto: b }], ...extra,
+});
+const soloDe = (pares) => new Map(Object.entries(pares).map(([fichero, [a, b]]) => [
+  fichero, [medidaFalsa('A', a), medidaFalsa('B', b)],
+]));
+
+test('SCRUM-1335b · ③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale de la cuenta', () => {
+  const r = resolverRepesca({
+    cambian: [],
+    sinComparar: [entrada('x::uno', 'pass', AUSENTE), entrada('x::dos', 'pass', AUSENTE)],
+    aSolas: soloDe({ x: [[['x::uno', 'pass'], ['x::dos', 'pass']], [['x::uno', 'pass']]] }),
+  });
+  assert.deepEqual(r.resueltas.map((c) => c.clave), ['x::uno'],
+    '🔴 una prueba que a solas da el MISMO veredicto en las dos zonas se comparó: no puede seguir '
+    + 'contando como «no pude comparar»');
+  assert.deepEqual(r.sinComparar.map((c) => c.clave), ['x::dos'],
+    '🔴 y la que a solas SIGUE sin resultado en una zona tiene que seguir en la cuenta');
+  assert.deepEqual(r.confirmadas, []);
+});
+
+test('SCRUM-1335b · 🔴 ① lo que la tanda no pudo comparar y a solas CAMBIA es un hallazgo', () => {
+  const r = resolverRepesca({
+    cambian: [],
+    sinComparar: [entrada('x::uno', 'pass', AUSENTE)],
+    aSolas: soloDe({ x: [[['x::uno', 'pass']], [['x::uno', 'fail']]] }),
+  });
+  assert.deepEqual(r.confirmadas.map((c) => c.clave), ['x::uno']);
+  assert.deepEqual(r.sinComparar, []);
+});
+
+test('SCRUM-1335b · 🔴 ① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA EN PIE', () => {
+  // La mitad que no se puede regalar: si a solas falta el resultado, la misma pérdida que este
+  // cambio deja de acusar serviría para BORRAR un hallazgo. Una diferencia vista con los dos
+  // resultados sólo la desmiente otra medida que la vea igual.
+  const vista = entrada('x::cae en B', 'pass', 'fail');
+  const sinResultado = resolverRepesca({
+    cambian: [vista], sinComparar: [],
+    aSolas: soloDe({ x: [[['x::cae en B', 'pass'], ['x::/ruta/x', 'fail']], [['x::/ruta/x', 'fail']]] }),
+  });
+  assert.deepEqual(sinResultado.confirmadas.map((c) => c.clave), ['x::cae en B'],
+    '🔴 una diferencia que se VIO ha desaparecido porque a solas faltó un resultado');
+  assert.equal(sinResultado.confirmadas[0].sinRefutar, 'sin comparar', 'y dice que nadie la desmintió');
+  assert.deepEqual(sinResultado.noConfirmadas, []);
+
+  const sinMedir = resolverRepesca({
+    cambian: [vista], sinComparar: [],
+    aSolas: new Map([['x', [{ zona: 'A', ok: false, porque: 'murió', veredictos: new Map() }, medidaFalsa('B', [])]]]),
+  });
+  assert.equal(sinMedir.confirmadas[0]?.sinRefutar, 'sin medir',
+    '🔴 una pasada a solas que NO MIDIÓ ha desmentido una diferencia vista');
+
+  // Y el parpadeo sigue siendo parpadeo: a solas se ve en las dos zonas, y da lo mismo.
+  const parpadeo = resolverRepesca({
+    cambian: [vista], sinComparar: [],
+    aSolas: soloDe({ x: [[['x::cae en B', 'pass']], [['x::cae en B', 'pass']]] }),
+  });
+  assert.deepEqual(parpadeo.confirmadas, [], '🔴 un parpadeo se ha vuelto hallazgo');
+  assert.deepEqual(parpadeo.noConfirmadas.map((c) => c.clave), ['x::cae en B']);
+});
+
+test('SCRUM-1335b · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo faltaba', () => {
+  // En la tanda la caída se supo por el fichero; a solas el resultado llega y tiene nombre. Se
+  // queda con el nombre — sin esto, una censada cuyo resultado se pierde en la tanda saldría
+  // además como una «nueva» que no es.
+  const porFichero = entrada('x::/ruta/x', AUSENTE, 'fail', { porElFichero: true });
+  const conNombre = resolverRepesca({
+    cambian: [porFichero],
+    sinComparar: [entrada('x::cae en B', 'pass', AUSENTE)],
+    aSolas: soloDe({ x: [[['x::cae en B', 'pass']], [['x::cae en B', 'fail']]] }),
+  });
+  assert.deepEqual(conNombre.confirmadas.map((c) => c.clave), ['x::cae en B'],
+    '🔴 lo que a solas se ve con su nombre tiene que salir UNA vez y con su nombre');
+
+  // Un fichero que a solas no cae en ninguna zona: la caída de la tanda fue un parpadeo.
+  const noRepite = resolverRepesca({
+    cambian: [porFichero], sinComparar: [],
+    aSolas: soloDe({ x: [[['x::cae en B', 'pass']], [['x::cae en B', 'pass']]] }),
+  });
+  assert.deepEqual(noRepite.confirmadas, []);
+  assert.deepEqual(noRepite.noConfirmadas.map((c) => c.clave), ['x::/ruta/x']);
+
+  // 🔴 Y el control negativo: de una prueba que en la tanda sólo «faltaba» no se ha visto NADA. Que
+  // su fichero caiga a solas en una zona no la convierte en dependiente de la zona.
+  const soloFaltaba = resolverRepesca({
+    cambian: [],
+    sinComparar: [entrada('x::uno', 'pass', AUSENTE)],
+    aSolas: soloDe({ x: [[['x::uno', 'pass']], [['x::/ruta/x', 'fail']]] }),
+  });
+  assert.deepEqual(soloFaltaba.confirmadas, [],
+    '🔴 una caída SIN NOMBRE a solas ha confirmado a una prueba de la que no se sabía nada');
+  assert.deepEqual(soloFaltaba.sinComparar.map((c) => c.clave), ['x::uno']);
+});
+
+// ── el veredicto y los controles, con lo que no se pudo comparar ─────────────────────────────
+
+test('SCRUM-1335b · ② el VERDE lleva consigo lo que no pudo comparar, y sigue siendo verde', () => {
+  const clave = 'tests/x.test.mjs::y';
+  const pendientes = [entrada('tests/z.test.mjs::uno', 'pass', AUSENTE), entrada('tests/z.test.mjs::dos', AUSENTE, 'pass')];
+  const v = veredicto({
+    cambianEnElArbol: [cambio(clave)], censadas: [censada(clave)],
+    medidas: DOS_MEDIDAS, controles: CONTROLES_OK, sinComparar: pendientes,
+  });
+  assert.equal(v.estado, 'OK', '🔴 un resultado que no llegó ha vuelto a poner el trinquete en rojo');
+  assert.equal(v.salida, SALIDA_OK);
+  assert.deepEqual(v.sinComparar.map((c) => c.clave), pendientes.map((c) => c.clave),
+    '🔴 el verde ha perdido la cuenta de lo que no pudo comparar: se ha callado');
+});
+
+test('SCRUM-1335b · 🔴 una CENSADA que no se pudo comparar no está viva ni apagada: es CIEGO', () => {
+  // Antes, que a la censada le faltara el resultado en una zona contaba como «sigue cambiando» y
+  // la alarma se daba por viva sin haberla visto. Llamarla APAGADA sería peor: es acusar a alguien
+  // de haberla arreglado en silencio.
+  const viva = 'tests/x.test.mjs::sigue cambiando';
+  const perdida = 'tests/w.test.mjs::no llegó';
+  const v = veredicto({
+    cambianEnElArbol: [cambio(viva)],
+    censadas: [censada(viva), censada(perdida)],
+    medidas: DOS_MEDIDAS, controles: CONTROLES_OK,
+    sinComparar: [entrada(perdida, 'pass', AUSENTE)],
+  });
+  assert.equal(v.estado, 'CIEGO', '🔴 una censada que no se pudo comparar se ha dado por buena');
+  assert.equal(v.salida, SALIDA_CIEGO);
+  assert.deepEqual(v.apagadas, [], '🔴 y no se la puede llamar APAGADA: no se sabe');
+  assert.ok(v.motivos.some((m) => m.includes(perdida)), 'el CIEGO dice cuál');
+
+  // Su fichero cae en una zona y en la otra no, sin el nombre de la prueba: casi seguro es ella,
+  // y por eso mismo no se le cuelga a nadie como NUEVA.
+  const conFichero = veredicto({
+    cambianEnElArbol: [cambio(viva), { ...cambio('tests/w.test.mjs::/ruta/w'), porElFichero: true }],
+    censadas: [censada(viva), censada(perdida)],
+    medidas: DOS_MEDIDAS, controles: CONTROLES_OK,
+    sinComparar: [entrada(perdida, 'pass', AUSENTE)],
+  });
+  assert.equal(conFichero.estado, 'CIEGO');
+  assert.deepEqual(conFichero.nuevas, [], '🔴 la censada perdida ha salido como una NUEVA sin nombre');
+
+  // Y una caída por el fichero en un fichero SIN censadas pendientes sí es una nueva.
+  const ajena = veredicto({
+    cambianEnElArbol: [cambio(viva), { ...cambio('tests/otro.test.mjs::/ruta/otro'), porElFichero: true }],
+    censadas: [censada(viva)], medidas: DOS_MEDIDAS, controles: CONTROLES_OK,
+  });
+  assert.equal(ajena.estado, 'HABLA');
+});
+
+test('SCRUM-1335b · 🔴 un CANARIO que no se pudo comparar no aprueba el autocontrol', () => {
+  // Los dos sentidos. Antes, a un dependiente le bastaba FALTAR en una zona para darse por
+  // «denunciado»; y un fijado que faltaba salía como «denunciado» — rojo, pero con una mentira.
+  for (const c of canarios) {
+    const resto = cambian.filter((x) => x.fichero !== c.rutaClave);
+    const j = juzgarCanarios(resto, canarios, [entrada(`${c.rutaClave}::su prueba`, 'pass', AUSENTE)]);
+    assert.equal(j.ok, false, `🔴 el canario \`${c.fichero}\` no se pudo comparar y el autocontrol pasa`);
+    assert.ok(j.fallos.some((f) => f.includes(c.fichero) && f.includes('NO SE PUDO COMPARAR')),
+      `el motivo tiene que decir que no se pudo comparar, no otra cosa: ${JSON.stringify(j.fallos)}`);
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL SEMBRADO · las condiciones ① y ②, por el camino real y no con medidas de mentira
+//
+// Tres ficheros fabricados FUERA del árbol (como los canarios), medidos por el mismo camino que
+// el job: proceso hijo con `TZ`, `run()`, diferencial, repesca a solas, veredicto.
+//
+//   · `real`     — una prueba que cae sólo en Midway. Se ve en las dos zonas.
+//   · `perdida`  — todo pasa; en Midway el fichero deja de escribir su salida. Es la forma de las
+//                  289: resultados que existen y no llegan.
+//   · `caida-perdida` — una prueba cae sólo en Midway Y allí su resultado no llega.
+//
+// ⚠️ LA PÉRDIDA SE IMITA, y se dice: la real sólo se ha visto en el runner de Linux y no se
+// reproduce en esta casa (0 de 120, SCRUM-1335). Lo que el sembrado demuestra no es la causa: es
+// qué hace el instrumento con un resultado que no llega, y que el código de salida del fichero
+// llega sin él.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const CABECERA_SEMBRADA = `import test from 'node:test';
+import assert from 'node:assert/strict';
+const ZONA = Intl.DateTimeFormat().resolvedOptions().timeZone;
+`;
+const ENMUDECE_EN_MIDWAY = "if (ZONA === 'Pacific/Midway') process.stdout.write = () => true;\n";
+const SEMBRADOS = {
+  'sembrado-real.test.mjs': `${CABECERA_SEMBRADA}
+test('sembrado · pasa en las dos', () => {});
+test('sembrado · cae SÓLO en Midway', () => { assert.notEqual(ZONA, 'Pacific/Midway'); });
+`,
+  'sembrado-perdida.test.mjs': `${CABECERA_SEMBRADA}${ENMUDECE_EN_MIDWAY}
+test('sembrado · pasa y en Midway no llega (1)', () => {});
+test('sembrado · pasa y en Midway no llega (2)', () => {});
+`,
+  'sembrado-caida-perdida.test.mjs': `${CABECERA_SEMBRADA}${ENMUDECE_EN_MIDWAY}
+test('sembrado · pasa', () => {});
+test('sembrado · cae SÓLO en Midway y su resultado no llega', () => { assert.notEqual(ZONA, 'Pacific/Midway'); });
+`,
+};
+
+const dirSembrado = path.join(dirCanarios, 'sembrado');
+fs.mkdirSync(dirSembrado, { recursive: true });
+const sembrados = Object.entries(SEMBRADOS).map(([nombre, codigo]) => {
+  const ruta = path.join(dirSembrado, nombre);
+  fs.writeFileSync(ruta, codigo);
+  return { nombre, ruta, rutaClave: path.relative(RAIZ, ruta).split(path.sep).join('/') };
+});
+const medidasSembradas = ZONAS.map((zona) => medirEnZona({
+  zona, ficheros: sembrados.map((s) => s.ruta), raiz: RAIZ,
+  salida: path.join(dirSembrado, `${zona.replace(/\W/g, '_')}.json`),
+}));
+const tandaSembrada = medidasSembradas.every((m) => m.ok)
+  ? compararZonas(medidasSembradas) : { cambian: [], sinComparar: [] };
+const finalSembrado = resolverRepesca({
+  ...tandaSembrada,
+  aSolas: repescar({
+    candidatas: [...tandaSembrada.cambian, ...tandaSembrada.sinComparar],
+    raiz: RAIZ, dirTrabajo: dirSembrado,
+  }),
+});
+const delSembrado = (lista, nombre) => lista
+  .filter((c) => c.fichero === sembrados.find((s) => s.nombre === nombre).rutaClave);
+
+test('SCRUM-1335b · SUELO del sembrado: las dos pasadas midieron, y en Midway FALTAN resultados', () => {
+  // Sin esto, todo lo de abajo podría pasar sobre un sembrado que no sembró nada: si la imitación
+  // de la pérdida dejara de funcionar, «no acusa» se cumpliría porque no habría nada que acusar.
+  for (const m of medidasSembradas) assert.equal(m.ok, true, `🔴 la pasada en \`${m.zona}\` no midió: ${m.porque}`);
+  const [kiritimati, midway] = medidasSembradas;
+  const claveDeLaPerdida = `${sembrados[1].rutaClave}::sembrado · pasa y en Midway no llega (1)`;
+  assert.equal(kiritimati.veredictos.get(claveDeLaPerdida), 'pass', '🔴 el sembrado no corrió en Kiritimati');
+  assert.equal(midway.veredictos.has(claveDeLaPerdida), false,
+    '🔴 EL SEMBRADO NO SIEMBRA: el resultado que tenía que perderse en Midway ha llegado.');
+});
+
+test('SCRUM-1335b · 🔴 ① SEMBRADO: una prueba que cae sólo en una zona sale ROJA — llegue o no su resultado', () => {
+  // La que se ve en las dos zonas, con su nombre.
+  const real = delSembrado(finalSembrado.confirmadas, 'sembrado-real.test.mjs');
+  assert.deepEqual(real.map((c) => c.prueba), ['sembrado · cae SÓLO en Midway'],
+    '🔴 EL TRINQUETE NO HABLA ante una diferencia pasa/cae vista en las dos zonas');
+  assert.deepEqual(real[0].porZona.map((p) => p.veredicto), ['pass', 'fail']);
+
+  // Y la que pierde su resultado justo donde cae: sale igual, por el fichero.
+  const perdida = delSembrado(finalSembrado.confirmadas, 'sembrado-caida-perdida.test.mjs');
+  assert.equal(perdida.length, 1,
+    '🔴 SE HA APAGADO: una prueba que cae sólo en Midway se escapa si allí se pierde su resultado. '
+    + `Confirmadas: ${JSON.stringify(finalSembrado.confirmadas.map((c) => c.clave))}`);
+  assert.equal(perdida[0].porElFichero, true);
+
+  const v = veredicto({
+    cambianEnElArbol: finalSembrado.confirmadas, censadas: [], medidas: medidasSembradas,
+    controles: CONTROLES_OK, sinComparar: finalSembrado.sinComparar,
+  });
+  assert.equal(v.estado, 'HABLA');
+  assert.equal(v.salida, SALIDA_HABLA);
+  assert.equal(v.nuevas.length, 2, 'dos sembrados dependen de la zona, y son los dos que salen');
+});
+
+test('SCRUM-1335b · ② ③ SEMBRADO: resultados que no llegan NO acusan, y salen CONTADOS', () => {
+  const nombre = 'sembrado-perdida.test.mjs';
+  assert.deepEqual(delSembrado(finalSembrado.confirmadas, nombre), [],
+    '🔴 un fichero donde TODO pasa ha salido acusado porque en una zona no llegaron sus resultados');
+  const pendientes = delSembrado(finalSembrado.sinComparar, nombre).map((c) => c.prueba);
+  for (const prueba of ['sembrado · pasa y en Midway no llega (1)', 'sembrado · pasa y en Midway no llega (2)']) {
+    assert.ok(pendientes.includes(prueba),
+      `🔴 «${prueba}» no acusa Y TAMPOCO se cuenta: se ha callado. Sin comparar: ${JSON.stringify(pendientes)}`);
+  }
+
+  // Sin los dos que caen de verdad, el veredicto es VERDE y lleva la cuenta consigo.
+  const v = veredicto({
+    cambianEnElArbol: delSembrado(finalSembrado.confirmadas, nombre), censadas: [],
+    medidas: medidasSembradas, controles: CONTROLES_OK,
+    sinComparar: delSembrado(finalSembrado.sinComparar, nombre),
+  });
+  assert.equal(v.estado, 'OK');
+  assert.equal(v.salida, SALIDA_OK);
+  assert.ok(v.sinComparar.length >= 2, '🔴 el verde no dice cuántas no pudo comparar');
 });
