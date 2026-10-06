@@ -160,10 +160,6 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "SCRUM-1215 lote 5 (S2, c.17505; decisión del orquestador, 29-sep-2026): SE CONSERVA, declarada. Sin productor vivo desde SCRUM-491 (nadie en src/ escribe 'manual'), pero traduce un VALOR DE DATO que una fila antigua puede traer escrito; sin ella se vería el valor crudo. No se puede consultar la base para saberlo, así que el lado seguro es conservarla. El motivo ya consta en su código (paidViaEtiquetas.js:53-58, fichero de J, no tocado). Cuando es cierto: «Marcado a mano» es lo que significa ese valor."
     },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.confirmarPropuesta": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/parteDetailView.js · TEXTOS.pistaFirma": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
@@ -369,6 +365,10 @@
     {
       "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFacturar",
       "motivo": "SCRUM-1215 lote 3 (albarán): revisada contra el código por S4 (Jira c.17493, corregida en c.17495) y APROBADA por el orquestador por delegación del fundador en SCRUM-1215 comentario 17496. Lleva su comentario de firma en su misma línea."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.confirmarPropuesta",
+      "motivo": "SCRUM-1215 (c.17375): el rótulo pasa a «Añadir al parte» y lleva su comentario de firma encima. Sustituye a «Añadir estas líneas», que no se aprobó (c.17367). Esta retirada estuvo parada desde el 28-sep-2026 (edición denegada entonces); se hace el 6-oct-2026 con permiso del fundador transmitido por el orquestador (SCRUM-1215 c.18381)."
     }
   ]
 }
