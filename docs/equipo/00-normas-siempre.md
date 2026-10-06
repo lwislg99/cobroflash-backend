@@ -109,3 +109,4 @@ Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de p
 Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente. (SCRUM-1372)
 Quien cierra no clasifica su propio «no lo vi»: pedírselo es justo lo que una auditoría existe para no creerse. (SCRUM-1372)
 La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido. (SCRUM-1295)
+Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con sus artefactos. (SCRUM-1384)

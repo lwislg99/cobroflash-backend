@@ -38,6 +38,14 @@
     // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
+    // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
+    // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
+    pistaFirmaTecnico: 'Firma con el dedo dentro del recuadro.',
+    // SCRUM-1426 · la pregunta antes de firmar ENCIMA de una firma guardada en este móvil. Dos, y
+    // no una: la cola guarda la del cliente y la del técnico por separado, y hay que decir cuál se
+    // sustituye. Ficha: `docs/microcopy/2026-10-02-SCRUM-1426-parte-firma-guardada.md`.
+    yaHayFirmaGuardadaCliente: 'Ya hay una firma del cliente de este parte guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.', // APROBADO · SCRUM-1426 comentario 18232
+    yaHayFirmaGuardadaTecnico: 'Ya hay una firma del técnico de este parte guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.', // APROBADO · SCRUM-1426 comentario 18232
     // APROBADO · SCRUM-1215 comentario 17367
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
@@ -1095,9 +1103,9 @@
     var esTecnico = quien === 'tecnico';
     abrirPad({
       title: esTecnico ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
-      // Sin pista para el técnico: la única aprobada habla del cliente, y `null` (no `undefined`)
-      // es lo que le dice al pad que no ponga la suya por defecto, que dice lo mismo.
-      hint: esTecnico ? null : TEXTOS.pistaFirma,
+      // Cada uno lee la suya: la del cliente habla del cliente, y la del técnico (SCRUM-1215
+      // c.18205) no nombra a nadie.
+      hint: esTecnico ? TEXTOS.pistaFirmaTecnico : TEXTOS.pistaFirma,
       // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
       ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
@@ -1151,6 +1159,10 @@
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
         return r;
       },
+      // SCRUM-1422 · el pad avisa al cerrarse, por el camino que sea (contrato en
+      // `docs/master/SCRUM-1420.md`). Viaja en el mismo objeto, así que le llega igual al pad
+      // inyectado. Si no es una función, el pad lo ignora.
+      onClose: o.alCerrarElPad,
     });
     return true;
   }
@@ -1248,14 +1260,28 @@
     }
   }
 
-  async function renderParteDetailView(contenedor, parteId, opciones) {
+  // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
+  var dejarDeEscucharLaColaDelParte = null;
+
+  /** ¿Hay un pad de firma en pantalla? Se mira el DOM, igual que en el albarán (SCRUM-1374). */
+  function hayPadDeFirmaAbierto() {
+    return !!(document.querySelector && document.querySelector('[data-sp-aviso]'));
+  }
+
+  /**
+   * `parteYaTraido` es para quien YA lo ha leído del servidor y sólo quiere pintarlo (SCRUM-1422):
+   * así una lectura que falla no tapa la ficha. No viaja en `opciones` a propósito — las opciones
+   * se heredan en cada repintado, y un parte heredado sería un parte viejo.
+   */
+  async function renderParteDetailView(contenedor, parteId, opciones, parteYaTraido) {
     var o = opciones || {};
     var pedir = o.apiRequest || window.apiRequest;
     if (!contenedor || typeof pedir !== 'function') return false;
+    if (dejarDeEscucharLaColaDelParte) { dejarDeEscucharLaColaDelParte(); dejarDeEscucharLaColaDelParte = null; }
 
     var parte;
     try {
-      parte = await pedir('/admin/partes/' + parteId);
+      parte = parteYaTraido || await pedir('/admin/partes/' + parteId);
     } catch (e) {
       // 🔴 SUELO: si el parte no se pudo traer NO se pinta un parte vacío. Un técnico que ve
       // un parte en blanco cree que no apuntó nada, y lo que pasa es que la respuesta no llegó.
@@ -1691,14 +1717,125 @@
       aviso.textContent = texto;
       seccion.appendChild(aviso);
     };
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-1422 · LA FICHA ABIERTA SE ENTERA DE QUE SU FIRMA HA SUBIDO.
+    //
+    // Se firmaba sin red, volvía la señal, la cola subía la firma y avisaba (`alConfirmarseFirmas`,
+    // SCRUM-1373), y esta ficha no escuchaba: seguía ofreciendo firmar lo que el servidor ya tenía.
+    //
+    // Sólo escucha por los recuadros que aún no están firmados. Con el pad abierto NO se repinta
+    // —alguien está firmando, o leyendo su aviso—: se apunta, y se pone al día cuando el pad se
+    // cierra. Y se LEE antes de pintar: si la lectura falla, la ficha se queda como estaba en vez
+    // de taparse con un error que el técnico no ha provocado.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var seccionDeFirmas = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
+    var sigueEnPantalla = function () {
+      return !!seccionDeFirmas && contenedor.querySelector('[data-parte-firmas]') === seccionDeFirmas;
+    };
+    var subioConElPadAbierto = false;
+    var ponerseAlDia = async function () {
+      try {
+        var fresco = await pedir('/admin/partes/' + parteId);
+        if (sigueEnPantalla()) await renderParteDetailView(contenedor, parteId, o, fresco);
+      } catch (_e) { /* la firma ya subió; lo que ha fallado es leer. La ficha sigue como estaba. */ }
+    };
+    var tiposQueEspera = [];
+    if (!parte.firmoElCliente) tiposQueEspera.push(FIRMAS.cliente.tipo);
+    if (!parte.firmoElTecnico) tiposQueEspera.push(FIRMAS.tecnico.tipo);
+    if (seccionDeFirmas && tiposQueEspera.length && typeof window.alConfirmarseFirmas === 'function') {
+      var dejar = window.alConfirmarseFirmas(async function (confirmadas) {
+        // Esta ficha ya no es la que está en pantalla (se navegó, o se repintó): se suelta sola.
+        if (!sigueEnPantalla()) { dejar(); return; }
+        var esDeEsteParte = (Array.isArray(confirmadas) ? confirmadas : []).some(function (c) {
+          return c && tiposQueEspera.indexOf(c.tipo) !== -1 && String(c.documentoId) === String(parte.id);
+        });
+        if (!esDeEsteParte) return;
+        if (hayPadDeFirmaAbierto()) { subioConElPadAbierto = true; return; }
+        await ponerseAlDia();
+      });
+      dejarDeEscucharLaColaDelParte = dejar;
+    }
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-1426 · LO QUE ESTE MÓVIL SABE Y EL SERVIDOR TODAVÍA NO.
+    //
+    // Con una firma de este parte en la cola, la ficha se veía igual que si nadie hubiera
+    // firmado: decía «falta» y dejaba firmar encima sin avisar. Es lo que SCRUM-1353 arregló en
+    // el albarán; aquí hay DOS firmas, y la cola guarda cada una con su clave.
+    //
+    // 🔴 Tres respuestas y no dos: `null` = no se pudo leer el almacén, y entonces NO se afirma
+    // nada — ni caja, ni pregunta, y «falta» se sigue diciendo.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    var firmasGuardadasAqui = async function () {
+      try {
+        if (typeof window.leerFirmasPendientes !== 'function') return null;
+        var cola = await window.leerFirmasPendientes();
+        if (!cola || cola.estado !== window.GUARDADO) return null;
+        var enCola = function (tipo) {
+          var clave = 'firma:' + tipo + ':' + String(parte.id);
+          return (cola.firmas || []).some(function (f) { return f && f.claveIdempotencia === clave; });
+        };
+        return { cliente: enCola(FIRMAS.cliente.tipo), tecnico: enCola(FIRMAS.tecnico.tipo) };
+      } catch (_e) {
+        return null;
+      }
+    };
+    // La caja es la del albarán, tal cual (`estadoFirma.js`), y va DENTRO de la caja de su firma:
+    // el literal no dice de quién es, lo dice el sitio (c.18232). Donde hay firma guardada no se
+    // dice «falta». Se puede llamar más de una vez: no repite la caja.
+    var pintarLoGuardadoAqui = async function () {
+      var guardadas = await firmasGuardadasAqui();
+      if (!guardadas || !sigueEnPantalla() || typeof window.pintarEstadoDeFirma !== 'function') return;
+      [['cliente', parte.firmoElCliente], ['tecnico', parte.firmoElTecnico]].forEach(function (par) {
+        if (par[1] || !guardadas[par[0]]) return;
+        var caja = seccionDeFirmas.querySelector('[data-parte-caja-firma="' + par[0] + '"]');
+        if (!caja || caja.querySelector('[data-parte-firma-guardada]')) return;
+        var falta = caja.querySelector('[data-parte-falta-firma]');
+        if (falta && falta.remove) falta.remove();
+        var guardada = document.createElement('div');
+        guardada.setAttribute('data-parte-firma-guardada', par[0]);
+        guardada.style.marginTop = '8px';
+        guardada.innerHTML = window.pintarEstadoDeFirma(window.FIRMA_SOLO_EN_ESTE_MOVIL);
+        caja.appendChild(guardada);
+      });
+    };
+    await pintarLoGuardadoAqui();
+
+    var alCerrarElPad = async function () {
+      if (subioConElPadAbierto) {
+        subioConElPadAbierto = false;
+        if (sigueEnPantalla()) await ponerseAlDia();
+        return;
+      }
+      // SCRUM-1426 · se firmó sin red y se cierra el pad: la firma está en la cola y esta ficha
+      // se pintó cuando aún no había nada. No se pide nada al servidor: sólo se mira el móvil.
+      await pintarLoGuardadoAqui();
+    };
+
+    var PREGUNTA_ANTES_DE_REEMPLAZAR = { cliente: TEXTOS.yaHayFirmaGuardadaCliente, tecnico: TEXTOS.yaHayFirmaGuardadaTecnico };
+
     [['[data-parte-firmar]', 'cliente'], ['[data-parte-firmar-tecnico]', 'tecnico']].forEach(function (par) {
       var boton = contenedor.querySelector && contenedor.querySelector(par[0]);
       if (!boton || !boton.addEventListener) return;
       boton.addEventListener('click', function () {
-        firmarParte(parte, Object.assign({}, o, {
-          alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
-          avisar: avisar,
-        }), par[1]);
+        var firmar = function () {
+          firmarParte(parte, Object.assign({}, o, {
+            alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
+            avisar: avisar,
+            alCerrarElPad: alCerrarElPad,
+          }), par[1]);
+        };
+        // Un parte que no va a abrir el pad (vacío, o sin líneas legibles) no tiene nada que
+        // reemplazar: va por el camino de siempre, EN EL MISMO CLIC. Su aviso sale junto al botón
+        // sin esperar a la cola (SCRUM-890).
+        var lineas = lineasOCeguera(parte);
+        if (!lineas || lineas.length === 0) { firmar(); return; }
+        // Firmar encima de una firma guardada la REEMPLAZA (la clave de la cola es por parte y
+        // tipo). Se puede, pero no en silencio. Se pregunta EN EL CLIC y no al pintar: quien firma
+        // sin red y cierra el pad sigue en esta pantalla, pintada cuando no había nada.
+        firmasGuardadasAqui().then(function (guardadas) {
+          if (guardadas && guardadas[par[1]] && !window.confirm(PREGUNTA_ANTES_DE_REEMPLAZAR[par[1]])) return;
+          firmar();
+        });
       });
     });
 

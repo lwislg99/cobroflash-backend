@@ -1323,6 +1323,34 @@ function initCustomerAutocomplete() {
   });
 }
 
+// SCRUM-1198 · texto aprobado por el orquestador por delegación del fundador (2-oct-2026,
+// comentario 18206 del ticket). Es
+// verdad en los dos caminos, cliente nuevo y existente: cuando el envío dice que no hay teléfono,
+// el presupuesto ya se ha creado.
+const AVISO_QQ_GUARDADO_SIN_TELEFONO = 'No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.';
+
+/**
+ * SCRUM-1198 · SIN TELÉFONO NO ES UN ERROR QUE REINTENTAR. El presupuesto ya está guardado y volver
+ * a pulsar «Enviar» daría el mismo no: el modal se quedaba abierto, con el botón encendido y
+ * «API 400: customer_missing_phone» a la vista. Se cierra, se dice fuera y se abre el presupuesto,
+ * igual que cuando el envío queda pendiente.
+ *
+ * Se decide por CÓDIGO y SÓLO para ése: cualquier otro fallo del envío (sin red, el servidor, Meta)
+ * devuelve `false`, y quien llama lo relanza — el modal sigue abierto para reintentar y este aviso
+ * no se pinta, porque de ese fallo sería mentira.
+ *
+ * @returns {boolean} `true` si era «sin teléfono» y ya se ha avisado.
+ */
+function avisarGuardadoSinTelefono(err, quote) {
+  if (!err || err.code !== 'customer_missing_phone') return false;
+  closeQuickQuote();
+  showToast(AVISO_QQ_GUARDADO_SIN_TELEFONO, true);
+  setTimeout(() => {
+    if (window.renderAppView) renderAppView("quotes-detail", { quoteId: quote.id });
+  }, 400);
+  return true;
+}
+
 async function submitQuickQuote() {
   const alertEl = document.getElementById("qq-alert");
   const btn = document.getElementById("qq-send");
@@ -1380,7 +1408,10 @@ async function submitQuickQuote() {
     let customerId = qqState.customerId;
     if (!customerId) {
       const phone = (document.getElementById("qq-customer-phone")?.value || qqState.customerPhone).trim();
-      const newCustomer = await createCustomer({ name: customerName, phone: phone || null });
+      // SCRUM-1198 · SIN TELÉFONO, `phone` NO VIAJA. El alta lo admite si no viene, pero rechaza
+      // un `null` («expected string, received null»): mandarlo vacío perdía lo tecleado antes de
+      // crear nada. El teléfono hace falta para ENVIAR, no para que el cliente exista.
+      const newCustomer = await createCustomer(phone ? { name: customerName, phone } : { name: customerName });
       customerId = newCustomer.id;
       // SCRUM-1371 · el cliente recién creado SE RECUERDA. Si un paso de más abajo falla, el
       // botón vuelve a encenderse, y sin esto cada reintento daba de alta al cliente otra vez.
@@ -1423,9 +1454,15 @@ async function submitQuickQuote() {
     }
 
     // 4. Enviar por WhatsApp
-    const sendResult = await apiRequest(`/admin/quotes/${quote.id}/send-whatsapp`, {
-      method: "POST",
-    });
+    let sendResult;
+    try {
+      sendResult = await apiRequest(`/admin/quotes/${quote.id}/send-whatsapp`, {
+        method: "POST",
+      });
+    } catch (err) {
+      if (!avisarGuardadoSinTelefono(err, quote)) throw err; // SCRUM-1198: sólo «sin teléfono»
+      return;
+    }
 
     closeQuickQuote();
 

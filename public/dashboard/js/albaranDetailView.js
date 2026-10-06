@@ -47,6 +47,9 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 // Cada uno en UN literal, tal cual se firmó (SCRUM-1353 comentario 17881): no se parten.
 const TEXTO_YA_HAY_FIRMA_GUARDADA = 'Ya hay una firma de este albarán guardada en este móvil. Si firmas otra vez, la nueva sustituye a la anterior.';
 const TEXTO_FIRMA_RECHAZADA_ALBARAN = 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el albarán.';
+// La pista del pad cuando firma el CLIENTE. Mismo literal que el parte (`TEXTOS.pistaFirma`),
+// firmado en `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`.
+const PISTA_FIRMA_DEL_CLIENTE = 'Pide al cliente que firme con el dedo dentro del recuadro.';
 
 /**
  * ¿Hay una firma de ESTE albarán esperando en la cola del móvil? `null` = no se pudo leer.
@@ -275,6 +278,22 @@ const ROTULOS_RAIL_ALBARAN = {
 // de la fila): es el mismo objeto en otra superficie. Reutilizar no es redactar.
 const ALT_FOTO_ALBARAN = 'Foto del albarán';
 
+// SCRUM-1375 · EL ESTADO DE FACTURACIÓN, CON PALABRAS. La ficha escribía el valor del dato tal
+// cual («sin_facturar», con su guion bajo). La fila y la píldora dicen LO MISMO: dos vocabularios
+// para un hecho es lo que se quiso evitar al firmarlo. Ficha:
+// `docs/microcopy/2026-10-02-SCRUM-1375-facturacion-del-albaran.md`.
+const TEXTOS_FACTURACION_ALBARAN = {
+  sin_facturar: 'Sin facturar', // APROBADO · SCRUM-1375 comentario 18203
+  parcial: 'Facturado en parte', // APROBADO · SCRUM-1375 comentario 18203
+  facturado: 'Facturado', // APROBADO · SCRUM-1375 comentario 18203
+};
+
+/** El texto de un `estadoFacturacion`, o `null` si el código no lo conoce: lo desconocido NO se pinta crudo. */
+function textoDeFacturacion(valor) {
+  return Object.prototype.hasOwnProperty.call(TEXTOS_FACTURACION_ALBARAN, valor)
+    ? TEXTOS_FACTURACION_ALBARAN[valor] : null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-379 · LA ESCRITURA SALIÓ BIEN Y LA RECARGA NO: QUÉ SE DICE
 //
@@ -457,8 +476,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   chips.innerHTML =
     `<span class="status-pill">${esc(alb.estado)}</span>` +
     (alb.enviadoParaFirma ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
-    (alb.estadoFacturacion && alb.estadoFacturacion !== 'sin_facturar'
-      ? `<span class="status-pill">${esc(alb.estadoFacturacion)}</span>` : '');
+    // SCRUM-1375 · las mismas palabras que la fila «Facturación» de abajo. Un valor que no se
+    // conoce no lleva píldora: la fila ya pinta su raya.
+    (alb.estadoFacturacion !== 'sin_facturar' && textoDeFacturacion(alb.estadoFacturacion)
+      ? `<span class="status-pill">${esc(textoDeFacturacion(alb.estadoFacturacion))}</span>` : '');
   page.appendChild(chips);
 
   // ── SCRUM-356 (H2) · DÓNDE ESTÁ LA FIRMA, que no es lo mismo que «guardada» ──────────────
@@ -640,6 +661,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       if ((await firmaDeEsteAlbaranEnCola(alb.id)) === true && !window.confirm(TEXTO_YA_HAY_FIRMA_GUARDADA)) return;
       window.openSignaturePad({
         title: 'Firma del cliente',
+        // SCRUM-1215 · el albarán no pasaba pista y vivía de la del pad por defecto, que era ésta.
+        // La del pad ha pasado a no nombrar a nadie (c.18205); aquí firma el cliente, y se dice.
+        hint: PISTA_FIRMA_DEL_CLIENTE,
         // ── SCRUM-466 · EL FIRMANTE VE LO QUE FIRMA ──────────────────────────────────────
         //
         // Medido en SCRUM-463: desde aquí se firmaba SIN VER NADA del albarán. Esta pantalla ni
@@ -903,7 +927,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     fila('Trabajo', alb.job?.titulo) +
     fila('Cliente', alb.customer?.name) +
     fila('Dirección', alb.job?.direccion) +
-    fila('Facturación', alb.estadoFacturacion) +
+    fila('Facturación', textoDeFacturacion(alb.estadoFacturacion)) +
     // El «parcial» se enseña con su detalle: decir «parcial» sin decir QUÉ queda es la mitad del
     // dato, y es el caso normal en una obra por fases.
     (pendientes.length ? fila('Pendiente de facturar', `${pendientes.length} ${pendientes.length === 1 ? 'línea' : 'líneas'}`) : '');

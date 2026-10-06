@@ -25,6 +25,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { cargarDashboard } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ANIO = new Date().getFullYear();
@@ -85,37 +86,40 @@ test('SCRUM-1200 · el texto es el APROBADO (17418), literal', () => {
 });
 
 // ① EL ALTA
-for (const [nombre, error] of SIN_RESPUESTA) {
-  for (const si of [true, false]) {
-    test(`SCRUM-1200 · ALTA · 🔴 ${nombre} con «${si ? 'Sí + 41' : 'No'}» → NO avanza y manda a MIRAR, sin mensaje crudo`, async () => {
-      const m = montar({ guardar: () => { throw error(); } });
-      const titulo = await alPaso2(m);
-      await m.pulsar(m.id(si ? 'ob-serie-si' : 'ob-serie-no'));
-      if (si) m.id('ob-serie-numero').value = '41';
-      await m.pulsar(m.id('ob-next'));
-      assert.equal(titulo(), `¿Ya has emitido facturas en ${ANIO}?`, '🔴 avanzó sin saber si se guardó');
-      const aviso = m.id('ob-serie-error');
-      assert.equal(aviso.textContent, APROBADO, `🔴 enseña «${aviso.textContent}»`);
-      assert.notEqual(aviso.style.display, 'none', 'el aviso no se ve');
-      assert.notEqual(m.id('ob-next').disabled, true, 'el botón se queda bloqueado: no se puede «pulsar otra vez»');
-      assert.equal(m.guardados().length, 1, 'la petición sí se intentó');
-    });
-  }
-}
+const FILAS_1 = SIN_RESPUESTA.flatMap(([nombre, error]) => [true, false].map((si) => [nombre, error, si]));
+const caso1 = casosEscritos(FILAS_1, ([nombre, error, si]) => `SCRUM-1200 · ALTA · 🔴 ${nombre} con «${si ? 'Sí + 41' : 'No'}» → NO avanza y manda a MIRAR, sin mensaje crudo`, async ([nombre, error, si]) => {
+  const m = montar({ guardar: () => { throw error(); } });
+  const titulo = await alPaso2(m);
+  await m.pulsar(m.id(si ? 'ob-serie-si' : 'ob-serie-no'));
+  if (si) m.id('ob-serie-numero').value = '41';
+  await m.pulsar(m.id('ob-next'));
+  assert.equal(titulo(), `¿Ya has emitido facturas en ${ANIO}?`, '🔴 avanzó sin saber si se guardó');
+  const aviso = m.id('ob-serie-error');
+  assert.equal(aviso.textContent, APROBADO, `🔴 enseña «${aviso.textContent}»`);
+  assert.notEqual(aviso.style.display, 'none', 'el aviso no se ve');
+  assert.notEqual(m.id('ob-next').disabled, true, 'el botón se queda bloqueado: no se puede «pulsar otra vez»');
+  assert.equal(m.guardados().length, 1, 'la petición sí se intentó');
+});
+test('SCRUM-1200 · ALTA · 🔴 sinRed con «Sí + 41» → NO avanza y manda a MIRAR, sin mensaje crudo', caso1(0));
+test('SCRUM-1200 · ALTA · 🔴 sinRed con «No» → NO avanza y manda a MIRAR, sin mensaje crudo', caso1(1));
+test('SCRUM-1200 · ALTA · 🔴 incierto con «Sí + 41» → NO avanza y manda a MIRAR, sin mensaje crudo', caso1(2));
+test('SCRUM-1200 · ALTA · 🔴 incierto con «No» → NO avanza y manda a MIRAR, sin mensaje crudo', caso1(3));
+caso1.todos();
 
 // ② AJUSTES
-for (const [nombre, error] of SIN_RESPUESTA) {
-  test(`SCRUM-1200 · AJUSTES · 🔴 ${nombre} → NO da por guardado y manda a MIRAR`, async () => {
-    const m = montar({ guardar: () => { throw error(); } });
-    let guardado = false;
-    const caja = puerta(m, () => { guardado = true; });
-    await m.pulsar(caja.querySelector('#ps-si'));
-    caja.querySelector('#ps-numero').value = '41';
-    await m.pulsar(caja.querySelector('#ps-guardar'));
-    assert.equal(guardado, false, '🔴 se dio por guardado sin respuesta');
-    assert.equal(caja.querySelector('#ps-error').textContent, APROBADO);
-  });
-}
+const caso2 = casosEscritos(SIN_RESPUESTA, ([nombre, error]) => `SCRUM-1200 · AJUSTES · 🔴 ${nombre} → NO da por guardado y manda a MIRAR`, async ([nombre, error]) => {
+  const m = montar({ guardar: () => { throw error(); } });
+  let guardado = false;
+  const caja = puerta(m, () => { guardado = true; });
+  await m.pulsar(caja.querySelector('#ps-si'));
+  caja.querySelector('#ps-numero').value = '41';
+  await m.pulsar(caja.querySelector('#ps-guardar'));
+  assert.equal(guardado, false, '🔴 se dio por guardado sin respuesta');
+  assert.equal(caja.querySelector('#ps-error').textContent, APROBADO);
+});
+test('SCRUM-1200 · AJUSTES · 🔴 sinRed → NO da por guardado y manda a MIRAR', caso2(0));
+test('SCRUM-1200 · AJUSTES · 🔴 incierto → NO da por guardado y manda a MIRAR', caso2(1));
+caso2.todos();
 
 // ③ CONTROL: lo que SÍ trae respuesta sigue diciendo lo suyo
 test('SCRUM-1200 · ✅ CONTROL: un rechazo CON respuesta no se convierte en «sin respuesta»', () => {
