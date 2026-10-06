@@ -57,18 +57,21 @@ function servidor(rechaza) {
 }
 
 /**
- * Monta la vista de verdad y apunta cada `scrollIntoView` que reciba un nodo creado por ella, con
- * la foto del instante: si el nodo ya cuelga de la ficha y si su línea plegada ya está abierta. Se
- * espía desde aquí, sin tocar el banco: el `scrollIntoView` del banco no hace nada y no apunta.
+ * Monta la vista de verdad y apunta cada `scrollIntoView`, con la foto del instante: si el nodo ya
+ * cuelga de la ficha y si su línea plegada ya está abierta. Se espía desde aquí, sin tocar el
+ * banco: el `scrollIntoView` del banco no hace nada y no apunta.
+ *
+ * ⚠️ QUÉ VE EL ESPÍA: los nodos que la vista crea con `createElement` (el aviso es uno) y TODOS los
+ * que hay en el documento al acabar de montar, la ficha incluida. Los que nazcan después de un
+ * `innerHTML` (un repintado) no los ve: quien necesite afirmar «nada se mueve» tras un repintado
+ * tiene que volver a llamar a `espiarLoQueHay`.
  */
 async function montar(srv) {
   const b = cargarDashboard(RAIZ);
   const c = b.mk('div');
   b.ctx.document.body.appendChild(c);
   const traidos = [];
-  const crear = b.ctx.document.createElement;
-  b.ctx.document.createElement = function (etiqueta) {
-    const n = crear.call(this, etiqueta);
+  const espiar = (n) => {
     n.scrollIntoView = function (opciones) {
       const plegable = n.closest ? n.closest('[data-parte-plegable]') : null;
       traidos.push({
@@ -80,8 +83,12 @@ async function montar(srv) {
     };
     return n;
   };
+  const espiarLoQueHay = () => todos(b.ctx.document.body).map(espiar).length;
+  const crear = b.ctx.document.createElement;
+  b.ctx.document.createElement = function (etiqueta) { return espiar(crear.call(this, etiqueta)); };
   const ok = await b.ctx.renderParteDetailView(c, 7, { apiRequest: srv.apiRequest });
   assert.notEqual(ok, false, '🔴 SUELO: la vista del parte no se ha montado');
+  assert.ok(espiarLoQueHay() > 20, '🔴 SUELO: el espía no ha encontrado la ficha pintada');
   return { c, traidos };
 }
 
