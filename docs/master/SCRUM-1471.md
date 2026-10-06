@@ -28,7 +28,7 @@ En invierno (+1) y en Canarias pasa lo mismo, con sus días; son casos aparte en
 
 - `receipt.routes.ts`: «Pagado el …» y la hora de los eventos llevan `timeZone: zonaDelMerchant(…)`.
   ⚠️ La lista de eventos sólo se pinta fuera de producción («Dev · eventos del cobro»): el cliente
-  no la lee. Se arregla igual, para que el fichero no tenga dos criterios.
+  no la lee. Se arregla igual: un sitio que hoy no se ve es el que mañana se enseña sin revisar.
 - `customerPortal.routes.ts`: `dateShort` recibe la zona del negocio, resuelta una vez por página.
 
 ## Lo que NO se ha cambiado, con su motivo y con QUÉ decisión lo desbloquea

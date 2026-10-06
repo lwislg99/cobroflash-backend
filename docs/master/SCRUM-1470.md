@@ -46,7 +46,7 @@ mueven. El test se vio caer: con los cinco `src/` devueltos a `main` y `dist/` r
 - ⚠️ **Una consecuencia que se dice:** un presupuesto YA FIRMADO cuyo PDF se regenere (el
   `GET /admin/quotes/:id/pdf` sobrescribe `pdfUrl`) saldrá con el día del negocio donde antes salía
   la víspera. Es justo lo que pide la aceptación 1; no cambia ningún hash (el sobre de SCRUM-805
-  sella datos, no los bytes del PDF) ni ningún valor guardado.
+  sella datos, no los bytes del PDF) ni ningún valor guardado. **Roza la regla conservadora de SCRUM-987** («el papel de un firmado no cambia de aspecto por debajo»): aquí cambia una fecha, de la equivocada a la correcta, sólo si alguien regenera el papel y sólo en negocios con zona declarada. Se queda dentro por decisión del orquestador de Javier, que lo sube al fundador.
 
 ## Lo que NO se ha cambiado, con su motivo y con QUÉ decisión lo desbloquea
 
