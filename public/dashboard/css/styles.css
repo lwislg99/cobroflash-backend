@@ -1118,6 +1118,9 @@ html, body { overflow-x: clip; }
   display: flex; align-items: center; justify-content: center;
   color: var(--neutral-500);
   transition: background .12s;
+  /* SCRUM-1215: un título que parte en dos líneas ENCOGÍA el botón de cerrar (medido a 320 px:
+     30 → 26 px, y 22 con un número largo). El que cede es el título, no la ✕. */
+  flex-shrink: 0; margin-left: 8px;
 }
 .modal-close:hover { background: var(--neutral-200); color: var(--neutral-800); }
 .modal-body {

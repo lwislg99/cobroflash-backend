@@ -210,3 +210,42 @@ Sin cifra cierta no se pregunta: cola ilegible (antes o después del intento), o
 ## Queda abierto: SCRUM-1383
 
 Leído en el código, NO ejecutado. Durante el intento de subida de (b) el servidor puede rechazar una firma de forma definitiva (`RECHAZOS_DEFINITIVOS`). Sale de la cola dejando una constancia en `localStorage`, la cola queda en cero, se cierra sin preguntar y el purgado borra la constancia (`almacenLocal.js`, patrón `yaqu_firma_rechazada_`, `purga: true`). La mitad (b) puede crear ese agujero, no sólo heredarlo. El texto firmado no sirve ahí (no «queda por subir», está rechazada): necesita texto nuevo, que se propone y se para.
+
+# APÉNDICE · B: un campo de la cabecera del parte que no se guarda, se dice (S4)
+
+**Medido contra:** `origin/main` = `39af736efc8ccf7d2966063561421855b3e4c4e9` · 2026-10-06T11:20:17Z
+A9: sin fallo que generalice — el arreglo se probó en rojo antes de darlo por bueno y el control negativo va dentro del test
+
+Carril S4 (`public/dashboard/js/parteDetailView.js`) · rama `scrum-1302b-campo-que-no-se-guarda`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) en esta sesión. Dicho como fue: la cargué DESPUÉS de editar la vista y antes del commit. Tras leerla no cambié nada, y declaro lo que choca con ella: el aviso lleva `style.marginTop = '8px'`, copiado del aviso vecino de la misma vista (`avisar`, el de la firma rechazada). No hay clase compartida que dé ese hueco y `styles.css` es carril de S2; sin el hueco el aviso queda pegado a la casilla. `tests/scrum713c` no lo cuenta (sólo mira `cssText`) y lo dice él mismo.
+
+## El defecto
+
+`guardarCampo` mandaba el `PATCH` y, si fallaba, repintaba la ficha desde el servidor sin decir nada. Visto en yaqu.app el 1-oct (comentario 17880): la casilla vuelve al valor viejo, su línea plegada se cierra y no sale ningún texto.
+
+## El texto
+
+Aprobado por el orquestador por delegación del fundador, 6-oct-2026 — SCRUM-1302 comentario 18288: «No se ha podido guardar el cambio — vuelve a intentarlo». Ficha: `docs/microcopy/2026-10-06-SCRUM-1302-campo-que-no-se-guarda.md`.
+
+## Lo construido
+
+- Tras el repintado, el aviso sale en el paso del campo que falló: en la sección de las horas, o dentro de su línea plegada, que se abre. `role="alert"`, clase `alert error`.
+- Vale para las ocho casillas y para los tres radios del tipo: todos guardan por `guardarCampo`.
+- Si ese mismo campo se guarda después, el aviso se quita. Guardar otro campo no lo quita.
+- Si la relectura también falla, la ficha ya dice entera que no se ha podido cargar y no se añade nada.
+
+Decisiones mías, no firmadas, que el orquestador puede cambiar: abrir la línea plegada (el comentario 18288 firma el texto, no dónde); y que cada fallo repinta la ficha, así que sólo queda a la vista el aviso del último campo que falló.
+
+## Verificado, ejecutando
+
+`tests/scrum1302b-campo-que-no-se-guarda.test.mjs`, con la vista real en el banco y un servidor que rechaza el campo que se le diga.
+
+- **Rojo antes** (con la vista de `origin/main`): 2 de 6; caen los cuatro del defecto y pasan los dos controles.
+- **Verde después:** 6 de 6.
+
+**NO medido:** yaqu.app ni un navegador real. La cuenta QA está caducada desde el 3-oct (`node scripts/qa/sesion-panel.mjs estado` → MUERTA). No se ha visto en pantalla cómo queda el aviso a 390 px ni si el hueco de 8 px basta.
+
+## Sigue abierto en este ticket
+
+C (el aviso vacío de «Ordenar en líneas») sin firmar, a propósito. D y E, camino fiscal. Y la pregunta de si los cuatro mensajes del servidor se pueden enseñar tal cual.
