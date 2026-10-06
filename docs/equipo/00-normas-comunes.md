@@ -491,11 +491,27 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
      mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
      tokens»;
   3. al empezar la tanda del día siguiente.
+
+  Y una sesión que ha **compactado** se releva en el siguiente punto limpio, diga lo que diga su número
+  (casilla 1 de abajo): el número vuelve a ser bajo, pero ya no mide lo mismo.
 - 🔴 **La COMPROBACIÓN al entregar — la hace la propia sesión, no espera a que se la pidan.** Tres
   casillas, cada una sí o no, después de cada entrega (push hecho o plan entregado):
   1. ¿He **medido** mi contexto? Es el `usage` del ÚLTIMO mensaje de mi propio jsonl: `input_tokens` +
-     `cache_read_input_tokens` + `cache_creation_input_tokens`. Desde fuera, `sesion.mjs contexto <nombre>`
-     (el lanzador de la S5) lee lo mismo. Estimarlo no vale.
+     `cache_read_input_tokens` + `cache_creation_input_tokens`. Estimarlo no vale.
+     - **«15.000.000 − restantes», el contador que enseña Claude Code, es una lectura válida de esa misma
+       suma:** la sigue a menos del 0,3 % (medido 2 de 2 por la S5, el 29-sep y el 1-oct-2026; SCRUM-1282).
+       Restarlo no es estimar. NO es el consumo acumulado: en la única sesión donde se sumó, el acumulado
+       era 32 veces mayor.
+     - **Desde fuera se lee en el latido** (`node scripts/equipo/latido.mjs`, sección CONTEXTO): corre desde
+       un árbol y da la cifra de cada sesión viva. `sesion.mjs contexto <nombre>` (el lanzador de la S5) lee
+       lo mismo, pero es de la copia INSTALADA y responde `ALTERADO` cada vez que un PR toca ese fichero y
+       nadie la refresca.
+     - **Si mi sesión ha COMPACTADO, lo digo al dar la cifra.** Al compactar, el número cae a ~70-80k
+       (medido sobre las 5 compactaciones de una transcripción: de 861-967k a 69-81k en las 4 que dejaron
+       un turno válido detrás) y es CIERTO como ocupación.
+       Lo que ya no dice es «sesión fresca»: desde ahí la sesión trabaja sobre un resumen de sí misma.
+       ⚠️ No medido: el contador visto desde DENTRO de una sesión recién compactada (una del otro equipo
+       leyó 6.108; ninguna nuestra lo ha cruzado con su jsonl).
   2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
      esta casilla.
   3. ¿Pasa de **200k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
@@ -503,6 +519,16 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
+
+  ⚠️ **Los dos números (200k y 500k) están EN REVISIÓN desde el 6-oct-2026, y lo decide el fundador**
+  (es una decisión de coste; SCRUM-1479). Hasta entonces valen los de arriba, y el relevo lo sigue
+  decidiendo el orquestador. Lo que hay medido, para que quien lo relea lo recalcule y no lo herede:
+  el 6-oct, de 21 sesiones con algún turno, **18 pasaron de 200k**, 3 de 500k y 2 de 800k; una sesión
+  arranca en ~66-70k y pasa de 200k entre su llamada 11 y la 44, antes de su primera entrega. Y lo que
+  cuesta cada opción, simulado por la S5 ese día con `gasto-arranque.mjs vivas --simular` sobre esas 21
+  (Σ de contexto 412,3 M): relevar a 200k lo dejaría en 207,2 M (−49,7 %), a 500k en 388,6 M (−5,8 %) y a
+  800k en −2,3 %. Recontado por la S0 una hora después, sobre 22: −50,2 %, −5,3 % y −2,1 %. Es una
+  simulación de la suma de contexto, no del coste, y supone que una sesión relevada arranca en 85k.
 
   ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
   ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
