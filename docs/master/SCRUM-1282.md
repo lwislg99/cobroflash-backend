@@ -130,3 +130,72 @@ Las cuatro aplicadas a mano y restauradas. No he corrido la tanda completa en lo
 ## Lo que sigue faltando de este ticket
 
 El texto de la A19 con esta magnitud. Es de S0 (`00-normas-comunes.md`).
+
+---
+
+# SCRUM-1282 · tercera parte: lo que le faltaba al texto de la A19 (S0)
+
+**Rama:** `scrum-1282c-a19-contador-compactacion-latido` · **Carril:** S0 (`00-normas-comunes.md`; sesión `s0-6octd`) · **Fecha:** 6-oct-2026
+**Medido contra:** `origin/main` = `6aaec0dc8f0267518a50f626299ae901f81e2ae1` · 2026-10-06T13:28:17Z
+
+A9: aviso → A10 «Una salida recortada para leerla cómoda es media salida: el corte cae donde no estabas mirando.» — no se pudo comprobar: el recorte lo pone a mano quien lee, en una orden de consola de un solo uso; no hay fichero del repositorio donde un test lo pueda ver.
+
+## Lo que NO había que arreglar
+
+El título del ticket dice que la A19 nombra una magnitud equivocada. **No es así.** La casilla 1 ya definía
+la suma correcta (`input_tokens` + `cache_read_input_tokens` + `cache_creation_input_tokens` del último
+mensaje), que es la que la S5 midió dos veces. Este puesto afirmó lo contrario el 6-oct por buscar una
+palabra en vez de leer la norma, y lo retiró (Jira, comentario 18367).
+
+## Lo que sí faltaba, y entra aquí
+
+Tres cosas en la casilla 1 y una frase en «Cuándo se releva». Todas salen de mediciones de la S5 (Jira,
+comentarios 17886 y 17901):
+
+| qué dice ahora la A19 | de dónde sale |
+|---|---|
+| «15.000.000 − restantes» es una lectura válida de esa suma: la sigue a menos del 0,3 % | 2 de 2: 805 de 327.605 (29-sep) y 373 de 235.014 (1-oct) |
+| No es el consumo acumulado | en la única sesión donde se sumó (1-oct, 42 turnos): 7.528.215 frente a 235.014, 32 veces más |
+| Desde fuera se lee en el latido, sección CONTEXTO; `sesion.mjs contexto` responde `ALTERADO` cuando un PR toca ese fichero | segunda parte de este registro (#2091) |
+| Una sesión que ha compactado lo dice al dar su cifra, y se releva en el siguiente punto limpio | 5 compactaciones de una transcripción: de 861-967k a 69-81k en las 4 con un turno válido detrás |
+| Queda sin medir el contador visto desde dentro de una sesión recién compactada | una sesión del otro equipo leyó 6.108 (comentario 17573); ninguna nuestra lo ha cruzado con su jsonl |
+
+## Lo que NO entra: el número
+
+**Los umbrales (200k al entregar, 500k a mitad) no se tocan en este PR.** El 6-oct el orquestador propuso
+500k y 800k, y lo paró él mismo: es una decisión de coste y es del fundador. La norma y la constante de
+`sesion.mjs` tienen que cambiar juntas, y el gemelo de código es SCRUM-1479 (S5). **Ninguno de los dos
+tickets se cierra sin el otro.**
+
+Lo que este PR sí deja escrito en la A19, con su fecha, es lo medido para decidir:
+
+| | 6-oct-2026 |
+|---|---|
+| sesiones con algún turno ese día (UTC) | 21 |
+| pasaron de 200k · de 500k · de 800k | 18 · 3 · 2 |
+| una sesión arranca en | ~66-70k |
+| pasa de 200k en su llamada | 11 a 44, en las 17 que nacieron ese día (la otra venía de antes, ya por encima) |
+| Σ de contexto simulado al relevar a 200k · 500k · 800k (S5, 21 sesiones, Σ 412,3 M) | −49,7 % · −5,8 % · −2,3 % |
+| lo mismo, recontado por S0 una hora después (22 sesiones, Σ 448,8 M) | −50,2 % · −5,3 % · −2,1 % |
+
+La simulación es la de SCRUM-1070 (`node scripts/equipo/gasto-arranque.mjs vivas --horas 24 --simular <n>`).
+Suma contexto, no coste, y supone que una sesión relevada arranca en 85k.
+
+## Dónde vive el 200k (para quien cambie el número)
+
+Leído sitio a sitio en `origin/main`. De S0: `00-normas-comunes.md`, A19 (tres veces) y A25 (dos). De S5:
+`scripts/equipo/sesion.mjs:99`, `scripts/equipo/gasto-arranque.mjs:647`,
+`docs/equipo/orquestador-autonomo.md:85-89` y tres tests (`scrum899c:157`, `scrum1070:22`,
+`scrum1350:450-451`). Del orquestador: `docs/equipo/orquestador.md:105`.
+
+## Mis errores
+
+1. **Leí media línea y la conté entera.** Miré `docs/master/SCRUM-1070.md:49` recortada a 260 caracteres
+   para que cupiera en pantalla. Entera dice que el 200k de la norma fue «decisión del orquestador» **y**
+   que la constante de `sesion.mjs` llevó «autorización escrita del fundador». El corte caía justo antes de
+   la segunda mitad, y con la primera escribí en SCRUM-1479 que un test atribuía mal el número. Lo cazó la
+   S5. Corregido en el ticket.
+2. **Conté 42 sesiones donde había 21.** La misma carpeta de transcripciones entraba dos veces, con
+   distinta mayúscula en la ruta. Lo vi en las filas repetidas, no en el total.
+3. **Puse la hora a ojo tres veces** en notas de Jira (13:35Z, 13:25Z y 13:45Z cuando eran 13:16Z, 13:19Z
+   y 13:27Z). La hora buena es la que marca Jira en cada una.
