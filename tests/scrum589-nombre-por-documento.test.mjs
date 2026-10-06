@@ -29,7 +29,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import { nombreParaDocumento } from '../dist/core/documentos/nombreParaDocumento.js';
 import { CreateQuoteSchema } from '../dist/core/validation/schemas.js';
 
@@ -161,7 +161,13 @@ test('SCRUM-589 · la nota ya no afirma la sustitución automática', () => {
   // 🔴 SÓLO CÓDIGO EJECUTABLE, y me lo he vuelto a hacer: la primera versión miraba el fuente
   // crudo y salió roja por MI PROPIO COMENTARIO, que cita la frase vieja para explicar por qué
   // se retiró. Es el mismo defecto que ya cacé en SCRUM-776 y que SCRUM-601 documentó al cerrar.
-  assert.ok(!/sustituye al nombre/.test(soloEjecutable(src)),
+  //
+  // 🔴 SCRUM-1395 · Y CON SUELO. Hasta el 6-oct-2026 esto filtraba con la forma que acepta la
+  // cadena vacía: medido rompiendo el filtro (`npm run censo:mudez`), este fichero era el ÚNICO
+  // mudo de 119 — seguía verde con la frase prohibida metida en el código. El ancla es algo de lo
+  // que este mismo test ya depende (la asignación de la nota, tres líneas más arriba): si no
+  // sobrevive al filtro, la negación de abajo no está mirando la vista y tiene que decirlo.
+  assert.ok(!/sustituye al nombre/.test(ejecutableDe(src, { ancla: 'dfNote.textContent', donde: VISTA })),
     '🔴 ha vuelto la frase «la razón social sustituye al nombre si existe». Con la elección ' +
     'delante esa afirmación es FALSA: le dice al profesional que no puede decidir algo que sí decide.');
 });

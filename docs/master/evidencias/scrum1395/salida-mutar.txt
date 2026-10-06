@@ -1,0 +1,35 @@
+POBLACION: 7 mutaciones sobre tests/scrum719-el-suelo-de-los-doce.test.mjs
+BASE sin mutar: exit=0 tests=29 fail=0
+
+M1 nace un test que llama a soloEjecutable sin suelo
+   aplicada=true exit=1 tests=29 fail=1 -> VIVA
+   cae: SCRUM-1395 · ② un test NUEVO no llama al filtro sin suelo (la lista de heredados no crece)
+
+M2 nace ese test y se le cuela en la lista (sin tocar el techo)
+   aplicada=true exit=1 tests=29 fail=1 -> VIVA
+   cae: SCRUM-1395 · ③ la lista de heredados no baja en silencio, y su número está escrito dos veces
+
+M3 se cuela en la lista Y se sube el techo (las dos manos): el trinquete NO puede verlo
+   aplicada=true exit=0 tests=29 fail=0 -> MUDA, y se DECLARA: es el limite del trinquete
+
+M4 se borra un heredado de la lista sin arreglarlo
+   aplicada=true exit=1 tests=29 fail=2 -> VIVA
+   cae: SCRUM-1395 · ② un test NUEVO no llama al filtro sin suelo (la lista de heredados no crece)
+   cae: SCRUM-1395 · ③ la lista de heredados no baja en silencio, y su número está escrito dos veces
+
+M5 un nombre de mas en la lista (un fichero que no llama al filtro)
+   aplicada=true exit=1 tests=29 fail=1 -> VIVA
+   cae: SCRUM-1395 · ③ la lista de heredados no baja en silencio, y su número está escrito dos veces
+
+M6 scrum589 vuelve a la forma sin suelo
+   aplicada=true exit=1 tests=29 fail=2 -> VIVA
+   cae: SCRUM-1395 · ② un test NUEVO no llama al filtro sin suelo (la lista de heredados no crece)
+   cae: SCRUM-1395 · ④ `scrum589`, el que estuvo mudo, tiene suelo y NO es un heredado
+
+M7 la lista pierde por que se toleran
+   aplicada=true exit=1 tests=29 fail=1 -> VIVA
+   cae: SCRUM-1395 · ③ la lista de heredados no baja en silencio, y su número está escrito dos veces
+
+VIVAS 6 · MUDAS 0 · mudas declaradas 1 · de 7
+ARBOL devuelto byte a byte: SI
+EXIT=0
