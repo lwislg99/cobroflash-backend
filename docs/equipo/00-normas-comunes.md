@@ -576,14 +576,15 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   **Quién lo autorizó.** El número es una decisión de coste, y el coste está fuera de la delegación del
   orquestador (`limites-del-fundador.md`). **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo
   pongo en 300.000. Autorizado el coste.»** Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479
-  (comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. La Sesión 0, que escribe esta línea,
-  no lo oyó de primera mano: lo lee de esa transcripción y de su orden de arranque. Autorizó UN número, el
-  de relevo al entregar.
+  (comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. En Jira los dos firman con la misma
+  cuenta, así que la S5 y la S0 lo comprobaron cada una en el origen: en la transcripción del chat del
+  orquestador es un turno escrito por una persona, con esa frase (SCRUM-1479, comentario 18532). La frase
+  la había redactado el orquestador y el fundador la envió tal cual. Autorizó UN número, el de relevo al
+  entregar.
 
-  ⏳ **El gemelo de código todavía dice 200k** (SCRUM-1479, de la S5: la constante de `sesion.mjs`,
-  `gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md`). Hasta que ese PR entre, el latido y
-  `sesion.mjs contexto` avisan «por encima de 200k (A19)»: el aviso llega antes de lo que esta norma pide.
-  Manda la norma.
+  **El gemelo de código entró en el mismo PR** (SCRUM-1479, de la S5): la constante de `sesion.mjs`,
+  `gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md` dicen 300k desde el mismo merge que esta
+  norma. Ningún test ata este texto a esa constante: quien cambie uno, cambia el otro en el mismo PR.
 
   ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
   ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
