@@ -23,6 +23,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 // SCRUM-987 · «Válido hasta el …»: la frase y su fecha, en el sitio que comparte con el PDF.
 import { textoDeValidez } from '../../../quotes/domain/validez';
+import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
 
 type DecisionApiError = { message?: string; error?: string };
@@ -489,7 +490,7 @@ function renderQuoteDetail(
       ${quote.merchant?.address ? `<div class="merchant-sub">${esc(quote.merchant.address)}</div>` : ''}
     </div>
     <h1>Hola, ${customerName} 👋</h1>
-    <div class="quote-meta">Presupuesto #${esc(String(quote.quoteNumber ?? quote.id))}</div>
+    <div class="quote-meta">Presupuesto #${esc(numeroQueImprimeElPapel(quote))}</div>
     ${validityHtml ? `<div style="text-align:center">${validityHtml}</div>` : ''}${cabeceraHtml /* SCRUM-1279: pegado, para que sin texto la página sea byte a byte la de antes (888d) */}
     ${linesHtml}
     ${vatHtml}
@@ -621,7 +622,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           ? String((quote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
           : '';
         const waBtnExp = proPhoneExp
-          ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id} caducó, ¿me pasas uno actualizado?`)}"
+          ? `<a href="https://wa.me/${proPhoneExp}?text=${encodeURIComponent(`Hola, el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)} caducó, ¿me pasas uno actualizado?`)}"
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno actualizado por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
@@ -678,7 +679,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           : '';
         const merchName = esc(quote.merchant?.legalName || quote.merchant?.name || 'el profesional');
         const waBtn = proPhone
-          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${quote.quoteNumber ?? quote.id}: he cambiado de opinión, ¿me lo reenvías?`)}"
+          ? `<a href="https://wa.me/${proPhone}?text=${encodeURIComponent(`Hola, sobre el ${locale.quoteVerb} #${numeroQueImprimeElPapel(quote)}: he cambiado de opinión, ¿me lo reenvías?`)}"
                style="display:inline-block;margin-top:14px;background:#16a34a;color:#fff;font-weight:700;padding:12px 22px;border-radius:999px;text-decoration:none">Pedir uno nuevo por WhatsApp</a>`
           : '';
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
@@ -707,7 +708,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   const proPhone = (loadedQuote?.merchant as any)?.whatsappPhone
     ? String((loadedQuote.merchant as any).whatsappPhone).replace(/[^\d]/g, '')
     : '';
-  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${loadedQuote.quoteNumber ?? loadedQuote.id}`);
+  const dudaTextEnc = encodeURIComponent(`Hola, tengo una duda sobre el ${locale.quoteVerb} #${numeroQueImprimeElPapel(loadedQuote)}`);
   const dudaHtml = proPhone
     ? `<a class="btn-duda" href="https://wa.me/${proPhone}?text=${dudaTextEnc}">💬 Tengo una duda</a>`
     : '';
@@ -907,12 +908,12 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
   const q = token
     ? await prisma.quote.findUnique({
         where: { decisionToken: token },
-        select: { id: true, quoteNumber: true, merchant: { select: { country: true } } },
+        select: { id: true, quoteNumber: true, revision: true, merchant: { select: { country: true } } },
       }).catch(() => null)
     : null;
   const locale = getLocale(q?.merchant?.country);
   const delDeLa = (locale.quote.endsWith('ón') || locale.quote.endsWith('a')) ? 'de la' : 'del';
-  const displayNum = q ? (q.quoteNumber ?? q.id) : '';
+  const displayNum = q ? numeroQueImprimeElPapel(q) : '';
 
   try {
     const apiResponse = await fetch(
