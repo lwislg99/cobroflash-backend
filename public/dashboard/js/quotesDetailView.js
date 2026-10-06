@@ -78,10 +78,18 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   head.className = 'detail-head';
   page.appendChild(head);
 
+  // SCRUM-1482 · hasta que llega la respuesta, lo único que se sabe es el id de la ruta, que es el
+  // de la tabla (de toda la plataforma) y NO el número del presupuesto: no se pinta. Mientras
+  // carga, y si la carga falla, la cabecera dice la palabra del documento sola, leída del locale
+  // (firma: SCRUM-1482 c.18490). El caso del id que no es un número se queda como estaba: no
+  // entra en esa firma.
   const headLeft = document.createElement('div');
   headLeft.innerHTML =
-    `<h2>Presupuesto #${Number.isFinite(id) ? id : '-'}</h2>` +
+    `<h2></h2>` +
     `<p class="detail-sub">Detalle del presupuesto y decisión del cliente.</p>`;
+  headLeft.querySelector('h2').textContent = Number.isFinite(id)
+    ? ((window.appLocale && window.appLocale.quote) || '')
+    : 'Presupuesto #-';
   head.appendChild(headLeft);
 
   const headRight = document.createElement('div');
@@ -169,8 +177,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
   setStatus('', '');
 
-  // A1.2: número por merchant — el h2 se pintó con el id de la ruta antes del
-  // fetch; al cargar, se corrige al número visible (y el título de la vista).
+  // A1.2: número por merchant — el h2 se pintó sin número antes del fetch (SCRUM-1482);
+  // al cargar, se le pone el número visible (y se corrige el título de la vista).
   const displayNum = quote.number ?? id;
   const h2 = headLeft.querySelector('h2');
   if (h2) h2.textContent = `Presupuesto #${displayNum}`;

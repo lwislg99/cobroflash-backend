@@ -172,6 +172,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
   // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
   'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 3,
+  // SCRUM-1489: el buscador de arriba pasa por esas mismas dos puertas (fila 9 del censo de
+  // SCRUM-1390). Necesita banco por el mismo motivo: lo que vigila es el WHERE que la busqueda
+  // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
+  // mitad sin base (nueve casos, con Prisma doblado) corre siempre.
+  'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
