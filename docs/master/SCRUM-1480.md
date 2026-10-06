@@ -155,3 +155,109 @@ No toca §3.1 ni §3.2, que son las que lee `tests/scrum514-aprobado-y-aplicado.
 
 Al traer `main` con estas filas: `node scripts/carriles.mjs generar` después del commit de la fusión, y volver a
 correr la sonda de la cerradura. Se marca listo al EMPEZAR una tanda, no al final (decisión del orquestador).
+
+---
+
+# SCRUM-1480c · La fila de S3 baja de 9 a 7, y la cifra de la fila general estaba medida antes de tiempo
+
+**Medido contra:** `origin/main` = `8f77f96dd12c0cc7cad87f94d166b58601741b5f` · 2026-10-06T17:57:09Z
+
+A9: aviso → cicatriz S0 «Una cifra que describe una tabla se mide después del último cambio del mismo PR: escribí que la fila general cubría sola 273 ficheros, y con las dos filas que entraban con esa frase eran 248.» — no se pudo comprobar: es una cifra en la prosa de una celda, y ningún test lee qué afirma una nota
+
+Carril S0 (`docs/equipo/dos-equipos.md`, `afirmaciones-verificadas.md` y `cicatrices/S0.md` son suyos). Sólo cambia
+§3.3. No toca §3.1 ni §3.2, que son las que lee `tests/scrum514-aprobado-y-aplicado.test.mjs`.
+
+## Qué pasaba
+
+El PR #2227 entró en `main` a las 17:45:34Z con 9 rutas en la fila de S3. El orquestador de Luis decidió después
+que salen también los dos ayudantes del censo táctil, con la misma regla que ya había sacado a los otros: un
+ayudante espera a quienes lo usan. Así que `main` afirmaba 9 donde lo firmado eran 7.
+
+De dónde sale la decisión, dicho: llegó en el mensaje de arranque del orquestador a esta sesión (6-oct, tercera
+tanda). En Jira no está: SCRUM-1480 tenía a las 17:57Z dos comentarios, los dos entregas de la S0. Queda escrita
+en la entrega de este cambio.
+
+## Lo que medí antes de quitar nada
+
+Quién importa cada una de las 9 rutas, leído con el compilador de TypeScript sobre 1.727 ficheros (`scripts/`,
+`tests/` y `.claude/hooks/`), con su control (ve que `suelo-de-la-tanda.mjs` importa `_suelo-de-la-tanda.mjs`):
+
+| fichero | lo importan, dentro de `scripts/` | ¿tienen fila? |
+|---|---|---|
+| `_medidor-de-toque.mjs` | `censo-objetivo-tactil-panel.mjs`, `guard-objetivo-tactil.mjs`, `guard-a11y-landing.mjs` | el censo sí (S3); los dos guards no |
+| `_pagina-panel.mjs` | `censo-objetivo-tactil-panel.mjs`, `guard-objetivo-tactil.mjs` | el censo sí (S3); el guard no |
+| `_arbol-quieto.mjs` | `meta-guard-mutaciones.mjs` | sí (S3) |
+| `frontera-dist.mjs` | `meta-guard-mutaciones.mjs` | sí (S3) |
+
+Lo que afirmó el orquestador se sostiene: a los dos que salen los importan guards sin clasificar. Los dos que se
+quedan sólo los importa, dentro de `scripts/`, un fichero de la misma fila.
+
+Se repite con:
+
+    node docs/master/evidencias/SCRUM-1480/importadores.mjs <raíz ABSOLUTA del árbol> docs/master/evidencias/SCRUM-1480/lista-de-la-fila-de-s3.txt
+
+La salida de ese día está al lado (`salida-importadores-fila-de-s3.txt`).
+
+**Lo que la regla no dice, para que nadie la estire:** a `meta-guard-mutaciones.mjs` también lo importa un script
+sin fila (`censo-guards-gateados.mjs`), además de `_suelo-contra-main.mjs` y de 28 tests. Se queda en la fila: no
+es un ayudante, el CI lo corre por su ruta (`npm run meta:mutaciones`) y su dueño se firmó por nombre.
+
+## La segunda corrección, que nadie pidió y es mía
+
+La fila general decía «medido ese día: 273 de los 296 ficheros de `scripts/` sólo los cubre esta fila». La cifra
+era cierta sobre el `main` de antes del PR #2227, y ese mismo PR añadía dos filas con 25 rutas. Contado leyendo
+las filas del documento de cada commit:
+
+| commit | qué es | ficheros en `scripts/` | con fila propia | sólo la fila general |
+|---|---|---|---|---|
+| `6aaec0dc` | antes de SCRUM-1480 | 296 | 18 | 278 |
+| `f8da1ec8` | antes de #2227 (donde se midió el 273) | 296 | 23 | 273 |
+| `8f77f96d` | `main` con #2227 | 298 | 50 | 248 |
+| esta rama | con la fila de S3 en 7 | 298 | 48 | 250 |
+
+Los dos ficheros de más son de `scripts/equipo/`, que tiene fila. «Con fila propia» cuenta también los tres
+`scripts/_suelo-*`, que no tienen fila sino una excepción nombrada en la nota de la fila general.
+
+    node docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs <raíz del árbol> [commit]
+
+Lleva tres controles: que la fila de `scripts/equipo/` casa con algún fichero (si no, sale CIEGO con código 2), que
+ninguna ruta nombrada se queda sin fichero y que ningún fichero casa con dos rutas. Los tres, limpios en los
+cuatro commits.
+
+Esa cifra se había repetido ya fuera del documento («los 273 sin clasificar»). Lo que cambia para quien la usó:
+los que no tienen cerradura porque nadie los ha clasificado son 250, no 273.
+
+## El cambio
+
+- `docs/equipo/dos-equipos.md` §3.3, fila de S3: salen `scripts/_medidor-de-toque.mjs` y `scripts/_pagina-panel.mjs`;
+  «los 9 instrumentos… con sus ayudantes» pasa a «los 7… con los dos ficheros que dentro de `scripts/` sólo
+  importa el meta-guard»; los ayudantes compartidos que quedan fuera pasan de ocho a diez, con quién los comparte;
+  y dice la consecuencia: el censo táctil es de S3 y sus dos ayudantes siguen en la fila general, sin cerradura.
+- La misma tabla, fila general: la cifra lleva su «antes de» y la de hoy, con el comando.
+- `docs/equipo/afirmaciones-verificadas.md`: dos filas del 6-oct (los scripts de workflow contados; el PR #2218).
+- `docs/equipo/cicatrices/S0.md`: una línea.
+
+## Aceptación → dónde se ve
+
+La aceptación es el encargo del orquestador de Luis a esta sesión; no está escrita en el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| Las dos rutas salen de la fila de S3, que queda en 7 | `docs/equipo/dos-equipos.md` §3.3 |
+| Los ayudantes que quedan fuera pasan de ocho a diez | la nota de esa misma fila |
+| Anexo en el registro | esta sección |
+| Las dos filas del 6-oct en `afirmaciones-verificadas.md` | `docs/equipo/afirmaciones-verificadas.md`, las dos últimas filas |
+
+## Lo que no se ha hecho
+
+- No he corrido los instrumentos del PR #2218: su fila en `afirmaciones-verificadas.md` sale de leer su registro, su
+  PR y su ticket, y lo dice.
+- No he corrido la suite completa (memoria de la máquina): los tests que leen los documentos tocados y
+  `guards:entrada`.
+
+## Para #2001
+
+La fila de S3 cambia otra vez: al traer `main` con esto, `node scripts/carriles.mjs generar` después del commit de
+la fusión. La sonda de la cerradura no cambia de veredicto por esto (`meta-guard-mutaciones.mjs` sigue en la fila
+de S3), pero un caso nuevo sí: una sesión de S3 en `_medidor-de-toque.mjs` ya no encuentra cerradura, ni a favor
+ni en contra.

@@ -1,0 +1,9 @@
+scripts/censo-objetivo-tactil-panel.mjs
+scripts/censo-clics-del-80.mjs
+scripts/censo-accion-del-80.mjs
+scripts/_medidor-de-toque.mjs
+scripts/_pagina-panel.mjs
+scripts/meta-guard-mutaciones.mjs
+scripts/_arbol-quieto.mjs
+scripts/frontera-dist.mjs
+scripts/suelo-de-la-tanda.mjs

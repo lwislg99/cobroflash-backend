@@ -75,6 +75,51 @@ export function numeroQueImprimeElPapel(
 }
 
 /**
+ * EL NÚMERO DE UN PRESUPUESTO TAL Y COMO LO LEE EL PROFESIONAL EN SU PANEL, YA HECHO: `#12` el
+ * original, `#12.1` su primera revisión (SCRUM-1483; la decisión, en SCRUM-1444 c.18429: «el
+ * servidor manda el TEXTO; el panel no lo compone»).
+ *
+ * 🔴 ES UN TEXTO, CON SU ALMOHADILLA, Y SE ESCRIBE AQUÍ Y EN NINGÚN OTRO SITIO. Una respuesta que
+ * manda la secuencia en crudo obliga al navegador a componer el número, y entonces hay dos sitios
+ * escribiéndolo: así nació «P12» en una pantalla y `#205` (el id de la tabla) en el buscador. La
+ * respuesta que use esta función NO manda además `quoteNumber`.
+ *
+ * 🔴 HOY ESCRIBE LO MISMO QUE EL PAPEL (`#12`), NO LA SERIE (`P260012`), Y ES A PROPÓSITO. La
+ * serie está decidida (SCRUM-1444 c.18405), pero su año no está guardado en la fila y una revisión
+ * no lo puede deducir (c.18485), y el PDF sigue diciendo `#12`. El día que cambie, cambia AQUÍ, y
+ * con esta función cambian a la vez todas las respuestas que la usan.
+ *
+ * Sin número devuelve `null`: ni una raya ni el `id` de la tabla (c.18405, punto 2). Quien pinta
+ * decide cómo nombra un presupuesto sin número, y ese texto es suyo. Por eso NO es
+ * `numeroQueImprimeElPapel` con una almohadilla delante: aquélla respalda al `id`.
+ */
+export function numeroVisibleDelPresupuesto(
+  q: { quoteNumber: number | null; revision: number },
+): string | null {
+  if (q.quoteNumber == null) return null;
+  return `#${numeroConRevision({ numero: String(q.quoteNumber), revision: q.revision })}`;
+}
+
+/**
+ * Lo que alguien teclea para buscar un presupuesto POR SU NÚMERO, leído al revés de como
+ * `numeroVisibleDelPresupuesto` lo escribe: `12`, `#12`, `12.1`, `#12.1` (SCRUM-1483).
+ *
+ * 🔴 EL QUE ESCRIBE EL NÚMERO Y EL QUE LO LEE VIVEN JUNTOS. Un buscador con su propia idea de qué
+ * es «un número» deja de encontrar lo que la pantalla enseña el día que el formato cambie, y no
+ * falla: devuelve cero. Si el formato de arriba cambia, este patrón cambia en el mismo commit.
+ *
+ * Devuelve `null` si el texto no es un número de presupuesto — y entonces NO se busca por número.
+ * Nunca se busca por el `id` de la tabla: es una clave interna, no algo que el profesional vea.
+ * Sin la revisión, casa el grupo entero (el original y sus revisiones se llaman `12`).
+ */
+export function numeroBuscado(texto: string): { quoteNumber: number; revision?: number } | null {
+  const m = /^#?(\d{1,9})(?:\.(\d{1,4}))?$/.exec(String(texto ?? '').trim());
+  if (!m) return null;
+  const quoteNumber = Number(m[1]);
+  return m[2] === undefined ? { quoteNumber } : { quoteNumber, revision: Number(m[2]) };
+}
+
+/**
  * Cuál es la VIGENTE de un grupo de revisiones del mismo presupuesto: la de revisión más alta.
  *
  * 🔴 Y LAS DEMÁS SIGUEN AHÍ. Esta función no borra, no marca y no devuelve «la buena y basura»:
