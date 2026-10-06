@@ -58,6 +58,10 @@
 //                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
 //  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
 //                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
+//  11 · DISCO    → (SCRUM-1473) el espacio libre de la unidad de la casa (transcripts, temporales) y de la de
+//                  los árboles, con aviso por debajo de seis días de lo que se escribe en cada una; cuánto de
+//                  lo ocupado es del EQUIPO y cuánto no; y lo que devolvería barrer los `tmp` de trabajos.
+//                  El 6-oct-2026 la primera se quedó a 79 MB y se supo por un ENOSPC a mitad de una tanda.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -78,6 +82,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   esAsuntoDelVigia, causaDelAtasco, checksObligatoriosDeReglas, ultimaEjecucionPorCheck, GRACIA_MINUTOS,
+  filaDeMain, MARCA_DE_MAIN_PARADO,
 } from '../vigia-atascados.mjs';
 // Solo las funciones PURAS de `sesion.mjs`. Su puerta de integridad guarda la CLI (lanzar, parar…), no
 // estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
@@ -88,6 +93,9 @@ import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } fr
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
 // (SCRUM-1463) El estado de la sesión QA lo dice SU instrumento; aquí sólo se le pregunta `estado`.
 import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
+// (SCRUM-1473) La máquina: el disco y lo que el barrido de `tmp` devolvería. El latido sólo mide; no borra.
+import { seccionDisco, medirDisco } from './disco.mjs';
+import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } from './barrer-jobs.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -733,15 +741,19 @@ export function prsDelAviso(cuerpo) {
  * guarda «visto»: es la única huella que deja quien lo abre, y se dice en la salida cómo dejarla.
  * VIVO  = nombra algún PR que sigue abierto. El que ya no, se cuenta y no se enseña: no hay nada que hacer.
  *
- * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number}} e
+ * (SCRUM-1458) Un aviso puede hablar de `main` y de ningún PR: «`main` está PARADO». Ése sigue VIVO
+ * mientras `main` siga parado, y eso se mide aquí con la fecha de su último commit y la MISMA regla del
+ * vigía (`filaDeMain`): no hay un segundo umbral. Sin esa fecha no se da por resuelto: sale, y lo dice.
+ *
+ * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number, ultimoMerge?:{fecha:string}|null}} e
  *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
  */
-export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
+export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge }) {
   // (SCRUM-1463) `pasadas`: `undefined` = no se pregunta (sólo los avisos) · cualquier otra cosa = se juzga.
   if (pasadas !== undefined) {
     const p = pasadaDelVigia(pasadas, ahora);
     if (p.ciego) return ciega('VIGÍA', p.ciego);
-    const s = seccionVigia({ issue, comentarios, abiertos, ahora });
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora, ultimoMerge });
     if (!s.pudo) return s;
     return { ...s, alertas: [...p.alertas, ...s.alertas], poblacion: `${p.texto} · ${s.poblacion}` };
   }
@@ -751,22 +763,31 @@ export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
   if (!Array.isArray(abiertos)) return ciega('VIGÍA', 'la lista de PR abiertos no llegó: no sé qué avisos siguen vivos');
   const orden = [...comentarios].sort((a, b) => String(a.creado).localeCompare(String(b.creado)));
   const ultimaPersona = orden.filter((c) => !c.esBot).map((c) => String(c.creado)).pop() || '';
-  const avisos = orden.filter((c) => c.esBot && String(c.cuerpo || '').includes(MARCA_DE_AVISO));
+  const deMain = (c) => String(c.cuerpo || '').includes(MARCA_DE_MAIN_PARADO);
+  const avisos = orden.filter((c) => c.esBot && (String(c.cuerpo || '').includes(MARCA_DE_AVISO) || deMain(c)));
   // Un aviso sin ningún PR legible no se da por «sin PR abierto»: el formato cambió y no sé leerlo.
-  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0);
+  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0 && !deMain(c));
   if (ilegibles.length) return ciega('VIGÍA', `${ilegibles.length} aviso(s) del issue #${issue} no nombran ningún PR que yo sepa leer (el primero, del ${String(ilegibles[0].creado).slice(0, 16)}Z): el formato del vigía ha cambiado`);
   const sinLeer = avisos.filter((c) => !(c.reacciones > 0) && String(c.creado) > ultimaPersona);
   const hoy = new Set(abiertos);
+  // ¿Sigue `main` parado? `null` = no lo sé (no llegó la fecha, o no se deja leer).
+  const main = ultimoMerge ? filaDeMain({ fecha: ultimoMerge.fecha, ahora }) : { leido: false };
+  const mainSigue = main.leido ? main.parado : null;
   const alertas = []; let muertos = 0;
   for (const c of sinLeer) {
     const nombra = prsDelAviso(c.cuerpo);
     const siguen = nombra.filter((n) => hoy.has(n));
-    if (siguen.length === 0) { muertos++; continue; }
+    const porMain = deMain(c) && mainSigue !== false;
+    if (siguen.length === 0 && !porMain) { muertos++; continue; }
     const h = (ahora - Date.parse(c.creado)) / 3600000;
     const edad = !Number.isFinite(h) ? 'edad DESCONOCIDA' : h >= 48 ? `${(h / 24).toFixed(1)} días` : `${h.toFixed(1)} h`;
+    const deQue = [
+      ...(porMain ? [mainSigue ? `dice que main está PARADO, y SIGUE parado (${main.horas} h sin un merge)` : 'dice que main está PARADO, y no sé si sigue: no pude leer la fecha de su último commit'] : []),
+      ...(nombra.length ? [`nombra ${nombra.length} PR, ${siguen.length} siguen abiertos${siguen.length ? `: ${siguen.map((n) => `#${n}`).join(' ')}` : ''}`] : []),
+    ].join(' · ');
     alertas.push({
-      id: c.id, siguen,
-      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · nombra ${nombra.length} PR, ${siguen.length} siguen abiertos: ${siguen.map((n) => `#${n}`).join(' ')} · comentario ${c.id}`,
+      id: c.id, siguen, porMain,
+      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · ${deQue} · comentario ${c.id}`,
     });
   }
   return {
@@ -1227,14 +1248,20 @@ async function todo() {
   // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
   // Cuándo CORRIÓ: las corridas de su workflow. `null` si no llegan (la sección lo dice; no lo da por bueno).
   const pasadas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA}/runs?per_page=10`]).workflow_runs) ?? null;
-  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas });
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas, ultimoMerge });
   tramo('vigía');
   // 10 · QA. Una petición GET a producción con la cookie guardada: lo mismo que `estado`. No entra ni renueva.
   const dichoQA = [];
   const codigoQA = await ejecutarQA(['estado'], { out: (s) => dichoQA.push(s), err: (s) => dichoQA.push(s) }).catch((e) => { dichoQA.push(`reventó: ${String((e && e.message) || e).split('\n')[0]}`); return undefined; });
   const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
   tramo('QA');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
+  // 11 · disco. La unidad de la casa (transcripts, temporales) y la de los árboles. Sólo lee.
+  const disco = intentar(() => medirDisco({ arboles: raiz }));
+  const censoTmp = intentar(() => censarTmp(dirDeTrabajos()));
+  const barrible = censoTmp && censoTmp.pudo ? { bytes: tmpBarribles(censoTmp).reduce((a, f) => a + f.bytes, 0), trabajos: tmpBarribles(censoTmp).length, horas: HORAS_SIN_ACTIVIDAD } : null;
+  const sDis = seccionDisco({ unidades: disco && disco.unidades, zonas: disco ? disco.zonas : [], barrible });
+  tramo('disco');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);

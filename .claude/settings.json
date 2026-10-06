@@ -5,6 +5,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node .claude/hooks/identidad.mjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/latido-arranque.mjs",
             "timeout": 120
           }
@@ -18,6 +22,15 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/guard-dangerous.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/carril.mjs"
           }
         ]
       }

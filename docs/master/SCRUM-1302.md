@@ -249,3 +249,63 @@ Decisiones mías, no firmadas, que el orquestador puede cambiar: abrir la línea
 ## Sigue abierto en este ticket
 
 C (el aviso vacío de «Ordenar en líneas») sin firmar, a propósito. D y E, camino fiscal. Y la pregunta de si los cuatro mensajes del servidor se pueden enseñar tal cual.
+
+# APÉNDICE · C: «Ordenar en líneas» que falla se dice, y no borra la propuesta que ya hay (S4)
+
+**Medido contra:** `origin/main` = `8f77f96dd12c0cc7cad87f94d166b58601741b5f` · 2026-10-06T18:06:42Z
+A9: comprobación → `tests/scrum1302c-ordenar-que-falla-no-borra-la-propuesta.test.mjs`
+
+Carril S4 (`public/dashboard/js/parteDetailView.js`) · rama `scrum-1302c-ordenar-que-falla-no-borra-la-propuesta`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) en esta sesión, antes de editar la vista. Sin clases, tokens ni colores nuevos: el aviso es el `alert error` de la casa, igual que el del punto B. Declaro lo que choca con ella: lleva `style.marginTop = '8px'`, copiado del aviso vecino de la misma vista; no hay clase compartida que dé ese hueco y `styles.css` es carril de S2.
+
+## El defecto
+
+Ejecutado en yaqu.app el 6-oct (comentario 18486, 18 filas). Si la ruta del dictado no contesta, el párrafo del aviso existe con texto «» y alto 0. Y si en pantalla había una propuesta, el fallo pintaba una propuesta vacía encima: tres líneas, una corregida a mano, y un 500 se las llevaba sin una palabra.
+
+## Lo firmado
+
+Aprobado por el orquestador por delegación del fundador, 6-oct-2026 — SCRUM-1302 comentario 18491, las tres cosas juntas. Ficha: `docs/microcopy/2026-10-06-SCRUM-1302-ordenar-que-falla.md`.
+
+- El texto: «No se ha podido ordenar el dictado — vuelve a intentarlo o escribe las líneas tú». Casos: no llega la petición, 5xx, 502.
+- Conducta 1: si ya hay una propuesta en pantalla y el nuevo intento falla, la propuesta no se toca.
+- Conducta 2: 409 y 404 releen el parte, sin texto nuevo.
+
+## Lo construido
+
+- El aviso tiene sitio propio (`[data-dictado-aviso]`), bajo el botón y fuera del hueco de la propuesta. Así se puede decir sin pintar encima de lo que el técnico corrigió. `role="alert"`, clase `alert error`, y se trae a la vista con `scrollIntoView({ block: 'nearest' })`, como el del punto B desde SCRUM-1475.
+- Un intento que falla ya no pinta nada en el hueco de la propuesta.
+- 409 y 404: `renderParteDetailView`, lo mismo que hace un campo que no se guarda.
+- Se quita cuando un intento siguiente recibe respuesta.
+- Se decide por `err.status`, que pone `apiRequest`; sin código es «no llegó» (sin red, o el plazo venció).
+
+**La trampa que este cambio abría, y por eso va en la línea `A9:`.** Dejar viva la propuesta de antes deja vivo su botón «Añadir al parte» con la escucha que ya tenía. El cable del dictado ataba una escucha al botón de añadir después de CADA intento: con la propuesta conservada, cada fallo le habría atado otra, y un solo toque habría guardado las líneas dos o tres veces en un documento que se firma. Ahora sólo se ata cuando acaba de nacer una propuesta nueva. Lo sujeta el test «guarda UNA vez», que cae si se quita esa línea (mutante M4).
+
+## Lo que la firma no cubre, y cómo queda
+
+- **Otro rechazo (400, 401, 403…):** no sale texto (no hay ninguno firmado para él) y la propuesta tampoco se toca. Sigue callado, como antes; lo que cambia es que ya no borra.
+- **La ruta contesta 200 sin líneas (la IA caída) con una propuesta en pantalla:** NO TOCADO. La propuesta se sustituye por el aviso del servidor, con lo corregido dentro. Medido el 6-oct, 2 de 2 ventanas. Es el mismo daño por otro camino, pero ahí el aviso diría «ninguna línea» encima de tres líneas: pide que lo mire quien firma.
+- **«Añadir al parte» con el guardado fallando:** NO TOCADO. La propuesta se sustituye por «No se han podido guardar las líneas — vuelve a intentarlo», y lo que habría que reintentar ya no está en pantalla. Medido el 6-oct, 2 de 2 ventanas.
+
+## Verificado, ejecutando
+
+`tests/scrum1302c-ordenar-que-falla-no-borra-la-propuesta.test.mjs`: la vista real en el banco, servida por `fetch`, así que el error que decide es el que fabrica el `apiRequest` de verdad.
+
+- **Rojo antes** (con la vista de `origin/main`): 1 de 9; caen los ocho del defecto y pasa el control.
+- **Verde después:** 9 de 9.
+- **Por mutación:** base verde y 15 mutantes de 15 mueren, cada uno con su `git diff --numstat` al lado.
+
+**En el navegador**, con el `parteDetailView.js` de esta rama servido encima de yaqu.app (build `8f77f96d`, cuenta QA, parte 9, service worker bloqueado, control del interceptor antes de tocar; a producción no llega nada que no sea GET). 2 ventanas (390×844 y 1280×800) × 12 casos = 24 filas, 0 rotas:
+
+- 500, sin red y 502: el texto firmado, letra a letra, a 8 px del botón; 366×63 en móvil y 984×42 en escritorio; entero en la ventana y sin nada encima. El dictado sigue escrito (70 caracteres) y el botón vuelve.
+- Propuesta de tres líneas, una corregida, y dos intentos fallidos seguidos: las tres siguen con la corrección, un solo aviso, y «Añadir al parte» manda UN `PATCH`.
+- 409: una relectura; la ficha sale firmada, sin botón de ordenar y sin casillas. La relectura se sirvió con el parte 10 de la cuenta, que está firmado de verdad.
+- 404 con la relectura también en 404: «No se ha podido cargar el parte. Vuelve a intentarlo.»
+- Con el botón pegado al borde inferior (la ventana encogida hasta dejarlo a 2 px): el aviso queda entero. **Control negativo:** la misma fila sirviendo la vista sin el `scrollIntoView` lo deja FUERA de la ventana, en las dos.
+- Control: la ruta contesta 200 sin líneas y sale el aviso del servidor, no éste.
+
+**NO medido:** yaqu.app con el JS ya desplegado (se mira cuando mergee) · un móvil de verdad · una sesión caducada (401) de verdad · el plazo vencido de `apiRequest` (se decide igual que sin red, por lectura del código).
+
+## Sigue abierto en este ticket tras C
+
+D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.

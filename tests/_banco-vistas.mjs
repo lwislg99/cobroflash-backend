@@ -47,6 +47,10 @@
 //      `<tr>` es hijo de la tabla; en Edge, nieto.
 //   4. `textContent` NO se agrega. El texto de un elemento es el que va justo detrás de su etiqueta de
 //      apertura, no la suma de sus descendientes: `<span>a <b>b</b></span>` da «a» y no «a b».
+//   5. SIN nodos de texto nacidos del marcado (SCRUM-1486, consecuencia del 4). `firstChild` y
+//      `nextSibling` devuelven el primer hijo y el siguiente hermano que el banco TIENE: de
+//      `<div> <b>x</b></div>` el navegador da el espacio y aquí sale el `<b>`. Para colocar con
+//      `insertBefore` el orden entre elementos es el mismo; para LEER ese nodo, no.
 //
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
@@ -306,7 +310,44 @@ export function nodo(tag, reg) {
         for (const d of todos(h)) if (d && d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
       }
     },
-    insertBefore(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.unshift(h); return h; },
+    // 🔴 SCRUM-1486 · `insertBefore` MIRA SU REFERENCIA. Recibía UN argumento y hacía `unshift`
+    // siempre: lo insertado iba el primero, se pidiera donde se pidiera. No faltaba la API —eso
+    // revienta y se ve—: EXISTÍA y hacía otra cosa en silencio. Medido antes de tocarla (el censo,
+    // con sus cifras, en `docs/master/SCRUM-1486.md`): había tests montando un DOM con el título y
+    // el subtítulo de Ajustes invertidos, o con el selector de Productos el primero de su bloque.
+    //
+    // ⚠️ VA JUNTO A `firstChild` Y `nextSibling`, que tampoco existían (daban `undefined`). Arreglar
+    // sólo esta línea EMPEORABA el banco: `x.insertBefore(nuevo, x.firstChild)` caía bien por
+    // accidente —referencia `undefined` + `unshift`— y con un `insertBefore` fiel y sin
+    // `firstChild` se iría al final.
+    //
+    // · sin referencia (`null`, y `undefined` como lo trata el navegador) → al final;
+    // · la referencia es el propio nodo → se queda donde estaba (el estándar toma su siguiente);
+    // · la referencia NO es hija de este padre → LANZA, como el navegador (`NotFoundError`), y antes
+    //   de mover nada. Adivinarle un sitio es lo que este arreglo viene a quitar; mismo criterio
+    //   que la posición inexistente de `_colocarAdyacente`.
+    insertBefore(h, ref) {
+      let r = ref || null;
+      if (r && !n.hijos.includes(r)) {
+        const e = new Error('insertBefore: el nodo de referencia no es hijo de este padre');
+        e.name = 'NotFoundError';
+        throw e;
+      }
+      if (r && r === h) r = h.nextSibling;
+      if (h) { desengancha(h); h._padre = n; }
+      const i = r ? n.hijos.indexOf(r) : -1;
+      n.hijos.splice(i < 0 ? n.hijos.length : i, 0, h);
+      return h;
+    },
+    // SCRUM-1486 · `null` cuando no hay, como el navegador: nunca `undefined`. (Lo que NO devuelven
+    // es un nodo de texto nacido del marcado: límite 5 de la cabecera.)
+    get firstChild() { return n.hijos[0] || null; },
+    get nextSibling() {
+      const p = n._padre;
+      if (!p) return null;
+      const i = p.hijos.indexOf(n);
+      return (i >= 0 && p.hijos[i + 1]) || null;
+    },
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
