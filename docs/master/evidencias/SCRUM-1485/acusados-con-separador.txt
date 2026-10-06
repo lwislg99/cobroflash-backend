@@ -1,0 +1,136 @@
+POBLACION · 39 ficheros × 2 pasadas · árbol D:\MILLONARIO\cobroFlash\wt-s5-6octe
+DIFIERE · tests/scrum1091-guard-cwd-posix.test.mjs · sin: 8/8 (exit 0) · con «/»: 7/8 (exit 1)
+    cae CON · SCRUM-1091 · en win32, `/<letra>/…` se traduce a `<letra>:/…` — y ahí YA NO duplica la letra
+IGUAL-VERDE · tests/scrum1093h-censo-fecha-sin-zona.test.mjs · sin: 21/21 (exit 0) · con «/»: 21/21 (exit 0)
+IGUAL-VERDE · tests/scrum124-r28-graph-facebook-guard.test.mjs · sin: 1/1 (exit 0) · con «/»: 1/1 (exit 0)
+IGUAL-VERDE · tests/scrum1281-fixture-git-raiz-propia.test.mjs · sin: 4/4 (exit 0) · con «/»: 4/4 (exit 0)
+IGUAL-VERDE · tests/scrum129-n8n-guard.test.mjs · sin: 1/1 (exit 0) · con «/»: 1/1 (exit 0)
+IGUAL-VERDE · tests/scrum1298-mesa-por-puesto.test.mjs · sin: 12/12 (exit 0) · con «/»: 12/12 (exit 0)
+IGUAL-ROJO · tests/scrum1398-la-sonda-de-colision.test.mjs · sin: 0/7 (exit 1) · con «/»: 0/7 (exit 1)
+    cae SIN · SCRUM-1398 · ⓪ la copia aislada tiene de dónde cargar: el script declara sus módulos de dist y existen
+    cae SIN · SCRUM-1398 · ① con las dos banderas, el sobre lleva ESA serie y ESA fecha, y lo avisa
+    cae SIN · SCRUM-1398 · ② la medición del 28-sep se puede repetir: misma serie, dos fechas, dos registros distintos
+    cae SIN · SCRUM-1398 · ③ una --fecha-propia con otro formato FALLA CERRADO: sale 1 y no escribe nada
+    cae SIN · SCRUM-1398 · ④ sin banderas hace lo de siempre: serie de prueba nueva, fecha de hoy y ningún aviso de sonda
+    cae SIN · SCRUM-1398 · ⑤ las banderas de la sonda NO son --serie ni --fecha, que siguen señalando la factura que se anul
+    cae SIN · SCRUM-1398 · ⑥ la separación funciona: el script escribió en su copia y el tmp/ del árbol no se ha movido
+    cae CON · SCRUM-1398 · ⓪ la copia aislada tiene de dónde cargar: el script declara sus módulos de dist y existen
+    cae CON · SCRUM-1398 · ① con las dos banderas, el sobre lleva ESA serie y ESA fecha, y lo avisa
+    cae CON · SCRUM-1398 · ② la medición del 28-sep se puede repetir: misma serie, dos fechas, dos registros distintos
+    cae CON · SCRUM-1398 · ③ una --fecha-propia con otro formato FALLA CERRADO: sale 1 y no escribe nada
+    cae CON · SCRUM-1398 · ④ sin banderas hace lo de siempre: serie de prueba nueva, fecha de hoy y ningún aviso de sonda
+    cae CON · SCRUM-1398 · ⑤ las banderas de la sonda NO son --serie ni --fecha, que siguen señalando la factura que se anul
+    cae CON · SCRUM-1398 · ⑥ la separación funciona: el script escribió en su copia y el tmp/ del árbol no se ha movido
+IGUAL-VERDE · tests/scrum1430-sesion-qa-estado.test.mjs · sin: 11/11 (exit 0) · con «/»: 11/11 (exit 0)
+IGUAL-VERDE · tests/scrum1473-latido-disco-y-barrido.test.mjs · sin: 12/12 (exit 0) · con «/»: 12/12 (exit 0)
+IGUAL-VERDE · tests/scrum189-citas-con-destino.test.mjs · sin: 2/2 (exit 0) · con «/»: 2/2 (exit 0)
+DIFIERE · tests/scrum226-url-credencial-en-argv.test.mjs · sin: 8/8 (exit 0) · con «/»: 1/8 (exit 1)
+    cae CON · SCRUM-226 · detecta --from-url en el argv de un spawn (el defecto vivo de SCRUM-196)
+    cae CON · SCRUM-226 · detecta --to-url y --url igual, y en cp.execFileSync (callee con punto)
+    cae CON · SCRUM-226 · detecta process.env.DATABASE_URL* crudo como elemento de argv (punto y corchete)
+    cae CON · SCRUM-226 · NO marca --from-schema-datasource: la URL va por el entorno (db-push-prod)
+    cae CON · SCRUM-226 · NO marca una URL YA sin contraseña + PGPASSWORD en el entorno (backup-dump)
+    cae CON · SCRUM-226 · un flag prohibido en COMENTARIO o fuera de un spawn no cuenta (AST, no grep)
+    cae CON · SCRUM-226 · GUARD: ningún spawn del repo mete una URL con credencial en argv
+DIFIERE · tests/scrum245-sin-listas-blancas.test.mjs · sin: 5/5 (exit 0) · con «/»: 0/5 (exit 1)
+    cae CON · SCRUM-245 · SUELO: el detector encuentra el camino de envío y SÍ ve una lista blanca
+    cae CON · SCRUM-245 · el falso positivo de las series sale POR CONSTRUCCIÓN, no por exención
+    cae CON · SCRUM-245 · el opt-out (pertenencia POSITIVA) no se confunde con una lista blanca
+    cae CON · SCRUM-245 · J0: ninguna lista blanca de destinos decide un envío sin estar condicionada al demo
+    cae CON · SCRUM-245 · CONTROL POSITIVO: el freno del demo sigue existiendo y sigue condicionado
+DIFIERE · tests/scrum253-adopcion.test.mjs · sin: 12/12 (exit 0) · con «/»: 10/12 (exit 1)
+    cae CON · SCRUM-253 · SUELO: el analizador ve de verdad las variables de entorno del código
+    cae CON · SCRUM-253 · nadie decide quién es el dueño del turno leyendo una variable de entorno
+IGUAL-ROJO · tests/scrum289b-factura-suelta.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum289b-factura-suelta.test.mjs
+    cae CON · tests\\scrum289b-factura-suelta.test.mjs
+IGUAL-ROJO · tests/scrum294-recargo-caja.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum294-recargo-caja.test.mjs
+    cae CON · tests\\scrum294-recargo-caja.test.mjs
+IGUAL-ROJO · tests/scrum347-origen-de-la-factura.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum347-origen-de-la-factura.test.mjs
+    cae CON · tests\\scrum347-origen-de-la-factura.test.mjs
+IGUAL-VERDE · tests/scrum351-diagnostico-dependencias.test.mjs · sin: 7/7 (exit 0) · con «/»: 7/7 (exit 0)
+IGUAL-ROJO · tests/scrum360-entorno-guardado.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum360-entorno-guardado.test.mjs
+    cae CON · tests\\scrum360-entorno-guardado.test.mjs
+CIEGO · tests/scrum378-carga-por-pagina.test.mjs · sin: 7/7 (exit 0) · con «/»: 0/1 (exit 1)
+    cae CON · tests\\scrum378-carga-por-pagina.test.mjs
+DIFIERE · tests/scrum381-scripts-cargables.test.mjs · sin: 2/5 (exit 1) · con «/»: 0/5 (exit 1)
+    cae SIN · SCRUM-381 · SUELO: hay scripts, tienen dependencias y `dist/` está construido
+    cae SIN · SCRUM-381 · 🔴 todo `import` de un script RESUELVE a un fichero que existe
+    cae SIN · SCRUM-381 · 🔴 y quitar un símbolo del destino también cae, nombrando cuál
+    cae CON · SCRUM-381 · SUELO: hay scripts, tienen dependencias y `dist/` está construido
+    cae CON · SCRUM-381 · 🔴 todo `import` de un script RESUELVE a un fichero que existe
+    cae CON · SCRUM-381 · 🔴 todo símbolo importado EXISTE en el fichero de destino
+    cae CON · SCRUM-381 · 🔴 borrar un fichero importado por un script hace caer el guard NOMBRÁNDOLO
+    cae CON · SCRUM-381 · 🔴 y quitar un símbolo del destino también cae, nombrando cuál
+IGUAL-VERDE · tests/scrum393-marcadores-de-conflicto.test.mjs · sin: 6/6 (exit 0) · con «/»: 6/6 (exit 0)
+DIFIERE · tests/scrum401-anular-no-borra-el-cobro.test.mjs · sin: 5/5 (exit 0) · con «/»: 3/5 (exit 1)
+    cae CON · SCRUM-401 · el `update` de la anulación NO borra `paidAt`
+    cae CON · SCRUM-401 · SUELO: `annulled` se ESCRIBE desde un único sitio
+IGUAL-ROJO · tests/scrum458-paquete-de-precarga.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum458-paquete-de-precarga.test.mjs
+    cae CON · tests\\scrum458-paquete-de-precarga.test.mjs
+DIFIERE · tests/scrum521-resolvedor-de-importadores.test.mjs · sin: 6/6 (exit 0) · con «/»: 1/6 (exit 1)
+    cae CON · SCRUM-521 · 🔴 CONTROL POSITIVO: los importadores salen NOMBRADOS, uno a uno
+    cae CON · SCRUM-521 · 🔴 LAS DOS RAMAS DE `resolver` devuelven el MISMO separador
+    cae CON · SCRUM-521 · 🔴 SUELO: cuando no puede mirar, LANZA — no devuelve []
+    cae CON · SCRUM-521 · 🔴 los números CUADRAN: con importadores + sin importadores = total
+    cae CON · SCRUM-521 · 🔴 el cero falso del árbol real ya no lo es
+CIEGO · tests/scrum590-el-destino-pasa-por-el-resolvedor.test.mjs · sin: 3/3 (exit 0) · con «/»: 0/1 (exit 1)
+    cae CON · tests\\scrum590-el-destino-pasa-por-el-resolvedor.test.mjs
+IGUAL-VERDE · tests/scrum637-un-numero-una-regla.test.mjs · sin: 6/6 (exit 0) · con «/»: 6/6 (exit 0)
+IGUAL-VERDE · tests/scrum646-cortafuegos-defaultvat.test.mjs · sin: 5/5 (exit 0) · con «/»: 5/5 (exit 0)
+DIFIERE · tests/scrum647-presupuesto-tambien-neutral.test.mjs · sin: 2/7 (exit 1) · con «/»: 0/7 (exit 1)
+    cae SIN · SCRUM-647 · SUELO: leo un PDF de presupuesto de verdad
+    cae SIN · SCRUM-647 · ① CONTROL NEGATIVO: sin pasar el impuesto, el papel no ha cambiado
+    cae SIN · SCRUM-647 · ② con el impuesto puesto desde fuera, «IVA» DESAPARECE del papel
+    cae SIN · SCRUM-647 · ③ la forma tampoco depende del juego de tipos español
+    cae SIN · SCRUM-647 · 🔴 EL CONTROL NEGATIVO NO PUEDE CAZAR ESTA REGRESIÓN — y por eso hay tres
+    cae CON · SCRUM-647 · SUELO: leo un PDF de presupuesto de verdad
+    cae CON · SCRUM-647 · ① CONTROL NEGATIVO: sin pasar el impuesto, el papel no ha cambiado
+    cae CON · SCRUM-647 · ② con el impuesto puesto desde fuera, «IVA» DESAPARECE del papel
+    cae CON · SCRUM-647 · ③ la forma tampoco depende del juego de tipos español
+    cae CON · SCRUM-647 · 🔴 EL CONTROL NEGATIVO NO PUEDE CAZAR ESTA REGRESIÓN — y por eso hay tres
+    cae CON · SCRUM-647 · el documento ya no tiene DOS criterios: ni «IVA» grabado ni `locale.vatName`
+    cae CON · SCRUM-647 · 🔴 TODOS los llamantes pasan el impuesto, o Perú regresa en silencio
+IGUAL-ROJO · tests/scrum650-asignacion-a-varios.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum650-asignacion-a-varios.test.mjs
+    cae CON · tests\\scrum650-asignacion-a-varios.test.mjs
+IGUAL-ROJO · tests/scrum72-pdfs-privados.test.mjs · sin: 0/1 (exit 1) · con «/»: 0/1 (exit 1)
+    cae SIN · tests\\scrum72-pdfs-privados.test.mjs
+    cae CON · tests\\scrum72-pdfs-privados.test.mjs
+DIFIERE · tests/scrum784-el-cuarto-veredicto.test.mjs · sin: 5/5 (exit 0) · con «/»: 4/5 (exit 1)
+    cae CON · SCRUM-784 · 🔴 ningún test EXIGE que dos grafías de la misma ruta difieran
+IGUAL-VERDE · tests/scrum813-trinquete-de-zona.test.mjs · sin: 43/43 (exit 0) · con «/»: 43/43 (exit 0)
+DIFIERE · tests/scrum829b-la-ref-rancia-se-poda.test.mjs · sin: 3/3 (exit 0) · con «/»: 2/3 (exit 1)
+    cae CON · SCRUM-829b · SUELO: la ref RANCIA está en el clon y ya no en origen, y el banco no es el repo real
+DIFIERE · tests/scrum836-ancla-de-mutacion-viva.test.mjs · sin: 16/17 (exit 1) · con «/»: 1/17 (exit 1)
+    cae SIN · SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada
+    cae CON · SCRUM-836 · 🔴 un ancla que ya no está en su fichero se DENUNCIA, con guard y fichero
+    cae CON · SCRUM-836 · ✅ CONTROL POSITIVO: con las dos anclas presentes NO acusa a nadie
+    cae CON · SCRUM-836 · un fichero que ya no existe también es un ancla muerta, y se dice aparte
+    cae CON · SCRUM-836 · SUELO: el censo del árbol REAL trae declaraciones de verdad
+    cae CON · SCRUM-836d · 🔴 EL QUE DECIDE: un `cae` que nombra un test inexistente CAE, con fichero y declaración
+    cae CON · SCRUM-836d · 🔴 MUTACIÓN: apagar la comprobación devuelve el verde falso
+    cae CON · SCRUM-836d · ✅ POSITIVO: un `cae` que SÍ nombra su test no se toca, y basta con UN test
+    cae CON · SCRUM-836d · ⚠️ un guard con nombres de test CONSTRUIDOS no se acusa: se declara aparte
+    cae CON · SCRUM-836d · 🔴 NINGUNA mutación declarada nombra un test que no existe
+    cae CON · SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada
+    cae CON · SCRUM-1321 · 🔴 EL CASO REAL: un ancla que casa ANTES en otra línea se denuncia, con sus líneas
+    cae CON · SCRUM-1321 · ✅ POSITIVO: la misma mutación, anclada con su contexto, NO se denuncia
+    cae CON · SCRUM-1321 · ✅ el guard que se muta a sí mismo y CITA su ancla no es ambiguo: se deriva, no se lista
+    cae CON · SCRUM-1321 · 🔴 con el array movido ARRIBA la primera ocurrencia es la CITA, y se denuncia
+    cae CON · SCRUM-1321 · 🔴 citarse a sí mismo no absuelve una SEGUNDA ocurrencia de código
+    cae CON · SCRUM-1321 · 🔴 NINGUNA mutación declarada tiene el ancla ambigua
+IGUAL-VERDE · tests/scrum864-el-temporal-que-se-borra.test.mjs · sin: 7/7 (exit 0) · con «/»: 7/7 (exit 0)
+IGUAL-VERDE · tests/scrum899c-relevar-y-contexto.test.mjs · sin: 14/14 (exit 0) · con «/»: 14/14 (exit 0)
+DIFIERE · tests/scrum932-el-turno-tiene-mecanismo.test.mjs · sin: 12/12 (exit 0) · con «/»: 9/12 (exit 1)
+    cae CON · scrum932: lo que ya está en el entorno NO se pisa
+    cae CON · scrum932: CONTROL POSITIVO del cargador — sí pone una clave que no estaba
+    cae CON · scrum932: el informe NO puede llevar valores, solo rutas y nombres
+IGUAL-VERDE · tests/scrum951a-equipo-configurable.test.mjs · sin: 20/20 (exit 0) · con «/»: 20/20 (exit 0)
+IGUAL-VERDE · tests/scrum996-suelo-de-arranque.test.mjs · sin: 22/22 (exit 0) · con «/»: 22/22 (exit 0)
+CIEGOS=2
+EXIT=0

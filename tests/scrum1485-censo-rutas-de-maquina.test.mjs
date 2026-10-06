@@ -180,7 +180,7 @@ const DECLARADOS = [
 
 test('SCRUM-1485 · GUARD: en `tests/` ninguna ruta de máquina se compara con un separador escrito a mano', () => {
   const c = censar(RAIZ);
-  // SUELO: que haya mirado, y que sepa ver comparaciones con rutas (hoy 1.438 ficheros y 78 sitios).
+  // SUELO: que haya mirado, y que sepa ver comparaciones con rutas. Las cifras del día, en el registro.
   assert.ok(c.poblacion > 1000, `SUELO: sólo ha leído ${c.poblacion} ficheros de tests/`);
   assert.deepEqual(c.sinLeer, [], '🔴 hay ficheros de tests/ que el censo no ha sabido leer: para ésos está CIEGO');
   assert.ok(c.conRutas > 500, `SUELO: sólo ${c.conRutas} ficheros tocan rutas; el censo ha dejado de reconocerlas`);
