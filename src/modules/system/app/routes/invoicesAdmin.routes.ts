@@ -27,6 +27,7 @@ import {
 
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
@@ -242,7 +243,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -345,7 +346,7 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
 router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -522,7 +523,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
 router.put('/:id/tags', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
     // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
     // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
@@ -1266,7 +1267,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
 router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Scope multi-tenant: 404 si no es del merchant.
     const owned = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
@@ -1327,7 +1328,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
     // asignarían documentos de otro merchant sabiendo contar.
