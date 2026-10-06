@@ -312,9 +312,9 @@ export function nodo(tag, reg) {
     },
     // 🔴 SCRUM-1486 · `insertBefore` MIRA SU REFERENCIA. Recibía UN argumento y hacía `unshift`
     // siempre: lo insertado iba el primero, se pidiera donde se pidiera. No faltaba la API —eso
-    // revienta y se ve—: EXISTÍA y hacía otra cosa en silencio. Medido antes de tocarla (censo en
-    // el ticket): 15 llamadas en 7 vistas, y 13 ficheros de test montaban un DOM con el título y el
-    // subtítulo de Ajustes invertidos, o con el selector de Productos el primero de cinco.
+    // revienta y se ve—: EXISTÍA y hacía otra cosa en silencio. Medido antes de tocarla (el censo,
+    // con sus cifras, en `docs/master/SCRUM-1486.md`): había tests montando un DOM con el título y
+    // el subtítulo de Ajustes invertidos, o con el selector de Productos el primero de su bloque.
     //
     // ⚠️ VA JUNTO A `firstChild` Y `nextSibling`, que tampoco existían (daban `undefined`). Arreglar
     // sólo esta línea EMPEORABA el banco: `x.insertBefore(nuevo, x.firstChild)` caía bien por

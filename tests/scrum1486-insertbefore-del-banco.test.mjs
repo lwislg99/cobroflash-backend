@@ -5,10 +5,10 @@
 // lo insertado SIEMPRE el primero. Y `firstChild` y `nextSibling` no existían (`undefined`).
 //
 // No era un hueco de los que revientan —ésos se ven—: era una API que contesta, y contesta mal.
-// Medido antes de arreglar (el censo está en el ticket): 15 llamadas en 7 vistas, 22 ficheros de
-// test las ejecutan y 13 montaban un DOM que no es el del navegador (el título y el subtítulo de
-// Ajustes invertidos; el selector de Productos el primero de cinco; la tarjeta de la Inicio la
-// primera). NINGÚN veredicto dependía de ello: 184 tests antes, los mismos 184 después.
+// Medido antes de arreglar: varias vistas montaban en el banco un DOM que no es el del navegador
+// (el título y el subtítulo de Ajustes invertidos; el selector de Productos el primero de su
+// bloque; la tarjeta de la Inicio la primera). NINGÚN veredicto dependía de ello. El censo, con
+// sus cifras y su fecha, está en el ticket y en `docs/master/SCRUM-1486.md`: aquí no se copia.
 //
 // 🔴 LAS TRES PIEZAS VAN JUNTAS, y por eso van en el mismo fichero. Con `insertBefore` fiel y sin
 // `firstChild`, `x.insertBefore(nuevo, x.firstChild)` —que hoy cae bien POR ACCIDENTE: referencia
