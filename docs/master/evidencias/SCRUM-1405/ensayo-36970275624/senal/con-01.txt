@@ -1,0 +1,25 @@
+
+[señal de nombres v1] medible=si ausentes=27 ficheros_con_ausentes=4 dudosos=6 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10269 tap_fail=8
+  POBLACIÓN: 1206 ficheros de tests/ · 9762 llamadas test()/it() (censo de SCRUM-708: 9762, coincide) · 9643 con nombre literal (9514 distintos)
+  PUNTO CIEGO: 119 llamadas NO se comparan (119 con el nombre construido, 0 sin nombre) en 68 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 129 nombres declarados más de una vez (129 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2613601 caracteres · 10269 líneas de test · 0 de suite · resumen: tests 10269 · fail 8 · entero
+  🔴 FALTAN AL MENOS 27 casos declarados, en 4 fichero(s). La tanda no informó de ellos:
+     tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan 4 de 10 (cola) · posiciones 7–10 · líneas 230–341
+     tests/scrum813-trinquete-de-zona.test.mjs · faltan 7 de 28 (cola) · posiciones 22–28 · líneas 567–743
+     tests/vigia-atascados.test.mjs · faltan 8 de 64 (cola) · posiciones 57–64 · líneas 636–677
+     tests/zz1405-copia-de-vigia-atascados.test.mjs · faltan 8 de 64 (cola) · posiciones 57–64 · líneas 636–677 · el fichero sale en el TAP como UNA línea: corrió y no informó de sus casos
+  🟠 DUDOSOS: faltan 6 apariciones de 6 nombre(s) repetido(s), y el TAP no dice de qué fichero:
+     «y una cuenta que solo se le parece NO» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «🔴 CONTROL NEGATIVO REAL \#1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+     «un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco» · declarado 2, registrado 1 · vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs
+
+::notice title=señal de nombres · FALTAN al menos 27 en 4 fichero(s)::[señal de nombres v1] medible=si ausentes=27 ficheros_con_ausentes=4 dudosos=6 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10269 tap_fail=8
+::warning title=señal de nombres · faltan casos::tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs · faltan 4 de 10 (cola) · posiciones 7–10 · líneas 230–341. La tanda no informó de ellos y salió igual.
+::warning title=señal de nombres · faltan casos::tests/scrum813-trinquete-de-zona.test.mjs · faltan 7 de 28 (cola) · posiciones 22–28 · líneas 567–743. La tanda no informó de ellos y salió igual.
+::warning title=señal de nombres · faltan casos::tests/vigia-atascados.test.mjs · faltan 8 de 64 (cola) · posiciones 57–64 · líneas 636–677. La tanda no informó de ellos y salió igual.
+::warning title=señal de nombres · faltan casos::tests/zz1405-copia-de-vigia-atascados.test.mjs · faltan 8 de 64 (cola) · posiciones 57–64 · líneas 636–677 · el fichero sale en el TAP como UNA línea: corrió y no informó de sus casos. La tanda no informó de ellos y salió igual.
+::warning title=señal de nombres · dudosos::faltan 6 apariciones de 6 nombre(s) repetido(s): «y una cuenta que solo se le parece NO» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «🔴 el suelo ejerce también el rojo obligatorio y la edad, no solo el DIRTY» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «la pasada lee reglas y checks, guarda el umbral y comprueba TAMBIÉN el aviso» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «el workflow publica el aviso que compone la pasada, y le da el dueño para mencionarlo» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «🔴 CONTROL NEGATIVO REAL \#1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs) ; «un atasco que espera y ENTRA ya viejo sí avisa: es la edad lo que lo vuelve atasco» (vigia-atascados.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs)
