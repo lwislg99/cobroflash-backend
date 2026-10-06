@@ -203,3 +203,59 @@ El defecto que relata la firma (al técnico se le decía «Pide al cliente que f
 
 - `sinLineas` en un parte firmado: **ya estaba** en `main` desde el 28-sep («No se apuntó nada en este apartado.», c.17367, apéndice de más arriba). La firma del c.18205 decía «…en este parte.»; se retiró en el c.18207 porque el texto se pinta por bloque y bajo «Materiales» habría sido falso en un parte con horas.
 - `confirmarPropuesta`: sigue esperando al fundador (lo bloquea el clasificador de permisos). No se reintenta.
+
+# SCRUM-1215 · lote 3 (albarán) — la hoja que abre «Facturar lo entregado» se titula como su botón
+
+**Medido contra:** `origin/main` = `39af736efc8ccf7d2966063561421855b3e4c4e9` · 2026-10-06T11:20:13Z
+A9: comprobación → `tests/scrum1215d-hoja-facturar-lo-entregado.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Dos literales en `public/dashboard/js/jobDetailView.js` y una regla en `public/dashboard/css/styles.css` (`.modal-close`): sin marcado nuevo, sin clases nuevas, sin tokens nuevos.
+
+6-oct-2026 · **S2** (`s2-6octb`) · rama `scrum-1215-hoja-facturar-lo-entregado`. Firma: SCRUM-1215 c.18283, que aplica a la hoja el literal ya firmado para el botón en c.17496. Ficha: `docs/microcopy/2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md`. Cierra lo que el apartado del lote 3 de este registro dejó escrito como «Pendiente de c.17496, sin construir».
+
+## Qué había, medido antes de tocar
+
+`ya-esta 1215` da «YA ESTÁ desde el 2026-09-28», y es cierto para otros lotes: **estos dos literales no estaban hechos.** En `origin/main` la hoja decía «Facturar parte de ‹número›» (título) y «Facturar parte del albarán ‹número›» (`aria-label`).
+
+## Qué cambia
+
+- `openFacturarParcialSheet`: título «Facturar lo entregado · ‹número›» y `aria-label` «Facturar lo entregado del albarán ‹número›». El cuerpo de la hoja y la línea del `apiRequest` no se tocan (SCRUM-386).
+- Dos comentarios del mismo fichero que seguían llamando «Facturar parte» a la hoja y a su botón.
+- `.modal-close` no encoge (`flex-shrink: 0`) y guarda 8 px con el título. Es la cabecera compartida de todos los modales: ver «Lo que salió al medir».
+
+## El gemelo, buscado
+
+`git grep -i "facturar parte"` sobre `public/` y `src/`, en `origin/main`: 5 líneas. Dos son los literales de arriba. Dos son comentarios de `jobDetailView.js`, corregidos aquí. La quinta es un comentario de `public/dashboard/js/albaranDetailView.js:609`, que es de S4: **no se toca y queda diciendo «Facturar parte»**; no se pinta en ninguna pantalla. No hay ningún otro texto pintado con «Facturar parte». La hoja tiene un solo sitio que la abre (`jobDetailView.js`, la fila del albarán en la ficha del Trabajo).
+
+## Verificado, ejecutando
+
+`tests/scrum1215d-hoja-facturar-lo-entregado.test.mjs`, 4 tests: abre la hoja en el banco y lee lo que queda en `document.body`.
+
+- **Antes: 1 verde** (el suelo: la hoja se abre, se le leen título y `aria-label`, y el botón dice «Facturar lo entregado») **y 3 rojos**.
+- **Después: 4 de 4.**
+- Vecinos: 28 ficheros (386, 128, 302, 304, 905, 1164, 514, 1157, 1415, 644, 601, 402, los guards del patrón gemelo de 1452) 218 de 218; y los 69 ficheros que nombran la cabecera del modal o `styles.css`, 666 de 666. La dirigida completa son 471 ficheros: no se lanza en local, la juzga el CI.
+
+## Lo que salió al medir
+
+Banco local en Chromium (sin red), con `tokens.css` + `styles.css` y la cabecera de verdad (`modalHeader.js`), a 320, 390 y 1280 px; mide el texto pintado (`Range`), no la caja. Control positivo: un título sin espacios **se sale** del modal en los tres anchos, y la sonda lo dice.
+
+| ancho | título | líneas | ✕ antes del arreglo | ✕ después |
+| --- | --- | --- | --- | --- |
+| 320 | Facturar parte de AB260011 (el viejo) | 1 | 30 px | 30 px |
+| 320 | Facturar lo entregado · AB260011 | 2 | **26 px** | 30 px |
+| 320 | Facturar lo entregado · ALB-2026-000123 | 2 | **22 px** | 30 px |
+| 390 | Facturar lo entregado · AB260011 | 1 | 30 px | 30 px |
+| 390 | Facturar lo entregado · ALB-2026-000123 | 2 | **28 px** | 30 px |
+| 1280 | los tres | 1 | 29 px | 29 px |
+
+El título nuevo no se sale ni pisa la ✕ en ningún ancho. A 320 px parte en dos líneas, y al partir **encogía el botón de cerrar**: el defecto es de la cabecera compartida y ya estaba ahí para cualquier título largo; el texto nuevo lo destapa en esta hoja, así que se arregla con él.
+
+## Lo que NO se ha podido mirar
+
+- **No visto en yaqu.app.** La cuenta QA está caducada desde el 3-oct y además no tiene ningún albarán valorado, firmado y con algo pendiente, que es lo que hace salir el botón.
+- El arreglo de `.modal-close` se ha medido en esta cabecera con cuatro títulos. **No se han recorrido los demás modales del panel uno a uno**; la regla `.modal-ayuda + .modal-close` (SCRUM-416) sigue ganando donde hay «?».
+- El botón de cerrar mide 30 px, por debajo de los 44 de DESIGN.md. Ya era así y no se toca aquí.
+
+## Lo que NO entra aquí
+
+`confirmarPropuesta` y el lote 2 (libro registro): el ticket sigue abierto por ellos (c.18283).
