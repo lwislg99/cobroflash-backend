@@ -1,6 +1,6 @@
 # SCRUM-1457 · CRUCE DE CARRIL DECLARADO (`area-j3`, lo trabaja J2e) — un `merchantId` que no cabe en la columna: NADA construido; una línea espera el GO y tres son una decisión, no un arreglo
 
-**Medido contra:** `origin/main` = `6aaec0dc8f0267518a50f626299ae901f81e2ae1` · 2026-10-06T13:28:49Z
+**Medido contra:** `origin/main` = `b71719f32f623729debec40518e3c7c6d3601086` · 2026-10-06T13:45:45Z
 
 6-oct-2026 · **J2e** (puesto J2, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`).
 [Escrito por J2e, una sesión; no por el fundador.]

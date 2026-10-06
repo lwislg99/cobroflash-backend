@@ -1,6 +1,6 @@
 # SCRUM-1456 · Un id que no cabe en la columna daba 500 donde tocaba 400 — la ficha de cliente, y la forma única para los tres tickets de la familia (1455, 1456 y 1457)
 
-**Medido contra:** `origin/main` = `6aaec0dc8f0267518a50f626299ae901f81e2ae1` · 2026-10-06T13:28:49Z
+**Medido contra:** `origin/main` = `b71719f32f623729debec40518e3c7c6d3601086` · 2026-10-06T13:45:45Z
 
 6-oct-2026 · **J2e** (puesto J2, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`).
 [Escrito por J2e, una sesión; no por el fundador. Los tres tickets y SCRUM-1379, con sus comentarios, los he
@@ -141,7 +141,7 @@ Subido al orquestador el 6-oct y ACEPTADO por él en SCRUM-1456 c.18414: esas ci
 | `tests/scrum1456-…test.mjs`, sobre la rama con `main` `6aaec0dc` mezclado (26 lecturas: 19 de clientes, 7 de facturas) | 55 de 55 |
 | Ese test más `scrum1379`, `scrum1379b` y `scrum1379d` (los hermanos de S1) | 124 de 124, 0 saltos (corrido cuando el test tenía 51 casos; no repetido con los 55) |
 | `tests/banco-scrum1456/mutar.mjs` (dos mutantes por llamada: `Number.isInteger` y `Number.isSafeInteger`) | **50 de 50 caen** (25 llamadas × 2), cada uno tumba sólo los casos de su lectura; 0 vivas, 0 ciegas; T0 en verde; árbol intacto por sha256. Salida: `docs/evidencias/scrum1456/mutar.salida.txt` |
-| La dirigida (`node scripts/tests-que-cubren.mjs`: 310 ficheros de 1.247) | **NO CORRIDA al escribir esto**: pedí turno y estoy en cola detrás de otra tanda. Lo que salga va en un anexo de este registro o en la entrega |
+| La dirigida (`node scripts/tests-que-cubren.mjs --lanzar`, en 4 tramos, con `main` `b71719f3` mezclado) | 329 ficheros · 3.214 tests · 3.205 pasan · **2 caen**, los dos de `scrum1199-avisos-alta-cliente` con `MODULE_NOT_FOUND`: el worktree no tiene `node_modules` propio y ese test carga un módulo por ruta. No son de este cambio; el juez es el CI, donde se leen por nombre |
 
 `dist/` se construyó con `tsc --noCheck`: el worktree hereda el `node_modules` del checkout compartido,
 cuyo cliente de Prisma es del 25-sep. El juez de los tipos es el CI.
