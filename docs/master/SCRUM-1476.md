@@ -38,6 +38,9 @@ de SCRUM-1443).
 En los países de «Cotización» el texto queda como estaba. En España y Argentina cambia una letra en
 cada título.
 
+Firma: comentario 18404 del ticket (orquestador, por la delegación de microcopy). Ficha:
+`docs/microcopy/2026-10-06-SCRUM-1476-titulos-de-la-pestana.md`.
+
 `getLocaleJson` (lo que recibe el panel) no lleva los campos nuevos: la página pública se pinta en
 el servidor y el panel no los usa. `tests/locales.test.mjs` no se ha tocado.
 
@@ -49,6 +52,11 @@ que cada caso llega a SU página y no al formulario de firma.
 En rojo antes de tocar `src/`: 7 casos, 5 rojos (verdes el suelo y México, que no cambia). Después,
 26 ficheros (los que nombran la ruta o el locale, más `scrum409`, `scrum1344` y `scrum1415`):
 **225 de 225**. **No corrida la tanda entera** (1.347 MB libres al medir, por debajo del umbral).
+
+Los guards que censan `tests/` y `docs/` enteros (155 ficheros): 1.475 de 1.476. El rojo era
+`tests/scrum822-el-arbol-con-punto.test.mjs`, que se declaró CIEGO, y era de mi entorno: tenía el
+directorio temporal en una carpeta cuyo nombre empieza por punto. Con el temporal en una carpeta sin
+punto, 4 de 4; con la del punto, 3 de 4.
 
 | Mutante (sobre `dist`; BASE 7/7; comprobado que la sustitución se aplica y que se restaura idéntico) | Rojos |
 |---|---|
