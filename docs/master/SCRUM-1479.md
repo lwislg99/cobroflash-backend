@@ -1,74 +1,123 @@
-# SCRUM-1479 · El umbral de relevo pasa de 200k a 500k: el gemelo en código de la A19
+# SCRUM-1479 · El umbral de relevo pasa de 200k a 300k: el gemelo en código de la A19
 
 **Rama:** `scrum-1479-umbral-de-relevo-500k` · **Carril:** S5 · **Fecha:** 6-oct-2026
-**Medido contra:** `origin/main` = `c92d8182697e15667652b786d76a5f8398c2f770` · 2026-10-06 ~13:40Z
+**Medido contra:** `origin/main` = `bafb07340557298cd5bfde943d81ade8823d4a78` · 2026-10-06T19:32:39Z (hora de GitHub)
 
 A9: comprobación → `tests/scrum1070-vivas-relevo.test.mjs`
 
-> ⏳ **ESPERANDO AUTORIZACIÓN DE COSTE DEL FUNDADOR.** Construido y comiteado; **sin empujar**. Lo paró el
-> orquestador de Luis el 6-oct (~13:45Z) al ver la medición de abajo: el coste no está en su delegación
-> (`docs/equipo/limites-del-fundador.md`, «Lo que NO está delegado»), y la vez anterior esta misma constante
-> llevó el sí escrito del fundador. Este aviso se quita, con la respuesta y su fecha, antes de empujar.
+> ⚠️ **El nombre de la rama ya no describe lo que lleva.** Se abrió para 500k a las ~13:20Z; lo que entra es
+> **300k**. No se renombra: la rama consta con ese nombre en SCRUM-1479 y en SCRUM-1282.
 
 Gemelo de SCRUM-1282 (el texto de la A19 y la A25, de S0). Ninguno de los dos se cierra sin el otro.
 
+## Quién lo autorizó, y cómo se comprobó
+
+> **«El límite de relevo lo pongo en 300.000. Autorizado el coste.»** — Luis, fundador, 6-oct-2026 ~18:50Z.
+
+Está transcrito en SCRUM-1479 c.18513 (Jira lo creó a las 18:51:21Z). **Ese comentario solo no lo prueba**: en
+Jira los comentarios del orquestador y los del fundador salen de la misma cuenta, que es por lo que esta rama se
+paró dos veces ese día. Lo que se comprobó, leyendo y no deduciendo:
+
+- En el transcrito del chat del orquestador (`ed676fd1-…jsonl`, línea 22479) la frase es un turno `type: user`
+  con `origin.kind = "human"`, de 111 caracteres, que lleva sólo esa frase y la de #2001. Marca de la máquina
+  18:55:32Z; el reloj de esta máquina iba 5 min 38 s adelantado (medido a las 19:32Z), así que son ~18:50Z.
+- **Lo que también consta y se dice:** la frase la había redactado el orquestador en su turno anterior (línea
+  22476), como texto para que el fundador lo firmara, y el fundador la envió tal cual. Es su turno y su firma; las
+  palabras las propuso el orquestador.
+- **Desviación declarada:** la condición escrita por la mañana era «que el fundador lo escriba en la sesión de
+  S5». No ocurrió así. Se da por cumplida porque lo que esa condición protegía —que la autorización no fuera
+  una decisión del orquestador contada como del fundador— se ha podido leer en el origen del turno.
+
 ## Qué cambia
 
-| Sitio | Antes | Ahora |
+| Sitio | Antes (en `main`) | Ahora |
 |---|---|---|
-| `scripts/equipo/sesion.mjs` · `UMBRAL_CONTEXTO` | `200_000` | `500_000`, con las dos fechas y de quién fue cada decisión |
-| `scripts/equipo/gasto-arranque.mjs` · `UMBRAL_RELEVO` | `200000`, escrito a mano, «fundador, 21-sep» | `= UMBRAL_CONTEXTO`, importado de `sesion.mjs` |
+| `scripts/equipo/sesion.mjs` · `UMBRAL_CONTEXTO` | `200_000` | `300_000`, con las fechas y de quién fue cada decisión |
+| `scripts/equipo/gasto-arranque.mjs` · `UMBRAL_RELEVO` | `200000`, escrito a mano | `= UMBRAL_CONTEXTO`, importado de `sesion.mjs` |
 | `gasto-arranque.mjs` · la ayuda | `--umbral 200000` tecleado | el número que rige, sacado de la constante |
-| `docs/equipo/orquestador-autonomo.md` §5bis.1 | 200k (tres veces) | 500k, y nombra el 800k de «a mitad de una entrega» |
-| `tests/scrum899c-…` | «A25: el relevo es a 200k, no a 300k» | 500k, con lo que afirmaba antes y desde cuándo |
-| `tests/scrum1070-…` | «el umbral del fundador es 200k» | 500k; de quién es el número, con las dos mitades del registro; y un test nuevo que cae si las dos constantes vuelven a escribirse por separado |
-| `tests/scrum1350-…` (sección CONTEXTO del latido) | una sesión de 409k avisaba | la de 409k no avisa; control positivo, una de 783k; y con el umbral de antes la de 409k vuelve a salir |
+| `gasto-arranque.mjs vivas` · la cabecera | «umbral de relevo N (fundador, 21-sep)», también con `--umbral` | dice si el número es el de `sesion.mjs` o uno pasado con `--umbral` |
+| `docs/equipo/orquestador-autonomo.md` §5bis.1 | 200k (tres veces) | 300k, y nombra el caso «a mitad» de la A19 (500k, sin volver a decidir) |
+| `tests/scrum899c-…` | «A25: el relevo es a 200k, no a 300k» | 300k por los dos lados; una de 230k sigue |
+| `tests/scrum1070-…` | «el umbral del fundador es 200k» | 300k; de quién es el número; y un test que cae si las dos constantes vuelven a escribirse por separado |
+| `tests/scrum1350-…` (sección CONTEXTO del latido) | «por encima de 200k (A19)» | «por encima de 300k (A19)»; una de 230k no avisa, y con el umbral de antes vuelve a salir |
 
-El latido no se toca: su sección CONTEXTO ya leía `UMBRAL_CONTEXTO`, así que su frase pasa sola a «por encima
-de 500k (A19)».
+El latido no se toca aquí: su sección CONTEXTO ya leía `UMBRAL_CONTEXTO`.
 
-## De quién es el número — las dos mitades
+## De quién era el número anterior — las dos mitades
 
-El ticket y los ficheros tocados decían cosas distintas, y las dos salían de la misma frase de
-`docs/master/SCRUM-1070.md` («1070b»):
+`docs/master/SCRUM-1070.md` («1070b»): «baja el relevo de A19 de 300k a 200k (**decisión del orquestador**; …) y
+UMBRAL_CONTEXTO de sesion.mjs (**autorización escrita del fundador**; …)». `tests/scrum1070` y
+`gasto-arranque.mjs` decían sólo «del fundador»; el ticket, sólo «del orquestador». Ahora dicen las dos cosas.
 
-> baja el relevo de A19 de 300k a 200k (**decisión del orquestador**; …) y UMBRAL_CONTEXTO de sesion.mjs
-> (**autorización escrita del fundador**; la copia de AppData la refresca el orquestador)
+## ¿Se sostiene 300k? La comprobación que pedía c.18513
 
-- El número de la norma fue del orquestador.
-- Tocar la constante de `sesion.mjs` llevó la firma del fundador.
+El comentario de la autorización dice que 300k es una lectura del orquestador y no una medición, y pide
+comprobarla antes de que entre. Medido el 6-oct-2026 a las 19:33Z sobre las **43 sesiones de fondo con algún
+turno en 30 h** (322 `state.json`, 0 ilegibles, 0 líneas rotas). «Entrega» se cuenta como un `git push`: es un
+sustituto (un push no es una entrega verificada, y una entrega sin push no se ve). Las cifras de «lo cruzan»
+cuentan el MÁXIMO del día de cada sesión.
 
-`tests/scrum1070` y el comentario de `gasto-arranque.mjs` decían sólo «del fundador»; el ticket, sólo «del
-orquestador». Ahora los dos sitios dicen las dos cosas.
+| Umbral | Lo cruzan | De ésas, sin ningún push antes de cruzarlo | Empujan después de cruzarlo (ahí saltaría el relevo) | A qué contexto es ese push |
+|---|---|---|---|---|
+| 200k | 38 de 43 | 30 | 23 | mediana 273k |
+| **300k** | **21 de 43** | **7** | **15** | **mediana 339k, máximo 416k** |
+| 400k | 12 de 43 | 1 | 6 | mediana 416k |
+| 500k | 4 de 43 | 1 | 1 | 527k |
 
-## El coste, medido
+28 de las 43 dieron algún push; el primero llega con 230k de mediana (mínimo 89k, máximo 395k).
 
-Con el instrumento que ya existía (`node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular <umbral>`,
-SCRUM-1070), el 6-oct-2026 ~13:35Z, sobre las 21 sesiones con actividad (300 `state.json`, 295 con jsonl, 0
-ilegibles), Σcontexto = 412,3 M de tokens:
+**Lo que sale:**
 
-| Relevo a | Sesiones por encima | Σcontexto simulado | Relevos de más |
-|---|---|---|---|
-| 200k | 18 de 21 | 207,2 M (−49,7 %) | +36 |
-| 500k | 3 de 21 | 388,6 M (−5,8 %) | +3 |
-| 800k | 1 de 21 | 403,4 M (−2,3 %) | +1 |
+- **300k se sostiene como umbral que distingue.** 200k salta en 38 de 43 y en 30 de ellas antes de la primera
+  entrega. 300k salta en la mitad (21), dos de cada tres ya han entregado algo (14), y 15 vuelven a empujar: se
+  habrían relevado entre 304k y 416k.
+- 🔴 **El motivo que da c.18513 NO se sostiene tal como está escrito.** Dice que «un umbral de 500k no salta
+  nunca: la sesión se muere antes» (381k y 423k). Medido: **4 de 43 cruzaron 500k y 12 cruzaron 400k**; una
+  acabó en 823k. No hay un techo en 380-425k: de las 33 sesiones paradas más de una hora, 7 acabaron entre 300k
+  y 400k, 7 entre 400k y 500k, 3 entre 500k y 800k y 1 por encima. Lo que sí es cierto es la versión débil: a
+  500k la norma «al entregar» casi no actúa (de las 4 que lo cruzan, sólo 1 vuelve a empujar).
+- **Lo que 300k no arregla:** 5 sesiones cruzaron 300k y se pararon sin volver a empujar (330k, 344k, 344k, 393k
+  y 823k). Una norma «al entregar» no las alcanza a ningún número: ése es el caso «a mitad».
 
-Lo que dice y lo que no:
+La S0 midió lo mismo por su cuenta a las 19:27Z sobre 42 sesiones (35, 20 y 4 cruces; 14 que vuelven a empujar,
+de 304k a 416k). Coinciden en lo que decide; las diferencias son del instante (su medida es seis minutos anterior
+y esta misma sesión aún no contaba).
 
-- Es una simulación de Σcontexto, no del coste ni de la eficiencia; el arranque tras un relevo (85k) es un
-  supuesto del instrumento.
-- El 200k era la palanca de coste de la A25. A 500k se renuncia a ella sobre el papel.
-- El ahorro del 200k **no se estaba cobrando**: 18 de 21 pasaban y seguían. Por eso el gasto real no sube al
-  mergear esto. Lo que cambia es lo que la norma da por bueno.
-- Las cifras del ticket (18 de 21 y 3 de 21) salen iguales aquí. La de «2 de 21 por encima de 800k» sale 1 de
-  21: la diferencia es el instante (el ticket se midió sobre el día entero; esto, sobre el último turno).
+Instrumento: `docs/master/evidencias/SCRUM-1479/medir-300k.mjs` (sólo lee) y su salida, al lado.
 
-## El segundo número: 800k «a mitad de una entrega»
+## El coste, recalculado para 300k (no extrapolado)
 
-No vive en el código. Por encima de 800k el latido dice lo mismo que por encima de 500k: «se releva AL
-TERMINAR su entrega». Para una sesión de más de 800k esa frase es la contraria de lo que pide la norma (punto
-seguro y relevo ya). Si se quiere un aviso propio, es una constante más en `sesion.mjs` y un renglón distinto
-en `seccionContexto`; no se ha construido porque el ticket lo deja a decisión del orquestador.
+`node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular <umbral>`, 6-oct-2026 19:28Z, sobre las mismas
+43 sesiones, Σcontexto = 734,5 M de tokens:
+
+| Relevo a | Σcontexto simulado | Relevos de más |
+|---|---|---|
+| 200k | 394,5 M (−46,3 %) | +64 |
+| **300k** | **519,3 M (−29,3 %)** | **+24** |
+| 500k | 702,0 M (−4,4 %) | +4 |
+
+- Es una simulación de Σcontexto, no del coste ni de la eficiencia. El arranque tras un relevo (85k) es un
+  supuesto del instrumento, **y no mete lo que cuesta cada relevo** (salvedad de la S0): los porcentajes son un
+  techo del ahorro, no el ahorro.
+- La simulación releva en el turno en que se cruza el umbral; la norma, en la entrega siguiente (339k de mediana).
+  El ahorro real de la norma es menor que el de la tabla.
+- Respecto a los 200k de antes, sobre el papel se renuncia a 124,8 M de 340,0 M. Ese ahorro **no se estaba
+  cobrando**: con el umbral en 200k, 38 de 43 lo pasaban y seguían.
+- Las cifras de la mañana (412,3 M; 207,2 M a 200k; 388,6 M a 500k) eran sobre 21 sesiones a las ~13:20Z. No se
+  comparan con éstas: es otra población.
+
+## El segundo número («a mitad de una entrega»): sin decidir, y lo que sostiene la medición
+
+El fundador autorizó UN número. El de «a mitad» sigue siendo el que la A19 ya llevaba en `main` (500k) y **aquí
+no se toca ni vive en el código**. Lo pedido por c.18513 es qué número sostienen las mediciones:
+
+- De las 15 sesiones que cruzaron 300k y volvieron a empujar, el push llegó como muy tarde a **416k**. Por encima
+  de ese contexto, una sesión que sigue sin entregar está fuera de lo visto en las 15.
+- Un umbral «a mitad» de **400k** habría interrumpido a 2 de esas 15 (las de 412k y 416k); uno de **450k**, a
+  ninguna.
+- Con el de hoy (**500k**), de las 4 sesiones que lo cruzaron 3 no volvieron a empujar.
+- **Lo que la medición sostiene es ~450k.** Es UN día, 15 casos, y «entrega» es un push. No mide cuánto contexto
+  hace falta para escribir un traspaso, ni dónde compacta la ventana.
 
 ## Tests
 
@@ -89,3 +138,10 @@ en `seccionContexto`; no se ha construido porque el ticket lo deja a decisión d
   de `sesion.mjs`, sólo **mayor**. Era así antes y no se ha tocado.
 - Los comentarios históricos de `gasto-arranque.mjs` («medido el 21-sep… con relevo a 200k, Σcontexto baja
   ~44 %») siguen: describen la medición de aquel día.
+- Por encima del número de «a mitad» el latido dice «se releva AL TERMINAR su entrega», lo contrario de la
+  norma para ese caso. Es SCRUM-1484.
+
+## Erratas del primer registro, corregidas aquí
+
+El registro de la mañana decía que la rama se cogió a las «~13:35Z» y se paró a las «~13:45Z». Fueron ~13:20Z y
+~13:23Z (SCRUM-1479 c.18418): las dos horas se habían puesto a ojo.

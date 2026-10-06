@@ -647,8 +647,9 @@ function subcomandoTraspaso(args, ctx) {
 // 300k; con relevo a 200k, Σcontexto baja ~44 % (simulado, no medido; ver simularRelevo).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // (SCRUM-1479, 6-oct-2026) El umbral ya no se escribe aquí: es el de `sesion.mjs`, que es el que manda. Eran dos
-// constantes con el mismo número puestas a mano. Hoy vale 500k; el 200k con el que se midió lo de arriba fue
-// del 21-sep al 6-oct (decisión del orquestador; el fundador autorizó por escrito tocar `sesion.mjs`).
+// constantes con el mismo número puestas a mano. Desde ese día vale 300k (autorizado por el fundador, coste
+// incluido); el 200k con el que se midió lo de arriba fue del 21-sep al 6-oct (decisión del orquestador; el
+// fundador autorizó por escrito tocar `sesion.mjs`).
 export const UMBRAL_RELEVO = UMBRAL_CONTEXTO;
 export const CTX_TRAS_RELEVO = 85000; // supuesto: ≈ U8 mediano de una sesión nacida (57k de suelo + arranque + traspaso)
 export const OCIOSA_MIN = 60; // A19 caso 2: la caché de prompt caduca a la hora
@@ -680,7 +681,7 @@ export function informeVivas(cen, { horas, umbral, simular, ahoraMs }) {
       lineaPoblacion(cen.pob, 1), lineaLectura(cen)].join('\n') };
   }
   const rs = cen.sesiones.map((s) => ({ nombre: s.nombre, ...s.datos })).sort((a, b) => b.ctx - a.ctx);
-  const l = [`vivas · ventana ${horas} h · umbral de relevo ${umbral} (fundador, 21-sep) · contexto = último turno medido`];
+  const l = [`vivas · ventana ${horas} h · umbral de relevo ${umbral}${umbral === UMBRAL_RELEVO ? ' (el de `sesion.mjs`)' : ' (pasado con --umbral)'} · contexto = último turno medido`];
   let sobre = 0;
   for (const r of rs) {
     const parada = Number.isFinite(r.ultimoMs) ? Math.max(0, Math.round((ahoraMs - r.ultimoMs) / 60000)) : null;

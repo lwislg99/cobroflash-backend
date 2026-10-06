@@ -444,19 +444,20 @@ test('SCRUM-1282 · 🔴 CONTEXTO: cada sesión viva sale con su ocupación, y l
   const por = { 's3-1oct': ctx(409_000, 11), 's4-1oct': ctx(121_000) };
   const s = seccionContexto({
     sesiones: [sesion('s3-1oct', 'working'), sesion('s4-1oct', 'blocked'), sesion('s1-1oct', 'done'), sesion('s2-30sep', 'working', { actualizado: AHORA - 30 * H })],
-    contextoDe: (x) => por[x.nombre], sueltas: [{ nombre: '(sin trabajo de fondo: ed676fd1)', ctx: ctx(783_000, 0) }], ahora: AHORA,
+    contextoDe: (x) => por[x.nombre], sueltas: [{ nombre: '(sin trabajo de fondo: ed676fd1)', ctx: ctx(421_000, 0) }], ahora: AHORA,
   });
   assert.equal(s.pudo, true, `🔴 la terminada y la de ayer no se miran: no pueden dejarla ciega (${s.motivo})`);
-  // LAS DOS FECHAS (SCRUM-1479). Del 1-oct al 6-oct-2026 este test afirmaba que la de 409k AVISABA («por encima
-  // de 200k (A19)»). Desde el 6-oct-2026 el umbral de la A19 es 500k: la de 409k ya NO avisa, y el control
-  // positivo es la de 783k (la ocupación real del orquestador ese día).
-  assert.deepEqual(s.alertas.map((a) => a.sesion), ['(sin trabajo de fondo: ed676fd1)'], '🔴 sólo la que pasa de 500k; ni la de 409k ni la de 121k');
-  assert.match(s.alertas[0].linea, /\(sin trabajo de fondo: ed676fd1\) · 783k de ventana, por encima de 500k \(A19\): se releva AL TERMINAR su entrega · último turno hace 0 min/);
-  assert.match(s.poblacion, /^2 sesiones vivas en 24 h \+ 1 transcript\(s\).* 3 leídas: .*783k · s3-1oct 409k · s4-1oct 121k/);
-  // El latido no tiene umbral propio: con el de antes, la de 409k vuelve a salir.
-  const conElDeAntes = seccionContexto({ sesiones: [sesion('s3-1oct', 'working')], contextoDe: () => ctx(409_000, 11), ahora: AHORA, umbral: 200_000 });
-  assert.match(conElDeAntes.alertas[0].linea, /s3-1oct \(s3-1oct\) · 409k de ventana, por encima de 200k \(A19\): se releva AL TERMINAR su entrega · último turno hace 11 min/);
+  // LAS DOS FECHAS (SCRUM-1479). Del 1-oct al 6-oct-2026 este test decía «por encima de 200k (A19)». Desde el
+  // 6-oct-2026 el umbral de la A19 es 300k: estas dos siguen avisando, y lo que cambia se fija abajo con la de 230k.
+  assert.deepEqual(s.alertas.map((a) => a.sesion), ['(sin trabajo de fondo: ed676fd1)', 's3-1oct (s3-1oct)'], '🔴 las dos por encima de 300k, la mayor primero; la de 121k no');
+  assert.match(s.alertas[1].linea, /s3-1oct \(s3-1oct\) · 409k de ventana, por encima de 300k \(A19\): se releva AL TERMINAR su entrega · último turno hace 11 min/);
+  assert.match(s.poblacion, /^2 sesiones vivas en 24 h \+ 1 transcript\(s\).* 3 leídas: .*s3-1oct 409k · s4-1oct 121k/);
   assert.equal(salidaDe([s]), SALIDA_AVISO);
+  // Lo que el cambio mueve: una sesión de 230k (la mediana del PRIMER push el 6-oct-2026) ya no se acusa…
+  const de230 = (umbral) => seccionContexto({ sesiones: [sesion('s2-6oct', 'working')], contextoDe: () => ctx(230_000, 3), ahora: AHORA, ...(umbral ? { umbral } : {}) });
+  assert.deepEqual(de230().alertas, [], '🔴 a 230k todavía no ha entregado nada: con el umbral en 300k no se le pide el relevo');
+  // …y el latido no tiene umbral propio: con el de antes, la misma sesión vuelve a salir.
+  assert.match(de230(200_000).alertas[0].linea, /s2-6oct \(s2-6oct\) · 230k de ventana, por encima de 200k \(A19\): se releva AL TERMINAR su entrega · último turno hace 3 min/);
 });
 
 test('SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y dice cuánto llevan', () => {
@@ -471,14 +472,13 @@ test('SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y di
 test('SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó', () => {
   const s = seccionContexto({
     sesiones: [sesion('s3-1oct', 'working'), sesion('s5-1oct', 'working'), sesion('s0-1oct', 'working')],
-    // 609k y no los 409k que llevaba hasta el 6-oct-2026: con el umbral en 500k (SCRUM-1479) la de 409k ya no avisa.
-    contextoDe: (x) => (x.nombre === 's5-1oct' ? undefined : x.nombre === 's0-1oct' ? null : ctx(609_000)), ahora: AHORA,
+    contextoDe: (x) => (x.nombre === 's5-1oct' ? undefined : x.nombre === 's0-1oct' ? null : ctx(409_000)), ahora: AHORA,
   });
   assert.equal(s.pudo, false);
   assert.equal(salidaDe([s]), SALIDA_CIEGO);
   const txt = informe([s], { ahora: AHORA });
   assert.match(txt, /CONTEXTO · NO PUDE MIRAR: no encontré o no pude leer el jsonl de 1 sesión\(es\) viva\(s\): s5-1oct \(s5-1oct\)/);
-  assert.match(txt, /· s3-1oct \(s3-1oct\) · 609k de ventana/, '🔴 estar ciego de UNA no tapa a la que sí se leyó');
+  assert.match(txt, /· s3-1oct \(s3-1oct\) · 409k de ventana/, '🔴 estar ciego de UNA no tapa a la que sí se leyó');
   // Recién lanzada, sin ningún turno todavía: se NOMBRA, pero no es ceguera (el jsonl se leyó).
   assert.match(txt, /1 sin ningún turno con uso todavía \(s0-1oct \(s0-1oct\)\)/);
   assert.equal(seccionContexto({ sesiones: [sesion('s0-1oct', 'working')], contextoDe: () => null, ahora: AHORA }).pudo, true);
