@@ -34,7 +34,26 @@ Aprobado por el orquestador por delegación del fundador, 6-oct-2026 — SCRUM-1
 
 `tests/scrum1491-desplazamiento-es-un-numero-entero.test.mjs`: la vista real en el banco, con un servidor que rechaza como entrega `apiRequest` un rechazo (`err.status`, `err.code` y el mensaje de la ruta).
 
-VERIFICADO_ABAJO
+- **Verde:** 8 de 8.
+- **Rojo antes y por mutación:** base verde y 11 mutantes de 11 mueren, cada uno con su `git diff --numstat` al lado. El primero es la vista de antes (siempre el general, teclado de coma): caen 3 de 8, las dos filas del defecto y la del teclado. Los demás: el error no llega al aviso · el literal nuevo se come todo fallo · se decide por el estado 400 · se decide leyendo el mensaje · se decide por el campo · el literal cambia una palabra · pierde «No se ha guardado.» · Desplazamiento sigue con la coma · Kilómetros la pierde · el código se compara al revés.
+
+**En el navegador**, sobre yaqu.app (build `bafb0734`, cuenta QA, parte 9, service worker bloqueado, control del interceptor antes de tocar; a producción no llega nada que no sea GET: el `PATCH` lo contesta la sonda con lo que contesta la ruta). 2 ventanas (390×844 y 1280×800) × 6 casos = 12 filas por pasada, 0 rotas, dos pasadas:
+
+| caso | con el JS de producción (antes) | con el JS de esta rama servido encima |
+|---|---|---|
+| `1,5` → 400 `desplazamientos_invalido` | el general | el firmado, letra a letra |
+| `3000000000` → 400, mismo código | el general | el firmado |
+| CONTROL · `3` → 500 | el general | el general |
+| CONTROL · `3` → sin red | el general | el general |
+| CONTROL · Kilómetros `12,5` → 500 | el general | el general |
+| `1,5` → 400 y después `2` → 200 | sale y se quita | sale el firmado y se quita |
+| teclado de Desplazamiento / Kilómetros | `decimal` / `decimal` | `numeric` / `decimal` |
+
+La primera columna es el control de la sonda: con el código viejo las dos filas del defecto vuelven a leer el general.
+
+El aviso firmado ocupa lo mismo que el general: 366×63 y 2 líneas en móvil, 984×42 y 1 línea en escritorio; letra 13,5 px, `role="alert"`, en el paso de las horas, entero en la ventana, sin nada encima y sin desborde. La casilla vuelve a `1`. El mensaje del servidor no sale en pantalla en ninguna fila.
+
+**NO medido:** yaqu.app con el JS ya desplegado (se mira cuando mergee).
 
 ## Sin medir
 
