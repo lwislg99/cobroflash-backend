@@ -1,0 +1,1720 @@
+[
+ {
+  "id": 37457005608,
+  "creado": "2026-10-06T11:31:46Z",
+  "evento": "pull_request",
+  "rama": "scrum-1459-latido-lee-al-vigia",
+  "sha": "a032c474c2fa573a29d7f9cbfc1ed01639173914",
+  "rec": "vivas 445 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37456412455,
+  "creado": "2026-10-06T11:26:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1454-ya-esta-commit-ajeno",
+  "sha": "6053d96074ad3d47ed7eb6f90a990ba80ab80dbe",
+  "rec": "vivas 444 · mudas 0 · ciegas 2 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum1349-entorno-prestado-solo-baja.test.mjs · CIEGO",
+   "  ? scrum1349-entorno-prestado-solo-baja.test.mjs · CIEGO",
+   "  · scrum1349-entorno-prestado-solo-baja.test.mjs · el test «CONTROL POSITIVO DEL TRINQUETE» NO aparece EN VERDE en la p",
+   "  · scrum1349-entorno-prestado-solo-baja.test.mjs · el test «son EXACTAMENTE los declarados» NO aparece EN VERDE en la p"
+  ],
+  "items": [
+   {
+    "g": "scrum1349-entorno-prestado-solo-baja",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "CONTROL POSITIVO DEL TRINQUETE"
+   },
+   {
+    "g": "scrum1349-entorno-prestado-solo-baja",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "son EXACTAMENTE los declarados"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=failure"
+ },
+ {
+  "id": 37455139532,
+  "creado": "2026-10-06T11:15:00Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "39af736efc8ccf7d2966063561421855b3e4c4e9",
+  "rec": "vivas 443 · mudas 0 · ciegas 3 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO →",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, ",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37454428095,
+  "creado": "2026-10-06T11:08:30Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "2753de7a43e8714b659ff432c574b9ba7b063a1a",
+  "rec": "vivas 445 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37454127059,
+  "creado": "2026-10-06T11:05:44Z",
+  "evento": "pull_request",
+  "rama": "scrum-1452b-registro-ocho-no-nueve",
+  "sha": "86447041b1c2dd133d457749725de5329634083d",
+  "rec": "vivas 444 · mudas 0 · ciegas 2 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO →",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, "
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37452377392,
+  "creado": "2026-10-06T10:49:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1452-guards-gemelo-crudo",
+  "sha": "1e62203a0c2b8596b341df0d0696a532ae032315",
+  "rec": "vivas 445 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37451560421,
+  "creado": "2026-10-06T10:42:32Z",
+  "evento": "pull_request",
+  "rama": "scrum-1450-lista-albaranes-facturacion-firmada",
+  "sha": "98a2240f1a5e1eac382c29827dd0fca0ef955733",
+  "rec": "vivas 443 · mudas 0 · ciegas 3 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO →",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, ",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37451186274,
+  "creado": "2026-10-06T10:39:07Z",
+  "evento": "pull_request",
+  "rama": "scrum-1453-latido-sin-auto-merge",
+  "sha": "c0967fb7576e7358be4e7ba7ea11075ec7473775",
+  "rec": "vivas 444 · mudas 0 · ciegas 2 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO →",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, "
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37450448569,
+  "creado": "2026-10-06T10:32:24Z",
+  "evento": "pull_request",
+  "rama": "scrum-1295-carriles-e-identidad",
+  "sha": "145861b86cdd3489e57818e638c109ee7aec42a8",
+  "rec": "vivas 445 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, "
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37047049994,
+  "creado": "2026-10-02T18:23:00Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "0dbf8eae7e47b8fd272aa644b810041c6ec3f9c0",
+  "rec": "vivas 444 · mudas 0 · ciegas 2 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  ? scrum834-puerta-avisador-rojo.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO →",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · el test «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, "
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO se empuja, y se DICE"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37045093167,
+  "creado": "2026-10-02T18:05:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-624-frecuencia-del-papel",
+  "sha": "b05c51c7363c20821bdabfd7582693e53320733a",
+  "rec": "vivas 443 · mudas 0 · ciegas 3 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · el test «EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición s",
+   "  · scrum813-trinquete-de-zona.test.mjs · el test «con la lista VACÍA nada se ampara: cualquier ruta sigue cegando» NO a",
+   "  · scrum813-trinquete-de-zona.test.mjs · el test «POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE "
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO"
+   },
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "con la lista VACÍA nada se ampara: cualquier ruta sigue cegando"
+   },
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37038227644,
+  "creado": "2026-10-02T17:04:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-605-nombre-accesible-de-los-atajos",
+  "sha": "e047b4fc9bf68838f6390a4a87cb638fe63b8253",
+  "rec": "vivas 445 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "claude.yml pregunta a la puerta ANTES de la acción"
+   }
+  ]
+ },
+ {
+  "id": 37037468566,
+  "creado": "2026-10-02T16:57:41Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "eca8566d130fc35e455b27508b1f3c199dc6263b",
+  "rec": "vivas 445 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "claude.yml pregunta a la puerta ANTES de la acción"
+   }
+  ]
+ },
+ {
+  "id": 37034410303,
+  "creado": "2026-10-02T16:30:34Z",
+  "evento": "pull_request",
+  "rama": "scrum-1366-causa-del-fichero-entero",
+  "sha": "a9f5b7fb6663ff97a9a6fe3ee41aa198be8ecd8a",
+  "rec": "vivas 442 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37033583034,
+  "creado": "2026-10-02T16:23:18Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "f30b1a4052957e245ebe1cfef53bbef410c5816b",
+  "rec": "vivas 442 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «EL QUE DECIDE"
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "NO-APARECE",
+    "cae": "EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO"
+   }
+  ]
+ },
+ {
+  "id": 37033425662,
+  "creado": "2026-10-02T16:21:56Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "b3b2a9e825d945823e509ea41809cf81a75495aa",
+  "rec": "vivas 442 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "claude.yml pregunta a la puerta ANTES de la acción"
+   }
+  ]
+ },
+ {
+  "id": 37032255635,
+  "creado": "2026-10-02T16:11:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1431-rechazo-escapado",
+  "sha": "96e567ae6ffb23af868eba8289dbf5c50e63fa81",
+  "rec": "vivas 442 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO"
+   }
+  ]
+ },
+ {
+  "id": 37032112109,
+  "creado": "2026-10-02T16:10:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1422-el-parte-escucha-la-cola",
+  "sha": "45d3b69caa0929e852d6db04d0ef3656f483260a",
+  "rec": "vivas 442 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar"
+   }
+  ]
+ },
+ {
+  "id": 37019193963,
+  "creado": "2026-10-02T14:20:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1367b-sembrador-fotos-y-firma",
+  "sha": "920b7345a6aafe661f0c531f4113c2c372bb1cf7",
+  "rec": "vivas 442 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37018821734,
+  "creado": "2026-10-02T14:17:25Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416c-nombres-construidos-lote-3",
+  "sha": "e4bf6321179ed831ecb83263b3078be345920b3b",
+  "rec": "vivas 436 · mudas 0 · ciegas 0 · ficheros muertos 2",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 37018449897,
+  "creado": "2026-10-02T14:14:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1381b-escritores-el-resumen-cuadra",
+  "sha": "2c55c27021c8148467fc982d06e2bdaddd3f54b1",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO"
+   }
+  ]
+ },
+ {
+  "id": 37018216962,
+  "creado": "2026-10-02T14:12:14Z",
+  "evento": "pull_request",
+  "rama": "scrum-1430-sesion-qa-dice-si-esta-viva",
+  "sha": "b45d63448ed57dca99b414474fee68dcee85e503",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "claude.yml pregunta a la puerta ANTES de la acción"
+   }
+  ]
+ },
+ {
+  "id": 37016609319,
+  "creado": "2026-10-02T13:58:24Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "0b4c983db97ab6b7296d499ace41385917590da2",
+  "rec": "vivas 437 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37016358241,
+  "creado": "2026-10-02T13:56:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1123c-censo-workflows-y-su-desmentido",
+  "sha": "da3798df86af335ce53546090cabe5605ace26f9",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar"
+   }
+  ]
+ },
+ {
+  "id": 37016039873,
+  "creado": "2026-10-02T13:53:28Z",
+  "evento": "pull_request",
+  "rama": "scrum-1431-rechazo-escapado",
+  "sha": "1e2bb5285c113fa41d415aa279ea4dc5c87ccfe6",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 37015285708,
+  "creado": "2026-10-02T13:46:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1418-sesiones-que-no-volvieron",
+  "sha": "841d7057e475fdf8973500c72b97e4d03956fb2b",
+  "rec": "vivas 435 · mudas 0 · ciegas 3 · ficheros muertos 0",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · vigia-atascados.test.mjs · el test «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por eda",
+   "  · vigia-atascados.test.mjs · el test «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bo",
+   "  · vigia-atascados.test.mjs · el test «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37014829177,
+  "creado": "2026-10-02T13:42:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1198-cliente-nuevo-sin-telefono",
+  "sha": "370954c364bd69612e4e4053b1539059daf7a45c",
+  "rec": "vivas 437 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «con la lista "
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "NO-APARECE",
+    "cae": "con la lista VACÍA nada se ampara: cualquier ruta sigue cegando"
+   }
+  ]
+ },
+ {
+  "id": 37014407450,
+  "creado": "2026-10-02T13:39:09Z",
+  "evento": "pull_request",
+  "rama": "scrum-1369b-eje-es-lo-aceptado",
+  "sha": "e43fc83618160c7ab6c6d666f1e09e74a18d49b0",
+  "rec": "vivas 437 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «con la lista "
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "NO-APARECE",
+    "cae": "con la lista VACÍA nada se ampara: cualquier ruta sigue cegando"
+   }
+  ]
+ },
+ {
+  "id": 37014095592,
+  "creado": "2026-10-02T13:36:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1422-el-parte-escucha-la-cola",
+  "sha": "526a9a3ac772424ee8e28195337578bd7d6df7b4",
+  "rec": "vivas 437 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37014036159,
+  "creado": "2026-10-02T13:35:49Z",
+  "evento": "pull_request",
+  "rama": "scrum-1419-canceladas-de-pr",
+  "sha": "76ccaf00186a33dc6d309315d857deb4ce32d4e4",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum813-trinquete-de-zona.test.mjs · FICHERO MUERTO",
+   "  · scrum813-trinquete-de-zona.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: e"
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "MUERTO",
+    "cae": "POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto"
+   }
+  ]
+ },
+ {
+  "id": 37011782455,
+  "creado": "2026-10-02T13:15:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1369b-eje-es-lo-aceptado",
+  "sha": "cd51f41a0437b28d5beb69de4740e4b405de3925",
+  "rec": "vivas 436 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "un 404 que llega como CUERPO DEL ERROR no es una cabeza remota"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37010639672,
+  "creado": "2026-10-02T13:04:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1423b-claves-bd-de-todos-los-arboles",
+  "sha": "6c59181ab566a5b06f311c37581e649f635d64df",
+  "rec": "vivas 437 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum813-trinquete-de-zona.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «con la lista "
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "NO-APARECE",
+    "cae": "con la lista VACÍA nada se ampara: cualquier ruta sigue cegando"
+   }
+  ]
+ },
+ {
+  "id": 37010328724,
+  "creado": "2026-10-02T13:01:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416b-nombres-construidos-lote-2",
+  "sha": "64bdbfd2f72b00db67ecd154114b2f0477ba5389",
+  "rec": "vivas 435 · mudas 0 · ciegas 1 · ficheros muertos 2",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   }
+  ]
+ },
+ {
+  "id": 37009502930,
+  "creado": "2026-10-02T12:54:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1419-canceladas-de-pr",
+  "sha": "5ee43c7aeb3b43dd52b01b3a861137428b3afaa8",
+  "rec": "vivas 436 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37008131372,
+  "creado": "2026-10-02T12:40:45Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "de59fe731c623f8797142dc6a877f998a1056f68",
+  "rec": "vivas 430 · mudas 0 · ciegas 1 · ficheros muertos 2",
+  "marcas": [
+   "  ☠ scrum813-trinquete-de-zona.test.mjs · FICHERO MUERTO",
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum813-trinquete-de-zona.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: e",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum813-trinquete-de-zona",
+    "clase": "MUERTO",
+    "cae": "POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto"
+   },
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 37007073566,
+  "creado": "2026-10-02T12:30:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1412-tanda-dirigida-por-tramos",
+  "sha": "b70c5cf63924a14570bd1c8f377a58bfa50f1763",
+  "rec": "vivas 437 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37007024514,
+  "creado": "2026-10-02T12:29:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1415-nombres-construidos-a-literal",
+  "sha": "5704c909c5a214fe482a3ea0186ea95117a65729",
+  "rec": "vivas 428 · mudas 0 · ciegas 4 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · vigia-atascados.test.mjs · el test «🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO",
+   "  · vigia-atascados.test.mjs · el test «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por eda",
+   "  · vigia-atascados.test.mjs · el test «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bo",
+   "  · vigia-atascados.test.mjs · el test «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 37006406887,
+  "creado": "2026-10-02T12:23:39Z",
+  "evento": "pull_request",
+  "rama": "scrum-1383-rechazo-durante-el-cierre",
+  "sha": "fc30bfe8e5963d35401027b9e8a37fc4321afab7",
+  "rec": "vivas 432 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37005003232,
+  "creado": "2026-10-02T12:09:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1413-latido-experimentos-sin-leer",
+  "sha": "efc263976749687a06ce6362389b599f808fc2ec",
+  "rec": "vivas 431 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ? scrum757-la-declaracion-que-nadie-lee.test.mjs · CIEGO",
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · scrum757-la-declaracion-que-nadie-lee.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «NE"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum757-la-declaracion-que-nadie-lee",
+    "clase": "NO-APARECE",
+    "cae": "NEGATIVO: un objeto cualquiera del fichero NO se denuncia"
+   }
+  ]
+ },
+ {
+  "id": 37004509302,
+  "creado": "2026-10-02T12:04:04Z",
+  "evento": "pull_request",
+  "rama": "scrum-1372c-a10-y-notas-de-registro",
+  "sha": "1e3af6f086601627e94abe48e8377dbd48fdcb90",
+  "rec": "vivas 432 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37004054706,
+  "creado": "2026-10-02T11:59:19Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "a096c7faf486e7ca4332c16f95344dc06220bbab",
+  "rec": "vivas 432 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37003969458,
+  "creado": "2026-10-02T11:58:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-1412-tanda-dirigida-por-tramos",
+  "sha": "24760be2ac014a096fc1c276798d9e475b6b1957",
+  "rec": "vivas 436 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ? scrum1412-tanda-por-tramos.test.mjs · CIEGO",
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · scrum1412-tanda-por-tramos.test.mjs · el test «SCRUM-1412 · ② 🔴 con la condición SIN cumplirse, el mismo caído es u"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum1412-tanda-por-tramos",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "SCRUM-1412 · ② 🔴 con la condición SIN cumplirse, el mismo caído es un rojo normal"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=failure"
+ },
+ {
+  "id": 37002928283,
+  "creado": "2026-10-02T11:47:15Z",
+  "evento": "pull_request",
+  "rama": "scrum-1379-id-fuera-de-rango-400",
+  "sha": "7a9ab7cc2318c8358b5f506ef203cf98a663bd0e",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37002193878,
+  "creado": "2026-10-02T11:39:20Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "e786b7f85db8e4938389d520322403c5c610b7ce",
+  "rec": "vivas 426 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   }
+  ]
+ },
+ {
+  "id": 37001307781,
+  "creado": "2026-10-02T11:29:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1411-dos-equipos-tablas-que-lee-scrum514",
+  "sha": "e03a277b95ac252289476f4e206f08764aafde8a",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 37001251503,
+  "creado": "2026-10-02T11:29:06Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "002fe63b463fd2973531f46ae5c8d9da75978c33",
+  "rec": "vivas 426 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   }
+  ]
+ },
+ {
+  "id": 37000528745,
+  "creado": "2026-10-02T11:21:10Z",
+  "evento": "pull_request",
+  "rama": "scrum-1285-escritores-cifra-del-censo",
+  "sha": "a322de9fc330be92c00e2d4ef08bb6efb4db188c",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 37000384548,
+  "creado": "2026-10-02T11:19:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1302-aviso-cerrar-sesion",
+  "sha": "f39413f77fb36cb281df14267b1a8ca3804cac7f",
+  "rec": "vivas 425 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1205 · su "
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO"
+   }
+  ]
+ },
+ {
+  "id": 37000226705,
+  "creado": "2026-10-02T11:17:51Z",
+  "evento": "pull_request",
+  "rama": "scrum-1373-drenado-avisa-firmas-confirmadas",
+  "sha": "88532240b159952d2b40c4dc968ec54147bedd33",
+  "rec": "vivas 425 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ? scrum757-la-declaracion-que-nadie-lee.test.mjs · CIEGO",
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test",
+   "  · scrum757-la-declaracion-que-nadie-lee.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «NE"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   },
+   {
+    "g": "scrum757-la-declaracion-que-nadie-lee",
+    "clase": "NO-APARECE",
+    "cae": "NEGATIVO: un objeto cualquiera del fichero NO se denuncia"
+   }
+  ]
+ },
+ {
+  "id": 36982504632,
+  "creado": "2026-10-02T08:10:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1405-force-exit-medido",
+  "sha": "501389504853471a7a346d5d9d3a21ef193bc495",
+  "rec": "vivas 426 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36975440639,
+  "creado": "2026-10-02T06:49:45Z",
+  "evento": "pull_request",
+  "rama": "scrum-1403-el-tecnico-y-las-otras-dos-puertas",
+  "sha": "88fc81817332f56fd343de572517b247016221e6",
+  "rec": "vivas 426 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36973433297,
+  "creado": "2026-10-02T06:24:56Z",
+  "evento": "pull_request",
+  "rama": "scrum-1399-el-anterior-de-una-anulacion",
+  "sha": "3477263cb503904c86ebf5aaed586d5113e9b5c9",
+  "rec": "vivas 431 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 36973054343,
+  "creado": "2026-10-02T06:20:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252b-evidencias-linea-y-literal",
+  "sha": "ae25733d5aac039db4d6963a6de1b1d1d0b0cb6f",
+  "rec": "vivas 426 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36972593292,
+  "creado": "2026-10-02T06:14:19Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "5d7aaebc41d71d24102a4852c1de04059d9ac559",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 36970498882,
+  "creado": "2026-10-02T05:47:10Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "35e1060e365a4cc11f16e4ccee393581679e73d9",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum834-puerta-avisador-rojo.test.mjs · FICHERO MUERTO",
+   "  · scrum834-puerta-avisador-rojo.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test"
+  ],
+  "items": [
+   {
+    "g": "scrum834-puerta-avisador-rojo",
+    "clase": "MUERTO",
+    "cae": "SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)"
+   }
+  ]
+ },
+ {
+  "id": 36969583822,
+  "creado": "2026-10-02T05:35:00Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "7779b0cbd473bc1a14e75308ce740ddc4e1e74cb",
+  "rec": "vivas 425 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36963260025,
+  "creado": "2026-10-02T04:08:51Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "fb7cbbc712e6961a6b2b9700741f8dd9a4742383",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 36962325431,
+  "creado": "2026-10-02T03:56:02Z",
+  "evento": "pull_request",
+  "rama": "scrum-1325-una-tilde-no-rompe-lo-que-entiende",
+  "sha": "c83abbdd31778f7752b584c90daff091e6ae8d09",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   }
+  ]
+ },
+ {
+  "id": 36961644136,
+  "creado": "2026-10-02T03:46:39Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252-evidencias-libro-solo-facturas",
+  "sha": "cea8d2044f7067a7df921eebb4c9a3088bf081ec",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 36961537377,
+  "creado": "2026-10-02T03:45:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1334-el-guard-dice-lo-que-no-cruza",
+  "sha": "05fa324be7c00d90d725aa0346ccef6dd97585c5",
+  "rec": "vivas 425 · mudas 0 · ciegas 2 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   }
+  ]
+ },
+ {
+  "id": 36960136892,
+  "creado": "2026-10-02T03:25:53Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252-evidencias-libro-solo-facturas",
+  "sha": "a54ac734544bc0bd1511467402b24e2e6ce98027",
+  "rec": "vivas 425 · mudas 0 · ciegas 1 · ficheros muertos 1",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   },
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36959682022,
+  "creado": "2026-10-02T03:19:45Z",
+  "evento": "pull_request",
+  "rama": "scrum-1407-registro-1397-anexo-fechado",
+  "sha": "d1da12c06a36d5265e75704ce8de33e9ac2704f3",
+  "rec": "vivas 424 · mudas 0 · ciegas 3 · ficheros muertos 0",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · vigia-atascados.test.mjs · el test «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por eda",
+   "  · vigia-atascados.test.mjs · el test «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bo",
+   "  · vigia-atascados.test.mjs · el test «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO",
+   "  ? vigia-atascados.test.mjs · CIEGO"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   },
+   {
+    "g": "vigia-atascados",
+    "clase": "LIMPIA-SIN-VERDE",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ],
+  "obligatorio": "build + tests (con banco desechable)=success"
+ },
+ {
+  "id": 36958967655,
+  "creado": "2026-10-02T03:10:15Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "bbe633acb852b1aaca413df4c5ebef76f1291e6c",
+  "rec": "vivas 426 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 36958106792,
+  "creado": "2026-10-02T02:59:03Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "c254023f2323f9b79de76678ffa838355bb3c470",
+  "rec": "vivas 420 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa"
+   }
+  ]
+ },
+ {
+  "id": 36956408166,
+  "creado": "2026-10-02T02:36:25Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339e-la-tasa-medida-hoy",
+  "sha": "1bb51786f7f22ddc9f9ce5def5ee12cf3cb02680",
+  "rec": "vivas 417 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36908181812,
+  "creado": "2026-10-01T18:37:15Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "7080ba9453b82be28ff338a41e590bcb2f70f9e9",
+  "rec": "vivas 417 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36906567049,
+  "creado": "2026-10-01T18:24:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1391-las-cinco-puertas-ejecutadas",
+  "sha": "c1b9c85788cc29476c9685e9ed9782096f38b88e",
+  "rec": "vivas 412 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO"
+   }
+  ]
+ },
+ {
+  "id": 36905130761,
+  "creado": "2026-10-01T18:12:40Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339d-senal-de-nombres",
+  "sha": "61d370cd8dedad674030fa5daf1708c16ef36504",
+  "rec": "vivas 417 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ scrum853-avisador-solo-obligatorio.test.mjs · FICHERO MUERTO",
+   "  · scrum853-avisador-solo-obligatorio.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de"
+  ],
+  "items": [
+   {
+    "g": "scrum853-avisador-solo-obligatorio",
+    "clase": "MUERTO",
+    "cae": "claude.yml pregunta a la puerta ANTES de la acción"
+   }
+  ]
+ },
+ {
+  "id": 36902185694,
+  "creado": "2026-10-01T17:49:04Z",
+  "evento": "pull_request",
+  "rama": "scrum-1344-arnes-de-prueba-con-rol",
+  "sha": "b6ae4c590603569171ed1686e82666a16501598a",
+  "rec": "vivas 404 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36896374800,
+  "creado": "2026-10-01T17:01:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1391-las-cinco-puertas-ejecutadas",
+  "sha": "e08d41e9bbceb1ef47e4604d4291d10d148e1989",
+  "rec": "vivas 404 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   }
+  ]
+ },
+ {
+  "id": 36892903386,
+  "creado": "2026-10-01T16:33:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1336-un-ciego-no-se-pinta-de-hallazgo",
+  "sha": "31c01fdce24846ad305ea1427077a3bb0ca4aa18",
+  "rec": "vivas 412 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36886780786,
+  "creado": "2026-10-01T15:45:42Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "cadf00bcee699dc200ff142050986a62b692b3c4",
+  "rec": "vivas 404 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36885380576,
+  "creado": "2026-10-01T15:34:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339b-comparacion-y-discriminador",
+  "sha": "ff4e6681414dbddf159b48f55aaf7d119f7f1177",
+  "rec": "vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36882137364,
+  "creado": "2026-10-01T15:10:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1341-actividad-del-equipo-sin-importes",
+  "sha": "620f7d76c33aa05faf3c4dc7d019bb5ce0f557d1",
+  "rec": "vivas 398 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36873388049,
+  "creado": "2026-10-01T14:03:41Z",
+  "evento": "pull_request",
+  "rama": "scrum-1295-carriles-e-identidad",
+  "sha": "629237b32528742d12becbe3d4f8f2810e570fd4",
+  "rec": "vivas 384 · mudas 0 · ciegas 0 · ficheros muertos 1",
+  "marcas": [
+   "  ☠ vigia-atascados.test.mjs · FICHERO MUERTO",
+   "  · vigia-atascados.test.mjs · EL FICHERO MURIÓ AL MUTAR. `node:test` no ha reportado ni un nombre de test: el único caí"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "MUERTO",
+    "cae": "🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot"
+   }
+  ]
+ },
+ {
+  "id": 36872847972,
+  "creado": "2026-10-01T13:59:35Z",
+  "evento": "pull_request",
+  "rama": "scrum-1231-logo-solo-imagen-subida",
+  "sha": "ca4a5942eefac53260a103ab4e6c32c4f009c90c",
+  "rec": "vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? vigia-atascados.test.mjs · CIEGO",
+   "  · vigia-atascados.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con"
+  ],
+  "items": [
+   {
+    "g": "vigia-atascados",
+    "clase": "NO-APARECE",
+    "cae": "🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad"
+   }
+  ]
+ },
+ {
+  "id": 36872822042,
+  "creado": "2026-10-01T13:59:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-1365-collect-rest-solo-aceptados",
+  "sha": "540e497d5be5204f125eb1d968764e2568866d55",
+  "rec": "vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ },
+ {
+  "id": 36872039381,
+  "creado": "2026-10-01T13:53:13Z",
+  "evento": "push",
+  "rama": "main",
+  "sha": "66ba128c699de3000d806440d3ca0751927e3f48",
+  "rec": "vivas 384 · mudas 0 · ciegas 1 · ficheros muertos 0",
+  "marcas": [
+   "  ? scrum859-identidad-y-motivo-cerrado.test.mjs · CIEGO",
+   "  · scrum859-identidad-y-motivo-cerrado.test.mjs · no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «SCRU"
+  ],
+  "items": [
+   {
+    "g": "scrum859-identidad-y-motivo-cerrado",
+    "clase": "NO-APARECE",
+    "cae": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave"
+   }
+  ]
+ }
+]

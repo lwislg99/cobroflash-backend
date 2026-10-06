@@ -28,6 +28,19 @@ import {
   aplicarUna, cayo, paso, mensajeDeLimpiaSinVerde, mensajeDeMuerto,
 } from '../scripts/meta-guard-mutaciones.mjs';
 
+// ⚠️ MUTACIONES DECLARADAS (SCRUM-745): las ejecuta `npm run meta:mutaciones` en CI. Cada una
+// devuelve un mensaje a su respuesta única —lo que había antes— y exige el rojo.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (llegaron === 0) {',
+    a: '  if (true) { // un solo mensaje para los dos casos, a proposito',
+    cae: 'SCRUM-1100d · 🔴 EL QUE DECIDE: un fichero que CORRIÓ no recibe el mensaje de uno que murió al cargar' },
+  { fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  if (cayo(limpia, cae)) {',
+    a: '  if (false) { // el que cayo y el que no llego, por la misma puerta, a proposito',
+    cae: 'SCRUM-1100d · 🔴 EL QUE DECIDE: «cayó en la limpia» y «no llegó» NO dan el mismo mensaje' },
+];
+
 const NOMBRE = 'SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)';
 const OTROS = ['uno', 'dos', 'tres'];
 
