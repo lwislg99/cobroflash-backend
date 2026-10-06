@@ -756,17 +756,27 @@ router.post('/:id/send-email', async (req, res) => {
     const { sendQuoteEmail } = await import('../../../messaging/domain/email.service');
     await sendQuoteEmail({ quoteId: id, prisma });
 
-    if (quote.status === 'draft') {
-      await prisma.quote.update({ where: { id }, data: { status: 'sent' } });
-    }
+    // SCRUM-1465 · EL CORREO YA SALIÓ. Lo que sigue es el apunte, y si falla NO puede caer en el
+    // `catch` de abajo: ese `catch` contesta «no se pudo enviar», el profesional reintenta y el
+    // cliente recibe el presupuesto dos veces. Mismo criterio que el WhatsApp (`sendQuote.service`).
+    try {
+      if (quote.status === 'draft') {
+        await prisma.quote.update({ where: { id }, data: { status: 'sent' } });
+      }
 
-    recordCustomerEvent({
-      merchantId: quote.merchantId,
-      customerId: quote.customerId,
-      type: 'quote_sent',
-      title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
-      detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
-    });
+      recordCustomerEvent({
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        type: 'quote_sent',
+        title: `Presupuesto #${quote.quoteNumber ?? quote.id} enviado por email`,
+        detail: formatMoneyEs(quote.total, quote.currency), // SCRUM-1288: el historial, en es-ES como el resto del panel
+      });
+    } catch (errDelApunte: any) {
+      console.error(
+        `[POST /admin/quotes/:id/send-email] el presupuesto ${id} SALIÓ por email y no se pudo apuntar (sigue como «${quote.status}»):`,
+        errDelApunte?.message || errDelApunte,
+      );
+    }
 
     return res.json(sendSuccessBody());
   } catch (err: any) {
