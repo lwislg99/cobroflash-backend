@@ -129,7 +129,14 @@ function juguete() {
   g(clon, 'checkout', '--quiet', 'main'); g(clon, 'fetch', '--quiet', 'origin');
   return { base, clon, origen };
 }
-const lanzar = (clon, ...args) => spawnSync(process.execPath, [GUION, ...args, '--raiz', clon], { encoding: 'utf8', timeout: 60000 });
+const lanzar = (clon, ...args) => {
+  // El hijo no hereda el reporter, el color ni el contexto de test de quien lo lanza (SCRUM-1349).
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  return spawnSync(process.execPath, [GUION, ...args, '--raiz', clon], { encoding: 'utf8', timeout: 60000, env: entornoHijo });
+};
 
 test('SCRUM-1424 · el COMANDO: un ticket que SÍ está sale YA ESTÁ con su fecha, su registro y sus evidencias', (t) => {
   const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
@@ -179,7 +186,11 @@ test('SCRUM-1424 · el COMANDO, CIEGO: con el acceso cortado dice NO HE PODIDO M
   assert.equal(sinRepo.status, SALIDA_CIEGO);
   assert.match(sinRepo.stdout.split('\n')[0], /NO HE PODIDO MIRAR/);
   // ④ sin número.
-  const sinNumero = spawnSync(process.execPath, [GUION], { encoding: 'utf8' });
+  const entornoSinNumero = { ...process.env };
+  delete entornoSinNumero.FORCE_COLOR;
+  delete entornoSinNumero.NODE_OPTIONS;
+  delete entornoSinNumero.NODE_TEST_CONTEXT;
+  const sinNumero = spawnSync(process.execPath, [GUION], { encoding: 'utf8', env: entornoSinNumero });
   assert.equal(sinNumero.status, SALIDA_CIEGO);
   assert.match(sinNumero.stdout, /NO HE PODIDO MIRAR: falta el número/);
 });
