@@ -374,3 +374,40 @@ reportan, y qué hacer con ellas lo decide el fundador (regla 29).
 ⚠️ Hoy `INVOICING_ES_ENABLED` está OFF y la data de producción es de prueba, así que esas cifras no
 son de nadie. **Esa ventana se cierra con la primera factura real por ese camino** — que es el de
 Tecnosel.
+
+---
+
+# SCRUM-624 · remedición del 2-oct-2026 — el papel sigue donde lo dejó la fase C
+
+**Medido contra:** `origin/main` = `d19852d7844a03cc9b0c93acf6e13220409c07e5` · 2026-10-02T17:16:01Z
+
+A9: aviso → cicatriz S1 «Se deja de leer cuando el texto te da la razón: un registro se lee ENTERO antes de citarlo.» — no se pudo comprobar: nada mide cuánto de un fichero ha leído una sesión antes de afirmar algo sobre él
+
+Sesión S1 (`s1-2octe`) · rama `scrum-624-frecuencia-del-papel`. **Sólo evidencia: ni `src/` ni `tests/`.**
+No es un hallazgo: es volver a medir, sobre el `main` de hoy, lo que S2 midió el 1-sep (Jira, c.14046).
+
+`docs/master/evidencias/SCRUM-624/sonda-papel-de-la-factura.cjs` — `node <sonda> <árbol con dist/>`.
+Es una COPIA de la aritmética del PDF de factura (`pdf.service.ts`, bucle de líneas y bloque de
+totales) con el formateador real de `dist/`; no genera ningún PDF. Si ese fichero cambia, la sonda
+deja de medirlo.
+
+**Población:** 100.000 facturas por fila, precios al azar con semilla fija de 1,00 a 500,00 € a 2
+decimales, cantidad 1, tipos alternados. No son facturas reales.
+
+| Tipos | Líneas | Total impreso ≠ total guardado | La columna de líneas no suma el total impreso |
+|---|---|---|---|
+| sólo 21 % | 2 | 0,3 % | 25,8 % |
+| sólo 21 % | 5 | 0,2 % | 46,0 % |
+| sólo 21 % | 10 | 0,3 % | 59,7 % |
+| sólo 10 % | 5 | 2,0 % | 47,0 % |
+| 21 % y 10 % | 2 | 25,0 % | 25,1 % |
+| 21 % y 10 % | 10 | 26,3 % | 60,4 % |
+
+La tercera columna es la decisión que este ticket dejó en la asesoría el 4-sep: sigue igual. La
+cuarta es SCRUM-1446 (2-oct): una convención por elegir, que sobrevive a lo que se decida aquí.
+
+**Error propio:** afirmé que este ticket llevaba «un mes con una propuesta sin decidir» habiendo
+leído 135 de las 377 líneas de este mismo fichero. Las fases B y C, y la decisión del fundador del
+4-sep, estaban más abajo.
+
+**No medido:** el PDF de verdad · facturas por tramos y recapitulativas · facturas reales.

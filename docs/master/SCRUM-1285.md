@@ -282,3 +282,39 @@ Lo construido arriba —releer y comparar lo que la persona ve del plan antes de
 
 - La cifra de «escritores distintos» de S3 (`--escritores`, SCRUM-1381): al escribir esto vive en un PR abierto y no se puede correr desde `main`. Puede no coincidir con 20 porque cuenta otra cosa (escritores, no sitios). No se copia; cuando entre, la reconcilia quien la corra.
 - El arreglo de fondo sigue siendo el mismo y sigue siendo esquema: una versión propia del plan (S1, con su ALTER).
+
+# APÉNDICE · La cifra del censo, corrida desde `main`, y cómo casa con el «20» de arriba (S2)
+
+**Medido contra:** `origin/main` = `5d7aaebc41d71d24102a4852c1de04059d9ac559` · 2026-10-02T11:19:59Z
+A9: sin fallo que generalice — apéndice de alcance, sin código; la cifra se copia de la salida del censo y dice cómo se obtuvo
+
+Sesión `s2-2octa`. Sólo documentación: no toca `public/` ni `src/`. Cierra el primer punto de «Lo que NO está aquí» del apéndice anterior: `--escritores` (SCRUM-1381, #2106) ya está en `main`.
+
+## Lo medido
+
+`node scripts/_censo-escrituras-sin-version.mjs --escritores --todo`, en ese commit. La fila del `PATCH /:id/billing-plan` (`quotesAdmin.routes.ts:491`, modelo `quote`, protege `customBillingPlan`), copiada tal cual:
+
+> otros escritores: 16 sitios en 20 líneas → 0 sitios tocan lo suyo, 16 sitios ajenos (19 líneas), 1 sitios opacos
+
+La unidad la define el propio censo: **un sitio es fichero + ruta o función; una línea es una llamada a prisma; un sitio puede tener varias líneas.**
+
+## Cómo casa con el «20» de arriba
+
+Las dos cifras son ciertas y cuentan cosas distintas:
+
+- El apéndice anterior dice «20 sitios ajenos». Contó **líneas**, a mano, y las llamó sitios. Son las mismas 20 líneas que da el censo.
+- En la unidad del censo son **16 sitios**. Con el propio `billing-plan`: 21 líneas en 17 sitios.
+
+Los 16, como los lista el censo (entre paréntesis, sus líneas): `ensureJobForQuote` (:78, :145) · `POST /:token/decision` (:468, :512, :722) · `POST /create` (:263) · `expireQuotes` (:17) · `ensureQuoteDecisionToken` (:21) · `markReminded` (:83) · `sendQuoteWhatsAppToCustomer` (:113) · `GET /:id/pdf` (:724) · `POST /:id/approve` (:804) · `POST /:id/send-email` (:759) · `PUT /:id/notes` (:843) · `fusionarClientes` (:177) · `acceptQuoteAdmin` (:377) · `rejectQuoteAdmin` (:424) · `setQuoteTags` (:159) · `handleIncomingText` (:482, :551).
+
+**Lo que no cuadra y no se ha resuelto:** el resumen dice «16 sitios ajenos (19 líneas), 1 sitios opacos», y la lista de ajenos suma 20 líneas. La lectura que encaja (una línea opaca dentro de un sitio que también tiene una ajena) es una deducción: la salida no nombra cuál es el opaco. No se ha abierto el censo para comprobarlo (es de S3).
+
+## Lo que de verdad importa
+
+Ninguno de los 16 toca `customBillingPlan` («0 sitios tocan lo suyo»): **todo 409 del plan de cobro que venga de ellos es un falso «ha cambiado».**
+
+Y dos de los 16 son **automáticos**: `expire.service.ts::expireQuotes` y `reminder.service.ts::markReminded`. Un proceso que corre solo puede hacer fallar el guardado de una persona que no ha tocado nada, y a quien nadie le ha cambiado nada.
+
+## El límite de lo construido en pantalla
+
+El arreglo (ante el 409, releer y comparar el plan; si es el mismo, reenviar en silencio con la versión nueva) aguanta a cualquier escritor que no cambie el plan, sea cual sea. **Pero está probado con el caso genérico** («la versión se movió y el plan es igual», `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`), **no con cada uno de los 16.** Y sigue sin verse en yaqu.app: la cuenta QA no tiene un presupuesto con plan propio (SCRUM-1367).

@@ -1,0 +1,24 @@
+﻿COLA FRENTE A EJECUCIÓN · job «build + tests…» de ci.yml · event=pull_request · ventana 2026-10-02T00:00:00Z → 2026-10-02T12:30:00Z
+POBLACIÓN: 54 corridas · 41 con el obligatorio en success/failure (MEDIDAS) · 12 con el obligatorio sin veredicto (cancelado, saltado o en curso) · 1 sin ese job · 0 de las medidas son reintentos (se mide el último intento)
+
+POR CORRIDA:
+   COLA (hasta el primer paso)        mediana 0.3 min · p90 1.5 min · máx 9.5 min · suma 0.6 h
+   EJECUCIÓN (primer paso → fin)      mediana 9.4 min · p90 10.6 min · máx 10.7 min · suma 6.2 h
+   TOTAL (arranque del intento → fin) mediana 9.9 min · p90 11.4 min · máx 15.4 min · suma 6.8 h
+
+LA FRACCIÓN QUE DECIDE: de todo el tiempo del obligatorio, COLA 9.1 % · EJECUCIÓN 90.9 %
+CORRIDAS CON COLA: > 1 min: 8 de 41 · > 5 min: 1 de 41 · > 10 min: 0 de 41
+CONTROL DE LA LECTURA: en 1 de 41 la cola leída del primer paso y la leída de `started_at` del job difieren en más de 30 s
+
+POR HORA (UTC) · corridas medidas · mediana de cola · máxima de cola:
+   2026-10-02T02h ·   9 ·   0.4 min ·   1.0 min
+   2026-10-02T03h ·   7 ·   0.1 min ·   0.9 min
+   2026-10-02T05h ·   3 ·   0.1 min ·   1.1 min
+   2026-10-02T06h ·   4 ·   0.9 min ·   3.8 min
+   2026-10-02T08h ·   1 ·   0.1 min ·   0.1 min
+   2026-10-02T11h ·  14 ·   1.0 min ·   9.5 min
+   2026-10-02T12h ·   3 ·   0.1 min ·   1.1 min
+
+LO QUE ESTO NO MIDE: la cola de los OTROS jobs y workflows (el abridor de PR, los informativos); ni el tiempo del empujón a que la corrida existe.
+
+filas escritas en docs\master\evidencias\SCRUM-1419\cola-2oct.tsv: 41

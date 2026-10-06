@@ -27,6 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTAS = '../dist/modules/jobs/app/routes/albaranes.routes.js';
@@ -97,21 +98,23 @@ async function accionesDelDetalle(alb, detalle) {
 const EMITIDO = filaAlbaran(1302601, 'emitido');
 const FIRMADO = filaAlbaran(1302602, 'firmado');
 
-for (const [caso, cliente] of [
+const FILAS = [
   ['sin ningún número', { phone: null, mobile: null }],
   ['con un número que no se puede marcar', { phone: 'no tiene', mobile: '' }],
-]) {
-  test(`SCRUM-1302 F · 🔴 cliente ${caso}: ni «Enviar para firmar» ni «Enviar por WhatsApp» (su único desenlace es 409)`, async () => {
-    const detalle = rutaDeDetalle([EMITIDO, FIRMADO], cliente);
-    const emitido = await accionesDelDetalle(EMITIDO, detalle);
-    assert.ok(!emitido.includes('btnEnviarFirmar'),
-      `🔴 emitido, cliente ${caso}: se ofrece «Enviar para firmar» y sólo puede dar 409 customer_missing_phone. Acciones: ${JSON.stringify(emitido)}`);
-    assert.ok(emitido.includes('btnFirmarAqui'), '🔴 se ha escondido de más: «Firmar aquí mismo» no necesita número');
-    const firmado = await accionesDelDetalle(FIRMADO, detalle);
-    assert.ok(!firmado.includes('btnWhatsApp'),
-      `🔴 firmado, cliente ${caso}: se ofrece «Enviar por WhatsApp» y sólo puede dar 409. Acciones: ${JSON.stringify(firmado)}`);
-  });
-}
+];
+const caso2 = casosEscritos(FILAS, ([caso, cliente]) => `SCRUM-1302 F · 🔴 cliente ${caso}: ni «Enviar para firmar» ni «Enviar por WhatsApp» (su único desenlace es 409)`, async ([caso, cliente]) => {
+  const detalle = rutaDeDetalle([EMITIDO, FIRMADO], cliente);
+  const emitido = await accionesDelDetalle(EMITIDO, detalle);
+  assert.ok(!emitido.includes('btnEnviarFirmar'),
+    `🔴 emitido, cliente ${caso}: se ofrece «Enviar para firmar» y sólo puede dar 409 customer_missing_phone. Acciones: ${JSON.stringify(emitido)}`);
+  assert.ok(emitido.includes('btnFirmarAqui'), '🔴 se ha escondido de más: «Firmar aquí mismo» no necesita número');
+  const firmado = await accionesDelDetalle(FIRMADO, detalle);
+  assert.ok(!firmado.includes('btnWhatsApp'),
+    `🔴 firmado, cliente ${caso}: se ofrece «Enviar por WhatsApp» y sólo puede dar 409. Acciones: ${JSON.stringify(firmado)}`);
+});
+test('SCRUM-1302 F · 🔴 cliente sin ningún número: ni «Enviar para firmar» ni «Enviar por WhatsApp» (su único desenlace es 409)', caso2(0));
+test('SCRUM-1302 F · 🔴 cliente con un número que no se puede marcar: ni «Enviar para firmar» ni «Enviar por WhatsApp» (su único desenlace es 409)', caso2(1));
+caso2.todos();
 
 test('SCRUM-1302 F · ✅ cliente con móvil: los dos envíos siguen ofreciéndose (btnEnviarFirmar, btnWhatsApp)', async () => {
   const detalle = rutaDeDetalle([EMITIDO, FIRMADO], { phone: null, mobile: '34000000001' });

@@ -1779,7 +1779,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // customersView). Cada albarán abre su propio sheet. Se monta en document.body para que el
   // position:fixed no dependa de ningún stacking-context de la vista.
   /**
-   * SCRUM-170 · HOJA DE «FACTURAR PARTE».
+   * SCRUM-170 · HOJA DE «FACTURAR LO ENTREGADO» (se llamó «Facturar parte» hasta SCRUM-1215 c.18283).
    *
    * Enseña lo SERVIDO, lo ya FACTURADO y lo que queda de cada línea, y deja escribir cuánto se
    * factura ahora. Por defecto propone TODO lo pendiente: el caso normal es cobrar lo que falta,
@@ -2078,7 +2078,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // la página del albarán, que las hace de verdad (no las delega). Aquí queda el enlace.
     //
     // ── LO QUE NO SE HA IDO, Y NO ES OLVIDO ────────────────────────────────────────────────
-    // «Editar líneas» y «Facturar parte» siguen aquí porque su mecanismo VIVE aquí:
+    // «Editar líneas» y «Facturar lo entregado» siguen aquí porque su mecanismo VIVE aquí:
     // `openAlbEditorSheet` y `openFacturarParcialSheet` están anidadas dentro de
     // `renderJobDetailView`, no son globales, y la página solo puede NAVEGAR hasta ellas.
     // Borrarlas de la fila no las movería: las dejaría inalcanzables desde los dos sitios, y los
@@ -3232,11 +3232,14 @@ function openFacturarParcialSheet(alb, ctx) {
   overlay.className = 'modal-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', `Facturar parte del albarán ${alb.numero}`);
+  // APROBADO · SCRUM-1215 comentario 18283 (6-oct-2026): la hoja se llama como el botón que la
+  // abre (`ROTULOS_ALBARAN.btnFacturar`, c.17496). Antes decía «parte» (una porción) en la misma
+  // ficha que tiene la entrada al «Parte de trabajo» (el documento).
+  overlay.setAttribute('aria-label', `Facturar lo entregado del albarán ${alb.numero}`);
   const modal = document.createElement('div');
   modal.className = 'modal';
   // SCRUM-446: la cabecera sale del constructor compartido.
-  const header = cabeceraModal({ titulo: `Facturar parte de ${alb.numero}` });
+  const header = cabeceraModal({ titulo: `Facturar lo entregado · ${alb.numero}` }); // APROBADO · SCRUM-1215 comentario 18283
   const closeBtn = header.querySelector('.modal-close');
 
   const err = document.createElement('div');

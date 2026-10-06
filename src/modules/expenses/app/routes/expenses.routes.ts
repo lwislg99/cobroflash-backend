@@ -1,3 +1,4 @@
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
@@ -50,10 +51,13 @@ function refErrorBody(err: ExpenseRefError) {
 router.get('/', requireRole('admin'), async (req, res) => {
   try {
     const { month, category, quoteId } = req.query;
+    // SCRUM-1379 · el id de la query va a la base: si no cabe en la columna, 400 y no 500.
+    const quoteIdNum = quoteId ? Number(quoteId) : undefined;
+    if (quoteIdNum !== undefined && !cabeEnColumnaInt(quoteIdNum)) return res.status(400).json({ error: 'invalid_id' });
     const items = await listExpenses(req.merchantId, {
       month:    month    ? String(month)    : undefined,
       category: category ? String(category) : undefined,
-      quoteId:  quoteId  ? Number(quoteId)  : undefined,
+      quoteId:  quoteIdNum,
     });
     return res.json({ ok: true, items });
   } catch (err) {
@@ -83,7 +87,7 @@ router.get('/categories', (_req, res) => {
 router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
   try {
     const quoteId = Number(req.params.quoteId);
-    if (!Number.isFinite(quoteId)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(quoteId)) return res.status(400).json({ error: 'invalid_id' });
     const margin = await getQuoteMargin(req.merchantId, quoteId);
     if (!margin) return res.status(404).json({ error: 'quote_not_found' });
     return res.json({ ok: true, ...margin });
@@ -117,7 +121,7 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
 router.get('/:id/foto', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const gasto = await prisma.expense.findFirst({
       where: { id, merchantId: req.merchantId },
       select: { receiptData: true },
@@ -157,9 +161,16 @@ router.post('/', async (req, res) => {
     if (amount == null || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'amount_required' });
     if (Number(amount) <= 0) return res.status(400).json({ error: 'amount_invalid' });
 
+    // SCRUM-1379 · los ids del CUERPO van a la base igual que el de la URL.
+    const quoteIdNum = quoteId ? Number(quoteId) : null;
+    const providerIdNum = providerId ? Number(providerId) : null;
+    if ((quoteIdNum !== null && !cabeEnColumnaInt(quoteIdNum)) || (providerIdNum !== null && !cabeEnColumnaInt(providerIdNum))) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+
     const expense = await createExpense(req.merchantId, {
-      quoteId:    quoteId    ? Number(quoteId)    : null,
-      providerId: providerId ? Number(providerId) : null,
+      quoteId:    quoteIdNum,
+      providerId: providerIdNum,
       concept:    String(concept).trim(),
       amount:     Number(amount),
       currency:   currency ? String(currency).toUpperCase() : undefined,
@@ -277,7 +288,7 @@ router.post('/leer-ticket', async (req, res) => {
 router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
             baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
     const patch: any = {};
@@ -289,6 +300,10 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (notes       !== undefined) patch.notes       = notes ? String(notes) : null;
     if (quoteId     !== undefined) patch.quoteId     = quoteId ? Number(quoteId) : null;
     if (providerId  !== undefined) patch.providerId  = providerId ? Number(providerId) : null;
+    // SCRUM-1379 · los ids del CUERPO van a la base igual que el de la URL.
+    if ((patch.quoteId != null && !cabeEnColumnaInt(patch.quoteId)) || (patch.providerId != null && !cabeEnColumnaInt(patch.providerId))) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
     if (receiptData !== undefined) patch.receiptData = receiptData ? String(receiptData) : null;
       // SCRUM-324 (E3) · en la edición se distingue «no lo mandes» (`undefined`, no se toca) de
       // «bórralo» (`null`). Sin esa distinción, abrir el modal y guardar borraría el desglose.
@@ -332,7 +347,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const deleted = await deleteExpense(req.merchantId, id);
     if (!deleted) return res.status(404).json({ error: 'not_found' });
     return res.json({ ok: true });
