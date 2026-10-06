@@ -85,7 +85,13 @@ function montar() {
   return { hecho, rellenar, elegirExistente, pulsar, loQueSeLee, $ };
 }
 
-const AVISO = 'No hemos podido enviarlo porque este cliente no tiene teléfono. El presupuesto se ha guardado.';
+// 🔴 LO QUE ESTE TEST AFIRMA CAMBIÓ, Y POR UNA FIRMA, NO PARA QUE EL CÓDIGO PASE. Las dos fechas:
+//   · 2-oct-2026 · SCRUM-1198 comentario 18206 aprobó «No hemos podido enviarlo porque este cliente
+//     no tiene teléfono. El presupuesto se ha guardado.»
+//   · 6-oct-2026 · SCRUM-1443 comentario 18313 lo SUSTITUYE por el de abajo: la palabra del
+//     documento es la del país («presupuesto» o «cotización») y ningún pronombre la señala
+//     («enviarlo» pasa a «enviar el WhatsApp»). El banco no carga `appLocale`: sale «presupuesto».
+const AVISO = 'No hemos podido enviar el WhatsApp porque este cliente no tiene teléfono. Hemos guardado tu presupuesto.';
 
 test('SCRUM-1198 · suelo: la red de mentira rechaza `phone: null` como producción, y acepta que no venga', async () => {
   const m = montar();
