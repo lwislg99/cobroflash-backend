@@ -68,7 +68,38 @@ function reservasAlTraerALaVista(css) {
   return out;
 }
 
+/** El alto (px) de la cabecera fija: el token `--topbar-h`, que es el `height` de `.topbar`. */
+function altoDeLaCabecera(css) {
+  const limpio = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const token = /--topbar-h\s*:\s*(\d+(?:\.\d+)?)px/.exec(limpio);
+  const usa = /(?:^|\})\s*\.topbar\s*\{[^{}]*height\s*:\s*var\(--topbar-h\)[^{}]*position\s*:\s*sticky/.test(limpio);
+  return token && usa ? Number(token[1]) : null;
+}
+
+/**
+ * Lo que la PÁGINA da por ocupado ARRIBA al traer algo a la vista: el `scroll-padding-top` (px) de
+ * cada regla `html`. Entiende `Npx` y `calc(var(--topbar-h) + Npx)`; otra forma sale `NaN`, que no
+ * pasa ninguna comparación (no se da por buena una reserva que no se sabe leer).
+ */
+function reservasArribaAlTraerALaVista(css, cabecera) {
+  const limpio = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(limpio))) {
+    if (!m[1].split(',').map((s) => s.trim()).includes('html')) continue;
+    const d = /(?:^|;)\s*scroll-padding-top\s*:\s*([^;]+)/.exec(m[2]);
+    if (!d) continue;
+    const v = d[1].trim();
+    const suma = /^calc\(\s*var\(--topbar-h\)\s*\+\s*(\d+(?:\.\d+)?)px\s*\)$/.exec(v);
+    out.push(suma ? cabecera + Number(suma[1]) : /^\d+(?:\.\d+)?px$/.test(v) ? parseFloat(v) : NaN);
+  }
+  return out;
+}
+
 const BOTON = altoQueOcupaElBoton(leer('public/dashboard/js/tutorial.js'));
+const CABECERA = altoDeLaCabecera(leer('public/dashboard/css/styles.css'));
+const RESERVAS_ARRIBA = reservasArribaAlTraerALaVista(leer('public/dashboard/css/styles.css'), CABECERA);
 const RELLENOS = rellenosInferiores(leer('public/dashboard/css/styles.css'));
 const RESERVAS = reservasAlTraerALaVista(leer('public/dashboard/css/styles.css'));
 
@@ -120,4 +151,31 @@ test('SCRUM-1464 (b) · CONTROL POSITIVO: sin la reserva, o con una corta, el le
   assert.deepEqual(reservasAlTraerALaVista('html { scroll-padding: 40px; }'), [40]);
   assert.deepEqual(reservasAlTraerALaVista('/* html { scroll-padding-bottom: 999px; } */ html.x { scroll-padding-bottom: 999px; } .modal { scroll-padding-bottom: 999px; }'), [],
     'ni un comentario, ni `html.x`, ni otro contenedor son la página');
+});
+
+// ── (b) · el borde de arriba: la cabecera fija ───────────────────────────────────────────────────
+// El mismo defecto en el borde opuesto. Medido en yaqu.app: lo traído con `start` acababa en y = 0,
+// debajo de `.topbar` (Configuración, 3 de 3 ventanas: tapaba «Datos de la empresa»).
+
+test('SCRUM-1464 (b) · SUELO: se lee el alto de la cabecera fija', () => {
+  assert.ok(Number.isFinite(CABECERA) && CABECERA >= 40,
+    `🔴 CIEGO: no sé leer el alto de la cabecera (\`--topbar-h\`, usado por un \`.topbar\` \`sticky\`; leído: ${CABECERA}). Si ya no es fija o ha cambiado de forma, este guard no mide nada.`);
+});
+
+test('SCRUM-1464 (b) · 🔴 al traer algo a la vista, la página da por ocupado arriba lo que mide la cabecera fija', () => {
+  assert.ok(RESERVAS_ARRIBA.length >= 1,
+    '🔴 ninguna regla de `html` declara `scroll-padding-top`: lo que se traiga a la vista con `start` acaba debajo de la cabecera.');
+  const cortas = RESERVAS_ARRIBA.filter((r) => !(r >= CABECERA));
+  assert.deepEqual(cortas, [],
+    `🔴 la página reserva ${cortas.join(', ')} px arriba al traer algo a la vista y la cabecera mide ${CABECERA} px.`);
+});
+
+test('SCRUM-1464 (b) · CONTROL POSITIVO de arriba: sin reserva, con una corta o con una que no se sabe leer, el lector lo ve', () => {
+  assert.deepEqual(reservasArribaAlTraerALaVista('html { scroll-padding-bottom: 80px; }', 60), [], 'la de abajo no cuenta como la de arriba');
+  assert.deepEqual(reservasArribaAlTraerALaVista('html { scroll-padding-top: calc(var(--topbar-h) + 12px); }', 60), [72]);
+  assert.deepEqual(reservasArribaAlTraerALaVista('html { scroll-padding-top: 24px; }', 60), [24]);
+  assert.ok(Number.isNaN(reservasArribaAlTraerALaVista('html { scroll-padding-top: 4rem; }', 60)[0]), 'una forma que no entiende no se da por buena');
+  assert.ok(!(NaN >= 60), 'y un NaN no pasa la comparación');
+  assert.equal(altoDeLaCabecera(':root { --topbar-h: 60px; } .topbar { height: var(--topbar-h); position: sticky; top: 0; }'), 60);
+  assert.equal(altoDeLaCabecera(':root { --topbar-h: 60px; } .topbar { height: var(--topbar-h); position: static; }'), null, 'una cabecera que no es fija no tapa nada');
 });
