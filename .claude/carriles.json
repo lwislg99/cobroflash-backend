@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 df7912c181fe). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 3dd485e5e1b5). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "df7912c181fe",
+  "sha": "3dd485e5e1b5",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -670,13 +670,6 @@
       "dueno": "**S3**"
     },
     {
-      "patron": "scripts/_medidor-de-toque.mjs",
-      "puesto": "S3",
-      "tipo": "puesto",
-      "linea": 175,
-      "dueno": "**S3**"
-    },
-    {
       "patron": "scripts/suelo-de-la-tanda.mjs",
       "puesto": "S3",
       "tipo": "puesto",
@@ -748,13 +741,6 @@
     },
     {
       "patron": "scripts/_arbol-quieto.mjs",
-      "puesto": "S3",
-      "tipo": "puesto",
-      "linea": 175,
-      "dueno": "**S3**"
-    },
-    {
-      "patron": "scripts/_pagina-panel.mjs",
       "puesto": "S3",
       "tipo": "puesto",
       "linea": 175,

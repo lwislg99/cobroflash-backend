@@ -167,3 +167,46 @@ Hasta entonces, nadie debe darlo por funcionando.
 `typescript` ausente, no por el código). La tanda la da el CI.
 
 A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+## 6-oct · tercera tanda · `main` traído con las filas de scripts de workflow, y una celda que el generador no pudo leer
+
+**Medido contra:** `origin/main` = `317c0bab5ed17aa7700f97cfca308d05d4238a8d` · 2026-10-06T18:24:10Z
+
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+`main` entró dos veces: con SCRUM-1480b (#2227) y con SCRUM-1480c (#2230). Las dos chocaron en
+`docs/equipo/dos-equipos.md` §3.3, donde las filas nuevas de `scripts/` quedan pegadas a las tres que esta rama
+cambia. Resuelto las dos veces igual: de `main`, sus filas; de la rama, las tres suyas (`scripts/_suelo-*`, las
+cicatrices y `docs/master/SCRUM-*.md`). Después de cada fusión, `node scripts/carriles.mjs generar`.
+
+**El fallo, que es mío y lo cazó el generador.** En #2230 escribí la fila de S3 así: «…con los dos ficheros que
+dentro de `scripts/` sólo importa el meta-guard». Esa frase va en la celda de RUTAS, y el generador lee de esa
+celda todo lo que va entre comillas invertidas: leyó una fila más, toda la carpeta para S3, y se negó:
+
+    NO-PUDE-MIRAR: la tabla no se deja convertir sin elegir por ella:
+      docs/equipo/dos-equipos.md:171 y :175 · `scripts/**` con dos dueños
+
+No eligió por la tabla, que es lo que tiene que hacer. Visto en rojo sobre la fusión sin corregir (`7e681763`):
+`tests/scrum1295-carriles.test.mjs` cae en tres de sus ocho tests con ese mismo mensaje. En `main` no lo caza nada
+todavía: nadie lee esa celda hasta que entre este PR.
+
+**El arreglo es del documento, no del generador:** la frase pasa a «…que, de entre los scripts, sólo importa el
+meta-guard», sin ruta. Va en esta rama porque es la que trae al lector de esa celda; en `main` la frase vieja se
+queda hasta que esto entre, sin nadie que la lea.
+
+**La sonda de la cerradura** (corre `.claude/hooks/carril.mjs` de verdad, con su entrada; vive fuera del
+repositorio, en la máquina de Luis), sobre el árbol ya regenerado, once casos:
+
+| quién | qué edita | antes de SCRUM-1480c | después |
+|---|---|---|---|
+| S5 | `scripts/vigia-atascados.mjs`, `scripts/puerta-avisador-rojo.mjs`, `scripts/equipo/latido.mjs` | pasa | pasa |
+| S3 | `scripts/meta-guard-mutaciones.mjs`, `scripts/censo-objetivo-tactil-panel.mjs` | pasa | pasa |
+| S3 | `scripts/_banco-vistas.mjs` (sólo fila general) | pasa | pasa |
+| S0 | `scripts/vigia-atascados.mjs` | bloquea | bloquea |
+| S5 | `scripts/meta-guard-mutaciones.mjs` | bloquea | bloquea |
+| S2 | `src/modules/quotes/domain/quote.service.ts` | bloquea | bloquea |
+| S3 | `scripts/_medidor-de-toque.mjs` | pasa | pasa |
+| S0 | `scripts/_medidor-de-toque.mjs` | **bloquea** | **pasa** |
+
+La última fila es lo que SCRUM-1480c cambia de verdad: con la fila de 9, la cerradura le habría cerrado a todo
+el que no fuera S3 un ayudante que usan dos guards sin dueño decidido.
