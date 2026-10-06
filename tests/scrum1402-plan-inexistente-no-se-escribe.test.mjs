@@ -370,3 +370,64 @@ test('SCRUM-1402 · 🔒 el webhook no lleva su PROPIA lista de planes: toma la 
     `🔴 EL WEBHOOK NOMBRA PLANES POR SU CUENTA: ${JSON.stringify(nombrados)}. Los únicos literales de plan que le `
     + 'tocan son los dos `trial` de las dos puertas de cancelación (SCRUM-809). Cualquier otro es una lista copiada a mano.');
 });
+
+// ── LO QUE TIENE QUE TUMBAR ESTE FICHERO (lo ejecuta `npm run meta:mutaciones`) ──────────
+// Las cuatro últimas parten de la MISMA línea —la pregunta— y la tuercen de cuatro maneras.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto del ticket, puerta 1: el checkout vuelve a escribir lo que llegue.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: ' && s.customer && planQueExiste(planId, merchantId, event)) {',
+    a: ' && s.customer) {',
+    cae: 'checkout.session.completed con un plan que NO existe',
+  },
+  {
+    // Puerta 2: la suscripción activa.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: "        if (st === 'active' || st === 'trialing') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
+    a: "        if (st === 'active' || st === 'trialing') {\n          await prisma.merchant.update({",
+    cae: '(active, trialing) con un plan que NO existe',
+  },
+  {
+    // Puerta 3: el impago.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: "        } else if (st === 'past_due' || st === 'unpaid') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
+    a: "        } else if (st === 'past_due' || st === 'unpaid') {\n          await prisma.merchant.update({",
+    cae: 'un impago (past_due, unpaid) con un plan que NO existe',
+  },
+  {
+    // El rechazo CALLADO, que el fundador dejó dicho que es peor que no rechazar.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: '  console.warn(\n    `[stripe] ',
+    a: '  String(\n    `[stripe] ',
+    cae: 'checkout.session.completed con un plan que NO existe',
+  },
+  {
+    // El arreglo peor que el defecto: se rechaza TODO y quien paga se queda sin plan.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: '  if (PLANES_CONOCIDOS.includes(planId)) return true;',
+    a: '  if (false) return true;',
+    cae: 'checkout.session.completed con un plan legítimo',
+  },
+  {
+    // El agujero de SCRUM-1342 otra vez: preguntar por lo que la lista HEREDA (`constructor`, `toString`).
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: '  if (PLANES_CONOCIDOS.includes(planId)) return true;',
+    a: '  if ((PLANES_CONOCIDOS as any)[planId] !== undefined || PLANES_CONOCIDOS.includes(planId)) return true;',
+    cae: 'checkout.session.completed con un plan que NO existe',
+  },
+  {
+    // La «ayuda»: se acepta `Equipo` o `equipo ` y se escribe en la fila TAL CUAL llegó.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: '  if (PLANES_CONOCIDOS.includes(planId)) return true;',
+    a: '  if (PLANES_CONOCIDOS.includes(planId.trim().toLowerCase())) return true;',
+    cae: '(active, trialing) con un plan que NO existe',
+  },
+  {
+    // La segunda lista, copiada a mano: funciona igual HOY y diverge el día que nazca un plan.
+    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
+    de: '  if (PLANES_CONOCIDOS.includes(planId)) return true;',
+    a: "  if (['trial', 'pro', 'founding', 'equipo'].includes(planId)) return true;",
+    cae: 'no lleva su PROPIA lista de planes',
+  },
+];
