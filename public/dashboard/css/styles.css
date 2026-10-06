@@ -3070,7 +3070,14 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   .table--cards-mobile tbody tr:hover { background: var(--neutral-50); }
   .table--cards-mobile td { display: block; padding: 0; border: 0; }
   .table--cards-mobile td.cell-id { grid-area: id; font-size: 12px; color: var(--muted); }
-  .table--cards-mobile td.cell-client { grid-area: client; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  /* SCRUM-1462 · EL NOMBRE DEL CLIENTE ENVUELVE EN LA TARJETA, EN TODAS LAS LISTAS. Esta regla ya
+     pedía `overflow-wrap: anywhere`, pero la tabla hereda `white-space: nowrap` (≤768 px) y con
+     `nowrap` no hay dónde partir: el nombre se salía de la tarjeta, cortado a media palabra.
+     Se había arreglado DOS veces por separado —`.table--trabajos` (SCRUM-727b) y
+     `.table--albaranes` (SCRUM-1450)— y seguía roto en las demás (medido en Presupuestos, 390 y
+     320 px). Va aquí, en la regla compartida, para que la siguiente lista no nazca con él.
+     Número, fecha, importe y estado NO se tocan: siguen en una línea. */
+  .table--cards-mobile td.cell-client { grid-area: client; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; white-space: normal; }
   .table--cards-mobile td.cell-date { grid-area: date; font-size: 12px; align-self: center; }
   .table--cards-mobile td.cell-amount { grid-area: amount; align-self: start; font-size: 16.5px; text-align: right; }
   .table--cards-mobile td.cell-status { grid-area: status; justify-self: end; }
@@ -4237,7 +4244,8 @@ textarea.parte-linea-desc {
       "trabajo  trabajo"
       "actions  actions";
   }
-  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; }
+  /* SCRUM-1462 · y el título del Trabajo también envuelve: es texto libre a ancho completo. */
+  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; white-space: normal; overflow-wrap: anywhere; }
   /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
      Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
   .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
