@@ -74,3 +74,64 @@ Las tres quedan en la clase IMPRIME del censo con este motivo escrito en `USO`.
   el obligatorio del PR.
 - La comprobación de tipos local da 6 errores, los 6 en ficheros que esta rama no toca y por el
   cliente de Prisma viejo del checkout compartido; la buena es la del CI.
+
+## 6-oct-2026 · el obligatorio del PR #2220 salió ROJO, y los dos casos eran de esta rama
+
+Lo escribe J3e (relevo de J3d), sobre la rama mezclada con `origin/main` =
+`ee4331a46b2d89864d1f044dcdc43af32e4c4479`. El job obligatorio de la punta `d6efb53a` acabó en
+`failure` con dos casos caídos. Ninguno era ajeno.
+
+### ① `SCRUM-643 · la DECISIÓN de qué zona usar vive en UN sitio`
+
+**La rama introdujo una lectura directa de `merchant.timezone` con su propia decisión para cuando
+falta:** `src/modules/quotes/domain/presupuestoParaPdf.ts`, `zona: merchant.timezone ?? null`. No es
+un tropiezo administrativo: es el patrón exacto que el guard existe para impedir.
+
+No fue un descuido. J3d pasó la zona **en crudo a propósito** y la resolvía dentro del documento
+(`pdf.service.ts`, `zonaDelMerchant({ timezone: params.zona })`): su comentario lo decía. Lo que el
+guard lee como una segunda decisión era la decisión deliberada de no decidir ahí. **El guard tiene
+razón de todas formas**: un `timezone ?? X` en el camino es justo como se vuelve al reloj del
+proceso, y el guard no puede distinguir un `?? null` inocente del `?? 'Europe/Madrid'` que vendría
+después copiándolo. Y la ironía, que se escribe: **el guard ha cazado en esta rama el mismo defecto
+que estos tres tickets arreglan** — una zona resuelta a mano.
+
+**El arreglo es del código, no del guard (regla 41):** `zona: zonaDelMerchant(merchant)`. El
+comentario de J3d que decía «EN CRUDO» lleva debajo una línea fechada que dice que ya no lo es.
+
+Lo que cambia y lo que no, medido:
+
+- `zonaDelMerchant` **no** devuelve lo mismo que `merchant.timezone ?? null` cuando el negocio no
+  tiene zona: devuelve `'UTC'`, no `null`. Y con una zona que `Intl` no conoce devuelve `'UTC'`,
+  donde antes viajaba la cadena rota. Se paró y se consultó al orquestador antes de cambiarlo.
+- El campo `zona` tiene **un solo lector** en `src/`: `pdf.service.ts`, que lo vuelve a pasar por
+  `zonaDelMerchant`. Sobre una zona ya resuelta devuelve la misma, así que cambia el valor
+  intermedio y **no el día impreso**.
+- **Ejecutado, no sólo leído:** «SCRUM-1470 · 🔴 CONTROL: una firma de mediodía NO cambia de día, y
+  sin zona declarada (o con una rota) el papel dice lo que decía» pasa antes y después del cambio,
+  con los mismos literales (`sinZona` y `zonaRota`: «02 de octubre de 2026»). «Negocio sin zona: no
+  se mueve nada» sigue siendo verdad en el papel.
+- La alternativa `zona: merchant.timezone` a secas dejaba el guard verde esquivando el patrón en
+  vez de llamar al sitio único. Descartada.
+
+### ② `SCRUM-553 · el número de etiquetas con el \`>\` pegado NO SUBE` (21 sobre un tope de 20)
+
+Había tres candidatos en `tests/_sonda-fecha-impresa.mjs`, que añade esta rama. **Medido con el
+propio censo** (`scripts/censo-etiquetas-pegadas.mjs`, 1.709 ficheros leídos) antes de tocar: cuenta
+**uno solo**, el extractor del evento del recibo, `<li>` con el `>` pegado. El comentario de uso de
+la cabecera **no cuenta**, y el extractor de `pf-card-meta` ya llevaba `[^>]*`. El arreglo es la
+forma que el propio guard enseña: `<li[^>]*>`. Tras el cambio el censo dice 20 (20 también sobre el
+árbol mezclado, 1.713 leídos). **El tope y el fichero del guard no se han tocado.**
+
+### Por qué llegó rojo al CI, y qué lo impide
+
+Antes de empujar se corrieron el test nuevo y los guards de registro, pero **no** los guards de
+suite que barren el árbol entero (`scrum643`, `scrum553`): un fichero nuevo en `src/` o en `tests/`
+entra en la población de guards que no llevan su número. No hay comprobación nueva que escribir:
+la que lo impide ya existe y es la que lo cazó, en el check obligatorio. Lo que faltó fue correrla
+en local, y eso es un aviso, no un mecanismo.
+
+Corrido en local sobre la mezcla, con el TAP a fichero: 12 ficheros (`scrum1470`, `scrum987`,
+`scrum1093h`, los dos `scrum643`, `scrum553` y los seis tests que pasan por `presupuestoParaPdf`),
+**149 pruebas, 0 caen, 0 saltos**; 15 «SCRUM-147x · » por nombre y un nombre inventado que da 0.
+Los guards de registro, aparte. La tanda completa local sigue sin correrse; la comprobación de
+tipos local sigue dando los 6 errores ajenos de arriba, ninguno en el fichero tocado.
