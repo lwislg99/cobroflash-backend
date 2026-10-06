@@ -295,3 +295,17 @@ puso otro número. Las cifras de aquella versión (21 y 32 sesiones; simulacione
 
 ## Comprobado
 
+En local, sobre el commit `c6f1a0b2` (con `main` = `bafb0734` dentro), entre las 19:35Z y las 19:56Z:
+
+- **Los tests que leen lo que este PR toca**: los 198 ficheros de `tests/` que nombran `docs/master`,
+  `docs/equipo`, `evidencias` o `cicatrices`, en tres tandas: 462 tests (455 pasan, 7 saltan), 1.030
+  (1.023 pasan, 6 saltan, 1 cae) y 556 (555 pasan, 1 salta). El que cayó en la segunda es de
+  `scrum1424-ya-esta`, y era ciego, no rojo: «no se pudo traer `origin` (git fetch falló)». Su fichero
+  entero va repetido dentro de la tercera, y ahí pasa.
+- **`npm run guards:entrada`**: 13 guards, 158 tests, en verde.
+
+**No corrido aquí:** la tanda entera (`npm test`). El `dist/` de este árbol es viejo y la máquina tenía
+598 MB libres al empezar. Este PR sólo toca `docs/`; la tanda la da el CI.
+
+**No comprobado, y no se puede desde aquí:** que el fundador dijera la frase. Lo que consta es la
+transcripción de su orquestador, y en Jira los dos firman con la misma cuenta.
