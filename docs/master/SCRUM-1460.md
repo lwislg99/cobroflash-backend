@@ -1,7 +1,7 @@
 # SCRUM-1460 · Tras firmar en el pad, la ficha del albarán recuerda mandar la copia
 
 **Medido contra:** `origin/main` = `3746d0351af6b56c88f6a53fce695eef51913d4f` · 2026-10-06T12:12:00Z
-A9: sin fallo que generalice en el producto — faltaba un texto, no había una conducta rota. Lo que sí generaliza es del instrumento y va abajo, en «Hallazgo del banco».
+A9: sin fallo que generalice — faltaba un texto, no había una conducta rota; lo que se vio del instrumento va abajo, en «Hallazgo del banco»
 
 **Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Un aviso nuevo en `public/dashboard/js/albaranDetailView.js` con el componente `.alert` que ya existe (`info` y `warning`), dentro del envoltorio de la caja de firma: sin clases, sin estilos y sin tokens nuevos.
 
