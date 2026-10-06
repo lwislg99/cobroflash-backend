@@ -220,8 +220,8 @@ test('SCRUM-1454 · de quién es un commit lo dice el PRIMER ticket de su asunto
 function jugueteConAjeno() {
   const j = juguete();
   const g = (...a) => execFileSync('git', ['-C', j.clon, '-c', 'user.name=prueba', '-c', 'user.email=prueba@example.invalid', '-c', 'commit.gpgsign=false', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  fs.writeFileSync(path.join(j.clon, 'censo.txt'), 'x\n');
-  g('add', '-A'); g('commit', '--quiet', '-m', 'SCRUM-50c: el censo y su desmentido; y el ticket abierto (SCRUM-51)');
+  // Commit VACÍO: lo que se prueba es el asunto, y así el test no crea ningún fichero (SCRUM-824).
+  g('commit', '--quiet', '--allow-empty', '-m', 'SCRUM-50c: el censo y su desmentido; y el ticket abierto (SCRUM-51)');
   g('push', '--quiet', 'origin', 'main'); g('fetch', '--quiet', 'origin');
   return j;
 }
@@ -266,11 +266,19 @@ test('SCRUM-1454 · el COMANDO con VARIOS: una respuesta por ticket, un recuento
 test('SCRUM-1454 · el COMANDO sin sus motores: lo dice por su SALIDA y sale 2 — con el stderr tirado sigue habiendo respuesta', (t) => {
   // Lo más cerca que se puede fabricar del 6-oct: el guion, solo, en un árbol donde no está lo que importa.
   const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
-  const suelto = path.join(j.base, 'suelto', 'scripts', 'equipo');
+  // Fuera del árbol y donde se vea de qué cuelga (SCRUM-824): un temporal propio, no una subcarpeta del juguete.
+  const arbolSuelto = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-ya-esta-suelto-'));
+  t.after(() => fs.rmSync(arbolSuelto, { recursive: true, force: true }));
+  const suelto = path.join(arbolSuelto, 'scripts', 'equipo');
   fs.mkdirSync(suelto, { recursive: true });
   fs.copyFileSync(GUION, path.join(suelto, 'ya-esta.mjs'));
+  // El hijo no hereda el reporter, el color ni el contexto de test de quien lo lanza (SCRUM-1349).
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
   // `stdio` con el stderr a `ignore` es el `2>/dev/null` de quien lo lanzó aquel día.
-  const r = spawnSync(process.execPath, [path.join(suelto, 'ya-esta.mjs'), '41', '99', '--raiz', j.clon], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'ignore'] });
+  const r = spawnSync(process.execPath, [path.join(suelto, 'ya-esta.mjs'), '41', '99', '--raiz', j.clon], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'ignore'], env: entornoHijo });
   assert.equal(r.status, SALIDA_CIEGO, r.stdout);
   assert.equal(r.stdout.split('\n').filter((l) => /NO HE PODIDO MIRAR/.test(l) && /^🔴 SCRUM-/u.test(l)).length, 2, r.stdout);
   assert.match(r.stdout, /el comando reventó/);

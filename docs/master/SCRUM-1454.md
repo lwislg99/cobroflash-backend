@@ -3,7 +3,13 @@
 **Rama:** `scrum-1454-ya-esta-commit-ajeno` · **Carril:** S5 · **Fecha:** 6-oct-2026
 **Medido contra:** `origin/main` = `39af736efc8ccf7d2966063561421855b3e4c4e9` · 2026-10-06T11:24:31Z (hora de GitHub)
 
-A9: comprobación → `tests/scrum1424-ya-esta.test.mjs` (los cuatro casos `SCRUM-1454`)
+A9: comprobación → `tests/scrum1424-ya-esta.test.mjs`
+
+**Por qué el test de 1454 vive en el fichero de 1424.** Son cuatro casos nuevos, titulados
+`SCRUM-1454`, añadidos al test del propio comando. No se hizo un fichero aparte porque comparten el
+repositorio de juguete (`juguete()`) y porque ese fichero ya está declarado en la lista de SCRUM-723
+(nombra la referencia móvil en sus aserciones): un fichero nuevo habría obligado a ampliar esa lista.
+Los ocho casos de SCRUM-1424 no cambian lo que afirman.
 
 Carril S5: `scripts/equipo/ya-esta.mjs` y su test. No toca ningún workflow ni `censarTicket`.
 GO del orquestador el 6-oct-2026 (~11:20Z); pedido antes dos veces (2-oct) sin respuesta.
