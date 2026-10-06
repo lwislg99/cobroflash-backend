@@ -180,6 +180,7 @@ test('SCRUM-1302c · 🔴 tras un intento fallido, «Añadir al parte» guarda U
   const { c } = await conPropuestaCorregida(srv);
   await ordenar(c, srv, 500);
   await ordenar(c, srv, 'sin-red');
+  assert.equal(avisosC(c).length, 1, '🔴 dos intentos fallidos dejan el aviso dos veces');
 
   const confirmar = con(c, 'data-propuesta-confirmar')[0];
   assert.equal(confirmar.disabled, false, '🔴 SUELO: «Añadir al parte» está apagado');
