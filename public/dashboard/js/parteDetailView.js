@@ -1277,6 +1277,13 @@
    * repintada desde el servidor. Va en el paso de ese campo —las horas, o su línea plegada, que
    * se abre— y no arriba: el dato que ha vuelto atrás está ahí. Si la relectura también falló ya
    * no hay casilla, y la ficha dice entera que no se ha podido cargar: no se añade nada.
+   *
+   * 🔴 SCRUM-1475 · Y SE TRAE A LA VISTA. Colgarlo no basta: con el campo al borde inferior de la
+   * ventana el aviso caía casi fuera (medido en yaqu.app: asomaban 13 px en móvil y 5 en
+   * escritorio). `nearest` y no `start`: si ya se ve entero la página no se mueve, y si no, se mueve
+   * lo justo. Va DESPUÉS de colgarlo y de abrir su línea, que antes no hay nada que traer. Que no
+   * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
+   * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
    */
   function avisarCampoNoGuardado(contenedor, nombre) {
     if (!contenedor || !contenedor.querySelector) return;
@@ -1295,6 +1302,7 @@
     aviso.style.marginTop = '8px';
     aviso.textContent = TEXTOS.noSeGuardoElCambio;
     paso.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
