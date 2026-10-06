@@ -154,7 +154,7 @@ async function papeles({ zona, instante }) {
     pagina: uno(pagina.cuerpo, /Ya aceptaste este [^<]*? el (\d{2} de \S+ de \d{4})/),
     reciboEstado: recibo.status,
     reciboPagado: uno(recibo.cuerpo, /Pagado el (\d{2} de \S+ de \d{4})/),
-    reciboEvento: uno(recibo.cuerpo, /<li>paid · ([^<]*)<\/li>/),
+    reciboEvento: uno(recibo.cuerpo, /<li[^>]*>paid · ([^<]*)<\/li>/),
     portalEstado: portal.status,
     portalPresupuesto: metas[0] ?? null,
     portalFactura: metas[1] ?? null,
