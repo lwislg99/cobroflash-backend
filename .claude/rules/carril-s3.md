@@ -1,5 +1,14 @@
 ---
 paths:
+  - "scripts/censo-objetivo-tactil-panel.mjs"
+  - "scripts/meta-guard-mutaciones.mjs"
+  - "scripts/censo-accion-del-80.mjs"
+  - "scripts/censo-clics-del-80.mjs"
+  - "scripts/_medidor-de-toque.mjs"
+  - "scripts/suelo-de-la-tanda.mjs"
+  - "scripts/_arbol-quieto.mjs"
+  - "scripts/_pagina-panel.mjs"
+  - "scripts/frontera-dist.mjs"
   - "scripts/_suelo-*"
   - "tests/_banco-*"
   - "tests/_suelo-*"

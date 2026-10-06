@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 e2e8bc67af05). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 df7912c181fe). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "e2e8bc67af05",
+  "sha": "df7912c181fe",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -326,11 +326,32 @@
       "dueno": "**J3** (contenedor)"
     },
     {
+      "patron": "scripts/censo-objetivo-tactil-panel.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
       "patron": "public/dashboard/js/parteDetailView.js",
       "puesto": "S4",
       "tipo": "puesto",
       "linea": 149,
       "dueno": "**S4**"
+    },
+    {
+      "patron": "scripts/_reporters-de-node-options.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/clasificar-fallo-automerge.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
     },
     {
       "patron": "src/modules/billing/domain/founding.ts",
@@ -382,6 +403,13 @@
       "dueno": "**J1**"
     },
     {
+      "patron": "scripts/_vigilante-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
       "patron": "src/modules/system/domain/soporte.ts",
       "puesto": "J3",
       "tipo": "puesto",
@@ -424,6 +452,13 @@
       "dueno": "**J3** (contenedor)"
     },
     {
+      "patron": "scripts/vigilante-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
       "patron": "src/modules/system/customerAdmin.ts",
       "puesto": "J2",
       "tipo": "puesto",
@@ -450,6 +485,13 @@
       "tipo": "puesto",
       "linea": 143,
       "dueno": "**J1**"
+    },
+    {
+      "patron": "scripts/vigia-despliegue-aviso.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
     },
     {
       "patron": "src/integrations/whatsappPolicy.ts",
@@ -480,6 +522,20 @@
       "dueno": "**J2**"
     },
     {
+      "patron": "scripts/conflicto-de-registro.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/meta-guard-mutaciones.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
       "patron": "docs/equipo/00-normas-comunes.md",
       "puesto": "S0",
       "tipo": "puesto",
@@ -506,6 +562,34 @@
       "tipo": "puesto",
       "linea": 145,
       "dueno": "**J3**"
+    },
+    {
+      "patron": "scripts/_ritmo-de-despliegue.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/constancia-del-alter.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/puerta-avisador-rojo.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/puerta-claude-empuje.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
     },
     {
       "patron": "public/dashboard/css/styles.css",
@@ -544,6 +628,27 @@
       "dueno": "**J3**"
     },
     {
+      "patron": "scripts/_huella-de-la-caida.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/censo-accion-del-80.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/tanda-con-veredicto.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
       "patron": "src/integrations/mercadopago.ts",
       "puesto": "J2",
       "tipo": "puesto",
@@ -556,6 +661,27 @@
       "tipo": "sin-cerradura",
       "linea": 160,
       "dueno": "orquestador de Luis / **orquestador de Javier**"
+    },
+    {
+      "patron": "scripts/censo-clics-del-80.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/_medidor-de-toque.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/suelo-de-la-tanda.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
     },
     {
       "patron": "scripts/vigia-sesiones-jv.mjs",
@@ -577,6 +703,13 @@
       "tipo": "contenedor",
       "linea": 150,
       "dueno": "**S2** (contenedor)"
+    },
+    {
+      "patron": "scripts/vigia-atascados.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
     },
     {
       "patron": "docs/equipo/dos-equipos.md",
@@ -614,6 +747,41 @@
       "dueno": "**J2**"
     },
     {
+      "patron": "scripts/_arbol-quieto.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/_pagina-panel.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/frontera-dist.mjs",
+      "puesto": "S3",
+      "tipo": "puesto",
+      "linea": 175,
+      "dueno": "**S3**"
+    },
+    {
+      "patron": "scripts/puerta-claude.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
+      "patron": "scripts/vigia-pasada.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
       "patron": "src/prisma/schema.prisma",
       "puesto": null,
       "tipo": "sin-cerradura",
@@ -642,6 +810,13 @@
       "dueno": "**J3** construye"
     },
     {
+      "patron": "scripts/zona-roja.mjs",
+      "puesto": "S5",
+      "tipo": "puesto",
+      "linea": 174,
+      "dueno": "**S5**"
+    },
+    {
       "patron": "public/register.html",
       "puesto": "J3",
       "tipo": "puesto",
@@ -666,7 +841,7 @@
       "patron": "docs/YAQU_MASTER.md",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 181,
+      "linea": 183,
       "dueno": "**un jefe**"
     },
     {
@@ -736,7 +911,7 @@
       "patron": "package.json",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 183,
+      "linea": 185,
       "dueno": "cada uno SU línea de script"
     },
     {
@@ -757,14 +932,14 @@
       "patron": "CLAUDE.md",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 181,
+      "linea": 183,
       "dueno": "**un jefe**"
     },
     {
       "patron": "DESIGN.md",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 182,
+      "linea": 184,
       "dueno": "**S2** propone"
     },
     {
@@ -778,7 +953,7 @@
       "patron": "docs/equipo/cicatrices/*.md",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 175,
+      "linea": 177,
       "dueno": "cada puesto, la suya"
     },
     {
@@ -848,14 +1023,14 @@
       "patron": "docs/master/SCRUM-*.md",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 176,
+      "linea": 178,
       "dueno": "quien trabaja el ticket"
     },
     {
       "patron": "docs/competencia/**",
       "puesto": "J5",
       "tipo": "puesto",
-      "linea": 179,
+      "linea": 181,
       "dueno": "**J5**"
     },
     {
@@ -869,21 +1044,21 @@
       "patron": "docs/prototipos/**",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 178,
+      "linea": 180,
       "dueno": "S4 / **J5**, por ticket"
     },
     {
       "patron": "docs/microcopy/**",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 177,
+      "linea": 179,
       "dueno": "**S4** el README; cada registro, el puesto que usa el texto"
     },
     {
       "patron": "scripts/_suelo-*",
       "puesto": "S3",
       "tipo": "puesto",
-      "linea": 174,
+      "linea": 176,
       "dueno": "**S3**"
     },
     {
@@ -918,7 +1093,7 @@
       "patron": "docs/legal/**",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 180,
+      "linea": 182,
       "dueno": "**J4** propone"
     },
     {
@@ -940,15 +1115,15 @@
       "patron": ".claude/**",
       "puesto": null,
       "tipo": "sin-cerradura",
-      "linea": 181,
+      "linea": 183,
       "dueno": "**un jefe**"
     },
     {
       "patron": "scripts/**",
-      "puesto": "S0",
-      "tipo": "puesto",
+      "puesto": null,
+      "tipo": "sin-cerradura",
       "linea": 171,
-      "dueno": "**S0**"
+      "dueno": "**S0**, sólo lo que sea verificación o censo de consulta"
     },
     {
       "patron": "public/**",
@@ -975,7 +1150,7 @@
       ],
       "motivo": "A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0",
       "ticket": "SCRUM-1294",
-      "linea": 195
+      "linea": 197
     }
   ]
 }
