@@ -204,7 +204,7 @@ Leído sitio a sitio en `origin/main`. De S0: `00-normas-comunes.md`, A19 (tres 
 
 # SCRUM-1282 · cuarta parte: el número de relevo al entregar pasa de 200k a 300k (S0)
 
-**Rama:** `scrum-1282d-umbral-de-relevo-300k` · **Carril:** S0 (`00-normas-comunes.md`; sesión `s0-6octh`) · **Fecha:** 6-oct-2026
+**Rama:** `scrum-1479-umbral-de-relevo-500k` (PR #2235, junto con SCRUM-1479; la rama local de la S0 se llamó `scrum-1282d-umbral-de-relevo-300k` y entró fusionada en ésa) · **Carril:** S0 (`00-normas-comunes.md`; sesión `s0-6octh`) · **Fecha:** 6-oct-2026
 **Medido contra:** `origin/main` = `bafb07340557298cd5bfde943d81ade8823d4a78` · 2026-10-06T19:31:32Z
 
 A9: aviso → cicatriz S0 «Un comando que se cita en una norma se copia de la terminal donde corrió: cité el simulador de relevo sin su número, y así no arranca.» — no se pudo comprobar: ningún test ejecuta los comandos que una norma cita en prosa
@@ -213,9 +213,14 @@ A9: aviso → cicatriz S0 «Un comando que se cita en una norma se copia de la t
 
 **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo pongo en 300.000. Autorizado el coste.»**
 
-Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479 (comentario 18513). Esta sesión no lo oyó de
-primera mano: lo lee de esa transcripción y de su orden de arranque, y así queda escrito en la A19. Autorizó
-UN número, el de relevo al entregar.
+Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479 (comentario 18513). En Jira los dos firman con
+la misma cuenta, así que eso solo no lo prueba. Lo comprobó la S5 en el origen (comentario 18532) y lo repetí
+yo: en la transcripción del chat del orquestador (`ed676fd1…jsonl`, línea 22479) es un turno `user` con
+`origin.kind = "human"`, 111 caracteres, con esa frase y la de #2001. La frase la había redactado el
+orquestador en su turno anterior y el fundador la envió tal cual. Autorizó UN número, el de relevo al entregar.
+
+⚠️ La hora: ese turno lleva `18:55:32Z` del reloj de la máquina, que ese día iba ~5,5 minutos adelantado. Las
+18:50Z de la cita son la hora de GitHub.
 
 ## Qué cambia
 
@@ -228,13 +233,14 @@ UN número, el de relevo al entregar.
 | `docs/equipo/cicatrices/S0.md` | S0 | una línea |
 | `docs/equipo/afirmaciones-verificadas.md` | S0 | dos filas: las dos frases de abajo que la medición no sostiene, y «cuando #2001 entre, bloquea de verdad» (SCRUM-1295: entró a las 19:15:33Z y no corre en ninguna de las 42 sesiones del día; entrega en Jira, comentario 18523). Los scripts de esa segunda fila van en `docs/master/evidencias/SCRUM-1295/` |
 
-## Lo que NO cambia aquí, y queda declarado
+## El gemelo, y lo que NO cambia aquí
 
-- **El gemelo de código sigue en 200k.** La constante de `sesion.mjs`, `gasto-arranque.mjs`, sus tests y
-  `orquestador-autonomo.md` son de la S5 (SCRUM-1479). Su rama `scrum-1479-umbral-de-relevo-500k` no estaba
-  en GitHub a las 19:21Z, y el orquestador mandó empujar ésta sin esperarla. Hasta que entre, el latido avisa
-  «por encima de 200k (A19)» y la norma dice 300k. La A19 lo dice con esas palabras. **Ninguno de los dos
-  tickets se cierra sin el otro.**
+- **El gemelo de código entra en el MISMO PR (#2235).** La constante de `sesion.mjs`, `gasto-arranque.mjs`,
+  sus tests y `orquestador-autonomo.md` son de la S5 (SCRUM-1479). A las 19:21Z su rama no estaba en GitHub;
+  a las 19:54Z la S5 fusionó en ella el primer commit de esta parte (`c6f1a0b2`) sin tocarle una línea y
+  empujó. Lo que este registro y la A19 decían entonces («el gemelo todavía dice 200k») dejó de ser cierto
+  con ese empujón, y se corrigió en la misma rama antes de que entrara. **Ninguno de los dos tickets se
+  cierra sin el otro.**
 - **El segundo número** (se releva ya, aunque sea a mitad) no lo ha decidido nadie. No lo toco: sigue el 500k
   que ya estaba en `main`. Abajo va lo que las mediciones sostienen.
 
@@ -307,5 +313,9 @@ En local, sobre el commit `c6f1a0b2` (con `main` = `bafb0734` dentro), entre las
 **No corrido aquí:** la tanda entera (`npm test`). El `dist/` de este árbol es viejo y la máquina tenía
 598 MB libres al empezar. Este PR sólo toca `docs/`; la tanda la da el CI.
 
-**No comprobado, y no se puede desde aquí:** que el fundador dijera la frase. Lo que consta es la
-transcripción de su orquestador, y en Jira los dos firman con la misma cuenta.
+**Después de fusionar la rama de la S5** (punta `ade488dc`, con `main` = `28222517` dentro), a las ~20:00Z:
+`scrum1485-censo-rutas-de-maquina` (entró en `main` mientras tanto, y las salidas de `evidencias/` llevan
+rutas de esta máquina), `scrum1070`, `scrum899c` y `scrum1350`: 64 tests, 64 pasan. Y otra vez
+`guards:entrada` y los tests que leen `docs/equipo` sobre la punta que se empuja.
+
+**La firma del fundador**, comprobada en el origen (arriba, «Quién lo autorizó»).
