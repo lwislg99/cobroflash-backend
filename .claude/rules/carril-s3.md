@@ -3,6 +3,7 @@ paths:
   - "scripts/_suelo-*"
   - "tests/_banco-*"
   - "tests/_suelo-*"
+  - "scripts/qa/**"
 ---
 # Carril S3 — GENERADO por `scripts/carriles.mjs` desde `docs/equipo/dos-equipos.md` §3. No se edita a mano.
 

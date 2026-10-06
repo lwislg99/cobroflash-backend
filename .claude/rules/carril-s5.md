@@ -1,6 +1,7 @@
 ---
 paths:
   - "docs/equipo/orquestador-autonomo.md"
+  - "scripts/vigia-sesiones-jv.mjs"
   - ".github/workflows/**"
   - "scripts/equipo/**"
   - "instalacion-*.md"
