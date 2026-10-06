@@ -1,0 +1,88 @@
+POBLACION · 7 escenarios × 2 versiones = 14 corridas del guion · node v24.8.0 · win32
+ANTES = 8dcc6d2ad6cab55e9b550220868b12adc82eb40e   AHORA = el árbol de trabajo (HEAD 018b61b1a36779455601213643d2966be3160ec0)
+
+══ A · BASE: la censada y un fichero limpio
+   sembrados: (ninguno)
+   ANTES · salida 0 (esperada 0) ✔ · 2 ficheros de la tanda + 4 canarios = 6 · canarios juzgados 4
+           ✔ TRINQUETE EN VERDE · la familia no ha crecido, y las 1 censadas siguen ahí.
+           acusa (🔴 NUEVA): 0
+           (esta versión no lo dice)
+   AHORA · salida 0 (esperada 0) ✔ · 2 ficheros de la tanda + 4 canarios = 6 · canarios juzgados 4
+           ✔ TRINQUETE EN VERDE · la familia no ha crecido, y las 1 censadas siguen ahí.
+           acusa (🔴 NUEVA): 0
+           NO PUDE COMPARAR · en la tanda 0 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 0
+
+══ B · PÉRDIDA PURA: todo pasa, en Midway faltan resultados
+   sembrados: perdida-entera.test.mjs, perdida-parcial.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 4 ficheros de la tanda + 4 canarios = 8 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 5 → <árbol>/tests\perdida-entera.test.mjs | perdida entera · pasa (1) | perdida entera · pasa (2) | perdida parcial · pasa y no llega (1) | perdida parcial · pasa y no llega (2)
+           (esta versión no lo dice)
+   AHORA · salida 0 (esperada 0) ✔ · 4 ficheros de la tanda + 4 canarios = 8 · canarios juzgados 4
+           ✔ TRINQUETE EN VERDE · la familia no ha crecido, y las 1 censadas siguen ahí.
+           acusa (🔴 NUEVA): 0
+           NO PUDE COMPARAR · en la tanda 5 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 5
+             · tests/perdida-entera.test.mjs   3 prueba(s) · faltan 1 en Pacific/Kiritimati · faltan 2 en Pacific/Midway
+             · tests/perdida-parcial.test.mjs   2 prueba(s) · faltan 2 en Pacific/Midway
+
+══ C · REAL: una prueba cae sólo en Midway, vista en las dos zonas
+   sembrados: real.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 1 → real · cae SOLO en Midway
+           (esta versión no lo dice)
+   AHORA · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 1 → real · cae SOLO en Midway
+           NO PUDE COMPARAR · en la tanda 0 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 0
+
+══ D · REAL con su resultado PERDIDO donde cae
+   sembrados: real-perdida.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 2 → <árbol>/tests\real-perdida.test.mjs | real perdida · cae SOLO en Midway y no llega
+           (esta versión no lo dice)
+   AHORA · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 1 → <árbol>/tests\real-perdida.test.mjs
+           NO PUDE COMPARAR · en la tanda 1 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 1
+             · tests/real-perdida.test.mjs   1 prueba(s) · faltan 1 en Pacific/Midway
+
+══ E · un fichero MUERE AL CARGAR en una zona sola
+   sembrados: muere-al-cargar.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 2 → <árbol>/tests\muere-al-cargar.test.mjs | muere al cargar · pasa donde carga
+           (esta versión no lo dice)
+   AHORA · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 1 → <árbol>/tests\muere-al-cargar.test.mjs
+           NO PUDE COMPARAR · en la tanda 1 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 1
+             · tests/muere-al-cargar.test.mjs   1 prueba(s) · faltan 1 en Pacific/Midway
+
+══ F · cae en LAS DOS zonas y en una se pierde
+   sembrados: cae-en-las-dos.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 2 → <árbol>/tests\cae-en-las-dos.test.mjs | cae en las dos · cae siempre
+           (esta versión no lo dice)
+   AHORA · salida 0 (esperada 0) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           ✔ TRINQUETE EN VERDE · la familia no ha crecido, y las 1 censadas siguen ahí.
+           acusa (🔴 NUEVA): 0
+           NO PUDE COMPARAR · en la tanda 2 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 2
+             · tests/cae-en-las-dos.test.mjs   2 prueba(s) · faltan 1 en Pacific/Kiritimati · faltan 1 en Pacific/Midway
+
+══ G · RETIRADO el sembrado real: queda sólo la pérdida
+   sembrados: perdida-parcial.test.mjs
+   ANTES · salida 1 (esperada 1) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban
+           acusa (🔴 NUEVA): 2 → perdida parcial · pasa y no llega (1) | perdida parcial · pasa y no llega (2)
+           (esta versión no lo dice)
+   AHORA · salida 0 (esperada 0) ✔ · 3 ficheros de la tanda + 4 canarios = 7 · canarios juzgados 4
+           ✔ TRINQUETE EN VERDE · la familia no ha crecido, y las 1 censadas siguen ahí.
+           acusa (🔴 NUEVA): 0
+           NO PUDE COMPARAR · en la tanda 2 · comparadas a solas, con el mismo veredicto 0 · SIGUEN SIN COMPARAR 2
+             · tests/perdida-parcial.test.mjs   2 prueba(s) · faltan 2 en Pacific/Midway
+
+RESUMEN · 14 de 14 corridas dan la salida esperada
+EXIT=0
