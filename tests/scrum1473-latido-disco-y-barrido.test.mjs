@@ -95,7 +95,13 @@ after(() => {
 });
 
 /** Un enlace a una carpeta: junction en Windows (no pide permisos), enlace simbólico en lo demás. */
-const enlazar = (destino, enlace) => { fs.symlinkSync(destino, enlace, 'junction'); ENLACES.push(enlace); };
+const enlazar = (destino, enlace) => { const e = path.join(BASE, bajoBase(enlace)); fs.symlinkSync(destino, e, 'junction'); ENLACES.push(e); };
+/** La ruta, relativa a BASE: lo que se crea en este fichero cuelga de BASE o no se crea. */
+function bajoBase(ruta) {
+  const rel = path.relative(BASE, ruta);
+  assert.ok(rel && !rel.startsWith('..') && !path.isAbsolute(rel), `🔴 ${ruta} no cuelga de la carpeta temporal del test`);
+  return rel;
+}
 /** Todo lo que hay bajo una carpeta, con su tamaño: para comparar un árbol antes y después. */
 const foto = (raiz) => {
   const out = [];
@@ -269,7 +275,7 @@ test('SCRUM-1473 · contra el disco: `medirDisco` da las unidades con su papel y
 
 /** Un trabajo en una carpeta de jobs de prueba. `hace`: horas desde su última actividad, en TODAS sus señales. */
 function trabajo(jobs, id, { estado = 'done', hace = 100, ficheros = { 'captura.png': 4000 }, state, sinTmp = false } = {}) {
-  const dir = path.join(jobs, id);
+  const dir = path.join(BASE, bajoBase(jobs), id);
   fs.mkdirSync(dir, { recursive: true });
   const rutaEstado = path.join(dir, 'state.json');
   fs.writeFileSync(rutaEstado, state !== undefined ? state : JSON.stringify({ name: `s-${id}`, state: estado, updatedAt: new Date(AHORA - hace * H).toISOString() }));
@@ -278,7 +284,7 @@ function trabajo(jobs, id, { estado = 'done', hace = 100, ficheros = { 'captura.
   fs.mkdirSync(path.join(dir, 'tmp'), { recursive: true });
   for (const [nombre, bytes] of Object.entries(ficheros)) {
     const p = path.join(dir, 'tmp', nombre);
-    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.mkdirSync(path.join(dir, 'tmp', path.dirname(nombre)), { recursive: true });
     fs.writeFileSync(p, Buffer.alloc(bytes, 7));
     envejecer(p, hace);
   }
