@@ -3,6 +3,7 @@ import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCusto
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { listCustomerEvents } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 // SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
@@ -144,7 +145,7 @@ router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const customer = await getCustomer(req.merchantId, id);
     if (!customer) return res.status(404).json({ error: 'not_found' });
     res.json(customer);
@@ -187,7 +188,7 @@ router.post('/', async (req, res) => {
 async function actualizarClienteHandler(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerUpdateSchema.parse(req.body);
     await updateCustomer(req.merchantId, id, parsed);
     const updated = await getCustomer(req.merchantId, id);
@@ -210,7 +211,7 @@ router.patch('/:id', actualizarClienteHandler);
 router.get('/:id/portal-url', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const token = await ensurePortalToken(req.merchantId, id);
     const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
     return res.json({ portalUrl, token });
@@ -332,9 +333,9 @@ router.post('/import', requireRole('admin'), async (req, res) => {
 router.get('/:id/historial', async (req: any, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
-    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+    if (despuesDe !== null && (!cabeEnColumnaInt(despuesDe) || despuesDe <= 0)) {
       return res.status(400).json({ error: 'invalid_cursor' });
     }
     const opciones: { despuesDe: number | null; soloTrabajosDe?: number | null } = { despuesDe };
@@ -362,9 +363,9 @@ router.get('/:id/historial', async (req: any, res) => {
 router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
-    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+    if (despuesDe !== null && (!cabeEnColumnaInt(despuesDe) || despuesDe <= 0)) {
       return res.status(400).json({ error: 'invalid_cursor' });
     }
     const historial = await historialWhatsAppDelCliente(req.merchantId, id, { despuesDe });
@@ -386,7 +387,7 @@ router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
 router.get('/:id/notes', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const notas = await listarNotas(req.merchantId, id);
     if (!notas) return res.status(404).json({ error: 'not_found' });
     return res.json({ notas });
@@ -403,7 +404,7 @@ router.get('/:id/notes', requireRole('admin'), async (req, res) => {
 router.post('/:id/notes', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
     const autor = await resolverAutor(req.merchantId, req.teamMemberId ?? null);
     const nota = await crearNota(req.merchantId, id, texto, autor);
@@ -428,7 +429,7 @@ router.post('/:id/notes', requireRole('admin'), async (req, res) => {
 router.get('/:id/sites', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const sitios = await listarSitios(req.merchantId, id);
     if (!sitios) return res.status(404).json({ error: 'not_found' });
     return res.json({ sitios });
@@ -442,7 +443,7 @@ router.get('/:id/sites', async (req, res) => {
 router.post('/:id/sites', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerSiteCreateSchema.parse(req.body);
     const sitio = await crearSitio(req.merchantId, id, parsed);
     if (!sitio) return res.status(404).json({ error: 'not_found' });
@@ -459,7 +460,7 @@ router.put('/:id/sites/:siteId', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const siteId = Number(req.params.siteId);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+    if (!cabeEnColumnaInt(id) || id <= 0 || !cabeEnColumnaInt(siteId) || siteId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const parsed = customerSiteUpdateSchema.parse(req.body);
@@ -482,7 +483,7 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const siteId = Number(req.params.siteId);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+    if (!cabeEnColumnaInt(id) || id <= 0 || !cabeEnColumnaInt(siteId) || siteId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const borrado = await borrarSitio(req.merchantId, id, siteId);
@@ -498,7 +499,7 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
 router.get('/:id/detail', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -615,7 +616,7 @@ router.get('/:id/fusion-preview', requireRole('admin'), async (req, res) => {
   try {
     const principalId = Number(req.params.id);
     const fusionadoId = Number(req.query.con);
-    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+    if (!cabeEnColumnaInt(principalId) || principalId <= 0 || !cabeEnColumnaInt(fusionadoId) || fusionadoId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const preview = await previsualizarFusion(req.merchantId, principalId, fusionadoId);
