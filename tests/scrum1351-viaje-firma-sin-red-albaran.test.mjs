@@ -715,13 +715,28 @@ test('SCRUM-1460 · al REABRIR la ficha ya firmada el recordatorio no sale: la f
   assert.deepEqual(recordatorios(otra.contenedor), [], 'reabierta, no afirma nada de la copia');
 });
 
-test('SCRUM-1460 · LÍMITE FIRMADO: la firma que sube desde la cola no trae recordatorio', async () => {
+test('SCRUM-1460 · LÍMITE FIRMADO: la firma que sube desde la cola SIN pad abierto no trae recordatorio', async () => {
   const { b, red } = await conUnaFirmaEnCola();
   const v = await abrirDetalle(b, { sinRed: true });
   assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
   assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: la ficha pasó sola a firmada');
   assert.deepEqual(recordatorios(v.contenedor), [],
-    'la firma de SCRUM-1460 lo acota a la ficha que queda al confirmar en el pad; ampliarlo pide firma');
+    'la firma de SCRUM-1460 (c.18330 y c.18374) deja fuera la subida por la cola sin pad; ampliarlo pide firma');
+});
+
+// c.18374 amplía la firma: firmar sin red, vuelve la señal con el pad abierto, y al cerrarlo la
+// ficha pasa a firmada. La cola no manda la copia y quien cierra el pad está mirando la ficha.
+test('SCRUM-1460 · firmar sin red, sube con el pad ABIERTO y se cierra el pad: la ficha firmada recuerda la copia', async () => {
+  const { b, red, v, pad } = await conElPadAbiertoSinRed();
+  assert.deepEqual(await vuelveLaRed(b, red), [`albaran:${ID}`], 'suelo: la cola subió y avisó de ESTE albarán');
+  assert.deepEqual(recordatorios(v.contenedor), [], 'suelo: con el pad abierto la ficha de debajo no se ha tocado');
+  cerrarPad(pad);
+  await esperar(150);
+  assert.equal(firmadaYASalvo(v.contenedor), true, 'suelo: al cerrar el pad la ficha pasa a firmada');
+  const [aviso, ...mas] = recordatorios(v.contenedor);
+  assert.ok(aviso, 'tiene que salir: la copia no ha salido por ningún camino y hay alguien mirando');
+  assert.deepEqual(mas, []);
+  assert.equal(aviso._texto, R1_COPIA, 'el mismo literal: c.18374 cambia cuándo, no qué');
 });
 
 test('SCRUM-1460 · mandar la copia y que salga bien QUITA el recordatorio', async () => {

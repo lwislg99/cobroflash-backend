@@ -102,15 +102,18 @@ if (typeof window !== 'undefined') {
 // verdad sobre la firma y suena a «ya está todo».
 //
 // Ficha: `docs/microcopy/2026-10-06-SCRUM-1460-recordatorio-de-la-copia.md`.
+// Los literales son de c.18330; c.18374 amplía CUÁNDO salen (también al cerrar el pad si la firma
+// subió por la cola con él abierto) sin tocarlos.
 const TEXTO_COPIA_SIN_ENVIAR = 'El cliente todavía no tiene su copia. Envíasela por WhatsApp.'; // APROBADO · SCRUM-1460 comentario 18330
 const TEXTO_COPIA_SIN_WHATSAPP = 'No podemos enviarle la copia por WhatsApp a este cliente. Descarga el PDF para dársela.'; // APROBADO · SCRUM-1460 comentario 18330
 
 /**
  * El recordatorio de la copia que toca en esta ficha, o `null`. PURO: ni DOM ni red.
  *
- * 🔴 SÓLO EN LA FICHA QUE QUEDA TRAS FIRMAR EN EL PAD. Es el único momento en que «todavía no
- * tiene su copia» es cierto seguro: la ficha no sabe si la copia se mandó, y una ficha recargada
- * o abierta mañana lo diría también después de enviarla.
+ * 🔴 SÓLO EN LA FICHA QUE QUEDA AL CERRARSE EL PAD: al confirmar la firma, o al cerrarlo cuando la
+ * firma subió por la cola mientras estaba abierto (c.18374). Son los momentos en que «todavía no
+ * tiene su copia» es cierto seguro Y hay alguien mirando: la ficha no sabe si la copia se mandó, y
+ * una ficha recargada o abierta mañana lo diría también después de enviarla.
  *
  * Cada texto nombra un botón, y sólo sale si ese botón está en la barra. «No podemos enviarle»
  * pide además SABER que el cliente no puede recibir WhatsApp: sin el dato no se afirma.
@@ -788,7 +791,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
           if (!subioConElPadAbierto) return;
           subioConElPadAbierto = false;
           if (container.querySelector('.detail-page') !== page) return;
-          await refrescar();
+          // SCRUM-1460 (c.18374) · también aquí se recuerda la copia: la firma subió por la cola,
+          // que no envía nada, y quien cierra el pad está mirando la ficha.
+          await refrescar({ recienFirmadoEnElPad: true });
         },
       });
     }),

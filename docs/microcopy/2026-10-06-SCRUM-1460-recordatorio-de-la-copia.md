@@ -3,7 +3,8 @@
 **Aprobado por el orquestador por delegación del fundador** el 2026-10-06 — SCRUM-1460 comentario 18330.
 
 La delegación de microcopy es la permanente de `docs/equipo/limites-del-fundador.md`. Ese mismo comentario
-firma dónde salen los textos y descarta el envío automático desde el pad.
+firma dónde salen los textos y descarta el envío automático desde el pad. El comentario 18374 del mismo ticket
+amplía cuándo salen, sin tocar los literales.
 
 ## Texto aprobado, literal
 
@@ -20,17 +21,18 @@ Cuando el cliente no puede recibir WhatsApp (el botón de enviar está oculto):
 `public/dashboard/js/albaranDetailView.js`: `TEXTO_COPIA_SIN_ENVIAR` y `TEXTO_COPIA_SIN_WHATSAPP`, por
 `recordatorioDeLaCopia`.
 
-Sólo en la ficha que queda al confirmar la firma en el pad («Firmar aquí mismo»), debajo de la caja «A salvo»
-y encima de los botones. El primero es un `.alert info`; el segundo, un `.alert warning`. Los dos con
+En la ficha que queda al cerrarse el pad de «Firmar aquí mismo», en dos casos: al confirmar la firma, y al
+cerrar el pad cuando la firma subió por la cola mientras estaba abierto (comentario 18374). Debajo de la caja
+«A salvo» y encima de los botones. El primero es un `.alert info`; el segundo, un `.alert warning`. Los dos con
 `role="status"` y dentro del mismo envoltorio que la caja, que es el que ya separa de la barra.
 
 Se quita cuando el profesional pulsa «Enviar por WhatsApp» y el envío sale. Si el envío falla, se queda.
 
-## Por qué sólo en ese momento
+## Por qué sólo en esos momentos
 
-Es el único en que «todavía no tiene su copia» es cierto con seguridad: acaba de firmarse en el pad, y por
-ese camino no sale ningún envío (SCRUM-47 lo hizo manual a propósito). La ficha no sabe si la copia se mandó:
-recargada o abierta al día siguiente, la frase podría ser falsa.
+Son los que cumplen las dos cosas: «todavía no tiene su copia» es cierto con seguridad —ni el pad ni la cola
+mandan nada (SCRUM-47 lo hizo manual a propósito)— y hay alguien mirando la ficha. La ficha no sabe si la
+copia se mandó: recargada o abierta al día siguiente, la frase podría ser falsa.
 
 ## Por qué el segundo no dice «no tiene WhatsApp»
 
@@ -39,8 +41,8 @@ frase no afirma cuál.
 
 ## Lo que no cubre
 
-- **La firma que sube desde la cola sin red** (minutos u horas después): la ficha pasa a firmada y no trae
-  recordatorio. Incluye el caso en que sube con el pad abierto y la ficha se pone al día al cerrarlo.
+- **La firma que sube desde la cola sin el pad abierto** (minutos u horas después): la ficha pasa a firmada
+  y no trae recordatorio.
 - **La ficha recargada o reabierta.** Un recordatorio que aguante la recarga pide que el servidor diga si la
   copia salió.
 - **Si el servidor no dice nada del canal del cliente**, el botón de enviar se ofrece y sale el primer texto.
