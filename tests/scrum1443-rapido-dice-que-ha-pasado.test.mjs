@@ -95,6 +95,43 @@ test('SCRUM-1443 · SUELO: sin fallos el presupuesto se crea, se envía y el mod
   assert.equal(m.$('qq-send'), null, '🔴 CIEGO: con todo bien el modal no se cierra');
 });
 
+// Comentario 18331 (6-oct-2026): cuando sale, se nombra lo que salió. Antes: «✓ Presupuesto
+// enviado por WhatsApp», que con «Cotización» decía «Cotización enviado».
+const enviado = (locale) => async () => {
+  const m = montar(locale);
+  m.rellenar();
+  await m.pulsar();
+  assert.deepEqual(m.hecho.envios, [501], '🔴 SUELO: el envío no llegó a salir');
+  assert.deepEqual(m.hecho.avisos, ['✓ WhatsApp enviado al cliente']);
+};
+test('SCRUM-1443 · 🔴 cuando el envío sale se lee «✓ WhatsApp enviado al cliente» · «presupuesto»', enviado(ES));
+test('SCRUM-1443 · 🔴 cuando el envío sale se lee «✓ WhatsApp enviado al cliente» · «cotización»', enviado(MX));
+
+test('SCRUM-1443 · envío intentado que NO sale (200, `sent: false`): se lee la frase del servidor, tal cual', async () => {
+  const m = montar(ES);
+  m.contesta.enviar = () => respuesta(200, { ok: true, sent: false, error: 'daily_cap', message: 'Has alcanzado el tope diario de mensajes de WhatsApp.' });
+  m.rellenar();
+  await m.pulsar();
+  assert.deepEqual(m.hecho.avisos, ['Has alcanzado el tope diario de mensajes de WhatsApp.']);
+});
+
+// Comentario 18333 (6-oct-2026): el respaldo. Hoy la ruta no lo provoca (con `sent: false` manda
+// siempre frase); aquí se fabrica el 200 sin `message` para ver qué se leería.
+const NO_HA_SALIDO = (q) => `Hemos guardado tu ${q}, pero el WhatsApp no ha salido. Envíalo desde aquí.`;
+const respaldoSinFrase = (locale, palabra) => async () => {
+  const m = montar(locale);
+  const vistas = [];
+  m.contesta.enviar = () => respuesta(200, { ok: true, sent: false });
+  m.rellenar();
+  m.alAbrirVista((v, id) => vistas.push([v, id]));
+  await m.pulsar();
+  assert.deepEqual(m.hecho.avisos, [NO_HA_SALIDO(palabra)]);
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(vistas, [['quotes-detail', 501]], '🔴 «Envíalo desde aquí» y no se abre la ficha del presupuesto: el «aquí» no existe');
+};
+test('SCRUM-1443 · 🔴 200 sin `sent` y sin frase: «Hemos guardado tu presupuesto, pero el WhatsApp no ha salido. Envíalo desde aquí.», y se abre la ficha', respaldoSinFrase(ES, 'presupuesto'));
+test('SCRUM-1443 · 🔴 200 sin `sent` y sin frase, con «cotización»: mismo texto con su palabra, y se abre la ficha', respaldoSinFrase(MX, 'cotización'));
+
 // ── falla al CREAR: nada se ha guardado ───────────────────────────────────────────────────────
 const noCreado = (cual, como) => async () => {
   const m = montar(ES);

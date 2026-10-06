@@ -1356,6 +1356,12 @@ function avisoQqGuardadoTelefonoNoValido() {
   return `Hemos guardado tu ${palabraDelPresupuestoQq()}, pero el teléfono de este cliente no es válido, así que el WhatsApp no ha salido. Corrige el teléfono y vuelve a enviarlo.`;
 }
 
+// SCRUM-1443 · APROBADO · comentario 18333 del ticket (6-oct-2026), que sustituye al texto 2 del
+// 18331. Antes: «{Presupuesto} creado. Envío WhatsApp pendiente.».
+function avisoQqGuardadoNoHaSalido() {
+  return `Hemos guardado tu ${palabraDelPresupuestoQq()}, pero el WhatsApp no ha salido. Envíalo desde aquí.`;
+}
+
 /**
  * SCRUM-1443 · LOS OTROS FALLOS DEL ENVÍO EN LOS QUE EL SERVIDOR DICE QUE NO LLEGÓ A INTENTARLO
  * (`quotesAdmin.routes.ts`, «precondición real: nunca se intentó el envío»). De éstos SÍ se sabe
@@ -1529,13 +1535,18 @@ async function submitQuickQuote() {
 
     closeQuickQuote();
 
-    const qLabel = (window.appLocale && window.appLocale.quote) || 'presupuesto';
-    const qCap = qLabel.charAt(0).toUpperCase() + qLabel.slice(1);
     if (sendResult.sent) {
-      showToast(`✓ ${qCap} enviado por WhatsApp`);
+      // APROBADO · SCRUM-1443 comentario 18331 (6-oct-2026). Antes: «✓ {Presupuesto} enviado por
+      // WhatsApp», que con «Cotización» no concuerda. Se nombra lo que salió: el WhatsApp.
+      showToast('✓ WhatsApp enviado al cliente');
     } else {
       // P3-2: mensaje claro del backend si Meta rechazó (en vez de un 502 críptico)
-      showToast(sendResult.message || `${qCap} creado. Envío WhatsApp pendiente.`, true);
+      //
+      // SCRUM-1443 · EL RESPALDO ES PARA UN CASO QUE LA RUTA HOY NO PRODUCE: con `sent: false` el
+      // servidor manda siempre una frase (`sendFailureBody`), y es la que se lee. Se queda por si
+      // algún día llega un 200 sin `message`: sin él no se leería nada. Y dice la verdad —no hay
+      // reintento automático, lo envía la persona desde la ficha que se abre aquí debajo—.
+      showToast(sendResult.message || avisoQqGuardadoNoHaSalido(), true);
     }
 
     // P2-2: en vez de volver a Home con un aviso discreto, abrimos el DETALLE del
