@@ -91,3 +91,97 @@ impuesto, que el panel hoy no produce en las opciones.
 
 - **No visto en yaqu.app.**
 - La aceptación 3 del ticket (el código crudo).
+
+---
+
+## SCRUM-1431b (6-oct) · el cliente ya no lee el código crudo
+
+**Medido contra:** `origin/main` = `3746d0351af6b56c88f6a53fce695eef51913d4f` · 2026-10-06T12:01:47Z
+
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
+Sesión S1 (`s1-6octc`) · rama `scrum-1431b-sin-codigo-crudo`. Es la aceptación 3, la que el tramo de
+arriba dejó en «Lo medido y NO tocado», punto 1.
+
+### De quién es la decisión
+
+Del orquestador, por la delegación permanente de microcopy. Dos pasos:
+
+- **c.18286 (6-oct):** se quita el código crudo y el 404 se queda sin texto, porque «inténtalo en unos
+  minutos» sobre un presupuesto que no existe es un consejo falso. Puso una condición: si el 404 y el
+  500 ya se podían distinguir, decirlo antes de borrar.
+- **c.18291 (S1):** sí se distinguen, `apiResponse.status` ya estaba ahí y la línea del 409 lo usaba.
+  Tres opciones.
+- **Opción 2**, en el encargo del orquestador a S1 del 6-oct: el 500 reutiliza «Inténtalo más tarde.»,
+  el literal que la misma página ya daba cuando la API no contesta. **No lo escribió en Jira de su
+  mano: lo transcribí yo en el c.18332**, dicho así en el comentario y en la ficha.
+
+### Lo que pinta la página del rechazo bajo «No se pudo registrar el rechazo.»
+
+| Lo que contesta la API de decisión | Antes | Ahora |
+|---|---|---|
+| con `message` (410 caducado, 429 demasiados intentos) | el mensaje | igual |
+| 404, sin `message` | `quote_not_found` | nada: el titular solo |
+| 5xx, sin `message` | `internal_error` (o nada si no era JSON) | «Inténtalo más tarde.» |
+| la API no contesta (el `catch`) | «Error inesperado. Inténtalo más tarde.» | igual |
+
+**Dos lecturas mías, no del orquestador, escritas también en el c.18332:** «el 500» está construido
+como «cualquier 5xx» (un 502 o un 503 de la pasarela es el mismo hecho); y un 5xx que SÍ traiga
+mensaje pinta su mensaje, sin el consejo detrás.
+
+**Un literal, no dos.** `CONSEJO_DE_REINTENTAR` es una constante y la usan los dos sitios. La línea del
+`catch` cambia de forma (interpola la constante) y no de texto.
+
+**Qué errores puede dar la API a un rechazo — leído en `quotes.routes.ts`, no ejecutado contra la
+API:** 404 y 500 sin `message`; 410 y 429 con él; 409 redirige antes. El 400 `invalid_decision` no se
+alcanza desde esta página, que manda siempre `reject`.
+
+### Los tests cambian lo que AFIRMAN, y llevan las dos fechas dentro
+
+| Test | 1.ª fecha: lo que afirmaba | 2.ª fecha: lo que afirma |
+|---|---|---|
+| `tests/scrum264-copy-que-llega-al-cliente.test.mjs`, fila RECHAZAR, «sin copy» | 3-ago-2026: el código NO se pierde | 6-oct-2026: el código NO se pinta |
+| `tests/scrum1431-rechazo-escapado.test.mjs`, caso del `error` | 2-oct-2026: sale escapado | 6-oct-2026: no se pinta, ni escapado |
+
+El montaje de `scrum264` no se toca: sigue extrayendo el primer `${}` y ejecutándolo con `json` como
+única variable. Por eso el consejo va en un `${}` aparte y no dentro del primero. Las otras tres
+superficies de esa tabla siguen afirmando lo del 3-ago.
+
+En `scrum1431-rechazo-escapado` son 8 casos (eran 4). El de «no es JSON» se llamaba «…: titular solo»:
+era un 502, que ahora lleva el consejo, así que cambia de nombre y gana una comprobación.
+
+### Corrido
+
+En rojo ANTES de tocar `src/` (BUILD verde, `dist` del código viejo): 25 casos en los dos ficheros,
+5 rojos — los 4 nuevos de 1431 que describen el cambio y el de `scrum264`.
+
+Después, 28 ficheros, **285 de 285**: los dos de arriba, los que nombran la página (`scrum1276`,
+`scrum1001`, `scrum212`, `scrum1444`, `scrum1325b`, `scrum633`, `scrum888d`, `scrum888g`,
+`scrum656`, `scrum656b`), los de casa (`scrum1344`, `scrum1415`, `scrum553`, `scrum237`, `scrum275`,
+`scrum850`, `scrum850b`, `scrum1294`, `scrum1452`) y los de microcopy (`scrum514`, `scrum715`,
+`scrum726`, `scrum861`, `scrum1306`). **No corrida la tanda entera.**
+
+| Mutante (sobre `dist`; BASE 25/25; comprobado que el fichero cambia y que se restaura idéntico) | Rojos |
+|---|---|
+| vuelve el código crudo | 4 |
+| el consejo sale siempre, también en el 404 | 1 |
+| el consejo no sale nunca | 2 |
+| el consejo se pega detrás del mensaje | 1 |
+| el fallo de red dice otra frase | 1 |
+| sin escapado (el del 2-oct) | 1 (eran 2: el `error` ya no se pinta) |
+
+### Error propio de la tanda
+
+Mi primer test nuevo subió el trinquete de SCRUM-553 de 20 a 22: una expresión con `<br\/>` y un
+`includes('<strong>…')`, las dos con el `>` pegado. Es el mismo tropiezo que este registro ya contaba
+arriba, del 2-oct. Lo cazó el guard en local, antes de empujar, que es lo que dice la línea `A9`.
+
+### yaqu.app
+
+**Línea base, medida el 6-oct a las 12:00Z** con la versión `f70625d8a009bdab1f672f4eb6fffb34e70bf2f2`
+desplegada: `POST https://yaqu.app/pay/quote/<32 efes>/reject` (un token que no existe; no crea ni
+cambia nada) → 400, y en la caja de error «No se pudo registrar el rechazo.» seguido de
+`quote_not_found`.
+
+**Después del despliegue: NO VISTO al escribir esto.** El 404 se puede mirar con esa misma orden. El
+5xx no se puede provocar desde fuera: sólo lo cubre el test.

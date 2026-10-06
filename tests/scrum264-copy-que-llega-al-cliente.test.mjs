@@ -76,6 +76,14 @@ const SUPERFICIES = [
     variables: ['json'],
     porDefecto: '',
     tieneMapa: false,
+    // 🔴 LO QUE ESTA FILA AFIRMA CUANDO NO HAY COPY CAMBIÓ, Y VAN LAS DOS FECHAS:
+    //   · 3-ago-2026 (SCRUM-264): «sin copy, el código NO se pierde», como en las otras tres.
+    //   · 6-oct-2026 (SCRUM-1431, decisión del orquestador: c.18286 + la opción 2 del c.18291):
+    //     en ESTA superficie, sin copy, el código NO SE PINTA. La lee el cliente final, que no
+    //     puede buscar un `quote_not_found`; el titular se queda solo, y si el fallo es nuestro
+    //     (5xx) lleva el consejo que la página ya daba (`tests/scrum1431-rechazo-escapado`).
+    // Las otras tres filas siguen como el 3-ago: esto no es un cambio de la regla, es UNA fila.
+    sinCopyElCodigoNoSePinta: true,
   },
   {
     nombre: 'página de acceso · /login.html',
@@ -127,13 +135,14 @@ const casoa = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: e
       'Es el arreglo de SCRUM-151 (api.js:35-37), que nunca llegó a esta pantalla.',
   );
 });
-const casob = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: sin copy, el código NO se pierde`, (sup) => {
+const casob = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: sin copy, el código ${sup.sinCopyElCodigoNoSePinta ? 'NO se pinta (SCRUM-1431, 6-oct-2026)' : 'NO se pierde'}`, (sup) => {
   // Preferir el texto humano no puede convertirse en tragarse el fallo: la mayoría de los
   // endpoints públicos aún no mandan `message` (27 de 36, censo de SCRUM-275) y para esos un
   // código es mejor que un genérico — al menos se puede buscar. Cambia la PRIORIDAD, no lo
   // que se ve cuando no hay copy.
+  // La excepción es la fila que lo declara, con sus dos fechas en la tabla de arriba.
   const mostrar = expresionDe(sup);
-  assert.equal(invocar(mostrar, sup, { error: CODIGO }), CODIGO);
+  assert.equal(invocar(mostrar, sup, { error: CODIGO }), sup.sinCopyElCodigoNoSePinta ? sup.porDefecto : CODIGO);
 });
 const casoc = casosEscritos(SUPERFICIES, (sup) => `SCRUM-264 · ${sup.nombre}: sin nada, su texto por defecto`, (sup) => {
   const mostrar = expresionDe(sup);
@@ -156,7 +165,7 @@ test('SCRUM-264 · landing de presupuesto · ACEPTAR: el mensaje humano GANA al 
 test('SCRUM-264 · landing de presupuesto · ACEPTAR: sin copy, el código NO se pierde', casob(0));
 test('SCRUM-264 · landing de presupuesto · ACEPTAR: sin nada, su texto por defecto', casoc(0));
 test('SCRUM-264 · landing de presupuesto · RECHAZAR: el mensaje humano GANA al código', casoa(1));
-test('SCRUM-264 · landing de presupuesto · RECHAZAR: sin copy, el código NO se pierde', casob(1));
+test('SCRUM-264 · landing de presupuesto · RECHAZAR: sin copy, el código NO se pinta (SCRUM-1431, 6-oct-2026)', casob(1));
 test('SCRUM-264 · landing de presupuesto · RECHAZAR: sin nada, su texto por defecto', casoc(1));
 test('SCRUM-264 · página de acceso · /login.html: el mensaje humano GANA al código', casoa(2));
 test('SCRUM-264 · página de acceso · /login.html: sin copy, el código NO se pierde', casob(2));

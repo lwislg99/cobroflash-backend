@@ -56,6 +56,13 @@ function escapandoLoInterpolado(trozos: TemplateStringsArray, ...valores: Array<
   return trozos.reduce((html, trozo, i) => html + trozo + (i < valores.length ? esc(valores[i]) : ''), '');
 }
 
+/**
+ * SCRUM-1431 · lo que la página del rechazo le dice al cliente cuando el fallo es nuestro: la API
+ * no contesta o contesta un 5xx. UN literal para los dos sitios; dos frases parecidas para el
+ * mismo hecho en la misma página acaban diciendo cosas distintas.
+ */
+const CONSEJO_DE_REINTENTAR = 'Inténtalo más tarde.';
+
 function renderPage(title: string, body: string, brandColor?: string | null): string {
   return `<!doctype html>
 <html lang="es">
@@ -930,15 +937,21 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
       return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
     }
     if (!apiResponse.ok) {
+      // SCRUM-1431 (6-oct-2026) · sin texto humano, bajo el titular NO se pinta el código
+      // (`quote_not_found`, `internal_error`): lo lee el cliente final. Un fallo NUESTRO (5xx)
+      // lleva el consejo que esta página ya da cuando la API no contesta (el `catch` de abajo);
+      // un 404 se queda con el titular solo, porque reintentar sobre un presupuesto que no existe
+      // no funciona nunca.
+      const consejo = !json?.message && apiResponse.status >= 500 ? CONSEJO_DE_REINTENTAR : '';
       return res.status(400).setHeader('Content-Type', 'text/html; charset=utf-8').send(
         // SCRUM-264 · mismo criterio que el camino de aceptar: el texto humano primero. El tipo
         // `DecisionApiError` ya declaraba `message?` y nadie lo leía.
         // SCRUM-1431 · ESCAPADO. Hoy todo lo que llega aquí son literales nuestros, pero el mensaje
         // del 409 lleva el nombre del negocio y sólo la redirección de arriba impide que pase.
-        // El escapado lo pone la ETIQUETA de la plantilla y no un `esc(…)` dentro del `${}`: la
-        // expresión de SCRUM-264 (mensaje → código → vacío) queda tal cual, que es lo que su guard
-        // extrae y ejecuta.
-        renderPage('Error', escapandoLoInterpolado`<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || json?.error || ''}</div>`)
+        // El escapado lo pone la ETIQUETA de la plantilla y no un `esc(…)` dentro del `${}`: el
+        // primer `${}` (mensaje → vacío) es lo que el guard de SCRUM-264 extrae y ejecuta con
+        // `json` como única variable, y por eso el consejo va en un `${}` aparte.
+        renderPage('Error', escapandoLoInterpolado`<div class="status-error"><strong>No se pudo registrar el rechazo.</strong><br/>${json?.message || ''}${consejo}</div>`)
       );
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8').send(
@@ -946,7 +959,7 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     );
   } catch {
     res.status(500).setHeader('Content-Type', 'text/html; charset=utf-8').send(
-      renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> Inténtalo más tarde.</div>`)
+      renderPage('Error', `<div class="status-error"><strong>Error inesperado.</strong> ${CONSEJO_DE_REINTENTAR}</div>`)
     );
   }
 });

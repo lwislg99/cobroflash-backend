@@ -39,7 +39,14 @@ El aviso de «sin teléfono» de SCRUM-1198 (firmado el 2-oct, c.18206) escribí
 
 **Regla de esta pantalla (c.18313): ningún pronombre apunta al documento.** La palabra cambia de género según el país; lo que haya que nombrar se nombra («el WhatsApp», «el teléfono») y del documento se habla en voz activa. Está escrita también en el código, encima de `palabraDelPresupuestoQq`.
 
-Sin tocar, y son de la misma pantalla: los avisos de cuando todo va bien («✓ Presupuesto enviado por WhatsApp», «Presupuesto creado. Envío WhatsApp pendiente.») componen con `appLocale.quote` y **«enviado» y «creado» concuerdan en masculino**: con «Cotización» salen mal. No tienen firma nueva y no entran aquí.
+Los dos avisos de cuando todo va bien componían con `appLocale.quote` y concordaban en masculino («Cotización enviado»). El c.18331 firmó los dos:
+
+- **«✓ WhatsApp enviado al cliente»: construido** (segundo empujón de esta rama). Nombra lo que salió.
+- **«Hemos guardado tu {quote}. El WhatsApp todavía no ha salido.» (c.18331): NO construido.** La firma traía una condición —que el envío pueda salir todavía— y no se cumple. LEÍDO en `src/lib/sendOutcome.ts` y en la ruta: no hay reintento automático, así que «todavía no» prometería algo que no va a pasar solo.
+- **«Hemos guardado tu {quote}, pero el WhatsApp no ha salido. Envíalo desde aquí.» (c.18333, que sustituye al anterior): construido.** «Aquí» es la ficha del presupuesto, que se abre justo después del aviso; el test lo comprueba.
+- 🔴 **Ese texto es un RESPALDO PARA UN CASO QUE LA RUTA HOY NO PRODUCE, y no se pinta en el uso normal.** Con `sent: false` el servidor manda siempre una frase (`sendFailureBody` pone la canónica del motivo si nadie pone otra) y el panel pinta `sendResult.message || <respaldo>`: lo que se lee es la frase del servidor. El respaldo sólo saldría con un 200 sin `sent` y sin `message`. Se queda a propósito (decisión del orquestador, c.18333): sin él, en ese caso no se leería nada. En el test ese 200 está fabricado.
+- `tests/scrum622-desconocido-no-es-verde.test.mjs` buscaba esa llamada por su texto viejo. Sigue afirmando lo mismo —que hay un llamador de `showToast(…, true)`—; cambia la cadena con la que lo busca, y lo dice dentro con su fecha.
+- Las frases del servidor para un envío que no sale (`sendOutcome.ts`, y «El presupuesto quedó guardado» en la ruta) no siguen la regla de esta pantalla. No son de este carril: quedan nombradas.
 
 ## Verificado, ejecutando
 
