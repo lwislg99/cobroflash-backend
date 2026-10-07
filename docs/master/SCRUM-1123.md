@@ -387,3 +387,17 @@ y se restaura después (`git status` al final: sólo los dos ficheros de la rama
   log de la corrida, y la sección DESPLIEGUE del latido ya mide eso por su lado.
 - **Una salida distinta de 0, 1 y 2** (el guion reventando con salida 1, por ejemplo) se leería como CONGELADA,
   igual que la lee el propio workflow.
+
+### Lo que se corrió antes de empujar
+
+Los tests que ENUMERAN lo que toco (`tests/`, `scripts/`, `docs/master/`) o nombran `latido.mjs`, `SCRUM-1123`
+o `vigia-despliegue`, más `scrum854`, `737`, `836`, `710b`, `976`, `850` y `393`, de uno en uno
+(`--test-concurrency=1`), con el TAP fuera del árbol y el commit ya hecho.
+
+| población | resultado |
+|---|---|
+| 111 ficheros, 1.137 tests, 1.357 s | 1.081 pasan · 1 saltado · 55 caen, **los 55 por falta de `dist/`** en este árbol (mirados: 51 por `Cannot find module '../dist/modules/billing/domain/metodoDeCobro.js'`, 3 ficheros enteros por lo mismo, y `scrum836` por tres anclas de `scrum608` que apuntan a `dist/`) |
+
+**Límite, y es memoria:** `dist/` no se construyó (de 300 a 900 MB libres durante la tanda, con otras sesiones
+corriendo las suyas). Otros 49 tests que casan con lo tocado piden `dist/` y no se corrieron. Un rojo mío ahí lo
+dirá el CI.
