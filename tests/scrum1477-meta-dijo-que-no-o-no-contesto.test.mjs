@@ -64,6 +64,8 @@ function medir(caso) {
   assert.deepEqual(Object.keys(m.resultados), SIETE, `🔴 CIEGO: no se han medido los siete envíos (${caso}).`);
   assert.equal(m.recibidas, SIETE.length,
     `🔴 CIEGO: el servidor de laboratorio ha recibido ${m.recibidas} peticiones y se han hecho ${SIETE.length} envíos (${caso}).`);
+  assert.equal(new Set(m.salidas.map((s) => `${s.protocolo}//${s.destino}`)).size, 1,
+    `🔴 los siete envíos ya no piden el mismo destino (${caso}): alguno habla con otro sitio.`);
   assert.deepEqual(m.salidas.map((s) => s.plazoPedidoMs), SIETE.map(() => PLAZO_REAL_MS),
     `🔴 algún envío ya no pide el plazo de ${PLAZO_REAL_MS} ms a Meta (${caso}).`);
   medidas.set(caso, m);

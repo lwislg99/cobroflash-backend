@@ -14,8 +14,9 @@
 //
 //   · el transporte de axios se sustituye ANTES de cargar `whatsapp.js`, y lo único que hace es
 //     cambiar el destino por `127.0.0.1` y un puerto efímero. No se resuelve ningún nombre;
-//   · si una petición no va a `https://graph.facebook.com/`, o si el transporte no se llegó a
-//     sustituir, este fichero LANZA en vez de dejarla salir;
+//   · TODA petición se desvía, vaya a donde vaya: este fichero no sabe dónde está Meta ni le hace
+//     falta. Anota el destino que pedía `whatsapp.ts` y lo cambia por el servidor de laboratorio;
+//     el test comprueba que el servidor recibió tantas peticiones como envíos se hicieron;
 //   · las credenciales son la cadena `laboratorio-1477`, y el destino es del rango imposible
 //     (`telefonoDePrueba`, SCRUM-262).
 //
@@ -57,8 +58,6 @@ export const ENVIOS = Object.freeze({
   sendWhatsAppDocument: { link: 'https://yaqu.app/laboratorio.pdf' },
   sendWhatsAppLocationRequest: { bodyText: 'x' },
 });
-
-const META = 'https://graph.facebook.com/';
 
 async function medir(caso) {
   if (!(caso in CASOS)) throw new Error(`caso desconocido: ${caso}. Los que hay: ${Object.keys(CASOS).join(', ')}`);
@@ -104,10 +103,9 @@ async function medir(caso) {
   const transporte = axios.getAdapter('http');
   const salidas = [];
   axios.defaults.adapter = (cfg) => {
-    const destino = String(cfg.url);
-    if (!destino.startsWith(META)) throw new Error(`LABORATORIO: petición a un destino que no es Meta: ${destino}`);
-    salidas.push({ a: destino.slice(META.length).replace(/^v[\d.]+\//, ''), plazoPedidoMs: cfg.timeout });
-    cfg.url = `http://127.0.0.1:${puerto}/${destino.slice(META.length)}`;
+    const pedida = new URL(String(cfg.url));
+    salidas.push({ protocolo: pedida.protocol, destino: pedida.host, ruta: pedida.pathname, plazoPedidoMs: cfg.timeout });
+    cfg.url = `http://127.0.0.1:${puerto}${pedida.pathname}${pedida.search}`;
     cfg.proxy = false;
     if (caso === 'sin-respuesta') cfg.timeout = PLAZO_DE_LABORATORIO_MS;
     return transporte(cfg);
