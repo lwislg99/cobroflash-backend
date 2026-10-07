@@ -1,0 +1,23 @@
+POBLACIÓN: 300 corridas rojas de ci.yml leídas · de 2026-09-29T16:53:03Z a 2026-10-07T17:05:09Z
+  sin log (gh no lo dio) ............................. 252
+  con log ............................................ 48
+  con algún paso rojo del job obligatorio ............ 45   (el resto cayó en OTRO job)
+  …y con la sección «failing tests» a la vista ....... 45
+
+SOBRE ESAS 45 (el rojo del obligatorio se puede leer):
+  con al menos un FICHERO caído a nivel de proceso ... 1
+  …y SIN ningún caso rojo (todo el rojo es de fichero)  1
+
+SOBRE LAS 45 con paso rojo del obligatorio:
+  con un `spawn … E…` (el proceso NO SE CREÓ) ........ 0
+  con algún `exitCode:` a la vista (SUELO, ver límites) 0
+  …de ellas con exitCode ≥ 0xC0000000 (nativo) ....... 0
+  con alguna `signal: SIG…` .......................... 0
+  con alguna frase del lector de huellas ............. 0
+
+exitCode vistos: (ninguno)
+señales vistas: (ninguna)
+huellas dichas: (ninguna)
+
+FICHEROS caídos a nivel de proceso, por nº de corridas (los 25 primeros):
+    1 · tests/scrum804b-el-barrido-de-la-42.test.mjs
