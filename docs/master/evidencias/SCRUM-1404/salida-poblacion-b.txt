@@ -1,0 +1,48 @@
+motor: PostgreSQL 18.3 (PGlite 0.5.8) on wasm32 · ALTER: ALTER TABLE "invoices" ADD COLUMN "vf_estado" TEXT NOT NULL DEFAULT 'pendiente_de_sellado';
+fecha candidata D = 2026-07-30T13:15:25.000Z
+
+fabricadas: 10 (5 historicas + 5 nuevas) · reparto: no_aplica=1 · pendiente_de_sellado=8 · sellado=1
+
+S0 · solo por estado (lo que J1 se nego a construir): 8 fila(s)
+   F-2026-0001 · 2026-05-31T13:15:25.000Z · huella=si · H1 sellada perezosamente hace dos meses (tiene huella)
+   F-2026-0002 · 2026-06-30T13:15:25.000Z · huella=si · H2 sellada perezosamente hace un mes (tiene huella)
+   J-2026-0001 · 2026-07-20T13:15:25.000Z · huella=no · H3 justificante, nunca entra en la cadena
+   F-2026-0003 · 2026-07-28T13:15:25.000Z · huella=no · H4 fiscal sin huella (nadie abrio su PDF)
+   F-2026-0004 · 2026-07-30T13:15:24.999Z · huella=no · H5 BORDE: un milisegundo ANTES de D
+   F-2026-0005 · 2026-07-30T13:15:25.000Z · huella=no · N1 BORDE: nacida exactamente en D, sellado pendiente
+   F-2026-0006 · 2026-08-04T13:15:25.000Z · huella=no · N2 nacida despues, el sellado fallo: sigue pendiente
+   F-2026-0008 · 2026-10-08T13:15:25.000Z · huella=no · N5 nacida ayer, el proceso murio antes de sellar
+
+SB · poblacion B: estado Y nacida desde D: 3 fila(s)
+   F-2026-0005 · 2026-07-30T13:15:25.000Z · huella=no · N1 BORDE: nacida exactamente en D, sellado pendiente
+   F-2026-0006 · 2026-08-04T13:15:25.000Z · huella=no · N2 nacida despues, el sellado fallo: sigue pendiente
+   F-2026-0008 · 2026-10-08T13:15:25.000Z · huella=no · N5 nacida ayer, el proceso murio antes de sellar
+
+SB+huella · B y ademas sin huella: 3 fila(s)
+   F-2026-0005 · 2026-07-30T13:15:25.000Z · huella=no · N1 BORDE: nacida exactamente en D, sellado pendiente
+   F-2026-0006 · 2026-08-04T13:15:25.000Z · huella=no · N2 nacida despues, el sellado fallo: sigue pendiente
+   F-2026-0008 · 2026-10-08T13:15:25.000Z · huella=no · N5 nacida ayer, el proceso murio antes de sellar
+
+CONTROL A CERO · B con una fecha en el futuro: 0 fila(s)
+
+CONTROL MALO · B con una fecha «por lo bajo» (un año antes): 8 fila(s)
+   F-2026-0001 · 2026-05-31T13:15:25.000Z · huella=si · H1 sellada perezosamente hace dos meses (tiene huella)
+   F-2026-0002 · 2026-06-30T13:15:25.000Z · huella=si · H2 sellada perezosamente hace un mes (tiene huella)
+   J-2026-0001 · 2026-07-20T13:15:25.000Z · huella=no · H3 justificante, nunca entra en la cadena
+   F-2026-0003 · 2026-07-28T13:15:25.000Z · huella=no · H4 fiscal sin huella (nadie abrio su PDF)
+   F-2026-0004 · 2026-07-30T13:15:24.999Z · huella=no · H5 BORDE: un milisegundo ANTES de D
+   F-2026-0005 · 2026-07-30T13:15:25.000Z · huella=no · N1 BORDE: nacida exactamente en D, sellado pendiente
+   F-2026-0006 · 2026-08-04T13:15:25.000Z · huella=no · N2 nacida despues, el sellado fallo: sigue pendiente
+   F-2026-0008 · 2026-10-08T13:15:25.000Z · huella=no · N5 nacida ayer, el proceso murio antes de sellar
+
+OK  · S0 arrastra el historico ENTERO (el desastre)
+OK  · SB no trae NINGUNA historica
+OK  · SB deja fuera el borde de antes (F-2026-0004)
+OK  · SB trae el borde de dentro (F-2026-0005)
+OK  · SB trae las posteriores pendientes y solo esas
+OK  · SB no trae la ya sellada ni el justificante
+OK  · control a cero: fecha futura = 0 filas
+OK  · control malo: una fecha por lo bajo devuelve el historico entero (igual que S0)
+OK  · aqui SB+huella coincide con SB
+
+veredictos: 9 · caen: 0
