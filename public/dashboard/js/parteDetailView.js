@@ -92,11 +92,32 @@
     noSeGuardoElCambio: 'No se ha podido guardar el cambio — vuelve a intentarlo',
     // SCRUM-1491 · Desplazamiento rechazado por la ruta con `desplazamientos_invalido`. «Vuelve a
     // intentarlo» ahí manda a repetir algo que no va a entrar nunca. Dice lo que VALE y no lo que
-    // falló, porque el código tiene dos causas (no es entero, o no cabe en la columna) y la vista
-    // no puede saber cuál sin copiar una regla de la ruta: para el número enorme es impreciso, no
-    // falso. Un texto por causa pide un código por causa (SCRUM-1488).
+    // falló. Desde SCRUM-1488 el código tiene UNA causa («no es un número entero»): el número
+    // enorme y el negativo llevan código y texto propios, más abajo.
+    // SCRUM-1492 · también se dice cuando es la CASILLA la que no entiende lo tecleado («1e»): es
+    // el mismo error visto por el profesional, cazado en otro sitio. Estirón firmado en c.18633.
     // APROBADO · SCRUM-1491 comentario 18517
     desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
+    // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
+    // falso: nada ha fallado, no se ha intentado.
+    // También es lo que se dice si la RUTA rechaza con `kilometros_invalido`: misma causa, cazada
+    // en otro sitio. Hoy desde la casilla no se llega a ese código (`badInput` lo para antes): es
+    // la red para el día que se llegue. Estirón firmado en c.18706.
+    // APROBADO · SCRUM-1492 comentario 18633
+    kilometrosEsUnNumero: 'No se ha guardado. Kilómetros es un número, como 12 o 12,5',
+    // SCRUM-1492 · los cuatro códigos de rango de la ruta (SCRUM-1488: un código por causa). Caían
+    // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
+    // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
+    // a un profesional no le dice nada.
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -509,7 +530,9 @@
     // ⚠️ Qué teclado saca cada móvil con cada valor no está medido en un aparato de verdad.
     var casilla =
       '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
-      (modo === 'number' ? ' inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
+      // SCRUM-1492 · `min="0"`: el rango de la ruta (SCRUM-1488, `>= 0` en los dos). Es cortesía
+      // —las flechas no bajan de 0—, no protección: `-3` tecleado llega igual a la ruta, y se dice.
+      (modo === 'number' ? ' min="0" inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
       (pista ? ' placeholder="' + esc(pista) + '"' : '') +
       ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
@@ -1368,9 +1391,9 @@
    * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
    * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
    *
-   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta dijo
-   * `desplazamientos_invalido`: se decide por el CÓDIGO (`err.code`, lo pone `apiRequest`), nunca
-   * por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
+   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta rechazó el valor
+   * con uno de sus códigos (`TEXTO_POR_CODIGO_DE_LA_RUTA`): se decide por el CÓDIGO (`err.code`, lo
+   * pone `apiRequest`), nunca por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
    */
   function avisarCampoNoGuardado(contenedor, nombre, fallo) {
     if (!contenedor || !contenedor.querySelector) return;
@@ -1382,15 +1405,48 @@
     var paso = linea ? linea.querySelector('.parte-plegable-cuerpo') : casilla.closest('.parte-horas');
     if (!paso) return;
     quitarAvisoDeCampoNoGuardado(contenedor, nombre);
+    var texto = textoDeCampoNoGuardado(nombre, fallo);
+    if (!texto) return;   // sin texto que decir no se cuelga una caja en blanco
     var aviso = document.createElement('div');
     aviso.className = 'alert error';
     aviso.setAttribute('role', 'alert');
     aviso.setAttribute('data-parte-campo-no-guardado', nombre);
     aviso.style.marginTop = '8px';
-    aviso.textContent = fallo && fallo.code === 'desplazamientos_invalido'
-      ? TEXTOS.desplazamientoEsEntero : TEXTOS.noSeGuardoElCambio;
+    aviso.textContent = texto;
     paso.appendChild(aviso);
     if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * SCRUM-1492 · qué se dice cuando lo tecleado en una casilla numérica NO ES UN NÚMERO. Una
+   * entrada por casilla numérica de la cabecera: una casilla numérica sin la suya no tendría qué
+   * decir, y el general («No se ha podido guardar el cambio») ahí sería falso.
+   */
+  var TEXTO_SI_NO_ES_UN_NUMERO = {
+    desplazamientos: TEXTOS.desplazamientoEsEntero,
+    kilometros: TEXTOS.kilometrosEsUnNumero,
+  };
+
+  /**
+   * SCRUM-1491 / SCRUM-1492 · qué se dice cuando la RUTA rechaza el valor por lo que es, no por
+   * un fallo. Un código, una causa, un texto (`parteRango.ts`, SCRUM-1488). Un código que no esté
+   * aquí cae en el general, y el general manda a reintentar: si la ruta estrena un código de
+   * rechazo, su texto entra aquí o esa frase vuelve a ser falsa.
+   */
+  var TEXTO_POR_CODIGO_DE_LA_RUTA = {
+    desplazamientos_invalido: TEXTOS.desplazamientoEsEntero,
+    desplazamientos_negativo: TEXTOS.desplazamientoEsCeroOMas,
+    desplazamientos_no_cabe: TEXTOS.desplazamientoDemasiadoGrande,
+    kilometros_invalido: TEXTOS.kilometrosEsUnNumero,
+    kilometros_negativo: TEXTOS.kilometrosEsCeroOMas,
+    kilometros_no_cabe: TEXTOS.kilometrosDemasiadoGrande,
+  };
+
+  function textoDeCampoNoGuardado(nombre, fallo) {
+    if (fallo && fallo.noEsUnNumero) return TEXTO_SI_NO_ES_UN_NUMERO[nombre];
+    var codigo = fallo && fallo.code;
+    return Object.prototype.hasOwnProperty.call(TEXTO_POR_CODIGO_DE_LA_RUTA, codigo)
+      ? TEXTO_POR_CODIGO_DE_LA_RUTA[codigo] : TEXTOS.noSeGuardoElCambio;
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
@@ -1463,6 +1519,16 @@
       (function (casilla) {
         var original = casilla.value;
         var alCambiar = function () {
+          // 🔴 SCRUM-1492 · LO QUE NO ES UN NÚMERO NO ES UN BORRADO. Una casilla `type="number"`
+          // con «1e», «-» o «,» entrega `value === ''`, igual que una casilla vacía, y se mandaba
+          // `null`: el dato guardado se borraba con un 200 y la casilla seguía enseñando lo
+          // tecleado (medido en yaqu.app el 6-oct). Lo que distingue los dos vacíos es
+          // `validity.badInput`. No se manda nada, la casilla vuelve a lo guardado y se dice.
+          if (casilla.validity && casilla.validity.badInput) {
+            casilla.value = original;
+            avisarCampoNoGuardado(contenedor, casilla.getAttribute('data-parte-campo'), { noEsUnNumero: true });
+            return;
+          }
           if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
           original = casilla.value;
           guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);
