@@ -4672,7 +4672,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     templateLines.forEach(function (l) {
       // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA" en
       // "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0).
-      addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
+      // SCRUM-930 · y su descripción y su «Dto. %», si la plantilla los trae. En el DOCUMENTO SUELTO
+      // no: esos dos campos no se pintan allí porque el emisor los descarta (SCRUM-616), y un
+      // descuento puesto en un campo que no se ve bajaría el importe de la vista previa sin que
+      // el documento emitido lo recoja.
+      const descripcion = esDocumentoSuelto ? undefined : l.description;
+      const dto = esDocumentoSuelto ? undefined : l.dto;
+      addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax, description: descripcion, dto: dto });
     });
     setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
     return templateLines.length;
@@ -4872,12 +4878,25 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         const price   = parseFloat(String(line.priceInput.value || '0').replace(',', '.'));
         const vatPerc = parseFloat(String(line.vatInput.value   || '0').replace(',', '.'));
         if (!concept || !Number.isFinite(price) || price < 0) return null;
-        return {
-          concept,
-          qty:   Number.isFinite(qty)   ? qty   : 1,
-          price: price,
-          tax:   Number.isFinite(vatPerc) ? vatPerc / 100 : 0,
-        };
+        // SCRUM-930 · la plantilla guarda también la DESCRIPCIÓN de la línea y su «Dto. %». Viajan
+        // dentro de `lines`, que el servidor guarda sin mirar: no hace falta columna. Clave AUSENTE
+        // si el campo está vacío (mismo criterio que el payload del presupuesto): una plantilla sin
+        // descripción ni descuento sale byte a byte como antes.
+        // El SUPLIDO no se guarda, y es decisión del ticket: es un gasto de UN cliente concreto. Una
+        // línea marcada como suplido entra en la plantilla como línea normal con su IVA a 0.
+        // El descuento GLOBAL tampoco: la plantilla no tiene columna (espera el ALTER de SCRUM-930).
+        // En el documento suelto ninguno de los dos campos se pinta y aquí llegan vacíos.
+        const description = ((line.descInput && line.descInput.value) || '').trim();
+        return Object.assign(
+          {
+            concept,
+            qty:   Number.isFinite(qty)   ? qty   : 1,
+            price: price,
+            tax:   Number.isFinite(vatPerc) ? vatPerc / 100 : 0,
+          },
+          description ? { description } : {},
+          window.quoteDescuentos.descuentoParaPayload(line.dtoInput && line.dtoInput.value)
+        );
       })
       .filter(Boolean);
 
