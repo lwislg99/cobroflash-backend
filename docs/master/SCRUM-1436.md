@@ -1,6 +1,6 @@
 # SCRUM-1436 · Dos de los cinco hallazgos: el aviso de disputa ya no afirma una firma que no ha mirado, y «ventana cerrada» ya no se dice de una ventana abierta
 
-**Medido contra:** `origin/main` = `e883e586d11298ca09d58cd3fa89937b7b0549bd` · 2026-10-07T15:52:25Z
+**Medido contra:** `origin/main` = `eda7ca55f9e2352b9da916c12f80d39aca5e1595` · 2026-10-07T16:01:39Z
 
 7-oct-2026 · **J2** (puesto J2, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`).
 [Escrito por una sesión; no por el fundador. SCRUM-1436 y SCRUM-1477, con sus comentarios, leídos en Jira.]
@@ -66,7 +66,9 @@ y convierte el resto en `whatsapp_send_failed`. El segundo caso del bloque ② d
 ## Ⓒ Lo corrido
 
 Todo en local, contra `dist/` construido con `tsc --noCheck` después del último cambio y después de
-mezclar `origin/main` `e883e586`. El build bueno es el del CI.
+mezclar `origin/main`. Las filas de abajo se midieron con `e883e586` mezclado; con `eda7ca55` mezclado
+se repitieron los dos tests míos (18 casos, 0 caen), el banco de mutaciones (mismo resultado) y
+`guards:entrada`. El build bueno es el del CI.
 
 | Qué | Resultado |
 |---|---|
