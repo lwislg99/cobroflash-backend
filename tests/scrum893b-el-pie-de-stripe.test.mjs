@@ -52,12 +52,20 @@ async function pagina(m, cobro = {}) {
   app.use('/pay', require_(R_INVOICE).default);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  const res = await fetch(`http://127.0.0.1:${server.address().port}/pay/invoice/tok893b`, { redirect: 'manual' });
-  const cuerpo = await res.text();
+  // Con `node:http` y sin agente, no con `fetch`: el último caso del fichero acaba en una petición,
+  // y con `fetch` el proceso moría al salir (0xC0000409 en Windows con `--test-force-exit`, 6 de 6
+  // pasadas) con sus cinco casos en verde: un fichero en rojo sin ningún caso rojo.
+  const { status, cuerpo } = await new Promise((resolve, reject) => {
+    http.get({ host: '127.0.0.1', port: server.address().port, path: '/pay/invoice/tok893b', agent: false }, (res) => {
+      const trozos = [];
+      res.on('data', (t) => trozos.push(t));
+      res.on('end', () => resolve({ status: res.statusCode, cuerpo: Buffer.concat(trozos).toString('utf8') }));
+    }).on('error', reject);
+  });
   await new Promise((r) => server.close(r));
 
   // SUELO: la página se pintó. Un 500 tampoco contiene el pie, y sería un verde sobre nada.
-  assert.equal(res.status, 200, `🔴 CIEGO: la página devolvió HTTP ${res.status}.`);
+  assert.equal(status, 200, `🔴 CIEGO: la página devolvió HTTP ${status}.`);
   assert.ok(cuerpo.includes('Elige cómo pagar') && cuerpo.includes('250,00'),
     '🔴 CIEGO: la página no contiene ni el rótulo ni el importe, así que no se pintó.');
   return cuerpo;
