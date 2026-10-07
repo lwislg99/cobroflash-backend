@@ -106,6 +106,7 @@ Un dato correcto bajo una etiqueta verde no se lee: la etiqueta manda sobre el c
 Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se queda sin juzgar. (SCRUM-1336)
 Un test que saca el handler de su ruta prueba el handler, no la ruta: sigue verde con el gate puesto y con el gate quitado. (SCRUM-1344)
 Lo que el repositorio llama inferencia puede estar ya medido en Jira: antes de pedir una medición se lee el ticket entero, comentarios incluidos. (SCRUM-1398)
+Un barrido que busca dónde se escribe un campo no ve el objeto que se construye en otro fichero: se cruza con el nombre del campo. (SCRUM-1401)
 Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente. (SCRUM-1372)
 Quien cierra no clasifica su propio «no lo vi»: pedírselo es justo lo que una auditoría existe para no creerse. (SCRUM-1372)
 La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido. (SCRUM-1295)

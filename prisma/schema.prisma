@@ -67,9 +67,9 @@ model Merchant {
   connectStatus      String  @default("none") @map("connect_status") // none|pending|active|restricted
   // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
   bizumPhone         String? @map("bizum_phone")
-  // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
+  // A10.2 (EXT3): estado de la suscripción de Stripe. Los valores los fija la Parte L del máster («Subscription») y los escribe el webhook (stripe.routes.ts).
   // plan conserva QUÉ plan es; esto conserva CÓMO está (banner past_due + portal).
-  subscriptionStatus String? @map("subscription_status") // active | past_due | canceled
+  subscriptionStatus String? @map("subscription_status")
 
   // A14 (EXT3, PERFIL-1): perfil público /p/:slug · flag PUBLIC_PROFILE_ENABLED (OFF)
   slug          String?   @unique
@@ -577,7 +577,7 @@ model Quote {
 
   // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
   // · docFields (A20.4: qué datos del cliente muestra el documento)
-  origin     String? // null|manual … | maintenance
+  origin     String? // null = no consta. Lo escribe maintenance.service.ts (propuesta de mantenimiento); revision.ts lo copia del original.
   validUntil DateTime? @map("valid_until")
   docFields  Json?     @map("doc_fields") // {name,phone,taxId,email}: bool
 
@@ -669,7 +669,7 @@ model Quote {
   acceptedAt           DateTime?
   paymentTerms         String?
   customBillingPlan    Json?     @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
-  // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
+  // V0-3: telemetría quote_created_via. Lo escriben tres sitios: el alta (schemas.ts, created_via), maintenance.service.ts y revision.ts.
   createdVia           String?   @map("created_via")
   rejectedAt           DateTime?
   decisionChannel      String?
@@ -889,7 +889,7 @@ model Invoice {
   // negativas — de un concepto en texto no se saca un identificador de factura.
   deductsRefs Json?    @map("deducts_refs")
 
-  // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
+  // Tipo de documento. Los valores los fija la unión TipoDocumento (src/modules/invoicing/domain/tipoDocumento.ts), que dice también cuáles se declaran.
   type        String @default("F1")
   rectifiesId Int?   @map("rectifies_id") // factura original a la que rectifica (solo R1)
 
@@ -1135,7 +1135,7 @@ model BotSession {
   id         Int      @id @default(autoincrement())
   phone      String // normalizado (normalizePhone)
   merchantId Int?     @map("merchant_id")
-  state      String   @default("menu") // menu|choosing_merchant|asking_description|asking_zone|done|handoff (K1)
+  state      String   @default("menu") // estados CERRADOS (regla 27): los fija el máster, Parte K1 («BotSession»)
   data       Json?
   expiresAt  DateTime @map("expires_at")
 
@@ -1195,7 +1195,7 @@ model CustomerEvent {
   merchantId Int @map("merchant_id")
   customerId Int @map("customer_id")
 
-  type   String // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_requested | review_requested
+  type   String // campo ABIERTO, sin lista cerrada: lo escribe quien llama a recordCustomerEvent (customerEvents.service.ts), más fusionClientes.ts y notasDelCliente.ts
   title  String
   detail String?
   meta   Json?
@@ -1274,7 +1274,7 @@ model WhatsAppMessage {
   status String  @default("queued") // queued → sent → delivered → read | failed
   error  String?
 
-  // Documento relacionado para el chip de entrega (quote | invoice | charge)
+  // Documento relacionado para el chip de entrega. Los valores: WaRelatedType (src/modules/messaging/domain/whatsappLog.service.ts).
   relatedType String? @map("related_type")
   relatedId   Int?    @map("related_id")
 
@@ -1406,7 +1406,7 @@ model AuditLog {
 model Attachment {
   id         Int      @id @default(autoincrement())
   merchantId Int      @map("merchant_id")
-  entityType String   @map("entity_type") // quote_request | job
+  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud) y albaranes.routes.ts (albarán); el de Trabajo (MEDIA-1 c) no está construido.
   entityId   Int      @map("entity_id")
   url        String
   kind       String   @default("photo") // photo | audio (audio = F2, no F1)
