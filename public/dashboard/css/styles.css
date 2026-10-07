@@ -4518,3 +4518,15 @@ textarea.parte-linea-desc {
    `.btn-sm` global no se toca. Los botones de las filas («📋 Usar», «Renombrar», «Borrar») y las
    pestañas `Historial · Plantillas` ya daban 44 px en el producto: no se tocan. */
 .plantillas-cabecera > .btn-sm { min-height: 44px; }
+
+/* SCRUM-1148 (AB6, defecto de paso) · lista de presupuestos: «⬇ CSV» de la cabecera medía 31 px de
+   toque en yaqu.app a 390 y a 929, y «Ver detalle» de cada fila 30,7 a 929 (a 390 ya daba 44 por
+   la regla de `.table--cards-mobile`, que sólo llega hasta 640). Regla ACOTADA A SUS DOS
+   CONTENEDORES, solo tamaño: `.btn-sm` global no se toca. Los mínimos son los de DESIGN.md: 36 en
+   escritorio, 44 hasta el corte de móvil (768, el de `scripts/_medidor-de-toque.mjs`). */
+.quotes-list-acciones > .btn-sm,
+.quotes-list-fila-acciones > .btn-sm { min-height: 36px; }
+@media (max-width: 768px) {
+  .quotes-list-acciones > .btn-sm,
+  .quotes-list-fila-acciones > .btn-sm { min-height: 44px; }
+}
