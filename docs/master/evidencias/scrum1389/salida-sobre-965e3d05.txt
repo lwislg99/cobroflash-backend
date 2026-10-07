@@ -1,0 +1,228 @@
+BANCO SCRUM-1389 · plataforma win32 · node v24.18.0
+POBLACIÓN: 9 casos · 2 controles (limpio, rojo de verdad), 5 de «el proceso SE CREA y muere», 2 de «el proceso NO SE CREA»
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 1 · CONTROL · dos limpios
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 2 · ℹ fail 0 · ℹ cancelled 0 · EXIT=0
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:pass","nombre":"otro caso limpio del banco","anidado":0,"fila":2,"col":1}
+RESUMEN {"tests":2,"failed":0,"passed":2,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=0
+tap   → # tests 2 · # pass 2 · # fail 0 · EXIT=0
+puerta (tanda-con-veredicto) → EXIT=0 · su lector de huellas NO DICE NADA
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 2 · CONTROL · un limpio y un ROJO DE VERDAD (assert dentro de un test)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"caso que cae de verdad","anidado":0,"fila":3,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","causaCode":"ERR_ASSERTION","causaTipo":"Error","mensaje":"Expected values to be strictly equal:"}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - caso que cae de verdad
+   tap│   duration_ms: 0.9815
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\rojo.test.mjs:3:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   error: |-
+   tap│   code: 'ERR_ASSERTION'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1 · su lector de huellas NO DICE NADA
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 3 · SE CREA y muere · un import que no resuelve
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:fail","nombre":"import-roto.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":1,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 1 - import-roto.test.mjs
+   tap│   duration_ms: 46.568
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\import-roto.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 1
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · import-roto.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 4 · SE CREA y muere · error de sintaxis
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"sintaxis-rota.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":1,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - sintaxis-rota.test.mjs
+   tap│   duration_ms: 39.0985
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\sintaxis-rota.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 1
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · sintaxis-rota.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 5 · SE CREA y muere · throw en la primera línea
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"throw-arriba.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":1,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - throw-arriba.test.mjs
+   tap│   duration_ms: 41.4042
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\throw-arriba.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 1
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · throw-arriba.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 6 · SE CREA y muere · process.exit(1) sin una letra
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:fail","nombre":"exit-uno-mudo.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":1,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 1 - exit-uno-mudo.test.mjs
+   tap│   duration_ms: 36.8584
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\exit-uno-mudo.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 1
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · exit-uno-mudo.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 7 · SE CREA y muere · sale con 0xC0000142 sin una letra (IMITACIÓN del código nativo)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"nativo.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":3221225794,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - nativo.test.mjs
+   tap│   duration_ms: 34.753
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\nativo.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 3221225794
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · nativo.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 8 · SE CREA, corre un caso y muere a medias con 0xC0000142 (IMITACIÓN)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"caso limpio del banco","anidado":0,"fila":2,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"muere-a-medias.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","exitCode":3221225794,"signal":null,"causaTipo":"String","mensaje":"test failed"}
+RESUMEN {"tests":2,"failed":1,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":2,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - muere-a-medias.test.mjs
+   tap│   duration_ms: 60.5014
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\muere-a-medias.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   exitCode: 3221225794
+   tap│   signal: ~
+   tap│   error: 'test failed'
+   tap│   code: 'ERR_TEST_FAILURE'
+tap   → # tests 2 · # pass 1 · # fail 1 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 1 caído(s) en «failing tests» · 1 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · muere-a-medias.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+
+████████████████████████████████████████████████████████████████████████████████████████████████████
+CASO 9 · NO SE CREA · dos nietos sin binario (ENOENT: la copia de node desaparece a mitad)
+████████████████████████████████████████████████████████████████████████████████████████████████████
+spec  → ℹ tests 3 · ℹ pass 1 · ℹ fail 2 · ℹ cancelled 0 · EXIT=1
+EVENTO {"tipo":"test:pass","nombre":"renombra el binario","anidado":0,"fila":3,"col":1}
+EVENTO {"tipo":"test:fail","nombre":"limpio.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","causaCode":"ENOENT","causaSyscall":"spawn","causaTipo":"Error","mensaje":"spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\node-copia-2.e"}
+EVENTO {"tipo":"test:fail","nombre":"otro-limpio.test.mjs","anidado":0,"esFichero":true,"fila":1,"col":1,"failureType":"testCodeFailure","code":"ERR_TEST_FAILURE","causaCode":"ENOENT","causaSyscall":"spawn","causaTipo":"Error","mensaje":"spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\node-copia-2.e"}
+RESUMEN {"tests":3,"failed":2,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":3,"suites":0}
+eventos → EXIT=1
+   tap│ not ok 2 - limpio.test.mjs
+   tap│   duration_ms: 1.316
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\limpio.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   error: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\node-copia-3.exe ENOENT'
+   tap│   code: 'ENOENT'
+   tap│ not ok 3 - otro-limpio.test.mjs
+   tap│   duration_ms: 0.8487
+   tap│   type: 'test'
+   tap│   location: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\otro-limpio.test.mjs:1:1'
+   tap│   failureType: 'testCodeFailure'
+   tap│   error: 'spawn C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1389-banco-LVjUQz\\node-copia-3.exe ENOENT'
+   tap│   code: 'ENOENT'
+tap   → # tests 3 · # pass 1 · # fail 2 · EXIT=1
+puerta (tanda-con-veredicto) → EXIT=1
+   │   población: 2 caído(s) en «failing tests» · 2 fichero(s) caído(s) SIN caso caído · 0 caso(s) caído(s) por CIEGO · 0 saltado(s) por CIEGO · 0 rojo(s) de caso
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · limpio.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   🔴 FICHERO CAÍDO SIN CASO CAÍDO · otro-limpio.test.mjs — 0 casos caídos dentro, y sin huella reconocida de red ni nativa. Puede ser un error AL CARGAR el fichero, también del cambio que se prueba: su salida está justo encima de su ✖.
+   │   No hay ningún otro rojo de caso: todo lo que ha caído en esta tanda está en las líneas de arriba.
+TESTIGO: binario renombrado en 4 de 4 pasadas
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+TABLA · un renglón por evento `test:fail` (los `test:pass` no se listan)
+caso | clase | anidado | esFichero | failureType | code | exitCode | signal | causaCode | causaSyscall | recuento
+1 | control-verde | (ningún test:fail) | | | | | | | | ℹ tests 2 · ℹ pass 2 · ℹ fail 0 · ℹ cancelled 0
+2 | rojo-real | 0 | no | testCodeFailure | ERR_TEST_FAILURE | — | — | ERR_ASSERTION | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+3 | muere-al-empezar | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 1 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+4 | muere-al-empezar | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 1 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+5 | muere-al-empezar | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 1 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+6 | muere-mudo | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 1 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+7 | muere-mudo | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 3221225794 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+8 | muere-a-medias | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | 3221225794 |  | — | — | ℹ tests 2 · ℹ pass 1 · ℹ fail 1 · ℹ cancelled 0
+9 | no-arranca | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | — | — | ENOENT | spawn | ℹ tests 3 · ℹ pass 1 · ℹ fail 2 · ℹ cancelled 0
+9 | no-arranca | 0 | sí | testCodeFailure | ERR_TEST_FAILURE | — | — | ENOENT | spawn | ℹ tests 3 · ℹ pass 1 · ℹ fail 2 · ℹ cancelled 0
+
+TABLA 2 · lo que dice HOY la puerta de la casa (scripts/tanda-con-veredicto.mjs, sin tocar)
+caso | clase | EXIT de la puerta | rótulo de su lector de huellas
+1 | control-verde | 0 | (nada)
+2 | rojo-real | 1 | (nada)
+3 | muere-al-empezar | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+4 | muere-al-empezar | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+5 | muere-al-empezar | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+6 | muere-mudo | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+7 | muere-mudo | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+8 | muere-a-medias | 1 | FICHERO CAÍDO SIN CASO CAÍDO
+9 | no-arranca | 1 | FICHERO CAÍDO SIN CASO CAÍDO + FICHERO CAÍDO SIN CASO CAÍDO
+
+CASOS CORRIDOS=9 · BANCO=0
