@@ -228,9 +228,13 @@ leído: una caja CSS no es lo que ocupa.
   fichero, comentario ni mensaje. Ni real ni de ejemplo.
 - Frontend vanilla, sin bundler, sin framework de CSS. Ni un `style=`
   en línea.
-- Un hallazgo de otro carril se REPORTA, no se arregla.
+- Un hallazgo de otro carril se REPORTA, no se arregla. (Uno de TU
+  carril encontrado de paso se arregla en el momento: A13, la orden
+  nº 1.)
 - Dependencia o coste nuevo: lo decide el fundador.
-- Un hallazgo solo es ticket si tiene víctima HOY. Tope 3 por tanda.
+- Un hallazgo solo es ticket si tiene víctima HOY y además no se
+  puede arreglar en el momento; o si tiene fecha; o si cruza al otro
+  equipo (A13, la orden nº 1). Tope 3 por tanda.
 - Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el
   guard exige. Si el arreglo pasa por relajar el guard, se para y se
   dice.
@@ -308,10 +312,60 @@ vez**. La orden era buena; lo que faltó fue mirar quién medía sobre eso.
 y dos jefes pasa a ser el ciclo entero, igual para los dos. Lo pidió el fundador: «dejar muy clara la
 metodología de abrir tickets, como con departamentos, y ponerlos SIEMPRE en curso para no pisarnos».)*
 
+### 🔴 La orden nº 1: CERRAR, NO ABRIR (6-oct-2026)
+
+Va por delante de los cinco pasos, y por delante de encontrar defectos nuevos. **Luis, fundador,
+6-oct-2026, hacia las 19:45Z, a su orquestador.** El mensaje entero, con las erratas de teclado
+corregidas; no se ha cambiado ninguna palabra:
+
+> «sobre todo lo que me interesa es limpiar tareas de jira y mandar lotes de tareas donde una sesion coja
+> una tarea la arregle y la cierre, coja otra la arregle y la cierre ya si. no es tan dificil no puede ser
+> que abramos siempre mas y mas. y si encuentra un defecto arreglando una tarea, pues lo soluciona, lo
+> arregla lo cierra y vuelve con la que estaba la termina de arreglar y la cierras. simple y llano.
+> apuntatelo donde te lo tengas que apuntar que no haya duda de que lo lleves a cabo siempre y guies bien
+> a las sesiones pero vamos en esto no puedes fallar es fuego y tenemos que quitarnos ya las 280 tareas
+> llevamos demasiados meses arreglando gilipolleces y sin poder vender el producto porque no para de abrir
+> cosas y arreglar otras que rompen otras»
+
+La S0 lo comprobó en el origen el 7-oct-2026: en la transcripción del chat de su orquestador es un turno
+escrito por una persona. En Jira no está (la búsqueda por «simple y llano» da cero tickets).
+
+**Cómo se cumple.** Los puntos 1 y 6 son de quien reparte; del 2 al 5, de cada sesión:
+
+1. **El encargo es un LOTE de 3 a 5 tickets EN ORDEN**, no uno.
+2. **Una tarea se ENTREGA antes de coger la siguiente:** completa contra su aceptación, o diciendo QUÉ LE
+   FALTA (A8). Cerrar sigue siendo del orquestador (paso 4 de abajo). No se llevan dos a medias.
+3. **Si te bloqueas, bajas a la siguiente del lote** y dejas la pregunta **en el ticket** (paso 3 de
+   abajo): no esperas al orquestador. Una tarea soltada con su pregunta escrita no es una tarea a medias.
+4. 🔴 **Un defecto que encuentras DE PASO se arregla y se cierra EN EL MOMENTO, y vuelves a lo que
+   estabas. NO se abre ticket.** Va en tu misma rama y tu mismo PR, con su test, y se NOMBRA, sin número,
+   en tu registro y en tu entrega («de paso: …»). No es apilar tickets (A17): no es un ticket.
+5. **Se abre ticket SÓLO si** el defecto tiene víctima hoy **y** no se puede arreglar en el momento ·
+   **o** tiene FECHA · **o** cruza al otro equipo. Todo lo demás se nombra en la entrega, sin número.
+6. **El orquestador da cada tanda, en una línea, ABIERTOS contra CERRADOS,** diciendo la ventana que
+   cuenta (de qué hora a qué hora). Y **un «En curso» que nadie trabaja vuelve a «Por hacer»** (paso 5).
+
+*Lectura de la S0, no palabras del fundador:* «no se puede arreglar en el momento» es una de tres cosas.
+Cae fuera de tu carril (A7 y A20; el candado de carril te para, y no se rodea). O pide una firma o una
+decisión de un jefe (A7: esquema, emisión fiscal, texto que ve el usuario, coste). O no cabe en el día
+(A17). La orden no levanta ninguna de las tres.
+
+**A quién obliga.** Al equipo de Luis, desde el 6-oct-2026. Al de Javier se le propone por su orquestador
+(el canal entre los dos equipos es el jefe); mientras Javier no lo diga, a su equipo no le obliga.
+
+**Por qué, medido en Jira.** El 6-oct-2026 (día de Madrid) se abrieron 44 tickets y se resolvieron 47: con
+ese neto no se vacía nada. El 7-oct a las 06:30Z había 110 «En curso» entre los dos equipos (45 con la
+etiqueta de Luis, 44 con la de Javier, 21 sin etiqueta de equipo), y 69 de los 110 llevaban cuatro días o
+más sin tocarse. Son fotos de una población viva: `created` y `resolved` del día, y `status = 10001` con
+su `updated`.
+
+### Los cinco pasos
+
 Los dos equipos **no se hablan**: lo único que ven los dos es Jira y el repo. Por eso el ticket no es
 papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar:
 
-1. **ABRIR.** Todo ticket nace con **DOS etiquetas**: la del equipo (`equipo-luis` o `equipo-javier`) y
+1. **ABRIR.** Antes de abrir, el punto 5 de la orden nº 1: casi nada de lo que se encuentra es ticket.
+   Todo ticket nace con **DOS etiquetas**: la del equipo (`equipo-luis` o `equipo-javier`) y
    la del área dueña según `dos-equipos.md` §3 (`area-s0` … `area-s5`, `area-j1` … `area-j6`). Si no casa
    con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
    mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
