@@ -1560,7 +1560,7 @@ model EmailMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  kind       String // CLASES_DE_CORREO (src/modules/messaging/domain/registroDeEnvios.ts): lista cerrada, una por emisor
+  kind       String // invoice | quote | magic_link | digest | ...
   toEmail    String  @map("to_email")
   providerId String? @unique @map("provider_id") // id de Resend; NULL = no consta
 
@@ -1568,7 +1568,7 @@ model EmailMessage {
   status String  @default("aceptado_sin_identificador")
   error  String?
 
-  relatedType String? @map("related_type") // documento relacionado; nulo si el emisor no lo sabe. Hoy sólo lo escribe email.service.ts (factura y presupuesto).
+  relatedType String? @map("related_type") // invoice | quote | charge
   relatedId   Int?    @map("related_id")
 
   createdAt DateTime @default(now()) @map("created_at")
