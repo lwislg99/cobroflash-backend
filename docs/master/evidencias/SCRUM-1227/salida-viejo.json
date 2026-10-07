@@ -1,0 +1,28 @@
+{
+ "modo": "VIEJO (control)",
+ "build": "5f48829e38ec4319793bcb87c66f36236b480637",
+ "getParcheados": 3,
+ "clausulasQueMandaElServidor": [
+  {
+   "id": "qa-1227-a",
+   "texto": "Texto de prueba QA para SCRUM-1227: seis meses de garantía en mano de obra.",
+   "titulo": "Garantía (QA)"
+  },
+  {
+   "id": "qa-1227-b",
+   "texto": "Texto de prueba QA para SCRUM-1227: precio válido treinta días.",
+   "titulo": "Validez (QA)"
+  }
+ ],
+ "filasDeClausulaEnPantalla": 0,
+ "botonesGuardar": 1,
+ "camposInvalidos": [],
+ "salioPUT": true,
+ "queSeHizoConEl": "contestada por la sonda (200)",
+ "putClausulas": [],
+ "putHomePrefs": {
+  "showTechPhotoToClient": false
+ },
+ "otrasNoGet": [],
+ "erroresDePagina": []
+}
