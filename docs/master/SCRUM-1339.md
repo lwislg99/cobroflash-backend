@@ -1053,3 +1053,170 @@ Todo lo que salió está en git (`g-*`). Las anotaciones viven en GitHub mientra
     node $E/e-tasa-de-main.mjs origin/main <fuera del árbol>/banco
     node $E/g-desglose.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv
     node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
+
+
+# SCRUM-1339h · ¿Está inflada la tasa por ficheros que no arrancaron o murieron? El mecanismo existe; en la ventana de 50 runs suma 0 de 587. La tasa sigue en 28 de 50
+
+**Medido contra:** `origin/main` = `6536e63e038ef36be9d61fc8057a649ff2af3149` · 2026-10-07T17:16:32Z
+
+A9: sin fallo que generalice — los dos tropiezos de la tanda (un guion escrito sobre la copia de `git show` que reventó con el CRLF del fichero del árbol, y un recuento de bytes NUL hecho con `grep`) dieron error o una cifra imposible en el acto y no llegaron a ninguna cifra entregada; van contados en «Mis errores»
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 7-oct): J4, construyendo
+SCRUM-1389, midió que la señal de nombres cuenta los casos de un fichero no arrancado como
+«ausentes». Si eso pasa en la ventana, la tasa de 1339g (28 de 50) está inflada. Tres preguntas:
+confirmar el mecanismo, cuantificarlo sobre los 587 casos, y dar la tasa corregida. Lo hace J6
+(sesión `jv-j6`, relevo de J6n). **Sólo lectura: no se toca la señal, ni `scripts/`, ni tests, ni
+`ci.yml`.** Entran esta sección y nueve ficheros `h-*` en evidencias.
+
+## En corto
+
+- **El mecanismo que midió J4 es cierto, y está confirmado por efecto.** Un fichero que muere al
+  cargar, o a medias, mete todos sus casos en «ausentes» (también el que había pasado), el run
+  cuenta en la tasa, y el aviso dice de él «corrió y no informó de sus casos», que es falso. El
+  TAP trae la entrada como caída y con su `exitCode`; la señal lee que cayó y no lo usa.
+- **En la ventana de 50 runs no ha ocurrido ni una vez: 0 de los 587 casos ausentes vienen de un
+  fichero que no arrancó o que murió.** Leídos los 50 TAP de la ventana, no sólo los avisos.
+- **La tasa corregida es la misma: 28 de 50 (56,0 %).** Y 24 de los 46 verdes. La cifra que vale
+  para el 15-oct no cambia.
+- **Por qué no podía moverse en los verdes, y esto no depende de mi lector:** un fichero caído
+  cuenta como `fail`, y un run con `fail > 0` no sale verde. Los 24 verdes con ausentes llevan
+  `# fail 0`. La inflación sólo cabía en los 4 runs rojos, y en los 4 está mirado caso a caso.
+- **Lo que sí hay, y no es lo que describió J4:** 16 de los 587 (dos bloques de `scrum237`, en
+  dos runs rojos) son de un fichero que corrió 3,8 s, salió con 0, y no dejó ninguno de sus 8
+  casos. Su entrada en el TAP es `ok`. Es la pérdida de SCRUM-1405 a tamaño de fichero entero, no
+  un fichero muerto. Si alguien quisiera apartarlos, la tasa sería 27 de 50 (54,0 %); no lo propongo.
+
+## ① El mecanismo: leído y por efecto
+
+Leído en `scripts/_senal-de-nombres.mjs` sobre `6536e63e`:
+
+- `leerTap` guarda, de cada línea de nivel 0 cuyo nombre acaba en `.test.mjs`,
+  `{ fichero, caida }` (línea 159). `caida` es el `not ok`.
+- `senalDeNombres` usa esa lista en un solo sitio (línea 297):
+  `conEntradaDeFichero: t.entradasDeFichero.some((e) => e.fichero === …)`. Mira si la entrada
+  EXISTE. `caida` no lo lee nadie en todo el módulo. `exitCode`, `signal` y `spawn` no se leen.
+- `describirBloque` (línea 313) le pone a todo bloque con entrada la misma frase: «corrió y no
+  informó de sus casos».
+- `tasaDeRegistros` cuenta el run si `ausentes > 0`, venga de donde venga.
+
+Por efecto (`h-efecto.mjs`, salida en `h-salida-efecto.txt`): un árbol de mentira fuera del repo,
+corrido con `node --test` de verdad (node v24.18.0, win32) y su TAP pasado a la señal de la casa
+sin tocarla.
+
+| caso | `node --test` | lo que trae el TAP | lo que dice la señal |
+|---|---|---|---|
+| control: un fichero limpio | sale 0 · tests 2 · fail 0 | ninguna entrada de fichero | ausentes 0 · no cuenta en la tasa |
+| muere al cargar (import que no resuelve), 3 casos | sale 1 · tests 3 · fail 1 | entrada caída · `exitCode: 1` · `error: 'test failed'` | **ausentes 3** · «corrió y no informó de sus casos» · cuenta en la tasa |
+| muere a medias (pasa uno y `process.exit(1)`), 3 casos | sale 1 · tests 3 · fail 1 | lo mismo | **ausentes 3**, el que pasó incluido · la misma frase · cuenta en la tasa |
+
+El proceso que no llega a crearse (`spawn … ENOENT`) no lo he fabricado: lo midió J4 en SCRUM-1389,
+caso 9 (entrada caída, sin `exitCode`). Por lectura cae en la misma rama.
+
+## ② La cuantificación, por dos caminos
+
+**Población:** los 50 runs medidos de la ventana de 1339g (`g-tasa-de-main.tsv`, 2-oct 01:54:30Z →
+7-oct 15:43:04Z), 28 con ausentes, 52 bloques, 587 casos. No he vuelto a medir la ventana: es la
+misma, para que la cifra corregida se pueda poner al lado de la de 1339g.
+
+**Camino A, lo que dicen los avisos** (`h-separar.mjs`, sin bajar nada). Los 52 bloques suman 587,
+que es lo que suma el registro; 0 avisos sin parsear.
+
+| forma · entrada de fichero · job | bloques | casos | runs |
+|---|---|---|---|
+| cola · sin entrada · `success` · `fail 0` | 46 | 519 | 24 |
+| cola · sin entrada · `failure` · `fail 1` | 3 | 36 | 2 |
+| cola · sin entrada · `failure` · `fail 0` | 1 | 16 | 1 |
+| entero · CON entrada · `failure` · `fail 0` | 2 | 16 | 2 |
+
+**Camino B, los TAP** (`h-bajar-taps.mjs` y `h-entradas.mjs`). Bajado el artefacto `tanda-tap` de
+los 50 runs (`h-bajados.tsv`: 50 de 50) y leído con el `leerTap` de la casa.
+
+- Los 50 TAP están enteros y sin bytes NUL, y cada uno trae el mismo `# tests` y `# fail` que la
+  línea de registro de su run: es el TAP que midió el paso. Descuadres: 0.
+- **Entradas de fichero en los 50 TAP: 2. Caídas: 0. Con `exitCode`, señal o `spawn`: 0.**
+- Las 2 son de `tests/scrum237-negacion-respaldada.test.mjs`, en `f30b1a40` y `7779b0cb`, y son
+  `ok`, sin `exitCode`. En el TAP de `f30b1a40` el fichero dura 3.806 ms y sus líneas de
+  diagnóstico están justo encima: corrió.
+- Cruce bloque a bloque: 50 bloques (571 casos, 27 runs, 17 ficheros) no tienen entrada de
+  fichero: el fichero informó de su cabeza y perdió la cola. 2 bloques (16 casos) tienen la
+  entrada `ok`.
+
+**El camino que no depende de cómo se escriba la entrada.** Un fichero caído cuenta como `fail`
+(SCRUM-1389 ①). 48 de los 50 TAP llevan `# fail 0`: ahí no hay ninguno, lo lea como lo lea. En
+los otros 2, la única línea `not ok` de nivel 0 es un caso con nombre, no un fichero: «SCRUM-1378
+· `leerTrabajos`…» en `28222517` y «SCRUM-1415 · 🔴 EL ÁRBOL…» en `643e9a65`.
+
+Los dos runs rojos con `fail 0` (`f30b1a40`, `7779b0cb`) cayeron en el paso 15, «¿Ha perdido tests
+la tanda?» (el suelo), no en la tanda. Preguntado a la API por sus jobs `110932298624` y
+`110720546826`.
+
+| de los 587 casos ausentes | casos | bloques | runs |
+|---|---|---|---|
+| de un fichero que NO ARRANCÓ o MURIÓ | **0** | 0 | 0 |
+| de un fichero que corrió, salió con 0 y no dejó ningún caso | 16 | 2 | 2 |
+| de un fichero que informó de su cabeza y perdió la cola | 571 | 50 | 27 |
+
+(Un run, `7779b0cb`, está en las dos últimas filas.)
+
+## ③ La tasa corregida
+
+| | 1339g | quitando lo de ficheros no arrancados o muertos |
+|---|---|---|
+| runs con ausentes, de 50 | 28 (56,0 %) | **28 (56,0 %)** |
+| verdes con ausentes, de 46 | 24 | **24** |
+| casos ausentes | 587 | **587** |
+
+No hay nada que quitar. La otra lectura posible, apartar también los dos bloques «entero» de
+`scrum237`, daría 27 de 50 (54,0 %), 24 de 46 verdes y 571 casos: `f30b1a40` sale de la cuenta y
+`7779b0cb` se queda por su cola de `scrum834`. No la doy como corregida, porque esos 16 casos se
+ejecutaron y se perdió su informe, que es lo que la tasa quiere contar.
+
+## ④ Los controles
+
+- **De cero:** una marca inventada en los avisos («el fichero NO SALE en el TAP») → 0 bloques. Una
+  entrada de un fichero que no existe (`scrum9999-no-existe.test.mjs`) → 0. El árbol limpio del
+  banco → 0 ausentes y 0 entradas.
+- **Positivo del lector de entradas:** un TAP fabricado con un fichero caído → 1 entrada, caída,
+  `exitCode` 1; el lector de la casa ve la misma. Y el banco de ① da una entrada caída por cada
+  fichero muerto.
+- **Dos lectores:** mi lector de bloques y `leerTap` ven las mismas entradas en los 50 TAP.
+- **Las sumas:** 52 bloques y 587 casos por los dos caminos; 519 + 36 + 16 + 16 = 587.
+
+## Lo que NO sé y lo que NO he hecho
+
+- **No he arreglado la señal.** Era el encargo: primero el número. El defecto de ① sigue en
+  `main`: el día que un fichero muera en un run, sus casos subirán la tasa y el aviso dirá de él
+  una frase falsa. Es la salida B de SCRUM-1389 y está sin decidir.
+- **Que no haya pasado en 50 runs no dice cada cuánto pasa.** J4 leyó 124 corridas con el rojo
+  del obligatorio a la vista y encontró 1 fichero caído (`scrum804b`, run `36806690822`).
+- **El testigo real en Linux no lo tengo.** Bajé el TAP de ese run para ver una entrada caída de
+  verdad escrita por el CI: llega con 2.198.683 bytes NUL de 2.346.221 (SCRUM-1289) y no se puede
+  leer. La forma de la entrada caída está medida en Windows (aquí y en SCRUM-1389). Por eso va el
+  camino del `# fail`, que no depende de ella.
+- **Los runs de PR siguen sin medir.** Ahí un fichero que muere por el cambio que se prueba es más
+  probable que en `main`, y ahí sí inflaría. La ventana de c.17935 es de `main`.
+- Los 88 commits de `main` sin run medido no entran, como en 1339g.
+- Por qué `scrum237` es el único que se pierde entero. No lo he mirado.
+- No he corrido la tanda completa. Este PR no añade ni cambia ningún test.
+
+## Mis errores
+
+- Escribí los guiones sobre una copia del TSV sacada con `git show`, y al correrlos sobre el
+  fichero del árbol reventaron: allí llega con CRLF y la última columna se llamaba `avisos\r`.
+  Salieron con 1 y sin cifras. Ahora parten por `\r?\n`.
+- Conté los bytes NUL del TAP testigo con `grep` y dio un número imposible. Contados por bytes con
+  node, son los de arriba.
+- La primera versión del banco creaba su temporal con `mkdtemp` a mano; antes de comitear pasó a
+  `temporal()`, que es lo que la casa exige.
+
+## Lo que no está en git, y reproducir
+
+Los 50 TAP (127 MB) no entran. Se rebajan mientras GitHub conserve los artefactos: los del
+2-oct caducan el 9-oct y los del 7-oct, el 14-oct. Después sólo queda el camino A.
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/h-separar.mjs $E/g-tasa-de-main.tsv
+    node $E/h-bajar-taps.mjs $E/g-tasa-de-main.tsv <fuera del árbol>/taps --solo 1     # el canario
+    node $E/h-bajar-taps.mjs $E/g-tasa-de-main.tsv <fuera del árbol>/taps
+    node $E/h-entradas.mjs scripts/_senal-de-nombres.mjs $E/g-tasa-de-main.tsv <fuera del árbol>/taps
+    node $E/h-efecto.mjs
