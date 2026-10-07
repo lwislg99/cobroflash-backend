@@ -7,6 +7,7 @@ import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../li
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { config } from '../../../../core/config/env';
+import { formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
@@ -282,8 +283,9 @@ router.post('/', async (req, res) => {
 
       // Confirmación de pago al cliente por WhatsApp (J1: payment_confirmation_invoice_es,
       // con botón "Ver documento" → /recibo/:token; copy neutro factura/justificante).
-      const amt = Number(body.amount ?? updated.amount).toFixed(2);
       const cur = body.currency ?? updated.currency;
+      // SCRUM-1436: lo que lee el PROFESIONAL (historial y aviso), en la forma de la casa.
+      const importe = formatMoneyEs(body.amount ?? updated.amount, cur);
       const invConf = invoiceId
         ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
         : null;
@@ -297,8 +299,8 @@ router.post('/', async (req, res) => {
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
-          // SCRUM-931: en bruto. `amt` sigue vivo debajo para el `detail` del panel y el aviso al
-          // PRO, que quedan FUERA del alcance decidido de este ticket y se dejan como estaban.
+          // SCRUM-931: en bruto; lo formatea quien envía. El `detail` del panel y el aviso al PRO
+          // llevan `importe`, de arriba (SCRUM-1436).
           amount: Number(body.amount ?? updated.amount),
           currency: cur,
           documentNumber,
@@ -314,7 +316,7 @@ router.post('/', async (req, res) => {
           customerId: updated.customerId,
           type: 'payment_received',
           title: 'Pago recibido',
-          detail: `${amt} ${cur}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+          detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
         });
       }
 
@@ -345,8 +347,8 @@ router.post('/', async (req, res) => {
           merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro
           merchantPhone: merchant?.whatsappPhone,
           customerName,
-          freeText: `💰 Pago recibido de ${customerName}: ${amt} ${cur}`,
-          detail: `${amt} ${cur}${documentNumber ? ` · ${documentNumber}` : ''}`,
+          freeText: `💰 Pago recibido de ${customerName}: ${importe}`,
+          detail: `${importe}${documentNumber ? ` · ${documentNumber}` : ''}`,
         }).catch((err) => console.error('[psp] Error notificando al merchant:', err));
       }
 

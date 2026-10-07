@@ -299,13 +299,18 @@ function importePintado(html) {
   return m[1];
 }
 
-for (const [estado, titulo] of [['paid', '¡Pago aprobado!'], ['failed', 'Pago rechazado'], ['pending', 'Pago en proceso'], ['expired', 'Cobro vencido']]) {
-  test(`SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro «${estado}»: el cliente lee «1.419,87 €»`, async () => {
-    reiniciar();
-    banco.cobro.status = estado;
-    const r = await llamar(resultadoMpH, { params: { token: 'tok_1436' }, query: {}, headers: {} });
-    assert.ok(typeof r.html === 'string' && r.html.includes(titulo),`🔴 CIEGO: no ha salido la página del estado «${estado}»`);
-    assert.equal(importePintado(r.html), formatMoneyEs(TOTAL, 'EUR'));
-    assert.ok(!CRUDO.test(importePintado(r.html)), `🔴 importe en crudo en la página: «${importePintado(r.html)}»`);
-  });
+/** La página de resultado con el cobro en ese estado: sale su título y el importe en la forma de la casa. */
+async function laPaginaDice(estado, titulo) {
+  reiniciar();
+  banco.cobro.status = estado;
+  const r = await llamar(resultadoMpH, { params: { token: 'tok_1436' }, query: {}, headers: {} });
+  assert.ok(typeof r.html === 'string' && r.html.includes(titulo), `🔴 CIEGO: no ha salido la página del estado «${estado}»`);
+  assert.equal(importePintado(r.html), formatMoneyEs(TOTAL, 'EUR'));
+  assert.ok(!CRUDO.test(importePintado(r.html)), `🔴 importe en crudo en la página: «${importePintado(r.html)}»`);
 }
+
+// Un caso por estado, con el nombre escrito (SCRUM-1415): la página pinta el importe en los cuatro.
+test('SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro pagado: el cliente lee «1.419,87 €»', () => laPaginaDice('paid', '¡Pago aprobado!'));
+test('SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro fallido: el cliente lee «1.419,87 €»', () => laPaginaDice('failed', 'Pago rechazado'));
+test('SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro pendiente: el cliente lee «1.419,87 €»', () => laPaginaDice('pending', 'Pago en proceso'));
+test('SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro vencido: el cliente lee «1.419,87 €»', () => laPaginaDice('expired', 'Cobro vencido'));
