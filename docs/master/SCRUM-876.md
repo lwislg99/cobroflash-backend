@@ -670,3 +670,21 @@ Restaurado con `git restore --source=HEAD`; `git status` vacío después.
 
     psql -d <banco> -c "alter sequence merchants_id_seq restart with 1"
     LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs
+
+## De paso: los seis arreglos de producto del día, ¿su test sale rojo con el código de antes?
+
+Encargo del orquestador (punto 4 del lote de tarde), sin ticket. Para cada uno: base verde, se quita el arreglo, se corre SU test, se restaura con git. El guion es `evidencias/SCRUM-876f/rojo-con-codigo-viejo.mjs`; dice en cada fila cómo quitó el arreglo.
+
+| PR | arreglo | cómo se quitó | caen |
+|---|---|---|---|
+| #2240 (1227) | el GET del perfil devuelve lo que Configuración guarda (`8ddea271`) | fichero entero de antes (`src/app.ts`, `merchantAdmin.ts`) + build | 2 de 3: «IDA Y VUELTA» y «vuelven CON SU VALOR» |
+| #2241 (1285) | la versión del plan de cobro se exige (`78f9a35d`) | parche al revés + build | 1 de 5: «sin `version` NO se escribe: 400» |
+| #2243 (1371) | reintentar no vuelve a crear (`34a3dc81`) | sólo la línea que reutiliza el presupuesto creado | 3 de 6: los dos «dos clics, UN presupuesto» y «a la segunda sale» |
+| #2243 (1371) | ídem | sólo la línea que recuerda al cliente | 1 de 6: «cliente NUEVO … UN cliente y UN presupuesto» |
+| #2247 (930) | la plantilla guarda descripción y «Dto. %» (`029222d9`) | parche al revés | 5 de 7 |
+| #2249 (1488) | el rango del parte se decide una vez (`eca676a3`) | parche al revés, sólo la ruta, + build | 5 de 8 |
+| #2250 (1487) | la ficha lee la palabra del locale (`73ce872c`) | sólo la línea que la lee | 2 de 3 |
+
+**Los seis traen test que caza su defecto. No ha hecho falta escribir ninguno.** Tras cada caso, `git status` vacío; al final, los 32 casos de los seis ficheros en verde (3 · 5 · 6 · 7 · 8 · 3).
+
+Límites: #2240 se quitó con el fichero entero de antes, que pierde también lo que entró después (65 líneas de `src/app.ts`); los nombres de los dos casos que caen son los del defecto. En #2243 y #2250 el parche ya no salía limpio (el código cambió encima) y con el fichero entero caían los mismos casos que con la línea sola. #2240 y #2243 son PR de evidencia: el arreglo y su test son de sus commits del 28-sep y del 1-oct.
