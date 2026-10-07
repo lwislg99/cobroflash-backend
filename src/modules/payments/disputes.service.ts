@@ -9,6 +9,47 @@ import { prisma } from '../../core/db/prisma';
 import { recordCustomerEvent } from '../system/customerEvents.service';
 import { notifyMerchantAlert } from '../../integrations/whatsappNotifications';
 import { formatMoneyEs } from '../../core/utils/utils';
+import { firmaTieneTrazo } from '../quotes/domain/firmaConTrazo';
+
+/**
+ * SCRUM-1436 · ¿La factura de este cobro viene de un presupuesto FIRMADO?
+ *
+ * El aviso de abajo decía «Tranquilo: tienes el presupuesto FIRMADO» SIEMPRE, sin mirar si había
+ * presupuesto ni firma. Se lo decíamos al profesional justo cuando un banco le reclama el dinero.
+ *
+ * 🔴 SE MIRA LO MISMO QUE VA A ENSEÑAR EL «PAQUETE DE DISPUTA» al que el aviso le manda: el
+ * presupuesto de ESA factura (`invoice.quoteId`) y su `signatureUrl`. No `acceptedAt`: aceptar y
+ * firmar no son lo mismo («Acepto sin firmar» deja la firma a `null`), y es el criterio que ya usa
+ * el Libro (`libroRegistro.repo.ts`).
+ *
+ * ⚠️ DIVERGENCIA DECLARADA sobre el MISMO campo: el Libro usa `signatureUrl` no nulo; aquí se pasa
+ * por `firmaTieneTrazo` (SCRUM-892) A PROPÓSITO, porque el aviso afirma que hay prueba. Un lienzo
+ * vacío guardado no es una firma, y con él volveríamos a decir lo que no es.
+ *
+ * 🔴 SI LA CONSULTA FALLA, DEVUELVE `false`. No saber no es «firmado»: el aviso sale igual, sin
+ * la afirmación. La asimetría es la del dinero — callar una firma que existe cuesta que el
+ * profesional vaya a mirarla; afirmar una que no existe le cuesta la disputa.
+ *
+ * ⚠️ LÍMITE DECLARADO: un cobro sin factura, o cuya factura no apunta a su presupuesto, sale
+ * como «no firmado» aunque exista un presupuesto firmado por otro camino (`Quote.chargeId`). Ahí
+ * el paquete tampoco lo enseñaría.
+ */
+async function presupuestoFirmadoDe(
+  merchantId: number,
+  invoice: { quoteId: number | null } | null,
+): Promise<boolean> {
+  if (!invoice || invoice.quoteId == null) return false;
+  try {
+    const quote = await prisma.quote.findFirst({
+      where: { id: invoice.quoteId, merchantId },
+      select: { signatureUrl: true },
+    });
+    return firmaTieneTrazo(quote?.signatureUrl);
+  } catch (err: any) {
+    console.warn('[dispute] no se pudo leer la firma del presupuesto — el aviso sale sin afirmarla:', err?.message || err);
+    return false;
+  }
+}
 
 /**
  * Tipo del apunte que deja constancia de que ESTA entrega ya se atendió. Vive en `events`, que es
@@ -81,9 +122,10 @@ export async function handleStripeDispute(dispute: {
 
   const invoice = await prisma.invoice.findFirst({
     where: { chargeId: charge.id },
-    select: { id: true, number: true },
+    select: { id: true, number: true, quoteId: true },
     orderBy: { id: 'desc' },
   });
+  const firmado = await presupuestoFirmadoDe(charge.merchantId, invoice);
 
   const amountTxt = dispute.amount != null
     ? formatMoneyEs(dispute.amount / 100, (dispute.currency || 'EUR').toUpperCase())
@@ -111,7 +153,9 @@ export async function handleStripeDispute(dispute: {
     detail: `${amountTxt}${invoice ? ` · ${invoice.number}` : ''}`,
     freeText:
       `⚠️ El banco de ${custName} ha abierto una disputa por ${amountTxt}.\n` +
-      `Tranquilo: tienes el presupuesto FIRMADO. Entra en la factura` +
+      // SCRUM-1436: la oración sale SÓLO con firma detrás. Sin ella el resto no cambia: qué
+      // decirle entonces es texto nuevo y necesita firma del fundador (regla 39).
+      `${firmado ? 'Tranquilo: tienes el presupuesto FIRMADO. ' : ''}Entra en la factura` +
       `${invoice ? ` ${invoice.number}` : ''} y pulsa "Paquete de disputa" — ` +
       `sale todo listo para responder al banco.`,
   }).catch(() => null);

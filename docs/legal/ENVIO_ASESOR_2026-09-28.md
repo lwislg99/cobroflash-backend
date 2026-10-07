@@ -258,7 +258,7 @@ que no se puede editar y sólo se puede rectificar?
 se active la emisión.
 **Normas que ya hemos localizado.** Ley 37/1992 (LIVA): arts. 7, 20, 84.Uno.2.º.f) y 91.Uno.2.10.º; ROF, art. 6.1.j) y
 m) y art. 6.2. El texto de los arts. 84 y 91 se cotejó en una base de datos jurídica, no directamente
-en el BOE.
+en el BOE. *(Nota del 7-oct-2026, SCRUM-1316: ese día se cotejaron los dos contra el BOE consolidado y coinciden. El 91.Uno.2.10.º tiene publicada una redacción nueva con efectos de 1-dic-2026 —Real Decreto-ley 29/2026, BOE-A-2026-20823, sin convalidar— que no es la que se cita aquí.)*
 **Qué haremos.** Preguntar al profesional los datos que decidan la calificación, y declararla así.
 **Lo que ya tenemos:** IA · 22-sep.
 

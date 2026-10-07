@@ -32,10 +32,6 @@
     }
   },
   "acusadas": {
-    "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFoto": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/cobrosView.js · COBROS_COPY.cabeceras": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
@@ -159,18 +155,6 @@
     "public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual": {
       "clase": "SIN_COMENTARIO",
       "motivo": "SCRUM-1215 lote 5 (S2, c.17505; decisión del orquestador, 29-sep-2026): SE CONSERVA, declarada. Sin productor vivo desde SCRUM-491 (nadie en src/ escribe 'manual'), pero traduce un VALOR DE DATO que una fila antigua puede traer escrito; sin ella se vería el valor crudo. No se puede consultar la base para saberlo, así que el lado seguro es conservarla. El motivo ya consta en su código (paidViaEtiquetas.js:53-58, fichero de J, no tocado). Cuando es cierto: «Marcado a mano» es lo que significa ese valor."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.pistaFirma": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.sinBloque": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/parteDetailView.js · TEXTOS.sinLineas": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
     },
     "public/dashboard/js/providersView.js · M.provider_in_use": {
       "clase": "SIN_COMENTARIO",
@@ -369,6 +353,22 @@
     {
       "id": "public/dashboard/js/parteDetailView.js · TEXTOS.confirmarPropuesta",
       "motivo": "SCRUM-1215 (c.17375): el rótulo pasa a «Añadir al parte» y lleva su comentario de firma encima. Sustituye a «Añadir estas líneas», que no se aprobó (c.17367). Esta retirada estuvo parada desde el 28-sep-2026 (edición denegada entonces); se hace el 6-oct-2026 con permiso del fundador transmitido por el orquestador (SCRUM-1215 c.18381)."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.pistaFirma",
+      "motivo": "SCRUM-1215 (7-oct-2026): TENÍA firma del fundador desde el 4-sep-2026 (SCRUM-720c, docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md) y ahora la cita encima. El 28-sep no pasaba la revisión (c.17360: se le decía también al técnico); lo arregló SCRUM-1229 y hoy sólo la lee el pad del cliente (tests/scrum1215c-pista-del-tecnico.test.mjs). Marca y ficha atadas en tests/scrum1215e-las-cuatro-de-s4-citan-su-firma.test.mjs."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.sinBloque",
+      "motivo": "SCRUM-1215 (7-oct-2026): TENÍA firma del fundador desde el 4-sep-2026 (SCRUM-720c, docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md) y ahora la cita encima. El 28-sep no pasaba la revisión (c.17360: mandaba elegir y no había con qué); lo arregló SCRUM-1230 y hoy cada línea sin colocar trae las dos fichas que el rótulo nombra (tests/scrum1230-colocar-lineas-dictadas.test.mjs y tests/scrum1215e-las-cuatro-de-s4-citan-su-firma.test.mjs)."
+    },
+    {
+      "id": "public/dashboard/js/parteDetailView.js · TEXTOS.sinLineas",
+      "motivo": "SCRUM-1215 (7-oct-2026): TENÍA firma del fundador desde el 4-sep-2026 (SCRUM-720, docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md) y ahora la cita encima. El 28-sep era dudosa (c.17360: salía también en un parte firmado); desde `sinLineasCerrado` (SCRUM-1215 c.17367) sólo se pinta en un bloque vacío de un parte en borrador (tests/scrum1215b-sin-lineas-cerrado.test.mjs)."
+    },
+    {
+      "id": "public/dashboard/js/albaranDetailView.js · ROTULOS_ALBARAN.btnFoto",
+      "motivo": "SCRUM-1215 lote 3 (albarán): APROBADA tal cual por el orquestador por delegación del fundador en SCRUM-1215 comentario 18283 (6-oct-2026). Lleva su comentario de firma en su misma línea y su ficha en docs/microcopy/2026-10-06-SCRUM-1215-anadir-foto-del-albaran.md. El comentario 17494 había decidido la conducta (oculta en firmado), no el texto."
     }
   ]
 }

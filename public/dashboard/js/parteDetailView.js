@@ -37,6 +37,10 @@
   var TEXTOS = {
     // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Sólo cuando firma el CLIENTE:
+    // el técnico lee `pistaFirmaTecnico` (hasta SCRUM-1229 se le decía también a él, y por eso el
+    // censo 1157 la tuvo sin marcar hasta el 7-oct-2026).
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
     // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
     // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
@@ -50,6 +54,9 @@
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720,
+    // `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`). Sólo en un bloque vacío de un parte
+    // EDITABLE (borrador), que es donde «todavía» es cierto; cerrado, se lee `sinLineasCerrado`.
     sinLineas: 'Todavía no has apuntado nada.',
     // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
     // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
@@ -152,6 +159,10 @@
     // APROBADO · SCRUM-1215 comentario 17375. Sustituye a «Añadir estas líneas», que no se aprobó
     // (c.17367): una línea sin cantidad no entra, y «estas» prometía que entraban las que se ven.
     confirmarPropuesta: 'Añadir al parte',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Se pinta sólo si la propuesta
+    // trae alguna línea sin colocar, y cada una lleva las dos fichas que el rótulo nombra (hasta
+    // SCRUM-1230 no había con qué elegir, y por eso el censo 1157 la tuvo sin marcar).
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────

@@ -224,7 +224,7 @@ const ROTULOS_ALBARAN = {
   btnPdf: 'Descargar PDF',
   btnWhatsApp: 'Enviar por WhatsApp', // APROBADO · SCRUM-1215 comentario 17494 (lote 3)
   btnEditarLineas: 'Editar líneas', // APROBADO · SCRUM-1215 comentario 17494 (lote 3): lleva al Trabajo, donde se editan
-  btnFoto: '📷 Añadir foto',
+  btnFoto: '📷 Añadir foto', // APROBADO · SCRUM-1215 comentario 18283 (lote 3): en borrador y emitido; en firmado no se ofrece
 };
 
 // SCRUM-905 · la franja mientras convierte. Aprobado por el orquestador por delegación del fundador
