@@ -87,7 +87,7 @@ import {
 // Solo las funciones PURAS de `sesion.mjs`. Su puerta de integridad guarda la CLI (lanzar, parar…), no
 // estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
 // instalada esté desfasada (SCRUM-1282).
-import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } from './sesion.mjs';
+import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, UMBRAL_CONTEXTO_A_MITAD, ESTADOS_TERMINALES } from './sesion.mjs';
 // Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
 // distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
@@ -504,9 +504,15 @@ const enK = (n) => `${Math.round(n / 1000)}k`;
  * @param {{sesiones:object[], contextoDe:(s:object)=>{tokens:number,cuando?:string}|null|undefined, sueltas?:{nombre:string,ctx:{tokens:number,cuando?:string}|null}[], ahora:number, umbral?:number}} e
  * `contextoDe`: `undefined` = no encontré o no pude leer su jsonl · `null` = lo leí y no trae ni un turno con uso.
  * `sueltas`: transcripts recientes que no son de ningún trabajo de fondo (el orquestador es uno).
+ *
+ * La A19 tiene DOS números y dos conductas (SCRUM-1484). Por encima de `umbral`, el relevo es AL TERMINAR la
+ * entrega; por encima de `umbralAMitad`, YA, en el primer punto seguro. Hasta el 6-oct-2026 esta sección conocía
+ * sólo el primero y a una sesión por encima del segundo le decía «al terminar», lo contrario de la norma.
  */
-export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umbral = UMBRAL_CONTEXTO }) {
+export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
   if (!Array.isArray(sesiones)) return ciega('CONTEXTO', 'no se pudo leer la carpeta de trabajos');
+  // Con los dos números al revés o iguales no hay tramo «al terminar»: cualquier frase que saliera sería inventada.
+  if (!(umbralAMitad > umbral)) return ciega('CONTEXTO', `el umbral de «a mitad de entrega» (${umbralAMitad}) no es mayor que el de «al entregar» (${umbral}): no sé qué frase le toca a cada sesión`);
   const vivas = sesiones.filter((s) => !ESTADOS_TERMINALES.includes(s.estado) && (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
   const filas = []; const sinLeer = []; const sinUso = [];
   for (const s of vivas) {
@@ -519,7 +525,12 @@ export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umb
   filas.sort((a, b) => b.tokens - a.tokens);
   const hace = (f) => (Number.isFinite(Date.parse(f.cuando)) ? ` · último turno hace ${Math.round((ahora - Date.parse(f.cuando)) / 60000)} min` : '');
   const alertas = filas.filter((f) => f.tokens > umbral)
-    .map((f) => ({ sesion: f.nombre, linea: `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega${hace(f)}` }));
+    .map((f) => ({
+      sesion: f.nombre,
+      linea: f.tokens > umbralAMitad
+        ? `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbralAMitad)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo${hace(f)}`
+        : `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega${hace(f)}`,
+    }));
   const poblacion = `${vivas.length} sesiones vivas en ${HORAS_DE_SESION} h + ${sueltas.length} transcript(s) reciente(s) sin trabajo de fondo · ${filas.length} leídas: ${filas.map((f) => `${f.nombre.split(' (')[0] || f.nombre} ${enK(f.tokens)}`).join(' · ') || 'ninguna'}${sinUso.length ? ` · ${sinUso.length} sin ningún turno con uso todavía (${sinUso.join(', ')})` : ''} · es la ventana del ÚLTIMO turno (entrada + caché), no lo gastado: al compactar BAJA`;
   // Una sesión viva cuyo jsonl no aparece NO ocupa cero: no se sabe cuánto ocupa.
   if (sinLeer.length) return { nombre: 'CONTEXTO', pudo: false, motivo: `no encontré o no pude leer el jsonl de ${sinLeer.length} sesión(es) viva(s): ${sinLeer.join(', ')}. Debajo va SOLO lo que sí pude leer: ${poblacion}`, alertas, poblacion: null };
