@@ -1,0 +1,25 @@
+POBLACION: 23 carpetas «fuera del catalogo» leidas de la salida de bancos.mjs · HEAD 4c10ce5c41e49d3ddb37b305b24622395610703e
+docs/evidencias/scrum1317 | ficheros mut: 4 | commit: 2026-10-01T06:14:02.000Z 56792052a | en main: 2026-10-01T07:23:12.000Z | antes de la medida de 1394 | 
+docs/evidencias/scrum1338 | ficheros mut: 2 | commit: 2026-10-01T07:58:49.000Z 99eca4b7c | en main: 2026-10-01T15:08:58.000Z | antes de la medida de 1394 | 
+docs/master/evidencias/SCRUM-1324 | ficheros mut: 2 | commit: 2026-10-01T02:25:37.000Z 31c10bf1e | en main: 2026-10-01T03:49:26.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/SCRUM-1345 | ficheros mut: 2 | commit: 2026-10-01T07:55:42.000Z 006f1f504 | en main: 2026-10-01T08:07:25.000Z | antes de la medida de 1394 | · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/SCRUM-1486 | ficheros mut: 2 | commit: 2026-10-06T18:05:43.000Z f5c90ed17 | en main: 2026-10-06T19:02:45.000Z | DESPUES de la decision | · sin entradas reconocidas · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/SCRUM-876f | ficheros mut: 1 | commit: 2026-10-07T07:49:47.000Z eec2d3c20 | en main: 2026-10-07T15:49:45.000Z | DESPUES de la decision | · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/SCRUM-912 | ficheros mut: 1 | commit: 2026-09-18T11:55:07.000Z 2ae0ce851 | en main: 2026-09-18T12:24:25.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/SCRUM-917 | ficheros mut: 2 | commit: 2026-09-21T14:01:23.000Z 793620014 | en main: 2026-09-24T15:51:25.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/scrum1304 | ficheros mut: 2 | commit: 2026-10-01T03:18:36.000Z 599104819 | en main: 2026-10-01T05:36:41.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/scrum1326 | ficheros mut: 2 | commit: 2026-10-01T06:42:42.000Z 4ed07c5a3 | en main: 2026-10-01T07:19:15.000Z | antes de la medida de 1394 | 
+docs/master/evidencias/scrum1327 | ficheros mut: 3 | commit: 2026-10-01T06:13:59.000Z 331c482c7 | en main: 2026-10-01T06:43:59.000Z | antes de la medida de 1394 | 
+docs/master/evidencias/scrum1330 | ficheros mut: 2 | commit: 2026-10-01T03:39:43.000Z afa903a4a | en main: 2026-10-01T05:36:41.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/scrum1333 | ficheros mut: 2 | commit: 2026-10-01T05:51:00.000Z c999b9528 | en main: 2026-10-01T06:26:08.000Z | antes de la medida de 1394 | · sin entradas reconocidas
+docs/master/evidencias/scrum1340 | ficheros mut: 3 | commit: 2026-10-01T07:08:17.000Z 2df6e3dd5 | en main: 2026-10-01T07:55:51.000Z | antes de la medida de 1394 | 
+docs/master/evidencias/scrum1344 | ficheros mut: 2 | commit: 2026-10-01T17:48:25.000Z b6ae4c590 | en main: 2026-10-01T19:03:24.000Z | entre la medida de 1394 y la decision | · sin entradas reconocidas
+docs/master/evidencias/scrum1392 | ficheros mut: 2 | commit: 2026-10-07T16:40:33.000Z 8b034d326 | en main: 2026-10-07T17:05:05.000Z | DESPUES de la decision | 
+docs/master/evidencias/scrum1395 | ficheros mut: 2 | commit: 2026-10-06T13:44:37.000Z 645573de1 | en main: 2026-10-06T14:49:48.000Z | DESPUES de la decision | · sin entradas reconocidas
+docs/master/evidencias/scrum864 | ficheros mut: 2 | commit: 2026-09-16T10:18:43.000Z a34730709 | en main: 2026-09-16T10:47:23.000Z | antes de la medida de 1394 | · sin entradas reconocidas · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/scrum864c | ficheros mut: 2 | commit: 2026-09-17T18:22:19.000Z 8db2059e1 | en main: 2026-09-17T18:28:39.000Z | antes de la medida de 1394 | · sin entradas reconocidas · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/scrum908c | ficheros mut: 9 | commit: 2026-09-18T15:28:40.000Z e778399fb | en main: 2026-09-21T14:02:15.000Z | antes de la medida de 1394 | · sin entradas reconocidas · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/scrum920 | ficheros mut: 9 | commit: 2026-09-21T14:28:47.000Z 3326db1e5 | en main: 2026-09-21T17:12:42.000Z | antes de la medida de 1394 | 
+docs/master/evidencias/scrum933 | ficheros mut: 1 | commit: 2026-09-18T08:38:22.000Z d2072b5c3 | en main: 2026-09-18T08:47:26.000Z | antes de la medida de 1394 | · algún test suyo SÍ está en el catálogo
+docs/master/evidencias/scrum982 | ficheros mut: 3 | commit: 2026-09-21T11:10:46.000Z 38849170f | en main: 2026-09-21T12:20:41.000Z | antes de la medida de 1394 | 
+RECUENTO · antes de la medida de 1394: 18 · entre medida y decision: 1 · DESPUES de la decision (2026-10-02T02:10:21Z): 4 · sin fecha: 0 · suma 23 de 23

@@ -1,0 +1,15 @@
+BANCO SCRUM-1387 · 3 mutaciones tomadas del test
+  ✔ BASE · pasados 5 · caídos 0 · exit 0
+  ✔ M1 · ancla 1 vez · aplicada true · cae «el clasificador separa el banco con lista propia del que toma las del test»: true · caídos 4 de 5
+  ✔ M1 restaurada · el fichero vuelve a ser el de antes, por contenido
+  ✔ M2 · ancla 1 vez · aplicada true · cae «un banco nuevo sin declarar sale nombrado, con su carpeta y su guion»: true · caídos 1 de 5
+  ✔ M2 restaurada · el fichero vuelve a ser el de antes, por contenido
+  ✔ M3 · ancla 1 vez · aplicada true · cae «una entrada declarada que ya no está fuera sobra»: true · caídos 1 de 5
+  ✔ M3 restaurada · el fichero vuelve a ser el de antes, por contenido
+  ✔ NUEVO · el caso del árbol cae: true · el rojo nombra carpeta y guion: true · caídos 1
+  ✔ SIN GUION · con sólo salidas no es un banco fuera: caídos 0 · exit 0
+  ✔ NUEVO retirado · la carpeta fabricada ya no existe
+  ✔ BASE otra vez · pasados 5 · caídos 0
+
+todas las filas dan lo esperado
+EXIT=0
