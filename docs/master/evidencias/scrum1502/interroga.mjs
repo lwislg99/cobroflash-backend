@@ -56,7 +56,11 @@ function caso(nombre, mutaciones) {
   }
   let medida;
   try { medida = medir(); } finally {
-    for (const a of antes) {
+    // 🔴 EN ORDEN INVERSO. Dos mutaciones sobre el MISMO fichero guardan cada una su «antes», y el
+    // de la segunda ya lleva la primera puesta: deshaciendo en el orden de ida, la última escritura
+    // devuelve el fichero a medio mutar y cada comprobación suelta sale bien. Pasó en la primera
+    // pasada de este guion (casos F y G ciegos) y lo cazó el `git status` del árbol desechable.
+    for (const a of antes.reverse()) {
       if (a.existia) fs.writeFileSync(a.p, a.original); else fs.rmSync(a.p, { force: true });
       const ok = a.existia ? sha(fs.readFileSync(a.p)) === sha(a.original) : !fs.existsSync(a.p);
       if (!ok) throw new Error(`NO RESTAURADO: ${a.p}`);
