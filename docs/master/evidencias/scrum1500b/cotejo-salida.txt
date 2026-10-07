@@ -1,0 +1,352 @@
+POBLACION: 19 comentarios + 4 controles · 319 ficheros .ts bajo src/ (0 sin parsear) · esquema 1834 líneas · máster 1905 líneas
+
+===   18 · Merchant.trade → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : cerrajero | climatizacion | electricista | fontanero | otro | pintor | reformista
+    código D     : cerrajero | climatizacion | electricista | fontanero | otro | pintor | reformista
+      · cierre   : cerrajero | climatizacion | electricista | fontanero | otro | pintor | reformista   ← src/core/validation/schemas.ts:435
+      · escritos : (ningún literal)
+      · en el cierre y sin ningún literal que lo escriba: cerrajero, climatizacion, electricista, fontanero, otro, pintor, reformista
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Merchant.trade»: 0 línea(s)
+    rastro «trade»: 0 línea(s)
+    rastro «electricista»: 1 línea(s) → 64
+    rastro «fontanero»: 4 línea(s) → 64, 216, 1116, 1671
+    rastro «reformista»: 1 línea(s) → 64
+    rastro «pintor»: 1 línea(s) → 64
+    rastro «cerrajero»: 1 línea(s) → 64
+    rastro «climatizacion»: 1 línea(s) → 634
+    rastro «otro»: 33 línea(s) → 168, 241, 245, 246, 250, 256, 681, 692, 709, 773, 831, 1138
+    ninguna línea del máster junta todos los valores
+
+===   67 · Merchant.connectStatus → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : active | none | pending | restricted
+    código D     : active | none | pending | restricted
+      · cierre   : (sin constante que lo cierre)
+      · escritos : active | pending | restricted   · @default none
+          src/modules/payments/connect/connect.routes.ts:56 'pending'
+          src/modules/payments/connect/connect.routes.ts:87 'active'
+          src/modules/payments/connect/connect.routes.ts:87 'restricted'
+          src/modules/payments/connect/connect.routes.ts:87 'pending'
+          src/modules/payments/connect/connectWebhook.routes.ts:41 'active'
+          src/modules/payments/connect/connectWebhook.routes.ts:41 'restricted'
+          src/modules/payments/connect/connectWebhook.routes.ts:41 'pending'
+    máster M     : active | none | pending | restricted   ← línea 1068
+    censo viejo  : coincide
+
+===  201 · AuthSession.type → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : magic_link | session
+    código D     : magic_link | session
+      · cierre   : (sin constante que lo cierre)
+      · escritos : magic_link | session   · @default session
+          src/modules/auth/app/routes/auth.routes.ts:117 'session'
+          src/modules/auth/domain/auth.service.ts:93 'magic_link'
+          src/modules/auth/domain/auth.service.ts:206 'magic_link'
+          src/modules/auth/domain/auth.service.ts:273 'session'
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «AuthSession.type»: 0 línea(s)
+    rastro «type»: 11 línea(s) → 309, 312, 387, 655, 712, 1069, 1216, 1346, 1372, 1419, 1610
+    rastro «session»: 2 línea(s) → 445, 777
+    rastro «magic_link»: 1 línea(s) → 712
+    ninguna línea del máster junta todos los valores
+
+===  973 · Expense.category → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : desplazamiento | herramientas | materiales | otros | subcontrata
+    código D     : desplazamiento | herramientas | materiales | otros | subcontrata
+      · cierre   : desplazamiento | herramientas | materiales | otros | subcontrata   ← src/modules/expenses/domain/expenses.service.ts:6
+      · escritos : otros   · @default otros
+          src/modules/expenses/domain/expenses.service.ts:362 'otros'
+          (no literal) src/modules/expenses/domain/expenses.service.ts:362 data.category
+      · en el cierre y sin ningún literal que lo escriba: desplazamiento, herramientas, materiales, subcontrata
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Expense.category»: 0 línea(s)
+    rastro «category»: 0 línea(s)
+    rastro «materiales»: 2 línea(s) → 644, 645
+    rastro «desplazamiento»: 0 línea(s)
+    rastro «herramientas»: 2 línea(s) → 438, 683
+    rastro «subcontrata»: 0 línea(s)
+    rastro «otros»: 2 línea(s) → 478, 1346
+    ninguna línea del máster junta todos los valores
+
+=== 1115 · QuoteRequest.status → CODIGO_FUERA_DEL_MASTER
+    por qué      : el código tiene done, pending, read y el máster no; y el máster manda converted, discarded, new, seen, que el código no tiene
+    comentario C : done | pending | read
+    código D     : done | pending | read
+      · cierre   : done | pending | read   ← src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:54
+      · escritos : pending   · @default pending
+          src/modules/system/app/routes/customerPortal.routes.ts:542 'pending'
+          src/modules/whatsappBot/domain/botFlow.service.ts:484 'pending'
+          (no literal) src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:65 req.body?.status
+      · en el cierre y sin ningún literal que lo escriba: done, read
+    máster M     : converted | discarded | new | seen   ← línea 401
+    censo viejo  : coincide
+
+=== 1174 · TeamMember.role → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : admin | tecnico
+    código D     : admin | tecnico
+      · cierre   : admin | tecnico   ← src/core/http/roleCapabilities.ts:30
+      · escritos : (ningún literal)   · @default tecnico
+          (no literal) src/modules/team/domain/team.service.ts:44 role
+          (no literal) src/modules/team/domain/team.service.ts:48 role
+      · en el cierre y sin ningún literal que lo escriba: admin
+    máster M     : admin | tecnico   ← línea 662
+    censo viejo  : coincide
+
+=== 1175 · TeamMember.status → ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    por qué      : el campo es un estado y el máster no trae su lista
+    comentario C : active | invited | suspended
+    código D     : active | invited | suspended
+      · cierre   : (sin constante que lo cierre)
+      · escritos : active | invited | suspended   · @default invited
+          src/modules/auth/domain/auth.service.ts:263 'active'
+          src/modules/team/domain/team.service.ts:44 'invited'
+          src/modules/team/domain/team.service.ts:48 'invited'
+          src/modules/team/domain/team.service.ts:86 'suspended'
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «TeamMember.status»: 0 línea(s)
+    rastro «status»: 24 línea(s) → 309, 312, 438, 443, 574, 629, 641, 642, 812, 1060, 1115, 1154
+    rastro «active»: 11 línea(s) → 167, 402, 405, 409, 603, 650, 728, 1068, 1070, 1209, 1383
+    rastro «invited»: 2 línea(s) → 717, 728
+    rastro «suspended»: 2 línea(s) → 716, 730
+    ninguna línea del máster junta todos los valores
+
+=== 1453 · Albaran.estado → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : borrador | emitido | firmado
+    código D     : borrador | emitido | firmado
+      · cierre   : borrador | emitido | firmado   ← src/modules/jobs/domain/albaran.service.ts:18
+      · escritos : firmado   · @default borrador
+          src/modules/jobs/app/routes/albaranes.routes.ts:1045 'firmado'
+          src/modules/jobs/app/routes/albaranPublic.routes.ts:443 'firmado'
+      · en el cierre y sin ningún literal que lo escriba: emitido
+    máster M     : borrador | emitido | firmado   ← línea 407
+    censo viejo  : coincide
+
+=== 1426 · Albaran.estado (comentario de cabecera) → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : borrador | emitido | firmado
+    código D     : borrador | emitido | firmado
+      · cierre   : borrador | emitido | firmado   ← src/modules/jobs/domain/albaran.service.ts:18
+      · escritos : firmado   · @default borrador
+          src/modules/jobs/app/routes/albaranes.routes.ts:1045 'firmado'
+          src/modules/jobs/app/routes/albaranPublic.routes.ts:443 'firmado'
+      · en el cierre y sin ningún literal que lo escriba: emitido
+    máster M     : borrador | emitido | firmado   ← línea 407
+    censo viejo  : coincide
+
+===  217 · Customer.contactKind → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : EMPRESA | PERSONA
+    código D     : EMPRESA | PERSONA
+      · cierre   : EMPRESA | PERSONA   ← src/core/validation/schemas.ts:570
+      · escritos : (ningún literal)
+      · en el cierre y sin ningún literal que lo escriba: EMPRESA, PERSONA
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Customer.contactKind»: 0 línea(s)
+    rastro «contactKind»: 0 línea(s)
+    rastro «EMPRESA»: 0 línea(s)
+    rastro «PERSONA»: 1 línea(s) → 245
+    ninguna línea del máster junta todos los valores
+
+===  328 · Customer.tipoDestinatario → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : EMPRESARIO | PARTICULAR
+    código D     : EMPRESARIO | PARTICULAR
+      · cierre   : EMPRESARIO | PARTICULAR   ← src/core/validation/schemas.ts:603
+      · escritos : (ningún literal)
+      · en el cierre y sin ningún literal que lo escriba: EMPRESARIO, PARTICULAR
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Customer.tipoDestinatario»: 0 línea(s)
+    rastro «tipoDestinatario»: 0 línea(s)
+    rastro «PARTICULAR»: 0 línea(s)
+    rastro «EMPRESARIO»: 0 línea(s)
+    ninguna línea del máster junta todos los valores
+
+===  396 · Customer.billingPeriodicity → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : MENSUAL | NINGUNA | QUINCENAL
+    código D     : MENSUAL | NINGUNA | QUINCENAL
+      · cierre   : MENSUAL | NINGUNA | QUINCENAL   ← src/core/validation/schemas.ts:650
+      · escritos : (ningún literal)   · @default NINGUNA
+      · en el cierre y sin ningún literal que lo escriba: MENSUAL, QUINCENAL
+    máster M     : MENSUAL | NINGUNA | QUINCENAL   ← línea 1326
+    censo viejo  : coincide
+
+===  609 · Quote.shippingAddressMode → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : facturacion | no_mostrar | personalizada
+    código D     : facturacion | no_mostrar | personalizada
+      · cierre   : facturacion | no_mostrar | personalizada   ← src/core/documentos/direccionObra.ts:45
+      · escritos : (ningún literal)
+          (no literal) src/modules/quotes/app/routes/quotes.routes.ts:217 normalizarModoDireccionObra(body.shippingAddressMode)
+      · en el cierre y sin ningún literal que lo escriba: facturacion, no_mostrar, personalizada
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Quote.shippingAddressMode»: 0 línea(s)
+    rastro «shippingAddressMode»: 0 línea(s)
+    rastro «no_mostrar»: 0 línea(s)
+    rastro «facturacion»: 0 línea(s)
+    rastro «personalizada»: 0 línea(s)
+    ninguna línea del máster junta todos los valores
+
+===  725 · Quote.ivaModo → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : no_incluido | sumar
+    código D     : no_incluido | sumar
+      · cierre   : no_incluido | sumar   ← src/modules/quotes/domain/presentacionIva.ts:33
+      · escritos : (ningún literal)
+          (no literal) src/modules/quotes/app/routes/quotes.routes.ts:235 body.ivaModo
+          (no literal) src/modules/quotes/app/routes/quotes.routes.ts:235 undefined
+      · en el cierre y sin ningún literal que lo escriba: no_incluido, sumar
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Quote.ivaModo»: 0 línea(s)
+    rastro «ivaModo»: 0 línea(s)
+    rastro «sumar»: 3 línea(s) → 638, 1114, 1376
+    rastro «no_incluido»: 0 línea(s)
+    ninguna línea del máster junta todos los valores
+
+=== 1050 · Product.itemKind → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : PRODUCTO | SERVICIO
+    código D     : PRODUCTO | SERVICIO
+      · cierre   : PRODUCTO | SERVICIO   ← src/core/validation/schemas.ts:539
+      · escritos : (ningún literal)
+          (no literal) src/modules/products/domain/products.service.ts:64 input.itemKind
+          (no literal) src/modules/products/domain/products.service.ts:64 null
+      · en el cierre y sin ningún literal que lo escriba: PRODUCTO, SERVICIO
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «Product.itemKind»: 0 línea(s)
+    rastro «itemKind»: 0 línea(s)
+    rastro «PRODUCTO»: 3 línea(s) → 115, 276, 1687
+    rastro «SERVICIO»: 0 línea(s)
+    ninguna línea del máster junta todos los valores
+
+=== 1335 · Job.tipoOperacion → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : OPERACIONES_SUELTAS | TRABAJO_UNICO
+    código D     : OPERACIONES_SUELTAS | TRABAJO_UNICO
+      · cierre   : OPERACIONES_SUELTAS | TRABAJO_UNICO   ← src/modules/jobs/domain/job.service.ts:17
+      · escritos : (ningún literal)   · @default TRABAJO_UNICO
+      · en el cierre y sin ningún literal que lo escriba: OPERACIONES_SUELTAS
+    máster M     : OPERACIONES_SUELTAS | TRABAJO_UNICO   ← línea 643
+    censo viejo  : coincide
+
+=== 1448 · Albaran.modoValoracion → COINCIDE_CON_EL_MASTER
+    por qué      : comentario, código y máster dicen lo mismo
+    comentario C : SIN_VALORAR | VALORADO
+    código D     : SIN_VALORAR | VALORADO
+      · cierre   : SIN_VALORAR | VALORADO   ← src/modules/jobs/domain/albaran.service.ts:24
+      · escritos : SIN_VALORAR   · @default SIN_VALORAR
+          src/modules/jobs/app/routes/jobs.routes.ts:1313 'SIN_VALORAR'
+      · en el cierre y sin ningún literal que lo escriba: VALORADO
+    máster M     : SIN_VALORAR | VALORADO   ← línea 647
+    censo viejo  : coincide
+
+=== 1636 · ParteTrabajo.tipo → EL_MASTER_NO_LO_FIJA
+    por qué      : el máster no trae una lista para este campo
+    comentario C : instalacion | mantenimiento | reparacion_asistencia
+    código D     : instalacion | mantenimiento | reparacion_asistencia
+      · cierre   : instalacion | mantenimiento | reparacion_asistencia   ← src/modules/jobs/domain/parteTrabajo.ts:68
+      · escritos : (ningún literal)
+          (no literal) src/modules/jobs/app/routes/partes.routes.ts:444 null
+          (no literal) src/modules/jobs/app/routes/partes.routes.ts:444 String(req.body.tipo)
+      · en el cierre y sin ningún literal que lo escriba: instalacion, mantenimiento, reparacion_asistencia
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «ParteTrabajo.tipo»: 0 línea(s)
+    rastro «tipo»: 19 línea(s) → 69, 243, 244, 314, 643, 647, 723, 1113, 1120, 1163, 1354, 1358
+    rastro «reparacion_asistencia»: 0 línea(s)
+    rastro «mantenimiento»: 5 línea(s) → 603, 645, 1314, 1696, 1702
+    rastro «instalacion»: 0 línea(s)
+    ninguna línea del máster junta todos los valores
+
+=== 1642 · ParteTrabajo.estado → ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    por qué      : el campo es un estado y el máster no trae su lista
+    comentario C : borrador | facturado | firmado
+    código D     : borrador | facturado | firmado
+      · cierre   : borrador | facturado | firmado   ← src/modules/jobs/domain/parteTrabajo.ts:78
+      · escritos : borrador   · @default borrador
+          src/modules/jobs/app/routes/partes.routes.ts:447 'borrador'
+          (no literal) src/modules/jobs/app/routes/partes.routes.ts:685 estadoTrasFirmar(parte.estado as EstadoParte)
+          (no literal) src/modules/jobs/app/routes/partes.routes.ts:765 estadoTrasFirmar(parte.estado as EstadoParte)
+      · en el cierre y sin ningún literal que lo escriba: facturado, firmado
+    máster M     : (sin lista)
+    censo viejo  : coincide
+    rastro «ParteTrabajo.estado»: 0 línea(s)
+    rastro «estado»: 37 línea(s) → 7, 117, 137, 181, 182, 246, 310, 376, 404, 408, 639, 640
+    rastro «borrador»: 12 línea(s) → 407, 408, 647, 975, 980, 1223, 1231, 1243, 1329, 1389, 1394, 1398
+    rastro «firmado»: 8 línea(s) → 407, 408, 436, 456, 581, 650, 1329, 1380
+    rastro «facturado»: 5 línea(s) → 408, 650, 1327, 1329, 1331
+    🔴 POSIBLE LISTA EN EL MÁSTER: la(s) línea(s) 408, 1329 juntan TODOS los valores. Hay que leerlas.
+
+=== [CONTROL, tiene que salir NO_EXISTE]    0 · Merchant.campoQueNoExiste → NO_EXISTE
+    por qué      : el campo no está en esa línea del esquema
+    comentario C : (no hay)
+    código D     : (nada)
+      · cierre   : (sin constante que lo cierre)
+      · escritos : (ningún literal)
+    máster M     : (sin lista)
+    censo viejo  : sin dato
+
+=== [CONTROL, tiene que salir NO_EXISTE]    0 · ModeloQueNoExiste.status → NO_EXISTE
+    por qué      : el campo no está en esa línea del esquema
+    comentario C : (no hay)
+    código D     : (nada)
+      · cierre   : (sin constante que lo cierre)
+      · escritos : (ningún literal)
+    máster M     : (sin lista)
+    censo viejo  : sin dato
+
+=== [CONTROL, tiene que salir CIEGO] 1453 · Albaran.estado con un ancla inventada → CIEGO
+    por qué      : el ancla /^\*\*EntidadQueElMasterNoTiene:\*\*/ casa 0 veces en el máster (tiene que ser 1)
+    comentario C : borrador | emitido | firmado
+    código D     : borrador | emitido | firmado
+      · cierre   : borrador | emitido | firmado   ← src/modules/jobs/domain/albaran.service.ts:18
+      · escritos : firmado   · @default borrador
+          src/modules/jobs/app/routes/albaranes.routes.ts:1045 'firmado'
+          src/modules/jobs/app/routes/albaranPublic.routes.ts:443 'firmado'
+      · en el cierre y sin ningún literal que lo escriba: emitido
+    máster M     : (sin lista)
+    censo viejo  : coincide
+
+=== [CONTROL, tiene que salir CIEGO] 1453 · Albaran.estado con una constante inventada → CIEGO
+    por qué      : no encuentro el cierre declarado: src/modules/jobs/domain/albaran.service.ts (no encontrado: CONSTANTE_QUE_NO_EXISTE)
+    comentario C : borrador | emitido | firmado
+    código D     : borrador
+      · cierre   : (sin constante que lo cierre)   ← src/modules/jobs/domain/albaran.service.ts (no encontrado: CONSTANTE_QUE_NO_EXISTE)
+      · escritos : (ningún literal)   · @default borrador
+    máster M     : borrador | emitido | firmado   ← línea 407
+    censo viejo  : diverge
+
+RESUMEN (sin los controles):
+   1  CODIGO_FUERA_DEL_MASTER
+   7  COINCIDE_CON_EL_MASTER
+   9  EL_MASTER_NO_LO_FIJA
+   2  ESTADO_SIN_MAQUINA_EN_EL_MASTER
+  19  TOTAL
+  el censo viejo daría «coincide» a 19 de 19; de ésos, con el máster delante coinciden 7
+
+CONTROLES: 4 de 4 salen como tienen que salir · controles que salen «coincide»: 0 (tiene que ser 0) · campos reales ciegos: 0 (tiene que ser 0)
+
+JUICIO sobre 19 comentarios (4 controles aparte) · 319 ficheros .ts bajo src/, 0 sin parsear:
+   7  coinciden con el máster
+   9  SIN COTEJAR, el máster no trae su lista (no es un verde): Merchant.trade, AuthSession.type, Expense.category, Customer.contactKind, Customer.tipoDestinatario, Quote.shippingAddressMode, Quote.ivaModo, Product.itemKind, ParteTrabajo.tipo
+   3  PARADOS, esperan al fundador con su excepción: QuoteRequest.status (CODIGO_FUERA_DEL_MASTER, desde 2026-10-07: 0 días) · TeamMember.status (ESTADO_SIN_MAQUINA_EN_EL_MASTER, desde 2026-10-07: 0 días) · ParteTrabajo.estado (ESTADO_SIN_MAQUINA_EN_EL_MASTER, desde 2026-10-07: 0 días)
+        QuoteRequest.status sigue montado en: src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:54 · src/modules/system/app/routes/customerPortal.routes.ts:542 'pending' · src/modules/whatsappBot/domain/botFlow.service.ts:484 'pending'
+        TeamMember.status sigue montado en: src/modules/auth/domain/auth.service.ts:263 'active' · src/modules/team/domain/team.service.ts:44 'invited' · src/modules/team/domain/team.service.ts:48 'invited' · src/modules/team/domain/team.service.ts:86 'suspended'
+        ParteTrabajo.estado sigue montado en: src/modules/jobs/domain/parteTrabajo.ts:78 · src/modules/jobs/app/routes/partes.routes.ts:447 'borrador'
+   0  HALLAZGOS
+  FUERA DE LA TABLA, sin mirar: 11 campo(s) del esquema con nombre de estado que este instrumento NO coteja (Merchant.subscriptionStatus, Merchant.status, Charge.status, Quote.status, Invoice.status, Invoice.vfEstado, BotSession.state, WhatsAppMessage.status, Job.status, EmailMessage.status, VfSubmission.status)
+EXIT=0
