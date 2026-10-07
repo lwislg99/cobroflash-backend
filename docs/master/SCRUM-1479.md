@@ -145,3 +145,75 @@ no se toca ni vive en el código**. Lo pedido por c.18513 es qué número sostie
 
 El registro de la mañana decía que la rama se cogió a las «~13:35Z» y se paró a las «~13:45Z». Fueron ~13:20Z y
 ~13:23Z (SCRUM-1479 c.18418): las dos horas se habían puesto a ojo.
+
+## SCRUM-1479b · 7-oct-2026 · el segundo número, medido sobre el tramo que le toca
+
+**Medido contra:** `origin/main` = `33f07c332c3c95fe1656f640184c5d340e519f5d` · 2026-10-07T06:26:49Z (hora de GitHub)
+
+A9: aviso → cicatriz S5 «Escribí un escape Unicode del BOM en un instrumento y aterrizó en disco como el carácter literal (A22); lo cazó contar los bytes a mano antes de comitear» — no se pudo comprobar: el recuento de A22 no ve el BOM y ningún guard lee las evidencias
+
+No cambia código ni norma. Es la medición que pidió el orquestador para quien decida el número de «a mitad»
+(coste: del fundador). Entregada en SCRUM-1479 c.18589.
+
+**El instrumento:** `docs/master/evidencias/SCRUM-1479/medir-a-mitad.mjs`; su salida de las 06:26Z, en
+`medir-a-mitad.txt`. Sólo lee transcripciones.
+
+    node docs/master/evidencias/SCRUM-1479/medir-a-mitad.mjs <árbol> 30
+
+**Qué mide, y por qué es otra cuenta que la de arriba.** La sección «El segundo número» contaba las sesiones que
+pasaron de cada número en todo el día. Pero con 300k «al entregar» ya puesto, a una sesión que empuja después de
+cruzar 300k la releva ESE número. El de «a mitad» sólo actúa en el tramo que va desde que cruza 300k hasta su
+siguiente push. Se mide el pico de ese tramo. «Entrega» sigue siendo un `git push` (sustituto).
+
+Población: 51 sesiones de fondo con nombre de puesto y algún turno en 30 h (330 `state.json`, 0 jsonl ilegibles,
+0 líneas rotas). Es el 6-oct entero más los primeros minutos del 7-oct.
+
+- Cruzan 300k: 26 de 51. Llegan a otro push: 16. No vuelven a empujar: 10 (3 `blocked`, 7 `done`).
+- Las 16 que entregan: pico del tramo con mediana 339k, p90 412k, máximo 416k.
+- Las 10 que no: 9 acaban en 393k o menos; una sube a 823k sin empujar (`s0-6octc`, 74 turnos en el tramo).
+
+| Número de «a mitad» | Cortaría | De ellas, iban a entregar | Contexto por encima, en el tramo |
+|---|---|---|---|
+| 350k | 7 | 5 (les faltaban de 19 a 33 turnos) | 87,6 M |
+| 400k | 3 | 2 (les faltaban 7 y 11 turnos; entregaron a 412k y 416k) | 45,7 M |
+| 425k | 1 | 0 | 36,2 M |
+| 450k | 1 | 0 | 35,7 M |
+| 475k | 1 | 0 | 34,3 M |
+| 500k (el vigente) | 1 | 0 | 32,4 M |
+| 550k | 1 | 0 | 29,7 M |
+| 600k | 1 | 0 | 26,8 M |
+
+**Lo que sostiene.** De 425k a 600k el número corta a la misma sesión y no interrumpe ninguna entrega. Por debajo
+de 425k empieza a costar entregas. Entre 450k y 500k la diferencia son 3,3 M de contexto en un día de ~733 M
+(SCRUM-1479, simulación de las 19:28Z del 6-oct): menos del 0,5 %. **Corrige el «~450k» de arriba:** 450k cabe,
+pero la medición no lo prefiere a 500k. Lo recomendado por la S5: dejar 500k; si se quiere margen, 450k; no bajar
+de 425k.
+
+**No hay un techo donde las sesiones «mueren».** Último turno de las 45 paradas más de una hora:
+
+| Tramo | `blocked` | `done` |
+|---|---|---|
+| menos de 300k | 11 | 8 |
+| 300-400k | 4 | 10 |
+| 400-450k | 4 | 2 |
+| 450-500k | 0 | 2 |
+| más de 500k | 0 | 4 |
+
+Acabaron entre 380k y 425k seis sesiones (4 `blocked`, 2 `done`). Pero 12 pasaron de 400k, 6 de ellas de 450k y 4
+de 500k, y sólo una compactó. Acaban donde entregaron o donde se quedaron con una pregunta.
+
+**De las 6 que pasaron de 450k, 5 habían empujado después de cruzar 300k.** A ésas las releva el primer número,
+no éste. Por eso el de «a mitad» casi no salta: es lo que le toca a una salida de emergencia.
+
+**Crecimiento entre un push y el siguiente:** 39 pares, mediana 43k, p90 139k, máximo 216k. Una sesión que entrega
+justo bajo 300k y hace una entrega más acaba hacia 343k (mediana), 439k (p90) o 516k (máximo). La cuenta del
+6-oct daba 23 pares y mediana 64k: era otra hora del mismo día.
+
+**Límites.**
+
+- Es UN día de UN equipo, y ese día las sesiones trabajaban con el umbral de 200k en sus normas: ninguna se
+  relevó a 300k. El tramo es una reconstrucción, no lo que pasaría con la norma aplicada.
+- La población se mueve mientras se mide. Una segunda pasada, minutos después, da 27 que cruzan y 11 que no
+  vuelven a empujar: una sesión de hoy (`s3-7oct`, trabajando) había pasado de 300k. La tabla de números no cambia.
+- «Contexto por encima» suma los turnos del tramo posteriores al primero que pasa del número. No resta lo que
+  cuesta el relevo (arrancar otra sesión y releer). Es un techo del ahorro.

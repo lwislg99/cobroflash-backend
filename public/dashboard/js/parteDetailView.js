@@ -866,6 +866,13 @@
     return n;
   }
 
+  /** Lo que el servidor dice de una propuesta vacía, por SU motivo. La vista no elige el texto. */
+  function textoDePropuestaVacia(respuesta) {
+    var avisos = (respuesta && respuesta.avisos) || {};
+    var motivo = respuesta && respuesta.propuesta && respuesta.propuesta.motivo;
+    return avisos[motivo] || avisos.sin_lineas_reconocidas || '';
+  }
+
   /**
    * Pinta la propuesta del dictado. Devuelve `false` si no hay nada que pintar, y entonces el
    * llamador enseña el motivo — que llega resuelto del servidor, no se decide aquí.
@@ -878,7 +885,7 @@
     // 🔴 SUELO: propuesta vacía → el parte se queda EN BLANCO Y SE DICE. No se rellena con nada.
     if (p.vacia) {
       contenedor.innerHTML = '<p data-propuesta-vacia="1" style="font-size:14px;color:var(--muted)">' +
-        esc(avisos[p.motivo] || avisos.sin_lineas_reconocidas || '') + '</p>';
+        esc(textoDePropuestaVacia(respuesta)) + '</p>';
       return false;
     }
 
@@ -1009,6 +1016,9 @@
    *   · 409 y 404 → se relee el parte, como hace un campo que no se guarda. Ahí repetir no va a
    *     funcionar nunca: la ficha sale firmada, o dice que no se ha podido cargar;
    *   · cualquier otro rechazo → nada. No hay texto firmado para él y el de arriba no se estira.
+   *
+   * 🔴 SCRUM-1493 · Y SI CONTESTA SIN LÍNEAS, TAMPOCO: un 200 con la propuesta vacía (la IA caída)
+   * no es un fallo de la petición, y con una propuesta en pantalla se dice arriba sin tocarla.
    */
   async function ordenarElDictado(parte, contenedor, opciones) {
     var o = opciones || {};
@@ -1030,31 +1040,49 @@
         await renderParteDetailView(contenedor, parte.id, o);
         return false;
       }
-      if (!codigo || codigo >= 500) avisarDictadoNoOrdenado(contenedor);
+      if (!codigo || codigo >= 500) avisarEnElDictado(contenedor, 'data-dictado-no-ordenado', TEXTOS.noSePudoOrdenar);
+      return false;
+    }
+    // 🔴 SCRUM-1493 · Y SI CONTESTA «NINGUNA LÍNEA», TAMPOCO BORRA. Con la IA caída la ruta contesta
+    // 200 con la propuesta vacía (a propósito), y eso NO es un fallo de la petición: no pasaba por el
+    // `catch` de arriba y se pintaba vacía encima de la que el técnico estaba corrigiendo. Con una
+    // propuesta en pantalla el hueco no se toca, y lo que manda el servidor se dice en el sitio del
+    // aviso. Sin propuesta que proteger, todo sigue como siempre (`pintarPropuesta`).
+    var vacia = !!(respuesta && respuesta.propuesta && respuesta.propuesta.vacia);
+    if (vacia && destino.querySelector('[data-propuesta-confirmar]')) {
+      avisarEnElDictado(contenedor, 'data-dictado-sin-lineas', textoDePropuestaVacia(respuesta));
       return false;
     }
     // Contestó: lo que hubiera que decir del intento anterior ya no es verdad.
-    quitarAvisoDeDictadoNoOrdenado(contenedor);
+    quitarAvisoDelDictado(contenedor);
     return pintarPropuesta(destino, respuesta);
   }
 
-  function quitarAvisoDeDictadoNoOrdenado(contenedor) {
-    var previo = contenedor.querySelector && contenedor.querySelector('[data-dictado-no-ordenado]');
-    if (previo && previo.remove) previo.remove();
+  /** SCRUM-1493 · en el sitio del aviso del dictado hay UNO, el del último intento: se vacía entero. */
+  function quitarAvisoDelDictado(contenedor) {
+    var sitio = contenedor.querySelector && contenedor.querySelector('[data-dictado-aviso]');
+    var previos = sitio && sitio.children ? Array.prototype.slice.call(sitio.children) : [];
+    previos.forEach(function (previo) { if (previo.remove) previo.remove(); });
   }
 
-  /** El aviso de «no se ha podido ordenar», en su sitio y traído a la vista (como SCRUM-1475). */
-  function avisarDictadoNoOrdenado(contenedor) {
+  /**
+   * Un aviso del dictado, en su sitio (bajo el botón de ordenar, FUERA del hueco de la propuesta) y
+   * traído a la vista (como SCRUM-1475). `marca` dice cuál es: `data-dictado-no-ordenado` (SCRUM-1302
+   * C), `data-dictado-no-guardado` o `data-dictado-sin-lineas` (SCRUM-1493). Sustituye al que hubiera.
+   */
+  function avisarEnElDictado(contenedor, marca, texto) {
     var sitio = contenedor.querySelector && contenedor.querySelector('[data-dictado-aviso]');
     // Sin sitio donde colgarlo no se cuelga, y no se lanza: ordenar es un extra y su aviso también.
     if (!sitio || !sitio.appendChild) return;
-    quitarAvisoDeDictadoNoOrdenado(contenedor);
+    quitarAvisoDelDictado(contenedor);
+    // Sin texto que decir no se cuelga una caja vacía: un `role="alert"` en blanco no dice nada.
+    if (!texto) return;
     var aviso = document.createElement('div');
     aviso.className = 'alert error';
     aviso.setAttribute('role', 'alert');
-    aviso.setAttribute('data-dictado-no-ordenado', '1');
+    aviso.setAttribute(marca, '1');
     aviso.style.marginTop = '8px';
-    aviso.textContent = TEXTOS.noSePudoOrdenar;
+    aviso.textContent = texto;
     sitio.appendChild(aviso);
     if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
@@ -1282,8 +1310,11 @@
       });
     } catch (e) {
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
-      var aviso = contenedor.querySelector('[data-dictado-propuesta]');
-      if (aviso) aviso.innerHTML = '<p data-dictado-no-guardado="1">' + esc(TEXTOS.noSeGuardo) + '</p>';
+      // 🔴 SCRUM-1493 · Y TAMPOCO SE PINTA ENCIMA DE LA PROPUESTA. El aviso se escribía DENTRO del
+      // hueco: se llevaba las líneas, lo corregido a mano y el botón, y decía «vuelve a intentarlo»
+      // sin dejar con qué (medido en yaqu.app el 6-oct). Va al sitio del aviso, y la propuesta se
+      // queda: el segundo toque es el mismo botón, que ya tiene su escucha.
+      avisarEnElDictado(contenedor, 'data-dictado-no-guardado', TEXTOS.noSeGuardo);
       return false;
     }
 

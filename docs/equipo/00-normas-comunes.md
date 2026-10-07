@@ -354,7 +354,7 @@ decisión de un jefe (A7: esquema, emisión fiscal, texto que ve el usuario, cos
 (el canal entre los dos equipos es el jefe); mientras Javier no lo diga, a su equipo no le obliga.
 
 **Por qué, medido en Jira.** El 6-oct-2026 (día de Madrid) se abrieron 44 tickets y se resolvieron 47: con
-ese neto no se vacía nada. El 7-oct a las 06:30Z había 110 «En curso» entre los dos equipos (45 con la
+ese neto no se vacía nada. El 7-oct a las 06:15Z había 110 «En curso» entre los dos equipos (45 con la
 etiqueta de Luis, 44 con la de Javier, 21 sin etiqueta de equipo), y 69 de los 110 llevaban cuatro días o
 más sin tocarse. Son fotos de una población viva: `created` y `resolved` del día, y `status = 10001` con
 su `updated`.

@@ -1,7 +1,11 @@
 // SCRUM-14 (ALBARAN-1) — numeración ALB, validación de líneas, FSM/lock y tenancy.
-// Parte pura SIEMPRE corre (contra dist/); la parte de BD+HTTP va gateada como
-// tenancy-permisos.test.mjs:  QA_DB_TEST=1 npm run test:staging
+// Parte pura SIEMPRE corre (contra dist/); la parte de BD+HTTP va gateada, con dos destinos (SCRUM-876e):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+// SCRUM-876e: va AQUÍ, antes de los `dist/` de abajo — `albaran.service.js` construye el cliente de
+// Prisma al cargarse, y para entonces `DATABASE_URL` tiene que apuntar ya al banco.
+import { URL_BANCO } from './_banco-libro.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -197,9 +201,9 @@ test('calcAlbaranTotales: SIN_VALORAR (líneas sin precioUnitario) da 0, no NaN'
 });
 
 // ── Tenancy + flujo HTTP real (gateado, patrón tenancy-permisos.test.mjs) ───
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -249,17 +253,22 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     const r1 = await jsonReq(`/admin/jobs/${jobA.id}/albaranes`, cookieA, 'POST', {});
     assert.equal(r1.status, 201);
     const alb1 = await r1.json();
-    assert.match(alb1.numero, /^ALB-\d{4}-001$/);
+    // SCRUM-876e: SCRUM-592 cambió el formato a `AB260001` (prefijo, año en dos cifras y cuatro de
+    // correlativo). Esto pedía el de antes y llevaba roto desde el 4-sep-2026 sin que nadie lo
+    // viera: un gateado roto y uno sano dan el mismo `skipped`.
+    assert.match(alb1.numero, /^AB\d{2}0001$/);
     const r2 = await jsonReq(`/admin/jobs/${jobA.id}/albaranes`, cookieA, 'POST', {});
     const alb2 = await r2.json();
-    assert.match(alb2.numero, /^ALB-\d{4}-002$/);
+    assert.match(alb2.numero, /^AB\d{2}0002$/);
 
     // Validación de líneas → 400
-    const rBad = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { lineas: [{ concepto: '', cantidad: 1, unidad: 'ud' }] });
+    // SCRUM-876e: desde SCRUM-361 el editor devuelve la `version` que se le mandó, y sin ella el
+    // PATCH contesta 409 ANTES de mirar las líneas. Estos PATCH no la mandaban.
+    const rBad = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { version: alb1.version, lineas: [{ concepto: '', cantidad: 1, unidad: 'ud' }] });
     assert.equal(rBad.status, 400);
 
     // Edición válida → version 2
-    const rEdit = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { lineas: [{ concepto: 'Mano de obra', cantidad: 3, unidad: 'h' }] });
+    const rEdit = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { version: alb1.version, lineas: [{ concepto: 'Mano de obra', cantidad: 3, unidad: 'h' }] });
     assert.equal(rEdit.status, 200);
     assert.equal((await rEdit.json()).version, 2);
 
@@ -328,7 +337,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
 // Playwright MCP contra staging (no hay librería de parseo de PDF en el repo);
 // aquí se blinda la MECÁNICA: validación 400, candado del modo tras emitir 409,
 // y que el PDF se sigue generando (200 + application/pdf) en ambos modos.
-test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -370,7 +379,9 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
     assert.equal(legacy.modoValoracion, 'SIN_VALORAR');
     assert.equal(legacy.totales, null);
     // Intentar colarle un precio en modo SIN_VALORAR → 400
+    // SCRUM-876e: con la `version` que devolvió el alta (SCRUM-361); sin ella contesta 409 y no 400.
     const rColado = await jsonReq(`/admin/albaranes/${legacy.id}`, 'PATCH', {
+      version: legacy.version,
       lineas: [{ concepto: 'X', cantidad: 1, unidad: 'ud', precioUnitario: 10 }],
     });
     assert.equal(rColado.status, 400);
@@ -382,11 +393,13 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
     assert.equal(val.modoValoracion, 'VALORADO');
     // Línea sin precio en modo VALORADO → 400
     const rFalta = await jsonReq(`/admin/albaranes/${val.id}`, 'PATCH', {
+      version: val.version,
       lineas: [{ concepto: 'Mano de obra', cantidad: 2, unidad: 'h' }],
     });
     assert.equal(rFalta.status, 400);
     // Líneas válidas → 200, totales calculados
     const rOk = await jsonReq(`/admin/albaranes/${val.id}`, 'PATCH', {
+      version: val.version,
       lineas: [{ concepto: 'Mano de obra', cantidad: 2, unidad: 'h', precioUnitario: 45, tipoIva: 21 }],
     });
     assert.equal(rOk.status, 200);
@@ -395,7 +408,10 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
 
     // Emitir → el modo queda CONGELADO: cambiarlo ahora → 409 albaran_locked
     assert.equal((await jsonReq(`/admin/albaranes/${val.id}/emitir`, 'POST')).status, 200);
-    const rCandado = await jsonReq(`/admin/albaranes/${val.id}`, 'PATCH', { modoValoracion: 'SIN_VALORAR' });
+    // La versión se LEE de la base: lo que se prueba es el candado del modo, y con una versión
+    // vieja el 409 sería el de SCRUM-361 (otro `error`), no éste.
+    const { version: versionEmitido } = await prisma.albaran.findUnique({ where: { id: val.id }, select: { version: true } });
+    const rCandado = await jsonReq(`/admin/albaranes/${val.id}`, 'PATCH', { version: versionEmitido, modoValoracion: 'SIN_VALORAR' });
     assert.equal(rCandado.status, 409);
     assert.equal((await rCandado.json()).error, 'albaran_locked');
 
