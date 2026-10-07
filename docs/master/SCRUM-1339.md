@@ -892,3 +892,164 @@ días. Sí está la lista para volver a bajarlos (`e-arts.tsv`) y todo lo que sa
     node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
     git fetch origin exp-1384-informe-truncado                                   # mientras exista la rama
     node $E/e-exp1384.mjs <fuera del árbol>/banco . $E/e-por-fichero.tsv         # los TAP caducan el 4-oct
+
+
+# SCRUM-1339g · La tasa sobre la ventana de 50 runs: 28 de 50 (56 %). No baja, y el obligatorio sólo corre en 50 de 138 commits de `main`
+
+**Medido contra:** `origin/main` = `12ecc7bb3bad377e729a01b09fd755f978e125b9` · 2026-10-07T15:51:42Z
+
+A9: sin fallo que generalice — el tropiezo de la tanda (leer un contador en cero como «la medición está colgada») se deshizo mirando el proceso antes de actuar y no cambió ninguna cifra; va contado en «Mis errores»
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 7-oct): dejar la decisión
+de c.17935 lista para tomarse, con el número de la ventana delante. Lo hace J6 (sesión `jv-j6`).
+Sólo lectura: ni `ci.yml`, ni `scripts/`, ni tests. Se usa el instrumento de 1339e sin tocarlo.
+
+## En corto
+
+- **La tasa de c.17935, por primera vez con la ventana completa: 28 de 50 runs del obligatorio en
+  `main` tienen nombres ausentes (56,0 %).** Está por ENCIMA del 5 %: según c.17935, la señal no
+  pasa a bloquear.
+- **Si se activara hoy, pondría en rojo 24 de los 46 jobs verdes de la ventana (52 %).** Los otros
+  4 con ausentes ya eran rojos.
+- **No ha bajado.** El 1-oct eran 23 de 54 jobs verdes (43 %, c.17934) y 11 de 21 commits de
+  `main` (52 %, 1339e). Son poblaciones distintas a la de hoy y no se restan; ninguna está cerca
+  del 5 %.
+- **Lo que se pierde es el final del informe, no nombres sueltos.** 587 casos en los 28 runs: de 1
+  a 59 por run, mediana 18. En 18 ficheros, y siempre la cola, salvo `scrum237`, que sale entero.
+- **🔴 La población, que nadie había pedido: para juntar 50 runs medidos hubo que recorrer 138
+  commits de `main`.** El obligatorio corrió en 50 (36 %). En 80 el run de CI salió `cancelled`
+  con 0 jobs, 7 no tienen run de CI y 1 estaba en cola. La tasa es de los que corrieron.
+- **El 15-oct sigue valiendo como fecha de revisión, pero el número no va a cambiar para
+  entonces** (lectura de J6, abajo). La causa está medida en SCRUM-1405 y el flag sigue puesto.
+
+## ⓪ La población y el instrumento
+
+`e-tasa-de-main.mjs` (de 1339e, sin cambios) recorre la línea principal de más nuevo a más viejo y
+lee, de cada commit, la `::notice` que el paso de la señal dejó en el job obligatorio de su run de
+push. Para cuando junta `VENTANA_DE_RUNS` = 50 runs medidos. No baja ningún TAP.
+
+| qué | cuánto |
+|---|---|
+| commits recorridos desde `12ecc7bb` | 138 (2-oct 01:54:30Z → 7-oct 15:43:04Z) |
+| el job obligatorio corrió y dejó registro medible | **50** |
+| run de CI `completed/cancelled` con 0 jobs | 80 |
+| sin run de CI | 7 |
+| run en cola al medir | 1 |
+| no pude preguntar | 0 |
+
+Los 80 se preguntaron uno a uno (`g-desglose.mjs`, dos llamadas por run): los 80 dicen lo mismo.
+No he medido QUIÉN los cancela; lo que se ve es que el run de un commit de `main` deja de existir
+como medición cuando entra el siguiente. **Dos de cada tres commits de `main` no tienen veredicto
+propio del obligatorio**, y eso es anterior a la señal y no depende de ella.
+
+Control positivo del lector, dentro del instrumento: el check-run `110514502040` trae su línea de
+registro. Si no la viera, el guion sale 3 sin medir.
+
+## ① La tasa
+
+    [señal de nombres · tasa] 28 de 50 runs medidos con nombres ausentes (56.0 %) · población 50 runs · sin medir 0 · por ENCIMA del 5 % sobre 50 runs medidos · tope 2026-10-15 (SCRUM-1339 c.17935)
+
+La línea la imprimen los dos caminos: el instrumento (`g-salida-tasa-de-main.txt`) y el guion de la
+casa con `--tasa` sobre el json de registros (`g-salida-tasa-cli.txt`, salida 0). No son dos
+mediciones: es la misma función (`tasaDeRegistros`) sobre los mismos 50 registros.
+
+| | completos | con ausentes |
+|---|---|---|
+| job `success` | 22 | **24** |
+| job `failure` | 0 | 4 |
+
+| día (UTC) | con ausentes | de |
+|---|---|---|
+| 2-oct | 14 | 25 |
+| 6-oct | 11 | 19 |
+| 7-oct | 3 | 6 |
+
+Entre el 2-oct a las 18:00Z y el 6-oct a las 11:08Z no hay ningún run medido en la ventana.
+
+**Coherencia interna de lo leído:** con ausentes y SIN `::warning` de la señal, 0 de 28; completos y
+CON `::warning`, 0 de 22. El registro y los avisos de cada run dicen lo mismo.
+
+## ② La forma
+
+- 587 casos ausentes en 28 runs. Por run: mínimo 1, mediana 18, máximo 59.
+- 18 ficheros distintos (un fichero cuenta una vez por run): `vigia-atascados` en 9 runs,
+  `scrum834` en 6, `scrum1379b` en 5, `scrum853` y `scrum524b` en 4, `scrum1262` y `scrum1344` en
+  3; siete ficheros en 2 y cuatro en 1. La lista entera, en `g-salida-desglose.txt`.
+- Todos los bloques son «(cola)», menos los dos de `scrum237`, que son «(entero)»: el fichero sale
+  en el TAP como una línea.
+- Son 18 ficheros, como en 1339e, pero no los mismos 18: cruzados por nombre con
+  `e-por-fichero.tsv`, 13 repiten y 5 son nuevos (`scrum1379b`, `scrum853`, `scrum1344`,
+  `scrum811c` y `scrum514`). No he mirado si los 5 existían el 2-oct.
+
+Esto es lo que SCRUM-1405 predice: pierden los que más escriben, y pierden el final. Lo que falta
+son informes de casos que sí corrieron (allí, 53.433 de 53.433 con su testigo de ejecución).
+
+## ③ Qué pasa el 15-oct — LECTURA DE J6, no medición
+
+1. Con el 56 %, c.17935 dice que no se bloquea. La revisión del 15-oct no es «¿bloqueamos ya?».
+2. La causa está demostrada y en `main` (SCRUM-1405): `--test-force-exit`. El flag sigue en el
+   script `test` de `package.json` (línea 11, leída sobre `12ecc7bb`). Mientras siga, no hay motivo
+   para que la tasa baje: lo que se lea el 15 será parecido a esto.
+3. La decisión que mueve el número es cuál de las tres salidas de SCRUM-1405 §⑤ se toma. Las tres
+   cambian lo que ejecuta el obligatorio y son del fundador. La señal puede bloquear después.
+4. Si nadie decide nada: el 15-oct no ocurre nada. El guion sale 0 siempre, por decisión firmada
+   (c.17935, c.17954), y sigue avisando. Y siguen entrando en `main` verdes sin entre 1 y 59
+   nombres, la mitad de las veces.
+
+No propongo mover la fecha.
+
+## ④ Lo que se consideró y NO se hizo
+
+**Una línea fija en la salida de cada run** que dijera el plan: «AVISA y NO BLOQUEA · umbral 5 % ·
+ventana 50 · se revisa como tarde el 2026-10-15». Habría sido una función pura en
+`scripts/_senal-de-nombres.mjs` y una llamada en el CLI, fuera de la `::notice` y de la línea de
+registro (que es lo que parsea el lector de la tasa).
+
+No se escribe, por decisión del orquestador sobre estos dos platos:
+
+- **Valor pequeño.** El nombre del paso de `ci.yml` ya dice «avisa, no bloquea», y `--tasa` ya
+  imprime umbral, ventana y tope. Las tres constantes NO están sin usar: `tasaDeRegistros` y
+  `lineaDeTasa` las aplican. Lo único que no hacen es cambiar un código de salida, y eso es lo
+  firmado.
+- **Coste.** Tocar dos ficheros sin fila propia en `dos-equipos.md` §3.3, que corren dentro del
+  obligatorio de los dos equipos.
+
+**Tampoco se fabricó «una tanda con más del 5 % de casos ausentes que sale 0».** El 5 % de c.17935
+es de RUNS con algún ausente sobre 50, no de casos dentro de una tanda. Esa tanda saliendo 0
+enseñaría la decisión, no un defecto.
+
+## ⑤ De quién son los dos guiones (leído, no decidido)
+
+`node scripts/carriles.mjs de scripts/senal-de-nombres.mjs` y lo mismo para
+`scripts/_senal-de-nombres.mjs`: «SIN CERRADURA», por la fila general de `scripts/`
+(`dos-equipos.md` línea 171 en `12ecc7bb`), que dice de sí misma que no recoge lo que nadie
+clasificó. La fila de S3 (línea 175) los deja fuera a propósito, porque «tienen ticket vivo del
+equipo de Javier». `tests/scrum1339d-senal-de-nombres.test.mjs`: «sin fila en §3: nadie lo
+reclama». Es un hueco declarado. La tabla es de la S0 y no se ha tocado; la propuesta la lleva el
+orquestador por Jira.
+
+## Lo que NO sé
+
+- **La tasa en los runs de PR**, que es donde un bloqueo mordería. El instrumento sólo recorre
+  `main`, que es la ventana de c.17935.
+- Si los 88 commits sin medir habrían perdido más o menos que los 50 medidos.
+- Quién cancela los 80 runs, y si es a propósito.
+- No he vuelto a bajar ningún TAP: las cifras son las que dejó el paso en cada run. El control de
+  1339e (anotación contra recálculo, 8 de 8) no se ha repetido hoy.
+
+## Mis errores
+
+- Creí que la medición llevaba ocho minutos colgada. Llevaba uno. Leí un «used 0» del límite de
+  la API como «no está llamando». Miré el proceso antes de matarlo y estaba vivo.
+- El reloj de la máquina va una hora por detrás de Madrid. Las horas de esta sección son de GitHub.
+- Mi primer desglose contaba un fichero dos veces si el aviso de un run lo nombraba dos veces. No
+  cambió ninguna cifra (ningún run lo hace hoy); `g-desglose.mjs` cuenta una vez por run.
+
+## Lo que no está en git, y reproducir
+
+Todo lo que salió está en git (`g-*`). Las anotaciones viven en GitHub mientras conserve los runs.
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/e-tasa-de-main.mjs origin/main <fuera del árbol>/banco
+    node $E/g-desglose.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv
+    node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
