@@ -91,6 +91,40 @@ seis; copié la suma sin recontarla y la repetí en cuatro entregas y en dos men
 
 A9: aviso → cicatriz S0 «Una suma que trae un subagente se recuenta contra su propia lista antes de copiarla: la lista era de siete y la suma decía seis.» — no se pudo comprobar: es un recuento a mano sobre un informe en prosa, sin fichero que un test pueda leer
 
+## Séptima entrega · el alta de cliente de YaQu, vista (7-oct-2026, rama `scrum-1437d-alta-de-cliente-en-pantalla`)
+
+**Medido contra:** `origin/main` = `21c27b1127d937c99fae56c1b2de67eff1d03ccb` · 2026-10-07T07:47:49Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1437/alta-cliente-en-pantalla.mjs`
+
+El tramo «alta de cliente» de YaQu era el único con camino en la cuenta de QA que la sexta entrega dejó sin
+ver. Visto hoy en yaqu.app, en 390×844 y 1280×800: **3 clics · 1 campo · 2 pantallas**, igual que lo leído
+en código. «Guardar» a la vista y sin pulsar; nada creado. Va en §12 del documento, «Añadido el 7-oct».
+
+**El fallo propio que lleva la línea A9.** El primer selector del botón de la lista casaba por nombre exacto.
+En 390 acertó; en 1280 el mismo botón lleva además la letra de su atajo y el selector casó cero. Lo cazó que
+el conductor exige UNA coincidencia y se para si hay cero o dos, y que el recorrido se hace en las dos
+ventanas: con una sola habría dado por visto el escritorio sin haberlo pisado.
+
+**Población.** Dos ventanas, un recorrido por ventana, 2 pulsaciones cada uno. Peticiones cortadas por
+ventana: 2, las dos antes de pulsar nada (una la manda el propio panel al cargar; la otra es el control del
+interceptor). Después del control: 0.
+
+### Contra la aceptación del ticket, hoy
+
+| # | Aceptación | Estado |
+|---|---|---|
+| 1 | Método escrito antes de la cifra | Hecho (§1) |
+| 2 | Verifacturamos por dentro | Hecho hasta el botón (§4): «Emitir», «Enviar al cliente» y «WhatsApp» no pulsados, como pedía el ticket |
+| 3 | YaQu medido igual y EN PANTALLA, cuenta de QA | **Hecho en todo lo que la cuenta de QA tiene:** cliente (hoy), presupuesto por el editor y rápido, aceptar a mano (2-oct). Factura y cobro: la pantalla dice que no hay camino, y eso es lo medido |
+| 4 | Tabla de tres columnas con el dato de pasos arriba | Hecho (§2, §3) |
+| 5 | Dicho qué se vio y qué no | Hecho (§6, §12) |
+| 6 | Sin copiar | Hecho |
+
+**Lo que queda fuera de la aceptación y sigue sin hacer:** la factura y el cobro de YaQu en pantalla (hace
+falta una cuenta con la facturación encendida: decisión del fundador) · Contasimple y Billin por dentro
+(recuperar la contraseña por correo: fundador) · la baja de las cuentas de prueba (el ticket la deja fuera).
+
 ## Error propio
 
 Para abrir el menú «⋯» de una factura emitida de ejemplo usé un selector por posición y pulsó el botón
