@@ -22,6 +22,9 @@ const R_PRISMA = require_.resolve('./dist/core/db/prisma.js');
 const R_INVOICE = require_.resolve('./dist/modules/billing/app/routes/payInvoice.routes.js');
 
 const PIE = 'Procesado por Stripe';
+// El BOTÓN de la tarjeta, no su texto: «Pagar con tarjeta» a secas también está en dos comentarios
+// del CSS que la página sirve, así que buscarlo suelto da «sí» en todas las páginas.
+const BOTON_TARJETA = '<span class="method-title">Pagar con tarjeta</span>';
 
 function merchant(extra = {}) {
   return {
@@ -88,7 +91,7 @@ test('SCRUM-893b · ninguna vía: la página NO dice «Procesado por Stripe»', 
 // La otra mitad: sin ella, borrar el pie de todas las páginas pasaría los tres casos de arriba.
 test('SCRUM-893b · con tarjeta (Connect activo): el pie de Stripe SIGUE saliendo', async () => {
   const html = await pagina(merchant({ iban: IBAN, ...CON_CONNECT, flags: { PAYMENTS_CONNECT_ENABLED: true } }));
-  assert.ok(html.includes('Pagar con tarjeta'), '🔴 CIEGO: este caso tenía que ofrecer la tarjeta.');
+  assert.ok(html.includes(BOTON_TARJETA), '🔴 CIEGO: este caso tenía que ofrecer la tarjeta.');
   assert.ok(html.includes(PIE), '🔴 La página ofrece tarjeta y ha perdido el pie que dice quién la procesa.');
 });
 
@@ -100,6 +103,6 @@ test('SCRUM-893b · sin tarjeta pero con Bizum automático: el pie de Stripe SIG
     { payMethods: ['bizum'] },
   );
   assert.ok(html.includes('Bizum al instante'), '🔴 CIEGO: este caso tenía que ofrecer el Bizum automático.');
-  assert.equal(html.includes('Pagar con tarjeta'), false, '🔴 CIEGO: en este cobro el PRO quitó la tarjeta.');
+  assert.equal(html.includes(BOTON_TARJETA), false, '🔴 CIEGO: en este cobro el PRO quitó la tarjeta.');
   assert.ok(html.includes(PIE), '🔴 El Bizum automático lo procesa Stripe y la página ya no lo dice.');
 });
