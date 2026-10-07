@@ -486,7 +486,7 @@ y **siempre están ocupados**. El puesto dura lo que dure el equipo. Lo que se c
 segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar su contexto.
 
 - **Cuándo se releva** (lo decide el orquestador). Hay tres casos:
-  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 200k**;
+  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 300k**;
   2. si la sesión lleva **más de 1 hora parada**. La caché de prompt caduca a la hora, y el siguiente
      mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
      tokens»;
@@ -514,28 +514,84 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
        leyó 6.108; ninguna nuestra lo ha cruzado con su jsonl).
   2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
      esta casilla.
-  3. ¿Pasa de **200k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
+  3. ¿Pasa de **300k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
+  ⚠️ **El latido no avisa de este caso** (SCRUM-1484): a una sesión por encima de 500k le dice lo mismo que
+  a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega», que para ese caso es
+  lo contrario de esta norma. Hasta que ese ticket entre, los 500k los vigila la propia sesión con la
+  casilla 1.
 
-  ⚠️ **Los dos números (200k y 500k) están EN REVISIÓN desde el 6-oct-2026, y lo decide el fundador**
-  (es una decisión de coste; SCRUM-1479). Hasta entonces valen los de arriba, y el relevo lo sigue
-  decidiendo el orquestador. Lo que hay medido, para que quien lo relea lo recalcule y no lo herede:
-  el 6-oct, de 21 sesiones con algún turno, **18 pasaron de 200k**, 3 de 500k y 2 de 800k; una sesión
-  arranca en ~66-70k y pasa de 200k entre su llamada 11 y la 44, antes de su primera entrega. Y lo que
-  cuesta cada opción, simulado por la S5 ese día con `gasto-arranque.mjs vivas --simular` sobre esas 21
-  (Σ de contexto 412,3 M): relevar a 200k lo dejaría en 207,2 M (−49,7 %), a 500k en 388,6 M (−5,8 %) y a
-  800k en −2,3 %. Recontado por la S0 una hora después, sobre 22: −50,2 %, −5,3 % y −2,1 %. Es una
-  simulación de la suma de contexto, no del coste, y supone que una sesión relevada arranca en 85k.
+  **Son dos números a propósito, y el 6-oct-2026 sólo cambió uno.** 300k al entregar es el camino normal
+  (era 200k; el porqué, abajo). 500k a mitad es la salida de emergencia y **es el de antes**: existe porque
+  una sesión llegó a ~560k sin decirlo (el fallo de abajo). ⏳ Ese segundo número está sin volver a decidir
+  (lo decide el fundador; SCRUM-1479); lo medido para decidirlo va abajo. La otra mitad de la norma no
+  cambia: el umbral dice «ya toca»; el punto limpio dice «ahora».
+
+  **Por qué 300k al entregar, y no los 200k de antes** (cambio del 6-oct-2026; quién lo autorizó, abajo).
+  Lo medido va entero para que quien lo relea con sesiones más largas lo RECALCULE y no lo herede. Es UN
+  día de UN equipo, y «entrega» se cuenta como un `git push`: es un sustituto (un push no es una entrega
+  verificada, y una entrega sin push no se ve).
+
+  - **La medición.** El 6-oct-2026 a las 19:27Z, 42 sesiones de fondo con algún turno ese día (26 dieron
+    algún push, 50 en total; el primero llega con 232k de mediana, habiendo arrancado en ~66-70k):
+    - **200k** lo cruzan 35 de 42, y al cruzarlo sólo 6 de las 35 habían empujado algo. Salta antes de la
+      primera entrega: un aviso que suena en ocho de cada diez no distingue a ninguna.
+    - **300k** lo cruzan 20 de 42; al cruzarlo 13 de las 20 ya habían empujado, y 14 vuelven a empujar
+      después, que es donde una norma «al entregar» puede saltar. Con ella, esas 14 se habrían relevado
+      entre 304k y 416k (mediana 340k). Las otras 6 cruzan y no vuelven a empujar.
+    - **500k** lo cruzan 4 de 42 y sólo 1 vuelve a empujar después: a 500k la norma «al entregar» casi no
+      salta nunca.
+
+    ⚠️ Qué mide cada cifra. Todas cuentan el MÁXIMO del día de cada sesión de fondo. A las ~17:15Z, contando
+    todas las transcripciones del día y no sólo las de fondo, eran 32 sesiones y 5 pasaban de 500k: son dos
+    poblaciones, no una contradicción. Y en aquella, contando el ÚLTIMO turno en vez del máximo salía una
+    menos por encima de 800k: una pasó, compactó y acabó por debajo.
+  - **No hay un techo medido por debajo de la compactación.** Las 16 sesiones que ese día quedaron paradas
+    con una pregunta acabaron entre 186k y 423k (mediana 273k): se paran por la pregunta, no por el tamaño.
+    11 de 42 pasaron de 400k y siguieron trabajando, y una llegó a 823k. El único límite medido es la
+    compactación sola, entre 861k y 967k (casilla 1).
+  - **El coste, sin adornarlo.** Simulado a las 19:28Z sobre 43 sesiones (las 42 de arriba y una del 2-oct
+    cuyo fichero se tocó ese día, con sus turnos viejos dentro; Σ de contexto 733,3 M): relevar a
+    200k lo dejaría en 393,7 M (−46,3 %), a 300k en 518,2 M (−29,3 %), a 400k en 625,4 M (−14,7 %) y a 500k
+    en 700,8 M (−4,4 %). Frente a 200k, 300k renuncia a 17 puntos del ahorro simulado. **El ahorro de 200k
+    no se estaba cobrando:** con el umbral en 200k la suma real era la de arriba, porque casi nadie relevaba
+    a 200k. Es una simulación de la suma de contexto, no del coste ni de la eficiencia. Supone que una
+    sesión relevada arranca en 85k, releva en el turno en que cruza el umbral (la norma espera a la entrega)
+    y no cuenta lo que cuesta cada relevo: es un techo del ahorro, no el ahorro. El comando, entero, una
+    vez por umbral:
+
+        node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular 300000
+
+    (`--simular` sin número no arranca. Sale con código 1 cuando hay sesiones que relevar: no es un fallo.)
+  - **El motivo.** Un umbral que salta antes de la primera entrega no se puede cumplir «al entregar», y uno
+    que casi nadie cruza no ahorra. 300k es, además, el valor que esta norma tuvo hasta el 21-sep-2026.
+  - **Para el número de «a mitad», que está sin decidir.** Entre un push y el siguiente una sesión crece
+    64k de mediana, 169k en el percentil 90 y 216k como máximo (23 pares). Una sesión que entrega justo por
+    debajo de 300k y hace una entrega más acaba, como mucho, hacia 470-516k; con la norma de 300k, la que
+    más tarde se habría relevado lo habría hecho a 416k. Por encima de 500k ese día hubo 4 sesiones.
+
+  **Quién lo autorizó.** El número es una decisión de coste, y el coste está fuera de la delegación del
+  orquestador (`limites-del-fundador.md`). **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo
+  pongo en 300.000. Autorizado el coste.»** Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479
+  (comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. En Jira los dos firman con la misma
+  cuenta, así que la S5 y la S0 lo comprobaron cada una en el origen: en la transcripción del chat del
+  orquestador es un turno escrito por una persona, con esa frase (SCRUM-1479, comentario 18532). La frase
+  la había redactado el orquestador y el fundador la envió tal cual. Autorizó UN número, el de relevo al
+  entregar.
+
+  **El gemelo de código entró en el mismo PR** (SCRUM-1479, de la S5): la constante de `sesion.mjs`,
+  `gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md` dicen 300k desde el mismo merge que esta
+  norma. Ningún test ata este texto a esa constante: quien cambie uno, cambia el otro en el mismo PR.
 
   ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
   ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
   existía; lo que faltaba era una casilla que se contesta al entregar.
 - **Cuándo NO se releva:**
   - **Nunca a mitad de una entrega** (salvo el caso de 500k de arriba, y siempre en un punto seguro).
-  - Tampoco en cada tarea: si una entrega se cierra por debajo de 200k, el siguiente encargo entra
+  - Tampoco en cada tarea: si una entrega se cierra por debajo de 300k, el siguiente encargo entra
     en la misma sesión.
   - Si el uso se acaba o Claude Code no deja seguir, el traspaso se deja ANTES. El último informe
     lo dice justo después de la hora y el SHA (A14): «traspaso listo: el siguiente encargo, en
@@ -858,8 +914,10 @@ guardarraíl se deshace: **rojos de CI por entrega** y **correcciones tras entre
 - **Mide y declara** tu contexto en cada informe de entrega (A19); estimarlo no vale.
 - **Arranque barato:** `norma.mjs --arranque`, traspaso ≤ 5 KB, ningún Read > 6 KB sin offset/limit,
   Grep antes que leer entero, salidas largas a fichero.
-- **Relevo a 200k** tras una entrega verificada (era 300k; A19 lo recoge). Medido: una sesión de 142 turnos
-  fue el 48 % de las vivas, y la mediana ACABA en 337k; simulado, 200k ahorra el 43 % del contexto.
+- **Relevo a 300k** tras una entrega verificada, y a 500k en mitad de una (A19, que lleva la medición y el
+  coste del 6-oct-2026). Fue 300k hasta el 21-sep y 200k desde entonces: medido aquel día, una sesión de
+  142 turnos fue el 48 % de las vivas, la mediana ACABABA en 337k y, simulado, 200k ahorraba el 43 % del
+  contexto. Ese ahorro no llegó a cobrarse: el 6-oct, 35 de 42 sesiones pasaban de 200k y seguían.
 - **Al orquestador solo ENTREGA, BLOQUEO o DECISIÓN:** sin saludos ni acuses.
 - **Subagentes** con presupuesto y salida ≤ 2 KB. **Rigor proporcional** a lo que se toca.
 - **No se relanza un puesto sin cola real**, y nunca `EnterWorktree` en un prompt de relevo.

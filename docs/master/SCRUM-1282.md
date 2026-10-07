@@ -199,3 +199,123 @@ Leído sitio a sitio en `origin/main`. De S0: `00-normas-comunes.md`, A19 (tres 
    distinta mayúscula en la ruta. Lo vi en las filas repetidas, no en el total.
 3. **Puse la hora a ojo tres veces** en notas de Jira (13:35Z, 13:25Z y 13:45Z cuando eran 13:16Z, 13:19Z
    y 13:27Z). La hora buena es la que marca Jira en cada una.
+
+---
+
+# SCRUM-1282 · cuarta parte: el número de relevo al entregar pasa de 200k a 300k (S0)
+
+**Rama:** `scrum-1479-umbral-de-relevo-500k` (PR #2235, junto con SCRUM-1479; la rama local de la S0 se llamó `scrum-1282d-umbral-de-relevo-300k` y entró fusionada en ésa) · **Carril:** S0 (`00-normas-comunes.md`; sesión `s0-6octh`) · **Fecha:** 6-oct-2026
+**Medido contra:** `origin/main` = `bafb07340557298cd5bfde943d81ade8823d4a78` · 2026-10-06T19:31:32Z
+
+A9: aviso → cicatriz S0 «Un comando que se cita en una norma se copia de la terminal donde corrió: cité el simulador de relevo sin su número, y así no arranca.» — no se pudo comprobar: ningún test ejecuta los comandos que una norma cita en prosa
+
+## Quién lo autorizó
+
+**Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo pongo en 300.000. Autorizado el coste.»**
+
+Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479 (comentario 18513). En Jira los dos firman con
+la misma cuenta, así que eso solo no lo prueba. Lo comprobó la S5 en el origen (comentario 18532) y lo repetí
+yo: en la transcripción del chat del orquestador (`ed676fd1…jsonl`, línea 22479) es un turno `user` con
+`origin.kind = "human"`, 111 caracteres, con esa frase y la de #2001. La frase la había redactado el
+orquestador en su turno anterior y el fundador la envió tal cual. Autorizó UN número, el de relevo al entregar.
+
+⚠️ La hora: ese turno lleva `18:55:32Z` del reloj de la máquina, que ese día iba ~5,5 minutos adelantado. Las
+18:50Z de la cita son la hora de GitHub.
+
+## Qué cambia
+
+| fichero | de quién es | qué cambia |
+|---|---|---|
+| `docs/equipo/00-normas-comunes.md`, A19 | S0 | 200k → **300k** en «cuándo se releva», en la casilla 3 y en «cuándo no se releva». Sale la nota «en revisión» y entran la medición, el coste, el motivo y quién lo autorizó. El número de «a mitad de una entrega» **sigue en 500k**, marcado como sin decidir |
+| `docs/equipo/00-normas-comunes.md`, A25 | S0 | su línea del relevo dice 300k y 500k, y conserva lo medido el 21-sep como historia |
+| `docs/equipo/orquestador.md`, punto 5bis | orquestador de Luis | 200k → 300k. Autorizado por escrito por su dueño para este PR (mensaje a la S0 del 6-oct, ~17:43Z; repetido en SCRUM-1479, comentario 18513) |
+| `docs/equipo/limites-del-fundador.md` | orquestador de Luis | entra la decisión, con sus palabras, su nombre y la fecha. Autorizado por escrito por su dueño en la orden de arranque de esta tanda (6-oct, ~19:25Z) |
+| `docs/equipo/cicatrices/S0.md` | S0 | una línea |
+| `docs/equipo/afirmaciones-verificadas.md` | S0 | dos filas: las dos frases de abajo que la medición no sostiene, y «cuando #2001 entre, bloquea de verdad» (SCRUM-1295: entró a las 19:15:33Z y no corre en ninguna de las 42 sesiones del día; entrega en Jira, comentario 18523). Los scripts de esa segunda fila van en `docs/master/evidencias/SCRUM-1295/` |
+
+## El gemelo, y lo que NO cambia aquí
+
+- **El gemelo de código entra en el MISMO PR (#2235).** La constante de `sesion.mjs`, `gasto-arranque.mjs`,
+  sus tests y `orquestador-autonomo.md` son de la S5 (SCRUM-1479). A las 19:21Z su rama no estaba en GitHub;
+  a las 19:54Z la S5 fusionó en ella el primer commit de esta parte (`c6f1a0b2`) sin tocarle una línea y
+  empujó. Lo que este registro y la A19 decían entonces («el gemelo todavía dice 200k») dejó de ser cierto
+  con ese empujón, y se corrigió en la misma rama antes de que entrara. **Ninguno de los dos tickets se
+  cierra sin el otro.**
+- **El segundo número** (se releva ya, aunque sea a mitad) no lo ha decidido nadie. No lo toco: sigue el 500k
+  que ya estaba en `main`. Abajo va lo que las mediciones sostienen.
+
+## Lo medido, con su comando
+
+Los dos scripts y sus salidas están en `docs/master/evidencias/SCRUM-1282/`. Leen `~/.claude/jobs` de la
+máquina donde corren: en otra máquina no dan estas cifras.
+
+| qué | cifra (6-oct-2026) | comando |
+|---|---|---|
+| sesiones de fondo con algún turno ese día | 42 | `node umbral-y-entregas.mjs 2026-10-06` (19:27Z) |
+| cruzan 200k · ya habían empujado al cruzarlo | 35 · 6 | el mismo |
+| cruzan 300k · ya habían empujado · vuelven a empujar después | 20 · 13 · 14 | el mismo |
+| cruzan 400k · ya habían empujado · vuelven a empujar después | 11 · 10 · 5 | el mismo |
+| cruzan 500k · ya habían empujado · vuelven a empujar después | 4 · 3 · 1 | el mismo |
+| ocupación en el primer push | de 89k a 395k, mediana 232k (26 sesiones) | el mismo |
+| dónde acaban las paradas con una pregunta | de 186k a 423k, mediana 273k (16) | el mismo |
+| con «se releva al entregar por encima de 300k», a qué ocupación | de 304k a 416k, mediana 340k (14 sesiones) | `node tamano-de-una-entrega.mjs 2026-10-06 300000` |
+| lo que crece una sesión de un push al siguiente | mediana 64k, percentil 90 169k, máximo 216k (23 pares) | el mismo |
+| Σ de contexto simulado a 200k · 300k · 400k · 500k (43 sesiones, Σ 733,3 M) | −46,3 % · −29,3 % · −14,7 % · −4,4 % | `node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular <umbral>`, cuatro veces (19:28Z) |
+
+**Qué mide cada una, porque no miden lo mismo:**
+
+- «Entrega» es un `git push` en una orden de terminal. Un push no es una entrega verificada, y una entrega sin
+  push (un informe en Jira) no se ve.
+- Las 42 son sesiones de fondo con `state.json`. El recuento de ~17:15Z (32 sesiones, 5 por encima de 500k)
+  contaba todas las transcripciones del día, también las que no son de fondo. Son dos poblaciones.
+- La simulación cuenta 43: las 42 y una del 2-oct (`s0-2octb`) cuyo fichero se tocó hoy sin turnos nuevos.
+  Releva en el turno en que se cruza el umbral, no en la siguiente entrega, y no cuenta lo que cuesta cada
+  relevo. Es un techo del ahorro.
+- La población estaba viva: entre la primera pasada y la segunda una sesión más había empujado (26 → 27).
+
+## Dos frases del encargo que la medición NO sostiene
+
+El número lo puso el fundador y la medición lo sostiene: 300k cae, en 13 de 20 sesiones, después del primer
+push, y deja 14 sesiones en las que la norma puede saltar. Pero dos de las razones con las que llegó no:
+
+1. **«Un umbral de 500k no salta nunca: la sesión se muere antes.»** 4 de 42 sesiones pasaron de 500k y una
+   llegó a 823k. Lo que sí es cierto es que a 500k la norma «al entregar» casi no salta: sólo 1 de esas 4
+   volvió a empujar.
+2. **«El techo de muerte está en ~380-425k.»** Las dos sesiones citadas (381k y 423k) quedaron paradas con una
+   pregunta, no muertas por tamaño. 11 de 42 pasaron de 400k y siguieron. El único límite medido es la
+   compactación sola (861k-967k).
+
+## Para el segundo número (lo decide el fundador)
+
+Con la norma de 300k, la sesión que más tarde se habría relevado lo habría hecho a 416k. Una entrega más
+desde justo debajo de 300k acaba, como mucho, hacia 470-516k. **Las mediciones sostienen un número entre
+450k y 500k**, y 500k es el que ya está en `main`: dejarlo no cambia nada ni cuesta nada nuevo. Bajarlo de
+450k lo haría saltar en mitad de entregas normales.
+
+## La versión que se escribió y no entró
+
+Esta parte se escribió primero, el 6-oct a las 17:38Z, con 500k al entregar y 800k a mitad (commit local
+`26579816`, nunca empujado). No entró porque el fundador no lo había dicho de primera mano, y cuando lo dijo
+puso otro número. Las cifras de aquella versión (21 y 32 sesiones; simulaciones de las ~13:20Z y de las
+17:37Z) están en SCRUM-1479, comentarios 18416 y 18492.
+
+## Comprobado
+
+En local, sobre el commit `c6f1a0b2` (con `main` = `bafb0734` dentro), entre las 19:35Z y las 19:56Z:
+
+- **Los tests que leen lo que este PR toca**: los 198 ficheros de `tests/` que nombran `docs/master`,
+  `docs/equipo`, `evidencias` o `cicatrices`, en tres tandas: 462 tests (455 pasan, 7 saltan), 1.030
+  (1.023 pasan, 6 saltan, 1 cae) y 556 (555 pasan, 1 salta). El que cayó en la segunda es de
+  `scrum1424-ya-esta`, y era ciego, no rojo: «no se pudo traer `origin` (git fetch falló)». Su fichero
+  entero va repetido dentro de la tercera, y ahí pasa.
+- **`npm run guards:entrada`**: 13 guards, 158 tests, en verde.
+
+**No corrido aquí:** la tanda entera (`npm test`). El `dist/` de este árbol es viejo y la máquina tenía
+598 MB libres al empezar. Este PR sólo toca `docs/`; la tanda la da el CI.
+
+**Después de fusionar la rama de la S5** (punta `ade488dc`, con `main` = `28222517` dentro), a las ~20:00Z:
+`scrum1485-censo-rutas-de-maquina` (entró en `main` mientras tanto, y las salidas de `evidencias/` llevan
+rutas de esta máquina), `scrum1070`, `scrum899c` y `scrum1350`: 64 tests, 64 pasan. Y otra vez
+`guards:entrada` y los tests que leen `docs/equipo` sobre la punta que se empuja.
+
+**La firma del fundador**, comprobada en el origen (arriba, «Quién lo autorizó»).

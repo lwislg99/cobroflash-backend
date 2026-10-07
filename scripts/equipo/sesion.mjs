@@ -95,8 +95,29 @@ export const UNA_HORA_MS = 60 * 60 * 1000;
 export const MODELO_POR_DEFECTO = 'opus';
 /** Un alias o un id de modelo. Nunca empieza por guion: viaja como argumento y no puede leerse como flag. */
 const MODELO = /^[a-z0-9][a-z0-9.-]{0,63}$/;
-/** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
-export const UMBRAL_CONTEXTO = 200_000;
+/**
+ * A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. Es el ÚNICO sitio donde vive el número:
+ * `gasto-arranque.mjs` y el latido lo toman de aquí.
+ *   · 300k desde el 6-oct-2026 (SCRUM-1479, gemelo del texto de la A19). Lo autorizó el FUNDADOR, coste
+ *     incluido: «El límite de relevo lo pongo en 300.000. Autorizado el coste.» (6-oct-2026 ~18:50Z, turno
+ *     suyo en el chat del orquestador; transcrito en SCRUM-1479 c.18513; cómo se comprobó que el turno es
+ *     suyo, en `docs/master/SCRUM-1479.md`).
+ *     Medido ese día a las 19:33Z sobre 43 sesiones con algún turno (`docs/master/SCRUM-1479.md`): 200k lo
+ *     cruzan 38 y 30 de ellas sin haber empujado nada todavía; 300k lo cruzan 21, 14 con algún push ya dado;
+ *     500k, 4. Un aviso que sale en casi todas no distingue a ninguna, y uno que no sale casi nunca tampoco.
+ *   · 200k del 21-sep-2026 al 6-oct-2026 (SCRUM-1070b; decisión del orquestador, y tocar esta constante llevó
+ *     la autorización escrita del fundador: `docs/master/SCRUM-1070.md`). Antes, 300k.
+ * La A19 tiene un segundo número, el de «a MITAD de una entrega»: es la constante de abajo.
+ */
+export const UMBRAL_CONTEXTO = 300_000;
+/**
+ * A19, el SEGUNDO número (SCRUM-1484): por encima de esto NO se espera a terminar la entrega. Primer punto
+ * seguro (un commit local), traspaso y relevo. El latido lo toma de aquí para decir una frase distinta.
+ * 500k es el que la A19 lleva escrito («en mitad de una entrega, si pasa de 500k»), leído el 6-oct-2026 en
+ * `docs/equipo/00-normas-comunes.md`. Ese día el fundador volvió a decidir el de arriba y NO éste: aquí se
+ * copia el de la norma, no se propone otro. Quien lo decida cambia esta línea y la norma JUNTAS.
+ */
+export const UMBRAL_CONTEXTO_A_MITAD = 500_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */

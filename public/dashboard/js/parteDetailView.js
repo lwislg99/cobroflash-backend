@@ -90,6 +90,13 @@
     // mismas palabras. «las líneas» ahí sería falso: lo que no se guardó es una casilla.
     // APROBADO · SCRUM-1302 comentario 18288
     noSeGuardoElCambio: 'No se ha podido guardar el cambio — vuelve a intentarlo',
+    // SCRUM-1491 · Desplazamiento rechazado por la ruta con `desplazamientos_invalido`. «Vuelve a
+    // intentarlo» ahí manda a repetir algo que no va a entrar nunca. Dice lo que VALE y no lo que
+    // falló, porque el código tiene dos causas (no es entero, o no cabe en la columna) y la vista
+    // no puede saber cuál sin copiar una regla de la ruta: para el número enorme es impreciso, no
+    // falso. Un texto por causa pide un código por causa (SCRUM-1488).
+    // APROBADO · SCRUM-1491 comentario 18517
+    desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -497,9 +504,12 @@
         esc(v ? v + (unidad ? ' ' + unidad : '') : '—') + '</span></div>'
       );
     }
+    // SCRUM-1491 · Desplazamiento es un ENTERO: `numeric` pide el teclado sin coma. Con `decimal`
+    // la casilla ofrecía la coma para un dato que no la admite. Kilómetros sí admite «12,5».
+    // ⚠️ Qué teclado saca cada móvil con cada valor no está medido en un aparato de verdad.
     var casilla =
       '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
-      (modo === 'number' ? ' inputmode="decimal"' : '') +
+      (modo === 'number' ? ' inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
       (pista ? ' placeholder="' + esc(pista) + '"' : '') +
       ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
@@ -1326,8 +1336,12 @@
    * lo justo. Va DESPUÉS de colgarlo y de abrir su línea, que antes no hay nada que traer. Que no
    * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
    * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
+   *
+   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta dijo
+   * `desplazamientos_invalido`: se decide por el CÓDIGO (`err.code`, lo pone `apiRequest`), nunca
+   * por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
    */
-  function avisarCampoNoGuardado(contenedor, nombre) {
+  function avisarCampoNoGuardado(contenedor, nombre, fallo) {
     if (!contenedor || !contenedor.querySelector) return;
     var casilla = contenedor.querySelector(nombre === 'tipo'
       ? 'input[name="parte-tipo"]' : '[data-parte-campo="' + nombre + '"]');
@@ -1342,7 +1356,8 @@
     aviso.setAttribute('role', 'alert');
     aviso.setAttribute('data-parte-campo-no-guardado', nombre);
     aviso.style.marginTop = '8px';
-    aviso.textContent = TEXTOS.noSeGuardoElCambio;
+    aviso.textContent = fallo && fallo.code === 'desplazamientos_invalido'
+      ? TEXTOS.desplazamientoEsEntero : TEXTOS.noSeGuardoElCambio;
     paso.appendChild(aviso);
     if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
@@ -1408,7 +1423,7 @@
         quitarAvisoDeCampoNoGuardado(contenedor, nombre);
       } catch (e) {
         await renderParteDetailView(contenedor, parteId, o);
-        avisarCampoNoGuardado(contenedor, nombre);
+        avisarCampoNoGuardado(contenedor, nombre, e);
       }
     };
     var casillas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-campo]') : [];
