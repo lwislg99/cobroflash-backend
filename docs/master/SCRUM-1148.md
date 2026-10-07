@@ -67,3 +67,60 @@ fichero es de la ficha 360, `renderCustomer360View`, que es de J2: no se toca.)
 **Sin test automático propio, y lo digo como hueco:** ni el guard táctil ni ningún test mide
 Plantillas. La evidencia es la medición en Chrome real de arriba; queda pendiente la de `yaqu.app` a
 390 px tras el despliegue. Meter Plantillas como superficie del guard sería otro ticket.
+
+---
+
+## Parte 3 · Lista de presupuestos: «⬇ CSV» y los botones de cada fila (defecto de paso)
+
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:12:16Z
+A9: comprobación → `tests/scrum1148-tactil-lista-presupuestos.test.mjs`
+(El fallo propio: la primera versión del test contaba llaves sobre la hoja ENTERA y dio un rojo falso
+—«la regla de escritorio está dentro de otro bloque»— porque los comentarios de `styles.css` citan
+reglas con sus llaves. Era el instrumento, no el producto. Ahora el test quita los comentarios antes
+de leer, y lo dice en la línea donde lo hace.)
+**Rama:** `scrum-1148-tactil-lista-presupuestos` · commit de producto y test `3b17f0517d42a20b53c44148c6099acbebe88ba4`.
+**Sesión:** S2 (`s2-7octt`). **Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: las partes 1 y 2 no se tocan.
+
+No estaba en la lista del ticket: salió al medir en yaqu.app las pantallas de las partes 1 y 2 (7-oct,
+c.18653). Es un defecto encontrado de paso y va aquí, sin ticket nuevo (A13).
+
+### Antes y después — área de toque real en yaqu.app (cuenta QA, Chromium sin cabeza, sólo GET)
+
+Sonda `sondas-s2/tactil-lista.mjs` (fuera del repo; usa `scripts/_medidor-de-toque.mjs`). «Antes» es lo
+que sirve producción (build `5f1bb361`); «después» son `styles.css` y `quotesListView.js` de esta rama
+servidos por la sonda encima de producción, con testigo de que lo servido es lo que se ejecuta.
+Población: 9 pulsables por ancho (2 pestañas, «⬇ CSV», «Nuevo presupuesto», 5 «Ver detalle»), 36 en total.
+
+| Ancho (mínimo) | «⬇ CSV» antes → después | «Ver detalle» ×5 antes → después | cortos antes → después |
+|---|---|---|---|
+| 390 (44) | 31 → 45 px | 44,5-44,9 → igual (ya los cubría `.table--cards-mobile`) | 1 → 0 |
+| 700 (44) | 31 → 45 px | 30,7-30,8 → 44,7-44,8 px | 6 → 0 |
+| 929 (36) | 31 → 37 px | 30,6-30,9 → 36,6-36,9 px | 6 → 0 |
+| 1280 (36) | 31 → 37 px | 30,6-30,8 → 36,6-36,8 px | 6 → 0 |
+
+**19 cortos de 36 antes; 0 de 36 después.** La fila de 700 no se conocía: la regla de móvil de la tabla
+corta en 640 y el mínimo táctil se exige hasta 768, así que entre los dos «Ver detalle» medía 30,7.
+«⬇ CSV» queda a la misma altura que «Nuevo presupuesto», su vecino (45 en móvil, 37 en escritorio).
+
+### Qué se construyó
+
+- `quotesListView.js`: el contenedor de acciones de la cabecera lleva la clase `quotes-list-acciones`
+  y el de cada fila `quotes-list-fila-acciones`. Sólo la clase: ni texto, ni orden, ni marcado nuevo.
+- `styles.css`: `.quotes-list-acciones > .btn-sm, .quotes-list-fila-acciones > .btn-sm` a
+  `min-height: 36px`, y a `44px` dentro de `@media (max-width: 768px)`. Regla acotada a su contenedor
+  (opción ③ del 21-sep), sólo tamaño; `.btn-sm` global no se toca. Los mínimos son los de DESIGN.md
+  (44 en móvil, 36 en escritorio a propósito).
+- `tests/scrum1148-tactil-lista-presupuestos.test.mjs` (3 casos). **Es un proxy y se dice:** node no
+  pinta, así que no mide píxeles; ata que cada `.btn-sm` de esos dos sitios sea hijo directo de su
+  contenedor con clase y que la hoja les dé el mínimo a cada lado del corte. El corte y los mínimos los
+  lee de `scripts/_medidor-de-toque.mjs`. Con el JS y el CSS de `origin/main`: caen 2 de 3. Mutantes:
+  corte de la hoja a 640 → cae 1; la fila sin su clase → cae 1. Con la rama: 3 de 3.
+
+### Lo que NO se ha hecho, dicho
+
+- **«✓ Aprobar»** (la fila pendiente de aprobar) está cubierto por la misma regla y por el test en el
+  banco, pero **no se ha medido en navegador**: la cuenta QA no tiene ningún presupuesto en ese estado.
+- **La lista de presupuestos sigue sin ser una superficie de `guard-objetivo-tactil.mjs`**: no había
+  excepción que retirar y no se ha añadido la pantalla al guard (sería otro cambio, en otro carril).
+- No medido: otro navegador, un móvil real, la lista con más de cinco filas.
+- Pendiente tras el despliegue: `node sondas-s2/tactil-lista.mjs` sin argumento → 0 cortos.

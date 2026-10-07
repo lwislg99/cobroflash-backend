@@ -48,8 +48,6 @@ function renderQuotesListView(container) {
   header.appendChild(left);
 
   const headerActions = document.createElement("div");
-  // SCRUM-1148 · la clase da el alto de toque a «⬇ CSV» (styles.css); `.btn-sm` global no se toca.
-  headerActions.className = "quotes-list-acciones";
   headerActions.style.cssText = "display:flex;align-items:center;gap:8px";
 
   const exportQBtn = document.createElement("a");
@@ -300,7 +298,6 @@ function renderQuotesListView(container) {
       const tdActions = document.createElement("td");
       tdActions.className = "cell-actions";
       const tdActionsDiv = document.createElement("div");
-      tdActionsDiv.className = "quotes-list-fila-acciones";   // SCRUM-1148 · alto de toque de «Ver detalle» y «✓ Aprobar»
       tdActionsDiv.style.cssText = "display:flex;gap:6px;align-items:center";
 
       // 🔴 SCRUM-832 · ESTO PINTABA LA FICHA A MANO, saltándose el router: cogía el título y el

@@ -4521,12 +4521,15 @@ textarea.parte-linea-desc {
 
 /* SCRUM-1148 (AB6, defecto de paso) · lista de presupuestos: «⬇ CSV» de la cabecera medía 31 px de
    toque en yaqu.app a 390 y a 929, y «Ver detalle» de cada fila 30,7 a 929 (a 390 ya daba 44 por
-   la regla de `.table--cards-mobile`, que sólo llega hasta 640). Regla ACOTADA A SUS DOS
-   CONTENEDORES, solo tamaño: `.btn-sm` global no se toca. Los mínimos son los de DESIGN.md: 36 en
-   escritorio, 44 hasta el corte de móvil (768, el de `scripts/_medidor-de-toque.mjs`). */
-.quotes-list-acciones > .btn-sm,
-.quotes-list-fila-acciones > .btn-sm { min-height: 36px; }
+   la regla de `.table--cards-mobile`, que sólo llega hasta 640). Regla ACOTADA A ESTA LISTA, solo
+   tamaño: `.btn-sm` global no se toca. Los mínimos son los de DESIGN.md: 36 en escritorio, 44
+   hasta el corte de móvil (768, el de `scripts/_medidor-de-toque.mjs`).
+   El ancla es `#quotes-count`, que esta lista ya lleva: SIN clase nueva en el marcado, porque
+   `guard:lista-trabajos` exige que el HTML de Presupuestos salga idéntico al de la base (mismo
+   motivo y mismo mecanismo `:has()` que el chip de WhatsApp de SCRUM-986, más arriba). */
+.data-card:has(#quotes-count) .data-card-header > div > .btn-sm,
+.data-card:has(#quotes-count) td.cell-actions > div > .btn-sm { min-height: 36px; }
 @media (max-width: 768px) {
-  .quotes-list-acciones > .btn-sm,
-  .quotes-list-fila-acciones > .btn-sm { min-height: 44px; }
+  .data-card:has(#quotes-count) .data-card-header > div > .btn-sm,
+  .data-card:has(#quotes-count) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
