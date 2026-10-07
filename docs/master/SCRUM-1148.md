@@ -74,11 +74,17 @@ Plantillas. La evidencia es la medición en Chrome real de arriba; queda pendien
 
 **Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:12:16Z
 A9: comprobación → `tests/scrum1148-tactil-lista-presupuestos.test.mjs`
-(El fallo propio: la primera versión del test contaba llaves sobre la hoja ENTERA y dio un rojo falso
-—«la regla de escritorio está dentro de otro bloque»— porque los comentarios de `styles.css` citan
-reglas con sus llaves. Era el instrumento, no el producto. Ahora el test quita los comentarios antes
-de leer, y lo dice en la línea donde lo hace.)
-**Rama:** `scrum-1148-tactil-lista-presupuestos` · commit de producto y test `3b17f0517d42a20b53c44148c6099acbebe88ba4`.
+A9: comprobación → `scripts/guard-lista-trabajos.mjs`
+(Dos fallos propios. Uno: la primera versión del test contaba llaves sobre la hoja ENTERA y dio un rojo
+falso —«la regla de escritorio está dentro de otro bloque»— porque los comentarios de `styles.css`
+citan reglas con sus llaves; era el instrumento, no el producto, y ahora el test quita los comentarios
+antes de leer. Dos: la primera versión del arreglo (`3b17f051`) ponía dos clases nuevas en el marcado
+de la lista, y `guard:lista-trabajos` salió ROJO —«Presupuestos HA CAMBIADO»— al correrlo antes de
+empujar. Se arregló el código, no el guard: el alto va sólo en la hoja y `quotesListView.js` vuelve a
+ser el de `main`. El traspaso de la sesión anterior ya decía «dar CLASE al contenedor»: era una
+instrucción que nadie había ejecutado contra ese guard.)
+**Rama:** `scrum-1148-tactil-lista-presupuestos` · commits `3b17f0517d42a20b53c44148c6099acbebe88ba4`
+(primera versión, con clases) y `ec5ecc8646f7f0cc51adff5065f5cac9bdfd7966` (la que vale: sólo la hoja).
 **Sesión:** S2 (`s2-7octt`). **Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: las partes 1 y 2 no se tocan.
 
 No estaba en la lista del ticket: salió al medir en yaqu.app las pantallas de las partes 1 y 2 (7-oct,
@@ -87,8 +93,8 @@ c.18653). Es un defecto encontrado de paso y va aquí, sin ticket nuevo (A13).
 ### Antes y después — área de toque real en yaqu.app (cuenta QA, Chromium sin cabeza, sólo GET)
 
 Sonda `sondas-s2/tactil-lista.mjs` (fuera del repo; usa `scripts/_medidor-de-toque.mjs`). «Antes» es lo
-que sirve producción (build `5f1bb361`); «después» son `styles.css` y `quotesListView.js` de esta rama
-servidos por la sonda encima de producción, con testigo de que lo servido es lo que se ejecuta.
+que sirve producción (build `5f1bb361`); «después» es el `styles.css` de esta rama servido por la sonda
+encima de producción, con testigo de que lo servido es lo que se ejecuta (y de que el JS no cambia).
 Población: 9 pulsables por ancho (2 pestañas, «⬇ CSV», «Nuevo presupuesto», 5 «Ver detalle»), 36 en total.
 
 | Ancho (mínimo) | «⬇ CSV» antes → después | «Ver detalle» ×5 antes → después | cortos antes → después |
@@ -104,17 +110,29 @@ corta en 640 y el mínimo táctil se exige hasta 768, así que entre los dos «V
 
 ### Qué se construyó
 
-- `quotesListView.js`: el contenedor de acciones de la cabecera lleva la clase `quotes-list-acciones`
-  y el de cada fila `quotes-list-fila-acciones`. Sólo la clase: ni texto, ni orden, ni marcado nuevo.
-- `styles.css`: `.quotes-list-acciones > .btn-sm, .quotes-list-fila-acciones > .btn-sm` a
-  `min-height: 36px`, y a `44px` dentro de `@media (max-width: 768px)`. Regla acotada a su contenedor
-  (opción ③ del 21-sep), sólo tamaño; `.btn-sm` global no se toca. Los mínimos son los de DESIGN.md
-  (44 en móvil, 36 en escritorio a propósito).
+- `styles.css`, y NADA MÁS de producto: `.data-card:has(#quotes-count) .data-card-header > div > .btn-sm`
+  y `.data-card:has(#quotes-count) td.cell-actions > div > .btn-sm` a `min-height: 36px`, y a `44px`
+  dentro de `@media (max-width: 768px)`. Sólo tamaño; `.btn-sm` global no se toca. Los mínimos son los
+  de DESIGN.md (44 en móvil, 36 en escritorio a propósito).
+- **`quotesListView.js` NO cambia** (`git diff origin/main` vacío para ese fichero). El ancla es
+  `#quotes-count`, que la lista ya lleva y que `tests/scrum432-plantillas-pestana.test.mjs` vigila. Es
+  el mismo mecanismo `:has()` que usó SCRUM-986 para el chip de WhatsApp, por el mismo guard.
 - `tests/scrum1148-tactil-lista-presupuestos.test.mjs` (3 casos). **Es un proxy y se dice:** node no
-  pinta, así que no mide píxeles; ata que cada `.btn-sm` de esos dos sitios sea hijo directo de su
-  contenedor con clase y que la hoja les dé el mínimo a cada lado del corte. El corte y los mínimos los
-  lee de `scripts/_medidor-de-toque.mjs`. Con el JS y el CSS de `origin/main`: caen 2 de 3. Mutantes:
-  corte de la hoja a 640 → cae 1; la fila sin su clase → cae 1. Con la rama: 3 de 3.
+  pinta, así que no mide píxeles; ata que cada `.btn-sm` de esos dos sitios esté donde el selector lo
+  busca (hijo de un `div`, nieto de la cabecera o de `td.cell-actions`, dentro de la tarjeta que lleva
+  el ancla) y que la hoja les dé el mínimo a cada lado del corte. El corte y los mínimos los lee de
+  `scripts/_medidor-de-toque.mjs`. Control positivo, cuatro mutaciones y cae 1 de 3 en cada una:
+  `styles.css` de `origin/main` · el corte de la hoja a 640 · «⬇ CSV» colgado directo de la cabecera ·
+  el ancla renombrada. Con la rama: 3 de 3.
+
+### Desviación DECLARADA
+
+La opción ③ del 21-sep es «regla por contenedor con su clase» (así van las partes 1 y 2). Aquí la regla
+va por un ancla que ya existía, sin clase nueva, porque una clase nueva cambia el HTML de la lista y
+`guard:lista-trabajos` lo exige idéntico al de la base. **Consecuencia que conviene saber:** ese guard
+compara el HTML, así que un cambio de aspecto hecho sólo en la hoja no lo ve; lo que vigila este cambio
+es el test de arriba y la medida en navegador. Vecinas medidas con la hoja de la rama a 390 y 929
+(`tactil-prod.mjs`): editor, Plantillas y Cobros, 0 cortos y las mismas cifras que en producción.
 
 ### Lo que NO se ha hecho, dicho
 
