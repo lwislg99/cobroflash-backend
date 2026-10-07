@@ -1,0 +1,24 @@
+POBLACION=7 pasadas · etiqueta=despues · sha=8b034d326ba4a289375478e20e0136d4c0084daf
+  duplicar-926-limpio                        salida 0 · 5.0 s · error visto nombrado: no · lectura rota nombrada: no
+      ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+      ⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  duplicar-926-error-visto                   salida 1 · 4.7 s · error visto nombrado: SÍ · lectura rota nombrada: no
+      ⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)
+      ⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  duplicar-926-lanza-sin-nada                salida 2 · 4.7 s · error visto nombrado: no · lectura rota nombrada: SÍ
+      ⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde
+      ⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  duplicar-926-error-visto-y-lanza           salida 1 · 4.7 s · error visto nombrado: SÍ · lectura rota nombrada: SÍ
+      ⟦veredicto⟧ 1 hallazgo · 4 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos
+      ⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  caja-datos-del-cliente-limpio              salida 0 · 4.9 s · error visto nombrado: no · lectura rota nombrada: no
+      ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+      ⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  caja-documento-suelto-limpio               salida 0 · 9.5 s · error visto nombrado: no · lectura rota nombrada: no
+      ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+      ⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+  portal-en-la-ficha-limpio                  salida 0 · 3.1 s · error visto nombrado: no · lectura rota nombrada: no
+      ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+      ⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+RESUMEN despues: 7 pasadas válidas de 7
+EXIT=0

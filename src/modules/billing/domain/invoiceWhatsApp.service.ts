@@ -18,7 +18,7 @@ import { ensureChargeReceiptToken } from '../../../lib/invoicing';
 
 export type SendInvoiceWAResult = {
   ok: boolean;
-  reason?: string;
+  reason?: string; motivoDelEnvio?: string; // SCRUM-1478: `reason` aplana el fallo del envío (lo lee collect-rest); el motivo real va aparte
   chargeId?: number;
   payToken?: string; // SCRUM-85: token opaco para /pay/invoice — el que debe usar cualquier link público
   to?: string;
@@ -126,7 +126,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b
   });
 
-  if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', chargeId: chargeId ?? undefined, payToken, to };
+  if (!result.ok) return { ok: false, reason: 'whatsapp_send_failed', motivoDelEnvio: (result as { reason?: string }).reason, chargeId: chargeId ?? undefined, payToken, to };
 
   // ENT-3: historial
   recordCustomerEvent({
@@ -134,7 +134,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     customerId: invoice.customerId,
     type: 'invoice_issued',
     title: `Factura ${invoice.number} enviada por WhatsApp`,
-    detail: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
+    detail: importe, // SCRUM-1436: el mismo importe que acaba de leer el cliente, no «419.87 EUR»
   });
 
   return { ok: true, chargeId: chargeId ?? undefined, payToken, to };

@@ -112,6 +112,70 @@ disputa de Stripe y un fallo de Meta, que no se pueden provocar desde fuera.
 - **Hallazgos 2, 4 y 5:** no cogidos aquí.
 - **SCRUM-1477** (los siete `catch` de `whatsapp.ts` no distinguen «Meta dijo que no» de «Meta no
   contestó») es OTRO trabajo y no se ha tocado. La ficha del encargo le puso ese número al hallazgo 3.
+
+---
+
+# SCRUM-1436c · Los dos literales del aviso de disputa sin firma
+
+**Medido contra:** `origin/main` = `eda7ca55f9e2352b9da916c12f80d39aca5e1595` · 2026-10-07T16:03:30Z
+
+7-oct-2026 · **J2**, rama `scrum-1436c-los-dos-literales-del-aviso-de-disputa`, montada encima de la del
+tramo de arriba. [Escrito por una sesión; no por el fundador. Los comentarios 18287, 18734 y 18747 de
+SCRUM-1436 los he leído en Jira.]
+
+A9: sin fallo que generalice — el tropiezo de este tramo fue de orden de trabajo (comiteé los literales en la primera rama antes de saber si su ficha podía firmarse, y hubo que revertirlos allí); el guard que lo paró ya existe, `scrum726`, y paró a tiempo
+
+**Sustituye** al primer punto de «Ⓔ Lo que falta» de arriba: los dos textos ya no esperan.
+
+## La firma
+
+- Los escribió S1 en el enunciado del ticket y los dio por firmados el comentario 18287 (6-oct-2026,
+  publicado desde la cuenta de Luis; si lo escribió él o su orquestador por delegación, no se sabe).
+- El comentario 18734 (7-oct-2026) recoge la decisión de Javier: esa firma vale para este carril.
+- **El comentario 18747 (7-oct-2026) es la firma directa de Javier, fundador, sobre los dos textos
+  completos: «Firmamos».** Es la que lleva la ficha, `docs/microcopy/2026-10-07-SCRUM-1436-aviso-de-disputa.md`.
+
+Por qué hizo falta la tercera: `tests/scrum726-quien-firma-la-microcopy.test.mjs` sólo admite
+«Aprobado por el fundador» o «por el orquestador por delegación del fundador», y del 18287 no se podía
+afirmar ninguna de las dos. Con la ficha sin línea de firma el guard caía («firmante: null»). No se
+tocó el guard.
+
+## Lo construido
+
+`avisoDeDisputa` en `src/modules/payments/disputes.service.ts`, cuatro formas:
+
+| Caso | Qué sale |
+|---|---|
+| presupuesto firmado (con trazo) | el aviso de siempre, sin tocar una letra |
+| con factura, presupuesto con `acceptedAt` y sin firma con trazo | el literal ① («Tienes el presupuesto aceptado, pero sin firma.») |
+| con factura, cualquier otro caso sin firma (sin presupuesto, sin aceptar, de otro negocio, borrado, lectura fallida) | el literal ②, que no dice nada del presupuesto |
+| SIN factura | el aviso de siempre menos la oración de la firma |
+
+«Aceptado» se lee de `Quote.acceptedAt`; el rechazo lo pone a `null` (`quotes.routes.ts`,
+`quoteAdmin.ts`).
+
+## Los tres hallazgos del encaje
+
+1. **El cobro SIN factura no tiene texto.** Los dos literales dicen «la factura {n}» y ahí no hay
+   ninguna. No se han encajado: sería cambiarlos. Ese caso sigue mandando a «la factura» sin que exista.
+   El comentario 18747 lo recoge como lo que la firma NO cubre; lo abre el orquestador.
+2. **El separador.** El aviso de siempre lleva un salto de línea tras la primera frase; los firmados,
+   un espacio. Copiados como están firmados.
+3. **«Firmado» pasa por `firmaTieneTrazo`**, más estricto que el Libro sobre el mismo campo. Declarado
+   arriba y en el código.
+
+## Lo corrido
+
+En local, con `dist/` de `tsc --noCheck` posterior al último cambio.
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1436-disputa-firmado-solo-con-firma.test.mjs` | 12 casos, 0 caen. Compara cada aviso por igualdad con el literal escrito a mano |
+| Los dos tests de 1436 juntos | 20 casos, 0 caen, 0 saltos |
+| Mutaciones (`docs/evidencias/scrum1436/mutaciones-con-los-literales.txt`) | 15: 14 caen y M5 es equivalente; entre ellas, quitar una coma (M14) y cambiar los dos puntos (M15) de un literal |
+| Los dos de 1436, `scrum815-disputa`, `scrum726`, `scrum861`, `scrum709`, los dos `scrum514`, `scrum267`, `scrum1294`, `scrum525d` y `scrum237`, con la ficha firmada | 122 casos, 0 caen, 0 saltos. Sin la línea de firma, `scrum726` caía con 1 |
+
+Nada visto en yaqu.app: hace falta una disputa real de Stripe.
 # SCRUM-1436b · El recordatorio manual nombra el documento por su número
 
 > Este tramo es **SCRUM-1436b**: sólo la parte de J1 del hallazgo 2 del ticket. Los hallazgos 1 y 3
@@ -181,3 +245,143 @@ saca el importe del helper de la casa (`formatMoneyEs`) y comprueba su forma ant
 - **No se ha visto en yaqu.app.** Pide una sesión con un justificante sin cobro y un cliente con
   teléfono.
 - **Tipos:** el build local es `--noCheck`. Los tipos los comprueba el CI.
+
+## SCRUM-1436d · Los importes en crudo (hallazgo 4): los cuatro de J1, y los siete de J2 sin tocar
+
+> Cruce de carril: **no lo hay**. El encargo permitía hacer también los de J2 declarándolo aquí, pero
+> la cerradura de carril pide que el cruce esté en `docs/equipo/dos-equipos.md` §3.4, y ese fichero
+> es de la S0. Los de J2 se quedan medidos, con su test en rojo y el cambio escrito abajo.
+
+**Medido contra:** `origin/main` = `9acfbeba61c997aa838ad2460103a219141cd293` · 2026-10-07T16:40:12Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1436d-los-importes-en-crudo.test.mjs`
+
+Sesión J1 (`jv-j1`, 7-oct, relevo de la de SCRUM-1436b) · rama `scrum-1436d-los-importes-en-crudo`.
+
+### Lo primero que se midió: ¿alguno es un log?
+
+Ninguno. Son once sitios (los diez del ticket y el undécimo del comentario 18194), y a los once se
+llegó EJECUTANDO la ruta o el servicio real de `dist/`, con la base doblada y el WhatsApp en dry-run.
+Lo que salió, antes de tocar nada (12 casos, 3 pasan, 9 caen):
+
+| sitio | dueño | dónde lo lee alguien | lo que salía |
+|---|---|---|---|
+| `invoiceWhatsApp.service.ts:137` | J1 | historial de la ficha del cliente | `1419.87 EUR` |
+| `invoicesAdmin.routes.ts:323` | J1 | aviso de la factura y del trabajo, e historial | `Recibidos 300.00 de 1419.87 EUR (faltan 1119.87). …` |
+| `invoicesAdmin.routes.ts:324` | J1 | los mismos | `Recibidos 1500.00 EUR (sobran 80.13). …` |
+| `invoicesAdmin.routes.ts:378` | J1 | paquete de disputa, que se imprime y va al banco | `1419.87 EUR` |
+| `psp.routes.ts:317` | J2 | historial de la ficha | `1419.87 EUR · Justificante J-2026-0007` |
+| `psp.routes.ts:348` | J2 | WhatsApp al profesional (texto libre) | `💰 Pago recibido de Cliente de prueba: 1419.87 EUR` |
+| `psp.routes.ts:349` | J2 | WhatsApp al profesional (variable de `merchant_alert_es`) | no visto (*) |
+| `mpWebhook.routes.ts:214` | J2 | historial de la ficha | no visto (*) |
+| `mpWebhook.routes.ts:243` | J2 | WhatsApp al profesional (texto libre) | `… de Cliente de prueba: 1419.8 EUR` |
+| `mpWebhook.routes.ts:244` | J2 | WhatsApp al profesional (variable de plantilla) | no visto (*) |
+| `payBizum.routes.ts:197` | J2 | WhatsApp al profesional, las dos vías | `… dice que te ha enviado 1419.87 EUR por Bizum. …` (el texto libre; la otra vía, no vista (*)) |
+
+(*) La llamada se ejecutó y llegó a ese sitio, pero el caso cayó en la comprobación anterior y no
+imprimió ese valor. Que lleva el mismo `toFixed(2)` más el código está leído, no visto salir.
+
+Las líneas son las de `origin/main` del 7-oct; las del ticket iban una por debajo en
+`invoicesAdmin.routes.ts`. Que el historial y el aviso se pintan tal cual está leído en
+`customerDetailView.js:469`, `invoiceDetailView.js:475` y `jobDetailView.js:2186`, no ejecutado en
+un navegador.
+
+### El arreglo (sólo J1)
+
+- **Historial de la factura enviada:** reusa el `importe` que la misma función ya calcula con
+  `formatMoneyEs` para el mensaje del cliente.
+- **Paquete de disputa:** su `money()` llama a `formatMoneyEs`.
+- **Importe distinto:** la frase lleva tres cifras y una sola moneda. Para no añadirle dos símbolos
+  que no tenía, la cifra que ya iba con la moneda pasa por `formatMoneyEs` y las otras dos por
+  `formatImporteEs` (la misma forma, sin símbolo). Queda «Recibidos 300,00 de 1.419,87 € (faltan
+  1.119,87). …». Ninguna palabra cambia: el test compara la frase entera y, aparte, su esqueleto sin
+  cifras contra el de la frase vieja.
+
+`formatMoneyEs` no se toca y no entra ningún formateador nuevo. No se toca el camino de emisión:
+`invoicesAdmin.routes.ts` tiene la puerta de emisión, pero los cambios están en `payment-anomaly` y
+`dispute-package`, que no emiten.
+
+**Un test que ya existía fijaba el formato viejo:** `tests/scrum342-dispute-package-quote-nulo.test.mjs`
+exigía `250.00 EUR` en el paquete. Cayó con el arreglo y se le cambió esa línea para que pida la
+forma de la casa, sacada del helper. Es consecuencia del cambio, no un guard relajado: sigue
+comprobando que el importe del presupuesto sale.
+
+### El test
+
+`tests/scrum1436d-los-importes-en-crudo.test.mjs`, 7 casos. Contra el código sin tocar caían 5 (los
+cuatro sitios y el de moneda no euro) y pasaban 2 (el suelo y el positivo de la frase). Después, 7 de 7.
+Los importes esperados salen del helper, nunca tecleados, por el espacio duro.
+
+Corrido después del último cambio de código: los 51 ficheros de `tests/` que nombran los dos ficheros
+tocados o sus rutas, 525 casos, 521 pasan, 0 caen, 4 saltan (dos piden `LIBRO_PG_URL` y dos
+`QA_DB_TEST`). Y `scrum411`, `scrum262`, `scrum1415`, `scrum237`, `scrum708`, `scrum931`, `scrum636`.
+
+### Mi error
+
+El caso positivo («la frase no cambia») cayó la primera vez con el arreglo puesto, y el fallo era
+mío: la expresión que quita las cifras pedía un límite de palabra detrás de «€», que nunca casa,
+así que dejaba el símbolo suelto. Con el formato viejo («EUR») sí casaba, y por eso había pasado
+antes. Lo delató el positivo, y el caso lleva ahora la comprobación contra la frase vieja.
+
+### Lo que queda para J2 (medido, no hecho)
+
+El banco completo está en
+`docs/master/evidencias/SCRUM-1436/propuesto-j2-los-importes-de-los-avisos.test.mjs.txt`: sus cuatro
+casos de J2 caen hoy. El cambio en cada sitio es el mismo: `formatMoneyEs(<importe>, <moneda>)` en
+lugar de `toFixed(2)` más el código. Dos cosas a mirar al hacerlo:
+
+- `psp.routes.ts` y `mpWebhook.routes.ts` no importan nada de `core/utils/utils`: hay que añadir el
+  import. Sus comentarios de SCRUM-931 («`amt` sigue vivo debajo…») dejan de ser ciertos.
+- `mpWebhook.routes.ts:243` pinta `payment.amount`, lo que dice el proveedor, y la línea de al lado
+  pinta `updated.amount`, lo del cobro. Son dos fuentes para el mismo importe; el test propuesto
+  conserva cada una.
+
+La variable de `merchant_alert_es` con «1.419,87 € · F260007» pasa el validador de la casa
+(`validateTemplateComponents`), y la muestra aprobada de esa plantilla ya lleva esa forma. No se ha
+enviado nada a Meta.
+
+### Lo que NO lleva
+
+- Los siete sitios de J2.
+- La tanda completa en local, y los tipos: el build local es `--noCheck`.
+- Nada visto en yaqu.app.
+
+## SCRUM-1436e · Los dos rojos del obligatorio de #2271: el trinquete pedía que se dijera, y mi test traía el `>` pegado
+
+**Medido contra:** `origin/main` = `965e3d053f1f7d9ba24830f17abc7a54254c83f9` · 2026-10-07T17:01:01Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
+Sesión J1 (`jv-j1`, 7-oct, relevo de la de SCRUM-1436d) · misma rama, con `origin/main` mezclado.
+
+El obligatorio de la punta `5b1617d7` (job 112904794612, «Merge 5b1617d7… into 28166620…») salió
+rojo: 10.940 casos, 10.845 pasan, 2 caen, 93 saltan. Los dos que caen:
+
+| guard | qué decía | qué se ha hecho |
+|---|---|---|
+| `SCRUM-1452 · TRINQUETE: ninguna entrada declarada ha BAJADO sin declararlo` | tres identidades IMPORTE de J1 con «declarados 1, 5 y 1, hay 0» | las tres pasan de `DECLARADOS` a `RETIRADAS` con `SCRUM-1436`, en `scripts/_censo-gemelo-crudo.mjs`, que es lo que su mensaje pide |
+| `SCRUM-553 · el número de etiquetas con el `>` pegado NO SUBE` | 27 con tope 20; siete eran de `tests/scrum1436d-…` (líneas 187 ×3, 189 y 196 ×3) | los tres extractores dejan hueco a los atributos (`<tr[^>]*>`, `<style[^>]*>`); el tope y el guard no se tocan |
+
+**Que bajaron por el arreglo y no por ceguera del censo**, medido con `censarFuente` sobre los dos
+ficheros en la base (`28166620`) y en la punta:
+
+- `invoiceWhatsApp.service.ts`: 1 fila → 0; `toFixed(2)` contados por texto, 1 → 0.
+- `invoicesAdmin.routes.ts`: `POST /:id/payment-anomaly` 5 → 0 y `money` 1 → 0; por texto, 8 → 2,
+  y esos 2 que quedan el censo los sigue viendo (son sus «sueltos», 2 antes y 2 después), igual que
+  la fila `NUMERO|…::GET /:id/dispute-package`, 1 antes y 1 después. El censo sigue leyendo el
+  fichero; lo que falta es lo que se cambió.
+
+Rojo primero, en local y con `origin/main` mezclado: los dos caían con el mismo mensaje que en el CI.
+Después: 146 casos en 12 ficheros (los dos guards, `scrum1436d`, `scrum342`, `scrum267`, `scrum1294`,
+`scrum525d`, `scrum237`, `scrum976`, los dos `scrum1436-` de J2, `scrum1478` y `scrum411`), 146 pasan,
+0 caen, 0 saltan; control `SCRUM-1436z ·` = 0.
+
+Mi fallo: el test se empujó sin correr los dos trinquetes que miran lo que el test y el arreglo
+tocan. El de las etiquetas ya lo impide en el obligatorio; no hace falta otro mecanismo.
+
+### Lo que NO lleva
+
+- Una mutación del arreglo después de reescribir los extractores: no he visto caer el caso del
+  paquete con la fila nueva. El caso sigue llevando su comprobación de «no queda ningún crudo».
+- La tanda completa en local, y los tipos (build `--noCheck`).
+- Los siete sitios de J2, que siguen en `DECLARADOS` con `retira: 'J2'`.
