@@ -385,3 +385,92 @@ tocan. El de las etiquetas ya lo impide en el obligatorio; no hace falta otro me
   paquete con la fila nueva. El caso sigue llevando su comprobación de «no queda ningún crudo».
 - La tanda completa en local, y los tipos (build `--noCheck`).
 - Los siete sitios de J2, que siguen en `DECLARADOS` con `retira: 'J2'`.
+
+## SCRUM-1436f · Los importes en crudo (hallazgo 4): los siete de J2, y la página de resultado de Mercado Pago
+
+**Medido contra:** `origin/main` = `51d763211c6b71807eb7ead6bdf4b7fe718a7f5c` · 2026-10-07T17:25:29Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
+
+Sesión J2 (`jv-j2`, 7-oct, relevo de J2g) · rama `scrum-1436f-los-importes-de-los-avisos`. La letra
+«e» ya nombra el tramo de arriba; por eso la rama salta a la «f».
+
+### Rojo primero
+
+El banco es el que J1 dejó propuesto, sin sus casos y con la página de Mercado Pago añadida:
+`tests/scrum1436f-los-importes-de-los-avisos.test.mjs`. Contra el código sin tocar (`6536e63e`),
+13 casos, 4 pasan y 9 caen (`docs/master/evidencias/SCRUM-1436/1436f-rojo-antes-6536e63e.txt`).
+Lo que salía, ejecutando el handler real de `dist/`:
+
+| sitio | quién lo lee | lo que salía |
+|---|---|---|
+| `psp.routes.ts`, historial | el profesional, en la ficha | `1419.87 EUR · Justificante J-2026-0007` |
+| `psp.routes.ts`, aviso (texto libre) | el profesional, por WhatsApp | `💰 Pago recibido de Cliente de prueba: 1419.87 EUR` |
+| `mpWebhook.routes.ts`, aviso (texto libre) | el profesional, por WhatsApp | `… (Mercado Pago) de Cliente de prueba: 1419.8 EUR` |
+| `payBizum.routes.ts`, aviso (texto libre) | el profesional, por WhatsApp | `… dice que te ha enviado 1419.87 EUR por Bizum. …` |
+| `payMp.routes.ts`, `GET /mp/:token/result` | el CLIENTE FINAL | `1419.87 EUR`, igual en sus cuatro estados |
+
+Los otros tres de los siete (la variable de plantilla de `psp` y de `mpWebhook`, y el historial de
+`mpWebhook`) no llegaron a imprimirse en rojo: su caso cae en la comprobación anterior. Que hoy
+salen bien sí está visto: son aserciones de los mismos casos, que ahora pasan.
+
+### El arreglo
+
+`formatMoneyEs(<importe>, <moneda>)` en lugar de `toFixed(2)` más el código, en los cuatro
+ficheros. Ningún formateador nuevo y ninguna palabra cambiada.
+
+- `psp.routes.ts` y `mpWebhook.routes.ts`: la variable `amt` pasa a ser `importe`, ya formateado,
+  y la usan el historial y las dos vías del aviso. Cada uno conserva su fuente: `psp` sigue
+  leyendo lo que trae el cuerpo y, si no, el cobro; el texto libre de `mpWebhook` sigue leyendo
+  lo que dice el proveedor y lo demás el cobro.
+- `payBizum.routes.ts`: una línea, que alimenta las dos vías.
+- `payMp.routes.ts` (**aparte: es el duodécimo sitio, no estaba entre los siete**): la caja del
+  importe de la página que ve el cliente al volver de Mercado Pago.
+
+Lo que se le manda al CLIENTE por WhatsApp no cambia: sigue recibiendo el importe como número.
+No se toca el camino de emisión ni la lógica del cobro: sólo las cadenas que se pintan.
+
+### El test, después
+
+13 casos, 13 pasan (`docs/master/evidencias/SCRUM-1436/1436f-verde-despues.txt`). Los positivos:
+la frase del aviso sin su importe es letra por letra la de antes (y el caso comprueba que una
+palabra de más sí la cambia), al cliente le sigue saliendo su plantilla de confirmación y del
+cobro salen los mismos dos mensajes, la variable pasa `validateTemplateComponents`, un
+justificante se sigue llamando justificante y fuera del euro sale el código de la moneda.
+
+Tanda dirigida, después del último cambio de código: 45 ficheros (los 33 de `tests/` que nombran
+los cuatro ficheros, sus rutas o el censo, más `scrum553`, `scrum931`, `scrum237`, `scrum976`,
+`scrum267`, `scrum1294`, `scrum525d`, `scrum1452`, `scrum1436d`, `scrum262`, `scrum1415`,
+`scrum411`, `scrum708` y `scrum636`), 416 casos, 413 pasan, 0 caen, 3 saltan (los tres piden
+`QA_DB_TEST`). «SCRUM-1436f · »: 13 en `ok`; el control `SCRUM-1436z · ` da 0.
+
+Tipos: `tsc --noEmit` da 6 errores, los mismos que antes del cambio (el cliente de Prisma
+desfasado de este árbol) y ninguno en los cuatro ficheros. El bueno es el del CI.
+
+### El censo
+
+`scripts/_censo-gemelo-crudo.mjs`: las dos identidades IMPORTE de J2 (`mpWebhook … POST /` y
+`payBizum … /bizum/:token/claimed`) pasan de `DECLARADOS` a `RETIRADAS` con `SCRUM-1436`, que es
+lo que pide el mensaje de `scrum1452` cuando cae. Bajó por el arreglo y no por ceguera: el censo
+sigue viendo los tres IMPORTE legítimos (3 sitios; los 5 de antes salen de sumar lo declarado,
+no de haberlo corrido sobre la base) sobre 319 ficheros, 0 no analizables. `psp.routes.ts` y `payMp.routes.ts` nunca estuvieron en el censo: llevaban el
+importe por una variable y el censo no sigue variables.
+
+### Mis dos tropiezos
+
+- El caso de la página de Mercado Pago nació en un bucle con el nombre construido, y `scrum1415`
+  lo paró. Ahora son cuatro casos con el nombre escrito.
+- El primer positivo pedía ver el importe en el mensaje al cliente, y el buzón del dry-run sólo
+  apunta la plantilla y el destino. Cayó por eso, no por el código. El caso dice ahora lo que de
+  verdad ve.
+
+### Lo que NO lleva
+
+- Banco de mutaciones: lo único visto es el rojo contra el código sin tocar.
+- Los tres casos de base (`QA_DB_TEST`), entre ellos `scrum90`, que mira esa misma página.
+- La tanda completa en local.
+- Nada visto en yaqu.app ni enviado a Meta. La forma «1.419,87 € · F260007» en la variable de
+  `merchant_alert_es` pasa el validador de la casa; que Meta la acepta no se ha medido aquí
+  (`disputes.service.ts` ya manda esa forma en esa variable).
+- De paso, visto y NO tocado: en `/pay/mp/:token/result` el importe sólo se pinta si el cobro
+  tiene concepto, y el concepto lleva un `style=` en línea. Es así desde antes.

@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { config, BASE_URL } from '../../../../core/config/env';
-import { esc } from '../../../../core/utils/utils';
+import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { createMpPreference } from '../../../../integrations/mercadopago';
 
 const router = Router();
@@ -93,9 +93,8 @@ router.get('/mp/:token/result', async (req, res) => {
   if (!charge) return res.status(404).send(documentNotFoundHtml());
 
   const concept  = charge.concept;
-  const amount   = Number(charge.amount).toFixed(2);
-  const currency = charge.currency;
-  const status   = CHARGE_STATUS_A_RESULTADO[charge.status] || 'pending';
+  const amount   = formatMoneyEs(charge.amount, charge.currency); // SCRUM-1436
+  const status  = CHARGE_STATUS_A_RESULTADO[charge.status] || 'pending';
 
   const statusMap: Record<string, { emoji: string; title: string; msg: string; color: string }> = {
     approved: { emoji: '✅', title: '¡Pago aprobado!',        msg: 'Tu pago ha sido procesado correctamente.',                  color: '#16a34a' },
@@ -133,7 +132,7 @@ router.get('/mp/:token/result', async (req, res) => {
     <span class="badge">${esc(status.toUpperCase())}</span>
     <h1>${esc(s.title)}</h1>
     <p>${esc(s.msg)}</p>
-    ${concept ? `<div class="amount">${esc(amount)} ${esc(currency)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b756f">${esc(concept)}</span></div>` : ''}
+    ${concept ? `<div class="amount">${esc(amount)}<br/><span style="font-size:.85rem;font-weight:400;color:#6b756f">${esc(concept)}</span></div>` : ''}
     <div class="footer">YaQu · Pago gestionado con Mercado Pago</div>
   </div>
 </body>
