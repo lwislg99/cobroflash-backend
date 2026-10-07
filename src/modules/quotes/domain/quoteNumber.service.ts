@@ -76,10 +76,14 @@ export const SIN_NUMERO = '—';
  * pidió.
  */
 export function displayQuoteNumber(
-  q: { quoteNumber?: number | null; createdAt?: Date | string | null },
+  q: { quoteNumber?: number | null; seriesYear?: number | null; createdAt?: Date | string | null },
   merchant?: { timezone?: string | null } | null,
 ): string {
   if (q.quoteNumber == null) return SIN_NUMERO;
+  // SCRUM-1490: si la fila GUARDA el año de su serie, manda ése. Una revisión hereda el de su
+  // original y su `createdAt` puede caer en otro año; lo de abajo queda para la fila anterior a la
+  // columna (la misma regla que `anioDeLaSerie`, `core/documentos/grupoDelPresupuesto.ts`).
+  if (q.seriesYear != null) return formatoNumeroDocumento(SERIES.presupuesto, q.seriesYear, q.quoteNumber);
   const d = q.createdAt ? new Date(q.createdAt) : null;
   if (!d || Number.isNaN(d.getTime())) return SIN_NUMERO;
   const year = Number(diaNaturalEn(d, zonaDelMerchant(merchant)).slice(0, 4));
