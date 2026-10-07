@@ -97,6 +97,11 @@
     // falso. Un texto por causa pide un código por causa (SCRUM-1488).
     // APROBADO · SCRUM-1491 comentario 18517
     desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
+    // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
+    // falso: nada ha fallado, no se ha intentado.
+    // PROPUESTO · SCRUM-1492 · SIN FIRMA: no se empuja así
+    kilometrosEsUnNumero: 'No se ha guardado. Kilómetros es un número, como 12 o 12,5',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -1351,15 +1356,32 @@
     var paso = linea ? linea.querySelector('.parte-plegable-cuerpo') : casilla.closest('.parte-horas');
     if (!paso) return;
     quitarAvisoDeCampoNoGuardado(contenedor, nombre);
+    var texto = textoDeCampoNoGuardado(nombre, fallo);
+    if (!texto) return;   // sin texto que decir no se cuelga una caja en blanco
     var aviso = document.createElement('div');
     aviso.className = 'alert error';
     aviso.setAttribute('role', 'alert');
     aviso.setAttribute('data-parte-campo-no-guardado', nombre);
     aviso.style.marginTop = '8px';
-    aviso.textContent = fallo && fallo.code === 'desplazamientos_invalido'
-      ? TEXTOS.desplazamientoEsEntero : TEXTOS.noSeGuardoElCambio;
+    aviso.textContent = texto;
     paso.appendChild(aviso);
     if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * SCRUM-1492 · qué se dice cuando lo tecleado en una casilla numérica NO ES UN NÚMERO. Una
+   * entrada por casilla numérica de la cabecera: una casilla numérica sin la suya no tendría qué
+   * decir, y el general («No se ha podido guardar el cambio») ahí sería falso.
+   */
+  var TEXTO_SI_NO_ES_UN_NUMERO = {
+    desplazamientos: TEXTOS.desplazamientoEsEntero,
+    kilometros: TEXTOS.kilometrosEsUnNumero,
+  };
+
+  function textoDeCampoNoGuardado(nombre, fallo) {
+    if (fallo && fallo.noEsUnNumero) return TEXTO_SI_NO_ES_UN_NUMERO[nombre];
+    return fallo && fallo.code === 'desplazamientos_invalido'
+      ? TEXTOS.desplazamientoEsEntero : TEXTOS.noSeGuardoElCambio;
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
@@ -1432,6 +1454,16 @@
       (function (casilla) {
         var original = casilla.value;
         var alCambiar = function () {
+          // 🔴 SCRUM-1492 · LO QUE NO ES UN NÚMERO NO ES UN BORRADO. Una casilla `type="number"`
+          // con «1e», «-» o «,» entrega `value === ''`, igual que una casilla vacía, y se mandaba
+          // `null`: el dato guardado se borraba con un 200 y la casilla seguía enseñando lo
+          // tecleado (medido en yaqu.app el 6-oct). Lo que distingue los dos vacíos es
+          // `validity.badInput`. No se manda nada, la casilla vuelve a lo guardado y se dice.
+          if (casilla.validity && casilla.validity.badInput) {
+            casilla.value = original;
+            avisarCampoNoGuardado(contenedor, casilla.getAttribute('data-parte-campo'), { noEsUnNumero: true });
+            return;
+          }
           if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
           original = casilla.value;
           guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);
