@@ -541,3 +541,83 @@ El §2 B de este registro da UNA causa por fichero. `albaran` tenía dos: la del
 
     node --test tests/scrum876e-el-segundo-destino.test.mjs
     LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/scrum72-pdfs-privados.test.mjs tests/albaran.test.mjs
+
+---
+
+# APÉNDICE · SCRUM-876f · El grupo C de SCRUM-868: `a55-window-quote` y `bot-suite` al banco, en seco y con la salida cortada
+
+**Medido contra:** `origin/main` = `725c0e3a1fff3409fdc2db2bdd493918cba5cec0` · 2026-10-07T07:42:50Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876f-a55-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** los dos gateados del grupo C corren con `LIBRO_PG_URL`; `ci.yml` no se toca y no hay variable nueva
+
+A9: sin fallo que generalice — la primera sonda de «bot-suite dentro de una tanda» no medía la tanda (55 vecinos que acabaron en 3 s y el bot corrió 17 s solo); se vio en sus propios tiempos antes de concluir nada, se repitió con 300 ficheros y queda dicho abajo
+
+## El verde de 876e, leído en el log (lo que quedó pendiente)
+
+Run `37583212357` (el `build + tests` de #2245, punta `f700f3bf`): `SCRUM-72: PDFs de factura y presupuesto no son públicos` ✔ 1.128 ms · `SCRUM-14: tenancy del albarán + lock de firmado` ✔ 1.365 ms · `SCRUM-65: albarán VALORADO` ✔ 425 ms. Ninguno con `# sin QA_DB_TEST=1 ni LIBRO_PG_URL`. En ese mismo log `A5.5` y `A8.4` salen saltados (`﹣`, 0,7 ms): es el antes de este apéndice.
+
+## La decisión, y lo que se comprobó antes de aplicarla
+
+SCRUM-868, comentario 18621 (orquestador): el propio test fija `WHATSAPP_DRY_RUN=1` cuando su destino es el banco, con tres condiciones.
+
+| condición | qué se hizo | dónde se ve |
+|---|---|---|
+| La aserción se queda | `assert.equal(process.env.WHATSAPP_DRY_RUN, '1')` sigue siendo la primera línea del test; el fichero se pone la bandera en su cuerpo, sólo con destino banco | `tests/a55-window-quote.test.mjs` |
+| Demostrar que ponerla surte efecto | El sender la lee EN CADA ENVÍO (`isDryRun` es una función). Corrido: sender cargado con la bandera ausente → `null`; puesta después → contesta en seco; quitada → `null` otra vez. Y el orden real del fichero se asierta con el estado del proceso (el sender no estaba cargado al fijarla; con su suelo: después de cargarlo la misma pregunta dice que sí) | `tests/scrum876f-el-seco-se-decide-al-enviar.test.mjs` (3 casos, sin base) |
+| Lo que decide es que no salga la llamada | `tests/_sin-salida.mjs` corta `net.Socket.prototype.connect` para todo lo que no sea loopback y apunta host y puerto. Control positivo delante de cada uso: un POST de axios y un fetch a un host `.invalid` tienen que verse y cortarse, o lanza. Tras cada envío, y al acabar, lo apuntado que no sea del control tiene que ser `[]` | los dos tests gateados, y el caso 1 de `scrum876f` |
+
+El corte sólo se instala con el banco como destino. Contra staging no: la base es remota y ese camino no se ha tocado. Límite dicho en el módulo: el motor de Prisma no pasa por ahí.
+
+## Los rojos, en el banco local
+
+Base sin mutar verde antes y después de cada serie; cada mutación exige casar una vez y se restaura por hash (`evidencias/SCRUM-876f/mutar-dist-876f.mjs`); `git status` vacío al terminar.
+
+| test | defecto inyectado | resultado |
+|---|---|---|
+| `a55` | el fichero deja de ponerse la bandera (`tests/`, `numstat` 1 1) | ROJO en la aserción que se quedó: «este test exige WHATSAPP_DRY_RUN=1» |
+| `a55` | con la bandera a `1`, el sender suelta un POST sin esperarlo, por fuera del punto único (`dist/`) | ROJO: «caso 1 … el envío INTENTÓ salir», dos intentos al host de Meta, puerto 443, los dos cortados. El envío seguía contestando `ok` y en seco |
+| `scrum876f` (sin base) | la bandera se congela al cargar el sender (`dist/`) | ROJO: «la bandera, puesta después de cargar el sender, NO surte efecto» |
+| `a55` | esa misma mutación | VERDE, y es lo esperado: el fichero la pone antes de cargar el sender. Por eso la lectura al enviar la fija el test sin base y no éste |
+| `bot-suite` | el POST suelto de arriba | ROJO: «el bot INTENTÓ salir», 67 intentos al host de Meta, cortados |
+| `bot-suite` | la confirmación de la baja al cliente lleva otro texto | ROJO: «confirmación de baja» |
+| `bot-suite` | el profesional no recibe el aviso de la baja | ROJO sin veredicto: el techo de 6.000 ms vence esperando el aviso |
+
+Las dos primeras filas de `scrum876f` van además declaradas en su `MUTACIONES_QUE_ME_TUMBAN` (la de `src/` y la del propio corte).
+
+## `bot-suite`: medido solo y dentro de un tramo de la tanda
+
+Contra el banco, con el gate cambiado en local, ANTES de decidir dónde corre.
+
+| cómo | pasadas | resultado |
+|---|---|---|
+| solo, tal cual estaba | 4 | 4 caídas, las cuatro en el paso 11 (BAJA), a los 19 s |
+| solo, con el paso 11 corregido | 3 | 3 verdes · 18,9 a 19,3 s · poso 0 |
+| con sus 55 vecinos de la tanda | 1 | verde, pero NO VALE: los vecinos acabaron en 3 s |
+| dentro de los 300 primeros ficheros de la tanda, concurrencia 3 | 1 | CAÍDA en el paso 8f a los 10,5 s; y una fila de `whatsAppMessage` que llegó después de la limpieza |
+| lo mismo, con el paso 8f corregido | 2 | 2 verdes · 19,3 y 19,7 s |
+| lo mismo, con los cuatro arreglos y concurrencia 7 | 3 | 3 verdes · 23,2 · 26,4 · 25,3 s · poso 0 |
+
+En las seis pasadas por tramos `a55` salió verde. El único caído ajeno fue `scrum1321 · PUERTA 1b`, que en esta máquina cae siempre (temporal en `C:`, repo en `D:`).
+
+**Lo que caía no era carga: eran cuatro sitios donde el test decidía por el reloj.** El bot hacía lo correcto en todos (sonda del buzón en el paso 11: primero la confirmación al cliente, después el aviso al profesional).
+
+| paso | qué hacía el test | qué hace ahora |
+|---|---|---|
+| 11 · BAJA | leía `last()`; la baja manda dos mensajes y «el último» era ya el aviso al profesional | busca lo que le llegó AL CLIENTE desde su BAJA: una respuesta, y con el texto de la confirmación |
+| 8f · enviar la solicitud | asertaba el aviso al profesional en cuanto llegaba el primer mensaje | espera a esa condición (`esperarCondicion`, techo 6 s; vencido, no hay veredicto) |
+| 8g · cancelar | esperaba un mensaje y asertaba dos | espera los dos |
+| 11 · final | acababa sin esperar el aviso de la baja al profesional, cuya fila podía llegar tras la limpieza | espera el aviso y a que el buzón quede quieto |
+
+**Dónde corre: dentro de la tanda, con `LIBRO_PG_URL`, sin paso propio.** Con qué se decide y qué no cubre: cinco pasadas verdes de cinco dentro de un tramo de 300 ficheros, en esta máquina (8 hilos), contra un Postgres de loopback. No es la tanda entera (1.270 ficheros) ni el runner de CI. El precedente de `scrum814` (un paso propio en `ci.yml`) era otro mecanismo: una transacción que vencía a los 5 s bajo carga; aquí el bot tardó entre 19 y 26 s con techos de 6 s por paso, y ningún techo venció. Si en CI cae o parpadea, la salida es sacarlo de la tanda (volver a su gate) y pedir el paso propio en `ci.yml`, que es de S5.
+
+## Lo que NO entra
+
+| qué | estado |
+|---|---|
+| El camino de staging (`A55_DB_TEST`, `BOT_SUITE_TEST`) | sin correr: no cambia de destino ni de gate, pero los cuatro arreglos de `bot-suite` también corren ahí y esa tanda no se ha lanzado |
+| El rojo EN CI con un paso temporal | no hecho: ese paso vive en `ci.yml` (S5). El verde en CI se lee en el log del `build + tests` de este PR: `A5.5` y `A8.4` con ✔ y con duración |
+| `scrum17`, `scrum234`, `scrum781` y T4 | sin tocar, igual que en 876e. Ojo para T4: `bot-suite` estaba en esa lista como «causa sin medir» y su causa era ésta |
+
+## Reproducir
+
+    node --test tests/scrum876f-el-seco-se-decide-al-enviar.test.mjs
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs tests/bot-suite.test.mjs
