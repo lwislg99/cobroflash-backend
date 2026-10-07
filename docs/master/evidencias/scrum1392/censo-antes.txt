@@ -1,0 +1,23 @@
+control · lista en la mano y un await detrás: listas 1 · awaits detrás 1 · llamadas 1 → como se esperaba
+control · lista en la mano y nada detrás: listas 1 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · lista del módulo (CERO): listas 0 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · la lista que entrega la pieza (CERO): listas 0 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · sólo nombrado en un comentario (CERO llamadas): listas 0 · awaits detrás 0 · llamadas 0 → como se esperaba
+
+POBLACIÓN: 1749 ficheros .mjs de scripts/ y tests/ · 42 importan la pieza · 11 llamadas a recorrerCasos en 9 guards de scripts/ · 0 sin poder leer su caso
+  scripts/guard-a11y-comparativa.mjs:205 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-a11y-landing.mjs:209 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-caja-datos-del-cliente.mjs:150 · caso con 1 parámetro(s) · «suyos» (hallazgos) nace L153, 1er apunte L198, 2 apuntes · detrás: 0 await, 0 throw, llamadas [estado.toUpperCase, m.bloque.alto.toFixed, m.fila.alto.toFixed, m.eleccion.alto.toFixed, m.nota.alto.toFixed, [m.bloque, m.fila, m.eleccion, m.nota…]
+  scripts/guard-caja-documento-suelto.mjs:414 · caso con 1 parámetro(s) · «suyas.hallazgos» (hallazgos) nace L290, 1er apunte L304, 1 apuntes · detrás: 0 await, 0 throw, llamadas [c.etiqueta.padEnd, JSON.stringify(c.texto).padEnd, JSON.stringify, String(c.chars).padStart, String, c.width.toFixed, c.height.toFixed]
+  scripts/guard-contraste.mjs:308 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-duplicar-926.mjs:165 · caso con 1 parámetro(s) · «errores» (errores) nace L139, 1er apunte L140, 1 apuntes · detrás: 7 await, 0 throw, llamadas [pag.setViewport, pag.goto, pag.waitForFunction(BUSCAR_DUPLICAR, …, pag.waitForFunction, pag.close, btn.asElement().click, btn.asElement, pag.waitForFunction(EDITOR_YA_TIENE_L…]
+  scripts/guard-marcadores-en-pantalla.mjs:350 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:589 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:708 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:860 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-portal-en-la-ficha.mjs:128 · caso con 1 parámetro(s) · «suyos» (hallazgos) nace L162, 1er apunte L164, 3 apuntes · detrás: 0 await, 0 throw, llamadas []
+  (aparte: 8 llamadas en 1 ficheros de tests/, con jueces de mentira)
+
+RESULTADO: 4 recorridos de 11 llevan una lista de hallazgos en la mano · 1 de ésos tienen un await o un throw después del primer apunte
+LO QUE ESTE CENSO NO VE: una lista que nace en una función y se apunta en OTRA (pasada como argumento) no se ve · sólo sigue funciones declaradas en el mismo fichero; no sigue imports · una llamada síncrona después del apunte se LISTA, no se juzga: que pueda lanzar se lee a mano
+EXIT=0

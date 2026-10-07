@@ -107,33 +107,68 @@ function listaDe(valor, nombre, caso) {
   return valor;
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1392 · LO QUE UN CASO YA HABÍA VISTO NO CADUCA PORQUE EL CASO REVIENTE DESPUÉS.
+//
+// El recorrido sumaba lo que cada caso DEVOLVÍA. Un caso que apuntaba un hallazgo en una lista suya
+// y después lanzaba no llegaba a devolverla: salía 2 («no supe medir») con el defecto ya visto.
+// Visto ocurrir con el navegador de verdad en `guard-duplicar-926` (docs/master/SCRUM-1392.md): un
+// error de página y, detrás, una lectura que lanza → «0 hallazgos · 4 ciegos» y del error ni una palabra.
+//
+// Por eso las dos listas del caso las pone AQUÍ el recorrido y se las entrega: lo que el caso apunta
+// en ellas ya está fuera de él cuando lanza. Lanzar con las manos vacías sigue siendo un ciego y
+// nada más: eso sí es no haber podido medir.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** La marca de la línea del recorrido. Sale SIEMPRE, también con ceros: su ausencia no puede significar «ninguno». */
+export const MARCA_RECORRIDO = '⟦recorrido⟧';
+
 /**
- * Recorre TODOS los casos y junta sus dos cuentas. `juzgarCaso(caso)` devuelve `{ hallazgos, ciegos }`
- * (dos listas) de ESE caso; puede ser asíncrona.
+ * Recorre TODOS los casos y junta sus dos cuentas. `juzgarCaso(caso, suyas)` devuelve
+ * `{ hallazgos, ciegos }` (dos listas) de ESE caso; puede ser asíncrona. `suyas` son las dos listas
+ * de ese caso, puestas por el recorrido: lo que se apunta en ellas se conserva aunque el caso lance.
  *
  *   · un caso ciego NO corta el recorrido: los de después se miden igual;
- *   · un caso que LANZA es un caso que no se pudo medir: se apunta como ciego, con su motivo, y se sigue;
+ *   · un caso que LANZA es un caso que no se pudo medir: se apunta como ciego, con su motivo, y se
+ *     sigue — y lo que ya había apuntado en `suyas` cuenta igual;
  *   · cero casos es un ciego, no un verde: «0 hallazgos» sobre nada no es una medición.
  *
- * Lo que devuelve se le pasa tal cual a `veredictoDe`.
+ * Lo que devuelve se le pasa tal cual a `veredictoDe`. `decir` recibe la línea del recorrido.
  */
-export async function recorrerCasos(casos, juzgarCaso, nombrar = (caso) => String(caso)) {
+export async function recorrerCasos(casos, juzgarCaso, nombrar = (caso) => String(caso), decir = (linea) => console.log(linea)) {
   const hallazgos = [];
   const ciegos = [];
   let recorridos = 0;
+  let lanzaron = 0;
+  let lanzaronConHallazgos = 0;
   for (const caso of casos) {
     recorridos += 1;
     const nombre = nombrar(caso);
+    const suyas = { hallazgos: [], ciegos: [] };
     let suyo;
     try {
-      suyo = await juzgarCaso(caso);
+      suyo = await juzgarCaso(caso, suyas);
     } catch (e) {
+      lanzaron += 1;
+      if (suyas.hallazgos.length) lanzaronConHallazgos += 1;
+      hallazgos.push(...suyas.hallazgos);
+      ciegos.push(...suyas.ciegos);
       ciegos.push(nombre + ': no se pudo medir — ' + String((e && e.message) || e));
       continue;
     }
-    hallazgos.push(...listaDe(suyo && suyo.hallazgos, 'hallazgos', nombre));
-    ciegos.push(...listaDe(suyo && suyo.ciegos, 'ciegos', nombre));
+    const devueltos = listaDe(suyo && suyo.hallazgos, 'hallazgos', nombre);
+    const devueltosCiegos = listaDe(suyo && suyo.ciegos, 'ciegos', nombre);
+    // Lo apuntado en las listas entregadas cuenta aunque el caso devuelva otras; si devuelve las
+    // mismas, una sola vez.
+    if (devueltos !== suyas.hallazgos) hallazgos.push(...suyas.hallazgos);
+    if (devueltosCiegos !== suyas.ciegos) ciegos.push(...suyas.ciegos);
+    hallazgos.push(...devueltos);
+    ciegos.push(...devueltosCiegos);
   }
   if (recorridos === 0) ciegos.push('no se recorrió ni un solo caso: «0 hallazgos» sobre nada no es una medición');
-  return { hallazgos, ciegos, recorridos };
+  const linea = MARCA_RECORRIDO + ' ' + recorridos + (recorridos === 1 ? ' caso recorrido' : ' casos recorridos')
+    + ' · ' + lanzaron + (lanzaron === 1 ? ' lanzó' : ' lanzaron')
+    + ' · ' + lanzaronConHallazgos + ' de ésos ' + (lanzaronConHallazgos === 1 ? 'traía' : 'traían') + ' hallazgos';
+  decir(linea);
+  return { hallazgos, ciegos, recorridos, lanzaron, lanzaronConHallazgos, linea };
 }
