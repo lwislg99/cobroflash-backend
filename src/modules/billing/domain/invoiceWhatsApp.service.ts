@@ -134,7 +134,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     customerId: invoice.customerId,
     type: 'invoice_issued',
     title: `Factura ${invoice.number} enviada por WhatsApp`,
-    detail: `${Number(invoice.total).toFixed(2)} ${invoice.currency}`,
+    detail: importe, // SCRUM-1436: el mismo importe que acaba de leer el cliente, no «419.87 EUR»
   });
 
   return { ok: true, chargeId: chargeId ?? undefined, payToken, to };

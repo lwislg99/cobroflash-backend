@@ -1,6 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router, type Request } from 'express';
-import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
+import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-1397 · qué facturas ve quien pregunta: UNA puerta para la lista, la ficha y el PDF.
 import { whereFacturasVisibles, puedeVerLaFactura, type QuienPide } from '../../../../core/documentos/accesoALaFactura';
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
@@ -320,8 +320,8 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
     const diff = Math.round((amount - total) * 100) / 100;
     const kind = diff < 0 ? 'parcial' : 'sobrepago';
     const detail = diff < 0
-      ? `Recibidos ${amount.toFixed(2)} de ${total.toFixed(2)} ${invoice.currency} (faltan ${Math.abs(diff).toFixed(2)}). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).`
-      : `Recibidos ${amount.toFixed(2)} ${invoice.currency} (sobran ${diff.toFixed(2)}). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).`;
+      ? `Recibidos ${formatImporteEs(amount)} de ${formatMoneyEs(total, invoice.currency)} (faltan ${formatImporteEs(Math.abs(diff))}). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).`
+      : `Recibidos ${formatMoneyEs(amount, invoice.currency)} (sobran ${formatImporteEs(diff)}). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).`;
 
     recordCustomerEvent({
       merchantId: req.merchantId,
@@ -375,7 +375,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 
     const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fD = (d: Date | string | null | undefined) => d ? new Date(d).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : '—';
-    const money = (n: unknown, cur?: string) => `${Number(n ?? 0).toFixed(2)} ${cur || invoice.currency}`;
+    const money = (n: unknown, cur?: string) => formatMoneyEs(Number(n ?? 0), cur || invoice.currency);
     const ev = (quote?.evidence ?? {}) as Record<string, unknown>;
 
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
