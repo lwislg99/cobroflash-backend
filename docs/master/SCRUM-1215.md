@@ -307,3 +307,75 @@ El texto estaba firmado desde el 28-sep y el botón seguía diciendo «Añadir e
 ## Lo que NO entra aquí
 
 El lote 2 (libro registro, SCRUM-1428, J1). Con esto, de SCRUM-1215 queda sólo eso.
+
+# SCRUM-1215 · las cuatro hojas de S4 que el censo seguía acusando citan su firma
+
+**Medido contra:** `origin/main` = `f9b4074d33278023f55548b88306421531114174` · 2026-10-07T16:13:47Z
+A9: aviso → cicatriz S4 «mi sonda buscó la lista de albaranes en una clave que la respuesta no trae, le salió vacía y escribió que la cuenta no tenía albaranes teniendo uno: una lista vacía sólo es un cero si el recuento del servidor también lo dice» — no se pudo comprobar: las sondas viven fuera del repositorio
+
+**Skill UI:** no cargada · sólo cambian comentarios de `public/dashboard/js/parteDetailView.js` y `public/dashboard/js/albaranDetailView.js`: ni un literal, ni marcado, ni estilos, ni clases. Lo que se pinta es byte a byte lo que se pintaba.
+
+7-oct-2026 · **S4** · rama `scrum-1215-las-cuatro-de-s4-citan-su-firma`. Antes de tocar: SCRUM-1215 c.18756.
+
+## La frase de arriba («queda sólo el lote 2») no era cierta, y era mía
+
+El 6-oct escribí que de este ticket quedaba sólo el lote 2. El censo de hoy (`node scripts/_censo-convenio-microcopy.mjs`, 98 ficheros, 41 objetos, 289 hojas) daba **APROBADO 244 · PENDIENTE 7 · SIN_COMENTARIO 38**, y de esas 38 sólo 22 son el lote 2:
+
+| De quién | Hojas | Cuáles |
+|---|---|---|
+| J1 (lote 2, SCRUM-1428) | 22 | `libroRegistroView.js · COPY.*` |
+| J (pagos) | 5 | `cobrosView.js · COBROS_COPY` (3) · `paidViaEtiquetas.js · ETIQUETAS_HEREDADAS` (2) |
+| S2 | 7 | `jobDetailView.js · TEXTO_HUECO` (3) · `providersView.js · M` (2) · `quoteDireccionObra.js · TEXTOS.personalizada` · `quoteActionsRegistry.js · btnBorrar` |
+| S4 | 4 | las de este apéndice |
+
+Conté «lo que me quedaba por construir» y lo escribí como «lo que le queda al ticket». La aceptación pide el censo en `APROBADO`, y eso se mira en el censo.
+
+## Las cuatro tenían firma. Tres no pasaban la revisión el 28-sep, y por eso no se marcaron
+
+| Hoja | Literal | Firma | Qué fallaba el 28-sep (c.17360) | Qué lo arregló |
+|---|---|---|---|---|
+| `TEXTOS.pistaFirma` | Pide al cliente que firme con el dedo dentro del recuadro. | fundador, 4-sep-2026, SCRUM-720c | se le decía también al técnico | SCRUM-1229 |
+| `TEXTOS.sinBloque` | Sin colocar — elige mano de obra o materiales | fundador, 4-sep-2026, SCRUM-720c | mandaba elegir y no había con qué | SCRUM-1230 |
+| `TEXTOS.sinLineas` | Todavía no has apuntado nada. | fundador, 4-sep-2026, SCRUM-720 (y c.17367 para el caso editable) | salía también en un parte firmado | `sinLineasCerrado` (c.17367) |
+| `ROTULOS_ALBARAN.btnFoto` | 📷 Añadir foto | orquestador por delegación, c.18283 (6-oct-2026) | se ofrecía en `firmado`, donde sólo podía fallar | PR #1947 (oculta en `firmado`) |
+
+Las tres del parte no se vuelven a firmar: citan la firma que ya tenían, como se hizo con `firmaRechazada` (c.17367). Lo que este apéndice añade es haberlas pasado otra vez por la pregunta del ticket con el código de hoy.
+
+## ¿El código de hoy hace lo que dicen? Ejecutando, no leyendo
+
+| Hoja | Lo que afirma | Dónde se mide | En yaqu.app (build `f07622f3`, cuenta QA, merchant 46) |
+|---|---|---|---|
+| `pistaFirma` | se le pide al cliente, y sólo en su pad | `tests/scrum1215c-pista-del-tecnico.test.mjs`, `tests/scrum1229-firma-del-tecnico-viaje.test.mjs` | pad del cliente del parte 9: esa frase; pad del técnico: «Firma con el dedo dentro del recuadro.» |
+| `sinLineas` | «todavía»: se puede apuntar | `tests/scrum1215b-sin-lineas-cerrado.test.mjs` | parte 9 (borrador, una línea de mano de obra): el bloque Materiales, vacío, la dice, con su «Añadir línea» al lado |
+| `sinBloque` | hay algo sin colocar y se puede elegir entre esas dos | `tests/scrum1230-colocar-lineas-dictadas.test.mjs` y el test nuevo | propuesta con una línea suelta: el rótulo en una línea a 390 y a 320 px, dos fichas de 48 px («Mano de obra», «Materiales»), «Añadir al parte» apagado hasta elegir y encendido al elegir |
+| `btnFoto` | se ofrece donde el servidor admite la foto | `tests/scrum1215c-foto-oculta-en-firmado.test.mjs`, `tests/scrum1302g-foto-con-diez.test.mjs` | albarán 46 (`emitido`): está en el «⋯». El mismo albarán contestado como `firmado` por la sonda: no está |
+
+## Qué cambia
+
+- `parteDetailView.js`: tres comentarios `// APROBADO por el fundador el 4-sep-2026 (…)` encima de sus claves, con la ficha y con el motivo por el que estuvieron sin marcar.
+- `albaranDetailView.js`: `// APROBADO · SCRUM-1215 comentario 18283` en la línea de `btnFoto`.
+- `docs/microcopy/2026-10-06-SCRUM-1215-anadir-foto-del-albaran.md`: la ficha de la firma de `btnFoto`, que no existía.
+- `scripts/_censo-convenio-microcopy-declarados.json`: las cuatro entradas salen de `acusadas` y entran en `retiradas` con su motivo.
+- `tests/scrum1215e-las-cuatro-de-s4-citan-su-firma.test.mjs` (7 tests): cada marca queda atada a SU ficha por ticket y ranura, el literal se lee del objeto que la vista pinta, y de `sinBloque` se mide lo que faltaba (el rótulo se lee, las fichas dicen las dos palabras que nombra, y sin nada suelto no se pinta).
+
+Censo después: **APROBADO 248 · PENDIENTE 7 · SIN_COMENTARIO 34**, trinquete 0 nuevas · 0 que sobran.
+
+## Verificado
+
+- El test nuevo, antes del cambio: 2 pass · 5 fail (uno de los cinco, por el instrumento: ver abajo). Después: 7 de 7.
+- Mutación (`mut1215e.mjs`, fuera del repo): base 7 de 7 y **11 de 11 mutantes mueren**, cada uno comprobando que se aplicó y que se restauró.
+- Con los vecinos de microcopy y de las dos vistas (19 ficheros): 137 · 137 pass · 0 fail · 0 saltos.
+
+## Carril: desviación declarada
+
+`scripts/` es de S0 por la tabla (`docs/equipo/dos-equipos.md:171`). La excepción de c.18381 era para UNA entrada y no se ha estirado: esta edición se apoya en que la aceptación del ticket pide el censo en `APROBADO`, en que cada una de las cuatro entradas nombraba a S4 («o se firma, o se anota la firma que ya tenga») y en que `node scripts/carriles.mjs de` dice de ese fichero «SIN CERRADURA». Dicho en c.18756 antes de hacerlo. El descuadre entre la tabla y la práctica sigue abierto.
+
+## Lo que salió al medir
+
+- **El banco no agrega `textContent`** (límite 4 de `tests/_banco-vistas.mjs`): el texto de `<label><input>Mano de obra</label>` lo guarda el `<input>`. El test lo lee de ahí y lo dice en un comentario; en el navegador es el texto de la ficha (visto: las dos fichas se leen por su `label`).
+- **La sonda, primera pasada:** dijo «la cuenta QA no tiene albaranes» y tenía uno. Buscaba la lista en claves que la respuesta no trae (viene en `filas`). Ahora para si `filas` no llega. Es la cicatriz de hoy.
+- De paso, sin tocar: `POST /admin/entorno` sale del panel al cargar y al recargar (la sonda lo corta). No sé qué es; no es de este cambio.
+
+## Lo que NO entra aquí
+
+Las otras 34 hojas: 22 de J1 (SCRUM-1428), 5 de J (pagos) y 7 de S2. No son de S4.
