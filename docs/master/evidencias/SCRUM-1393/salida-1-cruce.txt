@@ -1,0 +1,136 @@
+POBLACION corridas del CI por push a main=1135 (2026-09-07T01:06:37Z .. 2026-10-07T17:15:52Z) · suites con jobs leidas=726 · despliegues=1125 · commits de main (primer padre)=1169 · datos tomados 2026-10-07T17:22:41.778Z
+
+== A · LAS CORRIDAS, por lo que dijo el JOB obligatorio ==
+      468  VERDE
+      407  CANCELADA-0-JOBS
+      234  CON-JOBS-SIN-VEREDICTO(CANCELLED)
+       24  ROJO
+        1  CORRIENDO-O-EN-COLA
+        1  FAILURE-0-JOBS
+  y cruzado con la conclusion de la CORRIDA (lo que se ve en la lista de Actions):
+      407  CANCELADA-0-JOBS  <-  corrida completed/cancelled · jobs 0
+      234  CON-JOBS-SIN-VEREDICTO(CANCELLED)  <-  corrida completed/cancelled · jobs >0
+      220  VERDE  <-  corrida completed/failure · jobs >0
+      151  VERDE  <-  corrida completed/success · jobs >0
+       96  VERDE  <-  corrida completed/cancelled · jobs >0
+       22  ROJO  <-  corrida completed/failure · jobs >0
+        2  ROJO  <-  corrida completed/cancelled · jobs >0
+        1  CORRIENDO-O-EN-COLA  <-  corrida pending/null · jobs 0
+        1  VERDE  <-  corrida in_progress/null · jobs >0
+        1  FAILURE-0-JOBS  <-  corrida completed/failure · jobs 0
+
+== B · LOS COMMITS DE main (primer padre, desde 2026-09-07): 1133 ==
+      468  VERDE
+      406  CANCELADA-0-JOBS
+      233  CON-JOBS-SIN-VEREDICTO(CANCELLED)
+       24  ROJO
+        1  CORRIENDO-O-EN-COLA
+        1  FAILURE-0-JOBS
+  con veredicto propio (VERDE o ROJO): 492 de 1133 · VERDE sobre ESE commit: 468 (41.3 %)
+  shas con mas de una corrida: 2 · corridas cuyo sha NO es un commit de primer padre de main: 0
+
+== C · CORRIDAS failure CON 0 JOBS: 1 ==
+    2026-10-07T16:48:07Z · run 37654882700 · 965e3d05 · intento 1 · creada->tocada 12.9 min
+  por dia: {"2026-10-07":1}
+  comparacion · creada->tocada (min): FAILURE-0-JOBS n=1 · min 12.9 · p50 12.9 · p90 12.9 · max 12.9
+                                       CANCELADA-0-JOBS n=407 · min 0 · p50 2.6 · p90 8.5 · max 21.4
+  failure CON jobs y obligatorio VERDE (rojo de un informativo): 220 · failure con obligatorio ROJO: 22 · failure en total: 243
+
+== D · ROJOS DEL OBLIGATORIO SOBRE UN COMMIT DE main: 24 ==
+    caef3c29 · entra 2026-09-08T02:27Z · rojo legible 2026-09-08T02:32Z (+4.9 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +59.5 min (f0c500e1) · despliegues entre medias 3 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    da938ba0 · entra 2026-09-08T02:32Z · rojo legible 2026-09-08T02:38Z (+5.2 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +54.2 min (f0c500e1) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    f0ec26e8 · entra 2026-09-08T07:04Z · rojo legible 2026-09-08T07:09Z (+5 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +43.6 min (a44ecb8d) · despliegues entre medias 4 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    f1c84a8a · entra 2026-09-08T08:34Z · rojo legible 2026-09-08T08:39Z (+5.1 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +35.9 min (ade16430) · despliegues entre medias 7 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    61d14a15 · entra 2026-09-08T08:39Z · rojo legible 2026-09-08T08:44Z (+5.3 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +30.3 min (ade16430) · despliegues entre medias 6 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    da5ac06a · entra 2026-09-08T09:33Z · rojo legible 2026-09-08T09:37Z (+3.9 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +82.3 min (508d4f79) · despliegues entre medias 4 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    2be8fe16 · entra 2026-09-17T13:21Z · rojo legible 2026-09-17T13:28Z (+6.9 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +49.5 min (1941416e) · despliegues entre medias 7 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    c5d642fe · entra 2026-09-20T19:48Z · rojo legible 2026-09-20T19:58Z (+10.4 min) · 2 sin probar debajo · 0 ya encima · siguiente VERDE +40.2 min (ae43a3fd) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    f7214368 · entra 2026-09-20T20:56Z · rojo legible 2026-09-20T21:03Z (+6.5 min) · 5 sin probar debajo · 0 ya encima · siguiente VERDE +606.8 min (d7de8e65) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    1a6dfb9a · entra 2026-09-21T14:02Z · rojo legible 2026-09-21T14:09Z (+7.6 min) · 2 sin probar debajo · 0 ya encima · siguiente VERDE +67.8 min (4b3c0e47) · despliegues entre medias 10 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    840b7c56 · entra 2026-09-21T14:28Z · rojo legible 2026-09-21T14:35Z (+6.3 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +42.3 min (4b3c0e47) · despliegues entre medias 9 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    f510f1e1 · entra 2026-09-23T08:23Z · rojo legible 2026-09-23T08:31Z (+7.9 min) · 0 sin probar debajo · 3 ya encima · siguiente VERDE +13.5 min (0a93fc6a) · despliegues entre medias 9 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    dac1f9d7 · entra 2026-09-25T14:52Z · rojo legible 2026-09-25T15:01Z (+9.6 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +37 min (4f4a6f3c) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    bf4d82c6 · entra 2026-09-25T17:38Z · rojo legible 2026-09-25T17:49Z (+11.3 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +31.8 min (8fe2de5a) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    63e33e92 · entra 2026-09-27T16:45Z · rojo legible 2026-09-27T16:59Z (+14.2 min) · 0 sin probar debajo · 3 ya encima · siguiente VERDE +13.8 min (f888a039) · despliegues entre medias 6 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    95cd703f · entra 2026-09-27T17:43Z · rojo legible 2026-09-27T17:54Z (+11.1 min) · 2 sin probar debajo · 1 ya encima · siguiente VERDE +16.8 min (8f68b3e5) · despliegues entre medias 5 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    fcc2cc01 · entra 2026-09-29T10:52Z · rojo legible 2026-09-29T11:02Z (+10.1 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +244.8 min (00c07bef) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    e9e71cab · entra 2026-09-30T23:41Z · rojo legible 2026-10-01T00:28Z (+47 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +107.7 min (eabcb2d5) · despliegues entre medias 2 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    ba930e80 · entra 2026-10-01T11:33Z · rojo legible 2026-10-01T11:44Z (+10.9 min) · 3 sin probar debajo · 2 ya encima · siguiente VERDE +36.1 min (788a50d7) · despliegues entre medias 5 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    7a30dbb0 · entra 2026-10-01T11:38Z · rojo legible 2026-10-01T12:01Z (+22.6 min) · 1 sin probar debajo · 0 ya encima · siguiente VERDE +19.5 min (788a50d7) · despliegues entre medias 3 · latidos de arranque mientras vivio n/a (anterior al rastro)
+    7779b0cb · entra 2026-10-02T05:34Z · rojo legible 2026-10-02T05:41Z (+6.8 min) · 0 sin probar debajo · 0 ya encima · siguiente VERDE +24 min (35e1060e) · despliegues entre medias 2 · latidos de arranque mientras vivio 3
+    643e9a65 · entra 2026-10-02T13:01Z · rojo legible 2026-10-02T13:18Z (+16.2 min) · 5 sin probar debajo · 0 ya encima · siguiente VERDE +28.4 min (7d8a3ec9) · despliegues entre medias 3 · latidos de arranque mientras vivio 0
+    f30b1a40 · entra 2026-10-02T16:23Z · rojo legible 2026-10-02T16:50Z (+27 min) · 0 sin probar debajo · 1 ya encima · siguiente VERDE +20.5 min (eca8566d) · despliegues entre medias 4 · latidos de arranque mientras vivio 0
+    28222517 · entra 2026-10-06T19:39Z · rojo legible 2026-10-06T20:07Z (+28.3 min) · 0 sin probar debajo · 2 ya encima · siguiente VERDE +43 min (33f07c33) · despliegues entre medias 6 · latidos de arranque mientras vivio 0
+  commits SIN veredicto propio justo debajo del rojo (el rojo es su primera prueba; no se sabe de cual es): n=24 · min 0 · p50 1 · p90 3 · max 5 · rojos con alguno debajo: 13 de 24
+  latido de arranque (rastro de ESTA maquina: 63 pasadas, 2026-10-01T15:21:05.968Z .. 2026-10-07T17:16:21.652Z): rojos posteriores al primer rastro 4 · con AL MENOS una pasada mientras el rojo era el ultimo veredicto 1 · con ninguna 3
+  cada cuanto corre ese latido (min entre dos pasadas seguidas): n=62 · min 0 · p50 1.1 · p90 33.5 · max 6210.7 · huecos de mas de 60 min: 4 · de mas de 8 h: 2
+  push -> rojo LEGIBLE (min): n=24 · min 3.9 · p50 9.6 · p90 27 · max 47
+  commits ya encima cuando el rojo se puede leer: n=24 · min 0 · p50 0 · p90 2 · max 3
+  rojo legible -> siguiente VERDE de main (min): n=24 · min 13.5 · p50 40.2 · p90 107.7 · max 606.8 · sin verde posterior: 0
+  despliegues a produccion entre que entra el commit rojo y el siguiente verde: n=24 · min 2 · p50 4 · p90 9 · max 10 · suma 107
+  (referencia) push -> veredicto del obligatorio, VERDE o ROJO (min): n=492 · min 3 · p50 8.3 · p90 19 · max 47
+
+== E · DESPLIEGUES A PRODUCCION: 1125 (entorno unico: comfortable-nourishment / production) ==
+  por el conjunto de estados que Railway le conto a GitHub:
+     1067  INACTIVE+IN_PROGRESS+SUCCESS
+       21  FAILURE+IN_PROGRESS
+       16  INACTIVE+IN_PROGRESS
+       13  FAILURE+INACTIVE+IN_PROGRESS+SUCCESS
+        4  FAILURE+INACTIVE+IN_PROGRESS
+        3  INACTIVE+SUCCESS
+        1  IN_PROGRESS+SUCCESS
+  llegaron a SUCCESS (se sirvieron): 1084 de 1125 · shas distintos servidos: 1084
+  shas desplegados que NO son commit de primer padre de main: 0
+  lo que el CI de main dijo (alguna vez) de ESE commit servido:
+      443  VERDE
+      387  CANCELADA-0-JOBS
+      231  CON-JOBS-SIN-VEREDICTO(CANCELLED)
+       21  ROJO
+        1  FAILURE-0-JOBS
+        1  CORRIENDO-O-EN-COLA
+  de los 695 servidos cuyo commit tuvo veredicto: servido ANTES de tenerlo 313 · despues 382
+  adelanto del despliegue sobre el veredicto (min, positivo = se sirvio antes): n=695 · min -5296.6 · p50 -0.6 · p90 6.1 · max 29.5
+  merge -> servido (min): n=1084 · min 1 · p50 4.6 · p90 20.6 · max 5308.9
+  TIEMPO que produccion sirvio cada clase de commit (horas, de 736.2 h en total):
+      501.6 h   68.1 %  VERDE
+      181.1 h   24.6 %  CANCELADA-0-JOBS
+         48 h    6.5 %  CON-JOBS-SIN-VEREDICTO(CANCELLED)
+        5.4 h    0.7 %  ROJO
+        0.1 h      0 %  CORRIENDO-O-EN-COLA
+        0.1 h      0 %  FAILURE-0-JOBS
+  commits con el obligatorio en ROJO sobre main que se SIRVIERON: 21
+    caef3c29 · servido 2026-09-08T02:46Z · rojo legible 2026-09-08T02:32Z · servido con el rojo YA legible · sirvio 56.1 min hasta el siguiente despliegue
+    f0ec26e8 · servido 2026-09-08T07:06Z · rojo legible 2026-09-08T07:09Z · servido ANTES de poder saberse · sirvio 39.9 min hasta el siguiente despliegue
+    f1c84a8a · servido 2026-09-08T08:35Z · rojo legible 2026-09-08T08:39Z · servido ANTES de poder saberse · sirvio 5.3 min hasta el siguiente despliegue
+    61d14a15 · servido 2026-09-08T08:41Z · rojo legible 2026-09-08T08:44Z · servido ANTES de poder saberse · sirvio 23.4 min hasta el siguiente despliegue
+    da5ac06a · servido 2026-09-08T09:35Z · rojo legible 2026-09-08T09:37Z · servido ANTES de poder saberse · sirvio 80 min hasta el siguiente despliegue
+    2be8fe16 · servido 2026-09-17T14:02Z · rojo legible 2026-09-17T13:28Z · servido con el rojo YA legible · sirvio 1 min hasta el siguiente despliegue
+    c5d642fe · servido 2026-09-20T20:32Z · rojo legible 2026-09-20T19:58Z · servido con el rojo YA legible · sirvio 0.3 min hasta el siguiente despliegue
+    f7214368 · servido 2026-09-21T07:05Z · rojo legible 2026-09-20T21:03Z · servido con el rojo YA legible · sirvio 0.3 min hasta el siguiente despliegue
+    1a6dfb9a · servido 2026-09-21T14:31Z · rojo legible 2026-09-21T14:09Z · servido con el rojo YA legible · sirvio 17.7 min hasta el siguiente despliegue
+    840b7c56 · servido 2026-09-21T14:49Z · rojo legible 2026-09-21T14:35Z · servido con el rojo YA legible · sirvio 1.1 min hasta el siguiente despliegue
+    f510f1e1 · servido 2026-09-23T08:25Z · rojo legible 2026-09-23T08:31Z · servido ANTES de poder saberse · sirvio 1.5 min hasta el siguiente despliegue
+    63e33e92 · servido 2026-09-27T16:59Z · rojo legible 2026-09-27T16:59Z · servido ANTES de poder saberse · sirvio 0.1 min hasta el siguiente despliegue
+    95cd703f · servido 2026-09-27T17:50Z · rojo legible 2026-09-27T17:54Z · servido ANTES de poder saberse · sirvio 8.4 min hasta el siguiente despliegue
+    fcc2cc01 · servido 2026-09-29T15:15Z · rojo legible 2026-09-29T11:02Z · servido con el rojo YA legible · sirvio 18.3 min hasta el siguiente despliegue
+    e9e71cab · servido 2026-10-01T02:07Z · rojo legible 2026-10-01T00:28Z · servido con el rojo YA legible · sirvio 14.6 min hasta el siguiente despliegue
+    ba930e80 · servido 2026-10-01T11:38Z · rojo legible 2026-10-01T11:44Z · servido ANTES de poder saberse · sirvio 1.2 min hasta el siguiente despliegue
+    7a30dbb0 · servido 2026-10-01T12:12Z · rojo legible 2026-10-01T12:01Z · servido con el rojo YA legible · sirvio 4.6 min hasta el siguiente despliegue
+    7779b0cb · servido 2026-10-02T05:48Z · rojo legible 2026-10-02T05:41Z · servido con el rojo YA legible · sirvio 27.5 min hasta el siguiente despliegue
+    643e9a65 · servido 2026-10-02T13:32Z · rojo legible 2026-10-02T13:18Z · servido con el rojo YA legible · sirvio 11.3 min hasta el siguiente despliegue
+    f30b1a40 · servido 2026-10-02T16:44Z · rojo legible 2026-10-02T16:50Z · servido ANTES de poder saberse · sirvio 9.4 min hasta el siguiente despliegue
+    28222517 · servido 2026-10-06T20:07Z · rojo legible 2026-10-06T20:07Z · servido con el rojo YA legible · sirvio 1.8 min hasta el siguiente despliegue
+  COBERTURA de lo servido (verde de ESE commit o de uno posterior, ya terminado):
+    ya cubierto al empezar a servirse: 217 de 1084 (20 %)
+    se cubrio MIENTRAS se servia: 263 · espera (min) n=263 · min 0.5 · p50 5 · p90 12.1 · max 252.8
+    SUSTITUIDO por otro despliegue sin haber estado cubierto ni un minuto: 604 de 1084 (55.7 %)
+    horas de produccion sirviendo algo SIN cubrir: 86.9 de 736.2 (11.8 %)
+    VERDE propio y servido DESPUES de conocerse: 214 de 1084
+  racha mas larga de despliegues seguidos cuyo commit no tiene VERDE propio: 12 (desde 2026-09-28T15:36:58Z, 0.8 h)
+
+== F · CONTROLES ==
+  control a CERO · corridas del sha 00000000…: 0 · despliegues: 0 · commits: 0
+  caso conocido cadf00bc: corridas 1 [36886780786 corrida=failure jobs=6 -> VERDE] · despliegues 1 [INACTIVE+SUCCESS+IN_PROGRESS]
+  caso conocido cae4c5cc: corridas 1 [36881969807 corrida=cancelled jobs=0 -> CANCELADA-0-JOBS] · despliegues 1 [INACTIVE+SUCCESS+IN_PROGRESS]
+  caso conocido 965e3d05: corridas 1 [37654882700 corrida=failure jobs=0 -> FAILURE-0-JOBS] · despliegues 1 [INACTIVE+SUCCESS+IN_PROGRESS]
+EXIT=0
