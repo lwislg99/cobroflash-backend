@@ -621,3 +621,52 @@ En las seis pasadas por tramos `a55` salió verde. El único caído ajeno fue `s
 
     node --test tests/scrum876f-el-seco-se-decide-al-enviar.test.mjs
     LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs tests/bot-suite.test.mjs
+
+# APÉNDICE · SCRUM-876f (segunda parte) · El obligatorio de #2255 cayó: al merchant efímero le tocó el id del demo
+
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:06:27Z
+**Rama:** `scrum-876f-a55-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** `withMerchant` no entrega nunca el id 1; `ci.yml`, `src/` y los dos tests gateados no cambian
+
+A9: comprobación → `tests/merchant-fixture.test.mjs`
+
+## Qué dijo el juez
+
+Run `37590893205` (el `build + tests` de #2255, punta `491ed48b`): 10.827 tests, 1 caído.
+
+| test | resultado en el log |
+|---|---|
+| `A8.4: suite completa del bot` | ✔ 18.680 ms, merchant efímero 4 |
+| `A5.5: ventana abierta → envío por SESIÓN` | ✖ 393 ms, `false !== true` en `closed.ok` (línea 138), merchant efímero **1** |
+
+Justo delante del ✖, el sender dice: `V0-2: envío desde el merchant demo … BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`. El corte de salida no apuntó ningún intento: el envío no llegó a intentarse.
+
+## La causa
+
+El banco de CI se crea vacío en cada run. El primer merchant que nace en él recibe el id 1, que es el demo (regla 8), y el producto le aplica sus frenos a propósito. Le toca al fichero que llegue antes: en ese run fue `a55`. `bot-suite` pasó porque recibió el 4, no porque fuera inmune.
+
+**Mi fallo:** di por bueno el verde local sin mirar en qué se diferenciaba mi banco del de CI. La secuencia de `merchants` del mío iba por 225; en CI empieza en 1. Las «5 de 5 dentro de un tramo de 300» del apéndice de arriba medían la carga, y este defecto no depende de la carga.
+
+## El arreglo, y por qué en el fixture
+
+`tests/_merchant-fixture.mjs`: si el merchant recién creado es el demo, `withMerchant` lo borra y crea otro. La secuencia ya ha pasado del 1, así que ocurre como mucho una vez por banco. Va ahí y no en `a55` porque el defecto no es de `a55`: es de cualquier fichero que use el fixture y llegue el primero.
+
+Lo que NO cubre: los ficheros que crean su merchant a mano, sin `withMerchant`, contra el banco. Si a uno de ésos le toca el id 1, sigue siendo el demo. No los he censado.
+
+## Los rojos
+
+Banco local (Postgres 16.4, loopback), secuencia de `merchants` reiniciada a 1 antes de cada pasada.
+
+| qué se corre | fixture | resultado |
+|---|---|---|
+| `a55` | el de #2255 (`491ed48b`) | ROJO, el de CI: línea 138, mismo aviso V0-2, merchant efímero 1 |
+| `a55` | con el arreglo | VERDE, merchant efímero 2 |
+| `merchant-fixture.test.mjs` (sin base) | arreglo anulado (`numstat` 1 1) | ROJO en 2 de 13: «NO entrega el id del demo» y «si el segundo también nace demo» |
+| `bot-suite` | arreglo anulado | ROJO, merchant efímero 1, `V0-2: lista desde el merchant demo … BLOQUEADA` |
+| `bot-suite` + `a55` + `merchant-fixture` | con el arreglo | VERDE, 15 de 15, merchants efímeros 2 y 3, poso 0 |
+
+Restaurado con `git restore --source=HEAD`; `git status` vacío después.
+
+## Reproducir
+
+    psql -d <banco> -c "alter sequence merchants_id_seq restart with 1"
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs
