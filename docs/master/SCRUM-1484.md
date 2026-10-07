@@ -66,3 +66,93 @@ fabricadas en el test. El día que una sesión viva pase de 500k se ve sola en l
 La A19 lleva la frase «⚠️ El latido no avisa de este caso (SCRUM-1484)». Sale de la norma cuando esto entre, y
 el fichero es de la S0 (`docs/equipo/00-normas-comunes.md`): avisada en SCRUM-1484 y en SCRUM-1282. **Este
 ticket no se cierra hasta que esa frase salga.**
+
+## SCRUM-1484b · `contexto N` dice la misma frase que el latido, y el papel de S5 deja de negarlo
+
+**Rama:** `scrum-1484b-una-frase-y-su-papel` · **Carril:** S5 · **Fecha:** 7-oct-2026
+**Medido contra:** `origin/main` = `73ce872cbcb6c914355830fd6b358e30aa066c77` · 2026-10-07T07:14:33Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum899c-relevar-y-contexto.test.mjs`
+
+**El fallo, que es mío.** SCRUM-1484 (#2238) metió el segundo número en el código el 6-oct y dejó dos papeles
+diciendo lo contrario. Uno es de la S0 (la A19, abajo). El otro es de S5 y no lo toqué:
+`docs/equipo/orquestador-autonomo.md` §5bis.1 seguía diciendo que el número de «a mitad» «no está en el código: el
+latido dice la misma frase para los dos casos». El 7-oct el encargo del día repartió «construir» SCRUM-1484, que
+ya estaba en `main`. No sé si quien repartió leyó ese párrafo; sé que el párrafo decía eso.
+
+### Qué cambia
+
+| Sitio | Antes | Ahora |
+|---|---|---|
+| `scripts/equipo/sesion.mjs` · `fraseDeRelevo` | (no existía; la frase vivía dentro del latido) | la frase de la A19 para una ventana que pasó el primer número, en UN sitio |
+| `scripts/equipo/sesion.mjs` · `decidirRelevo` (lo que imprime `contexto N`) | `RELEVAR` · «por encima de 300k», también a una sesión de 800k | `RELEVAR` + `momento` (`AL-TERMINAR` o `YA`) y la frase del latido. Con los dos números iguales o al revés: `NO-PUDE-MIRAR` |
+| `scripts/equipo/latido.mjs` · `seccionContexto` | escribía las dos frases | las toma de `fraseDeRelevo`; lo que imprime no cambia |
+| `docs/equipo/orquestador-autonomo.md` §5bis.1 | «no está en el código» | dónde vive, qué dicen los dos instrumentos y quién dejó el número en 500k |
+| `tests/scrum899c-relevar-y-contexto.test.mjs` | sólo el veredicto | dos tests nuevos y dos mutaciones declaradas |
+
+**El número no cambia: sigue en 500k.** El orquestador de Luis lo dejó así el 7-oct (SCRUM-1479 c.18622) con la
+medición de `docs/master/evidencias/SCRUM-1479/`. No lo firmó el fundador y aquí queda dicho: no se mueve el
+número ni sube el gasto. Su comentario dice que hoy «no hay ningún corte» por encima del umbral de entrega; lo
+había desde el 6-oct, en la norma y en el código. La conclusión es la misma: se queda como está.
+
+### La medida que faltaba: el latido contra una sesión VIVA
+
+`node scripts/equipo/latido.mjs` desde un árbol en `725c0e3a1fff3409fdc2db2bdd493918cba5cec0`, el 7-oct entre
+las 07:05Z y las 07:12Z: 24 leídas, 10 por encima de 300k y **una por encima de 500k**. Es la primera vez que la
+orden entera imprime la frase sin sesiones fabricadas:
+
+    (sin trabajo de fondo: ed676fd1) · 530k de ventana, por encima de 500k (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo · último turno hace 3 min
+
+Las otras nueve dicen «AL TERMINAR su entrega». Desde el árbol de la rama, minutos después, las mismas líneas
+(la primera ya en 536k). `ed676fd1` es la transcripción del chat del orquestador de Luis.
+
+### `decidirRelevo` con transcripciones reales, en los dos árboles
+
+Sonda fuera de git: lee los jsonl tocados en 36 h de `~/.claude/projects` y les pasa `decidirRelevo` con
+`ultimaActividad = ahora`, para medir sólo la rama del tamaño. 60 jsonl, 60 leídos, 0 ilegibles, 59 con algún
+turno con uso. No son sólo sesiones del equipo: es todo lo tocado en esa carpeta.
+
+| árbol | `RELEVAR` | con `momento: YA` | con `AL-TERMINAR` | sin `momento` | `SEGUIR` |
+|---|---|---|---|---|---|
+| la rama | 35 | 7 (de 502k a 845k) | 28 | 0 | 24 |
+| `main` (`725c0e3a`) | 35 | 0 | 0 | 35 | 24 |
+
+En `main` a las siete de más de 500k les dice «por encima de 300k», igual que a la de 427k.
+
+### Visto en rojo
+
+Sobre `tests/scrum899c-relevar-y-contexto.test.mjs` y `tests/scrum1350-latido.test.mjs`, con el árbol comiteado
+(`3a5eeb889123ed1476b335c63c54f46c57eb2539`, ya con `main` traído). Base: 53 tests, 53 pasan, antes y después.
+
+| Mutación en `sesion.mjs` (`git diff --numstat`: 1 1) | Caen |
+|---|---|
+| `const yaSinEsperar = tokens > umbralAMitad;` → `false` | 2: el test de las dos frases del latido (SCRUM-1484) y el nuevo de `contexto N` |
+| la puerta de los umbrales al revés de `decidirRelevo` → `if (false)` | 1: el nuevo de `contexto N` |
+| `momento` siempre `'AL-TERMINAR'` | 1: el nuevo de `contexto N` |
+| `sesion.mjs` y `latido.mjs` enteros de `origin/main` (el código viejo) | 1: el nuevo de `contexto N` |
+| `UMBRAL_CONTEXTO_A_MITAD = 500_000` → `450_000` | 1: el del papel de S5 |
+| en `orquestador-autonomo.md`, quitar el nombre de la constante | 1: el del papel de S5 |
+
+Tras cada una, `git restore --source=HEAD` y `git status --porcelain` vacío.
+
+### Lo que queda fuera, dicho
+
+- **La copia INSTALADA del lanzador** (`%LOCALAPPDATA%\yaqu-equipo\sesion.mjs`) queda distinta de `main` cuando
+  esto entre, hasta que `arranque.cmd` la reescriba. No la he tocado.
+- `gasto-arranque.mjs vivas` sigue con un número: lista quién pasa del primero, no dice cuándo.
+- El test nuevo ata el papel de S5, no la A19: quien mueva el número sigue teniendo que cambiar la norma a mano.
+- No visto: `sesion.mjs contexto <nombre>` impreso por la orden instalada contra una sesión con nombre de más de
+  500k. La transcripción de 530k no es un trabajo de fondo y la orden pide un nombre.
+
+### Gemelo de la S0 (aceptación 5): sigue SIN hacer, y ahora son dos frases
+
+En `docs/equipo/00-normas-comunes.md`, A19, a las 07:14Z del 7-oct:
+
+1. «⚠️ **El latido no avisa de este caso** (SCRUM-1484): …» hasta «…los 500k los vigila la propia sesión con la
+   casilla 1.» Es falso desde el 6-oct: el latido avisa, y hoy se ha visto con una transcripción viva.
+2. «⏳ Ese segundo número está sin volver a decidir (lo decide el fundador; SCRUM-1479)». Desde el 7-oct tiene
+   respuesta (c.18622): se queda en 500k, y lo dejó el orquestador, no el fundador.
+
+`docs/equipo/limites-del-fundador.md` no hay que tocarlo: dice que el fundador no lo ha vuelto a decidir y que
+sigue valiendo el de antes, y las dos cosas siguen siendo ciertas. La A19 no es de S5.
+**SCRUM-1484 no se cierra hasta que salga la primera.**
