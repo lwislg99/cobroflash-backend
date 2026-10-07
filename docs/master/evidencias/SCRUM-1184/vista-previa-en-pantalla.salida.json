@@ -1,0 +1,60 @@
+{
+  "poblacion": {
+    "pasadas": 2,
+    "hojasAbiertas": 2
+  },
+  "veredicto": "VISTO",
+  "fallos": [],
+  "A": {
+    "pasada": "A · tal cual",
+    "cortadas": [
+      "POST /__control-s1-no-existe",
+      "POST /admin/entorno",
+      "POST /admin/entorno"
+    ],
+    "gets": 232,
+    "serieCortada": 0,
+    "build": "5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b",
+    "control": "cortada",
+    "trabajo": 76,
+    "trabajosEnLaCuenta": 1,
+    "ruta": {
+      "estado": 200,
+      "cuerpo": {
+        "siguiente": "AB260002"
+      }
+    },
+    "botones": 1,
+    "cortadasAntesDePulsar": 3,
+    "lineas": 1,
+    "oculta": false,
+    "visible": true,
+    "texto": "Siguiente número: AB260002.",
+    "cortadasAlAcabar": 3,
+    "escriturasDeLaHoja": []
+  },
+  "B": {
+    "pasada": "B · ruta cortada (control)",
+    "cortadas": [
+      "POST /__control-s1-no-existe",
+      "POST /admin/entorno",
+      "POST /admin/entorno"
+    ],
+    "gets": 230,
+    "serieCortada": 1,
+    "build": "5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b",
+    "control": "cortada",
+    "trabajo": 76,
+    "trabajosEnLaCuenta": 1,
+    "ruta": null,
+    "botones": 1,
+    "cortadasAntesDePulsar": 3,
+    "lineas": 1,
+    "oculta": true,
+    "visible": false,
+    "texto": "",
+    "cortadasAlAcabar": 3,
+    "escriturasDeLaHoja": []
+  }
+}
+EXIT=0
