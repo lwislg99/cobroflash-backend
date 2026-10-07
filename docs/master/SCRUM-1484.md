@@ -122,7 +122,7 @@ En `main` a las siete de más de 500k les dice «por encima de 300k», igual que
 ### Visto en rojo
 
 Sobre `tests/scrum899c-relevar-y-contexto.test.mjs` y `tests/scrum1350-latido.test.mjs`, con el árbol comiteado
-(`2e3dda3e7a47ab80530f438350a887e08786d1fa`). Base: 52 tests, 52 pasan, antes y después.
+(`3a5eeb889123ed1476b335c63c54f46c57eb2539`, ya con `main` traído). Base: 53 tests, 53 pasan, antes y después.
 
 | Mutación en `sesion.mjs` (`git diff --numstat`: 1 1) | Caen |
 |---|---|
@@ -131,6 +131,7 @@ Sobre `tests/scrum899c-relevar-y-contexto.test.mjs` y `tests/scrum1350-latido.te
 | `momento` siempre `'AL-TERMINAR'` | 1: el nuevo de `contexto N` |
 | `sesion.mjs` y `latido.mjs` enteros de `origin/main` (el código viejo) | 1: el nuevo de `contexto N` |
 | `UMBRAL_CONTEXTO_A_MITAD = 500_000` → `450_000` | 1: el del papel de S5 |
+| en `orquestador-autonomo.md`, quitar el nombre de la constante | 1: el del papel de S5 |
 
 Tras cada una, `git restore --source=HEAD` y `git status --porcelain` vacío.
 
