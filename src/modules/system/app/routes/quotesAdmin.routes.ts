@@ -23,7 +23,7 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA, ERROR_VERSION_INVALIDA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
+import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
 import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1288
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
@@ -505,8 +505,9 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     // SCRUM-1285 · la versión que leyó la pantalla (ver `core/db/escrituraConVersion.ts`).
+    // Se EXIGE: sin ella no se escribe (`version_requerida`), y no es lo mismo que mandarla ilegible.
     const leida = leerVersion(req.body?.version);
-    if (!leida.ok) return res.status(400).json({ error: ERROR_VERSION_INVALIDA });
+    if (!leida.ok) return res.status(400).json({ error: leida.error });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -525,7 +526,7 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     // 🔴 SCRUM-1285 · la versión va DENTRO del `where`, no en una comprobación previa: aquí
     // reemplazaba a ciegas, y un PATCH hecho sobre una versión vieja devolvía la base al plan viejo.
     const actualizado = await prisma.quote.update({
-      where: { id: quote.id, updatedAt: leida.version ?? undefined }, // undefined = no la mandó (transición): Prisma lo ignora
+      where: { id: quote.id, updatedAt: leida.version },
       data: { customBillingPlan: req.body.customBillingPlan },
     });
     return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas, version: actualizado.updatedAt });
