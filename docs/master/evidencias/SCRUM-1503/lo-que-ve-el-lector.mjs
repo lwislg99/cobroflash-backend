@@ -1,9 +1,9 @@
-// docs/master/evidencias/SCRUM-1503/dato-por-test.mjs — SCRUM-1503
+// docs/master/evidencias/SCRUM-1503/lo-que-ve-el-lector.mjs — SCRUM-1503
 //
 // Qué VE la herramienta de cada test, sacado de su propio análisis (`analizarArbol`, sin copiarlo):
 // los ficheros que le atribuye, los directorios que cree que lista y sus «no sé».
 //
-//     node docs/master/evidencias/SCRUM-1503/dato-por-test.mjs <tocado> <test> [<test> …]
+//     node docs/master/evidencias/SCRUM-1503/lo-que-ve-el-lector.mjs <tocado> <test> [<test> …]
 //
 // Sólo LEE. La primera línea es la POBLACIÓN y la última el EXIT.
 import path from 'node:path';
@@ -13,7 +13,7 @@ import { analizarArbol, razonDe, motivosParaNoFiarse } from '../../../../scripts
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const [tocado, ...pedidos] = process.argv.slice(2);
 if (!tocado || !pedidos.length) {
-  console.error('uso: dato-por-test.mjs <fichero tocado> <tests/…test.mjs> …');
+  console.error('uso: lo-que-ve-el-lector.mjs <fichero tocado> <tests/…test.mjs> …');
   process.exit(2);
 }
 

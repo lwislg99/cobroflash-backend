@@ -29,7 +29,7 @@ de forma de la herramienta: son **tres agujeros concretos de su lector**, y deja
 Un test entra por `NOMBRA` (escribe la ruta o el nombre del fichero tocado), por `RECORRE` (lista un directorio
 que lo contiene) o por `NO_SE` (lista algo que el lector no sabe resolver; entra siempre).
 
-El control que separa esto de una teoría (`dato-por-test.mjs`), con el fichero tocado de #2280:
+El control que separa esto de una teoría (`lo-que-ve-el-lector.mjs`), con el fichero tocado de #2280:
 
 | test | lo que el lector VE de él | razón |
 |---|---|---|
@@ -130,9 +130,11 @@ A y B no se excluyen, y D es lo que distingue «arreglado» de «arreglado hasta
 - **Enumerar con git** (`ls-files`, `ls-tree`, `grep`): 16 tests lo hacen en ejecución, 14 en `NO_SE`. Los otros 2
   (`scrum804b`, `scrum835`, los dos con `git ls-tree`) pueden estar mirando un repositorio de usar y tirar: la
   sonda no apunta el directorio de trabajo.
-- **1 test cortado por el techo de 120 s** (`scrum534b`, en `NO_SE`) y **6 con algún rojo bajo la sonda**
-  (`scrum1199`, `scrum1308`, `scrum245-tipo-obliga-declarar`, `scrum385`, `scrum471`, `scrum475`): no he mirado
-  por qué caen. El `dist/` de este árbol salió de `tsc --noCheck`, y un test que lanza otra tanda hereda la sonda.
+- **1 test cortado por el techo de 120 s** (`scrum534b`, en `NO_SE`): no he mirado por qué.
+- **6 tests cayeron bajo la sonda.** Uno, `scrum1308`, era un rojo MÍO (error 5, abajo). Los otros cinco
+  (`scrum1199`, `scrum245-tipo-obliga-declarar`, `scrum385`, `scrum471`, `scrum475`) caen también SIN la sonda,
+  y sus mensajes piden `node_modules/express`, `node_modules/typescript/bin/tsc` y el CLI de Prisma DENTRO de este
+  árbol: un worktree anidado no trae `node_modules` propio. En el CI los cinco pasaron.
 - `forma.mjs` mira `tests/`, `scripts/` y `scripts/equipo/`, sin bajar a más subcarpetas.
 - La tanda dirigida no la he corrido entera: sin `dist/` se declaró ciega, y después no hacía falta.
 - El cuerpo de los 24 tests no lo he leído: sólo la línea donde listan y la que los llama.
@@ -148,12 +150,19 @@ A y B no se excluyen, y D es lo que distingue «arreglado» de «arreglado hasta
 4. Escribí «los 7 suman ~13 s» antes de sumarlos, y al sumarlos casé por prefijo y entraron tres tests de más
    (15,1 s). Sumados por nombre entero: 13,8 s.
 
+5. **El primer obligatorio de #2290 salió ROJO, y el rojo era mío** (job 113072722432, 7-oct 23:51:05Z: 11.021 pruebas,
+   1 cae). Cayó `SCRUM-1308 · fuera de tests/ NINGÚN fichero se llama como un test`: un guion de evidencias se
+   llamaba `dato-por-test.mjs`, y `node --test` ejecuta por su nombre todo lo que acaba en `-test`. Renombrado a
+   `lo-que-ve-el-lector.mjs`. **Lo tuve delante antes de empujar y no lo miré:** `scrum1308` era uno de los 6 que
+   cayeron bajo la sonda, y escribí «no he mirado por qué caen». Y este rojo la dirigida SÍ lo habría traído
+   (`scrum1308` está en `NO_SE`, entra siempre): no la corrí por la memoria, y no corrí a mano los que entran siempre.
+
 ## Lo que pide → dónde se ve
 
 | lo que pide (literal) | dónde se ve |
 |---|---|
 | ① ¿CUÁNTOS guards hay así? | `docs/master/evidencias/SCRUM-1503/por-test.tsv` (columna `ficheros_ciegos` > 0: 24) · se rehace con `cruce.mjs` |
-| ② ¿Cómo decide `tests-que-cubren.mjs` ahora mismo? | `dato-por-test.mjs` y `por-que-no-entra.mjs`, misma carpeta; tablas de arriba |
+| ② ¿Cómo decide `tests-que-cubren.mjs` ahora mismo? | `lo-que-ve-el-lector.mjs` y `por-que-no-entra.mjs`, misma carpeta; tablas de arriba |
 | ③ ¿Desde cuándo? | `desde-cuando.mjs`, misma carpeta |
 | ④ ¿qué debería correr una sesión antes de empujar? | NO HECHO → es `decision-jefe`: las cuatro salidas van arriba con su coste, sin elegir. La B cae en el carril de S3 |
 
