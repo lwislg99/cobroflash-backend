@@ -28,6 +28,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+
+// SCRUM-262: del rango imposible (prefijo 340), que no puede ser de nadie.
+const TELEFONO = telefonoDePrueba(55);
 
 // LA BASE SE INYECTA UNA VEZ, y lo que cambia de un caso a otro es este estado. Inyectarla en cada
 // caso no vale: `inyectarBase` sólo descarta el sender y el envío, y los módulos que ya habían
@@ -45,7 +49,7 @@ inyectarBase({
     id: 7, merchantId: MERCHANT, customerId: CLIENTE, status: 'sent', quoteNumber: 12,
     total: '150.00', currency: 'EUR', decisionToken: 'tok-1436-de-laboratorio',
     merchant: { id: MERCHANT, name: 'Taller de prueba', legalName: null },
-    customer: { id: CLIENTE, name: 'Cliente de laboratorio', phone: '+34600000055', mobile: '+34600000055' },
+    customer: { id: CLIENTE, name: 'Cliente de laboratorio', phone: `+${TELEFONO}`, mobile: `+${TELEFONO}` },
   }),
 });
 
@@ -97,7 +101,7 @@ async function conEntorno({ ventana, meta }, cuerpo) {
 }
 
 const directo = (wa, extra = {}) => wa.sendWhatsAppWindowFirst({
-  to: '34600000055', // rango imposible de laboratorio (SCRUM-262)
+  to: TELEFONO, // rango imposible de laboratorio (SCRUM-262)
   merchantId: MERCHANT,
   customerId: CLIENTE,
   windowText: 'texto de ventana',
@@ -120,7 +124,7 @@ test('SCRUM-1436 · 🔴 SUELO: el banco sabe ABRIR la ventana (con Meta respond
 
 test('SCRUM-1436 · 🔴 SUELO: el banco sabe hacer FALLAR el envío sin tocar la red', async () => {
   await conEntorno({ ventana: 'abierta', meta: 'falla' }, async ({ wa, buzon }) => {
-    const r = await wa.sendWhatsAppText({ to: '34600000055', merchantId: MERCHANT, text: 'x' });
+    const r = await wa.sendWhatsAppText({ to: TELEFONO, merchantId: MERCHANT, text: 'x' });
     assert.equal(r.ok, false, '🔴 CIEGO: el envío no ha fallado: el caso de abajo no ejercitaría el fallo.');
     assert.equal(r.reason, undefined, '🔴 CIEGO: el envío se ha parado ANTES de Meta, con motivo propio.');
     assert.match(String(r.error), /SCRUM-180/, '🔴 CIEGO: el fallo no es el del interceptor de salida a Meta.');

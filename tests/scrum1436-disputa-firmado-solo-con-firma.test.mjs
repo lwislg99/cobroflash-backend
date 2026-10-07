@@ -27,6 +27,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415
 
 const FIRMAS = JSON.parse(fs.readFileSync(new URL('./fixtures/scrum892-firmas.json', import.meta.url), 'utf8'));
 const FIRMA_CON_TRAZO = FIRMAS['firma-390px-dpr1'];
@@ -139,8 +140,12 @@ const SIN_FIRMA = [
     { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: FIRMA_CON_TRAZO })], lecturaRota: true }],
 ];
 
-for (const [caso, etiqueta, banco] of SIN_FIRMA) {
-  test(`SCRUM-1436 · 🔴 ${caso} → el aviso NO dice «presupuesto FIRMADO»`, async () => {
+// Un caso por fila, con el nombre ESCRITO (SCRUM-1415): con el bucle, el nombre se construía al
+// ejecutar y la señal por nombres no podía decir que faltaba uno si la tanda lo perdía.
+const sinFirma = casosEscritos(
+  SIN_FIRMA,
+  ([caso]) => `SCRUM-1436 · 🔴 ${caso} → el aviso NO dice «presupuesto FIRMADO»`,
+  async ([caso, etiqueta, banco]) => {
     const { texto } = await avisoDe(banco, etiqueta);
 
     assert.ok(!texto.includes('FIRMADO'),
@@ -149,8 +154,16 @@ for (const [caso, etiqueta, banco] of SIN_FIRMA) {
     assert.equal(texto, avisoSinLaFrase(FACTURA),
       '🔴 sin firma, el aviso tiene que ser el de siempre MENOS esa oración, y nada más. Cualquier '
       + 'palabra nueva es texto que ve el usuario y necesita firma del fundador (regla 39).');
-  });
-}
+  },
+);
+test('SCRUM-1436 · 🔴 la factura NO viene de un presupuesto → el aviso NO dice «presupuesto FIRMADO»', sinFirma(0));
+test('SCRUM-1436 · 🔴 el presupuesto se ACEPTÓ SIN FIRMAR («Acepto sin firmar» deja la firma a null) → el aviso NO dice «presupuesto FIRMADO»', sinFirma(1));
+test('SCRUM-1436 · 🔴 la firma guardada es un lienzo VACÍO (SCRUM-892) → el aviso NO dice «presupuesto FIRMADO»', sinFirma(2));
+test('SCRUM-1436 · 🔴 la firma guardada es `data:,` → el aviso NO dice «presupuesto FIRMADO»', sinFirma(3));
+test('SCRUM-1436 · 🔴 el presupuesto firmado es de OTRO negocio → el aviso NO dice «presupuesto FIRMADO»', sinFirma(4));
+test('SCRUM-1436 · 🔴 el presupuesto de la factura ya no existe → el aviso NO dice «presupuesto FIRMADO»', sinFirma(5));
+test('SCRUM-1436 · 🔴 la lectura del presupuesto FALLA: no saber no es «firmado» → el aviso NO dice «presupuesto FIRMADO»', sinFirma(6));
+sinFirma.todos();
 
 test('SCRUM-1436 · 🔴 el cobro NO tiene factura → el aviso NO dice «presupuesto FIRMADO»', async () => {
   const { texto, consultas } = await avisoDe({
