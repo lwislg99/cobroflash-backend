@@ -13,8 +13,12 @@
 //   · la frase sale SÓLO si la factura del cobro viene de un presupuesto de ESE negocio cuya firma
 //     tiene trazo. Es lo que el «Paquete de disputa» de esa factura va a enseñar (lee
 //     `invoice.quote` y pinta `quote.signatureUrl`), así que el aviso y el paquete dicen lo mismo;
-//   · en cualquier otro caso el aviso sale IGUAL que antes menos esa oración. No hay texto nuevo:
-//     qué decirle al profesional cuando no hay firma necesita firma del fundador (regla 39);
+//   · sin firma y CON factura salen los dos literales firmados en SCRUM-1436 comentario 18287
+//     (cuenta de Luis; valen para este carril por la decisión del comentario 18734): «aceptado,
+//     pero sin firma» si el presupuesto tiene `acceptedAt`, y el que no dice nada del presupuesto
+//     en todos los demás casos, incluido «no lo sé». Letra por letra;
+//   · SIN factura el aviso es el de antes menos esa oración: los literales firmados llevan el
+//     número de la factura y ahí no hay ninguno, así que no se han encajado a la fuerza;
 //   · con presupuesto firmado, el aviso es byte a byte el de antes.
 //
 // EL DOBLE: el de `_envio-doblado.mjs` (base por `require.cache`, Meta en dry-run con buzón).
@@ -49,8 +53,17 @@ const avisoDeSiempre = (numero) =>
   `⚠️ El banco de ${CLIENTE} ha abierto una disputa por ${IMPORTE}.\n`
   + `${FRASE} Entra en la factura${numero ? ` ${numero}` : ''} y pulsa "Paquete de disputa" — `
   + 'sale todo listo para responder al banco.';
-/** El mismo, sin la oración. No lleva ni una palabra que no estuviera ya. */
+/** El mismo, sin la oración. No lleva ni una palabra que no estuviera ya. Es el del cobro SIN factura. */
 const avisoSinLaFrase = (numero) => avisoDeSiempre(numero).replace(`${FRASE} `, '');
+
+// LOS DOS LITERALES FIRMADOS — SCRUM-1436 comentario 18287 (cuenta de Luis), válidos para este
+// carril por la decisión del comentario 18734. Escritos aquí ENTEROS y a mano, no compuestos con
+// trozos del código: si el código cambia una coma, esto cae.
+const FIRMADO_ACEPTADO_SIN_FIRMA =
+  `⚠️ El banco de ${CLIENTE} ha abierto una disputa por ${IMPORTE}. Tienes el presupuesto aceptado, pero sin firma. Entra en la factura ${FACTURA} y pulsa "Paquete de disputa": reúne lo que hay para responder al banco.`;
+const FIRMADO_SIN_PRESUPUESTO =
+  `⚠️ El banco de ${CLIENTE} ha abierto una disputa por ${IMPORTE}. Entra en la factura ${FACTURA} y pulsa "Paquete de disputa": reúne lo que hay para responder al banco.`;
+const ACEPTADO_EL = new Date('2026-09-01T10:00:00Z');
 
 /**
  * Manda UNA disputa por el camino real y devuelve los textos que salieron hacia el profesional.
@@ -104,14 +117,14 @@ async function avisoDe({ factura, presupuestos = [], lecturaRota = false }, etiq
 }
 
 const conFactura = (quoteId) => ({ id: 1, number: FACTURA, quoteId });
-const presupuesto = (extra) => ({ id: PRESUPUESTO, merchantId: MERCHANT, signatureUrl: null, ...extra });
+const presupuesto = (extra) => ({ id: PRESUPUESTO, merchantId: MERCHANT, signatureUrl: null, acceptedAt: null, ...extra });
 
 // ═══ ① EL POSITIVO QUE PUEDE TUMBARLO ════════════════════════════════════════════════════════
 
 test('SCRUM-1436 · ✅ POSITIVO: con presupuesto FIRMADO, el aviso sale IGUAL que antes, byte a byte', async () => {
   const { texto, consultas } = await avisoDe({
     factura: conFactura(PRESUPUESTO),
-    presupuestos: [presupuesto({ signatureUrl: FIRMA_CON_TRAZO })],
+    presupuestos: [presupuesto({ signatureUrl: FIRMA_CON_TRAZO, acceptedAt: ACEPTADO_EL })],
   }, 'firmado');
 
   assert.equal(texto, avisoDeSiempre(FACTURA),
@@ -122,35 +135,57 @@ test('SCRUM-1436 · ✅ POSITIVO: con presupuesto FIRMADO, el aviso sale IGUAL q
 
 // ═══ ② EL DEFECTO: LA FRASE SIN FIRMA DETRÁS ════════════════════════════════════════════════
 
+// Cada fila: el caso, su etiqueta, el banco y el LITERAL FIRMADO que tiene que salir.
+const firmadoYAceptado = { signatureUrl: FIRMA_CON_TRAZO, acceptedAt: ACEPTADO_EL };
 const SIN_FIRMA = [
-  ['la factura NO viene de un presupuesto', 'sin-presupuesto',
-    { factura: conFactura(null) }],
   ['el presupuesto se ACEPTÓ SIN FIRMAR («Acepto sin firmar» deja la firma a null)', 'aceptado-sin-firma',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: null })] }],
-  ['la firma guardada es un lienzo VACÍO (SCRUM-892)', 'lienzo-vacio',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: LIENZO_VACIO })] }],
-  ['la firma guardada es `data:,`', 'data-coma',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: 'data:,' })] }],
-  ['el presupuesto firmado es de OTRO negocio', 'otro-negocio',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ merchantId: OTRO_NEGOCIO, signatureUrl: FIRMA_CON_TRAZO })] }],
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ acceptedAt: ACEPTADO_EL })] },
+    FIRMADO_ACEPTADO_SIN_FIRMA],
+  ['aceptado, y la firma guardada es un lienzo VACÍO (SCRUM-892)', 'lienzo-vacio',
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: LIENZO_VACIO, acceptedAt: ACEPTADO_EL })] },
+    FIRMADO_ACEPTADO_SIN_FIRMA],
+  ['aceptado, y la firma guardada es `data:,`', 'data-coma',
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: 'data:,', acceptedAt: ACEPTADO_EL })] },
+    FIRMADO_ACEPTADO_SIN_FIRMA],
+  ['la factura NO viene de un presupuesto', 'sin-presupuesto',
+    { factura: conFactura(null) },
+    FIRMADO_SIN_PRESUPUESTO],
+  ['el presupuesto existe pero NI se aceptó NI se firmó', 'ni-aceptado-ni-firmado',
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({})] },
+    FIRMADO_SIN_PRESUPUESTO],
+  ['el presupuesto firmado y aceptado es de OTRO negocio', 'otro-negocio',
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ merchantId: OTRO_NEGOCIO, ...firmadoYAceptado })] },
+    FIRMADO_SIN_PRESUPUESTO],
   ['el presupuesto de la factura ya no existe', 'presupuesto-borrado',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [] }],
-  ['la lectura del presupuesto FALLA: no saber no es «firmado»', 'lectura-rota',
-    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto({ signatureUrl: FIRMA_CON_TRAZO })], lecturaRota: true }],
+    { factura: conFactura(PRESUPUESTO), presupuestos: [] },
+    FIRMADO_SIN_PRESUPUESTO],
+  ['la lectura del presupuesto FALLA: no saber no es «firmado» ni «aceptado»', 'lectura-rota',
+    { factura: conFactura(PRESUPUESTO), presupuestos: [presupuesto(firmadoYAceptado)], lecturaRota: true },
+    FIRMADO_SIN_PRESUPUESTO],
 ];
 
-for (const [caso, etiqueta, banco] of SIN_FIRMA) {
+for (const [caso, etiqueta, banco, literal] of SIN_FIRMA) {
   test(`SCRUM-1436 · 🔴 ${caso} → el aviso NO dice «presupuesto FIRMADO»`, async () => {
     const { texto } = await avisoDe(banco, etiqueta);
 
     assert.ok(!texto.includes('FIRMADO'),
       `🔴 EL PROFESIONAL LEE «${FRASE}» Y NO ES VERDAD (${caso}). Se lo decimos justo cuando un `
       + `banco le reclama el dinero. Texto que salió:\n${texto}`);
-    assert.equal(texto, avisoSinLaFrase(FACTURA),
-      '🔴 sin firma, el aviso tiene que ser el de siempre MENOS esa oración, y nada más. Cualquier '
-      + 'palabra nueva es texto que ve el usuario y necesita firma del fundador (regla 39).');
+    assert.equal(texto, literal,
+      '🔴 el aviso no es, letra por letra, el literal firmado en SCRUM-1436 comentario 18287. Una '
+      + 'firma autoriza ESE texto: una coma distinta es texto nuevo (regla 39).');
+    if (literal === FIRMADO_SIN_PRESUPUESTO) {
+      assert.ok(!texto.includes('aceptado'),
+        `🔴 el aviso dice que el presupuesto está aceptado y no se ha podido comprobar (${caso}).`);
+    }
   });
 }
+
+test('SCRUM-1436 · 🔴 SUELO: los dos literales firmados sólo se distinguen por la segunda oración', () => {
+  assert.equal(FIRMADO_ACEPTADO_SIN_FIRMA.replace('Tienes el presupuesto aceptado, pero sin firma. ', ''), FIRMADO_SIN_PRESUPUESTO,
+    '🔴 la firma dice «la misma frase sin la segunda oración», y las dos constantes de este test no lo cumplen.');
+  assert.ok(!FIRMADO_SIN_PRESUPUESTO.includes('\n') && !FIRMADO_ACEPTADO_SIN_FIRMA.includes('—'));
+});
 
 test('SCRUM-1436 · 🔴 el cobro NO tiene factura → el aviso NO dice «presupuesto FIRMADO»', async () => {
   const { texto, consultas } = await avisoDe({

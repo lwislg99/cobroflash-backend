@@ -12,7 +12,9 @@ import { formatMoneyEs } from '../../core/utils/utils';
 import { firmaTieneTrazo } from '../quotes/domain/firmaConTrazo';
 
 /**
- * SCRUM-1436 · ¿La factura de este cobro viene de un presupuesto FIRMADO?
+ * SCRUM-1436 · ¿Qué prueba tiene el profesional? Tres respuestas, no dos: `firmado`,
+ * `aceptado_sin_firma` (`acceptedAt` puesto y sin trazo) y `ninguna` (todo lo demás, incluido
+ * «no lo sé»). De `ninguna` el aviso no dice nada del presupuesto.
  *
  * El aviso de abajo decía «Tranquilo: tienes el presupuesto FIRMADO» SIEMPRE, sin mirar si había
  * presupuesto ni firma. Se lo decíamos al profesional justo cuando un banco le reclama el dinero.
@@ -23,29 +25,62 @@ import { firmaTieneTrazo } from '../quotes/domain/firmaConTrazo';
  * el Libro (`libroRegistro.repo.ts`). Y con trazo: una firma guardada puede ser un lienzo vacío
  * (SCRUM-892).
  *
- * 🔴 SI LA CONSULTA FALLA, DEVUELVE `false`. No saber no es «firmado»: el aviso sale igual, sin
+ * 🔴 SI LA CONSULTA FALLA, DEVUELVE `ninguna`. No saber no es «firmado»: el aviso sale igual, sin
  * la afirmación. La asimetría es la del dinero — callar una firma que existe cuesta que el
  * profesional vaya a mirarla; afirmar una que no existe le cuesta la disputa.
  *
  * ⚠️ LÍMITE DECLARADO: un cobro sin factura, o cuya factura no apunta a su presupuesto, sale
- * como «no firmado» aunque exista un presupuesto firmado por otro camino (`Quote.chargeId`). Ahí
+ * como `ninguna` aunque exista un presupuesto firmado por otro camino (`Quote.chargeId`). Ahí
  * el paquete tampoco lo enseñaría.
  */
-async function presupuestoFirmadoDe(
+type PruebaDelPresupuesto = 'firmado' | 'aceptado_sin_firma' | 'ninguna';
+
+async function pruebaDelPresupuesto(
   merchantId: number,
   invoice: { quoteId: number | null } | null,
-): Promise<boolean> {
-  if (!invoice || invoice.quoteId == null) return false;
+): Promise<PruebaDelPresupuesto> {
+  if (!invoice || invoice.quoteId == null) return 'ninguna';
   try {
     const quote = await prisma.quote.findFirst({
       where: { id: invoice.quoteId, merchantId },
-      select: { signatureUrl: true },
+      select: { signatureUrl: true, acceptedAt: true },
     });
-    return firmaTieneTrazo(quote?.signatureUrl);
+    if (firmaTieneTrazo(quote?.signatureUrl)) return 'firmado';
+    return quote?.acceptedAt ? 'aceptado_sin_firma' : 'ninguna';
   } catch (err: any) {
-    console.warn('[dispute] no se pudo leer la firma del presupuesto — el aviso sale sin afirmarla:', err?.message || err);
-    return false;
+    console.warn('[dispute] no se pudo leer el presupuesto de la factura — el aviso sale sin afirmar nada de él:', err?.message || err);
+    return 'ninguna';
   }
+}
+
+/**
+ * SCRUM-1436 · El texto libre del aviso. Cuatro formas, y ninguna afirma lo que no se ha mirado.
+ *
+ * · `firmado` → el de siempre, sin tocar una letra.
+ * · `aceptado_sin_firma` y `ninguna`, CON factura → los dos literales firmados en SCRUM-1436
+ *   comentario 18287 (cuenta de Luis), que valen para este carril por la decisión del comentario
+ *   18734. Copiados letra por letra; constan en
+ *   `docs/microcopy/2026-10-06-SCRUM-1436-aviso-de-disputa.md`.
+ * · SIN factura → el de siempre menos la oración de la firma. Los literales firmados llevan el
+ *   número de la factura y aquí no hay ninguno: encajarlos sería cambiarlos, y no se ha hecho.
+ *   ⚠️ Sigue mandando a «la factura» sin que exista: queda dicho en `docs/master/SCRUM-1436.md`.
+ */
+function avisoDeDisputa(p: {
+  custName: string;
+  amountTxt: string;
+  numeroDeFactura: string | null;
+  prueba: PruebaDelPresupuesto;
+}): string {
+  const cabecera = `⚠️ El banco de ${p.custName} ha abierto una disputa por ${p.amountTxt}.`;
+  if (p.prueba === 'firmado' || p.numeroDeFactura === null) {
+    return `${cabecera}\n` +
+      `${p.prueba === 'firmado' ? 'Tranquilo: tienes el presupuesto FIRMADO. ' : ''}Entra en la factura` +
+      `${p.numeroDeFactura !== null ? ` ${p.numeroDeFactura}` : ''} y pulsa "Paquete de disputa" — ` +
+      `sale todo listo para responder al banco.`;
+  }
+  return `${cabecera} ` +
+    `${p.prueba === 'aceptado_sin_firma' ? 'Tienes el presupuesto aceptado, pero sin firma. ' : ''}` +
+    `Entra en la factura ${p.numeroDeFactura} y pulsa "Paquete de disputa": reúne lo que hay para responder al banco.`;
 }
 
 /**
@@ -122,7 +157,7 @@ export async function handleStripeDispute(dispute: {
     select: { id: true, number: true, quoteId: true },
     orderBy: { id: 'desc' },
   });
-  const firmado = await presupuestoFirmadoDe(charge.merchantId, invoice);
+  const prueba = await pruebaDelPresupuesto(charge.merchantId, invoice);
 
   const amountTxt = dispute.amount != null
     ? formatMoneyEs(dispute.amount / 100, (dispute.currency || 'EUR').toUpperCase())
@@ -148,13 +183,7 @@ export async function handleStripeDispute(dispute: {
     customerName: custName,
     action: 'ha disputado un cobro',
     detail: `${amountTxt}${invoice ? ` · ${invoice.number}` : ''}`,
-    freeText:
-      `⚠️ El banco de ${custName} ha abierto una disputa por ${amountTxt}.\n` +
-      // SCRUM-1436: la oración sale SÓLO con firma detrás. Sin ella el resto no cambia: qué
-      // decirle entonces es texto nuevo y necesita firma del fundador (regla 39).
-      `${firmado ? 'Tranquilo: tienes el presupuesto FIRMADO. ' : ''}Entra en la factura` +
-      `${invoice ? ` ${invoice.number}` : ''} y pulsa "Paquete de disputa" — ` +
-      `sale todo listo para responder al banco.`,
+    freeText: avisoDeDisputa({ custName, amountTxt, numeroDeFactura: invoice?.number ?? null, prueba }),
   }).catch(() => null);
 
   // 🔴 LA MARCA SE ESCRIBE AL TERMINAR, NUNCA ANTES.
