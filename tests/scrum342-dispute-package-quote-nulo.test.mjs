@@ -86,7 +86,10 @@ test('SCRUM-342 · dispute-package CON presupuesto → 200 y renderiza número, 
   assert.equal(r.code, 200, `esperaba 200 y fue ${r.code}: ${JSON.stringify(r.body).slice(0, 200)}`);
   const html = String(r.body);
   assert.match(html, /#42/, 'el número de presupuesto (#42) debe salir');
-  assert.match(html, /250\.00 EUR/, 'el importe del presupuesto debe salir');
+  // SCRUM-1436: el importe sale en la forma de la casa («250,00 €»), ya no «250.00 EUR». Se saca
+  // del helper porque separa la cifra del símbolo con un espacio duro.
+  const { formatMoneyEs } = await import(DIST + 'core/utils/utils.js');
+  assert.ok(html.includes(`#42 · ${formatMoneyEs('250.00', 'EUR')}`), 'el importe del presupuesto debe salir');
   assert.match(html, /class="sig"/, 'la firma (imagen) debe renderizarse cuando hay signatureUrl');
   assert.match(html, /203\.0\.113\.9/, 'la evidencia técnica (IP) debe salir');
 });
