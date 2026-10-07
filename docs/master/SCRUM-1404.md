@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `965e3d053f1f7d9ba24830f17abc7a54254c83f9` · 2026-10-07T17:05:20Z (hora de GitHub)
 
-A9: sin fallo que generalice — es una medición sin código de producto; lo que sí falló hoy (los dos trinquetes sin correr antes de empujar SCRUM-1436d) tiene su línea en el registro de ese ticket
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
 
 Sesión J1 (`jv-j1`, 7-oct), por encargo del orquestador de Javier: **medir y parar**. No se ha tocado
 `src/`, ni un test, ni un texto. Al cerrar, `origin/main` iba por `60f1933845705618e5b82847d6090158f730a390`;
@@ -38,9 +38,10 @@ El ticket suponía que el error «cambió de forma y el `catch` se quedó con la
 llegar al portón de la línea 104, así que el 409 sólo se alcanza con una fila incoherente (el caso ②).
 Para una factura que de verdad espera su sellado, el 409 no se alcanza nunca.
 
-**Los dos textos del 409 ya están firmados por el fundador (30-jul-2026) y hoy no los ve nadie:**
-«Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.» (panel) y
-«Esta factura se está registrando en Hacienda. Vuelve a intentarlo en un minuto.» (cliente).
+**Los dos textos del 409 llevan en el código una marca de aprobación del 30-jul-2026 y hoy no los
+ve nadie.** Están en `invoicesAdmin.routes.ts:1295` (panel) y en `portonDocumento.ts:51-52` (cliente);
+no se copian aquí a propósito (ver «Mi error», abajo). ⚠️ Esa aprobación **no la he comprobado en su
+origen**: lo único que la sostiene, que yo haya visto, es el comentario del propio código.
 
 ## Censo de quien llama a `ensureInvoicePdf`
 
@@ -101,6 +102,18 @@ Todas menos la última modifican el camino de emisión o la ruta que lo sirve: r
    sellado por su cuenta? ¿O se construye antes el reintento, o se cambian las frases?
 3. El enlace al PDF en el recibo del cliente, ¿se sigue pintando mientras la factura no está
    registrada?
+
+## Mi error
+
+La primera versión de este registro (punta `edf4e4d3`) copiaba las dos frases enteras al lado de la
+atribución de su firma. El obligatorio cayó en `SCRUM-921c · el trinquete tampoco baja en silencio`
+(«quedan 27 y el trinquete dice 28»): ese guard busca el literal de cada marca de aprobación en
+`docs/`, y mi registro pasó a contar como respaldo documental de una firma que sólo repetía del
+código. Separado por ejecución: el guard pasa en la base del CI (`938c73a6`) y en `origin/main`
+(`6536e63e`), y cae en mi punta. Se arregla aquí, quitando la copia; el trinquete no se toca.
+
+De paso, y es un dato: esa marca es una de las 28 que el trinquete tiene por «sin respaldo». Dónde
+consta la firma del 30-jul no está escrito en ningún sitio que el guard encuentre.
 
 ## Lo que NO lleva
 
