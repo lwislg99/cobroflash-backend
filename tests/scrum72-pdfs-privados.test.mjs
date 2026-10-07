@@ -8,9 +8,11 @@
 //
 // Datos EFÍMEROS propios con limpieza en el finally — nunca el seed demo (lección SCRUM-63).
 //
-// ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process). Dos destinos (SCRUM-876e):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876e: el segundo destino, fail-closed; no afloja el primero
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
@@ -19,7 +21,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // ── 🔒 ASSERT DE REGRESIÓN (el que blinda esto para siempre) ──────────────
 // Si alguien devuelve el dir a public/ o reintroduce el mount estático, esto falla.
@@ -41,9 +43,13 @@ test('SCRUM-72: invoicesDir no cuelga de public/ (regresión — sin base)', asy
   assert.ok(normalized.includes('/storage/'), `invoicesDir debe vivir en storage/ (actual: ${invoicesDir})`);
 });
 
-test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
+  // SCRUM-876e: SCRUM-844 se llevó este `import` al test de arriba al sacarlo del gate, y éste se
+  // quedó leyendo una variable que ya no existía: moría en el paso 4 con `invoicesDir is not
+  // defined`. Nadie lo vio porque un gateado roto y uno sano dan el mismo `skipped`.
+  const { invoicesDir } = await import('../dist/core/storage/dirs.js');
 
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
