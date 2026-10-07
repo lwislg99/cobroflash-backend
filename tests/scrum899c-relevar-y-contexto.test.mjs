@@ -71,6 +71,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  const yaSinEsperar = false;',
     cae: '🔴 SCRUM-1484b · `contexto N` dice CUÁNDO: entre los dos números AL TERMINAR, por encima del segundo YA',
   },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: 'export const UMBRAL_CONTEXTO_A_MITAD = 500_000;',
+    a: 'export const UMBRAL_CONTEXTO_A_MITAD = 450_000;',
+    cae: '🔴 SCRUM-1484b · el papel de S5 (`orquestador-autonomo.md` §5bis.1) dice los DOS números que lleva el código',
+  },
 ];
 
 const UUID = 'd521a2f6-ff99-4970-a1bc-f8064ed68061';
@@ -227,6 +233,22 @@ test('🔴 SCRUM-1484b · `contexto N` dice CUÁNDO: entre los dos números AL T
     assert.equal(r.veredicto, 'NO-PUDE-MIRAR', `🔴 con ${umbral}/${umbralAMitad} da un veredicto`);
     assert.equal(s.fraseDeRelevo({ tokens: 700_000, umbral, umbralAMitad }), null);
   }
+});
+
+// SCRUM-1484b · EL PAPEL Y SU GEMELO. SCRUM-1484 metió el segundo número en el código el 6-oct-2026 y dejó este
+// papel, que es de S5, diciendo que «no está en el código». Al día siguiente se repartió construir lo ya construido.
+// Lo que ata: quien mueva un número en `sesion.mjs` tiene que escribirlo en el apartado que le dice al orquestador
+// cuándo se releva, o esto cae. NO ata la A19 (`00-normas-comunes.md`): es de la S0 y nombra muchos números.
+test('🔴 SCRUM-1484b · el papel de S5 (`orquestador-autonomo.md` §5bis.1) dice los DOS números que lleva el código', () => {
+  const papel = fs.readFileSync(path.join(RAIZ, 'docs', 'equipo', 'orquestador-autonomo.md'), 'utf8');
+  const inicio = papel.indexOf('### 5bis.1');
+  const fin = papel.indexOf('### 5bis.2');
+  assert.ok(inicio > 0 && fin > inicio, '🔴 SUELO: no encuentro el apartado 5bis.1 entre sus dos cabeceras; sin él no he mirado nada');
+  const apartado = papel.slice(inicio, fin);
+  const k = (n) => `${Math.round(n / 1000)}k`;
+  assert.ok(apartado.includes(`por encima de ${k(s.UMBRAL_CONTEXTO)}**`), `🔴 el papel no dice «por encima de ${k(s.UMBRAL_CONTEXTO)}», que es UMBRAL_CONTEXTO`);
+  assert.ok(apartado.includes(`de ${k(s.UMBRAL_CONTEXTO_A_MITAD)} de la A19`), `🔴 el papel no dice «de ${k(s.UMBRAL_CONTEXTO_A_MITAD)} de la A19», que es UMBRAL_CONTEXTO_A_MITAD`);
+  assert.ok(apartado.includes('`UMBRAL_CONTEXTO_A_MITAD`'), '🔴 el papel no nombra la constante del segundo número');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
