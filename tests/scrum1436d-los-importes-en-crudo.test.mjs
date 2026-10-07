@@ -1,0 +1,332 @@
+// tests/scrum1436d-los-importes-en-crudo.test.mjs — SCRUM-1436 (hallazgo 4)
+//
+// 🔴 EL IMPORTE EN CRUDO: «1419.87 EUR» donde la casa escribe «1.419,87 €».
+//
+// SCRUM-931 quitó ese formato de lo que lee el CLIENTE y dejó fuera, a propósito y por alcance, lo
+// que lee el PROFESIONAL. Quedaban once sitios (los diez del ticket y el undécimo que midió S1 en
+// el comentario 18194), y NINGUNO es un log:
+//
+//   · cinco avisos de WhatsApp al profesional (texto libre y variable de `merchant_alert_es`);
+//   · cinco líneas que el panel pinta tal cual (historial de la ficha y aviso de la factura);
+//   · el «Paquete de evidencia de disputa», que se imprime y se entrega al banco.
+//
+// ── EL BANCO ──────────────────────────────────────────────────────────────────────────────
+// Los handlers y servicios REALES de `dist/`, con la base doblada y el WhatsApp en dry-run. Lo
+// que se lee es lo que sale: la fila que se escribe en `customerEvent`, el cuerpo de la respuesta,
+// el HTML, y lo que cada ruta le pasa a `notifyMerchantPaid` / `notifyMerchantAlert` (el módulo
+// real, envuelto para apuntar sus argumentos; el envío sigue ocurriendo y cae en el buzón).
+//
+// ⚠️ Ningún importe esperado está tecleado: sale de `formatMoneyEs` / `formatImporteEs`, porque
+// `formatMoneyEs` separa la cifra del símbolo con un espacio DURO (código 160) y uno tecleado no
+// casa. El primer caso comprueba que ese helper sigue dando lo que este fichero cree.
+//
+// ⚠️ Lo que NO mide: que Meta acepte el valor en la variable de la plantilla. No hace falta
+// medirlo aquí: `disputes.service.ts` ya manda la salida de `formatMoneyEs` en esa misma variable
+// (lo dejó escrito SCRUM-931).
+process.env.WHATSAPP_DRY_RUN = '1';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
+
+const RAIZ = path.resolve(import.meta.dirname, '..');
+const requiere = createRequire(import.meta.url);
+const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
+
+const M = 4436; // no es el 1: el demo tiene su propio freno de envío (V0-2)
+const CLIENTE = 57;
+const COBRO = 2436;
+const FACTURA = 7;
+const TEL_PRO = '34000001436'; // rango imposible (SCRUM-262)
+const TEL_CLIENTE = '34000001437';
+const TOTAL = '1419.87'; // cuatro cifras enteras: es donde `es-ES` no agrupa solo (SCRUM-743)
+const NUMERO = 'F260007';
+const DURO = String.fromCharCode(160);
+const sinDuro = (s) => String(s).split(DURO).join(' ');
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+/** El formato que se retira: cifra con punto decimal seguida del código de moneda. */
+const CRUDO = /\d\.\d{1,2} [A-Z]{3}\b/;
+
+const banco = { eventos: [], avisos: [], cobro: null, factura: null, pagoMp: null };
+
+function reiniciar({ importe = TOTAL, moneda = 'EUR', numero = NUMERO } = {}) {
+  banco.eventos = [];
+  banco.avisos = [];
+  banco.cobro = {
+    id: COBRO, merchantId: M, customerId: CLIENTE, status: 'pending', amount: importe, currency: moneda,
+    method: 'card', concept: 'Reparación', reference: null, intentId: null, receiptToken: 'tok_1436',
+    customer: { id: CLIENTE, name: 'Cliente de prueba', phone: TEL_CLIENTE, mobile: null, email: null },
+    merchant: { id: M, name: 'Taller de prueba', legalName: null, whatsappPhone: TEL_PRO, googleReviewUrl: null, country: 'ES' },
+  };
+  banco.factura = {
+    id: FACTURA, merchantId: M, customerId: CLIENTE, number: numero, status: 'pending', total: importe, currency: moneda,
+    chargeId: COBRO, quoteId: 9, stageLabel: null, createdAt: new Date('2026-10-01T10:00:00Z'), paidAt: null,
+    merchant: { id: M, name: 'Taller de prueba', legalName: null, taxId: 'B00000000', address: null, country: 'ES' },
+    customer: { id: CLIENTE, name: 'Cliente de prueba', phone: TEL_CLIENTE, mobile: null, email: null },
+    quote: { id: 9, quoteNumber: 12, total: importe, currency: moneda, acceptedAt: null, decisionChannel: null, evidence: null, signatureUrl: null, decisionComment: null },
+    charge: { id: COBRO, method: 'card', intentId: 'pi_1436', reference: null, status: 'paid' },
+  };
+  banco.pagoMp = { status: 'approved', externalReference: `charge_${COBRO}`, amount: Number(importe), currency: moneda, method: 'card' };
+}
+reiniciar();
+
+const doble = dobleDeLaBase({
+  'customerEvent.create': (a) => { banco.eventos.push(a.data); return a.data; },
+  'invoice.findUnique': () => ({ ...banco.factura }),
+  'invoice.findFirst': () => ({ ...banco.factura }),
+  'invoice.update': () => ({ ...banco.factura }),
+  'charge.findUnique': () => ({ ...banco.cobro }),
+  'charge.update': (a) => {
+    const { reconciliations, ...datos } = a?.data ?? {};
+    Object.assign(banco.cobro, datos);
+    return { ...banco.cobro };
+  },
+  'merchant.findUnique': () => ({ ...banco.cobro.merchant, timezone: 'Europe/Madrid', email: null, notifyEmailOnPaid: false }),
+});
+
+const fPrisma = rutaDe('dist/core/db/prisma.js');
+requiere.cache[fPrisma] = { id: fPrisma, filename: fPrisma, loaded: true, exports: { prisma: doble } };
+for (const [r, exports] of [
+  ['dist/lib/email.js', { sendInvoiceEmail: async () => {} }],
+  ['dist/lib/invoicing.js', {
+    ensureInvoiceForCharge: async () => ({ id: FACTURA, number: banco.factura.number, status: 'issued', pdfUrl: '/x.pdf' }),
+    ensureInvoicePdf: async () => ({ diskPath: null, pdfUrl: '/x.pdf' }),
+    ensureChargeReceiptToken: async () => 'tok_1436',
+  }],
+  // Mercado Pago: ni firma real ni llamada a su API. Se mide lo que la ruta hace DESPUÉS.
+  ['dist/integrations/mercadopago.js', {
+    verifyMpWebhookSignature: () => true,
+    getMpPayment: async () => ({ ...banco.pagoMp }),
+  }],
+]) {
+  const f = rutaDe(r);
+  requiere.cache[f] = { id: f, filename: f, loaded: true, exports };
+}
+
+// El módulo REAL de avisos al profesional, envuelto: apunta lo que cada ruta le pasa y lo ejecuta.
+const fAvisos = rutaDe('dist/integrations/whatsappNotifications.js');
+const avisosDeVerdad = requiere(fAvisos);
+const apuntando = (nombre) => async (params) => {
+  banco.avisos.push({ nombre, freeText: params.freeText, detail: params.detail });
+  return avisosDeVerdad[nombre](params);
+};
+requiere.cache[fAvisos].exports = {
+  ...avisosDeVerdad,
+  notifyMerchantPaid: apuntando('notifyMerchantPaid'),
+  notifyMerchantAlert: apuntando('notifyMerchantAlert'),
+};
+
+const { config } = requiere(rutaDe('dist/core/config/env.js'));
+const { formatMoneyEs, formatImporteEs } = requiere(rutaDe('dist/core/utils/utils.js'));
+const { buildMerchantAlert, validateTemplateComponents } = requiere(rutaDe('dist/integrations/whatsappTemplates.js'));
+
+const handlerDe = (modulo, metodo, ruta) => {
+  const m = requiere(rutaDe(modulo));
+  const router = m.default || m;
+  const capa = router.stack.find((l) => l.route?.path === ruta && l.route.methods[metodo]);
+  assert.ok(capa, `🔴 CIEGO: no encuentro ${metodo.toUpperCase()} ${ruta} en ${modulo}`);
+  return capa.route.stack.at(-1).handle;
+};
+const ADMIN = 'dist/modules/system/app/routes/invoicesAdmin.routes.js';
+const anomaliaH = handlerDe(ADMIN, 'post', '/:id/payment-anomaly');
+const paqueteH = handlerDe(ADMIN, 'get', '/:id/dispute-package');
+const pspH = handlerDe('dist/modules/billing/app/routes/psp.routes.js', 'post', '/');
+const mpH = handlerDe('dist/modules/billing/app/routes/mpWebhook.routes.js', 'post', '/');
+const bizumH = handlerDe('dist/modules/billing/app/routes/payBizum.routes.js', 'post', '/bizum/:token/claimed');
+const { sendInvoicePaymentRequest } = requiere(rutaDe('dist/modules/billing/domain/invoiceWhatsApp.service.js'));
+
+/** Llama a un handler y devuelve lo que contestó, con el buzón de WhatsApp de esa llamada. */
+async function llamar(handle, req) {
+  const r = { statusCode: 200, cuerpo: null, html: null, buzon: [] };
+  const res = {
+    status(c) { r.statusCode = c; return res; },
+    json(x) { r.cuerpo = x; return res; },
+    type() { return res; },
+    set() { return res; },
+    setHeader() { return res; },
+    send(x) { r.html = x; return res; },
+    redirect() { return res; },
+  };
+  const antes = {
+    AUTO_INVOICE_ON_PAID: config.AUTO_INVOICE_ON_PAID,
+    AUTO_EMAIL_INVOICE_ON_PAID: config.AUTO_EMAIL_INVOICE_ON_PAID,
+    MP_WEBHOOK_SECRET: config.MP_WEBHOOK_SECRET,
+    MP_ACCESS_TOKEN: config.MP_ACCESS_TOKEN,
+  };
+  // Los dos valores de Mercado Pago son relleno: la firma y la consulta del pago están dobladas.
+  Object.assign(config, {
+    AUTO_INVOICE_ON_PAID: true, AUTO_EMAIL_INVOICE_ON_PAID: false,
+    MP_WEBHOOK_SECRET: 'relleno-de-test', MP_ACCESS_TOKEN: 'relleno-de-test',
+  });
+  globalThis.__waDryRunOutbox = r.buzon;
+  try {
+    await handle(req, res, (e) => { if (e) throw e; });
+    await esperar(60); // los avisos son fire-and-forget
+  } finally {
+    delete globalThis.__waDryRunOutbox;
+    Object.assign(config, antes);
+  }
+  return r;
+}
+const deSesion = (extra) => reqDeSesion({ rol: 'admin', merchantId: M, headers: {}, ...extra });
+
+/** El único aviso al profesional de la llamada; falla si no hubo exactamente uno. */
+function elAviso(nombre) {
+  assert.equal(banco.avisos.length, 1, `🔴 CIEGO: se esperaba un aviso al profesional y hubo ${banco.avisos.length}`);
+  assert.equal(banco.avisos[0].nombre, nombre);
+  return banco.avisos[0];
+}
+/** La única línea de historial con ese tipo; falla si no hay exactamente una. */
+function elEvento(tipo) {
+  const filas = banco.eventos.filter((e) => e.type === tipo);
+  assert.equal(filas.length, 1, `🔴 CIEGO: se esperaba una línea «${tipo}» en el historial y hay ${filas.length}`);
+  return filas[0];
+}
+
+// ═══ SUELOS ══════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1436d · SUELO: el helper da «1.419,87 €» con espacio duro, y el patrón del crudo distingue', () => {
+  const bueno = formatMoneyEs(TOTAL, 'EUR');
+  assert.equal(sinDuro(bueno), '1.419,87 €');
+  assert.ok(bueno.includes(DURO), '🔴 `formatMoneyEs` ya no separa con espacio duro: revisa las comparaciones de este fichero');
+  assert.equal(formatImporteEs(TOTAL), '1.419,87');
+  assert.ok(CRUDO.test('1419.87 EUR'), '🔴 CIEGO: el patrón no reconoce el formato que viene a retirar');
+  assert.ok(CRUDO.test('419.8 EUR'), '🔴 CIEGO: el patrón no reconoce el importe sin su segundo decimal');
+  assert.ok(!CRUDO.test(bueno), '🔴 el patrón del crudo casa con el formato bueno: no distingue nada');
+  assert.ok(!CRUDO.test(formatMoneyEs(TOTAL, 'MXN')), '🔴 el patrón del crudo casa con el formato bueno fuera del euro');
+});
+
+// ═══ CARRIL J1 ════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1436d · 🔴 J1 · la factura enviada por WhatsApp deja en el historial «1.419,87 €»', async () => {
+  reiniciar();
+  globalThis.__waDryRunOutbox = [];
+  let r;
+  try { r = await sendInvoicePaymentRequest(FACTURA); await esperar(30); } finally { delete globalThis.__waDryRunOutbox; }
+  assert.equal(r.ok, true, `🔴 CIEGO: el envío no salió (${r.reason})`);
+  const ev = elEvento('invoice_issued');
+  assert.equal(ev.detail, formatMoneyEs(TOTAL, 'EUR'));
+  assert.ok(!CRUDO.test(ev.detail), `🔴 importe en crudo en el historial: «${ev.detail}»`);
+  assert.equal(ev.title, `Factura ${NUMERO} enviada por WhatsApp`, 'el título de la línea no es de este arreglo y no cambia');
+});
+
+test('SCRUM-1436d · 🔴 J1 · importe distinto (parcial): el aviso de la factura y el historial, en formato de la casa', async () => {
+  reiniciar();
+  const r = await llamar(anomaliaH, deSesion({ params: { id: String(FACTURA) }, body: { amount: 300 } }));
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.cuerpo.kind, 'parcial');
+  const esperado = `Recibidos ${formatImporteEs(300)} de ${formatMoneyEs(TOTAL, 'EUR')} (faltan ${formatImporteEs(1119.87)}). `
+    + 'La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).';
+  assert.equal(r.cuerpo.message, esperado);
+  assert.equal(elEvento('payment_anomaly').detail, esperado, 'la pantalla y el historial leen la MISMA frase');
+  assert.ok(!CRUDO.test(r.cuerpo.message), `🔴 importe en crudo: «${r.cuerpo.message}»`);
+  assert.ok(!/\d\.\d{2}\b/.test(r.cuerpo.message), `🔴 queda una cifra con punto decimal: «${r.cuerpo.message}»`);
+});
+
+test('SCRUM-1436d · 🔴 J1 · importe distinto (sobrepago): lo mismo en la otra rama', async () => {
+  reiniciar();
+  const r = await llamar(anomaliaH, deSesion({ params: { id: String(FACTURA) }, body: { amount: 1500 } }));
+  assert.equal(r.cuerpo.kind, 'sobrepago');
+  const esperado = `Recibidos ${formatMoneyEs(1500, 'EUR')} (sobran ${formatImporteEs(80.13)}). `
+    + 'Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).';
+  assert.equal(r.cuerpo.message, esperado);
+  assert.equal(elEvento('payment_anomaly').detail, esperado);
+  assert.ok(!/\d\.\d{2}\b/.test(r.cuerpo.message), `🔴 queda una cifra con punto decimal: «${r.cuerpo.message}»`);
+});
+
+test('SCRUM-1436d · ✅ J1 · importe distinto: la FRASE no cambia, sólo la forma de las cifras', async () => {
+  // El positivo: quitando las cifras, lo que queda es letra por letra la frase que ya había.
+  const sinCifras = (s) => sinDuro(s).replace(/\d[\d.,]*( (€|[A-Z]{3})\b)?/g, '#');
+  reiniciar();
+  const parcial = await llamar(anomaliaH, deSesion({ params: { id: String(FACTURA) }, body: { amount: 300 } }));
+  assert.equal(sinCifras(parcial.cuerpo.message),
+    'Recibidos # de # (faltan #). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V#).');
+  reiniciar();
+  const sobra = await llamar(anomaliaH, deSesion({ params: { id: String(FACTURA) }, body: { amount: 1500 } }));
+  assert.equal(sinCifras(sobra.cuerpo.message),
+    'Recibidos # (sobran #). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V#).');
+  // Y el instrumento distingue: con el formato viejo da el MISMO esqueleto (la frase era ésa).
+  assert.equal(sinCifras('Recibidos 300.00 de 1419.87 EUR (faltan 1119.87). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).'),
+    sinCifras(parcial.cuerpo.message));
+});
+
+test('SCRUM-1436d · 🔴 J1 · el paquete de disputa que se entrega al banco lleva «1.419,87 €»', async () => {
+  reiniciar();
+  const r = await llamar(paqueteH, deSesion({ params: { id: String(FACTURA) } }));
+  assert.equal(r.statusCode, 200);
+  assert.ok(typeof r.html === 'string' && r.html.includes('Paquete de evidencia de disputa'), '🔴 CIEGO: no ha salido el HTML del paquete');
+  const bueno = formatMoneyEs(TOTAL, 'EUR');
+  assert.ok(r.html.includes(`<tr><th>Importe</th><td>${bueno}</td></tr>`), '🔴 el importe del documento de cobro no sale en el formato de la casa');
+  assert.ok(r.html.includes(`#12 · ${bueno}</td>`), '🔴 el importe del presupuesto no sale en el formato de la casa');
+  const sinEstilo = r.html.replace(/<style>[\s\S]*?<\/style>/, '');
+  assert.ok(!CRUDO.test(sinEstilo), `🔴 queda un importe en crudo en el paquete: «${(sinEstilo.match(CRUDO) || [])[0]}»`);
+});
+
+test('SCRUM-1436d · J1 · fuera del euro sale el código de la moneda, no un € impostado', async () => {
+  reiniciar({ moneda: 'MXN' });
+  const r = await llamar(paqueteH, deSesion({ params: { id: String(FACTURA) } }));
+  assert.ok(r.html.includes(`<tr><th>Importe</th><td>${formatMoneyEs(TOTAL, 'MXN')}</td></tr>`));
+  assert.ok(sinDuro(formatMoneyEs(TOTAL, 'MXN')).endsWith(' MXN'), '🔴 CIEGO: el helper ya no escribe el código fuera del euro');
+});
+
+// ═══ CARRIL J2 (cruce de carril declarado en el registro) ═══════════════════════════════════
+
+test('SCRUM-1436d · 🔴 J2 · cobro confirmado: el WhatsApp al profesional y el historial dicen «1.419,87 €»', async () => {
+  reiniciar();
+  const r = await llamar(pspH, { body: { event: 'payment.confirmed', charge_id: COBRO }, headers: {} });
+  assert.equal(r.cuerpo?.ok, true, `🔴 CIEGO: el webhook no ha confirmado el cobro (${JSON.stringify(r.cuerpo)})`);
+  const bueno = formatMoneyEs(TOTAL, 'EUR');
+  const aviso = elAviso('notifyMerchantPaid');
+  assert.equal(aviso.freeText, `💰 Pago recibido de Cliente de prueba: ${bueno}`);
+  assert.equal(aviso.detail, `${bueno} · ${NUMERO}`);
+  // Y lo que sale de verdad hacia el teléfono del profesional es ese texto.
+  const alPro = r.buzon.filter((m) => m.to === TEL_PRO);
+  assert.equal(alPro.length, 1, `🔴 CIEGO: al profesional no le ha salido exactamente un mensaje (${alPro.length})`);
+  assert.equal(alPro[0].text, aviso.freeText);
+  assert.equal(elEvento('payment_received').detail, `${bueno} · Factura ${NUMERO}`);
+  for (const t of [aviso.freeText, aviso.detail, elEvento('payment_received').detail]) {
+    assert.ok(!CRUDO.test(t), `🔴 importe en crudo: «${t}»`);
+  }
+});
+
+test('SCRUM-1436d · J2 · la variable de la plantilla sigue pasando el validador de Meta', async () => {
+  reiniciar();
+  await llamar(pspH, { body: { event: 'payment.confirmed', charge_id: COBRO }, headers: {} });
+  const plantilla = buildMerchantAlert({ customerName: 'Cliente de prueba', action: 'te ha pagado', detail: elAviso('notifyMerchantPaid').detail });
+  assert.doesNotThrow(() => validateTemplateComponents(plantilla.templateName, plantilla.components));
+});
+
+test('SCRUM-1436d · 🔴 J2 · Mercado Pago: el aviso no pinta el número tal como lo manda el proveedor', async () => {
+  reiniciar({ importe: '1419.80' }); // el proveedor manda 1419.8: salía «1419.8 EUR»
+  const r = await llamar(mpH, { body: { type: 'payment', data: { id: 'mp-1436' } }, headers: {} });
+  assert.equal(banco.cobro.status, 'paid', '🔴 CIEGO: el webhook de Mercado Pago no ha marcado el cobro');
+  const bueno = formatMoneyEs('1419.80', 'EUR');
+  const aviso = elAviso('notifyMerchantPaid');
+  assert.equal(aviso.freeText, `💰 Pago recibido (Mercado Pago) de Cliente de prueba: ${bueno}`);
+  assert.equal(aviso.detail, `${bueno} · ${NUMERO}`);
+  assert.equal(r.buzon.filter((m) => m.to === TEL_PRO)[0]?.text, aviso.freeText);
+  assert.equal(elEvento('payment_received').detail, `${bueno} · Factura ${NUMERO}`);
+  for (const t of [aviso.freeText, aviso.detail, elEvento('payment_received').detail]) {
+    assert.ok(!CRUDO.test(t), `🔴 importe en crudo: «${t}»`);
+  }
+});
+
+test('SCRUM-1436d · 🔴 J2 · «dice que te ha enviado … por Bizum»: las dos vías del aviso, en formato de la casa', async () => {
+  reiniciar();
+  banco.cobro.method = 'bizum_manual';
+  const r = await llamar(bizumH, { params: { token: 'tok_1436' }, body: {}, headers: {} });
+  const bueno = formatMoneyEs(TOTAL, 'EUR');
+  const aviso = elAviso('notifyMerchantAlert');
+  assert.equal(aviso.freeText, `💸 Cliente de prueba dice que te ha enviado ${bueno} por Bizum. Confírmalo en tu panel de YaQu (cobro #${COBRO}).`);
+  assert.equal(aviso.detail, `${bueno} · Confírmalo en tu panel de YaQu`);
+  assert.equal(r.buzon.filter((m) => m.to === TEL_PRO)[0]?.text, aviso.freeText);
+  assert.ok(!CRUDO.test(aviso.freeText) && !CRUDO.test(aviso.detail), `🔴 importe en crudo: «${aviso.freeText}» / «${aviso.detail}»`);
+});
+
+test('SCRUM-1436d · ✅ J2 · un justificante se sigue llamando justificante en el historial', async () => {
+  reiniciar({ numero: 'J-2026-0007' });
+  await llamar(pspH, { body: { event: 'payment.confirmed', charge_id: COBRO }, headers: {} });
+  assert.equal(elEvento('payment_received').detail, `${formatMoneyEs(TOTAL, 'EUR')} · Justificante J-2026-0007`);
+});
