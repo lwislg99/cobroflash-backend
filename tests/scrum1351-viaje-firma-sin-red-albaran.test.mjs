@@ -29,6 +29,7 @@
 // sin `await`). De esa carrera aquí sólo se mide la marca que la hace posible.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -448,8 +449,9 @@ test('SCRUM-1376 · el aviso de rechazo va en el mismo envoltorio que la caja «
   const guardada = await conUnaFirmaEnCola();
   const caja = cajaDeFirmaGuardada((await abrirDetalle(guardada.b, { sinRed: true })).contenedor);
   assert.ok(caja, 'suelo: la caja se pinta');
-  const separacion = caja.style.cssText;
-  assert.match(separacion, /margin/, 'suelo: el envoltorio de la caja lleva su separación (si no, comparo «» con «»)');
+  // SCRUM-1421 · la separación ya no es un estilo en línea: es la clase del envoltorio.
+  const separacion = caja.className;
+  assert.equal(separacion, CLASE_CAJA_DE_FIRMA, 'suelo: el envoltorio de la caja lleva su separación (si no, comparo «» con «»)');
 
   const m = await conUnaFirmaEnCola();
   m.red.conRed = true;
@@ -461,8 +463,65 @@ test('SCRUM-1376 · el aviso de rechazo va en el mismo envoltorio que la caja «
   const barra = todos(v.contenedor).find((n) => n && n.className === 'job-doc-toolbar');
   assert.ok(barra, 'suelo: la barra de acciones está');
   assert.notEqual(aviso._padre, barra._padre, 'el aviso NO es hermano directo de la barra de acciones');
-  assert.equal(aviso._padre.style.cssText, separacion, 'su envoltorio separa igual que el de la caja');
+  assert.equal(aviso._padre.className, separacion, 'su envoltorio separa igual que el de la caja');
   assert.match(aviso.className, /^alert warning$/, 'y el aviso sigue siendo el componente de siempre');
+});
+
+// ── SCRUM-1421 · LA SEPARACIÓN DE LA CAJA SALE DE UNA CLASE, NO DE UN ESTILO EN LÍNEA ─────────────
+//
+// El envoltorio de la caja del estado de la firma, del aviso de rechazo (SCRUM-1376) y del
+// recordatorio de la copia (SCRUM-1460) llevaba `style.cssText = 'margin:0 0 16px'`. La medida era
+// buena y vivía donde no debe: «ni un `style=` en línea» (A7). Ahora la da `.albaran-caja-firma`.
+//
+// Son dos mitades y se miden las dos: el envoltorio lleva la clase y NO lleva estilo propio (lo
+// que pinta la vista), y la clase tiene su regla, una sola, con los 16 px (lo que dice el CSS). Con
+// una sola mitad el hueco desaparece sin un rojo: una clase sin regla no separa nada.
+const CLASE_CAJA_DE_FIRMA = 'albaran-caja-firma';
+
+/** Las declaraciones de cada regla `.albaran-caja-firma { … }` de `styles.css`, sin comentarios. */
+function reglasDeLaCajaEnElCss() {
+  const css = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'css', 'styles.css'), 'utf8')
+    .replace(/\r\n/g, '\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  // Anclado a principio de línea: `.x {` no puede casar con `.otra > .x {` (A23, casilla 4).
+  return [...('\n' + css).matchAll(/\n\.albaran-caja-firma\s*\{([^}]*)\}/g)]
+    .map((m) => m[1].split(';').map((d) => d.trim().replace(/\s+/g, ' ')).filter(Boolean));
+}
+
+test('SCRUM-1421 · suelo: el lector de reglas VE una regla que existe y no ve una que no', () => {
+  const css = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'css', 'styles.css'), 'utf8');
+  assert.ok(css.length > 50000, '🔴 CIEGO: `styles.css` no se ha leído entero');
+  assert.match(('\n' + css.replace(/\r\n/g, '\n')), /\n\.toolbar\s*\{/, '🔴 CIEGO: el patrón anclado no encuentra ni `.toolbar`, que está');
+});
+
+test('SCRUM-1421 · 🔴 la clase de la caja tiene UNA regla en el CSS, y es el hueco de 16 px que ya había', () => {
+  const reglas = reglasDeLaCajaEnElCss();
+  assert.equal(reglas.length, 1,
+    `🔴 \`.${CLASE_CAJA_DE_FIRMA}\` tiene ${reglas.length} reglas en styles.css y tiene que tener una: sin regla, el envoltorio no separa nada`);
+  assert.deepEqual(reglas[0], ['margin: 0 0 16px'],
+    '🔴 la regla de la caja ya no es el hueco medido en SCRUM-1376 (16 px por debajo, nada más)');
+});
+
+test('SCRUM-1421 · 🔴 los TRES envoltorios llevan la clase y NINGUNO lleva estilo en línea', async () => {
+  // ① firma guardada en este móvil
+  const guardada = await conUnaFirmaEnCola();
+  const cajaGuardada = cajaDeFirmaGuardada((await abrirDetalle(guardada.b, { sinRed: true })).contenedor);
+  assert.ok(cajaGuardada, 'suelo: la caja «Solo en este móvil» se pinta');
+  // ② firma rechazada para siempre
+  const m = await conUnaFirmaEnCola();
+  m.red.conRed = true;
+  m.red.modoPost = 'firma_invalida';
+  await m.b.ctx.drenarAlAbrir();
+  const aviso = avisoDeRechazo((await abrirDetalle(m.b)).contenedor);
+  assert.ok(aviso, 'suelo: el aviso de rechazo se pinta');
+  // ③ albarán firmado: «A salvo»
+  const { v } = await recienFirmadoConRed();
+  const aSalvo = todos(v.contenedor).find((n) => n && n._texto === 'A salvo');
+  assert.ok(aSalvo, 'suelo: la caja «A salvo» se pinta');
+
+  for (const [cual, envoltorio] of [['la caja «Solo en este móvil»', cajaGuardada], ['el aviso de rechazo', aviso._padre], ['la caja «A salvo»', aSalvo._padre]]) {
+    assert.equal(envoltorio.className, CLASE_CAJA_DE_FIRMA, `🔴 el envoltorio de ${cual} no lleva la clase que lo separa de la barra`);
+    assert.equal(envoltorio.style.cssText || '', '', `🔴 el envoltorio de ${cual} vuelve a llevar un estilo en línea: «${envoltorio.style.cssText}»`);
+  }
 });
 
 test('SCRUM-1353 · sin almacén que leer no se afirma nada: ni caja, ni aviso, ni pregunta', async () => {
@@ -690,8 +749,9 @@ test('SCRUM-1460 · el recordatorio va DEBAJO de «A salvo» y ENCIMA de los bot
   const envoltorio = nodos[aviso]._padre;
   assert.notEqual(envoltorio, nodos[barra]._padre, 'no es hermano directo de la barra de acciones');
   const cajaASalvo = nodos[aSalvo]._padre;
-  assert.match(cajaASalvo.style.cssText, /margin/, 'suelo: el envoltorio de «A salvo» lleva su separación');
-  assert.equal(envoltorio.style.cssText, cajaASalvo.style.cssText, 'el del recordatorio separa igual');
+  // SCRUM-1421 · la separación es la clase del envoltorio (antes, su estilo en línea).
+  assert.equal(cajaASalvo.className, CLASE_CAJA_DE_FIRMA, 'suelo: el envoltorio de «A salvo» lleva su separación');
+  assert.equal(envoltorio.className, cajaASalvo.className, 'el del recordatorio separa igual');
 });
 
 test('SCRUM-1460 · cliente que NO puede recibir WhatsApp: se dice eso y se manda al PDF, que sí está', async () => {

@@ -3019,6 +3019,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 /* SCRUM-1184 · «Siguiente número: …» bajo la cabecera de «Nuevo albarán». Mismos tokens que las ayudas. */
 .alb-siguiente-numero { margin: 12px 24px 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* S4 · SCRUM-1421 · el envoltorio de la caja del estado de la firma en la ficha del albarán, y de
+   lo que va en su sitio (el aviso de firma rechazada y el recordatorio de la copia). Sólo separa de
+   la barra de acciones: 16 px, el `spacing.md` de DESIGN.md. Venía de un estilo en línea de
+   `albaranDetailView.js`; la medida no cambia. */
+.albaran-caja-firma { margin: 0 0 16px; }
 .job-asignados-alta { min-height: 44px; margin-top: 8px; }
 /* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
 .detail-plega--fija > .detail-plega-cab { cursor: default; }
