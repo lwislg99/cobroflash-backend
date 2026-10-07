@@ -1,0 +1,62 @@
+POBLACIÓN · 330 state.json · 51 con actividad en 30 h · 51 con turnos · 51 con nombre de puesto · líneas rotas 0 · jsonl ilegibles 0 · umbral «al entregar» leído del código: 300k
+
+── 1 · EL TRAMO «a mitad»: desde que cruza 300k hasta su siguiente push (ahí la releva la norma de «al entregar») ──
+cruzan 300k: 26 de 51 · llegan a otro push: 16 · no vuelven a empujar: 10
+nombre         estado   pico-del-tramo  entregó-a  turnos  fin   max  comp
+s0-6octc       done         823k           NO      74  823k  823k  0
+s1-6octc       done         416k         416k      47  512k  512k  0
+s0-6octd       done         412k         412k      34  465k  465k  0
+s3-6octc       done         395k         395k      32  502k  502k  0
+s1-6octd       blocked      394k         394k      39  423k  423k  0
+s4-6octb       done         393k           NO      25  393k  393k  0
+s5-6octf       blocked      381k         381k      34  415k  415k  0
+s1-6octg       blocked      344k           NO      12  344k  344k  0
+s3-6oct        done         344k         344k      21  355k  355k  0
+s1-6octf       blocked      344k           NO      17  344k  344k  0
+s2-6octb       done         340k         340k       9  495k  495k  0
+s5-6octd       done         339k         339k      14  531k  531k  0
+s3-6octd       done         330k           NO      15  330k  330k  0
+s5-6octb       done         318k         318k       6  372k  372k  0
+s0-2octb       blocked      318k         318k       8  420k  420k  0
+s4-6octg       blocked      318k         318k      17  412k  412k  0
+s3-6octg       done         318k           NO      10  318k  318k  0
+s1-6octh       blocked      314k         314k      11  337k  337k  0
+s2-6octd       done         313k         313k      17  333k  333k  0
+s5-6octh       done         310k           NO       6  310k  310k  0
+s0-6octf       done         310k         310k      14  404k  404k  0
+s5-6octg       done         307k         307k       8  333k  333k  1
+s4-6octc       done         304k         304k       3  427k  427k  0
+s0-6octh       done         303k           NO       3  303k  303k  0
+s2-6octh       blocked      302k           NO       3  302k  302k  0
+s4-6octh       done         301k           NO       2  301k  301k  0
+pico del tramo, las que SÍ entregaron: mediana 339k · p90 412k · máx 416k
+pico del tramo, las que NO volvieron a empujar: mediana 330k · máx 823k · estados: 3 blocked, 7 done
+
+── 2 · QUÉ HARÍA CADA NÚMERO de «a mitad» sobre esas sesiones ──
+número  cortaría  …que SÍ iban a entregar (entrega perdida a mitad)  …que NO volvieron a empujar (arrastre ahorrado)  Σ contexto por encima, en el tramo
+ 350k      7        5 (les faltaban 19, 19, 22, 22, 33 turnos; entregaron a 416k, 412k, 395k, 394k, 381k)   ·   2 (s0-6octc 823k done, s4-6octb 393k done)   ·   87.6 M
+ 400k      3        2 (les faltaban 7, 11 turnos; entregaron a 416k, 412k)   ·   1 (s0-6octc 823k done)   ·   45.7 M
+ 425k      1        0   ·   1 (s0-6octc 823k done)   ·   36.2 M
+ 450k      1        0   ·   1 (s0-6octc 823k done)   ·   35.7 M
+ 475k      1        0   ·   1 (s0-6octc 823k done)   ·   34.3 M
+ 500k      1        0   ·   1 (s0-6octc 823k done)   ·   32.4 M
+ 550k      1        0   ·   1 (s0-6octc 823k done)   ·   29.7 M
+ 600k      1        0   ·   1 (s0-6octc 823k done)   ·   26.8 M
+
+── 3 · ¿HAY UN TECHO donde las sesiones «mueren»? Último turno de las PARADAS más de 60 min, por estado ──
+tramo        blocked     done   total
+0–200k             1        4       5
+200–300k          10        4      14
+300–350k           4        7      11
+350–400k           0        3       3
+400–450k           4        2       6
+450–500k           0        2       2
+500–800k           0        3       3
+800–2000k          0        1       1
+paradas: 45 de 51 · con alguna compactación: 1
+pasaron de 400k: 12 · de ellas siguieron y pasaron de 450k: 6 · de 500k: 4
+las que acabaron entre 380k y 425k: s4-6octb 393k done (1 push) · s5-6octf 415k blocked (2 push) · s1-6octd 423k blocked (2 push) · s4-6octg 412k blocked (1 push) · s0-2octb 420k blocked (10 push) · s0-6octf 404k done (3 push)
+
+── 4 · CUÁNTO CRECE una sesión entre un push y el siguiente (todos los pares) ──
+39 pares · mediana 43k · p90 139k · máx 216k → una que entrega justo bajo 300k y hace UNA entrega más acaba hacia 343k (mediana) · 439k (p90) · 516k (máx)
+EXIT=0
