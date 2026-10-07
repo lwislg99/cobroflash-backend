@@ -132,6 +132,15 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // de `albaran`).
   'scrum72-pdfs-privados.test.mjs': 1,
   'albaran.test.mjs': 2,
+  // SCRUM-876f (grupo C de SCRUM-868): el envío del presupuesto por ventana o por plantilla.
+  // Conserva staging con `A55_DB_TEST=1` y gana éste como segundo destino. Necesita banco porque
+  // lo que vigila son las FILAS que deja el envío (una `template`, una `service` a 0 €) y la
+  // ventana que abre un entrante. En este destino va en seco por sí mismo y con la salida cortada.
+  'a55-window-quote.test.mjs': 1,
+  // SCRUM-876f: la suite del bot, el otro del grupo C. Necesita banco porque recorre el webhook
+  // de verdad —sesiones, solicitud, adjunto, baja— y lee lo que deja escrito. Mismo trato: staging
+  // con `BOT_SUITE_TEST=1`, y éste como segundo destino, en seco y con la salida cortada.
+  'bot-suite.test.mjs': 1,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,

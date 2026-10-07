@@ -5,8 +5,9 @@
 // ── CÓMO SE EJECUTA (SCRUM-157 / 159 / 166) ──────────────────────────────────
 // Corre por `npm run test:staging:gated` — el runner `scripts/staging-gated.mjs`
 // (SCRUM-157) setea A55_DB_TEST=1 + WHATSAPP_DRY_RUN=1 en su hijo aislado. NO corre por
-// `npm run test:staging` (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166)
-// ni por el CI (`npm test`, ungated). En `npm test` normal aparece como SKIP y no toca nada.
+// `npm run test:staging` (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166).
+// En `npm test` sin banco aparece como SKIP y no toca nada; con `LIBRO_PG_URL` (la tanda de CI)
+// corre contra el banco desechable: ver SCRUM-876f, justo encima de los imports.
 //
 // ── SCRUM-159 (①): fixture EFÍMERO propio ────────────────────────────────────
 // Esta prueba estuvo ROJA hasta SCRUM-159 porque hacía findFirst de un cliente del seed demo
@@ -22,26 +23,66 @@
 // FK-Restrict, docs/QA/SUITE_REGRESION.md). Por eso la limpieza va en finally/withMerchant y
 // la contraprueba es un CONTEO que GRITA tras el borrado, no un assert (que en un finally
 // enmascararía el error real del test).
+//
+// ── SCRUM-876f: SEGUNDO DESTINO, el banco desechable de `LIBRO_PG_URL` ───────────────────────
+// Con `A55_DB_TEST=1` nada cambia: staging, y `WHATSAPP_DRY_RUN=1` lo pone quien lanza. Sin ese
+// gate y con `LIBRO_PG_URL` (lo que hay en la tanda de CI), corre contra el banco, y ahí:
+//   1) el fichero SE PONE `WHATSAPP_DRY_RUN=1` antes de que nada haya cargado el sender;
+//   2) la aserción de siempre SE QUEDA, y pasa a comprobar que ponerla ha surtido efecto;
+//   3) lo que decide no es la bandera: se corta toda conexión hacia fuera (`_sin-salida.mjs`,
+//      con su control positivo delante) y el test cae si el envío intentó abrir una sola.
+// El corte sólo se instala con el banco: contra staging la base es remota y no se toca nada.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando A55_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876e/f: segundo destino, inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-159 (①)
 import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876f
 
 /** El objeto `exports` REAL del módulo de log — el mismo que lee `whatsapp.js` en cada llamada. */
 async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-const ENABLED = process.env.A55_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.A55_DB_TEST === '1' || CON_BANCO;
 
-test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla', { skip: !ENABLED && 'sin A55_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+// SCRUM-876f (1): lo primero que hace el cuerpo del fichero. `SENDER_YA_CARGADO` deja dicho, con
+// el estado del proceso y no con el orden de las líneas, si la bandera llegó antes que el sender.
+const requiere = createRequire(import.meta.url);
+const senderCargado = () => Boolean(requiere.cache[requiere.resolve('../dist/integrations/whatsapp.js')]);
+const SENDER_YA_CARGADO = ENABLED && senderCargado();
+if (CON_BANCO) process.env.WHATSAPP_DRY_RUN = '1';
+
+test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla', { skip: !ENABLED && 'sin A55_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  assert.equal(SENDER_YA_CARGADO, false, '🔴 el sender de WhatsApp ya estaba cargado cuando este fichero fijó su entorno');
+
+  // SCRUM-876f (3): el corte, y su control ANTES del primer envío. Si el control no ve un POST de
+  // axios y un fetch, lanza aquí y no se manda nada.
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    t.after(() => corte.restaurar());
+    await corte.controlPositivo();
+  }
+  // Se llama justo detrás de cada envío, ANTES de mirar su `ok`: si algo quiso salir, el motivo
+  // del rojo tiene que ser ése y no una consecuencia suya.
+  const sinSalida = (cuando) => {
+    if (!corte) return;
+    assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+    assert.deepEqual(corte.ajenos(), [],
+      `🔴 ${cuando}: el envío INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino`);
+  };
 
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { recordInboundWaMessage } = await import('../dist/modules/messaging/domain/whatsappLog.service.js');
   const { sendWhatsAppWindowFirst } = await import('../dist/integrations/whatsapp.js');
   const { buildQuoteDecision } = await import('../dist/integrations/whatsappTemplates.js');
+  // El suelo de `SENDER_YA_CARGADO`: ahora que SÍ está cargado, la misma pregunta tiene que decir
+  // que sí. Si no, aquel `false` de arriba no era «todavía no»: era «no sé mirar».
+  assert.equal(senderCargado(), true, '🔴 CIEGO: no sé ver si el sender está cargado');
 
   let savedMerchantId;
   let failed = false;
@@ -93,6 +134,7 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
         template,
         log: { customerId: customer.id },
       });
+      sinSalida('caso 1, sin ventana (plantilla)');
       assert.equal(closed.ok, true);
       assert.equal(closed.via, 'template', 'sin inbound reciente debe caer a plantilla');
       let rows;
@@ -116,6 +158,7 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
         template,
         log: { customerId: customer.id },
       });
+      sinSalida('caso 2, con ventana (sesión)');
       assert.equal(open.ok, true);
       assert.equal(open.via, 'window', 'con inbound <24h debe salir por VENTANA');
 
@@ -131,6 +174,11 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       assert.equal(services.length, 1, 'debe registrarse 1 fila service (sentVia=window)');
       assert.equal(services[0].templateName, 'quote_decision_es', 'la service guarda qué plantilla se ahorró (métrica A5.4)');
       assert.equal(Number(services[0].costEstimate), 0, 'coste 0 €');
+
+      // SCRUM-876f (3): los dos envíos han terminado y sus dos filas están escritas. Una vuelta
+      // más del bucle, por si algo quedó lanzado sin esperar, y se mira por última vez.
+      await new Promise((r) => setImmediate(r));
+      sinSalida('al terminar');
     });
   } catch (e) {
     failed = true; // el test falló por su propia razón; el finally NO debe enmascararla
