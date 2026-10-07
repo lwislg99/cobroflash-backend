@@ -96,11 +96,17 @@ test('SCRUM-1285 · una versión ilegible → 400 y no se escribe (no se trata c
   assert.equal(b.log.escrituras, 0);
 });
 
-// ⚠️ TRANSICIÓN DECLARADA (ver `src/core/db/escrituraConVersion.ts`): la pantalla aún no manda la
-// versión. Sin ella se escribe como hasta hoy; este test es el que hay que invertir el día que se exija.
-test('SCRUM-1285 · transición: sin `version` el guardado funciona como hoy (la pantalla aún no la manda)', async () => {
+// 🔴 LA TRANSICIÓN SE ACABÓ (7-oct). Este caso decía «sin `version` el guardado funciona como hoy» y
+// avisaba de que había que invertirlo el día que se exigiera: la pantalla la manda desde #2095, y
+// mientras fuera opcional bastaba con no mandarla para reemplazar a ciegas. Con su propio código:
+// «no la mandó» no es «la mandó ilegible».
+test('🔴 SCRUM-1285 · 4 · sin `version` NO se escribe: 400 `version_requerida` y la base no cambia', async () => {
   const b = banco();
-  const r = await b.guardar({ customBillingPlan: PLAN_50_50 });
-  assert.equal(r.status, 200);
-  assert.deepEqual(b.fila.customBillingPlan, PLAN_50_50);
+  for (const body of [{ customBillingPlan: PLAN_50_50 }, { customBillingPlan: PLAN_50_50, version: null }]) {
+    const r = await b.guardar(body);
+    assert.equal(r.status, 400, `🔴 un guardado sin versión ha pasado: ${JSON.stringify(body)}`);
+    assert.equal(r.data.error, 'version_requerida');
+  }
+  assert.deepEqual(b.fila.customBillingPlan, PLAN_30_70, '🔴 un guardado sin versión ha reemplazado el plan');
+  assert.equal(b.log.escrituras, 0);
 });
