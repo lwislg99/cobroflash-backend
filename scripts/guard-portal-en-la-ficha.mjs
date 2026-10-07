@@ -125,7 +125,7 @@ try {
   const page = await navegador.newPage();
   await page.setViewport({ width: 1280, height: 900 });
 
-  cuentas = await recorrerCasos(CASOS, async (caso) => {
+  cuentas = await recorrerCasos(CASOS, async (caso, suyas) => {
     await page.goto(`${base}/${caso.nombre.replace(' ', '-')}`, { waitUntil: 'networkidle0' });
 
     const r = await page.evaluate(async (idBoton) => {
@@ -159,7 +159,8 @@ try {
     filas.push({ caso: caso.nombre, ficha: r.botonFicha, lista: r.botonLista, peticiones: r.peticiones });
 
     // El juicio es de CADA caso, con lo que ese caso midió: no espera a tener los dos.
-    const suyos = [];
+    // SCRUM-1392 · la lista es la que entrega el recorrido: lo apuntado sobrevive a un caso que lance.
+    const suyos = suyas.hallazgos;
     if (caso.portalUrl === null) {
       if (!r.botonLista) suyos.push('la LISTA no pinta el botón sin token: ha cambiado el lado que estaba bien');
       if (!r.botonFicha) suyos.push('la FICHA 360 NO pinta el botón sin token: las dos pantallas del mismo cliente no dicen lo mismo');

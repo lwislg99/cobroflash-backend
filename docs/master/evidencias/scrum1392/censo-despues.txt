@@ -1,0 +1,23 @@
+control · lista en la mano y un await detrás: listas 1 · awaits detrás 1 · llamadas 1 → como se esperaba
+control · lista en la mano y nada detrás: listas 1 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · lista del módulo (CERO): listas 0 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · la lista que entrega la pieza (CERO): listas 0 · awaits detrás 0 · llamadas 1 → como se esperaba
+control · sólo nombrado en un comentario (CERO llamadas): listas 0 · awaits detrás 0 · llamadas 0 → como se esperaba
+
+POBLACIÓN: 1750 ficheros .mjs de scripts/ y tests/ · 43 importan la pieza · 11 llamadas a recorrerCasos en 9 guards de scripts/ · 0 sin poder leer su caso
+  scripts/guard-a11y-comparativa.mjs:205 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-a11y-landing.mjs:209 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-caja-datos-del-cliente.mjs:150 · caso con 2 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-caja-documento-suelto.mjs:414 · caso con 2 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-contraste.mjs:308 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-duplicar-926.mjs:169 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-marcadores-en-pantalla.mjs:350 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:589 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:708 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-objetivo-tactil.mjs:860 · caso con 1 parámetro(s) · ninguna lista de hallazgos en la mano
+  scripts/guard-portal-en-la-ficha.mjs:128 · caso con 2 parámetro(s) · ninguna lista de hallazgos en la mano
+  (aparte: 21 llamadas en 2 ficheros de tests/, con jueces de mentira)
+
+RESULTADO: 0 recorridos de 11 llevan una lista de hallazgos en la mano · 0 de ésos tienen un await o un throw después del primer apunte
+LO QUE ESTE CENSO NO VE: una lista que nace en una función y se apunta en OTRA (pasada como argumento) no se ve · sólo sigue funciones declaradas en el mismo fichero; no sigue imports · una llamada síncrona después del apunte se LISTA, no se juzga: que pueda lanzar se lee a mano
+EXIT=0

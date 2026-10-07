@@ -147,10 +147,11 @@ console.log(`   nota     : ${nota.length} caracteres`);
 
 try {
   const page = await nav.newPage();
-  const cuentas = await recorrerCasos(CASOS, async ({ estado, ancho }) => {
+  const cuentas = await recorrerCasos(CASOS, async ({ estado, ancho }, suyas) => {
       // Lo que no deja medir ESTE caso lo deja ciego a él, y sólo a él: el siguiente se mide igual.
       const soloCiego = (porque) => ({ hallazgos: [], ciegos: [`${estado} @${ancho}px: ${porque}`] });
-      const suyos = [];
+      // SCRUM-1392 · la lista es la que entrega el recorrido: lo apuntado sobrevive a un caso que lance.
+      const suyos = suyas.hallazgos;
       await page.setViewport({ width: ancho, height: 1000 });
       await page.goto(`${base}/__datos-${estado}.html`, { waitUntil: 'networkidle0' });
       const m = await page.evaluate(() => {
