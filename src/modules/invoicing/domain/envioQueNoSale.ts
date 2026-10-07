@@ -22,7 +22,7 @@
 import { sendFailureBody, type SendFailureReason } from '../../../lib/sendOutcome';
 
 /** Un motivo que no está aquí sigue leyendo la frase del diccionario compartido. */
-export const ENVIO_DE_FACTURA_NO_SALIO: Readonly<Partial<Record<SendFailureReason, string>>> = Object.freeze({
+const ENVIO_DE_FACTURA_NO_SALIO: Readonly<Partial<Record<SendFailureReason, string>>> = Object.freeze({
   wa_opt_out: 'El WhatsApp no ha salido: este cliente pidió no recibir tus mensajes por WhatsApp. Envíale el enlace por email o SMS.',
   daily_cap: 'El WhatsApp no ha salido: has alcanzado el tope diario de mensajes. Vuelve a intentarlo mañana o envía el enlace por email.',
   // El límite es de YaQu (`WA_CUSTOMER_DAILY_CAP`), y la frase lo dice.

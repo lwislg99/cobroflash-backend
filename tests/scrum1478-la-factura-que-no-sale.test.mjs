@@ -282,8 +282,13 @@ test('SCRUM-1478 · correo · 🔴 si el envío falla, la frase no afirma que no
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-1478 · cada frase de la factura está, letra a letra, en las fichas firmadas del presupuesto', () => {
-  const { ENVIO_DE_FACTURA_NO_SALIO } = moduloDeDist(FRASES);
-  const frases = Object.entries(ENVIO_DE_FACTURA_NO_SALIO);
+  // Por la superficie que tiene consumidor (`falloDeEnvioDeFactura`), no por la tabla de dentro:
+  // se le pregunta por TODOS los motivos de la casa y se queda con los que no leen el diccionario.
+  const { falloDeEnvioDeFactura } = moduloDeDist(FRASES);
+  const { SEND_FAILURE_MESSAGES } = moduloDeDist(DICCIONARIO);
+  const motivos = Object.keys(SEND_FAILURE_MESSAGES);
+  assert.ok(motivos.length >= 9, `🔴 CIEGO: el diccionario de la casa sólo trae ${motivos.length} motivos`);
+  const frases = motivos.map((m) => [m, falloDeEnvioDeFactura(m).message]).filter(([m, frase]) => frase !== SEND_FAILURE_MESSAGES[m]);
   assert.deepEqual(frases.map(([motivo]) => motivo).sort(),
     ['customer_daily_cap', 'daily_cap', 'email_send_failed', 'wa_opt_out'],
     '🔴 la lista de motivos con frase propia ha cambiado: una frase más es un texto más, y pide firma');

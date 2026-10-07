@@ -79,3 +79,26 @@ del arreglo y tiene que seguir pasando. Quien lo «limpie» cambia `collect-rest
   10 s). No se ha tocado: la frase aprobada es la de «no se puede distinguir».
 - **El tope por cliente en el recordatorio**: sigue sin alcanzarse por esa ruta.
 - **No se ha visto en yaqu.app**, ni la tanda completa, ni los tipos (el build local es `--noCheck`).
+
+## Anexo SCRUM-1478b · el export que sólo leía su test
+
+**Medido contra:** `origin/main` = `818cb29be894a7861f11970a59e20eba5ca4e70b` · 2026-10-07T16:34:35Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs`
+
+El obligatorio del PR salió rojo por ese censo: «se declaran 236 y el censo mide 237». El export de más
+era `ENVIO_DE_FACTURA_NO_SALIO`, la tabla de frases del módulo nuevo. Su único consumidor de producción
+está dentro del propio fichero (`falloDeEnvioDeFactura`); de fuera sólo lo importaba el test.
+
+Reproducido en local antes de tocar, sobre la punta `6639b695`: 25 casos, 23 pasan y 2 caen (el del
+huérfano sin declarar y el de la suma). El consejo que da el censo para este export es quitarle el
+`export`, no declararlo, y eso es lo que se hizo: no se añade ninguna línea al registro de huérfanos.
+Después: 236 medidos, 236 declarados, 25 de 25.
+
+El caso «cada frase de la factura está, letra a letra, en las fichas firmadas» ya no lee la tabla:
+pregunta a `falloDeEnvioDeFactura` por todos los motivos del diccionario de la casa y se queda con los
+que no devuelven la frase del diccionario. Siguen saliendo los cuatro de antes, y el caso cae si sale
+uno más o uno menos. Ninguna frase cambia.
+
+No se corrió la tanda completa en local; `scrum411` no se había corrido antes del primer push, y por
+eso llegó rojo al CI.
