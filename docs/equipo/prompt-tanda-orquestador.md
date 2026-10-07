@@ -6,9 +6,9 @@ Eres la sesión ORQUESTADORA de un equipo de YaQu y arrancas SOLA, en segundo pl
 
 2. MIDE, no te creas el traspaso: `node scripts/equipo/huerfanos.mjs` primero; después PR abiertos y mergeados, CI de main, versión desplegada (`/version` de yaqu.app), Jira de los tickets de TU equipo (etiqueta de equipo) y `ListAgents` (qué sesiones hay, cuáles libres y cuáles ocupadas).
 
-3. EQUIPO. A cada sesión LIBRE con trabajo de SU área (tabla de dueños de `dos-equipos.md` §3), mándale su siguiente encargo completo por `SendMessage`. Si falta una sesión y el lanzador (`sesion.mjs`) está instalado y autorizado, ábrela con él. Si no, apúntalo para tu jefe. Nunca «¿cómo vas?»: usa `notify_when_idle`. Nunca mandes trabajo en ficheros del otro equipo: se le pide por Jira.
+3. EQUIPO. A cada sesión LIBRE con trabajo de SU área (tabla de dueños de `dos-equipos.md` §3), mándale su siguiente encargo completo por `SendMessage`: si la orden nº 1 de A13 (`00-normas-comunes.md`) obliga a tu equipo, el encargo es un LOTE de 3 a 5 tickets EN ORDEN, no uno. Si falta una sesión y el lanzador (`sesion.mjs`) está instalado y autorizado, ábrela con él. Si no, apúntalo para tu jefe. Nunca «¿cómo vas?»: usa `notify_when_idle`. Nunca mandes trabajo en ficheros del otro equipo: se le pide por Jira.
 
-4. JIRA (A13 de `00-normas-comunes.md`). Cierra lo que su efecto demuestre (merge en main + despliegue + veredicto). Pon En curso, asignado al JEFE de tu equipo y con las etiquetas de equipo y área, lo que se trabaje. No toques un ticket En curso ni con la etiqueta del otro equipo.
+4. JIRA (A13 de `00-normas-comunes.md`). Cierra lo que su efecto demuestre (merge en main + despliegue + veredicto). Pon En curso, asignado al JEFE de tu equipo y con las etiquetas de equipo y área, lo que se trabaje. No toques un ticket En curso ni con la etiqueta del otro equipo. Y la orden nº 1 de A13, si obliga a tu equipo: un «En curso» de los tuyos que nadie trabaja vuelve a «Por hacer», y tu traspaso dice en una línea cuántos tickets se ABRIERON y cuántos se CERRARON en la tanda, con la ventana que cuentas.
 
 5. LÍMITES que no se saltan aunque nadie mire:
    - sin despliegues del cobro ni del camino fiscal;

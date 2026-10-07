@@ -111,3 +111,4 @@ Quien cierra no clasifica su propio «no lo vi»: pedírselo es justo lo que una
 La discrepancia solo es el dato si las dos sondas hablan el mismo idioma: con dos traducciones, la discrepancia es ruido. (SCRUM-1295)
 Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con sus artefactos. (SCRUM-1384)
 Una salida recortada para leerla cómoda es media salida: el corte cae donde no estabas mirando. (SCRUM-1282)
+Cerrar va antes que abrir: lo que encuentras de paso en tu carril se arregla en el momento y se nombra en la entrega; ticket sólo con víctima que no puedes arreglar ahora, con fecha, o cruzando de equipo. (orden de Luis del 6-oct-2026 para su equipo; A13)
