@@ -1,0 +1,84 @@
+POBLACION workflows=8 en .github\workflows
+=== avisador-rojo.yml (320 lineas)
+55: on:
+56:   workflow_run:
+57:     workflows: ["CI"]
+58:     types: [completed]
+61: concurrency:
+62:   group: avisador-rojo-${{ github.event.workflow_run.head_sha }}
+63:   cancel-in-progress: false
+262: >> if SALIDA="$(printf '%s' "$ENTRADA" | node scripts/puerta-avisador-rojo.mjs)"; then
+296: >> const {cuerpoDespierta}=await import('./scripts/puerta-avisador-rojo.mjs');
+=== ci.yml (1090 lineas)
+23: on:
+24:   pull_request:
+25:     branches: [main]
+29:   push:
+30:     branches: [main]
+37: concurrency:
+38:   group: ci-${{ github.ref }}
+39:   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+1042: >> run: node scripts/vigilante-de-despliegue.mjs
+=== claude.yml (519 lineas)
+41: on:
+42:   issue_comment:
+43:     types: [created]
+44:   pull_request_review_comment:
+45:     types: [created]
+174: >> git show origin/main:scripts/puerta-avisador-rojo.mjs > "$RUNNER_TEMP/puerta/puerta-avisador-rojo.mjs"
+175: >> git show origin/main:scripts/vigia-atascados.mjs > "$RUNNER_TEMP/puerta/vigia-atascados.mjs"
+228: >> const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+368: >> const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+408: >> const { checksObligatoriosDeReglas } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/vigia-atascados.mjs').href);
+433: >> const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+506: >> const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+=== conflicto-de-registro.yml (203 lineas)
+40: on:
+41:   push:
+42:     branches: [main]
+43:   workflow_dispatch:
+47: concurrency:
+48:   group: conflicto-de-registro
+49:   cancel-in-progress: false
+=== pr-automatico.yml (525 lineas)
+85: on:
+86:   push:
+87:     branches:
+88:       - 'scrum-**'
+92: concurrency:
+93:   group: pr-auto-${{ github.ref }}
+94:   cancel-in-progress: true
+293: >> const {cuerpoNoDebeDespertar}=await import('./scripts/puerta-avisador-rojo.mjs');
+=== vigia-atascados.yml (291 lineas)
+49: on:
+50:   schedule:
+55:     - cron: '0 */3 * * *'
+56:   workflow_dispatch:
+64: concurrency:
+65:   group: vigia-atascados
+66:   cancel-in-progress: false
+210: >> ANTES="$ANTES" node scripts/vigia-pasada.mjs
+=== vigia-despliegue.yml (227 lineas)
+30: on:
+31:   schedule:
+33:     - cron: '0 */2 * * *'
+36:   workflow_dispatch:
+37:     inputs:
+38:       margen:
+39:         description: 'Margen en horas (por defecto, el propuesto en el código)'
+40:         required: false
+41:         default: ''
+49: concurrency:
+50:   group: vigia-despliegue
+51:   cancel-in-progress: true
+134: >> node scripts/vigilante-de-despliegue.mjs --margen "${{ inputs.margen }}"
+136: >> node scripts/vigilante-de-despliegue.mjs
+209: >> node scripts/vigia-despliegue-aviso.mjs)" || true
+=== zona-roja.yml (129 lineas)
+33: on:
+34:   pull_request:
+35:     branches: [main]
+41: concurrency:
+42:   group: zona-roja-${{ github.ref }}
+43:   cancel-in-progress: true
+TOTAL lineas que nombran un instrumento=15 · control a cero (ZZZ-NO-EXISTE)=0
