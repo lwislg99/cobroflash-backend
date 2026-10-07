@@ -295,3 +295,95 @@ orquestador si lo quiere.
 dentro de ese ticket como nota, no como tarea: les falta el `::error::`, nunca salen verdes en falso.
 El ticket no autoriza a tocar ningún workflow: son del fundador. Las tres líneas, releídas ese día
 contra `origin/main` = `10828add`, siguen en el mismo sitio y con el mismo texto.
+
+## SCRUM-1123d · el latido dice el ÚLTIMO VEREDICTO del vigía de despliegue (la condición para cerrar)
+
+**Rama:** `scrum-1123d-latido-dice-el-veredicto` · **Carril:** S5 · **Fecha:** 7-oct-2026
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:07:04Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1123d-latido-dice-el-veredicto.test.mjs`
+
+**Por qué.** El orquestador decidió cerrar este ticket como «cerrado, rama de aviso NO ejercida en vivo» (Jira,
+c.18656), con una condición de reapertura: el primer CONGELADO real que no deje Issue. Y puso una condición para
+cerrar: que esa condición se pueda VER. La pregunta era si la sección VIGÍA del latido dice el último veredicto
+del vigía de despliegue. La respuesta, mirado `main`: no. `latido.mjs` leía un solo workflow,
+`vigia-atascados.yml`; `vigia-despliegue.yml` no aparecía en el fichero.
+
+### Lo medido antes de escribir (GitHub, 7-oct-2026, dos pasadas: hacia las 08:00Z y poco antes de las 15:07Z)
+
+| qué | medido |
+|---|---|
+| corridas de `vigia-despliegue.yml` leídas | 190, del 2-sep al 7-oct 14:49Z: 185 `success`, 5 `failure` |
+| la conclusión de la corrida | NO distingue CONGELADA (salida 1) de «no supe mirar» (salida 2): las dos son `failure` |
+| lo que sí lo distingue: los pasos del job | con `success`, el paso de aviso sale `skipped`; en la del 30-sep (36684679677, salida 2) el paso que mira sale `failure` y el de aviso `skipped`. El de aviso sólo corre con salida 1 (`if: always() && steps.vigia.outputs.salida == '1'`) |
+| las cuatro `failure` del 24/25-sep | anteriores a #1777: no tienen paso de aviso. No se pueden leer con esta regla, y la función lo dice (ciega), no lo adivina |
+| huecos entre corridas (cron cada 2 h) | 189 huecos: mediana 4,7 h · p90 6,8 h · máximo 8,7 h. El tope de 12 h queda por encima de todo |
+| veces que ha cantado CONGELADA desde #1777 | 0. La rama «abre o comenta el Issue» sigue sin ejecutarse nunca |
+
+### Qué cambia
+
+| Sitio | Antes | Ahora |
+|---|---|---|
+| `scripts/equipo/latido.mjs` · `veredictoDelVigiaDeDespliegue` | (no existía) | lee la última corrida terminada y dice una de cinco cosas (abajo) |
+| `scripts/equipo/latido.mjs` · `seccionVigia` | PR atascados | lo mismo, con el veredicto del despliegue DELANTE. La ceguera de una mitad ciega la sección pero no tapa lo que leyó la otra |
+| `scripts/equipo/latido.mjs` · recogida | 4 llamadas a `gh` en el tramo | 1 más siempre (las corridas); 1 más si la última cayó (sus pasos); 1 más si cantó (los Issues abiertos) |
+| `tests/scrum1123d-latido-dice-el-veredicto.test.mjs` | — | 8 tests; uno ata los dos nombres de paso, la condición del aviso y la marca al YAML |
+
+Lo que dice, y cuándo:
+
+| última corrida | pasos | dice | ¿alerta? |
+|---|---|---|---|
+| `success` | (no se piden) | `veredicto NO CANTÓ (salida 0: producción al día, o retrasada pero desplegando)` | no |
+| `failure` | mira `failure`, aviso `skipped` | `NO SUPO MIRAR (salida 2)` · «que no haya aviso NO es que producción esté al día» | sí |
+| `failure` | aviso corrió, hay Issue abierto con la marca tocado después de la corrida | `CANTÓ PRODUCCIÓN CONGELADA · su aviso es el Issue #N` | sí |
+| `failure` | aviso corrió y no hay Issue con la marca · o el paso de aviso cayó · o el Issue no se ha tocado desde antes | `CANTÓ PRODUCCIÓN CONGELADA y NO CONSTA SU AVISO … ESTO REABRE SCRUM-1123` | sí |
+| más de 12 h sin corrida terminada | — | `NO CORRE desde hace N h … su veredicto es de ENTONCES` (delante del veredicto) | sí |
+| no llegan las corridas · no llegan los pasos · falta un paso por su nombre · cantó y no llegan los Issues | — | sección CIEGA (salida 2), nunca verde | — |
+
+Qué Issue lleva la marca se decide con `elegirIssueExistente` de `scripts/vigia-despliegue-aviso.mjs`, la misma
+función que usa el workflow: no hay un segundo criterio.
+
+### Visto en vivo
+
+`node scripts/equipo/latido.mjs` desde el árbol de la rama, el 7-oct minutos antes de las 15:07Z (hora de GitHub):
+
+    🔴 VIGÍA · vigía de DESPLIEGUE: última corrida hace 0.4 h, veredicto NO CANTÓ (salida 0: producción al día, o retrasada pero desplegando) · última pasada del vigía hace 5.8 h (success) · issue #1241 · 46 comentarios, …
+
+(El 🔴 es de dos avisos de PR atascados sin leer, no del despliegue.) El tramo «vigía» tardó 5,2 s con 4 llamadas.
+
+Y la función sola contra corridas REALES, tomando cada una como si fuera la última (sonda fuera de git):
+
+| corrida | dice |
+|---|---|
+| 37639986153 · 7-oct 14:49Z · `success` | NO CANTÓ, sin alerta |
+| 36684679677 · 30-sep 07:36Z · `failure` | NO SUPO MIRAR (salida 2), con alerta y el enlace a la corrida |
+| las cuatro del 24/25-sep · `failure` | CIEGA: «entre sus 9 pasos no está "Avisar de verdad si el vigía cantó (Issue de GitHub)"» |
+
+### Visto en rojo
+
+Sobre `tests/scrum1123d-latido-dice-el-veredicto.test.mjs`. Base: 8 tests, 8 pasan. Cada mutación toca una línea
+y se restaura después (`git status` al final: sólo los dos ficheros de la rama).
+
+| Mutación | Caen |
+|---|---|
+| `latido.mjs`: `skipped` se lee como «cantó» | 2 |
+| `latido.mjs`: nunca dice que falta el aviso (`if (falta)` → `if (false)`) | 2 |
+| `latido.mjs`: un Issue con la marca basta aunque nadie lo haya tocado | 1 |
+| `latido.mjs`: un paso de aviso caído cuenta como aviso | 1 |
+| `latido.mjs`: `failure` sin pasos legibles se da por «no cantó» | 1 |
+| `latido.mjs`: la sección no pregunta por el despliegue | 1 |
+| `latido.mjs`: el tope de 12 h no se aplica | 1 |
+| `vigia-despliegue.yml`: el paso de aviso cambia de nombre | 1 |
+| `vigia-despliegue.yml`: el aviso corre también con salida 2 | 1 |
+| `vigia-despliegue.yml`: la marca cambia | 1 |
+
+### Lo que esto NO es
+
+- **No ejerce la rama de aviso.** Sigue sin haberse visto abrir ni comentar un Issue. Lo que cambia es que, el
+  día que cante, el latido dirá si el Issue está o no. Las ramas CONGELADA de la función sólo se han visto contra
+  dobles: en GitHub no hay ninguna corrida con salida 1 posterior a #1777.
+- **El latido corre cuando alguien lo corre.** No convierte al vigía en un aviso que llega solo.
+- **`NO CANTÓ` no separa «al día» de «retrasada pero desplegando».** Las dos son salida 0; separarlas pide leer el
+  log de la corrida, y la sección DESPLIEGUE del latido ya mide eso por su lado.
+- **Una salida distinta de 0, 1 y 2** (el guion reventando con salida 1, por ejemplo) se leería como CONGELADA,
+  igual que la lee el propio workflow.
