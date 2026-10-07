@@ -1,6 +1,6 @@
 # SCRUM-1492 · Lo que una casilla numérica no entiende no borra el valor guardado, y se dice (S4)
 
-**Medido contra:** `origin/main` = `73ce872cbcb6c914355830fd6b358e30aa066c77` · 2026-10-07T07:44:39Z
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:08:29Z
 A9: comprobación → `tests/scrum1492-lo-que-no-es-un-numero-no-borra-lo-guardado.test.mjs`
 
 Carril S4 (`public/dashboard/js/parteDetailView.js`) · rama `scrum-1492-lo-que-no-es-un-numero-no-borra-lo-guardado`.
@@ -19,6 +19,12 @@ Aprobado por el orquestador por delegación del fundador, 7-oct-2026 — SCRUM-1
 - Desplazamiento dice el de SCRUM-1491 (c.18517), tal cual: la firma lo extiende a este caso, y dice por qué.
 - Conducta: con `badInput` no se manda nada · la casilla vuelve a lo guardado · también si estaba vacía de antes.
 
+Y una segunda firma, misma delegación, 7-oct-2026 — SCRUM-1492 comentario 18706 (propuestos en el 18634, vistos en pantalla en el 18639). Ficha: `docs/microcopy/2026-10-07-SCRUM-1492-rechazos-de-rango-del-parte.md`.
+
+- Los cuatro literales de rango, uno por código de la ruta (abajo, «De paso»).
+- `kilometros_invalido` dice el de Kilómetros ya firmado: misma causa, cazada en otro sitio.
+- El `min="0"` de las dos casillas entra en este PR.
+
 ## Lo construido
 
 - En el cable de las casillas (`alCambiar`): si `casilla.validity.badInput`, la casilla vuelve a su valor guardado, se cuelga el aviso y no se llama a `guardarCampo`.
@@ -30,9 +36,13 @@ Aprobado por el orquestador por delegación del fundador, 7-oct-2026 — SCRUM-1
 SCRUM-1488 (#2249) separó los rechazos de la ruta en un código por causa (`src/modules/jobs/domain/parteRango.ts`). Cuatro nacieron sin texto en la pantalla —`desplazamientos_negativo`, `desplazamientos_no_cabe`, `kilometros_negativo`, `kilometros_no_cabe`— y caían en «No se ha podido guardar el cambio — vuelve a intentarlo», que ahí es falso: repetirlo da otro 400. Y `-3` no es `badInput` (es un número, fuera de rango): lo de arriba no lo cubría. Medido en yaqu.app el 7-oct con el JS de producción: los cuatro dicen el general.
 
 - `TEXTO_POR_CODIGO_DE_LA_RUTA`: un código, un texto. Sustituye a la comparación suelta con `desplazamientos_invalido` de SCRUM-1491. Se mira con `hasOwnProperty`: un código que coincida con algo heredado de `Object` no es un código de la tabla.
-- Los cuatro literales: FIRMA_DE_LOS_CUATRO
+- Los cuatro literales, firmados en el comentario 18706:
+  - `desplazamientos_negativo` → «No se ha guardado. Desplazamiento es 0 o más»
+  - `kilometros_negativo` → «No se ha guardado. Kilómetros es 0 o más»
+  - `desplazamientos_no_cabe` → «No se ha guardado. Ese número es demasiado grande para Desplazamiento»
+  - `kilometros_no_cabe` → «No se ha guardado. Ese número es demasiado grande para Kilómetros»
 - `min="0"` en las dos casillas numéricas: la mitad de S4 que SCRUM-1488 dejó nombrada. Es cortesía (las flechas no bajan de 0); `-3` tecleado sigue llegando a la ruta, y se dice.
-- `kilometros_invalido` sigue en el general, declarado en el test con su motivo: desde la casilla no se llega (medido: `1e999` da `badInput` y no se manda nada).
+- `kilometros_invalido` pinta el texto de Kilómetros (firmado en el 18706). Hoy desde la casilla no se llega a ese código (medido: `1e999` da `badInput` y no se manda nada): es la red para el día que un cambio lo haga alcanzable, y el test lo declara así. Hasta la firma caía en el general.
 
 **El fallo propio que esto cierra.** Mi test de SCRUM-1491 llevaba la regla de la ruta copiada a mano en su servidor de mentira («no entero o no cabe → `desplazamientos_invalido`»). La ruta cambió y el test siguió verde afirmando algo que ya no pasa. Corregido, y el test nuevo ya no copia: LEE los códigos de `parteRango.ts` y cae si la ruta estrena uno sin texto.
 
@@ -40,8 +50,9 @@ SCRUM-1488 (#2249) separó los rechazos de la ruta en un código por causa (`src
 
 `tests/scrum1492-lo-que-no-es-un-numero-no-borra-lo-guardado.test.mjs`: la vista real en el banco. El banco no modela `validity`; el test la pone a mano en la casilla, con `value` vacío, que es lo que entrega el navegador.
 
-- **Verde:** 18 de 18, más los 8 de `tests/scrum1491-…` (26 de 26 juntos).
-- **Rojo por mutación:** base verde y 21 mutantes de 22 mueren, cada uno con su `git diff --numstat` al lado. El primero es la vista de antes (no mira `badInput`): caen 8. El que vive (quitar el `return` tras el aviso) es equivalente: la casilla ya volvió a lo guardado y la comparación de debajo corta igual. Un mutante heredado apuntaba, tras traer `main`, a una línea gemela de otra función y salió «vive» en falso: se reapuntó y se repitió la tanda entera.
+- **Verde:** 18 de 18, más los 8 de `tests/scrum1491-…` (26 de 26 juntos). Repetido tras la segunda firma, con `main` = `5f1bb361` dentro.
+- **Rojo por mutación** (repetida entera tras la segunda firma): base verde y 23 mutantes de 24 mueren, cada uno con su `git diff --numstat` al lado. El primero es la vista de antes (no mira `badInput`): caen 8. Los dos nuevos son la línea de `kilometros_invalido`: sin ella (la vista de antes de la firma) y diciendo el texto de Desplazamiento; caen 2 tests en cada uno. El que vive (quitar el `return` tras el aviso) es equivalente: la casilla ya volvió a lo guardado y la comparación de debajo corta igual. Un mutante heredado apuntaba, tras traer `main`, a una línea gemela de otra función y salió «vive» en falso: se reapuntó y se repitió la tanda entera.
+- **El censo de microcopy (SCRUM-1157), en sus dos sentidos:** con las cuatro marcas todavía sin firma, 2 rojos que acusan justo esos cuatro literales; con las marcas firmadas, verde. Con los censos de fichas y de firma (514, 709, 726, 861) y el de negaciones (237): 120 de 120.
 
 **En el navegador**, sobre yaqu.app (build `73ce872c`, cuenta QA, parte 9, service worker bloqueado, control del interceptor antes de tocar; a producción sólo llegan GET). El GET del parte se sirve con Desplazamiento 2 y Kilómetros 12 puestos por la sonda.
 
