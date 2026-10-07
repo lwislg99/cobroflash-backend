@@ -1,0 +1,46 @@
+POBLACION: bloque a91 · 44 versiones · fichero de 5604538 bytes
+
+=== VERSION BOE-A-2024-26694 · publicada 20241221 · fecha_vigencia 20241222
+NOTA (primera frase): Se modifica el apartado Dos.1.1º por la disposición final primera.2 de la Ley 7/2024, de 20 de diciembre. Ref. BOE-A-2024-26694#df
+  | 10.º Las ejecuciones de obra de renovación y reparación realizadas en edificios o partes de los mismos destinados a viviendas, cuando se cumplan los siguientes requisitos:
+  | a) Que el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda a que se refieren las obras para su uso particular.
+  | No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios.
+  | b) Que la construcción o rehabilitación de la vivienda a que se refieren las obras haya concluido al menos dos años antes del inicio de estas últimas.
+  | c) Que la persona que realice las obras no aporte materiales para su ejecución o, en el caso de que los aporte, su coste no exceda del 40 por ciento de la base imponible de la operación.
+CONDICION DEL MEDIO DE PAGO: no
+
+=== VERSION BOE-A-2026-20266 · publicada 20260930 · fecha_vigencia 20261201
+NOTA (primera frase): Se modifican, con efectos de 1 de diciembre de 2026, los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por el art. 7.2 a 4 del Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20266#a7
+  | 10.º Las ejecuciones de obra de renovación y reparación realizadas en edificios o partes de los mismos destinados a viviendas, cuando se cumplan los siguientes requisitos:
+  | a) Que el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda a que se refieren las obras para su uso particular.
+  | No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios o cuando se trate de viviendas destinadas a su arrendamiento como vivienda habitual, cualquiera que sea la condición del arrendador.
+  | La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.
+  | b) Que la construcción o rehabilitación de la vivienda a que se refieren las obras haya concluido al menos dos años antes del inicio de estas últimas.
+  | c) Que la persona que realice las obras no aporte materiales para su ejecución o, en el caso de que los aporte, su coste no exceda del 40 por ciento de la base imponible de la operación.
+  | Téngase en cuenta que esta actualización del apartado 10º produce efectos el 1 de diciembre de 2026, según establece el art. 7.2 del Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20266#a7
+  | Redacción anterior:
+  | "10.º Las ejecuciones de obra de renovación y reparación realizadas en edificios o partes de los mismos destinados a viviendas, cuando se cumplan los siguientes requisitos:
+  | a) Que el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda a que se refieren las obras para su uso particular.
+  | No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios.
+  | b) Que la construcción o rehabilitación de la vivienda a que se refieren las obras haya concluido al menos dos años antes del inicio de estas últimas.
+  | c) Que la persona que realice las obras no aporte materiales para su ejecución o, en el caso de que los aporte, su coste no exceda del 40 por ciento de la base imponible de la operación."
+CONDICION DEL MEDIO DE PAGO: SI
+
+=== VERSION BOE-A-2026-20526 · publicada 20261002 · fecha_vigencia 20261002
+NOTA (primera frase): Se deja sin efecto la modificación de los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por Resolución de 2 de octubre de 2026 que publica el Acuerdo del Congreso de los Diputados por el que se deroga el Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20526
+  | 10.º Las ejecuciones de obra de renovación y reparación realizadas en edificios o partes de los mismos destinados a viviendas, cuando se cumplan los siguientes requisitos:
+  | a) Que el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda a que se refieren las obras para su uso particular.
+  | No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios.
+  | b) Que la construcción o rehabilitación de la vivienda a que se refieren las obras haya concluido al menos dos años antes del inicio de estas últimas.
+  | c) Que la persona que realice las obras no aporte materiales para su ejecución o, en el caso de que los aporte, su coste no exceda del 40 por ciento de la base imponible de la operación.
+CONDICION DEL MEDIO DE PAGO: no
+
+=== VERSION BOE-A-2026-20823 · publicada 20261007 · fecha_vigencia 20261008
+NOTA (primera frase): Se modifican, con efectos de 1 de diciembre de 2026, los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por el art. 7.2 a 4 del Real Decreto-ley 29/2026, de 6 de octubre. Ref. BOE-A-2026-20823#a7
+  | 10.º Las ejecuciones de obra de renovación y reparación realizadas en edificios o partes de los mismos destinados a viviendas, cuando se cumplan los siguientes requisitos:
+  | a) Que el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda a que se refieren las obras para su uso particular.
+  | No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios o cuando se trate de viviendas destinadas a su arrendamiento como vivienda habitual, cualquiera que sea la condición del arrendador.
+  | La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.
+  | b) Que la construcción o rehabilitación de la vivienda a que se refieren las obras haya concluido al menos dos años antes del inicio de estas últimas.
+  | c) Que la persona que realice las obras no aporte materiales para su ejecución o, en el caso de que los aporte, su coste no exceda del 40 por ciento de la base imponible de la operación.
+CONDICION DEL MEDIO DE PAGO: SI
