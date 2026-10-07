@@ -521,7 +521,7 @@ export async function sendWhatsAppWindowFirst(params: {
   }
   // SCRUM-1436: lo que devolvió el envío por ventana cuando la ventana estaba ABIERTA y aun así
   // no salió. `null` = no se llegó a intentar (ventana cerrada, o sin cliente al que mirársela).
-  let falloEnVentana: { reason?: string; error?: any } | null = null;
+  let falloEnVentana: { reason?: string; error?: any; desenlace?: DesenlaceDeMeta } | null = null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).
@@ -553,7 +553,7 @@ export async function sendWhatsAppWindowFirst(params: {
       }).catch(() => {});
       return { ok: true, via: 'window' };
     }
-    falloEnVentana = text as { reason?: string; error?: any };
+    falloEnVentana = text as { reason?: string; error?: any; desenlace?: DesenlaceDeMeta };
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
   }
 
@@ -581,7 +581,10 @@ export async function sendWhatsAppWindowFirst(params: {
   // propio motivo (demo, baja, sin configurar) sube ése; si no, el genérico que ya existía.
   if (params.sinPlantilla) {
     if (falloEnVentana) {
-      return { ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error };
+      return {
+        ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error,
+        ...(falloEnVentana.desenlace ? { desenlace: falloEnVentana.desenlace } : {}), // SCRUM-1477
+      };
     }
     return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
@@ -594,6 +597,12 @@ export async function sendWhatsAppWindowFirst(params: {
     languageCode: params.template.languageCode,
     components: params.template.components,
   });
+  // SCRUM-1477: aquí puede haber habido DOS intentos, el de ventana y el de plantilla. Si el de
+  // ventana quedó sin respuesta, ese mensaje puede haber salido, y que después Meta rechace la
+  // plantilla (o que la pare un tope) no lo cambia: el conjunto no puede decir «no ha salido».
+  if (!result.ok && falloEnVentana?.desenlace === 'sin_respuesta') {
+    return { ...result, via: 'template', desenlace: 'sin_respuesta' };
+  }
   return { ...result, via: 'template' };
 }
 

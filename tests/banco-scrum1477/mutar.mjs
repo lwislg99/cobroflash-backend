@@ -55,6 +55,9 @@ const MUTACIONES = [
   { id: 'M10', que: 'un envío deja de devolver `error`', fichero: DIST, muta: enLa(3, 'error: err?.response?.data || err?.message, desenlace', 'desenlace') },
   { id: 'M11', que: 'un envío pide otro plazo a Meta', fichero: DIST, muta: enLa(5, 'timeout: 10_000', 'timeout: 9_000') },
   { id: 'M12', que: 'en el FUENTE, un `catch` devuelve un desenlace fijo', fichero: SRC, muta: enLa(6, DEVUELVE_TS, "desenlace: 'sin_respuesta' as const }") },
+  { id: 'M13', que: 'por ventana: un texto sin respuesta deja de mandar sobre la plantilla rechazada', fichero: DIST, muta: enLa(1, "falloEnVentana?.desenlace === 'sin_respuesta'", "falloEnVentana?.desenlace === 'nunca'") },
+  { id: 'M14', que: 'por ventana y sin plantilla: no sube el desenlace', fichero: DIST, muta: enLa(1, '...(falloEnVentana.desenlace ? { desenlace: falloEnVentana.desenlace } : {}),', '') },
+  { id: 'M15', que: 'por ventana y sin plantilla: el desenlace pisa el `reason` de SCRUM-1436', fichero: DIST, muta: enLa(1, "reason: falloEnVentana.reason ?? 'whatsapp_send_failed'", "reason: falloEnVentana.reason ?? falloEnVentana.desenlace") },
   { id: 'C1', que: 'CONTROL: un comentario, no cambia nada', fichero: DIST, muta: enLa(1, 'function desenlaceDeMeta(err) {', 'function desenlaceDeMeta(err) { /* control */'), esperaMuda: true },
 ];
 

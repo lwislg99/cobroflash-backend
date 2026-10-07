@@ -16,7 +16,7 @@
 //     cambiar el destino por `127.0.0.1` y un puerto efímero. No se resuelve ningún nombre;
 //   · TODA petición se desvía, vaya a donde vaya: este fichero no sabe dónde está Meta ni le hace
 //     falta. Anota el destino que pedía `whatsapp.ts` y lo cambia por el servidor de laboratorio;
-//     el test comprueba que el servidor recibió tantas peticiones como envíos se hicieron;
+//     el test comprueba que el servidor recibió tantas peticiones como salieron;
 //   · las credenciales son la cadena `laboratorio-1477`, y el destino es del rango imposible
 //     (`telefonoDePrueba`, SCRUM-262).
 //
@@ -24,8 +24,9 @@
 // 4xx, un 5xx, un plazo vencido o un corte, y el `catch` de producción tal cual está en `dist/`.
 //
 // EL LÍMITE: el plazo real es de 10 s (`timeout: 10_000`). Aquí se ANOTA el que pide cada envío
-// y se acorta a `PLAZO_DE_LABORATORIO_MS` para no esperar setenta segundos. El error que sale es
-// el de axios por plazo vencido; lo que cambia es la cifra de su mensaje.
+// y, cuando el servidor no va a contestar, se acorta a `PLAZO_DE_LABORATORIO_MS` para no esperar
+// más de un minuto. El error que sale es el de axios por plazo vencido; cambia la cifra de su
+// mensaje.
 //
 // USO: `node tests/_meta-de-laboratorio.mjs <caso>` → un JSON por stdout. Lo lanza
 // `tests/scrum1477-meta-dijo-que-no-o-no-contesto.test.mjs` con el entorno construido a mano.
@@ -35,10 +36,16 @@ import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 export const PLAZO_DE_LABORATORIO_MS = 300;
 
-/** Lo que contesta el servidor de laboratorio en cada caso. `null` = no contesta nunca. */
+const NO_ENTREGABLE = { status: 400, cuerpo: { error: { message: '(#131026) Message undeliverable', type: 'OAuthException', code: 131026 } } };
+
+/**
+ * Lo que contesta el servidor de laboratorio en cada caso. `null` = no contesta nunca ·
+ * `'corte'` = recibe el envío entero y cierra la conexión · `{ porTipo, resto }` = depende del
+ * `type` del mensaje que le llega (para el envío por ventana, que puede hacer DOS intentos).
+ */
 export const CASOS = Object.freeze({
   'responde-200': { status: 200, cuerpo: { messages: [{ id: 'wamid.laboratorio-1477' }] } },
-  'meta-400': { status: 400, cuerpo: { error: { message: '(#131026) Message undeliverable', type: 'OAuthException', code: 131026 } } },
+  'meta-400': NO_ENTREGABLE,
   'meta-401': { status: 401, cuerpo: { error: { message: 'Invalid OAuth access token', type: 'OAuthException', code: 190 } } },
   'meta-429': { status: 429, cuerpo: { error: { message: '(#130429) Rate limit hit', type: 'OAuthException', code: 130429 } } },
   'meta-408': { status: 408, cuerpo: { error: { message: 'Request timeout', code: 408 } } },
@@ -46,6 +53,12 @@ export const CASOS = Object.freeze({
   'meta-503': { status: 503, cuerpo: { error: { message: 'Service temporarily unavailable', code: 2 } } },
   'sin-respuesta': null,
   'corte': 'corte',
+  // El texto de ventana se queda sin respuesta; la plantilla que va detrás, Meta la rechaza.
+  'texto-sin-respuesta-y-plantilla-400': { porTipo: { template: NO_ENTREGABLE }, resto: null },
+  // El texto de ventana se queda sin respuesta; la plantilla que va detrás SALE.
+  'texto-sin-respuesta-y-plantilla-200': {
+    porTipo: { template: { status: 200, cuerpo: { messages: [{ id: 'wamid.laboratorio-1477' }] } } }, resto: null,
+  },
 });
 
 /** Los siete envíos que llaman a Meta, con lo mínimo que cada uno pide. */
@@ -58,6 +71,14 @@ export const ENVIOS = Object.freeze({
   sendWhatsAppDocument: { link: 'https://yaqu.app/laboratorio.pdf' },
   sendWhatsAppLocationRequest: { bodyText: 'x' },
 });
+
+/** Qué hace el servidor con un mensaje de ese `type` en ese caso. */
+function planDe(caso, tipo) {
+  const que = CASOS[caso];
+  if (que && typeof que === 'object' && 'porTipo' in que) return tipo in que.porTipo ? que.porTipo[tipo] : que.resto;
+  return que;
+}
+const tipoDe = (cuerpo) => { try { return String(JSON.parse(cuerpo)?.type); } catch { return 'ilegible'; } };
 
 async function medir(caso) {
   if (!(caso in CASOS)) throw new Error(`caso desconocido: ${caso}. Los que hay: ${Object.keys(CASOS).join(', ')}`);
@@ -77,8 +98,9 @@ async function medir(caso) {
     let cuerpo = '';
     req.on('data', (c) => { cuerpo += c; });
     req.on('end', () => {
-      recibidas.push({ ruta: req.url, bytes: cuerpo.length });
-      const que = CASOS[caso];
+      const tipo = tipoDe(cuerpo);
+      recibidas.push({ ruta: req.url, tipo });
+      const que = planDe(caso, tipo);
       if (que === null) return; // no contesta: el envío llegó entero y no se le dice nada
       if (que === 'corte') { req.socket.destroy(); return; }
       res.writeHead(que.status, { 'Content-Type': 'application/json' });
@@ -90,12 +112,14 @@ async function medir(caso) {
   const puerto = servidor.address().port;
 
   // ANTES de cargar nada de `dist/`: la base, y el transporte de axios.
-  const { inyectarBase, moduloDeDist, MERCHANT } = await import('./_envio-doblado.mjs');
+  const { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } = await import('./_envio-doblado.mjs');
   delete process.env.WHATSAPP_DRY_RUN; // `_envio-doblado` lo enciende al cargarse; aquí se mide SIN él
   const filas = [];
   inyectarBase({
     'customer.findMany': () => [], // nadie se ha dado de baja (J3)
     'whatsAppMessage.create': (args) => { filas.push(args?.data ?? null); return {}; },
+    // La ventana de 24 h del cliente, ABIERTA: sólo la mira el envío por ventana.
+    'whatsAppMessage.findFirst': (args) => (args?.where?.type === 'inbound' ? { id: 1 } : null),
   });
 
   const requiere = createRequire(import.meta.url);
@@ -104,10 +128,11 @@ async function medir(caso) {
   const salidas = [];
   axios.defaults.adapter = (cfg) => {
     const pedida = new URL(String(cfg.url));
-    salidas.push({ protocolo: pedida.protocol, destino: pedida.host, ruta: pedida.pathname, plazoPedidoMs: cfg.timeout });
+    const tipo = tipoDe(cfg.data);
+    salidas.push({ protocolo: pedida.protocol, destino: pedida.host, ruta: pedida.pathname, tipo, plazoPedidoMs: cfg.timeout });
     cfg.url = `http://127.0.0.1:${puerto}${pedida.pathname}${pedida.search}`;
     cfg.proxy = false;
-    if (caso === 'sin-respuesta') cfg.timeout = PLAZO_DE_LABORATORIO_MS;
+    if (planDe(caso, tipo) === null) cfg.timeout = PLAZO_DE_LABORATORIO_MS;
     return transporte(cfg);
   };
 
@@ -115,11 +140,12 @@ async function medir(caso) {
   config.WHATSAPP_PHONE_NUMBER_ID = 'laboratorio-1477';
   config.WHATSAPP_ACCESS_TOKEN = 'laboratorio-1477';
   const wa = moduloDeDist('../dist/integrations/whatsapp.js');
+  const to = telefonoDePrueba(77);
 
   const resultados = {};
   for (const [nombre, extra] of Object.entries(ENVIOS)) {
     const antes = salidas.length;
-    const r = await wa[nombre]({ to: telefonoDePrueba(77), merchantId: MERCHANT, ...extra });
+    const r = await wa[nombre]({ to, merchantId: MERCHANT, ...extra });
     resultados[nombre] = {
       claves: Object.keys(r).sort(),
       ok: r.ok,
@@ -128,6 +154,25 @@ async function medir(caso) {
       tipoDeError: r.error === undefined ? 'no hay' : typeof r.error,
       error: r.error ?? null,
       salidas: salidas.length - antes,
+    };
+  }
+
+  // El envío POR VENTANA, con la ventana abierta: primero un texto y, si falla, la plantilla
+  // (o nada, si el llamador pidió `sinPlantilla`).
+  const porVentana = {};
+  for (const sinPlantilla of [false, true]) {
+    const antes = salidas.length;
+    const r = await wa.sendWhatsAppWindowFirst({
+      to, merchantId: MERCHANT, customerId: CLIENTE, windowText: 'x', sinPlantilla,
+      template: { templateName: 'laboratorio_1477', components: [] },
+    });
+    porVentana[sinPlantilla ? 'sinPlantilla' : 'conPlantilla'] = {
+      ok: r.ok,
+      via: r.via,
+      reason: r.reason ?? null,
+      desenlace: r.desenlace ?? null,
+      error: r.error ?? null,
+      intentos: salidas.slice(antes).map((s) => s.tipo),
     };
   }
 
@@ -144,6 +189,7 @@ async function medir(caso) {
     recibidas: recibidas.length,
     filasDeFallo: filas.filter((f) => f?.status === 'failed').length,
     resultados,
+    porVentana,
   };
 }
 

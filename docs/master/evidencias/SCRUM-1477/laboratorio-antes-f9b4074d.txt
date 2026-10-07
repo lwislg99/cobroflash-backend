@@ -1,0 +1,10 @@
+== responde-200 · envíos 7 · salidas 7 · recibidas 7 · filas de fallo 0 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["data","ok"],"ok":true,"reason":null,"desenlace":null,"tipoDeError":"no hay","error":null}
+== meta-400 · envíos 7 · salidas 7 · recibidas 7 · filas de fallo 7 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["error","ok"],"ok":false,"reason":null,"desenlace":null,"tipoDeError":"object","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}}}
+== meta-500 · envíos 7 · salidas 7 · recibidas 7 · filas de fallo 7 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["error","ok"],"ok":false,"reason":null,"desenlace":null,"tipoDeError":"object","error":{"error":{"message":"An unknown error occurred","type":"OAuthException","code":1}}}
+== sin-respuesta · envíos 7 · salidas 7 · recibidas 7 · filas de fallo 7 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["error","ok"],"ok":false,"reason":null,"desenlace":null,"tipoDeError":"string","error":"timeout of 300ms exceeded"}
+== corte · envíos 7 · salidas 7 · recibidas 7 · filas de fallo 7 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["error","ok"],"ok":false,"reason":null,"desenlace":null,"tipoDeError":"string","error":"socket hang up"}

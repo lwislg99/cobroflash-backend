@@ -1,0 +1,46 @@
+== responde-200 · envíos 7 · salidas 9 · recibidas 9 · filas de fallo 0 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["data","ok"],"ok":true,"reason":null,"desenlace":null,"tipoDeError":"no hay","error":null}
+   por ventana, conPlantilla: {"ok":true,"via":"window","reason":null,"desenlace":null,"error":null,"intentos":["text"]}
+   por ventana, sinPlantilla: {"ok":true,"via":"window","reason":null,"desenlace":null,"error":null,"intentos":["text"]}
+== meta-400 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"rechazado","tipoDeError":"object","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"rechazado","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"rechazado","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}},"intentos":["text"]}
+== meta-401 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"rechazado","tipoDeError":"object","error":{"error":{"message":"Invalid OAuth access token","type":"OAuthException","code":190}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"rechazado","error":{"error":{"message":"Invalid OAuth access token","type":"OAuthException","code":190}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"rechazado","error":{"error":{"message":"Invalid OAuth access token","type":"OAuthException","code":190}},"intentos":["text"]}
+== meta-429 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"rechazado","tipoDeError":"object","error":{"error":{"message":"(#130429) Rate limit hit","type":"OAuthException","code":130429}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"rechazado","error":{"error":{"message":"(#130429) Rate limit hit","type":"OAuthException","code":130429}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"rechazado","error":{"error":{"message":"(#130429) Rate limit hit","type":"OAuthException","code":130429}},"intentos":["text"]}
+== meta-408 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"object","error":{"error":{"message":"Request timeout","code":408}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":{"error":{"message":"Request timeout","code":408}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":{"error":{"message":"Request timeout","code":408}},"intentos":["text"]}
+== meta-500 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"object","error":{"error":{"message":"An unknown error occurred","type":"OAuthException","code":1}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":{"error":{"message":"An unknown error occurred","type":"OAuthException","code":1}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":{"error":{"message":"An unknown error occurred","type":"OAuthException","code":1}},"intentos":["text"]}
+== meta-503 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"object","error":{"error":{"message":"Service temporarily unavailable","code":2}}}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":{"error":{"message":"Service temporarily unavailable","code":2}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":{"error":{"message":"Service temporarily unavailable","code":2}},"intentos":["text"]}
+== sin-respuesta · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"string","error":"timeout of 300ms exceeded"}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":"timeout of 300ms exceeded","intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":"timeout of 300ms exceeded","intentos":["text"]}
+== corte · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   7 de 7 [Template,Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"string","error":"socket hang up"}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":"socket hang up","intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":"socket hang up","intentos":["text"]}
+== texto-sin-respuesta-y-plantilla-400 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 10 · plazos pedidos (ms) 10000
+   1 de 7 [Template] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"rechazado","tipoDeError":"object","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}}}
+   6 de 7 [Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"string","error":"timeout of 300ms exceeded"}
+   por ventana, conPlantilla: {"ok":false,"via":"template","reason":null,"desenlace":"sin_respuesta","error":{"error":{"message":"(#131026) Message undeliverable","type":"OAuthException","code":131026}},"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":"timeout of 300ms exceeded","intentos":["text"]}
+== texto-sin-respuesta-y-plantilla-200 · envíos 7 · salidas 10 · recibidas 10 · filas de fallo 8 · plazos pedidos (ms) 10000
+   1 de 7 [Template] → {"claves":["data","ok"],"ok":true,"reason":null,"desenlace":null,"tipoDeError":"no hay","error":null}
+   6 de 7 [Text,Buttons,List,CtaUrl,Document,LocationRequest] → {"claves":["desenlace","error","ok"],"ok":false,"reason":null,"desenlace":"sin_respuesta","tipoDeError":"string","error":"timeout of 300ms exceeded"}
+   por ventana, conPlantilla: {"ok":true,"via":"template","reason":null,"desenlace":null,"error":null,"intentos":["text","template"]}
+   por ventana, sinPlantilla: {"ok":false,"via":"none","reason":"whatsapp_send_failed","desenlace":"sin_respuesta","error":"timeout of 300ms exceeded","intentos":["text"]}

@@ -62,11 +62,13 @@ function medir(caso) {
   const m = JSON.parse(r.stdout);
   // EL SUELO. Un laboratorio que no llega a llamar se lee igual que uno donde todo va bien.
   assert.deepEqual(Object.keys(m.resultados), SIETE, `🔴 CIEGO: no se han medido los siete envíos (${caso}).`);
-  assert.equal(m.recibidas, SIETE.length,
-    `🔴 CIEGO: el servidor de laboratorio ha recibido ${m.recibidas} peticiones y se han hecho ${SIETE.length} envíos (${caso}).`);
+  assert.deepEqual(Object.values(m.resultados).map((r) => r.salidas), SIETE.map(() => 1),
+    `🔴 CIEGO: alguno de los siete envíos no ha llegado a llamar, o ha llamado más de una vez (${caso}).`);
+  assert.equal(m.recibidas, m.salidas.length,
+    `🔴 CIEGO: el servidor de laboratorio ha recibido ${m.recibidas} peticiones y salieron ${m.salidas.length} (${caso}).`);
   assert.equal(new Set(m.salidas.map((s) => `${s.protocolo}//${s.destino}`)).size, 1,
     `🔴 los siete envíos ya no piden el mismo destino (${caso}): alguno habla con otro sitio.`);
-  assert.deepEqual(m.salidas.map((s) => s.plazoPedidoMs), SIETE.map(() => PLAZO_REAL_MS),
+  assert.deepEqual(m.salidas.map((s) => s.plazoPedidoMs), m.salidas.map(() => PLAZO_REAL_MS),
     `🔴 algún envío ya no pide el plazo de ${PLAZO_REAL_MS} ms a Meta (${caso}).`);
   medidas.set(caso, m);
   return m;
@@ -139,6 +141,45 @@ test('SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`', () => {
 test('SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`', () => {
   assert.deepEqual(loQueDevuelven('meta-408'),
     losSieteIgual({ ok: false, desenlace: 'sin_respuesta', reason: null, error: CASOS['meta-408'].cuerpo }));
+});
+
+// ═══ EL ENVÍO POR VENTANA: PUEDE HABER DOS INTENTOS ═════════════════════════════════════════
+
+/** Lo que devuelve `sendWhatsAppWindowFirst` con la ventana abierta, con plantilla detrás y sin ella. */
+const porVentana = (caso) => Object.fromEntries(
+  Object.entries(medir(caso).porVentana).map(([como, r]) => [como, { ok: r.ok, via: r.via, reason: r.reason, desenlace: r.desenlace, intentos: r.intentos }]),
+);
+
+test('SCRUM-1477 · SUELO: por ventana, con Meta contestando 200, el texto SALE a la primera', () => {
+  const sale = { ok: true, via: 'window', reason: null, desenlace: null, intentos: ['text'] };
+  assert.deepEqual(porVentana('responde-200'), { conPlantilla: sale, sinPlantilla: sale });
+});
+
+test('SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella', () => {
+  assert.deepEqual(porVentana('meta-400'), {
+    conPlantilla: { ok: false, via: 'template', reason: null, desenlace: 'rechazado', intentos: ['text', 'template'] },
+    sinPlantilla: { ok: false, via: 'none', reason: 'whatsapp_send_failed', desenlace: 'rechazado', intentos: ['text'] },
+  }, '🔴 el envío por ventana no sube el desenlace de sus intentos (o ha cambiado el `reason` de SCRUM-1436).');
+});
+
+test('SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella', () => {
+  assert.deepEqual(porVentana('sin-respuesta'), {
+    conPlantilla: { ok: false, via: 'template', reason: null, desenlace: 'sin_respuesta', intentos: ['text', 'template'] },
+    sinPlantilla: { ok: false, via: 'none', reason: 'whatsapp_send_failed', desenlace: 'sin_respuesta', intentos: ['text'] },
+  });
+});
+
+test('SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`', () => {
+  const m = medir('texto-sin-respuesta-y-plantilla-400');
+  assert.equal(m.resultados.sendWhatsAppTemplate.desenlace, 'rechazado',
+    '🔴 CIEGO: en este caso la plantilla tiene que salir rechazada; si no, no se está midiendo la mezcla.');
+  assert.equal(m.resultados.sendWhatsAppText.desenlace, 'sin_respuesta',
+    '🔴 CIEGO: en este caso el texto tiene que quedarse sin respuesta.');
+  assert.deepEqual(porVentana('texto-sin-respuesta-y-plantilla-400'), {
+    conPlantilla: { ok: false, via: 'template', reason: null, desenlace: 'sin_respuesta', intentos: ['text', 'template'] },
+    sinPlantilla: { ok: false, via: 'none', reason: 'whatsapp_send_failed', desenlace: 'sin_respuesta', intentos: ['text'] },
+  }, '🔴 el texto de ventana pudo salir (no hubo respuesta) y el envío dice `rechazado` porque Meta rechazó '
+    + 'la plantilla de después. El profesional leería «no ha salido» de un mensaje que quizá llegó.');
 });
 
 // ═══ ③ NO LLEGÓ A SALIR ═════════════════════════════════════════════════════════════════════
