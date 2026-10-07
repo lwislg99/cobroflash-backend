@@ -786,7 +786,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago ${isReceiptNumber(invoice.number) ? 'del justificante' : 'de la factura'} *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
         // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
