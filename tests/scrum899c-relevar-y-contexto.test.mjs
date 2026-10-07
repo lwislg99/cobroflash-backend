@@ -65,6 +65,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (false) {',
     cae: '🔴 no se para una sesión cuyo traspaso está REALMENTE viejo frente al último turno',
   },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: '  const yaSinEsperar = tokens > umbralAMitad;',
+    a: '  const yaSinEsperar = false;',
+    cae: '🔴 SCRUM-1484b · `contexto N` dice CUÁNDO: entre los dos números AL TERMINAR, por encima del segundo YA',
+  },
 ];
 
 const UUID = 'd521a2f6-ff99-4970-a1bc-f8064ed68061';
@@ -177,6 +183,50 @@ test('los tres casos de la A19, y sus dos lados del umbral (300k desde el 6-oct-
 
   assert.equal(s.decidirRelevo({ contexto: null, ultimaActividad: hace5min, ahora }).veredicto, 'NO-PUDE-MIRAR',
     '🔴 sin lectura NO se dice «sigue»: un instrumento que no pudo mirar no da verde');
+});
+
+// SCRUM-1484b (7-oct-2026) · La A19 tiene DOS números. El latido ya decía dos frases (SCRUM-1484); `contexto N`
+// seguía con una, «por encima de 300k», también para una sesión que ya había pasado el segundo. Dos instrumentos
+// que miran la misma ventana no pueden decirle dos cosas: la frase vive en `fraseDeRelevo` y la dicen los dos.
+test('🔴 SCRUM-1484b · `contexto N` dice CUÁNDO: entre los dos números AL TERMINAR, por encima del segundo YA', () => {
+  const ahora = Date.parse('2026-10-07T07:30:00Z');
+  const hace5min = ahora - 5 * 60 * 1000;
+  const ctx = (t) => ({ tokens: t, turnos: 10, cuando: null });
+  const de = (t, extra = {}) => s.decidirRelevo({ contexto: ctx(t), ultimaActividad: hace5min, ahora, ...extra });
+  assert.ok(s.UMBRAL_CONTEXTO_A_MITAD > s.UMBRAL_CONTEXTO, '🔴 el de «a mitad» tiene que quedar por encima del de «al entregar»');
+  const k = (n) => `${Math.round(n / 1000)}k`;
+  const entre = Math.round((s.UMBRAL_CONTEXTO + s.UMBRAL_CONTEXTO_A_MITAD) / 2);
+  const encima = s.UMBRAL_CONTEXTO_A_MITAD + 30_000;
+
+  const rEntre = de(entre);
+  assert.equal(rEntre.veredicto, 'RELEVAR');
+  assert.equal(rEntre.momento, 'AL-TERMINAR');
+  assert.equal(rEntre.motivo, `el contexto va por ${k(entre)}, por encima de ${k(s.UMBRAL_CONTEXTO)} (A19): se releva AL TERMINAR su entrega`);
+
+  const rEncima = de(encima);
+  assert.equal(rEncima.veredicto, 'RELEVAR', '🔴 por encima del segundo sigue siendo RELEVAR: lo que cambia es CUÁNDO');
+  assert.equal(rEncima.momento, 'YA');
+  assert.equal(rEncima.motivo, `el contexto va por ${k(encima)}, por encima de ${k(s.UMBRAL_CONTEXTO_A_MITAD)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo`);
+  // Control positivo de la negación: la frase de «YA» existe, o el `doesNotMatch` de abajo no mediría nada.
+  assert.match(rEncima.motivo, /se releva YA/);
+  assert.doesNotMatch(rEncima.motivo, /AL TERMINAR/, '🔴 a una sesión por encima del segundo número `contexto` le dice «al terminar»: lo contrario de la A19');
+  assert.doesNotMatch(rEntre.motivo, /se releva YA/, '🔴 a una sesión que sólo pasó el primero no se le pide parar a mitad');
+
+  // Igual al segundo todavía es «al terminar»: la norma dice «si pasa de». Y por debajo del primero no hay momento.
+  assert.equal(de(s.UMBRAL_CONTEXTO_A_MITAD).momento, 'AL-TERMINAR');
+  assert.equal(de(s.UMBRAL_CONTEXTO - 1).momento, undefined);
+  assert.equal(de(s.UMBRAL_CONTEXTO - 1).veredicto, 'SEGUIR');
+
+  // La frase es UNA: la que exporta `sesion.mjs` y toma el latido (`tests/scrum1350-latido.test.mjs` fija la suya).
+  assert.equal(rEncima.motivo, `el contexto va por ${k(encima)}, ${s.fraseDeRelevo({ tokens: encima })}`);
+  assert.equal(s.fraseDeRelevo({ tokens: s.UMBRAL_CONTEXTO }), null, 'sin pasar del primero no hay frase');
+
+  // CIEGO: con los dos números iguales o al revés no hay tramo «al terminar», y elegir una frase sería inventarla.
+  for (const [umbral, umbralAMitad] of [[300_000, 300_000], [500_000, 300_000], [300_000, NaN]]) {
+    const r = de(700_000, { umbral, umbralAMitad });
+    assert.equal(r.veredicto, 'NO-PUDE-MIRAR', `🔴 con ${umbral}/${umbralAMitad} da un veredicto`);
+    assert.equal(s.fraseDeRelevo({ tokens: 700_000, umbral, umbralAMitad }), null);
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
