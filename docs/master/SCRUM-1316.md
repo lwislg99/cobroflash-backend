@@ -437,7 +437,8 @@ y el día es mañana: basta con que alguien «arregle» la fecha fija poniendo l
 Hay un segundo dato en el mismo sitio. En la versión del 26/2026 el BOE había incrustado dentro del
 número 10.º un aviso («Téngase en cuenta que esta actualización del apartado 10º produce efectos el 1
 de diciembre de 2026») y la «Redacción anterior». **En la versión del 29/2026 ese aviso no está**: del
-art. 91 entero, la del 26 tiene 6 «Téngase en cuenta» y 3 «Redacción anterior»; la del 29, 3 y 0. Hoy,
+art. 91 entero, la del 26 tiene 6 «Téngase en cuenta» y 3 «Redacción anterior»; la del 29, 3 y 0. **El
+aviso que protegía al lector desapareció justo cuando el texto volvió.** Hoy,
 quien lea el número 10.º en el consolidado ve la redacción nueva sin nada al lado que diga que aún no
 se aplica; solo lo dice la nota al pie del artículo. Puede ser que el BOE lo complete (consolidó ese
 mismo día): **no lo sé**, y es un motivo más para leer la nota y no el atributo.
@@ -501,8 +502,17 @@ E1 a E5 (E5 es «Tipos de IVA poco comunes»). «cheque nominativo» aparece en 
 decretos-leyes (`evidencias/scrum1316/ramas-con-la-frase.mjs`; su control: de las 40 primeras ramas, 39
 traen «Iberley» en esa carpeta, así que el recorrido ve).
 
-Puede que esté en el correo que prepara el orquestador, fuera del repo: **no lo he visto**. Lo que se
-puede afirmar es que quien abra el repo no la encuentra. **No la he escrito yo en el documento de
+**Dónde está, según el orquestador** (su mensaje del 7-oct, tras recibir esta medición; yo no he visto
+ese documento): las preguntas al asesor se llevan desde hace días en un documento que el fundador tiene
+fuera del repositorio, y la del real decreto-ley se metió ahí esa misma tarde, ya con el 29/2026.
+
+🔴 **Así que hay DOS sitios que dicen contener las preguntas al asesor** —
+`docs/legal/ENVIO_ASESOR_2026-09-28.md`, en el repo, y ese documento de fuera— **y el ticket da por
+hecho que la E6 está en el primero. No está. El repositorio afirma algo sobre un documento que ya no
+gobierna.** Es un documento que promete algo que no cumple. No se arregla aquí: decidir dónde viven
+las preguntas es del fundador, y lo sube el orquestador.
+
+Lo que se puede afirmar desde aquí es que quien abra el repo no la encuentra. **No la he escrito yo en el documento de
 envío:** qué se le manda al asesor lo decide el fundador, y el documento del 28-sep es el registro de
 lo que se preparó ese día. Queda para el orquestador decidir dónde vive.
 
