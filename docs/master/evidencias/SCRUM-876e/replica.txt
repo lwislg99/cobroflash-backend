@@ -1,0 +1,7 @@
+POBLACION · 4 mutación(es) declaradas en tests/scrum876e-el-segundo-destino.test.mjs · BASE sin mutar: 8 casos, 0 caídos, salida 0
+✔ 1 · !['127.0.0.1', 'localhost', '::1'].includes(p.host) → false · caen 1 de 8 · el suyo («un host que NO es loopback»): CAE
+✔ 2 · !p.base.endsWith('_test') → false · caen 1 de 8 · el suyo («una base que NO termina en _test»): CAE
+✔ 3 · const mandaStaging = GATES_DE_STAGING.some((g) => process.en → const mandaStaging = false; · caen 1 de 8 · el suyo («con un gate de STAGING puesto»): CAE
+✔ 4 ·   process.env.DATABASE_URL = URL_BANCO; →   void URL_BANCO; · caen 1 de 8 · el suyo («un banco desechable de verdad»): CAE
+RESTAURADO · tras la última: 8 casos, 0 caídos
+EXIT=0

@@ -482,3 +482,62 @@ Es orden de tests y ahora va antes el producto. El ticket vuelve a «Por hacer»
 en el TRASPASO de 876c caduca con el aparcado**: los avisos de T3 (`scrum234` y `scrum781` son de
 carrera; `scrum781` lee `.env` a mano) y la regla de T4 (no se desgatea nada sin causa) siguen siendo
 el punto de partida para quien lo retome.
+
+---
+
+# APÉNDICE · SCRUM-876e · T3 (los dos que no son de carrera ni fiscales): `scrum72-pdfs-privados` y `albaran`
+
+**Medido contra:** `origin/main` = `33f07c332c3c95fe1656f640184c5d340e519f5d` · 2026-10-07T06:28:00Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876e-obsoletos-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** dos ficheros (tres tests gateados) con segundo destino y alineados; el resto de T3, T4 y el grupo C de SCRUM-868, sin tocar
+
+A9: sin fallo que generalice — lo que salió al medir (el censo del 16-sep contó una causa por fichero y `albaran` tenía dos) es de aquel censo y queda dicho abajo
+
+## Qué entra
+
+| fichero | tests gateados | por qué caía contra un banco limpio | qué cambia |
+|---|---|---|---|
+| `tests/scrum72-pdfs-privados.test.mjs` | 1 | `invoicesDir is not defined`: SCRUM-844 se llevó el `import` al test que sacó del gate | el test gateado vuelve a importar `invoicesDir` |
+| `tests/albaran.test.mjs` | 2 | ① esperaba `ALB-2026-001` y el código emite `AB260001` (SCRUM-592) · ② sus `PATCH` no mandaban `version`, y desde SCRUM-361 eso es un 409 antes de validar nada | el formato de hoy, y cada `PATCH` manda la versión que recibió |
+
+Los dos ganan un **segundo destino sin aflojar el primero**, el mismo de T2: con `QA_DB_TEST=1` siguen yendo a staging por `_staging-db.mjs`; si no, usan `LIBRO_PG_URL`, el banco que CI ya levanta para la tanda. **Ninguna variable nueva y `ci.yml` no se toca.**
+
+## El módulo nuevo: `tests/_banco-libro.mjs`
+
+T2 escribió el bloque del segundo destino DENTRO de cada fichero. Aquí no se puede: `albaran.test.mjs` importa `dist/…/albaran.service.js` de forma estática, ese módulo construye el cliente de Prisma al cargarse, y en ESM los imports se evalúan antes que el cuerpo. Una asignación de `DATABASE_URL` en el cuerpo llegaría tarde. Por eso el bloque vive en un módulo que se importa el segundo, detrás de `_staging-db.mjs`.
+
+Es el mismo criterio, con una barrera más: con **cualquiera** de los tres gates de staging puesto (`QA_DB_TEST`, `A55_DB_TEST`, `BOT_SUITE_TEST`) es inerte; el de T2 sólo miraba el primero. Los tres ficheros de T2 no se han movido a este módulo: siguen con su bloque propio.
+
+Sus barreras las fija `tests/scrum876e-el-segundo-destino.test.mjs`, que corre siempre y sin base (ocho casos). Réplica local de sus mutaciones declaradas, con el lector del propio test (`evidencias/SCRUM-876e/replica.txt`): base sin mutar, ocho casos y cero caídos; las cuatro mutaciones tumban cada una su caso. El octavo caso (quien lo importa, lo importa antes de `dist/`) se vio caer moviendo el import de `albaran.test.mjs` detrás de los de `dist/` (`git diff --numstat`: 1 1), y se restauró.
+
+## El rojo de cada test gateado, en el banco local
+
+Mutando `dist/` y nunca `src/`. Cada mutación exige casar una vez y `dist/` se restaura por hash (`evidencias/SCRUM-876e/mutar-dist-876e.mjs`). Banco: Postgres 16.4 portable, loopback, base `yaqu_libro_test` creada con el DDL de `migrate diff --from-empty` (33 tablas, las del esquema).
+
+| test | verde | defecto inyectado en `dist/` | rojo | poso |
+|---|---|---|---|---|
+| `scrum72` · PDFs no públicos | pasa | la ruta del PDF de factura deja de filtrar por merchant | «otro merchant no debe acceder al PDF»: 200 en vez de 404 | `merchants = 0` |
+| `albaran` · SCRUM-14 tenencia | pasa | `findAlbaran` deja de filtrar por merchant | «PATCH … con sesión B debería ser 404 y fue 409» | `merchants = 0` |
+| `albaran` · SCRUM-65 valorado | pasa | el candado del modo de valoración deja de mirar el estado | el `PATCH` tras emitir ya no da 409 | `merchants = 0` |
+
+Y el defecto de partida, corrido hoy antes de tocar las aserciones: `scrum72` caía con `invoicesDir is not defined`; `albaran` con `AB260001` contra `/^ALB-\d{4}-001$/` en un test y con `409 !== 400` en el otro.
+
+Los cuatro juntos contra el banco (`scrum876e`, `scrum419`, `scrum72`, `albaran`, en paralelo): 35 tests, 35 pasan, 0 saltados, `merchants = 0` al terminar. Sin `LIBRO_PG_URL`: los tres gateados salen `# SKIP` con su motivo. Con un host que no es loopback: los dos ficheros CAEN, no se saltan.
+
+## Lo que el censo del 16-sep no vio
+
+El §2 B de este registro da UNA causa por fichero. `albaran` tenía dos: la del formato, y los `PATCH` sin `version`. La segunda no salía porque el primer test caía antes y el segundo test del fichero no se miró por separado. Los otros obsoletos pueden tener lo mismo detrás de su primera causa: no se ha mirado.
+
+## Lo que NO entra, y por qué
+
+| qué | estado |
+|---|---|
+| `scrum17-recapitulativa` (T3) | sin tocar. Crea facturas de serie fiscal y sus merchants a mano (está en `MIGRACION_PENDIENTE` de `scrum113`, «con su dueño»). Antes de darle destino hay que medirlo solo contra el banco |
+| `scrum234-carrera-serie.gated`, `scrum781-concurrencia-de-la-factura` (T3) | sin tocar. Son de carrera: lo dicho en el TRASPASO de 876c sigue valiendo |
+| T4 (los cinco sin atribuir) | sin tocar: su causa sigue sin medir |
+| Grupo C de SCRUM-868 (`a55-window-quote`, `bot-suite`) | sin tocar. `a55` exige `WHATSAPP_DRY_RUN=1` y la tanda de CI no lo pone (medido: `ci.yml` no lo nombra); darle el banco pide decidir si el propio test lo fija en ese destino |
+| El verde y el rojo EN CI | el verde se lee en el log del `build + tests` de este PR: los tres con ✔ y sin `# sin QA_DB_TEST=1 ni LIBRO_PG_URL`. El rojo en CI con un paso temporal (como hizo T2) no se ha hecho: ese paso vive en `ci.yml`, que es de S5 |
+
+## Reproducir
+
+    node --test tests/scrum876e-el-segundo-destino.test.mjs
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/scrum72-pdfs-privados.test.mjs tests/albaran.test.mjs
