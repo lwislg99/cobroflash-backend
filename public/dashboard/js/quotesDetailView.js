@@ -180,11 +180,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   // A1.2: número por merchant — el h2 se pintó sin número antes del fetch (SCRUM-1482);
   // al cargar, se le pone el número visible (y se corrige el título de la vista).
   const displayNum = quote.number ?? id;
+  // SCRUM-1487 · la palabra del documento se LEE del locale («Presupuesto» en ES y AR, «Cotización»
+  // en MX, CO, PE y CL), igual que la cabecera de mientras carga. La regex de abajo NO es ese
+  // texto: reconoce el título provisional que escribe el router (`app.js`, SCRUM-832), que sigue
+  // a mano; los dos van juntos y no se tocan aquí.
+  const palabraDelDocumento = (window.appLocale && window.appLocale.quote) || '';
   const h2 = headLeft.querySelector('h2');
-  if (h2) h2.textContent = `Presupuesto #${displayNum}`;
+  if (h2) h2.textContent = `${palabraDelDocumento} #${displayNum}`;
   const viewTitleEl = document.getElementById('view-title');
   if (viewTitleEl && /^Presupuesto #/.test(viewTitleEl.textContent || '')) {
-    viewTitleEl.textContent = `Presupuesto #${displayNum}`;
+    viewTitleEl.textContent = `${palabraDelDocumento} #${displayNum}`;
   }
 
   const st = String(quote.status || '').toLowerCase();
