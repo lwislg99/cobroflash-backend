@@ -1182,6 +1182,30 @@ ejecutaron y se perdió su informe, que es lo que la tasa quiere contar.
 - **Dos lectores:** mi lector de bloques y `leerTap` ven las mismas entradas en los 50 TAP.
 - **Las sumas:** 52 bloques y 587 casos por los dos caminos; 519 + 36 + 16 + 16 = 587.
 
+## ⑤ Una variante que no estaba descrita: el fichero que termina bien y no informa de nada
+
+Los dos bloques con entrada de fichero no son ficheros muertos. `scrum237-negacion-respaldada`
+corrió 3,8 s, salió con 0 y no dejó ninguno de sus 8 casos. Su entrada en el TAP es `ok`, sin
+`exitCode`. Pasó dos veces en la ventana, en `f30b1a40` y en `7779b0cb`.
+
+Es la pérdida de SCRUM-1405 a tamaño de FICHERO ENTERO, no a tamaño de caso. Lo descrito hasta
+ahora era un fichero que informa de su cabeza y pierde la cola.
+
+Lo que la distingue de un fichero caído, todo leído del TAP:
+
+| | fichero caído (banco de ①) | `scrum237` en la ventana |
+|---|---|---|
+| línea del fichero | `not ok` | `ok` |
+| `exitCode` | sí (1) | no hay |
+| `# fail` del TAP | sube en 1 | 0 |
+| el job | rojo por la tanda | la tanda pasa; rojo por el suelo (paso 15) |
+
+La señal les pone a los dos la misma frase. Para `scrum237` es cierta. Para un fichero caído, no.
+
+Los dos runs salieron rojos porque el suelo vio que faltaban tests. No he mirado qué margen tenía
+el suelo esos dos días, ni si un fichero más pequeño que se pierda entero cabría dentro y saldría
+verde.
+
 ## Lo que NO sé y lo que NO he hecho
 
 - **No he arreglado la señal.** Era el encargo: primero el número. El defecto de ① sigue en
@@ -1190,8 +1214,10 @@ ejecutaron y se perdió su informe, que es lo que la tasa quiere contar.
 - **Que no haya pasado en 50 runs no dice cada cuánto pasa.** J4 leyó 124 corridas con el rojo
   del obligatorio a la vista y encontró 1 fichero caído (`scrum804b`, run `36806690822`).
 - **El testigo real en Linux no lo tengo.** Bajé el TAP de ese run para ver una entrada caída de
-  verdad escrita por el CI: llega con 2.198.683 bytes NUL de 2.346.221 (SCRUM-1289) y no se puede
-  leer. La forma de la entrada caída está medida en Windows (aquí y en SCRUM-1389). Por eso va el
+  verdad escrita por el CI: llega con 2.198.683 bytes NUL de 2.346.221 (el 93,7 %) y dos
+  resúmenes `# tests`, y no se puede leer. Es el TAP pisado de SCRUM-1328 (allí, «el 94 % de bytes
+  NUL»), visto en un artefacto del 1-oct. Los 50 de la ventana, del 2-oct en adelante, llegan con
+  0. La forma de la entrada caída está medida en Windows (aquí y en SCRUM-1389). Por eso va el
   camino del `# fail`, que no depende de ella.
 - **Los runs de PR siguen sin medir.** Ahí un fichero que muere por el cambio que se prueba es más
   probable que en `main`, y ahí sí inflaría. La ventana de c.17935 es de `main`.
