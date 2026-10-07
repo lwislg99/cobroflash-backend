@@ -187,8 +187,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const palabraDelDocumento = (window.appLocale && window.appLocale.quote) || '';
   const h2 = headLeft.querySelector('h2');
   if (h2) h2.textContent = `${palabraDelDocumento} #${displayNum}`;
+  // SCRUM-1495 · el título de la vista es de la ficha que está MONTADA. La regex sólo dice que el
+  // título parece de un presupuesto, no de cuál: si se abrió otra ficha (u otra vista) mientras
+  // ésta cargaba, el hueco se vació, `page` ya no cuelga de él y esta respuesta llega tarde: no
+  // toca un título que ya es de otro documento.
   const viewTitleEl = document.getElementById('view-title');
-  if (viewTitleEl && /^Presupuesto #/.test(viewTitleEl.textContent || '')) {
+  const sigueMontada = page.parentNode === container;
+  if (viewTitleEl && sigueMontada && /^Presupuesto #/.test(viewTitleEl.textContent || '')) {
     viewTitleEl.textContent = `${palabraDelDocumento} #${displayNum}`;
   }
 
