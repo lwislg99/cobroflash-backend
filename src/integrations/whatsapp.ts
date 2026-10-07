@@ -54,6 +54,37 @@ metaHttp.interceptors.request.use((cfg) => {
   return cfg;
 });
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1477 · QUÉ PASÓ CON LA LLAMADA A META, CON NOMBRE
+//
+// Los siete envíos acababan igual cuando la llamada fallaba: `{ ok: false, error }`, sin decir
+// cuál de estas tres cosas había pasado. Para quien envía son distintas, y dos son opuestas:
+//
+//   rechazado      · Meta CONTESTÓ que no (un 4xx). El mensaje NO ha salido.
+//   sin_respuesta  · la petición salió y no hay un «no» de Meta: plazo vencido, conexión
+//                    cortada, o un 5xx. El mensaje PUEDE haber salido. Decir «no ha salido» aquí
+//                    es como el profesional acaba mandándolo dos veces.
+//   no_enviado     · la petición NO llegó a salir: la paró `asegurarSalidaAMetaPermitida`.
+//
+// Los nombres son los de `sif.client.ts` (SCRUM-1112), que ya separa lo mismo hacia la AEAT.
+//
+// VA EN UN CAMPO NUEVO, `desenlace`, y no en `reason`, a propósito. `reason` es el motivo que el
+// envío decide ANTES de llamar a Meta, y hay quien lo lee tal cual: lo compara con el diccionario
+// (`SEND_FAILURE_MESSAGES`) o lo escribe en una nota. `error` tampoco cambia. Quien no lea
+// `desenlace` recibe exactamente lo de antes.
+//
+// Todo lo que no es un «no» claro cae en `sin_respuesta`, que es el lado que no duplica. El 408
+// es un 4xx y va ahí también: dice que el plazo venció, no que el mensaje se rechazara.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+export type DesenlaceDeMeta = 'rechazado' | 'sin_respuesta' | 'no_enviado';
+
+function desenlaceDeMeta(err: any): DesenlaceDeMeta {
+  if (err?.message === MOTIVO_SALIDA_BLOQUEADA) return 'no_enviado';
+  const status = Number(err?.response?.status);
+  if (status >= 400 && status < 500 && status !== 408) return 'rechazado';
+  return 'sin_respuesta';
+}
+
 // WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
 export interface WaLogMeta {
   customerId?: number | null;
@@ -443,7 +474,7 @@ export async function sendWhatsAppTemplate(params: {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
     logFailure(errMsg);
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -466,7 +497,7 @@ export async function sendWhatsAppWindowFirst(params: {
   sinPlantilla?: boolean;
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
-}): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
+}): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any; desenlace?: DesenlaceDeMeta }> {
   const customerId = params.customerId ?? params.log?.customerId ?? null;
 
   // J3: la baja del canal manda también sobre los textos de ventana
@@ -490,7 +521,7 @@ export async function sendWhatsAppWindowFirst(params: {
   }
   // SCRUM-1436: lo que devolvió el envío por ventana cuando la ventana estaba ABIERTA y aun así
   // no salió. `null` = no se llegó a intentar (ventana cerrada, o sin cliente al que mirársela).
-  let falloEnVentana: { reason?: string; error?: any } | null = null;
+  let falloEnVentana: { reason?: string; error?: any; desenlace?: DesenlaceDeMeta } | null = null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).
@@ -522,7 +553,7 @@ export async function sendWhatsAppWindowFirst(params: {
       }).catch(() => {});
       return { ok: true, via: 'window' };
     }
-    falloEnVentana = text as { reason?: string; error?: any };
+    falloEnVentana = text as { reason?: string; error?: any; desenlace?: DesenlaceDeMeta };
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
   }
 
@@ -550,7 +581,10 @@ export async function sendWhatsAppWindowFirst(params: {
   // propio motivo (demo, baja, sin configurar) sube ése; si no, el genérico que ya existía.
   if (params.sinPlantilla) {
     if (falloEnVentana) {
-      return { ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error };
+      return {
+        ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error,
+        ...(falloEnVentana.desenlace ? { desenlace: falloEnVentana.desenlace } : {}), // SCRUM-1477
+      };
     }
     return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
@@ -563,6 +597,12 @@ export async function sendWhatsAppWindowFirst(params: {
     languageCode: params.template.languageCode,
     components: params.template.components,
   });
+  // SCRUM-1477: aquí puede haber habido DOS intentos, el de ventana y el de plantilla. Si el de
+  // ventana quedó sin respuesta, ese mensaje puede haber salido, y que después Meta rechace la
+  // plantilla (o que la pare un tope) no lo cambia: el conjunto no puede decir «no ha salido».
+  if (!result.ok && falloEnVentana?.desenlace === 'sin_respuesta') {
+    return { ...result, via: 'template', desenlace: 'sin_respuesta' };
+  }
   return { ...result, via: 'template' };
 }
 
@@ -665,7 +705,7 @@ export async function sendWhatsAppText(params: {
     console.error('[WhatsApp] Error enviando texto:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
     logFailure(errMsg);
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -770,7 +810,7 @@ export async function sendWhatsAppButtons(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando botones:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -879,7 +919,7 @@ export async function sendWhatsAppList(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando lista:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -972,7 +1012,7 @@ export async function sendWhatsAppCtaUrl(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando cta_url:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -1058,7 +1098,7 @@ export async function sendWhatsAppDocument(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando documento:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -1143,7 +1183,7 @@ export async function sendWhatsAppLocationRequest(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando location_request:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
