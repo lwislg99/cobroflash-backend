@@ -1,4 +1,4 @@
-# duplicar-926-error-visto · sha 8b034d326ba4a289375478e20e0136d4c0084daf · EXIT=1 · 4.7 s
+# duplicar-926-error-visto · sha 1c0ec64b0dc734590972a4690a13d36cd4b32226 · EXIT=1 · 4.7 s
 ⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
 {
   "casos": {

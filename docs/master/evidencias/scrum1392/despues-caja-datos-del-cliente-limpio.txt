@@ -1,4 +1,4 @@
-# caja-datos-del-cliente-limpio · sha 8b034d326ba4a289375478e20e0136d4c0084daf · EXIT=0 · 4.9 s
+# caja-datos-del-cliente-limpio · sha 1c0ec64b0dc734590972a4690a13d36cd4b32226 · EXIT=0 · 4.8 s
 textos DERIVADOS de quotesView.js:
    casillas : ["Nombre","Teléfono","NIF","Email"]
    elección : ["Razón social","Nombre comercial"]
