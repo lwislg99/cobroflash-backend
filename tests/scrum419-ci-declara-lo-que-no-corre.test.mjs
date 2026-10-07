@@ -125,6 +125,13 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum13-cobrado.test.mjs': 1,
   'scrum52-operario.test.mjs': 1,
   'scrum692-guardado-parcial-en-base.test.mjs': 1,
+  // SCRUM-876e (T3): dos de los OBSOLETOS, alineados al código de hoy. Mismo trato que los tres de
+  // arriba: conservan staging con `QA_DB_TEST=1` y ganan éste como segundo destino. Necesitan banco
+  // porque levantan la app entera y lo que vigilan es a QUIÉN le contesta: el PDF de la factura de
+  // otro merchant (72), y el albarán de otro merchant y sus dos candados, firmado y modo (los dos
+  // de `albaran`).
+  'scrum72-pdfs-privados.test.mjs': 1,
+  'albaran.test.mjs': 2,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
