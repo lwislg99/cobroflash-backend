@@ -164,3 +164,18 @@ se dice en ⑦. La tanda completa NO se ha corrido en local: es la del CI.
   recuento mío (`dist/` conserva `10_000`, no `10000`). Corregida y el banco repetido entero.
 - **Otra hora a ojo** en un mensaje al orquestador («~16:55Z» siendo las 16:3x). Es la sexta de
   J2; la cicatriz ya está escrita y sigue sin comprobación posible.
+
+## ⑨ Tras mezclar `main` antes de empujar (relevo de sesión, 2026-10-07T17:18Z, hora de GitHub)
+
+La rama no se pudo empujar el día que se construyó (siete «Internal Server Error» de GitHub al
+crear la rama, entre las 16:56Z y las 16:59Z). La sesión de relevo mezcló
+`origin/main` = `6536e63e038ef36be9d61fc8057a649ff2af3149` (33 commits; el merge es `8d7444dc`).
+
+- **¿Se movió `main` donde toca esta rama?** No: `main` cambió 57 ficheros desde la base y la rama
+  8; la intersección es vacía (comparación de conjuntos, no de cuentas). Sin conflictos.
+- **Repetido sobre el árbol mezclado**, con `dist/` reconstruido: 110 casos, 110 pasan, 0 caen,
+  0 saltos, en diez patrones de fichero (el de este ticket, `scrum1436`, `scrum1436d`,
+  `scrum1478`, `scrum124`, `scrum267`, `scrum1294`, `scrum525d`, `scrum237`, `scrum976`). Los de
+  «SCRUM-1477 · »: 16 en `ok`; el control con un número que no existe da 0.
+- **NO repetido:** el banco de mutaciones (15 de 15 sobre `7eed4890`) ni la dirigida.
+  `whatsapp.ts` y el test no cambian con la mezcla; el veredicto del árbol mezclado es el del CI.
