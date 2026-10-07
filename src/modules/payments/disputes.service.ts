@@ -20,8 +20,11 @@ import { firmaTieneTrazo } from '../quotes/domain/firmaConTrazo';
  * 🔴 SE MIRA LO MISMO QUE VA A ENSEÑAR EL «PAQUETE DE DISPUTA» al que el aviso le manda: el
  * presupuesto de ESA factura (`invoice.quoteId`) y su `signatureUrl`. No `acceptedAt`: aceptar y
  * firmar no son lo mismo («Acepto sin firmar» deja la firma a `null`), y es el criterio que ya usa
- * el Libro (`libroRegistro.repo.ts`). Y con trazo: una firma guardada puede ser un lienzo vacío
- * (SCRUM-892).
+ * el Libro (`libroRegistro.repo.ts`).
+ *
+ * ⚠️ DIVERGENCIA DECLARADA sobre el MISMO campo: el Libro usa `signatureUrl` no nulo; aquí se pasa
+ * por `firmaTieneTrazo` (SCRUM-892) A PROPÓSITO, porque el aviso afirma que hay prueba. Un lienzo
+ * vacío guardado no es una firma, y con él volveríamos a decir lo que no es.
  *
  * 🔴 SI LA CONSULTA FALLA, DEVUELVE `false`. No saber no es «firmado»: el aviso sale igual, sin
  * la afirmación. La asimetría es la del dinero — callar una firma que existe cuesta que el

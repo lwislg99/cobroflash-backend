@@ -7,6 +7,9 @@
 
 A9: comprobación → `tests/scrum1436-ventana-abierta-envio-fallido.test.mjs`
 
+**Este tramo es el de los hallazgos 1 y 3.** El hallazgo 2 lo lleva J1 en su rama (`scrum-1436b-…`), con
+su anexo propio en este mismo fichero.
+
 **Este registro NO cierra el ticket.** SCRUM-1436 tiene cinco hallazgos y seis líneas de aceptación;
 aquí van el hallazgo 3 entero y la mitad del 1. Qué falta, al final.
 
@@ -25,6 +28,10 @@ presupuesto **de ese negocio** cuya firma **tiene trazo** (`firmaTieneTrazo`, SC
 guardada puede ser un lienzo vacío). Es lo mismo que enseña el «Paquete de disputa» al que el aviso
 manda: lee `invoice.quote` y pinta su `signatureUrl`. Si la consulta falla, es «no»: el aviso sale
 igual, sin la afirmación.
+
+**Divergencia declarada, sobre el mismo campo:** el Libro usa `signatureUrl` no nulo; aquí se pasa por
+`firmaTieneTrazo` (SCRUM-892) a propósito, porque el aviso afirma que hay prueba. Confirmado por el
+orquestador el 7-oct-2026.
 
 **Sin firma, el aviso es el de siempre MENOS esa oración.** Ni una palabra nueva: qué decirle entonces
 es texto que ve el usuario (regla 39). El test lo fija por igualdad de la cadena entera.
@@ -89,11 +96,17 @@ disputa de Stripe y un fallo de Meta, que no se pueden provocar desde fuera.
 
 ## Ⓔ Lo que falta, y de quién es
 
-- **Hallazgo 1, los dos textos nuevos** (aceptado sin firma · sin presupuesto). El comentario 18287
-  (cuenta de Luis, 6-oct) los da por firmados. NO construidos: si esa firma vale para un texto del
-  carril de Javier lo decide el orquestador de Javier.
-- **Hallazgo 1, el aviso sin factura** sigue diciendo «Entra en la factura y pulsa…» sin factura a la
-  que entrar. No tocado: arreglarlo es quitar o cambiar una instrucción, y va con los textos de arriba.
+- **Hallazgo 1, los dos textos nuevos** (aceptado sin firma · sin presupuesto), firmados en el
+  comentario 18287 (cuenta de Luis) y válidos para este carril por la decisión del comentario 18734.
+  Están construidos letra por letra y NO van en esta rama: esperan en `scrum-1436c` a que su ficha de
+  `docs/microcopy/` pueda llevar una línea de firma cierta. `tests/scrum726-quien-firma-la-microcopy`
+  sólo admite «Aprobado por el fundador» o «por el orquestador por delegación del fundador», y de ese
+  comentario no se puede afirmar ninguna de las dos. Lo lleva el orquestador. El commit ⑥ de esta rama
+  los traía y el siguiente lo revierte: no están en el árbol.
+- **Hallazgo 1, el cobro SIN factura** sigue diciendo «Entra en la factura y pulsa…» sin factura a la
+  que entrar. Los dos literales firmados llevan el número de la factura, así que tampoco sirven ahí:
+  necesita un texto propio y hoy no hay ninguno firmado. Es lo que le falta a la línea 1 de la
+  aceptación («no manda a una factura que no existe»). Lo sube el orquestador.
 - **Hallazgos 2, 4 y 5:** no cogidos aquí.
 - **SCRUM-1477** (los siete `catch` de `whatsapp.ts` no distinguen «Meta dijo que no» de «Meta no
   contestó») es OTRO trabajo y no se ha tocado. La ficha del encargo le puso ese número al hallazgo 3.
