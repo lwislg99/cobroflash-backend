@@ -122,3 +122,99 @@ consta la firma del 30-jul no está escrito en ningún sitio que el guard encuen
 - El correo y el ZIP, ejecutados.
 - Nada visto en yaqu.app ni en un navegador.
 - Si en producción hay hoy alguna factura en `pendiente_de_sellado`: no se consulta producción.
+
+## SCRUM-1404 · la fecha de la población B: medida, y la premisa de la pregunta no existe
+
+**Medido contra:** `origin/main` = `a65a8c756c0363ec5ea6f4f0b1e811ba17a909c0` · 2026-10-07T23:28:00Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1404/poblacion-b.mjs`
+
+Sesión J2 (`jv-j2`) · rama `scrum-1404-banco-de-la-poblacion-b` · **cruce de carril declarado por el
+orquestador de Javier (`cobroflash-backend-90`): el ticket es `area-j1`, quien escribe es J2, y el
+cruce fue SÓLO DE LECTURA.** Este tramo añade un banco y su salida en `docs/`; cero líneas de `src/`
+y cero de `tests/`. Entrega en Jira: comentario 18836. Decisión que lo pide: comentario 18833
+(población B: el reintento sólo toca las facturas nacidas después de una fecha fija).
+
+### La pregunta y lo que salió
+
+Se pidió «desde cuándo `vf_estado` se escribe DE VERDAD en el camino de alta». **Medido: nunca.**
+
+- En `src/` hay dos escrituras de `vfEstado`, las dos en `selladoEstado.ts` (líneas 134 y 145),
+  dentro de `sellarTrasEmision`: `no_aplica` y `sellado`. Ocurren DESPUÉS del commit del alta.
+  Ninguna escribe `pendiente_de_sellado`. Control: un nombre de campo inventado da 0.
+- `estadoAlNacer`, la función que debía fijarlo al nacer, no la llama nadie en `src/`: la nombran
+  un test y dos listas de exportaciones sin consumidor (`tests/_huerfanos-declarados.mjs`,
+  `scripts/_sin-consumir-declarados.json`).
+- El alta pasa por `crearFacturaEmitida` (9 llamadas en 6 ficheros). Ninguna lleva el campo.
+
+**Toda factura nace `pendiente_de_sellado` por el valor por defecto de la columna, igual que lo
+heredó el histórico.** El campo no distingue «falló el sellado» de «el relleno no la tocó». Lo único
+que las separa es la fecha de nacimiento.
+
+### La fecha: lo que el código da y lo que no puede dar
+
+| qué | valor | de dónde sale |
+|---|---|---|
+| el sellado al emitir entra en `main` | `2026-07-30T13:15:25Z` | merge `5c272ca1f` (PR #321), que trae `f0a005d61`, `17a21e372` y `09543a3ed`; ninguno de los tres estaba en el padre 1 de ese merge |
+| desde cuándo PRODUCCIÓN corre ese código | NO MEDIDO | es un dato del despliegue, no del repositorio |
+
+**La primera es un suelo, no la fecha.** Entre el merge y el primer despliegue bueno, producción
+siguió con el código anterior, que sellaba al abrir el PDF y no tocaba el estado; y
+`docs/MIGRATIONS_PENDING.md` da el `ALTER` de producción «por INFERENCIA» y su relleno «SIN MEDIR»
+(medición del 6-ago-2026, no de hoy). Una factura nacida en ese hueco tiene fecha posterior al merge
+y puede estar ya sellada con el estado en el valor por defecto.
+
+Las dos salidas, sin elegir: **(a)** la fecha del despliegue del propio reintento, que no necesita
+medir el pasado; **(b)** el 30-jul, sólo con la hora del primer despliegue bueno leída en Railway.
+En las dos, añadir «y sin huella» a la selección: es «la huella manda» del propio SCRUM-205.
+
+### El banco
+
+`docs/master/evidencias/SCRUM-1404/poblacion-b.mjs`, salida en `salida-poblacion-b.txt`. Un Postgres
+desechable en memoria (PGlite 0.5.8, PostgreSQL 18.3). Reproduce el mecanismo, no su resultado: la
+tabla SIN la columna con 5 facturas históricas; el `ALTER` literal leído de
+`docs/MIGRATIONS_PENDING.md` y cotejado con el `@default` del esquema; 5 facturas nuevas insertadas
+sin nombrar la columna; y los dos `UPDATE` de `sellarTrasEmision`. Las fechas se derivan de D.
+
+    node docs/master/evidencias/SCRUM-1404/poblacion-b.mjs . <carpeta de @electric-sql/pglite> [D]
+
+| selección | filas | qué trae |
+|---|---|---|
+| sólo por estado | 8 | las 5 históricas, dos de ellas YA SELLADAS con su huella, más 3 nuevas |
+| población B con D = `2026-07-30T13:15:25Z` | 3 | sólo las 3 nuevas pendientes |
+| borde: nacida 1 ms antes de D | fuera | |
+| borde: nacida exactamente en D | dentro | |
+| nueva ya sellada, y justificante nuevo | fuera | |
+| control a cero: D diez años en el futuro | 0 | |
+| control malo: una D «por lo bajo», un año antes | 8 | idéntica a la selección sin fecha |
+
+10 fabricadas, 10 contadas; 9 comprobaciones, 0 caen. El banco sale CIEGO, sin dar ningún número, si
+el documento mide menos de 1.000 caracteres, si no encuentra exactamente UN `ALTER` distinto, si el
+`ALTER` y el `@default` no dicen lo mismo, o si lo fabricado no coincide con lo contado.
+
+### Los cuatro límites, que valen tanto como las 9 comprobaciones
+
+- **El banco valida que la selección corta donde dice para CUALQUIER D; no valida que D sea la
+  frontera real de producción.** Nace de filas fabricadas, no de la base.
+- **No se ejecutaron los caminos de alta reales.** Que no escriben el campo sale de leer `src/` por
+  texto, con su control a cero. No es un AST.
+- **El emparejamiento alta → `sellarTrasEmision` se vio por FICHERO, no llamada por llamada:** los 6
+  ficheros que crean lo nombran, y los 4 llamadores de `emitInvoice` también.
+- **No se fabricó el caso «el relleno sí corrió»**, ni se ejecutó `prisma/backfill/scrum205-vf-estado.sql`.
+
+Tampoco se miró staging, producción, Railway ni yaqu.app. PGlite no está en `node_modules` del
+repositorio: se usó la copia de una carpeta de trabajo de la máquina, y por eso va como argumento.
+
+### Para quien construya
+
+- Con (b), el reintento sellaría hoy facturas fiscales pendientes desde el 30-jul. Qué fecha lleva
+  ese registro y dónde cae en la cadena NO se ha mirado: es camino de emisión, de J1.
+- Un justificante (`J-…`) también nace pendiente y pasa a `no_aplica` sólo cuando corre
+  `sellarTrasEmision`; si el proceso muere antes, entra en la selección B (leído, no ejecutado).
+
+### Mi error
+
+Al buscar el merge que metió los tres commits en `main`, la primera orden devolvió la PUNTA de `main`
+para los tres, y el control negativo que le puse era un sha que sí estaba en `main`. Lo delató que
+los tres «entraran» con un merge de ayer. Rehecho cruzando la línea principal con el camino de
+ascendencia, y comprobando que el commit no estaba en el padre 1 del merge hallado.
