@@ -488,6 +488,9 @@ export async function sendWhatsAppWindowFirst(params: {
     }).catch(() => {});
     return { ok: false, via: 'none', reason: corte };
   }
+  // SCRUM-1436: lo que devolvió el envío por ventana cuando la ventana estaba ABIERTA y aun así
+  // no salió. `null` = no se llegó a intentar (ventana cerrada, o sin cliente al que mirársela).
+  let falloEnVentana: { reason?: string; error?: any } | null = null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).
@@ -519,6 +522,7 @@ export async function sendWhatsAppWindowFirst(params: {
       }).catch(() => {});
       return { ok: true, via: 'window' };
     }
+    falloEnVentana = text as { reason?: string; error?: any };
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
   }
 
@@ -537,7 +541,17 @@ export async function sendWhatsAppWindowFirst(params: {
   // OPCIONAL y por defecto NO cambia nada: quien no lo pide sigue cayendo a plantilla como
   // siempre. Aquí NO se decide quién lo pide — eso depende del ROL del presupuesto, que es
   // schema del fundador y está pendiente.
+  //
+  // SCRUM-1436 · LA DECISIÓN ES LA MISMA; LO QUE CAMBIA ES EL MOTIVO QUE SE CUENTA. Aquí se llega
+  // por dos caminos y antes los dos decían `ventana_cerrada`: con la ventana cerrada (cierto) y
+  // con la ventana ABIERTA y el texto fallido. En el segundo el profesional leía «Tu cliente no
+  // ha escrito en 24 h» de un cliente que acababa de escribirle. `sinPlantilla` es una opción del
+  // llamador, no el estado de la ventana: el estado es `falloEnVentana`. Si el envío trae su
+  // propio motivo (demo, baja, sin configurar) sube ése; si no, el genérico que ya existía.
   if (params.sinPlantilla) {
+    if (falloEnVentana) {
+      return { ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error };
+    }
     return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
 
