@@ -528,9 +528,11 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // subirlo», gana la lectura que no promete nada.
   // SCRUM-1353 · UNA caja para los dos casos que la pintan (firmado, y firma guardada en el móvil):
   // la segunda no trae un segundo estilo en línea — el trinquete de SCRUM-713c lo cazó en el CI.
+  // SCRUM-1421 · su separación con la barra de acciones la da la clase (`styles.css`), no un estilo
+  // en línea: lo que vaya en este sitio entra por aquí y hereda el mismo hueco.
   const cajaDeFirma = (html) => {
     const cajaFirma = document.createElement('div');
-    cajaFirma.style.cssText = 'margin:0 0 16px';
+    cajaFirma.className = 'albaran-caja-firma';
     cajaFirma.innerHTML = html;
     page.appendChild(cajaFirma);
     return cajaFirma;

@@ -110,7 +110,11 @@ function censo() {
 // ninguna (0). Contado con ESTE contador sobre el árbol ya fusionado con `origin/main` (2631bb9a):
 // main daba 340 —el techo anterior, así que el contador no estaba descarriado— y la rama 336, con
 // la diferencia entera en ese único fichero. Recontado, no deducido restando.
-const TECHO = 336;
+// 336 → 335 · 7-oct-2026 (SCRUM-1421). El envoltorio de la caja de firma de `albaranDetailView.js`
+// (`cajaDeFirma`; ese fichero, de 5 a 4) pasa su `margin:0 0 16px` a la clase `.albaran-caja-firma` de `styles.css`.
+// Contado con ESTE contador sobre `origin/main` (f9b4074d): main daba 336 —el techo anterior— y la
+// rama 335; lo dijo el propio guard («HAN BAJADO … 335 frente al techo 336»).
+const TECHO = 335;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando
