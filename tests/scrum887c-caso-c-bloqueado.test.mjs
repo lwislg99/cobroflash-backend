@@ -142,6 +142,7 @@ function prismaDeDoble(quote, escrituras) {
 
 const quoteC = (extra = {}) => ({
   id: 7, merchantId: 7, customerId: 2, quoteNumber: 12, revision: 0, status: 'accepted', currency: 'EUR',
+  createdAt: new Date('2026-09-01T10:00:00Z'), // SCRUM-1490: una fila de `quotes` SIEMPRE trae su fecha; de ella sale el año de su serie
   lines: C3, discountGlobalAmount: 25, total: '539.05', Invoice: [], billingPlan: null, customBillingPlan: null,
   paymentTerms: 'FULL_UPFRONT', merchant: MERCHANT, customer: CUSTOMER, ...extra,
 });

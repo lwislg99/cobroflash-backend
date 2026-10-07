@@ -2,8 +2,11 @@
 /**
  * SCRUM-1490 · RELLENO de `quotes.series_year` en las filas anteriores a la columna.
  *
- * Uso:  node scripts/rellenar-anio-de-la-serie.mjs             (SIMULACRO: no escribe)
- *       node scripts/rellenar-anio-de-la-serie.mjs --aplicar   (escribe)
+ * Uso:  node scripts/rellenar-anio-de-la-serie.mjs --clave=DATABASE_URL_DEV             (SIMULACRO: no escribe)
+ *       node scripts/rellenar-anio-de-la-serie.mjs --clave=DATABASE_URL_DEV --aplicar   (escribe)
+ *
+ * `--clave` es el NOMBRE de la variable de entorno con la base (DATABASE_URL_DEV, _STAGING, o
+ * DATABASE_URL para producción). La URL nunca va en la línea de comandos.
  *
  * ⛔ NO LO EJECUTA UNA SESIÓN contra producción: escribe en filas de producción. Quién lo corre
  * en cada base se decide en el ticket. Va DESPUÉS del ALTER (sin la columna, falla al leer).
@@ -29,6 +32,7 @@
  *
  * Es idempotente: sólo toca filas con `series_year` a NULL, y al escribir lo vuelve a exigir.
  */
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export const ZONA_DEL_RELLENO = 'Europe/Madrid';
@@ -93,8 +97,18 @@ export function planDelRelleno(filas) {
 
 async function main() {
   const aplicar = process.argv.includes('--aplicar');
+  // 🔴 EL DESTINO SE COMPRUEBA CON EL MECANISMO, NO CON LA VISTA (SCRUM-383/746). La base se elige
+  // por el NOMBRE de su clave —nunca por una URL en `argv`, que queda en `ps` y en el historial— y
+  // `exigirDestinoCorrecto` LANZA si esa clave no apunta a donde promete su nombre.
+  const clave = (process.argv.find((a) => a.startsWith('--clave=')) ?? '').slice('--clave='.length);
+  if (!clave) throw new Error('Falta --clave=<nombre de la variable con la base>: DATABASE_URL_DEV, DATABASE_URL_STAGING o DATABASE_URL.');
+  await import('dotenv/config');
+  const { exigirDestinoCorrecto } = await import('./_clave-vs-destino.mjs');
+  const url = process.env[clave];
+  exigirDestinoCorrecto(clave, url, path.basename(process.cwd()));
+
   const { PrismaClient } = await import('@prisma/client');
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
   try {
     const [{ base }] = await prisma.$queryRaw`SELECT current_database() AS base`;
     const filas = await prisma.quote.findMany({
