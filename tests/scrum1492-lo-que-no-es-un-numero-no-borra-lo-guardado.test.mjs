@@ -10,6 +10,7 @@
 // casilla, con `value` vacío, que es lo que entrega el navegador.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
@@ -217,6 +218,134 @@ test('SCRUM-1492 · CONTROL: una casilla de texto, que no tiene `badInput`, sigu
 
   assert.deepEqual(srv.cuerpos, [{ notas: 'Llave en el bar' }]);
   assert.equal(avisos(c).length, 0);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// DE PASO, EN EL MISMO PR · LOS CÓDIGOS DE RANGO DE LA RUTA TIENEN SU TEXTO.
+//
+// SCRUM-1488 (#2249) separó los rechazos de la ruta en un código por causa. Cuatro nacieron sin
+// texto en la pantalla y caían en el general, que manda a «volver a intentarlo» algo que no va a
+// entrar nunca. Y `-3` no es `badInput`: es un número, sólo que fuera de rango; lo de arriba no
+// lo cubre. El servidor de aquí rechaza como `apiRequest` entrega un rechazo (`err.code`).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const DESPLAZAMIENTO_NEGATIVO = 'No se ha guardado. Desplazamiento es 0 o más';
+const KILOMETROS_NEGATIVO = 'No se ha guardado. Kilómetros es 0 o más';
+const DESPLAZAMIENTO_NO_CABE = 'No se ha guardado. Ese número es demasiado grande para Desplazamiento';
+const KILOMETROS_NO_CABE = 'No se ha guardado. Ese número es demasiado grande para Kilómetros';
+
+/** Qué pinta la ficha ante cada código de `parteRango.ts`. Un código nuevo entra aquí con su texto. */
+const TEXTO_DE_CADA_CODIGO = {
+  desplazamientos_invalido: DESPLAZAMIENTO,
+  desplazamientos_negativo: DESPLAZAMIENTO_NEGATIVO,
+  desplazamientos_no_cabe: DESPLAZAMIENTO_NO_CABE,
+  kilometros_negativo: KILOMETROS_NEGATIVO,
+  kilometros_no_cabe: KILOMETROS_NO_CABE,
+};
+/** Los que siguen en el general, con su motivo. No es una lista para que pase lo nuevo. */
+const SIGUE_EN_EL_GENERAL = {
+  kilometros_invalido: 'desde la casilla no se llega: lo que no es un número lo para `badInput` antes de mandarlo',
+};
+
+/** Un servidor que rechaza todo `PATCH` con ese código, como la ruta: 400 y nada guardado. */
+function servidorQueRechaza(codigo) {
+  const guardado = { ...BASE };
+  const cuerpos = [];
+  const apiRequest = async (ruta, opts = {}) => {
+    if ((opts.method || 'GET') !== 'PATCH') return { ...guardado };
+    cuerpos.push(JSON.parse(opts.body));
+    const e = new Error('lo que la ruta dice a quien la llama a mano');
+    e.status = 400;
+    e.code = codigo;
+    throw e;
+  };
+  return { apiRequest, cuerpos, leer: () => guardado };
+}
+
+async function loQueSaleAl(codigo, nombre, valor) {
+  const srv = servidorQueRechaza(codigo);
+  const { c } = await montar(srv);
+  await escribir(c, nombre, valor);
+  assert.equal(srv.cuerpos.length, 1, '🔴 SUELO: el valor no llegó a mandarse, no hay rechazo que mirar');
+  return { c, srv, salen: avisos(c) };
+}
+
+test('SCRUM-1492 · 🔴 «-3» en Desplazamiento: sale lo que VALE, no «vuelve a intentarlo», y la casilla vuelve a lo guardado', async () => {
+  const { c, srv, salen } = await loQueSaleAl('desplazamientos_negativo', 'desplazamientos', '-3');
+
+  assert.deepEqual(srv.cuerpos, [{ desplazamientos: -3 }], '🔴 SUELO: no se mandó lo tecleado');
+  assert.equal(salen.length, 1, '🔴 la ruta lo rechazó y la ficha no dice nada');
+  assert.equal(salen[0].textContent, DESPLAZAMIENTO_NEGATIVO);
+  assert.equal(attr(salen[0], 'data-parte-campo-no-guardado'), 'desplazamientos');
+  assert.equal(attr(salen[0], 'role'), 'alert');
+  assert.equal(casilla(c, 'desplazamientos').value, '2', '🔴 la casilla enseña algo que no está guardado');
+});
+
+test('SCRUM-1492 · 🔴 «-5» en Kilómetros: su texto, y el 12 sigue en la casilla', async () => {
+  const { c, salen } = await loQueSaleAl('kilometros_negativo', 'kilometros', '-5');
+
+  assert.equal(salen.length, 1);
+  assert.equal(salen[0].textContent, KILOMETROS_NEGATIVO);
+  assert.equal(attr(salen[0], 'data-parte-campo-no-guardado'), 'kilometros');
+  assert.equal(casilla(c, 'kilometros').value, '12');
+});
+
+test('SCRUM-1492 · 🔴 un número que no cabe, en las dos: se dice que es demasiado grande', async () => {
+  const d = await loQueSaleAl('desplazamientos_no_cabe', 'desplazamientos', '3000000000');
+  assert.equal(d.salen.length, 1);
+  assert.equal(d.salen[0].textContent, DESPLAZAMIENTO_NO_CABE);
+  assert.equal(casilla(d.c, 'desplazamientos').value, '2');
+
+  const k = await loQueSaleAl('kilometros_no_cabe', 'kilometros', '100000000');
+  assert.equal(k.salen.length, 1);
+  assert.equal(k.salen[0].textContent, KILOMETROS_NO_CABE);
+  assert.equal(casilla(k.c, 'kilometros').value, '12');
+});
+
+test('SCRUM-1492 · CENSO 🔴 cada código de rechazo de `parteRango.ts` tiene SU texto, y ninguno manda a reintentar', async () => {
+  // Los códigos se LEEN de la ruta (sin sus comentarios): si S1 estrena uno, este test cae hasta
+  // que tenga texto firmado o conste aquí por qué sigue en el general.
+  const fuente = fs.readFileSync(path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'parteRango.ts'), 'utf8')
+    .split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+  const codigos = [...new Set([...fuente.matchAll(/error:\s*'([a-z_]+)'/g)].map((m) => m[1]))].sort();
+  assert.ok(codigos.length >= 6, `🔴 SUELO: sólo he leído ${codigos.length} códigos de la ruta; no he podido mirar`);
+  assert.deepEqual(codigos, [...Object.keys(TEXTO_DE_CADA_CODIGO), ...Object.keys(SIGUE_EN_EL_GENERAL)].sort(),
+    '🔴 los códigos de la ruta han cambiado: uno nuevo necesita SU texto firmado antes de entrar');
+
+  const dichos = [];
+  for (const codigo of codigos) {
+    const nombre = codigo.startsWith('desplazamientos_') ? 'desplazamientos' : 'kilometros';
+    const { salen } = await loQueSaleAl(codigo, nombre, '7');
+    assert.equal(salen.length, 1, `🔴 «${codigo}»: la ruta rechazó y la ficha no dice nada`);
+    dichos.push(salen[0].textContent);
+    if (codigo in SIGUE_EN_EL_GENERAL) {
+      assert.equal(salen[0].textContent, EL_GENERAL, `«${codigo}» consta como «sigue en el general» y ya no lo está`);
+    } else {
+      assert.equal(salen[0].textContent, TEXTO_DE_CADA_CODIGO[codigo], `🔴 «${codigo}» no pinta su texto`);
+      assert.equal(/vuelve a intentarlo/.test(salen[0].textContent), false,
+        `🔴 «${codigo}» manda a repetir algo que la ruta va a rechazar siempre`);
+    }
+  }
+  const propios = dichos.filter((t) => t !== EL_GENERAL);
+  assert.equal(new Set(propios).size, propios.length, '🔴 dos causas distintas dicen lo mismo: un texto por causa');
+});
+
+test('SCRUM-1492 · CONTROL 🔴 un fallo que NO es un rechazo de rango sigue con el general', async () => {
+  const quinientos = await loQueSaleAl('server_error', 'desplazamientos', '3');
+  assert.equal(quinientos.salen.length, 1, '🔴 SUELO: el guardado falló y no hay aviso');
+  assert.equal(quinientos.salen[0].textContent, EL_GENERAL, '🔴 un texto de rango se ha comido el caso general');
+
+  // Un código que coincide con algo que TODO objeto trae no es un código de la tabla.
+  const heredado = await loQueSaleAl('constructor', 'kilometros', '3');
+  assert.equal(heredado.salen[0].textContent, EL_GENERAL);
+});
+
+test('SCRUM-1492 · las dos casillas numéricas llevan `min="0"`, y las de texto no', async () => {
+  const srv = servidor();
+  const { c } = await montar(srv);
+  const dos = numericas(c);
+  assert.equal(dos.length, 2, '🔴 SUELO: no están las dos casillas numéricas');
+  assert.deepEqual(dos.map((x) => attr(x, 'min')), ['0', '0']);
+  assert.equal(attr(casilla(c, 'notas'), 'min'), null);
 });
 
 test('SCRUM-1492 · CENSO: TODA casilla numérica de la cabecera tiene qué decir, y no es el general', async () => {
