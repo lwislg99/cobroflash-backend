@@ -40,6 +40,8 @@ Guard de SCRUM-633: su regex exige que `timezone` sea el último campo de la des
 
 Carril S1 · sesión `s1-6octi` · rama `scrum-1227b-el-gesto-de-guardar`. Sólo documentación y evidencia: ni `src/` ni `public/`.
 
+A9: comprobación → `tests/scrum1227-perfil-ida-y-vuelta.test.mjs`
+
 El ticket seguía abierto por una sola cosa (comentarios 17522 y 17913 de Jira): nadie había pulsado el botón. En la cuenta QA no se podía, porque su perfil tiene vacíos los cuatro campos obligatorios y el navegador corta el envío; rellenarlos es cambiar el fixture (SCRUM-1367).
 
 ### Cómo se ha pulsado sin tocar el fixture
