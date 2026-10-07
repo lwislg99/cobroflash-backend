@@ -25,6 +25,7 @@
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
+import { leerDesplazamientos, leerKilometros } from '../../domain/parteRango'; // SCRUM-1488
 import { seesAllJobs, seesOnlyOwnJobs, adminOnlyParteField } from '../../../../core/http/roleCapabilities';
 import { esSuyoElTrabajo, SELECT_DUENOS, whereSuyoElTrabajo } from '../../domain/accesoAlTrabajo'; // SCRUM-992
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -521,21 +522,18 @@ router.patch('/:id', async (req: any, res) => {
       }
       data.tipo = tipo;
     }
+    // SCRUM-1488 · el rango de los dos se decide en `parteRango.ts`, no aquí: un código por causa.
     if (req.body?.desplazamientos !== undefined) {
-      const n = req.body.desplazamientos === null ? null : Number(req.body.desplazamientos);
-      if (n !== null && !cabeEnColumnaInt(n)) {
-        return res
-          .status(400)
-          .json({ error: 'desplazamientos_invalido', message: 'Los desplazamientos son un número entero.' });
+      const desplazamientos = leerDesplazamientos(req.body.desplazamientos);
+      if (!desplazamientos.ok) {
+        return res.status(400).json({ error: desplazamientos.error, message: desplazamientos.message });
       }
-      data.desplazamientos = n;
+      data.desplazamientos = desplazamientos.valor;
     }
     if (req.body?.kilometros !== undefined) {
-      const n = req.body.kilometros === null ? null : Number(req.body.kilometros);
-      if (n !== null && !Number.isFinite(n)) {
-        return res.status(400).json({ error: 'kilometros_invalido', message: 'Los kilómetros son un número.' });
-      }
-      data.kilometros = n;
+      const kilometros = leerKilometros(req.body.kilometros);
+      if (!kilometros.ok) return res.status(400).json({ error: kilometros.error, message: kilometros.message });
+      data.kilometros = kilometros.valor;
     }
     if (req.body?.tecnicos !== undefined) {
       if (!Array.isArray(req.body.tecnicos)) {

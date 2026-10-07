@@ -87,7 +87,7 @@ import {
 // Solo las funciones PURAS de `sesion.mjs`. Su puerta de integridad guarda la CLI (lanzar, parar…), no
 // estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
 // instalada esté desfasada (SCRUM-1282).
-import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, UMBRAL_CONTEXTO_A_MITAD, ESTADOS_TERMINALES } from './sesion.mjs';
+import { contextoDelJsonl, buscarJsonl, fraseDeRelevo, UMBRAL_CONTEXTO, UMBRAL_CONTEXTO_A_MITAD, ESTADOS_TERMINALES } from './sesion.mjs';
 // Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
 // distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
@@ -527,9 +527,8 @@ export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umb
   const alertas = filas.filter((f) => f.tokens > umbral)
     .map((f) => ({
       sesion: f.nombre,
-      linea: f.tokens > umbralAMitad
-        ? `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbralAMitad)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo${hace(f)}`
-        : `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega${hace(f)}`,
+      // La frase es la de `sesion.mjs`, la misma que da `contexto N` (SCRUM-1484b): aquí no se escribe otra.
+      linea: `${f.nombre} · ${enK(f.tokens)} de ventana, ${fraseDeRelevo({ tokens: f.tokens, umbral, umbralAMitad })}${hace(f)}`,
     }));
   const poblacion = `${vivas.length} sesiones vivas en ${HORAS_DE_SESION} h + ${sueltas.length} transcript(s) reciente(s) sin trabajo de fondo · ${filas.length} leídas: ${filas.map((f) => `${f.nombre.split(' (')[0] || f.nombre} ${enK(f.tokens)}`).join(' · ') || 'ninguna'}${sinUso.length ? ` · ${sinUso.length} sin ningún turno con uso todavía (${sinUso.join(', ')})` : ''} · es la ventana del ÚLTIMO turno (entrada + caché), no lo gastado: al compactar BAJA`;
   // Una sesión viva cuyo jsonl no aparece NO ocupa cero: no se sabe cuánto ocupa.
