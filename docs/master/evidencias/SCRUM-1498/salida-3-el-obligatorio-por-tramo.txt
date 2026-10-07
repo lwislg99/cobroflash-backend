@@ -1,0 +1,54 @@
+$ node obligatorio.mjs datos-push-main-2026-09-07..10-07.json datos-jobs-de-esos-runs.json
+JOBS vistos (control de nombre exacto): "meta-guard · los guards caen cuando deben" · "vigía del despliegue (informativo)" · "constancia del ALTER (informativo)" · "guards de navegador (fuera de la tanda)" · "build + tests (con banco desechable)" · "trinquete · ningún test nuevo mide la zona de la máquina"
+control: el nombre del obligatorio aparece en 724 de 724 suites · un nombre inventado en 0
+
+== 07-09..21-09 (antes de 935b) · POBLACION 487 runs acabados (uno por push a main)
+   obligatorio: veredicto 222 (45.6 %) = success 211 + failure 11 · cancelado a medias 234 · otro 0 · el job no llego a existir 31
+   dura "build + tests (con banco desechable)" n=456 p50=4.5 p90=7.1 max=7.9 min
+   dura "constancia del ALTER (informativo)" n=456 p50=0.5 p90=0.5 max=1.3 min
+   dura "guards de navegador (fuera de la tanda)" n=456 p50=3.1 p90=6.8 max=9.9 min
+   dura "meta-guard · los guards caen cuando deben" n=456 p50=5.1 p90=9.9 max=12.4 min
+   dura "trinquete · ningún test nuevo mide la zona de la máquina" n=126 p50=6.5 p90=10.9 max=12.5 min
+   dura "vigía del despliegue (informativo)" n=456 p50=0.2 p90=0.2 max=1.3 min
+   ultimo job en acabar (runs con success|failure): {"meta-guard · los guards caen cuando deben":142,"build + tests (con banco desechable)":10,"trinquete · ningún test nuevo mide la zona de la máquina":10} · run entero p50=7.5 p90=11.1 min
+
+== 21-09..25-09 · POBLACION 176 runs acabados (uno por push a main)
+   obligatorio: veredicto 92 (52.3 %) = success 89 + failure 3 · cancelado a medias 0 · otro 0 · el job no llego a existir 84
+   dura "build + tests (con banco desechable)" n=92 p50=8.0 p90=8.4 max=8.8 min
+   dura "constancia del ALTER (informativo)" n=92 p50=0.5 p90=0.6 max=0.8 min
+   dura "guards de navegador (fuera de la tanda)" n=92 p50=10.0 p90=10.3 max=10.6 min
+   dura "meta-guard · los guards caen cuando deben" n=92 p50=12.7 p90=14.0 max=14.8 min
+   dura "trinquete · ningún test nuevo mide la zona de la máquina" n=92 p50=12.0 p90=12.6 max=45.3 min
+   dura "vigía del despliegue (informativo)" n=92 p50=0.2 p90=0.3 max=0.9 min
+   ultimo job en acabar (runs con success|failure): {"meta-guard · los guards caen cuando deben":41,"trinquete · ningún test nuevo mide la zona de la máquina":12,"guards de navegador (fuera de la tanda)":3} · run entero p50=15.9 p90=25.1 min
+
+== 26-09..02-10 · POBLACION 385 runs acabados (uno por push a main)
+   obligatorio: veredicto 147 (38.2 %) = success 138 + failure 9 · cancelado a medias 0 · otro 0 · el job no llego a existir 238
+   dura "build + tests (con banco desechable)" n=147 p50=9.0 p90=10.4 max=11.6 min
+   dura "constancia del ALTER (informativo)" n=147 p50=0.5 p90=0.6 max=0.6 min
+   dura "guards de navegador (fuera de la tanda)" n=147 p50=10.6 p90=11.8 max=12.8 min
+   dura "meta-guard · los guards caen cuando deben" n=147 p50=14.8 p90=20.0 max=21.3 min
+   dura "trinquete · ningún test nuevo mide la zona de la máquina" n=147 p50=13.3 p90=16.4 max=45.3 min
+   dura "vigía del despliegue (informativo)" n=147 p50=0.2 p90=0.3 max=0.8 min
+   ultimo job en acabar (runs con success|failure): {"meta-guard · los guards caen cuando deben":116,"trinquete · ningún test nuevo mide la zona de la máquina":27,"guards de navegador (fuera de la tanda)":3,"build + tests (con banco desechable)":1} · run entero p50=19.6 p90=32.8 min
+
+== 06-10..07-10 · POBLACION 76 runs acabados (uno por push a main)
+   obligatorio: veredicto 28 (36.8 %) = success 27 + failure 1 · cancelado a medias 0 · otro 0 · el job no llego a existir 48
+   dura "build + tests (con banco desechable)" n=28 p50=10.8 p90=11.3 max=11.5 min
+   dura "constancia del ALTER (informativo)" n=28 p50=0.5 p90=0.6 max=0.6 min
+   dura "guards de navegador (fuera de la tanda)" n=28 p50=10.4 p90=11.1 max=11.4 min
+   dura "meta-guard · los guards caen cuando deben" n=28 p50=20.9 p90=23.0 max=23.1 min
+   dura "trinquete · ningún test nuevo mide la zona de la máquina" n=28 p50=17.0 p90=45.3 max=45.3 min
+   dura "vigía del despliegue (informativo)" n=28 p50=0.2 p90=0.3 max=0.3 min
+   ultimo job en acabar (runs con success|failure): {"meta-guard · los guards caen cuando deben":21,"trinquete · ningún test nuevo mide la zona de la máquina":4,"guards de navegador (fuera de la tanda)":1} · run entero p50=30.8 p90=41.8 min
+
+== ventana de J6 (02-10 01:54Z..07-10 15:44Z) · POBLACION 139 runs acabados (uno por push a main)
+   obligatorio: veredicto 54 (38.8 %) = success 50 + failure 4 · cancelado a medias 0 · otro 0 · el job no llego a existir 85
+   dura "build + tests (con banco desechable)" n=54 p50=10.4 p90=11.1 max=11.6 min
+   dura "constancia del ALTER (informativo)" n=54 p50=0.5 p90=0.6 max=0.6 min
+   dura "guards de navegador (fuera de la tanda)" n=54 p50=10.6 p90=10.9 max=11.4 min
+   dura "meta-guard · los guards caen cuando deben" n=54 p50=20.5 p90=22.6 max=23.1 min
+   dura "trinquete · ningún test nuevo mide la zona de la máquina" n=54 p50=16.5 p90=17.8 max=45.3 min
+   dura "vigía del despliegue (informativo)" n=54 p50=0.2 p90=0.3 max=0.4 min
+   ultimo job en acabar (runs con success|failure): {"meta-guard · los guards caen cuando deben":46,"trinquete · ningún test nuevo mide la zona de la máquina":5,"guards de navegador (fuera de la tanda)":1} · run entero p50=27.0 p90=38.7 min
+EXIT=0

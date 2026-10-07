@@ -1,0 +1,9 @@
+$ node analiza.mjs datos-pr-2026-10-06..07.json
+POBLACION 106 runs de ci.yml · evento pull_request · creados 2026-10-06..2026-10-07 (dia UTC)
+dia	runs	cancelado-con-jobs	failure	sin-acabar	success	%con-jobs
+2026-10-06	71	16	27	0	28	100
+2026-10-07	35	4	7	6	18	100
+TOTAL	106	20	34	6	46	100
+actor/disparador: {"lwislg99/lwislg99":19,"yaqu-bot[bot]/yaqu-bot[bot]":74,"Javierpf28/Javierpf28":11,"yaqu-bot[bot]/lwislg99":1,"yaqu-bot[bot]/Javierpf28":1}
+intentos>1: 2
+EXIT=0

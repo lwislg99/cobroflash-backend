@@ -1,0 +1,9 @@
+$ node modelo.mjs datos-push-main-2026-09-07..10-07.json datos-jobs-de-esos-runs.json 2026-09-26 2026-10-08
+POBLACION 461 pushes a main · 2026-09-26..2026-10-08 · corrieron de verdad 175 (38.0 %)
+duracion real (primer job arranca -> ultimo acaba): mediana 16.4 min, n=175 · hasta que acaba el OBLIGATORIO: mediana 9.3 min, n=175
+  VALIDACION: servicio = mediana real del run entero   -> correrian 200 de 461 (43.4 %)
+  si el grupo se soltara al acabar el obligatorio      -> correrian 291 de 461 (63.1 %)
+  servicio 5 min                                       -> correrian 378 de 461 (82.0 %)
+  servicio 0 (control: deben correr todos)             -> correrian 461 de 461 (100.0 %)
+  servicio infinito (control: 1 + el ultimo)           -> correrian 2 de 461 (0.4 %)
+EXIT=0
