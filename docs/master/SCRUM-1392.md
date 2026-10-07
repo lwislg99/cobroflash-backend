@@ -145,6 +145,8 @@ a su lista · `guard-portal-en-la-ficha` vuelve a la suya. Traza: `mutaciones-tr
    imports. Lo dice en su salida.
 3. **Los tres guards de caja y portal no se han ejercitado con un lanzamiento después del apunte:**
    no tienen camino alcanzable sin mutar el guard. Sólo se midió que en limpio no cambian.
-4. **`guards:visuales` entero no se ha corrido.**
+4. **`guards:visuales` entero no se ha corrido, y la tanda completa en local tampoco** (decisión del
+   orquestador: hace de tanda el obligatorio del CI). En local corrieron 17 ficheros, 174 casos, 0
+   caen, 0 saltos: los guards de suite que miran ficheros nuevos, más los de SCRUM-1320, 1327 y 1336.
 5. Un caso que lanza **fuera** de los recorridos (al montar el servidor, al abrir el navegador)
    sigue como lo dejó SCRUM-1336.
