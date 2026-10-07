@@ -231,3 +231,176 @@ El ticket no trae una lista bajo «Aceptación»; trae «Lo que pide», y es lo 
 | ③ si el máster no es legible por máquina, decirlo | sección Ⓒ, los nueve «no cotejable» |
 | ④ Un control que dé cero | sección Ⓓ, controles 2 y 3 |
 | las líneas del esquema | NO HECHO → siete propuestas en la sección Ⓔ, sin aplicar: falta la firma |
+
+# SCRUM-1500b · El instrumento corre en la tanda: el cotejo sigue siendo contra el máster
+
+**Medido contra:** `origin/main` = `a65a8c756c0363ec5ea6f4f0b1e811ba17a909c0` · 2026-10-07T23:30:24Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`
+
+Sesión J5 (`jv-j5`, 8-oct de madrugada en Madrid, relevo de la que entregó SCRUM-1500), equipo de
+Javier, ticket de `area-j5`. Rama `scrum-1500b-guard-del-cotejo`.
+
+**El permiso es el comentario 18831 de SCRUM-1500 en Jira**, del orquestador del equipo
+(`cobroflash-backend-90`), leído en el ticket antes de escribir una línea. Contesta a lo que la
+sección Ⓔ de arriba le dejaba: sí se construye, como un fichero de test y no como un workflow,
+extendiendo `cotejo.cjs` y su test, y con los tres casos parados esperando sin poner el CI en rojo.
+
+**`prisma/schema.prisma`, el máster y `src/` no se han tocado.** Este PR cambia tres cosas: el
+instrumento, su test y este registro. Las siete líneas de Ⓔ siguen sin aplicar y sin firma.
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» porque no reconoce el nombre `jv-j5`. La
+ficha del orquestador dice que es SCRUM-1498 (carril de S5) y que se siga; se siguió, y queda dicho.
+
+## Ⓗ Qué faltaba para poder correrlo, y qué se hizo
+
+La sección Ⓔ decía por qué no se hizo el 7-oct: el instrumento localizaba cada comentario por su
+número de línea, y habría caído con cualquier cambio del esquema que moviera líneas.
+
+1. **El comentario se localiza por modelo y campo** (`localizar`). La tabla ya no lleva números de
+   línea: dice si el comentario va detrás del campo (`cola`), en el bloque pegado encima (`encima`) o
+   encima de `model X {` (`cabecera`). Un modelo o un campo que no aparece exactamente una vez sale
+   NO_EXISTE.
+2. **Detrás del cotejo va un juicio** (`juzgar`): qué veredictos se nombran y cuáles no.
+3. **Los tres parados llevan su excepción** (`PARADOS`), dentro del instrumento.
+4. **El test corre el instrumento sobre el árbol** y lo interroga.
+
+Control de que el punto 1 no cambió nada: la salida del instrumento antes y después, sobre el mismo
+árbol, es idéntica en las 19 fichas (línea, C, D y M de cada una). Sólo cambian la línea de población
+(3 controles → 4), la ficha del control nuevo y el bloque del juicio al final. Antes de tocar nada, la
+salida era idéntica byte a byte a `evidencias/scrum1500/cotejo-salida.txt`, que queda como estaba; la
+de hoy está en `evidencias/scrum1500b/cotejo-salida.txt`.
+
+## Ⓘ Qué pone el CI en rojo y qué no
+
+| veredicto del campo | en la tanda |
+|---|---|
+| COINCIDE_CON_EL_MASTER | no se nombra |
+| EL_MASTER_NO_LO_FIJA | no se nombra, pero se imprime como «sin cotejar»: no es un verde |
+| CODIGO_FUERA_DEL_MASTER, MASTER_SIN_ESCRIBIR, COMENTARIO_ATRASADO, ESTADO_SIN_MAQUINA_EN_EL_MASTER | cae, salvo que sea uno de los tres parados y siga siendo exactamente lo que se paró |
+| NO_EXISTE, CIEGO, un control que sale mal, un fichero de `src/` sin parsear | cae |
+
+Sobre el árbol de hoy: 7 coinciden, 9 sin cotejar, 3 parados, 0 hallazgos. Son los 19 de Ⓒ.
+
+Además cae, porque es lo que haría que el cotejo dejara de ser contra el máster sin que nadie lo viera:
+
+- **Una línea nueva del máster que junte todos los valores de un campo que la tabla declara «sin
+  lista».** Que el máster no lo fije lo afirma la tabla; el instrumento lo vuelve a buscar en cada
+  pasada.
+- **Un comentario que deja de enumerar** sin que la tabla lo diga (`sinLista: true`), y al revés. Es
+  lo que pasará el día que se firmen las siete líneas de Ⓔ: quien las aplique lo declara en la tabla,
+  en ese PR. Sin esto, un comentario que el localizador dejara de encontrar saldría en verde.
+
+## Ⓙ Los tres parados: la excepción, y por qué no es un agujero
+
+`QuoteRequest.status`, `ParteTrabajo.estado` y `TeamMember.status`. No se ha decidido ninguno ni se
+ha tocado ningún estado. Cada entrada de `PARADOS` lleva:
+
+- **motivo**, **quién la retira** (el fundador decide; quien aplique su decisión borra la entrada en
+  ese mismo PR) y **dónde consta** (los comentarios 18796 y 18831, y la sección Ⓒ).
+- **lo que se le llevó al fundador, congelado**: el veredicto, los valores del código y los del
+  máster. La excepción no dice «ignora este campo». Si el código gana un valor, si el máster cambia su
+  lista, si el campo pasa a pararse por otra cosa o deja de estar parado, cae nombrándola.
+- **la prueba de que sigue montada**, en cada pasada y por AST: sus valores tienen que salir de un
+  cierre encontrado en `src/` o de una escritura de Prisma, no sólo del `@default`. Hoy:
+  `quoteRequests.routes.ts:54`, `parteTrabajo.ts:78` y las escrituras de `team.service.ts` y
+  `auth.service.ts`. Los sitios se imprimen en cada pasada.
+- **el día en que se paró** (7-oct-2026). El juicio imprime su edad. **No caduca sola:** un plazo
+  pondría el CI en rojo a fecha fija por una decisión que es del fundador, y eso no lo autoriza el
+  comentario 18831. Lo dejo dicho como límite, no resuelto.
+
+Para `ParteTrabajo.estado` van además los dos trozos literales de las líneas del máster que juntan
+sus tres valores y que la sección Ⓒ ya leyó (hablan del albarán). Una tercera no estaría leída: cae.
+
+## Ⓚ Los controles: verlo en rojo
+
+1. **El que pedía el permiso: comentario = código ≠ máster tiene que caer.** Hecho de dos maneras.
+   - Sobre el árbol y sin fabricar nada: quitando las excepciones caen los tres parados y sólo ellos,
+     y `QuoteRequest.status` es ese caso (el censo viejo le sigue diciendo «coincide»).
+   - Fabricado: a cada una de las 6 líneas del máster que sujetan los 7 comentarios que coinciden se
+     le quita su último valor, en memoria y de una en una. Cae el comentario de esa línea, con
+     CODIGO_FUERA_DEL_MASTER, y no cae ningún otro. El test comprueba que el comentario sigue siendo
+     igual al código.
+   - **Lo que no hice:** fabricar el comentario. Lo fabricado es la línea del máster; el comentario y
+     el código son los del árbol. Para el instrumento es la misma situación (C = D ≠ M), pero no es
+     literalmente «un comentario fabricado».
+2. **El positivo que podía tumbarlo:** con el máster sin tocar, los 7 no se nombran, y en cada una de
+   las 6 pasadas siguen sin nombrarse los que no dependen de la línea movida.
+3. **Mover las líneas del esquema** (tres líneas añadidas arriba, en memoria): ningún veredicto
+   cambia y cada comentario sale tres líneas más abajo.
+4. **El banco de mutaciones** (`evidencias/scrum1500b/mutar.mjs`, salida en `mutaciones.txt`): 17
+   cambios de un literal en el instrumento, con la base en verde antes (13 de 13). **17 vivas, 0
+   mudas, 0 ciegas**, y el instrumento restaurado con el mismo sha256. La primera es volver a la
+   pregunta vieja (comparar el código con el comentario): caen 8 de 13.
+5. **Controles a cero que viajan en cada pasada:** 4 de 4 (campo inventado, modelo inventado, ancla
+   inventada, constante inventada).
+
+## Ⓛ La tanda dirigida local: lo que medí para SCRUM-1503 (sin arreglar nada)
+
+`node scripts/tests-que-cubren.mjs --porque <fichero>`, un fichero cada vez, sobre 1.290 tests:
+
+| fichero que se toca | ¿selecciona este test? | por qué |
+|---|---|---|
+| `docs/master/evidencias/scrum1500/cotejo.cjs` | sí | lo nombra |
+| `prisma/schema.prisma` | sí | lo nombra |
+| `docs/YAQU_MASTER.md` | **no** | el test lo lee a través del instrumento, no lo nombra |
+| `src/modules/jobs/domain/parteTrabajo.ts` | **no** | ídem |
+| `src/modules/quoteRequests/app/routes/quoteRequests.routes.ts` | **no** | ídem |
+
+Control: un nombre inventado (`scrum99999`) sale 0 veces en las cinco. Quien añada un estado en
+`src/` o cambie una máquina en el máster no verá este test en su dirigida local; lo verá en el CI.
+Es de J3 (SCRUM-1503) y va por el orquestador. No he probado más ficheros de `src/` que esos dos.
+
+## Ⓜ Lo que NO se ha medido
+
+- **Los 11 campos del esquema con nombre de estado que no están en la tabla** (`Merchant.status`,
+  `Merchant.subscriptionStatus`, `Charge.status`, `Quote.status`, `Invoice.status`,
+  `Invoice.vfEstado`, `BotSession.state`, `WhatsAppMessage.status`, `Job.status`,
+  `EmailMessage.status`, `VfSubmission.status`). El juicio los cuenta y los nombra en cada pasada, y
+  no los coteja. Un campo de estado nuevo tampoco entra solo en la tabla. Es el límite más serio de
+  lo entregado.
+- Las transiciones, los flags de la Parte P y las filas de una base: igual que en Ⓕ.
+- La tanda completa no se ha corrido en local. Qué corrió, en la sección Ⓝ.
+- El meta-guard de mutaciones de la casa: este test no declara mutaciones en su formato. Las 17
+  están en el banco de esta carpeta, que la tanda no corre.
+
+## Ⓝ Qué corrió antes de empujar
+
+Worktree anidado: sin `node_modules` propio (hereda el del checkout compartido) y sin `dist/`.
+`dist/` se compiló aquí con `tsc --noCheck` (salida 0); `prisma generate` **no** se corrió, porque
+escribe en el `node_modules` que comparten otras sesiones y este PR no toca ni el esquema ni `src/`.
+
+| qué | resultado |
+|---|---|
+| el fichero del test, solo | 13 casos, 13 pasan (7 «SCRUM-1500 · » de antes y 6 «SCRUM-1500b · »), 3 s |
+| el banco de mutaciones | base 13 de 13; 17 vivas, 0 mudas, 0 ciegas |
+| `npm run tanda:dirigida`, en cuatro tramos | 240 ficheros de 1.290 · 2.396 tests · 2.390 pasan · **1 cae** · 5 ni pasan ni caen, sin desglosar |
+| el que cae | «SCRUM-476 · SUELO: el censo de directorios `node_modules` no puede dar cero». Su mensaje dice «CERO directorios `node_modules` en el árbol»; este worktree no tiene ninguno (`ls node_modules`: no existe). No lo toca este PR. **No he comprobado que pase en un árbol con `node_modules`:** eso lo dirá el CI |
+| los seis casos «SCRUM-1500b · » dentro de la dirigida | 6 pasan (tramo 2); un nombre inventado, «SCRUM-99999 · », sale 0 veces en los cuatro tramos |
+| `npm run guards:entrada` | 13 guards, 158 tests, 158 pasan, salida 0 (corrido después del último cambio de este registro) |
+| a mano, con el test: scrum237, 976, 267, 1294, 525d, 812, 824, 864c, 850, 710b, 859, 921, 1327, 391, 242, 273 | 206 pasan de 208; los 2 que caen son de scrum622, que entró por error en esa lista y pide `dist/` (aún no estaba compilado: `ERR_MODULE_NOT_FOUND`). Repetido solo, ya con `dist/`: 12 de 12. (La dirigida NO lo selecciona: sale 0 veces en sus cuatro TAP) |
+
+La tanda completa no se corrió en local: la da el obligatorio del CI.
+
+## Ⓞ Lo que me salió mal
+
+- **El test salió verde a la primera y no valía nada todavía.** Lo que lo valida es el banco de Ⓚ.
+- **Una mutación habría salido muda y la vi antes de correr el banco, leyendo, no midiendo:** «la
+  excepción ampara cualquier veredicto que pare» no la cazaba ningún caso. Añadí el caso ②bis y
+  después corrí el banco; no tengo la fila en rojo de antes de añadirlo.
+- **Escribí en este registro un dato sin medir y lo cacé al comprobarlo:** que scrum622 «va en la
+  dirigida y pasa». En los cuatro TAP de la dirigida sale 0 veces. Lo corrí solo y corregí la fila.
+- **El localizador abría un hueco que no existía con números de línea:** un comentario que no se
+  encuentra da una lista vacía, y eso habría salido «coincide». Lo cierra `sinLista` (sección Ⓘ) y
+  una mutación del banco.
+
+## Lo que pide el comentario 18831 → dónde se ve
+
+| lo que pide | dónde se ve |
+|---|---|
+| ① un fichero de test en `tests/`, no un workflow | `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`, los seis casos «SCRUM-1500b · » |
+| ② que caiga un comentario que coincide con el código y no con el máster | casos «SCRUM-1500b · CAE» y «SCRUM-1500b · LOS TRES PARADOS»; `evidencias/scrum1500b/mutaciones.txt` |
+| ② se extiende el instrumento, no se escribe otro | `docs/master/evidencias/scrum1500/cotejo.cjs` (`localizar`, `juzgar`, `PARADOS`) |
+| ③ los tres parados esperan sin poner el CI en rojo | caso «SCRUM-1500b · EL ÁRBOL» (0 hallazgos, 3 parados) |
+| ③ su excepción lleva motivo, quién la retira y prueba de que sigue montada | `PARADOS` en el instrumento; casos «LOS TRES PARADOS» y «la excepción cubre lo que se le llevó al fundador» |
+| no tocar el esquema, no decidir los parados, no relajar nada, ningún workflow | `git diff --stat origin/main`: tres ficheros cambiados y tres nuevos, ninguno de esos |

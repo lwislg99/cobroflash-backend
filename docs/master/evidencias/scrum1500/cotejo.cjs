@@ -26,7 +26,15 @@
 //    ciegas: para esos campos el instrumento busca en el máster el nombre del campo y cada valor de
 //    D, y si alguna línea junta TODOS los valores lo dice (POSIBLE LISTA) en vez de callar.
 //
-// QUÉ NO VE: escrituras por SQL crudo, por un objeto construido en otro fichero o por derrame
+// DESDE SCRUM-1500b (decisión en Jira, SCRUM-1500 c.18831) ESTE INSTRUMENTO CORRE EN LA TANDA, desde
+// `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`. Dos cosas cambiaron para que pudiera:
+//   · cada comentario se localiza por su MODELO y su CAMPO (`localizar`), no por número de línea;
+//   · detrás del cotejo va un JUICIO (`juzgar`): qué veredictos se nombran, y los tres casos que
+//     esperan al fundador, cada uno con su excepción (`PARADOS`).
+// La salida del guion: 0 nada que nombrar · 1 hay hallazgos · 2 el instrumento no es fiable.
+//
+// QUÉ NO VE: los campos del esquema que no están en la tabla CAMPOS (los cuenta y los nombra al
+// final, pero no los coteja), ni las escrituras por SQL crudo, por un objeto construido en otro fichero o por derrame
 // (`...datos`). Por eso D lleva la constante que cierra la lista y no sólo las escrituras.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -34,81 +42,84 @@ const path = require('node:path');
 const RAIZ_POR_DEFECTO = path.resolve(__dirname, '..', '..', '..', '..');
 
 const CAMPOS = [
-  { linea: 18, campo: 'Merchant.trade', campoEn: 18,
+  { campo: 'Merchant.trade', comentario: 'cola',
     cierre: { tipo: 'zod', fichero: 'src/core/validation/schemas.ts', propiedad: 'trade' },
     escribe: ['merchant', 'trade'], master: null },
-  { linea: 67, campo: 'Merchant.connectStatus', campoEn: 67,
+  { campo: 'Merchant.connectStatus', comentario: 'cola',
     cierre: null, escribe: ['merchant', 'connectStatus'],
     master: { ancla: /merchant\.connectStatus\(/, lista: /merchant\.connectStatus\(([^)]*)\)/ } },
-  { linea: 201, campo: 'AuthSession.type', campoEn: 201,
+  { campo: 'AuthSession.type', comentario: 'cola',
     cierre: null, escribe: ['authSession', 'type'], master: null },
-  { linea: 973, campo: 'Expense.category', campoEn: 973,
+  { campo: 'Expense.category', comentario: 'cola',
     cierre: { tipo: 'const', fichero: 'src/modules/expenses/domain/expenses.service.ts', nombre: 'EXPENSE_CATEGORIES' },
     escribe: ['expense', 'category'], master: null },
-  { linea: 1115, campo: 'QuoteRequest.status', campoEn: 1115,
+  { campo: 'QuoteRequest.status', comentario: 'cola',
     cierre: { tipo: 'includes', fichero: 'src/modules/quoteRequests/app/routes/quoteRequests.routes.ts', argumento: 'status' },
     escribe: ['quoteRequest', 'status'],
     master: { ancla: /^\*\*QuoteRequest:\*\*/, lista: /^\*\*QuoteRequest:\*\* `([^`]+)`/ } },
-  { linea: 1174, campo: 'TeamMember.role', campoEn: 1174,
+  { campo: 'TeamMember.role', comentario: 'cola',
     cierre: { tipo: 'const', fichero: 'src/core/http/roleCapabilities.ts', nombre: 'SUPPORTED_ROLES' },
     escribe: ['teamMember', 'role'],
     // La S1 dice «esta tabla es la verdad» y nombra los roles en sus columnas, con mayúscula y
     // acento. Se comparan normalizados (minúsculas, sin acentos): es la única traducción que hay.
     master: { ancla: /^\| Capacidad \|/, lista: /^\| Capacidad \|(.*)\|\s*$/, separador: /\|/, normaliza: true } },
-  { linea: 1175, campo: 'TeamMember.status', campoEn: 1175,
+  { campo: 'TeamMember.status', comentario: 'cola',
     cierre: null, escribe: ['teamMember', 'status'], master: null },
-  { linea: 1453, campo: 'Albaran.estado', campoEn: 1453,
+  { campo: 'Albaran.estado', comentario: 'cola',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' },
     escribe: ['albaran', 'estado'],
     master: { ancla: /^\*\*Albaran \(NO fiscal\)/, lista: /:\*\* `([^`]+)`/ } },
-  { linea: 1426, campo: 'Albaran.estado', campoEn: 1453, etiqueta: 'Albaran.estado (comentario de cabecera)',
+  { campo: 'Albaran.estado', comentario: 'cabecera', etiqueta: 'Albaran.estado (comentario de cabecera)',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' },
     escribe: ['albaran', 'estado'],
     master: { ancla: /^\*\*Albaran \(NO fiscal\)/, lista: /:\*\* `([^`]+)`/ } },
-  { linea: 217, campo: 'Customer.contactKind', campoEn: 239,
+  { campo: 'Customer.contactKind', comentario: 'encima',
     cierre: { tipo: 'zod', fichero: 'src/core/validation/schemas.ts', propiedad: 'contactKind' },
     escribe: ['customer', 'contactKind'], master: null },
-  { linea: 328, campo: 'Customer.tipoDestinatario', campoEn: 334,
+  { campo: 'Customer.tipoDestinatario', comentario: 'encima',
     cierre: { tipo: 'zod', fichero: 'src/core/validation/schemas.ts', propiedad: 'tipoDestinatario' },
     escribe: ['customer', 'tipoDestinatario'], master: null },
-  { linea: 396, campo: 'Customer.billingPeriodicity', campoEn: 410,
+  { campo: 'Customer.billingPeriodicity', comentario: 'encima',
     cierre: { tipo: 'zod', fichero: 'src/core/validation/schemas.ts', propiedad: 'billingPeriodicity' },
     escribe: ['customer', 'billingPeriodicity'],
     master: { ancla: /`Customer\.billingPeriodicity` \(`/, lista: /`Customer\.billingPeriodicity` \(`([^`]+)`/ } },
-  { linea: 609, campo: 'Quote.shippingAddressMode', campoEn: 621,
+  { campo: 'Quote.shippingAddressMode', comentario: 'encima', encimaDe: 'shippingAddress',
     cierre: { tipo: 'const', fichero: 'src/core/documentos/direccionObra.ts', nombre: 'MODOS_DIRECCION_OBRA' },
     escribe: ['quote', 'shippingAddressMode'], master: null },
-  { linea: 725, campo: 'Quote.ivaModo', campoEn: 728,
+  { campo: 'Quote.ivaModo', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/quotes/domain/presentacionIva.ts', nombre: 'MODOS_IVA' },
     escribe: ['quote', 'ivaModo'], master: null },
-  { linea: 1050, campo: 'Product.itemKind', campoEn: 1057,
+  { campo: 'Product.itemKind', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/core/validation/schemas.ts', nombre: 'ITEM_KIND' },
     escribe: ['product', 'itemKind'], master: null },
-  { linea: 1335, campo: 'Job.tipoOperacion', campoEn: 1339, comentarioDesde: 1334,
+  { campo: 'Job.tipoOperacion', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/job.service.ts', nombre: 'JOB_TIPOS_OPERACION' },
     escribe: ['job', 'tipoOperacion'],
     master: { ancla: /`Job\.tipoOperacion` string `/, lista: /`Job\.tipoOperacion` string `([^`]+)`/ } },
-  { linea: 1448, campo: 'Albaran.modoValoracion', campoEn: 1451,
+  { campo: 'Albaran.modoValoracion', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_MODOS_VALORACION' },
     escribe: ['albaran', 'modoValoracion'],
     master: { ancla: /`Albaran\.modoValoracion` string `/, lista: /`Albaran\.modoValoracion` string `([^`]+)`/ } },
-  { linea: 1636, campo: 'ParteTrabajo.tipo', campoEn: 1637,
+  { campo: 'ParteTrabajo.tipo', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/parteTrabajo.ts', nombre: 'TIPOS_PARTE' },
     escribe: ['parteTrabajo', 'tipo'], master: null },
-  { linea: 1642, campo: 'ParteTrabajo.estado', campoEn: 1643,
+  { campo: 'ParteTrabajo.estado', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/parteTrabajo.ts', nombre: 'ESTADOS_PARTE' },
     escribe: ['parteTrabajo', 'estado'], master: null },
 ];
 
 // Controles que viajan con cada pasada. Ninguno puede salir «coincide».
 const CONTROLES = [
-  { linea: 18, campo: 'Merchant.campoQueNoExiste', campoEn: 18, control: 'NO_EXISTE',
+  { campo: 'Merchant.campoQueNoExiste', comentario: 'cola', control: 'NO_EXISTE',
     cierre: null, escribe: ['merchant', 'campoQueNoExiste'], master: null },
-  { linea: 1453, campo: 'Albaran.estado', campoEn: 1453, control: 'CIEGO', etiqueta: 'Albaran.estado con un ancla inventada',
+  // SCRUM-1500b · el localizador por identidad también lleva su cero: un modelo que no está.
+  { campo: 'ModeloQueNoExiste.status', comentario: 'cola', control: 'NO_EXISTE',
+    cierre: null, escribe: ['modeloQueNoExiste', 'status'], master: null },
+  { campo: 'Albaran.estado', comentario: 'cola', control: 'CIEGO', etiqueta: 'Albaran.estado con un ancla inventada',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' },
     escribe: ['albaran', 'estado'],
     master: { ancla: /^\*\*EntidadQueElMasterNoTiene:\*\*/, lista: /`([^`]+)`/ } },
-  { linea: 1453, campo: 'Albaran.estado', campoEn: 1453, control: 'CIEGO', etiqueta: 'Albaran.estado con una constante inventada',
+  { campo: 'Albaran.estado', comentario: 'cola', control: 'CIEGO', etiqueta: 'Albaran.estado con una constante inventada',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'CONSTANTE_QUE_NO_EXISTE' },
     escribe: ['albaranInventado', 'estado'],
     master: { ancla: /^\*\*Albaran \(NO fiscal\)/, lista: /:\*\* `([^`]+)`/ } },
@@ -136,25 +147,87 @@ function valoresDeLista(texto, separador = /\||→/) {
  * línea) y, si la línea de antes acaba abriendo esa racha, la junta (el caso de `Job.tipoOperacion`,
  * partido en dos líneas: lo que el censo viejo declaraba no ver).
  */
-function valoresDelComentario(lineas, c) {
-  const desde = c.comentarioDesde ?? c.linea;
+function valoresDelComentario(lineas, sitio) {
   const trozos = [];
-  for (let n = desde; n <= c.linea; n += 1) {
+  let texto = '';
+  for (let n = sitio.desde; n <= sitio.hasta; n += 1) {
     const l = lineas[n - 1] ?? '';
     const corte = l.indexOf('//');
-    if (corte < 0) return null;
-    trozos.push(l.slice(corte).replace(/^\/+\s?/, ''));
+    if (corte < 0) continue;
+    trozos.push({ linea: n, desde: texto.length });
+    texto += `${l.slice(corte).replace(/^\/+\s?/, '')} `;
   }
-  const texto = trozos.join(' ');
   const palabra = "['\"`]?[\\p{L}_][\\p{L}\\p{N}_]*['\"`]?";
   const hueco = '(?:\\s*\\([^)|]*\\))?\\s*';
   // Entre dos valores caben un paréntesis de glosa y, en el caso partido en dos líneas, la glosa
   // entera («(varias visitas → …, art. 13)»): por eso el hueco admite un paréntesis sin `|` dentro.
   const racha = new RegExp(`${palabra}${hueco}(?:\\|${hueco}${palabra}${hueco})+`, 'gu');
-  const rachas = texto.match(racha) || [];
-  if (rachas.length === 0) return new Set();
-  const larga = rachas.sort((a, b) => b.split('|').length - a.split('|').length)[0];
-  return valoresDeLista(larga, /\|/);
+  const rachas = [...texto.matchAll(racha)];
+  if (rachas.length === 0) return { valores: new Set(), linea: sitio.campoEn };
+  const larga = rachas.sort((a, b) => b[0].split('|').length - a[0].split('|').length)[0];
+  // La línea que se nombra es la de la primera barra de la racha (SCRUM-1500b): es un dato para
+  // quien lee la salida, no un ancla. El ancla es el modelo y el campo.
+  const barra = larga.index + larga[0].indexOf('|');
+  const linea = trozos.filter((t) => t.desde <= barra).pop().linea;
+  return { valores: valoresDeLista(larga[0], /\|/), linea };
+}
+
+/**
+ * SCRUM-1500b · DÓNDE VIVE EL CAMPO Y SU COMENTARIO, POR IDENTIDAD: el modelo y el nombre del campo,
+ * nunca un número de línea. Hasta aquí la tabla llevaba `linea` y `campoEn`, y por eso el instrumento
+ * no podía correr en el CI: cualquier cambio del esquema que moviera líneas lo dejaba leyendo otro
+ * campo. El comentario es uno de tres sitios, y la tabla dice cuál:
+ *   'cola'      detrás del campo, en su misma línea
+ *   'encima'    el bloque de comentarios pegado encima del campo (o del hermano `encimaDe`, cuando
+ *               un solo bloque explica dos columnas)
+ *   'cabecera'  el bloque de comentarios pegado encima de `model X {`
+ * Si el modelo o el campo no aparecen EXACTAMENTE una vez, no existe: no se adivina cuál.
+ */
+function localizar(lineas, c) {
+  const [modelo, campo] = c.campo.split('.');
+  const reModelo = new RegExp(`^model\\s+${modelo}\\s*\\{`);
+  const abre = [];
+  for (const [i, l] of lineas.entries()) if (reModelo.test(l)) abre.push(i);
+  if (abre.length !== 1) return { existe: false, motivo: `el modelo ${modelo} aparece ${abre.length} veces en el esquema (tiene que ser 1)` };
+  let cierra = abre[0] + 1;
+  while (cierra < lineas.length && !/^\}/.test(lineas[cierra])) cierra += 1;
+  const deCampo = (nombre) => {
+    const re = new RegExp(`^\\s+${nombre}\\s`);
+    const o = [];
+    for (let i = abre[0] + 1; i < cierra; i += 1) if (re.test(lineas[i])) o.push(i);
+    return o;
+  };
+  const suyas = deCampo(campo);
+  if (suyas.length !== 1) return { existe: false, motivo: `el campo ${campo} aparece ${suyas.length} veces en el modelo ${modelo} (tiene que ser 1)` };
+  const esComentario = (i) => /^\s*\/\//.test(lineas[i] ?? '');
+  // El bloque de comentarios pegado encima de la línea `i`. Si no hay ninguno sale vacío (desde > hasta).
+  const bloqueSobre = (i) => { let a = i; while (a - 1 >= 0 && esComentario(a - 1)) a -= 1; return [a, i - 1]; };
+  let rango = [suyas[0], suyas[0]];
+  if (c.comentario === 'cabecera') rango = bloqueSobre(abre[0]);
+  else if (c.comentario === 'encima') {
+    let pie = suyas[0];
+    if (c.encimaDe) {
+      const hermano = deCampo(c.encimaDe);
+      if (hermano.length !== 1) return { existe: false, motivo: `el campo ${c.encimaDe} aparece ${hermano.length} veces en el modelo ${modelo} (tiene que ser 1)` };
+      pie = hermano[0];
+    }
+    rango = bloqueSobre(pie);
+  } else if (c.comentario !== 'cola') return { existe: false, motivo: `la tabla no dice dónde está el comentario de ${c.campo} (cola, encima o cabecera)` };
+  return { existe: true, motivo: null, campoEn: suyas[0] + 1, desde: rango[0] + 1, hasta: rango[1] + 1 };
+}
+
+/** Los campos del esquema que por su nombre son un estado (`esEstado`). Es la población que la tabla NO agota. */
+function camposDeEstado(lineas) {
+  const fuera = [];
+  let modelo = null;
+  for (const l of lineas) {
+    const m = /^model\s+(\w+)\s*\{/.exec(l);
+    if (m) { modelo = m[1]; continue; }
+    if (/^\}/.test(l)) { modelo = null; continue; }
+    const c = modelo && /^\s+(\w+)\s+\w/.exec(l);
+    if (c && esEstado(`${modelo}.${c[1]}`)) fuera.push(`${modelo}.${c[1]}`);
+  }
+  return fuera;
 }
 
 function cargarTs(raiz) {
@@ -289,12 +362,10 @@ function censarEscrituras(ts, raiz, objetivos) {
 }
 
 /** El @default de la línea del campo, si lo hay. */
-function defectoDelEsquema(lineas, c) {
-  const l = lineas[c.campoEn - 1] ?? '';
-  const nombre = c.campo.split('.')[1];
-  if (!new RegExp(`^\\s+${nombre}\\s`).test(l)) return { existe: false, defecto: null };
-  const m = /@default\("([^"]*)"\)/.exec(l.split('//')[0]);
-  return { existe: true, defecto: m ? m[1] : null };
+function defectoDelEsquema(lineas, sitio) {
+  if (!sitio.existe) return null;
+  const m = /@default\("([^"]*)"\)/.exec((lineas[sitio.campoEn - 1] ?? '').split('//')[0]);
+  return m ? m[1] : null;
 }
 
 /** M: la lista del máster, o por qué no se pudo leer. */
@@ -324,7 +395,7 @@ function rastroEnElMaster(lineasMaster, campo, valores) {
     if (valores.size > 0 && cuantos === valores.size) juntas.push(i + 1);
     for (const n of nombres) if (palabra(n).test(l)) delNombre[n].push(i + 1);
   }
-  return { porValor, delNombre, juntas };
+  return { porValor, delNombre, juntas, juntasTexto: juntas.map((n) => lineasMaster[n - 1]) };
 }
 
 /** El veredicto, puro: tres conjuntos y dos banderas. Es lo que prueba el test. */
@@ -343,6 +414,9 @@ function veredicto({ existe, C, D, M, masterDeclarado, masterMotivo, campo, cier
   const faltan = menos(M, D);
   if (sobran.length > 0) return { veredicto: 'CODIGO_FUERA_DEL_MASTER', porque: `el código tiene ${sobran.join(', ')} y el máster no${faltan.length ? `; y el máster manda ${faltan.join(', ')}, que el código no tiene` : ''}`, sobran, faltan };
   if (faltan.length > 0) return { veredicto: 'MASTER_SIN_ESCRIBIR', porque: `el máster manda ${faltan.join(', ')} y el código no lo tiene`, sobran, faltan };
+  // SCRUM-1500b · un comentario que NO enumera no está atrasado: no hay lista que comparar. Que
+  // deje de enumerar sin que la tabla lo diga lo caza `juzgar` (sinLista), no este cajón.
+  if (C && C.size === 0) return { veredicto: 'COINCIDE_CON_EL_MASTER', porque: 'código y máster dicen lo mismo; el comentario no enumera valores' };
   if (!C || !igual(C, D)) return { veredicto: 'COMENTARIO_ATRASADO', porque: 'código y máster coinciden; el comentario no' };
   return { veredicto: 'COINCIDE_CON_EL_MASTER', porque: 'comentario, código y máster dicen lo mismo' };
 }
@@ -353,18 +427,33 @@ function censoViejo(C, D) {
   return igual(C, D) ? 'coincide' : 'diverge';
 }
 
-function cotejar({ raiz = RAIZ_POR_DEFECTO, master = null, campos = CAMPOS, controles = CONTROLES } = {}) {
+// El barrido de `src/` es lo caro (un parseo por fichero) y no depende ni del máster ni del esquema:
+// se hace una vez por raíz y por lista de columnas, para que el test pueda repetir el cotejo con un
+// máster cambiado en memoria sin volver a leer el árbol.
+const BARRIDOS = new Map();
+
+/**
+ * `textoMaster` y `textoEsquema` (SCRUM-1500b) sustituyen EN MEMORIA a los dos ficheros: es como el
+ * test mueve una línea del máster, o desplaza el esquema entero, sin escribir nada en disco.
+ */
+function cotejar({ raiz = RAIZ_POR_DEFECTO, master = null, textoMaster = null, textoEsquema = null, campos = CAMPOS, controles = CONTROLES } = {}) {
   const ts = cargarTs(raiz);
   if (!ts) return { ciego: 'no encuentro el módulo typescript' };
-  const lineasEsquema = fs.readFileSync(path.join(raiz, 'prisma', 'schema.prisma'), 'utf8').split(/\r?\n/);
+  const lineasEsquema = (textoEsquema ?? fs.readFileSync(path.join(raiz, 'prisma', 'schema.prisma'), 'utf8')).split(/\r?\n/);
   const rutaMaster = master ? path.resolve(master) : path.join(raiz, 'docs', 'YAQU_MASTER.md');
-  const lineasMaster = fs.readFileSync(rutaMaster, 'utf8').split(/\r?\n/);
+  const lineasMaster = (textoMaster ?? fs.readFileSync(rutaMaster, 'utf8')).split(/\r?\n/);
   const todos = [...campos, ...controles];
-  const { salida: escrituras, ficheros, sinParsear } = censarEscrituras(ts, raiz, todos.map((c) => c.escribe));
+  const clave = `${raiz}\n${todos.map((c) => c.escribe.join('.')).join('\n')}`;
+  if (!BARRIDOS.has(clave)) BARRIDOS.set(clave, censarEscrituras(ts, raiz, todos.map((c) => c.escribe)));
+  const { salida: escrituras, ficheros, sinParsear } = BARRIDOS.get(clave);
   const cache = new Map();
+  const enLaTabla = new Set(campos.map((c) => c.campo));
   const filas = todos.map((c) => {
-    const { existe, defecto } = defectoDelEsquema(lineasEsquema, c);
-    const C = existe ? valoresDelComentario(lineasEsquema, c) : null;
+    const sitio = localizar(lineasEsquema, c);
+    const { existe } = sitio;
+    const defecto = defectoDelEsquema(lineasEsquema, sitio);
+    const comentario = existe ? valoresDelComentario(lineasEsquema, sitio) : null;
+    const C = comentario ? comentario.valores : null;
     const cierre = valoresDelCierre(ts, raiz, c.cierre, cache);
     const esc = escrituras.get(c.escribe.join('.'));
     const D = new Set([...cierre.valores, ...esc.valores, ...(defecto ? [defecto] : [])]);
@@ -372,7 +461,9 @@ function cotejar({ raiz = RAIZ_POR_DEFECTO, master = null, campos = CAMPOS, cont
     const v = veredicto({ existe, C, D, M: m.valores, masterDeclarado: !!c.master, masterMotivo: m.motivo, campo: c.campo, cierreRoto: c.cierre && cierre.valores.size === 0 ? cierre.de : null });
     const rastro = !c.master && existe ? rastroEnElMaster(lineasMaster, c.campo, D) : null;
     return {
-      linea: c.linea, campo: c.etiqueta || c.campo, control: c.control || null,
+      linea: comentario ? comentario.linea : 0, campoEn: existe ? sitio.campoEn : 0, noExistePorque: sitio.motivo,
+      id: c.campo, sinLista: !!c.sinLista,
+      campo: c.etiqueta || c.campo, control: c.control || null,
       C: C ? ordenado(C) : null, D: ordenado(D), M: m.valores ? ordenado(m.valores) : null, lineaMaster: m.linea,
       cierre: ordenado(cierre.valores), cierreDe: cierre.de, escritos: ordenado(esc.valores), sitios: esc.sitios,
       noLiterales: esc.noLiterales, defecto,
@@ -382,9 +473,165 @@ function cotejar({ raiz = RAIZ_POR_DEFECTO, master = null, campos = CAMPOS, cont
     };
   });
   return {
-    poblacion: { campos: campos.length, controles: controles.length, ficheros, sinParsear, lineasEsquema: lineasEsquema.length, lineasMaster: lineasMaster.length, master: rutaMaster },
+    poblacion: {
+      campos: campos.length, controles: controles.length, ficheros, sinParsear, lineasEsquema: lineasEsquema.length, lineasMaster: lineasMaster.length, master: rutaMaster,
+      estadosFueraDeLaTabla: camposDeEstado(lineasEsquema).filter((c) => !enLaTabla.has(c)),
+    },
     filas,
   };
+}
+
+// ───────────────────────── SCRUM-1500b · EL JUICIO: qué pone el CI en rojo ─────────────────────────
+//
+// Decisión del orquestador de Javier en Jira, SCRUM-1500 c.18831 (8-oct-2026): el instrumento corre
+// sobre el árbol en la tanda normal, como un fichero de test. Lo que se vigila es que la pregunta
+// siga siendo «¿dice el CÓDIGO lo mismo que el MÁSTER?».
+//
+// SE PARA (sale nombrado) todo campo cuyo veredicto esté aquí. NO se nombran COINCIDE_CON_EL_MASTER
+// ni EL_MASTER_NO_LO_FIJA; este último se IMPRIME como «sin cotejar», porque no es un verde.
+const SE_PARA = new Set(['NO_EXISTE', 'CIEGO', 'CODIGO_FUERA_DEL_MASTER', 'MASTER_SIN_ESCRIBIR', 'COMENTARIO_ATRASADO', 'ESTADO_SIN_MAQUINA_EN_EL_MASTER']);
+
+// 🔴 LOS TRES PARADOS. Esperan una decisión del fundador (regla 27) y tienen que poder esperarla sin
+// poner el CI en rojo. NO son un «ignora este campo»: cada entrada congela EXACTAMENTE lo que se le
+// llevó al fundador (el veredicto, los valores del código y los del máster). Si el código gana o
+// pierde un valor, si el máster cambia su lista, o si el campo deja de estar parado, la entrada ya
+// no describe lo que hay y el guard cae nombrándola. Una entrada lleva:
+//   motivo   por qué espera            retira   quién la quita, y cuándo
+//   consta   dónde está escrito        desde    el día en que se paró (se imprime su edad; NO caduca
+//                                               sola: ponerle plazo al fundador no es de este fichero)
+//   leidas   un trozo literal de cada línea del máster que junta todos los valores y que YA se leyó
+//            y no es su lista. Una línea nueva que los junte no está leída: cae.
+// «Sigue montada» se comprueba en cada pasada y por AST: los valores de `D` tienen que salir de un
+// cierre encontrado en `src/` o de una escritura de Prisma, no sólo del @default del esquema.
+const PARADOS = [
+  {
+    campo: 'QuoteRequest.status',
+    veredicto: 'CODIGO_FUERA_DEL_MASTER',
+    D: [
+      'done',
+      'pending',
+      'read',
+    ],
+    M: [
+      'converted',
+      'discarded',
+      'new',
+      'seen',
+    ],
+    leidas: [],
+    motivo: 'el código escribe pending/read/done y la Parte L del máster dice new → seen → converted | discarded: ningún valor en común. Es cambio de máster o cambio de código (regla 27), y no lo decide una sesión',
+    retira: 'el fundador decide; quien aplique su decisión (máster o código) borra esta entrada en ese mismo PR',
+    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
+    desde: '2026-10-07',
+  },
+  {
+    campo: 'ParteTrabajo.estado',
+    veredicto: 'ESTADO_SIN_MAQUINA_EN_EL_MASTER',
+    D: [
+      'borrador',
+      'facturado',
+      'firmado',
+    ],
+    M: null,
+    leidas: [
+      'Estado de COBRO del albarán — VOCABULARIO DERIVADO',
+      'SCRUM-170 (FACT-2c) · facturación PARCIAL por cantidad servida',
+    ],
+    motivo: 'es un estado y el máster no nombra la entidad: o la Parte L gana su máquina, o se dice que no es una máquina de la Parte L (regla 27). Las dos líneas del máster que juntan sus tres valores hablan del albarán',
+    retira: 'el fundador decide; quien escriba la máquina en el máster (o la declaración de que no lo es) borra esta entrada y le pone ancla al campo en CAMPOS, en ese mismo PR',
+    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
+    desde: '2026-10-07',
+  },
+  {
+    campo: 'TeamMember.status',
+    veredicto: 'ESTADO_SIN_MAQUINA_EN_EL_MASTER',
+    D: [
+      'active',
+      'invited',
+      'suspended',
+    ],
+    M: null,
+    leidas: [],
+    motivo: 'es un estado y la Parte L no trae máquina para TeamMember: sus tres valores sólo salen en prosa. O la Parte L gana la máquina, o se dice que no lo es (regla 27)',
+    retira: 'el fundador decide; quien escriba la máquina en el máster (o la declaración de que no lo es) borra esta entrada y le pone ancla al campo en CAMPOS, en ese mismo PR',
+    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
+    desde: '2026-10-07',
+  },
+];
+
+const mismos = (a, b) => (a === null || b === null ? a === b : a.length === b.length && a.every((x, i) => x === b[i]));
+
+/**
+ * El juicio sobre una pasada. Devuelve `hallazgos` (lo que pone el CI en rojo, cada uno con su campo)
+ * y tres listas que se IMPRIMEN siempre: lo que coincide, lo que no se pudo cotejar y lo que espera.
+ */
+function juzgar(r, parados = PARADOS, hoy = new Date()) {
+  const hallazgos = [];
+  const di = (campo, clase, texto) => hallazgos.push({ campo, clase, texto });
+  if (r.ciego) return { fiable: false, hallazgos: [{ campo: '(instrumento)', clase: 'INSTRUMENTO_CIEGO', texto: r.ciego }], coinciden: [], sinCotejar: [], esperan: [] };
+  const p = r.poblacion;
+  if (!(p.ficheros > 0)) di('(instrumento)', 'INSTRUMENTO_CIEGO', 'no leí ningún fichero .ts bajo src/');
+  if (p.sinParsear > 0) di('(instrumento)', 'INSTRUMENTO_CIEGO', `${p.sinParsear} fichero(s) de src/ sin parsear`);
+  if (!(p.campos > 0)) di('(instrumento)', 'INSTRUMENTO_CIEGO', 'la tabla de campos está vacía');
+  for (const f of r.filas.filter((x) => x.control)) {
+    if (f.veredicto !== f.control) di(f.campo, 'CONTROL_ROTO', `el control tenía que salir ${f.control} y sale ${f.veredicto}: el instrumento ya no distingue lo que no pudo mirar`);
+  }
+  for (const e of parados) {
+    for (const k of ['motivo', 'retira', 'consta', 'desde']) if (!e[k] || !String(e[k]).trim()) di(e.campo, 'EXCEPCION_SIN_PAPELES', `a la excepción le falta «${k}»: sin eso no es una excepción, es una promesa`);
+  }
+  const reales = r.filas.filter((x) => !x.control);
+  const coinciden = [];
+  const sinCotejar = [];
+  const esperan = [];
+  const usadas = new Set();
+  for (const f of reales) {
+    const e = parados.find((x) => x.campo === f.id) || null;
+    if (f.veredicto !== 'NO_EXISTE' && (f.C || []).length > 0 === f.sinLista) {
+      di(f.campo, 'COMENTARIO_CAMBIO_DE_FORMA', f.sinLista
+        ? 'la tabla dice que su comentario no enumera (sinLista) y enumera: quita `sinLista` de su entrada en CAMPOS'
+        : 'su comentario ya no enumera valores, o no lo encuentro donde la tabla dice. Si se firmó quitarle la lista, dilo en su entrada de CAMPOS con `sinLista: true`');
+    }
+    if (!SE_PARA.has(f.veredicto)) {
+      if (e) { usadas.add(e); di(f.campo, 'EXCEPCION_SOBRANTE', `tiene una excepción de «parado» y hoy sale ${f.veredicto}: ya no espera nada. Bórrala de PARADOS`); }
+      if (f.veredicto === 'EL_MASTER_NO_LO_FIJA') {
+        if (f.rastro && f.rastro.juntas.length > 0) di(f.campo, 'POSIBLE_LISTA_EN_EL_MASTER', `la tabla dice que el máster no lo fija, y la(s) línea(s) ${f.rastro.juntas.join(', ')} del máster juntan TODOS sus valores. Léela(s): si es su lista, ponle ancla en CAMPOS`);
+        else sinCotejar.push(f.campo);
+      } else coinciden.push(f.campo);
+      continue;
+    }
+    if (!e) { di(f.campo, f.veredicto, f.noExistePorque || f.porque); continue; }
+    usadas.add(e);
+    const antes = hallazgos.length;
+    const rota = (texto) => di(f.campo, 'EXCEPCION_QUE_YA_NO_DESCRIBE', `${texto}. Lo que espera al fundador es lo que se le llevó, no esto: vuelve a preguntar (PARADOS no se ensancha a mano)`);
+    if (f.veredicto !== e.veredicto) rota(`se paró como ${e.veredicto} y hoy sale ${f.veredicto} (${f.porque})`);
+    if (!mismos(f.D, e.D)) rota(`el código tenía ${e.D.join(' | ')} y hoy tiene ${f.D.join(' | ') || '(nada)'}`);
+    if (!mismos(f.M, e.M)) rota(`el máster decía ${e.M ? e.M.join(' | ') : '(sin lista)'} y hoy dice ${f.M ? f.M.join(' | ') : '(sin lista)'}`);
+    if (f.cierre.length === 0 && f.sitios.length === 0) rota('ya no encuentro en src/ ni el cierre ni una escritura de esos valores: sólo queda el @default');
+    const sinLeer = f.rastro ? f.rastro.juntas.filter((n, i) => !e.leidas.some((t) => f.rastro.juntasTexto[i].includes(t))) : [];
+    if (sinLeer.length > 0) rota(`la(s) línea(s) ${sinLeer.join(', ')} del máster juntan todos sus valores y no están entre las ya leídas: puede ser su máquina`);
+    if (hallazgos.length === antes) {
+      const dias = Math.floor((hoy.getTime() - new Date(`${e.desde}T00:00:00Z`).getTime()) / 86400000);
+      esperan.push({ campo: f.campo, veredicto: f.veredicto, desde: e.desde, dias, montadaEn: [f.cierreDe, ...f.sitios].filter(Boolean), retira: e.retira });
+    }
+  }
+  for (const e of parados) if (!usadas.has(e)) di(e.campo, 'EXCEPCION_HUERFANA', 'está en PARADOS y no es ningún campo de la tabla: no sujeta nada. Bórrala');
+  return { fiable: !hallazgos.some((h) => h.clase === 'INSTRUMENTO_CIEGO' || h.clase === 'CONTROL_ROTO'), hallazgos, coinciden, sinCotejar, esperan };
+}
+
+/** Lo que el juicio dice siempre, caiga o no: su población, lo que no miró y lo que espera. */
+function pintaJuicio(r, j) {
+  const out = [];
+  if (r.ciego) return `JUICIO: CIEGO — ${r.ciego}`;
+  const p = r.poblacion;
+  out.push(`JUICIO sobre ${p.campos} comentarios (${p.controles} controles aparte) · ${p.ficheros} ficheros .ts bajo src/, ${p.sinParsear} sin parsear:`);
+  out.push(`  ${String(j.coinciden.length).padStart(2)}  coinciden con el máster`);
+  out.push(`  ${String(j.sinCotejar.length).padStart(2)}  SIN COTEJAR, el máster no trae su lista (no es un verde): ${j.sinCotejar.join(', ') || '—'}`);
+  out.push(`  ${String(j.esperan.length).padStart(2)}  PARADOS, esperan al fundador con su excepción: ${j.esperan.map((e) => `${e.campo} (${e.veredicto}, desde ${e.desde}: ${e.dias} días)`).join(' · ') || '—'}`);
+  for (const e of j.esperan) out.push(`        ${e.campo} sigue montado en: ${e.montadaEn.join(' · ')}`);
+  out.push(`  ${String(j.hallazgos.length).padStart(2)}  HALLAZGOS${j.hallazgos.length ? ':' : ''}`);
+  for (const h of j.hallazgos) out.push(`        🔴 ${h.campo} · ${h.clase} · ${h.texto}`);
+  out.push(`  FUERA DE LA TABLA, sin mirar: ${p.estadosFueraDeLaTabla.length} campo(s) del esquema con nombre de estado que este instrumento NO coteja${p.estadosFueraDeLaTabla.length ? ` (${p.estadosFueraDeLaTabla.join(', ')})` : ''}`);
+  return out.join('\n');
 }
 
 function pinta(r) {
@@ -428,17 +675,23 @@ function pinta(r) {
   out.push('');
   out.push(`CONTROLES: ${r.poblacion.controles - malos.length} de ${r.poblacion.controles} salen como tienen que salir · controles que salen «coincide»: ${coincidenDeMentira.length} (tiene que ser 0) · campos reales ciegos: ${ciegos.length} (tiene que ser 0)`);
   const ok = malos.length === 0 && coincidenDeMentira.length === 0 && ciegos.length === 0 && p.sinParsear === 0 && p.ficheros > 0;
-  out.push(ok ? 'EXIT=0' : 'INSTRUMENTO NO FIABLE\nEXIT=2');
-  return { texto: out.join('\n'), ok };
+  // SCRUM-1500b · el juicio va detrás, y la salida tiene tres valores: 0 nada que nombrar, 1 hay
+  // hallazgos, 2 el instrumento no es fiable (y entonces sus hallazgos no se creen).
+  const j = juzgar(r);
+  out.push('');
+  out.push(pintaJuicio(r, j));
+  const salida = !ok || !j.fiable ? 2 : (j.hallazgos.length > 0 ? 1 : 0);
+  out.push(salida === 2 ? 'INSTRUMENTO NO FIABLE\nEXIT=2' : `EXIT=${salida}`);
+  return { texto: out.join('\n'), ok, salida, juicio: j };
 }
 
-module.exports = { CAMPOS, CONTROLES, cotejar, veredicto, censoViejo, valoresDeLista, valoresDelComentario, valoresDelMaster, esEstado, pinta };
+module.exports = { CAMPOS, CONTROLES, PARADOS, SE_PARA, cotejar, juzgar, pintaJuicio, veredicto, censoViejo, valoresDeLista, valoresDelComentario, valoresDelMaster, localizar, camposDeEstado, esEstado, pinta };
 
 if (require.main === module) {
   const i = process.argv.indexOf('--master');
   const r = cotejar({ master: i > 0 ? process.argv[i + 1] : null });
   if (r.ciego) { console.log(`CIEGO: ${r.ciego}\nEXIT=2`); process.exit(2); }
-  const { texto, ok } = pinta(r);
+  const { texto, salida } = pinta(r);
   console.log(texto);
-  process.exit(ok ? 0 : 2);
+  process.exit(salida);
 }
