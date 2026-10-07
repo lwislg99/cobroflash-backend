@@ -156,3 +156,81 @@ En `docs/equipo/00-normas-comunes.md`, A19, a las 07:14Z del 7-oct:
 `docs/equipo/limites-del-fundador.md` no hay que tocarlo: dice que el fundador no lo ha vuelto a decidir y que
 sigue valiendo el de antes, y las dos cosas siguen siendo ciertas. La A19 no es de S5.
 **SCRUM-1484 no se cierra hasta que salga la primera.**
+
+## SCRUM-1484c · El gemelo de la S0: la A19 deja de negar lo que el latido ya hace
+
+**Rama:** `scrum-1484c-la-a19-dice-que-el-latido-avisa` · **Carril:** S0 · **Fecha:** 7-oct-2026
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:14:29Z
+
+A9: comprobación → `tests/scrum1484c-la-a19-dice-lo-que-dice-el-latido.test.mjs`
+
+**El fallo, que es de la S0.** El código cambió el 6-oct (#2238) y la norma siguió un día diciendo lo contrario.
+S5 lo dejó escrito dos veces en este registro («Gemelo de la S0: sigue SIN hacer») y tres sesiones de la S0
+pasaron por delante esa mañana sin cogerlo: no estaba en ningún lote. Lo que lo impide de ahora en adelante no
+es acordarse: es el test de arriba.
+
+### Qué cambia
+
+| Dónde | Antes | Ahora |
+|---|---|---|
+| A19, «en mitad de una entrega» | «⚠️ El latido no avisa de este caso (SCRUM-1484)… los 500k los vigila la propia sesión con la casilla 1» | dice que el latido avisa, cita las dos conductas que imprime `fraseDeRelevo`, y que la casilla 1 no cambia |
+| A19, «Son dos números a propósito» | «⏳ Ese segundo número está sin volver a decidir (lo decide el fundador; SCRUM-1479)» | se queda en 500k: lo dejó el orquestador de Luis el 7-oct (SCRUM-1479, comentario 18622); no lo firmó el fundador porque no cambia el número ni sube el gasto; moverlo sí es suyo |
+| A19, «Por qué 300k», último punto | «Para el número de «a mitad», que está sin decidir.» | «Para el número de «a mitad» (500k; quien lo quiera mover lo recalcula con esto).» |
+| `tests/scrum1484c-…test.mjs` | no existía: nada ataba la A19 al código | los dos números de la A19 son `UMBRAL_CONTEXTO` y `UMBRAL_CONTEXTO_A_MITAD`, y la A19 cita literales las dos conductas |
+
+Las palabras sobre quién dejó el 500k son las que S5 ya escribió en el comentario de la constante
+(`scripts/equipo/sesion.mjs`) y en `orquestador-autonomo.md` §5bis.1: los tres papeles dicen lo mismo.
+`docs/equipo/limites-del-fundador.md` no se toca: dice que el fundador no lo ha vuelto a decidir, y sigue siendo
+cierto.
+
+### Aceptación → dónde se ve
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| 5 · La frase «el latido no avisa de este caso» sale de la A19 en el mismo PR o en uno gemelo de la S0 nombrado en el registro | `docs/equipo/00-normas-comunes.md`, A19: `git grep -c "latido no avisa" -- docs/equipo/00-normas-comunes.md` no imprime nada y sale 1 |
+
+Las líneas 1 a 4 son de S5 y están arriba, en su entrega.
+
+### Visto en rojo
+
+`node docs/master/evidencias/SCRUM-1484/rojos-1484c.mjs <raíz ABSOLUTA del árbol>`: cuatro cambios de una línea,
+cada uno deshecho antes del siguiente.
+
+| Cambio | Caen (de 3) | Cuál |
+|---|---|---|
+| base, el árbol como está | 0 | — |
+| A · la norma deja de citar la frase de «YA» | 1 | «la A19 cita las dos conductas…» |
+| B · la norma dice 200k donde el código dice 300k | 1 | «los dos números de la A19…» |
+| C · el código baja el segundo número a 450k | 1 | «los dos números de la A19…» |
+| D · el código cambia la frase de «YA» | 1 | «la A19 cita las dos conductas…» |
+| restaurado | 0 | — |
+
+Y el tercer caso del test lleva dentro, con texto fijo, el párrafo que la A19 tuvo hasta hoy: cae por una sola
+cosa, no citar la frase de «YA».
+
+**Lo que me salió mal en esta misma rama, y quién lo cazó.** Ese instrumento escribe en el árbol y lo deshace al
+acabar. Lo corrí una vez cortándole la salida a la primera línea: el corte lo mató con el cambio A puesto, y el
+primer commit de la rama (`ab441fcf25dc14c4aa92e2a26121cc2d5a01fa65`) lleva la norma diciendo «se releva pronto». Lo
+cazó este test en la tanda dirigida, antes de empujar nada: 236 ficheros, 2.364 tests, 1 caído, éste. El commit
+siguiente lo deshace. Desde
+entonces el instrumento mira antes de empezar si el árbol trae ya uno de sus cambios, y si lo trae no corre
+(sale 2 y dice cuál). Cicatriz en `docs/equipo/cicatrices/S0.md`.
+
+### Lo que NO ata
+
+- Sólo mira los dos números en las dos frases donde la A19 los MANDA («¿Pasa de **300k**?» y «si pasa de
+  **500k**»). El resto de cifras de la A19 son mediciones fechadas y no las toca.
+- No ata `limites-del-fundador.md` ni la A25.
+- No corre el latido: compara la norma con lo que devuelve `fraseDeRelevo`. Que el latido use esa función lo
+  ata `tests/scrum1350-latido.test.mjs`.
+
+### De paso, sin ticket (orden nº 1, A13)
+
+- **Cuatro filas en `docs/equipo/afirmaciones-verificadas.md`**, de la orden de arranque del orquestador del
+  7-oct a las 14:55Z: «23 andamios y 28 defectos de 51» (eran 49: 19 · 16 · 14), «de 51 a 7» (18 de los que
+  desaparecieron sólo recibieron un comentario), «el candado bloquea de verdad» (en la sesión que recibió la
+  orden no corre) y «16 PR» y «34 de Javier» (16 sí; 45, con 32 sin tocarse).
+- **El criterio de «andamio o producto», en git para que se pueda volver a correr:**
+  `docs/master/evidencias/orden-1-cerrar-no-abrir-7oct/andamio-o-producto.mjs`, con su población
+  (`poblacion-49.txt`) y su tabla a mano (`clasificacion.tsv`, 76 tickets). Sólo lee. Controles vistos: una
+  población con un ticket sin fila sale 1 y lo nombra; una vacía sale 2.
