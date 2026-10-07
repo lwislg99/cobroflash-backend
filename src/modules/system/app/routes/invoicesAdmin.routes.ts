@@ -48,7 +48,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
-import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
@@ -67,7 +67,7 @@ import {
   modoDocumentoSuelto, validarFacturaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
 } from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
-
+import { falloDeEnvioDeFactura } from '../../../invoicing/domain/envioQueNoSale'; // SCRUM-1478
 
 const router = Router();
 
@@ -669,9 +669,9 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
       // Envío intentado, no salió (wa_opt_out/daily_cap/customer_daily_cap/demo_safe_numbers/
       // charge_creation_*/whatsapp_send_failed) — A20.5 (J5): charge_id/pay_token SIEMPRE
       // presentes para que la UI pueda ofrecer "Copiar enlace" aunque WhatsApp falle.
-      const reason: SendFailureReason =
-        r.reason && r.reason in SEND_FAILURE_MESSAGES ? (r.reason as SendFailureReason) : 'whatsapp_send_failed';
-      return res.status(200).json(sendFailureBody(reason, {
+      const motivo = r.motivoDelEnvio ?? r.reason; // SCRUM-1478: el motivo REAL del envío (baja, tope…), que `reason` aplana
+      const reason: SendFailureReason = motivo && motivo in SEND_FAILURE_MESSAGES ? (motivo as SendFailureReason) : 'whatsapp_send_failed';
+      return res.status(200).json(falloDeEnvioDeFactura(reason, {
         charge_id: r.chargeId ?? null,
         pay_token: r.payToken ?? null, // SCRUM-85: el frontend debe construir /pay/invoice con ESTO, no charge_id
       }));
@@ -719,7 +719,7 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
     // hermano de presupuestos (quotesAdmin.routes.ts): 200 + sent:false, salvo que sea
     // realmente la factura la que no existe (defensivo: el caller ya la comprobó arriba).
     if (err?.message === 'invoice_not_found') return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.status(200).json(sendFailureBody('email_send_failed'));
+    return res.status(200).json(falloDeEnvioDeFactura('email_send_failed'));
   }
 });
 
@@ -812,7 +812,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     }
 
     const extra = { via: payUrl ? 'template' : 'text', phone };
-    return res.json(sent ? sendSuccessBody(extra) : sendFailureBody(failReason, extra));
+    return res.json(sent ? sendSuccessBody(extra) : falloDeEnvioDeFactura(failReason, extra));
   } catch (err) {
     console.error('[POST /admin/invoices/:id/send-reminder]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
