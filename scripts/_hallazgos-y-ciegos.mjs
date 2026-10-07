@@ -166,9 +166,12 @@ export async function recorrerCasos(casos, juzgarCaso, nombrar = (caso) => Strin
     ciegos.push(...devueltosCiegos);
   }
   if (recorridos === 0) ciegos.push('no se recorrió ni un solo caso: «0 hallazgos» sobre nada no es una medición');
+  // «en las listas del recorrido», y no «traían hallazgos» a secas: es lo único que el recorrido ve.
+  // Un guard que apunta en una lista del MÓDULO tampoco pierde nada al lanzar, pero aquí cuenta 0
+  // (visto en `guard-duplicar-926`: el error de página sale en su veredicto, no en esta cuenta).
   const linea = MARCA_RECORRIDO + ' ' + recorridos + (recorridos === 1 ? ' caso recorrido' : ' casos recorridos')
     + ' · ' + lanzaron + (lanzaron === 1 ? ' lanzó' : ' lanzaron')
-    + ' · ' + lanzaronConHallazgos + ' de ésos ' + (lanzaronConHallazgos === 1 ? 'traía' : 'traían') + ' hallazgos';
+    + ' · ' + lanzaronConHallazgos + ' de ésos ' + (lanzaronConHallazgos === 1 ? 'traía' : 'traían') + ' hallazgos en las listas del recorrido';
   decir(linea);
   return { hallazgos, ciegos, recorridos, lanzaron, lanzaronConHallazgos, linea };
 }

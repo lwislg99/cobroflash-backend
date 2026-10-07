@@ -1,0 +1,99 @@
+{
+  "sha": "62eb8dc06b5a25f644ccb7d309fe6ae808d03aa1",
+  "etiqueta": "despues",
+  "pasadas": 7,
+  "validas": 7,
+  "filas": [
+    {
+      "id": "duplicar-926-limpio",
+      "guard": "duplicar-926",
+      "escenario": "limpio",
+      "valida": true,
+      "invalida": null,
+      "codigo": 0,
+      "segundos": 4.8,
+      "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": false,
+      "nombraLaLecturaRota": false
+    },
+    {
+      "id": "duplicar-926-error-visto",
+      "guard": "duplicar-926",
+      "escenario": "error-visto",
+      "valida": true,
+      "invalida": null,
+      "codigo": 1,
+      "segundos": 13.2,
+      "veredicto": "⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": true,
+      "nombraLaLecturaRota": false
+    },
+    {
+      "id": "duplicar-926-lanza-sin-nada",
+      "guard": "duplicar-926",
+      "escenario": "lanza-sin-nada",
+      "valida": true,
+      "invalida": null,
+      "codigo": 2,
+      "segundos": 5.9,
+      "veredicto": "⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": false,
+      "nombraLaLecturaRota": true
+    },
+    {
+      "id": "duplicar-926-error-visto-y-lanza",
+      "guard": "duplicar-926",
+      "escenario": "error-visto-y-lanza",
+      "valida": true,
+      "invalida": null,
+      "codigo": 1,
+      "segundos": 4.7,
+      "veredicto": "⟦veredicto⟧ 1 hallazgo · 4 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": true,
+      "nombraLaLecturaRota": true
+    },
+    {
+      "id": "caja-datos-del-cliente-limpio",
+      "guard": "caja-datos-del-cliente",
+      "escenario": "limpio",
+      "valida": true,
+      "invalida": null,
+      "codigo": 0,
+      "segundos": 4.8,
+      "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
+      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": false,
+      "nombraLaLecturaRota": false
+    },
+    {
+      "id": "caja-documento-suelto-limpio",
+      "guard": "caja-documento-suelto",
+      "escenario": "limpio",
+      "valida": true,
+      "invalida": null,
+      "codigo": 0,
+      "segundos": 9.5,
+      "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
+      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": false,
+      "nombraLaLecturaRota": false
+    },
+    {
+      "id": "portal-en-la-ficha-limpio",
+      "guard": "portal-en-la-ficha",
+      "escenario": "limpio",
+      "valida": true,
+      "invalida": null,
+      "codigo": 0,
+      "segundos": 3.1,
+      "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "nombraElErrorVisto": false,
+      "nombraLaLecturaRota": false
+    }
+  ]
+}

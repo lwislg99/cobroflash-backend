@@ -1,0 +1,25 @@
+# duplicar-926-error-visto-y-lanza · sha 62eb8dc06b5a25f644ccb7d309fe6ae808d03aa1 · EXIT=1 · 4.7 s
+⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos
+{
+  "casos": {},
+  "controles": {}
+}
+
+── SCRUM-926 · duplicar conserva lo que cobra ──
+⬜ NO SUPE MIRAR · caso G: no se pudo medir — lectura rota por el banco de SCRUM-1392
+⬜ NO SUPE MIRAR · caso P: no se pudo medir — lectura rota por el banco de SCRUM-1392
+⬜ NO SUPE MIRAR · SUELO · el caso G se pudo abrir
+·  SIN JUZGAR (su caso no se pudo leer) · G · duplicar CONSERVA el descuento global de 25 €
+·  SIN JUZGAR (su caso no se pudo leer) · G · y deja su campo ABIERTO, no un importe detras de un boton
+⬜ NO SUPE MIRAR · SUELO · el caso P se pudo abrir
+✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
+·  SIN JUZGAR (su caso no se pudo leer) · P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
+🔴 sin errores de pagina en ninguno de los dos casos — G: error de pagina puesto por el banco de SCRUM-1392 · P: error de pagina puesto por el banco de SCRUM-1392
+
+NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
+                                        `currency` (el editor no tiene selector: usa la del merchant)
+
+POBLACION casillas=9 verdes=1 hallazgos=1 ciegos=4 sin-juzgar=3
+EXIT=1
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+⟦veredicto⟧ 1 hallazgo · 4 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos

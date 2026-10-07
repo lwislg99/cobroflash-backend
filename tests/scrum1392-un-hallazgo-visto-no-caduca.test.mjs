@@ -86,7 +86,7 @@ test('SCRUM-1392 · ③ la línea del recorrido sale SIEMPRE, una por recorrido,
   const dichas = [];
   const decir = (l) => dichas.push(l);
   const limpio = await recorrerCasos(['a', 'b'], async () => ({ hallazgos: [], ciegos: [] }), String, decir);
-  assert.deepEqual(dichas, [MARCA_RECORRIDO + ' 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos']);
+  assert.deepEqual(dichas, [MARCA_RECORRIDO + ' 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido']);
   assert.equal(limpio.linea, dichas[0]);
   assert.equal(veredictoDe(limpio).codigo, SALIDA_VERDE);
 
@@ -95,14 +95,14 @@ test('SCRUM-1392 · ③ la línea del recorrido sale SIEMPRE, una por recorrido,
     if (c === 'b') throw new Error('se cayó');
     return suyas;
   }, String, decir);
-  assert.equal(dichas[1], MARCA_RECORRIDO + ' 3 casos recorridos · 2 lanzaron · 1 de ésos traía hallazgos');
+  assert.equal(dichas[1], MARCA_RECORRIDO + ' 3 casos recorridos · 2 lanzaron · 1 de ésos traía hallazgos en las listas del recorrido');
 
   await recorrerCasos(['a'], async () => { throw new Error('se cayó'); }, String, decir);
-  assert.equal(dichas[2], MARCA_RECORRIDO + ' 1 caso recorrido · 1 lanzó · 0 de ésos traían hallazgos');
+  assert.equal(dichas[2], MARCA_RECORRIDO + ' 1 caso recorrido · 1 lanzó · 0 de ésos traían hallazgos en las listas del recorrido');
 
   // Cero casos: la línea sale igual, y el suelo de SCRUM-1327 sigue en pie.
   const vacio = await recorrerCasos([], async () => ({ hallazgos: [], ciegos: [] }), String, decir);
-  assert.equal(dichas[3], MARCA_RECORRIDO + ' 0 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos');
+  assert.equal(dichas[3], MARCA_RECORRIDO + ' 0 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido');
   assert.equal(veredictoDe(vacio).codigo, SALIDA_NO_SUPE_MEDIR);
   assert.equal(dichas.length, 4, 'una línea por recorrido, ni más ni menos');
 });
@@ -114,7 +114,7 @@ test('SCRUM-1392 · ③ sin decirle a quién, la línea va a la salida del guard
   try {
     await recorrerCasos(['a'], async () => ({ hallazgos: [], ciegos: [] }));
   } finally { console.log = original; }
-  assert.deepEqual(vistas, [MARCA_RECORRIDO + ' 1 caso recorrido · 0 lanzaron · 0 de ésos traían hallazgos']);
+  assert.deepEqual(vistas, [MARCA_RECORRIDO + ' 1 caso recorrido · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido']);
 });
 
 // ── ④ NINGÚN GUARD LLEVA LA LISTA EN LA MANO ───────────────────────────────────────────────────
