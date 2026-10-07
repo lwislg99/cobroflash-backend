@@ -573,15 +573,21 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
-  ⚠️ **El latido no avisa de este caso** (SCRUM-1484): a una sesión por encima de 500k le dice lo mismo que
-  a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega», que para ese caso es
-  lo contrario de esta norma. Hasta que ese ticket entre, los 500k los vigila la propia sesión con la
-  casilla 1.
+  **El latido avisa de este caso** (SCRUM-1484, en `main` desde el 6-oct-2026): a una sesión por encima de
+  500k le dice «se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y
+  relevo», y a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega». La frase
+  es UNA para el latido y para `sesion.mjs contexto N` (`fraseDeRelevo`), y se vio el 7-oct-2026 contra una
+  transcripción viva de 530k. La casilla 1 no cambia: la cifra la mide y la dice la propia sesión.
+  *(Hasta el 7-oct-2026 este párrafo decía lo contrario: que el latido daba a las dos la misma frase. Dejó
+  de ser cierto el 6-oct, al entrar ese ticket, y la norma tardó un día en decirlo: el papel y su gemelo
+  cambian juntos. Lo ata `tests/scrum1484c-la-a19-dice-lo-que-dice-el-latido.test.mjs`.)*
 
   **Son dos números a propósito, y el 6-oct-2026 sólo cambió uno.** 300k al entregar es el camino normal
   (era 200k; el porqué, abajo). 500k a mitad es la salida de emergencia y **es el de antes**: existe porque
-  una sesión llegó a ~560k sin decirlo (el fallo de abajo). ⏳ Ese segundo número está sin volver a decidir
-  (lo decide el fundador; SCRUM-1479); lo medido para decidirlo va abajo. La otra mitad de la norma no
+  una sesión llegó a ~560k sin decirlo (el fallo de abajo). Ese segundo número **se queda en 500k**:
+  el 7-oct-2026 el orquestador de Luis lo dejó como estaba (SCRUM-1479, comentario 18622), con lo medido
+  abajo delante. No lo firmó el fundador: no cambia el número ni sube el gasto. **Bajarlo o subirlo sí es
+  coste, y es suyo** (`limites-del-fundador.md`). La otra mitad de la norma no
   cambia: el umbral dice «ya toca»; el punto limpio dice «ahora».
 
   **Por qué 300k al entregar, y no los 200k de antes** (cambio del 6-oct-2026; quién lo autorizó, abajo).
@@ -622,7 +628,7 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
     (`--simular` sin número no arranca. Sale con código 1 cuando hay sesiones que relevar: no es un fallo.)
   - **El motivo.** Un umbral que salta antes de la primera entrega no se puede cumplir «al entregar», y uno
     que casi nadie cruza no ahorra. 300k es, además, el valor que esta norma tuvo hasta el 21-sep-2026.
-  - **Para el número de «a mitad», que está sin decidir.** Entre un push y el siguiente una sesión crece
+  - **Para el número de «a mitad» (500k; quien lo quiera mover lo recalcula con esto).** Entre un push y el siguiente una sesión crece
     64k de mediana, 169k en el percentil 90 y 216k como máximo (23 pares). Una sesión que entrega justo por
     debajo de 300k y hace una entrega más acaba, como mucho, hacia 470-516k; con la norma de 300k, la que
     más tarde se habría relevado lo habría hecho a 416k. Por encima de 500k ese día hubo 4 sesiones.
