@@ -8,8 +8,9 @@
 // Esta suite corre por `npm run test:staging:gated` — el runner
 // `scripts/staging-gated.mjs` (SCRUM-157) setea BOT_SUITE_TEST=1 en su hijo
 // aislado (líneas 63-65 de ese fichero). NO corre por `npm run test:staging`
-// (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166) ni por el
-// CI (`npm test`, ungated). En `npm test` normal aparece como SKIP y no toca nada.
+// (rutina, sin ese gate hasta que mergee la unificación de SCRUM-166). En `npm test`
+// sin banco aparece como SKIP y no toca nada; con `LIBRO_PG_URL` (la tanda de CI) corre
+// contra el banco desechable (SCRUM-876f, junto a `ENABLED`).
 //
 // ── SCRUM-159 (①): fixture EFÍMERO propio ────────────────────────────────────
 // Esta suite estuvo ROJA hasta SCRUM-159 porque dependía de un cliente del seed
@@ -28,14 +29,20 @@
 //   b) las tablas SIN FK se comprueban EXPLÍCITAMENTE vacías tras el borrado;
 //   c) la contraprueba de que limpia es un CONTEO tras la limpieza, no la ausencia de error.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando BOT_SUITE_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876e/f: segundo destino, inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-159 (①)
 // SCRUM-681: esperar la CONDICION, no el reloj — y un techo vencido no produce veredicto.
 import { esperarCondicion, esperarQuieto } from './_espera-quieta.mjs';
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876f
 
-const ENABLED = process.env.BOT_SUITE_TEST === '1';
+// SCRUM-876f: con `BOT_SUITE_TEST=1` nada cambia (staging). Sin ese gate y con `LIBRO_PG_URL`, la
+// suite corre contra el banco desechable, y ahí se corta además toda conexión hacia fuera: el
+// «0 llamadas a Meta» del final deja de ser lo que creemos y pasa a ser lo que se ha medido.
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.BOT_SUITE_TEST === '1' || CON_BANCO;
 
 // Se asignan DENTRO del test, desde merchant.id (efímero, único por construcción, NO del
 // reloj → sin el ciclo de ~16,7 min que colisionaría en el lookup cross-merchant del bot).
@@ -71,7 +78,14 @@ const mediaMsg = (type = 'image', id = wamid()) => ({ from: reqPhone(), id, type
 const locMsg = (id = wamid()) => ({ from: reqPhone(), id, type: 'location', location: { latitude: 40.4319, longitude: -3.7036, name: 'Chamberí, Madrid' } });
 const metaEnvelope = (msg) => ({ object: 'whatsapp_business_account', entry: [{ id: '0', changes: [{ field: 'messages', value: { messaging_product: 'whatsapp', messages: [msg] } }] }] });
 
-test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'sin BOT_SUITE_TEST=1 · npm run test:staging:gated' }, async () => {
+test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'sin BOT_SUITE_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'esta suite exige WHATSAPP_DRY_RUN=1');
+  // SCRUM-876f: el corte, y su control ANTES del primer mensaje (lanza si no ve axios y fetch).
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    t.after(() => corte.restaurar());
+    await corte.controlPositivo();
+  }
   const { app } = await import('../dist/app.js');
   const { prisma } = await import('../dist/core/db/prisma.js');
 
@@ -263,6 +277,12 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       const qr = await prisma.quoteRequest.findFirst({ where: { merchantId: MERCHANT_ID, description: MARKER } });
       assert.ok(qr, '8f QuoteRequest creado');
       assert.equal(qr.source, 'whatsapp_bot');
+      // SCRUM-876f: el aviso al profesional sale DESPUÉS del «¡Listo!» y sin esperarlo. Mirarlo en
+      // cuanto llegaba el primer mensaje lo decidía el reloj (medido dentro de un tramo de la
+      // tanda: cayó aquí). Se espera a la condición; si el techo vence, no hay veredicto.
+      await esperarCondicion(() => outbox.slice(len).some((m) => m.to !== TEST_PHONE), {
+        techoMs: 6000, pasoMs: 100, que: 'el aviso al profesional (8f)',
+      });
       assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE), '8f aviso al PRO enviado');
       log('8 pedir presupuesto (validación + confirmación) → QuoteRequest', true);
 
@@ -287,7 +307,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       await waitOutbox(len + 1);
       len = outbox.length;
       await post(textMsg('cancelar'));
-      await waitOutbox(len + 1);
+      await waitOutbox(len + 2); // SCRUM-876f: se asiertan DOS mensajes (la salida y el menú); se esperan los dos
       assert.ok(outbox.slice(len).some((m) => /lo dejamos/i.test(m.text || '')), '8g cancelar → salida');
       assert.ok(outbox.slice(len).some((m) => m.kind === 'list'), '8g vuelve al menú');
       log('8g cancelar a mitad de captación', true);
@@ -328,11 +348,31 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       len = outbox.length;
       await post(textMsg('BAJA'));
       await waitOutbox(len + 1);
-      assert.ok(/No te enviaremos más mensajes/i.test(last()?.text || ''), 'confirmación de baja');
+      // SCRUM-876f: aquí se leía `last()`, y la baja manda DOS mensajes seguidos: la confirmación
+      // al cliente y el aviso al profesional. Cuál era «el último» al mirar lo decidía el reloj
+      // (medido contra el banco: caía 4 de 4 pasadas, y en la que se miró el buzón el último era ya
+      // el aviso). Se busca
+      // lo que se pregunta: lo que le llegó AL CLIENTE desde que escribió BAJA.
+      const alCliente = outbox.slice(len).filter((m) => m.to === TEST_PHONE);
+      assert.equal(alCliente.length, 1, 'al cliente le llega UNA respuesta a su BAJA');
+      assert.ok(/No te enviaremos más mensajes/i.test(alCliente[0].text || ''), 'confirmación de baja');
       const after = await prisma.customer.findUnique({ where: { id: customer.id }, select: { waOptOut: true } });
       assert.equal(after?.waOptOut, true, 'waOptOut activado');
+      // SCRUM-876f: el aviso de la baja al profesional sale detrás y sin esperarlo, y deja su fila
+      // en `whatsAppMessage`. Si la suite acaba antes de que llegue, la limpieza puede adelantarse
+      // a esa fila. Se espera el aviso y a que el buzón se quede quieto.
+      await esperarCondicion(() => outbox.slice(len).some((m) => m.to !== TEST_PHONE && /se ha dado de baja/i.test(m.text || '')), {
+        techoMs: 6000, pasoMs: 100, que: 'el aviso de la baja al profesional (11)',
+      });
+      await settle();
       log('11 BAJA (J3)', true);
 
+      if (corte) {
+        await new Promise((r) => setImmediate(r));
+        assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+        assert.deepEqual(corte.ajenos(), [],
+          '🔴 el bot INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+      }
       console.log(`\nSUITE OK — ${outbox.length} mensajes simulados, 0 llamadas a Meta.`);
     });
   } catch (e) {
