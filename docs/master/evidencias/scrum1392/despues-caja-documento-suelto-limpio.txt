@@ -1,4 +1,4 @@
-# caja-documento-suelto-limpio · sha 62eb8dc06b5a25f644ccb7d309fe6ae808d03aa1 · EXIT=0 · 9.5 s
+# caja-documento-suelto-limpio · sha 8b034d326ba4a289375478e20e0136d4c0084daf · EXIT=0 · 9.5 s
 
 ── LISTADO · MODO FACTURA · VIEWPORT 929 px ──
       título de listado    "Facturas"                                                     8 car · 633.0×46.5 px · 1 línea(s)
@@ -17,7 +17,7 @@
       título de la página  "Nueva factura"                                               13 car · 272.0×26.3 px · 1 línea(s)
       botón primario       "Emitir factura"                                              14 car · 151.6×44.0 px · 2 línea(s)
       error al emitir      "No hemos podido emitir la factura. Inténtalo otra vez."      54 car · 324.0×62.5 px · 3 línea(s)
-⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos
+⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
 
 ════ VEREDICTO ════
 ⟦veredicto⟧ 0 hallazgos · 0 ciegos

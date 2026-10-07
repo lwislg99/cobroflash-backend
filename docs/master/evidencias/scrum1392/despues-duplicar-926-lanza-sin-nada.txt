@@ -1,5 +1,5 @@
-# duplicar-926-lanza-sin-nada · sha 62eb8dc06b5a25f644ccb7d309fe6ae808d03aa1 · EXIT=2 · 5.9 s
-⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos
+# duplicar-926-lanza-sin-nada · sha 8b034d326ba4a289375478e20e0136d4c0084daf · EXIT=2 · 4.7 s
+⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
 {
   "casos": {},
   "controles": {}
@@ -21,5 +21,5 @@ NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni
 
 POBLACION casillas=9 verdes=1 hallazgos=0 ciegos=4 sin-juzgar=4
 EXIT=2
-⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
 ⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde

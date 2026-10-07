@@ -1,5 +1,5 @@
 {
-  "sha": "62eb8dc06b5a25f644ccb7d309fe6ae808d03aa1",
+  "sha": "8b034d326ba4a289375478e20e0136d4c0084daf",
   "etiqueta": "despues",
   "pasadas": 7,
   "validas": 7,
@@ -11,9 +11,9 @@
       "valida": true,
       "invalida": null,
       "codigo": 0,
-      "segundos": 4.8,
+      "segundos": 5,
       "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
-      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": false,
       "nombraLaLecturaRota": false
     },
@@ -24,9 +24,9 @@
       "valida": true,
       "invalida": null,
       "codigo": 1,
-      "segundos": 13.2,
+      "segundos": 4.7,
       "veredicto": "⟦veredicto⟧ 1 hallazgo · 0 ciegos → salida 1 (hallazgo)",
-      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": true,
       "nombraLaLecturaRota": false
     },
@@ -37,9 +37,9 @@
       "valida": true,
       "invalida": null,
       "codigo": 2,
-      "segundos": 5.9,
+      "segundos": 4.7,
       "veredicto": "⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde",
-      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": false,
       "nombraLaLecturaRota": true
     },
@@ -52,7 +52,7 @@
       "codigo": 1,
       "segundos": 4.7,
       "veredicto": "⟦veredicto⟧ 1 hallazgo · 4 ciegos → salida 1 (hallazgo) · ⚠️ lo que no se pudo medir sigue sin juzgar: ésta NO es la lista completa de defectos",
-      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 2 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": true,
       "nombraLaLecturaRota": true
     },
@@ -63,9 +63,9 @@
       "valida": true,
       "invalida": null,
       "codigo": 0,
-      "segundos": 4.8,
+      "segundos": 4.9,
       "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
-      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": false,
       "nombraLaLecturaRota": false
     },
@@ -78,7 +78,7 @@
       "codigo": 0,
       "segundos": 9.5,
       "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
-      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": false,
       "nombraLaLecturaRota": false
     },
@@ -91,7 +91,7 @@
       "codigo": 0,
       "segundos": 3.1,
       "veredicto": "⟦veredicto⟧ 0 hallazgos · 0 ciegos",
-      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos",
+      "recorrido": "⟦recorrido⟧ 2 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido",
       "nombraElErrorVisto": false,
       "nombraLaLecturaRota": false
     }
