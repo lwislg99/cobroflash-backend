@@ -27,6 +27,16 @@ function correr() {
   return { tests: n('tests'), pasan: n('pass'), caen: n('fail'), caidos };
 }
 
+// 🔴 Este instrumento ESCRIBE en el árbol y lo deshace al acabar. Si lo matan a mitad (un `| Select-Object -First 1`
+// o un `| head -1` sobre su salida lo matan en cuanto imprime la primera línea), el cambio se queda puesto. Pasó
+// el 7-oct-2026 y la norma se comiteó con el cambio A dentro. Por eso mira ANTES de empezar si el árbol trae ya
+// alguno de sus cambios, y si lo trae no corre: lo dice y sale 2.
+const restos = CAMBIOS.filter((c) => fs.readFileSync(path.join(raiz, c.fichero), 'utf8').includes(c.a));
+if (restos.length) {
+  for (const c of restos) console.log(`SUCIO: ${c.fichero} trae puesto el cambio «${c.nombre}» de una pasada que no terminó. Deshazlo a mano (\`${c.a}\` → \`${c.de}\`) y vuelve a correr.`);
+  process.exit(2);
+}
+
 let mal = 0;
 const base = correr();
 console.log(`BASE (árbol como está) | tests ${base.tests} · pasan ${base.pasan} · caen ${base.caen}`);

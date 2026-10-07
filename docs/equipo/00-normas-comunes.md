@@ -574,7 +574,7 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
   **El latido avisa de este caso** (SCRUM-1484, en `main` desde el 6-oct-2026): a una sesión por encima de
-  500k le dice «se releva pronto, sin esperar a terminar — primer punto seguro (un commit local), traspaso y
+  500k le dice «se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y
   relevo», y a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega». La frase
   es UNA para el latido y para `sesion.mjs contexto N` (`fraseDeRelevo`), y se vio el 7-oct-2026 contra una
   transcripción viva de 530k. La casilla 1 no cambia: la cifra la mide y la dice la propia sesión.

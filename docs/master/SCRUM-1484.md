@@ -208,6 +208,14 @@ cada uno deshecho antes del siguiente.
 Y el tercer caso del test lleva dentro, con texto fijo, el párrafo que la A19 tuvo hasta hoy: cae por una sola
 cosa, no citar la frase de «YA».
 
+**Lo que me salió mal en esta misma rama, y quién lo cazó.** Ese instrumento escribe en el árbol y lo deshace al
+acabar. Lo corrí una vez cortándole la salida a la primera línea: el corte lo mató con el cambio A puesto, y el
+primer commit de la rama (`ab441fcf25dc14c4aa92e2a26121cc2d5a01fa65`) lleva la norma diciendo «se releva pronto». Lo
+cazó este test en la tanda dirigida, antes de empujar nada: 236 ficheros, 2.364 tests, 1 caído, éste. El commit
+siguiente lo deshace. Desde
+entonces el instrumento mira antes de empezar si el árbol trae ya uno de sus cambios, y si lo trae no corre
+(sale 2 y dice cuál). Cicatriz en `docs/equipo/cicatrices/S0.md`.
+
 ### Lo que NO ata
 
 - Sólo mira los dos números en las dos frases donde la A19 los MANDA («¿Pasa de **300k**?» y «si pasa de
