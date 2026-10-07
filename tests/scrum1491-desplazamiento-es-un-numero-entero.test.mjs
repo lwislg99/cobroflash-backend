@@ -58,8 +58,10 @@ function servidor() {
     estado.cuerpos.push(cuerpo);
     if (estado.averia) throw estado.averia;
     const d = cuerpo.desplazamientos;
-    if (d !== undefined && d !== null && !(Number.isInteger(d) && Math.abs(d) <= TOPE_DE_LA_COLUMNA)) {
-      throw rechazo(400, 'desplazamientos_invalido', MENSAJE_DE_LA_RUTA);
+    // Desde SCRUM-1488 la ruta da UN CÓDIGO POR CAUSA: el que no cabe ya no es `_invalido`.
+    if (d !== undefined && d !== null) {
+      if (!Number.isInteger(d)) throw rechazo(400, 'desplazamientos_invalido', MENSAJE_DE_LA_RUTA);
+      if (d > TOPE_DE_LA_COLUMNA) throw rechazo(400, 'desplazamientos_no_cabe', `Los desplazamientos no pueden pasar de ${TOPE_DE_LA_COLUMNA}.`);
     }
     guardado = { ...guardado, ...cuerpo };
     return guardado;
@@ -103,18 +105,20 @@ test('SCRUM-1491 · 🔴 «1,5» en Desplazamiento: sale el literal firmado, let
   assert.ok(todos(horas).includes(salen[0]), '🔴 el aviso ha cambiado de sitio: va junto a las horas, como el general');
 });
 
-test('SCRUM-1491 · un número que no cabe sale con el mismo literal, que para él no es falso', async () => {
+// Hasta SCRUM-1488 el número que no cabe compartía código con «no es entero», y este literal salía
+// para los dos. La ruta los separó (un código por causa) y el que no cabe tiene su texto: lo fija,
+// letra a letra, `tests/scrum1492-lo-que-no-es-un-numero-no-borra-lo-guardado.test.mjs`.
+test('SCRUM-1491 · un número que no cabe tiene código propio: sale SU texto, ni este literal ni el general', async () => {
   const srv = servidor();
   const c = await montar(srv);
   await escribir(c, 'desplazamientos', '3000000000');
 
   assert.deepEqual(srv.estado.cuerpos, [{ desplazamientos: 3000000000 }], '🔴 SUELO: no se mandó el número');
+  assert.equal(srv.leer().desplazamientos, 1, '🔴 SUELO: la ruta de aquí no lo rechazó');
   const salen = avisos(c);
-  assert.equal(salen.length, 1);
-  assert.equal(salen[0].textContent, FIRMADO_EN_18517);
-  // «Falso» sería nombrar una causa que no es la suya. El literal no nombra ninguna.
-  assert.equal(/grande|decimal|coma/i.test(salen[0].textContent), false,
-    '🔴 el texto nombra una causa, y el código tiene dos: para una de ellas sería falso');
+  assert.equal(salen.length, 1, '🔴 la ruta lo rechazó y la ficha no dice nada');
+  assert.notEqual(salen[0].textContent, FIRMADO_EN_18517, '🔴 «es un número entero» a quien ha tecleado un entero');
+  assert.notEqual(salen[0].textContent, EL_GENERAL, '🔴 manda a reintentar algo que la ruta va a rechazar siempre');
 });
 
 test('SCRUM-1491 · CONTROL 🔴 un 500 en ese mismo campo sigue con el aviso general', async () => {
