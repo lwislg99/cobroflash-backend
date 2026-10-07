@@ -55,7 +55,9 @@
 //                  leído, con su edad, mientras alguno de sus PR siga abierto. Del 2 al 6-oct-2026 comentó
 //                  tres veces sobre cuatro PR y nadie lo abrió. Y la línea de MAIN dice cuánto hace de
 //                  su último commit. (SCRUM-1463) Y si el vigía lleva más de 12 h sin CORRER, o su última
-//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
+//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos». (SCRUM-1123d) Y el
+//                  ÚLTIMO VEREDICTO del otro vigía, el de DESPLIEGUE: no cantó · no supo mirar · cantó
+//                  CONGELADA y su aviso es el Issue #N · cantó y NO CONSTA su aviso (reabre SCRUM-1123).
 //  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
 //                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
 //  11 · DISCO    → (SCRUM-1473) el espacio libre de la unidad de la casa (transcripts, temporales) y de la de
@@ -96,6 +98,8 @@ import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
 // (SCRUM-1473) La máquina: el disco y lo que el barrido de `tmp` devolvería. El latido sólo mide; no borra.
 import { seccionDisco, medirDisco } from './disco.mjs';
 import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } from './barrer-jobs.mjs';
+// (SCRUM-1123d) Qué Issue lleva la marca del aviso se decide con la MISMA función que usa el workflow.
+import { elegirIssueExistente } from '../vigia-despliegue-aviso.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -758,7 +762,18 @@ export function prsDelAviso(cuerpo) {
  * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number, ultimoMerge?:{fecha:string}|null}} e
  *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
  */
-export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge }) {
+export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge, despliegue }) {
+  // (SCRUM-1123d) `despliegue`: `undefined` = no se pregunta · cualquier otra cosa = se dice su veredicto.
+  // Su ceguera ciega la sección, pero no tapa lo que la otra mitad sí leyó (ni al revés).
+  if (despliegue !== undefined) {
+    const d = veredictoDelVigiaDeDespliegue({ ...(despliegue || { corridas: null }), ahora });
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge });
+    const alertas = [...d.alertas, ...s.alertas];
+    if (!d.ciego && s.pudo) return { ...s, alertas, poblacion: `${d.texto} · ${s.poblacion}` };
+    const motivo = [d.ciego, s.pudo ? null : s.motivo].filter(Boolean).join(' · Y ADEMÁS: ');
+    const leido = d.ciego ? (s.pudo ? s.poblacion : null) : d.texto;
+    return { nombre: 'VIGÍA', pudo: false, motivo: leido ? `${motivo} · lo que SÍ se leyó: ${leido}` : motivo, alertas, poblacion: null };
+  }
   // (SCRUM-1463) `pasadas`: `undefined` = no se pregunta (sólo los avisos) · cualquier otra cosa = se juzga.
   if (pasadas !== undefined) {
     const p = pasadaDelVigia(pasadas, ahora);
@@ -836,6 +851,91 @@ export function pasadaDelVigia(corridas, ahora) {
     alertas.push({ linea: `el vigía NO CORRE desde hace ${cuanto(horas(ultima))} (${String(ultima.created_at).slice(0, 16)}Z) y se le pide cada 3 h (hueco mayor medido: 10,1 h; tope ${HORAS_DE_VIGIA_CALLADO} h). Que no haya avisos nuevos NO es que no haya atascos` });
   }
   return { alertas, texto: `última pasada del vigía hace ${cuanto(horas(ultima))} (${ultima.conclusion})` };
+}
+
+/** El OTRO vigía: el que mira si producción corre lo que hay en `main`. Su veredicto no está en ningún issue. */
+export const WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE = 'vigia-despliegue.yml';
+/** Los dos pasos de su job que dicen el veredicto, y la marca del Issue que abre. Un test los ata al YAML. */
+export const PASO_QUE_MIRA = '¿Está producción corriendo lo que hay en main?';
+export const PASO_QUE_AVISA = 'Avisar de verdad si el vigía cantó (Issue de GitHub)';
+export const MARCA_DE_CONGELADA = '<!-- vigia-despliegue:produccion-congelada -->';
+/**
+ * Su cron pide cada 2 h y GitHub lo retrasa: hueco mediano 4,7 h, p90 6,8 h y máximo 8,7 h en 189 huecos
+ * (2-sep → 7-oct-2026, medido dos veces el 7-oct). Doce horas queda por encima de todo lo medido.
+ */
+export const HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO = 12;
+
+/**
+ * (SCRUM-1123d) El ÚLTIMO VEREDICTO del vigía de despliegue. Sin esto, cerrar SCRUM-1123 dejaba un ciego:
+ * la rama «abre o comenta un Issue» no se ha ejecutado nunca en vivo, y un CONGELADO real que no dejara
+ * su Issue no se habría visto en ningún sitio.
+ *
+ * La conclusión de la corrida NO basta: CONGELADA (salida 1) y «no supe mirar» (salida 2) son las dos
+ * `failure`. Lo que las distingue son los PASOS del job: el de aviso lleva `if: … salida == '1'`, así que
+ * sale `skipped` con 0 y con 2 y sólo corre con 1 (medido en la corrida 36684679677, 30-sep: salida 2,
+ * aviso `skipped`). Con `success` no se piden los pasos: salida 0.
+ *
+ * @param {{corridas:{id?:number, created_at?:string, status?:string, conclusion?:string, html_url?:string}[]|null,
+ *   pasosDe?:(id:number)=>{name:string, conclusion:string}[]|undefined, issuesAbiertos?:()=>object[]|undefined, ahora:number}} e
+ *   `corridas` del más NUEVO al más viejo · `pasosDe` e `issuesAbiertos` devuelven `undefined` si no pudieron leer.
+ * @returns {{ciego?:string, alertas:{linea:string}[], texto:string}}
+ */
+export function veredictoDelVigiaDeDespliegue({ corridas, pasosDe = () => undefined, issuesAbiertos = () => undefined, ahora }) {
+  const V = 'vigía de DESPLIEGUE';
+  if (!Array.isArray(corridas)) return { ciego: `no llegaron las corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\`: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
+  const terminadas = corridas.filter((c) => c && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\` que llegaron está terminada y fechada: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
+  const horas = (c) => (ahora - Date.parse(c.created_at)) / 3600000;
+  const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
+  const ultima = terminadas[0];
+  const cuando = `${String(ultima.created_at).slice(0, 16)}Z`;
+  const donde = ultima.html_url ? ` · ${ultima.html_url}` : '';
+  const buena = terminadas.find((c) => c.conclusion === 'success');
+  const laBuena = buena ? `La última que no cantó es de hace ${cuanto(horas(buena))}` : `Ninguna en verde entre las ${terminadas.length} que llegaron`;
+  const alertas = [];
+  // Un veredicto viejo no es el estado de hoy: se dice delante, sea cual sea.
+  if (horas(ultima) > HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO) {
+    alertas.push({ linea: `el ${V} NO CORRE desde hace ${cuanto(horas(ultima))} (${cuando}) y se le pide cada 2 h (hueco mayor medido: 8,7 h; tope ${HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO} h). Su veredicto de abajo es de ENTONCES, no de hoy` });
+  }
+  const texto = (veredicto) => `${V}: última corrida hace ${cuanto(horas(ultima))}, veredicto ${veredicto}`;
+  if (ultima.conclusion === 'success') return { alertas, texto: texto('NO CANTÓ (salida 0: producción al día, o retrasada pero desplegando)') };
+  if (ultima.conclusion !== 'failure') {
+    alertas.push({ linea: `la última corrida del ${V} (${cuando}) terminó en ${String(ultima.conclusion).toUpperCase()}: NO DIO VEREDICTO. ${laBuena}${donde}` });
+    return { alertas, texto: texto(`NINGUNO (${ultima.conclusion})`) };
+  }
+  // `failure`: son los pasos los que dicen si cantó o si no supo mirar.
+  const pasos = pasosDe(ultima.id);
+  if (!Array.isArray(pasos)) return { ciego: `la última corrida del ${V} (${cuando}) terminó en FAILURE y no pude leer sus pasos: no sé si cantó CONGELADA o si no supo mirar${donde}`, alertas, texto: '' };
+  const mira = pasos.find((p) => p && p.name === PASO_QUE_MIRA);
+  const avisa = pasos.find((p) => p && p.name === PASO_QUE_AVISA);
+  if (!mira || !avisa) return { ciego: `la última corrida del ${V} (${cuando}) terminó en FAILURE y entre sus ${pasos.length} pasos no está «${!mira ? PASO_QUE_MIRA : PASO_QUE_AVISA}»: el workflow ha cambiado y no sé leer su veredicto${donde}`, alertas, texto: '' };
+  if (avisa.conclusion === 'skipped') {
+    const porque = mira.conclusion === 'failure'
+      ? 'NO SUPO MIRAR (salida 2: su paso de aviso no corrió, que es lo que manda el diseño; por ceguera no abre Issue)'
+      : `NO LLEGÓ A MIRAR (su paso «${PASO_QUE_MIRA}» quedó en ${String(mira.conclusion).toUpperCase()}: la corrida cayó antes)`;
+    alertas.push({ linea: `el ${V} ${porque} en su última corrida (${cuando}). Que no haya aviso NO es que producción esté al día. ${laBuena}${donde}` });
+    return { alertas, texto: texto(mira.conclusion === 'failure' ? 'NO SUPO MIRAR (salida 2)' : 'NINGUNO (cayó antes de mirar)') };
+  }
+  // El paso de aviso corrió: salida 1. ¿Dejó su aviso donde se ve?
+  const canto = `el ${V} CANTÓ PRODUCCIÓN CONGELADA en su última corrida (${cuando})`;
+  const issues = issuesAbiertos();
+  if (!Array.isArray(issues)) {
+    alertas.push({ linea: `${canto} · su paso de aviso terminó en ${String(avisa.conclusion).toUpperCase()}${donde}` });
+    return { ciego: `${canto} y no pude leer los Issues abiertos: no sé si dejó su aviso`, alertas, texto: '' };
+  }
+  const numero = elegirIssueExistente(issues, MARCA_DE_CONGELADA);
+  const elIssue = numero === null ? null : issues.find((i) => i && i.number === numero);
+  const tocado = elIssue && Number.isFinite(Date.parse(elIssue.updated_at)) && Date.parse(elIssue.updated_at) >= Date.parse(ultima.created_at);
+  const falta = numero === null ? 'ningún Issue ABIERTO lleva su marca'
+    : avisa.conclusion !== 'success' ? `su paso de aviso terminó en ${String(avisa.conclusion).toUpperCase()} (el Issue #${numero} lleva la marca, y no consta que esa corrida escribiera en él)`
+      : !tocado ? `el Issue #${numero} lleva la marca pero nadie lo ha tocado desde antes de esa corrida (${String(elIssue.updated_at).slice(0, 16)}Z)`
+        : null;
+  if (falta) {
+    alertas.push({ linea: `${canto} y NO CONSTA SU AVISO: ${falta}. ESTO REABRE SCRUM-1123 (se cerró con la rama de aviso sin ejercer en vivo)${donde}` });
+    return { alertas, texto: texto('CONGELADA, SIN AVISO') };
+  }
+  alertas.push({ linea: `${canto} · su aviso es el Issue #${numero}${donde}` });
+  return { alertas, texto: texto(`CONGELADA (aviso: Issue #${numero})`) };
 }
 
 // ───────────────────────────── 10 · QA ─────────────────────────────
@@ -1258,7 +1358,14 @@ async function todo() {
   // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
   // Cuándo CORRIÓ: las corridas de su workflow. `null` si no llegan (la sección lo dice; no lo da por bueno).
   const pasadas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA}/runs?per_page=10`]).workflow_runs) ?? null;
-  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas, ultimoMerge });
+  // (SCRUM-1123d) El vigía de DESPLIEGUE: sus corridas, y sólo si la última cayó, sus pasos y los Issues.
+  const despliegue = {
+    corridas: intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}/runs?per_page=10`]).workflow_runs) ?? null,
+    pasosDe: (id) => intentar(() => ghJson(['api', `repos/${REPO}/actions/runs/${id}/jobs?per_page=100`]).jobs.flatMap((j) => j.steps || [])),
+    issuesAbiertos: () => intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues?state=open&per_page=100`, '-q', '.[] | {number, body, pull_request, updated_at}'])
+      .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l))),
+  };
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas, ultimoMerge, despliegue });
   tramo('vigía');
   // 10 · QA. Una petición GET a producción con la cookie guardada: lo mismo que `estado`. No entra ni renueva.
   const dichoQA = [];
