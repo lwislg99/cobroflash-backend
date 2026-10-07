@@ -7,9 +7,6 @@
 
 A9: comprobación → `tests/scrum1436-ventana-abierta-envio-fallido.test.mjs`
 
-**Este tramo es el de los hallazgos 1 y 3.** El hallazgo 2 lo lleva J1 en su rama (`scrum-1436b-…`), con
-su anexo propio en este mismo fichero.
-
 **Este registro NO cierra el ticket.** SCRUM-1436 tiene cinco hallazgos y seis líneas de aceptación;
 aquí van el hallazgo 3 entero y la mitad del 1. Qué falta, al final.
 
@@ -29,24 +26,8 @@ guardada puede ser un lienzo vacío). Es lo mismo que enseña el «Paquete de di
 manda: lee `invoice.quote` y pinta su `signatureUrl`. Si la consulta falla, es «no»: el aviso sale
 igual, sin la afirmación.
 
-**Sin firma y con factura salen los dos literales firmados** en SCRUM-1436 comentario 18287 (publicado
-desde la cuenta de Luis; si lo escribió él o su orquestador por delegación, no se sabe). Valen para el
-carril de Javier por la decisión del comentario 18734 (7-oct-2026), que he leído en Jira. Copiados letra
-por letra; el test los compara por igualdad de la cadena entera contra el literal escrito a mano.
-
-- «Tienes el presupuesto aceptado, pero sin firma.» sale si el presupuesto de la factura tiene
-  `acceptedAt` (el rechazo lo pone a `null`: `quotes.routes.ts`, `quoteAdmin.ts`) y no tiene firma con
-  trazo.
-- El otro, que no dice nada del presupuesto, sale en todos los demás casos: la factura no viene de un
-  presupuesto, no está aceptado, es de otro negocio, no existe o no se pudo leer.
-
-**Sin factura, el aviso es el de siempre MENOS la oración de la firma.** Los dos literales llevan el
-número de la factura y ahí no hay ninguno: encajarlos sería cambiarlos. Ni una palabra nueva.
-
-Entre la primera frase y la siguiente el aviso de siempre lleva un salto de línea y los dos firmados un
-espacio. Copiados como están firmados.
-
-Ficha: `docs/microcopy/2026-10-06-SCRUM-1436-aviso-de-disputa.md`.
+**Sin firma, el aviso es el de siempre MENOS esa oración.** Ni una palabra nueva: qué decirle entonces
+es texto que ve el usuario (regla 39). El test lo fija por igualdad de la cadena entera.
 
 **Con firma, el aviso es byte a byte el de antes** (caso ① del test).
 
@@ -84,12 +65,10 @@ mezclar `origin/main` `e883e586`. El build bueno es el del CI.
 |---|---|
 | Rojo primero, disputa (contra `main` `12ecc7bb`, antes del arreglo) | 10 casos, 10 caen |
 | Rojo primero, ventana (antes del arreglo) | 8 casos, 3 caen (los 3 del defecto); 2 suelos y 3 positivos pasan |
-| Los dos tests, después (antes de los literales) | 18 casos, 0 caen, 0 saltos |
-| Los dos tests, con los literales | 20 casos (12 + 8), 0 caen, 0 saltos |
-| Mutaciones con los literales (`docs/evidencias/scrum1436/mutaciones-con-los-literales.txt`) | 15 mutaciones: 14 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
+| Los dos tests, después | 18 casos, 0 caen, 0 saltos |
 | Los dos míos, sus vecinos (scrum195-loop-adicional, scrum815-disputa, scrum62-albaran-ventana, scrum590-el-movil, scrum180, scrum227) y los guards de suite (scrum237, 976, 409, 419, 850, 850b, los cuatro scrum245, 864c, 267, 1294, 525d, 514), ya con main mezclado | 193 casos, 191 pasan, 2 caen, 0 saltos. Los 2 son de `scrum245-tipo-obliga-declarar` y caen por el árbol: `Cannot find module …\node_modules\typescript\bin\tsc` (este worktree no tiene `node_modules` propio). No los he visto pasar en ningún sitio: los dirá el CI |
 | `npm run guards:entrada`, después del registro | 13 guards, 158 casos, 0 caen |
-| Mutaciones antes de los literales (`tests/banco-scrum1436/mutar.mjs`, salida en `docs/evidencias/scrum1436/mutaciones.txt`) | 9 mutaciones: 8 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
+| Mutaciones (`tests/banco-scrum1436/mutar.mjs`, salida en `docs/evidencias/scrum1436/mutaciones.txt`) | 9 mutaciones: 8 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
 | `tsc --noEmit` completo | 6 errores, ninguno en mis dos ficheros (3 en `app.ts`, 2 en `invoiceNumber.service.ts`, 1 en `merchantAdmin.ts`); NO he mirado si son del árbol o del `node_modules` compartido |
 
 M5 quita la guarda «sin factura o sin presupuesto». Sale viva porque sin ella `invoice.quoteId` sobre
@@ -110,9 +89,11 @@ disputa de Stripe y un fallo de Meta, que no se pueden provocar desde fuera.
 
 ## Ⓔ Lo que falta, y de quién es
 
+- **Hallazgo 1, los dos textos nuevos** (aceptado sin firma · sin presupuesto). El comentario 18287
+  (cuenta de Luis, 6-oct) los da por firmados. NO construidos: si esa firma vale para un texto del
+  carril de Javier lo decide el orquestador de Javier.
 - **Hallazgo 1, el aviso sin factura** sigue diciendo «Entra en la factura y pulsa…» sin factura a la
-  que entrar. No tocado: necesita un texto propio, y hoy no hay ninguno firmado. Es lo que le falta a
-  la línea 1 de la aceptación («no manda a una factura que no existe»).
+  que entrar. No tocado: arreglarlo es quitar o cambiar una instrucción, y va con los textos de arriba.
 - **Hallazgos 2, 4 y 5:** no cogidos aquí.
 - **SCRUM-1477** (los siete `catch` de `whatsapp.ts` no distinguen «Meta dijo que no» de «Meta no
   contestó») es OTRO trabajo y no se ha tocado. La ficha del encargo le puso ese número al hallazgo 3.
