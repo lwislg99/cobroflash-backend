@@ -318,3 +318,36 @@ Y dos de los 16 son **automáticos**: `expire.service.ts::expireQuotes` y `remin
 ## El límite de lo construido en pantalla
 
 El arreglo (ante el 409, releer y comparar el plan; si es el mismo, reenviar en silencio con la versión nueva) aguanta a cualquier escritor que no cambie el plan, sea cual sea. **Pero está probado con el caso genérico** («la versión se movió y el plan es igual», `tests/scrum1285d-plan-de-cobro-version-pantalla.test.mjs`), **no con cada uno de los 16.** Y sigue sin verse en yaqu.app: la cuenta QA no tiene un presupuesto con plan propio (SCRUM-1367).
+
+# APÉNDICE · SCRUM-1285e · La versión se EXIGE: se acabó la transición (S1)
+
+**Medido contra:** `origin/main` = `33f07c332c3c95fe1656f640184c5d340e519f5d` · 2026-10-07T06:22:35Z
+A9: comprobación → `tests/scrum1285b-plan-de-cobro-con-version.test.mjs`
+
+Carril S1 · sesión `s1-7oct` · rama `scrum-1285e-la-version-se-exige`. Toca `src/core/db/escrituraConVersion.ts`, `quotesAdmin.routes.ts` (sólo `PATCH /:id/billing-plan`) y su test. Sin esquema, sin texto, sin pantalla.
+
+## Lo que quedaba
+
+La aceptación 4 («la ruta rechaza un PATCH que escribe sobre una versión que ya no es la actual, en vez de reemplazar a ciegas») estaba cumplida **sólo si la petición traía `version`**. Sin ella, la ruta escribía como antes: la «transición declarada» del 29-sep, puesta porque la pantalla aún no la mandaba. La pantalla la manda desde el 1-oct (#2095) y nadie volvió a retirar el hueco. Un candado que se abre con no traer la llave no para a nadie.
+
+## Lo construido
+
+- `leerVersion` ya no devuelve `version: null`. **Un código por causa:** no la mandó → `version_requerida`; la mandó ilegible → `version_invalida`. Los dos son 400 y ninguno escribe.
+- En la ruta, `where: { id, updatedAt: leida.version }`, LITERAL (el censo 1285c lo sigue viendo).
+- El caso de test «transición: sin `version` el guardado funciona como hoy» decía de sí mismo que había que invertirlo el día que se exigiera. Invertido: sin `version` (ausente o `null`) → 400 `version_requerida`, 0 escrituras, el plan intacto.
+
+## Medido
+
+| | casos | pasan |
+|---|---|---|
+| El test nuevo contra el `dist` de antes (rama de SCRUM-1489, misma ruta que `main`) | 5 | **4** — cae justo el de `version_requerida` |
+| El test nuevo contra este árbol | 5 | 5 |
+| Los 190 ficheros de `tests/` que nombran la ruta, el patrón o enumeran `src/` | 1.903 | 1.899 · 3 saltan (`SCRUM-1403`, sin `LIBRO_PG_URL`) · 1 caía: `SCRUM-854`, que pedía esta entrada |
+
+Quién llama a la ruta, buscado en `public/`, `scripts/` y `tests/`: sólo «Guardar plan» de `quotesDetailView.js`, que manda `version: quote.updatedAt` siempre. `scripts/qa/sembrar-casos.mjs` no la usa (el plan viaja en el alta).
+
+## Lo que NO está medido o queda nombrado
+
+- **En yaqu.app:** nada todavía; esto no está desplegado al escribirlo.
+- **Mitad de S2, nombrada (no la toco: `quotesDetailView.js`):** un 400 de esta ruta no trae `message`, y `api.js` le fabrica uno con el código dentro (`API 400: version_requerida`). El `catch` de «Guardar plan» sólo calla el de `version_superada`, así que ese texto se pintaría. Hoy no es alcanzable desde la pantalla (siempre manda la versión); lo sería una pestaña abierta desde antes del 1-oct, o `version_invalida`, que ya existía con el mismo camino.
+- **El falso 409** (cualquier escritura del presupuesto mueve la versión) sigue declarado en `scripts/_version-de-fila-dudosa-declaradas.json` y absorbido en la pantalla. No cambia con esto.
