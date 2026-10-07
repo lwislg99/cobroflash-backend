@@ -47,6 +47,10 @@ const sinDuro = (s) => String(s).split(DURO).join(' ');
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 /** El formato que se retira: cifra con punto decimal seguida del código de moneda. */
 const CRUDO = /\d\.\d{1,2} [A-Z]{3}\b/;
+// La fila «Importe» del paquete, con hueco para los atributos de cada etiqueta (SCRUM-553): si
+// mañana la tabla gana una clase, esto sigue mirando el importe y no se queda ciego.
+const literal = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const filaDeImporte = (valor) => new RegExp(`<tr[^>]*><th[^>]*>Importe</th><td[^>]*>${literal(valor)}</td></tr>`);
 
 const banco = { eventos: [], factura: null };
 
@@ -184,15 +188,16 @@ test('SCRUM-1436d · 🔴 J1 · el paquete de disputa que se entrega al banco ll
   assert.equal(r.statusCode, 200);
   assert.ok(typeof r.html === 'string' && r.html.includes('Paquete de evidencia de disputa'), '🔴 CIEGO: no ha salido el HTML del paquete');
   const bueno = formatMoneyEs(TOTAL, 'EUR');
-  assert.ok(r.html.includes(`<tr><th>Importe</th><td>${bueno}</td></tr>`), '🔴 el importe del documento de cobro no sale en el formato de la casa');
+  assert.ok(filaDeImporte(bueno).test(r.html), '🔴 el importe del documento de cobro no sale en el formato de la casa');
   assert.ok(r.html.includes(`#12 · ${bueno}</td>`), '🔴 el importe del presupuesto no sale en el formato de la casa');
-  const sinEstilo = r.html.replace(/<style>[\s\S]*?<\/style>/, '');
+  const sinEstilo = r.html.replace(/<style[^>]*>[\s\S]*?<\/style>/, '');
+  assert.notEqual(sinEstilo.length, r.html.length, '🔴 CIEGO: no se ha quitado la hoja de estilo del paquete');
   assert.ok(!CRUDO.test(sinEstilo), `🔴 queda un importe en crudo en el paquete: «${(sinEstilo.match(CRUDO) || [])[0]}»`);
 });
 
 test('SCRUM-1436d · J1 · fuera del euro sale el código de la moneda, no un € impostado', async () => {
   reiniciar({ moneda: 'MXN' });
   const r = await llamar(paqueteH, deSesion({ params: { id: String(FACTURA) } }));
-  assert.ok(r.html.includes(`<tr><th>Importe</th><td>${formatMoneyEs(TOTAL, 'MXN')}</td></tr>`));
+  assert.ok(filaDeImporte(formatMoneyEs(TOTAL, 'MXN')).test(r.html));
   assert.ok(sinDuro(formatMoneyEs(TOTAL, 'MXN')).endsWith(' MXN'), '🔴 CIEGO: el helper ya no escribe el código fuera del euro');
 });

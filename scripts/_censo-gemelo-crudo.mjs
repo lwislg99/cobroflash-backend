@@ -367,9 +367,6 @@ export const DECLARADOS = new Map([
   // ── IMPORTE · DEUDA ───────────────────────────────────────────────────────────────────────────
   [`IMPORTE|${M}billing/app/routes/mpWebhook.routes.ts::POST /`, { n: 1, clase: DEUDA, retira: 'J2', motivo: 'importe del aviso de cobro recibido, sin formatMoneyEs (SCRUM-1444 y SCRUM-1436)' }],
   [`IMPORTE|${M}billing/app/routes/payBizum.routes.ts::POST /bizum/:token/claimed`, { n: 1, clase: DEUDA, retira: 'J2', motivo: 'importe del aviso «el cliente dice que ha pagado por Bizum», sin formatMoneyEs (SCRUM-1444 y SCRUM-1436)' }],
-  [`IMPORTE|${M}billing/domain/invoiceWhatsApp.service.ts::sendInvoicePaymentRequest`, { n: 1, clase: DEUDA, retira: 'J1', motivo: 'importe de la factura en el aviso al profesional, sin formatMoneyEs (SCRUM-1444)' }],
-  [`IMPORTE|${M}system/app/routes/invoicesAdmin.routes.ts::POST /:id/payment-anomaly`, { n: 5, clase: DEUDA, retira: 'J1', motivo: 'los importes de «Recibidos … de …»: SCRUM-1444 contó sus dos líneas; son cinco llamadas' }],
-  [`IMPORTE|${M}system/app/routes/invoicesAdmin.routes.ts::money`, { n: 1, clase: DEUDA, retira: 'J1', motivo: 'un formateador propio del paquete de disputa, gemelo de formatMoneyEs (SCRUM-1444)' }],
   // ── NUMERO · LEGITIMO ─────────────────────────────────────────────────────────────────────────
   [`NUMERO|${M}invoicing/infra/pdf/pdf.service.ts::generateQuotePdf`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'el valor ya sale de numeroConRevision; llega por una variable y el censo no sigue variables' }],
   [`NUMERO|${M}system/domain/qrPagina.service.ts::normalizarHex`, { n: 2, clase: LEGITIMO, retira: null, motivo: 'es un color hexadecimal, no el número de un documento' }],
@@ -406,6 +403,10 @@ export const DECLARADOS = new Map([
  * lo contrario. Nace vacía.
  */
 export const RETIRADAS = new Map([
+  // SCRUM-1436 (hallazgo 4, parte de J1): los siete `toFixed(2)` pasaron a `formatMoneyEs` / `formatImporteEs`.
+  [`IMPORTE|${M}billing/domain/invoiceWhatsApp.service.ts::sendInvoicePaymentRequest`, 'SCRUM-1436'],
+  [`IMPORTE|${M}system/app/routes/invoicesAdmin.routes.ts::POST /:id/payment-anomaly`, 'SCRUM-1436'],
+  [`IMPORTE|${M}system/app/routes/invoicesAdmin.routes.ts::money`, 'SCRUM-1436'],
 ]);
 
 /** Los puestos que pueden figurar en `retira` (los de `dos-equipos.md` §2). */

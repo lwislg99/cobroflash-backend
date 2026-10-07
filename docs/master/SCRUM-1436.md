@@ -281,3 +281,43 @@ enviado nada a Meta.
 - Los siete sitios de J2.
 - La tanda completa en local, y los tipos: el build local es `--noCheck`.
 - Nada visto en yaqu.app.
+
+## SCRUM-1436e · Los dos rojos del obligatorio de #2271: el trinquete pedía que se dijera, y mi test traía el `>` pegado
+
+**Medido contra:** `origin/main` = `965e3d053f1f7d9ba24830f17abc7a54254c83f9` · 2026-10-07T17:01:01Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
+
+Sesión J1 (`jv-j1`, 7-oct, relevo de la de SCRUM-1436d) · misma rama, con `origin/main` mezclado.
+
+El obligatorio de la punta `5b1617d7` (job 112904794612, «Merge 5b1617d7… into 28166620…») salió
+rojo: 10.940 casos, 10.845 pasan, 2 caen, 93 saltan. Los dos que caen:
+
+| guard | qué decía | qué se ha hecho |
+|---|---|---|
+| `SCRUM-1452 · TRINQUETE: ninguna entrada declarada ha BAJADO sin declararlo` | tres identidades IMPORTE de J1 con «declarados 1, 5 y 1, hay 0» | las tres pasan de `DECLARADOS` a `RETIRADAS` con `SCRUM-1436`, en `scripts/_censo-gemelo-crudo.mjs`, que es lo que su mensaje pide |
+| `SCRUM-553 · el número de etiquetas con el `>` pegado NO SUBE` | 27 con tope 20; siete eran de `tests/scrum1436d-…` (líneas 187 ×3, 189 y 196 ×3) | los tres extractores dejan hueco a los atributos (`<tr[^>]*>`, `<style[^>]*>`); el tope y el guard no se tocan |
+
+**Que bajaron por el arreglo y no por ceguera del censo**, medido con `censarFuente` sobre los dos
+ficheros en la base (`28166620`) y en la punta:
+
+- `invoiceWhatsApp.service.ts`: 1 fila → 0; `toFixed(2)` contados por texto, 1 → 0.
+- `invoicesAdmin.routes.ts`: `POST /:id/payment-anomaly` 5 → 0 y `money` 1 → 0; por texto, 8 → 2,
+  y esos 2 que quedan el censo los sigue viendo (son sus «sueltos», 2 antes y 2 después), igual que
+  la fila `NUMERO|…::GET /:id/dispute-package`, 1 antes y 1 después. El censo sigue leyendo el
+  fichero; lo que falta es lo que se cambió.
+
+Rojo primero, en local y con `origin/main` mezclado: los dos caían con el mismo mensaje que en el CI.
+Después: 146 casos en 12 ficheros (los dos guards, `scrum1436d`, `scrum342`, `scrum267`, `scrum1294`,
+`scrum525d`, `scrum237`, `scrum976`, los dos `scrum1436-` de J2, `scrum1478` y `scrum411`), 146 pasan,
+0 caen, 0 saltan; control `SCRUM-1436z ·` = 0.
+
+Mi fallo: el test se empujó sin correr los dos trinquetes que miran lo que el test y el arreglo
+tocan. El de las etiquetas ya lo impide en el obligatorio; no hace falta otro mecanismo.
+
+### Lo que NO lleva
+
+- Una mutación del arreglo después de reescribir los extractores: no he visto caer el caso del
+  paquete con la fila nueva. El caso sigue llevando su comprobación de «no queda ningún crudo».
+- La tanda completa en local, y los tipos (build `--noCheck`).
+- Los siete sitios de J2, que siguen en `DECLARADOS` con `retira: 'J2'`.
