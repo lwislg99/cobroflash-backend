@@ -238,13 +238,15 @@ const TEXTO_DE_CADA_CODIGO = {
   desplazamientos_invalido: DESPLAZAMIENTO,
   desplazamientos_negativo: DESPLAZAMIENTO_NEGATIVO,
   desplazamientos_no_cabe: DESPLAZAMIENTO_NO_CABE,
+  // Firmado en c.18706: el de Kilómetros, que es la misma causa cazada por la ruta. HOY NO SE
+  // ALCANZA desde la casilla (lo que no es un número lo para `badInput` antes de mandarlo; medido
+  // con `1e999`): es la red para el día que un cambio lo haga alcanzable.
+  kilometros_invalido: KILOMETROS,
   kilometros_negativo: KILOMETROS_NEGATIVO,
   kilometros_no_cabe: KILOMETROS_NO_CABE,
 };
-/** Los que siguen en el general, con su motivo. No es una lista para que pase lo nuevo. */
-const SIGUE_EN_EL_GENERAL = {
-  kilometros_invalido: 'desde la casilla no se llega: lo que no es un número lo para `badInput` antes de mandarlo',
-};
+/** Los que siguen en el general, con su motivo. No es una lista para que pase lo nuevo. Hoy, ninguno. */
+const SIGUE_EN_EL_GENERAL = {};
 
 /** Un servidor que rechaza todo `PATCH` con ese código, como la ruta: 400 y nada guardado. */
 function servidorQueRechaza(codigo) {

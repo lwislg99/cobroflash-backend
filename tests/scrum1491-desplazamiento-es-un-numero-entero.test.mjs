@@ -155,7 +155,9 @@ test('SCRUM-1491 · 🔴 se decide por el CÓDIGO: el mensaje de la ruta sin su 
   assert.equal(salen[0].textContent, EL_GENERAL, '🔴 la vista ha decidido leyendo el mensaje del servidor');
 });
 
-test('SCRUM-1491 · CONTROL: Kilómetros rechazado con SU código sigue con el aviso general', async () => {
+test('SCRUM-1491 · CONTROL: Kilómetros rechazado con SU código dice el texto de Kilómetros, en su casilla', async () => {
+  // Hasta SCRUM-1492 (c.18706) este código caía en el general. Lo que este control guarda es lo
+  // mismo que antes: el texto de Desplazamiento es de SU código y de SU casilla.
   const srv = servidor();
   const c = await montar(srv);
   srv.estado.averia = rechazo(400, 'kilometros_invalido', 'Los kilómetros son un número.');
@@ -164,7 +166,7 @@ test('SCRUM-1491 · CONTROL: Kilómetros rechazado con SU código sigue con el a
   const salen = avisos(c);
   assert.equal(salen.length, 1, '🔴 SUELO: el guardado falló y no hay aviso');
   assert.equal(attr(salen[0], 'data-parte-campo-no-guardado'), 'kilometros');
-  assert.equal(salen[0].textContent, EL_GENERAL);
+  assert.equal(salen[0].textContent, 'No se ha guardado. Kilómetros es un número, como 12 o 12,5');
 });
 
 test('SCRUM-1491 · 🔴 corregido a un entero, se guarda y el aviso SE QUITA', async () => {

@@ -101,19 +101,22 @@
     // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
     // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
     // falso: nada ha fallado, no se ha intentado.
+    // También es lo que se dice si la RUTA rechaza con `kilometros_invalido`: misma causa, cazada
+    // en otro sitio. Hoy desde la casilla no se llega a ese código (`badInput` lo para antes): es
+    // la red para el día que se llegue. Estirón firmado en c.18706.
     // APROBADO · SCRUM-1492 comentario 18633
     kilometrosEsUnNumero: 'No se ha guardado. Kilómetros es un número, como 12 o 12,5',
     // SCRUM-1492 · los cuatro códigos de rango de la ruta (SCRUM-1488: un código por causa). Caían
     // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
     // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
     // a un profesional no le dice nada.
-    // PROPUESTO · SCRUM-1492 comentario 18634 · SIN FIRMA: no se empuja así
+    // APROBADO · SCRUM-1492 comentario 18706
     desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
-    // PROPUESTO · SCRUM-1492 comentario 18634 · SIN FIRMA: no se empuja así
+    // APROBADO · SCRUM-1492 comentario 18706
     kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
-    // PROPUESTO · SCRUM-1492 comentario 18634 · SIN FIRMA: no se empuja así
+    // APROBADO · SCRUM-1492 comentario 18706
     desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
-    // PROPUESTO · SCRUM-1492 comentario 18634 · SIN FIRMA: no se empuja así
+    // APROBADO · SCRUM-1492 comentario 18706
     kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
@@ -1434,6 +1437,7 @@
     desplazamientos_invalido: TEXTOS.desplazamientoEsEntero,
     desplazamientos_negativo: TEXTOS.desplazamientoEsCeroOMas,
     desplazamientos_no_cabe: TEXTOS.desplazamientoDemasiadoGrande,
+    kilometros_invalido: TEXTOS.kilometrosEsUnNumero,
     kilometros_negativo: TEXTOS.kilometrosEsCeroOMas,
     kilometros_no_cabe: TEXTOS.kilometrosDemasiadoGrande,
   };
