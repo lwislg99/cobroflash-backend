@@ -48,6 +48,12 @@ Tres casos × dos anchos (390 y 1280 px). La cola y los rechazos de este móvil 
 
 El control dice que la sonda sabe leer un hueco roto. Y dice otra cosa, que se nombra aquí sin tocarla: durante un despliegue, un navegador que reciba el JS nuevo con el `styles.css` viejo vería el aviso pegado a la barra hasta que recargue. Es cosmético y dura lo que tarde en llegar el CSS.
 
+## Lo que salió al medir
+
+- **Un rojo mío, cazado por la dirigida y arreglado en mi código:** al apuntar la bajada en el comentario del trinquete escribí el nombre del fichero de la ficha del albarán, y `tests/scrum1363-tests-que-cubren.test.mjs` usa ese trinquete como su caso real de «test que recorre el panel sin nombrar esa vista». Con el nombre dentro, el caso dejaba de reproducir su defecto y caía. El comentario ya no lo nombra y dice por qué. El guard no se ha tocado.
+- **La cifra a ojo:** escribí que ese fichero pasaba de 7 a 6 asignaciones contando sobre una búsqueda; con el contador del guard son 5 y 4 (no cuenta `style.display`). Corregido antes del commit; es la cicatriz de hoy.
+- Dirigida, 8 de 8 tramos, después del último cambio de código: 517 ficheros · 4.779 tests · 4.772 pass · 0 fail · 7 saltos nombrados (SCRUM-781 ×4 sin `QA_DB_TEST`, SCRUM-759 ×2 sin base de fusión, SCRUM-476 ×1 sin enlace a fichero en Windows).
+
 ## Lo que NO está medido
 
 - En yaqu.app con el cambio desplegado: falta, hasta que mergee. La sonda es `qa1421.mjs prod`, y cada fila debe decir `albaran-caja-firma`, sin estilo en línea y 16 px.
