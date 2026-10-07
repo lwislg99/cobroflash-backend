@@ -18,12 +18,14 @@ function bloquesDeFichero(texto) {
   const L = texto.split('\n');
   const out = [];
   for (let i = 0; i < L.length; i++) {
-    const mm = /^(not )?ok \d+ - (.*\.test\.mjs)\s*$/.exec(L[i]);
+    // `estado` es el texto LEÍDO de la línea («ok» o «not ok»), no una etiqueta deducida: lo que se
+    // imprime es lo que el TAP dice, y una línea que no sea ninguna de las dos no entra (SCRUM-622).
+    const mm = /^((?:not )?ok) \d+ - (.*\.test\.mjs)\s*$/.exec(L[i]);
     if (!mm) continue;
     const y = [];
     if ((L[i + 1] ?? '').trim() === '---') for (let j = i + 2; j < L.length && j < i + 80; j++) { if (L[j].trim() === '...') break; y.push(L[j].trim()); }
     const campo = (c) => (y.find((l) => l.startsWith(c + ':')) ?? '').slice(c.length + 1).trim() || null;
-    out.push({ fichero: mm[2].split(/[\\/]/).pop(), caida: Boolean(mm[1]), exitCode: campo('exitCode'), signal: campo('signal'), error: campo('error'), code: campo('code'), failureType: campo('failureType'), tipo: campo('type') });
+    out.push({ fichero: mm[2].split(/[\\/]/).pop(), estado: mm[1], caida: mm[1] === 'not ok', exitCode: campo('exitCode'), signal: campo('signal'), error: campo('error'), code: campo('code'), failureType: campo('failureType'), tipo: campo('type') });
   }
   return out;
 }
@@ -57,7 +59,7 @@ for (const f of filas) {
     if (e.caida) tot.entradasCaidas++; else tot.entradasOk++;
     if (/spawn/.test(e.error ?? '') || e.code) tot.spawn++;
     if (e.signal && e.signal !== '~' && e.signal !== 'null') tot.conSenal++;
-    filasSalida.push(`${f.sha.slice(0, 8)}\t${f.fecha}\t${f.estado}\t${f.conclusion}\ttap_fail=${t.fail}\t${e.fichero}\t${e.caida ? 'not ok' : 'ok'}\texitCode=${e.exitCode}\tsignal=${e.signal}\terror=${e.error}\tfailureType=${e.failureType}\ttype=${e.tipo}`);
+    filasSalida.push(`${f.sha.slice(0, 8)}\t${f.fecha}\t${f.estado}\t${f.conclusion}\ttap_fail=${t.fail}\t${e.fichero}\t${e.estado}\texitCode=${e.exitCode}\tsignal=${e.signal}\terror=${e.error}\tfailureType=${e.failureType}\ttype=${e.tipo}`);
   }
   // cruce: cada bloque del aviso con la entrada (o no) de su fichero
   if (f.estado === 'CON AUSENTES') for (const trozo of f.avisos.split(' | ')) {
@@ -65,7 +67,7 @@ for (const f of filas) {
     if (!b) { descuadres++; console.log('  AVISO SIN PARSEAR', trozo.slice(0, 80)); continue; }
     const e = mias.filter((x) => x.fichero === b[1]);
     const clase = e.length === 0 ? `SIN entrada de fichero (${b[4]})`
-      : e.map((x) => `entrada ${x.caida ? 'NOT OK' : 'ok'} · exitCode=${x.exitCode} · signal=${x.signal} · error=${x.error}`).join(' + ') + ` (${b[4]})`;
+      : e.map((x) => `entrada ${x.estado} · exitCode=${x.exitCode} · signal=${x.signal} · error=${x.error}`).join(' + ') + ` (${b[4]})`;
     cruce.bloques++; cruce.casos += Number(b[2]);
     cruce.clases[clase] ??= { bloques: 0, casos: 0, runs: new Set(), ficheros: new Set() };
     cruce.clases[clase].bloques++; cruce.clases[clase].casos += Number(b[2]); cruce.clases[clase].runs.add(f.sha.slice(0, 8)); cruce.clases[clase].ficheros.add(b[1]);

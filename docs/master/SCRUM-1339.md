@@ -1059,7 +1059,7 @@ Todo lo que salió está en git (`g-*`). Las anotaciones viven en GitHub mientra
 
 **Medido contra:** `origin/main` = `6536e63e038ef36be9d61fc8057a649ff2af3149` · 2026-10-07T17:16:32Z
 
-A9: sin fallo que generalice — los dos tropiezos de la tanda (un guion escrito sobre la copia de `git show` que reventó con el CRLF del fichero del árbol, y un recuento de bytes NUL hecho con `grep`) dieron error o una cifra imposible en el acto y no llegaron a ninguna cifra entregada; van contados en «Mis errores»
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
 
 **El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 7-oct): J4, construyendo
 SCRUM-1389, midió que la señal de nombres cuenta los casos de un fichero no arrancado como
@@ -1227,6 +1227,16 @@ verde.
 
 ## Mis errores
 
+- **Empujé con el obligatorio en rojo por un guion mío.** `h-entradas.mjs` imprimía el estado de
+  una entrada con `caida ? 'not ok' : 'ok'`, y `scrum622` censa en todo el árbol, evidencias
+  incluidas, cualquier expresión que acabe en «ok» por descarte. Cayó «SCRUM-622 · 🔴 EL CENSO» en
+  el run `37659284278` (job `112923098127`, 11.010 tests, 1 cae). Arreglado en el guion, sin tocar
+  el guard: ahora imprime el texto leído de la línea del TAP. Las cifras no cambian; las salidas
+  regeneradas son idénticas byte a byte.
+- Mi muestra local de guards (12 ficheros) no incluía `scrum622`. La herramienta de la casa
+  tampoco lo habría seleccionado: `tests-que-cubren.mjs` da 222 de 1.286 para esta rama y
+  `scrum622` no está entre ellos. Lo corrí después a mano; este árbol no tiene `dist/`, así que
+  de la dirigida sólo vale lo que no nombra `dist/`.
 - Escribí los guiones sobre una copia del TSV sacada con `git show`, y al correrlos sobre el
   fichero del árbol reventaron: allí llega con CRLF y la última columna se llamaba `avisos\r`.
   Salieron con 1 y sin cifras. Ahora parten por `\r?\n`.
