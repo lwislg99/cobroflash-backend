@@ -35,24 +35,6 @@ orquestador el 7-oct-2026.
 
 **Sin firma, el aviso es el de siempre MENOS esa oración.** Ni una palabra nueva: qué decirle entonces
 es texto que ve el usuario (regla 39). El test lo fija por igualdad de la cadena entera.
-**Sin firma y con factura salen los dos literales firmados** en SCRUM-1436 comentario 18287 (publicado
-desde la cuenta de Luis; si lo escribió él o su orquestador por delegación, no se sabe). Valen para el
-carril de Javier por la decisión del comentario 18734 (7-oct-2026), que he leído en Jira. Copiados letra
-por letra; el test los compara por igualdad de la cadena entera contra el literal escrito a mano.
-
-- «Tienes el presupuesto aceptado, pero sin firma.» sale si el presupuesto de la factura tiene
-  `acceptedAt` (el rechazo lo pone a `null`: `quotes.routes.ts`, `quoteAdmin.ts`) y no tiene firma con
-  trazo.
-- El otro, que no dice nada del presupuesto, sale en todos los demás casos: la factura no viene de un
-  presupuesto, no está aceptado, es de otro negocio, no existe o no se pudo leer.
-
-**Sin factura, el aviso es el de siempre MENOS la oración de la firma.** Los dos literales llevan el
-número de la factura y ahí no hay ninguno: encajarlos sería cambiarlos. Ni una palabra nueva.
-
-Entre la primera frase y la siguiente el aviso de siempre lleva un salto de línea y los dos firmados un
-espacio. Copiados como están firmados.
-
-Ficha: `docs/microcopy/2026-10-06-SCRUM-1436-aviso-de-disputa.md`.
 
 **Con firma, el aviso es byte a byte el de antes** (caso ① del test).
 
@@ -92,12 +74,10 @@ se repitieron los dos tests míos (18 casos, 0 caen), el banco de mutaciones (mi
 |---|---|
 | Rojo primero, disputa (contra `main` `12ecc7bb`, antes del arreglo) | 10 casos, 10 caen |
 | Rojo primero, ventana (antes del arreglo) | 8 casos, 3 caen (los 3 del defecto); 2 suelos y 3 positivos pasan |
-| Los dos tests, después (antes de los literales) | 18 casos, 0 caen, 0 saltos |
-| Los dos tests, con los literales | 20 casos (12 + 8), 0 caen, 0 saltos |
-| Mutaciones con los literales (`docs/evidencias/scrum1436/mutaciones-con-los-literales.txt`) | 15 mutaciones: 14 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
+| Los dos tests, después | 18 casos, 0 caen, 0 saltos |
 | Los dos míos, sus vecinos (scrum195-loop-adicional, scrum815-disputa, scrum62-albaran-ventana, scrum590-el-movil, scrum180, scrum227) y los guards de suite (scrum237, 976, 409, 419, 850, 850b, los cuatro scrum245, 864c, 267, 1294, 525d, 514), ya con main mezclado | 193 casos, 191 pasan, 2 caen, 0 saltos. Los 2 son de `scrum245-tipo-obliga-declarar` y caen por el árbol: `Cannot find module …\node_modules\typescript\bin\tsc` (este worktree no tiene `node_modules` propio). No los he visto pasar en ningún sitio: los dirá el CI |
 | `npm run guards:entrada`, después del registro | 13 guards, 158 casos, 0 caen |
-| Mutaciones antes de los literales (`tests/banco-scrum1436/mutar.mjs`, salida en `docs/evidencias/scrum1436/mutaciones.txt`) | 9 mutaciones: 8 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
+| Mutaciones (`tests/banco-scrum1436/mutar.mjs`, salida en `docs/evidencias/scrum1436/mutaciones.txt`) | 9 mutaciones: 8 caen, 1 viva y equivalente (M5); las 2 bases sin mutar, 0 caídas |
 | `tsc --noEmit` completo | 6 errores, ninguno en mis dos ficheros (3 en `app.ts`, 2 en `invoiceNumber.service.ts`, 1 en `merchantAdmin.ts`); NO he mirado si son del árbol o del `node_modules` compartido |
 
 M5 quita la guarda «sin factura o sin presupuesto». Sale viva porque sin ella `invoice.quoteId` sobre
@@ -129,9 +109,70 @@ disputa de Stripe y un fallo de Meta, que no se pueden provocar desde fuera.
   que entrar. Los dos literales firmados llevan el número de la factura, así que tampoco sirven ahí:
   necesita un texto propio y hoy no hay ninguno firmado. Es lo que le falta a la línea 1 de la
   aceptación («no manda a una factura que no existe»). Lo sube el orquestador.
-- **Hallazgo 1, el aviso sin factura** sigue diciendo «Entra en la factura y pulsa…» sin factura a la
-  que entrar. No tocado: necesita un texto propio, y hoy no hay ninguno firmado. Es lo que le falta a
-  la línea 1 de la aceptación («no manda a una factura que no existe»).
 - **Hallazgos 2, 4 y 5:** no cogidos aquí.
 - **SCRUM-1477** (los siete `catch` de `whatsapp.ts` no distinguen «Meta dijo que no» de «Meta no
   contestó») es OTRO trabajo y no se ha tocado. La ficha del encargo le puso ese número al hallazgo 3.
+
+---
+
+# SCRUM-1436c · Los dos literales del aviso de disputa sin firma
+
+**Medido contra:** `origin/main` = `eda7ca55f9e2352b9da916c12f80d39aca5e1595` · 2026-10-07T16:03:30Z
+
+7-oct-2026 · **J2**, rama `scrum-1436c-los-dos-literales-del-aviso-de-disputa`, montada encima de la del
+tramo de arriba. [Escrito por una sesión; no por el fundador. Los comentarios 18287, 18734 y 18747 de
+SCRUM-1436 los he leído en Jira.]
+
+A9: sin fallo que generalice — el tropiezo de este tramo fue de orden de trabajo (comiteé los literales en la primera rama antes de saber si su ficha podía firmarse, y hubo que revertirlos allí); el guard que lo paró ya existe, `scrum726`, y paró a tiempo
+
+**Sustituye** al primer punto de «Ⓔ Lo que falta» de arriba: los dos textos ya no esperan.
+
+## La firma
+
+- Los escribió S1 en el enunciado del ticket y los dio por firmados el comentario 18287 (6-oct-2026,
+  publicado desde la cuenta de Luis; si lo escribió él o su orquestador por delegación, no se sabe).
+- El comentario 18734 (7-oct-2026) recoge la decisión de Javier: esa firma vale para este carril.
+- **El comentario 18747 (7-oct-2026) es la firma directa de Javier, fundador, sobre los dos textos
+  completos: «Firmamos».** Es la que lleva la ficha, `docs/microcopy/2026-10-07-SCRUM-1436-aviso-de-disputa.md`.
+
+Por qué hizo falta la tercera: `tests/scrum726-quien-firma-la-microcopy.test.mjs` sólo admite
+«Aprobado por el fundador» o «por el orquestador por delegación del fundador», y del 18287 no se podía
+afirmar ninguna de las dos. Con la ficha sin línea de firma el guard caía («firmante: null»). No se
+tocó el guard.
+
+## Lo construido
+
+`avisoDeDisputa` en `src/modules/payments/disputes.service.ts`, cuatro formas:
+
+| Caso | Qué sale |
+|---|---|
+| presupuesto firmado (con trazo) | el aviso de siempre, sin tocar una letra |
+| con factura, presupuesto con `acceptedAt` y sin firma con trazo | el literal ① («Tienes el presupuesto aceptado, pero sin firma.») |
+| con factura, cualquier otro caso sin firma (sin presupuesto, sin aceptar, de otro negocio, borrado, lectura fallida) | el literal ②, que no dice nada del presupuesto |
+| SIN factura | el aviso de siempre menos la oración de la firma |
+
+«Aceptado» se lee de `Quote.acceptedAt`; el rechazo lo pone a `null` (`quotes.routes.ts`,
+`quoteAdmin.ts`).
+
+## Los tres hallazgos del encaje
+
+1. **El cobro SIN factura no tiene texto.** Los dos literales dicen «la factura {n}» y ahí no hay
+   ninguna. No se han encajado: sería cambiarlos. Ese caso sigue mandando a «la factura» sin que exista.
+   El comentario 18747 lo recoge como lo que la firma NO cubre; lo abre el orquestador.
+2. **El separador.** El aviso de siempre lleva un salto de línea tras la primera frase; los firmados,
+   un espacio. Copiados como están firmados.
+3. **«Firmado» pasa por `firmaTieneTrazo`**, más estricto que el Libro sobre el mismo campo. Declarado
+   arriba y en el código.
+
+## Lo corrido
+
+En local, con `dist/` de `tsc --noCheck` posterior al último cambio.
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1436-disputa-firmado-solo-con-firma.test.mjs` | 12 casos, 0 caen. Compara cada aviso por igualdad con el literal escrito a mano |
+| Los dos tests de 1436 juntos | 20 casos, 0 caen, 0 saltos |
+| Mutaciones (`docs/evidencias/scrum1436/mutaciones-con-los-literales.txt`) | 15: 14 caen y M5 es equivalente; entre ellas, quitar una coma (M14) y cambiar los dos puntos (M15) de un literal |
+| Los dos de 1436, `scrum815-disputa`, `scrum726`, `scrum861`, `scrum709`, los dos `scrum514`, `scrum267`, `scrum1294`, `scrum525d` y `scrum237`, con la ficha firmada | 122 casos, 0 caen, 0 saltos. Sin la línea de firma, `scrum726` caía con 1 |
+
+Nada visto en yaqu.app: hace falta una disputa real de Stripe.

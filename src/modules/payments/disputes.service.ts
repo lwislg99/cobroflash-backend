@@ -61,9 +61,9 @@ async function pruebaDelPresupuesto(
  *
  * · `firmado` → el de siempre, sin tocar una letra.
  * · `aceptado_sin_firma` y `ninguna`, CON factura → los dos literales firmados en SCRUM-1436
- *   comentario 18287 (cuenta de Luis), que valen para este carril por la decisión del comentario
- *   18734. Copiados letra por letra; constan en
- *   `docs/microcopy/2026-10-06-SCRUM-1436-aviso-de-disputa.md`.
+ *   comentario 18287 (cuenta de Luis) y, directamente por el fundador, en el comentario 18747.
+ *   Copiados letra por letra; constan en
+ *   `docs/microcopy/2026-10-07-SCRUM-1436-aviso-de-disputa.md`.
  * · SIN factura → el de siempre menos la oración de la firma. Los literales firmados llevan el
  *   número de la factura y aquí no hay ninguno: encajarlos sería cambiarlos, y no se ha hecho.
  *   ⚠️ Sigue mandando a «la factura» sin que exista: queda dicho en `docs/master/SCRUM-1436.md`.
