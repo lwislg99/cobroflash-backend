@@ -112,6 +112,70 @@ disputa de Stripe y un fallo de Meta, que no se pueden provocar desde fuera.
 - **Hallazgos 2, 4 y 5:** no cogidos aquí.
 - **SCRUM-1477** (los siete `catch` de `whatsapp.ts` no distinguen «Meta dijo que no» de «Meta no
   contestó») es OTRO trabajo y no se ha tocado. La ficha del encargo le puso ese número al hallazgo 3.
+
+---
+
+# SCRUM-1436c · Los dos literales del aviso de disputa sin firma
+
+**Medido contra:** `origin/main` = `eda7ca55f9e2352b9da916c12f80d39aca5e1595` · 2026-10-07T16:03:30Z
+
+7-oct-2026 · **J2**, rama `scrum-1436c-los-dos-literales-del-aviso-de-disputa`, montada encima de la del
+tramo de arriba. [Escrito por una sesión; no por el fundador. Los comentarios 18287, 18734 y 18747 de
+SCRUM-1436 los he leído en Jira.]
+
+A9: sin fallo que generalice — el tropiezo de este tramo fue de orden de trabajo (comiteé los literales en la primera rama antes de saber si su ficha podía firmarse, y hubo que revertirlos allí); el guard que lo paró ya existe, `scrum726`, y paró a tiempo
+
+**Sustituye** al primer punto de «Ⓔ Lo que falta» de arriba: los dos textos ya no esperan.
+
+## La firma
+
+- Los escribió S1 en el enunciado del ticket y los dio por firmados el comentario 18287 (6-oct-2026,
+  publicado desde la cuenta de Luis; si lo escribió él o su orquestador por delegación, no se sabe).
+- El comentario 18734 (7-oct-2026) recoge la decisión de Javier: esa firma vale para este carril.
+- **El comentario 18747 (7-oct-2026) es la firma directa de Javier, fundador, sobre los dos textos
+  completos: «Firmamos».** Es la que lleva la ficha, `docs/microcopy/2026-10-07-SCRUM-1436-aviso-de-disputa.md`.
+
+Por qué hizo falta la tercera: `tests/scrum726-quien-firma-la-microcopy.test.mjs` sólo admite
+«Aprobado por el fundador» o «por el orquestador por delegación del fundador», y del 18287 no se podía
+afirmar ninguna de las dos. Con la ficha sin línea de firma el guard caía («firmante: null»). No se
+tocó el guard.
+
+## Lo construido
+
+`avisoDeDisputa` en `src/modules/payments/disputes.service.ts`, cuatro formas:
+
+| Caso | Qué sale |
+|---|---|
+| presupuesto firmado (con trazo) | el aviso de siempre, sin tocar una letra |
+| con factura, presupuesto con `acceptedAt` y sin firma con trazo | el literal ① («Tienes el presupuesto aceptado, pero sin firma.») |
+| con factura, cualquier otro caso sin firma (sin presupuesto, sin aceptar, de otro negocio, borrado, lectura fallida) | el literal ②, que no dice nada del presupuesto |
+| SIN factura | el aviso de siempre menos la oración de la firma |
+
+«Aceptado» se lee de `Quote.acceptedAt`; el rechazo lo pone a `null` (`quotes.routes.ts`,
+`quoteAdmin.ts`).
+
+## Los tres hallazgos del encaje
+
+1. **El cobro SIN factura no tiene texto.** Los dos literales dicen «la factura {n}» y ahí no hay
+   ninguna. No se han encajado: sería cambiarlos. Ese caso sigue mandando a «la factura» sin que exista.
+   El comentario 18747 lo recoge como lo que la firma NO cubre; lo abre el orquestador.
+2. **El separador.** El aviso de siempre lleva un salto de línea tras la primera frase; los firmados,
+   un espacio. Copiados como están firmados.
+3. **«Firmado» pasa por `firmaTieneTrazo`**, más estricto que el Libro sobre el mismo campo. Declarado
+   arriba y en el código.
+
+## Lo corrido
+
+En local, con `dist/` de `tsc --noCheck` posterior al último cambio.
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1436-disputa-firmado-solo-con-firma.test.mjs` | 12 casos, 0 caen. Compara cada aviso por igualdad con el literal escrito a mano |
+| Los dos tests de 1436 juntos | 20 casos, 0 caen, 0 saltos |
+| Mutaciones (`docs/evidencias/scrum1436/mutaciones-con-los-literales.txt`) | 15: 14 caen y M5 es equivalente; entre ellas, quitar una coma (M14) y cambiar los dos puntos (M15) de un literal |
+| Los dos de 1436, `scrum815-disputa`, `scrum726`, `scrum861`, `scrum709`, los dos `scrum514`, `scrum267`, `scrum1294`, `scrum525d` y `scrum237`, con la ficha firmada | 122 casos, 0 caen, 0 saltos. Sin la línea de firma, `scrum726` caía con 1 |
+
+Nada visto en yaqu.app: hace falta una disputa real de Stripe.
 # SCRUM-1436b · El recordatorio manual nombra el documento por su número
 
 > Este tramo es **SCRUM-1436b**: sólo la parte de J1 del hallazgo 2 del ticket. Los hallazgos 1 y 3
