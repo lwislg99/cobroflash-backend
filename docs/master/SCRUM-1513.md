@@ -386,3 +386,317 @@ detrás de la que crea la carpeta, que la borra al salir el proceso. En local, a
 | 4 · La parte ①: por ficha y no por número | §4 |
 | Dejar escrito lo de Postgres en esta máquina | §5 |
 | Construir el arreglo | NO HECHO → fundador: no hay GO (regla 40). Decide P1, P2 y P3 de §1 y el punto 4 de §4 |
+
+---
+
+# SCRUM-1513d · El cerrojo del tope de plantillas, construido: la opción C
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T09:25:52Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1513d-la-reserva-del-tope.test.mjs`
+
+**J2 (relevo, sesión `jv-j2`, equipo de Javier).** Orden de construir: Jira `c.18998`. GO del fundador: `c.18988`
+(P1 devuelve el hueco · P2 ocupa hueco = mandar de menos · P3 no se toca). Firma del rótulo del chip: `c.18995`.
+El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+## Qué se ha construido
+
+- `src/modules/messaging/domain/whatsappLog.service.ts` (J2): `reservarPlantilla` y `resolverReservaDePlantilla`.
+  Una transacción corta: cerrojo del comercio (`pg_advisory_xact_lock`, espacio propio 1751), las dos preguntas del
+  tope y, si cabe, la fila en `queued`. El cerrojo se suelta ANTES de hablar con el proveedor.
+- `src/integrations/whatsapp.ts` (J2), sólo `sendWhatsAppTemplate`: la validación de la plantilla sube delante de
+  la reserva; el envío que sale pasa la fila a `sent`; el rechazo, a `failed`; sin respuesta, la deja en `queued`.
+  Ninguna firma ni valor devuelto cambia: no se ha tocado ningún llamador.
+- Qué cuenta para el tope: lo que tiene identificador del proveedor **o** sigue en `queued`, de hoy.
+- Los tres cerrojos de emisión (1748, 1749, 1750) no se han tocado. Ni esquema, ni estado nuevo, ni texto nuevo.
+- `tests/_envio-doblado.mjs`: el doble de la base aprende UNA sentencia, el cerrojo de transacción, como no-op.
+  Cualquier otro `$executeRaw` sigue avisando. Es un doble, no un control: no se ha relajado ninguna comprobación.
+
+## El control, contra PostgreSQL 16.13 de verdad (desechable, loopback), tope en 100
+
+El mismo guion de la medición de arriba (`evidencias/SCRUM-1513/tope-postgres.cjs`), una pasada de cada:
+
+| caso | ROJO PREVIO (`main`, sin arreglo) | con el arreglo | con el arreglo y **sin la línea del cerrojo** |
+| --- | --- | --- | --- |
+| UNA petición con 120 mensajes | 117 | **100 y 20 bloqueadas** | 108 |
+| 120 peticiones a la vez | 120 | **100 y 20** | 110 |
+| 99 enviadas y UNA petición con 2 | 2 | **1 y 1 bloqueada** (no 0) | 2 |
+| 99 enviadas y UNA petición con 5 | 2 | **1 y 4** | 3 |
+| el envío normal de 1 | 1 | **1** | 1 |
+
+Con `--pool 1` y con `--latencia 150`, las mismas cifras de la columna del arreglo (una pasada de cada; esas dos
+salidas no se han guardado). 11 controles con esperado, 0 sin cuadrar, en todas las pasadas.
+
+**La tercera columna es la que importa mañana.** Quitando SÓLO la línea del cerrojo en `dist`, con la reserva
+puesta, el defecto vuelve: 108, 110, 2 y 3. La reserva sola no cierra nada; lo que cierra es el cerrojo. En un
+banco en memoria esos números seguirían saliendo bien.
+
+Y los desenlaces del proveedor, que desde el webhook no se pueden provocar
+(`evidencias/SCRUM-1513d/reserva-postgres.cjs`, 19 comprobaciones, 0 sin cuadrar):
+
+| caso | salió |
+| --- | --- |
+| P1 · el proveedor RECHAZA (400) con 99 enviadas, y llega otro | la fila pasa a `failed`; el siguiente SALE |
+| **P2 · el proveedor NO CONTESTA (conexión cortada) con 99 enviadas, y llega otro** | la fila se queda en `queued`; **el siguiente NO sale** |
+| P2 · el proveedor contesta 500 | igual que el anterior |
+| mientras el proveedor contesta | la fila ya existe, en `queued` y sin documento |
+| una reserva parada de ayer · de hoy | no cuenta · cuenta |
+| tope por cliente: 2 enviadas a ese cliente y 3 envíos a la vez | 1 sale y 2 bloqueadas |
+| dos comercios al borde, 2 envíos a la vez en cada uno | 1 y 1: el cerrojo no es global |
+| 20 envíos a la vez con el proveedor tardando 150 ms | 233 ms en total, no 3.000: no van de uno en uno |
+| plantilla inválida | no sale y no ocupa hueco |
+
+Sin la línea del cerrojo ese guion sale 1: caen el tope por cliente (salen 2) y los dos comercios (salen 2 en uno).
+El caso «99 y 2 a la vez» NO cayó en esa pasada: la carrera no se pierde siempre, y por eso no es el único control.
+
+## El paquete de disputa, medido antes de que `queued` se vea
+
+Leído (`invoicesAdmin.routes.ts:363-374` y `:431`, carril J1, sin tocar): busca los mensajes **por documento**, no
+filtra por estado e imprime el estado tal cual. Una reserva asociada al documento habría impreso `queued`.
+
+**Por eso la reserva nace SIN documento, y sólo lo recibe cuando deja de estar en `queued`.** Ejecutado: tras un
+envío sin respuesta, el documento tiene 0 filas en `queued`. El paquete y los tres chips de documento no llegan a
+verlo; no hace falta traducir nada ni otra frase. La pestaña de WhatsApp de la ficha del cliente lee por cliente y sí
+lo ve, con el rótulo firmado en `c.18995`, que ya pinta `public/dashboard/js/api.js` (S2; no se ha tocado).
+
+## Lo que cambia para quien mira la pantalla, y no es un texto nuevo
+
+Cuando el proveedor no contesta, hoy se escribe una fila `failed` asociada al documento y el chip del documento dice
+«No entregado». Con este cambio la fila se queda en `queued` y sin documento, así que **el chip del documento ya no
+dice «No entregado» en ese caso** — y el aviso al profesional de que el documento está sin enviar **no cambia**: la
+regla que lo pinta da el mismo aviso y el mismo texto con y sin esa fila (medido en `c.18984`). «No entregado» es
+una afirmación, y en ese caso no se sabe si se entregó: el producto deja de afirmar lo que ignora. Aprobado por el
+orquestador el 8-oct-2026; es un cambio por ausencia, no por texto, y queda aquí para quien se lo pregunte.
+
+## Tests de la casa
+
+- `tests/scrum1513d-la-reserva-del-tope.test.mjs`: 11 de 11. Fija el orden (cerrojo, pregunta, fila), qué cuenta la
+  pregunta, y qué lleva la fila en cada desenlace. **No puede probar que el cerrojo cierre la carrera**: eso sólo se
+  ve con varias conexiones, y es lo medido a mano arriba.
+- Los 101 ficheros que nombran el camino de envío o su registro: 955 tests, 937 pasan, 16 saltan, **2 caen**, los
+  dos de `scrum245-tipo-obliga-declarar` con `MODULE_NOT_FOUND`. No los he corrido sobre `main` en este árbol:
+  que sean del árbol anidado y no de este cambio es lo que dice el error, no una medición.
+- **La tanda completa NO se ha corrido.** La lancé y el arnés la mató por falta de memoria; lo que dejó no se cuenta.
+  El veredicto de la tanda entera es el del obligatorio en CI.
+
+Tres rojos míos por el camino, arreglados en el código y no en el control: `scrum1477` exige el literal
+`desenlace: desenlaceDeMeta(err)` en los siete `catch` (lo había sacado a una variable); `scrum411` cazó un `export`
+sin llamador (el espacio del cerrojo); y ocho tests de `scrum1465b` y `scrum1478` doblan la base sólo en
+`whatsapp.js`, y la reserva preguntaba desde otro módulo — ahora recibe el cliente de la base por parámetro.
+
+## Lo que NO he medido
+
+Producción ni staging · el proveedor real · el pool y el número de instancias de producción · la muerte del proceso
+entre la reserva y la respuesta (deja una fila en `queued` hasta medianoche; razonado, no ejecutado) · P3, la base
+que no contesta en la reserva: sigue saliendo como antes, cubierto sólo por el test con un doble · una ráfaga que
+agote la espera de la transacción (15 s): caería en P3 y saldría sin reserva; con 120 a la vez y una sola conexión
+no pasó · la cadena de una fila `queued` hasta la pestaña del cliente en un navegador · `getWhatsAppMetrics`, que
+suma una fila `queued` en el total y en el coste (leído en `c.18984`, no ejecutado) · yaqu.app, que no se puede
+verificar hasta el merge.
+
+## Errores propios
+
+- Los tres rojos de arriba: escribí el código sin correr antes los controles de la casa que lo miran.
+- Lancé la tanda completa en segundo plano con la máquina corta de memoria, contra el aviso de la ficha; la mató
+  el arnés y perdí esa pasada.
+- Crucé los 200k de contexto antes de avisar: medido 210.344.
+
+| aceptación (de `c.18998`) | dónde se ve |
+| --- | --- |
+| cerrojo corto por comercio y reserva en `queued`, resuelta al volver | «Qué se ha construido» |
+| sin tocar los 3 sitios de emisión | ídem; espacio propio 1751 |
+| subir la validación de plantilla delante de la reserva | ídem; caso «plantilla inválida» |
+| 99 y una petición con 2 pasa de 2 a 1, NO a 0 | tabla del control |
+| el envío normal de 1 sigue saliendo | tabla del control |
+| visto en rojo antes, contra Postgres de verdad | columnas primera y tercera |
+| medir el paquete de disputa antes de que `queued` sea visible | «El paquete de disputa» |
+| la parte ① (la baja) | NO HECHO → sin GO |
+| P3 | NO HECHO → no se toca aquí |
+| tanda completa en local | NO HECHO → la mató el arnés; queda el obligatorio |
+
+---
+
+# SCRUM-1513e · El cierre: dónde vive la prueba del cerrojo, y los dos rojos de `scrum245` medidos sobre `main`
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T09:32:50Z (hora de GitHub)
+
+A9: sin fallo que generalice — tramo de cierre, sólo lectura y una medición; no toca `src` ni `tests`, y lo que deja dicho es dónde NO mira la tanda
+
+**J2 (relevo de la sesión que construyó el tramo de arriba; sesión `jv-j2`, equipo de Javier).** Encargo del
+orquestador: cerrar lo que quedó abierto, sin construir nada. Este tramo sólo añade texto a este registro. El hook de
+arranque volvió a decir «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+## 🔴 La prueba del cerrojo vive en la medición contra Postgres, NO en la tanda; el doble no lo ejercita
+
+Para quien lea esto dentro de tres meses y vea la tanda en verde:
+
+- `tests/_envio-doblado.mjs` aprende el cerrojo de transacción **como no-op**: la sentencia se acepta y no hace nada.
+  Los tests de envío que usan ese doble dan el mismo resultado con el cerrojo y sin él: hay un solo proceso y la
+  sentencia no bloquea a nadie.
+- `tests/scrum1513d-la-reserva-del-tope.test.mjs` (con su propia base de mentira, no con ese doble) sí cae si la
+  sentencia del cerrojo **desaparece o cambia de sitio**: comprueba que se PIDE, la segunda de la transacción, con
+  el comercio y fuera de los espacios 1748 a 1750. Lo que no prueba, y lo dice el tramo de arriba: **que pedirlo
+  cierre la carrera**. Un cerrojo pedido con otra clave, fuera de la transacción que cuenta, o que Postgres no
+  respetara, pasaría ese test. Eso sólo se ve con varias conexiones contra un Postgres de verdad.
+- Lo único que lo prueba es la medición a mano: `evidencias/SCRUM-1513/tope-postgres.cjs` y
+  `evidencias/SCRUM-1513d/reserva-postgres.cjs`, con su tercera columna (el arreglo **sin** la línea del cerrojo:
+  108, 110, 2 y 3). Esos guiones **no corren en CI**: piden un Postgres desechable que el obligatorio no les da.
+
+Consecuencia: quien toque `reservarPlantilla`, el espacio 1751 o la transacción que los envuelve **vuelve a pasar los
+dos guiones contra Postgres**. Un verde de la tanda no dice nada sobre el tope bajo concurrencia.
+
+## El hueco que sigue abierto
+
+Lo midió la sesión anterior y no se ha cerrado: **una ráfaga que agote los 15 s de espera de la transacción saldría
+SIN reserva**. Cae en P3 (la base no contesta), que el GO de `c.18988` deja fuera de este ticket: el mensaje sale
+como antes y no ocupa hueco, así que en ese caso el tope se puede rebasar. Con 120 envíos a la vez y una sola
+conexión no ocurrió; **no se ha medido con qué ráfaga ocurre**, ni el pool ni el número de instancias de producción.
+
+## Los dos rojos de `scrum245`, ahora medidos sobre `main`
+
+El tramo de arriba los dejó como «lo que dice el error, no una medición». Medido:
+
+| dónde | `scrum245-*` (4 ficheros) | los dos que caen |
+| --- | --- | --- |
+| esta rama @ `53ff10a98e15b3b3080e13fb7d0e38f0aef305eb` | 25 tests · 23 pasan · 2 caen | `Cannot find module …\node_modules\typescript\bin\tsc` |
+| `main` @ `497f516710e5ff843a6cfbee77f33c2692bba98f`, árbol anidado aparte, con `dist` (`tsc --noCheck`) | 25 tests · 23 pasan · 2 caen | los mismos dos, con el mismo error |
+
+Caen igual sin este cambio: el test busca `tsc` en el `node_modules` del propio árbol, y un árbol anidado no lo
+tiene. Y la otra mitad, que es la que importaba porque este PR toca `whatsapp.ts`, cuyos tipos compilan esos
+fixtures: la misma orden del test, con el `tsc` del checkout compartido, sobre los dos árboles —
+
+| fixture | `main` | esta rama |
+| --- | --- | --- |
+| `scrum245-no-compila.ts` (tiene que fallar nombrando `sinMerchant`) | código 2, lo nombra | código 2, lo nombra |
+| `scrum245-si-compila.ts` (tiene que compilar) | código 0 | código 0 |
+
+Idéntico en los dos. **Son del árbol, no del cambio.** Población: los 4 ficheros `tests/scrum245-*.test.mjs`; el
+positivo es el recuento de 25 y los 23 que pasan en cada lado.
+
+## Lo que NO he medido
+
+La tanda completa en local sigue SIN correr (esta máquina la mata; el veredicto de la tanda entera es el del
+obligatorio en CI, que al escribir este tramo no está leído) · los otros 97 ficheros del camino de envío sobre
+`main` (sólo se han cruzado los de `scrum245`, que eran los que caían) · nada de lo que el tramo de arriba declara
+sin medir ha cambiado.
+
+## Errores propios
+
+Ninguno medido al escribir este tramo. Este commit vuelve a arrancar el obligatorio de #2325, que ya corría sobre
+`53ff10a98`: es el coste de que la frase de arriba entre en el mismo PR y no en otro.
+
+---
+
+# SCRUM-1513f · Los tres rojos del obligatorio de #2325, ejecutando las tres decisiones de `c.19001`
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T10:17:19Z (hora de GitHub)
+
+A9: comprobación → `tests/wa-log-sync.test.mjs`
+
+**J2 (relevo; sesión `jv-j2`, equipo de Javier).** Orden: `c.19001`, que decide los tres. Entrega anterior: `c.19000`.
+GO: `c.18988`. Firma del rótulo: `c.18995` (no se ha tocado ningún texto). El hook de arranque volvió a decir «SIN
+IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+El tramo «SCRUM-1513e» de arriba dice «el obligatorio no está leído». **Después se leyó y salió ROJO** (`c.19000`):
+job `113246394344` sobre `4e255d2cd`, 11.086 tests, 10.990 pasan, **3 caen**, 93 saltan. Los tres eran del código de
+este PR. Este tramo es su arreglo.
+
+## 1 · `scrum1093h`: el «hoy» del tope es el día del COMERCIO
+
+`reservarPlantilla` ya no usa `setHours` (el reloj del proceso). Lee la zona del comercio dentro de la misma
+transacción, antes de pedir el cerrojo, y cuenta desde `inicioDelDiaEn(diaNaturalEn(ahora, zona), zona)`, con la zona
+resuelta por `zonaDelMerchant` de `src/core/zonaDelMerchant.ts`. No sale del país. Sin zona declarada, sin fila o con
+una zona que el motor no reconoce, cae a UTC (lo que ya hacía ese módulo), nunca a Madrid.
+
+**Sobre «clasifica el uso donde el censo lo pide»:** no ha hecho falta entrada en `USO`. La llamada que el censo
+acusaba ha desaparecido, así que el censo ya no tiene fila que clasificar (`RATCHET` en verde). En el `dist` del
+módulo queda un solo `setHours`, el de `getWhatsAppMetrics`, que ya estaba clasificado como AGREGADO y no se toca.
+
+Fijado en `tests/scrum1513d-la-reserva-del-tope.test.mjs`, cinco casos nuevos «SCRUM-1513f»: se pregunta la zona de
+ese comercio y sólo la zona; UTC+14 y UTC-11 cuentan desde su medianoche (el esperado se calcula en el test con
+aritmética, no con el módulo probado); sin zona el inicio cae a las 00:00 UTC (con Madrid daría 22:00 o 23:00).
+
+**Efecto que cambia, dicho:** las métricas (`getWhatsAppMetrics`, `templateToday`) siguen contando «hoy» con el reloj
+del proceso. Para un comercio con zona declarada, el tope y esa cifra pueden no coincidir durante unas horas. No se ha
+tocado: es otra función y no la nombra la orden.
+
+## 2 · `scrum728`: se BAJA la espera a la de Prisma por defecto. El test no se ha tocado
+
+La transacción de la reserva ya no fija `maxWait` ni `timeout`. Elegido con el dato delante
+(`docs/master/evidencias/SCRUM-1513f/`, PostgreSQL 16.13 desechable en loopback, `reservarPlantilla` de `dist`, una
+pasada de cada):
+
+| qué | con 15 s (como estaba) | por defecto (2 s de turno, 5 s de transacción) | por defecto, 5 conexiones |
+| --- | --- | --- | --- |
+| UNA reserva sola (200 seguidas) | mediana 1,9 ms · máxima 2,7 ms | mediana 1,9 ms · máxima 2,7 ms | mediana 1,8 ms · máxima 2,7 ms |
+| 120 a la vez, tope 100 | 100 y 20 · la más lenta 226 ms | 100 y 20 · 229 ms | 100 y 20 · 156 ms |
+| 2.000 a la vez, tope 100 | 100 y 1.900 · 1.363 ms | 100 y 1.900 · 1.409 ms · **lanzan 0** | 100 y 1.900 · 1.216 ms · lanzan 0 |
+| 4.000 a la vez, tope 100 | 100 y 3.900 · 2.548 ms · lanzan 0 | 100 y 3.027 · **LANZAN 873** (P2028, a los 2 s) | 100 y 3.274 · LANZAN 626 |
+| 2.000 a la vez, sin tope | 2.000 · 2.595 ms · lanzan 0 | 1.590 · **LANZAN 410** | 1.713 · LANZAN 287 |
+
+En los 30 casos de ráfaga, reservadas + bloqueadas + lanzadas = las pedidas, y las filas = las reservadas.
+
+**Por qué bajar y no declarar los 15 s:**
+
+- El único formato que ese test acepta para una transacción con opciones es editar su propia línea (su mensaje lo
+  dice: «(c) esta línea actualizada a propósito»; compara contra la lista vacía). La orden prohíbe tocarlo. Así que la
+  salida ① de `c.19001` no existía sin tocarlo. Dicho al orquestador, que lo ha recogido.
+- Y el dato no la pedía: la ráfaga medida como defecto en este ticket (120) tarda 229 ms contra un límite de 2.000.
+- La llamada al proveedor no cuenta: ocurre fuera de la transacción, con el cerrojo ya suelto (`c.18999`: 20 a la
+  vez con el proveedor a 150 ms, 233 ms).
+
+**Qué se pierde:** el tramo entre más de 2.000 y 4.000 reservas simultáneas de UN comercio, que con 15 s cabían
+(4.000: 2.548 ms, 0 lanzan) y por defecto no. A cambio, la que no consigue turno falla a los 2 s y no a los 15.
+
+🔴 **El hueco no queda cerrado, queda MEDIDO. Cerrarlo es decidir qué hace el envío cuando la reserva lanza, y eso es
+P3, que el fundador dejó fuera a propósito** (`c.18988`). Una reserva que lanza cae en el `catch` de
+`sendWhatsAppTemplate` («no se bloquea») y el mensaje sale sin reserva: en el caso de 4.000, 873 por encima del tope.
+Antes no se sabía con qué ráfaga; ahora sí, en esta máquina: entre 2.000 y 4.000 a la vez del mismo comercio. Con
+15 s el hueco era el mismo, sólo más lejos (no apareció hasta 4.000, el máximo medido).
+
+## 3 · `a55-window-quote`: se arregla el instrumento, sin relajarlo
+
+`tests/_wa-log-sync.mjs` envolvía sólo `recordWaMessage`. Desde este PR la plantilla que sale escribe por
+`reservarPlantilla` (que el envío espera) y `resolverReservaDePlantilla` (lanzada sin `await`). El ayudante envuelve
+ahora también la segunda, con la misma técnica, y el `update` para el diagnóstico. El suelo «cero escrituras
+interceptadas = rojo» no se ha tocado. `a55` pide además que la fila de la plantilla esté en `sent`: es más estricto
+que antes. Lo usan también `scrum115`, `scrum47` y `scrum49` (gateados por staging): heredan el arreglo, sin ejecutar.
+
+**Ejecutado, no leído**, con `LIBRO_PG_URL` a un Postgres desechable (el de la tanda de CI es eso mismo):
+
+| ayudante | resultado de `a55-window-quote` |
+| --- | --- |
+| el de `HEAD` (`4e255d2cd`), código de hoy | 1 test · **cae** · «SCRUM-250: no se interceptó NINGUNA escritura de WA-0b…», el mensaje de CI |
+| el nuevo | 1 test · **pasa** |
+
+🔴 **Por qué no se vio antes de empujar:** en local ese test SE SALTA, porque pide base. Estaba entre los 16 saltos de
+`c.18999`. **Un test que se salta no es un test que pasa.** La parte que no pide base queda ahora en
+`tests/wa-log-sync.test.mjs` (cinco casos «SCRUM-1513f», con dobles). Límite: eso prueba que el ayudante espera a la
+boca nueva; que el envío real pase por ella sólo lo prueban los tests con base.
+
+## Tests de la casa (en local, árbol anidado, `dist` con `tsc --noCheck`)
+
+- Los 122 ficheros que nombran el camino de envío, el ayudante, la zona o el censo, más `scrum237`, `scrum976`,
+  `scrum812`, `scrum411`, `scrum1477`, `scrum1294` y `scrum267`: 1.206 tests · 1.191 pasan · 13 saltan · **2 caen**
+  (1.191 + 2 + 13 = 1.206). Los dos son los `scrum245` ambientales de `c.19000` (no hay `tsc` en el árbol anidado).
+- `scrum728 ③` y `scrum1093h RATCHET`: en ✔ por nombre.
+- **La tanda completa NO se ha corrido en local** (el arnés la mata por memoria). El veredicto es el del obligatorio.
+
+## Lo que NO he medido
+
+- El «hoy» del comercio contra Postgres: sólo con el banco del test (qué fecha pide la reserva), no con filas a un
+  lado y otro de la medianoche del comercio.
+- La latencia hasta la base de producción. En loopback una reserva son unos 2 ms; con una red más lenta el umbral de
+  la ráfaga baja. No está medido cuánto.
+- Cada cifra de ráfaga es UNA pasada. Entre 2.000 y 4.000 no hay puntos intermedios.
+- El tope en sí: no se ha vuelto a medir (orden). No cambia cómo decide, sólo desde cuándo cuenta «hoy».
+- Producción, staging y el proveedor real. yaqu.app, hasta que el PR entre.
+
+## Errores propios
+
+- Un índice posicional del test de 1513d (`b.pedido[3]`) se quedó señalando otra petición al añadir la lectura del
+  comercio. Lo cazó el propio test; ahora busca por operación, no por posición.
+- Intenté restaurar el ayudante viejo ENCIMA del nuevo para ver el rojo; lo paró el hook de órdenes destructivas. Se
+  midió con una copia de nombre distinto, borrada después.
+- Lancé una búsqueda sobre el temporal de la máquina que no terminó en 120 s; la paré.
+- Avisé de los 200k a 202.407, no antes.

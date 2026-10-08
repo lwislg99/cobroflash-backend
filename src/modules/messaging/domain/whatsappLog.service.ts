@@ -4,6 +4,7 @@
 // se puede desplegar ANTES de aplicar la migración, sin romper el envío de mensajes.
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
+import { zonaDelMerchant, diaNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -49,6 +50,131 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
   } catch (err: any) {
     // Tabla aún no migrada en prod, u otro fallo: no romper el flujo de envío
     console.error('[WA-0b] recordWaMessage omitido:', err?.message || err);
+  }
+}
+
+// ── SCRUM-1513 · El tope de plantillas se decide y se apunta en el MISMO instante ──────────
+// Medido contra PostgreSQL 16 (Jira c.18973): con el tope en 100, una entrega del webhook con 120
+// mensajes sacaba de 113 a 120 plantillas, y 120 peticiones a la vez, 120. El tope era un `count`
+// y la fila que ese `count` cuenta se escribía DESPUÉS de hablar con el proveedor: todas las
+// preguntas se contestaban antes de la primera fila.
+//
+// Lo que cierra (opción C, GO del fundador en c.18988): un cerrojo CORTO por comercio, y dentro
+// de él la pregunta y la fila. La fila nace en `queued` —estado que ya está en el máster y que
+// hasta hoy no escribía nadie— y se resuelve al volver del proveedor, ya FUERA del cerrojo: no se
+// retiene ninguna conexión mientras el proveedor contesta.
+//
+// Qué cuenta para el tope: lo que tiene identificador del proveedor O sigue en `queued`.
+//   · el proveedor dijo que NO  → `failed`: devuelve el hueco (P1).
+//   · no se sabe si salió       → se queda en `queued`: OCUPA hueco hasta la medianoche del comercio (P2). Es
+//     mandar de menos a propósito: un solo número para todos los comercios, y pasarse cuesta más
+//     que quedarse corto.
+//
+// La reserva nace SIN documento asociado, y sólo lo recibe cuando deja de estar en `queued`. El
+// paquete de disputa (`invoicesAdmin.routes.ts`) imprime el estado de cada mensaje del documento
+// tal cual: así no llega a imprimir un estado sin resolver.
+//
+// El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y no se comparten.
+const TOPE_WA_LOCK_NS = 1751;
+
+export type ReservaDePlantilla =
+  | { ok: true; id: number }
+  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number };
+
+/**
+ * Pregunta los dos topes y, si cabe, deja la fila apuntada en `queued`. Todo bajo el cerrojo del
+ * comercio. LANZA si la base no contesta: qué se hace entonces lo decide quien llama.
+ */
+/** El cliente de la base lo pasa quien llama: es el suyo, y es el que un test dobla. */
+type ClienteDeLaBase = typeof prisma;
+
+export async function reservarPlantilla(db: ClienteDeLaBase, input: {
+  merchantId: number;
+  customerId?: number | null;
+  templateName?: string | null;
+  topeComercio: number;
+  topeCliente: number;
+}): Promise<ReservaDePlantilla> {
+  return db.$transaction(
+    async (tx) => {
+      // «Hoy» es el día del COMERCIO (c.19001), no el del servidor: con el reloj del proceso, que va
+      // en UTC, a un profesional de la península el cupo se le reiniciaba a la 01:00 o a las 02:00 de
+      // su madrugada. La zona la resuelve `zonaDelMerchant` y nadie más: no sale del país (dentro
+      // de `ES` hay dos husos), y sin declarar cae a UTC, que es lo que ya se hacía.
+      // Se lee ANTES de pedir el cerrojo: es una lectura que no necesita turno.
+      const comercio = await tx.merchant.findUnique({ where: { id: input.merchantId }, select: { timezone: true } });
+      const zona = zonaDelMerchant(comercio);
+      const cuentaParaElTope = {
+        merchantId: input.merchantId,
+        type: 'template',
+        createdAt: { gte: inicioDelDiaEn(diaNaturalEn(new Date(), zona), zona) },
+        OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
+      };
+
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
+
+      const sentToday = await tx.whatsAppMessage.count({ where: cuentaParaElTope });
+      if (sentToday >= input.topeComercio) return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday };
+
+      if (input.customerId) {
+        const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...cuentaParaElTope, customerId: input.customerId } });
+        if (toCustomerToday >= input.topeCliente) {
+          return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday };
+        }
+      }
+
+      const fila = await tx.whatsAppMessage.create({
+        data: {
+          merchantId: input.merchantId,
+          customerId: input.customerId ?? null,
+          type: 'template',
+          templateName: input.templateName ?? null,
+          status: 'queued',
+          costEstimate: WA_UTILITY_COST_ES,
+        },
+        select: { id: true },
+      });
+      return { ok: true as const, id: fila.id };
+    },
+    // SIN opciones propias, a propósito (SCRUM-728 ③): valen las de Prisma, 2 s para conseguir turno
+    // y 5 s de transacción. Medido el 8-oct-2026 contra PostgreSQL 16.13 en loopback
+    // (docs/master/evidencias/SCRUM-1513f): una reserva sola tarda unos 2 ms; 2.000 a la vez del
+    // mismo comercio caben; con 4.000, las que no consiguen turno LANZAN a los 2 s — y qué hace el
+    // envío entonces lo decide quien llama. Subir la espera no cierra eso: sólo lo aleja.
+  );
+}
+
+/**
+ * Resuelve una reserva al volver del proveedor. Nunca lanza.
+ *   · `enviada`       → `sent`, con el identificador del proveedor y su documento.
+ *   · `rechazada`     → `failed`, con su documento: devuelve el hueco.
+ *   · `sin_respuesta` → se queda en `queued` y sin documento: ocupa el hueco. Sólo se anota el motivo.
+ */
+export async function resolverReservaDePlantilla(
+  db: ClienteDeLaBase,
+  id: number,
+  desenlace:
+    | { como: 'enviada'; waMessageId: string | null; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'rechazada'; error: string; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'sin_respuesta'; error: string },
+): Promise<void> {
+  try {
+    if (desenlace.como === 'sin_respuesta') {
+      await db.whatsAppMessage.update({ where: { id }, data: { error: desenlace.error } });
+      return;
+    }
+    await db.whatsAppMessage.update({
+      where: { id },
+      data: {
+        ...(desenlace.como === 'enviada'
+          ? { status: 'sent', waMessageId: desenlace.waMessageId }
+          : { status: 'failed', error: desenlace.error }),
+        relatedType: desenlace.relatedType ?? null,
+        relatedId: desenlace.relatedId ?? null,
+      },
+    });
+  } catch (err: any) {
+    console.error('[WA-0b] resolverReservaDePlantilla omitido:', err?.message || err);
   }
 }
 

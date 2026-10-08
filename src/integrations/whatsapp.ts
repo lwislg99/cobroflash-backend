@@ -10,6 +10,8 @@ import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from '
 import type { MotivoExencionDemo } from './whatsappPolicy';
 import {
   recordWaMessage,
+  reservarPlantilla,
+  resolverReservaDePlantilla,
   extractWaMessageId,
   isServiceWindowOpen,
   type WaRelatedType,
@@ -363,50 +365,9 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: false, reason: corte };
   }
 
-  // A3.2 (PV-WA-CAPS): topes anti-abuso del número compartido, contados sobre
-  // el log WA-0b (WhatsAppMessage). Best-effort: si la BD falla, NO se bloquea.
-  if (params.merchantId) {
-    try {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-
-      // Tope por merchant/día (protege el número y el gasto). SCRUM-115: solo cuenta
-      // intentos que LLEGARON a Meta (waMessageId presente) — un fallo de guard o de
-      // credencial no consumió API ni gasto, así que no debe comerse cupo.
-      const sentToday = await prisma.whatsAppMessage.count({
-        where: { merchantId: params.merchantId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
-      });
-      if (sentToday >= config.WA_DAILY_TEMPLATE_CAP) {
-        // Alerta interna de gasto/uso diario (visible en logs de Railway)
-        console.error(
-          `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
-          `(${sentToday}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
-        );
-        logFailure('daily_cap');
-        return { ok: false, reason: 'daily_cap' };
-      }
-
-      // J6: tope duro de mensajes-iniciados-por-negocio por CLIENTE y día
-      const customerId = params.log?.customerId;
-      if (customerId) {
-        const toCustomerToday = await prisma.whatsAppMessage.count({
-          where: { merchantId: params.merchantId, customerId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
-        });
-        if (toCustomerToday >= config.WA_CUSTOMER_DAILY_CAP) {
-          console.warn(
-            `[WhatsApp] J6: cliente ${customerId} ya recibió ${toCustomerToday} plantillas hoy ` +
-            `del merchant ${params.merchantId}; envío BLOQUEADO`,
-          );
-          logFailure('customer_daily_cap');
-          return { ok: false, reason: 'customer_daily_cap' };
-        }
-      }
-    } catch (err: any) {
-      console.error('[WhatsApp] Error comprobando topes A3.2 (no se bloquea):', err?.message || err);
-    }
-  }
-
-  // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001)
+  // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001).
+  // SCRUM-1513: va DELANTE de los topes, porque ahora el tope APUNTA una fila: una plantilla que
+  // no va a salir no puede ocupar hueco.
   const invalid = validateTemplateComponents(params.templateName, params.components);
   if (invalid) {
     console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
@@ -414,22 +375,76 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: false, error: `template_invalid: ${invalid}` };
   }
 
+  // A3.2 (PV-WA-CAPS) y J6: topes anti-abuso del número compartido, contados sobre el log WA-0b
+  // (WhatsAppMessage). SCRUM-1513: la pregunta y la fila van juntas, bajo el cerrojo del comercio
+  // (`reservarPlantilla`). Si cabe, la fila queda apuntada en `queued` ANTES de hablar con Meta, y
+  // se resuelve al volver. Best-effort como antes: si la BD falla, NO se bloquea, y el envío se
+  // registra después como se hacía (`reservaId` se queda en null).
+  let reservaId: number | null = null;
+  if (params.merchantId) {
+    try {
+      const customerId = params.log?.customerId ?? null;
+      const reserva = await reservarPlantilla(prisma, {
+        merchantId: params.merchantId,
+        customerId,
+        templateName: params.templateName,
+        topeComercio: config.WA_DAILY_TEMPLATE_CAP,
+        topeCliente: config.WA_CUSTOMER_DAILY_CAP,
+      });
+      if (!reserva.ok && reserva.reason === 'daily_cap') {
+        // Alerta interna de gasto/uso diario (visible en logs de Railway)
+        console.error(
+          `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
+          `(${reserva.cuenta}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
+        );
+        logFailure('daily_cap');
+        return { ok: false, reason: 'daily_cap' };
+      }
+      if (!reserva.ok) {
+        // J6: tope duro de mensajes-iniciados-por-negocio por CLIENTE y día
+        console.warn(
+          `[WhatsApp] J6: cliente ${customerId} ya recibió ${reserva.cuenta} plantillas hoy ` +
+          `del merchant ${params.merchantId}; envío BLOQUEADO`,
+        );
+        logFailure('customer_daily_cap');
+        return { ok: false, reason: 'customer_daily_cap' };
+      }
+      reservaId = reserva.id;
+    } catch (err: any) {
+      console.error('[WhatsApp] Error comprobando topes A3.2 (no se bloquea):', err?.message || err);
+    }
+  }
+
+  // WA-0b: el envío que salió. Con reserva, la fila ya existe y pasa a `sent`; sin ella, se crea.
+  const registrarEnviado = (data: any) => {
+    if (!params.merchantId) return;
+    const waMessageId = extractWaMessageId(data);
+    if (reservaId !== null) {
+      resolverReservaDePlantilla(prisma, reservaId, {
+        como: 'enviada',
+        waMessageId,
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+      return;
+    }
+    recordWaMessage({
+      merchantId: params.merchantId,
+      customerId: params.log?.customerId ?? null,
+      type: 'template',
+      templateName: params.templateName,
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   // A5.5/A8.4: dry-run — guards pasados, Meta no se toca, log igual
   if (isDryRun()) {
     const data = dryRunData();
     dryRunRecord({ kind: 'template', to: params.to, templateName: params.templateName });
-    if (params.merchantId) {
-      recordWaMessage({
-        merchantId: params.merchantId,
-        customerId: params.log?.customerId ?? null,
-        type: 'template',
-        templateName: params.templateName,
-        waMessageId: extractWaMessageId(data),
-        status: 'sent',
-        relatedType: params.log?.relatedType ?? null,
-        relatedId: params.log?.relatedId ?? null,
-      }).catch(() => {});
-    }
+    registrarEnviado(data);
     return { ok: true, data, dryRun: true } as any;
   }
 
@@ -456,24 +471,26 @@ export async function sendWhatsAppTemplate(params: {
     );
 
     // WA-0b: registrar el envío con el waMessageId que devuelve Meta
-    if (params.merchantId) {
-      recordWaMessage({
-        merchantId: params.merchantId,
-        customerId: params.log?.customerId ?? null,
-        type: 'template',
-        templateName: params.templateName,
-        waMessageId: extractWaMessageId(response.data),
-        status: 'sent',
-        relatedType: params.log?.relatedType ?? null,
-        relatedId: params.log?.relatedId ?? null,
-      }).catch(() => {});
-    }
+    registrarEnviado(response.data);
 
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
-    logFailure(errMsg);
+    if (reservaId === null) {
+      logFailure(errMsg);
+    } else if (desenlaceDeMeta(err) === 'sin_respuesta') {
+      // P2: no se sabe si salió. La reserva se queda como está y sigue ocupando su hueco.
+      resolverReservaDePlantilla(prisma, reservaId, { como: 'sin_respuesta', error: errMsg }).catch(() => {});
+    } else {
+      // P1: Meta dijo que no, o la petición no llegó a salir. Devuelve el hueco.
+      resolverReservaDePlantilla(prisma, reservaId, {
+        como: 'rechazada',
+        error: errMsg,
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+    }
     return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }

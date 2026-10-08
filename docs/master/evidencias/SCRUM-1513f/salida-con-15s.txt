@@ -1,0 +1,19 @@
+== 0 · CON QUIEN HABLO, Y QUE MIDO ==
+  PostgreSQL 16.13, compiled by Visual C++ build 1944, 64-bit · base=yaqu_duracion_1513_test · host=127.0.0.1:54736
+  opciones de la transaccion en dist: maxWait 15_000 · timeout 15_000
+  conexiones del cliente: las de Prisma por defecto, 25 (nucleos x 2 + 1) · tope del comercio 100
+== 1 · UNA RESERVA, SOLA (200 seguidas, sin nadie mas; las 5 primeras se descartan) ==
+  reservadas 200 de 200 · minima 1.8 ms · mediana 1.9 ms · p95 2.2 ms · maxima 2.7 ms
+== 2 · RAFAGA CON EL TOPE EN 100 (lo que pasa en produccion: a partir de la 100 solo se pregunta) ==
+  tope 100 · 120 a la vez → reservadas 100 · bloqueadas 20 · LANZAN 0 · filas 100 · mediana 158 ms · la mas lenta 226 ms · total 226 ms
+  tope 100 · 500 a la vez → reservadas 100 · bloqueadas 400 · LANZAN 0 · filas 100 · mediana 254 ms · la mas lenta 416 ms · total 417 ms
+  tope 100 · 1000 a la vez → reservadas 100 · bloqueadas 900 · LANZAN 0 · filas 100 · mediana 416 ms · la mas lenta 744 ms · total 745 ms
+  tope 100 · 2000 a la vez → reservadas 100 · bloqueadas 1900 · LANZAN 0 · filas 100 · mediana 746 ms · la mas lenta 1363 ms · total 1366 ms
+  tope 100 · 4000 a la vez → reservadas 100 · bloqueadas 3900 · LANZAN 0 · filas 100 · mediana 1334 ms · la mas lenta 2548 ms · total 2554 ms
+== 3 · RAFAGA SIN TOPE (el peor caso: todas escriben su fila) ==
+  sin tope · 120 a la vez → reservadas 120 · bloqueadas 0 · LANZAN 0 · filas 120 · mediana 94 ms · la mas lenta 159 ms · total 159 ms
+  sin tope · 500 a la vez → reservadas 500 · bloqueadas 0 · LANZAN 0 · filas 500 · mediana 295 ms · la mas lenta 567 ms · total 567 ms
+  sin tope · 1000 a la vez → reservadas 1000 · bloqueadas 0 · LANZAN 0 · filas 1000 · mediana 565 ms · la mas lenta 1181 ms · total 1182 ms
+  sin tope · 2000 a la vez → reservadas 2000 · bloqueadas 0 · LANZAN 0 · filas 2000 · mediana 1194 ms · la mas lenta 2595 ms · total 2597 ms
+  sin tope · 4000 a la vez → reservadas 4000 · bloqueadas 0 · LANZAN 0 · filas 4000 · mediana 2591 ms · la mas lenta 6351 ms · total 6355 ms
+INSTRUMENTO: midio y sus recuentos cuadran.
