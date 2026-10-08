@@ -349,7 +349,22 @@ que sí funciona, medido por ella el 8-oct-2026:
   he comprobado).
 - Qué pinta el historial del cliente para una fila `queued`, y si «En cola» tiene firma.
 - Cuáles de los tests de §2 caerían: son ficheros que nombran un término.
-- El obligatorio de #2316 (la medición de arriba): ver la entrega en Jira.
+- El guion de arriba con la línea que le añado (abajo): pasa `node --check` y el control que lo señalaba, pero
+  **no lo he vuelto a correr contra Postgres** (el encargo veda repetir la medición).
+
+## De paso: el obligatorio de #2316 (la medición de arriba) salió ROJO, y por qué
+
+Leído por nombre (job 113211094712, log de 1.790.024 B): 11.071 tests, 10.977 pasan, **1 cae**, 93 saltan.
+Positivo: «SCRUM-124 (r28)» está en ✔ (1 línea). Cero: un nombre inventado, `SCRUM-1513zz-no-existe`, 0 líneas.
+
+Cae `SCRUM-864c · ③ NINGÚN temporal nuevo nace sin borrarse`: `tope-postgres.cjs:185` crea su carpeta de datos con
+`mkdtempSync` y sólo la borra dentro de `apagar()`, que no corre si el guion revienta antes. No es un fallo de la
+medición ni de sus cifras: es el guion dejando restos en el temporal.
+
+Arreglado aquí, en el guion (evidencias de J2; ni `src` ni `tests`, y el control no se toca: regla 41): una línea
+detrás de la que crea la carpeta, que la borra al salir el proceso. En local, antes: `scrum864c` 3 de 4, nombrando
+`:185`; después: 4 de 4. Esta rama lleva dentro el commit de #2316 (`0bef6b284`) para poder anexar el registro:
+**si entra ésta, #2316 queda sin nada propio que aportar**; si se prefiere que entre #2316, necesita esta misma línea.
 
 ## Errores propios
 

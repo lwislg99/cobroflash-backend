@@ -183,6 +183,8 @@ async function apagar() {
   const EmbeddedPostgres = (await import(pathToFileURL(requierePg.resolve('embedded-postgres')).href)).default;
   const { Client } = requierePg('pg');
   carpetaDatos = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1513-pg-'));
+  // SCRUM-864c: `apagar()` solo borra si se llega a llamarla; al salir el proceso se borra pase lo que pase.
+  process.on('exit', () => { try { fs.rmSync(carpetaDatos, { recursive: true, force: true }); } catch { /* nada */ } });
   const puertoPg = await puertoLibre();
   const usuario = 'u' + crypto.randomBytes(4).toString('hex');
   const clave = crypto.randomBytes(12).toString('hex');
