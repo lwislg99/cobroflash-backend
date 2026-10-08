@@ -404,3 +404,447 @@ La tanda completa no se corrió en local: la da el obligatorio del CI.
 | ③ los tres parados esperan sin poner el CI en rojo | caso «SCRUM-1500b · EL ÁRBOL» (0 hallazgos, 3 parados) |
 | ③ su excepción lleva motivo, quién la retira y prueba de que sigue montada | `PARADOS` en el instrumento; casos «LOS TRES PARADOS» y «la excepción cubre lo que se le llevó al fundador» |
 | no tocar el esquema, no decidir los parados, no relajar nada, ningún workflow | `git diff --stat origin/main`: tres ficheros cambiados y tres nuevos, ninguno de esos |
+
+# SCRUM-1500c · Los once campos de estado que el cotejo nombraba y no cotejaba
+
+**Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T01:50:22Z (fecha del commit; no es una cabecera de GitHub)
+
+A9: sin fallo que generalice — los dos errores de esta tanda (sección Ⓤ) son del instrumento nuevo y los cazaron sus propios controles antes de entregar; ninguna comprobación de la tanda corre este instrumento, y se dice en Ⓣ
+
+Sesión J5 (`jv-j5`, 8-oct de madrugada, relevo de la que entregó SCRUM-1500b), equipo de Javier, ticket de
+`area-j5`. Rama `scrum-1500c-los-once-estados-sin-cotejar`. Encargo del orquestador
+(`cobroflash-backend-90`): recoger el límite que la sección Ⓜ dejó declarado.
+
+**MEDICIÓN. `prisma/schema.prisma`, el máster, `src/`, los tests y el instrumento de SCRUM-1500 no se han
+tocado.** Este tramo trae una carpeta de evidencias (`docs/master/evidencias/scrum1500c/`) y este registro.
+
+El hook de arranque volvió a decir «SIN IDENTIDAD… no construyas» para `jv-j5` (SCRUM-1498, carril de
+S5). Se siguió, como dice la ficha del orquestador.
+
+## Ⓟ Cuáles son los once
+
+No los escribo yo: son `estadosFueraDeLaTabla` del instrumento de SCRUM-1500, y `cotejo-once.cjs`
+comprueba en cada pasada que su tabla y esa lista son la misma (hoy: 11 y 11, los mismos).
+
+| # | modelo.campo | línea del esquema | tipo | `@default` |
+|---|---|---|---|---|
+| 1 | `Merchant.subscriptionStatus` | 72 | `String?` | no tiene |
+| 2 | `Merchant.status` | 129 | `String` | `active` |
+| 3 | `Charge.status` | 473 | `String` | no tiene |
+| 4 | `Quote.status` | 653 | `String` | `draft` |
+| 5 | `Invoice.status` | 830 | `String` | `pending` |
+| 6 | `Invoice.vfEstado` | 916 | `String` | `pendiente_de_sellado` |
+| 7 | `BotSession.state` | 1138 | `String` | `menu` |
+| 8 | `WhatsAppMessage.status` | 1274 | `String` | `queued` |
+| 9 | `Job.status` | 1315 | `String` | `pendiente_agendar` |
+| 10 | `EmailMessage.status` | 1568 | `String` | `aceptado_sin_identificador` |
+| 11 | `VfSubmission.status` | 1802 | enum `VfSubmissionStatus` | `pending` |
+
+Ninguno es un flag de la Parte P: los trece flags de esa tabla son variables de entorno o ajustes, no
+columnas con nombre de estado. No se ha cotejado ningún flag.
+
+## Ⓠ Cómo se sacó cada conjunto
+
+- **D, lo que decide el destino**, por AST sobre 320 ficheros `.ts` de `src/` (0 sin parsear, 196 llamadas
+  de escritura de Prisma vistas). Casi ninguno de estos campos se escribe con un literal dentro de la
+  llamada de Prisma, así que cada campo declara de dónde sale: la escritura directa, una constante, las
+  claves de un objeto, un `[..].includes(x)`, el enum del esquema, la propiedad de un argumento en todas
+  las llamadas a una función (`setSession`, `recordWaMessage`) o el objeto que devuelve una fábrica
+  (`datosDeCobroPagado`, `nuevaRevisionDe`). Una fuente declarada que no encuentra nada deja el campo
+  CIEGO.
+- **M, lo que fija el máster**, de una línea localizada por un ancla que casa una sola vez: los tramos
+  entre comillas invertidas de esa línea que llevan una flecha.
+- **El veredicto** es la función `veredicto` del instrumento de SCRUM-1500, sin cambiar.
+- **El comentario** se mira al final: qué valores de D o de M nombra como palabra entera.
+
+## Ⓡ El resultado
+
+| cajón | cuántos | cuáles |
+|---|---|---|
+| coincide con el máster | 3 | `Invoice.vfEstado`, `BotSession.state`, `Job.status` |
+| el comentario está atrasado | 0 | ninguno |
+| **el código tiene un valor que el máster no tiene** (regla 27) | **4** | `Quote.status`, `Invoice.status`, `Charge.status`, `WhatsAppMessage.status` |
+| es un estado y el máster no trae su máquina | 3 | `Merchant.status`, `EmailMessage.status`, `VfSubmission.status` |
+| el máster nombra valores que esta columna no guarda | 1 | `Merchant.subscriptionStatus` |
+| total | 11 | |
+
+Los dos últimos cajones no estaban en el encargo. No caben en ninguno de los tres pedidos y no los he
+forzado.
+
+### Coinciden (3)
+
+| campo | valores | línea del máster |
+|---|---|---|
+| `Invoice.vfEstado` | `pendiente_de_sellado`, `sellado`, `no_aplica` | 404 (Parte L) |
+| `BotSession.state` | `menu`, `choosing_merchant`, `asking_description`, `asking_zone`, `confirming_request`, `done`, `handoff` | 374 (Parte K1) |
+| `Job.status` | `pendiente_agendar`, `agendado`, `en_curso`, `terminado`, `cerrado` | 406 (Parte L) |
+
+`BotSession.state` sólo escribe `menu` con un literal dentro de Prisma; los otros seis entran por las 16
+llamadas a `setSession`. `Job.status` sólo escribe `pendiente_agendar`; el resto lo cierra `JOB_STATES`.
+
+### 🔴 El código tiene un valor que el máster no tiene (4): PARADO, regla 27
+
+**1. `Quote.status` → `pending_approval`.**
+
+- Máster, línea 398: `draft → sent → accepted | rejected`, y `expired` en esa misma línea con la etiqueta
+  `F2`. `expired` lo doy por del máster y lo digo: el código ya lo escribe (`expire.service.ts:17`).
+- Dónde se escribe `pending_approval`: `quotes.routes.ts:160` lo elige cuando un técnico crea un
+  presupuesto por encima de `merchant.approvalThreshold`, y la `:197` lo guarda en `quote.create`.
+  Sale de ahí por `quotesAdmin.routes.ts:854`, que lo pasa a `draft`.
+- Búsqueda en el máster, como palabra entera: `pending_approval` 0 líneas. Además, por texto:
+  `needsApproval` 0, `approvalThreshold` 0, `ENT-2` (como lo llama el comentario del código) 0. El
+  CONCEPTO sí está: «aprobaciones» sale 3 veces (líneas 129, 1654 y 1655), como capacidad del plan
+  Equipo que «ya existe». El estado, no.
+
+**2. `Invoice.status` → `expired`.**
+
+- Máster, línea 399: `pending → paid` y `pending → annulled`.
+- Dónde entra: `PUT /admin/invoices/:id/status` (`invoicesAdmin.routes.ts:555`) admite
+  `['pending', 'paid', 'expired']`, y `updateInvoiceStatusAdmin` lo guarda tal cual
+  (`invoiceAdmin.ts:306`; la `:279` dice «para 'expired' dejamos paidAt como esté»).
+- **Ninguna línea de `src/` lo escribe con un literal.** Llega sólo por el cuerpo de esa petición. En
+  `public/` hay un filtro «Vencidas» con ese valor (`invoicesView.js:325`). Tres sitios de `public/`
+  llaman a esa ruta: `jobDetailView.js:2191` manda `paid`; de `invoiceDetailView.js:490` y
+  `quotesDetailView.js:942` no leí el cuerpo que mandan.
+- Búsqueda: `expired` sale en 5 líneas del máster (398, 405, 1085, 1089, 1699). Leídas las cinco:
+  hablan del presupuesto (`validUntil`/`expired`) y de la suscripción. Ninguna de una factura.
+
+**3. `Charge.status` → `failed` y `expired`; y `cancelled`, del máster, no lo escribe nadie.**
+
+- Máster, línea 400: `pending → paid(...)` y `pending → cancelled`.
+- Dónde se escriben: `failed` en `mpWebhook.routes.ts:259` y `psp.routes.ts:393`; `expired` en
+  `psp.routes.ts:393` (la `:388` elige entre los dos según el aviso). `estadoDelCobro.ts:40` los da por
+  estados de pleno derecho (`ESTADOS_QUE_UN_FALLO_PUEDE_PISAR`).
+- `paid` no se escribe con un literal en Prisma: entra por la fábrica `datosDeCobroPagado`
+  (`instanteDeCobro.ts:74`). Sin declararla, el instrumento habría dicho que nadie marca un cobro pagado.
+- `cancelled`: 0 escrituras y 0 lecturas en `src/` como estado de un cobro (los dos sitios donde sale la
+  palabra son el estado que devuelve Mercado Pago y la suscripción).
+- Búsqueda: `failed` sale en 5 líneas del máster (309, 310, 312, 403, 1646): las cuatro primeras son de
+  `WhatsAppMessage` y la 1646 es `Refund.status`. `expired`, las cinco de arriba. Ninguna de un cobro.
+
+**4. `WhatsAppMessage.status` → `received`.** Es SCRUM-1499, abierto el 7-oct y «Tareas por hacer» al
+leerlo hoy. Aquí sólo se confirma con otro instrumento: `whatsappLog.service.ts:81`; `received` 0 líneas
+en el máster; la Parte L (403) y la J4 (309) dicen lo mismo entre sí. No abro nada nuevo.
+
+### Es un estado y el máster no trae su máquina (3)
+
+| campo | valores del código | quién los cierra | rastro en el máster |
+|---|---|---|---|
+| `Merchant.status` | `active` | sólo el `@default` y `auth.service.ts:346` | `Merchant.status` 0 líneas. La Parte L trae «Merchant readiness (checklist, no FSM)», que es otra cosa |
+| `EmailMessage.status` | `aceptado_sin_confirmacion`, `aceptado_sin_identificador`, `fallo_envio`, `entregado`, `rebotado`, `reclamado` | `ESTADOS_CORREO` (`constanciaCorreo.ts:36`) | `EmailMessage` 0, `ESTADOS_CORREO` 0, `SCRUM-475` 0; cuatro de los seis valores, 0 |
+| `VfSubmission.status` | `pending`, `sent`, `accepted`, `rejected`, `manual_review` | el enum del esquema y `ESTADOS_VF_SUBMISSION` (`sif.cola.ts:25`) | la entidad sí (líneas 156, 404, 1060) y `manual_review` 1 vez (580); la lista, no |
+
+- `Merchant.status` no tiene más valor que `active` y nadie lo cambia. Se lee en dos sitios
+  (`publicProfile.routes.ts:32`, `botFlow.service.ts:258`).
+- `VfSubmission`: la línea 404 del máster dice que la cola de remisión «NO está construida — no hay
+  tabla». El esquema tiene el modelo y su enum, y `sif.procesador.ts:122` escribe `sent`. La línea 980
+  del máster, corregida el 1-oct, ya dice que S1-D no está hecho y que hay 3 registros aceptados en
+  pruebas. Las dos líneas no dicen lo mismo. No decido cuál manda: lo dejo delante.
+
+Es la misma decisión que SCRUM-1500 dejó para `ParteTrabajo.estado` y `TeamMember.status`.
+
+### El máster nombra valores que esta columna no guarda (1)
+
+`Merchant.subscriptionStatus`: el código escribe `active`, `past_due` y `canceled`
+(`stripe.routes.ts:123`, `:173`, `:181`, `:190`, `:205`), y los tres están en la línea 405. El veredicto
+del instrumento es MASTER_SIN_ESCRIBIR, por `trial` y `expired`. Leído:
+
+- la máquina de la línea 405 se titula «Subscription (merchant.plan)» y junta dos columnas: `trial` se
+  escribe en `plan` (tres sitios), no aquí;
+- `expired` no lo guarda ninguna columna: `authMiddleware.ts:72` lo calcula (`plan === 'trial'` con
+  `planExpiresAt` pasado).
+
+No hay ningún valor fuera del máster. No lo paro por regla 27; tampoco lo doy por «coincide».
+
+## Ⓢ Los controles
+
+1. **De cero, en cada pasada:** un campo inventado sale NO_EXISTE; una función inventada como fuente,
+   CIEGO; un ancla de máster inventada, CIEGO.
+2. **Positivos, en cada pasada:** `Albaran.estado`, sacado con estas fuentes y esta lectura del máster,
+   sale COINCIDE (lo mismo que le da el instrumento de SCRUM-1500); `QuoteRequest.status` sale
+   CODIGO_FUERA_DEL_MASTER. 5 de 5.
+3. **El rastro:** `confirming_request` sale en 3 líneas del máster (374, 376, 386); una palabra derivada
+   que no puede estar sale en 0.
+4. **El máster movido** (`master-movido.cjs`, en memoria): seis cambios de una línea. Los tres que le
+   dan al máster el valor que le falta sacan a su campo del tercer cajón; los tres que le quitan un
+   valor meten en él a un campo que coincidía. 6 de 6, y en ninguno cambia otro campo.
+5. **La población:** 11 en la lista del instrumento de SCRUM-1500 y 11 en la tabla nueva, los mismos.
+
+## Ⓣ Lo que NO se ha medido ni hecho
+
+- **Ningún test corre esto.** El guard de SCRUM-1500b sigue nombrando los once sin cotejarlos. Meterlos
+  en su tabla pide cuatro excepciones nuevas en `PARADOS` (o siete, con los estados sin máquina), y eso
+  es la misma clase de decisión que el comentario 18831. No la tomo.
+- **Un campo de estado nuevo sigue sin entrar solo.** Este tramo cierra los once de hoy, no el hueco.
+- **Las transiciones.** Sólo conjuntos de valores.
+- **Las lecturas.** No he buscado valores que el código compare y nadie escriba, salvo `cancelled`.
+- **SQL crudo:** 15 usos de `$executeRaw`/`$queryRaw` en `src/`, vistos por texto: cerrojos, consultas
+  de columnas y un `SELECT 1`. Ninguno es un `UPDATE` de estas columnas. No pasó por el AST.
+- **Escrituras anidadas** (una tabla escrita dentro de la llamada de otra): el instrumento las imprime
+  aparte y hoy no imprime ninguna para estos campos.
+- **`public/`**: sólo lo dicho de `Invoice.status`.
+- Nada contra una base: no sé qué valores hay en las filas.
+- La tanda no se ha corrido: no hay ningún test nuevo ni tocado. `dist/` no se compiló.
+
+## Ⓤ Lo que me salió mal
+
+- **Mi primera lectura del máster casaba con texto que no era una lista.** La expresión que cogía los
+  tramos entre comillas invertidas cogía también lo que queda ENTRE dos pares. No añadió ningún valor
+  falso, de milagro. Lo vi en la salida (salían tramos de prosa), lo cambié por emparejar las comillas
+  y comprobé que la salida no cambia en nada más que esos tramos.
+- **Predije mal un cambio del máster movido.** Esperaba que darle `received` al máster dejara
+  `WhatsAppMessage.status` en «coincide», y salió COMENTARIO_ATRASADO: el comentario del esquema no trae
+  ese valor. El instrumento tenía razón y yo no.
+- **La primera sonda no veía cómo se paga un cobro.** Buscando sólo literales dentro de Prisma,
+  `Charge.status` no tenía `paid`. Es la frase de SCRUM-1401 sobre el objeto que se construye en otro
+  fichero; lo cacé porque un cobro que nunca se paga no podía ser.
+- **Pasé de 200.000 de contexto antes de avisar:** medido 247.296 al avisar.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+|---|---|
+| ① cuáles son los once, con modelo y campo | sección Ⓟ |
+| ② valores del código y del máster, derivados del destino | sección Ⓡ y `docs/master/evidencias/scrum1500c/cotejo-once-salida.txt` |
+| ③ los tres cajones | sección Ⓡ: 3 coinciden, 0 atrasados, 4 fuera del máster; y dos cajones más, 3 y 1 |
+| ③ el tercero se PARA, con el valor y dónde se escribe | NO HECHO, a propósito → `Quote.status`, `Invoice.status`, `Charge.status` y `WhatsAppMessage.status` esperan al fundador |
+| antes de decir que el máster no lo tiene, buscarlo y guardar el grep | cada caso de Ⓡ lleva sus búsquedas; el rastro por palabra, en la salida del instrumento |
+| no tocar el esquema ni el máster | `git diff --stat origin/main`: este registro y la carpeta nueva |
+
+# SCRUM-1500d · ¿Existe la cola de VfSubmission? Una tabla que la emisión llena y que ningún proceso vacía
+
+**Medido contra:** `origin/main` = `179c248b496a963a999b5d45f125c5b458f21d78` · 2026-10-08T02:10:08Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1500d/cola.mjs`
+
+Sesión J5 (`jv-j5`, 8-oct de madrugada en Madrid, relevo de la que entregó SCRUM-1500c), equipo de
+Javier, ticket de `area-j5`. Rama `scrum-1500d-existe-la-cola-de-vfsubmission`. El encargo es el
+comentario 18912 de SCRUM-1500 en Jira, del orquestador del equipo (`cobroflash-backend-90`), leído
+en el ticket antes de medir.
+
+**Es MEDICIÓN.** `src/`, `prisma/schema.prisma`, el máster y los tests no se han tocado: el camino
+de emisión fiscal se ha LEÍDO (regla 38). Este PR trae este tramo y la carpeta
+`docs/master/evidencias/scrum1500d/`. No decido nada de los estados parados.
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» para `jv-j5`; la ficha del orquestador lo
+atribuye a SCRUM-1498 y dice que se siga. Se siguió, y queda dicho.
+
+## Ⓤ El veredicto, en una frase
+
+**Hay una tabla que la emisión llena y que ningún proceso vacía:** el esquema tiene el modelo, sellar
+una factura deja su alta en `pending`, y el único código que la sacaría de ahí
+(`procesarObligado`) existe, tiene tests y **no lo llama ni lo carga nadie**: ni un cron, ni una
+ruta, ni el arranque.
+
+No es «no hay nada» (la línea 404 del máster) ni es «una cola que alguien vacía». Y no es un
+descuido: está declarado así a propósito (decisión D2 = X de SCRUM-1296, y
+`scripts/_sin-consumir-declarados.json:158`).
+
+Todo lo de abajo sale de `node docs/master/evidencias/scrum1500d/cola.mjs`, con su salida entera en
+`cola-salida.txt`. Población: **321 ficheros `.ts` de `src/`, 0 sin parsear**, leídos por AST.
+
+## Ⓥ Las dos líneas del máster, literales, y en qué chocan
+
+El instrumento las localiza por su frase y comprueba el número: son la 404 y la 980.
+
+**Línea 404** (Parte L), la escribió el commit `970f3bf12` el 23-sep-2026 (SCRUM-534n, «opción B
+FIRMADA»):
+
+> **La cola de remisión a la AEAT NO está construida** — no hay tabla, no hay envío, cero llamadas de red (`docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8-9). Su diseño, antes descrito aquí como `VfSubmission`, vive en S1-D (Parte U1.3) hasta que se construya.
+
+**Línea 980** (Parte U), el trozo de S1-D, lo escribió el commit `50ff50e49` el 1-oct-2026
+(SCRUM-1319):
+
+> S1-D ~~✅~~ 🟡 NO HECHO — la VÍA está DECIDIDA 2026-09-16 (fundador): la representación ante la AEAT se hará como COLABORADOR SOCIAL. La vía MERCHANT no se implementa. Ningún certificado de colaborador social viaja a ninguna sesión, ni de prueba. *(1-oct-2026, SCRUM-1319: el ✅ que había aquí marcaba esa decisión, no el hito. Su «Done» es ≥10 registros (alta/anulación/R1) aceptados consecutivos, y hay 3 aceptados en pruebas (SCRUM-1110, SCRUM-1296); `enviarSobre` no tiene ningún llamador en `src/`.)*
+
+En qué chocan, exactamente:
+
+| la 404 dice | la 980 dice | medido hoy |
+| --- | --- | --- |
+| «no hay tabla» | no habla de la tabla | **la 404 es falsa aquí**: `model VfSubmission` está en el esquema desde el commit `7bb4b1c02`, 30-sep-2026 (SCRUM-1296) |
+| «no hay envío, cero llamadas de red» | «hay 3 aceptados en pruebas» | las dos caben si la 404 se lee «desde `src/`»: `enviarSobre` tiene 0 llamadas en `src/`. Los 3 aceptados no salieron de `src/`; **no he leído con qué se enviaron** |
+| «vive en S1-D hasta que se construya» | S1-D «NO HECHO» | coinciden en que el hito no está; la 404 además niega piezas que ya están |
+| — | «`enviarSobre` no tiene ningún llamador en `src/`» | cierto: 0 (sección Ⓧ) |
+
+Es decir: **no se contradicen entre sí sobre la cola —la 980 no la nombra—; la que quedó atrás es
+la 404, y sólo en «no hay tabla».** Era cierta el día que se escribió. Siete días después SCRUM-1296
+metió la tabla y el encolado sin tocar esa frase: desde el 30-sep, de los 8 commits que tocan el
+máster, 0 nombran `VfSubmission`, «cola de remisi» o «no hay tabla» en su diff.
+
+Por el ORIGEN sale además por qué `VfSubmission.status` es «un estado sin máquina» (SCRUM-1500c):
+**el máster la tenía y ese mismo commit `970f3bf12` la quitó.** La línea borrada decía:
+
+> **VfSubmission:** `pending → sent → accepted` · `sent → rejected(error) → pending(retry, attempts++)` · `attempts≥5 → manual_review`. accepted terminal.
+
+El código de hoy tiene esos cinco valores y se aparta de esa línea borrada en una transición: un
+`rejected` **no** vuelve solo a `pending` (`sif.cola.ts:14-16` lo declara y dice por qué). No decido
+si la máquina vuelve al máster ni con qué transiciones.
+
+Las otras dos líneas del máster que nombran `VfSubmission` (156 y 1060) son del 11-jun-2026 (commit
+`3d7a42ab0`) y describen el diseño de S1-D: «`sif.client.ts` + cola `VfSubmission
+{invoiceId,status,attempts,lastError}`».
+
+Dos textos más repiten lo de la 404 y siguen diciéndolo; no los he tocado:
+
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md`, líneas 40 y 150: eslabón 8 «NO EXISTE — ningún modelo
+  del esquema», «Ningún fichero de `src/` menciona `vfSubmission`». Es la fuente que cita la 404 y
+  la que la skill `yaqu-verifactu-sif` señala para saber qué está construido. Sólo he leído las
+  líneas que casan con la búsqueda, no el documento.
+- `src/modules/invoicing/domain/modoVisible.ts:22`, un comentario: «`VfSubmission` no está en el
+  schema, no hay cola de remisión».
+
+## Ⓦ Quién escribe filas y quién las lee, una a una
+
+Toda llamada `<algo>.vfSubmission.<método>()` de `src/`: **7**, y un acceso más por nombre de modelo.
+
+| | dónde | qué hace | ¿se ejecuta? |
+| --- | --- | --- | --- |
+| escribe | `encolarRemision.ts:61` `create` | deja la fila con el `@default`: `pending`. Sólo `tipoOperacion: 'Alta'` | **sí**: la llama `sellarTrasEmision` (`selladoEstado.ts:173`), que tiene 11 llamadas en `src/` |
+| escribe | `sif.procesador.ts:120` `updateMany` | `pending → sent` | no: dentro de `procesarObligado` |
+| escribe | `sif.procesador.ts:168` `update` | `status: d.estado`, lo que decida `decidirTrasEnvio` | no: ídem |
+| lee | `encolarRemision.ts:57` `count` | ¿ya está encolada esta factura? (para no encolarla dos veces) | sí |
+| lee | `borradoMerchant.ts:225` `count` | ¿tiene envíos este comercio? (para negarse a borrarlo) | sí |
+| lee | `barridoDemo.ts:83` `contar(prisma, 'vfSubmission', …)` | cuántas tiene el demo | sí |
+| lee | `sif.procesador.ts:81` `findMany` | las `sent` colgadas | no: dentro de `procesarObligado` |
+| lee | `sif.procesador.ts:98` `findMany` | las `pending` vencidas, para enviarlas | no: ídem |
+
+**Las tres lecturas que se ejecutan sólo CUENTAN.** Ninguna mira `status`, `lastError` ni
+`registroXml`; ninguna ruta enseña la cola a una persona. Las dos únicas que leen para procesar
+están en la función que nadie llama.
+
+Por otras vías: `vf_submissions` y `vf_flujo_obligado` salen 0 veces en una cadena o plantilla de
+`src/` (no hay SQL crudo sobre la tabla), y la relación `vfSubmissions` 0 veces como propiedad
+(nadie la pide con `include`/`select`). Fuera de `src/`: `scripts/verificar-vf-submissions.mjs` lee
+la FORMA de la tabla en una base (columnas, índices, claves), no filas.
+
+No se encola una anulación: el único `create` escribe `'Alta'` y su única llamada está en
+`sellarTrasEmision`. El «Done» de S1-D pide alta, anulación y R1.
+
+## Ⓧ Quién la vacía: nadie. El grep, y tres vías más
+
+Lo que me pedías enseñar, por texto (`grep -rn` sobre `src/`, 327 ficheros):
+
+```
+procesarObligado  → 1 línea: sif.procesador.ts:70 (su definición)
+enviarSobre       → 3 líneas: sif.client.ts:355 (su definición) y sif.procesador.ts:10 y :11 (comentarios)
+src/core/cron/cron.ts · sif|vfsub|remisi|aeat|cola|verifactu|sellado|procesar → 0 líneas
+src/index.ts      · lo mismo → 4 líneas (3, 16, 18 y 19), las cuatro de assertVerifactuIdSistema (comprueba una constante al arrancar)
+controles: un nombre derivado → 0 · `startCronJobs` en index.ts → 3
+```
+
+Y por AST, que no cuenta comentarios ni cadenas:
+
+1. **Llamadas.** `procesarObligado`: declara 1, importa 0, llama 0, otra referencia 0. `enviarSobre`:
+   lo mismo. `encolarAltaTrasSellado`: llama 1. Control de cero: un nombre derivado, 0 usos. Positivo:
+   `sellarTrasEmision`, 11 llamadas.
+2. **Lo que carga el proceso.** Desde `src/index.ts` se alcanzan 299 de 321 ficheros (0 importaciones
+   relativas sin resolver). `encolarRemision.ts` y `cron.ts` **se cargan**; `sif.cola.ts`,
+   `sif.procesador.ts` y `sif.client.ts` **no se cargan**. A `sif.procesador.ts` y a `sif.client.ts`
+   no los importa como valor ningún fichero de `src/`; a `sif.cola.ts`, sólo `sif.procesador.ts`.
+3. **Lo que se programa.** 6 `.schedule()` (los 6 `programar(` de `cron.ts`, que es el único fichero
+   con `node-cron`) y 5 `setInterval`/`setTimeout` en todo `src/`: los que llaman a una pieza de la
+   cola o tocan el modelo, **0**. Los seis crons llaman a: `expireQuotes`, `sendPendingReminders`,
+   `sendInvoicePaymentReminders`, `runMaintenanceProposals`, `avisarSiEntroClienteReal`,
+   `sendWeeklyDigests`, `runLifecycleEmails`, `barrerSellosAlbaran`.
+4. **El detector de la casa** (`scripts/_guard-afirmacion-fiscal.mjs`, `envioConstruido`,
+   SCRUM-1128), sobre el mismo árbol: `construido: false`, 0 llamantes de `enviarSobre`,
+   `SIF_ENABLED` por defecto en OFF, 321 ficheros leídos. Le fabriqué una llamada en memoria y la
+   cuenta (1); un `import type`, no (0).
+
+Fuera de `src/`, `procesarObligado` y `enviarSobre` sólo salen en tests y en dos ficheros de
+`scripts/` que los NOMBRAN sin llamarlos (el detector y `_sin-consumir-declarados.json`). No hay
+`Procfile` ni `railway.json`, y `package.json` no trae ningún script de remisión.
+
+Por ORIGEN: el commit que creó `procesarObligado` (`1f436fd80`, 30-sep) ya lo trae con la cabecera
+«NO LO LLAMA NINGÚN CRON. Nada en `src/` lo invoca todavía», y `docs/master/SCRUM-1296.md:278`
+dice «nadie llama al procesador ni a `enviarSobre`». Lo declarado y lo medido coinciden.
+
+## Ⓨ Los valores de status: el código frente al máster
+
+El `enum VfSubmissionStatus` del esquema y `ESTADOS_VF_SUBMISSION` (`sif.cola.ts:25`) son la misma
+lista de cinco.
+
+| valor | quién lo escribe | ¿lo filtra una lectura? | ¿el máster lo da para `VfSubmission`? |
+| --- | --- | --- | --- |
+| `pending` | el `@default`, al encolar (**se ejecuta**); y `sif.cola.ts:108` como reintento | `sif.procesador.ts:98` | no |
+| `sent` | `sif.procesador.ts:120` | `sif.procesador.ts:81` | no |
+| `accepted` | `sif.cola.ts:118, 121, 126, 129` | ninguna | no |
+| `rejected` | `sif.cola.ts:131, 175, 195` | ninguna | no |
+| `manual_review` | `sif.cola.ts:106, 123, 161` | ninguna | no |
+
+**De los cinco, hoy sólo se puede escribir `pending`**: los otros cuatro salen de `procesarObligado`
+o de las decisiones que sólo él aplica. Y el máster no da ninguno para esta entidad: 0 de sus líneas
+traen un valor y `VfSubmission` a la vez. `manual_review` sale en una línea (la 580) y `rejected` en
+una (la 398, del presupuesto); los otros tres salen por otras entidades.
+
+`accepted`, `rejected` y `manual_review` no los filtra ninguna lectura: `manual_review` es «va a una
+persona» y hoy no hay pantalla ni consulta que se lo enseñe a nadie.
+
+## Ⓩ Los controles
+
+19 de 19 en su sitio, salida 0. Cada recuento lleva los dos:
+
+| recuento | control de cero (nombre DERIVADO del árbol) | positivo que tiene que salir |
+| --- | --- | --- |
+| accesos al modelo | `vfSubmissionZ` → 0 | `.invoice` → 114 |
+| llamadas a las piezas | `procesarObligadoZ` → 0 usos | `sellarTrasEmision` → 11; el encolado → 1 |
+| grafo de carga | `sif.procesador.ts` no alcanzable | `cron.ts` y `encolarRemision.ts` alcanzables; 0 sin resolver |
+| lo programado | 0 tocan la cola | 6 `.schedule()` = 6 `programar(` |
+| el máster | `VfSubmissionZ` → 0 líneas | las dos frases, en UNA línea cada una; `manual_review` aparece |
+| el detector de la casa | un `import type` → 0 | una llamada fabricada → 1; ve 5 líneas con el host de la AEAT; misma población (321) |
+
+Los nombres de cero no están escritos: el instrumento alarga uno real hasta que ningún fuente lo
+contiene.
+
+Medí primero sobre `8518dc7a1`; `main` se movió a `179c248b4` (entró el PR #2302, entre otros), lo
+mergeé y volví a correr: la salida es idéntica byte a byte (`cmp`). En `src/` ese tramo de `main`
+cambia una línea, de `invoicesAdmin.routes.ts`.
+
+## ⓐ Lo que NO se ha medido
+
+- **Ninguna base.** No sé si la tabla existe en producción, staging o dev, ni cuántas filas tiene.
+  «Se llena» está medido en el código: quien selle una factura de un comercio que no sea el demo
+  ejecuta el `create`. Con `INVOICING_ES_ENABLED` en OFF en producción puede no haber ninguna fila;
+  eso lo dice `docs/master/SCRUM-1296.md`, no lo he medido.
+- **Ningún test corrido**: no hay `dist/` y no toco tests. Que `procesarObligado` funcione cuando
+  se le llama lo dicen `tests/scrum1296-procesador-cola.test.mjs` y compañía; no los he ejecutado.
+- **Con qué se enviaron los 3 registros aceptados.** No desde `src/`. Existe
+  `scripts/sobre-soap-prueba-aeat.mjs`; no lo he abierto.
+- **El valor de `SIF_ENABLED` en Railway.** Sólo su valor por defecto en `src/core/flags.ts`.
+- Un `import()` o `require()` con el nombre calculado no lo ve el grafo; no he contado cuántos hay.
+- `public/`: ningún fichero nombra `vfSubmission` (búsqueda por texto); no he leído más.
+- `docs/legal/AUDITORIA_CAMINO_EMISION.md`: sólo las líneas que casan.
+- **Ningún test corre este instrumento.** Si mañana alguien engancha el procesador, este registro
+  queda atrás y nada lo avisa; lo que sí lo vería es el detector de SCRUM-1128, que ya está en la
+  tanda.
+- El obligatorio de este PR: SIN LEER al escribir esto.
+
+## ⓑ Qué corrió antes de empujar
+
+`docs/master/evidencias/scrum1500d/cola.mjs`: salida 0, 19 controles. Los tests del registro
+(scrum267, scrum1294, scrum525d, scrum812, scrum273), con este tramo ya escrito: 37 tests, 37 pasan,
+0 caen, 0 saltados (leído del TAP en fichero). La tanda no se corrió.
+
+## ⓒ Lo que me salió mal
+
+- **Mi población perdió un fichero.** Excluí los `.d.ts` y conté 320; el detector de la casa lee
+  321. Lo cazó el control que compara las dos poblaciones, en la primera pasada. No cambiaba ningún
+  resultado (era `src/types/express.d.ts`), pero «320 ficheros» habría salido en la entrega.
+- Intenté sobrescribir la salida guardada con `>` y el hook `guard-dangerous` lo paró. Tenía razón:
+  comparé con `cmp` contra un temporal en vez de reemplazarla.
+- Empecé a medir sin volver a traer `main`, que ya se había movido. Lo vi al copiar la hora.
+- Volqué en el contexto una respuesta entera de `gh api -i` para leer una cabecera.
+
+## Lo que pide el comentario 18912 → dónde se ve
+
+| lo que pide | dónde se ve |
+| --- | --- |
+| ① las líneas 404 y 980 literales, y en qué se contradicen | sección Ⓥ |
+| ② qué escribe filas, una a una | sección Ⓦ |
+| ③ qué las lee | sección Ⓦ |
+| ④ cron, worker o reintento; y si no hay, el grep | sección Ⓧ |
+| ⑤ los valores de status en el código frente al máster | sección Ⓨ |
+| ⑥ el veredicto en una frase | sección Ⓤ |
+| buscarlo también por ORIGEN | secciones Ⓥ (los commits de las dos frases y el que borró la máquina) y Ⓧ (el que creó el procesador) |
+| no tocar `src/`, el esquema ni los tests | `git diff --stat origin/main`: este registro y la carpeta nueva |
+| nada de los 11 estados parados | NO HECHO, a propósito → siguen con el fundador |

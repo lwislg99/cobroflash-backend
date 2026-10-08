@@ -1,0 +1,31 @@
+diff --git a/src/modules/invoicing/infra/pdf/pdf.service.ts b/src/modules/invoicing/infra/pdf/pdf.service.ts
+index 39e5f0e68..adb8ac773 100644
+--- a/src/modules/invoicing/infra/pdf/pdf.service.ts
++++ b/src/modules/invoicing/infra/pdf/pdf.service.ts
+@@ -531,7 +531,7 @@ export async function generateInvoicePdf(params: {
+       }
+       doc.text(fmt(qty),              XQ,  rowY + 4, { width: WQ,  align: 'right' });
+       doc.text(fmt(price),            XP,  rowY + 4, { width: WP,  align: 'right' });
+-      doc.text(taxR > 0 ? `${(taxR*100).toFixed(0)}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
++      doc.text(taxR > 0 ? `${rotuloDeTipo(tipoEnPorcentaje(taxR))}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
+       doc.font('Helvetica-Bold')
+         .text(fmt(lineTotal),         XT,  rowY + 4, { width: WT,  align: 'right' });
+       doc.font('Helvetica');
+@@ -553,7 +553,7 @@ export async function generateInvoicePdf(params: {
+       const t    = Number(l.tax)   || 0;
+       const base = qty * p;
+       subtotal += base;
+-      const key = `${(t*100).toFixed(0)}%`;
++      const key = `${rotuloDeTipo(tipoEnPorcentaje(t))}%`;
+       if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
+       vatMap[key].base += base;
+       vatMap[key].vat  += base * t;
+@@ -643,7 +643,7 @@ export async function generateInvoicePdf(params: {
+       const wRot  = totalsW * 0.21;
+       const wCuota = totalsW * 0.32;
+       [...tiposDeIva]
+-        .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
++        .sort((a, b) => parseFloat(b[0].replace(',', '.')) - parseFloat(a[0].replace(',', '.')))
+         .forEach(([rate, g]) => {
+           const vy = doc.y;
+           doc.text(rate, totalsX, vy, { width: wTipo })

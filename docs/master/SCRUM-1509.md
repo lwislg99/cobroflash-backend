@@ -310,3 +310,442 @@ que nombra el fichero.
 
 Reproducir: `tsc --noCheck`, `node docs/master/evidencias/SCRUM-1509c/medir.cjs dist`, y
 `node docs/master/evidencias/SCRUM-1509c/contrafactico.cjs dist lectura-cerrada` (o `escritura-esperada`).
+
+---
+
+# SCRUM-1509e · La ruta manual del recordatorio de factura: quién puede llamarla y cuántas veces — medido, sin arreglar nada
+
+**Medido contra:** `origin/main` = `8518dc7a16164530863d657cb0f2f817a4691d78` · 2026-10-08T02:08:30Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509e/medir.cjs`
+
+J1 (relevo, sesión `jv-j1`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`, Jira
+c.18910). **Es EJECUCIÓN y LECTURA.** No se ha tocado ningún fichero de `src/`, test, plantilla, texto ni
+workflow; entran este tramo y `docs/master/evidencias/SCRUM-1509e/`. Nada contra producción ni staging. `dist`
+es `tsc --noCheck` del mismo commit del ancla. No se corrió `prisma generate`. El hook de arranque dijo «SIN
+IDENTIDAD» (SCRUM-1498); se siguió porque el encargo es medir.
+
+Son las dos cosas que c.18907 declaró sin medir: qué autenticación hay delante de
+`POST /admin/invoices/:id/send-reminder` (`src/modules/system/app/routes/invoicesAdmin.routes.ts:732`; la
+llamada a la plantilla está en `:766`) y si hay límite de peticiones.
+
+## 0 · La respuesta corta
+
+**Quién puede llamarla: sólo una sesión iniciada del propio comercio con rol `admin`** — el titular o un
+miembro del equipo con ese rol — **y sólo sobre una factura de ese comercio.** Un tercero sin sesión no llega:
+401 y 0 plantillas, por las cuatro vías probadas. Es el pie del propio comercio en el acelerador.
+
+**Cuántas veces: no hay límite de peticiones.** 120 seguidas del titular sobre la misma factura dan 0
+respuestas 429 y **100 plantillas al mismo cliente el mismo día**; las 20 restantes las para el tope de
+COMERCIO (100, leído en `dist`), que es el único techo. Con el tope por cliente (3) saldrían 3. Al destino se le
+pregunta el tope de comercio 120 veces y el de cliente 0.
+
+**Dos matices que mueven «sólo el comercio», y el segundo no está medido:**
+
+1. La ruta no mira el plan: un titular con la prueba vencida manda igual (A10: 200 y 1 plantilla).
+2. **Ser «comercio» no pide nada más que un correo.** `POST /auth/register` es público (leído: `auth.routes.ts:33`,
+   con límite de 5 por 15 min por IP y correo). **No ejecuté** si una cuenta recién creada llega a tener una
+   factura con cobro y un cliente con teléfono, que es lo que hace falta para que la ruta mande plantilla (sin
+   cobro va a texto libre). Si llega, cualquiera con un correo tiene 100 plantillas al día por cuenta, desde el
+   número de la casa, a los teléfonos que él escriba. Eso ya no es de esta ruta: es del alta.
+
+## 1 · La cadena, leída de la pila de la app cargada
+
+No del texto de `app.ts`: de `app.router.stack` con `dist/app.js` cargado (102 capas). Casan 8 con la ruta; una
+ruta inventada casa 6 (control). Las 2 que sólo ve esta zona:
+
+| capa | qué es | dónde está en el fuente |
+| --- | --- | --- |
+| 45 | `requireAuth`, montada en `/admin` | `src/app.ts:377` |
+| 50 | el router de facturas, montado en `/admin/invoices` **sin nada interpuesto** | `src/app.ts:572` |
+| dentro | la ruta: `requireRole(admin)` y el manejador, en ese orden | `invoicesAdmin.routes.ts:732` |
+
+Las 6 comunes: la cabecera de `Referrer-Policy`, los dos lectores de cuerpo, `jsonError`, el estático y el 404
+final. En el router de facturas no casa ninguna capa que no sea la ruta (0). **Ninguna de las 8 es un limitador.**
+
+`requireAuth` (`src/core/http/authMiddleware.ts`) sólo lee la cookie `pf_session`. El comercio y el rol salen de
+la fila de sesión, no de la petición. La cookie se pone `HttpOnly; SameSite=Lax` y `Secure` en producción, 30
+días (leído en `setCookie`, no ejecutado).
+
+## 2 · Lo medido (18 casos, 18 cuadran; salida entera en `evidencias/SCRUM-1509e/salida-medir.txt`)
+
+| caso | respuesta | plantillas |
+| --- | --- | --- |
+| K+ el titular, su factura (POSITIVO obligatorio) | 200 enviado | 1 |
+| K0 el titular, una factura que no existe (CERO) | 404 | 0 |
+| A1 sin credencial | 401 `not_authenticated` | 0 |
+| A2 la credencial del titular por otra vía (Bearer, cabecera, query, cuerpo) | 401 `not_authenticated` | 0 |
+| A3 cookie de nadie · A4 sesión caducada · A5 enlace sin canjear · A6 miembro suspendido | 401 `session_expired` | 0 |
+| A7 miembro con rol `tecnico` | 403 | 0 |
+| A8 el titular de OTRO comercio sobre esta factura | 404 | 0 |
+| A9 miembro con rol `admin` | 200 enviado | 1 |
+| A10 titular con la prueba vencida | 200 enviado | 1 |
+| A11 con `Origin` y `Referer` de otro sitio · A12 como la manda un formulario | 200 enviado | 1 |
+| A13 por GET | 404 | 0 |
+| **R1 el titular, 120 seguidas, misma factura** | **100 enviadas, 20 `daily_cap`, 0 de 429** | **100** |
+| R+ POSITIVO del contador de 429: `/auth/login`, 7 seguidas, mismo correo | 5 pasan, **2 de 429** | 0 |
+| R0 CERO del contador de 429: `/auth/login`, 7 correos distintos | 7 pasan, 0 de 429 | 0 |
+
+En R1 la factura recibe 2 marcas de fecha y luego ninguna: desde la tercera pulsación no queda escrito nada en
+ella que diga que se ha reclamado otra vez (coincide con lo que c.18907 vio con 10).
+
+**A11 y A12 dicen que el servidor no mira de dónde viene la petición.** Lo único que impide que otra web la
+dispare con la sesión del comercio es el `SameSite=Lax` de la cookie, que lo aplica el navegador. No hay
+navegador en esta medición: está leído, no ejecutado.
+
+**El rojo:** con `--comercio-esperado 1` el guion sale 1 con R1 en rojo (1 de 18;
+`salida-rojo-comercio-esperado-1.txt`). Los casos A no los vi en rojo uno a uno: su contraste es K+, que con la
+misma petición y otra cookie sí manda.
+
+## 3 · Lo que NO se midió
+
+- **La app desplegada.** Todo es `dist` local con la base en memoria; delante de producción hay un proxy
+  (Cloudflare, Railway) que podría limitar por su cuenta y aquí no se ve. `NODE_ENV` era `development`.
+- Postgres real y peticiones A LA VEZ: las 120 van una detrás de otra. La carrera entre contar y escribir es de
+  c.18894, no de aquí.
+- El alta de punta a punta (matiz 2 de §0), ni si el comercio demo tiene alguna entrada pública.
+- Un navegador de verdad para `SameSite`, y si algún subdominio de `yaqu.app` sirve contenido de terceros.
+- Las otras 17 rutas del mismo router, y `resend-whatsapp` (`:645`), que manda por otra función.
+- La base en memoria contestó sin modelarlo a `merchant.findUnique` y `teamMember.findUnique` (12 veces cada
+  una, todas de `/auth/login`).
+- Ninguna tanda de tests completa: no hay cambio de código.
+
+## 4 · Errores propios
+
+- Busqué el fichero donde el encargo lo nombraba de memoria (`src/modules/invoicing/`); no está ahí, está en
+  `src/modules/system/app/routes/`. Lo dijo el `wc` con su error, no un cero. Sin comprobación que generalice.
+- La corrida salió verde entera a la primera. No me fié hasta verla caer con el tope forzado; aun así sólo vi
+  en rojo R1 (dicho en §2).
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509e/medir.cjs dist`.
+# SCRUM-1509d · Los cuatro llamadores a los que no se les pregunta el tope por cliente — EJECUTADOS, sin arreglar nada
+
+**Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T01:51:08Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509d/medir.cjs`
+
+J2 (relevo, sesión `jv-j2`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`). **Es
+EJECUCIÓN y LECTURA:** no se ha tocado ningún fichero de `src/`, test, plantilla, texto ni workflow. Entran este
+tramo y `docs/master/evidencias/SCRUM-1509d/` (guion y sus dos salidas). Nada contra producción ni staging: base
+en memoria y transporte doblado. No se corrió `prisma generate`; `dist` con `tsc --noCheck`.
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j2`, SCRUM-1498). Se siguió porque el
+encargo es medir. La medición se hizo con `dist` de `c1bad3c34`; entre ese commit y `fae055329` no cambia ningún
+fichero de `src/` (`git diff --stat` vacío sobre `src`), sólo el registro y las evidencias del tramo «c».
+
+## 0 · La respuesta corta
+
+Lo que c.18894 dijo LEÍDO queda EJECUTADO: de las llamadas que cada uno de los cuatro hace llegar a
+`sendWhatsAppTemplate`, **0 llevan cliente** (40 de 40 sin cliente), y al destino **no se le pregunta el tope
+por cliente ni una vez** (0 preguntas; con cliente en la llamada, el mismo instrumento cuenta 10).
+
+Diez veces al mismo cliente el mismo día, todo sano, tope por cliente leído en `dist` = **3**:
+
+| llamador | plantillas que salen HOY | con el tope por cliente | de quién es |
+| --- | --- | --- | --- |
+| `whatsappNotifications.ts:35` · `sendPaymentConfirmation` | **10** | 3 (7 bloqueadas) | J2 |
+| `whatsappNotifications.ts:171` · `notifyMerchantAlert` | **10** | **10**: no hay cliente que ponerle | J2 |
+| `reminder.service.ts:47` · el cron de presupuestos, una pasada | **10** | 3 (7 bloqueadas) | S1 |
+| `invoicesAdmin.routes.ts:766` · `POST /admin/invoices/:id/send-reminder` | **10** | 3 (7 bloqueadas) | J1 |
+
+Los cuatro no son la misma cosa:
+
+1. **`:35` no lo llama nadie.** 0 llamadores en `src/`, `tests/`, `public/` y `scripts/` (el hermano
+   `sendPaymentConfirmationInvoice` sale en 4 ficheros con la misma búsqueda), y está declarado como export sin
+   consumir en `scripts/_sin-consumir-declarados.json:43` (SCRUM-1185, carril J2). El 10 es de la función
+   ejecutada a mano: **en el producto, hoy, por ahí salen 0**. Además su firma no recibe cliente: no tiene qué pasar.
+2. **`:171` no manda a un cliente: manda al profesional.** No hay cliente cuyo tope preguntar, así que «con el
+   tope por cliente» sigue en 10. Lo que sí se le pregunta es el tope de COMERCIO, y **se lo come**: 120 avisos
+   con la ventana cerrada → 100 plantillas y 20 bloqueadas; y con el cupo gastado en avisos al profesional, una
+   plantilla a un cliente ya no sale (`daily_cap`). Con la ventana abierta, 10 avisos gastan 0 plantillas.
+3. **`:47` y `:766` son los dos que mandan a un cliente sin preguntar.** El caso verosímil: el cliente ya recibió
+   hoy sus 3 plantillas por caminos que sí cuentan, y llega una más — **hoy sale (1), con el tope no (0)**, por
+   el cron y por la ruta.
+
+## 1 · El instrumento y sus controles
+
+`medir.cjs` ejecuta el LLAMADOR de `dist` (la función exportada, el cron, o la ruta montada en un express y
+pedida por HTTP), no `sendWhatsAppTemplate` a pelo. Dobla la base (en memoria, con estado) y el transporte de
+axios, y cuenta peticiones por tipo; no usa dry-run. Una envoltura sobre el export ve cada llamada que llega: en
+la pasada HOY sólo mira si trae cliente; en la pasada CON TOPE le pone, en memoria, el cliente dueño de ese
+teléfono. **Esa segunda pasada no es un arreglo ni una propuesta de código.** Los esperados salen del tope leído
+en `dist`. 22 casos, 22 cuadran (`salida-medir.txt`).
+
+| control | esperado | salió |
+| --- | --- | --- |
+| CERO: los cuatro sin nada que mandar | 0 plantillas, 0 llamadas, 0 preguntas | 0 / 0 / 0 (y el cron sí leyó: 1 lectura) |
+| POSITIVO obligatorio: la misma envoltura, con cliente en la llamada | 3 y 7 bloqueadas | 3 y 7 |
+| POSITIVO con un llamador real del mismo fichero que sí pasa cliente (`:105`) | 3 y 7 | 3 y 7 |
+| POSITIVO del tope de comercio (100 filas de otro cliente, 1 envío) | bloqueado | bloqueado |
+| CERO de la envoltura: CON TOPE, 10 presupuestos de 10 clientes | 10, 0 bloqueadas | 10 y 0 |
+| la ruta con rol `tecnico` | 403, 0 llamadas | 403 y 0 |
+| la ruta sin cobro (va por texto) | 0 plantillas, 1 de otro tipo | 0 y 1 |
+| el guion con el tope esperado forzado a 1 | rojo | salida 1, 5 casos en rojo de 22 (0 en la buena) |
+| el guion con un esperado sobre una clave que no existe | rojo | salida 1, K0 en rojo |
+
+El guion sale 2 («GUION MUDO») si los positivos no ven ningún bloqueo, si el total de plantillas es 0 o si la
+envoltura no se pudo poner.
+
+## 2 · De quién es cada uno (`node scripts/carriles.mjs de <ruta>`)
+
+| fichero | dice | por |
+| --- | --- | --- |
+| `src/integrations/whatsappNotifications.ts` | **J2** | `dos-equipos.md:124`, fila que nombra el fichero |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts` | **J1** | `dos-equipos.md:118`, fila que nombra el fichero |
+| `src/modules/quotes/domain/reminder.service.ts` | **S1** | `dos-equipos.md:136`, patrón `src/**` |
+| control: `src/modules/quotes/domain/no-existe-sonda-1509d.ts` | S1 | el mismo patrón `src/**` |
+| control: `no-existe-sonda-1509d/x.ts` (fuera de `src/`) | «sin fila en §3: nadie lo reclama» | — |
+
+El J2 y el J1 vienen de filas que nombran el fichero. El S1 del recordatorio viene del cajón `src/**` (una ruta
+inventada al lado da lo mismo), así que la herramienta sola no lo prueba; lo que lo sostiene es el texto de esa
+fila 136, que enumera «quotes» entre «todo lo demás de `src/`», y que ningún otro renglón de `dos-equipos.md`
+nombra `reminder.service` (0 apariciones). Está pedido a S1 en c.18881 y aquí no se ha tocado.
+
+**La ruta `:766` es de J1, no de J2.** No hay ticket abierto por esto desde aquí.
+
+## 3 · Vistas de paso, sin tocar
+
+- El cron marca el presupuesto como recordado **siempre**: en la pasada CON TOPE quedan marcados 10 de 10 con 3
+  plantillas fuera. Poner el cliente sin tocar el candado deja 7 recordatorios perdidos para siempre (es la
+  segunda pieza ya pedida a S1 en c.18881; aquí sale con número).
+- La ruta `:766` ya sabe contar el bloqueo: en la pasada CON TOPE contesta 200 con `sent:false` y el motivo
+  `customer_daily_cap` 7 de 7 veces. Su rama de texto (factura sin cobro) sí pasa el cliente.
+- Diez pulsaciones seguidas sobre la misma factura salen las 10: la ruta escribe `reminder7SentAt`, luego
+  `reminder14SentAt`, y a partir de la tercera no escribe nada y sigue enviando.
+
+## 4 · Lo que NO se midió
+
+- **Cuántas veces pasa de verdad.** Si un cliente llega a tener 10 presupuestos pendientes en una pasada, o si
+  alguien pulsa 10 veces: medida la propiedad, no su uso. El caso de «3 ya hoy y una más» es el verosímil, y
+  tampoco tiene dato de frecuencia.
+- La autenticación y lo que `app.ts` monte delante de `/admin/invoices` (incluido cualquier límite de
+  peticiones): el rol y el comercio los pone el guion. La puerta de rol de la propia ruta sí se ejercitó.
+- Los 10 sitios que llaman a `notifyMerchantAlert` no se ejecutaron uno a uno: se ejecutó la función.
+- Postgres real, envíos a la vez, y los fallos de escritura o lectura (eso es el tramo «c»).
+- La base en memoria contestó sin modelarlo, con un valor neutro, a `customerEvent.create` (8 veces: los 8
+  bloqueos del cron). Nada más quedó sin modelar.
+- Ninguna tanda de tests completa en local: sólo los de registro y `scrum124`. La completa es la de CI (§5).
+
+## 5 · Errores propios
+
+- En la primera versión del guion, el control de cero llevaba un esperado sobre una clave que el resumen no
+  tiene (`undefined === undefined`): cuadraba sin mirar nada. Lo vi al releer la salida. Ahora un esperado sobre
+  una clave inexistente sale rojo, y se ve con `--clave-fantasma` (salida 1).
+- La primera pasada salió verde entera a la primera. No me fié hasta verla en rojo con el tope forzado a 1.
+
+- **El primer obligatorio de este PR salió ROJO, y era mío** (1 de 11.074: `scrum124`, regla 28). `medir.cjs`
+  escribía el host de Meta para comprobar que nada salía a otro sitio, y ese test cuenta como «habla con Meta»
+  a cualquier `.cjs` del repositorio que lo nombre. Había escrito «no hay cambio de código» y por eso no corrí
+  más que los de registro: un guion de evidencias ES código para los tests que barren el árbol. Arreglado en el
+  guion, no en el test: ya no nombra el host, lo lee del módulo compilado que habla con Meta. `scrum124` verde
+  en local (43 de 43 con los de registro); el rojo lo vi en CI.
+- Ese arreglo lo metí pasando una expresión regular por la consola y se comió las barras invertidas: los dos
+  guiones dejaron de arrancar. Lo delató el recuento de líneas «cuadra» (0 en los cuatro ficheros de salida),
+  no el código de salida, que era 1 igual que en la pasada roja a propósito. Corregido con la herramienta de
+  edición. Es la cicatriz de J2 del 1-oct otra vez.
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509d/medir.cjs dist` (rojo a propósito:
+`--tope-esperado 1` o `--clave-fantasma`).
+
+## 6 · Segunda parte: los avisos al profesional (`notifyMerchantAlert`), sitio por sitio
+
+Encargo del orquestador tras leer §0: si los avisos al profesional se pueden comer el cupo de plantillas del
+cliente final. Guion: `avisos.cjs` (20 casos, 20 cuadran; `salida-avisos.txt`). Ejecuta las RUTAS de `dist` por
+HTTP —el webhook de entrantes con su firma, y la página pública de Bizum— con la base en memoria y el
+transporte doblado.
+
+### 6.1 · ¿Comparten contador? Con el de COMERCIO, sí. Con el del CLIENTE, no.
+
+| pregunta | medido |
+| --- | --- |
+| ¿La plantilla de un aviso al profesional cuenta en el tope de comercio (100 al día)? | **Sí.** Tras 10 avisos, la pregunta de comercio contesta 10 |
+| ¿Cuenta en el tope de algún cliente (3 al día)? | **No.** Tras esos 10 avisos, la pregunta del cliente contesta 0 |
+| ¿Puede un aviso dejar sin plantilla a un cliente? | **Sí, por el de comercio:** 120 textos de un cliente → 100 plantillas al profesional y 20 bloqueadas; después, una plantilla a un cliente del mismo comercio no sale (`daily_cap`, la pregunta contesta 100, 0 peticiones) |
+| ¿Y al revés? | **Sí:** con 100 plantillas a clientes hoy, el aviso al profesional no sale (0 plantillas) |
+| ¿Y si el profesional tiene su ventana de 24 h abierta? | **No hay riesgo:** los mismos 120 avisos salen por texto, gastan 0 plantillas, y la plantilla al cliente sale |
+
+Las dos preguntas leen la misma tabla con el mismo `where` (comercio, tipo plantilla, de hoy, con id de mensaje);
+la del cliente añade `customerId`. La fila de un aviso se escribe sin cliente: por eso entra en una y no en la otra.
+
+**El riesgo existe y está acotado:** hace falta que en un día salgan 100 plantillas de aviso, y sólo salen como
+plantilla si el profesional no ha escrito al número en las últimas 24 h. No toca el tope por cliente.
+
+### 6.2 · Los 10 sitios
+
+Censo: 321 ficheros `.ts` en `src/`; 10 llamadas de fuera del módulo (más el atajo `notifyMerchantPaid`); la
+misma búsqueda con un nombre que no existe da 0; fuera de `src/` (tests, scripts, public), 0.
+
+| sitio | lo dispara | quién lo provoca | avisos si se repite 10 veces | cómo se sabe |
+| --- | --- | --- | --- | --- |
+| `whatsappIncoming.routes.ts:409` | un cliente con albarán en 30 días y sin presupuesto pendiente escribe un texto | **un tercero (el cliente)** | **10** (uno por mensaje; la misma entrega repetida, 1) | EJECUTADO |
+| `whatsappIncoming.routes.ts:297` | un cliente escribe BAJA o STOP | **un tercero (el cliente)** | **10** (aunque ya esté de baja) | EJECUTADO |
+| `botFlow.service.ts:688` | segundo texto fuera de menú | un tercero (el cliente) | 1 (el bot calla 24 h) | EJECUTADO, con el flag del bot en ON |
+| `botFlow.service.ts:631` | «hablar con una persona» | un tercero (el cliente) | 1 (el bot calla 24 h); con el flag en OFF, 0 | EJECUTADO |
+| `botFlow.service.ts:495` | el cliente termina de pedir un presupuesto al bot | un tercero (el cliente) | uno por solicitud completada | LEÍDO |
+| `payBizum.routes.ts:198` | el cliente pulsa «ya he pagado» en la página pública | un tercero (el cliente) | 1 por cobro | EJECUTADO |
+| `psp.routes.ts:346` | webhook de pago confirmado | un tercero (la pasarela) | 1 por cobro: si ya está pagado vuelve antes (`:44`) | LEÍDO |
+| `mpWebhook.routes.ts:241` | webhook de Mercado Pago aprobado | un tercero (la pasarela) | 1 por cobro: sólo si no estaba pagado (`:104`) | LEÍDO |
+| `disputes.service.ts:183` | webhook de disputa de Stripe | un tercero (el banco) | 1 por disputa: deduplica por id (`:153`) | LEÍDO |
+| `quotes.routes.ts:761` | el cliente acepta o rechaza un presupuesto | un tercero (el cliente) | 1 por decisión: la escritura lleva el estado en el `where` | LEÍDO |
+
+**Ninguno de los diez lo dispara el comercio: los diez los provoca un tercero.** Ocho llevan un freno propio (uno
+por cobro, por disputa, por decisión, o el silencio de 24 h del bot). **Dos no lo llevan: `:409` y `:297`, uno
+por cada mensaje que el cliente escriba.** Los tres del bot dependen de `BOT_INBOUND_ENABLED`, que en el código
+está en OFF.
+
+### 6.3 · Un día verosímil
+
+**No se puede medir: no hay comercios con clientes reales** (memoria del equipo, 28-sep y 1-oct). Lo que el
+código da son los multiplicadores de arriba: avisos del día = pagos + decisiones de presupuesto + «ya he pagado»
+de Bizum + disputas + **cada texto** de un cliente con albarán reciente y sin presupuesto pendiente + **cada
+BAJA**. Con un comercio de, digamos, 5 pagos, 5 decisiones y 5 mensajes sueltos, son 15, muy lejos de 100; esa
+cifra es un supuesto mío, no una medición. Lo que sí está medido es qué hace falta para llegar a 100: **un solo
+cliente escribiendo 100 mensajes** (o BAJA 100 veces) con la ventana del profesional cerrada.
+
+### 6.4 · Controles de esta parte
+
+| control | esperado | salió |
+| --- | --- | --- |
+| CERO: entrante con la firma mala | 401, 0 avisos | 401 y 0 |
+| CERO: número que no es cliente de nadie | 0 avisos | 0 |
+| CERO: cliente sin albarán reciente | 0 avisos | 0 (y 1 respuesta al cliente: la ruta corrió) |
+| POSITIVO obligatorio: cliente con albarán escribe una vez | 1 aviso, 1 plantilla al profesional | 1 y 1 |
+| CERO del contador: 120 avisos con la ventana abierta | 0 plantillas, y la del cliente sale | 0, y sale |
+| CERO de Bizum: token que no existe | 404, 0 avisos | 404 y 0 |
+| el guion esperando una repetición menos | rojo | salida 1, 3 casos en rojo de 20 (0 en la buena) |
+
+Un manejador que revienta daría «0 avisos» igual que uno que no avisa: el guion cuenta sus trazas de error y
+un caso con alguna no vale. Salieron 0.
+
+### 6.5 · Lo que NO se midió de esta parte
+
+- **Cinco de los diez sitios están LEÍDOS, no ejecutados** (los dos webhooks de pago, la disputa, la decisión
+  del presupuesto y la solicitud por el bot). El «1 por cobro» de los dos webhooks de pago es una lectura seguida
+  de una escritura: **dos entregas a la vez no las he probado.**
+- Si delante del webhook de entrantes hay algún límite de peticiones en `app.ts`: aquí se montó la ruta sola.
+- Si Meta limita cuántos mensajes puede mandar un mismo usuario en un día. Fuera del repositorio.
+- El valor de `BOT_INBOUND_ENABLED` en producción. En el código, OFF.
+- Cuántos profesionales tienen la ventana cerrada. Sin dato; es lo que decide si un aviso es plantilla o texto.
+- La comprobación de que nada sale a un host que no es Meta no la he visto en rojo.
+- La base en memoria contestó sin modelarlo a `customerEvent.create` (2 veces). Nada más.
+
+Reproducir: `node docs/master/evidencias/SCRUM-1509d/avisos.cjs dist` (rojo a propósito: `--esperado-menos-uno`).
+
+---
+
+# SCRUM-1509f · Los dos avisos sin freno: qué límite de peticiones hay delante del webhook de entrantes — medido, sin arreglar nada
+
+**Medido contra:** `origin/main` = `453d3a5130dc2c01996b1a794b14262212f241a5` · 2026-10-08T02:18:41Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509f/limite.cjs`
+
+J2 (relevo, sesión `jv-j2`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`). **Es
+EJECUCIÓN y LECTURA:** no se ha tocado ningún fichero de `src/`, test, plantilla, texto ni workflow. Entran este
+tramo y `docs/master/evidencias/SCRUM-1509f/` (guion y sus dos salidas). Nada contra producción ni staging: base
+en memoria y transporte doblado. No se corrió `prisma generate`; `dist` con `tsc --noCheck` de `179c248b4`, y
+entre ese commit y `453d3a513` no cambia ningún fichero de `src/` (0 en `git diff --name-only` sobre `src`).
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j2`, SCRUM-1498). Se siguió porque el
+encargo es medir.
+
+## 0 · La respuesta corta
+
+**Delante del webhook de entrantes no hay ningún límite de peticiones en la aplicación. El riesgo está ABIERTO.**
+
+| pregunta | medido |
+| --- | --- |
+| ¿Hay un limitador delante de `POST /webhooks/whatsapp`? | **No.** De las 102 capas de la app cargada casan 7; 6 las ve cualquier petición y la séptima es el router del webhook, cuya ruta tiene **1 mano** (el manejador). La ruta de login, leída igual, tiene 2: la de más es su limitador |
+| ¿Contesta 429 alguna vez? | **No.** 120 peticiones firmadas seguidas: 0 respuestas 429. El mismo contador ve 2 de 7 en `/auth/login` |
+| ¿Quién puede hacerlo correr? | **Sólo quien firma con el secreto de la app.** 120 peticiones con la firma mala: 401 las 120, 0 avisos, 0 respuestas al cliente. Tampoco ahí hay 429 |
+| `:409` · un cliente con albarán escribe 120 textos, ventana del profesional cerrada | **120 avisos, 100 plantillas al profesional y 20 bloqueadas** por el tope de comercio. Nada lo para antes |
+| `:297` · un cliente que YA está de baja escribe BAJA 120 veces | **120 avisos, 100 plantillas y 20 bloqueadas.** Y 120 respuestas de texto al cliente dado de baja |
+| ¿Y con la ventana del profesional abierta? | 120 avisos por texto, **0 plantillas** |
+
+**Lo único que hay entre un cliente que escribe y el aviso al profesional** es, por este orden: la firma (quita a
+un tercero que llame por HTTP, no al cliente que escribe por WhatsApp), el descarte de la misma entrega repetida
+(medido en el tramo «d»: 10 reintentos, 1 aviso) y el tope de comercio de 100 al día, que es el techo y a la vez
+el daño: gastado en avisos, ese día el comercio no manda una plantilla más a ningún cliente (tramo «d», C2).
+
+**Quién puede provocarlo.** Para `:409`, un cliente al que se le mandó un albarán por plantilla en los últimos 30
+días y que no tiene presupuesto en `sent`. **Para `:297`, cualquier número que conste como cliente de algún
+comercio**, tenga o no albarán, esté o no de baja, con el bot en ON o en OFF. Es la puerta más ancha de las dos.
+
+## 1 · `:297`, mirado aparte (regla 28)
+
+El máster pide el aviso al profesional en la baja (J3: «`customer.waOptOut=true` + bloqueo de envíos […] + aviso
+al pro»). Lo que el código hace es darlo **en cada mensaje de baja, no en cada baja**:
+
+| caso | avisos | plantillas al profesional | textos al cliente |
+| --- | --- | --- | --- |
+| primera BAJA de un cliente que no estaba de baja | 1 | 1 | 1 |
+| un cliente YA de baja escribe BAJA 10 veces | **10** | **10** | **10** |
+| lo mismo con `stop`, `Baja.`, `STOP!`, `baja` | 10 | 10 | 10 |
+| el mismo número es cliente de DOS comercios, BAJA 10 veces | **20** (uno por comercio y mensaje) | 20 | 10 |
+| CERO: 10 textos que no son la orden («quiero la baja») | 0 | 0 | 10 |
+| CERO: BAJA de un número que no es cliente de nadie | 0 | 0 | — |
+| CERO de plantillas: BAJA 10 veces con la ventana abierta | 10 | 0 | 10 |
+
+La ruta no lee `waOptOut` antes de avisar: busca al cliente por teléfono, reescribe la baja y avisa
+(`whatsappIncoming.routes.ts:271-305`). El texto que recibe el cliente es una respuesta a quien acaba de escribir,
+dentro de su propia ventana. La tabla J6 del máster limita los mensajes al cliente; **de los avisos al profesional
+no dice nada**, y el único contador que los ve es el de comercio. Coste por plantilla en el máster: unos 0,023 €,
+o sea un techo de unos 2,30 € por comercio y día; el daño medible no es el dinero, es el cupo.
+
+## 2 · Lo que apareció midiendo: el tope de comercio no aguanta un lote
+
+| caso | peticiones | avisos | plantillas | bloqueadas |
+| --- | --- | --- | --- | --- |
+| L1 · 120 peticiones de 1 mensaje, una detrás de otra | 120 | 120 | **100** | 20 |
+| L2 · **una** petición con 120 mensajes dentro | 1 | 120 | **120** | **0** |
+| L3 · 120 peticiones de 1 mensaje lanzadas a la vez | 120 | 120 | 100 | 20 |
+
+En L2 salen **120 plantillas con el tope en 100**. El webhook recorre los mensajes de la petición y lanza cada uno
+sin esperar al anterior (`:146`); el tope se pregunta antes de enviar (`whatsapp.ts:376`) y la fila que cuenta se
+escribe después. Los 120 preguntan con el contador a 0.
+
+**Esto es una observación sobre una base EN MEMORIA, sin esperado previo.** No dice qué pasa en Postgres ni si el
+proveedor agrupa de verdad varios mensajes de un usuario en una petición. Dice que **un límite por petición no
+bastaría**: la unidad que dispara el aviso es el mensaje. Y L3 no prueba que las peticiones simultáneas sean
+seguras: aquí la base contesta al instante.
+
+## 3 · El instrumento y sus controles
+
+Se carga la APP ENTERA de `dist/app.js` (pila real, con su lector de cuerpo y su verificación de firma) y se le
+pide por HTTP. 18 casos, 18 cuadran. Total de la corrida buena: 652 avisos contados y 2 respuestas 429.
+
+| control | esperado | salió |
+| --- | --- | --- |
+| POSITIVO del contador de 429: `/auth/login`, 7 veces, mismo correo | 2 de 429 | 2 |
+| CERO del contador de 429: `/auth/login`, 7 correos | 0 | 0 |
+| POSITIVO de la lectura de la pila: la ruta de login | 2 manos | 2 |
+| CERO de la lectura de la pila: una ruta inventada | sólo las capas comunes | 6, las mismas |
+| CERO: 120 entrantes con la firma mala | 401 las 120, 0 avisos | 401x120 y 0 |
+| CERO: número que no es cliente de nadie (texto y BAJA) | 0 avisos | 0 y 0 |
+| POSITIVO obligatorio: cliente con albarán escribe una vez | 1 aviso, 1 plantilla | 1 y 1 |
+| el guion esperando una repetición menos | rojo | salida 1, 7 casos en rojo de 18 (0 en la buena) |
+
+El guion sale 2 si alguno de sus cinco positivos da 0. Un manejador que revienta se cuenta por sus trazas: 0.
+
+## 4 · Lo que NO se midió
+
+- **Lo que el proveedor ponga de su lado.** Si limita cuántos mensajes puede escribir un usuario a una empresa en
+  un día, y si agrupa mensajes en una petición. Una búsqueda en fuentes secundarias no encontró ningún tope de
+  entrantes documentado (los límites publicados son de conversaciones iniciadas por la empresa); **la
+  documentación primaria no la he leído**, así que queda sin juzgar, no en «no hay».
+- **La app desplegada.** Un proxy delante de producción (Cloudflare, Railway) podría limitar por IP; las
+  peticiones del proveedor llegan de sus propias direcciones. Aquí es `dist` local con `NODE_ENV=development`.
+- Postgres real. L2 y L3 dependen del orden en que la base contesta.
+- Cuántos profesionales tienen la ventana cerrada, que es lo que convierte el aviso en plantilla. Sin dato.
+- Si un tercero puede hacerse cliente de un comercio por su cuenta (el formulario público, el bot). No mirado.
+- El bot en ON para `:409`: sólo se ejecutó con el flag en OFF, que es su valor en el código.
+- La base en memoria contestó sin modelarlo a `teamMember.findUnique` (12 veces, todas de `/auth/login`).
+- Ninguna tanda completa: no hay cambio de código. Los de registro, abajo.
+
+## 5 · Errores propios
+
+- En L2 no supe escribir el esperado antes de correrlo; salió 120 y lo dejé como observación, no como caso que
+  cuadra. Su fila de «cuadra» comprueba sólo los avisos y la respuesta HTTP.
+- La primera compilación la lancé con un `tsc` que en un árbol anidado no existe; lo dijo la salida 127, no un cero.
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509f/limite.cjs dist` (rojo a propósito:
+`--esperado-menos-uno`).

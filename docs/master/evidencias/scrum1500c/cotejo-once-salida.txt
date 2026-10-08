@@ -1,0 +1,280 @@
+POBLACION: 11 campos de estado fuera de la tabla del instrumento de SCRUM-1500 · en mi tabla: 11 · SON LOS MISMOS
+           320 ficheros .ts bajo src/ (0 sin parsear) · 196 llamadas de escritura de Prisma vistas · máster 1905 líneas
+
+=== Merchant.subscriptionStatus (esquema, línea 72) → MASTER_SIN_ESCRIBIR
+    por qué   : el máster manda expired, trial y el código no lo tiene
+    código D  : active | canceled | past_due   · sin @default
+      · escrituras de Prisma en merchant.subscriptionStatus: active | canceled | past_due
+          src/modules/billing/app/routes/stripe.routes.ts:123 'active'
+          src/modules/billing/app/routes/stripe.routes.ts:173 'active'
+          src/modules/billing/app/routes/stripe.routes.ts:181 'past_due'
+          src/modules/billing/app/routes/stripe.routes.ts:190 'canceled'
+          src/modules/billing/app/routes/stripe.routes.ts:205 'canceled'
+    máster M  : active | canceled | expired | past_due | trial   ← línea 405
+          tramo: trial → active(founding|pro|equipo)
+          tramo: trial → expired
+          tramo: active → past_due → active|canceled
+          tramo: active → canceled
+    en el máster y sin fuente en el código: expired, trial
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== Merchant.status (esquema, línea 129) → ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    por qué   : el campo es un estado y el máster no trae su lista
+    código D  : active   · @default active
+      · escrituras de Prisma en merchant.status: active
+          src/modules/auth/domain/auth.service.ts:346 'active'
+    máster M  : (sin lista declarada)
+    rastro «Merchant.status» en el máster: 0 línea(s)
+    rastro «active» en el máster: 11 línea(s) → 167, 402, 405, 409, 603, 650, 728, 1068, 1070, 1209, 1383
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== Charge.status (esquema, línea 473) → CODIGO_FUERA_DEL_MASTER
+    por qué   : el código tiene expired, failed y el máster no; y el máster manda cancelled, que el código no tiene
+    código D  : expired | failed | paid | pending   · sin @default
+      · escrituras de Prisma en charge.status: expired | failed | pending
+          src/modules/billing/app/routes/charges.routes.ts:61 'pending'
+          src/modules/billing/app/routes/mpWebhook.routes.ts:259 'failed'
+          src/modules/billing/app/routes/psp.routes.ts:393 'failed'
+          src/modules/billing/app/routes/psp.routes.ts:393 'expired'
+      · fabrica datosDeCobroPagado en src/modules/billing/domain/instanteDeCobro.ts: paid
+          src/modules/billing/domain/instanteDeCobro.ts:74 'paid'
+    máster M  : cancelled | paid | pending   ← línea 400
+          tramo: pending → paid(paid_via: card|bizum_manual|transfer|cash)
+          tramo: pending → cancelled
+    🔴 en el código y NO en esa línea del máster: expired, failed
+          «expired» como palabra entera en TODO el máster: 5 línea(s) → 398, 405, 1085, 1089, 1699
+          «failed» como palabra entera en TODO el máster: 5 línea(s) → 309, 310, 312, 403, 1646
+    en el máster y sin fuente en el código: cancelled
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== Quote.status (esquema, línea 653) → CODIGO_FUERA_DEL_MASTER
+    por qué   : el código tiene pending_approval y el máster no
+    código D  : accepted | draft | expired | pending_approval | rejected | sent   · @default draft
+      · escrituras de Prisma en quote.status: accepted | draft | expired | pending_approval | rejected | sent
+          src/modules/jobs/app/routes/albaranes.routes.ts:1644 'draft'
+          src/modules/maintenance/domain/maintenance.service.ts:418 'draft'
+          src/modules/quotes/app/routes/quotes.routes.ts:197 'pending_approval'
+          src/modules/quotes/app/routes/quotes.routes.ts:197 'draft'
+          src/modules/quotes/app/routes/quotes.routes.ts:471 'accepted'
+          src/modules/quotes/app/routes/quotes.routes.ts:725 'rejected'
+          src/modules/quotes/domain/expire.service.ts:17 'expired'
+          src/modules/quotes/domain/sendQuote.service.ts:117 'sent'
+          src/modules/system/app/routes/quotesAdmin.routes.ts:803 'sent'
+          src/modules/system/app/routes/quotesAdmin.routes.ts:854 'draft'
+          src/modules/system/quoteAdmin.ts:389 'accepted'
+          src/modules/system/quoteAdmin.ts:436 'rejected'
+          src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:485 'accepted'
+          src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:554 'rejected'
+      · fabrica nuevaRevisionDe en src/modules/quotes/domain/revision.ts: draft
+          src/modules/quotes/domain/revision.ts:390 'draft'
+    máster M  : accepted | draft | expired | rejected | sent   ← línea 398
+          tramo: draft → sent → accepted | rejected
+          ⚠ «expired» está en esa línea con la etiqueta F2: cuenta como del máster, y se dice
+    🔴 en el código y NO en esa línea del máster: pending_approval
+          «pending_approval» como palabra entera en TODO el máster: 0 línea(s)
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== Invoice.status (esquema, línea 830) → CODIGO_FUERA_DEL_MASTER
+    por qué   : el código tiene expired y el máster no
+    código D  : annulled | expired | paid | pending   · @default pending
+      · escrituras de Prisma en invoice.status: annulled | paid
+          src/modules/billing/app/routes/mpWebhook.routes.ts:174 'paid'
+          src/modules/billing/app/routes/psp.routes.ts:196 'paid'
+          src/modules/billing/app/routes/psp.routes.ts:261 'paid'
+          src/modules/invoicing/app/routes/invoice.routes.ts:111 'paid'
+          src/modules/system/app/routes/invoicesAdmin.routes.ts:488 'paid'
+          src/modules/system/app/routes/invoicesAdmin.routes.ts:950 'annulled'
+          (no literal) src/modules/system/invoiceAdmin.ts:306 status
+      · includes includes(status) en src/modules/system/app/routes/invoicesAdmin.routes.ts: expired | paid | pending
+          src/modules/system/app/routes/invoicesAdmin.routes.ts:555
+      · argumento 1 de las 4 llamadas a updateInvoiceStatusAdmin(): paid | pending
+          src/modules/system/invoiceAdmin.ts:327 'paid'
+          src/modules/system/invoiceAdmin.ts:331 'pending'
+          (no literal) src/modules/system/app/routes/invoicesAdmin.routes.ts:562 String(req.body?.status || '').toLowerCase()
+          (no literal) src/modules/system/invoiceAdmin.ts:313 status
+    máster M  : annulled | paid | pending   ← línea 399
+          tramo: pending → paid
+          tramo: pending → annulled
+    🔴 en el código y NO en esa línea del máster: expired
+          «expired» como palabra entera en TODO el máster: 5 línea(s) → 398, 405, 1085, 1089, 1699
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== Invoice.vfEstado (esquema, línea 916) → COINCIDE_CON_EL_MASTER
+    por qué   : comentario, código y máster dicen lo mismo
+    código D  : no_aplica | pendiente_de_sellado | sellado   · @default pendiente_de_sellado
+      · escrituras de Prisma en invoice.vfEstado: no_aplica | sellado
+          src/modules/invoicing/domain/selladoEstado.ts:134 'no_aplica'
+          src/modules/invoicing/domain/selladoEstado.ts:145 'sellado'
+      · consts SELLADO_PENDIENTE+SELLADO_HECHO+SELLADO_NO_APLICA en src/modules/invoicing/domain/selladoEstado.ts: no_aplica | pendiente_de_sellado | sellado
+    máster M  : no_aplica | pendiente_de_sellado | sellado   ← línea 404
+          tramo: pendiente_de_sellado → sellado
+          tramo: pendiente_de_sellado → no_aplica
+    comentario: nombra no_aplica | pendiente_de_sellado | sellado
+
+=== BotSession.state (esquema, línea 1138) → COINCIDE_CON_EL_MASTER
+    por qué   : código y máster dicen lo mismo; el comentario no enumera valores
+    código D  : asking_description | asking_zone | choosing_merchant | confirming_request | done | handoff | menu   · @default menu
+      · escrituras de Prisma en botSession.state: menu
+          src/modules/whatsappBot/domain/botFlow.service.ts:70 'menu'
+          (no literal) src/modules/whatsappBot/domain/botFlow.service.ts:70 patch.state
+      · propiedad «state» del argumento 1 de las 16 llamadas a setSession(): asking_description | asking_zone | choosing_merchant | confirming_request | done | handoff | menu
+          src/modules/whatsappBot/domain/botFlow.service.ts:271 'asking_description'
+          src/modules/whatsappBot/domain/botFlow.service.ts:331 'done'
+          src/modules/whatsappBot/domain/botFlow.service.ts:366 'choosing_merchant'
+          src/modules/whatsappBot/domain/botFlow.service.ts:389 'menu'
+          src/modules/whatsappBot/domain/botFlow.service.ts:404 'asking_zone'
+          src/modules/whatsappBot/domain/botFlow.service.ts:440 'confirming_request'
+          src/modules/whatsappBot/domain/botFlow.service.ts:463 'asking_description'
+          src/modules/whatsappBot/domain/botFlow.service.ts:514 'done'
+          src/modules/whatsappBot/domain/botFlow.service.ts:567 'menu'
+          src/modules/whatsappBot/domain/botFlow.service.ts:607 'menu'
+          src/modules/whatsappBot/domain/botFlow.service.ts:612 'asking_description'
+          src/modules/whatsappBot/domain/botFlow.service.ts:656 'handoff'
+          src/modules/whatsappBot/domain/botFlow.service.ts:668 'menu'
+          src/modules/whatsappBot/domain/botFlow.service.ts:681 'menu'
+          src/modules/whatsappBot/domain/botFlow.service.ts:710 'handoff'
+          src/modules/whatsappBot/domain/botFlow.service.ts:722 'menu'
+    máster M  : asking_description | asking_zone | choosing_merchant | confirming_request | done | handoff | menu   ← línea 374
+          tramo: menu|choosing_merchant|asking_description|asking_zone|confirming_request|done|handoff
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== WhatsAppMessage.status (esquema, línea 1274) → CODIGO_FUERA_DEL_MASTER
+    por qué   : el código tiene received y el máster no
+    código D  : delivered | failed | queued | read | received | sent   · @default queued
+      · escrituras de Prisma en whatsAppMessage.status: received | sent
+          src/modules/messaging/domain/whatsappLog.service.ts:40 'sent'
+          src/modules/messaging/domain/whatsappLog.service.ts:81 'received'
+          (no literal) src/modules/messaging/domain/whatsappLog.service.ts:40 input.status
+          (no literal) src/modules/messaging/domain/whatsappLog.service.ts:144 status
+      · propiedad «status» del argumento 0 de las 16 llamadas a recordWaMessage(): failed | sent
+          src/integrations/whatsapp.ts:331 'failed'
+          src/integrations/whatsapp.ts:422 'sent'
+          src/integrations/whatsapp.ts:460 'sent'
+          src/integrations/whatsapp.ts:510 'failed'
+          src/integrations/whatsapp.ts:543 'sent'
+          src/integrations/whatsapp.ts:649 'failed'
+          src/integrations/whatsapp.ts:734 'failed'
+          src/integrations/whatsapp.ts:746 'sent'
+          src/integrations/whatsapp.ts:837 'failed'
+          src/integrations/whatsapp.ts:849 'sent'
+          src/integrations/whatsapp.ts:949 'failed'
+          src/integrations/whatsapp.ts:961 'sent'
+          src/integrations/whatsapp.ts:1039 'failed'
+          src/integrations/whatsapp.ts:1051 'sent'
+          src/integrations/whatsapp.ts:1122 'failed'
+          src/integrations/whatsapp.ts:1134 'sent'
+      · claves STATUS_RANK en src/modules/messaging/domain/whatsappLog.service.ts: delivered | queued | read | sent
+    máster M  : delivered | failed | queued | read | sent   ← línea 403
+          tramo: queued → sent → delivered → read
+          tramo: queued|sent → failed(error)
+    máster J4: delivered | failed | queued | read | sent   ← línea 309 · igual que la Parte L
+    🔴 en el código y NO en esa línea del máster: received
+          «received» como palabra entera en TODO el máster: 0 línea(s)
+    comentario: nombra delivered | failed | queued | read | sent
+
+=== Job.status (esquema, línea 1315) → COINCIDE_CON_EL_MASTER
+    por qué   : comentario, código y máster dicen lo mismo
+    código D  : agendado | cerrado | en_curso | pendiente_agendar | terminado   · @default pendiente_agendar
+      · escrituras de Prisma en job.status: pendiente_agendar
+          src/modules/jobs/domain/job.service.ts:106 'pendiente_agendar'
+      · const JOB_STATES en src/modules/jobs/domain/job.service.ts: agendado | cerrado | en_curso | pendiente_agendar | terminado
+    máster M  : agendado | cerrado | en_curso | pendiente_agendar | terminado   ← línea 406
+          tramo: pendiente_agendar → agendado(scheduledAt) → en_curso → terminado → cerrado
+    comentario: nombra agendado | cerrado | en_curso | pendiente_agendar | terminado
+
+=== EmailMessage.status (esquema, línea 1568) → ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    por qué   : el campo es un estado y el máster no trae su lista
+    código D  : aceptado_sin_confirmacion | aceptado_sin_identificador | entregado | fallo_envio | rebotado | reclamado   · @default aceptado_sin_identificador
+      · escrituras de Prisma en emailMessage.status: (ningún literal)
+          (no literal) src/modules/messaging/domain/registroDeEnvios.ts:223 constancia.estado
+          (no literal) src/modules/messaging/domain/registroDeEnvios.ts:320 avanzar(fila.status as EstadoCorreo, estado)
+      · const ESTADOS_CORREO en src/modules/messaging/domain/constanciaCorreo.ts: aceptado_sin_confirmacion | aceptado_sin_identificador | entregado | fallo_envio | rebotado | reclamado
+    máster M  : (sin lista declarada)
+    rastro «EmailMessage.status» en el máster: 0 línea(s)
+    rastro «aceptado_sin_confirmacion» en el máster: 0 línea(s)
+    rastro «aceptado_sin_identificador» en el máster: 0 línea(s)
+    rastro «fallo_envio» en el máster: 0 línea(s)
+    rastro «entregado» en el máster: 3 línea(s) → 1374, 1380, 1887
+    rastro «rebotado» en el máster: 0 línea(s)
+    rastro «reclamado» en el máster: 1 línea(s) → 1343
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== VfSubmission.status (esquema, línea 1802) → ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    por qué   : el campo es un estado y el máster no trae su lista
+    código D  : accepted | manual_review | pending | rejected | sent   · @default pending
+      · escrituras de Prisma en vfSubmission.status: sent
+          src/modules/fiscal/verifactu/sif.procesador.ts:122 'sent'
+          (no literal) src/modules/fiscal/verifactu/sif.procesador.ts:171 d.estado
+      · const ESTADOS_VF_SUBMISSION en src/modules/fiscal/verifactu/sif.cola.ts: accepted | manual_review | pending | rejected | sent
+      · enum VfSubmissionStatus de prisma/schema.prisma: accepted | manual_review | pending | rejected | sent
+    máster M  : (sin lista declarada)
+    rastro «VfSubmission.status» en el máster: 0 línea(s)
+    rastro «sent» en el máster: 17 línea(s) → 309, 310, 312, 327, 398, 403, 409, 797, 802, 812, 826, 830, 1003, 1216, 1337, 1637, 1699
+    rastro «pending» en el máster: 9 línea(s) → 376, 399, 400, 448, 641, 1068, 1385, 1644, 1646
+    rastro «accepted» en el máster: 8 línea(s) → 398, 406, 603, 641, 646, 1003, 1005, 1637
+    rastro «rejected» en el máster: 1 línea(s) → 398
+    rastro «manual_review» en el máster: 1 línea(s) → 580
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== [CONTROL, tiene que salir NO_EXISTE] Merchant.estadoQueNoExiste (esquema, línea 0) → NO_EXISTE
+    por qué   : el campo no está en esa línea del esquema
+    código D  : (nada)   · sin @default
+      · escrituras de Prisma en merchant.estadoQueNoExiste: (ningún literal)
+    máster M  : (sin lista declarada)
+    comentario: nombra (no enumera: menos de dos valores)
+
+=== [CONTROL, tiene que salir CIEGO] Job.status con una función inventada (esquema, línea 1315) → CIEGO
+    por qué   : no encuentro el cierre declarado: ninguna llamada a funcionQueNoExiste() en src/ · ninguna fuente declarada dio un valor
+    código D  : pendiente_agendar   · @default pendiente_agendar
+      · propiedad «status» del argumento 0 de las 0 llamadas a funcionQueNoExiste(): (ningún literal)   🔴 ninguna llamada a funcionQueNoExiste() en src/
+    máster M  : agendado | cerrado | en_curso | pendiente_agendar | terminado   ← línea 406
+          tramo: pendiente_agendar → agendado(scheduledAt) → en_curso → terminado → cerrado
+    en el máster y sin fuente en el código: agendado, cerrado, en_curso, terminado
+    comentario: nombra agendado | cerrado | en_curso | pendiente_agendar | terminado
+
+=== [CONTROL, tiene que salir CIEGO] Job.status con un ancla inventada (esquema, línea 1315) → CIEGO
+    por qué   : el ancla /^\*\*EntidadQueElMasterNoTiene:\*\*/ casa 0 veces en el máster (tiene que ser 1)
+    código D  : agendado | cerrado | en_curso | pendiente_agendar | terminado   · @default pendiente_agendar
+      · const JOB_STATES en src/modules/jobs/domain/job.service.ts: agendado | cerrado | en_curso | pendiente_agendar | terminado
+    máster M  : (sin lista declarada)
+    comentario: nombra agendado | cerrado | en_curso | pendiente_agendar | terminado
+
+=== [CONTROL, tiene que salir COINCIDE_CON_EL_MASTER] Albaran.estado (positivo) (esquema, línea 1453) → COINCIDE_CON_EL_MASTER
+    por qué   : comentario, código y máster dicen lo mismo
+    código D  : borrador | emitido | firmado   · @default borrador
+      · escrituras de Prisma en albaran.estado: firmado
+          src/modules/jobs/app/routes/albaranes.routes.ts:1045 'firmado'
+          src/modules/jobs/app/routes/albaranPublic.routes.ts:443 'firmado'
+      · const ALBARAN_ESTADOS en src/modules/jobs/domain/albaran.service.ts: borrador | emitido | firmado
+    máster M  : borrador | emitido | firmado   ← línea 407
+          tramo: borrador → emitido → firmado
+    comentario: nombra borrador | emitido | firmado
+
+=== [CONTROL, tiene que salir CODIGO_FUERA_DEL_MASTER] QuoteRequest.status (positivo del tercer cajón) (esquema, línea 1115) → CODIGO_FUERA_DEL_MASTER
+    por qué   : el código tiene done, pending, read y el máster no; y el máster manda converted, discarded, new, seen, que el código no tiene
+    código D  : done | pending | read   · @default pending
+      · escrituras de Prisma en quoteRequest.status: pending
+          src/modules/system/app/routes/customerPortal.routes.ts:542 'pending'
+          src/modules/whatsappBot/domain/botFlow.service.ts:484 'pending'
+          (no literal) src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:65 req.body?.status
+      · includes includes(status) en src/modules/quoteRequests/app/routes/quoteRequests.routes.ts: done | pending | read
+          src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:54
+    máster M  : converted | discarded | new | seen   ← línea 401
+          tramo: new → seen → converted(quoteId) | discarded(reason)
+    🔴 en el código y NO en esa línea del máster: done, pending, read
+          «done» como palabra entera en TODO el máster: 4 línea(s) → 374, 1646, 1801, 1817
+          «pending» como palabra entera en TODO el máster: 9 línea(s) → 376, 399, 400, 448, 641, 1068, 1385, 1644, 1646
+          «read» como palabra entera en TODO el máster: 9 línea(s) → 309, 310, 327, 403, 1116, 1176, 1629, 1631, 1634
+    en el máster y sin fuente en el código: converted, discarded, new, seen
+    comentario: nombra done | pending | read
+
+RESUMEN (sin los controles):
+   4  CODIGO_FUERA_DEL_MASTER
+   3  COINCIDE_CON_EL_MASTER
+   3  ESTADO_SIN_MAQUINA_EN_EL_MASTER
+   1  MASTER_SIN_ESCRIBIR
+  11  TOTAL
+
+CONTROLES: 5 de 5 salen como tienen que salir · campos reales ciegos: 0 (tiene que ser 0)
+RASTRO   : «confirming_request» sale en 3 línea(s) del máster (374, 376, 386; tiene que ser > 0) · una palabra derivada que no está sale en 0 (tiene que ser 0)
+EXIT=0

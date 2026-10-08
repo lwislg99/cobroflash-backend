@@ -114,3 +114,4 @@ Lanzar una medición no es tenerla: un resultado que nadie va a leer caduca con 
 Una salida recortada para leerla cómoda es media salida: el corte cae donde no estabas mirando. (SCRUM-1282)
 La fecha de vigencia de un texto consolidado no es la fecha desde la que se aplica: se lee la nota, no el atributo. (SCRUM-1316)
 Cerrar va antes que abrir: lo que encuentras de paso en tu carril se arregla en el momento y se nombra en la entrega; ticket sólo con víctima que no puedes arreglar ahora, con fecha, o cruzando de equipo. (orden de Luis del 6-oct-2026 para su equipo; A13)
+La base de un guard puede ser un commit y no un fichero: antes de autorizar moverla se lee contra qué compara. (SCRUM-1446)
