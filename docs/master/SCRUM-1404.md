@@ -445,3 +445,134 @@ el orquestador `cobroflash-backend-90`. La rama sigue SIN `origin/main` mezclado
 
 - Los tres casos nuevos salieron verdes a la primera, y un verde a la primera no dice nada: lo que los
   respalda son las 7 mutaciones del cinturón, corridas después, no el haberlos visto pasar.
+
+# SCRUM-1404e · los dos huecos que PR-1 declaró sin medir: medidos por efecto, sin tocar `src/` ni ningún test
+
+**Medido contra:** `origin/main` = `fc639ef96164b56ae99c129b7202c56c66abdaf4` · 2026-10-08T00:54:25Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1404/censo-scrum205-por-efecto.mjs`
+
+*(Escribe J6, relevo, equipo de Javier. Cruce de carril declarado: el ticket es `area-j1` y lo autorizó
+el orquestador `cobroflash-backend-90`. El hook de arranque volvió a decir «SIN IDENTIDAD… no construyas»
+(SCRUM-1498, de S5); se siguió por la norma común del 8-oct. Este tramo añade dos guiones y sus dos
+salidas en `docs/`: **cero líneas de `src/` y cero de `tests/`**. PR-2 sigue cerrado y no se abre aquí.)*
+
+## Cómo se mutó `selladoEstado.ts` sin tocarlo
+
+Mi antecesora no mutó el literal porque el fichero es camino de emisión. El encargo pide mutarlo ahí.
+Las dos cosas caben: `censo-scrum205-por-efecto.mjs` monta un **espejo** (copia de `src/`, de `dist/`,
+de los tres tests y de la lista de declaradas) dentro de `dist/`, que git ignora, y muta el espejo. Los
+tests calculan su raíz desde su propia carpeta, así que los del espejo leen el `src/` del espejo. Antes
+de juzgar nada coteja por sha256 que los 6 ficheros que importan son idénticos a los del árbol
+(distintos: 0), y al acabar vuelve a medir los 6 del árbol (movidos: 0) y borra el espejo.
+
+⚠️ Lo que eso es y lo que no: el literal mutado es el de una copia byte a byte, leída por el test
+byte a byte idéntico. **El fichero del árbol no se ha mutado nunca.**
+
+Cada mutación lleva escrito en el guion, antes de correr, qué caso tiene que caer —o que se espera
+muda, cuando lo que se quiere enseñar es un límite—. Se declararon con el código quieto: este tramo no
+cambia código.
+
+## Hueco (2) · el caso ④, mutado donde toca: CAE, y cae sólo él
+
+Base sin mutar: 17 casos, 0 caen.
+
+| mutación sobre el `selladoEstado.ts` del espejo | esperaba | visto |
+|---|---|---|
+| D1 · el literal de la acción cambia (sólo la fuente) | cae el ④ de la acción, y sólo él | cae 1 de 17: ése |
+| D2 · el mismo cambio en la fuente y en su compilado | lo mismo | cae 1 de 17: ése |
+| D3 · control: cambia OTRO literal del mismo registro | no cae nada | no cae nada |
+| D4 · el fichero pasa a escribir una segunda acción | cae el ④ | cae 1: ése |
+| D5 · la acción deja de ser un literal | cae el ④ | cae 1: ése |
+
+El test está atado a lo que cree. La diferencia con lo que vio mi antecesora (7 caídos al mover la
+constante) es la esperada: el doble de la base exige la acción de la constante, no la del sellado.
+
+## Hueco (1) · qué vigila `scrum205-fallo-de-sellado-no-entrega`, ejecutándolo
+
+Base: 3 casos, 0 caen.
+
+| | mutación en el espejo | esperaba | visto |
+|---|---|---|---|
+| ① | A1 · el fallo de sellado devuelve «sellado» | cae ①, señalando `selladoEstado.ts` | así |
+| ① | A2 · el sellado renombra la acción | cae ① por escáner ciego | así |
+| ① | A4 · el reintento vuelve a leer la acción con el literal | cae ①, señalando `reintentoSellado.ts` | así: es el falso positivo de PR-1, reproducido |
+| ① | **A3 · límite:** devuelve «sellado» y el estado bloqueante sólo queda en un comentario | muda | **muda** |
+| ② | B1 · el portón deja pasar todo | cae ② | así |
+| ② | B2 · el portón bloquea también «no aplica» | cae ② | así |
+| ② | **B3 · límite:** el predicado sigue bien y quien genera el PDF deja de preguntarle | muda | **muda** |
+| ③ | C1 · el reintento sella, tira el resultado y entrega el PDF | cae ③, señalando `reintentoSellado.ts` | así |
+| ③ | C2 · el reintento sella y tira el resultado, sin entregar | cae ③ por su tope de descartes | así |
+| ③ | **C3 · límite:** lo mismo que C1 llamando a la puerta por un alias | muda | **muda** |
+| ③ | **C4 · límite:** el reintento lee el resultado y, con «sigue pendiente», entrega igual | muda | **muda** |
+
+Y `scrum205-un-solo-punto-de-sellado` (6 casos): si el reintento sella por su cuenta sin pasar por la
+puerta (P1), cae y lo señala.
+
+**17 mutaciones declaradas, 17 salen como se predijeron, 0 ciegas.** Salida entera:
+`salida-censo-scrum205-por-efecto.txt`.
+
+**¿Cuenta el censo de ③ a la pasada como llamadora? Sí, medido dos veces.** Mi lectura da **11
+llamadas a la puerta en 8 ficheros**, una de ellas `reintentoSellado.ts:289` (control con un fichero
+que no existe: 0). Como esa lectura es la regla del test vuelta a escribir y no el test, se cotejó con
+él: sólo dice cuántas ve cuando ve menos de 8, así que se le quitaron al espejo 4 ajenas —dijo «veo
+7»— y luego además la del reintento —dijo «veo 6»—. Cuadra. Sin la del reintento nada más, sigue
+verde: el suelo de 8 no descansa en ella. De las 11, dos descartan el resultado y no son la pasada.
+
+### Los cuatro límites, que son del instrumento y no se tocan (regla 41)
+
+- **A3:** ① reconoce el corte por texto dentro del bloque (un `return` con el nombre del estado a
+  menos de 200 caracteres, o la palabra `throw`). No lee qué se devuelve.
+- **B3:** ② ejecuta el predicado; no mira que alguien lo llame. **Pero ejecutado no es un agujero:**
+  quitado ese corte del compilado, `ensureInvoicePdf` sigue sin entregar, porque el segundo portón
+  (`exigirDocumentoEmitible`) rechaza con otro código. Son dos cortes redundantes.
+- **C3:** ③ busca a los llamadores por el nombre. Es el punto ciego del alias que ya se cerró en
+  PR-1 por el lado del código; aquí queda visto por efecto.
+- **C4:** ③ entiende por «descartar» que nadie recoja el valor. Recogerlo y no hacerle caso no lo ve.
+
+Ninguno de los cuatro ocurre hoy en el camino del reintento: es lo que mide el guion de abajo.
+
+## ¿Se cumplen hoy las tres en el camino del reintento? Ejecutado por la puerta real
+
+`reintento-por-la-puerta-real.mjs` corre la pasada compilada **sin doblar la puerta**: llama al
+`sellarTrasEmision` y al `applyVeriFactu` de `dist/`. Sólo se dobla la base, con estado. El fallo es
+una factura fiscal sin líneas, que el propio sellado rechaza. 30 comprobaciones, 0 caen; salida en
+`salida-reintento-por-la-puerta-real.txt`.
+
+| | el registro del fallo se escribe | el registro NO se puede escribir |
+|---|---|---|
+| ① la factura sale como «sigue pendiente» | sí | sí |
+| ① registros del fallo pedidos / guardados | 5 / 5, con la acción que la pasada cuenta | 24 / 0 (24 errores tragados) |
+| ① escrituras sobre la factura, y cómo queda | 0 · pendiente, sin huella | 0 · pendiente, sin huella |
+| ② pedirle el PDF a `ensureInvoicePdf` | se niega, con el código de «sin sellar» | se niega igual |
+| ③ intentos de sellar en 24 pasadas | 5, y consta agotada desde la 17 | 24, y nunca consta agotada |
+| ③ el segundo cinturón | no dice nada | la señala desde la pasada 17 |
+
+Controles: sin fecha de corte, 0 llamadas a la base; un justificante pasa por la puerta real, queda
+«no aplica» con 1 escritura y deja de ser candidato; el mismo instrumento del PDF contesta tres cosas
+distintas a otras tres filas. **Visto en rojo** sobre una copia del compilado: con la puerta
+devolviendo «sellado» al fallar caen 4; con el primer corte del PDF quitado caen 2.
+
+La columna derecha es la sonda de PR-1 repetida por la puerta real en vez de con un doble: mismo
+resultado. La excepción del «no infinito» sigue viva y declarada (comentario 18872); esto no la cierra.
+
+## Lo que NO se midió
+
+- **Un sellado que sale bien por el reintento.** Calcularía una huella contra un doble: no diría nada
+  de la cadena. Tampoco un fallo de la base a mitad del sellado: el fallo provocado ocurre antes de
+  leer la cadena.
+- El doble evalúa los `where` en JavaScript: sigue sin ser Postgres.
+- Del fichero `scrum205-sql-a-mano-contra-schema` nada: mide SQL contra el esquema, no el reintento.
+  De `un-solo-punto` una mutación de seis casos.
+- Si algún OTRO test de la tanda caza B3, A3 o C4: sólo se corrieron los tres ficheros nombrados.
+- La tanda completa no se corrió. Nada en yaqu.app, staging ni producción.
+- `prisma generate` escribió el cliente en el `node_modules` del checkout compartido, que es el que
+  este árbol anidado hereda: no he medido si eso le cambia algo a otra sesión.
+
+## Mis errores
+
+- La primera pasada del censo no arrancó: copiaba `dist/` dentro de `dist/`. No llegó a mutar nada.
+- Al añadir un control al segundo guion metí un salto de línea dentro de una cadena y dejé una salida
+  rota en el árbol; el hook me paró al ir a pisarla. Borrada y regenerada.
+- Los dos guiones salieron verdes a la primera. Del censo lo que vale es que 12 de sus 17 mutaciones
+  son rojos predichos; del segundo, las dos mutaciones del compilado que lo tumban, corridas después.
