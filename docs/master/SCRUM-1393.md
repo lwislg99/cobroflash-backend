@@ -164,3 +164,175 @@ Todo está en `docs/master/evidencias/SCRUM-1393/`. Sin red: `node docs/master/e
 (`salida-1`), `disparos.mjs .` (`salida-2`) y `cero-jobs.mjs <runs.json>…` (`salida-3`). Para datos nuevos:
 `recoge.mjs push|pull_request <desde> <hasta> <salida.json>`, `jobs.mjs <runs.json> <salida.json>` (los dos son los
 de SCRUM-1498, sin cambiar) y `despliegues.mjs <desde> <salida.json>`.
+
+---
+
+# SCRUM-1393 (segundo tramo, «1393b») · Los checks que nadie lee: los PR que entraron en `main` el 7 y el 8 de octubre
+
+**Medido contra:** `origin/main` = `fc639ef96164b56ae99c129b7202c56c66abdaf4` · 2026-10-08T01:06:23Z
+
+A9: aviso → cicatriz J3 «Di por verde un job que acabó en `success` sin ejecutar el paso que le da nombre: mi primer PR de control «verde entero» no había abierto el navegador.» — no se pudo comprobar: es un guion de evidencias que corre a mano fuera de la tanda; lo que queda es que `clasifica.mjs` lleva la lista de pasos que deciden y, en su control C3, un `success` fabricado sin ese paso tiene que salir CIEGO
+
+J3 (jv-j3), por encargo del orquestador del equipo de Javier (`cobroflash-backend-90`). **Es LECTURA:** la API de
+GitHub (PR, corridas, jobs, check-runs, logs) y las reglas de `main`. No se ha tocado ningún workflow, test ni
+instrumento, no se ha arreglado nada de lo encontrado y no se ha transicionado el ticket. La hora es la de la
+cabecera `Date:` de GitHub. El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j3`: es
+SCRUM-1498, carril de S5); seguí por orden de la ficha, y aquí no se construye.
+
+## Lo primero
+
+**ROJOS REALES DE CÓDIGO que entraron en `main` el 7 y el 8 sin que nadie los viera, entre los checks no
+obligatorios: CERO.** De los 16 checks que GitHub da por `failure` o `cancelled`, 15 son CIEGO (el instrumento
+no pudo juzgar) y 1 es un fallo de la infraestructura. Ese cero vale por lo que lleva detrás: tres sondas de
+acuerdo, el cero derivado con su positivo, el PR fabricado sin corridas, el verde conocido y el rojo conocido.
+**Y no es un «todo bien»: 15 veces hubo algo sin juzgar y nada volvió a mirarlo.**
+
+## La pregunta y la respuesta
+
+**¿Cuántos de los PR que entraron en `main` el 7 y el 8 de octubre tienen algún check NO obligatorio en `failure`
+o `cancelled`?** **15 de 53.** Son 16 checks: 12 `failure` en 12 PR y 4 `cancelled` en 4 PR (el #2261 lleva uno
+de cada).
+
+Y lo que cambia la lectura, con los 16 logs leídos (`salida-2-logs.txt`): **ninguno de los 12 `failure` es un
+defecto demostrado del código que entró.** GitHub tiene dos colores; por dentro son tres estados:
+
+| lo que dice GitHub | lo que dice el log | checks |
+|---|---|---|
+| `failure` | **ROJO de verdad** (una mutación MUDA, un test que cae) | **0** |
+| `failure` | **CIEGO**: el instrumento dice que no pudo juzgar (meta-guard con `mudas 0` y alguna ciega o un fichero muerto; constancia «NO PUDE PREGUNTAR») | 11 |
+| `failure` | fallo de la operación, no del código (GitHub devolvió un error al armar el auto-merge) | 1 |
+| `cancelled` | **CIEGO**: el job tocó su techo de 45 min tras 36-44 min sin escribir nada | 4 |
+
+Los 15 CIEGO, por causa y sin agrupar, porque cada una es un arreglo distinto: **8** checks por la mutación de
+`scrum859`; **1** por `vigia-atascados` (3 mutaciones ciegas dentro de ese único check, #2284); **1** por un
+fichero muerto al mutar, `scrum834` (#2282); **1** constancia del ALTER que no pudo preguntar a producción
+(#2285); **4** trinquetes de zona en su techo. 8 + 1 + 1 + 1 + 4 = 15.
+
+**No es que nadie los lea por descuido: es que NO SE PUEDEN LEER ANTES.** **14 de los 16 acabaron DESPUÉS del
+merge de su PR**, entre 3,3 y 34,7 min después: el auto-merge entra en cuanto el obligatorio sale verde (11,1
+min de mediana en estos 53) y el meta-guard (21,3) y el trinquete (17,3, o 45 si se cuelga) terminan más tarde. Y **los 15 PR
+tienen 0 comentarios**. Los otros dos (#2234 y #2285) sí estaban en rojo al mergear, 654,1 y 13,6 min antes.
+
+La instrucción «lee también el meta-guard y el trinquete antes de dar por entregado» **era imposible de cumplir
+en 14 de 16 casos.** El orquestador `cobroflash-backend-90`, que la llevaba dos días repartiendo, pide que conste
+como error SUYO y no de las sesiones (mensaje del 8-oct, tras leer esta medición). Quién abrió qué check, en
+cambio, no se puede medir: ni GitHub ni el repositorio lo guardan.
+
+## Población y sondas
+
+53 PR con base `main` y `merged_at` entre el 6-oct 22:00Z y la recogida (8-oct 01:06:23Z): los días 7 y 8 de
+Madrid, 46 y 7. El primero entró a las 06:43:02Z del 7 y el último a las 00:54:26Z del 8. De la PUNTA de cada uno:
+159 corridas, 436 jobs contando todos los intentos (424 en el último intento), 8 nombres de check. Ningún PR sin
+corridas, ninguna corrida con 0 jobs, ningún check ausente.
+
+- **Segunda sonda** (`commits/<sha>/check-runs`, otra puerta de la API): 436 de 436 con la misma id y la misma
+  conclusión; 0 sólo en una de las dos.
+- **Tercera sonda** (el primer padre de `main` en la ventana, por git): 53 commits, los 53 `merge_commit` de la
+  API están entre ellos, y ningún número de PR de los asuntos falta en la API ni al revés.
+- El nombre del obligatorio se LEE de las reglas de `main` (`datos-reglas-main.json`): «build + tests (con banco
+  desechable)». En los 53 está en verde en su último intento (en #2264 y #2272, tras un primer intento en rojo).
+
+## Los tres controles
+
+1. **Cero derivado, corrido antes de dar el número** (`salida-1-checks.txt`, apartado C). La misma función que
+   cuenta los hallazgos da **0** con un nombre de check que no existe (el más largo de la población más « +1») y
+   **0** con el PR mayor de la población más uno (#2294); y con el nombre y el PR reales de los que se derivan da
+   1 y 3. Un PR fabricado sin corridas da 0 VERDE y 8 CIEGO de 8. Ningún número va escrito a mano.
+2. **Un PR que se sabe verde entero: #2292.** El método lo da por verde entero; `gh pr checks 2292` (sonda
+   independiente) da `pass` en los siete que corren, con el navegador 10 min 46 s; y el log de su meta-guard
+   dice «vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0». El rojo conocido, #2281, sale en la lista.
+3. **Verde, ROJO y CIEGO.** Jobs fabricados (C3): `cancelled`, sin acabar y `success` con su paso saltado dan
+   CIEGO; `failure`, ROJO; `success` con su paso, VERDE.
+
+## La lista: PR, check, conclusión de GitHub y lo que dice su log
+
+| PR | check | GitHub | acabó respecto al merge | lo que dice el log |
+|---|---|---|---|---|
+| #2234 | abrir-pr-y-armar-automerge | failure | 654,1 min antes | «GraphQL: Something went wrong» al armar el auto-merge |
+| #2240 | meta-guard | failure | 6,0 min después | vivas 509 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2247 | meta-guard | failure | 13,9 min después | vivas 509 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2251 | meta-guard | failure | 4,4 min después | vivas 515 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2257 | trinquete de zona | cancelled | 31,5 min después | 44,4 min de silencio antes de medir la primera zona |
+| #2259 | meta-guard | failure | 11,5 min después | vivas 515 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2261 | meta-guard | failure | 11,1 min después | vivas 517 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2261 | trinquete de zona | cancelled | 32,5 min después | midió Kiritimati (10.805 pruebas) y 38,1 min de silencio |
+| #2263 | trinquete de zona | cancelled | 34,7 min después | midió Kiritimati (10.860 pruebas) y 36,1 min de silencio |
+| #2273 | trinquete de zona | cancelled | 29,6 min después | 44,4 min de silencio antes de medir la primera zona |
+| #2277 | meta-guard | failure | 6,0 min después | vivas 519 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2281 | meta-guard | failure | 3,8 min después | vivas 519 · mudas 0 · ciegas 1 (`scrum859`) |
+| #2282 | meta-guard | failure | 3,3 min después | vivas 519 · mudas 0 · ficheros muertos 1 (`scrum834`) |
+| #2284 | meta-guard | failure | 11,9 min después | vivas 517 · mudas 0 · ciegas 3 (`vigia-atascados`) |
+| #2285 | constancia del ALTER (informativo) | failure | 13,6 min antes | «NO PUDE PREGUNTAR: producción responde 520» |
+| #2290 | meta-guard | failure | 7,7 min después | vivas 519 · mudas 0 · ciegas 1 (`scrum859`) |
+
+Nombres completos de los checks: «meta-guard · los guards caen cuando deben» y «trinquete · ningún test nuevo
+mide la zona de la máquina». Los id de job y las horas, en `salida-1-checks.txt`, apartado E.
+
+Lo que se repite: **la mutación de `scrum859` sale ciega en 8 de 53 pasadas** (faltan 4 de sus 20 tests en la
+pasada mutada), y en las otras 45 no; **el trinquete se cuelga en 4 de 53** (5 con el primer intento de #2272),
+los cinco arrancados entre las 15:29Z y las 16:50Z del 7. Los 49 que salen bien tardan entre 11,0 y 18,8 min (mediana 17,3).
+
+## Lo que este barrido encontró sin buscarlo: verdes que no midieron
+
+| check | VERDE | ROJO | CIEGO | de 53 |
+|---|---|---|---|---|
+| build + tests (obligatorio) | 53 | 0 | 0 | 53 |
+| meta-guard | 43 | 10 (por dentro: 0 mudas) | 0 | 53 |
+| trinquete de zona | 49 | 0 | 4 cancelados | 53 |
+| guards de navegador | 32 | 0 | **21: `success` sin el paso «Guards de navegador»** | 53 |
+| constancia del ALTER | 52 | 1 (por dentro: no pudo preguntar) | 0 | 53 |
+| vigía del despliegue | 0 | 0 | 53 `skipped` (su `if` sólo lo corre en `push`) | 53 |
+| abrir-pr-y-armar-automerge | 52 | 1 | 0 | 53 |
+| ¿este PR toca la zona roja? | 53 | 0 | 0 | 53 |
+
+- **«guards de navegador» sale `success` en los 53, y en 21 no abrió el navegador**: el PR era sólo de docs y el
+  workflow salta 7 de sus 15 pasos. Está escrito así a propósito; lo que no hay es forma de distinguirlo en la
+  lista de checks: los dos salen `pass`. **Un check que dice «pasa» sin haber hecho su trabajo es peor que un
+  rojo: fabrica confianza.** Y el vigía del despliegue se salta en 53 de 53. **Verdes enteros de verdad: 25 de 53**; 15 con algún `failure` o
+  `cancelled`; los 13 restantes, verdes salvo ese navegador que no se abrió.
+- La columna CIEGO de las dos últimas filas con contenido (21 y 53) es **por una condición escrita en el
+  workflow**, y por eso NO está en los 15.
+
+## Lo que ya tiene ticket (leído sólo el TÍTULO de cada uno, no su cuerpo ni sus comentarios)
+
+`scrum859` ciega en el meta-guard: SCRUM-1321. `vigia-atascados` inestable al mutar: SCRUM-1100. El job de zona
+que se cuelga hasta su techo de 45 min: SCRUM-1494 (equipo de Luis). Un check no obligatorio en `failure` que el
+auto-merge deja entrar: SCRUM-963 (S5). Nadie vigila el silencio: SCRUM-1324. No he comprobado que lo de hoy sea
+el mismo defecto que describe cada uno: coinciden el fichero y el síntoma.
+
+## Lo que NO he medido
+
+- **Quién leyó qué.** No deja rastro. «0 comentarios» no es «nadie lo leyó»; «acabó después del merge» sí es
+  «nadie lo leyó antes de entrar».
+- **Si una ciega esconde un defecto.** Una mutación ciega no dice que el guard caiga ni que no: 16 veces en dos
+  días hubo algo sin juzgar, y nada volvió a mirarlo. Tampoco he mirado por qué `scrum859` pierde 4 tests.
+- **Los 43 meta-guard verdes por dentro**: sólo el de #2292. Su `success` exige `mudas 0` y `ciegas 0` por código
+  de salida, pero eso lo afirmo por los 11 logs leídos, no por el fuente del guion.
+- **Sólo la PUNTA de cada PR.** Las corridas de puntas anteriores (canceladas al empujar encima) no están.
+- **Sólo `main` no:** qué dijeron esos mismos checks sobre el commit de merge en `main` es el primer tramo de
+  este registro, y no lo he cruzado con éste.
+- **La lista de «pasos que deciden» está escrita a mano** y tiene una entrada. De los otros siete jobs sólo se
+  juzga la conclusión: un `success` suyo que no hubiera medido nada pasaría por verde.
+- Los dos intentos tapados del obligatorio (#2264, #2272) no son la pregunta; el de #2272 ya está en el primer tramo.
+
+## Errores propios
+
+1. El de la línea A9. Mi primera pasada daba 38 verdes enteros y elegí #2293 como control; al pedirle a
+   `gh pr checks` que lo confirmara vi el navegador en 12 s. Eran 25, y el control pasó a ser #2292.
+2. **Tres de los 15 son PR míos** (#2263, #2282 y #2290), y son parte del dato: entregué leyendo el obligatorio
+   por nombre y dejé el meta-guard y el trinquete «sin leer», escrito así en mi propio traspaso. Que acabaran
+   después del merge explica que no los leyera ANTES; no explica que no volviera a mirarlos. Los he leído hoy.
+3. La primera salida decía «−654,1 min antes del merge»: signo y palabra a la vez. Corregido antes de entregar.
+4. Un `grep -c` de `\r` me devolvió 5 al comprobar la cicatriz: contaba líneas con la letra «r». Lo medí por
+   bytes (0), que es lo que mi memoria ya decía que hiciera.
+5. **El primer obligatorio de este PR (#2294) salió ROJO, y por un fallo mío:** `salida-2-logs.txt` llevaba 2
+   bytes de escape de color copiados del log de #2234, y `scrum942` censa justo eso (job 113099516025: 11.075
+   pruebas, 1 cae). Reproducido en local con el fichero nombrado; `lee-logs.mjs` quita ahora los escapes al
+   leer. No lo corrí antes de empujar: pasé siete guards de registro y no el de bytes.
+
+## Cómo se repite
+
+En `docs/master/evidencias/SCRUM-1393/checks-sin-leer/`. Sin red:
+`node clasifica.mjs datos-pr.json datos-reglas-main.json datos-main-primer-padre.txt` (`salida-1-checks.txt`).
+Con red: `node recoge-pr.mjs <desde ISO> <hasta ISO> <salida.json>` y
+`node lee-logs.mjs datos-pr.json <carpeta fuera del árbol> 2292` (`salida-2-logs.txt`; baja 20 logs).
