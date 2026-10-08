@@ -1292,6 +1292,7 @@ router.get('/:id/pdf', async (req, res) => {
         error: ERROR_SIN_SELLAR,
         // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el
         // PROFESIONAL al pulsar «Abrir PDF» de una factura cuyo sellado falló.
+        // Consta en: SCRUM-1502 comentario 18835.
         message: 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.',
       });
     }

@@ -404,3 +404,209 @@ La tanda completa no se corrió en local: la da el obligatorio del CI.
 | ③ los tres parados esperan sin poner el CI en rojo | caso «SCRUM-1500b · EL ÁRBOL» (0 hallazgos, 3 parados) |
 | ③ su excepción lleva motivo, quién la retira y prueba de que sigue montada | `PARADOS` en el instrumento; casos «LOS TRES PARADOS» y «la excepción cubre lo que se le llevó al fundador» |
 | no tocar el esquema, no decidir los parados, no relajar nada, ningún workflow | `git diff --stat origin/main`: tres ficheros cambiados y tres nuevos, ninguno de esos |
+
+# SCRUM-1500c · Los once campos de estado que el cotejo nombraba y no cotejaba
+
+**Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T01:50:22Z (fecha del commit; no es una cabecera de GitHub)
+
+A9: sin fallo que generalice — los dos errores de esta tanda (sección Ⓤ) son del instrumento nuevo y los cazaron sus propios controles antes de entregar; ninguna comprobación de la tanda corre este instrumento, y se dice en Ⓣ
+
+Sesión J5 (`jv-j5`, 8-oct de madrugada, relevo de la que entregó SCRUM-1500b), equipo de Javier, ticket de
+`area-j5`. Rama `scrum-1500c-los-once-estados-sin-cotejar`. Encargo del orquestador
+(`cobroflash-backend-90`): recoger el límite que la sección Ⓜ dejó declarado.
+
+**MEDICIÓN. `prisma/schema.prisma`, el máster, `src/`, los tests y el instrumento de SCRUM-1500 no se han
+tocado.** Este tramo trae una carpeta de evidencias (`docs/master/evidencias/scrum1500c/`) y este registro.
+
+El hook de arranque volvió a decir «SIN IDENTIDAD… no construyas» para `jv-j5` (SCRUM-1498, carril de
+S5). Se siguió, como dice la ficha del orquestador.
+
+## Ⓟ Cuáles son los once
+
+No los escribo yo: son `estadosFueraDeLaTabla` del instrumento de SCRUM-1500, y `cotejo-once.cjs`
+comprueba en cada pasada que su tabla y esa lista son la misma (hoy: 11 y 11, los mismos).
+
+| # | modelo.campo | línea del esquema | tipo | `@default` |
+|---|---|---|---|---|
+| 1 | `Merchant.subscriptionStatus` | 72 | `String?` | no tiene |
+| 2 | `Merchant.status` | 129 | `String` | `active` |
+| 3 | `Charge.status` | 473 | `String` | no tiene |
+| 4 | `Quote.status` | 653 | `String` | `draft` |
+| 5 | `Invoice.status` | 830 | `String` | `pending` |
+| 6 | `Invoice.vfEstado` | 916 | `String` | `pendiente_de_sellado` |
+| 7 | `BotSession.state` | 1138 | `String` | `menu` |
+| 8 | `WhatsAppMessage.status` | 1274 | `String` | `queued` |
+| 9 | `Job.status` | 1315 | `String` | `pendiente_agendar` |
+| 10 | `EmailMessage.status` | 1568 | `String` | `aceptado_sin_identificador` |
+| 11 | `VfSubmission.status` | 1802 | enum `VfSubmissionStatus` | `pending` |
+
+Ninguno es un flag de la Parte P: los trece flags de esa tabla son variables de entorno o ajustes, no
+columnas con nombre de estado. No se ha cotejado ningún flag.
+
+## Ⓠ Cómo se sacó cada conjunto
+
+- **D, lo que decide el destino**, por AST sobre 320 ficheros `.ts` de `src/` (0 sin parsear, 196 llamadas
+  de escritura de Prisma vistas). Casi ninguno de estos campos se escribe con un literal dentro de la
+  llamada de Prisma, así que cada campo declara de dónde sale: la escritura directa, una constante, las
+  claves de un objeto, un `[..].includes(x)`, el enum del esquema, la propiedad de un argumento en todas
+  las llamadas a una función (`setSession`, `recordWaMessage`) o el objeto que devuelve una fábrica
+  (`datosDeCobroPagado`, `nuevaRevisionDe`). Una fuente declarada que no encuentra nada deja el campo
+  CIEGO.
+- **M, lo que fija el máster**, de una línea localizada por un ancla que casa una sola vez: los tramos
+  entre comillas invertidas de esa línea que llevan una flecha.
+- **El veredicto** es la función `veredicto` del instrumento de SCRUM-1500, sin cambiar.
+- **El comentario** se mira al final: qué valores de D o de M nombra como palabra entera.
+
+## Ⓡ El resultado
+
+| cajón | cuántos | cuáles |
+|---|---|---|
+| coincide con el máster | 3 | `Invoice.vfEstado`, `BotSession.state`, `Job.status` |
+| el comentario está atrasado | 0 | ninguno |
+| **el código tiene un valor que el máster no tiene** (regla 27) | **4** | `Quote.status`, `Invoice.status`, `Charge.status`, `WhatsAppMessage.status` |
+| es un estado y el máster no trae su máquina | 3 | `Merchant.status`, `EmailMessage.status`, `VfSubmission.status` |
+| el máster nombra valores que esta columna no guarda | 1 | `Merchant.subscriptionStatus` |
+| total | 11 | |
+
+Los dos últimos cajones no estaban en el encargo. No caben en ninguno de los tres pedidos y no los he
+forzado.
+
+### Coinciden (3)
+
+| campo | valores | línea del máster |
+|---|---|---|
+| `Invoice.vfEstado` | `pendiente_de_sellado`, `sellado`, `no_aplica` | 404 (Parte L) |
+| `BotSession.state` | `menu`, `choosing_merchant`, `asking_description`, `asking_zone`, `confirming_request`, `done`, `handoff` | 374 (Parte K1) |
+| `Job.status` | `pendiente_agendar`, `agendado`, `en_curso`, `terminado`, `cerrado` | 406 (Parte L) |
+
+`BotSession.state` sólo escribe `menu` con un literal dentro de Prisma; los otros seis entran por las 16
+llamadas a `setSession`. `Job.status` sólo escribe `pendiente_agendar`; el resto lo cierra `JOB_STATES`.
+
+### 🔴 El código tiene un valor que el máster no tiene (4): PARADO, regla 27
+
+**1. `Quote.status` → `pending_approval`.**
+
+- Máster, línea 398: `draft → sent → accepted | rejected`, y `expired` en esa misma línea con la etiqueta
+  `F2`. `expired` lo doy por del máster y lo digo: el código ya lo escribe (`expire.service.ts:17`).
+- Dónde se escribe `pending_approval`: `quotes.routes.ts:160` lo elige cuando un técnico crea un
+  presupuesto por encima de `merchant.approvalThreshold`, y la `:197` lo guarda en `quote.create`.
+  Sale de ahí por `quotesAdmin.routes.ts:854`, que lo pasa a `draft`.
+- Búsqueda en el máster, como palabra entera: `pending_approval` 0 líneas. Además, por texto:
+  `needsApproval` 0, `approvalThreshold` 0, `ENT-2` (como lo llama el comentario del código) 0. El
+  CONCEPTO sí está: «aprobaciones» sale 3 veces (líneas 129, 1654 y 1655), como capacidad del plan
+  Equipo que «ya existe». El estado, no.
+
+**2. `Invoice.status` → `expired`.**
+
+- Máster, línea 399: `pending → paid` y `pending → annulled`.
+- Dónde entra: `PUT /admin/invoices/:id/status` (`invoicesAdmin.routes.ts:555`) admite
+  `['pending', 'paid', 'expired']`, y `updateInvoiceStatusAdmin` lo guarda tal cual
+  (`invoiceAdmin.ts:306`; la `:279` dice «para 'expired' dejamos paidAt como esté»).
+- **Ninguna línea de `src/` lo escribe con un literal.** Llega sólo por el cuerpo de esa petición. En
+  `public/` hay un filtro «Vencidas» con ese valor (`invoicesView.js:325`). Tres sitios de `public/`
+  llaman a esa ruta: `jobDetailView.js:2191` manda `paid`; de `invoiceDetailView.js:490` y
+  `quotesDetailView.js:942` no leí el cuerpo que mandan.
+- Búsqueda: `expired` sale en 5 líneas del máster (398, 405, 1085, 1089, 1699). Leídas las cinco:
+  hablan del presupuesto (`validUntil`/`expired`) y de la suscripción. Ninguna de una factura.
+
+**3. `Charge.status` → `failed` y `expired`; y `cancelled`, del máster, no lo escribe nadie.**
+
+- Máster, línea 400: `pending → paid(...)` y `pending → cancelled`.
+- Dónde se escriben: `failed` en `mpWebhook.routes.ts:259` y `psp.routes.ts:393`; `expired` en
+  `psp.routes.ts:393` (la `:388` elige entre los dos según el aviso). `estadoDelCobro.ts:40` los da por
+  estados de pleno derecho (`ESTADOS_QUE_UN_FALLO_PUEDE_PISAR`).
+- `paid` no se escribe con un literal en Prisma: entra por la fábrica `datosDeCobroPagado`
+  (`instanteDeCobro.ts:74`). Sin declararla, el instrumento habría dicho que nadie marca un cobro pagado.
+- `cancelled`: 0 escrituras y 0 lecturas en `src/` como estado de un cobro (los dos sitios donde sale la
+  palabra son el estado que devuelve Mercado Pago y la suscripción).
+- Búsqueda: `failed` sale en 5 líneas del máster (309, 310, 312, 403, 1646): las cuatro primeras son de
+  `WhatsAppMessage` y la 1646 es `Refund.status`. `expired`, las cinco de arriba. Ninguna de un cobro.
+
+**4. `WhatsAppMessage.status` → `received`.** Es SCRUM-1499, abierto el 7-oct y «Tareas por hacer» al
+leerlo hoy. Aquí sólo se confirma con otro instrumento: `whatsappLog.service.ts:81`; `received` 0 líneas
+en el máster; la Parte L (403) y la J4 (309) dicen lo mismo entre sí. No abro nada nuevo.
+
+### Es un estado y el máster no trae su máquina (3)
+
+| campo | valores del código | quién los cierra | rastro en el máster |
+|---|---|---|---|
+| `Merchant.status` | `active` | sólo el `@default` y `auth.service.ts:346` | `Merchant.status` 0 líneas. La Parte L trae «Merchant readiness (checklist, no FSM)», que es otra cosa |
+| `EmailMessage.status` | `aceptado_sin_confirmacion`, `aceptado_sin_identificador`, `fallo_envio`, `entregado`, `rebotado`, `reclamado` | `ESTADOS_CORREO` (`constanciaCorreo.ts:36`) | `EmailMessage` 0, `ESTADOS_CORREO` 0, `SCRUM-475` 0; cuatro de los seis valores, 0 |
+| `VfSubmission.status` | `pending`, `sent`, `accepted`, `rejected`, `manual_review` | el enum del esquema y `ESTADOS_VF_SUBMISSION` (`sif.cola.ts:25`) | la entidad sí (líneas 156, 404, 1060) y `manual_review` 1 vez (580); la lista, no |
+
+- `Merchant.status` no tiene más valor que `active` y nadie lo cambia. Se lee en dos sitios
+  (`publicProfile.routes.ts:32`, `botFlow.service.ts:258`).
+- `VfSubmission`: la línea 404 del máster dice que la cola de remisión «NO está construida — no hay
+  tabla». El esquema tiene el modelo y su enum, y `sif.procesador.ts:122` escribe `sent`. La línea 980
+  del máster, corregida el 1-oct, ya dice que S1-D no está hecho y que hay 3 registros aceptados en
+  pruebas. Las dos líneas no dicen lo mismo. No decido cuál manda: lo dejo delante.
+
+Es la misma decisión que SCRUM-1500 dejó para `ParteTrabajo.estado` y `TeamMember.status`.
+
+### El máster nombra valores que esta columna no guarda (1)
+
+`Merchant.subscriptionStatus`: el código escribe `active`, `past_due` y `canceled`
+(`stripe.routes.ts:123`, `:173`, `:181`, `:190`, `:205`), y los tres están en la línea 405. El veredicto
+del instrumento es MASTER_SIN_ESCRIBIR, por `trial` y `expired`. Leído:
+
+- la máquina de la línea 405 se titula «Subscription (merchant.plan)» y junta dos columnas: `trial` se
+  escribe en `plan` (tres sitios), no aquí;
+- `expired` no lo guarda ninguna columna: `authMiddleware.ts:72` lo calcula (`plan === 'trial'` con
+  `planExpiresAt` pasado).
+
+No hay ningún valor fuera del máster. No lo paro por regla 27; tampoco lo doy por «coincide».
+
+## Ⓢ Los controles
+
+1. **De cero, en cada pasada:** un campo inventado sale NO_EXISTE; una función inventada como fuente,
+   CIEGO; un ancla de máster inventada, CIEGO.
+2. **Positivos, en cada pasada:** `Albaran.estado`, sacado con estas fuentes y esta lectura del máster,
+   sale COINCIDE (lo mismo que le da el instrumento de SCRUM-1500); `QuoteRequest.status` sale
+   CODIGO_FUERA_DEL_MASTER. 5 de 5.
+3. **El rastro:** `confirming_request` sale en 3 líneas del máster (374, 376, 386); una palabra derivada
+   que no puede estar sale en 0.
+4. **El máster movido** (`master-movido.cjs`, en memoria): seis cambios de una línea. Los tres que le
+   dan al máster el valor que le falta sacan a su campo del tercer cajón; los tres que le quitan un
+   valor meten en él a un campo que coincidía. 6 de 6, y en ninguno cambia otro campo.
+5. **La población:** 11 en la lista del instrumento de SCRUM-1500 y 11 en la tabla nueva, los mismos.
+
+## Ⓣ Lo que NO se ha medido ni hecho
+
+- **Ningún test corre esto.** El guard de SCRUM-1500b sigue nombrando los once sin cotejarlos. Meterlos
+  en su tabla pide cuatro excepciones nuevas en `PARADOS` (o siete, con los estados sin máquina), y eso
+  es la misma clase de decisión que el comentario 18831. No la tomo.
+- **Un campo de estado nuevo sigue sin entrar solo.** Este tramo cierra los once de hoy, no el hueco.
+- **Las transiciones.** Sólo conjuntos de valores.
+- **Las lecturas.** No he buscado valores que el código compare y nadie escriba, salvo `cancelled`.
+- **SQL crudo:** 15 usos de `$executeRaw`/`$queryRaw` en `src/`, vistos por texto: cerrojos, consultas
+  de columnas y un `SELECT 1`. Ninguno es un `UPDATE` de estas columnas. No pasó por el AST.
+- **Escrituras anidadas** (una tabla escrita dentro de la llamada de otra): el instrumento las imprime
+  aparte y hoy no imprime ninguna para estos campos.
+- **`public/`**: sólo lo dicho de `Invoice.status`.
+- Nada contra una base: no sé qué valores hay en las filas.
+- La tanda no se ha corrido: no hay ningún test nuevo ni tocado. `dist/` no se compiló.
+
+## Ⓤ Lo que me salió mal
+
+- **Mi primera lectura del máster casaba con texto que no era una lista.** La expresión que cogía los
+  tramos entre comillas invertidas cogía también lo que queda ENTRE dos pares. No añadió ningún valor
+  falso, de milagro. Lo vi en la salida (salían tramos de prosa), lo cambié por emparejar las comillas
+  y comprobé que la salida no cambia en nada más que esos tramos.
+- **Predije mal un cambio del máster movido.** Esperaba que darle `received` al máster dejara
+  `WhatsAppMessage.status` en «coincide», y salió COMENTARIO_ATRASADO: el comentario del esquema no trae
+  ese valor. El instrumento tenía razón y yo no.
+- **La primera sonda no veía cómo se paga un cobro.** Buscando sólo literales dentro de Prisma,
+  `Charge.status` no tenía `paid`. Es la frase de SCRUM-1401 sobre el objeto que se construye en otro
+  fichero; lo cacé porque un cobro que nunca se paga no podía ser.
+- **Pasé de 200.000 de contexto antes de avisar:** medido 247.296 al avisar.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+|---|---|
+| ① cuáles son los once, con modelo y campo | sección Ⓟ |
+| ② valores del código y del máster, derivados del destino | sección Ⓡ y `docs/master/evidencias/scrum1500c/cotejo-once-salida.txt` |
+| ③ los tres cajones | sección Ⓡ: 3 coinciden, 0 atrasados, 4 fuera del máster; y dos cajones más, 3 y 1 |
+| ③ el tercero se PARA, con el valor y dónde se escribe | NO HECHO, a propósito → `Quote.status`, `Invoice.status`, `Charge.status` y `WhatsAppMessage.status` esperan al fundador |
+| antes de decir que el máster no lo tiene, buscarlo y guardar el grep | cada caso de Ⓡ lleva sus búsquedas; el rastro por palabra, en la salida del instrumento |
+| no tocar el esquema ni el máster | `git diff --stat origin/main`: este registro y la carpeta nueva |

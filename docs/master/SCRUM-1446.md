@@ -503,3 +503,105 @@ Qué hace la AEAT al recibirlo no está comprobado.
   Corregido tras repetir la orden sin tubería.
 - Puse a ojo un caso de 100,00 € en `casos-con-nombre.mjs` sobre una población que llega a 30,00 €:
   reventó al ejecutarlo.
+
+## SCRUM-1446c · LA FACTURA SIGUE IMPRIMIENDO «8%»: el parche NO ha entrado, porque la «base» de los dos guards es un commit y no un fichero
+
+**Medido contra:** `origin/main` = `176d0772eb0f4be574dad06f5c548f7da73c5ca7` · 2026-10-08T01:42:00Z (hora de GitHub)
+
+A9: aviso → A10 «La base de un guard puede ser un commit y no un fichero: antes de autorizar moverla se lee contra qué compara.» — no se pudo comprobar: el permiso se escribe en Jira y ningún test del repositorio lee Jira
+
+Lo hace J1 (equipo de Javier), sesión `jv-j1` (relevo), rama `scrum-1446c-la-factura-dice-siete-y-medio`.
+Permiso leído: SCRUM-1446 `c.18885` (y el GO de origen, `c.18865`). Respuesta del orquestador al
+aviso de esta tanda: `c.18895` (citado por su mensaje; no lo he abierto).
+
+### 0 · En corto
+
+**Este tramo no cambia ni una línea de `src/modules/invoicing/`. La fila y el pie de la FACTURA
+siguen rotulando «8%» sobre una cuota del 7,5 %.** Quien lea este PR no debe creer que el papel de
+la factura está arreglado: es la tercera vez que se escribe y sigue siendo verdad.
+
+`c.18885` autoriza dos cosas: aplicar las tres líneas de §3 del tramo anterior y «actualizar la base
+byte a byte» de `scrum603b` y `scrum723`, sin tocar su lógica. **La segunda no se puede hacer: no
+hay ningún fichero de base.** Lo que los dos guards llaman «base» es el commit del que sale la rama.
+
+### 1 · Contra qué comparan, medido
+
+Leído en `tests/_base-de-la-rama.mjs` y visto en el mensaje de su propio rojo:
+
+- `scrum603b` recorta el TEXTO FUENTE de `generateInvoicePdf` en `pdf.service.ts` del disco y lo
+  compara con el mismo recorte de `git show <merge-base de HEAD con origin/main>:pdf.service.ts`.
+- `scrum723` hace lo mismo con el ámbito alcanzable (la función más cinco piezas del módulo).
+- Ninguno genera ni lee un PDF, y ninguno lee un fichero guardado. En CI el HEAD es el commit de
+  mezcla, así que la diferencia es siempre «lo que aporta este PR».
+
+Consecuencia: un PR que cambie esa función sale rojo en el obligatorio por construcción, y no existe
+vía declarada para un cambio autorizado. Una vez dentro, la base se mueve sola para las ramas
+siguientes: no hay nada que regenerar.
+
+| estado del árbol | `SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con la BASE de la rama` | `SCRUM-723 · 🔴 el ÁMBITO ENTERO de la factura no ha cambiado respecto a la base de la rama` |
+| --- | --- | --- |
+| tal cual (`176d0772`) | pasa | pasa |
+| con las tres líneas puestas, y nada más | **cae** | **cae** |
+
+Población: esos dos casos, filtrados por nombre (2 de 2 pasan; con el parche, 0 de 2). El mensaje
+del primero: «respecto al punto de partida de esta rama (origin/main @ 176d0772): 22106 car. frente
+a 22040». El del segundo: «base: origin/main @ 176d0772».
+
+### 2 · Las dos vías, y ninguna la decide una sesión
+
+- **A.** Darles a los dos guards una vía DECLARADA de cambio autorizado: admitir el ámbito del disco
+  si su huella coincide con una declarada junto a la cita del permiso; todo lo demás sigue cayendo.
+  Es tocar su lógica: pide permiso nuevo (regla 41). Es la que recomiendo.
+- **B.** Que alguien con permiso mergee con el obligatorio en rojo por esos dos casos.
+
+El orquestador ha subido la A al fundador y ha descartado la B (su mensaje del 8-oct).
+
+**De quién son los dos guards:** `node scripts/carriles.mjs de <ruta>` contesta «sin fila en §3: nadie
+lo reclama» para los dos y para sus dos ficheros de apoyo. Controles: `pdf.service.ts` → J1,
+`presentacionIva.ts` → S1. Pero contesta lo mismo para un test que no existe, así que la herramienta
+no dice nada sobre `tests/`. Lo que hay es `docs/equipo/dos-equipos.md:170`: el test de un ticket es
+del puesto que trabaja el ticket. Nacieron el 3 y el 4-sep (SCRUM-603 y SCRUM-723). No he abierto
+esos dos tickets para leer su área.
+
+### 3 · El parche, que NO está aplicado, y lo que haría
+
+Las tres líneas, tal cual las puse y las quité (ediciones inversas; `git status` limpio y diff vacío
+comprobados antes de seguir): `docs/master/evidencias/SCRUM-1446c/parche-no-aplicado.diff.txt`.
+
+    :534  `${(taxR*100).toFixed(0)}%`          →  `${rotuloDeTipo(tipoEnPorcentaje(taxR))}%`
+    :556  `${(t*100).toFixed(0)}%`             →  `${rotuloDeTipo(tipoEnPorcentaje(t))}%`
+    :646  parseFloat(b[0]) - parseFloat(a[0])  →  lo mismo, cambiando antes la coma por punto
+
+Medido con el instrumento del tramo anterior (`evidencias/SCRUM-1446b/volcar.mjs` y `comparar.mjs`),
+antes = este árbol sin el parche, después = con él, los dos compilados con `tsc --noCheck`:
+
+| | casos | distintos |
+| --- | --- | --- |
+| sin 7,5 % (0, 2, 4, 5, 10 y 21 %) | 22.184 | **0** |
+| con 7,5 % | 5.137 | 33: los 33 PDF de FACTURA con alguna línea al 7,5 %, y sólo ellos |
+| control: antes contra antes | 27.321 | 0, y el comparador se declara CIEGO (salida 2) |
+
+**Qué cambia dentro de esos 33**, trozo a trozo (`que-cambia.mjs`, salida en `salida-que-cambia.txt`):
+69 líneas de texto del PDF, 0 casos con líneas de más o de menos. En las 69 el trozo que cambia es
+«8» → «7,5» dentro de un rótulo de tipo: 41 con un rótulo («…8%…» en la fila, «IVA 8%:» en el pie) y
+28 con dos en la misma línea del desglose («8%368,63 EURIVA 8%:27,65 EUR»). Ningún importe, ninguna
+fecha, ningún orden. Control: el mismo guion, antes contra antes, se declara CIEGO (salida 2).
+
+La línea 646 no cambia el orden de ninguno de estos casos: sin ella, «7,5%» se leería como 7, que
+cae entre 5 y 10 igual que 7,5.
+
+### 4 · Lo que no cambia, lo diga quien lo diga
+
+- **Las facturas ya emitidas no se tocan (regla 29).** Las que salieron con «8%» se quedan como
+  están, entre o no este parche.
+- Nada del sellado, la huella, la cadena ni el XML. Ningún texto nuevo. Ninguna base consultada.
+- `scrum603b`, `scrum723` y sus ficheros de apoyo: sin tocar.
+- Los tres ficheros de carril ajeno de §4 del tramo anterior: sin tocar.
+
+### 5 · Lo que no he hecho
+
+- No he empujado el parche a ninguna rama: un rojo del obligatorio hace que `yaqu-bot` llame a una
+  ejecución automática sobre la rama.
+- No he generado un PDF a mano para mirarlo: lo de §3 es el texto que saca el lector de la casa.
+- No he corrido la tanda completa ni `tsc --noEmit` (el árbol es anidado y no trae `node_modules`).
+- No he abierto SCRUM-603 ni SCRUM-723 en Jira.
