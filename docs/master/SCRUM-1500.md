@@ -1044,3 +1044,196 @@ generate` NO se corrió.
 | lo que el permiso NO cierra, dicho | sección ⓓ |
 | no tocar el test del cotejo | NO HECHO, a propósito → sigue sin los 11 (c.18912) |
 | construir la cola, el cron o el reintento | NO HECHO, a propósito → condición ① |
+
+# SCRUM-1500f · Los cinco sitios que todavía decían que la cola no existe: corregidos con lo que midió SCRUM-1500d, y nada más
+
+**Medido contra:** `origin/main` = `aa0b22acc3abe8572cd5e527caed0dab1e5c0f31` · 2026-10-08T08:06:21Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1500f/en-sitio.cjs`
+
+Sesión J5 (`jv-j5`, 8-oct por la mañana en Madrid, relevo de la que entregó SCRUM-1500e), equipo de
+Javier, ticket de `area-j5`. Rama `scrum-1500f-lo-que-todavia-dice-que-no-existe`. Encargo del
+orquestador del equipo (`cobroflash-backend-90`).
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» para `jv-j5`; la ficha del orquestador lo
+atribuye a SCRUM-1498 y dice que se siga. Se siguió, y queda dicho.
+
+## ⓛ El permiso, y que al empezar no estaba en Jira
+
+El encargo decía que el fundador había dado el OK esa mañana a los cinco sitios. Leído el ticket
+entero antes de tocar nada: 9 comentarios, el último el 18966, y el 18925 cubre «los tres sitios» de
+SCRUM-1500e. El traspaso de J5 dice que ese permiso «no se hereda para las gemelas que quedan». No
+había nada que citar, y la skill pide la revisión del fundador (regla 10).
+
+Se le pidió el número al orquestador y se siguió midiendo, sin editar. Lo publicó en **SCRUM-1500
+c.18970**, que se leyó entero antes del primer cambio. El literal del fundador que transcribe:
+«Le doy el OK» (a la skill) · «OK» (a los otros tres) · «Ok cámbialo tú» (al documento del asesor).
+El comentario dice que él ES la revisión que pide la regla 10 para tocar `.claude/*`, y mantiene las
+cuatro condiciones de c.18925.
+
+## ⓜ Qué decía cada sitio y qué dice ahora
+
+| sitio | decía | dice ahora | commit |
+| --- | --- | --- | --- |
+| `.claude/skills/yaqu-verifactu-sif/SKILL.md`, líneas 57-61, y su copia en `.agents/skills/` | «La entidad no existe: `VfSubmission` no está en `prisma/schema.prisma` (medido). No hay cola, ni estados, ni contador de intentos» | lo que decía, citado; lo medido; los cinco valores del enum y cuál se puede escribir hoy; lo NO medido | `2fb665cd7`, los dos ficheros solos |
+| `docs/legal/AUDITORIA_CAMINO_EMISION.md`, línea 52 | «No se encola y no se envía.» | «No se encola y» tachado, «no se envía» en pie, y al lado lo medido y lo NO medido | `7bfe971a6` |
+| `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md`, entrada D16 (líneas 414-416) | cita la frase vieja y la da por correcta | la cita se conserva; nota fechada al final de la 416 | `9685cd4b0` |
+| `tests/scrum298-modo-visible.test.mjs`, cabecera | «`VfSubmission` no está en el schema, no hay cola de remisión» | el mismo texto que lleva `modoVisible.ts:22` desde SCRUM-1500e | `98467e4ea`, solo |
+| `docs/legal/PREGUNTAS_ASESOR.md`, líneas 461-466 | citaba `modoVisible.ts:21-24` «con estas palabras» y ya no eran sus palabras | la cita lleva el corchete del comentario, copiado por programa; la 461 dice que se puso al día | `cb98faea4`, solo |
+
+Lo medido que llevan, copiado de c.18919: «hay una tabla que la emisión llena y que ningún proceso
+vacía»; el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código
+que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie. Lo NO medido que llevan:
+ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni
+el valor de `SIF_ENABLED` en Railway.
+
+## ⓝ En sitio, por bytes
+
+`node docs/master/evidencias/scrum1500f/en-sitio.cjs . origin/main` → salida 0. Su salida está en
+`salida-sobre-el-ancestro-comun.txt`, al lado. `en-sitio-salida.txt` es la pasada anterior, la que salió 1 (ver ⓢ): se conserva.
+
+| fichero | líneas antes → después | líneas distintas |
+| --- | --- | --- |
+| la skill en `.claude/` | 90 → 90 | 57, 58, 59, 60, 61 |
+| la skill en `.agents/` | 90 → 90 | 57, 58, 59, 60, 61 |
+| la auditoría | 240 → 240 | 52 |
+| el inventario | 499 → 499 | 416 |
+| el documento del asesor | 1.410 → 1.410 | 461, 463, 464 |
+| el test | 304 → 304 | 9, 10 |
+
+Los seis: 0 bytes `0x0D` y sin BOM. El contador se prueba antes sobre un búfer fabricado con dos CR
+y otro con BOM; si no los cuenta, el instrumento se declara ciego.
+
+**La copia de la skill:** 7.257 bytes las dos, comparación byte a byte igual, mismo sha256
+(`e904c467…`). Control positivo: con un byte de más, la comparación lo ve.
+
+**El test, sólo el comentario:** 451 tokens de código antes y 451 después, idénticos, con el escáner
+de TypeScript. Control positivo: con un token cambiado sale distinto.
+
+**La cita del asesor:** la línea 463 contiene, literal, el corchete de `modoVisible.ts:22` (666
+caracteres). No se tecleó: lo copió un guion que lee el `.ts`. Control de cero: el mismo corchete con
+un ticket derivado (`SCRUM-1500z`) no aparece. La coordenada `modoVisible.ts:21-24` de la línea 461
+sigue igual.
+
+Fuera de `docs/master` cambian 6 ficheros, los 6 de la tabla. En `src/`, `prisma/` y `public/`: 0.
+
+## ⓞ Tres sitios donde me aparté del encargo, y por qué
+
+**El inventario no se reclasifica.** D16 está en la clase D («Correcta») y la tabla de arriba del
+documento dice que son 25 y que el total de 61 cuadra. Si D16 pasa a falsa, la D baja a 24 y otra
+sube. Eso es rehacer la medición del 19-ago-2026, y el permiso es para corregir una afirmación. La
+cita queda como estaba, con una nota fechada debajo que dice desde cuándo es falsa.
+
+**La cabecera de la skill sigue diciendo «NO CONSTRUIDO · FSM `VfSubmission`».** Dos censos casan esa
+palabra (`scripts/censo-afirmaciones-de-skills.mjs:184` y
+`tests/scrum538-skills-no-prometen-ficheros.test.mjs:55`). Lo que se ha cambiado es lo que afirmaba
+debajo.
+
+**En el test cambian las líneas 9 y 10, y el encargo decía 8-9.** La frase falsa empieza en la 9 y
+acaba en las tres primeras palabras de la 10. La 8 no se toca.
+
+## ⓟ Lo que sigue diciendo que no existe, y NO he tocado
+
+El permiso nombra cinco sitios. El instrumento busca la frase en todo el árbol (fuera de
+`docs/master` y `docs/historico`): 144 líneas nombran `vfSubmission` (control positivo),
+`vfSubmissionZ` da 0 (control de cero), y 17 llevan la frase vieja. De ésas, 7 la citan dentro de su
+propia corrección y 10 están sin corregir:
+
+* `docs/legal/AUDITLOG_FISCAL_CONTRATO.md`, líneas 300 y 777: «sin `VfSubmission` en el schema».
+* `docs/legal/SEMAFORO_MAPA_EMISION.md`, líneas 295 y 301: «Sin `VfSubmission` en el schema» y
+  «es un modelo del máster que aún no existe en el schema».
+* `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md`, líneas 406, 408 y 411: las entradas D12 a D15,
+  que citan esos dos documentos y los dan por correctos. Y la 415, que es la cita de D16 que se
+  conserva a propósito con su nota en la 416.
+* `docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md`, línea 175: «`VfSubmission` no está en el esquema —
+  medido arriba». La 144 dice lo mismo con otras palabras y el patrón no la casa.
+* `docs/RUNBOOKS.md`, línea 76: «una cola `VfSubmission` que nunca se construyó (cero tabla…)».
+
+**Y en la misma skill, fuera de las líneas 57-61**, leída entera: la 47-48 («No hay envío ni
+respuesta que esperar»), la 62-64 («no hay cola que pausar ni nada pendiente que remitir al
+reanudar») y la 82-83 («no hay envío, ni reintentos, ni ese estado»). `manual_review` está en el enum
+del esquema. No las casa el patrón porque no nombran `VfSubmission`; las vi leyendo. No se han tocado:
+el permiso dice línea 57.
+
+**Y dos frases vecinas que no son la de la tabla:** «Cero clientes SOAP/mTLS contra la AEAT» sigue
+en `modoVisible.ts:21-22`, en la cabecera del test y en la cita del asesor, y la propia auditoría
+anota desde el 25-sep-2026 que existe `sif.client.ts` con una llamada `https.request`. Y la auditoría,
+líneas 45-47, dice que los dos últimos eslabones «no están escritos». Ninguna de las dos se ha medido
+aquí ni está en el permiso.
+
+## ⓠ Lo que el permiso NO cierra
+
+* **La cola sigue sin vaciarse.** Corregir cinco textos no envía nada a la AEAT.
+* **No se encola ninguna anulación**, y el Done de S1-D la pide.
+* **Los cuatro estados parados por regla 27** siguen parados.
+* **El test del cotejo sigue sin los 11** (c.18912). No se ha tocado.
+
+## ⓡ Lo que NO se ha medido
+
+* **Ninguna base de datos.** Ni si la tabla existe en producción, staging o dev, ni cuántas filas
+  tiene. Ni el valor de `SIF_ENABLED` en Railway.
+* **La medición de SCRUM-1500d no se ha repetido en este tramo.** Se copia de c.18919; la repitió
+  SCRUM-1500e sobre `16e80dea4` y dio la misma salida. Entre ese commit y `4f8c473da`, en `src/` y
+  `prisma/` cambia un fichero: `modoVisible.ts`, que es el comentario de SCRUM-1500e.
+* **El «contador de intentos».** La frase vieja de la skill decía que no lo hay. Leí
+  `prisma/schema.prisma:1803` (`attempts Int @default(0)`) y por eso la frase entera queda citada como
+  falsa, pero es una lectura mía de una línea, no parte de c.18919.
+* **La tanda completa** y **el obligatorio del PR**, sin leer al escribir esto.
+* **Que la skill corregida se cargue bien** en una sesión nueva: no se ha ejercitado.
+* **Los cuatro rojos del árbol anidado** (abajo): los atribuyo por su mensaje, no los he visto pasar
+  en un árbol con `node_modules`.
+
+## ⓢ Qué corrió antes de empujar
+
+209 ficheros de tests: los que nombran `docs/legal`, las skills, `modoVisible`, las anclas,
+`docs/master` o el máster, más scrum237, scrum976 y los del registro. TAP a fichero fuera del árbol
+(623.104 bytes), leído en otro comando. `dist/` de `tsc --noCheck`; `prisma generate` no se corrió.
+
+Antes de escribir este registro: **2.059 tests, 2.045 pasan, 5 caen, 9 saltados.** Los cinco:
+
+* `scrum854-todo-merge-deja-entrada`: 1. Era mío y era correcto: la rama tocaba un test y aún no
+  traía este tramo. Repetido después de escribirlo: ver la línea de abajo.
+* `scrum475-schema-vs-sql`: 3. «La herramienta no responde… ha devuelto CERO BYTES»: el árbol anidado
+  no trae `node_modules` y el CLI de Prisma no está.
+* `scrum476-reconciliar-censos`: 1. «CERO directorios `node_modules` en el árbol».
+
+Después de escribir este tramo y de mezclar `main` (`aa0b22acc`, que sólo traía ficheros de
+SCRUM-1510): 17 ficheros —los del registro, los de las skills, scrum298, scrum237, scrum976 y
+scrum1106—, **145 tests, 145 pasan, 0 caen, 0 saltados** (TAP de 69.756 bytes). Los seis casos de
+«SCRUM-854» salen `ok` por nombre, el ② incluido. `guards:entrada`: 13 guards, 158 tests, salida 0.
+`dist/` no se reconstruyó tras la mezcla: no traía nada de `src/`.
+
+**Empecé anclado a `4f8c473da` y `main` se movió mientras medía.** Lo vio el instrumento: comparaba
+contra la punta de `main` y contó 7 ficheros cambiados donde había 6 —el séptimo era un test que
+entró por `main`—. Ahora compara contra el ancestro común. La tabla de ⓝ es la de esa segunda pasada.
+
+## ⓣ Lo que me salió mal
+
+* **Medí los CR con `od -c | grep '\\r'`** y salieron 217, 643 y 3.856 «líneas con CR» en ficheros
+  que tienen cero. El patrón casaba con la letra. Es un tropiezo ya conocido en esta máquina y volví
+  a hacerlo. Lo delató que el número se parecía al total de líneas. El
+  instrumento cuenta bytes `0x0D` y prueba antes que sabe contarlos.
+* **El primer patrón del recuento llevaba «nunca se construy» suelto** y casaba cinco líneas que no
+  hablan de la cola (CLAUDE.md, el máster, dos de `docs/equipo`). Lo vi al leer la lista, no por el
+  número.
+* **`[áa]` dentro de `git grep -E` no casó la «á»** y el recuento se dejó fuera la línea 175 del
+  inventario de skills. Lo cacé porque esa línea la había visto antes con otra búsqueda y no salía.
+* **Avisé del contexto a 200.848**, con los cinco commits ya hechos. No lo medí hasta entonces.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+| --- | --- |
+| ① la skill y su copia, iguales por bytes | secciones ⓜ y ⓝ; commit `2fb665cd7` |
+| la revisión del fundador citada en el commit de la skill | primera línea de `2fb665cd7`: c.18970 |
+| ② la auditoría, línea 52 | sección ⓜ; commit `7bfe971a6` |
+| ③ el inventario, línea 415 | secciones ⓜ y ⓞ: nota en la 416, sin reclasificar |
+| ④ la cabecera del test | secciones ⓜ, ⓝ y ⓞ: líneas 9-10, 451 tokens idénticos |
+| ⑤ el documento del asesor | secciones ⓜ y ⓝ; commit `cb98faea4` |
+| sólo corregir; no construir la cola ni tocar `enviarSobre` | sección ⓝ: 0 ficheros en `src/`, `prisma/` y `public/` |
+| cada sitio delicado en su commit, con el carril en la primera línea | cinco commits, tabla de ⓜ |
+| en sitio, sin mover líneas | sección ⓝ |
+| copiado de c.18919, con lo NO medido | sección ⓜ |
+| ningún texto que vea un usuario | los seis ficheros son una skill, tres documentos de `docs/legal`, y la cabecera de un test |
+| construir la cola, el cron o el reintento | NO HECHO, a propósito → condición ① |
+| las gemelas que no nombra el permiso | NO HECHO, a propósito → sección ⓟ |

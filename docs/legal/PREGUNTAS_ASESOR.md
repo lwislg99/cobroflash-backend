@@ -458,10 +458,10 @@ web la menciona y el documento todavía no está emitido.**
 * **Incluye** el bloque obligatorio `SistemaInformatico` —productor, NIF, nombre del sistema,
   `idSistema`, versión, nº de instalación, `soloVerifactu = 'S'`— en `registro.builder.ts:19-30`,
   ligado explícitamente a la declaración responsable.
-* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`:
+* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`: *(cita puesta al día el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: ese comentario se corrigió el 8-oct-2026 en SCRUM-1500e y la cita de aquí había dejado de ser literal; el corchete de dentro es del propio comentario)*
 
-  > «**"se envía" NO EXISTE.** Cero clientes SOAP/mTLS contra la AEAT, `VfSubmission` no está en el
-  > schema, no hay cola de remisión; `applyVeriFactu` calcula la cadena de huellas y la URL del QR
+  > «**"se envía" NO EXISTE.** Cero clientes SOAP/mTLS contra la AEAT. [Corregido el 8-oct-2026, SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925: aquí decía «`VfSubmission` no está en el schema, no hay cola de remisión», y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
+  > `applyVeriFactu` calcula la cadena de huellas y la URL del QR
   > —o sea **SELLA EN LOCAL**— y los XSD están vendorizados pero **nadie los manda a ningún
   > sitio**. Hoy todo es "se guarda".»
 
