@@ -1,0 +1,45 @@
+tope 5 · plazo 960 s · acción contada «sellado_fallido»
+
+CONTROL A CERO · la pasada tal como está hoy en main (sin fecha)
+  ok   · activa: false
+  ok   · llamadas a la base: 0
+
+E1 · factura fiscal sin líneas: la puerta real la rechaza · el registro se escribe · 24 pasadas, una por minuto
+  ok   · ① 1.ª pasada: la factura sale como «sigue pendiente»: ["F-2026-0071"]
+  ok   · ① 1.ª pasada: registros pedidos por la puerta: 1
+  ok   · ① el registro: acción / entidad / id: ["sellado_fallido","invoice",71]
+  ok   · ① el registro: por qué falló y en qué estado queda: ["invoice_without_lines_not_sealable","pendiente_de_sellado"]
+  ok   · ① escrituras sobre la factura en las 24 pasadas: 0
+  ok   · ① la fila al acabar: estado y huella: ["pendiente_de_sellado",null]
+  ok   · ② pedirle el PDF a ensureInvoicePdf: "invoice_pendiente_de_sellado"
+  ok   · ③ intentos de sellar en total (el tope): 5
+  ok   · ③ registros que quedaron: 5
+  ok   · ③ primera pasada en que consta agotada: 17
+  ok   · ③ pasadas con algo fuera de plazo: 0
+  ok   · ③ conclusión de la última pasada: "hay_que_mirar"
+
+E2 · la misma factura · el registro NO se puede escribir · 24 pasadas, una por minuto
+  ok   · ① 1.ª pasada: aun sin registro, sale como «sigue pendiente»: ["F-2026-0072"]
+  ok   · ① registros pedidos / guardados / errores tragados: [24,0,24]
+  ok   · ① la fila al acabar: estado y huella: ["pendiente_de_sellado",null]
+  ok   · ② pedirle el PDF a ensureInvoicePdf: "invoice_pendiente_de_sellado"
+  ok   · ③ intentos de sellar en total (sin tope: uno por pasada): 24
+  ok   · ③ pasadas en que consta agotada: 0
+  ok   · ③ el segundo cinturón: primera pasada fuera de plazo: 17
+  ok   · ③ conclusiones: antes del plazo / después: ["todo_en_orden","hay_que_mirar"]
+
+E3 · CONTROL · un justificante (J-…): la puerta real lo marca «no aplica» · 2 pasadas, una por minuto
+  ok   · 1.ª pasada: sale como «no aplica»: ["J-2026-0073"]
+  ok   · escrituras sobre la factura / registros de fallo: [1,0]
+  ok   · la fila al acabar: "no_aplica"
+  ok   · 2.ª pasada: ya no es candidata: 0
+  ok   · el portón, para ese estado (sin pedir el PDF: lo escribiría en disco): true
+
+E4 · CONTROL · el mismo pdfDe, con otras filas, contesta otra cosa
+  ok   · marcada sellada y sin huella: NO entrega, y NO es el mismo rechazo: [true,true]
+         lo que contesta: invoice_sin_sellar:F-2026-0074
+  ok   · sin cliente: "missing_relations"
+  ok   · una factura que no existe: "invoice_not_found"
+
+caen 0
+EXIT=0
