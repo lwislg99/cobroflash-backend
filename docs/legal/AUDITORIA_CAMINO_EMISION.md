@@ -49,7 +49,7 @@ y el envío— no se han construido nunca.**
 ### ¿Dónde se para hoy el camino?
 
 **Se para justo después de sellar.** Se genera el registro, se sella la huella, se encadena y se
-pinta el QR. **No se encola y no se envía.**
+pinta el QR. **~~No se encola y~~ no se envía.** *(Corregido el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: aquí decía «No se encola y no se envía.», y «no se encola» es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): sellar una factura deja su alta en `pending` — hay una tabla que la emisión llena y que ningún proceso vacía. No se encola ninguna anulación. «No se envía» sigue en pie: llamadas a `procesarObligado`: 0; llamadas a `enviarSobre`: 0. NO MEDIDO: ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway. El tachado es deliberado: conserva lo que decía.)*
 
 > **Nota del 25-sep-2026 (SCRUM-1127):** desde ese día existen
 > `src/modules/fiscal/verifactu/sif.client.ts` (con una llamada `https.request`) y `sif.cola.ts`.
