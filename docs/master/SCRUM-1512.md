@@ -120,7 +120,9 @@ Reproducir, desde la raíz y con PGlite instalado fuera del repo:
     node ../../../node_modules/typescript/bin/tsc --noCheck
     node ../../../node_modules/prisma/build/index.js migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > <tmp>/esquema.sql
     node docs/master/evidencias/SCRUM-1512/medir.cjs dist <carpeta node_modules con @electric-sql> <tmp>/esquema.sql
-    node docs/master/evidencias/SCRUM-1512/forma.mjs
+    NO_COLOR=1 node docs/master/evidencias/SCRUM-1512/forma.mjs
+
+(`NO_COLOR=1` para que la salida guardada no lleve bytes ESC: el guard SCRUM-942 los rechaza en el árbol.)
 
 ## 6 · Lo que NO se midió
 

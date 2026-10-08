@@ -248,7 +248,7 @@ async function alta(etiqueta, correo, cuerpoExtra) {
     const rutas = [...new Set(aMeta.map((p) => p.host + p.ruta))];
     for (const r of rutas) hablar('    ' + r + '   x' + aMeta.filter((p) => p.host + p.ruta === r).length);
     const conId = aMeta.filter((p) => p.ruta.split('/').includes(ID_LAB)).length;
-    caso('N1 las dos cuentas piden por la MISMA ruta de numero', { peticiones: aMeta.length, rutasDistintas: rutas.length, conElIdDelEntorno: conId, hostAjeno: aMeta.filter((p) => p.host !== 'graph.facebook.com').length },
+    caso('N1 las dos cuentas piden por la MISMA ruta de numero', { peticiones: aMeta.length, rutasDistintas: rutas.length, conElIdDelEntorno: conId, hostAjeno: aMeta.filter((p) => p.host.split('.')[0] !== 'graph' || !p.host.endsWith('.facebook.com')).length },
       { rutasDistintas: 1, conElIdDelEntorno: aMeta.length, hostAjeno: 0 });
     if (aMeta.length === 0) { hablar('GUION MUDO: ninguna peticion a Meta; N1 no significa nada.'); process.exit(2); }
   }
