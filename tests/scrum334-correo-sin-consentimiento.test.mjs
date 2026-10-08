@@ -130,7 +130,7 @@ test('SCRUM-334 · SUELO: el barrido VE ficheros de rutas y manejadores de verda
   assert.ok(manejadores >= 100,
     `🔴 CIEGO: solo ${manejadores} manejadores encontrados. El patron dejo de casar.`);
   assert.ok(leenCorreo >= 1,
-    '🔴 CIEGO: ningun fichero de rutas lee `req.body.email`, y `auth.routes.ts` lo hace tres '
+    '🔴 CIEGO: ningun fichero de rutas lee `req.body.email`, y `auth.routes.ts` lo hace dos '
     + 'veces. El detector de lectura de correo esta roto.');
 });
 
@@ -249,13 +249,13 @@ test('SCRUM-334 · 🔴 ninguna ruta guarda un correo sin consentimiento', () =>
 // RATCHET · quien lee un correo en la superficie publica, y con que base
 // ═════════════════════════════════════════════════════════════════════════════════════════
 //
-// Las tres de hoy, medidas, con su base declarada. No es decoracion: el dia que aparezca una
+// Las dos de hoy, medidas, con su base declarada (eran tres: `/auth/register` se cerro el
+// 8-oct-2026, SCRUM-1515, y ya no lee nada de lo que le mandan; su linea se quito con ella). No es decoracion: el dia que aparezca una
 // cuarta, alguien tiene que venir aqui a escribir por que puede leer un correo — y esa frase
 // es la que hace pensar. Sin el ratchet, la cuarta entra en silencio si ademas no persiste.
 
 const LECTORES_DECLARADOS = {
   '/auth/login': 'ejecucion del contrato (6.1.b): manda el enlace de acceso a una cuenta que ya existe; no persiste correo nuevo',
-  '/auth/register': 'ejecucion del contrato (6.1.b): el visitante PIDE la cuenta; el correo ES el servicio',
   '/auth/test-login': 'interno, triple cerradura (flag + secreto + allowlist); no es superficie de captacion',
 };
 

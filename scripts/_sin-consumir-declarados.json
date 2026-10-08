@@ -150,6 +150,7 @@
     {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
+    {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","donde":"src/modules/auth/domain/auth.service.ts:307","carril":"J3","ticket":"SCRUM-1515"},
     {"clave":"ruta · POST /auth/test-login","donde":"src/modules/auth/app/routes/auth.routes.ts:95","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /schema-check","donde":"src/app.ts:328","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:455","carril":"J2","ticket":"SCRUM-1145"},
