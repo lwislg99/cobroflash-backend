@@ -168,6 +168,23 @@ export function normalizePhone(input?: string | null): string {
   }
   
   /**
+   * SCRUM-1446 · EL TIPO DE UNA LÍNEA, EN PORCENTAJE, SIN REDONDEAR A ENTERO.
+   *
+   * Aquí y en `calcVatBreakdown` ponía `Math.round(tax * 100)`: un 7,5 % —tipo admitido por
+   * `invalidTipoIva`— se agrupaba y se rotulaba como 8, y de ese 8 colgaban el pie del presupuesto
+   * (que CALCULABA con él), el descuento global y el `TipoImpositivo` del registro. Dos decimales
+   * de porcentaje, que es lo que admite el esquema; con un tipo entero el resultado es el de antes.
+   */
+  export function tipoEnPorcentaje(taxFrac: number): number {
+    return Math.round(taxFrac * 10000) / 100;
+  }
+
+  /** El tipo para un rótulo: «21», «7,5». Sin el signo, que lo pone quien rotula. */
+  export function rotuloDeTipo(pct: number): string {
+    return formatNumeroEs(pct);
+  }
+
+  /**
    * SCRUM-887 · EL DESCUENTO GLOBAL QUE SE FIRMA, EN CÉNTIMOS: las bases por tipo de IVA (línea a
    * línea, con su `dto`, sin cabeceras) y el importe a quitar, limitado a la suma de esas bases.
    * `null` si no hay global o no hay base de la que quitarlo — en los dos casos `calcTotal` lo ignora.
@@ -184,7 +201,7 @@ export function normalizePhone(input?: string | null): string {
 
     const porTipo = new Map<number, number>();
     for (const l of lineasQueSuman(lines as Record<string, unknown>[])) {
-      const rate = Math.round((Number(l.tax) || 0) * 100);
+      const rate = tipoEnPorcentaje(Number(l.tax) || 0);
       const baseCents = Math.round(
         Number(l.qty) * precioConDto(l.price, l.dto) * 100,
       );

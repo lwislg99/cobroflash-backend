@@ -1,0 +1,48 @@
+$ node docs/master/evidencias/SCRUM-1446b/comparar.mjs antes.jsonl despues.jsonl   (antes = origin/main fc639ef9 · después = esta rama; 321 PDF generados y leídos por árbol)
+casos comparados: 27321 · bytes: antes 32642372, después 32474626
+clase                                             | casos | distintos
+dominio-1-linea · CON 7,5 %                       |  3000 | 3000
+dominio-1-linea · sin 7,5 %                       | 18000 | 0
+dominio-mezcla · CON 7,5 %                        |  2070 | 2070
+dominio-mezcla · sin 7,5 %                        |  3930 | 0
+papel-factura-100 · CON 7,5 %                     |     1 | 0
+papel-factura-100 · sin 7,5 %                     |     6 | 0
+papel-factura-azar · CON 7,5 %                    |    32 | 0
+papel-factura-azar · sin 7,5 %                    |   118 | 0
+papel-presupuesto-100 · CON 7,5 %                 |     1 | 1
+papel-presupuesto-100 · sin 7,5 %                 |     6 | 0
+papel-presupuesto-100-global-10 · CON 7,5 %       |     1 | 1
+papel-presupuesto-100-global-10 · sin 7,5 %       |     6 | 0
+papel-presupuesto-azar · CON 7,5 %                |    32 | 32
+papel-presupuesto-azar · sin 7,5 %                |   118 | 0
+SIN 7,5 % (0, 2, 4, 5, 10 y 21 %): 22184 casos · distintos: 0
+CON 7,5 %: 5137 casos · distintos: 5104
+VEREDICTO: los tipos enteros salen IDÉNTICOS.
+EXIT=0
+
+$ control: antes contra antes (el comparador tiene que declararse CIEGO, no dar un verde)
+SIN 7,5 % (0, 2, 4, 5, 10 y 21 %): 22184 casos · distintos: 0
+CON 7,5 %: 5137 casos · distintos: 0
+CIEGO: tampoco cambia ningún caso con 7,5 %. O no hay arreglo, o se compara un árbol consigo mismo.
+EXIT=2
+
+$ node docs/master/evidencias/SCRUM-1446b/casos-con-nombre.mjs antes.jsonl despues.jsonl
+papel-factura-100 · 100,00 € al 7,5 %
+  ANTES   CONCEPTOCANT.PRECIO UNITIVA %TOTAL | L1Z1,00100,008%107,50 | Base imponible:100,00 EUR | IVA 8%:7,50 EUR | TOTAL:107,50 EUR
+  DESPUÉS CONCEPTOCANT.PRECIO UNITIVA %TOTAL | L1Z1,00100,008%107,50 | Base imponible:100,00 EUR | IVA 8%:7,50 EUR | TOTAL:107,50 EUR
+papel-presupuesto-100 · 100,00 € al 7,5 %
+  ANTES   TotalIVA%PrecioCant. | L1Z1100,008%107,50 | Base imponible: 100,00 EUR | IVA 8%: 8,00 EUR | Total presupuesto: 107,50 EUR
+  DESPUÉS TotalIVA%PrecioCant. | L1Z1100,007,5%107,50 | Base imponible: 100,00 EUR | IVA 7.5%: 7,50 EUR | Total presupuesto: 107,50 EUR
+papel-presupuesto-100-global-10 · 100,00 € al 7,5 %
+  ANTES   TotalIVA%PrecioCant. | L1Z1100,008%107,50 | Suma de líneas: 100,00 EUR | Descuento global: -10,00 EUR | Base imponible: 90,00 EUR | IVA 8%: 7,20 EUR | Total presupuesto: 96,70 EUR
+  DESPUÉS TotalIVA%PrecioCant. | L1Z1100,007,5%107,50 | Suma de líneas: 100,00 EUR | Descuento global: -10,00 EUR | Base imponible: 90,00 EUR | IVA 7.5%: 6,75 EUR | Total presupuesto: 96,75 EUR
+dominio · una línea de 20,00 € al 7,5 %, con 10,00 € de descuento global
+  ANTES   desglose [{"rate":8,"base":20,"cuota":1.5}] · guardado 21.5 · firmado 21.5 · firmado con global 10.7
+  ANTES   línea del descuento: tax 0.08 · portón: línea 1: el IVA 8 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, 4 %, 5 %, 7.5 %, 10 %, 21 %
+  ANTES   pie con global: Suma de líneas: 20 · Descuento global: -10 · Base imponible: 10 · IVA 8%: 0.8
+  ANTES   registro: <sum1:DetalleDesglose> <sum1:Impuesto>01</sum1:Impuesto> <sum1:ClaveRegimen>01</sum1:ClaveRegimen> <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion> <sum1:TipoImpositivo>8</sum1:TipoImpositivo> <sum1:BaseImponibleOimporteNoSujeto>20.00</sum1:BaseImponibleOimporteNoSujeto> <sum1:CuotaRepercutida>1.50</sum1:CuotaRepercutida> </sum1:DetalleDesglose>
+  DESPUÉS desglose [{"rate":7.5,"base":20,"cuota":1.5}] · guardado 21.5 · firmado 21.5 · firmado con global 10.75
+  DESPUÉS línea del descuento: tax 0.075 · portón: pasa
+  DESPUÉS pie con global: Suma de líneas: 20 · Descuento global: -10 · Base imponible: 10 · IVA 7.5%: 0.75
+  DESPUÉS registro: <sum1:DetalleDesglose> <sum1:Impuesto>01</sum1:Impuesto> <sum1:ClaveRegimen>01</sum1:ClaveRegimen> <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion> <sum1:TipoImpositivo>7.5</sum1:TipoImpositivo> <sum1:BaseImponibleOimporteNoSujeto>20.00</sum1:BaseImponibleOimporteNoSujeto> <sum1:CuotaRepercutida>1.50</sum1:CuotaRepercutida> </sum1:DetalleDesglose>
+casos de dominio con 7,5 %: 5070 · cambia lo GUARDADO 0 · la CUOTA total 0 · la BASE total 0 · lo firmado sin global 0 · lo firmado CON global 4692 · el registro 4349
