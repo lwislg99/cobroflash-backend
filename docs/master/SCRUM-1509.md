@@ -525,3 +525,122 @@ un caso con alguna no vale. Salieron 0.
 - La base en memoria contestó sin modelarlo a `customerEvent.create` (2 veces). Nada más.
 
 Reproducir: `node docs/master/evidencias/SCRUM-1509d/avisos.cjs dist` (rojo a propósito: `--esperado-menos-uno`).
+
+---
+
+# SCRUM-1509f · Los dos avisos sin freno: qué límite de peticiones hay delante del webhook de entrantes — medido, sin arreglar nada
+
+**Medido contra:** `origin/main` = `453d3a5130dc2c01996b1a794b14262212f241a5` · 2026-10-08T02:18:41Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509f/limite.cjs`
+
+J2 (relevo, sesión `jv-j2`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`). **Es
+EJECUCIÓN y LECTURA:** no se ha tocado ningún fichero de `src/`, test, plantilla, texto ni workflow. Entran este
+tramo y `docs/master/evidencias/SCRUM-1509f/` (guion y sus dos salidas). Nada contra producción ni staging: base
+en memoria y transporte doblado. No se corrió `prisma generate`; `dist` con `tsc --noCheck` de `179c248b4`, y
+entre ese commit y `453d3a513` no cambia ningún fichero de `src/` (0 en `git diff --name-only` sobre `src`).
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j2`, SCRUM-1498). Se siguió porque el
+encargo es medir.
+
+## 0 · La respuesta corta
+
+**Delante del webhook de entrantes no hay ningún límite de peticiones en la aplicación. El riesgo está ABIERTO.**
+
+| pregunta | medido |
+| --- | --- |
+| ¿Hay un limitador delante de `POST /webhooks/whatsapp`? | **No.** De las 102 capas de la app cargada casan 7; 6 las ve cualquier petición y la séptima es el router del webhook, cuya ruta tiene **1 mano** (el manejador). La ruta de login, leída igual, tiene 2: la de más es su limitador |
+| ¿Contesta 429 alguna vez? | **No.** 120 peticiones firmadas seguidas: 0 respuestas 429. El mismo contador ve 2 de 7 en `/auth/login` |
+| ¿Quién puede hacerlo correr? | **Sólo quien firma con el secreto de la app.** 120 peticiones con la firma mala: 401 las 120, 0 avisos, 0 respuestas al cliente. Tampoco ahí hay 429 |
+| `:409` · un cliente con albarán escribe 120 textos, ventana del profesional cerrada | **120 avisos, 100 plantillas al profesional y 20 bloqueadas** por el tope de comercio. Nada lo para antes |
+| `:297` · un cliente que YA está de baja escribe BAJA 120 veces | **120 avisos, 100 plantillas y 20 bloqueadas.** Y 120 respuestas de texto al cliente dado de baja |
+| ¿Y con la ventana del profesional abierta? | 120 avisos por texto, **0 plantillas** |
+
+**Lo único que hay entre un cliente que escribe y el aviso al profesional** es, por este orden: la firma (quita a
+un tercero que llame por HTTP, no al cliente que escribe por WhatsApp), el descarte de la misma entrega repetida
+(medido en el tramo «d»: 10 reintentos, 1 aviso) y el tope de comercio de 100 al día, que es el techo y a la vez
+el daño: gastado en avisos, ese día el comercio no manda una plantilla más a ningún cliente (tramo «d», C2).
+
+**Quién puede provocarlo.** Para `:409`, un cliente al que se le mandó un albarán por plantilla en los últimos 30
+días y que no tiene presupuesto en `sent`. **Para `:297`, cualquier número que conste como cliente de algún
+comercio**, tenga o no albarán, esté o no de baja, con el bot en ON o en OFF. Es la puerta más ancha de las dos.
+
+## 1 · `:297`, mirado aparte (regla 28)
+
+El máster pide el aviso al profesional en la baja (J3: «`customer.waOptOut=true` + bloqueo de envíos […] + aviso
+al pro»). Lo que el código hace es darlo **en cada mensaje de baja, no en cada baja**:
+
+| caso | avisos | plantillas al profesional | textos al cliente |
+| --- | --- | --- | --- |
+| primera BAJA de un cliente que no estaba de baja | 1 | 1 | 1 |
+| un cliente YA de baja escribe BAJA 10 veces | **10** | **10** | **10** |
+| lo mismo con `stop`, `Baja.`, `STOP!`, `baja` | 10 | 10 | 10 |
+| el mismo número es cliente de DOS comercios, BAJA 10 veces | **20** (uno por comercio y mensaje) | 20 | 10 |
+| CERO: 10 textos que no son la orden («quiero la baja») | 0 | 0 | 10 |
+| CERO: BAJA de un número que no es cliente de nadie | 0 | 0 | — |
+| CERO de plantillas: BAJA 10 veces con la ventana abierta | 10 | 0 | 10 |
+
+La ruta no lee `waOptOut` antes de avisar: busca al cliente por teléfono, reescribe la baja y avisa
+(`whatsappIncoming.routes.ts:271-305`). El texto que recibe el cliente es una respuesta a quien acaba de escribir,
+dentro de su propia ventana. La tabla J6 del máster limita los mensajes al cliente; **de los avisos al profesional
+no dice nada**, y el único contador que los ve es el de comercio. Coste por plantilla en el máster: unos 0,023 €,
+o sea un techo de unos 2,30 € por comercio y día; el daño medible no es el dinero, es el cupo.
+
+## 2 · Lo que apareció midiendo: el tope de comercio no aguanta un lote
+
+| caso | peticiones | avisos | plantillas | bloqueadas |
+| --- | --- | --- | --- | --- |
+| L1 · 120 peticiones de 1 mensaje, una detrás de otra | 120 | 120 | **100** | 20 |
+| L2 · **una** petición con 120 mensajes dentro | 1 | 120 | **120** | **0** |
+| L3 · 120 peticiones de 1 mensaje lanzadas a la vez | 120 | 120 | 100 | 20 |
+
+En L2 salen **120 plantillas con el tope en 100**. El webhook recorre los mensajes de la petición y lanza cada uno
+sin esperar al anterior (`:146`); el tope se pregunta antes de enviar (`whatsapp.ts:376`) y la fila que cuenta se
+escribe después. Los 120 preguntan con el contador a 0.
+
+**Esto es una observación sobre una base EN MEMORIA, sin esperado previo.** No dice qué pasa en Postgres ni si el
+proveedor agrupa de verdad varios mensajes de un usuario en una petición. Dice que **un límite por petición no
+bastaría**: la unidad que dispara el aviso es el mensaje. Y L3 no prueba que las peticiones simultáneas sean
+seguras: aquí la base contesta al instante.
+
+## 3 · El instrumento y sus controles
+
+Se carga la APP ENTERA de `dist/app.js` (pila real, con su lector de cuerpo y su verificación de firma) y se le
+pide por HTTP. 18 casos, 18 cuadran. Total de la corrida buena: 652 avisos contados y 2 respuestas 429.
+
+| control | esperado | salió |
+| --- | --- | --- |
+| POSITIVO del contador de 429: `/auth/login`, 7 veces, mismo correo | 2 de 429 | 2 |
+| CERO del contador de 429: `/auth/login`, 7 correos | 0 | 0 |
+| POSITIVO de la lectura de la pila: la ruta de login | 2 manos | 2 |
+| CERO de la lectura de la pila: una ruta inventada | sólo las capas comunes | 6, las mismas |
+| CERO: 120 entrantes con la firma mala | 401 las 120, 0 avisos | 401x120 y 0 |
+| CERO: número que no es cliente de nadie (texto y BAJA) | 0 avisos | 0 y 0 |
+| POSITIVO obligatorio: cliente con albarán escribe una vez | 1 aviso, 1 plantilla | 1 y 1 |
+| el guion esperando una repetición menos | rojo | salida 1, 7 casos en rojo de 18 (0 en la buena) |
+
+El guion sale 2 si alguno de sus cinco positivos da 0. Un manejador que revienta se cuenta por sus trazas: 0.
+
+## 4 · Lo que NO se midió
+
+- **Lo que el proveedor ponga de su lado.** Si limita cuántos mensajes puede escribir un usuario a una empresa en
+  un día, y si agrupa mensajes en una petición. Una búsqueda en fuentes secundarias no encontró ningún tope de
+  entrantes documentado (los límites publicados son de conversaciones iniciadas por la empresa); **la
+  documentación primaria no la he leído**, así que queda sin juzgar, no en «no hay».
+- **La app desplegada.** Un proxy delante de producción (Cloudflare, Railway) podría limitar por IP; las
+  peticiones del proveedor llegan de sus propias direcciones. Aquí es `dist` local con `NODE_ENV=development`.
+- Postgres real. L2 y L3 dependen del orden en que la base contesta.
+- Cuántos profesionales tienen la ventana cerrada, que es lo que convierte el aviso en plantilla. Sin dato.
+- Si un tercero puede hacerse cliente de un comercio por su cuenta (el formulario público, el bot). No mirado.
+- El bot en ON para `:409`: sólo se ejecutó con el flag en OFF, que es su valor en el código.
+- La base en memoria contestó sin modelarlo a `teamMember.findUnique` (12 veces, todas de `/auth/login`).
+- Ninguna tanda completa: no hay cambio de código. Los de registro, abajo.
+
+## 5 · Errores propios
+
+- En L2 no supe escribir el esperado antes de correrlo; salió 120 y lo dejé como observación, no como caso que
+  cuadra. Su fila de «cuadra» comprueba sólo los avisos y la respuesta HTTP.
+- La primera compilación la lancé con un `tsc` que en un árbol anidado no existe; lo dijo la salida 127, no un cero.
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509f/limite.cjs dist` (rojo a propósito:
+`--esperado-menos-uno`).
