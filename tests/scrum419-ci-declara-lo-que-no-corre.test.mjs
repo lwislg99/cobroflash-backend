@@ -183,6 +183,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1515: el merchant que crea nuestro guion nace igual que el de `POST /auth/register`.
+  // Necesita banco porque lo que compara son las dos FILAS, campo a campo, con sus valores por
+  // defecto, y lo que el alta deja colgando (sesiones, correos). Solo el desechable: da de alta y
+  // borra merchants por la ruta pública y por el guion.
+  'scrum1515-nuestra-puerta-de-alta.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
