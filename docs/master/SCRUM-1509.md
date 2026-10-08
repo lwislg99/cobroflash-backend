@@ -313,6 +313,111 @@ Reproducir: `tsc --noCheck`, `node docs/master/evidencias/SCRUM-1509c/medir.cjs 
 
 ---
 
+# SCRUM-1509e · La ruta manual del recordatorio de factura: quién puede llamarla y cuántas veces — medido, sin arreglar nada
+
+**Medido contra:** `origin/main` = `8518dc7a16164530863d657cb0f2f817a4691d78` · 2026-10-08T02:08:30Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509e/medir.cjs`
+
+J1 (relevo, sesión `jv-j1`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`, Jira
+c.18910). **Es EJECUCIÓN y LECTURA.** No se ha tocado ningún fichero de `src/`, test, plantilla, texto ni
+workflow; entran este tramo y `docs/master/evidencias/SCRUM-1509e/`. Nada contra producción ni staging. `dist`
+es `tsc --noCheck` del mismo commit del ancla. No se corrió `prisma generate`. El hook de arranque dijo «SIN
+IDENTIDAD» (SCRUM-1498); se siguió porque el encargo es medir.
+
+Son las dos cosas que c.18907 declaró sin medir: qué autenticación hay delante de
+`POST /admin/invoices/:id/send-reminder` (`src/modules/system/app/routes/invoicesAdmin.routes.ts:732`; la
+llamada a la plantilla está en `:766`) y si hay límite de peticiones.
+
+## 0 · La respuesta corta
+
+**Quién puede llamarla: sólo una sesión iniciada del propio comercio con rol `admin`** — el titular o un
+miembro del equipo con ese rol — **y sólo sobre una factura de ese comercio.** Un tercero sin sesión no llega:
+401 y 0 plantillas, por las cuatro vías probadas. Es el pie del propio comercio en el acelerador.
+
+**Cuántas veces: no hay límite de peticiones.** 120 seguidas del titular sobre la misma factura dan 0
+respuestas 429 y **100 plantillas al mismo cliente el mismo día**; las 20 restantes las para el tope de
+COMERCIO (100, leído en `dist`), que es el único techo. Con el tope por cliente (3) saldrían 3. Al destino se le
+pregunta el tope de comercio 120 veces y el de cliente 0.
+
+**Dos matices que mueven «sólo el comercio», y el segundo no está medido:**
+
+1. La ruta no mira el plan: un titular con la prueba vencida manda igual (A10: 200 y 1 plantilla).
+2. **Ser «comercio» no pide nada más que un correo.** `POST /auth/register` es público (leído: `auth.routes.ts:33`,
+   con límite de 5 por 15 min por IP y correo). **No ejecuté** si una cuenta recién creada llega a tener una
+   factura con cobro y un cliente con teléfono, que es lo que hace falta para que la ruta mande plantilla (sin
+   cobro va a texto libre). Si llega, cualquiera con un correo tiene 100 plantillas al día por cuenta, desde el
+   número de la casa, a los teléfonos que él escriba. Eso ya no es de esta ruta: es del alta.
+
+## 1 · La cadena, leída de la pila de la app cargada
+
+No del texto de `app.ts`: de `app.router.stack` con `dist/app.js` cargado (102 capas). Casan 8 con la ruta; una
+ruta inventada casa 6 (control). Las 2 que sólo ve esta zona:
+
+| capa | qué es | dónde está en el fuente |
+| --- | --- | --- |
+| 45 | `requireAuth`, montada en `/admin` | `src/app.ts:377` |
+| 50 | el router de facturas, montado en `/admin/invoices` **sin nada interpuesto** | `src/app.ts:572` |
+| dentro | la ruta: `requireRole(admin)` y el manejador, en ese orden | `invoicesAdmin.routes.ts:732` |
+
+Las 6 comunes: la cabecera de `Referrer-Policy`, los dos lectores de cuerpo, `jsonError`, el estático y el 404
+final. En el router de facturas no casa ninguna capa que no sea la ruta (0). **Ninguna de las 8 es un limitador.**
+
+`requireAuth` (`src/core/http/authMiddleware.ts`) sólo lee la cookie `pf_session`. El comercio y el rol salen de
+la fila de sesión, no de la petición. La cookie se pone `HttpOnly; SameSite=Lax` y `Secure` en producción, 30
+días (leído en `setCookie`, no ejecutado).
+
+## 2 · Lo medido (18 casos, 18 cuadran; salida entera en `evidencias/SCRUM-1509e/salida-medir.txt`)
+
+| caso | respuesta | plantillas |
+| --- | --- | --- |
+| K+ el titular, su factura (POSITIVO obligatorio) | 200 enviado | 1 |
+| K0 el titular, una factura que no existe (CERO) | 404 | 0 |
+| A1 sin credencial | 401 `not_authenticated` | 0 |
+| A2 la credencial del titular por otra vía (Bearer, cabecera, query, cuerpo) | 401 `not_authenticated` | 0 |
+| A3 cookie de nadie · A4 sesión caducada · A5 enlace sin canjear · A6 miembro suspendido | 401 `session_expired` | 0 |
+| A7 miembro con rol `tecnico` | 403 | 0 |
+| A8 el titular de OTRO comercio sobre esta factura | 404 | 0 |
+| A9 miembro con rol `admin` | 200 enviado | 1 |
+| A10 titular con la prueba vencida | 200 enviado | 1 |
+| A11 con `Origin` y `Referer` de otro sitio · A12 como la manda un formulario | 200 enviado | 1 |
+| A13 por GET | 404 | 0 |
+| **R1 el titular, 120 seguidas, misma factura** | **100 enviadas, 20 `daily_cap`, 0 de 429** | **100** |
+| R+ POSITIVO del contador de 429: `/auth/login`, 7 seguidas, mismo correo | 5 pasan, **2 de 429** | 0 |
+| R0 CERO del contador de 429: `/auth/login`, 7 correos distintos | 7 pasan, 0 de 429 | 0 |
+
+En R1 la factura recibe 2 marcas de fecha y luego ninguna: desde la tercera pulsación no queda escrito nada en
+ella que diga que se ha reclamado otra vez (coincide con lo que c.18907 vio con 10).
+
+**A11 y A12 dicen que el servidor no mira de dónde viene la petición.** Lo único que impide que otra web la
+dispare con la sesión del comercio es el `SameSite=Lax` de la cookie, que lo aplica el navegador. No hay
+navegador en esta medición: está leído, no ejecutado.
+
+**El rojo:** con `--comercio-esperado 1` el guion sale 1 con R1 en rojo (1 de 18;
+`salida-rojo-comercio-esperado-1.txt`). Los casos A no los vi en rojo uno a uno: su contraste es K+, que con la
+misma petición y otra cookie sí manda.
+
+## 3 · Lo que NO se midió
+
+- **La app desplegada.** Todo es `dist` local con la base en memoria; delante de producción hay un proxy
+  (Cloudflare, Railway) que podría limitar por su cuenta y aquí no se ve. `NODE_ENV` era `development`.
+- Postgres real y peticiones A LA VEZ: las 120 van una detrás de otra. La carrera entre contar y escribir es de
+  c.18894, no de aquí.
+- El alta de punta a punta (matiz 2 de §0), ni si el comercio demo tiene alguna entrada pública.
+- Un navegador de verdad para `SameSite`, y si algún subdominio de `yaqu.app` sirve contenido de terceros.
+- Las otras 17 rutas del mismo router, y `resend-whatsapp` (`:645`), que manda por otra función.
+- La base en memoria contestó sin modelarlo a `merchant.findUnique` y `teamMember.findUnique` (12 veces cada
+  una, todas de `/auth/login`).
+- Ninguna tanda de tests completa: no hay cambio de código.
+
+## 4 · Errores propios
+
+- Busqué el fichero donde el encargo lo nombraba de memoria (`src/modules/invoicing/`); no está ahí, está en
+  `src/modules/system/app/routes/`. Lo dijo el `wc` con su error, no un cero. Sin comprobación que generalice.
+- La corrida salió verde entera a la primera. No me fié hasta verla caer con el tope forzado; aun así sólo vi
+  en rojo R1 (dicho en §2).
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509e/medir.cjs dist`.
 # SCRUM-1509d · Los cuatro llamadores a los que no se les pregunta el tope por cliente — EJECUTADOS, sin arreglar nada
 
 **Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T01:51:08Z (hora de GitHub)
