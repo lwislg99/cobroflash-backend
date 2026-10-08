@@ -650,7 +650,8 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
     }
 
     // Lógica compartida (asegura cobro + envía payment_request_es)
-    const r = await sendInvoicePaymentRequest(id);
+    // SCRUM-1514 (regla 2): sólo la factura del comercio de la sesión; la de otro da el 404 de abajo.
+    const r = await sendInvoicePaymentRequest(id, { merchantId: req.merchantId });
     if (!r.ok) {
       // SCRUM-126: precondición real (nunca se intentó el envío) → status real, sin `sent`.
       // Este era el ÚNICO de los 9 endpoints de envío que trataba una política de envío
