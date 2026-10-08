@@ -1,0 +1,39 @@
+deps/uv/src/unix/process.c de nodejs/node, leído con gh api en los tags v24.21.0 (el node de los 53 logs) y v24.18.0 (el de esta máquina)
+bytes y sha256 (12) de cada uno: v24.21.0 31377 e79f9bd90787 · v24.18.0 31377 e79f9bd90787
+líneas 188-216 (número de línea delante):
+188:static int uv__process_init_stdio(uv_stdio_container_t* container, int fds[2]) {
+189:  int mask;
+190:  int fd;
+191:  int ret;
+192:  int size;
+193:  int i;
+194:
+195:  mask = UV_IGNORE | UV_CREATE_PIPE | UV_INHERIT_FD | UV_INHERIT_STREAM;
+196:  size = 64 * 1024;
+197:
+198:  switch (container->flags & mask) {
+199:  case UV_IGNORE:
+200:    return 0;
+201:
+202:  case UV_CREATE_PIPE:
+203:    assert(container->data.stream != NULL);
+204:    if (container->data.stream->type != UV_NAMED_PIPE)
+205:      return UV_EINVAL;
+206:    else {
+207:      ret = uv_socketpair(SOCK_STREAM, 0, fds, 0, 0);
+208:
+209:      if (ret == 0)
+210:        for (i = 0; i < 2; i++) {
+211:          setsockopt(fds[i], SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+212:          setsockopt(fds[i], SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
+213:        }
+214:    }
+215:
+216:    return ret;
+
+todas las líneas del fichero que nombran socketpair, SNDBUF, RCVBUF o una llamada a pipe:
+207:      ret = uv_socketpair(SOCK_STREAM, 0, fds, 0, 0);
+211:          setsockopt(fds[i], SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+212:          setsockopt(fds[i], SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
+922:  err = uv__make_pipe(signal_pipe, 0);
+control de cero: veces que nombra «F_SETPIPE_SZ» (el ajuste de tamaño de una tubería de verdad): 0

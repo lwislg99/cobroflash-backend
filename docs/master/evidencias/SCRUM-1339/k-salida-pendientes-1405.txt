@@ -1,0 +1,16 @@
+POBLACIÓN: filas 4012 · con sonda (sondas != -): 1600
+C-con-grande-bloqueante [con,sinc,casos 80×4,bloq puesto] · pasadas 200 · con ausentes 0 · con pendientes 0 · pend mín>0 - · mediana - · máx 0 · total_max 338338
+D-con-grande-sonda [con,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 195 · con pendientes 196 · pend mín>0 1697 · mediana 45619 · máx 64992 · total_max 337166/337106/337153/337107
+     cubos de 8 KiB (inicio en KiB: n): 0:10 8:10 16:35 24:12 32:16 40:26 48:36 56:51
+K-sin-grande-sonda [sin,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 0 · con pendientes 0 · pend mín>0 - · mediana - · máx 0 · total_max 336289/336288
+L-con-dosis-relleno-000 [con,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 195 · con pendientes 196 · pend mín>0 1742 · mediana 53560 · máx 65506 · total_max 98205/98219/98160/98218
+     cubos de 8 KiB (inicio en KiB: n): 0:3 8:8 16:5 24:10 32:20 40:29 48:50 56:71
+M-con-dosis-relleno-050 [con,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 195 · con pendientes 196 · pend mín>0 1741 · mediana 52009 · máx 65287 · total_max 118211/118270/118254/118255
+     cubos de 8 KiB (inicio en KiB: n): 0:5 8:27 16:6 24:15 32:20 40:17 48:41 56:65
+N-con-dosis-relleno-150 [con,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 191 · con pendientes 191 · pend mín>0 3112 · mediana 34039 · máx 65241 · total_max 158758/158712/158756/158770
+     cubos de 8 KiB (inicio en KiB: n): 0:5 8:14 16:24 24:13 32:65 40:12 48:25 56:33
+O-con-dosis-relleno-300 [con,sinc,casos 80×4,bloq no pedido] · pasadas 200 · con ausentes 183 · con pendientes 188 · pend mín>0 1188 · mediana 51059 · máx 65250 · total_max 218908/218919/218861/218906
+     cubos de 8 KiB (inicio en KiB: n): 0:12 8:8 16:13 24:12 32:18 40:29 48:36 56:60
+P-con-pequena-sonda [con,sinc,casos 10×4,bloq no pedido] · pasadas 200 · con ausentes 0 · con pendientes 0 · pend mín>0 - · mediana - · máx 0 · total_max 13645
+MÁXIMO global de pendientes_max: 65506 · por encima de 65.536: 0 · entre 60.000 y 65.536: 170
+pasadas con UNA sonda y ausentes: 0 · B pendientes por caso ausente (mín/mediana/máx): -
