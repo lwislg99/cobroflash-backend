@@ -54,11 +54,11 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
   documento: el tope de **1.000 registros** lo impone `MAX_REGISTROS_POR_ENVIO` al construir
   el XML (`registro.builder.ts` y `verifactu.service.ts`), que corta con un error antes de
   generar un fichero que el XSD rechazaría.
-- 🔴 **NO CONSTRUIDO · FSM `VfSubmission`.** La entidad no existe: `VfSubmission` no está en
-  `prisma/schema.prisma` (medido). No hay cola, ni estados, ni contador de intentos, así que
-  `pending → sent → accepted`, los reintentos y `manual_review` son un diseño pendiente y no
-  un comportamiento. Gemela de la afirmación A2 del máster, que el inventario SCRUM-528 ya
-  marcó falsa.
+- 🔴 **NO CONSTRUIDO · FSM `VfSubmission`.** [Corregido el 8-oct-2026, SCRUM-1500f, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18970): aquí decía «La entidad no existe: `VfSubmission` no está en `prisma/schema.prisma` (medido). No hay cola, ni estados, ni contador de intentos, así que `pending → sent → accepted`, los reintentos y `manual_review` son un diseño pendiente y no un comportamiento», y es falso desde el 30-sep-2026 (SCRUM-1296).]
+  Medido en SCRUM-1500d (Jira c.18919): **hay una tabla que la emisión llena y que ningún proceso vacía.** El esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí (`procesarObligado`) existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. No es «no hay nada» ni «una cola que alguien vacía».
+  El enum del esquema y `ESTADOS_VF_SUBMISSION` son la misma lista: `pending`, `sent`, `accepted`, `rejected`, `manual_review`. Hoy sólo se puede escribir `pending`; los otros cuatro salen de `procesarObligado`, que tiene 0 llamadas. No se encola ninguna anulación.
+  **NO medido:** ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway, sólo su valor por defecto en el código.
+  Gemela de la afirmación A2 del máster, que el inventario SCRUM-528 ya marcó falsa.
 - 🔴 **NO CONSTRUIDO · `SIF_ENABLED` no pausa ninguna cola.** La bandera existe y se lee, pero
   hoy lo único que hace es viajar en el sobre del registro de auditoría (`flagsFiscales`, en
   `audit.service.ts`): no hay cola que pausar ni nada pendiente que remitir al reanudar.
