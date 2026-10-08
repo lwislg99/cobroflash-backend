@@ -848,3 +848,199 @@ cambia una línea, de `invoicesAdmin.routes.ts`.
 | buscarlo también por ORIGEN | secciones Ⓥ (los commits de las dos frases y el que borró la máquina) y Ⓧ (el que creó el procesador) |
 | no tocar `src/`, el esquema ni los tests | `git diff --stat origin/main`: este registro y la carpeta nueva |
 | nada de los 11 estados parados | NO HECHO, a propósito → siguen con el fundador |
+
+# SCRUM-1500e · Los tres sitios que negaban la cola: corregidos con lo que midió SCRUM-1500d, y nada más
+
+**Medido contra:** `origin/main` = `16e80dea496dad3819bf444983f9974d3c13ebb9` · 2026-10-08T07:41:00Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1500e/solo-comentario.cjs`
+
+Sesión J5 (`jv-j5`, 8-oct por la mañana en Madrid, relevo de la que entregó SCRUM-1500d), equipo de
+Javier, ticket de `area-j5`. Rama `scrum-1500e-los-tres-sitios-que-niegan-la-cola`. Encargo del
+orquestador del equipo (`cobroflash-backend-90`).
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» para `jv-j5`; la ficha del orquestador lo
+atribuye a SCRUM-1498 y dice que se siga. Se siguió, y queda dicho.
+
+## ⓓ El permiso, literal, y lo que NO cubre
+
+Es el comentario 18925 de SCRUM-1500 en Jira, leído ENTERO en el ticket antes de tocar nada. Lo
+transcribe el orquestador; yo no se lo oí al fundador:
+
+> **«Arréglalos mañana.»** — el fundador, 8-oct-2026
+
+Sus cuatro condiciones, y dónde se ve cada una:
+
+| condición de c.18925 | dónde se ve |
+| --- | --- |
+| ① sólo corregir una afirmación falsa; no construir la cola, ni el cron, ni el reintento, ni tocar `enviarSobre` | `git diff --stat origin/main`: tres textos, este tramo y la carpeta de evidencias. Ni una línea de código |
+| ② el comentario de `modoVisible.ts:22` en su propio commit, con el carril en la primera línea, sin que cambie ninguna línea de código | commit `2d123dcb0`, un fichero, 1 línea; sección ⓕ |
+| ③ la línea 404 del máster, en sitio y sin mover líneas | sección ⓖ: 1.904 líneas antes y después, `numstat` 1/1 |
+| ④ lo que escribe cada sitio se copia de c.18919, con lo medido y lo NO medido | sección ⓔ, frase por frase |
+
+**Lo que este permiso NO cierra. Nada de esto está resuelto:**
+
+- **La cola sigue sin vaciarse.** Corregir tres textos no envía nada a la AEAT. Es el hueco del hito
+  VeriFactu y sigue entero.
+- **No se encola ninguna anulación**, y el «Done» de S1-D pide alta, anulación y R1.
+- **Los cuatro estados parados por regla 27** (c.18908 y c.18912: `Quote.status`, `Invoice.status`,
+  `Charge.status`, `WhatsAppMessage.status`) siguen parados. Los ve el fundador con el equipo de Luis.
+- **El test del cotejo sigue SIN los 11 campos**, por decisión del orquestador en c.18912. No se ha
+  tocado.
+- **Si la máquina de `VfSubmission` vuelve a la Parte L** no se ha decidido, y este cambio no la
+  devuelve: en la línea 404 no he escrito ningún valor de estado (sección ⓖ).
+
+## ⓔ Qué decía cada sitio y qué dice ahora
+
+Antes de escribir repetí la medición de SCRUM-1500d sobre el `main` de hoy:
+`node docs/master/evidencias/scrum1500d/cola.mjs` → salida 0, **11.037 bytes, idéntica byte a byte**
+(`cmp`) a la `cola-salida.txt` que ella guardó sobre `179c248b`. Lo que copio sigue siendo cierto en
+`16e80dea4`.
+
+Las frases que se copian de c.18919, y que están en los tres sitios:
+
+- lo medido: «**Hay una tabla que la emisión llena y que ningún proceso vacía.**» · «El esquema
+  tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de
+  ahí (`procesarObligado`) existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una
+  ruta, ni el arranque.»
+- lo NO medido: «**Ninguna base.** No sé si la tabla existe en producción, staging o dev, ni cuántas
+  filas tiene.» · «El valor de `SIF_ENABLED` en Railway: sólo su valor por defecto en el código.»
+
+| sitio | decía | dice ahora |
+| --- | --- | --- |
+| `docs/legal/AUDITORIA_CAMINO_EMISION.md`, línea 40 (eslabón 8) | «**NO EXISTE** · ningún modelo del esquema» | «NO EXISTE una cola que alguien vacíe — hay una tabla que la emisión llena y que ningún proceso vacía», con tres coordenadas con testigo, «No se encola ninguna anulación» y lo NO medido |
+| la misma, línea 150 | «**INEXISTENTE** · 25 modelos y ninguno se llama `Vf*`… Ningún fichero de `src/` menciona `vfSubmission`» | «la tabla existe y la emisión la llena; ningún proceso la vacía»: 7 llamadas `<algo>.vfSubmission.<método>()` y un acceso más, de las tres que escriben sólo se ejecuta la que crea la fila, 0 llamadas a `procesarObligado` y a `enviarSobre`, y lo NO medido |
+| la misma, línea 200 | «Hoy **inexistente**» | lo anterior TACHADO y al lado lo medido; lo que sigue por construir es quien la vacíe |
+| `src/modules/invoicing/domain/modoVisible.ts`, línea 22 (comentario) | «`VfSubmission` no está en el schema, no hay cola de remisión» | lo medido y lo NO medido, entre corchetes y con su fecha |
+| `docs/YAQU_MASTER.md`, línea 404 | «no hay tabla, no hay envío, cero llamadas de red» | lo medido y lo NO medido; lo que decía queda citado dentro |
+
+Cada sitio lleva su fecha (8-oct-2026), el permiso (c.18925) y la medición (c.18919): quien lo lea
+dentro de un mes sabe de cuándo es la frase.
+
+**La línea 199-200 de la auditoría: ENTRA, y por qué.** El orquestador me pidió decidirlo. Dice
+«tabla, estados y reintentos. Hoy **inexistente**»: es la misma afirmación que el permiso nombra
+(«donde dice que la tabla no existe»), en el mismo documento. La 199 no se toca; la 200 conserva
+tachado lo que decía, como ya hace este documento en su apéndice. **Sigue listada como algo por
+construir**, porque lo es: falta quien la vacíe.
+
+**En el eslabón 8 he dejado «NO EXISTE» al principio del estado, a propósito.** La línea 43 de la
+auditoría suma «EXISTE 7 + NO EXISTE 2 = 9 eslabones» y la 28 dice «siete existen». Si el eslabón 8
+cambiara de cajón, esas dos frases quedarían descuadradas y no entran en el permiso. Es el mismo
+patrón que el eslabón 7 («EXISTE — pero su destino es una DESCARGA»). Lo que el estado ya no dice es
+que no hay nada.
+
+## ⓕ El comentario de `modoVisible.ts`: sólo el comentario
+
+Ese fichero está en el camino de emisión y es del carril de J1 (`src/modules/invoicing/**`,
+`docs/equipo/dos-equipos.md` §3). La cerradura no me paró; el cruce lo cubre c.18925 y va declarado
+en la primera línea del commit `2d123dcb0`.
+
+`node docs/master/evidencias/scrum1500e/solo-comentario.cjs <raíz> src/modules/invoicing/domain/modoVisible.ts 16e80dea4…`,
+con el escáner de TypeScript 5.9.2 (salida entera en `solo-comentario-salida.txt`):
+
+| qué | antes | después |
+| --- | --- | --- |
+| líneas | 68 | 68 |
+| líneas distintas | — | una, la 22, y empieza por `//` |
+| tokens de código, sin comentarios | 99 | 99, idénticos uno a uno |
+| JS emitido sin comentarios | 487 B | 487 B, idéntico |
+
+Control positivo, en la misma pasada: con UN token de código cambiado en una copia, las dos vías lo
+ven. Sin él, «idénticos» podría ser un escáner que no lee nada; por eso el recuento de tokens (99)
+va al lado.
+
+La línea 21 («**«se envía» NO EXISTE**. Cero clientes SOAP/mTLS contra») **no se ha tocado.** El
+permiso nombra la tabla, y cuatro documentos de `docs/legal/` citan esa línea por su número.
+
+## ⓖ La línea 404 del máster: en sitio
+
+`docs/YAQU_MASTER.md`: 1.904 líneas antes y 1.904 después (`wc -l`), 0 retornos de carro antes y
+después, `git diff --numstat` 1/1, y el único tramo del diff es `@@ -404 +404 @@`. La frase en
+negrita del principio («La cola de remisión a la AEAT NO está construida») y la del final («Su
+diseño… vive en S1-D (Parte U1.3) hasta que se construya») quedan como estaban.
+
+**Aquí me aparto del literal de c.18919 en una palabra, y lo digo:** en el máster no escribo
+«deja su alta en `pending`» sino «deja su alta en esa tabla». La 404 es una línea de la Parte L, y
+el instrumento de SCRUM-1500d cuenta cuántas líneas del máster traen a la vez un valor de estado y
+`VfSubmission`: eran 0, y con `pending` pasaban a 1. Escribir ahí un valor es empezar a devolver al
+máster una máquina que el commit `970f3bf12` quitó, y eso es regla 27 y no está en el permiso. En la
+auditoría y en el comentario, que no son la Parte L, la frase va entera.
+
+Los dos instrumentos de la casa que leen esa línea, repetidos después del cambio:
+
+- `docs/master/evidencias/scrum1500c/cotejo-once.cjs`: salida 0, 20.026 bytes, **idéntica byte a
+  byte** antes y después. `Invoice.vfEstado` sigue en «coincide».
+- `docs/master/evidencias/scrum1500d/cola.mjs`: salida 0; cambian 2 líneas de su salida, las dos que
+  imprimen el literal de la 404. Ningún recuento cambia. Sigue encontrando la línea, porque la
+  localiza por la frase en negrita. **Su `cola-salida.txt` guardada ya no coincide con el árbol en
+  esas dos líneas, y no la he regenerado:** es la evidencia de SCRUM-1500d, medida sobre `179c248b`.
+
+## ⓗ Lo que sigue diciendo que no existe, y NO he tocado
+
+El permiso nombra tres sitios. Buscando la misma afirmación por texto en todo el árbol (fuera de
+`docs/master/`) salen más. Control positivo del `grep`: las frases nuevas salen 1, 2 y 1 veces en los
+tres ficheros tocados.
+
+| dónde | qué dice | por qué no se toca |
+| --- | --- | --- |
+| `.claude/skills/yaqu-verifactu-sif/SKILL.md:57` y su copia en `.agents/skills/` | «NO CONSTRUIDO · FSM `VfSubmission`. La entidad no existe: `VfSubmission` no está en `prisma/schema.prisma` (medido). No hay cola, ni estados…» | `.claude/**` es de un jefe, y no está en el permiso. **Es la más cara de las que quedan: la skill es de lectura obligatoria antes de tocar VeriFactu** |
+| `docs/legal/AUDITORIA_CAMINO_EMISION.md:52` | «**No se encola y no se envía.**» | no dice que la tabla no exista; dice que no se encola, y se encola. Mismo documento, fuera de las líneas que el permiso nombra |
+| `docs/legal/PREGUNTAS_ASESOR.md:461-466` | cita «con estas palabras» `modoVisible.ts:21-24`, con la frase vieja | 🔴 **consecuencia de mi cambio: esa cita ya no es literal.** Es un documento para el asesor |
+| `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:415` | copia la frase vieja del comentario | documento legal, fuera del permiso |
+| `tests/scrum298-modo-visible.test.mjs:8-9` | el mismo comentario, copiado en la cabecera del test | `tests/` no es mi carril ni está en el permiso |
+| `docs/legal/AUDITORIA_CAMINO_EMISION.md:41`, `:151` y `:201-202` | el eslabón 9 y el cliente de envío, «inexistente» | no hablan de la tabla. La nota del 25-sep de ese documento ya dice que `sif.client.ts` existe y nadie lo llama |
+
+## ⓘ Lo que NO se ha medido
+
+- **Ninguna base de datos.** Ni si la tabla existe en producción, staging o dev, ni filas. Igual que
+  SCRUM-1500d: nada de eso ha cambiado.
+- **El valor de `SIF_ENABLED` en Railway.**
+- **La tanda completa no se corrió.** Corrió una subtanda (sección ⓙ).
+- **El obligatorio del PR: SIN LEER** al escribir esto.
+- Las cifras de la línea 150 (7 llamadas, 321 ficheros, 0 y 0) son las de SCRUM-1500d; yo las he
+  repetido con su instrumento, no con otro.
+- «33 modelos» en el esquema de hoy lo conté por texto (`grep -c '^model '`) y **no lo he escrito
+  en la auditoría**: la línea 150 cita los 25 de entonces como lo que decía, sin cifra nueva.
+- No he leído la auditoría entera: las líneas 1-86 y 146-240.
+
+## ⓙ Qué corrió antes de empujar
+
+`dist/` salió de `tsc --noCheck` con el TypeScript del checkout compartido (salida 0); `prisma
+generate` NO se corrió.
+
+- **Subtanda:** los 40 ficheros de `tests/` que nombran el máster, `docs/legal`, la auditoría,
+  `modoVisible` o las anclas, más scrum812, 273, 267, 1294, 237, 976, 480, 1500, 1128, 1323 y 859.
+  TAP a fichero fuera del árbol (128.074 bytes), leído en otro comando: **381 tests, 379 pasan, 0
+  caen, 2 saltados** (los dos de SCRUM-324, «sin LIBRO_PG_URL»).
+- **Las anclas de `docs/legal`** (scrum525d), antes → después: 199 → 203 coordenadas vivas, 16 → 20
+  con testigo, 13 → 17 firmes, 0 → 0 desfasadas. Las cuatro nuevas son las mías y las cuatro salen
+  firmes.
+- `npm run guards:entrada`: 13, 158 tests, 158 pasan, salida 0.
+
+## ⓚ Lo que me salió mal
+
+- **Redacté en vez de copiar, dos veces, y la condición ④ lo prohíbe.** En la línea 200 escribí «a
+  medias», que no está en c.18919; y en el máster parafraseé `enviarSobre` y `SIF_ENABLED` para no
+  meter nombres entre comillas invertidas. Las dos las corregí antes de comitear, releyendo contra
+  el comentario.
+- **Metí `pending` en la línea 404 del máster.** Lo cazó repetir el instrumento de SCRUM-1500d, no
+  yo: «líneas con un valor y `VfSubmission`» pasó de 0 a 1. Quitado (sección ⓖ).
+- Mi comprobación del comentario falló al primer intento: daba por hecho un `node_modules` que el
+  árbol anidado no trae. Ahora resuelve hacia arriba y DICE cuál usó.
+- **scrum525d pide congelar los testigos nuevos** en `scripts/_anclas-sin-testigo.congelado.mjs`
+  («la cobertura SUBIÓ en 7»; eran 4 antes de mi cambio, 3 son míos). No lo he hecho: es `scripts/`,
+  no es mi carril ni está en el permiso, y el test pasa igual. Queda dicho para su dueño.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+| --- | --- |
+| leer c.18925 entero y citarlo en el commit | sección ⓓ; los mensajes de los commits |
+| auditoría, líneas 40 y 150 | sección ⓔ |
+| auditoría, línea 199: decidir y decirlo | sección ⓔ: entra, la 200, con lo anterior tachado |
+| el comentario de `modoVisible.ts:22`, en su commit y sin código | sección ⓕ; commit `2d123dcb0` |
+| el máster, línea 404, en sitio | sección ⓖ |
+| copiar de c.18919, con lo NO medido | sección ⓔ; la única palabra apartada, en ⓖ |
+| lo que el permiso NO cierra, dicho | sección ⓓ |
+| no tocar el test del cotejo | NO HECHO, a propósito → sigue sin los 11 (c.18912) |
+| construir la cola, el cron o el reintento | NO HECHO, a propósito → condición ① |
