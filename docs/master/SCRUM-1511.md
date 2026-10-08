@@ -209,3 +209,125 @@ Es la mitad de la entrega. Nada de esto está en la cifra:
 - Tanda completa: no corrida. El cambio de la rama es este tramo y dos ficheros bajo
   `docs/master/evidencias/scrum1511d/`.
 - El hook de arranque dijo «SIN IDENTIDAD» en las dos sesiones (SCRUM-1498, carril de S5); se siguió.
+
+## SCRUM-1511f · Tramo 3 (J4, 8-oct-2026): de las ancladas, cuántas citan un ticket o un comentario que no existe. Cero de 15, y ya no son 14
+
+**Medido contra:** `origin/main` = `16e80dea496dad3819bf444983f9974d3c13ebb9` · 2026-10-08T07:36:11Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1511f/ancladas.mjs`
+
+### T3.0 · En corto
+
+| pregunta | medido |
+| --- | --- |
+| marcas que el trinquete da por ancladas | **15**, no 14 |
+| citas con la forma que el trinquete reconoce | 19, en 14 pares ticket + comentario distintos, sobre 13 tickets |
+| el ticket existe en Jira | 13 de 13 |
+| el comentario existe DENTRO de ese ticket | 14 de 14 pares (19 de 19 citas) |
+| ancladas que citan algo inexistente | **0 de 15** |
+
+No hay ninguna marca del árbol que cite un 404. El ancla fabricada que abrió el ticket se fabricó en
+un espejo (lo dice la descripción del ticket) y no está en el árbol; el encargo de este tramo la daba
+por presente, y no lo está.
+
+Como ninguna cita algo inexistente, la tercera pregunta del encargo (qué gobierna cada una de las que
+citan un 404) se queda sin población: no hay ninguna que clasificar.
+
+### T3.1 · De dónde salen las 15
+
+Del propio `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`, sin tocarlo.
+`docs/master/evidencias/scrum1511f/ancladas.mjs` lee su fuente, le cambia sólo los tres imports
+relativos y la raíz, le añade un export y lo importa desde una copia FUERA del árbol. La lista es la de
+`veredictos()` filtrada por el nivel `anclado`, y se coteja con `porNivel()`, que es la cuenta del
+trinquete: 15 y 15. Al importarse corren sus 13 casos: 13 pasan, 0 fallan, 0 saltados.
+
+Reparto que dio en ese árbol: 229 marcas · 149 rastreables · 24 documentales · 27 sin respaldo ·
+15 ancladas · 13 negadas · 1 citada.
+
+### T3.2 · La que hace 15
+
+`src/modules/system/app/routes/invoicesAdmin.routes.ts:1293`, que cita SCRUM-1502 comentario 18835.
+En el tramo 1 era una de las acusadas. La línea de atribución entró en el commit `25dd9ae2e`
+(8-oct-2026, 01:47Z), de otro puesto y con permiso, y con ella el trinquete bajó de 28 a 27.
+
+Es la única de las 15 cuyo ancla se escribió DESPUÉS de la marca, así que es la única que abrí además
+por contenido:
+
+- La marca está dentro del `catch` de la ruta del PDF de una factura, en la rama que devuelve 409
+  cuando el error es el de factura sin sellar. Lo que gobierna es el campo `message` de esa respuesta:
+  un texto que ve el usuario. Leído en el código de alrededor, no deducido del nombre del fichero.
+- El comentario 18835 existe, es del 8-oct-2026 y transcribe la respuesta del fundador a la pregunta
+  por esa marca concreta, nombrada por fichero y línea. No copia el literal, y lo dice.
+- El comentario nace después del texto y reconoce una aprobación que la marca fecha en julio. Eso lo
+  puede leer cualquiera en Jira; lo que no puede comprobar nadie desde Jira es la aprobación de julio.
+
+Las otras 14 son las mismas del tramo 1, identificadas por fichero y cita (las líneas se han movido).
+Su contenido lo leyeron a mano las entregas de los comentarios 18904 y 18909; aquí sólo se ha medido
+que existen.
+
+### T3.3 · Cómo se comprobó contra Jira
+
+Una búsqueda por clave de los 13 tickets más SCRUM-1511, pidiendo el campo de comentarios. La
+respuesta (374.199 bytes, 14 tickets, sin página siguiente) no pasó por ningún subagente:
+`docs/master/evidencias/scrum1511f/cotejo.mjs` mira, por cada cita, si el id del comentario está en la
+lista de ESE ticket. Son dos comprobaciones y dan estados distintos.
+
+| control | resultado |
+| --- | --- |
+| POSITIVO obligatorio: SCRUM-1511 con los comentarios 18924 y 18903, leídos por mí en el ticket | EXISTE, los dos |
+| positivo del clasificador: una marca fabricada en memoria con la forma del ancla | `anclado` |
+| de cero del clasificador: la misma marca sin ancla | `sin-respaldo` |
+| cruzado: un comentario real en un ticket AJENO (18924 en SCRUM-1252; 17726 en SCRUM-915) | ticket sí, comentario no |
+| de cero del comentario: el mayor id bajado más 100.000 | ticket sí, comentario no |
+| de cero del ticket: SCRUM-6514, derivado (mayor número de Jira al medir: 1514; 0 ficheros y 0 commits lo nombran, contra 5 y 2 de SCRUM-1511) | Jira devuelve 404 |
+| población completa | cada ticket devolvió todos sus comentarios menos SCRUM-1404: 20 de 23 |
+
+En SCRUM-1404 los dos ids que hacían falta (18840 y 18856) están entre los 20 devueltos, así que el
+veredicto no depende de los tres que faltan. Una segunda búsqueda dio otra vez 20 de 23.
+
+SCRUM-99999 no servía de cero: lo nombran 3 ficheros y 1 commit.
+
+### T3.4 · Lo que el trinquete no ve dentro de esos mismos bloques
+
+Una sonda más ancha (todo «comentario» seguido de un id) saca cuatro ids que la forma del trinquete
+no reconoce. Los cuatro existen, cada uno en su ticket:
+
+- `tests/scrum411-exports-inalcanzables.test.mjs`: 16468, escrito con el ticket detrás («comentario
+  16468 de SCRUM-665»), y 18856 sin ticket al lado (es de SCRUM-1404).
+- `tests/scrum601-copy-del-documento-vs-flag.test.mjs`: 15868 (SCRUM-915), partido por un salto de
+  línea, y 17446 (SCRUM-825).
+
+No cambia ninguna cifra. Dice que la forma exigida deja fuera citas buenas, además de dejar entrar
+las inventadas.
+
+### T3.5 · Propuesta escrita, sin construir (decide un jefe)
+
+El trinquete no sale a la red a propósito, y lo declara. Esta medición no da motivo para cambiarlo:
+dos tramos seguidos han dado cero inexistentes. Lo que sí enseña:
+
+1. **El número envejece solo.** «Las 14» era verdad a las 01:38Z y a las 01:47Z ya eran 15. Quien cite
+   la cifra la saca de `porNivel()` en el momento, no de un registro.
+2. **Una anclada nueva es el único momento en que el riesgo existe.** Las 14 viejas están cotejadas
+   dos veces. La comprobación barata es de proceso: quien escribe un ancla pega en su registro el
+   resultado de abrir ese comentario, y quien revisa lo abre. La de hoy lo cumple.
+3. **Si se quiere mecanismo sin red:** el criterio del tramo 1 (el id del comentario consta en el
+   registro del propio ticket) se podría exigir sólo a las ancladas NUEVAS, con las 15 de hoy
+   congeladas por nombre. **No medido aquí** si la número 15 lo cumple, ni cuánto costaría.
+4. **El nombre del estado.** Sigue en pie lo dicho en la descripción del ticket: el nivel promete que
+   consta y mide que está bien escrito. Es un cambio en el trinquete: no se ha tocado.
+
+### T3.6 · Errores propios y lo que NO se ha hecho
+
+- **Contenido: sólo el de la número 15.** De las otras 14 no he reabierto ningún comentario para leer
+  qué dice; he comprobado que el id está en su ticket.
+- **Las 149 rastreables: sin tocar.** Ni existencia ni contenido en este tramo.
+- **Del 404 no se separa «no existe» de «sin permiso»**: Jira contesta lo mismo a las dos.
+- Mi primera salida llevaba el nombre de las cuentas de Jira de cada comentario y la ruta de mi
+  máquina; las quité antes de guardar la evidencia. La respuesta de Jira no se guarda en el árbol.
+- La copia del trinquete se escribe fuera del árbol; al terminar, `git status` limpio.
+- Nada corregido ni citado: ninguna marca, ninguna ancla, ningún texto. `scrum921c`, `scrum387`,
+  `tests/_respaldo-de-firma.mjs`, `SIN_RESPALDO` (27) y `SIN_PROCEDENCIA`, sin tocar. Ticket sin
+  transicionar.
+- Tanda completa: no corrida. El cambio de la rama es este tramo y cuatro ficheros bajo
+  `docs/master/evidencias/scrum1511f/`.
+- El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498, carril de S5); se siguió, como manda la ficha.

@@ -32,6 +32,43 @@ const raiz = process.argv[2];
 if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
 
+// ── SCRUM-1514 · SEGUNDO EJE, declarado: `--eje=comercio`. Sin esa bandera este fichero hace lo
+// mismo que hacía (el eje del ROL, sobre TECNICO_ALLOWED). Con ella mide OTRA cosa, con OTRA
+// población y OTRA prueba: la frontera ENTRE comercios, sobre TODAS las rutas montadas bajo /admin,
+// con una sesión de administrador del comercio 21 que pide el recurso 102, que es del comercio 22.
+// Lo que comparte con el eje del rol es el motor (manosDe, peticion, pedir y Prisma doblado).
+const EJE = process.argv.includes('--eje=comercio') ? 'comercio' : 'rol';
+const aMeta = []; const fugas = [];
+if (EJE === 'comercio') {
+  // Este eje ejecuta TODAS las rutas de /admin, también las que cobran y envían. Nada sale de aquí:
+  // se corta la resolución de nombres, https y fetch, y Meta se dobla en el transporte de axios.
+  const { createRequire } = await import('node:module');
+  const req0 = createRequire(import.meta.url);
+  const dns = req0('node:dns'); const https = req0('node:https');
+  const esLocal = (h) => h === '127.0.0.1' || h === 'localhost' || h === '::1';
+  const lookupReal = dns.lookup;
+  dns.lookup = function (host, ...resto) {
+    if (esLocal(String(host))) return lookupReal.call(dns, host, ...resto);
+    fugas.push('dns:' + host); const cb = resto[resto.length - 1];
+    const e = new Error('INSTRUMENTO: nombre cortado: ' + host); e.code = 'ENOTFOUND';
+    if (typeof cb === 'function') return process.nextTick(() => cb(e)); throw e;
+  };
+  for (const m of ['request', 'get']) https[m] = function (...a) { fugas.push('https:' + String(a[0] && (a[0].href || a[0].host || a[0].hostname || a[0]))); throw new Error('INSTRUMENTO: https cortado'); };
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = (u, ...r) => { const h = new URL(String(u && u.url ? u.url : u)).hostname; if (!esLocal(h)) { fugas.push('fetch:' + h); throw new Error('INSTRUMENTO: fetch cortado: ' + h); } return fetchReal(u, ...r); };
+  process.env.PUBLIC_BASE_URL = 'http://127.0.0.1:9'; // puerto de descarte: nadie escucha ahí
+  process.env.NODE_ENV = 'development';
+  const reqDist = createRequire(path.join(raiz, 'dist', 'integrations', 'whatsapp.js'));
+  reqDist('axios').defaults.adapter = async (cfg) => {
+    let cuerpo = {}; try { cuerpo = JSON.parse(cfg.data); } catch { /* vacío */ }
+    aMeta.push({ tipo: String(cuerpo.type || 'ilegible'), to: String(cuerpo.to || '') });
+    return { data: { messages: [{ id: 'wamid.laboratorio-1514.' + aMeta.length }] }, status: 200, statusText: '200', headers: {}, config: cfg, request: {} };
+  };
+  const { config } = reqDist(path.join(raiz, 'dist', 'core', 'config', 'env.js'));
+  config.WHATSAPP_PHONE_NUMBER_ID = 'ID-DE-LABORATORIO-1514'; // dos textos en memoria, no credenciales
+  config.WHATSAPP_ACCESS_TOKEN = 'texto-de-laboratorio-1514';
+}
+
 process.env.DISABLE_CRONS = 'true';
 const { app } = await de('app.js');
 const { getAdminMounts } = await de('core/http/adminMounts.js');
@@ -169,6 +206,129 @@ const firma = (l, modelo) => soloDoc(l).filter((a) => !modelo || a.modelo === mo
   .map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');
 const CORRIDAS = ['Aadmin', 'Atecnico', 'Badmin', 'Btecnico'];
 const esNo = (e) => e === 'EXC' || (typeof e === 'number' && e >= 400);
+
+if (EJE === 'comercio') {
+  // ── QUÉ ES DOBLE AQUÍ, y es distinto del eje del rol: el doble APLICA una sola cosa del `where`,
+  // el comercio. Una lectura que fija `merchantId` al de la sesión (21) y pide el 102 devuelve NADA
+  // (el 102 es del 22); una que NO lo fija devuelve el documento del 22. Así el veredicto sale del
+  // ESTADO que contesta la ruta, no de leer su consulta. Lo demás del `where` no se aplica.
+  const SESION = 21; const OTRO = 22; const ID_PROPIO = 501;
+  const { createRequire } = await import('node:module');
+  let Prisma = null; // el MISMO cliente que carga dist: se resuelve desde dist, no desde este fichero
+  try { ({ Prisma } = createRequire(path.join(raiz, 'dist', 'core', 'db', 'prisma.js'))('@prisma/client')); } catch { /* se declara ciego abajo */ }
+  const dm =Prisma && Prisma.dmmf && Prisma.dmmf.datamodel ? Prisma.dmmf.datamodel.models : null;
+  if (!dm) { console.log('CIEGO: no puedo leer el modelo de datos del cliente (dmmf)'); console.log('EXIT=2'); process.exit(2); }
+  const minus = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const CON_COMERCIO = new Set(dm.filter((x) => x.fields.some((f) => f.name === 'merchantId')).map((x) => minus(x.name)));
+  if (!CON_COMERCIO.has('invoice') || !CON_COMERCIO.has('quote') || CON_COMERCIO.has('merchant')) { console.log('CIEGO: la lista de modelos con comercio no es la que debería'); console.log('EXIT=2'); process.exit(2); }
+
+  const recoge = (w, clave, out) => { if (w && typeof w === 'object') for (const [k, v] of Object.entries(w)) { if (k === clave) out.push(v && typeof v === 'object' && 'equals' in v ? v.equals : v); recoge(v, clave, out); } return out; };
+  const lleva = (w, valor) => { if (w === valor || w === String(valor)) return true; if (w && typeof w === 'object') return Object.values(w).some((v) => lleva(v, valor)); return false; };
+  const de22 = (m) => (m === 'job' ? { ...trabajoAjeno, merchantId: OTRO } : m === 'merchant' ? { ...AJENO.merchant, id: OTRO, merchantId: undefined, plan: 'pro', status: 'active', email: 'otro@example.invalid' }
+    : { ...AJENO, merchantId: OTRO, chargeId: 900, merchant: { ...AJENO.merchant, id: OTRO }, customer: { ...AJENO.customer, merchantId: OTRO } });
+  const de21 = (m) => (m === 'merchant' ? { ...AJENO.merchant, id: SESION, plan: 'pro', status: 'active', email: 'sesion@example.invalid' }
+    : { ...AJENO, id: ID_PROPIO, merchantId: SESION, chargeId: null, jobId: null, quoteId: null, job: null, quote: null, merchant: { ...AJENO.merchant, id: SESION }, customer: { ...AJENO.customer, id: ID_PROPIO, merchantId: SESION } });
+  // ¿la consulta queda atada al comercio de la sesión?
+  // `--doble-sordo` NO es una medición: apaga lo único que el doble aplica, para ver el censo en ROJO
+  // (sin eso, las dos rutas del par se contestan igual y los controles tienen que decirlo).
+  const SORDO = process.argv.includes('--doble-sordo');
+  const RELLENO = { name: 'Relleno', nombre: 'Relleno', tags: ['a'], status: 'paid', estado: 'paid', reason: 'motivo de prueba', motivo: 'motivo de prueba',
+    type: 'otro', tipo: 'otro', amount: 10, importe: 10, total: 10, concept: 'c', concepto: 'c', price: 10, description: 'd', date: '2026-10-01', fecha: '2026-10-01',
+    address: 'd', direccion: 'd', label: 'l', phone: '600000000', notes: 'n', ids: [102], targetId: 102, sourceId: 102, keepId: 102, mergeId: 102, otherId: 102,
+    lines: [{ concept: 'c', qty: 1, price: 10, tax: 0.21 }], stages: [], plan: [], confirm: true, category: 'otros', paidAt: '2026-10-01', method: 'transfer' };
+  const atada = (m, w) => {
+    if (SORDO) return true;
+    if (m === 'merchant') return recoge(w, 'id', []).includes(SESION) || lleva(w, 'sesion@example.invalid');
+    return recoge(w, 'merchantId', []).includes(SESION) || lleva(w, ID_PROPIO); // por filtro, o por venir de una fila ya propia
+  };
+  const LEE = [...LECTURAS_UNA, 'findMany', 'count', 'aggregate', 'groupBy'];
+  let sueltas = [];
+  for (const m of modelos) {
+    const d = prisma[m];
+    const juzga = (op, args) => {
+      const w = args && args.where !== undefined ? args.where : null;
+      const ok = op === 'create' || op === 'createMany' ? true : atada(m, w);
+      apuntes.push({ modelo: m, op, where: w, atada: ok });
+      if (!ok && (CON_COMERCIO.has(m) || m === 'merchant')) sueltas.push({ modelo: m, op, where: w, escribe: !LEE.includes(op) });
+      return { ok, w };
+    };
+    for (const op of LECTURAS_UNA) d[op] = async (args) => { const { ok, w } = juzga(op, args); return ok ? (lleva(w, 102) ? null : de21(m)) : de22(m); };
+    d.findMany = async (args) => { const { ok } = juzga('findMany', args); return ok ? [] : [de22(m)]; };
+    d.count = async (args) => { const { ok } = juzga('count', args); return ok ? 0 : 1; };
+    d.aggregate = async (args) => { juzga('aggregate', args); return { _sum: {}, _count: { _all: 0 }, _avg: {}, _max: {}, _min: {} }; };
+    d.groupBy = async (args) => { juzga('groupBy', args); return []; };
+    for (const op of ESCRITURAS) d[op] = async (args) => { const { ok } = juzga(op, args); return /Many$/.test(op) ? { count: ok ? 0 : 1 } : (ok ? de21(m) : de22(m)); };
+  }
+
+  // ── POBLACIÓN: todo lo montado bajo /admin, no sólo lo que alcanza un Técnico.
+  const rutas = new Map(); let anidados = 0; let noTexto = 0;
+  const apunta = (ruta, metodos) => { for (const mt of Object.keys(metodos)) if (mt !== '_all' && metodos[mt]) rutas.set(mt.toUpperCase() + ' ' + ruta, { method: mt.toUpperCase(), path: ruta }); };
+  for (const layer of app.router.stack) {
+    if (!layer.route) continue;
+    if (typeof layer.route.path !== 'string') { noTexto += 1; continue; }
+    if (layer.route.path.startsWith('/admin')) apunta(layer.route.path, layer.route.methods);
+  }
+  for (const mount of getAdminMounts()) for (const layer of mount.router.stack) {
+    if (!layer.route) { if (layer.name === 'router') anidados += 1; continue; }
+    if (typeof layer.route.path !== 'string') { noTexto += 1; continue; }
+    apunta(mount.prefix + (layer.route.path === '/' ? '' : layer.route.path), layer.route.methods);
+  }
+  const poblacion = [...rutas.values()];
+  const delTecnico = TECNICO_ALLOWED.filter((d) => rutas.has(d.method.toUpperCase() + ' ' + d.path)).length;
+
+  const fc = [];
+  for (const d of poblacion) {
+    apuntes = []; sueltas = []; const m0 = aMeta.length;
+    const req = { ...peticion('admin', d.path, d.method), merchantId: SESION, merchant: de21('merchant') };
+    let out = await pedir(manosDe(d.method, d.path), req);
+    // 2ª pasada, sólo si la 1ª murió en la validación sin consultar nada: el mismo pedido con un
+    // cuerpo de relleno. No es el cuerpo que cada ruta espera; lo que siga sin llegar se dice.
+    let relleno = false;
+    if (out.estado === 400 && !apuntes.some((a) => CON_COMERCIO.has(a.modelo) || a.modelo === 'merchant')) {
+      relleno = true; apuntes = []; sueltas = [];
+      out = await pedir(manosDe(d.method, d.path), { ...req, body: JSON.parse(JSON.stringify(RELLENO)) });
+    }
+    const deComercio = apuntes.filter((a) => CON_COMERCIO.has(a.modelo) || a.modelo === 'merchant');
+    const e = out.estado; const pasa = typeof e === 'number' && e < 400; const niega = e === 403 || e === 404;
+    let v;
+    if (sueltas.length) v = pasa ? 'CRUZA' : niega ? 'LEE-Y-NIEGA' : 'LEE-Y-NO-ACABA';
+    else if (deComercio.length) v = 'FILTRA';
+    else v = pasa ? 'SIN-CONSULTA' : 'NO-LLEGO';
+    fc.push({ ...d, v, estado: e, relleno, conId: d.path.includes('/:'), envios: aMeta.length - m0, error: out.error,
+      sueltas: sueltas.map((a) => a.modelo + '.' + a.op + (a.escribe ? '(ESCRIBE)' : '') + ' ' + canon(a.where)),
+      atadas: deComercio.filter((a) => a.atada).length });
+  }
+
+  console.log('EJE: comercio (SCRUM-1514) · sesión: administrador del comercio ' + SESION + ' · el recurso ' + 102 + ' es del comercio ' + OTRO);
+  console.log('POBLACION: ' + poblacion.length + ' rutas montadas bajo /admin · de ellas ' + delTecnico + ' de las ' + TECNICO_ALLOWED.length + ' de TECNICO_ALLOWED (el censo del rol)'
+    + ' · con :parámetro ' + fc.filter((f) => f.conId).length + ' · routers anidados sin abrir ' + anidados + ' · rutas que no son texto ' + noTexto
+    + ' · modelos con columna de comercio ' + CON_COMERCIO.size + ' de ' + dm.length);
+  const CL = ['CRUZA', 'LEE-Y-NO-ACABA', 'LEE-Y-NIEGA', 'FILTRA', 'SIN-CONSULTA', 'NO-LLEGO'];
+  for (const v of CL) {
+    const l = fc.filter((f) => f.v === v);
+    console.log('\n== ' + v + ' · ' + l.length + ' (con :parámetro ' + l.filter((f) => f.conId).length + ')');
+    for (const f of l) {
+      console.log(`${f.method.padEnd(6)} ${f.path}  → ${f.estado}` + (f.relleno ? '  (2ª pasada, cuerpo de relleno)' : '') + (f.envios ? '  · ENVÍOS A META (doblado): ' + f.envios : '') + (v === 'FILTRA' ? '  · consultas atadas ' + f.atadas : ''));
+      if (f.sueltas.length) console.log('         sin comercio (' + f.sueltas.length + '): ' + f.sueltas.slice(0, 3).join(' | ').slice(0, 420));
+      if (f.error && v !== 'FILTRA') console.log('         error: ' + f.error);
+    }
+  }
+  // ── CONTROLES. El par viene medido por HTTP contra base real desechable en SCRUM-1512 (caso X1).
+  const ve = (m, p) => fc.find((f) => f.method === m && f.path === p) || {};
+  const pos = ve('POST', '/admin/invoices/:id/resend-whatsapp'); const neg = ve('POST', '/admin/invoices/:id/send-reminder');
+  const cero = ve('POST', '/admin/invoices/:id/resend-' + 'whatsapp-que-no-existe');
+  console.log('\n-- CONTROLES');
+  console.log('  POSITIVO (X1 de SCRUM-1512: 200 y 1 plantilla al cliente del otro)  POST …/resend-whatsapp → ' + pos.v + ' ' + pos.estado + ' envíos ' + pos.envios);
+  console.log('  NEGATIVO (X1 de SCRUM-1512: 404)                                    POST …/send-reminder   → ' + neg.v + ' ' + neg.estado + ' envíos ' + neg.envios);
+  console.log('  CERO     (una ruta que no está montada)                             → ' + (cero.v || 'no figura'));
+  console.log('  POBLACIÓN contiene las ' + TECNICO_ALLOWED.length + ' del censo del rol: ' + (delTecnico === TECNICO_ALLOWED.length));
+  const ok = pos.v === 'CRUZA' && pos.estado === 200 && pos.envios === 1 && neg.v === 'FILTRA' && neg.estado === 404 && neg.envios === 0 && !cero.v && delTecnico === TECNICO_ALLOWED.length;
+  console.log('¿el instrumento distingue las dos rutas del par?  ' + ok);
+  console.log('TOTALES: ' + CL.map((v) => v + ' ' + fc.filter((f) => f.v === v).length).join(' · ') + ' · suma ' + fc.length);
+  console.log('envíos a Meta doblados en toda la corrida: ' + aMeta.length + ' · intentos de salir de la máquina cortados: ' + fugas.length + (fugas.length ? ' → ' + [...new Set(fugas)].join(', ') : ''));
+  console.log('EXIT=' + (ok ? 0 : 1));
+  process.exit(ok ? 0 : 1);
+}
 
 const filas = [];
 for (const d of TECNICO_ALLOWED) {
