@@ -6,8 +6,8 @@
 //
 // ── LO QUE ESTE TICKET **NO** CONSTRUYE, Y ESTÁ MEDIDO ──────────────────────────────────────
 // El modal de dos caminos («se guarda» / «se envía») queda bloqueado porque **«se envía» no
-// existe**: cero clientes SOAP/mTLS contra la AEAT, `VfSubmission` no está en el schema, no hay
-// cola de remisión. Una salida visible pero inerte le diría al profesional que elegir remitir es
+// existe**: cero clientes SOAP/mTLS contra la AEAT. [Corregido el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: aquí decía «`VfSubmission` no está en el schema, no hay cola de remisión», y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
+// Una salida visible pero inerte le diría al profesional que elegir remitir es
 // algo que él podría hacer. No enseñarlo no cuesta nada; enseñarlo inerte cuesta que crea que
 // está remitiendo cuando no lo está.
 import test from 'node:test';
