@@ -178,3 +178,127 @@ aplican aquí.
 - No se ha medido por qué `scrum568:200` dejó de estar acusada, ni las 149 «rastreables» (citan un
   ticket; nadie ha comprobado que el ticket diga lo que la marca dice), ni las 11 del asesor.
 - La tanda completa no se ha corrido: el cambio son cuatro ficheros bajo `docs/master/`.
+
+---
+
+## SCRUM-1502b · Tramo 2 (J4, 8-oct-2026): el trinquete NO mira en Jira. Mira el ÁRBOL, y de Jira sólo la FORMA de una cita escrita en el comentario de la marca
+
+**Medido contra:** `origin/main` = `fc639ef96164b56ae99c129b7202c56c66abdaf4` · 2026-10-08T01:26:20Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1502b/que-fuentes-lee.mjs`
+
+La pregunta, de SCRUM-1502 comentario 18846: el 8-oct se reconoce en Jira (comentario 18835) la marca
+de `src/modules/system/app/routes/invoicesAdmin.routes.ts:1293`, y `SIN_RESPALDO` sigue en 28. Se
+contesta ejecutando el trinquete, no leyendo lo que dice de sí mismo. No se ha tocado `scrum921c`, ni
+su número, ni `src/`, `public/` ni `tests/`; este tramo son este registro y
+`docs/master/evidencias/scrum1502b/` (cuatro ficheros).
+
+### T2.0 · En corto
+
+| pregunta | respuesta medida |
+|---|---|
+| sale de la máquina mientras corre (red, nombres, procesos) | **0 salidas**, y con TODA salida bloqueada da lo mismo: 13 de 13 |
+| consulta alguna credencial por su nombre | **0** de 19 variables de entorno consultadas (son de node y del compilador) |
+| qué lee | 3.376 ficheros: `src/`, `public/`, `tests/`, `scripts/`, `docs/master/`, `docs/microcopy/`, el máster y el registro congelado de microcopy. 1 fuera del árbol (`typescript.js`). Ningún otro fichero de `docs/` |
+| una marca con respaldo en el ÁRBOL | la encuentra (caso B: documental +1, el 28 no se mueve) |
+| una marca con respaldo SÓLO en Jira | no la encuentra (caso D: la de `:1293`, que es exactamente eso, sigue acusada) |
+| una marca que CITA un ticket que no existe en Jira | la da por buena (casos C y C′: «anclado» y «rastreable») |
+
+Conclusión: el 28 mide **marcas cuyo comentario no dice dónde consta Y cuyo texto no está en esas
+cuatro fuentes del repositorio**. Una decisión que sólo vive en un comentario de Jira no la puede
+encontrar nunca, porque nunca va a Jira. No es un defecto de búsqueda: es su población. La cabecera de
+`tests/_respaldo-de-firma.mjs:36` lo declaraba desde el 17-sep; el comentario 18835 afirmaba lo
+contrario, y esto lo corrige.
+
+### T2.1 · Los controles, antes del número
+
+`espia.mjs` se carga delante del sujeto con `node --import` y envuelve las puertas por las que un
+proceso lee un fichero, abre una conexión, resuelve un nombre, lanza otro proceso o consulta una
+variable de entorno. Antes de ponerlo delante del trinquete se le pasan dos sujetos
+(`sujetos-de-control.mjs`):
+
+| control | qué tiene que dar | qué dio |
+|---|---|---|
+| CERO · un sujeto que lee un fichero y nada más | 0 salidas | 0, y le ve leer su fichero |
+| POSITIVO · un sujeto que sale por cinco puertas | las cinco | 9 salidas por `child_process`, `dns`, `fetch`, `https`, `net`; y le ve consultar una variable por su nombre |
+| BLOQUEO · el mismo, con las salidas cortadas | las sigue viendo | 5 vistas, el sujeto acaba con salida 0 |
+| CERO de los casos · la frase fabricada y el ticket inexistente, en el espejo | 0 y 0 | 0 y 0 |
+| POSITIVO de esa búsqueda · el ticket de este trabajo | más de 0 | 4 ficheros |
+
+El ticket inexistente es el que da `docs/master/evidencias/scrum1505/control-de-cero.mjs` (el máximo
+que nombra el árbol, más uno). Entra por la línea de órdenes y no se escribe aquí. Que tampoco existe
+en Jira se miró con la herramienta de Jira: devuelve 404; la misma herramienta abre SCRUM-1502.
+
+### T2.2 · Los casos del espejo
+
+Espejo: `git worktree add --detach` sobre `fc639ef96`, retirado sin forzar al acabar, con
+`git status --porcelain` vacío (0 líneas). Cada caso muta, mide con `evidencias/scrum1502/lista.mjs`
+(el camino del propio trinquete) y deshace comprobando los bytes. 10 casos, 0 ciegos, 0 salidas al
+exterior sumadas. Salida entera: `docs/master/evidencias/scrum1502b/salida.txt`.
+
+| caso | sin respaldo | lo que cambia | cae |
+|---|---|---|---|
+| 0 · base | 28 | anclado 14 · rastreable 149 · documental 24 | nada |
+| A · marca nueva, sin respaldo en ningún sitio | 29 | entra la fabricada | «el trinquete no sube» |
+| B · marca nueva + un `docs/master` que lleva su frase y atribuye | 28 | documental 25 | nada |
+| B′ · lo mismo, y el documento no atribuye a nadie | 29 | entra la fabricada | «el trinquete no sube» |
+| C · marca nueva cuyo comentario cita ticket + comentario de un ticket que NO existe | 28 | anclado 15 | nada |
+| C′ · marca nueva cuyo comentario sólo nombra ese ticket | 28 | rastreable 150 | nada |
+| D · la real de `:1293`, sin tocar (su respaldo está sólo en Jira) | 28 | sigue acusada | nada |
+| E1 · la real + ticket y comentario escritos en SU comentario | 27 | sale `:1293`, anclado 15 | «tampoco baja en silencio» |
+| E2 · la real + sólo el ticket en su comentario | 27 | sale `:1293`, rastreable 150 | «tampoco baja en silencio» |
+| E3 · la real + el id abreviado, sin ticket | 28 | nada | nada |
+| E4 · la real + la palabra «comentario» y el id, sin ticket | 28 | nada | nada |
+
+A y B separan «no hay respaldo» de «el respaldo está en el árbol». D y B separan «sólo en Jira» de «en
+el árbol». C dice que lo que el trinquete llama Jira es una forma: da por anclada una cita a un
+comentario que no puede existir.
+
+### T2.3 · Qué forma espera
+
+Lo que hace salir a una marca del 28, medido:
+
+1. que su COMENTARIO (el bloque de `//` de la marca, no un documento) nombre un ticket `SCRUM-<n>`
+   (rastreable), o un ticket seguido de la palabra `comentario` y un id de tres cifras o más (anclado);
+2. que su comentario cite una ruta bajo `docs/` (no medido aquí con un caso: lo cubren las 149);
+3. o que una frase de las que tiene debajo esté entera en el máster, en el registro congelado de
+   microcopy, o en un `.md` de `docs/master/` o `docs/microcopy/` que atribuya algo en algún párrafo.
+
+Y lo que NO: el id abreviado ni el id sin su ticket (E3, E4); y un puntero escrito en otro documento.
+Esto último ya está en el árbol: `docs/master/SCRUM-1404.md:248` escribe ticket y comentario del
+reconocimiento, con la forma exacta, y `:1293` sigue acusada. El ancla sólo se busca en el comentario
+de la marca.
+
+### T2.4 · Lo que esto cambia, y lo que decide un jefe
+
+- Preguntar en Jira y recibir un sí deja una decisión válida y citable, y no mueve el número. Para que
+  el número baje, el respaldo tiene que constar en el árbol por una de las tres vías de T2.3.
+- La vía 1 (E1) es una línea de comentario en `invoicesAdmin.routes.ts`, junto a la marca. No copia
+  ninguna frase, así que no es el respaldo fabricado del tramo 1. Pero edita una línea de atribución en
+  un fichero de ruta de facturas, y obliga a bajar `SIN_RESPALDO` a 27 en el mismo cambio (lo pide el
+  propio caso «tampoco baja en silencio»). **NO HECHO: son dos cosas que este encargo prohíbe.**
+- La vía 1 no comprueba nada contra Jira (caso C). Quien escriba el ancla responde de que el comentario
+  existe y dice eso; el trinquete no lo sabrá nunca.
+- Si lo que se quiere es que el instrumento VEA Jira, eso es otro instrumento: red y credenciales en el
+  obligatorio de los dos equipos. No se propone aquí.
+
+### T2.5 · Errores propios
+
+1. La primera pasada del espía dio «6 leídos fuera del espejo», y 5 estaban dentro: las rutas que el
+   cargador de módulos pasa como URL las resolvía mal. Lo cazó leer la lista, no el número. Corregido
+   y repetido entero: 1 (`typescript.js`).
+2. El recuento de casos en rojo contaba la línea de resumen del informe como un caso (decía 2 donde
+   había 1). Corregido y repetido.
+3. Di por hecho que el espía no vería los módulos cargados con `import` y lo dejé escrito en su
+   cabecera; la primera pasada lo desmintió. Cabecera corregida.
+
+### T2.6 · Lo que NO se ha hecho ni medido
+
+- No se fabricó un respaldo en Jira: sería escribir una firma falsa. El caso «sólo en Jira» es la marca
+  real de `:1293`, cuyo comentario 18835 abrí hoy con la herramienta de Jira.
+- El espía no ve lo que haga un addon nativo. No se midió en CI: sólo en esta máquina, node local.
+- No se miraron las 149 rastreables ni las 14 ancladas: el caso C dice que ninguna está comprobada
+  contra Jira por el trinquete, no que alguna sea falsa.
+- El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j4`; SCRUM-1498, carril de
+  S5). Se siguió por la norma común del 8-oct, y queda dicho.
+- Tanda completa: no corrida. El cambio es este registro y cuatro ficheros bajo `docs/master/`.
