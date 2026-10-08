@@ -413,7 +413,7 @@ que hoy la AEAT no puede rechazar porque no lo recibe. El mismo fichero declara 
   verdadera.
 * **D16 · `PREGUNTAS_ASESOR.md:463-464`** — cita literal del código: `«**"se envía" NO EXISTE.**
   Cero clientes SOAP/mTLS contra la AEAT, VfSubmission no está en el schema, no hay cola de
-  remisión»`.
+  remisión»`. *(Nota del 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: esta cita se clasificó D el 19-ago-2026, cuando era cierta. «VfSubmission no está en el schema, no hay cola de remisión» es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway. El comentario de origen y la cita de `PREGUNTAS_ASESOR.md` se corrigieron el 8-oct-2026 (SCRUM-1500e y SCRUM-1500f), así que esas líneas ya no dicen lo que aquí se cita. La clase D y su recuento de 25 NO se tocan: son la medición del 19-ago-2026.)*
 
 ## En el código y en la pantalla (9)
 
