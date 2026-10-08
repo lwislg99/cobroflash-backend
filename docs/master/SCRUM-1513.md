@@ -513,3 +513,74 @@ verificar hasta el merge.
 | la parte ① (la baja) | NO HECHO → sin GO |
 | P3 | NO HECHO → no se toca aquí |
 | tanda completa en local | NO HECHO → la mató el arnés; queda el obligatorio |
+
+---
+
+# SCRUM-1513e · El cierre: dónde vive la prueba del cerrojo, y los dos rojos de `scrum245` medidos sobre `main`
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T09:32:50Z (hora de GitHub)
+
+A9: sin fallo que generalice — tramo de cierre, sólo lectura y una medición; no toca `src` ni `tests`, y lo que deja dicho es dónde NO mira la tanda
+
+**J2 (relevo de la sesión que construyó el tramo de arriba; sesión `jv-j2`, equipo de Javier).** Encargo del
+orquestador: cerrar lo que quedó abierto, sin construir nada. Este tramo sólo añade texto a este registro. El hook de
+arranque volvió a decir «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+## 🔴 La prueba del cerrojo vive en la medición contra Postgres, NO en la tanda; el doble no lo ejercita
+
+Para quien lea esto dentro de tres meses y vea la tanda en verde:
+
+- `tests/_envio-doblado.mjs` aprende el cerrojo de transacción **como no-op**: la sentencia se acepta y no hace nada.
+  Los tests de envío que usan ese doble dan el mismo resultado con el cerrojo y sin él: hay un solo proceso y la
+  sentencia no bloquea a nadie.
+- `tests/scrum1513d-la-reserva-del-tope.test.mjs` (con su propia base de mentira, no con ese doble) sí cae si la
+  sentencia del cerrojo **desaparece o cambia de sitio**: comprueba que se PIDE, la segunda de la transacción, con
+  el comercio y fuera de los espacios 1748 a 1750. Lo que no prueba, y lo dice el tramo de arriba: **que pedirlo
+  cierre la carrera**. Un cerrojo pedido con otra clave, fuera de la transacción que cuenta, o que Postgres no
+  respetara, pasaría ese test. Eso sólo se ve con varias conexiones contra un Postgres de verdad.
+- Lo único que lo prueba es la medición a mano: `evidencias/SCRUM-1513/tope-postgres.cjs` y
+  `evidencias/SCRUM-1513d/reserva-postgres.cjs`, con su tercera columna (el arreglo **sin** la línea del cerrojo:
+  108, 110, 2 y 3). Esos guiones **no corren en CI**: piden un Postgres desechable que el obligatorio no les da.
+
+Consecuencia: quien toque `reservarPlantilla`, el espacio 1751 o la transacción que los envuelve **vuelve a pasar los
+dos guiones contra Postgres**. Un verde de la tanda no dice nada sobre el tope bajo concurrencia.
+
+## El hueco que sigue abierto
+
+Lo midió la sesión anterior y no se ha cerrado: **una ráfaga que agote los 15 s de espera de la transacción saldría
+SIN reserva**. Cae en P3 (la base no contesta), que el GO de `c.18988` deja fuera de este ticket: el mensaje sale
+como antes y no ocupa hueco, así que en ese caso el tope se puede rebasar. Con 120 envíos a la vez y una sola
+conexión no ocurrió; **no se ha medido con qué ráfaga ocurre**, ni el pool ni el número de instancias de producción.
+
+## Los dos rojos de `scrum245`, ahora medidos sobre `main`
+
+El tramo de arriba los dejó como «lo que dice el error, no una medición». Medido:
+
+| dónde | `scrum245-*` (4 ficheros) | los dos que caen |
+| --- | --- | --- |
+| esta rama @ `53ff10a98e15b3b3080e13fb7d0e38f0aef305eb` | 25 tests · 23 pasan · 2 caen | `Cannot find module …\node_modules\typescript\bin\tsc` |
+| `main` @ `497f516710e5ff843a6cfbee77f33c2692bba98f`, árbol anidado aparte, con `dist` (`tsc --noCheck`) | 25 tests · 23 pasan · 2 caen | los mismos dos, con el mismo error |
+
+Caen igual sin este cambio: el test busca `tsc` en el `node_modules` del propio árbol, y un árbol anidado no lo
+tiene. Y la otra mitad, que es la que importaba porque este PR toca `whatsapp.ts`, cuyos tipos compilan esos
+fixtures: la misma orden del test, con el `tsc` del checkout compartido, sobre los dos árboles —
+
+| fixture | `main` | esta rama |
+| --- | --- | --- |
+| `scrum245-no-compila.ts` (tiene que fallar nombrando `sinMerchant`) | código 2, lo nombra | código 2, lo nombra |
+| `scrum245-si-compila.ts` (tiene que compilar) | código 0 | código 0 |
+
+Idéntico en los dos. **Son del árbol, no del cambio.** Población: los 4 ficheros `tests/scrum245-*.test.mjs`; el
+positivo es el recuento de 25 y los 23 que pasan en cada lado.
+
+## Lo que NO he medido
+
+La tanda completa en local sigue SIN correr (esta máquina la mata; el veredicto de la tanda entera es el del
+obligatorio en CI, que al escribir este tramo no está leído) · los otros 97 ficheros del camino de envío sobre
+`main` (sólo se han cruzado los de `scrum245`, que eran los que caían) · nada de lo que el tramo de arriba declara
+sin medir ha cambiado.
+
+## Errores propios
+
+Ninguno medido al escribir este tramo. Este commit vuelve a arrancar el obligatorio de #2325, que ya corría sobre
+`53ff10a98`: es el coste de que la frase de arriba entre en el mismo PR y no en otro.
