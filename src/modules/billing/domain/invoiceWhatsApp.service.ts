@@ -27,10 +27,20 @@ export type SendInvoiceWAResult = {
 /**
  * Asegura un cobro para la factura (lo crea si no existe) y envía
  * payment_request_es al cliente. No lanza: devuelve {ok,reason}.
+ *
+ * SCRUM-1514 (regla 2): `soloDelComercio` lo pasa quien llama CON SESIÓN (resend-whatsapp). Con
+ * él, la factura se busca por id Y por comercio: la de otro contesta lo mismo que la que no
+ * existe. Los caminos sin sesión (aceptación pública, collect-rest) acaban de crear o de leer la
+ * factura con su comercio y siguen llamando sólo con el id.
  */
-export async function sendInvoicePaymentRequest(invoiceId: number): Promise<SendInvoiceWAResult> {
+export async function sendInvoicePaymentRequest(
+  invoiceId: number,
+  soloDelComercio?: { merchantId: number | undefined },
+): Promise<SendInvoiceWAResult> {
+  // Si se pide acotar y el comercio no viene, NO se busca sin él: se contesta que no está.
+  if (soloDelComercio && !Number.isInteger(soloDelComercio.merchantId)) return { ok: false, reason: 'invoice_not_found' };
   const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
+    where: soloDelComercio ? { id: invoiceId, merchantId: soloDelComercio.merchantId } : { id: invoiceId },
     include: { merchant: true, customer: true },
   });
   if (!invoice) return { ok: false, reason: 'invoice_not_found' };
