@@ -584,3 +584,119 @@ sin medir ha cambiado.
 
 Ninguno medido al escribir este tramo. Este commit vuelve a arrancar el obligatorio de #2325, que ya corría sobre
 `53ff10a98`: es el coste de que la frase de arriba entre en el mismo PR y no en otro.
+
+---
+
+# SCRUM-1513f · Los tres rojos del obligatorio de #2325, ejecutando las tres decisiones de `c.19001`
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T10:17:19Z (hora de GitHub)
+
+A9: comprobación → `tests/wa-log-sync.test.mjs`
+
+**J2 (relevo; sesión `jv-j2`, equipo de Javier).** Orden: `c.19001`, que decide los tres. Entrega anterior: `c.19000`.
+GO: `c.18988`. Firma del rótulo: `c.18995` (no se ha tocado ningún texto). El hook de arranque volvió a decir «SIN
+IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+El tramo «SCRUM-1513e» de arriba dice «el obligatorio no está leído». **Después se leyó y salió ROJO** (`c.19000`):
+job `113246394344` sobre `4e255d2cd`, 11.086 tests, 10.990 pasan, **3 caen**, 93 saltan. Los tres eran del código de
+este PR. Este tramo es su arreglo.
+
+## 1 · `scrum1093h`: el «hoy» del tope es el día del COMERCIO
+
+`reservarPlantilla` ya no usa `setHours` (el reloj del proceso). Lee la zona del comercio dentro de la misma
+transacción, antes de pedir el cerrojo, y cuenta desde `inicioDelDiaEn(diaNaturalEn(ahora, zona), zona)`, con la zona
+resuelta por `zonaDelMerchant` de `src/core/zonaDelMerchant.ts`. No sale del país. Sin zona declarada, sin fila o con
+una zona que el motor no reconoce, cae a UTC (lo que ya hacía ese módulo), nunca a Madrid.
+
+**Sobre «clasifica el uso donde el censo lo pide»:** no ha hecho falta entrada en `USO`. La llamada que el censo
+acusaba ha desaparecido, así que el censo ya no tiene fila que clasificar (`RATCHET` en verde). En el `dist` del
+módulo queda un solo `setHours`, el de `getWhatsAppMetrics`, que ya estaba clasificado como AGREGADO y no se toca.
+
+Fijado en `tests/scrum1513d-la-reserva-del-tope.test.mjs`, cinco casos nuevos «SCRUM-1513f»: se pregunta la zona de
+ese comercio y sólo la zona; UTC+14 y UTC-11 cuentan desde su medianoche (el esperado se calcula en el test con
+aritmética, no con el módulo probado); sin zona el inicio cae a las 00:00 UTC (con Madrid daría 22:00 o 23:00).
+
+**Efecto que cambia, dicho:** las métricas (`getWhatsAppMetrics`, `templateToday`) siguen contando «hoy» con el reloj
+del proceso. Para un comercio con zona declarada, el tope y esa cifra pueden no coincidir durante unas horas. No se ha
+tocado: es otra función y no la nombra la orden.
+
+## 2 · `scrum728`: se BAJA la espera a la de Prisma por defecto. El test no se ha tocado
+
+La transacción de la reserva ya no fija `maxWait` ni `timeout`. Elegido con el dato delante
+(`docs/master/evidencias/SCRUM-1513f/`, PostgreSQL 16.13 desechable en loopback, `reservarPlantilla` de `dist`, una
+pasada de cada):
+
+| qué | con 15 s (como estaba) | por defecto (2 s de turno, 5 s de transacción) | por defecto, 5 conexiones |
+| --- | --- | --- | --- |
+| UNA reserva sola (200 seguidas) | mediana 1,9 ms · máxima 2,7 ms | mediana 1,9 ms · máxima 2,7 ms | mediana 1,8 ms · máxima 2,7 ms |
+| 120 a la vez, tope 100 | 100 y 20 · la más lenta 226 ms | 100 y 20 · 229 ms | 100 y 20 · 156 ms |
+| 2.000 a la vez, tope 100 | 100 y 1.900 · 1.363 ms | 100 y 1.900 · 1.409 ms · **lanzan 0** | 100 y 1.900 · 1.216 ms · lanzan 0 |
+| 4.000 a la vez, tope 100 | 100 y 3.900 · 2.548 ms · lanzan 0 | 100 y 3.027 · **LANZAN 873** (P2028, a los 2 s) | 100 y 3.274 · LANZAN 626 |
+| 2.000 a la vez, sin tope | 2.000 · 2.595 ms · lanzan 0 | 1.590 · **LANZAN 410** | 1.713 · LANZAN 287 |
+
+En los 30 casos de ráfaga, reservadas + bloqueadas + lanzadas = las pedidas, y las filas = las reservadas.
+
+**Por qué bajar y no declarar los 15 s:**
+
+- El único formato que ese test acepta para una transacción con opciones es editar su propia línea (su mensaje lo
+  dice: «(c) esta línea actualizada a propósito»; compara contra la lista vacía). La orden prohíbe tocarlo. Así que la
+  salida ① de `c.19001` no existía sin tocarlo. Dicho al orquestador, que lo ha recogido.
+- Y el dato no la pedía: la ráfaga medida como defecto en este ticket (120) tarda 229 ms contra un límite de 2.000.
+- La llamada al proveedor no cuenta: ocurre fuera de la transacción, con el cerrojo ya suelto (`c.18999`: 20 a la
+  vez con el proveedor a 150 ms, 233 ms).
+
+**Qué se pierde:** el tramo entre más de 2.000 y 4.000 reservas simultáneas de UN comercio, que con 15 s cabían
+(4.000: 2.548 ms, 0 lanzan) y por defecto no. A cambio, la que no consigue turno falla a los 2 s y no a los 15.
+
+🔴 **El hueco no queda cerrado, queda MEDIDO. Cerrarlo es decidir qué hace el envío cuando la reserva lanza, y eso es
+P3, que el fundador dejó fuera a propósito** (`c.18988`). Una reserva que lanza cae en el `catch` de
+`sendWhatsAppTemplate` («no se bloquea») y el mensaje sale sin reserva: en el caso de 4.000, 873 por encima del tope.
+Antes no se sabía con qué ráfaga; ahora sí, en esta máquina: entre 2.000 y 4.000 a la vez del mismo comercio. Con
+15 s el hueco era el mismo, sólo más lejos (no apareció hasta 4.000, el máximo medido).
+
+## 3 · `a55-window-quote`: se arregla el instrumento, sin relajarlo
+
+`tests/_wa-log-sync.mjs` envolvía sólo `recordWaMessage`. Desde este PR la plantilla que sale escribe por
+`reservarPlantilla` (que el envío espera) y `resolverReservaDePlantilla` (lanzada sin `await`). El ayudante envuelve
+ahora también la segunda, con la misma técnica, y el `update` para el diagnóstico. El suelo «cero escrituras
+interceptadas = rojo» no se ha tocado. `a55` pide además que la fila de la plantilla esté en `sent`: es más estricto
+que antes. Lo usan también `scrum115`, `scrum47` y `scrum49` (gateados por staging): heredan el arreglo, sin ejecutar.
+
+**Ejecutado, no leído**, con `LIBRO_PG_URL` a un Postgres desechable (el de la tanda de CI es eso mismo):
+
+| ayudante | resultado de `a55-window-quote` |
+| --- | --- |
+| el de `HEAD` (`4e255d2cd`), código de hoy | 1 test · **cae** · «SCRUM-250: no se interceptó NINGUNA escritura de WA-0b…», el mensaje de CI |
+| el nuevo | 1 test · **pasa** |
+
+🔴 **Por qué no se vio antes de empujar:** en local ese test SE SALTA, porque pide base. Estaba entre los 16 saltos de
+`c.18999`. **Un test que se salta no es un test que pasa.** La parte que no pide base queda ahora en
+`tests/wa-log-sync.test.mjs` (cinco casos «SCRUM-1513f», con dobles). Límite: eso prueba que el ayudante espera a la
+boca nueva; que el envío real pase por ella sólo lo prueban los tests con base.
+
+## Tests de la casa (en local, árbol anidado, `dist` con `tsc --noCheck`)
+
+- Los 122 ficheros que nombran el camino de envío, el ayudante, la zona o el censo, más `scrum237`, `scrum976`,
+  `scrum812`, `scrum411`, `scrum1477`, `scrum1294` y `scrum267`: 1.206 tests · 1.191 pasan · 13 saltan · **2 caen**
+  (1.191 + 2 + 13 = 1.206). Los dos son los `scrum245` ambientales de `c.19000` (no hay `tsc` en el árbol anidado).
+- `scrum728 ③` y `scrum1093h RATCHET`: en ✔ por nombre.
+- **La tanda completa NO se ha corrido en local** (el arnés la mata por memoria). El veredicto es el del obligatorio.
+
+## Lo que NO he medido
+
+- El «hoy» del comercio contra Postgres: sólo con el banco del test (qué fecha pide la reserva), no con filas a un
+  lado y otro de la medianoche del comercio.
+- La latencia hasta la base de producción. En loopback una reserva son unos 2 ms; con una red más lenta el umbral de
+  la ráfaga baja. No está medido cuánto.
+- Cada cifra de ráfaga es UNA pasada. Entre 2.000 y 4.000 no hay puntos intermedios.
+- El tope en sí: no se ha vuelto a medir (orden). No cambia cómo decide, sólo desde cuándo cuenta «hoy».
+- Producción, staging y el proveedor real. yaqu.app, hasta que el PR entre.
+
+## Errores propios
+
+- Un índice posicional del test de 1513d (`b.pedido[3]`) se quedó señalando otra petición al añadir la lectura del
+  comercio. Lo cazó el propio test; ahora busca por operación, no por posición.
+- Intenté restaurar el ayudante viejo ENCIMA del nuevo para ver el rojo; lo paró el hook de órdenes destructivas. Se
+  midió con una copia de nombre distinto, borrada después.
+- Lancé una búsqueda sobre el temporal de la máquina que no terminó en 120 s; la paré.
+- Avisé de los 200k a 202.407, no antes.

@@ -262,3 +262,94 @@ test('SCRUM-255 · esperarAlMenos rechaza una `n` sin sentido', async () => {
     wa.restaurar();
   }
 });
+
+// ── SCRUM-1513f · la segunda boca: la plantilla que sale se RESUELVE, no se registra ──────────
+// Desde SCRUM-1513 la plantilla que sale escribe por `resolverReservaDePlantilla` (un `update`
+// lanzado sin `await`). Estos casos prueban, con dobles y sin base, que el helper la espera igual
+// que a `recordWaMessage` — y que el suelo de siempre no se ha movido.
+
+/** Como `dobles`, más la boca nueva: `async`, escribe con `update` y SE TRAGA el error, igual que la real. */
+function doblesConReserva(comportamientoDelUpdate) {
+  const par = dobles(() => Promise.resolve({ id: 1 }));
+  par.prisma.whatsAppMessage.update = (args) => comportamientoDelUpdate(args);
+  par.log.resolverReservaDePlantilla = async (db, id, desenlace) => {
+    try {
+      await db.whatsAppMessage.update({ where: { id }, data: desenlace });
+    } catch {
+      /* la real hace exactamente esto: no romper el envío */
+    }
+  };
+  return par;
+}
+
+test('SCRUM-1513f · 🔴 esperar() NO resuelve mientras la resolución de la reserva sigue pendiente', async () => {
+  const d = diferida();
+  const { log, prisma } = doblesConReserva(() => d.promesa);
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    log.resolverReservaDePlantilla(prisma, 41, { como: 'enviada' });
+    assert.equal(wa.interceptadas, 1, 'la resolución cuenta como escritura interceptada');
+    let terminada = false;
+    const espera = wa.esperar().then(() => { terminada = true; });
+    await vueltaDeBucle();
+    assert.equal(terminada, false, '🔴 esperar() resolvió con la resolución todavía en vuelo');
+    d.resolver({ id: 41 });
+    await espera;
+    assert.equal(terminada, true);
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-1513f · el suelo no se ha movido: con las dos bocas envueltas y ninguna escritura, rojo CON NOMBRE', async () => {
+  const { log, prisma } = doblesConReserva(() => Promise.resolve({ id: 41 }));
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    await assert.rejects(() => wa.esperar(), (err) => {
+      assert.equal(err.message, SIN_INTERCEPTAR);
+      return true;
+    });
+    assert.match(SIN_INTERCEPTAR, /resolverReservaDePlantilla/);
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-1513f · el motivo REAL de una resolución que falla llega al mensaje del assert', async () => {
+  const { log, prisma } = doblesConReserva(() => Promise.reject(Object.assign(new Error('pool agotado'), { code: 'P2024' })));
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    log.resolverReservaDePlantilla(prisma, 41, { como: 'enviada' });
+    await wa.esperar();
+    assert.match(wa.explicar('la fila tiene que estar enviada'), /P2024 pool agotado/);
+  } finally {
+    wa.restaurar();
+  }
+});
+
+test('SCRUM-1513f · restaurar() deshace también la envoltura de la resolución y la de su update', () => {
+  const { log, prisma } = doblesConReserva(() => Promise.resolve({ id: 41 }));
+  const resolverOriginal = log.resolverReservaDePlantilla;
+  const updateOriginal = prisma.whatsAppMessage.update;
+  const wa = interceptarWaLog({ log, prisma });
+  assert.notEqual(log.resolverReservaDePlantilla, resolverOriginal, 'debe quedar envuelta');
+  assert.notEqual(prisma.whatsAppMessage.update, updateOriginal, 'debe quedar envuelto');
+  wa.restaurar();
+  assert.equal(log.resolverReservaDePlantilla, resolverOriginal);
+  assert.equal(prisma.whatsAppMessage.update, updateOriginal);
+});
+
+test('SCRUM-1513f · un módulo de log SIN la boca nueva sigue valiendo: no se envuelve ni el update', async () => {
+  const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
+  prisma.whatsAppMessage.update = () => Promise.resolve({});
+  const updateOriginal = prisma.whatsAppMessage.update;
+  const wa = interceptarWaLog({ log, prisma });
+  try {
+    assert.equal(prisma.whatsAppMessage.update, updateOriginal);
+    log.recordWaMessage({ merchantId: 7 });
+    await wa.esperar();
+    assert.equal(wa.interceptadas, 1);
+  } finally {
+    wa.restaurar();
+  }
+});

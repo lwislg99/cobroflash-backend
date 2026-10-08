@@ -20,9 +20,10 @@ const CLIENTE = 50;
 const TOPES = { topeComercio: 100, topeCliente: 3 };
 
 /** Una base que apunta lo que se le pide. `cuenta` contesta a cada `count`. */
-function base({ cuenta = () => 0, rota = false } = {}) {
+function base({ cuenta = () => 0, rota = false, comercio = null } = {}) {
   const pedido = [];
   const tx = {
+    merchant: { findUnique: async (a) => { pedido.push({ op: 'comercio', where: a.where, select: a.select }); return comercio; } },
     $executeRaw: async (trozos, ...valores) => { pedido.push({ op: 'sentencia', texto: trozos.join('?'), valores }); return 0; },
     whatsAppMessage: {
       count: async (a) => { pedido.push({ op: 'count', where: a.where }); return cuenta(a.where); },
@@ -45,8 +46,8 @@ test('SCRUM-1513d · 🔴 si cabe: cerrojo, pregunta y fila, por ese orden y den
   const b = base();
   const r = await log.reservarPlantilla(b.db, { merchantId: COMERCIO, templateName: 'una', ...TOPES });
   assert.deepEqual(r, { ok: true, id: 41 });
-  assert.deepEqual(b.orden(), ['abre', 'sentencia', 'count', 'create', 'cierra']);
-  const cerrojo = b.pedido[1];
+  assert.deepEqual(b.orden(), ['abre', 'comercio', 'sentencia', 'count', 'create', 'cierra']);
+  const cerrojo = b.pedido[2];
   assert.match(cerrojo.texto, /^SELECT pg_advisory_xact_lock\(/);
   assert.equal(cerrojo.valores.length, 2);
   assert.equal(cerrojo.valores[1], COMERCIO, 'el cerrojo es de ESTE comercio, no global');
@@ -62,8 +63,7 @@ test('SCRUM-1513d · 🔴 la pregunta cuenta lo que tiene identificador del prov
   assert.equal(where.merchantId, COMERCIO);
   assert.equal(where.type, 'template');
   assert.deepEqual(where.OR, [{ waMessageId: { not: null } }, { status: 'queued' }]);
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  assert.equal(where.createdAt.gte.getTime(), hoy.getTime());
+  assert.equal(where.createdAt.gte instanceof Date, true);
 });
 
 test('SCRUM-1513d · 🔴 la fila nace en cola y SIN documento: el paquete de disputa lee por documento', async () => {
@@ -92,8 +92,8 @@ test('SCRUM-1513d · el tope por cliente se pregunta bajo el MISMO cerrojo, y s�
   const b = base({ cuenta: (w) => (w.customerId ? 3 : 0) });
   const r = await log.reservarPlantilla(b.db, { merchantId: COMERCIO, customerId: CLIENTE, ...TOPES });
   assert.deepEqual(r, { ok: false, reason: 'customer_daily_cap', cuenta: 3 });
-  assert.deepEqual(b.orden(), ['abre', 'sentencia', 'count', 'count', 'cierra']);
-  assert.equal(b.pedido[3].where.customerId, CLIENTE);
+  assert.deepEqual(b.orden(), ['abre', 'comercio', 'sentencia', 'count', 'count', 'cierra']);
+  assert.equal(b.pedido.filter((p) => p.op === 'count')[1].where.customerId, CLIENTE);
   const sinCliente = base({ cuenta: (w) => (w.customerId ? 3 : 0) });
   assert.equal((await log.reservarPlantilla(sinCliente.db, { merchantId: COMERCIO, ...TOPES })).ok, true);
   assert.equal(sinCliente.orden().filter((o) => o === 'count').length, 1);
@@ -129,4 +129,56 @@ test('SCRUM-1513d · resolver nunca lanza: una base caída al anotar no rompe el
   try { await log.resolverReservaDePlantilla(db, 41, { como: 'enviada', waMessageId: 'wamid.x' }); } finally { console.error = original; }
   assert.equal(trazas.length, 1);
   assert.match(trazas[0], /resolverReservaDePlantilla omitido/);
+});
+
+// ── SCRUM-1513f · el «hoy» del tope es el día del COMERCIO (decisión de c.19001) ──────────────
+// Antes salía de `setHours`, o sea del reloj del proceso. Lo esperado se calcula AQUÍ, con aritmética
+// sobre zonas de desfase fijo y sin horario de verano, y no con el módulo que se está probando.
+const DIA_MS = 86_400_000;
+const inicioConDesfase = (ahora, horas) => Math.floor((ahora + horas * 3_600_000) / DIA_MS) * DIA_MS - horas * 3_600_000;
+
+/** El inicio del día que usó la reserva para ese comercio, y los dos esperados (antes y después de llamar). */
+async function inicioQueUsa(comercio, horas) {
+  const b = base({ comercio });
+  const antes = inicioConDesfase(Date.now(), horas);
+  await log.reservarPlantilla(b.db, { merchantId: COMERCIO, customerId: CLIENTE, ...TOPES });
+  const despues = inicioConDesfase(Date.now(), horas);
+  const cuentas = b.pedido.filter((p) => p.op === 'count');
+  assert.equal(cuentas.length, 2, 'SUELO: con cliente se pregunta dos veces');
+  assert.equal(cuentas[0].where.createdAt.gte.getTime(), cuentas[1].where.createdAt.gte.getTime(), 'los dos topes miran el mismo día');
+  return { usa: cuentas[0].where.createdAt.gte.getTime(), esperados: [antes, despues], pedido: b.pedido };
+}
+
+test('SCRUM-1513f · 🔴 la reserva pregunta la zona de ESE comercio, y la pregunta antes de pedir el cerrojo', async () => {
+  const { pedido } = await inicioQueUsa({ timezone: 'Pacific/Kiritimati' }, 14);
+  const lectura = pedido.find((p) => p.op === 'comercio');
+  assert.deepEqual(lectura.where, { id: COMERCIO });
+  assert.deepEqual(lectura.select, { timezone: true }, 'sólo la zona: el país no decide el día');
+  assert.equal(pedido.findIndex((p) => p.op === 'comercio') < pedido.findIndex((p) => p.op === 'sentencia'), true);
+});
+
+test('SCRUM-1513f · 🔴 un comercio en UTC+14 cuenta desde SU medianoche, no desde la del servidor', async () => {
+  const { usa, esperados } = await inicioQueUsa({ timezone: 'Pacific/Kiritimati' }, 14);
+  assert.equal(esperados.includes(usa), true, `usa ${new Date(usa).toISOString()}`);
+  assert.equal(new Date(usa).getUTCHours(), 10, 'la medianoche de UTC+14 son las 10:00 UTC');
+});
+
+test('SCRUM-1513f · 🔴 un comercio en UTC-11 cuenta desde SU medianoche, no desde la del servidor', async () => {
+  const { usa, esperados } = await inicioQueUsa({ timezone: 'Pacific/Pago_Pago' }, -11);
+  assert.equal(esperados.includes(usa), true, `usa ${new Date(usa).toISOString()}`);
+  assert.equal(new Date(usa).getUTCHours(), 11, 'la medianoche de UTC-11 son las 11:00 UTC');
+});
+
+test('SCRUM-1513f · 🔴 sin zona declarada el día es el de UTC, NUNCA el de Madrid', async () => {
+  const { usa, esperados } = await inicioQueUsa({ timezone: null }, 0);
+  assert.equal(esperados.includes(usa), true, `usa ${new Date(usa).toISOString()}`);
+  // La medianoche de Madrid cae a las 22:00 o a las 23:00 UTC: con Madrid por defecto esto no daría 0.
+  assert.equal(new Date(usa).getUTCHours(), 0);
+});
+
+test('SCRUM-1513f · un comercio que no aparece, o una zona que el motor no reconoce, cae también a UTC', async () => {
+  const sinFila = await inicioQueUsa(null, 0);
+  assert.equal(sinFila.esperados.includes(sinFila.usa), true);
+  const rara = await inicioQueUsa({ timezone: 'Marte/Olimpo' }, 0);
+  assert.equal(rara.esperados.includes(rara.usa), true);
 });

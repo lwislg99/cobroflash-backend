@@ -4,6 +4,7 @@
 // se puede desplegar ANTES de aplicar la migración, sin romper el envío de mensajes.
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
+import { zonaDelMerchant, diaNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -65,7 +66,7 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
 //
 // Qué cuenta para el tope: lo que tiene identificador del proveedor O sigue en `queued`.
 //   · el proveedor dijo que NO  → `failed`: devuelve el hueco (P1).
-//   · no se sabe si salió       → se queda en `queued`: OCUPA hueco hasta medianoche (P2). Es
+//   · no se sabe si salió       → se queda en `queued`: OCUPA hueco hasta la medianoche del comercio (P2). Es
 //     mandar de menos a propósito: un solo número para todos los comercios, y pasarse cuesta más
 //     que quedarse corto.
 //
@@ -94,16 +95,22 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   topeComercio: number;
   topeCliente: number;
 }): Promise<ReservaDePlantilla> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const cuentaParaElTope = {
-    merchantId: input.merchantId,
-    type: 'template',
-    createdAt: { gte: startOfDay },
-    OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
-  };
   return db.$transaction(
     async (tx) => {
+      // «Hoy» es el día del COMERCIO (c.19001), no el del servidor: con el reloj del proceso, que va
+      // en UTC, a un profesional de la península el cupo se le reiniciaba a la 01:00 o a las 02:00 de
+      // su madrugada. La zona la resuelve `zonaDelMerchant` y nadie más: no sale del país (dentro
+      // de `ES` hay dos husos), y sin declarar cae a UTC, que es lo que ya se hacía.
+      // Se lee ANTES de pedir el cerrojo: es una lectura que no necesita turno.
+      const comercio = await tx.merchant.findUnique({ where: { id: input.merchantId }, select: { timezone: true } });
+      const zona = zonaDelMerchant(comercio);
+      const cuentaParaElTope = {
+        merchantId: input.merchantId,
+        type: 'template',
+        createdAt: { gte: inicioDelDiaEn(diaNaturalEn(new Date(), zona), zona) },
+        OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
+      };
+
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
 
       const sentToday = await tx.whatsAppMessage.count({ where: cuentaParaElTope });
@@ -129,8 +136,11 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
       });
       return { ok: true as const, id: fila.id };
     },
-    // La espera es por el cerrojo, que es corto; el margen es para una ráfaga, no para el proveedor.
-    { maxWait: 15_000, timeout: 15_000 },
+    // SIN opciones propias, a propósito (SCRUM-728 ③): valen las de Prisma, 2 s para conseguir turno
+    // y 5 s de transacción. Medido el 8-oct-2026 contra PostgreSQL 16.13 en loopback
+    // (docs/master/evidencias/SCRUM-1513f): una reserva sola tarda unos 2 ms; 2.000 a la vez del
+    // mismo comercio caben; con 4.000, las que no consiguen turno LANZAN a los 2 s — y qué hace el
+    // envío entonces lo decide quien llama. Subir la espera no cierra eso: sólo lo aleja.
   );
 }
 
