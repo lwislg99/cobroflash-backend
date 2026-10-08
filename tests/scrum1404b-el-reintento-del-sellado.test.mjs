@@ -86,6 +86,14 @@ function baseDe(filas, { fallos = {}, sordaAlWhere = false } = {}) {
   };
 }
 const corteEn = (d) => ({ desde: d, motivo: null });
+/** El `where` de la selección, leído de lo que la pasada le manda de verdad a la base. */
+async function whereDeLaPasada(desde) {
+  const base = baseDe([]);
+  await R.reintentarSelladosPendientes({ ahora: AHORA, corte: corteEn(desde), prisma: base, sellar: async () => ({ estado: 'sellado' }) });
+  const primera = base.llamadas.find(([q]) => q === 'invoice.findMany');
+  assert.ok(primera, 'la pasada activa consulta las facturas');
+  return primera[1];
+}
 
 // ───────────────────────────────── ① INERTE ─────────────────────────────────────────────────
 
@@ -170,6 +178,21 @@ test('SCRUM-1404 · ① la excepción está DECLARADA y sigue montada: el módul
   assert.match(principal.motivo, /src\/core\/cron\/cron\.ts/);
 });
 
+test('SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts', () => {
+  // El tope sale de contar registros de auditoría. Si el sellado cambiara el nombre de la acción,
+  // el contador se quedaría a cero y el reintento no se agotaría nunca, sin ningún rojo.
+  const ruta = 'src/modules/invoicing/domain/selladoEstado.ts';
+  const arbol = ts.createSourceFile(ruta, fs.readFileSync(path.join(RAIZ, ruta), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const escritas = [];
+  const ver = (n) => {
+    if (ts.isPropertyAssignment(n) && n.name.getText(arbol) === 'action' && ts.isStringLiteral(n.initializer)) escritas.push(n.initializer.text);
+    ts.forEachChild(n, ver);
+  };
+  ver(arbol);
+  assert.equal(escritas.length, 1, `población: acciones de auditoría que escribe ${ruta}: ${escritas.join(', ')}`);
+  assert.equal(R.ACCION_DEL_SELLADO_FALLIDO, escritas[0]);
+});
+
 // ───────────────────────────────── ② LA FECHA ───────────────────────────────────────────────
 
 test('SCRUM-1404 · ② la fecha de corte: sólo un instante completo y no anterior al propio reintento', () => {
@@ -210,7 +233,9 @@ test('SCRUM-1404 · ③ las tres condiciones dejan 3, con el borde de 1 ms fuera
   assert.equal(R.entraEnElReintento(POBLACION[4], D), false, '1 ms antes de D');
   assert.equal(R.entraEnElReintento(POBLACION[5], D), true, 'exactamente en D');
   // Lo mismo por la consulta que usa la pasada, evaluada por el doble.
-  assert.equal(numeros(POBLACION.filter((f) => casa(f, R.whereDelReintento(D)))), esperadas);
+  const DONDE = await whereDeLaPasada(D);
+  assert.deepEqual(Object.keys(DONDE).sort(), ['createdAt', 'vfEstado', 'vfHash']);
+  assert.equal(numeros(POBLACION.filter((f) => casa(f, DONDE))), esperadas);
   // Y por la pasada entera: son las tres a las que se les pide sellar, en orden y una a una.
   const base = baseDe(POBLACION);
   const pedidas = [];

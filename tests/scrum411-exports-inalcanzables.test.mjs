@@ -212,7 +212,21 @@ const R = analizar(RAIZ);
 // y con él salen DOS de la lista: `albaranSerie.ts` y `invoicing/domain/huecosSerie.ts`, que sólo
 // lo importaba él (hallazgo de SCRUM-1184, c.17277). Es un import, no dos hallazgos. Sus exports
 // sin llamador de fuera pasan a la segunda población, declarados en `_huerfanos-declarados.mjs`.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴 8-oct-2026 · SUBE A 6 (SCRUM-1404, el reintento del sellado). SUBIDA A CONCIENCIA.
+//
+// Entra `src/modules/invoicing/domain/reintentoSellado.ts`, y nace inalcanzable a propósito, como
+// nació `emisorCongelado.ts` el 16-sep: construido y probado, con su fecha de corte en `null` y sin
+// llamador. No es deuda ni olvido: el fundador decidió que el reintento sólo alcance facturas nacidas
+// DESPUÉS de que el reintento exista (SCRUM-1404, comentario 18840), y eso sólo es cierto por
+// construcción si el mecanismo se despliega ANTES de activarse. Por eso va en dos PR (comentario
+// 18849), y éste es el primero. La decisión de subir el número con su entrada, en vez de cablearlo
+// a la fuerza, es del orquestador del equipo de Javier (comentario 18856).
+//
+// **Baja el commit del segundo PR de SCRUM-1404 que lo cablee desde la tarea programada de
+// `src/core/cron/cron.ts`** (la línea es de S1 y está pedida en SCRUM-1507), EN EL MISMO COMMIT que
+// cablea. Sus tres piezas están además declaradas en `scripts/_sin-consumir-declarados.json`.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 6;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

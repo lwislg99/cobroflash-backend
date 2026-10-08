@@ -306,3 +306,77 @@ igual sin mi cambio.
 - Mi primer caso de la pasada daba por «en espera» una factura a la que ya le tocaba (leí mal mi propia
   progresión); lo cazó el test al correrlo.
 - Medí el contexto tarde: 328.859 cuando la orden era parar a 300.000.
+
+# SCRUM-1404c · PR-1: los rojos del obligatorio, cerrados menos uno — SIGUE A MEDIAS (falta el segundo cinturón del tope)
+
+**Medido contra:** `origin/main` = `fca2f2e934e30690e04ad7b9fe3ccfcae152a802` · 2026-10-08T00:07:24Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
+
+*(Escribe J6, relevo, equipo de Javier. Cruce de carril declarado: el ticket es `area-j1` y lo autorizó
+el orquestador `cobroflash-backend-90`. La rama NO lleva `origin/main` mezclado: va 4 commits por detrás.)*
+
+## Qué había y qué queda
+
+El obligatorio de la punta anterior (`4cda5f87`, run 37704496194, job 113075521722) se leyó por nombre:
+11.062 casos, 7 caen, 93 saltos. Mi antecesora anunció 3. **Eran 7: su tanda dirigida no incluía
+`scrum289` ni `scrum1325`.** Los doce «SCRUM-1404 · » salían bien (control de un nombre que no existe: 0).
+
+| rojo del obligatorio | qué era | qué se hizo |
+|---|---|---|
+| `SCRUM-1185 · ①` | tres piezas sin consumidor, a propósito | declaradas en `scripts/_sin-consumir-declarados.json` con motivo, quién las retira (el PR-2) y prueba; decisión en el comentario 18855 |
+| `SCRUM-411 · no crecen` | 6 módulos y el número era 5 | el número sube a 6 con su entrada fechada, calcada del caso de `emisorCongelado`; decisión rectificada en el comentario 18856 |
+| `SCRUM-205 · ①` | reconoce un registro por la forma `action: 'sellado_fallido'` y la línea era una LECTURA | la acción pasa a una constante del módulo, atada por AST a lo que escribe `selladoEstado.ts`; decisión en el comentario 18857 |
+| `SCRUM-289` | un `where` traído de una función es opaco para el censo | el `where` va escrito en la consulta; `whereDelReintento` se retira y el test lo lee de la propia pasada |
+| `SCRUM-1325` ×3 | una expresión regular con letras sin catalogar | la fecha de corte se valida sin expresión regular: tiene que ser lo que `toISOString` escribe |
+
+Los tres de `SCRUM-475` que caían en local **no son de este PR ni de `main`**: en el obligatorio de este
+PR pasan (47 «SCRUM-475 · » bien) y en el de `main` @ `a65a8c75` también. En el árbol anidado caen porque
+`scripts/preview-migracion.mjs` busca el CLI de Prisma en el `node_modules` del propio árbol, y no lo hay.
+
+## Lo medido antes de decidir
+
+- **Declarar en la lista NO baja `scrum411`.** Con las tres claves puestas (`git diff --numstat`: 3 0),
+  `scrum1185 ①` pasa y `scrum411` sigue en 6. Control hecho antes de tocar: los otros 5 inalcanzables
+  están los 5 en esa lista y los 5 cuentan. Son dos mecanismos distintos: una lista y un número con bitácora.
+- **El tope descansa en un registro que nadie espera.** `sellarTrasEmision` anota el fallo con
+  `recordAudit`, que no se espera y traga su error. Sonda de 40 pasadas con el módulo compilado y un
+  sellado que falla siempre: si el fallo queda anotado, 5 llamadas a sellar y «agotada» desde la pasada 17;
+  **si no queda anotado, 40 llamadas en 40 pasadas, «agotada» nunca y `todo_en_orden` 40 de 40.**
+  La cabecera del módulo lo llamaba «un intento de más»: son infinitos. NO medido: con qué frecuencia
+  falla esa escritura (no hay fallos reales a mano y no se consulta producción).
+- **La pasada llamaba a la puerta por un alias**, y el censo de llamadores de SCRUM-205 los busca por el
+  nombre `sellarTrasEmision`. Ahora la llama por su nombre cuando no se inyecta un doble.
+
+## Comprobado después del último cambio
+
+`tsc` con tipos: sale 0. 18 ficheros, 172 casos, 0 caen (el test propio con 14, `scrum289`, `scrum1325`,
+`scrum411`, `scrum1185`, los tres `scrum205`, `scrum237`, `scrum976`, `scrum622`, `scrum377`, `scrum864c`,
+`scrum702`, `scrum812`, `scrum710b`). `mutar-reintento.mjs`: 9 de 9 vivas. `mutar-declaracion.mjs`
+(nuevo): 4 de 4 vivas, y el fichero mutado quedó idéntico.
+
+## 🔴 Lo que NO lleva, y por eso no es una entrega
+
+1. **El segundo cinturón del tope (decidido en el comentario 18857, SIN CONSTRUIR).** Una factura que
+   sigue pendiente pasado el tiempo en que ya debería estar agotada se cuenta, se nombra en el parte y
+   pone `hay_que_mirar`; la cuenta sale siempre, también a cero; el plazo se DERIVA de `TOPE_DE_FALLOS` y
+   `ESPERA_INICIAL_S` (la espera inicial más las de los fallos 1 a 4: 16 minutos con los números de hoy).
+   Sin él no se puede activar el reintento.
+2. La cabecera del módulo sigue diciendo «un intento de más». Se corrige con el cinturón.
+3. Esperar la anotación dentro de `sellarTrasEmision` es el arreglo de raíz y es camino de emisión: no se toca.
+4. El segundo PR entero (fecha, línea de `cron.ts` de S1, el `catch` de las dos rutas, `puntoDeFallo`).
+
+## Lo que NO se midió
+
+- No vi en rojo el caso nuevo de la acción (④) ni comprobé por efecto que el censo de SCRUM-205 cuenta
+  ya a la pasada como llamadora: sólo que los tres ficheros `scrum205` pasan.
+- `medir-1404.mjs` y el banco de J2 NO se han vuelto a correr tras estos cambios.
+- La tanda completa no se corrió en local. El obligatorio de la punta nueva está sin leer al escribir esto.
+- De los otros dos ficheros `scrum205` leí los nombres de sus casos, no el cuerpo.
+
+## Mis errores
+
+- Medí el contexto tarde: 255.865 cuando el aviso era a 200.000. Me lo comieron las lecturas del PASO 0.
+- Al escribir el `where` en la consulta dejé `whereDelReintento` huérfano y `scrum1185` volvió a caer; lo
+  cazó la tanda dirigida, no yo.
+- Di por buena la lista de tres rojos de mi antecesora hasta leer el obligatorio: eran siete.

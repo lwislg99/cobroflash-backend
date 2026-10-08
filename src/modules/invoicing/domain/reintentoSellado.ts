@@ -83,6 +83,13 @@ export const SUELO_DE_LA_FECHA_DE_CORTE = '2026-10-07T23:43:18Z';
 export const TOPE_DE_FALLOS = 5;
 export const ESPERA_INICIAL_S = 60;
 
+/**
+ * La acción del registro de auditoría que esta pasada CUENTA como un sellado fallido. La escribe
+ * `sellarTrasEmision` (`selladoEstado.ts`); aquí sólo se lee. Si allí cambiara de nombre, el
+ * contador del tope se quedaría a cero sin avisar: por eso el test exige que sean la misma.
+ */
+export const ACCION_DEL_SELLADO_FALLIDO = 'sellado_fallido';
+
 /** Cuántas candidatas mira una pasada. Si las hay todas, el parte lo dice (`truncado`). */
 export const LOTE_DEL_REINTENTO = 500;
 
@@ -93,11 +100,14 @@ export function fechaDeCorte(valor: string | null = REINTENTO_ACTIVO_DESDE): Dec
   if (valor === null) return { desde: null, motivo: 'sin fecha de corte: el reintento no está activado' };
   // Se exige el instante completo en UTC. `new Date('2026-10-09')` también parsea, y una fecha sin
   // hora es justo la clase de valor que se escribe a ojo.
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(valor)) {
-    return { desde: null, motivo: `fecha de corte ilegible (${valor}): se espera un instante ISO en UTC` };
-  }
+  // Sin expresión regular: el valor tiene que ser EXACTAMENTE lo que el propio instante escribe de
+  // sí mismo (`toISOString`), con o sin los milisegundos a cero.
   const desde = new Date(valor);
   if (Number.isNaN(desde.getTime())) return { desde: null, motivo: `fecha de corte ilegible (${valor})` };
+  const canonico = desde.toISOString();
+  if (valor !== canonico && valor !== canonico.replace('.000Z', 'Z')) {
+    return { desde: null, motivo: `fecha de corte ilegible (${valor}): se espera un instante ISO en UTC` };
+  }
   if (desde.getTime() < new Date(SUELO_DE_LA_FECHA_DE_CORTE).getTime()) {
     return { desde: null, motivo: `fecha de corte (${valor}) anterior al propio reintento (${SUELO_DE_LA_FECHA_DE_CORTE})` };
   }
@@ -118,11 +128,6 @@ export interface FilaDelReintento {
  */
 export function entraEnElReintento(f: FilaDelReintento, desde: Date): boolean {
   return f.vfEstado === SELLADO_PENDIENTE && !f.vfHash && f.createdAt.getTime() >= desde.getTime();
-}
-
-/** El `where` de la selección. Exportado para que el test lo lea tal cual lo usa la pasada. */
-export function whereDelReintento(desde: Date) {
-  return { vfEstado: SELLADO_PENDIENTE, vfHash: null, createdAt: { gte: desde } };
 }
 
 /** Espera, en segundos, tras el fallo número `fallos` (1 → 60, 2 → 120, 3 → 240…). */
@@ -200,14 +205,15 @@ export async function reintentarSelladosPendientes(opciones: {
   const ahora = opciones.ahora ?? new Date();
   const corte = opciones.corte ?? fechaDeCorte();
   const prisma = opciones.prisma ?? defaultPrisma;
-  const sellar = opciones.sellar ?? sellarTrasEmision;
 
   if (corte.desde === null) return parteVacio(false, corte.motivo, null);
   const desde = corte.desde;
   const parte = parteVacio(true, null, desde);
 
   const filas: any[] = await prisma.invoice.findMany({
-    where: whereDelReintento(desde),
+    // Escrito aquí, a la vista, y no traído de una función: un `where` que llega de fuera es opaco
+    // para quien censa qué filtra cada consulta de facturas. El test lo lee de esta misma llamada.
+    where: { vfEstado: SELLADO_PENDIENTE, vfHash: null, createdAt: { gte: desde } },
     orderBy: { id: 'asc' },
     take: LOTE_DEL_REINTENTO,
     select: {
@@ -233,7 +239,7 @@ export async function reintentarSelladosPendientes(opciones: {
     const nombrada: FacturaNombrada = { id: f.id, numero: f.number, merchantId: f.merchantId };
     try {
       const anotados: Array<{ createdAt: Date }> = await prisma.auditLog.findMany({
-        where: { merchantId: f.merchantId, entityType: 'invoice', entityId: f.id, action: 'sellado_fallido' },
+        where: { merchantId: f.merchantId, entityType: 'invoice', entityId: f.id, action: ACCION_DEL_SELLADO_FALLIDO },
         select: { createdAt: true },
       });
       const ultimo = anotados.reduce<Date | null>(
@@ -242,11 +248,12 @@ export async function reintentarSelladosPendientes(opciones: {
       if (turno === 'agotada') { parte.agotadas.push({ ...nombrada, fallos: anotados.length }); continue; }
       if (turno === 'espera') { parte.enEspera += 1; continue; }
 
-      const r = await sellar(
-        { id: f.id, number: f.number, total: f.total, createdAt: f.createdAt, merchantId: f.merchantId, type: f.type },
-        f.merchant ?? {},
-        prisma,
-      );
+      const factura = { id: f.id, number: f.number, total: f.total, createdAt: f.createdAt, merchantId: f.merchantId, type: f.type };
+      // La puerta se llama POR SU NOMBRE cuando no hay doble: quien censa a los llamadores de
+      // `sellarTrasEmision` los busca por ese nombre, y un alias lo dejaría sin ver a éste.
+      const r = opciones.sellar
+        ? await opciones.sellar(factura, f.merchant ?? {}, prisma)
+        : await sellarTrasEmision(factura, f.merchant ?? {}, prisma);
       if (r.estado === SELLADO_HECHO) parte.selladas.push(nombrada);
       else if (r.estado === SELLADO_NO_APLICA) parte.noAplica.push(nombrada);
       else parte.siguenPendientes.push(nombrada);
