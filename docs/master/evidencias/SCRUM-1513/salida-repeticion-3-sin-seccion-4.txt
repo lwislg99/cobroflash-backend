@@ -1,0 +1,43 @@
+== 0 · CON QUIEN HABLO ==
+  PostgreSQL 16.13, compiled by Visual C++ build 1944, 64-bit
+  base=yaqu_tope_1513_test · host=127.0.0.1:63914 · escucha en: localhost · pid del servidor para esta conexion=11592 · aislamiento por defecto=read committed · max_connections=100
+  esquema: esquema-arbol.sql · 35482 caracteres · sha256 f72cfecc7ca035f3 · tablas creadas: 33 · whatsapp_messages: 1 · una tabla inventada: 0 (control)
+  app cargada de dist\app.js · NODE_ENV=development · tope por comercio y dia leido en dist = 100 · pool de Prisma = por defecto · latencia del transporte doblado = 0 ms
+
+== 1 · CONTROLES ==
+cuadra Z0 CERO: 5 entrantes con la firma MALA                                     avisos=  0 plantHTTP=  0 filasPG=  0 cuentanHoy=  0 bloq=  0/  0 preguntas=  0 resp=-1..-1 antes1aFila=  0 http=401x5
+cuadra Z1 CERO: entrante valido de un numero que no es cliente de nadie           avisos=  0 plantHTTP=  0 filasPG=  0 cuentanHoy=  0 bloq=  0/  0 preguntas=  0 resp=-1..-1 antes1aFila=  0 http=200x1
+cuadra Z2 CERO: cliente SIN albaran reciente escribe 1 vez                        avisos=  0 plantHTTP=  0 filasPG=  0 cuentanHoy=  0 bloq=  0/  0 preguntas=  0 resp=-1..-1 antes1aFila=  0 http=200x1
+cuadra P1 POSITIVO: cliente con albaran escribe 1 vez                             avisos=  1 plantHTTP=  1 filasPG=  1 cuentanHoy=  1 bloq=  0/  0 preguntas=  1 resp=0..0 antes1aFila=  1 http=200x1
+       conexiones abiertas a la base en el servidor: 3 (la mia y 2 del cliente de Prisma)
+cuadra P2 POSITIVO del tope: 100 filas sembradas POR SQL y 1 mensaje              avisos=  1 plantHTTP=  0 filasPG=  0 cuentanHoy=100 bloq=  1/  1 preguntas=  1 resp=100..100 antes1aFila=  1 http=200x1
+cuadra P3 BORDE del tope: 99 filas sembradas POR SQL y 1 mensaje                  avisos=  1 plantHTTP=  1 filasPG=  1 cuentanHoy=100 bloq=  0/  0 preguntas=  1 resp=99..99 antes1aFila=  1 http=200x1
+
+== 2 · EL TOPE (100) CON 120 MENSAJES DE UN CLIENTE CON ALBARAN, ventana del profesional CERRADA ==
+cuadra L1 120 peticiones de 1 mensaje, SEGUIDAS (cada una espera a la anterior)   avisos=120 plantHTTP=100 filasPG=100 cuentanHoy=100 bloq= 20/ 20 preguntas=120 resp=0..100 antes1aFila=  1 http=200x120
+OBSERV L2 UNA sola peticion con 120 mensajes dentro (lote)                        avisos=120 plantHTTP=116 filasPG=116 cuentanHoy=116 bloq=  4/  4 preguntas=120 resp=0..116 antes1aFila=115 http=200x1
+       PREDICCION escrita antes: 120 plantillas y 0 bloqueos · SALIO: 116 plantillas y 4 bloqueos · EL TOPE NO AGUANTA en Postgres (sobran 16) · la prediccion NO se cumple
+       despues del lote, 1 mensaje mas: plantillas en total = 116 · bloqueos = 5 · la ultima pregunta del tope contesto 116
+OBSERV L3 120 peticiones de 1 mensaje, lanzadas A LA VEZ                          avisos=120 plantHTTP=120 filasPG=120 cuentanHoy=120 bloq=  0/  0 preguntas=120 resp=0..95 antes1aFila=  1 http=200x120
+       conexiones del cliente de Prisma abiertas en el servidor tras L3: 13
+       sin prediccion de cifra · SALIO: 120 plantillas y 0 bloqueos · EL TOPE NO AGUANTA (sobran 20)
+
+== 3 · EL CASO MAS PEQUENO: al borde del tope, un lote corto ==
+OBSERV L4 99 ya enviadas hoy y UNA peticion con 2 mensajes                        avisos=  2 plantHTTP=  2 filasPG=  2 cuentanHoy=101 bloq=  0/  0 preguntas=  2 resp=99..99 antes1aFila=  2 http=200x1
+       cabia 1 · SALIERON 2 · filas que cuentan hoy = 101 (tope 100)
+OBSERV L5 99 ya enviadas hoy y UNA peticion con 5 mensajes                        avisos=  5 plantHTTP=  1 filasPG=  1 cuentanHoy=100 bloq=  4/  4 preguntas=  5 resp=99..100 antes1aFila=  1 http=200x1
+       cabia 1 · SALIERON 1 · filas que cuentan hoy = 100 (tope 100)
+
+== operaciones de Prisma que llegaron a Postgres en toda la corrida (por la app) ==
+  Customer.findMany x1488
+  Merchant.findUnique x371
+  Quote.findMany x372
+  WhatsAppMessage.count x371
+  WhatsAppMessage.create x742
+  WhatsAppMessage.createMany x372
+  WhatsAppMessage.findFirst x372
+
+CASOS: 11 · controles con esperado: 7 · NO cuadran: 0 · operaciones de Prisma observadas: 4088
+POSITIVOS OBLIGATORIOS: P1 conto 1 aviso y 1 fila en Postgres · P2 vio 1 bloqueo con el tope contestando 100 · L1 vio 20 bloqueos · conexiones de Prisma en el servidor: 2 (los cuatro > 0).
+servidor apagado y carpeta de datos borrada: true
+EXIT=0
