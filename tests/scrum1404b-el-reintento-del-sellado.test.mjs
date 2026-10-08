@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import ts from 'typescript';
 
 const requiere = createRequire(import.meta.url);
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -123,6 +124,50 @@ test('SCRUM-1404 · ① nadie en src/ llama todavía al reintento: se activa en 
   assert.ok(importan('selladoEstado').length >= 5, 'el barrido ve importadores de selladoEstado');
   // 🔴 El día que esto cambie es el PR de activación: fecha + cron + respuesta, los tres a la vez.
   assert.deepEqual(importan('reintentoSellado'), []);
+});
+
+test('SCRUM-1404 · ① la excepción está DECLARADA y sigue montada: el módulo existe, este test lo carga y sus tres piezas constan', () => {
+  // Un módulo sin consumidor a propósito es una excepción, y una excepción sin prueba de que se
+  // sigue montando es una promesa. Aquí se mira por AST, no por texto: que el fichero exporta las
+  // piezas que la lista nombra, que ESTE test carga el módulo compilado, y que la declaración dice
+  // quién la retira. La retira el PR de activación de SCRUM-1404, que mueve las claves a
+  // `retiradas` (lo exige `scrum1185` en cuanto alguien de src/ lo importe).
+  const MODULO = 'src/modules/invoicing/domain/reintentoSellado.ts';
+  const fuente = fs.readFileSync(path.join(RAIZ, MODULO), 'utf8');
+  const arbol = ts.createSourceFile(MODULO, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const exportadas = new Set();
+  ts.forEachChild(arbol, (n) => {
+    const exporta = (ts.getModifiers(n) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+    if (exporta && ts.isFunctionDeclaration(n) && n.name) exportadas.add(n.name.text);
+  });
+  assert.ok(exportadas.size >= 5, `población: ${exportadas.size} funciones exportadas en ${MODULO}`);
+
+  // Este mismo fichero carga el módulo compilado: se busca la llamada, no la cadena.
+  const yo = ts.createSourceFile('yo.mjs', fs.readFileSync(import.meta.filename, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const cargas = [];
+  const ver = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'requiere'
+      && n.arguments.length === 1 && ts.isStringLiteral(n.arguments[0])) cargas.push(n.arguments[0].text);
+    ts.forEachChild(n, ver);
+  };
+  ver(yo);
+  assert.ok(cargas.length >= 2, `población: ${cargas.length} módulos cargados por este test`);
+  assert.ok(cargas.includes('../dist/modules/invoicing/domain/reintentoSellado.js'), `este test carga el módulo: ${cargas.join(', ')}`);
+
+  const DECL = JSON.parse(fs.readFileSync(path.join(RAIZ, 'scripts/_sin-consumir-declarados.json'), 'utf8'));
+  assert.ok(DECL.declaradas.length > 50, `población: ${DECL.declaradas.length} piezas declaradas`);
+  const mias = DECL.declaradas.filter((d) => d.clave.startsWith(`export · ${MODULO}::`));
+  const nombres = mias.map((d) => d.clave.split('::')[1]).sort();
+  assert.deepEqual(nombres, ['conclusionDelReintento', 'reintentarSelladosPendientes', 'resumenDelReintento']);
+  for (const d of mias) {
+    assert.ok(exportadas.has(d.clave.split('::')[1]), `${d.clave} nombra una función que el módulo exporta`);
+    assert.equal(d.ticket, 'SCRUM-1404');
+    assert.equal(d.carril, 'J1');
+    assert.match(d.motivo ?? '', /SIN CONSUMIDOR A PROPOSITO/);
+  }
+  const principal = mias.find((d) => d.clave.endsWith('::reintentarSelladosPendientes'));
+  assert.match(principal.motivo, /QUIEN LA RETIRA: el PR-2 de SCRUM-1404/);
+  assert.match(principal.motivo, /src\/core\/cron\/cron\.ts/);
 });
 
 // ───────────────────────────────── ② LA FECHA ───────────────────────────────────────────────
