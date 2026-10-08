@@ -1,0 +1,287 @@
+POBLACION: 78 rutas en TECNICO_ALLOWED · 33 modelos doblados · modelos de documento: quote, invoice, albaran, parteTrabajo, job
+
+== NO-DISTINGUE · 13
+GET    /admin/metrics/inicio  [invoice=NO-DISTINGUE · quote=NO-DISTINGUE]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: invoice.count {"merchantId":1,"status":"pending"} | quote.count {"merchantId":1,"status":"sent"} | quote.findMany {"merchantId":1}
+GET    /admin/metrics/actividad-equipo  [quote=NO-DISTINGUE]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: quote.findMany {"merchantId":1,"status":{"not":"draft"},"createdAt":{"gte":"2026-09-30T23:00:00.000Z"}}
+GET    /admin/quotes/:id/pdf  [quote=NO-DISTINGUE]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: quote.findFirst {"id":102,"merchantId":1}
+PUT    /admin/quotes/:id/notes  [quote=NO-DISTINGUE]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: quote.updateMany {"id":102,"merchantId":1}
+POST   /admin/quotes/:id/accept  [quote=NO-DISTINGUE · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: quote.findFirst {"id":102,"merchantId":1}
+POST   /admin/quotes/:id/reject  [quote=NO-DISTINGUE · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 409
+         técnico: quote.findFirst {"id":102,"merchantId":1}
+         admin:   quote.findFirst {"id":102,"merchantId":1} | job.update {"id":77}
+POST   /admin/quotes/:id/send-whatsapp  [quote=NO-DISTINGUE]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: quote.findUnique {"id":102}
+POST   /admin/quotes/:id/send-email  [quote=NO-DISTINGUE]
+         A adm 404 tec 404 · B adm 400 tec 400
+         técnico: quote.findFirst {"id":102,"merchantId":1}
+GET    /admin/jobs/:id/ics  [job=NO-DISTINGUE]
+         A adm 404 tec 404 · B adm 409 tec 409
+         técnico: job.findFirst {"id":102,"merchantId":1}
+GET    /admin/albaranes/pendientes-facturar  [job=NO-DISTINGUE]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"tipoOperacion":{"not":"TRABAJO_UNICO"}}
+GET    /admin/albaranes/presupuestos  [quote=NO-DISTINGUE · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: quote.findMany {"merchantId":1,"OR":[{"customer":{"name":{"contains":"obra","mode":"insensitive"}}},{"customer":{"phone":{"contains":"obra","mode":"insensitive"}}}]} | job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]}
+         admin:   quote.findMany {"merchantId":1,"OR":[{"customer":{"name":{"contains":"obra","mode":"insensitive"}}},{"customer":{"phone":{"contains":"obra","mode":"insensitive"}}}]}
+GET    /admin/albaranes/consolidables  [job=NO-DISTINGUE]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"customerId":5}
+GET    /admin/products/frequent-concepts  [quote=NO-DISTINGUE]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: quote.findMany {"merchantId":1,"createdAt":{"gte":"2026-07-10T08:15:49.759Z"}}
+
+== RECORTA · 33
+GET    /admin/precarga  [job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"AND":[{"OR":[{"scheduledAt":{"gte":"2026-10-07T23:00:00.000Z","lt":"2026-10-09T23:00:00.000Z"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"2026-10-01T08:15:49.319Z"}}]},{"OR":[{"assignedUserId":11},{"operarioId":11}]}]}
+         admin:   job.findMany {"merchantId":1,"OR":[{"scheduledAt":{"gte":"2026-10-07T23:00:00.000Z","lt":"2026-10-09T23:00:00.000Z"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"2026-10-01T08:15:49.317Z"}}]}
+GET    /admin/albaranes  [albaran=RECORTA · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | albaran.findMany {"merchantId":1,"jobId":{"in":[]}} | job.findMany {"merchantId":1,"id":{"in":[]}}
+         admin:   albaran.findMany {"merchantId":1} | job.findMany {"merchantId":1,"id":{"in":[]}}
+GET    /admin/customers  [job=RECORTA · invoice=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.groupBy {"merchantId":1,"status":{"in":["terminado","cerrado"]},"scheduledAt":{"not":null},"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]}
+         admin:   job.groupBy {"merchantId":1,"status":{"in":["terminado","cerrado"]},"scheduledAt":{"not":null}} | invoice.groupBy {"merchantId":1,"status":"pending"}
+GET    /admin/customers/:id/detail  [quote=RECORTA · invoice=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | quote.findMany {"merchantId":1,"quoteNumber":{"not":null},"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}}]} | quote.findMany {"customerId":102,"merchantId":1,"AND":[{"OR":[{"teamMemberId":11},{"asignados":{"some":{"tea
+         admin:   quote.findMany {"customerId":102,"merchantId":1} | invoice.findMany {"customerId":102,"merchantId":1} | quote.count {"customerId":102,"merchantId":1} | quote.count {"customerId":102,"merchantId":1,"status":"accepted"} | invoice.aggregate {"customerId":102,"merchantId":1} | invoice.aggregate {"customerId":102,"merchantId":1,"status":"paid"} | invoice.groupBy {"merchantId":1,"status":"pending","customerId":{"in":[102]}}
+GET    /admin/customers/:id/historial  [job=RECORTA · parteTrabajo=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}}]} | job.findFirst {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}],"status":"agendado","scheduledAt":{"gte":"2026-10-08T08:15:49.435Z"}}
+         admin:   job.findMany {"merchantId":1,"customerId":102} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}},{"jobId":null,"customerId":102}]} | job.findFirst {"merchantId":1,"customerId":102,"status":"agendado","scheduledAt":{"gte":"2026-10-08T08:15:49.435Z"}}
+GET    /admin/quotes  [quote=RECORTA · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | quote.findMany {"merchantId":1,"quoteNumber":{"not":null},"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}}]} | quote.findMany {"merchantId":1,"AND":[{"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}},{"quoteNumber":{"in":[]}}]}]}
+         admin:   quote.findMany {"merchantId":1}
+GET    /admin/quotes/:id  [quote=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 500 tec 500
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | quote.findMany {"merchantId":1,"quoteNumber":{"not":null},"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}}]} | quote.findFirst {"id":102,"merchantId":1,"AND":[{"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}},{"quoteNumber":{"in":[]}}]}]}
+         admin:   quote.findFirst {"id":102,"merchantId":1}
+GET    /admin/invoices  [invoice=RECORTA · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | invoice.findMany {"merchantId":1,"type":{"not":"JUST"},"AND":[{"OR":[{"quote":{"teamMemberId":11}},{"asignados":{"some":{"teamMemberId":11}}},{"quoteId":{"in":[]}},{"quote":{"jobId":{"in":[]}}},{"id":{"in":[]}},{"rectifies":{"OR":[{"quote":{"teamMemberId":11}},{"asignados":{"some":{"teamMemberId":11}}},{"quoteId":{"in":[]}},{"quote":{"jobId":{"in":[]}}},{"id":{"in":[]}}]}}]}]}
+         admin:   invoice.findMany {"merchantId":1,"type":{"not":"JUST"}}
+GET    /admin/invoices/:id  [invoice=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | invoice.findFirst {"id":102,"merchantId":1,"AND":[{"OR":[{"quote":{"teamMemberId":11}},{"asignados":{"some":{"teamMemberId":11}}},{"quoteId":{"in":[]}},{"quote":{"jobId":{"in":[]}}},{"id":{"in":[]}},{"rectifies":{"OR":[{"quote":{"teamMemberId":11}},{"asignados":{"some":{"teamMemberId":11}}},{"quoteId":{"in":[]}},{"quote":{"jobId":{"in":[]}}},{"id":{"in":[]}}]}}]}]}
+         admin:   invoice.findFirst {"id":102,"merchantId":1}
+GET    /admin/invoices/:id/pdf  [invoice=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 200
+         técnico: invoice.findFirst {"id":102,"merchantId":1}
+GET    /admin/jobs  [job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]}
+         admin:   job.findMany {"merchantId":1}
+GET    /admin/jobs/:id  [job=RECORTA · quote=RECORTA · albaran=RECORTA]
+         A adm 404 tec 404 · B adm 500 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: job.findFirst {"id":102,"merchantId":1}
+PATCH  /admin/jobs/:id  [job=RECORTA · quote=RECORTA · albaran=RECORTA]
+         A adm 404 tec 404 · B adm 500 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: job.findFirst {"id":102,"merchantId":1}
+GET    /admin/jobs/:id/gastos  [job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: job.findFirst {"id":102,"merchantId":1}
+POST   /admin/jobs/:id/albaranes  [job=RECORTA · albaran=RECORTA]
+         A adm 404 tec 404 · B adm 201 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: job.findFirst {"id":102,"merchantId":1}
+PATCH  /admin/albaranes/:id  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+GET    /admin/albaranes/:id  [albaran=RECORTA · job=RECORTA · quote=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/emitir  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/firmar  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 400 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+GET    /admin/partes  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | parteTrabajo.findMany {"merchantId":1,"jobId":{"in":[]}}
+         admin:   parteTrabajo.findMany {"merchantId":1}
+POST   /admin/partes  [parteTrabajo=RECORTA]
+         A adm 201 tec 400 · B adm 201 tec 400
+         técnico: —
+         admin:   parteTrabajo.findMany {"merchantId":1} | parteTrabajo.create null
+GET    /admin/partes/:id  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: parteTrabajo.findFirst {"id":102,"merchantId":1}
+PATCH  /admin/partes/:id  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: parteTrabajo.findFirst {"id":102,"merchantId":1}
+POST   /admin/partes/:id/firmar  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: parteTrabajo.findFirst {"id":102,"merchantId":1}
+POST   /admin/partes/:id/firmar-tecnico  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: parteTrabajo.findFirst {"id":102,"merchantId":1}
+POST   /admin/partes/:id/dictado  [parteTrabajo=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: parteTrabajo.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/duplicar  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 201 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+GET    /admin/albaranes/:id/pdf  [albaran=RECORTA · job=RECORTA · quote=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/fotos  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 415 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+GET    /admin/albaranes/:id/fotos  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 200 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/enviar-whatsapp  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+POST   /admin/albaranes/:id/enviar-para-firmar  [albaran=RECORTA · job=RECORTA]
+         A adm 404 tec 404 · B adm 409 tec 404  (al técnico le NIEGA el ajeno)
+         técnico: albaran.findFirst {"id":102,"merchantId":1}
+GET    /admin/search  [quote=RECORTA · invoice=RECORTA · job=RECORTA]
+         A adm 200 tec 200 · B adm 200 tec 200
+         técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | quote.findMany {"merchantId":1,"quoteNumber":{"not":null},"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}}]} | quote.findMany {"merchantId":1,"AND":[{"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},
+         admin:   quote.findMany {"merchantId":1,"OR":[{"customer":{"name":{"contains":"obra","mode":"insensitive"}}}]} | invoice.findMany {"merchantId":1,"OR":[{"number":{"contains":"obra","mode":"insensitive"}},{"customer":{"name":{"contains":"obra","mode":"insensitive"}}}]}
+
+== SIN-DOCUMENTO · 17
+GET    /admin/merchant
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: merchant
+GET    /admin/customers/:id
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: customer
+PUT    /admin/customers/:id
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: customer
+PATCH  /admin/customers/:id
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: customer
+GET    /admin/customers/duplicados
+         A adm 200 tec 200 · B adm 200 tec 200
+GET    /admin/customers/:id/sites
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: customer, customerSite
+PUT    /admin/customers/:id/sites/:siteId
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: customerSite
+GET    /admin/templates
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: quoteTemplate
+GET    /admin/albaranes/serie
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: merchant
+GET    /admin/products
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: product
+GET    /admin/products/:id
+         A adm 404 tec 404 · B adm 200 tec 200
+         consulta: product
+GET    /admin/products/autocomplete
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: product
+GET    /admin/products/ping
+         A adm 200 tec 200 · B adm 200 tec 200
+GET    /admin/providers/ping
+         A adm 200 tec 200 · B adm 200 tec 200
+GET    /admin/quote-requests
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: quoteRequest
+GET    /admin/bot/handoffs
+         A adm 200 tec 200 · B adm 200 tec 200
+         consulta: botSession
+GET    /admin/expenses/categories
+         A adm 200 tec 200 · B adm 200 tec 200
+
+== NO-LLEGO · 15
+GET    /admin/me
+         A adm 401 tec 401 · B adm 401 tec 401
+POST   /admin/jobs
+         A adm 400 tec 400 · B adm 400 tec 400
+POST   /admin/entorno
+         A adm 400 tec 400 · B adm 400 tec 400
+POST   /admin/soporte
+         A adm 400 tec 400 · B adm 400 tec 400
+POST   /admin/customers
+         A adm 400 tec 400 · B adm 400 tec 400
+GET    /admin/customers/:id/portal-url
+         A adm 404 tec 404 · B adm 404 tec 404
+         consulta: customer
+POST   /admin/customers/:id/sites
+         A adm 400 tec 400 · B adm 400 tec 400
+DELETE /admin/customers/:id/sites/:siteId
+         A adm 404 tec 404 · B adm 404 tec 404
+         consulta: customerSite
+PATCH  /admin/quote-requests/:id
+         A adm 400 tec 400 · B adm 400 tec 400
+GET    /admin/attachments/:id
+         A adm 404 tec 404 · B adm 404 tec 404
+         consulta: attachment
+POST   /admin/ai/suggest-quote
+         A adm 503 tec 503 · B adm 503 tec 503
+POST   /admin/ai/quote-message
+         A adm 503 tec 503 · B adm 503 tec 503
+POST   /admin/ai/suggest-albaran-lines
+         A adm 404 tec 404 · B adm 404 tec 404
+         consulta: merchant
+POST   /admin/expenses
+         A adm 400 tec 400 · B adm 400 tec 400
+POST   /admin/expenses/leer-ticket
+         A adm 503 tec 503 · B adm 503 tec 503
+
+== CIEGO · 0
+
+-- POR MODELO: rutas del Técnico que consultan ese modelo SIN distinguir el rol
+  quote         10 de 18 que lo consultan
+      GET    /admin/metrics/inicio
+      GET    /admin/metrics/actividad-equipo
+      GET    /admin/quotes/:id/pdf
+      PUT    /admin/quotes/:id/notes
+      POST   /admin/quotes/:id/accept
+      POST   /admin/quotes/:id/reject
+      POST   /admin/quotes/:id/send-whatsapp
+      POST   /admin/quotes/:id/send-email
+      GET    /admin/albaranes/presupuestos
+      GET    /admin/products/frequent-concepts
+  invoice       1 de 7 que lo consultan
+      GET    /admin/metrics/inicio
+  albaran       0 de 14 que lo consultan
+  parteTrabajo  0 de 8 que lo consultan
+  job           3 de 38 que lo consultan
+      GET    /admin/jobs/:id/ics
+      GET    /admin/albaranes/pendientes-facturar
+      GET    /admin/albaranes/consolidables
+
+-- CONTROLES SEMBRADOS (SCRUM-1516: rutas de mentira que monta este fichero; no existen en el producto ni cuentan en los totales)
+  sembrada (la misma consulta para los dos roles      )  GET …/no-distingue → NO-DISTINGUE  (tiene que ser NO-DISTINGUE)
+  sembrada (el rol cambia el where (pasada A)        )  GET …/recorta-en-la-consulta → RECORTA  (tiene que ser RECORTA)
+  sembrada (al técnico se le niega el ajeno (pasada B))  GET …/:id/recorta-despues-de-leer → RECORTA  (tiene que ser RECORTA)
+  CERO     (una sembrada que no he montado)  → no figura
+  SEMBRADAS medidas 3 de 3 · coladas en la población 0 · filas del producto 78 de 78
+-- DEL ÁRBOL (rutas del producto: lo que digan puede cambiar con un arreglo)
+  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/jobs → RECORTA
+  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/jobs/:id → RECORTA
+  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/albaranes → RECORTA
+  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/albaranes/:id → RECORTA
+  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/partes → RECORTA
+  testigo, no se exige (era NO-DISTINGUE en yaqu.app, J4g / J2i)   GET /admin/quotes → RECORTA
+  testigo, no se exige (era NO-DISTINGUE en yaqu.app, J4g / J2i)   GET /admin/quotes/:id → RECORTA
+  testigo, no se exige (era NO-DISTINGUE en yaqu.app, J4g / J2i)   GET /admin/invoices → RECORTA
+  testigo, no se exige (era NO-DISTINGUE en yaqu.app, J4g / J2i)   GET /admin/metrics/inicio → NO-DISTINGUE
+¿los controles salen como se sabe que son?  true  (los sembrados)
+¿la conducta correcta del árbol sigue siéndolo?   true
+TOTALES: NO-DISTINGUE 13 · RECORTA 33 · SIN-DOCUMENTO 17 · NO-LLEGO 15 · CIEGO 0 · suma 78
+EXIT=0
