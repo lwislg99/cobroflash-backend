@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { requestMagicLink, verifyMagicLink, registerMerchant, revokeSession } from '../../domain/auth.service';
+import { requestMagicLink, verifyMagicLink, revokeSession } from '../../domain/auth.service';
 import { setCookie, clearCookie } from '../../../../core/http/authMiddleware';
 import { rateLimit } from '../../../../core/http/rateLimit'; // A11.2 (S3)
 import { prisma } from '../../../../core/db/prisma';
@@ -10,7 +10,6 @@ const router = Router();
 // A11.2 (S3): rate-limit del magic link — 5 envíos/15min por IP+email y
 // 30 verificaciones/15min por IP (el token en sí ya es aleatorio y de un solo uso).
 const loginLimiter    = rateLimit({ scope: 'login',    max: 5,  windowMs: 15 * 60_000, withEmail: true });
-const registerLimiter = rateLimit({ scope: 'register', max: 5,  windowMs: 15 * 60_000, withEmail: true });
 const verifyLimiter   = rateLimit({ scope: 'verify',   max: 30, windowMs: 15 * 60_000 });
 
 // POST /auth/login  { email }
@@ -29,34 +28,24 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-// POST /auth/register  { name, email, country? }
-router.post('/register', registerLimiter, async (req, res) => {
-  const name  = String(req.body?.name  || '').trim();
-  const email = String(req.body?.email || '').toLowerCase().trim();
-  const country = String(req.body?.country || 'ES').trim();
-  const ref = String(req.body?.ref || '').trim();
-  // V0-3: atribución de adquisición (UTM "source/medium/campaign" o "ref:CODIGO")
-  const source = String(req.body?.source || '').trim().slice(0, 200);
-
-  if (!name)  return res.status(400).json({ error: 'name_required' });
-  if (!email || !email.includes('@')) return res.status(400).json({ error: 'invalid_email' });
-
-  try {
-    await registerMerchant({ name, email, country, ref: ref || undefined, source: source || undefined });
-    return res.json({ ok: true, message: 'Cuenta creada. Revisa tu email para acceder.' });
-  } catch (err) {
-    // SCRUM-94: el email ya es de un operario (TeamMember activo/invitado). Mensaje CLARO pero
-    // genérico — no revela la empresa ni confirma datos concretos. (Nota: esto hace que un email de
-    // operario sea distinguible de uno nuevo; es el coste de la "opción 1: rechazar" del ticket.)
-    if ((err as { code?: string })?.code === 'email_belongs_to_team') {
-      return res.status(409).json({
-        error: 'email_belongs_to_team',
-        message: 'No podemos crear una cuenta con este email. Si trabajas con una empresa que ya usa YaQu, pide a quien la gestiona que te dé acceso a ti.',
-      });
-    }
-    console.error('[POST /auth/register]', err);
-    return res.status(500).json({ error: 'internal_error' });
-  }
+// POST /auth/register — CERRADA (SCRUM-1515, paso ②; orden del fundador del 8-oct-2026).
+// Ya no da de alta a nadie: los merchants los crea el equipo con
+// `src/modules/auth/app/cli/altaDeMerchant.ts`, que llama al mismo `registerMerchant`.
+//
+// No lee el cuerpo, no toca la base y no manda ningún correo: contesta SIEMPRE lo mismo, sea
+// quien sea quien llame. Por eso tampoco lleva limitador: su 429 trae otra frase («espera unos
+// minutos y vuelve a intentarlo»), que aquí sería falsa.
+//
+// La frase es la FIRMADA por el fundador en SCRUM-1515 c.18971 (regla 39) y se copia exacta.
+// Llega a la pantalla con la forma que ya tenía el 409 de `email_belongs_to_team` (SCRUM-94):
+// `public/register.html` pinta `data.message` lo primero. ⚠️ `login` y `verify`, aquí al lado, no
+// se han tocado: quien ya tiene cuenta entra igual
+// (`tests/scrum1515-nuestra-puerta-de-alta.test.mjs`).
+router.post('/register', (_req, res) => {
+  return res.status(409).json({
+    error: 'registration_closed',
+    message: 'Ahora mismo no estamos aceptando altas nuevas. Si quieres probar YaQu, escríbenos y te damos acceso.',
+  });
 });
 
 // GET /auth/verify?token=xxx

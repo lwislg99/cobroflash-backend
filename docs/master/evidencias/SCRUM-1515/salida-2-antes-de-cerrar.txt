@@ -1,0 +1,18 @@
+BANCO: PGlite en 127.0.0.1:60235 · 33 tablas · test: tests/scrum1515-nuestra-puerta-de-alta.test.mjs
+[lifecycle] (sin RESEND) email a b331004f@test.local: ¡Bienvenido a YaQu! 🎉
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"lifecycle","to":"b331004f@test.local","asunto":"¡Bienvenido a YaQu! 🎉"}
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"b331004f@test.local","asunto":"Tu enlace de acceso a YaQu"}
+[lifecycle] (sin RESEND) email a 6cc01a8a@test.local: ¡Bienvenido a YaQu! 🎉
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"lifecycle","to":"6cc01a8a@test.local","asunto":"¡Bienvenido a YaQu! 🎉"}
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"6cc01a8a@test.local","asunto":"Tu enlace de acceso a YaQu"}
+✔ SCRUM-1515 · el merchant que crea nuestro guion nace igual que el de POST /auth/register (6276.9464ms)
+ℹ SCRUM-1515: 2 merchants por cada puerta · 121 campos comparados por valor (65 por fila) · por regla: id, createdAt, updatedAt, planExpiresAt y referredBy en B · colgadas de A: {"authSession":2,"emailMessage":2} · correos de A: 2
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6434.4049
+BANCO: merchants que quedan al terminar: 0 · EXIT=0

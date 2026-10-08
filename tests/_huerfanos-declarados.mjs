@@ -88,6 +88,19 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-1515 · el alta de merchants, cuando la ruta pública se cerró ─────────────────
+  {
+    modulo: 'src/modules/auth/domain/auth.service.ts',
+    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-10-08',
+    motivo: '🔴 NO es huérfano: es la ÚNICA puerta de alta que queda. `POST /auth/register` se cerró '
+      + 'por orden del fundador (SCRUM-1515) y ya no lo llama; lo llama el guion '
+      + '`src/modules/auth/app/cli/altaDeMerchant.ts`, que se lanza a mano con `node dist/…` y por '
+      + 'eso no cuelga de ninguna entrada viva (`src/index.ts`, `src/app.ts`, los scripts de '
+      + '`package.json`): el censo no lo ve. Que el guion lo llama y que el merchant nace bien lo '
+      + 'EJECUTA `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`. Sale de aquí el día que el '
+      + 'guion sea una entrada del censo o el alta vuelva a tener llamador en el servidor.',
+    exports: ['registerMerchant'],
+  },
   // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
   //
   // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
