@@ -18,6 +18,7 @@
 // ⚠️ GATEADO: crea y BORRA merchants. Sólo en el banco desechable de `LIBRO_PG_URL` (loopback y
 // base «*_test»); con un gate de staging puesto NO corre: no hace falta staging para medir esto.
 import './_staging-db.mjs'; // SCRUM-60: si hay gate de staging, que mande él (y este fichero se salta)
+import { URL_BANCO } from './_banco-libro.mjs'; // el segundo destino: justo detrás, y antes de cualquier `dist/`
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -26,7 +27,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { URL_BANCO } from './_banco-libro.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GUION = path.join(RAIZ, 'dist', 'modules', 'auth', 'app', 'cli', 'altaDeMerchant.js');
@@ -161,7 +161,6 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que el de POST
     clearTimeout(reloj);
     anotarEnlace(salida);
     const dicho = salida.split(/\r?\n/).filter((l) => l.startsWith('{"resultado"')).map((l) => JSON.parse(l));
-    if (dicho.some((d) => d.resultado === 'creado')) creados.add(limpio(campos.email));
     return { codigo, dicho, salida, errores };
   };
 
@@ -195,6 +194,8 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que el de POST
     // ── EL GUION ─────────────────────────────────────────────────────────────────────────────
     const gA = await porElGuion(A);
     assert.equal(gA.codigo, 0, `🔴 el guion tiene que dar de alta a A y salió ${gA.codigo}\n${gA.salida}\n${gA.errores}`);
+    assert.equal(gA.dicho.at(-1)?.resultado, 'creado', `🔴 el guion salió 0 sin DECIR qué creó
+${gA.salida}`);
     // POSITIVO: existe de verdad y se puede leer DESPUÉS, desde otro proceso, sin esperar a nada.
     const guionA = await foto(A.email);
     assert.deepEqual(
@@ -271,6 +272,13 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que el de POST
     console.log = logReal;
     for (const correo of [...creados].reverse()) {
       await borrar(correo).catch((e) => logReal(`⚠️ SCRUM-1515: no se pudo borrar ${correo}: ${e.message}`));
+    }
+    // Red de última instancia: lo que el guion haya creado SIN decirlo o con el correo sin limpiar
+    // (es lo que pasa cuando este test cae) no está en `creados`. Todo lo de esta pasada lleva el sello.
+    const sueltos = await prisma.merchant.findMany({ where: { email: { contains: sello, mode: 'insensitive' } }, select: { id: true } }).catch(() => []);
+    for (const m of sueltos) {
+      for (const tabla of colgadas) await prisma[tabla].deleteMany({ where: { merchantId: m.id } }).catch(() => {});
+      await prisma.merchant.delete({ where: { id: m.id } }).catch((e) => logReal(`⚠️ SCRUM-1515: no se pudo borrar el merchant ${m.id}: ${e.message}`));
     }
     server.close();
     buzon.servidor.close();

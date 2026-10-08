@@ -38,9 +38,13 @@ const env = { LIBRO_PG_URL: `postgresql://postgres:postgres@127.0.0.1:${puerto}/
 for (const k of ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'TMPDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA']) if (process.env[k]) env[k] = process.env[k];
 const hijo = spawn(process.execPath, ['--test', '--test-reporter=spec', ficheroTest], { cwd: RAIZ, env, stdio: 'inherit' });
 hijo.on('close', async (codigo) => {
+  process.exitCode = codigo ?? 2;
   const quedan = await db.query('SELECT count(*)::int AS n FROM "merchants"');
   console.log(`BANCO: merchants que quedan al terminar: ${quedan.rows[0].n} · EXIT=${codigo}`);
-  await servidor.stop();
-  await db.close();
+  // Un hijo cortado a media consulta puede dejar el banco sin poder cerrarse: el código de salida
+  // es el del test, se cierre o no.
+  setTimeout(() => process.exit(codigo ?? 2), 3000).unref();
+  await servidor.stop().catch(() => {});
+  await db.close().catch(() => {});
   process.exit(codigo ?? 2);
 });

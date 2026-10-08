@@ -19,7 +19,7 @@ const ARGUMENTOS = ['name', 'email', 'country', 'ref', 'source'] as const;
 type Argumento = (typeof ARGUMENTOS)[number];
 
 /** `--clave valor` → { clave: valor }. `null` si hay algo que no es uno de los cinco. */
-export function leerArgumentos(argv: string[]): Partial<Record<Argumento, string>> | null {
+function leerArgumentos(argv: string[]): Partial<Record<Argumento, string>> | null {
   const crudo: Partial<Record<Argumento, string>> = {};
   for (let i = 0; i < argv.length; i += 2) {
     const clave = argv[i].replace(/^--/, '') as Argumento;
@@ -38,7 +38,7 @@ export function leerArgumentos(argv: string[]): Partial<Record<Argumento, string
  * de la ruta lo leen `scrum334` y `scrum264`. Que las dos copias sigan diciendo lo mismo lo
  * comprueba `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`, con datos SUCIOS por las dos puertas.
  */
-export function camposDeAlta(crudo: Partial<Record<Argumento, string>>) {
+function camposDeAlta(crudo: Partial<Record<Argumento, string>>) {
   const name = String(crudo.name || '').trim();
   const email = String(crudo.email || '').toLowerCase().trim();
   const country = String(crudo.country || 'ES').trim();
