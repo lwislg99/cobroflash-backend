@@ -3,7 +3,7 @@ POBLACION: 191 rutas montadas bajo /admin · de ellas 78 de las 78 de TECNICO_AL
 
 == CRUZA · 2 (con :parámetro 0)
 GET    /admin/referral  → 200
-         sin comercio (7): merchant.findUnique {"referralCode":"NEGOCIO26"} | merchant.findUnique {"referralCode":"NEGOCIO26RKI"} | merchant.findUnique {"referralCode":"NEGOCIO26BCA"}
+         sin comercio (7): merchant.findUnique {"referralCode":"NEGOCIO26"} | merchant.findUnique {"referralCode":"NEGOCIO26K1X"} | merchant.findUnique {"referralCode":"NEGOCIO26VWK"}
 GET    /admin/billing/plans  → 200
          sin comercio (1): merchant.count {"plan":"founding","subscriptionStatus":"active"}
 

@@ -1,32 +1,34 @@
-CENSO: docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt · 37653 caracteres
-POBLACION: 14 corridas · 2 sin romper · 4 que quitan la siembra · 8 que ciegan el motor
+CENSO: docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt · 38689 caracteres
+POBLACION: 15 corridas · 2 sin romper · 4 que quitan la siembra · 9 que ciegan el motor
   ✓ sale 0 (se espera 0) · sin romper · eje del rol
-        ¿los controles salen como se sabe que son?  true  (los sembrados)  [20843 B de salida]
+        ¿los controles salen como se sabe que son?  true  (los sembrados)  [20739 B de salida]
   ✓ sale 0 (se espera 0) · sin romper · eje del comercio
         ¿el instrumento distingue las dos rutas del par?  true  (el par sembrado)  [14011 B de salida]
   ✓ sale 2 (se espera 2) · comercio · se quita el montaje de la sembrada que cruza
         CIEGO: 1 de 2 rutas sembradas no están montadas (POST /admin/__sembrada-por-el-censo/:id/cruza).  [156 B de salida]
   ✓ sale 2 (se espera 2) · rol · se quita el montaje de la sembrada que no distingue
-        CIEGO: 1 de 3 rutas sembradas no están montadas (GET /admin/__sembrada-por-el-censo/no-distingue  [158 B de salida]
+        CIEGO: 1 de 4 rutas sembradas no están montadas (GET /admin/__sembrada-por-el-censo/no-distingue  [158 B de salida]
   ✓ sale 2 (se espera 2) · comercio · la bandera --sin-sembrar
         CIEGO: 2 de 2 rutas sembradas no están montadas (POST /admin/__sembrada-por-el-censo/:id/cruza,   [220 B de salida]
   ✓ sale 2 (se espera 2) · rol · la bandera --sin-sembrar
-        CIEGO: 3 de 3 rutas sembradas no están montadas (GET /admin/__sembrada-por-el-censo/no-distingue  [297 B de salida]
+        CIEGO: 4 de 4 rutas sembradas no están montadas (GET /admin/__sembrada-por-el-censo/no-distingue  [356 B de salida]
   ✓ sale 1 (se espera 1) · comercio · alguien «arregla» la sembrada que cruza
         ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [14013 B de salida]
   ✓ sale 1 (se espera 1) · comercio · el doble da todo por atado (ve filtrar siempre)
         ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [13749 B de salida]
   ✓ sale 1 (se espera 1) · comercio · el doble no da nada por atado (ve cruzar siempre)
-        ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [31142 B de salida]
+        ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [30344 B de salida]
   ✓ sale 1 (se espera 1) · comercio · el veredicto no mira las consultas sueltas
         ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [14079 B de salida]
   ✓ sale 1 (se espera 1) · comercio · el doble de Meta no apunta el envío
         ¿el instrumento distingue las dos rutas del par?  false  (el par sembrado)  [14012 B de salida]
   ✓ sale 1 (se espera 1) · rol · la firma de la consulta es siempre la misma (no ve recortes)
-        ¿los controles salen como se sabe que son?  false  (los sembrados)  [14657 B de salida]
+        ¿los controles salen como se sabe que son?  false  (los sembrados)  [14787 B de salida]
   ✓ sale 1 (se espera 1) · rol · la firma de la consulta no se repite nunca (todo es recorte)
-        ¿los controles salen como se sabe que son?  false  (los sembrados)  [24356 B de salida]
+        ¿los controles salen como se sabe que son?  false  (los sembrados)  [24245 B de salida]
+  ✓ sale 1 (se espera 1) · rol · el canon vuelve a no cambiar las fechas (la moneda)
+        ¿los controles salen como se sabe que son?  false  (los sembrados)  [20925 B de salida]
   ✓ sale 1 (se espera 1) · rol · no se mira si al técnico se le niega el ajeno
-        ¿los controles salen como se sabe que son?  false  (los sembrados)  [21009 B de salida]
-como se esperaba: 14 de 14 · no aplicadas: 0 · temporal borrado: true
+        ¿los controles salen como se sabe que son?  false  (los sembrados)  [20905 B de salida]
+como se esperaba: 15 de 15 · no aplicadas: 0 · temporal borrado: true
 EXIT=0

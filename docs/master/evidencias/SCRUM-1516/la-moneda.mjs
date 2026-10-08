@@ -2,9 +2,9 @@
 // entre corridas IDÉNTICAS, y por qué?
 //
 // Corre el censo N veces de tres maneras, siempre en una COPIA fuera del árbol:
-//   rol          · el fichero tal cual, eje del rol
-//   rol-fecha    · el eje del rol con UNA sustitución: el `canon` que de verdad cambia las fechas por
-//                  'FECHA'. No es un arreglo que se entregue: es la medición de qué pasaría.
+//   rol          · el eje del rol con el `canon` de ANTES repuesto en la copia (el que no cambiaba fechas)
+//   rol-fecha    · el fichero tal cual está hoy: su `canon` cambia las fechas por 'FECHA' (GO del
+//                  orquestador del 8-oct; la primera pasada de este guion midió qué pasaría, al revés)
 //   comercio     · el fichero tal cual, eje del comercio
 // En las tres copias se quita el recorte a 520 caracteres de la consulta impresa, para poder contar
 // las filas que llevan una fecha sin que el corte se coma ninguna.
@@ -23,14 +23,14 @@ const fuente = fs.readFileSync(path.join(aqui, '..', '..', '..', 'evidencias', '
 
 const veces = (s, t) => s.split(t).length - 1;
 const cambia = (s, de, a, cuantas) => { if (veces(s, de) !== cuantas) { console.log('CIEGO: «' + de + '» casa ' + veces(s, de) + ' veces y esperaba ' + cuantas); console.log('EXIT=2'); process.exit(2); } return s.split(de).join(a); };
-const CANON = "const canon = (x) => JSON.stringify(x, (k, v) => (v instanceof Date ? 'FECHA' : v));";
+const CANON = "(k, v) => (v instanceof Date ? 'FECHA' : v)";
 // JSON.stringify llama a toJSON ANTES de pasar el valor al reemplazador: dentro de un objeto, `v` ya
 // es un texto. El valor sin convertir está en `this[k]`.
-const CANON_QUE_LEE = "const canon = (x) => JSON.stringify(x, function (k, v) { return this[k] instanceof Date ? 'FECHA' : v; });";
+const CANON_QUE_LEE = "function (k, v) { return this[k] instanceof Date ? 'FECHA' : v; }";
 const sinCorte = cambia(fuente, '.slice(0, 520)', '', 2);
 const MANERAS = [
-  { n: 'rol', fuente: sinCorte, eje: [] },
-  { n: 'rol-fecha', fuente: cambia(sinCorte, CANON, CANON_QUE_LEE, 1), eje: [] },
+  { n: 'rol', fuente: cambia(sinCorte, CANON_QUE_LEE, CANON, 1), eje: [] },   // el canon de ANTES, repuesto en la copia
+  { n: 'rol-fecha', fuente: sinCorte, eje: [] },                              // el fichero tal cual esta hoy
   { n: 'comercio', fuente: sinCorte, eje: ['--eje=comercio'] },
 ];
 

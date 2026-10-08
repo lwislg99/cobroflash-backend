@@ -1,16 +1,16 @@
 N = 12 corridas idénticas por manera · copias fuera del árbol · temporal borrado: true
 
-== rol · filas leídas por corrida: 78 · códigos de salida: 12 sale 0 · 925 ms de media
+== rol · filas leídas por corrida: 78 · códigos de salida: 12 sale 1 · 850 ms de media
    filas que CAMBIAN de veredicto entre corridas: 1 de 78
-      GET /admin/products/frequent-concepts → 9 NO-DISTINGUE · 3 RECORTA
+      GET /admin/products/frequent-concepts → 11 NO-DISTINGUE · 1 RECORTA
    filas cuya consulta impresa lleva una fecha: 4 de 78  (sólo se imprime en NO-DISTINGUE y RECORTA)
       GET /admin/metrics/actividad-equipo → 12 NO-DISTINGUE
-      GET /admin/products/frequent-concepts → 9 NO-DISTINGUE · 3 RECORTA
       GET /admin/precarga → 12 RECORTA
       GET /admin/customers/:id/historial → 12 RECORTA
-   control, la fila señalada · GET /admin/products/frequent-concepts → 9 NO-DISTINGUE · 3 RECORTA
+      GET /admin/products/frequent-concepts → 11 NO-DISTINGUE · 1 RECORTA
+   control, la fila señalada · GET /admin/products/frequent-concepts → 11 NO-DISTINGUE · 1 RECORTA
 
-== rol-fecha · filas leídas por corrida: 78 · códigos de salida: 12 sale 0 · 979 ms de media
+== rol-fecha · filas leídas por corrida: 78 · códigos de salida: 12 sale 0 · 851 ms de media
    filas que CAMBIAN de veredicto entre corridas: 0 de 78
    filas cuya consulta impresa lleva una fecha: 4 de 78  (sólo se imprime en NO-DISTINGUE y RECORTA)
       GET /admin/metrics/actividad-equipo → 12 NO-DISTINGUE
@@ -19,7 +19,7 @@ N = 12 corridas idénticas por manera · copias fuera del árbol · temporal bor
       GET /admin/customers/:id/historial → 12 RECORTA
    control, la fila señalada · GET /admin/products/frequent-concepts → 12 NO-DISTINGUE
 
-== comercio · filas leídas por corrida: 191 · códigos de salida: 12 sale 0 · 848 ms de media
+== comercio · filas leídas por corrida: 191 · códigos de salida: 12 sale 0 · 729 ms de media
    filas que CAMBIAN de veredicto entre corridas: 0 de 191
    filas cuya consulta impresa lleva una fecha: 0 de 191  (en este eje sólo se imprime la consulta de las que cruzan)
    control, la fila señalada · GET /admin/products/frequent-concepts → 12 FILTRA

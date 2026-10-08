@@ -6,7 +6,7 @@ GET    /admin/metrics/inicio  [invoice=NO-DISTINGUE · quote=NO-DISTINGUE]
          técnico: invoice.count {"merchantId":1,"status":"pending"} | quote.count {"merchantId":1,"status":"sent"} | quote.findMany {"merchantId":1}
 GET    /admin/metrics/actividad-equipo  [quote=NO-DISTINGUE]
          A adm 200 tec 200 · B adm 200 tec 200
-         técnico: quote.findMany {"merchantId":1,"status":{"not":"draft"},"createdAt":{"gte":"2026-09-30T23:00:00.000Z"}}
+         técnico: quote.findMany {"merchantId":1,"status":{"not":"draft"},"createdAt":{"gte":"FECHA"}}
 GET    /admin/quotes/:id/pdf  [quote=NO-DISTINGUE]
          A adm 404 tec 404 · B adm 200 tec 200
          técnico: quote.findFirst {"id":102,"merchantId":1}
@@ -41,13 +41,13 @@ GET    /admin/albaranes/consolidables  [job=NO-DISTINGUE]
          técnico: job.findMany {"merchantId":1,"customerId":5}
 GET    /admin/products/frequent-concepts  [quote=NO-DISTINGUE]
          A adm 200 tec 200 · B adm 200 tec 200
-         técnico: quote.findMany {"merchantId":1,"createdAt":{"gte":"2026-07-10T08:15:49.759Z"}}
+         técnico: quote.findMany {"merchantId":1,"createdAt":{"gte":"FECHA"}}
 
 == RECORTA · 33
 GET    /admin/precarga  [job=RECORTA]
          A adm 200 tec 200 · B adm 200 tec 200
-         técnico: job.findMany {"merchantId":1,"AND":[{"OR":[{"scheduledAt":{"gte":"2026-10-07T23:00:00.000Z","lt":"2026-10-09T23:00:00.000Z"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"2026-10-01T08:15:49.319Z"}}]},{"OR":[{"assignedUserId":11},{"operarioId":11}]}]}
-         admin:   job.findMany {"merchantId":1,"OR":[{"scheduledAt":{"gte":"2026-10-07T23:00:00.000Z","lt":"2026-10-09T23:00:00.000Z"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"2026-10-01T08:15:49.317Z"}}]}
+         técnico: job.findMany {"merchantId":1,"AND":[{"OR":[{"scheduledAt":{"gte":"FECHA","lt":"FECHA"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"FECHA"}}]},{"OR":[{"assignedUserId":11},{"operarioId":11}]}]}
+         admin:   job.findMany {"merchantId":1,"OR":[{"scheduledAt":{"gte":"FECHA","lt":"FECHA"}},{"status":{"not":"cerrado"},"updatedAt":{"gte":"FECHA"}}]}
 GET    /admin/albaranes  [albaran=RECORTA · job=RECORTA]
          A adm 200 tec 200 · B adm 200 tec 200
          técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | albaran.findMany {"merchantId":1,"jobId":{"in":[]}} | job.findMany {"merchantId":1,"id":{"in":[]}}
@@ -62,8 +62,8 @@ GET    /admin/customers/:id/detail  [quote=RECORTA · invoice=RECORTA · job=REC
          admin:   quote.findMany {"customerId":102,"merchantId":1} | invoice.findMany {"customerId":102,"merchantId":1} | quote.count {"customerId":102,"merchantId":1} | quote.count {"customerId":102,"merchantId":1,"status":"accepted"} | invoice.aggregate {"customerId":102,"merchantId":1} | invoice.aggregate {"customerId":102,"merchantId":1,"status":"paid"} | invoice.groupBy {"merchantId":1,"status":"pending","customerId":{"in":[102]}}
 GET    /admin/customers/:id/historial  [job=RECORTA · parteTrabajo=RECORTA]
          A adm 404 tec 404 · B adm 200 tec 200
-         técnico: job.findMany {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}}]} | job.findFirst {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}],"status":"agendado","scheduledAt":{"gte":"2026-10-08T08:15:49.435Z"}}
-         admin:   job.findMany {"merchantId":1,"customerId":102} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}},{"jobId":null,"customerId":102}]} | job.findFirst {"merchantId":1,"customerId":102,"status":"agendado","scheduledAt":{"gte":"2026-10-08T08:15:49.435Z"}}
+         técnico: job.findMany {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}}]} | job.findFirst {"merchantId":1,"customerId":102,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}],"status":"agendado","scheduledAt":{"gte":"FECHA"}}
+         admin:   job.findMany {"merchantId":1,"customerId":102} | parteTrabajo.findMany {"merchantId":1,"OR":[{"jobId":{"in":[]}},{"jobId":null,"customerId":102}]} | job.findFirst {"merchantId":1,"customerId":102,"status":"agendado","scheduledAt":{"gte":"FECHA"}}
 GET    /admin/quotes  [quote=RECORTA · job=RECORTA]
          A adm 200 tec 200 · B adm 200 tec 200
          técnico: job.findMany {"merchantId":1,"OR":[{"operarioId":11},{"assignedUserId":11},{"assignees":{"some":{"teamMemberId":11}}}]} | quote.findMany {"merchantId":1,"quoteNumber":{"not":null},"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}}]} | quote.findMany {"merchantId":1,"AND":[{"OR":[{"teamMemberId":11},{"asignados":{"some":{"teamMemberId":11}}},{"id":{"in":[]}},{"jobId":{"in":[]}},{"quoteNumber":{"in":[]}}]}]}
@@ -267,10 +267,11 @@ POST   /admin/expenses/leer-ticket
 
 -- CONTROLES SEMBRADOS (SCRUM-1516: rutas de mentira que monta este fichero; no existen en el producto ni cuentan en los totales)
   sembrada (la misma consulta para los dos roles      )  GET …/no-distingue → NO-DISTINGUE  (tiene que ser NO-DISTINGUE)
+  sembrada (la misma, con una fecha que no se repite )  GET …/no-distingue-con-fecha → NO-DISTINGUE  (tiene que ser NO-DISTINGUE)
   sembrada (el rol cambia el where (pasada A)        )  GET …/recorta-en-la-consulta → RECORTA  (tiene que ser RECORTA)
   sembrada (al técnico se le niega el ajeno (pasada B))  GET …/:id/recorta-despues-de-leer → RECORTA  (tiene que ser RECORTA)
   CERO     (una sembrada que no he montado)  → no figura
-  SEMBRADAS medidas 3 de 3 · coladas en la población 0 · filas del producto 78 de 78
+  SEMBRADAS medidas 4 de 4 · coladas en la población 0 · filas del producto 78 de 78
 -- DEL ÁRBOL (rutas del producto: lo que digan puede cambiar con un arreglo)
   conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/jobs → RECORTA
   conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  GET /admin/jobs/:id → RECORTA

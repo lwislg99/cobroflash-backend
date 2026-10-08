@@ -151,7 +151,7 @@ const SIN_SEMBRAR = process.argv.includes('--sin-sembrar');
 const esSembrada = (ruta) => ruta.startsWith(SIEMBRA + '/');
 const SEMBRADAS = EJE === 'comercio'
   ? { cruza: { method: 'POST', path: SIEMBRA + '/:id/cruza' }, filtra: { method: 'POST', path: SIEMBRA + '/:id/filtra' } }
-  : { noDistingue: { method: 'GET', path: SIEMBRA + '/no-distingue' }, recortaAntes: { method: 'GET', path: SIEMBRA + '/recorta-en-la-consulta' },
+  : { noDistingue: { method: 'GET', path: SIEMBRA + '/no-distingue' }, conFecha: { method: 'GET', path: SIEMBRA + '/no-distingue-con-fecha' }, recortaAntes: { method: 'GET', path: SIEMBRA + '/recorta-en-la-consulta' },
     recortaDespues: { method: 'GET', path: SIEMBRA + '/:id/recorta-despues-de-leer' } };
 if (!SIN_SEMBRAR && EJE === 'comercio') {
   const { createRequire } = await import('node:module');
@@ -174,6 +174,12 @@ if (!SIN_SEMBRAR && EJE === 'rol') {
   // La que NO DISTINGUE: la misma consulta para los dos roles, y al técnico no se le niega el ajeno.
   app.get(SEMBRADAS.noDistingue.path, async (req, res) => {
     await prisma.quote.findMany({ where: { merchantId: req.merchantId } }); return res.json({ ok: true });
+  });
+  // La que NO DISTINGUE y lleva una FECHA que no se repite nunca (un milisegundo mas en cada peticion):
+  // si `canon` deja de cambiar las fechas, esta sale RECORTA siempre, no una vez de cada cuatro.
+  let tic = 0;
+  app.get(SEMBRADAS.conFecha.path, async (req, res) => {
+    await prisma.quote.findMany({ where: { merchantId: req.merchantId, createdAt: { gte: new Date(Date.UTC(2026, 0, 1) + (tic += 1)) } } }); return res.json({ ok: true });
   });
   // La que RECORTA EN LA CONSULTA (pasada A): el rol cambia el `where`.
   app.get(SEMBRADAS.recortaAntes.path, async (req, res) => {
@@ -263,7 +269,11 @@ async function pedir(manos, req) {
   return { estado: error && !acabado ? 'EXC' : estado, error: error ? String(error.message || error).slice(0, 90) : null };
 }
 
-const canon = (x) => JSON.stringify(x, (k, v) => (v instanceof Date ? 'FECHA' : v));
+// SCRUM-1516: JSON.stringify llama a toJSON ANTES de pasar el valor al sustituto, asi que dentro de un
+// objeto `v` ya es un texto y `v instanceof Date` no era cierto nunca: ninguna fecha se cambiaba, y una
+// consulta con `new Date()` salia RECORTA cuando entre las dos peticiones cambiaba el milisegundo
+// (frequent-concepts: 9 y 3 en 12 corridas identicas). El valor sin convertir esta en `this[k]`.
+const canon = (x) => JSON.stringify(x, function (k, v) { return this[k] instanceof Date ? 'FECHA' : v; });
 const soloDoc = (l) => l.filter((a) => DOCUMENTO.includes(a.modelo));
 const firma = (l, modelo) => soloDoc(l).filter((a) => !modelo || a.modelo === modelo)
   .map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');
@@ -487,7 +497,7 @@ const positivos = [['GET', '/admin/jobs'], ['GET', '/admin/jobs/:id'], ['GET', '
 // ahora es el sembrado. Estos cuatro se siguen enseñando, como testigos, y no se les exige nada.
 const testigos = [['GET', '/admin/quotes'], ['GET', '/admin/quotes/:id'], ['GET', '/admin/invoices'], ['GET', '/admin/metrics/inicio']];
 const vsr = (s) => (deSiembra.find((f) => f.method === s.method && f.path === s.path) || {}).veredicto;
-const esperado = [[SEMBRADAS.noDistingue, 'NO-DISTINGUE', 'la misma consulta para los dos roles      '], [SEMBRADAS.recortaAntes, 'RECORTA', 'el rol cambia el where (pasada A)        '],
+const esperado = [[SEMBRADAS.noDistingue, 'NO-DISTINGUE', 'la misma consulta para los dos roles      '], [SEMBRADAS.conFecha, 'NO-DISTINGUE', 'la misma, con una fecha que no se repite '], [SEMBRADAS.recortaAntes, 'RECORTA', 'el rol cambia el where (pasada A)        '],
   [SEMBRADAS.recortaDespues, 'RECORTA', 'al técnico se le niega el ajeno (pasada B)']];
 const colada = filas.filter((f) => esSembrada(f.path)).length;
 console.log('\n-- CONTROLES SEMBRADOS (SCRUM-1516: rutas de mentira que monta este fichero; no existen en el producto ni cuentan en los totales)');

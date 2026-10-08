@@ -46,6 +46,8 @@ const ROTURAS = [
     de: ".map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');", a: ".map((a) => a.modelo + '.' + a.op).join(' | ');" },
   { n: 'rol · la firma de la consulta no se repite nunca (todo es recorte)', eje: [], espera: 1,
     de: ".map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');", a: ".map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where) + Math.random()).join(' | ');" },
+  { n: 'rol · el canon vuelve a no cambiar las fechas (la moneda)', eje: [], espera: 1,
+    de: "function (k, v) { return this[k] instanceof Date ? 'FECHA' : v; }", a: "(k, v) => (v instanceof Date ? 'FECHA' : v)" },
   { n: 'rol · no se mira si al técnico se le niega el ajeno', eje: [], espera: 1,
     de: 'const niegaB = [403, 404].includes(r.Btecnico.estado)', a: 'const niegaB = false && [403, 404].includes(r.Btecnico.estado)' },
 ];
