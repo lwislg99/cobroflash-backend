@@ -1256,3 +1256,190 @@ Los 50 TAP (127 MB) no entran. Se rebajan mientras GitHub conserve los artefacto
     node $E/h-bajar-taps.mjs $E/g-tasa-de-main.tsv <fuera del árbol>/taps
     node $E/h-entradas.mjs scripts/_senal-de-nombres.mjs $E/g-tasa-de-main.tsv <fuera del árbol>/taps
     node $E/h-efecto.mjs
+
+# SCRUM-1339j · Por qué sale CIEGA `scrum859`: una sola causa en las 8, y es la cola que no llega cuando su segunda mutación escribe 1,1 MB
+
+**Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T02:03:21Z
+
+A9: aviso → cicatriz J3 «Di por hecho que las líneas de un mismo caso van pegadas en el log: stderr y stdout se intercalan, y conté dos firmas donde había una.» — no se pudo comprobar: es un guion de evidencias que corre a mano fuera de la tanda; lo que queda es el caso intercalado que ahora lleva el control fabricado de `j-logs.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 8-oct; sesión `jv-j3`,
+relevo). El barrido de SCRUM-1393b contó 15 checks ciegos en los 53 PR del 7 y el 8 de octubre, y 8
+eran `scrum859` en el job de mutación. Tres preguntas: qué le falta para poder juzgar, si las 8 son
+la misma causa, y si se arregla sin tocar `scrum859` ni el instrumento. **Es medición: no se ha
+arreglado nada, no se ha tocado ningún workflow ni ningún instrumento, y el ticket no se transiciona.**
+
+## En corto
+
+- **Lo que le falta es la cola de su propio informe.** `scrum859` declara dos mutaciones. Con la
+  segunda, el proceso del fichero manda al padre **1.104.695 B** (limpio manda 42.535), y el test
+  que tiene que caer es el 17.º de 20: su veredicto acaba a 7.606 B del final. Si esos últimos bytes
+  no llegan, el instrumento no puede juzgar y lo dice: CIEGO.
+- **Las 8 son la misma, medida por contenido y no por el nombre del fichero.** Una sola firma en los
+  8 logs: la misma mutación (la segunda), la misma causa escrita («NO APARECE en la pasada mutada»),
+  el mismo recuento (9 pasados, 7 caídos), los mismos 4 ausentes de 20, con la limpia en 20 de 20.
+- **Reproducido aquí con el instrumento de la casa:** quitándole al canal los últimos N bytes,
+  `aplicarUna` dicta exactamente lo que dicen los 8 logs cuando N está entre 8.000 y 60.000; con
+  7.000 dicta VIVA y con 67.000 el recuento ya es otro (9 y 6). La pérdida de CI cabe en esa ventana.
+- **No es la posición del test.** La primera mutación tiene su test más expuesto (a 4.332 B del
+  final) y no cegó en ninguno de los 53 logs. Lo que cambia entre las dos es cuánto se escribe.
+- **No se arregla sin tocar algo que tiene dueño o decisión:** el instrumento (S3), el workflow (S5
+  y fundador) o los dos tests (`scrum859` y `scrum267`, que según `carriles.mjs` no reclama nadie).
+  Abajo van las vías con lo medido de cada una. No elijo.
+- **No he ejecutado nada en Linux.** Lo de Linux sale de los 53 logs y de SCRUM-1405; mi intento de
+  reproducir la pérdida en Windows poniendo la tubería no bloqueante no perdió nada.
+
+## Lo que ya estaba medido, y no repito
+
+El mecanismo no es nuevo: SCRUM-1405 midió que con `--test-force-exit` el proceso de cada fichero
+sale con parte de su informe sin escribir, que en Linux la tubería no es bloqueante y que con la
+tubería bloqueante no se pierde (0 de 12 tandas). SCRUM-1100 (tramo 1100d) midió que `correr()` le
+pasa ese flag al hijo y que lo que llega en CI es un prefijo de lo que sale en local. SCRUM-1321
+quitó el mensaje falso del «título cambiado». Lo que faltaba era `scrum859` por dentro: qué
+mutación, cuántos bytes, dónde cae el corte y si las 8 son una.
+
+## ① Qué le falta: el instrumento ejecutado, y el canal byte a byte
+
+`j-medir.mjs` llama a `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (sin copiar su
+lógica) y, al lado, lanza el mismo hijo y trocea lo que manda al padre mensaje a mensaje. Windows,
+node v24.18.0. Salida entera en `evidencias/SCRUM-1339/j-salida-medir.txt`.
+
+| | bytes hacia el padre | veredictos | de ellos caen | el test declarado | bytes detrás de su veredicto | aquí |
+|---|---|---|---|---|---|---|
+| limpia | 42.535 | 20 | 0 | — | — | 20 pasan |
+| mutación 1 (`TOPE… = 99`) | 323.495 | 20 | 2 | el 19.º, 136.272 B | 4.332 | VIVA |
+| mutación 2 (clave posicional) | 1.104.695 | 20 | 8 | el 17.º, 28.908 B | 7.606 | VIVA |
+
+- **De dónde sale el megabyte.** Cada test que cae viaja dos veces (`test:complete` y `test:fail`,
+  539.864 y 534.428 B) con el mensaje del aserto entero dentro, y los mensajes listan claves y
+  entradas de `docs/master`. El mayor son 186.855 B; el 16.º, justo antes del declarado, 169.101 B.
+- **14 de los 20 tests no son de `scrum859`.** Importa funciones de `scrum267`, y al importarlo
+  ejecuta sus 14 tests dentro del mismo proceso. Con la mutación 2 caen 6 de esos 14 y suman
+  336.419 de los 534.428 B de `test:fail`.
+- **Detrás del 16.º quedan unos 66.200 B**, que es lo que viaja con los cuatro últimos tests.
+- Control positivo del troceo: 110 mensajes enteros, 0 B de resto y 20 veredictos en las tres
+  pasadas. La primera versión los daba todos por ilegibles (§Mis errores).
+
+### El corte, fabricado: cuánta cola tiene que faltar para que dicte lo que dictó CI
+
+`j-corte.mjs` corre el mismo instrumento con `j-sonda-tuberia.mjs` cargada en el hijo: los últimos N
+bytes que el hijo escribe no se entregan. **No imita cómo se pierde la cola en Linux; fija cuánta se
+pierde.** N=0 es el control. Salida en `j-salida-corte.txt`; dos pasadas, los mismos 20 veredictos.
+
+| cola que no llega | mutación 1 | mutación 2 |
+|---|---|---|
+| 0, 2.000 y 4.000 B | VIVA | VIVA |
+| 5.000 y 7.000 B | CIEGO · 17 pasados, 1 caído, faltan 2 de 20 | VIVA |
+| 8.000, 36.000 y 60.000 B | CIEGO · lo mismo | **CIEGO · 9 pasados, 7 caídos, faltan 4 de 20** |
+| 67.000 y 240.000 B | CIEGO · lo mismo | CIEGO · 9 pasados, 6 caídos, faltan 5 de 20 |
+
+La fila en negrita es, palabra por palabra, lo que traen los 8 logs. Dos cosas salen de aquí:
+
+1. En las 8 pasadas ciegas de CI se perdieron entre unos 7.600 y unos 66.200 B de la mutación 2.
+2. En los 53 logs la mutación 1 salió VIVA, y con 5.000 B de cola perdida ya sale CIEGA con un
+   recuento (17 y 1) que no aparece en ningún log. Así que con la mutación 1 se perdieron menos de
+   unos 5.000 B las 53 veces. **El mismo fichero, en el mismo runner, pierde más cola cuando escribe
+   1,1 MB que cuando escribe 323 KB.** Por qué, no lo he medido (§Lo que NO sé).
+
+### Lo que NO reprodujo
+
+Puse no bloqueante la salida del hijo en Windows (`setBlocking(false)` devuelve 0) para imitar a
+Linux: 5 pasadas de cada mutación, 10 de 10 VIVAS, 0 B pendientes al salir en los tres testigos
+(`j-salida-medir-no-bloqueante.txt`). O en Windows ese ajuste no cambia cómo escribe la tubería, o
+el padre vacía a tiempo. No distingo cuál. La pérdida real no la he visto en esta máquina.
+
+## ② ¿Una causa o varias? Los 53 logs, leídos
+
+`j-logs.mjs` baja el log del job de mutación de la punta de cada uno de los 53 PR del barrido
+(`evidencias/SCRUM-1393/checks-sin-leer/datos-pr.json`) y lee lo que dice de `scrum859`. Salida en
+`j-salida-logs.txt`.
+
+| | logs |
+|---|---|
+| población | 53 jobs en 53 PR; el menor de 121.880 B, ninguno vacío |
+| VERDE (resumen con mudas 0, ciegas 0, muertos 0) | 43 |
+| CIEGO (alguna ciega o fichero muerto, mudas 0) | 10 |
+| ROJO (alguna muda) | 0 |
+| sin veredicto (sin línea de resumen) | 0 |
+| `scrum859`: mutación 1 viva, mutación 2 viva | 45 |
+| `scrum859`: mutación 1 viva, mutación 2 ciega | **8** |
+| `scrum859`: mutación 1 ciega | 0 |
+
+- **Firmas distintas entre las 8: una.** La firma junta el test declarado, la causa que escribe el
+  instrumento, el recuento de la mutada, el de la limpia, cuántos faltan y sus cuatro nombres. PR
+  #2240, #2247, #2251, #2259, #2261, #2277, #2281 y #2290.
+- Los otros 2 CIEGO de los 10 no son de `scrum859` (#2282 por `scrum834`, #2284 por
+  `vigia-atascados`); en esos dos logs `scrum859` sale con sus dos mutaciones vivas.
+- **En qué NO se diferencian las que ciegan de las que no, leído en el log:** el node es el mismo en
+  las 53 (v24.21.0); por imagen del runner, 4 de 31 y 4 de 22; el tiempo entre las dos marcas de
+  `scrum859`, 1,06–1,34–1,61 s las que ciegan y 1,06–1,46–1,63 s las que no. Ni `scrum859`, ni
+  `scrum267`, ni el instrumento tienen commits en la ventana (los dos tests, desde el 26-sep).
+  Con el mismo árbol y el mismo runner, ciega 8 de 53: es una carrera, no una entrada distinta.
+- **Controles, corridos antes del número.** De cero, derivado: el guard de número más alto que
+  nombran los logs (`scrum1486-…`) sale en 53; con el número más uno, en 0. Positivos: `scrum859`
+  nombrado en 53 de 53; las ✔ contadas coinciden con las «vivas» del resumen en 53 de 53; 139
+  guards distintos. Y la función, sobre cinco logs fabricados (verde, ciego, rojo, vacío y cortado
+  sin resumen): los cinco en su estado; el vacío y el cortado salen «sin veredicto», no verdes.
+
+## ③ ¿Se arregla sin tocar `scrum859` ni el instrumento?
+
+No he encontrado ninguna vía que no toque una de estas tres cosas. De quién es cada una lo dice
+`node scripts/carriles.mjs de <ruta>`, no yo:
+
+| vía | qué toca | de quién | qué hay medido | qué no |
+|---|---|---|---|---|
+| A · que la cola llegue, desde el instrumento: `correr()` sin `forceExit`, o con la salida del hijo bloqueante | `scripts/meta-guard-mutaciones.mjs` | **S3** | SCRUM-1405, en la tanda: sin el flag 0 de 16 pierden; bloqueante 0 de 12 | nada dentro del job de mutación; sin el flag, un hijo que deja algo abierto no termina (aquí cada pasada tiene un tope de 300 s) |
+| B · lo mismo por entorno: un `--import` en el paso del job | `.github/workflows/ci.yml` | **S5** y fundador | lo mismo; se apoya en una pieza interna de node | si afecta a los otros 138 guards del job |
+| C · que el declarado no viaje en la cola, o que la mutada escriba menos: mover el test, acortar los mensajes de los asertos, o que `scrum859` no ejecute los 14 tests de `scrum267` | `tests/scrum859-…` y `tests/scrum267-…` | sin fila en §3: nadie los reclama | con el corte fabricado el declarado aguanta 7.000 B perdidos; 336.419 B de los `test:fail` son de los 14 tests ajenos | cuánto se pierde como máximo en Linux, así que no sé qué margen basta; cambia un test, y eso pide decisión |
+| D · esperar al arreglo de node (`nodejs/node#64833`) | la versión de node del workflow | S5 | — | no la he vuelto a leer; sin fecha |
+| E · no tocar nada | — | — | es lo de hoy: 8 de 53, y 27 de 180 en la medición del 6-oct (1100d) | — |
+
+Una cosa que no es una vía y conviene tener delante: la pérdida sólo quita eventos. En 53 logs no
+hay ninguna muda, y las 8 ciegas tienen la limpia en 20 de 20. Lo que no vale de esos 8 jobs es el
+rojo, no las 509 a 519 vivas que traen.
+
+## Hipótesis, de IA y SIN PROBAR
+
+Los cuatro últimos tests de la mutación 2 viajan en unos 66.200 B, y una tubería de Linux admite
+65.536. Si el hijo entrega ese último tramo de una vez cuando el padre aún no ha vaciado lo anterior,
+lo que no cabe se queda encolado y `process.exit()` lo tira; con la mutación 1 el tramo final son
+4.332 B y cabe siempre. Encaja con que ciegue sólo la 2 y con la ventana de 7.600 a 66.200 B. No
+explica por qué son 8 de 53 y no más, y no la he puesto a prueba: haría falta el testigo de bytes
+pendientes dentro del job de Linux, que es un workflow. No se construye nada sobre ella.
+
+## Lo que NO sé
+
+- Cuántos bytes se pierden en Linux en cada pasada: sólo la ventana que deja el recuento.
+- Por qué la mutación 2 pierde más cola que la 1. La diferencia medida es el volumen; el mecanismo
+  fino, no.
+- Si alguna de las vías A, B o C quita la ceguera dentro del job de mutación: ninguna está probada ahí.
+- Los 8 logs son de la punta de cada PR; las puntas anteriores y los runs de `main` no los he leído.
+- El árbol de cada run no es el mío: mis bytes son de `fae05532`; los de cada PR pueden variar algo
+  porque los mensajes listan `docs/master`.
+
+## Mis errores
+
+- **Los 110 mensajes me salieron «ilegibles» en la primera pasada.** Supuse que el valor iba sin su
+  cabecera v8 y la lleva. Lo cazó el positivo: «veredictos de primer nivel 0» con 42.535 B delante.
+- **Conté dos firmas donde había una.** El lector quería la línea de los ausentes pegada a la del
+  caso; en el log de #2247 el runner intercaló cinco líneas de stdout. Lo cazó que una de las 8
+  saliera sin nombres con el mismo recuento. Va a las cicatrices de J3 y al control fabricado.
+- El intento de reproducir la pérdida en Windows no reprodujo nada; está contado arriba como lo que es.
+- **Mi lector daba VERDE por descarte.** `j-logs.mjs` clasificaba un log con `… ? 'CIEGO' : 'VERDE'`.
+  Lo cazó `scrum622` en local, antes de empujar. Ahora el verde se afirma con sus tres ceros y lo
+  que no encaja sale «sin veredicto»; la salida regenerada es idéntica byte a byte.
+- Guards corridos aquí antes de empujar: 13 ficheros, 127 casos, 125 pasan. Los 2 que caen son de
+  `scrum622` y piden `dist/`, que este árbol no tiene (`ERR_MODULE_NOT_FOUND`); no los he visto en
+  verde en local.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/j-medir.mjs . <carpeta de fuera del árbol> scrum859-identidad-y-motivo-cerrado.test.mjs 1
+    node $E/j-logs.mjs docs/master/evidencias/SCRUM-1393/checks-sin-leer/datos-pr.json <carpeta de fuera>/logs
+    NODE_OPTIONS='--import file:///<ruta absoluta>/j-sonda-tuberia.mjs' \
+      node $E/j-corte.mjs . scrum859-identidad-y-motivo-cerrado.test.mjs 0,2000,4000,5000,7000,8000,36000,60000,67000,240000
+
+`j-medir.mjs` y `j-corte.mjs` mutan `tests/scrum267-ancla-de-medicion.test.mjs` mientras corren (lo
+hace `aplicarUna`, que lo restaura) y comprueban su sha256 al acabar: no los lances con otra cosa
+corriendo en el mismo árbol.
