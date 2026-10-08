@@ -99,3 +99,113 @@ Las tres tocan `scrum921c` o su apoyo: no se aplican aquí.
 - Del 404 no se separa «no existe» de «sin permiso»: Jira da el mismo mensaje.
 - Un guion escrito por heredoc perdió una barra invertida; node lo paró con error de sintaxis.
 - Tanda completa: no corrida. El cambio es este registro y ficheros bajo `docs/master/evidencias/`.
+
+---
+
+## SCRUM-1511d · Tramo 2 (J4, 8-oct-2026): cuántos literales pintados hoy tienen como único respaldo una ficha con firma delegada. Son 218, y es un suelo
+
+**Medido contra:** `origin/main` = `8518dc7a16164530863d657cb0f2f817a4691d78` · 2026-10-08T02:09:54Z (hora de GitHub, copiada de la entrega en SCRUM-1511 comentario 18916)
+
+A9: comprobación → `docs/master/evidencias/scrum1511d/censo-firma-delegada.mjs`
+
+La pregunta sale del criterio del fundador en SCRUM-1511 comentario 18903: si lo aprobado es texto
+que ve el usuario, sólo vale su firma y eso no se delega. Este tramo cuenta cuánto texto pintado
+depende hoy de una firma delegada. **Midió la sesión J4 anterior** (instrumento y salida, commit
+`0d3f65f8cc3f74aff93af1211797612b01a2000e`, entrega en el comentario 18916); **este registro lo
+escribe su relevo, que NO ha vuelto a correr el instrumento**: las cifras de abajo están copiadas de
+`evidencias/scrum1511d/salida.txt` y de esa entrega, no medidas de nuevo. Sólo mide: no toca ningún
+literal, ninguna marca, ninguna ficha, `src/`, `public/` ni `tests/`, y no escribe ninguna cita nueva.
+
+### T2.0 · En corto
+
+| pregunta | medido |
+|---|---|
+| literales distintos pintados hoy cuyo único respaldo en `docs/microcopy/` es una ficha con firma delegada | **218** |
+| qué cuenta | literales, no frases ni pantallas |
+| qué es «pintado» | el literal está en `public/` o `src/` en una línea que no es comentario. No se fue a ninguna pantalla |
+| de dónde sale quién firma | de la FICHA, no de Jira |
+| es un máximo o un mínimo | un **SUELO**: ver T2.3 |
+
+### T2.1 · Población
+
+| | medido |
+|---|---|
+| fichas en `docs/microcopy/` | 127 (más un registro congelado) |
+| con firma del fundador | 31 fichas · 114 citas |
+| con firma delegada (orquestador) | 96 fichas · 317 citas |
+| con otra firma o ninguna | 0 |
+| comentarios de Jira distintos que nombran las delegadas | 77 |
+| de esos 77, abiertos a mano | **5** (más otros dos comentarios que no están entre los 77) |
+| corpus | 428 ficheros de `public/` y `src/` |
+
+Cómo se llega a la cifra: 261 literales cruzables de fichas delegadas; 12 constan también firmados por
+el fundador (otra ficha o el congelado) y se restan; quedan 249 sólo delegados; de ellos **218
+pintados** y 31 no pintados (aparcados, compuestos o notas escritas como cita; 6 de los 31 están en el
+código sólo dentro de comentarios).
+
+Los comentarios que más pesan: SCRUM-915/15868 con 35, SCRUM-917/15881 con 27, SCRUM-1124/17002 con
+14, SCRUM-1126/17575 con 10. La suma por comentario da 225 y no 218 porque un literal nombrado por dos
+comentarios cuenta en los dos. La lista entera, por ficha y por comentario, está en `salida.txt`.
+
+### T2.2 · Controles que corrió el instrumento
+
+| control | resultado |
+|---|---|
+| POSITIVO: las fichas de SCRUM-1252 y SCRUM-1258, firmadas por el fundador en persona | salen como firma DIRECTA, pintadas (1 de 1 y 2 de 2), y aportan **0** a la cifra |
+| positivo del otro lado: la ficha de los pasos del editor (SCRUM-915) | sale delegada, 27 cruzables, aporta 23 |
+| DE CERO: un literal derivado en cada pasada, que no existe | no está en el código, ni en lo directo, ni en lo delegado |
+| positivo del cruce: la semilla de ese literal, sin el añadido | sí está en el código |
+| segunda sonda: citas contadas a pelo contra citas extraídas | 284 = 284 (además, 147 por celda de tabla) |
+| segunda sonda: unidades por ficha contra el lector de la casa | 431 = 431 |
+| suelo de población | 127 fichas · 428 ficheros · 306 literales directos |
+| toda ficha tiene firmante conocido | 0 sin clasificar |
+| **controles en rojo** | **0** |
+
+El literal del control de cero se deriva en cada pasada; no hay ningún número fijo escrito.
+
+### T2.3 · Lo que el 218 NO lleva dentro
+
+Es la mitad de la entrega. Nada de esto está en la cifra:
+
+- **Unos 40 literales de 7 fichas delegadas que el lector no extrae**, porque los escriben en lista
+  numerada o en tabla con otra cabecera. Son las de SCRUM-984, SCRUM-985, SCRUM-1155 (el alta de
+  Gastos), SCRUM-993, SCRUM-1375, SCRUM-1476 y SCRUM-1482. Contados a mano por la sesión anterior y
+  **sin cruzar con el código**: no se sabe cuántos se pintan.
+- **La lista y el detalle de Gastos** que firma SCRUM-920 comentario 15992: de ese comentario sólo
+  tiene ficha el alta. La lista (9 textos) y el detalle (unos 10 más el menú) no están en ninguna
+  ficha. Sin contar.
+- **El comentario 17349 no tiene ficha**: ninguna lo nombra.
+- **42 plantillas con hueco**, todas sólo delegadas, quedan fuera del cruce: no se sabe si se pintan.
+  Y 2 citas cortas.
+- **38 ids de comentario citados en el código que ninguna ficha nombra** (de 107 citados en `src/` y
+  `public/`). Cuáles de esos 38 son firmas de texto: NO MEDIDO.
+- De los 77 comentarios delegantes se abrieron 5. En esos 5 la ficha y Jira coinciden en quién firma;
+  de los otros 72 sólo se sabe lo que dice la ficha.
+
+### T2.4 · Lo que salió al leer los comentarios (de la entrega, sin reabrir)
+
+- El comentario 15881 firma por delegación los textos de SCRUM-917 menos dos; el anterior, 15876,
+  transcribe al fundador aprobando el prototipo y dice expresamente que eso no aprueba los literales
+  uno a uno.
+- Varios de los comentarios abiertos salen bajo la cuenta del orquestador del otro equipo: la
+  delegación no es toda de este equipo.
+- `scrum514` cruza con el código las líneas de cita de una ficha, no los literales que la ficha
+  escribe en tabla: 147 unidades de 431. Visto de paso y sin tocar: es de otro carril.
+
+### T2.5 · Errores propios y lo que NO se ha hecho
+
+- De la sesión que midió: metió texto con comillas invertidas por `node -e` desde bash y el guion
+  quedó roto; lo cazó la lectura, antes de medir. Y la cifra provisional que mandó por mensaje daba 36
+  para el comentario 15868; la buena es 35.
+- De la sesión que midió: empujó la rama sin este registro y sin línea A9, por falta de contexto, y lo
+  dijo en la entrega. Este tramo es esa deuda.
+- Del relevo: **no he vuelto a correr el instrumento ni he abierto ningún comentario delegante**. He
+  leído los comentarios 18903 y 18916, la salida y los controles del guion. Las cifras son copia.
+- No se fue a ninguna pantalla ni a yaqu.app. No se miró el despliegue.
+- No se derivó la población por los commits que citan cada comentario: para lo que no tiene ficha, esa
+  vía sigue pendiente.
+- Nada corregido ni citado: ninguna marca, ninguna ficha, ningún texto. `scrum921c`, `scrum387`,
+  `tests/_respaldo-de-firma.mjs`, `SIN_RESPALDO` y `SIN_PROCEDENCIA`, sin tocar. Ticket sin transicionar.
+- Tanda completa: no corrida. El cambio de la rama es este tramo y dos ficheros bajo
+  `docs/master/evidencias/scrum1511d/`.
+- El hook de arranque dijo «SIN IDENTIDAD» en las dos sesiones (SCRUM-1498, carril de S5); se siguió.
