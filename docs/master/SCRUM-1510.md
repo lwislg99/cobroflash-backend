@@ -132,3 +132,99 @@ es la cabecera de `scrum205`, que promete más de lo que mide.
   que declaró mi antecesora; la línea `A9:` apunta al hook que lo paró.
 - La primera versión del censo llamaba «decide» a devolver el valor en la respuesta. Leyendo los
   sitios vi que 5 de 9 sólo lo cuentan; cambié la etiqueta y lo escribí arriba.
+
+# SCRUM-1510b · El punto ciego ②: la factura pendiente que el segundo portón deja pasar EXISTE, y ya tiene test
+
+**Medido contra:** `origin/main` = `16e80dea496dad3819bf444983f9974d3c13ebb9` · 2026-10-08T07:41:39Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs`
+
+Sesión J6 (`jv-j6`, relevo de la mañana del 8-oct), por encargo del orquestador de Javier
+(`cobroflash-backend-90`). Carril: J6 (instrumentos), ticket `area-j6`. Un test nuevo, dos guiones y
+sus salidas. Cero líneas de `src/`. No se han tocado `scrum205`, `scrum206`, `scrum1296` ni ningún
+censo. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498, carril de S5); seguí por la norma común.
+
+## La pregunta que quedó sin comprobar, y su respuesta
+
+`ensureInvoicePdf` tiene dos cortes: el del ESTADO (`lib/invoicing.ts:61`) y el portón de la HUELLA
+(`:104`). Mi antecesora propuso un test sobre «una factura pendiente a la que el segundo portón
+dejaría pasar» y declaró que no había comprobado que esa factura pudiera existir.
+
+**Puede existir. Fabricadas cuatro**, con `sellarTrasEmision`, `applyVeriFactu` y `ensureInvoicePdf`
+de `dist/`; sólo la base va doblada, y lo único que se le hace es que una escritura concreta falle.
+Ningún campo de la fila se escribe a mano.
+
+| caso | cómo se llega | fila que queda | 1er corte | 2º portón |
+|---|---|---|---|---|
+| A (control) | factura ES, sin fallo | `sellado`, con huella | pasa | pasa |
+| B (control) | el sellado revienta antes de la huella | pendiente, sin huella | niega | niega |
+| C | la huella se escribe y la escritura siguiente, la del estado, falla | pendiente, CON huella | niega | **pasa** |
+| D | justificante `J-`: la escritura de «no aplica» falla (la puerta LANZA) | pendiente, sin huella | niega | **pasa** |
+| E | comercio no español: lo mismo | pendiente, sin huella | niega | **pasa** |
+| F | justificante al que no llega a llamarse la puerta | pendiente, sin huella | niega | **pasa** |
+
+Sobre el compilado de hoy, las cinco pendientes se niegan con `invoice_pendiente_de_sellado`, sin
+escrituras y sin PDF; sólo A produce PDF (6.538 B). **Sobre un espejo del compilado sin el primer
+corte, de C, D, E y F sale un PDF de verdad** (6.489, 5.154, 5.078 y 5.069 B, los cuatro empiezan
+por `%PDF-`) y se escribe `pdfUrl`; B sigue negada, ahora por el portón. El espejo vive en
+`dist/__espejo-1510b/`; `src/lib/invoicing.ts`, su compilado y `selladoEstado.ts` son iguales por
+sha256 antes y después.
+
+**El primer corte no es redundante.** Y C no es un caso de papel: el propio reintento ya la nombra
+(`conHuellaSinMarcar`, `reintentoSellado.ts:258`), la cuenta y no la arregla; y su registro no se
+ha encolado para la AEAT (0 escrituras en `vfSubmission`, comprobado en el test).
+
+Por qué D, E y F son posibles: **toda factura nace pendiente**. `estadoAlNacer` sólo aparece en su
+declaración (1 aparición en el código de 321 ficheros `.ts`; la misma búsqueda ve 3 de
+`entraEnLaCadena`), así que el estado de nacimiento es el `@default` del esquema, y «no aplica» se
+escribe después, en otra llamada.
+
+## El test
+
+`tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs`, vecino de `scrum206`. Tres casos:
+el POSITIVO (la misma factura, sellada entera, sí deja PDF en disco y `pdfUrl` escrito) y las dos
+negaciones, C y D. Cada negación comprueba antes que el portón de la huella, preguntado de verdad,
+dejaría pasar esa fila; y exige que `ensureInvoicePdf` se niegue, con el error del corte del estado,
+sin escrituras y sin fichero.
+
+**Visto en rojo antes que en verde.** Sobre el espejo: 3 casos, pasa 1 (el positivo), caen 2, y el
+mensaje dice «SALIÓ EL DOCUMENTO». Sobre hoy: 3 de 3.
+
+**El doble de los vecinos no sirve tal cual**, comprobado leyéndolos: el de `scrum206` hace reventar
+`$transaction`, así que no deja escribir la huella; el de `scrum1296` falla por `modelo.método`
+entero, y aquí hace falta que falle UNA escritura de `invoice.update` y no la anterior. El test
+lleva el suyo, calcado del de `scrum1296` con el fallo por argumento.
+
+## Lo que NO se midió
+
+Que alguna de esas filas exista en una base de verdad: las cuatro piden un fallo entre dos
+escrituras, o que el proceso muera entre el commit y el sellado, y aquí se provoca. Nada contra
+dev, staging ni producción. Sólo `ensureInvoicePdf`: los otros dos productores de bytes
+(`generateInvoicePdf` suelto, `createReadStream`) no. Una factura pendiente con el PDF ya en disco
+(la rama en la que el portón de la huella ni se ejecuta) tampoco. No he declarado la mutación al
+instrumento de mutaciones: el rojo de arriba es de una pasada a mano, no un control permanente.
+La tanda completa, no.
+
+## De paso, sin tocar (no es de este carril)
+
+- El error del primer corte no lo reconoce `esErrorSinSellar` (medido: `false` en las cinco
+  pendientes; sobre el espejo, el del portón sí). `GET /recibo/:token/pdf` sólo ramifica por esa
+  función. **Leído, no ejecutado:** una factura pendiente daría ahí un 500 y no el 409 con el texto
+  firmado de SCRUM-206. `tests/scrum206` no lo ve porque su fila no lleva `vfEstado`.
+- `sellarTrasEmision` LANZA si falla la escritura de «no aplica» (está fuera de su `try`), aunque su
+  cabecera dice que no lanza.
+
+## Mis errores
+
+- La primera pasada «en rojo» era ciega: el espejo no llevaba `prisma/schema.prisma`, el fichero
+  murió al cargar y la salida decía «tests 1 · fail 1». Lo vi por el recuento (1 y no 3), añadí el
+  esquema al espejo y repetí. El caso POSITIVO del test es lo que distingue las dos cosas.
+- Avisé del contexto con 252.971 medidos, no a los 200k: lo medí tarde.
+- El primer montaje del espejo intentó copiar `dist/` dentro de sí mismo y node se negó.
+
+## Ficheros
+
+- `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs`
+- `docs/master/evidencias/SCRUM-1510/fabricar-la-factura-del-segundo-porton.mjs` y sus dos salidas
+- `docs/master/evidencias/SCRUM-1510/espejo-sin-el-primer-corte.mjs` y `salida-montar-el-espejo.txt`
+- `docs/master/evidencias/SCRUM-1510/salida-test-en-rojo-sobre-el-espejo.txt` y `salida-test-en-verde-sobre-hoy.txt`
