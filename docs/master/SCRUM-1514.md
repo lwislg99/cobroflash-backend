@@ -147,3 +147,101 @@ ficha dudaba y está medido.
 2. Un comando que imprimía la respuesta entera de la API de GitHub me devolvió 47 KB; quería dos líneas.
 3. Di por «idéntico» el eje del rol tras UNA comparación que salió distinta, y la diferencia no era mía:
    hizo falta repetir cada versión varias veces para ver la moneda de ⑤.1.
+
+---
+
+# SCRUM-1514b · El único cruce real, arreglado: `resend-whatsapp` sólo reenvía la factura del comercio de la sesión
+
+**Medido contra:** `origin/main` = `4f8c473da8a565fdb6f00316f7ef5b14be3c1f1c` · 2026-10-08T07:57:41Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1514-el-reenvio-es-del-comercio.test.mjs`
+
+Sesión jv-j1 (relevo), equipo de Javier. Permiso: GO del fundador transcrito en SCRUM-1514 `c.18968`
+(una ruta, dos ficheros). Carril: `dos-equipos.md:118` (la ruta) y `:119` (el servicio), los dos de J1,
+leído contra `origin/main`. El arranque dijo «SIN IDENTIDAD… no construyas» (SCRUM-1498, carril de S5):
+se siguió, como manda la ficha.
+
+## 0 · La respuesta corta
+
+| paso del control | resultado |
+|---|---|
+| ① antes de tocar nada | `resend-whatsapp` → **CRUZA** 200, 1 envío doblado · `send-reminder` → FILTRA 404, 0 envíos |
+| ② arreglo | 2 ficheros de `src/`, 1 test nuevo |
+| ③ después | `resend-whatsapp` → **FILTRA** 404, 0 envíos · **190 de las otras 190 filas idénticas**, 0 movidas |
+| ④ positivo | el comercio que reenvía SU factura: 200, 1 plantilla al buzón de pruebas, mismo cuerpo que antes |
+
+Envíos reales 0, salidas de la máquina cortadas 0, ninguna base tocada (Prisma doblado, Meta doblado).
+
+## 1 · Qué cambia
+
+- `src/modules/billing/domain/invoiceWhatsApp.service.ts`: `sendInvoicePaymentRequest` admite un segundo
+  argumento opcional `{ merchantId }`. Con él, el `where` es `{ id, merchantId }`. Si se pide acotar y el
+  comercio no viene, contesta `invoice_not_found` SIN consultar.
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts`: la ruta pasa `{ merchantId: req.merchantId }`.
+- Los otros dos que llaman al servicio (`quotes.routes.ts:712`, `jobs.routes.ts:1598`) siguen llamando
+  sólo con el id: acaban de crear o de leer esa factura con su comercio. No se han tocado.
+- **Ningún texto nuevo.** La factura ajena cae en el 404 que la ruta YA daba para la que no existe.
+
+⚠️ **Una diferencia con la letra de `c.18968`, dicha aquí:** el GO pide «404 con la MISMA FORMA que
+`send-reminder`». El estado es el mismo (404, `ok:false`), pero el cuerpo es el que `resend-whatsapp`
+ya devolvía para una factura inexistente (`error: 'invoice_not_found'` más su `message` de siempre), no
+el de `send-reminder` (`error: 'not_found'`, sin `message`). Motivo: copiar el cuerpo de la vecina
+obligaba a CAMBIAR la respuesta de un caso que ya existía, o a contestar distinto a «ajena» y a «no
+existe», que delata que la factura existe. Así no hay literal nuevo ni respuesta vieja cambiada, y el
+test fija que las dos contestan lo mismo. Si se quiere el cuerpo de `send-reminder`, es una línea.
+
+## 2 · El instrumento, y por qué no es el que verá el siguiente
+
+El censo con `--eje=comercio` no estaba en `main` al empezar (#2312 abierto): el ① se corrió desde el sha
+`31d80a78` copiado fuera del árbol. #2312 entró a media tanda (07:52:15Z) y el fichero de `main` es
+byte a byte el mismo (`cmp`). Tras mezclar `main` se repitió el «después»: 191 de 191 filas idénticas.
+
+🔴 **Y con el arreglo dentro, ese censo sale 1.** Su control positivo ERA `resend-whatsapp` cruzando.
+Ya no cruza, así que dice «¿distingue las dos rutas del par? false». No es un rojo del arreglo: es el
+positivo que caduca, lo mismo que les pasó a los negativos del eje del rol con SCRUM-1397. El fichero
+no corre en CI. **No se ha tocado:** elegir otro positivo es rediseñar el instrumento y no lo cubre el GO.
+Mientras tanto la frontera de ESTA ruta la vigila el test nuevo, que sí corre en el obligatorio.
+
+La comparación fila a fila es `evidencias/SCRUM-1514b/comparar.mjs`. Normaliza UNA cosa, declarada: el
+sufijo al azar de los códigos de referido de `GET /admin/referral`. Sus controles:
+
+| control | salida |
+|---|---|
+| CERO: dos corridas del mismo código (`antes` / `antes-repetida`) | 191 idénticas, 0 movidas, sale 0 |
+| POSITIVO: `antes` / `despues` esperando la ruta | 190 idénticas, 1 movida (la esperada), sale 0 |
+| ROJO 1: esperar la ruta donde no se mueve | sale 1 |
+| ROJO 2: no esperar ninguna donde se mueve una | sale 1 |
+
+## 3 · El test, visto en rojo primero
+
+`tests/scrum1514-el-reenvio-es-del-comercio.test.mjs`, 5 casos. Sin el arreglo: 2 pasan y 3 caen (la
+ajena «ha salido 1 mensaje al cliente de otro comercio», ajena distinta de inexistente, y sin comercio
+no se corta). Con el arreglo: 5 de 5. El doble de la base aplica sólo el comercio del `where`.
+
+Tanda de alrededor: 65 ficheros (todo test que nombra el servicio, la ruta o `resend-whatsapp`, más
+los de suite 237, 976, 812, 267, 1294, 921c, 387, 603b, 723): 630 tests, 628 pasan, 0 caen, 2 saltan
+(los dos de SCRUM-1397, sin `LIBRO_PG_URL`). `tsc --noEmit` sobre el árbol: sale 0.
+
+## 4 · Lo que NO se ha hecho ni medido
+
+- La tanda COMPLETA en local no se corrió: sólo esos 65 ficheros. El obligatorio del PR, sin leer al escribir esto.
+- Nada por HTTP contra una base ni contra la app desplegada: Prisma doblado, como el censo.
+- Las otras dos que cruzan, las 4 SIN-CONSULTA y las 25 NO-LLEGO: sin tocar (fuera del GO).
+- `frequent-concepts` y los controles caducados del eje del rol: sin tocar (ticket aparte del orquestador).
+- El «antes» se midió sobre `ad377526` y el «después» sobre ese mismo commit más el arreglo; lo que
+  `main` trajo luego en `src/` es un comentario de `modoVisible.ts`.
+
+## 5 · Reproducir
+
+    node ../../../node_modules/typescript/bin/tsc --noCheck
+    cp docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt <tmp>/censo.mjs
+    NO_COLOR=1 node <tmp>/censo.mjs <raíz del árbol> --eje=comercio > <tmp>/ahora.txt   # sale 1: ver §2
+    node docs/master/evidencias/SCRUM-1514b/comparar.mjs docs/master/evidencias/SCRUM-1514b/despues.txt <tmp>/ahora.txt
+    node --test tests/scrum1514-el-reenvio-es-del-comercio.test.mjs
+
+## 6 · Mis errores de esta tanda
+
+1. Leí el estado de #2312 una vez («OPEN») y se lo di al orquestador como dato; entró cuatro minutos
+   después y lo vi tarde, al ir a escribir el registro. El dato llevaba hora y no la puse.
+2. El primer cotejo de las 190 filas lo hice con `sed` y `diff` en consola; lo rehíce como fichero
+   con población y controles porque así no se podía repetir.
