@@ -1,0 +1,9 @@
+BASE: Merchant.subscriptionStatus=MASTER_SIN_ESCRIBIR · Merchant.status=ESTADO_SIN_MAQUINA_EN_EL_MASTER · Charge.status=CODIGO_FUERA_DEL_MASTER · Quote.status=CODIGO_FUERA_DEL_MASTER · Invoice.status=CODIGO_FUERA_DEL_MASTER · Invoice.vfEstado=COINCIDE_CON_EL_MASTER · BotSession.state=COINCIDE_CON_EL_MASTER · WhatsAppMessage.status=CODIGO_FUERA_DEL_MASTER · Job.status=COINCIDE_CON_EL_MASTER · EmailMessage.status=ESTADO_SIN_MAQUINA_EN_EL_MASTER · VfSubmission.status=ESTADO_SIN_MAQUINA_EN_EL_MASTER
+VIVA  Quote.status: CODIGO_FUERA_DEL_MASTER → COINCIDE_CON_EL_MASTER (se esperaba COINCIDE_CON_EL_MASTER) · otros campos que cambian: 0
+VIVA  Invoice.status: CODIGO_FUERA_DEL_MASTER → COINCIDE_CON_EL_MASTER (se esperaba COINCIDE_CON_EL_MASTER) · otros campos que cambian: 0
+VIVA  WhatsAppMessage.status: CODIGO_FUERA_DEL_MASTER → COMENTARIO_ATRASADO (se esperaba COMENTARIO_ATRASADO) · otros campos que cambian: 0
+VIVA  Job.status: COINCIDE_CON_EL_MASTER → CODIGO_FUERA_DEL_MASTER (se esperaba CODIGO_FUERA_DEL_MASTER) · otros campos que cambian: 0
+VIVA  BotSession.state: COINCIDE_CON_EL_MASTER → CODIGO_FUERA_DEL_MASTER (se esperaba CODIGO_FUERA_DEL_MASTER) · otros campos que cambian: 0
+VIVA  Invoice.vfEstado: COINCIDE_CON_EL_MASTER → CODIGO_FUERA_DEL_MASTER (se esperaba CODIGO_FUERA_DEL_MASTER) · otros campos que cambian: 0
+
+6 de 6 cambios dan la vuelta a su campo y sólo a él
