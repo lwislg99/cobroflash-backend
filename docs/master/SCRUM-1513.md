@@ -122,7 +122,7 @@ repositorio, el DDL con `prisma migrate diff --from-empty --to-schema-datamodel 
 
 **Medido contra:** `origin/main` = `aa0b22acc3abe8572cd5e527caed0dab1e5c0f31` · 2026-10-08T08:09:33Z (hora de GitHub)
 
-A9: sin fallo que generalice — tramo de lectura y propuesta, sin instrumento propio; el único tropiezo (un recuento con la opción de filtro detrás de la ruta) lo delató la propia salida y va en «Errores propios»
+A9: sin fallo que generalice — tramo de lectura y propuesta, sin instrumento propio; los tres tropiezos los delató la propia salida y van en «Errores propios»
 
 J2 (relevo, sesión `jv-j2`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`). **Es LECTURA y
 PROPUESTA.** No se ha tocado ningún fichero de `src/`, `tests/`, `public/`, plantilla, texto ni workflow, y **no se
@@ -358,6 +358,10 @@ que sí funciona, medido por ella el 8-oct-2026:
   cifras van arriba con su población.
 - Iba a proponer «escribir la fila antes» como una opción suelta. Leyendo la columna de una sola conexión de la
   medición de arriba se ve que sola no cierra nada: por eso C lleva el cerrojo dentro.
+- Al comprobar en rojo los dos controles de registro quité de una vez mi ancla y mi línea `A9:`. Cayó `scrum267`
+  (3 casos, nombrando este tramo) y `scrum1294` siguió verde: sin ancla, mi tramo se fundía con el de arriba, que
+  sí tiene su línea. Dos cambios a la vez tapan uno. Repetido quitando sólo la línea: cae 1 de 4 y nombra
+  `SCRUM-1513.md:123`. Y deshice la siembra a mano: `git restore` lo para el hook, con razón.
 
 | aceptación (del encargo) | dónde se ve |
 | --- | --- |
