@@ -1,0 +1,18 @@
+2026-10-08T02:17:42.6658207Z ##[group]Run node scripts/senal-de-nombres.mjs "/home/runner/work/_temp/tanda.tap"
+2026-10-08T02:17:42.6659175Z [36;1mnode scripts/senal-de-nombres.mjs "/home/runner/work/_temp/tanda.tap"[0m
+2026-10-08T02:17:42.6701728Z shell: /usr/bin/bash -e {0}
+2026-10-08T02:17:42.6701995Z env:
+2026-10-08T02:17:42.6702208Z   PUERTA_INICIO: 1791425256
+2026-10-08T02:17:42.6702439Z ##[endgroup]
+2026-10-08T02:17:46.5554362Z 
+2026-10-08T02:17:46.5556715Z [señal de nombres v1] medible=si ausentes=18 ficheros_con_ausentes=2 dudosos=0 declarados=11005 literales=11005 no_comparables=0 ficheros=1292 tap_tests=11064 tap_fail=0
+2026-10-08T02:17:46.5558739Z   POBLACIÓN: 1292 ficheros de tests/ · 11005 llamadas test()/it() (censo de SCRUM-708: 11005, coincide) · 11005 con nombre literal (11004 distintos)
+2026-10-08T02:17:46.5560506Z   PUNTO CIEGO: 0 llamadas NO se comparan (0 con el nombre construido, 0 sin nombre) en 0 ficheros. Si se pierden, esta señal no lo ve.
+2026-10-08T02:17:46.5561892Z   REPETIDOS: 1 nombres declarados más de una vez (1 en más de un fichero): se comparan por multiplicidad.
+2026-10-08T02:17:46.5563040Z   TAP: 2759378 caracteres · 11064 líneas de test · 0 de suite · resumen: tests 11064 · fail 0 · entero
+2026-10-08T02:17:46.5564050Z   🔴 FALTAN AL MENOS 18 casos declarados, en 2 fichero(s). La tanda no informó de ellos:
+2026-10-08T02:17:46.5565149Z      tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · faltan 12 de 55 (cola) · posiciones 44–55 · líneas 222–249
+2026-10-08T02:17:46.5566225Z      tests/scrum176-guard-mensaje.test.mjs · faltan 6 de 26 (cola) · posiciones 21–26 · líneas 179–247
+2026-10-08T02:17:46.5566799Z 
+2026-10-08T02:17:46.5594213Z ##[notice][señal de nombres v1] medible=si ausentes=18 ficheros_con_ausentes=2 dudosos=0 declarados=11005 literales=11005 no_comparables=0 ficheros=1292 tap_tests=11064 tap_fail=0
+2026-10-08T02:17:46.5606735Z ##[warning]tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · faltan 12 de 55 (cola) · posiciones 44–55 · líneas 222–249. La tanda no informó de ellos y salió igual.
