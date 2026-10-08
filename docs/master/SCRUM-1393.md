@@ -325,6 +325,10 @@ el mismo defecto que describe cada uno: coinciden el fichero y el síntoma.
 3. La primera salida decía «−654,1 min antes del merge»: signo y palabra a la vez. Corregido antes de entregar.
 4. Un `grep -c` de `\r` me devolvió 5 al comprobar la cicatriz: contaba líneas con la letra «r». Lo medí por
    bytes (0), que es lo que mi memoria ya decía que hiciera.
+5. **El primer obligatorio de este PR (#2294) salió ROJO, y por un fallo mío:** `salida-2-logs.txt` llevaba 2
+   bytes de escape de color copiados del log de #2234, y `scrum942` censa justo eso (job 113099516025: 11.075
+   pruebas, 1 cae). Reproducido en local con el fichero nombrado; `lee-logs.mjs` quita ahora los escapes al
+   leer. No lo corrí antes de empujar: pasé siete guards de registro y no el de bytes.
 
 ## Cómo se repite
 

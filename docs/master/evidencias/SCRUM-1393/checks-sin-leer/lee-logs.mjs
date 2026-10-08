@@ -16,7 +16,9 @@ const log = (id) => {
     fs.writeFileSync(f, execFileSync('gh', ['api', '--allow-escape-sequences', `repos/lwislg99/cobroflash-backend/actions/jobs/${id}/logs`], { encoding: 'utf8', maxBuffer: 512 * 1024 * 1024 }));
   }
   // Cada linea trae delante la hora del runner: se guarda aparte para medir silencios.
-  return fs.readFileSync(f, 'utf8').split(/\r?\n/).map((l) => ({ hora: l.slice(0, 28), txt: l.slice(29) }));
+  // El log trae los escapes de color del runner (por eso se pide con --allow-escape-sequences): se
+  // quitan al leer, para que la salida de este guion no lleve bytes de control (lo vigila scrum942).
+  return fs.readFileSync(f, 'utf8').split(/\r?\n/).map((l) => ({ hora: l.slice(0, 28), txt: l.slice(29).replace(/\u001b\[[0-9;]*[A-Za-z]/g, '') }));
 };
 
 const jobs = [];

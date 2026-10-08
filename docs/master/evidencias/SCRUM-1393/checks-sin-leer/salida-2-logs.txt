@@ -1,7 +1,7 @@
 POBLACION: 19 jobs failure/cancelled en 17 PR (de 53), TODOS los intentos, obligatorio incluido · logs en logs
 
 #2234 · «abrir-pr-y-armar-automerge» · failure · job 112468336343 · intento 1
-   dice: [36;1mecho "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."[0m
+   dice: echo "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."
    dice: GraphQL: Something went wrong while executing your query on 2026-10-06T19:48:49Z. Please include `B84A:13253:17A7B6:4FCA84:6AC5509F` when reporting this issue.
    ##[error]: No se pudo armar el auto-merge del PR #2234 y no consta un motivo legítimo. | Process completed with exit code 1.
 
