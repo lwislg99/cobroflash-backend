@@ -1,0 +1,93 @@
+POBLACION: 19 jobs failure/cancelled en 17 PR (de 53), TODOS los intentos, obligatorio incluido · logs en logs
+
+#2234 · «abrir-pr-y-armar-automerge» · failure · job 112468336343 · intento 1
+   dice: echo "::error::No se pudo armar el auto-merge del PR #$NUM y no consta un motivo legítimo."
+   dice: GraphQL: Something went wrong while executing your query on 2026-10-06T19:48:49Z. Please include `B84A:13253:17A7B6:4FCA84:6AC5509F` when reporting this issue.
+   ##[error]: No se pudo armar el auto-merge del PR #2234 y no consta un motivo legítimo. | Process completed with exit code 1.
+
+#2264 · «build + tests (con banco desechable)» · failure · job 112884703499 · intento 1 (tapado por un intento posterior)
+   ##[error]: Process completed with exit code 1.
+
+#2272 · «build + tests (con banco desechable)» · failure · job 112906403918 · intento 1 (tapado por un intento posterior)
+   ##[error]: Process completed with exit code 3. | Process completed with exit code 1. | Process completed with exit code 2.
+
+#2285 · «constancia del ALTER (informativo)» · failure · job 112940436019 · intento 1
+   dice: [constancia del ALTER] ⚠️ NO PUDE PREGUNTAR: producción responde 520.
+   ##[error]: Process completed with exit code 2.
+
+#2240 · «meta-guard · los guards caen cuando deben» · failure · job 112658748910 · intento 1
+   resumen del propio meta-guard: vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 509 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2247 · «meta-guard · los guards caen cuando deben» · failure · job 112667939990 · intento 1
+   resumen del propio meta-guard: vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 509 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2251 · «meta-guard · los guards caen cuando deben» · failure · job 112682147837 · intento 1
+   resumen del propio meta-guard: vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 515 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2259 · «meta-guard · los guards caen cuando deben» · failure · job 112873222861 · intento 1
+   resumen del propio meta-guard: vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 515 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2261 · «meta-guard · los guards caen cuando deben» · failure · job 112877413270 · intento 1
+   resumen del propio meta-guard: vivas 517 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 517 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2277 · «meta-guard · los guards caen cuando deben» · failure · job 112914859767 · intento 1
+   resumen del propio meta-guard: vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 519 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2281 · «meta-guard · los guards caen cuando deben» · failure · job 112922067780 · intento 1
+   resumen del propio meta-guard: vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 519 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2282 · «meta-guard · los guards caen cuando deben» · failure · job 112925625227 · intento 1
+   resumen del propio meta-guard: vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1
+   lineas ✔ contadas aqui: 519 · marcadas: ☠ scrum834-puerta-avisador-rojo.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2284 · «meta-guard · los guards caen cuando deben» · failure · job 112939912316 · intento 1
+   resumen del propio meta-guard: vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0
+   lineas ✔ contadas aqui: 517 · marcadas: ? vigia-atascados.test.mjs ×3
+   ##[error]: Process completed with exit code 2.
+
+#2290 · «meta-guard · los guards caen cuando deben» · failure · job 113076553309 · intento 1
+   resumen del propio meta-guard: vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+   lineas ✔ contadas aqui: 519 · marcadas: ? scrum859-identidad-y-motivo-cerrado.test.mjs ×1
+   ##[error]: Process completed with exit code 2.
+
+#2257 · «trinquete · ningún test nuevo mide la zona de la máquina» · cancelled · job 112870964892 · intento 1
+   ultima linea con texto antes del error: «1274 ficheros de la tanda + 4 canarios = 1278» a las 2026-10-07T15:30:08.2189409Z · el error llega a las 2026-10-07T16:14:33.4672485Z (44.4 min de silencio)
+   ##[error]: The operation was canceled.
+
+#2261 · «trinquete · ningún test nuevo mide la zona de la máquina» · cancelled · job 112877412968 · intento 1
+   ultima linea con texto antes del error: «midiendo en Pacific/Kiritimati     … 10805 pruebas · 381 s · el hijo vio Pacific/Kiritimati» a las 2026-10-07T15:50:05.9351725Z · el error llega a las 2026-10-07T16:28:11.5320697Z (38.1 min de silencio)
+   ##[error]: The operation was canceled.
+
+#2263 · «trinquete · ningún test nuevo mide la zona de la máquina» · cancelled · job 112883431831 · intento 1
+   ultima linea con texto antes del error: «midiendo en Pacific/Kiritimati     … 10860 pruebas · 496 s · el hijo vio Pacific/Kiritimati» a las 2026-10-07T16:04:45.7343644Z · el error llega a las 2026-10-07T16:40:52.4493597Z (36.1 min de silencio)
+   ##[error]: The operation was canceled.
+
+#2272 · «trinquete · ningún test nuevo mide la zona de la máquina» · cancelled · job 112906404262 · intento 1 (tapado por un intento posterior)
+   ultima linea con texto antes del error: «1283 ficheros de la tanda + 4 canarios = 1287» a las 2026-10-07T16:49:30.0118251Z · el error llega a las 2026-10-07T17:34:08.1031048Z (44.6 min de silencio)
+   ##[error]: The operation was canceled.
+
+#2273 · «trinquete · ningún test nuevo mide la zona de la máquina» · cancelled · job 112906587066 · intento 1
+   ultima linea con texto antes del error: «1283 ficheros de la tanda + 4 canarios = 1287» a las 2026-10-07T16:50:34.1974731Z · el error llega a las 2026-10-07T17:34:57.7660134Z (44.4 min de silencio)
+   ##[error]: The operation was canceled.
+
+LEIDOS 19 de 19
+
+CONTROL · el meta-guard de un PR que este metodo da por verde entero (#2292, job 113084931156):
+   resumen del propio meta-guard: vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0
+   lineas ✔ contadas aqui: 520 · marcadas: ninguna
+   ##[error]: ninguno
