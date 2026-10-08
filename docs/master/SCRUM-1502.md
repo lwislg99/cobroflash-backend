@@ -179,6 +179,75 @@ aplican aquí.
   ticket; nadie ha comprobado que el ticket diga lo que la marca dice), ni las 11 del asesor.
 - La tanda completa no se ha corrido: el cambio son cuatro ficheros bajo `docs/master/`.
 
+## Tramo 3 · la línea de atribución junto a la marca de `invoicesAdmin.routes.ts:1293`, y el número baja de 28 a 27
+
+**Medido contra:** `origin/main` = `176d0772eb0f4be574dad06f5c548f7da73c5ca7` · 2026-10-08T01:44:30Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum387-procedencia-aprobacion.test.mjs`
+
+Lo hace J1 (equipo de Javier), sesión `jv-j1` (relevo), en la rama
+`scrum-1446c-la-factura-dice-siete-y-medio` (la ficha pedía no abrir otra). Permiso leído: SCRUM-1502
+`c.18892`. La decisión que la línea cita: SCRUM-1502 `c.18835`.
+
+### 🔴 El 27 es «bien escrito», NO «verificado»
+
+El trinquete acepta esa línea POR SU FORMA: un ticket, la palabra y un id. No comprueba que el ticket
+exista, ni que el comentario exista, ni que diga lo que la marca afirma: J4 fabricó un ancla a un
+ticket que en Jira da 404 y el trinquete la dio por buena (SCRUM-1511; `c.18889` de este ticket).
+**Nadie puede leer «27» como «27 marcas con su decisión comprobada».** En este caso la referencia es
+verdadera porque la he abierto yo: `c.18835` existe y trata de esa marca. Eso lo sé yo, no el guard.
+
+### 1 · Qué se ha cambiado
+
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts`: UNA línea de comentario, añadida al final
+  del bloque de la marca. Ninguna línea de código. El texto del 409 no se toca ni se copia aquí.
+- `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`: la constante `SIN_RESPALDO`, de 28 a 27.
+  Sólo el número.
+
+No se ha puesto ancla a ninguna otra marca: las otras 27 se le preguntan al fundador una a una.
+
+### 2 · El orden, que es lo que distingue esto de relajar un guard
+
+Población: las marcas que da `congeladas()`, el mismo camino que decide si el árbol pasa.
+
+| paso | árbol | `congeladas()` | `:1293` en la lista | `scrum921c` |
+| --- | --- | --- | --- | --- |
+| ① | tal cual | 28 | sí | 13 de 13 |
+| ② y ③ | con la línea, constante en 28 | 27 | **no** (es la única que sale) | 12 de 13: cae `SCRUM-921c · el trinquete tampoco baja en silencio` («quedan 27 y el trinquete dice 28») |
+| ④ | con la línea, constante en 27 | 27 | no | 13 de 13 |
+
+Por nivel, de ① a ②: `anclado` 14 → 15, `sin-respaldo` 28 → 27, el resto igual (negada 13, citada 1,
+rastreable 149, documental 24).
+
+### 3 · Lo que el permiso no preveía: un SEGUNDO trinquete
+
+La misma línea le da «procedencia» a la marca para `tests/scrum387-procedencia-aprobacion.test.mjs`,
+y cae `SCRUM-387 · el trinquete tampoco baja en silencio: la mejora se escribe`: «se han arreglado
+marcas sin procedencia (17 → 16) y el número no se ha bajado». Pide bajar `SIN_PROCEDENCIA` de 17 a
+16 en el mismo cambio. Ni la medición de J4 ni `c.18892` lo nombran. Lo cazó la tanda dirigida (65
+ficheros: 660 tests, 657 pasan, 2 saltan, 1 cae), no yo leyendo.
+
+Paré el commit y lo pregunté. La decisión está en `c.18900` (del orquestador del equipo de Javier,
+leída): se baja también, sólo el número, porque bajar un trinquete cuando él mismo lo exige es
+apretarlo y no relajarlo; tocar su lógica sería otro permiso. Y lo pedía el propio guard: el
+comentario que lleva encima esa constante dice que el número «baja según se les ponga su ticket o su
+documento». Con `SIN_PROCEDENCIA` en 16 la misma
+tanda da 660 tests, 658 pasan, 2 saltan, 0 caen.
+
+**El 16 vale lo mismo que el 27: «bien escrito», NO «verificado».** `scrum387` también mira la forma
+(un ticket o un documento en el bloque de la marca), no si lo que nombra dice lo que la marca dice.
+
+**El diff lleva dos cambios de número, y los dos vienen de UNA sola línea de comentario**: el 28 → 27
+de `scrum921c` y el 17 → 16 de `scrum387`. No son dos decisiones: es una marca que deja de estar
+acusada en los dos censos que la contaban. `scrum921c` cambia además, sin tocar nada, su reparto por
+nivel (`anclado` 14 → 15), que no es una constante.
+
+### 4 · Lo que no he hecho
+
+- No he comprobado contra Jira ninguna de las otras 14 marcas «ancladas» ni las 149 «rastreables».
+- No he corrido la tanda completa: la corre el check obligatorio.
+- El «Tramo 2» de J4 (rama `scrum-1502b-mira-el-guard-en-jira`) no estaba en `main` al escribir esto:
+  si entra después, los dos tramos se conservan.
 ---
 
 ## SCRUM-1502b · Tramo 2 (J4, 8-oct-2026): el trinquete NO mira en Jira. Mira el ÁRBOL, y de Jira sólo la FORMA de una cita escrita en el comentario de la marca

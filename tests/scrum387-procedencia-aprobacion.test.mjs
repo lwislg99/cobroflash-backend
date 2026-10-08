@@ -99,7 +99,7 @@ function censar() {
 // 📌 Y la lección, que vale más que el número: el fallo se manifestó como una BAJADA —de 9 a 8—,
 // o sea con la forma de una mejora. Lo cazó la mitad del trinquete que vigila que no baje en
 // silencio, que hasta hoy parecía la mitad menos útil.
-export const SIN_PROCEDENCIA = 17;
+export const SIN_PROCEDENCIA = 16;
 
 test('SCRUM-387 · SUELO: el censo encuentra marcas de aprobación de verdad', () => {
   const { conProcedencia, sinProcedencia } = censar();
