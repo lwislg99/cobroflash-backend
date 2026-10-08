@@ -1,0 +1,39 @@
+══ 1 · LO QUE OFRECEN LOS DOS DESPLEGABLES (ejecutando public/dashboard/js/tiposDeIva.js)
+  «IVA por defecto» del documento: [21,10,4,0]
+  «IVA» de una línea nueva:        [21,10,4,0]
+  POBLACION de tipos elegibles: 4 → [21,10,4,0]
+  tipos que admite el portón (7): [21,10,7.5,5,4,2,0]
+  admitidos que NO se pueden elegir: [7.5,5,2]
+
+══ 2 · EL CASO, TAL CUAL: 100,00 con 10,00 de descuento global
+   7.5 % · se firma 96,70 · la cuenta da 96,75 · diferencia -5 cént. · línea del descuento con tax 0.08 · portón: línea 1: el IVA 8 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, 4 %, 5 %, 7.5 %, 10 %, 21 %
+    21 % · se firma 108,90 · la cuenta da 108,90 · diferencia 0 cént. · línea del descuento con tax 0.21 · portón: pasa
+    10 % · se firma 99,00 · la cuenta da 99,00 · diferencia 0 cént. · línea del descuento con tax 0.1 · portón: pasa
+     4 % · se firma 93,60 · la cuenta da 93,60 · diferencia 0 cént. · línea del descuento con tax 0.04 · portón: pasa
+     0 % · se firma 90,00 · la cuenta da 90,00 · diferencia 0 cént. · línea del descuento con tax 0 · portón: pasa
+
+══ 3 · EL RECUENTO: un solo tipo, una línea y dos líneas iguales
+  precios: 810 (de 0,37 a 299,70) × cantidades [1,3] × descuentos [0.01,0.5,1,9.99,10,33.33] × 1 y 2 líneas
+  tipo                               |  casos | mecanismo | la cuenta no sale       | portón
+  CONTROL 7,5 % (no elegible)        |  19150 |     19150 |  11981 (máx. 17 cént.) |  19150
+  21 % (elegible)                    |  19150 |         0 |     17 (máx. 1 cént.) |      0
+      p. ej. 1 × (1 × 8,51) con 0,01 de descuento: se firma 10,28, la cuenta da 10,29
+  10 % (elegible)                    |  19150 |         0 |     74 (máx. 1 cént.) |      0
+      p. ej. 1 × (1 × 1,85) con 1,00 de descuento: se firma 0,93, la cuenta da 0,94
+  4 % (elegible)                     |  19150 |         0 |      0 (máx. 0 cént.) |      0
+  0 % (elegible)                     |  19150 |         0 |      0 (máx. 0 cént.) |      0
+  5 % (admitido, no elegible)        |  19150 |         0 |     82 (máx. 1 cént.) |      0
+  2 % (admitido, no elegible)        |  19150 |         0 |     44 (máx. 1 cént.) |      0
+  control: 1 × (1 × 1,11) con 0,50 de descuento: se firma 0,65, la cuenta da 0,66
+  control: línea 1: el IVA 8 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, 4 %, 5 %, 7.5 %, 10 %, 21 %
+
+  ELEGIBLES, en total: 76600 casos · mecanismo 0 · la cuenta no sale 91 · portón 0
+
+══ 4 · DOS TIPOS ELEGIBLES MEZCLADOS CON DESCUENTO GLOBAL (otra cosa: decidido en SCRUM-887)
+  pares de tipos: 6 · sus líneas salen a 0 al facturar (no se factura, a propósito): 6
+
+══ 5 · SI UNA LÍNEA LLEGA CON 7,5 %, EL DESPLEGABLE LO ENSEÑA Y LO CONSERVA
+  opciones(7.5) → [21,10,7.5,4,0] · esEspanol(7.5) → false
+  invalidTipoIva(0.075) (la regla que usan el portón y el asistente) → admitido
+  control · invalidTipoIva(0.08) → 8 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, 4 %, 5 %, 7.5 %, 10 %, 21 %
+EXIT=0

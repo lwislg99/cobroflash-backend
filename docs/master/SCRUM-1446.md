@@ -309,3 +309,37 @@ una ruta que sale de una variable.
   `c365c421`. Lo cazó el `git ls-remote` de antes de empujar, que es para lo que está (A4).
 - El hook de arranque me dijo «SIN IDENTIDAD… no construyas» (`jv-j1`). Es SCRUM-1498, de S5; seguí,
   como dice la ficha común.
+
+### SCRUM-1446b · ¿Se llega al presupuesto que no se puede facturar eligiendo en los desplegables?
+
+**No.** Medido ejecutando el módulo real de los dos desplegables y, con lo que ofrecen, `calcTotal`,
+`lineasParaFacturar` y el portón de tipos de `dist/`. Sonda y salida:
+`docs/master/evidencias/SCRUM-1446/medir-el-descuento-global-por-el-desplegable.mjs` y
+`salida-desplegable.txt`.
+
+- Los dos desplegables («IVA por defecto» del documento y el de cada línea) ofrecen los mismos cuatro
+  tipos: 21, 10, 4 y 0. El portón admite siete; los que no se pueden elegir son 7,5, 5 y 2.
+- Con los cuatro elegibles, un solo tipo y descuento global: 76.600 casos (19.150 por tipo). El
+  descuento se aplica con un tipo distinto del de la línea en **0**, y el portón rechaza la factura en
+  **0**.
+- Control, la misma población al 7,5 %: 19.150 de 19.150 en las dos columnas, y el caso del ticket tal
+  cual (100,00 con 10,00 de descuento): se firma 96,70, la cuenta da 96,75, y la línea del descuento
+  sale con tipo 0.08, que el portón rechaza.
+- El 5 % y el 2 % tampoco fallan (0 y 0): el defecto necesita un tipo con decimales en el porcentaje, y
+  entre los siete admitidos sólo lo es el 7,5 %.
+
+**Lo que sí queda, y es otra cosa.** Con tipos elegibles, lo firmado difiere en 1 céntimo de
+(base − descuento) × (1 + tipo) en 91 de los 76.600 (17 al 21 %, 74 al 10 %, 0 al 4 % y al 0 %). Son
+empates exactos en medio céntimo que la coma flotante resuelve hacia abajo (8,51 al 21 % con 0,01 de
+descuento: 1028,5 céntimos, se firma 10,28). Esas facturas pasan el portón. No he seguido si la
+factura sale por lo firmado; es la familia de SCRUM-141 y SCRUM-624, no la de este defecto.
+
+**Y un tercer caso que el desplegable sí alcanza, ya decidido:** dos tipos elegibles distintos con
+descuento global no se facturan (6 pares de 6: sus líneas salen a 0). Es la decisión C de SCRUM-887,
+escrita en `invoiceLines.service.ts`, no un hallazgo.
+
+**Por dónde entra entonces un 7,5 %.** Si una línea LLEGA con 7,5 %, el desplegable lo enseña y lo
+conserva (`opciones(7.5)` → 21, 10, 7.5, 4, 0): no es cerrado, a propósito. Las puertas por las que
+puede llegar las he **leído, no ejecutado**: la API, el asistente (valida con la misma regla de siete
+tipos, que admite 0.075), una plantilla o un borrador que ya lo traigan. No he mirado si alguna de
+ellas lo produce en la práctica, ni si hay alguno guardado: no he consultado ninguna base.
