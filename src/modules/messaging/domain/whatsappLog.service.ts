@@ -52,6 +52,122 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
   }
 }
 
+// ── SCRUM-1513 · El tope de plantillas se decide y se apunta en el MISMO instante ──────────
+// Medido contra PostgreSQL 16 (Jira c.18973): con el tope en 100, una entrega del webhook con 120
+// mensajes sacaba de 113 a 120 plantillas, y 120 peticiones a la vez, 120. El tope era un `count`
+// y la fila que ese `count` cuenta se escribía DESPUÉS de hablar con el proveedor: todas las
+// preguntas se contestaban antes de la primera fila.
+//
+// Lo que cierra (opción C, GO del fundador en c.18988): un cerrojo CORTO por comercio, y dentro
+// de él la pregunta y la fila. La fila nace en `queued` —estado que ya está en el máster y que
+// hasta hoy no escribía nadie— y se resuelve al volver del proveedor, ya FUERA del cerrojo: no se
+// retiene ninguna conexión mientras el proveedor contesta.
+//
+// Qué cuenta para el tope: lo que tiene identificador del proveedor O sigue en `queued`.
+//   · el proveedor dijo que NO  → `failed`: devuelve el hueco (P1).
+//   · no se sabe si salió       → se queda en `queued`: OCUPA hueco hasta medianoche (P2). Es
+//     mandar de menos a propósito: un solo número para todos los comercios, y pasarse cuesta más
+//     que quedarse corto.
+//
+// La reserva nace SIN documento asociado, y sólo lo recibe cuando deja de estar en `queued`. El
+// paquete de disputa (`invoicesAdmin.routes.ts`) imprime el estado de cada mensaje del documento
+// tal cual: así no llega a imprimir un estado sin resolver.
+//
+// El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y no se comparten.
+const TOPE_WA_LOCK_NS = 1751;
+
+export type ReservaDePlantilla =
+  | { ok: true; id: number }
+  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number };
+
+/**
+ * Pregunta los dos topes y, si cabe, deja la fila apuntada en `queued`. Todo bajo el cerrojo del
+ * comercio. LANZA si la base no contesta: qué se hace entonces lo decide quien llama.
+ */
+/** El cliente de la base lo pasa quien llama: es el suyo, y es el que un test dobla. */
+type ClienteDeLaBase = typeof prisma;
+
+export async function reservarPlantilla(db: ClienteDeLaBase, input: {
+  merchantId: number;
+  customerId?: number | null;
+  templateName?: string | null;
+  topeComercio: number;
+  topeCliente: number;
+}): Promise<ReservaDePlantilla> {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const cuentaParaElTope = {
+    merchantId: input.merchantId,
+    type: 'template',
+    createdAt: { gte: startOfDay },
+    OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
+  };
+  return db.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
+
+      const sentToday = await tx.whatsAppMessage.count({ where: cuentaParaElTope });
+      if (sentToday >= input.topeComercio) return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday };
+
+      if (input.customerId) {
+        const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...cuentaParaElTope, customerId: input.customerId } });
+        if (toCustomerToday >= input.topeCliente) {
+          return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday };
+        }
+      }
+
+      const fila = await tx.whatsAppMessage.create({
+        data: {
+          merchantId: input.merchantId,
+          customerId: input.customerId ?? null,
+          type: 'template',
+          templateName: input.templateName ?? null,
+          status: 'queued',
+          costEstimate: WA_UTILITY_COST_ES,
+        },
+        select: { id: true },
+      });
+      return { ok: true as const, id: fila.id };
+    },
+    // La espera es por el cerrojo, que es corto; el margen es para una ráfaga, no para el proveedor.
+    { maxWait: 15_000, timeout: 15_000 },
+  );
+}
+
+/**
+ * Resuelve una reserva al volver del proveedor. Nunca lanza.
+ *   · `enviada`       → `sent`, con el identificador del proveedor y su documento.
+ *   · `rechazada`     → `failed`, con su documento: devuelve el hueco.
+ *   · `sin_respuesta` → se queda en `queued` y sin documento: ocupa el hueco. Sólo se anota el motivo.
+ */
+export async function resolverReservaDePlantilla(
+  db: ClienteDeLaBase,
+  id: number,
+  desenlace:
+    | { como: 'enviada'; waMessageId: string | null; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'rechazada'; error: string; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'sin_respuesta'; error: string },
+): Promise<void> {
+  try {
+    if (desenlace.como === 'sin_respuesta') {
+      await db.whatsAppMessage.update({ where: { id }, data: { error: desenlace.error } });
+      return;
+    }
+    await db.whatsAppMessage.update({
+      where: { id },
+      data: {
+        ...(desenlace.como === 'enviada'
+          ? { status: 'sent', waMessageId: desenlace.waMessageId }
+          : { status: 'failed', error: desenlace.error }),
+        relatedType: desenlace.relatedType ?? null,
+        relatedId: desenlace.relatedId ?? null,
+      },
+    });
+  } catch (err: any) {
+    console.error('[WA-0b] resolverReservaDePlantilla omitido:', err?.message || err);
+  }
+}
+
 // ── A5.2 · Ventana de servicio de 24 h (estrategia de coste ~0, Ola 5) ──────
 // Cada mensaje ENTRANTE (texto, tap de quick reply/lista, audio…) abre o renueva la
 // ventana de 24 h de ese número. Se registra una fila `type:'inbound'` por CADA

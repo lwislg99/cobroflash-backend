@@ -386,3 +386,130 @@ detrás de la que crea la carpeta, que la borra al salir el proceso. En local, a
 | 4 · La parte ①: por ficha y no por número | §4 |
 | Dejar escrito lo de Postgres en esta máquina | §5 |
 | Construir el arreglo | NO HECHO → fundador: no hay GO (regla 40). Decide P1, P2 y P3 de §1 y el punto 4 de §4 |
+
+---
+
+# SCRUM-1513d · El cerrojo del tope de plantillas, construido: la opción C
+
+**Medido contra:** `origin/main` = `497f516710e5ff843a6cfbee77f33c2692bba98f` · 2026-10-08T09:25:52Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1513d-la-reserva-del-tope.test.mjs`
+
+**J2 (relevo, sesión `jv-j2`, equipo de Javier).** Orden de construir: Jira `c.18998`. GO del fundador: `c.18988`
+(P1 devuelve el hueco · P2 ocupa hueco = mandar de menos · P3 no se toca). Firma del rótulo del chip: `c.18995`.
+El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha común.
+
+## Qué se ha construido
+
+- `src/modules/messaging/domain/whatsappLog.service.ts` (J2): `reservarPlantilla` y `resolverReservaDePlantilla`.
+  Una transacción corta: cerrojo del comercio (`pg_advisory_xact_lock`, espacio propio 1751), las dos preguntas del
+  tope y, si cabe, la fila en `queued`. El cerrojo se suelta ANTES de hablar con el proveedor.
+- `src/integrations/whatsapp.ts` (J2), sólo `sendWhatsAppTemplate`: la validación de la plantilla sube delante de
+  la reserva; el envío que sale pasa la fila a `sent`; el rechazo, a `failed`; sin respuesta, la deja en `queued`.
+  Ninguna firma ni valor devuelto cambia: no se ha tocado ningún llamador.
+- Qué cuenta para el tope: lo que tiene identificador del proveedor **o** sigue en `queued`, de hoy.
+- Los tres cerrojos de emisión (1748, 1749, 1750) no se han tocado. Ni esquema, ni estado nuevo, ni texto nuevo.
+- `tests/_envio-doblado.mjs`: el doble de la base aprende UNA sentencia, el cerrojo de transacción, como no-op.
+  Cualquier otro `$executeRaw` sigue avisando. Es un doble, no un control: no se ha relajado ninguna comprobación.
+
+## El control, contra PostgreSQL 16.13 de verdad (desechable, loopback), tope en 100
+
+El mismo guion de la medición de arriba (`evidencias/SCRUM-1513/tope-postgres.cjs`), una pasada de cada:
+
+| caso | ROJO PREVIO (`main`, sin arreglo) | con el arreglo | con el arreglo y **sin la línea del cerrojo** |
+| --- | --- | --- | --- |
+| UNA petición con 120 mensajes | 117 | **100 y 20 bloqueadas** | 108 |
+| 120 peticiones a la vez | 120 | **100 y 20** | 110 |
+| 99 enviadas y UNA petición con 2 | 2 | **1 y 1 bloqueada** (no 0) | 2 |
+| 99 enviadas y UNA petición con 5 | 2 | **1 y 4** | 3 |
+| el envío normal de 1 | 1 | **1** | 1 |
+
+Con `--pool 1` y con `--latencia 150`, las mismas cifras de la columna del arreglo (una pasada de cada; esas dos
+salidas no se han guardado). 11 controles con esperado, 0 sin cuadrar, en todas las pasadas.
+
+**La tercera columna es la que importa mañana.** Quitando SÓLO la línea del cerrojo en `dist`, con la reserva
+puesta, el defecto vuelve: 108, 110, 2 y 3. La reserva sola no cierra nada; lo que cierra es el cerrojo. En un
+banco en memoria esos números seguirían saliendo bien.
+
+Y los desenlaces del proveedor, que desde el webhook no se pueden provocar
+(`evidencias/SCRUM-1513d/reserva-postgres.cjs`, 19 comprobaciones, 0 sin cuadrar):
+
+| caso | salió |
+| --- | --- |
+| P1 · el proveedor RECHAZA (400) con 99 enviadas, y llega otro | la fila pasa a `failed`; el siguiente SALE |
+| **P2 · el proveedor NO CONTESTA (conexión cortada) con 99 enviadas, y llega otro** | la fila se queda en `queued`; **el siguiente NO sale** |
+| P2 · el proveedor contesta 500 | igual que el anterior |
+| mientras el proveedor contesta | la fila ya existe, en `queued` y sin documento |
+| una reserva parada de ayer · de hoy | no cuenta · cuenta |
+| tope por cliente: 2 enviadas a ese cliente y 3 envíos a la vez | 1 sale y 2 bloqueadas |
+| dos comercios al borde, 2 envíos a la vez en cada uno | 1 y 1: el cerrojo no es global |
+| 20 envíos a la vez con el proveedor tardando 150 ms | 233 ms en total, no 3.000: no van de uno en uno |
+| plantilla inválida | no sale y no ocupa hueco |
+
+Sin la línea del cerrojo ese guion sale 1: caen el tope por cliente (salen 2) y los dos comercios (salen 2 en uno).
+El caso «99 y 2 a la vez» NO cayó en esa pasada: la carrera no se pierde siempre, y por eso no es el único control.
+
+## El paquete de disputa, medido antes de que `queued` se vea
+
+Leído (`invoicesAdmin.routes.ts:363-374` y `:431`, carril J1, sin tocar): busca los mensajes **por documento**, no
+filtra por estado e imprime el estado tal cual. Una reserva asociada al documento habría impreso `queued`.
+
+**Por eso la reserva nace SIN documento, y sólo lo recibe cuando deja de estar en `queued`.** Ejecutado: tras un
+envío sin respuesta, el documento tiene 0 filas en `queued`. El paquete y los tres chips de documento no llegan a
+verlo; no hace falta traducir nada ni otra frase. La pestaña de WhatsApp de la ficha del cliente lee por cliente y sí
+lo ve, con el rótulo firmado en `c.18995`, que ya pinta `public/dashboard/js/api.js` (S2; no se ha tocado).
+
+## Lo que cambia para quien mira la pantalla, y no es un texto nuevo
+
+Cuando el proveedor no contesta, hoy se escribe una fila `failed` asociada al documento y el chip del documento dice
+«No entregado». Con este cambio la fila se queda en `queued` y sin documento, así que **el chip del documento ya no
+dice «No entregado» en ese caso** — y el aviso al profesional de que el documento está sin enviar **no cambia**: la
+regla que lo pinta da el mismo aviso y el mismo texto con y sin esa fila (medido en `c.18984`). «No entregado» es
+una afirmación, y en ese caso no se sabe si se entregó: el producto deja de afirmar lo que ignora. Aprobado por el
+orquestador el 8-oct-2026; es un cambio por ausencia, no por texto, y queda aquí para quien se lo pregunte.
+
+## Tests de la casa
+
+- `tests/scrum1513d-la-reserva-del-tope.test.mjs`: 11 de 11. Fija el orden (cerrojo, pregunta, fila), qué cuenta la
+  pregunta, y qué lleva la fila en cada desenlace. **No puede probar que el cerrojo cierre la carrera**: eso sólo se
+  ve con varias conexiones, y es lo medido a mano arriba.
+- Los 101 ficheros que nombran el camino de envío o su registro: 955 tests, 937 pasan, 16 saltan, **2 caen**, los
+  dos de `scrum245-tipo-obliga-declarar` con `MODULE_NOT_FOUND`. No los he corrido sobre `main` en este árbol:
+  que sean del árbol anidado y no de este cambio es lo que dice el error, no una medición.
+- **La tanda completa NO se ha corrido.** La lancé y el arnés la mató por falta de memoria; lo que dejó no se cuenta.
+  El veredicto de la tanda entera es el del obligatorio en CI.
+
+Tres rojos míos por el camino, arreglados en el código y no en el control: `scrum1477` exige el literal
+`desenlace: desenlaceDeMeta(err)` en los siete `catch` (lo había sacado a una variable); `scrum411` cazó un `export`
+sin llamador (el espacio del cerrojo); y ocho tests de `scrum1465b` y `scrum1478` doblan la base sólo en
+`whatsapp.js`, y la reserva preguntaba desde otro módulo — ahora recibe el cliente de la base por parámetro.
+
+## Lo que NO he medido
+
+Producción ni staging · el proveedor real · el pool y el número de instancias de producción · la muerte del proceso
+entre la reserva y la respuesta (deja una fila en `queued` hasta medianoche; razonado, no ejecutado) · P3, la base
+que no contesta en la reserva: sigue saliendo como antes, cubierto sólo por el test con un doble · una ráfaga que
+agote la espera de la transacción (15 s): caería en P3 y saldría sin reserva; con 120 a la vez y una sola conexión
+no pasó · la cadena de una fila `queued` hasta la pestaña del cliente en un navegador · `getWhatsAppMetrics`, que
+suma una fila `queued` en el total y en el coste (leído en `c.18984`, no ejecutado) · yaqu.app, que no se puede
+verificar hasta el merge.
+
+## Errores propios
+
+- Los tres rojos de arriba: escribí el código sin correr antes los controles de la casa que lo miran.
+- Lancé la tanda completa en segundo plano con la máquina corta de memoria, contra el aviso de la ficha; la mató
+  el arnés y perdí esa pasada.
+- Crucé los 200k de contexto antes de avisar: medido 210.344.
+
+| aceptación (de `c.18998`) | dónde se ve |
+| --- | --- |
+| cerrojo corto por comercio y reserva en `queued`, resuelta al volver | «Qué se ha construido» |
+| sin tocar los 3 sitios de emisión | ídem; espacio propio 1751 |
+| subir la validación de plantilla delante de la reserva | ídem; caso «plantilla inválida» |
+| 99 y una petición con 2 pasa de 2 a 1, NO a 0 | tabla del control |
+| el envío normal de 1 sigue saliendo | tabla del control |
+| visto en rojo antes, contra Postgres de verdad | columnas primera y tercera |
+| medir el paquete de disputa antes de que `queued` sea visible | «El paquete de disputa» |
+| la parte ① (la baja) | NO HECHO → sin GO |
+| P3 | NO HECHO → no se toca aquí |
+| tanda completa en local | NO HECHO → la mató el arnés; queda el obligatorio |
