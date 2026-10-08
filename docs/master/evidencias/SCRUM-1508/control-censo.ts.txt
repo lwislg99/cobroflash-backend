@@ -1,0 +1,31 @@
+// Fixture de control del censo SCRUM-1508. Lo que tiene que ver cada modo va contado al lado.
+import { recordAudit, recordAuditOrThrow } from './x';
+declare const prisma: any; declare const tx: any; declare function algo(): Promise<void>;
+
+// escritores: 2 llamadas + 1 alias + 1 directo = 4
+export async function a() {
+  recordAudit({ merchantId: 1, action: 'deshacer_pago' });
+  await recordAuditOrThrow({ merchantId: 1, action: 'factura_emitida' }, tx);
+  const auditar = recordAuditOrThrow;
+  await tx.auditLog.create({ data: {} });
+  return auditar;
+}
+
+// lectores: 2 delegados (findMany, count) + 1 cadena SQL + 1 cadena de modelo + 1 delegado suelto = 5
+export async function b() {
+  const x = await prisma.auditLog.findMany({ where: { action: 'deshacer_pago' } });
+  const n = await tx.auditLog.count({ where: { action: { in: ['a', 'b'] } } });
+  const r = await prisma.$queryRaw`SELECT * FROM audit_log WHERE id = 1`;
+  const m = prisma['auditLog'];
+  const d = prisma.auditLog;
+  return [x, n, r, m, d];
+}
+
+// forma: 2 (suelta con catch que traga; void con catch que traga). NO cuentan: la esperada, la que relanza, la devuelta.
+export async function c() {
+  algo().catch((e) => console.error(e));
+  void prisma.cosa.create({ data: {} }).catch(() => {});
+  await algo().catch(() => {});
+  algo().catch((e) => { throw e; });
+  return algo().catch(() => null);
+}

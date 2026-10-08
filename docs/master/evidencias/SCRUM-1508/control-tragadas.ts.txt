@@ -1,0 +1,8 @@
+declare const prisma: any; declare const res: any;
+// esperado: 1 PROPAGA, 1 TRAGA(try) sin-senal, 1 TRAGA(try) devuelve-valor, 1 TRAGA(.catch), 1 PROPAGA (catch relanza), 1 TRAGA(try) responde-http = 6
+export async function p1() { await prisma.cosa.create({}); }
+export async function t1() { try { await prisma.cosa.create({}); } catch (e) { console.error(e); } }
+export async function t2() { try { await prisma.cosa.update({}); return true; } catch (e) { return false; } }
+export function c1() { prisma.cosa.create({}).catch(() => {}); }
+export async function p2() { try { await prisma.cosa.upsert({}); } catch (e) { throw new Error('x'); } }
+export async function h1() { try { await prisma.cosa.delete({}); } catch (e) { res.status(500).json({}); } }
