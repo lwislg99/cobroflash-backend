@@ -1,0 +1,99 @@
+node v24.18.0 · win32 · x64 · módulos internos legibles: 371
+
+① EJECUTADO: la marca de agua por defecto de un flujo de bytes
+   stream.getDefaultHighWaterMark(false) = 16384
+   process.stdout.writableHighWaterMark  = 16384 · tipo de la salida de ESTE proceso: fs
+   y en el código (lib/internal/streams/state.js):
+   10  
+   11  // TODO (fix): For some reason Windows CI fails with bigger hwm.
+   12  let defaultHighWaterMarkBytes = process.platform === 'win32' ? 16 * 1024 : 64 * 1024;
+   13  let defaultHighWaterMarkObjectMode = 16;
+   14  
+
+② lib/internal/test_runner/test.js — qué espera la rama de forceExit antes de process.exit()
+ 1391      } else if (this.config.forceExit) {
+ 1392        // This is the root test, and all known tests and hooks have finished
+ 1393        // executing. If the user wants to force exit the process regardless of
+ 1394        // any remaining ref'ed handles, then do that now. It is theoretically
+ 1395        // possible that a ref'ed handle could asynchronously create more tests,
+ 1396        // but the user opted into this behavior.
+ 1397        const promises = [];
+ 1398  
+ 1399        for (let i = 0; i < reporterScope.reporters.length; i++) {
+ 1400          const { destination } = reporterScope.reporters[i];
+ 1401  
+ 1402          ArrayPrototypePush(promises, new Promise((resolve) => {
+ 1403            destination.on('unpipe', () => {
+ 1404              if (!destination.closed && typeof destination.close === 'function') {
+ 1405                destination.close(resolve);
+ 1406              } else {
+ 1407                resolve();
+ 1408              }
+ 1409            });
+ 1410          }));
+ 1411        }
+ 1412  
+ 1413        this.harness.teardown();
+ 1414        await SafePromiseAllReturnVoid(promises);
+ 1415        process.exit();
+
+③ lib/internal/streams/readable.js — `pipe`: si el destino devuelve false, la fuente se para
+ 1009    function ondata(chunk) {
+ 1010      debug('ondata');
+ 1011      try {
+ 1012        const ret = dest.write(chunk);
+ 1013        debug('dest.write', ret);
+ 1014  
+ 1015        if (ret === false) {
+ 1016          pause();
+ 1017        }
+ 1018      } catch (error) {
+ 1019        dest.destroy(error);
+ 1020      }
+ 1021    }
+ 1022  
+ 1023    // If the dest has an error, then stop piping into it.
+ 1024    // However, don't suppress the throwing behavior for this.
+
+④ lib/internal/streams/writable.js — cuándo `write` devuelve false
+  572    }
+  573  
+  574    const ret = state.length < state.highWaterMark || state.length === 0;
+  575  
+  576    if (!ret) {
+  577      state[kState] |= kNeedDrain;
+  578    }
+  579  
+  580    // Return false if errored or destroyed in order to break
+
+⑤ lib/net.js — la salida estándar sólo se pone bloqueante en Windows
+  444      if ((fd === 1 || fd === 2) &&
+  445          (this._handle instanceof Pipe) && isWindows) {
+  446        // Make stdout and stderr blocking on Windows
+  447        err = this._handle.setBlocking(true);
+  448        if (err)
+  449          throw new ErrnoException(err, 'setBlocking');
+  450  
+  451        this._writev = null;
+  452        this._write = makeSyncWrite(fd);
+  453        // makeSyncWrite adjusts this value like the original handle would, so
+
+⑥ lib/internal/test_runner/reporter/v8-serializer.js — un mensaje por evento
+   31        item.data.details.error = originalError;
+   32      }
+   33  
+   34      const serializedMessage = serializer.releaseBuffer();
+   35      const serializedMessageLength = serializedMessage.length - (4 + headerLength);
+   36  
+   37      serializedMessage.set([
+   38        serializedMessageLength >> 24 & 0xFF,
+   39        serializedMessageLength >> 16 & 0xFF,
+   40        serializedMessageLength >> 8 & 0xFF,
+   41        serializedMessageLength & 0xFF,
+   42      ], headerLength);
+   43      yield serializedMessage;
+   44    }
+   45  };
+
+ANCLAS NO ENCONTRADAS: 0
+EXIT=0

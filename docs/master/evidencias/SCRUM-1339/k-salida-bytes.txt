@@ -1,0 +1,65 @@
+node v24.18.0 win32 · scrum859-identidad-y-motivo-cerrado.test.mjs · 2 mutaciones declaradas · modo bytes
+MUTACIÓN 2 · cae: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave» · el hijo salió con 1
+POBLACIÓN: 1049707 B hacia el padre · 110 mensajes enteros · 0 B de resto · veredictos de primer nivel 20 · ilegibles 0
+ESCRITURAS del hijo a su salida (sonda): 110 · bytes pedidos 1049707 · ¿una escritura por mensaje, con los mismos tamaños? sí
+
+Los veredictos, y cuánto viaja DETRÁS de cada uno:
+   1 pasa ·     441 B · detrás  1040470 B · «SCRUM-267 · ① el validador reconoce un ancla buena»
+   2 pasa ·     395 B · detrás  1038981 B · «SCRUM-267 · ② el barrido encuentra entradas de ver»
+   3 CAE  ·  177166 B · detrás   683992 B · «SCRUM-267 · toda entrada NUEVA del registro declar»
+   4 pasa ·     465 B · detrás   682223 B · «SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, »
+   5 pasa ·     453 B · detrás   680502 B · «SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y »
+   6 CAE  ·   26570 B · detrás   626579 B · «SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: »
+   7 CAE  ·    3449 B · detrás   618878 B · «SCRUM-267 · 🔴 los números CUADRAN: con ancla + si»
+   8 CAE  ·   96244 B · detrás   425773 B · «SCRUM-267 · el censo heredado no crece, y si BAJA »
+   9 pasa ·     477 B · detrás   423956 B · «SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el »
+  10 pasa ·     350 B · detrás   422647 B · «SCRUM-267 · el formato declarado en el README incl»
+  11 pasa ·     453 B · detrás   420926 B · «SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa »
+  12 CAE  ·    8717 B · detrás   402785 B · «SCRUM-649 · 🔴 TODO ancla apunta a un commit que E»
+  13 pasa ·     429 B · detrás   401160 B · «SCRUM-649 · 🔴 la lista de anclas que no resuelven»
+  14 CAE  ·    3898 B · detrás   392573 B · «SCRUM-649 · ✅ y la que está listada EXISTE como en»
+  15 pasa ·     375 B · detrás   391164 B · «SCRUM-859 · SUELO: hay exentas que examinar y entr»
+  16 CAE  ·  163972 B · detrás    62431 B · «SCRUM-859 · ✅ cada clave exenta apunta a UNA entra»
+  17 CAE  ·   27059 B · detrás     7540 B · «SCRUM-859 · 🔴 insertar una entrada en medio NO mu»  ← EL DECLARADO
+  18 pasa ·     444 B · detrás     5855 B · «SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN s»
+  19 pasa ·     414 B · detrás     4290 B · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado »
+  20 pasa ·     444 B · detrás     2605 B · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el mo»
+
+ÚLTIMO mensaje de 65536 B o más: el nº 84 de 110 (test:fail, 163972 B, «SCRUM-859 · ✅ cada clave exenta apunta a»)
+DETRÁS de él: 26 mensajes · 62431 B · faltan 3105 B respecto a 65536
+   +   387 B ·    387 B · test:dequeue    · vuelta del bucle 0 · «SCRUM-859 · 🔴 insertar una entrada en medio»
+   + 27459 B ·  27072 B · test:complete   · vuelta del bucle 0 · «SCRUM-859 · 🔴 insertar una entrada en medio»
+   + 27832 B ·    373 B · test:start      · vuelta del bucle 0 · «SCRUM-859 · 🔴 insertar una entrada en medio»
+   + 54891 B ·  27059 B · test:fail       · vuelta del bucle 0 · «SCRUM-859 · 🔴 insertar una entrada en medio»
+   + 55290 B ·    399 B · test:dequeue    · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL del control: por POSI»
+   + 55747 B ·    457 B · test:complete   · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL del control: por POSI»
+   + 56132 B ·    385 B · test:start      · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL del control: por POSI»
+   + 56576 B ·    444 B · test:pass       · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL del control: por POSI»
+   + 56945 B ·    369 B · test:dequeue    · vuelta del bucle 0 · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está ce»
+   + 57372 B ·    427 B · test:complete   · vuelta del bucle 0 · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está ce»
+   + 57727 B ·    355 B · test:start      · vuelta del bucle 0 · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está ce»
+   + 58141 B ·    414 B · test:pass       · vuelta del bucle 0 · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está ce»
+   + 58540 B ·    399 B · test:dequeue    · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue»
+   + 58997 B ·    457 B · test:complete   · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue»
+   + 59382 B ·    385 B · test:start      · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue»
+   + 59826 B ·    444 B · test:pass       · vuelta del bucle 0 · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue»
+   + 60053 B ·    227 B · test:plan       · vuelta del bucle 0 · «»
+   + 60309 B ·    256 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 60565 B ·    256 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 60820 B ·    255 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 61074 B ·    254 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 61333 B ·    259 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 61590 B ·    257 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 61844 B ·    254 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 62113 B ·    269 B · test:diagnostic · vuelta del bucle 0 · «»
+   + 62431 B ·    318 B · test:summary    · vuelta del bucle 0 · «»
+
+LA RUTA DE ESTA MÁQUINA dentro del canal (control positivo: «scrum859-identidad-y-motivo-cerrado.test.mjs» sale 44 veces en todo el canal):
+   «C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1339k-la-tuberia-de-65536» (92 caracteres): 110 veces en todo el canal · 26 en la cola
+   «C:/Users/Javier Pereira/cobroflash-backend/.claude/worktrees/scrum-1339k-la-tuberia-de-65536» (92 caracteres): 0 veces en todo el canal · 0 en la cola
+   «C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1339k-la-tuberia-de-65536» (94 caracteres): 16 veces en todo el canal · 2 en la cola
+   control de cero: «C:\Users\Javier Pereira\cobroflash-backend\.claude\worktrees\scrum-1339k-la-tuberia-de-65536-no-existe» sale 0 veces
+   con la ruta habitual de un runner («/home/runner/work/cobroflash-backend/cobroflash-backend», 55 caracteres, SUPUESTA, no leída de ningún log) la cola cambiaría en unos -1040 B (contando 1 B por carácter): 62431 → ~61391
+
+ÁRBOL: 1 fichero(s) mutados comprobados por sha256 · distintos de antes: 0
+EXIT=0

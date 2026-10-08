@@ -1443,3 +1443,191 @@ pendientes dentro del job de Linux, que es un workflow. No se construye nada sob
 `j-medir.mjs` y `j-corte.mjs` mutan `tests/scrum267-ancla-de-medicion.test.mjs` mientras corren (lo
 hace `aplicarUna`, que lo restaura) y comprueban su sha256 al acabar: no los lances con otra cosa
 corriendo en el mismo árbol.
+
+# SCRUM-1339k · La hipótesis de los 664 bytes: la cifra era de otra máquina, el 65.536 no es la tubería, y cruzarlo no ciega: protege (en un modelo)
+
+**Medido contra:** `origin/main` = `8518dc7a16164530863d657cb0f2f817a4691d78` · 2026-10-08T02:50:35Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1339/k-replica.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 8-oct; sesión `jv-j3`,
+relevo de la que escribió el tramo 1339j). Matar o probar la hipótesis que aquel tramo dejó sin
+probar: «los cuatro últimos tests viajan en unos 66.200 B y la tubería admite 65.536; sobran 664».
+Tres cosas: medir esos bytes, decir de dónde sale 65.536, y el par que decide (por debajo del límite
+desaparece la ceguera, por encima vuelve). **Es medición: no se ha arreglado nada; no se ha tocado
+el instrumento, ni los dos tests, ni ningún workflow; el ticket no se transiciona; no elijo entre A y E.**
+El hook de arranque dijo «SIN IDENTIDAD» (no reconoce `jv-j3`; es SCRUM-1498, de S5): seguí, como
+manda la ficha común.
+
+## En corto
+
+- **La hipótesis, tal como estaba escrita, no se sostiene.** En CI la cola no pasa de 65.536 por
+  664 B: se queda por debajo. 66.201 era un dato, pero de la máquina de quien lo midió.
+- **65.536 es real, y hay dos, ninguno la tubería del sistema.** Uno es la marca de agua de los
+  flujos de node fuera de Windows. El otro, el tamaño que libuv le pide al núcleo para el canal del
+  hijo, que en Linux es un par de sockets y no una tubería.
+- **El par sale, pero sólo en un modelo y en sentido contrario al de la hipótesis.** Con un núcleo
+  fabricado en Windows y todo lo demás node de verdad: cola 21 B por debajo de la marca, CIEGO con
+  la firma exacta de los 8 logs; cola 9 B por encima, VIVA con 0 B perdidos. Pasar la marca obliga
+  al hijo a esperar antes de salir.
+- **No hay umbral limpio.** Con la cola por encima de la marca también ciega si el núcleo deja de
+  admitir a mitad de cola (30.000 B dentro: CIEGO, 36.111 B perdidos). Lo que decide no es un
+  tamaño: es en qué mensaje deja de caber, y eso en Linux no lo he medido.
+- **Lo que sí queda explicado por construcción** (código de node leído del binario, y el modelo):
+  por qué la mutación 1 no ciega nunca, por qué las 8 ciegas traen el mismo recuento, y por qué en
+  SCRUM-1405 lo pendiente nunca pasó de 65.536.
+- **En Linux no he ejecutado nada.** Abajo va qué haría falta.
+
+## ① Cuánto ocupan los cuatro últimos tests
+
+`k-medir.mjs bytes` trocea el canal de la mutación 2 mensaje a mensaje (`k-salida-bytes.txt`).
+Detrás del veredicto del 16.º viajan 26 mensajes: los cuatro tests que faltan en los 8 logs, el
+plan, ocho diagnósticos y el resumen.
+
+| dónde se mide | ruta del árbol | color | la cola | respecto a 65.536 |
+|---|---|---|---|---|
+| tramo 1339j (su árbol) | 95 caracteres | forzado | 66.201 B | +665 |
+| mi árbol | 92 | forzado | 66.111 B | +575 |
+| réplica, 92 caracteres | 92 | forzado | 66.111 B | +575 |
+| réplica, como el runner | 55 | forzado | 64.975 B | −561 |
+| réplica, como el runner | 55 | sin forzar | **61.295 B** | **−4.241** |
+
+- **66.200 era un dato redondeado (66.201), no una estimación; pero no es el de CI.** Los 26
+  mensajes llevan dentro la ruta del árbol, y dos la llevan además como URL. Cada carácter de ruta
+  son unos 30 B de cola.
+- **El color mueve 3.680 B.** Este arnés pone `FORCE_COLOR=3` y el aserto pinta su diferencia con
+  códigos de color, que viajan en el mensaje. `ci.yml` no nombra `FORCE_COLOR` ni `NO_COLOR` (0
+  líneas; positivo: `node-version` y el nombre del job, 7). Que el runner no lo ponga por su cuenta
+  no lo he leído del runner: es lo habitual, no un dato.
+- **La ruta del runner sí está leída:** `/home/runner/work/cobroflash-backend/cobroflash-backend`,
+  5 veces en el log del job de mutación de #2240.
+- **Igual en los 53 PR** (`k-replica.mjs`, `k-salida-replica.txt`): sacados de git los dos tests y
+  `docs/master/*.md` del commit de merge de cada uno, en una carpeta de 55 caracteres y sin color,
+  la cola mide 61.295 o 61.294 B en los 53, 8 ciegos y 45 vivos. La cola no depende del árbol.
+- Controles. Del método: la réplica a 92 caracteres da 66.111 B, lo mismo que mi árbol; así que
+  no tener `.git` (cae un test más de `scrum267`, 9 en vez de 8) no toca la cola. Positivo: 20
+  veredictos y el declarado caído en 53 de 53; una escritura por mensaje, 110 de 110. De cero: la
+  ruta con «-no-existe» detrás, 0 veces.
+- La cifra de la réplica lleva 6 B que en Linux no estarían (la URL de Windows lleva «C:/» y «%20»),
+  y el node de aquí es v24.18.0, no el v24.21.0 del runner: las trazas pueden variar en decenas de
+  bytes. El margen es de miles.
+
+## ② De dónde sale 65.536
+
+| | qué es | dónde está | visto cómo |
+|---|---|---|---|
+| a | lo que cabe en una tubería de Linux | — | **no aplica**: el canal del hijo no es una tubería |
+| b | el tamaño que libuv pide para el par de sockets del hijo | `deps/uv/src/unix/process.c`, líneas 196 y 207–212 | leído en los tags v24.21.0 y v24.18.0 de nodejs/node: el mismo fichero, mismo sha256 |
+| c | la marca de agua de un flujo de bytes de node | `lib/internal/streams/state.js`, línea 12 | leído del binario que corre, y ejecutado |
+
+- **(b)** `uv_socketpair(SOCK_STREAM, …)` y, en los dos extremos, `SO_SNDBUF` y `SO_RCVBUF` a
+  `64 * 1024`. Es una petición: cuánto admite de verdad ese socket antes de decir que no cabe, no lo
+  he medido (`k-salida-libuv.txt`).
+- **(c)** `process.platform === 'win32' ? 16 * 1024 : 64 * 1024`. Aquí, ejecutado, 16.384; fuera
+  de Windows, 65.536 por esa línea (`k-salida-codigo-de-node.txt`).
+- **Lo que midió SCRUM-1405 era (c).** Su sonda apuntaba `writableLength`, que es la cuenta del
+  flujo de node. Releído (`k-pendientes-1405.mjs`): 1.600 pasadas con sonda en Linux, 967 con
+  bytes pendientes al salir en cinco celdas que escriben de 98 KB a 337 KB por fichero; el máximo,
+  65.506 B; por encima de 65.536, 0; entre 60.000 y 65.536, 170. El tope no se mueve con lo que se
+  escribe. La frase «que es lo que cabe en una tubería de Linux» de aquel registro era una
+  suposición, y la del tramo 1339j la heredó.
+- **Por qué el tope, leído en el código:** la rama de `forceExit` espera a que el informe se haya
+  ENTREGADO a la salida, no a que la salida lo haya escrito; y la entrega se para cuando lo
+  pendiente llega a la marca. Así que al salir nunca hay 65.536 B o más pendientes.
+- **Y por qué Windows no reprodujo en el tramo 1339j:** en Windows node cambia la escritura de la
+  salida por una síncrona (`lib/net.js`, `this._write = makeSyncWrite(fd)`). Quitarle el modo
+  bloqueante al descriptor no deshace eso.
+
+## ③ El par que decide — EN UN MODELO, no en Linux
+
+`k-sonda-nucleo.mjs` se carga en el hijo y le devuelve las dos cosas que en Windows no tiene: la
+marca de 65.536 y una escritura que puede no caber. **El «núcleo» es fabricado:** el caso que pongo
+es el peor, que deje de admitir justo tras entregar cada mensaje de 65.536 B o más, durante 150 ms.
+El corredor, el flujo, la pausa y `process.exit()` son los de node.
+
+**El par, variando el tamaño del informe y con la marca real** (`k-salida-par.txt`; réplica del
+mismo commit en carpetas de distinta longitud):
+
+| ruta | color | cola | respecto a 65.536 | llegan | el declarado | perdidos |
+|---|---|---|---|---|---|---|
+| 55 (runner) | sin forzar | 61.295 | −4.241 | 16 de 20 | NO LLEGA | 61.295 B |
+| 55 | forzado | 64.975 | −561 | 16 de 20 | NO LLEGA | 64.975 B |
+| 73 | forzado | 65.515 | **−21** | 16 de 20 | **NO LLEGA** | 65.514 B |
+| 74 | forzado | 65.545 | **+9** | 20 de 20 | **LLEGA** | 0 B |
+| 92 | forzado | 66.111 | +575 | 20 de 20 | LLEGA | 0 B |
+
+**Con el instrumento de la casa en mi árbol** (`aplicarUna`; cola de 66.111 B; `k-salida-mapa.txt`):
+
+| marca | el núcleo deja de admitir | mutación 1 | mutación 2 |
+|---|---|---|---|
+| sin modelo (control) | — | VIVA | VIVA |
+| 65.536, núcleo sin límite (control) | nunca | VIVA, 0 perdidos | VIVA, 0 perdidos |
+| 65.536 (cola 575 por encima) | al empezar la cola | VIVA | VIVA, 0 perdidos |
+| 66.111 (igual que la cola) | al empezar la cola | VIVA | VIVA, 0 perdidos |
+| 66.112 (cola 1 por debajo) | al empezar la cola | VIVA | **CIEGO · 9 pasados · 7 caídos · faltan 4 de 20** · 66.110 perdidos |
+| 66.678 (567 por debajo) | al empezar la cola | VIVA | CIEGO · lo mismo · 66.111 perdidos |
+| 66.678 | 58.000 B dentro de la cola | VIVA | CIEGO · lo mismo · 8.111 perdidos |
+| 66.678 | 58.600 B dentro | VIVA | VIVA · 7.511 perdidos |
+| 65.536 (cola por encima) | 500 y 600 B dentro | VIVA | VIVA, 0 perdidos |
+| 65.536 (cola por encima) | 30.000 B dentro | VIVA | **CIEGO · lo mismo** · 36.111 perdidos |
+
+Lo que sale de las dos tablas:
+
+1. **El sentido es el contrario al de la hipótesis.** Por debajo de la marca el hijo entrega toda
+   la cola sin que nada le pare, sale, y lo que no cupo se pierde. Por encima, la entrega se para,
+   espera a que se vacíe y sólo entonces sale.
+2. **Pero pasar la marca no es un arreglo.** La última fila: con la cola por encima, si deja de
+   caber a mitad, lo que queda detrás ya no llega a la marca y se pierde igual.
+3. **La mutación 1 no ciega en ninguna fila.** Su veredicto viaja en un mensaje de 136 KB, mayor
+   que la marca: o cabe entero, o para la entrega hasta que cabe. Pierde hasta 4.290 B de detrás,
+   nunca el veredicto. Encaja con 53 de 53 vivas en CI.
+4. **El recuento de las 8 ciegas no puede ser otro.** Para perder también el 16.º harían falta más
+   de 61.295 B pendientes al salir, y el 16.º viaja en un mensaje de 169 KB.
+5. **La firma de CI aparece en el modelo palabra por palabra**, y el corte entre VIVA y CIEGO cae
+   donde acaba el veredicto del declarado (7.540 B del final aquí).
+
+## Qué NO está probado, y qué haría falta en Linux
+
+- **Que en el runner pase esto.** El modelo demuestra qué hace node cuando una escritura no cabe;
+  no demuestra cuándo no cabe en Linux. Por qué 8 de 53 y no más, sigue sin medir.
+- **El par en Linux, sin tocar node:** el mismo job con el repositorio en una ruta más larga y con
+  el color forzado o no. Si el modelo vale, la tasa de ciegas tiene que cambiar al cruzar la cola
+  los 65.536 B (sin color hacen falta unos 142 caracteres más de ruta; con `FORCE_COLOR`, 19).
+  Es un workflow: S5 y fundador. La rama `exp-1405-force-exit` tiene ya el andamio.
+- **El testigo directo:** la sonda de SCRUM-1405 dentro del job de mutación, apuntando lo pendiente
+  al salir en la mutación 2. La predicción que la puede tumbar: en las ciegas, entre 6.704 y
+  61.295 B pendientes; nunca 65.536 o más.
+- Cuánto admite el par de sockets con 64 KiB pedidos. El número de la vía C del tramo 1339j
+  («el declarado aguanta 7.000 B perdidos») es de aquel árbol: con la ruta del runner son 6.704.
+- No he vuelto a leer los 53 logs: las 8 ciegas son las de `j-salida-logs.txt`.
+
+## Mis errores
+
+- **Lancé dos pasadas de `k-replica.mjs` a la vez sobre la misma carpeta.** La segunda le borró la
+  réplica a la primera: 27 PR con `EPERM` y uno con `ENOENT`. Lo dijo el propio recuento («con
+  error 28»), no pasó por bueno. Ahora el guion se niega a arrancar si la réplica existe.
+- **Retomé desde el PR equivocado** por leer el final recortado de la salida: #2272 donde era #2264.
+- **Todas las cifras de la primera pasada llevaban el color del arnés** y no lo sabía. Lo cazó que
+  la pasada repetida, lanzada con `FORCE_COLOR=0` por otro motivo, diera 61.295 donde antes 64.975.
+- **Le adelanté al orquestador «65.536 no es la tubería, es node»** antes de leer las líneas
+  208–212 de libuv, que piden 64 KiB para ese socket. Corregido en la entrega: son dos.
+- Predije que con la cola por encima de la marca cegaría si el núcleo fallaba 600 B dentro, y no
+  ciega: el flujo cuenta entero el mensaje que está a medio escribir. La fila de 30.000 B es la buena.
+- Un `grep` de bash sobre `.github/workflows/ci.yml` me dio 0 en todo, también en el positivo.
+  Repetido con la herramienta de búsqueda.
+- Pasé de 200.000 de contexto sin avisar: medí a 235.636.
+- Un escape roto por pasar texto a node desde bash; lo cazó `node --check` antes de correr.
+- Guards corridos antes de empujar: van en el comentario de entrega de Jira, con su recuento.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1339
+    node --no-deprecation $E/k-codigo-de-node.mjs
+    node $E/k-pendientes-1405.mjs docs/master/evidencias/SCRUM-1405
+    node $E/k-medir.mjs bytes . <carpeta de fuera> scrum859-identidad-y-motivo-cerrado.test.mjs 2
+    FORCE_COLOR=0 node $E/k-replica.mjs . <carpeta de fuera, de menos de 54 caracteres> docs/master/evidencias/SCRUM-1393/checks-sin-leer/datos-pr.json
+    K_LARGO=74 K_MODELO=1 K_TRAS_GORDO=0 K_SUELTA=150 node $E/k-replica.mjs . <carpeta de fuera> - <commit>
+    node $E/k-medir.mjs mapa . <carpeta de fuera> scrum859-identidad-y-motivo-cerrado.test.mjs "SIN;K_TRAS_GORDO=0,K_SUELTA=150,K_MARCA=66112"
+
+`k-medir.mjs` muta `tests/scrum267-ancla-de-medicion.test.mjs` mientras corre y comprueba su sha256
+al acabar. `k-replica.mjs` no toca el árbol.
