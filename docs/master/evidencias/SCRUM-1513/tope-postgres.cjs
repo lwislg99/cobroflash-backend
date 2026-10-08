@@ -184,6 +184,7 @@ async function apagar() {
   const { Client } = requierePg('pg');
   carpetaDatos = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1513-pg-'));
   // Garantía de borrado pase lo que pase (también process.exit): SCRUM-864c ③.
+  // SCRUM-864c: `apagar()` solo borra si se llega a llamarla; al salir el proceso se borra pase lo que pase.
   process.on('exit', () => { try { fs.rmSync(carpetaDatos, { recursive: true, force: true }); } catch { /* nada */ } });
   const puertoPg = await puertoLibre();
   const usuario = 'u' + crypto.randomBytes(4).toString('hex');
