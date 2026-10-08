@@ -244,3 +244,68 @@ Lo vi caer antes de darlo por bueno, y no a propósito: ver §7.
   SCRUM-1498, de S5; seguí, como dice la ficha común.
 - `prisma generate` no se corrió: el árbol anidado no tiene `node_modules` y el cliente de Prisma es
   del checkout compartido. Nada de lo medido lo usa. `dist/` se emitió con `tsc --noCheck`.
+
+## SCRUM-1446b · La sonda dejaba su carpeta temporal si salía a mitad (el rojo de #2289), y lo que `temporal()` sola no cubre en Windows
+
+**Medido contra:** `origin/main` = `9dd6aa773799565c3753c51f289efae1a4ecbca0` · 2026-10-08T00:07:30Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+
+Lo hace J1 (equipo de Javier), sesión `jv-j1`, relevo de la que escribió lo de arriba. Sólo cambia la
+sonda `docs/master/evidencias/SCRUM-1446/medir-los-tres-importes.mjs`. Nada de `src/`, ningún texto,
+ningún censo ni lista de excepciones. Lo medido es el árbol de la rama (base `a65a8c75`), en esta
+máquina (Windows); la línea de arriba dice dónde estaba `origin/main` en ese momento, no que la rama
+lo lleve dentro.
+
+**El rojo.** El obligatorio de `c365c421` (job `113072029875`) caía por un caso:
+`SCRUM-864c · ③`, con `[NO_GARANTIZADA] …medir-los-tres-importes.mjs:27 · mkdtempSync(…) → TMP · borra
+en 403 SIN cobertura`. Tenía razón: la sonda borraba su carpeta en la última línea, y tiene cuatro
+`process.exit` antes. Lo reproduje en local antes de tocar nada (3 ✔ y 1 ✖, el mismo).
+
+**Dos manos en la misma rama.** A las 00:03:01Z, mientras yo medía, una ejecución automática de
+`@claude` (la llama `yaqu-bot` cuando el obligatorio sale rojo) empujó `7d40a8fe`: el `import` y
+`temporal('scrum1446-')`, que es lo que SCRUM-864c aconseja. Mi árbol no lo tenía; lo vi al leer la
+punta del remoto antes de empujar. Lo fusioné con lo mío (un merge, sin reescribir nada).
+
+**Lo que ese arreglo no cubre, medido.** La sonda hace `process.chdir` a su carpeta temporal, y
+Windows no borra el directorio en el que sigue estando el proceso. `temporal()` borra al salir, con el
+proceso todavía dentro: el borrado falla, y falla callado. Carpetas `scrum1446-*` en el temporal del
+sistema, antes y después de una salida a mitad (`--filas` con un JSON `[]`, que sale con `EXIT=2`):
+
+| versión de la sonda | antes | después |
+|---|---|---|
+| `c365c421` (la original; control) | 3 | 4 |
+| `7d40a8fe` (`temporal()` sola) | 5 | 6 |
+| ésta, quitándole la línea del `chdir` de salida (mutación) | 4 | 5 |
+| ésta | 3 | 3 |
+| ésta, segunda pasada | 6 | 6 |
+
+Por eso la sonda registra, ANTES de llamar a `temporal()`, un manejador de `exit` que devuelve el
+proceso al temporal del sistema: los manejadores corren por orden de registro, y cuando llega el
+borrado el proceso ya está fuera. Las dos líneas finales (el `chdir` y el `rmSync` a mano) sobran y se
+van. En el camino feliz ninguna versión deja resto.
+
+**Los controles.**
+
+- `tests/scrum864c-el-temporal-no-vuelve.test.mjs`: de 3 ✔ y 1 ✖ a 4 ✔ de 4. Los cuatro por nombre: ①,
+  ①b, ② y ③.
+- La sonda sigue midiendo lo mismo: su salida con el cambio es **idéntica** a `salida.txt` (`cmp`,
+  12.216 bytes, 126 líneas, `EXIT=0`). Antes de tocarla también lo era: el control de que `salida.txt`
+  se puede reproducir.
+
+**Lo que NO he medido.** Linux: en el corredor de CI el borrado con el proceso dentro puede no fallar,
+y entonces `7d40a8fe` bastaba allí. Tampoco he mirado cuántos otros llamadores de `temporal()` hacen
+`chdir` a lo que crean; SCRUM-864c da por sano todo `temporal(…)` sin ejecutarlo, así que en Windows
+ese caso sale ✔ dejando resto. `tests/_temporal.mjs` no es de mi carril: lo digo en la entrega y no lo
+toco.
+
+**Restos en esta máquina.** Seis carpetas `scrum1446-*` vacías en el temporal del sistema: tres de la
+sesión anterior y tres de mis controles de arriba. No las borré: el arnés no me deja un `rm -rf` sobre
+una ruta que sale de una variable.
+
+**Errores míos.**
+
+- Medí y arreglé durante siete minutos sin mirar la punta del remoto: la rama ya no era
+  `c365c421`. Lo cazó el `git ls-remote` de antes de empujar, que es para lo que está (A4).
+- El hook de arranque me dijo «SIN IDENTIDAD… no construyas» (`jv-j1`). Es SCRUM-1498, de S5; seguí,
+  como dice la ficha común.
