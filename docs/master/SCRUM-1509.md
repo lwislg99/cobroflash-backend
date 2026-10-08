@@ -310,3 +310,123 @@ que nombra el fichero.
 
 Reproducir: `tsc --noCheck`, `node docs/master/evidencias/SCRUM-1509c/medir.cjs dist`, y
 `node docs/master/evidencias/SCRUM-1509c/contrafactico.cjs dist lectura-cerrada` (o `escritura-esperada`).
+
+---
+
+# SCRUM-1509d · Los cuatro llamadores a los que no se les pregunta el tope por cliente — EJECUTADOS, sin arreglar nada
+
+**Medido contra:** `origin/main` = `fae0553295d655d5579e3a1fc1c93b6f468c0149` · 2026-10-08T01:51:08Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1509d/medir.cjs`
+
+J2 (relevo, sesión `jv-j2`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`). **Es
+EJECUCIÓN y LECTURA:** no se ha tocado ningún fichero de `src/`, test, plantilla, texto ni workflow. Entran este
+tramo y `docs/master/evidencias/SCRUM-1509d/` (guion y sus dos salidas). Nada contra producción ni staging: base
+en memoria y transporte doblado. No se corrió `prisma generate`; `dist` con `tsc --noCheck`.
+
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j2`, SCRUM-1498). Se siguió porque el
+encargo es medir. La medición se hizo con `dist` de `c1bad3c34`; entre ese commit y `fae055329` no cambia ningún
+fichero de `src/` (`git diff --stat` vacío sobre `src`), sólo el registro y las evidencias del tramo «c».
+
+## 0 · La respuesta corta
+
+Lo que c.18894 dijo LEÍDO queda EJECUTADO: de las llamadas que cada uno de los cuatro hace llegar a
+`sendWhatsAppTemplate`, **0 llevan cliente** (40 de 40 sin cliente), y al destino **no se le pregunta el tope
+por cliente ni una vez** (0 preguntas; con cliente en la llamada, el mismo instrumento cuenta 10).
+
+Diez veces al mismo cliente el mismo día, todo sano, tope por cliente leído en `dist` = **3**:
+
+| llamador | plantillas que salen HOY | con el tope por cliente | de quién es |
+| --- | --- | --- | --- |
+| `whatsappNotifications.ts:35` · `sendPaymentConfirmation` | **10** | 3 (7 bloqueadas) | J2 |
+| `whatsappNotifications.ts:171` · `notifyMerchantAlert` | **10** | **10**: no hay cliente que ponerle | J2 |
+| `reminder.service.ts:47` · el cron de presupuestos, una pasada | **10** | 3 (7 bloqueadas) | S1 |
+| `invoicesAdmin.routes.ts:766` · `POST /admin/invoices/:id/send-reminder` | **10** | 3 (7 bloqueadas) | J1 |
+
+Los cuatro no son la misma cosa:
+
+1. **`:35` no lo llama nadie.** 0 llamadores en `src/`, `tests/`, `public/` y `scripts/` (el hermano
+   `sendPaymentConfirmationInvoice` sale en 4 ficheros con la misma búsqueda), y está declarado como export sin
+   consumir en `scripts/_sin-consumir-declarados.json:43` (SCRUM-1185, carril J2). El 10 es de la función
+   ejecutada a mano: **en el producto, hoy, por ahí salen 0**. Además su firma no recibe cliente: no tiene qué pasar.
+2. **`:171` no manda a un cliente: manda al profesional.** No hay cliente cuyo tope preguntar, así que «con el
+   tope por cliente» sigue en 10. Lo que sí se le pregunta es el tope de COMERCIO, y **se lo come**: 120 avisos
+   con la ventana cerrada → 100 plantillas y 20 bloqueadas; y con el cupo gastado en avisos al profesional, una
+   plantilla a un cliente ya no sale (`daily_cap`). Con la ventana abierta, 10 avisos gastan 0 plantillas.
+3. **`:47` y `:766` son los dos que mandan a un cliente sin preguntar.** El caso verosímil: el cliente ya recibió
+   hoy sus 3 plantillas por caminos que sí cuentan, y llega una más — **hoy sale (1), con el tope no (0)**, por
+   el cron y por la ruta.
+
+## 1 · El instrumento y sus controles
+
+`medir.cjs` ejecuta el LLAMADOR de `dist` (la función exportada, el cron, o la ruta montada en un express y
+pedida por HTTP), no `sendWhatsAppTemplate` a pelo. Dobla la base (en memoria, con estado) y el transporte de
+axios, y cuenta peticiones por tipo; no usa dry-run. Una envoltura sobre el export ve cada llamada que llega: en
+la pasada HOY sólo mira si trae cliente; en la pasada CON TOPE le pone, en memoria, el cliente dueño de ese
+teléfono. **Esa segunda pasada no es un arreglo ni una propuesta de código.** Los esperados salen del tope leído
+en `dist`. 22 casos, 22 cuadran (`salida-medir.txt`).
+
+| control | esperado | salió |
+| --- | --- | --- |
+| CERO: los cuatro sin nada que mandar | 0 plantillas, 0 llamadas, 0 preguntas | 0 / 0 / 0 (y el cron sí leyó: 1 lectura) |
+| POSITIVO obligatorio: la misma envoltura, con cliente en la llamada | 3 y 7 bloqueadas | 3 y 7 |
+| POSITIVO con un llamador real del mismo fichero que sí pasa cliente (`:105`) | 3 y 7 | 3 y 7 |
+| POSITIVO del tope de comercio (100 filas de otro cliente, 1 envío) | bloqueado | bloqueado |
+| CERO de la envoltura: CON TOPE, 10 presupuestos de 10 clientes | 10, 0 bloqueadas | 10 y 0 |
+| la ruta con rol `tecnico` | 403, 0 llamadas | 403 y 0 |
+| la ruta sin cobro (va por texto) | 0 plantillas, 1 de otro tipo | 0 y 1 |
+| el guion con el tope esperado forzado a 1 | rojo | salida 1, 5 casos en rojo de 22 (0 en la buena) |
+| el guion con un esperado sobre una clave que no existe | rojo | salida 1, K0 en rojo |
+
+El guion sale 2 («GUION MUDO») si los positivos no ven ningún bloqueo, si el total de plantillas es 0 o si la
+envoltura no se pudo poner.
+
+## 2 · De quién es cada uno (`node scripts/carriles.mjs de <ruta>`)
+
+| fichero | dice | por |
+| --- | --- | --- |
+| `src/integrations/whatsappNotifications.ts` | **J2** | `dos-equipos.md:124`, fila que nombra el fichero |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts` | **J1** | `dos-equipos.md:118`, fila que nombra el fichero |
+| `src/modules/quotes/domain/reminder.service.ts` | **S1** | `dos-equipos.md:136`, patrón `src/**` |
+| control: `src/modules/quotes/domain/no-existe-sonda-1509d.ts` | S1 | el mismo patrón `src/**` |
+| control: `no-existe-sonda-1509d/x.ts` (fuera de `src/`) | «sin fila en §3: nadie lo reclama» | — |
+
+El J2 y el J1 vienen de filas que nombran el fichero. El S1 del recordatorio viene del cajón `src/**` (una ruta
+inventada al lado da lo mismo), así que la herramienta sola no lo prueba; lo que lo sostiene es el texto de esa
+fila 136, que enumera «quotes» entre «todo lo demás de `src/`», y que ningún otro renglón de `dos-equipos.md`
+nombra `reminder.service` (0 apariciones). Está pedido a S1 en c.18881 y aquí no se ha tocado.
+
+**La ruta `:766` es de J1, no de J2.** No hay ticket abierto por esto desde aquí.
+
+## 3 · Vistas de paso, sin tocar
+
+- El cron marca el presupuesto como recordado **siempre**: en la pasada CON TOPE quedan marcados 10 de 10 con 3
+  plantillas fuera. Poner el cliente sin tocar el candado deja 7 recordatorios perdidos para siempre (es la
+  segunda pieza ya pedida a S1 en c.18881; aquí sale con número).
+- La ruta `:766` ya sabe contar el bloqueo: en la pasada CON TOPE contesta 200 con `sent:false` y el motivo
+  `customer_daily_cap` 7 de 7 veces. Su rama de texto (factura sin cobro) sí pasa el cliente.
+- Diez pulsaciones seguidas sobre la misma factura salen las 10: la ruta escribe `reminder7SentAt`, luego
+  `reminder14SentAt`, y a partir de la tercera no escribe nada y sigue enviando.
+
+## 4 · Lo que NO se midió
+
+- **Cuántas veces pasa de verdad.** Si un cliente llega a tener 10 presupuestos pendientes en una pasada, o si
+  alguien pulsa 10 veces: medida la propiedad, no su uso. El caso de «3 ya hoy y una más» es el verosímil, y
+  tampoco tiene dato de frecuencia.
+- La autenticación y lo que `app.ts` monte delante de `/admin/invoices` (incluido cualquier límite de
+  peticiones): el rol y el comercio los pone el guion. La puerta de rol de la propia ruta sí se ejercitó.
+- Los 10 sitios que llaman a `notifyMerchantAlert` no se ejecutaron uno a uno: se ejecutó la función.
+- Postgres real, envíos a la vez, y los fallos de escritura o lectura (eso es el tramo «c»).
+- La base en memoria contestó sin modelarlo, con un valor neutro, a `customerEvent.create` (8 veces: los 8
+  bloqueos del cron). Nada más quedó sin modelar.
+- Ninguna tanda de tests completa: no hay cambio de código. Sí los de registro.
+
+## 5 · Errores propios
+
+- En la primera versión del guion, el control de cero llevaba un esperado sobre una clave que el resumen no
+  tiene (`undefined === undefined`): cuadraba sin mirar nada. Lo vi al releer la salida. Ahora un esperado sobre
+  una clave inexistente sale rojo, y se ve con `--clave-fantasma` (salida 1).
+- La primera pasada salió verde entera a la primera. No me fié hasta verla en rojo con el tope forzado a 1.
+
+Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509d/medir.cjs dist` (rojo a propósito:
+`--tope-esperado 1` o `--clave-fantasma`).
