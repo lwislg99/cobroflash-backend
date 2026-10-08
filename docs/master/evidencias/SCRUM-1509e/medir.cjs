@@ -165,7 +165,7 @@ function resumen() {
   return {
     plantillas: est.aMeta.filter((p) => p.tipo === 'template').length,
     otroTipo: est.aMeta.filter((p) => p.tipo !== 'template').length,
-    hostAjeno: est.aMeta.filter((p) => p.host !== 'graph.facebook.com').length,
+    hostAjeno: est.aMeta.filter((p) => !p.host.endsWith('.facebook.com')).length,
     llamadas: est.llamadas, conCliente: est.conCliente,
     lecturasSesion: est.lecturasSesion,
     preguntasCliente: est.preguntas.filter((p) => p.conCliente).length,
