@@ -31,6 +31,11 @@ const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest
 // `invoicesDir` se calcula al CARGAR `dist` desde el directorio del proceso: se cambia ANTES.
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1510b-'));
 process.chdir(TMP);
+// Se borra PASE LO QUE PASE (también si un caso lanza): al salir el proceso, y volviendo antes al
+// árbol, porque Windows no deja borrar el directorio en el que está el proceso.
+process.on('exit', () => {
+  try { process.chdir(RAIZ); fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* temporal del sistema */ }
+});
 
 const requiere = createRequire(path.join(DIST, 'x.js'));
 const rutaDe = (r) => requiere.resolve(path.join(DIST, r));
@@ -217,7 +222,5 @@ if (filas.length !== CASOS.length) fallos.push('no corrieron todos los casos');
 console.log('');
 console.log(fallos.length ? `CONTROLES: ${fallos.length} FALLAN\n  · ${fallos.join('\n  · ')}` : 'CONTROLES: los 5 pasan (estado de nacimiento, búsqueda con positivo, PDF del caso sano, fallo normal, población)');
 
-process.chdir(RAIZ); // Windows no deja borrar el directorio en el que está el proceso
-fs.rmSync(TMP, { recursive: true, force: true });
 console.log(`EXIT=${fallos.length ? 1 : 0}`);
 process.exit(fallos.length ? 1 : 0);

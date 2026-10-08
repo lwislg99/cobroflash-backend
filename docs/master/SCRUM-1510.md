@@ -228,3 +228,9 @@ La tanda completa, no.
 - `docs/master/evidencias/SCRUM-1510/fabricar-la-factura-del-segundo-porton.mjs` y sus dos salidas
 - `docs/master/evidencias/SCRUM-1510/espejo-sin-el-primer-corte.mjs` y `salida-montar-el-espejo.txt`
 - `docs/master/evidencias/SCRUM-1510/salida-test-en-rojo-sobre-el-espejo.txt` y `salida-test-en-verde-sobre-hoy.txt`
+
+**Añadido tras leer el obligatorio de `71229443b` (job 113205156495, ROJO: 11.085 casos, 1 cae).**
+El rojo era mío: `scrum864c` vio que el guion de fabricar borraba su directorio temporal sólo al
+final, así que un caso que lanzara lo dejaba atrás (y mis dos primeras pasadas fallidas dejaron dos,
+que he borrado a mano). Arreglado en el guion, no en el censo: ahora se borra al salir el proceso.
+En local, `scrum864c` con el arreglo: pasa. Mi muestra de controles no lo incluía.
