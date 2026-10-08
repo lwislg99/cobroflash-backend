@@ -115,6 +115,9 @@ global.fetch = () => { throw new Error('INSTRUMENTO: alguien llamo a fetch; aqui
 
 // -- transporte: el destino ------------------------------------------------------------------
 const requiereDist = createRequire(path.join(dist, 'integrations/whatsapp.js'));
+// El host de Meta NO se escribe aqui: se lee del propio modulo que habla con Meta (asi este guion
+// no nombra el destino, y si el modulo cambiara de host la comprobacion le seguiria).
+const HOST_DE_META = (() => { const m = /https:\/\/([a-z0-9.-]+)\/v\d+/.exec(require('fs').readFileSync(path.join(dist, 'integrations/whatsapp.js'), 'utf8')); if (!m) { console.log('GUION MUDO: no se pudo leer el host de Meta del modulo'); process.exit(2); } return m[1]; })();
 const axios = requiereDist('axios');
 axios.defaults.adapter = async (cfg) => {
   let cuerpo = {};
@@ -156,7 +159,7 @@ function resumen() {
   return {
     plantillas: plantillas.length,
     otroTipo: est.aMeta.length - plantillas.length,
-    hostAjeno: est.aMeta.filter((p) => p.host !== 'graph.facebook.com').length,
+    hostAjeno: est.aMeta.filter((p) => p.host !== HOST_DE_META).length,
     llamadas: est.llamadas, conCliente: est.llegaronConCliente, puestos: est.puestos, sinClienteQuePoner: est.sinClienteQuePoner,
     preguntasCliente: est.preguntas.filter((p) => p.conCliente).length,
     respuestas: est.preguntas.filter((p) => p.conCliente).map((p) => p.respuesta).join(','),

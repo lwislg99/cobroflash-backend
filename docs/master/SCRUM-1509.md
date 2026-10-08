@@ -419,7 +419,7 @@ nombra `reminder.service` (0 apariciones). Está pedido a S1 en c.18881 y aquí 
 - Postgres real, envíos a la vez, y los fallos de escritura o lectura (eso es el tramo «c»).
 - La base en memoria contestó sin modelarlo, con un valor neutro, a `customerEvent.create` (8 veces: los 8
   bloqueos del cron). Nada más quedó sin modelar.
-- Ninguna tanda de tests completa: no hay cambio de código. Sí los de registro.
+- Ninguna tanda de tests completa en local: sólo los de registro y `scrum124`. La completa es la de CI (§5).
 
 ## 5 · Errores propios
 
@@ -428,5 +428,100 @@ nombra `reminder.service` (0 apariciones). Está pedido a S1 en c.18881 y aquí 
   una clave inexistente sale rojo, y se ve con `--clave-fantasma` (salida 1).
 - La primera pasada salió verde entera a la primera. No me fié hasta verla en rojo con el tope forzado a 1.
 
+- **El primer obligatorio de este PR salió ROJO, y era mío** (1 de 11.074: `scrum124`, regla 28). `medir.cjs`
+  escribía el host de Meta para comprobar que nada salía a otro sitio, y ese test cuenta como «habla con Meta»
+  a cualquier `.cjs` del repositorio que lo nombre. Había escrito «no hay cambio de código» y por eso no corrí
+  más que los de registro: un guion de evidencias ES código para los tests que barren el árbol. Arreglado en el
+  guion, no en el test: ya no nombra el host, lo lee del módulo compilado que habla con Meta. `scrum124` verde
+  en local (43 de 43 con los de registro); el rojo lo vi en CI.
+- Ese arreglo lo metí pasando una expresión regular por la consola y se comió las barras invertidas: los dos
+  guiones dejaron de arrancar. Lo delató el recuento de líneas «cuadra» (0 en los cuatro ficheros de salida),
+  no el código de salida, que era 1 igual que en la pasada roja a propósito. Corregido con la herramienta de
+  edición. Es la cicatriz de J2 del 1-oct otra vez.
+
 Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509d/medir.cjs dist` (rojo a propósito:
 `--tope-esperado 1` o `--clave-fantasma`).
+
+## 6 · Segunda parte: los avisos al profesional (`notifyMerchantAlert`), sitio por sitio
+
+Encargo del orquestador tras leer §0: si los avisos al profesional se pueden comer el cupo de plantillas del
+cliente final. Guion: `avisos.cjs` (20 casos, 20 cuadran; `salida-avisos.txt`). Ejecuta las RUTAS de `dist` por
+HTTP —el webhook de entrantes con su firma, y la página pública de Bizum— con la base en memoria y el
+transporte doblado.
+
+### 6.1 · ¿Comparten contador? Con el de COMERCIO, sí. Con el del CLIENTE, no.
+
+| pregunta | medido |
+| --- | --- |
+| ¿La plantilla de un aviso al profesional cuenta en el tope de comercio (100 al día)? | **Sí.** Tras 10 avisos, la pregunta de comercio contesta 10 |
+| ¿Cuenta en el tope de algún cliente (3 al día)? | **No.** Tras esos 10 avisos, la pregunta del cliente contesta 0 |
+| ¿Puede un aviso dejar sin plantilla a un cliente? | **Sí, por el de comercio:** 120 textos de un cliente → 100 plantillas al profesional y 20 bloqueadas; después, una plantilla a un cliente del mismo comercio no sale (`daily_cap`, la pregunta contesta 100, 0 peticiones) |
+| ¿Y al revés? | **Sí:** con 100 plantillas a clientes hoy, el aviso al profesional no sale (0 plantillas) |
+| ¿Y si el profesional tiene su ventana de 24 h abierta? | **No hay riesgo:** los mismos 120 avisos salen por texto, gastan 0 plantillas, y la plantilla al cliente sale |
+
+Las dos preguntas leen la misma tabla con el mismo `where` (comercio, tipo plantilla, de hoy, con id de mensaje);
+la del cliente añade `customerId`. La fila de un aviso se escribe sin cliente: por eso entra en una y no en la otra.
+
+**El riesgo existe y está acotado:** hace falta que en un día salgan 100 plantillas de aviso, y sólo salen como
+plantilla si el profesional no ha escrito al número en las últimas 24 h. No toca el tope por cliente.
+
+### 6.2 · Los 10 sitios
+
+Censo: 321 ficheros `.ts` en `src/`; 10 llamadas de fuera del módulo (más el atajo `notifyMerchantPaid`); la
+misma búsqueda con un nombre que no existe da 0; fuera de `src/` (tests, scripts, public), 0.
+
+| sitio | lo dispara | quién lo provoca | avisos si se repite 10 veces | cómo se sabe |
+| --- | --- | --- | --- | --- |
+| `whatsappIncoming.routes.ts:409` | un cliente con albarán en 30 días y sin presupuesto pendiente escribe un texto | **un tercero (el cliente)** | **10** (uno por mensaje; la misma entrega repetida, 1) | EJECUTADO |
+| `whatsappIncoming.routes.ts:297` | un cliente escribe BAJA o STOP | **un tercero (el cliente)** | **10** (aunque ya esté de baja) | EJECUTADO |
+| `botFlow.service.ts:688` | segundo texto fuera de menú | un tercero (el cliente) | 1 (el bot calla 24 h) | EJECUTADO, con el flag del bot en ON |
+| `botFlow.service.ts:631` | «hablar con una persona» | un tercero (el cliente) | 1 (el bot calla 24 h); con el flag en OFF, 0 | EJECUTADO |
+| `botFlow.service.ts:495` | el cliente termina de pedir un presupuesto al bot | un tercero (el cliente) | uno por solicitud completada | LEÍDO |
+| `payBizum.routes.ts:198` | el cliente pulsa «ya he pagado» en la página pública | un tercero (el cliente) | 1 por cobro | EJECUTADO |
+| `psp.routes.ts:346` | webhook de pago confirmado | un tercero (la pasarela) | 1 por cobro: si ya está pagado vuelve antes (`:44`) | LEÍDO |
+| `mpWebhook.routes.ts:241` | webhook de Mercado Pago aprobado | un tercero (la pasarela) | 1 por cobro: sólo si no estaba pagado (`:104`) | LEÍDO |
+| `disputes.service.ts:183` | webhook de disputa de Stripe | un tercero (el banco) | 1 por disputa: deduplica por id (`:153`) | LEÍDO |
+| `quotes.routes.ts:761` | el cliente acepta o rechaza un presupuesto | un tercero (el cliente) | 1 por decisión: la escritura lleva el estado en el `where` | LEÍDO |
+
+**Ninguno de los diez lo dispara el comercio: los diez los provoca un tercero.** Ocho llevan un freno propio (uno
+por cobro, por disputa, por decisión, o el silencio de 24 h del bot). **Dos no lo llevan: `:409` y `:297`, uno
+por cada mensaje que el cliente escriba.** Los tres del bot dependen de `BOT_INBOUND_ENABLED`, que en el código
+está en OFF.
+
+### 6.3 · Un día verosímil
+
+**No se puede medir: no hay comercios con clientes reales** (memoria del equipo, 28-sep y 1-oct). Lo que el
+código da son los multiplicadores de arriba: avisos del día = pagos + decisiones de presupuesto + «ya he pagado»
+de Bizum + disputas + **cada texto** de un cliente con albarán reciente y sin presupuesto pendiente + **cada
+BAJA**. Con un comercio de, digamos, 5 pagos, 5 decisiones y 5 mensajes sueltos, son 15, muy lejos de 100; esa
+cifra es un supuesto mío, no una medición. Lo que sí está medido es qué hace falta para llegar a 100: **un solo
+cliente escribiendo 100 mensajes** (o BAJA 100 veces) con la ventana del profesional cerrada.
+
+### 6.4 · Controles de esta parte
+
+| control | esperado | salió |
+| --- | --- | --- |
+| CERO: entrante con la firma mala | 401, 0 avisos | 401 y 0 |
+| CERO: número que no es cliente de nadie | 0 avisos | 0 |
+| CERO: cliente sin albarán reciente | 0 avisos | 0 (y 1 respuesta al cliente: la ruta corrió) |
+| POSITIVO obligatorio: cliente con albarán escribe una vez | 1 aviso, 1 plantilla al profesional | 1 y 1 |
+| CERO del contador: 120 avisos con la ventana abierta | 0 plantillas, y la del cliente sale | 0, y sale |
+| CERO de Bizum: token que no existe | 404, 0 avisos | 404 y 0 |
+| el guion esperando una repetición menos | rojo | salida 1, 3 casos en rojo de 20 (0 en la buena) |
+
+Un manejador que revienta daría «0 avisos» igual que uno que no avisa: el guion cuenta sus trazas de error y
+un caso con alguna no vale. Salieron 0.
+
+### 6.5 · Lo que NO se midió de esta parte
+
+- **Cinco de los diez sitios están LEÍDOS, no ejecutados** (los dos webhooks de pago, la disputa, la decisión
+  del presupuesto y la solicitud por el bot). El «1 por cobro» de los dos webhooks de pago es una lectura seguida
+  de una escritura: **dos entregas a la vez no las he probado.**
+- Si delante del webhook de entrantes hay algún límite de peticiones en `app.ts`: aquí se montó la ruta sola.
+- Si Meta limita cuántos mensajes puede mandar un mismo usuario en un día. Fuera del repositorio.
+- El valor de `BOT_INBOUND_ENABLED` en producción. En el código, OFF.
+- Cuántos profesionales tienen la ventana cerrada. Sin dato; es lo que decide si un aviso es plantilla o texto.
+- La comprobación de que nada sale a un host que no es Meta no la he visto en rojo.
+- La base en memoria contestó sin modelarlo a `customerEvent.create` (2 veces). Nada más.
+
+Reproducir: `node docs/master/evidencias/SCRUM-1509d/avisos.cjs dist` (rojo a propósito: `--esperado-menos-uno`).
