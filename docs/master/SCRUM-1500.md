@@ -1047,7 +1047,7 @@ generate` NO se corrió.
 
 # SCRUM-1500f · Los cinco sitios que todavía decían que la cola no existe: corregidos con lo que midió SCRUM-1500d, y nada más
 
-**Medido contra:** `origin/main` = `4f8c473da8a565fdb6f00316f7ef5b14be3c1f1c` · 2026-10-08T08:04:44Z (hora de GitHub)
+**Medido contra:** `origin/main` = `aa0b22acc3abe8572cd5e527caed0dab1e5c0f31` · 2026-10-08T08:06:21Z (hora de GitHub)
 
 A9: comprobación → `docs/master/evidencias/scrum1500f/en-sitio.cjs`
 
@@ -1090,7 +1090,7 @@ el valor de `SIF_ENABLED` en Railway.
 ## ⓝ En sitio, por bytes
 
 `node docs/master/evidencias/scrum1500f/en-sitio.cjs . origin/main` → salida 0. Su salida está en
-`en-sitio-salida.txt`, al lado.
+`salida-sobre-el-ancestro-comun.txt`, al lado. `en-sitio-salida.txt` es la pasada anterior, la que salió 1 (ver ⓢ): se conserva.
 
 | fichero | líneas antes → después | líneas distintas |
 | --- | --- | --- |
@@ -1173,8 +1173,8 @@ aquí ni está en el permiso.
 * **Ninguna base de datos.** Ni si la tabla existe en producción, staging o dev, ni cuántas filas
   tiene. Ni el valor de `SIF_ENABLED` en Railway.
 * **La medición de SCRUM-1500d no se ha repetido en este tramo.** Se copia de c.18919; la repitió
-  SCRUM-1500e sobre `16e80dea4` y dio la misma salida. Entre ese commit y el de este tramo `main` se
-  ha movido y no he comprobado si tocó `src/`.
+  SCRUM-1500e sobre `16e80dea4` y dio la misma salida. Entre ese commit y `4f8c473da`, en `src/` y
+  `prisma/` cambia un fichero: `modoVisible.ts`, que es el comentario de SCRUM-1500e.
 * **El «contador de intentos».** La frase vieja de la skill decía que no lo hay. Leí
   `prisma/schema.prisma:1803` (`attempts Int @default(0)`) y por eso la frase entera queda citada como
   falsa, pero es una lectura mía de una línea, no parte de c.18919.
@@ -1197,13 +1197,21 @@ Antes de escribir este registro: **2.059 tests, 2.045 pasan, 5 caen, 9 saltados.
   no trae `node_modules` y el CLI de Prisma no está.
 * `scrum476-reconciliar-censos`: 1. «CERO directorios `node_modules` en el árbol».
 
-%%DESPUES%%
+Después de escribir este tramo y de mezclar `main` (`aa0b22acc`, que sólo traía ficheros de
+SCRUM-1510): 17 ficheros —los del registro, los de las skills, scrum298, scrum237, scrum976 y
+scrum1106—, **145 tests, 145 pasan, 0 caen, 0 saltados** (TAP de 69.756 bytes). Los seis casos de
+«SCRUM-854» salen `ok` por nombre, el ② incluido. `guards:entrada`: 13 guards, 158 tests, salida 0.
+`dist/` no se reconstruyó tras la mezcla: no traía nada de `src/`.
+
+**Empecé anclado a `4f8c473da` y `main` se movió mientras medía.** Lo vio el instrumento: comparaba
+contra la punta de `main` y contó 7 ficheros cambiados donde había 6 —el séptimo era un test que
+entró por `main`—. Ahora compara contra el ancestro común. La tabla de ⓝ es la de esa segunda pasada.
 
 ## ⓣ Lo que me salió mal
 
 * **Medí los CR con `od -c | grep '\\r'`** y salieron 217, 643 y 3.856 «líneas con CR» en ficheros
-  que tienen cero. El patrón casaba con la letra. Es el tropiezo que ya está en A10 («un carácter que
-  no se ve lo caza un recuento») y volví a hacerlo. Lo delató que el número se parecía al total. El
+  que tienen cero. El patrón casaba con la letra. Es un tropiezo ya conocido en esta máquina y volví
+  a hacerlo. Lo delató que el número se parecía al total de líneas. El
   instrumento cuenta bytes `0x0D` y prueba antes que sabe contarlos.
 * **El primer patrón del recuento llevaba «nunca se construy» suelto** y casaba cinco líneas que no
   hablan de la cola (CLAUDE.md, el máster, dos de `docs/equipo`). Lo vi al leer la lista, no por el
