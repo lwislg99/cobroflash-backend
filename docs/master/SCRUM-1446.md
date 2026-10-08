@@ -343,3 +343,163 @@ conserva (`opciones(7.5)` → 21, 10, 7.5, 4, 0): no es cerrado, a propósito. L
 puede llegar las he **leído, no ejecutado**: la API, el asistente (valida con la misma regla de siete
 tipos, que admite 0.075), una plantilla o un borrador que ya lo traigan. No he mirado si alguna de
 ellas lo produce en la práctica, ni si hay alguno guardado: no he consultado ninguna base.
+
+## SCRUM-1446b · EL ARREGLO: el tipo de IVA deja de redondearse a entero al calcular y al construir el registro (②, ④, ⑤ y el descuento global). ① y ③ NO se tocan
+
+**Medido contra:** `origin/main` = `fc639ef96164b56ae99c129b7202c56c66abdaf4` · 2026-10-08T01:16:05Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1446-los-tres-importes-del-pdf.test.mjs`
+
+Lo hace J1 (equipo de Javier), sesión `jv-j1`, rama `scrum-1446b-arreglo-de-los-importes`.
+**Permiso:** GO del fundador en Jira, SCRUM-1446 `c.18865` («1-Ok go»), que levanta la regla 40 sólo
+para los importes y los rótulos. El GO se corrigió en `c.18878`: decía «con el 10 % los CINCO casos
+cuadran» y `c.18862` decía CUATRO.
+
+### 0 · En corto
+
+| caso del GO | qué pasa ahora | estado |
+| --- | --- | --- |
+| ⑤ desglose del registro que se REMITE | `TipoImpositivo` 7.5 · base 100.00 · cuota 7.50 (antes 8 · 100.00 · 7.50) | **arreglado** |
+| ④ el PDF del presupuesto calculaba al 8 % | pie 7,50 sobre base 100,00, Total 107,50: cuadra (antes 8,00, no cuadraba por 50 cént.) | **arreglado**; el rótulo del pie sale «7.5%» con punto (ver §4) |
+| descuento global al 7,5 % | se firma 96,75 = (100 − 10) × 1,075; la línea del descuento lleva `tax` 0.075 y pasa el portón (antes 96,70, `tax` 0.08, rechazada) | **arreglado** |
+| ② rótulo «8%» | fila del PRESUPUESTO: «7,5%». Fila y pie de la FACTURA: siguen «8%» | **a medias**: la factura no se puede tocar sin cambiar dos guards (§3) |
+| ① la columna no suma el TOTAL | igual que antes | **NO TOCADO**, a propósito (§2) |
+| ③ impreso ≠ guardado | igual que antes | **NO TOCADO**, a propósito (§2) |
+
+**El control que manda:** 22.184 casos sin 7,5 % (0, 2, 4, 5, 10 y 21 %), comparados byte a byte entre
+el árbol de antes y el de después: **0 distintos**. De ellos 254 son PDF generados y leídos.
+
+### 1 · Qué se ha cambiado
+
+La causa era `Math.round(tax * 100)` en dos sitios. Ahora los dos llaman a `tipoEnPorcentaje`
+(`core/utils/utils.ts`), que redondea a dos decimales de porcentaje: 0.075 → 7.5, 0.21 → 21.
+
+- `src/modules/invoicing/domain/vat.service.ts` — `calcVatBreakdown` agrupa por el tipo con decimales.
+  De él cuelgan el registro, el libro, el pie del presupuesto y la factura final.
+- `src/core/utils/utils.ts` — `descuentoGlobalEnCentimos`, lo mismo. Nombrado en el GO.
+- `src/modules/invoicing/infra/pdf/pdf.service.ts` — sólo la fila del PRESUPUESTO (`generateQuotePdf`).
+- `src/modules/invoicing/domain/finalInvoice.service.ts` — el concepto «Menos anticipo… — IVA 7,5 %»
+  escribe el tipo con coma; su `tax` pasa de 0.08 a 0.075 sin tocar esa línea. **Leído, no ejecutado.**
+
+Ningún texto nuevo: donde ponía una cifra hay otra cifra. No se toca el sellado, la huella, la cadena
+ni la firma, ni `prisma/schema.prisma`, ni ninguna base.
+
+**Lo que NO cambia ni con 7,5 %** (5.070 casos de dominio con alguna línea al 7,5 %): lo guardado
+(`grossOfLines`, que es `Invoice.total`) 0 · la cuota total 0 · la base total 0 · lo firmado sin
+descuento global 0. Cambian lo firmado CON descuento global (4.692) y el registro (4.349).
+
+**Las facturas ya emitidas no se tocan (regla 29).** Las que salieron con «8%», y los registros ya
+construidos con `TipoImpositivo` 8, se quedan como están. Cambia lo que se construye desde ahora.
+No he mirado si existe alguna: no he consultado ninguna base.
+
+### 2 · ① y ③ no se arreglan aquí, y no es por falta de permiso: falta una CONVENCIÓN
+
+No salen de `Math.round(tax * 100)`. Medido con la sonda de `main` sobre `fc639ef9`, antes de tocar:
+
+- **①** la columna no suma el TOTAL en **126.710 de 500.500** pares al 10 % y 125.232 al 21 %. Su
+  control a cero es el 0 %, no el 10 %.
+- **③** el TOTAL impreso no es el guardado en **8.699 de 500.500** al 10 % y 646 al 21 %; 24 % con
+  21 % + 10 %.
+
+Con dos decimales no pueden cuadrar a la vez la suma de las líneas y el total: hay que elegir cuál
+manda en el papel, y cualquiera de las dos elecciones mueve céntimos en documentos al 10 % y al
+21 %, que es lo que el control del GO prohíbe. Además ③ es la opción A de SCRUM-624, que según
+`c.18234` de SCRUM-1446 el fundador dejó a la espera de la asesoría (`c.14405` de SCRUM-624: citado
+de segunda mano, no lo he abierto).
+
+### 3 · La fila y el pie de la FACTURA siguen diciendo «8%», y por qué
+
+Las tres líneas que lo arreglan están dentro de `generateInvoicePdf` (`pdf.service.ts:534`, `:556`
+y `:646`). Las escribí, y al correr la tanda cayeron dos guards que comparan esa función byte a byte
+con la base de la rama y no tienen forma de admitir un cambio autorizado:
+`tests/scrum603b-descripcion-en-el-albaran.test.mjs` y `tests/scrum723-guard-contra-su-base.test.mjs`.
+Desde que existen, ningún PR ha cambiado esa función (el último que tocó el fichero, SCRUM-1470, no
+entra en ella). Para que pase hay que cambiar los guards, y eso no lo decido yo (regla 41, y el GO
+dice «ningún guard se relaja»). **Deshice las tres líneas.** El cambio pendiente, entero:
+
+    :534  `${(taxR*100).toFixed(0)}%`      →  `${rotuloDeTipo(tipoEnPorcentaje(taxR))}%`
+    :556  `${(t*100).toFixed(0)}%`         →  `${rotuloDeTipo(tipoEnPorcentaje(t))}%`
+    :646  parseFloat(b[0]) - parseFloat(a[0])  →  lo mismo, cambiando antes la coma por punto
+
+Con ellas puestas medí lo mismo que en §0: 0 distintos sin 7,5 %, y la factura imprimía
+«7,5%» y «IVA 7,5%: 7,50». En la factura es sólo el rótulo: la cuota impresa ya era la buena (7,50).
+
+### 4 · Lo que queda en carriles que no son el mío (leído, NO ejecutado, NO tocado)
+
+Las escribí también y las deshice al ver de quién eran (`docs/equipo/dos-equipos.md` §3):
+
+- `src/modules/quotes/domain/presentacionIva.ts:181` (S1) — el rótulo del pie del presupuesto se
+  compone con `${e.rate}%`. Antes imprimía «IVA 8%:»; ahora «IVA 7.5%:», con punto. La cifra es buena.
+- `src/modules/system/app/routes/quoteDecisionLanding.routes.ts:440` y `:452` (S1) — la página del
+  cliente pinta `IVA (${e.rate}%)` y reconoce el pie con `/^IVA (\d+)%:$/`, que no casa con «7.5%».
+- 🔴 `public/dashboard/js/quoteDescuentos.js:169` (S2) — la copia del editor sigue con
+  `Math.round(tax * 100)`. Con una línea al 7,5 % y descuento global, **la pantalla calculará con 8 y
+  el servidor firmará con 7,5**: antes coincidían (los dos mal) y ahora no. Es el único punto en que
+  este arreglo deja algo peor de lo que estaba, y sólo con el tipo que los desplegables no ofrecen.
+- `aiQuoteAssistant.js:145`, `productsView.js:820`, `quotesDetailView.js:635` — rótulos de pantalla
+  con `toFixed(0)`: el mismo «8%», en pantalla.
+
+### 5 · Los controles
+
+**El rojo de partida.** `node docs/master/evidencias/SCRUM-1446/medir-los-tres-importes.mjs .` sobre
+`fc639ef9`: `EXIT=0`, 12.215 bytes, idéntica a `salida.txt` salvo la línea 1, que lleva el nombre del
+árbol. Una diferencia explicada.
+
+**Byte a byte.** `docs/master/evidencias/SCRUM-1446b/volcar.mjs` vuelca 27.321 casos por árbol (321
+PDF generados y leídos, más dominio: desglose, guardado, firmado, reparto, líneas a facturar, portón,
+pie y registro) y `comparar.mjs` los compara línea a línea. Antes = un worktree en `fc639ef9`;
+después = esta rama. Salida en `salida.txt`.
+
+| | casos | distintos |
+| --- | --- | --- |
+| sin 7,5 % | 22.184 | **0** |
+| con 7,5 % | 5.137 | 5.104 (los 33 iguales son los PDF de FACTURA, §3) |
+| control: antes contra antes | 27.321 | 0, y el comparador se declara CIEGO (salida 2) en vez de dar un verde |
+
+**Por nombre, vistos caer antes y pasar después.** El fichero nuevo del test, corrido contra el árbol
+de antes: caen los tres, y sólo ellos (6 pasan, 3 caen). Contra esta rama: 9 de 9.
+
+- `SCRUM-1447 · ② el pie del presupuesto calcula la cuota del 7,5 % al 7,5 %, y base + cuota es el Total`
+- `SCRUM-1447 · ② el desglose del registro de facturación lleva el tipo REAL: tipo × base = cuota en todos los admitidos`
+- `SCRUM-1447 · ② el descuento global de un presupuesto al 7,5 % se firma con su tipo y se puede facturar`
+
+El segundo recorre los tipos que da `TIPOS_IVA_ES_BP`, no una lista copiada: un tipo con decimales
+que se admita mañana entra solo. `DECLARADOS` baja de cinco a tres.
+
+**El caso de los 91 de 76.600** (1 céntimo entre lo firmado y la cuenta, con tipos elegibles):
+`medir-el-descuento-global-por-el-desplegable.mjs` en los dos árboles da las mismas filas elegibles
+(21 %: 17 · 10 %: 74 · 4 %: 0 · 0 %: 0). **Ni lo arregla ni lo empeora.** En su control al 7,5 %: el
+mecanismo pasa de 19.150 a 0, los rechazos del portón de 19.150 a 0, y «la cuenta no sale» de 11.981
+(máx. 17 cént.) a 170 (máx. 1 cént.), que es la misma familia del medio céntimo.
+
+**`TipoImpositivo` 7.5 y el esquema.** El patrón de `Tipo2.2Type` en
+`src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd:517` admite «7.5» (control: «7,5» no).
+Qué hace la AEAT al recibirlo no está comprobado.
+
+**Tanda dirigida:** 152 ficheros (los que nombran lo tocado, más scrum237, 267, 514, 864c, 976, 1294 y
+1295): 1.472 tests, 1.450 pasan, 0 caen, 22 saltan (todos por falta de base: `QA_DB_TEST`,
+`LIBRO_PG_URL`, `SERIE_PG_URL`). `tsc --noEmit`: 0 errores.
+
+### 6 · Lo que no he hecho
+
+- La tanda completa en local (1.292 ficheros): la corre el check obligatorio.
+- Ejecutar el libro registro, el modelo 303 y el recargo con un 7,5 %. Leído: reciben 7.5 donde
+  recibían 8, y ni uno ni otro tienen casilla ni recargo en sus tablas.
+- La factura final con un anticipo al 7,5 % (`finalInvoice.service.ts`): leído, no ejecutado.
+- Contar facturas o presupuestos REALES al 7,5 %: no hay base a la que yo pueda preguntar. Un
+  presupuesto ya firmado al 7,5 % con descuento global daría ahora otro total si se recalcula; no sé
+  si existe alguno ni si su total se recalcula.
+- Las dos sondas de `evidencias/SCRUM-1446/` se declaran CIEGAS (salida 3) sobre esta rama: su
+  calibrado y su control llevan dentro el defecto que ya no está. No las he reescrito. Siguen
+  valiendo contra un árbol anterior al arreglo.
+
+### 7 · Errores míos
+
+- Escribí en tres ficheros del otro equipo (`presentacionIva.ts`, `quoteDecisionLanding.routes.ts`,
+  `quoteDescuentos.js`) antes de mirar de quién eran. La cerradura no me paró. Deshecho antes de
+  comitear; lo cazaron un rojo de `scrum1325b` y otro de `scrum811c`, no yo.
+- Toqué `generateInvoicePdf` sin preguntar antes a sus guards. Lo cazó la tanda dirigida.
+- En `salida.txt` copié un `EXIT=0` que era el del `tail` de la tubería; el del comparador era 2.
+  Corregido tras repetir la orden sin tubería.
+- Puse a ojo un caso de 100,00 € en `casos-con-nombre.mjs` sobre una población que llega a 30,00 €:
+  reventó al ejecutarlo.

@@ -21,6 +21,7 @@
 // Por eso este fichero se puede escribir hoy y aquello no.
 import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
 import { grossOfLines, type InvoiceLine } from './invoiceLines.service';
+import { rotuloDeTipo } from '../../../core/utils/utils';
 
 /** Documento ya emitido que la final descuenta (tramo/anticipo previo del mismo presupuesto). */
 export interface DeductibleDoc {
@@ -90,7 +91,7 @@ export function buildFinalInvoice(params: {
       // Una negativa POR TIPO de IVA: neutraliza exactamente la cuota que ese documento repercutió.
       for (const e of bd.entries) {
         negativas.push({
-          concept: `Menos anticipo facturado ${doc.number} (${fechaCorta})${bd.entries.length > 1 ? ` — IVA ${e.rate} %` : ''}`,
+          concept: `Menos anticipo facturado ${doc.number} (${fechaCorta})${bd.entries.length > 1 ? ` — IVA ${rotuloDeTipo(e.rate)} %` : ''}`,
           qty: 1,
           price: -e.base,
           tax: e.rate / 100,

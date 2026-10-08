@@ -9,9 +9,9 @@
 // Cada caso de abajo fija los importes EXACTOS que salen hoy, incluidos los que salen mal:
 //
 //   ① SCRUM-1446 · la columna TOTAL de las líneas no suma el TOTAL impreso.
-//   ② SCRUM-1447 · el tipo se redondea a entero: el 7,5 % —que el servidor ADMITE— sale «8%».
-//      Y no sólo en el papel de la factura: el pie del presupuesto CALCULA la cuota al 8 %, y el
-//      desglose del registro de facturación lleva `TipoImpositivo` 8 con la cuota del 7,5 %.
+//   ② SCRUM-1447 · el tipo se redondea a entero: el 7,5 % —que el servidor ADMITE— sale «8%» en
+//      el papel de la FACTURA. (El pie del presupuesto, que CALCULABA la cuota al 8 %, y el desglose
+//      del registro, que llevaba `TipoImpositivo` 8, se arreglaron en SCRUM-1446b: ver su tramo.)
 //   ③ SCRUM-1448 · la factura con líneas RECALCULA su total y la que no tiene líneas imprime el
 //      guardado; con dos tipos, con tramos o con descuento de línea, los dos números se separan.
 //
@@ -44,9 +44,7 @@ const { calcTotal } = require('../dist/core/utils/utils.js');
 /** Los defectos que este fichero fija sin arreglar, con el ticket que los lleva. */
 const DECLARADOS = Object.freeze({
   'la columna no suma el total': 'SCRUM-1446 · cada línea se redondea al imprimirse y el TOTAL sale de la suma sin redondear.',
-  'el 7,5 % se imprime «8%»': 'SCRUM-1447 · `(tax*100).toFixed(0)` en la fila y en el pie de la factura y en la fila del presupuesto.',
-  'el presupuesto calcula la cuota al 8 %': 'SCRUM-1447 · `pieDePresupuesto` multiplica por `calcVatBreakdown().rate`, que es `Math.round(tax*100)`.',
-  'el registro lleva TipoImpositivo 8': 'SCRUM-1447 · `clasificarDetalleDesglose` escribe `String(rate)` con ese mismo `rate` redondeado.',
+  'el 7,5 % se imprime «8%»': 'SCRUM-1447 · `(tax*100).toFixed(0)` en la fila y en el pie de la FACTURA. Lo demás se arregló en SCRUM-1446b; esto no, porque `scrum603b` y `scrum723` no dejan cambiar `generateInvoicePdf`.',
   'el total impreso no es el guardado': 'SCRUM-1448 y SCRUM-624 · la factura con líneas recalcula; el guardado es `grossOfLines`.',
 });
 
@@ -68,7 +66,7 @@ function leer(outPath) {
 function filasDe(textos) {
   const filas = [];
   for (const t of textos) {
-    const m = t.match(new RegExp(`^(L\\d+Z).*,\\d{2}(\\d+%|—)(${IMPORTE})$`));
+    const m = t.match(new RegExp(`^(L\\d+Z).*,\\d{2}([\\d,]+%|—)(${IMPORTE})$`));
     if (m) filas.push({ rotulo: m[2], total: aCent(m[3]) });
   }
   return filas;
@@ -106,7 +104,7 @@ async function papelPresupuesto(lines, total) {
     currency: 'EUR', total, lines: conNombre(lines), country: 'ES',
   });
   const textos = leer(outPath);
-  const pie = textos.map((t) => t.match(new RegExp(`^IVA (\\d+%): (${IMPORTE}) EUR$`)))
+  const pie = textos.map((t) => t.match(new RegExp(`^IVA ([\\d.,]+%): (${IMPORTE}) EUR$`)))
     .filter(Boolean).map((m) => ({ rotulo: m[1], cuota: aCent(m[2]) }));
   return {
     filas: filasDe(textos), pie,
@@ -195,36 +193,73 @@ test('SCRUM-1447 · ② DECLARADO: de los tipos que el servidor admite, el 7,5 %
   '7,5 % se imprime «8%»» de `DECLARADOS` y fija aquí el rótulo nuevo (que es texto: lo firma el fundador).');
 });
 
-test('SCRUM-1447 · ② DECLARADO: el pie del presupuesto CALCULA la cuota del 7,5 % al 8 %', async () => {
-  assert.ok(DECLARADOS['el presupuesto calcula la cuota al 8 %'].includes('SCRUM-1447'));
+// ── SCRUM-1446b (8-oct-2026) · ARREGLADO: el tipo ya no se redondea a entero al CALCULAR ──────
+// GO del fundador en SCRUM-1446 c.18865. `calcVatBreakdown` y `descuentoGlobalEnCentimos` agrupan
+// por el tipo con sus decimales (`tipoEnPorcentaje`). Los tres casos de abajo fijaban el defecto;
+// ahora fijan el valor bueno, cada uno con su control al 10 %, que tiene que salir como siempre.
+
+test('SCRUM-1447 · ② el pie del presupuesto calcula la cuota del 7,5 % al 7,5 %, y base + cuota es el Total', async () => {
   const visto = {};
   for (const t of [0.075, 0.10]) {
     const lines = [L(100, t)];
     const q = await papelPresupuesto(lines, calcTotal(lines).toFixed(2));
     visto[`${t * 100} %`] = { fila: q.filas[0].rotulo, base: q.base, pie: q.pie, total: q.total };
+    assert.equal(q.base + q.pie.reduce((a, x) => a + x.cuota, 0), q.total,
+      `🔴 en el presupuesto al ${t * 100} %, la base más las cuotas del pie no dan el Total impreso.`);
   }
   assert.deepEqual(visto, {
-    // Base 100,00 + IVA 8,00 = 108,00, y el Total que se firma es 107,50.
-    '7.5 %': { fila: '8%', base: 10000, pie: [{ rotulo: '8%', cuota: 800 }], total: 10750 },
-    // El control: con un tipo entero, base + cuota = total.
+    // ⚠️ El rótulo del PIE sale «7.5%», con punto: lo compone `presentacionIva.ts`, que no es de
+    // este carril. La fila, que pinta `pdf.service.ts`, sale «7,5%». La cifra es la buena en los dos.
+    '7.5 %': { fila: '7,5%', base: 10000, pie: [{ rotulo: '7.5%', cuota: 750 }], total: 10750 },
+    // El control: con un tipo entero, nada se ha movido.
     '10 %': { fila: '10%', base: 10000, pie: [{ rotulo: '10%', cuota: 1000 }], total: 11000 },
   },
-  'Ha cambiado el pie del presupuesto para una línea al 7,5 %. Si ya imprime 7,50, borra «el ' +
-  'presupuesto calcula la cuota al 8 %» de `DECLARADOS` y fija aquí el pie nuevo.');
+  'Ha cambiado el pie del presupuesto para una línea al 7,5 % o al 10 %.');
 });
 
-test('SCRUM-1447 · ② DECLARADO: el desglose del registro de facturación lleva TipoImpositivo 8 con la cuota del 7,5 %', () => {
-  assert.ok(DECLARADOS['el registro lleva TipoImpositivo 8'].includes('SCRUM-1447'));
+test('SCRUM-1447 · ② el desglose del registro de facturación lleva el tipo REAL: tipo × base = cuota en todos los admitidos', () => {
   const de = (t) => {
     const d = clasificarDetalleDesglose(calcVatBreakdown([L(100, t)]).entries[0], 'QA-1446');
     return { tipoImpositivo: d.tipoImpositivo, base: d.baseImponible, cuota: d.cuotaRepercutida };
   };
-  assert.deepEqual({ sieteYMedio: de(0.075), diez: de(0.10) }, {
-    sieteYMedio: { tipoImpositivo: '8', base: '100.00', cuota: '7.50' },   // 100,00 × 8 % no es 7,50
-    diez: { tipoImpositivo: '10', base: '100.00', cuota: '10.00' },        // el control
+  assert.deepEqual({ sieteYMedio: de(0.075), diez: de(0.10), veintiuno: de(0.21) }, {
+    sieteYMedio: { tipoImpositivo: '7.5', base: '100.00', cuota: '7.50' },   // antes: '8' con cuota 7.50
+    diez: { tipoImpositivo: '10', base: '100.00', cuota: '10.00' },          // el control
+    veintiuno: { tipoImpositivo: '21', base: '100.00', cuota: '21.00' },     // el control
   },
-  'Ha cambiado el desglose que se construye para una línea al 7,5 %. Si el tipo ya viaja con su ' +
-  'decimal, borra «el registro lleva TipoImpositivo 8» de `DECLARADOS` y fija aquí el valor nuevo.');
+  'Ha cambiado el desglose que se construye para una línea al 7,5 %, al 10 % o al 21 %.');
+
+  // La propiedad, sobre la población que da el validador y no sobre una lista copiada: la terna que
+  // se remite no se contradice. Si mañana se admite otro tipo con decimales, entra solo.
+  let medidos = 0;
+  for (const t of ADMITIDOS.filter((x) => x > 0)) {
+    const d = de(t);
+    assert.equal((Number(d.tipoImpositivo) * Number(d.base) / 100).toFixed(2), d.cuota,
+      `🔴 el registro de una línea de 100,00 al ${t * 100} % lleva TipoImpositivo ${d.tipoImpositivo} ` +
+      `y cuota ${d.cuota}: la terna se contradice.`);
+    medidos += 1;
+  }
+  assert.equal(medidos, 6, 'esperaba medir los seis tipos admitidos mayores que 0');
+  // El lado que cae: un tipo redondeado a entero, como antes, SÍ contradice la terna.
+  assert.notEqual((Math.round(0.075 * 100) * 100 / 100).toFixed(2), de(0.075).cuota,
+    'el control no distingue un 8 de un 7,5: la propiedad de arriba no mediría nada');
+});
+
+test('SCRUM-1447 · ② el descuento global de un presupuesto al 7,5 % se firma con su tipo y se puede facturar', () => {
+  const de = (t) => {
+    const lines = [L(100, t)];
+    const paraFacturar = lineasParaFacturar({ lines, discountGlobalAmount: 10 });
+    return { firmado: calcTotal(lines, 10), taxDelDescuento: paraFacturar[0].tax, porton: tipoIvaNoEmitible(paraFacturar) };
+  };
+  assert.deepEqual({ sieteYMedio: de(0.075), diez: de(0.10) }, {
+    // antes: se firmaba 96,70, la línea del descuento salía con tax 0.08 y el portón la rechazaba
+    sieteYMedio: { firmado: 96.75, taxDelDescuento: 0.075, porton: null },
+    diez: { firmado: 99, taxDelDescuento: 0.1, porton: null },               // el control
+  },
+  'Ha cambiado lo que se firma o lo que se factura con descuento global al 7,5 % o al 10 %.');
+  // El lado que cae: el portón sigue rechazando un tipo que no existe.
+  assert.match(String(tipoIvaNoEmitible([{ tax: 0.08 }])), /8 %/,
+    'el portón ya no rechaza un 8 %: el `porton: null` de arriba no diría nada');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -269,8 +304,8 @@ test('SCRUM-1448 · ③ la factura SIN líneas imprime el guardado, y con línea
     'documento según tenga líneas o no (SCRUM-1448); si pasa a ser una, fija aquí cuál.');
 });
 
-test('SCRUM-1446 · los defectos declarados son EXACTAMENTE cinco, y cada uno nombra su ticket', () => {
-  assert.equal(Object.keys(DECLARADOS).length, 5,
+test('SCRUM-1446 · los defectos declarados son EXACTAMENTE tres, y cada uno nombra su ticket', () => {
+  assert.equal(Object.keys(DECLARADOS).length, 3,
     'La lista de defectos declarados ha cambiado de tamaño. Sólo puede menguar, y al menguar se ' +
     'cambia este número en el mismo commit.');
   for (const [k, motivo] of Object.entries(DECLARADOS)) {
