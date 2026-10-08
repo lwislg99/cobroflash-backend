@@ -1,0 +1,6 @@
+schema.prisma: [33m100924[39m caracteres · bloque Merchant: [33m11005[39m caracteres, [33m185[39m lineas
+campos del Merchant: [33m79[39m
+POSITIVO  /whatsapp/i  -> whatsappPhone:String?
+PREGUNTA  /phoneNumberId|numberId|waba|accessToken|wa.*token|businessAccount/i -> [33m0[39m
+CERO      /zzzNoExiste1512/ -> [33m0[39m
+en TODO el esquema, campos que casan /phoneNumberId|waba|businessAccount/i: [33m0[39m de [33m611[39m
