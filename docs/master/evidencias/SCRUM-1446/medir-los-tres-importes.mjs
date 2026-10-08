@@ -15,6 +15,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { pathToFileURL } from 'node:url';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const R = path.resolve(process.argv[2] || '.');
 const iFilas = process.argv.indexOf('--filas');
@@ -24,7 +25,7 @@ if (!fs.existsSync(path.join(R, 'dist/lib/pdf.js'))) {
   console.log('EXIT=2');
   process.exit(2);
 }
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1446-'));
+const TMP = temporal('scrum1446-');
 process.chdir(TMP);
 
 const require = createRequire(path.join(R, 'x.js'));
