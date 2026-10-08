@@ -218,3 +218,230 @@ Al buscar el merge que metió los tres commits en `main`, la primera orden devol
 para los tres, y el control negativo que le puse era un sha que sí estaba en `main`. Lo delató que
 los tres «entraran» con un merge de ayer. Rehecho cruzando la línea principal con el camino de
 ascendencia, y comprobando que el commit no estaba en el padre 1 del merge hallado.
+
+---
+
+# SCRUM-1404b · PR-1: el reintento del sellado, construido e INERTE — A MEDIAS, parado por contexto
+
+**Medido contra:** `origin/main` = `edfbd86e7c193ce5b35f20269c478acc6e9b2777` · 2026-10-07T23:48:36Z (hora de GitHub)
+
+A9: aviso → cicatriz J6 «Un PR inerte nace sin consumidor: los censos de piezas sin consumir caen por diseño, y se miran ANTES de escribir el fichero, no al final.» — no se pudo comprobar: son los propios censos (scrum1185, scrum411) los que lo dicen, pero sólo después de escrito
+
+🔴 CRUCE DE CARRIL DECLARADO (A20): el ticket es `area-j1` y escribe J6 (sesión `jv-j6`), por encargo del
+orquestador de Javier (`cobroflash-backend-90`). El hook de arranque dijo «SIN IDENTIDAD… no construyas»
+(SCRUM-1498, de S5); se siguió por la norma común del 8-oct. La cerradura de carril no reconoce el nombre
+`jv-j6` y no para nada: el carril se aplicó a mano.
+
+## Qué es esto, para que no se lea como un PR vacío
+
+Un PR que **no cambia ninguna respuesta** y que es la primera mitad de la decisión del fundador. El diseño
+en dos PR lo aprobó el orquestador por mensaje; dice haberlo dejado en SCRUM-1404, comentario 18849, que **NO he abierto yo**:
+
+- **PR-1 (éste):** el mecanismo entero del reintento, sin fecha de corte (`REINTENTO_ACTIVO_DESDE = null`)
+  y sin que nadie lo llame. Con `null` no hace ni una consulta.
+- **PR-2 (activación), los tres A LA VEZ:** ① la fecha, escrita después de que PR-1 esté desplegado;
+  ② la línea de `src/core/cron/cron.ts`, que es de **S1** y la pide el orquestador por Jira; ③ el arreglo
+  del `catch` de las dos rutas del PDF. Así la fecha es posterior a la existencia del mecanismo en
+  producción por construcción, sin ALTER y sin leer Railway, y la respuesta no va antes que el reintento.
+
+Autorizaciones leídas de primera mano: SCRUM-1404 comentarios 18783 (C con reintento y el orden), 18833
+(población B) y 18840 (fecha, tope, cadencia, etiqueta); SCRUM-1502 comentario 18835 (la frase del
+profesional; la del cliente consta en `docs/YAQU_MASTER.md:1374`, comprobado: 1 aparición, control 0).
+El comentario 18851 (vocabulario `emision` | `reintento` y el parámetro en `sellarTrasEmision`) me lo
+anunció el orquestador: **NO lo he abierto yo**, y nada de lo que hay aquí lo usa.
+
+## Lo que lleva
+
+- `src/modules/invoicing/domain/reintentoSellado.ts` — la selección (estado **y** nacida desde la fecha
+  **y** sin huella), el tope, la espera, la pasada y su parte.
+- `tests/scrum1404b-el-reintento-del-sellado.test.mjs` — 12 casos.
+- `docs/master/evidencias/SCRUM-1404/mutar-reintento.mjs` y su salida — 9 mutaciones, 9 vivas, base limpia.
+
+## Lo medido
+
+| qué | resultado |
+|---|---|
+| el rojo de partida (`medir-1404.mjs`, 6 llamadas) antes de escribir nada | 500 en las dos rutas; controles 409 y 500 |
+| el mismo guion DESPUÉS de este PR | salida idéntica byte a byte (1.686 B, mismo sha256): no cambia ninguna respuesta |
+| el test nuevo | 12 de 12 |
+| mutaciones sobre la copia compilada | 9 de 9 vivas; restaurado idéntico |
+| el banco de J2 (`poblacion-b.mjs`) re-ejecutado en este árbol con un PGlite prestado de otro trabajo | 9 veredictos, 0 caen, salida idéntica a la guardada |
+| compilación con tipos (`tsc`, sin `--noCheck`) | sale 0 |
+
+Tope y espera: **5 fallos** y espera ×2 desde 60 s. No son números míos: son los de la cola de remisión
+(`src/modules/fiscal/verifactu/sif.cola.ts:30-36`), y un test fija que hoy coinciden. Con tope 5 las esperas
+son cuatro: 1, 2, 4 y 8 minutos.
+
+## 🔴 Lo que está ROJO y por qué NO se ha empujado como entrega
+
+Corridos 47 ficheros de la casa más el mío (459 casos): **6 caen**. Tres son de este PR:
+
+1. `SCRUM-1185 · ① ninguna pieza NUEVA construida y sin consumir` — el módulo no tiene consumidor, a
+   propósito. Su salida es declararlo en `scripts/_sin-consumir-declarados.json`. **No hecho.**
+2. `SCRUM-411 · los módulos de dominio inalcanzables NO crecen` — «6 módulos y el tope es 5». Subir ese
+   tope es mover un número de un control: **decisión del orquestador, no mía.**
+3. `SCRUM-205 · ① un sellado_fallido registrado va atado a un estado que bloquea` — señala
+   `reintentoSellado.ts:236`, que LEE esa acción en un `where`, no la registra. **Sin investigar.**
+
+Los otros tres son de `SCRUM-475` («la herramienta de la casa no responde»): **no he comprobado** si caen
+igual sin mi cambio.
+
+## Lo que NO lleva y lo que NO se midió
+
+- El arreglo del `catch`, la línea de cron y la fecha: son PR-2.
+- `puntoDeFallo`: un fallo del reintento saldría anotado como `emision`. Con PR-1 inerte no se escribe ninguno.
+- **El hueco del cinturón:** una factura con la huella escrita y el estado sin marcar queda fuera de la
+  selección para siempre. La pasada la cuenta y la nombra en cada parte, también a cero; no la toca.
+- «Marcada para que alguien la mire» es DERIVADO (pendiente, sin huella, 5 fallos) y sale en la línea de
+  log. Un aviso a una persona es canal y texto nuevos: no construido.
+- El doble de la base del test evalúa el `where` en JavaScript: **no es Postgres**. La consulta de Prisma
+  no se ha ejecutado contra ningún motor.
+- Los controles del arreglo de la respuesta (PDF de una sellada idéntico por bytes; un fallo de verdad
+  del generador sigue en 500): son de PR-2, **no hechos**.
+- Tanda completa y `guards:entrada`: no corridos. Nada en yaqu.app.
+
+## Mis errores
+
+- Le dije al orquestador «espera 1-2-4-8-16 min» con tope 5: con ese tope son cuatro esperas, no cinco.
+- Mi primer caso de la pasada daba por «en espera» una factura a la que ya le tocaba (leí mal mi propia
+  progresión); lo cazó el test al correrlo.
+- Medí el contexto tarde: 328.859 cuando la orden era parar a 300.000.
+
+# SCRUM-1404c · PR-1: los rojos del obligatorio, cerrados menos uno — SIGUE A MEDIAS (falta el segundo cinturón del tope)
+
+**Medido contra:** `origin/main` = `fca2f2e934e30690e04ad7b9fe3ccfcae152a802` · 2026-10-08T00:07:24Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
+
+*(Escribe J6, relevo, equipo de Javier. Cruce de carril declarado: el ticket es `area-j1` y lo autorizó
+el orquestador `cobroflash-backend-90`. La rama NO lleva `origin/main` mezclado: va 4 commits por detrás.)*
+
+## Qué había y qué queda
+
+El obligatorio de la punta anterior (`4cda5f87`, run 37704496194, job 113075521722) se leyó por nombre:
+11.062 casos, 7 caen, 93 saltos. Mi antecesora anunció 3. **Eran 7: su tanda dirigida no incluía
+`scrum289` ni `scrum1325`.** Los doce «SCRUM-1404 · » salían bien (control de un nombre que no existe: 0).
+
+| rojo del obligatorio | qué era | qué se hizo |
+|---|---|---|
+| `SCRUM-1185 · ①` | tres piezas sin consumidor, a propósito | declaradas en `scripts/_sin-consumir-declarados.json` con motivo, quién las retira (el PR-2) y prueba; decisión en el comentario 18855 |
+| `SCRUM-411 · no crecen` | 6 módulos y el número era 5 | el número sube a 6 con su entrada fechada, calcada del caso de `emisorCongelado`; decisión rectificada en el comentario 18856 |
+| `SCRUM-205 · ①` | reconoce un registro por la forma `action: 'sellado_fallido'` y la línea era una LECTURA | la acción pasa a una constante del módulo, atada por AST a lo que escribe `selladoEstado.ts`; decisión en el comentario 18857 |
+| `SCRUM-289` | un `where` traído de una función es opaco para el censo | el `where` va escrito en la consulta; `whereDelReintento` se retira y el test lo lee de la propia pasada |
+| `SCRUM-1325` ×3 | una expresión regular con letras sin catalogar | la fecha de corte se valida sin expresión regular: tiene que ser lo que `toISOString` escribe |
+
+Los tres de `SCRUM-475` que caían en local **no son de este PR ni de `main`**: en el obligatorio de este
+PR pasan (47 «SCRUM-475 · » bien) y en el de `main` @ `a65a8c75` también. En el árbol anidado caen porque
+`scripts/preview-migracion.mjs` busca el CLI de Prisma en el `node_modules` del propio árbol, y no lo hay.
+
+## Lo medido antes de decidir
+
+- **Declarar en la lista NO baja `scrum411`.** Con las tres claves puestas (`git diff --numstat`: 3 0),
+  `scrum1185 ①` pasa y `scrum411` sigue en 6. Control hecho antes de tocar: los otros 5 inalcanzables
+  están los 5 en esa lista y los 5 cuentan. Son dos mecanismos distintos: una lista y un número con bitácora.
+- **El tope descansa en un registro que nadie espera.** `sellarTrasEmision` anota el fallo con
+  `recordAudit`, que no se espera y traga su error. Sonda de 40 pasadas con el módulo compilado y un
+  sellado que falla siempre: si el fallo queda anotado, 5 llamadas a sellar y «agotada» desde la pasada 17;
+  **si no queda anotado, 40 llamadas en 40 pasadas, «agotada» nunca y `todo_en_orden` 40 de 40.**
+  La cabecera del módulo lo llamaba «un intento de más»: son infinitos. NO medido: con qué frecuencia
+  falla esa escritura (no hay fallos reales a mano y no se consulta producción).
+- **La pasada llamaba a la puerta por un alias**, y el censo de llamadores de SCRUM-205 los busca por el
+  nombre `sellarTrasEmision`. Ahora la llama por su nombre cuando no se inyecta un doble.
+
+## Comprobado después del último cambio
+
+`tsc` con tipos: sale 0. 18 ficheros, 172 casos, 0 caen (el test propio con 14, `scrum289`, `scrum1325`,
+`scrum411`, `scrum1185`, los tres `scrum205`, `scrum237`, `scrum976`, `scrum622`, `scrum377`, `scrum864c`,
+`scrum702`, `scrum812`, `scrum710b`). `mutar-reintento.mjs`: 9 de 9 vivas. `mutar-declaracion.mjs`
+(nuevo): 4 de 4 vivas, y el fichero mutado quedó idéntico.
+
+## 🔴 Lo que NO lleva, y por eso no es una entrega
+
+1. **El segundo cinturón del tope (decidido en el comentario 18857, SIN CONSTRUIR).** Una factura que
+   sigue pendiente pasado el tiempo en que ya debería estar agotada se cuenta, se nombra en el parte y
+   pone `hay_que_mirar`; la cuenta sale siempre, también a cero; el plazo se DERIVA de `TOPE_DE_FALLOS` y
+   `ESPERA_INICIAL_S` (la espera inicial más las de los fallos 1 a 4: 16 minutos con los números de hoy).
+   Sin él no se puede activar el reintento.
+2. La cabecera del módulo sigue diciendo «un intento de más». Se corrige con el cinturón.
+3. Esperar la anotación dentro de `sellarTrasEmision` es el arreglo de raíz y es camino de emisión: no se toca.
+4. El segundo PR entero (fecha, línea de `cron.ts` de S1, el `catch` de las dos rutas, `puntoDeFallo`).
+
+## Lo que NO se midió
+
+- No vi en rojo el caso nuevo de la acción (④) ni comprobé por efecto que el censo de SCRUM-205 cuenta
+  ya a la pasada como llamadora: sólo que los tres ficheros `scrum205` pasan.
+- `medir-1404.mjs` y el banco de J2 NO se han vuelto a correr tras estos cambios.
+- La tanda completa no se corrió en local. El obligatorio de la punta nueva está sin leer al escribir esto.
+- De los otros dos ficheros `scrum205` leí los nombres de sus casos, no el cuerpo.
+
+## Mis errores
+
+- Medí el contexto tarde: 255.865 cuando el aviso era a 200.000. Me lo comieron las lecturas del PASO 0.
+- Al escribir el `where` en la consulta dejé `whereDelReintento` huérfano y `scrum1185` volvió a caer; lo
+  cazó la tanda dirigida, no yo.
+- Di por buena la lista de tres rojos de mi antecesora hasta leer el obligatorio: eran siete.
+
+# SCRUM-1404d · PR-1: el segundo cinturón del tope, construido y visto en rojo
+
+**Medido contra:** `origin/main` = `9dd6aa773799565c3753c51f289efae1a4ecbca0` · 2026-10-08T00:19:27Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
+
+*(Escribe J6, relevo, equipo de Javier. Cruce de carril declarado: el ticket es `area-j1` y lo autorizó
+el orquestador `cobroflash-backend-90`. La rama sigue SIN `origin/main` mezclado. El módulo sigue inerte:
+`REINTENTO_ACTIVO_DESDE` vale `null` y nadie lo importa.)*
+
+## Qué se construyó (la c del comentario 18857)
+
+- `plazoDeAgotamientoS()`: la espera inicial más la de cada fallo anterior al último. **Derivado** de
+  `TOPE_DE_FALLOS`, `ESPERA_INICIAL_S` y `esperaTrasFalloS`; hoy da 960 s (16 min). El 16 sólo aparece en un
+  comentario; el código no lleva ningún 16 ni ningún 960.
+- `fueraDePlazo` en el parte: la candidata que **sigue pendiente tras la pasada**, **no consta agotada**
+  y nació hace MÁS del plazo. Sale del reloj, no del registro de auditoría. Entran la que sigue pendiente,
+  la que lanza y la que está en espera; no entran la que esta pasada sella, la que no lleva sello ni la
+  agotada (ésa ya se nombra en su lista).
+- `conclusionDelReintento` da `hay_que_mirar` si hay alguna.
+- `resumenDelReintento` lleva la cuenta **siempre, también a cero**, con el plazo dentro de la etiqueta
+  y los nombres cuando hay.
+- La cabecera ya no dice «un intento de más»: dice infinito, con la sonda que lo midió.
+
+## Lo medido
+
+| qué | resultado |
+|---|---|
+| el test del reintento | 17 de 17 (eran 14: tres casos nuevos) |
+| la sonda, ahora dentro del test: 40 pasadas, sellado que falla siempre, fallo SIN anotar | 40 llamadas, «agotada» nunca; fuera de plazo 0 en las pasadas 1-16 y 1 en las 24 siguientes, con `hay_que_mirar` en esas 24 |
+| su control: el fallo SÍ se anota | 5 llamadas, agotada desde la pasada 17, fuera de plazo 0 en las 40 |
+| el borde | justo en el plazo, 0; un milisegundo después, las tres que siguen pendientes |
+| mutaciones sobre la copia compilada | 17 de 17 vivas (9 de antes, 7 del cinturón, 1 de la acción); restaurado idéntico |
+| el caso de la acción (④), visto en rojo por su nombre | cae al cambiar la constante en la copia compilada; caen con él otros 6, porque el doble de la base exige la misma acción |
+| `medir-1404.mjs` repetido | idéntico byte a byte a la salida guardada: 1.686 B, sha256 `c17e1f60…6494f` |
+| el banco de J2 (`poblacion-b.mjs`) repetido con un PGlite prestado | 9 veredictos, 0 caen, salida idéntica a la guardada (3.468 B) |
+| compilación con tipos | sale 0 |
+| guards alrededor (1185, 1325 ×2, 205 ×3, 237, 289 ×2, 411, 976 y el propio) | 12 ficheros, 129 casos, 0 caen, 0 saltos |
+
+## 🔴 Lo que el cinturón NO hace, dicho antes de que alguien lo suponga
+
+1. **No para el reintento: lo señala.** Con la anotación perdida la factura se sigue reintentando en cada
+   pasada, y cada parte lo dice. Pararla por reloj dejaría sin sellar una factura sana tras una parada
+   larga de la tarea, y eso no lo ha decidido nadie. Si se quiere que además pare, es una decisión.
+2. **Supone una pasada por minuto o más rápida.** Con una cadencia más lenta, una factura sana que va
+   agotando su tope a su ritmo sale señalada antes de agotarse: avisa de más, nunca de menos. La
+   cadencia la pone la línea de `cron.ts` (SCRUM-1507), que no es de este PR.
+3. **`hay_que_mirar` es una palabra en un valor de retorno.** Hasta que PR-2 lo cablee, nadie la lee; y
+   cuando lo cablee, quien la lea es el log de la tarea. Que eso llegue a una persona no está construido.
+4. El arreglo de raíz (esperar la anotación dentro de `sellarTrasEmision`) sigue sin hacer: es STOP.
+
+## Lo que NO se midió
+
+- El caso ④ se vio caer moviendo la constante del módulo, **no** el literal de `selladoEstado.ts`: ese
+  fichero es camino de emisión y no se toca ni para mutarlo.
+- Que el censo de SCRUM-205 cuenta ya a la pasada como llamadora sigue sin comprobarse por efecto: sus
+  tres ficheros pasan, y es todo lo que sé.
+- La tanda completa no se corrió en local.
+- Con qué frecuencia falla de verdad la escritura de auditoría: no hay fallos reales a mano.
+
+## Mis errores
+
+- Los tres casos nuevos salieron verdes a la primera, y un verde a la primera no dice nada: lo que los
+  respalda son las 7 mutaciones del cinturón, corridas después, no el haberlos visto pasar.
