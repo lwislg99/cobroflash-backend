@@ -150,3 +150,101 @@ equipo, y la 2 es firma del fundador. Las cuatro, como se le llevaron:
 | ④ el positivo sigue GARANTIZADA; ESCAPA/FABRICA no se relajan | test ② y ④ del fichero nuevo · §5 |
 | ⑤ la línea que sale siempre | test ⑤ del fichero nuevo |
 | `scrum864c` en verde en `main` con el arreglo | NO HECHO → decisión del orquestador del equipo de Javier (§5) |
+
+---
+
+## Tramo 2 · ¿Dejan resto las 24? Medido por efecto, con el test pasando y con el test en rojo
+
+**Medido contra:** `origin/main` = `fc639ef96164b56ae99c129b7202c56c66abdaf4` · 2026-10-08T00:54:25Z
+(J4 del equipo de Javier, sesión `jv-j4`; encargo del orquestador `cobroflash-backend-90`. Los restos se midieron
+sobre esta rama, `33e3d9d4`; las 24 `fichero:línea` son las mismas que sobre `main` de hoy. Jira: c.18861, c.18874,
+c.18875 y c.18877 de SCRUM-1396.)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: el fallo fue de una medición hecha a mano (un `TEMP` con espacios rompió `scrum1289b` y lo di por «ya en rojo»); el guion guardado se niega ahora a correr con espacios en la ruta, pero nada impide que la próxima medición a mano preste otro entorno.
+
+Este tramo no cambia código: ni `src/`, ni `tests/`, ni el censo. Añade una medición y sus instrumentos.
+
+### Qué se midió
+
+El §6 decía: «"0 fugas vivas" es lectura del código, no una medición de restos». Esto es la medición.
+
+`evidencias/SCRUM-1396/medir-restos.sh` corre cada fichero de test solo, con `TEMP`/`TMP`/`TMPDIR` en una carpeta
+vacía propia, y con `espia-mkdtemp.cjs` cargado por `NODE_OPTIONS`. El espía anota cada `mkdtempSync` con el
+`fichero:línea` que lo llama y el directorio creado. En la pasada de fallo, tras cada llamada acusada hace que el
+siguiente método de `assert` lance un `AssertionError`: el test cae por un assert, no por un `exit` (un `exit` se
+salta el `finally` y mediría el arnés). Al acabar se mira cuáles de los directorios anotados siguen existiendo.
+Salida completa en `salida-medir-restos.txt`; las 24 líneas, en `las-24-llamadas.txt`.
+
+### Los cuatro controles del instrumento
+
+`control-del-espia.fixture.txt` es un test fabricado con tres auxiliares que crean y devuelven. Se guarda como texto
+y el guion lo copia fuera del árbol para correrlo: fuga a propósito, y como `.mjs` aquí dentro el censo lo acusaría.
+
+| caso | creados | siguen vivos | esperado |
+|---|---|---|---|
+| pasa, el llamador borra | 2 | 0 | 0 |
+| pasa, nadie borra | 3 | 1 | 1 |
+| assert inyectado, llamador con `finally` | 2 | 0 | 0 |
+| assert inyectado, llamador que borra sin `finally` | 2 | 1 | 1 |
+
+La primera vez que corrí el guion guardado no arrancó nada (una `\` dentro de `NODE_OPTIONS` se comía los
+separadores de la ruta del espía) y los cuatro controles salieron «creados 0»: fue el control el que lo dijo, no el
+número de las 24, que habría salido «0 restos» igual.
+
+### El número, las 24
+
+Camino feliz: de los directorios creados por las 24 líneas, 0 siguen vivos.
+
+Camino de fallo, los dos grupos aparte:
+
+| grupo | líneas medidas | fallos inyectados | líneas que dejan resto | directorios que quedan |
+|---|---|---|---|---|
+| NO_GARANTIZADA (`{ dir, limpia }`) | 6 de 6 | 26 | 0 | 0 |
+| ESCAPA (devuelve el directorio) | 18 de 18 | 58 | 2 | 6 |
+
+Las 4 de los ayudantes (`tests/_alcance-desde-entradas.mjs`, `_comparador-alcance.mjs`, `_export-que-sobra.mjs`,
+`_huerfanos-en-modulos-vivos.mjs`) no son tests: se ejercitan a través de los 6 tests que los importan.
+
+### Las dos que fugan, y por qué
+
+- **`tests/scrum1263-gancho-pre-push.test.mjs:52`, `montar()` — 4 de 4.** Sus cuatro llamadores borran en un
+  `finally`. Pero `montar()` hace sus propios `assert.equal(git(…).status, 0)` (líneas 59, 60 y 68) después de crear
+  el directorio y antes de devolverlo. Si uno cae, el llamador todavía no tiene `m` ni ha entrado en su `try`.
+- **`tests/scrum454-destructivo-sin-comprobacion.test.mjs:157`, `repo()` — 2 directorios.** Se llama a nivel de módulo
+  (`SUCIO`, `LIMPIO`) y se borra en `test.after`. Con un assert cayendo a nivel de módulo el fichero muere al cargarse
+  (1 test, 1 rojo) y el `after` no corre. No se identificó cuál de los `assert` de módulo saltó.
+
+**Lo que esto le hace a la salida 2 del §5** («que el censo siga al llamador y dé por buena una auxiliar cuyos
+llamadores borran todos»): `scrum1263` cumple ese criterio al pie de la letra y fuga. El hueco está dentro de la
+auxiliar, entre crear y devolver, que es donde un censo que mira al llamador no mira. `temporal()` lo cubre porque
+borra al salir el proceso, lo tenga quien lo tenga. Decisión: no es de este puesto (c.18876).
+
+### Lo que se dijo mal por el camino, y lo que queda débil
+
+- **Autocorrección a c.18875.** Allí escribí que los 2 fallos inyectados en `scrum1289b` caían sobre tests «ya en rojo
+  en mi árbol». El rojo lo causaba mi propio `TEMP` de medición, que tenía un espacio en la ruta. En esas pasadas
+  `scrum1289b:80` fue la línea peor medida de las 24: 0 restos, pero sobre tests que el instrumento ya había roto.
+  En la pasada guardada aquí (carpeta sin espacios) el camino feliz sale 9 de 9 y los 2 rojos de la pasada de fallo
+  son los inyectados: 2 fallos, 0 restos.
+- **Aviso que queda, y no es de este ticket:** `tests/scrum1289b-reporters-como-argumentos.test.mjs` no aguanta un
+  directorio temporal con espacios en la ruta (`EPERM: operation not permitted, open 'C:\Users\Javier'`). La carpeta
+  de usuario de esta máquina es `C:\Users\Javier Pereira`; hoy pasa porque `os.tmpdir()` devuelve la forma corta
+  (`C:\Users\JAVIER~1\…`). No se ha arreglado.
+- **Los 3 rojos de este árbol no son de `main`.** `scrum836` (1) y `scrum631` (no carga) caen aquí porque el árbol no
+  tiene `dist/`; siguen saliendo así en `salida-medir-restos.txt`. Sobre `fc639ef9` limpio, con `dist/` compilado
+  (`tsc --noCheck`) y sin tocar `TEMP`: `scrum1289b` 9 de 9, `scrum836` 17 de 17, `scrum631` 18 de 18, 0 saltos.
+- **Un resto que no es de las 24:** `yaqu-454-no-es-un-repo`, que `scrum454…test.mjs:333` crea con nombre fijo. No
+  es un `mkdtemp`, el censo no lo ve, y por eso «en TEMP al final» da 1 en su camino feliz. No se ha tocado.
+
+### Límites
+
+- El fallo cae en el **primer método de `assert`** que se llama tras crear. No intercepta `assert(x)` llamado como
+  función ni un `throw` que no venga de assert. Un fallo más tardío en el mismo test no está medido.
+- Dos pasadas completas con el mismo resultado, las dos en Windows. Ninguna en Linux.
+- El espía sólo arma en el proceso del test: un `mkdtempSync` hecho por un proceso hijo se anota, pero no se arma.
+
+### Lo que no se ha hecho
+
+- No se ha convertido ninguna de las 24, ni las 2 que fugan: son ficheros de otro carril (los dos los creó la cuenta
+  del equipo de Luis; reparto de los 22 en SCRUM-1506 c.18864).
+- `scrum864c` ③ sigue en rojo con este PR, por las mismas 24. El PR sigue aparcado.
