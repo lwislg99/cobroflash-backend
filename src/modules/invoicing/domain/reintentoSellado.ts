@@ -44,9 +44,18 @@
  * Cada sellado fallido deja un `sellado_fallido` en el registro de auditoría (lo escribe
  * `sellarTrasEmision`). Cuántos lleva una factura y cuándo fue el último salen de ahí.
  *
- * ⚠️ Ese registro se escribe sin esperar (`recordAudit`): si la escritura falla, ese intento no
- * cuenta. Va hacia el lado prudente —un intento de más, nunca una factura dada por agotada sin
- * haberlo estado—, y con la base caída no hay intento: la selección falla antes.
+ * 🔴 Ese registro se escribe sin esperar y traga su error (`recordAudit`): si la escritura falla,
+ * ese intento no cuenta. Y NO es «un intento de más»: si falla siempre, el contador no sube nunca,
+ * el tope no llega y el reintento es INFINITO (medido con una sonda de 40 pasadas, SCRUM-1404
+ * comentario 18857: 40 llamadas a sellar, ninguna «agotada»). Es el fallo correlacionado: la base
+ * que tumba el sellado es la misma que guarda la anotación.
+ *
+ * EL SEGUNDO CINTURÓN, que no depende de ese registro: el reloj. Una candidata que sigue pendiente
+ * y sin constar agotada pasado el plazo en que ya debería estarlo (`plazoDeAgotamientoS`, derivado
+ * del tope y de las esperas) se cuenta, se nombra y pone `hay_que_mirar`. ⚠️ NO la deja de
+ * reintentar: la señala. Parar el reintento por reloj dejaría sin sellar una factura sana tras una
+ * parada larga de la tarea, y eso nadie lo ha decidido. El arreglo de raíz —esperar la anotación
+ * dentro de `sellarTrasEmision`— es camino de emisión y no se toca desde aquí.
  *
  * ⚠️ Y `puntoDeFallo` saldrá como `emision` también en un fallo del reintento: lo escribe
  * `sellarTrasEmision`. Decir `reintento` pide un parámetro allí y una lista cerrada que firma el
@@ -136,6 +145,21 @@ export function esperaTrasFalloS(fallos: number): number {
   return ESPERA_INICIAL_S * 2 ** (n - 1);
 }
 
+/**
+ * EL PLAZO DEL SEGUNDO CINTURÓN: cuánto tarda, como mucho, una factura en agotar el tope si cada
+ * fallo queda anotado — la espera inicial desde su nacimiento más la de cada fallo anterior al
+ * último. Se DERIVA de las constantes (hoy 60·(1+1+2+4+8) s = 16 min); no se escribe a mano.
+ *
+ * ⚠️ Supone que la pasada corre al menos una vez por minuto. Con una cadencia más lenta, una
+ * factura sana puede salir señalada antes de agotarse: avisa de más, nunca de menos. La cadencia
+ * la pone la línea de `cron.ts` del PR de activación.
+ */
+export function plazoDeAgotamientoS(): number {
+  let s = ESPERA_INICIAL_S;
+  for (let k = 1; k < TOPE_DE_FALLOS; k += 1) s += esperaTrasFalloS(k);
+  return s;
+}
+
 export type TurnoDelReintento = 'toca' | 'espera' | 'agotada';
 
 /**
@@ -179,13 +203,18 @@ export interface ParteDelReintento {
   conError: Array<FacturaNombrada & { error: string }>;
   /** Huella escrita y estado sin marcar, nacidas tras el corte. Se cuentan; no se tocan. */
   conHuellaSinMarcar: FacturaNombrada[];
+  /**
+   * El segundo cinturón del tope: siguen pendientes tras esta pasada, no constan agotadas, y ya
+   * pasó el plazo en que deberían estarlo. No sale del registro de auditoría: sale del reloj.
+   */
+  fueraDePlazo: FacturaNombrada[];
 }
 
 function parteVacio(activo: boolean, motivo: string | null, desde: Date | null): ParteDelReintento {
   return {
     activo, motivo, desde: desde ? desde.toISOString() : null,
     candidatas: 0, truncado: false, selladas: [], noAplica: [], siguenPendientes: [], enEspera: 0,
-    agotadas: [], conError: [], conHuellaSinMarcar: [],
+    agotadas: [], conError: [], conHuellaSinMarcar: [], fueraDePlazo: [],
   };
 }
 
@@ -209,6 +238,7 @@ export async function reintentarSelladosPendientes(opciones: {
   if (corte.desde === null) return parteVacio(false, corte.motivo, null);
   const desde = corte.desde;
   const parte = parteVacio(true, null, desde);
+  const plazoMs = plazoDeAgotamientoS() * 1000;
 
   const filas: any[] = await prisma.invoice.findMany({
     // Escrito aquí, a la vista, y no traído de una función: un `where` que llega de fuera es opaco
@@ -237,6 +267,9 @@ export async function reintentarSelladosPendientes(opciones: {
     if (!entraEnElReintento(f, desde)) continue;
     parte.candidatas += 1;
     const nombrada: FacturaNombrada = { id: f.id, numero: f.number, merchantId: f.merchantId };
+    const vencida = ahora.getTime() - f.createdAt.getTime() > plazoMs;
+    // Sellada, sin sello que poner, o agotada y ya nombrada: deja de ser del segundo cinturón.
+    let cerrada = false;
     try {
       const anotados: Array<{ createdAt: Date }> = await prisma.auditLog.findMany({
         where: { merchantId: f.merchantId, entityType: 'invoice', entityId: f.id, action: ACCION_DEL_SELLADO_FALLIDO },
@@ -245,7 +278,7 @@ export async function reintentarSelladosPendientes(opciones: {
       const ultimo = anotados.reduce<Date | null>(
         (m, a) => (m === null || a.createdAt.getTime() > m.getTime() ? a.createdAt : m), null);
       const turno = turnoDe(f, { cuantos: anotados.length, ultimo }, ahora);
-      if (turno === 'agotada') { parte.agotadas.push({ ...nombrada, fallos: anotados.length }); continue; }
+      if (turno === 'agotada') { parte.agotadas.push({ ...nombrada, fallos: anotados.length }); cerrada = true; continue; }
       if (turno === 'espera') { parte.enEspera += 1; continue; }
 
       const factura = { id: f.id, number: f.number, total: f.total, createdAt: f.createdAt, merchantId: f.merchantId, type: f.type };
@@ -254,11 +287,13 @@ export async function reintentarSelladosPendientes(opciones: {
       const r = opciones.sellar
         ? await opciones.sellar(factura, f.merchant ?? {}, prisma)
         : await sellarTrasEmision(factura, f.merchant ?? {}, prisma);
-      if (r.estado === SELLADO_HECHO) parte.selladas.push(nombrada);
-      else if (r.estado === SELLADO_NO_APLICA) parte.noAplica.push(nombrada);
+      if (r.estado === SELLADO_HECHO) { parte.selladas.push(nombrada); cerrada = true; }
+      else if (r.estado === SELLADO_NO_APLICA) { parte.noAplica.push(nombrada); cerrada = true; }
       else parte.siguenPendientes.push(nombrada);
     } catch (e: any) {
       parte.conError.push({ ...nombrada, error: String(e?.message ?? e).slice(0, 300) });
+    } finally {
+      if (vencida && !cerrada) parte.fueraDePlazo.push(nombrada);
     }
   }
   return parte;
@@ -270,6 +305,7 @@ export type ConclusionDelReintento = 'inactivo' | 'nada_que_mirar' | 'todo_en_or
 export function conclusionDelReintento(p: ParteDelReintento): ConclusionDelReintento {
   if (!p.activo) return 'inactivo';
   if (p.agotadas.length || p.conError.length || p.conHuellaSinMarcar.length || p.truncado) return 'hay_que_mirar';
+  if (p.fueraDePlazo.length) return 'hay_que_mirar';
   if (p.candidatas === 0) return 'nada_que_mirar';
   return 'todo_en_orden';
 }
@@ -288,6 +324,7 @@ export function resumenDelReintento(p: ParteDelReintento): string {
     `agotadas ${p.agotadas.length}${p.agotadas.length ? `: ${nombres(p.agotadas)}` : ''}`,
     `con error ${p.conError.length}${p.conError.length ? `: ${nombres(p.conError)}` : ''}`,
     `con huella y sin marcar ${p.conHuellaSinMarcar.length}${p.conHuellaSinMarcar.length ? `: ${nombres(p.conHuellaSinMarcar)}` : ''}`,
+    `pendientes fuera de plazo (más de ${plazoDeAgotamientoS()} s sin agotarse) ${p.fueraDePlazo.length}${p.fueraDePlazo.length ? `: ${nombres(p.fueraDePlazo)}` : ''}`,
   ];
   return partes.join(' · ');
 }

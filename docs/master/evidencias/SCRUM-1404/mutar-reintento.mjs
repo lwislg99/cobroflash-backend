@@ -27,6 +27,16 @@ const MUTACIONES = [
   ['sin espera: siempre toca', '>= esperaS * 1000 ?', '>= 0 ?'],
   ['sin fecha de corte la pasada actúa igual', 'corte.desde === null', 'false'],
   ['la pasada no vuelve a exigir las tres condiciones', '!entraEnElReintento(f, desde)', 'false'],
+  // El segundo cinturón del tope (comentario 18857, c).
+  ['segundo cinturón: nunca hay nada fuera de plazo', 'if (vencida && !cerrada)', 'if (false)'],
+  ['segundo cinturón: el borde del plazo entra (> pasa a >=)', 'f.createdAt.getTime() > plazoMs', 'f.createdAt.getTime() >= plazoMs'],
+  ['segundo cinturón: cuenta también la que esta pasada sella', 'if (vencida && !cerrada)', 'if (vencida)'],
+  ['segundo cinturón: fuera de plazo no pide mirar', 'if (p.fueraDePlazo.length)', 'if (false)'],
+  ['segundo cinturón: el plazo olvida la espera inicial', 'let s = exports.ESPERA_INICIAL_S;', 'let s = 0;'],
+  ['segundo cinturón: el plazo no crece con las esperas', 's += esperaTrasFalloS(k)', 's += exports.ESPERA_INICIAL_S'],
+  ['segundo cinturón: la cuenta sólo sale cuando hay algo', '`pendientes fuera de plazo (m', 'p.fueraDePlazo.length === 0 ? `sin novedad` : `pendientes fuera de plazo (m'],
+  // La acción que se cuenta: si deja de ser la que el sellado escribe, el caso de AST tiene que caer.
+  ['la acción contada ya no es la que el sellado escribe', "exports.ACCION_DEL_SELLADO_FALLIDO = 'sellado_fallido'", "exports.ACCION_DEL_SELLADO_FALLIDO = 'sellado_fallado'"],
 ];
 
 function correr() {

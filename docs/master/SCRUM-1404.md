@@ -380,3 +380,68 @@ PR pasan (47 «SCRUM-475 · » bien) y en el de `main` @ `a65a8c75` también. En
 - Al escribir el `where` en la consulta dejé `whereDelReintento` huérfano y `scrum1185` volvió a caer; lo
   cazó la tanda dirigida, no yo.
 - Di por buena la lista de tres rojos de mi antecesora hasta leer el obligatorio: eran siete.
+
+# SCRUM-1404d · PR-1: el segundo cinturón del tope, construido y visto en rojo
+
+**Medido contra:** `origin/main` = `9dd6aa773799565c3753c51f289efae1a4ecbca0` · 2026-10-08T00:19:27Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
+
+*(Escribe J6, relevo, equipo de Javier. Cruce de carril declarado: el ticket es `area-j1` y lo autorizó
+el orquestador `cobroflash-backend-90`. La rama sigue SIN `origin/main` mezclado. El módulo sigue inerte:
+`REINTENTO_ACTIVO_DESDE` vale `null` y nadie lo importa.)*
+
+## Qué se construyó (la c del comentario 18857)
+
+- `plazoDeAgotamientoS()`: la espera inicial más la de cada fallo anterior al último. **Derivado** de
+  `TOPE_DE_FALLOS`, `ESPERA_INICIAL_S` y `esperaTrasFalloS`; hoy da 960 s (16 min). El 16 sólo aparece en un
+  comentario; el código no lleva ningún 16 ni ningún 960.
+- `fueraDePlazo` en el parte: la candidata que **sigue pendiente tras la pasada**, **no consta agotada**
+  y nació hace MÁS del plazo. Sale del reloj, no del registro de auditoría. Entran la que sigue pendiente,
+  la que lanza y la que está en espera; no entran la que esta pasada sella, la que no lleva sello ni la
+  agotada (ésa ya se nombra en su lista).
+- `conclusionDelReintento` da `hay_que_mirar` si hay alguna.
+- `resumenDelReintento` lleva la cuenta **siempre, también a cero**, con el plazo dentro de la etiqueta
+  y los nombres cuando hay.
+- La cabecera ya no dice «un intento de más»: dice infinito, con la sonda que lo midió.
+
+## Lo medido
+
+| qué | resultado |
+|---|---|
+| el test del reintento | 17 de 17 (eran 14: tres casos nuevos) |
+| la sonda, ahora dentro del test: 40 pasadas, sellado que falla siempre, fallo SIN anotar | 40 llamadas, «agotada» nunca; fuera de plazo 0 en las pasadas 1-16 y 1 en las 24 siguientes, con `hay_que_mirar` en esas 24 |
+| su control: el fallo SÍ se anota | 5 llamadas, agotada desde la pasada 17, fuera de plazo 0 en las 40 |
+| el borde | justo en el plazo, 0; un milisegundo después, las tres que siguen pendientes |
+| mutaciones sobre la copia compilada | 17 de 17 vivas (9 de antes, 7 del cinturón, 1 de la acción); restaurado idéntico |
+| el caso de la acción (④), visto en rojo por su nombre | cae al cambiar la constante en la copia compilada; caen con él otros 6, porque el doble de la base exige la misma acción |
+| `medir-1404.mjs` repetido | idéntico byte a byte a la salida guardada: 1.686 B, sha256 `c17e1f60…6494f` |
+| el banco de J2 (`poblacion-b.mjs`) repetido con un PGlite prestado | 9 veredictos, 0 caen, salida idéntica a la guardada (3.468 B) |
+| compilación con tipos | sale 0 |
+| guards alrededor (1185, 1325 ×2, 205 ×3, 237, 289 ×2, 411, 976 y el propio) | 12 ficheros, 129 casos, 0 caen, 0 saltos |
+
+## 🔴 Lo que el cinturón NO hace, dicho antes de que alguien lo suponga
+
+1. **No para el reintento: lo señala.** Con la anotación perdida la factura se sigue reintentando en cada
+   pasada, y cada parte lo dice. Pararla por reloj dejaría sin sellar una factura sana tras una parada
+   larga de la tarea, y eso no lo ha decidido nadie. Si se quiere que además pare, es una decisión.
+2. **Supone una pasada por minuto o más rápida.** Con una cadencia más lenta, una factura sana que va
+   agotando su tope a su ritmo sale señalada antes de agotarse: avisa de más, nunca de menos. La
+   cadencia la pone la línea de `cron.ts` (SCRUM-1507), que no es de este PR.
+3. **`hay_que_mirar` es una palabra en un valor de retorno.** Hasta que PR-2 lo cablee, nadie la lee; y
+   cuando lo cablee, quien la lea es el log de la tarea. Que eso llegue a una persona no está construido.
+4. El arreglo de raíz (esperar la anotación dentro de `sellarTrasEmision`) sigue sin hacer: es STOP.
+
+## Lo que NO se midió
+
+- El caso ④ se vio caer moviendo la constante del módulo, **no** el literal de `selladoEstado.ts`: ese
+  fichero es camino de emisión y no se toca ni para mutarlo.
+- Que el censo de SCRUM-205 cuenta ya a la pasada como llamadora sigue sin comprobarse por efecto: sus
+  tres ficheros pasan, y es todo lo que sé.
+- La tanda completa no se corrió en local.
+- Con qué frecuencia falla de verdad la escritura de auditoría: no hay fallos reales a mano.
+
+## Mis errores
+
+- Los tres casos nuevos salieron verdes a la primera, y un verde a la primera no dice nada: lo que los
+  respalda son las 7 mutaciones del cinturón, corridas después, no el haberlos visto pasar.

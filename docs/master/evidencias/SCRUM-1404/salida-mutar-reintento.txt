@@ -1,13 +1,21 @@
-POBLACION=9 mutaciones · BASE sin mutar: tests 14 · fail 0
-VIVA   · sin el cinturón «sin huella» · tests 14 · fail 1
-VIVA   · el borde de D se queda fuera (>= pasa a >) · tests 14 · fail 4
-VIVA   · sin la condición de la fecha · tests 14 · fail 3
-VIVA   · sin la condición del estado · tests 14 · fail 3
-VIVA   · la fecha de corte acepta una anterior al suelo · tests 14 · fail 1
-VIVA   · sin tope: nunca se agota · tests 14 · fail 2
-VIVA   · sin espera: siempre toca · tests 14 · fail 2
-VIVA   · sin fecha de corte la pasada actúa igual · tests 14 · fail 1
-VIVA   · la pasada no vuelve a exigir las tres condiciones · tests 14 · fail 1
-RESTAURADO: idéntico · tests 14 · fail 0
+POBLACION=17 mutaciones · BASE sin mutar: tests 17 · fail 0
+VIVA   · sin el cinturón «sin huella» · tests 17 · fail 1
+VIVA   · el borde de D se queda fuera (>= pasa a >) · tests 17 · fail 4
+VIVA   · sin la condición de la fecha · tests 17 · fail 3
+VIVA   · sin la condición del estado · tests 17 · fail 3
+VIVA   · la fecha de corte acepta una anterior al suelo · tests 17 · fail 1
+VIVA   · sin tope: nunca se agota · tests 17 · fail 5
+VIVA   · sin espera: siempre toca · tests 17 · fail 5
+VIVA   · sin fecha de corte la pasada actúa igual · tests 17 · fail 1
+VIVA   · la pasada no vuelve a exigir las tres condiciones · tests 17 · fail 1
+VIVA   · segundo cinturón: nunca hay nada fuera de plazo · tests 17 · fail 3
+VIVA   · segundo cinturón: el borde del plazo entra (> pasa a >=) · tests 17 · fail 2
+VIVA   · segundo cinturón: cuenta también la que esta pasada sella · tests 17 · fail 4
+VIVA   · segundo cinturón: fuera de plazo no pide mirar · tests 17 · fail 1
+VIVA   · segundo cinturón: el plazo olvida la espera inicial · tests 17 · fail 2
+VIVA   · segundo cinturón: el plazo no crece con las esperas · tests 17 · fail 2
+VIVA   · segundo cinturón: la cuenta sólo sale cuando hay algo · tests 17 · fail 2
+VIVA   · la acción contada ya no es la que el sellado escribe · tests 17 · fail 7
+RESTAURADO: idéntico · tests 17 · fail 0
 no vivas: 0
 EXIT=0

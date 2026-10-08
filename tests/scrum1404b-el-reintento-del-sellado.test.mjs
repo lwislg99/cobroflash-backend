@@ -322,7 +322,98 @@ test('SCRUM-1404 · ④ el turno: espera creciente desde el último fallo, y al 
   assert.equal(R.turnoDe(f, { cuantos: R.TOPE_DE_FALLOS + 3, ultimo: t(0) }, mucho), 'agotada');
 });
 
+test('SCRUM-1404 · ④ el plazo del segundo cinturón se DERIVA: es lo que tarda en agotarse quien anota todos sus fallos', () => {
+  // Por la suma, con los números de la cola (no con los del módulo).
+  let suma = COLA.ESPERA_MINIMA_S;
+  for (let k = 1; k < COLA.MAX_INTENTOS; k += 1) suma += COLA.backoffS(k);
+  assert.equal(R.plazoDeAgotamientoS(), suma);
+  // Y por simulación, sin sumar nada: se nace, se falla en cuanto toca, y se mira cuándo se agota.
+  const f = { createdAt: new Date(tD) };
+  const fallos = { cuantos: 0, ultimo: null };
+  let ms = 0;
+  let pasos = 0;
+  for (; pasos < 10_000 && R.turnoDe(f, fallos, new Date(tD + ms)) !== 'agotada'; pasos += 1) {
+    if (R.turnoDe(f, fallos, new Date(tD + ms)) === 'toca') { fallos.cuantos += 1; fallos.ultimo = new Date(tD + ms); } else ms += 1000;
+  }
+  assert.ok(pasos > R.TOPE_DE_FALLOS && pasos < 10_000, `población: ${pasos} pasos de la simulación`);
+  assert.equal(fallos.cuantos, R.TOPE_DE_FALLOS);
+  assert.equal(ms / 1000, R.plazoDeAgotamientoS(), 'el último fallo cae justo en el plazo');
+  assert.ok(R.plazoDeAgotamientoS() > R.ESPERA_INICIAL_S * R.TOPE_DE_FALLOS, 'crece con las esperas: no es tope × espera');
+});
+
 // ───────────────────────────────── ⑤ LA PASADA ──────────────────────────────────────────────
+
+/** Una factura, un sellado que falla siempre, una pasada por minuto. `anota` = el fallo queda en auditoría. */
+async function sonda({ anota, pasadas }) {
+  const nacida = tD + DIA;
+  const f = fila(31, 'F-2026-0031', nacida, null, PENDIENTE);
+  const fallos = { 31: [] };
+  const base = baseDe([f], { fallos });
+  const vistas = [];
+  let llamadas = 0;
+  for (let i = 1; i <= pasadas; i += 1) {
+    const ahora = new Date(nacida + i * MIN);
+    const parte = await R.reintentarSelladosPendientes({
+      ahora, corte: corteEn(D), prisma: base,
+      sellar: async () => { llamadas += 1; if (anota) fallos[31].push(ahora); return { estado: PENDIENTE, error: 'falla siempre' }; },
+    });
+    vistas.push({ min: i, fuera: parte.fueraDePlazo.length, agotadas: parte.agotadas.length, conclusion: R.conclusionDelReintento(parte), linea: R.resumenDelReintento(parte) });
+  }
+  return { llamadas, vistas };
+}
+
+test('SCRUM-1404 · ⑤ el segundo cinturón: si el fallo NO queda anotado, pasado el plazo la factura se nombra y hay que mirar', async () => {
+  const plazoMin = R.plazoDeAgotamientoS() / 60;
+  const pasadas = plazoMin + 24;
+  // CONTROL: el fallo se anota. El tope funciona solo, y el cinturón no dice nada.
+  const control = await sonda({ anota: true, pasadas });
+  assert.equal(control.llamadas, R.TOPE_DE_FALLOS);
+  assert.equal(control.vistas.filter((v) => v.fuera > 0).length, 0, 'quien se agota a su hora no sale fuera de plazo');
+  assert.equal(control.vistas.find((v) => v.agotadas > 0).min, plazoMin + 1, 'agotada desde la pasada siguiente al plazo');
+  // EL CASO: la anotación se pierde siempre. El tope no llega nunca…
+  const caso = await sonda({ anota: false, pasadas });
+  assert.equal(caso.llamadas, pasadas, 'se reintenta en todas las pasadas');
+  assert.equal(caso.vistas.filter((v) => v.agotadas > 0).length, 0, 'nunca consta agotada');
+  // …y aun así el parte lo dice en cuanto pasa el plazo, y en todas las pasadas desde entonces.
+  for (const v of caso.vistas) {
+    const esperado = v.min > plazoMin;
+    assert.equal(v.fuera, esperado ? 1 : 0, `pasada ${v.min}`);
+    assert.equal(v.conclusion, esperado ? 'hay_que_mirar' : 'todo_en_orden', `pasada ${v.min}`);
+    assert.ok(v.linea.includes(`pendientes fuera de plazo (más de ${R.plazoDeAgotamientoS()} s sin agotarse) ${esperado ? '1: F-2026-0031 (factura 31, merchant 4404)' : '0'}`), v.linea);
+  }
+  assert.equal(caso.vistas.filter((v) => v.fuera > 0).length, 24);
+});
+
+test('SCRUM-1404 · ⑤ el segundo cinturón cuenta la que SIGUE pendiente: ni la que esta pasada sella, ni antes del plazo', async () => {
+  const plazoMs = R.plazoDeAgotamientoS() * 1000;
+  const nacida = tD + DIA;
+  const filas = [
+    fila(41, 'F-2026-0041', nacida, null, PENDIENTE), // se sella en esta pasada
+    fila(42, 'J-2026-0042', nacida, null, PENDIENTE), // no lleva sello
+    fila(43, 'F-2026-0043', nacida, null, PENDIENTE), // sigue pendiente
+    fila(44, 'F-2026-0044', nacida, null, PENDIENTE), // lanza
+    fila(45, 'F-2026-0045', nacida, null, PENDIENTE), // en espera: un fallo anotado hace un instante
+    fila(46, 'F-2026-0046', nacida, null, PENDIENTE), // agotada: ya se nombra en su lista
+  ];
+  const pasada = async (ahora) => {
+    const fallos = { 45: [new Date(ahora.getTime() - 1000)], 46: Array.from({ length: R.TOPE_DE_FALLOS }, () => new Date(nacida)) };
+    const parte = await R.reintentarSelladosPendientes({
+      ahora, corte: corteEn(D), prisma: baseDe(filas, { fallos }),
+      sellar: async (f) => {
+        if (f.id === 41) return { estado: 'sellado' };
+        if (f.id === 42) return { estado: 'no_aplica' };
+        if (f.id === 44) throw new Error('la base se fue a mitad');
+        return { estado: PENDIENTE };
+      },
+    });
+    assert.equal(parte.candidatas, 6);
+    assert.equal(parte.enEspera, 1);
+    assert.equal(parte.agotadas.length, 1);
+    return parte.fueraDePlazo.map((x) => x.id);
+  };
+  assert.deepEqual(await pasada(new Date(nacida + plazoMs)), [], 'justo en el plazo todavía no');
+  assert.deepEqual(await pasada(new Date(nacida + plazoMs + 1)), [43, 44, 45], '1 ms después: la pendiente, la que lanza y la que espera');
+});
 
 test('SCRUM-1404 · ⑤ la pasada reparte: toca, espera, agotada, no aplica, sigue pendiente y la que lanza', async () => {
   const nacida = tD + DIA;
@@ -363,6 +454,8 @@ test('SCRUM-1404 · ⑤ la pasada reparte: toca, espera, agotada, no aplica, sig
   assert.deepEqual(parte.agotadas.map((a) => [a.id, a.fallos]), [[23, R.TOPE_DE_FALLOS]]);
   assert.deepEqual(parte.conError.map((e) => [e.id, e.error]), [[26, 'la base se fue a mitad']]);
   assert.deepEqual(parte.conHuellaSinMarcar.map((h) => h.id), [27]);
+  // A una hora de nacer, las tres que siguen pendientes sin constar agotadas están fuera de plazo.
+  assert.deepEqual(parte.fueraDePlazo.map((x) => x.id), [22, 25, 26]);
   assert.equal(R.conclusionDelReintento(parte), 'hay_que_mirar');
   const linea = R.resumenDelReintento(parte);
   assert.match(linea, /agotadas 1: F-2026-0023 \(factura 23, merchant 4404\)/);
@@ -375,7 +468,7 @@ test('SCRUM-1404 · ⑤ el parte dice TODAS sus cuentas también cuando son cero
   assert.equal(parte.activo, true);
   assert.equal(R.conclusionDelReintento(parte), 'nada_que_mirar');
   const linea = R.resumenDelReintento(parte);
-  for (const cuenta of ['candidatas 0', 'selladas 0', 'no aplica 0', 'siguen pendientes 0', 'en espera 0', 'agotadas 0', 'con error 0', 'con huella y sin marcar 0']) {
+  for (const cuenta of ['candidatas 0', 'selladas 0', 'no aplica 0', 'siguen pendientes 0', 'en espera 0', 'agotadas 0', 'con error 0', 'con huella y sin marcar 0', `pendientes fuera de plazo (más de ${R.plazoDeAgotamientoS()} s sin agotarse) 0`]) {
     assert.ok(linea.includes(cuenta), `falta «${cuenta}» en: ${linea}`);
   }
   // Control: con una factura sellada, la cuenta deja de ser cero y la conclusión cambia.
