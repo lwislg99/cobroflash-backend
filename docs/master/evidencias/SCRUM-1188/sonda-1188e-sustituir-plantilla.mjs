@@ -1,4 +1,4 @@
-// SCRUM-1188d (parte C) · ¿Qué pasa al «Guardar como plantilla» con el NOMBRE de una plantilla que ya existe?
+// SCRUM-1188e (parte C) · ¿Qué pasa al «Guardar como plantilla» con el NOMBRE de una plantilla que ya existe?
 // Sobre yaqu.app, cuenta QA. NO ESCRIBE: las plantillas viven en un servidor en memoria de la sonda,
 // con la MISMA regla que `templates.routes.ts` tras SCRUM-1188c (en el PUT, `paymentTerms` se escribe
 // si la clave viaja, aunque sea null; `name`/`currency`/`lines`/`tiers` ignoran null). La lista (GET),

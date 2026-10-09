@@ -1,4 +1,4 @@
-// Mutantes de SCRUM-1188d. Uso: node mutantes-1188d.mjs <raiz del worktree>
+// Mutantes de SCRUM-1188e. Uso: node mutantes-1188e.mjs <raiz del worktree>
 // Cada mutante: escribe quotesView.js mutado, comprueba que el diff NO es vacío, corre el test, restaura.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -6,7 +6,7 @@ import path from 'node:path';
 
 const RAIZ = path.resolve(process.argv[2]);
 const F = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
-const TEST = 'tests/scrum1188d-sustituir-una-plantilla-con-su-nombre.test.mjs';
+const TEST = 'tests/scrum1188e-sustituir-una-plantilla-con-su-nombre.test.mjs';
 const ORIGINAL = readFileSync(F);
 const fuente = ORIGINAL.toString('utf8');
 const git = (...a) => execFileSync('git', a, { cwd: RAIZ, encoding: 'utf8' });

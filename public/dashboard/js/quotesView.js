@@ -4960,7 +4960,7 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         : null;
 
       try {
-        // SCRUM-1188d (parte C) · guardar con el nombre de una plantilla que YA tiene la SUSTITUYE,
+        // SCRUM-1188e (parte C) · guardar con el nombre de una plantilla que YA tiene la SUSTITUYE,
         // previa pregunta, en vez de crear otra con el mismo nombre (el `POST` no mira duplicados).
         // Es la forma de cambiarle un precio a una plantilla: «Usar» → cambiar → guardar con su nombre.
         // La lista se pide AHORA, no se reutiliza la de las fichas rápidas, que es de cuando se montó

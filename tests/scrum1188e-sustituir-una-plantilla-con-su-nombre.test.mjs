@@ -1,4 +1,4 @@
-// SCRUM-1188d (parte C) · UNA PLANTILLA NO SE PODÍA EDITAR: SÓLO RENOMBRAR O BORRAR.
+// SCRUM-1188e (parte C) · UNA PLANTILLA NO SE PODÍA EDITAR: SÓLO RENOMBRAR O BORRAR.
 //
 // Para subirle un precio había que usarla en un presupuesto nuevo, cambiar el precio, guardarla
 // como plantilla NUEVA y borrar la vieja. Y guardar dos veces con el mismo nombre dejaba dos
@@ -153,7 +153,7 @@ async function sembrarCaldera(srv, condicion = 'FIFTY_FIFTY') {
   srv.peticiones.length = 0;
 }
 
-test('SCRUM-1188d · 🔴 guardar con el nombre de una plantilla que ya tiene la SUSTITUYE (PUT), previa pregunta, y no crea otra', async () => {
+test('SCRUM-1188e · 🔴 guardar con el nombre de una plantilla que ya tiene la SUSTITUYE (PUT), previa pregunta, y no crea otra', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv);
@@ -180,7 +180,7 @@ test('SCRUM-1188d · 🔴 guardar con el nombre de una plantilla que ya tiene la
   assert.equal(hojas(m.b).length, 0, '🔴 la hoja sigue abierta después de sustituir');
 });
 
-test('SCRUM-1188d · 🔴 si dice que NO, no se escribe nada y la hoja sigue abierta para cambiar el nombre', async () => {
+test('SCRUM-1188e · 🔴 si dice que NO, no se escribe nada y la hoja sigue abierta para cambiar el nombre', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv, { acepta: false });
@@ -196,7 +196,7 @@ test('SCRUM-1188d · 🔴 si dice que NO, no se escribe nada y la hoja sigue abi
   assert.equal(hoja.querySelector('#tpl-name-input').value, 'Caldera', 'el nombre escrito sigue ahí');
 });
 
-test('SCRUM-1188d · 🔴 sustituir una 50/50 desde «Personalizado» VACÍA su cobro (paymentTerms:null viaja) y sale el aviso firmado', async () => {
+test('SCRUM-1188e · 🔴 sustituir una 50/50 desde «Personalizado» VACÍA su cobro (paymentTerms:null viaja) y sale el aviso firmado', async () => {
   const srv = servidor();
   await sembrarCaldera(srv, 'FIFTY_FIFTY');
   const m = await montar(srv);
@@ -216,7 +216,7 @@ test('SCRUM-1188d · 🔴 sustituir una 50/50 desde «Personalizado» VACÍA su 
   assert.doesNotMatch(a.clase, /success/, 'no es un éxito a secas: algo NO se guardó');
 });
 
-test('SCRUM-1188d · «mismo nombre» no cuenta mayúsculas ni espacios de los bordes, y los textos llevan el nombre GUARDADO', async () => {
+test('SCRUM-1188e · «mismo nombre» no cuenta mayúsculas ni espacios de los bordes, y los textos llevan el nombre GUARDADO', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv);
@@ -228,7 +228,7 @@ test('SCRUM-1188d · «mismo nombre» no cuenta mayúsculas ni espacios de los b
   assert.equal(alertaVisible(m).texto, ACTUALIZADA('Caldera'));
 });
 
-test('SCRUM-1188d · CONTROL: con un nombre que no tiene, se crea como siempre (POST), sin preguntar', async () => {
+test('SCRUM-1188e · CONTROL: con un nombre que no tiene, se crea como siempre (POST), sin preguntar', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv);
@@ -242,7 +242,7 @@ test('SCRUM-1188d · CONTROL: con un nombre que no tiene, se crea como siempre (
   assert.match(alertaVisible(m).texto, /^Plantilla "Caldera de gasoil" guardada\. /);
 });
 
-test('SCRUM-1188d · 🔴 si la lista de plantillas no se puede leer NO se guarda a ciegas: ni POST ni PUT, y lo dice en la hoja', async () => {
+test('SCRUM-1188e · 🔴 si la lista de plantillas no se puede leer NO se guarda a ciegas: ni POST ni PUT, y lo dice en la hoja', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv);
@@ -258,7 +258,7 @@ test('SCRUM-1188d · 🔴 si la lista de plantillas no se puede leer NO se guard
   assert.equal(hoja.querySelector('#save-tpl-btn').disabled, false, 'puede reintentar');
 });
 
-test('SCRUM-1188d · 🔴 tras sustituir, la ficha rápida de esa plantilla carga el precio NUEVO, no el de cuando se abrió el editor', async () => {
+test('SCRUM-1188e · 🔴 tras sustituir, la ficha rápida de esa plantilla carga el precio NUEVO, no el de cuando se abrió el editor', async () => {
   const srv = servidor();
   await sembrarCaldera(srv);
   const m = await montar(srv);

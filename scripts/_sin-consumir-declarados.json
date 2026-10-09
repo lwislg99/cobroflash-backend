@@ -186,8 +186,8 @@
     {"clave":"front-funcion · public/dashboard/js/resistenciaAlmacen.js::hayEspacioParaOtraFirma","motivo":"SCRUM-1191: conectada en colaDeFirmas.js (firmarConRedDeSeguridad consulta el tope antes de encolar)"},
     {"clave":"cuerpo · POST /admin/jobs/:id/albaranes::claveIdempotencia","motivo":"SCRUM-1267: conectada en jobDetailView.js (crearAlbaran; la clave se acuña una vez al abrir la hoja de alta y la reutilizan los reintentos)"},
     {"clave":"cuerpo · POST /quote/create::job_id","motivo":"SCRUM-1274: conectada en quotesView.js — «Hacer presupuesto» desde el Trabajo (jobDetailView.js) abre el editor con el Trabajo y su cliente, y el POST lleva job_id si el cliente sigue siendo el del Trabajo. Sin esto, aceptar creaba un SEGUNDO Trabajo."},
-    {"clave":"cuerpo · PUT /admin/templates/:id::lines","motivo":"SCRUM-1188d: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"},
-    {"clave":"cuerpo · PUT /admin/templates/:id::currency","motivo":"SCRUM-1188d: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"},
-    {"clave":"cuerpo · PUT /admin/templates/:id::paymentTerms","motivo":"SCRUM-1188d: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"}
+    {"clave":"cuerpo · PUT /admin/templates/:id::lines","motivo":"SCRUM-1188e: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"},
+    {"clave":"cuerpo · PUT /admin/templates/:id::currency","motivo":"SCRUM-1188e: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"},
+    {"clave":"cuerpo · PUT /admin/templates/:id::paymentTerms","motivo":"SCRUM-1188e: conectada en quotesView.js («Guardar como plantilla» con el nombre de una plantilla que ya existe la sustituye, previa pregunta)"}
   ]
 }
