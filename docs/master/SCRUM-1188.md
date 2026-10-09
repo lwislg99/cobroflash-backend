@@ -144,6 +144,11 @@ con cinco, y son seis: faltaba `tags`, que está más abajo en `REVISION_HEREDA`
 censo de ese test en su primera pasada, antes de empujar nada: compara la lista con `schema.prisma` y
 con `REVISION_HEREDA`, así que una columna que falte (o una nueva) sale roja.
 
+Y otro, sin comprobación que lo impida: al juntar mis commits locales en uno hice `git reset --soft
+origin/main` por NOMBRE, justo después de un `fetch` que había movido `main` seis commits. El commit
+resultante deshacía el PR #2334 de otro puesto. No salió del disco: lo vi en el `--stat`, antes de
+empujar, y lo rehíce sobre el SHA de la base. Una base se nombra por su SHA.
+
 Es el cabo que 1188c dejó declarado: «`tiers` sigue ignorando `null`; no pude medir cómo se vacía (mi
 sonda salió ciega)». Aquella sonda corrió sin base. Ésta corre contra un Postgres 16 propio y
 desechable, y lleva sus dos controles: una columna que no existe da un error de VALIDACIÓN (distinto de
