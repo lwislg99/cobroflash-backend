@@ -379,3 +379,57 @@ Censo después: **APROBADO 248 · PENDIENTE 7 · SIN_COMENTARIO 34**, trinquete 
 ## Lo que NO entra aquí
 
 Las otras 34 hojas: 22 de J1 (SCRUM-1428), 5 de J (pagos) y 7 de S2. No son de S4.
+
+# SCRUM-1215f · en el bloque de las dos firmas del parte, la firma viaja con su clave
+
+**Medido contra:** `origin/main` = `17159d7f457b8e00002cd06c33f1e41941bb10d3` · 2026-10-09T10:49:01Z
+A9: comprobación → `tests/scrum1215f-la-firma-no-se-reparte-por-posicion.test.mjs`
+
+**Skill UI:** no cargada · sólo cambian comentarios de `public/dashboard/js/parteDetailView.js`: ni un literal, ni marcado, ni estilos, ni clases. Lo que se pinta es byte a byte lo que se pintaba.
+
+9-oct-2026 · **S4** · rama `scrum-1215-la-firma-no-se-reparte-por-posicion`. Antes de tocar: SCRUM-1215 c.19088. Es un defecto encontrado de paso, en mi carril, y se arregla aquí: no tiene ticket propio.
+
+## Qué pasaba
+
+El censo de SCRUM-1157 (`scripts/_censo-convenio-microcopy.mjs`), cuando una firma se dice en plural y CONTANDO, la reparte entre las N primeras claves que encuentra debajo, por orden del fuente. No sabe cuáles eran esas N. Es diseño y lo fija su test (`tests/scrum1157-censo-convenio-microcopy.test.mjs`, caso ②).
+
+En `parteDetailView.js` el bloque de las dos firmas decía «Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026». Los cinco de aquel día (`docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`) son `firmarTecnico`, `yaFirmoElCliente`, `yaFirmoElTecnico`, `faltaLaFirmaDelCliente` y `faltaLaFirmaDelTecnico`. Como `faltaLaFirmaDelCliente` llevaba además su firma propia encima, a la cuenta le sobraba un hueco y caía en `conLaPrimeraFirmaQuedaFijo`, que es del 28-sep (SCRUM-653 comentario 17354).
+
+Ningún texto estaba sin firmar. Lo que estaba mal era el motivo por el que el censo los daba por buenos, y lo que ese motivo dejaba pasar.
+
+## Medido antes de tocar (censo ejecutado sobre copias en memoria)
+
+| Ensayo | Resultado con el fuente de antes |
+|---|---|
+| base | las seis APROBADO |
+| la cabecera dice «cuatro» en vez de «cinco» | `conLaPrimeraFirmaQuedaFijo` pasa a SIN_COMENTARIO: la aprobaba la cuenta |
+| una clave nueva sin firma, la primera del bloque | la nueva sale APROBADO y la acusada es `conLaPrimeraFirmaQuedaFijo` |
+
+## Qué cambia
+
+Sólo comentarios. Cada una de las seis lleva su marca en SU línea (regla 1 del censo, la única que no cuenta ni mira el orden): las tres primeras citan al fundador y el 4-sep; las otras tres, la firma delegada de SCRUM-653 comentario 17354, que es la del literal que hoy se pinta. La cabecera del bloque deja de firmar en plural y cuenta por qué. El comentario de encima de `faltaLaFirmaDelCliente` deja de llevar la palabra de firma en mayúsculas, para que la firma esté en un solo sitio por clave.
+
+## Medido después
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1215f-…` con el fuente nuevo | 5 de 5 |
+| el mismo test con el fuente de `origin/main` | 3 caen de los 5 (clave nueva la primera; clave nueva delante de cualquiera; control «sin su marca»). Los otros dos son el suelo y la base, que pasan en los dos |
+| censo entero | APROBADO 248 · PENDIENTE 7 · SIN_COMENTARIO 34, trinquete 0 nuevas · 0 sobran: igual que antes |
+
+Se escribió un sexto caso («cambiar de orden las seis») y se quitó: con el fuente de antes también pasaba, así que no distinguía el arreglo de la avería.
+
+## De paso, en el propio test
+
+La primera versión cortaba la marca de la línea con una expresión regular sobre las dos barras. Los guards de SCRUM-694 y SCRUM-700 la acusaron (un filtro de comentarios hecho a mano). Se cambió el test, no los guards: ahora corta por el final del literal.
+
+## Lo que NO entra aquí
+
+- El censo no cambia: `scripts/` no es de S4. Que la cuenta se ate a nombres y no a posiciones es de la S0, y queda dicho en SCRUM-1215 c.19088 con su ejemplo ejecutado.
+- Los otros objetos del panel con firma contada (14, de S2, J2 y J3) no se tocan: no son de S4. La lista está en c.19088.
+- Las marcas del resto de `TEXTOS` del parte van ENCIMA de su clave, no en su línea. No se han movido: no hay cuenta que las reparta.
+
+## No medido
+
+- Nada en yaqu.app: no cambia ninguna pantalla.
+- `tsc` no cabía al medir (579 MB libres) y `dist` es de `2e8d8d82`, con 19 ficheros de `src/` cambiados desde entonces. De los 466 tests que cubren lo tocado se han corrido los 358 que no leen `dist`; los 108 que lo leen quedan para el check obligatorio.

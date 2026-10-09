@@ -2,6 +2,7 @@
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import { jsonAnulable } from '../../../../core/db/jsonAnulable'; // SCRUM-1188d
 import { requireRole } from '../../../../core/http/authMiddleware';
 
 const router = Router();
@@ -36,7 +37,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const name         = String(req.body?.name || '').trim();
     const currency     = String(req.body?.currency || 'EUR').slice(0, 3).toUpperCase();
     const lines        = req.body?.lines;
-    const tiers        = req.body?.tiers ?? null;
+    // SCRUM-1188d: «sin niveles» es NULL de SQL. Un `null` de JS aquí guardaba el valor JSON `null`
+    // y la columna dejaba de estar vacía (medido contra Postgres).
+    const tiers        = jsonAnulable(req.body?.tiers ?? null);
     const paymentTerms = req.body?.paymentTerms ?? null;
 
     if (!name)                   return res.status(400).json({ error: 'name_required' });
@@ -75,9 +78,10 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (req.body?.name        != null) data.name         = String(req.body.name).trim();
     if (req.body?.currency    != null) data.currency      = String(req.body.currency).slice(0,3).toUpperCase();
     if (req.body?.lines       != null) data.lines         = req.body.lines;
-    if (req.body?.tiers       != null) data.tiers         = req.body.tiers;
     // SCRUM-1188c: la clave AUSENTE no toca el cobro (renombrar); la clave a `null` lo VACÍA, igual
     // que el `null` del POST. Con `!= null` los dos cuerpos eran el mismo y no se podía vaciar.
+    // SCRUM-1188d: lo mismo para `tiers`, la otra columna anulable, que además es `Json?`.
+    if (req.body?.tiers        !== undefined) data.tiers        = jsonAnulable(req.body.tiers);
     if (req.body?.paymentTerms !== undefined) data.paymentTerms = req.body.paymentTerms;
 
     const updated = await prisma.quoteTemplate.update({ where: { id }, data });
