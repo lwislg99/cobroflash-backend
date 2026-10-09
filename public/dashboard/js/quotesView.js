@@ -4937,8 +4937,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     setTimeout(() => nameInput.focus(), 80);
 
     saveBtn.onclick = async function () {
-      const name = nameInput.value.trim();
-      if (!name) {
+      const escrito = nameInput.value.trim();
+      if (!escrito) {
         alertEl.textContent = 'Escribe un nombre para la plantilla.';
         alertEl.className = 'alert error';
         return;
@@ -4971,13 +4971,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // Mismo nombre = igual sin contar mayúsculas ni espacios de los bordes. La lista viene de la
         // más reciente a la más antigua: si ya hay varias con ese nombre, se sustituye la más reciente.
         const mismoNombre = (a, b) => String(a || '').trim().toLocaleLowerCase('es') === String(b || '').trim().toLocaleLowerCase('es');
-        const laQueYaTiene = yaGuardadas.find((tpl) => tpl && mismoNombre(tpl.name, name)) || null;
-        // En los textos va el nombre GUARDADO, que es el que ya conoce; el `PUT` no manda `name`
-        // («no lo cambies» es no mandar la clave: SCRUM-1188c).
-        const nombreFinal = laQueYaTiene ? laQueYaTiene.name : name;
+        const laQueYaTiene = yaGuardadas.find((tpl) => tpl && mismoNombre(tpl.name, escrito)) || null;
+        // `name` es el nombre que va en los textos y, si se crea, en el `POST`: al sustituir es el
+        // GUARDADO, que es el que ya conoce (el `PUT` no lo manda: «no lo cambies» es no mandar la
+        // clave, SCRUM-1188c). El literal firmado de abajo sigue interpolando `name`, sin tocar.
+        const name = laQueYaTiene ? laQueYaTiene.name : escrito;
 
         if (laQueYaTiene) {
-          if (!window.confirm(`Ya tienes una plantilla llamada "${nombreFinal}". ¿Quieres sustituirla?`)) {
+          if (!window.confirm(`Ya tienes una plantilla llamada "${name}". ¿Quieres sustituirla?`)) {
             // Dice que no: la hoja sigue abierta con lo escrito, para que le cambie el nombre.
             saveBtn.disabled = false;
             saveBtn.textContent = 'Guardar plantilla';
@@ -5012,8 +5013,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
         // Al SUSTITUIR con «CUSTOM» sale este mismo aviso y no el de «actualizada»: lo que afirma
         // sigue siendo verdad (la plantilla queda guardada sin plan de cobro) y es lo que más importa.
-        if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${nombreFinal}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
-        else if (laQueYaTiene) setAlert('success', `Plantilla "${nombreFinal}" actualizada.`);
+        if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else if (laQueYaTiene) setAlert('success', `Plantilla "${name}" actualizada.`);
         else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
