@@ -261,3 +261,70 @@ La fila de S3 cambia otra vez: al traer `main` con esto, `node scripts/carriles.
 la fusión. La sonda de la cerradura no cambia de veredicto por esto (`meta-guard-mutaciones.mjs` sigue en la fila
 de S3), pero un caso nuevo sí: una sesión de S3 en `_medidor-de-toque.mjs` ya no encuentra cerradura, ni a favor
 ni en contra.
+
+# SCRUM-1480d · La fila de `quoteRevisiones.js`, y cuántos ficheros del panel están como estaba él
+
+**Medido contra:** `origin/main` = `be48345279da158bc81aebbea543eb926ae9eb88` · 2026-10-09T08:22:54Z
+
+A9: sin fallo que generalice — una fila nueva que confirma al dueño que el fichero ya tenía; las cifras de este anexo salen de comandos que van escritos al lado
+
+Carril S0 (`docs/equipo/dos-equipos.md` y `afirmaciones-verificadas.md` son suyos). Toca §3.2, que lee
+`tests/scrum514-aprobado-y-aplicado.test.mjs`: se añade UNA fila con el formato que ese test espera, y eso no necesita
+aviso (lo dice la cabecera de §3). Con ella cambian dos ficheros generados (`.claude/carriles.json` y
+`.claude/rules/carril-s2.md`): los escribe `node scripts/carriles.mjs generar`, no una mano.
+
+## Qué pasaba
+
+El 7-oct-2026 la S4 tuvo que preguntarle al orquestador de quién era `public/dashboard/js/quoteRevisiones.js`. El
+orquestador contestó S2, por la fila general, y el 9-oct-2026 (orden de arranque de las 08:10Z) mandó ponerle fila
+propia y mirar si había más ficheros del panel en la misma situación.
+
+## Lo que medí antes de escribir la fila
+
+| Qué | Resultado | Comando |
+|---|---|---|
+| De quién es el fichero ANTES de la fila | S2, por el patrón `public/**` (la fila general) | `node scripts/carriles.mjs de public/dashboard/js/quoteRevisiones.js` |
+| De quién es DESPUÉS | S2, por su propio patrón | el mismo |
+| Un hermano sin fila (`quoteSuplido.js`), después | S2, por `public/**`: la fila nueva no arrastra a nadie más | el mismo, con esa ruta |
+| Ficheros de `public/dashboard/js/` | 95 | `git ls-files public/dashboard/js` |
+| Con fila propia | 30 (J2 10 · J1 8 · J3 6 · S4 3 · S2 3) | el comando `de`, una vez por fichero |
+| Sólo por la fila general, antes de este cambio | **65** (todos S2) | lo mismo |
+| De esos 65, con un nombre que se parece a los de OTRO puesto | 7: `albaranAccion.js`, `albaranActionsRegistry.js`, `albaranDesdePresupuestoModal.js`, `parteOficinaView.js` (S4) · `facturasRecibidasView.js` (J1) · `etiquetasDelDocumento.js`, `jobCobroHuecos.js` (J2) | `node scripts/carriles.mjs huecos` |
+
+**`quoteRevisiones.js` no sale en el censo de huecos**, y es coherente: ningún otro puesto tiene un fichero con «quote»
+ni con «revisiones» en el nombre. El censo busca parecidos de nombre, y aquí no lo había: la duda no venía del nombre.
+
+**Lo que la herramienta ya contestaba.** La cerradura no deduce: lee `.claude/carriles.json`, y ahí el fichero era de
+S2 antes y después. Quien tenía que deducir era la sesión que leía la tabla. La pregunta de la S4 se contestaba con
+el comando de la primera fila, que está en `main` desde el 6-oct-2026 (#2001).
+
+## El cambio
+
+- `docs/equipo/dos-equipos.md` §3.2: una fila, `dashboard/js/quoteRevisiones.js` → S2, con quién lo decidió y cuándo.
+- `.claude/carriles.json` y `.claude/rules/carril-s2.md`: regenerados (60 filas, 157 reglas, 137 con dueño; antes 59,
+  156 y 136). Segunda pasada: 0 escritos.
+- `docs/equipo/afirmaciones-verificadas.md`: tres filas del 9-oct.
+
+## Aceptación → dónde se ve
+
+La aceptación es el punto 4 del encargo del orquestador de Luis a esta sesión (9-oct-2026, 08:10Z); no está escrita en
+el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| «`quoteRevisiones.js` no tiene fila en `dos-equipos.md`… Ponle fila explícita» | `docs/equipo/dos-equipos.md` §3.2, la fila anterior a la general |
+| «mira si hay más ficheros de `public/dashboard/js/` en la misma situación» | la tabla de arriba: 65 de 95, con su comando |
+
+## Lo que no se ha hecho, dicho
+
+- **No he dado fila a los otros 64.** El orquestador decidió UNO. Siete de ellos son la pregunta de §7.4, que es de los
+  dos jefes, y una fila mía la contestaría por ellos.
+- **Dos familias que el censo de huecos no ve, y se parecen a ficheros de S4.** Diez `job*.js` (`jobDetailView.js`,
+  `jobActionsRegistry.js`, `jobAgendar.js`, `jobAsignados.js`, `jobDocsReparto.js`, `jobNextAction.js`,
+  `jobNuevoModal.js`, `jobRailBlocks.js`, `jobTrabajoPlegable.js`, `jobsCierreTrabajo.js`) frente a `jobsView.js`, y
+  `albaranesView.js` frente a `albaranDetailView.js`. Motivo, leído en `palabrasDe` (`scripts/_carriles.mjs`): no cuenta
+  palabras de menos de cinco letras («job», «jobs») y al plural sólo le quita la «s» final («albaranes» queda en
+  «albarane», que no es «albaran»). Es un límite del instrumento, no arreglado aquí: cambiarlo mueve la cifra «32» de
+  §7.4 y abre más preguntas para los jefes.
+- **No he corrido la suite completa** (memoria de la máquina): los tests que leen los documentos tocados y
+  `guards:entrada`.

@@ -148,6 +148,7 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `privacidad.html`, `terminos.html` | **J3** construye | el texto lo propone J4 y lo firma un jefe |
 | `dashboard/js/jobsView.js`, `parteDetailView.js`, `albaranDetailView.js` | **S4** | |
 | `dashboard/css/styles.css`, `dashboard/js/app.js`, `dashboard/js/api.js`, `dashboard/index.html`, `sw.js`, `tokens.css` | **S2** (contenedor) | toda vista nueva toca los cinco primeros: el otro equipo añade SU bloque marcado |
+| `dashboard/js/quoteRevisiones.js` | **S2** | fila propia para que no haya que deducirlo de la fila general: el 7-oct-2026 un puesto tuvo que preguntarlo. Confirma al dueño que ya tenía. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480). Los otros 64 ficheros del panel que sólo cubre la fila de abajo siguen igual, y el dueño de cualquiera se pregunta con el comando de carriles, no se deduce |
 | `dashboard/js/homeView.js` y todo lo demás de `public/` | **S2** | |
 
 ### 3.3 · Repositorio, documentos y automatización
