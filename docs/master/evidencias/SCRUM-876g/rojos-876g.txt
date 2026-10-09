@@ -1,0 +1,23 @@
+POBLACION · 4 ficheros · 8 pares mutacion-test · HEAD e2134eec4581c8f5b5a87e47c7af56292a65f86f
+--- BASE (antes)
+  scrum47-enviar-albaran-wa :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum49-firma-remota :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum50-bot-albaranes :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum68-evidencias-firma :: VERDE · casos 5 · caidos 0 · salida 0 
+--- MUTACIONES
+  tecnico-sin-recorte x scrum47-enviar-albaran-wa :: ROJO  · casos 1 · caidos 1 · salida 1 un técnico que no lleva el trabajo no envía su albarán (fue 200)  :: restaurado
+  firma-sin-version x scrum49-firma-remota :: ROJO  · casos 1 · caidos 1 · salida 1 firmar sin decir qué versión se vio → 409 (fue 200)  :: restaurado
+  acuse-otro-texto x scrum50-bot-albaranes :: ROJO  · casos 1 · caidos 1 · salida 1 code: 'ERR_ASSERTION' name: 'AssertionError' :: restaurado
+  evidencia-otro-canal x scrum68-evidencias-firma :: ROJO  · casos 5 · caidos 1 · salida 1 Expected values to be strictly equal: + actual - expected :: restaurado
+  fuga-en-seco x scrum47-enviar-albaran-wa :: ROJO  · casos 1 · caidos 1 · salida 1 🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino + actual - expected :: restaurado
+  fuga-en-seco x scrum49-firma-remota :: ROJO  · casos 1 · caidos 1 · salida 1 🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino + actual - expected :: restaurado
+  fuga-en-seco x scrum50-bot-albaranes :: ROJO  · casos 1 · caidos 1 · salida 1 🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino + actual - expected :: restaurado
+  fuga-en-seco x scrum68-evidencias-firma :: ROJO  · casos 5 · caidos 1 · salida 1 🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino + actual - expected :: restaurado
+--- BASE (despues)
+  scrum47-enviar-albaran-wa :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum49-firma-remota :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum50-bot-albaranes :: VERDE · casos 1 · caidos 0 · salida 0 
+  scrum68-evidencias-firma :: VERDE · casos 5 · caidos 0 · salida 0 
+git status: []
+poso: merchants=0 customers=0 albaranes=0
+EXIT=0

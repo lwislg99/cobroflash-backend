@@ -141,6 +141,19 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // de verdad —sesiones, solicitud, adjunto, baja— y lee lo que deja escrito. Mismo trato: staging
   // con `BOT_SUITE_TEST=1`, y éste como segundo destino, en seco y con la salida cortada.
   'bot-suite.test.mjs': 1,
+  // SCRUM-876g (T4 de SCRUM-876): los cuatro del albarán que seguían sólo en staging. Conservan
+  // `QA_DB_TEST=1` y ganan éste como segundo destino, en seco y con la salida cortada. Necesitan
+  // banco porque levantan la app y leen lo que la ruta deja escrito:
+  //   · el envío del albarán firmado por WhatsApp: quién puede (el técnico que lleva el trabajo) y
+  //     la fila de `whatsAppMessage` que deja;
+  'scrum47-enviar-albaran-wa.test.mjs': 1,
+  //   · la firma remota entera: el enlace, la página pública, la versión que el cliente vio y el
+  //     auto-envío de la copia firmada;
+  'scrum49-firma-remota.test.mjs': 1,
+  //   · el webhook cuando el cliente contesta sobre un albarán: el acuse y el aviso al profesional;
+  'scrum50-bot-albaranes.test.mjs': 1,
+  //   · las evidencias que se sellan al firmar (remoto e in situ) y que no salen por ninguna respuesta.
+  'scrum68-evidencias-firma.test.mjs': 1,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
