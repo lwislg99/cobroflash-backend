@@ -47,7 +47,7 @@ vigilando `scrum1277-aviso-importe-aceptado`).
 
 **Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:20:20Z
 
-A9: sin fallo que generalice — la primera versión de la forma miraba también la moneda DELANTE del valor y acusó `unidad` en «… €${unidad}»; lo cazó correrla sobre el árbol antes de declarar nada, y se quitó. Y dos salidas de evidencias salieron en UTF-16 y tres con BOM por el `>` de PowerShell (A22.1): las cazó el recuento de bytes antes del commit.
+A9: sin fallo que generalice — la primera versión de la forma miraba también la moneda DELANTE del valor y acusó `unidad` en «… €${unidad}»; lo cazó correrla sobre el árbol antes de declarar nada, y se quitó. Y las salidas de evidencias que escribió el `>` de PowerShell salieron mal tres veces: dos en UTF-16 y tres con BOM (A22.1), cazadas por el recuento de bytes antes del commit, y tres con CR, que el recuento no miraba y cazó `scrum533` en la tanda dirigida. Se regeneraron o se limpiaron byte a byte; ninguna llega al PR.
 
 Rama `scrum-1288b-censo-dinero-avisos-src`. Sólo `scripts/_censo-gemelo-crudo.mjs`, dos ficheros de
 `tests/` y este registro. No toca `src/`.
