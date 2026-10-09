@@ -876,7 +876,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
           techName: tech.name || '',
           quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
           customerName: quote.customer?.name || 'el cliente',
-          total: Number(quote.total).toFixed(2),
+          total: Number(quote.total), // SCRUM-1288c: el número; el correo lo formatea con formatMoneyEs
           currency: quote.currency,
         }));
       }

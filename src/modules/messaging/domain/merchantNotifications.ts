@@ -7,6 +7,7 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 import { CLASES_DE_CORREO } from './registroDeEnvios';
 // SCRUM-1212: el modo de emisión se LEE de la fuente única; este módulo no decide nada fiscal.
 import type { ModoVisible } from '../../invoicing/domain/modoVisible';
+import { formatMoneyEs } from '../../../core/utils/utils'; // SCRUM-1288c: el dinero del correo, en es-ES como el resto
 
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
 //
@@ -151,7 +152,9 @@ export async function sendTechQuoteApprovedEmail(params: {
   techName: string;
   quoteId: number;
   customerName: string;
-  total: string;
+  // SCRUM-1288c: llega el NÚMERO, no un texto ya hecho. Quien llamaba pasaba `toFixed(2)` y el correo
+  // decía «1234.50 EUR»; ahora el formato lo pone aquí el formateador de la casa: «1.234,50 €».
+  total: number;
   currency: string;
 }): Promise<ResultadoCorreo> {
   const { techEmail, techName, quoteId, customerName, total, currency } = params;
@@ -181,7 +184,7 @@ export async function sendTechQuoteApprovedEmail(params: {
       </div>
       <div style="display:flex;justify-content:space-between">
         <span style="color:#64748b;font-size:13px">Total</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${total} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${formatMoneyEs(total, currency)}</span>
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0">
