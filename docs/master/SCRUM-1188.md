@@ -70,6 +70,14 @@ Texto FIRMADO por el orquestador en SCRUM-1188, comentario 17332, pintado letra 
 
 **Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T09:55:45Z
 
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+El fallo propio de esta entrega: el primer push de esta sección salió SIN la línea de arriba y puso en
+rojo el check obligatorio del PR #2328 (1 fallo de 11.110). Corrí `guards:entrada`, que no lleva ese
+guard, y no corrí el dirigido; tampoco había leído `docs/equipo/00-normas-siempre.md`, porque la sesión
+arrancó desde un checkout cuyo `CLAUDE.md` todavía no lo importa. El guard ya existía y lo paró antes
+de `main`.
+
 Es la línea de servidor que la parte C (editar una plantilla, de S2) tenía delante: c.18609 y c.19052.
 La parte C NO se construye aquí.
 
