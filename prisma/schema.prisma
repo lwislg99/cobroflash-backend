@@ -645,6 +645,11 @@ model Quote {
   // plataforma (el primer presupuesto de un merchant nuevo salía "#47").
   // Nullable: quotes anteriores al backfill muestran el id como fallback.
   quoteNumber Int? @map("quote_number")
+  // SCRUM-1490: el AÑO de la serie en que se numeró ESTA fila (`P26…` → 2026). Lo escribe quien
+  // reserva el número, y una revisión HEREDA el de su original: su `createdAt` puede caer en otro
+  // año. NO es `Merchant.quoteSeriesYear`, que es el año EN CURSO del contador. NULL = fila
+  // anterior a esta columna, o presupuesto sin número; no es un año.
+  seriesYear  Int? @map("series_year")
 
   // A2.1: métodos de pago habilitados para ESTE presupuesto (selector al crear:
   // ["card","bizum","transfer"]). null = todos los que el merchant tenga activos.

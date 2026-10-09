@@ -85,9 +85,10 @@ export function numeroQueImprimeElPapel(
  * respuesta que use esta función NO manda además `quoteNumber`.
  *
  * 🔴 HOY ESCRIBE LO MISMO QUE EL PAPEL (`#12`), NO LA SERIE (`P260012`), Y ES A PROPÓSITO. La
- * serie está decidida (SCRUM-1444 c.18405), pero su año no está guardado en la fila y una revisión
- * no lo puede deducir (c.18485), y el PDF sigue diciendo `#12`. El día que cambie, cambia AQUÍ, y
- * con esta función cambian a la vez todas las respuestas que la usan.
+ * serie está decidida (SCRUM-1444 c.18405) y desde SCRUM-1490 su año se guarda en la fila
+ * (`Quote.seriesYear`), pero el PDF sigue diciendo `#12` y las filas viejas esperan su relleno:
+ * repartir la serie por el panel es de SCRUM-1444. El día que cambie, cambia AQUÍ, y con esta
+ * función cambian a la vez todas las respuestas que la usan.
  *
  * Sin número devuelve `null`: ni una raya ni el `id` de la tabla (c.18405, punto 2). Quien pinta
  * decide cómo nombra un presupuesto sin número, y ese texto es suyo. Por eso NO es
@@ -346,6 +347,7 @@ export const REVISION_LA_PONE_EL_SISTEMA: Readonly<Record<string, string>> = Obj
   id:          'fila nueva: la anterior conserva la suya, y por eso sigue existiendo',
   merchantId:  'el del que la crea; se comprueba contra el anterior, no se arrastra a ciegas',
   quoteNumber: 'EL NÚMERO BASE NO CAMBIA: es lo que hace que esto sea «P2004226.1» y no otro presupuesto',
+  seriesYear:  'EL AÑO DE LA SERIE TAMPOCO: es el de su ORIGINAL, no el del día en que se revisa (SCRUM-1490). La `.1` del 12 de 2026 creada en enero sigue siendo del 12 de 2026',
   revision:    'la siguiente del grupo. Es el dato del ticket',
   status:      'nace borrador: nadie la ha visto todavía',
   createdVia:  'queda marcado que nació como revisión, no como presupuesto suelto',
@@ -358,6 +360,8 @@ export interface VersionAnterior {
   id: number;
   merchantId: number;
   quoteNumber: number | null;
+  /** El año de la serie del grupo (SCRUM-1490). La revisión nueva lo guarda tal cual. */
+  seriesYear?: number | null;
   revision: number;
   signatureUrl?: string | null;
   [campo: string]: unknown;
@@ -390,6 +394,9 @@ export function nuevaRevisionDe(
     status: 'draft',
     createdVia: 'revision',
   };
+  // SCRUM-1490: el año de la serie viaja con el número base. Quien llama lo trae ya resuelto
+  // (`crearRevisionDeQuote` le pone el del grupo aunque la fila anterior sea vieja y no lo guarde).
+  if (anterior.seriesYear != null) nueva.seriesYear = anterior.seriesYear;
   for (const campo of REVISION_HEREDA) {
     if (campo in anterior) nueva[campo] = (anterior as Record<string, unknown>)[campo];
   }

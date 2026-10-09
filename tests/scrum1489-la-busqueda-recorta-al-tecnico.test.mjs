@@ -73,7 +73,8 @@ const PRESUPUESTOS = [
   { id: 201, quoteNumber: 7, revision: 0, teamMemberId: BLAS, jobId: null, asignados: [],                       customer: { name: 'Ajeno Autor' } },
   { id: 202, quoteNumber: 8, revision: 0, teamMemberId: null, jobId: null, asignados: [{ teamMemberId: BLAS }], customer: { name: 'Ajeno Asignado' } },
   { id: 203, quoteNumber: 9, revision: 0, teamMemberId: null, jobId: null, asignados: [],                       customer: { name: 'Ajeno Trabajo' } },
-].map((f) => ({ merchantId: NEGOCIO, status: 'accepted', total: 900, currency: 'EUR', createdAt: new Date('2026-09-01T10:00:00Z'), ...f }));
+// SCRUM-1490: el grupo de revisiones es {negocio, AÑO de la serie, número}; todos éstos son de 2026.
+].map((f) => ({ merchantId: NEGOCIO, status: 'accepted', total: 900, currency: 'EUR', seriesYear: 2026, createdAt: new Date('2026-09-01T10:00:00Z'), ...f }));
 const ALBARANES = [{ id: 700, merchantId: NEGOCIO, jobId: 900, invoiceId: 304 }];
 const LIBRO = [{ merchantId: NEGOCIO, albaranId: 700, invoiceId: 306 }];
 const FACTURAS = [
@@ -93,7 +94,7 @@ for (const f of FACTURAS) {
 }
 const CLIENTES = [{ id: 1, merchantId: NEGOCIO, name: 'Ajeno Autor', phone: null, email: null, updatedAt: new Date() }];
 
-const ESCALARES = new Set(['id', 'merchantId', 'quoteNumber', 'revision', 'teamMemberId', 'jobId', 'quoteId', 'albaranId',
+const ESCALARES = new Set(['id', 'merchantId', 'quoteNumber', 'seriesYear', 'revision', 'teamMemberId', 'jobId', 'quoteId', 'albaranId',
   'number', 'name', 'phone', 'email', 'operarioId', 'assignedUserId']);
 const UNO = new Set(['customer', 'quote', 'rectifies']);          // relación a UNA fila
 const VARIOS = new Set(['asignados', 'assignees']);                // relación a varias (`some`)
@@ -113,6 +114,9 @@ function casa(fila, where) {
     } else if (VARIOS.has(clave)) {
       assert.deepEqual(Object.keys(valor), ['some'], `🔴 DOBLE CIEGO: no sé evaluar ${clave}: ${JSON.stringify(valor)}`);
       if (!fila[clave].some((x) => casa(x, valor.some))) return false;
+    } else if (clave === 'createdAt') {                              // SCRUM-1490: el año de una fila sin `seriesYear`
+      assert.deepEqual(Object.keys(valor).sort(), ['gte', 'lt'], `🔴 DOBLE CIEGO: no sé evaluar createdAt: ${JSON.stringify(valor)}`);
+      if (!(fila.createdAt >= valor.gte && fila.createdAt < valor.lt)) return false;
     } else if (ESCALARES.has(clave)) {
       assert.ok(clave in fila, `🔴 DOBLE CIEGO: la fila no tiene \`${clave}\` — se está preguntando a otra tabla`);
       if (valor === null || typeof valor !== 'object') { if (fila[clave] !== valor) return false; continue; }
@@ -151,6 +155,9 @@ async function buscar(q, sesion) {
   const capa = searchRouter.stack.find((l) => l.route?.path === '/' && l.route.methods.get);
   assert.ok(capa, '🔴 CIEGO: no encuentro GET / en el router de la búsqueda');
   const originales = DOBLADOS.map(([tabla]) => prisma[tabla].findMany);
+  // SCRUM-1490: la puerta de presupuestos lee la zona del negocio (decide el año de una fila vieja).
+  const zonaOriginal = prisma.merchant.findUnique;
+  prisma.merchant.findUnique = async () => ({ timezone: null });
   for (const [tabla, filas] of DOBLADOS) {
     prisma[tabla].findMany = async (args) => {
       consultas.push({ tabla, where: args.where });
@@ -169,6 +176,7 @@ async function buscar(q, sesion) {
     await capa.route.stack[capa.route.stack.length - 1].handle(reqDeSesion({ merchantId: NEGOCIO, query: { q }, ...sesion }), res);
   } finally {
     DOBLADOS.forEach(([tabla], i) => { prisma[tabla].findMany = originales[i]; });
+    prisma.merchant.findUnique = zonaOriginal;
   }
   assert.equal(estado, 200, `🔴 la búsqueda de «${q}» contestó ${estado}: ${JSON.stringify(cuerpo)}`);
   for (const k of ['customers', 'quotes', 'invoices']) assert.ok(Array.isArray(cuerpo?.[k]), `🔴 CIEGO: la respuesta no trae \`${k}\``);
