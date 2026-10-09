@@ -1631,3 +1631,137 @@ Lo que sale de las dos tablas:
 
 `k-medir.mjs` muta `tests/scrum267-ancla-de-medicion.test.mjs` mientras corre y comprueba su sha256
 al acabar. `k-replica.mjs` no toca el árbol.
+
+# SCRUM-1339m · Los 18 ausentes del obligatorio de #2303: ni la señal está ciega ni los ficheros montan menos; es la cola que no informa, y ese job no dice si se ejecutaron
+
+**Medido contra:** `origin/main` = `7079aaf3876a6a314919c506b8aaa92d4ac52529` · 2026-10-08T08:26:15Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1339/m-los-dieciocho.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-90`, 8-oct; sesión `jv-j4`,
+relevo). El obligatorio de #2303 (job `113113442033`, cabeza `82e3637fcf48643aa994c724db378866adbabd3d`)
+salió verde y su señal de nombres dijo «18 ausentes en 2 ficheros»: `scrum1456-ids-que-no-caben-en-la-columna`
+(12 de 55) y `scrum176-guard-mensaje` (6 de 26). La pregunta: ¿la señal no ve nombres que sí están, o
+los ficheros declaran 55 y 26 y montan 43 y 20? **Es medición: no se ha tocado la señal, ni los dos
+tests, ni `scripts/`, ni ningún workflow, y el ticket no se transiciona.** Entran esta sección y cinco
+ficheros `m-*` en evidencias. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498, de S5): seguí,
+como manda la ficha común.
+
+## En corto
+
+- **Ninguna de las dos.** La señal ve bien y los dos ficheros montan todo lo que declaran. Lo que
+  pasó en ese job es lo que este ticket mide desde el 1-oct: el fichero informa de su cabeza y la
+  cola de su informe no llega a la tanda.
+- **Los ficheros montan 55 y 26.** Ejecutados aquí con `node --test`, 3 pasadas cada uno: 55 de 55 y
+  26 de 26, las 6 pasadas. No hay 18 casos que el árbol declare y no monte.
+- **La señal no está ciega: los 18 nombres no están en el TAP y tampoco en el otro reporter.** El log
+  del job trae la salida `spec` de la misma tanda. De los 55 y 26 nombres aparecen con resultado 43 y
+  20; los 12 y 6 que no, son exactamente las posiciones que nombró la señal.
+- **El cero derivado sale exacto.** Cinco jobs vecinos sobre árboles que declaran lo mismo (11.005)
+  y dan 0 ausentes registran 11.082 tests. El de #2303 registra 11.064. Son 18 menos.
+- **Lo que este job NO dice es si esos 18 casos se ejecutaron.** De uno hay rastro de que empezó (el
+  44 de `scrum1456` sale con «▶» y sin resultado). De los otros 17 no hay nada en el log. SCRUM-1405
+  midió que el proceso sale con parte del informe sin escribir, o sea, ejecutados y no informados;
+  aquí no lo he vuelto a medir.
+- **No es sólo #2303.** En los 11 PR de anoche que miré (#2298 y #2300 a #2309), 6 obligatorios
+  verdes traen ausentes: 2, 9, 18, 32, 18 y 16.
+
+## ① Qué significa «ausente», y de dónde saca la señal lo que espera
+
+Leído en `scripts/_senal-de-nombres.mjs` y `scripts/senal-de-nombres.mjs` sobre `7079aaf3`:
+
+- Lo que espera no sale de ninguna lista ni de una cifra escrita. `llamadasDeclaradas` recorre el AST
+  de cada `tests/*.test.mjs` del árbol que el job tiene delante y saca cada llamada `test(…)` / `it(…)`
+  con su nombre literal. Ata su recuento al censo de SCRUM-708, fichero a fichero.
+- «Ausente» es una llamada de nombre literal cuyo nombre no está ninguna vez en el TAP de la tanda.
+- «faltan 12 de 55» es 12 llamadas sin registro sobre 55 llamadas declaradas en ese fichero. «cola»
+  es que detrás de la primera ausente ya no hay ninguna presente.
+- El paso corre en `ci.yml` con `continue-on-error: true` y el guion sale siempre 0: avisa, no bloquea
+  (c.17935). Por eso el job es verde con el aviso dentro.
+
+## ② Lo medido, por tres caminos
+
+Banco: `m-los-dieciocho.mjs`. Salida: `m-salida-los-dieciocho.txt`. node v24.18.0, win32, `dist/`
+emitido con `tsc --noCheck`. El log del job: 1.781.097 B, 14.868 líneas, «ℹ tests 11064».
+
+| | `scrum1456` | `scrum176` | control: `scrum1339d-senal-de-nombres` |
+|---|---|---|---|
+| declara (AST de la señal) | 55 | 26 | 17 |
+| A · ejecutado aquí, 3 pasadas | 55, 55, 55 | 26, 26, 26 | 17, 17, 17 |
+| A · la señal sobre ese TAP | 0 ausentes | 0 ausentes | 0 ausentes |
+| C · nombres con resultado en el log del job | 43 | 20 | 17 |
+| C · sin resultado en el log | 12 (posiciones 44–55) | 6 (posiciones 21–26) | 0 |
+| C · ¿las mismas que nombró la señal? | sí | sí | no las nombró |
+| B · quitando esos casos del TAP local, la señal dice | «faltan 12 de 55 (cola) · posiciones 44–55 · líneas 222–249» | «faltan 6 de 26 (cola) · posiciones 21–26 · líneas 179–247» | no aplica |
+| B · ¿la misma frase que en CI? | sí | sí | |
+
+- **A** dice que los ficheros montan lo que declaran. **B** dice que la señal, ante una pérdida de
+  esa forma, dicta lo que dictó. **C** dice que la pérdida es de la tanda y no del TAP ni de la
+  señal: dos reporters distintos sobre los mismos eventos, y a los dos les falta lo mismo.
+- **El control cuadra por los tres caminos.** Si no cuadrara, el que mide mal sería el banco.
+- **Control de cero derivado del árbol:** cada nombre real más 8 hex de su sha1, buscado en el log:
+  0 de 55, 0 de 26 y 0 de 17.
+
+## ③ El cero derivado: 11.082 menos 18
+
+`m-vecinos.mjs`, salida en `m-salida-vecinos.txt`. Lee la línea de registro que la señal deja como
+anotación en cada run; no baja ningún log. 11 PR pedidos, 11 leídos, los 11 con `declarados=11005`.
+
+| ausentes | PR | `tap_tests` |
+|---|---|---|
+| 0 | #2298, #2302, #2307, #2308, #2309 | 11.082 los cinco |
+| 2 | #2300 | 11.080 |
+| 9 | #2301 | 11.073 |
+| 16 | #2306 | 11.066 |
+| 18 | #2303 | 11.064 |
+| 18 | #2305 | 11.064 |
+| 32 | #2304 | 11.050 |
+
+En los 11, `tap_tests` es 11.082 menos los ausentes. Los 11 obligatorios salieron `SUCCESS`. No he
+mirado qué ficheros pierden en los otros cinco, ni si los 18 de #2305 son los mismos de #2303.
+
+## ④ Los dos ficheros no se agrupan: lo que es igual y lo que no
+
+| | `scrum1456` | `scrum176` |
+|---|---|---|
+| forma | cola, sin entrada de fichero | cola, sin entrada de fichero |
+| dónde cae el corte | DENTRO de un caso: el 44 tiene inicio («▶») y no resultado | ENTRE dos casos: el 20 tiene resultado y del 21 no hay ni inicio |
+| qué hace la cola perdida | 11 casos síncronos contra un router con la base simulada | 2 de los 6 lanzan un proceso hijo (`spawnSync` del hook) |
+| ya estaba en la lista de 1339e (18 ficheros) | no; el fichero es del 6-oct | sí, con 1 aparición |
+
+- Comparten síntoma y forma. **No he medido la causa de ninguno de los dos**, así que no digo que sea
+  la misma. Lo que SCRUM-1405 midió (el proceso sale con el informe a medio escribir) explicaría los
+  dos, y el corte dentro de un caso es lo que deja un canal cortado a mitad de mensaje. Es lectura.
+- En todo el paso de la tanda hay 2 inicios sin resultado a nivel 0: el de `scrum1456` y uno de
+  «SCRUM-728 · el aviso del cerrojo saturado», que no he mirado.
+
+## Lo que NO sé y lo que NO he hecho
+
+- **Si los 18 casos se ejecutaron en ese job.** No hay en el log nada que lo diga. Es la diferencia
+  entre «no se vio el resultado» y «no se corrió», y con este job no se separa.
+- **Si un caso que falla dentro de una cola perdida deja el job en verde.** Es lo que haría grave
+  esto. 1339h leyó que un fichero caído cuenta como `fail`; con la cola perdida no lo ha medido nadie
+  que yo haya leído, y yo tampoco.
+- No he bajado el TAP del job (artefacto `tanda-tap`): la cifra del TAP sale de la línea de registro.
+- No he ejecutado nada en Linux. Las 6 pasadas son de Windows, donde esta pérdida no se reproduce.
+- Mi recuento de marcas del reporter `spec` dentro del paso de la tanda da 11.079 y el resumen dice
+  11.064. No lo he perseguido y no lo uso de control.
+- La tasa de la ventana (1339g: 28 de 50) no la he recalculado.
+
+## Mis errores
+
+- **Conté como «presente» un caso del que sólo había el inicio.** La primera versión del banco
+  buscaba el nombre en cualquier línea del log y dio 11 sin resultado donde la señal nombraba 12. Lo
+  cazó el cruce del propio banco («¿son las mismas?»: NO). Ahora cuenta resultado e inicio aparte.
+- **Empecé por la pregunta tal como venía, con dos salidas,** y la respuesta estaba en una tercera
+  que este mismo registro mide desde el 1-oct. Lo vi al leer los tramos 1339e y 1339h, no antes.
+- Pasé de 188.000 de contexto antes de medirme por primera vez.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1339
+    gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/113113442033/logs > <log, fuera del árbol>
+    node $E/m-los-dieciocho.mjs . <log> 3
+    node $E/m-vecinos.mjs 2298 2300 2301 2302 2303 2304 2305 2306 2307 2308 2309
+
+El primero pide `dist/` (los dos tests lo leen). Ninguno toca el árbol.
