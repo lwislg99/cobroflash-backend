@@ -1,0 +1,10 @@
+{
+  "leeme": "SCRUM-1480f · Un fichero NUEVO de `scripts/` no entra sin fila en docs/equipo/dos-equipos.md §3.3. Lo vigila tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs y lo cuenta `node scripts/carriles.mjs sin-fila`. `suelo` es la deuda que ya había el 9-oct-2026: los 225 ficheros de la foto, que sólo cubre la fila general y están SIN PUESTO. `quedan` SOLO BAJA: quien le da fila a uno de la foto, o lo borra, baja el número en ese mismo PR; nunca se sube y la foto no se edita. `declarados` es la salida para un script nuevo cuyo dueño NO se puede escribir hoy, y nace vacía: (1) lo crea el equipo de Javier, que no edita esa tabla y al que el criterio se le ha propuesto, no impuesto: apunta aquí su fichero con su ticket y la S0 le da fila cuando su orquestador diga el puesto; (2) lo crea el equipo de Luis en un ticket que no lleva UNA etiqueta de área (ninguna, o dos). En cualquier otro caso el equipo de Luis NO declara: da fila. Quien le da fila a un declarado BORRA su entrada en el mismo commit.",
+  "suelo": {
+    "fecha": "2026-10-09",
+    "foto": "docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt",
+    "quedan": 225
+  },
+  "declarados": {
+  }
+}
