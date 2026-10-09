@@ -2,6 +2,13 @@
 
 **Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:09:01Z
 
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+El fallo propio de esta entrega: el primer push de este registro salió SIN la línea de arriba, igual que
+el de SCRUM-1188c una hora antes. Lo dijo el check obligatorio de aquél (PR #2328) y se corrigió aquí
+antes de que el de éste diera veredicto. `guards:entrada` verde no cubre ese guard: hay que correr el
+dirigido.
+
 S1, 9-oct-2026. Es la mitad que el orquestador encargó a S1 en el comentario 18740 del ticket: separar
 el código `revisiones_ambiguas` y que la ruta deje de mandar el texto de la excepción. La otra mitad (que
 la pantalla decida por el código, con sus textos) es de S2 y de S4 y NO va aquí.
