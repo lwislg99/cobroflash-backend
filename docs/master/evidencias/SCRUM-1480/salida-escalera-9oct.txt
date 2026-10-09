@@ -1,0 +1,56 @@
+POBLACION | 253 ficheros | 33 tickets con area | 167 tickets creadores distintos
+
+1 · AREA DEL TICKET QUE LO CREO
+  189  TICKET-SIN-AREA
+   17  SIN-TICKET
+    9  s0
+    8  s3
+    6  DOS-AREAS
+    5  s4
+    5  j6
+    4  j1
+    3  s5
+    2  s2
+    2  j3
+    1  s1
+    1  j4
+    1  j5
+  decide puesto: 41 de 253
+
+2 · AUTOR, sobre los 212 que el 1 no decide
+   55  luis
+   83  javier
+   74  javier+luis
+  decide EQUIPO (no puesto): 138 | queda mezclado: 74
+  control: ficheros donde area y autor se CONTRADICEN: 0
+
+3 · QUIEN LO USA, sobre los 74 mezclados
+    6  1-CI
+    6  2-hook-o-skill
+    4  3-producto
+   50  4-test
+    7  6-npm-a-mano
+    1  7-nadie-en-codigo
+
+EQUIPO tras 1 y 2: luis 83 | javier 96 | MEZCLA 74
+
+AYUDANTES (_*): 99 | los importa algun otro script: 75 | solo tests: 24 | importadores de varias filas: 10
+NO ayudantes: 154 | por equipo: luis 46 | javier 57 | MEZCLA 51
+SIN USO en codigo (7): 17 | solo npm a mano (6): 8 | sin tocar > 60 d: 29 | las dos cosas (7 y > 30 d): 9
+
+LISTA 1-CI: _evidencia-tanda.mjs _navegador.mjs clean-staging-tests.mjs guards-visuales.mjs seed-staging.mjs senal-de-nombres.mjs staging-gated.mjs trinquete-de-zona.mjs
+LISTA 2-hook: _carriles.mjs _clasificador-sql.mjs _db-guard.mjs _guard-afirmacion-fiscal.mjs aplicar-sql-dev.mjs carriles.mjs db-push-prod preflight-schema-drift.mjs preview-migracion.mjs seed-demo.mjs verificar-evidencia-tanda.mjs
+LISTA 3-producto: _censo-convenio-microcopy-declarados.json _censo-microcopy-sin-marcar.mjs _cifras-heroe.mjs _gremios-landing.mjs _medidor-de-toque.mjs _staging-lock.mjs backup-restore.mjs capture-demo.mjs censo-marcadores.mjs censo-peso-prefijos.mjs gen-registros-sample.mjs guard-caja-avisos.mjs guard-detalle-trabajo-917.mjs guard-marcadores-en-pantalla.mjs seed-video.mjs setup-stripe-prices.mjs sobre-soap-prueba-aeat.mjs validate-registros-xsd.ps1 wa-prueba.mjs
+LISTA 7-nadie: censo-afirmaciones-medidas.mjs[javier,2026-09-17] censo-bancos-fijados.mjs[javier,2026-09-17] censo-escritores-invoice.mjs[javier,2026-09-23] censo-estado-no-contemplado.mjs[luis,2026-09-08] censo-eventos-de-pasarela.mjs[luis,2026-09-07] censo-migraciones.mjs[javier+luis,2026-09-22] censo-sellos-que-empatan.mjs[javier,2026-09-17] citar-afirmaciones-publicadas.mjs[javier,2026-08-20] medir-tokens.mjs[luis,2026-09-16] preflight-migracion.mjs[javier,2026-08-07] recorrido-entre-vistas.mjs[luis,2026-09-07] sonda-915-inventario-v3.mjs[luis,2026-09-21] verificacion-s5/idempotencia-stripe-corrida.mjs[luis,2026-09-07] verificacion-s5/intentar-pasar-la-puerta.mjs[luis,2026-09-09] verificacion-s5/kbd-en-botones-de-crear.mjs[luis,2026-09-07] verificacion-s5/tabla-dentro-de-su-scroll.mjs[luis,2026-09-07] verificar-vf-submissions.mjs[javier,2026-09-28]
+LISTA 6-npm: estado-antes-del-go.mjs guard-915e1-documento-vivo.mjs guard-915h-conceptos-limpios.mjs guard-albaranes-con-acciones.mjs guard-descuentos-en-el-detalle.mjs guard-escalera-por-estado.mjs guard-foto-del-gasto.mjs guard-rotulos-de-la-linea.mjs
+AREA s0 (9): _carriles.mjs _censo-sin-consumir.mjs _sin-consumir-declarados.json auditoria-cierres.mjs carriles.mjs claves-bd-de-todos-los-arboles.mjs espera-del-equipo.mjs sesiones-que-no-volvieron.mjs traspaso-derivado.mjs
+AREA s1 (1): _censo-rango-del-parte.mjs
+AREA s2 (2): guard-965-un-solo-presupuesto.mjs guard-duplicar-926.mjs
+AREA s3 (8): _censo-entorno-prestado.mjs _censo-gemelo-crudo.mjs _ciegos-por-entorno-declarados.json _entorno-prestado-declarados.json _tanda-por-tramos.mjs _tests-que-cubren.mjs _version-de-fila-dudosa-declaradas.json tests-que-cubren.mjs
+AREA s4 (5): _detalle-917.mjs _trabajos-917.mjs capturas-lista-trabajos-917.mjs guard-detalle-trabajo-917.mjs guard-lista-trabajos-917.mjs
+AREA s5 (3): _censo-bytes-control.mjs arbol-mio.mjs estado-antes-del-go.mjs
+AREA j1 (4): _hallazgos-y-ciegos.mjs _tabla-verifactu-catalogo.mjs sobre-soap-prueba-aeat.mjs tabla-verifactu.mjs
+AREA j3 (2): staging-gated.mjs wa-prueba.mjs
+AREA j4 (1): _documentos-citados.mjs
+AREA j5 (1): _guard-espejo-skills.mjs
+AREA j6 (5): _senal-de-nombres.mjs censo-escritores-invoice.mjs senal-de-nombres.mjs verificar-vf-submissions.mjs vigia-silencio-de-main.mjs

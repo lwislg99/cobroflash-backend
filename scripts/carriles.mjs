@@ -145,6 +145,9 @@ function principal(argv) {
     const rel = path.relative(RAIZ, path.resolve(resto[0] ?? '')).split(path.sep).join('/');
     const r = reglaDe(rel, mapa);
     console.log(r ? `${rel} → ${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · ${FUENTE}:${r.linea} · «${r.dueno}» · patrón ${r.patron}` : `${rel} → sin fila en §3: nadie lo reclama`);
+    // SCRUM-1480e: la fila general de scripts/ no da dueño (no es «todo lo demás de…», que sí lo da). A
+    // quien cae en ella se le dice aquí, que es donde se pregunta, y no en un documento que hay que ir a leer.
+    if (r && !r.puesto && r.patron === 'scripts/**') console.log(`  ⚠ sólo lo cubre la fila general de scripts/: su dueño no lo ha decidido nadie, y no es de la S0 por caer aquí. Si lo estás CREANDO, nace con fila en tu mismo PR: la del puesto del área del ticket que lo crea (${FUENTE} §3.3, «Cómo nace la fila de un fichero de scripts/»).`);
     for (const p of PUESTOS) { const e = excepcionPara(rel, p, mapa); if (e && !e.quien.includes('*')) console.log(`  excepción para ${p}: ${e.motivo} (${FUENTE}:${e.linea})`); }
     const todos = excepcionPara(rel, '*', mapa); if (todos) console.log(`  excepción para todos: ${todos.motivo} (${FUENTE}:${todos.linea})`);
     return 0;

@@ -1,0 +1,43 @@
+POBLACION | 302 ficheros de scripts/ leidos | 253 solo fila general | 41 con area de ticket creador
+CONTROL POSITIVO | _navegador.mjs lo importan 38 scripts (ve)
+j1	_hallazgos-y-ciegos.mjs	importa: 37 claves-bd-de-todos-los-arboles.mjs[s0] guard-915e1-documento-vivo.mjs[SIN-FILA] guard-915g-ajustes-del-justificante.mjs[SIN-FILA] guard-915h-conceptos-limpios.mjs[SIN-FILA] guard-915i-cabecera.mjs[SIN-FILA] guard-965-un-solo-presupuesto.mjs[s2] guard-a11y-comparativa.mjs[SIN-FILA] guard-a11y-landing.mjs[SIN-FILA] guard-albaranes-con-acciones.mjs[SIN-FILA] guard-arranque-sin-red.mjs[SIN-FILA] guard-aviso-bizum.mjs[SIN-FILA] guard-caja-avisos.mjs[SIN-FILA] guard-caja-datos-del-cliente.mjs[SIN-FILA] guard-caja-documento-suelto.mjs[SIN-FILA] guard-cls-barra-anuncio.mjs[SIN-FILA] guard-contraste.mjs[SIN-FILA] guard-descuento-redibuja.mjs[SIN-FILA] guard-descuentos-en-el-detalle.mjs[SIN-FILA] guard-detalle-trabajo-917.mjs[s4] guard-duplicar-926.mjs[s2] guard-escalera-por-estado.mjs[SIN-FILA] guard-falta-en-otra-pestana.mjs[SIN-FILA] guard-firma-con-tramos.mjs[SIN-FILA] guard-foto-del-gasto.mjs[SIN-FILA] guard-lista-gastos.mjs[SIN-FILA] guard-lista-trabajos-917.mjs[s4] guard-lista-trabajos.mjs[SIN-FILA] guard-marcadores-en-pantalla.mjs[SIN-FILA] guard-nif-del-gasto.mjs[SIN-FILA] guard-objetivo-tactil.mjs[SIN-FILA] guard-pasos-del-editor.mjs[SIN-FILA] guard-portal-en-la-ficha.mjs[SIN-FILA] guard-rastro-del-menu.mjs[SIN-FILA] guard-rotulos-de-la-linea.mjs[SIN-FILA] guard-vias-de-cobro.mjs[SIN-FILA] guards-entrada.mjs[SIN-FILA] guards-visuales.mjs[SIN-FILA]	solo-lo-nombra: 0	HAY-AJENOS:37
+j1	_tabla-verifactu-catalogo.mjs	importa: 1 tabla-verifactu.mjs[j1]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+j1	sobre-soap-prueba-aeat.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j1	tabla-verifactu.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+j3	staging-gated.mjs	importa: 0	solo-lo-nombra: 6	NADIE-LO-IMPORTA
+j3	wa-prueba.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j4	_documentos-citados.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j5	_guard-espejo-skills.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j6	_senal-de-nombres.mjs	importa: 1 senal-de-nombres.mjs[j6]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+j6	censo-escritores-invoice.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j6	senal-de-nombres.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+j6	verificar-vf-submissions.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+j6	vigia-silencio-de-main.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s0	_carriles.mjs	importa: 1 carriles.mjs[s0]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s0	_censo-sin-consumir.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s0	_sin-consumir-declarados.json	importa: 0	solo-lo-nombra: 2	NADIE-LO-IMPORTA
+s0	auditoria-cierres.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s0	carriles.mjs	importa: 0	solo-lo-nombra: 2	NADIE-LO-IMPORTA
+s0	claves-bd-de-todos-los-arboles.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s0	espera-del-equipo.mjs	importa: 1 sesiones-que-no-volvieron.mjs[s0]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s0	sesiones-que-no-volvieron.mjs	importa: 1 traspaso-derivado.mjs[s0]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s0	traspaso-derivado.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s1	_censo-rango-del-parte.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s2	guard-965-un-solo-presupuesto.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s2	guard-duplicar-926.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s3	_censo-entorno-prestado.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+s3	_censo-gemelo-crudo.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s3	_ciegos-por-entorno-declarados.json	importa: 0	solo-lo-nombra: 2	NADIE-LO-IMPORTA
+s3	_entorno-prestado-declarados.json	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+s3	_tanda-por-tramos.mjs	importa: 1 tests-que-cubren.mjs[s3]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s3	_tests-que-cubren.mjs	importa: 1 tests-que-cubren.mjs[s3]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s3	_version-de-fila-dudosa-declaradas.json	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s3	tests-que-cubren.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+s4	_detalle-917.mjs	importa: 1 guard-detalle-trabajo-917.mjs[s4]	solo-lo-nombra: 0	TODOS-DEL-MISMO
+s4	_trabajos-917.mjs	importa: 2 capturas-lista-trabajos-917.mjs[s4] guard-lista-trabajos-917.mjs[s4]	solo-lo-nombra: 1	TODOS-DEL-MISMO
+s4	capturas-lista-trabajos-917.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+s4	guard-detalle-trabajo-917.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s4	guard-lista-trabajos-917.mjs	importa: 0	solo-lo-nombra: 1	NADIE-LO-IMPORTA
+s5	_censo-bytes-control.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s5	arbol-mio.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
+s5	estado-antes-del-go.mjs	importa: 0	solo-lo-nombra: 0	NADIE-LO-IMPORTA
