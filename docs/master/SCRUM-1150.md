@@ -58,6 +58,12 @@ ocho líneas de diagnóstico.
 - `docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md` sigue nombrando `revisiones_ambiguas` entre los
   motivos de los que «se enseña el suyo». Ese registro es del puesto que usa el texto (S2): avisado en el
   ticket, no editado aquí.
+- **`revisiones_dos_vigentes` tiene HOY dos orígenes en los datos, y la frase que se le escriba tiene que
+  ser cierta para los dos.** Uno es una revisión repetida de verdad. El otro es SCRUM-1490: el grupo se
+  arma por (comercio, número) SIN el año de la serie, así que desde el 1-ene-2027 el presupuesto 12 de
+  2026 y el 12 de 2027 caen en el mismo grupo como dos originales. Ahí no hay «dos versiones»: hay dos
+  presupuestos distintos. El dominio no los puede distinguir (ve dos filas con la misma revisión); deja
+  de pasar cuando entre SCRUM-1490, que agrupa con el año. Medido en SCRUM-1444, comentario 18485.
 - **Cómo se llega a «dos vigentes» no se ha arreglado.** No hay unicidad en el esquema para
   (comercio, número, revisión), así que dos «Crear revisión» a la vez desde dos pestañas podrían crear el
   empate (la pantalla desactiva el botón al pulsar, pero eso sólo cubre una pestaña). Leído, no
