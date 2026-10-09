@@ -53,5 +53,8 @@
       "PowerShell(git push *)",
       "Bash(git fetch *)"
     ]
-  }
+  },
+  "disabledMcpjsonServers": [
+    "playwright"
+  ]
 }

@@ -1,0 +1,3 @@
+censo · 139 ficheros DECLARANTES de 1286 ficheros de test (11 %) · 520 declaraciones (suelos 20 / 54)
+  subconjunto AUTODECLARADO · 289 ficheros se titulan GUARD en algún test · 32 de ésos declaran (11 %)
+  ⚠️ la señal es DÉBIL EN LAS DOS DIRECCIONES: de los 139 declarantes sólo 32 se titulan guard, o sea que 107 declaran SIN llamarse guard. Y «guard» no está definido en el árbol: esto NO es un censo de guards.

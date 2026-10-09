@@ -1,0 +1,13 @@
+POBLACION · ficheros de test del arbol: 1287 · declarantes: 140 · declaraciones: 523
+LOG · lineas «  ✔ »: 520 · «  ✖ »: 0 · «  ? »: 0 · «  ☠ »: 0 · lineas con ✔ que NO son de veredicto: 1
+     otra: ✔ Generated Prisma Client (v6.18.0) to ./node_modules/@prisma/client in 385ms
+   SOLO EN EL ARBOL (x1): scrum1387-banco-nuevo-va-al-catalogo.test.mjs · el clasificador separa el banco con lista propia del que toma las del test
+   SOLO EN EL ARBOL (x1): scrum1387-banco-nuevo-va-al-catalogo.test.mjs · un banco nuevo sin declarar sale nombrado, con su carpeta y su guion
+   SOLO EN EL ARBOL (x1): scrum1387-banco-nuevo-va-al-catalogo.test.mjs · una entrada declarada que ya no está fuera sobra
+CRUCE · declaraciones sin su linea viva en el log: 3 · lineas vivas del log sin declaracion en el arbol: 0
+PAREJAS DISTINTAS (guard, cae): 486 de 523 declaraciones · repetidas: 37
+CONTROL A CERO · la pareja inventada «scrum9999-no-existe.test.mjs · nada»: en el arbol 0 · en el log 0
+CONTROL POSITIVO · la primera declaracion del arbol («restauracion-del-arbol-ejecutable.test.mjs · la restauración pide DOS piezas cuando el fic»): en el log 1
+QUE SE MUTA · por carpeta del fichero mutado: {"scripts/":334,"public/":56,"tests/":52,"src/":45,".github/":26,"docs/":5,"dist/":3,"(raiz)":2}
+FICHEROS MUTADOS distintos: 144 · de ellos en src/: 23 · en public/: 18
+DECLARACIONES que mutan EL PROPIO fichero del test: 3 de 523
