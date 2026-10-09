@@ -14,6 +14,13 @@
 //             un id enumerable a la vista (familia de SCRUM-95).
 //   IMPORTE · un `x.toFixed(2)` PEGADO a una moneda dentro del mismo texto — `${t.toFixed(2)} €`,
 //             `${t.toFixed(2)} ${currency}` — en vez de `formatMoneyEs` y familia.
+//   SIN_FORMATEAR · (SCRUM-1288b) un valor PEGADO a una moneda —`${amount} ${currency}`,
+//             `${total} €`— que no sale de un formateador de importes de la casa
+//             (`HELPERS_IMPORTE`). Es la otra cara de IMPORTE: allí se busca el `toFixed(2)` y se
+//             mira si hay moneda; aquí se busca la moneda y se mira qué valor lleva delante. Caza lo
+//             que IMPORTE no puede: el importe que llega ya hecho texto por un PARÁMETRO (el
+//             `toFixed(2)` o el `.toString()` está en quien llama, en otro fichero), el que pasa por
+//             una variable, el `toFixed` con otros decimales y el `toLocaleString()` a mano.
 //
 // ── POR QUÉ NO NECESITA TIPOS ───────────────────────────────────────────────────────────────────
 // Las dos formas son de SINTAXIS: qué pieza de texto hay a cada lado de una interpolación. Se parsea
@@ -35,9 +42,12 @@
 //   · Las familias donde el crudo es la AUSENCIA de una llamada: `esc()`, `normalizePhone`,
 //     «aceptado» (`status === 'accepted'`). No hay forma que buscar; SCRUM-1444 las dejó fuera a
 //     propósito y aquí siguen fuera.
-//   · El importe que pasa por una variable: `const t = x.toFixed(2)` y, más abajo, `${t} €`. El
-//     `toFixed` suelto se CUENTA (clase `SUELTO`) pero no se acusa.
-//   · Un `toFixed` con otro número de decimales, y `Intl.NumberFormat` / `toLocaleString` a mano.
+//   · El importe cuya moneda NO va en la pieza de al lado: `['Cobrado', x.toFixed(2), 'EUR'].join(' ')`,
+//     o `Total ${t}` en una línea y «EUR» en otra. SIN_FORMATEAR exige que el valor TOQUE la moneda
+//     (como mucho con un espacio en medio); el `toFixed(2)` suelto se CUENTA pero no se acusa.
+//   · La moneda escrita DELANTE del valor (`€${x}`, `EUR ${x}`).
+//   · `Intl.NumberFormat` a mano con `style: 'currency'`: la moneda la pone él, no hay pieza al lado.
+//   · Lo que hace un formateador de `HELPERS_IMPORTE` por dentro: se le cree por su NOMBRE.
 //   · Un `#` que no está pegado al valor: `Presupuesto nº ${id}`, `# ${id}`.
 //   · `public/` entero (JavaScript de navegador): la población es `src/**/*.ts`.
 //   · Lo que hace la función que recibe el texto: el sumidero se decide en el sitio, no siguiendo
@@ -61,6 +71,7 @@ const FUERA_DEL_CENSO = new Set(['node_modules', '.git', 'dist', 'coverage', 'st
 
 export const NUMERO = 'NUMERO';
 export const IMPORTE = 'IMPORTE';
+export const SIN_FORMATEAR = 'SIN_FORMATEAR';
 
 export const DENTRO = 'DENTRO';
 export const FUERA = 'FUERA';
@@ -79,6 +90,25 @@ export const HELPERS_NUMERO = new Set([
 const MONEDA_ESCRITA = /€|&euro;|\bEUR\b|\beuros?\b/i;
 /** …o una pieza interpolada que es una referencia a ella: un identificador o propiedad con este nombre. */
 const NOMBRE_DE_MONEDA = /^(?:currency|currencySymbol|moneda|divisa|simbolo|symbol|cur)$/i;
+
+/**
+ * SCRUM-1288b · los formateadores de importes de la casa, por su nombre. Un valor pegado a una moneda
+ * que sale de uno de éstos no es un crudo. Los dos primeros son los de `src/core/utils/utils.ts`; los
+ * otros dos, los EXPORTADOS que el PDF y el albarán tienen delante de ellos. Aquí NO van los nombres
+ * locales (`fmt`, `money`): a ésos no se les cree por llamarse así, se mira su cuerpo en su ámbito
+ * (`saleDeUnFormateador`), y un `fmt` que no devuelva un formateador se acusa.
+ */
+export const HELPERS_IMPORTE = new Set([
+  'formatMoneyEs',
+  'formatImporteEs',
+  'fmtImporte',
+  'fmtMoneyAlbaran',
+]);
+/** Envolturas que no cambian el valor: se mira lo que llevan dentro (`${esc(total)} €`). */
+const ENVOLTURAS = new Set(['esc', 'escEmail', 'escText', 'escapeHtml', 'String']);
+/** La moneda PEGADA al valor: la pieza escrita de detrás empieza por ella, con un espacio como mucho. */
+const MONEDA_DETRAS = /^(?:[ \xa0]|&nbsp;)?(?:€|&euro;|EUR\b|euros?\b)/i;
+const SOLO_UN_ESPACIO = /^(?:[ \xa0]|&nbsp;)?$/;
 
 /**
  * Sumideros que se sabe que salen HACIA FUERA. No es la lista que decide si un sitio se acusa (eso
@@ -185,6 +215,91 @@ function esReferenciaAMoneda(expr) {
   return false;
 }
 
+/** El nombre de lo que se llama: `f(…)` → `f`, `a.b.f(…)` → `f`. Nulo si no es una llamada. */
+function nombreDeLlamada(x) {
+  if (!ts.isCallExpression(x)) return null;
+  const c = x.expression;
+  return ts.isIdentifier(c) ? c.text : ts.isPropertyAccessExpression(c) ? c.name.text : null;
+}
+
+/** Quita lo que no cambia el valor: los paréntesis y las `ENVOLTURAS` (`esc(total)` → `total`). */
+function sinEnvolturas(expr) {
+  let x = sinParentesis(expr);
+  while (ts.isCallExpression(x) && ENVOLTURAS.has(nombreDeLlamada(x) ?? '') && x.arguments.length >= 1) x = sinParentesis(x.arguments[0]);
+  return x;
+}
+
+/** ¿Este nombre de enlace (`a`, `{ a, b }`, `[a]`) declara `nombre`? */
+function declara(enlace, nombre) {
+  if (ts.isIdentifier(enlace)) return enlace.text === nombre;
+  return enlace.elements.some((e) => !ts.isOmittedExpression(e) && declara(e.name, nombre));
+}
+
+/**
+ * Lo que `nombre` ES en el ámbito de `desde`, subiendo por sus bloques hasta la declaración más
+ * cercana: `{ valor }` si es un `const` de nombre simple (su inicializador), `{ funcion }` si es una
+ * función declarada ahí, y nulo en todo lo demás —un parámetro, un `let`, una desestructuración, un
+ * nombre importado—, porque desde aquí no se sabe qué lleva cuando llega al texto. Es por ÁMBITO,
+ * no por fichero: un homónimo en otra función no cuenta (SCRUM-846).
+ */
+function loQueEs(nombre, desde) {
+  for (let b = desde.parent; b; b = b.parent) {
+    if (ts.isFunctionLike(b) && b.parameters.some((p) => declara(p.name, nombre))) return null;
+    const sentencias = ts.isBlock(b) || ts.isSourceFile(b) || ts.isModuleBlock(b) || ts.isCaseClause(b) || ts.isDefaultClause(b)
+      ? b.statements : null;
+    if (!sentencias) continue;
+    for (const s of sentencias) {
+      if (ts.isFunctionDeclaration(s) && s.name?.text === nombre) return { funcion: s };
+      if (!ts.isVariableStatement(s)) continue;
+      for (const d of s.declarationList.declarations) {
+        if (!declara(d.name, nombre)) continue;
+        const esConst = (s.declarationList.flags & ts.NodeFlags.Const) !== 0;
+        if (!esConst || !ts.isIdentifier(d.name) || !d.initializer) return null;
+        const ini = sinParentesis(d.initializer);
+        return ts.isArrowFunction(ini) || ts.isFunctionExpression(ini) ? { funcion: ini } : { valor: ini };
+      }
+    }
+  }
+  return null;
+}
+
+/** ¿Lo ÚNICO que hace esta función es devolver un importe ya formateado? Un cuerpo de un solo `return`. */
+function soloDevuelveUnFormateador(fn, saltos) {
+  const c = fn.body;
+  if (!c) return false;
+  if (!ts.isBlock(c)) return saleDeUnFormateador(c, saltos);
+  return c.statements.length === 1 && ts.isReturnStatement(c.statements[0]) && c.statements[0].expression !== undefined
+    && saleDeUnFormateador(c.statements[0].expression, saltos);
+}
+
+/**
+ * ¿El valor sale de un formateador de importes de la casa? Cuatro caminos, y fuera de ellos NO:
+ *   · la llamada directa: `formatMoneyEs(x)`;
+ *   · un `const` de su ámbito que la guarda: `const t = fmtImporte(x)` … `${t} €`;
+ *   · una función LOCAL que sólo la devuelve: `const money = (n) => formatMoneyEs(n, cur)`;
+ *   · las dos ramas de un ternario / `??` / `||`. Un texto escrito («—») es texto, no un valor: vale.
+ * `saltos` corta una cadena de nombres que se apunten entre sí.
+ */
+function saleDeUnFormateador(expr, saltos = 3) {
+  const x = sinEnvolturas(expr);
+  if (esLiteralDeTexto(x)) return true;
+  if (HELPERS_IMPORTE.has(nombreDeLlamada(x) ?? '')) return true;
+  if (ts.isConditionalExpression(x)) return saleDeUnFormateador(x.whenTrue, saltos) && saleDeUnFormateador(x.whenFalse, saltos);
+  if (ts.isBinaryExpression(x) && [ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.BarBarToken].includes(x.operatorToken.kind)) {
+    return saleDeUnFormateador(x.left, saltos) && saleDeUnFormateador(x.right, saltos);
+  }
+  if (saltos <= 0) return false;
+  if (ts.isIdentifier(x)) {
+    const es = loQueEs(x.text, x);
+    return es?.valor !== undefined && saleDeUnFormateador(es.valor, saltos - 1);
+  }
+  if (ts.isCallExpression(x) && ts.isIdentifier(x.expression)) {
+    const es = loQueEs(x.expression.text, x);
+    return es?.funcion !== undefined && soloDevuelveUnFormateador(es.funcion, saltos - 1);
+  }
+  return false;
+}
+
 /** ¿El valor es SÓLO el `id` de algo (`x.id`, `id`, `quoteId`), sin número de serie por delante? */
 function esSoloId(expr, sf) {
   const t = sinParentesis(expr).getText(sf);
@@ -270,6 +385,23 @@ export function censarFuente(rel, texto) {
       if (!/#$/.test(antes.lit) || /&#$/.test(antes.lit)) continue;
       if (llamaA(p.expr, HELPERS_NUMERO)) continue;
       fila(NUMERO, p.expr, top, p.expr, { soloId: esSoloId(p.expr, sf) });
+    }
+    // SIN_FORMATEAR: una pieza `expr` con una moneda JUSTO DETRÁS que no sale de un formateador de
+    // importes. «Justo detrás» admite un espacio en medio y nada más. La moneda DELANTE del valor
+    // (`€${x}`) no se mira: en el árbol sólo casaba con lo que va detrás de «€» en una frase.
+    for (let i = 0; i < piezas.length; i++) {
+      const p = piezas[i];
+      if (!p.expr || esReferenciaAMoneda(p.expr)) continue;
+      const sig = piezas[i + 1];
+      const sig2 = piezas[i + 2];
+      const detras = sig !== undefined && (sig.lit !== undefined
+        ? MONEDA_DETRAS.test(sig.lit) || (SOLO_UN_ESPACIO.test(sig.lit) && sig2?.expr !== undefined && esReferenciaAMoneda(sig2.expr))
+        : esReferenciaAMoneda(sig.expr));
+      if (!detras) continue;
+      // Un `toFixed(2)` pegado a la moneda ya es una fila IMPORTE: no se acusa dos veces.
+      if (esToFixedDos(sinEnvolturas(p.expr))) continue;
+      if (saleDeUnFormateador(p.expr)) continue;
+      fila(SIN_FORMATEAR, p.expr, top, p.expr);
     }
   };
 
@@ -365,6 +497,13 @@ export const DECLARADOS = new Map([
   [`IMPORTE|${M}ai/domain/ai.service.ts::suggestQuoteLines`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'catálogo que se le pasa al modelo de IA: no lo lee una persona (SCRUM-1444, familia 2)' }],
   [`IMPORTE|${M}ai/domain/ai.service.ts::suggestAlbaranLines`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'catálogo que se le pasa al modelo de IA: no lo lee una persona (SCRUM-1444, familia 2)' }],
   // ── IMPORTE · DEUDA ───────────────────────────────────────────────────────────────────────────
+  // ── SIN_FORMATEAR · LEGITIMO (SCRUM-1288b) ────────────────────────────────────────────────────
+  [`SIN_FORMATEAR|${M}ai/domain/ai.service.ts::generateQuoteMessage`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'el total va dentro de las instrucciones que se le pasan al modelo de IA: no lo lee una persona (misma familia que las dos entradas IMPORTE de este fichero)' }],
+  // ── SIN_FORMATEAR · DEUDA (SCRUM-1288b) · medidas el 9-oct-2026 leyendo quién llama ───────────
+  [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendMerchantPaymentEmail`, { n: 2, clase: DEUDA, retira: 'S1', motivo: 'correo «Pago recibido» al profesional, asunto y cuerpo: el importe llega ya hecho texto y quien llama (`psp.routes.ts`, J2) le pasa el número con `.toString()`, sin formatMoneyEs' }],
+  [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendMerchantQuoteAcceptedEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'correo «presupuesto aceptado» al profesional: el total llega ya hecho texto y quien llama (`whatsappIncoming.routes.ts`, J2) le pasa `toFixed(2)`, sin formatMoneyEs' }],
+  [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendTechQuoteApprovedEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'correo «presupuesto aprobado» al técnico: el total llega ya hecho texto y quien llama (`quotesAdmin.routes.ts`, S1) le pasa `toFixed(2)`, sin formatMoneyEs' }],
+  [`SIN_FORMATEAR|src/core/data/catalogLoader.ts::orientativoLabel`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'rango orientativo del catálogo, «6000–11000 €»: enteros sin separador de miles (el 9-oct, 20 de los 310 precios de `data/catalogs` pasan de 1.000 y ninguno lleva decimales)' }],
   // ── NUMERO · LEGITIMO ─────────────────────────────────────────────────────────────────────────
   [`NUMERO|${M}invoicing/infra/pdf/pdf.service.ts::generateQuotePdf`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'el valor ya sale de numeroConRevision; llega por una variable y el censo no sigue variables' }],
   [`NUMERO|${M}system/domain/qrPagina.service.ts::normalizarHex`, { n: 2, clase: LEGITIMO, retira: null, motivo: 'es un color hexadecimal, no el número de un documento' }],
@@ -439,7 +578,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
   const r = censar();
   console.log(`POBLACIÓN: ${r.ficheros} ficheros .ts en [${CARPETAS.join(', ')}] de ${r.raiz} · no analizables: ${r.noAnalizables.length}`);
   for (const x of r.noAnalizables) console.log(`  🔴 NO PUDE MIRAR ${x.fichero}: ${x.motivo}`);
-  for (const forma of [NUMERO, IMPORTE]) {
+  for (const forma of [NUMERO, IMPORTE, SIN_FORMATEAR]) {
     const de = r.filas.filter((f) => f.forma === forma);
     const cuenta = (d) => de.filter((f) => f.destino === d).length;
     console.log(`${forma}: ${de.length} sitios · FUERA ${cuenta(FUERA)} · NO_DECIDIBLE ${cuenta(NO_DECIDIBLE)} · DENTRO ${cuenta(DENTRO)}`
