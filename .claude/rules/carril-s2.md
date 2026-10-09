@@ -1,8 +1,10 @@
 ---
 paths:
+  - "scripts/guard-965-un-solo-presupuesto.mjs"
   - "public/dashboard/js/quoteRevisiones.js"
   - "public/dashboard/css/styles.css"
   - "public/dashboard/js/homeView.js"
+  - "scripts/guard-duplicar-926.mjs"
   - "public/dashboard/index.html"
   - "public/dashboard/js/api.js"
   - "public/dashboard/js/app.js"
