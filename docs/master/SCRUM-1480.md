@@ -333,7 +333,7 @@ el ticket.
 
 **Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:01:47Z
 
-A9: sin fallo que generalice — el criterio estaba medido desde el 7-oct y lo aceptó el orquestador; aquí se recuenta, se aplica a lo que decide y se dice lo que deja sin decidir
+A9: regeneré los carriles y después retoqué una nota de la tabla; el generado lleva la huella del documento entero y quedó distinto. Lo cazó `tests/scrum1295-carriles.test.mjs` en la dirigida, antes de empujar. → `docs/equipo/cicatrices/S0.md`, línea del 9-oct
 
 Carril S0 (`docs/equipo/dos-equipos.md`, `afirmaciones-verificadas.md`, y desde este cambio `scripts/carriles.mjs`). Sólo
 cambia §3.3, que no lee `tests/scrum514-aprobado-y-aplicado.test.mjs`. Los generados los escribe
