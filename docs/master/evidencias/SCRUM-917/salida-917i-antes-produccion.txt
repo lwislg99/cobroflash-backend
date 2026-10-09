@@ -1,0 +1,29 @@
+ANCHO=1280 · SERVIDO=lo de producción · build 85d8d01e64196569928b523c9074542d6ffbbd0a
+TESTIGO={"cuelga":true,"guarda":true,"cuelgaDentroDeLaGuarda":false}
+POBLACION=1 Trabajos en la cuenta · 1 sin importe (totalAceptado null)
+TRABAJO=76
+  VACIA @1280 SIN: 37 px · <div class="detail-section"><div class="detail-summary"></div></div>
+  @1280 SIN: [162.8 «Lo que faltaEste traba»] [37 «»] [252.2 «Albaranes+ Nuevo albar»] [281.8 «El trabajoTipo de trab»] [103 «🔧Varios avisos o visi»] [169.8 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+  @1280 CON: [112.8 «Lo que falta1 albarán »] [103.3 «Aceptado 500,00 €Cobra»] [252.2 «Albaranes+ Nuevo albar»] [281.8 «El trabajoTipo de trab»] [103 «🔧Varios avisos o visi»] [169.8 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+  @1280 CERO: [112.8 «Lo que falta1 albarán »] [81.3 «Aceptado 0,00 €Cobrado»] [252.2 «Albaranes+ Nuevo albar»] [281.8 «El trabajoTipo de trab»] [103 «🔧Varios avisos o visi»] [169.8 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+no-GET @1280: ninguna
+errores de página @1280: ninguno
+ANCHO=390 · SERVIDO=lo de producción · build 85d8d01e64196569928b523c9074542d6ffbbd0a
+TESTIGO={"cuelga":true,"guarda":true,"cuelgaDentroDeLaGuarda":false}
+POBLACION=1 Trabajos en la cuenta · 1 sin importe (totalAceptado null)
+TRABAJO=76
+  VACIA @390 SIN: 37 px · <div class="detail-section"><div class="detail-summary"></div></div>
+  @390 SIN: [234.1 «Lo que faltaEste traba»] [37 «»] [317.2 «Albaranes+ Nuevo albar»] [293.2 «El trabajoTipo de trab»] [201 «🔧Varios avisos o visi»] [188.4 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+  @390 CON: [112.8 «Lo que falta1 albarán »] [103.3 «Aceptado 500,00 €Cobra»] [317.2 «Albaranes+ Nuevo albar»] [293.2 «El trabajoTipo de trab»] [201 «🔧Varios avisos o visi»] [188.4 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+  @390 CERO: [112.8 «Lo que falta1 albarán »] [81.3 «Aceptado 0,00 €Cobrado»] [317.2 «Albaranes+ Nuevo albar»] [293.2 «El trabajoTipo de trab»] [201 «🔧Varios avisos o visi»] [188.4 «Nombre del trabajoEl n»] [70.6 «Todavía no has dado de»] [93.3 «»] [20.1 «Todavía no hay gastos »]
+no-GET @390: ninguna
+errores de página @390: ninguno
+--- FILAS (ancho | caso | título | secciones visibles | VACÍAS | alto de las vacías | franja del dinero | barra | desborde px | respuestas parcheadas)
+1280 | SIN | «Trabajo de pruebas QA» | 9 | 1 | 37 | no hay | no | 0 | 0
+1280 | CON | «Trabajo de pruebas QA» | 9 | 0 | - | «Aceptado 500,00 €Cobrado 200,00 €» | sí | 0 | 1
+1280 | CERO | «Trabajo de pruebas QA» | 9 | 0 | - | «Aceptado 0,00 €Cobrado 0,00 €» | no | 0 | 1
+390 | SIN | «Trabajo de pruebas QA» | 9 | 1 | 37 | no hay | no | 0 | 0
+390 | CON | «Trabajo de pruebas QA» | 9 | 0 | - | «Aceptado 500,00 €Cobrado 200,00 €» | sí | 0 | 1
+390 | CERO | «Trabajo de pruebas QA» | 9 | 0 | - | «Aceptado 0,00 €Cobrado 0,00 €» | no | 0 | 1
+POBLACION_MEDIDA=6 pantallas · SECCIONES_VACIAS=2
+EXIT=1
