@@ -76,7 +76,9 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     if (req.body?.currency    != null) data.currency      = String(req.body.currency).slice(0,3).toUpperCase();
     if (req.body?.lines       != null) data.lines         = req.body.lines;
     if (req.body?.tiers       != null) data.tiers         = req.body.tiers;
-    if (req.body?.paymentTerms!= null) data.paymentTerms  = req.body.paymentTerms;
+    // SCRUM-1188c: la clave AUSENTE no toca el cobro (renombrar); la clave a `null` lo VACÍA, igual
+    // que el `null` del POST. Con `!= null` los dos cuerpos eran el mismo y no se podía vaciar.
+    if (req.body?.paymentTerms !== undefined) data.paymentTerms = req.body.paymentTerms;
 
     const updated = await prisma.quoteTemplate.update({ where: { id }, data });
     return res.json(updated);
