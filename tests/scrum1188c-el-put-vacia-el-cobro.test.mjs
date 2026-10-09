@@ -20,10 +20,10 @@
 // estado: lo que se mide es el `data` que la ruta le pasa a `quoteTemplate.update`, que es lo que
 // decide qué columnas cambian. No mide la base, y por eso no afirma nada de `tiers` (ver abajo).
 //
-// ── LO QUE ESTE FICHERO NO CAMBIA, Y SE DICE ────────────────────────────────────────────────
-// `tiers` es la otra columna anulable (`Json?`) y sigue con `!= null`: hoy no la manda nadie
-// (`scripts/_sin-consumir-declarados.json`), y vaciar un `Json?` no se ha medido contra una base.
-// El caso de abajo la FIJA como está para que cambiarla sea una decisión y no un descuido.
+// ── `tiers`, LA OTRA COLUMNA ANULABLE ───────────────────────────────────────────────────────
+// SCRUM-1188c la dejó con `!= null` porque vaciar un `Json?` no se había medido contra una base, y
+// la fijó con un caso para que cambiarla fuera una decisión. SCRUM-1188d la midió y la cambió: los
+// dos últimos casos de este fichero dicen qué manda ahora la ruta.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
@@ -103,7 +103,20 @@ test('SCRUM-1188c · `null` en las columnas que NO admiten vacío (name, currenc
     '🔴 un `null` ha llegado a una columna NOT NULL: eso es un 500 de la base, no un vaciado.');
 });
 
-test('SCRUM-1188c · `tiers: null` sigue como estaba (ignorado): esta entrega NO lo cambia, y se fija para que cambiarlo sea una decisión', async () => {
+// SCRUM-1188d: este caso FIJABA `tiers: null` como ignorado «para que cambiarlo sea una decisión».
+// La decisión llegó con la medición contra Postgres: la clave nula vacía, y viaja como
+// `Prisma.DbNull` porque un `null` de JS en un `Json?` guarda el JSON `null`. Lo que pasa en la base
+// lo mide `scrum1188d-tiers-tambien-se-vacia.test.mjs`; aquí, lo que la ruta le manda.
+test('SCRUM-1188d · `tiers: null` VACÍA los niveles: viaja a la base como `Prisma.DbNull`, no como el `null` de JS', async () => {
+  const { Prisma } = moduloDeDist('@prisma/client');
   const data = await put({ tiers: null, paymentTerms: null });
-  assert.deepEqual(data, { paymentTerms: null });
+  assert.deepEqual(Object.keys(data).sort(), ['paymentTerms', 'tiers']);
+  assert.equal(data.paymentTerms, null);
+  assert.equal(data.tiers, Prisma.DbNull,
+    '🔴 `tiers: null` no viaja como `Prisma.DbNull`: o la ruta lo ignora, o guarda el JSON `null`.');
+});
+
+test('SCRUM-1188d · sin la clave `tiers`, el PUT no la manda a la base', async () => {
+  const data = await put({ name: 'Baño', paymentTerms: 'MANUAL' });
+  assert.equal(Object.hasOwn(data, 'tiers'), false);
 });
