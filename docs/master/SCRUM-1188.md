@@ -202,8 +202,17 @@ un servidor en memoria que aplica la regla del `PUT` de `templates.routes.ts` tr
 - **Control positivo** (`evidencias/SCRUM-1188/salida-1188d-mutantes.txt`; base sin mutar 7 de 7): con el
   `quotesView.js` de `main` caen 6 de 7 (pasa el control del nombre nuevo); sin repintar las fichas cae
   el 7; sin mandar el `null` cae el 3; sustituyendo sin preguntar, 1, 2 y 4; creando a ciegas si la lista
-  no se lee, el 6; comparando el nombre exacto, el 4; mandando `name`, 1 y 4. Siete mutantes, siete
+  no se lee, el 6; comparando el nombre exacto, el 4; mandando `name`, el 1. Siete mutantes, siete
   mueren, cada uno con su `git diff --numstat` al lado.
+- **Dirigida:** 90 ficheros (los que nombran `quotesView`, el censo o la ruta, más los que leen los
+  registros): 978 pasan, 0 fallan, 0 saltos. La primera pasada dio 2 rojos, los dos míos, y se arregló
+  el código, no el guard:
+  - `scrum600` compara letra por letra el literal firmado de c.17332 y yo le había cambiado la variable
+    que interpola. El literal vuelve a ser idéntico al de `main`.
+  - `scrum811c` (lista de heredadas de la skill): al declarar aquí la skill, los dos PR de la parte A
+    (#1864 y #1877) dejan de ser «sin declarar» para el guard, que mira el registro entero, y exige
+    quitarlos de la lista. Quitados: la lista encoge en 2. Aquellos dos PR NO la declararon en su día;
+    lo que declara es esta sección.
 - **Navegador, sobre yaqu.app** (cuenta QA; build `ebd9bd8e`; `evidencias/SCRUM-1188/`): la sonda sirve el
   `quotesView.js` de la rama y contesta ella la lista, el `POST` y el `PUT` con la misma regla; nada llega
   a producción. Cinco casos, cero ciegos: la pregunta sale con el literal; el `PUT` lleva

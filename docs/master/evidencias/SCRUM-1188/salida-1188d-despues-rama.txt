@@ -1,4 +1,4 @@
-SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js\quotesView.js · build del panel ebd9bd8e9c4329edbdc35fffced5ff5b173f885c
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js\quotesView.js · build del panel 44cbb050536158705c423950a76254ad8f1848b4
 TESTIGO={"sustituye":true,"guardaCobro":true} · ROL=admin
 --- FILAS (partida de cada caso: UNA plantilla «Caldera (sonda)» a 90 € con cobro FIFTY_FIFTY; se teclea 120 €)
 
