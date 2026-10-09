@@ -1,0 +1,12 @@
+POBLACION · 2 mutaciones · HEAD a25c04ec693ed073f116aa7f9a9d81550fde537a
+BASE (antes) · trinquete: 31 tests · 0 caídos · salida 0
+M1 · la plantilla vuelve a pegar el total a la moneda
+  numstat: 1	1	src/modules/messaging/domain/merchantNotifications.ts
+  ROJO · 31 tests · 2 caídos · SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o || SCRUM-1452 · ninguna identidad RETIRADA ha vuelto a aparecer
+  restaurado · git status: []
+M2 · quien llama vuelve a pasar toFixed(2)
+  numstat: 1	1	src/modules/system/app/routes/quotesAdmin.routes.ts
+  ROJO · tsc --noEmit salida 2 · 1 error(es) · src/modules/system/app/routes/quotesAdmin.routes.ts(879,11): error TS2322: Type 'string' is not assignable to type 'number'.
+  restaurado · git status: []
+BASE (después) · trinquete: 31 tests · 0 caídos · salida 0
+EXIT=0
