@@ -1,0 +1,8 @@
+POBLACION | arbol D:\MILLONARIO\cobroFlash\wt-s3-1288b | HEAD 85d8d01e64196569928b523c9074542d6ffbbd0a | sucios antes: 0 | FORCE_COLOR ausente: True
+base | salida 0 | # tests 20 # pass 20 # fail 0 # skipped 0 | caidos:  | nombra el cebo: 
+cebo puesto: existe=True bytes=225 | git status: ?? src/modules/messaging/zz-cebo-1288.ts
+con-cebo | salida 1 | # tests 20 # pass 19 # fail 1 # skipped 0 | caidos: not ok 3 - SCRUM-1452 · 🔴 TRINQUETE: ningún sitio NUEVO con un número o un importe en crudo | nombra el cebo: src/modules/messaging/zz-cebo-1288.ts:3 [FUERA · prop text] importe.toFixed(2) // +   'IMPORTE|src/modules/messaging/zz-cebo-1288.ts::avisarCebo (1)'
+cebo quitado: existe=False
+sin-cebo | salida 0 | # tests 20 # pass 20 # fail 0 # skipped 0 | caidos:  | nombra el cebo: 
+sucios despues: 0
+EXIT=0

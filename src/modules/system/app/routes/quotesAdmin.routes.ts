@@ -491,8 +491,16 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
     }
     // `RevisionesAmbiguas` / `CensoDeRevisionesCiego`: el grupo no puede contestar cuál está
     // vigente. No se elige una por el profesional — se dice que no se sabe.
-    if (err?.name === 'RevisionesAmbiguas' || err?.name === 'CensoDeRevisionesCiego') {
-      return res.status(409).json({ error: 'revisiones_ambiguas', message: err.message });
+    //
+    // SCRUM-1150 · UN CÓDIGO POR CAUSA, Y SIN `message`. Antes salía todo como un solo código con el
+    // texto de la excepción dentro, y ese texto es el diagnóstico de un programador: la pantalla lo
+    // pintaba tal cual. Ahora viaja el `motivo` que puso el sitio que lanzó (`quotes/domain/revision.ts`)
+    // y el diagnóstico se queda en el log. Sin `motivo` no se contesta un 409 a ciegas: cae al 500.
+    if ((err?.name === 'RevisionesAmbiguas' || err?.name === 'CensoDeRevisionesCiego')
+      && typeof err.motivo === 'string') {
+      console.error('[POST /admin/quotes/:id/revisiones]', err.motivo,
+        `merchant=${req.merchantId} quote=${req.params.id}`, err.message);
+      return res.status(409).json({ error: err.motivo });
     }
     console.error('[POST /admin/quotes/:id/revisiones]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });

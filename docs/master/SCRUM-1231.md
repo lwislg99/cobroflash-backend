@@ -86,3 +86,92 @@ Rehecho con el `union` de verdad. De ahí la cicatriz.
   sirviendo en las seis páginas hasta que suba una imagen o se limpie la fila. Cuántos son, no medido
   (arriba). Las seis páginas son de varios carriles (S1, J2, J3): reportado en el ticket.
 - Tanda **dirigida**, no completa: 11 ficheros, 100 casos, 0 fallos, 1 salto. El juez es el CI.
+
+## SCRUM-1231b · `public/admin.html` pierde el campo «Logo (URL opcional)» (9-oct-2026)
+
+**Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:21:11Z
+A9: sin fallo que generalice — el cambio es retirar un campo y lo midió la misma sonda antes y después; el único rojo de la tanda dirigida fue `scrum811c` pidiendo esta entrada, que es para lo que está.
+**Rama:** `scrum-1231b-admin-sin-campo-de-logo` · commit del arreglo `704db561f33d60976eb2b04d97027c99ab3c6cc3`.
+**Sesión:** S2 (`s2-9oct`, tercera tanda) · carril: `public/admin.html` es S2 (`node scripts/carriles.mjs de public/admin.html`; lo corrigió S1 en el ticket, c.18713). **Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: lo de S1, arriba, no se toca.
+
+Es el «resto 2» que S1 dejó nombrado: la entrada del servidor quedó cerrada el 2-oct, y esta página
+seguía ofreciendo pegar un enlace. `admin.html` es la consola interna (sin ruta desde el panel; la
+sirve yaqu.app a quien tenga sesión).
+
+### PASO 0 — qué pasa HOY si alguien usa ese campo (yaqu.app, build `85d8d01e`, cuenta QA)
+
+La pregunta del encargo era ésa, porque de la respuesta dependía retirarlo o cambiarlo. Sonda
+`docs/master/evidencias/SCRUM-1231/sonda-1231b-admin-logo.mjs`. **Los `PUT` de la página no salen
+nunca:** la sonda pasa el cuerpo por el mismo esquema que el servidor (`dist` de `85d8d01e`, con la
+lógica de `app.ts`) y contesta ella. Aparte, tres `PUT` directos al servidor de verdad, de una sola
+clave, para atar ese veredicto a producción.
+
+| lo que se hace | lo que viaja en `logoUrl` | servidor | lo que dice la página |
+|---|---|---|---|
+| se pega `https://example.com/logo.png` y se guarda | la URL | **400** | «Error al guardar cambios del merchant» |
+| **se guarda sin tocar el campo** (la cuenta no tiene logo) | **`''`** (cadena vacía) | **400** | «Error al guardar cambios del merchant» |
+
+Directos al servidor real: `{logoUrl: ''}` → **400** (`validation_error`) · `{logoUrl: 'https://example.com/logo.png'}`
+→ **400** · **control positivo** `{}` → **200** (no cambia ningún campo; sin él, dos 400 no dirían
+nada del logo). Al acabar, el logo de la cuenta QA sigue como estaba (`null`).
+
+**Lo que eso decide:** el campo no puede guardar nada —una URL no entra desde SCRUM-1231, y nadie
+escribe a mano un `data:` de un megabyte— y además, por viajar siempre, **tumbaba el guardado de todo
+el formulario a quien no tiene logo**. Leído, no medido: tampoco es de ahora, porque `''` no es una
+URL y la rama `url()` de antes de SCRUM-1231 tampoco la habría dejado pasar.
+Se retira; no hay nada que cambiar por otra cosa. El logo se sube desde Configuración, que ya lo hace.
+
+Para aislar el logo, la sonda rellena en la página (sin que salga nada) los cuatro campos que la
+cuenta QA tiene vacíos; así el único motivo del 400 es `logoUrl`. Con la cuenta tal cual, el esquema
+da 400 por cinco campos a la vez (ver «de paso»).
+
+### El arreglo — tres retiradas en `public/admin.html`, ningún texto nuevo
+
+El `form-row` del campo (etiqueta, `input` y marcador) · la línea que lo rellenaba al cargar · la
+clave `logoUrl` del cuerpo del `PUT`. Sin la clave, el servidor no toca el logo guardado (ausente =
+no se toca), sea una imagen subida o una URL heredada.
+
+### Antes y después, misma sonda y mismos datos
+
+| | cuerpo del `PUT` | veredicto del esquema | lo que dice la página |
+|---|---|---|---|
+| **ANTES** · `admin.html` de producción | lleva `logoUrl: ''` | 400 por `logoUrl` | «Error al guardar cambios del merchant» |
+| **DESPUÉS** · `admin.html` de la rama servido | `logoUrl` NO VIAJA | lo aceptaría | «Cambios guardados correctamente» |
+
+El «después» lo contesta la sonda (200) porque el `PUT` no sale: **el guardado real no se ha hecho.**
+Salidas: `evidencias/SCRUM-1231/salida-1231b-antes-produccion.txt`, `salida-1231b-despues-rama.txt`
+y `salida-1231b-despues-rama-sin-rellenar.txt`.
+
+### Lo que lo vigila
+
+`tests/scrum1231b-admin-sin-campo-de-logo.test.mjs` (3 casos; el HTML sin comentarios y el script por
+AST): el formulario del perfil no tiene ningún control ni etiqueta de logo · el `payload` de
+`saveMerchant` no lleva `logoUrl` · todo `getElementById('…')` del script existe en el marcado (quitar
+un campo y dejar la línea que lo lee revienta al ejecutarse, no al cargar el fichero). Control
+positivo, dos mutantes con su `git diff --numstat`: el `admin.html` de `origin/main` (`12 3`) tumba
+los dos primeros; el campo fuera pero con la línea que lo lee (`1 0`) tumba el tercero. Rama: 3 de 3.
+
+**¿Existía ya «la otra mitad»? No.** `tests/scrum1231-logo-solo-imagen-subida.test.mjs` (S1) ata el
+ESQUEMA del servidor; no mira ninguna pantalla. Ningún test nombraba `merchant-logoUrl`. El test
+nuevo mira SÓLO `admin.html`: Configuración (`settingsView.js`) no la he vuelto a medir; S1 la leyó
+el 1-oct (campo oculto que sólo rellena «Subir logo»).
+
+### Corrido en local, con su población
+
+- Los 50 ficheros de `tests/` que leen HTML, marcadores o microcopy entre los 224 que
+  `tests:que-cubren` selecciona para `public/admin.html`, más los dos que la nombran: 515 tests,
+  514 pasan; el que cayó es `scrum811c`, que pedía esta entrada (se repite abajo, ya escrita).
+- **La suite completa no se ha corrido en local** (memoria de la máquina). La corre el obligatorio.
+
+### Lo que NO se ha hecho, dicho
+
+- **Contar las URL externas ya guardadas en producción.** No es de una sesión: es la SELECT de
+  c.18713, de quien tenga la base. Este cambio no las toca ni las cuenta.
+- **El guardado real desde la página desplegada.** Pendiente tras el despliegue: la sonda sin
+  argumento sobre yaqu.app → «hayCampo: false» y `logoUrl` «NO VIAJA».
+- **De paso, sin arreglar y sin ticket** (mismo formulario, mi carril): la página manda `''` en cada
+  campo vacío y el servidor rechaza cada una (`legalName`, `taxId`, `address`, `whatsappPhone`, y el
+  prefijo de serie). Con la cuenta QA tal cual, el guardado sigue dando 400 después de este cambio,
+  ya sin el logo entre los motivos. Configuración trata los cuatro primeros (y el nombre) como obligatorios y lo
+  dice antes de guardar (`settingsView.js:1154`); aquí la página sólo dice «Error al guardar cambios del merchant». Arreglarlo es decir
+  QUÉ falta, y eso es texto que ve el usuario: pide firma. No tiene víctima fuera de la consola.
