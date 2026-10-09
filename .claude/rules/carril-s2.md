@@ -1,5 +1,6 @@
 ---
 paths:
+  - "public/dashboard/js/quoteRevisiones.js"
   - "public/dashboard/css/styles.css"
   - "public/dashboard/js/homeView.js"
   - "public/dashboard/index.html"
