@@ -5,6 +5,9 @@
 //
 //   NUMERO  · un valor interpolado detrás de un `#` que no pasa por el helper del número.
 //   IMPORTE · un `toFixed(2)` en un texto que lleva una moneda, en vez de `formatMoneyEs`.
+//   SIN_FORMATEAR · (SCRUM-1288b) un valor pegado a una moneda que no sale de un formateador de
+//             importes. Entra en el MISMO trinquete; sus fabricados y su suelo, en
+//             `tests/scrum1288b-el-importe-pegado-a-la-moneda.test.mjs`.
 //
 // Cada uno es un TRINQUETE con sus dos mitades: un sitio NUEVO es rojo, y una BAJADA que nadie ha
 // declarado también (una bajada sin dueño es un censo roto hasta que se demuestre lo contrario).
@@ -63,7 +66,8 @@ test('SCRUM-1452 · 🔴 TRINQUETE: ningún sitio NUEVO con un número o un impo
     + lineasDe(nuevas).join('\n  ')
     + '\nNUMERO → el número visible de un documento sale de su helper (`displayQuoteNumber`, '
     + '`numeroConRevision`, `formatInvoiceNumber`…), no de `#${id}`. IMPORTE → `formatMoneyEs(valor, moneda)`, '
-    + 'no `toFixed(2)` más la moneda. NO lo añadas a `DECLARADOS` para que pase: ahí sólo entra lo LEGITIMO.');
+    + 'no `toFixed(2)` más la moneda. SIN_FORMATEAR → lo mismo: lo que va pegado a la moneda sale de '
+    + '`formatMoneyEs`, y si el importe te llega por un parámetro, que llegue el NÚMERO y se formatee aquí. NO lo añadas a `DECLARADOS` para que pase: ahí sólo entra lo LEGITIMO.');
 });
 
 test('SCRUM-1452 · 🔴 TRINQUETE: ninguna entrada declarada ha BAJADO sin declararlo', () => {
@@ -82,7 +86,7 @@ test('SCRUM-1452 · ninguna identidad RETIRADA ha vuelto a aparecer', () => {
 test('SCRUM-1452 · cada entrada declarada lleva su clase, su motivo y quién la retira', () => {
   const mal = [];
   for (const [id, d] of DECLARADOS) {
-    if (!/^(?:NUMERO|IMPORTE)\|src\/.+\.ts::.+$/.test(id)) mal.push(`${id}: la identidad no es «FORMA|src/….ts::función»`);
+    if (!/^(?:NUMERO|IMPORTE|SIN_FORMATEAR)\|src\/.+\.ts::.+$/.test(id)) mal.push(`${id}: la identidad no es «FORMA|src/….ts::función»`);
     if (!Number.isInteger(d.n) || d.n < 1) mal.push(`${id}: n=${d.n}`);
     if (typeof d.motivo !== 'string' || d.motivo.trim().length < 20) mal.push(`${id}: sin motivo que se pueda leer`);
     if (d.clase === DEUDA) { if (!PUESTOS.test(d.retira ?? '')) mal.push(`${id}: DEUDA sin el puesto que la retira (${d.retira})`); }
@@ -190,8 +194,11 @@ test('SCRUM-1452 · IMPORTE negativo derivado: con `formatMoneyEs`, y el `toFixe
   const calculo = censo(['export const redondeo = (t: number) => Number(t.toFixed(2));']);
   assert.deepEqual(formas(calculo), []);
   assert.equal(calculo.sueltos, 1);
+  // SCRUM-1288b · hasta el 9-oct-2026 esta línea fijaba que un `toFixed` con otros decimales NO se
+  // acusaba: era un límite declarado del censo. Sigue sin ser IMPORTE (no es un `toFixed(2)`), pero
+  // ya no pasa: lo acusa la forma SIN_FORMATEAR (sus casos, en `scrum1288b`).
   const otrosDecimales = censo(['export const linea = (t: number) => ({ text: `${t.toFixed(1)} €` });']);
-  assert.deepEqual(formas(otrosDecimales), []);
+  assert.deepEqual(formas(otrosDecimales), ['SIN_FORMATEAR:FUERA']);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
