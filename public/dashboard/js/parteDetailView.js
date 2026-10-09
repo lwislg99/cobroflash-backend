@@ -166,27 +166,34 @@
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
-    // Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026. Constan en
+    // Seis textos y dos fechas de firma, y CADA CLAVE LLEVA LA SUYA EN SU LÍNEA. Constan en
     // `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`.
     //
+    // SCRUM-1215f · hasta el 9-oct-2026 la firma de este bloque se decía UNA vez, en plural y
+    // contando («los cinco textos…»). El censo 1157 reparte una firma contada por POSICIÓN, no por
+    // nombre: le daba el quinto hueco a `conLaPrimeraFirmaQuedaFijo`, que es del 28-sep y no de
+    // aquel día, y se lo habría dado igual a cualquier clave nueva escrita aquí arriba. Con la
+    // marca en la línea, la firma viaja con su clave: una clave nueva nace sin ella y el censo la
+    // acusa. Lo ata `tests/scrum1215f-la-firma-no-se-reparte-por-posicion.test.mjs`.
+    //
     // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
-    firmarTecnico: 'Firma del técnico',
-    yaFirmoElCliente: 'Firmado por el cliente',
-    yaFirmoElTecnico: 'Firmado por el técnico',
+    firmarTecnico: 'Firma del técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElCliente: 'Firmado por el cliente', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElTecnico: 'Firmado por el técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
     // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
     //
-    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». FIRMADO por delegación del fundador,
-    // SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma, sea cual
-    // sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y `/firmar-tecnico`),
-    // así que con una basta y la segunda ya no cierra nada.
-    faltaLaFirmaDelCliente: 'Falta la firma del cliente.',
-    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.',
+    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». Lo firmado ese día, por delegación del
+    // fundador, es SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma,
+    // sea cual sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y
+    // `/firmar-tecnico`), así que con una basta y la segunda ya no cierra nada.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
     // Misma firma (c.17354). Solo mientras no ha firmado NADIE: después ya no avisa, es un hecho.
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
-    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.',
+    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
