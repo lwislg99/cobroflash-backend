@@ -12,8 +12,8 @@
 // 17354), no de aquel día. Estaba firmada, pero el censo la aprobaba por el motivo equivocado. Y
 // una clave NUEVA, sin firma de nadie, escrita la primera del bloque, salía APROBADO.
 //
-// La cura está en el fuente: cada una de las seis lleva su marca EN SU LÍNEA (regla 1 del censo,
-// la única que no cuenta ni mira el orden) y la cabecera ya no firma en plural.
+// La cura está en el fuente: cada una de las seis lleva su marca EN SU LÍNEA (la única forma de
+// firmar que el censo ni cuenta ni ordena) y la cabecera ya no firma en plural.
 //
 // Todo se mide con el censo de verdad sobre copias del fuente mutadas EN MEMORIA: aquí no se
 // escribe en el árbol.
