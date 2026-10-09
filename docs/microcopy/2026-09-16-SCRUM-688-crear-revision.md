@@ -20,6 +20,12 @@
   `quote_sin_numero`, `revisiones_ambiguas`— se enseña **el suyo**, no éste: el motivo no se
   inventa.
 
+  *(Corregido el 9-oct-2026, SCRUM-1150. La frase de arriba describe lo que la pantalla hacía el
+  16-sep y se deja como estaba; ya no es así. El texto aprobado NO cambia. Lo que cambia es cuándo
+  sale: la pantalla decide por el código, `quote_not_found` y `quote_sin_numero` tienen literal
+  propio y firmado, y `revisiones_ambiguas` dejó de existir: son cuatro códigos y hoy todos leen
+  este general. El detalle, en la ficha de SCRUM-1150 de este mismo directorio.)*
+
 ## De dónde venían
 
 Nacieron el **15-sep-2026**, con el POST, en un bloque `TEXTOS_SIN_APROBAR` **separado a
