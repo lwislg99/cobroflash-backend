@@ -11,6 +11,8 @@
 // de la 49 aplicado (firma_token, enviado_para_firma_at):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -23,7 +25,8 @@ import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar
 // fijarlo. ANTES de importar dist (config se congela al cargar).
 process.env.WHATSAPP_DRY_RUN = '1';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 // SCRUM-255: aqui habia un sondeo de 3 s sobre `whatsAppMessage` -- la forma que SCRUM-250
@@ -47,7 +50,22 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -131,7 +149,18 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // (d) POST público /albaran/:token/firmar → 200 → firmado
     const wa2 = interceptarWaLog({ log: await moduloDeLog(), prisma }); // ventana propia: ver arriba
     // SCRUM-300: la firma remota también puede declarar QUIÉN firma (campo OPCIONAL en C5).
-    const rFirmar = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
+    // SCRUM-876g · el cliente firma LA VERSIÓN QUE VIO (SCRUM-361), y la que vio es la que la
+    // página le dio: se lee del HTML servido, no de la base. Sin ella la ruta contesta 409, y así
+    // llevaba cayendo este test desde que entró aquella regla.
+    const mVersion = html.match(/version:(\d+),/);
+    assert.ok(mVersion, 'la página pública le da al cliente la versión del albarán que está viendo');
+    const version = Number(mVersion[1]);
+    const rSinVersion = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
+    assert.equal(rSinVersion.status, 409, `firmar sin decir qué versión se vio → 409 (fue ${rSinVersion.status})`);
+    row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true } });
+    assert.equal(row.estado, 'emitido', 'un 409 no firma nada: el albarán sigue emitido');
+    assert.equal(row.signatureUrl, null, 'un 409 no guarda la firma');
+    const rFirmar = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez', version }) });
     assert.equal(rFirmar.status, 200, `firmar público debe ser 200 y fue ${rFirmar.status}`);
     row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true, firmadoAt: true } });
     assert.equal(row.estado, 'firmado', 'la firma remota transiciona a firmado');
