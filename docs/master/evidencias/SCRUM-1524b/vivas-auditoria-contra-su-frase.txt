@@ -1,0 +1,86 @@
+POBLACION · 202 vivas · AUDITORIA_CAMINO @ *: 17
+
+[DESPLAZADA] L33 · src/modules/system/app/routes/invoicesAdmin.routes.ts:100 · SIN · un solo sitio · salto=15 · 870f4e15a 2026-09-16 · lo que decía está hoy en 115
+  FRASE: …| 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |…
+  DECIA: router.post('/', requireRole('admin'), async (req, res) => {
+  HOY  : 
+
+[DESPLAZADA] L39 · src/modules/exports/app/routes/exports.routes.ts:563 · SIN · varios sitios · salto=5 · 65600855d 2026-09-23 · lo que decía está hoy en 253, 568
+  FRASE: …ISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:659` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos;…
+  DECIA: const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+  HOY  : return res.status(400).json({ error: 'anio_invalido', message: `El año pedido ${motivoAnio}.` });
+
+[DESPLAZADA] L68 · src/modules/invoicing/domain/verifactu.service.ts:153 · SIN · un solo sitio · salto=44 · 870f4e15a 2026-09-16 · lo que decía está hoy en 197
+  FRASE: …(`src/modules/invoicing/domain/verifactu.service.ts:153`) y **enlaces a la especificación dentro de comentarios**…
+  DECIA: return `https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?${qs.toString()}`;
+  HOY  : `&Huella=${params.prevHash.trim()}` +
+
+[DESPLAZADA] L73 · src/modules/invoicing/infra/pdf/pdf.service.ts:120 · SIN · un solo sitio · salto=1 · a07d332bc 2026-09-16 · lo que decía está hoy en 121
+  FRASE: …`src/modules/invoicing/infra/pdf/pdf.service.ts:120`, que es un `axios.get` **para descargar el…
+  DECIA: const resp = await axios.get(logoUrl, { responseType: 'arraybuffer', timeout: 5_000 });
+  HOY  : if (logoUrl.startsWith('http')) {
+
+[DESPLAZADA] L76 · src/integrations/gemini.ts:43 · SIN · un solo sitio · salto=46 · ea3bbe29b 2026-09-16 · lo que decía está hoy en 89
+  FRASE: …`src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:43`, `src/integrations/mercadopago.ts:51`). Si…
+  DECIA: response = await fetch(url, {
+  HOY  : for (const v of Array.isArray(d?.violations) ? d.violations : []) {
+
+[DESPLAZADA] L102 · src/modules/exports/app/routes/exports.routes.ts:524 · SIN · un solo sitio · salto=1 · 6245478d1 2026-08-19 · lo que decía está hoy en 525
+  FRASE: …* `src/modules/exports/app/routes/exports.routes.ts:524` — un **comentario** que dice que el envío…
+  DECIA: // requiere certificado digital del emisor — pendiente (tarea usuario).
+  HOY  : // Encadenamiento de huellas, Huella SHA-256). El ENVÍO telemático real al SIF
+
+[DESPLAZADA] L104 · src/modules/invoicing/domain/verifactu.service.ts:527 · SIN · un solo sitio · salto=124 · 6245478d1 2026-08-19 · lo que decía está hoy en 651
+  FRASE: …* `src/modules/invoicing/domain/verifactu.service.ts:527` — otro **comentario** con el mismo aviso.…
+  DECIA: * ENVÍO telemático real al SIF requiere certificado digital del emisor — pendiente (tarea
+  HOY  : data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },
+
+[DESPLAZADA] L107 · src/modules/jobs/infra/albaranPdf.service.ts:382 · SIN · un solo sitio · salto=30 · 870f4e15a 2026-09-16 · lo que decía está hoy en 412
+  FRASE: …* `src/modules/jobs/infra/albaranPdf.service.ts:382` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de…
+  DECIA: // ── Certificado de evidencias (SCRUM-68 · solo si hay firma sellada) ──────
+  HOY  : // reescribir un documento firmado). Lo IMPRESO es su etiqueta, que sale de la fuente
+
+[DESPLAZADA] L144 · src/modules/invoicing/domain/verifactu.service.ts:947 · SIN · un solo sitio · salto=92 · a07d332bc 2026-09-16 · lo que decía está hoy en 855
+  FRASE: …| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:947`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |…
+  DECIA: // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
+  HOY  : // vez que alguien mueva el modo, este comentario volvería a mentir. La autoridad es
+
+[DESPLAZADA] L145 · prisma/schema.prisma:865-866 · SIN · un solo sitio · salto=52 · a07d332bc 2026-09-16 · lo que decía está hoy en 917
+  FRASE: …| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |…
+  DECIA: vfHash          String?   @map("vf_hash") // huella SHA-256 de esta factura ⏎ vfPrevHash      String?   @map("
+  HOY  : // El estilo del nombre no se eligió a ojo. En esta tabla `snake_case` gana 18 a 13, pero el // // corte que decide es otro: las 13 en camelCase son las columnas ORIGINALES y las 18 en snake
+
+[DESPLAZADA] L145 · src/modules/invoicing/domain/selladoEstado.ts:116 · SIN · un solo sitio · salto=3 · 6245478d1 2026-08-19 · lo que decía está hoy en 119
+  FRASE: …| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |…
+  DECIA: export async function sellarTrasEmision(
+  HOY  : * 🚨 Lo que NO se hace nunca: revertir el número. Un hueco en la serie correlativa es peor que
+
+[DESPLAZADA] L146 · prisma/schema.prisma:864 · SIN · un solo sitio · salto=52 · a07d332bc 2026-09-16 · lo que decía está hoy en 916
+  FRASE: …| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |…
+  DECIA: vfEstado        String    @default("pendiente_de_sellado") @map("vf_estado")
+  HOY  : //
+
+[DESPLAZADA] L147 · src/modules/fiscal/verifactu/registro.builder.ts:536 · SIN · un solo sitio · salto=16 · ea3bbe29b 2026-09-16 · lo que decía está hoy en 552
+  FRASE: …| Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |…
+  DECIA: * SCRUM-240 · EL ÚNICO GENERADOR DEL CONTENIDO DEL SOBRE `RegFactuSistemaFacturacion`.
+  HOY  : <sum1:FechaHoraHusoGenRegistro>${esc(p.fechaHoraHusoGenRegistro)}</sum1:FechaHoraHusoGenRegistro>
+
+[DESPLAZADA] L176 · src/modules/invoicing/domain/invoiceNumber.service.ts:452-457 · SIN · un solo sitio · salto=46 · 870f4e15a 2026-09-16 · lo que decía está hoy en 406
+  FRASE: …`src/modules/invoicing/domain/invoiceNumber.service.ts:452-457` se lee junto a `INVOICING_ES_ENABLED`…
+  DECIA: // SCRUM-207: el modo fiscal del MOMENTO, congelado en el registro. Se calcula con la ⏎ // misma `m` que ya es
+  HOY  :  // // ── SCRUM-780 · DE QUÉ CONTADOR SALE LA SECUENCIA ────────────────────────────────────── // // Después del corte la serie ordinaria es `F<AA><NNNN>` y empieza en 0001, así que su
+
+[DESPLAZADA] L217 · src/modules/invoicing/domain/verifactu.service.ts:674 · SIN · un solo sitio · salto=256 · ea3bbe29b 2026-09-16 · lo que decía está hoy en 930
+  FRASE: …* `src/modules/invoicing/domain/verifactu.service.ts:674` — **MEDIDO el 16-sep-2026 (SCRUM-525c);…
+  DECIA: // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+  HOY  : where: {
+
+[CAMBIADA] L223 · src/modules/invoicing/domain/modoVisible.ts:21 · SIN · ese texto ya no está en el fichero · salto= · 6245478d1 2026-08-19
+  FRASE: …* `src/modules/invoicing/domain/modoVisible.ts:21` afirma en un comentario que «**se envía** NO…
+  DECIA: // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Cero clientes SOAP/mTLS contra
+  HOY  : // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Nada envía a
+
+[DESPLAZADA] L234 · src/modules/invoicing/domain/verifactu.service.ts:674 · SIN · un solo sitio · salto=256 · ea3bbe29b 2026-09-16 · lo que decía está hoy en 930
+  FRASE: …`src/modules/invoicing/domain/verifactu.service.ts:674` (la 673 se quedó vacía al reescribirlo)…
+  DECIA: // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+  HOY  : where: {
