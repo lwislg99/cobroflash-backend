@@ -285,3 +285,298 @@ proceso se queda sin caso. Visto en local en rojo antes (`scrum1415`: 5 de 6) y 
 - El «meta-guard» de aquella pasada seguía corriendo al empujar este arreglo: **sin leer**.
 - El ancla de arriba es la de la construcción. Al relevar, `origin/main` =
   `dfda86d65b8de9594b59b277fd38ea0ac3eda93a`: cuatro commits más, ninguno en los ficheros de esta rama.
+
+# SCRUM-1522c · Cuándo se separan hoy el tope y el panel, y qué le pasa al comercio sin zona
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:44:28Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1522c/el-dia-del-tope.cjs`
+
+J2 (sesión `jv-j2f`, equipo de Javier). Encargo: decir en qué franja y para qué comercio se separan el
+«hoy» del tope y el de las métricas, qué ve el usuario, qué le pasa al comercio con la zona a NULL, y
+proponer cuál cede. **Sólo medición y propuesta: no se ha tocado `src/`, `public/` ni `tests/`.**
+
+## 0 · La premisa del encargo ya no se cumple: hoy NO se separan
+
+El encargo decía «el tope cuenta con el día del comercio y las métricas con el del servidor». **Eso dejó
+de ser cierto a las 04:59Z de hoy**, cuando entró el PR #2349 (tramo «SCRUM-1522b» de arriba). Desde
+entonces los dos piden su filtro a la misma función, `plantillasDeHoy`
+(`src/modules/messaging/domain/whatsappLog.service.ts:101`; el tope en `:123`, el panel en `:449`).
+
+Comprobado corriendo, no leyendo. Las dos funciones reales de `dist` (`reservarPlantilla` y
+`getWhatsAppMetrics`), con una base en memoria, en cada minuto de 2026; se compara el filtro ENTERO que
+cada una le pide a la base:
+
+| comercio | instantes mirados | con el filtro distinto | hablando de días distintos |
+| --- | --- | --- | --- |
+| `Europe/Madrid` | 525.600 | **0** | 0 |
+| `Atlantic/Canary` | 525.600 | **0** | 0 |
+| sin zona (NULL) | 525.600 | **0** | 0 |
+| **control positivo, sembrado:** al panel se le contesta NULL y al tope `Europe/Madrid` | 525.600 | **525.600** | 34.500 min = 575 h |
+
+- La siembra es el defecto de antes de #2349 fabricado en el doble. Da las mismas 575 horas que midió
+  el primer tramo (`c.19150`). Quitándola (`--sin-siembra`) el guion dice `CIEGO` y sale 1.
+- Con el proceso en `UTC` (desfase 0 min) y en `Europe/Madrid` (desfase 120 min) la huella del resultado
+  es la misma, `32de201fe5cc24ea`: **el reloj del servidor ya no entra en ninguno de los dos números.**
+- «13 de 14 con la divergencia real» era cierto hasta las 04:59Z. Hoy es 0 de 14 para tope contra panel.
+
+**No medido:** el panel pintado con sesión en yaqu.app, ni la zona del proceso de Railway (que ya no
+cambia el resultado). Lo de arriba es `dist` de este árbol con `tsc --noCheck`, no producción.
+
+## 1 · Lo que sí se separa: el día que se cuenta y el reloj de pared del comercio SIN zona
+
+`zonaDelMerchant` devuelve `ZONA_POR_DEFECTO` cuando la columna está a NULL, y esa constante es `UTC`
+(`src/core/zonaDelMerchant.ts:54`). El borde sale de ahí: el guion pide la zona a esa función y compara,
+minuto a minuto, el día que se le cuenta con el día de un reloj de pared.
+
+| si el comercio sin zona vive con el reloj de… | franja de SU reloj en que su «hoy» es todavía ayer | días | horas al año |
+| --- | --- | --- | --- |
+| la península (`Europe/Madrid`) | de 00:00 a 01:59 (verano, 210 días) o a 00:59 (invierno, 155 días) | 365 | 575 |
+| Canarias (`Atlantic/Canary`) | de 00:00 a 00:59, sólo en verano | 210 | 210 |
+| control de cero: el de la propia zona por defecto | ninguna | 0 | 0 |
+
+Para los 13 con `Europe/Madrid` guardada esa franja no existe: el día que se cuenta es el de su zona.
+**No medido:** dónde vive el comercio de la zona a NULL (no se ha mirado ninguna base, por orden), ni si
+alguno de los 13 es canario y quedó con la zona de la península en el relleno de septiembre.
+
+## 2 · Qué ve el usuario
+
+**Con zona guardada: nada raro.** El panel y el tope dan el mismo número y los dos cambian de día a su
+medianoche.
+
+**El comercio sin zona, si vive en la península** (casos del guion, verano; las mismas filas pasadas por
+las dos funciones):
+
+| caso | hora de su reloj | panel «Hoy» | cuenta el tope | el envío |
+| --- | --- | --- | --- | --- |
+| 100 ayer por la tarde | 00:30 | 100 | 100 | **BLOQUEADO** |
+| las mismas filas, con `Europe/Madrid` guardada | 00:30 | 0 | 0 | sale |
+| las mismas filas, sin zona | 02:00 | 0 | 0 | sale |
+| 100 entre las 00:00 y las 02:00 + 99 de día | 18:00 | 99 | 99 | sale |
+| las mismas filas, con `Europe/Madrid` guardada | 18:00 | 199 | 199 | BLOQUEADO |
+| control: 87 de día | 18:00 | 87 | 87 | sale |
+
+- **El panel y el tope no se contradicen nunca** (columna 3 = columna 4 en las seis filas). Lo que el
+  encargo temía —el tope diciendo «agotado» y el panel otra cifra— **no ocurre**.
+- Lo que sí ocurre: durante la primera hora o dos de su día, a ese comercio el cupo de ayer le sigue
+  contando. Si ayer llegó al tope, está bloqueado hasta las 02:00 (01:00 en invierno), y el aviso que
+  recibe le dice que vuelva «mañana» cuando en su reloj ya es mañana. Los tres textos del aviso ya
+  existen y no llevan ninguna cifra: `src/lib/sendOutcome.ts:39`,
+  `src/modules/invoicing/domain/envioQueNoSale.ts:27` y
+  `src/modules/system/app/routes/quotesAdmin.routes.ts:88`. El panel tampoco enseña el tope
+  (`public/dashboard/js/reportsView.js:812`: sólo «Hoy: N»).
+- La cuarta fila es la otra cara: en un mismo día de su reloj le caben hasta dos cupos (lo enviado antes
+  de las 02:00 cuenta en el día anterior). Las filas quinta y cuarta son un banco, no un caso real: con el
+  tope puesto, 199 en un día no llegan a existir.
+
+**Urgencia, con lo medido:** baja para hoy. Hace falta un comercio sin zona, que viva fuera de UTC y que
+además haya agotado el cupo la víspera y envíe de madrugada. Con los 14 de prueba, es uno como mucho.
+
+## 3 · Por qué el de la zona a NULL importa más que uno de catorce
+
+**Ningún camino de `src/` escribe `timezone`.** Hay un solo sitio que crea comercios,
+`src/modules/auth/domain/auth.service.ts:341`, y no la pone; las demás apariciones del campo son lecturas
+(patrón de escritura buscado en `src/`: 3 líneas, las tres leídas, ninguna escribe en la base; el patrón
+ve una escritura sembrada). En `public/` no hay pantalla que la pregunte.
+
+Es decir: **los 13 con zona la tienen por el relleno a mano de septiembre (SCRUM-643), y todo comercio
+que se dé de alta desde entonces nace a NULL.** El de hoy no es un resto: es el primero de todos los que
+vengan. Leído en el código, **no ejecutado un alta**, y no comprobado en ninguna base.
+
+De paso, sin medir y fuera de mi carril: `zonaDelMerchant` es la misma función que usan los cortes
+fiscales por mes y por día (lo dice su cabecera). Un comercio que nace a NULL también hereda ahí el día
+de UTC. Es de J1/J5; lo nombro, no lo he mirado.
+
+## 4 · El P3 que ya estaba medido: reproducido, y el 873 no es una constante
+
+No está en los comentarios de SCRUM-1522: está en `docs/master/SCRUM-1513.md`, tramo «SCRUM-1513f» (8-oct).
+Decía: con las esperas de Prisma por defecto, 2.000 reservas a la vez del mismo comercio caben y con 4.000
+**lanzan 873**. Repetido hoy con el mismo guion (`docs/master/evidencias/SCRUM-1513f/reserva-duracion.cjs`),
+el `dist` de este árbol y un PostgreSQL 16.13 desechable en loopback, tope 100:
+
+| a la vez | 8-oct | hoy, pasada 1 | hoy, pasada 2 |
+| --- | --- | --- | --- |
+| 1.500 | sin medir | sin medir | lanzan 0 (la más lenta 1.483 ms) |
+| 2.000 | lanzan 0 (1.409 ms) | lanzan 0 (**1.992 ms**) | lanzan 0 (1.780 ms) |
+| 2.500 | sin medir | sin medir | **lanzan 272** |
+| 3.000 | sin medir | sin medir | lanzan 903 |
+| 4.000 | lanzan 873 | **lanzan 1.924** | lanzan 1.813 |
+
+- **Se reproduce el hecho** (con ráfaga suficiente, las reservas que no consiguen turno lanzan `P2028` a
+  los 2 s) **y no la cifra**: 873, 1.924 y 1.813 para la misma ráfaga. Depende de lo rápida que vaya la
+  máquina ese rato (una reserva sola: mediana 1,9 ms el 8-oct, 2,6 y 2,5 ms hoy).
+- El umbral, hoy y aquí: entre 2.000 y 2.500. La pasada 1 se quedó a 8 ms del límite con 2.000.
+- En las 20 ráfagas de hoy, reservadas + bloqueadas + lanzadas = las pedidas, y las filas = las reservadas;
+  con tope, nunca más de 100 reservadas.
+- **Qué hace el envío cuando la reserva lanza: leído, no ejecutado hoy.** Cae en el `catch` de
+  `src/integrations/whatsapp.ts:414` («no se bloquea») y el mensaje sale sin reserva, por encima del tope.
+- No tiene que ver con el día: ocurre igual con cualquier zona. Sigue siendo la decisión P3 que el fundador
+  dejó fuera en `c.18988`. No medido contra la latencia de la base de producción: con red más lenta el
+  umbral baja, y no sé cuánto.
+
+## 5 · Propuesta (recomendación; decide el fundador)
+
+**Entre el tope y el panel no tiene que ceder ninguno: ya cuentan lo mismo.** Lo que queda por decidir es
+otra cosa, y es de dónde sale la zona de un comercio nuevo:
+
+1. **Recomiendo que la zona se pregunte o se fije en el alta**, y que no se deduzca del país. Dentro de
+   `ES` hay dos husos, y por eso la decisión A del fundador (2-sep) dejó el valor por defecto en UTC y no en
+   Madrid. Pide una decisión suya, un texto firmado si se pregunta en pantalla (regla 39) y manos de otros
+   carriles (el alta es de J3; la pantalla, de S2). **No toca el flujo de cobro.**
+2. **El comercio que hoy está a NULL:** si es de prueba y peninsular, se arregla con un dato, que aplica el
+   colaborador. No lo he mirado.
+3. **No hacer nada** cuesta lo de la tabla del §2 para cada comercio que nazca: su día empieza una o dos
+   horas tarde en el tope y en el panel, y lo mismo en los cortes fiscales que leen esa función.
+
+Lo que NO recomiendo: cambiar `ZONA_POR_DEFECTO` a Madrid. Arregla el tope del peninsular y declara
+peninsular al canario, que es lo que esa constante existe para no hacer.
+
+## Lo que NO he medido
+
+- Ninguna base: ni producción ni staging. El «13 con Madrid y 1 a NULL» es el dato que me dieron.
+- El panel con sesión en yaqu.app. Ningún WhatsApp enviado. El proveedor real.
+- Un alta ejecutada de punta a punta para ver nacer la zona a NULL: está leído.
+- Cuántas plantillas salen de verdad entre las 00:00 y las 02:00.
+- El camino del envío cuando la reserva lanza (§4): leído.
+- La tanda completa (no hay código tocado). En local, los guards del registro: ver la entrega en Jira.
+
+## De paso
+
+- `docs/master/evidencias/SCRUM-1522/dos-hoy.cjs`: sus 8 casos dicen hoy «coinciden» y su barrido sigue
+  diciendo 575 horas, porque el barrido compara con una copia del cálculo viejo del panel y no pregunta a
+  la función. Le he puesto un aviso de cuatro líneas encima del barrido; no he cambiado lo que calcula ni
+  sus salidas guardadas.
+
+## Errores propios
+
+- Di por hecho que «873 de 4.000» era un número que se podía reproducir. Es una carrera contra un límite de
+  2 s: salieron 1.924 y 1.813. Lo reproducible es el umbral, no la cuenta.
+- Los casos cuarto y quinto del §2 meten 199 plantillas en un día de Madrid: el tope no lo habría dejado
+  pasar. Sirven para ver desde cuándo cuenta cada zona, no como ejemplo de lo que le pasa a nadie.
+
+| encargo | dónde se ve |
+| --- | --- |
+| cuándo divergen, con el borde derivado | §0 y §1 · `docs/master/evidencias/SCRUM-1522c/salida-proceso-en-UTC.txt` |
+| qué ve el usuario | §2 |
+| el comercio con la zona a NULL | §1, §2 y §3 |
+| cuál cede | §5 |
+| el P3 del tope, reproducido | §4 · `docs/master/evidencias/SCRUM-1522c/p3-reserva-duracion-pasada-1.txt` y `-pasada-2.txt` |
+
+# SCRUM-1522d · La zona por el lugar donde trabaja: lo que hay que saber antes de construirlo
+
+**Medido contra:** `origin/main` = `b9ecf641065f2616b0d019fa398f7f1c21f4e8d6` · 2026-10-13T11:00:06Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1522d/zonas-es.cjs`
+
+J2 (sesión `jv-j2g`, equipo de Javier). Encargo: PREPARAR, sin construir, la decisión del fundador de
+`c.19290` (la zona se pregunta, pero por el lugar y no como zona horaria). La entrega completa está en
+Jira, `c.19294`; aquí va lo que tiene que durar. **No se ha tocado `src/`, `public/`, `tests/` ni el
+esquema, y no se ha mirado ninguna base.** Al empujar, la rama lleva dentro `origin/main` =
+`6f35b50901fac64347d862255ec755a036ca1f0d`; entre los dos sha no cambió ningún fichero de `src/`,
+`public/` ni `prisma/` (13 ficheros: `docs/`, dos de `scripts/equipo/` y dos tests).
+
+## 0 · Tres premisas del encargo que la medición corrige
+
+1. **Hoy no hay alta en pantalla.** `POST /auth/register` está cerrada desde el 8-oct (SCRUM-1515,
+   `src/modules/auth/app/routes/auth.routes.ts:44`). La única puerta que crea comercios es la consola
+   del equipo, `src/modules/auth/app/cli/altaDeMerchant.ts`, que llama a `registerMerchant`.
+2. **La pantalla no es de S2.** En `docs/equipo/dos-equipos.md`: `register.html` (`:147`),
+   `onboardingView.js` (`:145`), lo general de `settingsView.js` (`:146`), `src/modules/auth/**`
+   (`:126`) y `merchantAdmin.ts` (`:127`) son de **J3**, equipo de Javier. Tampoco son de J2.
+3. **No hay lista de ciudades ni de provincias en casa** (§2).
+
+## 1 · Dónde se escribiría
+
+El campo existe: `prisma/schema.prisma:124`, `timezone String? @map("timezone")`, sin `@default`.
+
+| puerta | fichero y línea | carril |
+| --- | --- | --- |
+| el alta, la única que crea | `src/modules/auth/domain/auth.service.ts:307-314` y `:341-352` | J3 |
+| la consola del equipo | `src/modules/auth/app/cli/altaDeMerchant.ts:18` y `:43-50` | J3 |
+| el arranque guiado, donde hoy se pregunta «País» | `public/dashboard/js/onboardingView.js:146-148` y `:163-167` | J3 |
+| lo que valida ese guardado | `src/core/validation/schemas.ts:390` (`merchantProfileUpdateSchema`) | S1, equipo de Luis |
+| lo que guarda | `src/modules/system/merchantAdmin.ts:252-258` | J3 (contenedor) |
+| el formulario público, cuando se reabra el alta | `public/register.html:33-34` | J3 |
+
+Propuesta: que viaje el LUGAR y el servidor lo traduzca a zona. No hace falta columna nueva.
+
+Recuentos, por concepto: `merchant.create|createMany|upsert` e `INSERT INTO merchants` en `src/`,
+`scripts/` y `prisma/` dan 6 sitios, 1 en `src/` (`auth.service.ts:341`). `timezone:` como clave de
+objeto en `src/`: 34 líneas, las 34 lecturas. `timezone` en `schemas.ts`: 0.
+
+## 2 · De dónde sale la lista
+
+* Seis provincias (Badajoz, Ourense, Huesca, Teruel, Palencia, Zamora) en todo el repositorio menos
+  `docs/master`: 0 ficheros cada una. Control positivo de la misma búsqueda, «Madrid»: 130 ficheros.
+* Por nombre de fichero, sobre 6.136 seguidos: ninguna lista de lugares. `profileZones` es texto libre;
+  `prefijosPais.js` no baja de país; el comercio no tiene código postal ni provincia en el esquema.
+* El motor, sin traer nada (`salida-zonas-es.txt`): `Atlantic/Canary` marca un reloj distinto del de
+  Madrid las 8.760 horas de 2026; `Africa/Ceuta`, ninguna; una zona inventada no la acepta.
+
+**En España la zona depende sólo de la provincia, y de las 52 sólo cambian dos.** Una tabla escrita en
+casa basta. «Ciudad» al pie de la letra pide una lista de municipios traída de fuera (regla 36).
+
+Descartado: la zona del dispositivo (esta máquina contesta `Europe/London`) y el nombre que `Intl` da en
+castellano («hora de Europa central», «hora de Europa occidental»).
+
+## 3 · Los que ya están a NULL
+
+Pregunta al fundador: al comercio que ya está sin zona, ¿se le hace la misma pregunta la próxima vez
+que entre, en Ajustes, o lo rellena el equipo a mano como en septiembre? Recomendación: las dos.
+
+## 4 · El literal, PROPUESTO y SIN FIRMAR (regla 39). No está escrito en ningún fichero de producto
+
+| dónde | propuesta |
+| --- | --- |
+| etiqueta del campo | ¿Dónde trabajas? |
+| primera opción, sin elegir | Elige tu provincia |
+| debajo, al elegir Las Palmas o Santa Cruz de Tenerife | Usaremos la hora de Canarias, una menos que en la Península. |
+| debajo, al elegir cualquier otra | Usaremos la hora peninsular. |
+| si intenta seguir sin elegir | Elige tu provincia para continuar. |
+
+Las 52 opciones propuestas, por orden alfabético (los nombres también son texto que se ve, y se firman
+con lo demás): A Coruña · Álava · Albacete · Alicante · Almería · Asturias · Ávila · Badajoz ·
+Barcelona · Bizkaia · Burgos · Cáceres · Cádiz · Cantabria · Castellón · Ceuta · Ciudad Real · Córdoba ·
+Cuenca · Gipuzkoa · Girona · Granada · Guadalajara · Huelva · Huesca · Illes Balears · Jaén · La Rioja ·
+Las Palmas · León · Lleida · Lugo · Madrid · Málaga · Melilla · Murcia · Navarra · Ourense · Palencia ·
+Pontevedra · Salamanca · Santa Cruz de Tenerife · Segovia · Sevilla · Soria · Tarragona · Teruel ·
+Toledo · Valencia · Valladolid · Zamora · Zaragoza.
+
+⚠️ La grafía de cada nombre (Álava o Araba, Illes Balears o Baleares, Alicante o Alacant…) la he escrito
+de memoria y NO la he cotejado con ninguna fuente oficial: es parte de lo que se firma.
+
+## 5 · Lo que decide el fundador
+
+1. Provincia en vez de ciudad. 2. Los textos del §4. 3. Los que ya están a NULL. 4. Si es obligatorio
+(recomendado: sí, con país España). 5. Otros países (recomendado: sólo España por ahora).
+
+## Lo que NO he medido
+
+* Ninguna base, ningún alta ejecutada, nada en yaqu.app ni en un navegador.
+* Que el guardado descarte hoy una `timezone` que llegue: leído, no ejecutado.
+* Cuándo se enseña el arranque guiado a un comercio que ya existe.
+* La versión de node y de ICU de producción.
+* Cuántos municipios hay, y de qué país son los 14 comercios.
+* La tanda completa: no hay código tocado.
+
+## De paso (carril de S1; sin arreglar)
+
+`Europe/Madrid` escrito a mano en `src/modules/expenses/domain/lecturaTicket.ts:167`,
+`src/modules/maintenance/domain/maintenance.service.ts:106` y, como valor por defecto de un parámetro,
+`src/modules/jobs/domain/ventanaDeFirma.ts:182`. No he medido quién las llama ni con qué.
+
+## Errores propios
+
+* En `c.19294` puse 11:00Z como hora y el sha `b9ecf6410` como base; mientras lo escribía entró #2365 y
+  `main` pasó a `6f35b5090`. Lo medido no cambia (ningún fichero de producto entre los dos), pero el sha
+  de aquel comentario ya no era la punta cuando se publicó.
+
+| encargo | dónde se ve |
+| --- | --- |
+| 1 · dónde se escribe y si el campo existe | §1 |
+| 2 · de dónde sale la lista y cómo se traduce | §2 · `docs/master/evidencias/SCRUM-1522d/salida-zonas-es.txt` |
+| 3 · los que ya están a NULL | §3 |
+| 4 · el literal para firmar | §4 |
+| 5 · carriles | §0.2 y §1 |
+| visto en yaqu.app | NO HECHO → no hay nada construido que ver |
+

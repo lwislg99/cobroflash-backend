@@ -147,6 +147,10 @@ async function medir(nombre, { zona, ahora, filas }) {
     filas: [...varias(5, '2026-07-15T08:00:00Z'), ...varias(40, '2026-07-13T08:00:00Z')],
   }));
 
+  // AVISO (SCRUM-1522c, 13-oct-2026): este barrido NO pregunta a `getWhatsAppMetrics`. Compara el tope
+  // con una COPIA del calculo que el panel tenia ANTES de SCRUM-1522b, asi que sigue diciendo 575 horas
+  // con el defecto ya arreglado. Mide «cuanto se separaria el reloj del proceso», no «cuanto se separan
+  // hoy». El que pregunta a las dos funciones es ../SCRUM-1522c/el-dia-del-tope.cjs.
   // -- El barrido: cuantos minutos del ano el inicio de «hoy» de cada lado cae en dias distintos.
   // El lado del tope se calcula con las MISMAS llamadas que su linea (inicioDelDiaEn(diaNaturalEn(ahora, zona), zona));
   // el de las metricas con la suya (setHours(0,0,0,0) sobre el reloj del proceso).
