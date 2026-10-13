@@ -175,3 +175,142 @@ El primer recuento de temporales sobrantes lo hice con `ls` sobre el temporal de
 comprobé que fuera el mismo directorio que usa node en Windows, así que ese 0 no valía. Repetido preguntando a node por
 su temporal: 0 directorios `scrum1517-` entre 63.067 entradas, tras tres pasadas del guion.
 El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); seguí por la norma común.
+
+# SCRUM-1517b · Preparar el GO: el 500 sigue vivo, el arreglo son dos líneas, y NO puede ir solo
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:29:30Z (hora de GitHub)
+
+A9: aviso → A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.» — no se pudo comprobar: el orden «el reintento antes que la respuesta» vive en la cabecera de un módulo y en otro ticket, y el guard que lo ataría (sección ④) queda propuesto y sin construir: verlo en rojo pide poner el arreglo, que es STOP
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+Sesión `jv-j5f` (13-oct), por encargo del orquestador de Javier (`cobroflash-backend-2e`): **preparar
+el GO, no construirlo.** 🔴 CRUCE DE CARRIL DECLARADO (A20): los ficheros del arreglo son de J1 y J2;
+aquí sólo se LEEN. Esta rama lleva `docs/master/` y nada más: **cero líneas de `src/`, de `tests/` y
+de `prisma/`**. Nada contra ninguna base. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498).
+
+## ① ¿Sigue vivo hoy? SÍ, por efecto
+
+`dist/` compilado hoy de `9358f02b1` con `tsc --noCheck` (322 ficheros `.js`), y el guion de J6
+ejecutado tal cual: **500 en 5 de 5 pendientes, por las DOS rutas**; texto firmado, 0 de 5; los 8
+controles del guion pasan (200 con PDF, 409 alcanzable, 404). La salida mide 6.772 B, lo mismo que la
+del 8-oct. Entre `aa0b22acc` y hoy, de los cinco ficheros implicados sólo cambió
+`invoicesAdmin.routes.ts`, en otra ruta (SCRUM-1514): por eso el `catch` del panel está ahora en la
+línea **1291**, no en la 1290.
+
+## ② El alcance exacto del arreglo
+
+`esErrorSinSellar` tiene **2 usos en `src/`**, los dos dentro de un `catch` (AST, 322 ficheros; un
+nombre que no existe da 0): `receipt.routes.ts:509` y `invoicesAdmin.routes.ts:1291`. Cambiarla mueve
+esas dos rutas y ninguna otra cosa.
+
+| variante | ficheros de `src/` | líneas | carril | lo que arrastra |
+| --- | --- | --- | --- | --- |
+| **①a** · la función reconoce también `ERROR_PDF_SIN_SELLAR`, importándola | 1: `portonDocumento.ts` | **2** (un `import` y la línea 118) | J1 | `portonDocumento.ts` deja de ser un módulo sin dependencias: pasa a cargar `selladoEstado.ts`, que importa la base. Ciclo no hay hoy (`selladoEstado.ts` no importa `portonDocumento.ts`). NO medido: qué les pasa a los tests que cargan `portonDocumento` suelto |
+| **①b** · la constante se declara en `portonDocumento.ts` y `selladoEstado.ts` la re-exporta | 2 | 3 o 4 | J1 | toca también `selladoEstado.ts`, que es el fichero que sella |
+| ② · cada ruta ramifica además por el otro código | 2 | ≥ 4 | J2 y J1 | la misma condición escrita dos veces |
+| ③ · `lib/invoicing.ts:62` lanza `FacturaSinSellarError` | 1 | 1 | J1 | cambia el mensaje que comprueban `tests/_factura-fixture.mjs` y `scrum1510b` |
+
+Ninguna necesita texto nuevo: las dos frases ya están firmadas (`portonDocumento.ts:51-52` y
+`invoicesAdmin.routes.ts:1297`) y **no se tocan**. Con el arreglo va un test nuevo por destino
+(sección ④) y nada más en `tests/`: los tres ficheros que hoy nombran estos códigos (`_factura-fixture`,
+`scrum1510b`, `scrum206`) no fijan el 500 — leído, no ejecutado.
+
+## ③ Qué más toca. Esto es lo que cambia el GO
+
+🔴 **El arreglo no puede entrar solo: es la pieza ③ de un PR que ya está definido, el PR-2 de
+SCRUM-1404.** La cabecera de `src/modules/invoicing/domain/reintentoSellado.ts`, en `main`, dice que lo
+activa un segundo PR con tres cosas a la vez —la fecha de corte, su línea en `src/core/cron/cron.ts`
+(S1, pedida en SCRUM-1507) y «el arreglo del `catch` de las dos rutas del PDF»— y que el orden es
+decisión del fundador (SCRUM-1404, comentario 18783): **la respuesta nunca antes que el reintento**.
+Ni la ficha de hoy, ni la entrega de J6, ni el comentario 19147 de este ticket lo nombran.
+
+Y el reintento está inerte, medido: `reintentarSelladosPendientes` tiene **0 usos en `src/`** (AST;
+segunda sonda por texto en todo el repo fuera de `docs/`, `tests/` y `dist/`: sólo su declaración y
+`scripts/_sin-consumir-declarados.json`, que lo declara sin consumidor a propósito), y
+`REINTENTO_ACTIVO_DESDE` vale `null` (`reintentoSellado.ts:74`).
+
+**Por qué importa:** la frase del cliente acaba en «Vuelve a intentarlo en un minuto.» y la del
+profesional dice «Se reintenta solo». Con el arreglo puesto y el reintento apagado, las dos prometen
+algo que ningún proceso ejecuta. Hoy salen 0 veces para una pendiente; con el arreglo a secas saldrían
+siempre.
+
+**Un hueco que el propio reintento declara:** una factura con la huella ESCRITA y el estado sin marcar
+(el caso C) queda fuera de su selección. A ésa, incluso con el PR-2 entero, las dos frases le seguirían
+prometiendo un reintento que no la recoge. Es 1 de los 3 casos que quedan (B, C, F) desde que D y E
+cayeron (comentario 19147).
+
+Las demás rutas que reciben uno de los dos errores. **Ninguna contesta 500 al cliente final; una sí
+contesta 500, y es interna.** Población: 4 usos de `ensureInvoicePdf`, 6 de `ensureInvoiceForCharge`,
+6 de `sendInvoiceEmail` (AST). Las dos primeras filas están ejecutadas; el resto, LEÍDO:
+
+| ruta | qué error le llega | qué contesta hoy |
+| --- | --- | --- |
+| `GET /recibo/:token/pdf` | pendiente | 500 + «no encontrado» — **ejecutado** |
+| `GET /admin/invoices/:id/pdf` | pendiente | 500 `pdf_generation_failed` — **ejecutado** |
+| `POST /invoice/issue` (`invoice.routes.ts:15`, tras `requireInternalSecret`) | el del portón, si el sellado falla al emitir desde un cobro | **500 `internal_error`**: su `catch` no conoce ninguno de los dos |
+| `POST /admin/invoices/:id/send-email` (`:713`) | pendiente, vía `sendInvoiceEmail` | 200 con `email_send_failed`: al profesional se le dice que falló el correo |
+| webhooks de pago (`mpWebhook.routes.ts:142`, `psp.routes.ts:55` y `:218`) | el del portón | lo tragan a consola y contestan bien a la pasarela; el correo de la factura no sale. No he medido si el aviso de Cobros (SCRUM-1243) salta en ese caso: el fallo ocurre antes de `sendInvoiceEmail`, que es quien deja la fila |
+| `GET /exports/datos.zip` (`exports.routes.ts:201`) | pendiente | la cuenta como «fallida» y sigue |
+| `POST /admin/invoices/:id/regenerate-pdf` (`:1211`) | no llama a `ensureInvoicePdf` | 409 `invoice_pendiente_de_sellado`, sin frase. Y no pasa por `exigirDocumentoEmitible` (2 usos, los dos en `lib/invoicing.ts`) |
+| `/dev/issue-invoice` y `/dev/email-invoice` | — | no se montan en producción (`app.ts:372`) |
+
+Con ①a, el panel contestaría `invoice_sin_sellar` en «Abrir PDF» e `invoice_pendiente_de_sellado` en
+«regenerar» para el mismo estado. Ya son dos códigos hoy; el arreglo no lo crea, lo hace visible.
+
+## ④ El control, visto en rojo sin tocar `src/`
+
+`docs/master/evidencias/SCRUM-1517b/control-en-rojo.mjs`: el guion de J6 copiado byte a byte (`cmp`
+idéntico antes de editar) y cambiado en tres sitios. Pide las dos rutas por HTTP con el router
+compilado; sólo va doblada la base.
+
+| pasada | qué hay | veredicto | código |
+| --- | --- | --- | --- |
+| `--exigir-el-409` | el código de hoy | **ROJO**: 5 de 5 sin su 409, por las dos rutas | 1 |
+| `… --simular-la-propuesta` | la función sustituida en memoria | **VERDE**: 0 de 5 | 0 |
+| `… --simular-un-arreglo-que-se-lo-traga-todo` | un arreglo malo, que llama «sin sellar» a cualquier error | **caen 2 controles** (el negativo, por las dos rutas) | 1 |
+
+El caso nuevo, H, es el negativo que le faltaba al ensayo del 8-oct: una factura bien sellada cuyo PDF
+falla de verdad (`emisor_sin_nombre_al_generar_pdf`) tiene que **seguir en 500** con el arreglo puesto.
+Sigue. Y con el arreglo malo cae, que es lo que demuestra que mira. Los 11 controles pasan en las dos
+primeras pasadas. Entre dos pasadas iguales cambian 5 líneas: las huellas (llevan la hora) y el tamaño
+del PDF del caso A (6.534 / 6.536 B).
+
+Lo que NO es: no es un test de `tests/`. Hoy nacería rojo, y verde sólo con una sustitución en memoria,
+que no es un diff.
+
+**El guard que falta, propuesto y NO construido:** uno que LEA `src/` y caiga si `esErrorSinSellar` (o
+el `catch` de cualquiera de las dos rutas) reconoce el error del primer corte mientras
+`reintentarSelladosPendientes` siga con 0 usos o `REINTENTO_ACTIVO_DESDE` siga en `null`. Hoy nacería
+verde. Convierte la orden del comentario 18783 en mecanismo.
+
+## Lo que NO se midió
+
+El comentario 18783 de SCRUM-1404 **no lo he abierto en Jira**: lo leo de la cabecera de
+`reintentoSellado.ts` y de `docs/master/SCRUM-1404.md:242-247`. El estado de SCRUM-1507 (la línea de
+cron), tampoco. Ninguna base. Los middlewares de `src/app.ts` por delante de las rutas. El panel en un
+navegador. `POST /invoice/issue`, el correo, los webhooks, el ZIP y «regenerar»: leídos, no ejecutados.
+Quién llama a `POST /invoice/issue`. La tanda completa y `guards:entrada`, no.
+
+## Aceptación → dónde se ve
+
+| lo que pedía el encargo | dónde se ve |
+| --- | --- |
+| ¿Sigue vivo en `main` hoy?, por efecto | sección ① · `docs/master/evidencias/SCRUM-1517b/salida-hoy-ROJO.txt` |
+| El alcance exacto: ficheros y líneas | sección ② |
+| Qué más toca: otras rutas con el patrón | sección ③ · `docs/master/evidencias/SCRUM-1517b/censo-de-usos.mjs` y `salida-censo.txt` |
+| El control en rojo, antes y después | sección ④ · `control-en-rojo.mjs` y sus tres salidas |
+| Construir el arreglo | NO HECHO → es STOP (regla 40); va con el PR-2 de SCRUM-1404, carril J1 |
+
+## Mis errores
+
+Di por idénticas dos pasadas del control antes de compararlas: `cmp` dijo que no lo eran. Miradas las
+diferencias, son la hora de la huella y dos bytes del PDF; el veredicto no cambia. No he leído en Jira
+la decisión que más pesa de esta entrega (18783): me quedaba contexto para el ticket propio y no para
+SCRUM-1404 entero. Y cité la frase de A10 con su «(SCRUM-1358)» detrás: el guard de la A9 la busca sin
+el origen y cayó; corregida y vuelto a correr. Contexto medido en el jsonl al escribir: 220.206.
+
+**Y el primer empujón (`f439d465`) dejó el obligatorio en ROJO, por mi guion:** 11.197 casos, 1 cae,
+`SCRUM-622`. El veredicto de `control-en-rojo.mjs` estaba escrito como «si no es rojo, es verde», y sin
+pendientes habría dicho VERDE sobre nada. El censo tenía razón. Ahora son tres estados y el verde se
+gana; sin población dice CIEGO. No corrí ese censo antes de empujar: corrí siete ficheros de guards y
+no era ninguno de ellos. Tras el cambio, las tres pasadas dan lo mismo que antes (ROJO, VERDE, caen 2).
