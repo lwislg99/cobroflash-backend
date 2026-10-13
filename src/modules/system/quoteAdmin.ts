@@ -550,13 +550,32 @@ export function revisionParaLaBase(datos: Record<string, unknown>): Record<strin
 const REVISION_LOCK_NS = 1752;
 
 /**
+ * Lo mínimo que usa `decidirRevisionDe`. NO es `Prisma.TransactionClient`, y es a propósito (lo
+ * cazó el guard de SCRUM-219, como a `LectorDeFichas`): la primera vez se le pasa el cliente
+ * GLOBAL, y una firma que dijera «transacción» afirmaría lo contrario de lo que se hace.
+ */
+interface LectorDeRevisiones {
+  quote: {
+    findFirst(args: {
+      where: { id: number; merchantId: number };
+      select: Record<string, true>;
+    }): Promise<unknown>;
+    findMany(args: {
+      where: { merchantId: number; quoteNumber: number };
+      select: { id: true; revision: true; signatureUrl: true };
+      orderBy: { revision: 'asc' };
+    }): Promise<Array<{ id: number; revision: number; signatureUrl: string | null }>>;
+  };
+}
+
+/**
  * Lee el grupo y decide SOBRE QUÉ versión se crea la revisión y con qué número. No escribe nada,
  * y lanza los rechazos (`RevisionNoCreable`, `RevisionesAmbiguas`, `CensoDeRevisionesCiego`).
  *
- * Se llama DOS veces (ver `crearRevisionDeQuote`), y por eso recibe el cliente: la primera con el
- * global, la segunda con el de la transacción, ya detrás del cerrojo.
+ * Se llama DOS veces (ver `crearRevisionDeQuote`), y por eso recibe el lector: la primera con el
+ * cliente global, la segunda con el de la transacción, ya detrás del cerrojo.
  */
-async function decidirRevisionDe(db: Prisma.TransactionClient, merchantId: number, id: number) {
+async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id: number) {
   const anterior = await db.quote.findFirst({
     where: { id, merchantId },
     select: SELECT_PARA_REVISION,
