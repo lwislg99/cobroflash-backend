@@ -83,3 +83,113 @@ no devuelve nada (SCRUM-1483), y la fila seguía pintando «#205».
 - La cabecera cuando el id de la ruta no es un número («Presupuesto #-»): intacta, no entra en la firma.
 - Los «Presupuesto» escritos a mano: SCRUM-1487. Leído de paso y no contado allí: el botón
   «← Volver» de la ficha escribe «Presupuestos» a mano en el título (`quotesDetailView.js`).
+
+## SCRUM-1482b · el título de la vista deja de enseñar el id de la tabla (13-oct, S2)
+
+**Medido contra:** `origin/main` = `4605a14508e4e8f6b8e5ddb701bf08f9573c546e` · 2026-10-13T10:57:21Z
+
+A9: sin fallo que generalice — leí el literal de las reglas 39, 40 y 41 del máster con el instrumento y el cambio ya en commits locales (antes de empujar, no antes de la primera línea, que es lo que manda `CLAUDE.md`); releídas, no cambian nada de lo hecho
+
+**Sesión:** S2 (`s2-13oct`, primera tanda) · carril: `public/dashboard/js/app.js` y
+`public/dashboard/js/quotesDetailView.js` son de S2 (`node scripts/carriles.mjs de …`).
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y antes de editar). Cambia QUÉ texto escribe
+el router en un nodo que ya existía, y cómo lo reconoce la ficha: sin marcado nuevo, sin clases, sin
+estilos, sin tokens. Sección AÑADIDA: lo de arriba no se toca, y su fila «🔴 NO HECHO» y su apartado
+«Por qué el título de la vista no entra» quedan como historia del 6-oct.
+
+**Qué pasaba** (visto en yaqu.app el 13-oct, build `9358f02b`, presupuesto de id 206 y número 5):
+al abrir la ficha, el título de la vista decía «Presupuesto #206» mientras cargaba, y se quedaba
+así si la carga fallaba. La pestaña del navegador decía «Presupuesto #206 · YaQu» siempre, también
+con la ficha cargada. El 206 es el id de la tabla, de toda la plataforma.
+
+**Qué cambia.** Dos líneas:
+
+1. `app.js`, `case 'quotes-detail'`: el router escribe `L.quote`, la palabra del documento, sola
+   (antes, `'Presupuesto #' + state.quoteId`). Es el literal firmado en SCRUM-1482 c.18490, el mismo
+   que la cabecera lleva desde el 6-oct.
+2. `quotesDetailView.js`: la ficha, al cargar, corrige el título si sigue MONTADA (SCRUM-1495) y el
+   título es EXACTAMENTE esa palabra (antes, si casaba con `/^Presupuesto #/`). Un título que ya
+   lleva su número, o el de otra vista, no se toca.
+
+La pestaña del navegador sale de ese mismo título (`document.title`, al final del router): pasa a
+«Presupuesto · YaQu», como «Trabajo · YaQu» o «Factura · YaQu». Sin texto nuevo.
+
+**La firma.** Ninguna nueva: SCRUM-1482 c.18490 (orquestador, por delegación permanente) firmó la
+palabra sola «para el título de la vista y la cabecera de la ficha». Registro:
+`docs/microcopy/2026-10-06-SCRUM-1482-ficha-sin-numero-mientras-carga.md`, con su nota de hoy.
+
+### 🔴 El caso 7 de `scrum832` se ha CAMBIADO, y con qué permiso
+
+El apartado de arriba dice que sustituirlo estaba denegado. Lo que consta escrito: el «no» lo dio el
+orquestador en sus encargos del 6 y del 7-oct (SCRUM-1482 c.18521). El 9-oct lo levantó él mismo
+(c.19093, transcrito por S4: «el caso 7 se CAMBIA, no se rodea… con su motivo escrito en el propio
+test y con su control positivo»), y el 13-oct me lo repite en mi encargo. S4 buscó otra denegación
+(del fundador o del sistema de permisos) y no encontró ninguna; yo tampoco, y la edición del fichero
+no la ha parado nada. Regla 41: no es una edición de paso; se paró y se dijo el 6-oct, con qué mide
+y qué debería medir (c.18534).
+
+- **Qué exigía:** que el router llevara escrito, entre comillas, el prefijo de la regex de la ficha
+  («Presupuesto #»). Eso obliga a escribir un número antes de saberlo. Exigía el defecto.
+- **Qué exige ahora** (mismo nombre, mismo propósito): EJECUTA el enganche. Saca del router de
+  verdad el título que escribe, monta la ficha de verdad sobre él y exige que mientras carga no
+  lleve ni el id ni una almohadilla, y que cargada diga «‹palabra› #‹número›», en España y con un
+  locale de «Cotización». Sale CIEGO si no encuentra la expresión del router.
+- **No es más laxo:** el viejo no veía un título cruzado ni uno sin corregir con las dos cadenas en
+  su sitio. El nuevo cae con 5 de los 7 mutantes de abajo.
+
+**Desviación DECLARADA: tres tests más cambian su PREPARACIÓN, no lo que exigen.**
+`scrum1482`, `scrum1487` y `scrum1495` sembraban el título de la vista con una cadena copiada a mano
+de lo que escribía el router («Presupuesto #» + id). Con el router cambiado habrían seguido en verde
+midiendo un panel que ya no existe, o en rojo por su copia. Ahora los cuatro toman el título de
+`tests/_titulo-provisional-del-router.mjs`, que busca por AST el `case 'quotes-detail'`, evalúa la
+expresión que asigna a `viewTitle.textContent` con `state` y `L`, y falla cerrado (lanza si no hay
+exactamente un `case` y una asignación, o si la expresión nombra otra cosa). Cada test lleva la
+fecha y el motivo en su cabecera. En `scrum1495`, dos aserciones que decían «el título se queda como
+lo dejó el router» comparan ahora con ese título, no con la cadena vieja.
+
+### Pruebas de SCRUM-1482b
+
+- **Rojo primero** (instrumento comiteado antes que el código, `ca69fd3b1973361efc2b0421e1f575b10ad053d7`):
+  con el código de `main`, 27 casos · 23 pasan · **4 caen**: los tres «título de la vista» nuevos de
+  `scrum1482` y el caso 7 de `scrum832`. Con el cambio: 27 de 27.
+- **Mutantes** (`evidencias/SCRUM-1482/mutantes-1482b.mjs` y `salida-1482b-mutantes.txt`; base sin
+  mutar 27 de 27; cada uno con su `git diff --numstat`): **7 de 7 mueren, 0 ciegos.** El código de
+  antes, 4 casos · router nuevo con ficha vieja (el título sin número para siempre de c.18498), 8 ·
+  router viejo con ficha nueva, 11 · la palabra escrita a mano en el router, 3 · la ficha sin mirar
+  si sigue montada, 2 · la ficha corrigiendo cualquier título, 1 · el router con una almohadilla
+  suelta, 11.
+- **Navegador, sobre yaqu.app** (cuenta QA, 5 presupuestos, los 5 con número distinto de su id;
+  sólo GET, control del interceptor antes de pulsar; `evidencias/SCRUM-1482/`). La sonda sirve los
+  dos ficheros de la rama encima de producción e imprime un testigo de que lo servido es lo que se
+  ejecuta. A = id 206 / número 5 · B = id 205 / número 4.
+
+| escenario | producción (`9358f02b`) · título · pestaña | la rama · título · pestaña |
+|---|---|---|
+| mientras carga A | «Presupuesto #206» · «Presupuesto #206 · YaQu» | «Presupuesto» · «Presupuesto · YaQu» |
+| A cargada | «Presupuesto #5» · «Presupuesto #206 · YaQu» | «Presupuesto #5» · «Presupuesto · YaQu» |
+| la carga de A falla | «Presupuesto #206» · «Presupuesto #206 · YaQu» | «Presupuesto» · «Presupuesto · YaQu» |
+| se va a Inicio mientras A carga | «Inicio» | «Inicio» |
+| abre A (lenta) y luego B, que falla | «Presupuesto #205» | «Presupuesto», nada de A |
+| abre A (lenta) y luego B, que carga | «Presupuesto #4» · «Presupuesto #205 · YaQu» | «Presupuesto #4» · «Presupuesto · YaQu» |
+
+  Con la palabra del locale forzada a «Cotización» por la sonda (simula otro país, no lo es): las
+  seis filas igual, con «Cotización» y «Cotización #5».
+- **Dirigida y `guards:entrada`:** en el comentario de entrega del ticket, con su población.
+- 🔴 **Sin `tsc`:** este cambio no toca `src/`. La suite completa la corre el obligatorio.
+
+### Lo que NO hace, y se dice
+
+- **La pestaña del navegador no lleva el número del presupuesto ni con la ficha cargada.** Antes
+  llevaba el id; ahora, la palabra sola. Que diga «Presupuesto #5 · YaQu» es función nueva y otra
+  decisión (SCRUM-1482 c.19079).
+- **Con otro país, los avisos de la ficha siguen diciendo «presupuesto»** («Cargando presupuesto…»,
+  «Error cargando presupuesto.») bajo un título «Cotización»: c.18490 dice que el aviso no se toca.
+- Un presupuesto SIN número: la ficha cargada sigue cayendo al id (`quote.number ?? id`). Fuera.
+- «Sin cotización seleccionada» (`app.js`, mismo `case`, cuando no hay id): escrito a mano, nombrado
+  por S4 en c.19078. No tocado: es otro texto.
+
+### No visto en yaqu.app
+
+Hasta que la rama entre y se despliegue. El paso exacto: `node sondas-s2/id-ficha.mjs` sin argumento
+(copia en `evidencias/SCRUM-1482/sonda-1482b-id-ficha.mjs`); el testigo tiene que decir
+`conPalabraExacta: true` y las filas, lo de la columna derecha.
