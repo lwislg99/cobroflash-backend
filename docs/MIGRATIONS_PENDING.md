@@ -3192,7 +3192,9 @@ sale del comentario 19370 del ticket, del orquestador del equipo de Javier:
 - [x] **producción** — aplicada por el fundador («OK hecho», según ese comentario). La medida propia
       es el check «constancia del ALTER» del CI del PR #2252, que pregunta a producción por las
       columnas que el cliente de Prisma va a nombrar: el 7-oct-2026 cayó nombrando
-      `quotes.series_year`. Su resultado sobre la rama al día está en el ticket.
+      `quotes.series_year`, y el 13-oct-2026 (14:06Z, sobre `d8706857`, job 115341282939) contesta
+      «producción responde que no le falta ninguna de las 512 columnas preguntadas». **Medido por el
+      equipo de Luis, por esa vía.**
 
 ⚠️ **El relleno de las filas que ya existen NO es este ALTER** y no está hecho en ninguna base:
 `scripts/rellenar-anio-de-la-serie.mjs` (simulacro por defecto) sigue sin ejecutarse, y quién lo

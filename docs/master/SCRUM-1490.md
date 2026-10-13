@@ -68,7 +68,7 @@ Sesión de S1 que releva a `s1-13octd`. Lo de arriba es del 7-oct y se deja como
 |---|---|---|
 | dev y tests (`yaqu_dev_javier`, la misma base) | el orquestador del equipo de Javier | él, leyendo el catálogo, con control positivo y negativo. **NO medido por nosotros** |
 | staging | el fundador («OK hecho») | **NO medido por nosotros**, y el 19370 no dice que nadie lo leyera del catálogo |
-| producción | el fundador («OK hecho») | el check «constancia del ALTER» del CI de este PR, que se lo pregunta a producción: el 7-oct cayó nombrando `quotes.series_year`. Su resultado de hoy va en la entrega del ticket |
+| producción | el fundador («OK hecho») | **medido por nosotros**, con el check «constancia del ALTER» del CI de este PR, que se lo pregunta a producción. El 7-oct, sobre `a2afbfec`, cayó nombrando `quotes.series_year` (ése es su control: ve la ausencia). El 13-oct a las 14:06Z, sobre `d8706857`, contesta «producción responde que no le falta ninguna de las 512 columnas preguntadas» (job 115341282939) |
 
 Este árbol no tiene ninguna clave de base (`node scripts/comprobar-claves-bd.mjs`: las tres ausentes), así que dev y staging no se han podido mirar desde aquí.
 
