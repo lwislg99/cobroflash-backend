@@ -1,0 +1,36 @@
+INSTRUMENTO: docs/master/evidencias/scrum1500c/cotejo-once.cjs · sha256 ff4aa44eb6ea46546be435ce25e65fd51f183e0b030cc93a8ca9b166cad85653
+MASTER     : 1905 líneas · sha256 795f2f29ad5ad822ccccea11a3a97147df228f25cd8c57bb09e245e05ed3fcef
+SEMILLA    : «sembrado_scrum1537» · veces que sale en el máster sin sembrar: 0 (tiene que ser 0)
+POBLACION  : 7 campos de la tabla ONCE leídos en modo 'flechas', de 11 (Merchant.subscriptionStatus, Charge.status, Quote.status, Invoice.status, Invoice.vfEstado, WhatsAppMessage.status, Job.status)
+
+Merchant.subscriptionStatus · línea 405 del máster · sin sembrar: MASTER_SIN_ESCRIBIR · M = active | canceled | expired | past_due | trial
+    SIN FLECHA: el veneno entró en la línea 405 · el instrumento NO LA VE · veredicto MASTER_SIN_ESCRIBIR
+    CON FLECHA: el veneno entró en la línea 405 · el instrumento LA VE · veredicto MASTER_SIN_ESCRIBIR · la nombra en «en el máster y sin fuente en el código»
+Charge.status · línea 400 del máster · sin sembrar: CODIGO_FUERA_DEL_MASTER · M = cancelled | paid | pending
+    SIN FLECHA: el veneno entró en la línea 400 · el instrumento NO LA VE · veredicto CODIGO_FUERA_DEL_MASTER
+    CON FLECHA: el veneno entró en la línea 400 · el instrumento LA VE · veredicto CODIGO_FUERA_DEL_MASTER · la nombra en «en el máster y sin fuente en el código»
+Quote.status · línea 398 del máster · sin sembrar: CODIGO_FUERA_DEL_MASTER · M = accepted | draft | expired | rejected | sent
+    SIN FLECHA: el veneno entró en la línea 398 · el instrumento NO LA VE · veredicto CODIGO_FUERA_DEL_MASTER
+    CON FLECHA: el veneno entró en la línea 398 · el instrumento LA VE · veredicto CODIGO_FUERA_DEL_MASTER · la nombra en «en el máster y sin fuente en el código»
+Invoice.status · línea 399 del máster · sin sembrar: CODIGO_FUERA_DEL_MASTER · M = annulled | paid | pending
+    SIN FLECHA: el veneno entró en la línea 399 · el instrumento NO LA VE · veredicto CODIGO_FUERA_DEL_MASTER
+    CON FLECHA: el veneno entró en la línea 399 · el instrumento LA VE · veredicto CODIGO_FUERA_DEL_MASTER · la nombra en «en el máster y sin fuente en el código»
+Invoice.vfEstado · línea 404 del máster · sin sembrar: COINCIDE_CON_EL_MASTER · M = no_aplica | pendiente_de_sellado | sellado
+    SIN FLECHA: el veneno entró en la línea 404 · el instrumento NO LA VE · veredicto COINCIDE_CON_EL_MASTER
+    CON FLECHA: el veneno entró en la línea 404 · el instrumento LA VE · veredicto MASTER_SIN_ESCRIBIR · la nombra en «en el máster y sin fuente en el código»
+WhatsAppMessage.status · línea 403 del máster · sin sembrar: CODIGO_FUERA_DEL_MASTER · M = delivered | failed | queued | read | sent
+    SIN FLECHA: el veneno entró en la línea 403 · el instrumento NO LA VE · veredicto CODIGO_FUERA_DEL_MASTER
+    CON FLECHA: el veneno entró en la línea 403 · el instrumento LA VE · veredicto CODIGO_FUERA_DEL_MASTER · la nombra en «en el máster y sin fuente en el código»
+Job.status · línea 406 del máster · sin sembrar: COINCIDE_CON_EL_MASTER · M = agendado | cerrado | en_curso | pendiente_agendar | terminado
+    SIN FLECHA: el veneno entró en la línea 406 · el instrumento NO LA VE · veredicto COINCIDE_CON_EL_MASTER
+    CON FLECHA: el veneno entró en la línea 406 · el instrumento LA VE · veredicto MASTER_SIN_ESCRIBIR · la nombra en «en el máster y sin fuente en el código»
+
+LA OTRA DIRECCIÓN: un valor que el máster SIGUE declarando, cambiado de «con flecha» a «sin flecha»
+    Job.status · línea 406 · sin tocar: COINCIDE_CON_EL_MASTER
+    con `cerrado` fuera de la flecha y todavía en la línea: CODIGO_FUERA_DEL_MASTER · dice «en el código y NO en esa línea del máster: cerrado»
+
+RESUMEN sobre 7 campos:
+  SIN FLECHA: entró en 7 de 7 · el instrumento la ve en 0
+  CON FLECHA: entró en 7 de 7 · el instrumento la ve en 7
+  sin medir : 0
+EXIT=0

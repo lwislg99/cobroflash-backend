@@ -37,8 +37,31 @@
 // QUÉ NO VE: los campos del esquema que no están en la tabla CAMPOS (los cuenta y los nombra al
 // final, pero no los coteja), ni las escrituras por SQL crudo, por un objeto construido en otro fichero o por derrame
 // (`...datos`). Por eso D lleva la constante que cierra la lista y no sólo las escrituras.
+//
+// 🔴 SCRUM-1537 (13-oct-2026) · ESE LÍMITE, MEDIDO CON ESCRITURAS SEMBRADAS y no sólo leído: está
+// declarado abajo, en LIMITE_DEL_LITERAL, con su motivo, quién lo retira y la prueba que lo sujeta.
 const fs = require('node:fs');
 const path = require('node:path');
+
+// EL LÍMITE DEL LITERAL. No es «sólo ve literales»: de ocho formas de escribir un campo, sembradas en
+// una raíz fabricada (`../SCRUM-1537/siembra-literal.cjs`), este instrumento
+//   VE      un literal, un ternario de literales y una constante declarada en el MISMO fichero
+//   AVISA   (deja una línea «(no literal)») de una llamada a función y de una constante importada
+//   CALLA   ante un objeto construido antes de la llamada, un derrame (`...datos`) y el SQL crudo
+// Se DECLARA y no se ensancha, y esto es una decisión con su medida: de las escrituras no literales
+// que hoy lista sobre el árbol, las que llegan de la petición (`req.body?.status`, `data.category`)
+// no tienen valor que leer en el código, así que ningún lector las cerraría; lo que las cierra es
+// la constante o el validador (`cierre`). El límite sólo cambia un VEREDICTO en los campos SIN
+// cierre, cuya lista sale únicamente de las escrituras: ahí, desde SCRUM-1537, una escritura de la
+// zona AVISA pasa a ser un hallazgo (ESCRITURA_SIN_LEER) en vez de una línea que nadie mira. La zona
+// CALLA sigue sin verse: se imprime en cada juicio qué campos están expuestos a ella.
+const LIMITE_DEL_LITERAL = {
+  motivo: 'D sale de la constante o el validador que cierra la lista, más los literales de las escrituras de Prisma. Una escritura que no es un literal (ni un ternario de literales, ni una constante del mismo fichero) no aporta valores a D. Por eso «en el cierre y sin ningún literal que lo escriba» NO significa «nadie lo escribe»: `firmado` del parte sale ahí y lo escribe `estadoTrasFirmar()`',
+  retira: 'quien dé cierre en CAMPOS a los campos que no lo tienen (hoy Merchant.connectStatus, AuthSession.type y TeamMember.status), o quien enseñe a `censarEscrituras` a abrir objetos construidos fuera de la llamada y derrames. En ese PR cambia el caso «el límite, sembrado» del test de la prueba, que cae en cuanto una de esas formas empieza a verse',
+  consta: 'Jira SCRUM-1537 (la medición con siembra) y SCRUM-1529 c.19320 (jv-j3i, la medición sobre el árbol); docs/master/SCRUM-1537.md',
+  prueba: 'tests/scrum1537-los-dos-cotejos.test.mjs',
+  desde: '2026-10-13',
+};
 
 const RAIZ_POR_DEFECTO = path.resolve(__dirname, '..', '..', '..', '..');
 
@@ -575,6 +598,13 @@ function juzgar(r, parados = PARADOS, hoy = new Date()) {
         ? 'la tabla dice que su comentario no enumera (sinLista) y enumera: quita `sinLista` de su entrada en CAMPOS'
         : 'su comentario ya no enumera valores, o no lo encuentro donde la tabla dice. Si se firmó quitarle la lista, dilo en su entrada de CAMPOS con `sinLista: true`');
     }
+    // SCRUM-1537 · un campo SIN cierre saca su lista sólo de las escrituras. Si una de ellas no se
+    // dejó leer, no sé qué valores tiene el código y no puedo decir que coincide. (`null` y
+    // `undefined` no son valores: una escritura que los pone no esconde ningún estado.)
+    const opacas = (f.noLiterales || []).filter((x) => !/ (null|undefined)$/.test(x));
+    if (f.veredicto !== 'NO_EXISTE' && !f.cierreDe && opacas.length > 0) {
+      di(f.campo, 'ESCRITURA_SIN_LEER', `no tiene constante ni validador que cierre su lista, y ${opacas.length} escritura(s) no son un literal: ${opacas.join(' · ')}. No sé qué valores escribe el código. Dale un cierre en CAMPOS (LIMITE_DEL_LITERAL)`);
+    }
     if (!SE_PARA.has(f.veredicto)) {
       if (e) { usadas.add(e); di(f.campo, 'EXCEPCION_SOBRANTE', `tiene una excepción de «parado» y hoy sale ${f.veredicto}: ya no espera nada. Bórrala de PARADOS`); }
       if (f.veredicto === 'EL_MASTER_NO_LO_FIJA') {
@@ -615,6 +645,8 @@ function pintaJuicio(r, j) {
   for (const e of j.esperan) out.push(`        ${e.campo} · la retira: ${e.retira}`);
   out.push(`  ${String(j.hallazgos.length).padStart(2)}  HALLAZGOS${j.hallazgos.length ? ':' : ''}`);
   for (const h of j.hallazgos) out.push(`        🔴 ${h.campo} · ${h.clase} · ${h.texto}`);
+  const sinCierre = r.filas.filter((f) => !f.control && !f.cierreDe && f.veredicto !== 'NO_EXISTE').map((f) => f.campo);
+  out.push(`  SIN CIERRE, su lista sale sólo de las escrituras que sé leer (un objeto construido fuera, un derrame o SQL crudo NO los veo: LIMITE_DEL_LITERAL): ${sinCierre.length} campo(s)${sinCierre.length ? ` (${sinCierre.join(', ')})` : ''}`);
   out.push(`  FUERA DE LA TABLA, sin mirar: ${p.estadosFueraDeLaTabla.length} campo(s) del esquema con nombre de estado que este instrumento NO coteja${p.estadosFueraDeLaTabla.length ? ` (${p.estadosFueraDeLaTabla.join(', ')})` : ''}`);
   return out.join('\n');
 }
@@ -670,7 +702,7 @@ function pinta(r) {
   return { texto: out.join('\n'), ok, salida, juicio: j };
 }
 
-module.exports = { CAMPOS, CONTROLES, PARADOS, SE_PARA, cotejar, juzgar, pintaJuicio, veredicto, censoViejo, valoresDeLista, valoresDelComentario, valoresDelMaster, localizar, camposDeEstado, esEstado, pinta };
+module.exports = { CAMPOS, CONTROLES, PARADOS, SE_PARA, LIMITE_DEL_LITERAL, cotejar, juzgar, pintaJuicio, veredicto, censoViejo, valoresDeLista, valoresDelComentario, valoresDelMaster, localizar, camposDeEstado, esEstado, pinta };
 
 if (require.main === module) {
   const i = process.argv.indexOf('--master');
