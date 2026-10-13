@@ -4937,8 +4937,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     setTimeout(() => nameInput.focus(), 80);
 
     saveBtn.onclick = async function () {
-      const name = nameInput.value.trim();
-      if (!name) {
+      const escrito = nameInput.value.trim();
+      if (!escrito) {
         alertEl.textContent = 'Escribe un nombre para la plantilla.';
         alertEl.className = 'alert error';
         return;
@@ -4960,15 +4960,65 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         : null;
 
       try {
-        await apiRequest('/admin/templates', {
-          method: 'POST',
-          body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
-        });
+        // SCRUM-1188e (parte C) · guardar con el nombre de una plantilla que YA tiene la SUSTITUYE,
+        // previa pregunta, en vez de crear otra con el mismo nombre (el `POST` no mira duplicados).
+        // Es la forma de cambiarle un precio a una plantilla: «Usar» → cambiar → guardar con su nombre.
+        // La lista se pide AHORA, no se reutiliza la de las fichas rápidas, que es de cuando se montó
+        // el editor. Si no se puede leer NO se guarda (cae al `catch`): «no pude mirar» no es «no hay
+        // ninguna con ese nombre», y crear a ciegas es justo el duplicado que esto viene a quitar.
+        const yaGuardadas = await apiRequest('/admin/templates');
+        if (!Array.isArray(yaGuardadas)) throw new Error('lista_de_plantillas_ilegible');
+        // Mismo nombre = igual sin contar mayúsculas ni espacios de los bordes. La lista viene de la
+        // más reciente a la más antigua: si ya hay varias con ese nombre, se sustituye la más reciente.
+        const mismoNombre = (a, b) => String(a || '').trim().toLocaleLowerCase('es') === String(b || '').trim().toLocaleLowerCase('es');
+        const laQueYaTiene = yaGuardadas.find((tpl) => tpl && mismoNombre(tpl.name, escrito)) || null;
+        // `name` es el nombre que va en los textos y, si se crea, en el `POST`: al sustituir es el
+        // GUARDADO, que es el que ya conoce (el `PUT` no lo manda: «no lo cambies» es no mandar la
+        // clave, SCRUM-1188c). El literal firmado de abajo sigue interpolando `name`, sin tocar.
+        const name = laQueYaTiene ? laQueYaTiene.name : escrito;
+
+        if (laQueYaTiene) {
+          // Pregunta FIRMADA por el orquestador (SCRUM-1188, comentario 19400), letra por letra. Avisa
+          // de que no se deshace porque es verdad: las líneas que tenía la plantilla se pierden.
+          if (!window.confirm(`Ya tienes una plantilla llamada "${name}". ¿Quieres sustituirla? Esta acción no se puede deshacer.`)) {
+            // Dice que no: la hoja sigue abierta con lo escrito, para que le cambie el nombre.
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Guardar plantilla';
+            return;
+          }
+          // `paymentTerms` viaja SIEMPRE, también a `null`: desde SCRUM-1188c el `null` VACÍA el cobro
+          // guardado. Sin eso, sustituir una plantilla 50/50 desde un plan personalizado dejaría el
+          // 50/50 viejo debajo del aviso que dice «guardada sin el plan de cobro».
+          // `tiers` no viaja: este editor no tiene opciones, y lo que no se manda no se toca.
+          await apiRequest(`/admin/templates/${laQueYaTiene.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ currency, lines: templateLines, paymentTerms }),
+          });
+          // Las fichas rápidas guardan la plantilla TAL COMO ERA al montar el editor: sin esto, la
+          // ficha de la recién sustituida seguiría cargando las líneas y los precios viejos. Se
+          // quitan YA y se vuelven a pedir; si esa petición falla queda el botón de la lista, que
+          // pide la suya cada vez que se abre.
+          plantillasRapidas.hidden = true;
+          plantillasRapidas.innerHTML = '';
+          plantillasRotulo = null;
+          useTemplateBtn.hidden = false;
+          pintarPlantillasRapidas();
+        } else {
+          await apiRequest('/admin/templates', {
+            method: 'POST',
+            body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
+          });
+        }
         closeOverlay();
         // SCRUM-1188 · con «CUSTOM» la plantilla sale SIN condición (arriba): se dice, una vez, aquí.
         // Texto FIRMADO por el orquestador (SCRUM-1188, comentario 17332), letra por letra. SOLO con
         // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
+        // Al SUSTITUIR con «CUSTOM» sale este mismo aviso y no el de «actualizada»: lo que afirma
+        // sigue siendo verdad (la plantilla queda guardada sin plan de cobro) y es lo que más importa.
+        // Esa firma era para CREAR; el comentario 19400 la extiende a sustituir y firma el de
+        // «actualizada» de la línea siguiente.
         if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else if (laQueYaTiene) setAlert('success', `Plantilla "${name}" actualizada.`);
         else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
