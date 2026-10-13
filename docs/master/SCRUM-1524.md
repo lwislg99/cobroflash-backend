@@ -315,7 +315,7 @@ el documento entero (nota fechada, como los inventarios) y es del fundador.
 
 **Medido contra:** `origin/main` = `6f35b50901fac64347d862255ec755a036ca1f0d` · 2026-10-13T11:00:33Z (hora de GitHub)
 
-A9: aviso → A10 «El sitio al que un censo dice que se fue una línea es el del texto que había, no el de lo que la frase afirma: si la cita nació mal, su destino también. (SCRUM-1524)» — no se pudo comprobar: decidir qué afirma una frase es leerla; `leer.mjs` lo comprueba para estas 25 con el texto esperado escrito a mano, y no corre en CI
+A9: aviso → A10 «El sitio al que un censo dice que se fue una línea es el del texto que había, no el de lo que la frase afirma: si la cita nació mal, su destino también.» — no se pudo comprobar: decidir qué afirma una frase es leerla; `leer.mjs` lo comprueba para estas 25 con el texto esperado escrito a mano, y no corre en CI
 
 **ES CONSTRUIR, con permiso del fundador:** SCRUM-1524 c.19292 (las 25 citas del grupo 1 y la nota fechada).
 Carril J5, a mano. Tres ficheros de `docs/legal/`, una línea en A10 y este registro. Nada en `src/`, ni en
