@@ -37,6 +37,12 @@
 //     entra en la ventana. No se ha visto, pero no hay con qué excluirlo desde `spec`.
 //   · `spec` no trae el código de salida del fichero. Una muerte nativa que no escriba nada
 //     (un SIGKILL) sale «sin huella reconocida», no «nativa»: se dice así, no se adivina.
+//   · SCRUM-1331b · LA FRASE QUE LLEGA TARDE NO EXISTE. `node --test` espera a que el fichero salga
+//     y cierre su salida estándar, no a la de error, y cierra el lector (`runner.js`, v24): lo que
+//     el fichero escriba justo al morir puede llegar después y entonces NO sale en `spec`, ni antes
+//     ni después de su `✖` (medido el 13-oct-2026 forzando el retraso: 0 líneas). Ese fichero sale
+//     «sin huella reconocida». Es el lado seguro —no se absuelve nada—, pero una muerte nativa de
+//     verdad puede leerse así: «sin huella» NO es «no fue nativa».
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { esFalloDeRed } from './censo-regla-42.mjs';
 

@@ -22,10 +22,25 @@
 // Una fuente DECLARADA que no encuentra nada deja el campo CIEGO: no se suple con el @default.
 //
 // M sale de UNA línea del máster, por un ancla que tiene que casar exactamente una vez. En modo
-// 'flechas' son todos los tramos entre comillas invertidas de esa línea que llevan una flecha.
+// 'flechas' son los tramos entre comillas invertidas de esa línea que llevan una flecha, MÁS
+// (SCRUM-1537) cada tramo que es UNA palabra sola y que la tabla no declara en `noSonValores`.
 //
-// QUÉ NO VE: SQL crudo (se cuenta aparte, abajo), un objeto que llega por derrame (`...datos`) y no
-// está declarado como fábrica, y las TRANSICIONES: se comparan conjuntos de valores.
+// 🔴 SCRUM-1537 (13-oct-2026) · HASTA AQUÍ SÓLO LEÍA LOS TRAMOS CON FLECHA. Medido con valores
+// sembrados (`../SCRUM-1537/siembra-once.cjs`): uno sin flecha no lo veía en 0 de 7 campos, y uno con
+// flecha en 7 de 7. La Parte L escribe sin flecha desde SCRUM-1529c («`expired`: valor de la máquina,
+// sin transiciones fijadas aquí»), así que daba por fuera del máster valores que el máster declara.
+// Una palabra sola entre comillas que NO es un estado (`F2`, `validUntil`) se declara en la tabla,
+// en `noSonValores`, con la línea delante. Una palabra NUEVA cuenta como valor hasta que alguien la
+// declare: si el código no la tiene, el campo sale MASTER_SIN_ESCRIBIR y se ve. No hay criterio por
+// la forma de la frase.
+//
+// QUÉ NO VE: SQL crudo, un objeto que llega por derrame (`...datos`) y no está declarado como
+// fábrica, las TRANSICIONES (se comparan conjuntos de valores), y del máster: un valor escrito sin
+// flecha con algo más dentro de las mismas comillas (`cerrado (todo cobrado)`), o sin comillas.
+// Esos tramos se CUENTAN y se imprimen por campo («sin leer»); no se cotejan.
+//
+// NO CORRE EN LA TANDA. Lo que sí corre, desde `tests/scrum1537-los-dos-cotejos.test.mjs`, es que
+// siga siendo FIABLE sobre el árbol y que vea un valor sembrado con flecha y otro sin ella.
 const fs = require('node:fs');
 const path = require('node:path');
 const base = require('../scrum1500/cotejo.cjs');
@@ -39,19 +54,22 @@ const ONCE = [
     master: { ancla: /^\*\*Subscription \(merchant\.plan\):\*\*/, modo: 'flechas' } },
   { campo: 'Merchant.status',
     fuentes: [{ tipo: 'prisma', delegado: 'merchant' }],
-    master: null },
+    // SCRUM-1537 · la Parte L lo nombra desde SCRUM-1529c (decisión ⑧). Comparte línea con otras tres
+    // entidades: el ancla es su rótulo, como en el instrumento de SCRUM-1500.
+    master: { ancla: /\*\*Merchant\.status:\*\* `/, lista: /\*\*Merchant\.status:\*\* `([^`]+)`/ } },
   { campo: 'Charge.status',
     fuentes: [
       { tipo: 'prisma', delegado: 'charge' },
       { tipo: 'fabrica', fichero: 'src/modules/billing/domain/instanteDeCobro.ts', funcion: 'datosDeCobroPagado', propiedad: 'status' },
     ],
-    master: { ancla: /^\*\*Charge:\*\*/, modo: 'flechas' } },
+    master: { ancla: /^\*\*Charge:\*\*/, modo: 'flechas', noSonValores: ['Refund'] } },
   { campo: 'Quote.status',
     fuentes: [
       { tipo: 'prisma', delegado: 'quote' },
       { tipo: 'fabrica', fichero: 'src/modules/quotes/domain/revision.ts', funcion: 'nuevaRevisionDe', propiedad: 'status' },
     ],
-    master: { ancla: /^\*\*Quote:\*\*/, modo: 'flechas', etiquetados: [{ re: /`(expired)` `F2`/, etiqueta: 'F2' }] } },
+    master: { ancla: /^\*\*Quote:\*\*/, modo: 'flechas', etiquetados: [{ re: /`(expired)` `F2`/, etiqueta: 'F2' }],
+      noSonValores: ['INVOICING_ES_ENABLED', 'F2', 'validUntil', 'approvalThreshold'] } },
   { campo: 'Invoice.status',
     fuentes: [
       { tipo: 'prisma', delegado: 'invoice' },
@@ -64,7 +82,7 @@ const ONCE = [
       { tipo: 'prisma', delegado: 'invoice' },
       { tipo: 'consts', fichero: 'src/modules/invoicing/domain/selladoEstado.ts', nombres: ['SELLADO_PENDIENTE', 'SELLADO_HECHO', 'SELLADO_NO_APLICA'] },
     ],
-    master: { ancla: /^\*\*Invoice\.vfEstado /, modo: 'flechas' } },
+    master: { ancla: /^\*\*Invoice\.vfEstado /, modo: 'flechas', noSonValores: ['procesarObligado', 'enviarSobre', 'SIF_ENABLED', 'VfSubmission'] } },
   { campo: 'BotSession.state',
     fuentes: [
       { tipo: 'prisma', delegado: 'botSession' },
@@ -77,8 +95,8 @@ const ONCE = [
       { tipo: 'llamada', funcion: 'recordWaMessage', n: 0, propiedad: 'status' },
       { tipo: 'claves', fichero: 'src/modules/messaging/domain/whatsappLog.service.ts', nombre: 'STATUS_RANK' },
     ],
-    master: { ancla: /^\*\*WhatsAppMessage:\*\*/, modo: 'flechas' },
-    masterOtro: { ancla: /^Tabla `WhatsAppMessage \{/, modo: 'flechas', nombre: 'J4' } },
+    master: { ancla: /^\*\*WhatsAppMessage:\*\*/, modo: 'flechas', noSonValores: ['WhatsAppMessage'] },
+    masterOtro: { ancla: /^Tabla `WhatsAppMessage \{/, modo: 'flechas', soloFlechas: true, nombre: 'J4' } },
   { campo: 'Job.status',
     fuentes: [
       { tipo: 'prisma', delegado: 'job' },
@@ -90,7 +108,8 @@ const ONCE = [
       { tipo: 'prisma', delegado: 'emailMessage', puedeNoTraerLiteral: true },
       { tipo: 'const', fichero: 'src/modules/messaging/domain/constanciaCorreo.ts', nombre: 'ESTADOS_CORREO' },
     ],
-    master: null },
+    // SCRUM-1537 · la Parte L lo nombra desde SCRUM-1529c (decisión ⑨), en la misma línea que Merchant.status.
+    master: { ancla: /\*\*EmailMessage\.status:\*\* `/, lista: /\*\*EmailMessage\.status:\*\* `([^`]+)`/ } },
   { campo: 'VfSubmission.status',
     fuentes: [
       { tipo: 'prisma', delegado: 'vfSubmission' },
@@ -117,14 +136,30 @@ const CONTROLES = [
       { tipo: 'prisma', delegado: 'albaran' },
       { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' },
     ],
-    master: { ancla: /^\*\*Albaran \(NO fiscal\)/, modo: 'flechas' } },
-  // POSITIVO del cajón que PARA: el caso que abrió SCRUM-1500 tiene que salir fuera del máster.
-  { campo: 'QuoteRequest.status', etiqueta: 'QuoteRequest.status (positivo del tercer cajón)', control: 'CODIGO_FUERA_DEL_MASTER',
-    fuentes: [
-      { tipo: 'prisma', delegado: 'quoteRequest' },
-      { tipo: 'includes', fichero: 'src/modules/quoteRequests/app/routes/quoteRequests.routes.ts', argumento: 'status' },
-    ],
-    master: { ancla: /^\*\*QuoteRequest:\*\*/, modo: 'flechas' } },
+    master: { ancla: /^\*\*Albaran \(NO fiscal\)/, modo: 'flechas', noSonValores: ['albaran_locked'] } },
+  // 🔴 SCRUM-1537 · LOS POSITIVOS SE SIEMBRAN. Aquí había uno PRESTADO del árbol: «QuoteRequest.status
+  // tiene que salir fuera del máster», que era el defecto real que abrió SCRUM-1500. SCRUM-1529c lo
+  // arregló el 13-oct-2026 y desde ese merge este fichero salía «INSTRUMENTO NO FIABLE» sin que nada
+  // estuviera roto. Los de abajo no dependen de ningún defecto del árbol: su línea del máster la
+  // fabrica el propio control (`sembrada`) y sólo existe en memoria. Lo único que toman del árbol es
+  // la constante ALBARAN_ESTADOS (borrador, emitido, firmado), y si ésa cambia salen CIEGO o rotos,
+  // que es ruido y no silencio.
+  { campo: 'Albaran.estado', etiqueta: 'sembrado: el código tiene un valor que la línea no', control: 'CODIGO_FUERA_DEL_MASTER',
+    fuentes: [{ tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' }],
+    sembrada: '**Sembrado:** `borrador → emitido`.',
+    master: { ancla: /^\*\*Sembrado:\*\*/, modo: 'flechas' } },
+  { campo: 'Albaran.estado', etiqueta: 'sembrado: un valor SIN flecha también es del máster', control: 'COINCIDE_CON_EL_MASTER',
+    fuentes: [{ tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' }],
+    sembrada: '**Sembrado:** `borrador → emitido`. `firmado`: valor de la máquina, sin transiciones fijadas aquí.',
+    master: { ancla: /^\*\*Sembrado:\*\*/, modo: 'flechas' } },
+  { campo: 'Albaran.estado', etiqueta: 'sembrado: una palabra suelta sin declarar cuenta como valor', control: 'MASTER_SIN_ESCRIBIR',
+    fuentes: [{ tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' }],
+    sembrada: '**Sembrado:** `borrador → emitido → firmado`. Editar da `palabra_sembrada`.',
+    master: { ancla: /^\*\*Sembrado:\*\*/, modo: 'flechas' } },
+  { campo: 'Albaran.estado', etiqueta: 'sembrado: la misma palabra, declarada en noSonValores, no cuenta', control: 'COINCIDE_CON_EL_MASTER',
+    fuentes: [{ tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' }],
+    sembrada: '**Sembrado:** `borrador → emitido → firmado`. Editar da `palabra_sembrada`.',
+    master: { ancla: /^\*\*Sembrado:\*\*/, modo: 'flechas', noSonValores: ['palabra_sembrada'] } },
 ];
 
 const ESCRIBE = new Set(['create', 'update', 'upsert', 'createMany', 'updateMany', 'createManyAndReturn']);
@@ -314,18 +349,34 @@ function leerMaster(lineasMaster, spec) {
   if (casan.length !== 1) return { valores: null, motivo: `el ancla ${spec.ancla} casa ${casan.length} veces en el máster (tiene que ser 1)`, linea: null, etiquetados: [] };
   const l = lineasMaster[casan[0] - 1];
   let v = new Set(); const tramos = [];
+  // SCRUM-1537 · lo que la línea trae entre comillas y NO es una lista con flecha, repartido en tres:
+  // `sueltos` (una palabra sola: cuenta como valor), `descartadas` (una palabra sola que la tabla
+  // declara en `noSonValores`) y `sinLeer` (más de una palabra: no se coteja, y se dice).
+  const sueltos = []; const descartadas = []; const sinLeer = [];
+  const no = new Set(spec.noSonValores || []);
   if (spec.modo === 'flechas') {
     // Las comillas invertidas se EMPAREJAN: los trozos impares de partir la línea por ellas. Con una
     // expresión regular suelta casaba también el texto que queda ENTRE dos pares.
-    for (const [i, t] of l.split('`').entries()) if (i % 2 === 1 && t.includes('→')) { tramos.push(t); for (const x of valores(t)) v.add(x); }
+    for (const [i, t] of l.split('`').entries()) {
+      if (i % 2 === 0) continue;
+      if (t.includes('→')) { tramos.push(t); for (const x of valores(t)) v.add(x); continue; }
+      if (spec.soloFlechas) continue;
+      if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(t)) { sinLeer.push(t); continue; }
+      if (no.has(t)) { if (!descartadas.includes(t)) descartadas.push(t); continue; }
+      if (!sueltos.includes(t)) sueltos.push(t);
+      v.add(t);
+    }
   } else {
     const m = spec.lista.exec(l);
     if (m) { tramos.push(m[1]); v = valores(m[1]); }
   }
+  // Una palabra declarada en `noSonValores` que ya no está en la línea es una declaración caducada.
+  const caducadas = [...no].filter((x) => !descartadas.includes(x));
   if (v.size === 0) return { valores: null, motivo: `la línea ${casan[0]} del máster no trae la lista con la forma esperada`, linea: casan[0], etiquetados: [] };
+  if (caducadas.length > 0) return { valores: null, motivo: `la tabla declara en noSonValores ${caducadas.join(', ')} y la línea ${casan[0]} del máster ya no lo trae como palabra sola entre comillas`, linea: casan[0], etiquetados: [] };
   const etiquetados = [];
   for (const e of spec.etiquetados || []) { const m = e.re.exec(l); if (m) etiquetados.push({ valor: m[1], etiqueta: e.etiqueta }); }
-  return { valores: v, motivo: null, linea: casan[0], tramos, etiquetados };
+  return { valores: v, motivo: null, linea: casan[0], tramos, etiquetados, sueltos, descartadas, sinLeer };
 }
 
 /** Dónde sale una palabra entera en el máster. Es el grep que se guarda antes de decir «no está». */
@@ -362,7 +413,8 @@ function cotejarOnce({ textoMaster = null } = {}) {
     const D = new Set([...fuentes.flatMap((f) => [...f.valores]), ...(defecto ? [defecto] : [])]);
     const ciegas = fuentes.filter((f) => f.ciego).map((f) => f.ciego);
     if (fuentes.every((f) => f.valores.size === 0)) ciegas.push('ninguna fuente declarada dio un valor');
-    const m = c.master ? leerMaster(lineasMaster, c.master) : { valores: null, motivo: null, linea: null, etiquetados: [] };
+    // SCRUM-1537 · un control sembrado trae SU línea del máster: no se busca en el máster de verdad.
+    const m = c.master ? leerMaster(c.sembrada ? [c.sembrada] : lineasMaster, c.master) : { valores: null, motivo: null, linea: null, etiquetados: [] };
     const M = m.valores ? new Set([...m.valores, ...m.etiquetados.map((e) => e.valor)]) : null;
     // C: los valores de D∪M que el comentario NOMBRA como palabra entera. Con menos de dos no enumera.
     const universo = new Set([...D, ...(M || [])]);
@@ -375,6 +427,7 @@ function cotejarOnce({ textoMaster = null } = {}) {
     return {
       campo: c.etiqueta || c.campo, id: c.campo, control: c.control || null, campoEn: sitio.existe ? sitio.campoEn : 0, defecto,
       fuentes, D: [...D].sort(), M: M ? [...M].sort() : null, lineaMaster: m.linea, tramos: m.tramos || [], etiquetados: m.etiquetados,
+      sueltos: m.sueltos || [], descartadas: m.descartadas || [], sinLeer: m.sinLeer || [], sembrada: c.sembrada || null,
       C: [...C].sort(), comentario: texto, sobran, faltan, ...v,
       rastroSobran: Object.fromEntries(sobran.map((x) => [x, rastro(lineasMaster, x)])),
       rastroSinMaster: !c.master && sitio.existe ? Object.fromEntries([c.campo, ...D].map((x) => [x, rastro(lineasMaster, x)])) : null,
@@ -404,7 +457,11 @@ function pinta(r) {
       for (const x of s.anidadas) out.push(`          (ANIDADA, es de otra tabla: no se suma) ${x}`);
     }
     out.push(`    máster M  : ${f.M ? `${f.M.join(' | ')}   ← línea ${f.lineaMaster}` : '(sin lista declarada)'}`);
+    if (f.sembrada) out.push(`          (línea SEMBRADA por el control, no es del máster) ${f.sembrada}`);
     for (const t of f.tramos) out.push(`          tramo: ${t}`);
+    if (f.sueltos.length) out.push(`          sin flecha, una palabra sola (cuentan como valor): ${f.sueltos.join(' | ')}`);
+    if (f.descartadas.length) out.push(`          sin flecha, declaradas en noSonValores (no cuentan): ${f.descartadas.join(' | ')}`);
+    if (f.sinLeer.length) out.push(`          sin leer, ${f.sinLeer.length} tramo(s) entre comillas con más de una palabra: ${f.sinLeer.join(' ; ')}`);
     for (const e of f.etiquetados) out.push(`          ⚠ «${e.valor}» está en esa línea con la etiqueta ${e.etiqueta}: cuenta como del máster, y se dice`);
     if (f.otro) out.push(`    máster ${f.otro.nombre}: ${f.otro.valores ? `${f.otro.valores.join(' | ')}   ← línea ${f.otro.linea} · ${f.M && f.otro.valores.join() === f.M.join() ? 'igual que la Parte L' : '🔴 DISTINTO de la Parte L'}` : `🔴 ${f.otro.motivo}`}`);
     if (f.sobran.length) {

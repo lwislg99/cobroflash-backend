@@ -1,0 +1,16 @@
+== ANTES (control): el clon A está al día. ¿scrum-3-rama sale borrable y es verdad?
+EXIT_GUION=0
+lineas «  scrum-3-rama» en BORRABLES: 1
+commits de scrum-3-rama en el REMOTO que no están en main: 0
+== DESPUÉS: el remoto ha avanzado, A NO ha hecho fetch.
+EXIT_GUION=0
+lineas «  scrum-3-rama» en BORRABLES: 1
+ramas vivas en el remoto: 8 · mergeadas en main: 8 · sin mergear: 0
+CONTROL · ninguna sin mergear en la lista: ✅
+CONTROL · main fuera de la lista: ✅
+CONTROL · el reparto separa de verdad: 1 apartadas de 7 (14.3 %) ✅
+BORRABLES: 6  (6 con número de ticket · 0 sin número)
+commits de scrum-3-rama en el REMOTO que no están en main: 1
+== CONTRAPRUEBA: con un fetch delante, ¿deja de salir?
+EXIT_GUION=0
+lineas «  scrum-3-rama» en BORRABLES: 0

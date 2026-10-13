@@ -1,0 +1,67 @@
+POBLACION: 1 fichero de test · modo cronometro · 4 lecturas del remoto · 7349 ms
+  lectura 1: 161 líneas · tardó 539 ms
+  lectura 2: 161 líneas · tardó 530 ms · 3249 ms después del FIN de la 1ª
+  lectura 3: 161 líneas · tardó 548 ms · 4363 ms después del FIN de la 1ª
+  lectura 4: 161 líneas · tardó 525 ms · 5120 ms después del FIN de la 1ª
+  ramas que la 1ª pasada dio por vivas: 83
+  ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+  ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+  ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+  ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+  ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+  # tests 5
+  # pass 5
+  # fail 0
+  # skipped 0
+SALIDA_COMPLETA_BYTES=2264
+EXIT=0
+
+===== salida completa del sujeto =====
+TAP version 13
+# Subtest: SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+  ---
+  duration_ms: 1.5053
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+  ---
+  duration_ms: 0.3657
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+  ---
+  duration_ms: 4901.7497
+  type: 'test'
+  ...
+# población: 3 tickets mirados · 3 clasificados · 2 DENTRO · 1 FUERA · 0 NO DECIDIBLE (lado malo) · leídas 161 ramas remotas, 6224 ficheros de main y 1086 entradas de registro (la convención empieza en SCRUM-192)
+# Subtest: SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+  ---
+  duration_ms: 757.458
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+  ---
+  duration_ms: 1628.7315
+  type: 'test'
+  ...
+# población: 6 tickets mirados · 6 clasificados · 4 DENTRO · 1 FUERA · 1 NO DECIDIBLE (lado malo) · leídas 161 ramas remotas, 6224 ficheros de main y 1086 entradas de registro (la convención empieza en SCRUM-192)
+#   SCRUM-866    DENTRO        entrada en main + 2/2 artefactos suyos presentes
+#   SCRUM-881    DENTRO        entrada en main + 5/5 artefactos suyos presentes
+#   SCRUM-1537   FUERA         rama viva SIN mergear: scrum-1537-los-dos-cotejos
+#   SCRUM-41     NO_DECIDIBLE  1 commit(s) de main lo nombran, pero ningún artefacto comprobable — el número en un commit no p
+#   SCRUM-534    DENTRO        entrada en main + 26/36 artefactos suyos presentes
+#   SCRUM-691    DENTRO        entrada en main + 8/8 artefactos suyos presentes
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7296.7927

@@ -116,4 +116,5 @@ La fecha de vigencia de un texto consolidado no es la fecha desde la que se apli
 Cerrar va antes que abrir: lo que encuentras de paso en tu carril se arregla en el momento y se nombra en la entrega; ticket sólo con víctima que no puedes arreglar ahora, con fecha, o cruzando de equipo. (orden de Luis del 6-oct-2026 para su equipo; A13)
 La base de un guard puede ser un commit y no un fichero: antes de autorizar moverla se lee contra qué compara. (SCRUM-1446)
 El sitio al que un censo dice que se fue una línea es el del texto que había, no el de lo que la frase afirma: si la cita nació mal, su destino también. (SCRUM-1524)
+Una frase que un fichero escribe al morir compite con el lector que la espera: se escribe con el proceso vivo. (SCRUM-1331b)
 Antes de escribir una sonda que pregunta «¿consta?», se busca la función de la casa que ya lo contesta: una sonda propia mira el papel que tú conoces, no el que hay. (SCRUM-1215)

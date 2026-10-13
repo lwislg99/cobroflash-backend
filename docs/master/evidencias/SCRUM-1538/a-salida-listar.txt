@@ -1,0 +1,15 @@
+POBLACIÓN · ventana 2026-10-06T13:43:02Z → 2026-10-13T12:10:00Z · origin/main eebc104d9e955cdd67b31ad2d24a50cc9b849a7b
+commits de main (primer padre) en la ventana: 158
+  listado 2026-10-06T13:43:02Z .. 2026-10-06T23:59:59Z: declarados 133 · traídos 133
+  listado 2026-10-07T00:00:00Z .. 2026-10-07T23:59:59Z: declarados 224 · traídos 224
+  listado 2026-10-08T00:00:00Z .. 2026-10-08T23:59:59Z: declarados 185 · traídos 185
+  listado 2026-10-09T00:00:00Z .. 2026-10-09T23:59:59Z: declarados 69 · traídos 69
+  listado 2026-10-10T00:00:00Z .. 2026-10-10T23:59:59Z: declarados 10 · traídos 10
+  listado 2026-10-11T00:00:00Z .. 2026-10-11T23:59:59Z: declarados 8 · traídos 8
+  listado 2026-10-12T00:00:00Z .. 2026-10-12T23:59:59Z: declarados 6 · traídos 6
+  listado 2026-10-13T00:00:00Z .. 2026-10-13T12:10:00Z: declarados 188 · traídos 188
+runs con rama main · del listado: 823 · sólo por sha (el listado no los traía): 1 · total: 824
+commits consultados por sha: 158 de 158 · fallos: 0
+runs con sus jobs leídos: 824 de 824 · fallos: 0
+llamadas a gh: 995
+EXIT=0
