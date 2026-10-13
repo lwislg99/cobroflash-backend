@@ -1,0 +1,18 @@
+CONTROL SEMBRADO de los lectores · 18 casos fabricados por este guion · ⚠️ --sin-siembra: los casos van VACÍOS: 3 salen en su estado
+  🔴 tanda verde, con la cruz y «TANDA SIN VEREDICTO» dentro de un NOMBRE que pasa: sale «SIN CLASIFICAR», debía «VERDE»
+  🔴 tanda roja: sale «SIN CLASIFICAR», debía «ROJO»
+  🔴 tanda roja: nombra 1 caído, con su fichero: sale «undefined·undefined», debía «1·tests/cobaya.test.mjs»
+  🔴 tanda colgada: sale «SIN CLASIFICAR», debía «COLGADA»
+  🔴 meta-guard verde: sale «SIN CLASIFICAR», debía «VERDE»
+  🔴 meta-guard ciego: sale «SIN CLASIFICAR», debía «CIEGO»
+  🔴 meta-guard ciego: nombra al guard: sale «undefined», debía «cobaya.test.mjs»
+  🔴 meta-guard rojo (una muda): sale «SIN CLASIFICAR», debía «ROJO»
+  🔴 trinquete verde: sale «SIN CLASIFICAR», debía «VERDE»
+  🔴 trinquete cortado tras 2.400 s callado: sale «SIN CLASIFICAR·undefined», debía «COLGADA?·2400»
+  🔴 navegador verde: sale «SIN CLASIFICAR», debía «VERDE»
+  🔴 vigía al día: sale «SIN CLASIFICAR», debía «VERDE»
+  🔴 vigía congelado: sale «SIN CLASIFICAR», debía «ROJO»
+  🔴 constancia que no pudo preguntar: sale «ROJO», debía «CIEGO»
+  🔴 constancia verde: sale «SIN CLASIFICAR», debía «VERDE»
+CIEGO — los lectores no reconocen sus casos sembrados: este censo no puede afirmar nada.
+EXIT=3
