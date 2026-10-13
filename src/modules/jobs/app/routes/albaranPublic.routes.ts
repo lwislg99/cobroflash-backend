@@ -437,13 +437,38 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       firmadoPorNombre,
       firmadoPorCalidad: calidad.valor,
     });
-    await prisma.albaran.update({
-      where: { id: albaran.id },
-      data: {
-        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
-        firmadoPorNombre, firmadoPorCalidad: calidad.valor,
-      },
-    });
+    // ── 🔴 SCRUM-1302j · LA FIRMA SE ESCRIBE SÓLO SI EL PARTE SIGUE COMO SE LEYÓ ───────────────
+    //
+    // Leer `emitido` arriba y escribir aquí no es una sola operación. Con `where: { id }`, dos
+    // peticiones a la vez leían las dos `emitido` y escribían las dos: quedaba el SEGUNDO trazo y
+    // el segundo nombre, con dos PDF y dos copias pedidas (medido por S4 en SCRUM-1302d). Es el
+    // patrón de SCRUM-1276 en el presupuesto: el estado leído va en el `where`.
+    //
+    // Y la versión leída también: si el profesional corrige el parte entre la lectura y esta
+    // escritura, lo que se sellaría es un contenido que el cliente no vio (la ventana que
+    // SCRUM-361 comprueba arriba, pero sobre lo leído).
+    //
+    // Quien llega tarde NO repite nada: ni PDF, ni copia, ni enlace del portal. Se vuelve a leer y
+    // se contesta lo mismo que contestaría una petición nueva sobre ese parte.
+    try {
+      await prisma.albaran.update({
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
+        data: {
+          estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+          firmadoPorNombre, firmadoPorCalidad: calidad.valor,
+        },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const ahora = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, version: true } });
+      if (ahora?.estado === 'firmado') return res.json({ ok: true, already: true });
+      const sigueIgual = ahora ? puedeFirmarEstaVersion(req.body?.version, ahora.version) : null;
+      if (sigueIgual && !sigueIgual.ok) {
+        return res.status(409).json({ error: sigueIgual.error, message: sigueIgual.message });
+      }
+      // El mismo texto, ya aprobado, que la puerta de arriba: literal y con su `message` (SCRUM-275).
+      return res.status(409).json({ error: 'invalid_transition', message: 'Este parte de trabajo no se puede firmar ahora.' });
+    }
     await ensureAlbaranPdf(albaran.id, true).catch((e) => console.error('[albaranPublic] PDF tras firmar:', e?.message || e));
 
     // AUTO-ENVÍO de la copia firmada (SCRUM-49): best-effort, fire-and-forget. La firma NUNCA

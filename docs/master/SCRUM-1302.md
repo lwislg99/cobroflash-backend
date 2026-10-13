@@ -306,6 +306,34 @@ Aprobado por el orquestador por delegación del fundador, 6-oct-2026 — SCRUM-1
 
 **NO medido:** yaqu.app con el JS ya desplegado (se mira cuando mergee) · un móvil de verdad · una sesión caducada (401) de verdad · el plazo vencido de `apiRequest` (se decide igual que sin red, por lectura del código).
 
+## SCRUM-1302j · dos firmas a la vez sobre el mismo parte escribían las dos (S1, 13-oct-2026)
+
+**Medido contra:** `origin/main` = `fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7` · 2026-10-13T14:50:24Z
+A9: comprobación → `tests/scrum1302j-dos-firmas-del-parte-a-la-vez.test.mjs`
+
+Carril S1 · sesión `s1-13octe` · rama `scrum-1302j-dos-firmas-del-parte-a-la-vez`. Encargo del orquestador sobre una medición de S4 (SCRUM-1302d, `docs/master/evidencias/SCRUM-1302/reintento-de-firma/`, caso 2; en su rama, sin mergear al escribir esto): dos `POST /albaran/:token/firmar` a la vez contestaban las dos 200, con 2 escrituras, 2 PDF y 2 copias pedidas, y en el parte quedaba el SEGUNDO trazo y el segundo nombre.
+
+**La causa:** `albaranPublic.routes.ts` leía el parte, comprobaba `emitido` y escribía con `where: { id }`. Leer y escribir no es una operación.
+
+**El arreglo**, el de SCRUM-1276 en el presupuesto: el `update` lleva en el `where` el estado y la versión LEÍDOS (`{ id, estado, version }`). Quien llega tarde recibe P2025, se vuelve a leer el parte y se contesta lo que contestaría una petición nueva: `{ ok: true, already: true }` si ya está firmado; el 409 de SCRUM-361 si el parte cambió de versión; el 409 `invalid_transition` en otro caso. No repite PDF, copia ni enlace del portal. **Ningún texto nuevo:** los tres son respuestas que la ruta ya daba.
+
+La versión en el `where` cierra una segunda ventana que nadie había pedido medir: si el profesional corrige el parte entre la lectura y la escritura, antes se sellaba un contenido que el cliente no vio (SCRUM-361 lo comprueba, pero sobre lo leído).
+
+**Medido, con el mismo test y el doble fiel al `where`:**
+
+| caso | código de `main` | con el arreglo |
+|---|---|---|
+| suelo: una firma, una copia pedida | pasa | pasa |
+| 🔴 dos a la vez | **2 escrituras** («Ana y después Blas») | 1 escritura, queda la de quien escribió, la otra contesta `already`, 1 copia |
+| 🔴 el parte cambia de versión tras leerlo | **se sella** (1 escritura) | 0 escrituras, 409 de SCRUM-361 |
+| control: firmar un parte ya firmado | pasa | pasa |
+
+- Tanda dirigida (230 ficheros de `tests/` que nombran la ruta, el censo de escrituras del albarán o la microcopy): 2.323 tests, 0 fallos, 7 saltos. Una pasada anterior dio un rojo mío, `SCRUM-275 · TRINQUETE` (respuestas públicas sin `message`): había sacado el 409 a una variable y el guard dejó de verle el `message`. Arreglado en el código: literal y con su `message`.
+
+**NO medido:** contra un Postgres real (el doble imita el P2025; que Prisma acepte campos no únicos en el `where` de `update` es lo que ya usa SCRUM-1276 en producción) · yaqu.app · cada cuánto ocurre la carrera.
+
+**NO tocado, y es el gemelo:** la firma EN OBRA (`albaranes.routes.ts:1045`) escribe `estado: 'firmado'` igual. No la he medido ni cambiado.
+
 ## Sigue abierto en este ticket tras C
 
 D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.
