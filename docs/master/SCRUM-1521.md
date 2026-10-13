@@ -150,3 +150,81 @@ orquestador en el encargo del 13-oct; no lo he comprobado yo).
   cierto (segunda fila de la tabla).
 - **No vi venir el rojo de `scrum1480f`.** Mi barrido buscaba el NOMBRE del guion; ese guard cuenta
   ficheros y no nombra ninguno. Lo cazó correr los guards vecinos antes de la tanda.
+
+---
+
+# SCRUM-1521b · La nota del máster
+
+**Medido contra:** `origin/main` = `dfda86d65b8de9594b59b277fd38ea0ac3eda93a` · 2026-10-13T04:39:10Z
+
+A9: aviso → A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.» — no se pudo comprobar: lo que falló fue un aviso entre sesiones (el texto firmado se publicó en Jira un minuto después de pedirlo y nadie avisó a quien lo esperaba), y eso no vive en el repositorio; un guard que exigiera nota a toda cita del máster a un fichero ausente caería sobre las líneas 1289, 1291 y 1324, que son historia y no se tocan.
+
+13-oct-2026 · **J3** (sesión `jv-j3`, relevo de la que retiró el guion), por encargo del orquestador
+(`cobroflash-backend-2e`). [Escrito por J3. El texto se leyó en Jira, SCRUM-1521 c.19153.]
+
+**Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha
+común del 13-oct. Se escribe en `docs/YAQU_MASTER.md` con la firma del fundador transcrita en c.19153
+(«Ok, me vale así.»).
+
+## Antes
+
+Desde el merge de la retirada (#2347) hasta este cambio, `main` afirmaba en presente algo que ya no estaba:
+
+- `docs/YAQU_MASTER.md:820`: «lo que existe y está probado es `scripts/e2e-critico.mjs`».
+- El guion en el árbol de `dfda86d65`: **0** ficheros con esa ruta. Control positivo del mismo listado, para
+  que el cero no sea un instrumento mudo: `scripts/_console-guard.mjs` sale **1**.
+
+## Qué se ha hecho
+
+La nota firmada, **añadida al final de la línea 821**, que es donde acaba la frase que hace la afirmación.
+El literal se copió de c.19153; las barras que Jira pone delante de los corchetes al devolverlo en
+Markdown son escape de su formato y no se han copiado.
+
+## 🔴 Dónde me aparto del encargo, y por qué
+
+El encargo esperaba «el mismo número de líneas más las de la nota». **La nota no añade ninguna línea.**
+Las dos órdenes chocaban: 25 números de línea distintos por encima del 820 están citados como
+`YAQU_MASTER.md:<n>` en el repositorio, y una línea nueva los habría desplazado a todos (las tres
+menciones de SCRUM-183 incluidas). «No se mueven líneas» es la que viene en el comentario firmado, así
+que manda. El precio: **la línea 821 sí cambia**, por añadido al final; su texto anterior queda intacto
+como prefijo.
+
+## El control, por bytes
+
+Base: `docs/YAQU_MASTER.md` en `dfda86d65`. Comparación línea a línea sobre los bytes, no sobre el texto.
+
+| | Base | Esta rama |
+|---|---|---|
+| Bytes | 508.644 | 508.811 (+167) |
+| Líneas | 1.904 | 1.904 |
+| Retornos de carro | 0 | 0 |
+| Líneas distintas | — | 1 (la 821) |
+
+- La línea 820: idéntica byte a byte. Las 1289, 1291 y 1324: idénticas.
+- La 821: el texto viejo es prefijo exacto del nuevo; lo añadido son 167 bytes, que es lo que mide el
+  literal firmado más el espacio que lo separa de la frase.
+- Las tildes: tres `c3 b3` dentro de la nota («retiró», «tomó», «decisión»).
+- Menciones del guion en el máster: de 4 a 5 (la nota lo nombra).
+
+## Lo que se corrió, y sobre cuánto
+
+No la tanda completa: los 191 ficheros de `tests/` que nombran el máster o `docs/master`, más los de
+suite (`scrum237`, `scrum267`, `scrum273`, `scrum525d`, `scrum812`, `scrum976`, `scrum1294`), en este
+árbol anidado con `dist` de `tsc --noCheck`. **1.916 casos · 1.912 pasan · 4 caen**, y los que pasan más
+los que caen suman el total. Los mismos 191 ficheros sobre la base, con mi cambio retirado: **los mismos
+4**, nombre a nombre (`SCRUM-475` ×3 y `SCRUM-476`, que piden el CLI de Prisma y un `node_modules` propio
+que este árbol no tiene). Eso es CIEGO para esos cuatro, no verde: los juzga el CI.
+
+Visto en rojo: con la línea `A9:` de este tramo estropeada, `scrum1294` cae nombrando
+`docs/master/SCRUM-1521.md:158`; restaurada, 4 de 4.
+
+## Dicho y NO arreglado
+
+1. **`docs/legal/AUDITLOG_FISCAL_CONTRATO.md:130`, la otra cita de la fila** (`clean-staging-tests.mjs:78`)
+   sigue desfasada: medido hoy, la 78 es `return;` y el `auditLog.deleteMany` está en la 175. Ya estaba
+   dicho arriba (punto 3). No se arregla aquí: `docs/legal/` no se edita sin permiso del fundador y para
+   esa cita no está dado. Tiene ticket propio desde hoy: **SCRUM-1524**.
+2. El punto ② del ticket (`publicAccessDeclarations.ts`, S1) sigue sin tocar.
+3. Las frases del tramo de arriba que dicen que el máster está «sin tocar» y que la 820 «hoy es falsa»
+   eran ciertas cuando se escribieron y no se reescriben: este tramo es su fecha al lado.
+4. Nada verificado en yaqu.app: el cambio no toca nada que se sirva.
