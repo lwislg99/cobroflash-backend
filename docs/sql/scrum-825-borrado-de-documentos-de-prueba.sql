@@ -11,7 +11,7 @@
 -- NO HAY COPIA DE SEGURIDAD. Railway no la permite en este plan, y el fundador ha autorizado
 -- por escrito ejecutar igualmente (8-sep-2026): son datos de prueba, ningún merchant real tiene
 -- documentos, y SCRUM-525 auditó que NUNCA se ha remitido nada a la AEAT — de los nueve pasos
--- del camino de emisión, la cola de envío y el envío NO EXISTEN.
+-- del camino de emisión, la cola de envío y el envío NO EXISTEN. [Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: cierto el 8-sep-2026, cuando se escribió este guion. Desde el 30-sep-2026 (SCRUM-1296) la cola existe a medias: la emisión la llena y ningún proceso la vacía (SCRUM-1500d, Jira c.18919). El envío sigue sin existir. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
 --
 -- Eso NO baja el listón: lo sube. Sin copia, esto es irreversible línea por línea:
 --

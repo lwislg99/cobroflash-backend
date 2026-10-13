@@ -1,0 +1,25 @@
+DESPUES del arreglo · commit 193130c6ddbb7c6a34a6005949a9835d86dabb33 sobre origin/main 6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9 · 14 ficheros de test · salida de node: 0
+# tests 187
+# pass 181
+# fail 0
+# cancelled 0
+# skipped 6
+ok 54 - SCRUM-1522b · SUELO: la zona del proceso entra, y el doble da filas a las dos funciones
+ok 55 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en UTC: el panel y el tope dicen 100
+ok 56 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en UTC: el panel y el tope dicen 90
+ok 57 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en Europe/Madrid: el panel y el tope dicen 100
+ok 58 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en Europe/Madrid: el panel y el tope dicen 90
+ok 59 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en America/New_York: el panel y el tope dicen 100
+ok 60 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en America/New_York: el panel y el tope dicen 90
+ok 61 - SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el proveedor aceptó y luego falló también
+ok 62 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en UTC
+ok 63 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en Europe/Madrid
+ok 64 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en America/New_York
+ok 65 - SCRUM-1522b · 🔴 «por ventana» de hoy también es del día del comercio
+ok 66 - SCRUM-1522b · 🔴 BARRIDO: en ningún instante el panel y el tope cuentan distinto
+ok 1 - A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla # SKIP sin A55_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated
+ok 112 - SCRUM-728 · el aviso del cerrojo saturado # SKIP sin SERIE_PG_URL
+ok 119 - SCRUM-728d · SUELO: el banco es desechable, y el RTT en loopback es ~0 # SKIP necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)
+ok 120 - SCRUM-728d · 🔴 LOS TRES CAMINOS QUE RESERVAN, con 1 · 5 · 10 simultáneas # SKIP necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)
+ok 121 - SCRUM-1027 · 🔴 EL CUARTO CAMINO YA NO RESERVA: el modo receipt rechaza SIEMPRE bajo concurrencia # SKIP necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)
+ok 122 - SCRUM-728d · 🔴 LA PENDIENTE DEL VIAJE QUE ESCALA: 10 · 100 · 1.000 filas en la serie F # SKIP necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)

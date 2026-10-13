@@ -1,0 +1,28 @@
+##### node docs/master/evidencias/scrum1529b/tres.cjs --romper where  → sale 1
+           copia sembrada: 323 ficheros .ts, 202 escrituras · marcas de la siembra A en disco: 3 de 3 · 🔧 ROTO A PROPÓSITO: where
+🔴 MAL Merchant.status: «zz1529b_merchant» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [], en ESCRITO de [] (sólo Merchant.status) · copia sin siembra igual que el árbol real: sí
+🔴 MAL EmailMessage.status: «zz1529b_emailMessage» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [], en ESCRITO de [] (sólo EmailMessage.status) · copia sin siembra igual que el árbol real: sí
+🔴 MAL VfSubmission.status: «zz1529b_vfSubmission» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [], en ESCRITO de [] (sólo VfSubmission.status) · copia sin siembra igual que el árbol real: sí
+0 de 3
+2 de 2 · Merchant.status no tiene lista declarada: no hay valor que quitarle, y se dice.
+EXIT=1
+
+##### node docs/master/evidencias/scrum1529b/tres.cjs --romper sin-siembra  → sale 1
+           copia sembrada: NO SE LEYÓ · marcas de la siembra A en disco: 0 de 3 · 🔧 ROTO A PROPÓSITO: sin-siembra
+🔴 CIEGO: la siembra A no llegó al disco; sus controles no valen
+🔴 MAL Merchant.status: «zz1529b_merchant» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [CIEGO], en ESCRITO de [CIEGO] (sólo Merchant.status) · copia sin siembra igual que el árbol real: sí
+🔴 MAL EmailMessage.status: «zz1529b_emailMessage» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [CIEGO], en ESCRITO de [CIEGO] (sólo EmailMessage.status) · copia sin siembra igual que el árbol real: sí
+🔴 MAL VfSubmission.status: «zz1529b_vfSubmission» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [CIEGO], en ESCRITO de [CIEGO] (sólo VfSubmission.status) · copia sin siembra igual que el árbol real: sí
+0 de 3
+2 de 2 · Merchant.status no tiene lista declarada: no hay valor que quitarle, y se dice.
+🔴 MAL llamadas a procesarObligado(): árbol real 0 · copia sin siembra 0 · copia con una llamada sembrada CIEGO (tiene que ser una más) · positivo del árbol real: encolarAltaTrasSellado() tiene 1 (> 0)
+EXIT=1
+
+##### node docs/master/evidencias/scrum1529b/tres.cjs --romper sin-quitar  → sale 1
+           copia sembrada: 323 ficheros .ts, 202 escrituras · marcas de la siembra A en disco: 3 de 3 · 🔧 ROTO A PROPÓSITO: sin-quitar
+3 de 3
+🔴 MAL EmailMessage.status: quitado «reclamado» de src/integrations/firmaResend.ts (1 sitio(s) cambiados, quedan 1) · «declarado y nadie lo escribe» lo nombra: árbol real [] (vacío) · copia sin tocar [] (vacío) · copia sin escritor [] (sólo EmailMessage.status)
+🔴 MAL VfSubmission.status: quitado «rejected» de src/modules/fiscal/verifactu/sif.cola.ts (3 sitio(s) cambiados, quedan 3) · «declarado y nadie lo escribe» lo nombra: árbol real [] (vacío) · copia sin tocar [] (vacío) · copia sin escritor [] (sólo VfSubmission.status)
+0 de 2 · Merchant.status no tiene lista declarada: no hay valor que quitarle, y se dice.
+EXIT=1
+

@@ -143,6 +143,34 @@ export function reglaDe(rel, mapa) {
   return null;
 }
 
+/**
+ * SCRUM-1480f · Los ficheros de `scripts/` que SÓLO cubre la fila general, la que no da dueño: nadie ha
+ * decidido de quién son. Es la misma pregunta que contesta `carriles.mjs de <ruta>`, para toda la carpeta.
+ */
+export function scriptsSinFila(mapa, ficheros) {
+  const sin = [];
+  for (const f of ficheros) {
+    if (!f.startsWith('scripts/')) continue;
+    const r = reglaDe(f, mapa);
+    if (r && !r.puesto && r.patron === 'scripts/**') sin.push(f);
+  }
+  return sin.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/**
+ * SCRUM-1480f · El trinquete, sin tocar el disco: qué scripts sin fila son NUEVOS (ni estaban en la foto del
+ * suelo ni están declarados), cuántos de la foto QUEDAN sin fila y qué declarados ya no pintan nada.
+ */
+export function trinqueteDeScripts({ sinFila, foto, declarados }) {
+  const enFoto = new Set(foto);
+  const hoy = new Set(sinFila);
+  return {
+    nuevos: sinFila.filter((f) => !enFoto.has(f) && !declarados.includes(f)),
+    quedan: foto.filter((f) => hoy.has(f)),
+    declaradosQueSobran: declarados.filter((f) => !hoy.has(f) || enFoto.has(f)),
+  };
+}
+
 export function excepcionPara(rel, puesto, mapa) {
   return mapa.excepciones.find((e) => (e.quien.includes('*') || e.quien.includes(puesto)) && globARegex(e.patron).test(rel)) ?? null;
 }
