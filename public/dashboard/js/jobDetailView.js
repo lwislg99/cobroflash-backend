@@ -213,8 +213,8 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // puede saber. Los dos literales están FIRMADOS (com. 15881); aquí no se escribe copy.
     'sin-presupuesto': () => 'Este trabajo no tiene presupuesto aceptado',
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
-    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
-    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, «N € entregados sin facturar»; marca: SCRUM-1215 comentario 19084)
+    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, C4, «aceptados y sin facturar»; marca: SCRUM-1215 comentario 19084)
     // SCRUM-423 · copy APROBADA por el asesor el 10-ago-2026 (regla 30). El formato copia el de
     // los otros cuatro, MEDIDO y no supuesto: número delante, sin mayúscula inicial forzada, sin
     // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
@@ -239,7 +239,7 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       const base = `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`;
       return h.fraseSinAtribuir ? `${base} · ${h.fraseSinAtribuir}` : base;
     },
-    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
+    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, «N € facturados sin cobrar»; marca: SCRUM-1215 comentario 19084)
   };
   const TEXTO_ACCION = {
     'hacer-presupuesto': 'Hacer presupuesto',
