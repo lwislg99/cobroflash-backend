@@ -33,7 +33,7 @@ const VIEJOS = ['Más popular', 'Error de conexión.', 'Error al procesar.', 'Re
 // ── Las sondas: funciones puras sobre el HTML, para poder darles el texto viejo y ver que lo cazan ──
 const viejosEn = (html) => VIEJOS.filter((v) => html.includes(v));
 /** Las insignias de las tarjetas de opción, con la opción a la que pertenecen. */
-const insigniasDe = (html) => [...html.matchAll(/data-tier-id="([^"]*)">\s*<div class="tier-badge">([^<]*)<\/div>/g)]
+const insigniasDe = (html) => [...html.matchAll(/data-tier-id="([^"]*)"[^>]*>\s*<div class="tier-badge"[^>]*>([^<]*)<\/div>/g)]
   .map((m) => ({ opcion: m[1], texto: m[2] }));
 /**
  * El texto que pinta el `catch` de la petición de firma (la respuesta no volvió): el literal que
@@ -91,8 +91,8 @@ const TRES_OPCIONES = [opcion('basica', 'Básica', 100, false), opcion('completa
 // ── Control de las sondas: con el texto viejo delante, cada una lo ve ─────────────────────────────
 test('SCRUM-1302d · control · las sondas ven el texto viejo cuando está', () => {
   const vieja = `<div class="tier-card tier-recommended" data-tier-id="completa">
-      <div class="tier-badge">⭐ Más popular</div></div>
-    <p class="meta">Gracias, Ana. Recibirás tu copia por WhatsApp.</p>
+      <div class="tier-badge" id="con-un-atributo-mas">⭐ Más popular</div></div>
+    <p class="meta" id="otro">Gracias, Ana. Recibirás tu copia por WhatsApp.</p>
     <script>
       try { document.getElementById('sig-error').textContent = data.message || data.error || 'Error al procesar.'; }
       catch { btn.disabled = false; btn.textContent = 'Firmar y aceptar presupuesto'; document.getElementById('sig-error').textContent = 'Error de conexión.'; }
@@ -141,7 +141,7 @@ test('SCRUM-1302d · B · parte: lo que se lee si la respuesta de la firma no vu
 test('🔴 SCRUM-1302d · D · el parte firmado no promete ninguna copia: ni al acabar de firmar ni al volver al enlace', async () => {
   // Al acabar de firmar: lo que el guion de la página pone en lugar del formulario.
   const { cuerpo: deFirma } = await bancoDelParte().pagina();
-  const exito = deFirma.match(/<h1>¡Parte firmado!<\/h1><p class="meta">([^<]*)<\/p>/);
+  const exito = deFirma.match(/<h1[^>]*>¡Parte firmado!<\/h1><p class="meta"[^>]*>([^<]*)<\/p>/);
   assert.ok(exito, 'CIEGO: no encuentro la pantalla «¡Parte firmado!» en la página de firma');
   assert.equal(exito[1], `Gracias, ${CLIENTE_DEL_PARTE}.`);
   assert.deepEqual(promesasDeCopia(deFirma), [], '🔴 la página de firma del parte habla de una copia');
