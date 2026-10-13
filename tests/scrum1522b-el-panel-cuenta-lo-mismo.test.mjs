@@ -20,6 +20,7 @@ import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -122,8 +123,10 @@ test('SCRUM-1522b · SUELO: la zona del proceso entra, y el doble da filas a las
 
 // ═══ 🔴 LOS DOS QUE DECIDEN (c.19157) ════════════════════════════════════════════════════════
 
-for (const [proceso, esperado] of PROCESOS) {
-  test(`SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en ${proceso}: el panel y el tope dicen 100`, async () => {
+// Los nombres van ESCRITOS (SCRUM-1415): un caso por zona de proceso, y `todos()` lanza si falta una.
+const elDelFundador = casosEscritos(PROCESOS,
+  ([proceso]) => `SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en ${proceso}: el panel y el tope dicen 100`,
+  async ([proceso, esperado]) => {
     procesoEn(proceso, esperado);
     // El día de Madrid 15-jul va de 14T22:00Z a 15T22:00Z. Se mira a las 18:00 de Madrid.
     const r = await medir({
@@ -137,7 +140,9 @@ for (const [proceso, esperado] of PROCESOS) {
       + 'plantillas y el envío no sale.');
   });
 
-  test(`SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en ${proceso}: el panel y el tope dicen 90`, async () => {
+const lasRechazadas = casosEscritos(PROCESOS,
+  ([proceso]) => `SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en ${proceso}: el panel y el tope dicen 90`,
+  async ([proceso, esperado]) => {
     procesoEn(proceso, esperado);
     for (const zona of [null, PENINSULA]) {
       const r = await medir({
@@ -149,7 +154,15 @@ for (const [proceso, esperado] of PROCESOS) {
       assert.equal(r.metricas.month.failed, 15, 'las rechazadas siguen en su cifra del mes: no se han perdido');
     }
   });
-}
+
+test('SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en UTC: el panel y el tope dicen 100', elDelFundador(0));
+test('SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en UTC: el panel y el tope dicen 90', lasRechazadas(0));
+test('SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en Europe/Madrid: el panel y el tope dicen 100', elDelFundador(1));
+test('SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en Europe/Madrid: el panel y el tope dicen 90', lasRechazadas(1));
+test('SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en America/New_York: el panel y el tope dicen 100', elDelFundador(2));
+test('SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en America/New_York: el panel y el tope dicen 90', lasRechazadas(2));
+elDelFundador.todos();
+lasRechazadas.todos();
 
 test('SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el proveedor aceptó y luego falló también', async () => {
   procesoEn('UTC', 0);
@@ -167,8 +180,9 @@ test('SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el pr
 
 // ═══ ② EL MES ════════════════════════════════════════════════════════════════════════════════
 
-for (const [proceso, esperado] of PROCESOS) {
-  test(`SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en ${proceso}`, async () => {
+const elMes = casosEscritos(PROCESOS,
+  ([proceso]) => `SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en ${proceso}`,
+  async ([proceso, esperado]) => {
     procesoEn(proceso, esperado);
     // Son las 00:40 del 1 de agosto en Madrid (31-jul 22:40Z): 5 de agosto, 40 de julio.
     const filas = [...varias(5, '2026-07-31T22:10:00Z'), ...varias(40, '2026-07-20T10:00:00Z')];
@@ -188,7 +202,11 @@ for (const [proceso, esperado] of PROCESOS) {
     const julioSinZona = await medir({ zona: null, ahora: '2026-07-01T10:00:00Z', filas: primeras });
     assert.equal(julioSinZona.metricas.month.total, 0);
   });
-}
+
+test('SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en UTC', elMes(0));
+test('SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en Europe/Madrid', elMes(1));
+test('SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en America/New_York', elMes(2));
+elMes.todos();
 
 test('SCRUM-1522b · 🔴 «por ventana» de hoy también es del día del comercio', async () => {
   procesoEn('UTC', 0);

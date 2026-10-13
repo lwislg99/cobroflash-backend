@@ -256,3 +256,32 @@ en el censo». Visto en rojo: es la tercera fila de la tabla de arriba.
   ser exactamente una.
 - La ficha del encargo daba `origin/main` = `0472952cd`; medido, `6834c4b8d` (habían entrado #2343,
   #2342 y #2341). La rama se adelantó a `main` antes de empezar.
+
+## Relevo (13-oct, 04:34Z en adelante): el primer obligatorio salió ROJO, y era del test nuevo
+
+La sesión que construyó esto se quedó sin uso con el commit del arreglo hecho y sin empujar. La que
+releva comiteó el registro tal como estaba, empujó (`a822f1476`, PR #2349) y leyó el obligatorio por
+nombre, job `115130920308`: log de 1.807.258 B, 11.193 casos, pasan 11.099, **cae 1**, saltan 93 (la
+suma contada, con la cruz anclada al inicio del caso, cuadra con la declarada). Los 13 de este test
+pasaban. El que cayó:
+
+- `SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido…`: el test nuevo registraba 9 de sus
+  13 casos con tres bucles `for (… of PROCESOS) test(\`…${proceso}…\`)`. Un nombre construido no
+  está en el fuente, y la señal por nombres no puede decir que falta si la tanda lo pierde.
+
+Arreglado en el test, no en la lista del guard (regla 41): los tres bucles van desenrollados con
+`casosEscritos` de `tests/_casos-escritos.mjs`. Son los mismos 13 casos con los mismos nombres; cada
+uno comprueba que su nombre escrito es el que sale de su fila, y `todos()` lanza si una zona de
+proceso se queda sin caso. Visto en local en rojo antes (`scrum1415`: 5 de 6) y en verde después
+(con este test, `scrum1093h`, `scrum237` y `scrum976`: 59 de 59, 13 de ellos de este fichero).
+`src/` no se ha vuelto a tocar.
+
+- **Error del puesto:** los «vecinos» de la pasada local se eligieron a mano y `scrum1415` no estaba
+  entre ellos; `guards:entrada` tampoco lo lleva. El «13 de 13» era cierto y no decía nada de esto.
+  Cicatriz en `docs/equipo/cicatrices/J2.md`, con `scrum1415` como comprobación.
+- **Error de la que releva:** parcheé mi lector del log pasando una expresión regular por la consola y
+  se comió las barras invertidas; el lector contó 0 casos sobre un log de 1,8 MB. Lo delató la propia
+  calibración (un log rojo y uno verde ya conocidos, que tenían que sumar su total declarado).
+- El «meta-guard» de aquella pasada seguía corriendo al empujar este arreglo: **sin leer**.
+- El ancla de arriba es la de la construcción. Al relevar, `origin/main` =
+  `dfda86d65b8de9594b59b277fd38ea0ac3eda93a`: cuatro commits más, ninguno en los ficheros de esta rama.
