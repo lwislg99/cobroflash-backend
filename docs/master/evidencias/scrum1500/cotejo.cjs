@@ -29,8 +29,9 @@
 // DESDE SCRUM-1500b (decisión en Jira, SCRUM-1500 c.18831) ESTE INSTRUMENTO CORRE EN LA TANDA, desde
 // `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`. Dos cosas cambiaron para que pudiera:
 //   · cada comentario se localiza por su MODELO y su CAMPO (`localizar`), no por número de línea;
-//   · detrás del cotejo va un JUICIO (`juzgar`): qué veredictos se nombran, y los tres casos que
-//     esperan al fundador, cada uno con su excepción (`PARADOS`).
+//   · detrás del cotejo va un JUICIO (`juzgar`): qué veredictos se nombran, y los casos que
+//     esperan, cada uno con su excepción (`PARADOS`). Eran tres hasta el 13-oct-2026; desde
+//     SCRUM-1529c queda uno, y ya no espera una decisión sino un arreglo con ticket.
 // La salida del guion: 0 nada que nombrar · 1 hay hallazgos · 2 el instrumento no es fiable.
 //
 // QUÉ NO VE: los campos del esquema que no están en la tabla CAMPOS (los cuenta y los nombra al
@@ -64,7 +65,10 @@ const CAMPOS = [
     // acento. Se comparan normalizados (minúsculas, sin acentos): es la única traducción que hay.
     master: { ancla: /^\| Capacidad \|/, lista: /^\| Capacidad \|(.*)\|\s*$/, separador: /\|/, normaliza: true } },
   { campo: 'TeamMember.status', comentario: 'cola',
-    cierre: null, escribe: ['teamMember', 'status'], master: null },
+    cierre: null, escribe: ['teamMember', 'status'],
+    // SCRUM-1529c · la Parte L lo fija desde el 13-oct-2026 (decisión ③ del fundador, SCRUM-1529
+    // c.19228). Comparte línea con otras tres entidades: el ancla es su rótulo, no el principio.
+    master: { ancla: /\*\*TeamMember\.status:\*\* `/, lista: /\*\*TeamMember\.status:\*\* `([^`]+)`/ } },
   { campo: 'Albaran.estado', comentario: 'cola',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/albaran.service.ts', nombre: 'ALBARAN_ESTADOS' },
     escribe: ['albaran', 'estado'],
@@ -105,7 +109,10 @@ const CAMPOS = [
     escribe: ['parteTrabajo', 'tipo'], master: null },
   { campo: 'ParteTrabajo.estado', comentario: 'encima',
     cierre: { tipo: 'const', fichero: 'src/modules/jobs/domain/parteTrabajo.ts', nombre: 'ESTADOS_PARTE' },
-    escribe: ['parteTrabajo', 'estado'], master: null },
+    escribe: ['parteTrabajo', 'estado'],
+    // SCRUM-1529c · la Parte L lo fija desde el 13-oct-2026 SIN `facturado` (decisión ② del
+    // fundador, SCRUM-1529 c.19228). El código lo sigue declarando: ver su entrada en PARADOS.
+    master: { ancla: /\*\*ParteTrabajo\.estado:\*\* `/, lista: /\*\*ParteTrabajo\.estado:\*\* `([^`]+)`/ } },
 ];
 
 // Controles que viajan con cada pasada. Ninguno puede salir «coincide».
@@ -491,71 +498,48 @@ function cotejar({ raiz = RAIZ_POR_DEFECTO, master = null, textoMaster = null, t
 // ni EL_MASTER_NO_LO_FIJA; este último se IMPRIME como «sin cotejar», porque no es un verde.
 const SE_PARA = new Set(['NO_EXISTE', 'CIEGO', 'CODIGO_FUERA_DEL_MASTER', 'MASTER_SIN_ESCRIBIR', 'COMENTARIO_ATRASADO', 'ESTADO_SIN_MAQUINA_EN_EL_MASTER']);
 
-// 🔴 LOS TRES PARADOS. Esperan una decisión del fundador (regla 27) y tienen que poder esperarla sin
-// poner el CI en rojo. NO son un «ignora este campo»: cada entrada congela EXACTAMENTE lo que se le
-// llevó al fundador (el veredicto, los valores del código y los del máster). Si el código gana o
-// pierde un valor, si el máster cambia su lista, o si el campo deja de estar parado, la entrada ya
-// no describe lo que hay y el guard cae nombrándola. Una entrada lleva:
+// 🔴 LOS PARADOS. Un campo parado tiene que poder esperar sin poner el CI en rojo. NO es un «ignora
+// este campo»: cada entrada congela EXACTAMENTE lo que se llevó a quien decide (el veredicto, los
+// valores del código y los del máster). Si el código gana o pierde un valor, si el máster cambia su
+// lista, o si el campo deja de estar parado, la entrada ya no describe lo que hay y el guard cae
+// nombrándola. Una entrada lleva:
 //   motivo   por qué espera            retira   quién la quita, y cuándo
 //   consta   dónde está escrito        desde    el día en que se paró (se imprime su edad; NO caduca
 //                                               sola: ponerle plazo al fundador no es de este fichero)
 //   leidas   un trozo literal de cada línea del máster que junta todos los valores y que YA se leyó
-//            y no es su lista. Una línea nueva que los junte no está leída: cae.
+//            y no es su lista. Una línea nueva que los junte no está leída: cae. (Sólo se mira en un
+//            campo SIN ancla en el máster; con ancla, lo que se congela es `M`.)
 // «Sigue montada» se comprueba en cada pasada y por AST: los valores de `D` tienen que salir de un
 // cierre encontrado en `src/` o de una escritura de Prisma, no sólo del @default del esquema.
+//
+// SCRUM-1529c (13-oct-2026) · ERAN TRES Y QUEDA UNO. El fundador contestó (SCRUM-1529 c.19228) y sus
+// decisiones se aplicaron a la Parte L:
+//   · `QuoteRequest.status`: el máster adoptó pending → read → done. Ya coincide: entrada BORRADA.
+//   · `TeamMember.status`: el máster ganó sus tres valores. Tiene ancla y coincide: entrada BORRADA.
+//   · `ParteTrabajo.estado`: el máster lo fija SIN `facturado`, y el código lo sigue declarando. La
+//     entrada vieja («el máster no nombra la entidad») se BORRA y entra OTRA, que es la de abajo.
+// 🔴 ESA ENTRADA SE ESCRIBIÓ A MANO, y esta lista pide no ensancharse a mano. Se hizo UNA vez, por
+// decisión del fundador (SCRUM-1529 c.19316, opción A), y por eso lleva encima lo que la separa de
+// un agujero: el motivo exacto, quién la retira y cuándo, y el número del ticket que la retira. Es
+// un PUENTE, no un estado: al cerrar SCRUM-1535 se borra y el cotejo tiene que seguir verde SIN ella.
 const PARADOS = [
   {
-    campo: 'QuoteRequest.status',
-    veredicto: 'CODIGO_FUERA_DEL_MASTER',
-    D: [
-      'done',
-      'pending',
-      'read',
-    ],
-    M: [
-      'converted',
-      'discarded',
-      'new',
-      'seen',
-    ],
-    leidas: [],
-    motivo: 'el código escribe pending/read/done y la Parte L del máster dice new → seen → converted | discarded: ningún valor en común. Es cambio de máster o cambio de código (regla 27), y no lo decide una sesión',
-    retira: 'el fundador decide; quien aplique su decisión (máster o código) borra esta entrada en ese mismo PR',
-    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
-    desde: '2026-10-07',
-  },
-  {
     campo: 'ParteTrabajo.estado',
-    veredicto: 'ESTADO_SIN_MAQUINA_EN_EL_MASTER',
+    veredicto: 'CODIGO_FUERA_DEL_MASTER',
     D: [
       'borrador',
       'facturado',
       'firmado',
     ],
-    M: null,
-    leidas: [
-      'Estado de COBRO del albarán — VOCABULARIO DERIVADO',
-      'SCRUM-170 (FACT-2c) · facturación PARCIAL por cantidad servida',
+    M: [
+      'borrador',
+      'firmado',
     ],
-    motivo: 'es un estado y el máster no nombra la entidad: o la Parte L gana su máquina, o se dice que no es una máquina de la Parte L (regla 27). Las dos líneas del máster que juntan sus tres valores hablan del albarán',
-    retira: 'el fundador decide; quien escriba la máquina en el máster (o la declaración de que no lo es) borra esta entrada y le pone ancla al campo en CAMPOS, en ese mismo PR',
-    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
-    desde: '2026-10-07',
-  },
-  {
-    campo: 'TeamMember.status',
-    veredicto: 'ESTADO_SIN_MAQUINA_EN_EL_MASTER',
-    D: [
-      'active',
-      'invited',
-      'suspended',
-    ],
-    M: null,
     leidas: [],
-    motivo: 'es un estado y la Parte L no trae máquina para TeamMember: sus tres valores sólo salen en prosa. O la Parte L gana la máquina, o se dice que no lo es (regla 27)',
-    retira: 'el fundador decide; quien escriba la máquina en el máster (o la declaración de que no lo es) borra esta entrada y le pone ancla al campo en CAMPOS, en ese mismo PR',
-    consta: 'Jira SCRUM-1500, comentarios 18796 y 18831; docs/master/SCRUM-1500.md, sección Ⓒ',
-    desde: '2026-10-07',
+    motivo: '`facturado` está declarado en ESTADOS_PARTE (src/modules/jobs/domain/parteTrabajo.ts:78) y ninguna línea de src/ lo escribe; por la decisión ② del fundador no entra en la Parte L del máster, así que el cotejo ve un desajuste que es real y está decidido: el código declara un estado que ningún camino produce',
+    retira: 'quien cierre SCRUM-1535 (retirar `facturado` de ESTADOS_PARTE; es src/ y pide su propio GO) borra esta entrada en ese mismo PR, y el cotejo tiene que seguir verde sin ella. No es permanente: es un puente',
+    consta: 'Jira SCRUM-1529, comentarios 19228 (decisión ②), 19303 (la medición), 19305 y 19316 (opción A, decisión del fundador); SCRUM-1535 (el arreglo); docs/master/SCRUM-1529.md, tramo SCRUM-1529c',
+    desde: '2026-10-13',
   },
 ];
 
@@ -626,8 +610,9 @@ function pintaJuicio(r, j) {
   out.push(`JUICIO sobre ${p.campos} comentarios (${p.controles} controles aparte) · ${p.ficheros} ficheros .ts bajo src/, ${p.sinParsear} sin parsear:`);
   out.push(`  ${String(j.coinciden.length).padStart(2)}  coinciden con el máster`);
   out.push(`  ${String(j.sinCotejar.length).padStart(2)}  SIN COTEJAR, el máster no trae su lista (no es un verde): ${j.sinCotejar.join(', ') || '—'}`);
-  out.push(`  ${String(j.esperan.length).padStart(2)}  PARADOS, esperan al fundador con su excepción: ${j.esperan.map((e) => `${e.campo} (${e.veredicto}, desde ${e.desde}: ${e.dias} días)`).join(' · ') || '—'}`);
+  out.push(`  ${String(j.esperan.length).padStart(2)}  PARADOS, esperan con su excepción (quién la retira, abajo): ${j.esperan.map((e) => `${e.campo} (${e.veredicto}, desde ${e.desde}: ${e.dias} días)`).join(' · ') || '—'}`);
   for (const e of j.esperan) out.push(`        ${e.campo} sigue montado en: ${e.montadaEn.join(' · ')}`);
+  for (const e of j.esperan) out.push(`        ${e.campo} · la retira: ${e.retira}`);
   out.push(`  ${String(j.hallazgos.length).padStart(2)}  HALLAZGOS${j.hallazgos.length ? ':' : ''}`);
   for (const h of j.hallazgos) out.push(`        🔴 ${h.campo} · ${h.clase} · ${h.texto}`);
   out.push(`  FUERA DE LA TABLA, sin mirar: ${p.estadosFueraDeLaTabla.length} campo(s) del esquema con nombre de estado que este instrumento NO coteja${p.estadosFueraDeLaTabla.length ? ` (${p.estadosFueraDeLaTabla.join(', ')})` : ''}`);

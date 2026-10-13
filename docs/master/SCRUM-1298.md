@@ -61,3 +61,95 @@ Aserción en «una mesa que no existe nace en origin/main…».
 Tanda completa en local (Windows): 9.623 tests, 9.481 pasan, 138 saltan, 4 caen — los cuatro se
 declaran CIEGOS por la máquina (`scrum1093h` ×3 y `scrum1321`: el temporal está en otra unidad),
 no por este cambio. El veredicto que vale es el del CI.
+
+## 9-oct-2026 · SCRUM-1298b · el latido dice si el árbol de arranque trae lo que `main` trae
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:03:49Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1298b-latido-arbol-de-arranque.test.mjs`
+
+Lo que salió mal: en cuatro comentarios de este ticket (del 29-sep al 9-oct) dije «le falta el
+interruptor» y medí a mano, cada vez, que el checkout compartido iba miles de commits por detrás y
+cargaba 1 hook de 5. Cuatro mediciones a mano de lo mismo son un instrumento que falta. Ahora lo dice
+el latido en cada pasada.
+
+### Qué cambia
+
+| Pieza | Qué hace |
+|---|---|
+| `scripts/equipo/arranque.mjs` (nuevo) | `medirArranque` pregunta la punta de `main` al remoto (`ls-remote`, no escribe referencias), la congela en un sha y compara con ella el árbol PRINCIPAL del repositorio, que es donde se lanzan hoy las sesiones. `seccionArranque` monta la sección. Sólo lee. |
+| `scripts/equipo/latido.mjs` | sección 12 · ARRANQUE, dentro del veredicto. |
+| `tests/scrum723-guard-contra-su-base.test.mjs` | dos entradas declaradas con su motivo: aquí la punta es el sujeto. |
+
+**Qué avisa.** Si al `settings.json` que hay EN DISCO le falta un hook de los que declara `main`, o si
+una sola de las piezas que una sesión carga al arrancar (`CLAUDE.md`, lo que importa con `@`, y
+`.claude/`) es distinta en `main`.
+
+**Por qué el umbral no es un número de commits.** En los siete días anteriores `main` recibió 201
+merges; «va 40 por detrás» es verdad cualquier tarde y no dice si a quien arranca le falta algo. En esos
+mismos siete días, 26 commits tocaron alguna pieza de arranque: eso es lo que se compara. Los commits
+por detrás salen siempre en la línea, como dato.
+
+**Si no puede preguntar al remoto, la sección sale «NO PUDE MIRAR» (salida 2).** No compara contra la
+copia local de la referencia, que es de cuando alguien trajo por última vez.
+
+### El rojo, demostrado
+
+| Dónde | Resultado |
+|---|---|
+| El repositorio de verdad, 9-oct 11:01Z | 🔴 rama `scrum-1082…`, `e4ea95e5` · 2.588 por detrás · carga 1 de 5 hooks · 21 piezas distintas · salida 1 |
+| Un clon aislado, 6 commits por detrás y sin ninguna pieza distinta | ✅ no avisa, y enseña los 6 · salida 0 |
+| El mismo clon, puesto al día | ✅ 0 por detrás · 5 de 5 · 0 piezas · salida 0 |
+| Las 4 mutaciones declaradas en el test | las 4 caen en el test que nombran, y el fichero se restaura byte a byte |
+
+### El salto del checkout compartido (plan; NO ejecutado)
+
+Lo ejecuta el orquestador con el equipo parado: cambiar de rama bajo una sesión viva le cambia los
+ficheros en la mano. Ensayado entero el 9-oct en un clon aislado que reproduce las 47 entradas sin
+commit del compartido (14 comprobaciones, las 14 en verde; el compartido no se tocó).
+
+Estado medido: rama `scrum-1082-flujo-crear-factura-competencia`, `e4ea95e5`, 0 commits propios (su
+commit ya está en `main`). 47 entradas sin commit: 24 frenan el salto (3 modificados que `main` también
+cambia, 19 capturas que `main` ya trae byte a byte, y 2 ficheros que `main` trae con otro contenido) y
+23 no chocan (`.claude/settings.local.json`, 21 ficheros que `main` no trae y un árbol de trabajo
+anidado).
+
+| Paso | Qué hace | Qué se pierde |
+|---|---|---|
+| 0 | Nadie trabajando en ese árbol. | — |
+| 1 | Copiar a una carpeta de rescate, fuera del repositorio, TODO lo que no está en ningún commit, con su sha256, y releer la copia. | Nada: sólo copia. |
+| 2 | Devolver a `HEAD` los 3 modificados que `main` también cambia y quitar del árbol los 21 sin seguir que `main` trae en esa ruta. | Del árbol salen 24 ficheros; los 24 están en el rescate, comprobados. |
+| 3 | `git merge-base --is-ancestor main origin/main` (el `main` local no tiene nada propio) y `git switch -C main origin/main`. | Nada. Si aún queda algo que choque, git se niega y no toca nada. |
+| 4 | Comprobar: al día, los 5 hooks declarados y cargables, la cerradura muerde (`public/app.js` sale 2 para una sesión de nombre `s5-…`), `settings.local.json` idéntico, el stash sigue, los 23 que no chocaban siguen idénticos. | — |
+| 5 | Lanzar una sesión y leer en la ESTRUCTURA de su transcript que el hook de inicio corrió (`hook_success` de `SessionStart`). | — |
+| Después, cada tanda | `git merge --ff-only origin/main` en ese árbol. | Nada; falla cerrado. |
+
+Lo que el salto NO arregla y lo que cambia: el `node_modules` de ese árbol (del que cuelgan 29 árboles
+por enlace) se queda como está, y a `main` le falta ahí una dependencia (`read-excel-file`). A partir
+del salto los cuatro hooks nuevos corren en toda sesión que arranque ahí: la cerradura para a una sesión
+con nombre de puesto que edite fuera de su carril; el orquestador pasa siempre, y una sesión sin nombre
+también.
+
+### Los materiales que sólo viven en ese disco
+
+21 ficheros del checkout compartido no están en ningún commit y `main` no los trae: 17 notas de sesión
+bajo `docs/Srpint Scrum/`, una auditoría de la superficie pública, una semilla de demo y dos capturas en
+la raíz. El repositorio es público (SCRUM-1283) y son materiales del fundador, así que NO van a git.
+Siguen en su sitio —el salto no los toca— y desde el 9-oct tienen copia, con su sha256, en una carpeta
+`rescate-compartido-9oct` hermana del repositorio.
+
+### Lo que NO se ha corrido
+
+La tanda dirigida que calcula `tests-que-cubren` son 233 ficheros de test. En la máquina quedaban
+0,63 GB de memoria libre y el árbol de trabajo no tenía `dist/`: no se compiló.
+
+| Qué | Cuántos |
+|---|---|
+| ficheros de la dirigida | 233 |
+| NO corridos (nombran `dist/`, la base de datos o un navegador en su fuente) | 55 |
+| corridos | 178 → 1.797 tests: 1.745 pasan, 1 salta, 51 caen |
+| de los 51, por no existir `dist/` (lo dice su error) | 49 |
+| de los 51, ciego por la máquina (`scrum1321`: el temporal está en otra unidad) | 1 |
+| de los 51, por este cambio | 1: `scrum824` no podía probar de dónde colgaban los ficheros del banco del test nuevo. Arreglado en el test (las rutas se dan relativas a la carpeta temporal) y vuelto a correr en verde |
+
+Lo que no se compiló lo dirá el CI.

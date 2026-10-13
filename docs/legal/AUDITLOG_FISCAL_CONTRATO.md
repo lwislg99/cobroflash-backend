@@ -1,5 +1,5 @@
 # CONTRATO DEL AUDITLOG FISCAL — SCRUM-207 (AUDIT-FISCAL-1)
-
+**⚠️ NOTA FECHADA · 13-oct-2026 · SCRUM-1524c (decisión del fundador, SCRUM-1524 c.19292). Este documento se deja COMO SE ESCRIBIÓ el 29-jul-2026 y NO describe el código de hoy.** La cabecera de abajo dice «Cero código» y «Nada de esto está implementado»: dejó de ser cierto **el mismo 29-jul-2026**, cuando el commit `df8890e63` (fechado ese día a las 16:33, tres horas después del que trajo este contrato) cambió `src/` en nombre de SCRUM-207. Las coordenadas de fichero y línea que cita son las de aquel día y **NO se han puesto al día, a propósito**: medido el 13-oct-2026 (SCRUM-1524b, Jira c.19280), 42 están desfasadas —28 desplazadas y 14 que ya apuntan a otra cosa— y en al menos 6 el código que describían se reescribió; corregirles el número dejaría un texto de julio con aspecto de recién verificado. **NO MEDIDO: cuánto de lo que aquí se propone está construido hoy.** Esta nota no lo dice en ningún sentido; qué hace el sistema se lee en el código, no aquí.
 > **PROPUESTA PARA APROBAR. Cero código, cero schema, cero staging.** Este documento define
 > **qué se registra, quién lo escribe, con qué campos, y cómo se consulta** cuando alguien
 > pregunta. Nada de esto está implementado; el ticket que lo implemente se apoyará en este

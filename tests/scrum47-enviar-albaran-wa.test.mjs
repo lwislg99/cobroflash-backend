@@ -7,6 +7,8 @@
 // ⚠️ GATEADO (crea/BORRA merchants efímeros; genera el PDF real en disco; levanta la app):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -22,7 +24,8 @@ import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar
 // al cargar).
 process.env.WHATSAPP_DRY_RUN = '1';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 // SCRUM-255: aquí había un sondeo de 3 s sobre `whatsAppMessage` — la misma forma que SCRUM-250
@@ -41,7 +44,22 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -72,10 +90,10 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     data: { merchantId: merchantA.id, name: 'Sin teléfono', phone: null },
   });
   const job = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12' },
+    data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12', operarioId: tecnico.id },
   });
   const jobSinTel = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customerSinTel.id, status: 'terminado', titulo: 'Sin tel' },
+    data: { merchantId: merchantA.id, customerId: customerSinTel.id, status: 'terminado', titulo: 'Sin tel', operarioId: tecnico.id },
   });
   const mkAlb = (jobId, numero, estado, firmado) =>
     prisma.albaran.create({
@@ -102,6 +120,11 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
 
     const cookieTecnico = await mkCookie(merchantA.id, tecnico.id); // rol técnico (S1: enviar WA ✅)
     const cookieB = await mkCookie(merchantB.id, null);
+    // SCRUM-876g · otro técnico del MISMO negocio que no lleva ese trabajo.
+    const ajeno = await prisma.teamMember.create({
+      data: { merchantId: merchantA.id, name: 'QA Téc 47 ajeno', email: `qa-tec47b-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+    });
+    const cookieAjeno = await mkCookie(merchantA.id, ajeno.id);
 
     // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
     // SCRUM-255: el interceptor se instala ANTES de la petición — la escritura de WA-0b nace
@@ -136,6 +159,13 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     // ── Tenancy (regla 2): B no ve el albarán de A → 404 ──
     const rB = await post(albFirmado.id, cookieB);
     assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
+
+    // ── SCRUM-876g · un técnico que NO lleva el trabajo → 404, y no se envía nada ──
+    // Es la regla que tuvo este test caído mientras estaba gateado: `findAlbaran` recorta por el
+    // dueño del Trabajo (`esSuyoElTrabajo`). Arriba pasa porque el trabajo ES del técnico
+    // (`operarioId`); aquí no lo es. 404 y no 403: el código no le dice que el albarán existe.
+    const rAjeno = await post(albFirmado.id, cookieAjeno);
+    assert.equal(rAjeno.status, 404, `un técnico que no lleva el trabajo no envía su albarán (fue ${rAjeno.status})`);
 
     console.log('✔ SCRUM-47: técnico 200 (firmado, dry-run), 409 no-firmado/sin-tel, tenancy 404, WA-0b albaran ✓');
       }));

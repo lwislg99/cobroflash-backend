@@ -1,0 +1,17 @@
+BANCO: PGlite en 127.0.0.1:51247 · 33 tablas · test: tests/scrum1515-nuestra-puerta-de-alta.test.mjs
+[magic-link] to=alta-a-1515-6lasdj@test.local link=http://localhost:3000/auth/verify?token=ddd6ec246f41d1e7fc73e2a6d1c3c41202bc282084ac9548d1c80d3eb1a9a24e
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"e23f10e5@test.local","asunto":"Tu enlace de acceso a YaQu"}
+[magic-link] email enviado OK a e23f10e5@test.local
+[magic-link] intento de login con email no registrado: e20b04ad@test.local
+✔ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (2847.4584ms)
+ℹ SCRUM-1515: ruta cerrada, 409 y la frase firmada en 14 llamadas, 0 altas y 0 correos · 2 merchants por el guion · 118 campos comparados por valor con la foto de la ruta (65 por fila en la foto) · por regla: id, createdAt, updatedAt, planExpiresAt, referralCode, referredBy en B y timezone en A (Atlantic/Canary; en B, null) · campos de hoy que la foto no tiene: 0 · un merchant que ya existe pide enlace, entra y lee su sesión
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2989.3883
+BANCO: merchants que quedan al terminar: 0 · EXIT=0
+EXIT=0

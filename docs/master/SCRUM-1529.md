@@ -399,3 +399,171 @@ sobre una copia del árbol en un directorio temporal fuera del repositorio.
 | las tres decisiones tomadas | NO HECHO → son del fundador |
 
 Cómo se repite: `node docs/master/evidencias/scrum1529b/tres.cjs` (salida 0; menos de un minuto).
+
+---
+
+# SCRUM-1529c · Las diez decisiones, aplicadas a la Parte L del máster
+
+**Medido contra:** `origin/main` = `f7a4c816ab2bf5c334a953dee60dc7b73718a0f8` · 2026-10-13T11:38:33Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1500-el-cotejo-contra-el-master.test.mjs`
+
+13-oct-2026 · sesión `jv-j3i` (equipo de Javier, carril de censos e instrumentos), por encargo del
+orquestador (`cobroflash-backend-2e`).
+[Escrito por la sesión, no por Javier. Leídos en Jira antes de tocar nada: SCRUM-1529 entero, con
+`c.19299` (el permiso), `c.19228` y `c.19273` (las decisiones); y después `c.19305` y `c.19316`.]
+
+El trabajo se empezó sobre `3bf6163bb5708e174af74ea2266412eab2f586be`. `main` avanzó hasta el sha del
+ancla mientras se hacía: 0 cambios en el máster, en el instrumento de SCRUM-1500 y en su test.
+
+## Qué se pidió
+
+Aplicar a `docs/YAQU_MASTER.md`, Parte L, las diez decisiones de estado del fundador. Tocar el máster
+es excepcional: el permiso es `c.19299` y sus límites mandan. Sólo las líneas que las decisiones
+nombran; ninguna transición inventada; `VfSubmission` fuera y su línea 404 sin tocar; `ParteTrabajo`
+sin `facturado`; nada en `src/`, en el esquema ni en texto que vea el usuario.
+
+## Lo primero: quién cita el máster por número de línea
+
+Sobre 6.161 ficheros seguidos por git (6.161 leídos, 0 ilegibles):
+
+- **177 citas** `YAQU_MASTER.md:<n>` en 45 ficheros.
+- **91 de ellas, en 32 ficheros, apuntan por debajo de la línea 397.** Una está en
+  `src/modules/fiscal/verifactu/registro.builder.ts` (camino de emisión: no se puede corregir aquí), y
+  `tests/scrum525d-anclas-que-apuntan.test.mjs` tiene un control que cae al mover un ancla una línea.
+- Control de cero: una cita a una línea que no existe (`:9824`) sale 0 veces.
+
+**Decisión: no se añade NINGUNA línea.** El máster tiene 1.905 líneas antes y después. Las cuatro
+entidades que entran nuevas van juntas en la línea 397, que estaba en blanco entre el título de la
+Parte L y la línea de `Quote`. El coste, declarado: cuatro entidades comparten línea y quedan por
+delante de `Quote`. Al pintarse es el mismo párrafo que ya formaban las líneas 398 a 409.
+
+NO medido: las citas con otra forma («línea 404 del máster»). El patrón sólo ve `YAQU_MASTER.md:<n>`.
+
+## Lo que dice ahora la Parte L
+
+| decisión | línea | qué dice ahora |
+|---|---|---|
+| ① `QuoteRequest` | 401 | la lista es `pending → read → done`. Lo que decía queda citado entre « » con su fecha, y declarada la distinción que se pierde (`done` no dice por qué terminó) |
+| ② `ParteTrabajo.estado` | 397 | `borrador` y `firmado`, sin flechas y SIN `facturado`, con el porqué |
+| ③ `TeamMember.status` | 397 | `invited`, `active`, `suspended`, sin flechas |
+| ④ `Quote` | 398 | gana `pending_approval` como valor, sin flechas. La máquina que había no se toca |
+| ⑤ `Invoice` | 399 | gana `expired` como valor, sin flechas |
+| ⑥a `Charge` | 400 | ganan `failed` y `expired`, sin flechas |
+| ⑥b `Charge` | 400 | `pending → cancelled` se queda; dice que hoy nadie lo escribe y que construirlo es STOP con GO propio |
+| ⑦ `WhatsAppMessage` | 403 | gana `received` para los entrantes, sin flechas |
+| ⑧ `Merchant.status` | 397 | `active` |
+| ⑨ `EmailMessage.status` | 397 | sus seis valores, copiados de Jira `c.19233`, sin flechas |
+| ⑩ `VfSubmission` | 404 | NO entra. La línea 404 es idéntica byte a byte |
+
+Cada línea tocada conserva entero el texto que tenía y lleva al final una nota fechada
+(«13-oct-2026, SCRUM-1529c») con el número de la decisión y el del permiso. Es la misma forma que ya
+usaba la línea 404.
+
+Lo que NO se ha escrito, a propósito:
+
+- **Ninguna flecha nueva.** Tampoco la de `ParteTrabajo` (`borrador → firmado`): la decisión ② dice
+  que entra su máquina, pero las transiciones no las ha medido nadie y no las he medido yo.
+- **La tabla `WhatsAppMessage` de la Parte J (línea 309)** repite la lista de los salientes y no lleva
+  `received`. No se ha tocado: el permiso cubre sólo la Parte L. La línea 403 lo dice.
+
+## Comprobado por efecto
+
+`node docs/master/evidencias/scrum1529c/aplicado.cjs` (salida 0; entera en `aplicado-salida.txt`).
+Compara el máster del árbol con el de la base, leyendo las líneas:
+
+- cambian las líneas 397, 398, 399, 400, 401 y 403, y ninguna más;
+- **un positivo y un cero por decisión: 10 de 10** (el valor nuevo está en su línea; lo que no tenía
+  que entrar —`facturado` en la lista del parte, una flecha en las listas sin flechas— no está);
+- 11 líneas vigiladas idénticas, entre ellas la 404 y la 309;
+- citas que ahora apuntan a otro texto sin ser de una línea tocada: 0. Citas a una línea tocada: 2
+  (`docs/master/SCRUM-1513.md` a la 403 y `docs/master/SCRUM-534.md` a la 401), y en las dos sigue
+  estando lo que citaban;
+- **el control del instrumento:** las mismas preguntas sobre el máster de la base cumplen 1 de 10, y
+  es la ⑥b, que es «se queda». Si la base cumpliera más, el instrumento diría CIEGO y saldría con 2.
+
+## El guard de SCRUM-1500, que cayó, y lo que se hizo con él
+
+Con sólo el máster cambiado, `tests/scrum1500-el-cotejo-contra-el-master.test.mjs` caía: 13 casos, 7
+pasaban y 6 no. El instrumento nombraba sus tres «parados», y la propia entrada de cada uno mandaba
+retirarla «en ese mismo PR» que aplicara la decisión. El permiso `c.19299` decía «sólo el máster», así
+que **se paró y se preguntó** (`c.19303`) antes de tocar nada.
+
+Lo autorizado y lo hecho:
+
+- **`c.19305` (orquestador):** se puede editar `docs/master/evidencias/scrum1500/cotejo.cjs` y su test,
+  porque es consecuencia mecánica del trabajo autorizado. Con el límite de la regla 41: si el arreglo
+  baja lo que el instrumento exige, se para.
+- **`c.19316` (fundador, opción A):** una excepción nueva y declarada para `ParteTrabajo.estado`, y
+  ticket aparte para quitar `facturado` del código. Ese ticket es **SCRUM-1535**.
+
+| campo | antes | ahora |
+|---|---|---|
+| `QuoteRequest.status` | parado: el código tenía tres valores y el máster otros cuatro | coincide con el máster; excepción BORRADA |
+| `TeamMember.status` | parado: el máster no traía su lista | con ancla en la 397; coincide; excepción BORRADA |
+| `ParteTrabajo.estado` | parado: el máster no nombraba la entidad | con ancla en la 397; el cotejo ve «el código tiene `facturado` y el máster no»; excepción NUEVA, puente hasta SCRUM-1535 |
+
+**¿Mide ahora más o menos?** Más. Antes cotejaba 7 campos contra el máster y dejaba 3 parados; ahora
+coteja 9 y deja 1. Y el que queda ya no está «sin lista»: tiene su lista del máster congelada en la
+excepción, así que si alguien le mete `facturado` al máster, o el código gana otro estado, cae.
+
+La excepción nueva lleva dentro lo que `c.19316` exige: el motivo (`facturado` declarado en
+`parteTrabajo.ts:78`, ninguna línea de `src/` lo escribe, y por la decisión ② no entra en el máster),
+quién la retira y cuándo (quien cierre SCRUM-1535, en ese mismo PR, y el cotejo tiene que seguir verde
+sin ella) y el número del ticket. El instrumento imprime esa frase en cada pasada.
+
+El test pasa de 13 a 14 casos, 14 de 14:
+
+- «los tres parados» pasa a ser «el parado»: sin su excepción cae él, y sólo él. Y la lista de
+  excepciones queda fijada a ese único campo: una entrada nueva pone el test en rojo.
+- un caso NUEVO para los dos que salieron: coinciden, y si a su lista del máster se le quita un valor
+  caen por su nombre, sin excepción que los tape.
+- el caso de «la excepción cubre lo decidido y nada más» se rehízo sobre la excepción que queda.
+- el mecanismo «una línea nueva que junta los valores cae» ya no tiene un parado real sin ancla: se
+  conserva probado con la tabla y la excepción de antes, fabricadas dentro del test.
+
+**Visto en rojo, sobre el fichero y no en memoria:** con `facturado` añadido a la lista del parte en
+el máster (`git diff --numstat` 1 1), el test cae 7 de 14, salida 1. Restaurado con
+`git restore --source=HEAD`; árbol limpio y `aplicado.cjs` otra vez en 0.
+
+## Lo que NO he medido
+
+- Ninguna base de datos. Ningún valor del código: los tomo de `c.19222` y `c.19233` (los instrumentos
+  `scrum1529/siete.cjs` y `scrum1529b/tres.cjs` no los he vuelto a correr).
+- Las transiciones de ninguno de los diez.
+- `docs/master/evidencias/scrum1500c/cotejo-once.cjs` (no está en la tanda): lee sólo las listas con
+  flecha, así que no verá los valores que entran sin ella. No lo he corrido ni tocado.
+- «Ninguna línea de `src/` escribe `facturado`» es de `c.19222`. El cotejo de SCRUM-1500 no puede
+  afirmarlo: sólo ve escrituras con literal, y tampoco ve la de `firmado`. El test sujeta lo que sí
+  puede: que no aparezca una escritura literal de `facturado`.
+- La tanda completa no se corrió. Corridos: el guard de SCRUM-1500 y los del registro (abajo).
+- Cómo se pinta la línea 397 en un visor de Markdown: razonado, no visto.
+
+## Lo que me salió mal
+
+- **Mi instrumento dijo CIEGO en su primera pasada, y era un error mío.** Para la ⑥b exigía que
+  `cancelled` saliera suelto entre comillas, cosa que sólo pasa en mi texto nuevo; la base no lo
+  cumplía y el control no cuadraba. Corregido antes del primer commit.
+- Un rótulo del mismo instrumento decía «3 líneas del tramo» contando el fichero entero. Corregido.
+- En el test escribí que el cotejo veía `facturado` como el ÚNICO valor declarado y sin escribir. Ve
+  dos: tampoco ve la escritura de `firmado`. Lo dijo el rojo; la aserción ahora afirma sólo lo que el
+  instrumento puede ver.
+- Avisé del contexto a 213.341, no al cruzar 200.000.
+
+**La lección, y por qué la línea A9 apunta a un test:** el permiso decía «sólo el máster» y eso no se
+podía cumplir, porque el guard de SCRUM-1500 ata el máster a sus excepciones. No lo paró ninguna nota:
+lo paró el guard, cayendo con el nombre de cada excepción y diciendo quién la retira. Es la
+comprobación que ya existía y que volvería a parar a la siguiente sesión.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+|---|---|
+| las diez decisiones en la Parte L | `docs/YAQU_MASTER.md`, líneas 397 a 401 y 403 |
+| sólo las líneas que las decisiones nombran | `docs/master/evidencias/scrum1529c/aplicado-salida.txt`, apartado ① |
+| ninguna transición inventada; `VfSubmission` fuera; `ParteTrabajo` sin `facturado` | el mismo fichero, apartados ② y ③ |
+| medir quién cita el máster antes de añadir una línea, y declarar la decisión | arriba, «Lo primero»; el mismo fichero, apartado ④ |
+| constancia de qué cambió y cuándo | la nota fechada al final de cada línea tocada |
+| positivo que tiene que aparecer y cero derivado | `docs/master/evidencias/scrum1529c/aplicado.cjs` |
+| guards del registro y del máster | `tests/scrum1500-el-cotejo-contra-el-master.test.mjs` (14 de 14) |
+| quitar `facturado` del código | NO HECHO → SCRUM-1535, con su propio GO |
