@@ -48,6 +48,12 @@ Lo que hace falta para que la aprobación sea **verificable por alguien que no e
    `limites-del-fundador.md` con su línea de microcopy. Si el fundador retira la delegación, estas
    firmas **dejan de contar solas**. ⛔ Nadie escribe «Aprobado por el fundador» si no es él.
 
+   Una firma delegada **cuenta, y sale con otro nombre** (SCRUM-997d). El oráculo da tres estados:
+   `aprobada` (la firma del fundador), `aprobada-por-delegacion-sin-comprobar` y `no-aprobada`. De
+   una delegada **no comprueba** qué orquestador firma, ni si el texto es legal o fiscal, ni que el
+   comentario citado exista, y lo dice en `noComprobado`. `comoConstaAprobado()` devuelve el estado
+   junto a la ruta; `delegadasSinComprobar()` las lista.
+
    Si la firma dice otra cosa —«por el asesor», «por el orquestador» a secas, «pendiente»— el
    registro **se lee igual, pero sus textos NO cuentan como aprobados**: `constaAprobado()` los
    ignora y `pendientesDeFirma()` los lista para que se firmen. **No se borra nada de la pantalla

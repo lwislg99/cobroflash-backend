@@ -186,3 +186,6 @@ delegación, sus firmas delegadas seguirían contando. Es del carril de microcop
 | los seis puntos, con qué es cada uno y si algo lo cumple | `docs/equipo/limites-del-fundador.md` (tabla de arriba, fila a fila) |
 | la medición del flag, repetida o citada como ajena | repetida: `docs/master/evidencias/SCRUM-997/sonda-997.cjs` |
 | visto en yaqu.app | NO APLICA: no cambia nada que se sirva |
+
+La pieza del oráculo de microcopy que salió de esta medición (rama `scrum-997d-el-oraculo-declara-lo-que-no-comprueba`,
+PR #2400) tiene ticket propio, SCRUM-1546, y su registro está en `docs/master/SCRUM-1546.md`.
