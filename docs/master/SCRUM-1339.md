@@ -2125,3 +2125,28 @@ Un dato que no encaja con lo escrito antes y dejo sin perseguir: la hipótesis d
     node docs/master/evidencias/SCRUM-1339/p-blobs.mjs docs/master/evidencias/SCRUM-1339/n-datos.json <logs> . <guards, por comas>
     node docs/master/evidencias/SCRUM-1339/p-quien.mjs <p-filas.json> <logs del avisador, FUERA del árbol> <p-quien.json>
     node scripts/vigia-silencio-de-main.mjs
+
+## Corrección tras el obligatorio de #2361 (sesión `jv-j3j`, 13-oct, 11:21Z; `origin/main` = `97618f169b3b4f71e384600b3d0720d7e502fea9`)
+
+El obligatorio de la punta `c24d42f3a2bd2e47fc3a8160ec8fdec0009fc412` salió rojo (job 115181642015,
+log de 1.808.766 B): 11.204 = 11.110 pasan + 1 cae + 93 saltan, contado con el caso anclado al
+inicio de la línea, y suma. El que cae es `tests/scrum622-desconocido-no-es-verde.test.mjs`,
+«EL CENSO: queda UNA red benigna», y nombra `p-leer.mjs:35`.
+
+**Tenía razón.** `leerLog` daba VERDE como resto: «ni muda ni ciega». Un resumen con los cuatro
+recuentos a cero —una pasada que no juzgó nada— salía VERDE. Ahora cada estado se afirma por su
+condición (VERDE pide `vivas > 0`) y lo demás se queda en SIN VEREDICTO. No se ha tocado el censo
+ni ningún test.
+
+- Antes y después, sobre el mismo log fabricado «vivas 0 · mudas 0 · ciegas 0 · ficheros muertos 0»:
+  VERDE con el guion de `c24d42f3a`, SIN VEREDICTO con éste. Verde, ciego, rojo y vacío dan lo
+  mismo en los dos. El caso entra en el control de la función, que pasa de 6 a 7 logs fabricados.
+- `scrum622` en este árbol: 11 pasan y 1 cae de 12 con el guion de antes; 12 de 12 con éste.
+- **Las cifras del tramo no cambian, medido sobre `p-filas.json` y no volviendo a pasar los 246
+  logs** (no están en git y no los he vuelto a bajar): de sus 248 filas, 0 tienen resumen con
+  `vivas` a cero, y las 155 VERDE llevan de 455 vivas para arriba.
+- ⚠️ `p-salida-leer.txt` y `p-salida-leer-control-al-reves.txt` son la salida del guion ANTERIOR:
+  su primera línea dice «6 logs fabricados». No se han regenerado.
+- De paso, sin tocar: en ese mismo run el job del meta-guard (115181642144) salió con 2 por
+  `scrum859-identidad-y-motivo-cerrado.test.mjs` (vivas 519 · mudas 0 · ciegas 1). Es un caso más
+  de lo que este tramo mide. Si es requerido para el merge, no lo he mirado.

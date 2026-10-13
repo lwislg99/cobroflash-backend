@@ -31,8 +31,13 @@ export function leerLog(crudo) {
   const marcas = L.map((l) => /^ {2}(✔|\?|☠|✖) (\S+)/.exec(l)).filter(Boolean).map((x) => ({ marca: x[1], guard: x[2] }));
   let estado = 'SIN VEREDICTO';
   if (m) {
-    const [mudas, ciegas, muertos] = [Number(m[2]), Number(m[3]), Number(m[4])];
-    estado = mudas > 0 ? 'ROJO' : ciegas + muertos > 0 ? 'CIEGO' : 'VERDE';
+    const [vivas, mudas, ciegas, muertos] = [Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4])];
+    // Cada estado se AFIRMA por su condición; ninguno es «lo que queda». Antes VERDE era el resto
+    // de «ni muda ni ciega», y un resumen con los cuatro recuentos a cero —una pasada que no juzgó
+    // NADA— salía VERDE. Lo cazó `tests/scrum622` en el obligatorio de #2361: desconocido no es verde.
+    if (mudas > 0) estado = 'ROJO';
+    else if (ciegas + muertos > 0) estado = 'CIEGO';
+    else if (vivas > 0) estado = 'VERDE';
   }
   // El motivo que el instrumento escribe de cada mutación sin juzgar, por guard.
   const motivos = [];
@@ -78,9 +83,10 @@ if (LANZADO) {
     ['vacío', '', 'SIN VEREDICTO', 0],
     ['cortado sin resumen', fab(['  ? b.test.mjs · CIEGO']), 'SIN VEREDICTO', 1],
     ['la marca DENTRO de un nombre no cuenta', fab(['  ✔ a.test.mjs · viva «el test ? raro ☠»', 'vivas 1 · mudas 0 · ciegas 0 · ficheros muertos 0']), 'VERDE', 0],
+    ['resumen con los cuatro recuentos a cero', fab(['vivas 0 · mudas 0 · ciegas 0 · ficheros muertos 0']), 'SIN VEREDICTO', 0],
   ];
   const fallos = casos.filter(([, txt, est, n]) => { const r = leerLog(txt); return r.estado !== est || r.marcas.filter((x) => x.marca === '?' || x.marca === '☠').length !== n; });
-  exige(fallos.length === 0, `CONTROL de la función sobre ${casos.length} logs fabricados (verde, ciego con dos marcas de UN guard, rojo, vacío, cortado, marca dentro de un nombre): ${casos.length - fallos.length} de ${casos.length} en su estado y con su número de marcas${fallos.length ? ' · fallan: ' + fallos.map((c) => c[0]).join(', ') : ''}`);
+  exige(fallos.length === 0, `CONTROL de la función sobre ${casos.length} logs fabricados (verde, ciego con dos marcas de UN guard, rojo, vacío, cortado, marca dentro de un nombre, resumen todo a cero): ${casos.length - fallos.length} de ${casos.length} en su estado y con su número de marcas${fallos.length ? ' · fallan: ' + fallos.map((c) => c[0]).join(', ') : ''}`);
 }
 
 // ── Población ────────────────────────────────────────────────────────────────────────────────
