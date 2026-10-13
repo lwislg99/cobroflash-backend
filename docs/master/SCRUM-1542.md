@@ -347,7 +347,38 @@ corriendo y el censo de ramas leyó el remoto antes y después (es la carrera de
 
 ### El simulacro en vivo
 
-PENDIENTE al escribir esto: se lanza desde la rama, ya empujada, y su resultado se anexa aquí.
+**SONÓ.** Lanzado desde la rama el 13-oct-2026 a las 15:02:14Z
+(`gh workflow run vigia-despliegue.yml --ref scrum-1542c-primer-padre-y-el-aviso-suena -f simulacro=true`),
+sobre el commit `d5cb6ea59cb3156b5f74028ed46b80f472890431`.
+
+| qué | lo que se vio | dónde |
+|---|---|---|
+| la ejecución | `failure` (el vigía canta fallando el job), título «SIMULACRO del aviso del vigía (producción NO está congelada)» | run 38418569164 |
+| la caché | recuperar: `skipped` · guardar: `skipped` | pasos del job |
+| la siembra | `success` (salida 2, un renglón) | paso «SIMULACRO · fabricar…» |
+| el vigía | salida 1, «PRODUCCIÓN CONGELADA», 7,4 h de hueco sobre `prod=be69e7cd` fabricada | paso «¿Está producción corriendo lo que hay en main?» |
+| el aviso | `success`: **abrió el Issue #2398** | paso «Avisar de verdad…» |
+| «¿sonó?» | `success`: leyó el Issue de vuelta, con su marca, y lo cerró | último paso |
+
+**Comprobado desde fuera, en la API, 34 s después** (15:02:48Z; `GET /issues?state=all`, las 30 filas
+más nuevas: 29 PR y 1 Issue): **1 Issue con la marca** `vigia-despliegue:produccion-congelada`, el
+#2398, creado a las 15:02:29Z por `github-actions[bot]`, cerrado a las 15:02:31Z, con 1 comentario,
+título «🧪 SIMULACRO (no es real) · 🔴 Producción congelada — el vigía del despliegue está en rojo» y
+la primera línea del cuerpo diciendo que producción no está congelada. Control de cero: la marca
+escrita al revés, 0. La medición de arriba daba 0 sobre 2.382 filas; ésta mira sólo las 30 últimas.
+
+**Y el latido, sobre las corridas de verdad** (las 10 últimas del workflow, la más nueva el
+simulacro): con este cambio no pide los pasos del simulacro y dice «última corrida hace 6,5 h,
+veredicto NO CANTÓ (…) (1 simulacro(s) del aviso apartado(s): no leen producción)». **Control: el
+latido SIN este cambio, sobre las mismas 10, sí va a leer los pasos del simulacro como si fuera el
+último veredicto.** Hasta que este PR entre y la copia instalada se refresque, o hasta la siguiente
+pasada programada del vigía, el latido de `main` puede decir «CANTÓ PRODUCCIÓN CONGELADA y NO CONSTA
+SU AVISO» por culpa de este simulacro: es falso, y está avisado al orquestador.
+
+**Lo que este simulacro NO prueba:** que el correo del Issue llegue a una persona; y que una pasada
+PROGRAMADA de verdad, con su caché, llegue a salir con código 1. Lo que prueba es todo lo que hay
+desde «el vigía sale con 1» hasta «hay un Issue con la marca en GitHub», que es lo que no se había
+ejercitado nunca.
 
 ### No medido
 
