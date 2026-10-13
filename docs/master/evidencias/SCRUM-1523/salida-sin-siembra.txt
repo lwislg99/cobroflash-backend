@@ -1,0 +1,2 @@
+CONTROL POSITIVO SEMBRADO · bytes=0 · apariciones=0 · comentario=0 identificador=0 cadena=0 · CIEGO
+CIEGO: el instrumento no ve su propia siembra. Ningun numero de abajo vale. EXIT=2
