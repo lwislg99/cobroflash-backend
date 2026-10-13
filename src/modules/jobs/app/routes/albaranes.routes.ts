@@ -1039,13 +1039,33 @@ router.post('/:id/firmar', async (req, res) => {
       firmadoPorNombre,
       firmadoPorCalidad: calidad.valor,
     });
-    const updated = await prisma.albaran.update({
-      where: { id: albaran.id },
-      data: {
-        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
-        firmadoPorNombre, firmadoPorCalidad: calidad.valor,
-      },
-    });
+    // SCRUM-1302k: la firma se escribe SÓLO si el albarán sigue en el estado que se leyó. Con
+    // `where: { id }`, dos peticiones a la vez (el reintento de la firma, o la cola sin cobertura
+    // al volver la red) leían las dos `emitido` y escribían las dos: quedaba el SEGUNDO trazo.
+    // Mismo patrón que la firma remota (SCRUM-1302j). Quien llega tarde no regenera el PDF.
+    let updated;
+    try {
+      updated = await prisma.albaran.update({
+        where: { id: albaran.id, estado: albaran.estado },
+        data: {
+          estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+          firmadoPorNombre, firmadoPorCalidad: calidad.valor,
+        },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      // Se vuelve a leer y se contesta lo mismo que contestaría una petición nueva: los mismos
+      // textos, ya aprobados, de las puertas de arriba, literales y con su `message` (SCRUM-275).
+      const ahora = await prisma.albaran.findFirst({
+        where: { id: albaran.id, merchantId: req.merchantId },
+        select: { estado: true },
+      });
+      if (!ahora) return res.status(404).json({ error: 'not_found' });
+      if (ahora.estado === 'firmado') {
+        return res.status(409).json({ error: 'albaran_locked', message: 'Este albarán ya está firmado.' });
+      }
+      return res.status(409).json({ error: 'invalid_transition', from: ahora.estado, to: 'firmado', message: 'Emite el albarán antes de firmarlo.' });
+    }
     // Regenerar el PDF YA con el bloque de firma (force). Si el PDF falla, la firma
     // queda registrada igualmente (el GET /pdf lo regenerará bajo demanda).
     await ensureAlbaranPdf(albaran.id, true).catch((e) =>
