@@ -10,6 +10,7 @@ import { constanciaDeFallo } from '../../messaging/domain/constanciaCorreo';
 import { CLASES_DE_CORREO, type ContextoDeEnvio } from '../../messaging/domain/registroDeEnvios';
 import { renderEmailLayout, escEmail } from '../../messaging/domain/emailLayout';
 import { generateUniqueReferralCode, resolveReferrer } from './referral.service';
+import { zonaDeAlta } from './zonaDeLaProvincia';
 import { maskEmail } from '../../../core/utils/utils';
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
@@ -311,6 +312,8 @@ export async function registerMerchant(params: {
   ref?: string;
   // V0-3: atribución de adquisición ("utm_source/medium/campaign" o "ref:CODIGO")
   source?: string;
+  // SCRUM-1522e: de ella sale la zona con la que nace el comercio (zonaDeLaProvincia.ts)
+  provincia?: string;
 }): Promise<void> {
   const existing = await prisma.merchant.findUnique({ where: { email: params.email } });
   if (existing) {
@@ -334,6 +337,12 @@ export async function registerMerchant(params: {
     throw err;
   }
 
+  // SCRUM-1522e · la zona se resuelve ANTES de crear nada, y si no sale, no se crea: un comercio de
+  // España sin provincia LANZA aquí (`provincia_required` / `provincia_desconocida`). Hasta hoy este
+  // `create` no escribía `timezone` y todo comercio nacía a NULL, o sea con el día contado en UTC.
+  const country = params.country ?? 'ES';
+  const timezone = zonaDeAlta(country, params.provincia);
+
   // Atribución de referido (si llega un código válido y no es autorreferencia)
   const referredBy = params.ref ? await resolveReferrer(params.ref) : null;
   const referralCode = await generateUniqueReferralCode(params.name);
@@ -342,7 +351,8 @@ export async function registerMerchant(params: {
     data: {
       name: params.name,
       email: params.email,
-      country: params.country ?? 'ES',
+      country,
+      timezone,
       status: 'active',
       plan: 'trial',
       planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
