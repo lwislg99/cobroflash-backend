@@ -64,6 +64,11 @@
 //                  los árboles, con aviso por debajo de seis días de lo que se escribe en cada una; cuánto de
 //                  lo ocupado es del EQUIPO y cuánto no; y lo que devolvería barrer los `tmp` de trabajos.
 //                  El 6-oct-2026 la primera se quedó a 79 MB y se supo por un ENOSPC a mitad de una tanda.
+//  12 · ARRANQUE → (SCRUM-1298b) el árbol donde ARRANCAN las sesiones contra la punta de `main`: cuántos commits
+//                  va por detrás, cuántos hooks de `main` declara el `settings.json` que hay en disco, y cuántas
+//                  de las piezas que una sesión carga al arrancar (CLAUDE.md, lo que importa, `.claude/`) son
+//                  distintas. Avisa si falta UN hook o UNA pieza; el número de commits no avisa, se enseña.
+//                  El 9-oct-2026 iba 2.582 por detrás con 1 hook de 5, y sólo se sabía midiéndolo a mano.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -98,6 +103,8 @@ import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
 // (SCRUM-1473) La máquina: el disco y lo que el barrido de `tmp` devolvería. El latido sólo mide; no borra.
 import { seccionDisco, medirDisco } from './disco.mjs';
 import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } from './barrer-jobs.mjs';
+// (SCRUM-1298b) El árbol donde arrancan las sesiones contra la punta de main. Sólo lee; no cambia de rama.
+import { seccionArranque, medirArranque } from './arranque.mjs';
 // (SCRUM-1123d) Qué Issue lleva la marca del aviso se decide con la MISMA función que usa el workflow.
 import { elegirIssueExistente } from '../vigia-despliegue-aviso.mjs';
 
@@ -1378,7 +1385,10 @@ async function todo() {
   const barrible = censoTmp && censoTmp.pudo ? { bytes: tmpBarribles(censoTmp).reduce((a, f) => a + f.bytes, 0), trabajos: tmpBarribles(censoTmp).length, horas: HORAS_SIN_ACTIVIDAD } : null;
   const sDis = seccionDisco({ unidades: disco && disco.unidades, zonas: disco ? disco.zonas : [], barrible });
   tramo('disco');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis];
+  // 12 · arranque. Pregunta la punta al remoto (`ls-remote`, sin escribir referencias) y compara el árbol principal.
+  const sArr = seccionArranque(intentar(() => medirArranque({ raiz })));
+  tramo('arranque');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis, sArr];
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
