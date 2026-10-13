@@ -1,0 +1,89 @@
+✖ SCRUM-1288d · 🔴 «Pago recibido»: un importe con miles sale «1.234,50 €» en el CUERPO, no «1234.5 EUR» (36.0925ms)
+✖ SCRUM-1288d · 🔴 «Pago recibido»: y también en el ASUNTO, que es lo que se lee en la bandeja (0.3988ms)
+✖ SCRUM-1288d · 🔴 «Presupuesto aceptado»: un total con miles sale «1.234,50 €», no «1234.50 EUR» (0.4282ms)
+✖ SCRUM-1288d · CONTROL: dos importes distintos salen distintos en los dos correos (el formateador no devuelve siempre lo mismo) (0.3364ms)
+✖ SCRUM-1288d · la moneda la decide el cobro o el presupuesto: fuera del euro no se pinta «€» (1.1238ms)
+✔ SCRUM-1288d · el resto de los dos correos no cambia: asunto del aceptado, cliente y frases siguen donde estaban (0.268ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 1
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 566.2692
+
+✖ failing tests:
+
+test at tests\scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:75:1
+✖ SCRUM-1288d · 🔴 «Pago recibido»: un importe con miles sale «1.234,50 €» en el CUERPO, no «1234.5 EUR» (36.0925ms)
+  AssertionError [ERR_ASSERTION]: 🔴 el importe del correo de pago no está en es-ES: «1234.5 EUR»
+      at enEsEs (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:70:10)
+      at TestContext.<anonymous> (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:77:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '1234.5 EUR',
+    expected: /^1\.234,50\s€$/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:80:1
+✖ SCRUM-1288d · 🔴 «Pago recibido»: y también en el ASUNTO, que es lo que se lee en la bandeja (0.3988ms)
+  AssertionError [ERR_ASSERTION]: 🔴 el asunto del correo de pago no está en es-ES: «💰 Pago recibido: 1234.5 EUR de Cliente QA»
+      at enEsEs (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:70:10)
+      at TestContext.<anonymous> (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:82:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '💰 Pago recibido: 1234.5 EUR de Cliente QA',
+    expected: /^💰 Pago recibido: 1\.234,50\s€ de Cliente QA$/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:85:1
+✖ SCRUM-1288d · 🔴 «Presupuesto aceptado»: un total con miles sale «1.234,50 €», no «1234.50 EUR» (0.4282ms)
+  AssertionError [ERR_ASSERTION]: 🔴 el total del correo de aceptado no está en es-ES: «1234.50 EUR»
+      at enEsEs (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:70:10)
+      at TestContext.<anonymous> (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:87:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '1234.50 EUR',
+    expected: /^1\.234,50\s€$/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:90:1
+✖ SCRUM-1288d · CONTROL: dos importes distintos salen distintos en los dos correos (el formateador no devuelve siempre lo mismo) (0.3364ms)
+  AssertionError [ERR_ASSERTION]: «99 EUR»
+      at TestContext.<anonymous> (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:93:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: '99 EUR',
+    expected: /^99,00\s€$/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:101:1
+✖ SCRUM-1288d · la moneda la decide el cobro o el presupuesto: fuera del euro no se pinta «€» (1.1238ms)
+  AssertionError [ERR_ASSERTION]: 🔴 fuera del euro se pierde el formato del número: «1500 MXN»
+      at TestContext.<anonymous> (file:///tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs:106:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
