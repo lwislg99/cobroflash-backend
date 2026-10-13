@@ -1795,3 +1795,169 @@ extracto: leen el log entero, que se baja fuera del árbol. Con el fichero de an
 canceled» y no dice quién ni por qué. Y si la ciega del meta-guard se repite sobre la base de hoy:
 ese run es de hace cinco días y de otro `main` (112 commits). La rama se ha mezclado con `main` para
 que los tres corran de nuevo sobre la base actual; lo que salga de ahí es lo que vale.
+
+# SCRUM-1339n · La ciega de `scrum859` no es de dos veces: es 42 de 213, siempre la misma, y el mismo blob se juzga entero en las otras 171
+
+**Medido contra:** `origin/main` = `780c812707bfd97b815fe5e25f31110e66e25975` · 2026-10-13T06:33:14Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1339/n-listar.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-2e`, 13-oct, comentario 19215;
+sesión `jv-j3c`, carril J3 por encargo: el ticket lleva `area-j6`). El 13-oct el meta-guard sacó
+`scrum859` como CIEGO en dos PR (#2323 y #2354), con la misma cifra, 4 de 20. ¿Es la cola perdida
+que caracterizó SCRUM-1520, o es que el meta-guard no puede verificar esos 4 casos? Tres preguntas:
+cuántas veces ha salido, si son siempre los mismos 4, y si el mismo blob sale completo en otros
+jobs. **Es medición: no se ha tocado el meta-guard, ni `scrum859`, ni `scrum267`, ni ningún
+workflow; no se ha ajustado ningún número; el ticket no se transiciona.** Entran esta sección y
+siete ficheros `n-*` en evidencias. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498): seguí.
+
+## En corto
+
+- **Es cola perdida, y el meta-guard SÍ puede verificar esos 4 casos: lo hace en 171 de 213
+  ejecuciones.** Mismos tres blobs (el guard, el fichero que muta y el instrumento) en las 213.
+- **Sale CIEGO en 42 de las 213 ejecuciones con veredicto, el 19,7 %**, desde que entró el
+  instrumento actual (6-oct, 13:43Z) hasta el 13-oct, 06:20Z. Otras 35 ejecuciones se cancelaron y
+  no dicen nada.
+- **Siempre los mismos 4, y siempre igual: una sola firma en las 42.** El test declarado, la causa
+  que escribe el instrumento, «9 pasados · 7 caídos», la limpia «20 pasados · 0 caídos», «faltan 4
+  de 20» y los cuatro nombres.
+- **Las dos preguntas ya estaban contestadas en este mismo registro**, tramo 1339j (8-oct): 8 de 53,
+  una firma. El encargo las daba por no medidas. Lo de hoy amplía la población de 53 puntas de PR a
+  las 248 ejecuciones del job, y añade la pata del blob.
+- **Aquí el corte SÍ es fijo, 42 de 42, y sigue sin ser una avería del guard.** «Se repite en el
+  mismo sitio» falla en los dos sentidos: con dos casos no separa nada, y con 42 separa mal. Lo que
+  decide es que el mismo blob sale entero en otros jobs.
+- **No he ejecutado nada, ni en local ni en Linux.** Todo sale de leer 246 logs. Por qué ocurre una
+  de cada cinco veces sigue sin medir, igual que el 8-oct.
+
+## Lo que ya estaba medido, y no repito
+
+El tramo 1339j ejecutó `scrum859` con el instrumento de la casa y con el canal del hijo troceado:
+quitándole la cola a su informe, el instrumento dicta palabra por palabra lo de CI («9 pasados · 7
+caídos · faltan 4 de 20») mientras falten entre unos 8.000 y unos 60.000 B. El tramo 1339k dio, en
+un modelo, por qué el recuento no puede ser otro: los cuatro últimos tests viajan juntos. Y
+SCRUM-1405 midió en Linux que con `--test-force-exit` el proceso de cada fichero sale con parte del
+informe sin escribir. **Nada de eso lo he vuelto a medir hoy**: lo cito con su fecha. Lo que traigo
+es la población y la pata independiente.
+
+## ① Cuántas veces: 42 de 213
+
+`n-listar.mjs` pide a GitHub todos los runs del workflow CI creados desde el merge de #2213
+(`8290e27d`, 2026-10-06T13:43:02Z, el último cambio de `scripts/meta-guard-mutaciones.mjs`) y, de
+cada uno, el job del meta-guard en todos sus intentos. `j-logs.mjs`, el guion del tramo 1339j, lee
+los logs **sin haberlo tocado**: la lista sale con la forma de su fichero de entrada.
+
+| | |
+|---|---|
+| runs de CI en la ventana | 326 declarados por GitHub, 326 traídos |
+| runs sin job de meta-guard | 80, todos `push` a `main`: 79 cancelados y 1 en `failure` |
+| ejecuciones del meta-guard | **248**, en 246 runs y 139 PR (192 `pull_request`, 56 `push`; 2 son un segundo intento) |
+| sin veredicto (canceladas; sin línea de resumen) | 35 |
+| con veredicto | **213** |
+| `scrum859`: mutación 1 viva, mutación 2 viva | **171** |
+| `scrum859`: mutación 1 viva, mutación 2 ciega | **42** |
+| `scrum859`: cualquier otra forma | 0 |
+| el job entero: VERDE · CIEGO · ROJO | 155 · 58 · 0 |
+
+- 42 + 171 = 213. La conclusión de GitHub coincide con el resumen propio en las 248 (155 `success`,
+  58 `failure`, 35 `cancelled`).
+- Esta población **contiene** las 53 puntas del tramo 1339j: no son 8 más 42.
+- Por día (creación del run, UTC): 8 de 35 · 10 de 73 · 13 de 56 · 5 de 24 · 6 de 25, del 6 al 9 y
+  el 13 de octubre. Por evento: 28 de 157 en `pull_request`, 14 de 56 en `push`. Por imagen del
+  runner: 17 de 102 y 25 de 111. El node, v24.21.0 en las 213.
+- En orden de creación van intercaladas: 66 cambios de forma entre vecinas, y la racha más larga de
+  ciegas seguidas es de 4. La última ciega es de las 05:32:38Z del 13-oct y la última entera de las
+  05:45:59Z.
+
+## ② ¿Siempre los mismos 4? Sí: una firma en las 42
+
+La firma de `j-logs.mjs` junta el test declarado, la causa que escribe el instrumento, el recuento
+de la pasada mutada, el de la limpia, cuántos faltan y sus nombres. **Firmas distintas: 1.**
+
+    SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave ¦ NO APARECE en la mutada ¦ 9p+7c+0s ¦ 20p+0c ¦ 4 de 20
+
+Los cuatro que faltan son los cuatro últimos del fichero, y el declarado es el primero de ellos.
+En las 42, **la pasada limpia del mismo job trae los 20**: el fichero monta e informa de todo en
+ese mismo runner.
+
+## ③ La pata independiente: el mismo blob, entero en 171
+
+CI no prueba la punta de la rama: prueba su merge con `main`. Así que el blob que corrió es el de
+`main`, salvo que la rama traiga una versión propia. Medido:
+
+- `main` no ha tocado ninguno de los tres ficheros desde `8290e27d`: 0 commits (el mismo comando
+  sobre `docs/master` da 455).
+- De las 211 puntas distintas, ninguna trae una versión de ninguno de los tres que `main` no haya
+  tenido, y las 211 están en local.
+- Con esos tres blobs (`97a2be40`, `597c2e43`, `b0bfd890`): **juzgado entero en 171, ciego en 42.**
+
+Una salida escrita en el código, o un caso que el instrumento no supiera verificar, no puede dar
+171 enteras con el mismo blob.
+
+Lo que esta pata **no** da: la misma punta ejecutada dos veces con las dos formas. Sólo hay 2
+puntas con más de una ejecución y las dos salen enteras las dos veces: con 2 no dice nada. Sí hay 64
+PR con más de una ejecución (puntas distintas): 25 traen las dos formas, 37 sólo enteras y 2 sólo
+ciegas.
+
+## ④ Los controles
+
+- **Positivos, que tienen que salir ciegos:** el job `115146037750` (#2354) y el `113223120811`
+  (#2323, run `37750763506`), los dos del encargo. Salen `CIEGO · ✔?`.
+- **Cero, que no puede salir ciego:** el job `113102985230` (#2294), leído verde el 8-oct con
+  «vivas 520 · ciegas 0». Sale `VERDE · ✔✔`.
+- **Los dos, dados la vuelta:** con el limpio en el sitio del positivo y un ciego en el del cero,
+  `n-patas.mjs` dice que 2 controles no se cumplen y sale con 1
+  (`n-salida-patas-control-al-reves.txt`).
+- **Tamaño antes de contar:** los 213 logs con veredicto pesan de 113.588 a 127.648 B. Los 35 sin
+  veredicto, de 0 a 123.069 B; dos de ellos no se pudieron bajar (404) y van como 0 B y sin
+  veredicto, no como enteros.
+- **Sumas:** las ✔ contadas coinciden con las «vivas» del resumen en 213 de 213; las marcas «?» y
+  «☠» contadas dan las ciegas más los muertos del resumen en 213 de 213; las 248 ejecuciones
+  listadas están una a una en la lista del lector.
+- **Cero derivado, del lector:** el guard de número más alto que nombran los logs
+  (`scrum1486-…`) sale en 213; con el número más uno, en 0.
+- **La función del lector**, sobre cinco logs fabricados (verde, ciego, rojo, vacío y cortado): los
+  cinco en su estado.
+
+## ⑤ Lo que salió sin pedirlo
+
+- **El job del meta-guard sale con 2 en 58 de 213 ejecuciones, el 27,2 %, y en ninguna hay una
+  muda.** 42 llevan a `scrum859`; 16 son CIEGO sin él.
+- **`vigia-atascados` ciega en 26 logs**, más 1 como fichero muerto. Después: `scrum757`, 3;
+  `scrum813`, 3 como fichero muerto; `scrum834`, 1. No los he abierto: no sé si son la misma causa.
+- ROJO, en 213: 0. La ceguera sólo quita veredictos; no he visto que invente ninguno.
+
+## Lo que NO sé y lo que NO he hecho
+
+- **No he ejecutado nada**, ni en local ni en Linux. El mecanismo es el de 1339j, 1339k y
+  SCRUM-1405, citado.
+- **Si los 4 casos ausentes se ejecutaron** en las pasadas ciegas. Estos logs no lo traen.
+- **Por qué una de cada cinco.** Ni el día, ni el evento, ni la imagen del runner lo separan.
+- Las ejecuciones anteriores al 6-oct, 13:43Z: otro blob del instrumento, y el lector lee los
+  mensajes del actual.
+- Las 35 canceladas: no cuentan en ningún sentido.
+- Si este job es obligatorio para el merge. #2323 entró con él corriendo (comentario 19213).
+- El blob es el mismo; el árbol no. `scrum267` lee `docs/master`, que cambió en 455 commits en la
+  ventana. El tramo 1339k midió que la cola no cambia con eso en sus 53 PR; yo no.
+
+## Mis errores
+
+1. La primera pasada de `n-listar.mjs` dejó 184 de 247 ejecuciones sin número de PR: tomé el campo
+   `pull_requests` del run, que GitHub devuelve vacío casi siempre. Lo cazó la línea de población
+   del propio guion («sin número de PR: 184»). Ahora cruza por la punta y por la rama: 0.
+2. Un `git rev-list` mal escrito me dio la punta de `main` como «primer merge que contiene el
+   instrumento». Lo delató que la distancia a `main` fuera 0. Repetido recorriendo la línea
+   principal: `8290e27d`.
+3. Empecé a diseñar la medición antes de leer el tramo 1339j, que ya tenía el lector y las dos
+   primeras respuestas. Lo encontré al listar los comentarios del ticket.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/n-listar.mjs 2026-10-06T13:43:02Z <carpeta de fuera>/n-datos.json
+    node $E/j-logs.mjs <carpeta de fuera>/n-datos.json <carpeta de fuera>/logs
+    node $E/n-patas.mjs <carpeta de fuera>/n-datos.json <la salida de j-logs> <carpeta de fuera>/logs . 115146037750,113223120811 113102985230
+
+Sin `FORCE_COLOR` en el entorno. La lista de hoy va en `n-datos.json`; los 246 logs (29 MB) no
+están en git y se bajan con sus números de job, que van en esa lista. Una lista nueva trae más
+runs: las cifras se recalculan, no se heredan.
