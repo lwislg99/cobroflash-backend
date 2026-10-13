@@ -12,10 +12,10 @@
 //           o la hoja cayó bajo una firma que YA estaba escrita para otras (sG ≥ sT, la letra existía).
 // No escribe en el árbol. Uso: node quien-la-vio.mjs <árbol> [--lab]
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { temporal } from '../../../../../tests/_temporal.mjs';
 
 const arbol = path.resolve(process.argv[2]);
 const git = (...a) => execFileSync('git', ['-C', arbol, ...a], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
@@ -40,7 +40,7 @@ sust("censarObjeto(e, propia, ruta + '[]');", "censarObjeto(e, propia, ruta + '[
 sust('hojas.push({ id: `${rel} · ${ruta}`, clase: propia, porGrupo });', 'hojas.push({ id: `${rel} · ${ruta}`, clase: propia, porGrupo, texto: valor.getText(sf), firma: firmaDeEsta, trozos: trozosDe(valor) });', 2);
 sust("censarObjeto(n, heredada, base, heredada === 'APROBADO' ? cuantosDice(bloque(decl)) : Infinity);",
   "censarObjeto(n, heredada, base, heredada === 'APROBADO' ? cuantosDice(bloque(decl)) : Infinity, heredada ? bloque(decl) : null);");
-const dirTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'quienlavio'));
+const dirTmp = temporal('quienlavio');
 const copia = path.join(dirTmp, 'censo-instrumentado.mjs');
 fs.writeFileSync(copia, fuente);
 const inst = await import(pathToFileURL(copia).href);
@@ -270,5 +270,4 @@ for (const r of filas.filter((x) => x.clase === 'FIRMA_ESCRITA_DESPUES')) {
 for (const [k, e] of ev) { console.log(`  ${e.n} hoja(s) · ${k}\n      firma hoy:  ${corto(e.firma, 160)}`); for (const p of e.previa) console.log(`      antes:      ${p}`); }
 
 fs.writeFileSync(path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), 'quien-la-vio.json'), JSON.stringify({ head, main, filas: filas.map(({ estados, ...r }) => r) }, null, 1));
-fs.rmSync(dirTmp, { recursive: true, force: true });
 console.log('\nEXIT=0');
