@@ -365,7 +365,7 @@ router.get('/:token', async (req: Request, res: Response) => {
             }
             btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
             const e=document.getElementById('sig-error');
-            e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block';
+            e.textContent=d.message||'No se ha podido firmar. Inténtalo de nuevo.'; e.style.display='block';
           }
         }catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
           // SCRUM-1302d: aquí no se sabe si la firma llegó. Sobre un parte ya firmado el POST contesta que ya está, sin escribir.

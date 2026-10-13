@@ -402,3 +402,47 @@ No es el reintento de una persona que ha leído el aviso: para entonces la prime
 - En el parte, el texto de reserva sigue siendo «No se pudo firmar. Inténtalo de nuevo.», que no es el literal C. El comentario 19428 dice que C «unifica»; cambiar también éste es estirar la firma, y se pregunta.
 - Con «Acepto sin firmar» marcado en el presupuesto, C dice «No se ha podido firmar» de una aceptación sin trazo. El botón se sigue llamando «Firmar y aceptar», así que no desentona con la página; queda dicho.
 - El guion de las dos páginas lleva comentarios de código que se sirven al navegador (ya los había). Los dos que añade esta rama no nombran ficheros ni tests.
+
+# APÉNDICE · SCRUM-1302e: la reserva del parte dice lo mismo que la del presupuesto, y dos guiones a salvo (S4)
+
+**Medido contra:** `origin/main` = `1ef32907a2e7fb162a5d9b95ab7e887a4cfb35a0` · 2026-10-13T15:25:14Z
+A9: comprobación → `tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`
+
+Carril S4 por ser texto puro (encargo del orquestador del 13-oct; el fichero es de S1) · sesión `s4-13octf` · rama `scrum-1302e-la-reserva-del-parte-dice-lo-mismo`. El #2395 (SCRUM-1302d, arriba) entró a las 15:10:04Z; esto es lo que el comentario 19454 firmó después y no llegó a tiempo de ir dentro.
+
+**Skill UI:** no cargada · cambia un literal en una página que sirve el servidor.
+
+## Lo firmado
+
+Aprobado por el orquestador por delegación del fundador, 13-oct-2026 — SCRUM-1302 comentario 19454, punto 4. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-paginas-de-firma-del-cliente.md`, que ya llevaba el literal para el presupuesto.
+
+| | antes | ahora | dónde |
+|---|---|---|---|
+| C, parte | «No se pudo firmar. Inténtalo de nuevo.» | «No se ha podido firmar. Inténtalo de nuevo.» | el texto de reserva de `albaranPublic.routes.ts`, detrás de `d.message` |
+
+Lo que el mismo comentario dijo y NO se ha aplicado, con su motivo:
+
+- **El final «Inténtalo otra vez.» (punto 5): anulado.** El orquestador lo retiró el mismo día en SCRUM-1215 comentario 19460, con la medida del puesto de front delante: «Inténtalo de nuevo.» está en 24 sitios del panel y «otra vez» en 7. Esta sesión llegó a escribir el cambio en su árbol, no lo empujó, y lo deshizo al recibir la anulación. En `main` no ha estado nunca.
+- **«Firmar» cuando se acepta sin trazo:** la regla es que el aviso nombra la acción que nombraba el botón. El botón del presupuesto dice «Firmar y aceptar» con la casilla marcada o sin marcar, así que el aviso se queda como está.
+
+## Verificado, ejecutando
+
+`tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs` gana un test y una sonda con su control: 9 tests. El test pide la página del parte a su ruta de `dist`, lee el texto de reserva y lo compara con el literal y con el que pinta la página del presupuesto.
+
+- **Rojo antes** (el fichero de `origin/main` puesto de vuelta y compilado): cae 1 de 26 entre este fichero y `scrum264`, el test nuevo, enseñando «No se pudo firmar. Inténtalo de nuevo.».
+- **Verde después** (cambio repuesto, `git status` limpio, `npm run build` con código 0): 26 de 26.
+- **Los que leen estas páginas, las fichas, las evidencias o el registro:** 424 ficheros, 4.123 tests, 4.095 pasan, 27 saltados y 1 caído: `scrum854`, que pedía esta misma entrada de registro antes de que estuviera escrita. Repetido con la entrada puesta: ver el comentario de entrega. La tanda dirigida entera NO se ha corrido.
+- **De paso, un rojo propio que cazó esa misma tanda en la versión que no se empujó:** una ficha de microcopy que nombraba a otra por su fichero es un índice a mano (`scrum709`). La versión empujada no lo hace: el literal del parte se apunta en la ficha que ya lo tenía.
+
+## Dos guiones que vivían fuera de git, ahora a salvo
+
+- `docs/master/evidencias/SCRUM-1302/revision-vieja/`: el defecto del enlace de una revisión antigua (comentario 19451). Con una .1 en el grupo, el enlace de la .0 pinta el formulario con el total de la vieja y el `POST` acepta con 200; preguntas por el grupo, 0, con el contador comprobado a mano. Vuelto a correr hoy sobre este árbol: mismo resultado. Es el control de lo que se construya.
+- `docs/master/evidencias/SCRUM-1302/crear-revision-no-avisa/`: qué le dice el panel al profesional al pulsar «Crear revisión». Con la ficha real del presupuesto montada entera y una versión enviada y sin decidir: ninguna pregunta antes del POST, un POST con un solo clic, la sección «Revisiones» dice lo mismo antes, durante y después («Esta es la única versión.» y el botón), ninguno de esos textos nombra el enlace, y al terminar la pantalla va a la ficha de la revisión nueva sin mensaje. La primera versión de la sonda estaba ciega (el banco de vistas no agrega el texto de los hijos) y la cazó su propio control positivo, que salió rojo.
+
+## Sigue abierto en este ticket tras 1302e
+
+- **La página del enlace de una revisión antigua NO está construida.** Los literales y la conducta están firmados en el comentario 19454, con una condición: el panel tiene que decírselo al profesional al crear la revisión, y hoy no lo dice. El aviso del panel está propuesto para firmar en el comentario 19456. Las dos mitades entran juntas o no entra ninguna.
+- Rechazar el `POST /quote/:token/decision` de una revisión no vigente es de S1.
+- D y E de la tabla del comentario 19449 siguen vivos y cruzan a J1.
+
+**NO medido:** yaqu.app con el #2395 desplegado · la ficha de la revisión nueva tras navegar · un clic en «Crear revisión» en yaqu.app.

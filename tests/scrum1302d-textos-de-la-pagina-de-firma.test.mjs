@@ -6,7 +6,8 @@
 //       popularidad: lo único que hay es que el profesional la marcó).
 //   B · cuando la petición de firma no vuelve, la página no dice «Error de conexión.»: dice que no
 //       se ha podido confirmar que la firma llegara. En el presupuesto y en el parte.
-//   C · el texto de reserva al aceptar el presupuesto dice qué no se pudo hacer.
+//   C · el texto de reserva al aceptar el presupuesto dice qué no se pudo hacer. Y el del parte dice
+//       lo MISMO, palabra por palabra (SCRUM-1302 comentario 19454; rama 1302e).
 //   D · el parte firmado NO promete la copia por WhatsApp: el envío es de mejor esfuerzo.
 //
 // 🔴 Y LA CONDICIÓN CON LA QUE SE FIRMÓ LA B: el texto aconseja reintentar, así que reintentar sobre
@@ -51,6 +52,11 @@ const textoSinRespuesta = (html) => {
 const textoDeReserva = (html) => {
   const m = html.match(/getElementById\('sig-error'\)\.textContent = (data\.[^;]+);/);
   return m ? new Function('data', `return ${m[1]};`)({}) : null;
+};
+/** El texto de reserva del PARTE: lo que recibe el aviso cuando el servidor contesta un error sin `message`. */
+const textoDeReservaDelParte = (html) => {
+  const m = html.match(/e\.textContent\s*=\s*d\.message\s*\|\|\s*'([^']*)'/);
+  return m ? m[1] : null;
 };
 /** Cualquier promesa de copia en la página: la palabra, no una frase concreta (D es una RETIRADA). */
 const promesasDeCopia = (html) => html.match(/[^<>'"`]*\b(?:copia|recibir[áa]s)\b[^<>'"`]*/gi) ?? [];
@@ -102,6 +108,9 @@ test('SCRUM-1302d · control · las sondas ven el texto viejo cuando está', () 
   assert.equal(textoSinRespuesta(vieja), 'Error de conexión.');
   assert.equal(textoDeReserva(vieja), 'Error al procesar.');
   assert.equal(promesasDeCopia(vieja).length, 1);
+  // La reserva del parte, con lo que el parte pintaba hasta el 13-oct: parecido a C y no igual.
+  const parteViejo = "if(!r.ok){ btn.disabled=false; const e=document.getElementById('sig-error'); e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block'; }";
+  assert.equal(textoDeReservaDelParte(parteViejo), 'No se pudo firmar. Inténtalo de nuevo.');
   // Y la del parte, que escribe el `catch` de otra manera.
   assert.equal(textoSinRespuesta("}catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';\n const e=document.getElementById('sig-error'); e.textContent='Error de conexión.'; e.style.display='block'; }"), 'Error de conexión.');
 });
@@ -136,6 +145,13 @@ test('SCRUM-1302d · B · parte: lo que se lee si la respuesta de la firma no vu
   assert.ok(cuerpo.includes('Firmar el parte de trabajo'), 'CIEGO: no es la página de firma del parte');
   assert.equal(textoSinRespuesta(cuerpo), TEXTO_B);
   assert.deepEqual(viejosEn(cuerpo), []);
+});
+
+test('SCRUM-1302e · C · parte: si el servidor contesta un error sin texto, se lee lo mismo que en el presupuesto', async () => {
+  const { cuerpo } = await bancoDelParte().pagina();
+  assert.ok(cuerpo.includes('Firmar el parte de trabajo'), 'CIEGO: no es la página de firma del parte');
+  assert.equal(textoDeReservaDelParte(cuerpo), TEXTO_C);
+  assert.equal(textoDeReservaDelParte(cuerpo), textoDeReserva(await paginaDelPresupuesto()), '🔴 parte y presupuesto ya no dicen lo mismo');
 });
 
 test('🔴 SCRUM-1302d · D · el parte firmado no promete ninguna copia: ni al acabar de firmar ni al volver al enlace', async () => {
