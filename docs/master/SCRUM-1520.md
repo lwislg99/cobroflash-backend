@@ -244,3 +244,105 @@ cuenta los otros jobs de esa noche donde ese mismo blob informó de todos sus ca
     node $E/b-los-cinco.mjs . <carpeta> --sin-siembra  # tiene que salir 2 y decir CIEGO
 
 No pide `dist/`. No toca el árbol.
+
+# SCRUM-1520c · El obligatorio de las dos entregas salió ROJO y nadie lo había leído: dos caídos, los dos por el banco de la primera, ninguno por la medición
+
+**Medido contra:** `origin/main` = `dfda86d65b8de9594b59b277fd38ea0ac3eda93a` · 2026-10-13T04:43:50Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum708-el-fichero-que-no-corre.test.mjs`
+
+J6 (sesión `jv-j6`, segundo relevo; equipo de Javier), por encargo del orquestador
+`cobroflash-backend-2e`. Carril a mano: sólo `docs/master/SCRUM-1520.md` y
+`docs/master/evidencias/SCRUM-1520/`. No he tocado `src/`, `tests/`, `scripts/`, ningún workflow, el
+meta-guard, `scrum859` ni `scrum267`, y el ticket no se transiciona.
+
+## En corto
+
+- **La medición de los cinco ya estaba hecha y entregada** (tramo 1520b, Jira c.19159) cuando
+  arranqué. No la he repetido. El árbol estaba limpio y empujado: `HEAD` = remoto = `7e73ee831`.
+- **Lo que las dos entregas dejaron «SIN LEER» estaba en rojo.** El obligatorio de #2344 y el de
+  #2348 salieron `FAILURE`. Con el auto-merge armado, ninguna de las dos habría entrado en `main`:
+  el registro de SCRUM-1520 NO está en `main` a la hora del ancla.
+- **Los dos caídos son del banco de la primera entrega,** no de lo medido:
+  `scrum708` (las dos siembras registran tests y `npm test` no las ejecuta) y `scrum864c`
+  (`la-cola-que-cae.mjs:48` creaba un temporal que no borraba nadie).
+- **Arreglado en la evidencia, sin tocar ningún instrumento.** Las siembras pasan a `.txt` y sólo son
+  `.mjs` dentro del temporal; el temporal sale de `temporal()`. El banco da lo mismo: 8 controles
+  de 8, y sin siembra dice CIEGO y sale 2.
+
+## ① El obligatorio de #2348, leído por nombre
+
+Job `115070389248`, cabeza `7e73ee831`. Log de 1.810.288 B (uno completo ronda 1,78 MB) y sin
+«TANDA SIN VEREDICTO».
+
+| | cuenta |
+|---|---|
+| ✔ con su duración al final | 11.047 |
+| ✖ con su duración, antes de la sección «failing tests» | 2 |
+| ﹣ con su duración | 93 |
+| suma | 11.142 |
+| «ℹ tests» declarado | 11.142 (pass 11.047 · fail 2 · skipped 93) |
+
+Los dos, por nombre:
+
+- `SCRUM-708 · 🔴 NINGÚN fichero registra tests fuera de lo que la tanda ejecuta` — nombra
+  `evidencias/SCRUM-1520/siembra-cola.mjs` y `siembra-vecino.mjs`.
+- `SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse` — nombra
+  `evidencias/SCRUM-1520/la-cola-que-cae.mjs:48`, `SIN_LIMPIEZA`.
+
+El obligatorio de #2344 (cabeza `e34daaf5`) también está en `FAILURE`. **Su log no lo he bajado:** que
+sean los mismos dos es lo esperable, porque lleva los mismos tres ficheros, y no está medido.
+
+El job del meta-guard de #2348 (`115070389216`) salió con 2: 519 vivas, 0 mudas, **1 ciega**, en
+`scrum859` (faltan 4 de sus 20 tests en la pasada mutada). En #2344, con los mismos ficheros, ese job
+salió verde. No lo he tocado ni investigado: es la familia de SCRUM-1339 y no es mi carril. No sé si
+ese job es obligatorio para el merge.
+
+## ② El arreglo
+
+| qué | antes | ahora |
+|---|---|---|
+| las dos siembras | `siembra-cola.mjs`, `siembra-vecino.mjs` | `siembra-cola.txt`, `siembra-vecino.txt`; el banco las copia al temporal con su nombre `.mjs` |
+| el temporal del banco | `mkdtempSync(…)` sin borrado | `temporal('scrum1520-')`, de `tests/_temporal.mjs` |
+
+El `.txt` no es un invento: `evidencias/SCRUM-1339/d-banco-de-nombres.txt` es código de `node:test`
+guardado así y está en `main`. Una siembra que cae a propósito no puede entrar en el patrón de la
+tanda, que es la otra salida que ofrece el mensaje de `scrum708`.
+
+Comprobado en local (Windows, node v24.18.0):
+
+- `scrum708` + `scrum864c`: 10 de 10, 0 saltados. Con el estado viejo devuelto a propósito (una
+  siembra con extensión `.mjs` y un `mkdtempSync` suelto en la carpeta): 8 de 10, y los dos que caen
+  son los dos del obligatorio, por nombre.
+- El banco, `--por-npm`: sale 0, 8 controles de 8, las 14 líneas del resumen iguales a las de
+  `salida-la-cola-que-cae.txt`. `--sin-siembra`: sale 2 y dice CIEGO.
+- Temporales `scrum1520-*` en la máquina después de mis dos pasadas: los mismos 4 de antes, fechados
+  entre la 01:06 y la 01:09 hora local (la sesión anterior). Mis pasadas no dejaron ninguno. Esos 4
+  no los he borrado.
+
+Las dos salidas guardadas (`salida-la-cola-que-cae.txt`, `salida-sin-siembra.txt`) son las de la
+primera entrega y no las he regenerado: cambian el sello de tiempo y la ruta del temporal, no la tabla.
+
+## Lo que NO he medido
+
+- **El obligatorio de este empujón.** Se lee después de empujar; lo que salga va al comentario de
+  Jira, no aquí.
+- El log de #2344. La tanda completa en local, no corrida. Nada en Linux.
+- Nada nuevo sobre los cinco obligatorios del 8-oct: lo que dice el tramo 1520b sigue como estaba,
+  con sus propios «no sé».
+
+## Mis errores
+
+- **Mi lector contó 4 caídos donde el resumen declara 2,** y lo cazó la suma, no yo: 11.144 contra
+  11.142. `spec` repite cada caído en su sección final. Es el mismo error que la primera entrega
+  dejó escrito en este registro (33 sobre 32), que yo había leído media hora antes.
+- **La ficha me daba la medición por pendiente y estaba entregada cuatro horas antes.** Lo vi en el
+  `git log` antes de construir nada, porque la ficha mandaba medir el árbol lo primero.
+
+## Reproducir
+
+    rm -f "${TMPDIR:-/tmp}/1520c.tap"
+    node --test --test-force-exit --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/1520c.tap" \
+         tests/scrum708-el-fichero-que-no-corre.test.mjs tests/scrum864c-el-temporal-no-vuelve.test.mjs
+    grep -E "^# (tests|pass|fail|skipped)" "${TMPDIR:-/tmp}/1520c.tap"     # 10 · 10 · 0 · 0
+    node docs/master/evidencias/SCRUM-1520/la-cola-que-cae.mjs --por-npm  # sale 0, 8 controles de 8

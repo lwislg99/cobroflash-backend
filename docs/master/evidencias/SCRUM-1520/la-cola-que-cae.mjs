@@ -16,10 +16,10 @@
 // salió como tiene que salir: entonces la tabla NO VALE y lo dice.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = resolve(AQUI, '../../../..');
@@ -45,9 +45,13 @@ const VARIANTES = [
 const DECLARADOS_COLA = 27; // 01…20, 21, 21a, 21b, 21c, 22, 23, 24
 const DECLARADOS_VECINO = 5;
 
-const dir = mkdtempSync(join(tmpdir(), 'scrum1520-'));
+// El temporal se borra al salir el proceso (`temporal()`): el primer empujón lo creaba con
+// `mkdtempSync` a pelo y no lo borraba nadie, y lo cazó `scrum864c` en el obligatorio.
+const dir = temporal('scrum1520-');
 if (/\s/.test(dir)) { console.error(`CIEGO: el temporal lleva un espacio (${dir}) y NODE_OPTIONS no lo admite.`); process.exit(2); }
-for (const f of ['siembra-cola.mjs', 'siembra-vecino.mjs', 'corte-del-informe.mjs']) copyFileSync(join(AQUI, f), join(dir, f));
+// Las dos siembras se guardan como `.txt` y sólo son `.mjs` DENTRO del temporal: en el árbol eran
+// dos ficheros que registran tests y que `npm test` no ejecuta, y lo cazó `scrum708`.
+for (const [origen, destino] of [['siembra-cola.txt', 'siembra-cola.mjs'], ['siembra-vecino.txt', 'siembra-vecino.mjs'], ['corte-del-informe.mjs', 'corte-del-informe.mjs']]) copyFileSync(join(AQUI, origen), join(dir, destino));
 const barra = (p) => p.replaceAll('\\', '/');
 const CSI = /\u001B\[[0-9;?]*[ -\/]*[@-~]/g;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

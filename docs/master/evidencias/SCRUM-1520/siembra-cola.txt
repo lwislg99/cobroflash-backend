@@ -1,4 +1,4 @@
-// docs/master/evidencias/SCRUM-1520/siembra-cola.mjs — SCRUM-1520 · LA SIEMBRA.
+// docs/master/evidencias/SCRUM-1520/siembra-cola.txt — SCRUM-1520 · LA SIEMBRA.
 //
 // 24 casos en orden. El 21 tiene tres casos dentro (21a, 21b, 21c). Por defecto pasan todos.
 // NO es un test del repositorio: no se llama `*.test.mjs` a propósito, para que ninguna tanda lo
