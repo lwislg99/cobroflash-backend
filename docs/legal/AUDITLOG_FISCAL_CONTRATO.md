@@ -127,7 +127,7 @@ Barrido completo sobre `src/`, `public/`, `tests/`, `scripts/` y `prisma/`:
 | **Export de datos (ZIP/CSV)** | — | 🔴 **No incluido.** El paquete son 6 CSVs ([`exportData.ts:650-658`](../../src/modules/exports/domain/exportData.ts#L650-L658)): clientes, facturas, cobros, trabajos, presupuestos, gastos. `grep -ni "audit"` en ese fichero = 0 |
 | **Borrado de merchant** | [`borradoMerchant.ts:47`](../../src/modules/system/domain/borradoMerchant.ts#L47) | 🟠 **Lo BORRA** — y es el primero de la lista |
 | **Backup** | [`scripts/backup-dump.mjs:69`](../../scripts/backup-dump.mjs#L69) | 🟢 `audit_log` sí entra en el volcado |
-| **Limpieza de staging** | [`clean-staging-tests.mjs:78`](../../scripts/clean-staging-tests.mjs#L78), [`e2e-critico.mjs:305`](../../scripts/e2e-critico.mjs#L305) | Lo borra (mantenimiento) |
+| **Limpieza de staging** | [`clean-staging-tests.mjs:78`](../../scripts/clean-staging-tests.mjs#L78), ~~[`e2e-critico.mjs:305`](../../scripts/e2e-critico.mjs#L305)~~ *(fue cierto hasta el 13-oct-2026: ese guion se retiró entero ese día, SCRUM-1521; desde entonces ya no borra nada)* | Lo borra (mantenimiento) |
 | **Tests** | `scrum25-exports.test.mjs:171`, `scrum25-export-zip.test.mjs:213`, `scrum52-operario.test.mjs:23,47,87`, `scrum66-tipo-operacion.test.mjs:48,73`, `merchant-fixture.test.mjs:78-85` | Lo leen para comprobar que se escribió |
 
 > **En una frase:** el único software que ha leído alguna vez el AuditLog de YaQu son sus
