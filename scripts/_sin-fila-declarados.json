@@ -6,5 +6,10 @@
     "quedan": 224
   },
   "declarados": {
+    "scripts/respaldo-programado.mjs": {
+      "ticket": "SCRUM-1525",
+      "equipo": "javier",
+      "motivo": "Lo crea el carril J6 (equipo de Javier), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    }
   }
 }
