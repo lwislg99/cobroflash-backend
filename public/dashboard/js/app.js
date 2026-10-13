@@ -331,17 +331,10 @@ async function initApp() {
         // usuario pasaba de ver «Presupuesto #N-1» a ver «Presupuestos».
         //
         // Y hay un enganche que no se ve desde aquí: `quotesDetailView.js` corrige el título al
-        // número REAL del presupuesto **sólo si encuentra el rótulo provisional que escribe esta
-        // línea**. Quien navega escribe el provisional y la ficha lo corrige al cargar.
-        //
-        // 🔴 SCRUM-1482 · EL PROVISIONAL LLEVABA EL ID DE LA RUTA («Presupuesto #206» para el que
-        // la lista llama «#5»), que es el id de la tabla, de toda la plataforma. Aquí todavía no
-        // ha llegado ninguna respuesta: el número del presupuesto NO SE SABE, y si la carga falla
-        // no se sabrá. Así que no se pinta ninguno: la palabra del documento, sola, leída del
-        // locale (firma: SCRUM-1482 c.18490), como las fichas hermanas («Trabajo», «Factura»…).
-        // La pestaña del navegador sale de este mismo título, más abajo, y deja de llevarlo también.
-        // El enganche lo ejecuta `tests/scrum832-atras-vuelve-a-la-lista.test.mjs`: si esto y lo
-        // que la ficha reconoce se separan, el título se queda provisional para siempre.
+        // número REAL del presupuesto **sólo si encuentra el provisional que escribe esta línea**.
+        // 🔴 SCRUM-1482 · ese provisional llevaba el ID DE LA RUTA («Presupuesto #206» para el «#5»
+        // de la lista). Aquí el número aún NO SE SABE: no se pinta ninguno, sólo la palabra del
+        // locale (firma: c.18490). La pestaña sale de este título. Lo ata el caso 7 de `scrum832`.
         viewTitle.textContent = state.quoteId != null ? L.quote : L.quotePlural;
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
