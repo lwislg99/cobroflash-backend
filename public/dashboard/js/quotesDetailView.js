@@ -181,19 +181,22 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   // al cargar, se le pone el número visible (y se corrige el título de la vista).
   const displayNum = quote.number ?? id;
   // SCRUM-1487 · la palabra del documento se LEE del locale («Presupuesto» en ES y AR, «Cotización»
-  // en MX, CO, PE y CL), igual que la cabecera de mientras carga. La regex de abajo NO es ese
-  // texto: reconoce el título provisional que escribe el router (`app.js`, SCRUM-832), que sigue
-  // a mano; los dos van juntos y no se tocan aquí.
+  // en MX, CO, PE y CL), igual que la cabecera de mientras carga.
   const palabraDelDocumento = (window.appLocale && window.appLocale.quote) || '';
   const h2 = headLeft.querySelector('h2');
   if (h2) h2.textContent = `${palabraDelDocumento} #${displayNum}`;
-  // SCRUM-1495 · el título de la vista es de la ficha que está MONTADA. La regex sólo dice que el
-  // título parece de un presupuesto, no de cuál: si se abrió otra ficha (u otra vista) mientras
-  // ésta cargaba, el hueco se vació, `page` ya no cuelga de él y esta respuesta llega tarde: no
-  // toca un título que ya es de otro documento.
+  // SCRUM-1495 · el título de la vista es de la ficha que está MONTADA. Que el título sea el
+  // provisional sólo dice que parece de un presupuesto, no de cuál: si se abrió otra ficha (u otra
+  // vista) mientras ésta cargaba, el hueco se vació, `page` ya no cuelga de él y esta respuesta
+  // llega tarde: no toca un título que ya es de otro documento.
+  //
+  // SCRUM-1482 · el provisional que escribe el router (`app.js`, `case 'quotes-detail'`) es esa
+  // misma palabra, sola: ya no lleva el id de la ruta. Se reconoce por ser EXACTAMENTE ella. Un
+  // título que ya lleva su número (la ficha se repinta en sitio tras enviar o guardar) o el de
+  // otra vista no casan, y no se tocan.
   const viewTitleEl = document.getElementById('view-title');
   const sigueMontada = page.parentNode === container;
-  if (viewTitleEl && sigueMontada && /^Presupuesto #/.test(viewTitleEl.textContent || '')) {
+  if (viewTitleEl && sigueMontada && palabraDelDocumento && viewTitleEl.textContent === palabraDelDocumento) {
     viewTitleEl.textContent = `${palabraDelDocumento} #${displayNum}`;
   }
 

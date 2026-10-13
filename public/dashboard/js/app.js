@@ -331,11 +331,18 @@ async function initApp() {
         // usuario pasaba de ver «Presupuesto #N-1» a ver «Presupuestos».
         //
         // Y hay un enganche que no se ve desde aquí: `quotesDetailView.js` corrige el título al
-        // número REAL del presupuesto **sólo si ya empieza por «Presupuesto #»** (su regex). O sea
-        // que quien navega escribe el rótulo provisional con el id, y la ficha lo corrige al
-        // cargar. Ese es el contrato que había, y es el que se conserva — con el mismo literal,
-        // que es el que la ficha sabe reconocer.
-        viewTitle.textContent = state.quoteId != null ? 'Presupuesto #' + state.quoteId : L.quotePlural;
+        // número REAL del presupuesto **sólo si encuentra el rótulo provisional que escribe esta
+        // línea**. Quien navega escribe el provisional y la ficha lo corrige al cargar.
+        //
+        // 🔴 SCRUM-1482 · EL PROVISIONAL LLEVABA EL ID DE LA RUTA («Presupuesto #206» para el que
+        // la lista llama «#5»), que es el id de la tabla, de toda la plataforma. Aquí todavía no
+        // ha llegado ninguna respuesta: el número del presupuesto NO SE SABE, y si la carga falla
+        // no se sabrá. Así que no se pinta ninguno: la palabra del documento, sola, leída del
+        // locale (firma: SCRUM-1482 c.18490), como las fichas hermanas («Trabajo», «Factura»…).
+        // La pestaña del navegador sale de este mismo título, más abajo, y deja de llevarlo también.
+        // El enganche lo ejecuta `tests/scrum832-atras-vuelve-a-la-lista.test.mjs`: si esto y lo
+        // que la ficha reconoce se separan, el título se queda provisional para siempre.
+        viewTitle.textContent = state.quoteId != null ? L.quote : L.quotePlural;
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
