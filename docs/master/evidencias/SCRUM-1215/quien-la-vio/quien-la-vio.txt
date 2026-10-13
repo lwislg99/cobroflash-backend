@@ -1,0 +1,211 @@
+== LABORATORIO (historia fabricada)
+  LAB1 T.uno    → NACIO_CON_EL_FICHERO           como se esperaba
+  LAB1 T.dos    → TEXTO_CAMBIADO_DESPUES         como se esperaba
+  LAB1 T.tres   → LLEGO_BAJO_FIRMA_YA_ESCRITA    como se esperaba
+  LAB1 T.otra   → LLEGO_BAJO_FIRMA_YA_ESCRITA    como se esperaba · mismo texto antes: public/x.js · T.uno [APROBADO, MISMA firma]
+  LAB2 T.uno    → FIRMA_ESCRITA_DESPUES          como se esperaba
+  LAB2 T.dos    → FIRMA_ESCRITA_DESPUES          como se esperaba
+  LAB2 T.tres   → FIRMA_ESCRITA_DESPUES          como se esperaba
+  LAB2 T.otra   → FIRMA_ESCRITA_DESPUES          como se esperaba
+  LAB3 T.tres   → CAYO_BAJO_FIRMA_YA_ESCRITA     como se esperaba (clase del censo hoy: APROBADO)
+LABORATORIO: 9 casos · 0 mal
+
+== ÁRBOL REAL · HEAD f7a4c816ab2bf5c334a953dee60dc7b73718a0f8 · origin/main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8
+POBLACION: 173 identidades aprobadas por grupo (173 hojas) en 20 ficheros · APROBADO en total 248
+HISTORIA: 389 estados de fichero leídos de main (primer padre) · 0 que no parsean (saltados)
+
+VISTAS por la firma que las aprueba: 167 de 173
+NO VISTAS:                          6 de 173
+     1  CAYO_BAJO_FIRMA_YA_ESCRITA
+    12  FIRMA_ESCRITA_DESPUES
+   123  LLEGARON_JUNTAS
+     3  LLEGO_BAJO_FIRMA_YA_ESCRITA
+    32  NACIO_CON_EL_FICHERO
+     2  TEXTO_CAMBIADO_DESPUES
+
+CONTROL CON LO YA SABIDO («porGrupoSinVer», 2):
+  NO VISTA, como consta  public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnCobrar · LLEGO_BAJO_FIRMA_YA_ESCRITA
+  NO VISTA, como consta  public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnNuevoAlbaran · LLEGO_BAJO_FIRMA_YA_ESCRITA
+
+POR OBJETO (no vistas / total):
+    0 /   2  albaranDetailView.js · ROTULOS_RAIL_ALBARAN
+    0 /   5  atajoNuevo.js · TEXTOS
+    0 /   2  buscadorDeClientes.js · TEXTOS
+    1 /  11  cobrosView.js · COBROS_COPY
+    0 /   2  cobrosView.js · COBROS_DESCONOCIDO
+    2 /  22  customerDetailView.js · FUSION_CLIENTE
+    0 /   9  customerDetailView.js · HISTORIAL_CLIENTE
+    0 /   5  documentoAsignados.js · TEXTOS_DOC_ASIGNADOS
+    0 /   2  estadoFirma.js · TEXTO_DESALOJO
+    0 /   3  estadoFirma.js · TEXTO_FIRMA
+    0 /   2  estadoFirma.js · TEXTO_PRECARGA
+    0 /   4  filtroClientes.js · TEXTOS_ETIQUETAS
+    0 /   3  filtroClientes.js · TEXTOS_SELECCION
+    0 /   2  filtroClientes.js · TEXTOS_VISITA
+    0 /   2  filtroClientes.js · VACIO_PESTANA
+    0 /   3  homeView.js · TONO_DE_ACEPTACION
+    0 /   7  jobDetailView.js · ALB_CREAR_COPY
+    0 /   5  jobDetailView.js · ALB_TABLA_COPY
+    0 /   2  jobDetailView.js · TEXTO_HUECO
+    0 /   5  jobRailBlocks.js · JOB_RAIL_TITULOS
+    0 /   5  jobsCierreTrabajo.js · CIERRE_TEXTOS
+    0 /   3  libroRegistroView.js · ESTADO_VISIBLE
+    0 /  17  parteDetailView.js · TEXTOS
+    1 /   8  puertaSerie.js · SERIE_TEXTOS
+    2 /  12  quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS
+    0 /   3  quoteDireccionObra.js · TEXTOS
+    0 /   8  quoteRevisiones.js · TEXTOS
+    0 /   9  settingsSubmenus.js · ROTULOS
+    0 /   2  settingsView.js · QR_COPY
+    0 /   8  settingsView.js · TX
+
+DE LAS «LLEGARON_JUNTAS», las que entraron en un objeto que YA tenía hojas aprobadas (el commit retocó la letra):
+  25 de 123
+  2 · public/dashboard/js/atajoNuevo.js @ e85d9520c 2026-09-06 · TEXTOS.expenses, TEXTOS.jobs
+  5 · public/dashboard/js/cobrosView.js @ fdc01e4fc 2026-09-28 · COBROS_COPY.correoFallido.invoice, COBROS_COPY.correoFallido.justificante, COBROS_COPY.reenviado, COBROS_COPY.reenviando, COBROS_COPY.reenviar
+  1 · public/dashboard/js/jobDetailView.js @ 6b0d92e42 2026-09-21 · TEXTO_HUECO.sin-presupuesto
+  7 · public/dashboard/js/parteDetailView.js @ f0eac753c 2026-09-27 · TEXTOS.ahora, TEXTOS.horasGuia, TEXTOS.horasTitulo, TEXTOS.km, TEXTOS.revisaLasHoras, TEXTOS.salidaAntesQueEntrada, TEXTOS.tiempoEnLaObra
+  10 · public/dashboard/js/parteDetailView.js @ 8c77d6db8 2026-09-27 · TEXTOS.datosTitulo, TEXTOS.obraYReferencia, TEXTOS.pistaNotas, TEXTOS.pistaObra, TEXTOS.pistaReferencia, TEXTOS.pistaTecnicos, TEXTOS.sinElegir, TEXTOS.sinNotas, TEXTOS.sinObraNiReferencia, TEXTOS.sinTecnicos
+
+== SEGUNDA SONDA (el papel) · POBLACION: 129 actas .md en docs/microcopy/
+  control: «Cobrar ahora» (firmado en SCRUM-984, con acta) SÍ consta
+     5  NO VISTA × papel ENTERO
+     1  NO VISTA × papel NADA
+    83  VISTA    × papel ENTERO
+    79  VISTA    × papel NADA
+     1  VISTA    × papel PARTE
+     4  VISTA    × papel SIN_TROZOS
+  las VISTAS por git que NO constan enteras en ningún acta (la discrepancia es el dato):
+    NADA       buscadorDeClientes.js · TEXTOS.placeholder · NACIO_CON_EL_FICHERO · falta: «Buscar por nombre, teléfono, email o referencia…»
+    NADA       cobrosView.js · COBROS_COPY.errorCarga · LLEGARON_JUNTAS · falta: «No hemos podido cargar los cobros. Vuelve a intentarlo.»
+    NADA       cobrosView.js · COBROS_COPY.filtroSinMetodo · LLEGARON_JUNTAS · falta: «Método no registrado»
+    NADA       cobrosView.js · COBROS_COPY.vacioSinCobros · LLEGARON_JUNTAS · falta: «Todavía no hay cobros registrados.»
+    NADA       cobrosView.js · COBROS_DESCONOCIDO.rotulo · LLEGARON_JUNTAS · falta: «Método sin especificar»
+    NADA       cobrosView.js · COBROS_DESCONOCIDO.valor · LLEGARON_JUNTAS · falta: «desconocido»
+    SIN_TROZOS customerDetailView.js · FUSION_CLIENTE.candidatos · LLEGARON_JUNTAS · falta: 
+    PARTE      customerDetailView.js · HISTORIAL_CLIENTE.fechaProxima · LLEGARON_JUNTAS · falta: «es-ES» «short» «2-digit»
+    SIN_TROZOS customerDetailView.js · HISTORIAL_CLIENTE.tituloPestana · LLEGARON_JUNTAS · falta: 
+    NADA       estadoFirma.js · TEXTO_DESALOJO.cuerpo · LLEGARON_JUNTAS · falta: «Revisa tus albaranes: los que no salgan firmados hay que vol…»
+    NADA       estadoFirma.js · TEXTO_DESALOJO.titulo · LLEGARON_JUNTAS · falta: «El móvil ha borrado firmas sin subir»
+    NADA       estadoFirma.js · TEXTO_FIRMA.[FIRMA_SUBIENDO] · NACIO_CON_EL_FICHERO · falta: «Subiendo…»
+    NADA       estadoFirma.js · TEXTO_PRECARGA.nada · LLEGARON_JUNTAS · falta: «No hay nada que llevarte: no tienes trabajos abiertos ni age…»
+    NADA       estadoFirma.js · TEXTO_PRECARGA.noSePudo · LLEGARON_JUNTAS · falta: «No hemos podido preparar tus albaranes. Vuelve a entrar con …»
+    NADA       filtroClientes.js · TEXTOS_ETIQUETAS.placeholder · LLEGARON_JUNTAS · falta: «comunidad, administrador, urgencias…»
+    NADA       filtroClientes.js · TEXTOS_ETIQUETAS.sinFiltro · LLEGARON_JUNTAS · falta: «Todas las etiquetas»
+    NADA       filtroClientes.js · TEXTOS_SELECCION.todos · LLEGARON_JUNTAS · falta: «Seleccionar todos»
+    NADA       filtroClientes.js · TEXTOS_SELECCION.uno · LLEGARON_JUNTAS · falta: «1 cliente seleccionado»
+    NADA       filtroClientes.js · TEXTOS_SELECCION.varios · LLEGARON_JUNTAS · falta: «clientes seleccionados»
+    NADA       homeView.js · TONO_DE_ACEPTACION.alta · LLEGARON_JUNTAS · falta: «equipo-actividad-num equipo-actividad-tasa-alta»
+    NADA       homeView.js · TONO_DE_ACEPTACION.baja · LLEGARON_JUNTAS · falta: «equipo-actividad-num equipo-actividad-tasa-baja»
+    NADA       homeView.js · TONO_DE_ACEPTACION.media · LLEGARON_JUNTAS · falta: «equipo-actividad-num equipo-actividad-tasa-media»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.descartadas · LLEGARON_JUNTAS · falta: «1 línea sin cantidad no se ha copiado.» «líneas sin cantidad no se han copiado.»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.guardar · LLEGARON_JUNTAS · falta: «Crear albarán»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.presupuesto_ilegible · LLEGARON_JUNTAS · falta: «No se ha podido leer el presupuesto, así que no se ha rellen…»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.presupuesto_sin_lineas · LLEGARON_JUNTAS · falta: «El presupuesto no tiene ninguna línea que se pueda entregar.»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.sin_presupuesto · LLEGARON_JUNTAS · falta: «Este trabajo no tiene presupuesto, así que empiezas de cero.»
+    NADA       jobDetailView.js · ALB_CREAR_COPY.valorado · LLEGARON_JUNTAS · falta: «Con precios, las líneas se escriben a mano: el presupuesto n…»
+    SIN_TROZOS jobDetailView.js · ALB_TABLA_COPY.colNumero · LLEGARON_JUNTAS · falta: 
+    NADA       jobDetailView.js · TEXTO_HUECO.sin-presupuesto · LLEGARON_JUNTAS · falta: «Este trabajo no tiene presupuesto aceptado»
+    NADA       jobRailBlocks.js · JOB_RAIL_TITULOS.dinero · NACIO_CON_EL_FICHERO · falta: «DINERO»
+    NADA       jobRailBlocks.js · JOB_RAIL_TITULOS.responsable · NACIO_CON_EL_FICHERO · falta: «RESPONSABLE»
+    NADA       jobsCierreTrabajo.js · CIERRE_TEXTOS.avisoSaldo · NACIO_CON_EL_FICHERO · falta: «Quedan» «que todavía no has cobrado. Si cierras el trabajo, el botón» ««Cobrar el resto» desaparece y ya no podrás cobrarlos desde …» «por ejemplo, si ya lo cobraste por otra vía o lo das por per…»
+    NADA       jobsCierreTrabajo.js · CIERRE_TEXTOS.boton · NACIO_CON_EL_FICHERO · falta: «Cerrar trabajo»
+    NADA       jobsCierreTrabajo.js · CIERRE_TEXTOS.confirmar · NACIO_CON_EL_FICHERO · falta: «Quedan» «sin cobrar. Al cerrar el trabajo ya no podrás cobrarlos desd…» «YaQu. ¿Cerrar de todas formas?»
+    NADA       jobsCierreTrabajo.js · CIERRE_TEXTOS.explicacion · NACIO_CON_EL_FICHERO · falta: «Cerrar da el trabajo por acabado. No se puede reabrir.»
+    NADA       jobsCierreTrabajo.js · CIERRE_TEXTOS.titulo · NACIO_CON_EL_FICHERO · falta: «Cerrar el trabajo»
+    NADA       libroRegistroView.js · ESTADO_VISIBLE.annulled · LLEGARON_JUNTAS · falta: «Anulada»
+    NADA       libroRegistroView.js · ESTADO_VISIBLE.paid · LLEGARON_JUNTAS · falta: «Cobrada»
+    NADA       parteDetailView.js · TEXTOS.datosTitulo · LLEGARON_JUNTAS · falta: «Datos del parte»
+    NADA       parteDetailView.js · TEXTOS.horasGuia · LLEGARON_JUNTAS · falta: «La hora se elige, no se escribe.»
+    SIN_TROZOS parteDetailView.js · TEXTOS.km · LLEGARON_JUNTAS · falta: 
+    NADA       parteDetailView.js · TEXTOS.obraYReferencia · LLEGARON_JUNTAS · falta: «Obra y referencia»
+    NADA       parteDetailView.js · TEXTOS.pistaNotas · LLEGARON_JUNTAS · falta: «Lo que haya que dejar dicho.»
+    NADA       parteDetailView.js · TEXTOS.pistaObra · LLEGARON_JUNTAS · falta: «Dónde se ha hecho el trabajo»
+    NADA       parteDetailView.js · TEXTOS.pistaReferencia · LLEGARON_JUNTAS · falta: «Tu referencia interna, si usas alguna»
+    NADA       parteDetailView.js · TEXTOS.pistaTecnicos · LLEGARON_JUNTAS · falta: «Quién ha estado en la obra»
+    NADA       parteDetailView.js · TEXTOS.revisaLasHoras · LLEGARON_JUNTAS · falta: «Revisa las horas»
+    NADA       parteDetailView.js · TEXTOS.salidaAntesQueEntrada · LLEGARON_JUNTAS · falta: «La salida es antes que la entrada»
+    NADA       parteDetailView.js · TEXTOS.sinElegir · LLEGARON_JUNTAS · falta: «Sin elegir»
+    NADA       parteDetailView.js · TEXTOS.sinNotas · LLEGARON_JUNTAS · falta: «Sin notas»
+    NADA       parteDetailView.js · TEXTOS.sinObraNiReferencia · LLEGARON_JUNTAS · falta: «Sin dirección ni referencia»
+    NADA       parteDetailView.js · TEXTOS.sinTecnicos · LLEGARON_JUNTAS · falta: «Sin técnicos»
+    NADA       parteDetailView.js · TEXTOS.tiempoEnLaObra · LLEGARON_JUNTAS · falta: «Tiempo en la obra»
+    NADA       puertaSerie.js · SERIE_TEXTOS.ayudaCampo · LLEGARON_JUNTAS · falta: «YaQu empezará en el siguiente, para que no repitas un número…»
+    NADA       puertaSerie.js · SERIE_TEXTOS.ayudaTitulo · LLEGARON_JUNTAS · falta: «Si vienes de otro programa, de una plantilla o del papel, cu…»
+    NADA       puertaSerie.js · SERIE_TEXTOS.errorNumeroFalta · LLEGARON_JUNTAS · falta: «Escribe el número de tu última factura. Por ejemplo: 41.»
+    NADA       puertaSerie.js · SERIE_TEXTOS.errorNumeroGrande · LLEGARON_JUNTAS · falta: «Ese número es demasiado alto. Revisa el número de tu última …»
+    NADA       puertaSerie.js · SERIE_TEXTOS.errorNumeroNoValido · LLEGARON_JUNTAS · falta: «Tiene que ser un número entero, del 1 en adelante. Por ejemp…»
+    NADA       puertaSerie.js · SERIE_TEXTOS.etiquetaCampo · LLEGARON_JUNTAS · falta: «¿Cuál fue el número de tu última factura de»
+    NADA       puertaSerie.js · SERIE_TEXTOS.titulo · LLEGARON_JUNTAS · falta: «¿Ya has emitido facturas en»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnAprobar · LLEGARON_JUNTAS · falta: «Aprobar»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnEditarLineas · LLEGARON_JUNTAS · falta: «Editar líneas»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnEnviar · LLEGARON_JUNTAS · falta: «Enviar al cliente»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnEnviarAprobacion · LLEGARON_JUNTAS · falta: «Enviar a aprobación»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnMarcarRechazado · LLEGARON_JUNTAS · falta: «Marcar como rechazado»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnRecordar · LLEGARON_JUNTAS · falta: «Enviar recordatorio»
+    NADA       quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnVerCliente · LLEGARON_JUNTAS · falta: «Ver cliente»
+    NADA       quoteDireccionObra.js · TEXTOS.facturacion · NACIO_CON_EL_FICHERO · falta: «Utilizar dirección de facturación»
+    NADA       quoteDireccionObra.js · TEXTOS.noMostrar · NACIO_CON_EL_FICHERO · falta: «No mostrar»
+    NADA       quoteRevisiones.js · TEXTOS.sinOtras · FIRMA_ESCRITA_DESPUES · falta: «Esta es la única versión.»
+    NADA       quoteRevisiones.js · TEXTOS.vigente · FIRMA_ESCRITA_DESPUES · falta: «Vigente»
+    NADA       settingsSubmenus.js · ROTULOS.avisos · NACIO_CON_EL_FICHERO · falta: «Avisos»
+    NADA       settingsSubmenus.js · ROTULOS.datos · NACIO_CON_EL_FICHERO · falta: «Tus datos»
+    NADA       settingsSubmenus.js · ROTULOS.publica · NACIO_CON_EL_FICHERO · falta: «Tu página pública»
+    NADA       settingsView.js · QR_COPY.ayudaSvg · LLEGARON_JUNTAS · falta: «Elige SVG si vas a imprimirlo grande (furgoneta, cartel): no…»
+    NADA       settingsView.js · QR_COPY.errorGenerico · LLEGARON_JUNTAS · falta: «No hemos podido generar el QR con esas opciones. Prueba a ca…»
+    NADA       settingsView.js · TX.clausulaAnadir · LLEGARON_JUNTAS · falta: «Añadir condición»
+    NADA       settingsView.js · TX.clausulasIlegibles · LLEGARON_JUNTAS · falta: «No se han podido leer tus condiciones — no se ha guardado na…»
+    NADA       settingsView.js · TX.clausulasPista · LLEGARON_JUNTAS · falta: «Se escriben una vez y salen en todos tus presupuestos.»
+    NADA       settingsView.js · TX.clausulasTitulo · LLEGARON_JUNTAS · falta: «Condiciones del presupuesto»
+    NADA       settingsView.js · TX.clausulasVacio · LLEGARON_JUNTAS · falta: «Todavía no has escrito ninguna condición.»
+    NADA       settingsView.js · TX.clausulaTexto · LLEGARON_JUNTAS · falta: «Texto de la condición»
+    NADA       settingsView.js · TX.clausulaTitulo · LLEGARON_JUNTAS · falta: «Título (GARANTÍA, ALCANCE…)»
+  las NO VISTAS por git, y su papel:
+    NADA       cobrosView.js · COBROS_COPY.vacioPorFiltro · falta: «Ningún cobro coincide con este filtro.»
+    ENTERO     customerDetailView.js · FUSION_CLIENTE.contados
+    ENTERO     customerDetailView.js · FUSION_CLIENTE.todoPasa
+    ENTERO     puertaSerie.js · SERIE_TEXTOS.errorSinRespuesta
+    ENTERO     quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnCobrar
+    ENTERO     quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnNuevoAlbaran
+
+LAS NO VISTAS, una a una:
+  CAYO_BAJO_FIRMA_YA_ESCRITA · public/dashboard/js/cobrosView.js · COBROS_COPY.vacioPorFiltro
+      texto de hoy desde 2026-08-10 24047c3a4 · firma de hoy la gobierna desde 2026-08-12 87cb4f9fb
+      texto: 'Ningún cobro coincide con este filtro.'
+      firma: public/dashboard/js/cobrosView.js — SCRUM-285 (B4) ═════════════════════════════════════════════════════════════════════════════════════════ «Menú **Cobros** = …
+  TEXTO_CAMBIADO_DESPUES · public/dashboard/js/customerDetailView.js · FUSION_CLIENTE.contados
+      texto de hoy desde 2026-09-30 264096a82 · firma de hoy la gobierna desde 2026-09-29 51d81311b
+      texto: contados(presupuestos, trabajos, notas) { const uno = (n, singular, plural) => (Number(n) === 1 ? '1 ' + singu…
+      antes: contados(presupuestos, trabajos, notas) { return 'Contados: ' + presupuestos + ' presupuestos · ' + trabajos +…
+      firma: SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha. `GET /admin/customers/:id/fusion-preview` y `POST /admin/customers/:id/…
+  TEXTO_CAMBIADO_DESPUES · public/dashboard/js/customerDetailView.js · FUSION_CLIENTE.todoPasa
+      texto de hoy desde 2026-09-30 264096a82 · firma de hoy la gobierna desde 2026-09-29 51d81311b
+      texto: todoPasa(fusionado, principal) { return 'Todo lo de ' + fusionado + ' pasa a ' + principal + ': presupuestos, …
+      antes: todoPasa(fusionado, principal) { return 'Todo lo de ' + fusionado + ' pasa a ' + principal + ': presupuestos, …
+      firma: SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha. `GET /admin/customers/:id/fusion-preview` y `POST /admin/customers/:id/…
+  LLEGO_BAJO_FIRMA_YA_ESCRITA · public/dashboard/js/puertaSerie.js · SERIE_TEXTOS.errorSinRespuesta
+      texto de hoy desde 2026-09-28 7ddab7d83 · firma de hoy la gobierna desde 2026-09-28 7ddab7d83
+      texto: 'No hemos podido confirmar si se ha guardado. Comprueba tu conexión y pulsa otra vez: si ya estaba guardado, s…
+      firma: ───────────────────────────────────────────────────────────────────────────────────────── SCRUM-1216b · EL NÚMERO DE ARRANQUE: los textos y la validación, en UN…
+  LLEGO_BAJO_FIRMA_YA_ESCRITA · public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnCobrar
+      texto de hoy desde 2026-09-21 1dd09882f · firma de hoy la gobierna desde 2026-09-21 1dd09882f
+      texto: 'Cobrar ahora'
+      firma: ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ──────────────────────────────────────────────── Van con marcador visible, como hicieron `albaranesView` y la panta…
+  LLEGO_BAJO_FIRMA_YA_ESCRITA · public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnNuevoAlbaran
+      texto de hoy desde 2026-09-21 1dd09882f · firma de hoy la gobierna desde 2026-09-21 1dd09882f
+      texto: 'Nuevo albarán'
+      firma: ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ──────────────────────────────────────────────── Van con marcador visible, como hicieron `albaranesView` y la panta…
+
+LAS VISTAS POR UNA FIRMA ESCRITA DESPUÉS (para leer: ¿firma nueva o sólo se retocó la letra?):
+  3 hoja(s) · public/dashboard/js/atajoNuevo.js @ 8767a6199 2026-09-04
+      firma hoy:  ✅ MICROCOPY FIRMADA POR EL FUNDADOR el 4-sep-2026 (regla 30). El asesor la había aprobado el 3-sep y quedaba a la espera; ya no. El registro de la aprobación vi…
+      antes:      [APROBADO] MICROCOPY APROBADA por el asesor el 3-sep-2026, A LA ESPERA DE LA FIRMA DEL FUNDADOR (regla 30). Van aquí y en un solo sitio: si cada vista …
+  1 hoja(s) · public/dashboard/js/jobDetailView.js @ 6b0d92e42 2026-09-21
+      firma hoy:  SCRUM-917f · el caso SIN PRESUPUESTO ACEPTADO, que hasta este corte no se nombraba: sin huecos la sección entera no se pintaba, así que la pantalla callaba. Un …
+      antes:      [SIN_COMENTARIO] —
+  8 hoja(s) · public/dashboard/js/quoteRevisiones.js @ 510ba6d9f 2026-09-29
+      firma hoy:  ✅ Los OCHO rótulos están APROBADOS por el fundador (regla 30), en dos actos: · las SEIS primeras, el 3-sep-2026, SIN UN CAMBIO; · `crearRevision` y `errorCrear`…
+      antes:      [SIN_COMENTARIO] —
+      antes:      [APROBADO] ✅ MICROCOPY APROBADA por el fundador (regla 30). OCHO rótulos, en DOS firmas: · las SEIS primeras, el 3-sep-2026, SIN UN CAMBIO; · `crearRev…
+
+EXIT=0
