@@ -169,3 +169,104 @@ node docs/master/evidencias/SCRUM-1519/censo-de-la-forma.mjs . <ruta a typescrip
 ```
 
 Sin `FORCE_COLOR` y con `NO_COLOR=1`. ⛔ `prisma generate` no, en árbol anidado.
+
+
+# SCRUM-1519b · Los tres escritores de `Job.customerId` y `Job.quoteId`: ninguno ORIGINA una fila cruzada, y uno la COPIA
+
+**Medido contra:** `origin/main` = `0472952cd2c54e1c336170fa502ca902e6fda8cf` · 2026-10-13T00:15:56Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1519b/medir-los-escritores.mjs`
+
+13-oct-2026 · **J1** (sesión `jv-j1`, relevo; equipo de Javier), por encargo del orquestador (`cobroflash-backend-2e`).
+[Escrito por J1. El encargo es el mensaje de reparto del orquestador más SCRUM-1519 leído entero en Jira con sus dos comentarios, c.19109 y c.19148.]
+
+**Es MEDICIÓN. No se ha tocado `src/`, ni `prisma/`, ni ningún test.** La rama lleva mezclada la de
+SCRUM-1519 (`764b9caac`, PR #2341, sin mergear al escribir esto) porque este instrumento reutiliza su almacén.
+
+## El veredicto, en una frase
+
+**El cero de hoy es estable por la puerta y NO lo es por herencia:** pidiéndoselo con la sesión del
+comercio 21 y recursos del 22, **ninguno de los dos escritores que faltaban deja una fila de Trabajo
+cruzada** (0 de 6 intentos), pero el de la aceptación (`job.service.ts:101`) **no comprueba nada: copia
+el cliente del presupuesto**, y con un presupuesto ya cruzado fabrica el Trabajo cruzado (2 de 2).
+
+Lo que esa frase no dice: la aceptación traslada la pregunta al presupuesto. De los cuatro sitios que
+crean un presupuesto con cliente, **sólo uno está ejecutado** (`POST /quote/create`: no deja). Los otros
+tres están LEÍDOS, no ejecutados.
+
+## 1 · Los escritores, por efecto
+
+Sesión del comercio 21. El veredicto sale del ALMACÉN, no de la respuesta: tras cada caso se recorren
+todas las filas de Trabajo y de Presupuesto y se compara su comercio con el de aquello a lo que apuntan.
+
+| escritor | sitio | control propio | P · se le pide lo de B | D · el dato ya viene cruzado |
+|---|---|---|---|---|
+| 1 · crear un Trabajo | `jobs.routes.ts:890` | (medido en SCRUM-1519) | 404, no escribe (SCRUM-1519) | no aplica |
+| 2 · aceptar un presupuesto | `job.service.ts:101` | escribe limpio | aceptar el de B: 404, no escribe · la función a pelo sobre el de B: crea un Trabajo de B con cliente de B (coherente, no cruzado) | **CRUZA, 2 de 2** (a pelo y por la ruta) |
+| 3 · fusionar clientes | `fusionClientes.ts:178` | escribe limpio (mueve el Trabajo 505) | 409 y no escribe, 4 de 4 (el que queda es de B; el que desaparece es de B; por la ruta y a pelo) | no aplica |
+| aguas arriba del 2 · crear el presupuesto | `quotes.routes.ts:192` | escribe limpio | 404 con el cliente de B · 403 con `merchant_id` de B | no aplica |
+
+- **El 2 no tiene puerta que guardar:** `ensureJobForQuote(quoteId)` no recibe comercio. Toma `merchantId`,
+  `customerId` y `quoteId` del MISMO presupuesto, así que `Job.quoteId` es del comercio del Trabajo por
+  construcción, y `Job.customerId` vale lo que valga `Quote.customerId`.
+- **El 3 lleva el comercio dos veces:** valida los dos clientes con comercio y además el `updateMany` lleva
+  `merchantId` en el `where`.
+- A pelo sobre el presupuesto de B, la función del 2 escribe filas de B (el Trabajo nuevo y `Quote.jobId`).
+  No es una fila cruzada. Sus tres llamadores están LEÍDOS: `quotesAdmin.routes.ts:151` (ejecutado, 404
+  antes), `quotes.routes.ts:519` y `whatsappIncoming.routes.ts:493` (no ejecutados).
+
+## 2 · Quién escribe (censo por texto, no AST)
+
+323 ficheros `.ts`, 32 llamadas que escriben en `job` (7) o en `quote` (25).
+
+- `job`: `jobs.routes.ts:890` (create), `:1118` y `:1120` (update con `data` en variable: SCRUM-1519 midió
+  que el PATCH no reapunta), `job.service.ts:101` (create), `:196` y `:297` (update, sólo totales),
+  `fusionClientes.ts:178` (updateMany). **Los escritores de `customerId`/`quoteId` son tres, como dijo c.19148.**
+- `quote` con cliente: `quotes.routes.ts:192` (EJECUTADO), `quoteAdmin.ts:593` (revisión: copia de un
+  presupuesto propio, LEÍDO), `albaranes.routes.ts:1641` (copia `job.customerId`: cierra el círculo
+  Trabajo → presupuesto → Trabajo, LEÍDO), `maintenance.service.ts:413` (copia `plan.customerId`; el plan
+  se crea validando cliente y presupuesto con comercio, `maintenance.routes.ts:43` y `:49`, LEÍDO) y
+  `fusionClientes.ts:177` (con comercio; va en la misma transacción que la `:178`, cuyo camino sí se ejecutó).
+
+## 3 · Los controles
+
+| control | sale |
+|---|---|
+| par sembrado: 5 escritores de mentira, 10 casos (3 cruzan, 2 filtran, cada uno con su caso limpio) | 10 de 10, salida 0 |
+| `--doble-sordo` | salida 1: los 3 que deben cruzar dicen NO-ESCRIBE, y el resumen de los reales sale IGUAL que el bueno |
+| `--sin-siembra` | salida 2 (CIEGO) |
+| control propio de cada escritor real (con recursos del 21 TIENE que escribir) | 3 de 3 escriben |
+| control sembrado del censo (1 comentario + 3 llamadas de mentira) | 3 de 3, el comentario fuera |
+
+Uno de los sembrados cruza sólo por `quoteId` con cliente propio: si el detector mirase sólo el cliente, callaría.
+
+## 4 · Lo que no se ha hecho
+
+- Nada por HTTP ni contra Postgres. Manejadores y funciones reales de `dist/` (`tsc --noCheck`) con Prisma
+  doblado por un almacén en memoria; la sesión va inyectada y el middleware de autenticación no se ejecuta.
+  **Las claves foráneas no existen en el almacén.**
+- Tres de los cuatro creadores de presupuesto, dos de los tres llamadores de `ensureJobForQuote` y la
+  ruta pública de decisión: LEÍDOS, no ejecutados.
+- Escrituras anidadas (`job: { create | connect }` dentro de otro modelo): buscadas con una expresión de
+  una línea, 0 resultados, sin control positivo. Es un cero sin positivo y se dice.
+- `Job.operarioId` no era el encargo. Que una fila de cliente cambie de comercio (lo que cruzaría el
+  Trabajo sin tocarlo) no está mirado.
+- No se han tocado las 143 consultas sólo-por-id.
+- **No leí** los comentarios de SCRUM-1514 que cita c.19148, ni `docs/equipo/00-normas-comunes.md` (sólo
+  medí su tamaño en `origin/main`: 65.517 B), ni `dos-equipos.md`. Leí la ficha del 13-oct entera, el
+  ticket con sus dos comentarios, la entrada vigente del traspaso y el instrumento de SCRUM-1519.
+- Tanda completa local no corrida. El obligatorio del PR está SIN LEER al escribir esto.
+
+## 5 · Mis errores de hoy
+
+- La primera medida de contexto la leí del jsonl de OTRA sesión (el más reciente de la carpeta de
+  proyectos era de `scrum-1500h`): dio 246.061 y eran 106.581. Lo cantó el nombre de la carpeta.
+- El resumen decía «escritores medidos 3» contando la fila de aguas arriba; corregido antes de guardar la salida.
+
+## Cómo se repite
+
+    node <checkout compartido>/node_modules/typescript/bin/tsc --noCheck
+    node docs/master/evidencias/SCRUM-1519b/medir-los-escritores.mjs . [--doble-sordo] [--sin-siembra]
+
+Salidas guardadas: `salida-escritores.txt` (0), `salida-escritores-rojo-doble-sordo.txt` (1) y
+`salida-escritores-ciego-sin-siembra.txt` (2), en `docs/master/evidencias/SCRUM-1519b/`.
