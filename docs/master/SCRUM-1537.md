@@ -50,3 +50,70 @@ palabra entre las comillas, que `cotejo-once.cjs` cuenta como «sin leer» y no 
     node --test tests/scrum1537-los-dos-cotejos.test.mjs
 
 Las salidas `*-ANTES.txt` de esa carpeta son del instrumento sin tocar, sobre `254a69792`.
+
+## SCRUM-1537b · El obligatorio de la rama estaba en ROJO, y el aviso ya dice que no es tu código
+
+**Medido contra:** `origin/main` = `9308125e7c7885fb9568fcd633ad8dc1fa021eba` · 2026-10-13T12:59:02Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum710b-anclaje-por-identidad.test.mjs`
+
+Sesión `jv-j6k`, puesto J6. Rama `scrum-1537b-el-aviso-se-explica`, que lleva DENTRO (por merge) la
+rama `scrum-1537-los-dos-cotejos` @ `1b827185fc2724e682498d92f4cd87ece46225d9` entera. **Esta rama
+SUPERA al PR #2380: aquél no se mergea.** Cerrarlo es del orquestador.
+
+### ① Qué decía el obligatorio de #2380
+
+ROJO, y del cambio. Job «build + tests (con banco desechable)» `115295643243`: log de 1.823.594 B,
+sin «TANDA SIN VEREDICTO»; `tests 11240` = `pass 11150` + `fail 1` + `skipped 89`. El único que cae:
+`tests/scrum710b-anclaje-por-identidad.test.mjs` («los anclajes por NÚMERO DE LÍNEA no crecen»), que
+nombra a `tests/scrum1537-los-dos-cotejos.test.mjs` con tres citas de fichero y línea a un
+`src/sembrado.ts` escrito a mano («declarados 0, hay 3»). No es la carrera de SCRUM-1539. Los demás
+jobs de ese commit: zona roja, navegador, trinquete y meta-guard, en verde (el meta-guard acabó a las
+12:59Z; a las 12:52Z seguía corriendo).
+
+### ② El arreglo: se cita por identidad, y el guard no se toca
+
+Las tres escrituras ya no se escriben a mano. Salen del propio instrumento, que las lee de la raíz
+sembrada (`siembra-literal.cjs`, forma «funcion»): el test comprueba que es la llamada `calcula()` de
+`src/escribe.ts` y no mira en qué línea cae. `siembra-literal.cjs` devuelve ahora también
+`noLiterales` de cada forma; su salida impresa no cambia. Después: scrum710b 9 de 9.
+
+Y el test sigue cayendo donde debía. Base sin mutar 6 de 6; cuatro mutaciones de UNA línea en
+`cotejo.cjs`, cada una con su `git diff --numstat` «1 1» y restaurada (árbol limpio después):
+
+| mutación | caen |
+|---|---|
+| el juicio deja de nombrar la escritura sin leer | 2 de 6 |
+| un `null` cuenta como escritura que esconde un valor | 1 de 6 |
+| el cierre deja de eximir al campo | 1 de 6 |
+| el aviso pierde la frase nueva | 1 de 6 |
+
+### ③ La frase del aviso `ESCRITURA_SIN_LEER`
+
+Visto en rojo antes de escribirla (5 de 6). El aviso dice ahora que el rojo **no es un defecto del
+código de quien lo recibe**, sino un límite declarado del instrumento (`LIMITE_DEL_LITERAL`, con la
+ruta del fichero), que no busque el fallo en su línea, y qué hacer: poner en `cierre` de ESE campo,
+en la tabla `CAMPOS`, la constante o el validador que enumera sus valores. No cambia qué se detecta:
+sobre el árbol sigue dando 0 hallazgos de esa clase. De paso se rehízo la última frase («Dale un
+cierre…») para que nombre el campo y el fichero: es más que la frase pedida, y se dice.
+
+### Lo que no se midió
+
+La tanda completa y `guards:entrada` en esta máquina: sólo 7 ficheros (el del ticket, scrum1500,
+scrum710b, scrum237, scrum976, scrum1294 y scrum267), 66 de 66. El obligatorio de ESTA rama. Si un campo sin
+cierre tiene de verdad una constante o un validador que declarar: el aviso dice dónde se pone, no que
+exista. Las salidas `*-DESPUES.txt` de la carpeta de evidencias no se regeneraron: su primera línea
+lleva el sha256 de `cotejo.cjs` de antes de la frase, y es lo único que cambiaría (comparado).
+
+### De paso
+
+`node scripts/carriles.mjs de docs/master/evidencias/scrum1500/cotejo.cjs` responde «sin fila en §3:
+nadie lo reclama». Es un instrumento que corre en la tanda obligatoria y no tiene dueño.
+
+### Errores propios
+
+- El primer parche del test, lanzado por consola, perdió todas las barras invertidas de tres
+  expresiones regulares y el fichero no cargaba. Lo cazó la primera pasada del test, sin commit por
+  medio; rehecho con la herramienta de edición. La causa exacta no la comprobé.
+- La primera pasada de mutaciones dio el código de salida pero los recuentos vacíos (mi lector no
+  casaba con la salida); no la di por buena y la repetí hasta tener base y población.

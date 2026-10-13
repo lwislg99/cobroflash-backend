@@ -141,13 +141,27 @@ test('SCRUM-1537 · cotejo.cjs · el límite está DECLARADO con sus papeles, y 
   // …y si la tuviera caería: la misma pasada, con una escritura no literal puesta en un campo sin cierre.
   const copia = structuredClone(r);
   const tocada = copia.filas.find((f) => !f.control && !f.cierreDe);
-  tocada.noLiterales = ['src/sembrado.ts:1 calculaElEstado()'];
+  // La escritura que se le pone NO se escribe a mano: es la que el propio instrumento saca de la raíz
+  // sembrada para la forma «funcion» (`data: { funcion: calcula() }` en su `src/escribe.ts`). Se cita
+  // por lo que ES —el fichero sembrado y la llamada—, no por la línea en que cae (scrum710b).
+  const deLaSiembra = siembra.medir().formas.find((f) => f.forma === 'funcion').noLiterales;
+  assert.equal(deLaSiembra.length, 1, 'la forma «funcion» de la siembra ya no deja exactamente una escritura sin leer');
+  assert.match(deLaSiembra[0], /^src\/escribe\.ts:\d+ calcula\(\)$/, 'la escritura sembrada ya no es la llamada a calcula() de src/escribe.ts');
+  tocada.noLiterales = deLaSiembra;
+  // El aviso lo lee alguien con el CI en rojo: tiene que decirle que no es su código y qué hacer.
+  const aviso = juzgar(copia).hallazgos.find((h) => h.clase === 'ESCRITURA_SIN_LEER').texto;
+  assert.match(aviso, /NO es un defecto de tu código/, 'el aviso ya no dice que el rojo no es un defecto del código de quien lo recibe');
+  assert.match(aviso, /límite declarado de este instrumento \(LIMITE_DEL_LITERAL/, 'el aviso ya no dice que es un límite declarado del instrumento');
+  assert.ok(aviso.includes(`\`cierre\` de ${tocada.campo}`), 'el aviso ya no dice en qué entrada de CAMPOS se pone el cierre');
+  assert.ok(aviso.includes(deLaSiembra[0]), 'el aviso ya no nombra la escritura que no supo leer');
   assert.deepEqual(juzgar(copia).hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${tocada.campo} · ESCRITURA_SIN_LEER`]);
   // Un `null` no es un valor que se esconda: no cae por él.
-  tocada.noLiterales = ['src/sembrado.ts:1 null'];
+  const conNull = deLaSiembra.map((x) => x.replace(/ calcula\(\)$/, ' null'));
+  assert.match(conNull[0], /^src\/escribe\.ts:\d+ null$/, 'el control: la misma escritura sembrada, ahora poniendo null');
+  tocada.noLiterales = conNull;
   assert.deepEqual(juzgar(copia).hallazgos, []);
   // Y en un campo CON cierre la misma escritura no cae: su lista la cierra la constante.
   const conCierre = structuredClone(r);
-  conCierre.filas.find((f) => !f.control && f.cierreDe && f.veredicto === 'COINCIDE_CON_EL_MASTER').noLiterales = ['src/sembrado.ts:1 calculaElEstado()'];
+  conCierre.filas.find((f) => !f.control && f.cierreDe && f.veredicto === 'COINCIDE_CON_EL_MASTER').noLiterales = deLaSiembra;
   assert.deepEqual(juzgar(conCierre).hallazgos, []);
 });

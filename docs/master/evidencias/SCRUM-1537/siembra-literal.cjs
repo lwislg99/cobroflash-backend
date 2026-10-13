@@ -105,7 +105,7 @@ for (const [n] of FORMAS) {
   const avisa = f.noLiterales.length > 0;
   const nombrado = j.hallazgos.filter((h) => h.campo === f.campo).map((h) => h.clase);
   if (laVe) cuenta.laVe += 1; else if (avisa) cuenta.avisa += 1; else cuenta.calla += 1;
-  formas.push({ forma: n, zona: laVe ? 've' : (avisa ? 'avisa' : 'calla'), veredicto: f.veredicto, nombrado });
+  formas.push({ forma: n, zona: laVe ? 've' : (avisa ? 'avisa' : 'calla'), veredicto: f.veredicto, nombrado, noLiterales: f.noLiterales });
   di(`${n.padEnd(10)} D = ${f.D.join(' | ').padEnd(28)} ${laVe ? 'LA VE    ' : 'NO LA VE '} · ${avisa ? `avisa: (no literal) ${f.noLiterales.map((x) => x.replace(/^\S+ /, '')).join(' ; ')}` : 'no avisa de nada'} · veredicto ${f.veredicto} · el juicio ${nombrado.length ? `lo nombra (${nombrado.join(', ')})` : 'NO lo nombra'}`);
 }
 di('');

@@ -603,7 +603,7 @@ function juzgar(r, parados = PARADOS, hoy = new Date()) {
     // `undefined` no son valores: una escritura que los pone no esconde ningún estado.)
     const opacas = (f.noLiterales || []).filter((x) => !/ (null|undefined)$/.test(x));
     if (f.veredicto !== 'NO_EXISTE' && !f.cierreDe && opacas.length > 0) {
-      di(f.campo, 'ESCRITURA_SIN_LEER', `no tiene constante ni validador que cierre su lista, y ${opacas.length} escritura(s) no son un literal: ${opacas.join(' · ')}. No sé qué valores escribe el código. Dale un cierre en CAMPOS (LIMITE_DEL_LITERAL)`);
+      di(f.campo, 'ESCRITURA_SIN_LEER', `no tiene constante ni validador que cierre su lista, y ${opacas.length} escritura(s) no son un literal: ${opacas.join(' · ')}. No sé qué valores escribe el código. Este rojo NO es un defecto de tu código: es un límite declarado de este instrumento (LIMITE_DEL_LITERAL, en docs/master/evidencias/scrum1500/cotejo.cjs), que no sabe leer el valor de una escritura hecha con una variable o una llamada, así que no busques el fallo en tu línea ni la cambies. Qué hacer: en la tabla CAMPOS de ese mismo fichero, pon en \`cierre\` de ${f.campo} la constante o el validador que enumera sus valores`);
     }
     if (!SE_PARA.has(f.veredicto)) {
       if (e) { usadas.add(e); di(f.campo, 'EXCEPCION_SOBRANTE', `tiene una excepción de «parado» y hoy sale ${f.veredicto}: ya no espera nada. Bórrala de PARADOS`); }
