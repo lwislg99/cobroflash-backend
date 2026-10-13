@@ -1,0 +1,54 @@
+## A · el alta: que devuelve zonaDeAlta (lo UNICO que la provincia produce)
+POBLACION provincias de la tabla = 52 · por zona: Europe/Madrid=50 · Atlantic/Canary=2
+   Álava                    → Europe/Madrid · esta en la tabla: true
+   Bizkaia                  → Europe/Madrid · esta en la tabla: true
+   Gipuzkoa                 → Europe/Madrid · esta en la tabla: true
+   Navarra                  → Europe/Madrid · esta en la tabla: true
+   Las Palmas               → Atlantic/Canary · esta en la tabla: true
+   Santa Cruz de Tenerife   → Atlantic/Canary · esta en la tabla: true
+   control de cero (provincia inventada «Qwzx») → LANZA provincia_desconocida
+   control positivo («Madrid») → Europe/Madrid
+   tipo de lo devuelto para Bizkaia: string — una cadena de zona, sin provincia ni regimen dentro
+   Bizkaia y Madrid dan el MISMO valor: true
+
+## B · la puerta de emision: que propiedades del comercio LEE getEmissionMode (Proxy que apunta cada lectura)
+  · flag OFF (como hoy)
+      Madrid · no foral                      → receipt
+      Bizkaia · dijo SI a domicilio foral    → receipt
+      Navarra · dijo SI a domicilio foral    → receipt
+      Alava · no consta                      → receipt
+      Gipuzkoa · dijo SI                     → receipt
+      Las Palmas                             → receipt
+      Santa Cruz de Tenerife                 → receipt
+      resultados distintos entre los 7 casos: 1 receipt
+  · flag ON por override del comercio
+      Madrid · no foral                      → fiscal
+      Bizkaia · dijo SI a domicilio foral    → fiscal
+      Navarra · dijo SI a domicilio foral    → fiscal
+      Alava · no consta                      → fiscal
+      Gipuzkoa · dijo SI                     → fiscal
+      Las Palmas                             → fiscal
+      Santa Cruz de Tenerife                 → fiscal
+      resultados distintos entre los 7 casos: 1 fiscal
+   PROPIEDADES LEIDAS (union de 14 llamadas): country, email, flags, id
+     ¿lee timezone? false
+     ¿lee domicilioFiscalForal? false
+     ¿lee address? false
+     ¿lee nif? false
+   control positivo 1 (country MX) → fiscal (tiene que ser fiscal)
+   control positivo 2 (id 1, demo) → demo (tiene que ser demo)
+   control del espia: una funcion que SI lee timezone la apunta → true
+   isFlagEnabled sin override ni env → false · env INVOICING_ES_ENABLED en este proceso: undefined
+
+## C · los tipos: que acepta la unica regla (invalidTipoIva)
+      IGIC    0 % → acepta
+      IGIC    3 % → RECHAZA
+      IGIC    7 % → RECHAZA
+      IGIC  9.5 % → RECHAZA
+      IGIC   15 % → RECHAZA
+      IGIC   20 % → RECHAZA
+      IVA    21 % → acepta
+      IVA    10 % → acepta
+      IVA     4 % → acepta
+   IGIC aceptados 1 de 6 · IVA aceptados 3 de 3 (control positivo: 3 de 3)
+EXIT=0
