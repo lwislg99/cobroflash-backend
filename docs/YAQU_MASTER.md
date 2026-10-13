@@ -818,7 +818,7 @@ _(Las dos filas del equipo: decisión del fundador del 1-oct-2026, literal «1-B
 > **Frontend, decisión del fundador (24-jul-2026): capa (a) SÍ, capa (b) DIFERIDA con gate escrito.**
 > Corregida antes la premisa del propio ticket: **Playwright NO está instalado** (sin devDependency,
 > sin config) — lo que existe y está probado es `scripts/e2e-critico.mjs` (`npm run e2e:critico`),
-> un harness con **puppeteer-core sobre Edge/Chromium** que ya recorre la cadena crítica de dinero.
+> un harness con **puppeteer-core sobre Edge/Chromium** que ya recorre la cadena crítica de dinero. **[Nota del 13-oct-2026:** `scripts/e2e-critico.mjs` se retiró (SCRUM-1521). Lo de arriba describe lo que era cierto el 24-jul-2026, cuando se tomó esta decisión.]
 > La capa (b) sería extender ESE patrón, no montar un framework nuevo — más barato de lo asumido,
 > pero sigue siendo 8 flujos de navegador (login, selectores, DOM), ~1-2 días, y los tests más
 > frágiles de la suite. **Capa (a) implementada:** `tests/scrum128-frontend-census.test.mjs`, mismo
