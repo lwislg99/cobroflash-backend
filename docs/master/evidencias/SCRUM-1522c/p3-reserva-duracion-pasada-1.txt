@@ -1,0 +1,22 @@
+== 0 · CON QUIEN HABLO, Y QUE MIDO ==
+  PostgreSQL 16.13, compiled by Visual C++ build 1944, 64-bit · base=yaqu_duracion_1513_test · host=127.0.0.1:62200
+  opciones de la transaccion en dist: NINGUNA (las de Prisma por defecto: maxWait 2000 · timeout 5000)
+  conexiones del cliente: las de Prisma por defecto, 25 (nucleos x 2 + 1) · tope del comercio 100
+== 1 · UNA RESERVA, SOLA (200 seguidas, sin nadie mas; las 5 primeras se descartan) ==
+  reservadas 200 de 200 · minima 1.8 ms · mediana 2.6 ms · p95 3.6 ms · maxima 5.8 ms
+== 2 · RAFAGA CON EL TOPE EN 100 (lo que pasa en produccion: a partir de la 100 solo se pregunta) ==
+  tope 100 · 120 a la vez → reservadas 100 · bloqueadas 20 · LANZAN 0 · filas 100 · mediana 193 ms · la mas lenta 270 ms · total 271 ms
+  tope 100 · 500 a la vez → reservadas 100 · bloqueadas 400 · LANZAN 0 · filas 100 · mediana 280 ms · la mas lenta 447 ms · total 448 ms
+  tope 100 · 1000 a la vez → reservadas 100 · bloqueadas 900 · LANZAN 0 · filas 100 · mediana 574 ms · la mas lenta 1202 ms · total 1204 ms
+  tope 100 · 2000 a la vez → reservadas 100 · bloqueadas 1900 · LANZAN 0 · filas 100 · mediana 1098 ms · la mas lenta 1992 ms · total 1998 ms
+  tope 100 · 4000 a la vez → reservadas 100 · bloqueadas 1976 · LANZAN 1924 {"P2028":1924} · filas 100 · mediana 1973 ms · la mas lenta 2062 ms · total 2068 ms
+      las que lanzan tardan de 2024 ms a 2051 ms · un texto: Transaction API error: Unable to start a transaction in the given time.
+== 3 · RAFAGA SIN TOPE (el peor caso: todas escriben su fila) ==
+  sin tope · 120 a la vez → reservadas 120 · bloqueadas 0 · LANZAN 0 · filas 120 · mediana 102 ms · la mas lenta 184 ms · total 184 ms
+  sin tope · 500 a la vez → reservadas 500 · bloqueadas 0 · LANZAN 0 · filas 500 · mediana 425 ms · la mas lenta 767 ms · total 768 ms
+  sin tope · 1000 a la vez → reservadas 1000 · bloqueadas 0 · LANZAN 0 · filas 1000 · mediana 792 ms · la mas lenta 1558 ms · total 1560 ms
+  sin tope · 2000 a la vez → reservadas 1318 · bloqueadas 0 · LANZAN 682 {"P2028":682} · filas 1318 · mediana 1527 ms · la mas lenta 2036 ms · total 2037 ms
+      las que lanzan tardan de 2010 ms a 2018 ms · un texto: Transaction API error: Unable to start a transaction in the given time.
+  sin tope · 4000 a la vez → reservadas 1176 · bloqueadas 0 · LANZAN 2824 {"P2028":2824} · filas 1176 · mediana 2030 ms · la mas lenta 2091 ms · total 2092 ms
+      las que lanzan tardan de 2012 ms a 2068 ms · un texto: Transaction API error: Unable to start a transaction in the given time.
+INSTRUMENTO: midio y sus recuentos cuadran.
