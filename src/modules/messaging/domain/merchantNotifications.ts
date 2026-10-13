@@ -42,13 +42,16 @@ export async function sendMerchantPaymentEmail(params: {
   merchantEmail: string;
   merchantName: string;
   customerName: string;
+  // SCRUM-1288d: llega como TEXTO («1234.5», el `.toString()` de quien llama) y el correo lo pegaba
+  // a la moneda: «1234.5 EUR». `formatMoneyEs` acepta texto, así que el formato se pone aquí.
   amount: string;
   currency: string;
   invoiceNumber?: string | null;
 }): Promise<ResultadoCorreo> {
   const { merchantEmail, merchantName, customerName, amount, currency, invoiceNumber } = params;
+  const importe = formatMoneyEs(amount, currency);
 
-  const subject = `💰 Pago recibido: ${amount} ${currency} de ${customerName}`;
+  const subject = `💰 Pago recibido: ${importe} de ${customerName}`;
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
@@ -62,7 +65,7 @@ export async function sendMerchantPaymentEmail(params: {
     <div style="background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span style="color:#64748b;font-size:13px">Importe</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${amount} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${importe}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span style="color:#64748b;font-size:13px">Cliente</span>
@@ -93,6 +96,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   merchantName: string;
   customerName: string;
   quoteId: number;
+  // SCRUM-1288d: llega como TEXTO («1234.50», el `toFixed(2)` de quien llama); se formatea aquí.
   total: string;
   currency: string;
   /**
@@ -129,7 +133,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
       </div>
       <div style="display:flex;justify-content:space-between">
         <span style="color:#64748b;font-size:13px">Total</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${total} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${formatMoneyEs(total, currency)}</span>
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0 0 4px">
