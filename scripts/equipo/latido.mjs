@@ -871,6 +871,13 @@ export const MARCA_DE_CONGELADA = '<!-- vigia-despliegue:produccion-congelada --
  * (2-sep → 7-oct-2026, medido dos veces el 7-oct). Doce horas queda por encima de todo lo medido.
  */
 export const HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO = 12;
+/**
+ * (SCRUM-1542) Cómo empieza el título de una corrida que es un SIMULACRO del aviso. Sale en `failure`
+ * con su paso de aviso corrido, igual que una CONGELADA de verdad, y su Issue se cierra solo: leída
+ * como una corrida más diría «CANTÓ y NO CONSTA SU AVISO». Se aparta por el título que le pone el
+ * `run-name` del workflow (un test ata las dos puntas) y se dice cuántas se apartaron.
+ */
+export const TITULO_DE_CORRIDA_DE_SIMULACRO = 'SIMULACRO del aviso del vigía';
 
 /**
  * (SCRUM-1123d) El ÚLTIMO VEREDICTO del vigía de despliegue. Sin esto, cerrar SCRUM-1123 dejaba un ciego:
@@ -890,8 +897,12 @@ export const HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO = 12;
 export function veredictoDelVigiaDeDespliegue({ corridas, pasosDe = () => undefined, issuesAbiertos = () => undefined, ahora }) {
   const V = 'vigía de DESPLIEGUE';
   if (!Array.isArray(corridas)) return { ciego: `no llegaron las corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\`: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
-  const terminadas = corridas.filter((c) => c && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
-  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\` que llegaron está terminada y fechada: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
+  // (SCRUM-1542) Un simulacro no es una lectura de producción: no da veredicto. Se aparta y se cuenta.
+  const esSimulacro = (c) => String((c && c.display_title) || '').startsWith(TITULO_DE_CORRIDA_DE_SIMULACRO);
+  const simulacros = corridas.filter(esSimulacro).length;
+  const aparte = simulacros ? ` (${simulacros} simulacro(s) del aviso apartado(s): no leen producción)` : '';
+  const terminadas = corridas.filter((c) => c && !esSimulacro(c) && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\` que llegaron está terminada y fechada${aparte}: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
   const horas = (c) => (ahora - Date.parse(c.created_at)) / 3600000;
   const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
   const ultima = terminadas[0];
@@ -904,7 +915,7 @@ export function veredictoDelVigiaDeDespliegue({ corridas, pasosDe = () => undefi
   if (horas(ultima) > HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO) {
     alertas.push({ linea: `el ${V} NO CORRE desde hace ${cuanto(horas(ultima))} (${cuando}) y se le pide cada 2 h (hueco mayor medido: 8,7 h; tope ${HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO} h). Su veredicto de abajo es de ENTONCES, no de hoy` });
   }
-  const texto = (veredicto) => `${V}: última corrida hace ${cuanto(horas(ultima))}, veredicto ${veredicto}`;
+  const texto = (veredicto) => `${V}: última corrida hace ${cuanto(horas(ultima))}, veredicto ${veredicto}${aparte}`;
   if (ultima.conclusion === 'success') return { alertas, texto: texto('NO CANTÓ (salida 0: producción al día, o retrasada pero desplegando)') };
   if (ultima.conclusion !== 'failure') {
     alertas.push({ linea: `la última corrida del ${V} (${cuando}) terminó en ${String(ultima.conclusion).toUpperCase()}: NO DIO VEREDICTO. ${laBuena}${donde}` });
