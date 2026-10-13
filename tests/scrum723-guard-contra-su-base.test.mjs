@@ -286,6 +286,16 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien le pase a la pasada la fecha ya leída (un fichero más de los que prepara el
   // workflow), o quien retire el aviso de `main` parado.
   'scripts/vigia-pasada.mjs [log]',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Para fabricar una «producción»
+  // congelada necesita un commit VIEJO de la cadena de primer padre de la PUNTA
+  // (`git log --first-parent origin/main`): es contra esa punta contra la que el vigía va a medir
+  // el hueco acto seguido, así que la referencia móvil es el sujeto, misma familia que el vigía de
+  // arriba. Contra la base de una rama fabricaría un hueco que el vigía no vería. No acusa a
+  // ninguna rama ni corre en la tanda: sólo en `vigia-despliegue.yml` lanzado a mano con
+  // `simulacro=true`, que trae `main` con `fetch-depth: 0`; y si no encuentra una entrada lo
+  // bastante vieja lo DICE y sale 2 (`tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`).
+  // Lo retira: quien retire el simulacro, o quien le pase la lista de entradas ya leída.
+  'scripts/equipo/simulacro-del-vigia.mjs [log]',
   // Este mismo fichero: la lógica VIEJA, conservada para poder enseñar el rojo del ticket. Vive
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
@@ -622,6 +632,16 @@ const INDIRECTAS_DECLARADAS = [
   // repositorio SINTÉTICO en el temporal con su propio remoto desnudo, cuyo `main` no es el de nadie.
   // Lo retira quien borre el test.
   'tests/scrum1298b-latido-arbol-de-arranque.test.mjs',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Su ÚNICA lectura de la punta es el
+  // `[log]` declarado arriba; lo que sale aquí es la prosa de sus mensajes, que nombra `main` para
+  // decir qué ha fabricado y sobre qué («entró en `main` hace N h», «entradas de `main` miradas»).
+  // No hay ninguna referencia que viaje por una variable hasta un git. Lo retira quien retire el
+  // simulacro.
+  'scripts/equipo/simulacro-del-vigia.mjs',
+  // …y su test: monta repositorios SINTÉTICOS en el temporal (uno con un merge, otro lineal) y les
+  // pone su propio `refs/remotes/origin/main`, que no es el de nadie; el resto son los mensajes de
+  // sus aserciones, que hablan de cuándo ENTRÓ algo en `main`. Mismo caso que 839d, 899b y 966.
+  'tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
