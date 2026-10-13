@@ -1961,3 +1961,167 @@ ciegas.
 Sin `FORCE_COLOR` en el entorno. La lista de hoy va en `n-datos.json`; los 246 logs (29 MB) no
 están en git y se bajan con sus números de job, que van en esa lista. Una lista nueva trae más
 runs: las cifras se recalculan, no se heredan.
+
+# SCRUM-1339p · El 27 % que sale con 2 no lo recoge nadie: el único vigía de `main` dice VERDE, y los «26 de vigia-atascados» eran marcas, no ejecuciones
+
+**Medido contra:** `origin/main` = `9226d0f2dd48f885b63b3222441f57554a7cdb1c` · 2026-10-13T07:15:14Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1339/p-leer.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-2e`, 13-oct; sesión `jv-j3d`,
+carril J3 por encargo: el ticket lleva `area-j6`). El tramo 1339n dejó dicho que el job del
+meta-guard sale con código 2 en 58 de 213 ejecuciones. Cuatro preguntas: si ese 2 bloquea algún
+merge, si algo mira ese código de salida, si los de `vigia-atascados` son la misma firma que los
+de `scrum859`, y si 42 + 26 = 68 cuadra con 58. **Es lectura: no se ha tocado el meta-guard, ni
+ningún test, ni ningún workflow, ni el auto-merge; no se ha ajustado ningún número; el ticket no
+se transiciona.** Entran esta sección y diez ficheros `p-*` en evidencias. El hook de arranque dijo
+«SIN IDENTIDAD» (SCRUM-1498): seguí.
+
+## En corto
+
+- **Nadie recoge ese 2, y hay un instrumento que parece que sí.** `scripts/vigia-silencio-de-main.mjs`
+  (SCRUM-1324) es lo único de la casa que mira este job en `main`. Corrido el 13-oct a las 07:14Z
+  dice **VERDE, «0 rojos seg.»** para el meta-guard, sobre sus 100 últimos runs. En la ventana de
+  este tramo el job sale con 2 en **19 de 56** ejecuciones de `main`. No está roto: avisa con 5
+  rojos SEGUIDOS, y ese 5 se derivó para que la tasa intermitente de este mismo job no avisara
+  (comentario de `umbralDeRojos`: 25,8 % el 1-oct). La racha más larga de la ventana es 3. Y no lo
+  lanza ningún workflow ni ningún hook: sólo `npm run vigia:silencio`, a mano.
+- **El avisador lo descarta por diseño** (SCRUM-853): de las 49 ejecuciones con el 2 a solas
+  (el obligatorio de ese run en verde), publicó aviso en **0**.
+- **No es un check requerido.** Las reglas vivas de `main`, leídas por API: un solo requerido,
+  «build + tests (con banco desechable)».
+- **«No espera» y «sale con 2 y entra igual» son dos cosas, y sólo la primera está observada.** De
+  133 ejecuciones cuya punta es la que entró, **123** se mergearon con el meta-guard todavía
+  corriendo (le faltaban de 133 a 1.063 s; mediana 619), y 31 de ésas acabaron con 2. Con el 2 **ya
+  dicho** antes del merge: **0 de 133**. En las 10 en que había acabado antes, las 10 estaban en
+  verde. Que un 2 visible no pararía el merge lo dice la regla, no un caso de esta ventana.
+- **La aritmética: 42 + 26 no son 68 ejecuciones.** El 26 son MARCAS (mutaciones sin juzgar), no
+  logs. El apartado ④ de `n-patas.mjs` empuja una fila por marca y la rotula «logs». Las 58, cada
+  una en una fila: 41 sólo `scrum859` · 10 `vigia-atascados` · 3 `scrum813` · 2 sólo `scrum757` ·
+  1 `scrum757` con `scrum859` · 1 `scrum834`. Fuera de las dos causas del encargo quedan 6.
+- **`vigia-atascados`: misma familia, firma distinta.** Pierde la cola en la pasada LIMPIA, no en la
+  mutada, y el corte salta: 22, 36, 37, 41, 41, 41, 42 y 43 de 64. El mismo blob sale entero en 203
+  de 213.
+- **Las 58 de 58 tienen la pata del blob, y en las 213 hay 0 mudas.**
+- **No he ejecutado nada en Linux ni en local** (salvo el vigía de silencio, que sólo lee). Todo
+  sale de 246 logs del meta-guard, 79 del avisador y la API.
+
+## ① La aritmética, que iba primero
+
+Población: la de `n-listar.mjs` del tramo 1339n, sin volver a listar — 248 ejecuciones del job en
+246 runs, del 2026-10-06T13:46:31Z al 2026-10-13T06:20:11Z. Con veredicto, 213; canceladas, 35.
+
+| guard | marcas | logs | de ellas `?` | de ellas `☠` |
+|---|---|---|---|---|
+| `scrum859-identidad-y-motivo-cerrado` | 42 | 42 | 42 | 0 |
+| `vigia-atascados` | 27 | 10 | 26 | 1 |
+| `scrum757-la-declaracion-que-nadie-lee` | 3 | 3 | 3 | 0 |
+| `scrum813-trinquete-de-zona` | 3 | 3 | 0 | 3 |
+| `scrum834-puerta-avisador-rojo` | 1 | 1 | 0 | 1 |
+
+76 marcas, que es lo que suman las ciegas y los muertos de los 58 resúmenes. 59 logs por guard,
+menos 58 ejecuciones: una lleva dos guards a la vez (#2229, `scrum757` y `scrum859`).
+
+De dónde sale el 26: `vigia-atascados` declara 5 mutaciones y el instrumento hace UNA pasada limpia
+del fichero. Si esa pasada llega cortada, quedan sin juzgar todas las mutaciones cuyo test declarado
+cae detrás del corte: 3 marcas en siete logs y 4 en uno, 25. Más una ciega en la mutada y un
+fichero muerto: 26 `?` y 1 `☠`, en 10 logs. La línea de 1339n «`? vigia-atascados.test.mjs`: 26
+logs» cuenta marcas. Su cifra de `scrum859` no cambia: una marca por log.
+
+## ② ¿Bloquea? Las dos cosas, separadas
+
+Sobre las 192 ejecuciones de `pull_request` (138 PR, 132 mergeados):
+
+| frente al merge de su PR | con 2 | con 0 | sin veredicto |
+|---|---|---|---|
+| entró con esta punta, meta-guard todavía corriendo | 31 | 92 | 0 |
+| entró con esta punta, meta-guard ya acabado | 0 | 10 | 0 |
+| el PR entró con otra punta | 7 | 11 | 34 |
+| PR sin mergear | 1 | 5 | 1 |
+
+- Los dos PR del encargo: #2354, job `115146037750`, entró 578 s antes de que el meta-guard acabara
+  con 2. #2323 entró con otra punta, 855 s antes de que su meta-guard acabara, y ése acabó en verde;
+  el ciego `113223120811` es de su punta del 8-oct.
+- En 132 de las 133 el obligatorio de ese mismo run acabó en verde. La que no: #2344, obligatorio
+  en `failure` y `merged_by` vacío. No la he abierto.
+- En `main` (push) no hay nada que bloquear: 19 de 56 con 2.
+
+## ③ ¿Quién mira ese código de salida?
+
+| mecanismo | qué hace con el 2 del meta-guard | medido |
+|---|---|---|
+| reglas de `main` | no lo exigen | 1 requerido, y no es éste |
+| `avisador-rojo.yml` | salta con el CI en `failure` y la puerta lo descarta si ningún obligatorio está rojo, o si el PR ya está cerrado | 49 con el 2 a solas: 47 «PR-YA-CERRADO», 2 «ESCALADO-FISCAL», 0 avisos |
+| `vigia-silencio-de-main.mjs` | sólo `main`, 5 rojos seguidos, a mano | racha máxima 3; hoy dice VERDE |
+| `vigia-atascados.yml` | sólo rojos de checks obligatorios | leído en el código, no medido |
+| `latido.mjs` (hook de arranque y de cierre) | sólo el obligatorio | leído en el código, no medido |
+| `ci-de-la-rama.mjs` | lee el veredicto por job si alguien lo lanza | leído en el código, no medido |
+
+Las otras 9 de las 58 llevan además el obligatorio en rojo: en 5 el avisador publicó aviso, y lo
+publicó por el obligatorio. Control del lector: en toda la ventana ve 22 avisos publicados, así que
+su «0» no es que no sepa leer un aviso.
+
+## ④ `vigia-atascados` frente a `scrum859`
+
+| | `scrum859` | `vigia-atascados` |
+|---|---|---|
+| logs | 42 | 10 |
+| qué pasada llega cortada | la MUTADA (la limpia, 20 de 20 siempre) | la LIMPIA en 8; la mutada en 2 |
+| dónde corta | fijo: 9 pasados y 7 caídos, faltan 4 de 20 | salta: 22, 36, 37, 41, 41, 41, 42 y 43 de 64 |
+| tests declarados afectados | siempre el mismo | cuatro distintos |
+| mismo blob del guard y del instrumento, entero en | 171 de 213 | 203 de 213 |
+
+Los otros tres: `scrum757` (3 logs, la mutada trae 4 de 9, las tres veces igual), `scrum813` (3,
+fichero rojo y el caso que cayó sin nombre; llegan 18, 19 y 36 de 43) y `scrum834` (1, llegan 33 de
+53). Mismo blob entero en 210, 198 y 212. En los cinco, el instrumento escribe que es la pérdida de
+informe de SCRUM-1405; eso lo dice él, yo no lo he medido.
+
+Un dato que no encaja con lo escrito antes y dejo sin perseguir: la hipótesis de 1339j y 1339k
+(sin probar) explicaba el corte de `scrum859` por el megabyte que escribe su pasada mutada. La de
+`vigia-atascados` se corta en la pasada limpia, 64 tests que pasan. No he medido cuánto escribe.
+
+## Controles
+
+- Positivos del encargo: `115146037750` (125.694 B) y `113223120811` (125.496 B) salen CIEGO y
+  `failure`. Cero: `113102985230` (124.277 B) sale VERDE con 0 marcas sin juzgar. Dados la vuelta,
+  el guion sale con 1 (`p-salida-leer-control-al-reves.txt`).
+- Tamaño antes de contar: los 213 logs pesan de 113.588 a 127.648 B; los 79 del avisador, de 25.684
+  a 28.786 B.
+- Sumas: ✔, `?`, `☠` y ✖ contadas dan las cuatro cifras del resumen en 213 de 213; cada marca tiene
+  su línea de motivo en 213 de 213; CIEGO ↔ `failure` y VERDE ↔ `success` en 248 de 248.
+- Sembrado: seis logs fabricados por el guion, uno con dos marcas de UN guard (tiene que contar 2
+  marcas y 1 log) y otro con la marca dentro de un nombre (no cuenta).
+- Pata del blob: el log de las 157 de `pull_request` nombra «Merge punta into base» con la punta de
+  la lista; el positivo del método es un fichero que sí se movió, 7 blobs distintos.
+
+## Lo que NO sé y lo que NO he hecho
+
+- Nada en Linux. Por qué corta, y por qué en `vigia-atascados` el corte salta.
+- Si un 2 ya visible pararía un merge: no hay ni un caso en la ventana. Fuera de ella está #2118
+  (comentario 17978, 1-oct), armado a mano con el run en rojo.
+- Las 35 canceladas y lo anterior al 6-oct, 13:43Z.
+- Cuántos rojos hay entre las 100 últimas corridas que mira el vigía de silencio: su salida da la
+  racha, no el recuento. El 19 de 56 es de mi ventana, que es más larga que la suya.
+- Si alguien ha lanzado alguna vez `npm run vigia:silencio`: no deja rastro.
+- Los ficheros que cada guard lee del árbol no son un blob: la pata cubre el guard y el instrumento.
+- #2344.
+
+## Mis errores
+
+1. Mi primer clasificador de motivos sacó «OTRA» en cuatro de los cinco guards: el motivo va en las
+   líneas «→» de debajo y yo sólo leía la primera. Lo delató la propia tabla.
+2. El control de coherencia salió rojo (130 de 133): comparaba el obligatorio del mismo intento, y
+   un relanzamiento sólo repite lo que cayó. Con todos los intentos, 132.
+3. Leí «el motivo nombra al meta-guard» como que el avisador avisaba por él. Era la marca del
+   aviso, que toma el primer check rojo; el motivo era el obligatorio. Lo separa el cruce con el
+   obligatorio de cada run.
+4. Un `sed` para cambiar un escape metió un byte ESC de verdad en dos guiones. Lo cazó el recuento
+   por bytes antes de comitear; `sed` interpreta la barra-x en el reemplazo.
+
+## Reproducir
+
+    node docs/master/evidencias/SCRUM-1339/j-logs.mjs docs/master/evidencias/SCRUM-1339/n-datos.json <logs, FUERA del árbol> vigia-atascados.test.mjs
+    node docs/master/evidencias/SCRUM-1339/p-leer.mjs docs/master/evidencias/SCRUM-1339/n-datos.json <logs> 115146037750,113223120811 113102985230 <p-filas.json>
+    node docs/master/evidencias/SCRUM-1339/p-blobs.mjs docs/master/evidencias/SCRUM-1339/n-datos.json <logs> . <guards, por comas>
+    node docs/master/evidencias/SCRUM-1339/p-quien.mjs <p-filas.json> <logs del avisador, FUERA del árbol> <p-quien.json>
+    node scripts/vigia-silencio-de-main.mjs
