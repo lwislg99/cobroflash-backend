@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `780c812707bfd97b815fe5e25f31110e66e25975` · 2026-10-13T06:14:35Z
 
-A9: sin fallo que generalice — el defecto es una frase fechada que caducó, familia que ya barren los censos de SCRUM-1500g y SCRUM-1524; de esta sesión no hay tropiezo propio que convertir en comprobación
+A9: aviso → cicatriz J5 «Empujé un cambio a una skill sin tener citado en Jira el OK del fundador que pide la regla 10: el bot arma el auto-merge en el push y la sesión ya no lo puede parar» — no se pudo comprobar: ningún guard del repositorio lee Jira, y el permiso de la regla 10 vive en un comentario
 
 13-oct-2026 · **J5** (sesión `jv-j5b`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-2e`).
 [Escrito por la sesión, no por Javier. El encargo se leyó en Jira: SCRUM-1530 entero; «lo coge», c.19216.]
@@ -10,6 +10,16 @@ A9: sin fallo que generalice — el defecto es una frase fechada que caducó, fa
 **Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha
 común del 13-oct. Carril J5 (fiscal). No se ha tocado `src/`, ni `prisma/schema.prisma`, ni ningún guard.
 **No se ha pedido, buscado, abierto ni tocado ningún certificado, contraseña ni clave.**
+
+## El error de esta sesión
+
+Se empujó la rama (06:19Z) **antes** de comprobar si había en Jira un OK del fundador citable para tocar
+`.claude/skills` (regla 10). El precedente lo pide por número de comentario (SCRUM-1500 c.18970 y c.18993).
+En SCRUM-1530 no lo hay: la descripción la escribe el orquestador, y SCRUM-1521 c.19153 firma CÓMO se
+corrige una frase histórica, no que se toque esta skill. El bot abrió el PR #2355 y le armó el auto-merge
+en el mismo push; la sesión no toca el auto-merge. Se avisó al orquestador a las 06:20Z, con el PR sin
+mergear, y la decisión —publicar el número del OK o parar el PR— es suya o de Javier. Va a las
+cicatrices de J5, sin comprobación: no hay instrumento que lea Jira.
 
 ## Qué cambia
 
