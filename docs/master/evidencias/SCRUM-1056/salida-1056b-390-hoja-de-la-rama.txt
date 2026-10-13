@@ -1,0 +1,69 @@
+HOJA=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\css\styles.css · regla de la nota en la hoja cargada: true
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js\clienteVolverALlamar.js · build del panel 18014c49ab7f2089c48d4c2e189f1fe799b829cf · TESTIGO={"pieza":"object","montar":"function","ancho":390}
+--- FILAS (ancho de ventana 390)
+
+· sin fecha
+    título   : Volver a llamar
+    se lee   : —
+    botones  : «Poner fecha» 113×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· con fecha, para más adelante
+    título   : Volver a llamar
+    se lee   : «Volver a llamar el 01/12/2026» ; «Llamar por la tarde»
+    botones  : «Hecho» 91×44 ; «Cambiar» 89×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· toca hoy, sin nota
+    título   : Volver a llamar
+    se lee   : «Volver a llamar hoy»
+    botones  : «Hecho» 91×44 ; «Cambiar» 89×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· vencida, con una nota larga y una palabra que no cabe
+    título   : Volver a llamar
+    se lee   : «Había que llamar el 01/10/2026» ; «Quedó en mirar el presupuesto de la cald… (224 car.)»
+    botones  : «Hecho» 91×44 ; «Cambiar» 89×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· formulario, abierto con «Cambiar»
+    título   : Volver a llamar
+    se lee   : —
+    rótulos  : Día→input ; Nota de la llamada→textarea
+    campos   : input[date] 364×47 «2026-10-01» ; textarea 364×67 «Quedó en mirar el presupuesto de la caldera con su hermano y contestar antes del puente; si no coge, probar por la tarde, que por la mañana trabaja. Supercalifragilisticoespialidosoconunapalabralarguisimaquenocabeenunalinea.»
+    botones  : «Guardar» 106×44 ; «Cancelar» 92×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· formulario, tras un «Guardar» que falla
+    título   : Volver a llamar
+    se lee   : —
+    rótulos  : Día→input ; Nota de la llamada→textarea
+    campos   : input[date] 364×47 «2020-02-03» ; textarea 364×67 «Quedó en mirarlo»
+    botones  : «Guardar» 106×44 ; «Cancelar» 92×44
+    avisos   : «No se ha podido guardar la llamada. Inténtalo otra vez.»
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· tras guardar una fecha PASADA (el servidor de la sonda contesta «vencido»)
+    título   : Volver a llamar
+    se lee   : «Había que llamar el 03/02/2020» ; «Quedó en mirarlo»
+    botones  : «Hecho» 91×44 ; «Cambiar» 89×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+· tras «Hecho»
+    título   : Volver a llamar
+    se lee   : —
+    botones  : «Poner fecha» 113×44
+    avisos   : ninguno
+    caja     : 366 de ancho (de 12 a 378) · se sale la caja: false · se sale la página: false · hijos que asoman: ninguno
+
+lo que recibió la sonda: guardar=[{"dia":"2020-02-03","nota":"Quedó en mirarlo"},{"dia":"2020-02-03","nota":"Quedó en mirarlo"}] · hecho=1
+peticiones que no son GET durante la sonda: 0
+errores de página: ninguno
+POBLACION=8 estados · controles de menos de 44 px de alto=0 · estados con algo fuera de la caja=0
+EXIT=0
