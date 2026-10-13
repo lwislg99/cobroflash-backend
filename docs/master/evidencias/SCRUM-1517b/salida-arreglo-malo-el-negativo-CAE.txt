@@ -6,13 +6,13 @@ sha256 dist/lib/invoicing.js                                 = 24bb7011e75dc5528
 texto firmado del 409 (COPY_PUBLICO_SIN_SELLAR, leído de dist): «Esta factura se está registrando en Hacienda. Vuelve a intentarlo en un minuto.»
 titular de la página que acompaña al 500 (documentNotFoundHtml, leído de dist): «Este enlace no corresponde a ningún documento activo.»
 
-[verifactu] invoice=2026-CF-0001 hash=880A18862E37EB0C…
+[verifactu] invoice=2026-CF-0001 hash=80C88D87C1FD5122…
 ── A · CONTROL · factura ES, sin fallo: se sella entera
    la puerta devuelve sellado
    fila que queda:  vfEstado=sellado  huella=sí   → no pendiente
-   GET /recibo/:token/pdf        → 200  application/pdf  6536 B  · es un PDF
+   GET /recibo/:token/pdf        → 200  application/pdf  6538 B  · es un PDF
       lo que la ruta dejó en el log: (nada)
-   GET /admin/invoices/:id/pdf   → 200  application/pdf  6536 B  · es un PDF
+   GET /admin/invoices/:id/pdf   → 200  application/pdf  6538 B  · es un PDF
       lo que la ruta dejó en el log: (nada)
    escrituras durante las dos peticiones: invoice.update
 
@@ -25,7 +25,7 @@ titular de la página que acompaña al 500 (documentNotFoundHtml, leído de dist
       lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
    escrituras durante las dos peticiones: ninguna
 
-[verifactu] invoice=2026-CF-0003 hash=6424ED0B3DA6C873…
+[verifactu] invoice=2026-CF-0003 hash=5854E550269457DC…
 ── C · factura ES: la HUELLA se escribe y la escritura siguiente, la del estado, falla
    la puerta devuelve pendiente_de_sellado (la base no responde (estado))
    fila que queda:  vfEstado=pendiente_de_sellado  huella=sí   → PENDIENTE DE SELLADO
@@ -71,7 +71,7 @@ titular de la página que acompaña al 500 (documentNotFoundHtml, leído de dist
       lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] FacturaSinSellarError: invoice_sin_sellar:2026-CF-0007
    escrituras durante las dos peticiones: ninguna
 
-[verifactu] invoice=2026-CF-0008 hash=792AD672CBBAC1A0…
+[verifactu] invoice=2026-CF-0008 hash=C3080A8B920A924E…
 ── H · NEGATIVO DEL ARREGLO · factura bien SELLADA cuyo PDF falla de verdad (emisor sin nombre): tiene que seguir en 500
    la puerta devuelve sellado
    fila que queda:  vfEstado=sellado  huella=sí   → no pendiente

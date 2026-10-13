@@ -181,6 +181,7 @@ El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); seguí por la norma com
 **Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:29:30Z (hora de GitHub)
 
 A9: aviso → A10 «Una dependencia entre dos PR escrita en el prompt de UNA sesión no existe para la otra: o es un guard, o no es nada.» — no se pudo comprobar: el orden «el reintento antes que la respuesta» vive en la cabecera de un módulo y en otro ticket, y el guard que lo ataría (sección ④) queda propuesto y sin construir: verlo en rojo pide poner el arreglo, que es STOP
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
 
 Sesión `jv-j5f` (13-oct), por encargo del orquestador de Javier (`cobroflash-backend-2e`): **preparar
 el GO, no construirlo.** 🔴 CRUCE DE CARRIL DECLARADO (A20): los ficheros del arreglo son de J1 y J2;
@@ -307,3 +308,9 @@ diferencias, son la hora de la huella y dos bytes del PDF; el veredicto no cambi
 la decisión que más pesa de esta entrega (18783): me quedaba contexto para el ticket propio y no para
 SCRUM-1404 entero. Y cité la frase de A10 con su «(SCRUM-1358)» detrás: el guard de la A9 la busca sin
 el origen y cayó; corregida y vuelto a correr. Contexto medido en el jsonl al escribir: 220.206.
+
+**Y el primer empujón (`f439d465`) dejó el obligatorio en ROJO, por mi guion:** 11.197 casos, 1 cae,
+`SCRUM-622`. El veredicto de `control-en-rojo.mjs` estaba escrito como «si no es rojo, es verde», y sin
+pendientes habría dicho VERDE sobre nada. El censo tenía razón. Ahora son tres estados y el verde se
+gana; sin población dice CIEGO. No corrí ese censo antes de empujar: corrí siete ficheros de guards y
+no era ninguno de ellos. Tras el cambio, las tres pasadas dan lo mismo que antes (ROJO, VERDE, caen 2).

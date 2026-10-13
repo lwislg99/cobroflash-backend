@@ -312,9 +312,15 @@ console.log(fallos.length
 // ── EL VEREDICTO: lo que el arreglo tiene que conseguir, y hoy no consigue ───────────────────────
 const sinFirmar = pendientes.filter((f) => !(f.recibo.status === 409 && f.lleva.firmado));
 const sinCodigo = pendientes.filter((f) => !(f.panel.status === 409 && f.json?.error === porton.ERROR_SIN_SELLAR));
-const rojo = sinFirmar.length > 0 || sinCodigo.length > 0;
+// TRES estados, y el verde se GANA: sólo si hay pendientes y TODAS tienen su 409 por las dos rutas.
+// Sin pendientes no hay nada medido: CIEGO, nunca verde (lo exige `tests/scrum622`, que cayó en CI
+// con la primera versión de esta línea: un «si no es rojo, es verde»).
+let veredicto = 'CIEGO';
+if (pendientes.length > 0 && sinFirmar.length === 0 && sinCodigo.length === 0) veredicto = 'VERDE';
+else if (pendientes.length > 0) veredicto = 'ROJO';
+const rojo = veredicto !== 'VERDE';
 console.log('');
-console.log(`VEREDICTO sobre ${pendientes.length} pendientes: ${rojo ? 'ROJO' : 'VERDE'}`
+console.log(`VEREDICTO sobre ${pendientes.length} pendientes: ${veredicto}`
   + ` · recibo público sin su 409 firmado: ${sinFirmar.length} (${sinFirmar.map((f) => f.c.id).join(', ') || '—'})`
   + ` · panel sin su 409 ${porton.ERROR_SIN_SELLAR}: ${sinCodigo.length} (${sinCodigo.map((f) => f.c.id).join(', ') || '—'})`);
 
