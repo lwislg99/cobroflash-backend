@@ -238,3 +238,5 @@ es lo que casa con el código del runner y con el síntoma, no una reproducción
 - **El rojo del arreglo no lo puedo dar** como «con el código viejo vuelve a fallar»: el viejo no falla
   aquí (96 de 96). Lo que hay es la tercera fila de la tabla. Es una pausa, no una garantía: ensancha el
   margen de «lo que tarde en morir» a medio segundo.
+
+A9: aviso → A10 «Una frase que un fichero escribe al morir compite con el lector que la espera: se escribe con el proceso vivo.» — no se pudo comprobar: la carrera no se reproduce de forma natural (96 de 96 bien en Windows; sólo forzada), así que no hay test que falle antes y pase después
