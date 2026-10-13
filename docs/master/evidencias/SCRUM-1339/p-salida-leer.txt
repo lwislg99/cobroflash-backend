@@ -1,0 +1,79 @@
+✅ CONTROL de la función sobre 6 logs fabricados (verde, ciego con dos marcas de UN guard, rojo, vacío, cortado, marca dentro de un nombre): 6 de 6 en su estado y con su número de marcas
+
+POBLACIÓN: 248 ejecuciones del job del meta-guard en 246 runs · de 2026-10-06T13:46:31Z a 2026-10-13T06:20:11Z · lista recogida 2026-10-13T06:21:08.000Z (la de 1339n, sin volver a listar)
+  por su propio resumen: VERDE: 155 · CIEGO: 58 · SIN VEREDICTO: 35
+  por la conclusión de GitHub: success: 155 · failure: 58 · cancelled: 35
+✅ LAS DOS LECTURAS COINCIDEN, ejecución a ejecución: CIEGO ↔ failure y VERDE ↔ success en 248 de 248
+✅ TAMAÑO antes de contar: los 213 logs con veredicto pesan de 113588 a 127648 B (mediana 124163) · los 35 sin veredicto, de 0 a 123069 B
+✅ SUMA: las marcas ✔, ?, ☠ y ✖ contadas dan vivas, ciegas, muertos y mudas del resumen en 213 de 213 logs
+✅ SUMA: cada marca sin juzgar tiene su línea de motivo en 213 de 213 logs
+
+CONTROLES DEL ENCARGO
+✅ POSITIVO que TIENE que salir: job 115146037750 → #2354 · 125694 B · CIEGO · GitHub failure · ? scrum859-identidad-y-motivo-cerrado.test.mjs
+✅ POSITIVO que TIENE que salir: job 113223120811 → #2323 · 125496 B · CIEGO · GitHub failure · ? scrum859-identidad-y-motivo-cerrado.test.mjs
+✅ CERO que NO debe salir: job 113102985230 → #2294 · 124277 B · VERDE · GitHub success · marcas sin juzgar 0
+
+① LA ARITMÉTICA · 58 ejecuciones salen con 2 de 213 con veredicto = 27.2 % · con alguna MUDA: 0
+  guard · MARCAS (mutaciones sin juzgar) · LOGS (ejecuciones) · de ellas ? y ☠
+    scrum859-identidad-y-motivo-cerrado.test.mjs · 42 marcas · 42 logs · ? 42 · ☠ 0
+    vigia-atascados.test.mjs · 27 marcas · 10 logs · ? 26 · ☠ 1
+    scrum757-la-declaracion-que-nadie-lee.test.mjs · 3 marcas · 3 logs · ? 3 · ☠ 0
+    scrum813-trinquete-de-zona.test.mjs · 3 marcas · 3 logs · ? 0 · ☠ 3
+    scrum834-puerta-avisador-rojo.test.mjs · 1 marcas · 1 logs · ? 0 · ☠ 1
+✅ SUMA: 76 marcas en total = las ciegas más los muertos que suman los 58 resúmenes (76)
+  las 58, por QUÉ guards llevan (cada ejecución en UNA fila):
+    41 · scrum859-identidad-y-motivo-cerrado
+    10 · vigia-atascados
+    3 · scrum813-trinquete-de-zona
+    2 · scrum757-la-declaracion-que-nadie-lee
+    1 · scrum757-la-declaracion-que-nadie-lee + scrum859-identidad-y-motivo-cerrado
+    1 · scrum834-puerta-avisador-rojo
+✅ SUMA: las filas de arriba dan 58 = 58
+  logs por guard sumados: 59 · menos 58 ejecuciones = 1 que llevan DOS guards a la vez (contadas dos veces en esa suma)
+✅ SUMA: ejecuciones con dos guards a la vez, contadas una a una: 1 · con tres o más: 0
+
+② LA FIRMA DE CADA GUARD (causa que escribe el instrumento · recuento · qué test declarado)
+  scrum859-identidad-y-motivo-cerrado.test.mjs · 42 motivos en 42 logs
+     causa: B · el declarado no llegó en la MUTADA: 42
+     recuento limpia / mutada / faltan: 20p+0c / 9p+7c / 4 de 20: 42
+     por log (limpia, nº de motivos): 20p+0c × 1: 42
+     42 × «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+  vigia-atascados.test.mjs · 27 motivos en 10 logs
+     causa: A · el declarado no llegó en la LIMPIA (no se mutó nada): 25 · B · el declarado no llegó en la MUTADA: 1 · C · el fichero salió rojo y el caso que cayó no llegó con nombre: 1
+     recuento limpia / mutada / faltan: 41p+0c / — / —: 9 · 22p+0c / — / —: 4 · 36p+0c / — / —: 3 · 37p+0c / — / —: 3 · 42p+0c / — / —: 3 · 43p+0c / — / —: 3 · 64 en total / 48p+0c / 16 de 64: 1 · 64p+0c / 39p+1c / 24 de 64: 1
+     por log (limpia, nº de motivos): 41p+0c × 3: 3 · 22p+0c × 4: 1 · 36p+0c × 3: 1 · 37p+0c × 3: 1 · 42p+0c × 3: 1 · 43p+0c × 3: 1 · 64 en total × 1: 1 · 64p+0c × 1: 1
+     9 × «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad»
+     9 × «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot»
+     8 × «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa»
+     1 × «🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO»
+     jobs: #2234/112667383017 #2255/112691846913 #2269/112889028671 #2284/112939912316 #2305/113131724906 #2313/113213355139 #2325/113262962012 #2334/113791782111 #2347/115068111410 #2347/115072897218
+  scrum757-la-declaracion-que-nadie-lee.test.mjs · 3 motivos en 3 logs
+     causa: B · el declarado no llegó en la MUTADA: 3
+     recuento limpia / mutada / faltan: 9p+0c / 3p+1c / 5 de 9: 3
+     por log (limpia, nº de motivos): 9p+0c × 1: 3
+     3 × «NEGATIVO: un objeto cualquiera del fichero NO se denuncia»
+     jobs: #2229/112424515978 #2233/112443517464 #2337/113807919144
+  scrum813-trinquete-de-zona.test.mjs · 3 motivos en 3 logs
+     causa: C · el fichero salió rojo y el caso que cayó no llegó con nombre: 3
+     recuento limpia / mutada / faltan: 43 en total / 18p+0c / 25 de 43: 1 · 43 en total / 19p+0c / 24 de 43: 1 · 43 en total / 36p+0c / 7 de 43: 1
+     por log (limpia, nº de motivos): 43 en total × 1: 3
+     1 × «la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo faltaba»
+     1 × «③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale de la cuenta»
+     1 × «① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA EN PIE»
+     jobs: #2293/113098721671 #2298/113106794420 #2301/113113747240
+  scrum834-puerta-avisador-rojo.test.mjs · 1 motivos en 1 logs
+     causa: C · el fichero salió rojo y el caso que cayó no llegó con nombre: 1
+     recuento limpia / mutada / faltan: 53 en total / 33p+0c / 20 de 53: 1
+     por log (limpia, nº de motivos): 53 en total × 1: 1
+     1 × «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un test de BD se salta)»
+     jobs: #2282/112925625227
+
+③ EL MISMO GUARD, ENTERO EN OTRAS EJECUCIONES (todas sus mutaciones ✔)
+  scrum859-identidad-y-motivo-cerrado.test.mjs: nombrado en 213 · entero en 171 · sin juzgar del todo o en parte en 42 · formas: ✔✔: 171 · ✔?: 42
+  vigia-atascados.test.mjs: nombrado en 213 · entero en 203 · sin juzgar del todo o en parte en 10 · formas: ✔✔✔✔✔: 203 · ✔✔???: 7 · ✔????: 1 · ✔✔?✔✔: 1 · ✔✔✔☠✔: 1
+  scrum757-la-declaracion-que-nadie-lee.test.mjs: nombrado en 213 · entero en 210 · sin juzgar del todo o en parte en 3 · formas: ✔✔✔✔: 210 · ✔✔✔?: 3
+  scrum813-trinquete-de-zona.test.mjs: nombrado en 213 · entero en 210 · sin juzgar del todo o en parte en 3 · formas: ✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔: 198 · ✔✔✔✔✔✔✔✔✔✔✔: 12 · ✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔☠✔✔✔✔✔✔: 1 · ✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔☠✔✔✔✔✔: 1 · ✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔☠✔✔✔✔: 1
+  scrum834-puerta-avisador-rojo.test.mjs: nombrado en 213 · entero en 212 · sin juzgar del todo o en parte en 1 · formas: ✔✔: 212 · ✔☠: 1
+
+controles: todos se cumplen
+EXIT=0

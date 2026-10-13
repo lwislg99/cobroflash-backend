@@ -26,6 +26,8 @@ import { fileURLToPath } from 'node:url';
 
 import { soloCodigo } from './_solo-codigo.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { tituloProvisionalDelRouter } from './_titulo-provisional-del-router.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APP = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'js', 'app.js'), 'utf8');
@@ -185,25 +187,90 @@ test('SCRUM-832 · el hash se parte por la PRIMERA barra, y no se renombra ningu
 // contrato: quien navega escribe el rótulo provisional con el id, y la ficha lo corrige al cargar.
 // El camino viejo lo cumplía por casualidad, porque escribía el título a mano.
 //
-// El prefijo NO se escribe aquí a mano: se SACA de la regex de `quotesDetailView.js`. Si alguien
-// la cambia allí, este test cambia con ella en vez de quedarse defendiendo una cadena muerta.
+// ── 🔴 ESTE CASO CAMBIÓ EL 13-oct-2026 (SCRUM-1482b), y aquí va por qué ───────────────────────
+// Hasta ese día comparaba DOS CADENAS del fuente: sacaba el prefijo de la regex de la ficha
+// («Presupuesto #») y exigía que el router lo llevara escrito entre comillas. Eso obligaba al
+// router a escribir «Presupuesto #» y algo detrás ANTES de tener la respuesta, y lo único que tiene
+// entonces es el id de la ruta, que es el de la tabla y no el número del presupuesto. El caso no
+// pasaba a pesar del defecto de SCRUM-1482: lo EXIGÍA. Y no veía el defecto que sí quería ver: un
+// título que se queda sin corregir con las dos cadenas en su sitio.
+//
+// El texto firmado para ese título (SCRUM-1482 c.18490) es la palabra del documento, sola, leída
+// del locale. Lo cambia la orden del orquestador escrita en SCRUM-1482 c.19093: «el caso 7 se
+// CAMBIA, no se rodea». Ahora no lee dos cadenas: EJECUTA el enganche. El título de partida es el
+// que escribe el router de verdad (`_titulo-provisional-del-router.mjs` lo saca de su `case`), y
+// sobre él se monta la ficha de verdad.
+//
+// Su control positivo (`docs/master/SCRUM-1482.md`, sección 1482b): con el router y la ficha de
+// antes, este caso sale ROJO; con el router nuevo y la ficha de antes, también (es el título que
+// se quedaba sin número para siempre, medido en c.18498).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR', () => {
-  const detalle = soloCodigo(
-    fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'js', 'quotesDetailView.js'), 'utf8'));
+test('SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR', async () => {
+  const ID = 205;       // el id de la ruta: el de la tabla
+  const NUMERO = 4;     // el número del presupuesto: lo que el profesional ve en su lista
+  const respuesta = (status, cuerpo) => ({
+    ok: status < 400, status,
+    headers: { get: () => 'application/json' },
+    json: async () => cuerpo, text: async () => JSON.stringify(cuerpo), blob: async () => ({}),
+  });
+  const presupuesto = {
+    id: ID, number: NUMERO, quoteNumber: NUMERO, revision: 0, numeroConRevision: 'P4', revisiones: [], vigenteId: ID,
+    status: 'draft', total: '1.00', currency: 'EUR', payToken: 'tok832',
+    lines: [{ concept: 'Punto de luz', qty: 1, price: 1, tax: 0 }],
+    createdAt: '2026-10-13T10:00:00.000Z', updatedAt: '2026-10-13T10:00:00.000Z',
+    customer: { id: 3, name: 'Ana Ruiz', phone: null, email: null, notes: null },
+    merchant: { id: 7, name: 'QA 832', legalName: null, taxId: null, address: null, whatsappPhone: null, defaultCurrency: 'EUR', logoUrl: null },
+    charge: null, invoices: [],
+    decision: { acceptedAt: null, rejectedAt: null, decisionChannel: null, decisionComment: null, rejectionReason: null, paymentTerms: null, evidence: null },
+    billingPlan: [], nextStage: null, hasCustomPlan: false,
+    asignados: [], waDelivery: null, tags: null, internalNotes: null, signatureUrl: null, firmaConTrazo: false,
+    albaranOrigen: { elegible: false, jobId: null, motivo: 'sin_trabajo' },
+  };
+  const LOCALES = [
+    { quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteVerb: 'presupuesto', currency: 'EUR' },
+    { quote: 'Cotización', quotePlural: 'Cotizaciones', quoteVerb: 'cotización', currency: 'MXN' },
+  ];
 
-  const corrector = detalle.match(/\/\^([^/\n]+)\/\.test\(\s*viewTitleEl/);
-  assert.ok(corrector, '🔴 CIEGO: `quotesDetailView.js` ya no corrige el título de la vista con una '
-    + 'regex anclada. Si cambió de forma, este test no está midiendo el enganche que dice medir — '
-    + 'y el rótulo puede haberse quedado en el plural sin que nadie se entere.');
-  const prefijo = corrector[1];   // «Presupuesto #»
+  for (const locale of LOCALES) {
+    // ① Lo que el router escribe al abrir la ficha, ejecutando SU expresión (CIEGO si no la hay).
+    const provisional = tituloProvisionalDelRouter(RAIZ, { quoteId: ID, locale });
+    assert.ok(provisional.length > 0, '🔴 CIEGO: el router deja el título de la ficha vacío.');
 
-  const caso = CODIGO.match(/case 'quotes-detail':([\s\S]*?)break;/);
-  assert.ok(caso, '🔴 CIEGO: no encuentro el `case` de la ficha de presupuesto en el router.');
+    // ② La ficha de verdad, montada sobre ese título, con su carga EN VUELO.
+    let contestar;
+    const enVuelo = new Promise((res) => { contestar = res; });
+    let pedidas = 0;
+    const fetch = async (url, opts = {}) => {
+      const metodo = String(opts.method || 'GET').toUpperCase();
+      if (metodo === 'GET' && new RegExp(`/admin/quotes/${ID}$`).test(String(url))) { pedidas++; return enVuelo; }
+      return respuesta(200, []);
+    };
+    const banco = cargarDashboard(RAIZ, { red: { fetch } });
+    banco.ctx.appLocale = locale;
+    const titulo = banco.mk('span');
+    titulo.id = 'view-title';
+    titulo.textContent = provisional;
+    banco.ctx.document.body.appendChild(titulo);
+    const v = await pintarVista(banco, 'renderQuoteDetailView', ID);
+    assert.equal(v.error, null, `🔴 la ficha revienta: ${v.error && v.error.message}`);
+    assert.equal(pedidas, 1, '🔴 CIEGO: la ficha no ha pedido el presupuesto, así que no hay nada que corregir.');
 
-  assert.ok(caso[1].includes("'" + prefijo + "'"),
-    `🔴 el router no escribe un título que empiece por «${prefijo}», así que \`quotesDetailView.js\` `
-    + 'NO lo corregirá al número real y el usuario verá el rótulo de la LISTA —en plural— en la '
-    + 'ficha de uno solo. Medido en navegador: «Presupuesto #N-1» pasaba a «Presupuestos».');
+    // ③ Mientras carga, el título no lleva un número que todavía no se sabe.
+    assert.equal(titulo.textContent.includes(String(ID)) || titulo.textContent.includes('#'), false,
+      `🔴 mientras la ficha carga, el título de la vista dice «${titulo.textContent}»: lleva el id de la ruta `
+      + `(${ID}, el de la tabla) o una almohadilla. El router aún no sabe el número del presupuesto: lo firmado `
+      + 'es la palabra del documento, sola (SCRUM-1482 c.18490).');
+
+    // ④ EL ENGANCHE: cargada, la ficha corrige ESE título al número del presupuesto.
+    contestar(respuesta(200, presupuesto));
+    for (let i = 0; i < 40; i++) await new Promise((r) => setImmediate(r));
+    assert.equal(titulo.textContent, `${locale.quote} #${NUMERO}`,
+      `🔴 el router escribe «${provisional}» y la ficha, ya cargada, deja el título en «${titulo.textContent}»: `
+      + `no lo ha corregido a «${locale.quote} #${NUMERO}». Lo que escribe el router y lo que la ficha sabe `
+      + 'reconocer se han separado, y en el fuente no se ve: el profesional se queda con un rótulo provisional '
+      + 'para siempre (el defecto de SCRUM-832, y la V1 medida en SCRUM-1482 c.18498).');
+    const h2 = todos(v.contenedor).filter((n) => n.tagName === 'H2').map((n) => n.textContent);
+    assert.deepEqual(h2, [`${locale.quote} #${NUMERO}`], '🔴 CIEGO: la ficha no ha terminado de cargar.');
+  }
 });

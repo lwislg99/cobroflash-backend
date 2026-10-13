@@ -433,3 +433,52 @@ La primera versión cortaba la marca de la línea con una expresión regular sob
 
 - Nada en yaqu.app: no cambia ninguna pantalla.
 - `tsc` no cabía al medir (579 MB libres) y `dist` es de `2e8d8d82`, con 19 ficheros de `src/` cambiados desde entonces. De los 466 tests que cubren lo tocado se han corrido los 358 que no leen `dist`; los 108 que lo leen quedan para el check obligatorio.
+
+# SCRUM-1215g · una firma de grupo no cubre a quien llega después (el censo aprobaba por posición)
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:48:11Z
+A9: comprobación → `tests/scrum1215g-una-firma-de-grupo-no-cubre-a-quien-llega-despues.test.mjs`
+
+13-oct-2026 · **S4** · rama `scrum-1215g-el-censo-no-reparte-la-firma-por-posicion`. Antes de tocar: SCRUM-1215 comentario 19284. Encargo del orquestador (lote del 13-oct, punto 1): demostrar o descartar que el censo de SCRUM-1157 aprueba por posición y, si miente, arreglarlo con su control positivo. No toca ningún fichero de `public/`.
+
+## Demostrado: miente
+
+Ejecutado contra `main`, en memoria, sobre `public/dashboard/js/quoteActionsRegistry.js` → `QUOTE_ACTION_ROTULOS`: la firma es «los doce rótulos» del 17-ago-2026 y el objeto tiene trece claves desde el 21-sep (SCRUM-984, commit `1c39f9d81`: salió una y entraron `btnCobrar` y `btnNuevoAlbaran`).
+
+| Qué se hace | Qué decía el censo | Trinquete, antes | Trinquete, ahora |
+|---|---|---|---|
+| nada | `btnCobrar` y `btnNuevoAlbaran` APROBADO bajo una firma que no los vio; `btnBorrar`, que estaba entre los doce, acusada | verde | verde, y las dos declaradas en «porGrupoSinVer» |
+| una hoja nueva en el sitio de una firmada | la nueva, APROBADO | **verde** | rojo: nombra a la nueva |
+| una hoja nueva añadida arriba | la nueva, APROBADO; acusa a `btnMarcarRechazado`, que sí estaba firmada | rojo contra la que no es | rojo: nombra a la nueva, y a la empujada le dice que mire antes de declararla |
+| las mismas trece con dos cambiadas de sitio | la firmada y la acusada se intercambian | rojo, sin decir por qué | rojo: dice que el reparto ha cambiado |
+| firma en plural sin cuenta y entra una hoja | APROBADO | **verde** | rojo: nombra a la nueva |
+
+No era sólo la cuenta. Cualquier firma de GRUPO (en plural, contando, en la cabecera del objeto, o la del objeto que contiene a la hoja) aprueba lo que cae debajo, lo viera o no. De las 248 hojas APROBADO de hoy, 173 lo son así, en 30 objetos; 75 llevan firma propia.
+
+## Qué cambia
+
+- `scripts/_censo-convenio-microcopy.mjs`: cada hoja APROBADO dice si la firma es suya (comentario en su línea, o en singular encima) o le llega de un grupo. El censo devuelve además `porGrupo` (identidad y cuántas), y `compararConDeclarados` las compara por identidad con «porGrupo» del JSON, en las dos direcciones, dentro de las mismas `nuevas` y `sobran` de siempre: quien ya miraba esas dos listas se pone rojo sin cambiar nada. Un JSON sin «porGrupo» las da todas por nuevas. `queHacer()` da a cada fila su instrucción, una para la CLI y para el test.
+- `scripts/_censo-convenio-microcopy-declarados.json`: «porGrupo» con las 173 identidades de hoy y «porGrupoSinVer» con las dos que se sabe que su firma de grupo no vio, y por qué.
+- `tests/scrum1157-…`: el mensaje del trinquete dice de cada fila lo suyo.
+
+**«porGrupo» nace como una foto.** Dice qué cubría cada firma de grupo el 13-oct-2026; no dice que alguien haya comprobado que la firma vio cada una de las 173. Lo que garantiza desde hoy es que ninguna más entra callada. La cura de cada fichero sigue siendo la de SCRUM-1215f: la marca en la línea de cada clave, que saca a la hoja de la lista.
+
+## De paso, en el mismo instrumento
+
+El título de ese bloque dice «REGLA 30: NINGUNO ESTÁ APROBADO» y el censo leía esa palabra como la firma (el párrafo que cuenta la firma dice «APROBÓ», que no es palabra de convenio). `NINGUNO`/`NINGUNA`/`NINGÚN` pasan a negar, como `NO`, `SIN` y `NI`; el comentario sale AMBIGUO y queda resuelto por identidad en «ambiguos», con su motivo. El resultado no cambia; cambia que ya no depende de un título que dice lo contrario.
+
+## Medido después
+
+| Qué | Resultado |
+|---|---|
+| censo entero | APROBADO 248 · PENDIENTE 7 · SIN_COMENTARIO 34 (igual que antes) · por grupo 173 · trinquete 0 nuevas, 0 sobran |
+| `tests/scrum1215g-…` + `scrum1157` + `scrum1215e` + `scrum1215f` | 34 de 34 |
+| la misma sonda, antes y después | antes: de los cuatro casos que cambian algo, dos salían en verde; después: los cuatro en rojo, y «nada» sigue verde |
+| mutación del censo (13 mutantes, con la base sin mutar antes y después) | mueren los 13 |
+
+## Lo que NO resuelve
+
+- Cambiar el TEXTO de una clave firmada sin cambiarle el nombre sigue saliendo APROBADO. El censo lee qué comentario gobierna a qué clave; no sabe qué decía el literal el día de la firma.
+- Las 171 de «porGrupo» que no están en «porGrupoSinVer» no se han contrastado una a una con su firma.
+- Una clave con marca en su línea gasta igualmente un hueco de la cuenta que tenga encima (por eso otra del grupo puede salir acusada). Es anterior a este cambio y acusa de más, no de menos; se deja y se fija en el test.
+- `QUOTE_ACTION_ROTULOS` (dice 12, tiene 13), `quoteDireccionObra.TEXTOS` (3 y 4), `settingsSubmenus.ROTULOS` (10 y 9) y `COBROS_COPY` (6 en la cabecera y 13 claves, con otra firma de grupo dentro) siguen con una cuenta de cabecera que no coincide con sus claves. Recontado hoy con una sonda propia que no es el censo. Sus ficheros no son de S4.

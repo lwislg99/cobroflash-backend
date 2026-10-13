@@ -1,0 +1,23 @@
+suelo del vigía: reconoce sus cuatro cebos ({"rojo":"ROJO-SOSTENIDO","mudo":"SILENCIO","sano":"VERDE","cron":"SILENCIO"})
+POBLACION runs=260 · jobs sin leer=0 · medido 2026-10-13T07:14:21.906Z · GitHub lwislg99/cobroflash-backend · obligatorios: build + tests (con banco desechable) · main en 9226d0f2
+umbrales: 5 rojos seguidos · 22 runs sin ejecutar · 10 h de cron sin run o sin verde
+VERDE          OBLIG.  CI / build + tests (con banco desechable)
+               42 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · 33e62fee · 2026-10-13T06:48:28Z
+VERDE          no obl. CI / guards de navegador (fuera de la tanda)
+               42 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · 33e62fee · 2026-10-13T06:48:28Z
+VERDE          no obl. CI / meta-guard · los guards caen cuando deben
+               41 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · b95e33e4 · 2026-10-13T06:36:27Z
+VERDE          no obl. CI / trinquete · ningún test nuevo mide la zona de la máquina
+               39 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · b95e33e4 · 2026-10-13T06:36:27Z
+VERDE          no obl. CI / vigía del despliegue (informativo)
+               42 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · 33e62fee · 2026-10-13T06:48:28Z
+VERDE          no obl. CI / constancia del ALTER (informativo)
+               42 ejecuciones de 100 runs · 0 rojos seg. · 1 sin ejecutar · última: success · 33e62fee · 2026-10-13T06:48:28Z
+VERDE          no obl. Conflicto de registro / resolver
+               99 ejecuciones de 100 runs · 0 rojos seg. · 0 sin ejecutar · última: success · 9226d0f2 · 2026-10-13T07:10:38Z
+VERDE          no obl. Vigía de PR atascados / vigilar
+               30 ejecuciones de 30 runs · 0 rojos seg. · 5 h sin run · 5 h sin verde · última: success · dfda86d6 · 2026-10-13T02:16:47Z
+VERDE          no obl. Vigía del despliegue / vigia
+               30 ejecuciones de 30 runs · 0 rojos seg. · 5.5 h sin run · 5.5 h sin verde · última: success · dfda86d6 · 2026-10-13T01:41:51Z
+sin avisos: 9 jobs mirados, ninguno en rojo sostenido ni en silencio
+EXIT=0

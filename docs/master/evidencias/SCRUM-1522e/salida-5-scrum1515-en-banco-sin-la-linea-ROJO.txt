@@ -1,0 +1,33 @@
+BANCO: PGlite en 127.0.0.1:60564 · 33 tablas · test: tests/scrum1515-nuestra-puerta-de-alta.test.mjs
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (1702.1515ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1837.3224
+
+✖ failing tests:
+
+test at tests\scrum1515-nuestra-puerta-de-alta.test.mjs:93:1
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (1702.1515ms)
+  AssertionError [ERR_ASSERTION]: 🔴 A se dio de alta en Las Palmas y su fila no guarda la hora de Canarias
+  + actual - expected
+  
+  + null
+  - 'Atlantic/Canary'
+  
+      at TestContext.<anonymous> (<arbol>/tests/scrum1515-nuestra-puerta-de-alta.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'Atlantic/Canary',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+BANCO: merchants que quedan al terminar: 0 · EXIT=1
+EXIT=1
