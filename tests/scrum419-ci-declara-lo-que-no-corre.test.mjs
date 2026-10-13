@@ -154,6 +154,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum50-bot-albaranes.test.mjs': 1,
   //   · las evidencias que se sellan al firmar (remoto e in situ) y que no salen por ninguna respuesta.
   'scrum68-evidencias-firma.test.mjs': 1,
+  // SCRUM-876h: la factura recapitulativa, uno de los OBSOLETOS (leía el formato de serie anterior
+  // a SCRUM-780). Conserva `QA_DB_TEST=1` y gana éste como segundo destino, con la salida cortada.
+  // Necesita banco porque levanta la app y lo que vigila es lo que la ruta EMITE y deja escrito:
+  // una factura por mes natural, el albarán marcado como facturado y a quién se le niega.
+  'scrum17-recapitulativa.test.mjs': 1,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
