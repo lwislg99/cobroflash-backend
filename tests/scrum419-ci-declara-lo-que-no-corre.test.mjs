@@ -222,6 +222,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
   // mitad sin base (nueve casos, con Prisma doblado) corre siempre.
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs': 1,
+  // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
+  // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
+  // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)
+  // y que su lectura del grupo, lanzada tras conseguir el cerrojo, ve la revision que acaba de
+  // confirmar la primera. La mitad con Prisma doblado (cuatro casos) corre siempre.
+  'scrum1150c-carrera-de-la-revision-postgres.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
