@@ -188,3 +188,27 @@ Base del trinquete 31 de 31 antes y después; `git status` vacío tras cada rest
 
     node --test tests/scrum1288c-el-correo-al-tecnico-en-euros.test.mjs
     node docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs
+
+## 13-oct · El obligatorio de #2340 estuvo cuatro días en rojo, y el rojo era mío
+
+**Medido contra:** `origin/main` = `6f35b50901fac64347d862255ec755a036ca1f0d` · 2026-10-13T11:02:11Z
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+No cayó por el arreglo ni por su test. Run 37926919510, un caído de 7.618: `SCRUM-622 · EL CENSO`, que barre el árbol entero buscando expresiones cuyo lado por defecto es el estado bueno. Encontró dos, las dos en el guion de los rojos de este PR:
+
+    docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs:50   r.fail > 0 ? 'ROJO' : 'VERDE'
+    docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs:59   r.status !== 0 && errores.length ? 'ROJO' : 'VERDE'
+
+Y tenía razón en las dos. Una pasada sin recuento (`fail` no numérico) salía `VERDE`; un `tsc` que no llegó a correr, también. Y el guion acababa en `EXIT=0` pasara lo que pasara. El guard no se ha tocado; cambia el guion:
+
+| qué | antes | ahora |
+|---|---|---|
+| M1 sin recuento de tests | `VERDE` | `CIEGO` |
+| M2 con `tsc` caído sin ningún error que nombre el fichero mutado | `VERDE`, o `ROJO` por un error de otro sitio | `CIEGO` |
+| Una mutación que no casa | se saltaba, y `EXIT=0` | cuenta como `CIEGO` |
+| Código de salida | siempre 0 | 1 si algo no es `ROJO`, o si la base de después no queda verde |
+
+Corrido otra vez sobre el árbol ya fusionado con `main` (`77c630f9`, build exit 0): 2 de 2 `ROJO`, los mismos casos del 9-oct, base 31 de 31 antes y después; `mutar-1288c.txt` es esa salida. Control del camino nuevo: una copia del guion cuya M2 busca un texto que no existe dice `CIEGO`, `RECUENTO · 1 ROJO · 0 VERDE · 1 CIEGO`, y sale 1.
+
+El fallo mío: escribí el guion DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días. La cicatriz del puesto va en el PR #2337, que cayó por lo mismo.
