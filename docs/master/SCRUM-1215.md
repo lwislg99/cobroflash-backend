@@ -624,3 +624,41 @@ Suma 173. Las 20: `cobrosView.js` 7 (`COBROS_COPY` 6 y `COBROS_DESCONOCIDO.rotul
 - En c.19421 escribí «34 hojas de agosto» y eran 32, con 2 de septiembre: conté las 2 de `QR_COPY`, que justamente no tienen registro. Corregido en c.19422.
 - La hora de c.19422 la escribí sin tomarla de GitHub en el mismo comando. Coincidió con la que puso Jira, y aun así no se midió.
 - La foto de las hojas es de `f7a4c816ab2bf5c334a953dee60dc7b73718a0f8` y el oráculo se leyó sobre el árbol de hoy: por eso las 73 de 1215h son 75 aquí. No se ha vuelto a tomar la foto.
+
+# SCRUM-1215k · de cuántas formas dice el panel «vuelve a intentarlo»: la medida, subida al repositorio
+
+**Medido contra:** `origin/main` = `1ef32907a2e7fb162a5d9b95ab7e887a4cfb35a0` · 2026-10-13T15:25:18Z
+A9: sin fallo que generalice — sólo se sube un guion de lectura y su salida; no cambia ningún texto, ninguna pantalla ni ningún guard
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún fichero del panel
+
+13-oct-2026 · **S2** (`s2-13octf`) · rama `scrum-1215k-la-medida-de-los-reintentos`. El guion y su salida vivían fuera de git, en la carpeta de sondas del puesto. Sobre esa medida el orquestador anuló una unificación suya y fijó la forma de la casa (SCRUM-1215, comentario 19460). Aquí sólo se sube: **ningún texto cambia**.
+
+## La decisión que sostiene (comentario 19460; no es de esta sesión)
+
+- La forma de la casa para todo texto NUEVO es «Inténtalo de nuevo.».
+- Lo ya construido no se toca, y no hay ticket para barrer los sitios existentes.
+
+## La cifra, vuelta a contar hoy sobre `main`
+
+| forma | sitios | ficheros |
+|---|---|---|
+| «Inténtalo de nuevo.» | 24 | 11 |
+| «Vuelve a intentarlo.» | 19 | 14 |
+| «Inténtalo otra vez.» | 7 | 6 |
+| la frase suelta, en total | 50 | 25 |
+
+- **Es la cifra del comentario 19460, y hoy ya es la de `main`.** Aquélla se midió sobre la rama de SCRUM-1056c, antes de que entrara. Sobre el `main` de un commit antes (`c252b1315d56a1b5294ac8f80c1abbe678104dfd`) el mismo guion dio 6 y 49: el séptimo es el segundo «Inténtalo otra vez.» de `clienteVolverALlamar.js`, que llegó con el merge de arriba.
+- Cinco ficheros mezclan dos o tres formas: `jobDetailView.js` (las tres), `exportView.js`, `facturasRecibidasView.js`, `customerDetailView.js` y `homeView.js`. Recontado hoy desde la salida, no copiado.
+- Con cola propia hay 7 sitios más, y otras formas que no son la misma frase («reintentarlo», «Reintentar», «vuelve a enviarlo»…). Están todas en la salida, con su línea.
+
+## Dónde está y cómo se repite
+
+- `docs/master/evidencias/SCRUM-1215/reintentos/reintentos.mjs`: lee por AST los literales de texto (los comentarios no cuentan). Se lanza con `node`, la raíz del árbol, la carpeta y `--todo`. Declara su población, lleva control positivo (tiene que ver la frase de `clienteVolverALlamar.js`) y sale con código 2 si no la ve.
+- `docs/master/evidencias/SCRUM-1215/reintentos/reintentos-13oct.txt`: la salida de hoy sobre `main` (96 ficheros, 15.429 literales, 74 frases que casan). Comparada línea a línea con la que cita el comentario 19460, que se quedó fuera de git: 0 diferencias.
+
+## No medido
+
+- El HTML del panel, lo que contesta el servidor y el panel pinta tal cual, y las páginas del cliente final.
+- Una frase de reintento que no abra con ninguno de los verbos del patrón del guion: no la ve.
+- Los números de línea son de hoy. Quien barra vuelve a lanzar el guion; no se fía de esta foto.
+- Nada en yaqu.app: no cambia ninguna pantalla.
