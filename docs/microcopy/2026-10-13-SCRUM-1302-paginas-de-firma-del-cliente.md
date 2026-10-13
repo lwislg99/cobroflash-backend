@@ -14,7 +14,8 @@ B · bajo la firma, cuando la petición no vuelve y no se sabe si llegó. En el 
 
 > No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.
 
-C · bajo la firma del presupuesto, cuando el servidor contesta un error que no trae texto ni código:
+C · bajo la firma, cuando el servidor contesta un error que no trae texto. En el presupuesto y, desde
+SCRUM-1302 comentario 19454, también en el parte:
 
 > No se ha podido firmar. Inténtalo de nuevo.
 
@@ -24,7 +25,8 @@ C · bajo la firma del presupuesto, cuando el servidor contesta un error que no 
   tarjeta cuya opción lleva `recommended`.
 - B: el `catch` de la petición de firma de `quoteDecisionLanding.routes.ts` y el de
   `src/modules/jobs/app/routes/albaranPublic.routes.ts`.
-- C: el texto de reserva de `quoteDecisionLanding.routes.ts`, detrás de `data.message` y `data.error`.
+- C: el texto de reserva de `quoteDecisionLanding.routes.ts`, detrás de `data.message` y `data.error`,
+  y el de `albaranPublic.routes.ts`, detrás de `d.message`.
 
 ## Qué cambió, y por qué
 
@@ -51,8 +53,10 @@ de construir:
 
 ## Lo que queda sin firmar en estas páginas
 
-- En el parte, el texto de reserva cuando el servidor contesta un error sin texto sigue siendo «No se
-  pudo firmar. Inténtalo de nuevo.». Se parece a C y no es el mismo literal; la firma nombra C para
-  el presupuesto y no se ha estirado.
+- Nada del texto de reserva: el del parte era «No se pudo firmar. Inténtalo de nuevo.», parecido a C
+  y no igual, y el comentario 19428 nombraba C sólo para el presupuesto. El comentario 19454 lo pasa
+  al mismo literal, y el parte lo pinta desde la rama 1302e.
+- El final de C es «Inténtalo de nuevo.». El comentario 19454 lo cambió a «otra vez» y el orquestador
+  lo anuló el mismo día (SCRUM-1215 comentario 19460): «de nuevo» es la forma de la casa, medida.
 - «Elegir este plan» y «IVA incluido» de las tarjetas de opción, y el aviso del enlace de una revisión
   antigua: no entran en esta firma.
