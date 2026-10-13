@@ -1,0 +1,19 @@
+INSTRUMENTO: docs/master/evidencias/scrum1500/cotejo.cjs · sha256 b437d3f4775412dfc501f36e89bcd0cf38ecedd14a67ba0549c3d2d97a4118e5
+RAIZ FABRICADA: 4 ficheros (esquema, máster, src/escribe.ts, src/otro.ts) · borrada al acabar: sí
+POBLACION: 8 formas de escribir, un campo sin cierre por forma · el instrumento leyó 2 ficheros .ts de la raíz fabricada (0 sin parsear)
+
+literal    D = dos | fuera_literal | uno    LA VE     · no avisa de nada · veredicto CODIGO_FUERA_DEL_MASTER · el juicio lo nombra (CODIGO_FUERA_DEL_MASTER)
+ternario   D = dos | fuera_ternario | uno   LA VE     · no avisa de nada · veredicto CODIGO_FUERA_DEL_MASTER · el juicio lo nombra (CODIGO_FUERA_DEL_MASTER)
+constante  D = dos | fuera_constante | uno  LA VE     · no avisa de nada · veredicto CODIGO_FUERA_DEL_MASTER · el juicio lo nombra (CODIGO_FUERA_DEL_MASTER)
+funcion    D = dos | uno                    NO LA VE  · avisa: (no literal) calcula() · veredicto COINCIDE_CON_EL_MASTER · el juicio lo nombra (ESCRITURA_SIN_LEER)
+importada  D = dos | uno                    NO LA VE  · avisa: (no literal) VALOR_IMPORTADO · veredicto COINCIDE_CON_EL_MASTER · el juicio lo nombra (ESCRITURA_SIN_LEER)
+objeto     D = dos | uno                    NO LA VE  · no avisa de nada · veredicto COINCIDE_CON_EL_MASTER · el juicio NO lo nombra
+derrame    D = dos | uno                    NO LA VE  · no avisa de nada · veredicto COINCIDE_CON_EL_MASTER · el juicio NO lo nombra
+sql        D = dos | uno                    NO LA VE  · no avisa de nada · veredicto COINCIDE_CON_EL_MASTER · el juicio NO lo nombra
+
+RESUMEN sobre 8 formas, todas con un valor fuera del máster escrito en src/:
+  3  las ve (el campo sale CODIGO_FUERA_DEL_MASTER)
+  2  no las ve, y deja una línea «(no literal)»: el juicio las nombra en 2
+  3  no las ve y no deja rastro
+  0  sin medir
+EXIT=0
