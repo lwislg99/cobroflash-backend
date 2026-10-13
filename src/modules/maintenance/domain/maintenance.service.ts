@@ -409,12 +409,13 @@ export async function runMaintenanceProposals(
 
     const draft = await db.$transaction(async (tx) => {
       // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
-      const { seq: quoteNumber } = await allocateQuoteNumber(tx, plan.merchantId);
+      const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(tx, plan.merchantId);
       return tx.quote.create({
         data: {
           merchantId: plan.merchantId,
           customerId: plan.customerId,
           quoteNumber,
+          seriesYear, // SCRUM-1490: el año en que se numeró, guardado en la fila
           status: 'draft',
           origin: 'maintenance', // A15.3: métrica € por origen
           total: price.toFixed(2),

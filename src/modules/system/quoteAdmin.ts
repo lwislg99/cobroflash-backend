@@ -7,6 +7,7 @@ import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRU
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
 import { getDeliveryStatusMany } from '../messaging/domain/whatsappLog.service'; // SCRUM-986
 import { tieneNumeroDeContacto } from '../../core/contacto/canalDeWhatsApp'; // SCRUM-1166
+import { anioDeLaSerie, whereDelGrupo } from '../../core/documentos/grupoDelPresupuesto'; // SCRUM-1490
 import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
@@ -206,13 +207,17 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
 
   // ── SCRUM-655 (T6, fase B) · QUÉ REVISIONES HAY Y CUÁL ESTÁ VIGENTE ───────────────────────
   // El «.1» de «P2004226.1» es una REVISIÓN, y vive en su columna: el número base no cambia.
-  // El grupo es {merchantId, quoteNumber}. 🔴 Y `quoteNumber` NULO NO ES UNA CLAVE: agrupar por
+  // El grupo es {merchantId, AÑO de la serie, quoteNumber} (SCRUM-1490: la serie es anual, y el 12
+  // de 2026 no es hermano del 12 de 2027). 🔴 Y `quoteNumber` NULO NO ES UNA CLAVE: agrupar por
   // null metería en el mismo saco a todos los presupuestos sin numerar del merchant, que no tienen
   // nada que ver entre sí. Sin número, un presupuesto es su propio grupo — y eso es la verdad, no
   // un apaño: sin número no hay «P2004226» del que ser la revisión.
   const hermanas = quote.quoteNumber != null
     ? await prisma.quote.findMany({
-        where: { merchantId: quote.merchantId, quoteNumber: quote.quoteNumber },
+        where: whereDelGrupo({
+          merchantId: quote.merchantId, quoteNumber: quote.quoteNumber,
+          anio: anioDeLaSerie(quote, quote.merchant),
+        }, quote.merchant),
         select: { id: true, quoteNumber: true, revision: true, status: true,
                   signatureUrl: true, total: true, createdAt: true },
         orderBy: { revision: 'asc' },
@@ -490,7 +495,8 @@ export async function rejectQuoteAdmin(
 
 /** Lo que hay que leer de la versión anterior: lo que se hereda + lo que la función necesita. */
 const SELECT_PARA_REVISION = Object.freeze(Object.fromEntries(
-  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'revision', 'signatureUrl']
+  // SCRUM-1490: `seriesYear` y `createdAt` dicen de qué AÑO de la serie es el grupo.
+  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'seriesYear', 'createdAt', 'revision', 'signatureUrl']
     .map((campo) => [campo, true]),
 )) as Record<string, true>;
 
@@ -544,6 +550,8 @@ export function revisionParaLaBase(datos: Record<string, unknown>): Record<strin
 // El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y 1751 del tope de
 // WhatsApp, y no se comparten. Crear una revisión no espera a una factura, ni al revés. La
 // segunda clave es el negocio: el grupo es (negocio, número) y sólo caben dos enteros.
+// (Desde SCRUM-1490 el grupo es (negocio, año de la serie, número); el cerrojo sigue siendo por
+// negocio, que los contiene a todos.)
 //
 // 🔴 NO HAY SEGUNDA RED, y se dice: `Quote` no tiene unicidad para (negocio, número, revisión).
 // El cerrojo es la garantía; el índice único sería esquema (ALTER) y no depende de este código.
@@ -561,10 +569,17 @@ interface LectorDeRevisiones {
       select: Record<string, true>;
     }): Promise<unknown>;
     findMany(args: {
-      where: { merchantId: number; quoteNumber: number };
+      where: Prisma.QuoteWhereInput; // SCRUM-1490: {negocio, año de la serie, número} (`whereDelGrupo`)
       select: { id: true; revision: true; signatureUrl: true };
       orderBy: { revision: 'asc' };
     }): Promise<Array<{ id: number; revision: number; signatureUrl: string | null }>>;
+  };
+  // SCRUM-1490: la zona del negocio, que sólo decide el año de una fila anterior a la columna.
+  merchant: {
+    findUnique(args: {
+      where: { id: number };
+      select: { timezone: true };
+    }): Promise<{ timezone: string | null } | null>;
   };
 }
 
@@ -579,7 +594,10 @@ async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id:
   const anterior = await db.quote.findFirst({
     where: { id, merchantId },
     select: SELECT_PARA_REVISION,
-  }) as (Record<string, unknown> & { id: number; quoteNumber: number | null; revision: number }) | null;
+  }) as (Record<string, unknown> & {
+    id: number; quoteNumber: number | null; revision: number;
+    seriesYear?: number | null; createdAt?: Date | null;
+  }) | null;
 
   if (!anterior) throw new RevisionNoCreable('quote_not_found', 'El presupuesto no existe.');
 
@@ -592,8 +610,12 @@ async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id:
     );
   }
 
+  // SCRUM-1490 · EL GRUPO ES {negocio, AÑO de la serie, número}, y la revisión nueva GUARDA ese año:
+  // no el del día en que se crea. La zona sólo decide el año de una fila anterior a la columna.
+  const negocio = await db.merchant.findUnique({ where: { id: merchantId }, select: { timezone: true } });
+  const anio = anioDeLaSerie(anterior, negocio);
   const hermanas = await db.quote.findMany({
-    where: { merchantId, quoteNumber: anterior.quoteNumber },
+    where: whereDelGrupo({ merchantId, quoteNumber: anterior.quoteNumber, anio }, negocio),
     select: { id: true, revision: true, signatureUrl: true },
     orderBy: { revision: 'asc' },
   });
@@ -620,7 +642,7 @@ async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id:
   }
 
   const siguiente = Math.max(...hermanas.map((q) => q.revision)) + 1;
-  return { base, vigente, origen, siguiente };
+  return { base, vigente, origen, siguiente, anio };
 }
 
 /**
@@ -646,8 +668,9 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
     // 🔴 Y SE DECIDE OTRA VEZ, YA DENTRO. Lo de arriba se leyó sin cerrojo y pudo quedarse viejo
     // mientras esperábamos: sólo esta lectura ve la revisión que acaba de confirmar el otro. Son
     // las mismas puertas sobre el grupo que de verdad se va a ampliar (como SCRUM-814 al facturar).
-    const { base, vigente, origen, siguiente } = await decidirRevisionDe(tx, merchantId, id);
-    const datos = nuevaRevisionDe(origen as any, siguiente);
+    const { base, vigente, origen, siguiente, anio } = await decidirRevisionDe(tx, merchantId, id);
+    // SCRUM-1490: el año es el del GRUPO, ya resuelto (la vigente puede ser una fila vieja sin él).
+    const datos = nuevaRevisionDe({ ...origen, seriesYear: anio } as any, siguiente);
 
     const creada = await tx.quote.create({
       data: revisionParaLaBase(datos) as any, // SCRUM-1188d: un `Json?` vacío se hereda vacío

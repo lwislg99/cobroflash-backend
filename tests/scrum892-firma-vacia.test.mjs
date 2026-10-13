@@ -97,6 +97,7 @@ const TRAMOS = [
 function presupuesto({ tramos = null, status = 'sent' } = {}) {
   return {
     id: QUOTE_ID, quoteNumber: 7, merchantId: 7, customerId: 2, status, currency: 'EUR',
+    createdAt: new Date('2026-09-01T10:00:00Z'), // SCRUM-1490: una fila de `quotes` SIEMPRE trae su fecha; de ella sale el año de su serie
     total: 590, lines: [{ concept: 'Cuadro eléctrico', qty: 1, price: 590, tax: 0 }], tiers: tramos,
     paymentTerms: 'MANUAL', decisionToken: 'a'.repeat(32), Invoice: [], validUntil: null,
     merchant: { id: 7, name: 'QA', country: 'ES' }, customer: { id: 2, name: 'Cliente QA' },

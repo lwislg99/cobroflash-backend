@@ -3,6 +3,7 @@ paths:
   - "src/modules/system/app/routes/quoteDecisionLanding.routes.ts"
   - "src/modules/exports/app/routes/exports.routes.ts"
   - "src/modules/quotes/domain/billingPlan.ts"
+  - "scripts/rellenar-anio-de-la-serie.mjs"
   - "scripts/_censo-rango-del-parte.mjs"
   - "src/api/routes.ts"
   - "src/core/flags.ts"
