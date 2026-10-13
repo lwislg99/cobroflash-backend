@@ -293,6 +293,11 @@ Docker, y lanzarlo en CI pide tocar un workflow, que no es mío.
 - El primer control positivo de ① dio 5 de 7 y lo arreglé antes de contar; va dicho arriba.
 - Durante media sesión trabajé la hipótesis «lo dispara el fin de `scrum419`» antes de medir la
   frontera en verdes, que la tumbó como condición suficiente.
+- El obligatorio del push de este tramo (job 115258635622, PR #2366) salió ROJO y la sesión que empujó
+  ya estaba cerrada: 1 caso de 11.179, `scrum622`, por `1527b/huecos.mjs:11`, que rotulaba «verde»
+  todo log sin el aviso. El guard tenía razón: un log sin aviso puede ser rojo o cancelado (el del
+  29-sep de ① lo es). Arreglado en el fichero, que ahora dice «sin aviso»; el guard no se toca.
+  Lo leyó y lo arregló la sesión `jv-j6h`. Este registro no cita la salida de `huecos.mjs` en ningún sitio (buscado por nombre).
 
 ## Cómo se repite
 
