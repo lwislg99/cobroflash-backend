@@ -119,3 +119,62 @@ entero cargado por el índice.
 
 La pieza no se ve hasta que J2 la monte en la ficha y en la lista y S1 ponga las rutas. Lo que sí se
 puede ver al desplegar es que el panel la carga: `window.clienteVolverALlamar` existe en la consola.
+
+## SCRUM-1056c · el fallo de «Hecho» dice lo que se pulsó (13-oct, S2)
+
+**Medido contra:** `origin/main` = `fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7` · 2026-10-13T15:02:00Z
+
+A9: comprobación → `tests/scrum1056b-volver-a-llamar-la-pieza.test.mjs`
+
+El fallo propio: en SCRUM-1056b la pieza salió con UN aviso para dos fallos distintos, y cuando lo
+que fallaba era «Hecho» decía «No se ha podido guardar la llamada», que no es lo que se acababa de
+pulsar. Lo vi al escribir la entrega (la tabla «conducta contra texto» de c.19432), no al
+construir. El test tiene ahora un caso que hace fallar las dos cosas en el mismo bloque y exige a
+cada una su texto.
+
+**Sesión:** S2 (`s2-13octe`, cuarta tanda) · carril: `public/**` es S2.
+**Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: lo de arriba no se toca.
+
+**Qué cambia.** Una clave nueva en `TEXTOS`, `noMarcado`, y el fallo de «Hecho» la usa en vez de
+`noGuardado`. Nada más: el aviso sale en el mismo sitio, una vez, con la llamada en pantalla como
+estaba. El de «Guardar» sigue con su texto. Es un texto, no conducta: los dos fallos ya estaban en
+dos sitios distintos del fichero y sólo compartían la constante.
+
+**De paso en `main` (visto en yaqu.app el 13-oct, entre las 14:45Z y las 14:50Z):** con SCRUM-1056b ya desplegado,
+`window.clienteVolverALlamar` existe en el panel de producción (c.19445).
+
+**Texto y firma.** «No se ha podido marcar como hecha. Inténtalo otra vez.», del orquestador por
+delegación: SCRUM-1056 comentario 19453. Registro:
+`docs/microcopy/2026-10-13-SCRUM-1056-fallo-de-hecho.md`. La primera firma (c.19452) acababa en
+«Inténtalo de nuevo.»; el orquestador la corrigió antes de que se escribiera en ningún fichero, para
+que los dos avisos de la pieza acaben igual (SCRUM-1188, comentario 19450).
+
+**Desviación declarada.** La firma no está en un comentario escrito por el orquestador: llegó por el
+canal entre sesiones y la transcribí yo, letra por letra, en c.19452 y c.19453, con el sitio donde
+se comprueba. En Jira todas las sesiones firman con la misma cuenta.
+
+### Pruebas de SCRUM-1056c
+
+- **PASO 0, corriendo:** sobre `main` sin tocar, el test de la pieza da 14 de 14, y uno de ellos
+  fijaba que el fallo de «Hecho» salía con el texto de guardar. El defecto existía.
+- `tests/scrum1056b-volver-a-llamar-la-pieza.test.mjs`: 15 casos (uno nuevo, «cada fallo con su
+  texto», y el de «Hecho» ampliado con el segundo fallo seguido).
+- **Mutantes** (`evidencias/SCRUM-1056/salida-1056c-mutantes.txt`; base sin mutar 15 de 15):
+  dieciséis, mueren dieciséis, cada uno con su `git diff --numstat`. Los tres nuevos: el fallo de
+  «Hecho» vuelve al texto de guardar (lo que había), el fallo de guardar sale con el texto de
+  «Hecho», y el texto nuevo acaba como la firma retirada. El guion es el de 1056b
+  (`mutantes-1056b.mjs`), con la línea de su M7 puesta al día.
+- **Navegador, a 390 px, sobre yaqu.app** (cuenta QA, build `fc10ff9c…`; la pieza no hace peticiones
+  y el interceptor corta todo lo que no sea `GET`: 0 en las dos pasadas; guion
+  `evidencias/SCRUM-1056/sonda-1056c-fallo-de-hecho-390.mjs`), seis estados por pasada:
+  - con la pieza que sirve **producción** (el control: el texto viejo se vuelve a ver), el fallo de
+    «Hecho» dice «No se ha podido guardar la llamada. Inténtalo otra vez.»;
+  - con la pieza **de la rama**, dice «No se ha podido marcar como hecha. Inténtalo otra vez.», una
+    vez tras dos fallos seguidos, y el fallo de «Guardar» sigue diciendo el suyo;
+  - en las dos, los botones miden 44 px de alto y nada se sale de la caja. Una captura.
+
+### No visto en yaqu.app
+
+El texto nuevo no se ve en producción hasta que alguna pantalla monte la pieza (J2) y haya rutas
+(S1). Al desplegar esta rama lo que se puede comprobar es que `clienteVolverALlamar.TEXTOS.noMarcado`
+existe en el panel.
