@@ -32,6 +32,7 @@ const MUTANTES = [
   ['M5 · si la lista no se lee, crea a ciegas', (s) => s.replace("const yaGuardadas = await apiRequest('/admin/templates');\n        if (!Array.isArray(yaGuardadas)) throw new Error('lista_de_plantillas_ilegible');", "let yaGuardadas = []; try { yaGuardadas = await apiRequest('/admin/templates'); } catch (_e) { yaGuardadas = []; }\n        if (!Array.isArray(yaGuardadas)) yaGuardadas = [];")],
   ['M6 · «mismo nombre» exacto (cuenta mayúsculas)', (s) => s.replace("String(a || '').trim().toLocaleLowerCase('es') === String(b || '').trim().toLocaleLowerCase('es')", "String(a || '').trim() === String(b || '').trim()")],
   ['M7 · el PUT manda también name', (s) => s.replace("body: JSON.stringify({ currency, lines: templateLines, paymentTerms }),", "body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),")],
+  ['M8 · la pregunta sin «no se puede deshacer» (el literal de antes de la firma)', (s) => s.replace(" ¿Quieres sustituirla? Esta acción no se puede deshacer.`)) {", " ¿Quieres sustituirla?`)) {")],
 ];
 
 const normal = fuente.replace(/\r\n/g, '\n');
