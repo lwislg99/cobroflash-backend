@@ -276,14 +276,45 @@ Con un nombre que no tiene, todo sale como antes (`POST`).
 
 **Textos nuevos (dos), y su firma.**
 
-> Ya tienes una plantilla llamada "{nombre}". ¿Quieres sustituirla?
+> Ya tienes una plantilla llamada "{nombre}". ¿Quieres sustituirla? Esta acción no se puede deshacer.
 >
 > Plantilla "{nombre}" actualizada.
 
-`{nombre}` es el nombre GUARDADO. Ninguno nombra el documento. Propuestos en c.18609; la firma y su
-registro en `docs/microcopy/` van en la línea «Firma» de abajo.
+`{nombre}` es el nombre GUARDADO. Ninguno nombra el documento. Propuestos en c.18609 y c.19101.
 
-**Firma:** PENDIENTE al escribir esto. Esta rama NO se empuja hasta que conste en el ticket.
+**Firma:** del orquestador, por la delegación permanente, el 13-oct-2026, en SCRUM-1188 comentario
+19400. Registrada en `docs/microcopy/2026-10-13-SCRUM-1188-sustituir-plantilla.md`. Firma tres cosas:
+la pregunta en su versión larga, «actualizada» tal cual, y que el aviso de c.17332 vale también al
+sustituir. Esta rama no se empujó hasta que constó en el ticket.
+
+### 13-oct · la firma cambia la pregunta (S2, `s2-13oct`, tercera tanda)
+
+**Medido contra:** `origin/main` = `6640b38f3d7800f7c439e1e78fa9694440822507` · 2026-10-13T13:38:34Z
+
+A9: sin fallo que generalice — el literal cambia porque la firma eligió la otra versión, no por un error; el test lo sujeta letra por letra (mutante M8)
+
+Lo construido el 9-oct llevaba la pregunta corta, sin «Esta acción no se puede deshacer.». La firma
+eligió la larga, por un motivo de hecho: sustituir pierde las líneas que tenía la plantilla. Cambia el
+literal en `quotesView.js`, en el test (que lo compara letra por letra) y en el guion de mutantes, y se
+repite todo lo que lo mide. El literal se copió del comentario 19400, no del encargo.
+
+- **Mutantes:** ocho, mueren ocho; base sin mutar 7 de 7. El octavo es nuevo: la pregunta con el literal
+  de antes de la firma. Caen los casos 1, 2 y 4, así que el test sujeta la frase añadida.
+- **Navegador, sobre yaqu.app** (cuenta QA; la sonda contesta ella la lista, el `POST` y el `PUT`; nada
+  llega a producción): cinco casos, cero ciegos. La pregunta sale con el literal firmado en los cuatro
+  casos de mismo nombre; lo demás, igual que el 9-oct. Con el `quotesView.js` de producción (build
+  `6640b38f`): ninguna pregunta y dos plantillas con el mismo nombre. Las tres salidas de
+  `evidencias/SCRUM-1188/` son las de hoy.
+- **De paso:** el aviso de c.17332 llevaba en pantalla desde el 28-sep sin ficha en `docs/microcopy/`.
+  Entra en la ficha de hoy, que es donde el comentario 19400 lo vuelve a citar entero.
+- **Dirigida, a mano:** 162 ficheros de 1.320 (los que nombran `quotesView`, el censo de sin-consumir,
+  la ruta de plantillas, `docs/microcopy/` o este ticket, más los que leen los registros): 1.532 tests,
+  1.523 pasan, 8 saltos declarados (piden un Postgres desechable o la base de staging; corren en el
+  obligatorio) y 1 rojo, mío: `scrum1294` pedía la línea A9 bajo el ancla de este tramo. Puesta, y
+  repetido. `npm run tanda:dirigida` selecciona 550 ficheros y no se lanza en esta máquina: la suite
+  completa la corre el obligatorio.
+- 🔴 **Sin `tsc`:** como el 9-oct. Desde el `main` que la rama ya tenía mezclado (`254a6979`) cambió un
+  `.ts` (`publicAccessDeclarations.ts`), transpilado sin comprobar tipos. Este cambio no toca `src/`.
 
 **La otra mitad.** `scripts/_sin-consumir-declarados.json`: `PUT /admin/templates/:id::lines`,
 `::currency` y `::paymentTerms` pasan a `retiradas`; `::tiers` sigue declarada, con su motivo al día.

@@ -1,4 +1,4 @@
-SERVIDO=el quotesView.js de producción · build del panel ebd9bd8e9c4329edbdc35fffced5ff5b173f885c
+SERVIDO=el quotesView.js de producción · build del panel 6640b38f3d7800f7c439e1e78fa9694440822507
 TESTIGO={"sustituye":false,"guardaCobro":true} · ROL=admin
 --- FILAS (partida de cada caso: UNA plantilla «Caldera (sonda)» a 90 € con cobro FIFTY_FIFTY; se teclea 120 €)
 
