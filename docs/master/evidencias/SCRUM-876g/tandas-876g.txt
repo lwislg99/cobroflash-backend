@@ -1,0 +1,8 @@
+POBLACION · tanda entera = 1296 ficheros · FORCE_COLOR ausente: True · HEAD e2134eec4581c8f5b5a87e47c7af56292a65f86f
+p80-c7-1 · ficheros 80 · conc 7 · 23s · salida 1 · # tests 344 # pass 260 # fail 1 # skipped 83 · SCRUM-47: enviar=ok 3796ms | SCRUM-49: firma remota=ok 3912ms | SCRUM-50: webhook=ok 6436ms | SCRUM-68: sella=ok 2470ms · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POS
+p80-c7-2 · ficheros 80 · conc 7 · 22s · salida 1 · # tests 344 # pass 260 # fail 1 # skipped 83 · SCRUM-47: enviar=ok 3188ms | SCRUM-49: firma remota=ok 3033ms | SCRUM-50: webhook=ok 5368ms | SCRUM-68: sella=ok 2276ms · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POS
+p300-c3 · ficheros 304 · conc 3 · 178s · salida 1 · # tests 2209 # pass 2190 # fail 1 # skipped 18 · SCRUM-47: enviar=ok 8288ms | SCRUM-49: firma remota=ok 7236ms | SCRUM-50: webhook=ok 6218ms | SCRUM-68: sella=ok 3556ms · caidos: not ok 1691 - SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando 
+p300-c7 · ficheros 304 · conc 7 · 249s · salida 1 · # tests 2209 # pass 2188 # fail 3 # skipped 18 · SCRUM-47: enviar=ok 4521ms | SCRUM-49: firma remota=ok 3973ms | SCRUM-50: webhook=ok 6271ms | SCRUM-68: sella=ok 3251ms · caidos: not ok 1263 - SCRUM-1266b · 🔴 corregir una descripción y quitar OTRA línea con «×»: la co || not ok 1264 - SCRUM-1266b · 🔴 corregir una descripción y añadir una línea nueva: la corre || not ok 1691 - SCRUM-1321 · 🔴 PUERTA 1b: un ancla que casa DOS veces sale CIEGA nombrando 
+poso: merchants=0
+libreMB=1449
+EXIT=0
