@@ -59,6 +59,28 @@ orquestador (dentro de la regla 30: siguen sin poder inventarse a nivel de sesi�
 SCRUM-1121. Delegación aparte de la de Luis (línea de arriba): dos jefes, dos delegaciones
 distintas, nunca una sola frase para las dos.
 
+**Javier, 22-sep-2026** (SCRUM-997, comentario 16373; escrito aquí el 13-oct-2026, tres semanas después).
+Su literal, como lo dejó en el chat de su orquestador:
+
+> «delego en mi orquestador la aprobación de los textos que no sean legales ni fiscales, y las decisiones
+> de producto y de proceso que sean claramente suyas. Siguen siendo míos el coste nuevo, el camino de
+> emisión fiscal, la infraestructura de producción y los permisos.»
+
+- **Qué es:** una delegación, tres días anterior a la del 25-sep de arriba. **No dicen lo mismo.** Ésta
+  excluye los textos legales y los fiscales y añade las decisiones de producto y de proceso; la del 25-sep
+  («te lo delego», SCRUM-1121) habla de «microcopy» sin excluir nada.
+- **Cuál de las dos manda sobre un texto fiscal no lo ha dicho Javier.** Aquí quedan las dos, cada una con
+  su fecha; la pregunta es suya y le llega por su orquestador. *Lectura de la Sesión 0, no palabras de
+  Javier:* la del 25-sep contestaba a si firmaba él cada literal, y nada en ella retira la exclusión del
+  22-sep.
+- **Mecanismo: ninguno para la exclusión.** El oráculo de microcopy (`delegacionVigente`, en
+  `tests/_microcopy-aprobada.mjs`) comprueba UNA línea de esta sección: la viñeta de Luis. No lee ninguna de
+  las dos líneas de Javier, no distingue qué orquestador firma y no sabe si un texto es legal o fiscal.
+  Ejecutado el 13-oct-2026 sobre copias de este fichero: sin ninguna línea que nombre a Javier, la
+  delegación sigue saliendo vigente; sin la viñeta de Luis, deja de estarlo
+  (`docs/master/evidencias/SCRUM-997/vigencia.mjs`). Que un texto fiscal del equipo de Javier suba a
+  Javier lo sostiene hoy quien firma.
+
 Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva,
 el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
@@ -174,6 +196,68 @@ robusto está en SCRUM-899.
   huecos que él tenga que rellenar.
 - Los pasos manuales, de UNO EN UNO. Nunca una lista.
 - Lo que no conoce, explicado «para tontos», sin dar contexto por sabido.
+
+## Forales y Canarias: qué está decidido, qué es cada cosa y qué lo cumple (escrito el 13-oct-2026)
+
+*(SCRUM-997, pedido por el orquestador de Javier el 21-sep-2026. Lo escribe la Sesión 0 con la excepción
+de carril escrita del orquestador de Luis, dueño de este fichero, del 13-oct-2026.)*
+
+**Son cuatro fuentes y no dicen lo mismo.** «No cubrimos forales ni Canarias» es una frase que ninguna de
+las cuatro dice: una habla de facturar, otra de vender, otra de no construir y otra de Canarias. Cada fila
+dice **qué es** y **si algo en el código la cumple**. «Sólo papel» quiere decir que hoy la sostiene quien
+la lea.
+
+| Quién y cuándo | Qué dice | Qué es | Dónde vive | ¿La cumple algo? |
+|---|---|---|---|---|
+| El máster, v5.3, **regla 33** | «Onboarding bloquea facturación ES a domicilios forales (PV/Navarra) con aviso digno; TicketBAI = cajón F3.» | **Norma.** Habla de **facturación**, y sólo de forales | `docs/YAQU_MASTER.md`, Parte I (y B2 punto 6, y Parte M) | **Sólo papel.** Ninguna puerta bloquea la facturación por domicilio foral. La respuesta a esa pregunta se guarda desde SCRUM-1102 y nada la lee para decidir |
+| **Javier, 21-sep-2026** | «Sí, de momento no vendemos para estas regiones, déjalo por escrito» | **Decisión de venta.** País Vasco y Navarra | SCRUM-997 (enunciado); contesta a la P-3 de SCRUM-612 | **Sólo papel.** Ninguna puerta lee el territorio. Buscado en `src/` el 13-oct-2026: `domicilioFiscalForal` se guarda y se enseña, y nada más |
+| **Javier, 23-sep-2026** | No se hace nada hoy: ni se bloquea el alta ni se avisa. Sin literal suyo: lo redacta su orquestador, que dice que la decisión es de Javier | **Decisión de producto:** no construir, a propósito | SCRUM-998, comentario 16609 | No pide mecanismo: decide que no lo haya. Deja escrito qué la reabre (abajo) |
+| **Javier, 7-oct-2026** | «No de momento dejamos Canarias sin hacer, ya lo haremos déjalo reflejado en JIRA junto con las forales» | **Decisión fiscal:** Canarias (IGIC) no se construye por ahora | SCRUM-1497. **No está en el máster:** «IGIC» sale 0 veces | **Sólo por accidente.** La regla de tipos rechaza los cinco propios del IGIC porque no los conoce, no porque alguien lo decidiera (medido por el equipo de Javier, no por la Sesión 0). No se amplía «de paso» |
+
+**Por qué la fila del 7-oct lleva nombre.** SCRUM-1497 dice «DECISIÓN DEL FUNDADOR», sin nombre. Lo abrió el
+orquestador de Javier bajo la cuenta de Javier, y ese equipo llama «el fundador» a quien el enunciado de
+SCRUM-997 firma «Javier (jefe)» y a quien SCRUM-998 titula «DECISIÓN DE JAVIER». Con eso se escribe el
+nombre. No se ha comprobado en el chat donde se dijo, que está en otra máquina.
+
+**13-oct-2026, repetida.** Al firmar otros textos, el jefe del equipo de Javier dijo: «de momento las forales
+y canarias no están incluidas, si alguien las selecciona no las cubrimos» (lo cita el enunciado de
+SCRUM-1536; su origen, SCRUM-1522 comentario 19294, no lo ha abierto la Sesión 0). Su propio equipo midió
+que repite las de arriba y no añade ninguna. SCRUM-997 no pedía esta línea: va para que no se redescubra.
+
+### El estado del mecanismo, medido el 13-oct-2026
+
+- **Lo único que hoy impide emitir una factura fiscal a un profesional foral o canario es
+  `INVOICING_ES_ENABLED` apagado. No es un freno territorial:** a Bilbao y a Las Palmas les pasa lo mismo
+  que a Madrid.
+- **Medido dos veces, por los dos equipos,** llamando a `getEmissionMode` con comercios fabricados y un
+  espía de propiedades: jv-j5j, 14 llamadas (SCRUM-1536, comentario 19355), y la Sesión 0, 35 llamadas sobre
+  `origin/main` = `6640b38f3d7800f7c439e1e78fa9694440822507` (`docs/master/SCRUM-997.md`). Apagado: 7 de 7
+  dan `receipt`. Encendido: **7 de 7 dan `fiscal`**, incluidos tres que contestaron «Sí» al domicilio foral y
+  dos canarios. La función lee `country`, `email`, `flags` e `id`. No lee `domicilioFiscalForal`.
+- **Se enciende por tres sitios, y en el repositorio sólo se ve uno:** el valor por comercio
+  (`merchants.flags`, en la base), la variable de entorno y el valor por defecto de `src/core/flags.ts`. Un
+  test sobre el valor por defecto vigilaría uno de los tres. El «país» de la precedencia no enciende nada:
+  sólo hace que el flag no cuente fuera de España.
+- **Lo que reabre la decisión del 23-sep,** escrito en ese mismo comentario: «que se encienda la facturación
+  para España, o que aparezca un profesional foral real». O sea: **antes de encender el flag para España,
+  por cualquiera de las tres vías, esto se mira.** No lo caza ningún test: lo caza que quien lo encienda lea
+  esta línea.
+- ⛔ **La puerta no se construye sin decisión de un jefe.** Es camino de emisión (regla 40 del máster) y
+  pide elegir con qué dato se frena.
+
+### Dos hechos que corrigen cómo se suele contar
+
+Son del equipo de Javier (SCRUM-1536, comentario 19355). La Sesión 0 no los ha reproducido.
+
+- **Canarias está DENTRO del reglamento de VeriFactu** (RD 1007/2023, art. 1.3 del Reglamento, texto
+  consolidado). No es otro sistema: es el mismo con IGIC, y lo que falta es nuestro (los tipos y la clave
+  de impuesto). A un canario no se le puede decir que su territorio «no usa VeriFactu».
+- **Lo foral va por DOMICILIO FISCAL, no por la provincia donde se trabaja.** La provincia del alta sólo da
+  la zona horaria y no se guarda. Que un domiciliado foral quede fuera es la lectura a contrario de ese
+  artículo, no su literal: depende del Concierto y del Convenio, que nadie ha leído (lista del asesor,
+  SCRUM-1264).
+- **Sin medir por nadie:** la normativa foral (TicketBAI, Batuz, Navarra), y si hay hoy en alguna base un
+  comercio con «Sí» en el domicilio foral o con la zona de Canarias.
 
 ## Las normas de Javier (jefe desde el 18-sep-2026; antes, «el colaborador»)
 
