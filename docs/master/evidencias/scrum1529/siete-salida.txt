@@ -1,0 +1,89 @@
+POBLACION: 7 campos · árbol real: 322 ficheros .ts bajo src/ (0 sin parsear), 199 escrituras de Prisma vistas, esquema 1834 líneas, máster 1905 líneas
+           copia sembrada: 323 ficheros .ts (0 sin parsear), 206 escrituras · marcas de la siembra en disco: 7 de 7
+
+=== LOS SIETE, hoy (lo dicen los instrumentos de SCRUM-1500, sin tocar) ===
+
+QuoteRequest.status (esquema, línea 1115) → CODIGO_FUERA_DEL_MASTER   [scrum1500/cotejo.cjs]
+    código  : done | pending | read   · @default pending
+    máster  : converted | discarded | new | seen   ← línea 401
+    en el código y no en el máster: done, pending, read · en el máster y no en el código: converted, discarded, new, seen
+    lo cierra: done | pending | read   ← src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:54
+      literal    src/modules/system/app/routes/customerPortal.routes.ts:542 'pending'
+      literal    src/modules/whatsappBot/domain/botFlow.service.ts:484 'pending'
+      NO literal src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:65 req.body?.status
+
+ParteTrabajo.estado (esquema, línea 1643) → ESTADO_SIN_MAQUINA_EN_EL_MASTER   [scrum1500/cotejo.cjs]
+    código  : borrador | facturado | firmado   · @default borrador
+    máster  : EL MÁSTER NO LO FIJA (sin lista para este campo)
+    lo cierra: borrador | facturado | firmado   ← src/modules/jobs/domain/parteTrabajo.ts:78
+      literal    src/modules/jobs/app/routes/partes.routes.ts:447 'borrador'
+      NO literal src/modules/jobs/app/routes/partes.routes.ts:685 estadoTrasFirmar(parte.estado as EstadoParte)
+      NO literal src/modules/jobs/app/routes/partes.routes.ts:765 estadoTrasFirmar(parte.estado as EstadoParte)
+
+TeamMember.status (esquema, línea 1175) → ESTADO_SIN_MAQUINA_EN_EL_MASTER   [scrum1500/cotejo.cjs]
+    código  : active | invited | suspended   · @default invited
+    máster  : EL MÁSTER NO LO FIJA (sin lista para este campo)
+      literal    src/modules/auth/domain/auth.service.ts:263 'active'
+      literal    src/modules/team/domain/team.service.ts:44 'invited'
+      literal    src/modules/team/domain/team.service.ts:48 'invited'
+      literal    src/modules/team/domain/team.service.ts:86 'suspended'
+
+Quote.status (esquema, línea 653) → CODIGO_FUERA_DEL_MASTER   [scrum1500c/cotejo-once.cjs]
+    código  : accepted | draft | expired | pending_approval | rejected | sent   · @default draft
+    máster  : accepted | draft | expired | rejected | sent   ← línea 398
+    en el código y no en el máster: pending_approval · en el máster y no en el código: (ninguno)
+      · escrituras de Prisma en quote.status: accepted | draft | expired | pending_approval | rejected | sent
+      · fabrica nuevaRevisionDe en src/modules/quotes/domain/revision.ts: draft
+
+Invoice.status (esquema, línea 830) → CODIGO_FUERA_DEL_MASTER   [scrum1500c/cotejo-once.cjs]
+    código  : annulled | expired | paid | pending   · @default pending
+    máster  : annulled | paid | pending   ← línea 399
+    en el código y no en el máster: expired · en el máster y no en el código: (ninguno)
+      · escrituras de Prisma en invoice.status: annulled | paid
+          NO literal src/modules/system/invoiceAdmin.ts:306 status
+      · includes includes(status) en src/modules/system/app/routes/invoicesAdmin.routes.ts: expired | paid | pending
+      · argumento 1 de las 4 llamadas a updateInvoiceStatusAdmin(): paid | pending
+          NO literal src/modules/system/app/routes/invoicesAdmin.routes.ts:562 String(req.body?.status || '').toLowerCase()
+          NO literal src/modules/system/invoiceAdmin.ts:313 status
+
+Charge.status (esquema, línea 473) → CODIGO_FUERA_DEL_MASTER   [scrum1500c/cotejo-once.cjs]
+    código  : expired | failed | paid | pending   · sin @default
+    máster  : cancelled | paid | pending   ← línea 400
+    en el código y no en el máster: expired, failed · en el máster y no en el código: cancelled
+      · escrituras de Prisma en charge.status: expired | failed | pending
+      · fabrica datosDeCobroPagado en src/modules/billing/domain/instanteDeCobro.ts: paid
+
+WhatsAppMessage.status (esquema, línea 1274) → CODIGO_FUERA_DEL_MASTER   [scrum1500c/cotejo-once.cjs]
+    código  : delivered | failed | queued | read | received | sent   · @default queued
+    máster  : delivered | failed | queued | read | sent   ← línea 403
+    en el código y no en el máster: received · en el máster y no en el código: (ninguno)
+      · escrituras de Prisma en whatsAppMessage.status: failed | queued | received | sent
+          NO literal src/modules/messaging/domain/whatsappLog.service.ts:41 input.status
+          NO literal src/modules/messaging/domain/whatsappLog.service.ts:281 status
+      · propiedad «status» del argumento 0 de las 15 llamadas a recordWaMessage(): failed | sent
+      · claves STATUS_RANK en src/modules/messaging/domain/whatsappLog.service.ts: delivered | queued | read | sent
+
+=== CONTROLES, uno POSITIVO y uno de CERO por campo ===
+VE    QuoteRequest.status: «zz1529_quoteRequest» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [QuoteRequest.status] (tiene que ser sólo QuoteRequest.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    ParteTrabajo.estado: «zz1529_parteTrabajo» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [ParteTrabajo.estado] (tiene que ser sólo ParteTrabajo.estado) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    TeamMember.status: «zz1529_teamMember» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [TeamMember.status] (tiene que ser sólo TeamMember.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    Quote.status: «zz1529_quote» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [Quote.status] (tiene que ser sólo Quote.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    Invoice.status: «zz1529_invoice» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [Invoice.status] (tiene que ser sólo Invoice.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    Charge.status: «zz1529_charge» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [Charge.status] (tiene que ser sólo Charge.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+VE    WhatsAppMessage.status: «zz1529_whatsAppMessage» sale en el árbol real 0 veces (tiene que ser 0) · en la copia sin siembra 0 (0) · sembrado sale en [WhatsAppMessage.status] (tiene que ser sólo WhatsAppMessage.status) · la copia sin siembra da los mismos valores que el árbol real: sí
+
+7 de 7 campos: la búsqueda VE una escritura nueva en ese campo y no la confunde con otro
+
+=== SONDA DE TEXTO (no atribuye a un campo) · 322 ficheros .ts de src/ · 107 ficheros .js/.html de public/ ===
+    «pending_approval» (por Quote.status): src/ 8 entre comillas, 8 como palabra, en 3 fichero(s) · public/ 9 entre comillas, 33 como palabra, en 7 fichero(s) · control «pending_approvalzz1529»: 0
+    «expired» (por Invoice.status): src/ 20 entre comillas, 42 como palabra, en 18 fichero(s) · public/ 10 entre comillas, 32 como palabra, en 10 fichero(s) · control «expiredzz1529»: 0
+    «failed» (por Charge.status): src/ 29 entre comillas, 47 como palabra, en 16 fichero(s) · public/ 0 entre comillas, 3 como palabra, en 2 fichero(s) · control «failedzz1529»: 0
+    «cancelled» (por Charge.status): src/ 1 entre comillas, 3 como palabra, en 3 fichero(s) · public/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · control «cancelledzz1529»: 0
+    «received» (por WhatsAppMessage.status): src/ 1 entre comillas, 6 como palabra, en 3 fichero(s) · public/ 0 entre comillas, 10 como palabra, en 4 fichero(s) · control «receivedzz1529»: 0
+    «converted» (por QuoteRequest.status): src/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · public/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · control «convertedzz1529»: 0
+    «discarded» (por QuoteRequest.status): src/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · public/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · control «discardedzz1529»: 0
+    «seen» (por QuoteRequest.status): src/ 0 entre comillas, 3 como palabra, en 1 fichero(s) · public/ 0 entre comillas, 0 como palabra, en 0 fichero(s) · control «seenzz1529»: 0
+    «facturado» (por ParteTrabajo.estado): src/ 14 entre comillas, 69 como palabra, en 21 fichero(s) · public/ 11 entre comillas, 50 como palabra, en 15 fichero(s) · control «facturadozz1529»: 0
+    «suspended» (por TeamMember.status): src/ 9 entre comillas, 9 como palabra, en 4 fichero(s) · public/ 1 entre comillas, 3 como palabra, en 1 fichero(s) · control «suspendedzz1529»: 0
+
+EXIT=0
