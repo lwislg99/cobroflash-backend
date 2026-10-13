@@ -285,3 +285,180 @@ proceso se queda sin caso. Visto en local en rojo antes (`scrum1415`: 5 de 6) y 
 - El «meta-guard» de aquella pasada seguía corriendo al empujar este arreglo: **sin leer**.
 - El ancla de arriba es la de la construcción. Al relevar, `origin/main` =
   `dfda86d65b8de9594b59b277fd38ea0ac3eda93a`: cuatro commits más, ninguno en los ficheros de esta rama.
+
+# SCRUM-1522c · Cuándo se separan hoy el tope y el panel, y qué le pasa al comercio sin zona
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:44:28Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1522c/el-dia-del-tope.cjs`
+
+J2 (sesión `jv-j2f`, equipo de Javier). Encargo: decir en qué franja y para qué comercio se separan el
+«hoy» del tope y el de las métricas, qué ve el usuario, qué le pasa al comercio con la zona a NULL, y
+proponer cuál cede. **Sólo medición y propuesta: no se ha tocado `src/`, `public/` ni `tests/`.**
+
+## 0 · La premisa del encargo ya no se cumple: hoy NO se separan
+
+El encargo decía «el tope cuenta con el día del comercio y las métricas con el del servidor». **Eso dejó
+de ser cierto a las 04:59Z de hoy**, cuando entró el PR #2349 (tramo «SCRUM-1522b» de arriba). Desde
+entonces los dos piden su filtro a la misma función, `plantillasDeHoy`
+(`src/modules/messaging/domain/whatsappLog.service.ts:101`; el tope en `:123`, el panel en `:449`).
+
+Comprobado corriendo, no leyendo. Las dos funciones reales de `dist` (`reservarPlantilla` y
+`getWhatsAppMetrics`), con una base en memoria, en cada minuto de 2026; se compara el filtro ENTERO que
+cada una le pide a la base:
+
+| comercio | instantes mirados | con el filtro distinto | hablando de días distintos |
+| --- | --- | --- | --- |
+| `Europe/Madrid` | 525.600 | **0** | 0 |
+| `Atlantic/Canary` | 525.600 | **0** | 0 |
+| sin zona (NULL) | 525.600 | **0** | 0 |
+| **control positivo, sembrado:** al panel se le contesta NULL y al tope `Europe/Madrid` | 525.600 | **525.600** | 34.500 min = 575 h |
+
+- La siembra es el defecto de antes de #2349 fabricado en el doble. Da las mismas 575 horas que midió
+  el primer tramo (`c.19150`). Quitándola (`--sin-siembra`) el guion dice `CIEGO` y sale 1.
+- Con el proceso en `UTC` (desfase 0 min) y en `Europe/Madrid` (desfase 120 min) la huella del resultado
+  es la misma, `32de201fe5cc24ea`: **el reloj del servidor ya no entra en ninguno de los dos números.**
+- «13 de 14 con la divergencia real» era cierto hasta las 04:59Z. Hoy es 0 de 14 para tope contra panel.
+
+**No medido:** el panel pintado con sesión en yaqu.app, ni la zona del proceso de Railway (que ya no
+cambia el resultado). Lo de arriba es `dist` de este árbol con `tsc --noCheck`, no producción.
+
+## 1 · Lo que sí se separa: el día que se cuenta y el reloj de pared del comercio SIN zona
+
+`zonaDelMerchant` devuelve `ZONA_POR_DEFECTO` cuando la columna está a NULL, y esa constante es `UTC`
+(`src/core/zonaDelMerchant.ts:54`). El borde sale de ahí: el guion pide la zona a esa función y compara,
+minuto a minuto, el día que se le cuenta con el día de un reloj de pared.
+
+| si el comercio sin zona vive con el reloj de… | franja de SU reloj en que su «hoy» es todavía ayer | días | horas al año |
+| --- | --- | --- | --- |
+| la península (`Europe/Madrid`) | de 00:00 a 01:59 (verano, 210 días) o a 00:59 (invierno, 155 días) | 365 | 575 |
+| Canarias (`Atlantic/Canary`) | de 00:00 a 00:59, sólo en verano | 210 | 210 |
+| control de cero: el de la propia zona por defecto | ninguna | 0 | 0 |
+
+Para los 13 con `Europe/Madrid` guardada esa franja no existe: el día que se cuenta es el de su zona.
+**No medido:** dónde vive el comercio de la zona a NULL (no se ha mirado ninguna base, por orden), ni si
+alguno de los 13 es canario y quedó con la zona de la península en el relleno de septiembre.
+
+## 2 · Qué ve el usuario
+
+**Con zona guardada: nada raro.** El panel y el tope dan el mismo número y los dos cambian de día a su
+medianoche.
+
+**El comercio sin zona, si vive en la península** (casos del guion, verano; las mismas filas pasadas por
+las dos funciones):
+
+| caso | hora de su reloj | panel «Hoy» | cuenta el tope | el envío |
+| --- | --- | --- | --- | --- |
+| 100 ayer por la tarde | 00:30 | 100 | 100 | **BLOQUEADO** |
+| las mismas filas, con `Europe/Madrid` guardada | 00:30 | 0 | 0 | sale |
+| las mismas filas, sin zona | 02:00 | 0 | 0 | sale |
+| 100 entre las 00:00 y las 02:00 + 99 de día | 18:00 | 99 | 99 | sale |
+| las mismas filas, con `Europe/Madrid` guardada | 18:00 | 199 | 199 | BLOQUEADO |
+| control: 87 de día | 18:00 | 87 | 87 | sale |
+
+- **El panel y el tope no se contradicen nunca** (columna 3 = columna 4 en las seis filas). Lo que el
+  encargo temía —el tope diciendo «agotado» y el panel otra cifra— **no ocurre**.
+- Lo que sí ocurre: durante la primera hora o dos de su día, a ese comercio el cupo de ayer le sigue
+  contando. Si ayer llegó al tope, está bloqueado hasta las 02:00 (01:00 en invierno), y el aviso que
+  recibe le dice que vuelva «mañana» cuando en su reloj ya es mañana. Los tres textos del aviso ya
+  existen y no llevan ninguna cifra: `src/lib/sendOutcome.ts:39`,
+  `src/modules/invoicing/domain/envioQueNoSale.ts:27` y
+  `src/modules/system/app/routes/quotesAdmin.routes.ts:88`. El panel tampoco enseña el tope
+  (`public/dashboard/js/reportsView.js:812`: sólo «Hoy: N»).
+- La cuarta fila es la otra cara: en un mismo día de su reloj le caben hasta dos cupos (lo enviado antes
+  de las 02:00 cuenta en el día anterior). Las filas quinta y cuarta son un banco, no un caso real: con el
+  tope puesto, 199 en un día no llegan a existir.
+
+**Urgencia, con lo medido:** baja para hoy. Hace falta un comercio sin zona, que viva fuera de UTC y que
+además haya agotado el cupo la víspera y envíe de madrugada. Con los 14 de prueba, es uno como mucho.
+
+## 3 · Por qué el de la zona a NULL importa más que uno de catorce
+
+**Ningún camino de `src/` escribe `timezone`.** Hay un solo sitio que crea comercios,
+`src/modules/auth/domain/auth.service.ts:341`, y no la pone; las demás apariciones del campo son lecturas
+(patrón de escritura buscado en `src/`: 3 líneas, las tres leídas, ninguna escribe en la base; el patrón
+ve una escritura sembrada). En `public/` no hay pantalla que la pregunte.
+
+Es decir: **los 13 con zona la tienen por el relleno a mano de septiembre (SCRUM-643), y todo comercio
+que se dé de alta desde entonces nace a NULL.** El de hoy no es un resto: es el primero de todos los que
+vengan. Leído en el código, **no ejecutado un alta**, y no comprobado en ninguna base.
+
+De paso, sin medir y fuera de mi carril: `zonaDelMerchant` es la misma función que usan los cortes
+fiscales por mes y por día (lo dice su cabecera). Un comercio que nace a NULL también hereda ahí el día
+de UTC. Es de J1/J5; lo nombro, no lo he mirado.
+
+## 4 · El P3 que ya estaba medido: reproducido, y el 873 no es una constante
+
+No está en los comentarios de SCRUM-1522: está en `docs/master/SCRUM-1513.md`, tramo «SCRUM-1513f» (8-oct).
+Decía: con las esperas de Prisma por defecto, 2.000 reservas a la vez del mismo comercio caben y con 4.000
+**lanzan 873**. Repetido hoy con el mismo guion (`docs/master/evidencias/SCRUM-1513f/reserva-duracion.cjs`),
+el `dist` de este árbol y un PostgreSQL 16.13 desechable en loopback, tope 100:
+
+| a la vez | 8-oct | hoy, pasada 1 | hoy, pasada 2 |
+| --- | --- | --- | --- |
+| 1.500 | sin medir | sin medir | lanzan 0 (la más lenta 1.483 ms) |
+| 2.000 | lanzan 0 (1.409 ms) | lanzan 0 (**1.992 ms**) | lanzan 0 (1.780 ms) |
+| 2.500 | sin medir | sin medir | **lanzan 272** |
+| 3.000 | sin medir | sin medir | lanzan 903 |
+| 4.000 | lanzan 873 | **lanzan 1.924** | lanzan 1.813 |
+
+- **Se reproduce el hecho** (con ráfaga suficiente, las reservas que no consiguen turno lanzan `P2028` a
+  los 2 s) **y no la cifra**: 873, 1.924 y 1.813 para la misma ráfaga. Depende de lo rápida que vaya la
+  máquina ese rato (una reserva sola: mediana 1,9 ms el 8-oct, 2,6 y 2,5 ms hoy).
+- El umbral, hoy y aquí: entre 2.000 y 2.500. La pasada 1 se quedó a 8 ms del límite con 2.000.
+- En las 20 ráfagas de hoy, reservadas + bloqueadas + lanzadas = las pedidas, y las filas = las reservadas;
+  con tope, nunca más de 100 reservadas.
+- **Qué hace el envío cuando la reserva lanza: leído, no ejecutado hoy.** Cae en el `catch` de
+  `src/integrations/whatsapp.ts:414` («no se bloquea») y el mensaje sale sin reserva, por encima del tope.
+- No tiene que ver con el día: ocurre igual con cualquier zona. Sigue siendo la decisión P3 que el fundador
+  dejó fuera en `c.18988`. No medido contra la latencia de la base de producción: con red más lenta el
+  umbral baja, y no sé cuánto.
+
+## 5 · Propuesta (recomendación; decide el fundador)
+
+**Entre el tope y el panel no tiene que ceder ninguno: ya cuentan lo mismo.** Lo que queda por decidir es
+otra cosa, y es de dónde sale la zona de un comercio nuevo:
+
+1. **Recomiendo que la zona se pregunte o se fije en el alta**, y que no se deduzca del país. Dentro de
+   `ES` hay dos husos, y por eso la decisión A del fundador (2-sep) dejó el valor por defecto en UTC y no en
+   Madrid. Pide una decisión suya, un texto firmado si se pregunta en pantalla (regla 39) y manos de otros
+   carriles (el alta es de J3; la pantalla, de S2). **No toca el flujo de cobro.**
+2. **El comercio que hoy está a NULL:** si es de prueba y peninsular, se arregla con un dato, que aplica el
+   colaborador. No lo he mirado.
+3. **No hacer nada** cuesta lo de la tabla del §2 para cada comercio que nazca: su día empieza una o dos
+   horas tarde en el tope y en el panel, y lo mismo en los cortes fiscales que leen esa función.
+
+Lo que NO recomiendo: cambiar `ZONA_POR_DEFECTO` a Madrid. Arregla el tope del peninsular y declara
+peninsular al canario, que es lo que esa constante existe para no hacer.
+
+## Lo que NO he medido
+
+- Ninguna base: ni producción ni staging. El «13 con Madrid y 1 a NULL» es el dato que me dieron.
+- El panel con sesión en yaqu.app. Ningún WhatsApp enviado. El proveedor real.
+- Un alta ejecutada de punta a punta para ver nacer la zona a NULL: está leído.
+- Cuántas plantillas salen de verdad entre las 00:00 y las 02:00.
+- El camino del envío cuando la reserva lanza (§4): leído.
+- La tanda completa (no hay código tocado). En local, los guards del registro: ver la entrega en Jira.
+
+## De paso
+
+- `docs/master/evidencias/SCRUM-1522/dos-hoy.cjs`: sus 8 casos dicen hoy «coinciden» y su barrido sigue
+  diciendo 575 horas, porque el barrido compara con una copia del cálculo viejo del panel y no pregunta a
+  la función. Le he puesto un aviso de cuatro líneas encima del barrido; no he cambiado lo que calcula ni
+  sus salidas guardadas.
+
+## Errores propios
+
+- Di por hecho que «873 de 4.000» era un número que se podía reproducir. Es una carrera contra un límite de
+  2 s: salieron 1.924 y 1.813. Lo reproducible es el umbral, no la cuenta.
+- Los casos cuarto y quinto del §2 meten 199 plantillas en un día de Madrid: el tope no lo habría dejado
+  pasar. Sirven para ver desde cuándo cuenta cada zona, no como ejemplo de lo que le pasa a nadie.
+
+| encargo | dónde se ve |
+| --- | --- |
+| cuándo divergen, con el borde derivado | §0 y §1 · `docs/master/evidencias/SCRUM-1522c/salida-proceso-en-UTC.txt` |
+| qué ve el usuario | §2 |
+| el comercio con la zona a NULL | §1, §2 y §3 |
+| cuál cede | §5 |
+| el P3 del tope, reproducido | §4 · `docs/master/evidencias/SCRUM-1522c/p3-reserva-duracion-pasada-1.txt` y `-pasada-2.txt` |
+

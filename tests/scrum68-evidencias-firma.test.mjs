@@ -5,6 +5,8 @@
 //   evidenciaFirma { canal, ip, ua, tokenId, firmante, contentHash } y — CLAVE — ip/ua/hash
 //   NUNCA se exponen (ni en la respuesta serializada, ni en la página pública, ni en el JSON).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -81,14 +83,33 @@ test('computeAlbaranContentHash: null vs cadena no colisionan (serialización ca
 });
 
 // ── Sellado real + PRIVACIDAD (gateado) ──────────────────────────────────────
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
+// SCRUM-876g · la firma remota lanza el auto-envío de la copia firmada (SCRUM-49). Con el banco como
+// destino va en seco; contra staging no cambia nada: lo pone quien lanza, como dice la cabecera.
+if (CON_BANCO) process.env.WHATSAPP_DRY_RUN = '1';
 const FWD_IP = '203.0.113.9';   // x-forwarded-for determinista para la aserción de ip
 const UA = 'QA-UA-SCRUM68/1.0';
 // SCRUM-300: DISTINTO del nombre del cliente ('Cliente 68') a propósito — es lo que permite
 // distinguir «lo declaró alguien» de «se lo pusimos nosotros».
 const FIRMANTE_DECLARADO = 'Encargado de obra Paco';
 
-test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  if (CON_BANCO) assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -134,7 +155,7 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
       // SCRUM-300: se declara un nombre DISTINTO del cliente a propósito. Antes el sobre ponía
       // el nombre del cliente pasara lo que pasara, así que los dos valores eran
       // indistinguibles y el test no podía ver la diferencia. Ahora sí.
-      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO }),
+      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO, version: albRemoto.version }),
     });
     assert.equal(rFirmar.status, 200, `firmar remoto → 200 (fue ${rFirmar.status})`);
     const firmarBody = await rFirmar.text();
