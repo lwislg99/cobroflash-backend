@@ -43,13 +43,13 @@ El camino de una factura tiene **nueve pasos. Siete existen y funcionan:**
 6. **QR de cotejo**
 7. **XML del registro con el formato oficial de la AEAT**
 
-**Los dos que NO existen:**
+**Los dos que NO existen:** *(el 8 existe a medias desde el 30-sep-2026: ver su corchete)*
 
-8. ⛔ La **cola de envío**
+8. ⛔ La **cola de envío** — [Corregido el 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): aquí figuraba, sin más, entre «los dos que NO existen», y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. Falta quien la vacíe. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
 9. ⛔ El **envío** y la lectura de la respuesta de la AEAT
 
-**Hoy ese XML se descarga. No se transmite.** No hay ni una sola llamada del código hacia la
-Agencia Tributaria. La auditoría lo midió con dos instrumentos y con un control de ceguera.
+**Hoy ese XML se descarga. No se transmite.** Nada envía a la
+Agencia Tributaria. [Corregido el 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): aquí decía «No hay ni una sola llamada del código hacia la Agencia Tributaria», que es falso como «el código no trae ninguna llamada» desde SCRUM-1127 y sigue siendo cierto como «nada envía». Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway.] La auditoría lo midió con dos instrumentos y con un control de ceguera.
 
 **Consecuencia para cualquier estimación:** entre hoy y el envío no hay «encender», hay
 **construir**. *«Apagado» y «no construido» se parecen en una conversación y no se parecen en

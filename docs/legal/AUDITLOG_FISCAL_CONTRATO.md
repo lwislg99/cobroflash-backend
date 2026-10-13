@@ -297,8 +297,8 @@ unir las tres (`anular_factura` ∪ `factura_anulada` ∪ `factura_rectificada`)
 registro de auditoría: exactamente lo que este documento existe para impedir.
 
 **Lo que NO se propone, a propósito:** una acción por cada código AEAT. Los 2xxx son
-**respuestas de la AEAT**, y la remisión no existe (`SIF_ENABLED=false`, sin `VfSubmission` en el
-schema — SCRUM-200 §7). Registrar el resultado del envío es otro contrato, el día que haya
+**respuestas de la AEAT**, y la remisión no existe (`SIF_ENABLED=false`, nada envía; [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin `VfSubmission` en el schema», falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] —
+SCRUM-200 §7). Registrar el resultado del envío es otro contrato, el día que haya
 envío. Aquí solo se registra **lo que YaQu decide y lo que YaQu muestra**.
 
 ### 3.3 Resumen: 10 acciones, 3 niveles de durabilidad
@@ -774,7 +774,7 @@ Para que nadie lo dé por cubierto:
 - **No se ha auditado el front.** Dónde cabe cada aviso en el dashboard, y con qué componente
   de la Parte AB, es trabajo de los tickets de ámbar que este contrato desbloquea.
 - **No se han medido los caminos de SCRUM-16, 18 y 20** — no existen en `main`.
-- **La remisión a la AEAT no existe** (`SIF_ENABLED=false`, sin `VfSubmission` en el schema), así
+- **La remisión a la AEAT no existe** (`SIF_ENABLED=false`, nada envía; [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin `VfSubmission` en el schema», falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]), así
   que **no se registra ninguna respuesta de la AEAT**. Ese es otro contrato, el día que haya
   envío.
 
