@@ -105,10 +105,13 @@ entero cargado por el índice.
   aviso de fallo sale una vez; una fecha de 2020 se manda y vuelve como vencida. Con la hoja de
   producción la nota larga se sale de la caja (1 estado de 8: es el control); con la hoja de la rama,
   ninguno. Dos capturas.
-- **Dirigida, a mano:** 82 ficheros (los que nombran el service worker, la lista de scripts, los
-  censos de microcopy y de sin-consumir y las clases de las hojas, más los que leen los registros):
-  785 tests, 784 pasan y 1 rojo esperado, el de `scrum811c`, que pide esta sección. Repetida con la
-  sección escrita. `npm run tanda:dirigida` selecciona 610 ficheros y no se lanza en esta máquina.
+- **Dirigida, a mano:** 176 ficheros (los que nombran el service worker, la lista de scripts, la
+  hoja de estilos, `docs/microcopy/` y los censos de microcopy, de sin-consumir y de clases, más los
+  que leen los registros): 1.709 tests, 4 saltos declarados. Dio 1 rojo, mío, y se arregló el código:
+  `scrum352` (el censo de áreas táctiles) no sacaba ningún conjunto de clases de la pieza, porque los
+  botones componían su clase a trozos dentro de un ayudante. Ahora cada clase va entera y como
+  literal en `className`. Repetida después. `npm run tanda:dirigida` selecciona 610 ficheros y no se
+  lanza en esta máquina.
 - 🔴 **Sin `tsc`:** no cabe en memoria. Este cambio no toca `src/`. La suite completa y los tipos los
   corre el obligatorio.
 
