@@ -139,15 +139,17 @@ test('SCRUM-1537 · cotejo.cjs · el límite está DECLARADO con sus papeles, y 
   // Sobre el árbol, hoy, ninguno de esos campos tiene una escritura que no se deje leer.
   assert.deepEqual(j.hallazgos.filter((h) => h.clase === 'ESCRITURA_SIN_LEER'), []);
   // …y si la tuviera caería: la misma pasada, con una escritura no literal puesta en un campo sin cierre.
+  // La cita se arma aquí: un literal «fichero:N» en el test lo contaría el censo de SCRUM-710b como un anclaje por línea que no es.
+  const cita = (expr) => `${['src/sembrado.ts', 1].join(':')} ${expr}`;
   const copia = structuredClone(r);
   const tocada = copia.filas.find((f) => !f.control && !f.cierreDe);
-  tocada.noLiterales = ['src/sembrado.ts:1 calculaElEstado()'];
+  tocada.noLiterales = [cita('calculaElEstado()')];
   assert.deepEqual(juzgar(copia).hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${tocada.campo} · ESCRITURA_SIN_LEER`]);
   // Un `null` no es un valor que se esconda: no cae por él.
-  tocada.noLiterales = ['src/sembrado.ts:1 null'];
+  tocada.noLiterales = [cita('null')];
   assert.deepEqual(juzgar(copia).hallazgos, []);
   // Y en un campo CON cierre la misma escritura no cae: su lista la cierra la constante.
   const conCierre = structuredClone(r);
-  conCierre.filas.find((f) => !f.control && f.cierreDe && f.veredicto === 'COINCIDE_CON_EL_MASTER').noLiterales = ['src/sembrado.ts:1 calculaElEstado()'];
+  conCierre.filas.find((f) => !f.control && f.cierreDe && f.veredicto === 'COINCIDE_CON_EL_MASTER').noLiterales = [cita('calculaElEstado()')];
   assert.deepEqual(juzgar(conCierre).hallazgos, []);
 });
