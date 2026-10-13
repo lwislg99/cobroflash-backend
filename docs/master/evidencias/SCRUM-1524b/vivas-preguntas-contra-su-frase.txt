@@ -1,0 +1,41 @@
+POBLACION · 202 vivas · PREGUNTAS_ASESOR.md @ *: 8
+
+[CAMBIADA] L461 · src/modules/invoicing/domain/modoVisible.ts:21-24 · SIN · editada en su sitio · salto= · 833f1587a 2026-08-07
+  FRASE: …* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`: *(cita puesta al día el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: ese comentario se corrigió el 8-oct-2…
+  DECIA: // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Cero clientes SOAP/mTLS contra ⏎ // la AEAT
+  HOY  : // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Nada envía a // // la AEAT. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «Cero clientes SOAP/mTLS contra la AEAT»,  // // la cadena de huellas y la URL del QR —o sea SELLA EN LOCAL— y los XSD están vendorizados pero
+
+[DESPLAZADA] L693 · libroRegistroView.js:231 · SIN_RUTA · un solo sitio · salto=7 · 09f262b16 2026-08-19 · lo que decía está hoy en 238
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:231`, dentro de `if (asientos.length === 0)` (`:229`):…
+  DECIA: if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) {
+  HOY  : pintarError(new Error('respuesta_incompleta'));
+
+[DESPLAZADA] L693 · libroRegistroView.js:229 · SIN_RUTA · un solo sitio · salto=7 · 09f262b16 2026-08-19 · lo que decía está hoy en 236
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:231`, dentro de `if (asientos.length === 0)` (`:229`):…
+  DECIA: subtitle.textContent = COPY.recuento(asientos.length);
+  HOY  : // leer». Si no viene, la respuesta está incompleta y se trata como fallo, no como cero.
+
+[DESPLAZADA] L704 · libroRegistroView.js:53-55 · SIN_RUTA · un solo sitio · salto=7 · 09f262b16 2026-08-19 · lo que decía está hoy en 60
+  FRASE: …**(b) Qué se pinta hoy** (`libroRegistroView.js:53-55`):…
+  DECIA: descuadre: (miradas) => rotulo( ⏎ 'El libro no cuadra: se han revisado ' + miradas + ' facturas y no ha salido
+  HOY  : cargando: 'Cargando…', // NO es de este ticket: cadena ya usada en invoicesView.js, copiada tal cual // // SCRUM-1232 · firmado SÓLO junto al filtro de justificantes (comentario 17435): con él, el // // recuento cuenta facturas de verdad y la frase es cierta. Antes decía «1 facturas».
+
+[DESPLAZADA] L724 · libroRegistroView.js:223-225 · SIN_RUTA · un solo sitio · salto=7 · 09f262b16 2026-08-19 · lo que decía está hoy en 230
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:223-225`:…
+  DECIA: if (!asientos || typeof libro.miradas !== 'number') { ⏎ pintarError(new Error('respuesta_incompleta')); ⏎ retu
+  HOY  : body.appendChild(a); // } // 
+
+[DESPLAZADA] L745 · libroRegistroView.js:226 · SIN_RUTA · varios sitios · salto=2 · 09f262b16 2026-08-19 · lo que decía está hoy en 113, 119, 136, 145…
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:226`:…
+  DECIA: }
+  HOY  : function pintar(libro) {
+
+[DESPLAZADA] L764 · libroRegistroView.js:227 · SIN_RUTA · varios sitios · salto=2 · 09f262b16 2026-08-19 · lo que decía está hoy en 40, 49, 91, 108…
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:227`:…
+  DECIA: 
+  HOY  : const asientos = libro && Array.isArray(libro.asientos) ? libro.asientos : null;
+
+[DESPLAZADA] L786 · libroRegistroView.js:332-334 · SIN_RUTA · un solo sitio · salto=7 · 09f262b16 2026-08-19 · lo que decía está hoy en 339
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:332-334`, por cada fila de la tabla:…
+  DECIA: } ⏎ if (Array.isArray(e.albaranes)) { ⏎ for (const alb of e.albaranes) {
+  HOY  : const e = a.enlaces || {}; // let alguna = false; // if (e.presupuestoId != null) {
