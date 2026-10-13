@@ -24,12 +24,14 @@
 //
 // «P2004226.1» es otra fila de `quotes`. Al revisar se copian el autor y el Trabajo, pero NO las
 // filas de `quote_assignees`: el Técnico que lleva un presupuesto por asignación dejaría de ver
-// justo la versión vigente. Así que es suyo todo el grupo {merchant, número} de uno suyo. Sin
-// número no hay grupo (un `quoteNumber` nulo no es una clave: SCRUM-655).
+// justo la versión vigente. Así que es suyo todo el grupo {merchant, año de la serie, número} de
+// uno suyo (el año, desde SCRUM-1490). Sin número no hay grupo (un `quoteNumber` nulo no es una
+// clave: SCRUM-655).
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma';
 import { seesAllJobs } from '../http/roleCapabilities';
 import { trabajosDeLaPersona, type QuienPide } from './accesoALaFactura';
+import { anioDeLaSerie, whereDelAnio } from './grupoDelPresupuesto';
 
 /**
  * El recorte de `quotes` para quien pregunta. **`null` = sin recorte**: quien ve todo el negocio
@@ -53,13 +55,26 @@ export async function wherePresupuestosVisibles(quien: QuienPide): Promise<Prism
     { jobId: { in: trabajos.map((t) => t.id) } },                                      // un adicional
   ];
 
-  // Las demás revisiones de uno suyo.
+  // Las demás revisiones de uno suyo. 🔴 El grupo es {merchant, AÑO de la serie, número}
+  // (SCRUM-1490): la serie es anual, y quien lleva «el 12» de 2026 no lleva el 12 de 2027.
   const numerados = await prisma.quote.findMany({
     where: { merchantId: quien.merchantId, quoteNumber: { not: null }, OR: suyo }, // regla 2
-    select: { quoteNumber: true },
-    distinct: ['quoteNumber'],
+    select: { quoteNumber: true, seriesYear: true, createdAt: true },
   });
-  return { OR: [...suyo, { quoteNumber: { in: numerados.map((q) => q.quoteNumber as number) } }] };
+  if (numerados.length === 0) return { OR: suyo };
+
+  // La zona sólo decide el año de una fila anterior a la columna (`anioDeLaSerie`).
+  const negocio = await prisma.merchant.findUnique({ where: { id: quien.merchantId }, select: { timezone: true } });
+  const porAnio = new Map<number, Set<number>>();
+  for (const q of numerados) {
+    const anio = anioDeLaSerie(q, negocio);
+    if (!porAnio.has(anio)) porAnio.set(anio, new Set());
+    porAnio.get(anio)!.add(q.quoteNumber as number);
+  }
+  const grupos: Prisma.QuoteWhereInput[] = [...porAnio].map(([anio, numeros]) => ({
+    quoteNumber: { in: [...numeros] }, ...whereDelAnio(anio, negocio),
+  }));
+  return { OR: [...suyo, ...grupos] };
 }
 
 /**
