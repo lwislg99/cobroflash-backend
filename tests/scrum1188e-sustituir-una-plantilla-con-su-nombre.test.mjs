@@ -24,7 +24,7 @@ import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const respirar = () => new Promise((r) => setTimeout(r, 80));
 
-const PREGUNTA = (nombre) => `Ya tienes una plantilla llamada "${nombre}". ¿Quieres sustituirla?`;
+const PREGUNTA = (nombre) => `Ya tienes una plantilla llamada "${nombre}". ¿Quieres sustituirla? Esta acción no se puede deshacer.`;
 const ACTUALIZADA = (nombre) => `Plantilla "${nombre}" actualizada.`;
 // Firmado en SCRUM-1188 c.17332 (parte A). Aquí sólo se comprueba que al SUSTITUIR sale el mismo.
 const SIN_PLAN = (nombre) => `Plantilla "${nombre}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`;

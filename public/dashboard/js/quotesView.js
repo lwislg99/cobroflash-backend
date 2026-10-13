@@ -4978,7 +4978,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         const name = laQueYaTiene ? laQueYaTiene.name : escrito;
 
         if (laQueYaTiene) {
-          if (!window.confirm(`Ya tienes una plantilla llamada "${name}". ¿Quieres sustituirla?`)) {
+          // Pregunta FIRMADA por el orquestador (SCRUM-1188, comentario 19400), letra por letra. Avisa
+          // de que no se deshace porque es verdad: las líneas que tenía la plantilla se pierden.
+          if (!window.confirm(`Ya tienes una plantilla llamada "${name}". ¿Quieres sustituirla? Esta acción no se puede deshacer.`)) {
             // Dice que no: la hoja sigue abierta con lo escrito, para que le cambie el nombre.
             saveBtn.disabled = false;
             saveBtn.textContent = 'Guardar plantilla';
@@ -5013,6 +5015,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
         // Al SUSTITUIR con «CUSTOM» sale este mismo aviso y no el de «actualizada»: lo que afirma
         // sigue siendo verdad (la plantilla queda guardada sin plan de cobro) y es lo que más importa.
+        // Esa firma era para CREAR; el comentario 19400 la extiende a sustituir y firma el de
+        // «actualizada» de la línea siguiente.
         if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
         else if (laQueYaTiene) setAlert('success', `Plantilla "${name}" actualizada.`);
         else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
