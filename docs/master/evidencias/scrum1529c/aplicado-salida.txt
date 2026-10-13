@@ -1,0 +1,30 @@
+POBLACIÓN · máster de la base 3bf6163bb: 1905 líneas · máster del árbol: 1905 líneas · decisiones: 10 (diez, con la ⑥ en dos)
+
+① LAS LÍNEAS
+  líneas que cambian: 397, 398, 399, 400, 401, 403
+  vigiladas e idénticas: 11 de 11 (la 404 es la de la cola de la AEAT; la 309, la tabla de la Parte J)
+
+② y ③ UN POSITIVO Y UN CERO POR DECISIÓN (árbol)
+  ✓ ① línea 401 · QuoteRequest adopta pending → read → done · positivo SÍ · cero SÍ
+  ✓ ② línea 397 · ParteTrabajo.estado entra con borrador y firmado · positivo SÍ · cero SÍ
+  ✓ ③ línea 397 · TeamMember.status entra con sus tres valores · positivo SÍ · cero SÍ
+  ✓ ④ línea 398 · Quote gana pending_approval · positivo SÍ · cero SÍ
+  ✓ ⑤ línea 399 · Invoice gana expired · positivo SÍ · cero SÍ
+  ✓ ⑥a línea 400 · Charge gana failed y expired · positivo SÍ · cero SÍ
+  ✓ ⑥b línea 400 · Charge conserva cancelled · positivo SÍ · cero SÍ
+  ✓ ⑦ línea 403 · WhatsAppMessage gana received · positivo SÍ · cero SÍ
+  ✓ ⑧ línea 397 · Merchant.status entra con active · positivo SÍ · cero SÍ
+  ✓ ⑨ línea 397 · EmailMessage.status entra con sus seis valores · positivo SÍ · cero SÍ
+  ✓ ⑩ VfSubmission NO entra: 0 líneas la rotulan como máquina; «VfSubmission» sale en 1 línea(s) del tramo 396-412 (404), que es la que ya lo decía y no se ha tocado
+  cero derivado: «zz1529c_valor_que_no_existe» sale en 0 líneas del máster
+
+EL CONTROL DEL INSTRUMENTO: las mismas preguntas sobre la BASE
+  positivos que la base cumple: 1 de 10 (⑥b) — tienen que ser 1: ⑥b, que es «se queda»
+
+④ LAS CITAS `YAQU_MASTER.md:<n>`
+  ficheros seguidos: 6161 · leídos: 6161 · citas: 177 en 45 ficheros · por debajo de la 397: 91 en 32 ficheros
+  citas que ahora apuntan a un texto distinto sin ser de una línea tocada: 0
+  citas a una línea tocada (su texto de antes sigue ahí; la 401 lo lleva citado): 2 → docs/master/SCRUM-1513.md:136 → 403 · docs/master/SCRUM-534.md:52 → 401
+
+APLICADAS las diez, y sólo eso
+EXIT=0

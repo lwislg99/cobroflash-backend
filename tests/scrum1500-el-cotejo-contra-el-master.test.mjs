@@ -17,9 +17,12 @@
 //    Por eso el control no es que salga verde: es que CAIGA un comentario que coincide con el código
 //    y no con el máster (los casos «CAE»), y que NO se nombre el que sí coincide con el máster.
 //
-// LOS TRES PARADOS (`QuoteRequest.status`, `ParteTrabajo.estado`, `TeamMember.status`) esperan al
-// fundador (regla 27) y no ponen el CI en rojo; su excepción vive en `PARADOS`, dentro del
-// instrumento, con motivo, quién la retira y dónde consta. Aquí se prueba que no es un agujero.
+// LOS PARADOS. Eran tres (`QuoteRequest.status`, `ParteTrabajo.estado`, `TeamMember.status`) y
+// esperaban al fundador (regla 27). SCRUM-1529c (13-oct-2026) aplicó sus decisiones a la Parte L:
+// dos ya coinciden con el máster y su excepción se borró. Queda UNO, `ParteTrabajo.estado`, y por
+// otro motivo: el máster lo fija sin `facturado` y el código lo sigue declarando. Su excepción es
+// un puente hasta SCRUM-1535 y vive en `PARADOS`, dentro del instrumento, con motivo, quién la
+// retira y dónde consta. Aquí se prueba que no es un agujero, y que los dos que salieron se miran.
 //
 // QUÉ NO HACE: no coteja los campos del esquema que no están en la tabla del instrumento (los
 // cuenta y los nombra en su salida), ni las transiciones, ni nada contra una base.
@@ -175,50 +178,80 @@ test('SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el 
   }
 });
 
-test('SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres', () => {
+test('SCRUM-1500b · EL PARADO no es un agujero: sin su excepción cae, y sólo él (SCRUM-1529c: eran tres)', () => {
   const sin = juzgar(ARBOL, []);
   assert.deepEqual(
     sin.hallazgos.map((h) => `${h.campo} · ${h.clase}`).sort(),
-    ['ParteTrabajo.estado · ESTADO_SIN_MAQUINA_EN_EL_MASTER', 'QuoteRequest.status · CODIGO_FUERA_DEL_MASTER', 'TeamMember.status · ESTADO_SIN_MAQUINA_EN_EL_MASTER'],
+    ['ParteTrabajo.estado · CODIGO_FUERA_DEL_MASTER'],
   );
-  // `QuoteRequest.status` es el caso que abrió el ticket, vivo en el árbol: comentario = código ≠ máster.
-  assert.equal(fila(ARBOL, 'QuoteRequest.status').viejo, 'coincide');
+  // Lo que ve es lo que se decidió: el código declara `facturado` y la Parte L, por decisión, no.
+  assert.deepEqual(fila(ARBOL, 'ParteTrabajo.estado').sobran, ['facturado']);
+  // Este instrumento sólo ve escrituras con literal (tampoco ve la de `firmado`, que entra por una
+  // variable), así que no puede afirmar «nadie lo escribe». Lo que sí sujeta: el día que una
+  // escritura literal de `facturado` aparezca en src/, el motivo de la excepción deja de ser verdad.
+  assert.ok(fila(ARBOL, 'ParteTrabajo.estado').declaradoSinEscribir.includes('facturado'), 'hay una escritura literal de `facturado` en src/: el motivo de la excepción ya no es verdad');
   const con = juzgar(ARBOL);
   assert.deepEqual(con.esperan.map((e) => e.campo).sort(), PARADOS.map((e) => e.campo).sort());
+  assert.deepEqual(PARADOS.map((e) => e.campo), ['ParteTrabajo.estado'], 'PARADOS no se ensancha a mano: una entrada nueva pide su decisión, por número');
   for (const e of PARADOS) {
     for (const k of ['motivo', 'retira', 'consta', 'desde']) assert.ok(String(e[k] || '').trim().length > 0, `${e.campo}: la excepción no dice «${k}»`);
     assert.match(e.desde, /^\d{4}-\d{2}-\d{2}$/);
+    // Es un puente: dice qué ticket la retira, y dónde consta la decisión que la permitió.
+    assert.match(e.retira, /SCRUM-\d+/, `${e.campo}: la excepción no dice qué ticket la retira`);
+    assert.match(e.consta, /SCRUM-\d+/);
   }
   // «Sigue montada», por AST y en esta pasada: sus valores salen de un cierre o de una escritura de src/.
   for (const e of con.esperan) assert.ok(e.montadaEn.length > 0, `${e.campo}: no encuentro dónde sigue montado`);
 });
 
-test('SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae', () => {
+test('SCRUM-1529c · LOS DOS QUE DEJARON DE ESTAR PARADOS ahora se cotejan: coinciden, y si el máster pierde un valor caen', () => {
+  for (const id of ['QuoteRequest.status', 'TeamMember.status']) {
+    assert.equal(fila(ARBOL, id).veredicto, 'COINCIDE_CON_EL_MASTER', id);
+    assert.ok(fila(ARBOL, id).lineaMaster > 0, `${id}: no tiene línea en el máster`);
+    // Sin excepción que lo tape: quitarle a su lista del máster el último valor lo nombra, a él solo.
+    const j = juzgar(cotejar({ textoMaster: masterSinElUltimoValor(id) }));
+    assert.deepEqual(j.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${id} · CODIGO_FUERA_DEL_MASTER`]);
+  }
+  // El parado comparte línea del máster con `TeamMember.status` y cada uno lee SU lista, no la del otro.
+  assert.equal(fila(ARBOL, 'ParteTrabajo.estado').lineaMaster, fila(ARBOL, 'TeamMember.status').lineaMaster);
+  assert.deepEqual(fila(ARBOL, 'TeamMember.status').M, ['active', 'invited', 'suspended']);
+  assert.deepEqual(fila(ARBOL, 'ParteTrabajo.estado').M, ['borrador', 'firmado']);
+});
+
+test('SCRUM-1500b · la excepción cubre lo que se decidió y nada más: si cambia, cae', () => {
   const copia = () => structuredClone(ARBOL);
   const tras = (toca, parados = PARADOS) => { const r = copia(); toca(r); return juzgar(r, parados); };
+  const P = 'ParteTrabajo.estado';
   // El control de la copia: sin tocar nada, la copia juzga igual que el original.
   assert.deepEqual(tras(() => {}).hallazgos, []);
   // ① el código gana un estado más: la excepción no lo ampara.
-  const masEstados = tras((r) => { fila(r, 'QuoteRequest.status').D = ['archived', 'done', 'pending', 'read']; });
-  assert.deepEqual(masEstados.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['QuoteRequest.status · EXCEPCION_QUE_YA_NO_DESCRIBE']);
-  assert.match(masEstados.hallazgos[0].texto, /archived/);
-  // ② el máster cambia su lista.
-  const otroMaster = tras((r) => { fila(r, 'QuoteRequest.status').M = ['discarded', 'new', 'seen']; });
+  const masEstados = tras((r) => { fila(r, P).D = ['anulado', 'borrador', 'facturado', 'firmado']; });
+  assert.deepEqual(masEstados.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_QUE_YA_NO_DESCRIBE`]);
+  assert.match(masEstados.hallazgos[0].texto, /anulado/);
+  // ② el máster cambia su lista: por ejemplo, alguien le mete `facturado` contra la decisión ②.
+  const otroMaster = tras((r) => { fila(r, P).M = ['borrador', 'facturado', 'firmado']; });
   assert.deepEqual(clases(otroMaster), ['EXCEPCION_QUE_YA_NO_DESCRIBE']);
-  // ②bis sigue parado, pero por OTRA cosa que la que se le llevó al fundador.
-  const otroVeredicto = tras((r) => { Object.assign(fila(r, 'QuoteRequest.status'), { veredicto: 'MASTER_SIN_ESCRIBIR' }); });
-  assert.deepEqual(otroVeredicto.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['QuoteRequest.status · EXCEPCION_QUE_YA_NO_DESCRIBE']);
-  // ③ el campo deja de estar parado: la excepción sobra, y se dice.
-  const resuelto = tras((r) => { Object.assign(fila(r, 'TeamMember.status'), { veredicto: 'COINCIDE_CON_EL_MASTER' }); });
-  assert.deepEqual(resuelto.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['TeamMember.status · EXCEPCION_SOBRANTE']);
+  // …y de verdad, no sólo sobre la copia: con `facturado` escrito en la lista del máster, cae.
+  const conFacturado = MASTER.replace('**ParteTrabajo.estado:** `borrador | firmado`', '**ParteTrabajo.estado:** `borrador | firmado | facturado`');
+  assert.notEqual(conFacturado, MASTER, 'la mutación del máster no se aplicó');
+  assert.deepEqual(juzgar(cotejar({ textoMaster: conFacturado })).hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_SOBRANTE`]);
+  // ②bis sigue parado, pero por OTRA cosa que la que se decidió.
+  const otroVeredicto = tras((r) => { Object.assign(fila(r, P), { veredicto: 'MASTER_SIN_ESCRIBIR' }); });
+  assert.deepEqual(otroVeredicto.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_QUE_YA_NO_DESCRIBE`]);
+  // ③ el campo deja de estar parado (SCRUM-1535 hecho): la excepción sobra, y se dice.
+  const resuelto = tras((r) => { Object.assign(fila(r, P), { veredicto: 'COINCIDE_CON_EL_MASTER' }); });
+  assert.deepEqual(resuelto.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_SOBRANTE`]);
   // ④ ya no queda en src/ ni el cierre ni una escritura: sólo el @default.
-  const desmontado = tras((r) => { Object.assign(fila(r, 'ParteTrabajo.estado'), { cierre: [], sitios: [] }); });
-  assert.deepEqual(desmontado.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['ParteTrabajo.estado · EXCEPCION_QUE_YA_NO_DESCRIBE']);
+  const desmontado = tras((r) => { Object.assign(fila(r, P), { cierre: [], sitios: [] }); });
+  assert.deepEqual(desmontado.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_QUE_YA_NO_DESCRIBE`]);
   // ⑤ una excepción de un campo que no está en la tabla, y una a la que le falta quién la retira.
   const huerfana = juzgar(ARBOL, [...PARADOS, { ...PARADOS[0], campo: 'Modelo.queNoEsta' }]);
   assert.deepEqual(huerfana.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['Modelo.queNoEsta · EXCEPCION_HUERFANA']);
   const sinPapeles = juzgar(ARBOL, PARADOS.map((e, i) => (i === 0 ? { ...e, retira: ' ' } : e)));
-  assert.deepEqual(sinPapeles.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['QuoteRequest.status · EXCEPCION_SIN_PAPELES']);
+  assert.deepEqual(sinPapeles.hallazgos.map((h) => `${h.campo} · ${h.clase}`), [`${P} · EXCEPCION_SIN_PAPELES`]);
+  // ⑤bis una excepción puesta a un campo que hoy coincide (la que se borró el 13-oct): sobra, y se dice.
+  const vieja = juzgar(ARBOL, [...PARADOS, { ...PARADOS[0], campo: 'QuoteRequest.status' }]);
+  assert.deepEqual(vieja.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['QuoteRequest.status · EXCEPCION_SOBRANTE']);
   // ⑥ un control que deja de salir como tiene que salir: el instrumento ya no es fiable.
   const controlRoto = tras((r) => { r.filas.find((f) => f.control).veredicto = 'COINCIDE_CON_EL_MASTER'; });
   assert.equal(controlRoto.fiable, false);
@@ -226,8 +259,15 @@ test('SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada 
 });
 
 test('SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae', () => {
-  // Una máquina para el parte, escrita en el máster sin tocar la tabla ni la excepción.
-  const conMaquina = juzgar(cotejar({ textoMaster: `${MASTER}\n**Parte de trabajo:** \`borrador → firmado → facturado\`.\n` }));
+  // Un parado SIN ancla en el máster (lo que era el parte hasta SCRUM-1529c): una máquina escrita en
+  // el máster sin tocar la tabla ni la excepción cae. Hoy ningún parado real está sin ancla, así que
+  // el caso se fabrica con la tabla y la excepción de entonces; el mecanismo es el del árbol.
+  const sinAncla = CAMPOS.map((c) => (c.campo === 'ParteTrabajo.estado' ? { ...c, master: null } : c));
+  const deEntonces = [{ ...PARADOS[0], veredicto: 'ESTADO_SIN_MAQUINA_EN_EL_MASTER', M: null, leidas: ['Estado de COBRO del albarán — VOCABULARIO DERIVADO', 'SCRUM-170 (FACT-2c) · facturación PARCIAL por cantidad servida', '**ParteTrabajo.estado:**'] }];
+  // El control: con las líneas de hoy ya leídas, esa excepción de entonces no nombra a nadie…
+  assert.deepEqual(juzgar(cotejar({ campos: sinAncla }), deEntonces).hallazgos, []);
+  // …y con una línea NUEVA que junta sus tres valores, cae.
+  const conMaquina = juzgar(cotejar({ campos: sinAncla, textoMaster: `${MASTER}\n**Parte de trabajo:** \`borrador → firmado → facturado\`.\n` }), deEntonces);
   assert.deepEqual(conMaquina.hallazgos.map((h) => `${h.campo} · ${h.clase}`), ['ParteTrabajo.estado · EXCEPCION_QUE_YA_NO_DESCRIBE']);
   assert.match(conMaquina.hallazgos[0].texto, /puede ser su máquina/);
   // Y una lista para un campo que no es un estado.
