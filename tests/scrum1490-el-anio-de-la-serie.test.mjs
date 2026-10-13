@@ -88,13 +88,29 @@ function casa(f, where) {
   return true;
 }
 
+/**
+ * La fila TAL COMO LA DEVUELVE PRISMA: con `select`, sólo lo pedido. 🔴 Un doble que devuelve la
+ * fila entera no ve un `select` cerrado al que le falta el campo: `crearRevisionDeQuote` lee la
+ * versión anterior por `SELECT_PARA_REVISION`, y sin `seriesYear` ahí la revisión nacería con el
+ * año del reloj mientras este banco seguía en verde (aviso del equipo de Javier, 13-oct-2026).
+ * Sin `select` (o con `include`) Prisma devuelve todos los escalares: la fila entera.
+ */
+function comoLaDevuelvePrisma(f, args) {
+  if (f == null || !args?.select) return f;
+  const salida = {};
+  for (const [campo, pedido] of Object.entries(args.select)) {
+    if (pedido && campo in f) salida[campo] = f[campo];
+  }
+  return salida;
+}
+
 let tabla = TABLA();
 const creadas = [];   // el `data` de cada `quote.create`
 const porRevision = (a, b) => a.revision - b.revision;
 
 inyectarBase({
-  'quote.findFirst': (args) => tabla.find((f) => casa(f, args.where)) ?? null,
-  'quote.findMany': (args) => tabla.filter((f) => casa(f, args.where)).sort(porRevision),
+  'quote.findFirst': (args) => comoLaDevuelvePrisma(tabla.find((f) => casa(f, args.where)) ?? null, args),
+  'quote.findMany': (args) => tabla.filter((f) => casa(f, args.where)).sort(porRevision).map((f) => comoLaDevuelvePrisma(f, args)),
   // El enlace público del detalle (`ensureQuoteDecisionToken`): no decide nada de lo que se mide.
   'quote.findUnique': (args) => (tabla.some((f) => f.id === args.where.id) ? { id: args.where.id, decisionToken: 'tok-de-prueba' } : null),
   'quote.create': (args) => { creadas.push(args.data); return { id: 999, ...args.data }; },
@@ -132,6 +148,9 @@ test('SCRUM-1490 · CONTROL del doble: evalúa años, NULL y tramos de fecha, y 
   assert.deepEqual(ids(t.filter((f) => casa(f, { createdAt: { gte: new Date('2026-01-01T00:00:00Z'), lt: new Date('2027-01-01T00:00:00Z') } }))), [1, 4, 9]);
   assert.throws(() => casa(t[0], { inventada: 1 }), /DOBLE CIEGO/);
   assert.throws(() => casa(t[0], { quoteNumber: { gt: 3 } }), /DOBLE CIEGO/);
+  // Y respeta el `select`: lo que no se pide NO viaja, aunque la fila del banco lo tenga.
+  assert.deepEqual(comoLaDevuelvePrisma(t[1], { select: { id: true, revision: true } }), { id: 2, revision: 1 });
+  assert.equal(comoLaDevuelvePrisma(t[1], { include: { merchant: true } }).seriesYear, 2026, 'sin `select`, la fila entera');
 });
 
 test('SCRUM-1490 · CONTROL del defecto: agrupando por {negocio, número}, la tabla de este banco LANZA «dos vigentes»', () => {
@@ -186,6 +205,15 @@ test('SCRUM-1490 · 🔴 aceptación 3: la revisión creada en ENERO de un origi
   assert.equal(creadas[0].revision, 2, '🔴 la siguiente revisión del 12 de 2026 es la .2: su grupo son la 0 y la 1, sin el 12 de 2027');
   assert.equal(deLaDe2026.origenId, 2, 'se revisa la VIGENTE de su grupo');
   assert.ok(!('createdAt' in creadas[0]), 'la fecha de la fila nueva la pone la base: no se arrastra la del original');
+
+  // 🔴 Y ABRIENDO LA REVISIÓN DE ENERO (la 2), que es la fila cuyo `createdAt` cae en OTRO año: su
+  // grupo sale del año GUARDADO. Si `SELECT_PARA_REVISION` no trae `seriesYear`, el año se lee de
+  // su fecha (2027) y esto crea la `.1` del 12 de 2027 sobre el documento de otra persona.
+  creadas.length = 0;
+  const desdeLaDeEnero = await crearRevisionDeQuote(NEGOCIO, 2);
+  assert.deepEqual([creadas[0].seriesYear, creadas[0].quoteNumber, creadas[0].revision], [2026, 12, 2],
+    '🔴 revisar la `.1` de enero no sigue en el 12 de 2026: la lectura de la versión anterior no trae el año guardado');
+  assert.equal(desdeLaDeEnero.origenId, 2);
 
   creadas.length = 0;
   await crearRevisionDeQuote(NEGOCIO, 3);
@@ -261,14 +289,26 @@ function creacionesDePresupuesto() {
 // `nuevaRevisionDe`. Que ése guarda el año lo mide el test de la aceptación 3, ejecutándolo.
 const CREA_SIN_LITERAL = ['src/modules/system/quoteAdmin.ts'];
 
-test('SCRUM-1490 · 🔴 aceptación 3 (censo): TODO `quote.create` de src/ que numera guarda el año que le dio la reserva', () => {
+// 🔴 EL QUE NO GUARDA EL AÑO, Y POR QUÉ: el presupuesto ADICIONAL que nace al convertir un albarán
+// en factura. Su `quote.create` vive DENTRO del manejador `POST /:id/convertir-en-factura`, unas
+// líneas debajo de `sellarTrasEmision`: es camino de emisión, y ese camino se lee, no se modifica
+// (reglas 38 y 40) sin el OK del fundador. Pedido en SCRUM-1490. Mientras, esa fila nace con el año
+// a NULL y se lee por su `createdAt`, que para un ORIGINAL es exacto (se numera en la transacción
+// que lo crea); su revisión sí guarda el año del grupo.
+// La lista es EXACTA en los dos sentidos: uno nuevo sin año sale rojo, y el día que éste lo guarde
+// también, para que se borre de aquí.
+const SIN_ANIO_POR_SER_CAMINO_DE_EMISION = ['src/modules/jobs/app/routes/albaranes.routes.ts'];
+
+test('SCRUM-1490 · 🔴 aceptación 3 (censo): TODO `quote.create` de src/ que numera guarda el año que le dio la reserva, menos el declarado', () => {
   const { salida, ficheros } = creacionesDePresupuesto();
   assert.ok(ficheros > 100, `🔴 CIEGO: sólo he leído ${ficheros} ficheros de src/`);
   assert.ok(salida.length >= 4, `🔴 CIEGO: el censo ve ${salida.length} \`quote.create\` y el 7-oct-2026 había 4`);
   const sinLiteral = salida.filter((c) => !c.literal).map((c) => c.fichero);
   assert.deepEqual(sinLiteral, CREA_SIN_LITERAL, '🔴 hay un `quote.create` cuyo `data` no es un literal y no está declarado: no sé si guarda el año');
+  const conAnio = salida.filter((c) => c.literal && c.llevaAnio && c.reservaConAnio).map((c) => c.fichero);
+  assert.ok(conAnio.length >= 2, `🔴 CIEGO: el censo sólo reconoce ${conAnio.length} \`quote.create\` que guarden el año, y son al menos dos (el alta y el mantenimiento)`);
   const malos = salida.filter((c) => c.literal && !(c.llevaAnio && c.reservaConAnio)).map((c) => c.fichero);
-  assert.deepEqual(malos, [], `🔴 de ${salida.length} \`quote.create\` (en ${ficheros} ficheros), éstos crean un presupuesto sin guardar el año de la reserva (\`const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(…)\`)`);
+  assert.deepEqual(malos, SIN_ANIO_POR_SER_CAMINO_DE_EMISION, `🔴 de ${salida.length} \`quote.create\` (en ${ficheros} ficheros), los que crean un presupuesto sin guardar el año de la reserva (\`const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(…)\`) no son exactamente los declarados`);
 });
 
 test('SCRUM-1490 · 🔴 aceptación 5: el recorte del Técnico le da el grupo de lo suyo y NO el mismo número de otro año', async () => {

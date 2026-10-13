@@ -19,8 +19,11 @@
 // zona del negocio: la MISMA función que usó `allocateQuoteNumber` al numerarla. Es exacto para
 // todo original, y para una revisión mientras su grupo tenga un solo original; eso deja de ser
 // cierto el 1-ene-2027, y por eso existe el relleno (`scripts/rellenar-anio-de-la-serie.mjs`).
-// El conjunto que se lee así es CERRADO: los cuatro caminos que escriben un presupuesto numerado
-// guardan el año, y lo censa `tests/scrum1490-el-anio-de-la-serie.test.mjs`.
+// El conjunto que se lee así está CENSADO (`tests/scrum1490-el-anio-de-la-serie.test.mjs`): de los
+// cuatro caminos que escriben un presupuesto numerado, tres guardan el año. 🔴 El cuarto NO: el
+// adicional que nace al convertir un albarán en factura (`albaranes.routes.ts`) es camino de
+// emisión y no se ha tocado (reglas 38 y 40; el OK está pedido en SCRUM-1490). Esa fila es un
+// original, así que su año de `createdAt` es exacto con la salvedad de abajo.
 //
 // ⚠️ Si un negocio declara su zona DESPUÉS de numerar, el año de sus filas viejas sin rellenar se
 // leería con la zona nueva. Hoy nadie escribe `Merchant.timezone`; la pantalla que lo permita no

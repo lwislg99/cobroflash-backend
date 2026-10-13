@@ -25,6 +25,7 @@ const fila = (over = {}) => ({
   id: 700, merchantId: MERCHANT, quoteNumber: NUMERO, revision: 0, signatureUrl: null,
   customerId: 55, total: '100.00', currency: 'EUR', lines: [{ concept: 'x', qty: 1, price: 100, tax: 0.21 }],
   discountGlobalAmount: null, // la puerta de SCRUM-887 exige que venga cargado, aunque sea vacío
+  createdAt: new Date('2026-10-01T10:00:00Z'), // una fila real siempre lo trae; SCRUM-1490 lee de ahí el año de una fila sin `seriesYear`
   ...over,
 });
 
