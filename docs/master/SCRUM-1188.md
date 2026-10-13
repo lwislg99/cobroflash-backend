@@ -225,3 +225,134 @@ Contra el banco propio (Postgres 16.4 en loopback, base `*_test`, esquema de `mi
 Lo que cambia es qué null queda en una columna, y eso no se ve desde fuera: la API lo lee `null` antes
 y después. `scripts/qa/sesion-panel.mjs` sólo hace `GET`. Lo que se puede ver en producción cuando
 entre es que crear una plantilla y crear una revisión siguen funcionando.
+
+## SCRUM-1188e · parte C: guardar con el nombre de una plantilla que ya existe la SUSTITUYE (9-oct, S2)
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:15:38Z
+
+A9: comprobación → `tests/scrum1188e-sustituir-una-plantilla-con-su-nombre.test.mjs`
+
+El fallo propio de esta entrega: la primera versión del cambio sustituía la plantilla en el servidor y
+dejaba las fichas rápidas del editor con la plantilla de cuando se montó. La ficha de la recién
+sustituida habría seguido cargando el precio viejo, en silencio. Lo vi al leer `pintarPlantillasRapidas`
+(«se llama UNA vez al abrir el editor») antes de empujar nada; el caso 7 del test lo fija y su mutante
+(M2) lo tumba. Y un segundo, de mi banco y no del código: la sonda leía el aviso DESPUÉS de pulsar la
+ficha rápida, que pinta el suyo encima, y en la primera pasada «lo que dice» era el texto de la ficha.
+
+*(El sufijo: esta sección nació como «1188d» en una rama local. S1 empujó antes una rama con ese sufijo
+(#2335) y lo mío pasó a `e` sin haber salido del disco. El control del sufijo se hace justo antes del
+primer push, y eso es lo que lo cazó.)*
+
+**Sesión:** S2 (`s2-9oct`, cuarta tanda) · carril: `public/dashboard/js/quotesView.js` es S2
+(`node scripts/carriles.mjs de …`). **Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: lo de
+arriba no se toca.
+
+**Qué pasaba.** Una plantilla sólo se podía renombrar o borrar (c.17515). Para subirle un precio había
+que usarla, cambiar el precio, guardarla como plantilla nueva y borrar la vieja. Y guardar dos veces con
+el mismo nombre dejaba dos plantillas iguales de nombre: el `POST` no mira duplicados.
+
+**Qué cambia (sólo front; el servidor ya lo aceptaba, y desde SCRUM-1188c también vaciar el cobro).** En
+la hoja «Guardar plantilla» que ya existe, al pulsar el botón:
+
+1. se pide la lista de plantillas en ese momento (no se reutiliza la de las fichas rápidas);
+2. si el nombre escrito es el de una que ya tiene (sin contar mayúsculas ni espacios de los bordes), se
+   pregunta con un `confirm` nativo, que es lo que ya usa «Borrar» en Plantillas;
+3. si dice que sí, sale `PUT /admin/templates/:id` con `{ currency, lines, paymentTerms }`. `name` no
+   viaja (no se renombra) ni `tiers` (este editor no tiene opciones). `paymentTerms` viaja siempre,
+   también a `null`: desde un plan personalizado el cobro guardado se VACÍA;
+4. si dice que no, no se escribe nada y la hoja sigue abierta con el nombre, para cambiarlo;
+5. tras sustituir, las fichas rápidas se quitan y se vuelven a pedir.
+
+Con un nombre que no tiene, todo sale como antes (`POST`).
+
+**Desviaciones declaradas.**
+
+- Si la lista no se puede leer, NO se guarda: sale el «Error al guardar la plantilla.» de siempre. Antes
+  el guardado no dependía de esa lectura. «No pude mirar» no es «no hay ninguna con ese nombre».
+- Por este camino ya no se pueden crear dos plantillas con el mismo nombre: o se sustituye o se le cambia
+  el nombre. Si ya había varias iguales, se sustituye la más reciente (la lista viene por `updatedAt`).
+- Al sustituir desde «Plan personalizado» sale el aviso de la parte A («… guardada sin el plan de
+  cobro…», c.17332) y no el de «actualizada»: lo que afirma sigue siendo verdad y es lo que importa.
+
+**Textos nuevos (dos), y su firma.**
+
+> Ya tienes una plantilla llamada "{nombre}". ¿Quieres sustituirla? Esta acción no se puede deshacer.
+>
+> Plantilla "{nombre}" actualizada.
+
+`{nombre}` es el nombre GUARDADO. Ninguno nombra el documento. Propuestos en c.18609 y c.19101.
+
+**Firma:** del orquestador, por la delegación permanente, el 13-oct-2026, en SCRUM-1188 comentario
+19400. Registrada en `docs/microcopy/2026-10-13-SCRUM-1188-sustituir-plantilla.md`. Firma tres cosas:
+la pregunta en su versión larga, «actualizada» tal cual, y que el aviso de c.17332 vale también al
+sustituir. Esta rama no se empujó hasta que constó en el ticket.
+
+### 13-oct · la firma cambia la pregunta (S2, `s2-13oct`, tercera tanda)
+
+**Medido contra:** `origin/main` = `6640b38f3d7800f7c439e1e78fa9694440822507` · 2026-10-13T13:38:34Z
+
+A9: sin fallo que generalice — el literal cambia porque la firma eligió la otra versión, no por un error; el test lo sujeta letra por letra (mutante M8)
+
+Lo construido el 9-oct llevaba la pregunta corta, sin «Esta acción no se puede deshacer.». La firma
+eligió la larga, por un motivo de hecho: sustituir pierde las líneas que tenía la plantilla. Cambia el
+literal en `quotesView.js`, en el test (que lo compara letra por letra) y en el guion de mutantes, y se
+repite todo lo que lo mide. El literal se copió del comentario 19400, no del encargo.
+
+- **Mutantes:** ocho, mueren ocho; base sin mutar 7 de 7. El octavo es nuevo: la pregunta con el literal
+  de antes de la firma. Caen los casos 1, 2 y 4, así que el test sujeta la frase añadida.
+- **Navegador, sobre yaqu.app** (cuenta QA; la sonda contesta ella la lista, el `POST` y el `PUT`; nada
+  llega a producción): cinco casos, cero ciegos. La pregunta sale con el literal firmado en los cuatro
+  casos de mismo nombre; lo demás, igual que el 9-oct. Con el `quotesView.js` de producción (build
+  `6640b38f`): ninguna pregunta y dos plantillas con el mismo nombre. Las tres salidas de
+  `evidencias/SCRUM-1188/` son las de hoy.
+- **De paso:** el aviso de c.17332 llevaba en pantalla desde el 28-sep sin ficha en `docs/microcopy/`.
+  Entra en la ficha de hoy, que es donde el comentario 19400 lo vuelve a citar entero.
+- **Dirigida, a mano:** 162 ficheros de 1.320 (los que nombran `quotesView`, el censo de sin-consumir,
+  la ruta de plantillas, `docs/microcopy/` o este ticket, más los que leen los registros): 1.532 tests,
+  1.523 pasan, 8 saltos declarados (piden un Postgres desechable o la base de staging; corren en el
+  obligatorio) y 1 rojo, mío: `scrum1294` pedía la línea A9 bajo el ancla de este tramo. Puesta, y
+  repetido. `npm run tanda:dirigida` selecciona 550 ficheros y no se lanza en esta máquina: la suite
+  completa la corre el obligatorio.
+- 🔴 **Sin `tsc`:** como el 9-oct. Desde el `main` que la rama ya tenía mezclado (`254a6979`) cambió un
+  `.ts` (`publicAccessDeclarations.ts`), transpilado sin comprobar tipos. Este cambio no toca `src/`.
+
+**La otra mitad.** `scripts/_sin-consumir-declarados.json`: `PUT /admin/templates/:id::lines`,
+`::currency` y `::paymentTerms` pasan a `retiradas`; `::tiers` sigue declarada, con su motivo al día.
+El censo (`scrum1185`) recorre `src/` y `public/` y habría puesto en rojo esta rama si no se movían.
+`tiers` no ha hecho falta: nadie lo crea desde el panel y este gesto no lo toca. El cabo de S1 (el `PUT`
+ignoraba `tiers: null`) lo cerró S1 mientras tanto, en la sección SCRUM-1188d de arriba; esta entrega no
+depende de él.
+
+### Pruebas de SCRUM-1188e
+
+`tests/scrum1188e-sustituir-una-plantilla-con-su-nombre.test.mjs`: 7 casos por el banco de vistas, con
+un servidor en memoria que aplica la regla del `PUT` de `templates.routes.ts` tras 1188c.
+
+- **Control positivo** (`evidencias/SCRUM-1188/salida-1188e-mutantes.txt`; base sin mutar 7 de 7): con el
+  `quotesView.js` de `main` caen 6 de 7 (pasa el control del nombre nuevo); sin repintar las fichas cae
+  el 7; sin mandar el `null` cae el 3; sustituyendo sin preguntar, 1, 2 y 4; creando a ciegas si la lista
+  no se lee, el 6; comparando el nombre exacto, el 4; mandando `name`, el 1. Siete mutantes, siete
+  mueren, cada uno con su `git diff --numstat` al lado.
+- **Dirigida:** 90 ficheros (los que nombran `quotesView`, el censo o la ruta, más los que leen los
+  registros): 978 pasan, 0 fallan, 0 saltos. La primera pasada dio 2 rojos, los dos míos, y se arregló
+  el código, no el guard:
+  - `scrum600` compara letra por letra el literal firmado de c.17332 y yo le había cambiado la variable
+    que interpola. El literal vuelve a ser idéntico al de `main`.
+  - `scrum811c` (lista de heredadas de la skill): al declarar aquí la skill, los dos PR de la parte A
+    (#1864 y #1877) dejan de ser «sin declarar» para el guard, que mira el registro entero, y exige
+    quitarlos de la lista. Quitados: la lista encoge en 2. Aquellos dos PR NO la declararon en su día;
+    lo que declara es esta sección.
+- **Navegador, sobre yaqu.app** (cuenta QA; build `ebd9bd8e`; `evidencias/SCRUM-1188/`): la sonda sirve el
+  `quotesView.js` de la rama y contesta ella la lista, el `POST` y el `PUT` con la misma regla; nada llega
+  a producción. Cinco casos, cero ciegos: la pregunta sale con el literal; el `PUT` lleva
+  `currency, lines, paymentTerms`; desde «Personalizado» viaja `paymentTerms: null` y sale el aviso
+  firmado; la ficha rápida añade la línea a 120 y no a 90. La misma sonda con el `quotesView.js` de
+  producción: ninguna pregunta, un `POST` y dos plantillas con el mismo nombre en los cuatro casos.
+- 🔴 **Sin `tsc`:** 0,8-1,3 GB libres, no cabe. Este cambio no toca `src/`. Para los tests que leen
+  `dist/`, los tres `.ts` que cambiaron en `main` desde el último build se transpilaron con
+  `ts.transpileModule`, que NO comprueba tipos. La suite completa la corre el obligatorio.
+
+### No visto en yaqu.app
+
+Hasta que la rama entre y se despliegue. El paso exacto: `node sondas-s2/sustituir-plantilla.mjs` sin
+argumento (copia en `evidencias/SCRUM-1188/`); el testigo tiene que decir `sustituye: true`.
