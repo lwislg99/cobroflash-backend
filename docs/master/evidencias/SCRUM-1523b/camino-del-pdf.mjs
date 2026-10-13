@@ -15,11 +15,12 @@
 //
 // Que NO mide: si en alguna base hay una fila asi (no se toca ninguna base); ni las rutas HTTP que
 // llaman a `ensureInvoicePdf` (su sesion, su rol, su token); ni ninguna pantalla en un navegador.
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const raiz = process.argv[2] ? path.resolve(process.argv[2]) : null;
 const sinSiembra = process.argv.includes('--sin-siembra');
@@ -28,7 +29,7 @@ if (!raiz || !existsSync(path.join(raiz, 'dist', 'lib', 'invoicing.js'))) {
   process.exit(2);
 }
 
-const banco = mkdtempSync(path.join(tmpdir(), 'scrum1523b-'));
+const banco = temporal('scrum1523b-'); // el helper lo borra al salir el proceso, salga por donde salga
 process.chdir(banco); // ANTES de cargar dist: storage/ nace aqui y no en el arbol
 
 const require = createRequire(path.join(raiz, 'package.json'));
@@ -123,7 +124,7 @@ const siembra = filas.find((r) => r.nombre.startsWith('A ·'));
 const visto = !!(siembra && siembra.sale && siembra.conTitulo && siembra.primera === TITULO);
 const ceroLimpio = filas.every((r) => !r.sale || !r.conCero);
 const todosLeyeron = filas.every((r) => r.preguntas > 0);
-try { process.chdir(tmpdir()); rmSync(banco, { recursive: true, force: true }); } catch {}
+try { process.chdir(tmpdir()); } catch {} // sale del banco para que el borrado de `temporal` pueda con el
 
 if (!visto) { console.log('CIEGO: la fila sembrada no dio el titulo. Ninguna fila de arriba vale. EXIT=2'); process.exit(2); }
 if (!ceroLimpio || !todosLeyeron) { console.log('ROTO: el cero derivado aparece o algun caso no llego a leer su fila. EXIT=1'); process.exit(1); }
