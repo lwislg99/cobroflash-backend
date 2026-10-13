@@ -212,3 +212,61 @@ Y tenía razón en las dos. Una pasada sin recuento (`fail` no numérico) salía
 Corrido otra vez sobre el árbol ya fusionado con `main` (`77c630f9`, build exit 0): 2 de 2 `ROJO`, los mismos casos del 9-oct, base 31 de 31 antes y después; `mutar-1288c.txt` es esa salida. Control del camino nuevo: una copia del guion cuya M2 busca un texto que no existe dice `CIEGO`, `RECUENTO · 1 ROJO · 0 VERDE · 1 CIEGO`, y sale 1.
 
 El fallo mío: escribí el guion DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días. La cicatriz del puesto va en el PR #2337, que cayó por lo mismo.
+
+# APÉNDICE · SCRUM-1288d (S3) · Los dos correos al profesional que quedaban, en es-ES
+
+**Medido contra:** `origin/main` = `0279db997e577473c03f088916abd3d448a061c5` · 2026-10-13T14:34:06Z
+**Rama:** `scrum-1288d-los-dos-correos-al-profesional-en-euros` · **Carril:** un fichero de `src/` de S1, por encargo del orquestador (punto 1 del lote de las 13:35Z del 13-oct) · **Resultado:** «Pago recibido» y «presupuesto aceptado» dicen el dinero como el resto de la casa. Con el del técnico (1288c), los tres correos que 1288b dejó como DEUDA están arreglados.
+
+A9: sin fallo que generalice — lo que cambia respecto a 1288c es una lectura que faltaba, no un error de esta tanda: dos veces (c.19112 y c.19321) se dio por hecho que estos dos «cruzaban a Javier» sin abrir la firma de `formatMoneyEs`, que acepta texto
+
+## Por qué ahora sí, sin tocar a Javier
+
+El apéndice 1288c dejó estos dos fuera porque «el arreglo limpio (que llegue el número) cambia la llamada en dos ficheros de J2». Eso es cierto del arreglo que se eligió allí, no del defecto. Leída hoy la firma del formateador:
+
+    export function formatMoneyEs(n: number | string | { toString(): string }, currency = 'EUR')
+
+Acepta texto y el `Decimal` de Prisma. Y la propia ruta de J2 ya lo usa así, 79 líneas antes de llamar al correo: `psp.routes.ts:288`, `formatMoneyEs(body.amount ?? updated.amount, cur)`, para el WhatsApp del mismo cobro. Leído en el código: el WhatsApp escribe «1.234,50 €» y el correo del mismo pago «1234.5 EUR».
+
+Así que el formato se pone donde se escribe la moneda, y **quien llama no cambia**:
+
+| fichero | antes | ahora |
+|---|---|---|
+| `src/modules/messaging/domain/merchantNotifications.ts::sendMerchantPaymentEmail` (S1) | asunto y cuerpo escribían `${amount} ${currency}` | `const importe = formatMoneyEs(amount, currency)`, y los dos escriben `${importe}` |
+| `…::sendMerchantQuoteAcceptedEmail` (S1) | la fila «Total» escribía `${total} ${currency}` | `${formatMoneyEs(total, currency)}` |
+| `scripts/_censo-gemelo-crudo.mjs` | dos entradas `SIN_FORMATEAR`, DEUDA | pasan a `RETIRADAS` |
+| `src/modules/billing/app/routes/psp.routes.ts`, `src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts` (J2) | — | **sin tocar**: el `git diff --numstat` de la rama no los nombra |
+
+Lo que lee el profesional: «💰 Pago recibido: 1234.5 EUR de …» → «💰 Pago recibido: 1.234,50 € de …» (asunto), «1234.5 EUR» → «1.234,50 €» (fila «Importe») y «1234.50 EUR» → «1.234,50 €» (fila «Total»). Ninguna otra palabra de los dos correos cambia.
+
+**Queda dicho para J2, sin ticket:** sus dos llamadas siguen pasando un texto (`.toString()` y `toFixed(2)`). Ya no hace daño; si algún día tocan esas líneas, pueden pasar el número y cambiar el tipo, como en 1288c.
+
+## La firma, dicha como está
+
+El cambio lo ve un usuario (regla 39). La orden es del orquestador, en el encargo de las 13:35Z a esta sesión («si el arreglo es el mismo formateador, hazlo y ciérralo en el momento»): **un mensaje, no un comentario de Jira**, igual que en 1288c. No se escribe ningún literal nuevo: es el formateador de los ocho avisos anteriores de este ticket.
+
+## Los rojos
+
+| qué se rompe | resultado | dónde |
+|---|---|---|
+| El test nuevo contra el `dist/` de antes (sin recompilar) | ROJO en 5 de 6: «1234.5 EUR» en el cuerpo y en el asunto, «1234.50 EUR», «1500 MXN». El sexto (las frases que no cambian) pasa | `evidencias/SCRUM-1288d/rojo-antes.txt` |
+| M1 · el asunto de «Pago recibido» vuelve a pegar importe y moneda (`numstat` 1 1) | ROJO en 2 de 31: `scrum1288b` («los tres correos… VISTOS») y `scrum1452` («ninguna identidad RETIRADA ha vuelto a aparecer») | `evidencias/SCRUM-1288d/mutar-1288d.txt` |
+| M2 · lo mismo en el cuerpo (`numstat` 1 1) | ROJO en 2 de 31, los mismos dos | ídem |
+| M3 · la fila «Total» de «presupuesto aceptado» (`numstat` 1 1) | ROJO en 2 de 31, los mismos dos | ídem |
+
+Base del trinquete 31 de 31 antes y después; `git status` vacío tras cada restauración. El guion acota cada mutación a SU función: la fila «Total» del aceptado y la del técnico son idénticas letra por letra.
+
+## Lo que cazó la dirigida antes de empujar
+
+El tramo 3 de 4 salió en ROJO por el test nuevo: su sexto caso buscaba las frases con `<strong>` pegado, y el trinquete de `tests/scrum553-etiquetas-pegadas.test.mjs` cuenta eso como un extractor que se rompe en cuanto la etiqueta gane un atributo (23 contra un tope de 20; nombraba las líneas 113 y 117). El guard no se ha tocado: el caso lee ahora el texto sin etiquetas. `scrum553` y el test nuevo, 22 de 22 después. `rojo-antes.txt` es la salida del test ANTES de ese cambio: sus cinco rojos son de los casos que no han cambiado, y el sexto, el que pasaba, es el reescrito.
+
+## Lo que NO mide
+
+- El camino entero por las dos rutas (cobro confirmado → correo; aceptar por WhatsApp → correo): pide base y ningún test lo corre. El test les pasa a las dos funciones lo que hoy les pasan sus llamadores, **leído en el código**: un texto.
+- Un importe que no sea un número. `formatMoneyEs('abc')` escribe «NaN €», donde antes salía «abc EUR». No se ha buscado si puede llegar; el WhatsApp del mismo cobro ya se formatea igual desde SCRUM-1436.
+- El correo recibido en un buzón: no se ha enviado ninguno. Lo que se lee es el asunto y el HTML que la función real entrega al emisor, doblado.
+
+## Reproducir
+
+    node --test tests/scrum1288d-los-dos-correos-al-profesional-en-euros.test.mjs
+    node docs/master/evidencias/SCRUM-1288d/mutar-1288d.mjs
