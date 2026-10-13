@@ -129,3 +129,118 @@ he separado llamadas de comentarios ni de guiones que el test lanza aparte. No e
     node $E/la-cola-que-cae.mjs --sin-siembra  # la prueba del banco: nadie cae y tiene que salir 2
 
 No pide `dist/`. Escribe sólo en el temporal del sistema.
+
+# SCRUM-1520b · Los cinco obligatorios que faltaban: en los cinco el corte SALTA de sitio y el mismo fichero sale completo en los jobs vecinos — es cola perdida, no una salida escrita en el código
+
+**Medido contra:** `origin/main` = `fc4c714a96779cfc3d5249aa0b448f5f89a8a0a8` · 2026-10-13T00:29:51Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1520/b-los-cinco.mjs`
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-2e`, 13-oct; sesión `jv-j6`,
+relevo). De los seis obligatorios del 8-oct con nombres ausentes, los 18 de #2303 ya estaban leídos.
+Faltaban #2300, #2301, #2304, #2305 y #2306: leer sus logs por nombre y contestar, para cada uno, si
+el corte cae siempre en el mismo caso o salta. **Es medición: no he tocado `src/`, `tests/`,
+`scripts/`, ningún workflow, el meta-guard, `scrum859` ni `scrum267`, y el ticket no se transiciona.**
+Entran esta sección y tres ficheros `b-*` en evidencias. El hook de arranque dijo «SIN IDENTIDAD»
+(SCRUM-1498): seguí, como manda la ficha común.
+
+## En corto
+
+- **En los cinco, el corte salta.** Los cinco obligatorios pierden nombres en cuatro ficheros, y los
+  cuatro salen COMPLETOS, con el mismo blob, en la mayoría de los otros diez jobs de esa noche.
+  Donde se cortan, se cortan en casos distintos.
+- **Eso es cola perdida.** Una salida escrita en el código de un test no puede dejar el mismo
+  fichero completo en 8, 9 o 10 jobs de 11. Por esta puerta no hay nada que revisar en `main`.
+- **La ficha del encargo traía el criterio al revés,** y lo digo antes de que alguien lea «salta» y
+  mande revisar. Decía «si cae siempre en el mismo, es cola perdida; si salta, puede ser la segunda
+  puerta». La entrega anterior (c.19151, §4) dice lo contrario y es lo que sostiene el mecanismo:
+  la salida escrita en el código corta SIEMPRE en el mismo caso; la cola perdida, unas veces sí y
+  otras no. Leído con la ficha al pie de la letra, este resultado pediría mirar qué entró en `main`.
+  No lo pide.
+- **Lo que «salta» no descarta:** una salida a mitad que no fuera fija (que dependiera de una
+  carrera). En los cuatro ficheros no hay texto de salida de proceso, y eso es un recuento de texto
+  que no sigue imports ni procesos hijos.
+- **No he medido si los casos ausentes se ejecutaron en estos jobs.** El log no lo dice. Lo midió
+  SCRUM-1405 el 2-oct en otra tanda (53.433 de 53.433); aquí no se ha repetido.
+
+## ① Los cinco, uno por uno
+
+Los 11 jobs corrieron árboles que declaran lo mismo (11.005 llamadas, 1.292 ficheros) y los cinco
+ficheros de la tabla tienen UN solo blob en las 11 cabezas, igual que en su base. «Completo en»
+cuenta los otros jobs de esa noche donde ese mismo blob informó de todos sus casos.
+
+| obligatorio | ausentes | fichero | corte aquí | el mismo fichero en los otros 10 | ¿salta? |
+|---|---|---|---|---|---|
+| #2300 | 2 | `scrum524b-trinquete-de-la-tabla` | desde el 40 de 41, ENTRE dos casos | completo en 8; cortado en #2301 (desde 33) y #2304 (desde 36) | sí |
+| #2301 | 9 | `scrum524b-trinquete-de-la-tabla` | desde el 33 de 41, ENTRE | completo en 8; cortado en #2300 (40) y #2304 (36) | sí |
+| #2304 | 6 | `scrum524b-trinquete-de-la-tabla` | desde el 36 de 41, ENTRE | completo en 8; cortado en #2300 (40) y #2301 (33) | sí |
+| #2304 | 1 | `scrum834-puerta-avisador-rojo` | el 53 de 53, DENTRO (inicio sin resultado) | completo en 9; cortado en #2306 (desde 38) | sí |
+| #2304 | 25 | `vigia-atascados` | desde el 40 de 64, DENTRO (inicio sin resultado en el 40) | completo en los 10 | sí |
+| #2305 | 18 | `scrum1456-ids-que-no-caben-en-la-columna` | desde el 38 de 55, ENTRE | completo en 9; cortado en #2303 (desde 44, DENTRO) | sí |
+| #2306 | 16 | `scrum834-puerta-avisador-rojo` | desde el 38 de 53, ENTRE | completo en 9; cortado en #2304 (el 53, DENTRO) | sí |
+
+- **Los 18 de #2305 no son los 18 de #2303.** La cifra coincide y el contenido no: #2303 pierde 12 de
+  `scrum1456` y 6 de `scrum176`; #2305 pierde 18 de `scrum1456` y nada más. Era la pregunta que el
+  tramo 1339m dejó abierta.
+- **#2304 son tres ficheros y tres cortes distintos** en la misma tanda: uno ENTRE y dos DENTRO.
+- **El mismo fichero cambia de tipo de corte de un job a otro:** `scrum1456` corta DENTRO en #2303 y
+  ENTRE en #2305; `scrum834`, DENTRO en #2304 y ENTRE en #2306. El tipo de corte no es una propiedad
+  del fichero.
+- **No agrupo los cuatro ficheros por causa.** Lo que tienen en común está medido (forma de cola, sin
+  entrada de fichero, el corte se mueve). La causa de cada corte no la he medido en ninguno.
+
+## ② Cómo se leyó, y con qué controles
+
+`b-los-cinco.mjs` lee los 11 logs ya bajados y los blobs de git; no ejecuta ningún test. Salida:
+`b-salida-los-cinco.txt`.
+
+- **Tamaño antes de contar.** Los 11 logs pesan entre 1.778.728 y 1.783.467 B. El de #2303 pesa
+  1.781.097 B, la cifra del tramo 1339m. Ninguno lleva «TANDA SIN VEREDICTO».
+- **La suma.** En el paso de la tanda, ✔ + ✖ + ﹣ anclados da «ℹ tests» en 11 de 11, y cada marca da
+  su línea del resumen (pass, fail, skipped). Fail es 0 en los 11.
+- **El cruce.** Lo que saco del reporter `spec` es lo que la señal sacó del TAP: 55 de 55 celdas
+  (5 ficheros × 11 jobs), 9 cortadas y 46 completas. Y la suma de lo dictado da el registro de la
+  señal en los 11.
+- **El cero.** Cada nombre real con 8 hex de su sha1 detrás: 0 apariciones en las 55 celdas.
+- **El positivo, sembrado.** Sobre el log de #2298 (0 ausentes) se quitan las 3 últimas líneas de
+  resultado de un fichero: dice «COLA desde 53». Con `--sin-siembra` dice CIEGO y sale 2
+  (`b-salida-sin-siembra.txt`).
+- **El positivo del «0 de texto de salida».** El mismo patrón encuentra 31 de 1.292 tests en esa
+  cabeza. En los cinco ficheros, 0.
+
+## ③ Lo que NO sé y lo que NO he hecho
+
+- **Si los casos ausentes se ejecutaron en estos jobs.** Es lo único que separaría del todo las dos
+  puertas, y estos logs no lo traen.
+- **El discriminador no lo he visto decir «FIJO» sobre un caso real.** No conozco en CI un fichero
+  que salga a mitad con 0; la variante K de la entrega anterior es fabricada y local. Sí lo he
+  probado contra lo ya clasificado: los dos ficheros de #2303 salen «SALTA».
+- **CI corre el merge, no la cabeza.** Leo el blob de la cabeza y compruebo que es el de la base. El
+  árbol del merge no lo tengo.
+- **En la ventana vieja de 1339b, `scrum524b` cortó ocho veces en la posición 10 de 12** y dos en la
+  12 (otro blob; `evidencias/SCRUM-1339/b-faltan-por-fichero.tsv`). No he medido en cuántos runs de aquella ventana salió
+  completo, así que no sé si allí saltaba. Con el blob de hoy, 40, 33 y 36.
+- No he ejecutado los cinco ficheros en local, ni nada en Linux. No he bajado los artefactos TAP.
+- No he mirado más allá de esos 11 PR, ni el cuelgue de #2318.
+
+## Mis errores
+
+- **Mi primera suma salió 20 de más en los 11 logs, y la cazó el control de la suma, no yo.** Anclé
+  la marca al inicio del caso, como pedía la ficha, y no basta: 20 líneas por log empiezan por «✔» y
+  las imprime un test por su salida («✔ 1 saludo → menú»). Un resultado acaba siempre en su duración.
+- **El arreglo perdió los 93 saltados.** Pedí «# SKIP» detrás de la duración y un salto lleva su
+  motivo, no esa palabra. También lo cazó la suma.
+- **Pasé texto con acentos por un heredoc de bash** para parchear el lector, con la trampa escrita en
+  la ficha. Falló con error y no escribió nada; lo rehíce con la herramienta de edición.
+- La tabla de ① no dependió de ninguno de los tres: el cruce con la señal coincidía 55 de 55 desde
+  la primera pasada. Lo que estaba mal era el control.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1520
+    # los 11 logs, fuera del árbol, como pr<N>-job<ID>.log (los ids están en b-salida-los-cinco.txt):
+    gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/<ID>/logs > <carpeta>/pr<N>-job<ID>.log
+    node $E/b-los-cinco.mjs . <carpeta>                # sale 0
+    node $E/b-los-cinco.mjs . <carpeta> --sin-siembra  # tiene que salir 2 y decir CIEGO
+
+No pide `dist/`. No toca el árbol.
