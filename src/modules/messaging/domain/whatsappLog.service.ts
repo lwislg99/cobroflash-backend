@@ -4,7 +4,7 @@
 // se puede desplegar ANTES de aplicar la migración, sin romper el envío de mensajes.
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
-import { zonaDelMerchant, diaNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
+import { zonaDelMerchant, diaNaturalEn, mesNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -88,6 +88,25 @@ export type ReservaDePlantilla =
 /** El cliente de la base lo pasa quien llama: es el suyo, y es el que un test dobla. */
 type ClienteDeLaBase = typeof prisma;
 
+/**
+ * Qué es una «plantilla de hoy» de un comercio. Lo preguntan DOS: el tope (`reservarPlantilla`) y el
+ * «Hoy» del panel (`getWhatsAppMetrics`), y los dos lo piden aquí (SCRUM-1522, Jira c.19157): con
+ * una definición cada uno, el panel enseñaba 87 mientras el tope contaba 100 y bloqueaba el envío.
+ *
+ * «Hoy» es el día del COMERCIO (c.19001), no el del servidor: con el reloj del proceso, que va en
+ * UTC, a un profesional de la península el cupo se le reiniciaba a la 01:00 o a las 02:00 de su
+ * madrugada. Y cuenta lo que tiene identificador del proveedor o sigue en `queued`: un rechazo
+ * devuelve el hueco, así que no es una plantilla de hoy para ninguno de los dos.
+ */
+function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
+  return {
+    merchantId,
+    type: 'template',
+    createdAt: { gte: inicioDelDiaEn(diaNaturalEn(ahora, zona), zona) },
+    OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
+  };
+}
+
 export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   merchantId: number;
   customerId?: number | null;
@@ -97,19 +116,11 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
 }): Promise<ReservaDePlantilla> {
   return db.$transaction(
     async (tx) => {
-      // «Hoy» es el día del COMERCIO (c.19001), no el del servidor: con el reloj del proceso, que va
-      // en UTC, a un profesional de la península el cupo se le reiniciaba a la 01:00 o a las 02:00 de
-      // su madrugada. La zona la resuelve `zonaDelMerchant` y nadie más: no sale del país (dentro
-      // de `ES` hay dos husos), y sin declarar cae a UTC, que es lo que ya se hacía.
+      // La zona la resuelve `zonaDelMerchant` y nadie más: no sale del país (dentro de `ES` hay dos
+      // husos), y sin declarar cae a UTC, que es lo que ya se hacía.
       // Se lee ANTES de pedir el cerrojo: es una lectura que no necesita turno.
       const comercio = await tx.merchant.findUnique({ where: { id: input.merchantId }, select: { timezone: true } });
-      const zona = zonaDelMerchant(comercio);
-      const cuentaParaElTope = {
-        merchantId: input.merchantId,
-        type: 'template',
-        createdAt: { gte: inicioDelDiaEn(diaNaturalEn(new Date(), zona), zona) },
-        OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
-      };
+      const cuentaParaElTope = plantillasDeHoy(input.merchantId, zonaDelMerchant(comercio), new Date());
 
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
 
@@ -414,10 +425,13 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
     channel: { templateToday: 0, windowToday: 0, windowMonth: 0, savedEurMonth: 0 },
   };
   try {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // El día y el mes son los del COMERCIO, como en el tope (SCRUM-1522, c.19157): con el reloj del
+    // proceso, lo enviado en la primera hora o dos del día —y del mes— caía en el anterior.
+    const comercio = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { timezone: true } });
+    const zona = zonaDelMerchant(comercio);
+    const monthStart = inicioDelDiaEn(`${mesNaturalEn(now, zona)}-01`, zona);
     const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
-    const dayStart = new Date(now);
-    dayStart.setHours(0, 0, 0, 0);
+    const dayStart = inicioDelDiaEn(diaNaturalEn(now, zona), zona);
 
     const rows = await prisma.whatsAppMessage.findMany({
       where: { merchantId, type: 'template', createdAt: { gte: monthStart } },
@@ -431,7 +445,8 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       select: { createdAt: true },
     });
     const channel = {
-      templateToday: rows.filter((r) => r.createdAt >= dayStart).length,
+      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③).
+      templateToday: await prisma.whatsAppMessage.count({ where: plantillasDeHoy(merchantId, zona, now) }),
       windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
       windowMonth: windowRows.length,
       savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,

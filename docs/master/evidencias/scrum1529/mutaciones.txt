@@ -1,0 +1,15 @@
+SCRUM-1529 · siete.cjs visto en ROJO · 13-oct-2026 · base: commit 55cc96a89d88a3d8c3b252a5440c74cf894fdd73
+
+Cada mutación toca UNA línea de siete.cjs (git diff --numstat: 1 1) y se deshace con
+git restore --source=HEAD; después de cada una, git status --porcelain: 0 cambios.
+
+BASE (sin mutar)                                  salida 0 · VE 7 de 7 · MAL 0 · CIEGO 0
+M1 · la siembra cae dentro del `where`            salida 1 · VE 0 de 7 · MAL 7 · CIEGO 0
+     (los instrumentos no miran el `where`: el valor sembrado no puede salir en ningún campo)
+M2 · la siembra no se escribe (`sembrar` apagado) salida 1 · VE 0 de 7 · MAL 7 · CIEGO 1
+     («CIEGO: la siembra no llegó al disco; ningún control vale»)
+BASE otra vez, tras restaurar                     salida 0 · VE 7 de 7
+
+Lo que esto NO prueba: que los instrumentos de SCRUM-1500 vean una escritura que no sea de Prisma
+directa (una fábrica nueva, un objeto que llega por derrame, SQL crudo). La siembra es una escritura
+directa: prueba que cada campo se mira y que no se confunde con otro, no que se vean todas las puertas.

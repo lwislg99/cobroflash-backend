@@ -110,8 +110,10 @@ if (esCli) {
     console.error(`\n❌ ${r.fallos} problema(s) de claves en «${r.worktree}». No se sigue.\n`);
     process.exit(1);
   }
+  // SCRUM-1526: el verde dice lo que se comprobó. «Ninguna va a producción» era una afirmación
+  // sobre un nombre de host; lo que se mira ahora es que cada destino esté DECLARADO.
   console.log(`\n✅ las ${r.comprobadas} claves de «${r.worktree}» apuntan a donde prometen, y ` +
-    `ninguna de las ${r.conexiones} cadenas de conexión de este árbol va a producción.\n`);
+    `las ${r.conexiones} cadenas de conexión de este árbol van a destinos declarados como no-producción.\n`);
 }
 
 // Delata el caso de arriba: si alguien invoca este fichero y no se reconoce como CLI, no puede

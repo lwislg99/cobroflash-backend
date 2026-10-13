@@ -192,7 +192,7 @@ function renderSettingsView(container) {
     // ticket: un texto que explica mal una obligación fiscal no es feo, es peligroso.
     //
     // ⚠️ Y NO ES UN INTERRUPTOR. Esto solo LEE. El modal de dos caminos quedó bloqueado porque
-    // «se envía» no existe (sin cliente SOAP/mTLS, sin cola de remisión): una salida inerte le
+    // «se envía» no existe (nada envía a la AEAT) [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin cliente SOAP/mTLS, sin cola de remisión», y las dos mitades eran falsas como «no existe»: hay un cliente (`sif.client.ts`) que nadie llama y una cola que la emisión llena y ningún proceso vacía. Sigue siendo cierto que nada envía. El detalle y lo NO medido, en `src/modules/invoicing/domain/modoVisible.ts`.]: una salida inerte le
     // diría al profesional que puede elegir remitir a la AEAT, y no puede.
     //
     // ⚠️ VIVE EN `Configuración › Cumplimiento`, y el panel se pide POR EL MAPA

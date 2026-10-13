@@ -1,0 +1,43 @@
+HEAD dfda86d65 · copia en un temporal · 6054 ficheros
+Censo de la casa sobre la copia: 202 vivas · 20 con testigo · firmes 17 · sin testigo 81 · sin ruta 101 · no resuelven 3
+Las que «no resuelven» y con las que el guard está en verde hoy:
+     · docs/legal/AUDITLOG_FISCAL_CONTRATO.md:287 → lib/invoicing.ts:58 (AUSENTE) sin testigo
+     · docs/legal/AUDITLOG_FISCAL_CONTRATO.md:287 → lib/invoicing.ts:152 (AUSENTE) sin testigo
+     · docs/legal/AUDITLOG_FISCAL_CONTRATO.md:639 → lib/invoicing.ts:58 (AUSENTE) sin testigo
+
+✅ E0 · sin tocar nada
+     línea base
+     → pasan 8 de 8 · salida 0
+✅ E1 · BORRAR un fichero citado con ruta completa y SIN testigo
+     scripts/backup-dump.mjs (lo cita docs/legal/AUDITLOG_FISCAL_CONTRATO.md:129)
+     → pasan 8 de 8 · salida 0
+✅ E2 · BORRAR un fichero citado sólo por su nombre
+     scripts/clean-staging-tests.mjs (lo cita docs/legal/AUDITLOG_FISCAL_CONTRATO.md:130 como «clean-staging-tests.mjs:78»)
+     → pasan 8 de 8 · salida 0
+🔴 E3 · CONTROL: BORRAR un fichero citado CON testigo
+     src/modules/invoicing/domain/invoiceNumber.service.ts (lo cita docs/legal/AUDITORIA_CAMINO_EMISION.md:35, testigo «allocateInvoiceNumber»)
+     → pasan 7 de 8 · salida 1
+     caen: SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice
+✅ E4 · DESPLAZAR tres líneas un fichero citado SIN testigo
+     scripts/backup-dump.mjs
+     → pasan 8 de 8 · salida 0
+🔴 E5 · CONTROL: DESPLAZAR tres líneas un fichero citado CON testigo
+     src/modules/invoicing/domain/invoiceNumber.service.ts
+     → pasan 7 de 8 · salida 1
+     caen: SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice
+✅ E6 · BORRAR DE GOLPE todos los ficheros que sólo se citan sin testigo
+     41 ficheros borrados
+     → pasan 8 de 8 · salida 0
+🔴 E7 · cita NUEVA sin testigo a un fichero que no existe (par nuevo)
+     añadida a docs/legal/AUDITLOG_FISCAL_CONTRATO.md
+     → pasan 7 de 8 · salida 1
+     caen: SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo
+🔴 E8 · cita NUEVA con testigo a un fichero que no existe
+     añadida a docs/legal/AUDITLOG_FISCAL_CONTRATO.md
+     → pasan 7 de 8 · salida 1
+     caen: SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice
+✅ E9 · cita NUEVA sin testigo a un fichero que no existe, en un par YA perdonado
+     añadida a docs/legal/AUDITLOG_FISCAL_CONTRATO.md: scripts/backup-dump.mjs:999999 (línea que no existe)
+     → pasan 8 de 8 · salida 0
+
+✅ controles E3 y E5: el guard SÍ cae cuando la cita lleva testigo. Lo de arriba mide al guard.

@@ -96,3 +96,81 @@ ocho líneas de diagnóstico.
 Ninguna de las tres causas se puede provocar en producción sin estropear datos (hacen falta dos filas
 con la misma revisión) y la herramienta de sesión de la cuenta QA sólo hace `GET`. Lo que se ve en
 pantalla lo midió S4 con su sonda (comentario 18736), contestando ella el `POST`.
+
+## SCRUM-1150b · la mitad de la pantalla: «Crear revisión» decide por el código (9-oct, S2)
+
+**Medido contra:** `origin/main` = `44cbb050536158705c423950a76254ad8f1848b4` · 2026-10-09T11:40:48Z
+
+A9: comprobación → `tests/scrum1150b-la-pantalla-decide-por-el-codigo.test.mjs`
+
+El fallo propio de esta entrega: di por bueno que «un `message` humano del servidor se enseña tal cual»
+era de otro ticket y no lo miré hasta que mi propio cambio lo contradijo.
+`tests/scrum1215-revisiones-error-crear.test.mjs` fijaba para `quote_sin_numero` justo la conducta que
+c.18740 firmó cambiar. No se rodea: su tercer caso pasa al único código para el que sigue siendo verdad, con el motivo escrito dentro,
+y `quote_sin_numero` queda atado a su literal firmado en el test de arriba.
+
+**Sesión:** S2 (`s2-9oct`, cuarta tanda) · carril: `public/dashboard/js/quoteRevisiones.js` es S2, con
+fila propia (`node scripts/carriles.mjs de …`). **Skill UI:** cargada (`yaqu-premium-ui`). Sección
+AÑADIDA: lo de S1, arriba, no se toca.
+
+**Qué pasaba.** La pantalla pintaba el `data.message` de cualquier respuesta fallida. S1 quitó el
+diagnóstico de los 409 de grupo (arriba), pero la puerta seguía abierta: cualquier `message` nuevo habría
+llegado tal cual. Además el aviso no llevaba `role`, y cada fallo colgaba otro párrafo debajo del
+anterior (medido: dos fallos, dos avisos).
+
+**Qué cambia, sólo en `quoteRevisiones.js`.**
+
+| código del servidor | lo que se lee | por qué |
+|---|---|---|
+| `quote_sin_numero` | «No se puede crear una revisión: este presupuesto no tiene número.» | literal firmado, c.18740 |
+| `quote_not_found` | «No se puede crear una revisión: este presupuesto ya no existe.» | literal firmado, c.18740 |
+| `descuento_global_con_varios_iva` | el `message` del servidor | firmado en SCRUM-887; el único que pasa tal cual |
+| `revisiones_dos_vigentes` | el general | 🔴 su frase (c.19098) NO tiene firma; no se pinta hasta que conste |
+| `revisiones_sin_leer` · `revision_no_posterior` · `revisiones_sin_la_propia` | el general | c.19085 |
+| `invalid_quote_id` · `internal_error` · sin red · cualquier código nuevo | el general | la puerta |
+
+El general es «No se ha podido crear la revisión. Vuelve a intentarlo.» (SCRUM-688). El aviso lleva
+`role="alert"`, y el del intento anterior se quita al volver a pulsar: queda uno.
+
+**Desviación declarada, que sigue.** Para `revisiones_dos_vigentes`, «vuelve a intentarlo» no es cierto
+(son los datos). Es lo mismo que se lee hoy en producción desde #2330. Deja de serlo cuando se firme su
+frase: una fila en `TEXTO_POR_CODIGO`, una en `DECISION` del test y su ficha en `docs/microcopy/`.
+
+**Textos.** Ninguno nuevo sin firma. Ficha:
+`docs/microcopy/2026-10-07-SCRUM-1150-crear-revision-por-codigo.md` (firma delegada, comentario 18740). La de SCRUM-688 nombraba `revisiones_ambiguas`, que ya no
+existe: lleva una nota fechada debajo; su texto aprobado y su firma no se tocan.
+
+**La otra mitad (pantalla ↔ servidor).** El censo de S1 recorre `src/` y no mira `public/`. El test nuevo
+ata los dos árboles por AST: los códigos que la ruta puede contestar (3 `new RevisionNoCreable` de
+`quoteAdmin.ts`, los 4 motivos de los dos tipos cerrados de `revision.ts` y los literales de la propia
+ruta: 9) son exactamente los decididos en su tabla; y todo código que la pantalla nombra existe en el
+servidor, con el literal firmado letra por letra. Un código nuevo en `src/` lo pone en rojo hasta que
+alguien decida qué lee el profesional.
+
+### Pruebas de SCRUM-1150b
+
+`tests/scrum1150b-la-pantalla-decide-por-el-codigo.test.mjs`: 16 casos. Catorce por el viaje (ficha en el
+banco, clic, `apiRequest` real) y dos de atadura. A cada código se le pone SIEMPRE un `message`: el
+firmado donde toca y un diagnóstico de programador en los demás.
+
+- **Control positivo** (`evidencias/SCRUM-1150/salida-1150b-mutantes.txt`; base 16 de 16): con el
+  `quoteRevisiones.js` de `main` caen 12 de 16 y deja 2 avisos tras dos fallos; sin `role`, 1; sin quitar
+  el aviso anterior, 1; con la puerta abierta, 7; una errata en una clave, 2; una letra de un literal, 3;
+  la frase sin firma metida en la tabla, 2; un motivo nuevo en el dominio, 1 (la atadura). Ocho mutantes,
+  ocho mueren, cada uno con su `git diff --numstat`.
+- **Navegador, sobre yaqu.app** (cuenta QA, presupuesto 206, build `44cbb050`; el `POST` lo contesta la
+  sonda, a producción sólo llegan `GET`): 22 filas, 0 rotas, a 390×844 y 1280×800. Con el fichero de la
+  rama: los dos literales en 2 líneas (320×40) y 1 línea (938×20), enteros en la ventana; el diagnóstico
+  no llega con ningún código; `role=alert` en las 22; dos fallos, un aviso. Con el de producción y el
+  mismo `message` puesto: el diagnóstico sale en 9 de 10 códigos (5 líneas, no cabe entero a 390),
+  `role=null` en las 22, y dos fallos dejan dos avisos.
+- ⚠️ Lo que el «antes» de la sonda NO dice: producción ya no manda ese diagnóstico (#2330). La sonda lo
+  pone a propósito para ver si la pantalla lo deja pasar.
+- 🔴 **Sin `tsc`** (≈1 GB libre): no se toca `src/`. Los tests que leen `dist/` corrieron con los tres
+  `.ts` de `main` transpilados. La suite completa y los tipos, en el obligatorio.
+
+### No visto en yaqu.app
+
+Hasta que la rama entre: `node sondas-s2/revision-error.mjs` sin argumento (copia en
+`evidencias/SCRUM-1150/`). Ninguna de las causas se provoca de verdad; lo que se mide es la pantalla de
+producción con la respuesta puesta por la sonda.

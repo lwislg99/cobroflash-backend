@@ -1,6 +1,6 @@
 // tests/scrum1127-sif-cola.test.mjs — SCRUM-1127 · las decisiones puras de la cola de remisión.
 //
-// Sin base (la tabla `VfSubmission` NO existe: ver `docs/master/SCRUM-1127.md`) y sin red.
+// Sin base y sin red. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «(la tabla `VfSubmission` NO existe: ver `docs/master/SCRUM-1127.md`)», cierto al escribirse y falso desde el 30-sep-2026 (SCRUM-1296): el esquema tiene `model VfSubmission`. Este test sigue sin usar base. NO medido: si la tabla existe en producción, staging o dev.]
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
