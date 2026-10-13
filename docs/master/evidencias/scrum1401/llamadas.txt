@@ -1,0 +1,106 @@
+POBLACION: 319 ficheros .ts bajo src/ · 0 sin parsear
+
+=== callee /^recordCustomerEvent$/ · propiedad type · 20 llamadas · 20 valores
+  src/modules/billing/app/routes/mpWebhook.routes.ts:212  'payment_received'
+  src/modules/billing/app/routes/psp.routes.ts:315  'payment_received'
+  src/modules/billing/app/routes/receipt.routes.ts:549  'feedback'
+  src/modules/billing/domain/invoiceReminder.service.ts:191  'wa_send_failed'
+  src/modules/billing/domain/invoiceReminder.service.ts:215  'wa_send_failed'
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:135  'invoice_issued'
+  src/modules/maintenance/domain/maintenance.service.ts:153  EVENTO_SIN_CANAL
+  src/modules/payments/disputes.service.ts:141  'dispute_created'
+  src/modules/quotes/app/routes/quotes.routes.ts:494  'quote_accepted'
+  src/modules/quotes/app/routes/quotes.routes.ts:743  'quote_rejected'
+  src/modules/quotes/domain/expire.service.ts:21  'quote_expired'
+  src/modules/quotes/domain/reminder.service.ts:68  'wa_send_failed'
+  src/modules/quotes/domain/sendQuote.service.ts:124  'quote_sent'
+  src/modules/system/app/routes/customerPortal.routes.ts:550  'quote_requested'
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:329  'payment_anomaly'
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:1126  'invoice_rectified'
+  src/modules/system/app/routes/quotesAdmin.routes.ts:809  'quote_sent'
+  src/modules/whatsappBot/domain/botFlow.service.ts:490  'quote_requested'
+  src/modules/whatsappBot/domain/botFlow.service.ts:652  'handoff'
+  src/modules/whatsappBot/domain/botFlow.service.ts:706  'handoff'
+
+=== callee /^recordWaMessage$/ · propiedad type · 16 llamadas · 16 valores
+  src/integrations/whatsapp.ts:303  'template'
+  src/integrations/whatsapp.ts:394  'template'
+  src/integrations/whatsapp.ts:432  'template'
+  src/integrations/whatsapp.ts:482  'service'
+  src/integrations/whatsapp.ts:515  'service'
+  src/integrations/whatsapp.ts:612  'service'
+  src/integrations/whatsapp.ts:697  'service'
+  src/integrations/whatsapp.ts:709  'service'
+  src/integrations/whatsapp.ts:800  'service'
+  src/integrations/whatsapp.ts:812  'service'
+  src/integrations/whatsapp.ts:912  'service'
+  src/integrations/whatsapp.ts:924  'service'
+  src/integrations/whatsapp.ts:1002  'service'
+  src/integrations/whatsapp.ts:1014  'service'
+  src/integrations/whatsapp.ts:1085  'service'
+  src/integrations/whatsapp.ts:1097  'service'
+
+=== callee /^recordWaMessage$/ · propiedad status · 16 llamadas · 16 valores
+  src/integrations/whatsapp.ts:305  'failed'
+  src/integrations/whatsapp.ts:397  'sent'
+  src/integrations/whatsapp.ts:435  'sent'
+  src/integrations/whatsapp.ts:484  'failed'
+  src/integrations/whatsapp.ts:518  'sent'
+  src/integrations/whatsapp.ts:613  'failed'
+  src/integrations/whatsapp.ts:698  'failed'
+  src/integrations/whatsapp.ts:711  'sent'
+  src/integrations/whatsapp.ts:801  'failed'
+  src/integrations/whatsapp.ts:814  'sent'
+  src/integrations/whatsapp.ts:913  'failed'
+  src/integrations/whatsapp.ts:926  'sent'
+  src/integrations/whatsapp.ts:1003  'failed'
+  src/integrations/whatsapp.ts:1016  'sent'
+  src/integrations/whatsapp.ts:1086  'failed'
+  src/integrations/whatsapp.ts:1099  'sent'
+
+=== callee /^recordWaMessage$/ · propiedad relatedType · 16 llamadas · 16 valores
+  src/integrations/whatsapp.ts:307  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:398  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:436  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:486  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:519  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:615  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:700  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:712  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:803  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:815  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:915  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:927  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:1005  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:1017  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:1088  params.log?.relatedType ?? null
+  src/integrations/whatsapp.ts:1100  params.log?.relatedType ?? null
+
+=== callee /^updateWaMessageStatus$/ · propiedad (arg1) · 1 llamadas · 1 valores
+  src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:122  status
+
+=== callee /WhatsApp|^sendWa|^enviarWa/ · propiedad relatedType · 84 llamadas · 9 valores
+  src/integrations/whatsappNotifications.ts:132  'charge'
+  src/modules/billing/app/routes/mpWebhook.routes.ts:229  'review'
+  src/modules/billing/app/routes/psp.routes.ts:335  'review'
+  src/modules/billing/domain/invoiceReminder.service.ts:180  'invoice'
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:126  'invoice'
+  src/modules/jobs/domain/albaranWhatsApp.service.ts:84  'albaran'
+  src/modules/jobs/domain/albaranWhatsApp.service.ts:177  'albaran'
+  src/modules/quotes/domain/sendQuote.service.ts:97  'quote'
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:791  'invoice'
+
+=== callee /^recordCustomerEvent$/ · propiedad campoQueNoExiste · 20 llamadas · 0 valores
+
+=== callee /^funcionQueNoExiste$/ · propiedad type · 0 llamadas · 0 valores
+
+=== objeto con «relatedType» y «kind» · 4
+  src/modules/billing/domain/cobros.service.ts:374  relatedType='invoice'  ·  kind={ in: CLASES_DEL_DOCUMENTO }
+  src/modules/messaging/domain/email.service.ts:52  relatedType='invoice'  ·  kind=isJust ? CLASES_DE_CORREO.justificante : CLASES_DE_CORREO.factura
+  src/modules/messaging/domain/email.service.ts:242  relatedType='quote'  ·  kind=CLASES_DE_CORREO.presupuesto
+  src/modules/messaging/domain/registroDeEnvios.ts:227  relatedType=contexto.relatedType ?? null  ·  kind=contexto.kind
+
+=== objeto con «campoQueNoExiste» y «kind» · 0
+
+CONTROLES: positivo=20 (>0) · negativos=0 (0)
+EXIT=0

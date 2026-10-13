@@ -1,0 +1,25 @@
+0 · base, sin mutar
+    sin-respaldo=28 documental=24 · salen: — · entran: —
+    casos del guard en rojo (0): —
+A · se le quita la marca a una SIN respaldo (homeView)
+    sin-respaldo=27 documental=24 · salen: public/dashboard/js/homeView.js:779 · entran: —
+    casos del guard en rojo (2): SCRUM-921c · el trinquete tampoco baja en silencio | failing tests:
+B · se le quita la marca a una CON respaldo documental (botFlow, menú K1)
+    sin-respaldo=28 documental=23 · salen: — · entran: —
+    casos del guard en rojo (2): SCRUM-921c · 🔴 SEGUNDO NEGATIVO: lo respaldado en el MÁSTER sale limpio | failing tests:
+C · un registro nuevo copia la frase del 409 a pelo
+    sin-respaldo=27 documental=25 · salen: src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · entran: —
+    casos del guard en rojo (2): SCRUM-921c · el trinquete tampoco baja en silencio | failing tests:
+D · el mismo registro, con la frase entre [[cita]]
+    sin-respaldo=27 documental=25 · salen: src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · entran: —
+    casos del guard en rojo (2): SCRUM-921c · el trinquete tampoco baja en silencio | failing tests:
+E · la propuesta puesta, sin cobaya
+    sin-respaldo=28 documental=24 · salen: — · entran: —
+    casos del guard en rojo (0): —
+F · la propuesta + la frase a pelo
+    sin-respaldo=27 documental=25 · salen: src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · entran: —
+    casos del guard en rojo (2): SCRUM-921c · el trinquete tampoco baja en silencio | failing tests:
+G · la propuesta + la frase entre [[cita]]
+    sin-respaldo=28 documental=24 · salen: — · entran: —
+    casos del guard en rojo (0): —
+POBLACION casos=8 ciegos=0

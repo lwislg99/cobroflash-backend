@@ -1,0 +1,45 @@
+node v24.18.0 win32 · scrum859-identidad-y-motivo-cerrado.test.mjs · 2 mutaciones · cortes: 0,2000,4000,5000,7000,8000,36000,60000,67000,240000
+
+══ COLA QUE NO LLEGA: 0 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → VIVA
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → VIVA
+
+══ COLA QUE NO LLEGA: 2000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → VIVA
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → VIVA
+
+══ COLA QUE NO LLEGA: 4000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → VIVA
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → VIVA
+
+══ COLA QUE NO LLEGA: 5000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → VIVA
+
+══ COLA QUE NO LLEGA: 7000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → VIVA
+
+══ COLA QUE NO LLEGA: 8000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+
+══ COLA QUE NO LLEGA: 36000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+
+══ COLA QUE NO LLEGA: 60000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+
+══ COLA QUE NO LLEGA: 67000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 6 caídos · 0 saltados · faltan 5 de los 20
+
+══ COLA QUE NO LLEGA: 240000 B · LIMPIA 20 pasados · 0 caídos
+   mutación 1 («🔴 `INVISIBLE_HASTA_859` está cerrado en…») → CIEGO · NO APARECE en la mutada · mutada: 17 pasados · 1 caídos · 0 saltados · faltan 2 de los 20
+   mutación 2 («🔴 insertar una entrada en medio NO muev…») → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 6 caídos · 0 saltados · faltan 5 de los 20
+
+RECUENTO de veredictos: VIVA 8 · CIEGO 12
+ÁRBOL: 1 fichero(s) mutados comprobados por sha256 · distintos de antes: 0
+EXIT=0

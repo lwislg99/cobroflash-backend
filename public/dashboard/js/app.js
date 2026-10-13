@@ -331,11 +331,11 @@ async function initApp() {
         // usuario pasaba de ver «Presupuesto #N-1» a ver «Presupuestos».
         //
         // Y hay un enganche que no se ve desde aquí: `quotesDetailView.js` corrige el título al
-        // número REAL del presupuesto **sólo si ya empieza por «Presupuesto #»** (su regex). O sea
-        // que quien navega escribe el rótulo provisional con el id, y la ficha lo corrige al
-        // cargar. Ese es el contrato que había, y es el que se conserva — con el mismo literal,
-        // que es el que la ficha sabe reconocer.
-        viewTitle.textContent = state.quoteId != null ? 'Presupuesto #' + state.quoteId : L.quotePlural;
+        // número REAL del presupuesto **sólo si encuentra el provisional que escribe esta línea**.
+        // 🔴 SCRUM-1482 · ese provisional llevaba el ID DE LA RUTA («Presupuesto #206» para el «#5»
+        // de la lista). Aquí el número aún NO SE SABE: no se pinta ninguno, sólo la palabra del
+        // locale (firma: c.18490). La pestaña sale de este título. Lo ata el caso 7 de `scrum832`.
+        viewTitle.textContent = state.quoteId != null ? L.quote : L.quotePlural;
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;

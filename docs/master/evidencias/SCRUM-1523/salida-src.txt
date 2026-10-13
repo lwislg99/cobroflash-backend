@@ -1,0 +1,173 @@
+CONTROL POSITIVO SEMBRADO · bytes=204 · apariciones=5 · comentario=2 identificador=2 cadena=1 · VISTO
+POBLACION · carpeta=src · ficheros de codigo seguidos por git=323
+POBLACION · caracteres leidos=3548932
+CONTROL DE CERO DERIVADO · «etnacifitsuj» · apariciones=0 · CERO
+TERMINO justificante · ficheros=46 · apariciones=162 · {"comentario":118,"cadena":19,"identificador":25}
+TERMINO isReceiptNumber · ficheros=19 · apariciones=44 · {"identificador":43,"comentario":1}
+TERMINO RECEIPT_NUMBER_PREFIX · ficheros=1 · apariciones=2 · {"identificador":2}
+TERMINO 'JUST' · ficheros=12 · apariciones=19 · {"cadena":13,"comentario":6}
+TERMINO 'receipt' · ficheros=11 · apariciones=23 · {"cadena":19,"comentario":4}
+TERMINO 'J-' · ficheros=3 · apariciones=3 · {"cadena":3}
+TERMINO J- · ficheros=24 · apariciones=49 · {"comentario":44,"cadena":4,"otro":1}
+
+POR FICHERO · «justificante» · 46 ficheros
+  src/core/http/publicAccessDeclarations.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/core/validation/fiscalInput.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/integrations/whatsappNotifications.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/integrations/whatsappTemplates.ts · comentario=3 cadena=0 identificador=0 otro=0
+  src/lib/invoicing.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/billing/app/routes/mpWebhook.routes.ts · comentario=1 cadena=1 identificador=0 otro=0
+  src/modules/billing/app/routes/payInvoice.routes.ts · comentario=1 cadena=1 identificador=0 otro=0
+  src/modules/billing/app/routes/psp.routes.ts · comentario=2 cadena=1 identificador=0 otro=0
+  src/modules/billing/app/routes/receipt.routes.ts · comentario=4 cadena=1 identificador=0 otro=0
+  src/modules/billing/domain/cobros.service.ts · comentario=6 cadena=0 identificador=1 otro=0
+  src/modules/billing/domain/invoiceReminder.service.ts · comentario=1 cadena=1 identificador=0 otro=0
+  src/modules/billing/domain/invoiceWhatsApp.service.ts · comentario=2 cadena=2 identificador=0 otro=0
+  src/modules/expenses/app/routes/expenses.routes.ts · comentario=1 cadena=1 identificador=4 otro=0
+  src/modules/expenses/domain/expenses.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/expenses/domain/justificante.ts · comentario=6 cadena=0 identificador=3 otro=0
+  src/modules/expenses/domain/lecturaTicket.ts · comentario=3 cadena=1 identificador=5 otro=0
+  src/modules/exports/app/routes/exports.routes.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/exports/domain/exportData.ts · comentario=0 cadena=1 identificador=0 otro=0
+  src/modules/fiscal/evidencias/paquete.ts · comentario=4 cadena=1 identificador=1 otro=0
+  src/modules/fiscal/librosAeat/librosAeat.repo.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/app/routes/libroRegistro.routes.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/emission.service.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/facturaSuelta.ts · comentario=8 cadena=1 identificador=0 otro=0
+  src/modules/invoicing/domain/invoiceNumber.service.ts · comentario=7 cadena=0 identificador=3 otro=0
+  src/modules/invoicing/domain/invoicing.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/libroRegistro.repo.ts · comentario=5 cadena=0 identificador=5 otro=0
+  src/modules/invoicing/domain/libroRegistro.ts · comentario=1 cadena=0 identificador=1 otro=0
+  src/modules/invoicing/domain/modoVisible.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/rectificabilidad.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/selladoEstado.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/tipoDocumento.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/domain/verifactu.service.ts · comentario=3 cadena=0 identificador=0 otro=0
+  src/modules/invoicing/infra/pdf/pdf.service.ts · comentario=5 cadena=2 identificador=0 otro=0
+  src/modules/jobs/app/routes/albaranes.routes.ts · comentario=7 cadena=0 identificador=0 otro=0
+  src/modules/jobs/app/routes/jobs.routes.ts · comentario=3 cadena=0 identificador=0 otro=0
+  src/modules/jobs/domain/albaranNumber.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/jobs/domain/recapitulativa.service.ts · comentario=2 cadena=0 identificador=0 otro=0
+  src/modules/maintenance/domain/maintenance.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/messaging/domain/email.service.ts · comentario=2 cadena=1 identificador=1 otro=0
+  src/modules/messaging/domain/emailLayout.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/messaging/domain/lifecycle.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/messaging/domain/registroDeEnvios.ts · comentario=1 cadena=1 identificador=1 otro=0
+  src/modules/payments/disputes.service.ts · comentario=1 cadena=0 identificador=0 otro=0
+  src/modules/system/app/routes/invoicesAdmin.routes.ts · comentario=7 cadena=3 identificador=0 otro=0
+  src/modules/system/app/routes/quotesAdmin.routes.ts · comentario=3 cadena=0 identificador=0 otro=0
+  src/modules/system/invoiceAdmin.ts · comentario=6 cadena=0 identificador=0 otro=0
+
+FICHEROS DONDE «justificante» SOLO APARECE EN COMENTARIOS: 26 de 46
+
+CADENAS que contienen «justificante» (candidatas a texto, se derivan LEYENDO):
+  src/modules/billing/app/routes/mpWebhook.routes.ts:216 · detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+  src/modules/billing/app/routes/payInvoice.routes.ts:48 · const invRef = num ? `${isReceiptNumber(invoice!.number) ? 'Justificante' : 'Factura'} ${num}` : '';
+  src/modules/billing/app/routes/psp.routes.ts:319 · detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+  src/modules/billing/app/routes/receipt.routes.ts:106 · const docLabel = isJust ? 'justificante' : 'factura';
+  src/modules/billing/domain/invoiceReminder.service.ts:141 · const docLabel      = isReceiptNumber(inv.number) ? 'justificante' : 'factura';
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:76 · concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${appendStageLabel(invoice.number, invoice.stageLabel)}`,
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:102 · const docLabel = isReceiptNumber(invoice.number) ? 'justificante' : 'factura';
+  src/modules/expenses/app/routes/expenses.routes.ts:11 · import { clasificarJustificante } from '../../domain/justificante';
+  src/modules/expenses/domain/lecturaTicket.ts:31 · } from './justificante';
+  src/modules/exports/domain/exportData.ts:615 · `facturas/  ${pdfsOk} de ${pdfsTotal} PDF de factura/justificante`,
+  src/modules/fiscal/evidencias/paquete.ts:190 · export const AVISO_LIBRO_SOLO_FACTURAS = 'El libro registro incluye sólo facturas. Si emitiste justificantes de cobro, no aparecen aquí — pero su IVA sí está en el modelo
+  src/modules/invoicing/domain/facturaSuelta.ts:83 · export type ModoDocumentoSuelto = 'factura' | 'justificante' | 'no';
+  src/modules/invoicing/infra/pdf/pdf.service.ts:401 · const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';
+  src/modules/invoicing/infra/pdf/pdf.service.ts:712 · .text('Justificante de cobro — este documento acredita el cobro recibido.', M, doc.y, { width: W, align: 'center' });
+  src/modules/messaging/domain/email.service.ts:91 · const docLabel = isJust ? 'justificante de cobro' : 'factura';
+  src/modules/messaging/domain/registroDeEnvios.ts:91 · justificante: 'justificante',
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:435 · PDF del presupuesto firmado y del justificante: disponibles desde el panel (se adjuntan a la respuesta de la disputa).</p>
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:790 · text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago ${isReceiptNumber(invoice.number) ? 'del justificante' : 'de la factura'} *${invoice.number}* p
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:908 · message: 'Este documento es un justificante, no una factura fiscal: no entra en la cadena VeriFactu.',
+
+IDENTIFICADORES que contienen «justificante»:
+  JustificanteEntrada @ src/modules/expenses/domain/justificante.ts ×2
+  clasificarJustificante @ src/modules/expenses/app/routes/expenses.routes.ts ×2
+  clasificarJustificante @ src/modules/expenses/domain/justificante.ts ×1
+  clasificarJustificante @ src/modules/expenses/domain/lecturaTicket.ts ×2
+  esJustificante @ src/modules/invoicing/domain/invoiceNumber.service.ts ×3
+  esJustificante @ src/modules/invoicing/domain/libroRegistro.repo.ts ×2
+  esJustificanteMio @ src/modules/invoicing/domain/libroRegistro.repo.ts ×2
+  justificante @ src/modules/billing/domain/cobros.service.ts ×1
+  justificante @ src/modules/expenses/app/routes/expenses.routes.ts ×2
+  justificante @ src/modules/expenses/domain/lecturaTicket.ts ×3
+  justificante @ src/modules/messaging/domain/email.service.ts ×1
+  justificante @ src/modules/messaging/domain/registroDeEnvios.ts ×1
+  justificantesFuera @ src/modules/fiscal/evidencias/paquete.ts ×1
+  justificantesFuera @ src/modules/invoicing/domain/libroRegistro.repo.ts ×1
+  justificantesFuera @ src/modules/invoicing/domain/libroRegistro.ts ×1
+
+FICHEROS que usan el vocabulario hermano EN CODIGO y NO contienen «justificante»: 5
+  src/modules/invoicing/domain/portonDocumento.ts · isReceiptNumber
+  src/modules/messaging/domain/weeklyDigest.service.ts · 'receipt'
+  src/modules/quotes/app/routes/quotes.routes.ts · isReceiptNumber 'JUST' 'receipt'
+  src/modules/system/app/routes/quoteDecisionLanding.routes.ts · 'receipt'
+  src/modules/system/quoteAdmin.ts · isReceiptNumber
+
+USOS EN CODIGO de isReceiptNumber: 43
+  src/lib/invoicing.ts:6 · import { allocateInvoiceNumber, isReceiptNumber } from '../modules/invoicing/domain/invoiceNumber.service';
+  src/lib/invoicing.ts:432 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
+  src/modules/billing/app/routes/mpWebhook.routes.ts:13 · import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/app/routes/mpWebhook.routes.ts:216 · detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+  src/modules/billing/app/routes/payInvoice.routes.ts:15 · import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/app/routes/payInvoice.routes.ts:48 · const invRef = num ? `${isReceiptNumber(invoice!.number) ? 'Justificante' : 'Factura'} ${num}` : '';
+  src/modules/billing/app/routes/psp.routes.ts:14 · import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/app/routes/psp.routes.ts:319 · detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+  src/modules/billing/app/routes/receipt.routes.ts:9 · import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/app/routes/receipt.routes.ts:105 · const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
+  src/modules/billing/domain/invoiceReminder.service.ts:28 · import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/domain/invoiceReminder.service.ts:141 · const docLabel      = isReceiptNumber(inv.number) ? 'justificante' : 'factura';
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:16 · import { isReceiptNumber, appendStageLabel } from '../../invoicing/domain/invoiceNumber.service';
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:76 · concept: `${isReceiptNumber(invoice.number) ? 'Justificante' : 'Factura'} ${appendStageLabel(invoice.number, invoice.stageLabel)}`,
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:102 · const docLabel = isReceiptNumber(invoice.number) ? 'justificante' : 'factura';
+  src/modules/invoicing/domain/invoiceNumber.service.ts:88 · export function isReceiptNumber(number: string | null | undefined): boolean {
+  src/modules/invoicing/domain/invoicing.service.ts:14 · import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
+  src/modules/invoicing/domain/invoicing.service.ts:115 · type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
+  src/modules/invoicing/domain/portonDocumento.ts:40 · import { isReceiptNumber } from './invoiceNumber.service';
+  src/modules/invoicing/domain/portonDocumento.ts:84 · return merchant?.country === 'ES' && !!merchant?.taxId && !isReceiptNumber(numero);
+  src/modules/invoicing/domain/selladoEstado.ts:46 · import { isReceiptNumber } from './invoiceNumber.service';
+  src/modules/invoicing/domain/selladoEstado.ts:75 · return merchant.country === 'ES' && !!merchant.taxId && !isReceiptNumber(numero);
+  src/modules/invoicing/domain/verifactu.service.ts:15 · import { isReceiptNumber } from './invoiceNumber.service';
+  src/modules/invoicing/domain/verifactu.service.ts:252 · if (isReceiptNumber(invoice.number)) {
+  src/modules/invoicing/domain/verifactu.service.ts:469 · if (isReceiptNumber(invoice.number)) {
+  src/modules/jobs/app/routes/albaranes.routes.ts:69 · import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/jobs/app/routes/albaranes.routes.ts:1321 · if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
+  src/modules/jobs/app/routes/albaranes.routes.ts:1603 · if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
+  src/modules/jobs/app/routes/jobs.routes.ts:25 · import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/jobs/app/routes/jobs.routes.ts:1543 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  src/modules/jobs/domain/recapitulativa.service.ts:24 · import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
+  src/modules/jobs/domain/recapitulativa.service.ts:118 · if (isReceiptNumber(invoice.number)) throw new Error('consolidacion_no_disponible');
+  src/modules/quotes/app/routes/quotes.routes.ts:46 · import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/quotes/app/routes/quotes.routes.ts:641 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:32 · import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:197 · if (modoSuelto === 'factura' && isReceiptNumber(invoice.number)) {
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:790 · text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago ${isReceiptNumber(invoice.number) ? 'del justificante' : 'de la factura'} *${invoice.number}* p
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:905 · if (isReceiptNumber(invoice.number)) {
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:1070 · if (isReceiptNumber(original.number)) {
+  src/modules/system/app/routes/quotesAdmin.routes.ts:43 · import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+  src/modules/system/app/routes/quotesAdmin.routes.ts:355 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/app/routes/quotesAdmin.routes.ts:648 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/quoteAdmin.ts:5 · import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
+
+USOS EN CODIGO de 'JUST': 13
+  src/lib/invoicing.ts:432 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: justificante si ES real sin flag
+  src/modules/billing/app/routes/receipt.routes.ts:105 · const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
+  src/modules/invoicing/domain/invoiceNumber.service.ts:431 · tipoFactura: esJustificante ? 'JUST' : rect ? 'R1' : 'F1',
+  src/modules/invoicing/domain/invoicing.service.ts:115 · type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
+  src/modules/invoicing/domain/libroRegistro.repo.ts:96 · return f.type === 'JUST';
+  src/modules/invoicing/domain/tipoDocumento.ts:52 · export type TipoDocumento = 'F1' | 'R1' | 'JUST';
+  src/modules/invoicing/infra/pdf/pdf.service.ts:318 · const isReceipt = params.type === 'JUST';
+  src/modules/jobs/app/routes/jobs.routes.ts:1543 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  src/modules/quotes/app/routes/quotes.routes.ts:641 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/app/routes/quotesAdmin.routes.ts:355 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/app/routes/quotesAdmin.routes.ts:648 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+  src/modules/system/invoiceAdmin.ts:44 · const where: Prisma.InvoiceWhereInput = { merchantId, type: { not: 'JUST' } };
+  src/modules/system/invoiceAdmin.ts:261 · const isReceipt = existing.type === 'JUST' || /^J-/i.test(existing.number || '');
+
+USOS EN CODIGO de 'J-': 3
+  src/core/validation/fiscalInput.ts:165 · .filter((n) => !n.startsWith('J-'))
+  src/modules/invoicing/domain/invoiceNumber.service.ts:86 · export const RECEIPT_NUMBER_PREFIX = 'J-';
+  src/modules/messaging/domain/email.service.ts:39 · const isJust = inv.number.startsWith('J-');
+
+EXIT=0

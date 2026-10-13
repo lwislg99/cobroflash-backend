@@ -1,0 +1,15 @@
+ficheros .ts en src: 320 · nodos: 266254 · nombres buscados: sendWhatsAppTemplate, sendWhatsAppWindowFirst
+llamadas: 11
+sendWhatsAppTemplate	src/integrations/whatsapp.ts:592	merchantId=si	cliente=si
+sendWhatsAppTemplate	src/integrations/whatsappNotifications.ts:35	merchantId=si	cliente=esparcido
+sendWhatsAppWindowFirst	src/integrations/whatsappNotifications.ts:105	merchantId=si	cliente=si
+sendWhatsAppTemplate	src/integrations/whatsappNotifications.ts:171	merchantId=si	cliente=esparcido
+sendWhatsAppWindowFirst	src/modules/billing/domain/invoiceReminder.service.ts:150	merchantId=si	cliente=si
+sendWhatsAppWindowFirst	src/modules/billing/domain/invoiceWhatsApp.service.ts:97	merchantId=si	cliente=si
+sendWhatsAppTemplate	src/modules/jobs/domain/albaranWhatsApp.service.ts:78	merchantId=si	cliente=si
+sendWhatsAppWindowFirst	src/modules/jobs/domain/albaranWhatsApp.service.ts:167	merchantId=si	cliente=si
+sendWhatsAppTemplate	src/modules/quotes/domain/reminder.service.ts:47	merchantId=si	cliente=esparcido
+sendWhatsAppWindowFirst	src/modules/quotes/domain/sendQuote.service.ts:66	merchantId=si	cliente=si
+sendWhatsAppTemplate	src/modules/system/app/routes/invoicesAdmin.routes.ts:766	merchantId=si	cliente=esparcido
+RESUMEN cliente: si=7 NO=0 log-variable=0 esparcido=4 no-literal=0
+RESUMEN merchantId: si=11 NO=0 esparcido=0 no-literal=0

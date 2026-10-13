@@ -1,0 +1,67 @@
+[verifactu] invoice=2026-CF-0001 hash=AE97CE14BDCD37B8…
+[verifactu] invoice=2026-CF-0002 hash=8FE6ABF4EA20C359…
+✔ SCRUM-1510 · POSITIVO: la misma factura, sellada entera, SÍ produce su PDF (bytes en disco y `pdfUrl` escrito) (344.2339ms)
+✖ SCRUM-1510 · 🔴 pendiente CON huella (la escritura del estado falló): no sale documento, y lo niega el corte del ESTADO (21.7289ms)
+✖ SCRUM-1510 · 🔴 justificante que se quedó pendiente (la escritura de «no aplica» falló): no sale documento, y lo niega el corte del ESTADO (17.5518ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 632.8865
+
+✖ failing tests:
+
+test at dist\__espejo-1510b\tests\scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:190:1
+✖ SCRUM-1510 · 🔴 pendiente CON huella (la escritura del estado falló): no sale documento, y lo niega el corte del ESTADO (21.7289ms)
+  AssertionError [ERR_ASSERTION]: 🔴 SALIÓ EL DOCUMENTO de la factura con huella y sin estado: {"diskPath":"C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-2026-CF-0002.pdf","pdfUrl":"/admin/invoices/4101/pdf","number":"2026-CF-0002"}.
+    La factura está pendiente de sellado y el portón de la huella no la para: el único corte
+    que la negaba es el del ESTADO, y ya no se pregunta.
+  + actual - expected
+  
+  + {
+  +   diskPath: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-2026-CF-0002.pdf',
+  +   number: '2026-CF-0002',
+  +   pdfUrl: '/admin/invoices/4101/pdf'
+  + }
+  - null
+  
+      at exigirQueNoSale (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1510b-el-test-del-segundo-porton/dist/__espejo-1510b/tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:154:10)
+      at async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1510b-el-test-del-segundo-porton/dist/__espejo-1510b/tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:203:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { diskPath: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-2026-CF-0002.pdf', pdfUrl: '/admin/invoices/4101/pdf', number: '2026-CF-0002' },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\__espejo-1510b\tests\scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:208:1
+✖ SCRUM-1510 · 🔴 justificante que se quedó pendiente (la escritura de «no aplica» falló): no sale documento, y lo niega el corte del ESTADO (17.5518ms)
+  AssertionError [ERR_ASSERTION]: 🔴 SALIÓ EL DOCUMENTO de el justificante pendiente: {"diskPath":"C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-J-20260929-AB12.pdf","pdfUrl":"/admin/invoices/4101/pdf","number":"J-20260929-AB12"}.
+    La factura está pendiente de sellado y el portón de la huella no la para: el único corte
+    que la negaba es el del ESTADO, y ya no se pregunta.
+  + actual - expected
+  
+  + {
+  +   diskPath: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-J-20260929-AB12.pdf',
+  +   number: 'J-20260929-AB12',
+  +   pdfUrl: '/admin/invoices/4101/pdf'
+  + }
+  - null
+  
+      at exigirQueNoSale (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1510b-el-test-del-segundo-porton/dist/__espejo-1510b/tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:154:10)
+      at async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/scrum-1510b-el-test-del-segundo-porton/dist/__espejo-1510b/tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:218:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { diskPath: 'C:\\Users\\JAVIER~1\\AppData\\Local\\Temp\\scrum1510b-wyHnBC\\storage\\invoices\\77-J-20260929-AB12.pdf', pdfUrl: '/admin/invoices/4101/pdf', number: 'J-20260929-AB12' },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

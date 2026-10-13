@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import {
   withMerchant, limpiarMerchant, merchantsVivos, barridoFinal, registrarBarridoFinal,
-  _resetBarridoParaTests, telefonosDe,
+  _resetBarridoParaTests, telefonosDe, ID_DEL_DEMO,
 } from './_merchant-fixture.mjs';
 
 /**
@@ -209,4 +209,78 @@ test('SCRUM-174: withMerchant barre botSession con merchantId=null por el phone 
   // Antes del fix (barrido solo por merchantId), la #1 (merchantId=null) SOBREVIVÍA → este assert
   // era rojo. Con el barrido por phone del fixture, las dos mueren.
   assert.equal(sesiones.length, 0, 'ambas sesiones borradas — incluida la de merchantId=null (SCRUM-174)');
+});
+
+// ── SCRUM-876f: un merchant efímero nunca es el DEMO ─────────────────────────────────────────
+// En un banco recién creado el primer merchant nace con el id 1, que es el demo (regla 8), y el
+// producto le aplica sus frenos: V0-2 le bloquea el WhatsApp. Medido en el run 37590893205 de
+// #2255: le tocó a `a55-window-quote` y cayó. Doble con los ids PROGRAMADOS, que es lo único que
+// distingue un banco virgen de staging.
+function fakePrismaConIds(ids) {
+  const cola = [...ids];
+  const creados = [];
+  const borrados = [];
+  const cliente = new Proxy(
+    {
+      merchant: {
+        create: async ({ data }) => { const m = { id: cola.shift(), ...data }; creados.push(m.id); return m; },
+        delete: async ({ where }) => { borrados.push(where.id); return { id: where.id }; },
+      },
+    },
+    { get: (obj, prop) => (prop in obj ? obj[prop] : { deleteMany: async () => ({ count: 0 }) }) },
+  );
+  return { cliente, creados, borrados };
+}
+
+test('SCRUM-876f: el id del demo que conoce el fixture es el del producto', async () => {
+  const { DEMO_MERCHANT_ID } = await import('../dist/modules/invoicing/domain/emission.service.js');
+  assert.equal(typeof DEMO_MERCHANT_ID, 'number', '🔴 CIEGO: el producto ya no exporta el id del demo');
+  assert.equal(ID_DEL_DEMO, DEMO_MERCHANT_ID);
+});
+
+test('SCRUM-876f: en un banco virgen, withMerchant NO entrega el id del demo', async () => {
+  const f = fakePrismaConIds([ID_DEL_DEMO, 2]);
+  let recibido = null;
+  let borradosAlEntrar = null;
+
+  await withMerchant(f.cliente, { name: 'QA', email: 'qa-876f@test.local' }, async (merchant, phones) => {
+    recibido = { id: merchant.id, email: merchant.email, phones };
+    borradosAlEntrar = [...f.borrados];
+  }, { after: () => {} });
+
+  assert.deepEqual(f.creados, [ID_DEL_DEMO, 2], 'suelo: el doble llegó a repartir el id del demo');
+  assert.equal(recibido.id, 2, 'el test recibe el SEGUNDO merchant, no el demo');
+  assert.equal(recibido.email, 'qa-876f@test.local', 'con los mismos datos que pidió');
+  assert.deepEqual(recibido.phones, telefonosDe(2), 'y sus teléfonos salen del id que de verdad tiene');
+  assert.deepEqual(borradosAlEntrar, [ID_DEL_DEMO], 'el que nació demo se borra ANTES de entrar en el test');
+  assert.deepEqual(f.borrados, [ID_DEL_DEMO, 2], 'y el efímero, al salir');
+  assert.equal(merchantsVivos.size, 0, 'no queda ninguno registrado como vivo');
+});
+
+test('SCRUM-876f: fuera de un banco virgen no se crea ni se borra nada de más', async () => {
+  const f = fakePrismaConIds([42]);
+  let borradosAlEntrar = null;
+
+  await withMerchant(f.cliente, { name: 'QA', email: 'qa-876f-b@test.local' }, async (merchant) => {
+    assert.equal(merchant.id, 42);
+    borradosAlEntrar = [...f.borrados];
+  }, { after: () => {} });
+
+  assert.deepEqual(f.creados, [42], 'una sola creación');
+  assert.deepEqual(borradosAlEntrar, [], 'ningún borrado antes del test');
+});
+
+test('SCRUM-876f: si el segundo también nace demo, no se le entrega a nadie y queda para el barrido', async () => {
+  const f = fakePrismaConIds([ID_DEL_DEMO, ID_DEL_DEMO]);
+  let entro = false;
+
+  await assert.rejects(
+    () => withMerchant(f.cliente, { name: 'QA', email: 'qa-876f-c@test.local' }, async () => { entro = true; }, { after: () => {} }),
+    /ha vuelto a nacer con el id del demo/,
+  );
+
+  assert.equal(entro, false, 'el cuerpo del test no llega a correr con el demo');
+  assert.equal(merchantsVivos.has(ID_DEL_DEMO), true, 'y el que sobró queda registrado para el barrido final');
+  await barridoFinal(f.cliente);
+  assert.equal(merchantsVivos.size, 0);
 });

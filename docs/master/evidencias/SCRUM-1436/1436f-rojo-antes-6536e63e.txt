@@ -1,0 +1,35 @@
+ok 1 - SCRUM-1436f · SUELO: el helper da «1.419,87 €» con espacio duro, y el patrón del crudo distingue
+not ok 2 - SCRUM-1436f · 🔴 cobro confirmado: el WhatsApp al profesional y el historial dicen «1.419,87 €»
+  expected: '💰 Pago recibido de Cliente de prueba: 1.419,87 €'
+  actual: '💰 Pago recibido de Cliente de prueba: 1419.87 EUR'
+ok 3 - SCRUM-1436f · ✅ cobro confirmado: la FRASE no cambia, sólo la forma de la cifra
+ok 4 - SCRUM-1436f · ✅ cobro confirmado: al CLIENTE le sigue saliendo su confirmación, la misma
+ok 5 - SCRUM-1436f · la variable de la plantilla sigue pasando el validador de la casa
+not ok 6 - SCRUM-1436f · ✅ un justificante se sigue llamando justificante en el historial
+  expected: '1.419,87 € · Justificante J-2026-0007'
+  actual: '1419.87 EUR · Justificante J-2026-0007'
+not ok 7 - SCRUM-1436f · fuera del euro sale el código de la moneda, no un € impostado
+  expected: '💰 Pago recibido de Cliente de prueba: 1.419,87 MXN'
+  actual: '💰 Pago recibido de Cliente de prueba: 1419.87 MXN'
+not ok 8 - SCRUM-1436f · 🔴 Mercado Pago: el aviso no pinta el número tal como lo manda el proveedor
+  expected: '💰 Pago recibido (Mercado Pago) de Cliente de prueba: 1.419,80 €'
+  actual: '💰 Pago recibido (Mercado Pago) de Cliente de prueba: 1419.8 EUR'
+not ok 9 - SCRUM-1436f · 🔴 «dice que te ha enviado … por Bizum»: las dos vías del aviso, en formato de la casa
+  expected: '💸 Cliente de prueba dice que te ha enviado 1.419,87 € por Bizum. Confírmalo en tu panel de YaQu (cobro #2436).'
+  actual: '💸 Cliente de prueba dice que te ha enviado 1419.87 EUR por Bizum. Confírmalo en tu panel de YaQu (cobro #2436).'
+not ok 10 - SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro «paid»: el cliente lee «1.419,87 €»
+  expected: '1.419,87 €'
+  actual: '1419.87 EUR'
+not ok 11 - SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro «failed»: el cliente lee «1.419,87 €»
+  expected: '1.419,87 €'
+  actual: '1419.87 EUR'
+not ok 12 - SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro «pending»: el cliente lee «1.419,87 €»
+  expected: '1.419,87 €'
+  actual: '1419.87 EUR'
+not ok 13 - SCRUM-1436f · 🔴 /pay/mp/:token/result con el cobro «expired»: el cliente lee «1.419,87 €»
+  expected: '1.419,87 €'
+  actual: '1419.87 EUR'
+# tests 13
+# pass 4
+# fail 9
+# skipped 0

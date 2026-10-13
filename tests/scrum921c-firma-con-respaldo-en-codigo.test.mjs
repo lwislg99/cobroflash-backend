@@ -132,7 +132,7 @@ const VENTANA = 45;
 //
 // ⚠️ Y NO es el 27 de `_censo-firmas-autorizacion.mjs`: aquél cuenta sobre `docs/` incluido y con
 // otra marca. Que los dos rondaran 27 es casualidad, y por eso se dice aquí.
-export const SIN_RESPALDO = 28;
+export const SIN_RESPALDO = 27;
 
 // Procedencias que apuntan a un documento que NO EXISTE. Peor que no tener procedencia: parece
 // rastreable, así que nadie va a mirar. Se congela con nombre y apellidos, y NO se arregla aquí

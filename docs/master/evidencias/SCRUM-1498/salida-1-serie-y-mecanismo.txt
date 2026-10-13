@@ -1,0 +1,43 @@
+$ node analiza.mjs datos-push-main-2026-09-07..10-07.json --mecanismo 2026-09-22
+POBLACION 1126 runs de ci.yml · evento push · creados 2026-09-07..2026-10-07 (dia UTC)
+dia	runs	cancelado-0-jobs	cancelado-con-jobs	failure	sin-acabar	success	%con-jobs
+2026-09-07	40	4	11	0	0	25	90
+2026-09-08	51	2	25	6	0	18	96
+2026-09-09	29	0	15	14	0	0	100
+2026-09-15	68	3	40	24	0	1	96
+2026-09-16	71	3	30	38	0	0	96
+2026-09-17	107	10	83	6	0	8	91
+2026-09-18	31	1	25	3	0	2	97
+2026-09-20	25	2	17	6	0	0	92
+2026-09-21	78	11	51	8	0	8	86
+2026-09-22	61	37	8	7	0	9	39
+2026-09-23	53	25	10	8	0	10	53
+2026-09-24	8	2	4	1	0	1	75
+2026-09-25	41	15	11	11	0	4	63
+2026-09-26	32	21	0	8	0	3	34
+2026-09-27	31	20	0	5	0	6	35
+2026-09-28	83	57	0	14	0	12	31
+2026-09-29	49	28	0	21	0	0	43
+2026-09-30	26	12	0	14	0	0	54
+2026-10-01	94	56	0	22	0	16	40
+2026-10-02	70	44	0	19	0	7	37
+2026-10-06	52	32	2	6	0	12	38
+2026-10-07	26	16	0	1	2	7	35
+TOTAL	1126	401	332	242	2	149	64
+actor/disparador: {"Javierpf28/Javierpf28":120,"lwislg99/lwislg99":26,"yaqu-bot[bot]/yaqu-bot[bot]":980}
+intentos>1: 0
+
+MECANISMO sobre «cancelado-0-jobs» · poblacion 365 (sin run posterior: 0)
+  (a) habia un run con jobs corriendo al nacer: 365
+  (b) murio a <=15 s del nacimiento del run siguiente: 363
+  (a) y (b): 363
+  NO ENCAJA 36432871706 sha=3f4c643e creado=2026-09-28T14:01:40Z tocado=2026-09-28T14:03:50Z dY=-17s corriendo=true
+  NO ENCAJA 37480458047 sha=6b375fa8 creado=2026-10-06T14:37:02Z tocado=2026-10-06T14:50:10Z dY=-18s corriendo=true
+  vida (creado->tocado) s: min 2 · p50 171 · max 1285
+
+MECANISMO sobre «CON jobs (control)» · poblacion 259 (sin run posterior: 0)
+  (a) habia un run con jobs corriendo al nacer: 187
+  (b) murio a <=15 s del nacimiento del run siguiente: 3
+  (a) y (b): 3
+  vida (creado->tocado) s: min 722 · p50 1158 · max 3806
+EXIT=0

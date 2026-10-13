@@ -1,0 +1,16 @@
+POBLACION · con = 80 ficheros · sin = 76 ficheros · quitados = 4 · FORCE_COLOR ausente: True · HEAD caf677d09d8c34778d9cb9bec99dc1dfa20b6737
+delta de tests/ y src/ entre este HEAD~2 y origin/main (ficheros): 0
+libreMB al empezar=2512
+b-con-c7-1 · ficheros 80 · conc 7 · 67s · salida 1 · # tests 344 # pass 260 # fail 1 # skipped 83 · 1515=CAE 🔴 LA RUTA CERRADA HA DADO DE ALTA A ALGUIEN / 8 !== 0 · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion 
+b-sin-c7-1 · ficheros 76 · conc 7 · 34s · salida 0 · # tests 336 # pass 253 # fail 0 # skipped 83 · 1515=ok  · caidos: 
+b-sin-c7-2 · ficheros 76 · conc 7 · 75s · salida 1 · # tests 336 # pass 252 # fail 1 # skipped 83 · 1515=CAE 4 !== 3 · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion 
+b-sin-c7-3 · ficheros 76 · conc 7 · 63s · salida 1 · # tests 336 # pass 252 # fail 1 # skipped 83 · 1515=CAE 4 !== 3 · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion 
+b-sin-c7-4 · ficheros 76 · conc 7 · 63s · salida 1 · # tests 336 # pass 252 # fail 1 # skipped 83 · 1515=CAE 4 !== 3 · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion 
+b-sin-c3-1 · ficheros 76 · conc 3 · 51s · salida 0 · # tests 336 # pass 253 # fail 0 # skipped 83 · 1515=ok  · caidos: 
+b-sin-c3-2 · ficheros 76 · conc 3 · 50s · salida 0 · # tests 336 # pass 253 # fail 0 # skipped 83 · 1515=ok  · caidos: 
+b-con-c3-1 · ficheros 80 · conc 3 · 63s · salida 0 · # tests 344 # pass 261 # fail 0 # skipped 83 · 1515=ok  · caidos: 
+b-con-c3-2 · ficheros 80 · conc 3 · 55s · salida 0 · # tests 344 # pass 261 # fail 0 # skipped 83 · 1515=ok  · caidos: 
+b-con-c7-2 · ficheros 80 · conc 7 · 30s · salida 1 · # tests 344 # pass 260 # fail 1 # skipped 83 · 1515=CAE 7 !== 3 · caidos: not ok 57 - SCRUM-1515 · el merchant que crea nuestro guion 
+poso: merchants=0
+libreMB al acabar=2739
+EXIT=0

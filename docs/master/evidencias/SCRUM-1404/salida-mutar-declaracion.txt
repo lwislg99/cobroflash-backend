@@ -1,0 +1,8 @@
+POBLACION=4 mutaciones · BASE sin mutar: tests 14 · fail 0 · el caso sale 1 vez
+VIVA   · se borra una de las tres piezas declaradas · tests 14 · fail 1 · cae el caso: true
+VIVA   · la declaración ya no dice quién la retira · tests 14 · fail 1 · cae el caso: true
+VIVA   · una pieza cambia de ticket · tests 14 · fail 1 · cae el caso: true
+VIVA   · una pieza nombra una función que el módulo no exporta · tests 14 · fail 1 · cae el caso: true
+RESTAURADO: idéntico · tests 14 · fail 0
+no vivas: 0
+EXIT=0

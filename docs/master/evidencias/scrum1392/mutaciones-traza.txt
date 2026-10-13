@@ -1,0 +1,16 @@
+BASE sin mutar: salida 0 · 9 pasan · 0 caen
+POBLACIÓN: 6 mutaciones, una cada vez, sobre 9 casos
+  1. la pieza deja de conservar lo entregado cuando el caso lanza (el defecto del ticket)
+     scripts/_hallazgos-y-ciegos.mjs → VIVA — cae «SCRUM-1392 · ① un caso que apunta en las listas ENTREGADAS y después lanza conserva lo que» (caen 2 de 9)
+  2. todo lanzamiento se vuelve hallazgo (lo que rompería el ciego)
+     scripts/_hallazgos-y-ciegos.mjs → VIVA — cae «SCRUM-1392 · ② EL POSITIVO: lanzar con las manos vacías sigue siendo un ciego, y sale 2» (caen 3 de 9)
+  3. la línea sólo sale si alguien lanzó con hallazgos
+     scripts/_hallazgos-y-ciegos.mjs → VIVA — cae «SCRUM-1392 · ③ la línea del recorrido sale SIEMPRE, una por recorrido, también con ceros» (caen 2 de 9)
+  4. lo entregado se cuenta dos veces
+     scripts/_hallazgos-y-ciegos.mjs → VIVA — cae «SCRUM-1392 · ① lo entregado no se cuenta dos veces, ni se pierde si el caso devuelve otras» (caen 1 de 9)
+  5. `guard-duplicar-926` vuelve a llevar los errores de página en la mano
+     scripts/guard-duplicar-926.mjs → VIVA — cae «SCRUM-1392 · ④ ningún guard de scripts/ lleva una lista de hallazgos en la mano» (caen 1 de 9)
+  6. `guard-portal-en-la-ficha` vuelve a su lista propia
+     scripts/guard-portal-en-la-ficha.mjs → VIVA — cae «SCRUM-1392 · ④ ningún guard de scripts/ lleva una lista de hallazgos en la mano» (caen 1 de 9)
+RESULTADO: 6 VIVAS de 6 · 0 ciegas
+EXIT=0

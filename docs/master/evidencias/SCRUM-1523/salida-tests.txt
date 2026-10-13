@@ -1,0 +1,456 @@
+CONTROL POSITIVO SEMBRADO · bytes=204 · apariciones=5 · comentario=2 identificador=2 cadena=1 · VISTO
+POBLACION · carpeta=tests · ficheros de codigo seguidos por git=1492
+POBLACION · caracteres leidos=18243569
+CONTROL DE CERO DERIVADO · «etnacifitsuj» · apariciones=0 · CERO
+TERMINO justificante · ficheros=105 · apariciones=543 · {"comentario":225,"cadena":235,"identificador":74,"otro":9}
+TERMINO isReceiptNumber · ficheros=12 · apariciones=28 · {"cadena":7,"identificador":14,"otro":3,"comentario":4}
+TERMINO RECEIPT_NUMBER_PREFIX · ficheros=5 · apariciones=8 · {"cadena":2,"identificador":4,"otro":1,"comentario":1}
+TERMINO 'JUST' · ficheros=18 · apariciones=31 · {"comentario":2,"cadena":25,"otro":4}
+TERMINO 'receipt' · ficheros=26 · apariciones=59 · {"cadena":40,"comentario":14,"otro":5}
+TERMINO 'J-' · ficheros=2 · apariciones=2 · {"cadena":2}
+TERMINO J- · ficheros=56 · apariciones=162 · {"comentario":56,"cadena":103,"otro":3}
+
+POR FICHERO · «justificante» · 105 ficheros
+  tests/_barra-lateral.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/_censo-aritmetica-iva.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/_censo-copy-vs-flag.mjs · comentario=4 cadena=1 identificador=0 otro=0
+  tests/_copy-publico.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/_factura-fixture.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/_guards-de-navegador-declarados.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/_huerfanos-declarados.mjs · comentario=0 cadena=4 identificador=0 otro=0
+  tests/_viajes-de-la-reserva.mjs · comentario=3 cadena=0 identificador=1 otro=0
+  tests/banco-scrum1220/medir-ajustes-modo-justificante.mjs · comentario=2 cadena=2 identificador=0 otro=0
+  tests/banco-scrum1257/censo-vocabulario-justificante.mjs · comentario=3 cadena=0 identificador=0 otro=1
+  tests/emission.test.mjs · comentario=3 cadena=2 identificador=0 otro=0
+  tests/pdfs.test.mjs · comentario=1 cadena=3 identificador=0 otro=0
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs · comentario=2 cadena=4 identificador=0 otro=0
+  tests/scrum1160-cobrar-ahora-modo-recibo.test.mjs · comentario=1 cadena=2 identificador=0 otro=0
+  tests/scrum1169-linea-tiempo-modo-recibo.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum1170-seccion-facturas-modo-recibo.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum1205-cobrar-resto-lista-modo.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum1212-correo-aceptado-sin-emitir-factura.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum1232-libro-sin-justificantes.test.mjs · comentario=9 cadena=15 identificador=8 otro=0
+  tests/scrum1235-el-correo-que-no-salio.test.mjs · comentario=0 cadena=11 identificador=0 otro=1
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs · comentario=8 cadena=10 identificador=12 otro=0
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs · comentario=5 cadena=13 identificador=0 otro=0
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs · comentario=1 cadena=4 identificador=0 otro=0
+  tests/scrum1296-emitir-encola.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs · comentario=4 cadena=8 identificador=0 otro=0
+  tests/scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum1344-arnes-de-prueba-con-rol.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs · comentario=1 cadena=2 identificador=0 otro=0
+  tests/scrum1404b-el-reintento-del-sellado.test.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/scrum1425-foto-pequena-que-no-es-imagen.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs · comentario=3 cadena=8 identificador=2 otro=1
+  tests/scrum1436f-los-importes-de-los-avisos.test.mjs · comentario=0 cadena=3 identificador=0 otro=0
+  tests/scrum149-sin-lineas-no-sella.test.mjs · comentario=1 cadena=2 identificador=0 otro=0
+  tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs · comentario=1 cadena=2 identificador=0 otro=0
+  tests/scrum153d-ui-anular.test.mjs · comentario=0 cadena=2 identificador=0 otro=0
+  tests/scrum170-facturacion-parcial.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum171a-consolidar-cliente.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum178-emision-manual.test.mjs · comentario=2 cadena=2 identificador=0 otro=0
+  tests/scrum205-fallo-de-sellado-no-entrega.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum206-sin-huella-no-salen-bytes.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum207-conciliacion.test.mjs · comentario=3 cadena=1 identificador=2 otro=0
+  tests/scrum207-emision-auditada.test.mjs · comentario=3 cadena=1 identificador=1 otro=0
+  tests/scrum263-sin-lineas-409.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum289b-factura-suelta.test.mjs · comentario=8 cadena=3 identificador=0 otro=0
+  tests/scrum290-endpoint-convertir.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum291-series-huecos.test.mjs · comentario=11 cadena=2 identificador=2 otro=0
+  tests/scrum298-modo-visible.test.mjs · comentario=5 cadena=3 identificador=0 otro=0
+  tests/scrum299-copy-factura-publico.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum308-caracterizacion-rectify.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum316-detalle-trabajo-b2.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum318-rail-contenido.test.mjs · comentario=0 cadena=2 identificador=3 otro=0
+  tests/scrum319-documentos-por-tipo.test.mjs · comentario=2 cadena=8 identificador=0 otro=0
+  tests/scrum320-que-falta-para-cobrar.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum324-aviso-simplificado-ui.test.mjs · comentario=1 cadena=2 identificador=0 otro=1
+  tests/scrum324-cadena-hasta-el-libro.test.mjs · comentario=1 cadena=2 identificador=3 otro=0
+  tests/scrum324-justificante-deducible.test.mjs · comentario=2 cadena=1 identificador=19 otro=0
+  tests/scrum344-cierre-con-saldo.test.mjs · comentario=1 cadena=0 identificador=0 otro=2
+  tests/scrum346-justificante-suelto.test.mjs · comentario=9 cadena=3 identificador=0 otro=0
+  tests/scrum349-copy-no-comentarios.test.mjs · comentario=0 cadena=4 identificador=0 otro=0
+  tests/scrum396-referencia-justificante.test.mjs · comentario=6 cadena=1 identificador=0 otro=0
+  tests/scrum397-fecha-real-de-cobro.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum409-fixtures-sin-merchant-demo.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum412-primaria-nunca-es-sm.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum413-tipo-factura-cerrado.test.mjs · comentario=0 cadena=3 identificador=0 otro=0
+  tests/scrum419-ci-declara-lo-que-no-corre.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum442-facturas-sin-justificantes.test.mjs · comentario=1 cadena=6 identificador=0 otro=0
+  tests/scrum445-cobros-sin-duplicar.test.mjs · comentario=2 cadena=6 identificador=4 otro=0
+  tests/scrum508-los-cinco-dejan-fila.test.mjs · comentario=0 cadena=0 identificador=1 otro=0
+  tests/scrum514-aprobado-y-aplicado.test.mjs · comentario=0 cadena=5 identificador=0 otro=0
+  tests/scrum522-guards-fuera-de-la-tanda.test.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/scrum548-peaje-package-json.test.mjs · comentario=3 cadena=0 identificador=0 otro=0
+  tests/scrum600-un-solo-front-documento.test.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/scrum600b-la-factura-usa-el-front.test.mjs · comentario=8 cadena=8 identificador=0 otro=0
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs · comentario=3 cadena=8 identificador=0 otro=0
+  tests/scrum601-copy-del-documento-vs-flag.test.mjs · comentario=19 cadena=0 identificador=0 otro=0
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs · comentario=0 cadena=4 identificador=0 otro=0
+  tests/scrum627-censo-ciego.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum627b-censo-declara-reimplementaciones.test.mjs · comentario=0 cadena=2 identificador=0 otro=0
+  tests/scrum643-huso-del-sello-fiscal.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum667-marcador-visible.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum728d-ms-en-loopback.test.mjs · comentario=2 cadena=0 identificador=0 otro=0
+  tests/scrum728d-viajes-de-la-reserva.test.mjs · comentario=5 cadena=0 identificador=1 otro=0
+  tests/scrum776-una-sola-voz.test.mjs · comentario=14 cadena=10 identificador=1 otro=1
+  tests/scrum780-formato-f-en-la-factura.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum781-concurrencia-de-la-factura.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum81-allocate-flags.test.mjs · comentario=3 cadena=1 identificador=0 otro=0
+  tests/scrum825-rama-justificante-retirada.test.mjs · comentario=5 cadena=17 identificador=1 otro=1
+  tests/scrum844-sellar-dentro-de-transaccion.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum844b-que-documento-se-declara.test.mjs · comentario=2 cadena=2 identificador=0 otro=0
+  tests/scrum844d-quien-entra-en-la-cadena.test.mjs · comentario=3 cadena=2 identificador=5 otro=0
+  tests/scrum846b-siembras-a-los-quince.test.mjs · comentario=0 cadena=1 identificador=0 otro=0
+  tests/scrum867-el-modal-muerto.test.mjs · comentario=0 cadena=0 identificador=0 otro=1
+  tests/scrum887b-descuento-global.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum895-boton-imposible.test.mjs · comentario=2 cadena=4 identificador=0 otro=0
+  tests/scrum895b-literales-firmados.test.mjs · comentario=3 cadena=2 identificador=0 otro=0
+  tests/scrum905-facturar-solo-si-se-puede.test.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  tests/scrum912-leer-ticket-gasto.test.mjs · comentario=0 cadena=1 identificador=3 otro=0
+  tests/scrum937-el-nif-no-se-tira-en-silencio.test.mjs · comentario=3 cadena=2 identificador=5 otro=0
+  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs · comentario=0 cadena=2 identificador=0 otro=0
+  tests/scrum964-la-lista-no-carga-las-fotos.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum965-un-solo-documento.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum974-firmado-sin-facturar-en-el-lunes.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/scrum984-del-presupuesto-al-albaran.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  tests/whatsappTemplates.test.mjs · comentario=1 cadena=0 identificador=0 otro=0
+
+FICHEROS DONDE «justificante» SOLO APARECE EN COMENTARIOS: 31 de 105
+
+CADENAS que contienen «justificante» (candidatas a texto, se derivan LEYENDO):
+  tests/_censo-copy-vs-flag.mjs:102 · export const SEMILLA_TIPO = { nombre: 'TIPO_DEL_DOCUMENTO', ids: new Set(['isReceiptNumber', 'tipoDeFactura']), textos: new Set(['JUST', 'justificante']) };
+  tests/_guards-de-navegador-declarados.mjs:81 · 'guard:ajustes-del-justificante',
+  tests/_huerfanos-declarados.mjs:395 · { modulo: 'src/modules/expenses/domain/justificante.ts',
+  tests/_huerfanos-declarados.mjs:399 · { modulo: 'src/modules/expenses/domain/justificante.ts',
+  tests/_huerfanos-declarados.mjs:503 · motivo: 'SCRUM-1232: el criterio único de «esto es un justificante» (sólo `type === \'JUST\'`). Lo '
+  tests/_huerfanos-declarados.mjs:507 · exports: ['esJustificante'] },
+  tests/banco-scrum1220/medir-ajustes-modo-justificante.mjs:68 · 'Se emiten justificantes de cobro',
+  tests/banco-scrum1220/medir-ajustes-modo-justificante.mjs:69 · 'Cada cobro genera un justificante',
+  tests/emission.test.mjs:46 · test('isReceiptNumber: reconoce los justificantes J- YA EMITIDOS (el generador se retiró, SCRUM-825)', () => {
+  tests/emission.test.mjs:98 · 'Desde SCRUM-1027 el interruptor en OFF significa CERO documentos, no «justificante».');
+  tests/pdfs.test.mjs:54 · test('A12.5b: justificante serie J — sin QR, copy de justificante', async () => {
+  tests/pdfs.test.mjs:54 · test('A12.5b: justificante serie J — sin QR, copy de justificante', async () => {
+  tests/pdfs.test.mjs:66 · assertPdf(outPath, 1500, 'justificante');
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:200 · 'makeReceiptNumber', 'reservarReferenciaJustificante',
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:201 · 'ReferenciaJustificanteAgotada', 'INTENTOS_REFERENCIA_JUSTIFICANTE',
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:201 · 'ReferenciaJustificanteAgotada', 'INTENTOS_REFERENCIA_JUSTIFICANTE',
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:212 · '🔴 isReceiptNumber ha desaparecido: los justificantes YA EMITIDOS dejan de reconocerse. ' +
+  tests/scrum1160-cobrar-ahora-modo-recibo.test.mjs:77 · assert.equal(m.cobrar.length, 0, '🔴 «Cobrar ahora» se ofrece en modo justificante');
+  tests/scrum1160-cobrar-ahora-modo-recibo.test.mjs:96 · assert.equal(m.generar.length, 0, '🔴 «Generar factura» se ofrece en modo justificante');
+  tests/scrum1169-linea-tiempo-modo-recibo.test.mjs:72 · '🔴 en modo justificante la línea promete pasos que la regla 24 no deja ocurrir.');
+  tests/scrum1170-seccion-facturas-modo-recibo.test.mjs:74 · assert.ok(!m.titulos.includes('Facturas'), '🔴 en modo justificante la ficha enseña una sección «Facturas» que no tendrá contenido.');
+  tests/scrum1212-correo-aceptado-sin-emitir-factura.test.mjs:54 · assert.equal(modoEmisionVisible(merchant), 'receipt', 'premisa: sin el flag, un ES real va en justificante');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:113 · test('SCRUM-1232 · el libro de la pantalla NO trae justificantes (`type JUST`)', async () => {
+  tests/scrum1232-libro-sin-justificantes.test.mjs:120 · `🔴 «${j}» sigue en el «Libro registro de facturas expedidas». Un justificante no es una ` +
+  tests/scrum1232-libro-sin-justificantes.test.mjs:141 · '🔴 el libro ha perdido (o ganado) facturas que no son justificantes.');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:147 · 'justificantes, un merchant que sólo tuviera justificantes vería «el libro no cuadra».');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:147 · 'justificantes, un merchant que sólo tuviera justificantes vería «el libro no cuadra».');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:149 · '🔴 los justificantes se han quitado sin DECLARARLO. Lo que un libro fiscal descarta se cuenta.');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:152 · test('SCRUM-1232 · con SÓLO justificantes el libro dice «no hay», no «no cuadra»', async () => {
+  tests/scrum1232-libro-sin-justificantes.test.mjs:158 · 'sería falso: no había ninguna factura, había justificantes.');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:162 · test('SCRUM-1232 · un justificante AJENO que se cuele no desaparece: sigue contando en `ajenas`', async () => {
+  tests/scrum1232-libro-sin-justificantes.test.mjs:166 · assert.equal(libro.ajenas, 1, '🔴 el justificante del otro merchant se ha filtrado en silencio en vez de contarse.');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:167 · assert.equal(libro.justificantesFuera, 1, '🔴 un justificante ajeno se ha contado como mío.');
+  tests/scrum1232-libro-sin-justificantes.test.mjs:174 · test('SCRUM-1232 · el libro de expedidas para la AEAT tampoco lleva justificantes', async () => {
+  tests/scrum1232-libro-sin-justificantes.test.mjs:191 · test('SCRUM-1232 · ⛔ el 303 SIGUE declarando el IVA de los justificantes (lo devengado, no lo documentado)', async () => {
+  tests/scrum1232-libro-sin-justificantes.test.mjs:199 · '🔴 la base del 303 ha cambiado. Quitar el justificante del 303 INFRADECLARA: la operación ' +
+  tests/scrum1232-libro-sin-justificantes.test.mjs:212 · '🔴 `leerLibroRegistro` sin `soloFacturas` ya no trae los justificantes: el 303, las evidencias ' +
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:215 · test('SCRUM-1235 · un justificante (J-…) se dice como justificante, nunca como factura (reglas 24/26)', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:215 · test('SCRUM-1235 · un justificante (J-…) se dice como justificante, nunca como factura (reglas 24/26)', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:219 · assert.deepEqual(fila.correoNoSalio, { invoiceId: 7010, clase: 'justificante' });
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:313 · test('SCRUM-1235 · un justificante se avisa como justificante', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:313 · test('SCRUM-1235 · un justificante se avisa como justificante', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:314 · const p = await abrirCobros([{ ...COBRO_SIN_CORREO, correoNoSalio: { invoiceId: 7010, clase: 'justificante' } }], () => ({}));
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:316 · assert.doesNotMatch(p.texto(), /la factura/, '🔴 reglas 24/26: un justificante no se llama factura');
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:383 · test('SCRUM-1243 · un justificante (J-…) que falla antes de Resend se registra como justificante', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:383 · test('SCRUM-1243 · un justificante (J-…) que falla antes de Resend se registra como justificante', async () => {
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:387 · assert.equal(b.filasCorreo[0].kind, 'justificante');
+  tests/scrum1235-el-correo-que-no-salio.test.mjs:388 · assert.deepEqual((await b.pantalla()).correoNoSalio, { invoiceId: 7020, clase: 'justificante' });
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:110 · test('SCRUM-1252 · SUELO: sin filtrar, el paquete SÍ pinta el justificante — la muestra no está ciega', async () => {
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:134 · test('SCRUM-1252 · ⛔ el 303 del paquete es IDÉNTICO con filtro y sin él, y sigue llevando el IVA del justificante', async () => {
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:140 · 'no lo documentado (LIVA 75/167): sacarle el justificante INFRADECLARA.');
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:149 · assert.equal(base, 250, 'la muestra ha cambiado: 100 + 200 (justificante) + 50 − 100.');
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:167 · test('SCRUM-1252 · 🔴 la línea no entra sola: con un justificante fuera del libro, el paquete lo DICE en `avisos` y dentro del ZIP', async () => {
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:173 · '🔴 el libro y el 303 del paquete no se separan por la base del justificante: la muestra ya no ' +
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:175 · assert.equal(BASE_DEL_JUSTIFICANTE, 200, 'la muestra ha cambiado: el justificante propio era de 200.');
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:178 · '🔴 el paquete deja un justificante fuera del libro y NO lo dice. Su IVA sigue en el 303 del mismo ' +
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:186 · test('SCRUM-1252 · CONTROL: sin nada fuera del libro, el aviso NO sale — ni sin justificantes, ni con el libro sin filtrar', async () => {
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:191 · '🔴 sin justificantes, el libro y el 303 del paquete tienen que sumar la misma base.');
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:25 · const CENSO = path.join(RAIZ, 'tests/banco-scrum1257/censo-vocabulario-justificante.mjs');
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:28 · const VIEJO = 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.';
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:90 · 'cobrosView.js\tNo se pudo enviar el justificante al cliente por email.',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:91 · 'invoiceDetailView.js\tJustificante de cobro',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:92 · 'invoiceDetailView.js\tDetalle y acciones del justificante.',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:93 · 'invoiceDetailView.js\tJUSTIFICANTE',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:94 · 'jobDetailView.js\tJustificante',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:99 · 'invoiceDetailView.js\tPresupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:100 · 'quotesDetailView.js\t🧾 Ver justificante',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:101 · 'invoicesView.js\tjustificante',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:102 · 'jobDocsReparto.js\tjustificante',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:103 · 'jobRailBlocks.js\tjustificante',
+  tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs:138 · '🔴 Ajustes sigue en el censo del «justificante»');
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:38 · 'settingsView.js': ['Sin ellos, el documento tras el pago es un justificante de cobro'],
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:97 · test('SCRUM-1257 · P5 · la fila «Datos fiscales» ya no promete un justificante', () => {
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:103 · assert.equal(eleccion('quotesDetailView.js', P6, '🧾 Ver justificante'), "tipoDeFactura(paidInvCta) === 'factura'");
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:107 · const vieja = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
+  tests/scrum1296-emitir-encola.test.mjs:150 · test('SCRUM-1296 · ✅ un justificante (J-…) no se encola (regla 24/26: no es factura)', async () => {
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:251 · assert.equal(loQueLeeElPanel('justificante'), 'no', 'SCRUM-825 D1: un «justificante» cae a «no»');
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:251 · assert.equal(loQueLeeElPanel('justificante'), 'no', 'SCRUM-825 D1: un «justificante» cae a «no»');
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:258 · const directo = leerArnes("const me = () => ({ id: 1, documentoSuelto: 'justificante' });\nawait pag.goto(`http://x/dashboard/index.html#invoices-new`);");
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:259 · assert.deepEqual(directo.valores, ['justificante']);
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:262 · const porVariable = leerArnes("let modoSuelto = 'no';\nconst me = () => ({ documentoSuelto: modoSuelto });\nmodoSuelto = suelto ? 'justificante' : 'no';\nawait pag.goto(`
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:263 · assert.deepEqual(porVariable.valores, ['justificante', 'no']);
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:264 · assert.ok(defectosDelArnes(porVariable).some((d) => d.includes('«justificante»')));
+  tests/scrum1313-ciego-no-es-verde-ni-rojo.test.mjs:312 · const LOS_CUATRO = ['guard-915g-ajustes-del-justificante.mjs', 'guard-915i-cabecera.mjs', 'guard-965-un-solo-presupuesto.mjs', 'guard-pasos-del-editor.mjs'];
+  tests/scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs:195 · assert.ok(conVeredicto.some((r) => r.f === 'guard-915g-ajustes-del-justificante.mjs'),
+  tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs:319 · assert.ok(c.limpios.includes('guard-915g-ajustes-del-justificante.mjs'),
+  tests/scrum1344-arnes-de-prueba-con-rol.test.mjs:83 · 'scrum346-justificante-suelto.test.mjs',
+  tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs:308 · assert.equal((await pedir(port, tokenAna, `/admin/invoices/${justSuyo.id}`)).status, 200, '🔴 no abre la ficha de un justificante suyo');
+  tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs:309 · assert.equal((await pedir(port, tokenAna, `/admin/invoices/${justAjeno.id}`)).status, 404, '🔴 abre la ficha de un justificante ajeno');
+  tests/scrum1425-foto-pequena-que-no-es-imagen.test.mjs:108 · assert.deepEqual(altas(r), [], '🔴 el fichero viajó como justificante del gasto');
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:75 · test('SCRUM-1436b · 🔴 a un justificante `J-…` el recordatorio lo llama «justificante», no «factura»', async () => {
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:75 · test('SCRUM-1436b · 🔴 a un justificante `J-…` el recordatorio lo llama «justificante», no «factura»', async () => {
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:77 · assert.ok(texto.includes('el pago del justificante *J-2026-0007*'),
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:80 · `🔴 el recordatorio de un justificante dice «factura»: «${texto}»`);
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:93 · assert.equal(/justificante/i.test(texto), false, `🔴 el recordatorio de una factura dice «justificante»: «${texto}»`);
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:104 · const dice = texto.includes(`del justificante *${numero}*`) ? 'justificante'
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:104 · const dice = texto.includes(`del justificante *${numero}*`) ? 'justificante'
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:107 · assert.equal(dice, isReceiptNumber(numero) ? 'justificante' : 'factura',
+  tests/scrum1436f-los-importes-de-los-avisos.test.mjs:248 · test('SCRUM-1436f · ✅ un justificante se sigue llamando justificante en el historial', async () => {
+  tests/scrum1436f-los-importes-de-los-avisos.test.mjs:248 · test('SCRUM-1436f · ✅ un justificante se sigue llamando justificante en el historial', async () => {
+  tests/scrum1436f-los-importes-de-los-avisos.test.mjs:251 · assert.equal(elEvento('payment_received').detail, `${formatMoneyEs(TOTAL, 'EUR')} · Justificante J-2026-0007`);
+  tests/scrum149-sin-lineas-no-sella.test.mjs:90 · test('SCRUM-149: el guard NO se salta la regla de los justificantes (orden de las comprobaciones)', async () => {
+  tests/scrum149-sin-lineas-no-sella.test.mjs:97 · 'el justificante se rechaza por serlo, antes de mirar las líneas',
+  tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:208 · test('SCRUM-1510 · 🔴 justificante que se quedó pendiente (la escritura de «no aplica» falló): no sale documento, y lo niega el corte del ESTADO', async () => {
+  tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:218 · await exigirQueNoSale(d, camino, 'el justificante pendiente');
+  tests/scrum153d-ui-anular.test.mjs:146 · test('SCRUM-153 · no se ofrece sobre pagadas, rectificativas ni justificantes', () => {
+  tests/scrum153d-ui-anular.test.mjs:156 · assert.ok(/J-/.test(bloque), '🔴 se ofrece sobre un justificante J- (V0-0: nunca entra en la cadena)');
+  tests/scrum178-emision-manual.test.mjs:111 · assert.equal(factura.type, 'JUST', 'un número de justificante tiene que dar tipo JUST');
+  tests/scrum178-emision-manual.test.mjs:113 · `🔴 JUSTIFICANTE SELLADO: ${factura.number} no es una factura fiscal y no puede entrar ` +
+  tests/scrum205-fallo-de-sellado-no-entrega.test.mjs:173 · '🔴 el portón bloquea `no_aplica`: los justificantes J- y los merchants no-ES no llevan huella ' +
+  tests/scrum206-sin-huella-no-salen-bytes.test.mjs:40 · { nombre: 'justificante J- (regla 26)',    inv: { number: 'J-2026-001', vfHash: null }, merchant: ES,                                 debeSellarse: false, puedeSalir: tru
+  tests/scrum207-conciliacion.test.mjs:55 · test('SCRUM-207 · el ORDEN de los if es el criterio: un justificante sin líneas NO es agujero', () => {
+  tests/scrum207-emision-auditada.test.mjs:94 · test('SCRUM-207 · el justificante YA NO se emite ni se audita: invoicing_es_disabled, cero filas (SCRUM-1027)', async () => {
+  tests/scrum289b-factura-suelta.test.mjs:109 · 'ni factura ni justificante — no solo "no factura".');
+  tests/scrum289b-factura-suelta.test.mjs:159 · '🔴 el `J-` se sigue rechazando en el camino de JUSTIFICANTE, donde es exactamente lo que ' +
+  tests/scrum289b-factura-suelta.test.mjs:325 · '+ Nuevo justificante': 'fundador, 6-ago-2026 (SCRUM-346 / A0.5)',
+  tests/scrum290-endpoint-convertir.test.mjs:193 · test('SCRUM-290 · en modo JUSTIFICANTE no se emite (reglas 24/26)', async () => {
+  tests/scrum291-series-huecos.test.mjs:78 · test('SCRUM-291 ④ · los JUSTIFICANTES no cuentan como serie empezada', () => {
+  tests/scrum291-series-huecos.test.mjs:85 · '🔴 un justificante se está contando como parte de la serie fiscal.');
+  tests/scrum298-modo-visible.test.mjs:50 · assert.equal(modoEmisionVisible(ES_REAL), 'receipt', 'el ES real sin flag emite justificante');
+  tests/scrum298-modo-visible.test.mjs:69 · assert.equal(antes, 'receipt', 'y sigue siendo el justificante: A8 no enciende nada');
+  tests/scrum298-modo-visible.test.mjs:260 · + 'el mismo `throw` de `allocateInvoiceNumber` en `receipt`; ya no nombra el justificante y no afirma nada sobre él',
+  tests/scrum299-copy-factura-publico.test.mjs:76 · `«factura» (Parte M: el documento post-pago es justificante, no factura) → ` +
+  tests/scrum318-rail-contenido.test.mjs:236 · assert.ok(conJustificante, '🔴 SUELO: el bloque DINERO no sale ni con un justificante — lo de abajo no mediría nada.');
+  tests/scrum318-rail-contenido.test.mjs:243 · '🔴 el bloque DINERO se pinta sin ningún justificante: un título con el cuerpo vacío.');
+  tests/scrum319-documentos-por-tipo.test.mjs:85 · 'Si el derivador no los expande, un justificante y una factura contarían como el mismo tipo.',
+  tests/scrum319-documentos-por-tipo.test.mjs:209 · test('SCRUM-319 · los JUSTIFICANTES bajan al bloque DINERO — y las facturas NO', () => {
+  tests/scrum319-documentos-por-tipo.test.mjs:212 · assert.ok(dinero, '🔴 ESCÁNER CIEGO: no sale bloque DINERO con dinero y justificantes');
+  tests/scrum319-documentos-por-tipo.test.mjs:217 · '🔴 los justificantes no bajan al bloque DINERO enlazados (o baja algo que no es justificante). ' +
+  tests/scrum319-documentos-por-tipo.test.mjs:217 · '🔴 los justificantes no bajan al bloque DINERO enlazados (o baja algo que no es justificante). ' +
+  tests/scrum319-documentos-por-tipo.test.mjs:225 · `🔴 la factura/rectificativa ${id} está en el bloque DINERO junto a los justificantes.`,
+  tests/scrum319-documentos-por-tipo.test.mjs:250 · '🔴 la condición del justificante está DUPLICADA en la vista, además de en el módulo.',
+  tests/scrum319-documentos-por-tipo.test.mjs:254 · assert.equal(REPARTO.tipoDeFactura({ number: 'J-1' }), 'justificante');
+  tests/scrum324-aviso-simplificado-ui.test.mjs:87 · '🔴 se ha desconectado el motor del justificante de la ruta. El motor se queda —dejo de ser ' +
+  tests/scrum324-aviso-simplificado-ui.test.mjs:104 · + '  el justificante no puede deducir IVA nunca, y el aviso sería un misterio en vez de una\n'
+  tests/scrum324-cadena-hasta-el-libro.test.mjs:50 · const { clasificarJustificante } = await import('../dist/modules/expenses/domain/justificante.js');
+  tests/scrum324-cadena-hasta-el-libro.test.mjs:207 · test('SCRUM-324 · 🔴 el motor del justificante ya no se alimenta de NULOS', () => {
+  tests/scrum324-justificante-deducible.test.mjs:20 · } from '../dist/modules/expenses/domain/justificante.js';
+  tests/scrum346-justificante-suelto.test.mjs:72 · const numero = modoDocumentoSuelto(merchant) === 'justificante' ? 'J-2026-0001' : 'F-2026-0001';
+  tests/scrum346-justificante-suelto.test.mjs:139 · test('SCRUM-1027 · REGLA 24: el ES real sin flag no emite NINGÚN documento suelto (ni factura ni justificante)', () => {
+  tests/scrum346-justificante-suelto.test.mjs:145 · assert.notEqual(modoDocumentoSuelto(ES_REAL), 'justificante');
+  tests/scrum349-copy-no-comentarios.test.mjs:99 · comentario: (f) => `// Regla 26: al cliente final JAMÁS se le dice «${f}» — hasta SIF-1 es un justificante.\nconst x = 1;\n`,
+  tests/scrum349-copy-no-comentarios.test.mjs:113 · comentario: (f) => `// El copy prohibido es del tipo «${f}»; aquí va el número de justificante.\nconst z = 3;\n`,
+  tests/scrum349-copy-no-comentarios.test.mjs:149 · const comentarioHtml = `<html><body>\n<!-- Ojo: nunca poner «${frase}» aquí; es un justificante -->\n<p>Hola</p></body></html>`;
+  tests/scrum349-copy-no-comentarios.test.mjs:180 · `      // post-pago es un justificante, no una factura (reglas 24/26).\n`;
+  tests/scrum396-referencia-justificante.test.mjs:65 · update: async () => { throw new Error('🔴 el justificante NO puede avanzar la serie fiscal'); },
+  tests/scrum413-tipo-factura-cerrado.test.mjs:262 · test('SCRUM-413 · 🔴 EL VECTOR: un JUSTIFICANTE se declara a la AEAT como factura F1', async () => {
+  tests/scrum413-tipo-factura-cerrado.test.mjs:269 · `🔴 el justificante declara «${declarado}». Desde SCRUM-413 NO se declara: se EXCLUYE con motivo. ` +
+  tests/scrum413-tipo-factura-cerrado.test.mjs:273 · assert.notEqual(declarado, 'F1', '🔴 el justificante ha vuelto a declararse como factura completa');
+  tests/scrum442-facturas-sin-justificantes.test.mjs:33 · test('SCRUM-442 · 🔴 EL VECTOR: el listado EXCLUYE los justificantes', () => {
+  tests/scrum442-facturas-sin-justificantes.test.mjs:36 · `🔴 SE HA COLADO EL JUSTIFICANTE EN EL LISTADO DE FACTURAS.\n\n`
+  tests/scrum442-facturas-sin-justificantes.test.mjs:38 · + '  Sin `type: { not: \'JUST\' }`, los justificantes salen mezclados con las facturas — en\n'
+  tests/scrum442-facturas-sin-justificantes.test.mjs:39 · + '  producción eran 44 de 55 documentos (10-ago-2026). Un justificante NO es una factura: vive\n'
+  tests/scrum442-facturas-sin-justificantes.test.mjs:61 · test('SCRUM-442 · EL SUELO DEL TICKET: los justificantes siguen alcanzables desde Cobros', () => {
+  tests/scrum442-facturas-sin-justificantes.test.mjs:67 · '🔴 COBROS HA DEJADO DE LISTAR INVOICE. Entonces los justificantes excluidos de Facturas no '
+  tests/scrum445-cobros-sin-duplicar.test.mjs:91 · '`Invoice` no guarda. Quedarse con el justificante perdería el dato.');
+  tests/scrum445-cobros-sin-duplicar.test.mjs:100 · '🔴 el cobro a mano sale sin su número de justificante.');
+  tests/scrum445-cobros-sin-duplicar.test.mjs:103 · test('SCRUM-445 · ① CONTROL NEGATIVO: un justificante SIN evento no se quita', () => {
+  tests/scrum445-cobros-sin-duplicar.test.mjs:107 · '🔴 se ha quitado un justificante que NO está atado a ningún cobro. El criterio es «lo trae su ' +
+  tests/scrum445-cobros-sin-duplicar.test.mjs:108 · 'charge», no «es un justificante».');
+  tests/scrum445-cobros-sin-duplicar.test.mjs:138 · '🔴 el servicio ya no lee los eventos `invoiced`: sin ellos no hay vínculo cobro→justificante ' +
+  tests/scrum514-aprobado-y-aplicado.test.mjs:350 · texto: '¿Para quién es el justificante?',
+  tests/scrum514-aprobado-y-aplicado.test.mjs:352 · + '28-sep-2026). Era la guía del paso «Cliente» del documento suelto en modo justificante '
+  tests/scrum514-aprobado-y-aplicado.test.mjs:353 · + '(`quotesView.js`). Desde SCRUM-1027 `modoDocumentoSuelto` no devuelve nunca «justificante», '
+  tests/scrum514-aprobado-y-aplicado.test.mjs:359 · texto: 'Por ahora, YaQu no genera facturas ni justificantes desde tu cuenta.',
+  tests/scrum514-aprobado-y-aplicado.test.mjs:363 · + 'texto sin «ni justificantes». NO se desaprueba en el registro —la firma ocurrió—; ya no '
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:73 · function bancoConRed(documentoSuelto = 'justificante') {
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:332 · const r = await pintarPagina('justificante', undefined); // sin tercer argumento = presupuesto
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:374 · const r = await pintarPagina('justificante', true);
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:408 · `🔴 el justificante debe llevar UNA fila «Ajustes del documento» (915g) y lleva ${filas.length}.`);
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:410 · '🔴 el justificante ya no ofrece «IVA por defecto»: la fila de Ajustes se quedó sin su único contenido.');
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:466 · const r = await pintarPagina('justificante', true);
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:471 · const q = await pintarPagina('justificante', undefined);
+  tests/scrum600b-la-factura-usa-el-front.test.mjs:515 · const r = await pintarPagina('justificante', true);
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:244 · for (const modo of ['factura', 'justificante']) {
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:321 · test('SCRUM-600g · ⑦ sin variante justificante: en modo justificante, las MISMAS dos frases', async () => {
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:321 · test('SCRUM-600g · ⑦ sin variante justificante: en modo justificante, las MISMAS dos frases', async () => {
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:322 · const usar = await abrirHojaUsar(await montar('justificante'));
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:324 · `🔴 en modo justificante la hoja «Usar plantilla» no dice la frase firmada.\n  dice: ${muestra(usar)}`);
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:325 · const guardar = await abrirHojaGuardar(await montar('justificante'));
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:327 · `🔴 en modo justificante la hoja «Guardar como plantilla» no dice la frase firmada.\n  dice: ${muestra(guardar)}`);
+  tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs:340 · for (const modo of ['factura', 'justificante']) {
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs:155 · test('SCRUM-608 · la RECTIFICATIVA y el JUSTIFICANTE tampoco se disfrazan de factura normal', async () => {
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs:159 · assert.equal(await cabeceraDeFactura(60804, { type: 'JUST' }), 'JUSTIFICANTE DE COBRO',
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs:160 · '🔴 el justificante NO puede abrir con la palabra «FACTURA»: es el documento del flag apagado '
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs:262 · de: "const docTitle = isReceipt ? 'JUSTIFICANTE DE COBRO' : isRect ? 'FACTURA RECTIFICATIVA' : 'FACTURA';",
+  tests/scrum627-censo-ciego.test.mjs:154 · 'src/modules/expenses/domain/justificante.ts',
+  tests/scrum627b-censo-declara-reimplementaciones.test.mjs:61 · 'src/modules/expenses/domain/justificante.ts': {
+  tests/scrum627b-censo-declara-reimplementaciones.test.mjs:64 · + 'declarada y detectar que el justificante no cuadra, con tolerancia en céntimos. No produce '
+  tests/scrum776-una-sola-voz.test.mjs:108 · for (const modo of ['justificante', 'factura']) {
+  tests/scrum776-una-sola-voz.test.mjs:124 · for (const modo of ['factura', 'no', 'justificante']) {
+  tests/scrum776-una-sola-voz.test.mjs:139 · for (const modo of ['factura', 'no', undefined, null, '', 'JUSTIFICANTE', 'otra-cosa']) {
+  tests/scrum776-una-sola-voz.test.mjs:145 · assert.equal(typeof cargarRotulos('justificante').esJustificante, 'undefined',
+  tests/scrum776-una-sola-voz.test.mjs:146 · '🔴 `esJustificante()` ha vuelto a `rotulosDelDocumento`: la rama muerta se retiró por firma del ' +
+  tests/scrum776-una-sola-voz.test.mjs:162 · test('SCRUM-776 · 🔴 nadie decide ya el nombre del documento por el modo «justificante»', () => {
+  tests/scrum776-una-sola-voz.test.mjs:173 · '🔴 ha vuelto una rama por modo «justificante», que se retiró por firma del fundador (SCRUM-825 ' +
+  tests/scrum776-una-sola-voz.test.mjs:178 · assert.equal((soloEjecutable("const a = window.appDocumentoSuelto === 'justificante';").match(PREDICADO) || []).length, 1);
+  tests/scrum776-una-sola-voz.test.mjs:179 · assert.equal((soloEjecutable("// window.appDocumentoSuelto === 'justificante'\nconst a = 1;").match(PREDICADO) || []).length, 0);
+  tests/scrum776-una-sola-voz.test.mjs:252 · 'flag en su valor por defecto le dice «facturas» a quien emite justificantes. Se firma antes de ' +
+  tests/scrum781-concurrencia-de-la-factura.test.mjs:132 · + 'merchant se ha ido por el camino del justificante y no hay carrera que medir.');
+  tests/scrum81-allocate-flags.test.mjs:47 · 'sin override, en España, ya no se emite nada — ni factura ni justificante (regla 24)',
+  tests/scrum825-rama-justificante-retirada.test.mjs:29 · ['rotulosDelDocumento.js', 'Justificantes'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:30 · ['rotulosDelDocumento.js', 'Nº justificante'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:31 · ['rotulosDelDocumento.js', 'Nuevo justificante'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:32 · ['rotulosDelDocumento.js', 'Emitir justificante'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:33 · ['rotulosDelDocumento.js', 'Justificante emitido'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:34 · ['rotulosDelDocumento.js', 'No hemos podido emitir el justificante. Inténtalo otra vez.'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:35 · ['invoicesView.js', '+ Nuevo justificante'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:36 · ['quotesView.js', '¿Para quién es el justificante?'],
+  tests/scrum825-rama-justificante-retirada.test.mjs:62 · const sf = ts.createSourceFile('x.js', "// 'Justificantes'\nconst a = 'Facturas';", ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  tests/scrum825-rama-justificante-retirada.test.mjs:68 · test('SCRUM-825 · nadie pregunta ya si el documento suelto es un justificante', () => {
+  tests/scrum825-rama-justificante-retirada.test.mjs:82 · assert.deepEqual(con, [], `🔴 vuelve a haber una rama por modo justificante:\n  ${con.join('\n  ')}`);
+  tests/scrum825-rama-justificante-retirada.test.mjs:83 · assert.equal(typeof ejecutarRotulos('justificante').esJustificante, 'undefined',
+  tests/scrum825-rama-justificante-retirada.test.mjs:84 · '🔴 `rotulosDelDocumento.esJustificante()` sigue existiendo: el predicado de la rama muerta');
+  tests/scrum825-rama-justificante-retirada.test.mjs:95 · for (const modo of ['factura', 'justificante', 'no', undefined]) {
+  tests/scrum825-rama-justificante-retirada.test.mjs:102 · test('SCRUM-825 · un «justificante» que llegara del servidor cae a «no», no a «factura»', () => {
+  tests/scrum825-rama-justificante-retirada.test.mjs:114 · for (const v of ['justificante', 'no', undefined, 'JUSTIFICANTE']) {
+  tests/scrum825-rama-justificante-retirada.test.mjs:114 · for (const v of ['justificante', 'no', undefined, 'JUSTIFICANTE']) {
+  tests/scrum844b-que-documento-se-declara.test.mjs:60 · test('SCRUM-844b · 🔴 EL VECTOR: un JUSTIFICANTE no se declara — y NO cae a F1', () => {
+  tests/scrum844b-que-documento-se-declara.test.mjs:71 · '🔴 UN JUSTIFICANTE SE ESTÁ DECLARANDO. Un `J-` está fuera de toda serie fiscal (regla 26): '
+  tests/scrum844d-quien-entra-en-la-cadena.test.mjs:88 · test('SCRUM-844d · 🔴 un JUSTIFICANTE de cobro no entra en la cadena fiscal', () => {
+  tests/scrum844d-quien-entra-en-la-cadena.test.mjs:90 · `🔴 el justificante ${NUM_JUSTIFICANTE} entraría en la cadena VeriFactu. Un J- está FUERA de `
+  tests/scrum846b-siembras-a-los-quince.test.mjs:72 · "boton.textContent = INVOICING_ES_ENABLED ? 'Emitir factura' : 'Emitir justificante';",
+  tests/scrum895-boton-imposible.test.mjs:94 · test('SCRUM-895 · ROJO REAL: en modo justificante no se ofrece convertir en factura', () => {
+  tests/scrum895-boton-imposible.test.mjs:96 · '🔴 la pantalla ofrece `btnConvertirFactura` a un merchant en modo justificante. Esa ruta\n' +
+  tests/scrum895-boton-imposible.test.mjs:100 · '🔴 en modo justificante este albarán no tiene siguiente paso, así que la primaria debe ser\n' +
+  tests/scrum895-boton-imposible.test.mjs:160 · '🔴 el contexto compartido sigue diciendo que el albarán es convertible en modo justificante.\n' +
+  tests/scrum895b-literales-firmados.test.mjs:160 · '  propuesta decía «justificantes de cobro» y el justificante está RETIRADO (SCRUM-825 /\n' +
+  tests/scrum895b-literales-firmados.test.mjs:160 · '  propuesta decía «justificantes de cobro» y el justificante está RETIRADO (SCRUM-825 /\n' +
+  tests/scrum905-facturar-solo-si-se-puede.test.mjs:107 · '🔴 la fila del Trabajo ofrece «Facturar lo entregado» en modo justificante. Fila: ' + JSON.stringify(p.fila));
+  tests/scrum912-leer-ticket-gasto.test.mjs:279 · test('SCRUM-912 · el céntimo de tolerancia de justificante.ts vale también aquí; dos céntimos, no', () => {
+  tests/scrum937-el-nif-no-se-tira-en-silencio.test.mjs:129 · + 'El profesional cree que ha completado su justificante, y no lo ha hecho.');
+  tests/scrum937-el-nif-no-se-tira-en-silencio.test.mjs:133 · test('SCRUM-937 · el motor del justificante NO se toca: sin proveedor sigue faltando el NIF', async () => {
+  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs:124 · 'docs/evidencias/scrum883/C1-pdf-justificante.txt',
+  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs:126 · 'docs/evidencias/scrum883/C3-pdf-justificante.txt',
+
+IDENTIFICADORES que contienen «justificante»:
+  BASE_DEL_JUSTIFICANTE @ tests/scrum1252-evidencias-libro-solo-facturas.test.mjs ×3
+  JUSTIFICANTES_MIOS @ tests/scrum1232-libro-sin-justificantes.test.mjs ×4
+  JUSTIFICANTE_DE_ESE_CHARGE @ tests/scrum445-cobros-sin-duplicar.test.mjs ×4
+  JUSTIFICANTE_MIO @ tests/scrum1252-evidencias-libro-solo-facturas.test.mjs ×5
+  NUM_JUSTIFICANTE @ tests/scrum844d-quien-entra-en-la-cadena.test.mjs ×5
+  SIN_JUSTIFICANTE_MIO @ tests/scrum1252-evidencias-libro-solo-facturas.test.mjs ×2
+  clasificarJustificante @ tests/scrum324-cadena-hasta-el-libro.test.mjs ×3
+  clasificarJustificante @ tests/scrum324-justificante-deducible.test.mjs ×19
+  conJustificante @ tests/scrum1252-evidencias-libro-solo-facturas.test.mjs ×2
+  conJustificante @ tests/scrum318-rail-contenido.test.mjs ×3
+  esJustificante @ tests/scrum207-emision-auditada.test.mjs ×1
+  esJustificante @ tests/scrum776-una-sola-voz.test.mjs ×1
+  esJustificante @ tests/scrum825-rama-justificante-retirada.test.mjs ×1
+  justificante @ tests/_viajes-de-la-reserva.mjs ×1
+  justificante @ tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs ×2
+  justificante @ tests/scrum207-conciliacion.test.mjs ×2
+  justificante @ tests/scrum508-los-cinco-dejan-fila.test.mjs ×1
+  justificante @ tests/scrum728d-viajes-de-la-reserva.test.mjs ×1
+  justificante @ tests/scrum912-leer-ticket-gasto.test.mjs ×3
+  justificante @ tests/scrum937-el-nif-no-se-tira-en-silencio.test.mjs ×5
+  justificantesFuera @ tests/scrum1232-libro-sin-justificantes.test.mjs ×4
+  soloJustificantes @ tests/scrum291-series-huecos.test.mjs ×2
+
+FICHEROS que usan el vocabulario hermano EN CODIGO y NO contienen «justificante»: 10
+  tests/scrum1164-ocultar-en-receipt-ficha-trabajo.test.mjs · 'receipt'
+  tests/scrum1164-ocultar-en-receipt-inicio-planes.test.mjs · 'receipt'
+  tests/scrum1165-verifactu-xml-solo-en-fiscal.test.mjs · 'receipt'
+  tests/scrum1216a-serie-sin-promesa.test.mjs · 'receipt'
+  tests/scrum1298-mesa-por-puesto.test.mjs · 'J-'
+  tests/scrum292-nif-antes-de-emitir.test.mjs · 'JUST'
+  tests/scrum362-banco-sin-cobertura.test.mjs · 'JUST'
+  tests/scrum665b-el-esquema-declara.test.mjs · 'JUST'
+  tests/scrum903-marcador-no-se-imprime.test.mjs · 'JUST'
+  tests/scrumD1-puerta-serie.test.mjs · 'receipt'
+
+USOS EN CODIGO de isReceiptNumber: 24
+  tests/_censo-copy-vs-flag.mjs:102 · export const SEMILLA_TIPO = { nombre: 'TIPO_DEL_DOCUMENTO', ids: new Set(['isReceiptNumber', 'tipoDeFactura']), textos: new Set(['JUST', 'justificante']) };
+  tests/emission.test.mjs:10 · isReceiptNumber,
+  tests/emission.test.mjs:46 · test('isReceiptNumber: reconoce los justificantes J- YA EMITIDOS (el generador se retiró, SCRUM-825)', () => {
+  tests/emission.test.mjs:51 · assert.equal(isReceiptNumber(n), true);
+  tests/emission.test.mjs:52 · assert.equal(isReceiptNumber('2026-CF-001'), false);
+  tests/emission.test.mjs:53 · assert.equal(isReceiptNumber(null), false);
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:188 · assert.match(emisor, /type:\s*isReceiptNumber\(number\)\s*\?\s*'JUST'/,
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:211 · assert.match(numService, /export function isReceiptNumber\b/,
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:212 · '🔴 isReceiptNumber ha desaparecido: los justificantes YA EMITIDOS dejan de reconocerse. ' +
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:96 · test('SCRUM-1436b · la palabra la decide el MISMO criterio que en los otros dos emisores (`isReceiptNumber`)', async () => {
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:97 · const { isReceiptNumber } = moduloDeDist(NUMERO);
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:98 · assert.equal(typeof isReceiptNumber, 'function', '🔴 CIEGO: no encuentro isReceiptNumber: si se ha movido, se reapunta el test');
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:98 · assert.equal(typeof isReceiptNumber, 'function', '🔴 CIEGO: no encuentro isReceiptNumber: si se ha movido, se reapunta el test');
+  tests/scrum1436b-el-recordatorio-nombra-por-el-numero.test.mjs:107 · assert.equal(dice, isReceiptNumber(numero) ? 'justificante' : 'factura',
+  tests/scrum178-emision-manual.test.mjs:109 · const { isReceiptNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+  tests/scrum178-emision-manual.test.mjs:110 · if (isReceiptNumber(factura.number)) {
+  tests/scrum289b-factura-suelta.test.mjs:153 · assert.match(h, /isReceiptNumber\s*\(/,
+  tests/scrum289b-factura-suelta.test.mjs:156 · const linea = h.split(String.fromCharCode(10)).find((l) => l.includes('isReceiptNumber(invoice.number)'));
+  tests/scrum308-caracterizacion-rectify.test.mjs:160 · test('SCRUM-308 · caracterización · corte isReceiptNumber (J-) → 409 cannot_rectify_receipt', async (t) => {
+  tests/scrum728d-viajes-de-la-reserva.test.mjs:43 · import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+  tests/scrum728d-viajes-de-la-reserva.test.mjs:57 · assert.ok(!isReceiptNumber(r.numero), `🔴 el camino fiscal devolvió un J-: \`${r.numero}\``);
+  tests/scrum81-allocate-flags.test.mjs:7 · import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+  tests/scrum81-allocate-flags.test.mjs:53 · assert.ok(!isReceiptNumber(n), `con el override debe ser fiscal, salió ${n}`);
+  tests/scrum81-allocate-flags.test.mjs:74 · assert.ok(!isReceiptNumber(n), `demo debe ser fiscal, salió ${n}`);
+
+USOS EN CODIGO de 'JUST': 29
+  tests/_censo-copy-vs-flag.mjs:102 · export const SEMILLA_TIPO = { nombre: 'TIPO_DEL_DOCUMENTO', ids: new Set(['isReceiptNumber', 'tipoDeFactura']), textos: new Set(['JUST', 'justificante']) };
+  tests/pdfs.test.mjs:63 · type: 'JUST',
+  tests/pdfs.test.mjs:76 · currency: 'EUR', total: '10.00', qrData: 'x', type: 'JUST',
+  tests/pdfs.test.mjs:83 · currency: 'EUR', total: '10.00', qrData: 'x', type: 'JUST',
+  tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:188 · assert.match(emisor, /type:\s*isReceiptNumber\(number\)\s*\?\s*'JUST'/,
+  tests/scrum1232-libro-sin-justificantes.test.mjs:48 · fila(2, MIO, 'J-2026-0001', 'JUST', 200),     // justificante por `type`
+  tests/scrum1232-libro-sin-justificantes.test.mjs:52 · fila(6, OTRO, 'J-2026-0099', 'JUST', 999),    // otro merchant: la consulta ni lo trae
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:53 · fila(2, MIO, 'J-2026-0001', 'JUST', 200),     // justificante por `type`: fuera del libro, dentro del 303
+  tests/scrum1252-evidencias-libro-solo-facturas.test.mjs:57 · fila(6, OTRO, 'J-2026-0099', 'JUST', 999),    // otro merchant: la consulta ni lo trae
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:111 · "invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-')");
+  tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs:236 · const justSuyo = await e.factura('J-SUYO', 11, { type: 'JUST', quoteId: q1.id });
+  tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs:249 · const justAjeno = await e.factura('J-AJENO', 12, { type: 'JUST', quoteId: qb.id });
+  tests/scrum178-emision-manual.test.mjs:111 · assert.equal(factura.type, 'JUST', 'un número de justificante tiene que dar tipo JUST');
+  tests/scrum292-nif-antes-de-emitir.test.mjs:159 · for (const prohibido of ['F1', 'F2', 'R1', 'JUST', 'resolverSinDestinatario', 'ClaveRegimen']) {
+  tests/scrum319-documentos-por-tipo.test.mjs:133 · { id: 21, number: 'J-20260629-6981', type: 'JUST' },
+  tests/scrum319-documentos-por-tipo.test.mjs:249 · !/inv\.type === 'JUST'/.test(VISTA),
+  tests/scrum362-banco-sin-cobertura.test.mjs:75 · referencia: null, numero: 'J-20260802-AB12', tipo: 'JUST', invoiceId: 1, chargeId: null,
+  tests/scrum413-tipo-factura-cerrado.test.mjs:58 · const TIPOS_DECLARADOS = ['F1', 'JUST', 'R1'];
+  tests/scrum413-tipo-factura-cerrado.test.mjs:265 · const declarado = await tipoDeclaradoHoy(facturaDe('JUST', 'J-20260304-AB12'));
+  tests/scrum442-facturas-sin-justificantes.test.mjs:35 · assert.match(w, /type:\s*\{\s*not:\s*'JUST'\s*\}/,
+  tests/scrum442-facturas-sin-justificantes.test.mjs:69 · assert.doesNotMatch(cobros, /type:\s*\{\s*not:\s*'JUST'\s*\}/,
+  tests/scrum445-cobros-sin-duplicar.test.mjs:38 · status: 'paid', number: 'J-20260801-AAAA', type: 'JUST', customer: { name: 'Con pasarela' },
+  tests/scrum445-cobros-sin-duplicar.test.mjs:45 · status: 'paid', number: 'J-20260802-BBBB', type: 'JUST', customer: { name: 'A mano' },
+  tests/scrum608-tipo-de-documento-en-la-cabecera.test.mjs:159 · assert.equal(await cabeceraDeFactura(60804, { type: 'JUST' }), 'JUSTIFICANTE DE COBRO',
+  tests/scrum665b-el-esquema-declara.test.mjs:65 · currency: 'EUR', total: '150.00', qrData: 'x', type: 'JUST',
+  tests/scrum844b-que-documento-se-declara.test.mjs:62 · () => exigirTipoDeclarable('JUST', NUM_J),
+  tests/scrum844b-que-documento-se-declara.test.mjs:77 · try { devuelto = exigirTipoDeclarable('JUST', NUM_J); } catch { /* lo esperado */ }
+  tests/scrum844b-que-documento-se-declara.test.mjs:79 · `🔴 \`exigirTipoDeclarable('JUST')\` ha DEVUELTO «${devuelto}» en vez de lanzar. Ése es el `
+  tests/scrum903-marcador-no-se-imprime.test.mjs:70 · currency: 'EUR', total: '100.00', type: 'JUST',
+
+USOS EN CODIGO de 'J-': 2
+  tests/scrum1257-vacio-facturas-segun-modo.test.mjs:111 · "invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-')");
+  tests/scrum1298-mesa-por-puesto.test.mjs:107 · const javier = { prefijo: 'j-', puestos: ['orquestador', 'sesion-1'], orquestador: 'orquestador' };
+
+EXIT=0

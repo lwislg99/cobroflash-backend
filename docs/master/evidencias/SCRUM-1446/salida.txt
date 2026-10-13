@@ -1,0 +1,126 @@
+POBLACION: árbol «scrum-1446-los-tres-importes-del-pdf», con su dist/
+tipos admitidos por invalidTipoIva (leídos de TIPOS_IVA_ES_BP): 0 % · 2 % · 4 % · 5 % · 7,5 % · 10 % · 21 %  [7]
+
+══ 0 · CALIBRADO de la copia contra el PDF generado
+facturas generadas y leídas: 60 · la copia difiere del papel en: 0
+control (copia rota a propósito, +1 cént.): difiere
+
+══ ① SCRUM-1446 · la columna TOTAL de las líneas no suma el TOTAL impreso
+— el PAPEL, generado (dos líneas iguales, cantidad 1):
+documento    | caso              | líneas impresas | suma a la vista | TOTAL impreso | diferencia
+factura      | 2 × 0,50 al 21 %        | 0,61 + 0,61     |            1,22 |          1,21 | 1 cént.
+presupuesto  | 2 × 0,50 al 21 %        | 0,61 + 0,61     |            1,22 |          1,21 | 1 cént.
+factura      | 2 × 2,50 al 21 %        | 3,03 + 3,03     |            6,06 |          6,05 | 1 cént.
+presupuesto  | 2 × 2,50 al 21 %        | 3,03 + 3,03     |            6,06 |          6,05 | 1 cént.
+factura      | 2 × 12,50 al 21 %       | 15,13 + 15,13   |           30,26 |         30,25 | 1 cént.
+presupuesto  | 2 × 12,50 al 21 %       | 15,13 + 15,13   |           30,26 |         30,25 | 1 cént.
+factura      | 2 × 0,15 al 10 %        | 0,17 + 0,17     |            0,34 |          0,33 | 1 cént.
+presupuesto  | 2 × 0,15 al 10 %        | 0,17 + 0,17     |            0,34 |          0,33 | 1 cént.
+factura      | 2 × 7,25 al 21 %        | 8,77 + 8,77     |           17,54 |         17,55 | -1 cént.
+presupuesto  | 2 × 7,25 al 21 %        | 8,77 + 8,77     |           17,54 |         17,54 | 0 cént.
+factura      | CONTROL 2 × 100 al 21 % | 121,00 + 121,00 |          242,00 |        242,00 | 0 cént.
+presupuesto  | CONTROL 2 × 100 al 21 % | 121,00 + 121,00 |          242,00 |        242,00 | 0 cént.
+— CUÁNTOS, por enumeración COMPLETA (copia calibrada): todos los pares de precios de 0,01 a 10,00 €, 2 líneas, cantidad 1
+tipo     | pares    | la columna no suma el TOTAL | máx. | TOTAL impreso ≠ guardado (③) | máx.
+0 %      |   500500 |        0 (0.0 %)          | 0    |        0 (0.00 %)     | 0
+2 %      |   500500 |   125250 (25.0 %)         | 1    |      690 (0.14 %)     | 1
+4 %      |   500500 |   125040 (25.0 %)         | 1    |        0 (0.00 %)     | 0
+5 %      |   500500 |   125614 (25.1 %)         | 1    |     4685 (0.94 %)     | 1
+7,5 %    |   500500 |   125298 (25.0 %)         | 1    |     3666 (0.73 %)     | 1
+10 %     |   500500 |   126710 (25.3 %)         | 1    |     8699 (1.74 %)     | 1
+21 %     |   500500 |   125232 (25.0 %)         | 1    |      646 (0.13 %)     | 1
+  (el 0 % es el CONTROL A CERO: sin impuesto no hay redondeo que repartir)
+
+══ ② SCRUM-1447 · el tipo se redondea a entero
+— ¿qué tipos deja pasar el servidor? (ejecutado: invalidTipoIva y el portón tipoIvaNoEmitible)
+  0 %     validador: ADMITIDO  · portón de emisión: pasa
+  2 %     validador: ADMITIDO  · portón de emisión: pasa
+  4 %     validador: ADMITIDO  · portón de emisión: pasa
+  5 %     validador: ADMITIDO  · portón de emisión: pasa
+  7,5 %   validador: ADMITIDO  · portón de emisión: pasa
+  10 %    validador: ADMITIDO  · portón de emisión: pasa
+  21 %    validador: ADMITIDO  · portón de emisión: pasa
+  9,5 %   validador: rechazado · portón de emisión: no pasa
+  3 %     validador: rechazado · portón de emisión: no pasa
+  7 %     validador: rechazado · portón de emisión: no pasa
+  15 %    validador: rechazado · portón de emisión: no pasa
+  20 %    validador: rechazado · portón de emisión: no pasa
+  6,5 %   validador: rechazado · portón de emisión: no pasa
+  5,2 %   validador: rechazado · portón de emisión: no pasa
+  0,5 %   validador: rechazado · portón de emisión: no pasa
+  10,5 %  validador: rechazado · portón de emisión: no pasa
+  1,4 %   validador: rechazado · portón de emisión: no pasa
+— el PAPEL y el REGISTRO, tipo a tipo (una línea de 100,00 €, generado y leído):
+tipo real | factura: fila · pie y cuota      | presupuesto: fila · pie y cuota · Total  | calcVatBreakdown.rate | registro VeriFactu (TipoImpositivo · Cuota)
+0 %       | —    · (sin fila)                | 0%   · (sin fila) · 100,00              | 0                     | (0 %: no clasificable, lanza)
+2 %       | 2%   · IVA 2%: 2,00              | 2%   · IVA 2%: 2,00 · 102,00            | 2                     | 2 · 2.00
+4 %       | 4%   · IVA 4%: 4,00              | 4%   · IVA 4%: 4,00 · 104,00            | 4                     | 4 · 4.00
+5 %       | 5%   · IVA 5%: 5,00              | 5%   · IVA 5%: 5,00 · 105,00            | 5                     | 5 · 5.00
+7,5 %     | 8%   · IVA 8%: 7,50              | 8%   · IVA 8%: 8,00 · 107,50            | 8                     | 8 · 7.50
+10 %      | 10%  · IVA 10%: 10,00            | 10%  · IVA 10%: 10,00 · 110,00          | 10                    | 10 · 10.00
+21 %      | 21%  · IVA 21%: 21,00            | 21%  · IVA 21%: 21,00 · 121,00          | 21                    | 21 · 21.00
+RECUENTO sobre los 6 tipos admitidos mayores que 0: rótulo falso en la fila de la factura 1 · en el pie de la factura 1 · en la fila del presupuesto 1 · en el pie del presupuesto 1 · CUOTA del pie del presupuesto calculada con otro tipo 1 · calcVatBreakdown.rate 1 · TipoImpositivo del registro 1
+— el bloque que construye el registro para 100,00 € al 7,5 % (clasificarDetalleDesglose + buildDetallesDesgloseXml, ejecutados):
+    <sum1:DetalleDesglose>
+    <sum1:Impuesto>01</sum1:Impuesto>
+    <sum1:ClaveRegimen>01</sum1:ClaveRegimen>
+    <sum1:CalificacionOperacion>S1</sum1:CalificacionOperacion>
+    <sum1:TipoImpositivo>8</sum1:TipoImpositivo>
+    <sum1:BaseImponibleOimporteNoSujeto>100.00</sum1:BaseImponibleOimporteNoSujeto>
+    <sum1:CuotaRepercutida>7.50</sum1:CuotaRepercutida>
+    </sum1:DetalleDesglose>
+  control (10 %): TipoImpositivo 10 · Cuota 10.00 → 100,00 × 10 % = 10,00, cuadra
+— dos tipos en UNA fila: los pares de tipos admitidos
+  pares: 21 · fundidos en el PDF: 0 · fundidos en calcVatBreakdown: 0
+  control (9,5 % + 10 %, que el portón RECHAZA, metidos directamente en el generador): filas de desglose en el papel 1 → IVA 10%: 19,50 · calcVatBreakdown: 1 tramo(s)
+— DONDE EL TIPO REDONDEADO NO SÓLO SE IMPRIME: SE USA PARA CALCULAR (7,5 % contra el control al 10 %)
+  7,5 % · presupuesto de 100,00: Base 100,00 + IVA 8% 8,00 = 108,00 · Total impreso 107,50 · diferencia 50 cént.
+  7,5 % · el mismo con 10,00 € de descuento global: calcTotal (lo que se FIRMA) 96,70 · (100 − 10) × (1 + tipo) = 96,75 · diferencia -5 cént.
+  7,5 % · y al facturarlo: la línea «Descuento global» sale con tax 0.08 · portón de emisión: línea 1: el IVA 8 % no es un tipo de IVA español. Admitidos: 0 %, 2 %, 4 %, 5 %, 7.5 %, 10 %, 21 %
+  10 % · presupuesto de 100,00: Base 100,00 + IVA 10% 10,00 = 110,00 · Total impreso 110,00 · diferencia 0 cént.
+  10 % · el mismo con 10,00 € de descuento global: calcTotal (lo que se FIRMA) 99,00 · (100 − 10) × (1 + tipo) = 99,00 · diferencia 0 cént.
+  10 % · y al facturarlo: la línea «Descuento global» sale con tax 0.1 · portón de emisión: pasa
+
+══ ③ SCRUM-1448 · el TOTAL impreso (recalculado) contra el guardado (grossOfLines → Invoice.total)
+— el PAPEL, generado: se le pasa el guardado y se lee lo que imprime
+caso                                         | guardado | TOTAL impreso | diferencia
+CONTROL 1 × 100 al 21 %                      |   121,00 |        121,00 | 0 cént.
+1 × 0,05 al 10 % + 1 × 0,05 al 21 %          |     0,12 |          0,12 | 0 cént.
+3 × 9,99 al 21 % (el de SCRUM-624)           |    36,26 |         36,26 | 0 cént.
+el menor hallado · 0,02 al 21 % + 0,48 al 21 % |     0,60 |          0,61 | 1 cént.
+el menor hallado · 0,03 al 10 % + 0,12 al 10 % |     0,17 |          0,16 | -1 cént.
+el menor hallado · 0,02 al 21 % + 0,01 al 10 % |     0,03 |          0,04 | 1 cént.
+el menor hallado · 0,02 al 21 % + 0,02 al 4 % |     0,04 |          0,05 | 1 cént.
+— CUÁNTOS, por CLASE de factura, con las líneas que construyen las funciones REALES de dist/ (copia calibrada)
+clase                                                         | facturas | TOTAL impreso ≠ guardado | máx. | ejemplo
+CONTROL A CERO · 1 línea, euros enteros, 21 %                 |     1349 |        0 (0.00 %)         | 0    | —
+1 línea, precio de 2 decimales, 21 %                          |     1349 |        3 (0.22 %)         | 1    | PDF generado: guardado 157,90 · impreso 157,91 · 1×130.5@0.21
+2 líneas, 21 % + 10 %                                         |     1348 |      329 (24.41 %)        | 1    | PDF generado: guardado 551,36 · impreso 551,35 · 1×4.7@0.21 ; 1×496.06@0.1
+TRAMOS 30/70 · 1 línea al 21 % (stageLinesReconciled)         |     2698 |      192 (7.12 %)         | 1    | PDF generado: guardado 1,48 · impreso 1,47 · 1×1.218@0.21
+TRAMOS 50/50 · 1 línea al 21 % (stageLinesReconciled)         |     2698 |      308 (11.42 %)        | 1    | PDF generado: guardado 1,27 · impreso 1,28 · 1×1.0545@0.21
+TRAMOS 30/40/30 · 1 línea al 21 % (stageLinesReconciled)      |     4047 |      405 (10.01 %)        | 1    | PDF generado: guardado 0,76 · impreso 0,77 · 1×0.633@0.21
+DESCUENTO DE LÍNEA 5 % · 1 línea al 21 % (lineasParaFacturar) |     1349 |      332 (24.61 %)        | 1    | PDF generado: guardado 2,42 · impreso 2,43 · 1×2.0044999999999997@0.21
+DESCUENTO DE LÍNEA 10 % · 1 línea al 21 % (lineasParaFacturar) |     1349 |      349 (25.87 %)       | 1    | PDF generado: guardado 1,90 · impreso 1,89 · 1×1.566@0.21
+DESCUENTO DE LÍNEA 15 % · 1 línea al 21 % (lineasParaFacturar) |     1349 |      332 (24.61 %)       | 1    | PDF generado: guardado 1,40 · impreso 1,41 · 1×1.1645@0.21
+DESCUENTO DE LÍNEA 33 % · 1 línea al 21 % (lineasParaFacturar) |     1349 |      334 (24.76 %)       | 1    | PDF generado: guardado 2,92 · impreso 2,91 · 1×2.4052999999999995@0.21
+DESCUENTO GLOBAL de 10,00 € · 1 línea al 21 % (línea negativa) |     1324 |        5 (0.38 %)        | 1    | PDF generado: guardado 11,49 · impreso 11,50 · 1×-10@0.21 ; 1×19.5@0.21
+RECTIFICATIVA · las 2 líneas 21 % + 10 % con el precio negado |     1348 |      328 (24.33 %)        | 1    | PDF generado: guardado -551,06 · impreso -551,07 · 1×-2.11@0.21 ; 1×-498.65@0.1
+— la factura SIN líneas: de dónde sale su total
+  generado con lines = [] y total guardado 123,45 → imprime 123,45 · del GUARDADO (rama «Total:») · filas de línea en el papel: 0
+  control: con una línea de 100 al 21 % y total guardado 999,99 → imprime 121,00 (ignora el guardado)
+— el PRESUPUESTO: el pie (Base + cuotas, de pieDePresupuesto) contra el Total impreso (el guardado, calcTotal)
+clase                                              | presupuestos | Base + cuotas ≠ Total | máx.
+  (modo por defecto de leerModoIva: «sumar»)
+CONTROL A CERO · 1 línea, euros enteros, 21 %      |         1349 |        0 (0.00 %)   | 0
+1 línea de 2 decimales, 21 %                       |         1349 |        8 (0.59 %)   | 1 | PDF generado: Base 56,50 + IVA 21% 11,87 · Total 68,36
+2 líneas, 21 % + 10 %                              |         1348 |      329 (24.41 %)  | 1 | PDF generado: Base 500,76 + IVA 21% 0,99 + IVA 10% 49,61 · Total 551,35
+1 línea con descuento de línea del 15 %, 21 %      |         1349 |      408 (30.24 %)  | 1 | PDF generado: Base 1,16 + IVA 21% 0,24 · Total 1,41
+1 línea al 21 % con 10,00 € de descuento global    |         1324 |        2 (0.15 %)   | 1 | PDF generado: Base 157,50 + IVA 21% 33,07 · Total 190,58
+1 línea al 7,5 % (el tipo admitido con decimales)  |         1349 |     1348 (99.93 %)  | 250 | PDF generado: Base 1,37 + IVA 8% 0,11 · Total 1,47
+
+══ el clasificador de FACTURAS REALES (`--filas`), probado aquí con filas fabricadas
+  filas: 5 · limpias 1 · ① columna 2 · ② rótulo 1 · ③ total 1 · sin líneas 1
+  esperado:  limpias 1 · ① columna 2 · ② rótulo 1 · ③ total 1 · sin líneas 1 → COINCIDE
+
+PDF generados y leídos en total: 115
+EXIT=0

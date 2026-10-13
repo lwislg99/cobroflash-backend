@@ -1,0 +1,272 @@
+SCRUM-1519 · censo de la forma (estático, AST)
+POBLACION: 322 ficheros .ts de src/ · 768 llamadas a Prisma con operación de OPS (13 operaciones) · modelos del esquema 33, con columna de comercio 25 · ficheros con alguna llamada 125
+  por clase de modelo: CON-COLUMNA 614 · MERCHANT 137 · SIN-COLUMNA 17
+  receptores: prisma 632 · tx 48 · prismaClient 36 · db 34 · cliente 9 · client 7 · (prisma as any) 2
+
+── EL PAR SEMBRADO (11 fuentes de mentira)
+  ✓ cruza-por-id             espera SOLO-POR-ID     sale SOLO-POR-ID
+  ✓ filtra                   espera ATADA           sale ATADA
+  ✓ cruza-id-de-otra-fila    espera SOLO-POR-ID     sale SOLO-POR-ID
+  ✓ filtra-por-relacion      espera ATADA           sale ATADA
+  ✓ cruza-en-lote            espera SOLO-POR-ID     sale SOLO-POR-ID
+  ✓ filtra-variable          espera ATADA           sale ATADA
+  ✓ cruza-variable           espera SOLO-POR-ID     sale SOLO-POR-ID
+  ✓ escribe-cruza            espera SOLO-POR-ID     sale SOLO-POR-ID
+  ✓ filtra-clave-compuesta   espera ATADA           sale ATADA
+  ✓ otra-clave               espera POR-OTRA-CLAVE  sale POR-OTRA-CLAVE
+  ✓ de-otro-sitio            espera ILEGIBLE        sale ILEGIBLE
+
+── MODELOS CON COLUMNA DE COMERCIO · 614 llamadas
+  ATADA 385 · SOLO-POR-ID 143 · POR-OTRA-CLAVE 67 · ILEGIBLE 17 · SIN-WHERE 2
+
+── LA FORMA · SOLO-POR-ID sobre modelo con columna de comercio · 143 llamadas en 49 ficheros
+  por tipo:    escribe 88 · lee-una 51 · lee-varias 4
+  por sitio:   no-ruta 83 · ruta 60
+  tipo×sitio:  escribe/no-ruta 50 · escribe/ruta 38 · lee-una/no-ruta 31 · lee-una/ruta 20 · lee-varias/ruta 2 · lee-varias/no-ruta 2
+  por modelo:  invoice 33 · quote 31 · charge 13 · customer 13 · albaran 9 · job 9 · maintenancePlan 7 · teamMember 5 · authSession 3 · parteTrabajo 3 · expense 2 · vfSubmission 2 · attachment 2 · whatsAppMessage 2 · provider 2 · quoteTemplate 2 · emailMessage 1 · product 1 · quoteRequest 1 · customerSite 1 · botSession 1
+  por fichero: lib/invoicing.ts 11 · maintenance/domain/maintenance.service.ts 10 · billing/app/routes/psp.routes.ts 8 · jobs/domain/job.service.ts 8 · jobs/app/routes/jobs.routes.ts 7 · jobs/domain/albaran.service.ts 6 · billing/app/routes/mpWebhook.routes.ts 5 · invoicing/domain/verifactu.service.ts 5 · quotes/app/routes/quotes.routes.ts 5 · system/app/routes/quotesAdmin.routes.ts 5 · jobs/app/routes/albaranes.routes.ts 4 · jobs/app/routes/albaranPublic.routes.ts 4 · whatsappBot/app/routes/whatsappIncoming.routes.ts 4 · jobs/app/routes/partes.routes.ts 3 · jobs/domain/albaranWhatsApp.service.ts 3 · system/app/routes/invoicesAdmin.routes.ts 3 · team/domain/team.service.ts 3 · auth/domain/auth.service.ts 2 · auth/domain/entornoApp.service.ts 2 · billing/app/routes/chargesAdmin.routes.ts 2 · billing/app/routes/receipt.routes.ts 2 · billing/domain/invoiceReminder.service.ts 2 · billing/domain/invoiceWhatsApp.service.ts 2 · expenses/domain/expenses.service.ts 2 · fiscal/verifactu/sif.procesador.ts 2 · invoicing/app/routes/invoice.routes.ts 2 · invoicing/domain/selladoEstado.ts 2 · messaging/domain/email.service.ts 2 · messaging/domain/whatsappLog.service.ts 2 · providers/domain/providers.service.ts 2 · quotes/domain/quoteToken.service.ts 2 · quotes/domain/sendQuote.service.ts 2 · system/quoteAdmin.ts 2 · templates/app/routes/templates.routes.ts 2 · billing/app/routes/payMp.routes.ts 1 · jobs/domain/pendientesFacturar.service.ts 1 · jobs/domain/recapitulativa.service.ts 1 · maintenance/app/routes/maintenance.routes.ts 1 · messaging/domain/registroDeEnvios.ts 1 · metrics/domain/metrics.service.ts 1 · products/domain/products.service.ts 1 · quoteRequests/app/routes/quoteRequests.routes.ts 1 · quoteRequests/domain/attachment.service.ts 1 · quotes/domain/expire.service.ts 1 · quotes/domain/reminder.service.ts 1 · system/app/routes/dev.routes.ts 1 · system/domain/sitiosDelCliente.ts 1 · system/invoiceAdmin.ts 1 · whatsappBot/domain/botFlow.service.ts 1
+
+── POR-OTRA-CLAVE (sin id y sin comercio) · 67 · por tipo×sitio: lee-una/ruta 26 · lee-varias/no-ruta 17 · lee-una/no-ruta 15 · lee-varias/ruta 5 · escribe/no-ruta 4
+── ILEGIBLE · 17 · NO juzgadas: ni atadas ni sueltas · por sitio: no-ruta 12 · ruta 5
+── SIN-WHERE · 2 · por operación: groupBy 2
+
+── MODELOS SIN COLUMNA (sólo se atan por el padre) · 17 llamadas · POR-OTRA-CLAVE 8 · ATADA 5 · ILEGIBLE 4 · modelos: event 6 · jobAssignee 5 · gatewayEvent 4 · vfFlujoObligado 2
+── MERCHANT (su id ES el comercio) · 137 llamadas · SOLO-POR-ID 117 · POR-OTRA-CLAVE 16 · SIN-WHERE 3 · ILEGIBLE 1
+
+── EL DEL TICKET (customer.findUnique por job.customerId en jobs.routes.ts): 2 → src/modules/jobs/app/routes/jobs.routes.ts:379, src/modules/jobs/app/routes/jobs.routes.ts:583
+
+── LISTA · SOLO-POR-ID (143)
+src/lib/invoicing.ts:40  invoice.findUnique  [lee-una/no-ruta]  { id: invoiceId }
+src/lib/invoicing.ts:145  invoice.update  [escribe/no-ruta]  { id: invoiceId }
+src/lib/invoicing.ts:162  charge.findUnique  [lee-una/no-ruta]  { id: chargeId }
+src/lib/invoicing.ts:170  charge.update  [escribe/no-ruta]  { id: chargeId }
+src/lib/invoicing.ts:182  charge.findUnique  [lee-una/no-ruta]  { id: chargeId }
+src/lib/invoicing.ts:243  invoice.findUnique  [lee-una/no-ruta]  { id: inv.id }
+src/lib/invoicing.ts:264  customer.findUnique  [lee-una/no-ruta]  { id: inv.customerId }
+src/lib/invoicing.ts:304  invoice.update  [escribe/no-ruta]  { id: inv.id }
+src/lib/invoicing.ts:309  invoice.update  [escribe/no-ruta]  { id: inv.id }
+src/lib/invoicing.ts:330  invoice.findUnique  [lee-una/no-ruta]  { id: prevInvEv.payload.invoice_id as number }
+src/lib/invoicing.ts:345  quote.findUnique  [lee-una/no-ruta]  { id: quote.id }
+src/modules/auth/domain/auth.service.ts:257  authSession.update  [escribe/no-ruta]  { id: session.id }
+src/modules/auth/domain/auth.service.ts:261  teamMember.update  [escribe/no-ruta]  { id: session.teamMemberId }
+src/modules/auth/domain/entornoApp.service.ts:81  authSession.findUnique  [lee-una/no-ruta]  { id: sessionId }
+src/modules/auth/domain/entornoApp.service.ts:93  authSession.update  [escribe/no-ruta]  { id: sessionId }
+src/modules/billing/app/routes/chargesAdmin.routes.ts:141  charge.update  [escribe/ruta]  { id }
+src/modules/billing/app/routes/chargesAdmin.routes.ts:206  charge.update  [escribe/ruta]  { id: original.id }
+src/modules/billing/app/routes/mpWebhook.routes.ts:95  charge.findUnique  [lee-una/ruta]  { id: chargeId }
+src/modules/billing/app/routes/mpWebhook.routes.ts:108  charge.update  [escribe/ruta]  { id: chargeId }
+src/modules/billing/app/routes/mpWebhook.routes.ts:172  invoice.update  [escribe/ruta]  { id: invoiceId, status: { not: ESTADO_ANULADA } }
+src/modules/billing/app/routes/mpWebhook.routes.ts:189  invoice.findUnique  [lee-una/ruta]  { id: invoiceId }
+src/modules/billing/app/routes/mpWebhook.routes.ts:256  charge.update  [escribe/ruta]  { id: chargeId }
+src/modules/billing/app/routes/payMp.routes.ts:62  charge.update  [escribe/ruta]  { id: charge.id }
+src/modules/billing/app/routes/psp.routes.ts:41  charge.findUnique  [lee-una/ruta]  { id: chargeId }
+src/modules/billing/app/routes/psp.routes.ts:78  customer.findUnique  [lee-una/ruta]  { id: charge.customerId }
+src/modules/billing/app/routes/psp.routes.ts:136  charge.update  [escribe/ruta]  { id: chargeId }
+src/modules/billing/app/routes/psp.routes.ts:194  invoice.update  [escribe/ruta]  { id: linkedInvoice.id, status: { not: ESTADO_ANULADA } }
+src/modules/billing/app/routes/psp.routes.ts:258  invoice.update  [escribe/ruta]  { id: invoiceId, status: { not: ESTADO_ANULADA } }
+src/modules/billing/app/routes/psp.routes.ts:290  invoice.findUnique  [lee-una/ruta]  { id: invoiceId }
+src/modules/billing/app/routes/psp.routes.ts:357  invoice.findFirst  [lee-una/ruta]  { id: invoiceId ?? undefined }
+src/modules/billing/app/routes/psp.routes.ts:390  charge.update  [escribe/ruta]  { id: chargeId, status: { in: ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } }
+src/modules/billing/app/routes/receipt.routes.ts:100  invoice.findUnique  [lee-una/ruta]  { id: invId }
+src/modules/billing/app/routes/receipt.routes.ts:495  invoice.findUnique  [lee-una/ruta]  { id: invId }
+src/modules/billing/domain/invoiceReminder.service.ts:90  invoice.update  [escribe/no-ruta]  { id: inv.id }
+src/modules/billing/domain/invoiceReminder.service.ts:98  invoice.update  [escribe/no-ruta]  { id: inv.id }
+src/modules/billing/domain/invoiceWhatsApp.service.ts:61  quote.findUnique  [lee-una/no-ruta]  { id: invoice.quoteId }
+src/modules/billing/domain/invoiceWhatsApp.service.ts:88  invoice.update  [escribe/no-ruta]  { id: invoice.id }
+src/modules/expenses/domain/expenses.service.ts:437  expense.update  [escribe/no-ruta]  { id }
+src/modules/expenses/domain/expenses.service.ts:445  expense.delete  [escribe/no-ruta]  { id }
+src/modules/fiscal/verifactu/sif.procesador.ts:120  vfSubmission.updateMany  [escribe/no-ruta]  { id: { in: enviables.map((x: any) => x.f.id) } }
+src/modules/fiscal/verifactu/sif.procesador.ts:168  vfSubmission.update  [escribe/no-ruta]  { id }
+src/modules/invoicing/app/routes/invoice.routes.ts:68  invoice.findUnique  [lee-una/ruta]  { id: invoiceId }
+src/modules/invoicing/app/routes/invoice.routes.ts:108  invoice.update  [escribe/ruta]  { id: invoiceId }
+src/modules/invoicing/domain/selladoEstado.ts:132  invoice.update  [escribe/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/selladoEstado.ts:143  invoice.update  [escribe/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/verifactu.service.ts:284  invoice.findUnique  [lee-una/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/verifactu.service.ts:364  invoice.findUnique  [lee-una/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/verifactu.service.ts:430  invoice.update  [escribe/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/verifactu.service.ts:525  invoice.update  [escribe/no-ruta]  { id: invoice.id }
+src/modules/invoicing/domain/verifactu.service.ts:1195  invoice.findUnique  [lee-una/no-ruta]  { id: invoiceId }
+src/modules/jobs/app/routes/albaranes.routes.ts:770  albaran.update  [escribe/ruta]  { id: albaran.id }
+src/modules/jobs/app/routes/albaranes.routes.ts:943  albaran.update  [escribe/ruta]  { id: albaran.id }
+src/modules/jobs/app/routes/albaranes.routes.ts:1042  albaran.update  [escribe/ruta]  { id: albaran.id }
+src/modules/jobs/app/routes/albaranes.routes.ts:1147  attachment.update  [escribe/ruta]  { id: att.id }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:242  job.findUnique  [lee-una/ruta]  { id: albaran.jobId }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:244  customer.findUnique  [lee-una/ruta]  { id: job.customerId }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:440  albaran.update  [escribe/ruta]  { id: albaran.id }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:458  job.findUnique  [lee-una/ruta]  { id: albaran.jobId }
+src/modules/jobs/app/routes/jobs.routes.ts:212  quote.findMany  [lee-varias/ruta]  { id: { in: quoteIds } }
+src/modules/jobs/app/routes/jobs.routes.ts:224  customer.findMany  [lee-varias/ruta]  { id: { in: customerIds } }
+src/modules/jobs/app/routes/jobs.routes.ts:330  quote.findUnique  [lee-una/ruta]  { id: job.quoteId }
+src/modules/jobs/app/routes/jobs.routes.ts:379  customer.findUnique  [lee-una/ruta]  { id: job.customerId }
+src/modules/jobs/app/routes/jobs.routes.ts:583  customer.findUnique  [lee-una/ruta]  { id: job.customerId }
+src/modules/jobs/app/routes/jobs.routes.ts:1118  job.update  [escribe/ruta]  { id }
+src/modules/jobs/app/routes/jobs.routes.ts:1120  job.update  [escribe/ruta]  { id }
+src/modules/jobs/app/routes/partes.routes.ts:605  parteTrabajo.update  [escribe/ruta]  { id: parte.id }
+src/modules/jobs/app/routes/partes.routes.ts:679  parteTrabajo.update  [escribe/ruta]  { id: parte.id }
+src/modules/jobs/app/routes/partes.routes.ts:761  parteTrabajo.update  [escribe/ruta]  { id: parte.id }
+src/modules/jobs/domain/albaran.service.ts:636  job.findUnique  [lee-una/no-ruta]  { id: a.jobId }
+src/modules/jobs/domain/albaran.service.ts:642  customer.findUnique  [lee-una/no-ruta]  { id: job.customerId }
+src/modules/jobs/domain/albaran.service.ts:779  albaran.findUnique  [lee-una/no-ruta]  { id: albaranId }
+src/modules/jobs/domain/albaran.service.ts:797  job.findUnique  [lee-una/no-ruta]  { id: albaran.jobId }
+src/modules/jobs/domain/albaran.service.ts:800  customer.findUnique  [lee-una/no-ruta]  { id: job.customerId }
+src/modules/jobs/domain/albaran.service.ts:901  albaran.update  [escribe/no-ruta]  { id: albaranId }
+src/modules/jobs/domain/albaranWhatsApp.service.ts:35  albaran.findUnique  [lee-una/no-ruta]  { id: albaranId }
+src/modules/jobs/domain/albaranWhatsApp.service.ts:107  albaran.findUnique  [lee-una/no-ruta]  { id: albaranId }
+src/modules/jobs/domain/albaranWhatsApp.service.ts:133  albaran.update  [escribe/no-ruta]  { id: albaran.id }
+src/modules/jobs/domain/job.service.ts:45  quote.findUnique  [lee-una/no-ruta]  { id: quoteId }
+src/modules/jobs/domain/job.service.ts:83  quote.update  [escribe/no-ruta]  { id: quote.id }
+src/modules/jobs/domain/job.service.ts:153  quote.update  [escribe/no-ruta]  { id: quote.id }
+src/modules/jobs/domain/job.service.ts:196  job.update  [escribe/no-ruta]  { id: jobId }
+src/modules/jobs/domain/job.service.ts:224  job.findUnique  [lee-una/no-ruta]  { id: jobId }
+src/modules/jobs/domain/job.service.ts:297  job.update  [escribe/no-ruta]  { id: jobId }
+src/modules/jobs/domain/job.service.ts:313  quote.findUnique  [lee-una/no-ruta]  { id: quoteId }
+src/modules/jobs/domain/job.service.ts:351  invoice.findUnique  [lee-una/no-ruta]  { id: invoiceId }
+src/modules/jobs/domain/pendientesFacturar.service.ts:322  customer.findMany  [lee-varias/no-ruta]  { id: { in: [...porCliente.keys()] } }
+src/modules/jobs/domain/recapitulativa.service.ts:143  invoice.findUnique  [lee-una/no-ruta]  { id: f.id }
+src/modules/maintenance/app/routes/maintenance.routes.ts:89  maintenancePlan.update  [escribe/ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:310  customer.findUnique  [lee-una/no-ruta]  { id: plan.customerId }
+src/modules/maintenance/domain/maintenance.service.ts:369  maintenancePlan.update  [escribe/no-ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:379  quote.findUnique  [lee-una/no-ruta]  { id: plan.quoteId }
+src/modules/maintenance/domain/maintenance.service.ts:450  maintenancePlan.update  [escribe/no-ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:482  maintenancePlan.findUnique  [lee-una/no-ruta]  { id: planId }
+src/modules/maintenance/domain/maintenance.service.ts:510  maintenancePlan.update  [escribe/no-ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:525  maintenancePlan.update  [escribe/no-ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:534  quote.delete  [escribe/no-ruta]  { id: draft.id }
+src/modules/maintenance/domain/maintenance.service.ts:545  maintenancePlan.update  [escribe/no-ruta]  { id: plan.id }
+src/modules/maintenance/domain/maintenance.service.ts:547  quote.delete  [escribe/no-ruta]  { id: draft.id }
+src/modules/messaging/domain/email.service.ts:35  invoice.findUnique  [lee-una/no-ruta]  { id: invoiceId }
+src/modules/messaging/domain/email.service.ts:179  quote.findUnique  [lee-una/no-ruta]  { id: quoteId }
+src/modules/messaging/domain/registroDeEnvios.ts:317  emailMessage.update  [escribe/no-ruta]  { id: fila.id }
+src/modules/messaging/domain/whatsappLog.service.ts:163  whatsAppMessage.update  [escribe/no-ruta]  { id }
+src/modules/messaging/domain/whatsappLog.service.ts:166  whatsAppMessage.update  [escribe/no-ruta]  { id }
+src/modules/metrics/domain/metrics.service.ts:64  customer.findMany  [lee-varias/no-ruta]  { id: { in: customerIds } }
+src/modules/products/domain/products.service.ts:318  product.update  [escribe/no-ruta]  { id }
+src/modules/providers/domain/providers.service.ts:64  provider.update  [escribe/no-ruta]  { id }
+src/modules/providers/domain/providers.service.ts:88  provider.delete  [escribe/no-ruta]  { id }
+src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:63  quoteRequest.update  [escribe/ruta]  { id }
+src/modules/quoteRequests/domain/attachment.service.ts:32  attachment.update  [escribe/no-ruta]  { id: att.id }
+src/modules/quotes/app/routes/quotes.routes.ts:263  quote.update  [escribe/ruta]  { id: quote.id }
+src/modules/quotes/app/routes/quotes.routes.ts:310  quote.findUnique  [lee-una/ruta]  { id: quote.id }
+src/modules/quotes/app/routes/quotes.routes.ts:468  quote.update  [escribe/ruta]  { id: quote.id, status: { in: ESTADOS_DECIDIBLES } }
+src/modules/quotes/app/routes/quotes.routes.ts:512  quote.update  [escribe/ruta]  { id: quote.id }
+src/modules/quotes/app/routes/quotes.routes.ts:722  quote.update  [escribe/ruta]  { id: quote.id, status: { in: ESTADOS_DECIDIBLES } }
+src/modules/quotes/domain/expire.service.ts:17  quote.update  [escribe/no-ruta]  { id: q.id }
+src/modules/quotes/domain/quoteToken.service.ts:13  quote.findUnique  [lee-una/no-ruta]  { id: quoteId }
+src/modules/quotes/domain/quoteToken.service.ts:21  quote.update  [escribe/no-ruta]  { id: quoteId }
+src/modules/quotes/domain/reminder.service.ts:83  quote.update  [escribe/no-ruta]  { id: quoteId }
+src/modules/quotes/domain/sendQuote.service.ts:36  quote.findUnique  [lee-una/no-ruta]  { id: quoteId }
+src/modules/quotes/domain/sendQuote.service.ts:117  quote.update  [escribe/no-ruta]  { id: quote.id }
+src/modules/system/app/routes/dev.routes.ts:73  charge.findUnique  [lee-una/ruta]  { id: chargeId }
+src/modules/system/app/routes/invoicesAdmin.routes.ts:811  invoice.update  [escribe/ruta]  { id }
+src/modules/system/app/routes/invoicesAdmin.routes.ts:951  invoice.update  [escribe/ruta]  { id: invoice.id, status: 'pending' }
+src/modules/system/app/routes/invoicesAdmin.routes.ts:1250  invoice.update  [escribe/ruta]  { id }
+src/modules/system/app/routes/quotesAdmin.routes.ts:536  quote.update  [escribe/ruta]  { id: quote.id, updatedAt: leida.version }
+src/modules/system/app/routes/quotesAdmin.routes.ts:772  quote.update  [escribe/ruta]  { id }
+src/modules/system/app/routes/quotesAdmin.routes.ts:811  quote.update  [escribe/ruta]  { id }
+src/modules/system/app/routes/quotesAdmin.routes.ts:862  quote.update  [escribe/ruta]  { id }
+src/modules/system/app/routes/quotesAdmin.routes.ts:866  teamMember.findUnique  [lee-una/ruta]  { id: quote.teamMemberId }
+src/modules/system/domain/sitiosDelCliente.ts:65  customerSite.update  [escribe/no-ruta]  { id: siteId }
+src/modules/system/invoiceAdmin.ts:303  invoice.update  [escribe/no-ruta]  { id, status: existing.status }
+src/modules/system/quoteAdmin.ts:387  quote.update  [escribe/no-ruta]  { id: quoteId }
+src/modules/system/quoteAdmin.ts:434  quote.update  [escribe/no-ruta]  { id: quoteId }
+src/modules/team/domain/team.service.ts:42  teamMember.update  [escribe/no-ruta]  { id: existing.id }
+src/modules/team/domain/team.service.ts:71  teamMember.update  [escribe/no-ruta]  { id }
+src/modules/team/domain/team.service.ts:84  teamMember.update  [escribe/no-ruta]  { id }
+src/modules/templates/app/routes/templates.routes.ts:87  quoteTemplate.update  [escribe/ruta]  { id }
+src/modules/templates/app/routes/templates.routes.ts:106  quoteTemplate.delete  [escribe/ruta]  { id }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:482  quote.update  [escribe/ruta]  { id: quote.id }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:511  customer.findUnique  [lee-una/ruta]  { id: quote.customerId }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:551  quote.update  [escribe/ruta]  { id: quote.id }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:571  customer.findUnique  [lee-una/ruta]  { id: quote.customerId }
+src/modules/whatsappBot/domain/botFlow.service.ts:61  botSession.update  [escribe/no-ruta]  { id: existing.id }
+
+── LISTA · POR-OTRA-CLAVE (67)
+src/lib/invoicing.ts:335  quote.findFirst  [lee-una/no-ruta]  { chargeId: ch.id }
+src/lib/invoicing.ts:337  invoice.findFirst  [lee-una/no-ruta]  { quoteId: quote.id }
+src/modules/auth/domain/auth.service.ts:147  teamMember.findUnique  [lee-una/no-ruta]  { email }
+src/modules/auth/domain/auth.service.ts:250  authSession.findUnique  [lee-una/no-ruta]  { token }
+src/modules/auth/domain/auth.service.ts:283  authSession.findUnique  [lee-una/no-ruta]  { token }
+src/modules/auth/domain/auth.service.ts:304  authSession.deleteMany  [escribe/no-ruta]  { token }
+src/modules/auth/domain/auth.service.ts:330  teamMember.findUnique  [lee-una/no-ruta]  { email: params.email }
+src/modules/billing/app/routes/payBank.routes.ts:27  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/payBizum.routes.ts:122  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/payCard.routes.ts:19  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/payInvoice.routes.ts:24  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/payInvoice.routes.ts:37  invoice.findFirst  [lee-una/ruta]  { chargeId: id }
+src/modules/billing/app/routes/payMp.routes.ts:20  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/payMp.routes.ts:92  charge.findUnique  [lee-una/ruta]  { receiptToken: req.params.token }
+src/modules/billing/app/routes/psp.routes.ts:164  quote.findFirst  [lee-una/ruta]  { chargeId: updated.id }
+src/modules/billing/app/routes/psp.routes.ts:168  invoice.findFirst  [lee-una/ruta]  { OR: [ { chargeId: updated.id }, ...(linkedQuote ? [{ quoteId: linkedQuote.id }] : []), ], }
+src/modules/billing/app/routes/receipt.routes.ts:31  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/receipt.routes.ts:75  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/app/routes/receipt.routes.ts:92  quote.findFirst  [lee-una/ruta]  { chargeId: ch.id }
+src/modules/billing/app/routes/receipt.routes.ts:94  invoice.findFirst  [lee-una/ruta]  { quoteId: quote.id }
+src/modules/billing/app/routes/receipt.routes.ts:486  charge.findUnique  [lee-una/ruta]  { receiptToken: req.params.token }
+src/modules/billing/app/routes/receipt.routes.ts:489  quote.findFirst  [lee-una/ruta]  { chargeId: ch.id }
+src/modules/billing/app/routes/receipt.routes.ts:491  invoice.findFirst  [lee-una/ruta]  { quoteId: quote.id }
+src/modules/billing/app/routes/receipt.routes.ts:522  charge.findUnique  [lee-una/ruta]  { receiptToken: token }
+src/modules/billing/domain/invoiceReminder.service.ts:40  invoice.findMany  [lee-varias/no-ruta]  { status: 'pending', createdAt: { lte: cut7 }, reminder7SentAt: null, // SCRUM-116: el opt-out se filtra AQUÍ, no se trata como un fallo de envío. Enviar a // q
+src/modules/billing/domain/invoiceReminder.service.ts:63  invoice.findMany  [lee-varias/no-ruta]  { status: 'pending', createdAt: { lte: cut14 }, reminder14SentAt: null, // reminder7SentAt puede ser null si el cliente no tiene WA → no bloquear el de 14d cust
+src/modules/exports/app/routes/exports.routes.ts:467  charge.findMany  [lee-varias/ruta]  { status: 'paid', method: { contains: 'card' }, updatedAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) }, }
+src/modules/exports/domain/portabilidadRegistro.ts:182  auditLog.findMany  [lee-varias/no-ruta]  { action: ACCION_ATENDIDA, entityType: ENTIDAD, entityId: { in: solicitudes.map((s: any) => s.id) }, }
+src/modules/fiscal/verifactu/sif.procesador.ts:81  vfSubmission.findMany  [lee-varias/no-ruta]  { obligadoNif, status: 'sent', lastSentAt: { lt: new Date(ahora.getTime() - SENT_INTERRUMPIDO_TRAS_MS) } }
+src/modules/fiscal/verifactu/sif.procesador.ts:98  vfSubmission.findMany  [lee-varias/no-ruta]  { obligadoNif, status: 'pending', OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: ahora } }] }
+src/modules/invoicing/domain/reintentoSellado.ts:243  invoice.findMany  [lee-varias/no-ruta]  { vfEstado: SELLADO_PENDIENTE, vfHash: null, createdAt: { gte: desde } }
+src/modules/invoicing/domain/reintentoSellado.ts:257  invoice.findMany  [lee-varias/no-ruta]  { vfEstado: SELLADO_PENDIENTE, vfHash: { not: null }, createdAt: { gte: desde } }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:238  albaran.findUnique  [lee-una/ruta]  { firmaToken: token }
+src/modules/jobs/app/routes/albaranPublic.routes.ts:377  albaran.findUnique  [lee-una/ruta]  { firmaToken: req.params.token }
+src/modules/jobs/domain/job.service.ts:81  job.findUnique  [lee-una/no-ruta]  { quoteId: quote.id }
+src/modules/jobs/domain/job.service.ts:293  invoice.aggregate  [lee-varias/no-ruta]  { quoteId: { in: quoteIds }, status: 'paid' }
+src/modules/jobs/domain/job.service.ts:319  job.findUnique  [lee-una/no-ruta]  { quoteId }
+src/modules/jobs/domain/job.service.ts:334  invoice.findFirst  [lee-una/no-ruta]  { chargeId }
+src/modules/jobs/domain/job.service.ts:337  quote.findFirst  [lee-una/no-ruta]  { chargeId }
+src/modules/maintenance/domain/maintenance.service.ts:211  customer.findMany  [lee-varias/no-ruta]  { waOptOut: true }
+src/modules/messaging/domain/registroDeEnvios.ts:310  emailMessage.findUnique  [lee-una/no-ruta]  { providerId: idProveedor }
+src/modules/messaging/domain/whatsappLog.service.ts:197  customer.findMany  [lee-varias/no-ruta]  { phone: { in: [phone, `+${phone}`] } }
+src/modules/messaging/domain/whatsappLog.service.ts:260  whatsAppMessage.findUnique  [lee-una/no-ruta]  { waMessageId }
+src/modules/messaging/domain/whatsappLog.service.ts:268  whatsAppMessage.update  [escribe/no-ruta]  { waMessageId }
+src/modules/metrics/domain/metrics.service.ts:390  quote.groupBy  [lee-varias/no-ruta]  { status: { in: ['sent', 'accepted', 'rejected'] } }
+src/modules/metrics/domain/metrics.service.ts:395  quote.groupBy  [lee-varias/no-ruta]  { status: 'accepted' }
+src/modules/metrics/domain/metrics.service.ts:396  charge.groupBy  [lee-varias/no-ruta]  { status: 'paid' }
+src/modules/payments/disputes.service.ts:137  charge.findFirst  [lee-una/no-ruta]  { intentId: piId }
+src/modules/payments/disputes.service.ts:158  invoice.findFirst  [lee-una/no-ruta]  { chargeId: charge.id }
+src/modules/quotes/app/routes/quotes.routes.ts:363  quote.findUnique  [lee-una/ruta]  { decisionToken: token }
+src/modules/quotes/domain/expire.service.ts:9  quote.findMany  [lee-varias/no-ruta]  { status: 'sent', validUntil: { not: null, lt: now } }
+src/modules/quotes/domain/reminder.service.ts:13  quote.findMany  [lee-varias/no-ruta]  { status: 'sent', reminderSentAt: null, updatedAt: { lte: cutoff }, }
+src/modules/system/app/routes/customerPortal.routes.ts:237  customer.findUnique  [lee-una/ruta]  { portalToken: token }
+src/modules/system/app/routes/customerPortal.routes.ts:260  quote.findMany  [lee-varias/ruta]  { customerId: customer.id }
+src/modules/system/app/routes/customerPortal.routes.ts:265  invoice.findMany  [lee-varias/ruta]  { customerId: customer.id }
+src/modules/system/app/routes/customerPortal.routes.ts:528  customer.findUnique  [lee-una/ruta]  { portalToken: token }
+src/modules/system/app/routes/quoteDecisionLanding.routes.ts:267  quote.findUnique  [lee-una/ruta]  { decisionToken: token }
+src/modules/system/app/routes/quoteDecisionLanding.routes.ts:918  quote.findUnique  [lee-una/ruta]  { decisionToken: token }
+src/modules/system/app/routes/quoteDecisionLanding.routes.ts:995  quote.findUnique  [lee-una/ruta]  { decisionToken: token }
+src/modules/system/domain/borradoMerchant.ts:278  botSession.deleteMany  [escribe/no-ruta]  { phone: { in: telefonos } }
+src/modules/team/domain/team.service.ts:82  authSession.deleteMany  [escribe/no-ruta]  { teamMemberId: id, type: 'session' }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:342  quote.findMany  [lee-varias/ruta]  { customerId: { in: customers.map((c) => c.id) }, status: 'sent' }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:377  quote.findMany  [lee-varias/ruta]  { customerId: { in: customers.map((c) => c.id) }, status: 'sent', }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:391  whatsAppMessage.findFirst  [lee-una/ruta]  { customerId: { in: customers.map((c) => c.id) }, relatedType: 'albaran', type: 'template', createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+src/modules/whatsappBot/domain/botFlow.service.ts:48  botSession.findFirst  [lee-una/no-ruta]  { phone, expiresAt: { gt: new Date() } }
+src/modules/whatsappBot/domain/botFlow.service.ts:194  customer.findMany  [lee-varias/no-ruta]  { phone: { in: [phone, `+${phone}`] } }
+src/modules/whatsappBot/domain/botFlow.service.ts:318  customer.findMany  [lee-varias/no-ruta]  { phone: { in: [phone, `+${phone}`] } }
+
+── LISTA · ILEGIBLE (17)
+src/modules/billing/domain/invoiceWhatsApp.service.ts:42  invoice.findUnique  [lee-una/no-ruta]  soloDelComercio ? { id: invoiceId, merchantId: soloDelComercio.merchantId } : { id: invoiceId }
+src/modules/exports/domain/exportData.ts:161  customer.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango)
+src/modules/exports/domain/exportData.ts:200  invoice.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {})
+src/modules/exports/domain/exportData.ts:232  charge.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {})
+src/modules/exports/domain/exportData.ts:273  job.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango, CAMPO_FECHA_TRABAJOS, status !== 'all' ? { status } : {})
+src/modules/exports/domain/exportData.ts:333  expense.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango, 'date', extra)
+src/modules/exports/domain/exportData.ts:361  quote.findMany  [lee-varias/no-ruta]  whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {})
+src/modules/jobs/domain/precarga.service.ts:305  job.findMany  [lee-varias/no-ruta]  whereDePrecarga(merchantId, ahora, soloDelTecnico)
+src/modules/maintenance/domain/maintenance.service.ts:218  maintenancePlan.findMany  [lee-varias/no-ruta]  idsSinCanal.length ? { ...vencidos, customerId: { notIn: idsSinCanal } } : vencidos
+src/modules/maintenance/domain/maintenance.service.ts:225  maintenancePlan.findMany  [lee-varias/no-ruta]  { ...vencidos, customerId: { in: idsSinCanal } }
+src/modules/messaging/domain/whatsappLog.service.ts:120  whatsAppMessage.count  [lee-varias/no-ruta]  { ...cuentaParaElTope, customerId: input.customerId }
+src/modules/system/domain/historialDelCliente.ts:81  job.findFirst  [lee-una/no-ruta]  { ...whereTrabajos, status: 'agendado', scheduledAt: { gte: op.ahora ?? new Date() } }
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:271  customer.findMany  [lee-varias/ruta]  dondePuedeEstarElNumero(phone)
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:284  customer.updateMany  [escribe/ruta]  dondePuedeEstarElNumero(phone)
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:318  customer.findMany  [lee-varias/ruta]  dondePuedeEstarElNumero(phone)
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:337  customer.findMany  [lee-varias/ruta]  dondePuedeEstarElNumero(phone)
+src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:362  customer.findMany  [lee-varias/ruta]  dondePuedeEstarElNumero(phone)
+
+El par sembrado se separa (11 de 11).
+EXIT=0

@@ -1,0 +1,45 @@
+app cargada de dist\app.js · NODE_ENV=development · capas en la pila de la app: 102
+topes leidos en dist: por cliente y dia = 3 · por comercio y dia = 100  [ESPERADO FORZADO A 1: este guion debe salir rojo]
+
+== 1 · LA CADENA que tiene delante POST /admin/invoices/21/send-reminder (pila de la app cargada) ==
+  [  0] (toda peticion) <anonymous>
+  [ 12] (toda peticion) jsonParser
+  [ 13] (toda peticion) urlencodedParser
+  [ 14] (toda peticion) jsonError
+  [ 17] (toda peticion) serveStatic
+  [ 45] (SOLO esta zona) requireAuth  montada en /admin
+  [ 50] (SOLO esta zona) ROUTER router  montada en /admin/invoices
+         dentro [12] ruta POST /:id/send-reminder  ->  requireRole(admin) , <anonymous>
+  [101] (toda peticion) <anonymous>
+  capas que casan: 8 · de ellas, 2 no las ve una ruta inventada (control: la inventada casa 6)
+  manos de la ruta, en orden: requireRole(admin) , <anonymous> · capas del router de facturas que no son ruta y casan: 0
+
+== 2 · CONTROLES ==
+cuadra K+ POSITIVO: el titular, su factura                                        plantillas=  1 llamadas=  1 sesion=  1 pregCom=  1 pregCli=  0 429= 0 [http200+enviado=1]
+cuadra K0 CERO: el titular, una factura que no existe                             plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http404:not_found=1]
+
+== 3 · QUIEN PASA ==
+cuadra A1 sin credencial ninguna                                                  plantillas=  0 llamadas=  0 sesion=  0 pregCom=  0 pregCli=  0 429= 0 [http401:not_authenticated=1]
+cuadra A2 la credencial del titular por OTRA via (Bearer, cabecera, query, cuerpo) plantillas=  0 llamadas=  0 sesion=  0 pregCom=  0 pregCli=  0 429= 0 [http401:not_authenticated=1]
+cuadra A3 una cookie que no es de nadie                                           plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http401:session_expired=1]
+cuadra A4 una sesion caducada                                                     plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http401:session_expired=1]
+cuadra A5 un enlace de acceso sin canjear (no es de tipo sesion)                  plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http401:session_expired=1]
+cuadra A6 un miembro del equipo suspendido (era admin)                            plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http401:session_expired=1]
+cuadra A7 un miembro del equipo con rol tecnico                                   plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http403:forbidden=1]
+cuadra A8 el titular de OTRO comercio, sobre esta factura                         plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http404:not_found=1]
+cuadra A9 un miembro del equipo con rol admin                                     plantillas=  1 llamadas=  1 sesion=  1 pregCom=  1 pregCli=  0 429= 0 [http200+enviado=1]
+cuadra A10 el titular con la prueba VENCIDA, su factura                           plantillas=  1 llamadas=  1 sesion=  1 pregCom=  1 pregCli=  0 429= 0 [http200+enviado=1]
+cuadra A11 el titular, peticion que dice venir de otro sitio (Origin y Referer ajenos) plantillas=  1 llamadas=  1 sesion=  1 pregCom=  1 pregCli=  0 429= 0 [http200+enviado=1]
+cuadra A12 el titular, como la manda un formulario (urlencoded, sin JSON)         plantillas=  1 llamadas=  1 sesion=  1 pregCom=  1 pregCli=  0 429= 0 [http200+enviado=1]
+cuadra A13 el titular por GET (la ruta es POST)                                   plantillas=  0 llamadas=  0 sesion=  1 pregCom=  0 pregCli=  0 429= 0 [http404:not_found=1]
+
+== 4 · CUANTAS VECES ==
+ROJO   R1 el titular, 21 seguidas, misma factura, mismo cliente                   plantillas= 21 llamadas= 21 sesion= 21 pregCom= 21 pregCli=  0 429= 0 [http200+enviado=21]  <<< plantillas: esperado 1, salio 21 | resultados: esperado http200+enviado=1 http200+no:daily_cap=20, salio http200+enviado=21
+       marcas de fecha escritas en la factura: 2 · filas en el registro de mensajes: 21
+cuadra R+ POSITIVO del contador de 429: /auth/login, 7 seguidas, mismo correo     plantillas=  0 llamadas=  0 sesion=  0 pregCom=  0 pregCli=  0 429= 2 [http200=5 http429:too_many_requests=2]
+cuadra R0 CERO del contador de 429: /auth/login, 7 seguidas, 7 correos            plantillas=  0 llamadas=  0 sesion=  0 pregCom=  0 pregCli=  0 429= 0 [http200=7]
+
+== RESUMEN ==
+casos: 18 · cuadran: 17 · en rojo: 1 · plantillas en toda la corrida: 26
+R1: de 21 peticiones seguidas del titular salen 21 plantillas al MISMO cliente; con el tope por cliente (3) saldrian 3. Respuestas 429: 0.
+la base en memoria contesto sin modelarlo a: merchant.findUnique x12, teamMember.findUnique x12

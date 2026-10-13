@@ -1,0 +1,8 @@
+BASE antes  · salida 0 · tests 4 · pass 4 · fail 0
+I1 · un «¿puede?» exportado en el módulo · CAE · salida 1 · tests 4 · fail 1 · cae: SCRUM-1408 · A: `asignacionDeDocumento.ts` exporta exactamente lo declarado, y ninguna función exportada contesta sí o no
+I2 · una función del módulo pasa a contestar sí o no (mismo nombre, mismo export) · CAE · salida 1 · tests 4 · fail 1 · cae: SCRUM-1408 · A: `asignacionDeDocumento.ts` exporta exactamente lo declarado, y ninguna función exportada contesta sí o no
+I3 · un tercer fichero filtra por la relación `asignados` · CAE · salida 1 · tests 4 · fail 1 · cae: SCRUM-1408 · B: la asignación al documento sólo la tocan los ficheros declarados, y sólo dos DECIDEN con ella
+I4 · un fichero lejano lee la tabla puente por su modelo · CAE · salida 1 · tests 4 · fail 1 · cae: SCRUM-1408 · B: la asignación al documento sólo la tocan los ficheros declarados, y sólo dos DECIDEN con ella
+BASE después · salida 0 · tests 4 · pass 4 · fail 0
+ÁRBOL · intacto · sha256 de src/core/documentos/asignacionDeDocumento.ts: fee7aabd20c9ae4ce217229fdb86c500e90314ed4bf29f820310340d1d2d5433
+POBLACIÓN: 4 inyecciones · 4 como debían · EXIT=0

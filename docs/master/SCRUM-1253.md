@@ -385,3 +385,30 @@ esperaba `fecha_publicacion` justo detrás de `id_norma`. Las versiones nuevas t
 `fpub=""` en medio, así que devolvió **0 bloques modificados**. No lo di por bueno porque otro
 recuento, por norma, decía **2**. Lo releí por número de línea. El extractor del repo no tiene ese
 defecto: busca `fecha_vigencia` en cualquier posición.
+
+## Nota del 7-oct-2026 · el Real Decreto-ley 26/2026 que cita este apéndice fue derogado
+
+**Medido contra:** `origin/main` = `e883e586d11298ca09d58cd3fa89937b7b0549bd` · 2026-10-07T15:52:45Z
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: que una norma siga viva sólo se sabe volviendo a preguntárselo al BOE, y la tanda de CI no sale a la red.
+
+Sesión J5 (IA), por SCRUM-1316. **No se toca nada de lo de arriba:** era cierto el 1-oct-2026, y forma
+parte de por qué se miró esto. Lo que ha cambiado desde entonces, medido el 7-oct-2026 contra el BOE:
+
+1. **El Real Decreto-ley 26/2026 (`BOE-A-2026-20266`) está derogado.** El Congreso acordó derogarlo el
+   2-oct-2026 (`BOE-A-2026-20526`), y con ello quedó sin efecto su modificación de los arts. 20 y 91 LIVA
+   que cuentan §Ⓙ y §Ⓜ.
+2. **El Real Decreto-ley 29/2026, de 6 de octubre (`BOE-A-2026-20823`), publicado el 7-oct-2026, repite
+   esa modificación**, con los mismos efectos de 1 de diciembre de 2026 y, en el art. 91.Uno.2.10.º, con
+   el mismo texto que se cita en §Ⓜ. **No está convalidado.**
+3. **El veredicto de este expediente no se mueve.** Los artículos que cita (75, 88, 97 y 164 LIVA)
+   siguen sin versión de 2026: en la LIVA de hoy, los únicos bloques con versiones publicadas desde
+   septiembre son el art. 20 y el art. 91, igual que el 1-oct.
+4. **La LIVA consolidada ha vuelto a cambiar de sha256** (hoy `5fb06ddd…`; el 1-oct era `e2386e75…`): el
+   BOE le ha añadido dos versiones a cada uno de esos dos artículos.
+5. 🔴 **El aviso de §Ⓛ.2 se queda corto.** Decía que el extractor habría que moverlo después del 1-dic.
+   La versión del 29/2026 trae `fecha_vigencia` del **8-oct-2026**: quien mueva la fecha fija a hoy
+   leerá desde mañana la redacción nueva como si ya se aplicara.
+
+Las fuentes, los literales y la medición del extractor: `docs/master/SCRUM-1316.md`, sección
+«SCRUM-1316b».

@@ -1,0 +1,84 @@
+⚠️ ENSAYO DE LA PROPUESTA: `esErrorSinSellar` sustituida EN MEMORIA. Esto NO es lo que hace el código de hoy.
+POBLACION: 7 filas fabricadas por el camino real compilado, y 2 rutas pedidas por HTTP a 127.0.0.1 (puerto efímero)
+sha256 dist/modules/billing/app/routes/receipt.routes.js     = ed5fc744997b1e03687536c25166edd50ebec591e0fdbd81701882979f40c8e2
+sha256 dist/modules/invoicing/domain/portonDocumento.js      = f71b64c4598c16f566b4289d70a63eec32ca04a6905a3bd05ee142c893cc1fce
+sha256 dist/lib/invoicing.js                                 = 24bb7011e75dc5528ff760a0787c7e63204796fdfec05681b7a1d2921cd8ee03
+texto firmado del 409 (COPY_PUBLICO_SIN_SELLAR, leído de dist): «Esta factura se está registrando en Hacienda. Vuelve a intentarlo en un minuto.»
+titular de la página que acompaña al 500 (documentNotFoundHtml, leído de dist): «Este enlace no corresponde a ningún documento activo.»
+
+[verifactu] invoice=2026-CF-0001 hash=FDAC45EDFE05B6B4…
+── A · CONTROL · factura ES, sin fallo: se sella entera
+   la puerta devuelve sellado
+   fila que queda:  vfEstado=sellado  huella=sí   → no pendiente
+   GET /recibo/:token/pdf        → 200  application/pdf  6538 B  · es un PDF
+      lo que la ruta dejó en el log: (nada)
+   GET /admin/invoices/:id/pdf   → 200  application/pdf  6538 B  · es un PDF
+      lo que la ruta dejó en el log: (nada)
+   escrituras durante las dos peticiones: invoice.update
+
+── B · factura ES, el sellado revienta ANTES de la huella (el caso NORMAL del fallo de sellado)
+   la puerta devuelve pendiente_de_sellado (la base no responde (huella))
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no   → PENDIENTE DE SELLADO
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+   escrituras durante las dos peticiones: ninguna
+
+[verifactu] invoice=2026-CF-0003 hash=95234E7B95DC0C85…
+── C · factura ES: la HUELLA se escribe y la escritura siguiente, la del estado, falla
+   la puerta devuelve pendiente_de_sellado (la base no responde (estado))
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=sí   → PENDIENTE DE SELLADO
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+   escrituras durante las dos peticiones: ninguna
+
+── D · justificante J- de un comercio ES: la escritura de «no aplica» falla
+   la puerta LANZA la base no responde (no aplica)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no   → PENDIENTE DE SELLADO
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+   escrituras durante las dos peticiones: ninguna
+
+── E · factura de un comercio NO español: la escritura de «no aplica» falla
+   la puerta LANZA la base no responde (no aplica)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no   → PENDIENTE DE SELLADO
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+   escrituras durante las dos peticiones: ninguna
+
+── F · factura ES: el proceso muere entre el commit y el sellado (no se llama a la puerta)
+   la puerta (no se llama)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no   → PENDIENTE DE SELLADO
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+   escrituras durante las dos peticiones: ninguna
+
+── G · POSITIVO DEL 409 · factura emitida SIN NIF en la ficha («no aplica»); el comercio pone su NIF después
+   la puerta devuelve no_aplica
+   fila que queda:  vfEstado=no_aplica  huella=no   → no pendiente
+   GET /recibo/:token/pdf        → 409  text/html; charset=utf-8  931 B  · LLEVA el texto firmado del 409
+      lo que la ruta dejó en el log: [GET /recibo/:token/pdf] invoice_sin_sellar:2026-CF-0007
+   GET /admin/invoices/:id/pdf   → 409  application/json; charset=utf-8  130 B  · {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+      lo que la ruta dejó en el log: [GET /admin/invoices/:id/pdf] FacturaSinSellarError: invoice_sin_sellar:2026-CF-0007
+   escrituras durante las dos peticiones: ninguna
+
+── RESUMEN ──
+  facturas PENDIENTES DE SELLADO fabricadas: 5 de 7 → B, C, D, E, F
+  qué contesta a esas 5 la ruta PÚBLICA  GET /recibo/:token/pdf      : 409 × 5 (B, C, D, E, F)
+     de ellas, con el texto firmado en el cuerpo: 5 · con «Este enlace no corresponde a ningún documento activo.»: 0
+  qué contesta a esas 5 la ruta del PANEL  GET /admin/invoices/:id/pdf : 409 invoice_sin_sellar × 5 (B, C, D, E, F)
+  PDF entregados a una pendiente (por cualquiera de las dos rutas): 0
+  escrituras provocadas por pedir el documento de una pendiente: 0
+
+  control a cero: un enlace que no es de ningún cobro → 404
+CONTROLES: los 8 pasan (estado de nacimiento · 200 con PDF por las dos rutas · 409 alcanzable por las dos rutas · 404 del enlace ajeno · población de pendientes · todos los casos)
+EXIT=0

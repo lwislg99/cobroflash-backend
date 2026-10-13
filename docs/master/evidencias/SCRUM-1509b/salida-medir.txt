@@ -1,0 +1,57 @@
+tope por cliente y dia leido en dist: 3 · tope por comercio y dia: 100 · pasadas: 30
+
+== 0 · CONTROLES DEL INSTRUMENTO (antes de cualquier numero)
+ok        CONTROL · cero: sin pasadas no sale nada ni se pregunta nada  [pasadas=0]
+   {"SALIERON":0,"porClase":{},"candado":"0 pedidos / 0 escritos","topeClientePreguntado":0,"topeComercioPreguntado":0,"bloqueos":{},"avisosEnFicha":0,"filas":"0 pedidas / 0 escritas","con7":0,"con14":0,"porPasada":""}
+ok        CONTROL · el instrumento VE un envio al que no se le pregunta el tope por cliente (presupuestos, solo ejecutado)  [objeto=presupuesto pasadas=48]
+   {"SALIERON":1,"porClase":{"template":1},"candado":"1 pedidos / 1 escritos","topeClientePreguntado":0,"topeComercioPreguntado":1,"bloqueos":{},"avisosEnFicha":0,"filas":"1 pedidas / 1 escritas","con7":0,"con14":0,"porPasada":"1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+ok        CONTROL · la mutacion en memoria sustituye 2 de 2 y deja de preguntarse el tope  [mutar=sin-cliente pasadas=1]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":0,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"2"}
+ok        CONTROL · EL QUE MANDA: recordatorio legitimo, todo sano, salen el de 7 y el de 14 una vez  []
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":2,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+
+== 1 · SE ESCRIBE EL CANDADO AUNQUE EL ENVIO SE HAYA BLOQUEADO?
+ok        cliente con 3 plantillas hoy, 1 pasada: bloqueado y candado NO pedido  [previas=3 pasadas=1]
+   {"SALIERON":0,"porClase":{},"candado":"0 pedidos / 0 escritos","topeClientePreguntado":2,"topeComercioPreguntado":2,"bloqueos":{"customer_daily_cap":2},"avisosEnFicha":2,"filas":"2 pedidas / 2 escritas","con7":0,"con14":0,"porPasada":"0"}
+ok        el mismo, 3 pasadas: se reintenta al dia siguiente y sale  [previas=3 pasadas=3]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":4,"topeComercioPreguntado":4,"bloqueos":{"customer_daily_cap":2},"avisosEnFicha":2,"filas":"4 pedidas / 4 escritas","con7":1,"con14":1,"porPasada":"0,2,0"}
+ok        cliente con 2 plantillas hoy: sale uno hoy y el otro manana  [previas=2 pasadas=3]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":3,"topeComercioPreguntado":3,"bloqueos":{"customer_daily_cap":1},"avisosEnFicha":1,"filas":"3 pedidas / 3 escritas","con7":1,"con14":1,"porPasada":"1,1,0"}
+ok        comercio en su tope (100): bloqueado, candado NO pedido, sale manana  [previasComercio=100 pasadas=2]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":2,"topeComercioPreguntado":4,"bloqueos":{"daily_cap":2},"avisosEnFicha":2,"filas":"4 pedidas / 4 escritas","con7":1,"con14":1,"porPasada":"0,2"}
+ok        contrafactico SIN cliente, cliente con 3 plantillas hoy: salen igual  [previas=3 pasadas=1 mutar=sin-cliente]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":0,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"2"}
+
+== 2 · SE LE PASA EL CLIENTE? (lo dice el destino: la pregunta del tope y la fila)
+ok        HOY, todo sano  []
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":2,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+ok        contrafactico SIN cliente  [mutar=sin-cliente]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":0,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+
+== 3 · EL NUMERO: escritura del candado ROTA, 30 dias
+ok        1 factura · HOY (con cliente)  [candado=roto]
+   {"SALIERON":60,"porClase":{"template":60},"candado":"60 pedidos / 0 escritos","topeClientePreguntado":60,"topeComercioPreguntado":60,"bloqueos":{},"avisosEnFicha":0,"filas":"60 pedidas / 60 escritas","con7":0,"con14":0,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+ok        1 factura · contrafactico SIN cliente  [candado=roto mutar=sin-cliente]
+   {"SALIERON":60,"porClase":{"template":60},"candado":"60 pedidos / 0 escritos","topeClientePreguntado":0,"topeComercioPreguntado":60,"bloqueos":{},"avisosEnFicha":0,"filas":"60 pedidas / 60 escritas","con7":0,"con14":0,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+ok        2 facturas del mismo cliente · HOY  [facturas=2 candado=roto]
+   {"SALIERON":90,"porClase":{"template":90},"candado":"90 pedidos / 0 escritos","topeClientePreguntado":120,"topeComercioPreguntado":120,"bloqueos":{"customer_daily_cap":30},"avisosEnFicha":30,"filas":"120 pedidas / 120 escritas","con7":0,"con14":0,"porPasada":"3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3"}
+ok        2 facturas · contrafactico SIN cliente  [facturas=2 candado=roto mutar=sin-cliente]
+   {"SALIERON":120,"porClase":{"template":120},"candado":"120 pedidos / 0 escritos","topeClientePreguntado":0,"topeComercioPreguntado":120,"bloqueos":{},"avisosEnFicha":0,"filas":"120 pedidas / 120 escritas","con7":0,"con14":0,"porPasada":"4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4"}
+ok        3 facturas del mismo cliente · HOY  [facturas=3 candado=roto]
+   {"SALIERON":90,"porClase":{"template":90},"candado":"90 pedidos / 0 escritos","topeClientePreguntado":180,"topeComercioPreguntado":180,"bloqueos":{"customer_daily_cap":90},"avisosEnFicha":90,"filas":"180 pedidas / 180 escritas","con7":0,"con14":0,"porPasada":"3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3"}
+ok        2 facturas · rotos candado Y registro de WhatsApp  [facturas=2 candado=roto registro=roto]
+   {"SALIERON":120,"porClase":{"template":120},"candado":"120 pedidos / 0 escritos","topeClientePreguntado":120,"topeComercioPreguntado":120,"bloqueos":{},"avisosEnFicha":0,"filas":"120 pedidas / 0 escritas","con7":0,"con14":0,"porPasada":"4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4"}
+ok        1 factura de 7 dias (edad real del primer aviso) · candado roto  [edad=7 candado=roto]
+   {"SALIERON":53,"porClase":{"template":53},"candado":"53 pedidos / 0 escritos","topeClientePreguntado":53,"topeComercioPreguntado":53,"bloqueos":{},"avisosEnFicha":0,"filas":"53 pedidas / 53 escritas","con7":0,"con14":0,"porPasada":"1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+ok        1 factura de 7 dias · todo sano (control)  [edad=7]
+   {"SALIERON":2,"porClase":{"template":2},"candado":"2 pedidos / 2 escritos","topeClientePreguntado":2,"topeComercioPreguntado":2,"bloqueos":{},"avisosEnFicha":0,"filas":"2 pedidas / 2 escritas","con7":1,"con14":1,"porPasada":"1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+ok        2 facturas · todo sano (control: las 4 salen, la cuarta al dia siguiente)  [facturas=2]
+   {"SALIERON":4,"porClase":{"template":4},"candado":"4 pedidos / 4 escritos","topeClientePreguntado":5,"topeComercioPreguntado":5,"bloqueos":{"customer_daily_cap":1},"avisosEnFicha":1,"filas":"5 pedidas / 5 escritas","con7":2,"con14":2,"porPasada":"3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+
+== 4 · LOS CAMINOS A LOS QUE EL TOPE NO SE LES PREGUNTA (no son plantilla)
+ok        ventana de 24 h abierta en cada pasada · candado roto  [ventana=1 candado=roto]
+   {"SALIERON":60,"porClase":{"cta_url":60},"candado":"60 pedidos / 0 escritos","topeClientePreguntado":0,"topeComercioPreguntado":0,"bloqueos":{},"avisosEnFicha":0,"filas":"120 pedidas / 120 escritas","con7":0,"con14":0,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+ok        factura SIN cobro (texto libre) · candado roto · OJO: dry-run no rechaza fuera de ventana  [cobro=0 candado=roto]
+   {"SALIERON":60,"porClase":{"text":60},"candado":"60 pedidos / 0 escritos","topeClientePreguntado":0,"topeComercioPreguntado":0,"bloqueos":{},"avisosEnFicha":0,"filas":"0 pedidas / 0 escritas","con7":0,"con14":0,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+
+TODO CUADRA con lo derivado del tope leido (3)

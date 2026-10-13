@@ -1,8 +1,13 @@
 ---
 paths:
   - "public/dashboard/js/albaranDetailView.js"
+  - "scripts/capturas-lista-trabajos-917.mjs"
   - "public/dashboard/js/parteDetailView.js"
+  - "scripts/guard-detalle-trabajo-917.mjs"
+  - "scripts/guard-lista-trabajos-917.mjs"
   - "public/dashboard/js/jobsView.js"
+  - "scripts/_trabajos-917.mjs"
+  - "scripts/_detalle-917.mjs"
 ---
 # Carril S4 — GENERADO por `scripts/carriles.mjs` desde `docs/equipo/dos-equipos.md` §3. No se edita a mano.
 

@@ -1,0 +1,17 @@
+POBLACION · 15 cebos · censo de D:\MILLONARIO\cobroFlash\wt-s3-1288b\scripts\_censo-gemelo-crudo.mjs · carpetas que recorre: [src]
+CAZA    · 1 · el cebo del orquestador: suma con EUR, en un text: · IMPORTE FUERA (prop text)
+CAZA    · 2 · plantilla con € · IMPORTE FUERA (prop text)
+CAZA    · 3 · plantilla con la moneda interpolada · IMPORTE FUERA (prop text)
+CAZA    · 4 · suma con Number(…) y la moneda en variable · IMPORTE FUERA (prop text)
+CAZA    · 5 · partido en varias líneas · IMPORTE NO_DECIDIBLE (var texto)
+CAZA    · 6 · con «euros» escrito · IMPORTE FUERA (prop text)
+CAZA    · 7 · por una variable intermedia · SIN_FORMATEAR FUERA (prop text)
+NO CAZA · 8 · toFixed(2) y la moneda en OTRA pieza del array · filas IMPORTE=0 sueltos=1 enTextoSinMoneda=0
+CAZA    · 9 · la coma a mano: toFixed(2).replace · SIN_FORMATEAR FUERA (prop text)
+CAZA    · 10 · sin toFixed: el número tal cual con EUR · SIN_FORMATEAR FUERA (prop text)
+CAZA    · 11 · toFixed(0) con € · SIN_FORMATEAR FUERA (prop text)
+NO CAZA · 12 · Intl en-US a mano · filas IMPORTE=0 sueltos=0 enTextoSinMoneda=0
+CAZA    · 13 · toLocaleString() sin locale, con € · SIN_FORMATEAR FUERA (prop text)
+NO CAZA · N1 · el formateador de la casa · filas IMPORTE=0 sueltos=0 enTextoSinMoneda=0
+NO CAZA · N2 · toFixed(2) en un console.log con EUR · filas IMPORTE=1 sueltos=0 enTextoSinMoneda=0
+RECUENTO · cazados 11 de 15

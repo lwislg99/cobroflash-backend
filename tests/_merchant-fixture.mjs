@@ -233,15 +233,50 @@ export function _resetBarridoParaTests() {
   barridoRegistradoEnEsteFichero = false;
 }
 
+/**
+ * SCRUM-876f · UN MERCHANT EFÍMERO NUNCA ES EL DEMO.
+ *
+ * El demo es el merchant de id 1 (regla 8; `DEMO_MERCHANT_ID` en `emission.service`, y
+ * `merchant-fixture.test.mjs` ata este número a aquél). El producto lo trata distinto A PROPÓSITO:
+ * el freno V0-2 le bloquea todo WhatsApp fuera de `DEMO_SAFE_NUMBERS`, sus facturas llevan marca
+ * de agua. En staging el id 1 ya existe (quemado por SCRUM-42), así que ningún efímero lo recibe.
+ * En un banco RECIÉN CREADO —el de `LIBRO_PG_URL` en CI— el primer merchant que nace ES el 1: le
+ * toca al fichero que llegue antes, y ése deja de probar lo suyo y prueba al demo.
+ *
+ * Medido el 7-oct-2026 (run 37590893205 de #2255): `a55-window-quote` recibió el id 1, V0-2 le
+ * bloqueó la plantilla y cayó en `closed.ok`. En local salía verde porque la secuencia de ese
+ * banco ya iba por 225. No era el test: era a quién le tocaba el primer id.
+ *
+ * Por eso se arregla AQUÍ y no en cada fichero: si el que nace es el demo, se borra y se crea
+ * otro. La secuencia ya ha pasado del 1, así que ocurre como mucho una vez por banco, y sólo a
+ * un proceso (`nextval` no reparte el mismo número dos veces).
+ */
+export const ID_DEL_DEMO = 1;
+
+async function crearSinSerElDemo(prisma, data) {
+  const primero = await prisma.merchant.create({ data });
+  if (primero.id !== ID_DEL_DEMO) return primero;
+
+  // Vivo hasta que su borrado TERMINE: si el `delete` revienta, lo recoge el barrido final.
+  merchantsVivos.add(primero.id);
+  await prisma.merchant.delete({ where: { id: primero.id } });
+  merchantsVivos.delete(primero.id);
+
+  const segundo = await prisma.merchant.create({ data });
+  if (segundo.id === ID_DEL_DEMO) {
+    merchantsVivos.add(segundo.id);
+    throw new Error('🔴 SCRUM-876f: el merchant efímero ha vuelto a nacer con el id del demo. No se le entrega a ningún test.');
+  }
+  return segundo;
+}
+
 export async function withMerchant(prisma, data, fn, { after: afterFn = after, phones: phonesExtra = [] } = {}) {
   if (!barridoRegistradoEnEsteFichero) {
     barridoRegistradoEnEsteFichero = true;
     registrarBarridoFinal(prisma, { after: afterFn });
   }
 
-  const merchant = await prisma.merchant.create({
-    data: { country: 'ES', onboardingCompleted: true, ...data },
-  });
+  const merchant = await crearSinSerElDemo(prisma, { country: 'ES', onboardingCompleted: true, ...data });
   // Registrar ANTES de cualquier otra cosa: a partir de aquí el borrado está garantizado
   // aunque `fn` reviente en su primera línea.
   merchantsVivos.add(merchant.id);

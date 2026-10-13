@@ -1,0 +1,82 @@
+$ node par.mjs datos-push-main-2026-09-07..10-07.json 37650042161
+
+id
+   Z corria (con jobs)    37649401838
+   X cancelado sin jobs   37650042161
+   Y el push siguiente    37652551343
+
+run_number
+   Z corria (con jobs)    4833
+   X cancelado sin jobs   4836
+   Y el push siguiente    4839
+
+head_sha
+   Z corria (con jobs)    f07622f34164a5590540310fcf1b58bff1cd81ee
+   X cancelado sin jobs   f9b4074d33278023f55548b88306421531114174
+   Y el push siguiente    818cb29be894a7861f11970a59e20eba5ca4e70b
+
+event
+   Z corria (con jobs)    push
+   X cancelado sin jobs   push
+   Y el push siguiente    push
+
+status
+   Z corria (con jobs)    completed
+   X cancelado sin jobs   completed
+   Y el push siguiente    completed
+
+conclusion
+   Z corria (con jobs)    success
+   X cancelado sin jobs   cancelled
+   Y el push siguiente    cancelled
+
+created_at
+   Z corria (con jobs)    2026-10-07T16:06:14Z
+   X cancelado sin jobs   2026-10-07T16:11:00Z
+   Y el push siguiente    2026-10-07T16:30:17Z
+
+run_started_at
+   Z corria (con jobs)    2026-10-07T16:06:14Z
+   X cancelado sin jobs   2026-10-07T16:11:00Z
+   Y el push siguiente    2026-10-07T16:30:17Z
+
+updated_at
+   Z corria (con jobs)    2026-10-07T16:37:23Z
+   X cancelado sin jobs   2026-10-07T16:30:18Z
+   Y el push siguiente    2026-10-07T16:36:16Z
+
+run_attempt
+   Z corria (con jobs)    1
+   X cancelado sin jobs   1
+   Y el push siguiente    1
+
+actor.login
+   Z corria (con jobs)    Javierpf28
+   X cancelado sin jobs   yaqu-bot[bot]
+   Y el push siguiente    Javierpf28
+
+triggering_actor.login
+   Z corria (con jobs)    Javierpf28
+   X cancelado sin jobs   yaqu-bot[bot]
+   Y el push siguiente    Javierpf28
+
+jobs.total_count
+   Z corria (con jobs)    6
+   X cancelado sin jobs   0
+   Y el push siguiente    0
+
+jobs
+   Z corria (con jobs)    guards de navegador (fuera de la tanda)=success | vigía del despliegue (informativo)=success | trinquete · ningún test nuevo mide la zona de la máquina=success | build + tests (con banco desechable)=success | constancia del ALTER (informativo)=success | meta-guard · los guards caen cuando deben=succ
+   X cancelado sin jobs   
+   Y el push siguiente    
+
+check-suite
+   Z corria (con jobs)    check-runs=6 anotaciones=14
+   X cancelado sin jobs   check-runs=0 anotaciones=0
+   Y el push siguiente    check-runs=0 anotaciones=0
+
+timing
+   Z corria (con jobs)    {"billable":{"UBUNTU":{"total_ms":0,"jobs":6,"job_runs":[{"job_id":112889211914,"duration_ms":0},{"job_id":112889212252,"duration_ms":0},{"job_id":112889212311,"duration_ms":0},{"job_id":112889212477,"duration_ms":0},{"job_id":112889212499,"duration_ms":0},{"job_id":112889212506,"duration_ms":0}]}},"run_duration_ms":1869000}
+   X cancelado sin jobs   {"billable":{},"run_duration_ms":1158000}
+   Y el push siguiente    {"billable":{},"run_duration_ms":359000}
+EXIT=0

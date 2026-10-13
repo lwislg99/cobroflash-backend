@@ -1,0 +1,13 @@
+[verifactu] invoice=2026-CF-0001 hash=5AE0ED587B5B7BA3…
+[verifactu] invoice=2026-CF-0002 hash=3B6AA8272BA92B28…
+✔ SCRUM-1510 · POSITIVO: la misma factura, sellada entera, SÍ produce su PDF (bytes en disco y `pdfUrl` escrito) (612.2185ms)
+✔ SCRUM-1510 · 🔴 pendiente CON huella (la escritura del estado falló): no sale documento, y lo niega el corte del ESTADO (4.2827ms)
+✔ SCRUM-1510 · 🔴 justificante que se quedó pendiente (la escritura de «no aplica» falló): no sale documento, y lo niega el corte del ESTADO (3.0553ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1110.4362

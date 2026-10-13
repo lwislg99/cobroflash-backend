@@ -1,0 +1,205 @@
+SCRUM-1511d · censo de literales con firma delegada · arbol (ruta local omitida)
+
+POBLACION
+  fichas en docs/microcopy/ ............... 127  (+ 1 registro congelado)
+    firma del fundador .................... 31 fichas · 114 citas
+    firma delegada (orquestador) .......... 96 fichas · 317 citas
+    otra firma o ninguna .................. 0 fichas
+  comentarios de Jira distintos que nombran las delegadas: 77
+  de las citas delegadas: por linea de cita 228 · por celda de tabla 89
+  fichas delegadas SIN ninguna unidad ..... 7 → 2026-09-21-SCRUM-984-del-presupuesto-al-albaran · 2026-09-21-SCRUM-985-importar-solo-csv · 2026-09-26-SCRUM-1155-alta-rediseno · 2026-09-27-SCRUM-993-un-toque · 2026-10-02-SCRUM-1375-facturacion-del-albaran · 2026-10-06-SCRUM-1476-titulos-de-la-pestana · 2026-10-06-SCRUM-1482-ficha-sin-numero-mientras-carga
+  corpus: 428 ficheros de public/ y src/ · 6263377 caracteres (3098468 sin comentarios)
+  delegacion vigente segun limites-del-fundador.md: true
+
+CITAS DE FICHAS DELEGADAS, POR CAJA (lineas de cita, con repeticiones)
+  cruce      271
+  plantilla  44
+  corta      2
+
+LITERALES DISTINTOS DE FICHAS DELEGADAS QUE SE PUEDEN CRUZAR: 261
+  el mismo literal consta tambien firmado por el fundador (otra ficha o el congelado): 12
+  SOLO en fichas delegadas ................................................. 249
+     pintados hoy (fuera de comentario) ..................................... 218   ← LA CIFRA
+     no pintados (aparcados, compuestos o notas escritas como cita) ......... 31
+       de ellos, el literal esta en el codigo pero solo en comentarios ..... 6
+  FUERA DEL CRUCE, sin medir si se pintan: plantillas con hueco 42 (42 solo delegadas) · cortas 2
+
+CONTROLES
+  OK  · POSITIVO SCRUM-1252/libro-solo-facturas · firmante=fundador · citas cruzables 1 · pintadas 1 · en LA CIFRA 0
+  OK  · POSITIVO SCRUM-1258/tipo-distinto-del-sellado · firmante=fundador · citas cruzables 2 · pintadas 2 · en LA CIFRA 0
+  OK  · POSITIVO delegada SCRUM-915/pasos-del-editor · firmante=orquestador · ref=SCRUM-915 comentario 15868 · cruzables 27 · en LA CIFRA 23
+  OK  · DE CERO: literal derivado que no existe · en codigo false · directo false · delegado false
+  OK  · POSITIVO del cruce: la semilla sin el anadido · en codigo true
+  OK  · SEGUNDA SONDA: citas a pelo = citas extraidas · a pelo 284 · extraidas por cita 284 · ademas por tabla 147
+  OK  · SEGUNDA SONDA: unidades por ficha = literales del lector · lector 431 · aqui 431
+  OK  · SUELO de poblacion · fichas 127 · ficheros 428 · literales directos 306
+  OK  · TODA ficha tiene firmante conocido · otras 0
+
+POR FICHA DELEGADA: referencia · ficha · citas (cruce/plantilla/corta) · literales en LA CIFRA
+  SCRUM-600 comentario 15357   2026-09-15-SCRUM-600-plantillas-en-el-documento-suelto.md      2/0/0 · 2
+  SCRUM-885 comentario 15615   2026-09-16-SCRUM-885-documento-sin-enviar.md                   1/0/0 · 1
+  SCRUM-888 comentario 15624   2026-09-16-SCRUM-888-condiciones-en-la-firma.md                3/1/0 · 3
+  SCRUM-890 comentario 15623   2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md                1/0/0 · 1
+  SCRUM-887 comentario 15675   2026-09-17-SCRUM-887-albaran-con-descuento-global.md           1/0/0 · 1
+  SCRUM-887 comentario 15697   2026-09-17-SCRUM-887-cobrado-de-mas.md                         2/1/0 · 2
+  SCRUM-887 comentario 15697   2026-09-17-SCRUM-887-descuento-global-varios-iva-editor.md     1/0/0 · 1
+  SCRUM-887 comentario 15698   2026-09-17-SCRUM-887-descuento-global-varios-iva-facturar.md   5/0/0 · 3
+  SCRUM-888 comentario 15788   2026-09-17-SCRUM-888-descuentos-en-la-firma.md                 3/0/0 · 3
+  SCRUM-890 comentario 15665   2026-09-17-SCRUM-890-firma-rechazada.md                        1/0/0 · 1
+  SCRUM-892 comentario 15660   2026-09-17-SCRUM-892-firma-vacia.md                            1/0/0 · 1
+  SCRUM-894 comentario 15672   2026-09-17-SCRUM-894-falta-en-otra-pestana.md                  2/1/0 · 2
+  SCRUM-905 comentario 15696   2026-09-17-SCRUM-905-convirtiendo.md                           1/0/0 · 1
+  SCRUM-918 comentario 15792   2026-09-17-SCRUM-918-aviso-sin-cobertura.md                    1/0/0 · 1
+  SCRUM-919 comentario 15799   2026-09-17-SCRUM-919-ayuda-firmante-parte.md                   1/0/0 · 1
+  SCRUM-919 comentario 15799   2026-09-17-SCRUM-919-firma-guardada-en-el-movil.md             1/0/0 · 1
+  SCRUM-915 comentario 15868   2026-09-18-SCRUM-915-pasos-del-editor.md                       27/0/0 · 23
+  SCRUM-917 comentario 15881   2026-09-18-SCRUM-917-lista-de-trabajos.md                      12/5/0 · 12
+  SCRUM-917 comentario 15938   2026-09-18-SCRUM-917-lista-singulares.md                       4/0/0 · 2
+  SCRUM-937 comentario 15873   2026-09-18-SCRUM-937-nif-del-gasto.md                          2/0/0 · 2
+  SCRUM-947 comentario 15931   2026-09-18-SCRUM-947-foto-del-gasto.md                         1/0/0 · 1
+  SCRUM-915 comentario 15868   2026-09-20-SCRUM-915-documento-vivo.md                         3/1/0 · 3
+  SCRUM-915 comentario 15868   2026-09-20-SCRUM-915-ver-documento.md                          2/0/0 · 2
+  SCRUM-917 comentario 15881   2026-09-20-SCRUM-917-franja-del-dinero.md                      4/1/0 · 4
+  SCRUM-915 comentario 15868   2026-09-21-SCRUM-915-ajustes-del-justificante.md               2/0/0 · 1
+  SCRUM-915 comentario 15868   2026-09-21-SCRUM-915-cabecera-del-editor.md                    4/0/0 · 4
+  SCRUM-915 comentario 15868   2026-09-21-SCRUM-915-conceptos-limpios.md                      1/0/0 · 1
+  SCRUM-915 comentario 15868   2026-09-21-SCRUM-915-marcadores-firmados.md                    4/0/0 · 2
+  SCRUM-917 comentario 15881   2026-09-21-SCRUM-917-el-trabajo-plegable.md                    12/0/0 · 11
+  SCRUM-967 comentario 16055   2026-09-21-SCRUM-967-enlace-del-portal.md                      1/2/0 · 1
+  SCRUM-974 comentario 16056   2026-09-21-SCRUM-974-firmado-sin-facturar.md                   4/0/0 · 1
+  SCRUM-979 comentario 16058   2026-09-21-SCRUM-979-ultima-visita.md                          5/0/0 · 5
+  SCRUM-980 comentario 16062   2026-09-21-SCRUM-980-aviso-del-parte.md                        1/0/0 · 1
+  SCRUM-980 comentario 16061   2026-09-21-SCRUM-980-historial-del-cliente.md                  11/0/0 · 8
+  SCRUM-982 comentario 16065   2026-09-21-SCRUM-982-nota-del-cliente.md                       1/0/0 · 1
+  SCRUM-984 comentario 16105   2026-09-21-SCRUM-984-del-presupuesto-al-albaran.md             0/0/0 · 0
+  SCRUM-985 comentario 16104   2026-09-21-SCRUM-985-importar-solo-csv.md                      0/0/0 · 0
+  SCRUM-915 comentario 16165   2026-09-21-SCRUM-987-valido-hasta-en-el-pdf.md                 0/1/0 · 0
+  SCRUM-1003 comentario 16401  2026-09-22-SCRUM-1003-1004-vcard-como-llegar.md                2/0/0 · 2
+  SCRUM-1041 comentario 16306  2026-09-22-SCRUM-1041-facturas-emitidas.md                     3/0/1 · 3
+  SCRUM-1042 comentario 16765  2026-09-22-SCRUM-1042-ajuste-foto-tecnico.md                   2/0/0 · 2
+  SCRUM-1061 comentario 16433  2026-09-22-SCRUM-1061-fotos-historial.md                       1/2/0 · 1
+  SCRUM-1022 comentario 17019  2026-09-25-SCRUM-1022-importar-boton-y-titulo.md               2/0/0 · 2
+  SCRUM-1022 comentario 17016  2026-09-25-SCRUM-1022-importar-xlsx.md                         3/0/0 · 1
+  SCRUM-1038 comentario 16942  2026-09-25-SCRUM-1038-leer-el-ticket.md                        4/0/0 · 4
+  SCRUM-1108 comentario 17000  2026-09-25-SCRUM-1108-garantia-retenida.md                     0/2/0 · 0
+  SCRUM-1116 comentario 17017  2026-09-25-SCRUM-1116-digest-garantia.md                       0/2/0 · 0
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-acciones-albaran-detalle.md              3/0/0 · 3
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-buscador-albaran-presupuesto.md          6/0/0 · 6
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-direccion-albaran-firmado.md             1/0/0 · 0
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md               0/1/0 · 0
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md         0/1/0 · 0
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-proveedor-duplicado.md                   1/0/0 · 1
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md        1/0/0 · 1
+  SCRUM-1124 comentario 17002  2026-09-25-SCRUM-1124-switch-forma-juridica.md                 3/0/0 · 3
+  SCRUM-920 comentario 15992   2026-09-26-SCRUM-1155-alta-rediseno.md                         0/0/0 · 0
+  SCRUM-631 comentario 17180   2026-09-26-SCRUM-631-nombre-activo-duplicado.md                1/0/0 · 1
+  SCRUM-904 comentario 17138   2026-09-26-SCRUM-904-checklist-pestana.md                      0/1/0 · 0
+  SCRUM-904 comentario 17138   2026-09-26-SCRUM-904-cobros-con-tarjeta-flag-off.md            1/0/0 · 1
+  SCRUM-993 comentario 17261   2026-09-27-SCRUM-993-un-toque.md                               0/0/0 · 0
+  SCRUM-1130 comentario 17403  2026-09-28-SCRUM-1130-demo-firmado.md                          1/0/0 · 1
+  SCRUM-1133 comentario 17448  2026-09-28-SCRUM-1133-whatsapp-del-cliente.md                  8/0/1 · 5
+  SCRUM-1135 comentario 17447  2026-09-28-SCRUM-1135-etiquetar-seleccion.md                   8/4/0 · 8
+  SCRUM-1136 comentario 17445  2026-09-28-SCRUM-1136-columnas-importar.md                     8/0/0 · 4
+  SCRUM-1199 comentario 17321  2026-09-28-SCRUM-1199-alta-cliente-errores.md                  5/0/0 · 4
+  SCRUM-1200 comentario 17418  2026-09-28-SCRUM-1200-arranque-sin-respuesta.md                1/0/0 · 1
+  SCRUM-1215 comentario 17375  2026-09-28-SCRUM-1215-anadir-al-parte.md                       1/0/0 · 1
+  SCRUM-1220 comentario 17385  2026-09-28-SCRUM-1220-modo-justificante.md                     2/0/0 · 1
+  SCRUM-1232 comentario 17435  2026-09-28-SCRUM-1232-recuento-libro.md                        1/0/0 · 1
+  SCRUM-1235 comentario 17384  2026-09-28-SCRUM-1235-correo-que-no-salio.md                   5/0/0 · 5
+  SCRUM-1239 comentario 17386  2026-09-28-SCRUM-1239-alta-cliente-sin-conexion.md             3/0/0 · 3
+  SCRUM-1247 comentario 17425  2026-09-28-SCRUM-1247-rotulo-ia.md                             4/0/0 · 2
+  SCRUM-1249 comentario 17432  2026-09-28-SCRUM-1249-descarga-recibidas.md                    5/0/0 · 2
+  SCRUM-1257 comentario 17444  2026-09-28-SCRUM-1257-vacio-facturas.md                        14/0/0 · 7
+  SCRUM-1126 comentario 17575  2026-09-29-SCRUM-1126-fusion-de-clientes.md                    10/8/0 · 10
+  SCRUM-1126 comentario 17580  2026-09-29-SCRUM-1126-fusion-singular-contados.md              3/3/0 · 0
+  SCRUM-1257 comentario 17676  2026-10-01-SCRUM-1257-detalle-modo-receipt.md                  1/0/0 · 1
+  SCRUM-1353 comentario 17881  2026-10-01-SCRUM-1353-firma-guardada-y-rechazo.md              2/0/0 · 2
+  SCRUM-1215 comentario 18205  2026-10-02-SCRUM-1215-pista-del-tecnico.md                     1/0/0 · 1
+  SCRUM-1375 comentario 18203  2026-10-02-SCRUM-1375-facturacion-del-albaran.md               0/0/0 · 0
+  SCRUM-1426 comentario 18232  2026-10-02-SCRUM-1426-parte-firma-guardada.md                  4/0/0 · 4
+  SCRUM-1215 comentario 18283  2026-10-06-SCRUM-1215-anadir-foto-del-albaran.md               1/0/0 · 1
+  SCRUM-1215 comentario 18283  2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md            0/2/0 · 0
+  SCRUM-1302 comentario 18288  2026-10-06-SCRUM-1302-campo-que-no-se-guarda.md                1/0/0 · 1
+  SCRUM-1302 comentario 18491  2026-10-06-SCRUM-1302-ordenar-que-falla.md                     1/0/0 · 1
+  SCRUM-1431 comentario 18332  2026-10-06-SCRUM-1431-rechazo-fallo-nuestro.md                 1/0/0 · 1
+  SCRUM-1443 comentario 18307  2026-10-06-SCRUM-1443-presupuesto-rapido-fallos.md             1/5/0 · 1
+  SCRUM-1460 comentario 18330  2026-10-06-SCRUM-1460-recordatorio-de-la-copia.md              2/0/0 · 2
+  SCRUM-1465 comentario 18357  2026-10-06-SCRUM-1465-envio-que-no-sale.md                     3/0/0 · 3
+  SCRUM-1465 comentario 18371  2026-10-06-SCRUM-1465-tope-por-cliente-y-correo.md             2/0/0 · 2
+  SCRUM-1476 comentario 18404  2026-10-06-SCRUM-1476-titulos-de-la-pestana.md                 0/0/0 · 0
+  SCRUM-1482 comentario 18490  2026-10-06-SCRUM-1482-ficha-sin-numero-mientras-carga.md       0/0/0 · 0
+  SCRUM-1491 comentario 18517  2026-10-06-SCRUM-1491-desplazamiento-numero-entero.md          1/0/0 · 1
+  SCRUM-1478 comentario 18735  2026-10-07-SCRUM-1478-factura-que-no-sale.md                   4/0/0 · 4
+  SCRUM-1492 comentario 18633  2026-10-07-SCRUM-1492-casilla-numerica-del-parte.md            1/0/0 · 1
+  SCRUM-1492 comentario 18706  2026-10-07-SCRUM-1492-rechazos-de-rango-del-parte.md           4/0/0 · 4
+
+POR COMENTARIO DE JIRA: literales distintos en LA CIFRA
+   35 · SCRUM-915 comentario 15868
+   27 · SCRUM-917 comentario 15881
+   14 · SCRUM-1124 comentario 17002
+   10 · SCRUM-1126 comentario 17575
+    8 · SCRUM-980 comentario 16061
+    8 · SCRUM-1135 comentario 17447
+    7 · SCRUM-1257 comentario 17444
+    5 · SCRUM-979 comentario 16058
+    5 · SCRUM-1133 comentario 17448
+    5 · SCRUM-1235 comentario 17384
+    4 · SCRUM-1038 comentario 16942
+    4 · SCRUM-1136 comentario 17445
+    4 · SCRUM-1199 comentario 17321
+    4 · SCRUM-1426 comentario 18232
+    4 · SCRUM-1478 comentario 18735
+    4 · SCRUM-1492 comentario 18706
+    3 · SCRUM-888 comentario 15624
+    3 · SCRUM-887 comentario 15697
+    3 · SCRUM-887 comentario 15698
+    3 · SCRUM-888 comentario 15788
+    3 · SCRUM-1041 comentario 16306
+    3 · SCRUM-1239 comentario 17386
+    3 · SCRUM-1465 comentario 18357
+    2 · SCRUM-600 comentario 15357
+    2 · SCRUM-894 comentario 15672
+    2 · SCRUM-919 comentario 15799
+    2 · SCRUM-917 comentario 15938
+    2 · SCRUM-937 comentario 15873
+    2 · SCRUM-1003 comentario 16401
+    2 · SCRUM-1042 comentario 16765
+    2 · SCRUM-1022 comentario 17019
+    2 · SCRUM-1247 comentario 17425
+    2 · SCRUM-1249 comentario 17432
+    2 · SCRUM-1353 comentario 17881
+    2 · SCRUM-1460 comentario 18330
+    2 · SCRUM-1465 comentario 18371
+    1 · SCRUM-885 comentario 15615
+    1 · SCRUM-890 comentario 15623
+    1 · SCRUM-887 comentario 15675
+    1 · SCRUM-890 comentario 15665
+    1 · SCRUM-892 comentario 15660
+    1 · SCRUM-905 comentario 15696
+    1 · SCRUM-918 comentario 15792
+    1 · SCRUM-947 comentario 15931
+    1 · SCRUM-967 comentario 16055
+    1 · SCRUM-974 comentario 16056
+    1 · SCRUM-980 comentario 16062
+    1 · SCRUM-982 comentario 16065
+    1 · SCRUM-1061 comentario 16433
+    1 · SCRUM-1022 comentario 17016
+    1 · SCRUM-631 comentario 17180
+    1 · SCRUM-904 comentario 17138
+    1 · SCRUM-1130 comentario 17403
+    1 · SCRUM-1200 comentario 17418
+    1 · SCRUM-1215 comentario 17375
+    1 · SCRUM-1220 comentario 17385
+    1 · SCRUM-1232 comentario 17435
+    1 · SCRUM-1257 comentario 17676
+    1 · SCRUM-1215 comentario 18205
+    1 · SCRUM-1215 comentario 18283
+    1 · SCRUM-1302 comentario 18288
+    1 · SCRUM-1302 comentario 18491
+    1 · SCRUM-1431 comentario 18332
+    1 · SCRUM-1443 comentario 18307
+    1 · SCRUM-1491 comentario 18517
+    1 · SCRUM-1492 comentario 18633
+  (suma por comentario 225; un literal en dos comentarios cuenta en los dos)
+
+POBLACION=431 citas de 127 fichas · CIFRA=218 · CONTROLES EN ROJO=0

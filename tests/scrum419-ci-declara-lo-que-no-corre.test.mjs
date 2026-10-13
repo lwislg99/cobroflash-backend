@@ -132,6 +132,28 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // de `albaran`).
   'scrum72-pdfs-privados.test.mjs': 1,
   'albaran.test.mjs': 2,
+  // SCRUM-876f (grupo C de SCRUM-868): el envío del presupuesto por ventana o por plantilla.
+  // Conserva staging con `A55_DB_TEST=1` y gana éste como segundo destino. Necesita banco porque
+  // lo que vigila son las FILAS que deja el envío (una `template`, una `service` a 0 €) y la
+  // ventana que abre un entrante. En este destino va en seco por sí mismo y con la salida cortada.
+  'a55-window-quote.test.mjs': 1,
+  // SCRUM-876f: la suite del bot, el otro del grupo C. Necesita banco porque recorre el webhook
+  // de verdad —sesiones, solicitud, adjunto, baja— y lee lo que deja escrito. Mismo trato: staging
+  // con `BOT_SUITE_TEST=1`, y éste como segundo destino, en seco y con la salida cortada.
+  'bot-suite.test.mjs': 1,
+  // SCRUM-876g (T4 de SCRUM-876): los cuatro del albarán que seguían sólo en staging. Conservan
+  // `QA_DB_TEST=1` y ganan éste como segundo destino, en seco y con la salida cortada. Necesitan
+  // banco porque levantan la app y leen lo que la ruta deja escrito:
+  //   · el envío del albarán firmado por WhatsApp: quién puede (el técnico que lleva el trabajo) y
+  //     la fila de `whatsAppMessage` que deja;
+  'scrum47-enviar-albaran-wa.test.mjs': 1,
+  //   · la firma remota entera: el enlace, la página pública, la versión que el cliente vio y el
+  //     auto-envío de la copia firmada;
+  'scrum49-firma-remota.test.mjs': 1,
+  //   · el webhook cuando el cliente contesta sobre un albarán: el acuse y el aviso al profesional;
+  'scrum50-bot-albaranes.test.mjs': 1,
+  //   · las evidencias que se sellan al firmar (remoto e in situ) y que no salen por ninguna respuesta.
+  'scrum68-evidencias-firma.test.mjs': 1,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
@@ -174,6 +196,22 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1188d: los TRES que miran que `tiers` de una plantilla quede a NULL de SQL (el alta sin
+  // niveles y el `PUT` con `tiers: null`), mas su suelo. Necesitan banco porque lo que vigilan es
+  // QUE NULL queda en la columna: por la API de Prisma el NULL de SQL y el valor JSON `null` se leen
+  // igual, y solo el SQL crudo contra Postgres (`IS NULL`, `jsonb_typeof`) los distingue. La sonda
+  // que lo intento sin base salio ciega (SCRUM-1188c). `jsonAnulable`, sin base, corre siempre.
+  'scrum1188d-tiers-tambien-se-vacia.test.mjs': 3,
+  // SCRUM-1188d: el que crea una revision con `crearRevisionDeQuote` de verdad y relee por SQL que
+  // las columnas `Json?` vacias se heredan vacias. Mismo motivo. El censo de la lista y la funcion
+  // pura corren siempre.
+  'scrum1188d-la-revision-hereda-el-vacio.test.mjs': 1,
+  // SCRUM-1515: el merchant que crea nuestro guion nace igual que nacia el de `POST /auth/register`
+  // (la ruta se cerro el 8-oct-2026 y la referencia es su foto, `_scrum1515-foto-de-la-ruta.json`),
+  // la ruta cerrada no da de alta, y quien ya tiene cuenta sigue entrando. Necesita banco porque
+  // compara la FILA campo a campo, con sus valores por defecto, y lo que el alta deja colgando
+  // (sesiones, correos). Solo el desechable: da de alta y borra merchants por el guion.
+  'scrum1515-nuestra-puerta-de-alta.test.mjs': 1,
   // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
@@ -184,6 +222,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
   // mitad sin base (nueve casos, con Prisma doblado) corre siempre.
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs': 1,
+  // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
+  // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
+  // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)
+  // y que su lectura del grupo, lanzada tras conseguir el cerrojo, ve la revision que acaba de
+  // confirmar la primera. La mitad con Prisma doblado (cuatro casos) corre siempre.
+  'scrum1150c-carrera-de-la-revision-postgres.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

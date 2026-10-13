@@ -1,0 +1,72 @@
+node v24.18.0 win32 · scrum859-identidad-y-motivo-cerrado.test.mjs · 2 mutaciones declaradas · modo mapa
+
+══ SIN MODELO (control: la salida de la plataforma) · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 0 · pausas 0 · atascos 0 · escrituras que no cupieron 0 de 110
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 0 · atascos 0 · escrituras que no cupieron 0 de 110
+
+══ K_CAP=1000000000 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 0 · pausas 0 · atascos 0 · escrituras que no cupieron 0 de 110
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 0 · atascos 0 · escrituras que no cupieron 0 de 110
+
+══ K_TRAS_GORDO=0,K_SUELTA=150 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323140 · perdidos 4289 · pausas 1 · atascos 2 · escrituras que no cupieron 2 de 97
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 6 · atascos 6 · escrituras que no cupieron 6 de 110
+
+══ K_TRAS_GORDO=0,K_SUELTA=150,K_MARCA=66678 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 4290 · pausas 1 · atascos 2 · escrituras que no cupieron 2 de 97
+   mutación 2 → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+        hijo(s) 1: pedidos 1104269 · perdidos 66111 · pausas 5 · atascos 6 · escrituras que no cupieron 6 de 85
+
+══ K_TRAS_GORDO=0,K_SUELTA=150,K_MARCA=66111 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323140 · perdidos 4289 · pausas 1 · atascos 2 · escrituras que no cupieron 2 de 97
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 6 · atascos 6 · escrituras que no cupieron 6 de 110
+
+══ K_TRAS_GORDO=0,K_SUELTA=150,K_MARCA=66112 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 4290 · pausas 1 · atascos 2 · escrituras que no cupieron 2 de 97
+   mutación 2 → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+        hijo(s) 1: pedidos 1104268 · perdidos 66110 · pausas 5 · atascos 6 · escrituras que no cupieron 6 de 85
+
+══ K_TRAS_GORDO=58000,K_SUELTA=150,K_MARCA=66678 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 0 · pausas 1 · atascos 1 · escrituras que no cupieron 1 de 110
+   mutación 2 → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+        hijo(s) 1: pedidos 1104269 · perdidos 8111 · pausas 5 · atascos 5 · escrituras que no cupieron 6 de 88
+
+══ K_TRAS_GORDO=58600,K_SUELTA=150,K_MARCA=66678 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 0 · pausas 1 · atascos 1 · escrituras que no cupieron 1 de 110
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 7511 · pausas 5 · atascos 5 · escrituras que no cupieron 6 de 89
+
+ÁRBOL: 1 fichero(s) mutados comprobados por sha256 · distintos de antes: 0
+EXIT=0
+
+══ K_TRAS_GORDO=500,K_SUELTA=150 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 3790 · pausas 1 · atascos 1 · escrituras que no cupieron 2 de 98
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 6 · atascos 6 · escrituras que no cupieron 6 de 110
+
+══ K_TRAS_GORDO=600,K_SUELTA=150 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323140 · perdidos 3689 · pausas 1 · atascos 1 · escrituras que no cupieron 2 de 98
+   mutación 2 → VIVA
+        hijo(s) 1: pedidos 1104269 · perdidos 0 · pausas 6 · atascos 6 · escrituras que no cupieron 6 de 110
+
+
+══ K_TRAS_GORDO=30000,K_SUELTA=150 · LIMPIA 20 pasados · 0 caídos
+   mutación 1 → VIVA
+        hijo(s) 1: pedidos 323141 · perdidos 0 · pausas 1 · atascos 1 · escrituras que no cupieron 1 de 110
+   mutación 2 → CIEGO · NO APARECE en la mutada · mutada: 9 pasados · 7 caídos · 0 saltados · faltan 4 de los 20
+        hijo(s) 1: pedidos 1104269 · perdidos 36111 · pausas 5 · atascos 5 · escrituras que no cupieron 6 de 88
+

@@ -1,0 +1,24 @@
+# duplicar-926-error-visto-y-lanza · sha f9b4074d33278023f55548b88306421531114174 · EXIT=2 · 4.7 s
+{
+  "casos": {},
+  "controles": {}
+}
+
+── SCRUM-926 · duplicar conserva lo que cobra ──
+⬜ NO SUPE MIRAR · caso G: no se pudo medir — lectura rota por el banco de SCRUM-1392
+⬜ NO SUPE MIRAR · caso P: no se pudo medir — lectura rota por el banco de SCRUM-1392
+⬜ NO SUPE MIRAR · SUELO · el caso G se pudo abrir
+·  SIN JUZGAR (su caso no se pudo leer) · G · duplicar CONSERVA el descuento global de 25 €
+·  SIN JUZGAR (su caso no se pudo leer) · G · y deja su campo ABIERTO, no un importe detras de un boton
+⬜ NO SUPE MIRAR · SUELO · el caso P se pudo abrir
+✔ CONTROL DEL CASO P · FIFTY_FIFTY no es el valor de nacimiento del editor
+·  SIN JUZGAR (su caso no se pudo leer) · P · duplicar CONSERVA las condiciones de pago (FIFTY_FIFTY)
+·  SIN JUZGAR (su caso no se pudo leer) · sin errores de pagina en ninguno de los dos casos
+
+NO SE MIDE AQUI (medido, no supuesto): `tiers` (quotesView.js no nombra tiers ni una vez: no hay editor de tramos)
+                                        `currency` (el editor no tiene selector: usa la del merchant)
+
+POBLACION casillas=9 verdes=1 hallazgos=0 ciegos=4 sin-juzgar=4
+EXIT=2
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+⟦veredicto⟧ 0 hallazgos · 4 ciegos → salida 2 (no supe medir) · un ciego no es un verde

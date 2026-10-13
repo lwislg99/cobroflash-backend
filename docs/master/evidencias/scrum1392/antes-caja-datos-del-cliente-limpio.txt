@@ -1,0 +1,31 @@
+# caja-datos-del-cliente-limpio · sha f9b4074d33278023f55548b88306421531114174 · EXIT=0 · 4.9 s
+textos DERIVADOS de quotesView.js:
+   casillas : ["Nombre","Teléfono","NIF","Email"]
+   elección : ["Razón social","Nombre comercial"]
+   nota     : 104 caracteres
+
+── CON-NOMBRE · 929 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · activos
+   → cabe ✅
+
+── CON-NOMBRE · 390 px ──
+   bloque   139.5 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 35.6 px (2 línea/s)
+   radios: en el layout · activos
+   → cabe ✅
+
+── SIN-NOMBRE · 929 px ──
+   bloque   121.7 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 17.8 px (1 línea/s)
+   radios: en el layout · deshabilitados
+   → cabe ✅
+
+── SIN-NOMBRE · 390 px ──
+   bloque   139.5 px · fila 20.1 px (1 línea/s) · elección 19.4 px · nota 35.6 px (2 línea/s)
+   radios: en el layout · deshabilitados
+   → cabe ✅
+
+════ VEREDICTO ════
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+   El bloque cabe en los dos estados y en los dos anchos, y la elección nunca
+   desaparece del layout. (Envolver no es hallazgo; desbordar o salirse, sí.)
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

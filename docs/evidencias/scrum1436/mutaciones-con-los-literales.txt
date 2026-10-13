@@ -1,0 +1,51 @@
+VIVA   C0 base sin mutar (disputa) :: aplicada=n/a casos=12 caen=0 restaurado=true
+VIVA   C0 base sin mutar (ventana) :: aplicada=n/a casos=8 caen=0 restaurado=true
+CAE    M1 sin filtro de negocio :: aplicada=si casos=12 caen=2 restaurado=true
+         - 7 - SCRUM-1436 · 🔴 el presupuesto firmado y aceptado es de OTRO negocio → el aviso NO dice «presupuesto FIRMA
+         - 12 - SCRUM-1436 · 🔴 la firma se busca por el presupuesto de la factura Y por el negocio del cobro
+CAE    M2 firmado = signatureUrl no nulo (sin trazo) :: aplicada=si casos=12 caen=2 restaurado=true
+         - 3 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es un lienzo VACÍO (SCRUM-892) → el aviso NO dice «presupues
+         - 4 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es `data:,` → el aviso NO dice «presupuesto FIRMADO»
+CAE    M3 la oracion de la firma sale siempre :: aplicada=si casos=12 caen=1 restaurado=true
+         - 11 - SCRUM-1436 · 🔴 el cobro NO tiene factura → el aviso NO dice «presupuesto FIRMADO»
+CAE    M4 la oracion de la firma no sale nunca :: aplicada=si casos=12 caen=1 restaurado=true
+         - 1 - SCRUM-1436 · ✅ POSITIVO: con presupuesto FIRMADO, el aviso sale IGUAL que antes, byte a byte
+VIVA   M5 sin factura no corta :: aplicada=si casos=12 caen=0 restaurado=true
+CAE    M10 aceptado siempre :: aplicada=si casos=12 caen=3 restaurado=true
+         - 6 - SCRUM-1436 · 🔴 el presupuesto existe pero NI se aceptó NI se firmó → el aviso NO dice «presupuesto FIRMAD
+         - 7 - SCRUM-1436 · 🔴 el presupuesto firmado y aceptado es de OTRO negocio → el aviso NO dice «presupuesto FIRMA
+         - 8 - SCRUM-1436 · 🔴 el presupuesto de la factura ya no existe → el aviso NO dice «presupuesto FIRMADO»
+CAE    M11 aceptado nunca :: aplicada=si casos=12 caen=3 restaurado=true
+         - 2 - SCRUM-1436 · 🔴 el presupuesto se ACEPTÓ SIN FIRMAR («Acepto sin firmar» deja la firma a null) → el aviso 
+         - 3 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es un lienzo VACÍO (SCRUM-892) → el aviso NO dice «presupues
+         - 4 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es `data:,` → el aviso NO dice «presupuesto FIRMADO»
+CAE    M12 sin factura se encaja el literal firmado :: aplicada=si casos=12 caen=1 restaurado=true
+         - 11 - SCRUM-1436 · 🔴 el cobro NO tiene factura → el aviso NO dice «presupuesto FIRMADO»
+CAE    M13 firmado sale con el literal nuevo :: aplicada=si casos=12 caen=1 restaurado=true
+         - 1 - SCRUM-1436 · ✅ POSITIVO: con presupuesto FIRMADO, el aviso sale IGUAL que antes, byte a byte
+CAE    M14 una coma del literal firmado :: aplicada=si casos=12 caen=3 restaurado=true
+         - 2 - SCRUM-1436 · 🔴 el presupuesto se ACEPTÓ SIN FIRMAR («Acepto sin firmar» deja la firma a null) → el aviso 
+         - 3 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es un lienzo VACÍO (SCRUM-892) → el aviso NO dice «presupues
+         - 4 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es `data:,` → el aviso NO dice «presupuesto FIRMADO»
+CAE    M15 los dos puntos del literal firmado :: aplicada=si casos=12 caen=8 restaurado=true
+         - 2 - SCRUM-1436 · 🔴 el presupuesto se ACEPTÓ SIN FIRMAR («Acepto sin firmar» deja la firma a null) → el aviso 
+         - 3 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es un lienzo VACÍO (SCRUM-892) → el aviso NO dice «presupues
+         - 4 - SCRUM-1436 · 🔴 aceptado, y la firma guardada es `data:,` → el aviso NO dice «presupuesto FIRMADO»
+         - 5 - SCRUM-1436 · 🔴 la factura NO viene de un presupuesto → el aviso NO dice «presupuesto FIRMADO»
+         - 6 - SCRUM-1436 · 🔴 el presupuesto existe pero NI se aceptó NI se firmó → el aviso NO dice «presupuesto FIRMAD
+         - 7 - SCRUM-1436 · 🔴 el presupuesto firmado y aceptado es de OTRO negocio → el aviso NO dice «presupuesto FIRMA
+         - 8 - SCRUM-1436 · 🔴 el presupuesto de la factura ya no existe → el aviso NO dice «presupuesto FIRMADO»
+         - 9 - SCRUM-1436 · 🔴 la lectura del presupuesto FALLA: no saber no es «firmado» ni «aceptado» → el aviso NO dic
+CAE    M6 se pierde el motivo propio :: aplicada=si casos=8 caen=1 restaurado=true
+         - 8 - SCRUM-1436 · 🔴 ventana ABIERTA y el envío se para con motivo propio → sube ESE motivo, no `ventana_cerrad
+CAE    M7 el fallo en ventana no se mira :: aplicada=si casos=8 caen=3 restaurado=true
+         - 3 - SCRUM-1436 · 🔴 ventana ABIERTA y envío fallido → el motivo es `whatsapp_send_failed`, no `ventana_cerrada
+         - 4 - SCRUM-1436 · 🔴 por el camino entero del presupuesto, el profesional NO lee «no ha escrito en 24 h»
+         - 8 - SCRUM-1436 · 🔴 ventana ABIERTA y el envío se para con motivo propio → sube ESE motivo, no `ventana_cerrad
+CAE    M8 fallo en ventana siempre :: aplicada=si casos=8 caen=2 restaurado=true
+         - 5 - SCRUM-1436 · ✅ POSITIVO: ventana CERRADA con `sinPlantilla` → sigue siendo `ventana_cerrada` y no se manda
+         - 6 - SCRUM-1436 · ✅ POSITIVO: sin cliente conocido no hay ventana que mirar → `ventana_cerrada`, como antes
+CAE    M9 no se guarda el fallo :: aplicada=si casos=8 caen=3 restaurado=true
+         - 3 - SCRUM-1436 · 🔴 ventana ABIERTA y envío fallido → el motivo es `whatsapp_send_failed`, no `ventana_cerrada
+         - 4 - SCRUM-1436 · 🔴 por el camino entero del presupuesto, el profesional NO lee «no ha escrito en 24 h»
+         - 8 - SCRUM-1436 · 🔴 ventana ABIERTA y el envío se para con motivo propio → sube ESE motivo, no `ventana_cerrad

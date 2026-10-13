@@ -5,6 +5,7 @@
  * Reutilizado por: resumen modelo 303 (reports), export XML RRSIF y la
  * cuota total de la huella VeriFactu.
  */
+import { tipoEnPorcentaje } from '../../../core/utils/utils';
 
 /**
  * SCRUM-1050/1051 · LISTA CERRADA de causas por las que una línea no repercute IVA por su
@@ -17,7 +18,7 @@
 export type Causa = 'S2';
 
 export type VatLine = { qty?: number; price?: number; tax?: number; causa?: Causa };
-export type VatRateEntry = { rate: number; base: number; cuota: number; causa?: Causa }; // rate en % (21, 10, 4, 0)
+export type VatRateEntry = { rate: number; base: number; cuota: number; causa?: Causa }; // rate en % (21, 10, 7.5, 4, 0)
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -66,7 +67,7 @@ export function calcVatBreakdown(lines: VatLine[] | null | undefined): {
     const price = Number(l?.price) || 0;   // el defecto ES 0: sustituye un cero por un cero
     const taxFrac = Number(l?.tax) || 0;
     const base = qty * price;
-    const rate = Math.round(taxFrac * 100);
+    const rate = tipoEnPorcentaje(taxFrac); // SCRUM-1446: 7,5 % es 7.5, no 8
     const causa = l?.causa;
     const key = `${rate}|${causa ?? ''}`;
     const e = map.get(key) ?? { rate, base: 0, cuota: 0, causa };

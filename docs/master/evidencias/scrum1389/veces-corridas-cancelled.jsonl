@@ -1,0 +1,300 @@
+{"id":36601146241,"creado":"2026-09-29T16:54:39Z","rama":"scrum-825-guards-ciegos-a-factura","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36601666048,"creado":"2026-09-29T16:58:59Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36602442606,"creado":"2026-09-29T17:05:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36600951979,"creado":"2026-09-29T16:53:03Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36603290498,"creado":"2026-09-29T17:12:24Z","rama":"scrum-1278-banco-pantalla-de-error","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36605012714,"creado":"2026-09-29T17:27:07Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36605353988,"creado":"2026-09-29T17:29:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36603723586,"creado":"2026-09-29T17:16:04Z","rama":"scrum-1289-tap-del-obligatorio","evento":"pull_request","gh":0,"bytes":2059016,"lineasDelObligatorio":12859,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36606654639,"creado":"2026-09-29T17:40:52Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36607900842,"creado":"2026-09-29T17:51:27Z","rama":"scrum-1289b-reporters-como-argumentos","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36607532524,"creado":"2026-09-29T17:48:19Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36606734506,"creado":"2026-09-29T17:41:33Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36608030549,"creado":"2026-09-29T17:52:34Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36775428568,"creado":"2026-09-30T20:50:27Z","rama":"scrum-1261-decisiones-30sep","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36608284826,"creado":"2026-09-29T17:54:45Z","rama":"scrum-1298-mesa-por-puesto","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36608497041,"creado":"2026-09-29T17:56:30Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36777418404,"creado":"2026-09-30T21:08:02Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36779542904,"creado":"2026-09-30T21:27:29Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36779813790,"creado":"2026-09-30T21:30:01Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36780524154,"creado":"2026-09-30T21:36:34Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36782970476,"creado":"2026-09-30T22:00:20Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36782547832,"creado":"2026-09-30T21:56:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36785732438,"creado":"2026-09-30T22:28:05Z","rama":"scrum-1093-bulk-paid-zona","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36785616372,"creado":"2026-09-30T22:26:51Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36786167350,"creado":"2026-09-30T22:32:33Z","rama":"scrum-1154-apendice-google-fonts","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36787589644,"creado":"2026-09-30T22:47:41Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36789343021,"creado":"2026-09-30T23:06:43Z","rama":"scrum-1307-negarse-con-envios","evento":"pull_request","gh":0,"bytes":2079611,"lineasDelObligatorio":12955,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36787066681,"creado":"2026-09-30T22:42:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36789497002,"creado":"2026-09-30T23:08:25Z","rama":"scrum-1308-scripts-sin-nombre-de-test","evento":"pull_request","gh":0,"bytes":2077410,"lineasDelObligatorio":12938,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36792076990,"creado":"2026-09-30T23:37:55Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36791201462,"creado":"2026-09-30T23:27:44Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36791242358,"creado":"2026-09-30T23:28:12Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36797773776,"creado":"2026-10-01T00:45:41Z","rama":"scrum-1257-p8-sin-justificantes","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36798373730,"creado":"2026-10-01T00:52:57Z","rama":"scrum-1311-suelo-de-poblacion","evento":"pull_request","gh":0,"bytes":2350616,"lineasDelObligatorio":12322,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36797938424,"creado":"2026-10-01T00:47:40Z","rama":"scrum-1257-p8-sin-justificantes","evento":"pull_request","gh":0,"bytes":2220794,"lineasDelObligatorio":13019,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36797941392,"creado":"2026-10-01T00:47:42Z","rama":"scrum-1316-censo-tipo-iva","evento":"pull_request","gh":0,"bytes":2094456,"lineasDelObligatorio":13040,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36804064137,"creado":"2026-10-01T02:04:05Z","rama":"scrum-1323-resumen-vs-detalle-sif1","evento":"pull_request","gh":0,"bytes":2234015,"lineasDelObligatorio":13097,"vistaLaSeccion":true,"fail":3,"ficheros":[],"casosRojos":3,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36804638669,"creado":"2026-10-01T02:11:19Z","rama":"scrum-1244-cabe-hoy-medido","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36804658406,"creado":"2026-10-01T02:11:34Z","rama":"scrum-1319-linea-progreso-sif1","evento":"pull_request","gh":0,"bytes":2094106,"lineasDelObligatorio":13040,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36805076064,"creado":"2026-10-01T02:16:47Z","rama":"scrum-1323-resumen-vs-detalle-sif1","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36805383785,"creado":"2026-10-01T02:20:35Z","rama":"scrum-1323-resumen-vs-detalle-sif1","evento":"pull_request","gh":0,"bytes":2369063,"lineasDelObligatorio":13041,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36805500396,"creado":"2026-10-01T02:22:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36805256504,"creado":"2026-10-01T02:19:01Z","rama":"scrum-1321-ancla-de-mutacion-ambigua","evento":"pull_request","gh":0,"bytes":142129,"lineasDelObligatorio":0,"vistaLaSeccion":false,"fail":null,"ficheros":[],"casosRojos":0,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36805526325,"creado":"2026-10-01T02:22:24Z","rama":"scrum-1257-p8-sin-justificantes","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36805949120,"creado":"2026-10-01T02:27:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36805533244,"creado":"2026-10-01T02:22:29Z","rama":"scrum-1316-censo-tipo-iva","evento":"pull_request","gh":0,"bytes":142171,"lineasDelObligatorio":0,"vistaLaSeccion":false,"fail":null,"ficheros":[],"casosRojos":0,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36805540050,"creado":"2026-10-01T02:22:34Z","rama":"scrum-1128b-las-tres-por-efecto","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36806144562,"creado":"2026-10-01T02:30:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36806690822,"creado":"2026-10-01T02:37:14Z","rama":"scrum-1320-hallazgo-manda-sobre-ciego","evento":"pull_request","gh":0,"bytes":2239609,"lineasDelObligatorio":13028,"vistaLaSeccion":true,"fail":1,"ficheros":["tests/scrum804b-el-barrido-de-la-42.test.mjs"],"casosRojos":0,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36806806470,"creado":"2026-10-01T02:38:46Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36808166877,"creado":"2026-10-01T02:56:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36808738301,"creado":"2026-10-01T03:03:34Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36807926083,"creado":"2026-10-01T02:53:09Z","rama":"scrum-1258-el-tipo-del-registro-es-el-de-la-huella","evento":"pull_request","gh":0,"bytes":142285,"lineasDelObligatorio":0,"vistaLaSeccion":false,"fail":null,"ficheros":[],"casosRojos":0,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36809483620,"creado":"2026-10-01T03:13:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36809567473,"creado":"2026-10-01T03:14:10Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36810230391,"creado":"2026-10-01T03:22:46Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36810840414,"creado":"2026-10-01T03:30:39Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36810384876,"creado":"2026-10-01T03:24:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36811051948,"creado":"2026-10-01T03:33:25Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36811310534,"creado":"2026-10-01T03:36:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36811613720,"creado":"2026-10-01T03:40:43Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36824571645,"creado":"2026-10-01T06:24:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36825280730,"creado":"2026-10-01T06:32:02Z","rama":"scrum-1327-el-veredicto-no-se-decide-a-mano","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36825282596,"creado":"2026-10-01T06:32:04Z","rama":"scrum-1331-la-red-sale-del-nivel-superior","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36825977531,"creado":"2026-10-01T06:39:55Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36826354986,"creado":"2026-10-01T06:44:03Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36826149227,"creado":"2026-10-01T06:41:46Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36830025304,"creado":"2026-10-01T07:23:16Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36830184758,"creado":"2026-10-01T07:24:58Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36849000731,"creado":"2026-10-01T10:25:07Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36834387322,"creado":"2026-10-01T08:07:28Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36849042279,"creado":"2026-10-01T10:25:31Z","rama":"scrum-1289b-reporters-como-argumentos","evento":"pull_request","gh":0,"bytes":2203502,"lineasDelObligatorio":13750,"vistaLaSeccion":true,"fail":3,"ficheros":[],"casosRojos":3,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36849232992,"creado":"2026-10-01T10:27:20Z","rama":"scrum-1285c-censo-escrituras-sin-version","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36849234235,"creado":"2026-10-01T10:27:20Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":2168255,"lineasDelObligatorio":13478,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36850145997,"creado":"2026-10-01T10:36:03Z","rama":"scrum-1289-tap-del-obligatorio","evento":"pull_request","gh":0,"bytes":2192184,"lineasDelObligatorio":13640,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36850488261,"creado":"2026-10-01T10:39:24Z","rama":"scrum-1298-mesa-por-puesto","evento":"pull_request","gh":0,"bytes":2175806,"lineasDelObligatorio":13526,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36850829533,"creado":"2026-10-01T10:42:44Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851277963,"creado":"2026-10-01T10:47:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851460711,"creado":"2026-10-01T10:48:51Z","rama":"scrum-1293-listas-de-marcadores-a-json","evento":"pull_request","gh":0,"bytes":2184556,"lineasDelObligatorio":13580,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36851933697,"creado":"2026-10-01T10:53:32Z","rama":"scrum-1285b-plan-de-cobro-con-version","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851820389,"creado":"2026-10-01T10:52:24Z","rama":"scrum-1289-tap-del-obligatorio","evento":"pull_request","gh":0,"bytes":2190401,"lineasDelObligatorio":13631,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36851502105,"creado":"2026-10-01T10:49:15Z","rama":"scrum-1289-tap-del-obligatorio","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851672276,"creado":"2026-10-01T10:50:55Z","rama":"scrum-1348b-normas-aceptacion","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851945597,"creado":"2026-10-01T10:53:38Z","rama":"scrum-743-cantidad-una-sola-forma","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36852184536,"creado":"2026-10-01T10:56:01Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36851974482,"creado":"2026-10-01T10:53:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36852394629,"creado":"2026-10-01T10:58:04Z","rama":"scrum-1348b-normas-aceptacion","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36854754309,"creado":"2026-10-01T11:20:30Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36854314863,"creado":"2026-10-01T11:16:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36856082374,"creado":"2026-10-01T11:33:10Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36852561104,"creado":"2026-10-01T10:59:43Z","rama":"scrum-1349-entorno-prestado-trinquete","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36856542767,"creado":"2026-10-01T11:37:36Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36859091123,"creado":"2026-10-01T12:01:48Z","rama":"scrum-1355-borrador-no-es-deuda","evento":"pull_request","gh":0,"bytes":2200293,"lineasDelObligatorio":13690,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36859123187,"creado":"2026-10-01T12:02:06Z","rama":"scrum-1357-latido-cementerio","evento":"pull_request","gh":0,"bytes":2307417,"lineasDelObligatorio":13727,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36859314576,"creado":"2026-10-01T12:03:54Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":2208175,"lineasDelObligatorio":13733,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36860171227,"creado":"2026-10-01T12:11:57Z","rama":"scrum-1357-latido-cementerio","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36860610412,"creado":"2026-10-01T12:15:57Z","rama":"scrum-1353-albaran-firma-guardada-y-rechazo","evento":"pull_request","gh":0,"bytes":2209331,"lineasDelObligatorio":13726,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36860627983,"creado":"2026-10-01T12:16:06Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36861845021,"creado":"2026-10-01T12:27:13Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36861583754,"creado":"2026-10-01T12:24:53Z","rama":"scrum-1362-defectos-del-viaje-a-json","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36862143729,"creado":"2026-10-01T12:29:55Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36862403804,"creado":"2026-10-01T12:32:09Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36862446208,"creado":"2026-10-01T12:32:31Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36862617716,"creado":"2026-10-01T12:34:02Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36862960384,"creado":"2026-10-01T12:37:07Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36863093543,"creado":"2026-10-01T12:38:19Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36865870029,"creado":"2026-10-01T13:02:23Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36863261106,"creado":"2026-10-01T12:39:49Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36867966094,"creado":"2026-10-01T13:20:28Z","rama":"scrum-1352-invalid-id-inalcanzable-desde-el-pad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36868070313,"creado":"2026-10-01T13:21:18Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36868138329,"creado":"2026-10-01T13:21:51Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36866764935,"creado":"2026-10-01T13:10:31Z","rama":"scrum-1231-logo-solo-imagen-subida","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36869029238,"creado":"2026-10-01T13:29:13Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36869259804,"creado":"2026-10-01T13:31:09Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36868152641,"creado":"2026-10-01T13:21:58Z","rama":"scrum-1356-latido-enganchado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36870262122,"creado":"2026-10-01T13:39:12Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36870616421,"creado":"2026-10-01T13:42:00Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36870787175,"creado":"2026-10-01T13:43:21Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36871031378,"creado":"2026-10-01T13:45:17Z","rama":"scrum-1380-suelo-corrio-y-no-reporto","evento":"pull_request","gh":0,"bytes":2512690,"lineasDelObligatorio":13102,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36871008807,"creado":"2026-10-01T13:45:08Z","rama":"scrum-1377-censo-fecha-raiz-del-arbol","evento":"pull_request","gh":0,"bytes":2516601,"lineasDelObligatorio":13121,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36871214903,"creado":"2026-10-01T13:46:44Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36871837399,"creado":"2026-10-01T13:51:37Z","rama":"scrum-1381-censo-escritores-por-fila","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36872366911,"creado":"2026-10-01T13:55:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36872393460,"creado":"2026-10-01T13:56:00Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36873356617,"creado":"2026-10-01T14:03:28Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36873400330,"creado":"2026-10-01T14:03:46Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36872791738,"creado":"2026-10-01T13:59:08Z","rama":"scrum-1231-logo-solo-imagen-subida","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36874501627,"creado":"2026-10-01T14:12:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36875536287,"creado":"2026-10-01T14:20:16Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36875680992,"creado":"2026-10-01T14:21:21Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36876103522,"creado":"2026-10-01T14:24:37Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36876201887,"creado":"2026-10-01T14:25:22Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36876497639,"creado":"2026-10-01T14:27:40Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36877586427,"creado":"2026-10-01T14:35:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36878649258,"creado":"2026-10-01T14:43:56Z","rama":"scrum-1338-menu-del-operario-contra-los-gates","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36881969807,"creado":"2026-10-01T15:09:02Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36888164178,"creado":"2026-10-01T15:56:23Z","rama":"scrum-1390-master-s1-autor-o-asignado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36888848950,"creado":"2026-10-01T16:01:39Z","rama":"scrum-1390-master-s1-autor-o-asignado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36889740689,"creado":"2026-10-01T16:08:36Z","rama":"scrum-1390-master-s1-autor-o-asignado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36904154609,"creado":"2026-10-01T18:04:53Z","rama":"scrum-1339d-senal-de-nombres","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36955982158,"creado":"2026-10-02T02:30:54Z","rama":"scrum-1397-el-tecnico-ve-sus-facturas","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36956184883,"creado":"2026-10-02T02:33:32Z","rama":"scrum-1388-facturas-recibidas-literales-firmados","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36956046612,"creado":"2026-10-02T02:31:43Z","rama":"scrum-1397-el-tecnico-ve-sus-facturas","evento":"pull_request","gh":0,"bytes":2315249,"lineasDelObligatorio":14340,"vistaLaSeccion":true,"fail":5,"ficheros":[],"casosRojos":5,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36956367056,"creado":"2026-10-02T02:35:52Z","rama":"scrum-1388-facturas-recibidas-literales-firmados","evento":"pull_request","gh":0,"bytes":2225477,"lineasDelObligatorio":13676,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36957288613,"creado":"2026-10-02T02:47:59Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36956431649,"creado":"2026-10-02T02:36:43Z","rama":"scrum-1342-plan-desconocido-no-calla","evento":"pull_request","gh":0,"bytes":2351726,"lineasDelObligatorio":13986,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36958685511,"creado":"2026-10-02T03:06:34Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36957170927,"creado":"2026-10-02T02:46:25Z","rama":"scrum-1397-el-tecnico-ve-sus-facturas","evento":"pull_request","gh":0,"bytes":2308773,"lineasDelObligatorio":14301,"vistaLaSeccion":true,"fail":5,"ficheros":[],"casosRojos":5,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36960247696,"creado":"2026-10-02T03:27:25Z","rama":"scrum-1325-una-tilde-no-rompe-lo-que-entiende","evento":"pull_request","gh":0,"bytes":2237532,"lineasDelObligatorio":13744,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36961040260,"creado":"2026-10-02T03:38:15Z","rama":"scrum-1325-una-tilde-no-rompe-lo-que-entiende","evento":"pull_request","gh":0,"bytes":2315774,"lineasDelObligatorio":13709,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":36961335730,"creado":"2026-10-02T03:42:26Z","rama":"scrum-1334-el-guard-dice-lo-que-no-cruza","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36972670096,"creado":"2026-10-02T06:15:17Z","rama":"scrum-1252b-evidencias-linea-y-literal","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":36973269253,"creado":"2026-10-02T06:22:56Z","rama":"scrum-1399-el-anterior-de-una-anulacion","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37000522206,"creado":"2026-10-02T11:21:05Z","rama":"scrum-1384-resultado-que-nadie-leyo","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37000440705,"creado":"2026-10-02T11:20:14Z","rama":"scrum-1379-id-fuera-de-rango-400","evento":"pull_request","gh":0,"bytes":2252191,"lineasDelObligatorio":13798,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37001255403,"creado":"2026-10-02T11:29:09Z","rama":"scrum-1369-entrega-solo-de-lo-aceptado","evento":"pull_request","gh":0,"bytes":2253529,"lineasDelObligatorio":13808,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37001283986,"creado":"2026-10-02T11:29:27Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37001378994,"creado":"2026-10-02T11:30:28Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37001444676,"creado":"2026-10-02T11:31:08Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37002034843,"creado":"2026-10-02T11:37:36Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37001338501,"creado":"2026-10-02T11:30:04Z","rama":"scrum-1379-id-fuera-de-rango-400","evento":"pull_request","gh":0,"bytes":2253256,"lineasDelObligatorio":13807,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37003380093,"creado":"2026-10-02T11:52:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37003818037,"creado":"2026-10-02T11:56:42Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37003850395,"creado":"2026-10-02T11:57:03Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37005020305,"creado":"2026-10-02T12:09:21Z","rama":"scrum-1384-resultado-que-nadie-leyo","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37005061868,"creado":"2026-10-02T12:09:49Z","rama":"scrum-1384-resultado-que-nadie-leyo","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37005573528,"creado":"2026-10-02T12:15:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37005310670,"creado":"2026-10-02T12:12:24Z","rama":"scrum-1414-espera-del-equipo","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37005729111,"creado":"2026-10-02T12:16:39Z","rama":"scrum-1414-espera-del-equipo","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37007108987,"creado":"2026-10-02T12:30:41Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37007492894,"creado":"2026-10-02T12:34:28Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37007568377,"creado":"2026-10-02T12:35:13Z","rama":"scrum-1420-el-pad-avisa-al-cerrarse","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37007601294,"creado":"2026-10-02T12:35:32Z","rama":"scrum-1418-sesiones-que-no-volvieron","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37008545008,"creado":"2026-10-02T12:44:46Z","rama":"scrum-1418-sesiones-que-no-volvieron","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37007782887,"creado":"2026-10-02T12:37:19Z","rama":"scrum-1418-sesiones-que-no-volvieron","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37008651020,"creado":"2026-10-02T12:45:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37008963236,"creado":"2026-10-02T12:48:47Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37009332942,"creado":"2026-10-02T12:52:23Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37009544396,"creado":"2026-10-02T12:54:27Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37010077642,"creado":"2026-10-02T12:59:39Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37009584200,"creado":"2026-10-02T12:54:51Z","rama":"scrum-1416-nombres-construidos-lote-1","evento":"pull_request","gh":0,"bytes":2280099,"lineasDelObligatorio":13933,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37009866980,"creado":"2026-10-02T12:57:36Z","rama":"scrum-1416b-nombres-construidos-lote-2","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37011478201,"creado":"2026-10-02T13:12:37Z","rama":"scrum-1422-el-parte-escucha-la-cola","evento":"pull_request","gh":0,"bytes":2288514,"lineasDelObligatorio":13976,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37011669381,"creado":"2026-10-02T13:14:20Z","rama":"scrum-1198-cliente-nuevo-sin-telefono","evento":"pull_request","gh":0,"bytes":2296305,"lineasDelObligatorio":14042,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37011761371,"creado":"2026-10-02T13:15:10Z","rama":"scrum-1418-sesiones-que-no-volvieron","evento":"pull_request","gh":0,"bytes":2285817,"lineasDelObligatorio":13961,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37011768002,"creado":"2026-10-02T13:15:13Z","rama":"scrum-1416d-main-rojo-tres-nombres-construidos","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37014815619,"creado":"2026-10-02T13:42:47Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37012260056,"creado":"2026-10-02T13:19:45Z","rama":"scrum-1425-foto-pequena-que-no-es-imagen","evento":"pull_request","gh":0,"bytes":2286268,"lineasDelObligatorio":13965,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37013307239,"creado":"2026-10-02T13:29:17Z","rama":"scrum-1427-traspaso-derivado","evento":"pull_request","gh":0,"bytes":2288501,"lineasDelObligatorio":13975,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37016087336,"creado":"2026-10-02T13:53:53Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37016342202,"creado":"2026-10-02T13:56:04Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37014829177,"creado":"2026-10-02T13:42:55Z","rama":"scrum-1198-cliente-nuevo-sin-telefono","evento":"pull_request","gh":0,"bytes":2445486,"lineasDelObligatorio":13982,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37016557758,"creado":"2026-10-02T13:57:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37017940461,"creado":"2026-10-02T14:09:51Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37017977457,"creado":"2026-10-02T14:10:11Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37019192203,"creado":"2026-10-02T14:20:36Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37019521521,"creado":"2026-10-02T14:23:25Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37020368988,"creado":"2026-10-02T14:30:39Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37020651272,"creado":"2026-10-02T14:33:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37022477817,"creado":"2026-10-02T14:48:36Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37022493854,"creado":"2026-10-02T14:48:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37035521913,"creado":"2026-10-02T16:40:30Z","rama":"scrum-1437-verifacturamos-por-dentro-pasos","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37035776744,"creado":"2026-10-02T16:42:46Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37035683354,"creado":"2026-10-02T16:41:57Z","rama":"scrum-1437-verifacturamos-por-dentro-pasos","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37035839726,"creado":"2026-10-02T16:43:18Z","rama":"scrum-1366b-censo-en-una-escritura","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37036808634,"creado":"2026-10-02T16:51:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37035863495,"creado":"2026-10-02T16:43:31Z","rama":"scrum-1366b-censo-en-una-escritura","evento":"pull_request","gh":0,"bytes":2334431,"lineasDelObligatorio":14186,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37038584079,"creado":"2026-10-02T17:07:33Z","rama":"scrum-1437b-servicem8-por-dentro","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37038045038,"creado":"2026-10-02T17:02:49Z","rama":"scrum-1437b-servicem8-por-dentro","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37039157773,"creado":"2026-10-02T17:12:40Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37039251129,"creado":"2026-10-02T17:13:29Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37039552194,"creado":"2026-10-02T17:16:05Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37040333455,"creado":"2026-10-02T17:23:04Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37040415348,"creado":"2026-10-02T17:23:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37040998048,"creado":"2026-10-02T17:28:58Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37041544079,"creado":"2026-10-02T17:33:49Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37039501619,"creado":"2026-10-02T17:15:39Z","rama":"scrum-1198-sin-telefono-se-guarda-y-se-dice","evento":"pull_request","gh":0,"bytes":2305254,"lineasDelObligatorio":14077,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37042365343,"creado":"2026-10-02T17:40:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37042568131,"creado":"2026-10-02T17:42:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37043241930,"creado":"2026-10-02T17:48:44Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37043255001,"creado":"2026-10-02T17:48:51Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37043282657,"creado":"2026-10-02T17:49:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37046328352,"creado":"2026-10-02T18:16:33Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37452885247,"creado":"2026-10-06T10:54:32Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37453678669,"creado":"2026-10-06T11:01:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37457739269,"creado":"2026-10-06T11:38:24Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37458103143,"creado":"2026-10-06T11:41:42Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37457808512,"creado":"2026-10-06T11:39:02Z","rama":"scrum-1463-latido-qa-y-vigia-callado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37458156588,"creado":"2026-10-06T11:42:10Z","rama":"scrum-1454-ya-esta-commit-ajeno","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37458672142,"creado":"2026-10-06T11:46:46Z","rama":"scrum-1443-rapido-dice-que-ha-pasado","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37460073433,"creado":"2026-10-06T11:59:15Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37460132819,"creado":"2026-10-06T11:59:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37460143958,"creado":"2026-10-06T11:59:54Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37462468644,"creado":"2026-10-06T12:19:49Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37464443828,"creado":"2026-10-06T12:36:14Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37464060328,"creado":"2026-10-06T12:33:09Z","rama":"scrum-1460-recordatorio-de-la-copia","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37469864721,"creado":"2026-10-06T13:19:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37464772788,"creado":"2026-10-06T12:38:57Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37469866804,"creado":"2026-10-06T13:19:18Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37470223556,"creado":"2026-10-06T13:22:03Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37470290928,"creado":"2026-10-06T13:22:33Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37471404570,"creado":"2026-10-06T13:30:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37470798725,"creado":"2026-10-06T13:26:23Z","rama":"scrum-1476-titulos-de-la-pagina-del-locale","evento":"pull_request","gh":0,"bytes":2351654,"lineasDelObligatorio":14328,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37470969758,"creado":"2026-10-06T13:27:41Z","rama":"scrum-1480-filas-de-scripts-qa-y-vigia","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37472609057,"creado":"2026-10-06T13:40:03Z","rama":"scrum-1476-titulos-de-la-pagina-del-locale","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37472653382,"creado":"2026-10-06T13:40:23Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37472976882,"creado":"2026-10-06T13:42:50Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37473012811,"creado":"2026-10-06T13:43:06Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37473664106,"creado":"2026-10-06T13:47:56Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37474140921,"creado":"2026-10-06T13:51:32Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37473472867,"creado":"2026-10-06T13:46:31Z","rama":"scrum-1472-fecha-impresa-zona-del-negocio","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37474458073,"creado":"2026-10-06T13:53:52Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37475286953,"creado":"2026-10-06T13:59:59Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37474162751,"creado":"2026-10-06T13:51:41Z","rama":"scrum-1395-el-filtro-sin-suelo-no-crece","evento":"pull_request","gh":0,"bytes":2355776,"lineasDelObligatorio":14333,"vistaLaSeccion":true,"fail":1,"ficheros":[],"casosRojos":1,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37474343634,"creado":"2026-10-06T13:53:02Z","rama":"scrum-1472-fecha-impresa-zona-del-negocio","evento":"pull_request","gh":0,"bytes":2367656,"lineasDelObligatorio":14423,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37479005789,"creado":"2026-10-06T14:26:41Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37479298488,"creado":"2026-10-06T14:28:47Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37475583387,"creado":"2026-10-06T14:02:04Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37478951135,"creado":"2026-10-06T14:26:18Z","rama":"scrum-1472-fecha-impresa-zona-del-negocio","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37480458047,"creado":"2026-10-06T14:37:02Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37506028693,"creado":"2026-10-06T17:45:37Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37510466901,"creado":"2026-10-06T18:19:52Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37501510496,"creado":"2026-10-06T17:10:40Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37513231684,"creado":"2026-10-06T18:41:25Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37510663908,"creado":"2026-10-06T18:21:22Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37522432501,"creado":"2026-10-06T19:54:42Z","rama":"scrum-1479-umbral-de-relevo-500k","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37511808504,"creado":"2026-10-06T18:30:16Z","rama":"scrum-1295-carriles-e-identidad","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37522498189,"creado":"2026-10-06T19:55:12Z","rama":"scrum-1479-umbral-de-relevo-500k","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37523829235,"creado":"2026-10-06T20:05:42Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37523704192,"creado":"2026-10-06T20:04:45Z","rama":"scrum-1484-latido-a-mitad-de-entrega","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37524014692,"creado":"2026-10-06T20:07:10Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37525133900,"creado":"2026-10-06T20:16:00Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37582484744,"creado":"2026-10-07T06:36:55Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37582947940,"creado":"2026-10-07T06:41:54Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37525818618,"creado":"2026-10-06T20:21:27Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37583309127,"creado":"2026-10-07T06:45:42Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37584183504,"creado":"2026-10-07T06:55:01Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37584110867,"creado":"2026-10-07T06:54:15Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37584456001,"creado":"2026-10-07T06:57:51Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37585297271,"creado":"2026-10-07T07:06:15Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37591871716,"creado":"2026-10-07T08:09:11Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37585464472,"creado":"2026-10-07T07:07:53Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37646723448,"creado":"2026-10-07T15:46:48Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37646562630,"creado":"2026-10-07T15:45:38Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37644306008,"creado":"2026-10-07T15:29:16Z","rama":"scrum-1184b-ventana-de-firma-declarada","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37647051503,"creado":"2026-10-07T15:49:13Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37647132722,"creado":"2026-10-07T15:49:49Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37647953904,"creado":"2026-10-07T15:55:45Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37647924711,"creado":"2026-10-07T15:55:33Z","rama":"scrum-1496-censo-de-abiertos-tres-hechos","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37648930692,"creado":"2026-10-07T16:02:48Z","rama":"scrum-1316-rdl-derogado-y-repetido","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37643339747,"creado":"2026-10-07T15:22:11Z","rama":"scrum-876f-a55-al-banco","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37649162940,"creado":"2026-10-07T16:04:31Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37648979079,"creado":"2026-10-07T16:03:10Z","rama":"scrum-1436-disputa-firmado-y-motivo-de-ventana","evento":"pull_request","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37650042161,"creado":"2026-10-07T16:11:00Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37652551343,"creado":"2026-10-07T16:30:17Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37649563949,"creado":"2026-10-07T16:07:27Z","rama":"scrum-1436c-los-dos-literales-del-aviso-de-disputa","evento":"pull_request","gh":0,"bytes":2879567,"lineasDelObligatorio":14075,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37653947020,"creado":"2026-10-07T16:40:52Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37649527370,"creado":"2026-10-07T16:07:11Z","rama":"scrum-1436-disputa-firmado-y-motivo-de-ventana","evento":"pull_request","gh":0,"bytes":2749159,"lineasDelObligatorio":14071,"vistaLaSeccion":true,"fail":2,"ficheros":[],"casosRojos":2,"exitCodes":[],"senales":[],"spawns":[],"huellas":[]}
+{"id":37654600264,"creado":"2026-10-07T16:45:54Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}
+{"id":37656286301,"creado":"2026-10-07T17:05:09Z","rama":"main","evento":"push","gh":0,"bytes":0,"sinLog":"salida vacía"}

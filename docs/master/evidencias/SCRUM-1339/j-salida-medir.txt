@@ -1,0 +1,85 @@
+node v24.18.0 win32 · tubería del hijo: la de la plataforma · sonda en NODE_OPTIONS: no
+POBLACIÓN: scrum859-identidad-y-motivo-cerrado.test.mjs · 2 mutación(es) declaradas · 1 pasada(s) de cada una
+
+── LIMPIA (por `correr` del meta-guard): 20 pasados · 0 caídos · 0 saltados · árbol movido: 0
+  LIMPIA, canal crudo: 42535 B hacia el padre · 110 mensajes enteros · 0 B de resto sin trocear · veredictos de primer nivel 20
+    por tipo: test:complete ×20 = 8784 B · test:pass ×20 = 8524 B · test:enqueue ×20 = 7624 B · test:dequeue ×20 = 7624 B · test:start ×20 = 7344 B · test:diagnostic ×8 = 2084 B · test:summary ×1 = 321 B · test:plan ×1 = 230 B
+     1 pasa · empieza en el byte     8865 ·     444 B · faltan   33226 B detrás · «SCRUM-267 · ① el validador reconoce un ancla buena y las t»
+     2 pasa · empieza en el byte    10412 ·     398 B · faltan   31725 B detrás · «SCRUM-267 · ② el barrido encuentra entradas de verdad»
+     3 pasa · empieza en el byte    11850 ·     377 B · faltan   30308 B detrás · «SCRUM-267 · toda entrada NUEVA del registro declara contra»
+     4 pasa · empieza en el byte    13540 ·     468 B · faltan   28527 B detrás · «SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque l»
+     5 pasa · empieza en el byte    15285 ·     456 B · faltan   26794 B detrás · «SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe sal»
+     6 pasa · empieza en el byte    16970 ·     440 B · faltan   25125 B detrás · «SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista»
+     7 pasa · empieza en el byte    18669 ·     450 B · faltan   23416 B detrás · «SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla »
+     8 pasa · empieza en el byte    20099 ·     357 B · faltan   22079 B detrás · «SCRUM-267 · el censo heredado no crece, y si BAJA hay que »
+     9 pasa · empieza en el byte    21805 ·     480 B · faltan   20250 B detrás · «SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de»
+    10 pasa · empieza en el byte    23253 ·     353 B · faltan   18929 B detrás · «SCRUM-267 · el formato declarado en el README incluye el a»
+    11 pasa · empieza en el byte    24883 ·     456 B · faltan   17196 B detrás · «SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su contr»
+    12 pasa · empieza en el byte    26454 ·     402 B · faltan   15679 B detrás · «SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE»
+    13 pasa · empieza en el byte    28061 ·     432 B · faltan   14042 B detrás · «SCRUM-649 · 🔴 la lista de anclas que no resuelven está CE»
+    14 pasa · empieza en el byte    29734 ·     444 B · faltan   12357 B detrás · «SCRUM-649 · ✅ y la que está listada EXISTE como entrada y »
+    15 pasa · empieza en el byte    31221 ·     378 B · faltan   10936 B detrás · «SCRUM-859 · SUELO: hay exentas que examinar y entradas con»
+    16 pasa · empieza en el byte    32837 ·     443 B · faltan    9255 B detrás · «SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real »
+    17 pasa · empieza en el byte    34494 ·     435 B · faltan    7606 B detrás · «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ning»
+    18 pasa · empieza en el byte    36179 ·     447 B · faltan    5909 B detrás · «SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se hab»
+    19 pasa · empieza en el byte    37786 ·     417 B · faltan    4332 B detrás · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»
+    20 pasa · empieza en el byte    39453 ·     447 B · faltan    2635 B detrás · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hac»
+    el hijo salió con 0
+
+── pasada 1 · MUTACIÓN 1 · tests/scrum267-ancla-de-medicion.test.mjs · cae: «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»
+   VEREDICTO DEL META-GUARD (`aplicarUna`): VIVA
+  MUTADA 1, canal crudo: 323495 B hacia el padre · 110 mensajes enteros · 0 B de resto sin trocear · veredictos de primer nivel 20
+    por tipo: test:complete ×20 = 149264 B · test:fail ×2 = 141347 B · test:pass ×18 = 7657 B · test:enqueue ×20 = 7624 B · test:dequeue ×20 = 7624 B · test:start ×20 = 7344 B · test:diagnostic ×8 = 2084 B · test:summary ×1 = 321 B · test:plan ×1 = 230 B
+     1 pasa · empieza en el byte     8865 ·     444 B · faltan  314186 B detrás · «SCRUM-267 · ① el validador reconoce un ancla buena y las t»
+     2 pasa · empieza en el byte    10412 ·     398 B · faltan  312685 B detrás · «SCRUM-267 · ② el barrido encuentra entradas de verdad»
+     3 pasa · empieza en el byte    11850 ·     377 B · faltan  311268 B detrás · «SCRUM-267 · toda entrada NUEVA del registro declara contra»
+     4 pasa · empieza en el byte    13540 ·     468 B · faltan  309487 B detrás · «SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque l»
+     5 pasa · empieza en el byte    15285 ·     456 B · faltan  307754 B detrás · «SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe sal»
+     6 pasa · empieza en el byte    16970 ·     440 B · faltan  306085 B detrás · «SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista»
+     7 CAE  · empieza en el byte    23294 ·    5075 B · faltan  295126 B detrás · «SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla »
+     8 pasa · empieza en el byte    29349 ·     357 B · faltan  293789 B detrás · «SCRUM-267 · el censo heredado no crece, y si BAJA hay que »
+     9 pasa · empieza en el byte    31055 ·     480 B · faltan  291960 B detrás · «SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de»
+    10 pasa · empieza en el byte    32503 ·     353 B · faltan  290639 B detrás · «SCRUM-267 · el formato declarado en el README incluye el a»
+    11 pasa · empieza en el byte    34133 ·     456 B · faltan  288906 B detrás · «SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su contr»
+    12 pasa · empieza en el byte    35704 ·     402 B · faltan  287389 B detrás · «SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE»
+    13 pasa · empieza en el byte    37311 ·     432 B · faltan  285752 B detrás · «SCRUM-649 · 🔴 la lista de anclas que no resuelven está CE»
+    14 pasa · empieza en el byte    38984 ·     444 B · faltan  284067 B detrás · «SCRUM-649 · ✅ y la que está listada EXISTE como entrada y »
+    15 pasa · empieza en el byte    40471 ·     378 B · faltan  282646 B detrás · «SCRUM-859 · SUELO: hay exentas que examinar y entradas con»
+    16 pasa · empieza en el byte    42087 ·     443 B · faltan  280965 B detrás · «SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real »
+    17 pasa · empieza en el byte    43744 ·     435 B · faltan  279316 B detrás · «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ning»
+    18 pasa · empieza en el byte    45429 ·     447 B · faltan  277619 B detrás · «SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se hab»
+    19 CAE  · empieza en el byte   182891 ·  136272 B · faltan    4332 B detrás · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»  ← EL DECLARADO
+    20 pasa · empieza en el byte   320413 ·     447 B · faltan    2635 B detrás · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hac»
+    el hijo salió con 1
+
+── pasada 1 · MUTACIÓN 2 · tests/scrum267-ancla-de-medicion.test.mjs · cae: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+   VEREDICTO DEL META-GUARD (`aplicarUna`): VIVA
+  MUTADA 2, canal crudo: 1104695 B hacia el padre · 110 mensajes enteros · 0 B de resto sin trocear · veredictos de primer nivel 20
+    por tipo: test:complete ×20 = 539864 B · test:fail ×8 = 534428 B · test:enqueue ×20 = 7624 B · test:dequeue ×20 = 7624 B · test:start ×20 = 7344 B · test:pass ×12 = 5176 B · test:diagnostic ×8 = 2084 B · test:summary ×1 = 321 B · test:plan ×1 = 230 B
+     1 pasa · empieza en el byte     8865 ·     444 B · faltan 1095386 B detrás · «SCRUM-267 · ① el validador reconoce un ancla buena y las t»
+     2 pasa · empieza en el byte    10412 ·     398 B · faltan 1093885 B detrás · «SCRUM-267 · ② el barrido encuentra entradas de verdad»
+     3 CAE  · empieza en el byte   198328 ·  186855 B · faltan  719512 B detrás · «SCRUM-267 · toda entrada NUEVA del registro declara contra»
+     4 pasa · empieza en el byte   386496 ·     468 B · faltan  717731 B detrás · «SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque l»
+     5 pasa · empieza en el byte   388241 ·     456 B · faltan  715998 B detrás · «SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe sal»
+     6 CAE  · empieza en el byte   421106 ·   31620 B · faltan  651969 B detrás · «SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista»
+     7 CAE  · empieza en el byte   456993 ·    3458 B · faltan  644244 B detrás · «SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla »
+     8 CAE  · empieza en el byte   562367 ·  101293 B · faltan  441035 B detrás · «SCRUM-267 · el censo heredado no crece, y si BAJA hay que »
+     9 pasa · empieza en el byte   665009 ·     480 B · faltan  439206 B detrás · «SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de»
+    10 pasa · empieza en el byte   666457 ·     353 B · faltan  437885 B detrás · «SCRUM-267 · el formato declarado en el README incluye el a»
+    11 pasa · empieza en el byte   668087 ·     456 B · faltan  436152 B detrás · «SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su contr»
+    12 CAE  · empieza en el byte   678542 ·    9286 B · faltan  416867 B detrás · «SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE»
+    13 pasa · empieza en el byte   689033 ·     432 B · faltan  415230 B detrás · «SCRUM-649 · 🔴 la lista de anclas que no resuelven está CE»
+    14 CAE  · empieza en el byte   694169 ·    3907 B · faltan  406619 B detrás · «SCRUM-649 · ✅ y la que está listada EXISTE como entrada y »
+    15 pasa · empieza en el byte   699119 ·     378 B · faltan  405198 B detrás · «SCRUM-859 · SUELO: hay exentas que examinar y entradas con»
+    16 CAE  · empieza en el byte   869393 ·  169101 B · faltan   66201 B detrás · «SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real »
+    17 CAE  · empieza en el byte  1068181 ·   28908 B · faltan    7606 B detrás · «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ning»  ← EL DECLARADO
+    18 pasa · empieza en el byte  1098339 ·     447 B · faltan    5909 B detrás · «SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se hab»
+    19 pasa · empieza en el byte  1099946 ·     417 B · faltan    4332 B detrás · «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»
+    20 pasa · empieza en el byte  1101613 ·     447 B · faltan    2635 B detrás · «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hac»
+    el hijo salió con 1
+
+── RECUENTO DE VEREDICTOS por mutación, sobre 1 pasada(s):
+   mutación 1: VIVA 1
+   mutación 2: VIVA 1
+ÁRBOL: 1 fichero(s) mutados comprobados por sha256 · distintos de antes: 0
+EXIT=0

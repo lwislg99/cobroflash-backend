@@ -1,0 +1,106 @@
+POBLACION leidos=105 con-renglon=105 sin-renglon=0 con-mas-de-uno=0
+prog 2026-10-06T03:33:53Z success paso=success al-dia prod=0dbf8eae main=0dbf8eae 0.0h c=0 -  vigia-estado-37388341828|vigia-estado-37388341828|vigia-estado-37409567872 aviso=skipped 112094716291
+ci 2026-10-06T10:50:25Z success paso=success al-dia prod=0dbf8eae main=5508e95b 0.1h c=2 -  vigia-estado-37409567872|vigia-estado-37409567872  112231896715
+prog 2026-10-06T10:50:57Z success paso=success al-dia prod=0dbf8eae main=5508e95b 0.1h c=2 -  vigia-estado-37409567872|vigia-estado-37409567872|vigia-estado-37452484375 aviso=skipped 112232086826
+ci 2026-10-06T11:11:22Z success paso=success al-dia prod=2753de7a main=2753de7a 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112239460999
+ci 2026-10-06T11:32:48Z success paso=success al-dia prod=39af736e main=39af736e 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112247311242
+ci 2026-10-06T11:53:42Z success paso=success al-dia prod=dae66d0f main=dae66d0f 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112255073912
+ci 2026-10-06T12:14:45Z success paso=success al-dia prod=ebd15a90 main=ebd15a90 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112263193764
+ci 2026-10-06T12:35:36Z success paso=success al-dia prod=a3a2f3b0 main=a3a2f3b0 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112271539473
+ci 2026-10-06T12:56:20Z success paso=success al-dia prod=eb1fdefa main=a2533fd9 0.7h c=6 -  vigia-estado-37452484375|vigia-estado-37452484375  112280218119
+ci 2026-10-06T13:16:56Z success paso=success al-dia prod=8dcc6d2a main=8dcc6d2a 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112289165298
+ci 2026-10-06T13:49:09Z success paso=success al-dia prod=24a6ab04 main=24a6ab04 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112298733976
+ci 2026-10-06T14:16:20Z success paso=success al-dia prod=ee4331a4 main=ee4331a4 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112314350297
+ci 2026-10-06T14:57:06Z success paso=success al-dia prod=31ff91d9 main=31ff91d9 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112336614945
+ci 2026-10-06T17:02:27Z success paso=success al-dia prod=31ff91d9 main=f8da1ec8 4.0h c=5 -  vigia-estado-37452484375|vigia-estado-37452484375  112395697652
+ci 2026-10-06T17:23:47Z success paso=success al-dia prod=b7f31687 main=b7f31687 0.0h c=0 -  vigia-estado-37452484375|vigia-estado-37452484375  112405191301
+prog 2026-10-06T17:30:31Z success paso=success al-dia prod=b7f31687 main=78426f7a 3.9h c=5 -  vigia-estado-37452484375|vigia-estado-37452484375|vigia-estado-37504035937 aviso=skipped 112408091436
+ci 2026-10-06T17:45:35Z success paso=success al-dia prod=78426f7a main=bcd74aba 0.2h c=3 -  vigia-estado-37504035937|vigia-estado-37504035937  112414753828
+ci 2026-10-06T18:07:21Z success paso=success al-dia prod=8f77f96d main=8f77f96d 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112424387962
+ci 2026-10-06T18:26:37Z success paso=success al-dia prod=317c0bab main=317c0bab 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112432961464
+ci 2026-10-06T19:11:56Z success paso=success al-dia prod=378027a7 main=378027a7 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112452844474
+ci 2026-10-06T19:35:05Z success paso=success al-dia prod=bafb0734 main=bafb0734 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112462861671
+ci 2026-10-06T19:58:23Z success paso=success al-dia prod=28222517 main=28222517 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112472123882
+ci 2026-10-06T20:43:02Z success paso=success al-dia prod=33f07c33 main=33f07c33 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937  112491681698
+prog 2026-10-06T21:56:58Z success paso=success al-dia prod=33f07c33 main=33f07c33 0.0h c=0 -  vigia-estado-37504035937|vigia-estado-37504035937|vigia-estado-37537385161 aviso=skipped 112521735764
+prog 2026-10-07T01:10:02Z success paso=success al-dia prod=33f07c33 main=33f07c33 0.0h c=0 -  vigia-estado-37537385161|vigia-estado-37537385161|vigia-estado-37555721382 aviso=skipped 112581370619
+ci 2026-10-07T06:25:19Z failure paso=failure atrasado prod=33f07c33 main=720c1a12 10.1h c=4 CONGELADO exit 1. vigia-estado-37555721382|vigia-estado-37555721382  112661659895
+ci 2026-10-07T06:44:44Z success paso=success al-dia prod=adedcf53 main=adedcf53 0.0h c=0 -  vigia-estado-37555721382|vigia-estado-37555721382  112667382998
+ci 2026-10-07T07:04:10Z success paso=success al-dia prod=725c0e3a main=725c0e3a 0.0h c=0 -  vigia-estado-37555721382|vigia-estado-37555721382  112672771801
+ci 2026-10-07T07:27:01Z success paso=success al-dia prod=73ce872c main=73ce872c 0.0h c=0 -  vigia-estado-37555721382|vigia-estado-37555721382  112680559246
+ci 2026-10-07T07:44:48Z success paso=success al-dia prod=73ce872c main=21c27b11 0.5h c=6 -  vigia-estado-37555721382|vigia-estado-37555721382  112686461651
+prog 2026-10-07T07:49:02Z success paso=success al-dia prod=21c27b11 main=21c27b11 0.0h c=0 -  vigia-estado-37555721382|vigia-estado-37555721382|vigia-estado-37589682927 aviso=skipped 112687920652
+ci 2026-10-07T08:02:01Z success paso=success al-dia prod=5ca9334a main=5ca9334a 0.0h c=0 -  vigia-estado-37589682927|vigia-estado-37589682927  112692439832
+ci 2026-10-07T08:25:11Z success paso=success al-dia prod=5f1bb361 main=5f1bb361 0.0h c=0 -  vigia-estado-37589682927|vigia-estado-37589682927  112700793920
+prog 2026-10-07T14:49:47Z success paso=success al-dia prod=5f1bb361 main=5f1bb361 0.0h c=0 -  vigia-estado-37589682927|vigia-estado-37589682927|vigia-estado-37639986153 aviso=skipped 112856057346
+ci 2026-10-07T15:44:15Z success paso=success al-dia prod=5f1bb361 main=12ecc7bb 0.4h c=2 -  vigia-estado-37639986153|vigia-estado-37639986153  112877533957
+ci 2026-10-07T16:10:28Z success paso=success al-dia prod=f07622f3 main=f07622f3 0.0h c=0 -  vigia-estado-37639986153|vigia-estado-37639986153  112889212252
+ci 2026-10-07T16:37:27Z success paso=success al-dia prod=818cb29b main=9acfbeba 0.4h c=4 -  vigia-estado-37639986153|vigia-estado-37639986153  112902589916
+ci 2026-10-07T17:05:08Z success paso=success al-dia prod=965e3d05 main=60f19338 1.0h c=12 -  vigia-estado-37639986153|vigia-estado-37639986153  112911978420
+ci 2026-10-07T17:29:26Z success paso=success al-dia prod=51d76321 main=51d76321 0.0h c=0 -  vigia-estado-37639986153|vigia-estado-37639986153  112922460102
+ci 2026-10-07T17:49:06Z success paso=success al-dia prod=58fb1028 main=58fb1028 0.0h c=0 -  vigia-estado-37639986153|vigia-estado-37639986153  112931568436
+ci 2026-10-07T18:34:26Z success paso=success al-dia prod=a65a8c75 main=a65a8c75 0.0h c=0 -  vigia-estado-37639986153|vigia-estado-37639986153  112951615544
+prog 2026-10-07T20:51:54Z success paso=success al-dia prod=a65a8c75 main=a65a8c75 0.0h c=0 -  vigia-estado-37639986153|vigia-estado-37639986153|vigia-estado-37685236019 aviso=skipped 113011238387
+ci 2026-10-07T23:42:27Z success paso=success al-dia prod=a65a8c75 main=edfbd86e 0.2h c=2 -  vigia-estado-37685236019|vigia-estado-37685236019  113072953284
+ci 2026-10-08T00:27:18Z success paso=success al-dia prod=8b9f3910 main=8b9f3910 0.0h c=0 -  vigia-estado-37685236019|vigia-estado-37685236019  113086392742
+ci 2026-10-08T00:48:37Z success paso=success al-dia prod=789509a9 main=789509a9 0.0h c=0 -  vigia-estado-37685236019|vigia-estado-37685236019  113092411967
+ci 2026-10-08T01:11:27Z success paso=success al-dia prod=fc639ef9 main=fc639ef9 0.0h c=0 -  vigia-estado-37685236019|vigia-estado-37685236019  113098721741
+prog 2026-10-08T01:24:01Z success paso=success al-dia prod=fc639ef9 main=fc639ef9 0.0h c=0 -  vigia-estado-37685236019|vigia-estado-37685236019|vigia-estado-37712727329 aviso=skipped 113102125984
+ci 2026-10-08T01:34:41Z success paso=success al-dia prod=c63a527e main=176d0772 0.2h c=2 -  vigia-estado-37712727329|vigia-estado-37712727329  113104965037
+ci 2026-10-08T01:53:45Z success paso=success al-dia prod=fae05532 main=fae05532 0.0h c=0 -  vigia-estado-37712727329|vigia-estado-37712727329  113109884706
+ci 2026-10-08T02:12:11Z success paso=success al-dia prod=179c248b main=179c248b 0.0h c=0 -  vigia-estado-37712727329|vigia-estado-37712727329  113114694118
+ci 2026-10-08T02:35:32Z success paso=success al-dia prod=3be83fbd main=3be83fbd 0.0h c=0 -  vigia-estado-37712727329|vigia-estado-37712727329  113120830314
+ci 2026-10-08T02:58:53Z success paso=success al-dia prod=787aa06c main=787aa06c 0.0h c=0 -  vigia-estado-37712727329|vigia-estado-37712727329  113126803713
+ci 2026-10-08T03:17:58Z success paso=success al-dia prod=326e6af4 main=16e80dea 1.1h c=4 -  vigia-estado-37712727329|vigia-estado-37712727329  113131724965
+ci 2026-10-08T07:46:37Z success paso=success al-dia prod=16e80dea main=ad377526 5.6h c=4 -  vigia-estado-37712727329|vigia-estado-37712727329  113205990932
+prog 2026-10-08T08:06:05Z success paso=success al-dia prod=4f8c473d main=aa0b22ac 0.4h c=3 -  vigia-estado-37712727329|vigia-estado-37712727329|vigia-estado-37747605598 aviso=skipped 113212720676
+ci 2026-10-08T08:07:51Z success paso=success al-dia prod=aa0b22ac main=aa0b22ac 0.0h c=0 -  vigia-estado-37747605598|vigia-estado-37747605598  113213355214
+ci 2026-10-08T08:26:00Z success paso=success al-dia prod=a46ade85 main=e414866d 0.3h c=3 -  vigia-estado-37747605598|vigia-estado-37747605598  113219731469
+ci 2026-10-08T08:46:13Z success paso=success al-dia prod=6defb376 main=6defb376 0.0h c=0 -  vigia-estado-37747605598|vigia-estado-37747605598  113227371347
+ci 2026-10-08T09:07:03Z success paso=success al-dia prod=497f5167 main=497f5167 0.0h c=0 -  vigia-estado-37747605598|vigia-estado-37747605598  113235294827
+ci 2026-10-08T10:33:51Z success paso=success al-dia prod=497f5167 main=be483452 1.1h c=4 -  vigia-estado-37747605598|vigia-estado-37747605598  113267981815
+prog 2026-10-08T17:01:53Z success paso=success al-dia prod=be483452 main=be483452 0.0h c=0 -  vigia-estado-37747605598|vigia-estado-37747605598|vigia-estado-37813389377 aviso=skipped 113435697467
+prog 2026-10-08T22:34:03Z success paso=success al-dia prod=be483452 main=be483452 0.0h c=0 -  vigia-estado-37813389377|vigia-estado-37813389377|vigia-estado-37854274059 aviso=skipped 113574581312
+prog 2026-10-09T03:22:21Z success paso=success al-dia prod=be483452 main=be483452 0.0h c=0 -  vigia-estado-37854274059|vigia-estado-37854274059|vigia-estado-37878963851 aviso=skipped 113653959343
+ci 2026-10-09T08:35:26Z success paso=success al-dia prod=be483452 main=65ee1329 0.2h c=2 -  vigia-estado-37878963851|vigia-estado-37878963851  113739106807
+ci 2026-10-09T08:58:25Z success paso=success al-dia prod=85d8d01e main=85d8d01e 0.0h c=0 -  vigia-estado-37878963851|vigia-estado-37878963851  113746959933
+ci 2026-10-09T10:16:16Z success paso=success al-dia prod=85d8d01e main=51fbba7f 0.2h c=3 -  vigia-estado-37878963851|vigia-estado-37878963851  113774047122
+ci 2026-10-09T10:33:09Z success paso=success al-dia prod=51fbba7f main=582656bd 0.5h c=9 -  vigia-estado-37878963851|vigia-estado-37878963851  113779763291
+ci 2026-10-09T10:50:02Z success paso=success al-dia prod=17159d7f main=17159d7f 0.0h c=0 -  vigia-estado-37878963851|vigia-estado-37878963851  113785389829
+prog 2026-10-09T10:58:07Z success paso=success al-dia prod=ebd9bd8e main=ebd9bd8e 0.0h c=0 -  vigia-estado-37878963851|vigia-estado-37878963851|vigia-estado-37920829580 aviso=skipped 113788074647
+ci 2026-10-09T11:06:24Z success paso=success al-dia prod=ebd9bd8e main=ebd9bd8e 0.0h c=0 -  vigia-estado-37920829580|vigia-estado-37920829580  113790844783
+ci 2026-10-09T11:29:43Z success paso=success al-dia prod=44cbb050 main=44cbb050 0.0h c=0 -  vigia-estado-37920829580|vigia-estado-37920829580  113798681323
+ci 2026-10-09T11:50:23Z success paso=success al-dia prod=44cbb050 main=206d57a4 0.3h c=4 -  vigia-estado-37920829580|vigia-estado-37920829580  113805611996
+ci 2026-10-09T12:13:25Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-37920829580|vigia-estado-37920829580  113813539206
+prog 2026-10-09T17:37:50Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-37920829580|vigia-estado-37920829580|vigia-estado-37967621832 aviso=skipped 113945839834
+prog 2026-10-09T21:56:30Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-37967621832|vigia-estado-37967621832|vigia-estado-37996404067 aviso=skipped 114043500052
+prog 2026-10-10T01:24:51Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-37996404067|vigia-estado-37996404067|vigia-estado-38013078155 aviso=skipped 114097246919
+prog 2026-10-10T07:49:44Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38013078155|vigia-estado-38013078155|vigia-estado-38035757444 aviso=skipped 114165714119
+prog 2026-10-10T14:02:11Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38035757444|vigia-estado-38035757444|vigia-estado-38058021593 aviso=skipped 114230367274
+prog 2026-10-10T19:36:11Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38058021593|vigia-estado-38058021593|vigia-estado-38080448769 aviso=skipped 114296091115
+prog 2026-10-10T23:01:08Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38080448769|vigia-estado-38080448769|vigia-estado-38093539330 aviso=skipped 114334656502
+prog 2026-10-11T02:32:35Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38093539330|vigia-estado-38093539330|vigia-estado-38105492115 aviso=skipped 114370019890
+prog 2026-10-11T10:22:37Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38105492115|vigia-estado-38105492115|vigia-estado-38131726737 aviso=skipped 114447263213
+prog 2026-10-11T16:53:21Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38131726737|vigia-estado-38131726737|vigia-estado-38157321080 aviso=skipped 114522870743
+prog 2026-10-11T21:09:00Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38157321080|vigia-estado-38157321080|vigia-estado-38175153246 aviso=skipped 114575880357
+prog 2026-10-12T00:47:30Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38175153246|vigia-estado-38175153246|vigia-estado-38189360445 aviso=skipped 114618575694
+prog 2026-10-12T08:11:12Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38189360445|vigia-estado-38189360445|vigia-estado-38222038040 aviso=skipped 114720358340
+prog 2026-10-12T19:28:03Z success paso=success al-dia prod=0472952c main=0472952c 0.0h c=0 -  vigia-estado-38222038040|vigia-estado-38222038040|vigia-estado-38297830598 aviso=skipped 114973116848
+ci 2026-10-13T00:18:24Z success paso=success al-dia prod=0472952c main=265322bc 0.2h c=4 -  vigia-estado-38297830598|vigia-estado-38297830598  115066474774
+ci 2026-10-13T00:42:42Z success paso=success al-dia prod=dfda86d6 main=dfda86d6 0.0h c=0 -  vigia-estado-38297830598|vigia-estado-38297830598  115072897305
+prog 2026-10-13T01:41:53Z success paso=success al-dia prod=dfda86d6 main=dfda86d6 0.0h c=0 -  vigia-estado-38297830598|vigia-estado-38297830598|vigia-estado-38333359939 aviso=skipped 115087874023
+ci 2026-10-13T04:57:06Z success paso=success al-dia prod=dfda86d6 main=0e5491a6 4.8h c=17 -  vigia-estado-38333359939|vigia-estado-38333359939  115136447906
+ci 2026-10-13T05:13:43Z success paso=success al-dia prod=6ca2fb65 main=6ca2fb65 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115140980109
+ci 2026-10-13T05:33:02Z success paso=success al-dia prod=ccee4b60 main=ccee4b60 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115146133861
+ci 2026-10-13T05:56:27Z success paso=success al-dia prod=780c8127 main=780c8127 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115152523335
+ci 2026-10-13T06:36:29Z success paso=success al-dia prod=780c8127 main=b95e33e4 0.3h c=3 -  vigia-estado-38333359939|vigia-estado-38333359939  115164184389
+ci 2026-10-13T06:55:44Z success paso=success al-dia prod=33e62fee main=33e62fee 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115170162953
+ci 2026-10-13T07:19:21Z success paso=success al-dia prod=9226d0f2 main=9226d0f2 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115177888084
+ci 2026-10-13T07:41:20Z success paso=success al-dia prod=9358f02b main=9358f02b 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939  115185474303
+prog 2026-10-13T08:37:24Z success paso=success al-dia prod=9358f02b main=9358f02b 0.0h c=0 -  vigia-estado-38333359939|vigia-estado-38333359939|vigia-estado-38370507826 aviso=skipped 115206032267
+ci 2026-10-13T10:49:38Z success paso=success al-dia prod=9358f02b main=b9ecf641 0.3h c=2 -  vigia-estado-38370507826|vigia-estado-38370507826  115257832701
+ci 2026-10-13T11:11:07Z success paso=success al-dia prod=32425f41 main=32425f41 0.0h c=0 -  vigia-estado-38370507826|vigia-estado-38370507826  115265409683
+ci 2026-10-13T11:38:02Z success paso=success atrasado prod=38de705e main=f7a4c816 95.8h c=20 DESPLIEGA  vigia-estado-38370507826|vigia-estado-38370507826  115272657889
+ci 2026-10-13T11:53:34Z success paso=success al-dia prod=fdd80538 main=fdd80538 0.0h c=0 -  vigia-estado-38370507826|vigia-estado-38370507826  115281374789
+ci 2026-10-13T12:15:30Z success paso=success al-dia prod=eebc104d main=eebc104d 0.0h c=0 -  vigia-estado-38370507826|vigia-estado-38370507826  115290699946
+ci 2026-10-13T12:39:26Z success paso=success al-dia prod=7802d7cb main=7802d7cb 0.0h c=0 -  vigia-estado-38370507826|vigia-estado-38370507826  115301120229

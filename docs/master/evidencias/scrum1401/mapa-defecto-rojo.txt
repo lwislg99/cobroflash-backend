@@ -1,0 +1,231 @@
+POBLACION: 12 nombres propios de Object.prototype: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== STATUS_RANK[next] (whatsappLog.service.ts:119) · shouldApplyStatus("sent", next) · next lo pone Meta
+  control conocida   [delivered] -> true
+  control desconocida [zzz]  -> false   (este es el DEFECTO)
+  0 de 12 heredadas NO caen al defecto
+
+=== STATUS_RANK[current] (whatsappLog.service.ts:118) · shouldApplyStatus(current, "sent") · current sale de nuestra base
+  control conocida   [read] -> false
+  control desconocida [zzz]  -> true   (este es el DEFECTO)
+  VIVA  [constructor] -> false
+  VIVA  [__defineGetter__] -> false
+  VIVA  [__defineSetter__] -> false
+  VIVA  [hasOwnProperty] -> false
+  VIVA  [__lookupGetter__] -> false
+  VIVA  [__lookupSetter__] -> false
+  VIVA  [isPrototypeOf] -> false
+  VIVA  [propertyIsEnumerable] -> false
+  VIVA  [toString] -> false
+  VIVA  [valueOf] -> false
+  VIVA  [__proto__] -> false
+  VIVA  [toLocaleString] -> false
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== SINONIMOS_UNIDAD[clave] (ai.service.ts:195) · normalizarUnidad(bruto) · bruto lo pone el modelo
+  control conocida   [horas] -> "h"
+  control desconocida [zzz]  -> "ud"   (este es el DEFECTO)
+  VIVA  [constructor] -> FUNCION Object
+  VIVA  [__proto__] -> Object.prototype
+  2 de 12 heredadas NO caen al defecto: constructor, __proto__
+
+===   aguas abajo: sanearLineasAlbaran([{concepto, unidad}], SIN_VALORAR) pasado por JSON
+  control conocida   [horas] -> [{"concepto":"x","cantidad":1,"unidad":"h"}]
+  control desconocida [zzz]  -> [{"concepto":"x","cantidad":1,"unidad":"ud"}]   (este es el DEFECTO)
+  VIVA  [constructor] -> [{"concepto":"x","cantidad":1}]
+  VIVA  [__proto__] -> [{"concepto":"x","cantidad":1,"unidad":{}}]
+  2 de 12 heredadas NO caen al defecto: constructor, __proto__
+
+=== BLOQUES[clave] x2 (parteDictado.ts:313) · sanearDictadoDelParte([{descripcion, bloque}]) · bloque lo pone el modelo
+  control conocida   [materiales] -> {"mano_obra":0,"materiales":1,"sinBloque":0}
+  control desconocida [zzz]  -> {"mano_obra":0,"materiales":0,"sinBloque":1}   (este es el DEFECTO)
+  0 de 12 heredadas NO caen al defecto
+
+=== TRADE_CATALOGS (tradeCatalogs.ts:141) · getTradeCatalog(trade, "es") · trade lo manda el profesional
+  control conocida   [electricista] -> 8
+  control desconocida [zzz]  -> 0   (este es el DEFECTO)
+  0 de 12 heredadas NO caen al defecto
+
+===   la unica via: getTradeCatalog("_", pais) con el PAIS fabricado
+  control conocida   [es] -> 0
+  control desconocida [zzz]  -> 0   (este es el DEFECTO)
+  VIVA  [__proto__] -> "Object.prototype"
+  1 de 12 heredadas NO caen al defecto: __proto__
+
+=== LOCALES (locales.ts:39) · getLocale(country).currency
+  control conocida   [CO] -> "COP"
+  control desconocida [zzz]  -> "EUR"   (este es el DEFECTO)
+  0 de 12 heredadas NO caen al defecto
+
+=== TRANSITIONS[from] (job.service.ts:31) · canTransition(from, "agendado") · from sale de nuestra base
+  control conocida   [pendiente_agendar] -> true
+  control desconocida [zzz]  -> false   (este es el DEFECTO)
+  VIVA  [constructor] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [__defineGetter__] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [__defineSetter__] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [hasOwnProperty] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [__lookupGetter__] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [__lookupSetter__] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [isPrototypeOf] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [propertyIsEnumerable] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [toString] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [valueOf] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [__proto__] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  VIVA  [toLocaleString] -> TypeError: (TRANSITIONS[from] || []).includes is not a function
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== TRADE_LABELS (publicProfile.service.ts:52) · buildPublicProfileHtml({trade}) · que sale en la pagina publica
+  control conocida   [fontanero] -> {"nativo":false,"objeto":false,"fontanero":true}
+  control desconocida [zzz]  -> {"nativo":false,"objeto":false,"fontanero":false}   (este es el DEFECTO)
+  VIVA  [constructor] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [__defineGetter__] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [__defineSetter__] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [hasOwnProperty] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [__lookupGetter__] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [__lookupSetter__] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [isPrototypeOf] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [propertyIsEnumerable] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [toString] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [valueOf] -> {"nativo":true,"objeto":false,"fontanero":false}
+  VIVA  [__proto__] -> {"nativo":false,"objeto":true,"fontanero":false}
+  VIVA  [toLocaleString] -> {"nativo":true,"objeto":false,"fontanero":false}
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== STATUS_LABELS / STATUS_COLOR (customerPortal.routes.ts:35-36) · pill(status), lineas 20-38 tal cual · status sale de nuestra base
+  control conocida   [paid] -> {"undefinedEnElColor":false,"nativo":false}
+  control desconocida [zzz]  -> {"undefinedEnElColor":false,"nativo":false}   (este es el DEFECTO)
+  VIVA  [constructor] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [__defineGetter__] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [__defineSetter__] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [hasOwnProperty] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [__lookupGetter__] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [__lookupSetter__] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [isPrototypeOf] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [propertyIsEnumerable] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [toString] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [valueOf] -> {"undefinedEnElColor":true,"nativo":true}
+  VIVA  [__proto__] -> {"undefinedEnElColor":true,"nativo":false}
+  VIVA  [toLocaleString] -> {"undefinedEnElColor":true,"nativo":true}
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== REASON_LABELS (quoteDecisionLanding.routes.ts:911, pagina PUBLICA) · reasonLabel · reason lo manda el cliente final
+  control conocida   [price] -> "El precio es demasiado alto"
+  control desconocida [zzz]  -> "clave_que_no_existe_zzz"   (este es el DEFECTO)
+  VIVA  [constructor] -> FUNCION Object
+  VIVA  [__defineGetter__] -> FUNCION __defineGetter__
+  VIVA  [__defineSetter__] -> FUNCION __defineSetter__
+  VIVA  [hasOwnProperty] -> FUNCION hasOwnProperty
+  VIVA  [__lookupGetter__] -> FUNCION __lookupGetter__
+  VIVA  [__lookupSetter__] -> FUNCION __lookupSetter__
+  VIVA  [isPrototypeOf] -> FUNCION isPrototypeOf
+  VIVA  [propertyIsEnumerable] -> FUNCION propertyIsEnumerable
+  VIVA  [toString] -> FUNCION toString
+  VIVA  [valueOf] -> FUNCION valueOf
+  VIVA  [__proto__] -> Object.prototype
+  VIVA  [toLocaleString] -> FUNCION toLocaleString
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+===   aguas abajo: lo que llega a rejectionReason tras el JSON de la linea 933 y el String() de quotes.routes.ts:354
+  control conocida   [price] -> "El precio es demasiado alto"
+  control desconocida [zzz]  -> "clave_que_no_existe_zzz"   (este es el DEFECTO)
+  VIVA  [constructor] -> null
+  VIVA  [__defineGetter__] -> null
+  VIVA  [__defineSetter__] -> null
+  VIVA  [hasOwnProperty] -> null
+  VIVA  [__lookupGetter__] -> null
+  VIVA  [__lookupSetter__] -> null
+  VIVA  [isPrototypeOf] -> null
+  VIVA  [propertyIsEnumerable] -> null
+  VIVA  [toString] -> null
+  VIVA  [valueOf] -> null
+  VIVA  [__proto__] -> "[object Object]"
+  VIVA  [toLocaleString] -> null
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== reasonCount (metrics.service.ts:315) · lineas 312-320 tal cual, con DOS rechazos de ese motivo y tres de «precio» · el motivo lo escribe el cliente final por la API publica
+  control conocida   [caro] -> [{"reason":"precio","count":3},{"reason":"caro","count":2}]
+  control desconocida [zzz]  -> [{"reason":"precio","count":3},{"reason":"clave_que_no_existe_zz","count":2}]   (este es el DEFECTO)
+  VIVA  [constructor] -> [{"reason":"constructor","count":"NO-NUMERO(string): function Object() { [native code] }11"},{"reason":"precio
+  VIVA  [__defineGetter__] -> [{"reason":"__defineGetter__","count":"NO-NUMERO(string): function __defineGetter__() { [native code] "},{"rea
+  VIVA  [__defineSetter__] -> [{"reason":"__defineSetter__","count":"NO-NUMERO(string): function __defineSetter__() { [native code] "},{"rea
+  VIVA  [hasOwnProperty] -> [{"reason":"hasOwnProperty","count":"NO-NUMERO(string): function hasOwnProperty() { [native code] }1"},{"reaso
+  VIVA  [__lookupGetter__] -> [{"reason":"__lookupGetter__","count":"NO-NUMERO(string): function __lookupGetter__() { [native code] "},{"rea
+  VIVA  [__lookupSetter__] -> [{"reason":"__lookupSetter__","count":"NO-NUMERO(string): function __lookupSetter__() { [native code] "},{"rea
+  VIVA  [isPrototypeOf] -> [{"reason":"isPrototypeOf","count":"NO-NUMERO(string): function isPrototypeOf() { [native code] }11"},{"reason
+  VIVA  [propertyIsEnumerable] -> [{"reason":"propertyIsEnumerable","count":"NO-NUMERO(string): function propertyIsEnumerable() { [native co"},{
+  VIVA  [toString] -> [{"reason":"toString","count":"NO-NUMERO(string): function toString() { [native code] }11"},{"reason":"precio"
+  VIVA  [valueOf] -> [{"reason":"valueOf","count":"NO-NUMERO(string): function valueOf() { [native code] }11"},{"reason":"precio","
+  VIVA  [__proto__] -> [{"reason":"precio","count":3}]
+  VIVA  [toLocaleString] -> [{"reason":"toLocaleString","count":"NO-NUMERO(string): function toLocaleString() { [native code] }1"},{"reaso
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== CHARGE_STATUS_A_RESULTADO y statusMap (payMp.routes.ts:98 y :107) · lineas 84-89, 98 y 100-107 · charge.status sale de nuestra base
+  control conocida   [paid] -> {"status":"approved","titulo":"¡Pago aprobado!"}
+  control desconocida [zzz]  -> {"status":"pending","titulo":"Pago en proceso"}   (este es el DEFECTO)
+  VIVA  [constructor] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [__defineGetter__] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [__defineSetter__] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [hasOwnProperty] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [__lookupGetter__] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [__lookupSetter__] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [isPrototypeOf] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [propertyIsEnumerable] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [toString] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [valueOf] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  VIVA  [__proto__] -> {"status":"NO-CADENA:object","titulo":"Pago en proceso"}
+  VIVA  [toLocaleString] -> {"status":"NO-CADENA:function","titulo":"Pago en proceso"}
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== SH (receipt.routes.ts:267) · lineas 261-267 · ch.status sale de nuestra base
+  control conocida   [paid] -> {"title":"Pago confirmado","cls":"paid"}
+  control desconocida [zzz]  -> {"title":"Pago pendiente","cls":"pending"}   (este es el DEFECTO)
+  VIVA  [constructor] -> {}
+  VIVA  [__defineGetter__] -> {}
+  VIVA  [__defineSetter__] -> {}
+  VIVA  [hasOwnProperty] -> {}
+  VIVA  [__lookupGetter__] -> {}
+  VIVA  [__lookupSetter__] -> {}
+  VIVA  [isPrototypeOf] -> {}
+  VIVA  [propertyIsEnumerable] -> {}
+  VIVA  [toString] -> {}
+  VIVA  [valueOf] -> {}
+  VIVA  [__proto__] -> {}
+  VIVA  [toLocaleString] -> {}
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+=== CONTEXT_LABEL (botFlow.service.ts:630) · lineas 625-630 · lastAction lo escribe nuestro bot
+  control conocida   [pay] -> "estaba mirando sus pagos pendientes"
+  control desconocida [zzz]  -> "estaba en el menú"   (este es el DEFECTO)
+  VIVA  [constructor] -> FUNCION Object
+  VIVA  [__defineGetter__] -> FUNCION __defineGetter__
+  VIVA  [__defineSetter__] -> FUNCION __defineSetter__
+  VIVA  [hasOwnProperty] -> FUNCION hasOwnProperty
+  VIVA  [__lookupGetter__] -> FUNCION __lookupGetter__
+  VIVA  [__lookupSetter__] -> FUNCION __lookupSetter__
+  VIVA  [isPrototypeOf] -> FUNCION isPrototypeOf
+  VIVA  [propertyIsEnumerable] -> FUNCION propertyIsEnumerable
+  VIVA  [toString] -> FUNCION toString
+  VIVA  [valueOf] -> FUNCION valueOf
+  VIVA  [__proto__] -> Object.prototype
+  VIVA  [toLocaleString] -> FUNCION toLocaleString
+  12 de 12 heredadas NO caen al defecto: constructor, __defineGetter__, __defineSetter__, hasOwnProperty, __lookupGetter__, __lookupSetter__, isPrototypeOf, propertyIsEnumerable, toString, valueOf, __proto__, toLocaleString
+
+TOTAL: 17 bancos · 204 casos con clave heredada
+   0 vivas · STATUS_RANK[next] (whatsappLog.service.ts:119) · shouldApplyStatus("sent", next) · next lo pone Meta
+  12 vivas · STATUS_RANK[current] (whatsappLog.service.ts:118) · shouldApplyStatus(current, "sent") · current sale de nuestra base
+   2 vivas · SINONIMOS_UNIDAD[clave] (ai.service.ts:195) · normalizarUnidad(bruto) · bruto lo pone el modelo
+   2 vivas · aguas abajo: sanearLineasAlbaran([{concepto, unidad}], SIN_VALORAR) pasado por JSON
+   0 vivas · BLOQUES[clave] x2 (parteDictado.ts:313) · sanearDictadoDelParte([{descripcion, bloque}]) · bloque lo pone el modelo
+   0 vivas · TRADE_CATALOGS (tradeCatalogs.ts:141) · getTradeCatalog(trade, "es") · trade lo manda el profesional
+   1 vivas · la unica via: getTradeCatalog("_", pais) con el PAIS fabricado
+   0 vivas · LOCALES (locales.ts:39) · getLocale(country).currency
+  12 vivas · TRANSITIONS[from] (job.service.ts:31) · canTransition(from, "agendado") · from sale de nuestra base
+  12 vivas · TRADE_LABELS (publicProfile.service.ts:52) · buildPublicProfileHtml({trade}) · que sale en la pagina publica
+  12 vivas · STATUS_LABELS / STATUS_COLOR (customerPortal.routes.ts:35-36) · pill(status), lineas 20-38 tal cual · status sale de nue
+  12 vivas · REASON_LABELS (quoteDecisionLanding.routes.ts:911, pagina PUBLICA) · reasonLabel · reason lo manda el cliente final
+  12 vivas · aguas abajo: lo que llega a rejectionReason tras el JSON de la linea 933 y el String() de quotes.routes.ts:354
+  12 vivas · reasonCount (metrics.service.ts:315) · lineas 312-320 tal cual, con DOS rechazos de ese motivo y tres de «precio» · el m
+  12 vivas · CHARGE_STATUS_A_RESULTADO y statusMap (payMp.routes.ts:98 y :107) · lineas 84-89, 98 y 100-107 · charge.status sale de n
+  12 vivas · SH (receipt.routes.ts:267) · lineas 261-267 · ch.status sale de nuestra base
+  12 vivas · CONTEXT_LABEL (botFlow.service.ts:630) · lineas 625-630 · lastAction lo escribe nuestro bot
+EXIT=0

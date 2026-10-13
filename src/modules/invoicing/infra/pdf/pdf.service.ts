@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
-import { formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 // SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
@@ -987,7 +987,7 @@ params.lines.forEach((l) => {
 
   const qty = String(l.qty ?? '');
   const price = Number.isFinite(l.price) ? fmtImporte(l.price) : '';
-  const vat = Number.isFinite(l.tax) ? (l.tax * 100).toFixed(0) + '%' : '';
+  const vat = Number.isFinite(l.tax) ? rotuloDeTipo(tipoEnPorcentaje(l.tax)) + '%' : '';
   const total = Number.isFinite(lineTotal) ? fmtImporte(lineTotal) : '';
 
   const y0 = doc.y;

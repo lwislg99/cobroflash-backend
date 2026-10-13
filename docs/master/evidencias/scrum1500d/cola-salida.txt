@@ -1,0 +1,114 @@
+SCRUM-1500d · ¿existe la cola de VfSubmission? · lectura de src/ por AST
+población: 321 ficheros .ts en src/ · 0 sin parsear
+   OK  control · la población no está vacía → 321 ficheros
+   OK  control · ningún fichero quedó sin parsear → 0
+
+① LAS DOS LÍNEAS DEL MÁSTER (se localizan por su frase; el número se comprueba)
+   máster: 1905 líneas
+   OK  control · «La cola de remisión a la AEAT NO está construida» está en UNA línea y es la 404 → líneas [404]
+   L404 literal: **La cola de remisión a la AEAT NO está construida** — no hay tabla, no hay envío, cero llamadas de red (`docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8-9). Su diseño, antes descrito aquí como `VfSubmission`, vive en S1-D (Parte U1.3) hasta que se construya.
+   OK  control · «`enviarSobre` no tiene ningún llamador» está en UNA línea y es la 980 → líneas [980]
+   L980 literal: S1-D ~~✅~~ 🟡 NO HECHO — la VÍA está DECIDIDA 2026-09-16 (fundador): la representación ante la AEAT se hará como COLABORADOR SOCIAL. La vía MERCHANT no se implementa. Ningún certificado de colaborador social viaja a ninguna sesión, ni de prueba. *(1-oct-2026, SCRUM-1319: el ✅ que había aquí marcaba esa decisión, no el hito. Su «Done» es ≥10 registros (alta/anulación/R1) aceptados consecutivos, y hay 3 aceptados en pruebas (SCRUM-1110, SCRUM-1296); `enviarSobre` no tiene ningún llamador en `src/`.)*
+   OK  control · una palabra derivada no está en el máster → «VfSubmissionZ» 0 líneas
+   todas las líneas del máster que nombran VfSubmission:
+     L156: …src/modules/fiscal/verifactu/ ← SIF-1 (F1): sif.client.ts + cola VfSubmission…
+     L404: …/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8-9). Su diseño, antes descrito aquí como `VfSubmission`, vive en S1-D (Parte U1.3) hasta que se construya.…
+     L1060: …- **S1-D · Envío en pruebas AEAT:** `src/modules/fiscal/verifactu/sif.client.ts` + cola `VfSubmission {invoiceId,status,attempts,lastError}` + retry backoff + incidencias/subsanación + logs legibles.…
+
+② QUIÉN ESCRIBE FILAS (toda llamada `<algo>.vfSubmission.<método de escritura>()` de src/)
+     src/modules/fiscal/verifactu/sif.procesador.ts:120 · prisma.vfSubmission.updateMany() · en procesarObligado · status [data] sent
+     src/modules/fiscal/verifactu/sif.procesador.ts:168 · prisma.vfSubmission.update() · en aplicar · status [data] NO LITERAL: d.estado
+     src/modules/invoicing/domain/encolarRemision.ts:61 · tx.vfSubmission.create() · en encolarAltaTrasSellado
+
+③ QUIÉN LAS LEE (toda llamada `<algo>.vfSubmission.<método de lectura>()` de src/)
+     src/modules/fiscal/verifactu/sif.procesador.ts:81 · prisma.vfSubmission.findMany() · en procesarObligado · status [where] sent
+     src/modules/fiscal/verifactu/sif.procesador.ts:98 · prisma.vfSubmission.findMany() · en procesarObligado · status [where] pending
+     src/modules/invoicing/domain/encolarRemision.ts:57 · tx.vfSubmission.count() · en encolarAltaTrasSellado
+     src/modules/system/domain/borradoMerchant.ts:225 · prisma.vfSubmission.count() · en borrarMerchant
+   accesos que no son ni lectura ni escritura conocida: 1
+     src/modules/system/domain/barridoDemo.ts:83 · porModelo.vfSubmission.(sin método)() · en barridoDemo
+   OK  control · un modelo derivado que no existe → «vfSubmissionZ» 0 accesos
+   OK  control · el mismo recorrido ve un modelo que se sabe usado (invoice) → 114 accesos a .invoice
+   por otras vías (cadena, relación, tabla en SQL):
+     «vfSubmission» fuera de comentarios, como cadena o propiedad: 5 → src/modules/system/domain/barridoDemo.ts:82 cadena «vfSubmission» · src/modules/system/domain/barridoDemo.ts:83 cadena «vfSubmission» · src/modules/system/domain/borradoMerchant.ts:158 propiedad · src/modules/system/domain/borradoMerchant.ts:231 cadena «vfSubmission» · src/modules/system/domain/borradoMerchant.ts:241 cadena «vfSubmission»
+     «vfSubmissions» fuera de comentarios, como cadena o propiedad: 0
+     «vf_submissions» fuera de comentarios, como cadena o propiedad: 0
+     «vf_flujo_obligado» fuera de comentarios, como cadena o propiedad: 0
+     «vfSubmissionZ» fuera de comentarios, como cadena o propiedad: 0
+
+④ QUIÉN LLAMA A CADA PIEZA (identificadores del AST: un comentario o una cadena no cuentan)
+   encolarAltaTrasSellado: declara 1 · importa como valor 1 · importa como tipo 0 · LLAMADAS 1 · otras referencias 0
+       declara src/modules/invoicing/domain/encolarRemision.ts:33
+       importa src/modules/invoicing/domain/selladoEstado.ts:48
+       LLAMA src/modules/invoicing/domain/selladoEstado.ts:173 (en sellarTrasEmision)
+   procesarObligado: declara 1 · importa como valor 0 · importa como tipo 0 · LLAMADAS 0 · otras referencias 0
+       declara src/modules/fiscal/verifactu/sif.procesador.ts:70
+   enviarSobre: declara 1 · importa como valor 0 · importa como tipo 0 · LLAMADAS 0 · otras referencias 0
+       declara src/modules/fiscal/verifactu/sif.client.ts:355
+   decidirTrasEnvio: declara 1 · importa como valor 1 · importa como tipo 0 · LLAMADAS 1 · otras referencias 2
+       declara src/modules/fiscal/verifactu/sif.cola.ts:140
+       importa src/modules/fiscal/verifactu/sif.procesador.ts:25
+       LLAMA src/modules/fiscal/verifactu/sif.procesador.ts:128 (en procesarObligado)
+       referencia src/modules/fiscal/verifactu/sif.procesador.ts:28 (TypeQuery)
+       referencia src/modules/fiscal/verifactu/sif.procesador.ts:163 (TypeQuery)
+   recuperarEnviadoSinCierre: declara 1 · importa como valor 1 · importa como tipo 0 · LLAMADAS 1 · otras referencias 0
+       declara src/modules/fiscal/verifactu/sif.cola.ts:99
+       importa src/modules/fiscal/verifactu/sif.procesador.ts:25
+       LLAMA src/modules/fiscal/verifactu/sif.procesador.ts:88 (en procesarObligado)
+   trocear: declara 1 · importa como valor 0 · importa como tipo 0 · LLAMADAS 0 · otras referencias 0
+       declara src/modules/fiscal/verifactu/sif.cola.ts:73
+   idDelRegistro: declara 1 · importa como valor 0 · importa como tipo 0 · LLAMADAS 2 · otras referencias 0
+       declara src/modules/fiscal/verifactu/sif.procesador.ts:41
+       LLAMA src/modules/fiscal/verifactu/sif.procesador.ts:86 (en procesarObligado)
+       LLAMA src/modules/fiscal/verifactu/sif.procesador.ts:105 (en procesarObligado)
+   OK  control · una función derivada que no existe → «procesarObligadoZ» 0 usos
+   OK  control · el mismo recorrido ve llamadas que se saben muchas (sellarTrasEmision) → 11 llamadas
+   OK  control · el encolado SÍ tiene quien lo llame → 1 llamadas
+
+④bis QUÉ CARGA EL PROCESO: grafo de import/require/import() desde src/index.ts (los `import type` no cargan nada)
+   alcanzables desde src/index.ts: 299 de 321 · importaciones relativas sin resolver: 0
+     SE CARGA    src/core/cron/cron.ts
+     SE CARGA    src/modules/invoicing/domain/selladoEstado.ts
+     SE CARGA    src/modules/invoicing/domain/encolarRemision.ts
+     SE CARGA    src/modules/fiscal/verifactu/registro.builder.ts
+     NO SE CARGA src/modules/fiscal/verifactu/sif.cola.ts
+     NO SE CARGA src/modules/fiscal/verifactu/sif.procesador.ts
+     NO SE CARGA src/modules/fiscal/verifactu/sif.client.ts
+   OK  control · las importaciones relativas se resuelven todas → 0 sin resolver
+   OK  control · el grafo ve lo que se sabe cargado (cron.ts y el encolado) → los dos alcanzables
+   quién importa cada fichero de la cola (cualquier fichero de src/, cargado o no):
+     src/modules/fiscal/verifactu/sif.cola.ts ← src/modules/fiscal/verifactu/sif.procesador.ts
+     src/modules/fiscal/verifactu/sif.procesador.ts ← NADIE (como valor)
+     src/modules/fiscal/verifactu/sif.client.ts ← NADIE (como valor)
+
+④ter LO QUE SE PROGRAMA: toda llamada `.schedule(…)`, `setInterval(…)` y `setTimeout(…)` de src/, y a qué llama dentro
+     src/core/cron/cron.ts:58 schedule('0 * * * *') → llama a: expireQuotes, sendPendingReminders
+     src/core/cron/cron.ts:73 schedule('0 10 * * *') → llama a: sendInvoicePaymentReminders
+     src/core/cron/cron.ts:84 schedule('0 10 * * *') → llama a: runMaintenanceProposals, avisarSiEntroClienteReal
+     src/core/cron/cron.ts:103 schedule('0 9 * * 1') → llama a: sendWeeklyDigests, resumenDelParte
+     src/core/cron/cron.ts:120 schedule('0 8 * * *') → llama a: runLifecycleEmails, resumenDelParte
+     src/core/cron/cron.ts:145 schedule('15 3 * * *') → llama a: barrerSellosAlbaran, resumenDelBarrido
+   .schedule(): 6 · setInterval/setTimeout: 5 · de todos ellos, los que tocan la cola (llaman a una de sus piezas o al modelo): 0
+   OK  control · los .schedule() vistos son los `programar(` de cron.ts → 6 vistos, 6 registrados
+
+⑤ LOS VALORES DE status
+   esquema · enum VfSubmissionStatus: pending, sent, accepted, rejected, manual_review · @default(pending)
+   código · ESTADOS_VF_SUBMISSION (sif.cola.ts): pending, sent, accepted, rejected, manual_review
+   valor · ¿lo escribe alguien? · ¿lo filtra una lectura? · líneas del máster que lo traen · de ellas, las que nombran VfSubmission
+     pending        · escribe: prisma/schema.prisma @default ; sif.cola.ts:108 (decisión → sif.procesador.ts `status: d.estado`) · lectura con where: src/modules/fiscal/verifactu/sif.procesador.ts:98 · máster: 9 líneas · con VfSubmission: 0
+     sent           · escribe: src/modules/fiscal/verifactu/sif.procesador.ts:120 · lectura con where: src/modules/fiscal/verifactu/sif.procesador.ts:81 · máster: 17 líneas · con VfSubmission: 0
+     accepted       · escribe: sif.cola.ts:118,121,126,129 (decisión → sif.procesador.ts `status: d.estado`) · lectura con where: ninguna · máster: 8 líneas · con VfSubmission: 0
+     rejected       · escribe: sif.cola.ts:131,175,195 (decisión → sif.procesador.ts `status: d.estado`) · lectura con where: ninguna · máster: 1 líneas (398) · con VfSubmission: 0
+     manual_review  · escribe: sif.cola.ts:106,123,161 (decisión → sif.procesador.ts `status: d.estado`) · lectura con where: ninguna · máster: 1 líneas (580) · con VfSubmission: 0
+   OK  control · el enum del esquema y la constante del código son la misma lista → 5 y 5
+   OK  control · `manual_review` sí está en el máster (el rastro ve) → aparece
+
+⑥ EL DETECTOR DE LA CASA (scripts/_guard-afirmacion-fiscal.mjs · envioConstruido, SCRUM-1128)
+   construido: false · llamantes de enviarSobre: 0 · flag SIF_ENABLED: leído true, on false · ficheros leídos: 321 · líneas con host de la AEAT vistas: 5 · esquema leído: true
+   señales: cola @ prisma/schema.prisma
+   OK  control · el detector de la casa leyó la misma población → 321 y 321
+   OK  control · el detector de la casa no está ciego (ve el host de la AEAT) → 5 líneas
+   OK  control · su detector de llamadas cuenta una llamada fabricada → 1 en un fuente de prueba en memoria
+   OK  control · y no cuenta un `import type` → 0
+
+CONTROLES: todos en su sitio

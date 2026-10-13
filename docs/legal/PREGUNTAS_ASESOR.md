@@ -458,10 +458,10 @@ web la menciona y el documento todavía no está emitido.**
 * **Incluye** el bloque obligatorio `SistemaInformatico` —productor, NIF, nombre del sistema,
   `idSistema`, versión, nº de instalación, `soloVerifactu = 'S'`— en `registro.builder.ts:19-30`,
   ligado explícitamente a la declaración responsable.
-* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`:
+* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`: *(cita puesta al día el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: ese comentario se corrigió el 8-oct-2026 en SCRUM-1500e y la cita de aquí había dejado de ser literal; los corchetes de dentro son del propio comentario; puesta al día otra vez el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993, al corregirse en él «Cero clientes SOAP/mTLS contra la AEAT»)*
 
-  > «**"se envía" NO EXISTE.** Cero clientes SOAP/mTLS contra la AEAT, `VfSubmission` no está en el
-  > schema, no hay cola de remisión; `applyVeriFactu` calcula la cadena de huellas y la URL del QR
+  > «**"se envía" NO EXISTE.** Nada envía a la AEAT. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «Cero clientes SOAP/mTLS contra la AEAT», que es falso como «no existe ningún cliente» desde SCRUM-1127 y sigue siendo cierto como «nada envía». Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway.] [Corregido el 8-oct-2026, SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925: aquí decía «`VfSubmission` no está en el schema, no hay cola de remisión», y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
+  > `applyVeriFactu` calcula la cadena de huellas y la URL del QR
   > —o sea **SELLA EN LOCAL**— y los XSD están vendorizados pero **nadie los manda a ningún
   > sitio**. Hoy todo es "se guarda".»
 
@@ -690,7 +690,7 @@ pantalla pero se ven marcadas**. No se han reescrito: lo que hay abajo es lo que
 
 ### 21.1 · `descuadre` — 🔴 la que más importa, y no es un rótulo
 
-**(a) Qué la dispara.** `libroRegistroView.js:231`, dentro de `if (asientos.length === 0)` (`:229`):
+**(a) Qué la dispara.** `libroRegistroView.js:246`, dentro de `if (asientos.length === 0)` (`:244`):
 
 ```js
 if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');
@@ -701,7 +701,7 @@ Es decir: **se examinaron N facturas y no salió NI UN asiento**. `miradas` est�
 existe justamente para separar «no había» de «algo está roto». Cero asientos con `miradas: 0` es un
 negocio que no ha facturado; cero asientos con `miradas: 40` es **un libro que no cuadra**.
 
-**(b) Qué se pinta hoy** (`libroRegistroView.js:53-55`):
+**(b) Qué se pinta hoy** (`libroRegistroView.js:60-62`):
 
 > `[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 40 facturas y no ha salido
 > ningún asiento. No lo tomes como que no has facturado.`
@@ -721,7 +721,7 @@ Tres preguntas concretas:
 
 ### 21.2 · `avisoIlegibles` — importes que no se pudieron leer
 
-**(a) Qué la dispara.** `libroRegistroView.js:223-225`:
+**(a) Qué la dispara.** `libroRegistroView.js:238-240`:
 
 ```js
 if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) { … }
@@ -742,7 +742,7 @@ entender el profesional sobre la validez del libro mientras haya importes ilegib
 
 ### 21.3 · `avisoAjenas` — filas descartadas por no ser de este negocio
 
-**(a) Qué la dispara.** `libroRegistroView.js:226`:
+**(a) Qué la dispara.** `libroRegistroView.js:241`:
 
 ```js
 if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
@@ -761,7 +761,7 @@ que tiene que avisarnos a nosotros y no a él? Y si lo ve, ¿qué se le pide que
 
 ### 21.4 · `avisoSinNumero` — facturas sin número, que no son asiento
 
-**(a) Qué la dispara.** `libroRegistroView.js:227`:
+**(a) Qué la dispara.** `libroRegistroView.js:242`:
 
 ```js
 if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
@@ -783,7 +783,7 @@ factura sin número quede fuera del libro y solo se avise?
 
 ### 21.5 · `trazaNoSellado` — albaranes posteriores al sello
 
-**(a) Qué la dispara.** `libroRegistroView.js:332-334`, por cada fila de la tabla:
+**(a) Qué la dispara.** `libroRegistroView.js:346-349`, por cada fila de la tabla:
 
 ```js
 if (e.albaranesNoSellados > 0) { … COPY.trazaNoSellado + ' ×' + e.albaranesNoSellados … }
@@ -1270,14 +1270,14 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 | Caso | Norma | En la factura (ROF) | En el registro VeriFactu |
 |---|---|---|---|
 | Ejecución de obra de **construcción o rehabilitación** de edificación, entre empresarios, contrato promotor-contratista o subcontrata | Art. 84.Uno.2.º.f) LIVA ✅ | Sin IVA + mención «inversión del sujeto pasivo» (art. 6.1.m ROF) | `CalificacionOperacion = S2` ✅ |
-| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ✅ | Tipo 10 % | `S1`, tipo 10 |
+| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ✅ (⚠ cambia el 1-dic-2026 si se convalida el RDL 29/2026: nota del 7-oct, abajo) | Tipo 10 % | `S1`, tipo 10 |
 | Operación **exenta** (art. 20 LIVA; rara en oficios) | Art. 20 LIVA | Referencia al precepto o «operación exenta» (art. 6.1.j ROF) | `OperacionExenta = E1` ✅ |
 | **No sujeta** | Art. 7 LIVA | Sin cuota | `N1` ✅ |
 | Mezcla de casos en una factura | Art. 6.2 ROF | Base **separada** por cada bloque | Una línea de desglose por bloque |
 
 **Cotejado 23-sep-2026 (SCRUM-1088) — las 6 marcas de esta tabla, CONFIRMADAS:**
 - **Art. 84.Uno.2.º.f) LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-84-ley-impuesto-sobre-valor-anadido-iva): *"Ejecuciones de obra, con o sin aportación de materiales, así como las cesiones de personal para su realización, consecuencia de contratos directamente formalizados entre el promotor y el contratista que tengan por objeto la urbanización de terrenos o la construcción o rehabilitación de edificaciones."* — y confirma también el matiz «o subcontrata»: la regla aplica igual cuando el destinatario es el contratista principal u otros subcontratistas.
-- **Art. 91.Uno.2.10.º LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-91-ley-impuesto-sobre-valor-anadido-iva): exige que «el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda... para su uso particular» (con la excepción de comunidades de propietarios), que «la construcción o rehabilitación... haya concluido al menos dos años antes» y que el coste de los materiales aportados «no exceda del 40 por ciento de la base imponible». Coincide exactamente con la fila de la tabla.
+- **Art. 91.Uno.2.10.º LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-91-ley-impuesto-sobre-valor-anadido-iva): exige que «el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda... para su uso particular» (con la excepción de comunidades de propietarios), que «la construcción o rehabilitación... haya concluido al menos dos años antes» y que el coste de los materiales aportados «no exceda del 40 por ciento de la base imponible». Coincide exactamente con la fila de la tabla. **⚠ Nota del 7-oct-2026 (SCRUM-1316; la escribe una sesión de IA, J5, no un asesor):** las tres citas se cotejaron ese día contra el **BOE consolidado** (API de legislación consolidada, `BOE-A-1992-28740`, art. 91) y coinciden con la redacción que se aplica hoy. **Esa redacción tiene fecha de caducidad publicada:** el Real Decreto-ley 29/2026, de 6 de octubre (`BOE-A-2026-20823`, art. 7.Tres), la cambia **con efectos de 1 de diciembre de 2026**: añade las viviendas destinadas a alquiler como vivienda habitual y **condiciona el tipo reducido a que la obra se haya pagado por tarjeta, transferencia bancaria, cheque nominativo o ingreso en cuenta**. Ese real decreto-ley **no está convalidado** a 7-oct-2026, y repite el art. 7 del Real Decreto-ley 26/2026, que el Congreso **derogó** el 2-oct-2026 (`BOE-A-2026-20526`). La fila de la tabla describe la redacción anterior a ese cambio. Detalle y literales: `docs/master/SCRUM-1316.md`, sección «SCRUM-1316b».
 - **Claves `S1`/`S2`/`N1`/`E1`**, cotejadas contra el XSD oficial de la AEAT ya vendorizado en este mismo repo (`src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd`, namespace `www2.agenciatributaria.gob.es/.../SuministroInformacion.xsd` — es la especificación técnica de la propia AEAT, no una transcripción de tercero): `S1` = *"OPERACIÓN SUJETA Y NO EXENTA - SIN INVERSIÓN DEL SUJETO PASIVO"* (:1240-1242), `S2` = *"...CON INVERSIÓN DEL SUJETO PASIVO"* (:1245-1247), `N1` = *"OPERACIÓN NO SUJETA ARTÍCULO 7, 14, OTROS"* (:1250-1252), `E1` = *"EXENTA por Art. 20"* (:681-683). Las cuatro coinciden letra a letra con el uso que les da esta tabla.
 
 Lo que no depende de YaQu: si una obra concreta es ISP o 10 % lo decide el hecho (quién es el destinatario, qué edificio, cuánto material). Encaja con `HITOS-producto.md`: el sistema pregunta, no decide.
@@ -1326,7 +1326,7 @@ literal en el sitio de cada uno, arriba):
 | Cita | Veredicto | Fuente cotejada |
 |---|---|---|
 | Art. 84.Uno.2.º.f) LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
-| Art. 91.Uno.2.10.º LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
+| Art. 91.Uno.2.10.º LIVA | ✅ CONFIRMADA **la redacción que se aplica a 7-oct-2026**; ⚠ hay otra publicada con efectos de 1-dic-2026 (RDL 29/2026, sin convalidar): ver la nota del 7-oct en el bloque F y SCRUM-1316 | Iberley (BOE-A-1992-28740); **recotejada contra el BOE consolidado el 7-oct-2026** |
 | Art. 78.Tres.3.º LIVA | ✅ CONFIRMADA, con matiz (ver P12: "mandato expreso" y no deducción del IVA no estaban en la redacción original) | Iberley (BOE-A-1992-28740) |
 | Art. 30 CCom | ✅ CONFIRMADA, literal exacto | **BOE consolidado directo** (BOE-A-1885-6627) |
 | Art. 66 LGT | ✅ CONFIRMADA, literal exacto (a-d) | Iberley (BOE-A-2003-23186) |

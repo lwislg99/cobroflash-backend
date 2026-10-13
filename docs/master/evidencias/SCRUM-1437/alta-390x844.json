@@ -1,0 +1,64 @@
+{
+  "ventana": "390x844",
+  "cortadas": [
+    "POST /admin/entorno",
+    "POST /__control-s0-no-existe"
+  ],
+  "gets": 116,
+  "pasos": [
+    "clic 1: accion rapida del inicio [👤]",
+    "pantalla 1: lista de clientes",
+    "clic 2: boton de la lista [Nuevo cliente]",
+    "pantalla 2: formulario de cliente nuevo",
+    "campo 1: nombre",
+    "«Guardar»: a la vista, NO PULSADO (seria el clic 3)"
+  ],
+  "clics": 2,
+  "campos": 1,
+  "pantallas": 2,
+  "build": "21c27b1127d937c99fae56c1b2de67eff1d03ccb",
+  "control": "cortada",
+  "cortadasAntesDePulsar": 2,
+  "camposDelFormulario": 25,
+  "obligatorios": [
+    "Nombre"
+  ],
+  "conValorDeEntrada": [
+    "=RECIENTES",
+    "prefijoPais=34",
+    "prefijoPaisMovil=34",
+    "País=ES"
+  ],
+  "listaDeCampos": [
+    "  Buscar por nombre, teléfono, email o referencia… (text)",
+    "   (select)",
+    "  Etiquetas (text)",
+    "  Empresa (radio)",
+    "  Persona (radio)",
+    "* Nombre (text)",
+    "  prefijoPais (select)",
+    "  phone (text)",
+    "  prefijoPaisMovil (select)",
+    "  mobile (text)",
+    "  Email (email)",
+    "  Razón social (empresa, opcional) (text)",
+    "  NIF/CIF (opcional) (text)",
+    "  Empresa (select)",
+    "  Dirección (text)",
+    "  Población (text)",
+    "  Código postal (text)",
+    "  Provincia (text)",
+    "  País (select)",
+    "  Tipo de cliente (select)",
+    "  Recargo de equivalencia (select)",
+    "  Referencia interna (text)",
+    "  Descuento pactado (%) (number)",
+    "  Notas (textarea)",
+    "  Baja de WhatsApp: no enviarle más mensajes (el cliente lo pi (checkbox)"
+  ],
+  "guardarEnVacio": "activo",
+  "guardarConNombre": "activo",
+  "clicsHastaElBoton": 2,
+  "clicsConGuardar": 3,
+  "cortadasDespuesDelControl": []
+}

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { config } from '../../../../core/config/env';
+import { formatMoneyEs } from '../../../../core/utils/utils';
 import { verifyMpWebhookSignature, getMpPayment } from '../../../../integrations/mercadopago';
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
@@ -181,8 +182,9 @@ router.post('/', async (req, res) => {
       // Confirmación de pago al cliente (J1: payment_confirmation_invoice_es, con botón
       // "Ver documento" → /recibo/:token; copy neutro factura/justificante).
       const merchant = updated.merchant as any;
-      const amt = Number(updated.amount).toFixed(2);
       const cur = updated.currency;
+      // SCRUM-1436: lo que lee el PROFESIONAL (historial y aviso), en la forma de la casa.
+      const importe = formatMoneyEs(updated.amount, cur);
       const invConf = invoiceId
         ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
         : null;
@@ -195,8 +197,8 @@ router.post('/', async (req, res) => {
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
-          // SCRUM-931: en bruto. `amt` sigue vivo debajo para el `detail` del panel, que queda
-          // FUERA del alcance decidido de este ticket y se deja como estaba.
+          // SCRUM-931: en bruto; lo formatea quien envía. El `detail` del panel y el aviso al PRO
+          // llevan `importe`, de arriba (SCRUM-1436).
           amount: Number(updated.amount),
           currency: cur,
           documentNumber,
@@ -211,7 +213,7 @@ router.post('/', async (req, res) => {
           customerId: updated.customerId,
           type: 'payment_received',
           title: 'Pago recibido (Mercado Pago)',
-          detail: `${Number(updated.amount).toFixed(2)} ${updated.currency}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
+          detail: `${importe}${invConf?.number ? ` · ${isReceiptNumber(invConf.number) ? 'Justificante' : 'Factura'} ${invConf.number}` : ''}`,
         });
       }
 
@@ -240,8 +242,8 @@ router.post('/', async (req, res) => {
           merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro
           merchantPhone: merchant?.whatsappPhone,
           customerName,
-          freeText: `💰 Pago recibido (Mercado Pago) de ${customerName}: ${payment.amount} ${payment.currency}`,
-          detail: `${amt} ${cur}${documentNumber ? ` · ${documentNumber}` : ''}`,
+          freeText: `💰 Pago recibido (Mercado Pago) de ${customerName}: ${formatMoneyEs(payment.amount, payment.currency)}`,
+          detail: `${importe}${documentNumber ? ` · ${documentNumber}` : ''}`,
         }).catch(() => {});
       }
 

@@ -1,0 +1,3 @@
+
+[señal de nombres · tasa] 28 de 50 runs medidos con nombres ausentes (56.0 %) · población 50 runs · sin medir 0 · por ENCIMA del 5 % sobre 50 runs medidos · tope 2026-10-15 (SCRUM-1339 c.17935)
+

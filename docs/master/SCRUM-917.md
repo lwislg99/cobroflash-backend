@@ -883,3 +883,88 @@ Tests que referencian este guard —`scrum542-objetivo-tactil`, `scrum562-arbitr
 
 Fuera de este incremento: `renderCustomer360View` sigue con 6 excepciones de `.btn-sm` esperando
 la decisión del fundador (SCRUM-786/787). No se toca aquí.
+
+## 917i · La sección vacía de 37 px: el resumen del dinero sólo se cuelga si tiene franja (9-oct-2026)
+
+**Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:03:02Z
+A9: sin fallo que generalice — el cambio son dos líneas y lo midió entero la misma sonda antes y después; el único tropiezo (preguntar a `carriles.mjs` por una ruta que no existe) no decidió nada: se repitió con la ruta real.
+**Rama:** `scrum-917i-el-resumen-vacio-no-se-cuelga` · commit del arreglo `1fba763f8e234f0c55a95e5b1ee44941d1629d61`.
+**Sesión:** S2 (`s2-9oct`, tercera tanda). **Skill UI:** cargada (`yaqu-premium-ui`). Sección AÑADIDA: las anteriores no se tocan.
+
+Lo vio S4 el 7-oct midiendo el ticket entero en yaqu.app (c.18650, c.18723): en la ficha de un Trabajo
+sin importe, entre «Lo que falta» y «Albaranes», una sección con su relleno y su borde y nada dentro.
+Era lo único de lo que quedaba de 917 que alguien VE.
+
+### PASO 0 — se reproduce hoy, en producción
+
+Sonda `docs/master/evidencias/SCRUM-917/sonda-917i-seccion-vacia.mjs` sobre yaqu.app (build
+`85d8d01e`, cuenta QA, sólo GET, control positivo del interceptor antes de mirar). Población: el único
+Trabajo de la cuenta (el 76, sin importe) × 3 casos × 2 anchos = 6 pantallas. Los casos CON y CERO son
+el MISMO Trabajo con `totalAceptado`/`totalCobrado` puestos por la sonda en la respuesta: la vista es
+la de producción, los datos de esos dos casos no. La sonda subida es la copia de la que se corrió:
+importa `./comun.mjs` (el arranque del navegador con la sesión de la cuenta QA), que vive fuera del
+repo con las demás sondas del puesto y no se sube.
+
+| ancho | caso | secciones vacías ANTES (producción) | DESPUÉS (el fichero de la rama servido) | franja del dinero (igual antes y después) |
+|---|---|---|---|---|
+| 1280 | SIN importe | **1, de 37 px** | **0** | no hay |
+| 1280 | CON (500 / 200, puestos por la sonda) | 0 | 0 | «Aceptado 500,00 €» y «Cobrado 200,00 €», con barra |
+| 1280 | CERO (0 / 0, puestos por la sonda) | 0 | 0 | «Aceptado 0,00 €» y «Cobrado 0,00 €», sin barra |
+| 390 | SIN importe | **1, de 37 px** | **0** | no hay |
+| 390 | CON | 0 | 0 | la misma |
+| 390 | CERO | 0 | 0 | la misma |
+
+**2 de 6 antes; 0 de 6 después.** Las demás secciones miden lo mismo en las dos pasadas (162,8 ·
+252,2 · 281,8 … a 1280) y la franja sigue entre «Lo que falta» y «Albaranes». Sin desborde, sin
+errores de página, ninguna petición que no sea GET. Salidas enteras:
+`evidencias/SCRUM-917/salida-917i-antes-produccion.txt` (EXIT=1) y `salida-917i-despues-rama.txt`
+(EXIT=0). **El control positivo es la propia pasada de producción:** la misma sonda, con el código de
+antes, falla. Y lleva testigo de qué fuente corre (`cuelgaDentroDeLaGuarda`: `false` en producción,
+`true` con la rama) y control de discriminación (los tres casos pintan tres franjas distintas).
+
+La franja de CON no dice «Te falta por cobrar»: la cuenta QA está en modo justificante y ahí el foco
+se calla (SCRUM-1164). No es de este cambio; se anota para que nadie lo lea como una pérdida.
+
+### La causa y el arreglo
+
+`jobDetailView.js` creaba `sumSec` y lo colgaba del cuerpo ANTES de saber si iba a tener algo: la
+franja y la barra van bajo `if (job.totalAceptado != null)`, y el contenedor no. 18 + 18 de relleno
++ 1 de borde = los 37 px.
+
+El arreglo son dos líneas: `body.appendChild(sumSec)` baja a la primera línea de esa misma guarda.
+Entre los dos puntos no se añade nada más al cuerpo, así que el resumen ocupa el mismo sitio de antes
+cuando existe. **La condición de la franja NO se toca** (es la de SCRUM-651: «consta», no «mayor que
+cero») y ni la hoja ni ningún texto cambian.
+
+### Lo que lo vigila
+
+- `tests/scrum917i-el-resumen-vacio-no-se-cuelga.test.mjs` (2 casos, vista MONTADA en el banco): sin
+  importe, ninguna sección de la ficha queda sin texto ni control, y no hay fila de resumen; con 480 €
+  y con 0 €, el resumen está colgado UNA vez, con su franja dentro y antes de «Albaranes».
+  **Con `jobDetailView.js` de `origin/main` cae 1 de 2** («LA FICHA CUELGA 1 SECCIÓN(ES) SIN NADA
+  DENTRO (de 8)»; `git diff --numstat` de la inyección: `1 7`); con la rama, 2 de 2.
+  **Es un proxy y se dice:** el banco no pinta, no mide los 37 px; eso lo mide la sonda.
+- **¿Existe ya «la otra mitad» en otro sitio? No.** `guard:detalle-trabajo-917` (246 comprobaciones)
+  recorre la ficha en navegador pero ninguna de sus letras pregunta por una sección vacía: salía
+  246 de 246 con el defecto dentro, y sigue en 246 de 246 con la rama. `tests/scrum320` sólo ata que
+  la línea `body.appendChild(sumSec);` exista en el fuente (sigue existiendo, y sigue pasando). El
+  test nuevo mira SÓLO la ficha del Trabajo: no hay censo de «secciones vacías» para las demás fichas.
+
+### Corrido en local, con su población
+
+- Los ficheros de `tests/` que nombran `jobDetailView`: **78**. 61 que no leen `dist`: 565 tests,
+  565 pasan. 17 que leen `dist` (tras `npm run build`, EXIT 0): 169 tests, 168 pasan, 1 saltado y
+  declarado (`scrum22`, «sin QA_DB_TEST=1»), 0 fallan.
+- `node scripts/guard-detalle-trabajo-917.mjs`: 246 de 246, 0 no medidas.
+
+### Lo que NO se ha hecho, dicho
+
+- **La suite completa no se ha corrido en local:** al empezar había 0,55 GB libres de 15,9 (el umbral
+  del equipo es 2,2 GB). La corre el check obligatorio sobre el merge.
+- Las otras dos fichas que usan `detail-summary` (`invoiceDetailView.js`, `quotesDetailView.js`) se
+  han LEÍDO, no medido: cuelgan siempre el bloque de estado y el del total, así que su fila no puede
+  quedar vacía por este camino.
+- No medido: un Trabajo con importe REAL (la cuenta QA no tiene: SCRUM-1367), el rol técnico, otro
+  navegador. Pendiente tras el despliegue: la sonda sin argumento sobre yaqu.app → 0 de 6.
+- De paso, de otro carril y sin tocar: `node scripts/carriles.mjs de <ruta>` contesta un carril
+  también para una ruta que NO existe (casa el patrón `public/**`), sin decir que no la ha encontrado.

@@ -609,6 +609,19 @@ const INDIRECTAS_DECLARADAS = [
   // Fuera de los argumentos de git nombra `main` en los nombres de sus tests y en sus aserciones.
   // Lo retira quien borre el test.
   'tests/scrum1458-vigia-main-parado.test.mjs',
+  // SCRUM-1298b · la sección ARRANQUE del latido. Aquí la punta es el SUJETO, igual que en el latido
+  // (SCRUM-1350) y en `ya-esta` (SCRUM-1424): la pregunta es «¿el árbol donde arrancan las sesiones trae
+  // lo que `main` trae AHORA?», y contra la base de una rama no se puede contestar. Lo que hace para no
+  // reintroducir el defecto que este guard vigila: pregunta la punta AL REMOTO con `ls-remote`, la congela
+  // en un sha y mide todo contra ESE objeto — ninguna de sus llamadas lectoras lleva la referencia móvil.
+  // Fuera de los argumentos la nombra en el valor por defecto `rama = 'main'`, en la orden que le da a
+  // quien lee y en su prosa. Herramienta de mano del orquestador; no corre en CI.
+  // Lo retira quien retire la sección.
+  'scripts/equipo/arranque.mjs',
+  // SCRUM-1298b · su test: mismo caso que 1298, 899b, 1424 y 1458 — la medición se lanza contra un
+  // repositorio SINTÉTICO en el temporal con su propio remoto desnudo, cuyo `main` no es el de nadie.
+  // Lo retira quien borre el test.
+  'tests/scrum1298b-latido-arbol-de-arranque.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

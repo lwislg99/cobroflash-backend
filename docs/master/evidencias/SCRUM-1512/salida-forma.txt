@@ -1,0 +1,6 @@
+schema.prisma: 100924 caracteres · bloque Merchant: 11005 caracteres, 185 lineas
+campos del Merchant: 79
+POSITIVO  /whatsapp/i  -> whatsappPhone:String?
+PREGUNTA  /phoneNumberId|numberId|waba|accessToken|wa.*token|businessAccount/i -> 0
+CERO      /zzzNoExiste1512/ -> 0
+en TODO el esquema, campos que casan /phoneNumberId|waba|businessAccount/i: 0 de 611

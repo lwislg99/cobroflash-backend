@@ -116,8 +116,26 @@ export const UMBRAL_CONTEXTO = 300_000;
  * 500k es el que la A19 lleva escrito («en mitad de una entrega, si pasa de 500k»), leído el 6-oct-2026 en
  * `docs/equipo/00-normas-comunes.md`. Ese día el fundador volvió a decidir el de arriba y NO éste: aquí se
  * copia el de la norma, no se propone otro. Quien lo decida cambia esta línea y la norma JUNTAS.
+ * El 7-oct-2026 el orquestador de Luis lo dejó como estaba (SCRUM-1479 c.18622), con la medición de
+ * `docs/master/evidencias/SCRUM-1479/` delante. No lo firmó el fundador: no cambia el número ni sube el gasto.
+ * BAJARLO o SUBIRLO sí es coste, y es suyo.
  */
 export const UMBRAL_CONTEXTO_A_MITAD = 500_000;
+
+/**
+ * La frase de la A19 para una ventana que ya pasó `umbral`. Es UNA para todo el que la diga (la sección
+ * CONTEXTO del latido y `contexto N`), para que dos instrumentos no le digan dos cosas a la misma sesión
+ * (SCRUM-1484b). Entre los dos números, AL TERMINAR la entrega; por encima del segundo, YA.
+ * `null` = no hay frase: o no pasa del primero, o los dos números no dejan tramo «al terminar».
+ */
+export function fraseDeRelevo({ tokens, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
+  const enK = (n) => `${Math.round(n / 1000)}k`;
+  if (!(umbralAMitad > umbral) || !(tokens > umbral)) return null;
+  const yaSinEsperar = tokens > umbralAMitad;
+  return yaSinEsperar
+    ? `por encima de ${enK(umbralAMitad)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo`
+    : `por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega`;
+}
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */
@@ -465,16 +483,29 @@ export function buscarJsonl({ sessionId, carpetas, existe }) {
 /**
  * ¿Toca relevar? Los tres casos son los de la A19 («El PUESTO es fijo; la SESIÓN se releva»), y no
  * se amplían: el cuarto caso que a uno se le ocurra es una sesión parada a mitad de una entrega.
+ *
+ * SCRUM-1484b · por encima de `umbral` el veredicto sigue siendo `RELEVAR`, y `momento` dice CUÁNDO, que
+ * es lo que la A19 distingue con sus dos números: `AL-TERMINAR` la entrega, o `YA` por encima del segundo.
+ * Hasta el 7-oct-2026 `contexto N` decía sólo «por encima de 300k» también a una sesión de 800k.
  */
-export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = false, umbral = UMBRAL_CONTEXTO }) {
+export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = false, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
   if (tandaNueva) return { veredicto: 'RELEVAR', motivo: 'empieza la tanda del día siguiente' };
   // SUELO: sin lectura no se dice «sigue». Un instrumento que no pudo mirar no da verde.
   if (!contexto) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el contexto de la sesión' };
   if (typeof ultimaActividad === 'number' && ahora - ultimaActividad > UNA_HORA_MS) {
     return { veredicto: 'RELEVAR', motivo: 'lleva más de 1 h parada: la caché de prompt ya está fría', tokens: contexto.tokens };
   }
+  // Con los dos números al revés o iguales no hay tramo «al terminar»: la misma puerta que el latido.
+  if (!(umbralAMitad > umbral)) {
+    return { veredicto: 'NO-PUDE-MIRAR', motivo: `el umbral de «a mitad de entrega» (${umbralAMitad}) no es mayor que el de «al entregar» (${umbral}): no sé qué frase le toca`, tokens: contexto.tokens };
+  }
   if (contexto.tokens > umbral) {
-    return { veredicto: 'RELEVAR', motivo: `el contexto va por ${Math.round(contexto.tokens / 1000)}k, por encima de ${Math.round(umbral / 1000)}k`, tokens: contexto.tokens };
+    return {
+      veredicto: 'RELEVAR',
+      momento: contexto.tokens > umbralAMitad ? 'YA' : 'AL-TERMINAR',
+      motivo: `el contexto va por ${Math.round(contexto.tokens / 1000)}k, ${fraseDeRelevo({ tokens: contexto.tokens, umbral, umbralAMitad })}`,
+      tokens: contexto.tokens,
+    };
   }
   return { veredicto: 'SEGUIR', motivo: `${Math.round(contexto.tokens / 1000)}k, por debajo de ${Math.round(umbral / 1000)}k`, tokens: contexto.tokens };
 }

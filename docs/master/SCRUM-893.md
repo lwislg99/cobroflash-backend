@@ -312,3 +312,77 @@ que difería era el final de línea del árbol de trabajo. La sonda válida para
 `git diff` / `git status` —vacías las dos—, no un `sha256` sobre el disco, que mide el checkout y no
 el commit. Un `sha256` que no cuadra da un susto legítimo; darlo por bueno en cualquiera de los dos
 sentidos sin medir habría sido el error.
+
+## SCRUM-893b (7-oct) · el pie de la página sólo nombra a Stripe si algo pasa por Stripe
+
+**Medido contra:** `origin/main` = `5ca9334a5025e75b1e646f6acc1174c830492360` · 2026-10-07T07:59:49Z
+A9: comprobación → `tests/scrum893b-el-pie-de-stripe.test.mjs`
+
+Carril S1 · sesión `s1-7octc` · rama `scrum-893b-pie-de-stripe-solo-si-hay-stripe`. Toca
+`payInvoice.routes.ts` (una constante y la línea del pie), su test y sus rojos. Sin esquema, sin
+texto nuevo, sin tocar `payCard.routes.ts` ni nada del camino del cobro.
+
+### Qué quedaba de SCRUM-893, mirado el 7-oct
+
+El ticket llevaba veinte días «En curso» con su código en `main` desde el 17-sep (#1414). Su banco
+corre en verde sobre la punta de hoy: **8 casos, 8 pasan, 0 saltados**.
+
+**Lo que no se ha podido ver en yaqu.app, y por qué.** La aceptación pide verlo desplegado con un
+negocio sin Connect. La cuenta de pruebas de producción (negocio 46: España, `connectStatus: none`,
+sin IBAN, sin teléfono de Bizum, `flags: null`) tiene **0 facturas** y **5 presupuestos, los 5 en
+borrador, ninguno con cobro**. Un cobro nace al enviar una factura, y un negocio español con
+`INVOICING_ES_ENABLED` apagado no puede emitirla (regla 24). O sea: hoy, en producción, ningún
+negocio español sin Connect puede tener una página de pago que abrir. Crear ese cobro a mano es
+tocar el flujo de cobro de producción, y no se ha hecho. La página queda medida ejecutando la ruta
+real contra dobles, que es lo que hace el banco; en pantalla se verá el día que exista un cobro.
+
+### El defecto de paso
+
+Con la tarjeta ofrecida a todos, el pie «Procesado por Stripe · Nunca vemos los datos de tu
+tarjeta» era verdad en todas las páginas. Desde #1414 la tarjeta sólo sale con Connect, y el pie
+siguió saliendo siempre: también en la página que sólo ofrece transferencia, en la de Bizum manual
+y en la que no ofrece ninguna vía. Lo anotó la Sesión 3 en su PASO 0 (comentario 15663) y no lo
+recogió nadie. Es justo la página que verá la clienta de cualquier negocio antes de Connect.
+
+### El arreglo
+
+El pie se pinta sólo si la lista **ya filtrada** contiene la tarjeta o el Bizum automático (los dos
+van por `/pay/card`, o sea por el Checkout de Stripe). Se mira la lista pintada y no `hasCard`
+porque el profesional puede haber quitado la tarjeta de ese cobro concreto (`payMethods`) y dejar
+sólo el Bizum automático. **No hay literal nuevo:** es el mismo texto, que deja de pintarse donde
+no es cierto. «Pago seguro y cifrado» no se toca (ver abajo).
+
+### Test — `tests/scrum893b-el-pie-de-stripe.test.mjs` (5 casos)
+
+Ejecuta `GET /pay/invoice/:token` con un doble de `prisma`. Tres casos «no lo dice» (sólo
+transferencia, sólo Bizum manual, ninguna vía) y dos «lo sigue diciendo» (tarjeta con Connect; sin
+tarjeta pero con Bizum automático). Cada caso comprueba antes que la página se pintó y que ofrece
+lo que el caso dice que ofrece.
+
+**Los dos rojos**, inyectados en `src/` con `tsc` entre uno y otro
+(`docs/master/evidencias/scrum893/rojos-893b.mjs`, base sin mutar a 0 de 5):
+
+| mutación | `git diff --numstat` | caen |
+|---|---|---|
+| A · el pie sale siempre (el código de antes) | `1 1` | los 3 «no lo dice», y sólo ésos |
+| B · el pie no sale nunca | `1 1` | los 2 «lo sigue diciendo», y sólo ésos |
+
+Restaurado: 0 de 5 y `git status` vacío.
+
+### Errores propios
+
+- **Una sonda ciega en mi propio test.** El caso de la tarjeta comprobaba
+  `html.includes('Pagar con tarjeta')`. Ese texto está además en dos comentarios del CSS que la
+  página sirve, así que daba «sí» en todas las páginas: el control positivo era una tautología. Lo
+  delató el caso del Bizum automático, que exigía lo contrario y cayó. Ahora se busca el botón
+  (`<span class="method-title">Pagar con tarjeta</span>`), y la mutación B prueba que discrimina.
+- **Un fichero en rojo sin ningún caso rojo.** Con `fetch`, el proceso del test moría al salir
+  (código `0xC0000409`, 6 de 6 pasadas) con los cinco casos en verde; con `node:http` y sin agente,
+  0 de 6. La causa no está demostrada: lo medido es que cambia con el cliente HTTP. El banco de
+  SCRUM-893 usa `fetch` y no muere (6 de 6); su último caso no hace ninguna petición.
+
+### Lo que NO está hecho
+
+- **«Pago seguro y cifrado»** sigue saliendo en la página que no ofrece ninguna vía, donde no hay
+  pago. Quitarlo o cambiarlo es decidir un texto: no lo he tocado.
+- **Verlo en yaqu.app**, por lo dicho arriba.

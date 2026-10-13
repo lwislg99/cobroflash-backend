@@ -1,0 +1,4 @@
+$ node dice.mjs datos-push-main-2026-09-07..10-07.json 2026-10-02T01:54 2026-10-07T15:44
+«cancelado-0-jobs» · poblacion 85 · no pude mirar 0 · {"ci-refs/heads/main":85}
+«con jobs (control)» · poblacion 54 · no pude mirar 0 · {"(sin la frase)":54}
+EXIT=0

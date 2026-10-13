@@ -1,0 +1,31 @@
+POBLACION: 2370 PR cerrados (límite pedido 3000) · del 2026-07-10T13:31:06Z al 2026-10-13T12:27:02Z
+  mergeados: 2316 · cerrados SIN mergear: 54 · de esos, con la rama ya borrada: 30
+  punta EN main: 1
+  punta FUERA de main: 29
+  punta que no está en este almacén (no se puede mirar): 0
+CONTROL: las tres clases suman 30 de 30 · ramas vivas leídas: 159 · control positivo, PR mergeados (tiene que ser > 0): 2316
+  #1385 · scrum-839f-control-positivo · cerrado 2026-09-17T08:40:29Z
+  #1384 · scrum-839f-control-codigo · cerrado 2026-09-17T08:40:50Z
+  #1354 · exp-union-sin-b · cerrado 2026-09-16T13:01:46Z
+  #1353 · exp-union-b · cerrado 2026-09-16T13:01:44Z
+  #1213 · scrum-834-control-e2e · cerrado 2026-09-09T08:07:56Z
+  #1194 · revert-1192-scrum-824b-el-vigia-que-no-deja-pasar · cerrado 2026-09-08T08:35:41Z
+  #626 · scrum-432-sesion4-duplicada · cerrado 2026-08-10T16:48:43Z
+  #492 · scrum-300-campos-albaran · cerrado 2026-08-06T08:55:12Z
+  #450 · scrum-312-importador-clientes · cerrado 2026-08-06T08:14:48Z
+  #449 · scrum-316-detalle-b2 · cerrado 2026-08-05T23:20:05Z
+  #378 · scrum-225-lista-a-mano · cerrado 2026-08-03T10:41:37Z
+  #371 · scrum-240-sobre-duplicado-rebasada-3 · cerrado 2026-08-03T10:41:59Z
+  #363 · scrum-240-sobre-duplicado · cerrado 2026-08-03T09:16:49Z
+  #361 · scrum-272-criterio-referencial · cerrado 2026-08-03T09:13:15Z
+  #354 · scrum-247-productor-constantes · cerrado 2026-08-03T09:13:31Z
+  #352 · scrum-260-constancia-clean-staging · cerrado 2026-08-03T09:13:40Z
+  #349 · scrum-259-diagnostico-ausencia · cerrado 2026-08-03T09:13:59Z
+  #346 · scrum-234-carrera-numeracion-rebasada · cerrado 2026-08-02T14:05:52Z
+  #311 · docs-cara7-anuncio-sin-hecho · cerrado 2026-07-30T15:40:56Z
+  #295 · scrum-209-desglose-conforme · cerrado 2026-07-30T15:40:41Z
+  #235 · scrum-189-citas-inequivocas · cerrado 2026-07-28T07:43:02Z
+  #186 · ci-prueba-en-rojo · cerrado 2026-07-27T13:04:11Z
+  #168 · scrum-54-collect-rest-role · cerrado 2026-07-27T09:50:50Z
+  #165 · scrum-78-qa-determinismo · cerrado 2026-07-27T09:51:09Z
+  #163 · scrum-114-enviar-para-firmar-ok-false · cerrado 2026-07-27T09:51:32Z

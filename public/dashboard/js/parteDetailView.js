@@ -37,6 +37,10 @@
   var TEXTOS = {
     // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Sólo cuando firma el CLIENTE:
+    // el técnico lee `pistaFirmaTecnico` (hasta SCRUM-1229 se le decía también a él, y por eso el
+    // censo 1157 la tuvo sin marcar hasta el 7-oct-2026).
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
     // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
     // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
@@ -50,6 +54,9 @@
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720,
+    // `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`). Sólo en un bloque vacío de un parte
+    // EDITABLE (borrador), que es donde «todavía» es cierto; cerrado, se lee `sinLineasCerrado`.
     sinLineas: 'Todavía no has apuntado nada.',
     // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
     // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
@@ -92,11 +99,32 @@
     noSeGuardoElCambio: 'No se ha podido guardar el cambio — vuelve a intentarlo',
     // SCRUM-1491 · Desplazamiento rechazado por la ruta con `desplazamientos_invalido`. «Vuelve a
     // intentarlo» ahí manda a repetir algo que no va a entrar nunca. Dice lo que VALE y no lo que
-    // falló, porque el código tiene dos causas (no es entero, o no cabe en la columna) y la vista
-    // no puede saber cuál sin copiar una regla de la ruta: para el número enorme es impreciso, no
-    // falso. Un texto por causa pide un código por causa (SCRUM-1488).
+    // falló. Desde SCRUM-1488 el código tiene UNA causa («no es un número entero»): el número
+    // enorme y el negativo llevan código y texto propios, más abajo.
+    // SCRUM-1492 · también se dice cuando es la CASILLA la que no entiende lo tecleado («1e»): es
+    // el mismo error visto por el profesional, cazado en otro sitio. Estirón firmado en c.18633.
     // APROBADO · SCRUM-1491 comentario 18517
     desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
+    // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
+    // falso: nada ha fallado, no se ha intentado.
+    // También es lo que se dice si la RUTA rechaza con `kilometros_invalido`: misma causa, cazada
+    // en otro sitio. Hoy desde la casilla no se llega a ese código (`badInput` lo para antes): es
+    // la red para el día que se llegue. Estirón firmado en c.18706.
+    // APROBADO · SCRUM-1492 comentario 18633
+    kilometrosEsUnNumero: 'No se ha guardado. Kilómetros es un número, como 12 o 12,5',
+    // SCRUM-1492 · los cuatro códigos de rango de la ruta (SCRUM-1488: un código por causa). Caían
+    // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
+    // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
+    // a un profesional no le dice nada.
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -131,30 +159,41 @@
     // APROBADO · SCRUM-1215 comentario 17375. Sustituye a «Añadir estas líneas», que no se aprobó
     // (c.17367): una línea sin cantidad no entra, y «estas» prometía que entraban las que se ven.
     confirmarPropuesta: 'Añadir al parte',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Se pinta sólo si la propuesta
+    // trae alguna línea sin colocar, y cada una lleva las dos fichas que el rótulo nombra (hasta
+    // SCRUM-1230 no había con qué elegir, y por eso el censo 1157 la tuvo sin marcar).
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
-    // Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026. Constan en
+    // Seis textos y dos fechas de firma, y CADA CLAVE LLEVA LA SUYA EN SU LÍNEA. Constan en
     // `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`.
     //
+    // SCRUM-1215f · hasta el 9-oct-2026 la firma de este bloque se decía UNA vez, en plural y
+    // contando («los cinco textos…»). El censo 1157 reparte una firma contada por POSICIÓN, no por
+    // nombre: le daba el quinto hueco a `conLaPrimeraFirmaQuedaFijo`, que es del 28-sep y no de
+    // aquel día, y se lo habría dado igual a cualquier clave nueva escrita aquí arriba. Con la
+    // marca en la línea, la firma viaja con su clave: una clave nueva nace sin ella y el censo la
+    // acusa. Lo ata `tests/scrum1215f-la-firma-no-se-reparte-por-posicion.test.mjs`.
+    //
     // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
-    firmarTecnico: 'Firma del técnico',
-    yaFirmoElCliente: 'Firmado por el cliente',
-    yaFirmoElTecnico: 'Firmado por el técnico',
+    firmarTecnico: 'Firma del técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElCliente: 'Firmado por el cliente', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElTecnico: 'Firmado por el técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
     // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
     //
-    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». FIRMADO por delegación del fundador,
-    // SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma, sea cual
-    // sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y `/firmar-tecnico`),
-    // así que con una basta y la segunda ya no cierra nada.
-    faltaLaFirmaDelCliente: 'Falta la firma del cliente.',
-    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.',
+    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». Lo firmado ese día, por delegación del
+    // fundador, es SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma,
+    // sea cual sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y
+    // `/firmar-tecnico`), así que con una basta y la segunda ya no cierra nada.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
     // Misma firma (c.17354). Solo mientras no ha firmado NADIE: después ya no avisa, es un hecho.
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
-    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.',
+    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
@@ -509,7 +548,9 @@
     // ⚠️ Qué teclado saca cada móvil con cada valor no está medido en un aparato de verdad.
     var casilla =
       '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
-      (modo === 'number' ? ' inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
+      // SCRUM-1492 · `min="0"`: el rango de la ruta (SCRUM-1488, `>= 0` en los dos). Es cortesía
+      // —las flechas no bajan de 0—, no protección: `-3` tecleado llega igual a la ruta, y se dice.
+      (modo === 'number' ? ' min="0" inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
       (pista ? ' placeholder="' + esc(pista) + '"' : '') +
       ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
@@ -1368,9 +1409,9 @@
    * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
    * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
    *
-   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta dijo
-   * `desplazamientos_invalido`: se decide por el CÓDIGO (`err.code`, lo pone `apiRequest`), nunca
-   * por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
+   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta rechazó el valor
+   * con uno de sus códigos (`TEXTO_POR_CODIGO_DE_LA_RUTA`): se decide por el CÓDIGO (`err.code`, lo
+   * pone `apiRequest`), nunca por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
    */
   function avisarCampoNoGuardado(contenedor, nombre, fallo) {
     if (!contenedor || !contenedor.querySelector) return;
@@ -1382,15 +1423,48 @@
     var paso = linea ? linea.querySelector('.parte-plegable-cuerpo') : casilla.closest('.parte-horas');
     if (!paso) return;
     quitarAvisoDeCampoNoGuardado(contenedor, nombre);
+    var texto = textoDeCampoNoGuardado(nombre, fallo);
+    if (!texto) return;   // sin texto que decir no se cuelga una caja en blanco
     var aviso = document.createElement('div');
     aviso.className = 'alert error';
     aviso.setAttribute('role', 'alert');
     aviso.setAttribute('data-parte-campo-no-guardado', nombre);
     aviso.style.marginTop = '8px';
-    aviso.textContent = fallo && fallo.code === 'desplazamientos_invalido'
-      ? TEXTOS.desplazamientoEsEntero : TEXTOS.noSeGuardoElCambio;
+    aviso.textContent = texto;
     paso.appendChild(aviso);
     if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * SCRUM-1492 · qué se dice cuando lo tecleado en una casilla numérica NO ES UN NÚMERO. Una
+   * entrada por casilla numérica de la cabecera: una casilla numérica sin la suya no tendría qué
+   * decir, y el general («No se ha podido guardar el cambio») ahí sería falso.
+   */
+  var TEXTO_SI_NO_ES_UN_NUMERO = {
+    desplazamientos: TEXTOS.desplazamientoEsEntero,
+    kilometros: TEXTOS.kilometrosEsUnNumero,
+  };
+
+  /**
+   * SCRUM-1491 / SCRUM-1492 · qué se dice cuando la RUTA rechaza el valor por lo que es, no por
+   * un fallo. Un código, una causa, un texto (`parteRango.ts`, SCRUM-1488). Un código que no esté
+   * aquí cae en el general, y el general manda a reintentar: si la ruta estrena un código de
+   * rechazo, su texto entra aquí o esa frase vuelve a ser falsa.
+   */
+  var TEXTO_POR_CODIGO_DE_LA_RUTA = {
+    desplazamientos_invalido: TEXTOS.desplazamientoEsEntero,
+    desplazamientos_negativo: TEXTOS.desplazamientoEsCeroOMas,
+    desplazamientos_no_cabe: TEXTOS.desplazamientoDemasiadoGrande,
+    kilometros_invalido: TEXTOS.kilometrosEsUnNumero,
+    kilometros_negativo: TEXTOS.kilometrosEsCeroOMas,
+    kilometros_no_cabe: TEXTOS.kilometrosDemasiadoGrande,
+  };
+
+  function textoDeCampoNoGuardado(nombre, fallo) {
+    if (fallo && fallo.noEsUnNumero) return TEXTO_SI_NO_ES_UN_NUMERO[nombre];
+    var codigo = fallo && fallo.code;
+    return Object.prototype.hasOwnProperty.call(TEXTO_POR_CODIGO_DE_LA_RUTA, codigo)
+      ? TEXTO_POR_CODIGO_DE_LA_RUTA[codigo] : TEXTOS.noSeGuardoElCambio;
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
@@ -1463,6 +1537,16 @@
       (function (casilla) {
         var original = casilla.value;
         var alCambiar = function () {
+          // 🔴 SCRUM-1492 · LO QUE NO ES UN NÚMERO NO ES UN BORRADO. Una casilla `type="number"`
+          // con «1e», «-» o «,» entrega `value === ''`, igual que una casilla vacía, y se mandaba
+          // `null`: el dato guardado se borraba con un 200 y la casilla seguía enseñando lo
+          // tecleado (medido en yaqu.app el 6-oct). Lo que distingue los dos vacíos es
+          // `validity.badInput`. No se manda nada, la casilla vuelve a lo guardado y se dice.
+          if (casilla.validity && casilla.validity.badInput) {
+            casilla.value = original;
+            avisarCampoNoGuardado(contenedor, casilla.getAttribute('data-parte-campo'), { noEsUnNumero: true });
+            return;
+          }
           if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
           original = casilla.value;
           guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);

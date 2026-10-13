@@ -1,0 +1,99 @@
+POBLACION: 17 mutaciones sobre docs/master/evidencias/scrum1500/cotejo.cjs · sha256 28e6202fbea77db1
+BASE sin mutar: 13 pasan, 0 caen, salida 0
+
+VIVA · vuelve la pregunta vieja: el código se compara con el COMENTARIO, no con el máster
+    caen 8 de 13
+      ✖ SCRUM-1500 · EL CONTROL QUE LO SEPARA DE SU PADRE: comentario y código iguales, máster distinto → NO sale «coincide»
+      ✖ SCRUM-1500 · los dos cajones de en medio: comentario atrasado, y máster que manda lo que nadie escribe
+      ✖ SCRUM-1500b · EL ÁRBOL: ningún comentario de la tabla se sale del máster, y el instrumento dice qué miró y qué no
+      ✖ SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado, uno por uno
+      ✖ SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · se apaga «el código tiene un valor que el máster no»
+    caen 8 de 13
+      ✖ SCRUM-1500 · EL CONTROL QUE LO SEPARA DE SU PADRE: comentario y código iguales, máster distinto → NO sale «coincide»
+      ✖ SCRUM-1500 · los dos cajones de en medio: comentario atrasado, y máster que manda lo que nadie escribe
+      ✖ SCRUM-1500b · EL ÁRBOL: ningún comentario de la tabla se sale del máster, y el instrumento dice qué miró y qué no
+      ✖ SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado, uno por uno
+      ✖ SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · lo que se para y no tiene excepción deja de nombrarse
+    caen 3 de 13
+      ✖ SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado, uno por uno
+      ✖ SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · CODIGO_FUERA_DEL_MASTER deja de ser un veredicto que para
+    caen 6 de 13
+      ✖ SCRUM-1500b · EL ÁRBOL: ningún comentario de la tabla se sale del máster, y el instrumento dice qué miró y qué no
+      ✖ SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado, uno por uno
+      ✖ SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · la excepción ampara cualquier veredicto que pare
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · la excepción ampara cualquier valor nuevo del código
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · la excepción ampara cualquier lista del máster
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · la excepción no comprueba que siga montada en src/
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · la excepción no mira las líneas nuevas del máster que juntan sus valores
+    caen 1 de 13
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+
+VIVA · una excepción que sobra no se dice
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · una excepción huérfana no se dice
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · una excepción sin papeles no se dice
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · «el máster no lo fija» se cree a ciegas
+    caen 1 de 13
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+
+VIVA · un comentario que deja de enumerar no se dice
+    caen 1 de 13
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · un control que sale mal no se dice
+    caen 1 de 13
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+
+VIVA · el comentario vuelve a localizarse por posición: siempre el bloque que empieza en la línea 1426
+    caen 1 de 13
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+VIVA · un campo que no está en su modelo se da por existente
+    caen 6 de 13
+      ✖ SCRUM-1500b · EL ÁRBOL: ningún comentario de la tabla se sale del máster, y el instrumento dice qué miró y qué no
+      ✖ SCRUM-1500b · CAE: un comentario que coincide con el CÓDIGO y no con el MÁSTER sale nombrado, uno por uno
+      ✖ SCRUM-1500b · LOS TRES PARADOS no son un agujero: sin su excepción caen los tres, y sólo esos tres
+      ✖ SCRUM-1500b · la excepción cubre lo que se le llevó al fundador y nada más: si cambia, cae
+      ✖ SCRUM-1500b · «el máster no lo fija» lo declara la tabla, y no se cree a ciegas: una línea nueva que junte los valores cae
+      ✖ SCRUM-1500b · el comentario se localiza por modelo y campo: mover las líneas del esquema no cambia ningún veredicto
+
+RESUMEN: 17 vivas · 0 mudas · 0 ciegas · instrumento restaurado: sí, mismo sha256
+EXIT=0

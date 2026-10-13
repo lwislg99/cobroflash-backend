@@ -1,0 +1,107 @@
+POBLACION: 16 mutaciones (15 que deben caer + 1 control) · test: tests\scrum1477-meta-dijo-que-no-o-no-contesto.test.mjs
+BASE: 16 de 16 pasan, 0 caen
+ok  M1 · CAE (2 de 16) · un 5xx pasa a ser un rechazo · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+ok  M2 · CAE (1 de 16) · el 408 pasa a ser un rechazo · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+ok  M3 · CAE (5 de 16) · ningún 4xx es un rechazo · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  M4 · CAE (1 de 16) · el freno de salida deja de ser «no enviado» · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M5 · CAE (7 de 16) · todo lo que no es rechazo dice «rechazado» · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  M6 · CAE (11 de 16) · el primer envío (plantilla) no dice el desenlace · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M7 · CAE (9 de 16) · el cuarto envío (lista) no dice el desenlace · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M8 · CAE (9 de 16) · el último envío (ubicación) no dice el desenlace · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M9 · CAE (12 de 16) · un envío pone el desenlace en `reason` · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M10 · CAE (9 de 16) · un envío deja de devolver `error` · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 la petición NO llega a salir (el freno de SCRUM-180) → los siete dicen `no_enviado`
+ok  M11 · CAE (13 de 16) · un envío pide otro plazo a Meta · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · SUELO: con Meta contestando 200, los siete envíos SALEN y no llevan desenlace
+       cae: SCRUM-1477 · 🔴 Meta contesta 400 → los siete dicen `rechazado`, y `error` sigue siendo el cuerpo de Meta
+       cae: SCRUM-1477 · 🔴 Meta contesta 401 → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta contesta 429 (su límite de ritmo) → los siete dicen `rechazado`
+       cae: SCRUM-1477 · 🔴 Meta NO contesta y vence el plazo → los siete dicen `sin_respuesta`, que es OTRO nombre
+       cae: SCRUM-1477 · 🔴 la conexión se CORTA después de recibir el envío → los siete dicen `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 Meta contesta 500 → `sin_respuesta`, aunque `error` sea un objeto como en un 4xx
+       cae: SCRUM-1477 · 🔴 Meta contesta 503 → `sin_respuesta`
+       cae: SCRUM-1477 · 🔴 el 408 es un 4xx y NO es un rechazo: dice que venció el plazo → `sin_respuesta`
+       cae: SCRUM-1477 · SUELO: por ventana, con Meta contestando 200, el texto SALE a la primera
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  M12 · CAE (1 de 16) · en el FUENTE, un `catch` devuelve un desenlace fijo · src/integrations/whatsapp.ts
+       cae: SCRUM-1477 · 🔴 los `catch` que envuelven una llamada a Meta son SIETE, los que mide el laboratorio, y devuelven lo mismo
+ok  M13 · CAE (1 de 16) · por ventana: un texto sin respuesta deja de mandar sobre la plantilla rechazada · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  M14 · CAE (3 de 16) · por ventana y sin plantilla: no sube el desenlace · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  M15 · CAE (3 de 16) · por ventana y sin plantilla: el desenlace pisa el `reason` de SCRUM-1436 · dist/integrations/whatsapp.js
+       cae: SCRUM-1477 · 🔴 por ventana: Meta rechaza el texto y la plantilla → `rechazado`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: Meta no contesta → `sin_respuesta`, con plantilla detrás y sin ella
+       cae: SCRUM-1477 · 🔴 por ventana: el texto queda SIN RESPUESTA y Meta rechaza la plantilla → el conjunto dice `sin_respuesta`
+ok  C1 · MUDA (0 de 16) · CONTROL: un comentario, no cambia nada · dist/integrations/whatsapp.js
+RESUMEN: 15 caen · 1 mudas · 0 ciegas · 0 que no hicieron lo esperado
+EXIT=0

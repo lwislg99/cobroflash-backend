@@ -1,0 +1,80 @@
+fichero Jira: 374199 B · tickets devueltos: 14 · hasNextPage=false
+  SCRUM-825 · comentarios devueltos 3 de total 3
+  SCRUM-887 · comentarios devueltos 9 de total 9
+  SCRUM-895 · comentarios devueltos 5 de total 5
+  SCRUM-915 · comentarios devueltos 8 de total 8
+  SCRUM-920 · comentarios devueltos 11 de total 11
+  SCRUM-1135 · comentarios devueltos 6 de total 6
+  SCRUM-1216 · comentarios devueltos 7 de total 7
+  SCRUM-1252 · comentarios devueltos 11 de total 11
+  SCRUM-1257 · comentarios devueltos 3 de total 3
+  SCRUM-1258 · comentarios devueltos 3 de total 3
+  SCRUM-1341 · comentarios devueltos 9 de total 9
+  SCRUM-1404 · comentarios devueltos 20 de total 23  <-- INCOMPLETO
+  SCRUM-1502 · comentarios devueltos 9 de total 9
+  SCRUM-1511 · comentarios devueltos 11 de total 11
+
+ANCLADAS segun porNivel(): 15 · listadas: 15
+
+src/modules/fiscal/evidencias/paquete.ts:174
+   [estricta] SCRUM-1252 / 17726 -> EXISTE · 2026-10-01T05:17:53.671+0200 · 2417 ch
+
+src/modules/fiscal/verifactu/registro.builder.ts:629
+   [estricta] SCRUM-1258 / 17713 -> EXISTE · 2026-10-01T04:40:39.256+0200 · 2962 ch
+
+src/modules/metrics/domain/actividadEquipo.ts:1
+   [estricta] SCRUM-1341 / 17825 -> EXISTE · 2026-10-01T09:45:50.123+0200 · 4602 ch
+
+src/modules/system/app/routes/invoicesAdmin.routes.ts:1293
+   [estricta] SCRUM-1502 / 18835 -> EXISTE · 2026-10-08T01:21:06.554+0200 · 2988 ch
+
+public/dashboard/js/invoicesView.js:209
+   [estricta] SCRUM-825 / 17446 -> EXISTE · 2026-09-28T23:57:13.708+0200 · 3587 ch
+
+public/dashboard/js/quotesView.js:401
+   [estricta] SCRUM-915 / 15868 -> EXISTE · 2026-09-18T08:36:34.985+0200 · 2896 ch
+
+tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:194
+   [estricta] SCRUM-825 / 17446 -> EXISTE · 2026-09-28T23:57:13.708+0200 · 3587 ch
+
+tests/scrum411-exports-inalcanzables.test.mjs:68
+   [estricta] SCRUM-1404 / 18840 -> EXISTE · 2026-10-08T01:34:04.320+0200 · 4217 ch
+   [solo sonda ancha] comentario 16468 -> vive en: NINGUNO de los tickets bajados
+   [solo sonda ancha] comentario 18856 -> vive en: SCRUM-1404
+
+tests/scrum514-aprobado-y-aplicado.test.mjs:943
+   [estricta] SCRUM-1258 / 17713 -> EXISTE · 2026-10-01T04:40:39.256+0200 · 2962 ch
+
+tests/scrum582-seleccion-multiple-clientes.test.mjs:187
+   [estricta] SCRUM-1135 / 17449 -> EXISTE · 2026-09-29T00:06:52.331+0200 · 2662 ch
+
+tests/scrum601-copy-del-documento-vs-flag.test.mjs:87
+   [estricta] SCRUM-887 / 15675 -> EXISTE · 2026-09-17T11:05:00.139+0200 · 758 ch
+   [estricta] SCRUM-895 / 15699 -> EXISTE · 2026-09-17T12:10:48.538+0200 · 3413 ch
+   [estricta] SCRUM-920 / 15992 -> EXISTE · 2026-09-20T15:22:54.565+0200 · 3800 ch
+   [estricta] SCRUM-1216 / 17347 -> EXISTE · 2026-09-28T16:47:22.222+0200 · 4571 ch
+   [estricta] SCRUM-1257 / 17444 -> EXISTE · 2026-09-28T23:42:05.115+0200 · 3263 ch
+   [solo sonda ancha] comentario 15868 -> vive en: SCRUM-915
+   [solo sonda ancha] comentario 17446 -> vive en: SCRUM-825
+
+tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113
+   [estricta] SCRUM-915 / 15868 -> EXISTE · 2026-09-18T08:36:34.985+0200 · 2896 ch
+
+tests/scrum895b-literales-firmados.test.mjs:1
+   [estricta] SCRUM-895 / 15699 -> EXISTE · 2026-09-17T12:10:48.538+0200 · 3413 ch
+
+tests/_asignacion-bloques-presupuesto.mjs:30
+   [estricta] SCRUM-915 / 15868 -> EXISTE · 2026-09-18T08:36:34.985+0200 · 2896 ch
+
+scripts/guard-pasos-del-editor.mjs:1
+   [estricta] SCRUM-915 / 15790 -> EXISTE · 2026-09-17T16:06:04.720+0200 · 1690 ch
+
+citas estrictas: 19 · pares distintos: 14 · NO existentes: 0
+
+CONTROLES
+  positivo (SCRUM-1511 / 18924, leido por mi en el ticket): EXISTE
+  positivo (SCRUM-1511 / 18903): EXISTE
+  cruzado: comentario real en ticket AJENO (SCRUM-1252 / 18924): TICKET-SI · COMENTARIO-NO
+  cruzado: (SCRUM-915 / 17726, que es de 1252): TICKET-SI · COMENTARIO-NO
+  cero: id derivado = mayor id bajado (18924) + 100000 en SCRUM-1511: TICKET-SI · COMENTARIO-NO
+  ticket no pedido (SCRUM-1514): TICKET-NO-DEVUELTO

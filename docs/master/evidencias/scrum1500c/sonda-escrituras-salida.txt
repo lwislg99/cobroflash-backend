@@ -1,0 +1,102 @@
+POBLACION: 11 campos fuera de la tabla · 320 ficheros .ts (0 sin parsear)
+
+=== Merchant.subscriptionStatus (esquema línea 72) @default —
+    comentario C : (no enumera)
+    escritos     : active | canceled | past_due
+        src/modules/billing/app/routes/stripe.routes.ts:123 'active'
+        src/modules/billing/app/routes/stripe.routes.ts:173 'active'
+        src/modules/billing/app/routes/stripe.routes.ts:181 'past_due'
+        src/modules/billing/app/routes/stripe.routes.ts:190 'canceled'
+        src/modules/billing/app/routes/stripe.routes.ts:205 'canceled'
+
+=== Merchant.status (esquema línea 129) @default active
+    comentario C : (no enumera)
+    escritos     : active
+        src/modules/auth/domain/auth.service.ts:346 'active'
+
+=== Charge.status (esquema línea 473) @default —
+    comentario C : (no enumera)
+    escritos     : expired | failed | pending
+        src/modules/billing/app/routes/charges.routes.ts:61 'pending'
+        src/modules/billing/app/routes/mpWebhook.routes.ts:259 'failed'
+        src/modules/billing/app/routes/psp.routes.ts:393 'failed'
+        src/modules/billing/app/routes/psp.routes.ts:393 'expired'
+
+=== Quote.status (esquema línea 653) @default draft
+    comentario C : (no enumera)
+    escritos     : accepted | draft | expired | pending_approval | rejected | sent
+        src/modules/jobs/app/routes/albaranes.routes.ts:1644 'draft'
+        src/modules/maintenance/domain/maintenance.service.ts:418 'draft'
+        src/modules/quotes/app/routes/quotes.routes.ts:197 'pending_approval'
+        src/modules/quotes/app/routes/quotes.routes.ts:197 'draft'
+        src/modules/quotes/app/routes/quotes.routes.ts:471 'accepted'
+        src/modules/quotes/app/routes/quotes.routes.ts:725 'rejected'
+        src/modules/quotes/domain/expire.service.ts:17 'expired'
+        src/modules/quotes/domain/sendQuote.service.ts:117 'sent'
+        src/modules/system/app/routes/quotesAdmin.routes.ts:803 'sent'
+        src/modules/system/app/routes/quotesAdmin.routes.ts:854 'draft'
+        src/modules/system/quoteAdmin.ts:389 'accepted'
+        src/modules/system/quoteAdmin.ts:436 'rejected'
+        src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:485 'accepted'
+        src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:554 'rejected'
+        (no literal) src/modules/system/quoteAdmin.ts:563 true
+
+=== Invoice.status (esquema línea 830) @default pending
+    comentario C : (no enumera)
+    escritos     : annulled | paid
+        src/modules/billing/app/routes/mpWebhook.routes.ts:174 'paid'
+        src/modules/billing/app/routes/psp.routes.ts:196 'paid'
+        src/modules/billing/app/routes/psp.routes.ts:261 'paid'
+        src/modules/invoicing/app/routes/invoice.routes.ts:111 'paid'
+        src/modules/system/app/routes/invoicesAdmin.routes.ts:488 'paid'
+        src/modules/system/app/routes/invoicesAdmin.routes.ts:950 'annulled'
+        (no literal) src/modules/system/invoiceAdmin.ts:306 status
+
+=== Invoice.vfEstado (esquema línea 916) @default pendiente_de_sellado
+    comentario C : (no enumera)
+    escritos     : no_aplica | sellado
+        src/modules/invoicing/domain/selladoEstado.ts:134 'no_aplica'
+        src/modules/invoicing/domain/selladoEstado.ts:145 'sellado'
+
+=== BotSession.state (esquema línea 1138) @default menu
+    comentario C : (no enumera)
+    escritos     : menu
+        src/modules/whatsappBot/domain/botFlow.service.ts:70 'menu'
+        (no literal) src/modules/whatsappBot/domain/botFlow.service.ts:70 patch.state
+
+=== WhatsAppMessage.status (esquema línea 1274) @default queued
+    comentario C : failed | read
+    escritos     : received | sent
+        src/modules/messaging/domain/whatsappLog.service.ts:40 'sent'
+        src/modules/messaging/domain/whatsappLog.service.ts:81 'received'
+        (no literal) src/modules/messaging/domain/whatsappLog.service.ts:40 input.status
+        (no literal) src/modules/messaging/domain/whatsappLog.service.ts:144 status
+
+=== Job.status (esquema línea 1315) @default pendiente_agendar
+    comentario C : (no enumera)
+    escritos     : pendiente_agendar
+        src/modules/jobs/domain/job.service.ts:106 'pendiente_agendar'
+
+=== EmailMessage.status (esquema línea 1568) @default aceptado_sin_identificador
+    comentario C : (no enumera)
+    escritos     : (ningún literal)
+        (no literal) src/modules/messaging/domain/registroDeEnvios.ts:223 constancia.estado
+        (no literal) src/modules/messaging/domain/registroDeEnvios.ts:320 avanzar(fila.status as EstadoCorreo, estado)
+
+=== VfSubmission.status (esquema línea 1802) @default —
+    comentario C : (no enumera)
+    escritos     : sent
+        src/modules/fiscal/verifactu/sif.procesador.ts:122 'sent'
+        (no literal) src/modules/fiscal/verifactu/sif.procesador.ts:171 d.estado
+
+=== TeamMember.status (esquema línea 1175) @default invited
+    comentario C : active | invited | suspended
+    escritos     : active | invited | suspended
+        src/modules/auth/domain/auth.service.ts:263 'active'
+        src/modules/team/domain/team.service.ts:44 'invited'
+        src/modules/team/domain/team.service.ts:48 'invited'
+        src/modules/team/domain/team.service.ts:86 'suspended'
+
+=== CONTROL delegado inventado (esquema línea 129) @default active
+    comentario C : (no enumera)
+    escritos     : (ningún literal)

@@ -1,0 +1,21 @@
+cuadra · sin cambio (la base)
+    entró=no aplica · salida=0 · pass=1 fail=0 · merchants que quedan=0
+cuadra · el guion corta en cuanto vuelve registerMerchant
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=1
+    AssertionError [ERR_ASSERTION]: 🔴 el guion salió 0 sin DECIR qué creó
+cuadra · el guion no pasa el correo a minúsculas
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 no hay merchant con el correo alta-a-1515-z9bxgx@test.local: el alta no dejó fila
+cuadra · el guion no recorta `source` a 200
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 B: EL MERCHANT DEL GUION NO NACE IGUAL QUE EL DE LA RUTA
+cuadra · el guion no quita los espacios del país
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 B: EL MERCHANT DEL GUION NO NACE IGUAL QUE EL DE LA RUTA
+cuadra · el guion escribe la fila A MANO en vez de llamar a registerMerchant
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 A: EL MERCHANT DEL GUION NO NACE IGUAL QUE EL DE LA RUTA
+cuadra · la RUTA deja de recortar `source` a 200 (las copias divergen por el otro lado)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 B: EL MERCHANT DEL GUION NO NACE IGUAL QUE EL DE LA RUTA
+FILAS=7 · que no cuadran=0 · EXIT=0

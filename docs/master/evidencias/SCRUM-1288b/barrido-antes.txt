@@ -1,0 +1,14 @@
+POBLACION · 321 ficheros de src/ · valores pegados a una moneda dentro de un texto: 22
+  VALOR CRUDO: 7
+  toFixed(2): 3
+  FORMATEADOR: 12
+  · src/core/data/catalogLoader.ts:79 [VALOR CRUDO] max
+  · src/core/utils/utils.ts:111 [toFixed(2)] v.toFixed(2)
+  · src/modules/ai/domain/ai.service.ts:117 [toFixed(2)] Number(p.price).toFixed(2)
+  · src/modules/ai/domain/ai.service.ts:346 [toFixed(2)] Number(p.price).toFixed(2)
+  · src/modules/ai/domain/ai.service.ts:395 [VALOR CRUDO] params.total
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:908 [VALOR CRUDO] lineTotal
+  · src/modules/messaging/domain/merchantNotifications.ts:50 [VALOR CRUDO] amount
+  · src/modules/messaging/domain/merchantNotifications.ts:64 [VALOR CRUDO] amount
+  · src/modules/messaging/domain/merchantNotifications.ts:131 [VALOR CRUDO] total
+  · src/modules/messaging/domain/merchantNotifications.ts:184 [VALOR CRUDO] total

@@ -10,7 +10,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc, formatImporteEs } from '../../../../core/utils/utils';
+import { esc, formatImporteEs, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 
@@ -194,7 +194,7 @@ router.post('/bizum/:token/claimed', async (req, res) => {
       data: { chargeId: id, type: 'bizum_claimed', payload: { ts: new Date().toISOString() } as any },
     });
     const customerName = charge.customer?.name || 'El cliente';
-    const amount = `${Number(charge.amount).toFixed(2)} ${charge.currency}`;
+    const amount = formatMoneyEs(charge.amount, charge.currency); // SCRUM-1436
     notifyMerchantAlert({
       merchantId: charge.merchantId,
       merchantPhone: charge.merchant?.whatsappPhone,

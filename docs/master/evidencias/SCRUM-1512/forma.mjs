@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const s = fs.readFileSync('prisma/schema.prisma', 'utf8');
+const m = s.match(/^model Merchant \{[\s\S]*?^\}/m);
+console.log('schema.prisma:', s.length, 'caracteres · bloque Merchant:', m ? m[0].length : 0, 'caracteres,', m ? m[0].split('\n').length : 0, 'lineas');
+const campos = m[0].split('\n').map((l) => l.trim()).filter((l) => /^[a-zA-Z]/.test(l) && !l.startsWith('model'));
+const ve = (re) => campos.filter((l) => re.test(l.split(/\s+/)[0]));
+console.log('campos del Merchant:', campos.length);
+console.log('POSITIVO  /whatsapp/i  ->', ve(/whatsapp/i).map((l) => l.split(/\s+/).slice(0, 2).join(':')).join(' | ') || 0);
+console.log('PREGUNTA  /phoneNumberId|numberId|waba|accessToken|wa.*token|businessAccount/i ->', ve(/phoneNumberId|numberId|waba|accessToken|wa.*token|businessAccount/i).length);
+console.log('CERO      /zzzNoExiste1512/ ->', ve(/zzzNoExiste1512/).length);
+const todo = [...s.matchAll(/^\s+(\w+)\s+\S+.*$/gm)].map((x) => x[1]);
+console.log('en TODO el esquema, campos que casan /phoneNumberId|waba|businessAccount/i:', todo.filter((c) => /phoneNumberId|waba|businessAccount/i.test(c)).length, 'de', todo.length);

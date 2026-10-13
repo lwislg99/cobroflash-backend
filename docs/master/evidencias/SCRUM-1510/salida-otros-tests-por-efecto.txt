@@ -1,0 +1,57 @@
+CONTROL A CERO de la búsqueda · «sellarTrasEmision_96397295b6» · ficheros de test leídos 1292 · que lo nombran 0 (bien)
+POBLACIÓN · 1292 ficheros *.test.mjs en tests/ · nombran el concepto 73 ficheros (5 son ayudantes: _ambito-de-la-factura.mjs, _banco-emision-con-estado.mjs, _dato-personal-en-contenido.mjs, _factura-fixture.mjs, _huerfanos-declarados.mjs) · tests que llegan sólo por un ayudante 2 · CANDIDATOS 70
+POSITIVO de la búsqueda · el propio guard está entre los candidatos: sí
+ESPEJO · 9 ficheros cotejados por sha256 con el árbol · distintos 0
+
+BASE (sin sembrar) · candidatos 70 · MEDIBLES (corren y 0 caen) 70 · casos 603 · pasan 586 · caen 0 · SALTAN 17
+  NO MEDIBLES en el espejo (ya caen o no arrancan sin sembrar nada; NO se juzgan): 0
+  medibles con casos que SALTAN (esos casos no han corrido): 12
+    · tests/pdfs.test.mjs · saltan 1 de 4
+    · tests/scrum1333-carrera-del-encolado-postgres.test.mjs · saltan 3 de 3
+    · tests/scrum1397-el-tecnico-ve-sus-facturas.test.mjs · saltan 2 de 5
+    · tests/scrum1403-el-tecnico-y-las-otras-puertas.test.mjs · saltan 3 de 6
+    · tests/scrum1489-la-busqueda-recorta-al-tecnico.test.mjs · saltan 1 de 10
+    · tests/scrum244-supresion-y-anonimizado.test.mjs · saltan 1 de 10
+    · tests/scrum25-export-zip.test.mjs · saltan 1 de 1
+    · tests/scrum72-pdfs-privados.test.mjs · saltan 1 de 2
+    · tests/scrum73-verifactu-gate.test.mjs · saltan 1 de 1
+    · tests/scrum74-recibo-token.test.mjs · saltan 1 de 1
+    · tests/scrum76-email-adjunto.test.mjs · saltan 1 de 1
+    · tests/scrum82-zip-verifactu.test.mjs · saltan 1 de 1
+
+SIEMBRAS · 7 declaradas · cada una contra 70 ficheros (69 que no son el guard)
+
+── RUIDO · CONTROL POSITIVO: el fallo devuelve «sellado», sin comentario (el guard SÍ lo caza)
+   corridos 70 ficheros · casos 603 · el guard scrum205: CAE (SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea) · OTROS ficheros que caen: 1 · espejo restaurado: sí
+     · tests/scrum1296-emitir-encola.test.mjs · tests 8 (base 8) · fail 1 · SCRUM-1296 · ✅ si el sellado FALLA no se encola nada (no hay registro que remitir)
+
+── C① · punto ciego ① · el fallo devuelve «sellado» y el estado bloqueante sólo queda en un comentario
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 1 · espejo restaurado: sí
+     · tests/scrum1296-emitir-encola.test.mjs · tests 8 (base 8) · fail 1 · SCRUM-1296 · ✅ si el sellado FALLA no se encola nada (no hay registro que remitir)
+
+── C② · punto ciego ② · el predicado sigue bien, pero quien genera el PDF deja de preguntarle
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 0 · espejo restaurado: sí
+
+── C③-reintento · punto ciego ③ · el reintento sella por un ALIAS, tira el resultado y entrega el PDF
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 2 · espejo restaurado: sí
+     · tests/scrum1404b-el-reintento-del-sellado.test.mjs · tests 17 (base 17) · fail 5 · SCRUM-1404 · ③ las tres condiciones dejan 3, con el borde de 1 ms fuera y el de D dentro | SCRUM-1404 · ⑤ el segundo cinturón: si el fallo NO queda anotado, pasado el plazo la factura se nombra y hay que mirar | SCRUM-1404 · ⑤ el segundo cinturón cuenta la que
+     · tests/scrum206-sin-huella-no-salen-bytes.test.mjs · tests 6 (base 6) · fail 1 · SCRUM-206 · (b) los consumidores de `ensureInvoicePdf` no convierten el rechazo en éxito
+
+── C③bis-reintento · punto ciego ③bis · el reintento LEE el resultado, y con «sigue pendiente» entrega el PDF igual
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 2 · espejo restaurado: sí
+     · tests/scrum1404b-el-reintento-del-sellado.test.mjs · tests 17 (base 17) · fail 2 · SCRUM-1404 · ⑤ el segundo cinturón: si el fallo NO queda anotado, pasado el plazo la factura se nombra y hay que mirar | SCRUM-1404 · ⑤ la pasada reparte: toca, espera, agotada, no aplica, sigue pendiente y la que lanza
+     · tests/scrum206-sin-huella-no-salen-bytes.test.mjs · tests 6 (base 6) · fail 1 · SCRUM-206 · (b) los consumidores de `ensureInvoicePdf` no convierten el rechazo en éxito
+
+── C③-ruta · punto ciego ③ · una RUTA de emisión sella por un alias, tira el resultado y entrega el PDF
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 3 · espejo restaurado: sí
+     · tests/scrum205-un-solo-punto-de-sellado.test.mjs · tests 6 (base 6) · fail 1 · SCRUM-205 · los llamadores de `emitInvoice` sellan (la delegación no es un agujero)
+     · tests/scrum206b-quien-emite-sella.test.mjs · tests 3 (base 3) · fail 1 · SCRUM-206b · los llamadores de `emitInvoice` sellan (la delegación no es un agujero)
+     · tests/scrum346-justificante-suelto.test.mjs · tests 10 (base 10) · fail 1 · SCRUM-346 · NO-REGRESIÓN: en modo factura se sigue emitiendo FACTURA, como antes
+
+── C③bis-ruta · punto ciego ③bis · una RUTA de emisión recoge el resultado y entrega el PDF sin mirarlo
+   corridos 70 ficheros · casos 603 · el guard scrum205: MUDO · OTROS ficheros que caen: 1 · espejo restaurado: sí
+     · tests/scrum346-justificante-suelto.test.mjs · tests 10 (base 10) · fail 1 · SCRUM-346 · NO-REGRESIÓN: en modo factura se sigue emitiendo FACTURA, como antes
+
+ÁRBOL DE VERDAD · 9 ficheros (fuente, compilado y el guard) con sha256 antes y después · movidos 0 · espejo borrado: sí
+controles que fallan: 0
+EXIT=0

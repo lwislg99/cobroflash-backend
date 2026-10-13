@@ -1,0 +1,2 @@
+CONTROL SEMBRADO · 2 citas fabricadas · rotas vistas 0 de 6 sembradas · buenas marcadas como rotas 0
+🔴 CIEGO: el instrumento no ha visto las rotas sembradas (o ha marcado una buena). NO SE IMPRIME NINGUNA CIFRA.

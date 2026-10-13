@@ -1,0 +1,17 @@
+ESQUEMA=D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\dist\core\validation\schemas.js · control: URL externa cae · imagen subida pasa
+SERVIDO=el admin.html de producción · build del panel 85d8d01e64196569928b523c9074542d6ffbbd0a · REAL=1 (tres PUT directos de una clave, al final) · RELLENA=1
+AL CARGAR={"estado":"Perfil cargado correctamente","hayCampo":true,"etiqueta":"Logo (URL opcional)","marcador":"https://tudominio.com/logo.png","valorCampo":0,"logoGuardado":"ninguno (null)","vacios":["legalName","taxId","address","whatsappPhone"],"controlesDelFormulario":8}
+  RELLENADOS POR LA SONDA (no salen de la página): legalName, taxId, address, whatsappPhone
+  RELLENADOS POR LA SONDA (no salen de la página): legalName, taxId, address, whatsappPhone
+--- FILAS (caso | logoUrl en el cuerpo | veredicto del esquema | qué se hizo con el PUT | lo que dice la página | clase del aviso)
+URL · se pega https://example.com/logo.png y se guarda | https://example.com/logo.png (28 car.) | 400 por logoUrl | NO salió · contestado por la sonda (400) | «Error al guardar cambios del merchant» | status error
+NADA · se guarda sin tocar nada | «» (cadena vacía) | 400 por logoUrl | NO salió · contestado por la sonda (400) | «Error al guardar cambios del merchant» | status error
+claves del último cuerpo: name, legalName, taxId, address, defaultCurrency, invoiceSeriesPrefix, whatsappPhone, logoUrl
+--- DIRECTOS AL SERVIDOR DE VERDAD (una clave; sin pasar por la página)
+logoUrl vacío | esquema: 400 | servidor: 400 (validation_error)
+logoUrl URL externa | esquema: 400 | servidor: 400 (validation_error)
+CONTROL POSITIVO cuerpo vacío | esquema: lo aceptaría | servidor: 200
+AL ACABAR={"logoGuardado":"ninguno (null)","estado":"Perfil cargado correctamente"}
+errores de página: ninguno
+POBLACION=2 guardados · PUT vistos=2
+EXIT=0

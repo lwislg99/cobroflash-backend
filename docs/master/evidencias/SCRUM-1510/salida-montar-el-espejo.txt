@@ -1,0 +1,5 @@
+espejo montado en dist\__espejo-1510b
+  primer corte en el compilado: 1 · en el espejo: 0
+  sha256 del compilado de verdad : 24bb7011e75dc5528ff760a0787c7e63204796fdfec05681b7a1d2921cd8ee03
+  sha256 del compilado del espejo: 1cd9b2b4851d5f65a2b7022225d0655a5d3d4b990b7a4aea5969d21fa4dc7f63
+  árbol de verdad igual antes y después (3 ficheros): SÍ

@@ -1,0 +1,48 @@
+## A · GET /pay/mp/:token — qué decide el 503 y el 502
+
+| situación | estado HTTP | ¿página? | lo que lee el cliente |
+| --- | --- | --- | --- |
+| plataforma SIN token · merchant sin nada | 503 | no (texto plano) | «Mercado Pago no está configurado para este merchant.» |
+| plataforma SIN token · merchant con `mpAccessToken` en la fila | 302 | no (texto plano) | redirige a https://mp.invalid/checkout |
+| plataforma CON token · merchant sin nada | 302 | no (texto plano) | redirige a https://mp.invalid/checkout |
+| plataforma CON token · Mercado Pago no contesta | 502 | no (texto plano) | «Error al conectar con Mercado Pago. Inténtalo de nuevo.» |
+
+## B · GET /pay/mp/:token/result — qué frase sale con cada estado del cobro
+
+| estado del cobro | frase | importe que pinta |
+| --- | --- | --- |
+| pending | «Tu pago está siendo procesado. Te notificaremos pronto.» | «1419.87 EUR» |
+| paid | «Tu pago ha sido procesado correctamente.» | «1419.87 EUR» |
+| failed | «El pago no pudo procesarse. Inténtalo de nuevo.» | «1419.87 EUR» |
+| expired | «Este cobro ha vencido. Contacta con el profesional.» | «1419.87 EUR» |
+
+## C · «Te notificaremos pronto»: qué recibe el cliente cuando el pago pendiente se resuelve
+
+| contacto del cliente | Mercado Pago dice | mensajes de WhatsApp al cliente | correos | estado final del cobro |
+| --- | --- | --- | --- | --- |
+[mpWebhook] Charge 2449 marcado como pagado (MP mp-1449)
+| teléfono y correo | approved | 1 | 1 | paid |
+[mpWebhook] Charge 2449 marcado como fallido (MP status: rejected)
+| teléfono y correo | rejected | 0 | 0 | failed |
+[mpWebhook] Estado MP 'pending' para charge 2449 (ya en 'pending') — sin cambios
+| teléfono y correo | pending | 0 | 0 | pending |
+[mpWebhook] Charge 2449 marcado como pagado (MP mp-1449)
+| sólo teléfono | approved | 1 | 0 | paid |
+[mpWebhook] Charge 2449 marcado como fallido (MP status: rejected)
+| sólo teléfono | rejected | 0 | 0 | failed |
+[mpWebhook] Estado MP 'pending' para charge 2449 (ya en 'pending') — sin cambios
+| sólo teléfono | pending | 0 | 0 | pending |
+[mpWebhook] Charge 2449 marcado como pagado (MP mp-1449)
+| sólo correo | approved | 0 | 1 | paid |
+[mpWebhook] Charge 2449 marcado como fallido (MP status: rejected)
+| sólo correo | rejected | 0 | 0 | failed |
+[mpWebhook] Estado MP 'pending' para charge 2449 (ya en 'pending') — sin cambios
+| sólo correo | pending | 0 | 0 | pending |
+[mpWebhook] Charge 2449 marcado como pagado (MP mp-1449)
+| ni teléfono ni correo | approved | 0 | 0 | paid |
+[mpWebhook] Charge 2449 marcado como fallido (MP status: rejected)
+| ni teléfono ni correo | rejected | 0 | 0 | failed |
+[mpWebhook] Estado MP 'pending' para charge 2449 (ya en 'pending') — sin cambios
+| ni teléfono ni correo | pending | 0 | 0 | pending |
+
+POBLACION: A=4 situaciones · B=4 estados · C=12 combinaciones
