@@ -1,5 +1,5 @@
 2026-10-08T02:17:42.6658207Z ##[group]Run node scripts/senal-de-nombres.mjs "/home/runner/work/_temp/tanda.tap"
-2026-10-08T02:17:42.6659175Z [36;1mnode scripts/senal-de-nombres.mjs "/home/runner/work/_temp/tanda.tap"[0m
+2026-10-08T02:17:42.6659175Z \x1b[36;1mnode scripts/senal-de-nombres.mjs "/home/runner/work/_temp/tanda.tap"\x1b[0m
 2026-10-08T02:17:42.6701728Z shell: /usr/bin/bash -e {0}
 2026-10-08T02:17:42.6701995Z env:
 2026-10-08T02:17:42.6702208Z   PUERTA_INICIO: 1791425256

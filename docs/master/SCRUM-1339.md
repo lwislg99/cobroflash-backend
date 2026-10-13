@@ -1765,3 +1765,33 @@ mirado qué ficheros pierden en los otros cinco, ni si los 18 de #2305 son los m
     node $E/m-vecinos.mjs 2298 2300 2301 2302 2303 2304 2305 2306 2307 2308 2309
 
 El primero pide `dist/` (los dos tests lo leen). Ninguno toca el árbol.
+
+## Corrección del 13-oct: el PR de este tramo estuvo cinco días en rojo, y eran tres cosas
+
+Sesión `jv-j4b`, por encargo del orquestador (`cobroflash-backend-2e`). Medido el 2026-10-13T05:35Z
+contra `origin/main` = `ccee4b60695ec9e0688c52037139a7660d09084f`, sobre el único run del PR #2323
+(`37750763506`, creado el 2026-10-08T08:34:43Z, cabeza `883acb86ddff717deada52601b3fa9ea3d91e575`).
+Los tres avisos no eran el mismo:
+
+| job | conclusión | qué era | de esta rama |
+|---|---|---|---|
+| `build + tests (con banco desechable)` · `113223120854` | failure | 1 caído de 11.064 (10.970 pasan, 93 saltan: suma). `tests/scrum942-bytes-de-control-en-el-arbol.test.mjs` nombra `m-log-2303-job-113113442033-paso-de-la-senal.txt`, 2 bytes ESC en los desplazamientos 141 y 217 | **sí** |
+| `meta-guard · los guards caen cuando deben` · `113223120811` | failure, salida 2 | no es un rojo: `vivas 519 · mudas 0 · ciegas 1`. La ciega es `scrum859-identidad-y-motivo-cerrado`, con 4 de 20 casos que no llegan en la pasada mutada. Es el sujeto del tramo 1339j | no |
+| `trinquete · ningún test nuevo mide la zona de la máquina` · `113223120653` | cancelled | cancelado a los 45 min 15 s, sin veredicto. Ni verde ni rojo | sin medir |
+
+Los 2 bytes explican el primero y sólo el primero. Los puse yo (el puesto J4, en este tramo) al
+copiar al árbol 18 líneas del log de CI tal cual: la línea que GitHub pinta en color trae la
+secuencia entera. El detector de la casa lo cazó a la primera; lo que faltó fue correrlo antes de
+empujar.
+
+**El arreglo.** Cada byte 27 del extracto pasa a ser el texto visible `\x1b` (cuatro caracteres),
+como pide la A22. El fichero va de 2.135 a 2.141 bytes, `git diff --numstat` dice `1 1`, y deshacer
+la sustitución devuelve el fichero anterior byte a byte (sha256
+`2cbc1d7e8fe5e4942b36b4eecd166e974c3642aa87273fad4e786b0f26a2f2e1`). Ningún guion `m-*` lee ese
+extracto: leen el log entero, que se baja fuera del árbol. Con el fichero de antes, el detector cae
+(11 de 12, el caído es el del árbol limpio); con el de ahora, 12 de 12.
+
+**Lo que NO está medido.** Por qué se canceló el trinquete: el log acaba en «The operation was
+canceled» y no dice quién ni por qué. Y si la ciega del meta-guard se repite sobre la base de hoy:
+ese run es de hace cinco días y de otro `main` (112 commits). La rama se ha mezclado con `main` para
+que los tres corran de nuevo sobre la base actual; lo que salga de ahí es lo que vale.
