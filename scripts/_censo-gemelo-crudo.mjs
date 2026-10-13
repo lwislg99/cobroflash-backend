@@ -502,7 +502,6 @@ export const DECLARADOS = new Map([
   // ── SIN_FORMATEAR · DEUDA (SCRUM-1288b) · medidas el 9-oct-2026 leyendo quién llama ───────────
   [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendMerchantPaymentEmail`, { n: 2, clase: DEUDA, retira: 'S1', motivo: 'correo «Pago recibido» al profesional, asunto y cuerpo: el importe llega ya hecho texto y quien llama (`psp.routes.ts`, J2) le pasa el número con `.toString()`, sin formatMoneyEs' }],
   [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendMerchantQuoteAcceptedEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'correo «presupuesto aceptado» al profesional: el total llega ya hecho texto y quien llama (`whatsappIncoming.routes.ts`, J2) le pasa `toFixed(2)`, sin formatMoneyEs' }],
-  [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendTechQuoteApprovedEmail`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'correo «presupuesto aprobado» al técnico: el total llega ya hecho texto y quien llama (`quotesAdmin.routes.ts`, S1) le pasa `toFixed(2)`, sin formatMoneyEs' }],
   [`SIN_FORMATEAR|src/core/data/catalogLoader.ts::orientativoLabel`, { n: 1, clase: DEUDA, retira: 'S1', motivo: 'rango orientativo del catálogo, «6000–11000 €»: enteros sin separador de miles (el 9-oct, 20 de los 310 precios de `data/catalogs` pasan de 1.000 y ninguno lleva decimales)' }],
   // ── NUMERO · LEGITIMO ─────────────────────────────────────────────────────────────────────────
   [`NUMERO|${M}invoicing/infra/pdf/pdf.service.ts::generateQuotePdf`, { n: 1, clase: LEGITIMO, retira: null, motivo: 'el valor ya sale de numeroConRevision; llega por una variable y el censo no sigue variables' }],
@@ -547,6 +546,8 @@ export const RETIRADAS = new Map([
   // SCRUM-1436 (hallazgo 4, parte de J2): los avisos al profesional pasan por `formatMoneyEs`.
   [`IMPORTE|${M}billing/app/routes/mpWebhook.routes.ts::POST /`, 'SCRUM-1436'],
   [`IMPORTE|${M}billing/app/routes/payBizum.routes.ts::POST /bizum/:token/claimed`, 'SCRUM-1436'],
+  // SCRUM-1288c: el correo «presupuesto aprobado» al técnico recibe el número y lo formatea con `formatMoneyEs`.
+  [`SIN_FORMATEAR|${M}messaging/domain/merchantNotifications.ts::sendTechQuoteApprovedEmail`, 'SCRUM-1288'],
 ]);
 
 /** Los puestos que pueden figurar en `retira` (los de `dos-equipos.md` §2). */
