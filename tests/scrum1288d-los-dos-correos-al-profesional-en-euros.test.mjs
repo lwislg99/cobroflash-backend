@@ -109,11 +109,13 @@ test('SCRUM-1288d · la moneda la decide el cobro o el presupuesto: fuera del eu
 });
 
 test('SCRUM-1288d · el resto de los dos correos no cambia: asunto del aceptado, cliente y frases siguen donde estaban', async () => {
+  // Lo que se lee, sin etiquetas y con los espacios plegados.
+  const leido = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
   const pago = await correoDePago('1234.5');
-  assert.ok(pago.html.includes('<strong>Cliente QA</strong> ha realizado un pago.'), '🔴 el correo de pago ha perdido su frase');
-  assert.ok(pago.html.includes('Este email fue enviado a Reformas QA.'), '🔴 el correo de pago ha perdido su pie');
+  assert.ok(leido(pago.html).includes('Cliente QA ha realizado un pago.'), '🔴 el correo de pago ha perdido su frase');
+  assert.ok(leido(pago.html).includes('Este email fue enviado a Reformas QA.'), '🔴 el correo de pago ha perdido su pie');
   const aceptado = await correoDeAceptado('1234.50');
   assert.equal(aceptado.subject, '✅ Presupuesto #41 aceptado por Cliente QA');
-  assert.ok(aceptado.html.includes('<strong>Cliente QA</strong> ha aceptado el presupuesto <strong>#41</strong>.'), '🔴 el correo de aceptado ha perdido su frase');
-  assert.ok(aceptado.html.includes('El cliente ha aceptado el presupuesto. Ya puedes emitir la factura.'), '🔴 el correo de aceptado ha perdido su frase final');
+  assert.ok(leido(aceptado.html).includes('Cliente QA ha aceptado el presupuesto #41 .'), '🔴 el correo de aceptado ha perdido su frase');
+  assert.ok(leido(aceptado.html).includes('El cliente ha aceptado el presupuesto. Ya puedes emitir la factura.'), '🔴 el correo de aceptado ha perdido su frase final');
 });

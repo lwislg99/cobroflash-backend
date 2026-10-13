@@ -256,6 +256,10 @@ El cambio lo ve un usuario (regla 39). La orden es del orquestador, en el encarg
 
 Base del trinquete 31 de 31 antes y después; `git status` vacío tras cada restauración. El guion acota cada mutación a SU función: la fila «Total» del aceptado y la del técnico son idénticas letra por letra.
 
+## Lo que cazó la dirigida antes de empujar
+
+El tramo 3 de 4 salió en ROJO por el test nuevo: su sexto caso buscaba las frases con `<strong>` pegado, y el trinquete de `tests/scrum553-etiquetas-pegadas.test.mjs` cuenta eso como un extractor que se rompe en cuanto la etiqueta gane un atributo (23 contra un tope de 20; nombraba las líneas 113 y 117). El guard no se ha tocado: el caso lee ahora el texto sin etiquetas. `scrum553` y el test nuevo, 22 de 22 después. `rojo-antes.txt` es la salida del test ANTES de ese cambio: sus cinco rojos son de los casos que no han cambiado, y el sexto, el que pasaba, es el reescrito.
+
 ## Lo que NO mide
 
 - El camino entero por las dos rutas (cobro confirmado → correo; aceptar por WhatsApp → correo): pide base y ningún test lo corre. El test les pasa a las dos funciones lo que hoy les pasan sus llamadores, **leído en el código**: un texto.
