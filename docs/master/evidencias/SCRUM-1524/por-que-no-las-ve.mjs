@@ -13,16 +13,16 @@
 // Las víctimas no se escriben a mano: se derivan del censo de la casa sobre la propia copia.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..', '..', '..', '..');
 const TEST = 'tests/scrum525d-anclas-que-apuntan.test.mjs';
 const git = (...a) => execFileSync('git', ['-C', RAIZ, ...a], { encoding: 'utf8', maxBuffer: 1 << 28 }).trimEnd();
 
 // ── La copia ────────────────────────────────────────────────────────────────────────────────
-const COPIA = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1524-copia-'));
+const COPIA = temporal('scrum1524-copia-');
 execFileSync('git', ['-C', RAIZ, 'archive', '--format=tar', '-o', path.join(COPIA, 'arbol.tar'), 'HEAD']);
 execFileSync('tar', ['-xf', 'arbol.tar'], { cwd: COPIA });
 fs.rmSync(path.join(COPIA, 'arbol.tar'));
