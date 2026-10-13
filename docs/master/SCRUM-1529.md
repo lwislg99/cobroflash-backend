@@ -209,3 +209,193 @@ valor lo he leído línea a línea.
 | las siete decisiones tomadas | NO HECHO → son del fundador; este ticket sigue abierto hasta que conteste |
 
 Cómo se repite: `node docs/master/evidencias/scrum1529/siete.cjs` (salida 0; un minuto).
+
+# SCRUM-1529b · Los tres del mismo cajón: `Merchant.status`, `EmailMessage.status`, `VfSubmission.status`
+
+**Medido contra:** `origin/main` = `9226d0f2dd48f885b63b3222441f57554a7cdb1c` · 2026-10-13T07:22:14Z (hora de GitHub)
+
+A9: sin fallo que generalice — mis tres tropiezos (abajo, «Lo que me salió mal») son casos de frases que A10 ya tiene: «Una salida recortada para leerla cómoda es media salida» y «Lo que el repositorio llama inferencia puede estar ya medido en Jira»; ninguno llegó al resultado y no añaden regla nueva.
+
+13-oct-2026 · sesión `jv-j2e` (equipo de Javier), por encargo del orquestador (`cobroflash-backend-2e`).
+[Escrito por la sesión, no por Javier. Leídos en Jira antes de medir: SCRUM-1529 entero con sus cuatro
+comentarios (`c.19222`, `c.19225`, `c.19227`, `c.19228`) y, de SCRUM-1500, `c.18908`. Los otros 17
+comentarios de SCRUM-1500 NO los he leído.]
+
+**Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha
+común del 13-oct. Sólo se ha escrito este tramo y `docs/master/evidencias/scrum1529b/`. **No se ha tocado
+`src/`, ni `prisma/schema.prisma`, ni el máster, ni `public/`, ni ningún test.** `VfSubmission` es la cola
+de remisión a la AEAT: su código se ha LEÍDO (regla 38) y no se ha modificado ni instrumentado. No se ha
+decidido nada: las tres decisiones son del fundador, y las recomendaciones de abajo son mías.
+
+## Qué estaba ya hecho, y qué añade este tramo
+
+- **Los valores y «el máster no lo fija» ya los midió J5** el 8-oct (`c.18908`,
+  `docs/master/evidencias/scrum1500c/cotejo-once.cjs`). **No los he rehecho: he vuelto a correr su
+  instrumento**, sin tocarlo. La salida de hoy, comparada con la que dejó en `main`, no cambia en ninguno
+  de estos tres campos: mismos valores, mismas líneas, mismo veredicto.
+- **Que la cola de `VfSubmission` no la vacía nadie ya lo midió J5** en SCRUM-1500d (tramo de
+  `docs/master/SCRUM-1500.md`, instrumento `docs/master/evidencias/scrum1500d/cola.mjs`), y el máster lo
+  dice desde el 8-oct en la línea 404. Lo vi al final, no al principio (ver «Lo que me salió mal»). Mi
+  contador de llamadas es una segunda sonda y da lo mismo; su instrumento no lo he corrido.
+- **Lo que faltaba**, y es lo que pide el criterio del fundador de hoy (`c.19228`): la columna de J5 es la
+  UNIÓN de lo declarado (una constante, un enum) y lo escrito, así que no puede contestar «¿hay algún valor
+  declarado que nadie escriba?». Este tramo separa las dos cosas, deriva por qué puerta entra cada valor y
+  mira si a esa puerta la llama alguien.
+
+## La tabla
+
+Sobre 322 ficheros `.ts` de `src/` (0 sin parsear), 199 escrituras de Prisma vistas, máster de 1.905
+líneas. La Parte L son las líneas 396 a 412 del máster y trae doce entradas; ninguna es de estos campos.
+
+| campo | valores DECLARADOS | valores que alguna línea ESCRIBE, y por dónde | qué fija la Parte L | dónde discrepan | ¿declarado que nadie escribe? |
+|---|---|---|---|---|---|
+| `Merchant.status` | ninguna lista: es un `String` con `@default("active")` | `active`, literal en la creación del comercio (`auth.service.ts:346`) | **el máster no lo fija** («Merchant.status» sale 0 veces) | no hay con qué comparar | no aplica: no hay lista declarada |
+| `EmailMessage.status` | los seis de `ESTADOS_CORREO` (`constanciaCorreo.ts:36`) | los seis, y ninguno con un literal dentro de Prisma: dos por `constanciaDeEnvio`, uno por `constanciaDeFallo`, y cuatro por los valores de `EVENTOS_RESEND` (`firmaResend.ts:260-263`) | **el máster no lo fija** (no nombra la entidad: «EmailMessage», «ESTADOS_CORREO» y «email_messages» salen 0 veces) | no hay con qué comparar | **NINGUNO** |
+| `VfSubmission.status` | los cinco del enum `VfSubmissionStatus` y de `ESTADOS_VF_SUBMISSION` (`sif.cola.ts:25`) | los cinco: `pending` por el `@default` (`encolarRemision.ts:61` crea sin poner el campo), `sent` con un literal (`sif.procesador.ts:122`) y el resto por las decisiones de `sif.cola.ts` | **no trae la lista, y dice por qué**: la línea 404 dice que su diseño «vive en S1-D (Parte U1.3) hasta que se construya» | en los valores, en nada | **NINGUNO por línea; cuatro de cinco por alcance** (abajo) |
+
+Los seis de `EmailMessage`: `aceptado_sin_confirmacion`, `aceptado_sin_identificador`, `fallo_envio`,
+`entregado`, `rebotado`, `reclamado`. Los cinco de `VfSubmission`: `pending`, `sent`, `accepted`,
+`rejected`, `manual_review`.
+
+## Campo por campo
+
+### `Merchant.status`
+
+1. **Valores:** uno, `active`. Lo escribe una sola línea, al crear el comercio. Ninguna otra escritura de
+   `merchant` en `src/` toca el campo: 4 derrames, ninguno lo nombra, y ninguna escritura lleva el dato
+   sin literal.
+2. **Parte L:** no lo fija. La Parte L tiene dos entradas del comercio y son otras columnas:
+   «Subscription (merchant.plan)» y «Merchant readiness (checklist, no FSM)».
+3. **Discrepancia:** ninguna posible.
+4. **¿Valor declarado que nadie escriba?** No hay valores declarados. Lo que hay es el revés: **dos
+   lectores con una rama a la que hoy no se llega**, porque nadie escribe otra cosa que `active`:
+   `publicProfile.routes.ts:32` (`status === 'active'` para enseñar el perfil público) y
+   `botFlow.service.ts:258` (`status !== 'active'` para no atender). Es la misma consecuencia que
+   `c.19228` anotó para `facturado`: se mira aparte, no se borra de paso.
+5. **La pregunta:** *¿Entra `Merchant.status` en la Parte L con su único valor, `active`?* (SÍ o NO)
+   - **Mi recomendación, no decisión: SÍ**, con el valor y sin flechas. Es el criterio de ③ tal cual: el
+     valor se escribe, así que entra; transiciones no hay ninguna que medir. Cero código.
+   - Si es NO: el máster dice que no es una máquina. Cero código también.
+
+### `EmailMessage.status`
+
+1. **Valores:** seis, y **ninguno entra con un literal dentro de Prisma**. La tabla sólo se escribe en
+   `registroDeEnvios.ts`, con dos expresiones:
+   - `:223`, `constancia.estado`. Las 10 llamadas a `registrarEnvio()` traen una constancia que sale de
+     `constanciaDeEnvio` (`aceptado_sin_confirmacion`, `aceptado_sin_identificador`) o de
+     `constanciaDeFallo` (`fallo_envio`); fuera de esas dos fábricas, 0.
+   - `:320`, `avanzar(fila.status, estado)`, desde `aplicarAvisoDeProveedor`. Tiene una llamada, la ruta
+     del aviso de Resend (`resendWebhook.routes.ts:82`, montada en `app.ts:157`), y el estado sale de
+     `EVENTOS_RESEND`: `entregado`, `rebotado`, `reclamado`, `fallo_envio`.
+2. **Parte L:** no lo fija, ni lo nombra el máster en ningún sitio.
+3. **Discrepancia:** ninguna posible.
+4. **¿Valor declarado que nadie escriba?** **Ninguno.** Los seis tienen su línea y a las seis se llega por
+   funciones que sí tienen llamadores.
+5. **La pregunta:** *¿Entra `EmailMessage.status` en la Parte L con sus seis valores?* (SÍ o NO)
+   - **Mi recomendación, no decisión: SÍ**, los seis y sin flechas. El código tiene un orden
+     (`RANGO`, `constanciaCorreo.ts:105`), pero las transiciones no las he medido y la regla 27 prohíbe
+     inventarlas: como en ③. Cero código.
+
+### `VfSubmission.status` — el caso
+
+1. **Valores:** cinco, y los cinco tienen una línea que los escribe.
+   - `pending`: lo pone el `@default` cuando sellar una factura encola su alta (`encolarRemision.ts:61`,
+     que crea la fila sin poner el campo; lo llama `selladoEstado.ts:173`).
+   - `sent`: literal en `sif.procesador.ts:122`.
+   - `accepted`, `rejected`, `manual_review` y la vuelta a `pending`: `sif.procesador.ts:171` escribe
+     `d.estado`, y `d` sale de las decisiones de `sif.cola.ts` (11 literales, líneas 106 a 195).
+2. **Parte L:** no trae su lista, y esta vez **el máster sí dice algo**. La línea 404, que es de la
+   Parte L, dice que la cola «NO está construida» —la emisión la llena y ningún proceso la vacía— y que su
+   diseño «vive en S1-D (Parte U1.3) hasta que se construya». Esa frase es del 8-oct y lleva la firma del
+   fundador citada (SCRUM-1500e, `c.18925`). Fuera de la Parte L, el máster nombra la entidad en las líneas
+   156 y 1060 y `manual_review` una vez, en la 580; la lista de valores, en ninguna.
+3. **Discrepancia:** en los valores, ninguna. Y un dato de `c.18908` ha caducado: J5 anotó que las líneas
+   404 y 980 no decían lo mismo; la 404 se corrigió el mismo 8-oct y hoy dicen lo mismo.
+4. 🔴 **¿Valor declarado que nadie escriba?** Depende de qué se pregunte, y hay que decir las dos:
+   - **Por línea, ninguno.** No es el caso de `facturado`, que no tiene ninguna línea que lo escriba.
+   - **Por alcance, cuatro de cinco.** `sent`, `accepted`, `rejected` y `manual_review` (y la vuelta a
+     `pending`) se escriben sólo dentro de `procesarObligado`, y **`procesarObligado()` tiene 0 llamadas en
+     `src/`**. No es un olvido: está declarado sin enchufar a propósito
+     (`scripts/_sin-consumir-declarados.json:159`, decisión D2 de SCRUM-1296: se enchufa cuando se decida
+     la custodia del certificado). Lo llama un test (`tests/scrum1296-procesador-cola.test.mjs`); ningún
+     proceso. Hoy una fila de esta tabla sólo puede estar en `pending`.
+5. **La pregunta:** *¿Se queda `VfSubmission.status` fuera de la Parte L hasta que se enchufe el
+   procesador, como ya dice la línea 404?* (SÍ o NO)
+   - **Mi recomendación, no decisión: SÍ, se queda fuera y no se toca nada.** El fundador ya lo decidió el
+     8-oct con esa frase, y su criterio de hoy lo confirma en vez de moverlo: un estado al que no se puede
+     llegar es una promesa, y aquí son cuatro. El día que `procesarObligado` tenga un llamante, entran los
+     cinco; ese día el guard de SCRUM-1128 lo verá.
+   - Si es NO, hay dos formas y las dos son una línea del máster: entran los cinco (y la Parte L lista
+     cuatro estados a los que hoy no llega ninguna fila), o entra sólo `pending`.
+   - **Cero código en cualquiera de las tres.** Es el camino de emisión: no se propone tocarlo.
+
+## Los controles
+
+Instrumento: `docs/master/evidencias/scrum1529b/tres.cjs`. Salida entera en `tres-salida.txt`. Trabaja
+sobre una copia del árbol en un directorio temporal fuera del repositorio.
+
+| control | qué se siembra | árbol real | copia sin siembra | copia sembrada |
+|---|---|---|---|---|
+| A · `Merchant.status` | una escritura de Prisma con `zz1529b_merchant` | 0 | 0 | sale en ese campo y sólo en él |
+| A · `EmailMessage.status` | una escritura de Prisma con `zz1529b_emailMessage` | 0 | 0 | sale en ese campo y sólo en él |
+| A · `VfSubmission.status` | una escritura de Prisma con `zz1529b_vfSubmission` | 0 | 0 | sale en ese campo y sólo en él |
+| B · `EmailMessage.status` | se le QUITA a la copia el escritor de `reclamado` (1 sitio) | no lo nombra | no lo nombra | «declarado y nadie lo escribe»: `reclamado`, sólo en ese campo |
+| B · `VfSubmission.status` | se le QUITA a la copia el escritor de `rejected` (3 sitios) | no lo nombra | no lo nombra | «declarado y nadie lo escribe»: `rejected`, sólo en ese campo |
+| C · llamadas a `procesarObligado()` | una llamada fabricada | 0 | 0 | 1 |
+
+- **El control B es el que sostiene la respuesta que decide.** «Ningún valor declarado sin escribir» es un
+  cero, y un cero no distingue limpio de ciego: por eso se fabrica el caso `facturado` en la copia y se
+  comprueba que el instrumento lo nombra. `Merchant.status` no tiene lista declarada: no hay valor que
+  quitarle, y el instrumento lo dice en vez de darlo por visto.
+- **El positivo del control C en el árbol real:** `encolarAltaTrasSellado()` tiene 1 llamada. El contador
+  no está mudo cuando dice 0 de `procesarObligado`.
+- **Cada expresión que Prisma recibe sin literal tiene que estar explicada por una puerta declarada**
+  (`constancia.estado`, `avanzar(…)`, `d.estado`: 3 de 3). Si mañana aparece una cuarta, el campo sale
+  CIEGO en vez de verde.
+- **Visto en rojo, tres veces** (`rojos.txt`; se repite con `--romper`, no hay que editar nada):
+  la siembra A metida en el `where`, 0 de 3 y salida 1; la siembra A sin escribir, «CIEGO» y salida 1;
+  el control B sin quitar el escritor, 0 de 2 y salida 1.
+- Rastro en el máster, por texto: «VfSubmission» sale en 3 líneas y «QuoteRequest» en 8 (positivos);
+  una palabra fabricada, en 0.
+
+## Lo que NO he medido
+
+- **Ninguna base de datos.** No sé qué valores hay en las filas de ninguna de las tres tablas.
+- **Las transiciones**, de ninguno de los tres. Los órdenes que cito (`RANGO`, las decisiones de la cola)
+  los he leído, no los he ejecutado ni cotejado.
+- **Si las ramas de `Merchant.status` son inalcanzables corriendo**: lo afirmo por lectura (nadie escribe
+  otro valor), no por ejecución.
+- **Si el aviso de Resend llega en producción** (que `RESEND_WEBHOOK_SECRET` esté puesto): la ruta está
+  montada; si recibe algo, no lo sé. Tampoco el valor de `SIF_ENABLED`.
+- **Las lecturas**, sólo por texto y sólo las que cito.
+- **SQL crudo:** no lo he contado; me apoyo en el recuento de `jv-j2c` de esta mañana (16 usos, ninguno
+  escribe tablas de estado) sin repetirlo.
+- **Fuera de `src/`:** `scripts/` y `prisma/` tienen 12 escrituras de `merchant`, vistas por texto; ninguna
+  línea pone un `status` de comercio. No pasaron por el AST. `procesarObligado` fuera de `src/` sólo sale
+  en su test y en el fichero de declarados.
+- El instrumento de SCRUM-1500d no lo he corrido, y de SCRUM-1500 sólo he leído `c.18908`.
+- **La tanda completa** no se ha corrido: no hay código ni test nuevo. Sí los guards del registro (abajo).
+
+## Lo que me salió mal
+
+- **Leí la línea 404 del máster recortada a 900 caracteres** y la frase que decide («su diseño… vive en
+  S1-D hasta que se construya») está más allá. Con media línea iba a recomendar que `VfSubmission` entrara
+  con sus cinco valores. Lo vi al contar en qué líneas sale «VfSubmission» y encontrar la 404 entre ellas.
+- **SCRUM-1500d ya había medido que a la cola no la vacía nadie**, y lo encontré al final, mirando los
+  títulos del registro de SCRUM-1500, después de haberlo derivado por mi cuenta. El encargo avisaba
+  exactamente de esto. No cambia el resultado; sí habría ahorrado una sonda.
+- **Avisé del contexto a 211.374, no al cruzar 200.000.**
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+|---|---|
+| qué valores existen hoy, derivando quién escribe y con qué | «La tabla» y «Campo por campo», punto 1; entero en `docs/master/evidencias/scrum1529b/tres-salida.txt` |
+| qué fija la Parte L, o que no fija nada | «Campo por campo», punto 2: dos sin fijar, y la línea 404 para `VfSubmission` |
+| dónde discrepan | «Campo por campo», punto 3 |
+| ¿hay algún valor declarado que nadie escriba? | «Campo por campo», punto 4; control B |
+| la pregunta en una frase y la recomendación | «Campo por campo», punto 5 |
+| un positivo y un cero sembrados por campo, y visto en rojo | «Los controles»; `docs/master/evidencias/scrum1529b/rojos.txt` |
+| las tres decisiones tomadas | NO HECHO → son del fundador |
+
+Cómo se repite: `node docs/master/evidencias/scrum1529b/tres.cjs` (salida 0; menos de un minuto).
