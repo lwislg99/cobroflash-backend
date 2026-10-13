@@ -7,13 +7,18 @@
 // banco de vistas, con la red de mentira. En todos los casos el presupuesto tiene id 205 y
 // número 4, que es lo que hace que confundirlos se vea.
 //
+// EL TERCER SITIO, EL TÍTULO DE LA VISTA (SCRUM-1482b, 13-oct-2026). Lo escribe el router
+// (`app.js`) antes de que llegue ninguna respuesta. Hasta ese día llevaba el id de la ruta y este
+// fichero decía que no lo medía: el caso 7 de `scrum832` exigía ese literal. Aquel caso se cambió
+// (orden del orquestador, SCRUM-1482 c.19093) y el título se mide aquí, en los tres casos «título
+// de la vista» de abajo.
+//
 // 🔴 QUÉ NO MIDE, y se dice:
-//   · EL TÍTULO DE LA VISTA MIENTRAS CARGA Y SI FALLA. Lo escribe el router (`app.js`) y hoy
-//     sigue llevando el id: el literal firmado («Presupuesto», sin número) no puede entrar ahí
-//     mientras `tests/scrum832-atras-vuelve-a-la-lista.test.mjs` exija que el router escriba
-//     «Presupuesto #». Está dicho en el ticket; no se toca aquel caso desde éste.
-//   · El router: el banco no lo ejecuta. En el caso «cargada» el título se SIEMBRA con lo que
-//     el router escribe hoy. El recorrido entero se mide en navegador (sonda `id-ficha.mjs`).
+//   · El router ENTERO: el banco no lo ejecuta. El título de la vista se siembra con lo que da la
+//     EXPRESIÓN del router, sacada de su `case` y evaluada (`_titulo-provisional-del-router.mjs`);
+//     hasta el 13-oct era una cadena copiada a mano. El recorrido entero, y la pestaña del
+//     navegador (`document.title`, que el router escribe a partir de ese título), se miden en
+//     navegador (sonda `id-ficha.mjs`).
 //   · Un presupuesto SIN número (`number` nulo): la ficha cae al id. Familia nombrada en el
 //     ticket, fuera de él.
 import test from 'node:test';
@@ -23,6 +28,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { tituloProvisionalDelRouter } from './_titulo-provisional-del-router.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = 205;
@@ -68,10 +74,11 @@ async function fichaConLaCargaEnVuelo(locale) {
   };
   const banco = cargarDashboard(RAIZ, { red: { fetch } });
   banco.ctx.appLocale = locale;
-  // El título de la vista, con lo que el router escribe hoy al abrir la ficha (ver cabecera).
+  // El título de la vista, con lo que el ROUTER escribe al abrir la ficha: su expresión, evaluada
+  // con el id de la ruta y este locale (ver cabecera). No es una cadena copiada aquí.
   const titulo = banco.mk('span');
   titulo.id = 'view-title';
-  titulo.textContent = 'Presupuesto #' + ID;
+  titulo.textContent = tituloProvisionalDelRouter(RAIZ, { quoteId: ID, locale });
   banco.ctx.document.body.appendChild(titulo);
 
   const v = await pintarVista(banco, 'renderQuoteDetailView', ID);
@@ -123,6 +130,36 @@ test('SCRUM-1482 · ficha · CONTROL: cargada, la cabecera y el título de la vi
     '🔴 cargada, el título de la vista no se ha corregido al número del presupuesto. La ficha sólo lo '
     + 'corrige si el título que encuentra es el que ella reconoce: si ha cambiado lo que escribe el '
     + 'router, esto es lo que se rompe y en el fuente no se ve.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// EL TÍTULO DE LA VISTA (SCRUM-1482b) — lo escribe el router; la ficha sólo lo corrige al cargar
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1482 · título de la vista · mientras carga dice la palabra del documento, sola: ni el id de la tabla ni una almohadilla', async () => {
+  const f = await fichaConLaCargaEnVuelo(LOCALE_ES);
+  assert.equal(f.titulo.textContent, 'Presupuesto',
+    `🔴 mientras la ficha carga, el título de la vista dice «${f.titulo.textContent}» y lo firmado es «Presupuesto», `
+    + `a secas (SCRUM-1482 c.18490). El router aún no sabe el número: lo único que tiene es el id de la ruta (${ID}), `
+    + 'que es el de la tabla, y ése no se enseña.');
+});
+
+test('SCRUM-1482 · título de la vista · la palabra sale del LOCALE, no está escrita en el router', async () => {
+  const f = await fichaConLaCargaEnVuelo({ ...LOCALE_ES, quote: 'Cotización', quotePlural: 'Cotizaciones' });
+  assert.equal(f.titulo.textContent, 'Cotización',
+    `🔴 con un locale que dice «Cotización», el título de la vista dice «${f.titulo.textContent}» mientras la ficha carga: `
+    + 'el router escribe la palabra a mano en vez de leerla del locale.');
+});
+
+test('SCRUM-1482 · título de la vista · si la carga falla se queda en la palabra sola, sin el id de la tabla', async () => {
+  const f = await fichaConLaCargaEnVuelo(LOCALE_ES);
+  f.contestar(500, { error: 'internal_error' });
+  await vueltas();
+  assert.ok(textos(f.v.contenedor).includes('Error cargando presupuesto.'),
+    '🔴 CIEGO: no sale «Error cargando presupuesto.», así que la carga no ha fallado.');
+  assert.equal(f.titulo.textContent, 'Presupuesto',
+    `🔴 con la carga fallida el título de la vista se queda en «${f.titulo.textContent}». Lo firmado es `
+    + '«Presupuesto», a secas; el fallo ya lo dice el aviso de debajo.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
