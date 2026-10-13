@@ -284,7 +284,7 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
       ${tiers.map((tier) => `
         <div class="tier-card ${tier.recommended ? 'tier-recommended' : ''}" data-tier-id="${esc(tier.id)}">
-          ${tier.recommended ? `<div class="tier-badge">⭐ Más popular</div>` : ''}
+          ${tier.recommended ? `<div class="tier-badge">Recomendada</div>` : '' /* SCRUM-1302d: dice lo que hay —el profesional la marcó—; «Más popular» afirmaba algo de otros clientes que nadie mide */}
           <div class="tier-header">
             <span class="tier-label">${esc(tier.label)}</span>
             ${tier.description ? `<span class="tier-desc">${esc(tier.description)}</span>` : ''}
@@ -819,12 +819,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           // Leyendo \`error\` primero, el cliente veía «factura_sin_lineas» en rojo bajo la firma
           // que acababa de dibujar. El código se conserva de reserva: para los endpoints que aún
           // no mandan copy, un identificador es mejor que un mensaje genérico.
-          document.getElementById('sig-error').textContent = data.message || data.error || 'Error al procesar.';
+          document.getElementById('sig-error').textContent = data.message || data.error || 'No se ha podido firmar. Inténtalo de nuevo.';
           document.getElementById('sig-error').style.display = 'block';
         }
       } catch {
         btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
-        document.getElementById('sig-error').textContent = 'Error de conexión.';
+        // SCRUM-1302d: aquí no se sabe si la aceptación llegó. Si llegó, el reintento contesta que ya está, sin escribir (SCRUM-1276).
+        document.getElementById('sig-error').textContent = 'No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.';
         document.getElementById('sig-error').style.display = 'block';
       }
     });
