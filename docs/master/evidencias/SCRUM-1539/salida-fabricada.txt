@@ -1,0 +1,88 @@
+POBLACION: 1 fichero de test · modo fabricado · 4 lecturas del remoto · 1995 ms
+  lectura 1: 1 líneas · tardó 0 ms
+  lectura 2: 1 líneas · tardó 0 ms · 29 ms después del FIN de la 1ª
+  lectura 3: 1 líneas · tardó 0 ms · 609 ms después del FIN de la 1ª
+  lectura 4: 1 líneas · tardó 0 ms · 819 ms después del FIN de la 1ª
+  ramas que la 1ª pasada dio por vivas: 1
+  ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+  ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+  not ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+  >>> 🔴 SCRUM-1529 tiene rama viva SIN mergear y el criterio lo saca DENTRO (entrada en main + 19/19 artefactos suyos presentes). Un censo que da por DENTRO lo que no está cierra tickets vivos.
+  ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+  ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+  # tests 5
+  # pass 4
+  # fail 1
+  # skipped 0
+SALIDA_COMPLETA_BYTES=3352
+EXIT=1
+
+===== salida completa del sujeto =====
+TAP version 13
+# Subtest: SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+ok 1 - SCRUM-804b · 🔴 el emparejamiento va por IDENTIDAD, no por contener el número
+  ---
+  duration_ms: 1.2612
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+ok 2 - SCRUM-804b · los artefactos se sacan del TEXTO de la entrada, no del número del ticket
+  ---
+  duration_ms: 0.319
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+not ok 3 - SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO
+  ---
+  duration_ms: 609.0231
+  type: 'test'
+  location: '<raiz>/tests\\scrum804b-el-barrido-de-la-42.test.mjs:169:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 SCRUM-1529 tiene rama viva SIN mergear y el criterio lo saca DENTRO (entrada en main + 19/19 artefactos suyos presentes). Un censo que da por DENTRO lo que no está cierra tickets vivos.
+    
+    'DENTRO' !== 'FUERA'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'FUERA'
+  actual: 'DENTRO'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (<raiz>/tests/scrum804b-el-barrido-de-la-42.test.mjs:202:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1325:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+    Test.postRun (node:internal/test_runner/test:1465:19)
+    Test.run (node:internal/test_runner/test:1390:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# población: 3 tickets mirados · 3 clasificados · 3 DENTRO · 0 FUERA · 0 NO DECIDIBLE (lado malo) · leídas 1 ramas remotas, 6224 ficheros de main y 1086 entradas de registro (la convención empieza en SCRUM-192)
+# Subtest: SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+ok 4 - SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo
+  ---
+  duration_ms: 209.635
+  type: 'test'
+  ...
+# Subtest: SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+ok 5 - SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN
+  ---
+  duration_ms: 1118.4656
+  type: 'test'
+  ...
+# población: 6 tickets mirados · 6 clasificados · 5 DENTRO · 0 FUERA · 1 NO DECIDIBLE (lado malo) · leídas 1 ramas remotas, 6224 ficheros de main y 1086 entradas de registro (la convención empieza en SCRUM-192)
+#   SCRUM-866    DENTRO        entrada en main + 2/2 artefactos suyos presentes
+#   SCRUM-881    DENTRO        entrada en main + 5/5 artefactos suyos presentes
+#   SCRUM-1529   DENTRO        entrada en main + 19/19 artefactos suyos presentes
+#   SCRUM-41     NO_DECIDIBLE  1 commit(s) de main lo nombran, pero ningún artefacto comprobable — el número en un commit no p
+#   SCRUM-534    DENTRO        entrada en main + 26/36 artefactos suyos presentes
+#   SCRUM-691    DENTRO        entrada en main + 8/8 artefactos suyos presentes
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1946.1467
