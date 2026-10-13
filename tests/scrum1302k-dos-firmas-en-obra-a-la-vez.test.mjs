@@ -13,6 +13,7 @@
 // que escribe siempre no ve este arreglo (ni su ausencia).
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 
 const RUTA = '../dist/modules/jobs/app/routes/albaranes.routes.js';
@@ -78,11 +79,11 @@ async function firmar(quien) {
   const res = { status(s) { r.status = s; return res; }, json(j) { r.body = structuredClone(j); return res; }, setHeader() { return res; } };
   const deVerdad = console.error; console.error = () => {};
   try {
-    await manejador({
-      params: { id: String(ID) }, merchantId: MERCHANT, userRole: 'admin', teamMemberId: null,
+    await manejador(reqDeSesion({
+      rol: 'admin', params: { id: String(ID) }, merchantId: MERCHANT, teamMemberId: null,
       headers: { 'user-agent': 'test' }, ip: '127.0.0.1', socket: {},
       body: { signatureData: trazo(quien), firmadoPorNombre: quien, firmadoPorCalidad: '', firmadoPorCalidadOtro: '' },
-    }, res);
+    }), res);
   } finally { console.error = deVerdad; }
   return r;
 }
