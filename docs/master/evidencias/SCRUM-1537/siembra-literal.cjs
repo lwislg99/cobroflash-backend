@@ -42,6 +42,8 @@ const FORMAS = [
   ['sql', '', "await prisma.$executeRawUnsafe(`UPDATE \"Cosa\" SET \"sql\" = 'fuera_sql' WHERE id = ${id}`);"],
 ];
 
+/** La medición, sin imprimir: la usa `tests/scrum1537-los-dos-cotejos.test.mjs`. */
+function medir() {
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1537-raiz-'));
 const escribe = (rel, texto) => { const p = path.join(dir, rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, texto); };
 
@@ -87,9 +89,9 @@ di(`RAIZ FABRICADA: 4 ficheros (esquema, máster, src/escribe.ts, src/otro.ts) �
 if (!r || r.ciego) {
   di(`CIEGO: ${r ? r.ciego : 'el instrumento no devolvió nada'}`);
   di('EXIT=2');
-  console.log(out.join('\n'));
-  process.exit(2);
+  return { texto: out.join('\n'), salida: 2, formas: [] };
 }
+const formas = [];
 di(`POBLACION: ${FORMAS.length} formas de escribir, un campo sin cierre por forma · el instrumento leyó ${r.poblacion.ficheros} ficheros .ts de la raíz fabricada (${r.poblacion.sinParsear} sin parsear)`);
 di('');
 const j = juzgar(r, []);
@@ -103,15 +105,24 @@ for (const [n] of FORMAS) {
   const avisa = f.noLiterales.length > 0;
   const nombrado = j.hallazgos.filter((h) => h.campo === f.campo).map((h) => h.clase);
   if (laVe) cuenta.laVe += 1; else if (avisa) cuenta.avisa += 1; else cuenta.calla += 1;
+  formas.push({ forma: n, zona: laVe ? 've' : (avisa ? 'avisa' : 'calla'), veredicto: f.veredicto, nombrado });
   di(`${n.padEnd(10)} D = ${f.D.join(' | ').padEnd(28)} ${laVe ? 'LA VE    ' : 'NO LA VE '} · ${avisa ? `avisa: (no literal) ${f.noLiterales.map((x) => x.replace(/^\S+ /, '')).join(' ; ')}` : 'no avisa de nada'} · veredicto ${f.veredicto} · el juicio ${nombrado.length ? `lo nombra (${nombrado.join(', ')})` : 'NO lo nombra'}`);
 }
 di('');
 di(`RESUMEN sobre ${FORMAS.length} formas, todas con un valor fuera del máster escrito en src/:`);
 di(`  ${cuenta.laVe}  las ve (el campo sale CODIGO_FUERA_DEL_MASTER)`);
-di(`  ${cuenta.avisa}  no las ve, y deja una línea «(no literal)» que el juicio no mira`);
+di(`  ${cuenta.avisa}  no las ve, y deja una línea «(no literal)»: el juicio las nombra en ${formas.filter((x) => x.zona === 'avisa' && x.nombrado.length > 0).length}`);
 di(`  ${cuenta.calla}  no las ve y no deja rastro`);
 di(`  ${sinMedir}  sin medir`);
 const salida = sinMedir > 0 || fs.existsSync(dir) ? 2 : 0;
 di(`EXIT=${salida}`);
-console.log(out.join('\n'));
-process.exit(salida);
+return { texto: out.join('\n'), salida, formas };
+}
+
+module.exports = { medir, FORMAS };
+
+if (require.main === module) {
+  const { texto, salida } = medir();
+  console.log(texto);
+  process.exit(salida);
+}
