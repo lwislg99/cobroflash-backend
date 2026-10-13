@@ -101,7 +101,15 @@ for (const arg of shas) {
             else {
               const m = correr(tests);
               const soloDelObjetivo = m.caidos.filter((c) => !media.caidos.includes(c));
-              veredicto = `${soloDelObjetivo.length ? 'ROJO' : 'VERDE'}: base intermedia (sin los de encima; numstat ${numMedia}) caen ${media.caidos.length} de ${media.casos}; con el objetivo quitado caen ${m.caidos.length} de ${m.casos}; SÓLO por el objetivo ${soloDelObjetivo.length} → ${soloDelObjetivo.slice(0, 6).map((c) => c.slice(0, 110)).join(' ‖ ')}${media.caidos.length ? ` · [ya caían sin los de encima: ${media.caidos.slice(0, 4).map((c) => c.slice(0, 70)).join(' ‖ ')}]` : ''}`;
+              // «No cae ninguno» sobre CERO casos (o todos saltados) no es que el arreglo no esté protegido:
+              // es no haber mirado. Hasta el 13-oct esta rama lo daba por VERDE; la de un solo merge ya lo
+              // separaba. Lo cazó el censo de SCRUM-622 en el PR #2337.
+              const sinCasos = (p) => !p.casos || p.saltados === p.casos;
+              let sale;
+              if (sinCasos(media) || sinCasos(m)) sale = 'CIEGO';
+              else if (soloDelObjetivo.length) sale = 'ROJO';
+              else sale = 'VERDE';
+              veredicto = `${sale}: base intermedia (sin los de encima; numstat ${numMedia}) caen ${media.caidos.length} de ${media.casos}; con el objetivo quitado caen ${m.caidos.length} de ${m.casos}; SÓLO por el objetivo ${soloDelObjetivo.length} → ${soloDelObjetivo.slice(0, 6).map((c) => c.slice(0, 110)).join(' ‖ ')}${media.caidos.length ? ` · [ya caían sin los de encima: ${media.caidos.slice(0, 4).map((c) => c.slice(0, 70)).join(' ‖ ')}]` : ''}`;
             }
           }
         }

@@ -789,3 +789,25 @@ El guion mintió una vez: #2319 salió VERDE con 115 líneas quitadas, porque `t
 
     LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/scrum47-enviar-albaran-wa.test.mjs tests/scrum49-firma-remota.test.mjs tests/scrum50-bot-albaranes.test.mjs tests/scrum68-evidencias-firma.test.mjs
     node docs/master/evidencias/SCRUM-876g/vecinos-1515.mjs <raíz del árbol>
+
+## 13-oct · El obligatorio de #2337 estuvo cuatro días en rojo, y el rojo era mío
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:42:08Z
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+No cayó por `scrum1515` ni por ninguno de los cuatro de T4. Run 37926820757, un caído de 7.614: `SCRUM-622 · EL CENSO`, que barre el árbol entero buscando expresiones cuyo lado por defecto es el estado bueno. Encontró una, en un guion de este mismo PR:
+
+    docs/master/evidencias/SCRUM-876g/rojo-por-merge.mjs:104   soloDelObjetivo.length ? 'ROJO' : 'VERDE'
+
+Y tenía razón. En la rama «en pila» del guion, «no cae ninguno» sobre cero casos salía `VERDE`; la rama de un solo merge ya lo separaba (`CIEGO: … no dieron casos`). Ahora la de pila también: sin casos, o con todos saltados, en la base intermedia o con el objetivo quitado, dice `CIEGO`. El guard no se ha tocado.
+
+| qué | antes del arreglo | después |
+|---|---|---|
+| `tests/scrum622-desconocido-no-es-verde.test.mjs`, sobre este árbol ya fusionado con `main` | 12 tests, 1 caído (el mismo de CI) | 12 tests, 0 caídos |
+
+Lo que NO se ha hecho: volver a correr los dos casos en pila (#2268 y #2279) con el guion corregido. Sus resultados de la tabla de arriba son del 9-oct, tenían casos, y el cambio no les toca la respuesta.
+
+El fallo mío: escribí el expediente y sus guiones DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días.
+
+El «CIEGO» del meta-guard de ese mismo run (`scrum757`, «no aparece en la pasada mutada») es informativo: a la pasada mutada le faltaron 5 de los 9 tests de ese fichero. No he medido por qué; en #2340, a la misma hora y desde la misma base, ese job salió verde.
