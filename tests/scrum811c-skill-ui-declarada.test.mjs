@@ -222,7 +222,6 @@ export const HEREDADAS = [
   'a1f4d9ddae5e6f47e56ea0f4a39c58c4527afc40', // 2026-09-28 · SCRUM-1165.md
   'f9dc44a3f9267cd5624a4902ba3fc1fd93b108d9', // 2026-09-28 · SCRUM-1202.md
   '90b82de5844e9e6c664b66707cf0aaf3a67a21f9', // 2026-09-28 · SCRUM-993.md (sólo tocadas)
-  '92161e9387119b6fdd39507bc0561b7af252b6ec', // 2026-09-28 · SCRUM-1188.md
   '00eef8c5e641fb418d8a25e9e172f90b328bd04c', // 2026-09-28 · SCRUM-1216.md
   'c57f745d0f9f8424abc90e8a591d10fd81a00cad', // 2026-09-28 · SCRUM-1164.md
   '6184ea45acbf37a645a7402e55f5e1abf85ab8f8', // 2026-09-28 · SCRUM-1191.md
@@ -233,7 +232,6 @@ export const HEREDADAS = [
   'c6337738d88b64068a53e3f54983a3f8abee5476', // 2026-09-28 · SCRUM-1205.md
   'beca1de8870d43381668da32b51c8729ef6e5e21', // 2026-09-28 · SCRUM-1171.md (sólo tocadas)
   '44dd30659ce983dd646f35da0ee582860877a9bb', // 2026-09-28 · SCRUM-1215.md
-  '0fa2140a431df06e942cc58ae6ef920c44a5417c', // 2026-09-28 · SCRUM-1188.md (sólo tocadas)
   '666f0a078e466800bbdf7c5e7bd49c2b427b89f0', // 2026-09-28 · SCRUM-1230.md
   '0c381c940db43ad4699537e29262791df7fcee95', // 2026-09-28 · SCRUM-1184.md (sólo tocadas)
   'c504b033de5e11ecfd7e7d46d0bc8b8d6fa546d8', // 2026-09-28 · SCRUM-1229.md

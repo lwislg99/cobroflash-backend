@@ -118,3 +118,4 @@ La base de un guard puede ser un commit y no un fichero: antes de autorizar move
 El sitio al que un censo dice que se fue una línea es el del texto que había, no el de lo que la frase afirma: si la cita nació mal, su destino también. (SCRUM-1524)
 Una frase que un fichero escribe al morir compite con el lector que la espera: se escribe con el proceso vivo. (SCRUM-1331b)
 Una fecha de commit dice cuándo se escribió, no cuándo entró. (SCRUM-1542)
+Antes de escribir una sonda que pregunta «¿consta?», se busca la función de la casa que ya lo contesta: una sonda propia mira el papel que tú conoces, no el que hay. (SCRUM-1215)

@@ -1,0 +1,42 @@
+SERVIDO=el quotesView.js de producción · build del panel 6640b38f3d7800f7c439e1e78fa9694440822507
+TESTIGO={"sustituye":false,"guardaCobro":true} · ROL=admin
+--- FILAS (partida de cada caso: UNA plantilla «Caldera (sonda)» a 90 € con cobro FIFTY_FIFTY; se teclea 120 €)
+
+· MISMO NOMBRE, dice que SÍ (cobro «Acordar con el cliente»)
+    pregunta     : ninguna
+    escrituras   : POST /admin/templates ["currency","lines","name","paymentTerms"] paymentTerms="MANUAL" → contestada por la sonda (201)
+    en el servidor de la sonda: #990010 «Caldera (sonda)» 90 € · cobro "FIFTY_FIFTY" ; #990011 «Caldera (sonda)» 120 € · cobro "MANUAL"
+    lo que dice  : «Plantilla "Caldera (sonda)" guardada. Puedes usarla con el botón "📋 Usar plantilla". [alert success]»
+    ficha rápida : añade una línea a 90
+
+· MISMO NOMBRE, dice que NO
+    pregunta     : ninguna
+    escrituras   : POST /admin/templates ["currency","lines","name","paymentTerms"] paymentTerms="MANUAL" → contestada por la sonda (201)
+    en el servidor de la sonda: #990010 «Caldera (sonda)» 90 € · cobro "FIFTY_FIFTY" ; #990011 «Caldera (sonda)» 120 € · cobro "MANUAL"
+    lo que dice  : «Plantilla "Caldera (sonda)" guardada. Puedes usarla con el botón "📋 Usar plantilla". [alert success]»
+    ficha rápida : añade una línea a 90
+
+· MISMO NOMBRE desde «Personalizado», dice que SÍ
+    pregunta     : ninguna
+    escrituras   : POST /admin/templates ["currency","lines","name","paymentTerms"] paymentTerms=null → contestada por la sonda (201)
+    en el servidor de la sonda: #990010 «Caldera (sonda)» 90 € · cobro "FIFTY_FIFTY" ; #990011 «Caldera (sonda)» 120 € · cobro null
+    lo que dice  : «Plantilla "Caldera (sonda)" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto. [alert]»
+    ficha rápida : añade una línea a 90
+
+· otras mayúsculas y espacios («  caldera (SONDA) »), dice que SÍ
+    pregunta     : ninguna
+    escrituras   : POST /admin/templates ["currency","lines","name","paymentTerms"] paymentTerms="FULL_UPFRONT" → contestada por la sonda (201)
+    en el servidor de la sonda: #990010 «Caldera (sonda)» 90 € · cobro "FIFTY_FIFTY" ; #990011 «caldera (SONDA)» 120 € · cobro "FULL_UPFRONT"
+    lo que dice  : «Plantilla "caldera (SONDA)" guardada. Puedes usarla con el botón "📋 Usar plantilla". [alert success]»
+    ficha rápida : añade una línea a 90
+
+· CONTROL · nombre que no existe
+    pregunta     : ninguna
+    escrituras   : POST /admin/templates ["currency","lines","name","paymentTerms"] paymentTerms="FULL_UPFRONT" → contestada por la sonda (201)
+    en el servidor de la sonda: #990010 «Caldera (sonda)» 90 € · cobro "FIFTY_FIFTY" ; #990011 «Caldera de gasoil (sonda)» 120 € · cobro "FULL_UPFRONT"
+    lo que dice  : «Plantilla "Caldera de gasoil (sonda)" guardada. Puedes usarla con el botón "📋 Usar plantilla". [alert success]»
+    ficha rápida : añade una línea a 90
+
+errores de página: ninguno
+POBLACION=5 casos · ciegos=0 · listas servidas por la sonda=5
+EXIT=0
