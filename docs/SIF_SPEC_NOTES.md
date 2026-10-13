@@ -74,8 +74,8 @@ justificada" del master (microservicio solo-firma) NO hace falta. Fuente: FAQ of
 
 > ⚠️ **Esta sección describe un envío que TODAVÍA NO EXISTE.** Las reglas son ciertas —las
 > impone la AEAT—, pero YaQu no las cumple ni las incumple hoy: no hay envío que las cumpla.
-> Y donde dice «la cola `VfSubmission`» o «nuestra FSM», léase **[SE HARÁ]**: esa cola no
-> está en `prisma/schema.prisma`.
+> Y donde dice «la cola `VfSubmission`» o «nuestra FSM», léase **[SE HARÁ]**: esa cola
+> existe en `prisma/schema.prisma` y nadie la vacía. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «esa cola no está en `prisma/schema.prisma`», falso desde el 30-sep-2026 (SCRUM-1296; este mismo fichero lo dice más abajo, en «Actualizado el 30-sep-2026»). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
 
 - **Máx 1.000 registros por envío.**
 - **Flujo de control:** cada `RespuestaSuministro` trae `TiempoEsperaEnvio` (mínimo 60 s);
