@@ -67,6 +67,41 @@
     errorCrear: 'No se ha podido crear la revisión. Vuelve a intentarlo.',
   };
 
+  // SCRUM-1150 · CUANDO «CREAR REVISIÓN» FALLA, LA PANTALLA DECIDE POR EL CÓDIGO, NO PINTA EL
+  // `message` QUE VENGA. Conducta y literales firmados por el orquestador por delegación del
+  // fundador (SCRUM-1150, comentario 18740, 7-oct-2026):
+  // `docs/microcopy/2026-10-07-SCRUM-1150-crear-revision-por-codigo.md`.
+  //
+  // Hasta aquí se pintaba `data.message` de cualquier respuesta, y uno de esos mensajes era el
+  // diagnóstico de un programador: ocho líneas a 390 px («DOS VIGENTES A LA VEZ: …»). El servidor
+  // ya no lo manda (#2330), pero la puerta es ésta: un mensaje de excepción NUEVO no puede llegar
+  // a la cara de nadie, porque lo que no esté en esta tabla cae en `TEXTOS.errorCrear`.
+  //
+  // Los códigos son los de `POST /admin/quotes/:id/revisiones` (`quotesAdmin.routes.ts`); que cada
+  // clave de aquí exista en el servidor lo ata `tests/scrum1150b-…`.
+  var TEXTO_POR_CODIGO = {
+    quote_sin_numero: 'No se puede crear una revisión: este presupuesto no tiene número.',
+    quote_not_found: 'No se puede crear una revisión: este presupuesto ya no existe.',
+  };
+  // El ÚNICO código cuyo `message` del servidor pasa tal cual: está firmado (SCRUM-887, L2r) y
+  // atado al dominio por `tests/scrum887c-caso-c-bloqueado.test.mjs`.
+  var CODIGO_QUE_TRAE_SU_TEXTO = 'descuento_global_con_varios_iva';
+  //
+  // Caen en el general A PROPÓSITO, y se dice cuál no debería:
+  //   · `revisiones_sin_leer`: «vuelve a intentarlo» es cierto (SCRUM-1150 c.19085).
+  //   · `revision_no_posterior`, `revisiones_sin_la_propia`: fallos nuestros, sin frase propia.
+  //   · `revisiones_dos_vigentes`: aquí «vuelve a intentarlo» NO es cierto (son los datos). Su
+  //     frase está propuesta en c.19098 y SIN FIRMA al escribir esto: no se pinta hasta que conste.
+  function textoDelFalloAlCrear(e) {
+    var codigo = e && e.data && typeof e.data.error === 'string' ? e.data.error : null;
+    if (codigo !== null && Object.prototype.hasOwnProperty.call(TEXTO_POR_CODIGO, codigo)) {
+      return TEXTO_POR_CODIGO[codigo];
+    }
+    // SCRUM-1233 · leer el mensaje del servidor sigue viviendo en UN sitio (`mensajeParaPersona`).
+    if (codigo === CODIGO_QUE_TRAE_SU_TEXTO) return mensajeParaPersona(e, TEXTOS.errorCrear);
+    return TEXTOS.errorCrear;
+  }
+
   function esc(v) {
     return String(v === null || v === undefined ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -192,20 +227,24 @@
     btn.addEventListener('click', function () {
       var id = btn.getAttribute('data-revision-crear');
       btn.disabled = true; // que dos clics no creen dos revisiones
+      // SCRUM-1150 · el aviso del intento ANTERIOR se quita al volver a pulsar. Cada fallo colgaba
+      // otro párrafo debajo del anterior (medido: dos fallos, dos avisos), y mientras el segundo
+      // intento está en vuelo el primero ya no dice nada cierto.
+      var viejos = contenedor.querySelectorAll('[data-revision-error]');
+      for (var v = 0; v < viejos.length; v += 1) viejos[v].remove();
       Promise.resolve()
         .then(function () { return api('/admin/quotes/' + id + '/revisiones', { method: 'POST' }); })
         .then(function (r) { if (typeof alCrear === 'function') alCrear(r); })
         .catch(function (e) {
           btn.disabled = false;
-          // El motivo NO se inventa: si el servidor manda uno, se enseña el suyo.
-          // SCRUM-1215 (lote 4) · «el suyo» es `data.message`, el que el servidor escribe para una
-          // persona (`RevisionNoCreable`). NO `e.message`: `apiRequest` lo compone SIEMPRE
-          // —«API 500: internal_error», o «Failed to fetch» sin red— y así el texto firmado no se
-          // pintaba nunca. Lo que no traiga `data.message` cae en `errorCrear`, nunca al revés.
-          // SCRUM-1233 · esa regla vive ya en UN sitio, `mensajeParaPersona` (api.js).
-          var msg = mensajeParaPersona(e, TEXTOS.errorCrear);
+          // SCRUM-1215 (lote 4) · NUNCA `e.message`: `apiRequest` lo compone SIEMPRE —«API 500:
+          // internal_error», o «Failed to fetch» sin red— y así el texto firmado no se pintaba.
+          // SCRUM-1150 · y tampoco `data.message` a ciegas: decide el CÓDIGO (arriba).
+          var msg = textoDelFalloAlCrear(e);
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
+          // Es un fallo que aparece después de pulsar: un lector de pantalla tiene que oírlo.
+          aviso.setAttribute('role', 'alert');
           // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
           // cuenta). Aquí había un `cssText` con `--danger`, y el trinquete de SCRUM-713c lo
           // cazó: 349 sobre un techo de 348.

@@ -1,0 +1,56 @@
+POBLACIÓN · log 2303.log: 1781097 bytes · 14868 líneas
+POBLACIÓN · «ℹ tests» en el log: 11064, 5 · líneas de caso del reporter spec (✔ ✖ ﹣ a nivel 0): 11082
+POBLACIÓN · node v24.18.0 · win32 · 3 pasada(s) por fichero
+
+══ tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs 
+   DECLARA (AST, el recorrido de la señal): 55 llamadas test()/it() · 55 de nombre literal · 55 nombres distintos
+   A · pasada 1: sale 0 · TAP 17611 caracteres · líneas de test 55 · resumen tests 55 pass 55 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 2: sale 0 · TAP 17615 caracteres · líneas de test 55 · resumen tests 55 pass 55 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 3: sale 0 · TAP 17618 caracteres · líneas de test 55 · resumen tests 55 pass 55 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   C · en el log del job (reporter spec): 43 de 55 nombres aparecen · 12 no aparecen → posiciones 44–55 · líneas 222–249
+       control de cero (cada nombre real + 8 hex de su sha1): 0 de 55 aparecen
+       ¿son las mismas 12 que nombró la señal (posiciones 44–55)? SÍ, el mismo conjunto
+         44 · línea 222 · INICIO SIN RESULTADO («▶») · SCRUM-1456 · PUT invoices /:id/tags · `id` (params) · SUELO: un id que cabe LLEGA a la bas
+         45 · línea 223 · ni inicio ni resultado · SCRUM-1456 · PUT invoices /:id/tags · `id` (params) · 🔴 un id que no cabe en la columna →
+         46 · línea 224 · ni inicio ni resultado · SCRUM-1456 · GET invoices /:id/pdf · `id` (params) · SUELO: un id que cabe LLEGA a la base
+         47 · línea 225 · ni inicio ni resultado · SCRUM-1456 · GET invoices /:id/pdf · `id` (params) · 🔴 un id que no cabe en la columna → 
+         48 · línea 226 · ni inicio ni resultado · SCRUM-1456 · PATCH invoices /:id/asignados · `id` (params) · SUELO: un id que cabe LLEGA a
+         49 · línea 227 · ni inicio ni resultado · SCRUM-1456 · PATCH invoices /:id/asignados · `id` (params) · 🔴 un id que no cabe en la co
+         50 · línea 228 · ni inicio ni resultado · SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · SUELO: un id que cabe LL
+         51 · línea 229 · ni inicio ni resultado · SCRUM-1456 · POST invoices /:id/resend-whatsapp · `id` (params) · 🔴 un id que no cabe en 
+         52 · línea 230 · ni inicio ni resultado · SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · SUELO: un id que cabe LLEG
+         53 · línea 231 · ni inicio ni resultado · SCRUM-1456 · POST invoices /:id/send-reminder · `id` (params) · 🔴 un id que no cabe en la
+         54 · línea 237 · ni inicio ni resultado · SCRUM-1456 · GET customers /:id · un cliente que EXISTE se sigue devolviendo: 200 con su f
+         55 · línea 244 · ni inicio ni resultado · SCRUM-1455 · PUT invoices /:id/tags · una factura que EXISTE se sigue etiquetando: 200
+       control del inicio: de los 43 con resultado, 0 llevan además «▶»
+   B · quitados 12 bloques del TAP local (veneno ENTRÓ) → la señal dice: tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · faltan 12 de 55 (cola) · posiciones 44–55 · líneas 222–249
+       ¿la misma frase que en CI («faltan 12 de 55 (cola) · posiciones 44–55 · líneas 222–249»)? SÍ
+
+══ tests/scrum176-guard-mensaje.test.mjs 
+   DECLARA (AST, el recorrido de la señal): 26 llamadas test()/it() · 26 de nombre literal · 26 nombres distintos
+   A · pasada 1: sale 0 · TAP 5636 caracteres · líneas de test 26 · resumen tests 26 pass 26 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 2: sale 0 · TAP 5637 caracteres · líneas de test 26 · resumen tests 26 pass 26 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 3: sale 0 · TAP 5634 caracteres · líneas de test 26 · resumen tests 26 pass 26 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   C · en el log del job (reporter spec): 20 de 26 nombres aparecen · 6 no aparecen → posiciones 21–26 · líneas 179–247
+       control de cero (cada nombre real + 8 hex de su sha1): 0 de 26 aparecen
+       ¿son las mismas 6 que nombró la señal (posiciones 21–26)? SÍ, el mismo conjunto
+         21 · línea 179 · ni inicio ni resultado · SCRUM-176 · sin sentinel y con otra regla, gana el mensaje de db push (orden intacto)
+         22 · línea 186 · ni inicio ni resultado · SCRUM-176 · el sentinel autoriza UN db push y se consume
+         23 · línea 208 · ni inicio ni resultado · SCRUM-176 · e2e: la accion real sale con codigo 2 y explica por que
+         24 · línea 214 · ni inicio ni resultado · SCRUM-176 · e2e: el commit con prosa sale con codigo 0
+         25 · línea 227 · ni inicio ni resultado · SCRUM-176 · el hook de Codex delega, no reimplementa las reglas
+         26 · línea 242 · ni inicio ni resultado · SCRUM-176 · descontarTexto quita el mensaje pero deja la invocacion
+       control del inicio: de los 20 con resultado, 0 llevan además «▶»
+   B · quitados 6 bloques del TAP local (veneno ENTRÓ) → la señal dice: tests/scrum176-guard-mensaje.test.mjs · faltan 6 de 26 (cola) · posiciones 21–26 · líneas 179–247
+       ¿la misma frase que en CI («faltan 6 de 26 (cola) · posiciones 21–26 · líneas 179–247»)? SÍ
+
+══ tests/scrum1339d-senal-de-nombres.test.mjs (CONTROL: tiene que cuadrar)
+   DECLARA (AST, el recorrido de la señal): 17 llamadas test()/it() · 17 de nombre literal · 17 nombres distintos
+   A · pasada 1: sale 0 · TAP 4949 caracteres · líneas de test 17 · resumen tests 17 pass 17 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 2: sale 0 · TAP 4950 caracteres · líneas de test 17 · resumen tests 17 pass 17 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   A · pasada 3: sale 0 · TAP 4952 caracteres · líneas de test 17 · resumen tests 17 pass 17 fail 0 skipped 0 · la señal: medible=true ausentes=0 → CUADRA con lo declarado
+   C · en el log del job (reporter spec): 17 de 17 nombres aparecen · 0 no aparecen
+       control de cero (cada nombre real + 8 hex de su sha1): 0 de 17 aparecen
+
+DESCUADRES entre lo declarado y lo ejecutado en local: 0 (sobre 3 ficheros × 3 pasadas)
+EXIT=0

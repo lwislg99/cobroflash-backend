@@ -1,0 +1,114 @@
+POBLACIÓN · 11 logs en la carpeta · node v24.18.0 · win32
+
+── ① cada log: tamaño ANTES de contar, y la suma (anclado y con duración: ✔ + ✖ + ﹣ = «ℹ tests»)
+pr	job	bytes	lineas	paso	i_tests	pass	fail	skip	ancl_ok	ancl_x	ancl_skip	SUMA	ancl_sin_duracion	sin_anclar	senal_ausentes	senal_tap	sin_veredicto
+2298	113106794214	1782986	14882	14147	11082	10989	0	93	10989	0	93	CUADRA	20	11103	0	11082	0
+2300	113111055443	1782743	14881	14145	11080	10987	0	93	10987	0	93	CUADRA	20	11101	2	11080	0
+2301	113113747450	1780812	14871	14138	11073	10980	0	93	10980	0	93	CUADRA	20	11094	9	11073	0
+2302	113110667368	1783054	14881	14147	11082	10989	0	93	10989	0	93	CUADRA	20	11103	0	11082	0
+2303	113113442033	1781097	14868	14130	11064	10971	0	93	10971	0	93	CUADRA	20	11085	18	11064	0
+2304	113113729266	1778728	14854	14117	11050	10957	0	93	10957	0	93	CUADRA	20	11071	32	11050	0
+2305	113129323405	1778826	14862	14129	11064	10971	0	93	10971	0	93	CUADRA	20	11085	18	11064	0
+2306	113115708000	1781542	14869	14131	11066	10973	0	93	10973	0	93	CUADRA	20	11087	16	11066	0
+2307	113115947941	1783467	14885	14147	11082	10989	0	93	10989	0	93	CUADRA	20	11103	0	11082	0
+2308	113117249500	1783171	14882	14147	11082	10989	0	93	10989	0	93	CUADRA	20	11103	0	11082	0
+2309	113125061246	1782976	14881	14147	11082	10989	0	93	10989	0	93	CUADRA	20	11103	0	11082	0
+   leídos 11 de 11 · ciegos 0 · sumas que NO cuadran 0
+
+── ② 5 ficheros dictados por la señal en algún job, mirados en los 11 logs
+══ tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs
+   #2298	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2300	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2301	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2302	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2303	blob e4b2923b23	declara 55	COLA · faltan 12 · posiciones 44–55 · corte DENTRO (inicio sin resultado en 44)	señal: faltan 12 de 55 (cola) 44–55 → COINCIDE	cero: 0
+   #2304	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2305	blob e4b2923b23	declara 55	COLA · faltan 18 · posiciones 38–55 · corte ENTRE	señal: faltan 18 de 55 (cola) 38–55 → COINCIDE	cero: 0
+   #2306	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2307	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2308	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   #2309	blob e4b2923b23	declara 55	COMPLETO 55 de 55	señal: no lo nombra → COINCIDE	cero: 0
+   → blobs distintos 1 · cortado en 2 de 11 (#2303 desde 44, DENTRO · #2305 desde 38, ENTRE) · completo en 9 · texto de salida de proceso en el fichero: 0 · SALTA: el mismo blob sale completo en otros jobs
+
+══ tests/scrum176-guard-mensaje.test.mjs
+   #2298	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2300	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2301	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2302	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2303	blob 3a177b4902	declara 26	COLA · faltan 6 · posiciones 21–26 · corte ENTRE	señal: faltan 6 de 26 (cola) 21–26 → COINCIDE	cero: 0
+   #2304	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2305	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2306	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2307	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2308	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   #2309	blob 3a177b4902	declara 26	COMPLETO 26 de 26	señal: no lo nombra → COINCIDE	cero: 0
+   → blobs distintos 1 · cortado en 1 de 11 (#2303 desde 21, ENTRE) · completo en 10 · texto de salida de proceso en el fichero: 0 · SALTA: el mismo blob sale completo en otros jobs
+
+══ tests/scrum524b-trinquete-de-la-tabla.test.mjs
+   #2298	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2300	blob 3acc9d1c05	declara 41	COLA · faltan 2 · posiciones 40–41 · corte ENTRE	señal: faltan 2 de 41 (cola) 40–41 → COINCIDE	cero: 0
+   #2301	blob 3acc9d1c05	declara 41	COLA · faltan 9 · posiciones 33–41 · corte ENTRE	señal: faltan 9 de 41 (cola) 33–41 → COINCIDE	cero: 0
+   #2302	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2303	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2304	blob 3acc9d1c05	declara 41	COLA · faltan 6 · posiciones 36–41 · corte ENTRE	señal: faltan 6 de 41 (cola) 36–41 → COINCIDE	cero: 0
+   #2305	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2306	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2307	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2308	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   #2309	blob 3acc9d1c05	declara 41	COMPLETO 41 de 41	señal: no lo nombra → COINCIDE	cero: 0
+   → blobs distintos 1 · cortado en 3 de 11 (#2300 desde 40, ENTRE · #2301 desde 33, ENTRE · #2304 desde 36, ENTRE) · completo en 8 · texto de salida de proceso en el fichero: 0 · SALTA: el mismo blob sale completo en otros jobs
+
+══ tests/scrum834-puerta-avisador-rojo.test.mjs
+   #2298	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2300	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2301	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2302	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2303	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2304	blob efb8625455	declara 53	COLA · faltan 1 · posiciones 53–53 · corte DENTRO (inicio sin resultado en 53)	señal: faltan 1 de 53 (cola) 53–53 → COINCIDE	cero: 0
+   #2305	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2306	blob efb8625455	declara 53	COLA · faltan 16 · posiciones 38–53 · corte ENTRE	señal: faltan 16 de 53 (cola) 38–53 → COINCIDE	cero: 0
+   #2307	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2308	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   #2309	blob efb8625455	declara 53	COMPLETO 53 de 53	señal: no lo nombra → COINCIDE	cero: 0
+   → blobs distintos 1 · cortado en 2 de 11 (#2304 desde 53, DENTRO · #2306 desde 38, ENTRE) · completo en 9 · texto de salida de proceso en el fichero: 0 · SALTA: el mismo blob sale completo en otros jobs
+
+══ tests/vigia-atascados.test.mjs
+   #2298	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2300	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2301	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2302	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2303	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2304	blob f50f23e797	declara 64	COLA · faltan 25 · posiciones 40–64 · corte DENTRO (inicio sin resultado en 40)	señal: faltan 25 de 64 (cola) 40–64 → COINCIDE	cero: 0
+   #2305	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2306	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2307	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2308	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   #2309	blob f50f23e797	declara 64	COMPLETO 64 de 64	señal: no lo nombra → COINCIDE	cero: 0
+   → blobs distintos 1 · cortado en 1 de 11 (#2304 desde 40, DENTRO) · completo en 10 · texto de salida de proceso en el fichero: 0 · SALTA: el mismo blob sale completo en otros jobs
+
+── ③ resumen por fichero
+fichero	blobs	cortado_en	completo_en	sitios(pos/corte)	texto_salida	veredicto
+scrum1456-ids-que-no-caben-en-la-columna.test.mjs	1	#2303@44 #2305@38	9 de 11	44/DENTRO 38/ENTRE	0	SALTA: el mismo blob sale completo en otros jobs
+scrum176-guard-mensaje.test.mjs	1	#2303@21	10 de 11	21/ENTRE	0	SALTA: el mismo blob sale completo en otros jobs
+scrum524b-trinquete-de-la-tabla.test.mjs	1	#2300@40 #2301@33 #2304@36	8 de 11	40/ENTRE 33/ENTRE 36/ENTRE	0	SALTA: el mismo blob sale completo en otros jobs
+scrum834-puerta-avisador-rojo.test.mjs	1	#2304@53 #2306@38	9 de 11	53/DENTRO 38/ENTRE	0	SALTA: el mismo blob sale completo en otros jobs
+vigia-atascados.test.mjs	1	#2304@40	10 de 11	40/DENTRO	0	SALTA: el mismo blob sale completo en otros jobs
+
+── ④ resumen por obligatorio
+   #2298	ausentes 0	ficheros 0	suma de los dictados 0 = registro	—
+   #2300	ausentes 2	ficheros 1	suma de los dictados 2 = registro	scrum524b-trinquete-de-la-tabla 40–41
+   #2301	ausentes 9	ficheros 1	suma de los dictados 9 = registro	scrum524b-trinquete-de-la-tabla 33–41
+   #2302	ausentes 0	ficheros 0	suma de los dictados 0 = registro	—
+   #2303	ausentes 18	ficheros 2	suma de los dictados 18 = registro	scrum1456-ids-que-no-caben-en-la-columna 44–55 · scrum176-guard-mensaje 21–26
+   #2304	ausentes 32	ficheros 3	suma de los dictados 32 = registro	scrum524b-trinquete-de-la-tabla 36–41 · scrum834-puerta-avisador-rojo 53–53 · vigia-atascados 40–64
+   #2305	ausentes 18	ficheros 1	suma de los dictados 18 = registro	scrum1456-ids-que-no-caben-en-la-columna 38–55
+   #2306	ausentes 16	ficheros 1	suma de los dictados 16 = registro	scrum834-puerta-avisador-rojo 38–53
+   #2307	ausentes 0	ficheros 0	suma de los dictados 0 = registro	—
+   #2308	ausentes 0	ficheros 0	suma de los dictados 0 = registro	—
+   #2309	ausentes 0	ficheros 0	suma de los dictados 0 = registro	—
+
+── ⑤ controles del instrumento
+   siembra sobre #2298, tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs: quitadas 0 líneas de resultado (veneno NO ENTRÓ) · antes COMPLETO · después COMPLETO → CIEGO
+   positivo del texto de salida: 31 de 1292 tests de la cabeza de #2298 lo contienen → VE (es recuento de texto: no sigue imports ni procesos hijos)
+   sumas ancladas que no cuadran: 0 de 11 · cruces con la señal que no coinciden: 0 · logs ciegos: 0
+EXIT=2

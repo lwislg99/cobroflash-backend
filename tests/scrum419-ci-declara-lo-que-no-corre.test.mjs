@@ -183,6 +183,16 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1188d: los TRES que miran que `tiers` de una plantilla quede a NULL de SQL (el alta sin
+  // niveles y el `PUT` con `tiers: null`), mas su suelo. Necesitan banco porque lo que vigilan es
+  // QUE NULL queda en la columna: por la API de Prisma el NULL de SQL y el valor JSON `null` se leen
+  // igual, y solo el SQL crudo contra Postgres (`IS NULL`, `jsonb_typeof`) los distingue. La sonda
+  // que lo intento sin base salio ciega (SCRUM-1188c). `jsonAnulable`, sin base, corre siempre.
+  'scrum1188d-tiers-tambien-se-vacia.test.mjs': 3,
+  // SCRUM-1188d: el que crea una revision con `crearRevisionDeQuote` de verdad y relee por SQL que
+  // las columnas `Json?` vacias se heredan vacias. Mismo motivo. El censo de la lista y la funcion
+  // pura corren siempre.
+  'scrum1188d-la-revision-hereda-el-vacio.test.mjs': 1,
   // SCRUM-1515: el merchant que crea nuestro guion nace igual que nacia el de `POST /auth/register`
   // (la ruta se cerro el 8-oct-2026 y la referencia es su foto, `_scrum1515-foto-de-la-ruta.json`),
   // la ruta cerrada no da de alta, y quien ya tiene cuenta sigue entrando. Necesita banco porque

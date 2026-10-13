@@ -132,3 +132,96 @@ El `PUT` con `paymentTerms: null` no lo manda ninguna pantalla hasta que exista 
 (versión desplegada `85d8d01e…`, cuenta QA): la plantilla 38 tiene `paymentTerms: "FIFTY_FIFTY"` y
 `tiers: null`, o sea que el `null` del `POST` llega a la base. El gesto entero lo ve S2 con su sonda al
 construir la parte C.
+
+## SCRUM-1188d · `tiers` también se vacía, y «vacío» en un `Json?` es NULL de SQL (9-oct, S1)
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:17:57Z
+
+A9: comprobación → `tests/scrum1188d-la-revision-hereda-el-vacio.test.mjs`
+
+El fallo propio de esta entrega: la lista de columnas `Json?` que hereda una revisión la escribí a mano
+con cinco, y son seis: faltaba `tags`, que está más abajo en `REVISION_HEREDA` y no la vi. La cazó el
+censo de ese test en su primera pasada, antes de empujar nada: compara la lista con `schema.prisma` y
+con `REVISION_HEREDA`, así que una columna que falte (o una nueva) sale roja.
+
+Y otro, sin comprobación que lo impida: al juntar mis commits locales en uno hice `git reset --soft
+origin/main` por NOMBRE, justo después de un `fetch` que había movido `main` seis commits. El commit
+resultante deshacía el PR #2334 de otro puesto. No salió del disco: lo vi en el `--stat`, antes de
+empujar, y lo rehíce sobre el SHA de la base. Una base se nombra por su SHA.
+
+Es el cabo que 1188c dejó declarado: «`tiers` sigue ignorando `null`; no pude medir cómo se vacía (mi
+sonda salió ciega)». Aquella sonda corrió sin base. Ésta corre contra un Postgres 16 propio y
+desechable, y lleva sus dos controles: una columna que no existe da un error de VALIDACIÓN (distinto de
+todo lo demás: la sonda ve), y `paymentTerms: null` vacía su columna (lo que ya estaba en `main`).
+
+**Lo medido** (`docs/master/evidencias/SCRUM-1188d/salida-sonda-tiers.txt`, @prisma/client 6.18.0):
+
+| qué se le pasa a Prisma en `tiers` | qué queda en la columna |
+|---|---|
+| un `null` de JS, en `create` o en `update` | el valor JSON `null`: la columna **no** es NULL |
+| `Prisma.JsonNull` | lo mismo |
+| `Prisma.DbNull` | NULL de SQL |
+| la clave no viaja, en `create` | NULL de SQL |
+
+Prisma no rechaza el `null` de JS ni lo ignora. Y por su API los dos resultados se leen `null`: sólo
+los distingue el SQL crudo (`tiers IS NULL`, `jsonb_typeof`).
+
+**Qué pasaba, entonces: dos cosas.**
+
+- El `PUT` ignoraba `tiers: null` (`!= null`): no se podía vaciar. El mismo defecto del cobro.
+- El `POST` guardaba `tiers ?? null`: cada plantilla sin niveles nacía con el JSON `null` dentro. La
+  frase de arriba sobre la plantilla 38 («el `null` del `POST` llega a la base») era una lectura por la
+  API, que no dice cuál de los dos nulls hay.
+
+**Qué cambia.** `src/core/db/jsonAnulable.ts` (nuevo, una función: `null` → `Prisma.DbNull`, lo demás
+pasa) y dos líneas de `templates.routes.ts`: el `POST` guarda `jsonAnulable(tiers ?? null)`, y el `PUT`
+mira `!== undefined` y guarda `jsonAnulable(tiers)`. La clave ausente sigue sin tocar la columna.
+
+**De paso: «Crear revisión» hacía lo mismo, y en seis columnas.** `nuevaRevisionDe` copia cada campo
+tal cual se leyó; una columna `Json?` vacía se lee `null` y se escribía de vuelta como el JSON `null`.
+Medido con `crearRevisionDeQuote` de verdad (`salida-sonda-revision.txt`): la revisión de un presupuesto
+sin nada en esas columnas salía con todas ocupadas. Son `docFields`, `payMethods`, `customBillingPlan`,
+`tiers`, `clausulasExcluidas` y `tags`. Arreglado en `quoteAdmin.ts` (`revisionParaLaBase`, justo antes
+del `create`); `nuevaRevisionDe` no cambia.
+
+**Víctima hoy: ninguna que haya encontrado, y se dice cómo se miró.** En `src/` y `scripts/` ninguna
+consulta pregunta `IS NULL` por esas columnas de `quotes` ni de `quote_templates`, ni filtra por ellas
+en un `where` (`rg` de los nombres de columna y de `campo: { not|equals|path`: cero consultas; el único
+`tags IS NOT NULL` que hay es sobre `customers`, en `scripts/censo-etiquetas-del-documento.mjs`), y todo
+lo que lee por Prisma recibe `null` en los dos casos. No se miró `public/` porque no ve la base.
+
+**Lo que NO cambia, y se dice.**
+
+- Las filas que ya existen. Las plantillas creadas sin niveles y las revisiones creadas hasta hoy
+  conservan el JSON `null`. Corregirlas es escribir datos en producción: no se ha hecho ni se ha
+  preparado.
+- La forma de `tiers`: ni el `POST` ni el `PUT` de plantillas validan que sean tres niveles.
+- Nadie manda `tiers` en el `PUT` todavía (`scripts/_sin-consumir-declarados.json`): es de la parte C.
+
+### Pruebas de SCRUM-1188d
+
+Contra el banco propio (Postgres 16.4 en loopback, base `*_test`, esquema de `migrate diff
+--from-empty`); en el CI corren con su `LIBRO_PG_URL`.
+
+- `tests/scrum1188d-tiers-tambien-se-vacia.test.mjs`: 4 casos. Tres por HTTP contra `dist/app.js` y
+  releídos por SQL; el primero es el SUELO (la relectura distingue los dos nulls, y fija la medición:
+  si un Prisma futuro cambia lo que hace el `null` de JS, cae). El cuarto, sin base, es `jsonAnulable`.
+- `tests/scrum1188d-la-revision-hereda-el-vacio.test.mjs`: 3 casos (censo, función pura, y la función
+  de verdad contra la base).
+- `tests/scrum1188c-el-put-vacia-el-cobro.test.mjs`: su último caso FIJABA `tiers: null` como ignorado
+  «para que cambiarlo sea una decisión». Cambia de signo, declarado, y gana un caso: 6 → 7.
+- **Control positivo, plantillas:** con la ruta de `origin/main`, de 11 casos caen 3 (el `POST`, el
+  `PUT` y el de 1188c) y pasan 8. Con la nueva, 11 de 11.
+- **Control positivo, revisión:** sin `revisionParaLaBase` en el `create`, de 3 cae 1 (el de la base).
+  El censo se vio rojo solo, con mi lista de cinco.
+- 🔴 **Sin `tsc` completo:** había entre 1,0 y 1,7 GB libres. El `dist/` de las tandas es de
+  `ts.transpileModule` (`evidencias/SCRUM-1188d/transpilar.mjs`, 322 ficheros), que no comprueba tipos.
+  Los tipos de los tres ficheros de `src/` tocados sí: `tsc --noEmit` sólo sobre ellos y lo que
+  importan, sale 0 (y sin `src/types/express.d.ts` daba 9 errores: la herramienta ve). El build entero
+  lo comprueba el check obligatorio.
+
+### No visto en yaqu.app, y por qué
+
+Lo que cambia es qué null queda en una columna, y eso no se ve desde fuera: la API lo lee `null` antes
+y después. `scripts/qa/sesion-panel.mjs` sólo hace `GET`. Lo que se puede ver en producción cuando
+entre es que crear una plantilla y crear una revisión siguen funcionando.

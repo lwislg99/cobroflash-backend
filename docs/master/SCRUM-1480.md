@@ -415,3 +415,101 @@ escrita en el ticket.
 - **Los 55 de Luis sin puesto no se han leído** (paso 3 de la propuesta del 7-oct). Siguen en la fila general.
 - **Los 17 que no nombra nada en el código y los 8 que sólo se corren a mano** siguen sin mirar: quizá sobran.
 - **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.
+
+# SCRUM-1480f · El trinquete: un script nuevo no entra sin fila; y la aceptación 3 del ticket, que no estaba a la letra
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:10:09Z
+
+A9: comprobación → `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`
+
+El fallo, que es mío y del 6-oct: entregué la aceptación 3 de este ticket («la fila de `scripts/` NOMBRA las dos
+excepciones nuevas») como hecha, y la fila no las nombraba: decía «y las dos filas de abajo» (#2216), y desde #2227 «y
+las filas de abajo». Remitir no es nombrar. Lo vi al releer la aceptación contra `main`, que es lo que pidió el
+orquestador antes de cerrar. La última prueba de ese test lo sujeta desde hoy.
+
+Carril S0 (`docs/equipo/dos-equipos.md`, `afirmaciones-verificadas.md`, `scripts/carriles.mjs`, `scripts/_carriles.mjs`).
+
+## Qué pasaba
+
+SCRUM-1480e dejó escrito el criterio («un fichero nuevo de `scripts/` nace con fila») y un aviso en
+`carriles.mjs de`. Nada lo hacía cumplir: un PR que creara un script sin fila entraba en verde. Mirado en el cuerpo de
+los dos tests que podían hacerlo, no en su nombre: `tests/scrum1295-carriles.test.mjs` compara la tabla con lo generado
+y `tests/scrum1480e-…` sujeta 28 ficheros con nombre; ninguno cuenta los que no tienen fila.
+
+## Lo que recontré antes de escribir nada
+
+| qué | resultado | comando |
+|---|---|---|
+| Scripts que sólo cubre la fila general, en `origin/main` | **225 de 302** (77 con fila propia): la cifra del 9-oct por la mañana sigue saliendo | `node docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs <raíz>` |
+| Lo mismo con la sonda nueva, sobre el árbol de esta rama | **225 de 303** (78 con fila): el fichero que se suma es la lista del trinquete, que nace con fila | `node scripts/carriles.mjs sin-fila` |
+
+Son dos sondas distintas (una lee las filas del documento de un commit; la otra usa el mapa que lee la cerradura) y dan
+el mismo número. No he comparado los dos CONJUNTOS: el recuento viejo no imprime la lista.
+
+## El cambio
+
+- `scripts/_carriles.mjs`: `scriptsSinFila` (la pregunta de `carriles.mjs de`, para toda la carpeta) y
+  `trinqueteDeScripts` (nuevos · quedan · declarados que sobran), sin tocar el disco.
+- `scripts/carriles.mjs sin-fila [--lista]`: la cuenta, con su población, y la lista.
+- `docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt`: **la foto**, los 225. No se edita: el test lleva su huella.
+- `scripts/_sin-fila-declarados.json`: el número (`suelo.quedan`, 225, 9-oct-2026) y la lista de declarados, vacía. Con
+  fila propia en §3.3 (S0, contenedor).
+- `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`, seis pruebas: la foto y el tope · NO SUBE (conjuntos:
+  todo script sin fila está en la foto o declarado) · NO BAJA EN SILENCIO (de la foto quedan exactamente `suelo.quedan`)
+  · la forma de un declarado · el cebo fabricado · la aceptación 3.
+- `docs/equipo/dos-equipos.md` §3.3: la fila general nombra `scripts/qa/` y `scripts/vigia-sesiones-jv.mjs`; la fila de
+  la lista; y dos puntos nuevos en «Cómo nace la fila…» (el trinquete y sus dos salidas).
+- `.claude/carriles.json` y `.claude/rules/carril-s0.md`: regenerados (69 filas, 186 reglas, 166 con dueño; antes 68,
+  185 y 165), después del último cambio de la tabla. `comprobar`: igual a la tabla.
+- `docs/equipo/afirmaciones-verificadas.md`: tres filas del 9-oct (dos del orquestador y una mía).
+
+## Visto en ROJO
+
+Con todo comiteado antes (`d7e3fa474d81b326d51e0a3f2ef0e1183b72f9b4`) y deshecho después con
+`git restore --source=HEAD --staged --worktree`; el árbol quedó limpio las tres veces.
+
+| lo que inyecté (el `--numstat` al lado) | lo que cayó |
+|---|---|
+| un script REAL nuevo sin fila, `scripts/cebo-real-sin-fila.mjs`, añadido al índice (1 · 0) | «NO SUBE», 1 de 6, y lo nombra |
+| fila para uno de la foto (`scripts/_navegador.mjs`) sin bajar el número (1 · 1) | «NO BAJA EN SILENCIO», 1 de 6: «siguen sin fila 224, y … dice 225» |
+| la tabla de `origin/main` entera (1 · 16) | 2 de 6: «NO SUBE», que caza a la propia lista del trinquete porque allí no tiene fila, y la aceptación 3 |
+
+Base sin mutar: 6 de 6.
+
+## Una desviación, declarada
+
+**El encargo era «que no suba de 225», a secas, y el rojo tiene una segunda salida que añado yo: declarar el fichero.**
+El motivo es el que di el 9-oct por la mañana para no construirlo: el trinquete corre en el check obligatorio de TODOS
+los PR, y el equipo de Javier crea scripts (83 de los 225 son suyos por el autor) sobre una tabla que no edita
+(`dos-equipos.md` es de la S0; ellos proponen por Jira). Sin esa salida, un PR suyo se quedaría en rojo sin poder
+arreglarlo él, por una norma que el propio §3.3 dice que a su equipo «se le propone». Con ella no entra NADA callado: o
+trae fila, o trae una línea con su ticket y su motivo en una lista que el test cuenta. Lo que la desviación cuesta: el
+total de scripts sin fila SÍ puede subir, por la lista de declarados; lo que no sube es lo no dicho. Quitarla es borrar
+`declarados` del test y de la lista: una decisión de los dos orquestadores, no mía.
+
+## Aceptación → dónde se ve
+
+La del encargo del orquestador de Luis a esta sesión (9-oct-2026, cuarta tanda, punto 2); no está escrita en el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| «Un trinquete que cuente los ficheros de `scripts/` sin fila y no deje subir ese número» | `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs` · con la desviación de arriba |
+| «Con su control positivo: un script nuevo fabricado sin fila tiene que ponerlo ROJO» | «Visto en ROJO», primera fila (un fichero real) · y dentro del test, la prueba del cebo, que corre siempre |
+| «no puede exigir cero — tiene que ser "no suba de 225", con el número escrito y su fecha» | `scripts/_sin-fila-declarados.json`, `suelo` · `TOPE` en el test · `dos-equipos.md` §3.3 |
+
+Y la del ticket, releída contra `main`:
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| §3.3 tiene una fila `scripts/qa/**` → **S3**, con su motivo. | `docs/equipo/dos-equipos.md` §3.3, en `main` |
+| §3.3 tiene una fila para el vigía de sesiones (`scripts/vigia-sesiones-jv.mjs`) → **S5**, y dice que lo escribió el equipo de Javier para su máquina (SCRUM-1000) y que un cambio se le avisa a su orquestador. | el mismo fichero, la fila siguiente, en `main` |
+| La fila de `scripts/` nombra las dos excepciones nuevas, para que nadie vuelva a leerla a la letra. | **en `main` NO** (remite a «las filas de abajo») · en esta rama sí, y lo sujeta la última prueba del test nuevo |
+| El formato que lee `tests/scrum514-aprobado-y-aplicado.test.mjs` (§3.1 y §3.2) no se toca: ese test sigue verde. | ese test, corrido sobre esta rama |
+| Dicho en el registro qué queda SIN fila después de esto. | este fichero, «Lo que sigue sin fila, dicho» (dos veces) y «Lo que no se ha hecho, dicho» |
+
+## Lo que no se ha hecho, dicho
+
+- **No he avisado al equipo de Javier.** El canal es su orquestador. Lo que tiene que saber cabe en el mensaje del rojo,
+  que es lo primero que verá una sesión suya; el texto para su orquestador va en la entrega de Jira.
+- **Los 225 siguen sin puesto.** El trinquete no reparte nada: impide que la cuenta crezca callada.
+- **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.

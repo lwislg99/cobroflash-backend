@@ -9,6 +9,7 @@
 //   node scripts/carriles.mjs generar            escribe carriles.json y las reglas
 //   node scripts/carriles.mjs comprobar          salida 1 si lo escrito no es lo que sale de la tabla
 //   node scripts/carriles.mjs de <ruta>          de quién es un fichero, y por qué fila
+//   node scripts/carriles.mjs sin-fila [--lista] los scripts que sólo cubre la fila general (SCRUM-1480f)
 //   node scripts/carriles.mjs mesa <PUESTO> <dir>
 //
 // Salida 2 = NO-PUDE-MIRAR (tabla ambigua, ruta que no existe, puesto desconocido): nunca un verde.
@@ -17,7 +18,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, titulosDePuestos, fichaDe, globARegex, censoDeHuecos, nombresQueContradicen, puestoDeNombre } from './_carriles.mjs';
+import { FUENTE, PUESTOS, construirMapa, reglaDe, excepcionPara, areasDePuestos, titulosDePuestos, fichaDe, globARegex, censoDeHuecos, nombresQueContradicen, puestoDeNombre, scriptsSinFila } from './_carriles.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const MAPA = '.claude/carriles.json';
@@ -182,7 +183,17 @@ function principal(argv) {
     console.log(`→ ${n} casos. No es un veredicto: es la pregunta para los jefes (¿hueco de la tabla, o de ese puesto a propósito?). Cada uno se cierra con una fila en §3.`);
     return n ? 1 : 0;
   }
-  console.log('uso: node scripts/carriles.mjs generar | comprobar | de <ruta> | huecos | mesa <PUESTO> <dir> [--nombre <nombre de sesión>]');
+  if (orden === 'sin-fila') {
+    // SCRUM-1480f: los scripts que sólo cubre la fila general. Con `--lista`, sólo los nombres (uno por línea).
+    const scripts = ficheros.filter((f) => f.startsWith('scripts/'));
+    const sin = scriptsSinFila(mapa, ficheros);
+    // CONTROL POSITIVO: sin scripts, o sin ninguno con fila, la cuenta no distingue nada.
+    if (!scripts.length || sin.length === scripts.length) { console.log('NO-PUDE-MIRAR: no hay scripts/ o ninguno tiene fila; una cuenta así no mide'); return 2; }
+    if (!resto.includes('--lista')) console.log(`sin-fila · ${scripts.length} ficheros en scripts/ · ${scripts.length - sin.length} con fila propia · ${sin.length} sólo con la fila general (${FUENTE} §3.3)`);
+    for (const f of sin) console.log(f);
+    return 0;
+  }
+  console.log('uso: node scripts/carriles.mjs generar | comprobar | de <ruta> | huecos | sin-fila [--lista] | mesa <PUESTO> <dir> [--nombre <nombre de sesión>]');
   return 2;
 }
 
