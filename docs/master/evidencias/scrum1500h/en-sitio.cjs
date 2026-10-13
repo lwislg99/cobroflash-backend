@@ -22,9 +22,9 @@ const tieneBom = (b) => b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf;
 
 /** Las líneas que el encargo permite tocar en cada fichero. Ni una más. */
 const ESPERADO = {
-  '.claude/skills/yaqu-verifactu-sif/SKILL.md': [51, 64, 83, 88],
-  '.agents/skills/yaqu-verifactu-sif/SKILL.md': [51, 64, 83, 88],
-  '.claude/skills/verifactu/SKILL.md': [46, 48],
+  '.claude/skills/yaqu-verifactu-sif/SKILL.md': [51, 64, 83],
+  '.agents/skills/yaqu-verifactu-sif/SKILL.md': [51, 64, 83],
+  '.claude/skills/verifactu/SKILL.md': [46, 48, 51, 52],
   'src/modules/invoicing/domain/modoVisible.ts': [21, 22],
   'tests/scrum298-modo-visible.test.mjs': [9],
   'tests/scrum1127-sif-cola.test.mjs': [3],
@@ -131,6 +131,42 @@ const red = cliente.map((l, i) => (/\)\.request\(/.test(l) ? i + 1 : 0)).filter(
 console.log(`\n⑥ CLIENTE · sif.client.ts: ${lineasCliente} líneas · llamadas de red (\`).request(\`) en: ${red.join(', ')}`);
 if (lineasCliente !== 538) mal(`sif.client.ts tiene ${lineasCliente} líneas, y lo escrito dice 538`);
 if (red.length !== 1) mal(`sif.client.ts tiene ${red.length} llamadas de red, y lo escrito dice una`);
+
+// ⑦ El relevo (SCRUM-1500 c.19155): la línea 88 de la skill vuelve a ser la del ancestro —la
+//    nota ensanchaba el permiso— y `verifactu/SKILL.md:52` dice del cliente lo MISMO que el
+//    comentario de modoVisible.ts, letra a letra.
+const es88DelAncestro = (antes, ahora) => antes === ahora && !/\[Nota del/.test(ahora);
+console.log('\n⑦ RELEVO · la línea 88 de la skill, contra el ancestro · y la 52 de la otra skill, contra el comentario');
+for (const d of ['.claude', '.agents']) {
+  const f = `${d}/skills/yaqu-verifactu-sif/SKILL.md`;
+  const antes88 = git('show', `${BASE}:${f}`).toString('utf8').split('\n')[87];
+  const ahora88 = fs.readFileSync(path.join(RAIZ, f), 'utf8').split('\n')[87];
+  console.log(`   ${f}:88 · ${Buffer.byteLength(antes88)} B / ${Buffer.byteLength(ahora88)} B · ${antes88 === ahora88 ? 'idéntica' : 'DISTINTA'}`);
+  if (!antes88.includes('hay envío, y el documento')) mal(`${f}:88 del ancestro no es la línea que se esperaba: el lector está ciego`);
+  if (!es88DelAncestro(antes88, ahora88)) mal(`${f}:88 no es la del ancestro, o sigue llevando una nota`);
+}
+{
+  const base88 = git('show', `${BASE}:.claude/skills/yaqu-verifactu-sif/SKILL.md`).toString('utf8').split('\n')[87];
+  const conNota = base88.replace('hay envío,', 'hay envío [Nota del 13-oct-2026],');
+  const lo_ve = es88DelAncestro(base88, base88) && !es88DelAncestro(base88, conNota);
+  console.log(`   control sembrado (la nota, puesta otra vez): ${lo_ve ? 'lo ve' : 'CIEGO'}`);
+  if (!lo_ve) mal('el control de la línea 88 está CIEGO');
+}
+{
+  const l51 = fs.readFileSync(path.join(RAIZ, '.claude/skills/verifactu/SKILL.md'), 'utf8').split('\n')[50];
+  const l52 = fs.readFileSync(path.join(RAIZ, '.claude/skills/verifactu/SKILL.md'), 'utf8').split('\n')[51];
+  // `corchetes` trae DOS corchetes (el del cliente y el de la cola): lo del cliente acaba en el primer «Railway.]».
+  const desde = corchetes.indexOf('Medido en SCRUM-1500g');
+  const medido = corchetes.slice(desde, corchetes.indexOf('Railway.]', desde) + 'Railway.]'.length);
+  console.log(`   verifactu/SKILL.md:51 acaba en «Nada envía a la»: ${l51.endsWith('Nada envía a la')} · la 52 lleva literales los ${medido.length} caracteres de lo medido y lo NO medido: ${l52.includes(medido)}`);
+  if (medido.length < 300 || !medido.endsWith('Railway.]')) mal('no encuentro lo medido del cliente en modoVisible.ts:22');
+  if (!l51.endsWith('Nada envía a la')) mal('verifactu/SKILL.md:51 no acaba en «Nada envía a la»');
+  if (!l52.includes(medido)) mal('verifactu/SKILL.md:52 NO dice del cliente lo mismo que modoVisible.ts:22');
+  if (/ni una sola llamada del código hacia la$/.test(l51)) mal('verifactu/SKILL.md:51 sigue diciendo «ni una sola llamada»');
+  const sembrado7 = l52.replace('538 líneas', '539 líneas').includes(medido);
+  console.log(`   control sembrado (una cifra cambiada en la 52): ${sembrado7 ? 'CIEGO' : 'lo ve'}`);
+  if (sembrado7) mal('el control de la línea 52 está CIEGO');
+}
 
 console.log(`\n${malas.length ? 'NO CUADRA: ' + malas.length : 'TODO CUADRA'}`);
 console.log(`EXIT=${malas.length ? 1 : 0}`);

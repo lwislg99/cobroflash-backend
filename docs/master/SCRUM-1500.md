@@ -1369,3 +1369,148 @@ comentario de entrega de Jira.
 | el registro, con su ancla y su línea A9 | este tramo |
 | abrir `docs/master` | NO HECHO → sección ⓨ; lo decide el orquestador |
 | construir la cola, el cron o el reintento; tocar `enviarSobre` | NO HECHO, a propósito |
+
+## El relevo (13-oct-2026, 00:22Z de GitHub): una nota que sale, un sitio que entra y un borde
+
+Sesión J5 (`jv-j5`, relevo de la que escribió lo de arriba), mismo árbol, misma rama, mismo PR
+(#2345). Encargo: SCRUM-1500 **c.19155** (respuesta del orquestador a los cuatro apartes de c.19154),
+leído entero en Jira antes del primer cambio, junto a c.19154, c.18993 y c.18919. Al empezar,
+`origin/main` ya no era `0472952cd`: es `6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9` (tres merges,
+#2341, #2342 y #2343; 22 ficheros, todos en `docs/master/` y `docs/equipo/cicatrices/`, **0 en común
+con los de esta rama**). El ancestro común sigue siendo `0472952cd`, y contra él mide `en-sitio.cjs`.
+Lo de arriba NO se reescribe: es lo que se sabía y se hizo a las 00:10Z. Donde este tramo lo
+contradice, manda este tramo.
+
+### ① La nota de la línea 88 de la skill `yaqu-verifactu-sif`: QUITADA, en las dos copias
+
+La sección ⓥ dice que la 88 lleva una NOTA, y la ⓧ que «si esto es ensanchar, se quita». **Era
+ensanchar, y se ha quitado.** El motivo, que importa más que la línea:
+
+* «No hay pruebas contra la AEAT» **no es ninguna de las cuatro afirmaciones** del literal de
+  c.18993 —que la cola no existe, que no se encola, que no tiene reintentos, que no está en el
+  esquema—, **aunque estuviera entre los 24 del censo y aunque la ficha del orquestador la nombrara.**
+  La ficha ensanchaba el permiso del fundador; lo dice el propio orquestador en c.19155.
+* **Se quita aunque la nota fuera correcta y aunque fuera una sola línea**, porque la regla de no
+  ensanchar un permiso sólo sirve si aguanta cuando es incómoda. Si hoy pasa «porque total es una
+  nota», mañana nadie sabe dónde está el borde.
+* Lo que la nota decía queda SIN decir en la skill y sin ticket: el máster habla de «3 aceptados en
+  pruebas» y **con qué se enviaron no lo ha medido nadie** (tampoco yo). Si se abre, se abre por su
+  cuenta y con su propia medición; no lo abro yo.
+
+Cómo queda: la línea 88 de las dos copias es **byte a byte la del ancestro común** (89 bytes). Las
+dos copias: 9.567 bytes (eran 9.890) y el mismo sha256, `e769d14082178946…`. Las líneas que cambian
+contra el ancestro en esa skill pasan de 51, 64, 83 y 88 a **51, 64 y 83**.
+
+### ② `verifactu/SKILL.md`, líneas 51-52: CORREGIDA (el sitio que quedó fuera de la población)
+
+| línea | decía | dice ahora |
+| --- | --- | --- |
+| 51 | «No hay ni una sola llamada del código hacia la» | «Nada envía a la» |
+| 52 | «Agencia Tributaria. La auditoría lo midió…» | «Agencia Tributaria. [Corregido el 13-oct-2026…] La auditoría lo midió…» |
+
+Mismo criterio que las 36: en sitio, 312 líneas antes y después, y **las dos mitades** — falsa como
+«el código no trae ninguna llamada» (hay UN cliente, `sif.client.ts`, con una llamada de red),
+cierta como «nada envía» (nadie lo llama). El texto no se ha vuelto a teclear: `aplicar-relevo.cjs`
+lee de `aplicar.cjs` las mismas constantes que usaron las gemelas, y `en-sitio.cjs` comprueba que
+la línea 52 lleva **literales los 470 caracteres** de lo medido y lo NO medido del comentario de
+`modoVisible.ts:22`. Lo NO medido va en la misma frase: el cliente no se ha ejecutado, ninguna base
+de datos, ni el valor de `SIF_ENABLED` en Railway.
+
+**Un aparte mío, declarado.** La ficha del relevo dice que esta frase «es una de las cuatro». Leído
+el literal de c.18993, **no es una de las cuatro de la cola**: entra por el apartado siguiente del
+mismo comentario, el de «Cero clientes SOAP/mTLS contra la AEAT» («literal en 5 sitios y con otras
+palabras en 2 … queda cubierta por esta ampliación»). Ésta es una tercera forma de decir lo mismo,
+y es la misma lectura con la que arriba se corrigió «cero llamadas de red» en
+`SEMAFORO_CALIBRACION.md:199`. La he corregido con ese apoyo y no con el de «las cuatro». **Si esa
+lectura también es ensanchar, se deshace igual que la 88: son dos líneas de un fichero.**
+
+Una palabra que no he tocado y que alguien preguntará: la misma línea 52 sigue diciendo «La
+auditoría lo midió con dos instrumentos y con un control de ceguera». Lo que la auditoría midió es
+que nada envía (`AUDITORIA_CAMINO_EMISION.md:225`, ya corregida arriba); la frase queda detrás del
+corchete y se lee así. No la he reescrito.
+
+### ③ El recuento, después del relevo
+
+Siguen siendo **36 correcciones en 18 ficheros**, y es casualidad, no que no haya cambiado nada:
+salen 2 (la nota de la 88, una por copia) y entran 2 (las líneas 51 y 52 de la otra skill). Los 18
+ficheros son los mismos.
+
+### ④ `docs/master` NO se abre, y lo que queda fuera es historia
+
+Decisión del orquestador en c.19155, que aquí se escribe y no se rediscute. La sección ⓨ deja
+`docs/master` como «SIN ABRIR: 1.046 candidatas en 177 ficheros». **Eso deja de ser un pendiente.**
+`docs/master` son registros fechados de trabajo pasado: un registro de septiembre que dice que no
+hay cola **era verdad en septiembre**. Corregirlo no lo haría más cierto: lo haría mentir sobre lo
+que se sabía entonces, y haría imposible entender por qué se decidió lo que se decidió. Lo que queda
+fuera del barrido **no son afirmaciones falsas pendientes: es historia.** Es el mismo principio con
+el que arriba el guion SQL de SCRUM-825 y los dos inventarios de agosto conservan su frase con la
+fecha al lado. El barrido tiene, por tanto, un borde definido: todo el repositorio **menos**
+`docs/master`.
+
+Lo que digo de esas 1.046 es lo que dice c.19155 y lo que midió SCRUM-1500g: **yo no las he abierto
+ni contado.**
+
+### ⑤ Lo que SÍ sigue siendo suelo
+
+* **Las 769 candidatas que la criba de SCRUM-1500g dejó sin leer** (370 abiertas de 1.139). No las
+  he leído. Dentro del borde de ④ **puede haber más sitios**, y `verifactu/SKILL.md:51-52` es la
+  prueba: apareció leyendo, no buscando, y estaba fuera de la población.
+* «No hay pruebas contra la AEAT» (la 88) sigue en la skill tal como estaba el 20-ago, sin nota.
+* Ninguna base de datos; `SIF_ENABLED` en Railway; el cliente y el procesador, sin ejecutar; que
+  las dos skills carguen bien en una sesión nueva.
+
+### ⑥ El censo de skills se vuelve a mover, y por qué no es empeorar
+
+`scripts/censo-afirmaciones-de-skills.mjs`, antes y después de este relevo (salida 1 las dos veces:
+es su salida con FALSAS, no un fallo de arranque; 2.594 bytes la de antes):
+
+| | antes de 1500h | al entregar 1500h | después del relevo |
+| --- | --- | --- | --- |
+| afirmaciones comprobables extraídas | 50 | 63 | 64 |
+| NO COMPROBABLES | 5 | 13 | 14 |
+| FALSAS | 2 | 2 | 2 |
+
+Las dos primeras columnas son de la sección ⓨ; la primera no la he vuelto a medir. Del relevo: salen
+las dos entradas de `yaqu-verifactu-sif:88` (la ruta `src/` y la «regla 10» de la nota) y entran
+tres en `verifactu:52` (la ruta del cliente, `src/` y la «regla 10» del corchete), las tres con el
+motivo «la línea NIEGA, y este censo no lee polaridad». **Al poner «no medido» y una ruta donde
+antes había una afirmación redonda, el instrumento cuenta más cosas como no comprobables: el
+repositorio es más honesto, no menos.** Quien lea sólo el número verá empeorar algo que ha mejorado.
+Las FALSAS, que es lo que vigila el trinquete de `scrum939b`, siguen en 2 y son las mismas dos
+(`verifactu:163` y `:164`, ajenas a este trabajo).
+
+### ⑦ La comprobación
+
+`node docs/master/evidencias/scrum1500h/en-sitio.cjs`, salida 0, guardada en
+`en-sitio-salida-relevo.txt` (3.342 bytes; `en-sitio-salida.txt` es la de las 00:10Z y se queda como
+estaba). Lleva un apartado nuevo, ⑦: la 88 de las dos copias contra el ancestro, y la 52 de la otra
+skill contra el comentario, cada una con su control sembrado («la nota, puesta otra vez» y «una
+cifra cambiada en la 52»: los dos «lo ve»). **Visto en rojo antes de fiarme:** repuesta la nota en
+UNA sola copia, la comprobación sale 1 y lo dice tres veces (línea 88 de más, copias distintas, 88
+que no es la del ancestro); devuelta la copia, sale 0. `aplicar-relevo.cjs` se comiteó antes de
+usarlo (`7b4e7a3c1`), casó sus 4 operaciones y, corrido otra vez, cae entero: es de un solo uso.
+
+El obligatorio del PR se lee DESPUÉS de empujar esto y su veredicto va al comentario de entrega de
+Jira, no aquí: escribirlo aquí sería otro commit y otra tanda.
+
+### Lo que me salió mal (el relevo)
+
+* **Mi primer control sembrado de la línea 88 no pasaba por la comprobación:** comparaba una cadena
+  con ella misma modificada, así que habría dicho «lo ve» con la comprobación rota. Lo vi al
+  releerlo y lo rehice para que el caso sembrado entre por la misma función que el real.
+* **Mi primera comprobación de la línea 52 salió en rojo y el rojo era mío:** recortaba «lo medido»
+  hasta el final de los corchetes de `modoVisible.ts`, que son dos (el del cliente y el de la cola),
+  y pedía 1.137 caracteres donde tocaban 470. El texto de la skill estaba bien.
+* Un guion de edición con las barras mal escapadas no casó (no escribió nada); lo hice a mano.
+* `main` se había movido tres merges cuando yo aún repetía el `0472952cd` de la ficha: lo vi por la
+  cabecera de GitHub, no por haber vuelto a traerlo antes de medir.
+* El hook de arranque volvió a decir «SIN IDENTIDAD… no construyas»; seguí por lo mismo (SCRUM-1498).
+
+| lo que pide c.19155 | dónde se ve |
+| --- | --- |
+| quitar la nota de la 88, en las dos copias, idénticas por sha256, con el motivo escrito | ① y ⑦ |
+| corregir `verifactu/SKILL.md:51-52`, en sitio, copiando, con lo NO medido | ② y ⑦ |
+| `docs/master` no se abre: historia, no pendiente | ④ |
+| las 769 candidatas, dichas como suelo | ⑤ |
+| explicar el 5 → 13 del censo de skills | ⑥ (y ahora 14) |
+| leer el obligatorio de #2345 por nombre | comentario de entrega de Jira |
