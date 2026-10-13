@@ -343,7 +343,7 @@ Carril S1 · sesión `s1-13octf` · rama `scrum-1302k-dos-firmas-en-obra-a-la-ve
 
 **Reproduce.** `POST /admin/albaranes/:id/firmar` leía el albarán, comprobaba `emitido` y escribía con `where: { id }`. Con el código de `main` (instrumento comiteado antes del arreglo, `923fe69b40c12a3faf4fdc071ce359455ca61068`): 2 escrituras, «Ana y después Blas». Aquí la segunda petición tiene origen conocido: la firma en obra se reintenta (`firmarConRedDeSeguridad`) y la cola de firmas sin cobertura la vuelve a subir.
 
-**Dónde cae el arreglo, mirado y no deducido:** las bocas de emisión del fichero (`emitInvoice`) están en `facturar-parcial` (línea 1310) y `convertir-en-factura` (línea 1590). El manejador de la firma (995-1075) no llama a ninguna. El diff se queda entero dentro de ese manejador y no toca `buildFirmaEvidencia` ni lo que se sella: sólo el `where` del `update` y qué se contesta cuando no casa.
+**Dónde cae el arreglo, mirado y no deducido:** las bocas de emisión del fichero (`emitInvoice`) están en `facturar-parcial` (línea 1310) y `convertir-en-factura` (línea 1590). El manejador de la firma (995-1079) no llama a ninguna. El diff se queda entero dentro de ese manejador y no toca `buildFirmaEvidencia` ni lo que se sella: sólo el `where` del `update` y qué se contesta cuando no casa.
 
 **El arreglo:** el `where` lleva el estado LEÍDO (`{ id, estado }`). Quien llega tarde recibe P2025, se relee el albarán (por id y merchant) y se contesta lo que contestaría una petición nueva: 409 `albaran_locked` si ya está firmado, 409 `invalid_transition` en otro caso, 404 si ya no existe. No regenera el PDF. **Ningún texto nuevo:** son los literales que la ruta ya daba unas líneas más arriba.
 
