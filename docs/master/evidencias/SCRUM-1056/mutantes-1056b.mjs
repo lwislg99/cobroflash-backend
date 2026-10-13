@@ -37,7 +37,7 @@ const MUTANTES = [
   ['M10 · guardado sin día devuelto: se ofrece «Poner fecha»', (s) => s.replace("actual = leida && leida.dia ? leida : null;", "actual = leida;")],
   ['M11 · «Cambiar» abre el formulario vacío', (s) => s.replace("dia.value = actual.dia || '';", "dia.value = '';")],
   ['M12 · la nota viaja sin recortar', (s) => s.replace("nota: nota.value.trim() };", "nota: nota.value };")],
-  ['M13 · la nota se pinta sin la clase que parte las palabras largas', (s) => s.replace("crear('p', 'volver-a-llamar-nota', actual.nota)", "crear('p', '', actual.nota)")],
+  ['M13 · la nota se pinta sin la clase que parte las palabras largas', (s) => s.replace("          parrafoNota.className = 'volver-a-llamar-nota';\n", '')],
 ];
 
 const normal = ORIGINAL.toString('utf8').replace(/\r\n/g, '\n');

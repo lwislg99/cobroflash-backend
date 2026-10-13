@@ -129,23 +129,45 @@
     cuenta += 1;
     var sufijo = cuenta;
 
-    function crear(etiqueta, clase, texto) {
+    // Las clases se escriben ENTERAS y como literal en `className`: es la forma que leen los censos
+    // de clases (el de áreas táctiles entre ellos). Compuestas a trozos no las vería ninguno.
+    function crear(etiqueta, texto) {
       var e = doc.createElement(etiqueta);
-      if (clase) e.className = clase;
       if (texto !== undefined) e.textContent = texto;
       return e;
     }
-    function boton(texto, clase, alPulsar) {
-      var b = crear('button', 'btn ' + clase, texto);
+    function boton(texto, principal, alPulsar) {
+      var b = crear('button', texto);
       b.type = 'button';
+      if (principal) b.className = 'btn btn-primary';
+      else b.className = 'btn btn-secondary';
       b.addEventListener('click', alPulsar);
       return b;
+    }
+    function titulo() {
+      var t = crear('div', TEXTOS.titulo);
+      t.className = 'section-title';
+      return t;
+    }
+    function filaDeAcciones() {
+      var f = crear('div');
+      f.className = 'form-actions';
+      return f;
+    }
+    function campo(rotulo, control) {
+      var c = crear('div');
+      c.className = 'field';
+      rotulo.htmlFor = control.id;
+      c.appendChild(rotulo);
+      c.appendChild(control);
+      return c;
     }
     function vaciar() {
       while (contenedor.firstChild) contenedor.removeChild(contenedor.firstChild);
     }
     function aviso(texto) {
-      var a = crear('div', 'alert error', texto);
+      var a = crear('div', texto);
+      a.className = 'alert error';
       a.setAttribute('role', 'alert');
       return a;
     }
@@ -157,14 +179,18 @@
     function pintarEstado(fallo) {
       vaciar();
       if (!actual) return false;
-      contenedor.appendChild(crear('div', 'section-title', TEXTOS.titulo));
-      var acciones = crear('div', 'form-actions');
+      contenedor.appendChild(titulo());
+      var acciones = filaDeAcciones();
       if (!actual.dia) {
-        acciones.appendChild(boton(TEXTOS.ponerFecha, 'btn-secondary', pintarFormulario));
+        acciones.appendChild(boton(TEXTOS.ponerFecha, false, pintarFormulario));
       } else {
-        contenedor.appendChild(crear('p', '', textoDelEstado(actual)));
-        if (actual.nota) contenedor.appendChild(crear('p', 'volver-a-llamar-nota', actual.nota));
-        var hecho = boton(TEXTOS.hecho, 'btn-primary', function () {
+        contenedor.appendChild(crear('p', textoDelEstado(actual)));
+        if (actual.nota) {
+          var parrafoNota = crear('p', actual.nota);
+          parrafoNota.className = 'volver-a-llamar-nota';
+          contenedor.appendChild(parrafoNota);
+        }
+        var hecho = boton(TEXTOS.hecho, true, function () {
           apagar([hecho, cambiar], true);
           Promise.resolve().then(function () { return o.hecho(); }).then(function () {
             actual = { dia: null, nota: '', estado: null };
@@ -174,7 +200,7 @@
             pintarEstado(TEXTOS.noGuardado);
           });
         });
-        var cambiar = boton(TEXTOS.cambiar, 'btn-secondary', pintarFormulario);
+        var cambiar = boton(TEXTOS.cambiar, false, pintarFormulario);
         acciones.appendChild(hecho);
         acciones.appendChild(cambiar);
       }
@@ -186,32 +212,25 @@
     /** El formulario: día y nota. Sirve para poner la primera fecha y para cambiarla. */
     function pintarFormulario() {
       vaciar();
-      contenedor.appendChild(crear('div', 'section-title', TEXTOS.titulo));
+      contenedor.appendChild(titulo());
 
-      var campoDia = crear('div', 'field');
-      var rotuloDia = crear('label', '', TEXTOS.dia);
-      var dia = crear('input', 'input');
+      var dia = crear('input');
+      dia.className = 'input';
       dia.type = 'date';
       dia.required = true;
       dia.id = 'volver-a-llamar-dia-' + sufijo;
       dia.value = actual.dia || '';
-      rotuloDia.htmlFor = dia.id;
-      campoDia.appendChild(rotuloDia);
-      campoDia.appendChild(dia);
+      var campoDia = campo(crear('label', TEXTOS.dia), dia);
 
-      var campoNota = crear('div', 'field');
-      var rotuloNota = crear('label', '', TEXTOS.nota);
       var nota = crear('textarea');
       nota.rows = 2;
       nota.id = 'volver-a-llamar-nota-' + sufijo;
       nota.value = actual.nota || '';
-      rotuloNota.htmlFor = nota.id;
-      campoNota.appendChild(rotuloNota);
-      campoNota.appendChild(nota);
+      var campoNota = campo(crear('label', TEXTOS.nota), nota);
 
-      var acciones = crear('div', 'form-actions');
+      var acciones = filaDeAcciones();
       var avisoPuesto = null;
-      var guardar = boton(TEXTOS.guardar, 'btn-primary', function () {
+      var guardar = boton(TEXTOS.guardar, true, function () {
         // Sin día no hay nada que guardar. El aviso lo pone el navegador: es su campo obligatorio.
         if (!diaLegible(dia.value)) {
           if (typeof dia.reportValidity === 'function') dia.reportValidity();
@@ -236,7 +255,7 @@
           apagar([guardar, cancelar], false);
         });
       });
-      var cancelar = boton(TEXTOS.cancelar, 'btn-secondary', function () { pintarEstado(); });
+      var cancelar = boton(TEXTOS.cancelar, false, function () { pintarEstado(); });
       acciones.appendChild(guardar);
       acciones.appendChild(cancelar);
 
