@@ -159,3 +159,154 @@ es que la pregunta de fondo tiene dos mitades de tamaño muy distinto.
   `tests/scrum1294-a9-leccion-en-a10.test.mjs`, en rojo, antes del commit.
 - La primera versión del censo metía en un solo saco «cambiada» tres cosas distintas (editada en su sitio,
   movida y editada, texto desaparecido). Lo vi al leer las 48 filas y lo partí con criterios discretos.
+
+## SCRUM-1524b · Tramo 2 (jv-j4f, 13-oct-2026): las desfasadas, separadas en vivas, fechadas y dudosas
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:29:36Z (hora de GitHub)
+
+A9: sin fallo que generalice — el tramo reusa el censo del tramo 1 sin tocarlo y lo único que añade es lectura; lo que salió mal fue una premisa del encargo (abajo, «Lo primero»), y ésa la cazó leer el comentario 19194 antes de medir, que es lo que el encargo pedía
+
+**ES MEDIR Y PROPONER.** No se ha tocado ninguna cita, ni `docs/legal/`, ni `scrum525d`, ni nada en
+`src/`. Instrumentos y salidas: `docs/master/evidencias/SCRUM-1524b/`.
+
+### Lo primero: ninguna de las desfasadas vive en `docs/master`
+
+El encargo decía que muchas de las 131 «viven en registros fechados de `docs/master`». **Son cero.** El censo
+del tramo 1 sólo mira `docs/legal/` (su población es la del extractor de la casa), así que las 202 vivas y
+todas sus desfasadas están en ocho documentos de `docs/legal/`. La separación entre vivo y fechado existe,
+pero hay que hacerla **dentro de `docs/legal/`**, documento a documento.
+
+Y `docs/master` no está censado por nadie: con el mismo extractor salen **4.786 coordenadas en 550 de sus
+1.087 registros**. Cuántas están desfasadas, **no medido** — y por el principio del fundador no hay nada
+que hacer con ellas, así que medirlo no cambiaría ninguna decisión.
+
+| Zona | Ficheros | Coordenadas | Desfase |
+|---|---|---|---|
+| `docs/legal/` (control: tiene que dar 205) | 19 | 205 | medido, abajo |
+| `docs/master/*.md`, registros | 1.087 | 4.786 | no medido |
+| `docs/YAQU_MASTER.md` | 1 | 82 | no medido |
+| `docs/equipo/` | 43 | 5 | leídas por encima: 1 desplazada (la de `sesion-4.md`, del equipo de Luis); las otras 4, sin juzgar |
+| `docs/RUNBOOKS.md`, `docs/QA_MASTER.md`, `CLAUDE.md`, `.claude/skills/` | 39 | 0 | — |
+| Cero derivado: un texto sembrado sin citas | 1 | 0 | — |
+
+El extractor sólo ve citas entre acentos graves con extensión de su lista: un cero suyo en las skills es
+«no hay ninguna escrita así», no «no citan código».
+
+### El número se ha movido en seis horas: 137, no 131
+
+Mismo instrumento, sin tocar, sobre el `main` de hoy. Control sembrado: 6 rotas vistas de 6, 0 buenas
+marcadas; sin las rotas dice CIEGO y sale 2.
+
+| | tramo 1 (`dfda86d65`) | hoy (`9358f02b1`) |
+|---|---|---|
+| Vivas | 202 | 202 |
+| Desplazadas | 83 | 82 |
+| Cambiadas | 48 | 55 |
+| **Desfasadas** | **131** | **137** |
+| Intactas | 69 | 63 |
+
+Siete filas cambian de veredicto (seis intactas pasan a cambiadas y una desplazada también). Tres citan
+el comentario de `modoVisible.ts` y tres citan líneas de otros documentos de `docs/legal/`: las seis las
+editó hoy SCRUM-1500h. La séptima cita `settingsView.js`, y por qué cambió no lo he mirado.
+
+### La separación
+
+El criterio no es mío: lo fijó el fundador hoy mismo al corregir estos documentos (SCRUM-1500h, que cita su
+decisión de SCRUM-1500 c.18993). A los dos inventarios les puso una **nota fechada** que dice «es del
+19-ago-2026 y NO se reclasifica»; a la auditoría y a las preguntas del asesor las **corrigió en su sitio**.
+⚠️ Esa decisión la he leído en el commit `311738c07` y en el texto de los documentos, **no en Jira**.
+
+| Grupo | Documento | Desplazadas | Cambiadas | Desfasadas | Por qué va ahí |
+|---|---|---|---|---|---|
+| **1 · VIVO** | `AUDITORIA_CAMINO_EMISION.md` | 16 | 1 | **17** | dos skills mandan leerla «para saber qué está construido»; 27 commits; corregida en su sitio el 8 y el 13-oct |
+| **1 · VIVO** | `PREGUNTAS_ASESOR.md` | 7 | 1 | **8** | 38 commits; la citan 14 tests y 4 ficheros de `src/`; corregida en su sitio |
+| | **Grupo 1** | **23** | **2** | **25** | |
+| **2 · FECHADO** | `INVENTARIO_AFIRMACIONES_VERIFACTU.md` | 25 | 27 | **52** | nota del fundador: «NO se reclasifica» |
+| **2 · FECHADO** | `INVENTARIO_AFIRMACIONES_SKILLS.md` | 2 | 8 | **10** | la misma nota |
+| **2 · FECHADO** | `MEDICION_GUION_H2_EN_PUBLIC.md` | 2 | 2 | **4** | misma forma que los inventarios («Medido: 19-ago · Contra: sha»), 1 commit, fuera de un script nadie la nombra. **Inferencia mía**: no tiene nota del fundador |
+| | **Grupo 2** | **29** | **37** | **66** | |
+| **3 · DUDOSO** | `AUDITLOG_FISCAL_CONTRATO.md` | 28 | 14 | **42** | abajo |
+| **3 · DUDOSO** | `ENVIO_ASESOR_2026-09-28.md` | 0 | 2 | **2** | abajo |
+| **3 · DUDOSO** | `EXPEDIENTE_FISCAL_ANTICIPOS_RECAPITULATIVA.md` | 2 | 0 | **2** | abajo |
+| | **Grupo 3** | **30** | **16** | **46** | |
+| | **Total** | **82** | **55** | **137** | suma comprobada contra el censo |
+
+**Por qué dudo de cada uno del grupo 3:**
+
+- **El contrato del auditlog (42, el mayor).** Su cabecera dice «escrito el 29-jul-2026 sobre `485ff72`» y
+  «nada de esto está implementado»: por forma es un documento fechado. Pero el fundador lo corrigió en su
+  sitio hoy, y lo citan `src/` y el máster: por uso es vivo. **No sé de cuál es, y lo que leí inclina a
+  fechado:** de sus 14 cambiadas, las 14 apuntan hoy a una línea que no dice lo que la frase afirma, y en
+  al menos 6 no es que la línea se moviera sino que **el código que describía se reescribió** (el tipo de
+  acciones, `recordAudit` —hoy marcado LEGADO—, el `catch` de `lib/invoicing.ts`). Cambiarle 42 números
+  dejaría una propuesta de julio con aspecto de recién verificada. De las otras 8, en 3 comprobé que el
+  hecho sigue en pie en otra línea; las 5 restantes no las he leído más allá de la línea citada.
+- **El envío al asesor (2).** Lleva la fecha en el nombre, y sus dos citas tienen testigo que la casa
+  comprueba y hoy pasa: apuntan bien. El censo las da por cambiadas porque el texto de la línea citada se
+  editó (decía «RESPONDIDA por el asesor fiscal», dice «RESPUESTA DE IA»). **No hay nada que arreglar**;
+  dudo sólo de en qué grupo contarlas.
+- **El expediente de anticipos (2, más las 2 sin referencia).** Borrador de julio que nadie toca desde el
+  29-jul, pero lo citan otros tres documentos legales. No sé si alguien lo consulta.
+
+### Grupo 1: el arreglo que propongo
+
+Leídas las 25 contra su frase, una a una (`vivas-*-contra-su-frase.txt`):
+
+| | Auditoría | Preguntas | Total |
+|---|---|---|---|
+| Cambiar el número, y nada más (el censo da un solo destino y la frase lo confirma) | 13 | 5 | **18** |
+| Hay que leer antes de tocar | 3 | 2 | **5** |
+| No necesitan nada (apuntan bien; se editó el texto citado y el documento ya lo anota) | 1 | 1 | **2** |
+
+- Las 3 de la auditoría que piden lectura: la de la línea 39 (dos destinos posibles) y las de las líneas
+  217 y 234, que citan la misma coordenada dentro de una frase fechada («MEDIDO el 16-sep-2026», «la 673
+  se quedó vacía»): ahí el número forma parte de un relato.
+- Las 2 de las preguntas (líneas 745 y 764): según la referencia nacieron apuntando a una llave de cierre
+  y a una línea en blanco. O nacieron mal, o el autor midió sobre otro árbol que el del commit. No lo sé.
+
+**Cabe en UN PR:** dos ficheros, 18 números en 16 líneas de documento (21 líneas si entran las cinco que
+piden lectura). Se edita **en su sitio, sin
+mover líneas**, porque otros documentos citan a estos dos por número de línea. Es `docs/legal/`: lo toca
+J5 **con permiso del fundador**, que se da caso a caso y hoy no está dado.
+
+⚠️ **El censo no sirve para comprobar ese PR.** Mide contra el commit en que la cita entró en el documento:
+una cita recién corregida nace «intacta» por construcción, esté bien o mal. Se comprueba leyendo, y
+`leer.mjs` pone cada frase al lado de lo que hay hoy en la línea citada.
+
+**Opción aparte, que no propongo sin que la decida un jefe:** ponerles testigo a esas 18 al corregirlas.
+Es el mecanismo que ya existe y es lo que la auditoría hace con las suyas (13 de sus 34 intactas lo
+llevan). Tiene el coste que se midió en el tramo 1: cada cita con testigo pone en rojo el PR que la mueva.
+
+### «Intacta no es correcta» y «cambiada no es falsa»: la muestra
+
+- **34 intactas leídas contra su frase** (todas las de la auditoría): **34 dicen lo que la frase afirma.**
+  ⚠️ Es el documento más cuidado de los ocho: no vale para los otros siete, cuyas 29 intactas no he leído.
+- **18 cambiadas leídas de 55:** **4 no son falsas** (la cita apunta bien; se editó el texto citado) y
+  **14 apuntan a otra cosa** — las 14 del contrato. En 3 de esas 14 (dos hechos) lo afirmado sigue siendo
+  cierto en otra línea: el borrado del merchant sigue llevándose `auditLog`, y `audit_log` sigue en el volcado.
+- **Las 37 cambiadas del grupo 2 no las he leído**, a propósito: no se van a tocar.
+
+**¿Es mayor de lo que parece?** En los dos documentos vivos, no: es mecánico y pequeño. Donde sí lo es, es
+en el contrato del auditlog, y no por los números de línea: describe un código que ya no existe y su
+cabecera sigue diciendo que nada está implementado. Eso no lo arregla ninguna cita; es una decisión sobre
+el documento entero (nota fechada, como los inventarios) y es del fundador.
+
+### Lo que NO he medido
+
+- La decisión c.18993 de SCRUM-1500 en Jira: la tengo por el commit y por las notas de los documentos.
+- Las 29 apariciones de «fichero:línea» que el extractor deja fuera (tramo 1): siguen fuera de toda cifra.
+- Si el contrato del auditlog está implementado y cuánto: sólo vi que tres de sus frases ya no describen el
+  código de hoy.
+- El desfase en `docs/master`, en el máster y en 4 de las 5 de `docs/equipo/`.
+- La tanda completa de tests. Sí los guards de registro que toca este PR, abajo.
+
+### Aceptación → dónde se ve
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| Separar las que viven en documentos vivos | tabla «La separación», grupo 1 · `salida-tabla-por-documento.txt` |
+| Decir cuántas viven en registros fechados y no se tocan | grupo 2: 66. En `docs/master`: 0 de las desfasadas, 4.786 sin censar |
+| Las dudosas, y por qué | grupo 3: 46, con el motivo de cada documento |
+| Para el grupo 1, el arreglo: cuántas, cuánto cuesta, cuántos PR | «Grupo 1: el arreglo que propongo» |
+| Leer una muestra de las cambiadas contra su frase | 18 de 55 · `muestra-14-cambiadas-contrato.txt` |
+| Positivo que tiene que aparecer y cero derivado | control sembrado del censo (6 de 6; CIEGO sin rotas) · control 205 y cero sembrado en `fuera.mjs` |
