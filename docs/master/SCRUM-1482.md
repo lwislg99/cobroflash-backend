@@ -174,7 +174,17 @@ lo dejó el router» comparan ahora con ese título, no con la cadena vieja.
 
   Con la palabra del locale forzada a «Cotización» por la sonda (simula otro país, no lo es): las
   seis filas igual, con «Cotización» y «Cotización #5».
-- **Dirigida y `guards:entrada`:** en el comentario de entrega del ticket, con su población.
+- **Dirigida** (los ficheros de `tests/` que nombran lo tocado, el banco de vistas, los registros,
+  la microcopy o las evidencias: **562 de 1.310**, en 6 lotes): 4.918 casos · **4.836 pasan · 1
+  cae · 81 saltos**. El que cae es del entorno, no del cambio: `scrum476` hace `realpath` de un
+  worktree de OTRA sesión que git tiene registrado y cuya carpeta no existe en ese momento; había
+  pasado en la primera pasada. `guards:entrada`: 13 guards, 158 tests, verde.
+- **Un rojo mío en la primera pasada, arreglado en el código:** `scrum601` ancla un control POR
+  POSICIÓN (`app.js`, línea 386, el rótulo «Facturas»), y mi comentario metía 7 líneas por encima.
+  No se ha reanclado el control: los comentarios de las dos líneas ocupan ahora exactamente las
+  líneas que ocupaban (`git diff --numstat`: `5 5` y `8 8`), y el control sigue donde se midió.
+- **Visto de paso, no tocado:** `scrum1266b` (un caso de `quotesView.js`, que esta rama no toca)
+  cayó UNA vez dentro de un lote y pasa solo (15 de 15) y en la segunda pasada del mismo lote.
 - 🔴 **Sin `tsc`:** este cambio no toca `src/`. La suite completa la corre el obligatorio.
 
 ### Lo que NO hace, y se dice

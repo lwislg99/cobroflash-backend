@@ -1,4 +1,4 @@
-SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js (app.js y quotesDetailView.js) · build 9358f02b14e9648f1ab65fbdacf6464d50728242
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js (app.js y quotesDetailView.js) · build af37a0cd3836575b86ed4fb2bc05a49e89970092
 TESTIGO={"conRegex":false,"conConectada":false,"conMontada":true,"conIgualdad":false,"conPalabraExacta":true,"h2ConId":false} · palabra del locale: «Presupuesto»
 POBLACION=5 presupuestos · 5 con número distinto de su id
 A = id 206 / número 5 · B = id 205 / número 4
