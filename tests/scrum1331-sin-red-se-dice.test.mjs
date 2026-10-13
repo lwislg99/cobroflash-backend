@@ -171,11 +171,24 @@ const SANO = "import test from 'node:test';\ntest('sano', () => {});\n";
 // Pasa su caso y el PROCESO sale ≠ 0 escribiendo la frase literal de libuv que dejó `scrum1216b`
 // (SCRUM-1332). No es una muerte nativa de verdad —ésa la fabrica el test de SCRUM-1332—: es lo
 // que el lector VE de ella, que es lo que aquí se mide.
-const MUERE_AL_SALIR = "import test from 'node:test';\nimport fs from 'node:fs';\n"
-  + "process.on('exit', () => { fs.writeSync(2, 'Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\\\win\\\\async.c, line 94\\n'); process.exitCode = 7; });\n"
-  + "test('pasa, y luego muere el proceso', () => {});\n";
-const NO_CARGA_SIN_RED = "import test from 'node:test';\n"
+//
+// 🔴 SCRUM-1331b · LA FRASE SE ESCRIBE CON EL PROCESO VIVO, NO AL SALIR. `node --test` espera a que el
+// fichero salga y a que cierre su salida estándar, NO a la de error, y cierra el lector: la frase que le
+// llega después se pierde y no aparece en `spec` (`lib/internal/test_runner/runner.js`, v24; medido el
+// 13-oct-2026 forzando el retraso). Escrita dentro del `exit`, llegaba a tiempo casi siempre: el 9-oct
+// no llegó y el PR #2336 estuvo cuatro días en rojo por un caso que su diff no tocaba. Lo que este
+// fichero fabrica es «lo que el lector VE»; para que lo vea SIEMPRE, la frase sale en el `after` de la
+// raíz —después del ✔ del caso, que es donde empieza la ventana— y el proceso sigue vivo un rato.
+// Las aserciones de abajo no cambian. El límite del lector queda escrito en `_huella-de-la-caida.mjs`.
+const PAUSA = "const pausa = (ms) => new Promise((r) => setTimeout(r, ms));\n";
+const MUERE_AL_SALIR = "import test, { after } from 'node:test';\nimport fs from 'node:fs';\n" + PAUSA
+  + "process.on('exit', () => { process.exitCode = 7; });\n"
+  + "test('pasa, y luego muere el proceso', () => {});\n"
+  + "after(async () => { await pausa(250); fs.writeSync(2, 'Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\\\win\\\\async.c, line 94\\n'); await pausa(500); });\n";
+// La misma carrera, por el mismo motivo: escribe la frase de red y espera antes de reventar al cargar.
+const NO_CARGA_SIN_RED = "import test from 'node:test';\n" + PAUSA
   + "process.stderr.write(\"fatal: unable to access 'https://github.com/x/y.git/': Could not resolve host: github.com\\n\");\n"
+  + "await pausa(500);\n"
   + "throw new Error('no llega a declarar nada');\n";
 const NO_CARGA_Y_ES_TUYO = "import test from 'node:test';\nthrow new Error('un error al cargar que SÍ puede ser del cambio');\n";
 const CIEGOS = "import test from 'node:test';\nimport assert from 'node:assert/strict';\n"

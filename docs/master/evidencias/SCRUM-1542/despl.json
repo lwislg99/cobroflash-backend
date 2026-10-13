@@ -1,0 +1,6846 @@
+{
+ "desde": "2026-10-06",
+ "tomada": "2026-10-13T12:51:27.002Z",
+ "despliegues": [
+  {
+   "id": 7038881184,
+   "sha": "9308125e7c7885fb9568fcd633ad8dc1fa021eba",
+   "creado": "2026-10-13T12:48:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 1,
+   "estados": [
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:48:02Z"
+    }
+   ]
+  },
+  {
+   "id": 7038880010,
+   "sha": "a11f6d2cb3324c4cb5f50ec5e9cd807ae1088d33",
+   "creado": "2026-10-13T12:47:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 1,
+   "estados": [
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:47:59Z"
+    }
+   ]
+  },
+  {
+   "id": 7038522373,
+   "sha": "7802d7cb509a6d57593e470f26702646668ae4be",
+   "creado": "2026-10-13T12:32:13Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 4,
+   "estados": [
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:37:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:36:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:34:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:32:14Z"
+    }
+   ]
+  },
+  {
+   "id": 7038413492,
+   "sha": "4460363b62956b175e24c343e945901c212db75c",
+   "creado": "2026-10-13T12:27:06Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T12:37:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:36:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:34:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:32:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:31:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:29:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:27:07Z"
+    }
+   ]
+  },
+  {
+   "id": 7038317081,
+   "sha": "ff18f2a49517831baba4a373b8ee84598d19e4ff",
+   "creado": "2026-10-13T12:22:31Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T12:32:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:31:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:29:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:28:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:24:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:24:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:22:31Z"
+    }
+   ]
+  },
+  {
+   "id": 7038007933,
+   "sha": "eebc104d9e955cdd67b31ad2d24a50cc9b849a7b",
+   "creado": "2026-10-13T12:07:41Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T12:28:56Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:24:39Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:24:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:11:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:10:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:09:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T12:07:41Z"
+    }
+   ]
+  },
+  {
+   "id": 7037777524,
+   "sha": "254a697924c99bdf85eb06c95ee439a4a013aa67",
+   "creado": "2026-10-13T11:56:11Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T12:11:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:10:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T12:09:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:58:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:58:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:57:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:56:12Z"
+    }
+   ]
+  },
+  {
+   "id": 7037670956,
+   "sha": "fdd8053889974f5e97d4adaa757b86109c5d40a5",
+   "creado": "2026-10-13T11:50:53Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:58:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:58:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:57:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:54:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:52:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:52:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:50:54Z"
+    }
+   ]
+  },
+  {
+   "id": 7037622839,
+   "sha": "b3142335ea76903ac1969dc352018dee854ed22b",
+   "creado": "2026-10-13T11:48:27Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:54:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:52:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:52:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:50:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:49:57Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:49:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:48:27Z"
+    }
+   ]
+  },
+  {
+   "id": 7037410166,
+   "sha": "f7a4c816ab2bf5c334a953dee60dc7b73718a0f8",
+   "creado": "2026-10-13T11:37:48Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:50:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:50:01Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:49:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:41:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:41:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:40:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:37:49Z"
+    }
+   ]
+  },
+  {
+   "id": 7037400659,
+   "sha": "28e34d28020001d84881f57a585f2ad9ab6de205",
+   "creado": "2026-10-13T11:37:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:41:19Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:41:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:40:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:39:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:39:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:38:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:37:19Z"
+    }
+   ]
+  },
+  {
+   "id": 7037341724,
+   "sha": "38de705e79ace334a216c2c37f53356f4fa8ee63",
+   "creado": "2026-10-13T11:34:21Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:39:31Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:39:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:38:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:36:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:36:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:36:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:34:21Z"
+    }
+   ]
+  },
+  {
+   "id": 7037312384,
+   "sha": "f6110338b73e18a944662abfae496e1ac492c16e",
+   "creado": "2026-10-13T11:32:49Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:36:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:36:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:36:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:35:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:35:01Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:34:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:32:49Z"
+    }
+   ]
+  },
+  {
+   "id": 7037065441,
+   "sha": "97618f169b3b4f71e384600b3d0720d7e502fea9",
+   "creado": "2026-10-13T11:20:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:35:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:35:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:34:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:24:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:23:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:23:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:20:17Z"
+    }
+   ]
+  },
+  {
+   "id": 7037024144,
+   "sha": "af37a0cd3836575b86ed4fb2bc05a49e89970092",
+   "creado": "2026-10-13T11:18:18Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:24:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:23:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:23:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:21:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:20:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:20:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:18:18Z"
+    }
+   ]
+  },
+  {
+   "id": 7036948444,
+   "sha": "3bf6163bb5708e174af74ea2266412eab2f586be",
+   "creado": "2026-10-13T11:14:46Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:21:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:20:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:20:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:17:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:16:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:16:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:14:46Z"
+    }
+   ]
+  },
+  {
+   "id": 7036824668,
+   "sha": "32425f414fd399936b5669b855c3644e6efb35fa",
+   "creado": "2026-10-13T11:08:33Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:17:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:16:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:16:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:13:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:12:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:11:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:08:33Z"
+    }
+   ]
+  },
+  {
+   "id": 7036820257,
+   "sha": "f1f01628de0cc494462e7cc45a7005a82886df8b",
+   "creado": "2026-10-13T11:08:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:13:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:12:37Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:11:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:11:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:10:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:09:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:08:19Z"
+    }
+   ]
+  },
+  {
+   "id": 7036659086,
+   "sha": "6f35b50901fac64347d862255ec755a036ca1f0d",
+   "creado": "2026-10-13T10:59:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:11:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:10:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:09:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:04:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:03:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T11:02:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:59:51Z"
+    }
+   ]
+  },
+  {
+   "id": 7036610927,
+   "sha": "4605a14508e4e8f6b8e5ddb701bf08f9573c546e",
+   "creado": "2026-10-13T10:57:14Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T11:04:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:03:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T11:02:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:59:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:59:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:58:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:57:15Z"
+    }
+   ]
+  },
+  {
+   "id": 7036466246,
+   "sha": "b9ecf641065f2616b0d019fa398f7f1c21f4e8d6",
+   "creado": "2026-10-13T10:49:37Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T10:59:54Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:59:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:58:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:51:50Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:51:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:51:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T10:49:38Z"
+    }
+   ]
+  },
+  {
+   "id": 7032810809,
+   "sha": "9358f02b14e9648f1ab65fbdacf6464d50728242",
+   "creado": "2026-10-13T07:37:24Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T10:51:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:51:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T10:51:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:40:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:40:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:40:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:37:25Z"
+    }
+   ]
+  },
+  {
+   "id": 7032786198,
+   "sha": "be69e7cda63d246900e9e9e0c530a002a271d619",
+   "creado": "2026-10-13T07:36:07Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T07:40:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:40:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:40:03Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:39:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:39:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:38:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:36:07Z"
+    }
+   ]
+  },
+  {
+   "id": 7032765260,
+   "sha": "6539cfff0333472666e0f3ebeb4c784de1c5226c",
+   "creado": "2026-10-13T07:34:56Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T07:39:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:39:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:38:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:37:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:37:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:36:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:34:56Z"
+    }
+   ]
+  },
+  {
+   "id": 7032360860,
+   "sha": "9226d0f2dd48f885b63b3222441f57554a7cdb1c",
+   "creado": "2026-10-13T07:10:41Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T07:37:35Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:37:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:36:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T07:12:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T07:10:41Z"
+    }
+   ]
+  },
+  {
+   "id": 7032001644,
+   "sha": "33e62fee6c915ee9a8baa8d20f1e3ece9905bbf9",
+   "creado": "2026-10-13T06:48:31Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T07:12:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:50:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:50:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:50:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:48:31Z"
+    }
+   ]
+  },
+  {
+   "id": 7031807765,
+   "sha": "b95e33e4dc818eaa20f500f5a08bb1040c0d080a",
+   "creado": "2026-10-13T06:36:29Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T06:50:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:50:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:50:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:38:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:38:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:37:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T06:36:29Z"
+    }
+   ]
+  },
+  {
+   "id": 7031082044,
+   "sha": "780c812707bfd97b815fe5e25f31110e66e25975",
+   "creado": "2026-10-13T05:46:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 9,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T06:38:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:38:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T06:37:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:58:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:58:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:56:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:47:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:47:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:46:02Z"
+    }
+   ]
+  },
+  {
+   "id": 7031015551,
+   "sha": "7ce7747b716223a77f5dfc983c9b3e92f49668bf",
+   "creado": "2026-10-13T05:41:04Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:47:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:47:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:42:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:42:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:42:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:41:05Z"
+    }
+   ]
+  },
+  {
+   "id": 7030957062,
+   "sha": "299a6c6e68bcdd82b98ac193ae0b833130c21618",
+   "creado": "2026-10-13T05:36:36Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:42:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:42:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:42:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:38:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:37:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:37:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:36:36Z"
+    }
+   ]
+  },
+  {
+   "id": 7030823652,
+   "sha": "ccee4b60695ec9e0688c52037139a7660d09084f",
+   "creado": "2026-10-13T05:26:44Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:38:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:37:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:37:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:28:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:28:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:28:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:26:44Z"
+    }
+   ]
+  },
+  {
+   "id": 7030808829,
+   "sha": "f94aa5309820096c44c1f7b56393ade9d0120b3d",
+   "creado": "2026-10-13T05:25:35Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:28:35Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:28:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:28:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:27:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:27:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:25:36Z"
+    }
+   ]
+  },
+  {
+   "id": 7030467215,
+   "sha": "6ca2fb6516b2ae72b1a2dad065840feb9a9cc495",
+   "creado": "2026-10-13T04:59:35Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 8,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:27:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:27:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:08:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:08:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:06:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:03:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:01:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:59:35Z"
+    }
+   ]
+  },
+  {
+   "id": 7030457769,
+   "sha": "3373e89cae00c4fdd46de72f4464f493e0f1bfeb",
+   "creado": "2026-10-13T04:58:48Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:03:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:01:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:00:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:00:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T05:00:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:58:49Z"
+    }
+   ]
+  },
+  {
+   "id": 7030439575,
+   "sha": "0e5491a646a4c7b5f0dd9292051e4ec13b80f982",
+   "creado": "2026-10-13T04:57:21Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T05:01:02Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:00:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T05:00:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T04:59:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:59:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:57:21Z"
+    }
+   ]
+  },
+  {
+   "id": 7030424719,
+   "sha": "944cc64f2f3c458a02de73dbc05ce79b0c47636b",
+   "creado": "2026-10-13T04:56:12Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "FAILURE",
+     "t": "2026-10-13T04:59:19Z"
+    },
+    {
+     "e": "FAILURE",
+     "t": "2026-10-13T04:58:50Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:57:40Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:57:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T04:56:12Z"
+    }
+   ]
+  },
+  {
+   "id": 7027135359,
+   "sha": "dfda86d65b8de9594b59b277fd38ea0ac3eda93a",
+   "creado": "2026-10-13T00:37:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T04:59:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T04:57:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T04:57:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:39:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:38:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:38:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:37:18Z"
+    }
+   ]
+  },
+  {
+   "id": 7027014318,
+   "sha": "fc4c714a96779cfc3d5249aa0b448f5f89a8a0a8",
+   "creado": "2026-10-13T00:27:32Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:39:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:38:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:29:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:29:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:28:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:27:32Z"
+    }
+   ]
+  },
+  {
+   "id": 7026918194,
+   "sha": "6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9",
+   "creado": "2026-10-13T00:19:46Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:29:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:29:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:28:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:22:50Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:22:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:22:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:19:46Z"
+    }
+   ]
+  },
+  {
+   "id": 7026902654,
+   "sha": "265322bc0e0980198419648518c32ad67963665e",
+   "creado": "2026-10-13T00:18:28Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:22:53Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:22:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:22:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:21:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:21:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:21:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:18:28Z"
+    }
+   ]
+  },
+  {
+   "id": 7026899253,
+   "sha": "9b77c72dfc2830df80415ac70e20a236368039bb",
+   "creado": "2026-10-13T00:18:11Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:21:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:21:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:19:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:19:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:19:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-13T00:18:12Z"
+    }
+   ]
+  },
+  {
+   "id": 6960227539,
+   "sha": "0472952cd2c54e1c336170fa502ca902e6fda8cf",
+   "creado": "2026-10-09T12:06:10Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:20:00Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-13T00:19:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-13T00:19:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T12:07:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T12:07:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T12:07:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T12:06:11Z"
+    }
+   ]
+  },
+  {
+   "id": 6959997849,
+   "sha": "232cf1853504fc9fe953f96e4882ea4def49074d",
+   "creado": "2026-10-09T11:53:37Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T12:07:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T12:07:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T12:07:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:55:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:55:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:54:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:53:37Z"
+    }
+   ]
+  },
+  {
+   "id": 6959934820,
+   "sha": "206d57a49e3cddf9012a8580781dd5d7b9e9de2a",
+   "creado": "2026-10-09T11:50:05Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T11:55:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:55:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:54:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:51:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:51:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:50:06Z"
+    }
+   ]
+  },
+  {
+   "id": 6959397307,
+   "sha": "44cbb050536158705c423950a76254ad8f1848b4",
+   "creado": "2026-10-09T11:20:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T11:51:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:51:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:22:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:22:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:22:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T11:20:51Z"
+    }
+   ]
+  },
+  {
+   "id": 6958933164,
+   "sha": "ebd9bd8e9c4329edbdc35fffced5ff5b173f885c",
+   "creado": "2026-10-09T10:54:48Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T11:22:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:22:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T11:22:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:56:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:56:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:56:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:54:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6958668798,
+   "sha": "17159d7f457b8e00002cd06c33f1e41941bb10d3",
+   "creado": "2026-10-09T10:39:23Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:56:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:56:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:56:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:40:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:40:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:40:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:39:23Z"
+    }
+   ]
+  },
+  {
+   "id": 6958644585,
+   "sha": "5ca15aedb85367a48e225015cbf81dd99bf4ef51",
+   "creado": "2026-10-09T10:38:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:40:56Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:40:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:40:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:39:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:39:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:39:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:38:03Z"
+    }
+   ]
+  },
+  {
+   "id": 6958535543,
+   "sha": "582656bd9eb79cebc1468db75b19fa85b9c696b5",
+   "creado": "2026-10-09T10:32:05Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:39:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:39:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:39:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:35:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:34:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:34:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:32:06Z"
+    }
+   ]
+  },
+  {
+   "id": 6958534390,
+   "sha": "c524b02fd3655cc905a7a1303cbc04de88ed5daa",
+   "creado": "2026-10-09T10:32:01Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:35:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:34:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:34:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:34:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:33:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:33:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:32:02Z"
+    }
+   ]
+  },
+  {
+   "id": 6958255486,
+   "sha": "51fbba7f43b4e5391314f961f198b2c5f6b88ee6",
+   "creado": "2026-10-09T10:16:15Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:34:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:33:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:33:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:17:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:17:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:17:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T10:16:16Z"
+    }
+   ]
+  },
+  {
+   "id": 6956671004,
+   "sha": "85d8d01e64196569928b523c9074542d6ffbbd0a",
+   "creado": "2026-10-09T08:46:11Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T10:17:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:17:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T10:17:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T08:47:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T08:47:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T08:47:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T08:46:11Z"
+    }
+   ]
+  },
+  {
+   "id": 6956489761,
+   "sha": "65ee132921af1587fa20169d709a7649d9059e80",
+   "creado": "2026-10-09T08:35:25Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T08:48:00Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T08:47:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T08:47:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T08:36:58Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T08:36:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-09T08:35:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6933225902,
+   "sha": "be48345279da158bc81aebbea543eb926ae9eb88",
+   "creado": "2026-10-08T10:33:50Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-09T08:37:02Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-09T08:36:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T10:35:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T10:35:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T10:33:50Z"
+    }
+   ]
+  },
+  {
+   "id": 6931324866,
+   "sha": "497f516710e5ff843a6cfbee77f33c2692bba98f",
+   "creado": "2026-10-08T08:55:23Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T10:35:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:57:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:56:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:56:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:55:23Z"
+    }
+   ]
+  },
+  {
+   "id": 6931175574,
+   "sha": "8b115d0f81facb763f2f2b2230c7615e3b3a23e7",
+   "creado": "2026-10-08T08:47:30Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:57:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:56:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:48:57Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:48:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:47:30Z"
+    }
+   ]
+  },
+  {
+   "id": 6931105734,
+   "sha": "6defb376e57ab6397bfc49e9a909051178bdd414",
+   "creado": "2026-10-08T08:43:58Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:48:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:48:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:45:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:45:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:45:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:43:58Z"
+    }
+   ]
+  },
+  {
+   "id": 6930998295,
+   "sha": "3c981d477d80a716a4ce5fd887792708a33b7950",
+   "creado": "2026-10-08T08:38:24Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:45:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:45:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:45:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:39:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:39:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:39:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:38:25Z"
+    }
+   ]
+  },
+  {
+   "id": 6930971911,
+   "sha": "f1d535f92ec81c1b3f1e9371f2541adee59d0292",
+   "creado": "2026-10-08T08:36:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:39:53Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:39:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:39:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:38:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:38:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:38:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:36:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6930775317,
+   "sha": "7079aaf3876a6a314919c506b8aaa92d4ac52529",
+   "creado": "2026-10-08T08:26:20Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:38:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:38:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:38:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:28:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:28:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:28:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:26:20Z"
+    }
+   ]
+  },
+  {
+   "id": 6930762992,
+   "sha": "e414866dda770eda6ba0dec82df1bd17656ba3cf",
+   "creado": "2026-10-08T08:25:38Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:28:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:28:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:28:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:27:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:26:58Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:25:39Z"
+    }
+   ]
+  },
+  {
+   "id": 6930677408,
+   "sha": "a46ade85412a88c7f9d95c25b2d063f4501fb89e",
+   "creado": "2026-10-08T08:20:55Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:27:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:27:01Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:22:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:22:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:20:56Z"
+    }
+   ]
+  },
+  {
+   "id": 6930538857,
+   "sha": "d47dad333d2c1ca5a763292e7f94c8433498a53d",
+   "creado": "2026-10-08T08:13:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:22:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:22:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:14:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:14:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:13:20Z"
+    }
+   ]
+  },
+  {
+   "id": 6930389476,
+   "sha": "aa0b22acc3abe8572cd5e527caed0dab1e5c0f31",
+   "creado": "2026-10-08T08:05:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:14:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:14:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:14:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:06:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:06:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T08:05:02Z"
+    }
+   ]
+  },
+  {
+   "id": 6930193653,
+   "sha": "4f8c473da8a565fdb6f00316f7ef5b14be3c1f1c",
+   "creado": "2026-10-08T07:53:52Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T08:06:39Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:06:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T08:06:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:55:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:55:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:55:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:53:52Z"
+    }
+   ]
+  },
+  {
+   "id": 6930168285,
+   "sha": "3f15924a253e0647509b8bf6a680f7f3d819efd2",
+   "creado": "2026-10-08T07:52:20Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:55:21Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:55:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:55:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:53:37Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:53:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:53:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:52:20Z"
+    }
+   ]
+  },
+  {
+   "id": 6930135964,
+   "sha": "4ae8dfdcac5906606a841c59e293b42f32b53dcc",
+   "creado": "2026-10-08T07:50:28Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:53:40Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:53:37Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:53:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:51:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:51:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:51:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:50:28Z"
+    }
+   ]
+  },
+  {
+   "id": 6930069743,
+   "sha": "ad377526013cc518a09de4a3a1b0d86743d7e7b9",
+   "creado": "2026-10-08T07:46:37Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 4,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:51:47Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:51:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T07:47:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T07:46:37Z"
+    }
+   ]
+  },
+  {
+   "id": 6926357787,
+   "sha": "16e80dea496dad3819bf444983f9974d3c13ebb9",
+   "creado": "2026-10-08T03:17:26Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:47:53Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T07:47:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T03:18:58Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T03:18:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T03:17:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6926186993,
+   "sha": "326e6af4ef5489d7d35305f08bc528ff210ec2f9",
+   "creado": "2026-10-08T03:03:53Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T03:19:00Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T03:18:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T03:05:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T03:05:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T03:05:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T03:03:53Z"
+    }
+   ]
+  },
+  {
+   "id": 6925828012,
+   "sha": "787aa06c2daf18ee2f309f4c5c0ec02e2e6774ba",
+   "creado": "2026-10-08T02:35:50Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T03:05:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T03:05:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T03:05:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:37:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:37:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:37:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:35:50Z"
+    }
+   ]
+  },
+  {
+   "id": 6925750774,
+   "sha": "3be83fbdb5db39808b022361a67efea3bd147daa",
+   "creado": "2026-10-08T02:29:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:37:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:37:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:37:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:31:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:31:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:29:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6925728907,
+   "sha": "9d410c74679f18e8abafc07f24b858dd182ac58c",
+   "creado": "2026-10-08T02:28:16Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:31:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:31:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:29:33Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:29:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:28:16Z"
+    }
+   ]
+  },
+  {
+   "id": 6925605784,
+   "sha": "453d3a5130dc2c01996b1a794b14262212f241a5",
+   "creado": "2026-10-08T02:18:46Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:29:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:29:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:21:48Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:21:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:21:26Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:18:47Z"
+    }
+   ]
+  },
+  {
+   "id": 6925601681,
+   "sha": "41810bcf16a5d049ce9d02cdd90bdbd28fa6b665",
+   "creado": "2026-10-08T02:18:26Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:21:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:21:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:21:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:20:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:20:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:20:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:18:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6925593492,
+   "sha": "d46d196f3cfc1696f8ed3eed9676e2f324a3db9d",
+   "creado": "2026-10-08T02:17:49Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:20:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:20:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:19:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:19:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:17:49Z"
+    }
+   ]
+  },
+  {
+   "id": 6925489760,
+   "sha": "179c248b496a963a999b5d45f125c5b458f21d78",
+   "creado": "2026-10-08T02:10:04Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:19:16Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:19:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:19:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:11:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:11:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:10:04Z"
+    }
+   ]
+  },
+  {
+   "id": 6925473859,
+   "sha": "93712f10e75dfeca3438502a3e516244f24486dc",
+   "creado": "2026-10-08T02:08:48Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:11:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:11:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:10:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:10:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:10:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T02:08:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6925316165,
+   "sha": "8518dc7a16164530863d657cb0f2f817a4691d78",
+   "creado": "2026-10-08T01:56:30Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T02:10:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T02:10:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:57:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:57:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:56:30Z"
+    }
+   ]
+  },
+  {
+   "id": 6925241174,
+   "sha": "fae0553295d655d5579e3a1fc1c93b6f468c0149",
+   "creado": "2026-10-08T01:50:28Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:57:52Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:57:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:51:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:51:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:51:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:50:28Z"
+    }
+   ]
+  },
+  {
+   "id": 6925067393,
+   "sha": "c1bad3c34e5ac6379d2b7fadd9615fd5d2b5d189",
+   "creado": "2026-10-08T01:37:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:51:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:51:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:51:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:38:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:38:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:38:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:37:02Z"
+    }
+   ]
+  },
+  {
+   "id": 6925039134,
+   "sha": "176d0772eb0f4be574dad06f5c548f7da73c5ca7",
+   "creado": "2026-10-08T01:34:49Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:38:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:38:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:38:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:36:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:36:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:34:50Z"
+    }
+   ]
+  },
+  {
+   "id": 6924981297,
+   "sha": "c63a527ebb5b33450e40f0bef5c28e0791ab6ea8",
+   "creado": "2026-10-08T01:30:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:36:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:36:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:31:57Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:31:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:31:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:30:20Z"
+    }
+   ]
+  },
+  {
+   "id": 6924938270,
+   "sha": "d00c97509221bf07b45a31cbe6a9b162895ce5eb",
+   "creado": "2026-10-08T01:26:52Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:32:01Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:31:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:31:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:28:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:28:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T01:26:53Z"
+    }
+   ]
+  },
+  {
+   "id": 6924494415,
+   "sha": "fc639ef96164b56ae99c129b7202c56c66abdaf4",
+   "creado": "2026-10-08T00:54:30Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T01:28:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T01:28:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:57:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:56:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:56:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:54:31Z"
+    }
+   ]
+  },
+  {
+   "id": 6924216973,
+   "sha": "789509a9e4a85e9f1cb2ff7de0889a2cee3158a8",
+   "creado": "2026-10-08T00:33:29Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T00:57:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:56:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:56:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:36:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:35:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:34:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:33:30Z"
+    }
+   ]
+  },
+  {
+   "id": 6924118183,
+   "sha": "8b9f3910bf2b86b83a8f5d144fe5c53ea4601de3",
+   "creado": "2026-10-08T00:26:00Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T00:36:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:35:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:34:56Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:27:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:27:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:27:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:26:01Z"
+    }
+   ]
+  },
+  {
+   "id": 6923845755,
+   "sha": "9dd6aa773799565c3753c51f289efae1a4ecbca0",
+   "creado": "2026-10-08T00:05:53Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T00:27:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:27:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:27:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:09:26Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:07:40Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:07:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-08T00:05:53Z"
+    }
+   ]
+  },
+  {
+   "id": 6923643164,
+   "sha": "fca2f2e934e30690e04ad7b9fe3ccfcae152a802",
+   "creado": "2026-10-07T23:50:54Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 4,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T00:09:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:07:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-08T00:07:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T23:50:54Z"
+    }
+   ]
+  },
+  {
+   "id": 6923615577,
+   "sha": "b951dc1dad57b49ddd700165b6317553d4c8c6df",
+   "creado": "2026-10-07T23:48:54Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 3,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-08T00:07:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T23:50:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T23:48:54Z"
+    }
+   ]
+  },
+  {
+   "id": 6923510392,
+   "sha": "edfbd86e7c193ce5b35f20269c478acc6e9b2777",
+   "creado": "2026-10-07T23:41:44Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T23:50:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T23:50:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T23:43:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T23:43:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T23:43:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T23:41:44Z"
+    }
+   ]
+  },
+  {
+   "id": 6917542508,
+   "sha": "a65a8c756c0363ec5ea6f4f0b1e811ba17a909c0",
+   "creado": "2026-10-07T18:23:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T23:43:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T23:43:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T23:43:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:26:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:25:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:25:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:23:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6917442111,
+   "sha": "da2514fc865c940fafa42cec8c962da50591bb98",
+   "creado": "2026-10-07T18:19:08Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T18:26:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:25:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:25:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:21:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:21:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:21:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:19:09Z"
+    }
+   ]
+  },
+  {
+   "id": 6917415158,
+   "sha": "bc5e398fcada9f350ce5237aaa28c30fd613220f",
+   "creado": "2026-10-07T18:17:47Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T18:21:37Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:20:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:19:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:19:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:17:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6917032576,
+   "sha": "0fd400cbc3dddf2d7d55573014937b53dc499edc",
+   "creado": "2026-10-07T17:59:56Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T18:20:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:19:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:19:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:02:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T18:01:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:59:56Z"
+    }
+   ]
+  },
+  {
+   "id": 6916936997,
+   "sha": "c8ab5d321f6d2e1d54b4cd8677e7dee1e8d79f2f",
+   "creado": "2026-10-07T17:55:33Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T18:19:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:02:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T18:01:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:57:26Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:57:21Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:57:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:55:33Z"
+    }
+   ]
+  },
+  {
+   "id": 6916841265,
+   "sha": "f6fe6a38c00bab577e67f17cba3bb567c6227304",
+   "creado": "2026-10-07T17:50:58Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:57:33Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:57:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:57:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:53:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:52:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:52:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:50:58Z"
+    }
+   ]
+  },
+  {
+   "id": 6916623188,
+   "sha": "58fb1028bb5702892ef1ee75c8fbb637505928b2",
+   "creado": "2026-10-07T17:40:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:53:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:52:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:52:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:43:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:42:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:42:33Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:40:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6916592061,
+   "sha": "e779ad24187fb8c8f485642585cb7bd690253aac",
+   "creado": "2026-10-07T17:39:31Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:43:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:42:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:41:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:41:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:39:32Z"
+    }
+   ]
+  },
+  {
+   "id": 6916474726,
+   "sha": "67ec2a088f9eb617c6e68b72d82977e5335761ad",
+   "creado": "2026-10-07T17:33:58Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:52:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:41:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:37:01Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:35:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:35:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:33:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6916440972,
+   "sha": "63a4ae3e53c316bf7cede7d3ebca33f9da6c8650",
+   "creado": "2026-10-07T17:32:23Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:37:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:36:01Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:35:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:34:33Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:34:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:34:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:32:23Z"
+    }
+   ]
+  },
+  {
+   "id": 6916234758,
+   "sha": "51d763211c6b71807eb7ead6bdf4b7fe718a7f5c",
+   "creado": "2026-10-07T17:22:48Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:34:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:34:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:34:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:24:33Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:22:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6916086913,
+   "sha": "6536e63e038ef36be9d61fc8057a649ff2af3149",
+   "creado": "2026-10-07T17:15:54Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:24:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:19:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:19:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:18:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:15:55Z"
+    }
+   ]
+  },
+  {
+   "id": 6916075205,
+   "sha": "f878939d4e313fb94bafbe889f32a56d1ea34f28",
+   "creado": "2026-10-07T17:15:22Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:19:10Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:19:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:18:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:17:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:17:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:17:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:15:22Z"
+    }
+   ]
+  },
+  {
+   "id": 6915856382,
+   "sha": "938c73a6b1a18627d064891827a5729ab302bef3",
+   "creado": "2026-10-07T17:05:33Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:17:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:17:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:17:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:11:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:10:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:10:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:05:34Z"
+    }
+   ]
+  },
+  {
+   "id": 6915847318,
+   "sha": "60f1933845705618e5b82847d6090158f730a390",
+   "creado": "2026-10-07T17:05:11Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:11:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:11:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:10:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:10:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:10:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:08:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:05:11Z"
+    }
+   ]
+  },
+  {
+   "id": 6915845453,
+   "sha": "912fb95701424239bd4d61aca203dc6360755523",
+   "creado": "2026-10-07T17:05:06Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:10:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:10:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:09:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:08:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:07:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:06:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T17:05:07Z"
+    }
+   ]
+  },
+  {
+   "id": 6915653184,
+   "sha": "965e3d053f1f7d9ba24830f17abc7a54254c83f9",
+   "creado": "2026-10-07T16:48:10Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T17:09:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:07:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T17:06:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:50:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:50:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:49:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:48:10Z"
+    }
+   ]
+  },
+  {
+   "id": 6915606900,
+   "sha": "b2188ed995843fa9eb01e371f5033974dd2897b6",
+   "creado": "2026-10-07T16:45:56Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:51:00Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:50:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:49:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:47:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:47:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:47:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:45:56Z"
+    }
+   ]
+  },
+  {
+   "id": 6915499599,
+   "sha": "28166620c923253a3c2c350f415894e6fc2ed1f4",
+   "creado": "2026-10-07T16:40:55Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:47:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:47:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:47:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:44:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:42:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:42:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:40:55Z"
+    }
+   ]
+  },
+  {
+   "id": 6915399784,
+   "sha": "9acfbeba61c997aa838ad2460103a219141cd293",
+   "creado": "2026-10-07T16:36:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:44:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:42:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:39:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:38:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:38:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:36:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6915263811,
+   "sha": "818cb29be894a7861f11970a59e20eba5ca4e70b",
+   "creado": "2026-10-07T16:30:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:39:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:38:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:38:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:32:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:32:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:32:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:30:19Z"
+    }
+   ]
+  },
+  {
+   "id": 6914837406,
+   "sha": "f9b4074d33278023f55548b88306421531114174",
+   "creado": "2026-10-07T16:11:03Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:32:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:32:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:32:21Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:15:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:13:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:12:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:11:03Z"
+    }
+   ]
+  },
+  {
+   "id": 6914729944,
+   "sha": "f07622f34164a5590540310fcf1b58bff1cd81ee",
+   "creado": "2026-10-07T16:06:16Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:15:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:13:53Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:12:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:10:26Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:09:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:08:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:06:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6914690632,
+   "sha": "9d80e872c4854f8bdb5a086d26a5cb0bca049e5a",
+   "creado": "2026-10-07T16:04:32Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:10:35Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:09:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:08:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:08:21Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:06:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:06:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T16:04:32Z"
+    }
+   ]
+  },
+  {
+   "id": 6914489460,
+   "sha": "eda7ca55f9e2352b9da916c12f80d39aca5e1595",
+   "creado": "2026-10-07T15:55:47Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T16:08:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:06:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T16:06:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:57:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:57:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:57:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:55:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6914353147,
+   "sha": "e883e586d11298ca09d58cd3fa89937b7b0549bd",
+   "creado": "2026-10-07T15:49:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:57:56Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:57:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:57:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:53:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:52:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:49:52Z"
+    }
+   ]
+  },
+  {
+   "id": 6914339161,
+   "sha": "531489aa0a3c7857ffa65dfc08abc554ad4cb569",
+   "creado": "2026-10-07T15:49:15Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:53:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:52:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:52:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:50:58Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:50:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:49:15Z"
+    }
+   ]
+  },
+  {
+   "id": 6914283992,
+   "sha": "8857fa29f38a73c7089f46202370c79cc4eeffe9",
+   "creado": "2026-10-07T15:46:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:52:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:51:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:50:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:50:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:49:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:49:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:46:51Z"
+    }
+   ]
+  },
+  {
+   "id": 6914256145,
+   "sha": "0a62be75a18054c63954fd4e273e93a072d09f96",
+   "creado": "2026-10-07T15:45:40Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:50:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:49:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:49:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:48:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:47:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:47:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:45:40Z"
+    }
+   ]
+  },
+  {
+   "id": 6914199120,
+   "sha": "12ecc7bb3bad377e729a01b09fd755f978e125b9",
+   "creado": "2026-10-07T15:43:10Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:48:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:47:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:47:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:45:40Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:45:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T15:43:11Z"
+    }
+   ]
+  },
+  {
+   "id": 6905020394,
+   "sha": "5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b",
+   "creado": "2026-10-07T08:13:27Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:45:51Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T15:45:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T15:45:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T08:14:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T08:14:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T08:14:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T08:13:27Z"
+    }
+   ]
+  },
+  {
+   "id": 6904943134,
+   "sha": "af295084aec71e77b65441f1bd84389f0ec050c1",
+   "creado": "2026-10-07T08:09:13Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T08:14:44Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T08:14:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T08:14:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T08:10:30Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T08:10:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T08:09:13Z"
+    }
+   ]
+  },
+  {
+   "id": 6904677273,
+   "sha": "5ca9334a5025e75b1e646f6acc1174c830492360",
+   "creado": "2026-10-07T07:54:18Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T08:10:34Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T08:10:32Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T08:10:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:55:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:55:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:55:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:54:19Z"
+    }
+   ]
+  },
+  {
+   "id": 6904496281,
+   "sha": "21c27b1127d937c99fae56c1b2de67eff1d03ccb",
+   "creado": "2026-10-07T07:43:52Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:55:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:55:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:55:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:45:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:45:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:43:52Z"
+    }
+   ]
+  },
+  {
+   "id": 6903952560,
+   "sha": "73ce872cbcb6c914355830fd6b358e30aa066c77",
+   "creado": "2026-10-07T07:11:25Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:45:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:45:02Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:13:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:13:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:12:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:11:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6903895708,
+   "sha": "eca676a3bf78221a1eea08dfd4d61a3c78872b3b",
+   "creado": "2026-10-07T07:07:56Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:13:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:13:03Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:12:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:09:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:09:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:07:56Z"
+    }
+   ]
+  },
+  {
+   "id": 6903869641,
+   "sha": "4281b53253cc5cc3708830f98d4d21e7ff35b687",
+   "creado": "2026-10-07T07:06:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:09:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:09:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:09:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:07:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:06:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6903749497,
+   "sha": "725c0e3a1fff3409fdc2db2bdd493918cba5cec0",
+   "creado": "2026-10-07T06:58:50Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:07:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:00:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T07:00:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:59:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:58:50Z"
+    }
+   ]
+  },
+  {
+   "id": 6903734980,
+   "sha": "fb3693a37cc8cc9fecd64a52e0bc538ee956be11",
+   "creado": "2026-10-07T06:57:53Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T07:00:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:00:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T07:00:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:59:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:59:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:57:53Z"
+    }
+   ]
+  },
+  {
+   "id": 6903690315,
+   "sha": "00ffc1e1b282e63eda67250d3b4096e5c465fb42",
+   "creado": "2026-10-07T06:55:03Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:59:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:59:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:57:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:56:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:56:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:55:03Z"
+    }
+   ]
+  },
+  {
+   "id": 6903678943,
+   "sha": "c2cb59fb16bb9196ad3fc1cb4b9fe54836d36e72",
+   "creado": "2026-10-07T06:54:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:57:03Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:56:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:56:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:55:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:55:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:55:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:54:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6903549926,
+   "sha": "85fad1ee5ef1f5ff0b9753783c300438d8c248dc",
+   "creado": "2026-10-07T06:45:44Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:55:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:55:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:55:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:47:09Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:46:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:45:44Z"
+    }
+   ]
+  },
+  {
+   "id": 6903509514,
+   "sha": "adedcf53a77287bbf891155569c51605ebaec698",
+   "creado": "2026-10-07T06:43:06Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:47:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:46:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:46:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:44:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:44:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:44:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:43:06Z"
+    }
+   ]
+  },
+  {
+   "id": 6903491576,
+   "sha": "f7a65d42ed777afbf392007ff5afc741e66bb06c",
+   "creado": "2026-10-07T06:41:55Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:44:25Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:44:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:44:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:43:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:43:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:43:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:41:56Z"
+    }
+   ]
+  },
+  {
+   "id": 6903414749,
+   "sha": "bfa625815ff6e4b5fc199c86a7099ae14d272b8d",
+   "creado": "2026-10-07T06:36:57Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:43:18Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:43:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:43:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:38:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:38:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:38:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:36:57Z"
+    }
+   ]
+  },
+  {
+   "id": 6903238074,
+   "sha": "720c1a122ffc796371004a92f6ab143b5f79d4d3",
+   "creado": "2026-10-07T06:25:19Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:38:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:38:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:38:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:26:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:26:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:26:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-07T06:25:19Z"
+    }
+   ]
+  },
+  {
+   "id": 6894418662,
+   "sha": "33f07c332c3c95fe1656f640184c5d340e519f5d",
+   "creado": "2026-10-06T20:23:23Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-07T06:26:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:26:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-07T06:26:39Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:25:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:25:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:23:23Z"
+    }
+   ]
+  },
+  {
+   "id": 6894380458,
+   "sha": "dad18d1ce2ed0f13de61b8387506258bd011e52c",
+   "creado": "2026-10-06T20:21:29Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T20:25:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:25:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:23:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:23:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:21:29Z"
+    }
+   ]
+  },
+  {
+   "id": 6894268542,
+   "sha": "0602e521d1128c5e82619cca1d189a9b86673f51",
+   "creado": "2026-10-06T20:16:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T20:23:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:23:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:17:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:17:38Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:17:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:16:02Z"
+    }
+   ]
+  },
+  {
+   "id": 6894087016,
+   "sha": "5f48829e38ec4319793bcb87c66f36236b480637",
+   "creado": "2026-10-06T20:07:13Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T20:17:54Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:17:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:17:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:10:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:09:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:08:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:07:13Z"
+    }
+   ]
+  },
+  {
+   "id": 6894056930,
+   "sha": "5f2c0801fb90ea4c6d49fcf464e30255e8f863e5",
+   "creado": "2026-10-06T20:05:45Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T20:10:43Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:09:44Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:08:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:08:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:07:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T20:05:45Z"
+    }
+   ]
+  },
+  {
+   "id": 6893540773,
+   "sha": "2822251746ce8fdb2602f693068d313d577eb245",
+   "creado": "2026-10-06T19:39:36Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T20:08:17Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T20:07:55Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:42:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:42:29Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:42:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:39:36Z"
+    }
+   ]
+  },
+  {
+   "id": 6893050988,
+   "sha": "bafb07340557298cd5bfde943d81ade8823d4a78",
+   "creado": "2026-10-06T19:15:39Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T19:42:46Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:42:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:42:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:19:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:15:40Z"
+    }
+   ]
+  },
+  {
+   "id": 6892785633,
+   "sha": "378027a738d670709ee213612a8fa06f5972f14e",
+   "creado": "2026-10-06T19:02:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T19:19:53Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:18:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:17:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:05:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:04:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:04:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T19:02:51Z"
+    }
+   ]
+  },
+  {
+   "id": 6892338261,
+   "sha": "f0ec16f899387818b9f73e59e873a742cf99170b",
+   "creado": "2026-10-06T18:41:27Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T19:05:37Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:04:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T19:04:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:44:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:43:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:42:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:41:27Z"
+    }
+   ]
+  },
+  {
+   "id": 6891914659,
+   "sha": "317c0bab5ed17aa7700f97cfca308d05d4238a8d",
+   "creado": "2026-10-06T18:21:24Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T18:44:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:43:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:43:01Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:23:48Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:23:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:23:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:21:24Z"
+    }
+   ]
+  },
+  {
+   "id": 6891883544,
+   "sha": "d01a769ac177f3f38f6f5b3b5b8733db94ce87fe",
+   "creado": "2026-10-06T18:19:55Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T18:23:49Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:23:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:23:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:22:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:22:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:21:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T18:19:55Z"
+    }
+   ]
+  },
+  {
+   "id": 6891170569,
+   "sha": "8f77f96dd12c0cc7cad87f94d166b58601741b5f",
+   "creado": "2026-10-06T17:46:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T18:22:07Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T18:22:04Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T18:21:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:49:48Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:49:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:48:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:46:03Z"
+    }
+   ]
+  },
+  {
+   "id": 6891163250,
+   "sha": "bcd74abab69a1a609e520f85fe50e6632ced204c",
+   "creado": "2026-10-06T17:45:41Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T17:49:53Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:49:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:49:00Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:47:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:47:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:47:17Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:45:41Z"
+    }
+   ]
+  },
+  {
+   "id": 6890826351,
+   "sha": "78426f7ad5d75af2f43ebb553eb5fe7604f2eafc",
+   "creado": "2026-10-06T17:29:39Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T17:47:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:47:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:47:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:32:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:31:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:31:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:29:40Z"
+    }
+   ]
+  },
+  {
+   "id": 6890642027,
+   "sha": "b7f31687868053b2a567f0cc200c8158ef1ecafd",
+   "creado": "2026-10-06T17:21:01Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T17:32:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:31:29Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:31:18Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:24:37Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:23:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:23:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:21:01Z"
+    }
+   ]
+  },
+  {
+   "id": 6890235347,
+   "sha": "f8da1ec83777c4110228e82093047e69a671dfe1",
+   "creado": "2026-10-06T17:02:26Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T17:24:42Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:23:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:23:16Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:04:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:04:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:04:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T17:02:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6887208230,
+   "sha": "31ff91d900f6178327cdb2dbab7a9e1273222e10",
+   "creado": "2026-10-06T14:49:54Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T17:04:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:04:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T17:04:07Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:53:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:51:34Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:51:20Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:49:54Z"
+    }
+   ]
+  },
+  {
+   "id": 6886894362,
+   "sha": "6b375fa8b617ec82cd56213e8a02f7a654d3d43c",
+   "creado": "2026-10-06T14:37:04Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:53:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:51:38Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:51:24Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:39:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:38:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:37:04Z"
+    }
+   ]
+  },
+  {
+   "id": 6886694433,
+   "sha": "1bff92e1d47648b8aa3bd1e04bdf72e409e9919f",
+   "creado": "2026-10-06T14:28:49Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:39:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:38:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:38:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:32:26Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:31:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:31:24Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:28:49Z"
+    }
+   ]
+  },
+  {
+   "id": 6886643051,
+   "sha": "577f1fb473816d7e39a9208737e361e3c3ff6d73",
+   "creado": "2026-10-06T14:26:43Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:32:32Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:31:31Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:31:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:29:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:29:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:28:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:26:43Z"
+    }
+   ]
+  },
+  {
+   "id": 6886050002,
+   "sha": "ee4331a46b2d89864d1f044dcdc43af32e4c4479",
+   "creado": "2026-10-06T14:02:06Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:30:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:29:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:28:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:04:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:03:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:03:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:02:06Z"
+    }
+   ]
+  },
+  {
+   "id": 6885999373,
+   "sha": "0f6b3099ddbdbf28fd2bcc2fcdc1c55a17282f6a",
+   "creado": "2026-10-06T14:00:01Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:05:02Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:04:05Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:02:01Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:01:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:01:36Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T14:00:02Z"
+    }
+   ]
+  },
+  {
+   "id": 6885855511,
+   "sha": "7c801d0124fbbf03e1faccb0327b83eb40c0ee10",
+   "creado": "2026-10-06T13:53:52Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:02:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:01:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T14:01:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:55:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:55:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:55:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:53:52Z"
+    }
+   ]
+  },
+  {
+   "id": 6885838200,
+   "sha": "7769c933b52d12e19e84c9ead9a044e2311f1da2",
+   "creado": "2026-10-06T13:53:06Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 4,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:55:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:55:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:53:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:53:06Z"
+    }
+   ]
+  },
+  {
+   "id": 6885717413,
+   "sha": "24a6ab0499c5c62982f7ccf61bd5e405f5d74421",
+   "creado": "2026-10-06T13:47:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:53:35Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:53:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:53:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:49:40Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:49:21Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:49:13Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:47:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6885602570,
+   "sha": "8290e27d56279a5c26b700dd7c30def2be75b933",
+   "creado": "2026-10-06T13:43:08Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:49:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:49:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:49:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:46:14Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:45:56Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:45:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:43:08Z"
+    }
+   ]
+  },
+  {
+   "id": 6885596611,
+   "sha": "ff2a325c81e2793a7dad903069cf6a6d1ce9e453",
+   "creado": "2026-10-06T13:42:53Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:46:20Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:46:01Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:45:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:45:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:44:47Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:44:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:42:53Z"
+    }
+   ]
+  },
+  {
+   "id": 6885536928,
+   "sha": "b71719f32f623729debec40518e3c7c6d3601086",
+   "creado": "2026-10-06T13:40:25Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T14:28:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:44:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:42:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:41:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:41:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:40:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6885474277,
+   "sha": "5e3211dc4ca3decda4f50b976c5272ed53d82c99",
+   "creado": "2026-10-06T13:37:45Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:42:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:41:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:40:07Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:39:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:37:46Z"
+    }
+   ]
+  },
+  {
+   "id": 6885311914,
+   "sha": "fdac6867180adf6892fa3cb0f514ebbf69d04ab5",
+   "creado": "2026-10-06T13:30:58Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:40:17Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:39:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:33:27Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:33:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:32:19Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:30:58Z"
+    }
+   ]
+  },
+  {
+   "id": 6885116483,
+   "sha": "6aaec0dc8f0267518a50f626299ae901f81e2ae1",
+   "creado": "2026-10-06T13:22:35Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:33:37Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:33:35Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:32:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:24:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:24:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:24:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:22:36Z"
+    }
+   ]
+  },
+  {
+   "id": 6885104862,
+   "sha": "80b53b980b548849df8238f1dcd6c50cfea442be",
+   "creado": "2026-10-06T13:22:04Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:24:50Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:24:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:24:36Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:23:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:23:23Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:23:16Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:22:04Z"
+    }
+   ]
+  },
+  {
+   "id": 6885040336,
+   "sha": "c92d8182697e15667652b786d76a5f8398c2f770",
+   "creado": "2026-10-06T13:19:20Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 9,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:23:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:23:27Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:23:19Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:21:26Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:21:21Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:20:57Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:20:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:20:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:19:20Z"
+    }
+   ]
+  },
+  {
+   "id": 6884620183,
+   "sha": "8dcc6d2ad6cab55e9b550220868b12adc82eb40e",
+   "creado": "2026-10-06T13:00:57Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:21:00Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:02:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:02:48Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:02:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T13:00:57Z"
+    }
+   ]
+  },
+  {
+   "id": 6884507000,
+   "sha": "a2533fd9bb3a94c762fda17fef91185b8bc68f42",
+   "creado": "2026-10-06T12:55:37Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T13:02:54Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T13:02:22Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:57:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:57:00Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:56:53Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:55:37Z"
+    }
+   ]
+  },
+  {
+   "id": 6884145463,
+   "sha": "eb1fdefaf9e660bd706e1fbba31c90f868343ad1",
+   "creado": "2026-10-06T12:38:59Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:57:10Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:57:02Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:56:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:40:39Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:40:31Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:40:25Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:38:59Z"
+    }
+   ]
+  },
+  {
+   "id": 6884079291,
+   "sha": "ea8ee3d1aa7fe298f17a1ba5b1b7b609c03794e5",
+   "creado": "2026-10-06T12:36:16Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:40:41Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:40:34Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:40:30Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:37:42Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:37:35Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:37:32Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:36:16Z"
+    }
+   ]
+  },
+  {
+   "id": 6883733294,
+   "sha": "a3a2f3b0de69803c1f16444b72a69f6908a5254e",
+   "creado": "2026-10-06T12:20:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:37:46Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:37:40Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:37:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:22:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:22:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:20:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6883724679,
+   "sha": "edbd86949e0ec76effd4719fb438018d6781e260",
+   "creado": "2026-10-06T12:19:51Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:22:18Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:22:15Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:22:12Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:21:05Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:19:52Z"
+    }
+   ]
+  },
+  {
+   "id": 6883452376,
+   "sha": "ebd15a90618ea5da432485c048e9b170a221c9b6",
+   "creado": "2026-10-06T12:06:35Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:21:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:08:12Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:07:59Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:07:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:06:35Z"
+    }
+   ]
+  },
+  {
+   "id": 6883316056,
+   "sha": "3746d0351af6b56c88f6a53fce695eef51913d4f",
+   "creado": "2026-10-06T11:59:57Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:08:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:08:03Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:07:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:03:28Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:03:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:03:04Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:59:57Z"
+    }
+   ]
+  },
+  {
+   "id": 6883313999,
+   "sha": "9361f41db1819d4e9257eb0ac1d2aaef8a1775f5",
+   "creado": "2026-10-06T11:59:50Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:03:33Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:03:14Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:03:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:02:18Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:01:51Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:01:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:59:50Z"
+    }
+   ]
+  },
+  {
+   "id": 6883303822,
+   "sha": "f70625d8a009bdab1f672f4eb6fffb34e70bf2f2",
+   "creado": "2026-10-06T11:59:17Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:02:23Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:01:56Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:01:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T12:00:41Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:59:17Z"
+    }
+   ]
+  },
+  {
+   "id": 6883008929,
+   "sha": "dae66d0f6623072e29ecf2dc454da8b8596f30fb",
+   "creado": "2026-10-06T11:43:55Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T12:00:51Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T12:00:45Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:45:15Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:45:08Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:45:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:43:55Z"
+    }
+   ]
+  },
+  {
+   "id": 6882966547,
+   "sha": "1a59ba31f27bb18f998b41356248900b7d934adc",
+   "creado": "2026-10-06T11:41:44Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:45:17Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:45:11Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:45:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:43:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:43:03Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:43:01Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:41:44Z"
+    }
+   ]
+  },
+  {
+   "id": 6882902932,
+   "sha": "3f290137be180ce6e54349df187eaf569ca18677",
+   "creado": "2026-10-06T11:38:26Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 5,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:43:08Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:39:58Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:39:54Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:39:49Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:38:26Z"
+    }
+   ]
+  },
+  {
+   "id": 6882460652,
+   "sha": "39af736efc8ccf7d2966063561421855b3e4c4e9",
+   "creado": "2026-10-06T11:15:02Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:40:03Z"
+    },
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:39:58Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:39:52Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:16:25Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:16:22Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:16:10Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:15:03Z"
+    }
+   ]
+  },
+  {
+   "id": 6882322089,
+   "sha": "2753de7a43e8714b659ff432c574b9ba7b063a1a",
+   "creado": "2026-10-06T11:08:33Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 6,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:16:28Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:16:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:10:06Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:09:57Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:09:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:08:33Z"
+    }
+   ]
+  },
+  {
+   "id": 6882196371,
+   "sha": "8c589a8e48b69bf39141181f126239610ed4e03f",
+   "creado": "2026-10-06T11:01:47Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:10:09Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:09:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:09:48Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:03:11Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:03:02Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:02:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T11:01:48Z"
+    }
+   ]
+  },
+  {
+   "id": 6882063458,
+   "sha": "7503fa3f8a7a91e3f50ad9d0c6943bcc1c802889",
+   "creado": "2026-10-06T10:54:35Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T11:03:13Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:03:06Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T11:02:59Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T10:55:55Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:55:46Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:55:44Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:54:35Z"
+    }
+   ]
+  },
+  {
+   "id": 6881985931,
+   "sha": "5508e95b05c901ce44d9352fa3b48fd55ec08688",
+   "creado": "2026-10-06T10:50:24Z",
+   "entorno": "comfortable-nourishment / production",
+   "tarea": "deploy",
+   "quien": "railway-app",
+   "nEstados": 7,
+   "estados": [
+    {
+     "e": "INACTIVE",
+     "t": "2026-10-06T10:55:57Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T10:55:50Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T10:55:47Z"
+    },
+    {
+     "e": "SUCCESS",
+     "t": "2026-10-06T10:51:52Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:51:45Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:51:43Z"
+    },
+    {
+     "e": "IN_PROGRESS",
+     "t": "2026-10-06T10:50:25Z"
+    }
+   ]
+  }
+ ]
+}

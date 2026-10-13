@@ -202,11 +202,17 @@ export function crearTransportadorResend(apiKey, { peticion } = {}) {
   const pedir = peticion || ((u, o) => fetch(u, o));
   return {
     canal: 'resend',
-    async sendMail({ from, to, subject, text }) {
+    // SCRUM-1525b · `attachments` llega con la forma de nodemailer (`content` es un Buffer) y sale
+    // con la de Resend (`content` en base64). Sin adjuntos el cuerpo es el de siempre, byte a byte.
+    async sendMail({ from, to, subject, text, attachments }) {
+      const adjuntos = (attachments || []).map((a) => ({
+        filename: a.filename,
+        content: Buffer.isBuffer(a.content) ? a.content.toString('base64') : a.content,
+      }));
       const r = await pedir('https://api.resend.com/emails', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [to], subject, text }),
+        body: JSON.stringify({ from, to: [to], subject, text, ...(adjuntos.length ? { attachments: adjuntos } : {}) }),
       });
       const cuerpo = await r.text();
       // 🔴 El mensaje lleva estado y cuerpo, NUNCA la clave: un error acaba en un log.

@@ -482,3 +482,48 @@ El título de ese bloque dice «REGLA 30: NINGUNO ESTÁ APROBADO» y el censo le
 - Las 171 de «porGrupo» que no están en «porGrupoSinVer» no se han contrastado una a una con su firma.
 - Una clave con marca en su línea gasta igualmente un hueco de la cuenta que tenga encima (por eso otra del grupo puede salir acusada). Es anterior a este cambio y acusa de más, no de menos; se deja y se fija en el test.
 - `QUOTE_ACTION_ROTULOS` (dice 12, tiene 13), `quoteDireccionObra.TEXTOS` (3 y 4), `settingsSubmenus.ROTULOS` (10 y 9) y `COBROS_COPY` (6 en la cabecera y 13 claves, con otra firma de grupo dentro) siguen con una cuenta de cabecera que no coincide con sus claves. Recontado hoy con una sonda propia que no es el censo. Sus ficheros no son de S4.
+
+# SCRUM-1215i · las nueve hojas de S2 llevan su firma en su línea
+
+**Medido contra:** `origin/main` = `254a697924c99bdf85eb06c95ee439a4a013aa67` · 2026-10-13T11:56:05Z
+A9: comprobación → `tests/scrum1215i-las-marcas-de-s2.test.mjs`
+
+13-oct-2026 · **S2** · rama `scrum-1215i-las-marcas-de-s2`. Antes de tocar: SCRUM-1215 comentarios 19084 (la firma) y 19088 (la receta de S4, ensayada en memoria). Encargo del orquestador (lote del 13-oct, punto 3). El sufijo `h` lo tiene S4 en una rama remota; por eso éste es el `i`.
+
+**Skill UI:** no cargada · sólo comentarios de firma detrás de la coma en nueve líneas de tres ficheros de `public/dashboard/js/`; ningún literal, marcado, clase ni token cambia, y ninguna pantalla pinta nada distinto.
+
+## Qué se ha escrito
+
+| Hoja | Marca en su línea | Firma |
+|---|---|---|
+| `providersView.js · M.provider_in_use` | sí | orquestador por delegación, SCRUM-1215 comentario 19084 (F1) |
+| `providersView.js · M.taxId_invalido` | sí | la misma (F2); es del texto, no del criterio de validez del NIF |
+| `quoteDireccionObra.js · TEXTOS.rotulo`, `noMostrar`, `facturacion`, `personalizada` | las cuatro | la misma (F3) |
+| `jobDetailView.js · TEXTO_HUECO.sin-facturar`, `sin-facturar-nada`, `sin-cobrar` | las tres | fundador, `docs/master/SCRUM-320.md` (leído hoy: «N € entregados sin facturar», «N € facturados sin cobrar» y, en la sección C4, «aceptados y sin facturar») |
+
+Dos fichas nuevas en `docs/microcopy/`, con fecha del día de la firma (9-oct-2026): la de los dos fallos de Proveedores y la de los cuatro rótulos de la dirección de la obra. Las tres de `TEXTO_HUECO` no llevan ficha nueva: su firma es del fundador y consta en el registro de SCRUM-320.
+
+En `scripts/_censo-convenio-microcopy-declarados.json`: seis hojas pasan de «acusadas» a «retiradas» con su motivo, y tres (`rotulo`, `noMostrar`, `facturacion`) salen de «porGrupo» porque ya no las aprueba la cabecera.
+
+## Medido después
+
+- Censo (`node scripts/_censo-convenio-microcopy.mjs`): **APROBADO 254 · PENDIENTE 7 · SIN_COMENTARIO 28**; por firma de grupo, 170. Antes: 248 · 7 · 34 y 173. Trinquete: 0 nuevas, 0 sobran, 35 acusadas.
+- Antes de mover el JSON el trinquete salió ROJO con 9 «SOBRA» (las seis acusadas y las tres de «porGrupo»), que es lo que c.19088 anunciaba.
+- Test nuevo: 6 de 6. **Control positivo:** con los tres ficheros de `origin/main` (sin las marcas) caen 5 de 6 y sólo pasa el suelo.
+- `git diff --numstat` de los tres ficheros de `public/`: 3/3, 2/2 y 4/4. Ninguna línea se añade ni se quita: los guards que anclan por posición no se mueven.
+
+## Desviación declarada respecto a c.19088
+
+c.19088 decía «`SIN_APROBAR` deja de ser 4» en `quoteDireccionObra.js`. **No se ha tocado y sigue en 4.** Ese contador cuenta las ranuras «sin la firma del FUNDADOR»; `tests/scrum602-direccion-obra.test.mjs` fija que vale 4 y que es igual a `SIN_APROBAR_DIRECCION_OBRA` de `src/core/documentos/direccionObra.ts`, que es del carril de S1. Bajarlo pide decidir si una firma delegada cuenta ahí, cambiar un guard y tocar un fichero de otro puesto. Queda preguntado en el ticket.
+
+## Lo que NO entra aquí
+
+- `QUOTE_ACTION_ROTULOS.btnBorrar`: no se pinta, está firmada desde el 17-ago y espera a SCRUM-1273 (c.19084). Sigue en «acusadas».
+- Las tres de `COBROS_COPY` y `ETIQUETAS_HEREDADAS.card:stripe`: ficheros de J2.
+- Las 22 de `libroRegistroView.js`: J1, SCRUM-1428.
+- La cabecera de `quoteDireccionObra.TEXTOS` sigue diciendo «los tres rótulos de SCRUM-599» y la de `TEXTO_HUECO`, «Los dos literales están FIRMADOS»: el censo las sigue leyendo como cuenta. Con la marca en cada línea ya no deciden nada de estas nueve; no se han reescrito.
+
+## No medido
+
+- Nada en yaqu.app: no cambia ninguna pantalla.
+- La suite completa y `tsc`: en el check obligatorio. El cambio no toca `src/`.
