@@ -49,6 +49,7 @@
     cambiar: 'Cambiar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B9)
     marcaHoy: 'Llamar hoy', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B10)
     noGuardado: 'No se ha podido guardar la llamada. Inténtalo otra vez.', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B12)
+    noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19453, B15)
     guardar: 'Guardar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B13)
     cancelar: 'Cancelar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B14)
   };
@@ -175,7 +176,7 @@
       botones.forEach(function (b) { b.disabled = apagado; });
     }
 
-    /** El bloque en reposo. `fallo` es el aviso de un «Hecho» que no se pudo guardar. */
+    /** El bloque en reposo. `fallo` es el aviso de un «Hecho» que no se pudo marcar. */
     function pintarEstado(fallo) {
       vaciar();
       if (!actual) return false;
@@ -196,8 +197,9 @@
             actual = { dia: null, nota: '', estado: null };
             pintarEstado();
           }, function () {
-            // No se ha marcado: la llamada sigue como estaba, y se dice.
-            pintarEstado(TEXTOS.noGuardado);
+            // No se ha marcado: la llamada sigue como estaba, y se dice CON SU TEXTO. El de guardar
+            // nombraría una acción que no es la que se acaba de pulsar.
+            pintarEstado(TEXTOS.noMarcado);
           });
         });
         var cambiar = boton(TEXTOS.cambiar, false, pintarFormulario);
