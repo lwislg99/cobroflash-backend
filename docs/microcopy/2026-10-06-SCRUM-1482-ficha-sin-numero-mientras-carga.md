@@ -25,6 +25,9 @@ texto del cliente final, pero no se hereda de ella.
 
 `public/dashboard/js/quotesDetailView.js`, la cabecera (`<h2>`) de la ficha del presupuesto.
 
+Desde el 13-oct-2026 (SCRUM-1482b), también `public/dashboard/js/app.js`, el título de la vista que
+escribe el router al abrir la ficha (`case 'quotes-detail'`).
+
 ## Qué cambió y por qué
 
 Antes la cabecera decía «Presupuesto #205» mientras cargaba, y se quedaba así si la carga fallaba.
@@ -38,6 +41,15 @@ cubre y sigue diciendo «Presupuesto #205» mientras carga y si falla. No se ha 
 caso de `tests/scrum832-atras-vuelve-a-la-lista.test.mjs` exige que el router escriba un título que
 empiece por «Presupuesto #», y cambiar lo que ese caso exige necesita un permiso que no está dado.
 Está escrito en SCRUM-1482.
+
+**13-oct-2026 · aplicado (SCRUM-1482b).** El párrafo de arriba se queda como historia. El título de
+la vista ya lo cubre esta misma firma en el código: el router escribe la palabra de
+`window.appLocale.quote`, sola, mientras carga y si la carga falla, y la ficha lo corrige a su
+número al cargar. No hay texto nuevo ni firma nueva: es la tabla de arriba, en el sitio que faltaba.
+El caso de aquel test se cambió por orden del orquestador (SCRUM-1482, comentario 19093): ahora
+ejecuta el enganche entre el router y la ficha en vez de comparar dos cadenas. La pestaña del
+navegador sale de ese mismo título y deja de llevar el id de la tabla; no lleva el número del
+presupuesto ni cargada (antes llevaba el id), y eso no entra en esta firma.
 
 ## Lo que no cubre
 
