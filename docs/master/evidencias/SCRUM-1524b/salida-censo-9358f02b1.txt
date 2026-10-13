@@ -1,0 +1,47 @@
+CONTROL SEMBRADO · 8 citas fabricadas · rotas vistas 6 de 6 sembradas · buenas marcadas como rotas 0
+✅ el control ve cada rota sembrada con su clase y no marca ninguna buena
+
+POBLACIÓN · HEAD 9358f02b1 · 19 documentos de docs/legal/ · 564259 bytes leídos
+           205 coordenadas · 202 vivas · 3 tachadas
+           únicas (por fichero:línea citado) entre las vivas: 178
+
+CÓMO LAS VE LA CASA (veredictoDe)  · AUSENTE 3 · FIRME 17 · SIN 81 · SIN_RUTA 101
+CÓMO ESTÁN ESCRITAS                · COMPLETA 98 · PARCIAL 3 · SOLO_NOMBRE 101
+
+VEREDICTO DE ESTE CENSO, vivas     · F2_CAMBIADA 55 · F2_DESPLAZADA 82 · INTACTA 63 · SIN_REFERENCIA 2
+
+CRUCE casa × censo (vivas):
+      3  AUSENTE   → F2_CAMBIADA
+      2  FIRME     → F2_CAMBIADA
+     15  FIRME     → INTACTA
+     17  SIN       → F2_CAMBIADA
+     34  SIN       → F2_DESPLAZADA
+     30  SIN       → INTACTA
+     33  SIN_RUTA  → F2_CAMBIADA
+     48  SIN_RUTA  → F2_DESPLAZADA
+     18  SIN_RUTA  → INTACTA
+      2  SIN_RUTA  → SIN_REFERENCIA
+
+INTACTAS cuya línea de nacimiento no dice nada (llave, return…): 0
+DESPLAZADAS cuya línea de nacimiento no dice nada:               2
+
+F2 POR DENTRO (vivas)              · [CAMBIADA: editada en su sitio] 6 · [CAMBIADA: ese texto ya no está en el fichero] 40 · [CAMBIADA: movida y además editada] 9 · [DESPLAZADA: un solo sitio] 70 · [DESPLAZADA: varios sitios] 12
+SALTO de las desplazadas, en líneas · mínimo 1 · mediana 80 · máximo 1052 (sobre 82)
+FICHEROS citados (vivas): 58 distintos · con alguna cita F1/F2: 37
+
+POR DOCUMENTO (vivas): total · F1 · F2 (desplazada/cambiada/fuera) · ambigua · sin referencia · intacta
+   AUDITLOG_FISCAL_CONTRATO.md                     50 · 0 · 28/14/0 · 0 · 0 · 8
+   AUDITORIA_CAMINO_EMISION.md                     51 · 0 · 16/1/0 · 0 · 0 · 34
+   ENVIO_ASESOR_2026-09-28.md                       2 · 0 · 0/2/0 · 0 · 0 · 0
+   EXPEDIENTE_FISCAL_ANTICIPOS_RECAPITULATIVA.md    4 · 0 · 2/0/0 · 0 · 2 · 0
+   INVENTARIO_AFIRMACIONES_SKILLS.md               11 · 0 · 2/8/0 · 0 · 0 · 1
+   INVENTARIO_AFIRMACIONES_VERIFACTU.md            59 · 0 · 25/27/0 · 0 · 0 · 7
+   MEDICION_GUION_H2_EN_PUBLIC.md                   5 · 0 · 2/2/0 · 0 · 0 · 1
+   PREGUNTAS_ASESOR.md                             20 · 0 · 7/1/0 · 0 · 0 · 12
+
+TACHADAS (exentas para la casa):
+   docs/legal/AUDITLOG_FISCAL_CONTRATO.md:130 · e2e-critico.mjs:305 → F1_AUSENTE
+   docs/legal/AUDITORIA_CAMINO_EMISION.md:231 · src/modules/invoicing/domain/verifactu.service.ts:673 → F2_DESPLAZADA
+   docs/legal/LITERALES_COBRO_WEB_PENDIENTES.md:147 · docs/YAQU_MASTER.md:215 → F2_CAMBIADA
+
+TSV: 205 filas en C:/Users/Javier Pereira/.claude/jobs/a86432d0/tmp/filas.tsv
