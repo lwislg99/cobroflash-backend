@@ -86,7 +86,7 @@ no devuelve nada (SCRUM-1483), y la fila seguía pintando «#205».
 
 ## SCRUM-1482b · el título de la vista deja de enseñar el id de la tabla (13-oct, S2)
 
-**Medido contra:** `origin/main` = `4605a14508e4e8f6b8e5ddb701bf08f9573c546e` · 2026-10-13T10:57:21Z
+**Medido contra:** `origin/main` = `97618f169b3b4f71e384600b3d0720d7e502fea9` · 2026-10-13T11:24:48Z
 
 A9: sin fallo que generalice — leí el literal de las reglas 39, 40 y 41 del máster con el instrumento y el cambio ya en commits locales (antes de empujar, no antes de la primera línea, que es lo que manda `CLAUDE.md`); releídas, no cambian nada de lo hecho
 
