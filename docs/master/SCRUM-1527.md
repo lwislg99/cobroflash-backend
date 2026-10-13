@@ -140,3 +140,171 @@ node.
 Los logs pesan cientos de MB y GitHub los borra a los 90 días: no van al repositorio. Van
 `colgados.json` (los 7) y `verdes-job-bytes-pasan-total.txt` (los 339 verdes: job, bytes, casos
 que pasan y total declarado).
+
+---
+
+# SCRUM-1527b · Por qué se cuelga: no son 7 sino 12, en TRES sitios, y el nombre fijo sólo lo es por temporadas
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:49:48Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527b/pasos2.mjs`
+
+J6 (sesión `jv-j6f`, equipo de Javier), por encargo del orquestador `cobroflash-backend-2e`. Sólo
+medición: no toca `src/`, `tests/`, `scripts/`, workflows ni ningún tiempo de espera. El ticket no
+se transiciona. Al escribir, `origin/main` ya iba por `b9ecf641065f2616b0d019fa398f7f1c21f4e8d6`;
+lo medido son logs de CI y el árbol de `9358f02b1`.
+
+**La causa NO está encontrada.** Lo que sigue cambia el encuadre del tramo anterior, descarta
+siete cosas y deja una hipótesis sin probar. Cada apartado dice lo medido y lo no medido.
+
+## ① No son 7: son 12 desde el 17-sep, y en tres sitios distintos
+
+**Población:** las 2.400 últimas ejecuciones de `ci.yml` (2026-09-17T13:54Z a 2026-10-13T10:32Z);
+2.002 jobs «build + tests (con banco desechable)» contando reintentos (1.351 `success`, 395
+`failure`, 256 `cancelled`). **Filtro barato:** paso «Tests» en `failure` y de 900 s o más. Salen
+11, y entre 600 y 900 s no hay ninguno (los 385 fallos corrientes duran de 182 a menos de 600 s):
+el corte es limpio. Los 11 logs se bajaron y los 11 llevan «TANDA SIN VEREDICTO».
+
+- **Control positivo:** los 7 conocidos tienen que salir. La primera pasada dio **5 de 7**: los
+  otros dos estaban en ejecuciones que luego se relanzaron a verde, y yo sólo había mirado las
+  fallidas y las canceladas. Con las `success` dentro (`pasos2.mjs`) salen 7 de 7.
+- **El duodécimo no lleva aviso:** el job `109503839889` (29-sep) se CANCELÓ a los 938 s de paso,
+  con 792 s de silencio tras el último caso de `scrum475-constancia-correo`: el mismo sitio que el
+  colgado del 26-sep. El detector no llegó a hablar porque lo cancelaron antes de los 900 s.
+- **No medido:** de los 256 cancelados sólo abrí ese (el único con el paso de 600 s o más). Un
+  cuelgue cancelado antes de los 10 min no lo ve este filtro. Nada anterior al 17-sep.
+
+| fecha | job | node | último fichero que entrega | no llega nada de |
+|---|---|---|---|---|
+| 22-sep 23:04Z | 106973511384 | 24.20.0 | `scrum615-plazo-con-null` | `scrum616-que-guarda-la-factura` |
+| 23-sep 10:20Z | 107138394330 | 24.21.0 | `scrum615-plazo-con-null` | `scrum616-que-guarda-la-factura` |
+| 23-sep 10:59Z | 107150234705 | 24.20.0 | `scrum615-plazo-con-null` | `scrum616-que-guarda-la-factura` |
+| 26-sep 06:21Z | 108352556918 | 24.21.0 | `scrum475-constancia-correo` | `scrum475-firma-del-webhook` |
+| 29-sep 16:22Z | 109503839889 (cancelado) | 24.21.0 | `scrum475-constancia-correo` | `scrum475-firma-del-webhook` |
+| 6-oct a 13-oct | los 7 de arriba | 24.21.0 | `scrum445-cobros-sin-duplicar` (3) · `scrum446` (4) | `scrum446` (3) · `scrum447` (4) |
+
+**Lo que esto corrige:** «siempre entre `scrum445` y `scrum447`» es cierto del 6 al 13 de octubre
+y falso antes. El sitio aguanta días y luego se muda: 22–23 sep, 26–29 sep, 6–13 oct. Entre el
+29-sep y el 6-oct no hay ninguno.
+
+**Qué NO es lo que fija el sitio (`indice.mjs`, medido sobre 10 de los 11 con aviso: el del 23-sep
+10:59Z apareció después y no lo pasé):** la posición en la lista (567, 570, 465 y de 679 a 734 sobre
+968 a 1.307 ficheros) ni los ficheros que quedan por detrás (401 a 574). Tampoco el tiempo desde el
+arranque de la tanda (de 149 a 212 s en los 7 de octubre, con el mismo par de ficheros), la versión
+de node (24.20.0 y 24.21.0) ni la imagen del runner (cuatro distintas).
+
+## ② Los ficheros POSTERIORES siguieron corriendo: se cuelga UNO, no la tanda
+
+Era un «no medido» del tramo anterior. El log del job trae al final el del Postgres del servicio,
+que es un testigo que no pasa por la salida ordenada de `node --test`. En **11 de 11** colgados con
+aviso hay un error de clave duplicada de `scrum809` (`evt_scrum809_…`) entre 2 y 4 min DESPUÉS de la
+última línea de la tanda (`testigo-pg.mjs`). `scrum809` ordena muy por detrás de cualquiera de los
+tres sitios. Así que el proceso padre no está bloqueado y los demás ficheros se siguen lanzando: lo
+que no termina es un fichero, y su silencio tapa a los 400–570 que van detrás.
+
+- **Control:** en los 59 verdes bajados el mismo error sale, a una mediana de 202 s del punto.
+- **No medido:** si los posteriores acabaron TODOS. Sólo sé que la tanda llegó al menos a `scrum809`.
+- **El ritmo no separa** (`ritmo.mjs`): tras el corte, los colgados tardan en llegar a `scrum809`
+  casi lo mismo que los verdes (cociente 0,99 a 1,10 en los 7 de octubre; verdes 0,84 a 1,08). Con
+  un hueco de concurrencia perdido esperaba bastante más. No lo doy por prueba de que el hueco esté
+  libre: no he medido la concurrencia real del runner ni si el tramo lo marca la CPU.
+
+## ③ Lo único que los 12 tienen en común, y es hipótesis, no causa
+
+En los 12, la última ráfaga antes del silencio la ABRE un fichero de censo síncrono y pesado, que
+sale tras retener la salida entre 2,4 y 10,8 s (`ultima-rafaga.mjs`):
+
+- sitio 615: `scrum615-plazo-con-null`, tres casos de 1,7 a 4,6 s. Es además el último que entrega.
+- sitio 475: `scrum475-constancia-correo`, casos de 1,1 a 2,0 s. También es el último que entrega.
+- sitio 445–447: `scrum419-ci-declara-lo-que-no-corre`, casos de 1,6 a 2,8 s. Abre la ráfaga, y el
+  corte llega 263 o 269 líneas después, **entre 50 y 570 ms más tarde**.
+
+En los verdes, la ráfaga que suelta `scrum419` acaba justo en `scrum445`/`scrum446` en 11 de 59
+(19 %); en los colgados de octubre, en 5 de 7 (`frontera.mjs`).
+
+🔴 **Por qué NO lo doy por hallazgo:** todo corte va precedido de una ráfaga, y no he calculado
+cuántas veces saldría esto por azar. Probé la versión fuerte («se cuelga el fichero que está en la
+frontera cuando termina `scrum419`») y es FALSA como condición suficiente: en verdes esa frontera
+cae entre `scrum438` y `scrum451` y no se cuelga nadie, y en 2 de los 7 el corte llega a `scrum446`
+con la frontera en `scrum442`/`scrum443`. Queda como pista: el cuelgue vive pegado a la salida de
+un proceso que ha estado segundos sin soltar el hilo.
+
+## ④ «El siguiente nunca escribió» o «el anterior no cerró»: el log NO puede separarlo, y por qué
+
+Leído en el runner de node (fuente de la v24.18.0 local; CI corre 24.20/24.21, **no cotejado**):
+
+- El padre da un fichero por acabado cuando llegan DOS cosas: el `exit` del hijo y el cierre de su
+  salida. Mientras no llegan, lo de los siguientes se queda en memoria aunque hayan terminado.
+- `--test-force-exit` SÍ baja a cada hijo. El hijo, al acabar, espera a que su informe se despegue
+  de la salida y entonces llama a `process.exit()`.
+
+Y medido en los logs: un fichero de casos síncronos entrega **todo de golpe o nada**. `scrum446`
+escribe sus 5 líneas en 4 ms o menos, con casos de 40 a 90 ms. En los verdes, `scrum447` llega de 15
+a 46 ms detrás del último de `scrum446`, con sus dos casos de 150 ms separados 2 ms: ya estaba
+terminado y retenido, y lo suelta el CIERRE de `scrum446`.
+
+Consecuencia: en los 4 casos «llega todo `scrum446`, nada de `scrum447`» caben igual «`scrum446`
+entregó y su proceso no cerró» y «`scrum447` no llegó a entregar»; y en los 3 «nada de `scrum446`»,
+igual «`scrum445b` no cerró» y «`scrum446` no entregó». `scrum446` es el único que sale en las dos
+lecturas de los dos casos. **No he podido decidir cuál**, y con lo que guarda hoy CI no se puede:
+el TAP corta en el mismo sitio (misma cola ordenada) y el vigía no guarda nada de procesos.
+
+## ⑤ Descartado, con qué
+
+| candidato | cómo se descarta |
+|---|---|
+| Bucle infinito en `soloEjecutable` (lo usa `scrum446`) | leído entero: el índice avanza en todas las ramas |
+| Un FIFO o fichero especial en `tests/`, `scripts/` o `public/dashboard/js` | 0 `mkfifo`/`mknod` en `tests/` y `scripts/`; control positivo: la misma búsqueda encuentra `symlinkSync` en 9 ficheros |
+| Una señal de parada desde otro test | 0 `SIGSTOP`/`SIGTSTP` en `tests/` y `scripts/` |
+| Los tres ficheros abren algo que no cierran | `scrum446` y `scrum447`: sólo `node:fs` síncrono. `scrum445b` importa `dist/…/cobros.service.js`: **no medido** si deja un manejador vivo |
+| El padre bloqueado (tubería llena, bucle) | ② |
+| Índice fijo, tiempo fijo, versión de node, imagen | ① |
+| Que el fin de `scrum419` baste para colgar | ③ |
+
+## ⑥ Qué guarda el vigía
+
+`scripts/tanda-con-veredicto.mjs` guarda los últimos 4.000 caracteres de la salida y el pid del
+hijo. De procesos, nada: al cumplirse el tope escribe el aviso y mata el grupo. Lo que dice el
+aviso («el que no ha terminado es el SIGUIENTE») es una frase fija, no una lectura.
+
+## ⑦ Windows, otra vez, y por qué sigue sin valer
+
+`ventana.mjs`: `scrum419` más los 22 ficheros de `scrum438` a `scrum458`, con
+`node --test --test-force-exit --test-concurrency=3`, node v24.18.0. **100 pasadas completas de
+100, 0 colgadas**, máximo 14,3 s (al escribir esto; lanzadas 150). Es otro sistema y otra versión:
+dice que así no, no que no se reproduzca. **Linux no se ha medido:** en esta máquina no hay WSL ni
+Docker, y lanzarlo en CI pide tocar un workflow, que no es mío.
+
+## ⑧ Lo que falta, por orden de lo que más separa
+
+1. **Quién está vivo cuando se cumple el tope.** Es la propuesta del tramo anterior (carril S5), y
+   con lo de ④ se puede afinar qué tiene que escribir el vigía ANTES de matar: por cada descendiente,
+   pid, padre, estado, tiempo de CPU dos veces con un segundo entre medias, y argumentos. Con eso
+   se lee de una vez (a) qué fichero es, (b) si gira o duerme, y (c) si NO queda ningún proceso de
+   fichero vivo, que también es una respuesta: entonces el fallo está en la cuenta del padre.
+2. **Un bucle en Linux de los ficheros de los tres sitios** (`scrum615-plazo-con-null`,
+   `scrum475-constancia-correo`, `scrum419` con su ventana), con la concurrencia del runner.
+3. Cotejar ④ contra la fuente de node 24.21.0, y medir la concurrencia real del runner.
+
+## Errores míos en este tramo
+
+- Crucé los 200k de contexto sin avisar: medí 86.158 al acabar la lectura de arranque y no volví a
+  medir hasta 298.340. La ficha pedía avisar a 200k.
+- El primer control positivo de ① dio 5 de 7 y lo arreglé antes de contar; va dicho arriba.
+- Durante media sesión trabajé la hipótesis «lo dispara el fin de `scrum419`» antes de medir la
+  frontera en verdes, que la tumbó como condición suficiente.
+
+## Cómo se repite
+
+Los instrumentos están en `docs/master/evidencias/SCRUM-1527/1527b/` (node, sin `jq` ni Python).
+Los logs no van al repositorio.
+
+    gh run list --workflow ci.yml --limit 2400 --json databaseId,event,headBranch,headSha,status,conclusion,createdAt > runs.json
+    node pasos.mjs && node pasos2.mjs                 # paso «Tests» de cada job; candidatos por duración
+    node candidatos.mjs ../colgados.json              # control positivo contra los 7 conocidos
+    node bajar7.mjs ../colgados.json ../verdes-job-bytes-pasan-total.txt logs && node bajar2.mjs ../verdes-job-bytes-pasan-total.txt logs 45
+    node testigo-pg.mjs logs                          # ②
+    node ritmo.mjs logs                               # ② el ritmo
+    node ultima-rafaga.mjs logs && node frontera.mjs logs   # ③
+    node indice.mjs <raíz del árbol>                  # ① la posición
+    node ventana.mjs <raíz del árbol> 150 3 ventana.log     # ⑦
