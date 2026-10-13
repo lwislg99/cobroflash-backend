@@ -424,3 +424,30 @@ Y leídas con los ojos las 25 de `salida-leer-DESPUES.txt`, una a una.
 | Medir quién cita por línea antes de añadir líneas, y declarar la decisión | apartado «Antes de añadir líneas» |
 | Comprobar leyendo, no con el censo | `docs/master/evidencias/SCRUM-1524c/leer.mjs` y sus dos salidas |
 | Positivo que tiene que aparecer y cero derivado | controles sembrados de `leer.mjs`; CIEGO con `--sin-rotas` |
+
+### Corrección tras el primer obligatorio (jv-j5i, 13-oct-2026): el temporal de `leer.mjs`
+
+El primer empujón de este tramo (`90365e6574d4e9787754f00516c555e81a5c0603`, PR #2369) dejó el obligatorio en
+ROJO, y no por las citas: por el propio instrumento. `leer.mjs` creaba su directorio de controles con
+`mkdtempSync` y lo borraba en la línea siguiente al uso, por el camino feliz. Lo acusó
+`tests/scrum864c-el-temporal-no-vuelve.test.mjs` (`[NO_GARANTIZADA] …/leer.mjs:49 · borra en 61 SIN cobertura`).
+El tramo se entregó sin leer el obligatorio; lo leyó el orquestador.
+
+- **El log, contado** (job 115263942409, 1.812.571 B, 15.121 líneas, anclando al inicio del caso):
+  11.107 pasan · **1 cae** · 93 saltan · suma 11.201, que es el total que declara node, partida a partida.
+  La cruz a secas daba 2 en el tramo y 4 en todo el log. Control positivo (el caso caído) 1; cero derivado
+  (su nombre del revés) 0; sin el positivo dice CIEGO.
+- **El arreglo:** el borrado pasa a un `finally`. Sólo `leer.mjs`; ni el guard ni `scripts/_censo-mkdtemp.mjs`.
+- **En rojo primero:** con el fichero de antes el guard da 3 pasan · 1 cae de 4; con el de ahora, 4 de 4.
+- **Por efecto, no sólo por forma:** con un `throw` sembrado justo antes de juzgar los controles, la versión
+  de antes deja 1 directorio `scrum1524c-*` en TMPDIR y la de ahora 0; sin `throw`, las dos dejan 0. El
+  sujeto deja testigo (revienta, o imprime su POBLACION) y el banco aborta si falta.
+- **La salida no cambia:** `leer.mjs` da byte a byte `salida-leer-DESPUES.txt` (9.033 B), y `--sin-rotas`
+  sigue diciendo CIEGO con salida 2.
+
+No medido: un proceso matado a lo bruto no ejecuta ningún `finally` (es el límite que declara el propio
+guard); la tanda completa en local; y `aplicar.mjs` y `tabla.mjs` no crean temporales (leídos, sin
+`mkdtemp`), así que no se tocan. El contador y el banco van en `docs/master/evidencias/SCRUM-1524c/`
+(`contar-log.mjs`, `banco-temporal.mjs` y sus dos salidas); el log del job no se sube, se vuelve a bajar.
+De paso, error propio: el contador nació con un BOM literal dentro (lo escribí como escape y aterrizó como
+carácter); lo cazó el recuento de bytes antes de subirlo, y el recuento del log se repitió con el corregido.

@@ -46,19 +46,28 @@ function juzgar(f) {
 }
 
 // ── los controles, en un directorio desechable ──────────────────────────────────────────────────
+// El borrado va en un `finally`: en el camino feliz no se ejecutaba si `juzgar` o una escritura
+// lanzaban, y el directorio se quedaba en TMPDIR (lo cazó `tests/scrum864c`, en rojo en el PR #2369).
+// Lo que NO cubre: un proceso matado a lo bruto no ejecuta ningún `finally`.
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1524c-'));
-const cod = path.join(tmp, 'codigo.ts');
-const docS = path.join(tmp, 'doc.md');
-fs.writeFileSync(cod, 'uno\ndos\nconst testigo = 1;\ncuatro\n');
-fs.writeFileSync(docS, 'buena `codigo.ts:3`\nrota `codigo.ts:2`\nrota `nohay.ts:1`\n');
-const BUENA = { doc: docS, linea: 1, nuevo: '`codigo.ts:3`', fichero: cod, rango: [3, 3], espera: 'const testigo' };
-const ROTAS = process.argv.includes('--sin-rotas') ? [] : [
-  { doc: docS, linea: 2, nuevo: '`codigo.ts:2`', fichero: cod, rango: [2, 2], espera: 'const testigo' },
-  { doc: docS, linea: 3, nuevo: '`nohay.ts:1`', fichero: path.join(tmp, 'nohay.ts'), rango: [1, 1], espera: 'const testigo' },
-];
-const rotasVistas = ROTAS.filter((f) => juzgar(f).motivos.length > 0).length;
-const buenaMarcada = juzgar(BUENA).motivos.length > 0;
-fs.rmSync(tmp, { recursive: true, force: true });
+let ROTAS = [];
+let rotasVistas = 0;
+let buenaMarcada = true;
+try {
+  const cod = path.join(tmp, 'codigo.ts');
+  const docS = path.join(tmp, 'doc.md');
+  fs.writeFileSync(cod, 'uno\ndos\nconst testigo = 1;\ncuatro\n');
+  fs.writeFileSync(docS, 'buena `codigo.ts:3`\nrota `codigo.ts:2`\nrota `nohay.ts:1`\n');
+  const BUENA = { doc: docS, linea: 1, nuevo: '`codigo.ts:3`', fichero: cod, rango: [3, 3], espera: 'const testigo' };
+  ROTAS = process.argv.includes('--sin-rotas') ? [] : [
+    { doc: docS, linea: 2, nuevo: '`codigo.ts:2`', fichero: cod, rango: [2, 2], espera: 'const testigo' },
+    { doc: docS, linea: 3, nuevo: '`nohay.ts:1`', fichero: path.join(tmp, 'nohay.ts'), rango: [1, 1], espera: 'const testigo' },
+  ];
+  rotasVistas = ROTAS.filter((f) => juzgar(f).motivos.length > 0).length;
+  buenaMarcada = juzgar(BUENA).motivos.length > 0;
+} finally {
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
 if (rotasVistas !== 2 || ROTAS.length !== 2) {
   console.log(`CIEGO · control positivo: ${rotasVistas} rotas vistas de ${ROTAS.length} sembradas (hacen falta 2 de 2). No se da ninguna cifra.`);
   console.log('EXIT=2');
