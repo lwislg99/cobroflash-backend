@@ -85,6 +85,6 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
   para que no vuelva a añadirse como si fuera trabajo pendiente de QA.
 - [ ] `SIF_ENABLED=off` no rompe la emisión local.
 - 🔴 **NO CONSTRUIDO** — «evidencias de pruebas AEAT»: no hay pruebas contra la AEAT porque no
-  hay envío [Nota del 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): el máster, Parte U1.3 (S1-D), dice que hay 3 registros aceptados en pruebas (SCRUM-1110, SCRUM-1296); con qué se enviaron NO está medido. Desde `src/` nada envía: `enviarSobre` tiene 0 llamadas (Jira c.18919)], y el documento que se citaba, `docs/VERIFACTU_EVIDENCIAS.md`, **no existe**
+  hay envío, y el documento que se citaba, `docs/VERIFACTU_EVIDENCIAS.md`, **no existe**
   (comprobado el 20-ago-2026). Cítese `docs/EVIDENCIAS_E2E.md`, que sí existe, cuando lo que
   se quiera adjuntar sean evidencias E2E.
