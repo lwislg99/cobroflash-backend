@@ -1,0 +1,47 @@
+// docs/master/evidencias/SCRUM-1520/siembra-cola.txt — SCRUM-1520 · LA SIEMBRA.
+//
+// 24 casos en orden. El 21 tiene tres casos dentro (21a, 21b, 21c). Por defecto pasan todos.
+// NO es un test del repositorio: no se llama `*.test.mjs` a propósito, para que ninguna tanda lo
+// descubra por nombre. Sólo lo ejecuta `la-cola-que-cae.mjs`, que le pasa la ruta entera.
+//
+//   SIEMBRA_ID          sello que va dentro de cada nombre (el banco lo busca en los informes)
+//   SIEMBRA_CAE         el caso que FALLA: `22`, `21b`… Vacío: ninguno.
+//   SIEMBRA_SALE_EN     el caso en cuyo cuerpo el proceso se va con `process.exit(0)`. Vacío: ninguno.
+//   SIEMBRA_CEDE        si está puesto, cada caso suelta el bucle antes de correr (ver abajo)
+//   SIEMBRA_EJECUTADOS  fichero donde cada cuerpo apunta su número AL EMPEZAR A CORRER. Es lo único
+//                       que distingue «se ejecutó y no se informó» de «no se ejecutó».
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { appendFileSync } from 'node:fs';
+
+const ID = process.env.SIEMBRA_ID || 'sin-sello';
+const CAE = process.env.SIEMBRA_CAE || '';
+const SALE_EN = process.env.SIEMBRA_SALE_EN || '';
+const nombre = (n) => `caso ${n} de 24 · siembra ${ID}`;
+
+// Con SIEMBRA_CEDE cada caso suelta el bucle antes de correr, y así el informe de los anteriores
+// ya ha salido hacia el padre cuando le toca. Sin él los 24 corren de un tirón y el informe sale
+// todo al final.
+const CEDE = Boolean(process.env.SIEMBRA_CEDE);
+const soltar = () => new Promise((hecho) => setTimeout(hecho, 5));
+
+async function cuerpo(n) {
+  if (CEDE) await soltar();
+  if (process.env.SIEMBRA_EJECUTADOS) appendFileSync(process.env.SIEMBRA_EJECUTADOS, `${n}\n`);
+  if (SALE_EN === n) process.exit(0);
+  assert.notEqual(CAE, n, `fallo SEMBRADO en el caso ${n} (${ID})`);
+}
+
+for (let i = 1; i <= 20; i++) {
+  const n = String(i).padStart(2, '0');
+  test(nombre(n), () => cuerpo(n));
+}
+
+test(nombre('21'), async (t) => {
+  await cuerpo('21');
+  await t.test(nombre('21a'), () => cuerpo('21a'));
+  await t.test(nombre('21b'), () => cuerpo('21b'));
+  await t.test(nombre('21c'), () => cuerpo('21c'));
+});
+
+for (const n of ['22', '23', '24']) test(nombre(n), () => cuerpo(n));

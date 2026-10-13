@@ -148,7 +148,7 @@ existe, porque no hay envío.**
 | Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:104` y `:261` (`exigirDocumentoEmitible`) — SCRUM-1304 y SCRUM-1330 movieron la línea |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
 | Cola `VfSubmission` | **LA TABLA EXISTE Y LA EMISIÓN LA LLENA; NINGÚN PROCESO LA VACÍA** | Corregido el 8-oct-2026 (SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925): aquí decía «INEXISTENTE», que el esquema tenía 25 modelos y ninguno se llamaba `Vf*`, `*Submission` ni `*Verifactu`, y que ningún fichero de `src/` mencionaba `vfSubmission`. Era cierto el 19-ago-2026 y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919) sobre 321 ficheros `.ts` de `src/` leídos por AST, 0 sin parsear: el esquema tiene `model VfSubmission`; toda llamada `<algo>.vfSubmission.<método>()` de `src/` son 7, y un acceso más por nombre de modelo; de las tres que escriben sólo se ejecuta la que crea la fila en `pending` — `src/modules/invoicing/domain/encolarRemision.ts:61` (`vfSubmission.create`) —, y las tres lecturas que se ejecutan sólo cuentan. Llamadas a `procesarObligado`: 0. Llamadas a `enviarSobre`: 0. **NO MEDIDO:** ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway. Detalle: `docs/master/SCRUM-1500.md`, tramo «SCRUM-1500d» |
-| Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |
+| Control de flujo de envío (reintentos, ritmo) | **EL CÓDIGO EXISTE Y NADA LO EJECUTA** | Corregido el 13-oct-2026 (SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993): aquí decía «INEXISTENTE · no hay envío que gobernar». Desde el 30-sep-2026 (SCRUM-1296) el código de reintentos existe (`sif.cola.ts`: `MAX_INTENTOS`, `backoffS` y el paso a `manual_review`) y nada lo ejecuta: el proceso no carga ese fichero y `procesarObligado` tiene 0 llamadas (Jira c.18919). «No hay envío que gobernar» sigue siendo cierto. NO medido: sus tests no se han corrido hoy, ni ninguna base de datos, ni el valor de `SIF_ENABLED` en Railway. |
 
 ---
 
@@ -222,7 +222,7 @@ Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene
   se puede cerrar.
 * `src/modules/invoicing/domain/modoVisible.ts:21` afirma en un comentario que «**se envía** NO
   EXISTE. Cero clientes SOAP/mTLS». **Esta auditoría lo confirma por su cuenta**, con los dos
-  instrumentos y el control positivo — no por creerse el comentario.
+  instrumentos y el control positivo — no por creerse el comentario. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: lo que esta auditoría confirmó es que nada envía, y eso sigue en pie. «Cero clientes SOAP/mTLS» es falso como «no existe ningún cliente» desde SCRUM-1127. Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway. El comentario de `modoVisible.ts` se corrigió ese mismo día y dice ahora «Nada envía a la AEAT».]
 
 ## Qué queda NO MEDIDO
 

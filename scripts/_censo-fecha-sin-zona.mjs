@@ -375,7 +375,6 @@ export const USO = new Map([
   ['src/modules/system/app/routes/invoicesAdmin.routes.ts::fD', { uso: IMPRIME, motivo: 'las fechas del paquete de disputa: su gemelo es el sello «(hora del servidor)» del PDF firmado, que no se mueve sin cambiar su literal (regla 39)', ref: 'SCRUM-1470' }],
 
   // ── AGREGADO — bordes de ventana de informe/filtro/métrica: NO se acusan ──────────────────────
-  ['src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics', { uso: AGREGADO }],
   ['src/integrations/whatsapp.ts::sendWhatsAppTemplate', { uso: AGREGADO }],
   ['src/modules/expenses/domain/expenses.service.ts::getExpenseSummary', { uso: AGREGADO }],
   ['src/modules/jobs/domain/precarga.service.ts::ventanaDePrecarga', { uso: AGREGADO }],
@@ -420,8 +419,14 @@ export const USO = new Map([
  *     La semana del asunto, con `timeZone: zonaDelMerchant(merchant)`.
  *   Los tres, comparados contra el papel real con el proceso en UTC en
  *   `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`.
+ *   · `src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics` — SCRUM-1522 (decisión
+ *     del fundador, Jira c.19157). Estaba en `USO` como AGREGADO, o sea dada por buena con el reloj
+ *     del proceso; el «Hoy» y el mes del panel van ahora en la zona del comercio, con el mismo
+ *     filtro que el tope. Sale de `USO` y entra aquí: si vuelve a leer el reloj del proceso, cae.
+ *     Comparada contra el tope en `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`.
  */
 export const RETIRADAS = new Set([
+  'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
   'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
   'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
   'src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant',

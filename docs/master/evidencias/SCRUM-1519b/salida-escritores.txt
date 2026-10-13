@@ -1,0 +1,67 @@
+SCRUM-1519b · los escritores de Job.customerId y Job.quoteId, por efecto · sesión: administrador del comercio 21 · lo ajeno es del comercio 22
+POBLACION: almacén: merchant 2, customer 3, teamMember 2, quote 7, job 6 · filas cruzadas SEMBRADAS de partida: 4 · modelos doblados 33
+    sembrada: job 502 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: job 503 (comercio 21) → presupuesto 712 (comercio 22)
+    sembrada: quote 615 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: quote 616 (comercio 21) → cliente 702 (comercio 22)
+
+── 0 · QUIÉN ESCRIBE (censo por TEXTO sobre src/, comentarios fuera; no es AST)
+    control sembrado del censo (fuente de mentira: 1 comentario + 3 llamadas): 3 de 3 · NOMBRA customerId/quoteId | no los nombra | data EN VARIABLE o función ✓
+    población: 323 ficheros .ts · llamadas que escriben: 32 (job 7, quote 25)
+    job:
+      src/modules/jobs/app/routes/jobs.routes.ts:890 create · data EN VARIABLE o función
+      src/modules/jobs/app/routes/jobs.routes.ts:1118 update · data EN VARIABLE o función
+      src/modules/jobs/app/routes/jobs.routes.ts:1120 update · data EN VARIABLE o función
+      src/modules/jobs/domain/job.service.ts:101 create · NOMBRA customerId/quoteId
+      src/modules/jobs/domain/job.service.ts:196 update · no los nombra
+      src/modules/jobs/domain/job.service.ts:297 update · no los nombra
+      src/modules/system/domain/fusionClientes.ts:178 updateMany · NOMBRA customerId/quoteId
+    quote:
+      src/modules/jobs/app/routes/albaranes.routes.ts:1641 create · NOMBRA customerId/quoteId
+      src/modules/maintenance/domain/maintenance.service.ts:413 create · NOMBRA customerId/quoteId
+      src/modules/quotes/app/routes/quotes.routes.ts:192 create · NOMBRA customerId/quoteId
+      src/modules/system/domain/fusionClientes.ts:177 updateMany · NOMBRA customerId/quoteId
+      src/modules/system/quoteAdmin.ts:593 create · data EN VARIABLE o función
+    (de quote sólo se listan las que nombran customerId o llevan data en variable; las demás, 20, no los nombran)
+
+── 1 · EL PAR SEMBRADO (5 escritores de mentira, 10 casos)
+    ✓ crea/cruza {"customerId":702} espera CRUZA                       → 201  CRUZA           CRUZADA NUEVA: job 9000 (comercio 21) → cliente 702 (comercio 22) · cambió: job 9000: no estaba → 21|702||agendado
+    ✓ crea/cruza {"customerId":601} espera ESCRIBE-LIMPIO              → 201  ESCRIBE-LIMPIO  · cambió: job 9001: no estaba → 21|601||agendado
+    ✓ crea/filtra {"customerId":702} espera NO-ESCRIBE                 → 404  NO-ESCRIBE      · dijo: {"error":"not_found"}
+    ✓ crea/filtra {"customerId":601} espera ESCRIBE-LIMPIO             → 201  ESCRIBE-LIMPIO  · cambió: job 9002: no estaba → 21|601||agendado
+    ✓ crea/cruza-por-presupuesto {"quoteId":712} espera CRUZA          → 201  CRUZA           CRUZADA NUEVA: job 9003 (comercio 21) → presupuesto 712 (comercio 22) · cambió: job 9003: no estaba → 21|601|712|agendado
+    ✓ crea/cruza-por-presupuesto {"quoteId":613} espera ESCRIBE-LIMPIO → 201  ESCRIBE-LIMPIO  · cambió: job 9004: no estaba → 21|601|613|agendado
+    ✓ mueve/cruza {"a":702,"de":602} espera CRUZA                      → 200  CRUZA           CRUZADA NUEVA: job 505 (comercio 21) → cliente 702 (comercio 22) · cambió: job 505: 21|602||agendado → 21|702||agendado
+    ✓ mueve/cruza {"a":601,"de":602} espera ESCRIBE-LIMPIO             → 200  ESCRIBE-LIMPIO  · cambió: job 505: 21|602||agendado → 21|601||agendado
+    ✓ mueve/filtra {"a":702,"de":602} espera NO-ESCRIBE                → 409  NO-ESCRIBE      · dijo: {"error":"cliente_no_encontrado"}
+    ✓ mueve/filtra {"a":601,"de":602} espera ESCRIBE-LIMPIO            → 200  ESCRIBE-LIMPIO  · cambió: job 505: 21|602||agendado → 21|601||agendado
+
+── ESCRITOR 2 · aceptar un presupuesto (ensureJobForQuote → job.create)  ·  job.service.ts:101, llamado desde quotesAdmin.routes.ts:151
+    C · POST accept del 613 (propio, cliente propio)                   → 200  ESCRIBE-LIMPIO  · cambió: quote 613: 21|601||sent → 21|601|9005|accepted ; job 9005: no estaba → 21|601|613|pendiente_agendar
+    P · POST accept del 713 (presupuesto de B)                         → 404  NO-ESCRIBE      · dijo: {"error":"not_found"}
+    P · ensureJobForQuote(714) a pelo (de B, aceptado, sin Trabajo)    → fn   ESCRIBE-LIMPIO  · cambió: quote 714: 22|702||accepted → 22|702|9007|accepted ; job 9007: no estaba → 22|702|714|pendiente_agendar · ⚠️ ESCRIBIÓ FILA DE B: quote.update {"id":714}
+    H · ensureJobForQuote(615) a pelo (de A, SEMBRADO con cliente de B) → fn   CRUZA           CRUZADA NUEVA: job 9009 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 615: 21|702||accepted → 21|702|9009|accepted ; job 9009: no estaba → 21|702|615|pendiente_agendar
+    H · POST accept del 616 (de A, SEMBRADO con cliente de B)          → 200  CRUZA           CRUZADA NUEVA: job 9011 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 616: 21|702||sent → 21|702|9011|accepted ; job 9011: no estaba → 21|702|616|pendiente_agendar
+
+──   AGUAS ARRIBA del 2 · crear el presupuesto (¿se puede FABRICAR el 615?)  ·  quotes.routes.ts:192, POST /quote/create
+    C · POST /quote/create con cliente propio (601)                    → 201  ESCRIBE-LIMPIO  · cambió: quote 9013: no estaba → 21|601||draft
+    P · POST /quote/create con el cliente de B (702)                   → 404  NO-ESCRIBE      · dijo: {"error":"customer_not_found"}
+    P · POST /quote/create con merchant_id de B y cliente de B         → 403  NO-ESCRIBE      · dijo: {"error":"forbidden"}
+
+── ESCRITOR 3 · fusionar clientes (job.updateMany)  ·  fusionClientes.ts:178, llamado desde customersAdmin.routes.ts:661
+    C · POST fusionar 601 ← 602 (los dos propios; el Trabajo 505 es del 602) → 200  ESCRIBE-LIMPIO  · cambió: job 505: 21|602||agendado → 21|601||agendado
+    P · POST fusionar 702 ← 602 (el que QUEDA es de B)                 → 409  NO-ESCRIBE      · dijo: {"error":"cliente_no_encontrado"}
+    P · POST fusionar 601 ← 702 (el que DESAPARECE es de B)            → 409  NO-ESCRIBE      · dijo: {"error":"cliente_no_encontrado"}
+    P · fusionarClientes(21, 702, 602) a pelo, sin la ruta             → fn   NO-ESCRIBE      · dijo: {"lanza":"cliente_no_encontrado"}
+    P · fusionarClientes(21, 601, 702) a pelo, sin la ruta             → fn   NO-ESCRIBE      · dijo: {"lanza":"cliente_no_encontrado"}
+
+── RESUMEN · una fila por escritor
+  escritor | sitio | control propio | P por la puerta | D con el dato ya cruzado
+  ESCRITOR 2 · aceptar un presupuesto (ensureJobForQuote → job.create) | job.service.ts:101, llamado desde quotesAdmin.routes.ts:151 | ESCRIBE-LIMPIO 200 | NO-ESCRIBE, ESCRIBE-LIMPIO | CRUZA, CRUZA
+  AGUAS ARRIBA del 2 · crear el presupuesto (¿se puede FABRICAR el 615?) | quotes.routes.ts:192, POST /quote/create | ESCRIBE-LIMPIO 201 | NO-ESCRIBE, NO-ESCRIBE | no aplica
+  ESCRITOR 3 · fusionar clientes (job.updateMany) | fusionClientes.ts:178, llamado desde customersAdmin.routes.ts:661 | ESCRIBE-LIMPIO 200 | NO-ESCRIBE, NO-ESCRIBE, NO-ESCRIBE, NO-ESCRIBE | no aplica
+
+  filas 3 (2 escritores y 1 aguas arriba) · dejan una fila cruzada pidiéndoselo por la PUERTA 0 · COPIAN un dato que ya venía cruzado 1 · envíos a Meta 0 · intentos de red 0
+
+El par sembrado se separa (10 de 10, más el del censo) y los controles propios escriben.
+EXIT=0

@@ -38,7 +38,7 @@ async function metricas(filas) {
   const fS = requiere.resolve(path.join(RAIZ, 'dist/modules/messaging/domain/whatsappLog.service.js'));
   requiere.cache[fP] = {
     id: fP, filename: fP, loaded: true,
-    exports: { prisma: { whatsAppMessage: { findMany: async () => filas } } },
+    exports: { prisma: { merchant: { findUnique: async () => null }, whatsAppMessage: { findMany: async () => filas, count: async () => 0 } } },
   };
   delete requiere.cache[fS];
   const { getWhatsAppMetrics } = requiere(fS);

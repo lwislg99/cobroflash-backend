@@ -1237,3 +1237,327 @@ entró por `main`—. Ahora compara contra el ancestro común. La tabla de ⓝ e
 | ningún texto que vea un usuario | los seis ficheros son una skill, tres documentos de `docs/legal`, y la cabecera de un test |
 | construir la cola, el cron o el reintento | NO HECHO, a propósito → condición ① |
 | las gemelas que no nombra el permiso | NO HECHO, a propósito → sección ⓟ |
+
+# SCRUM-1500h · Lo que seguía diciendo que la cola no existe y que no hay cliente SOAP: 36 correcciones en 18 ficheros, en sitio, y lo que queda sin abrir
+
+**Medido contra:** `origin/main` = `0472952cd2c54e1c336170fa502ca902e6fda8cf` · 2026-10-13T00:10:49Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/scrum1500h/en-sitio.cjs`
+
+**Skill UI:** no cargada · el único cambio en `public/` es un comentario `//` de `settingsView.js` (línea 195): 8.576 tokens de código antes y después, idénticos; no se toca nada que se pinte.
+
+Sesión J5 (`jv-j5`, 13-oct de madrugada en Madrid, relevo de la que entregó SCRUM-1500g), equipo de
+Javier, ticket de `area-j5`. Rama `scrum-1500h-los-veinticuatro-sitios`. Encargo del orquestador del
+equipo (`cobroflash-backend-2e`). El hook de arranque dijo «SIN IDENTIDAD… no construyas»; la ficha
+lo atribuye a SCRUM-1498 y dice que se siga. Se siguió.
+
+## ⓤ El permiso, leído en Jira antes del primer cambio
+
+SCRUM-1500, comentario **18993** (ampliación del fundador, 8-oct-2026, transcrita por el orquestador:
+«Sí amplío.»). Literal de lo que autoriza: «Corregir toda afirmación del repositorio que diga que la
+cola de remisión no existe, no se encola, no tiene reintentos o no está en el esquema — con el mismo
+criterio de los cinco de hoy: sólo corregir lo falso, sin construir nada, en sitio y sin mover
+líneas.» Sustituye a la lista cerrada de c.18970, cubre `.claude/` y `.agents/` (es la revisión de la
+regla 10 y se cita en esos dos commits), el comentario de `settingsView.js` y la frase «Cero clientes
+SOAP/mTLS contra la AEAT». Leídos también c.18919, c.18970, c.18975, c.18986 y c.18987.
+
+Lo escrito se copia de c.18919 (la cola) y de c.18986 y c.18993 (el cliente), con lo NO medido en
+la misma frase. Antes de copiarlo se releyó sobre este árbol: `sif.client.ts` tiene 538 líneas y una
+sola llamada de red, en la 472; `enviarSobre` y `procesarObligado`, 1 definición y 0 llamadas cada
+una en `src/`; `model VfSubmission` y su enum de cinco valores están en `prisma/schema.prisma`;
+`TiempoEsperaEnvio` lo nombran tres `.ts`. **No se ha repetido la medición de SCRUM-1500d ni el censo
+de SCRUM-1500g:** se usan.
+
+## ⓥ Qué se corrigió
+
+Todo sale de un solo guion, `docs/master/evidencias/scrum1500h/aplicar.cjs`, comiteado antes de
+usarlo: 36 operaciones, cada una con su fichero, su línea y el trozo exacto que tenía que estar una
+vez en esa línea; si una no casa, no escribe ninguna. Casaron las 36.
+
+| sitio | qué decía | qué dice ahora | commit |
+| --- | --- | --- | --- |
+| skill `yaqu-verifactu-sif`, las dos copias, 51 | `TiempoEsperaEnvio` «no en código nuestro» | lo nombran tres ficheros; nada se ejecuta | `fb6792cd4` |
+| ídem, 64 | «no hay cola que pausar ni nada pendiente» | hay cola; `procesarObligado` lee la bandera y tiene 0 llamadas | `fb6792cd4` |
+| ídem, 83 | «ni reintentos, ni ese estado» | el código de reintentos existe y nada lo ejecuta; `manual_review` está en el enum | `fb6792cd4` |
+| ídem, 88 | «no hay pruebas contra la AEAT» | NOTA: el máster dice 3 aceptados en pruebas; con qué se enviaron, NO medido | `fb6792cd4` |
+| skill `verifactu`, 46 y 48 | la cola, entre «los dos que NO existen» | existe a medias; falta quien la vacíe | `f275c8c99` |
+| `modoVisible.ts`, 21-22 (comentario) | «Cero clientes SOAP/mTLS contra la AEAT» | «Nada envía a la AEAT» + las dos mitades | `85697ebdd` |
+| `settingsView.js`, 195 (comentario) | «sin cliente SOAP/mTLS, sin cola de remisión» | «nada envía a la AEAT» + las dos mitades, en corto | `e21fc57ef` |
+| `PREGUNTAS_ASESOR.md`, 461 y 463 | la cita de `modoVisible.ts`, que dejaba de ser literal | la cita, literal otra vez | `923cf405f` |
+| cabeceras de `scrum298` (9) y `scrum1127` (3) | «cero clientes…» · «la tabla NO existe» | lo mismo que el comentario · «sin base y sin red» | `9806a4c28` |
+| `AUDITLOG_FISCAL_CONTRATO.md`, 300-301 y 777 | «sin `VfSubmission` en el schema» | «nada envía» + lo medido | `311738c07` |
+| `SEMAFORO_MAPA_EMISION.md`, 295, 296 y 302 | «No hay tabla ni columna» · «Sin estado, sin reintentos» · «aún no existe en el schema» | no hay respuesta guardada porque nada envía · nada lo ejecuta · modelo del esquema desde el 30-sep | `311738c07` |
+| `SEMAFORO_CALIBRACION.md`, 199 | «sin tabla, sin envío, cero llamadas de red» | «sin envío» + las dos correcciones | `311738c07` |
+| `AUDITORIA_CAMINO_EMISION.md`, 151 y 225 | reintentos «INEXISTENTE» · «lo confirma por su cuenta» | el código existe y nada lo ejecuta · lo confirmado es que nada envía | `311738c07` |
+| los dos inventarios (5 notas) | veredictos del 19 y 20-ago | **sin reclasificar**: nota fechada al lado | `311738c07` |
+| `RUNBOOKS.md` 76 · `puesto-j1.md` 16 · `SIF_SPEC_NOTES.md` 77-78 | «nunca se construyó» · «sin tabla» · «no está en el esquema» | corregido en sitio | `3a1408155` |
+| `docs/sql/scrum-825-…sql`, 14 | «la cola de envío y el envío NO EXISTEN» (8-sep) | **sin tocar la frase**: nota fechada al final de la línea | `3a1408155` |
+
+## ⓦ En sitio, por bytes
+
+`node docs/master/evidencias/scrum1500h/en-sitio.cjs`, salida en `en-sitio-salida.txt`, contra el
+ancestro común con `main` (`0472952cd`): cambian **18 ficheros** fuera de `docs/master`, los 18 de la
+lista (1 en `src/`, 0 en `prisma/`, 1 en `public/`); los 18 conservan su número de líneas y sólo
+difieren en las líneas declaradas; 0 retornos de carro y ningún BOM, antes y después. Las dos copias
+de la skill: 9.890 bytes y el mismo sha256. Tokens de código idénticos en los cuatro ficheros de
+código (99, 451, 925 y 8.576). La línea 463 del asesor lleva literales los 1.378 caracteres de
+corchetes de `modoVisible.ts:22`. Los tres controles sembrados (un byte de más, una sentencia de más,
+una cifra cambiada en la cita) salen «lo ve».
+
+## ⓧ Dónde me aparté del encargo
+
+* **Los inventarios no se reclasifican.** Sus 15 líneas son veredictos del 19 y 20-ago y sus clases
+  suman totales que el documento dice que cuadran. Van cinco notas fechadas (VeriFactu 107, 411 y
+  416; skills 143 y 229) que nombran las demás líneas por su número.
+* **Las cabeceras «NO CONSTRUIDO» de la skill no se tocan** (las casan dos censos), ni la línea 47
+  («No hay envío ni respuesta que esperar»), que sigue siendo cierta.
+* **La línea 88 de la skill lleva una NOTA, no una corrección.** «No hay pruebas contra la AEAT» no
+  es una de las cuatro afirmaciones que nombra el literal de c.18993; está entre los 24 del censo
+  que se le enseñó al fundador y el encargo la nombra. No he medido con qué se enviaron los 3
+  aceptados: sólo cito lo que dice el máster.
+* **El guion de SCRUM-825 conserva su frase:** era cierta el 8-sep y justificaba un borrado de ese día.
+* **La ficha contaba `PREGUNTAS_ASESOR.md` entre los 2 «con otras palabras».** Es uno de los 5
+  literales (c.18987); los 2 son `settingsView.js:195` e `INVENTARIO_AFIRMACIONES_SKILLS.md:229`.
+
+## ⓨ Lo que NO se ha hecho ni medido
+
+* 🔴 **`docs/master` sigue SIN ABRIR:** 1.046 candidatas en 177 ficheros, y 8 de ellos traen la frase
+  del cliente SOAP (c.18987). Son registros fechados; no he decidido nada sobre ellos.
+* **Las 769 candidatas que la criba de SCRUM-1500g dejó fuera, sin leer.** Mi barrido de hoy es más
+  estrecho que el suyo (tres patrones por texto fuera de `docs/master`; control positivo 18 ficheros,
+  control de cero 0) y no encontró ningún sitio nuevo: no prueba que no los haya. **Puede haber más.**
+* `verifactu/SKILL.md:51-52` («No hay ni una sola llamada del código hacia la Agencia Tributaria»)
+  es de la misma familia que la frase del cliente y **no está tocada**: no estaba en la población.
+* Ninguna base de datos; el valor de `SIF_ENABLED` en Railway; ningún test del procesador ni del
+  cliente ejecutado para comprobar que funcionan; con qué se enviaron los 3 aceptados en pruebas.
+* La tanda completa (la da el obligatorio del PR) y que las skills corregidas carguen bien en una
+  sesión nueva.
+* **Efecto lateral, medido:** `scripts/censo-afirmaciones-de-skills.mjs` pasa de 50 a 63
+  afirmaciones extraídas y de 5 a 13 NO COMPROBABLES (las rutas y la «regla 10» que nombran mis
+  corchetes); las FALSAS siguen en 2, que es lo que vigila el trinquete de `scrum939b`.
+
+## ⓩ Qué corrió antes de empujar
+
+`dist/` de `tsc --noCheck` (salida 0); `prisma generate` NO se corrió (árbol anidado). 114 ficheros
+de tests —los que nombran alguno de los ficheros tocados, más `scrum921c`, `scrum237`, `scrum942`,
+`scrum1127`, `scrum1128`, `scrum298` y `scrum187`—: **1.065 tests, 1.054 pasan, 4 caen, 7 saltados**,
+TAP de 304.636 bytes. De los cuatro: tres son `scrum475`, que dice «NO SUPE MIRAR — la herramienta de
+la casa no responde» (el árbol anidado no trae el CLI de Prisma; es un CIEGO de este árbol, no lo he
+visto pasar en otro), y uno era `scrum854` («esta rama, si toca código, trae su entrada de
+registro»), correcto: faltaba este tramo. Los guards del registro, después de escribirlo, van en el
+comentario de entrega de Jira.
+
+## Lo que me salió mal
+
+* **Avisé del contexto a 246.061 y no a 200k:** me medí al arrancar (112.681) y no volví a medirme
+  hasta tener los ocho commits hechos. Es el mismo tropiezo de mi antecesora.
+* Mi primer borrador de los textos de las skills llevaba «ya no» y «no existe» en líneas que antes
+  no negaban: habría movido el censo de skills por una palabra. Lo cacé comparando el censo antes y
+  después, y aun así el censo se mueve (arriba).
+* No dejé en Jira el comentario de «lo coge» al empezar (A13, paso 2): va todo en el de entrega.
+
+## Lo que pide el encargo → dónde se ve
+
+| lo que pide | dónde se ve |
+| --- | --- |
+| leer y citar c.18993 antes de tocar | sección ⓤ |
+| corregir los 13 de partida y los 24 nuevos, en sitio y sin mover líneas | secciones ⓥ y ⓦ |
+| las dos skills fiscales, la copia por bytes | sección ⓦ; commits `fb6792cd4` y `f275c8c99` |
+| el comentario de `settingsView.js:195`, y parar si lo ve alguien | es un comentario `//`; sección ⓦ (8.576 tokens idénticos) |
+| «Cero clientes SOAP/mTLS», con las DOS mitades | `modoVisible.ts:21-22` y sus gemelas; sección ⓥ |
+| no ensanchar el permiso | sección ⓧ |
+| el registro, con su ancla y su línea A9 | este tramo |
+| abrir `docs/master` | NO HECHO → sección ⓨ; lo decide el orquestador |
+| construir la cola, el cron o el reintento; tocar `enviarSobre` | NO HECHO, a propósito |
+
+## El relevo (13-oct-2026, 00:22Z de GitHub): una nota que sale, un sitio que entra y un borde
+
+Sesión J5 (`jv-j5`, relevo de la que escribió lo de arriba), mismo árbol, misma rama, mismo PR
+(#2345). Encargo: SCRUM-1500 **c.19155** (respuesta del orquestador a los cuatro apartes de c.19154),
+leído entero en Jira antes del primer cambio, junto a c.19154, c.18993 y c.18919. Al empezar,
+`origin/main` ya no era `0472952cd`: es `6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9` (tres merges,
+#2341, #2342 y #2343; 22 ficheros, todos en `docs/master/` y `docs/equipo/cicatrices/`, **0 en común
+con los de esta rama**). El ancestro común sigue siendo `0472952cd`, y contra él mide `en-sitio.cjs`.
+Lo de arriba NO se reescribe: es lo que se sabía y se hizo a las 00:10Z. Donde este tramo lo
+contradice, manda este tramo.
+
+### ① La nota de la línea 88 de la skill `yaqu-verifactu-sif`: QUITADA, en las dos copias
+
+La sección ⓥ dice que la 88 lleva una NOTA, y la ⓧ que «si esto es ensanchar, se quita». **Era
+ensanchar, y se ha quitado.** El motivo, que importa más que la línea:
+
+* «No hay pruebas contra la AEAT» **no es ninguna de las cuatro afirmaciones** del literal de
+  c.18993 —que la cola no existe, que no se encola, que no tiene reintentos, que no está en el
+  esquema—, **aunque estuviera entre los 24 del censo y aunque la ficha del orquestador la nombrara.**
+  La ficha ensanchaba el permiso del fundador; lo dice el propio orquestador en c.19155.
+* **Se quita aunque la nota fuera correcta y aunque fuera una sola línea**, porque la regla de no
+  ensanchar un permiso sólo sirve si aguanta cuando es incómoda. Si hoy pasa «porque total es una
+  nota», mañana nadie sabe dónde está el borde.
+* Lo que la nota decía queda SIN decir en la skill y sin ticket: el máster habla de «3 aceptados en
+  pruebas» y **con qué se enviaron no lo ha medido nadie** (tampoco yo). Si se abre, se abre por su
+  cuenta y con su propia medición; no lo abro yo.
+
+Cómo queda: la línea 88 de las dos copias es **byte a byte la del ancestro común** (89 bytes). Las
+dos copias: 9.567 bytes (eran 9.890) y el mismo sha256, `e769d14082178946…`. Las líneas que cambian
+contra el ancestro en esa skill pasan de 51, 64, 83 y 88 a **51, 64 y 83**.
+
+### ② `verifactu/SKILL.md`, líneas 51-52: CORREGIDA (el sitio que quedó fuera de la población)
+
+| línea | decía | dice ahora |
+| --- | --- | --- |
+| 51 | «No hay ni una sola llamada del código hacia la» | «Nada envía a la» |
+| 52 | «Agencia Tributaria. La auditoría lo midió…» | «Agencia Tributaria. [Corregido el 13-oct-2026…] La auditoría lo midió…» |
+
+Mismo criterio que las 36: en sitio, 312 líneas antes y después, y **las dos mitades** — falsa como
+«el código no trae ninguna llamada» (hay UN cliente, `sif.client.ts`, con una llamada de red),
+cierta como «nada envía» (nadie lo llama). El texto no se ha vuelto a teclear: `aplicar-relevo.cjs`
+lee de `aplicar.cjs` las mismas constantes que usaron las gemelas, y `en-sitio.cjs` comprueba que
+la línea 52 lleva **literales los 470 caracteres** de lo medido y lo NO medido del comentario de
+`modoVisible.ts:22`. Lo NO medido va en la misma frase: el cliente no se ha ejecutado, ninguna base
+de datos, ni el valor de `SIF_ENABLED` en Railway.
+
+**Un aparte mío, declarado.** La ficha del relevo dice que esta frase «es una de las cuatro». Leído
+el literal de c.18993, **no es una de las cuatro de la cola**: entra por el apartado siguiente del
+mismo comentario, el de «Cero clientes SOAP/mTLS contra la AEAT» («literal en 5 sitios y con otras
+palabras en 2 … queda cubierta por esta ampliación»). Ésta es una tercera forma de decir lo mismo,
+y es la misma lectura con la que arriba se corrigió «cero llamadas de red» en
+`SEMAFORO_CALIBRACION.md:199`. La he corregido con ese apoyo y no con el de «las cuatro». **Si esa
+lectura también es ensanchar, se deshace igual que la 88: son dos líneas de un fichero.**
+
+Una palabra que no he tocado y que alguien preguntará: la misma línea 52 sigue diciendo «La
+auditoría lo midió con dos instrumentos y con un control de ceguera». Lo que la auditoría midió es
+que nada envía (`AUDITORIA_CAMINO_EMISION.md:225`, ya corregida arriba); la frase queda detrás del
+corchete y se lee así. No la he reescrito.
+
+### ③ El recuento, después del relevo
+
+Siguen siendo **36 correcciones en 18 ficheros**, y es casualidad, no que no haya cambiado nada:
+salen 2 (la nota de la 88, una por copia) y entran 2 (las líneas 51 y 52 de la otra skill). Los 18
+ficheros son los mismos.
+
+### ④ `docs/master` NO se abre, y lo que queda fuera es historia
+
+Decisión del orquestador en c.19155, que aquí se escribe y no se rediscute. La sección ⓨ deja
+`docs/master` como «SIN ABRIR: 1.046 candidatas en 177 ficheros». **Eso deja de ser un pendiente.**
+`docs/master` son registros fechados de trabajo pasado: un registro de septiembre que dice que no
+hay cola **era verdad en septiembre**. Corregirlo no lo haría más cierto: lo haría mentir sobre lo
+que se sabía entonces, y haría imposible entender por qué se decidió lo que se decidió. Lo que queda
+fuera del barrido **no son afirmaciones falsas pendientes: es historia.** Es el mismo principio con
+el que arriba el guion SQL de SCRUM-825 y los dos inventarios de agosto conservan su frase con la
+fecha al lado. El barrido tiene, por tanto, un borde definido: todo el repositorio **menos**
+`docs/master`.
+
+Lo que digo de esas 1.046 es lo que dice c.19155 y lo que midió SCRUM-1500g: **yo no las he abierto
+ni contado.**
+
+### ⑤ Lo que SÍ sigue siendo suelo
+
+* **Las 769 candidatas que la criba de SCRUM-1500g dejó sin leer** (370 abiertas de 1.139). No las
+  he leído. Dentro del borde de ④ **puede haber más sitios**, y `verifactu/SKILL.md:51-52` es la
+  prueba: apareció leyendo, no buscando, y estaba fuera de la población.
+* «No hay pruebas contra la AEAT» (la 88) sigue en la skill tal como estaba el 20-ago, sin nota.
+* Ninguna base de datos; `SIF_ENABLED` en Railway; el cliente y el procesador, sin ejecutar; que
+  las dos skills carguen bien en una sesión nueva.
+
+### ⑥ El censo de skills se vuelve a mover, y por qué no es empeorar
+
+`scripts/censo-afirmaciones-de-skills.mjs`, antes y después de este relevo (salida 1 las dos veces:
+es su salida con FALSAS, no un fallo de arranque; 2.594 bytes la de antes):
+
+| | antes de 1500h | al entregar 1500h | después del relevo |
+| --- | --- | --- | --- |
+| afirmaciones comprobables extraídas | 50 | 63 | 64 |
+| NO COMPROBABLES | 5 | 13 | 14 |
+| FALSAS | 2 | 2 | 2 |
+
+Las dos primeras columnas son de la sección ⓨ; la primera no la he vuelto a medir. Del relevo: salen
+las dos entradas de `yaqu-verifactu-sif:88` (la ruta `src/` y la «regla 10» de la nota) y entran
+tres en `verifactu:52` (la ruta del cliente, `src/` y la «regla 10» del corchete), las tres con el
+motivo «la línea NIEGA, y este censo no lee polaridad». **Al poner «no medido» y una ruta donde
+antes había una afirmación redonda, el instrumento cuenta más cosas como no comprobables: el
+repositorio es más honesto, no menos.** Quien lea sólo el número verá empeorar algo que ha mejorado.
+Las FALSAS, que es lo que vigila el trinquete de `scrum939b`, siguen en 2 y son las mismas dos
+(`verifactu:163` y `:164`, ajenas a este trabajo).
+
+### ⑦ La comprobación
+
+`node docs/master/evidencias/scrum1500h/en-sitio.cjs`, salida 0, guardada en
+`en-sitio-salida-relevo.txt` (3.342 bytes; `en-sitio-salida.txt` es la de las 00:10Z y se queda como
+estaba). Lleva un apartado nuevo, ⑦: la 88 de las dos copias contra el ancestro, y la 52 de la otra
+skill contra el comentario, cada una con su control sembrado («la nota, puesta otra vez» y «una
+cifra cambiada en la 52»: los dos «lo ve»). **Visto en rojo antes de fiarme:** repuesta la nota en
+UNA sola copia, la comprobación sale 1 y lo dice tres veces (línea 88 de más, copias distintas, 88
+que no es la del ancestro); devuelta la copia, sale 0. `aplicar-relevo.cjs` se comiteó antes de
+usarlo (`7b4e7a3c1`), casó sus 4 operaciones y, corrido otra vez, cae entero: es de un solo uso.
+
+El obligatorio del PR se lee DESPUÉS de empujar esto y su veredicto va al comentario de entrega de
+Jira, no aquí: escribirlo aquí sería otro commit y otra tanda.
+
+### Lo que me salió mal (el relevo)
+
+* **Mi primer control sembrado de la línea 88 no pasaba por la comprobación:** comparaba una cadena
+  con ella misma modificada, así que habría dicho «lo ve» con la comprobación rota. Lo vi al
+  releerlo y lo rehice para que el caso sembrado entre por la misma función que el real.
+* **Mi primera comprobación de la línea 52 salió en rojo y el rojo era mío:** recortaba «lo medido»
+  hasta el final de los corchetes de `modoVisible.ts`, que son dos (el del cliente y el de la cola),
+  y pedía 1.137 caracteres donde tocaban 470. El texto de la skill estaba bien.
+* Un guion de edición con las barras mal escapadas no casó (no escribió nada); lo hice a mano.
+* `main` se había movido tres merges cuando yo aún repetía el `0472952cd` de la ficha: lo vi por la
+  cabecera de GitHub, no por haber vuelto a traerlo antes de medir.
+* El hook de arranque volvió a decir «SIN IDENTIDAD… no construyas»; seguí por lo mismo (SCRUM-1498).
+
+| lo que pide c.19155 | dónde se ve |
+| --- | --- |
+| quitar la nota de la 88, en las dos copias, idénticas por sha256, con el motivo escrito | ① y ⑦ |
+| corregir `verifactu/SKILL.md:51-52`, en sitio, copiando, con lo NO medido | ② y ⑦ |
+| `docs/master` no se abre: historia, no pendiente | ④ |
+| las 769 candidatas, dichas como suelo | ⑤ |
+| explicar el 5 → 13 del censo de skills | ⑥ (y ahora 14) |
+| leer el obligatorio de #2345 por nombre | comentario de entrega de Jira |
+
+### ⑧ El obligatorio de #2345, leído por nombre: COLGADA (ni verde ni rojo)
+
+Lo escribe una tercera sesión J5 (`jv-j5`, relevo del relevo; 13-oct-2026, 04:42Z de GitHub). La
+anterior dejó ①-⑦ comiteado y EMPUJADO (`a6c65b4f7`, punta del remoto comprobada: 0 commits sin
+empujar, árbol limpio) y se paró sin leer el obligatorio ni entregar. El párrafo de ⑦ dice que el
+veredicto iría sólo a Jira «porque escribirlo aquí sería otro commit y otra tanda». Va aquí porque
+**la otra tanda hace falta de todos modos**: la que hay no tiene veredicto, y sin una nueva el PR se
+queda bloqueado para siempre. No he tocado ①-⑦: los he vuelto a medir (`en-sitio.cjs`, salida 0,
+3.342 bytes; las dos copias, 9.567 B y el mismo sha256 `e769d14082178946…`; la 88, la del ancestro).
+
+**El job «build + tests (con banco desechable)»** del run 38327072252, sobre `a6c65b4f7`, acabado a
+las 00:45:07Z: GitHub lo da por `failure`, y **no es un rojo**:
+
+| qué | este job | uno completo (el de `main` @`dfda86d65`) |
+| --- | --- | --- |
+| tamaño del log (bajado con `--allow-escape-sequences`) | 992.258 B | 1.799.846 B |
+| «TANDA SIN VEREDICTO» | 1 | 0 |
+| línea `ℹ tests N` | no hay | `ℹ tests 11180` · pass 11087 · fail 0 · skipped 93 |
+| casos pasados, la marca anclada al inicio del caso | 5.933 | 11.114 |
+| casos caídos, la cruz anclada al inicio del caso | 0 | 0 |
+| la cruz contada a secas | 2 (el nombre de un caso de SCRUM-1336 que pasa, y un aviso de `por-que-cayo`) | — |
+| control de cero (una cadena que no existe) / positivo (grupos de paso) | 0 / 32 | 0 / 32 |
+
+A las 00:29:49Z llegó el último caso de `scrum446`, y a las 00:44:59Z el vigilante de SCRUM-858 cortó:
+«910 s sin escribir nada», salida 3. Los tres pasos de detrás (`por-que-cayo`, su integridad y el
+suelo de la tanda) dicen «NO SUPE MIRAR»: el TAP no tiene resumen. **Lo que se puede afirmar: 5.933
+casos pasaron y 0 cayeron ANTES del silencio. De los otros ~5.100 no se sabe nada**, y entre ellos
+están `scrum854`, `scrum811c` y `scrum939b`, que son los que leen este registro y las skills.
+
+El mismo lector, sobre un log que sí es rojo (run 38327792266, de otra rama): 2 casos caídos con la
+cruz anclada y `ℹ fail 2`. Lo cuento porque un lector que sólo se ha probado contra verdes no se
+sabe si ve.
+
+**Qué fichero no terminó:** el vigilante dice que es el siguiente a `scrum446`, y en los dos logs
+completos que he bajado lo que sigue es `scrum447`. En este árbol, `scrum447`, `scrum448` y
+`scrum451` juntos: 25 de 25 en 5,3 s. **La causa del silencio NO está medida.** Que sea cosa del
+corredor y no de esta rama es una suposición mía y no la doy por buena: lo único que dirá algo es la
+tanda nueva. Si vuelve a pararse en el mismo sitio, es de la rama y hay que mirarlo.
+
+`main` al escribir esto: `dfda86d65b8de9594b59b277fd38ea0ac3eda93a` (39 ficheros desde el ancestro
+común; UNO en común con esta rama, `docs/legal/AUDITLOG_FISCAL_CONTRATO.md`: `main` le cambia la
+línea 130 y esta rama la 300, la 301 y la 777, las dos sin mover líneas; GitHub da el PR por
+`MERGEABLE`).
+
+**Lo que NO he hecho:** relanzar el job (`gh run rerun` conserva la base vieja), cerrar y reabrir el
+PR (desarma el auto-merge, que no se toca), ni correr la tanda completa en este árbol.

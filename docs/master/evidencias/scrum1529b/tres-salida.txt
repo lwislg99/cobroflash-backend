@@ -1,0 +1,84 @@
+POBLACION: 3 campos · árbol real: 322 ficheros .ts bajo src/ (0 sin parsear), 199 escrituras de Prisma vistas, máster 1905 líneas
+           copia sembrada: 323 ficheros .ts, 202 escrituras · marcas de la siembra A en disco: 3 de 3
+
+=== Merchant.status (esquema, línea 129) · J5 dice ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    J5, unión D     : active   · @default active
+    DECLARADO       : (ninguna lista ni enum: el campo es un String sin vocabulario declarado)
+    ESCRITO         : active
+      · literal dentro de Prisma: active
+          src/modules/auth/domain/auth.service.ts:346 'active'
+      · por el @default (creaciones que no ponen el campo): (ninguna)
+      · derrames en escrituras de merchant: 4, que nombran el campo: 0 · escrituras con el dato no literal: 0
+    ⚠️ DECLARADO Y NADIE LO ESCRIBE: no aplica (no hay lista declarada)
+    máster          : «Merchant.status» 0 · «active» 11   (líneas del máster donde sale la palabra entera; J5)
+
+=== EmailMessage.status (esquema, línea 1568) · J5 dice ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    J5, unión D     : aceptado_sin_confirmacion | aceptado_sin_identificador | entregado | fallo_envio | rebotado | reclamado   · @default aceptado_sin_identificador
+    DECLARADO       : aceptado_sin_confirmacion | aceptado_sin_identificador | entregado | fallo_envio | rebotado | reclamado
+    ESCRITO         : aceptado_sin_confirmacion | aceptado_sin_identificador | entregado | fallo_envio | rebotado | reclamado
+      · literal dentro de Prisma: (ninguno)
+      · por el @default (creaciones que no ponen el campo): (ninguna)
+      · PUERTA la propiedad «estado» dentro de constanciaDeEnvio() en src/modules/messaging/domain/constanciaCorreo.ts: aceptado_sin_confirmacion | aceptado_sin_identificador
+          src/modules/messaging/domain/constanciaCorreo.ts:66 'aceptado_sin_confirmacion'
+          src/modules/messaging/domain/constanciaCorreo.ts:66 'aceptado_sin_identificador'
+      · PUERTA la propiedad «estado» dentro de constanciaDeFallo() en src/modules/messaging/domain/constanciaCorreo.ts: fallo_envio
+          src/modules/messaging/domain/constanciaCorreo.ts:77 'fallo_envio'
+      · PUERTA los VALORES del objeto EVENTOS_RESEND en src/integrations/firmaResend.ts: entregado | fallo_envio | rebotado | reclamado
+          src/integrations/firmaResend.ts:260 'entregado'
+          src/integrations/firmaResend.ts:261 'rebotado'
+          src/integrations/firmaResend.ts:262 'reclamado'
+          src/integrations/firmaResend.ts:263 'fallo_envio'
+      · expresión en Prisma src/modules/messaging/domain/registroDeEnvios.ts:223 constancia.estado  ← constanciaDeEnvio / constanciaDeFallo (se comprueba abajo que toda llamada a registrarEnvio trae una de las dos)
+      · expresión en Prisma src/modules/messaging/domain/registroDeEnvios.ts:320 avanzar(fila.status as EstadoCorreo, estado)  ← EVENTOS_RESEND: avanzar() devuelve el aviso o lo que ya había, nunca un valor nuevo
+      · llamadas a registrarEnvio(): 10, con la constancia fuera de las dos fábricas: 0
+      · derrames en escrituras de emailMessage: 1, que nombran el campo: 0 · escrituras con el dato no literal: 0
+    ⚠️ DECLARADO Y NADIE LO ESCRIBE: NINGUNO
+    llamadas a registrarEnvio() en src/: 10 → src/integrations/enviarCorreo.ts:143, src/integrations/enviarCorreo.ts:153, src/integrations/enviarCorreo.ts:201, src/integrations/enviarCorreo.ts:209, …
+    llamadas a aplicarAvisoDeProveedor() en src/: 1 → src/modules/messaging/app/routes/resendWebhook.routes.ts:82
+    llamadas a estadoDelAviso() en src/: 1 → src/modules/messaging/domain/avisoDeCorreo.ts:83
+    máster          : «EmailMessage.status» 0 · «aceptado_sin_confirmacion» 0 · «aceptado_sin_identificador» 0 · «fallo_envio» 0 · «entregado» 3 · «rebotado» 0 · «reclamado» 1   (líneas del máster donde sale la palabra entera; J5)
+
+=== VfSubmission.status (esquema, línea 1802) · J5 dice ESTADO_SIN_MAQUINA_EN_EL_MASTER
+    J5, unión D     : accepted | manual_review | pending | rejected | sent   · @default pending
+    DECLARADO       : accepted | manual_review | pending | rejected | sent
+    ESCRITO         : accepted | manual_review | pending | rejected | sent
+      · literal dentro de Prisma: sent
+          src/modules/fiscal/verifactu/sif.procesador.ts:122 'sent'
+      · por el @default (creaciones que no ponen el campo): pending
+          src/modules/invoicing/domain/encolarRemision.ts:61 create sin «status»
+      · PUERTA toda propiedad «estado» de un objeto literal en src/modules/fiscal/verifactu/sif.cola.ts: accepted | manual_review | pending | rejected
+          src/modules/fiscal/verifactu/sif.cola.ts:106 'manual_review'
+          src/modules/fiscal/verifactu/sif.cola.ts:108 'pending'
+          src/modules/fiscal/verifactu/sif.cola.ts:118 'accepted'
+          src/modules/fiscal/verifactu/sif.cola.ts:121 'accepted'
+          src/modules/fiscal/verifactu/sif.cola.ts:123 'manual_review'
+          src/modules/fiscal/verifactu/sif.cola.ts:126 'accepted'
+          src/modules/fiscal/verifactu/sif.cola.ts:129 'accepted'
+          src/modules/fiscal/verifactu/sif.cola.ts:131 'rejected'
+          src/modules/fiscal/verifactu/sif.cola.ts:161 'manual_review'
+          src/modules/fiscal/verifactu/sif.cola.ts:175 'rejected'
+          src/modules/fiscal/verifactu/sif.cola.ts:195 'rejected'
+      · expresión en Prisma src/modules/fiscal/verifactu/sif.procesador.ts:171 d.estado  ← las decisiones de sif.cola.ts (decidirTrasEnvio, recuperarEnviadoSinCierre)
+      · derrames en escrituras de vfSubmission: 2, que nombran el campo: 0 · escrituras con el dato no literal: 0
+    ⚠️ DECLARADO Y NADIE LO ESCRIBE: NINGUNO
+    llamadas a encolarAltaTrasSellado() en src/: 1 → src/modules/invoicing/domain/selladoEstado.ts:173
+    llamadas a procesarObligado() en src/: 0
+    llamadas a decidirTrasEnvio() en src/: 1 → src/modules/fiscal/verifactu/sif.procesador.ts:128
+    llamadas a recuperarEnviadoSinCierre() en src/: 1 → src/modules/fiscal/verifactu/sif.procesador.ts:88
+    máster          : «VfSubmission.status» 0 · «sent» 17 · «pending» 9 · «accepted» 8 · «rejected» 1 · «manual_review» 1   (líneas del máster donde sale la palabra entera; J5)
+
+=== CONTROL A · una escritura de Prisma sembrada por campo ===
+VE     Merchant.status: «zz1529b_merchant» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [Merchant.status], en ESCRITO de [Merchant.status] (sólo Merchant.status) · copia sin siembra igual que el árbol real: sí
+VE     EmailMessage.status: «zz1529b_emailMessage» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [EmailMessage.status], en ESCRITO de [EmailMessage.status] (sólo EmailMessage.status) · copia sin siembra igual que el árbol real: sí
+VE     VfSubmission.status: «zz1529b_vfSubmission» árbol real 0 (0) · copia sin siembra 0 (0) · sembrada: en D de [VfSubmission.status], en ESCRITO de [VfSubmission.status] (sólo VfSubmission.status) · copia sin siembra igual que el árbol real: sí
+3 de 3
+
+=== CONTROL B · el caso que decide: quitarle a la copia el escritor de un valor declarado ===
+VE     EmailMessage.status: quitado «reclamado» de src/integrations/firmaResend.ts (1 sitio(s) cambiados, quedan 0) · «declarado y nadie lo escribe» lo nombra: árbol real [] (vacío) · copia sin tocar [] (vacío) · copia sin escritor [EmailMessage.status] (sólo EmailMessage.status)
+VE     VfSubmission.status: quitado «rejected» de src/modules/fiscal/verifactu/sif.cola.ts (3 sitio(s) cambiados, quedan 0) · «declarado y nadie lo escribe» lo nombra: árbol real [] (vacío) · copia sin tocar [] (vacío) · copia sin escritor [VfSubmission.status] (sólo VfSubmission.status)
+2 de 2 · Merchant.status no tiene lista declarada: no hay valor que quitarle, y se dice.
+
+=== CONTROL C · el contador de llamadas ===
+VE     llamadas a procesarObligado(): árbol real 0 · copia sin siembra 0 · copia con una llamada sembrada 1 (tiene que ser una más) · positivo del árbol real: encolarAltaTrasSellado() tiene 1 (> 0)
+
+EXIT=0
