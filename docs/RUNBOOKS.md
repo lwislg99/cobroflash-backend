@@ -73,7 +73,7 @@
 ## R7 · Falla el sellado local de una factura
 
 > **CORREGIDO 23-sep-2026 (SCRUM-1094, jv-j4):** esta entrada describía un rechazo de la
-> AEAT vía una cola `VfSubmission` que nunca se construyó (cero tabla, cero envío, cero
+> AEAT vía una cola `VfSubmission` que nunca se construyó [13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: eso era cierto el 23-sep-2026; desde el 30-sep-2026 (SCRUM-1296) la tabla existe, la emisión la llena y ningún proceso la vacía (SCRUM-1500d, Jira c.18919); sigue sin haber envío. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] (cero tabla, cero envío, cero
 > llamada de red). El máster ya no la publica (Parte L, `docs/YAQU_MASTER.md`) tras
 > SCRUM-534n. El guion que había aquí para el merchant se **retira**, no se reescribe: nadie
 > ha diseñado qué decirle en esta incidencia, e inventarlo aquí sería regla 39 sin firma.

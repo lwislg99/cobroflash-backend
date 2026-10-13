@@ -48,7 +48,7 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
   (auditoría `docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8 y 9). Lo que esta regla
   decía —esperar el `TiempoEsperaEnvio` de cada respuesta, mín. 60 s, y reenviar los mismos
   registros si no llega ninguna— describe una conversación que ningún código mantiene:
-  `TiempoEsperaEnvio` sólo aparece dentro del XSD de la AEAT, no en código nuestro. Queda
+  [Corregido el 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): aquí decía «`TiempoEsperaEnvio` sólo aparece dentro del XSD de la AEAT, no en código nuestro», y es falso: lo nombran tres ficheros de `src/modules/fiscal/verifactu/` —`sif.client.ts` lo lee de la respuesta, `sif.cola.ts` fija su suelo de 60 s y `sif.procesador.ts` lo usa como espera por obligado— (SCRUM-1500g, Jira c.18986). «Ningún código mantiene esa conversación» sigue siendo cierto sólo como «nada se ejecuta»: `procesarObligado` y `enviarSobre` tienen 0 llamadas en `src/` (SCRUM-1500d, Jira c.18919). NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] Queda
   escrito en vez de borrado para que se vea que se comprobó, no que se olvidó.
   ⚠️ **De las tres reglas que había aquí, UNA sí rige hoy**, y no es de envío sino de
   documento: el tope de **1.000 registros** lo impone `MAX_REGISTROS_POR_ENVIO` al construir
@@ -61,7 +61,7 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
   Gemela de la afirmación A2 del máster, que el inventario SCRUM-528 ya marcó falsa.
 - 🔴 **NO CONSTRUIDO · `SIF_ENABLED` no pausa ninguna cola.** La bandera existe y se lee, pero
   hoy lo único que hace es viajar en el sobre del registro de auditoría (`flagsFiscales`, en
-  `audit.service.ts`): no hay cola que pausar ni nada pendiente que remitir al reanudar.
+  `audit.service.ts`): [Corregido el 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): aquí decía «no hay cola que pausar ni nada pendiente que remitir al reanudar», y que lo único que hace la bandera es viajar en el sobre de auditoría; es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. `procesarObligado` (`sif.procesador.ts`) también lee `SIF_ENABLED`, para dejar la cola en pausa, pero tiene 0 llamadas: hoy la bandera sigue sin pausar nada que esté en marcha, y lo pendiente de remitir son las altas en `pending`. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]
   ✅ **Lo que sí sigue vigente es la REGLA de diseño:** jamás bloquear la emisión por un fallo
   de remisión (runbook R7).
 - **Cero claims** hasta SIF-1 8/8 (regla 7): nada de "VeriFactu" en UI/copy de venta;
@@ -80,7 +80,7 @@ description: Obligatoria antes de tocar código de VeriFactu/SIF. Contiene guard
 
 - [ ] Registros alta/anulación/R1 validan contra los XSD del espejo.
 - 🔴 **NO CONSTRUIDO** — «rechazo forzado → retry con backoff → `manual_review` al 5º
-  intento»: no hay envío, ni reintentos, ni ese estado (auditoría, eslabones 8 y 9). No es
+  intento»: no hay envío. [Corregido el 13-oct-2026, SCRUM-1500h, con la revisión del fundador que pide la regla 10 (SCRUM-1500 c.18993): aquí seguía «ni reintentos, ni ese estado (auditoría, eslabones 8 y 9)», y es falso desde el 30-sep-2026 (SCRUM-1296): `manual_review` está en el enum del esquema, y el código de reintentos existe (`sif.cola.ts`: `MAX_INTENTOS`, `backoffS` y el paso a `manual_review`) y nada lo ejecuta: el proceso no carga ese fichero y `procesarObligado` tiene 0 llamadas (Jira c.18919); sus tests NO se han corrido hoy. Falta quien lo ejecute. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] No es
   una casilla que falte marcar: es una casilla que **nadie puede marcar**. Se deja anotada
   para que no vuelva a añadirse como si fuera trabajo pendiente de QA.
 - [ ] `SIF_ENABLED=off` no rompe la emisión local.
